@@ -1,0 +1,162 @@
+import { useState } from "react";
+import { X, Trash2, Save } from "lucide-react";
+import { useModel } from "@/lib/model-store";
+import type { ArchElement, ArchRelationship, C4ElementType } from "@/lib/model-types";
+
+interface Props {
+  selectedElementId: string | null;
+  selectedEdgeId: string | null;
+  onClose: () => void;
+}
+
+const ElementPanel = ({ selectedElementId, selectedEdgeId, onClose }: Props) => {
+  const { draft, updateElement, removeElement, updateRelationship, removeRelationship } = useModel();
+
+  if (selectedEdgeId) {
+    const rel = draft.relationships[selectedEdgeId];
+    if (!rel) return null;
+    return <RelationshipDetail rel={rel} onClose={onClose} updateRelationship={updateRelationship} removeRelationship={removeRelationship} />;
+  }
+
+  if (selectedElementId) {
+    const el = draft.elements[selectedElementId];
+    if (!el) return null;
+    return <ElementDetail el={el} onClose={onClose} updateElement={updateElement} removeElement={removeElement} />;
+  }
+
+  return null;
+};
+
+const ElementDetail = ({
+  el,
+  onClose,
+  updateElement,
+  removeElement,
+}: {
+  el: ArchElement;
+  onClose: () => void;
+  updateElement: (id: string, patch: Partial<Omit<ArchElement, "id">>) => void;
+  removeElement: (id: string) => void;
+}) => {
+  const [name, setName] = useState(el.name);
+  const [desc, setDesc] = useState(el.description);
+  const [tech, setTech] = useState(el.technology ?? "");
+  const [type, setType] = useState<C4ElementType>(el.type);
+
+  const save = () => {
+    updateElement(el.id, { name, description: desc, technology: tech || undefined, type });
+  };
+
+  const handleRemove = () => {
+    removeElement(el.id);
+    onClose();
+  };
+
+  return (
+    <div className="w-80 border-l border-border bg-card overflow-auto">
+      <div className="flex items-center justify-between p-3 border-b border-border">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Propriedades</h3>
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+      </div>
+      <div className="p-4 space-y-4">
+        <Field label="Nome" value={name} onChange={setName} />
+        <div>
+          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">Tipo</label>
+          <select
+            value={type}
+            onChange={(e) => setType(e.target.value as C4ElementType)}
+            className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          >
+            <option value="person">Person</option>
+            <option value="system">System</option>
+            <option value="container">Container</option>
+            <option value="component">Component</option>
+          </select>
+        </div>
+        <Field label="Descrição" value={desc} onChange={setDesc} multiline />
+        <Field label="Tecnologia" value={tech} onChange={setTech} />
+        <div>
+          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">ID</label>
+          <p className="text-xs font-mono text-muted-foreground bg-secondary rounded px-2 py-1.5">{el.id}</p>
+        </div>
+
+        <div className="flex gap-2 pt-2">
+          <button onClick={save} className="flex-1 flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+            <Save className="h-3.5 w-3.5" /> Salvar
+          </button>
+          <button onClick={handleRemove} className="flex items-center justify-center gap-1.5 rounded-md border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors">
+            <Trash2 className="h-3.5 w-3.5" /> Remover
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const RelationshipDetail = ({
+  rel,
+  onClose,
+  updateRelationship,
+  removeRelationship,
+}: {
+  rel: ArchRelationship;
+  onClose: () => void;
+  updateRelationship: (id: string, patch: Partial<Omit<ArchRelationship, "id">>) => void;
+  removeRelationship: (id: string) => void;
+}) => {
+  const [label, setLabel] = useState(rel.label);
+  const [tech, setTech] = useState(rel.technology ?? "");
+  const [desc, setDesc] = useState(rel.description ?? "");
+
+  const save = () => {
+    updateRelationship(rel.id, { label, technology: tech || undefined, description: desc || undefined });
+  };
+
+  return (
+    <div className="w-80 border-l border-border bg-card overflow-auto">
+      <div className="flex items-center justify-between p-3 border-b border-border">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Relacionamento</h3>
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+      </div>
+      <div className="p-4 space-y-4">
+        <Field label="Label" value={label} onChange={setLabel} />
+        <Field label="Tecnologia" value={tech} onChange={setTech} />
+        <Field label="Descrição" value={desc} onChange={setDesc} multiline />
+        <div>
+          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">ID</label>
+          <p className="text-xs font-mono text-muted-foreground bg-secondary rounded px-2 py-1.5">{rel.id}</p>
+        </div>
+        <div className="flex gap-2 pt-2">
+          <button onClick={save} className="flex-1 flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+            <Save className="h-3.5 w-3.5" /> Salvar
+          </button>
+          <button onClick={() => { removeRelationship(rel.id); onClose(); }} className="flex items-center justify-center gap-1.5 rounded-md border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors">
+            <Trash2 className="h-3.5 w-3.5" /> Remover
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Field = ({ label, value, onChange, multiline }: { label: string; value: string; onChange: (v: string) => void; multiline?: boolean }) => (
+  <div>
+    <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">{label}</label>
+    {multiline ? (
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={3}
+        className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+      />
+    ) : (
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+      />
+    )}
+  </div>
+);
+
+export default ElementPanel;
