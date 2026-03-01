@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import ModelExplorer from "./pages/ModelExplorer";
 import NotFound from "./pages/NotFound";
+import DiffViewer from "./pages/DiffViewer";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +22,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/model/:id" element={<ModelProvider><ModelExplorer /></ModelProvider>} />
+          <Route path="/model/:id/diff" element={<ModelProvider><DiffViewer /></ModelProvider>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
