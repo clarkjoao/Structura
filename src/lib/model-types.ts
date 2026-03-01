@@ -1,7 +1,12 @@
 // Core model types — source of truth for all architectural data.
 // React Flow is a projection layer; these types define the actual model.
 
-export type C4ElementType = "person" | "system" | "container" | "component";
+import type { AwsCategoryId } from "./aws-catalog";
+
+export type C4ElementType =
+  | "person" | "system" | "container" | "component"
+  | AwsCategoryId;
+
 export type C4Level = "context" | "container" | "component";
 
 /** A globally unique architectural element */
@@ -13,6 +18,8 @@ export interface ArchElement {
   technology?: string;
   parentId: string | null; // null = top-level
   tags?: string[];
+  /** When type is an AWS category, this specifies the exact service (e.g. "lambda", "s3") */
+  awsService?: string;
 }
 
 /** A first-class relationship between two elements */

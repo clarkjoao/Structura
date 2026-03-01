@@ -95,7 +95,7 @@ interface ModelContextValue {
   activeView: ArchView;
 
   // Element operations
-  addElement: (type: C4ElementType, name: string, parentId: string | null, position?: { x: number; y: number }) => ArchElement;
+  addElement: (type: C4ElementType, name: string, parentId: string | null, position?: { x: number; y: number }, awsService?: string) => ArchElement;
   updateElement: (id: string, patch: Partial<Omit<ArchElement, "id">>) => void;
   removeElement: (id: string) => void;
 
@@ -139,8 +139,8 @@ export const ModelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // ── Element ops ────────────────────────────────────────
 
-  const addElement = useCallback((type: C4ElementType, name: string, parentId: string | null, position?: { x: number; y: number }): ArchElement => {
-    const el: ArchElement = { id: generateId("el"), name, type, description: "", parentId };
+  const addElement = useCallback((type: C4ElementType, name: string, parentId: string | null, position?: { x: number; y: number }, awsService?: string): ArchElement => {
+    const el: ArchElement = { id: generateId("el"), name, type, description: "", parentId, awsService: awsService || undefined };
     setDraft((d) => {
       const newElements = { ...d.elements, [el.id]: el };
       const view = d.views[d.activeViewId];

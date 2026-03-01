@@ -56,6 +56,7 @@ const ArchCanvas = () => {
         type: el.type,
         description: el.description,
         technology: el.technology,
+        awsService: el.awsService,
         canDrillDown: canNavigateInto(el.id),
         isSelected: selectedNodeId === el.id,
         onDrillDown: handleDrillDown,
