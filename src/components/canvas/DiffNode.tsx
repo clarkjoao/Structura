@@ -3,17 +3,20 @@ import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { Network, Server, Database, User, Plus, Minus, Pencil } from "lucide-react";
 import type { C4ElementType } from "@/lib/model-types";
 import type { DiffStatus } from "@/lib/model-diff";
+import { isAwsType, AWS_SERVICE_MAP } from "@/lib/aws-catalog";
+import AwsIcon from "./AwsIcon";
 
 export interface DiffNodeData {
   name: string;
   type: C4ElementType;
   description: string;
   technology?: string;
+  awsService?: string;
   diffStatus: DiffStatus;
   changes?: string[];
 }
 
-const typeIcons: Record<C4ElementType, typeof Network> = {
+const typeIcons: Record<string, typeof Network> = {
   person: User,
   system: Network,
   container: Server,
@@ -29,8 +32,9 @@ const diffStyles: Record<DiffStatus, { border: string; bg: string; badge: string
 
 const DiffNode = memo(({ data }: NodeProps) => {
   const d = data as unknown as DiffNodeData;
-  const Icon = typeIcons[d.type];
   const style = diffStyles[d.diffStatus];
+  const isAws = isAwsType(d.type);
+  const svcInfo = d.awsService ? AWS_SERVICE_MAP.get(d.awsService) : null;
 
   return (
     <div
@@ -51,9 +55,16 @@ const DiffNode = memo(({ data }: NodeProps) => {
 
         {/* Header */}
         <div className="flex items-center gap-2 mb-1.5">
-          <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+          {isAws && svcInfo ? (
+            <AwsIcon iconName={svcInfo.iconName} size={20} />
+          ) : (
+            (() => {
+              const Icon = typeIcons[d.type] ?? Network;
+              return <Icon className="h-4 w-4 text-muted-foreground shrink-0" />;
+            })()
+          )}
           <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-            {d.type}
+            {isAws ? (svcInfo?.name ?? d.type) : d.type}
           </span>
         </div>
 
@@ -64,19 +75,16 @@ const DiffNode = memo(({ data }: NodeProps) => {
           {d.name}
         </h4>
 
-        {/* Description */}
         {d.description && (
           <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2">{d.description}</p>
         )}
 
-        {/* Technology */}
         {d.technology && (
           <span className="inline-block mt-2 text-[10px] font-mono rounded bg-secondary px-2 py-0.5 text-secondary-foreground">
             {d.technology}
           </span>
         )}
 
-        {/* Changed fields */}
         {d.changes && d.changes.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
             {d.changes.map((c) => (

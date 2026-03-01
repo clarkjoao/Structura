@@ -57,6 +57,25 @@
     --node-component: 152 60% 45%;
     --node-person: 38 92% 50%;
     --grid-line: 220 20% 12%;
+
+    /* AWS category colors */
+    --aws-orange: 30 100% 50%;
+    --aws-compute: 30 100% 50%;
+    --aws-storage: 142 52% 45%;
+    --aws-database: 215 80% 55%;
+    --aws-networking: 280 60% 55%;
+    --aws-security: 0 72% 55%;
+    --aws-analytics: 280 60% 55%;
+    --aws-ml: 170 60% 45%;
+    --aws-integration: 330 70% 55%;
+    --aws-management: 330 70% 55%;
+    --aws-developer: 215 80% 55%;
+    --aws-containers: 30 100% 50%;
+    --aws-media: 30 80% 50%;
+    --aws-migration: 170 60% 45%;
+    --aws-iot: 142 52% 45%;
+    --aws-end-user: 215 80% 55%;
+    --aws-general: 30 100% 50%;
   }
 }
 

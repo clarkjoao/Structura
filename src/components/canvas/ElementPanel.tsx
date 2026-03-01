@@ -2,6 +2,8 @@ import { useState } from "react";
 import { X, Trash2, Save } from "lucide-react";
 import { useModel } from "@/lib/model-store";
 import type { ArchElement, ArchRelationship, C4ElementType } from "@/lib/model-types";
+import { isAwsType, AWS_CATEGORIES, AWS_CATEGORY_MAP, AWS_SERVICE_MAP, type AwsCategoryId } from "@/lib/aws-catalog";
+import AwsIcon from "./AwsIcon";
 
 interface Props {
   selectedElementId: string | null;
@@ -42,9 +44,19 @@ const ElementDetail = ({
   const [desc, setDesc] = useState(el.description);
   const [tech, setTech] = useState(el.technology ?? "");
   const [type, setType] = useState<C4ElementType>(el.type);
+  const [awsService, setAwsService] = useState(el.awsService ?? "");
+
+  const isAws = isAwsType(type);
+  const svcInfo = awsService ? AWS_SERVICE_MAP.get(awsService) : null;
 
   const save = () => {
-    updateElement(el.id, { name, description: desc, technology: tech || undefined, type });
+    updateElement(el.id, {
+      name,
+      description: desc,
+      technology: tech || undefined,
+      type,
+      awsService: isAws && awsService ? awsService : undefined,
+    });
   };
 
   const handleRemove = () => {
@@ -59,20 +71,66 @@ const ElementDetail = ({
         <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
       </div>
       <div className="p-4 space-y-4">
+        {/* AWS icon preview */}
+        {isAws && svcInfo && (
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
+            <AwsIcon iconName={svcInfo.iconName} size={32} />
+            <div>
+              <p className="text-xs font-semibold text-foreground">{svcInfo.name}</p>
+              <p className="text-[10px] text-muted-foreground">{AWS_CATEGORY_MAP.get(type)?.name}</p>
+            </div>
+          </div>
+        )}
+
         <Field label="Nome" value={name} onChange={setName} />
+
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">Tipo</label>
           <select
             value={type}
-            onChange={(e) => setType(e.target.value as C4ElementType)}
+            onChange={(e) => {
+              setType(e.target.value as C4ElementType);
+              if (!e.target.value.startsWith("aws-")) setAwsService("");
+            }}
             className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           >
-            <option value="person">Person</option>
-            <option value="system">System</option>
-            <option value="container">Container</option>
-            <option value="component">Component</option>
+            <optgroup label="C4 Model">
+              <option value="person">Person</option>
+              <option value="system">System</option>
+              <option value="container">Container</option>
+              <option value="component">Component</option>
+            </optgroup>
+            {AWS_CATEGORIES.map((cat) => (
+              <optgroup key={cat.id} label={`AWS: ${cat.name}`}>
+                <option value={cat.id}>{cat.name}</option>
+              </optgroup>
+            ))}
           </select>
         </div>
+
+        {/* AWS service selector */}
+        {isAws && (
+          <div>
+            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">Serviço AWS</label>
+            <select
+              value={awsService}
+              onChange={(e) => {
+                setAwsService(e.target.value);
+                const svc = AWS_SERVICE_MAP.get(e.target.value);
+                if (svc && name.startsWith("Novo") || name === el.name) {
+                  setName(svc?.name ?? name);
+                }
+              }}
+              className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            >
+              <option value="">Selecionar serviço...</option>
+              {AWS_CATEGORY_MAP.get(type)?.services.map((svc) => (
+                <option key={svc.id} value={svc.id}>{svc.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <Field label="Descrição" value={desc} onChange={setDesc} multiline />
         <Field label="Tecnologia" value={tech} onChange={setTech} />
         <div>
