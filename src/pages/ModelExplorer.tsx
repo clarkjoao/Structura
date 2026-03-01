@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft, GitCommit, ChevronRight, History,
-  FileJson, Network
+  FileJson, Network, GitCompare
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import ArchCanvas from "@/components/canvas/ArchCanvas";
@@ -132,6 +132,13 @@ const ModelExplorer = () => {
               <History className="h-3.5 w-3.5" />
               Histórico
             </button>
+            <Link
+              to="/model/1/diff"
+              className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all"
+            >
+              <GitCompare className="h-3.5 w-3.5" />
+              Diff
+            </Link>
             <button className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all">
               <FileJson className="h-3.5 w-3.5" />
               Exportar
