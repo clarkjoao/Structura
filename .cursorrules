@@ -1,0 +1,18 @@
+This project uses:
+- React Native
+- Expo
+- expo-router
+- Tailwind (nativewind)
+- tailwind-variants
+
+Architecture:
+- Feature-based folder structure
+- Reusable UI components
+- No inline styles
+- Use SOLID principles
+
+Rules:
+- Prefer functional components
+- Avoid large files (>300 lines)
+- Separate business logic from UI
+- Use hooks for state management

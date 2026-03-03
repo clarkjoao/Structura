@@ -13,27 +13,20 @@ const Navbar = () => {
             Arch<span className="text-primary">Flow</span>
           </span>
         </Link>
-        
+
         <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
-          <Link to="/" className="hover:text-foreground transition-colors">Product</Link>
-          <Link to="/" className="hover:text-foreground transition-colors">Docs</Link>
-          <Link to="/" className="hover:text-foreground transition-colors">Pricing</Link>
+          <Link to="/" className="hover:text-foreground transition-colors">
+            Product
+          </Link>
+          <Link
+            to="/dashboard"
+            className="hover:text-foreground transition-colors"
+          >
+            Workspaces
+          </Link>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Link
-            to="/dashboard"
-            className="rounded-md border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all"
-          >
-            Sign in
-          </Link>
-          <Link
-            to="/dashboard"
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors glow-primary"
-          >
-            Get Started
-          </Link>
-        </div>
+        <div className="flex items-center gap-3" />
       </div>
     </nav>
   );

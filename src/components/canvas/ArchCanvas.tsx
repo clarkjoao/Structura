@@ -25,20 +25,27 @@ const edgeTypes = { c4: C4Edge };
 
 const ArchCanvas = () => {
   const {
-    draft, activeView,
-    getVisibleElements, getVisibleRelationships,
-    updateNodeLayout, updateViewport,
-    navigateInto, canNavigateInto,
+    draft,
+    activeView,
+    getVisibleElements,
+    getVisibleRelationships,
+    updateNodeLayout,
+    updateViewport,
+    navigateInto,
+    canNavigateInto,
     addRelationship,
   } = useModel();
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
 
-  const handleDrillDown = useCallback((elementId: string) => {
-    navigateInto(elementId);
-    setSelectedNodeId(null);
-  }, [navigateInto]);
+  const handleDrillDown = useCallback(
+    (elementId: string) => {
+      navigateInto(elementId);
+      setSelectedNodeId(null);
+    },
+    [navigateInto],
+  );
 
   const handleSelectNode = useCallback((elementId: string) => {
     setSelectedNodeId(elementId);
@@ -49,7 +56,9 @@ const ArchCanvas = () => {
   const nodes = useMemo(() => {
     const elements = getVisibleElements();
     return elements.map((el) => {
-      const layout = activeView.nodeLayouts.find((nl) => nl.elementId === el.id);
+      const layout = activeView.nodeLayouts.find(
+        (nl) => nl.elementId === el.id,
+      );
       const data = {
         elementId: el.id,
         name: el.name,
@@ -69,7 +78,14 @@ const ArchCanvas = () => {
         data,
       };
     });
-  }, [draft, activeView, selectedNodeId, getVisibleElements, canNavigateInto, handleDrillDown, handleSelectNode]);
+  }, [
+    activeView,
+    selectedNodeId,
+    getVisibleElements,
+    canNavigateInto,
+    handleDrillDown,
+    handleSelectNode,
+  ]);
 
   // Derive React Flow edges from model relationships
   const edges: Edge[] = useMemo(() => {
@@ -82,26 +98,32 @@ const ArchCanvas = () => {
       data: { label: r.label, technology: r.technology, relationshipId: r.id },
       selected: selectedEdgeId === r.id,
     }));
-  }, [draft, activeView, selectedEdgeId, getVisibleRelationships]);
+  }, [selectedEdgeId, getVisibleRelationships]);
 
-  const onNodesChange: OnNodesChange = useCallback((changes) => {
-    // Update layout positions in the model for drag changes
-    changes.forEach((change) => {
-      if (change.type === "position" && change.position) {
-        updateNodeLayout(change.id, change.position);
-      }
-    });
-  }, [updateNodeLayout]);
+  const onNodesChange: OnNodesChange = useCallback(
+    (changes) => {
+      // Update layout positions in the model for drag changes
+      changes.forEach((change) => {
+        if (change.type === "position" && change.position) {
+          updateNodeLayout(change.id, change.position);
+        }
+      });
+    },
+    [updateNodeLayout],
+  );
 
   const onEdgesChange: OnEdgesChange = useCallback((changes) => {
     // Edge selection handled via click
   }, []);
 
-  const onConnect: OnConnect = useCallback((connection: Connection) => {
-    if (connection.source && connection.target) {
-      addRelationship(connection.source, connection.target, "Usa");
-    }
-  }, [addRelationship]);
+  const onConnect: OnConnect = useCallback(
+    (connection: Connection) => {
+      if (connection.source && connection.target) {
+        addRelationship(connection.source, connection.target, "Usa");
+      }
+    },
+    [addRelationship],
+  );
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
     setSelectedNodeId(node.id);
@@ -150,9 +172,7 @@ const ArchCanvas = () => {
             size={1}
             color="hsl(220 20% 18%)"
           />
-          <Controls
-            className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8"
-          />
+          <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
         </ReactFlow>
       </div>
 

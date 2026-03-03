@@ -1,8 +1,29 @@
 import { motion } from "framer-motion";
-import { GitBranch, Layers, Box, ArrowRight, Network, History, Users, Shield } from "lucide-react";
+import {
+  GitBranch,
+  Layers,
+  Box,
+  ArrowRight,
+  Network,
+  History,
+  Users,
+  Shield,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 
-const C4Node = ({ label, type, x, y, delay }: { label: string; type: string; x: number; y: number; delay: number }) => {
+const C4Node = ({
+  label,
+  type,
+  x,
+  y,
+  delay,
+}: {
+  label: string;
+  type: string;
+  x: number;
+  y: number;
+  delay: number;
+}) => {
   const colors: Record<string, string> = {
     system: "border-node-system text-node-system bg-node-system/5",
     container: "border-node-container text-node-container bg-node-container/5",
@@ -23,7 +44,19 @@ const C4Node = ({ label, type, x, y, delay }: { label: string; type: string; x: 
   );
 };
 
-const ConnectionLine = ({ x1, y1, x2, y2, delay }: { x1: number; y1: number; x2: number; y2: number; delay: number }) => (
+const ConnectionLine = ({
+  x1,
+  y1,
+  x2,
+  y2,
+  delay,
+}: {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  delay: number;
+}) => (
   <motion.line
     x1={`${x1}%`}
     y1={`${y1}%`}
@@ -69,7 +102,7 @@ const features = [
   {
     icon: GitBranch,
     title: "Versionamento Imutável",
-    desc: "Cada commit é um snapshot completo. Histórico rastreável, diff e branching.",
+    desc: "Cada commit é um snapshot completo. Histórico rastreável, e branching.",
   },
   {
     icon: Network,
@@ -119,7 +152,9 @@ const LandingPage = () => {
                 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6"
               >
                 Arquitetura como{" "}
-                <span className="text-primary glow-text">modelo versionado</span>
+                <span className="text-primary glow-text">
+                  modelo versionado
+                </span>
                 , não como diagrama.
               </motion.h1>
 
@@ -129,8 +164,8 @@ const LandingPage = () => {
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="text-lg text-muted-foreground max-w-lg mb-8 leading-relaxed"
               >
-                Modele, versione e navegue sua arquitetura com o C4 Model.
-                O modelo é a fonte da verdade — diagramas são apenas projeções.
+                Modele, versione e navegue sua arquitetura com o C4 Model. O
+                modelo é a fonte da verdade — diagramas são apenas projeções.
               </motion.p>
 
               <motion.div
@@ -177,10 +212,12 @@ const LandingPage = () => {
             className="text-center mb-16"
           >
             <h2 className="text-3xl font-bold mb-4">
-              Projetado para arquitetura <span className="text-primary">como código</span>
+              Projetado para arquitetura{" "}
+              <span className="text-primary">como código</span>
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Cada decisão arquitetural é rastreável, cada versão é imutável, cada relacionamento é uma entidade de primeira classe.
+              Cada decisão arquitetural é rastreável, cada versão é imutável,
+              cada relacionamento é uma entidade de primeira classe.
             </p>
           </motion.div>
 
@@ -198,7 +235,9 @@ const LandingPage = () => {
                   <f.icon className="h-5 w-5 text-primary" />
                 </div>
                 <h3 className="text-base font-semibold mb-2">{f.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {f.desc}
+                </p>
               </motion.div>
             ))}
           </div>
@@ -215,7 +254,8 @@ const LandingPage = () => {
                 Comece a versionar sua arquitetura hoje
               </h2>
               <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
-                Crie seu primeiro workspace, modele seu sistema e faça o primeiro commit em minutos.
+                Crie seu primeiro workspace, modele seu sistema e faça o
+                primeiro commit em minutos.
               </p>
               <Link
                 to="/dashboard"
@@ -236,7 +276,9 @@ const LandingPage = () => {
             <Network className="h-4 w-4 text-primary" />
             <span className="font-semibold text-foreground">ArchFlow</span>
           </div>
-          <p className="font-mono text-xs">© 2026 ArchFlow. Architecture as code.</p>
+          <p className="font-mono text-xs">
+            © 2026 ArchFlow. Architecture as code.
+          </p>
         </div>
       </footer>
     </div>
