@@ -204,9 +204,31 @@ const Canvas = () => {
   const onNodeDragStop = useCallback(
     (_: React.MouseEvent, draggedNode: Node) => {
       if (groupIds.has(draggedNode.id)) return; // don't nest groups
-      if (draggedNode.parentId) return; // already a child
 
       const allNodes = reactFlowInstance.getNodes();
+
+      // If already a child, check if dragged outside parent → ungroup
+      if (draggedNode.parentId) {
+        const parent = allNodes.find((n) => n.id === draggedNode.parentId);
+        if (parent) {
+          const gw = (parent.style?.width as number) ?? 500;
+          const gh = (parent.style?.height as number) ?? 350;
+          const nx = draggedNode.position.x;
+          const ny = draggedNode.position.y;
+
+          if (nx < 0 || ny < 0 || nx > gw || ny > gh) {
+            // Convert relative position back to absolute
+            const absX = parent.position.x + nx;
+            const absY = parent.position.y + ny;
+            updateComponent(draggedNode.id, { parentId: activeView.rootElementId });
+            updateNodeLayout(draggedNode.id, { x: absX, y: absY });
+            return;
+          }
+        }
+        return;
+      }
+
+      // Not a child yet — check if dropped inside a group
       for (const potentialGroup of allNodes) {
         if (potentialGroup.type !== "group") continue;
         if (potentialGroup.id === draggedNode.id) continue;
@@ -220,20 +242,13 @@ const Canvas = () => {
         const ny = draggedNode.position.y;
 
         if (nx > gx && nx < gx + gw && ny > gy && ny < gy + gh) {
-          // Set parentId in model
-          updateComponent(draggedNode.id, {
-            parentId: potentialGroup.id,
-          });
-          // Update layout to relative position
-          updateNodeLayout(draggedNode.id, {
-            x: nx - gx,
-            y: ny - gy,
-          });
+          updateComponent(draggedNode.id, { parentId: potentialGroup.id });
+          updateNodeLayout(draggedNode.id, { x: nx - gx, y: ny - gy });
           break;
         }
       }
     },
-    [groupIds, reactFlowInstance, updateComponent, updateNodeLayout],
+    [groupIds, reactFlowInstance, updateComponent, updateNodeLayout, activeView.rootElementId],
   );
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {

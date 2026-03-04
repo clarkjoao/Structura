@@ -46,6 +46,10 @@ const CanvasToolbar = () => {
     setShowAdd(false);
   };
 
+  const handleAddGroup = () => {
+    addComponent("system", "Novo Grupo", activeView.rootElementId, { x: 200, y: 150 });
+  };
+
   const handleAddAws = (
     categoryId: AwsCategoryId,
     serviceId: string,
@@ -86,6 +90,15 @@ const CanvasToolbar = () => {
           Nível acima
         </button>
       )}
+
+      {/* Add group */}
+      <button
+        onClick={handleAddGroup}
+        className="flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <Layers className="h-3.5 w-3.5" />
+        Agrupar
+      </button>
 
       {/* Add component */}
       <div className="relative">
