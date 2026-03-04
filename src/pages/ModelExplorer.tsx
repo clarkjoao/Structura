@@ -142,7 +142,6 @@ const ModelExplorer = () => {
     <div className="h-screen flex flex-col">
       <Navbar />
 
-      {/* Model header */}
       <div className="border-b border-border bg-card shrink-0 mt-16">
         <div className="container flex items-center justify-between h-12">
           <div className="flex items-center gap-3 text-sm">
@@ -157,56 +156,20 @@ const ModelExplorer = () => {
             <span className="font-medium">
               {rootComponent?.name ?? "System Context"}
             </span>
-            <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-warning/10 border border-warning/20 px-2.5 py-0.5 text-[10px] font-mono text-warning">
-              <span className="h-1.5 w-1.5 rounded-full bg-warning animate-pulse-glow" />
-              draft
-            </span>
-            <span className="font-mono text-xs text-muted-foreground ml-1">
-              {versions[0]?.version}
-            </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowHistory(!showHistory)}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
-                showHistory
-                  ? "bg-primary/10 text-primary border border-primary/20"
-                  : "text-muted-foreground hover:text-foreground border border-transparent hover:border-border"
-              }`}
-            >
-              <History className="h-3.5 w-3.5" />
-              Histórico
-            </button>
             <button className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all">
               <FileJson className="h-3.5 w-3.5" />
               Exportar
-            </button>
-            <button
-              onClick={() => setShowCommit(true)}
-              className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              <GitCommit className="h-3.5 w-3.5" />
-              Commit
             </button>
           </div>
         </div>
       </div>
 
-      {/* Canvas + panels */}
       <div className="flex-1 flex overflow-hidden">
         <Canvas />
-        <AnimatePresence>
-          {showHistory && (
-            <VersionHistory onClose={() => setShowHistory(false)} />
-          )}
-        </AnimatePresence>
       </div>
-
-      {/* Commit dialog */}
-      {showCommit && (
-        <CommitDialog onClose={() => setShowCommit(false)} onCommit={commit} />
-      )}
     </div>
   );
 };
