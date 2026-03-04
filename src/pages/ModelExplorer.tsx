@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -7,15 +7,18 @@ import {
   ChevronRight,
   History,
   FileJson,
-  Network,
-  GitCompare,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import ArchCanvas from "@/components/canvas/ArchCanvas";
-import { useModel } from "@/lib/model-store";
+import Canvas from "@/components/canvas/Canvas";
+import {
+  useActiveBluePrintView,
+  useVersions,
+  useComponents,
+  useDiagramActions,
+} from "@/lib/model-store";
 
 const VersionHistory = ({ onClose }: { onClose: () => void }) => {
-  const { versions } = useModel();
+  const versions = useVersions();
 
   return (
     <motion.div
@@ -123,19 +126,22 @@ const CommitDialog = ({
 };
 
 const ModelExplorer = () => {
-  const { activeView, commit, versions, draft } = useModel();
+  const activeView = useActiveBluePrintView();
+  const versions = useVersions();
+  const components = useComponents();
+  const { commit } = useDiagramActions();
+
   const [showHistory, setShowHistory] = useState(false);
   const [showCommit, setShowCommit] = useState(false);
 
-  const rootEl = activeView.rootElementId
-    ? draft.elements[activeView.rootElementId]
+  const rootComponent = activeView.rootElementId
+    ? components[activeView.rootElementId]
     : null;
 
   return (
     <div className="h-screen flex flex-col">
       <Navbar />
 
-      {/* Model header */}
       <div className="border-b border-border bg-card shrink-0 mt-16">
         <div className="container flex items-center justify-between h-12">
           <div className="flex items-center gap-3 text-sm">
@@ -147,57 +153,23 @@ const ModelExplorer = () => {
             </Link>
             <span className="text-muted-foreground">Plataforma E-commerce</span>
             <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="font-medium">Sistema de Pedidos</span>
-            <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-warning/10 border border-warning/20 px-2.5 py-0.5 text-[10px] font-mono text-warning">
-              <span className="h-1.5 w-1.5 rounded-full bg-warning animate-pulse-glow" />
-              draft
-            </span>
-            <span className="font-mono text-xs text-muted-foreground ml-1">
-              {versions[0]?.version}
+            <span className="font-medium">
+              {rootComponent?.name ?? "System Context"}
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowHistory(!showHistory)}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
-                showHistory
-                  ? "bg-primary/10 text-primary border border-primary/20"
-                  : "text-muted-foreground hover:text-foreground border border-transparent hover:border-border"
-              }`}
-            >
-              <History className="h-3.5 w-3.5" />
-              Histórico
-            </button>
             <button className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all">
               <FileJson className="h-3.5 w-3.5" />
               Exportar
-            </button>
-            <button
-              onClick={() => setShowCommit(true)}
-              className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              <GitCommit className="h-3.5 w-3.5" />
-              Commit
             </button>
           </div>
         </div>
       </div>
 
-      {/* Canvas + panels */}
       <div className="flex-1 flex overflow-hidden">
-        <ArchCanvas />
-        <AnimatePresence>
-          {showHistory && (
-            <VersionHistory onClose={() => setShowHistory(false)} />
-          )}
-        </AnimatePresence>
+        <Canvas />
       </div>
-
-      {/* Commit dialog */}
-      {showCommit && (
-        <CommitDialog onClose={() => setShowCommit(false)} onCommit={commit} />
-      )}
     </div>
   );
 };
