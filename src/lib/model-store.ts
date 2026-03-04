@@ -153,9 +153,10 @@ function buildSeedDraft(): ModelDraft {
       level: "container",
       rootElementId: "e-orders",
       nodeLayouts: [
-        { elementId: "e-gateway", x: 100, y: 80 },
-        { elementId: "e-order-svc", x: 400, y: 80 },
-        { elementId: "e-db", x: 400, y: 300 },
+        { elementId: "e-orders", x: 50, y: 50, width: 700, height: 400 },
+        { elementId: "e-gateway", x: 40, y: 60 },
+        { elementId: "e-order-svc", x: 300, y: 60 },
+        { elementId: "e-db", x: 300, y: 240 },
       ],
       viewport: { x: 0, y: 0, zoom: 1 },
     },
@@ -273,6 +274,11 @@ interface DiagramActions {
   updateNodeLayout: (
     elementId: string,
     position: { x: number; y: number },
+  ) => void;
+  updateNodeSize: (
+    elementId: string,
+    width: number,
+    height: number,
   ) => void;
   updateViewport: (viewport: { x: number; y: number; zoom: number }) => void;
   navigateInto: (elementId: string) => void;
@@ -400,6 +406,19 @@ export const useDiagramStore = create<DiagramStore>()(
         if (layout) {
           layout.x = position.x;
           layout.y = position.y;
+        }
+      });
+    },
+
+    updateNodeSize: (elementId, width, height) => {
+      set((state) => {
+        const layouts =
+          state.draft.bluePrintViews[state.draft.activeBluePrintViewId]
+            .nodeLayouts;
+        const layout = layouts.find((nl) => nl.elementId === elementId);
+        if (layout) {
+          layout.width = width;
+          layout.height = height;
         }
       });
     },
@@ -578,6 +597,7 @@ export const useDiagramActions = () =>
       removeConnection: s.removeConnection,
       setActiveBluePrintView: s.setActiveBluePrintView,
       updateNodeLayout: s.updateNodeLayout,
+      updateNodeSize: s.updateNodeSize,
       updateViewport: s.updateViewport,
       navigateInto: s.navigateInto,
       navigateUp: s.navigateUp,

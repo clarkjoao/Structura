@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ReactFlowProvider } from "@xyflow/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -168,7 +169,9 @@ const ModelExplorer = () => {
       </div>
 
       <div className="flex-1 flex overflow-hidden">
-        <Canvas />
+        <ReactFlowProvider>
+          <Canvas />
+        </ReactFlowProvider>
       </div>
     </div>
   );
