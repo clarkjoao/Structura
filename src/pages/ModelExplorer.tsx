@@ -9,7 +9,7 @@ import {
   FileJson,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import ArchCanvas from "@/components/canvas/ArchCanvas";
+import Canvas from "@/components/canvas/Canvas";
 import {
   useActiveBluePrintView,
   useVersions,
@@ -195,7 +195,7 @@ const ModelExplorer = () => {
 
       {/* Canvas + panels */}
       <div className="flex-1 flex overflow-hidden">
-        <ArchCanvas />
+        <Canvas />
         <AnimatePresence>
           {showHistory && (
             <VersionHistory onClose={() => setShowHistory(false)} />

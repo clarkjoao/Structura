@@ -16,7 +16,7 @@ import {
 import { useCanNavigateInto } from "@/lib/model-store";
 import AwsIcon from "./AwsIcon";
 
-export interface C4NodeData {
+export interface NodeData {
   elementId: string;
   name: string;
   type: ComponentType;
@@ -28,7 +28,7 @@ export interface C4NodeData {
   onSelect: (elementId: string) => void;
 }
 
-const c4TypeConfig: Record<
+const TypeConfig: Record<
   string,
   {
     icon: typeof Network;
@@ -149,11 +149,11 @@ const awsCategoryColors: Record<
   },
 };
 
-const C4Node = memo(({ data }: NodeProps) => {
-  const d = data as unknown as C4NodeData;
-  const isAws = isAwsType(d.type);
+const handleStyle = "!bg-muted-foreground !border-background !w-2.5 !h-2.5";
 
-  // Each node derives its own drill-down capability from the store directly
+const Node = memo(({ data }: NodeProps) => {
+  const d = data as unknown as NodeData;
+  const isAws = isAwsType(d.type);
   const canDrillDown = useCanNavigateInto(d.elementId);
 
   const handleDrillDown = useCallback(
@@ -178,10 +178,11 @@ const C4Node = memo(({ data }: NodeProps) => {
           d.isSelected ? "ring-2 ring-primary shadow-lg shadow-primary/10" : ""
         }`}
       >
+        {/* Input — left */}
         <Handle
           type="target"
-          position={Position.Top}
-          className="!bg-muted-foreground !border-background !w-2.5 !h-2.5"
+          position={Position.Left}
+          className={handleStyle}
         />
 
         <div className="px-4 py-3">
@@ -195,13 +196,11 @@ const C4Node = memo(({ data }: NodeProps) => {
                 <Network className="h-4 w-4" />
               </div>
             )}
-            <div className="flex flex-col min-w-0">
-              <span
-                className={`text-[9px] font-mono uppercase tracking-wider ${awsColors.textClass}`}
-              >
-                {categoryLabel}
-              </span>
-            </div>
+            <span
+              className={`text-[9px] font-mono uppercase tracking-wider ${awsColors.textClass}`}
+            >
+              {categoryLabel}
+            </span>
           </div>
 
           <h4 className="text-sm font-semibold text-foreground leading-tight mb-1">
@@ -231,17 +230,18 @@ const C4Node = memo(({ data }: NodeProps) => {
           )}
         </div>
 
+        {/* Output — right */}
         <Handle
           type="source"
-          position={Position.Bottom}
-          className="!bg-muted-foreground !border-background !w-2.5 !h-2.5"
+          position={Position.Right}
+          className={handleStyle}
         />
       </div>
     );
   }
 
-  // Standard C4 node
-  const cfg = c4TypeConfig[d.type] ?? c4TypeConfig.system;
+  // Standard node
+  const cfg = TypeConfig[d.type] ?? TypeConfig.system;
   const Icon = cfg.icon;
 
   return (
@@ -250,11 +250,8 @@ const C4Node = memo(({ data }: NodeProps) => {
         d.isSelected ? "ring-2 ring-primary shadow-lg shadow-primary/10" : ""
       }`}
     >
-      <Handle
-        type="target"
-        position={Position.Top}
-        className="!bg-muted-foreground !border-background !w-2.5 !h-2.5"
-      />
+      {/* Input — left */}
+      <Handle type="target" position={Position.Left} className={handleStyle} />
 
       <div className="px-4 py-3">
         <div className="flex items-center gap-2 mb-1.5">
@@ -293,15 +290,12 @@ const C4Node = memo(({ data }: NodeProps) => {
         )}
       </div>
 
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        className="!bg-muted-foreground !border-background !w-2.5 !h-2.5"
-      />
+      {/* Output — right */}
+      <Handle type="source" position={Position.Right} className={handleStyle} />
     </div>
   );
 });
 
-C4Node.displayName = "C4Node";
+Node.displayName = "Node";
 
-export default C4Node;
+export default Node;

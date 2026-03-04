@@ -2,36 +2,34 @@ import { memo } from "react";
 import {
   BaseEdge,
   EdgeLabelRenderer,
-  getBezierPath,
+  getStraightPath,
   type EdgeProps,
 } from "@xyflow/react";
 
-export interface C4EdgeData {
+export interface EdgeData {
   label: string;
   technology?: string;
   connectionId: string;
 }
 
-const C4Edge = memo(
+const Edge = memo(
   ({
     id,
     sourceX,
     sourceY,
     targetX,
     targetY,
-    sourcePosition,
-    targetPosition,
     data,
     selected,
+    sourcePosition,
+    targetPosition,
   }: EdgeProps) => {
-    const d = data as unknown as C4EdgeData;
-    const [edgePath, labelX, labelY] = getBezierPath({
+    const d = data as unknown as EdgeData;
+    const [edgePath, labelX, labelY] = getStraightPath({
       sourceX,
       sourceY,
       targetX,
       targetY,
-      sourcePosition,
-      targetPosition,
     });
 
     return (
@@ -75,6 +73,6 @@ const C4Edge = memo(
   },
 );
 
-C4Edge.displayName = "C4Edge";
+Edge.displayName = "Edge";
 
-export default C4Edge;
+export default Edge;

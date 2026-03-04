@@ -19,18 +19,18 @@ import {
   useCanNavigateInto,
   useDiagramActions,
 } from "@/lib/model-store";
-import C4Node, { type C4NodeData } from "./C4Node";
-import C4Edge from "./C4Edge";
+import CustomNode from "./CustomNode";
+import CustomEdge from "./CustomEdge";
 import CanvasToolbar from "./CanvasToolbar";
 import ElementPanel from "./ElementPanel";
 
-const nodeTypes = { c4: C4Node };
-const edgeTypes = { c4: C4Edge };
+const nodeTypes = { c4: CustomNode };
+const edgeTypes = { c4: CustomEdge };
 
 // Per-node hook wrapper to avoid calling hooks conditionally
 const useNodeCanNavigate = (id: string) => useCanNavigateInto(id);
 
-const ArchCanvas = () => {
+const Canvas = () => {
   const activeView = useActiveBluePrintView();
   const visibleComponents = useVisibleComponents();
   const visibleConnections = useVisibleConnections();
@@ -200,4 +200,4 @@ const ArchCanvas = () => {
   );
 };
 
-export default ArchCanvas;
+export default Canvas;
