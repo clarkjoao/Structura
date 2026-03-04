@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -7,15 +7,18 @@ import {
   ChevronRight,
   History,
   FileJson,
-  Network,
-  GitCompare,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import ArchCanvas from "@/components/canvas/ArchCanvas";
-import { useModel } from "@/lib/model-store";
+import {
+  useActiveBluePrintView,
+  useVersions,
+  useComponents,
+  useDiagramActions,
+} from "@/lib/model-store";
 
 const VersionHistory = ({ onClose }: { onClose: () => void }) => {
-  const { versions } = useModel();
+  const versions = useVersions();
 
   return (
     <motion.div
@@ -123,12 +126,16 @@ const CommitDialog = ({
 };
 
 const ModelExplorer = () => {
-  const { activeView, commit, versions, draft } = useModel();
+  const activeView = useActiveBluePrintView();
+  const versions = useVersions();
+  const components = useComponents();
+  const { commit } = useDiagramActions();
+
   const [showHistory, setShowHistory] = useState(false);
   const [showCommit, setShowCommit] = useState(false);
 
-  const rootEl = activeView.rootElementId
-    ? draft.elements[activeView.rootElementId]
+  const rootComponent = activeView.rootElementId
+    ? components[activeView.rootElementId]
     : null;
 
   return (
@@ -147,7 +154,9 @@ const ModelExplorer = () => {
             </Link>
             <span className="text-muted-foreground">Plataforma E-commerce</span>
             <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="font-medium">Sistema de Pedidos</span>
+            <span className="font-medium">
+              {rootComponent?.name ?? "System Context"}
+            </span>
             <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-warning/10 border border-warning/20 px-2.5 py-0.5 text-[10px] font-mono text-warning">
               <span className="h-1.5 w-1.5 rounded-full bg-warning animate-pulse-glow" />
               draft
