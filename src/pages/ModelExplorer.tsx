@@ -94,7 +94,7 @@ const ModelExplorer = () => {
       </div>
       <div className="flex-1 flex overflow-hidden">
         <ReactFlowProvider>
-          <div className="flex-1 relative">
+          <div className="flex-1 flex flex-col relative">
             <Canvas activeFlow={activeFlow} currentStep={currentStep} />
             {activeFlow && (
               <FlowStepNavigator
