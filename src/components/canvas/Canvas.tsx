@@ -11,14 +11,11 @@ import {
   type OnEdgesChange,
   type OnConnect,
   type Connection,
-  
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import {
-  useActiveBluePrintView,
-  useVisibleComponents,
-  useVisibleConnections,
-  useCanNavigateInto,
+  useAllComponents,
+  useAllConnections,
   useDiagramActions,
 } from "@/lib/model-store";
 import CustomNode from "./CustomNode";
@@ -31,20 +28,17 @@ import NodeContextMenu from "./NodeContextMenu";
 const nodeTypes = { c4: CustomNode, group: GroupNode };
 const edgeTypes = { c4: CustomEdge };
 
-// Per-node hook wrapper to avoid calling hooks conditionally
-const useNodeCanNavigate = (id: string) => useCanNavigateInto(id);
+const GROUP_DEFAULT_W = 800;
+const GROUP_DEFAULT_H = 500;
 
 const Canvas = () => {
-  const activeView = useActiveBluePrintView();
-  const visibleComponents = useVisibleComponents();
-  const visibleConnections = useVisibleConnections();
+  const allComponents = useAllComponents();
+  const allConnections = useAllConnections();
   const {
-    updateNodeLayout,
+    updateNodePosition,
     updateNodeSize,
-    updateViewport,
-    navigateInto,
     addConnection,
-    updateComponent,
+    setComponentParent,
     bringToFront,
     sendToBack,
   } = useDiagramActions();
@@ -59,107 +53,73 @@ const Canvas = () => {
     elementId: string;
   } | null>(null);
 
-  const handleDrillDown = useCallback(
-    (elementId: string) => {
-      navigateInto(elementId);
-      setSelectedNodeId(null);
-    },
-    [navigateInto],
-  );
-
-  const handleSelectNode = useCallback((elementId: string) => {
-    setSelectedNodeId(elementId);
-    setSelectedEdgeId(null);
-  }, []);
-
-  // Determine which components are groups (have children in the current view)
   const groupIds = useMemo(() => {
-    const visibleIds = new Set(visibleComponents.map((c) => c.id));
-    const groups = new Set<string>();
-    for (const c of visibleComponents) {
-      if (c.parentId && visibleIds.has(c.parentId)) {
-        groups.add(c.parentId);
+    const ids = new Set<string>();
+    for (const c of allComponents) {
+      if (c.type === "system") {
+        ids.add(c.id);
       }
     }
-    return groups;
-  }, [visibleComponents]);
+    return ids;
+  }, [allComponents]);
 
-  // Derive React Flow nodes from visible components
-  // Groups must come before their children in the array for React Flow parent-child to work
   const nodes = useMemo(() => {
     const nodeList: Node[] = [];
-    const visibleIds = new Set(visibleComponents.map((c) => c.id));
 
-    // First pass: groups
-    for (const component of visibleComponents) {
-      if (!groupIds.has(component.id)) continue;
-      const layout = activeView.nodeLayouts.find(
-        (nl) => nl.elementId === component.id,
-      );
-      nodeList.push({
-        id: component.id,
-        type: "group",
-        position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
-        zIndex: layout?.zIndex ?? 0,
-        style: {
-          width: layout?.width ?? 500,
-          height: layout?.height ?? 350,
-        },
-        data: {
-          elementId: component.id,
-          name: component.name,
-          type: component.type,
-          description: component.description,
-          technology: component.technology,
-          isSelected: selectedNodeId === component.id,
-        },
-      });
+    for (const comp of allComponents) {
+      if (groupIds.has(comp.id)) {
+        nodeList.push({
+          id: comp.id,
+          type: "group",
+          position: { x: comp.x, y: comp.y },
+          zIndex: comp.zIndex ?? 0,
+          style: {
+            width: comp.width ?? GROUP_DEFAULT_W,
+            height: comp.height ?? GROUP_DEFAULT_H,
+          },
+          data: {
+            elementId: comp.id,
+            name: comp.name,
+            type: comp.type,
+            description: comp.description,
+            technology: comp.technology,
+            isSelected: selectedNodeId === comp.id,
+          },
+        });
+      }
     }
 
-    // Second pass: regular nodes
-    for (const component of visibleComponents) {
-      if (groupIds.has(component.id)) continue;
-      const layout = activeView.nodeLayouts.find(
-        (nl) => nl.elementId === component.id,
-      );
+    for (const comp of allComponents) {
+      if (groupIds.has(comp.id)) continue;
+
       const isChildOfGroup =
-        component.parentId && visibleIds.has(component.parentId) && groupIds.has(component.parentId);
+        comp.parentId !== null && groupIds.has(comp.parentId);
 
       nodeList.push({
-        id: component.id,
+        id: comp.id,
         type: "c4",
-        position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
-        zIndex: layout?.zIndex ?? 0,
+        position: { x: comp.x, y: comp.y },
+        zIndex: comp.zIndex ?? 1,
         ...(isChildOfGroup
-          ? { parentId: component.parentId!, extent: "parent" as const }
+          ? { parentId: comp.parentId!, extent: "parent" as const }
           : {}),
         data: {
-          elementId: component.id,
-          name: component.name,
-          type: component.type,
-          description: component.description,
-          technology: component.technology,
-          awsService: component.awsService,
-          isSelected: selectedNodeId === component.id,
-          onDrillDown: handleDrillDown,
-          onSelect: handleSelectNode,
+          elementId: comp.id,
+          name: comp.name,
+          type: comp.type,
+          description: comp.description,
+          technology: comp.technology,
+          awsService: comp.awsService,
+          isSelected: selectedNodeId === comp.id,
         } as Record<string, unknown>,
       });
     }
 
     return nodeList;
-  }, [
-    activeView,
-    visibleComponents,
-    groupIds,
-    selectedNodeId,
-    handleDrillDown,
-    handleSelectNode,
-  ]);
+  }, [allComponents, groupIds, selectedNodeId]);
 
-  // Derive React Flow edges from visible connections
   const edges: Edge[] = useMemo(() => {
-    return visibleConnections.map((conn) => ({
+    return allConnections.map((conn) => ({
       id: conn.id,
       source: conn.sourceId,
       target: conn.targetId,
@@ -171,35 +131,27 @@ const Canvas = () => {
       },
       selected: selectedEdgeId === conn.id,
     }));
-  }, [visibleConnections, selectedEdgeId]);
+  }, [allConnections, selectedEdgeId]);
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
       changes.forEach((change) => {
         if (change.type === "position" && change.position) {
-          updateNodeLayout(change.id, change.position);
+          updateNodePosition(change.id, change.position);
         }
         if (change.type === "dimensions" && change.dimensions) {
-          updateNodeSize(change.id, change.dimensions.width, change.dimensions.height);
+          updateNodeSize(
+            change.id,
+            change.dimensions.width,
+            change.dimensions.height,
+          );
         }
       });
     },
-    [updateNodeLayout, updateNodeSize],
+    [updateNodePosition, updateNodeSize],
   );
 
-  const onEdgesChange: OnEdgesChange = useCallback(() => {
-    // Edge selection handled via click — no state update needed
-  }, []);
-
-  // Persist viewport changes to the store without triggering re-renders.
-  // We use a ref to debounce and avoid calling updateViewport on every pixel
-  // of movement, which would cause a store update → re-render loop.
-  const onMoveEnd = useCallback(
-    (_: unknown, viewport: { x: number; y: number; zoom: number }) => {
-      updateViewport(viewport);
-    },
-    [updateViewport],
-  );
+  const onEdgesChange: OnEdgesChange = useCallback(() => {}, []);
 
   const onConnect: OnConnect = useCallback(
     (connection: Connection) => {
@@ -210,55 +162,51 @@ const Canvas = () => {
     [addConnection],
   );
 
-  // Detect drag-into-group: when a non-group node is dropped inside a group boundary
   const onNodeDragStop = useCallback(
     (_: React.MouseEvent, draggedNode: Node) => {
-      if (groupIds.has(draggedNode.id)) return; // don't nest groups
+      if (groupIds.has(draggedNode.id)) return;
 
       const allNodes = reactFlowInstance.getNodes();
 
-      // If already a child, check if dragged outside parent → ungroup
       if (draggedNode.parentId) {
         const parent = allNodes.find((n) => n.id === draggedNode.parentId);
         if (parent) {
-          const gw = (parent.style?.width as number) ?? 500;
-          const gh = (parent.style?.height as number) ?? 350;
+          const gw = (parent.style?.width as number) ?? GROUP_DEFAULT_W;
+          const gh = (parent.style?.height as number) ?? GROUP_DEFAULT_H;
           const nx = draggedNode.position.x;
           const ny = draggedNode.position.y;
 
-          if (nx < 0 || ny < 0 || nx > gw || ny > gh) {
-            // Convert relative position back to absolute
+          if (nx < -20 || ny < -20 || nx > gw + 20 || ny > gh + 20) {
             const absX = parent.position.x + nx;
             const absY = parent.position.y + ny;
-            updateComponent(draggedNode.id, { parentId: activeView.rootElementId });
-            updateNodeLayout(draggedNode.id, { x: absX, y: absY });
+            setComponentParent(draggedNode.id, null);
+            updateNodePosition(draggedNode.id, { x: absX, y: absY });
             return;
           }
         }
         return;
       }
 
-      // Not a child yet — check if dropped inside a group
       for (const potentialGroup of allNodes) {
         if (potentialGroup.type !== "group") continue;
         if (potentialGroup.id === draggedNode.id) continue;
 
         const gx = potentialGroup.position.x;
         const gy = potentialGroup.position.y;
-        const gw = (potentialGroup.style?.width as number) ?? 500;
-        const gh = (potentialGroup.style?.height as number) ?? 350;
+        const gw = (potentialGroup.style?.width as number) ?? GROUP_DEFAULT_W;
+        const gh = (potentialGroup.style?.height as number) ?? GROUP_DEFAULT_H;
 
         const nx = draggedNode.position.x;
         const ny = draggedNode.position.y;
 
         if (nx > gx && nx < gx + gw && ny > gy && ny < gy + gh) {
-          updateComponent(draggedNode.id, { parentId: potentialGroup.id });
-          updateNodeLayout(draggedNode.id, { x: nx - gx, y: ny - gy });
+          setComponentParent(draggedNode.id, potentialGroup.id);
+          updateNodePosition(draggedNode.id, { x: nx - gx, y: ny - gy });
           break;
         }
       }
     },
-    [groupIds, reactFlowInstance, updateComponent, updateNodeLayout, activeView.rootElementId],
+    [groupIds, reactFlowInstance, setComponentParent, updateNodePosition],
   );
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
@@ -282,7 +230,11 @@ const Canvas = () => {
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: Node) => {
       event.preventDefault();
-      setContextMenu({ x: event.clientX, y: event.clientY, elementId: node.id });
+      setContextMenu({
+        x: event.clientX,
+        y: event.clientY,
+        elementId: node.id,
+      });
       setSelectedNodeId(node.id);
       setSelectedEdgeId(null);
     },
@@ -311,10 +263,8 @@ const Canvas = () => {
           onPaneClick={onPaneClick}
           onNodeContextMenu={onNodeContextMenu}
           onNodeDragStop={onNodeDragStop}
-          defaultViewport={activeView.viewport}
           fitView
-          fitViewOptions={{ padding: 0.3 }}
-          onMoveEnd={onMoveEnd}
+          fitViewOptions={{ padding: 0.2 }}
           proOptions={{ hideAttribution: true }}
           className="bg-background"
         >

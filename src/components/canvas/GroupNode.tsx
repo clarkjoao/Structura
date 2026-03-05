@@ -13,31 +13,25 @@ export interface GroupNodeData {
   isSelected: boolean;
 }
 
-const typeLabels: Record<string, string> = {
-  system: "Software System",
-  container: "Container",
-  person: "Person",
-};
-
 const typeIcons: Record<string, typeof Network> = {
   system: Network,
   container: Server,
   person: User,
 };
 
-const typeBorderColor: Record<string, string> = {
-  system: "border-node-system/30",
-  container: "border-node-container/30",
-  person: "border-node-person/30",
+const typeLabels: Record<string, string> = {
+  system: "System",
+  container: "Container",
+  person: "Person",
 };
 
-const typeHeaderBg: Record<string, string> = {
-  system: "bg-node-system/10",
-  container: "bg-node-container/10",
-  person: "bg-node-person/10",
+const typeBorder: Record<string, string> = {
+  system: "border-node-system/40",
+  container: "border-node-container/40",
+  person: "border-node-person/40",
 };
 
-const typeTextColor: Record<string, string> = {
+const typeText: Record<string, string> = {
   system: "text-node-system",
   container: "text-node-container",
   person: "text-node-person",
@@ -49,15 +43,12 @@ const GroupNode = memo(({ data, selected }: NodeProps) => {
   const d = data as unknown as GroupNodeData;
   const isAws = isAwsType(d.type);
 
-  const borderClass = isAws
-    ? "border-aws-general/30"
-    : typeBorderColor[d.type] ?? typeBorderColor.system;
-  const headerBg = isAws
-    ? "bg-aws-general/10"
-    : typeHeaderBg[d.type] ?? typeHeaderBg.system;
+  const border = isAws
+    ? "border-aws-general/40"
+    : typeBorder[d.type] ?? typeBorder.system;
   const textColor = isAws
     ? "text-aws-general"
-    : typeTextColor[d.type] ?? typeTextColor.system;
+    : typeText[d.type] ?? typeText.system;
 
   const Icon = typeIcons[d.type] ?? Network;
   const label = isAws
@@ -67,8 +58,8 @@ const GroupNode = memo(({ data, selected }: NodeProps) => {
   return (
     <>
       <NodeResizer
-        minWidth={280}
-        minHeight={200}
+        minWidth={400}
+        minHeight={300}
         isVisible={selected || d.isSelected}
         lineClassName="!border-primary/40"
         handleClassName="!w-2.5 !h-2.5 !bg-primary !border-background !rounded-sm"
@@ -77,34 +68,19 @@ const GroupNode = memo(({ data, selected }: NodeProps) => {
       <Handle type="target" position={Position.Left} className={handleStyle} />
 
       <div
-        className={`w-full h-full rounded-xl border-2 border-dashed ${borderClass} bg-card/30 backdrop-blur-[2px] overflow-visible`}
+        className={`w-full h-full rounded-2xl border ${border} bg-card/5 backdrop-blur-[1px]`}
       >
-        {/* Header */}
-        <div
-          className={`flex items-center gap-2 px-3 py-2 rounded-t-[10px] ${headerBg}`}
-        >
-          <Icon className={`h-3.5 w-3.5 ${textColor} shrink-0`} />
-          <span className="text-xs font-semibold text-foreground truncate">
+        <div className="flex items-center gap-2 px-4 py-3">
+          <Icon className={`h-4 w-4 ${textColor} shrink-0`} />
+          <span className="text-sm font-semibold text-foreground truncate">
             {d.name}
           </span>
           <span
-            className={`text-[9px] font-mono uppercase tracking-wider ${textColor} ml-auto shrink-0`}
+            className={`text-xs font-mono ${textColor} ml-1 shrink-0`}
           >
-            [{label}]
+            {label}
           </span>
         </div>
-
-        {d.description && (
-          <p className="px-3 pt-1 text-[10px] text-muted-foreground line-clamp-1">
-            {d.description}
-          </p>
-        )}
-
-        {d.technology && (
-          <span className="inline-block mx-3 mt-1 text-[9px] font-mono rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground">
-            {d.technology}
-          </span>
-        )}
       </div>
 
       <Handle type="source" position={Position.Right} className={handleStyle} />

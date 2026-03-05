@@ -7,8 +7,6 @@ export type ComponentType =
   | "component"
   | AwsCategoryId;
 
-export type Level = "context" | "container" | "component";
-
 export interface Component {
   id: string;
   name: string;
@@ -17,7 +15,12 @@ export interface Component {
   technology?: string;
   parentId: string | null;
   tags?: string[];
-  awsService?: string; // maybe turn it more agnostic
+  awsService?: string;
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+  zIndex?: number;
 }
 
 export interface Connection {
@@ -29,30 +32,9 @@ export interface Connection {
   description?: string;
 }
 
-export interface ViewNodeLayout {
-  elementId: string;
-  x: number;
-  y: number;
-  width?: number;
-  height?: number;
-  zIndex?: number;
-}
-
-export interface BluePrintView {
-  id: string;
-  name: string;
-  level: Level;
-  rootElementId: string | null; // which element we're "inside" (null = top-level context)
-  nodeLayouts: ViewNodeLayout[];
-  viewport: { x: number; y: number; zoom: number };
-}
-
-/** The complete working draft — everything that gets snapshotted on commit */
 export interface ModelDraft {
   components: Record<string, Component>;
   connections: Record<string, Connection>;
-  bluePrintViews: Record<string, BluePrintView>;
-  activeBluePrintViewId: string;
 }
 
 export interface BluePrintVersion {

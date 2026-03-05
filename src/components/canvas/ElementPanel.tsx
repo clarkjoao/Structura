@@ -11,7 +11,6 @@ import {
   AWS_CATEGORIES,
   AWS_CATEGORY_MAP,
   AWS_SERVICE_MAP,
-  type AwsCategoryId,
 } from "@/lib/aws-catalog";
 import AwsIcon from "./AwsIcon";
 
@@ -111,7 +110,6 @@ const ComponentDetail = ({
         </button>
       </div>
       <div className="p-4 space-y-4">
-        {/* AWS icon preview */}
         {isAws && svcInfo && (
           <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
             <AwsIcon iconName={svcInfo.iconName} size={32} />
@@ -154,7 +152,6 @@ const ComponentDetail = ({
           </select>
         </div>
 
-        {/* AWS service selector */}
         {isAws && (
           <div>
             <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">

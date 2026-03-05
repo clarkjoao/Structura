@@ -4,11 +4,9 @@ import { immer } from "zustand/middleware/immer";
 import type {
   Component,
   Connection,
-  BluePrintView,
   ModelDraft,
   BluePrintVersion,
   ComponentType,
-  Level,
 } from "./model-types";
 import { generateId } from "./model-types";
 
@@ -16,19 +14,16 @@ import { generateId } from "./model-types";
 
 function buildSeedDraft(): ModelDraft {
   const components: Record<string, Component> = {
-    "e-user": {
-      id: "e-user",
-      name: "Cliente",
-      type: "person",
-      description: "Usuário final do sistema",
-      parentId: null,
-    },
     "e-orders": {
       id: "e-orders",
       name: "Sistema de Pedidos",
       type: "system",
       description: "Processa e gerencia pedidos de compra",
       parentId: null,
+      x: 80,
+      y: 80,
+      width: 800,
+      height: 500,
     },
     "e-payments": {
       id: "e-payments",
@@ -36,6 +31,19 @@ function buildSeedDraft(): ModelDraft {
       type: "system",
       description: "Processamento de transações financeiras",
       parentId: null,
+      x: 1000,
+      y: 80,
+      width: 800,
+      height: 500,
+    },
+    "e-user": {
+      id: "e-user",
+      name: "Cliente",
+      type: "person",
+      description: "Usuário final do sistema",
+      parentId: null,
+      x: 500,
+      y: -120,
     },
     "e-gateway": {
       id: "e-gateway",
@@ -44,6 +52,8 @@ function buildSeedDraft(): ModelDraft {
       description: "Roteamento e autenticação",
       technology: "Kong / Nginx",
       parentId: "e-orders",
+      x: 40,
+      y: 80,
     },
     "e-order-svc": {
       id: "e-order-svc",
@@ -52,6 +62,8 @@ function buildSeedDraft(): ModelDraft {
       description: "Lógica de negócio de pedidos",
       technology: "Java / Spring Boot",
       parentId: "e-orders",
+      x: 320,
+      y: 80,
     },
     "e-db": {
       id: "e-db",
@@ -60,6 +72,8 @@ function buildSeedDraft(): ModelDraft {
       description: "Armazenamento de pedidos e produtos",
       technology: "PostgreSQL",
       parentId: "e-orders",
+      x: 320,
+      y: 280,
     },
     "e-auth": {
       id: "e-auth",
@@ -67,7 +81,9 @@ function buildSeedDraft(): ModelDraft {
       type: "component",
       description: "Validação JWT",
       technology: "Node.js",
-      parentId: "e-gateway",
+      parentId: "e-payments",
+      x: 40,
+      y: 80,
     },
     "e-limiter": {
       id: "e-limiter",
@@ -75,7 +91,9 @@ function buildSeedDraft(): ModelDraft {
       type: "component",
       description: "Controle de taxa de requisições",
       technology: "Redis",
-      parentId: "e-gateway",
+      parentId: "e-payments",
+      x: 320,
+      y: 80,
     },
     "e-ctrl": {
       id: "e-ctrl",
@@ -83,7 +101,9 @@ function buildSeedDraft(): ModelDraft {
       type: "component",
       description: "Endpoints REST",
       technology: "Spring MVC",
-      parentId: "e-order-svc",
+      parentId: "e-payments",
+      x: 40,
+      y: 280,
     },
     "e-repo": {
       id: "e-repo",
@@ -91,7 +111,9 @@ function buildSeedDraft(): ModelDraft {
       type: "component",
       description: "Persistência de dados",
       technology: "JPA",
-      parentId: "e-order-svc",
+      parentId: "e-payments",
+      x: 320,
+      y: 280,
     },
   };
 
@@ -134,51 +156,7 @@ function buildSeedDraft(): ModelDraft {
     },
   };
 
-  const bluePrintViews: Record<string, BluePrintView> = {
-    "v-context": {
-      id: "v-context",
-      name: "System Context",
-      level: "context",
-      rootElementId: null,
-      nodeLayouts: [
-        { elementId: "e-user", x: 400, y: 50 },
-        { elementId: "e-orders", x: 200, y: 250 },
-        { elementId: "e-payments", x: 600, y: 250 },
-      ],
-      viewport: { x: 0, y: 0, zoom: 1 },
-    },
-    "v-orders-containers": {
-      id: "v-orders-containers",
-      name: "Orders – Containers",
-      level: "container",
-      rootElementId: "e-orders",
-      nodeLayouts: [
-        { elementId: "e-orders", x: 50, y: 50, width: 700, height: 400 },
-        { elementId: "e-gateway", x: 40, y: 60 },
-        { elementId: "e-order-svc", x: 300, y: 60 },
-        { elementId: "e-db", x: 300, y: 240 },
-      ],
-      viewport: { x: 0, y: 0, zoom: 1 },
-    },
-    "v-gateway-components": {
-      id: "v-gateway-components",
-      name: "Gateway – Components",
-      level: "component",
-      rootElementId: "e-gateway",
-      nodeLayouts: [
-        { elementId: "e-auth", x: 100, y: 100 },
-        { elementId: "e-limiter", x: 400, y: 100 },
-      ],
-      viewport: { x: 0, y: 0, zoom: 1 },
-    },
-  };
-
-  return {
-    components,
-    connections,
-    bluePrintViews,
-    activeBluePrintViewId: "v-context",
-  };
+  return { components, connections };
 }
 
 const seedVersions: BluePrintVersion[] = [
@@ -246,7 +224,6 @@ interface DiagramState {
 }
 
 interface DiagramActions {
-  // Component operations
   addComponent: (
     type: ComponentType,
     name: string,
@@ -257,7 +234,6 @@ interface DiagramActions {
   updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => void;
   removeComponent: (id: string) => void;
 
-  // Connection operations
   addConnection: (
     sourceId: string,
     targetId: string,
@@ -269,9 +245,7 @@ interface DiagramActions {
   ) => void;
   removeConnection: (id: string) => void;
 
-  // View / layout operations
-  setActiveBluePrintView: (viewId: string) => void;
-  updateNodeLayout: (
+  updateNodePosition: (
     elementId: string,
     position: { x: number; y: number },
   ) => void;
@@ -280,15 +254,11 @@ interface DiagramActions {
     width: number,
     height: number,
   ) => void;
-  updateViewport: (viewport: { x: number; y: number; zoom: number }) => void;
-  navigateInto: (elementId: string) => void;
-  navigateUp: () => void;
 
-  // Z-order operations
   bringToFront: (elementId: string) => void;
   sendToBack: (elementId: string) => void;
+  setComponentParent: (childId: string, parentId: string | null) => void;
 
-  // Version operations
   commit: (message: string) => void;
 }
 
@@ -301,8 +271,6 @@ export const useDiagramStore = create<DiagramStore>()(
     draft: buildSeedDraft(),
     versions: seedVersions,
 
-    // ── Component ops ────────────────────────────────────
-
     addComponent: (type, name, parentId, position, awsService) => {
       const component: Component = {
         id: generateId("el"),
@@ -311,17 +279,12 @@ export const useDiagramStore = create<DiagramStore>()(
         description: "",
         parentId,
         awsService: awsService ?? undefined,
+        x: position?.x ?? 300,
+        y: position?.y ?? 300,
       };
 
       set((state) => {
         state.draft.components[component.id] = component;
-        state.draft.bluePrintViews[
-          state.draft.activeBluePrintViewId
-        ].nodeLayouts.push({
-          elementId: component.id,
-          x: position?.x ?? 300,
-          y: position?.y ?? 300,
-        });
       });
 
       return component;
@@ -335,7 +298,6 @@ export const useDiagramStore = create<DiagramStore>()(
 
     removeComponent: (id) => {
       set((state) => {
-        // Collect component and all descendants
         const toRemove = new Set<string>();
         const collect = (eid: string) => {
           toRemove.add(eid);
@@ -345,26 +307,15 @@ export const useDiagramStore = create<DiagramStore>()(
         };
         collect(id);
 
-        // Remove components
         toRemove.forEach((eid) => delete state.draft.components[eid]);
 
-        // Remove related connections
         Object.values(state.draft.connections).forEach((conn) => {
           if (toRemove.has(conn.sourceId) || toRemove.has(conn.targetId)) {
             delete state.draft.connections[conn.id];
           }
         });
-
-        // Remove from all view layouts
-        Object.values(state.draft.bluePrintViews).forEach((view) => {
-          view.nodeLayouts = view.nodeLayouts.filter(
-            (nl) => !toRemove.has(nl.elementId),
-          );
-        });
       });
     },
-
-    // ── Connection ops ───────────────────────────────────
 
     addConnection: (sourceId, targetId, label) => {
       const connection: Connection = {
@@ -393,155 +344,56 @@ export const useDiagramStore = create<DiagramStore>()(
       });
     },
 
-    // ── View / layout ops ────────────────────────────────
-
-    setActiveBluePrintView: (viewId) => {
+    updateNodePosition: (elementId, position) => {
       set((state) => {
-        state.draft.activeBluePrintViewId = viewId;
-      });
-    },
-
-    updateNodeLayout: (elementId, position) => {
-      set((state) => {
-        const layouts =
-          state.draft.bluePrintViews[state.draft.activeBluePrintViewId]
-            .nodeLayouts;
-        const layout = layouts.find((nl) => nl.elementId === elementId);
-        if (layout) {
-          layout.x = position.x;
-          layout.y = position.y;
+        const comp = state.draft.components[elementId];
+        if (comp) {
+          comp.x = position.x;
+          comp.y = position.y;
         }
       });
     },
 
     updateNodeSize: (elementId, width, height) => {
       set((state) => {
-        const layouts =
-          state.draft.bluePrintViews[state.draft.activeBluePrintViewId]
-            .nodeLayouts;
-        const layout = layouts.find((nl) => nl.elementId === elementId);
-        if (layout) {
-          layout.width = width;
-          layout.height = height;
+        const comp = state.draft.components[elementId];
+        if (comp) {
+          comp.width = width;
+          comp.height = height;
         }
       });
     },
-
-    updateViewport: (viewport) => {
-      set((state) => {
-        state.draft.bluePrintViews[state.draft.activeBluePrintViewId].viewport =
-          viewport;
-      });
-    },
-
-    navigateInto: (elementId) => {
-      const { draft } = get();
-      const component = draft.components[elementId];
-      if (
-        !component ||
-        (component.type !== "system" && component.type !== "container")
-      )
-        return;
-
-      const nextLevel: Level =
-        component.type === "system" ? "container" : "component";
-      const existingView = Object.values(draft.bluePrintViews).find(
-        (v) => v.rootElementId === elementId && v.level === nextLevel,
-      );
-
-      if (existingView) {
-        set((state) => {
-          state.draft.activeBluePrintViewId = existingView.id;
-        });
-        return;
-      }
-
-      const children = Object.values(draft.components).filter(
-        (c) => c.parentId === elementId,
-      );
-      const viewId = generateId("view");
-      const newView: BluePrintView = {
-        id: viewId,
-        name: `${component.name} – ${nextLevel === "container" ? "Containers" : "Components"}`,
-        level: nextLevel,
-        rootElementId: elementId,
-        nodeLayouts: children.map((c, i) => ({
-          elementId: c.id,
-          x: 150 + (i % 3) * 300,
-          y: 100 + Math.floor(i / 3) * 200,
-        })),
-        viewport: { x: 0, y: 0, zoom: 1 },
-      };
-
-      set((state) => {
-        state.draft.bluePrintViews[viewId] = newView;
-        state.draft.activeBluePrintViewId = viewId;
-      });
-    },
-
-    navigateUp: () => {
-      const { draft } = get();
-      const view = draft.bluePrintViews[draft.activeBluePrintViewId];
-      if (!view.rootElementId) return;
-
-      const current = draft.components[view.rootElementId];
-      if (!current) return;
-
-      if (current.parentId) {
-        const grandparent = draft.components[current.parentId];
-        if (grandparent) {
-          const parentView = Object.values(draft.bluePrintViews).find(
-            (v) => v.rootElementId === grandparent.id,
-          );
-          if (parentView) {
-            set((state) => {
-              state.draft.activeBluePrintViewId = parentView.id;
-            });
-          }
-        }
-      } else {
-        const contextView = Object.values(draft.bluePrintViews).find(
-          (v) => v.rootElementId === null,
-        );
-        if (contextView) {
-          set((state) => {
-            state.draft.activeBluePrintViewId = contextView.id;
-          });
-        }
-      }
-    },
-
-    // ── Z-order ops ─────────────────────────────────────
 
     bringToFront: (elementId) => {
       set((state) => {
-        const layouts =
-          state.draft.bluePrintViews[state.draft.activeBluePrintViewId]
-            .nodeLayouts;
-        const maxZ = Math.max(...layouts.map((nl) => nl.zIndex ?? 0));
-        const layout = layouts.find((nl) => nl.elementId === elementId);
-        if (layout) {
-          layout.zIndex = maxZ + 1;
+        const all = Object.values(state.draft.components);
+        const maxZ = Math.max(...all.map((c) => c.zIndex ?? 0));
+        const comp = state.draft.components[elementId];
+        if (comp) {
+          comp.zIndex = maxZ + 1;
         }
       });
     },
 
     sendToBack: (elementId) => {
       set((state) => {
-        const layouts =
-          state.draft.bluePrintViews[state.draft.activeBluePrintViewId]
-            .nodeLayouts;
-        const minZ = Math.min(
-          ...layouts.map((nl) => nl.zIndex ?? 0),
-        );
-        const layout = layouts.find((nl) => nl.elementId === elementId);
-        if (layout) {
-          layout.zIndex = minZ - 1;
+        const all = Object.values(state.draft.components);
+        const minZ = Math.min(...all.map((c) => c.zIndex ?? 0));
+        const comp = state.draft.components[elementId];
+        if (comp) {
+          comp.zIndex = minZ - 1;
         }
       });
     },
 
-    // ── Version ops ──────────────────────────────────────
+    setComponentParent: (childId, parentId) => {
+      set((state) => {
+        const comp = state.draft.components[childId];
+        if (comp) {
+          comp.parentId = parentId;
+        }
+      });
+    },
 
     commit: (message) => {
       const { draft, versions } = get();
@@ -563,12 +415,6 @@ export const useDiagramStore = create<DiagramStore>()(
 );
 
 // ── Selectors ──────────────────────────────────────────────────────────────
-// Selectors that return objects/arrays use useShallow to prevent infinite
-// re-render loops — without it, a new reference is returned every render
-// even when the underlying data hasn't changed.
-
-export const useActiveBluePrintView = () =>
-  useDiagramStore((s) => s.draft.bluePrintViews[s.draft.activeBluePrintViewId]);
 
 export const useComponents = () => useDiagramStore((s) => s.draft.components);
 
@@ -579,34 +425,15 @@ export const useConnections = () => useDiagramStore((s) => s.draft.connections);
 
 export const useVersions = () => useDiagramStore((s) => s.versions);
 
-export const useVisibleComponents = () =>
+export const useAllComponents = () =>
   useDiagramStore(
-    useShallow((s) => {
-      const view = s.draft.bluePrintViews[s.draft.activeBluePrintViewId];
-      const visibleIds = new Set(view.nodeLayouts.map((nl) => nl.elementId));
-      return Object.values(s.draft.components).filter((c) =>
-        visibleIds.has(c.id),
-      );
-    }),
+    useShallow((s) => Object.values(s.draft.components)),
   );
 
-export const useVisibleConnections = () =>
+export const useAllConnections = () =>
   useDiagramStore(
-    useShallow((s) => {
-      const view = s.draft.bluePrintViews[s.draft.activeBluePrintViewId];
-      const visibleIds = new Set(view.nodeLayouts.map((nl) => nl.elementId));
-      return Object.values(s.draft.connections).filter(
-        (conn) =>
-          visibleIds.has(conn.sourceId) && visibleIds.has(conn.targetId),
-      );
-    }),
+    useShallow((s) => Object.values(s.draft.connections)),
   );
-
-export const useCanNavigateInto = (elementId: string) =>
-  useDiagramStore((s) => {
-    const component = s.draft.components[elementId];
-    return component?.type === "system" || component?.type === "container";
-  });
 
 export const useComponentChildren = (parentId: string | null) =>
   useDiagramStore(
@@ -616,9 +443,6 @@ export const useComponentChildren = (parentId: string | null) =>
   );
 
 // ── Action hooks ───────────────────────────────────────────────────────────
-// useShallow prevents infinite re-renders: without it, the selector returns
-// a new object literal on every render, causing Zustand to always trigger
-// a re-render even when nothing actually changed.
 
 export const useDiagramActions = () =>
   useDiagramStore(
@@ -629,14 +453,11 @@ export const useDiagramActions = () =>
       addConnection: s.addConnection,
       updateConnection: s.updateConnection,
       removeConnection: s.removeConnection,
-      setActiveBluePrintView: s.setActiveBluePrintView,
-      updateNodeLayout: s.updateNodeLayout,
+      updateNodePosition: s.updateNodePosition,
       updateNodeSize: s.updateNodeSize,
-      updateViewport: s.updateViewport,
-      navigateInto: s.navigateInto,
-      navigateUp: s.navigateUp,
       bringToFront: s.bringToFront,
       sendToBack: s.sendToBack,
+      setComponentParent: s.setComponentParent,
       commit: s.commit,
     })),
   );
