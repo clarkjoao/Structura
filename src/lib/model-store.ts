@@ -6,6 +6,8 @@ import type {
   Connection,
   ServiceDefinition,
   EmbeddedDiagram,
+  Flow,
+  FlowStep,
   Diagram,
   ModelDraft,
   ComponentType,
@@ -62,6 +64,19 @@ function buildSeedDiagrams(): Record<string, Diagram> {
           "r-2": { id: "r-2", sourceId: "e-orders", targetId: "e-payments", label: "Processa pagamento via" },
         },
         serviceRegistry: registry,
+        flows: {
+          "flow-order": {
+            id: "flow-order",
+            name: "Fluxo de Pedido",
+            diagramId: "d-context",
+            mermaid: "Cliente->>Sistema de Pedidos: Faz pedido\nNote over Sistema de Pedidos: Valida estoque\nSistema de Pedidos->>Sistema de Pagamento: Processa pagamento",
+            steps: [
+              { order: 0, componentId: "e-user", connectionId: "r-1", note: "Cliente faz pedido no sistema" },
+              { order: 1, componentId: "e-orders", note: "Valida estoque disponível" },
+              { order: 2, componentId: "e-orders", connectionId: "r-2", note: "Envia para processamento de pagamento" },
+            ],
+          },
+        },
       },
       nodeLayouts: [
         { elementId: "e-user", x: 400, y: 50 },
@@ -88,6 +103,7 @@ function buildSeedDiagrams(): Record<string, Diagram> {
           "r-4": { id: "r-4", sourceId: "e-order-svc", targetId: "e-db", label: "Lê e escreve em" },
         },
         serviceRegistry: registry,
+        flows: {},
       },
       nodeLayouts: [
         { elementId: "e-gateway", x: 100, y: 100 },
@@ -112,6 +128,7 @@ function buildSeedDiagrams(): Record<string, Diagram> {
           "r-5": { id: "r-5", sourceId: "e-auth", targetId: "e-limiter", label: "Verifica limite via" },
         },
         serviceRegistry: registry,
+        flows: {},
       },
       nodeLayouts: [
         { elementId: "e-auth", x: 100, y: 100 },
@@ -161,6 +178,10 @@ interface AppActions {
   embedDiagram: (originComponentId: string, diagramId: string, position: { x: number; y: number }) => void;
   detachEmbed: (embedId: string) => void;
 
+  addFlow: (diagramId: string, name: string, mermaid: string) => Flow;
+  updateFlow: (id: string, patch: Partial<Omit<Flow, "id">>) => void;
+  removeFlow: (id: string) => void;
+
   pushUndo: () => void;
   undo: () => void;
   redo: () => void;
@@ -172,6 +193,54 @@ export type DiagramStore = AppState & AppActions;
 
 function activeDiagram(state: AppState): Diagram {
   return state.diagrams[state.activeDiagramId!];
+}
+
+function parseMermaidToSteps(
+  mermaid: string,
+  components: Record<string, Component>,
+  connections: Record<string, Connection>,
+): FlowStep[] {
+  const steps: FlowStep[] = [];
+  const compByName = new Map<string, string>();
+  for (const c of Object.values(components)) {
+    compByName.set(c.name.toLowerCase(), c.id);
+  }
+
+  const lines = mermaid.split("\n").map((l) => l.trim()).filter(Boolean);
+  let order = 0;
+
+  for (const line of lines) {
+    const noteMatch = line.match(/^Note\s+over\s+([^:]+):\s*(.+)$/i);
+    if (noteMatch) {
+      const name = noteMatch[1].trim().toLowerCase();
+      const note = noteMatch[2].trim();
+      const compId = compByName.get(name);
+      steps.push({ order: order++, componentId: compId, note });
+      continue;
+    }
+
+    const arrowMatch = line.match(/^(.+?)\s*->>?\s*(.+?):\s*(.+)$/);
+    if (arrowMatch) {
+      const srcName = arrowMatch[1].trim().toLowerCase();
+      const tgtName = arrowMatch[2].trim().toLowerCase();
+      const label = arrowMatch[3].trim();
+      const srcId = compByName.get(srcName);
+      const tgtId = compByName.get(tgtName);
+
+      let connId: string | undefined;
+      if (srcId && tgtId) {
+        const conn = Object.values(connections).find(
+          (c) => c.sourceId === srcId && c.targetId === tgtId,
+        );
+        connId = conn?.id;
+      }
+
+      steps.push({ order: order++, componentId: srcId, connectionId: connId, note: label });
+      continue;
+    }
+  }
+
+  return steps;
 }
 
 // ── Store ──────────────────────────────────────────────────────────────────
@@ -191,7 +260,7 @@ export const useDiagramStore = create<DiagramStore>()(
         name, level,
         domain: domain || undefined,
         updatedAt: "agora",
-        snapshot: { components: {}, connections: {}, serviceRegistry: {} },
+        snapshot: { components: {}, connections: {}, serviceRegistry: {}, flows: {} },
         nodeLayouts: [],
         viewport: { x: 0, y: 0, zoom: 1 },
         embeddedDiagrams: [],
@@ -343,6 +412,32 @@ export const useDiagramStore = create<DiagramStore>()(
       });
     },
 
+    addFlow: (diagramId, name, mermaid) => {
+      const { diagrams } = get();
+      const d = diagrams[diagramId];
+      if (!d) throw new Error("Diagram not found");
+      const steps = parseMermaidToSteps(mermaid, d.snapshot.components, d.snapshot.connections);
+      const flow: Flow = { id: generateId("flow"), name, mermaid, steps, diagramId };
+      set((state) => { state.diagrams[diagramId].snapshot.flows[flow.id] = flow; });
+      return flow;
+    },
+
+    updateFlow: (id, patch) => {
+      set((state) => {
+        const d = activeDiagram(state);
+        const flow = d.snapshot.flows[id];
+        if (!flow) return;
+        Object.assign(flow, patch);
+        if (patch.mermaid !== undefined) {
+          flow.steps = parseMermaidToSteps(patch.mermaid ?? flow.mermaid, d.snapshot.components, d.snapshot.connections);
+        }
+      });
+    },
+
+    removeFlow: (id) => {
+      set((state) => { delete activeDiagram(state).snapshot.flows[id]; });
+    },
+
     pushUndo: () => {
       const { activeDiagramId, diagrams } = get();
       if (!activeDiagramId) return;
@@ -435,6 +530,12 @@ export const useAllConnections = () =>
     return Object.values(s.diagrams[s.activeDiagramId].snapshot.connections);
   }));
 
+export const useFlows = () =>
+  useDiagramStore(useShallow((s) => {
+    if (!s.activeDiagramId) return [];
+    return Object.values(s.diagrams[s.activeDiagramId].snapshot.flows);
+  }));
+
 // ── Action hooks ───────────────────────────────────────────────────────────
 
 export const useDiagramActions = () =>
@@ -448,5 +549,6 @@ export const useDiagramActions = () =>
     linkComponentToDiagram: s.linkComponentToDiagram,
     setParent: s.setParent,
     embedDiagram: s.embedDiagram, detachEmbed: s.detachEmbed,
+    addFlow: s.addFlow, updateFlow: s.updateFlow, removeFlow: s.removeFlow,
     pushUndo: s.pushUndo, undo: s.undo, redo: s.redo,
   })));

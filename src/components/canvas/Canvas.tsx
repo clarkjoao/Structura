@@ -23,7 +23,12 @@ const PANEL_DEFAULT_W = 600;
 const PANEL_DEFAULT_H = 400;
 const EMBED_PREFIX = "emb__";
 
-const Canvas = () => {
+interface CanvasProps {
+  activeFlow?: import("@/lib/model-types").Flow | null;
+  currentStep?: number;
+}
+
+const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
   const diagram = useActiveDiagram();
   const allDiagrams = useDiagrams();
   const visibleComponents = useVisibleComponents();
@@ -76,6 +81,28 @@ const Canvas = () => {
     return ids;
   }, [visibleComponents]);
 
+  const isPlaying = !!activeFlow && currentStep !== undefined && currentStep >= 0;
+
+  const flowHighlight = useMemo(() => {
+    if (!isPlaying || !activeFlow) return { activeNodeId: null as string | null, activeConnId: null as string | null, visitedNodeIds: new Set<string>(), participantNodeIds: new Set<string>(), participantConnIds: new Set<string>() };
+    const step = activeFlow.steps[currentStep!];
+    const visitedNodeIds = new Set<string>();
+    const participantNodeIds = new Set<string>();
+    const participantConnIds = new Set<string>();
+    for (const s of activeFlow.steps) {
+      if (s.componentId) participantNodeIds.add(s.componentId);
+      if (s.connectionId) participantConnIds.add(s.connectionId);
+      if (s.order < (currentStep ?? 0) && s.componentId) visitedNodeIds.add(s.componentId);
+    }
+    return {
+      activeNodeId: step?.componentId ?? null,
+      activeConnId: step?.connectionId ?? null,
+      visitedNodeIds,
+      participantNodeIds,
+      participantConnIds,
+    };
+  }, [isPlaying, activeFlow, currentStep]);
+
   const nodes = useMemo(() => {
     if (!diagram) return [];
 
@@ -100,19 +127,31 @@ const Canvas = () => {
         const isChildOfPanel = comp.parentId !== null && panelIds.has(comp.parentId);
         const linkedDiagramName = comp.linkedDiagramId ? allDiagrams[comp.linkedDiagramId]?.name : undefined;
 
+        const flowNodeStyle = isPlaying ? (() => {
+          const isActive = flowHighlight.activeNodeId === comp.id;
+          const isVisited = flowHighlight.visitedNodeIds.has(comp.id);
+          const isParticipant = flowHighlight.participantNodeIds.has(comp.id);
+          if (isActive) return { opacity: 1, filter: "none" };
+          if (isVisited) return { opacity: 0.85, filter: "none" };
+          if (isParticipant) return { opacity: 0.5, filter: "none" };
+          return { opacity: 0.25, filter: "none" };
+        })() : undefined;
+
         nodeList.push({
           id: comp.id, type: "c4",
           position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
           zIndex: layout?.zIndex ?? 1,
           ...(isChildOfPanel ? { parentId: comp.parentId!, extent: "parent" as const } : {}),
+          ...(flowNodeStyle ? { style: flowNodeStyle } : {}),
           data: {
             elementId: comp.id, name: comp.name, type: comp.type,
             description: comp.description, technology: comp.technology,
-            awsService: comp.awsService, isSelected: selectedNodeId === comp.id,
+            awsService: comp.awsService,
+            isSelected: isPlaying ? flowHighlight.activeNodeId === comp.id : selectedNodeId === comp.id,
             serviceName: comp.serviceId ? serviceRegistry[comp.serviceId]?.name : undefined,
-            linkedDiagramName,
-            onDrillDown: linkedDiagramName ? handleDrillDown : undefined,
-            onEmbed: linkedDiagramName ? handleEmbed : undefined,
+            linkedDiagramName: isPlaying ? undefined : linkedDiagramName,
+            onDrillDown: isPlaying ? undefined : (linkedDiagramName ? handleDrillDown : undefined),
+            onEmbed: isPlaying ? undefined : (linkedDiagramName ? handleEmbed : undefined),
           } as Record<string, unknown>,
         });
       }
@@ -148,15 +187,21 @@ const Canvas = () => {
     }
 
     return nodeList;
-  }, [diagram, visibleComponents, panelIds, selectedNodeId, serviceRegistry, allDiagrams, handleDrillDown, handleEmbed, handleDetach]);
+  }, [diagram, visibleComponents, panelIds, selectedNodeId, serviceRegistry, allDiagrams, handleDrillDown, handleEmbed, handleDetach, isPlaying, flowHighlight]);
 
   const edges: Edge[] = useMemo(() => {
     if (!diagram) return [];
-    const edgeList: Edge[] = visibleConnections.map((conn) => ({
-      id: conn.id, source: conn.sourceId, target: conn.targetId, type: "c4",
-      data: { label: conn.label, technology: conn.technology, connectionId: conn.id },
-      selected: selectedEdgeId === conn.id,
-    }));
+    const edgeList: Edge[] = visibleConnections.map((conn) => {
+      const isActiveConn = isPlaying && flowHighlight.activeConnId === conn.id;
+      const isParticipantConn = isPlaying && flowHighlight.participantConnIds.has(conn.id);
+      return {
+        id: conn.id, source: conn.sourceId, target: conn.targetId, type: "c4",
+        data: { label: conn.label, technology: conn.technology, connectionId: conn.id },
+        selected: selectedEdgeId === conn.id,
+        animated: isActiveConn,
+        style: isPlaying ? { opacity: isActiveConn ? 1 : isParticipantConn ? 0.5 : 0.2 } : undefined,
+      };
+    });
 
     for (const emb of diagram.embeddedDiagrams) {
       const linked = allDiagrams[emb.diagramId];
@@ -175,7 +220,7 @@ const Canvas = () => {
     }
 
     return edgeList;
-  }, [diagram, visibleConnections, selectedEdgeId, allDiagrams]);
+  }, [diagram, visibleConnections, selectedEdgeId, allDiagrams, isPlaying, flowHighlight]);
 
   const onNodesChange: OnNodesChange = useCallback((changes) => {
     changes.forEach((change) => {
@@ -221,9 +266,10 @@ const Canvas = () => {
   const onConnect: OnConnect = useCallback((c: Connection) => { if (c.source && c.target) addConnection(c.source, c.target, "Usa"); }, [addConnection]);
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
+    if (isPlaying) return;
     if (node.id.startsWith(EMBED_PREFIX)) return;
     setSelectedNodeId(node.id); setSelectedEdgeId(null); setContextMenu(null);
-  }, []);
+  }, [isPlaying]);
   const onEdgeClick = useCallback((_: React.MouseEvent, edge: Edge) => { setSelectedEdgeId(edge.id); setSelectedNodeId(null); setContextMenu(null); }, []);
   const onPaneClick = useCallback(() => { setSelectedNodeId(null); setSelectedEdgeId(null); setContextMenu(null); }, []);
   const onNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => {
