@@ -5,9 +5,11 @@ import type {
   Component,
   Connection,
   ServiceDefinition,
+  BluePrintView,
   ModelDraft,
   BluePrintVersion,
   ComponentType,
+  Level,
 } from "./model-types";
 import { generateId } from "./model-types";
 
@@ -15,16 +17,19 @@ import { generateId } from "./model-types";
 
 function buildSeedDraft(): ModelDraft {
   const components: Record<string, Component> = {
+    "e-user": {
+      id: "e-user",
+      name: "Cliente",
+      type: "person",
+      description: "Usuário final do sistema",
+      parentId: null,
+    },
     "e-orders": {
       id: "e-orders",
       name: "Sistema de Pedidos",
       type: "system",
       description: "Processa e gerencia pedidos de compra",
       parentId: null,
-      x: 80,
-      y: 80,
-      width: 800,
-      height: 500,
     },
     "e-payments": {
       id: "e-payments",
@@ -32,19 +37,6 @@ function buildSeedDraft(): ModelDraft {
       type: "system",
       description: "Processamento de transações financeiras",
       parentId: null,
-      x: 1000,
-      y: 80,
-      width: 800,
-      height: 500,
-    },
-    "e-user": {
-      id: "e-user",
-      name: "Cliente",
-      type: "person",
-      description: "Usuário final do sistema",
-      parentId: null,
-      x: 500,
-      y: -120,
     },
     "e-gateway": {
       id: "e-gateway",
@@ -53,8 +45,7 @@ function buildSeedDraft(): ModelDraft {
       description: "Roteamento e autenticação",
       technology: "Kong / Nginx",
       parentId: "e-orders",
-      x: 40,
-      y: 80,
+      serviceId: "svc-gateway",
     },
     "e-order-svc": {
       id: "e-order-svc",
@@ -63,8 +54,7 @@ function buildSeedDraft(): ModelDraft {
       description: "Lógica de negócio de pedidos",
       technology: "Java / Spring Boot",
       parentId: "e-orders",
-      x: 320,
-      y: 80,
+      serviceId: "svc-order",
     },
     "e-db": {
       id: "e-db",
@@ -73,8 +63,6 @@ function buildSeedDraft(): ModelDraft {
       description: "Armazenamento de pedidos e produtos",
       technology: "PostgreSQL",
       parentId: "e-orders",
-      x: 320,
-      y: 280,
     },
     "e-auth": {
       id: "e-auth",
@@ -82,9 +70,8 @@ function buildSeedDraft(): ModelDraft {
       type: "component",
       description: "Validação JWT",
       technology: "Node.js",
-      parentId: "e-payments",
-      x: 40,
-      y: 80,
+      parentId: "e-gateway",
+      serviceId: "svc-auth",
     },
     "e-limiter": {
       id: "e-limiter",
@@ -92,9 +79,7 @@ function buildSeedDraft(): ModelDraft {
       type: "component",
       description: "Controle de taxa de requisições",
       technology: "Redis",
-      parentId: "e-payments",
-      x: 320,
-      y: 80,
+      parentId: "e-gateway",
     },
     "e-ctrl": {
       id: "e-ctrl",
@@ -102,9 +87,7 @@ function buildSeedDraft(): ModelDraft {
       type: "component",
       description: "Endpoints REST",
       technology: "Spring MVC",
-      parentId: "e-payments",
-      x: 40,
-      y: 280,
+      parentId: "e-order-svc",
     },
     "e-repo": {
       id: "e-repo",
@@ -112,49 +95,17 @@ function buildSeedDraft(): ModelDraft {
       type: "component",
       description: "Persistência de dados",
       technology: "JPA",
-      parentId: "e-payments",
-      x: 320,
-      y: 280,
+      parentId: "e-order-svc",
     },
   };
 
   const connections: Record<string, Connection> = {
-    "r-1": {
-      id: "r-1",
-      sourceId: "e-user",
-      targetId: "e-orders",
-      label: "Faz pedidos via",
-    },
-    "r-2": {
-      id: "r-2",
-      sourceId: "e-orders",
-      targetId: "e-payments",
-      label: "Processa pagamento via",
-    },
-    "r-3": {
-      id: "r-3",
-      sourceId: "e-gateway",
-      targetId: "e-order-svc",
-      label: "Roteia para",
-    },
-    "r-4": {
-      id: "r-4",
-      sourceId: "e-order-svc",
-      targetId: "e-db",
-      label: "Lê e escreve em",
-    },
-    "r-5": {
-      id: "r-5",
-      sourceId: "e-auth",
-      targetId: "e-limiter",
-      label: "Verifica limite via",
-    },
-    "r-6": {
-      id: "r-6",
-      sourceId: "e-ctrl",
-      targetId: "e-repo",
-      label: "Persiste dados via",
-    },
+    "r-1": { id: "r-1", sourceId: "e-user", targetId: "e-orders", label: "Faz pedidos via" },
+    "r-2": { id: "r-2", sourceId: "e-orders", targetId: "e-payments", label: "Processa pagamento via" },
+    "r-3": { id: "r-3", sourceId: "e-gateway", targetId: "e-order-svc", label: "Roteia para" },
+    "r-4": { id: "r-4", sourceId: "e-order-svc", targetId: "e-db", label: "Lê e escreve em" },
+    "r-5": { id: "r-5", sourceId: "e-auth", targetId: "e-limiter", label: "Verifica limite via" },
+    "r-6": { id: "r-6", sourceId: "e-ctrl", targetId: "e-repo", label: "Persiste dados via" },
   };
 
   const serviceRegistry: Record<string, ServiceDefinition> = {
@@ -187,68 +138,54 @@ function buildSeedDraft(): ModelDraft {
     },
   };
 
-  components["e-order-svc"].serviceId = "svc-order";
-  components["e-gateway"].serviceId = "svc-gateway";
-  components["e-auth"].serviceId = "svc-auth";
+  const bluePrintViews: Record<string, BluePrintView> = {
+    "v-context": {
+      id: "v-context",
+      name: "System Context",
+      level: "context",
+      rootElementId: null,
+      nodeLayouts: [
+        { elementId: "e-user", x: 400, y: 50 },
+        { elementId: "e-orders", x: 200, y: 250 },
+        { elementId: "e-payments", x: 600, y: 250 },
+      ],
+      viewport: { x: 0, y: 0, zoom: 1 },
+    },
+    "v-orders-containers": {
+      id: "v-orders-containers",
+      name: "Orders – Containers",
+      level: "container",
+      rootElementId: "e-orders",
+      nodeLayouts: [
+        { elementId: "e-gateway", x: 100, y: 100 },
+        { elementId: "e-order-svc", x: 400, y: 100 },
+        { elementId: "e-db", x: 400, y: 300 },
+      ],
+      viewport: { x: 0, y: 0, zoom: 1 },
+    },
+    "v-gateway-components": {
+      id: "v-gateway-components",
+      name: "Gateway – Components",
+      level: "component",
+      rootElementId: "e-gateway",
+      nodeLayouts: [
+        { elementId: "e-auth", x: 100, y: 100 },
+        { elementId: "e-limiter", x: 400, y: 100 },
+      ],
+      viewport: { x: 0, y: 0, zoom: 1 },
+    },
+  };
 
-  return { components, connections, serviceRegistry };
+  return { components, connections, serviceRegistry, bluePrintViews, activeBluePrintViewId: "v-context" };
 }
 
 const seedVersions: BluePrintVersion[] = [
-  {
-    id: "ver-6",
-    version: "v3.2.1",
-    parentId: "ver-5",
-    timestamp: "2h atrás",
-    author: "maria.dev",
-    message: "Adicionado Rate Limiter ao Gateway",
-    snapshot: buildSeedDraft(),
-  },
-  {
-    id: "ver-5",
-    version: "v3.2.0",
-    parentId: "ver-4",
-    timestamp: "1 dia",
-    author: "joao.arq",
-    message: "Refatoração do Order Service",
-    snapshot: buildSeedDraft(),
-  },
-  {
-    id: "ver-4",
-    version: "v3.1.0",
-    parentId: "ver-3",
-    timestamp: "3 dias",
-    author: "maria.dev",
-    message: "Novo container: Database",
-    snapshot: buildSeedDraft(),
-  },
-  {
-    id: "ver-3",
-    version: "v3.0.0",
-    parentId: "ver-2",
-    timestamp: "1 sem",
-    author: "joao.arq",
-    message: "Migração para microservices",
-    snapshot: buildSeedDraft(),
-  },
-  {
-    id: "ver-2",
-    version: "v2.0.0",
-    parentId: "ver-1",
-    timestamp: "2 sem",
-    author: "maria.dev",
-    message: "Adicionado sistema de pagamentos",
-    snapshot: buildSeedDraft(),
-  },
-  {
-    id: "ver-1",
-    version: "v1.0.0",
-    parentId: null,
-    timestamp: "1 mês",
-    author: "joao.arq",
-    message: "Commit inicial do modelo",
-    snapshot: buildSeedDraft(),
-  },
+  { id: "ver-6", version: "v3.2.1", parentId: "ver-5", timestamp: "2h atrás", author: "maria.dev", message: "Adicionado Rate Limiter ao Gateway", snapshot: buildSeedDraft() },
+  { id: "ver-5", version: "v3.2.0", parentId: "ver-4", timestamp: "1 dia", author: "joao.arq", message: "Refatoração do Order Service", snapshot: buildSeedDraft() },
+  { id: "ver-4", version: "v3.1.0", parentId: "ver-3", timestamp: "3 dias", author: "maria.dev", message: "Novo container: Database", snapshot: buildSeedDraft() },
+  { id: "ver-3", version: "v3.0.0", parentId: "ver-2", timestamp: "1 sem", author: "joao.arq", message: "Migração para microservices", snapshot: buildSeedDraft() },
+  { id: "ver-2", version: "v2.0.0", parentId: "ver-1", timestamp: "2 sem", author: "maria.dev", message: "Adicionado sistema de pagamentos", snapshot: buildSeedDraft() },
+  { id: "ver-1", version: "v1.0.0", parentId: null, timestamp: "1 mês", author: "joao.arq", message: "Commit inicial do modelo", snapshot: buildSeedDraft() },
 ];
 
 // ── Store interface ────────────────────────────────────────────────────────
@@ -259,51 +196,27 @@ interface DiagramState {
 }
 
 interface DiagramActions {
-  addComponent: (
-    type: ComponentType,
-    name: string,
-    parentId: string | null,
-    position?: { x: number; y: number },
-    awsService?: string,
-  ) => Component;
+  addComponent: (type: ComponentType, name: string, parentId: string | null, position?: { x: number; y: number }, awsService?: string) => Component;
   updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => void;
   removeComponent: (id: string) => void;
 
-  addConnection: (
-    sourceId: string,
-    targetId: string,
-    label: string,
-  ) => Connection;
-  updateConnection: (
-    id: string,
-    patch: Partial<Omit<Connection, "id">>,
-  ) => void;
+  addConnection: (sourceId: string, targetId: string, label: string) => Connection;
+  updateConnection: (id: string, patch: Partial<Omit<Connection, "id">>) => void;
   removeConnection: (id: string) => void;
 
-  updateNodePosition: (
-    elementId: string,
-    position: { x: number; y: number },
-  ) => void;
-  updateNodeSize: (
-    elementId: string,
-    width: number,
-    height: number,
-  ) => void;
+  setActiveBluePrintView: (viewId: string) => void;
+  updateNodeLayout: (elementId: string, position: { x: number; y: number }) => void;
+  updateViewport: (viewport: { x: number; y: number; zoom: number }) => void;
+  navigateInto: (elementId: string) => void;
+  navigateUp: () => void;
 
   bringToFront: (elementId: string) => void;
   sendToBack: (elementId: string) => void;
-  setComponentParent: (childId: string, parentId: string | null) => void;
 
   addService: (service: Omit<ServiceDefinition, "id">) => ServiceDefinition;
-  updateService: (
-    id: string,
-    patch: Partial<Omit<ServiceDefinition, "id">>,
-  ) => void;
+  updateService: (id: string, patch: Partial<Omit<ServiceDefinition, "id">>) => void;
   removeService: (id: string) => void;
-  linkComponentToService: (
-    componentId: string,
-    serviceId: string | undefined,
-  ) => void;
+  linkComponentToService: (componentId: string, serviceId: string | undefined) => void;
 
   commit: (message: string) => void;
 }
@@ -318,244 +231,192 @@ export const useDiagramStore = create<DiagramStore>()(
     versions: seedVersions,
 
     addComponent: (type, name, parentId, position, awsService) => {
-      const component: Component = {
-        id: generateId("el"),
-        name,
-        type,
-        description: "",
-        parentId,
-        awsService: awsService ?? undefined,
-        x: position?.x ?? 300,
-        y: position?.y ?? 300,
-      };
-
+      const component: Component = { id: generateId("el"), name, type, description: "", parentId, awsService: awsService ?? undefined };
       set((state) => {
         state.draft.components[component.id] = component;
+        state.draft.bluePrintViews[state.draft.activeBluePrintViewId].nodeLayouts.push({
+          elementId: component.id, x: position?.x ?? 300, y: position?.y ?? 300,
+        });
       });
-
       return component;
     },
 
     updateComponent: (id, patch) => {
-      set((state) => {
-        Object.assign(state.draft.components[id], patch);
-      });
+      set((state) => { Object.assign(state.draft.components[id], patch); });
     },
 
     removeComponent: (id) => {
       set((state) => {
         const toRemove = new Set<string>();
-        const collect = (eid: string) => {
-          toRemove.add(eid);
-          Object.values(state.draft.components)
-            .filter((c) => c.parentId === eid)
-            .forEach((c) => collect(c.id));
-        };
+        const collect = (eid: string) => { toRemove.add(eid); Object.values(state.draft.components).filter((c) => c.parentId === eid).forEach((c) => collect(c.id)); };
         collect(id);
-
         toRemove.forEach((eid) => delete state.draft.components[eid]);
-
-        Object.values(state.draft.connections).forEach((conn) => {
-          if (toRemove.has(conn.sourceId) || toRemove.has(conn.targetId)) {
-            delete state.draft.connections[conn.id];
-          }
-        });
+        Object.values(state.draft.connections).forEach((conn) => { if (toRemove.has(conn.sourceId) || toRemove.has(conn.targetId)) delete state.draft.connections[conn.id]; });
+        Object.values(state.draft.bluePrintViews).forEach((view) => { view.nodeLayouts = view.nodeLayouts.filter((nl) => !toRemove.has(nl.elementId)); });
       });
     },
 
     addConnection: (sourceId, targetId, label) => {
-      const connection: Connection = {
-        id: generateId("conn"),
-        sourceId,
-        targetId,
-        label,
-      };
-
-      set((state) => {
-        state.draft.connections[connection.id] = connection;
-      });
-
+      const connection: Connection = { id: generateId("conn"), sourceId, targetId, label };
+      set((state) => { state.draft.connections[connection.id] = connection; });
       return connection;
     },
 
-    updateConnection: (id, patch) => {
+    updateConnection: (id, patch) => { set((state) => { Object.assign(state.draft.connections[id], patch); }); },
+    removeConnection: (id) => { set((state) => { delete state.draft.connections[id]; }); },
+
+    setActiveBluePrintView: (viewId) => { set((state) => { state.draft.activeBluePrintViewId = viewId; }); },
+
+    updateNodeLayout: (elementId, position) => {
       set((state) => {
-        Object.assign(state.draft.connections[id], patch);
+        const layouts = state.draft.bluePrintViews[state.draft.activeBluePrintViewId].nodeLayouts;
+        const layout = layouts.find((nl) => nl.elementId === elementId);
+        if (layout) { layout.x = position.x; layout.y = position.y; }
       });
     },
 
-    removeConnection: (id) => {
-      set((state) => {
-        delete state.draft.connections[id];
-      });
+    updateViewport: (viewport) => {
+      set((state) => { state.draft.bluePrintViews[state.draft.activeBluePrintViewId].viewport = viewport; });
     },
 
-    updateNodePosition: (elementId, position) => {
-      set((state) => {
-        const comp = state.draft.components[elementId];
-        if (comp) {
-          comp.x = position.x;
-          comp.y = position.y;
+    navigateInto: (elementId) => {
+      const { draft } = get();
+      const component = draft.components[elementId];
+      if (!component || (component.type !== "system" && component.type !== "container")) return;
+
+      const nextLevel: Level = component.type === "system" ? "container" : "component";
+      const existingView = Object.values(draft.bluePrintViews).find((v) => v.rootElementId === elementId && v.level === nextLevel);
+
+      if (existingView) {
+        set((state) => { state.draft.activeBluePrintViewId = existingView.id; });
+        return;
+      }
+
+      const children = Object.values(draft.components).filter((c) => c.parentId === elementId);
+      const viewId = generateId("view");
+      const newView: BluePrintView = {
+        id: viewId,
+        name: `${component.name} – ${nextLevel === "container" ? "Containers" : "Components"}`,
+        level: nextLevel,
+        rootElementId: elementId,
+        nodeLayouts: children.map((c, i) => ({ elementId: c.id, x: 150 + (i % 3) * 300, y: 100 + Math.floor(i / 3) * 200 })),
+        viewport: { x: 0, y: 0, zoom: 1 },
+      };
+
+      set((state) => { state.draft.bluePrintViews[viewId] = newView; state.draft.activeBluePrintViewId = viewId; });
+    },
+
+    navigateUp: () => {
+      const { draft } = get();
+      const view = draft.bluePrintViews[draft.activeBluePrintViewId];
+      if (!view.rootElementId) return;
+
+      const current = draft.components[view.rootElementId];
+      if (!current) return;
+
+      if (current.parentId) {
+        const grandparent = draft.components[current.parentId];
+        if (grandparent) {
+          const parentView = Object.values(draft.bluePrintViews).find((v) => v.rootElementId === grandparent.id);
+          if (parentView) { set((state) => { state.draft.activeBluePrintViewId = parentView.id; }); }
         }
-      });
-    },
-
-    updateNodeSize: (elementId, width, height) => {
-      set((state) => {
-        const comp = state.draft.components[elementId];
-        if (comp) {
-          comp.width = width;
-          comp.height = height;
-        }
-      });
+      } else {
+        const contextView = Object.values(draft.bluePrintViews).find((v) => v.rootElementId === null);
+        if (contextView) { set((state) => { state.draft.activeBluePrintViewId = contextView.id; }); }
+      }
     },
 
     bringToFront: (elementId) => {
       set((state) => {
-        const all = Object.values(state.draft.components);
-        const maxZ = Math.max(...all.map((c) => c.zIndex ?? 0));
-        const comp = state.draft.components[elementId];
-        if (comp) {
-          comp.zIndex = maxZ + 1;
-        }
+        const layouts = state.draft.bluePrintViews[state.draft.activeBluePrintViewId].nodeLayouts;
+        const maxZ = Math.max(...layouts.map((nl) => nl.zIndex ?? 0));
+        const layout = layouts.find((nl) => nl.elementId === elementId);
+        if (layout) layout.zIndex = maxZ + 1;
       });
     },
 
     sendToBack: (elementId) => {
       set((state) => {
-        const all = Object.values(state.draft.components);
-        const minZ = Math.min(...all.map((c) => c.zIndex ?? 0));
-        const comp = state.draft.components[elementId];
-        if (comp) {
-          comp.zIndex = minZ - 1;
-        }
-      });
-    },
-
-    setComponentParent: (childId, parentId) => {
-      set((state) => {
-        const comp = state.draft.components[childId];
-        if (comp) {
-          comp.parentId = parentId;
-        }
+        const layouts = state.draft.bluePrintViews[state.draft.activeBluePrintViewId].nodeLayouts;
+        const minZ = Math.min(...layouts.map((nl) => nl.zIndex ?? 0));
+        const layout = layouts.find((nl) => nl.elementId === elementId);
+        if (layout) layout.zIndex = minZ - 1;
       });
     },
 
     addService: (service) => {
-      const svc: ServiceDefinition = {
-        ...service,
-        id: generateId("svc"),
-      };
-      set((state) => {
-        state.draft.serviceRegistry[svc.id] = svc;
-      });
+      const svc: ServiceDefinition = { ...service, id: generateId("svc") };
+      set((state) => { state.draft.serviceRegistry[svc.id] = svc; });
       return svc;
     },
 
-    updateService: (id, patch) => {
-      set((state) => {
-        Object.assign(state.draft.serviceRegistry[id], patch);
-      });
-    },
+    updateService: (id, patch) => { set((state) => { Object.assign(state.draft.serviceRegistry[id], patch); }); },
 
     removeService: (id) => {
       set((state) => {
         delete state.draft.serviceRegistry[id];
-        Object.values(state.draft.components).forEach((c) => {
-          if (c.serviceId === id) {
-            c.serviceId = undefined;
-          }
-        });
+        Object.values(state.draft.components).forEach((c) => { if (c.serviceId === id) c.serviceId = undefined; });
       });
     },
 
     linkComponentToService: (componentId, serviceId) => {
-      set((state) => {
-        const comp = state.draft.components[componentId];
-        if (comp) {
-          comp.serviceId = serviceId;
-        }
-      });
+      set((state) => { const comp = state.draft.components[componentId]; if (comp) comp.serviceId = serviceId; });
     },
 
     commit: (message) => {
       const { draft, versions } = get();
-      const newVersion: BluePrintVersion = {
-        id: generateId("ver"),
-        version: `v${versions.length + 1}.0.0`,
-        parentId: versions[0]?.id ?? null,
-        timestamp: "agora",
-        author: "you",
-        message,
-        snapshot: JSON.parse(JSON.stringify(draft)),
-      };
-
-      set((state) => {
-        state.versions.unshift(newVersion);
-      });
+      const newVersion: BluePrintVersion = { id: generateId("ver"), version: `v${versions.length + 1}.0.0`, parentId: versions[0]?.id ?? null, timestamp: "agora", author: "you", message, snapshot: JSON.parse(JSON.stringify(draft)) };
+      set((state) => { state.versions.unshift(newVersion); });
     },
   })),
 );
 
 // ── Selectors ──────────────────────────────────────────────────────────────
 
+export const useActiveBluePrintView = () =>
+  useDiagramStore((s) => s.draft.bluePrintViews[s.draft.activeBluePrintViewId]);
+
 export const useComponents = () => useDiagramStore((s) => s.draft.components);
-
-export const useComponent = (id: string) =>
-  useDiagramStore((s) => s.draft.components[id]);
-
+export const useComponent = (id: string) => useDiagramStore((s) => s.draft.components[id]);
 export const useConnections = () => useDiagramStore((s) => s.draft.connections);
-
 export const useVersions = () => useDiagramStore((s) => s.versions);
 
-export const useAllComponents = () =>
-  useDiagramStore(
-    useShallow((s) => Object.values(s.draft.components)),
-  );
+export const useVisibleComponents = () =>
+  useDiagramStore(useShallow((s) => {
+    const view = s.draft.bluePrintViews[s.draft.activeBluePrintViewId];
+    const visibleIds = new Set(view.nodeLayouts.map((nl) => nl.elementId));
+    return Object.values(s.draft.components).filter((c) => visibleIds.has(c.id));
+  }));
 
-export const useAllConnections = () =>
-  useDiagramStore(
-    useShallow((s) => Object.values(s.draft.connections)),
-  );
+export const useVisibleConnections = () =>
+  useDiagramStore(useShallow((s) => {
+    const view = s.draft.bluePrintViews[s.draft.activeBluePrintViewId];
+    const visibleIds = new Set(view.nodeLayouts.map((nl) => nl.elementId));
+    return Object.values(s.draft.connections).filter((conn) => visibleIds.has(conn.sourceId) && visibleIds.has(conn.targetId));
+  }));
 
-export const useServiceRegistry = () =>
-  useDiagramStore((s) => s.draft.serviceRegistry);
+export const useCanNavigateInto = (elementId: string) =>
+  useDiagramStore((s) => { const c = s.draft.components[elementId]; return c?.type === "system" || c?.type === "container"; });
 
-export const useAllServices = () =>
-  useDiagramStore(
-    useShallow((s) => Object.values(s.draft.serviceRegistry)),
-  );
+export const useAllComponents = () => useDiagramStore(useShallow((s) => Object.values(s.draft.components)));
+export const useAllConnections = () => useDiagramStore(useShallow((s) => Object.values(s.draft.connections)));
 
-export const useService = (id: string) =>
-  useDiagramStore((s) => s.draft.serviceRegistry[id]);
+export const useServiceRegistry = () => useDiagramStore((s) => s.draft.serviceRegistry);
+export const useAllServices = () => useDiagramStore(useShallow((s) => Object.values(s.draft.serviceRegistry)));
+export const useService = (id: string) => useDiagramStore((s) => s.draft.serviceRegistry[id]);
 
 export const useComponentChildren = (parentId: string | null) =>
-  useDiagramStore(
-    useShallow((s) =>
-      Object.values(s.draft.components).filter((c) => c.parentId === parentId),
-    ),
-  );
+  useDiagramStore(useShallow((s) => Object.values(s.draft.components).filter((c) => c.parentId === parentId)));
 
 // ── Action hooks ───────────────────────────────────────────────────────────
 
 export const useDiagramActions = () =>
-  useDiagramStore(
-    useShallow((s) => ({
-      addComponent: s.addComponent,
-      updateComponent: s.updateComponent,
-      removeComponent: s.removeComponent,
-      addConnection: s.addConnection,
-      updateConnection: s.updateConnection,
-      removeConnection: s.removeConnection,
-      updateNodePosition: s.updateNodePosition,
-      updateNodeSize: s.updateNodeSize,
-      bringToFront: s.bringToFront,
-      sendToBack: s.sendToBack,
-      setComponentParent: s.setComponentParent,
-      addService: s.addService,
-      updateService: s.updateService,
-      removeService: s.removeService,
-      linkComponentToService: s.linkComponentToService,
-      commit: s.commit,
-    })),
-  );
+  useDiagramStore(useShallow((s) => ({
+    addComponent: s.addComponent, updateComponent: s.updateComponent, removeComponent: s.removeComponent,
+    addConnection: s.addConnection, updateConnection: s.updateConnection, removeConnection: s.removeConnection,
+    setActiveBluePrintView: s.setActiveBluePrintView, updateNodeLayout: s.updateNodeLayout, updateViewport: s.updateViewport,
+    navigateInto: s.navigateInto, navigateUp: s.navigateUp,
+    bringToFront: s.bringToFront, sendToBack: s.sendToBack,
+    addService: s.addService, updateService: s.updateService, removeService: s.removeService, linkComponentToService: s.linkComponentToService,
+    commit: s.commit,
+  })));

@@ -7,6 +7,8 @@ export type ComponentType =
   | "component"
   | AwsCategoryId;
 
+export type Level = "context" | "container" | "component";
+
 export interface Component {
   id: string;
   name: string;
@@ -17,11 +19,6 @@ export interface Component {
   tags?: string[];
   awsService?: string;
   serviceId?: string;
-  x: number;
-  y: number;
-  width?: number;
-  height?: number;
-  zIndex?: number;
 }
 
 export interface ServiceDefinition {
@@ -43,10 +40,28 @@ export interface Connection {
   description?: string;
 }
 
+export interface ViewNodeLayout {
+  elementId: string;
+  x: number;
+  y: number;
+  zIndex?: number;
+}
+
+export interface BluePrintView {
+  id: string;
+  name: string;
+  level: Level;
+  rootElementId: string | null;
+  nodeLayouts: ViewNodeLayout[];
+  viewport: { x: number; y: number; zoom: number };
+}
+
 export interface ModelDraft {
   components: Record<string, Component>;
   connections: Record<string, Connection>;
   serviceRegistry: Record<string, ServiceDefinition>;
+  bluePrintViews: Record<string, BluePrintView>;
+  activeBluePrintViewId: string;
 }
 
 export interface BluePrintVersion {
