@@ -51,10 +51,36 @@ export interface ViewNodeLayout {
   zIndex?: number;
 }
 
+export interface FlowStep {
+  order: number;
+  componentId?: string;
+  connectionId?: string;
+  note?: string;
+}
+
+export interface Flow {
+  id: string;
+  name: string;
+  mermaid: string;
+  steps: FlowStep[];
+  diagramId: string;
+}
+
 export interface ModelDraft {
   components: Record<string, Component>;
   connections: Record<string, Connection>;
   serviceRegistry: Record<string, ServiceDefinition>;
+  flows: Record<string, Flow>;
+}
+
+export interface EmbeddedDiagram {
+  id: string;
+  diagramId: string;
+  originComponentId: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 export interface Diagram {
@@ -66,6 +92,7 @@ export interface Diagram {
   snapshot: ModelDraft;
   nodeLayouts: ViewNodeLayout[];
   viewport: { x: number; y: number; zoom: number };
+  embeddedDiagrams: EmbeddedDiagram[];
 }
 
 let _counter = 0;

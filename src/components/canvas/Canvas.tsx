@@ -26,17 +26,30 @@ import { generateId } from "@/lib/model-types";
 import CustomNode from "./CustomNode";
 import CustomEdge from "./CustomEdge";
 import PanelNode from "./PanelNode";
+import EmbeddedPanelNode from "./EmbeddedPanelNode";
+import C4ReadonlyNode from "./C4ReadonlyNode";
 import CanvasToolbar from "./CanvasToolbar";
 import ElementPanel from "./ElementPanel";
 import NodeContextMenu from "./NodeContextMenu";
 
-const nodeTypes = { c4: CustomNode, panel: PanelNode };
+const nodeTypes = {
+  c4: CustomNode,
+  panel: PanelNode,
+  "embedded-panel": EmbeddedPanelNode,
+  "c4-readonly": C4ReadonlyNode,
+};
 const edgeTypes = { c4: CustomEdge };
 
 const PANEL_DEFAULT_W = 600;
 const PANEL_DEFAULT_H = 400;
+const EMBED_PREFIX = "emb__";
 
-const Canvas = () => {
+interface CanvasProps {
+  activeFlow?: import("@/lib/model-types").Flow | null;
+  currentStep?: number;
+}
+
+const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
   const diagram = useActiveDiagram();
   const allDiagrams = useDiagrams();
   const visibleComponents = useVisibleComponents();
@@ -53,7 +66,8 @@ const Canvas = () => {
     setParent,
     addComponent,
     removeComponent,
-    removeConnection,
+    embedDiagram,
+    detachEmbed,
     pushUndo,
     undo,
     redo,
@@ -81,6 +95,29 @@ const Canvas = () => {
     [diagram, allDiagrams, openDiagram, navigate],
   );
 
+  const handleEmbed = useCallback(
+    (elementId: string) => {
+      if (!diagram) return;
+      const comp = diagram.snapshot.components[elementId];
+      if (!comp?.linkedDiagramId || !allDiagrams[comp.linkedDiagramId]) return;
+      const layout = diagram.nodeLayouts.find(
+        (nl) => nl.elementId === elementId,
+      );
+      embedDiagram(elementId, comp.linkedDiagramId, {
+        x: (layout?.x ?? 0) + 50,
+        y: (layout?.y ?? 0) + 50,
+      });
+    },
+    [diagram, allDiagrams, embedDiagram],
+  );
+
+  const handleDetach = useCallback(
+    (embedId: string) => {
+      detachEmbed(embedId);
+    },
+    [detachEmbed],
+  );
+
   const panelIds = useMemo(() => {
     const ids = new Set<string>();
     for (const c of visibleComponents) {
@@ -88,6 +125,37 @@ const Canvas = () => {
     }
     return ids;
   }, [visibleComponents]);
+
+  const isPlaying =
+    !!activeFlow && currentStep !== undefined && currentStep >= 0;
+
+  const flowHighlight = useMemo(() => {
+    if (!isPlaying || !activeFlow)
+      return {
+        activeNodeId: null as string | null,
+        activeConnId: null as string | null,
+        visitedNodeIds: new Set<string>(),
+        participantNodeIds: new Set<string>(),
+        participantConnIds: new Set<string>(),
+      };
+    const step = activeFlow.steps[currentStep!];
+    const visitedNodeIds = new Set<string>();
+    const participantNodeIds = new Set<string>();
+    const participantConnIds = new Set<string>();
+    for (const s of activeFlow.steps) {
+      if (s.componentId) participantNodeIds.add(s.componentId);
+      if (s.connectionId) participantConnIds.add(s.connectionId);
+      if (s.order < (currentStep ?? 0) && s.componentId)
+        visitedNodeIds.add(s.componentId);
+    }
+    return {
+      activeNodeId: step?.componentId ?? null,
+      activeConnId: step?.connectionId ?? null,
+      visitedNodeIds,
+      participantNodeIds,
+      participantConnIds,
+    };
+  }, [isPlaying, activeFlow, currentStep]);
 
   const nodes = useMemo(() => {
     if (!diagram) return [];
@@ -124,6 +192,20 @@ const Canvas = () => {
           ? allDiagrams[comp.linkedDiagramId]?.name
           : undefined;
 
+        const flowNodeStyle = isPlaying
+          ? (() => {
+              const isActive = flowHighlight.activeNodeId === comp.id;
+              const isVisited = flowHighlight.visitedNodeIds.has(comp.id);
+              const isParticipant = flowHighlight.participantNodeIds.has(
+                comp.id,
+              );
+              if (isActive) return { opacity: 1, filter: "none" };
+              if (isVisited) return { opacity: 0.85, filter: "none" };
+              if (isParticipant) return { opacity: 0.5, filter: "none" };
+              return { opacity: 0.25, filter: "none" };
+            })()
+          : undefined;
+
         nodeList.push({
           id: comp.id,
           type: "c4",
@@ -132,6 +214,7 @@ const Canvas = () => {
           ...(isChildOfPanel
             ? { parentId: comp.parentId!, extent: "parent" as const }
             : {}),
+          ...(flowNodeStyle ? { style: flowNodeStyle } : {}),
           data: {
             elementId: comp.id,
             name: comp.name,
@@ -139,13 +222,69 @@ const Canvas = () => {
             description: comp.description,
             technology: comp.technology,
             awsService: comp.awsService,
-            isSelected: selectedNodeId === comp.id,
+            isSelected: isPlaying
+              ? flowHighlight.activeNodeId === comp.id
+              : selectedNodeId === comp.id,
             serviceName: comp.serviceId
               ? serviceRegistry[comp.serviceId]?.name
               : undefined,
-            linkedDiagramName,
-            onDrillDown: linkedDiagramName ? handleDrillDown : undefined,
+            linkedDiagramName: isPlaying ? undefined : linkedDiagramName,
+            onDrillDown: isPlaying
+              ? undefined
+              : linkedDiagramName
+                ? handleDrillDown
+                : undefined,
+            onEmbed: isPlaying
+              ? undefined
+              : linkedDiagramName
+                ? handleEmbed
+                : undefined,
           } as Record<string, unknown>,
+        });
+      }
+    }
+
+    for (const emb of diagram.embeddedDiagrams) {
+      const linked = allDiagrams[emb.diagramId];
+      if (!linked) continue;
+
+      const panelNodeId = `${EMBED_PREFIX}panel__${emb.id}`;
+      nodeList.push({
+        id: panelNodeId,
+        type: "embedded-panel",
+        position: { x: emb.x, y: emb.y },
+        zIndex: -1,
+        style: { width: emb.width, height: emb.height },
+        draggable: false,
+        selectable: false,
+        connectable: false,
+        data: {
+          embedId: emb.id,
+          diagramName: linked.name,
+          onDetach: handleDetach,
+        },
+      });
+
+      for (const childComp of Object.values(linked.snapshot.components)) {
+        const childLayout = linked.nodeLayouts.find(
+          (nl) => nl.elementId === childComp.id,
+        );
+        nodeList.push({
+          id: `${EMBED_PREFIX}${emb.id}__${childComp.id}`,
+          type: "c4-readonly",
+          parentId: panelNodeId,
+          extent: "parent" as const,
+          position: { x: childLayout?.x ?? 0, y: (childLayout?.y ?? 0) + 30 },
+          zIndex: 0,
+          draggable: false,
+          connectable: false,
+          selectable: false,
+          data: {
+            name: childComp.name,
+            type: childComp.type,
+            description: childComp.description,
+            technology: childComp.technology,
+          },
         });
       }
     }
@@ -159,26 +298,71 @@ const Canvas = () => {
     serviceRegistry,
     allDiagrams,
     handleDrillDown,
+    handleEmbed,
+    handleDetach,
+    isPlaying,
+    flowHighlight,
   ]);
 
   const edges: Edge[] = useMemo(() => {
-    return visibleConnections.map((conn) => ({
-      id: conn.id,
-      source: conn.sourceId,
-      target: conn.targetId,
-      type: "c4",
-      data: {
-        label: conn.label,
-        technology: conn.technology,
-        connectionId: conn.id,
-      },
-      selected: selectedEdgeId === conn.id,
-    }));
-  }, [visibleConnections, selectedEdgeId]);
+    if (!diagram) return [];
+    const edgeList: Edge[] = visibleConnections.map((conn) => {
+      const isActiveConn = isPlaying && flowHighlight.activeConnId === conn.id;
+      const isParticipantConn =
+        isPlaying && flowHighlight.participantConnIds.has(conn.id);
+      return {
+        id: conn.id,
+        source: conn.sourceId,
+        target: conn.targetId,
+        type: "c4",
+        data: {
+          label: conn.label,
+          technology: conn.technology,
+          connectionId: conn.id,
+        },
+        selected: selectedEdgeId === conn.id,
+        animated: isActiveConn,
+        style: isPlaying
+          ? { opacity: isActiveConn ? 1 : isParticipantConn ? 0.5 : 0.2 }
+          : undefined,
+      };
+    });
+
+    for (const emb of diagram.embeddedDiagrams) {
+      const linked = allDiagrams[emb.diagramId];
+      if (!linked) continue;
+      for (const conn of Object.values(linked.snapshot.connections)) {
+        edgeList.push({
+          id: `${EMBED_PREFIX}${emb.id}__${conn.id}`,
+          source: `${EMBED_PREFIX}${emb.id}__${conn.sourceId}`,
+          target: `${EMBED_PREFIX}${emb.id}__${conn.targetId}`,
+          type: "c4",
+          data: { label: conn.label, technology: conn.technology },
+          selectable: false,
+          style: { opacity: 0.5 },
+        });
+      }
+    }
+
+    return edgeList;
+  }, [
+    diagram,
+    visibleConnections,
+    selectedEdgeId,
+    allDiagrams,
+    isPlaying,
+    flowHighlight,
+  ]);
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
       changes.forEach((change) => {
+        if (
+          "id" in change &&
+          typeof change.id === "string" &&
+          change.id.startsWith(EMBED_PREFIX)
+        )
+          return;
         if (change.type === "position" && change.position)
           updateNodeLayout(change.id, change.position);
         if (change.type === "dimensions" && change.dimensions)
@@ -193,20 +377,30 @@ const Canvas = () => {
 
   const onNodeDragStop = useCallback(
     (_: unknown, draggedNode: Node) => {
-      if (draggedNode.type === "panel") return;
+      if (
+        draggedNode.type === "panel" ||
+        draggedNode.type === "embedded-panel" ||
+        draggedNode.type === "c4-readonly"
+      )
+        return;
+      if (draggedNode.id.startsWith(EMBED_PREFIX)) return;
 
       if (draggedNode.parentId) {
         const parent = nodes.find((n) => n.id === draggedNode.parentId);
         if (parent) {
           const pw = (parent.style?.width as number) ?? PANEL_DEFAULT_W;
           const ph = (parent.style?.height as number) ?? PANEL_DEFAULT_H;
-          const nx = draggedNode.position.x;
-          const ny = draggedNode.position.y;
-          if (nx < -20 || ny < -20 || nx > pw + 20 || ny > ph + 20) {
-            const absX = parent.position.x + nx;
-            const absY = parent.position.y + ny;
+          if (
+            draggedNode.position.x < -20 ||
+            draggedNode.position.y < -20 ||
+            draggedNode.position.x > pw + 20 ||
+            draggedNode.position.y > ph + 20
+          ) {
             setParent(draggedNode.id, null);
-            updateNodeLayout(draggedNode.id, { x: absX, y: absY });
+            updateNodeLayout(draggedNode.id, {
+              x: parent.position.x + draggedNode.position.x,
+              y: parent.position.y + draggedNode.position.y,
+            });
             return;
           }
         }
@@ -249,11 +443,16 @@ const Canvas = () => {
     [addConnection],
   );
 
-  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
-    setSelectedNodeId(node.id);
-    setSelectedEdgeId(null);
-    setContextMenu(null);
-  }, []);
+  const onNodeClick = useCallback(
+    (_: React.MouseEvent, node: Node) => {
+      if (isPlaying) return;
+      if (node.id.startsWith(EMBED_PREFIX)) return;
+      setSelectedNodeId(node.id);
+      setSelectedEdgeId(null);
+      setContextMenu(null);
+    },
+    [isPlaying],
+  );
   const onEdgeClick = useCallback((_: React.MouseEvent, edge: Edge) => {
     setSelectedEdgeId(edge.id);
     setSelectedNodeId(null);
@@ -266,6 +465,7 @@ const Canvas = () => {
   }, []);
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: Node) => {
+      if (node.id.startsWith(EMBED_PREFIX)) return;
       event.preventDefault();
       setContextMenu({
         x: event.clientX,
@@ -293,7 +493,6 @@ const Canvas = () => {
       )
         return;
       if (!diagram) return;
-
       const mod = e.metaKey || e.ctrlKey;
 
       if (e.key === "Escape") {
@@ -306,19 +505,25 @@ const Canvas = () => {
         setContextMenu(null);
         return;
       }
-
       if (mod && e.key === "a") {
         e.preventDefault();
         reactFlowInstance.setNodes((nds) =>
-          nds.map((n) => ({ ...n, selected: true })),
+          nds.map((n) =>
+            n.id.startsWith(EMBED_PREFIX) ? n : { ...n, selected: true },
+          ),
         );
         return;
       }
-
       if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
-        const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
-        if (selected.length === 0 && selectedNodeId) {
+        const selected = reactFlowInstance
+          .getNodes()
+          .filter((n) => n.selected && !n.id.startsWith(EMBED_PREFIX));
+        if (
+          selected.length === 0 &&
+          selectedNodeId &&
+          !selectedNodeId.startsWith(EMBED_PREFIX)
+        ) {
           pushUndo();
           removeComponent(selectedNodeId);
           setSelectedNodeId(null);
@@ -331,14 +536,15 @@ const Canvas = () => {
         }
         return;
       }
-
       if (mod && e.key === "d") {
         e.preventDefault();
-        const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
+        const selected = reactFlowInstance
+          .getNodes()
+          .filter((n) => n.selected && !n.id.startsWith(EMBED_PREFIX));
         const toDuplicate =
           selected.length > 0
             ? selected
-            : selectedNodeId
+            : selectedNodeId && !selectedNodeId.startsWith(EMBED_PREFIX)
               ? reactFlowInstance
                   .getNodes()
                   .filter((n) => n.id === selectedNodeId)
@@ -361,20 +567,17 @@ const Canvas = () => {
         }
         return;
       }
-
       if (mod && e.shiftKey && (e.key === "z" || e.key === "Z")) {
         e.preventDefault();
         redo();
         return;
       }
-
       if (mod && e.key === "z") {
         e.preventDefault();
         undo();
         return;
       }
     };
-
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [
