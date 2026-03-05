@@ -197,11 +197,14 @@ export const useDiagramStore = create<DiagramStore>()(
     // ── Component ops (operate on active diagram's snapshot) ─────
 
     addComponent: (type, name, parentId, position, awsService) => {
-      const component: Component = { id: generateId("el"), name, type, description: "", parentId, awsService: awsService ?? undefined };
+      const component: Component = {
+        id: generateId("el"), name, type, description: "", parentId, awsService: awsService ?? undefined,
+        ...(type === "panel" ? { width: 600, height: 400 } : {}),
+      };
       set((state) => {
         const d = activeDiagram(state);
         d.snapshot.components[component.id] = component;
-        d.nodeLayouts.push({ elementId: component.id, x: position?.x ?? 300, y: position?.y ?? 300 });
+        d.nodeLayouts.push({ elementId: component.id, x: position?.x ?? 300, y: position?.y ?? 300, ...(type === "panel" ? { zIndex: -1 } : {}) });
         d.updatedAt = "agora";
       });
       return component;

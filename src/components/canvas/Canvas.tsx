@@ -8,11 +8,12 @@ import { useNavigate } from "react-router-dom";
 import { useActiveDiagram, useDiagrams, useVisibleComponents, useVisibleConnections, useServiceRegistry, useDiagramActions } from "@/lib/model-store";
 import CustomNode from "./CustomNode";
 import CustomEdge from "./CustomEdge";
+import PanelNode from "./PanelNode";
 import CanvasToolbar from "./CanvasToolbar";
 import ElementPanel from "./ElementPanel";
 import NodeContextMenu from "./NodeContextMenu";
 
-const nodeTypes = { c4: CustomNode };
+const nodeTypes = { c4: CustomNode, panel: PanelNode };
 const edgeTypes = { c4: CustomEdge };
 
 const Canvas = () => {
@@ -21,7 +22,7 @@ const Canvas = () => {
   const visibleComponents = useVisibleComponents();
   const visibleConnections = useVisibleConnections();
   const serviceRegistry = useServiceRegistry();
-  const { updateNodeLayout, updateViewport, addConnection, bringToFront, sendToBack, openDiagram } = useDiagramActions();
+  const { updateNodeLayout, updateViewport, addConnection, bringToFront, sendToBack, openDiagram, updateComponent } = useDiagramActions();
   const navigate = useNavigate();
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -39,23 +40,39 @@ const Canvas = () => {
 
   const nodes = useMemo(() => {
     if (!diagram) return [];
-    return visibleComponents.map((comp) => {
+    const nodeList: Node[] = [];
+
+    for (const comp of visibleComponents) {
       const layout = diagram.nodeLayouts.find((nl) => nl.elementId === comp.id);
-      const linkedDiagramName = comp.linkedDiagramId ? allDiagrams[comp.linkedDiagramId]?.name : undefined;
-      return {
-        id: comp.id, type: "c4",
-        position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
-        zIndex: layout?.zIndex ?? 0,
-        data: {
-          elementId: comp.id, name: comp.name, type: comp.type,
-          description: comp.description, technology: comp.technology,
-          awsService: comp.awsService, isSelected: selectedNodeId === comp.id,
-          serviceName: comp.serviceId ? serviceRegistry[comp.serviceId]?.name : undefined,
-          linkedDiagramName,
-          onDrillDown: linkedDiagramName ? handleDrillDown : undefined,
-        } as Record<string, unknown>,
-      } satisfies Node;
-    });
+
+      if (comp.type === "panel") {
+        nodeList.push({
+          id: comp.id,
+          type: "panel",
+          position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
+          zIndex: layout?.zIndex ?? -1,
+          style: { width: comp.width ?? 600, height: comp.height ?? 400 },
+          data: { elementId: comp.id, name: comp.name, isSelected: selectedNodeId === comp.id },
+        });
+      } else {
+        const linkedDiagramName = comp.linkedDiagramId ? allDiagrams[comp.linkedDiagramId]?.name : undefined;
+        nodeList.push({
+          id: comp.id, type: "c4",
+          position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
+          zIndex: layout?.zIndex ?? 0,
+          data: {
+            elementId: comp.id, name: comp.name, type: comp.type,
+            description: comp.description, technology: comp.technology,
+            awsService: comp.awsService, isSelected: selectedNodeId === comp.id,
+            serviceName: comp.serviceId ? serviceRegistry[comp.serviceId]?.name : undefined,
+            linkedDiagramName,
+            onDrillDown: linkedDiagramName ? handleDrillDown : undefined,
+          } as Record<string, unknown>,
+        });
+      }
+    }
+
+    return nodeList;
   }, [diagram, visibleComponents, selectedNodeId, serviceRegistry, allDiagrams, handleDrillDown]);
 
   const edges: Edge[] = useMemo(() => {
@@ -67,8 +84,11 @@ const Canvas = () => {
   }, [visibleConnections, selectedEdgeId]);
 
   const onNodesChange: OnNodesChange = useCallback((changes) => {
-    changes.forEach((change) => { if (change.type === "position" && change.position) updateNodeLayout(change.id, change.position); });
-  }, [updateNodeLayout]);
+    changes.forEach((change) => {
+      if (change.type === "position" && change.position) updateNodeLayout(change.id, change.position);
+      if (change.type === "dimensions" && change.dimensions) updateComponent(change.id, { width: change.dimensions.width, height: change.dimensions.height });
+    });
+  }, [updateNodeLayout, updateComponent]);
 
   const onEdgesChange: OnEdgesChange = useCallback(() => {}, []);
   const onMoveEnd = useCallback((_: unknown, vp: { x: number; y: number; zoom: number }) => { updateViewport(vp); }, [updateViewport]);

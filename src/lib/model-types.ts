@@ -5,6 +5,7 @@ export type ComponentType =
   | "system"
   | "container"
   | "component"
+  | "panel"
   | AwsCategoryId;
 
 export type Level = "context" | "container" | "component";
@@ -20,6 +21,8 @@ export interface Component {
   awsService?: string;
   serviceId?: string;
   linkedDiagramId?: string;
+  width?: number;
+  height?: number;
 }
 
 export interface ServiceDefinition {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, User, Network, Server, Database, Layers, ChevronRight, Cloud } from "lucide-react";
+import { Plus, User, Network, Server, Database, Layers, ChevronRight, Cloud, Square } from "lucide-react";
 import { useActiveDiagram, useDiagramActions } from "@/lib/model-store";
 import type { ComponentType } from "@/lib/model-types";
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/aws-catalog";
@@ -54,6 +54,10 @@ const CanvasToolbar = () => {
                 <opt.icon className="h-3.5 w-3.5 text-muted-foreground" /> {opt.label}
               </button>
             ))}
+            <div className="border-t border-border my-1" />
+            <button onClick={() => { addComponent("panel", "Novo Painel", null, { x: 200, y: 150 }); setShowAdd(false); }} className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-surface-hover transition-colors">
+              <Square className="h-3.5 w-3.5 text-muted-foreground" /> Painel
+            </button>
             <div className="border-t border-border my-1" />
             <button onClick={() => setShowAws(!showAws)} className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-surface-hover transition-colors font-medium text-[hsl(var(--aws-orange))]">
               <Cloud className="h-3.5 w-3.5" /> AWS Services
