@@ -5,9 +5,8 @@ import type {
   Component,
   Connection,
   ServiceDefinition,
-  BluePrintView,
+  Diagram,
   ModelDraft,
-  BluePrintVersion,
   ComponentType,
   Level,
 } from "./model-types";
@@ -15,135 +14,54 @@ import { generateId } from "./model-types";
 
 // ── Seed data ──────────────────────────────────────────────────────────────
 
-function buildSeedDraft(): ModelDraft {
-  const components: Record<string, Component> = {
-    "e-user": {
-      id: "e-user",
-      name: "Cliente",
-      type: "person",
-      description: "Usuário final do sistema",
-      parentId: null,
-    },
-    "e-orders": {
-      id: "e-orders",
-      name: "Sistema de Pedidos",
-      type: "system",
-      description: "Processa e gerencia pedidos de compra",
-      parentId: null,
-    },
-    "e-payments": {
-      id: "e-payments",
-      name: "Sistema de Pagamento",
-      type: "system",
-      description: "Processamento de transações financeiras",
-      parentId: null,
-    },
-    "e-gateway": {
-      id: "e-gateway",
-      name: "API Gateway",
-      type: "container",
-      description: "Roteamento e autenticação",
-      technology: "Kong / Nginx",
-      parentId: "e-orders",
-      serviceId: "svc-gateway",
-    },
-    "e-order-svc": {
-      id: "e-order-svc",
-      name: "Order Service",
-      type: "container",
-      description: "Lógica de negócio de pedidos",
-      technology: "Java / Spring Boot",
-      parentId: "e-orders",
-      serviceId: "svc-order",
-    },
-    "e-db": {
-      id: "e-db",
-      name: "Database",
-      type: "container",
-      description: "Armazenamento de pedidos e produtos",
-      technology: "PostgreSQL",
-      parentId: "e-orders",
-    },
-    "e-auth": {
-      id: "e-auth",
-      name: "Auth Middleware",
-      type: "component",
-      description: "Validação JWT",
-      technology: "Node.js",
-      parentId: "e-gateway",
-      serviceId: "svc-auth",
-    },
-    "e-limiter": {
-      id: "e-limiter",
-      name: "Rate Limiter",
-      type: "component",
-      description: "Controle de taxa de requisições",
-      technology: "Redis",
-      parentId: "e-gateway",
-    },
-    "e-ctrl": {
-      id: "e-ctrl",
-      name: "Order Controller",
-      type: "component",
-      description: "Endpoints REST",
-      technology: "Spring MVC",
-      parentId: "e-order-svc",
-    },
-    "e-repo": {
-      id: "e-repo",
-      name: "Order Repository",
-      type: "component",
-      description: "Persistência de dados",
-      technology: "JPA",
-      parentId: "e-order-svc",
-    },
-  };
-
-  const connections: Record<string, Connection> = {
-    "r-1": { id: "r-1", sourceId: "e-user", targetId: "e-orders", label: "Faz pedidos via" },
-    "r-2": { id: "r-2", sourceId: "e-orders", targetId: "e-payments", label: "Processa pagamento via" },
-    "r-3": { id: "r-3", sourceId: "e-gateway", targetId: "e-order-svc", label: "Roteia para" },
-    "r-4": { id: "r-4", sourceId: "e-order-svc", targetId: "e-db", label: "Lê e escreve em" },
-    "r-5": { id: "r-5", sourceId: "e-auth", targetId: "e-limiter", label: "Verifica limite via" },
-    "r-6": { id: "r-6", sourceId: "e-ctrl", targetId: "e-repo", label: "Persiste dados via" },
-  };
-
-  const serviceRegistry: Record<string, ServiceDefinition> = {
+function buildSharedServiceRegistry(): Record<string, ServiceDefinition> {
+  return {
     "svc-order": {
-      id: "svc-order",
-      name: "order-service",
+      id: "svc-order", name: "order-service",
       description: "Microserviço de processamento de pedidos",
       repositoryUrl: "https://github.com/acme/order-service",
       technology: ["Java", "Spring Boot", "PostgreSQL"],
-      owner: "team-orders",
-      tags: ["backend", "core"],
+      owner: "team-orders", tags: ["backend", "core"],
     },
     "svc-gateway": {
-      id: "svc-gateway",
-      name: "api-gateway",
+      id: "svc-gateway", name: "api-gateway",
       description: "Gateway de entrada para roteamento e autenticação",
       repositoryUrl: "https://github.com/acme/api-gateway",
       technology: ["Kong", "Nginx", "Lua"],
-      owner: "team-platform",
-      tags: ["infra", "gateway"],
+      owner: "team-platform", tags: ["infra", "gateway"],
     },
     "svc-auth": {
-      id: "svc-auth",
-      name: "auth-middleware",
+      id: "svc-auth", name: "auth-middleware",
       description: "Middleware de autenticação e validação JWT",
       repositoryUrl: "https://github.com/acme/auth-middleware",
       technology: ["Node.js", "Express", "jsonwebtoken"],
-      owner: "team-security",
-      tags: ["security", "middleware"],
+      owner: "team-security", tags: ["security", "middleware"],
     },
   };
+}
 
-  const bluePrintViews: Record<string, BluePrintView> = {
-    "v-context": {
-      id: "v-context",
+function buildSeedDiagrams(): Record<string, Diagram> {
+  const registry = buildSharedServiceRegistry();
+
+  return {
+    "d-context": {
+      id: "d-context",
       name: "System Context",
       level: "context",
-      rootElementId: null,
+      domain: "E-commerce",
+      updatedAt: "2h atrás",
+      snapshot: {
+        components: {
+          "e-user": { id: "e-user", name: "Cliente", type: "person", description: "Usuário final do sistema", parentId: null },
+          "e-orders": { id: "e-orders", name: "Sistema de Pedidos", type: "system", description: "Processa e gerencia pedidos de compra", parentId: null },
+          "e-payments": { id: "e-payments", name: "Sistema de Pagamento", type: "system", description: "Processamento de transações financeiras", parentId: null },
+        },
+        connections: {
+          "r-1": { id: "r-1", sourceId: "e-user", targetId: "e-orders", label: "Faz pedidos via" },
+          "r-2": { id: "r-2", sourceId: "e-orders", targetId: "e-payments", label: "Processa pagamento via" },
+        },
+        serviceRegistry: registry,
+      },
       nodeLayouts: [
         { elementId: "e-user", x: 400, y: 50 },
         { elementId: "e-orders", x: 200, y: 250 },
@@ -151,11 +69,24 @@ function buildSeedDraft(): ModelDraft {
       ],
       viewport: { x: 0, y: 0, zoom: 1 },
     },
-    "v-orders-containers": {
-      id: "v-orders-containers",
+    "d-orders": {
+      id: "d-orders",
       name: "Orders – Containers",
       level: "container",
-      rootElementId: "e-orders",
+      domain: "E-commerce",
+      updatedAt: "1 dia",
+      snapshot: {
+        components: {
+          "e-gateway": { id: "e-gateway", name: "API Gateway", type: "container", description: "Roteamento e autenticação", technology: "Kong / Nginx", parentId: null, serviceId: "svc-gateway" },
+          "e-order-svc": { id: "e-order-svc", name: "Order Service", type: "container", description: "Lógica de negócio de pedidos", technology: "Java / Spring Boot", parentId: null, serviceId: "svc-order" },
+          "e-db": { id: "e-db", name: "Database", type: "container", description: "Armazenamento de pedidos e produtos", technology: "PostgreSQL", parentId: null },
+        },
+        connections: {
+          "r-3": { id: "r-3", sourceId: "e-gateway", targetId: "e-order-svc", label: "Roteia para" },
+          "r-4": { id: "r-4", sourceId: "e-order-svc", targetId: "e-db", label: "Lê e escreve em" },
+        },
+        serviceRegistry: registry,
+      },
       nodeLayouts: [
         { elementId: "e-gateway", x: 100, y: 100 },
         { elementId: "e-order-svc", x: 400, y: 100 },
@@ -163,11 +94,22 @@ function buildSeedDraft(): ModelDraft {
       ],
       viewport: { x: 0, y: 0, zoom: 1 },
     },
-    "v-gateway-components": {
-      id: "v-gateway-components",
+    "d-gateway": {
+      id: "d-gateway",
       name: "Gateway – Components",
       level: "component",
-      rootElementId: "e-gateway",
+      domain: "E-commerce",
+      updatedAt: "3 dias",
+      snapshot: {
+        components: {
+          "e-auth": { id: "e-auth", name: "Auth Middleware", type: "component", description: "Validação JWT", technology: "Node.js", parentId: null, serviceId: "svc-auth" },
+          "e-limiter": { id: "e-limiter", name: "Rate Limiter", type: "component", description: "Controle de taxa de requisições", technology: "Redis", parentId: null },
+        },
+        connections: {
+          "r-5": { id: "r-5", sourceId: "e-auth", targetId: "e-limiter", label: "Verifica limite via" },
+        },
+        serviceRegistry: registry,
+      },
       nodeLayouts: [
         { elementId: "e-auth", x: 100, y: 100 },
         { elementId: "e-limiter", x: 400, y: 100 },
@@ -175,27 +117,20 @@ function buildSeedDraft(): ModelDraft {
       viewport: { x: 0, y: 0, zoom: 1 },
     },
   };
-
-  return { components, connections, serviceRegistry, bluePrintViews, activeBluePrintViewId: "v-context" };
 }
-
-const seedVersions: BluePrintVersion[] = [
-  { id: "ver-6", version: "v3.2.1", parentId: "ver-5", timestamp: "2h atrás", author: "maria.dev", message: "Adicionado Rate Limiter ao Gateway", snapshot: buildSeedDraft() },
-  { id: "ver-5", version: "v3.2.0", parentId: "ver-4", timestamp: "1 dia", author: "joao.arq", message: "Refatoração do Order Service", snapshot: buildSeedDraft() },
-  { id: "ver-4", version: "v3.1.0", parentId: "ver-3", timestamp: "3 dias", author: "maria.dev", message: "Novo container: Database", snapshot: buildSeedDraft() },
-  { id: "ver-3", version: "v3.0.0", parentId: "ver-2", timestamp: "1 sem", author: "joao.arq", message: "Migração para microservices", snapshot: buildSeedDraft() },
-  { id: "ver-2", version: "v2.0.0", parentId: "ver-1", timestamp: "2 sem", author: "maria.dev", message: "Adicionado sistema de pagamentos", snapshot: buildSeedDraft() },
-  { id: "ver-1", version: "v1.0.0", parentId: null, timestamp: "1 mês", author: "joao.arq", message: "Commit inicial do modelo", snapshot: buildSeedDraft() },
-];
 
 // ── Store interface ────────────────────────────────────────────────────────
 
-interface DiagramState {
-  draft: ModelDraft;
-  versions: BluePrintVersion[];
+interface AppState {
+  diagrams: Record<string, Diagram>;
+  activeDiagramId: string | null;
 }
 
-interface DiagramActions {
+interface AppActions {
+  addDiagram: (name: string, level: Level, domain?: string) => Diagram;
+  openDiagram: (id: string) => void;
+  deleteDiagram: (id: string) => void;
+
   addComponent: (type: ComponentType, name: string, parentId: string | null, position?: { x: number; y: number }, awsService?: string) => Component;
   updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => void;
   removeComponent: (id: string) => void;
@@ -204,11 +139,8 @@ interface DiagramActions {
   updateConnection: (id: string, patch: Partial<Omit<Connection, "id">>) => void;
   removeConnection: (id: string) => void;
 
-  setActiveBluePrintView: (viewId: string) => void;
   updateNodeLayout: (elementId: string, position: { x: number; y: number }) => void;
   updateViewport: (viewport: { x: number; y: number; zoom: number }) => void;
-  navigateInto: (elementId: string) => void;
-  navigateUp: () => void;
 
   bringToFront: (elementId: string) => void;
   sendToBack: (elementId: string) => void;
@@ -217,206 +149,214 @@ interface DiagramActions {
   updateService: (id: string, patch: Partial<Omit<ServiceDefinition, "id">>) => void;
   removeService: (id: string) => void;
   linkComponentToService: (componentId: string, serviceId: string | undefined) => void;
-
-  commit: (message: string) => void;
 }
 
-export type DiagramStore = DiagramState & DiagramActions;
+export type DiagramStore = AppState & AppActions;
+
+// ── helpers ────────────────────────────────────────────────────────────────
+
+function activeDiagram(state: AppState): Diagram {
+  return state.diagrams[state.activeDiagramId!];
+}
 
 // ── Store ──────────────────────────────────────────────────────────────────
 
 export const useDiagramStore = create<DiagramStore>()(
   immer((set, get) => ({
-    draft: buildSeedDraft(),
-    versions: seedVersions,
+    diagrams: buildSeedDiagrams(),
+    activeDiagramId: null,
+
+    // ── Diagram CRUD ───────────────────────────────────
+
+    addDiagram: (name, level, domain) => {
+      const diagram: Diagram = {
+        id: generateId("d"),
+        name, level,
+        domain: domain || undefined,
+        updatedAt: "agora",
+        snapshot: { components: {}, connections: {}, serviceRegistry: {} },
+        nodeLayouts: [],
+        viewport: { x: 0, y: 0, zoom: 1 },
+      };
+      set((state) => { state.diagrams[diagram.id] = diagram; });
+      return diagram;
+    },
+
+    openDiagram: (id) => {
+      set((state) => { state.activeDiagramId = id; });
+    },
+
+    deleteDiagram: (id) => {
+      set((state) => {
+        delete state.diagrams[id];
+        if (state.activeDiagramId === id) state.activeDiagramId = null;
+      });
+    },
+
+    // ── Component ops (operate on active diagram's snapshot) ─────
 
     addComponent: (type, name, parentId, position, awsService) => {
       const component: Component = { id: generateId("el"), name, type, description: "", parentId, awsService: awsService ?? undefined };
       set((state) => {
-        state.draft.components[component.id] = component;
-        state.draft.bluePrintViews[state.draft.activeBluePrintViewId].nodeLayouts.push({
-          elementId: component.id, x: position?.x ?? 300, y: position?.y ?? 300,
-        });
+        const d = activeDiagram(state);
+        d.snapshot.components[component.id] = component;
+        d.nodeLayouts.push({ elementId: component.id, x: position?.x ?? 300, y: position?.y ?? 300 });
+        d.updatedAt = "agora";
       });
       return component;
     },
 
     updateComponent: (id, patch) => {
-      set((state) => { Object.assign(state.draft.components[id], patch); });
+      set((state) => { const d = activeDiagram(state); Object.assign(d.snapshot.components[id], patch); d.updatedAt = "agora"; });
     },
 
     removeComponent: (id) => {
       set((state) => {
+        const d = activeDiagram(state);
         const toRemove = new Set<string>();
-        const collect = (eid: string) => { toRemove.add(eid); Object.values(state.draft.components).filter((c) => c.parentId === eid).forEach((c) => collect(c.id)); };
+        const collect = (eid: string) => { toRemove.add(eid); Object.values(d.snapshot.components).filter((c) => c.parentId === eid).forEach((c) => collect(c.id)); };
         collect(id);
-        toRemove.forEach((eid) => delete state.draft.components[eid]);
-        Object.values(state.draft.connections).forEach((conn) => { if (toRemove.has(conn.sourceId) || toRemove.has(conn.targetId)) delete state.draft.connections[conn.id]; });
-        Object.values(state.draft.bluePrintViews).forEach((view) => { view.nodeLayouts = view.nodeLayouts.filter((nl) => !toRemove.has(nl.elementId)); });
+        toRemove.forEach((eid) => delete d.snapshot.components[eid]);
+        Object.values(d.snapshot.connections).forEach((conn) => { if (toRemove.has(conn.sourceId) || toRemove.has(conn.targetId)) delete d.snapshot.connections[conn.id]; });
+        d.nodeLayouts = d.nodeLayouts.filter((nl) => !toRemove.has(nl.elementId));
+        d.updatedAt = "agora";
       });
     },
 
+    // ── Connection ops ────────────────────────────────────
+
     addConnection: (sourceId, targetId, label) => {
       const connection: Connection = { id: generateId("conn"), sourceId, targetId, label };
-      set((state) => { state.draft.connections[connection.id] = connection; });
+      set((state) => { const d = activeDiagram(state); d.snapshot.connections[connection.id] = connection; d.updatedAt = "agora"; });
       return connection;
     },
 
-    updateConnection: (id, patch) => { set((state) => { Object.assign(state.draft.connections[id], patch); }); },
-    removeConnection: (id) => { set((state) => { delete state.draft.connections[id]; }); },
+    updateConnection: (id, patch) => { set((state) => { const d = activeDiagram(state); Object.assign(d.snapshot.connections[id], patch); d.updatedAt = "agora"; }); },
+    removeConnection: (id) => { set((state) => { const d = activeDiagram(state); delete d.snapshot.connections[id]; d.updatedAt = "agora"; }); },
 
-    setActiveBluePrintView: (viewId) => { set((state) => { state.draft.activeBluePrintViewId = viewId; }); },
+    // ── Layout ops ────────────────────────────────────────
 
     updateNodeLayout: (elementId, position) => {
       set((state) => {
-        const layouts = state.draft.bluePrintViews[state.draft.activeBluePrintViewId].nodeLayouts;
-        const layout = layouts.find((nl) => nl.elementId === elementId);
+        const d = activeDiagram(state);
+        const layout = d.nodeLayouts.find((nl) => nl.elementId === elementId);
         if (layout) { layout.x = position.x; layout.y = position.y; }
       });
     },
 
     updateViewport: (viewport) => {
-      set((state) => { state.draft.bluePrintViews[state.draft.activeBluePrintViewId].viewport = viewport; });
+      set((state) => { activeDiagram(state).viewport = viewport; });
     },
 
-    navigateInto: (elementId) => {
-      const { draft } = get();
-      const component = draft.components[elementId];
-      if (!component || (component.type !== "system" && component.type !== "container")) return;
-
-      const nextLevel: Level = component.type === "system" ? "container" : "component";
-      const existingView = Object.values(draft.bluePrintViews).find((v) => v.rootElementId === elementId && v.level === nextLevel);
-
-      if (existingView) {
-        set((state) => { state.draft.activeBluePrintViewId = existingView.id; });
-        return;
-      }
-
-      const children = Object.values(draft.components).filter((c) => c.parentId === elementId);
-      const viewId = generateId("view");
-      const newView: BluePrintView = {
-        id: viewId,
-        name: `${component.name} – ${nextLevel === "container" ? "Containers" : "Components"}`,
-        level: nextLevel,
-        rootElementId: elementId,
-        nodeLayouts: children.map((c, i) => ({ elementId: c.id, x: 150 + (i % 3) * 300, y: 100 + Math.floor(i / 3) * 200 })),
-        viewport: { x: 0, y: 0, zoom: 1 },
-      };
-
-      set((state) => { state.draft.bluePrintViews[viewId] = newView; state.draft.activeBluePrintViewId = viewId; });
-    },
-
-    navigateUp: () => {
-      const { draft } = get();
-      const view = draft.bluePrintViews[draft.activeBluePrintViewId];
-      if (!view.rootElementId) return;
-
-      const current = draft.components[view.rootElementId];
-      if (!current) return;
-
-      if (current.parentId) {
-        const grandparent = draft.components[current.parentId];
-        if (grandparent) {
-          const parentView = Object.values(draft.bluePrintViews).find((v) => v.rootElementId === grandparent.id);
-          if (parentView) { set((state) => { state.draft.activeBluePrintViewId = parentView.id; }); }
-        }
-      } else {
-        const contextView = Object.values(draft.bluePrintViews).find((v) => v.rootElementId === null);
-        if (contextView) { set((state) => { state.draft.activeBluePrintViewId = contextView.id; }); }
-      }
-    },
+    // ── Z-order ───────────────────────────────────────────
 
     bringToFront: (elementId) => {
       set((state) => {
-        const layouts = state.draft.bluePrintViews[state.draft.activeBluePrintViewId].nodeLayouts;
-        const maxZ = Math.max(...layouts.map((nl) => nl.zIndex ?? 0));
-        const layout = layouts.find((nl) => nl.elementId === elementId);
+        const d = activeDiagram(state);
+        const maxZ = Math.max(...d.nodeLayouts.map((nl) => nl.zIndex ?? 0));
+        const layout = d.nodeLayouts.find((nl) => nl.elementId === elementId);
         if (layout) layout.zIndex = maxZ + 1;
       });
     },
 
     sendToBack: (elementId) => {
       set((state) => {
-        const layouts = state.draft.bluePrintViews[state.draft.activeBluePrintViewId].nodeLayouts;
-        const minZ = Math.min(...layouts.map((nl) => nl.zIndex ?? 0));
-        const layout = layouts.find((nl) => nl.elementId === elementId);
+        const d = activeDiagram(state);
+        const minZ = Math.min(...d.nodeLayouts.map((nl) => nl.zIndex ?? 0));
+        const layout = d.nodeLayouts.find((nl) => nl.elementId === elementId);
         if (layout) layout.zIndex = minZ - 1;
       });
     },
 
+    // ── Service registry ops ──────────────────────────────
+
     addService: (service) => {
       const svc: ServiceDefinition = { ...service, id: generateId("svc") };
-      set((state) => { state.draft.serviceRegistry[svc.id] = svc; });
+      set((state) => { activeDiagram(state).snapshot.serviceRegistry[svc.id] = svc; });
       return svc;
     },
 
-    updateService: (id, patch) => { set((state) => { Object.assign(state.draft.serviceRegistry[id], patch); }); },
+    updateService: (id, patch) => { set((state) => { Object.assign(activeDiagram(state).snapshot.serviceRegistry[id], patch); }); },
 
     removeService: (id) => {
       set((state) => {
-        delete state.draft.serviceRegistry[id];
-        Object.values(state.draft.components).forEach((c) => { if (c.serviceId === id) c.serviceId = undefined; });
+        const d = activeDiagram(state);
+        delete d.snapshot.serviceRegistry[id];
+        Object.values(d.snapshot.components).forEach((c) => { if (c.serviceId === id) c.serviceId = undefined; });
       });
     },
 
     linkComponentToService: (componentId, serviceId) => {
-      set((state) => { const comp = state.draft.components[componentId]; if (comp) comp.serviceId = serviceId; });
-    },
-
-    commit: (message) => {
-      const { draft, versions } = get();
-      const newVersion: BluePrintVersion = { id: generateId("ver"), version: `v${versions.length + 1}.0.0`, parentId: versions[0]?.id ?? null, timestamp: "agora", author: "you", message, snapshot: JSON.parse(JSON.stringify(draft)) };
-      set((state) => { state.versions.unshift(newVersion); });
+      set((state) => { const comp = activeDiagram(state).snapshot.components[componentId]; if (comp) comp.serviceId = serviceId; });
     },
   })),
 );
 
 // ── Selectors ──────────────────────────────────────────────────────────────
 
-export const useActiveBluePrintView = () =>
-  useDiagramStore((s) => s.draft.bluePrintViews[s.draft.activeBluePrintViewId]);
+export const useDiagrams = () => useDiagramStore((s) => s.diagrams);
+export const useAllDiagrams = () => useDiagramStore(useShallow((s) => Object.values(s.diagrams)));
+export const useActiveDiagramId = () => useDiagramStore((s) => s.activeDiagramId);
 
-export const useComponents = () => useDiagramStore((s) => s.draft.components);
-export const useComponent = (id: string) => useDiagramStore((s) => s.draft.components[id]);
-export const useConnections = () => useDiagramStore((s) => s.draft.connections);
-export const useVersions = () => useDiagramStore((s) => s.versions);
+export const useActiveDiagram = () =>
+  useDiagramStore((s) => s.activeDiagramId ? s.diagrams[s.activeDiagramId] : null);
+
+export const useComponents = () =>
+  useDiagramStore((s) => s.activeDiagramId ? s.diagrams[s.activeDiagramId].snapshot.components : {});
+
+export const useComponent = (id: string) =>
+  useDiagramStore((s) => s.activeDiagramId ? s.diagrams[s.activeDiagramId].snapshot.components[id] : undefined);
+
+export const useConnections = () =>
+  useDiagramStore((s) => s.activeDiagramId ? s.diagrams[s.activeDiagramId].snapshot.connections : {});
 
 export const useVisibleComponents = () =>
   useDiagramStore(useShallow((s) => {
-    const view = s.draft.bluePrintViews[s.draft.activeBluePrintViewId];
-    const visibleIds = new Set(view.nodeLayouts.map((nl) => nl.elementId));
-    return Object.values(s.draft.components).filter((c) => visibleIds.has(c.id));
+    if (!s.activeDiagramId) return [];
+    const d = s.diagrams[s.activeDiagramId];
+    const visibleIds = new Set(d.nodeLayouts.map((nl) => nl.elementId));
+    return Object.values(d.snapshot.components).filter((c) => visibleIds.has(c.id));
   }));
 
 export const useVisibleConnections = () =>
   useDiagramStore(useShallow((s) => {
-    const view = s.draft.bluePrintViews[s.draft.activeBluePrintViewId];
-    const visibleIds = new Set(view.nodeLayouts.map((nl) => nl.elementId));
-    return Object.values(s.draft.connections).filter((conn) => visibleIds.has(conn.sourceId) && visibleIds.has(conn.targetId));
+    if (!s.activeDiagramId) return [];
+    const d = s.diagrams[s.activeDiagramId];
+    const visibleIds = new Set(d.nodeLayouts.map((nl) => nl.elementId));
+    return Object.values(d.snapshot.connections).filter((conn) => visibleIds.has(conn.sourceId) && visibleIds.has(conn.targetId));
   }));
 
-export const useCanNavigateInto = (elementId: string) =>
-  useDiagramStore((s) => { const c = s.draft.components[elementId]; return c?.type === "system" || c?.type === "container"; });
+export const useCanNavigateInto = (_elementId: string) => false;
 
-export const useAllComponents = () => useDiagramStore(useShallow((s) => Object.values(s.draft.components)));
-export const useAllConnections = () => useDiagramStore(useShallow((s) => Object.values(s.draft.connections)));
+export const useServiceRegistry = () =>
+  useDiagramStore((s) => s.activeDiagramId ? s.diagrams[s.activeDiagramId].snapshot.serviceRegistry : {});
 
-export const useServiceRegistry = () => useDiagramStore((s) => s.draft.serviceRegistry);
-export const useAllServices = () => useDiagramStore(useShallow((s) => Object.values(s.draft.serviceRegistry)));
-export const useService = (id: string) => useDiagramStore((s) => s.draft.serviceRegistry[id]);
+export const useAllServices = () =>
+  useDiagramStore(useShallow((s) => {
+    if (!s.activeDiagramId) return [];
+    return Object.values(s.diagrams[s.activeDiagramId].snapshot.serviceRegistry);
+  }));
 
-export const useComponentChildren = (parentId: string | null) =>
-  useDiagramStore(useShallow((s) => Object.values(s.draft.components).filter((c) => c.parentId === parentId)));
+export const useAllComponents = () =>
+  useDiagramStore(useShallow((s) => {
+    if (!s.activeDiagramId) return [];
+    return Object.values(s.diagrams[s.activeDiagramId].snapshot.components);
+  }));
+
+export const useAllConnections = () =>
+  useDiagramStore(useShallow((s) => {
+    if (!s.activeDiagramId) return [];
+    return Object.values(s.diagrams[s.activeDiagramId].snapshot.connections);
+  }));
 
 // ── Action hooks ───────────────────────────────────────────────────────────
 
 export const useDiagramActions = () =>
   useDiagramStore(useShallow((s) => ({
+    addDiagram: s.addDiagram, openDiagram: s.openDiagram, deleteDiagram: s.deleteDiagram,
     addComponent: s.addComponent, updateComponent: s.updateComponent, removeComponent: s.removeComponent,
     addConnection: s.addConnection, updateConnection: s.updateConnection, removeConnection: s.removeConnection,
-    setActiveBluePrintView: s.setActiveBluePrintView, updateNodeLayout: s.updateNodeLayout, updateViewport: s.updateViewport,
-    navigateInto: s.navigateInto, navigateUp: s.navigateUp,
+    updateNodeLayout: s.updateNodeLayout, updateViewport: s.updateViewport,
     bringToFront: s.bringToFront, sendToBack: s.sendToBack,
     addService: s.addService, updateService: s.updateService, removeService: s.removeService, linkComponentToService: s.linkComponentToService,
-    commit: s.commit,
   })));

@@ -1,9 +1,8 @@
-import { memo, useCallback } from "react";
+import { memo } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { Network, Server, Database, User, MousePointerClick, Link2 } from "lucide-react";
+import { Network, Server, Database, User, Link2 } from "lucide-react";
 import type { ComponentType } from "@/lib/model-types";
 import { isAwsType, AWS_SERVICE_MAP, AWS_CATEGORY_MAP } from "@/lib/aws-catalog";
-import { useCanNavigateInto } from "@/lib/model-store";
 import AwsIcon from "./AwsIcon";
 
 export interface NodeData {
@@ -14,8 +13,6 @@ export interface NodeData {
   technology?: string;
   awsService?: string;
   isSelected: boolean;
-  onDrillDown: (elementId: string) => void;
-  onSelect: (elementId: string) => void;
   serviceName?: string;
 }
 
@@ -40,18 +37,11 @@ const handleStyle = "!bg-muted-foreground !border-background !w-2.5 !h-2.5";
 const CardNode = memo(({ data }: NodeProps) => {
   const d = data as unknown as NodeData;
   const isAws = isAwsType(d.type);
-  const canDrillDown = useCanNavigateInto(d.elementId);
-
-  const handleDrillDown = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    d.onDrillDown(d.elementId);
-  }, [d]);
 
   if (isAws) {
     const svcInfo = d.awsService ? AWS_SERVICE_MAP.get(d.awsService) : null;
     const catInfo = AWS_CATEGORY_MAP.get(d.type);
     const borderClass = awsCategoryBorders[d.type] ?? "border-l-aws-general";
-
     return (
       <div className={`min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${borderClass} border-l-[3px] transition-shadow duration-200 ${d.isSelected ? "ring-2 ring-primary shadow-lg shadow-primary/10" : ""}`}>
         <Handle type="target" position={Position.Left} className={handleStyle} />
@@ -61,20 +51,8 @@ const CardNode = memo(({ data }: NodeProps) => {
             <span className="text-sm font-bold text-foreground leading-tight truncate">{d.name}</span>
           </div>
           {d.description && <p className="text-xs text-muted-foreground leading-snug line-clamp-2 mb-1.5">{d.description}</p>}
-          {(d.technology || svcInfo) && (
-            <span className="inline-block text-[10px] font-mono rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground">{d.technology ?? catInfo?.name ?? svcInfo?.name}</span>
-          )}
-          {d.serviceName && (
-            <div className="flex items-center gap-1 mt-1.5">
-              <Link2 className="h-3 w-3 text-primary shrink-0" />
-              <span className="text-[10px] text-primary truncate">{d.serviceName}</span>
-            </div>
-          )}
-          {canDrillDown && (
-            <button onClick={handleDrillDown} className="mt-2 flex items-center gap-1 text-[10px] font-medium text-primary hover:underline">
-              <MousePointerClick className="h-3 w-3" /> Explorar interior
-            </button>
-          )}
+          {(d.technology || svcInfo) && <span className="inline-block text-[10px] font-mono rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground">{d.technology ?? catInfo?.name ?? svcInfo?.name}</span>}
+          {d.serviceName && <div className="flex items-center gap-1 mt-1.5"><Link2 className="h-3 w-3 text-primary shrink-0" /><span className="text-[10px] text-primary truncate">{d.serviceName}</span></div>}
         </div>
         <Handle type="source" position={Position.Right} className={handleStyle} />
       </div>
@@ -93,20 +71,8 @@ const CardNode = memo(({ data }: NodeProps) => {
           <span className="text-sm font-bold text-foreground leading-tight truncate">{d.name}</span>
         </div>
         {d.description && <p className="text-xs text-muted-foreground leading-snug line-clamp-2 mb-1.5">{d.description}</p>}
-        {d.technology && (
-          <span className="inline-block text-[10px] font-mono rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground">{d.technology}</span>
-        )}
-        {d.serviceName && (
-          <div className="flex items-center gap-1 mt-1.5">
-            <Link2 className="h-3 w-3 text-primary shrink-0" />
-            <span className="text-[10px] text-primary truncate">{d.serviceName}</span>
-          </div>
-        )}
-        {canDrillDown && (
-          <button onClick={handleDrillDown} className={`mt-2 flex items-center gap-1 text-[10px] font-medium ${cfg.textColor} hover:underline`}>
-            <MousePointerClick className="h-3 w-3" /> Explorar interior
-          </button>
-        )}
+        {d.technology && <span className="inline-block text-[10px] font-mono rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground">{d.technology}</span>}
+        {d.serviceName && <div className="flex items-center gap-1 mt-1.5"><Link2 className="h-3 w-3 text-primary shrink-0" /><span className="text-[10px] text-primary truncate">{d.serviceName}</span></div>}
       </div>
       <Handle type="source" position={Position.Right} className={handleStyle} />
     </div>

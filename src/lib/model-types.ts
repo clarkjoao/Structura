@@ -47,31 +47,21 @@ export interface ViewNodeLayout {
   zIndex?: number;
 }
 
-export interface BluePrintView {
-  id: string;
-  name: string;
-  level: Level;
-  rootElementId: string | null;
-  nodeLayouts: ViewNodeLayout[];
-  viewport: { x: number; y: number; zoom: number };
-}
-
 export interface ModelDraft {
   components: Record<string, Component>;
   connections: Record<string, Connection>;
   serviceRegistry: Record<string, ServiceDefinition>;
-  bluePrintViews: Record<string, BluePrintView>;
-  activeBluePrintViewId: string;
 }
 
-export interface BluePrintVersion {
+export interface Diagram {
   id: string;
-  version: string;
-  parentId: string | null;
-  timestamp: string;
-  author: string;
-  message: string;
+  name: string;
+  level: Level;
+  domain?: string;
+  updatedAt: string;
   snapshot: ModelDraft;
+  nodeLayouts: ViewNodeLayout[];
+  viewport: { x: number; y: number; zoom: number };
 }
 
 let _counter = 0;
