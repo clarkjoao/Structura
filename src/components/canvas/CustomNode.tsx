@@ -1,6 +1,6 @@
-import { memo } from "react";
+import { memo, useCallback } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { Network, Server, Database, User, Link2 } from "lucide-react";
+import { Network, Server, Database, User, Link2, LayoutDashboard, MousePointerClick } from "lucide-react";
 import type { ComponentType } from "@/lib/model-types";
 import { isAwsType, AWS_SERVICE_MAP, AWS_CATEGORY_MAP } from "@/lib/aws-catalog";
 import AwsIcon from "./AwsIcon";
@@ -14,6 +14,8 @@ export interface NodeData {
   awsService?: string;
   isSelected: boolean;
   serviceName?: string;
+  linkedDiagramName?: string;
+  onDrillDown?: (elementId: string) => void;
 }
 
 const TypeConfig: Record<string, { icon: typeof Network; borderColor: string; textColor: string }> = {
@@ -34,9 +36,37 @@ const awsCategoryBorders: Record<string, string> = {
 
 const handleStyle = "!bg-muted-foreground !border-background !w-2.5 !h-2.5";
 
+const Badges = ({ serviceName, linkedDiagramName }: { serviceName?: string; linkedDiagramName?: string }) => (
+  <>
+    {serviceName && (
+      <div className="flex items-center gap-1 mt-1.5">
+        <Link2 className="h-3 w-3 text-primary shrink-0" />
+        <span className="text-[10px] text-primary truncate">{serviceName}</span>
+      </div>
+    )}
+    {linkedDiagramName && (
+      <div className="flex items-center gap-1 mt-1">
+        <LayoutDashboard className="h-3 w-3 text-node-container shrink-0" />
+        <span className="text-[10px] text-node-container truncate">{linkedDiagramName}</span>
+      </div>
+    )}
+  </>
+);
+
+const DrillDownButton = ({ elementId, onDrillDown, colorClass }: { elementId: string; onDrillDown?: (id: string) => void; colorClass: string }) => {
+  const handleClick = useCallback((e: React.MouseEvent) => { e.stopPropagation(); onDrillDown?.(elementId); }, [elementId, onDrillDown]);
+  if (!onDrillDown) return null;
+  return (
+    <button onClick={handleClick} className={`mt-2 flex items-center gap-1 text-[10px] font-medium ${colorClass} hover:underline`}>
+      <MousePointerClick className="h-3 w-3" /> Explorar interior
+    </button>
+  );
+};
+
 const CardNode = memo(({ data }: NodeProps) => {
   const d = data as unknown as NodeData;
   const isAws = isAwsType(d.type);
+  const hasDrillDown = !!d.linkedDiagramName && !!d.onDrillDown;
 
   if (isAws) {
     const svcInfo = d.awsService ? AWS_SERVICE_MAP.get(d.awsService) : null;
@@ -52,7 +82,8 @@ const CardNode = memo(({ data }: NodeProps) => {
           </div>
           {d.description && <p className="text-xs text-muted-foreground leading-snug line-clamp-2 mb-1.5">{d.description}</p>}
           {(d.technology || svcInfo) && <span className="inline-block text-[10px] font-mono rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground">{d.technology ?? catInfo?.name ?? svcInfo?.name}</span>}
-          {d.serviceName && <div className="flex items-center gap-1 mt-1.5"><Link2 className="h-3 w-3 text-primary shrink-0" /><span className="text-[10px] text-primary truncate">{d.serviceName}</span></div>}
+          <Badges serviceName={d.serviceName} linkedDiagramName={d.linkedDiagramName} />
+          {hasDrillDown && <DrillDownButton elementId={d.elementId} onDrillDown={d.onDrillDown} colorClass="text-primary" />}
         </div>
         <Handle type="source" position={Position.Right} className={handleStyle} />
       </div>
@@ -72,7 +103,8 @@ const CardNode = memo(({ data }: NodeProps) => {
         </div>
         {d.description && <p className="text-xs text-muted-foreground leading-snug line-clamp-2 mb-1.5">{d.description}</p>}
         {d.technology && <span className="inline-block text-[10px] font-mono rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground">{d.technology}</span>}
-        {d.serviceName && <div className="flex items-center gap-1 mt-1.5"><Link2 className="h-3 w-3 text-primary shrink-0" /><span className="text-[10px] text-primary truncate">{d.serviceName}</span></div>}
+        <Badges serviceName={d.serviceName} linkedDiagramName={d.linkedDiagramName} />
+        {hasDrillDown && <DrillDownButton elementId={d.elementId} onDrillDown={d.onDrillDown} colorClass={cfg.textColor} />}
       </div>
       <Handle type="source" position={Position.Right} className={handleStyle} />
     </div>

@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { X, Trash2, Save, Link2 } from "lucide-react";
+import { X, Trash2, Save, Link2, LayoutDashboard } from "lucide-react";
 import {
   useComponent,
   useConnections,
   useAllServices,
+  useAllDiagrams,
   useDiagramActions,
 } from "@/lib/model-store";
 import type { Component, Connection, ComponentType } from "@/lib/model-types";
@@ -74,7 +75,8 @@ const ComponentDetail = ({
   removeComponent: (id: string) => void;
 }) => {
   const allServices = useAllServices();
-  const { linkComponentToService } = useDiagramActions();
+  const allDiagrams = useAllDiagrams();
+  const { linkComponentToService, linkComponentToDiagram } = useDiagramActions();
   const [name, setName] = useState(component.name);
   const [desc, setDesc] = useState(component.description);
   const [tech, setTech] = useState(component.technology ?? "");
@@ -206,6 +208,30 @@ const ComponentDetail = ({
             {allServices.map((svc) => (
               <option key={svc.id} value={svc.id}>
                 {svc.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+            <LayoutDashboard className="h-3 w-3 inline mr-1" />
+            Vincular ao Diagrama
+          </label>
+          <select
+            value={component.linkedDiagramId ?? ""}
+            onChange={(e) =>
+              linkComponentToDiagram(
+                component.id,
+                e.target.value || undefined,
+              )
+            }
+            className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          >
+            <option value="">Nenhum</option>
+            {allDiagrams.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
               </option>
             ))}
           </select>

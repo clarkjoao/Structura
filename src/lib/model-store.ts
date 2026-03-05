@@ -53,7 +53,7 @@ function buildSeedDiagrams(): Record<string, Diagram> {
       snapshot: {
         components: {
           "e-user": { id: "e-user", name: "Cliente", type: "person", description: "Usuário final do sistema", parentId: null },
-          "e-orders": { id: "e-orders", name: "Sistema de Pedidos", type: "system", description: "Processa e gerencia pedidos de compra", parentId: null },
+          "e-orders": { id: "e-orders", name: "Sistema de Pedidos", type: "system", description: "Processa e gerencia pedidos de compra", parentId: null, linkedDiagramId: "d-orders" },
           "e-payments": { id: "e-payments", name: "Sistema de Pagamento", type: "system", description: "Processamento de transações financeiras", parentId: null },
         },
         connections: {
@@ -77,7 +77,7 @@ function buildSeedDiagrams(): Record<string, Diagram> {
       updatedAt: "1 dia",
       snapshot: {
         components: {
-          "e-gateway": { id: "e-gateway", name: "API Gateway", type: "container", description: "Roteamento e autenticação", technology: "Kong / Nginx", parentId: null, serviceId: "svc-gateway" },
+          "e-gateway": { id: "e-gateway", name: "API Gateway", type: "container", description: "Roteamento e autenticação", technology: "Kong / Nginx", parentId: null, serviceId: "svc-gateway", linkedDiagramId: "d-gateway" },
           "e-order-svc": { id: "e-order-svc", name: "Order Service", type: "container", description: "Lógica de negócio de pedidos", technology: "Java / Spring Boot", parentId: null, serviceId: "svc-order" },
           "e-db": { id: "e-db", name: "Database", type: "container", description: "Armazenamento de pedidos e produtos", technology: "PostgreSQL", parentId: null },
         },
@@ -149,6 +149,7 @@ interface AppActions {
   updateService: (id: string, patch: Partial<Omit<ServiceDefinition, "id">>) => void;
   removeService: (id: string) => void;
   linkComponentToService: (componentId: string, serviceId: string | undefined) => void;
+  linkComponentToDiagram: (componentId: string, diagramId: string | undefined) => void;
 }
 
 export type DiagramStore = AppState & AppActions;
@@ -289,6 +290,10 @@ export const useDiagramStore = create<DiagramStore>()(
     linkComponentToService: (componentId, serviceId) => {
       set((state) => { const comp = activeDiagram(state).snapshot.components[componentId]; if (comp) comp.serviceId = serviceId; });
     },
+
+    linkComponentToDiagram: (componentId, diagramId) => {
+      set((state) => { const comp = activeDiagram(state).snapshot.components[componentId]; if (comp) comp.linkedDiagramId = diagramId; });
+    },
   })),
 );
 
@@ -359,4 +364,5 @@ export const useDiagramActions = () =>
     updateNodeLayout: s.updateNodeLayout, updateViewport: s.updateViewport,
     bringToFront: s.bringToFront, sendToBack: s.sendToBack,
     addService: s.addService, updateService: s.updateService, removeService: s.removeService, linkComponentToService: s.linkComponentToService,
+    linkComponentToDiagram: s.linkComponentToDiagram,
   })));

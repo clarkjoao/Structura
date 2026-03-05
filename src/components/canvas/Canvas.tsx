@@ -4,7 +4,8 @@ import {
   type Node, type Edge, type OnNodesChange, type OnEdgesChange, type OnConnect, type Connection,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useActiveDiagram, useVisibleComponents, useVisibleConnections, useServiceRegistry, useDiagramActions } from "@/lib/model-store";
+import { useNavigate } from "react-router-dom";
+import { useActiveDiagram, useDiagrams, useVisibleComponents, useVisibleConnections, useServiceRegistry, useDiagramActions } from "@/lib/model-store";
 import CustomNode from "./CustomNode";
 import CustomEdge from "./CustomEdge";
 import CanvasToolbar from "./CanvasToolbar";
@@ -16,19 +17,31 @@ const edgeTypes = { c4: CustomEdge };
 
 const Canvas = () => {
   const diagram = useActiveDiagram();
+  const allDiagrams = useDiagrams();
   const visibleComponents = useVisibleComponents();
   const visibleConnections = useVisibleConnections();
   const serviceRegistry = useServiceRegistry();
-  const { updateNodeLayout, updateViewport, addConnection, bringToFront, sendToBack } = useDiagramActions();
+  const { updateNodeLayout, updateViewport, addConnection, bringToFront, sendToBack, openDiagram } = useDiagramActions();
+  const navigate = useNavigate();
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; elementId: string } | null>(null);
 
+  const handleDrillDown = useCallback((elementId: string) => {
+    if (!diagram) return;
+    const comp = diagram.snapshot.components[elementId];
+    if (comp?.linkedDiagramId && allDiagrams[comp.linkedDiagramId]) {
+      openDiagram(comp.linkedDiagramId);
+      navigate(`/model/${comp.linkedDiagramId}`);
+    }
+  }, [diagram, allDiagrams, openDiagram, navigate]);
+
   const nodes = useMemo(() => {
     if (!diagram) return [];
     return visibleComponents.map((comp) => {
       const layout = diagram.nodeLayouts.find((nl) => nl.elementId === comp.id);
+      const linkedDiagramName = comp.linkedDiagramId ? allDiagrams[comp.linkedDiagramId]?.name : undefined;
       return {
         id: comp.id, type: "c4",
         position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
@@ -37,12 +50,13 @@ const Canvas = () => {
           elementId: comp.id, name: comp.name, type: comp.type,
           description: comp.description, technology: comp.technology,
           awsService: comp.awsService, isSelected: selectedNodeId === comp.id,
-          onDrillDown: () => {}, onSelect: (id: string) => { setSelectedNodeId(id); setSelectedEdgeId(null); },
           serviceName: comp.serviceId ? serviceRegistry[comp.serviceId]?.name : undefined,
+          linkedDiagramName,
+          onDrillDown: linkedDiagramName ? handleDrillDown : undefined,
         } as Record<string, unknown>,
       } satisfies Node;
     });
-  }, [diagram, visibleComponents, selectedNodeId, serviceRegistry]);
+  }, [diagram, visibleComponents, selectedNodeId, serviceRegistry, allDiagrams, handleDrillDown]);
 
   const edges: Edge[] = useMemo(() => {
     return visibleConnections.map((conn) => ({

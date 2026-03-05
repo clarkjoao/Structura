@@ -19,6 +19,7 @@ export interface Component {
   tags?: string[];
   awsService?: string;
   serviceId?: string;
+  linkedDiagramId?: string;
 }
 
 export interface ServiceDefinition {
