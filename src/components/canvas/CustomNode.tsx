@@ -1,6 +1,6 @@
 import { memo, useCallback } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { Network, Server, Database, User, Link2, LayoutDashboard, MousePointerClick } from "lucide-react";
+import { Network, Server, Database, User, Link2, LayoutDashboard, MousePointerClick, Eye } from "lucide-react";
 import type { ComponentType } from "@/lib/model-types";
 import { isAwsType, AWS_SERVICE_MAP, AWS_CATEGORY_MAP } from "@/lib/aws-catalog";
 import AwsIcon from "./AwsIcon";
@@ -16,6 +16,7 @@ export interface NodeData {
   serviceName?: string;
   linkedDiagramName?: string;
   onDrillDown?: (elementId: string) => void;
+  onEmbed?: (elementId: string) => void;
 }
 
 const TypeConfig: Record<string, { icon: typeof Network; borderColor: string; textColor: string }> = {
@@ -63,10 +64,21 @@ const DrillDownButton = ({ elementId, onDrillDown, colorClass }: { elementId: st
   );
 };
 
+const EmbedButton = ({ elementId, onEmbed }: { elementId: string; onEmbed?: (id: string) => void }) => {
+  const handleClick = useCallback((e: React.MouseEvent) => { e.stopPropagation(); onEmbed?.(elementId); }, [elementId, onEmbed]);
+  if (!onEmbed) return null;
+  return (
+    <button onClick={handleClick} className="mt-1 flex items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:underline">
+      <Eye className="h-3 w-3" /> Incorporar diagrama
+    </button>
+  );
+};
+
 const CardNode = memo(({ data }: NodeProps) => {
   const d = data as unknown as NodeData;
   const isAws = isAwsType(d.type);
   const hasDrillDown = !!d.linkedDiagramName && !!d.onDrillDown;
+  const hasEmbed = !!d.linkedDiagramName && !!d.onEmbed;
 
   if (isAws) {
     const svcInfo = d.awsService ? AWS_SERVICE_MAP.get(d.awsService) : null;
@@ -84,6 +96,7 @@ const CardNode = memo(({ data }: NodeProps) => {
           {(d.technology || svcInfo) && <span className="inline-block text-[10px] font-mono rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground">{d.technology ?? catInfo?.name ?? svcInfo?.name}</span>}
           <Badges serviceName={d.serviceName} linkedDiagramName={d.linkedDiagramName} />
           {hasDrillDown && <DrillDownButton elementId={d.elementId} onDrillDown={d.onDrillDown} colorClass="text-primary" />}
+          {hasEmbed && <EmbedButton elementId={d.elementId} onEmbed={d.onEmbed} />}
         </div>
         <Handle type="source" position={Position.Right} className={handleStyle} />
       </div>
@@ -105,6 +118,7 @@ const CardNode = memo(({ data }: NodeProps) => {
         {d.technology && <span className="inline-block text-[10px] font-mono rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground">{d.technology}</span>}
         <Badges serviceName={d.serviceName} linkedDiagramName={d.linkedDiagramName} />
         {hasDrillDown && <DrillDownButton elementId={d.elementId} onDrillDown={d.onDrillDown} colorClass={cfg.textColor} />}
+        {hasEmbed && <EmbedButton elementId={d.elementId} onEmbed={d.onEmbed} />}
       </div>
       <Handle type="source" position={Position.Right} className={handleStyle} />
     </div>

@@ -5,6 +5,7 @@ import type {
   Component,
   Connection,
   ServiceDefinition,
+  EmbeddedDiagram,
   Diagram,
   ModelDraft,
   ComponentType,
@@ -68,6 +69,7 @@ function buildSeedDiagrams(): Record<string, Diagram> {
         { elementId: "e-payments", x: 600, y: 250 },
       ],
       viewport: { x: 0, y: 0, zoom: 1 },
+      embeddedDiagrams: [],
     },
     "d-orders": {
       id: "d-orders",
@@ -93,6 +95,7 @@ function buildSeedDiagrams(): Record<string, Diagram> {
         { elementId: "e-db", x: 400, y: 300 },
       ],
       viewport: { x: 0, y: 0, zoom: 1 },
+      embeddedDiagrams: [],
     },
     "d-gateway": {
       id: "d-gateway",
@@ -115,6 +118,7 @@ function buildSeedDiagrams(): Record<string, Diagram> {
         { elementId: "e-limiter", x: 400, y: 100 },
       ],
       viewport: { x: 0, y: 0, zoom: 1 },
+      embeddedDiagrams: [],
     },
   };
 }
@@ -154,6 +158,9 @@ interface AppActions {
   linkComponentToDiagram: (componentId: string, diagramId: string | undefined) => void;
   setParent: (childId: string, parentId: string | null) => void;
 
+  embedDiagram: (originComponentId: string, diagramId: string, position: { x: number; y: number }) => void;
+  detachEmbed: (embedId: string) => void;
+
   pushUndo: () => void;
   undo: () => void;
   redo: () => void;
@@ -187,6 +194,7 @@ export const useDiagramStore = create<DiagramStore>()(
         snapshot: { components: {}, connections: {}, serviceRegistry: {} },
         nodeLayouts: [],
         viewport: { x: 0, y: 0, zoom: 1 },
+        embeddedDiagrams: [],
       };
       set((state) => { state.diagrams[diagram.id] = diagram; });
       return diagram;
@@ -311,6 +319,30 @@ export const useDiagramStore = create<DiagramStore>()(
       set((state) => { const comp = activeDiagram(state).snapshot.components[childId]; if (comp) comp.parentId = parentId; });
     },
 
+    embedDiagram: (originComponentId, diagramId, position) => {
+      set((state) => {
+        const d = activeDiagram(state);
+        const already = d.embeddedDiagrams.find((e) => e.diagramId === diagramId && e.originComponentId === originComponentId);
+        if (already) return;
+        d.embeddedDiagrams.push({
+          id: generateId("emb"),
+          diagramId,
+          originComponentId,
+          x: position.x,
+          y: position.y,
+          width: 650,
+          height: 450,
+        });
+      });
+    },
+
+    detachEmbed: (embedId) => {
+      set((state) => {
+        const d = activeDiagram(state);
+        d.embeddedDiagrams = d.embeddedDiagrams.filter((e) => e.id !== embedId);
+      });
+    },
+
     pushUndo: () => {
       const { activeDiagramId, diagrams } = get();
       if (!activeDiagramId) return;
@@ -415,5 +447,6 @@ export const useDiagramActions = () =>
     addService: s.addService, updateService: s.updateService, removeService: s.removeService, linkComponentToService: s.linkComponentToService,
     linkComponentToDiagram: s.linkComponentToDiagram,
     setParent: s.setParent,
+    embedDiagram: s.embedDiagram, detachEmbed: s.detachEmbed,
     pushUndo: s.pushUndo, undo: s.undo, redo: s.redo,
   })));

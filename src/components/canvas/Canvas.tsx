@@ -10,15 +10,18 @@ import { generateId } from "@/lib/model-types";
 import CustomNode from "./CustomNode";
 import CustomEdge from "./CustomEdge";
 import PanelNode from "./PanelNode";
+import EmbeddedPanelNode from "./EmbeddedPanelNode";
+import C4ReadonlyNode from "./C4ReadonlyNode";
 import CanvasToolbar from "./CanvasToolbar";
 import ElementPanel from "./ElementPanel";
 import NodeContextMenu from "./NodeContextMenu";
 
-const nodeTypes = { c4: CustomNode, panel: PanelNode };
+const nodeTypes = { c4: CustomNode, panel: PanelNode, "embedded-panel": EmbeddedPanelNode, "c4-readonly": C4ReadonlyNode };
 const edgeTypes = { c4: CustomEdge };
 
 const PANEL_DEFAULT_W = 600;
 const PANEL_DEFAULT_H = 400;
+const EMBED_PREFIX = "emb__";
 
 const Canvas = () => {
   const diagram = useActiveDiagram();
@@ -30,7 +33,8 @@ const Canvas = () => {
     updateNodeLayout, updateViewport, addConnection,
     bringToFront, sendToBack, openDiagram,
     updateComponent, setParent,
-    addComponent, removeComponent, removeConnection,
+    addComponent, removeComponent,
+    embedDiagram, detachEmbed,
     pushUndo, undo, redo,
   } = useDiagramActions();
   const navigate = useNavigate();
@@ -48,6 +52,21 @@ const Canvas = () => {
       navigate(`/model/${comp.linkedDiagramId}`);
     }
   }, [diagram, allDiagrams, openDiagram, navigate]);
+
+  const handleEmbed = useCallback((elementId: string) => {
+    if (!diagram) return;
+    const comp = diagram.snapshot.components[elementId];
+    if (!comp?.linkedDiagramId || !allDiagrams[comp.linkedDiagramId]) return;
+    const layout = diagram.nodeLayouts.find((nl) => nl.elementId === elementId);
+    embedDiagram(elementId, comp.linkedDiagramId, {
+      x: (layout?.x ?? 0) + 50,
+      y: (layout?.y ?? 0) + 50,
+    });
+  }, [diagram, allDiagrams, embedDiagram]);
+
+  const handleDetach = useCallback((embedId: string) => {
+    detachEmbed(embedId);
+  }, [detachEmbed]);
 
   const panelIds = useMemo(() => {
     const ids = new Set<string>();
@@ -71,8 +90,7 @@ const Canvas = () => {
 
       if (comp.type === "panel") {
         nodeList.push({
-          id: comp.id,
-          type: "panel",
+          id: comp.id, type: "panel",
           position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
           zIndex: layout?.zIndex ?? -1,
           style: { width: comp.width ?? PANEL_DEFAULT_W, height: comp.height ?? PANEL_DEFAULT_H },
@@ -83,8 +101,7 @@ const Canvas = () => {
         const linkedDiagramName = comp.linkedDiagramId ? allDiagrams[comp.linkedDiagramId]?.name : undefined;
 
         nodeList.push({
-          id: comp.id,
-          type: "c4",
+          id: comp.id, type: "c4",
           position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
           zIndex: layout?.zIndex ?? 1,
           ...(isChildOfPanel ? { parentId: comp.parentId!, extent: "parent" as const } : {}),
@@ -95,44 +112,91 @@ const Canvas = () => {
             serviceName: comp.serviceId ? serviceRegistry[comp.serviceId]?.name : undefined,
             linkedDiagramName,
             onDrillDown: linkedDiagramName ? handleDrillDown : undefined,
+            onEmbed: linkedDiagramName ? handleEmbed : undefined,
           } as Record<string, unknown>,
         });
       }
     }
 
+    for (const emb of diagram.embeddedDiagrams) {
+      const linked = allDiagrams[emb.diagramId];
+      if (!linked) continue;
+
+      const panelNodeId = `${EMBED_PREFIX}panel__${emb.id}`;
+      nodeList.push({
+        id: panelNodeId, type: "embedded-panel",
+        position: { x: emb.x, y: emb.y },
+        zIndex: -1,
+        style: { width: emb.width, height: emb.height },
+        draggable: false, selectable: false, connectable: false,
+        data: { embedId: emb.id, diagramName: linked.name, onDetach: handleDetach },
+      });
+
+      for (const childComp of Object.values(linked.snapshot.components)) {
+        const childLayout = linked.nodeLayouts.find((nl) => nl.elementId === childComp.id);
+        nodeList.push({
+          id: `${EMBED_PREFIX}${emb.id}__${childComp.id}`,
+          type: "c4-readonly",
+          parentId: panelNodeId,
+          extent: "parent" as const,
+          position: { x: (childLayout?.x ?? 0), y: (childLayout?.y ?? 0) + 30 },
+          zIndex: 0,
+          draggable: false, connectable: false, selectable: false,
+          data: { name: childComp.name, type: childComp.type, description: childComp.description, technology: childComp.technology },
+        });
+      }
+    }
+
     return nodeList;
-  }, [diagram, visibleComponents, panelIds, selectedNodeId, serviceRegistry, allDiagrams, handleDrillDown]);
+  }, [diagram, visibleComponents, panelIds, selectedNodeId, serviceRegistry, allDiagrams, handleDrillDown, handleEmbed, handleDetach]);
 
   const edges: Edge[] = useMemo(() => {
-    return visibleConnections.map((conn) => ({
+    if (!diagram) return [];
+    const edgeList: Edge[] = visibleConnections.map((conn) => ({
       id: conn.id, source: conn.sourceId, target: conn.targetId, type: "c4",
       data: { label: conn.label, technology: conn.technology, connectionId: conn.id },
       selected: selectedEdgeId === conn.id,
     }));
-  }, [visibleConnections, selectedEdgeId]);
+
+    for (const emb of diagram.embeddedDiagrams) {
+      const linked = allDiagrams[emb.diagramId];
+      if (!linked) continue;
+      for (const conn of Object.values(linked.snapshot.connections)) {
+        edgeList.push({
+          id: `${EMBED_PREFIX}${emb.id}__${conn.id}`,
+          source: `${EMBED_PREFIX}${emb.id}__${conn.sourceId}`,
+          target: `${EMBED_PREFIX}${emb.id}__${conn.targetId}`,
+          type: "c4",
+          data: { label: conn.label, technology: conn.technology },
+          selectable: false,
+          style: { opacity: 0.5 },
+        });
+      }
+    }
+
+    return edgeList;
+  }, [diagram, visibleConnections, selectedEdgeId, allDiagrams]);
 
   const onNodesChange: OnNodesChange = useCallback((changes) => {
     changes.forEach((change) => {
+      if ("id" in change && typeof change.id === "string" && change.id.startsWith(EMBED_PREFIX)) return;
       if (change.type === "position" && change.position) updateNodeLayout(change.id, change.position);
       if (change.type === "dimensions" && change.dimensions) updateComponent(change.id, { width: change.dimensions.width, height: change.dimensions.height });
     });
   }, [updateNodeLayout, updateComponent]);
 
   const onNodeDragStop = useCallback((_: unknown, draggedNode: Node) => {
-    if (draggedNode.type === "panel") return;
+    if (draggedNode.type === "panel" || draggedNode.type === "embedded-panel" || draggedNode.type === "c4-readonly") return;
+    if (draggedNode.id.startsWith(EMBED_PREFIX)) return;
 
     if (draggedNode.parentId) {
       const parent = nodes.find((n) => n.id === draggedNode.parentId);
       if (parent) {
         const pw = (parent.style?.width as number) ?? PANEL_DEFAULT_W;
         const ph = (parent.style?.height as number) ?? PANEL_DEFAULT_H;
-        const nx = draggedNode.position.x;
-        const ny = draggedNode.position.y;
-        if (nx < -20 || ny < -20 || nx > pw + 20 || ny > ph + 20) {
-          const absX = parent.position.x + nx;
-          const absY = parent.position.y + ny;
+        if (draggedNode.position.x < -20 || draggedNode.position.y < -20 || draggedNode.position.x > pw + 20 || draggedNode.position.y > ph + 20) {
           setParent(draggedNode.id, null);
-          updateNodeLayout(draggedNode.id, { x: absX, y: absY });
+          updateNodeLayout(draggedNode.id, { x: parent.position.x + draggedNode.position.x, y: parent.position.y + draggedNode.position.y });
           return;
         }
       }
@@ -141,18 +205,14 @@ const Canvas = () => {
 
     const panels = nodes.filter((n) => n.type === "panel");
     const match = panels.find((p) =>
-      draggedNode.position.x > p.position.x &&
-      draggedNode.position.y > p.position.y &&
+      draggedNode.position.x > p.position.x && draggedNode.position.y > p.position.y &&
       draggedNode.position.x < p.position.x + ((p.style?.width as number) ?? PANEL_DEFAULT_W) &&
       draggedNode.position.y < p.position.y + ((p.style?.height as number) ?? PANEL_DEFAULT_H)
     );
 
     if (match) {
       setParent(draggedNode.id, match.id);
-      updateNodeLayout(draggedNode.id, {
-        x: draggedNode.position.x - match.position.x,
-        y: draggedNode.position.y - match.position.y,
-      });
+      updateNodeLayout(draggedNode.id, { x: draggedNode.position.x - match.position.x, y: draggedNode.position.y - match.position.y });
     }
   }, [nodes, setParent, updateNodeLayout]);
 
@@ -160,10 +220,16 @@ const Canvas = () => {
   const onMoveEnd = useCallback((_: unknown, vp: { x: number; y: number; zoom: number }) => { updateViewport(vp); }, [updateViewport]);
   const onConnect: OnConnect = useCallback((c: Connection) => { if (c.source && c.target) addConnection(c.source, c.target, "Usa"); }, [addConnection]);
 
-  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => { setSelectedNodeId(node.id); setSelectedEdgeId(null); setContextMenu(null); }, []);
+  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
+    if (node.id.startsWith(EMBED_PREFIX)) return;
+    setSelectedNodeId(node.id); setSelectedEdgeId(null); setContextMenu(null);
+  }, []);
   const onEdgeClick = useCallback((_: React.MouseEvent, edge: Edge) => { setSelectedEdgeId(edge.id); setSelectedNodeId(null); setContextMenu(null); }, []);
   const onPaneClick = useCallback(() => { setSelectedNodeId(null); setSelectedEdgeId(null); setContextMenu(null); }, []);
-  const onNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => { event.preventDefault(); setContextMenu({ x: event.clientX, y: event.clientY, elementId: node.id }); setSelectedNodeId(node.id); setSelectedEdgeId(null); }, []);
+  const onNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => {
+    if (node.id.startsWith(EMBED_PREFIX)) return;
+    event.preventDefault(); setContextMenu({ x: event.clientX, y: event.clientY, elementId: node.id }); setSelectedNodeId(node.id); setSelectedEdgeId(null);
+  }, []);
   const closePanel = useCallback(() => { setSelectedNodeId(null); setSelectedEdgeId(null); }, []);
 
   useEffect(() => {
@@ -171,45 +237,32 @@ const Canvas = () => {
       const target = e.target as HTMLElement;
       if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable) return;
       if (!diagram) return;
-
       const mod = e.metaKey || e.ctrlKey;
 
       if (e.key === "Escape") {
         e.preventDefault();
         reactFlowInstance.setNodes((nds) => nds.map((n) => ({ ...n, selected: false })));
-        setSelectedNodeId(null);
-        setSelectedEdgeId(null);
-        setContextMenu(null);
+        setSelectedNodeId(null); setSelectedEdgeId(null); setContextMenu(null);
         return;
       }
-
       if (mod && e.key === "a") {
         e.preventDefault();
-        reactFlowInstance.setNodes((nds) => nds.map((n) => ({ ...n, selected: true })));
+        reactFlowInstance.setNodes((nds) => nds.map((n) => n.id.startsWith(EMBED_PREFIX) ? n : { ...n, selected: true }));
         return;
       }
-
       if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
-        const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
-        if (selected.length === 0 && selectedNodeId) {
-          pushUndo();
-          removeComponent(selectedNodeId);
-          setSelectedNodeId(null);
-          return;
+        const selected = reactFlowInstance.getNodes().filter((n) => n.selected && !n.id.startsWith(EMBED_PREFIX));
+        if (selected.length === 0 && selectedNodeId && !selectedNodeId.startsWith(EMBED_PREFIX)) {
+          pushUndo(); removeComponent(selectedNodeId); setSelectedNodeId(null); return;
         }
-        if (selected.length > 0) {
-          pushUndo();
-          for (const n of selected) removeComponent(n.id);
-          setSelectedNodeId(null);
-        }
+        if (selected.length > 0) { pushUndo(); for (const n of selected) removeComponent(n.id); setSelectedNodeId(null); }
         return;
       }
-
       if (mod && e.key === "d") {
         e.preventDefault();
-        const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
-        const toDuplicate = selected.length > 0 ? selected : (selectedNodeId ? reactFlowInstance.getNodes().filter((n) => n.id === selectedNodeId) : []);
+        const selected = reactFlowInstance.getNodes().filter((n) => n.selected && !n.id.startsWith(EMBED_PREFIX));
+        const toDuplicate = selected.length > 0 ? selected : (selectedNodeId && !selectedNodeId.startsWith(EMBED_PREFIX) ? reactFlowInstance.getNodes().filter((n) => n.id === selectedNodeId) : []);
         if (toDuplicate.length === 0) return;
         pushUndo();
         for (const n of toDuplicate) {
@@ -220,20 +273,9 @@ const Canvas = () => {
         }
         return;
       }
-
-      if (mod && e.shiftKey && (e.key === "z" || e.key === "Z")) {
-        e.preventDefault();
-        redo();
-        return;
-      }
-
-      if (mod && e.key === "z") {
-        e.preventDefault();
-        undo();
-        return;
-      }
+      if (mod && e.shiftKey && (e.key === "z" || e.key === "Z")) { e.preventDefault(); redo(); return; }
+      if (mod && e.key === "z") { e.preventDefault(); undo(); return; }
     };
-
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [diagram, selectedNodeId, reactFlowInstance, pushUndo, undo, redo, removeComponent, addComponent]);
