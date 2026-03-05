@@ -35,6 +35,7 @@ export interface ViewNodeLayout {
   y: number;
   width?: number;
   height?: number;
+  zIndex?: number;
 }
 
 export interface BluePrintView {

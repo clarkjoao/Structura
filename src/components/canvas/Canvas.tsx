@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ReactFlow,
   Background,
@@ -26,6 +26,7 @@ import CustomEdge from "./CustomEdge";
 import GroupNode from "./GroupNode";
 import CanvasToolbar from "./CanvasToolbar";
 import ElementPanel from "./ElementPanel";
+import NodeContextMenu from "./NodeContextMenu";
 
 const nodeTypes = { c4: CustomNode, group: GroupNode };
 const edgeTypes = { c4: CustomEdge };
@@ -44,12 +45,19 @@ const Canvas = () => {
     navigateInto,
     addConnection,
     updateComponent,
+    bringToFront,
+    sendToBack,
   } = useDiagramActions();
 
   const reactFlowInstance = useReactFlow();
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    elementId: string;
+  } | null>(null);
 
   const handleDrillDown = useCallback(
     (elementId: string) => {
@@ -92,6 +100,7 @@ const Canvas = () => {
         id: component.id,
         type: "group",
         position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
+        zIndex: layout?.zIndex ?? 0,
         style: {
           width: layout?.width ?? 500,
           height: layout?.height ?? 350,
@@ -120,6 +129,7 @@ const Canvas = () => {
         id: component.id,
         type: "c4",
         position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
+        zIndex: layout?.zIndex ?? 0,
         ...(isChildOfGroup
           ? { parentId: component.parentId!, extent: "parent" as const }
           : {}),
@@ -254,17 +264,30 @@ const Canvas = () => {
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
     setSelectedNodeId(node.id);
     setSelectedEdgeId(null);
+    setContextMenu(null);
   }, []);
 
   const onEdgeClick = useCallback((_: React.MouseEvent, edge: Edge) => {
     setSelectedEdgeId(edge.id);
     setSelectedNodeId(null);
+    setContextMenu(null);
   }, []);
 
   const onPaneClick = useCallback(() => {
     setSelectedNodeId(null);
     setSelectedEdgeId(null);
+    setContextMenu(null);
   }, []);
+
+  const onNodeContextMenu = useCallback(
+    (event: React.MouseEvent, node: Node) => {
+      event.preventDefault();
+      setContextMenu({ x: event.clientX, y: event.clientY, elementId: node.id });
+      setSelectedNodeId(node.id);
+      setSelectedEdgeId(null);
+    },
+    [],
+  );
 
   const closePanel = useCallback(() => {
     setSelectedNodeId(null);
@@ -286,6 +309,7 @@ const Canvas = () => {
           onNodeClick={onNodeClick}
           onEdgeClick={onEdgeClick}
           onPaneClick={onPaneClick}
+          onNodeContextMenu={onNodeContextMenu}
           onNodeDragStop={onNodeDragStop}
           defaultViewport={activeView.viewport}
           fitView
@@ -303,6 +327,17 @@ const Canvas = () => {
           <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
         </ReactFlow>
       </div>
+
+      {contextMenu && (
+        <NodeContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          elementId={contextMenu.elementId}
+          onBringToFront={bringToFront}
+          onSendToBack={sendToBack}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
 
       {(selectedNodeId || selectedEdgeId) && (
         <ElementPanel

@@ -284,6 +284,10 @@ interface DiagramActions {
   navigateInto: (elementId: string) => void;
   navigateUp: () => void;
 
+  // Z-order operations
+  bringToFront: (elementId: string) => void;
+  sendToBack: (elementId: string) => void;
+
   // Version operations
   commit: (message: string) => void;
 }
@@ -507,6 +511,36 @@ export const useDiagramStore = create<DiagramStore>()(
       }
     },
 
+    // ── Z-order ops ─────────────────────────────────────
+
+    bringToFront: (elementId) => {
+      set((state) => {
+        const layouts =
+          state.draft.bluePrintViews[state.draft.activeBluePrintViewId]
+            .nodeLayouts;
+        const maxZ = Math.max(...layouts.map((nl) => nl.zIndex ?? 0));
+        const layout = layouts.find((nl) => nl.elementId === elementId);
+        if (layout) {
+          layout.zIndex = maxZ + 1;
+        }
+      });
+    },
+
+    sendToBack: (elementId) => {
+      set((state) => {
+        const layouts =
+          state.draft.bluePrintViews[state.draft.activeBluePrintViewId]
+            .nodeLayouts;
+        const minZ = Math.min(
+          ...layouts.map((nl) => nl.zIndex ?? 0),
+        );
+        const layout = layouts.find((nl) => nl.elementId === elementId);
+        if (layout) {
+          layout.zIndex = minZ - 1;
+        }
+      });
+    },
+
     // ── Version ops ──────────────────────────────────────
 
     commit: (message) => {
@@ -601,6 +635,8 @@ export const useDiagramActions = () =>
       updateViewport: s.updateViewport,
       navigateInto: s.navigateInto,
       navigateUp: s.navigateUp,
+      bringToFront: s.bringToFront,
+      sendToBack: s.sendToBack,
       commit: s.commit,
     })),
   );
