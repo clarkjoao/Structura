@@ -1,163 +1,183 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
-import {
-  Plus, GitBranch, Clock, Users, MoreHorizontal,
-  Network, Box, Layers, ChevronRight
-} from "lucide-react";
+import { Plus, Layers, Clock, Network, Trash2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import { useAllDiagrams, useDiagramActions } from "@/lib/model-store";
+import type { Level, Diagram } from "@/lib/model-types";
 
-interface Workspace {
-  id: string;
-  name: string;
-  models: Model[];
-}
+const levelLabels: Record<string, string> = { context: "Level 1", container: "Level 2", component: "Level 3" };
 
-interface Model {
-  id: string;
-  name: string;
-  description: string;
-  version: string;
-  lastModified: string;
-  isDraft: boolean;
-  elements: number;
-  relationships: number;
-}
-
-const mockWorkspaces: Workspace[] = [
-  {
-    id: "ws-1",
-    name: "Plataforma E-commerce",
-    models: [
-      {
-        id: "m-1",
-        name: "Sistema de Pedidos",
-        description: "Arquitetura completa do sistema de processamento de pedidos",
-        version: "v3.2.1",
-        lastModified: "há 2 horas",
-        isDraft: true,
-        elements: 24,
-        relationships: 31,
-      },
-      {
-        id: "m-2",
-        name: "Gateway de Pagamentos",
-        description: "Integração com provedores de pagamento",
-        version: "v1.8.0",
-        lastModified: "há 3 dias",
-        isDraft: false,
-        elements: 12,
-        relationships: 15,
-      },
-    ],
-  },
-  {
-    id: "ws-2",
-    name: "Infraestrutura Core",
-    models: [
-      {
-        id: "m-3",
-        name: "Plataforma de Observabilidade",
-        description: "Stack de monitoramento e alertas",
-        version: "v2.1.0",
-        lastModified: "há 1 semana",
-        isDraft: false,
-        elements: 18,
-        relationships: 22,
-      },
-    ],
-  },
-];
-
-const ModelCard = ({ model }: { model: Model }) => (
-  <Link to={`/model/${model.id}`}>
-    <motion.div
-      whileHover={{ y: -2 }}
-      className="group rounded-xl border border-border bg-card p-5 hover:border-primary/20 transition-all duration-200 cursor-pointer"
-    >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 border border-primary/10">
-          <Network className="h-4 w-4 text-primary" />
-        </div>
-        <div className="flex items-center gap-2">
-          {model.isDraft && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 border border-warning/20 px-2.5 py-0.5 text-[10px] font-mono text-warning">
-              <span className="h-1.5 w-1.5 rounded-full bg-warning animate-pulse-glow" />
-              draft
-            </span>
-          )}
-          <span className="font-mono text-xs text-muted-foreground">{model.version}</span>
-        </div>
-      </div>
-
-      <h3 className="font-semibold text-sm mb-1 group-hover:text-primary transition-colors">
-        {model.name}
-      </h3>
-      <p className="text-xs text-muted-foreground mb-4 line-clamp-2">{model.description}</p>
-
-      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-        <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1">
-            <Box className="h-3 w-3" /> {model.elements}
-          </span>
-          <span className="flex items-center gap-1">
-            <Layers className="h-3 w-3" /> {model.relationships}
-          </span>
-        </div>
-        <span className="flex items-center gap-1">
-          <Clock className="h-3 w-3" /> {model.lastModified}
-        </span>
-      </div>
-    </motion.div>
-  </Link>
-);
+type SortKey = "name" | "domain" | "level" | "updatedAt";
 
 const Dashboard = () => {
+  const diagrams = useAllDiagrams();
+  const { addDiagram, openDiagram, deleteDiagram } = useDiagramActions();
+  const navigate = useNavigate();
+
+  const [showAdd, setShowAdd] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortAsc, setSortAsc] = useState(true);
+
+  const sorted = useMemo(() => {
+    const arr = [...diagrams];
+    arr.sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === "name") cmp = a.name.localeCompare(b.name);
+      else if (sortKey === "domain") cmp = (a.domain ?? "").localeCompare(b.domain ?? "");
+      else if (sortKey === "level") cmp = a.level.localeCompare(b.level);
+      else cmp = a.updatedAt.localeCompare(b.updatedAt);
+      return sortAsc ? cmp : -cmp;
+    });
+    return arr;
+  }, [diagrams, sortKey, sortAsc]);
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) setSortAsc(!sortAsc);
+    else { setSortKey(key); setSortAsc(true); }
+  };
+
+  const handleOpen = (d: Diagram) => {
+    openDiagram(d.id);
+    navigate(`/model/${d.id}`);
+  };
+
+  const handleDelete = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    deleteDiagram(id);
+  };
+
+  const sortIcon = (key: SortKey) => {
+    if (sortKey !== key) return "";
+    return sortAsc ? " ↑" : " ↓";
+  };
+
   return (
     <div className="min-h-screen pt-16">
       <Navbar />
-      <div className="container py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+      <div className="container py-8 max-w-5xl">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold">Workspaces</h1>
-            <p className="text-sm text-muted-foreground mt-1">Gerencie seus modelos de arquitetura</p>
+            <h1 className="text-2xl font-bold">Diagrams</h1>
+            <p className="text-sm text-muted-foreground mt-1">Seus diagramas de arquitetura C4</p>
           </div>
-          <button className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-            <Plus className="h-4 w-4" />
-            Novo Workspace
+          <button onClick={() => setShowAdd(true)}
+            className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+            <Plus className="h-4 w-4" /> New diagram
           </button>
         </div>
 
-        {/* Workspaces */}
-        {mockWorkspaces.map((ws, i) => (
-          <motion.div
-            key={ws.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className="mb-8"
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-secondary border border-border">
-                <Users className="h-3.5 w-3.5 text-muted-foreground" />
-              </div>
-              <h2 className="font-semibold text-sm">{ws.name}</h2>
-              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">{ws.models.length} modelos</span>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {ws.models.map((model) => (
-                <ModelCard key={model.id} model={model} />
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-secondary/50">
+                <th className="w-10 px-4 py-3" />
+                <th onClick={() => handleSort("name")} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none">
+                  Diagram name{sortIcon("name")}
+                </th>
+                <th onClick={() => handleSort("domain")} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none">
+                  Domain{sortIcon("domain")}
+                </th>
+                <th onClick={() => handleSort("level")} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none">
+                  C4 Level{sortIcon("level")}
+                </th>
+                <th onClick={() => handleSort("updatedAt")} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none">
+                  Last edit{sortIcon("updatedAt")}
+                </th>
+                <th className="w-10 px-4 py-3" />
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((d) => (
+                <tr key={d.id} onClick={() => handleOpen(d)} className="border-b border-border last:border-0 cursor-pointer hover:bg-surface-hover transition-colors">
+                  <td className="px-4 py-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/10">
+                      <Network className="h-4 w-4 text-primary" />
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 font-medium text-foreground">{d.name}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{d.domain ?? "—"}</td>
+                  <td className="px-4 py-3">
+                    <span className="inline-flex items-center gap-1.5 text-xs">
+                      <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+                      {levelLabels[d.level]}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Clock className="h-3.5 w-3.5" /> {d.updatedAt}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <button onClick={(e) => handleDelete(e, d.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </td>
+                </tr>
               ))}
-              <button className="rounded-xl border border-dashed border-border p-5 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-foreground hover:border-primary/20 transition-all min-h-[160px]">
-                <Plus className="h-5 w-5" />
-                <span className="text-xs font-medium">Novo Modelo</span>
-              </button>
-            </div>
-          </motion.div>
-        ))}
+              {sorted.length === 0 && (
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">Nenhum diagrama. Crie o primeiro!</td></tr>
+              )}
+            </tbody>
+          </table>
+          <div className="border-t border-border px-4 py-2.5 text-xs text-muted-foreground bg-secondary/30">
+            Total diagrams: {diagrams.length}
+          </div>
+        </div>
       </div>
+
+      {showAdd && <AddDiagramDialog onClose={() => setShowAdd(false)} onAdd={(name, level, domain) => {
+        const d = addDiagram(name, level, domain);
+        openDiagram(d.id);
+        navigate(`/model/${d.id}`);
+        setShowAdd(false);
+      }} />}
+    </div>
+  );
+};
+
+const AddDiagramDialog = ({ onClose, onAdd }: {
+  onClose: () => void;
+  onAdd: (name: string, level: Level, domain?: string) => void;
+}) => {
+  const [name, setName] = useState("");
+  const [level, setLevel] = useState<Level>("context");
+  const [domain, setDomain] = useState("");
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm" onClick={onClose}>
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-lg font-bold mb-4">New Diagram</h3>
+        <div className="space-y-3">
+          <div>
+            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">Nome</label>
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. System Context"
+              className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring" autoFocus />
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">C4 Level</label>
+            <select value={level} onChange={(e) => setLevel(e.target.value as Level)}
+              className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring">
+              <option value="context">Level 1 – System Context</option>
+              <option value="container">Level 2 – Container</option>
+              <option value="component">Level 3 – Component</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">Domain (opcional)</label>
+            <input value={domain} onChange={(e) => setDomain(e.target.value)} placeholder="e.g. E-commerce"
+              className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 mt-4">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground rounded-md border border-border transition-colors">Cancelar</button>
+          <button onClick={() => { if (name.trim()) onAdd(name.trim(), level, domain.trim() || undefined); }} disabled={!name.trim()}
+            className="px-4 py-2 text-sm font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
+            Criar Diagrama
+          </button>
+        </div>
+      </motion.div>
     </div>
   );
 };

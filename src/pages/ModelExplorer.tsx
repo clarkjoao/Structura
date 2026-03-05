@@ -1,177 +1,48 @@
-import { useState } from "react";
 import { ReactFlowProvider } from "@xyflow/react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import {
-  ArrowLeft,
-  GitCommit,
-  ChevronRight,
-  History,
-  FileJson,
-} from "lucide-react";
+import { ArrowLeft, FileJson } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Canvas from "@/components/canvas/Canvas";
-import {
-  useActiveBluePrintView,
-  useVersions,
-  useComponents,
-  useDiagramActions,
-} from "@/lib/model-store";
-
-const VersionHistory = ({ onClose }: { onClose: () => void }) => {
-  const versions = useVersions();
-
-  return (
-    <motion.div
-      initial={{ width: 0, opacity: 0 }}
-      animate={{ width: 320, opacity: 1 }}
-      exit={{ width: 0, opacity: 0 }}
-      transition={{ duration: 0.2 }}
-      className="border-l border-border bg-card overflow-hidden shrink-0"
-    >
-      <div className="w-80">
-        <div className="p-3 border-b border-border">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Histórico de Versões
-          </h3>
-        </div>
-        <div className="p-3 space-y-1">
-          {versions.map((v, i) => (
-            <div
-              key={v.id}
-              className={`relative rounded-lg p-3 cursor-pointer transition-all text-sm ${
-                i === 0
-                  ? "bg-primary/5 border border-primary/20"
-                  : "hover:bg-surface-hover border border-transparent"
-              }`}
-            >
-              {i < versions.length - 1 && (
-                <div className="absolute left-[22px] top-[38px] bottom-[-8px] w-px bg-border" />
-              )}
-              <div className="flex items-center gap-2 mb-1">
-                <GitCommit className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="font-mono text-xs font-semibold text-primary">
-                  {v.version}
-                </span>
-                {i === 0 && (
-                  <span className="text-[9px] font-mono bg-primary/10 text-primary rounded px-1.5 py-0.5">
-                    LATEST
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-foreground pl-[22px]">{v.message}</p>
-              <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-1 pl-[22px]">
-                <span>{v.author}</span>
-                <span>·</span>
-                <span>{v.timestamp}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-const CommitDialog = ({
-  onClose,
-  onCommit,
-}: {
-  onClose: () => void;
-  onCommit: (msg: string) => void;
-}) => {
-  const [msg, setMsg] = useState("");
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h3 className="text-lg font-bold mb-4">Novo Commit</h3>
-        <input
-          value={msg}
-          onChange={(e) => setMsg(e.target.value)}
-          placeholder="Mensagem do commit..."
-          className="w-full rounded-md border border-border bg-secondary px-3 py-2.5 text-sm text-foreground mb-4 focus:outline-none focus:ring-1 focus:ring-ring"
-          autoFocus
-        />
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground rounded-md border border-border transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={() => {
-              if (msg.trim()) {
-                onCommit(msg);
-                onClose();
-              }
-            }}
-            disabled={!msg.trim()}
-            className="px-4 py-2 text-sm font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
-          >
-            <GitCommit className="h-3.5 w-3.5 inline mr-1.5" />
-            Commit
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  );
-};
+import { useActiveDiagram } from "@/lib/model-store";
 
 const ModelExplorer = () => {
-  const activeView = useActiveBluePrintView();
-  const versions = useVersions();
-  const components = useComponents();
-  const { commit } = useDiagramActions();
+  const diagram = useActiveDiagram();
 
-  const [showHistory, setShowHistory] = useState(false);
-  const [showCommit, setShowCommit] = useState(false);
-
-  const rootComponent = activeView.rootElementId
-    ? components[activeView.rootElementId]
-    : null;
+  if (!diagram) {
+    return (
+      <div className="h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center mt-16">
+          <div className="text-center">
+            <p className="text-muted-foreground mb-4">Nenhum diagrama selecionado.</p>
+            <Link to="/dashboard" className="text-primary hover:underline text-sm">Voltar ao Dashboard</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex flex-col">
       <Navbar />
-
       <div className="border-b border-border bg-card shrink-0 mt-16">
         <div className="container flex items-center justify-between h-12">
           <div className="flex items-center gap-3 text-sm">
-            <Link
-              to="/dashboard"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
+            <Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="h-4 w-4" />
             </Link>
-            <span className="text-muted-foreground">Plataforma E-commerce</span>
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="font-medium">
-              {rootComponent?.name ?? "System Context"}
-            </span>
+            {diagram.domain && <span className="text-muted-foreground">{diagram.domain}</span>}
+            <span className="font-medium">{diagram.name}</span>
           </div>
-
           <div className="flex items-center gap-2">
             <button className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all">
-              <FileJson className="h-3.5 w-3.5" />
-              Exportar
+              <FileJson className="h-3.5 w-3.5" /> Exportar
             </button>
           </div>
         </div>
       </div>
-
       <div className="flex-1 flex overflow-hidden">
-        <ReactFlowProvider>
-          <Canvas />
-        </ReactFlowProvider>
+        <ReactFlowProvider><Canvas /></ReactFlowProvider>
       </div>
     </div>
   );

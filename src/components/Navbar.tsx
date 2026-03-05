@@ -24,6 +24,12 @@ const Navbar = () => {
           >
             Workspaces
           </Link>
+          <Link
+            to="/registry"
+            className="hover:text-foreground transition-colors"
+          >
+            Registry
+          </Link>
         </div>
 
         <div className="flex items-center gap-3" />

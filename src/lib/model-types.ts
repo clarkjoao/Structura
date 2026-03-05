@@ -17,7 +17,19 @@ export interface Component {
   technology?: string;
   parentId: string | null;
   tags?: string[];
-  awsService?: string; // maybe turn it more agnostic
+  awsService?: string;
+  serviceId?: string;
+  linkedDiagramId?: string;
+}
+
+export interface ServiceDefinition {
+  id: string;
+  name: string;
+  description: string;
+  repositoryUrl: string;
+  technology: string[];
+  owner?: string;
+  tags?: string[];
 }
 
 export interface Connection {
@@ -33,35 +45,24 @@ export interface ViewNodeLayout {
   elementId: string;
   x: number;
   y: number;
-  width?: number;
-  height?: number;
+  zIndex?: number;
 }
 
-export interface BluePrintView {
-  id: string;
-  name: string;
-  level: Level;
-  rootElementId: string | null; // which element we're "inside" (null = top-level context)
-  nodeLayouts: ViewNodeLayout[];
-  viewport: { x: number; y: number; zoom: number };
-}
-
-/** The complete working draft — everything that gets snapshotted on commit */
 export interface ModelDraft {
   components: Record<string, Component>;
   connections: Record<string, Connection>;
-  bluePrintViews: Record<string, BluePrintView>;
-  activeBluePrintViewId: string;
+  serviceRegistry: Record<string, ServiceDefinition>;
 }
 
-export interface BluePrintVersion {
+export interface Diagram {
   id: string;
-  version: string;
-  parentId: string | null;
-  timestamp: string;
-  author: string;
-  message: string;
+  name: string;
+  level: Level;
+  domain?: string;
+  updatedAt: string;
   snapshot: ModelDraft;
+  nodeLayouts: ViewNodeLayout[];
+  viewport: { x: number; y: number; zoom: number };
 }
 
 let _counter = 0;
