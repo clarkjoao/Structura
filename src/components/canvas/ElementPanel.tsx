@@ -1,8 +1,12 @@
-import { useState } from "react";
-import { X, Trash2, Save, Link2, LayoutDashboard } from "lucide-react";
+import { useState, useMemo } from "react";
+import {
+  X, Trash2, Save, Link2, LayoutDashboard,
+  Search, ArrowRight, Network, Server, Database, User,
+} from "lucide-react";
 import {
   useComponent,
   useConnections,
+  useComponents,
   useAllServices,
   useAllDiagrams,
   useDiagramActions,
@@ -63,6 +67,142 @@ const ElementPanel = ({
   return null;
 };
 
+// ── Tabs ────────────────────────────────────────────────────────────────────
+
+type Tab = "details" | "connections";
+
+const TabBar = ({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) => (
+  <div className="flex border-b border-border">
+    {(["details", "connections"] as const).map((t) => (
+      <button
+        key={t}
+        onClick={() => onChange(t)}
+        className={`flex-1 px-3 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
+          active === t
+            ? "text-primary border-b-2 border-primary"
+            : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        {t === "details" ? "Details" : "Connections"}
+      </button>
+    ))}
+  </div>
+);
+
+// ── Component type icons (small helper) ─────────────────────────────────────
+
+const typeIcons: Record<string, typeof Network> = {
+  person: User,
+  system: Network,
+  container: Server,
+  component: Database,
+};
+
+function NodeIcon({ type }: { type: ComponentType }) {
+  const Icon = typeIcons[type] ?? Network;
+  return <Icon className="h-3 w-3 text-muted-foreground shrink-0" />;
+}
+
+// ── Connections tab content ─────────────────────────────────────────────────
+
+const ConnectionsTab = ({ componentId }: { componentId: string }) => {
+  const connections = useConnections();
+  const components = useComponents();
+  const [search, setSearch] = useState("");
+
+  const { incoming, outgoing } = useMemo(() => {
+    const allConns = Object.values(connections);
+    return {
+      incoming: allConns.filter((c) => c.targetId === componentId),
+      outgoing: allConns.filter((c) => c.sourceId === componentId),
+    };
+  }, [connections, componentId]);
+
+  const allEntries = useMemo(() => {
+    const entries: { conn: Connection; direction: "in" | "out"; peerId: string }[] = [];
+    for (const c of incoming) entries.push({ conn: c, direction: "in", peerId: c.sourceId });
+    for (const c of outgoing) entries.push({ conn: c, direction: "out", peerId: c.targetId });
+    return entries;
+  }, [incoming, outgoing]);
+
+  const filtered = useMemo(() => {
+    if (!search) return allEntries;
+    const q = search.toLowerCase();
+    return allEntries.filter((e) => {
+      const peer = components[e.peerId];
+      return (
+        peer?.name.toLowerCase().includes(q) ||
+        e.conn.label.toLowerCase().includes(q)
+      );
+    });
+  }, [allEntries, search, components]);
+
+  if (allEntries.length === 0) {
+    return (
+      <div className="p-4 text-xs text-muted-foreground italic text-center">
+        Nenhuma conexão encontrada.
+      </div>
+    );
+  }
+
+  const self = components[componentId];
+
+  return (
+    <div className="p-3 space-y-3">
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Filtrar por nome ou label..."
+          className="w-full rounded-md border border-border bg-secondary pl-8 pr-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+      </div>
+
+      <div className="text-[10px] text-muted-foreground">
+        {incoming.length} entrada{incoming.length !== 1 ? "s" : ""} · {outgoing.length} saída{outgoing.length !== 1 ? "s" : ""}
+      </div>
+
+      <div className="space-y-1">
+        {filtered.map((entry) => {
+          const peer = components[entry.peerId];
+          if (!peer) return null;
+
+          const source = entry.direction === "in" ? peer : self;
+          const target = entry.direction === "in" ? self : peer;
+
+          return (
+            <div
+              key={entry.conn.id}
+              className="flex items-center gap-1.5 rounded-md bg-secondary/50 border border-border px-2.5 py-2 text-xs"
+            >
+              {source && <NodeIcon type={source.type} />}
+              <span className="text-foreground font-medium truncate max-w-[60px]">
+                {source?.name ?? "?"}
+              </span>
+              <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
+              {target && <NodeIcon type={target.type} />}
+              <span className="text-foreground font-medium truncate max-w-[60px]">
+                {target?.name ?? "?"}
+              </span>
+              <span className="text-muted-foreground ml-auto text-[10px] truncate max-w-[70px]">
+                {entry.conn.label}
+              </span>
+            </div>
+          );
+        })}
+        {filtered.length === 0 && search && (
+          <p className="text-xs text-muted-foreground italic text-center py-2">
+            Nenhum resultado para "{search}"
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ── Component detail (with tabs) ────────────────────────────────────────────
+
 const ComponentDetail = ({
   component,
   onClose,
@@ -77,6 +217,7 @@ const ComponentDetail = ({
   const allServices = useAllServices();
   const allDiagrams = useAllDiagrams();
   const { linkComponentToService, linkComponentToDiagram } = useDiagramActions();
+  const [tab, setTab] = useState<Tab>("details");
   const [name, setName] = useState(component.name);
   const [desc, setDesc] = useState(component.description);
   const [tech, setTech] = useState(component.technology ?? "");
@@ -105,7 +246,7 @@ const ComponentDetail = ({
     <div className="w-80 border-l border-border bg-card overflow-auto">
       <div className="flex items-center justify-between p-3 border-b border-border">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Propriedades
+          {component.name}
         </h3>
         <button
           onClick={onClose}
@@ -114,156 +255,159 @@ const ComponentDetail = ({
           <X className="h-4 w-4" />
         </button>
       </div>
-      <div className="p-4 space-y-4">
-        {isAws && svcInfo && (
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
-            <AwsIcon iconName={svcInfo.iconName} size={32} />
-            <div>
-              <p className="text-xs font-semibold text-foreground">
-                {svcInfo.name}
-              </p>
-              <p className="text-[10px] text-muted-foreground">
-                {AWS_CATEGORY_MAP.get(type)?.name}
-              </p>
+
+      <TabBar active={tab} onChange={setTab} />
+
+      {tab === "connections" ? (
+        <ConnectionsTab componentId={component.id} />
+      ) : (
+        <div className="p-4 space-y-4">
+          {isAws && svcInfo && (
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
+              <AwsIcon iconName={svcInfo.iconName} size={32} />
+              <div>
+                <p className="text-xs font-semibold text-foreground">
+                  {svcInfo.name}
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  {AWS_CATEGORY_MAP.get(type)?.name}
+                </p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <Field label="Nome" value={name} onChange={setName} />
+          <Field label="Nome" value={name} onChange={setName} />
 
-        <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-            Tipo
-          </label>
-          <select
-            value={type}
-            onChange={(e) => {
-              setType(e.target.value as ComponentType);
-              if (!e.target.value.startsWith("aws-")) setAwsService("");
-            }}
-            className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            <optgroup label="C4 Model">
-              <option value="person">Person</option>
-              <option value="system">System</option>
-              <option value="container">Container</option>
-              <option value="component">Component</option>
-            </optgroup>
-            {AWS_CATEGORIES.map((cat) => (
-              <optgroup key={cat.id} label={`AWS: ${cat.name}`}>
-                <option value={cat.id}>{cat.name}</option>
-              </optgroup>
-            ))}
-          </select>
-        </div>
-
-        {isAws && (
           <div>
             <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-              Serviço AWS
+              Tipo
             </label>
             <select
-              value={awsService}
+              value={type}
               onChange={(e) => {
-                setAwsService(e.target.value);
-                const svc = AWS_SERVICE_MAP.get(e.target.value);
-                if (
-                  svc &&
-                  (name.startsWith("Novo") || name === component.name)
-                ) {
-                  setName(svc.name);
-                }
+                setType(e.target.value as ComponentType);
+                if (!e.target.value.startsWith("aws-")) setAwsService("");
               }}
               className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             >
-              <option value="">Selecionar serviço...</option>
-              {AWS_CATEGORY_MAP.get(type)?.services.map((svc) => (
+              <optgroup label="C4 Model">
+                <option value="person">Person</option>
+                <option value="system">System</option>
+                <option value="container">Container</option>
+                <option value="component">Component</option>
+              </optgroup>
+              {AWS_CATEGORIES.map((cat) => (
+                <optgroup key={cat.id} label={`AWS: ${cat.name}`}>
+                  <option value={cat.id}>{cat.name}</option>
+                </optgroup>
+              ))}
+            </select>
+          </div>
+
+          {isAws && (
+            <div>
+              <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+                Serviço AWS
+              </label>
+              <select
+                value={awsService}
+                onChange={(e) => {
+                  setAwsService(e.target.value);
+                  const svc = AWS_SERVICE_MAP.get(e.target.value);
+                  if (
+                    svc &&
+                    (name.startsWith("Novo") || name === component.name)
+                  ) {
+                    setName(svc.name);
+                  }
+                }}
+                className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="">Selecionar serviço...</option>
+                {AWS_CATEGORY_MAP.get(type)?.services.map((svc) => (
+                  <option key={svc.id} value={svc.id}>
+                    {svc.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <Field label="Descrição" value={desc} onChange={setDesc} multiline />
+          <Field label="Tecnologia" value={tech} onChange={setTech} />
+
+          <div>
+            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+              <Link2 className="h-3 w-3 inline mr-1" />
+              Vincular ao Serviço
+            </label>
+            <select
+              value={component.serviceId ?? ""}
+              onChange={(e) =>
+                linkComponentToService(component.id, e.target.value || undefined)
+              }
+              className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            >
+              <option value="">Nenhum</option>
+              {allServices.map((svc) => (
                 <option key={svc.id} value={svc.id}>
                   {svc.name}
                 </option>
               ))}
             </select>
           </div>
-        )}
 
-        <Field label="Descrição" value={desc} onChange={setDesc} multiline />
-        <Field label="Tecnologia" value={tech} onChange={setTech} />
+          <div>
+            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+              <LayoutDashboard className="h-3 w-3 inline mr-1" />
+              Vincular ao Diagrama
+            </label>
+            <select
+              value={component.linkedDiagramId ?? ""}
+              onChange={(e) =>
+                linkComponentToDiagram(component.id, e.target.value || undefined)
+              }
+              className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            >
+              <option value="">Nenhum</option>
+              {allDiagrams.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-            <Link2 className="h-3 w-3 inline mr-1" />
-            Vincular ao Serviço
-          </label>
-          <select
-            value={component.serviceId ?? ""}
-            onChange={(e) =>
-              linkComponentToService(
-                component.id,
-                e.target.value || undefined,
-              )
-            }
-            className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            <option value="">Nenhum</option>
-            {allServices.map((svc) => (
-              <option key={svc.id} value={svc.id}>
-                {svc.name}
-              </option>
-            ))}
-          </select>
+          <div>
+            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+              ID
+            </label>
+            <p className="text-xs font-mono text-muted-foreground bg-secondary rounded px-2 py-1.5">
+              {component.id}
+            </p>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <button
+              onClick={save}
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              <Save className="h-3.5 w-3.5" /> Salvar
+            </button>
+            <button
+              onClick={handleRemove}
+              className="flex items-center justify-center gap-1.5 rounded-md border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Remover
+            </button>
+          </div>
         </div>
-
-        <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-            <LayoutDashboard className="h-3 w-3 inline mr-1" />
-            Vincular ao Diagrama
-          </label>
-          <select
-            value={component.linkedDiagramId ?? ""}
-            onChange={(e) =>
-              linkComponentToDiagram(
-                component.id,
-                e.target.value || undefined,
-              )
-            }
-            className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            <option value="">Nenhum</option>
-            {allDiagrams.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-            ID
-          </label>
-          <p className="text-xs font-mono text-muted-foreground bg-secondary rounded px-2 py-1.5">
-            {component.id}
-          </p>
-        </div>
-
-        <div className="flex gap-2 pt-2">
-          <button
-            onClick={save}
-            className="flex-1 flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-          >
-            <Save className="h-3.5 w-3.5" /> Salvar
-          </button>
-          <button
-            onClick={handleRemove}
-            className="flex items-center justify-center gap-1.5 rounded-md border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors"
-          >
-            <Trash2 className="h-3.5 w-3.5" /> Remover
-          </button>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
+
+// ── Connection detail (unchanged) ───────────────────────────────────────────
 
 const ConnectionDetail = ({
   conn,
@@ -339,6 +483,8 @@ const ConnectionDetail = ({
     </div>
   );
 };
+
+// ── Shared field ────────────────────────────────────────────────────────────
 
 const Field = ({
   label,
