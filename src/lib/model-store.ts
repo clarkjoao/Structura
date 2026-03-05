@@ -124,6 +124,8 @@ function buildSeedDiagrams(): Record<string, Diagram> {
 interface AppState {
   diagrams: Record<string, Diagram>;
   activeDiagramId: string | null;
+  _undoStack: string[];
+  _redoStack: string[];
 }
 
 interface AppActions {
@@ -151,6 +153,10 @@ interface AppActions {
   linkComponentToService: (componentId: string, serviceId: string | undefined) => void;
   linkComponentToDiagram: (componentId: string, diagramId: string | undefined) => void;
   setParent: (childId: string, parentId: string | null) => void;
+
+  pushUndo: () => void;
+  undo: () => void;
+  redo: () => void;
 }
 
 export type DiagramStore = AppState & AppActions;
@@ -167,6 +173,8 @@ export const useDiagramStore = create<DiagramStore>()(
   immer((set, get) => ({
     diagrams: buildSeedDiagrams(),
     activeDiagramId: null,
+    _undoStack: [],
+    _redoStack: [],
 
     // ── Diagram CRUD ───────────────────────────────────
 
@@ -302,6 +310,39 @@ export const useDiagramStore = create<DiagramStore>()(
     setParent: (childId, parentId) => {
       set((state) => { const comp = activeDiagram(state).snapshot.components[childId]; if (comp) comp.parentId = parentId; });
     },
+
+    pushUndo: () => {
+      const { activeDiagramId, diagrams } = get();
+      if (!activeDiagramId) return;
+      const snap = JSON.stringify(diagrams[activeDiagramId]);
+      set((state) => {
+        state._undoStack.push(snap);
+        if (state._undoStack.length > 50) state._undoStack.shift();
+        state._redoStack = [];
+      });
+    },
+
+    undo: () => {
+      const { _undoStack, activeDiagramId, diagrams } = get();
+      if (!activeDiagramId || _undoStack.length === 0) return;
+      const currentSnap = JSON.stringify(diagrams[activeDiagramId]);
+      set((state) => {
+        const prev = state._undoStack.pop()!;
+        state._redoStack.push(currentSnap);
+        state.diagrams[activeDiagramId] = JSON.parse(prev);
+      });
+    },
+
+    redo: () => {
+      const { _redoStack, activeDiagramId, diagrams } = get();
+      if (!activeDiagramId || _redoStack.length === 0) return;
+      const currentSnap = JSON.stringify(diagrams[activeDiagramId]);
+      set((state) => {
+        const next = state._redoStack.pop()!;
+        state._undoStack.push(currentSnap);
+        state.diagrams[activeDiagramId] = JSON.parse(next);
+      });
+    },
   })),
 );
 
@@ -374,4 +415,5 @@ export const useDiagramActions = () =>
     addService: s.addService, updateService: s.updateService, removeService: s.removeService, linkComponentToService: s.linkComponentToService,
     linkComponentToDiagram: s.linkComponentToDiagram,
     setParent: s.setParent,
+    pushUndo: s.pushUndo, undo: s.undo, redo: s.redo,
   })));

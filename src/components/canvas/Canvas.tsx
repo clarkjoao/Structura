@@ -1,11 +1,12 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ReactFlow, Background, BackgroundVariant, Controls,
+  ReactFlow, Background, BackgroundVariant, Controls, useReactFlow,
   type Node, type Edge, type OnNodesChange, type OnEdgesChange, type OnConnect, type Connection,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useNavigate } from "react-router-dom";
 import { useActiveDiagram, useDiagrams, useVisibleComponents, useVisibleConnections, useServiceRegistry, useDiagramActions } from "@/lib/model-store";
+import { generateId } from "@/lib/model-types";
 import CustomNode from "./CustomNode";
 import CustomEdge from "./CustomEdge";
 import PanelNode from "./PanelNode";
@@ -29,8 +30,11 @@ const Canvas = () => {
     updateNodeLayout, updateViewport, addConnection,
     bringToFront, sendToBack, openDiagram,
     updateComponent, setParent,
+    addComponent, removeComponent, removeConnection,
+    pushUndo, undo, redo,
   } = useDiagramActions();
   const navigate = useNavigate();
+  const reactFlowInstance = useReactFlow();
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
@@ -161,6 +165,78 @@ const Canvas = () => {
   const onPaneClick = useCallback(() => { setSelectedNodeId(null); setSelectedEdgeId(null); setContextMenu(null); }, []);
   const onNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => { event.preventDefault(); setContextMenu({ x: event.clientX, y: event.clientY, elementId: node.id }); setSelectedNodeId(node.id); setSelectedEdgeId(null); }, []);
   const closePanel = useCallback(() => { setSelectedNodeId(null); setSelectedEdgeId(null); }, []);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable) return;
+      if (!diagram) return;
+
+      const mod = e.metaKey || e.ctrlKey;
+
+      if (e.key === "Escape") {
+        e.preventDefault();
+        reactFlowInstance.setNodes((nds) => nds.map((n) => ({ ...n, selected: false })));
+        setSelectedNodeId(null);
+        setSelectedEdgeId(null);
+        setContextMenu(null);
+        return;
+      }
+
+      if (mod && e.key === "a") {
+        e.preventDefault();
+        reactFlowInstance.setNodes((nds) => nds.map((n) => ({ ...n, selected: true })));
+        return;
+      }
+
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
+        if (selected.length === 0 && selectedNodeId) {
+          pushUndo();
+          removeComponent(selectedNodeId);
+          setSelectedNodeId(null);
+          return;
+        }
+        if (selected.length > 0) {
+          pushUndo();
+          for (const n of selected) removeComponent(n.id);
+          setSelectedNodeId(null);
+        }
+        return;
+      }
+
+      if (mod && e.key === "d") {
+        e.preventDefault();
+        const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
+        const toDuplicate = selected.length > 0 ? selected : (selectedNodeId ? reactFlowInstance.getNodes().filter((n) => n.id === selectedNodeId) : []);
+        if (toDuplicate.length === 0) return;
+        pushUndo();
+        for (const n of toDuplicate) {
+          const comp = diagram.snapshot.components[n.id];
+          if (!comp) continue;
+          const layout = diagram.nodeLayouts.find((nl) => nl.elementId === n.id);
+          addComponent(comp.type, `${comp.name} (cópia)`, comp.parentId, { x: (layout?.x ?? 0) + 20, y: (layout?.y ?? 0) + 20 }, comp.awsService);
+        }
+        return;
+      }
+
+      if (mod && e.shiftKey && (e.key === "z" || e.key === "Z")) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      if (mod && e.key === "z") {
+        e.preventDefault();
+        undo();
+        return;
+      }
+    };
+
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [diagram, selectedNodeId, reactFlowInstance, pushUndo, undo, redo, removeComponent, addComponent]);
 
   if (!diagram) return <div className="flex-1 flex items-center justify-center text-muted-foreground">Nenhum diagrama selecionado</div>;
 
