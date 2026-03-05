@@ -4,6 +4,7 @@ import { immer } from "zustand/middleware/immer";
 import type {
   Component,
   Connection,
+  ServiceDefinition,
   ModelDraft,
   BluePrintVersion,
   ComponentType,
@@ -156,7 +157,41 @@ function buildSeedDraft(): ModelDraft {
     },
   };
 
-  return { components, connections };
+  const serviceRegistry: Record<string, ServiceDefinition> = {
+    "svc-order": {
+      id: "svc-order",
+      name: "order-service",
+      description: "Microserviço de processamento de pedidos",
+      repositoryUrl: "https://github.com/acme/order-service",
+      technology: ["Java", "Spring Boot", "PostgreSQL"],
+      owner: "team-orders",
+      tags: ["backend", "core"],
+    },
+    "svc-gateway": {
+      id: "svc-gateway",
+      name: "api-gateway",
+      description: "Gateway de entrada para roteamento e autenticação",
+      repositoryUrl: "https://github.com/acme/api-gateway",
+      technology: ["Kong", "Nginx", "Lua"],
+      owner: "team-platform",
+      tags: ["infra", "gateway"],
+    },
+    "svc-auth": {
+      id: "svc-auth",
+      name: "auth-middleware",
+      description: "Middleware de autenticação e validação JWT",
+      repositoryUrl: "https://github.com/acme/auth-middleware",
+      technology: ["Node.js", "Express", "jsonwebtoken"],
+      owner: "team-security",
+      tags: ["security", "middleware"],
+    },
+  };
+
+  components["e-order-svc"].serviceId = "svc-order";
+  components["e-gateway"].serviceId = "svc-gateway";
+  components["e-auth"].serviceId = "svc-auth";
+
+  return { components, connections, serviceRegistry };
 }
 
 const seedVersions: BluePrintVersion[] = [
@@ -258,6 +293,17 @@ interface DiagramActions {
   bringToFront: (elementId: string) => void;
   sendToBack: (elementId: string) => void;
   setComponentParent: (childId: string, parentId: string | null) => void;
+
+  addService: (service: Omit<ServiceDefinition, "id">) => ServiceDefinition;
+  updateService: (
+    id: string,
+    patch: Partial<Omit<ServiceDefinition, "id">>,
+  ) => void;
+  removeService: (id: string) => void;
+  linkComponentToService: (
+    componentId: string,
+    serviceId: string | undefined,
+  ) => void;
 
   commit: (message: string) => void;
 }
@@ -395,6 +441,43 @@ export const useDiagramStore = create<DiagramStore>()(
       });
     },
 
+    addService: (service) => {
+      const svc: ServiceDefinition = {
+        ...service,
+        id: generateId("svc"),
+      };
+      set((state) => {
+        state.draft.serviceRegistry[svc.id] = svc;
+      });
+      return svc;
+    },
+
+    updateService: (id, patch) => {
+      set((state) => {
+        Object.assign(state.draft.serviceRegistry[id], patch);
+      });
+    },
+
+    removeService: (id) => {
+      set((state) => {
+        delete state.draft.serviceRegistry[id];
+        Object.values(state.draft.components).forEach((c) => {
+          if (c.serviceId === id) {
+            c.serviceId = undefined;
+          }
+        });
+      });
+    },
+
+    linkComponentToService: (componentId, serviceId) => {
+      set((state) => {
+        const comp = state.draft.components[componentId];
+        if (comp) {
+          comp.serviceId = serviceId;
+        }
+      });
+    },
+
     commit: (message) => {
       const { draft, versions } = get();
       const newVersion: BluePrintVersion = {
@@ -435,6 +518,17 @@ export const useAllConnections = () =>
     useShallow((s) => Object.values(s.draft.connections)),
   );
 
+export const useServiceRegistry = () =>
+  useDiagramStore((s) => s.draft.serviceRegistry);
+
+export const useAllServices = () =>
+  useDiagramStore(
+    useShallow((s) => Object.values(s.draft.serviceRegistry)),
+  );
+
+export const useService = (id: string) =>
+  useDiagramStore((s) => s.draft.serviceRegistry[id]);
+
 export const useComponentChildren = (parentId: string | null) =>
   useDiagramStore(
     useShallow((s) =>
@@ -458,6 +552,10 @@ export const useDiagramActions = () =>
       bringToFront: s.bringToFront,
       sendToBack: s.sendToBack,
       setComponentParent: s.setComponentParent,
+      addService: s.addService,
+      updateService: s.updateService,
+      removeService: s.removeService,
+      linkComponentToService: s.linkComponentToService,
       commit: s.commit,
     })),
   );

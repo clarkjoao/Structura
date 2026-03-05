@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { X, Trash2, Save } from "lucide-react";
+import { X, Trash2, Save, Link2 } from "lucide-react";
 import {
   useComponent,
   useConnections,
+  useAllServices,
   useDiagramActions,
 } from "@/lib/model-store";
 import type { Component, Connection, ComponentType } from "@/lib/model-types";
@@ -72,6 +73,8 @@ const ComponentDetail = ({
   updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => void;
   removeComponent: (id: string) => void;
 }) => {
+  const allServices = useAllServices();
+  const { linkComponentToService } = useDiagramActions();
   const [name, setName] = useState(component.name);
   const [desc, setDesc] = useState(component.description);
   const [tech, setTech] = useState(component.technology ?? "");
@@ -183,6 +186,30 @@ const ComponentDetail = ({
 
         <Field label="Descrição" value={desc} onChange={setDesc} multiline />
         <Field label="Tecnologia" value={tech} onChange={setTech} />
+
+        <div>
+          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+            <Link2 className="h-3 w-3 inline mr-1" />
+            Vincular ao Serviço
+          </label>
+          <select
+            value={component.serviceId ?? ""}
+            onChange={(e) =>
+              linkComponentToService(
+                component.id,
+                e.target.value || undefined,
+              )
+            }
+            className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          >
+            <option value="">Nenhum</option>
+            {allServices.map((svc) => (
+              <option key={svc.id} value={svc.id}>
+                {svc.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">

@@ -16,6 +16,7 @@ import "@xyflow/react/dist/style.css";
 import {
   useAllComponents,
   useAllConnections,
+  useServiceRegistry,
   useDiagramActions,
 } from "@/lib/model-store";
 import CustomNode from "./CustomNode";
@@ -34,6 +35,7 @@ const GROUP_DEFAULT_H = 500;
 const Canvas = () => {
   const allComponents = useAllComponents();
   const allConnections = useAllConnections();
+  const serviceRegistry = useServiceRegistry();
   const {
     updateNodePosition,
     updateNodeSize,
@@ -111,12 +113,15 @@ const Canvas = () => {
           technology: comp.technology,
           awsService: comp.awsService,
           isSelected: selectedNodeId === comp.id,
+          serviceName: comp.serviceId
+            ? serviceRegistry[comp.serviceId]?.name
+            : undefined,
         } as Record<string, unknown>,
       });
     }
 
     return nodeList;
-  }, [allComponents, groupIds, selectedNodeId]);
+  }, [allComponents, groupIds, selectedNodeId, serviceRegistry]);
 
   const edges: Edge[] = useMemo(() => {
     return allConnections.map((conn) => ({

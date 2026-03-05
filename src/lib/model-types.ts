@@ -16,11 +16,22 @@ export interface Component {
   parentId: string | null;
   tags?: string[];
   awsService?: string;
+  serviceId?: string;
   x: number;
   y: number;
   width?: number;
   height?: number;
   zIndex?: number;
+}
+
+export interface ServiceDefinition {
+  id: string;
+  name: string;
+  description: string;
+  repositoryUrl: string;
+  technology: string[];
+  owner?: string;
+  tags?: string[];
 }
 
 export interface Connection {
@@ -35,6 +46,7 @@ export interface Connection {
 export interface ModelDraft {
   components: Record<string, Component>;
   connections: Record<string, Connection>;
+  serviceRegistry: Record<string, ServiceDefinition>;
 }
 
 export interface BluePrintVersion {

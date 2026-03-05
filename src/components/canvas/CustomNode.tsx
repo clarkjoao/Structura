@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { Network, Server, Database, User } from "lucide-react";
+import { Network, Server, Database, User, Link2 } from "lucide-react";
 import type { ComponentType } from "@/lib/model-types";
 import {
   isAwsType,
@@ -17,6 +17,7 @@ export interface NodeData {
   technology?: string;
   awsService?: string;
   isSelected: boolean;
+  serviceName?: string;
 }
 
 const TypeConfig: Record<
@@ -110,6 +111,15 @@ const CardNode = memo(({ data }: NodeProps) => {
               {d.technology ?? catInfo?.name ?? svcInfo?.name}
             </span>
           )}
+
+          {d.serviceName && (
+            <div className="flex items-center gap-1 mt-1.5">
+              <Link2 className="h-3 w-3 text-primary shrink-0" />
+              <span className="text-[10px] text-primary truncate">
+                {d.serviceName}
+              </span>
+            </div>
+          )}
         </div>
 
         <Handle
@@ -150,6 +160,15 @@ const CardNode = memo(({ data }: NodeProps) => {
           <span className="inline-block text-[10px] font-mono rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground">
             {d.technology}
           </span>
+        )}
+
+        {d.serviceName && (
+          <div className="flex items-center gap-1 mt-1.5">
+            <Link2 className="h-3 w-3 text-primary shrink-0" />
+            <span className="text-[10px] text-primary truncate">
+              {d.serviceName}
+            </span>
+          </div>
         )}
       </div>
 
