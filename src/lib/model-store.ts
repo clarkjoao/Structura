@@ -150,6 +150,7 @@ interface AppActions {
   removeService: (id: string) => void;
   linkComponentToService: (componentId: string, serviceId: string | undefined) => void;
   linkComponentToDiagram: (componentId: string, diagramId: string | undefined) => void;
+  setParent: (childId: string, parentId: string | null) => void;
 }
 
 export type DiagramStore = AppState & AppActions;
@@ -297,6 +298,10 @@ export const useDiagramStore = create<DiagramStore>()(
     linkComponentToDiagram: (componentId, diagramId) => {
       set((state) => { const comp = activeDiagram(state).snapshot.components[componentId]; if (comp) comp.linkedDiagramId = diagramId; });
     },
+
+    setParent: (childId, parentId) => {
+      set((state) => { const comp = activeDiagram(state).snapshot.components[childId]; if (comp) comp.parentId = parentId; });
+    },
   })),
 );
 
@@ -368,4 +373,5 @@ export const useDiagramActions = () =>
     bringToFront: s.bringToFront, sendToBack: s.sendToBack,
     addService: s.addService, updateService: s.updateService, removeService: s.removeService, linkComponentToService: s.linkComponentToService,
     linkComponentToDiagram: s.linkComponentToDiagram,
+    setParent: s.setParent,
   })));
