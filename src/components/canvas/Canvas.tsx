@@ -730,6 +730,7 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
       )}
       {(selectedNodeId || selectedEdgeId) && (
         <ElementPanel
+          key={selectedNodeId ?? selectedEdgeId}
           selectedElementId={selectedNodeId}
           selectedEdgeId={selectedEdgeId}
           onClose={closePanel}

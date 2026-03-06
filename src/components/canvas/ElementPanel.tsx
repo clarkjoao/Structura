@@ -1,8 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import debounce from "lodash.debounce";
 import {
   X,
   Trash2,
-  Save,
   Link2,
   LayoutDashboard,
   Search,
@@ -360,21 +360,18 @@ const ComponentDetail = ({
   const isAws = isAwsType(type);
   const svcInfo = awsService ? AWS_SERVICE_MAP.get(awsService) : null;
 
-  const save = () => {
-    if (isSimple) {
-      updateComponent(component.id, { name, description: desc });
-    } else {
-      updateComponent(component.id, {
-        name,
-        description: desc,
-        technology: tech || undefined,
-        type,
-        awsService: isAws && awsService ? awsService : undefined,
-      });
-    }
-  };
+  const debouncedUpdate = useMemo(
+    () =>
+      debounce((patch: Partial<Omit<Component, "id">>) => {
+        updateComponent(component.id, patch);
+      }, 300),
+    [component.id, updateComponent],
+  );
+
+  useEffect(() => () => debouncedUpdate.cancel(), [debouncedUpdate]);
 
   const handleRemove = () => {
+    debouncedUpdate.cancel();
     removeComponent(component.id);
     onClose();
   };
@@ -413,7 +410,14 @@ const ComponentDetail = ({
             </div>
           )}
 
-          <Field label="Nome" value={name} onChange={setName} />
+          <Field
+            label="Nome"
+            value={name}
+            onChange={(v) => {
+              setName(v);
+              debouncedUpdate({ name: v });
+            }}
+          />
 
           {!isSimple && (
             <div>
@@ -423,8 +427,14 @@ const ComponentDetail = ({
               <select
                 value={type}
                 onChange={(e) => {
-                  setType(e.target.value as ComponentType);
-                  if (!e.target.value.startsWith("aws-")) setAwsService("");
+                  const newType = e.target.value as ComponentType;
+                  setType(newType);
+                  const newAws = newType.startsWith("aws-") ? awsService : "";
+                  if (!newType.startsWith("aws-")) setAwsService("");
+                  updateComponent(component.id, {
+                    type: newType,
+                    awsService: newType.startsWith("aws-") && newAws ? newAws : undefined,
+                  });
                 }}
                 className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
               >
@@ -451,13 +461,17 @@ const ComponentDetail = ({
               <select
                 value={awsService}
                 onChange={(e) => {
-                  setAwsService(e.target.value);
-                  const svc = AWS_SERVICE_MAP.get(e.target.value);
+                  const newSvc = e.target.value;
+                  setAwsService(newSvc);
+                  const svc = AWS_SERVICE_MAP.get(newSvc);
                   if (
                     svc &&
                     (name.startsWith("Novo") || name === component.name)
                   ) {
                     setName(svc.name);
+                    updateComponent(component.id, { awsService: newSvc || undefined, name: svc.name });
+                  } else {
+                    updateComponent(component.id, { awsService: newSvc || undefined });
                   }
                 }}
                 className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
@@ -472,7 +486,15 @@ const ComponentDetail = ({
             </div>
           )}
 
-          <Field label="Descrição" value={desc} onChange={setDesc} multiline />
+          <Field
+            label="Descrição"
+            value={desc}
+            onChange={(v) => {
+              setDesc(v);
+              debouncedUpdate({ description: v });
+            }}
+            multiline
+          />
 
           {isPanel && (
             <PanelColorPicker
@@ -493,7 +515,14 @@ const ComponentDetail = ({
           )}
 
           {!isSimple && (
-            <Field label="Tecnologia" value={tech} onChange={setTech} />
+            <Field
+              label="Tecnologia"
+              value={tech}
+              onChange={(v) => {
+                setTech(v);
+                debouncedUpdate({ technology: v || undefined });
+              }}
+            />
           )}
 
           {!isSimple && (
@@ -557,16 +586,10 @@ const ComponentDetail = ({
             </p>
           </div>
 
-          <div className="flex gap-2 pt-2">
-            <button
-              onClick={save}
-              className="flex-1 flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              <Save className="h-3.5 w-3.5" /> Salvar
-            </button>
+          <div className="pt-2">
             <button
               onClick={handleRemove}
-              className="flex items-center justify-center gap-1.5 rounded-md border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors"
+              className="flex items-center justify-center gap-1.5 rounded-md border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors w-full"
             >
               <Trash2 className="h-3.5 w-3.5" /> Remover
             </button>
@@ -597,13 +620,15 @@ const ConnectionDetail = ({
   const [tech, setTech] = useState(conn.technology ?? "");
   const [desc, setDesc] = useState(conn.description ?? "");
 
-  const save = () => {
-    updateConnection(conn.id, {
-      label,
-      technology: tech || undefined,
-      description: desc || undefined,
-    });
-  };
+  const debouncedUpdate = useMemo(
+    () =>
+      debounce((patch: Partial<Omit<Connection, "id">>) => {
+        updateConnection(conn.id, patch);
+      }, 300),
+    [conn.id, updateConnection],
+  );
+
+  useEffect(() => () => debouncedUpdate.cancel(), [debouncedUpdate]);
 
   return (
     <div className="w-80 border-l border-border bg-card overflow-auto">
@@ -619,9 +644,31 @@ const ConnectionDetail = ({
         </button>
       </div>
       <div className="p-4 space-y-4">
-        <Field label="Label" value={label} onChange={setLabel} />
-        <Field label="Tecnologia" value={tech} onChange={setTech} />
-        <Field label="Descrição" value={desc} onChange={setDesc} multiline />
+        <Field
+          label="Label"
+          value={label}
+          onChange={(v) => {
+            setLabel(v);
+            debouncedUpdate({ label: v });
+          }}
+        />
+        <Field
+          label="Tecnologia"
+          value={tech}
+          onChange={(v) => {
+            setTech(v);
+            debouncedUpdate({ technology: v || undefined });
+          }}
+        />
+        <Field
+          label="Descrição"
+          value={desc}
+          onChange={(v) => {
+            setDesc(v);
+            debouncedUpdate({ description: v || undefined });
+          }}
+          multiline
+        />
 
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
@@ -632,19 +679,14 @@ const ConnectionDetail = ({
           </p>
         </div>
 
-        <div className="flex gap-2 pt-2">
-          <button
-            onClick={save}
-            className="flex-1 flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-          >
-            <Save className="h-3.5 w-3.5" /> Salvar
-          </button>
+        <div className="pt-2">
           <button
             onClick={() => {
+              debouncedUpdate.cancel();
               removeConnection(conn.id);
               onClose();
             }}
-            className="flex items-center justify-center gap-1.5 rounded-md border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors"
+            className="flex items-center justify-center gap-1.5 rounded-md border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors w-full"
           >
             <Trash2 className="h-3.5 w-3.5" /> Remover
           </button>
