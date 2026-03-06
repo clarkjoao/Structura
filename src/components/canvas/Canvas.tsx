@@ -398,7 +398,7 @@ const Canvas = ({
         });
       }
     },
-    [nodes, setParent, updateNodeLayout],
+    [nodes, setParent, updateNodeLayout, snapshotBeforeLayoutChange],
   );
 
   const onEdgesChange: OnEdgesChange = useCallback((changes) => {
