@@ -49,9 +49,11 @@ const EMBED_PREFIX = "emb__";
 interface CanvasProps {
   activeFlow?: import("@/lib/model-types").Flow | null;
   currentStep?: number;
+  onOpenDiagram?: (id: string) => void;
+  onDrillUp?: () => void;
 }
 
-const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
+const Canvas = ({ activeFlow, currentStep, onOpenDiagram, onDrillUp }: CanvasProps = {}) => {
   const diagram = useActiveDiagram();
   const allDiagrams = useDiagrams();
   const visibleComponents = useVisibleComponents();
@@ -92,11 +94,15 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
       if (!diagram) return;
       const comp = diagram.snapshot.components[elementId];
       if (comp?.linkedDiagramId && allDiagrams[comp.linkedDiagramId]) {
-        openDiagram(comp.linkedDiagramId);
-        navigate(`/model/${comp.linkedDiagramId}`);
+        if (onOpenDiagram) {
+          onOpenDiagram(comp.linkedDiagramId);
+        } else {
+          openDiagram(comp.linkedDiagramId);
+          navigate(`/model/${comp.linkedDiagramId}`);
+        }
       }
     },
-    [diagram, allDiagrams, openDiagram, navigate],
+    [diagram, allDiagrams, openDiagram, navigate, onOpenDiagram],
   );
 
   const handleEmbed = useCallback(
@@ -688,7 +694,7 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
   return (
     <div className="flex-1 flex relative">
       <div className="flex-1 relative">
-        <CanvasToolbar />
+        <CanvasToolbar onDrillUp={onDrillUp} />
         <ReactFlow
           nodes={nodes}
           edges={edges}
