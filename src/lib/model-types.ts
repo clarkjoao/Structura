@@ -6,6 +6,7 @@ export type ComponentType =
   | "container"
   | "component"
   | "panel"
+  | "note"
   | AwsCategoryId;
 
 export type Level = "context" | "container" | "component";

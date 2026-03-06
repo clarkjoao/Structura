@@ -26,6 +26,7 @@ import { generateId } from "@/lib/model-types";
 import CustomNode from "./CustomNode";
 import CustomEdge from "./CustomEdge";
 import PanelNode from "./PanelNode";
+import NoteNode from "./NoteNode";
 import EmbeddedPanelNode from "./EmbeddedPanelNode";
 import C4ReadonlyNode from "./C4ReadonlyNode";
 import CanvasToolbar from "./CanvasToolbar";
@@ -35,6 +36,7 @@ import NodeContextMenu from "./NodeContextMenu";
 const nodeTypes = {
   c4: CustomNode,
   panel: PanelNode,
+  note: NoteNode,
   "embedded-panel": EmbeddedPanelNode,
   "c4-readonly": C4ReadonlyNode,
 };
@@ -189,6 +191,29 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
             panelOpacity: comp.panelOpacity,
             isSelected: selectedNodeId === comp.id,
             isDragTarget: dragTargetPanelId === comp.id,
+          },
+        });
+      } else if (comp.type === "note") {
+        const isChildOfPanel =
+          comp.parentId !== null && panelIds.has(comp.parentId);
+        nodeList.push({
+          id: comp.id,
+          type: "note",
+          position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
+          zIndex: layout?.zIndex ?? 1,
+          connectable: false,
+          ...(isChildOfPanel
+            ? { parentId: comp.parentId!, extent: "parent" as const }
+            : {}),
+          ...(comp.width || comp.height
+            ? { style: { width: comp.width, height: comp.height } }
+            : {}),
+          data: {
+            elementId: comp.id,
+            name: comp.name,
+            description: comp.description,
+            panelColor: comp.panelColor,
+            isSelected: selectedNodeId === comp.id,
           },
         });
       } else {
@@ -389,6 +414,7 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
           if (
             !comp ||
             comp.type === "panel" ||
+            comp.type === "note" ||
             dragId.startsWith(EMBED_PREFIX)
           ) {
             continue;

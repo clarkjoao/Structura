@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Cloud,
   Square,
+  StickyNote,
 } from "lucide-react";
 import { useActiveDiagram, useDiagramActions } from "@/lib/model-store";
 import type { ComponentType } from "@/lib/model-types";
@@ -104,6 +105,15 @@ const CanvasToolbar = () => {
               className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-surface-hover transition-colors"
             >
               <Square className="h-3.5 w-3.5 text-muted-foreground" /> Painel
+            </button>
+            <button
+              onClick={() => {
+                addComponent("note", "", null, { x: 300, y: 200 });
+                setShowAdd(false);
+              }}
+              className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-surface-hover transition-colors"
+            >
+              <StickyNote className="h-3.5 w-3.5 text-muted-foreground" /> Nota
             </button>
             <div className="border-t border-border my-1" />
             <button

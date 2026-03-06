@@ -45,6 +45,7 @@ const PANEL_COLOR_PRESETS = [
 
 const DEFAULT_PANEL_COLOR = "hsl(220 20% 20%)";
 const DEFAULT_PANEL_OPACITY = 10;
+const DEFAULT_NOTE_COLOR = "hsl(48 96% 53%)";
 
 interface Props {
   selectedElementId: string | null;
@@ -240,6 +241,50 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
   );
 };
 
+// ── Color swatches (shared by panel and note) ───────────────────────────────
+
+const ColorSwatches = ({
+  componentId,
+  currentColor,
+  label,
+  updateComponent,
+}: {
+  componentId: string;
+  currentColor: string;
+  label: string;
+  updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => void;
+}) => (
+  <div>
+    <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-2 block">
+      <Palette className="h-3 w-3 inline mr-1" />
+      {label}
+    </label>
+    <div className="grid grid-cols-4 gap-2">
+      {PANEL_COLOR_PRESETS.map((preset) => (
+        <button
+          key={preset.name}
+          onClick={() =>
+            updateComponent(componentId, { panelColor: preset.color })
+          }
+          className={`group relative h-8 rounded-md border-2 transition-all ${
+            currentColor === preset.color
+              ? "border-foreground scale-105 shadow-md"
+              : "border-transparent hover:border-muted-foreground/40 hover:scale-105"
+          }`}
+          style={{ backgroundColor: preset.color }}
+          title={preset.name}
+        >
+          {currentColor === preset.color && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-white shadow-sm" />
+            </div>
+          )}
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
 // ── Panel color picker ──────────────────────────────────────────────────────
 
 const PanelColorPicker = ({
@@ -254,36 +299,12 @@ const PanelColorPicker = ({
   updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => void;
 }) => (
   <div className="space-y-3">
-    <div>
-      <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-2 block">
-        <Palette className="h-3 w-3 inline mr-1" />
-        Cor do Painel
-      </label>
-      <div className="grid grid-cols-4 gap-2">
-        {PANEL_COLOR_PRESETS.map((preset) => (
-          <button
-            key={preset.name}
-            onClick={() =>
-              updateComponent(componentId, { panelColor: preset.color })
-            }
-            className={`group relative h-8 rounded-md border-2 transition-all ${
-              currentColor === preset.color
-                ? "border-foreground scale-105 shadow-md"
-                : "border-transparent hover:border-muted-foreground/40 hover:scale-105"
-            }`}
-            style={{ backgroundColor: preset.color }}
-            title={preset.name}
-          >
-            {currentColor === preset.color && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-white shadow-sm" />
-              </div>
-            )}
-          </button>
-        ))}
-      </div>
-    </div>
-
+    <ColorSwatches
+      componentId={componentId}
+      currentColor={currentColor}
+      label="Cor do Painel"
+      updateComponent={updateComponent}
+    />
     <div>
       <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
         Opacidade — {currentOpacity}%
@@ -334,11 +355,13 @@ const ComponentDetail = ({
   const [awsService, setAwsService] = useState(component.awsService ?? "");
 
   const isPanel = component.type === "panel";
+  const isNote = component.type === "note";
+  const isSimple = isPanel || isNote;
   const isAws = isAwsType(type);
   const svcInfo = awsService ? AWS_SERVICE_MAP.get(awsService) : null;
 
   const save = () => {
-    if (isPanel) {
+    if (isSimple) {
       updateComponent(component.id, { name, description: desc });
     } else {
       updateComponent(component.id, {
@@ -360,7 +383,7 @@ const ComponentDetail = ({
     <div className="w-80 border-l border-border bg-card overflow-auto">
       <div className="flex items-center justify-between p-3 border-b border-border">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          {isPanel ? "Painel" : component.name}
+          {isPanel ? "Painel" : isNote ? "Nota" : component.name}
         </h3>
         <button
           onClick={onClose}
@@ -370,13 +393,13 @@ const ComponentDetail = ({
         </button>
       </div>
 
-      {!isPanel && <TabBar active={tab} onChange={setTab} />}
+      {!isSimple && <TabBar active={tab} onChange={setTab} />}
 
-      {!isPanel && tab === "connections" ? (
+      {!isSimple && tab === "connections" ? (
         <ConnectionsTab componentId={component.id} />
       ) : (
         <div className="p-4 space-y-4">
-          {!isPanel && isAws && svcInfo && (
+          {!isSimple && isAws && svcInfo && (
             <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
               <AwsIcon iconName={svcInfo.iconName} size={32} />
               <div>
@@ -392,7 +415,7 @@ const ComponentDetail = ({
 
           <Field label="Nome" value={name} onChange={setName} />
 
-          {!isPanel && (
+          {!isSimple && (
             <div>
               <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
                 Tipo
@@ -420,7 +443,7 @@ const ComponentDetail = ({
             </div>
           )}
 
-          {!isPanel && isAws && (
+          {!isSimple && isAws && (
             <div>
               <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
                 Serviço AWS
@@ -460,11 +483,20 @@ const ComponentDetail = ({
             />
           )}
 
-          {!isPanel && (
+          {isNote && (
+            <ColorSwatches
+              componentId={component.id}
+              currentColor={component.panelColor ?? DEFAULT_NOTE_COLOR}
+              label="Cor da Nota"
+              updateComponent={updateComponent}
+            />
+          )}
+
+          {!isSimple && (
             <Field label="Tecnologia" value={tech} onChange={setTech} />
           )}
 
-          {!isPanel && (
+          {!isSimple && (
             <div>
               <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
                 <Link2 className="h-3 w-3 inline mr-1" />
@@ -490,7 +522,7 @@ const ComponentDetail = ({
             </div>
           )}
 
-          {!isPanel && (
+          {!isSimple && (
             <div>
               <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
                 <LayoutDashboard className="h-3 w-3 inline mr-1" />

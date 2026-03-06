@@ -442,6 +442,7 @@ export const useDiagramStore = create<DiagramStore>()(
         parentId,
         awsService: awsService ?? undefined,
         ...(type === "panel" ? { width: 600, height: 400 } : {}),
+        ...(type === "note" ? { panelColor: "hsl(48 96% 53%)" } : {}),
       };
       set((state) => {
         const d = activeDiagram(state);
