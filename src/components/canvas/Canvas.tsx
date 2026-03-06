@@ -26,8 +26,6 @@ import { generateId } from "@/lib/model-types";
 import CustomNode from "./CustomNode";
 import CustomEdge from "./CustomEdge";
 import PanelNode from "./PanelNode";
-import EmbeddedPanelNode from "./EmbeddedPanelNode";
-import C4ReadonlyNode from "./C4ReadonlyNode";
 import CanvasToolbar from "./CanvasToolbar";
 import ElementPanel from "./ElementPanel";
 import NodeContextMenu from "./NodeContextMenu";
@@ -35,14 +33,12 @@ import NodeContextMenu from "./NodeContextMenu";
 const nodeTypes = {
   c4: CustomNode,
   panel: PanelNode,
-  "embedded-panel": EmbeddedPanelNode,
-  "c4-readonly": C4ReadonlyNode,
 };
+
 const edgeTypes = { c4: CustomEdge };
 
 const PANEL_DEFAULT_W = 600;
 const PANEL_DEFAULT_H = 400;
-const EMBED_PREFIX = "emb__";
 
 interface CanvasProps {
   activeFlow?: import("@/lib/model-types").Flow | null;
@@ -66,8 +62,6 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
     setParent,
     addComponent,
     removeComponent,
-    embedDiagram,
-    detachEmbed,
     pushUndo,
     undo,
     redo,
@@ -93,29 +87,6 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
       }
     },
     [diagram, allDiagrams, openDiagram, navigate],
-  );
-
-  const handleEmbed = useCallback(
-    (elementId: string) => {
-      if (!diagram) return;
-      const comp = diagram.snapshot.components[elementId];
-      if (!comp?.linkedDiagramId || !allDiagrams[comp.linkedDiagramId]) return;
-      const layout = diagram.nodeLayouts.find(
-        (nl) => nl.elementId === elementId,
-      );
-      embedDiagram(elementId, comp.linkedDiagramId, {
-        x: (layout?.x ?? 0) + 50,
-        y: (layout?.y ?? 0) + 50,
-      });
-    },
-    [diagram, allDiagrams, embedDiagram],
-  );
-
-  const handleDetach = useCallback(
-    (embedId: string) => {
-      detachEmbed(embedId);
-    },
-    [detachEmbed],
   );
 
   const panelIds = useMemo(() => {
@@ -234,57 +205,7 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
               : linkedDiagramName
                 ? handleDrillDown
                 : undefined,
-            onEmbed: isPlaying
-              ? undefined
-              : linkedDiagramName
-                ? handleEmbed
-                : undefined,
           } as Record<string, unknown>,
-        });
-      }
-    }
-
-    for (const emb of diagram.embeddedDiagrams) {
-      const linked = allDiagrams[emb.diagramId];
-      if (!linked) continue;
-
-      const panelNodeId = `${EMBED_PREFIX}panel__${emb.id}`;
-      nodeList.push({
-        id: panelNodeId,
-        type: "embedded-panel",
-        position: { x: emb.x, y: emb.y },
-        zIndex: -1,
-        style: { width: emb.width, height: emb.height },
-        draggable: false,
-        selectable: false,
-        connectable: false,
-        data: {
-          embedId: emb.id,
-          diagramName: linked.name,
-          onDetach: handleDetach,
-        },
-      });
-
-      for (const childComp of Object.values(linked.snapshot.components)) {
-        const childLayout = linked.nodeLayouts.find(
-          (nl) => nl.elementId === childComp.id,
-        );
-        nodeList.push({
-          id: `${EMBED_PREFIX}${emb.id}__${childComp.id}`,
-          type: "c4-readonly",
-          parentId: panelNodeId,
-          extent: "parent" as const,
-          position: { x: childLayout?.x ?? 0, y: (childLayout?.y ?? 0) + 30 },
-          zIndex: 0,
-          draggable: false,
-          connectable: false,
-          selectable: false,
-          data: {
-            name: childComp.name,
-            type: childComp.type,
-            description: childComp.description,
-            technology: childComp.technology,
-          },
         });
       }
     }
@@ -298,8 +219,6 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
     serviceRegistry,
     allDiagrams,
     handleDrillDown,
-    handleEmbed,
-    handleDetach,
     isPlaying,
     flowHighlight,
   ]);
@@ -328,41 +247,12 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
       };
     });
 
-    for (const emb of diagram.embeddedDiagrams) {
-      const linked = allDiagrams[emb.diagramId];
-      if (!linked) continue;
-      for (const conn of Object.values(linked.snapshot.connections)) {
-        edgeList.push({
-          id: `${EMBED_PREFIX}${emb.id}__${conn.id}`,
-          source: `${EMBED_PREFIX}${emb.id}__${conn.sourceId}`,
-          target: `${EMBED_PREFIX}${emb.id}__${conn.targetId}`,
-          type: "c4",
-          data: { label: conn.label, technology: conn.technology },
-          selectable: false,
-          style: { opacity: 0.5 },
-        });
-      }
-    }
-
     return edgeList;
-  }, [
-    diagram,
-    visibleConnections,
-    selectedEdgeId,
-    allDiagrams,
-    isPlaying,
-    flowHighlight,
-  ]);
+  }, [diagram, visibleConnections, selectedEdgeId, isPlaying, flowHighlight]);
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
       changes.forEach((change) => {
-        if (
-          "id" in change &&
-          typeof change.id === "string" &&
-          change.id.startsWith(EMBED_PREFIX)
-        )
-          return;
         if (change.type === "position" && change.position)
           updateNodeLayout(change.id, change.position);
         if (change.type === "dimensions" && change.dimensions)
@@ -377,14 +267,7 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
 
   const onNodeDragStop = useCallback(
     (_: unknown, draggedNode: Node) => {
-      if (
-        draggedNode.type === "panel" ||
-        draggedNode.type === "embedded-panel" ||
-        draggedNode.type === "c4-readonly"
-      )
-        return;
-      if (draggedNode.id.startsWith(EMBED_PREFIX)) return;
-
+      if (draggedNode.type === "panel") return;
       if (draggedNode.parentId) {
         const parent = nodes.find((n) => n.id === draggedNode.parentId);
         if (parent) {
@@ -446,7 +329,6 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
       if (isPlaying) return;
-      if (node.id.startsWith(EMBED_PREFIX)) return;
       setSelectedNodeId(node.id);
       setSelectedEdgeId(null);
       setContextMenu(null);
@@ -465,7 +347,6 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
   }, []);
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: Node) => {
-      if (node.id.startsWith(EMBED_PREFIX)) return;
       event.preventDefault();
       setContextMenu({
         x: event.clientX,
@@ -508,22 +389,14 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
       if (mod && e.key === "a") {
         e.preventDefault();
         reactFlowInstance.setNodes((nds) =>
-          nds.map((n) =>
-            n.id.startsWith(EMBED_PREFIX) ? n : { ...n, selected: true },
-          ),
+          nds.map((n) => ({ ...n, selected: true })),
         );
         return;
       }
       if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
-        const selected = reactFlowInstance
-          .getNodes()
-          .filter((n) => n.selected && !n.id.startsWith(EMBED_PREFIX));
-        if (
-          selected.length === 0 &&
-          selectedNodeId &&
-          !selectedNodeId.startsWith(EMBED_PREFIX)
-        ) {
+        const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
+        if (selected.length === 0 && selectedNodeId) {
           pushUndo();
           removeComponent(selectedNodeId);
           setSelectedNodeId(null);
@@ -538,13 +411,11 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
       }
       if (mod && e.key === "d") {
         e.preventDefault();
-        const selected = reactFlowInstance
-          .getNodes()
-          .filter((n) => n.selected && !n.id.startsWith(EMBED_PREFIX));
+        const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
         const toDuplicate =
           selected.length > 0
             ? selected
-            : selectedNodeId && !selectedNodeId.startsWith(EMBED_PREFIX)
+            : selectedNodeId
               ? reactFlowInstance
                   .getNodes()
                   .filter((n) => n.id === selectedNodeId)

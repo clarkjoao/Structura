@@ -73,16 +73,6 @@ export interface ModelDraft {
   flows: Record<string, Flow>;
 }
 
-export interface EmbeddedDiagram {
-  id: string;
-  diagramId: string;
-  originComponentId: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
 export interface Diagram {
   id: string;
   name: string;
@@ -92,7 +82,6 @@ export interface Diagram {
   snapshot: ModelDraft;
   nodeLayouts: ViewNodeLayout[];
   viewport: { x: number; y: number; zoom: number };
-  embeddedDiagrams: EmbeddedDiagram[];
 }
 
 let _counter = 0;

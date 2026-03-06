@@ -5,11 +5,9 @@ import type {
   Component,
   Connection,
   ServiceDefinition,
-  EmbeddedDiagram,
   Flow,
   FlowStep,
   Diagram,
-  ModelDraft,
   ComponentType,
   Level,
 } from "./model-types";
@@ -120,7 +118,7 @@ function buildSeedDiagrams(): Record<string, Diagram> {
               },
               {
                 order: 2,
-                componentId: "e-orders",
+                componentId: "e-payments",
                 connectionId: "r-2",
                 note: "Envia para processamento de pagamento",
               },
@@ -134,7 +132,6 @@ function buildSeedDiagrams(): Record<string, Diagram> {
         { elementId: "e-payments", x: 600, y: 250 },
       ],
       viewport: { x: 0, y: 0, zoom: 1 },
-      embeddedDiagrams: [],
     },
     "d-orders": {
       id: "d-orders",
@@ -195,7 +192,6 @@ function buildSeedDiagrams(): Record<string, Diagram> {
         { elementId: "e-db", x: 400, y: 300 },
       ],
       viewport: { x: 0, y: 0, zoom: 1 },
-      embeddedDiagrams: [],
     },
     "d-gateway": {
       id: "d-gateway",
@@ -239,7 +235,6 @@ function buildSeedDiagrams(): Record<string, Diagram> {
         { elementId: "e-limiter", x: 400, y: 100 },
       ],
       viewport: { x: 0, y: 0, zoom: 1 },
-      embeddedDiagrams: [],
     },
   };
 }
@@ -303,13 +298,6 @@ interface AppActions {
     diagramId: string | undefined,
   ) => void;
   setParent: (childId: string, parentId: string | null) => void;
-
-  embedDiagram: (
-    originComponentId: string,
-    diagramId: string,
-    position: { x: number; y: number },
-  ) => void;
-  detachEmbed: (embedId: string) => void;
 
   addFlow: (diagramId: string, name: string, mermaid: string) => Flow;
   updateFlow: (id: string, patch: Partial<Omit<Flow, "id">>) => void;
@@ -410,7 +398,6 @@ export const useDiagramStore = create<DiagramStore>()(
         },
         nodeLayouts: [],
         viewport: { x: 0, y: 0, zoom: 1 },
-        embeddedDiagrams: [],
       };
       set((state) => {
         state.diagrams[diagram.id] = diagram;
@@ -606,34 +593,6 @@ export const useDiagramStore = create<DiagramStore>()(
       });
     },
 
-    embedDiagram: (originComponentId, diagramId, position) => {
-      set((state) => {
-        const d = activeDiagram(state);
-        const already = d.embeddedDiagrams.find(
-          (e) =>
-            e.diagramId === diagramId &&
-            e.originComponentId === originComponentId,
-        );
-        if (already) return;
-        d.embeddedDiagrams.push({
-          id: generateId("emb"),
-          diagramId,
-          originComponentId,
-          x: position.x,
-          y: position.y,
-          width: 650,
-          height: 450,
-        });
-      });
-    },
-
-    detachEmbed: (embedId) => {
-      set((state) => {
-        const d = activeDiagram(state);
-        d.embeddedDiagrams = d.embeddedDiagrams.filter((e) => e.id !== embedId);
-      });
-    },
-
     addFlow: (diagramId, name, mermaid) => {
       const { diagrams } = get();
       const d = diagrams[diagramId];
@@ -708,20 +667,6 @@ export const useDiagramStore = create<DiagramStore>()(
         const next = state._redoStack.pop()!;
         state._undoStack.push(currentSnap);
         state.diagrams[activeDiagramId] = JSON.parse(next);
-      });
-    },
-
-    linkComponentToService: (componentId, serviceId) => {
-      set((state) => {
-        const comp = activeDiagram(state).snapshot.components[componentId];
-        if (comp) comp.serviceId = serviceId;
-      });
-    },
-
-    linkComponentToDiagram: (componentId, diagramId) => {
-      set((state) => {
-        const comp = activeDiagram(state).snapshot.components[componentId];
-        if (comp) comp.linkedDiagramId = diagramId;
       });
     },
   })),
@@ -849,8 +794,6 @@ export const useDiagramActions = () =>
       linkComponentToService: s.linkComponentToService,
       linkComponentToDiagram: s.linkComponentToDiagram,
       setParent: s.setParent,
-      embedDiagram: s.embedDiagram,
-      detachEmbed: s.detachEmbed,
       addFlow: s.addFlow,
       updateFlow: s.updateFlow,
       removeFlow: s.removeFlow,
