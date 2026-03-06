@@ -23,6 +23,8 @@ export interface Component {
   linkedDiagramId?: string;
   width?: number;
   height?: number;
+  panelColor?: string;
+  panelOpacity?: number;
 }
 
 export interface ServiceDefinition {

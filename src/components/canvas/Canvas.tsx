@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ReactFlow,
   Background,
@@ -82,6 +82,8 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
     y: number;
     elementId: string;
   } | null>(null);
+  const [dragTargetPanelId, setDragTargetPanelId] = useState<string | null>(null);
+  const dragTargetRef = useRef<string | null>(null);
 
   const handleDrillDown = useCallback(
     (elementId: string) => {
@@ -182,7 +184,11 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
           data: {
             elementId: comp.id,
             name: comp.name,
+            description: comp.description || undefined,
+            panelColor: comp.panelColor,
+            panelOpacity: comp.panelOpacity,
             isSelected: selectedNodeId === comp.id,
+            isDragTarget: dragTargetPanelId === comp.id,
           },
         });
       } else {
@@ -302,6 +308,7 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
     handleDetach,
     isPlaying,
     flowHighlight,
+    dragTargetPanelId,
   ]);
 
   const edges: Edge[] = useMemo(() => {
@@ -356,13 +363,13 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
-      changes.forEach((change) => {
+      for (const change of changes) {
         if (
           "id" in change &&
           typeof change.id === "string" &&
           change.id.startsWith(EMBED_PREFIX)
         )
-          return;
+          continue;
         if (change.type === "position" && change.position)
           updateNodeLayout(change.id, change.position);
         if (change.type === "dimensions" && change.dimensions)
@@ -370,13 +377,67 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
             width: change.dimensions.width,
             height: change.dimensions.height,
           });
-      });
+
+        if (
+          change.type === "position" &&
+          "dragging" in change &&
+          change.dragging &&
+          change.position
+        ) {
+          const dragId = change.id;
+          const comp = diagram?.snapshot.components[dragId];
+          if (
+            !comp ||
+            comp.type === "panel" ||
+            dragId.startsWith(EMBED_PREFIX)
+          ) {
+            continue;
+          }
+
+          let absX = change.position.x;
+          let absY = change.position.y;
+
+          if (comp.parentId) {
+            const parentLayout = diagram?.nodeLayouts.find(
+              (nl) => nl.elementId === comp.parentId,
+            );
+            if (parentLayout) {
+              absX += parentLayout.x;
+              absY += parentLayout.y;
+            }
+          }
+
+          const panels = nodes.filter(
+            (n) => n.type === "panel" && n.id !== comp.parentId,
+          );
+          const match = panels.find(
+            (p) =>
+              absX > p.position.x &&
+              absY > p.position.y &&
+              absX <
+                p.position.x +
+                  ((p.style?.width as number) ?? PANEL_DEFAULT_W) &&
+              absY <
+                p.position.y +
+                  ((p.style?.height as number) ?? PANEL_DEFAULT_H),
+          );
+
+          const newTarget = match?.id ?? null;
+          if (newTarget !== dragTargetRef.current) {
+            dragTargetRef.current = newTarget;
+            setDragTargetPanelId(newTarget);
+          }
+        }
+      }
     },
-    [updateNodeLayout, updateComponent],
+    [updateNodeLayout, updateComponent, diagram, nodes],
   );
 
   const onNodeDragStop = useCallback(
     (_: unknown, draggedNode: Node) => {
+      dragTargetRef.current = null;
+      setDragTargetPanelId(null);
+
       if (
         draggedNode.type === "panel" ||
         draggedNode.type === "embedded-panel" ||

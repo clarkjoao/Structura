@@ -11,6 +11,7 @@ import {
   Server,
   Database,
   User,
+  Palette,
 } from "lucide-react";
 import {
   useComponent,
@@ -28,6 +29,22 @@ import {
   AWS_SERVICE_MAP,
 } from "@/lib/aws-catalog";
 import AwsIcon from "./AwsIcon";
+
+// ── Panel color presets ─────────────────────────────────────────────────────
+
+const PANEL_COLOR_PRESETS = [
+  { name: "Blue", color: "hsl(220 70% 50%)" },
+  { name: "Purple", color: "hsl(270 70% 50%)" },
+  { name: "Green", color: "hsl(150 70% 40%)" },
+  { name: "Orange", color: "hsl(30 90% 50%)" },
+  { name: "Red", color: "hsl(0 70% 50%)" },
+  { name: "Cyan", color: "hsl(190 80% 45%)" },
+  { name: "Yellow", color: "hsl(45 90% 50%)" },
+  { name: "Gray", color: "hsl(220 20% 40%)" },
+];
+
+const DEFAULT_PANEL_COLOR = "hsl(220 20% 20%)";
+const DEFAULT_PANEL_OPACITY = 10;
 
 interface Props {
   selectedElementId: string | null;
@@ -223,6 +240,75 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
   );
 };
 
+// ── Panel color picker ──────────────────────────────────────────────────────
+
+const PanelColorPicker = ({
+  componentId,
+  currentColor,
+  currentOpacity,
+  updateComponent,
+}: {
+  componentId: string;
+  currentColor: string;
+  currentOpacity: number;
+  updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => void;
+}) => (
+  <div className="space-y-3">
+    <div>
+      <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-2 block">
+        <Palette className="h-3 w-3 inline mr-1" />
+        Cor do Painel
+      </label>
+      <div className="grid grid-cols-4 gap-2">
+        {PANEL_COLOR_PRESETS.map((preset) => (
+          <button
+            key={preset.name}
+            onClick={() =>
+              updateComponent(componentId, { panelColor: preset.color })
+            }
+            className={`group relative h-8 rounded-md border-2 transition-all ${
+              currentColor === preset.color
+                ? "border-foreground scale-105 shadow-md"
+                : "border-transparent hover:border-muted-foreground/40 hover:scale-105"
+            }`}
+            style={{ backgroundColor: preset.color }}
+            title={preset.name}
+          >
+            {currentColor === preset.color && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-white shadow-sm" />
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <div>
+      <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+        Opacidade — {currentOpacity}%
+      </label>
+      <input
+        type="range"
+        min={5}
+        max={40}
+        step={1}
+        value={currentOpacity}
+        onChange={(e) =>
+          updateComponent(componentId, {
+            panelOpacity: Number(e.target.value),
+          })
+        }
+        className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+      />
+      <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5">
+        <span>5%</span>
+        <span>40%</span>
+      </div>
+    </div>
+  </div>
+);
+
 // ── Component detail (with tabs) ────────────────────────────────────────────
 
 const ComponentDetail = ({
@@ -247,17 +333,22 @@ const ComponentDetail = ({
   const [type, setType] = useState<ComponentType>(component.type);
   const [awsService, setAwsService] = useState(component.awsService ?? "");
 
+  const isPanel = component.type === "panel";
   const isAws = isAwsType(type);
   const svcInfo = awsService ? AWS_SERVICE_MAP.get(awsService) : null;
 
   const save = () => {
-    updateComponent(component.id, {
-      name,
-      description: desc,
-      technology: tech || undefined,
-      type,
-      awsService: isAws && awsService ? awsService : undefined,
-    });
+    if (isPanel) {
+      updateComponent(component.id, { name, description: desc });
+    } else {
+      updateComponent(component.id, {
+        name,
+        description: desc,
+        technology: tech || undefined,
+        type,
+        awsService: isAws && awsService ? awsService : undefined,
+      });
+    }
   };
 
   const handleRemove = () => {
@@ -269,7 +360,7 @@ const ComponentDetail = ({
     <div className="w-80 border-l border-border bg-card overflow-auto">
       <div className="flex items-center justify-between p-3 border-b border-border">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          {component.name}
+          {isPanel ? "Painel" : component.name}
         </h3>
         <button
           onClick={onClose}
@@ -279,13 +370,13 @@ const ComponentDetail = ({
         </button>
       </div>
 
-      <TabBar active={tab} onChange={setTab} />
+      {!isPanel && <TabBar active={tab} onChange={setTab} />}
 
-      {tab === "connections" ? (
+      {!isPanel && tab === "connections" ? (
         <ConnectionsTab componentId={component.id} />
       ) : (
         <div className="p-4 space-y-4">
-          {isAws && svcInfo && (
+          {!isPanel && isAws && svcInfo && (
             <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
               <AwsIcon iconName={svcInfo.iconName} size={32} />
               <div>
@@ -301,33 +392,35 @@ const ComponentDetail = ({
 
           <Field label="Nome" value={name} onChange={setName} />
 
-          <div>
-            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-              Tipo
-            </label>
-            <select
-              value={type}
-              onChange={(e) => {
-                setType(e.target.value as ComponentType);
-                if (!e.target.value.startsWith("aws-")) setAwsService("");
-              }}
-              className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            >
-              <optgroup label="C4 Model">
-                <option value="person">Person</option>
-                <option value="system">System</option>
-                <option value="container">Container</option>
-                <option value="component">Component</option>
-              </optgroup>
-              {AWS_CATEGORIES.map((cat) => (
-                <optgroup key={cat.id} label={`AWS: ${cat.name}`}>
-                  <option value={cat.id}>{cat.name}</option>
+          {!isPanel && (
+            <div>
+              <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+                Tipo
+              </label>
+              <select
+                value={type}
+                onChange={(e) => {
+                  setType(e.target.value as ComponentType);
+                  if (!e.target.value.startsWith("aws-")) setAwsService("");
+                }}
+                className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <optgroup label="C4 Model">
+                  <option value="person">Person</option>
+                  <option value="system">System</option>
+                  <option value="container">Container</option>
+                  <option value="component">Component</option>
                 </optgroup>
-              ))}
-            </select>
-          </div>
+                {AWS_CATEGORIES.map((cat) => (
+                  <optgroup key={cat.id} label={`AWS: ${cat.name}`}>
+                    <option value={cat.id}>{cat.name}</option>
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+          )}
 
-          {isAws && (
+          {!isPanel && isAws && (
             <div>
               <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
                 Serviço AWS
@@ -357,55 +450,71 @@ const ComponentDetail = ({
           )}
 
           <Field label="Descrição" value={desc} onChange={setDesc} multiline />
-          <Field label="Tecnologia" value={tech} onChange={setTech} />
 
-          <div>
-            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-              <Link2 className="h-3 w-3 inline mr-1" />
-              Vincular ao Serviço
-            </label>
-            <select
-              value={component.serviceId ?? ""}
-              onChange={(e) =>
-                linkComponentToService(
-                  component.id,
-                  e.target.value || undefined,
-                )
-              }
-              className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            >
-              <option value="">Nenhum</option>
-              {allServices.map((svc) => (
-                <option key={svc.id} value={svc.id}>
-                  {svc.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {isPanel && (
+            <PanelColorPicker
+              componentId={component.id}
+              currentColor={component.panelColor ?? DEFAULT_PANEL_COLOR}
+              currentOpacity={component.panelOpacity ?? DEFAULT_PANEL_OPACITY}
+              updateComponent={updateComponent}
+            />
+          )}
 
-          <div>
-            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-              <LayoutDashboard className="h-3 w-3 inline mr-1" />
-              Vincular ao Diagrama
-            </label>
-            <select
-              value={component.linkedDiagramId ?? ""}
-              onChange={(e) =>
-                linkComponentToDiagram(
-                  component.id,
-                  e.target.value || undefined,
-                )
-              }
-              className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            >
-              <option value="">Nenhum</option>
-              {allDiagrams.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {!isPanel && (
+            <Field label="Tecnologia" value={tech} onChange={setTech} />
+          )}
+
+          {!isPanel && (
+            <div>
+              <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+                <Link2 className="h-3 w-3 inline mr-1" />
+                Vincular ao Serviço
+              </label>
+              <select
+                value={component.serviceId ?? ""}
+                onChange={(e) =>
+                  linkComponentToService(
+                    component.id,
+                    e.target.value || undefined,
+                  )
+                }
+                className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="">Nenhum</option>
+                {allServices.map((svc) => (
+                  <option key={svc.id} value={svc.id}>
+                    {svc.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {!isPanel && (
+            <div>
+              <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+                <LayoutDashboard className="h-3 w-3 inline mr-1" />
+                Vincular ao Diagrama
+              </label>
+              <select
+                value={component.linkedDiagramId ?? ""}
+                onChange={(e) =>
+                  linkComponentToDiagram(
+                    component.id,
+                    e.target.value || undefined,
+                  )
+                }
+                className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="">Nenhum</option>
+                {allDiagrams.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
