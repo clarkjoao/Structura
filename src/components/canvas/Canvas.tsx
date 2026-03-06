@@ -72,7 +72,7 @@ const Canvas = ({ activeFlow, currentStep, onOpenDiagram, onDrillUp }: CanvasPro
     removeComponent,
     embedDiagram,
     detachEmbed,
-    pushUndo,
+    snapshotBeforeLayoutChange,
     undo,
     redo,
   } = useDiagramActions();
@@ -469,6 +469,7 @@ const Canvas = ({ activeFlow, currentStep, onOpenDiagram, onDrillUp }: CanvasPro
     (_: unknown, draggedNode: Node) => {
       dragTargetRef.current = null;
       setDragTargetPanelId(null);
+      snapshotBeforeLayoutChange();
 
       if (
         draggedNode.type === "panel" ||
@@ -519,7 +520,7 @@ const Canvas = ({ activeFlow, currentStep, onOpenDiagram, onDrillUp }: CanvasPro
         });
       }
     },
-    [nodes, setParent, updateNodeLayout],
+    [nodes, setParent, updateNodeLayout, snapshotBeforeLayoutChange],
   );
 
   const onEdgesChange: OnEdgesChange = useCallback(() => {}, []);
@@ -617,13 +618,11 @@ const Canvas = ({ activeFlow, currentStep, onOpenDiagram, onDrillUp }: CanvasPro
           selectedNodeId &&
           !selectedNodeId.startsWith(EMBED_PREFIX)
         ) {
-          pushUndo();
           removeComponent(selectedNodeId);
           setSelectedNodeId(null);
           return;
         }
         if (selected.length > 0) {
-          pushUndo();
           for (const n of selected) removeComponent(n.id);
           setSelectedNodeId(null);
         }
@@ -643,7 +642,6 @@ const Canvas = ({ activeFlow, currentStep, onOpenDiagram, onDrillUp }: CanvasPro
                   .filter((n) => n.id === selectedNodeId)
               : [];
         if (toDuplicate.length === 0) return;
-        pushUndo();
         for (const n of toDuplicate) {
           const comp = diagram.snapshot.components[n.id];
           if (!comp) continue;
@@ -677,7 +675,6 @@ const Canvas = ({ activeFlow, currentStep, onOpenDiagram, onDrillUp }: CanvasPro
     diagram,
     selectedNodeId,
     reactFlowInstance,
-    pushUndo,
     undo,
     redo,
     removeComponent,
