@@ -2,6 +2,8 @@
 @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -9,44 +11,44 @@
 
 @layer base {
   :root {
-    --background: 0 0% 96%;
-    --foreground: 0 0% 9%;
+    --background: 222 47% 6%;
+    --foreground: 210 40% 93%;
 
-    --card: 0 0% 98%;
-    --card-foreground: 0 0% 9%;
+    --card: 222 44% 8%;
+    --card-foreground: 210 40% 93%;
 
-    --popover: 0 0% 89%;
-    --popover-foreground: 0 0% 9%;
+    --popover: 222 44% 8%;
+    --popover-foreground: 210 40% 93%;
 
-    --primary: 20 90% 48%;
-    --primary-foreground: 33 100% 96%;
+    --primary: 187 72% 51%;
+    --primary-foreground: 222 47% 6%;
 
-    --secondary: 0 0% 32%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 220 30% 14%;
+    --secondary-foreground: 210 30% 80%;
 
-    --muted: 0 0% 63%;
-    --muted-foreground: 0 0% 9%;
+    --muted: 220 25% 12%;
+    --muted-foreground: 215 20% 55%;
 
-    --accent: 47 100% 96%;
-    --accent-foreground: 37 92% 50%;
+    --accent: 187 72% 51%;
+    --accent-foreground: 222 47% 6%;
 
-    --destructive: 0 72% 50%;
-    --destructive-foreground: 0 85% 97%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 0 0% 83%;
-    --input: 0 0% 83%;
-    --ring: 20 90% 48%;
+    --border: 220 20% 16%;
+    --input: 220 20% 16%;
+    --ring: 187 72% 51%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
     --sidebar-background: 222 44% 7%;
-    --sidebar-foreground: 0 0% 9%;
-    --sidebar-primary: 20 90% 48%;
-    --sidebar-primary-foreground: 33 100% 96%;
-    --sidebar-accent: 0 0% 32%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 83%;
-    --sidebar-ring: 20 90% 48%;
+    --sidebar-foreground: 210 30% 80%;
+    --sidebar-primary: 187 72% 51%;
+    --sidebar-primary-foreground: 222 47% 6%;
+    --sidebar-accent: 220 25% 12%;
+    --sidebar-accent-foreground: 210 30% 80%;
+    --sidebar-border: 220 20% 16%;
+    --sidebar-ring: 187 72% 51%;
 
     /* Custom tokens */
     --surface: 222 40% 10%;
