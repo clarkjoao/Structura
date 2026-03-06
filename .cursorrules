@@ -1,10 +1,12 @@
 # .cursorrules — Architecture Diagram Platform
 
 ## Project overview
+
 A C4 Model architecture diagramming platform built with React, TypeScript, Vite, and React Flow.
 Think IcePanel.io — multiple independent diagrams, drill-down navigation, AWS service nodes, flows, and a service registry.
 
 ## Tech stack
+
 - **React 18** + **TypeScript** (strict)
 - **Vite** with `@vitejs/plugin-react-swc`
 - **React Flow** (`@xyflow/react`) — canvas, nodes, edges
@@ -16,6 +18,7 @@ Think IcePanel.io — multiple independent diagrams, drill-down navigation, AWS 
 - **react-router-dom** — routing
 
 ## Project structure
+
 ```
 src/
 ├── components/
@@ -36,6 +39,7 @@ src/
 ## Data model (model-types.ts)
 
 ### Core types
+
 ```ts
 ComponentType = "person" | "system" | "container" | "component" | "panel" | AwsCategoryId
 
@@ -68,15 +72,16 @@ ModelDraft { components, connections, serviceRegistry }
 ```
 
 ### Planned types (not yet implemented — add when needed)
+
 ```ts
 FlowStep { order, componentId?, connectionId?, note? }
 Flow { id, name, mermaid, steps: FlowStep[], diagramId }
-EmbeddedDiagram { id, diagramId, originComponentId, x, y, width, height }
 ```
 
 ## State management rules (CRITICAL)
 
 ### Always follow these patterns:
+
 1. **All state lives in `useDiagramStore`** — no local state for data, only for UI (modals, panels open/closed)
 2. **All mutations use immer** — mutate `state` directly inside `set()`
 3. **Selectors that return arrays/objects MUST use `useShallow`** to prevent infinite re-render loops
@@ -101,35 +106,42 @@ export const useVisibleComponents = () =>
 ## Canvas rules (React Flow)
 
 ### Node types registered in ArchCanvas:
+
 ```ts
 const nodeTypes = { c4: C4Node, panel: PanelNode };
 const edgeTypes = { c4: C4Edge };
 ```
 
 ### Node rendering order — panels MUST come first:
+
 ```ts
 const sorted = [...visibleComponents].sort((a, b) =>
-  a.type === "panel" ? -1 : b.type === "panel" ? 1 : 0
+  a.type === "panel" ? -1 : b.type === "panel" ? 1 : 0,
 );
 ```
 
 ### Panel nodes use parent-child system:
+
 - `parentId` on a Component → set as `parentId` on the React Flow node
 - `extent: "parent"` on children inside panels
 - `zIndex: -1` for panels, `zIndex: 1` for regular nodes
 
 ### Handles are horizontal:
+
 - `type="target"` → `Position.Left`
 - `type="source"` → `Position.Right`
 
 ### Edges are straight lines:
+
 - Use `getStraightPath` from `@xyflow/react` (not getBezierPath)
 - `sourcePosition` and `targetPosition` are NOT passed to `getStraightPath`
 
 ### Viewport persistence:
+
 - Use `onMoveEnd` (not `onMove`) to call `updateViewport` — avoids re-render loop
 
 ### `onNodeDragStop` detects panel drops:
+
 ```ts
 // When a non-panel node is dropped inside a panel boundary → setParent(nodeId, panelId)
 // When dropped outside all panels → setParent(nodeId, null)
@@ -138,20 +150,22 @@ const sorted = [...visibleComponents].sort((a, b) =>
 ## Component conventions
 
 ### Selectors to use in components:
+
 ```ts
-useActiveDiagram()          // full Diagram object
-useComponents()             // Record<string, Component>
-useComponent(id)            // single Component
-useConnections()            // Record<string, Connection>
-useVisibleComponents()      // Component[] filtered by nodeLayouts
-useVisibleConnections()     // Connection[] filtered by visible node ids
-useAllDiagrams()            // Diagram[] for dashboard list
-useServiceRegistry()        // Record<string, ServiceDefinition>
-useAllServices()            // ServiceDefinition[]
-useDiagramActions()         // all actions — always useShallow
+useActiveDiagram(); // full Diagram object
+useComponents(); // Record<string, Component>
+useComponent(id); // single Component
+useConnections(); // Record<string, Connection>
+useVisibleComponents(); // Component[] filtered by nodeLayouts
+useVisibleConnections(); // Connection[] filtered by visible node ids
+useAllDiagrams(); // Diagram[] for dashboard list
+useServiceRegistry(); // Record<string, ServiceDefinition>
+useAllServices(); // ServiceDefinition[]
+useDiagramActions(); // all actions — always useShallow
 ```
 
 ### Actions available via `useDiagramActions()`:
+
 ```ts
 // Diagrams
 addDiagram(name, level, domain?)
@@ -185,30 +199,36 @@ linkComponentToDiagram(componentId, diagramId | undefined)
 ## Key behaviors
 
 ### Navigation between diagrams:
+
 - `Dashboard` lists all diagrams → click row → `openDiagram(id)` → navigate to `/model/:id`
 - `ModelExplorer` reads `useActiveDiagram()`
 
 ### Linked diagram navigation:
+
 - If `component.linkedDiagramId` is set → "Explorar interior" button calls `openDiagram(linkedDiagramId)` and navigates
 - If not set → no drill-down (drill-down navigation was removed in favor of separate diagrams)
 
 ### AWS nodes:
+
 - `isAwsType(type)` from `aws-catalog.ts` detects AWS category types
 - `AWS_SERVICE_MAP`, `AWS_CATEGORY_MAP` for icon/name lookup
 - `AwsIcon` component lazy-loads icons via `import("aws-react-icons")` — lib is CJS, pre-bundled via `optimizeDeps.include` in vite.config.ts
 
 ### Panel nodes:
+
 - `type: "panel"` — resizable container, no handles, no connections
 - Uses `NodeResizer` from `@reactflow/node-resizer`
 - `width`/`height` stored on `Component`, passed as `style` to React Flow node
 - `onResize` → `updateComponent(id, { width, height })`
 
 ### Z-order:
+
 - `bringToFront` → `zIndex = max + 1`
 - `sendToBack` → `zIndex = min - 1`
 - `zIndex` stored in `ViewNodeLayout`, not in `Component`
 
 ## Styling conventions
+
 - Dark theme — `bg-card`, `bg-background`, `border-border`, `text-muted-foreground`
 - Node colors by type: `text-node-person`, `text-node-system`, `text-node-container`, `text-node-component`
 - AWS category colors: `text-aws-compute`, `border-aws-storage/50`, etc.
@@ -217,6 +237,7 @@ linkComponentToDiagram(componentId, diagramId | undefined)
 - Tailwind utility classes only
 
 ## What NOT to do
+
 - Never add `Provider` wrappers for data — Zustand needs no provider
 - Never use `useCallback` with `draft` as dependency — use store actions instead
 - Never call `Object.values()` in a selector without `useShallow`

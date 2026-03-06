@@ -27,8 +27,6 @@ import CustomNode from "./CustomNode";
 import CustomEdge from "./CustomEdge";
 import PanelNode from "./PanelNode";
 import NoteNode from "./NoteNode";
-import EmbeddedPanelNode from "./EmbeddedPanelNode";
-import C4ReadonlyNode from "./C4ReadonlyNode";
 import CanvasToolbar from "./CanvasToolbar";
 import ElementPanel from "./ElementPanel";
 import NodeContextMenu from "./NodeContextMenu";
@@ -37,14 +35,12 @@ const nodeTypes = {
   c4: CustomNode,
   panel: PanelNode,
   note: NoteNode,
-  "embedded-panel": EmbeddedPanelNode,
-  "c4-readonly": C4ReadonlyNode,
 };
+
 const edgeTypes = { c4: CustomEdge };
 
 const PANEL_DEFAULT_W = 600;
 const PANEL_DEFAULT_H = 400;
-const EMBED_PREFIX = "emb__";
 
 interface CanvasProps {
   activeFlow?: import("@/lib/model-types").Flow | null;
@@ -53,7 +49,12 @@ interface CanvasProps {
   onDrillUp?: () => void;
 }
 
-const Canvas = ({ activeFlow, currentStep, onOpenDiagram, onDrillUp }: CanvasProps = {}) => {
+const Canvas = ({
+  activeFlow,
+  currentStep,
+  onOpenDiagram,
+  onDrillUp,
+}: CanvasProps = {}) => {
   const diagram = useActiveDiagram();
   const allDiagrams = useDiagrams();
   const visibleComponents = useVisibleComponents();
@@ -70,9 +71,7 @@ const Canvas = ({ activeFlow, currentStep, onOpenDiagram, onDrillUp }: CanvasPro
     setParent,
     addComponent,
     removeComponent,
-    embedDiagram,
-    detachEmbed,
-    snapshotBeforeLayoutChange,
+    pushUndo,
     undo,
     redo,
   } = useDiagramActions();
@@ -86,7 +85,9 @@ const Canvas = ({ activeFlow, currentStep, onOpenDiagram, onDrillUp }: CanvasPro
     y: number;
     elementId: string;
   } | null>(null);
-  const [dragTargetPanelId, setDragTargetPanelId] = useState<string | null>(null);
+  const [dragTargetPanelId, setDragTargetPanelId] = useState<string | null>(
+    null,
+  );
   const dragTargetRef = useRef<string | null>(null);
 
   const handleDrillDown = useCallback(
@@ -103,29 +104,6 @@ const Canvas = ({ activeFlow, currentStep, onOpenDiagram, onDrillUp }: CanvasPro
       }
     },
     [diagram, allDiagrams, openDiagram, navigate, onOpenDiagram],
-  );
-
-  const handleEmbed = useCallback(
-    (elementId: string) => {
-      if (!diagram) return;
-      const comp = diagram.snapshot.components[elementId];
-      if (!comp?.linkedDiagramId || !allDiagrams[comp.linkedDiagramId]) return;
-      const layout = diagram.nodeLayouts.find(
-        (nl) => nl.elementId === elementId,
-      );
-      embedDiagram(elementId, comp.linkedDiagramId, {
-        x: (layout?.x ?? 0) + 50,
-        y: (layout?.y ?? 0) + 50,
-      });
-    },
-    [diagram, allDiagrams, embedDiagram],
-  );
-
-  const handleDetach = useCallback(
-    (embedId: string) => {
-      detachEmbed(embedId);
-    },
-    [detachEmbed],
   );
 
   const panelIds = useMemo(() => {
@@ -271,57 +249,7 @@ const Canvas = ({ activeFlow, currentStep, onOpenDiagram, onDrillUp }: CanvasPro
               : linkedDiagramName
                 ? handleDrillDown
                 : undefined,
-            onEmbed: isPlaying
-              ? undefined
-              : linkedDiagramName
-                ? handleEmbed
-                : undefined,
           } as Record<string, unknown>,
-        });
-      }
-    }
-
-    for (const emb of diagram.embeddedDiagrams) {
-      const linked = allDiagrams[emb.diagramId];
-      if (!linked) continue;
-
-      const panelNodeId = `${EMBED_PREFIX}panel__${emb.id}`;
-      nodeList.push({
-        id: panelNodeId,
-        type: "embedded-panel",
-        position: { x: emb.x, y: emb.y },
-        zIndex: -1,
-        style: { width: emb.width, height: emb.height },
-        draggable: false,
-        selectable: false,
-        connectable: false,
-        data: {
-          embedId: emb.id,
-          diagramName: linked.name,
-          onDetach: handleDetach,
-        },
-      });
-
-      for (const childComp of Object.values(linked.snapshot.components)) {
-        const childLayout = linked.nodeLayouts.find(
-          (nl) => nl.elementId === childComp.id,
-        );
-        nodeList.push({
-          id: `${EMBED_PREFIX}${emb.id}__${childComp.id}`,
-          type: "c4-readonly",
-          parentId: panelNodeId,
-          extent: "parent" as const,
-          position: { x: childLayout?.x ?? 0, y: (childLayout?.y ?? 0) + 30 },
-          zIndex: 0,
-          draggable: false,
-          connectable: false,
-          selectable: false,
-          data: {
-            name: childComp.name,
-            type: childComp.type,
-            description: childComp.description,
-            technology: childComp.technology,
-          },
         });
       }
     }
@@ -335,8 +263,6 @@ const Canvas = ({ activeFlow, currentStep, onOpenDiagram, onDrillUp }: CanvasPro
     serviceRegistry,
     allDiagrams,
     handleDrillDown,
-    handleEmbed,
-    handleDetach,
     isPlaying,
     flowHighlight,
     dragTargetPanelId,
@@ -366,41 +292,12 @@ const Canvas = ({ activeFlow, currentStep, onOpenDiagram, onDrillUp }: CanvasPro
       };
     });
 
-    for (const emb of diagram.embeddedDiagrams) {
-      const linked = allDiagrams[emb.diagramId];
-      if (!linked) continue;
-      for (const conn of Object.values(linked.snapshot.connections)) {
-        edgeList.push({
-          id: `${EMBED_PREFIX}${emb.id}__${conn.id}`,
-          source: `${EMBED_PREFIX}${emb.id}__${conn.sourceId}`,
-          target: `${EMBED_PREFIX}${emb.id}__${conn.targetId}`,
-          type: "c4",
-          data: { label: conn.label, technology: conn.technology },
-          selectable: false,
-          style: { opacity: 0.5 },
-        });
-      }
-    }
-
     return edgeList;
-  }, [
-    diagram,
-    visibleConnections,
-    selectedEdgeId,
-    allDiagrams,
-    isPlaying,
-    flowHighlight,
-  ]);
+  }, [diagram, visibleConnections, selectedEdgeId, isPlaying, flowHighlight]);
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
-      for (const change of changes) {
-        if (
-          "id" in change &&
-          typeof change.id === "string" &&
-          change.id.startsWith(EMBED_PREFIX)
-        )
-          continue;
+      changes.forEach((change) => {
         if (change.type === "position" && change.position)
           updateNodeLayout(change.id, change.position);
         if (change.type === "dimensions" && change.dimensions)
@@ -417,14 +314,7 @@ const Canvas = ({ activeFlow, currentStep, onOpenDiagram, onDrillUp }: CanvasPro
         ) {
           const dragId = change.id;
           const comp = diagram?.snapshot.components[dragId];
-          if (
-            !comp ||
-            comp.type === "panel" ||
-            comp.type === "note" ||
-            dragId.startsWith(EMBED_PREFIX)
-          ) {
-            continue;
-          }
+          if (!comp || comp.type === "panel" || comp.type === "note") return;
 
           let absX = change.position.x;
           let absY = change.position.y;
@@ -450,8 +340,7 @@ const Canvas = ({ activeFlow, currentStep, onOpenDiagram, onDrillUp }: CanvasPro
                 p.position.x +
                   ((p.style?.width as number) ?? PANEL_DEFAULT_W) &&
               absY <
-                p.position.y +
-                  ((p.style?.height as number) ?? PANEL_DEFAULT_H),
+                p.position.y + ((p.style?.height as number) ?? PANEL_DEFAULT_H),
           );
 
           const newTarget = match?.id ?? null;
@@ -460,25 +349,14 @@ const Canvas = ({ activeFlow, currentStep, onOpenDiagram, onDrillUp }: CanvasPro
             setDragTargetPanelId(newTarget);
           }
         }
-      }
+      });
     },
     [updateNodeLayout, updateComponent, diagram, nodes],
   );
 
   const onNodeDragStop = useCallback(
     (_: unknown, draggedNode: Node) => {
-      dragTargetRef.current = null;
-      setDragTargetPanelId(null);
-      snapshotBeforeLayoutChange();
-
-      if (
-        draggedNode.type === "panel" ||
-        draggedNode.type === "embedded-panel" ||
-        draggedNode.type === "c4-readonly"
-      )
-        return;
-      if (draggedNode.id.startsWith(EMBED_PREFIX)) return;
-
+      if (draggedNode.type === "panel") return;
       if (draggedNode.parentId) {
         const parent = nodes.find((n) => n.id === draggedNode.parentId);
         if (parent) {
@@ -520,10 +398,13 @@ const Canvas = ({ activeFlow, currentStep, onOpenDiagram, onDrillUp }: CanvasPro
         });
       }
     },
-    [nodes, setParent, updateNodeLayout, snapshotBeforeLayoutChange],
+    [nodes, setParent, updateNodeLayout],
   );
 
-  const onEdgesChange: OnEdgesChange = useCallback(() => {}, []);
+  const onEdgesChange: OnEdgesChange = useCallback((changes) => {
+    // Edge changes are handled by ReactFlow
+  }, []);
+
   const onMoveEnd = useCallback(
     (_: unknown, vp: { x: number; y: number; zoom: number }) => {
       updateViewport(vp);
@@ -540,7 +421,6 @@ const Canvas = ({ activeFlow, currentStep, onOpenDiagram, onDrillUp }: CanvasPro
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
       if (isPlaying) return;
-      if (node.id.startsWith(EMBED_PREFIX)) return;
       setSelectedNodeId(node.id);
       setSelectedEdgeId(null);
       setContextMenu(null);
@@ -559,7 +439,6 @@ const Canvas = ({ activeFlow, currentStep, onOpenDiagram, onDrillUp }: CanvasPro
   }, []);
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: Node) => {
-      if (node.id.startsWith(EMBED_PREFIX)) return;
       event.preventDefault();
       setContextMenu({
         x: event.clientX,
@@ -602,22 +481,15 @@ const Canvas = ({ activeFlow, currentStep, onOpenDiagram, onDrillUp }: CanvasPro
       if (mod && e.key === "a") {
         e.preventDefault();
         reactFlowInstance.setNodes((nds) =>
-          nds.map((n) =>
-            n.id.startsWith(EMBED_PREFIX) ? n : { ...n, selected: true },
-          ),
+          nds.map((n) => ({ ...n, selected: true })),
         );
         return;
       }
       if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
-        const selected = reactFlowInstance
-          .getNodes()
-          .filter((n) => n.selected && !n.id.startsWith(EMBED_PREFIX));
-        if (
-          selected.length === 0 &&
-          selectedNodeId &&
-          !selectedNodeId.startsWith(EMBED_PREFIX)
-        ) {
+        const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
+        if (selected.length === 0 && selectedNodeId) {
+          pushUndo();
           removeComponent(selectedNodeId);
           setSelectedNodeId(null);
           return;
@@ -630,13 +502,11 @@ const Canvas = ({ activeFlow, currentStep, onOpenDiagram, onDrillUp }: CanvasPro
       }
       if (mod && e.key === "d") {
         e.preventDefault();
-        const selected = reactFlowInstance
-          .getNodes()
-          .filter((n) => n.selected && !n.id.startsWith(EMBED_PREFIX));
+        const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
         const toDuplicate =
           selected.length > 0
             ? selected
-            : selectedNodeId && !selectedNodeId.startsWith(EMBED_PREFIX)
+            : selectedNodeId
               ? reactFlowInstance
                   .getNodes()
                   .filter((n) => n.id === selectedNodeId)
