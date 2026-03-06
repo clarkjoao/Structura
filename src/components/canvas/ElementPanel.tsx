@@ -433,7 +433,8 @@ const ComponentDetail = ({
                   if (!newType.startsWith("aws-")) setAwsService("");
                   updateComponent(component.id, {
                     type: newType,
-                    awsService: newType.startsWith("aws-") && newAws ? newAws : undefined,
+                    awsService:
+                      newType.startsWith("aws-") && newAws ? newAws : undefined,
                   });
                 }}
                 className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
@@ -469,9 +470,14 @@ const ComponentDetail = ({
                     (name.startsWith("Novo") || name === component.name)
                   ) {
                     setName(svc.name);
-                    updateComponent(component.id, { awsService: newSvc || undefined, name: svc.name });
+                    updateComponent(component.id, {
+                      awsService: newSvc || undefined,
+                      name: svc.name,
+                    });
                   } else {
-                    updateComponent(component.id, { awsService: newSvc || undefined });
+                    updateComponent(component.id, {
+                      awsService: newSvc || undefined,
+                    });
                   }
                 }}
                 className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
