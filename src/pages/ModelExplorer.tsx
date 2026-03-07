@@ -95,15 +95,28 @@ const ModelExplorer = () => {
     ]);
   }, []);
 
-  const handleRecordEdgeClick = useCallback((edgeId: string) => {
+  const handleRecordEdgeClick = useCallback((edgeId: string, handleId?: string) => {
     setRecordingSteps((prev) => [
       ...prev,
-      { order: prev.length, connectionId: edgeId },
+      { order: prev.length, connectionId: edgeId, handleId },
+    ]);
+  }, []);
+
+  const handleRecordHandleClick = useCallback((nodeId: string, handleId: string) => {
+    setRecordingSteps((prev) => [
+      ...prev,
+      { order: prev.length, componentId: nodeId, handleId },
     ]);
   }, []);
 
   const handleRecordUndo = useCallback(() => {
     setRecordingSteps((prev) => prev.slice(0, -1));
+  }, []);
+
+  const handleUpdateStepDescription = useCallback((index: number, description: string) => {
+    setRecordingSteps((prev) =>
+      prev.map((step, i) => (i === index ? { ...step, description } : step)),
+    );
   }, []);
 
   useEffect(() => {
@@ -180,6 +193,7 @@ const ModelExplorer = () => {
               recordingSteps={recordingSteps}
               onRecordNodeClick={handleRecordNodeClick}
               onRecordEdgeClick={handleRecordEdgeClick}
+              onRecordHandleClick={handleRecordHandleClick}
               onRecordUndo={handleRecordUndo}
             />
             {activeFlow && (
@@ -200,6 +214,7 @@ const ModelExplorer = () => {
             steps={recordingSteps}
             onCancel={handleCancelRecording}
             onFinalize={handleFinalizeRecording}
+            onUpdateStepDescription={handleUpdateStepDescription}
           />
         )}
         {showFlows && !activeFlow && !isRecording && (

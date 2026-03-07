@@ -59,6 +59,8 @@ export interface FlowStep {
   componentId?: string;
   connectionId?: string;
   note?: string;
+  description?: string;
+  handleId?: string;
 }
 
 export interface Flow {

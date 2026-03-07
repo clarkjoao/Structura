@@ -19,6 +19,10 @@ export interface NodeData {
   onEmbed?: (elementId: string) => void;
   recordingBadges?: number[];
   isLastRecorded?: boolean;
+  isRecording?: boolean;
+  onHandleClick?: (nodeId: string, handleId: string) => void;
+  lastRecordedHandleId?: string;
+  activeHandleId?: string;
 }
 
 const TypeConfig: Record<string, { icon: typeof Network; borderColor: string; textColor: string }> = {
@@ -37,7 +41,22 @@ const awsCategoryBorders: Record<string, string> = {
   "aws-general": "border-l-aws-general",
 };
 
-const handleStyle = "!bg-muted-foreground !border-background !w-2.5 !h-2.5";
+function getHandleClass(d: NodeData, handleId: string): string {
+  const base = "!border-background";
+  const isRecHighlighted = d.isRecording && d.lastRecordedHandleId === handleId;
+  const isPlayHighlighted = !d.isRecording && d.activeHandleId === handleId;
+
+  if (isRecHighlighted) {
+    return `${base} !w-3.5 !h-3.5 !bg-primary ring-2 ring-primary`;
+  }
+  if (isPlayHighlighted) {
+    return `${base} !w-3.5 !h-3.5 !bg-primary ring-2 ring-primary animate-pulse`;
+  }
+  if (d.isRecording) {
+    return `${base} !w-3.5 !h-3.5 !bg-primary/60 cursor-pointer hover:!bg-primary hover:ring-2 hover:ring-primary transition-all`;
+  }
+  return `${base} !w-2.5 !h-2.5 !bg-muted-foreground`;
+}
 
 const Badges = ({ serviceName, linkedDiagramName }: { serviceName?: string; linkedDiagramName?: string }) => (
   <>
@@ -82,6 +101,20 @@ const CardNode = memo(({ data }: NodeProps) => {
   const hasDrillDown = !!d.linkedDiagramName && !!d.onDrillDown;
   const hasEmbed = !!d.linkedDiagramName && !!d.onEmbed;
 
+  const forcePointer = d.isRecording || !!d.activeHandleId;
+
+  const onLeftClick = (e: React.MouseEvent) => {
+    if (d.isRecording && d.onHandleClick) { e.stopPropagation(); d.onHandleClick(d.elementId, "left"); }
+  };
+
+  const onRightClick = (e: React.MouseEvent) => {
+    if (d.isRecording && d.onHandleClick) { e.stopPropagation(); d.onHandleClick(d.elementId, "right"); }
+  };
+
+  const leftClass = getHandleClass(d, "left");
+  const rightClass = getHandleClass(d, "right");
+  const handlePointer = forcePointer ? { pointerEvents: "all" as const } : undefined;
+
   if (isAws) {
     const svcInfo = d.awsService ? AWS_SERVICE_MAP.get(d.awsService) : null;
     const catInfo = AWS_CATEGORY_MAP.get(d.type);
@@ -93,7 +126,7 @@ const CardNode = memo(({ data }: NodeProps) => {
             {d.recordingBadges.join(",")}
           </div>
         )}
-        <Handle type="target" position={Position.Left} className={handleStyle} />
+        <Handle type="target" position={Position.Left} className={leftClass} style={handlePointer} onClick={d.isRecording ? onLeftClick : undefined} />
         <div className="px-3 py-2.5">
           <div className="flex items-center gap-2 mb-1.5">
             {svcInfo?.iconName ? <AwsIcon iconName={svcInfo.iconName} size={20} /> : <Network className="h-4 w-4 text-muted-foreground" />}
@@ -105,7 +138,7 @@ const CardNode = memo(({ data }: NodeProps) => {
           {hasDrillDown && <DrillDownButton elementId={d.elementId} onDrillDown={d.onDrillDown} colorClass="text-primary" />}
           {hasEmbed && <EmbedButton elementId={d.elementId} onEmbed={d.onEmbed} />}
         </div>
-        <Handle type="source" position={Position.Right} className={handleStyle} />
+        <Handle type="source" position={Position.Right} className={rightClass} style={handlePointer} onClick={d.isRecording ? onRightClick : undefined} />
       </div>
     );
   }
@@ -120,7 +153,7 @@ const CardNode = memo(({ data }: NodeProps) => {
           {d.recordingBadges.join(",")}
         </div>
       )}
-      <Handle type="target" position={Position.Left} className={handleStyle} />
+      <Handle type="target" position={Position.Left} className={leftClass} style={handlePointer} onClick={d.isRecording ? onLeftClick : undefined} />
       <div className="px-3 py-2.5">
         <div className="flex items-center gap-2 mb-1.5">
           <Icon className={`h-4 w-4 ${cfg.textColor} shrink-0`} />
@@ -132,7 +165,7 @@ const CardNode = memo(({ data }: NodeProps) => {
         {hasDrillDown && <DrillDownButton elementId={d.elementId} onDrillDown={d.onDrillDown} colorClass={cfg.textColor} />}
         {hasEmbed && <EmbedButton elementId={d.elementId} onEmbed={d.onEmbed} />}
       </div>
-      <Handle type="source" position={Position.Right} className={handleStyle} />
+      <Handle type="source" position={Position.Right} className={rightClass} style={handlePointer} onClick={d.isRecording ? onRightClick : undefined} />
     </div>
   );
 });

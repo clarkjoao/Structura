@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useComponents, useConnections } from "@/lib/model-store";
 import type { FlowStep, Component, Connection } from "@/lib/model-types";
 import { X } from "lucide-react";
@@ -16,10 +17,13 @@ export function stepsToMermaid(
         const src = components[conn.sourceId]?.name ?? "?";
         const tgt = components[conn.targetId]?.name ?? "?";
         lines.push(`  ${src}->>${tgt}: ${conn.label}`);
+        if (step.description) {
+          lines.push(`  Note over ${src}: ${step.description}`);
+        }
       }
     } else if (step.componentId) {
       const name = components[step.componentId]?.name ?? "?";
-      lines.push(`  Note over ${name}: step ${step.order + 1}`);
+      lines.push(`  Note over ${name}: ${step.description || `step ${step.order + 1}`}`);
     }
   });
   return lines.join("\n");
@@ -31,6 +35,7 @@ interface Props {
   steps: FlowStep[];
   onCancel: () => void;
   onFinalize: () => void;
+  onUpdateStepDescription: (index: number, description: string) => void;
 }
 
 const FlowRecorderPanel = ({
@@ -39,9 +44,11 @@ const FlowRecorderPanel = ({
   steps,
   onCancel,
   onFinalize,
+  onUpdateStepDescription,
 }: Props) => {
   const components = useComponents();
   const connections = useConnections();
+  const [expandedStep, setExpandedStep] = useState<number | null>(null);
 
   const getStepLabel = (step: FlowStep): string => {
     if (step.connectionId) {
@@ -98,23 +105,47 @@ const FlowRecorderPanel = ({
           </p>
           {steps.length === 0 ? (
             <p className="text-xs text-muted-foreground italic py-2">
-              Clique em nós e conexões no canvas para gravar passos.
+              Clique em nós, handles ou conexões no canvas para gravar passos.
             </p>
           ) : (
-            <div className="space-y-1 max-h-48 overflow-auto">
+            <div className="space-y-0.5 max-h-60 overflow-auto">
               {steps.map((step, i) => (
-                <div
-                  key={i}
-                  className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-xs ${
-                    i === steps.length - 1
-                      ? "bg-primary/10 text-primary"
-                      : "text-foreground"
-                  }`}
-                >
-                  <span className="font-mono text-[10px] text-muted-foreground w-4 text-right shrink-0">
-                    {step.order + 1}.
-                  </span>
-                  <span className="truncate">{getStepLabel(step)}</span>
+                <div key={i}>
+                  <div
+                    onClick={() => setExpandedStep(expandedStep === i ? null : i)}
+                    className={`flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs cursor-pointer hover:bg-secondary/50 transition-colors ${
+                      i === steps.length - 1
+                        ? "bg-primary/10 text-primary"
+                        : "text-foreground"
+                    }`}
+                  >
+                    <span className="text-[10px] text-muted-foreground shrink-0">
+                      {expandedStep === i ? "▾" : "▸"}
+                    </span>
+                    <span className="font-mono text-[10px] text-muted-foreground w-4 text-right shrink-0">
+                      {step.order + 1}.
+                    </span>
+                    <span className="truncate flex-1">{getStepLabel(step)}</span>
+                    {step.handleId && (
+                      <span className="text-[9px] font-mono text-muted-foreground shrink-0">
+                        [{step.handleId}]
+                      </span>
+                    )}
+                  </div>
+                  {expandedStep === i && (
+                    <div className="pl-7 pr-2 pb-1 pt-0.5">
+                      <div className="flex items-start gap-1">
+                        <span className="text-[10px] mt-1 shrink-0">📝</span>
+                        <input
+                          value={step.description ?? ""}
+                          onChange={(e) => onUpdateStepDescription(i, e.target.value)}
+                          placeholder="Descrição do passo..."
+                          className="w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

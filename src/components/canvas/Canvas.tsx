@@ -50,7 +50,8 @@ interface CanvasProps {
   isRecording?: boolean;
   recordingSteps?: FlowStep[];
   onRecordNodeClick?: (nodeId: string) => void;
-  onRecordEdgeClick?: (edgeId: string) => void;
+  onRecordEdgeClick?: (edgeId: string, handleId?: string) => void;
+  onRecordHandleClick?: (nodeId: string, handleId: string) => void;
   onRecordUndo?: () => void;
 }
 
@@ -63,6 +64,7 @@ const Canvas = ({
   recordingSteps,
   onRecordNodeClick,
   onRecordEdgeClick,
+  onRecordHandleClick,
   onRecordUndo,
 }: CanvasProps = {}) => {
   const diagram = useActiveDiagram();
@@ -126,6 +128,8 @@ const Canvas = ({
   const isPlaying =
     !!activeFlow && currentStep !== undefined && currentStep >= 0;
 
+  const activeStep = isPlaying && activeFlow ? activeFlow.steps[currentStep!] : null;
+
   const flowHighlight = useMemo(() => {
     if (!isPlaying || !activeFlow)
       return {
@@ -184,6 +188,7 @@ const Canvas = ({
       recordedEdgeIds,
       lastNodeId: lastStep?.componentId ?? null,
       lastEdgeId: lastStep?.connectionId ?? null,
+      lastHandleId: lastStep?.handleId ?? null,
     };
   }, [isRecording, recordingSteps]);
 
@@ -295,6 +300,14 @@ const Canvas = ({
                 : undefined,
             recordingBadges: recordingInfo?.nodeSteps.get(comp.id),
             isLastRecorded: recordingInfo?.lastNodeId === comp.id,
+            isRecording: !!isRecording,
+            onHandleClick: isRecording ? onRecordHandleClick : undefined,
+            lastRecordedHandleId: isRecording && recordingInfo?.lastNodeId === comp.id
+              ? recordingInfo?.lastHandleId ?? undefined
+              : undefined,
+            activeHandleId: isPlaying && flowHighlight.activeNodeId === comp.id
+              ? activeStep?.handleId ?? undefined
+              : undefined,
           } as Record<string, unknown>,
         });
       }
@@ -314,6 +327,8 @@ const Canvas = ({
     dragTargetPanelId,
     isRecording,
     recordingInfo,
+    onRecordHandleClick,
+    activeStep,
   ]);
 
   const edges: Edge[] = useMemo(() => {
@@ -488,7 +503,7 @@ const Canvas = ({
   const onEdgeClick = useCallback(
     (_: React.MouseEvent, edge: Edge) => {
       if (isRecording) {
-        onRecordEdgeClick?.(edge.id);
+        onRecordEdgeClick?.(edge.id, edge.sourceHandle ?? undefined);
         return;
       }
       setSelectedEdgeId(edge.id);
