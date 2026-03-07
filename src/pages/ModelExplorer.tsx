@@ -1,19 +1,21 @@
 import { useState, useEffect, useCallback } from "react";
 import { ReactFlowProvider } from "@xyflow/react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, FileJson, GitBranch } from "lucide-react";
+import { ArrowLeft, Download, GitBranch } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Canvas from "@/components/canvas/Canvas";
 import FlowPanel from "@/components/canvas/FlowPanel";
 import FlowStepNavigator from "@/components/canvas/FlowStepNavigator";
 import FlowRecorderPanel, { stepsToMermaid } from "@/components/canvas/FlowRecorderPanel";
-import { useActiveDiagram, useActiveDiagramId, useDiagramActions } from "@/lib/model-store";
+import { useActiveDiagram, useActiveDiagramId, useDiagramActions, useFlows } from "@/lib/model-store";
+import { exportJSON, exportDrawio, exportMermaid, downloadFile } from "@/lib/export-service";
 import type { Flow, FlowStep } from "@/lib/model-types";
 
 const ModelExplorer = () => {
   const diagram = useActiveDiagram();
   const activeDiagramId = useActiveDiagramId();
   const { openDiagram, addFlow, updateFlow } = useDiagramActions();
+  const flows = useFlows();
   const navigate = useNavigate();
   const [showFlows, setShowFlows] = useState(false);
   const [activeFlow, setActiveFlow] = useState<Flow | null>(null);
@@ -116,6 +118,20 @@ const ModelExplorer = () => {
   const handleAddTag = useCallback((tag: string) => { setRecordingTags((prev) => prev.includes(tag) ? prev : [...prev, tag]); }, []);
   const handleRemoveTag = useCallback((index: number) => { setRecordingTags((prev) => prev.filter((_, i) => i !== index)); }, []);
 
+  const handleExport = useCallback(() => {
+    if (!diagram) return;
+    const slug = diagram.name.toLowerCase().replace(/\s+/g, "-");
+    downloadFile(exportJSON(diagram), `${slug}.json`, "application/json");
+    downloadFile(exportDrawio(diagram), `${slug}.drawio`, "application/xml");
+    if (flows.length > 0) {
+      downloadFile(
+        exportMermaid(flows, diagram.snapshot.components, diagram.snapshot.connections),
+        `${slug}-flows.md`,
+        "text/markdown",
+      );
+    }
+  }, [diagram, flows]);
+
   useEffect(() => {
     if (!activeFlow) return;
     const handler = (e: KeyboardEvent) => {
@@ -174,8 +190,11 @@ const ModelExplorer = () => {
             >
               <GitBranch className="h-3.5 w-3.5" /> Flows
             </button>
-            <button className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all">
-              <FileJson className="h-3.5 w-3.5" /> Exportar
+            <button
+              onClick={handleExport}
+              className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all"
+            >
+              <Download className="h-3.5 w-3.5" /> Exportar
             </button>
           </div>
         </div>
