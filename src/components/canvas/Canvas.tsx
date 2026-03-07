@@ -71,7 +71,6 @@ const Canvas = ({
     setParent,
     addComponent,
     removeComponent,
-    // pushUndo,
     undo,
     redo,
   } = useDiagramActions();
@@ -489,7 +488,6 @@ const Canvas = ({
         e.preventDefault();
         const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
         if (selected.length === 0 && selectedNodeId) {
-          // pushUndo();
           removeComponent(selectedNodeId);
           setSelectedNodeId(null);
           return;
