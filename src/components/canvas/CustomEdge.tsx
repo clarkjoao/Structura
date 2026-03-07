@@ -10,6 +10,8 @@ export interface EdgeData {
   label: string;
   technology?: string;
   connectionId: string;
+  recordingBadges?: number[];
+  isLastRecorded?: boolean;
 }
 
 const Edge = memo(
@@ -52,12 +54,17 @@ const Edge = memo(
               }}
             >
               <div
-                className={`rounded-md px-2 py-1 text-[10px] font-medium border transition-colors ${
+                className={`relative rounded-md px-2 py-1 text-[10px] font-medium border transition-colors ${
                   selected
                     ? "bg-primary/15 border-primary/30 text-primary"
                     : "bg-card border-border text-muted-foreground"
                 }`}
               >
+                {d?.recordingBadges && d.recordingBadges.length > 0 && (
+                  <div className={`absolute -top-2.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-primary text-primary-foreground text-[9px] font-bold px-0.5 ${d.isLastRecorded ? "animate-pulse" : ""}`}>
+                    {d.recordingBadges.join(",")}
+                  </div>
+                )}
                 {d.label}
                 {d.technology && (
                   <span className="ml-1 font-mono opacity-60">

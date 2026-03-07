@@ -6,18 +6,22 @@ import Navbar from "@/components/Navbar";
 import Canvas from "@/components/canvas/Canvas";
 import FlowPanel from "@/components/canvas/FlowPanel";
 import FlowStepNavigator from "@/components/canvas/FlowStepNavigator";
+import FlowRecorderPanel, { stepsToMermaid } from "@/components/canvas/FlowRecorderPanel";
 import { useActiveDiagram, useActiveDiagramId, useDiagramActions } from "@/lib/model-store";
-import type { Flow } from "@/lib/model-types";
+import type { Flow, FlowStep } from "@/lib/model-types";
 
 const ModelExplorer = () => {
   const diagram = useActiveDiagram();
   const activeDiagramId = useActiveDiagramId();
-  const { openDiagram } = useDiagramActions();
+  const { openDiagram, addFlow } = useDiagramActions();
   const navigate = useNavigate();
   const [showFlows, setShowFlows] = useState(false);
   const [activeFlow, setActiveFlow] = useState<Flow | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [navStack, setNavStack] = useState<string[]>([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSteps, setRecordingSteps] = useState<FlowStep[]>([]);
+  const [recordingName, setRecordingName] = useState("");
 
   const handleOpenDiagram = useCallback(
     (id: string) => {
@@ -57,6 +61,50 @@ const ModelExplorer = () => {
     if (!activeFlow) return;
     setCurrentStep((s) => Math.min(activeFlow.steps.length - 1, s + 1));
   }, [activeFlow]);
+
+  const handleStartRecording = useCallback(() => {
+    setIsRecording(true);
+    setShowFlows(false);
+    setRecordingSteps([]);
+    setRecordingName("");
+  }, []);
+
+  const handleCancelRecording = useCallback(() => {
+    setIsRecording(false);
+    setRecordingSteps([]);
+    setRecordingName("");
+  }, []);
+
+  const handleFinalizeRecording = useCallback(() => {
+    if (!diagram) return;
+    const mermaid = stepsToMermaid(
+      recordingSteps,
+      diagram.snapshot.components,
+      diagram.snapshot.connections,
+    );
+    addFlow(diagram.id, recordingName || "Flow sem nome", mermaid, recordingSteps);
+    setIsRecording(false);
+    setRecordingSteps([]);
+    setRecordingName("");
+  }, [diagram, recordingSteps, recordingName, addFlow]);
+
+  const handleRecordNodeClick = useCallback((nodeId: string) => {
+    setRecordingSteps((prev) => [
+      ...prev,
+      { order: prev.length, componentId: nodeId },
+    ]);
+  }, []);
+
+  const handleRecordEdgeClick = useCallback((edgeId: string) => {
+    setRecordingSteps((prev) => [
+      ...prev,
+      { order: prev.length, connectionId: edgeId },
+    ]);
+  }, []);
+
+  const handleRecordUndo = useCallback(() => {
+    setRecordingSteps((prev) => prev.slice(0, -1));
+  }, []);
 
   useEffect(() => {
     if (!activeFlow) return;
@@ -99,13 +147,18 @@ const ModelExplorer = () => {
                 ▶ {activeFlow.name}
               </span>
             )}
+            {isRecording && (
+              <span className="text-[10px] font-mono text-red-400 bg-red-400/10 rounded px-1.5 py-0.5 animate-pulse">
+                ● REC
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setShowFlows(!showFlows)}
+              onClick={() => { if (!isRecording) setShowFlows(!showFlows); }}
               className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
                 showFlows ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground border border-transparent hover:border-border"
-              }`}
+              } ${isRecording ? "opacity-50 pointer-events-none" : ""}`}
             >
               <GitBranch className="h-3.5 w-3.5" /> Flows
             </button>
@@ -123,6 +176,11 @@ const ModelExplorer = () => {
               currentStep={currentStep}
               onOpenDiagram={handleOpenDiagram}
               onDrillUp={navStack.length > 0 ? handleDrillUp : undefined}
+              isRecording={isRecording}
+              recordingSteps={recordingSteps}
+              onRecordNodeClick={handleRecordNodeClick}
+              onRecordEdgeClick={handleRecordEdgeClick}
+              onRecordUndo={handleRecordUndo}
             />
             {activeFlow && (
               <FlowStepNavigator
@@ -135,8 +193,17 @@ const ModelExplorer = () => {
             )}
           </div>
         </ReactFlowProvider>
-        {showFlows && !activeFlow && (
-          <FlowPanel onClose={() => setShowFlows(false)} onPlay={handlePlay} />
+        {isRecording && (
+          <FlowRecorderPanel
+            name={recordingName}
+            onNameChange={setRecordingName}
+            steps={recordingSteps}
+            onCancel={handleCancelRecording}
+            onFinalize={handleFinalizeRecording}
+          />
+        )}
+        {showFlows && !activeFlow && !isRecording && (
+          <FlowPanel onClose={() => setShowFlows(false)} onPlay={handlePlay} onStartRecording={handleStartRecording} />
         )}
       </div>
     </div>

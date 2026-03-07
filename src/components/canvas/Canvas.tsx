@@ -22,7 +22,7 @@ import {
   useServiceRegistry,
   useDiagramActions,
 } from "@/lib/model-store";
-import { generateId } from "@/lib/model-types";
+import { generateId, type FlowStep } from "@/lib/model-types";
 import CustomNode from "./CustomNode";
 import CustomEdge from "./CustomEdge";
 import PanelNode from "./PanelNode";
@@ -47,6 +47,11 @@ interface CanvasProps {
   currentStep?: number;
   onOpenDiagram?: (id: string) => void;
   onDrillUp?: () => void;
+  isRecording?: boolean;
+  recordingSteps?: FlowStep[];
+  onRecordNodeClick?: (nodeId: string) => void;
+  onRecordEdgeClick?: (edgeId: string) => void;
+  onRecordUndo?: () => void;
 }
 
 const Canvas = ({
@@ -54,6 +59,11 @@ const Canvas = ({
   currentStep,
   onOpenDiagram,
   onDrillUp,
+  isRecording,
+  recordingSteps,
+  onRecordNodeClick,
+  onRecordEdgeClick,
+  onRecordUndo,
 }: CanvasProps = {}) => {
   const diagram = useActiveDiagram();
   const allDiagrams = useDiagrams();
@@ -144,6 +154,39 @@ const Canvas = ({
     };
   }, [isPlaying, activeFlow, currentStep]);
 
+  const recordingInfo = useMemo(() => {
+    if (!isRecording || !recordingSteps?.length) return null;
+    const nodeSteps = new Map<string, number[]>();
+    const edgeSteps = new Map<string, number[]>();
+    const recordedNodeIds = new Set<string>();
+    const recordedEdgeIds = new Set<string>();
+
+    for (const step of recordingSteps) {
+      if (step.componentId) {
+        recordedNodeIds.add(step.componentId);
+        const arr = nodeSteps.get(step.componentId) ?? [];
+        arr.push(step.order + 1);
+        nodeSteps.set(step.componentId, arr);
+      }
+      if (step.connectionId) {
+        recordedEdgeIds.add(step.connectionId);
+        const arr = edgeSteps.get(step.connectionId) ?? [];
+        arr.push(step.order + 1);
+        edgeSteps.set(step.connectionId, arr);
+      }
+    }
+
+    const lastStep = recordingSteps[recordingSteps.length - 1];
+    return {
+      nodeSteps,
+      edgeSteps,
+      recordedNodeIds,
+      recordedEdgeIds,
+      lastNodeId: lastStep?.componentId ?? null,
+      lastEdgeId: lastStep?.connectionId ?? null,
+    };
+  }, [isRecording, recordingSteps]);
+
   const nodes = useMemo(() => {
     if (!diagram) return [];
 
@@ -218,7 +261,9 @@ const Canvas = ({
               if (isParticipant) return { opacity: 0.5, filter: "none" };
               return { opacity: 0.25, filter: "none" };
             })()
-          : undefined;
+          : isRecording
+            ? { opacity: recordingInfo?.recordedNodeIds.has(comp.id) ? 1 : 0.35 }
+            : undefined;
 
         nodeList.push({
           id: comp.id,
@@ -242,12 +287,14 @@ const Canvas = ({
             serviceName: comp.serviceId
               ? serviceRegistry[comp.serviceId]?.name
               : undefined,
-            linkedDiagramName: isPlaying ? undefined : linkedDiagramName,
-            onDrillDown: isPlaying
+            linkedDiagramName: isPlaying || isRecording ? undefined : linkedDiagramName,
+            onDrillDown: isPlaying || isRecording
               ? undefined
               : linkedDiagramName
                 ? handleDrillDown
                 : undefined,
+            recordingBadges: recordingInfo?.nodeSteps.get(comp.id),
+            isLastRecorded: recordingInfo?.lastNodeId === comp.id,
           } as Record<string, unknown>,
         });
       }
@@ -265,6 +312,8 @@ const Canvas = ({
     isPlaying,
     flowHighlight,
     dragTargetPanelId,
+    isRecording,
+    recordingInfo,
   ]);
 
   const edges: Edge[] = useMemo(() => {
@@ -282,17 +331,21 @@ const Canvas = ({
           label: conn.label,
           technology: conn.technology,
           connectionId: conn.id,
+          recordingBadges: recordingInfo?.edgeSteps.get(conn.id),
+          isLastRecorded: recordingInfo?.lastEdgeId === conn.id,
         },
         selected: selectedEdgeId === conn.id,
         animated: isActiveConn,
         style: isPlaying
           ? { opacity: isActiveConn ? 1 : isParticipantConn ? 0.5 : 0.2 }
-          : undefined,
+          : isRecording
+            ? { opacity: recordingInfo?.recordedEdgeIds.has(conn.id) ? 1 : 0.2 }
+            : undefined,
       };
     });
 
     return edgeList;
-  }, [diagram, visibleConnections, selectedEdgeId, isPlaying, flowHighlight]);
+  }, [diagram, visibleConnections, selectedEdgeId, isPlaying, flowHighlight, isRecording, recordingInfo]);
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
@@ -419,18 +472,31 @@ const Canvas = ({
 
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
+      if (isRecording) {
+        if (node.type !== "panel" && node.type !== "note") {
+          onRecordNodeClick?.(node.id);
+        }
+        return;
+      }
       if (isPlaying) return;
       setSelectedNodeId(node.id);
       setSelectedEdgeId(null);
       setContextMenu(null);
     },
-    [isPlaying],
+    [isPlaying, isRecording, onRecordNodeClick],
   );
-  const onEdgeClick = useCallback((_: React.MouseEvent, edge: Edge) => {
-    setSelectedEdgeId(edge.id);
-    setSelectedNodeId(null);
-    setContextMenu(null);
-  }, []);
+  const onEdgeClick = useCallback(
+    (_: React.MouseEvent, edge: Edge) => {
+      if (isRecording) {
+        onRecordEdgeClick?.(edge.id);
+        return;
+      }
+      setSelectedEdgeId(edge.id);
+      setSelectedNodeId(null);
+      setContextMenu(null);
+    },
+    [isRecording, onRecordEdgeClick],
+  );
   const onPaneClick = useCallback(() => {
     setSelectedNodeId(null);
     setSelectedEdgeId(null);
@@ -438,6 +504,7 @@ const Canvas = ({
   }, []);
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: Node) => {
+      if (isRecording) return;
       event.preventDefault();
       setContextMenu({
         x: event.clientX,
@@ -447,7 +514,7 @@ const Canvas = ({
       setSelectedNodeId(node.id);
       setSelectedEdgeId(null);
     },
-    [],
+    [isRecording],
   );
   const closePanel = useCallback(() => {
     setSelectedNodeId(null);
@@ -465,6 +532,15 @@ const Canvas = ({
       )
         return;
       if (!diagram) return;
+
+      if (isRecording) {
+        if (e.key === "Backspace" || e.key === "Delete") {
+          e.preventDefault();
+          onRecordUndo?.();
+        }
+        return;
+      }
+
       const mod = e.metaKey || e.ctrlKey;
 
       if (e.key === "Escape") {
@@ -547,6 +623,8 @@ const Canvas = ({
     redo,
     removeComponent,
     addComponent,
+    isRecording,
+    onRecordUndo,
   ]);
 
   if (!diagram)
@@ -577,6 +655,8 @@ const Canvas = ({
           fitView
           fitViewOptions={{ padding: 0.3 }}
           onMoveEnd={onMoveEnd}
+          nodesDraggable={!isRecording}
+          nodesConnectable={!isRecording}
           proOptions={{ hideAttribution: true }}
           className="bg-background"
         >
@@ -599,7 +679,7 @@ const Canvas = ({
           onClose={() => setContextMenu(null)}
         />
       )}
-      {(selectedNodeId || selectedEdgeId) && (
+      {(selectedNodeId || selectedEdgeId) && !isRecording && (
         <ElementPanel
           key={selectedNodeId ?? selectedEdgeId}
           selectedElementId={selectedNodeId}

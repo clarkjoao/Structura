@@ -17,6 +17,8 @@ export interface NodeData {
   linkedDiagramName?: string;
   onDrillDown?: (elementId: string) => void;
   onEmbed?: (elementId: string) => void;
+  recordingBadges?: number[];
+  isLastRecorded?: boolean;
 }
 
 const TypeConfig: Record<string, { icon: typeof Network; borderColor: string; textColor: string }> = {
@@ -85,7 +87,12 @@ const CardNode = memo(({ data }: NodeProps) => {
     const catInfo = AWS_CATEGORY_MAP.get(d.type);
     const borderClass = awsCategoryBorders[d.type] ?? "border-l-aws-general";
     return (
-      <div className={`min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${borderClass} border-l-[3px] transition-shadow duration-200 ${d.isSelected ? "ring-2 ring-primary shadow-lg shadow-primary/10" : ""}`}>
+      <div className={`relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${borderClass} border-l-[3px] transition-shadow duration-200 ${d.isSelected ? "ring-2 ring-primary shadow-lg shadow-primary/10" : ""}`}>
+        {d.recordingBadges && d.recordingBadges.length > 0 && (
+          <div className={`absolute -top-2.5 -right-2.5 z-10 flex items-center justify-center min-w-[20px] h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold px-1 ${d.isLastRecorded ? "animate-pulse" : ""}`}>
+            {d.recordingBadges.join(",")}
+          </div>
+        )}
         <Handle type="target" position={Position.Left} className={handleStyle} />
         <div className="px-3 py-2.5">
           <div className="flex items-center gap-2 mb-1.5">
@@ -107,7 +114,12 @@ const CardNode = memo(({ data }: NodeProps) => {
   const Icon = cfg.icon;
 
   return (
-    <div className={`min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${cfg.borderColor} border-l-[3px] transition-shadow duration-200 ${d.isSelected ? "ring-2 ring-primary shadow-lg shadow-primary/10" : ""}`}>
+    <div className={`relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${cfg.borderColor} border-l-[3px] transition-shadow duration-200 ${d.isSelected ? "ring-2 ring-primary shadow-lg shadow-primary/10" : ""}`}>
+      {d.recordingBadges && d.recordingBadges.length > 0 && (
+        <div className={`absolute -top-2.5 -right-2.5 z-10 flex items-center justify-center min-w-[20px] h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold px-1 ${d.isLastRecorded ? "animate-pulse" : ""}`}>
+          {d.recordingBadges.join(",")}
+        </div>
+      )}
       <Handle type="target" position={Position.Left} className={handleStyle} />
       <div className="px-3 py-2.5">
         <div className="flex items-center gap-2 mb-1.5">

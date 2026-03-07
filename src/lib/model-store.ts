@@ -307,7 +307,7 @@ interface AppActions {
   ) => void;
   setParent: (childId: string, parentId: string | null) => void;
 
-  addFlow: (diagramId: string, name: string, mermaid: string) => Flow;
+  addFlow: (diagramId: string, name: string, mermaid: string, steps?: FlowStep[]) => Flow;
   updateFlow: (id: string, patch: Partial<Omit<Flow, "id">>) => void;
   removeFlow: (id: string) => void;
 
@@ -634,11 +634,11 @@ export const useDiagramStore = create<DiagramStore>()(
       });
     },
 
-    addFlow: (diagramId, name, mermaid) => {
+    addFlow: (diagramId, name, mermaid, precomputedSteps) => {
       const { diagrams } = get();
       const d = diagrams[diagramId];
       if (!d) throw new Error("Diagram not found");
-      const steps = parseMermaidToSteps(
+      const steps = precomputedSteps ?? parseMermaidToSteps(
         mermaid,
         d.snapshot.components,
         d.snapshot.connections,
