@@ -22,13 +22,13 @@ const ModelExplorer = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSteps, setRecordingSteps] = useState<FlowStep[]>([]);
   const [recordingName, setRecordingName] = useState("");
+  const [recordingDescription, setRecordingDescription] = useState("");
+  const [recordingTags, setRecordingTags] = useState<string[]>([]);
   const [editingFlowId, setEditingFlowId] = useState<string | null>(null);
 
   const handleOpenDiagram = useCallback(
     (id: string) => {
-      if (activeDiagramId) {
-        setNavStack((prev) => [...prev, activeDiagramId]);
-      }
+      if (activeDiagramId) setNavStack((prev) => [...prev, activeDiagramId]);
       openDiagram(id);
       navigate(`/model/${id}`);
     },
@@ -43,116 +43,78 @@ const ModelExplorer = () => {
     navigate(`/model/${prev}`);
   }, [navStack, openDiagram, navigate]);
 
-  const handlePlay = useCallback((flow: Flow) => {
-    setActiveFlow(flow);
-    setCurrentStep(0);
-    setShowFlows(false);
-  }, []);
+  const handlePlay = useCallback((flow: Flow) => { setActiveFlow(flow); setCurrentStep(0); setShowFlows(false); }, []);
+  const handleExit = useCallback(() => { setActiveFlow(null); setCurrentStep(0); }, []);
+  const handlePrev = useCallback(() => { setCurrentStep((s) => Math.max(0, s - 1)); }, []);
+  const handleNext = useCallback(() => { if (!activeFlow) return; setCurrentStep((s) => Math.min(activeFlow.steps.length - 1, s + 1)); }, [activeFlow]);
 
-  const handleExit = useCallback(() => {
-    setActiveFlow(null);
-    setCurrentStep(0);
-  }, []);
-
-  const handlePrev = useCallback(() => {
-    setCurrentStep((s) => Math.max(0, s - 1));
-  }, []);
-
-  const handleNext = useCallback(() => {
-    if (!activeFlow) return;
-    setCurrentStep((s) => Math.min(activeFlow.steps.length - 1, s + 1));
-  }, [activeFlow]);
-
-  const handleStartRecording = useCallback(() => {
-    setIsRecording(true);
-    setShowFlows(false);
+  const resetRecordingState = useCallback(() => {
+    setIsRecording(false);
     setRecordingSteps([]);
     setRecordingName("");
+    setRecordingDescription("");
+    setRecordingTags([]);
     setEditingFlowId(null);
   }, []);
+
+  const handleStartRecording = useCallback(() => {
+    resetRecordingState();
+    setIsRecording(true);
+    setShowFlows(false);
+  }, [resetRecordingState]);
 
   const handleEditFlow = useCallback((flow: Flow) => {
     setIsRecording(true);
     setRecordingName(flow.name);
+    setRecordingDescription(flow.description ?? "");
+    setRecordingTags([...(flow.tags ?? [])]);
     setRecordingSteps([...flow.steps]);
     setEditingFlowId(flow.id);
     setShowFlows(false);
   }, []);
 
-  const handleCancelRecording = useCallback(() => {
-    setIsRecording(false);
-    setRecordingSteps([]);
-    setRecordingName("");
-    setEditingFlowId(null);
-  }, []);
+  const handleCancelRecording = useCallback(() => { resetRecordingState(); }, [resetRecordingState]);
 
   const handleFinalizeRecording = useCallback(() => {
     if (!diagram) return;
-    const mermaid = stepsToMermaid(
-      recordingSteps,
-      diagram.snapshot.components,
-      diagram.snapshot.connections,
-    );
+    const mermaid = stepsToMermaid(recordingSteps, diagram.snapshot.components, diagram.snapshot.connections);
+    const desc = recordingDescription || undefined;
+    const flowTags = recordingTags.length ? recordingTags : undefined;
     if (editingFlowId) {
-      updateFlow(editingFlowId, {
-        name: recordingName || "Flow sem nome",
-        mermaid,
-        steps: recordingSteps,
-      });
+      updateFlow(editingFlowId, { name: recordingName || "Flow sem nome", mermaid, steps: recordingSteps, description: desc, tags: flowTags });
     } else {
-      addFlow(diagram.id, recordingName || "Flow sem nome", mermaid, recordingSteps);
+      const flow = addFlow(diagram.id, recordingName || "Flow sem nome", mermaid, recordingSteps);
+      if (desc || flowTags) updateFlow(flow.id, { description: desc, tags: flowTags });
     }
-    setIsRecording(false);
-    setRecordingSteps([]);
-    setRecordingName("");
-    setEditingFlowId(null);
-  }, [diagram, recordingSteps, recordingName, addFlow, updateFlow, editingFlowId]);
+    resetRecordingState();
+  }, [diagram, recordingSteps, recordingName, recordingDescription, recordingTags, addFlow, updateFlow, editingFlowId, resetRecordingState]);
 
   const handleRecordNodeClick = useCallback((nodeId: string) => {
-    setRecordingSteps((prev) => [
-      ...prev,
-      { order: prev.length, componentId: nodeId },
-    ]);
+    setRecordingSteps((prev) => [...prev, { order: prev.length, componentId: nodeId }]);
   }, []);
-
   const handleRecordEdgeClick = useCallback((edgeId: string, handleId?: string) => {
-    setRecordingSteps((prev) => [
-      ...prev,
-      { order: prev.length, connectionId: edgeId, handleId },
-    ]);
+    setRecordingSteps((prev) => [...prev, { order: prev.length, connectionId: edgeId, handleId }]);
   }, []);
-
   const handleRecordHandleClick = useCallback((nodeId: string, handleId: string) => {
-    setRecordingSteps((prev) => [
-      ...prev,
-      { order: prev.length, componentId: nodeId, handleId },
-    ]);
+    setRecordingSteps((prev) => [...prev, { order: prev.length, componentId: nodeId, handleId }]);
   }, []);
-
-  const handleRecordUndo = useCallback(() => {
-    setRecordingSteps((prev) => prev.slice(0, -1));
-  }, []);
+  const handleRecordUndo = useCallback(() => { setRecordingSteps((prev) => prev.slice(0, -1)); }, []);
 
   const handleUpdateStepDescription = useCallback((index: number, description: string) => {
-    setRecordingSteps((prev) =>
-      prev.map((step, i) => (i === index ? { ...step, description } : step)),
-    );
+    setRecordingSteps((prev) => prev.map((s, i) => (i === index ? { ...s, description } : s)));
   }, []);
-
+  const handleUpdateStepDuration = useCallback((index: number, duration: string) => {
+    setRecordingSteps((prev) => prev.map((s, i) => (i === index ? { ...s, duration: duration || undefined } : s)));
+  }, []);
   const handleDeleteStep = useCallback((index: number) => {
-    setRecordingSteps((prev) =>
-      prev.filter((_, i) => i !== index).map((step, i) => ({ ...step, order: i })),
-    );
+    setRecordingSteps((prev) => prev.filter((_, i) => i !== index).map((s, i) => ({ ...s, order: i })));
+  }, []);
+  const handleReorderSteps = useCallback((from: number, to: number) => {
+    setRecordingSteps((prev) => { const n = [...prev]; const [m] = n.splice(from, 1); n.splice(to, 0, m); return n.map((s, i) => ({ ...s, order: i })); });
   }, []);
 
-  const handleReorderSteps = useCallback((fromIndex: number, toIndex: number) => {
-    setRecordingSteps((prev) => {
-      const next = [...prev];
-      const [moved] = next.splice(fromIndex, 1);
-      next.splice(toIndex, 0, moved);
-      return next.map((step, i) => ({ ...step, order: i }));
-    });
-  }, []);
+  const handleAddTag = useCallback((tag: string) => { setRecordingTags((prev) => prev.includes(tag) ? prev : [...prev, tag]); }, []);
+  const handleRemoveTag = useCallback((index: number) => { setRecordingTags((prev) => prev.filter((_, i) => i !== index)); }, []);
 
   useEffect(() => {
     if (!activeFlow) return;
@@ -192,14 +154,12 @@ const ModelExplorer = () => {
             <span className="font-medium">{diagram.name}</span>
             {activeFlow && (
               <span className="text-[10px] font-mono text-primary bg-primary/10 rounded px-1.5 py-0.5">
-                ▶ {activeFlow.name}
+                ▶ {activeFlow.name}{activeFlow.description ? ` · "${activeFlow.description}"` : ""}
               </span>
             )}
             {isRecording && (
               <span className={`text-[10px] font-mono rounded px-1.5 py-0.5 animate-pulse ${
-                editingFlowId
-                  ? "text-amber-400 bg-amber-400/10"
-                  : "text-red-400 bg-red-400/10"
+                editingFlowId ? "text-amber-400 bg-amber-400/10" : "text-red-400 bg-red-400/10"
               }`}>
                 {editingFlowId ? "✎ EDIT" : "● REC"}
               </span>
@@ -236,36 +196,25 @@ const ModelExplorer = () => {
               onRecordUndo={handleRecordUndo}
             />
             {activeFlow && (
-              <FlowStepNavigator
-                flow={activeFlow}
-                currentStep={currentStep}
-                onPrev={handlePrev}
-                onNext={handleNext}
-                onExit={handleExit}
-              />
+              <FlowStepNavigator flow={activeFlow} currentStep={currentStep} onPrev={handlePrev} onNext={handleNext} onExit={handleExit} />
             )}
           </div>
         </ReactFlowProvider>
         {isRecording && (
           <FlowRecorderPanel
-            name={recordingName}
-            onNameChange={setRecordingName}
+            name={recordingName} onNameChange={setRecordingName}
+            description={recordingDescription} onDescriptionChange={setRecordingDescription}
+            tags={recordingTags} onAddTag={handleAddTag} onRemoveTag={handleRemoveTag}
             steps={recordingSteps}
-            onCancel={handleCancelRecording}
-            onFinalize={handleFinalizeRecording}
+            onCancel={handleCancelRecording} onFinalize={handleFinalizeRecording}
             onUpdateStepDescription={handleUpdateStepDescription}
-            onDeleteStep={handleDeleteStep}
-            onReorderSteps={handleReorderSteps}
+            onUpdateStepDuration={handleUpdateStepDuration}
+            onDeleteStep={handleDeleteStep} onReorderSteps={handleReorderSteps}
             isEditing={!!editingFlowId}
           />
         )}
         {showFlows && !activeFlow && !isRecording && (
-          <FlowPanel
-            onClose={() => setShowFlows(false)}
-            onPlay={handlePlay}
-            onStartRecording={handleStartRecording}
-            onEditFlow={handleEditFlow}
-          />
+          <FlowPanel onClose={() => setShowFlows(false)} onPlay={handlePlay} onStartRecording={handleStartRecording} onEditFlow={handleEditFlow} />
         )}
       </div>
     </div>

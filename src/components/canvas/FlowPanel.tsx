@@ -1,4 +1,5 @@
-import { X, Plus, Play, Trash2, Pencil } from "lucide-react";
+import { useState } from "react";
+import { X, Plus, Play, Trash2, Pencil, Copy, Check } from "lucide-react";
 import { useFlows, useDiagramActions } from "@/lib/model-store";
 import type { Flow } from "@/lib/model-types";
 
@@ -12,6 +13,17 @@ interface Props {
 const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow }: Props) => {
   const flows = useFlows();
   const { removeFlow } = useDiagramActions();
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const allTags = [...new Set(flows.flatMap((f) => f.tags ?? []))];
+  const filtered = tagFilter ? flows.filter((f) => f.tags?.includes(tagFilter)) : flows;
+
+  const handleCopy = (flow: Flow) => {
+    navigator.clipboard.writeText(flow.mermaid);
+    setCopiedId(flow.id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   return (
     <div className="w-80 border-l border-border bg-card overflow-auto">
@@ -24,27 +36,76 @@ const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow }: Props) => 
         </button>
       </div>
 
+      {allTags.length > 0 && (
+        <div className="px-3 pt-2 flex flex-wrap gap-1">
+          <button
+            onClick={() => setTagFilter(null)}
+            className={`text-[9px] rounded-full px-2 py-0.5 font-medium transition-colors ${
+              tagFilter === null
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+            }`}
+          >
+            Todos
+          </button>
+          {allTags.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
+              className={`text-[9px] rounded-full px-2 py-0.5 font-medium transition-colors ${
+                tagFilter === tag
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+              }`}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="p-3 space-y-2">
-        {flows.map((flow) => (
-          <div key={flow.id} className="flex items-center gap-2 rounded-lg border border-border p-2.5 hover:bg-surface-hover transition-colors">
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-foreground truncate">{flow.name}</p>
-              <p className="text-[10px] text-muted-foreground">{flow.steps.length} passos</p>
+        {filtered.map((flow) => (
+          <div key={flow.id} className="rounded-lg border border-border p-2.5 hover:bg-surface-hover transition-colors">
+            <div className="flex items-center gap-2">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-foreground truncate">{flow.name}</p>
+                {flow.description && (
+                  <p className="text-[10px] text-muted-foreground italic truncate mt-0.5">"{flow.description}"</p>
+                )}
+                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                  <span className="text-[10px] text-muted-foreground">{flow.steps.length} passos</span>
+                  {flow.tags?.map((tag) => (
+                    <span key={tag} className="text-[9px] rounded-full bg-secondary px-1.5 py-0.5 text-secondary-foreground">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <button onClick={() => handleCopy(flow)} className="text-muted-foreground hover:text-foreground transition-colors" title="Copiar Mermaid">
+                  {copiedId === flow.id
+                    ? <Check className="h-3.5 w-3.5 text-emerald-500" />
+                    : <Copy className="h-3.5 w-3.5" />}
+                </button>
+                <button onClick={() => onEditFlow(flow)} className="text-muted-foreground hover:text-foreground transition-colors" title="Editar">
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <button onClick={() => onPlay(flow)} className="text-primary hover:text-primary/80 transition-colors" title="Iniciar flow">
+                  <Play className="h-4 w-4" />
+                </button>
+                <button onClick={() => removeFlow(flow.id)} className="text-muted-foreground hover:text-destructive transition-colors" title="Remover">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
-            <button onClick={() => onEditFlow(flow)} className="text-muted-foreground hover:text-foreground transition-colors" title="Editar">
-              <Pencil className="h-3.5 w-3.5" />
-            </button>
-            <button onClick={() => onPlay(flow)} className="text-primary hover:text-primary/80 transition-colors" title="Iniciar flow">
-              <Play className="h-4 w-4" />
-            </button>
-            <button onClick={() => removeFlow(flow.id)} className="text-muted-foreground hover:text-destructive transition-colors" title="Remover">
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
           </div>
         ))}
 
-        {flows.length === 0 && (
-          <p className="text-xs text-muted-foreground italic text-center py-4">Nenhum flow definido.</p>
+        {filtered.length === 0 && (
+          <p className="text-xs text-muted-foreground italic text-center py-4">
+            {tagFilter ? "Nenhum flow com essa tag." : "Nenhum flow definido."}
+          </p>
         )}
 
         <button onClick={onStartRecording}

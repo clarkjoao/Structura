@@ -23,6 +23,7 @@ export interface NodeData {
   onHandleClick?: (nodeId: string, handleId: string) => void;
   lastRecordedHandleId?: string;
   activeHandleId?: string;
+  coverageFlowNames?: string[];
 }
 
 const TypeConfig: Record<string, { icon: typeof Network; borderColor: string; textColor: string }> = {
@@ -139,6 +140,12 @@ const CardNode = memo(({ data }: NodeProps) => {
           {hasEmbed && <EmbedButton elementId={d.elementId} onEmbed={d.onEmbed} />}
         </div>
         <Handle type="source" position={Position.Right} className={rightClass} style={handlePointer} onClick={d.isRecording ? onRightClick : undefined} />
+        {d.coverageFlowNames && d.coverageFlowNames.length > 0 && (
+          <div
+            className="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-card z-10"
+            title={`Flows: ${d.coverageFlowNames.join(", ")}`}
+          />
+        )}
       </div>
     );
   }
@@ -166,6 +173,12 @@ const CardNode = memo(({ data }: NodeProps) => {
         {hasEmbed && <EmbedButton elementId={d.elementId} onEmbed={d.onEmbed} />}
       </div>
       <Handle type="source" position={Position.Right} className={rightClass} style={handlePointer} onClick={d.isRecording ? onRightClick : undefined} />
+      {d.coverageFlowNames && d.coverageFlowNames.length > 0 && (
+        <div
+          className="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-card z-10"
+          title={`Flows: ${d.coverageFlowNames.join(", ")}`}
+        />
+      )}
     </div>
   );
 });

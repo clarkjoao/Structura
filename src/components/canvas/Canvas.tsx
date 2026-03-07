@@ -21,6 +21,7 @@ import {
   useVisibleConnections,
   useServiceRegistry,
   useDiagramActions,
+  useFlows,
 } from "@/lib/model-store";
 import { generateId, type FlowStep } from "@/lib/model-types";
 import CustomNode from "./CustomNode";
@@ -157,6 +158,29 @@ const Canvas = ({
       participantConnIds,
     };
   }, [isPlaying, activeFlow, currentStep]);
+
+  const flows = useFlows();
+
+  const coverage = useMemo(() => {
+    if (isPlaying || isRecording) return null;
+    const nodeFlows = new Map<string, string[]>();
+    const edgeFlows = new Map<string, string[]>();
+    for (const flow of flows) {
+      for (const step of flow.steps) {
+        if (step.componentId) {
+          const arr = nodeFlows.get(step.componentId) ?? [];
+          if (!arr.includes(flow.name)) arr.push(flow.name);
+          nodeFlows.set(step.componentId, arr);
+        }
+        if (step.connectionId) {
+          const arr = edgeFlows.get(step.connectionId) ?? [];
+          if (!arr.includes(flow.name)) arr.push(flow.name);
+          edgeFlows.set(step.connectionId, arr);
+        }
+      }
+    }
+    return { nodeFlows, edgeFlows };
+  }, [flows, isPlaying, isRecording]);
 
   const recordingInfo = useMemo(() => {
     if (!isRecording || !recordingSteps?.length) return null;
@@ -300,6 +324,7 @@ const Canvas = ({
                 : undefined,
             recordingBadges: recordingInfo?.nodeSteps.get(comp.id),
             isLastRecorded: recordingInfo?.lastNodeId === comp.id,
+            coverageFlowNames: coverage?.nodeFlows.get(comp.id),
             isRecording: !!isRecording,
             onHandleClick: isRecording ? onRecordHandleClick : undefined,
             lastRecordedHandleId: isRecording && recordingInfo?.lastNodeId === comp.id
@@ -329,6 +354,7 @@ const Canvas = ({
     recordingInfo,
     onRecordHandleClick,
     activeStep,
+    coverage,
   ]);
 
   const edges: Edge[] = useMemo(() => {
@@ -348,6 +374,8 @@ const Canvas = ({
           connectionId: conn.id,
           recordingBadges: recordingInfo?.edgeSteps.get(conn.id),
           isLastRecorded: recordingInfo?.lastEdgeId === conn.id,
+          coverageFlowNames: coverage?.edgeFlows.get(conn.id),
+          playbackDuration: isPlaying && flowHighlight.activeConnId === conn.id ? activeStep?.duration : undefined,
         },
         selected: selectedEdgeId === conn.id,
         animated: isActiveConn,
@@ -360,7 +388,7 @@ const Canvas = ({
     });
 
     return edgeList;
-  }, [diagram, visibleConnections, selectedEdgeId, isPlaying, flowHighlight, isRecording, recordingInfo]);
+  }, [diagram, visibleConnections, selectedEdgeId, isPlaying, flowHighlight, isRecording, recordingInfo, coverage, activeStep]);
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
