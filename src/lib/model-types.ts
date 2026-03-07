@@ -59,6 +59,9 @@ export interface FlowStep {
   componentId?: string;
   connectionId?: string;
   note?: string;
+  description?: string;
+  handleId?: string;
+  duration?: string;
 }
 
 export interface Flow {
@@ -67,6 +70,8 @@ export interface Flow {
   mermaid: string;
   steps: FlowStep[];
   diagramId: string;
+  description?: string;
+  tags?: string[];
 }
 
 export interface ModelDraft {
