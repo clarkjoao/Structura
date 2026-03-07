@@ -1,7 +1,7 @@
 import { memo, useCallback } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { Network, Server, Database, User, Link2, LayoutDashboard, MousePointerClick, Eye } from "lucide-react";
-import type { ComponentType } from "@/lib/model-types";
+import type { ComponentType } from "@/features/diagram";
 import { isAwsType, AWS_SERVICE_MAP, AWS_CATEGORY_MAP } from "@/lib/aws-catalog";
 import AwsIcon from "./AwsIcon";
 

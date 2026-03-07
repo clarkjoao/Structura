@@ -12,10 +12,10 @@ import {
   Square,
   StickyNote,
 } from "lucide-react";
-import { useActiveDiagram, useDiagramActions } from "@/lib/model-store";
-import type { ComponentType } from "@/lib/model-types";
+import { useActiveDiagram, useDiagramActions } from "@/features/diagram";
+import type { ComponentType } from "@/features/diagram";
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/aws-catalog";
-import AwsIcon from "./AwsIcon";
+import AwsIcon from "../nodes/AwsIcon";
 
 const c4Options: {
   type: ComponentType;

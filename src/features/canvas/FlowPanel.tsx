@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X, Plus, Play, Trash2, Pencil, Copy, Check } from "lucide-react";
-import { useFlows, useDiagramActions } from "@/lib/model-store";
-import type { Flow } from "@/lib/model-types";
+import { useFlows, useDiagramActions } from "@/features/diagram";
+import type { Flow } from "@/features/diagram";
 
 interface Props {
   onClose: () => void;

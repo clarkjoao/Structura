@@ -1,4 +1,4 @@
-import type { Diagram, Flow, Component, Connection } from "./model-types";
+import type { Diagram, Flow, Component, Connection } from "@/features/diagram";
 
 export function exportJSON(diagram: Diagram): string {
   return JSON.stringify(diagram, null, 2);

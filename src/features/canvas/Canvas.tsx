@@ -22,13 +22,14 @@ import {
   useServiceRegistry,
   useDiagramActions,
   useFlows,
-} from "@/lib/model-store";
-import { generateId, type FlowStep } from "@/lib/model-types";
-import CustomNode from "./CustomNode";
-import CustomEdge from "./CustomEdge";
-import PanelNode from "./PanelNode";
-import NoteNode from "./NoteNode";
-import CanvasToolbar from "./CanvasToolbar";
+  generateId,
+  type FlowStep,
+} from "@/features/diagram";
+import CustomNode from "./nodes/CustomNode";
+import CustomEdge from "./edges/CustomEdge";
+import PanelNode from "./nodes/PanelNode";
+import NoteNode from "./nodes/NoteNode";
+import CanvasToolbar from "./toolbar/CanvasToolbar";
 import ElementPanel from "./ElementPanel";
 import NodeContextMenu from "./NodeContextMenu";
 
@@ -44,7 +45,7 @@ const PANEL_DEFAULT_W = 600;
 const PANEL_DEFAULT_H = 400;
 
 interface CanvasProps {
-  activeFlow?: import("@/lib/model-types").Flow | null;
+  activeFlow?: import("@/features/diagram").Flow | null;
   currentStep?: number;
   onOpenDiagram?: (id: string) => void;
   onDrillUp?: () => void;

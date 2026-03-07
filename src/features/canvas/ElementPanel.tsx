@@ -20,15 +20,15 @@ import {
   useAllServices,
   useAllDiagrams,
   useDiagramActions,
-} from "@/lib/model-store";
-import type { Component, Connection, ComponentType } from "@/lib/model-types";
+} from "@/features/diagram";
+import type { Component, Connection, ComponentType } from "@/features/diagram";
 import {
   isAwsType,
   AWS_CATEGORIES,
   AWS_CATEGORY_MAP,
   AWS_SERVICE_MAP,
 } from "@/lib/aws-catalog";
-import AwsIcon from "./AwsIcon";
+import AwsIcon from "./nodes/AwsIcon";
 
 // ── Panel color presets ─────────────────────────────────────────────────────
 

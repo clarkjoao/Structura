@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Plus, Layers, Clock, Network, Trash2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import { useAllDiagrams, useDiagramActions } from "@/lib/model-store";
-import type { Level, Diagram } from "@/lib/model-types";
+import { useAllDiagrams, useDiagramActions } from "@/features/diagram";
+import type { Level, Diagram } from "@/features/diagram";
 
 const levelLabels: Record<string, string> = { context: "Level 1", container: "Level 2", component: "Level 3" };
 

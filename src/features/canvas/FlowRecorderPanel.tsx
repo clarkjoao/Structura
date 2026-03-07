@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
-import { useComponents, useConnections } from "@/lib/model-store";
-import type { FlowStep, Component, Connection } from "@/lib/model-types";
+import { useComponents, useConnections } from "@/features/diagram";
+import type { FlowStep, Component, Connection } from "@/features/diagram";
 import { X, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 
