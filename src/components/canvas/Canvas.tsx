@@ -71,7 +71,7 @@ const Canvas = ({
     setParent,
     addComponent,
     removeComponent,
-    pushUndo,
+    // pushUndo,
     undo,
     redo,
   } = useDiagramActions();
@@ -398,7 +398,7 @@ const Canvas = ({
         });
       }
     },
-    [nodes, setParent, updateNodeLayout, snapshotBeforeLayoutChange],
+    [nodes, setParent, updateNodeLayout],
   );
 
   const onEdgesChange: OnEdgesChange = useCallback((changes) => {
@@ -489,7 +489,7 @@ const Canvas = ({
         e.preventDefault();
         const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
         if (selected.length === 0 && selectedNodeId) {
-          pushUndo();
+          // pushUndo();
           removeComponent(selectedNodeId);
           setSelectedNodeId(null);
           return;

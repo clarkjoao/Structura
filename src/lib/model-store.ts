@@ -286,7 +286,6 @@ interface AppActions {
     elementId: string,
     position: { x: number; y: number },
   ) => void;
-  snapshotBeforeLayoutChange: () => void;
   updateViewport: (viewport: { x: number; y: number; zoom: number }) => void;
 
   bringToFront: (elementId: string) => void;
@@ -556,12 +555,6 @@ export const useDiagramStore = create<DiagramStore>()(
           layout.x = position.x;
           layout.y = position.y;
         }
-      });
-    },
-
-    snapshotBeforeLayoutChange: () => {
-      set((state) => {
-        pushHistory(state);
       });
     },
 
@@ -848,7 +841,6 @@ export const useDiagramActions = () =>
       addFlow: s.addFlow,
       updateFlow: s.updateFlow,
       removeFlow: s.removeFlow,
-      snapshotBeforeLayoutChange: s.snapshotBeforeLayoutChange,
       undo: s.undo,
       redo: s.redo,
     })),
