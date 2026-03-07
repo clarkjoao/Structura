@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useComponents, useConnections } from "@/lib/model-store";
 import type { FlowStep, Component, Connection } from "@/lib/model-types";
-import { X } from "lucide-react";
+import { X, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 
 export function stepsToMermaid(
@@ -36,6 +36,9 @@ interface Props {
   onCancel: () => void;
   onFinalize: () => void;
   onUpdateStepDescription: (index: number, description: string) => void;
+  onDeleteStep: (index: number) => void;
+  onReorderSteps: (fromIndex: number, toIndex: number) => void;
+  isEditing?: boolean;
 }
 
 const FlowRecorderPanel = ({
@@ -45,21 +48,29 @@ const FlowRecorderPanel = ({
   onCancel,
   onFinalize,
   onUpdateStepDescription,
+  onDeleteStep,
+  onReorderSteps,
+  isEditing,
 }: Props) => {
   const components = useComponents();
   const connections = useConnections();
   const [expandedStep, setExpandedStep] = useState<number | null>(null);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
 
-  const getStepLabel = (step: FlowStep): string => {
-    if (step.connectionId) {
-      const conn = connections[step.connectionId];
-      if (conn) return `→ ${conn.label}`;
-    }
-    if (step.componentId) {
-      return components[step.componentId]?.name ?? "?";
-    }
-    return "?";
-  };
+  const getStepLabel = useCallback(
+    (step: FlowStep): string => {
+      if (step.connectionId) {
+        const conn = connections[step.connectionId];
+        if (conn) return `→ ${conn.label}`;
+      }
+      if (step.componentId) {
+        return components[step.componentId]?.name ?? "?";
+      }
+      return "?";
+    },
+    [components, connections],
+  );
 
   const handleFinalize = () => {
     if (!name.trim()) {
@@ -71,15 +82,22 @@ const FlowRecorderPanel = ({
     onFinalize();
   };
 
+  const handleDelete = (i: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (expandedStep === i) setExpandedStep(null);
+    else if (expandedStep !== null && expandedStep > i) setExpandedStep(expandedStep - 1);
+    onDeleteStep(i);
+  };
+
   const mermaidPreview = stepsToMermaid(steps, components, connections);
 
   return (
     <div className="w-80 border-l border-border bg-card overflow-hidden flex flex-col">
       <div className="flex items-center justify-between p-3 border-b border-border">
         <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+          <span className={`h-2 w-2 rounded-full ${isEditing ? "bg-amber-500" : "bg-red-500"} animate-pulse`} />
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Gravando Flow
+            {isEditing ? "Editando Flow" : "Gravando Flow"}
           </h3>
         </div>
         <button
@@ -110,20 +128,47 @@ const FlowRecorderPanel = ({
           ) : (
             <div className="space-y-0.5 max-h-60 overflow-auto">
               {steps.map((step, i) => (
-                <div key={i}>
+                <div key={`${step.order}-${step.componentId ?? step.connectionId}-${i}`}>
                   <div
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.effectAllowed = "move";
+                      setDragIdx(i);
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                      if (dragIdx !== null) setOverIdx(i);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (dragIdx !== null && dragIdx !== i) {
+                        onReorderSteps(dragIdx, i);
+                      }
+                      setDragIdx(null);
+                      setOverIdx(null);
+                    }}
+                    onDragEnd={() => {
+                      setDragIdx(null);
+                      setOverIdx(null);
+                    }}
                     onClick={() => setExpandedStep(expandedStep === i ? null : i)}
-                    className={`flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs cursor-pointer hover:bg-secondary/50 transition-colors ${
+                    className={`group flex items-center gap-1 rounded-md px-1.5 py-1.5 text-xs cursor-pointer hover:bg-secondary/50 transition-colors ${
                       i === steps.length - 1
                         ? "bg-primary/10 text-primary"
                         : "text-foreground"
+                    } ${dragIdx === i ? "opacity-40" : ""} ${
+                      overIdx === i && dragIdx !== null && dragIdx !== i
+                        ? "ring-1 ring-primary/50"
+                        : ""
                     }`}
                   >
+                    <GripVertical className="h-3 w-3 text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 cursor-grab transition-opacity" />
                     <span className="text-[10px] text-muted-foreground shrink-0">
                       {expandedStep === i ? "▾" : "▸"}
                     </span>
                     <span className="font-mono text-[10px] text-muted-foreground w-4 text-right shrink-0">
-                      {step.order + 1}.
+                      {i + 1}.
                     </span>
                     <span className="truncate flex-1">{getStepLabel(step)}</span>
                     {step.handleId && (
@@ -131,6 +176,13 @@ const FlowRecorderPanel = ({
                         [{step.handleId}]
                       </span>
                     )}
+                    <button
+                      onClick={(e) => handleDelete(i, e)}
+                      className="shrink-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
+                      title="Remover passo"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                   </div>
                   {expandedStep === i && (
                     <div className="pl-7 pr-2 pb-1 pt-0.5">

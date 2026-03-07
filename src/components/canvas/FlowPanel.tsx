@@ -1,4 +1,4 @@
-import { X, Plus, Play, Trash2 } from "lucide-react";
+import { X, Plus, Play, Trash2, Pencil } from "lucide-react";
 import { useFlows, useDiagramActions } from "@/lib/model-store";
 import type { Flow } from "@/lib/model-types";
 
@@ -6,9 +6,10 @@ interface Props {
   onClose: () => void;
   onPlay: (flow: Flow) => void;
   onStartRecording: () => void;
+  onEditFlow: (flow: Flow) => void;
 }
 
-const FlowPanel = ({ onClose, onPlay, onStartRecording }: Props) => {
+const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow }: Props) => {
   const flows = useFlows();
   const { removeFlow } = useDiagramActions();
 
@@ -30,6 +31,9 @@ const FlowPanel = ({ onClose, onPlay, onStartRecording }: Props) => {
               <p className="text-xs font-semibold text-foreground truncate">{flow.name}</p>
               <p className="text-[10px] text-muted-foreground">{flow.steps.length} passos</p>
             </div>
+            <button onClick={() => onEditFlow(flow)} className="text-muted-foreground hover:text-foreground transition-colors" title="Editar">
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
             <button onClick={() => onPlay(flow)} className="text-primary hover:text-primary/80 transition-colors" title="Iniciar flow">
               <Play className="h-4 w-4" />
             </button>

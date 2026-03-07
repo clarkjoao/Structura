@@ -662,7 +662,7 @@ export const useDiagramStore = create<DiagramStore>()(
         const flow = d.snapshot.flows[id];
         if (!flow) return;
         Object.assign(flow, patch);
-        if (patch.mermaid !== undefined) {
+        if (patch.mermaid !== undefined && patch.steps === undefined) {
           flow.steps = parseMermaidToSteps(
             patch.mermaid ?? flow.mermaid,
             d.snapshot.components,

@@ -13,7 +13,7 @@ import type { Flow, FlowStep } from "@/lib/model-types";
 const ModelExplorer = () => {
   const diagram = useActiveDiagram();
   const activeDiagramId = useActiveDiagramId();
-  const { openDiagram, addFlow } = useDiagramActions();
+  const { openDiagram, addFlow, updateFlow } = useDiagramActions();
   const navigate = useNavigate();
   const [showFlows, setShowFlows] = useState(false);
   const [activeFlow, setActiveFlow] = useState<Flow | null>(null);
@@ -22,6 +22,7 @@ const ModelExplorer = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSteps, setRecordingSteps] = useState<FlowStep[]>([]);
   const [recordingName, setRecordingName] = useState("");
+  const [editingFlowId, setEditingFlowId] = useState<string | null>(null);
 
   const handleOpenDiagram = useCallback(
     (id: string) => {
@@ -67,12 +68,22 @@ const ModelExplorer = () => {
     setShowFlows(false);
     setRecordingSteps([]);
     setRecordingName("");
+    setEditingFlowId(null);
+  }, []);
+
+  const handleEditFlow = useCallback((flow: Flow) => {
+    setIsRecording(true);
+    setRecordingName(flow.name);
+    setRecordingSteps([...flow.steps]);
+    setEditingFlowId(flow.id);
+    setShowFlows(false);
   }, []);
 
   const handleCancelRecording = useCallback(() => {
     setIsRecording(false);
     setRecordingSteps([]);
     setRecordingName("");
+    setEditingFlowId(null);
   }, []);
 
   const handleFinalizeRecording = useCallback(() => {
@@ -82,11 +93,20 @@ const ModelExplorer = () => {
       diagram.snapshot.components,
       diagram.snapshot.connections,
     );
-    addFlow(diagram.id, recordingName || "Flow sem nome", mermaid, recordingSteps);
+    if (editingFlowId) {
+      updateFlow(editingFlowId, {
+        name: recordingName || "Flow sem nome",
+        mermaid,
+        steps: recordingSteps,
+      });
+    } else {
+      addFlow(diagram.id, recordingName || "Flow sem nome", mermaid, recordingSteps);
+    }
     setIsRecording(false);
     setRecordingSteps([]);
     setRecordingName("");
-  }, [diagram, recordingSteps, recordingName, addFlow]);
+    setEditingFlowId(null);
+  }, [diagram, recordingSteps, recordingName, addFlow, updateFlow, editingFlowId]);
 
   const handleRecordNodeClick = useCallback((nodeId: string) => {
     setRecordingSteps((prev) => [
@@ -117,6 +137,21 @@ const ModelExplorer = () => {
     setRecordingSteps((prev) =>
       prev.map((step, i) => (i === index ? { ...step, description } : step)),
     );
+  }, []);
+
+  const handleDeleteStep = useCallback((index: number) => {
+    setRecordingSteps((prev) =>
+      prev.filter((_, i) => i !== index).map((step, i) => ({ ...step, order: i })),
+    );
+  }, []);
+
+  const handleReorderSteps = useCallback((fromIndex: number, toIndex: number) => {
+    setRecordingSteps((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next.map((step, i) => ({ ...step, order: i }));
+    });
   }, []);
 
   useEffect(() => {
@@ -161,8 +196,12 @@ const ModelExplorer = () => {
               </span>
             )}
             {isRecording && (
-              <span className="text-[10px] font-mono text-red-400 bg-red-400/10 rounded px-1.5 py-0.5 animate-pulse">
-                ● REC
+              <span className={`text-[10px] font-mono rounded px-1.5 py-0.5 animate-pulse ${
+                editingFlowId
+                  ? "text-amber-400 bg-amber-400/10"
+                  : "text-red-400 bg-red-400/10"
+              }`}>
+                {editingFlowId ? "✎ EDIT" : "● REC"}
               </span>
             )}
           </div>
@@ -215,10 +254,18 @@ const ModelExplorer = () => {
             onCancel={handleCancelRecording}
             onFinalize={handleFinalizeRecording}
             onUpdateStepDescription={handleUpdateStepDescription}
+            onDeleteStep={handleDeleteStep}
+            onReorderSteps={handleReorderSteps}
+            isEditing={!!editingFlowId}
           />
         )}
         {showFlows && !activeFlow && !isRecording && (
-          <FlowPanel onClose={() => setShowFlows(false)} onPlay={handlePlay} onStartRecording={handleStartRecording} />
+          <FlowPanel
+            onClose={() => setShowFlows(false)}
+            onPlay={handlePlay}
+            onStartRecording={handleStartRecording}
+            onEditFlow={handleEditFlow}
+          />
         )}
       </div>
     </div>
