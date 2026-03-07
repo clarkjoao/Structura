@@ -7,8 +7,10 @@ import {
   Database,
   Layers,
   ChevronRight,
+  ChevronUp,
   Cloud,
   Square,
+  StickyNote,
 } from "lucide-react";
 import { useActiveDiagram, useDiagramActions } from "@/lib/model-store";
 import type { ComponentType } from "@/lib/model-types";
@@ -32,7 +34,7 @@ const levelLabels: Record<string, string> = {
   component: "Level 3",
 };
 
-const CanvasToolbar = () => {
+const CanvasToolbar = ({ onDrillUp }: { onDrillUp?: () => void }) => {
   const diagram = useActiveDiagram();
   const { addComponent } = useDiagramActions();
   const [showAdd, setShowAdd] = useState(false);
@@ -67,6 +69,15 @@ const CanvasToolbar = () => {
           {levelLabels[diagram.level]}
         </span>
       </div>
+
+      {onDrillUp && (
+        <button
+          onClick={onDrillUp}
+          className="flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+        >
+          <ChevronUp className="h-3.5 w-3.5" /> Nível acima
+        </button>
+      )}
 
       <div className="relative">
         <button
@@ -104,6 +115,15 @@ const CanvasToolbar = () => {
               className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-surface-hover transition-colors"
             >
               <Square className="h-3.5 w-3.5 text-muted-foreground" /> Painel
+            </button>
+            <button
+              onClick={() => {
+                addComponent("note", "", null, { x: 300, y: 200 });
+                setShowAdd(false);
+              }}
+              className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-surface-hover transition-colors"
+            >
+              <StickyNote className="h-3.5 w-3.5 text-muted-foreground" /> Nota
             </button>
             <div className="border-t border-border my-1" />
             <button

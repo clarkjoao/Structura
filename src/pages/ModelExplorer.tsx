@@ -1,19 +1,42 @@
 import { useState, useEffect, useCallback } from "react";
 import { ReactFlowProvider } from "@xyflow/react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, FileJson, GitBranch } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Canvas from "@/components/canvas/Canvas";
 import FlowPanel from "@/components/canvas/FlowPanel";
 import FlowStepNavigator from "@/components/canvas/FlowStepNavigator";
-import { useActiveDiagram } from "@/lib/model-store";
+import { useActiveDiagram, useActiveDiagramId, useDiagramActions } from "@/lib/model-store";
 import type { Flow } from "@/lib/model-types";
 
 const ModelExplorer = () => {
   const diagram = useActiveDiagram();
+  const activeDiagramId = useActiveDiagramId();
+  const { openDiagram } = useDiagramActions();
+  const navigate = useNavigate();
   const [showFlows, setShowFlows] = useState(false);
   const [activeFlow, setActiveFlow] = useState<Flow | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
+  const [navStack, setNavStack] = useState<string[]>([]);
+
+  const handleOpenDiagram = useCallback(
+    (id: string) => {
+      if (activeDiagramId) {
+        setNavStack((prev) => [...prev, activeDiagramId]);
+      }
+      openDiagram(id);
+      navigate(`/model/${id}`);
+    },
+    [activeDiagramId, openDiagram, navigate],
+  );
+
+  const handleDrillUp = useCallback(() => {
+    const prev = navStack[navStack.length - 1];
+    if (!prev) return;
+    setNavStack((s) => s.slice(0, -1));
+    openDiagram(prev);
+    navigate(`/model/${prev}`);
+  }, [navStack, openDiagram, navigate]);
 
   const handlePlay = useCallback((flow: Flow) => {
     setActiveFlow(flow);
@@ -95,7 +118,12 @@ const ModelExplorer = () => {
       <div className="flex-1 flex overflow-hidden">
         <ReactFlowProvider>
           <div className="flex-1 flex flex-col relative">
-            <Canvas activeFlow={activeFlow} currentStep={currentStep} />
+            <Canvas
+              activeFlow={activeFlow}
+              currentStep={currentStep}
+              onOpenDiagram={handleOpenDiagram}
+              onDrillUp={navStack.length > 0 ? handleDrillUp : undefined}
+            />
             {activeFlow && (
               <FlowStepNavigator
                 flow={activeFlow}

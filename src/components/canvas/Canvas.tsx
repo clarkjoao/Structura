@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ReactFlow,
   Background,
@@ -26,6 +26,7 @@ import { generateId } from "@/lib/model-types";
 import CustomNode from "./CustomNode";
 import CustomEdge from "./CustomEdge";
 import PanelNode from "./PanelNode";
+import NoteNode from "./NoteNode";
 import CanvasToolbar from "./CanvasToolbar";
 import ElementPanel from "./ElementPanel";
 import NodeContextMenu from "./NodeContextMenu";
@@ -33,6 +34,7 @@ import NodeContextMenu from "./NodeContextMenu";
 const nodeTypes = {
   c4: CustomNode,
   panel: PanelNode,
+  note: NoteNode,
 };
 
 const edgeTypes = { c4: CustomEdge };
@@ -43,9 +45,16 @@ const PANEL_DEFAULT_H = 400;
 interface CanvasProps {
   activeFlow?: import("@/lib/model-types").Flow | null;
   currentStep?: number;
+  onOpenDiagram?: (id: string) => void;
+  onDrillUp?: () => void;
 }
 
-const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
+const Canvas = ({
+  activeFlow,
+  currentStep,
+  onOpenDiagram,
+  onDrillUp,
+}: CanvasProps = {}) => {
   const diagram = useActiveDiagram();
   const allDiagrams = useDiagrams();
   const visibleComponents = useVisibleComponents();
@@ -62,7 +71,7 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
     setParent,
     addComponent,
     removeComponent,
-    pushUndo,
+    // pushUndo,
     undo,
     redo,
   } = useDiagramActions();
@@ -76,17 +85,25 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
     y: number;
     elementId: string;
   } | null>(null);
+  const [dragTargetPanelId, setDragTargetPanelId] = useState<string | null>(
+    null,
+  );
+  const dragTargetRef = useRef<string | null>(null);
 
   const handleDrillDown = useCallback(
     (elementId: string) => {
       if (!diagram) return;
       const comp = diagram.snapshot.components[elementId];
       if (comp?.linkedDiagramId && allDiagrams[comp.linkedDiagramId]) {
-        openDiagram(comp.linkedDiagramId);
-        navigate(`/model/${comp.linkedDiagramId}`);
+        if (onOpenDiagram) {
+          onOpenDiagram(comp.linkedDiagramId);
+        } else {
+          openDiagram(comp.linkedDiagramId);
+          navigate(`/model/${comp.linkedDiagramId}`);
+        }
       }
     },
-    [diagram, allDiagrams, openDiagram, navigate],
+    [diagram, allDiagrams, openDiagram, navigate, onOpenDiagram],
   );
 
   const panelIds = useMemo(() => {
@@ -153,6 +170,33 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
           data: {
             elementId: comp.id,
             name: comp.name,
+            description: comp.description || undefined,
+            panelColor: comp.panelColor,
+            panelOpacity: comp.panelOpacity,
+            isSelected: selectedNodeId === comp.id,
+            isDragTarget: dragTargetPanelId === comp.id,
+          },
+        });
+      } else if (comp.type === "note") {
+        const isChildOfPanel =
+          comp.parentId !== null && panelIds.has(comp.parentId);
+        nodeList.push({
+          id: comp.id,
+          type: "note",
+          position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
+          zIndex: layout?.zIndex ?? 1,
+          connectable: false,
+          ...(isChildOfPanel
+            ? { parentId: comp.parentId!, extent: "parent" as const }
+            : {}),
+          ...(comp.width || comp.height
+            ? { style: { width: comp.width, height: comp.height } }
+            : {}),
+          data: {
+            elementId: comp.id,
+            name: comp.name,
+            description: comp.description,
+            panelColor: comp.panelColor,
             isSelected: selectedNodeId === comp.id,
           },
         });
@@ -221,6 +265,7 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
     handleDrillDown,
     isPlaying,
     flowHighlight,
+    dragTargetPanelId,
   ]);
 
   const edges: Edge[] = useMemo(() => {
@@ -260,9 +305,53 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
             width: change.dimensions.width,
             height: change.dimensions.height,
           });
+
+        if (
+          change.type === "position" &&
+          "dragging" in change &&
+          change.dragging &&
+          change.position
+        ) {
+          const dragId = change.id;
+          const comp = diagram?.snapshot.components[dragId];
+          if (!comp || comp.type === "panel" || comp.type === "note") return;
+
+          let absX = change.position.x;
+          let absY = change.position.y;
+
+          if (comp.parentId) {
+            const parentLayout = diagram?.nodeLayouts.find(
+              (nl) => nl.elementId === comp.parentId,
+            );
+            if (parentLayout) {
+              absX += parentLayout.x;
+              absY += parentLayout.y;
+            }
+          }
+
+          const panels = nodes.filter(
+            (n) => n.type === "panel" && n.id !== comp.parentId,
+          );
+          const match = panels.find(
+            (p) =>
+              absX > p.position.x &&
+              absY > p.position.y &&
+              absX <
+                p.position.x +
+                  ((p.style?.width as number) ?? PANEL_DEFAULT_W) &&
+              absY <
+                p.position.y + ((p.style?.height as number) ?? PANEL_DEFAULT_H),
+          );
+
+          const newTarget = match?.id ?? null;
+          if (newTarget !== dragTargetRef.current) {
+            dragTargetRef.current = newTarget;
+            setDragTargetPanelId(newTarget);
+          }
+        }
       });
     },
-    [updateNodeLayout, updateComponent],
+    [updateNodeLayout, updateComponent, diagram, nodes],
   );
 
   const onNodeDragStop = useCallback(
@@ -312,7 +401,10 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
     [nodes, setParent, updateNodeLayout],
   );
 
-  const onEdgesChange: OnEdgesChange = useCallback(() => {}, []);
+  const onEdgesChange: OnEdgesChange = useCallback((changes) => {
+    // Edge changes are handled by ReactFlow
+  }, []);
+
   const onMoveEnd = useCallback(
     (_: unknown, vp: { x: number; y: number; zoom: number }) => {
       updateViewport(vp);
@@ -397,13 +489,12 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
         e.preventDefault();
         const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
         if (selected.length === 0 && selectedNodeId) {
-          pushUndo();
+          // pushUndo();
           removeComponent(selectedNodeId);
           setSelectedNodeId(null);
           return;
         }
         if (selected.length > 0) {
-          pushUndo();
           for (const n of selected) removeComponent(n.id);
           setSelectedNodeId(null);
         }
@@ -421,7 +512,6 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
                   .filter((n) => n.id === selectedNodeId)
               : [];
         if (toDuplicate.length === 0) return;
-        pushUndo();
         for (const n of toDuplicate) {
           const comp = diagram.snapshot.components[n.id];
           if (!comp) continue;
@@ -455,7 +545,6 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
     diagram,
     selectedNodeId,
     reactFlowInstance,
-    pushUndo,
     undo,
     redo,
     removeComponent,
@@ -472,7 +561,7 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
   return (
     <div className="flex-1 flex relative">
       <div className="flex-1 relative">
-        <CanvasToolbar />
+        <CanvasToolbar onDrillUp={onDrillUp} />
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -514,6 +603,7 @@ const Canvas = ({ activeFlow, currentStep }: CanvasProps = {}) => {
       )}
       {(selectedNodeId || selectedEdgeId) && (
         <ElementPanel
+          key={selectedNodeId ?? selectedEdgeId}
           selectedElementId={selectedNodeId}
           selectedEdgeId={selectedEdgeId}
           onClose={closePanel}

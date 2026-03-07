@@ -6,6 +6,7 @@ export type ComponentType =
   | "container"
   | "component"
   | "panel"
+  | "note"
   | AwsCategoryId;
 
 export type Level = "context" | "container" | "component";
@@ -23,6 +24,8 @@ export interface Component {
   linkedDiagramId?: string;
   width?: number;
   height?: number;
+  panelColor?: string;
+  panelOpacity?: number;
 }
 
 export interface ServiceDefinition {

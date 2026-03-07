@@ -241,11 +241,19 @@ function buildSeedDiagrams(): Record<string, Diagram> {
 
 // ── Store interface ────────────────────────────────────────────────────────
 
+interface DiagramSnapshot {
+  diagramId: string;
+  snapshot: ModelDraft;
+  nodeLayouts: import("./model-types").ViewNodeLayout[];
+  timestamp: number;
+}
+
 interface AppState {
   diagrams: Record<string, Diagram>;
   activeDiagramId: string | null;
-  _undoStack: string[];
-  _redoStack: string[];
+  past: DiagramSnapshot[];
+  future: DiagramSnapshot[];
+  _lastUndoRedoAt: number;
 }
 
 interface AppActions {
@@ -303,7 +311,6 @@ interface AppActions {
   updateFlow: (id: string, patch: Partial<Omit<Flow, "id">>) => void;
   removeFlow: (id: string) => void;
 
-  pushUndo: () => void;
   undo: () => void;
   redo: () => void;
 }
@@ -314,6 +321,26 @@ export type DiagramStore = AppState & AppActions;
 
 function activeDiagram(state: AppState): Diagram {
   return state.diagrams[state.activeDiagramId!];
+}
+
+function deepClone<T>(v: T): T {
+  return JSON.parse(JSON.stringify(v));
+}
+
+function pushHistory(state: AppState) {
+  const d = activeDiagram(state);
+  if (!d) return;
+  if (Date.now() - state._lastUndoRedoAt < 500) return;
+  const last = state.past[state.past.length - 1];
+  if (last?.diagramId === d.id && Date.now() - last.timestamp < 1000) return;
+  state.past.push({
+    diagramId: d.id,
+    timestamp: Date.now(),
+    snapshot: deepClone(d.snapshot),
+    nodeLayouts: deepClone(d.nodeLayouts),
+  });
+  if (state.past.length > 50) state.past.shift();
+  state.future = [];
 }
 
 function parseMermaidToSteps(
@@ -378,8 +405,9 @@ export const useDiagramStore = create<DiagramStore>()(
   immer((set, get) => ({
     diagrams: buildSeedDiagrams(),
     activeDiagramId: null,
-    _undoStack: [],
-    _redoStack: [],
+    past: [],
+    future: [],
+    _lastUndoRedoAt: 0,
 
     // ── Diagram CRUD ───────────────────────────────────
 
@@ -429,8 +457,10 @@ export const useDiagramStore = create<DiagramStore>()(
         parentId,
         awsService: awsService ?? undefined,
         ...(type === "panel" ? { width: 600, height: 400 } : {}),
+        ...(type === "note" ? { panelColor: "hsl(48 96% 53%)" } : {}),
       };
       set((state) => {
+        pushHistory(state);
         const d = activeDiagram(state);
         d.snapshot.components[component.id] = component;
         d.nodeLayouts.push({
@@ -445,7 +475,11 @@ export const useDiagramStore = create<DiagramStore>()(
     },
 
     updateComponent: (id, patch) => {
+      const isDimensionOnly = Object.keys(patch).every(
+        (k) => k === "width" || k === "height",
+      );
       set((state) => {
+        if (!isDimensionOnly) pushHistory(state);
         const d = activeDiagram(state);
         Object.assign(d.snapshot.components[id], patch);
         d.updatedAt = "agora";
@@ -454,6 +488,7 @@ export const useDiagramStore = create<DiagramStore>()(
 
     removeComponent: (id) => {
       set((state) => {
+        pushHistory(state);
         const d = activeDiagram(state);
         const toRemove = new Set<string>();
         const collect = (eid: string) => {
@@ -485,6 +520,7 @@ export const useDiagramStore = create<DiagramStore>()(
         label,
       };
       set((state) => {
+        pushHistory(state);
         const d = activeDiagram(state);
         d.snapshot.connections[connection.id] = connection;
         d.updatedAt = "agora";
@@ -494,6 +530,7 @@ export const useDiagramStore = create<DiagramStore>()(
 
     updateConnection: (id, patch) => {
       set((state) => {
+        pushHistory(state);
         const d = activeDiagram(state);
         Object.assign(d.snapshot.connections[id], patch);
         d.updatedAt = "agora";
@@ -501,6 +538,7 @@ export const useDiagramStore = create<DiagramStore>()(
     },
     removeConnection: (id) => {
       set((state) => {
+        pushHistory(state);
         const d = activeDiagram(state);
         delete d.snapshot.connections[id];
         d.updatedAt = "agora";
@@ -530,6 +568,7 @@ export const useDiagramStore = create<DiagramStore>()(
 
     bringToFront: (elementId) => {
       set((state) => {
+        pushHistory(state);
         const d = activeDiagram(state);
         const maxZ = Math.max(...d.nodeLayouts.map((nl) => nl.zIndex ?? 0));
         const layout = d.nodeLayouts.find((nl) => nl.elementId === elementId);
@@ -539,6 +578,7 @@ export const useDiagramStore = create<DiagramStore>()(
 
     sendToBack: (elementId) => {
       set((state) => {
+        pushHistory(state);
         const d = activeDiagram(state);
         const minZ = Math.min(...d.nodeLayouts.map((nl) => nl.zIndex ?? 0));
         const layout = d.nodeLayouts.find((nl) => nl.elementId === elementId);
@@ -588,6 +628,7 @@ export const useDiagramStore = create<DiagramStore>()(
 
     setParent: (childId, parentId) => {
       set((state) => {
+        pushHistory(state);
         const comp = activeDiagram(state).snapshot.components[childId];
         if (comp) comp.parentId = parentId;
       });
@@ -637,36 +678,39 @@ export const useDiagramStore = create<DiagramStore>()(
       });
     },
 
-    pushUndo: () => {
-      const { activeDiagramId, diagrams } = get();
-      if (!activeDiagramId) return;
-      const snap = JSON.stringify(diagrams[activeDiagramId]);
-      set((state) => {
-        state._undoStack.push(snap);
-        if (state._undoStack.length > 50) state._undoStack.shift();
-        state._redoStack = [];
-      });
-    },
-
     undo: () => {
-      const { _undoStack, activeDiagramId, diagrams } = get();
-      if (!activeDiagramId || _undoStack.length === 0) return;
-      const currentSnap = JSON.stringify(diagrams[activeDiagramId]);
       set((state) => {
-        const prev = state._undoStack.pop()!;
-        state._redoStack.push(currentSnap);
-        state.diagrams[activeDiagramId] = JSON.parse(prev);
+        const entry = state.past.pop();
+        if (!entry) return;
+        const d = state.diagrams[entry.diagramId];
+        if (!d) return;
+        state.future.push({
+          diagramId: d.id,
+          snapshot: deepClone(d.snapshot),
+          nodeLayouts: deepClone(d.nodeLayouts),
+          timestamp: Date.now(),
+        });
+        d.snapshot = entry.snapshot;
+        d.nodeLayouts = entry.nodeLayouts;
+        state._lastUndoRedoAt = Date.now();
       });
     },
 
     redo: () => {
-      const { _redoStack, activeDiagramId, diagrams } = get();
-      if (!activeDiagramId || _redoStack.length === 0) return;
-      const currentSnap = JSON.stringify(diagrams[activeDiagramId]);
       set((state) => {
-        const next = state._redoStack.pop()!;
-        state._undoStack.push(currentSnap);
-        state.diagrams[activeDiagramId] = JSON.parse(next);
+        const entry = state.future.pop();
+        if (!entry) return;
+        const d = state.diagrams[entry.diagramId];
+        if (!d) return;
+        state.past.push({
+          diagramId: d.id,
+          snapshot: deepClone(d.snapshot),
+          nodeLayouts: deepClone(d.nodeLayouts),
+          timestamp: Date.now(),
+        });
+        d.snapshot = entry.snapshot;
+        d.nodeLayouts = entry.nodeLayouts;
+        state._lastUndoRedoAt = Date.now();
       });
     },
   })),
@@ -797,7 +841,6 @@ export const useDiagramActions = () =>
       addFlow: s.addFlow,
       updateFlow: s.updateFlow,
       removeFlow: s.removeFlow,
-      pushUndo: s.pushUndo,
       undo: s.undo,
       redo: s.redo,
     })),

@@ -1,8 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import debounce from "lodash.debounce";
 import {
   X,
   Trash2,
-  Save,
   Link2,
   LayoutDashboard,
   Search,
@@ -11,6 +11,7 @@ import {
   Server,
   Database,
   User,
+  Palette,
 } from "lucide-react";
 import {
   useComponent,
@@ -28,6 +29,23 @@ import {
   AWS_SERVICE_MAP,
 } from "@/lib/aws-catalog";
 import AwsIcon from "./AwsIcon";
+
+// ── Panel color presets ─────────────────────────────────────────────────────
+
+const PANEL_COLOR_PRESETS = [
+  { name: "Blue", color: "hsl(220 70% 50%)" },
+  { name: "Purple", color: "hsl(270 70% 50%)" },
+  { name: "Green", color: "hsl(150 70% 40%)" },
+  { name: "Orange", color: "hsl(30 90% 50%)" },
+  { name: "Red", color: "hsl(0 70% 50%)" },
+  { name: "Cyan", color: "hsl(190 80% 45%)" },
+  { name: "Yellow", color: "hsl(45 90% 50%)" },
+  { name: "Gray", color: "hsl(220 20% 40%)" },
+];
+
+const DEFAULT_PANEL_COLOR = "hsl(220 20% 20%)";
+const DEFAULT_PANEL_OPACITY = 10;
+const DEFAULT_NOTE_COLOR = "hsl(48 96% 53%)";
 
 interface Props {
   selectedElementId: string | null;
@@ -223,6 +241,95 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
   );
 };
 
+// ── Color swatches (shared by panel and note) ───────────────────────────────
+
+const ColorSwatches = ({
+  componentId,
+  currentColor,
+  label,
+  updateComponent,
+}: {
+  componentId: string;
+  currentColor: string;
+  label: string;
+  updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => void;
+}) => (
+  <div>
+    <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-2 block">
+      <Palette className="h-3 w-3 inline mr-1" />
+      {label}
+    </label>
+    <div className="grid grid-cols-4 gap-2">
+      {PANEL_COLOR_PRESETS.map((preset) => (
+        <button
+          key={preset.name}
+          onClick={() =>
+            updateComponent(componentId, { panelColor: preset.color })
+          }
+          className={`group relative h-8 rounded-md border-2 transition-all ${
+            currentColor === preset.color
+              ? "border-foreground scale-105 shadow-md"
+              : "border-transparent hover:border-muted-foreground/40 hover:scale-105"
+          }`}
+          style={{ backgroundColor: preset.color }}
+          title={preset.name}
+        >
+          {currentColor === preset.color && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-white shadow-sm" />
+            </div>
+          )}
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
+// ── Panel color picker ──────────────────────────────────────────────────────
+
+const PanelColorPicker = ({
+  componentId,
+  currentColor,
+  currentOpacity,
+  updateComponent,
+}: {
+  componentId: string;
+  currentColor: string;
+  currentOpacity: number;
+  updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => void;
+}) => (
+  <div className="space-y-3">
+    <ColorSwatches
+      componentId={componentId}
+      currentColor={currentColor}
+      label="Cor do Painel"
+      updateComponent={updateComponent}
+    />
+    <div>
+      <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+        Opacidade — {currentOpacity}%
+      </label>
+      <input
+        type="range"
+        min={5}
+        max={40}
+        step={1}
+        value={currentOpacity}
+        onChange={(e) =>
+          updateComponent(componentId, {
+            panelOpacity: Number(e.target.value),
+          })
+        }
+        className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+      />
+      <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5">
+        <span>5%</span>
+        <span>40%</span>
+      </div>
+    </div>
+  </div>
+);
+
 // ── Component detail (with tabs) ────────────────────────────────────────────
 
 const ComponentDetail = ({
@@ -247,20 +354,24 @@ const ComponentDetail = ({
   const [type, setType] = useState<ComponentType>(component.type);
   const [awsService, setAwsService] = useState(component.awsService ?? "");
 
+  const isPanel = component.type === "panel";
+  const isNote = component.type === "note";
+  const isSimple = isPanel || isNote;
   const isAws = isAwsType(type);
   const svcInfo = awsService ? AWS_SERVICE_MAP.get(awsService) : null;
 
-  const save = () => {
-    updateComponent(component.id, {
-      name,
-      description: desc,
-      technology: tech || undefined,
-      type,
-      awsService: isAws && awsService ? awsService : undefined,
-    });
-  };
+  const debouncedUpdate = useMemo(
+    () =>
+      debounce((patch: Partial<Omit<Component, "id">>) => {
+        updateComponent(component.id, patch);
+      }, 300),
+    [component.id, updateComponent],
+  );
+
+  useEffect(() => () => debouncedUpdate.cancel(), [debouncedUpdate]);
 
   const handleRemove = () => {
+    debouncedUpdate.cancel();
     removeComponent(component.id);
     onClose();
   };
@@ -269,7 +380,7 @@ const ComponentDetail = ({
     <div className="w-80 border-l border-border bg-card overflow-auto">
       <div className="flex items-center justify-between p-3 border-b border-border">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          {component.name}
+          {isPanel ? "Painel" : isNote ? "Nota" : component.name}
         </h3>
         <button
           onClick={onClose}
@@ -279,13 +390,13 @@ const ComponentDetail = ({
         </button>
       </div>
 
-      <TabBar active={tab} onChange={setTab} />
+      {!isSimple && <TabBar active={tab} onChange={setTab} />}
 
-      {tab === "connections" ? (
+      {!isSimple && tab === "connections" ? (
         <ConnectionsTab componentId={component.id} />
       ) : (
         <div className="p-4 space-y-4">
-          {isAws && svcInfo && (
+          {!isSimple && isAws && svcInfo && (
             <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
               <AwsIcon iconName={svcInfo.iconName} size={32} />
               <div>
@@ -299,35 +410,51 @@ const ComponentDetail = ({
             </div>
           )}
 
-          <Field label="Nome" value={name} onChange={setName} />
+          <Field
+            label="Nome"
+            value={name}
+            onChange={(v) => {
+              setName(v);
+              debouncedUpdate({ name: v });
+            }}
+          />
 
-          <div>
-            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-              Tipo
-            </label>
-            <select
-              value={type}
-              onChange={(e) => {
-                setType(e.target.value as ComponentType);
-                if (!e.target.value.startsWith("aws-")) setAwsService("");
-              }}
-              className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            >
-              <optgroup label="C4 Model">
-                <option value="person">Person</option>
-                <option value="system">System</option>
-                <option value="container">Container</option>
-                <option value="component">Component</option>
-              </optgroup>
-              {AWS_CATEGORIES.map((cat) => (
-                <optgroup key={cat.id} label={`AWS: ${cat.name}`}>
-                  <option value={cat.id}>{cat.name}</option>
+          {!isSimple && (
+            <div>
+              <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+                Tipo
+              </label>
+              <select
+                value={type}
+                onChange={(e) => {
+                  const newType = e.target.value as ComponentType;
+                  setType(newType);
+                  const newAws = newType.startsWith("aws-") ? awsService : "";
+                  if (!newType.startsWith("aws-")) setAwsService("");
+                  updateComponent(component.id, {
+                    type: newType,
+                    awsService:
+                      newType.startsWith("aws-") && newAws ? newAws : undefined,
+                  });
+                }}
+                className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <optgroup label="C4 Model">
+                  <option value="person">Person</option>
+                  <option value="system">System</option>
+                  <option value="container">Container</option>
+                  <option value="component">Component</option>
                 </optgroup>
-              ))}
-            </select>
-          </div>
+                {AWS_CATEGORIES.map((cat) => (
+                  <optgroup key={cat.id} label={`AWS: ${cat.name}`}>
+                    <option value={cat.id}>{cat.name}</option>
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+          )}
 
-          {isAws && (
+          {!isSimple && isAws && (
             <div>
               <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
                 Serviço AWS
@@ -335,13 +462,22 @@ const ComponentDetail = ({
               <select
                 value={awsService}
                 onChange={(e) => {
-                  setAwsService(e.target.value);
-                  const svc = AWS_SERVICE_MAP.get(e.target.value);
+                  const newSvc = e.target.value;
+                  setAwsService(newSvc);
+                  const svc = AWS_SERVICE_MAP.get(newSvc);
                   if (
                     svc &&
                     (name.startsWith("Novo") || name === component.name)
                   ) {
                     setName(svc.name);
+                    updateComponent(component.id, {
+                      awsService: newSvc || undefined,
+                      name: svc.name,
+                    });
+                  } else {
+                    updateComponent(component.id, {
+                      awsService: newSvc || undefined,
+                    });
                   }
                 }}
                 className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
@@ -356,56 +492,96 @@ const ComponentDetail = ({
             </div>
           )}
 
-          <Field label="Descrição" value={desc} onChange={setDesc} multiline />
-          <Field label="Tecnologia" value={tech} onChange={setTech} />
+          <Field
+            label="Descrição"
+            value={desc}
+            onChange={(v) => {
+              setDesc(v);
+              debouncedUpdate({ description: v });
+            }}
+            multiline
+          />
 
-          <div>
-            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-              <Link2 className="h-3 w-3 inline mr-1" />
-              Vincular ao Serviço
-            </label>
-            <select
-              value={component.serviceId ?? ""}
-              onChange={(e) =>
-                linkComponentToService(
-                  component.id,
-                  e.target.value || undefined,
-                )
-              }
-              className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            >
-              <option value="">Nenhum</option>
-              {allServices.map((svc) => (
-                <option key={svc.id} value={svc.id}>
-                  {svc.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {isPanel && (
+            <PanelColorPicker
+              componentId={component.id}
+              currentColor={component.panelColor ?? DEFAULT_PANEL_COLOR}
+              currentOpacity={component.panelOpacity ?? DEFAULT_PANEL_OPACITY}
+              updateComponent={updateComponent}
+            />
+          )}
 
-          <div>
-            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-              <LayoutDashboard className="h-3 w-3 inline mr-1" />
-              Vincular ao Diagrama
-            </label>
-            <select
-              value={component.linkedDiagramId ?? ""}
-              onChange={(e) =>
-                linkComponentToDiagram(
-                  component.id,
-                  e.target.value || undefined,
-                )
-              }
-              className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            >
-              <option value="">Nenhum</option>
-              {allDiagrams.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {isNote && (
+            <ColorSwatches
+              componentId={component.id}
+              currentColor={component.panelColor ?? DEFAULT_NOTE_COLOR}
+              label="Cor da Nota"
+              updateComponent={updateComponent}
+            />
+          )}
+
+          {!isSimple && (
+            <Field
+              label="Tecnologia"
+              value={tech}
+              onChange={(v) => {
+                setTech(v);
+                debouncedUpdate({ technology: v || undefined });
+              }}
+            />
+          )}
+
+          {!isSimple && (
+            <div>
+              <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+                <Link2 className="h-3 w-3 inline mr-1" />
+                Vincular ao Serviço
+              </label>
+              <select
+                value={component.serviceId ?? ""}
+                onChange={(e) =>
+                  linkComponentToService(
+                    component.id,
+                    e.target.value || undefined,
+                  )
+                }
+                className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="">Nenhum</option>
+                {allServices.map((svc) => (
+                  <option key={svc.id} value={svc.id}>
+                    {svc.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {!isSimple && (
+            <div>
+              <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+                <LayoutDashboard className="h-3 w-3 inline mr-1" />
+                Vincular ao Diagrama
+              </label>
+              <select
+                value={component.linkedDiagramId ?? ""}
+                onChange={(e) =>
+                  linkComponentToDiagram(
+                    component.id,
+                    e.target.value || undefined,
+                  )
+                }
+                className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="">Nenhum</option>
+                {allDiagrams.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
@@ -416,16 +592,10 @@ const ComponentDetail = ({
             </p>
           </div>
 
-          <div className="flex gap-2 pt-2">
-            <button
-              onClick={save}
-              className="flex-1 flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              <Save className="h-3.5 w-3.5" /> Salvar
-            </button>
+          <div className="pt-2">
             <button
               onClick={handleRemove}
-              className="flex items-center justify-center gap-1.5 rounded-md border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors"
+              className="flex items-center justify-center gap-1.5 rounded-md border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors w-full"
             >
               <Trash2 className="h-3.5 w-3.5" /> Remover
             </button>
@@ -456,13 +626,15 @@ const ConnectionDetail = ({
   const [tech, setTech] = useState(conn.technology ?? "");
   const [desc, setDesc] = useState(conn.description ?? "");
 
-  const save = () => {
-    updateConnection(conn.id, {
-      label,
-      technology: tech || undefined,
-      description: desc || undefined,
-    });
-  };
+  const debouncedUpdate = useMemo(
+    () =>
+      debounce((patch: Partial<Omit<Connection, "id">>) => {
+        updateConnection(conn.id, patch);
+      }, 300),
+    [conn.id, updateConnection],
+  );
+
+  useEffect(() => () => debouncedUpdate.cancel(), [debouncedUpdate]);
 
   return (
     <div className="w-80 border-l border-border bg-card overflow-auto">
@@ -478,9 +650,31 @@ const ConnectionDetail = ({
         </button>
       </div>
       <div className="p-4 space-y-4">
-        <Field label="Label" value={label} onChange={setLabel} />
-        <Field label="Tecnologia" value={tech} onChange={setTech} />
-        <Field label="Descrição" value={desc} onChange={setDesc} multiline />
+        <Field
+          label="Label"
+          value={label}
+          onChange={(v) => {
+            setLabel(v);
+            debouncedUpdate({ label: v });
+          }}
+        />
+        <Field
+          label="Tecnologia"
+          value={tech}
+          onChange={(v) => {
+            setTech(v);
+            debouncedUpdate({ technology: v || undefined });
+          }}
+        />
+        <Field
+          label="Descrição"
+          value={desc}
+          onChange={(v) => {
+            setDesc(v);
+            debouncedUpdate({ description: v || undefined });
+          }}
+          multiline
+        />
 
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
@@ -491,19 +685,14 @@ const ConnectionDetail = ({
           </p>
         </div>
 
-        <div className="flex gap-2 pt-2">
-          <button
-            onClick={save}
-            className="flex-1 flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-          >
-            <Save className="h-3.5 w-3.5" /> Salvar
-          </button>
+        <div className="pt-2">
           <button
             onClick={() => {
+              debouncedUpdate.cancel();
               removeConnection(conn.id);
               onClose();
             }}
-            className="flex items-center justify-center gap-1.5 rounded-md border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors"
+            className="flex items-center justify-center gap-1.5 rounded-md border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors w-full"
           >
             <Trash2 className="h-3.5 w-3.5" /> Remover
           </button>
