@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 import { immer } from "zustand/middleware/immer";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { defaultStorage } from "@/infrastructure/persistence";
 import type {
   Component,
   Connection,
@@ -348,13 +350,16 @@ function pushHistory(state: AppState) {
 
 // ── Store ──────────────────────────────────────────────────────────────────
 
+const PERSIST_KEY = "diagram-store";
+
 export const useDiagramStore = create<DiagramStore>()(
-  immer((set, get) => ({
-    diagrams: buildSeedDiagrams(),
-    activeDiagramId: null,
-    past: [],
-    future: [],
-    _lastUndoRedoAt: 0,
+  persist(
+    immer((set, get) => ({
+      diagrams: buildSeedDiagrams(),
+      activeDiagramId: null,
+      past: [],
+      future: [],
+      _lastUndoRedoAt: 0,
 
     addDiagram: (name, level, domain) => {
       const diagram: Diagram = {
@@ -651,6 +656,15 @@ export const useDiagramStore = create<DiagramStore>()(
       });
     },
   })),
+    {
+      name: PERSIST_KEY,
+      storage: createJSONStorage(() => defaultStorage),
+      merge: (persistedState, currentState) => ({
+        ...currentState,
+        ...(persistedState && (persistedState as Partial<DiagramStore>)),
+      }),
+    },
+  ),
 );
 
 // ── Selectors ──────────────────────────────────────────────────────────────
