@@ -26,24 +26,19 @@ import {
   getEffectiveConnectionStyle,
   type FlowStep,
 } from "@/features/diagram";
-import CustomNode from "./nodes/CustomNode";
 import CustomEdge from "./edges/CustomEdge";
-import PanelNode from "./nodes/PanelNode";
-import NoteNode from "./nodes/NoteNode";
 import CanvasToolbar from "./toolbar/CanvasToolbar";
 import ElementPanel from "./ElementPanel";
 import NodeContextMenu from "./NodeContextMenu";
-
-const nodeTypes = {
-  c4: CustomNode,
-  panel: PanelNode,
-  note: NoteNode,
-};
+import {
+  nodeTypes,
+  getDescriptor,
+  PANEL_DEFAULT_W,
+  PANEL_DEFAULT_H,
+  type NodeBuildContext,
+} from "./node-types";
 
 const edgeTypes = { c4: CustomEdge };
-
-const PANEL_DEFAULT_W = 600;
-const PANEL_DEFAULT_H = 400;
 
 interface CanvasProps {
   activeFlow?: import("@/features/diagram").Flow | null;
@@ -253,132 +248,45 @@ const Canvas = ({
   const nodes = useMemo(() => {
     if (!diagram) return [];
 
-    const sorted = [...visibleComponents].sort((a, b) =>
-      a.type === "panel" ? -1 : b.type === "panel" ? 1 : 0,
-    );
+    const ctx: NodeBuildContext = {
+      diagram,
+      serviceRegistry: serviceRegistry ?? {},
+      allDiagrams,
+      selectedNodeId,
+      dragTargetPanelId,
+      panelIds,
+      connectionCounts: connectionCountPerNode,
+      isPlaying,
+      isRecording: !!isRecording,
+      flowHighlight,
+      activeStep,
+      recordingInfo,
+      coverage,
+      handleDrillDown,
+      onRecordHandleClick,
+    };
 
-    const nodeList: Node[] = [];
+    return [...visibleComponents]
+      .sort((a, b) => (a.type === "panel" ? -1 : b.type === "panel" ? 1 : 0))
+      .map((comp): Node => {
+        const d = getDescriptor(comp.type);
+        const layout = diagram.nodeLayouts.find((nl) => nl.elementId === comp.id);
+        const isChild =
+          d.canHaveParent && comp.parentId !== null && panelIds.has(comp.parentId);
+        const zIndex =
+          layout?.zIndex ?? (typeof d.zIndex === "function" ? d.zIndex(comp) : d.zIndex);
 
-    for (const comp of sorted) {
-      const layout = diagram.nodeLayouts.find((nl) => nl.elementId === comp.id);
-
-      if (comp.type === "panel") {
-        nodeList.push({
+        return {
           id: comp.id,
-          type: "panel",
+          type: d.rfType,
           position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
-          zIndex: layout?.zIndex ?? -1,
-          style: {
-            width: comp.width ?? PANEL_DEFAULT_W,
-            height: comp.height ?? PANEL_DEFAULT_H,
-          },
-          data: {
-            elementId: comp.id,
-            name: comp.name,
-            description: comp.description || undefined,
-            panelColor: comp.panelColor,
-            panelOpacity: comp.panelOpacity,
-            isSelected: selectedNodeId === comp.id,
-            isDragTarget: dragTargetPanelId === comp.id,
-          },
-        });
-      } else if (comp.type === "note") {
-        const isChildOfPanel =
-          comp.parentId !== null && panelIds.has(comp.parentId);
-        nodeList.push({
-          id: comp.id,
-          type: "note",
-          position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
-          zIndex: layout?.zIndex ?? 1,
-          connectable: false,
-          ...(isChildOfPanel
-            ? { parentId: comp.parentId!, extent: "parent" as const }
-            : {}),
-          ...(comp.width || comp.height
-            ? { style: { width: comp.width, height: comp.height } }
-            : {}),
-          data: {
-            elementId: comp.id,
-            name: comp.name,
-            description: comp.description,
-            panelColor: comp.panelColor,
-            isSelected: selectedNodeId === comp.id,
-          },
-        });
-      } else {
-        const isChildOfPanel =
-          comp.parentId !== null && panelIds.has(comp.parentId);
-        const linkedDiagramName = comp.linkedDiagramId
-          ? allDiagrams[comp.linkedDiagramId]?.name
-          : undefined;
-
-        const flowNodeStyle = isPlaying
-          ? (() => {
-              const isActive = flowHighlight.activeNodeId === comp.id;
-              const isVisited = flowHighlight.visitedNodeIds.has(comp.id);
-              const isParticipant = flowHighlight.participantNodeIds.has(
-                comp.id,
-              );
-              if (isActive) return { opacity: 1, filter: "none" };
-              if (isVisited) return { opacity: 0.85, filter: "none" };
-              if (isParticipant) return { opacity: 0.5, filter: "none" };
-              return { opacity: 0.25, filter: "none" };
-            })()
-          : isRecording
-            ? { opacity: recordingInfo?.recordedNodeIds.has(comp.id) ? 1 : 0.35 }
-            : undefined;
-
-        const counts = connectionCountPerNode[comp.id] ?? { incoming: 0, outgoing: 0 };
-        const incomingCount = Math.min(4, Math.max(1, counts.incoming));
-        const outgoingCount = Math.min(4, Math.max(1, counts.outgoing));
-
-        nodeList.push({
-          id: comp.id,
-          type: "c4",
-          position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
-          zIndex: layout?.zIndex ?? 1,
-          ...(isChildOfPanel
-            ? { parentId: comp.parentId!, extent: "parent" as const }
-            : {}),
-          ...(flowNodeStyle ? { style: flowNodeStyle } : {}),
-          data: {
-            elementId: comp.id,
-            name: comp.name,
-            type: comp.type,
-            description: comp.description,
-            technology: comp.technology,
-            awsService: comp.awsService,
-            isSelected: isPlaying
-              ? flowHighlight.activeNodeId === comp.id
-              : selectedNodeId === comp.id,
-            serviceName: comp.serviceId
-              ? serviceRegistry?.[comp.serviceId]?.name
-              : undefined,
-            linkedDiagramName: isPlaying || isRecording ? undefined : linkedDiagramName,
-            onDrillDown: isPlaying || isRecording
-              ? undefined
-              : linkedDiagramName
-                ? handleDrillDown
-                : undefined,
-            recordingBadges: recordingInfo?.nodeSteps.get(comp.id),
-            isLastRecorded: recordingInfo?.lastNodeId === comp.id,
-            coverageFlowNames: coverage?.nodeFlows.get(comp.id),
-            isRecording: !!isRecording,
-            onHandleClick: isRecording ? onRecordHandleClick : undefined,
-            lastRecordedHandleId: isRecording && recordingInfo?.lastNodeId === comp.id
-              ? recordingInfo?.lastHandleId ?? undefined
-              : undefined,
-            activeHandleId: isPlaying && flowHighlight.activeNodeId === comp.id
-              ? activeStep?.handleId ?? undefined
-              : undefined,
-            incomingCount,
-            outgoingCount,
-          } as Record<string, unknown>,
-        });
-      }
-    }
-
-    return nodeList;
+          zIndex,
+          connectable: d.connectable,
+          ...(isChild ? { parentId: comp.parentId!, extent: "parent" as const } : {}),
+          style: d.buildStyle?.(comp, ctx),
+          data: d.buildData(comp, ctx),
+        };
+      });
   }, [
     diagram,
     visibleComponents,
@@ -704,7 +612,7 @@ const Canvas = ({
             comp.type,
             `${comp.name} (cópia)`,
             comp.parentId,
-            { x: (layout?.x ?? 0) + 20, y: (layout?.y ?? 0) + 20 },
+            { x: (layout?.x ?? 0) + 30, y: (layout?.y ?? 0) + 30 },
             comp.awsService,
           );
         }
@@ -745,7 +653,10 @@ const Canvas = ({
   return (
     <div className="flex-1 flex relative">
       <div className="flex-1 relative">
-        <CanvasToolbar onDrillUp={onDrillUp} />
+        <CanvasToolbar
+          onDrillUp={onDrillUp}
+          isPanelOpen={!!(selectedNodeId || selectedEdgeId) && !isRecording}
+        />
         <ReactFlow
           nodes={nodes}
           edges={edges}

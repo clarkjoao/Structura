@@ -13,11 +13,13 @@ import {
   StickyNote,
   Puzzle,
 } from "lucide-react";
+import { useReactFlow } from "@xyflow/react";
 import { useActiveDiagram, useDiagramActions } from "@/features/diagram";
 import type { ComponentType } from "@/features/diagram";
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/aws-catalog";
 import AwsIcon from "../nodes/AwsIcon";
 import PatternPicker from "../PatternPicker";
+import { getViewportCenter } from "../viewport-utils";
 
 const c4Options: {
   type: ComponentType;
@@ -36,9 +38,16 @@ const levelLabels: Record<string, string> = {
   component: "Level 3",
 };
 
-const CanvasToolbar = ({ onDrillUp }: { onDrillUp?: () => void }) => {
+const CanvasToolbar = ({
+  onDrillUp,
+  isPanelOpen,
+}: {
+  onDrillUp?: () => void;
+  isPanelOpen?: boolean;
+}) => {
   const diagram = useActiveDiagram();
   const { addComponent } = useDiagramActions();
+  const rfInstance = useReactFlow();
   const [showAdd, setShowAdd] = useState(false);
   const [showAws, setShowAws] = useState(false);
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
@@ -46,7 +55,7 @@ const CanvasToolbar = ({ onDrillUp }: { onDrillUp?: () => void }) => {
 
   const handleAddC4 = (type: ComponentType) => {
     const name = `Novo ${type.charAt(0).toUpperCase() + type.slice(1)}`;
-    addComponent(type, name, null, { x: 300, y: 200 });
+    addComponent(type, name, null, getViewportCenter(rfInstance, isPanelOpen));
     setShowAdd(false);
   };
 
@@ -55,7 +64,7 @@ const CanvasToolbar = ({ onDrillUp }: { onDrillUp?: () => void }) => {
     serviceId: string,
     serviceName: string,
   ) => {
-    addComponent(categoryId, serviceName, null, { x: 300, y: 200 }, serviceId);
+    addComponent(categoryId, serviceName, null, getViewportCenter(rfInstance, isPanelOpen), serviceId);
     setShowAws(false);
     setShowAdd(false);
     setExpandedCat(null);
@@ -119,7 +128,7 @@ const CanvasToolbar = ({ onDrillUp }: { onDrillUp?: () => void }) => {
             <div className="border-t border-border my-1" />
             <button
               onClick={() => {
-                addComponent("panel", "Novo Painel", null, { x: 200, y: 150 });
+                addComponent("panel", "Novo Painel", null, getViewportCenter(rfInstance, isPanelOpen));
                 setShowAdd(false);
               }}
               className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-surface-hover transition-colors"
@@ -128,7 +137,7 @@ const CanvasToolbar = ({ onDrillUp }: { onDrillUp?: () => void }) => {
             </button>
             <button
               onClick={() => {
-                addComponent("note", "", null, { x: 300, y: 200 });
+                addComponent("note", "", null, getViewportCenter(rfInstance, isPanelOpen));
                 setShowAdd(false);
               }}
               className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-surface-hover transition-colors"

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
+import { useReactFlow } from "@xyflow/react";
 import {
   PATTERNS_BY_CATEGORY,
   PATTERN_CATEGORY_LABELS,
@@ -7,6 +8,7 @@ import {
   type PatternTemplate,
 } from "@/lib/patterns-catalog";
 import { useDiagramActions } from "@/features/diagram";
+import { getViewportCenter } from "./viewport-utils";
 
 const CATEGORIES = Object.keys(PATTERN_CATEGORY_LABELS) as PatternCategory[];
 
@@ -17,9 +19,10 @@ interface PatternPickerProps {
 const PatternPicker = ({ onClose }: PatternPickerProps) => {
   const [activeCategory, setActiveCategory] = useState<PatternCategory>(CATEGORIES[0]);
   const { insertPattern } = useDiagramActions();
+  const rfInstance = useReactFlow();
 
   const handleInsert = (template: PatternTemplate) => {
-    insertPattern(template, { x: 100, y: 200 });
+    insertPattern(template, getViewportCenter(rfInstance));
     onClose();
   };
 
