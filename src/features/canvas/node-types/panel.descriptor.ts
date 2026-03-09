@@ -19,10 +19,18 @@ export const panelDescriptor: NodeTypeDescriptor = {
     panelOpacity: comp.panelOpacity,
     isSelected: ctx.selectedNodeId === comp.id,
     isDragTarget: ctx.dragTargetPanelId === comp.id,
+    collapsed: comp.collapsed ?? false,
+    childCount: Object.values(ctx.diagram.snapshot.components).filter(
+      (c) => c.parentId === comp.id,
+    ).length,
+    onToggleCollapse: () => ctx.onPanelCollapseToggle?.(comp.id),
   }),
 
-  buildStyle: (comp) => ({
-    width: comp.width ?? PANEL_DEFAULT_W,
-    height: comp.height ?? PANEL_DEFAULT_H,
-  }),
+  buildStyle: (comp) =>
+    comp.collapsed
+      ? { width: 200, height: 60 }
+      : {
+          width: comp.width ?? PANEL_DEFAULT_W,
+          height: comp.height ?? PANEL_DEFAULT_H,
+        },
 };

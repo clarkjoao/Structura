@@ -41,6 +41,7 @@ export interface NodeBuildContext {
   coverage: CoverageInfo | null;
   handleDrillDown: (id: string) => void;
   onRecordHandleClick?: (nodeId: string, handleId: string) => void;
+  onPanelCollapseToggle?: (panelId: string) => void;
 }
 
 export interface NodeTypeDescriptor {

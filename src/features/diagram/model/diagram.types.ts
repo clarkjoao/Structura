@@ -27,6 +27,14 @@ export interface Component {
   height?: number;
   panelColor?: string;
   panelOpacity?: number;
+  /** Only for type === "panel": when true, panel renders minimized (compact). */
+  collapsed?: boolean;
+  /** Internal: saved panel width before collapse; restored on expand. */
+  collapsedWidth?: number;
+  /** Internal: saved panel height before collapse; restored on expand. */
+  collapsedHeight?: number;
+  /** When true, node is hidden on canvas (e.g. child of collapsed panel). Never clear parentId. */
+  hidden?: boolean;
 }
 
 export type EdgeStyle = "straight" | "bezier" | "step" | "smoothstep";

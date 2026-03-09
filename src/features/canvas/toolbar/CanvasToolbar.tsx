@@ -41,9 +41,11 @@ const levelLabels: Record<string, string> = {
 const CanvasToolbar = ({
   onDrillUp,
   isPanelOpen,
+  selectedCount = 0,
 }: {
   onDrillUp?: () => void;
   isPanelOpen?: boolean;
+  selectedCount?: number;
 }) => {
   const diagram = useActiveDiagram();
   const { addComponent } = useDiagramActions();
@@ -80,6 +82,11 @@ const CanvasToolbar = ({
         <span className="text-[10px] font-mono text-muted-foreground rounded bg-secondary px-1.5 py-0.5">
           {levelLabels[diagram.level]}
         </span>
+        {selectedCount > 1 && (
+          <span className="text-xs text-muted-foreground ml-1">
+            {selectedCount} selecionados
+          </span>
+        )}
       </div>
 
       {onDrillUp && (

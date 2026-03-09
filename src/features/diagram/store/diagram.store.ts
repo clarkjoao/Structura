@@ -317,6 +317,8 @@ interface AppActions {
     diagramId: string | undefined,
   ) => void;
   setParent: (childId: string, parentId: string | null) => void;
+  groupNodes: (componentIds: string[]) => string | null;
+  ungroupNodes: (panelId: string) => void;
 
   addFlow: (diagramId: string, name: string, mermaid: string, steps?: FlowStep[]) => Flow;
   updateFlow: (id: string, patch: Partial<Omit<Flow, "id">>) => void;
@@ -626,6 +628,120 @@ export const useDiagramStore = create<DiagramStore>()(
       });
     },
 
+    groupNodes: (componentIds) => {
+      const PADDING = 40;
+      const DEFAULT_NODE_W = 180;
+      const DEFAULT_NODE_H = 80;
+      let panelId: string | null = null;
+      set((state) => {
+        const d = activeDiagram(state);
+        const comps = d.snapshot.components;
+        const ids = componentIds.filter(
+          (id) => comps[id] && comps[id].type !== "panel",
+        );
+        if (ids.length < 2) return;
+
+        function getAbsPos(eid: string): { x: number; y: number } {
+          const layout = d.nodeLayouts.find((nl) => nl.elementId === eid);
+          const c = comps[eid];
+          if (!c || !layout) return { x: 0, y: 0 };
+          if (!c.parentId) return { x: layout.x, y: layout.y };
+          const parentPos = getAbsPos(c.parentId);
+          return { x: parentPos.x + layout.x, y: parentPos.y + layout.y };
+        }
+
+        function getSize(eid: string): { w: number; h: number } {
+          const c = comps[eid];
+          if (!c) return { w: DEFAULT_NODE_W, h: DEFAULT_NODE_H };
+          if (c.type === "panel")
+            return {
+              w: c.width ?? 600,
+              h: c.height ?? 400,
+            };
+          return {
+            w: (c as { width?: number }).width ?? DEFAULT_NODE_W,
+            h: (c as { height?: number }).height ?? DEFAULT_NODE_H,
+          };
+        }
+
+        const positions = ids.map((id) => getAbsPos(id));
+        const sizes = ids.map((id) => getSize(id));
+        const minX =
+          Math.min(...positions.map((p, i) => p.x)) - PADDING;
+        const minY =
+          Math.min(...positions.map((p, i) => p.y)) - PADDING;
+        const maxX =
+          Math.max(...positions.map((p, i) => p.x + sizes[i].w)) + PADDING;
+        const maxY =
+          Math.max(...positions.map((p, i) => p.y + sizes[i].h)) + PADDING;
+        const panelW = maxX - minX;
+        const panelH = maxY - minY;
+
+        pushHistory(state);
+        const panel: Component = {
+          id: generateId("el"),
+          name: "Grupo",
+          type: "panel",
+          description: "",
+          parentId: null,
+          width: panelW,
+          height: panelH,
+        };
+        d.snapshot.components[panel.id] = panel;
+        d.nodeLayouts.push({
+          elementId: panel.id,
+          x: minX,
+          y: minY,
+          zIndex: -1,
+        });
+        panelId = panel.id;
+
+        ids.forEach((eid, i) => {
+          const comp = comps[eid];
+          if (comp) comp.parentId = panel.id;
+          const layout = d.nodeLayouts.find((nl) => nl.elementId === eid);
+          if (layout) {
+            layout.x = positions[i].x - minX;
+            layout.y = positions[i].y - minY;
+          }
+        });
+        d.updatedAt = "agora";
+      });
+      return panelId;
+    },
+
+    ungroupNodes: (panelId) => {
+      set((state) => {
+        const d = activeDiagram(state);
+        const comps = d.snapshot.components;
+        const panel = comps[panelId];
+        if (!panel || panel.type !== "panel") return;
+        const children = Object.values(comps).filter(
+          (c) => c.parentId === panelId,
+        );
+        const panelLayout = d.nodeLayouts.find(
+          (nl) => nl.elementId === panelId,
+        );
+        if (!panelLayout) return;
+        pushHistory(state);
+        children.forEach((c) => {
+          c.parentId = null;
+          const childLayout = d.nodeLayouts.find(
+            (nl) => nl.elementId === c.id,
+          );
+          if (childLayout) {
+            childLayout.x = panelLayout.x + childLayout.x;
+            childLayout.y = panelLayout.y + childLayout.y;
+          }
+        });
+        delete d.snapshot.components[panelId];
+        d.nodeLayouts = d.nodeLayouts.filter(
+          (nl) => nl.elementId !== panelId,
+        );
+        d.updatedAt = "agora";
+      });
+    },
+
     addFlow: (diagramId, name, mermaid, precomputedSteps) => {
       const { diagrams } = get();
       const d = diagrams[diagramId];
@@ -875,6 +991,8 @@ export const useDiagramActions = () =>
       renameFolder: s.renameFolder,
       deleteFolder: s.deleteFolder,
       moveDiagram: s.moveDiagram,
+      groupNodes: s.groupNodes,
+      ungroupNodes: s.ungroupNodes,
       addComponent: s.addComponent,
       updateComponent: s.updateComponent,
       removeComponent: s.removeComponent,

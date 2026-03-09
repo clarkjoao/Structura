@@ -55,6 +55,8 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
+import type { Node } from "@xyflow/react";
+import { MultiSelectPanel } from "./MultiSelectPanel";
 
 // ── Panel color presets ─────────────────────────────────────────────────────
 
@@ -109,12 +111,16 @@ const TECHNOLOGY_OPTIONS: { group: string; options: string[] }[] = [
 interface Props {
   selectedElementId: string | null;
   selectedEdgeId: string | null;
+  selectedNodeIds?: string[];
+  selectedNodes?: Node[];
   onClose: () => void;
 }
 
 const ElementPanel = ({
   selectedElementId,
   selectedEdgeId,
+  selectedNodeIds = [],
+  selectedNodes = [],
   onClose,
 }: Props) => {
   const component = useComponent(selectedElementId ?? "");
@@ -124,7 +130,20 @@ const ElementPanel = ({
     removeComponent,
     updateConnection,
     removeConnection,
+    groupNodes,
+    ungroupNodes,
   } = useDiagramActions();
+  const diagram = useActiveDiagram();
+
+  const isMultiSelect = selectedNodes.length > 1;
+  if (isMultiSelect) {
+    return (
+      <MultiSelectPanel
+        selectedNodes={selectedNodes}
+        onClose={onClose}
+      />
+    );
+  }
 
   if (selectedEdgeId) {
     const conn = connections[selectedEdgeId];
@@ -140,13 +159,45 @@ const ElementPanel = ({
   }
 
   if (selectedElementId && component) {
+    const canGroup = selectedNodeIds.length >= 2;
+    const isPanelWithChildren =
+      component.type === "panel" &&
+      diagram &&
+      Object.values(diagram.snapshot.components).some(
+        (c) => c.parentId === component.id,
+      );
     return (
-      <ComponentDetail
-        component={component}
-        onClose={onClose}
-        updateComponent={updateComponent}
-        removeComponent={removeComponent}
-      />
+      <div className="w-80 border-l border-border bg-card overflow-auto flex flex-col">
+        {canGroup && (
+          <div className="flex items-center gap-2 p-2 border-b border-border bg-secondary/30">
+            <button
+              type="button"
+              onClick={() => {
+                const id = groupNodes(selectedNodeIds);
+                if (id) onClose();
+              }}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              <LayoutDashboard className="h-3.5 w-3.5" />
+              Agrupar
+            </button>
+          </div>
+        )}
+        <ComponentDetail
+          component={component}
+          onClose={onClose}
+          updateComponent={updateComponent}
+          removeComponent={removeComponent}
+          onUngroup={
+            isPanelWithChildren
+              ? () => {
+                  ungroupNodes(component.id);
+                  onClose();
+                }
+              : undefined
+          }
+        />
+      </div>
     );
   }
 
@@ -396,11 +447,13 @@ const ComponentDetail = ({
   onClose,
   updateComponent,
   removeComponent,
+  onUngroup,
 }: {
   component: Component;
   onClose: () => void;
   updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => void;
   removeComponent: (id: string) => void;
+  onUngroup?: () => void;
 }) => {
   const allServices = useAllServices();
   const allDiagrams = useAllDiagrams();
@@ -455,8 +508,8 @@ const ComponentDetail = ({
   };
 
   return (
-    <div className="w-80 border-l border-border bg-card overflow-auto">
-      <div className="flex items-center justify-between p-3 border-b border-border">
+    <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex items-center justify-between p-3 border-b border-border shrink-0">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           {isPanel ? "Painel" : isNote ? "Nota" : component.name}
         </h3>
@@ -467,6 +520,18 @@ const ComponentDetail = ({
           <X className="h-4 w-4" />
         </button>
       </div>
+
+      {isPanel && onUngroup && (
+        <div className="px-3 py-2 border-b border-border">
+          <button
+            type="button"
+            onClick={onUngroup}
+            className="w-full inline-flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          >
+            Desagrupar
+          </button>
+        </div>
+      )}
 
       {!isSimple && <TabBar active={tab} onChange={setTab} />}
 

@@ -240,7 +240,7 @@ const EmbedButton = ({
   );
 };
 
-const CardNode = memo(({ data }: NodeProps) => {
+const CardNode = memo(({ data, selected }: NodeProps) => {
   const d = data as unknown as NodeData;
   const isAws = isAwsType(d.type);
   const hasDrillDown = !!d.linkedDiagramName && !!d.onDrillDown;
@@ -265,7 +265,7 @@ const CardNode = memo(({ data }: NodeProps) => {
     const borderClass = awsCategoryBorders[d.type] ?? "border-l-aws-general";
     return (
       <div
-        className={`relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${borderClass} border-l-[3px] transition-shadow duration-200 ${d.isSelected ? "ring-2 ring-primary shadow-lg shadow-primary/10" : ""}`}
+        className={`relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${borderClass} border-l-[3px] transition-shadow duration-200 ${(selected || d.isSelected) ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
       >
         {d.recordingBadges && d.recordingBadges.length > 0 && (
           <div
@@ -327,7 +327,7 @@ const CardNode = memo(({ data }: NodeProps) => {
 
   return (
     <div
-      className={`relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${cfg.borderColor} border-l-[3px] transition-shadow duration-200 ${d.isSelected ? "ring-2 ring-primary shadow-lg shadow-primary/10" : ""}`}
+      className={`relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${cfg.borderColor} border-l-[3px] transition-shadow duration-200 ${(selected || d.isSelected) ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
     >
       {d.recordingBadges && d.recordingBadges.length > 0 && (
         <div

@@ -46,7 +46,7 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
       />
       <div
         className={`min-w-[160px] max-w-[280px] rounded-lg shadow-md transition-shadow duration-200 ${
-          isSelected ? "ring-2 ring-primary/60 shadow-lg" : ""
+          isSelected ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"
         }`}
         style={{ backgroundColor: color }}
       >

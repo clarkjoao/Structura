@@ -6,6 +6,8 @@ import {
   Controls,
   useReactFlow,
   MarkerType,
+  PanOnScrollMode,
+  SelectionMode,
   type Node,
   type Edge,
   type OnNodesChange,
@@ -83,12 +85,17 @@ const Canvas = ({
     removeComponent,
     undo,
     redo,
+    groupNodes,
+    ungroupNodes,
   } = useDiagramActions();
   const navigate = useNavigate();
   const reactFlowInstance = useReactFlow();
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+  const reactFlowWrapperRef = useRef<HTMLDivElement>(null);
+  // Wheel effect must run unconditionally (hooks order). Uses document.querySelector when diagram exists.
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -245,8 +252,43 @@ const Canvas = ({
     });
   }, [visibleConnections, connectionCountPerNode]);
 
+  const handlePanelCollapseToggle = useCallback(
+    (panelId: string) => {
+      if (!diagram) return;
+      const comp = diagram.snapshot.components[panelId];
+      if (comp?.type !== "panel") return;
+      const children = Object.values(diagram.snapshot.components).filter(
+        (c) => c.parentId === panelId,
+      );
+      if (comp.collapsed) {
+        updateComponent(panelId, {
+          collapsed: false,
+          width: comp.collapsedWidth ?? 600,
+          height: comp.collapsedHeight ?? 400,
+        });
+        children.forEach((c) => updateComponent(c.id, { hidden: false }));
+      } else {
+        updateComponent(panelId, {
+          collapsed: true,
+          collapsedWidth: comp.width,
+          collapsedHeight: comp.height,
+          width: 200,
+          height: 60,
+        });
+        children.forEach((c) => updateComponent(c.id, { hidden: true }));
+      }
+    },
+    [diagram, updateComponent],
+  );
+
   const nodes = useMemo(() => {
     if (!diagram) return [];
+
+    const collapsedPanelIds = new Set(
+      Object.values(diagram.snapshot.components).filter(
+        (c) => c.type === "panel" && c.collapsed,
+      ).map((c) => c.id),
+    );
 
     const ctx: NodeBuildContext = {
       diagram,
@@ -264,6 +306,7 @@ const Canvas = ({
       coverage,
       handleDrillDown,
       onRecordHandleClick,
+      onPanelCollapseToggle: handlePanelCollapseToggle,
     };
 
     return [...visibleComponents]
@@ -275,15 +318,29 @@ const Canvas = ({
           d.canHaveParent && comp.parentId !== null && panelIds.has(comp.parentId);
         const zIndex =
           layout?.zIndex ?? (typeof d.zIndex === "function" ? d.zIndex(comp) : d.zIndex);
+        const isHidden =
+          comp.hidden === true ||
+          (isChild &&
+            comp.parentId !== null &&
+            collapsedPanelIds.has(comp.parentId));
 
+        const isSelected = selectedNodeIds.has(comp.id);
+        const dimWhenSelectionActive =
+          selectedNodeIds.size > 0 && !isSelected && !isHidden;
+        const style = {
+          ...d.buildStyle?.(comp, ctx),
+          ...(dimWhenSelectionActive ? { opacity: 0.6 } : {}),
+        };
         return {
           id: comp.id,
           type: d.rfType,
           position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
           zIndex,
           connectable: d.connectable,
+          selected: isSelected,
           ...(isChild ? { parentId: comp.parentId!, extent: "parent" as const } : {}),
-          style: d.buildStyle?.(comp, ctx),
+          hidden: isHidden,
+          style,
           data: d.buildData(comp, ctx),
         };
       });
@@ -292,6 +349,7 @@ const Canvas = ({
     visibleComponents,
     panelIds,
     selectedNodeId,
+    selectedNodeIds,
     serviceRegistry,
     allDiagrams,
     handleDrillDown,
@@ -304,14 +362,27 @@ const Canvas = ({
     activeStep,
     coverage,
     connectionCountPerNode,
+    handlePanelCollapseToggle,
   ]);
+
+  const selectedNodes = useMemo(
+    () => nodes.filter((n) => selectedNodeIds.has(n.id)),
+    [nodes, selectedNodeIds],
+  );
+  const selectedCount = selectedNodeIds.size;
 
   const edges: Edge[] = useMemo(() => {
     if (!diagram) return [];
+    const comps = diagram.snapshot.components;
+    const connectionsToShow = visibleConnections.filter((conn) => {
+      const src = comps[conn.sourceId];
+      const tgt = comps[conn.targetId];
+      return !src?.hidden && !tgt?.hidden;
+    });
     const assignmentMap = new Map(
       edgeHandleAssignments.map((a) => [a.connId, a]),
     );
-    const edgeList: Edge[] = visibleConnections.map((conn) => {
+    const edgeList: Edge[] = connectionsToShow.map((conn) => {
       const assignment = assignmentMap.get(conn.id);
       const isActiveConn = isPlaying && flowHighlight.activeConnId === conn.id;
       const isParticipantConn =
@@ -487,7 +558,7 @@ const Canvas = ({
   );
 
   const onNodeClick = useCallback(
-    (_: React.MouseEvent, node: Node) => {
+    (e: React.MouseEvent, node: Node) => {
       if (isRecording) {
         if (node.type !== "panel" && node.type !== "note") {
           onRecordNodeClick?.(node.id);
@@ -495,9 +566,22 @@ const Canvas = ({
         return;
       }
       if (isPlaying) return;
-      setSelectedNodeId(node.id);
       setSelectedEdgeId(null);
       setContextMenu(null);
+      const multi = e.metaKey || e.ctrlKey;
+      if (multi) {
+        setSelectedNodeIds((prev) => {
+          const next = new Set(prev);
+          if (next.has(node.id)) next.delete(node.id);
+          else next.add(node.id);
+          const primary = next.size === 0 ? null : (next.has(node.id) ? node.id : next.values().next().value);
+          setSelectedNodeId(primary);
+          return next;
+        });
+      } else {
+        setSelectedNodeIds(new Set([node.id]));
+        setSelectedNodeId(node.id);
+      }
     },
     [isPlaying, isRecording, onRecordNodeClick],
   );
@@ -513,8 +597,21 @@ const Canvas = ({
     },
     [isRecording, onRecordEdgeClick],
   );
+  const onSelectionChange = useCallback(
+    ({ nodes: updatedNodes }: { nodes: Node[]; edges: Edge[] }) => {
+      const ids = new Set(
+        updatedNodes.filter((n) => n.selected).map((n) => n.id),
+      );
+      setSelectedNodeIds(ids);
+      const first = updatedNodes.find((n) => n.selected);
+      setSelectedNodeId(first?.id ?? null);
+    },
+    [],
+  );
+
   const onPaneClick = useCallback(() => {
     setSelectedNodeId(null);
+    setSelectedNodeIds(new Set());
     setSelectedEdgeId(null);
     setContextMenu(null);
   }, []);
@@ -565,15 +662,19 @@ const Canvas = ({
           nds.map((n) => ({ ...n, selected: false })),
         );
         setSelectedNodeId(null);
+        setSelectedNodeIds(new Set());
         setSelectedEdgeId(null);
         setContextMenu(null);
         return;
       }
       if (mod && e.key === "a") {
         e.preventDefault();
-        reactFlowInstance.setNodes((nds) =>
-          nds.map((n) => ({ ...n, selected: true })),
-        );
+        reactFlowInstance.setNodes((nds) => {
+          const updated = nds.map((n) => ({ ...n, selected: true }));
+          setSelectedNodeIds(new Set(updated.map((n) => n.id)));
+          setSelectedNodeId(updated[0]?.id ?? null);
+          return updated;
+        });
         return;
       }
       if (e.key === "Delete" || e.key === "Backspace") {
@@ -582,11 +683,13 @@ const Canvas = ({
         if (selected.length === 0 && selectedNodeId) {
           removeComponent(selectedNodeId);
           setSelectedNodeId(null);
+          setSelectedNodeIds(new Set());
           return;
         }
         if (selected.length > 0) {
           for (const n of selected) removeComponent(n.id);
           setSelectedNodeId(null);
+          setSelectedNodeIds(new Set());
         }
         return;
       }
@@ -628,6 +731,24 @@ const Canvas = ({
         undo();
         return;
       }
+      if (mod && e.shiftKey && e.key === "g") {
+        e.preventDefault();
+        const nodes = reactFlowInstance.getNodes();
+        const selected = nodes.filter((n) => n.selected);
+        if (selected.length === 1 && selected[0].type === "panel") {
+          ungroupNodes(selected[0].id);
+        }
+        return;
+      }
+      if (mod && e.key === "g") {
+        e.preventDefault();
+        const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
+        if (selected.length >= 2) {
+          const ids = selected.map((n) => n.id);
+          groupNodes(ids);
+        }
+        return;
+      }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
@@ -639,9 +760,43 @@ const Canvas = ({
     redo,
     removeComponent,
     addComponent,
+    groupNodes,
+    ungroupNodes,
     isRecording,
     onRecordUndo,
   ]);
+
+  useEffect(() => {
+    const el = document.querySelector(".react-flow__renderer");
+    if (!el || !diagram) return;
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const { x, y, zoom } = reactFlowInstance.getViewport();
+      if (e.ctrlKey || e.metaKey) {
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        const nextZoom = Math.min(
+          4,
+          Math.max(0.1, zoom * delta),
+        );
+        reactFlowInstance.setViewport(
+          { x, y, zoom: nextZoom },
+          { duration: 0 },
+        );
+      } else if (e.shiftKey) {
+        reactFlowInstance.setViewport(
+          { x: x - e.deltaY, y, zoom },
+          { duration: 0 },
+        );
+      } else {
+        reactFlowInstance.setViewport(
+          { x, y: y - e.deltaY, zoom },
+          { duration: 0 },
+        );
+      }
+    };
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, [reactFlowInstance, diagram]);
 
   if (!diagram)
     return (
@@ -652,41 +807,68 @@ const Canvas = ({
 
   return (
     <div className="flex-1 flex relative">
-      <div className="flex-1 relative">
+      <style>{`
+        .react-flow__pane { cursor: default; }
+        .react-flow__pane:active { cursor: grabbing; }
+        .react-flow__selection {
+          background: rgba(59, 130, 246, 0.08);
+          border: 1px solid #3b82f6;
+        }
+      `}</style>
+      <div ref={reactFlowWrapperRef} className="flex-1 relative">
         <CanvasToolbar
           onDrillUp={onDrillUp}
           isPanelOpen={!!(selectedNodeId || selectedEdgeId) && !isRecording}
+          selectedCount={selectedCount}
         />
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onNodeClick={onNodeClick}
-          onEdgeClick={onEdgeClick}
-          onPaneClick={onPaneClick}
-          onNodeContextMenu={onNodeContextMenu}
-          onNodeDragStop={onNodeDragStop}
-          defaultViewport={diagram.viewport}
-          fitView
-          fitViewOptions={{ padding: 0.3 }}
-          onMoveEnd={onMoveEnd}
-          nodesDraggable={!isRecording}
-          nodesConnectable={!isRecording}
-          proOptions={{ hideAttribution: true }}
-          className="bg-background"
+        <div
+          onContextMenu={(e) => e.preventDefault()}
+          className="w-full h-full"
         >
-          <Background
-            variant={BackgroundVariant.Dots}
-            gap={20}
-            size={1}
-            color="hsl(220 20% 18%)"
-          />
-          <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
-        </ReactFlow>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onNodeClick={onNodeClick}
+            onEdgeClick={onEdgeClick}
+            onPaneClick={onPaneClick}
+            onPaneContextMenu={(e) => e.preventDefault()}
+            onNodeContextMenu={onNodeContextMenu}
+            onNodeDragStop={onNodeDragStop}
+            onSelectionChange={onSelectionChange}
+            panOnDrag={[2]}
+            panOnScroll
+            panOnScrollMode={PanOnScrollMode.Free}
+            selectionOnDrag
+            selectionMode={SelectionMode.Partial}
+            zoomOnScroll={false}
+            zoomOnPinch
+            zoomOnDoubleClick={false}
+            minZoom={0.1}
+            maxZoom={4}
+            multiSelectionKeyCode="Meta"
+            defaultViewport={diagram.viewport}
+            fitView
+            fitViewOptions={{ padding: 0.3 }}
+            onMoveEnd={onMoveEnd}
+            nodesDraggable={!isRecording}
+            nodesConnectable={!isRecording}
+            proOptions={{ hideAttribution: true }}
+            className="bg-background"
+          >
+            <Background
+              variant={BackgroundVariant.Dots}
+              gap={20}
+              size={1}
+              color="hsl(220 20% 18%)"
+            />
+            <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
+          </ReactFlow>
+        </div>
       </div>
       {contextMenu && (
         <NodeContextMenu
@@ -698,11 +880,13 @@ const Canvas = ({
           onClose={() => setContextMenu(null)}
         />
       )}
-      {(selectedNodeId || selectedEdgeId) && !isRecording && (
+      {(selectedNodeId || selectedEdgeId || selectedCount > 0) && !isRecording && (
         <ElementPanel
-          key={selectedNodeId ?? selectedEdgeId}
+          key={selectedNodeId ?? selectedEdgeId ?? "multi"}
           selectedElementId={selectedNodeId}
           selectedEdgeId={selectedEdgeId}
+          selectedNodeIds={Array.from(selectedNodeIds)}
+          selectedNodes={selectedNodes}
           onClose={closePanel}
         />
       )}

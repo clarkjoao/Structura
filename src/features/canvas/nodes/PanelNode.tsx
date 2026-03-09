@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { NodeResizer, type NodeProps } from "@xyflow/react";
-import { Square } from "lucide-react";
+import { Square, ChevronDown, ChevronUp } from "lucide-react";
 
 const DEFAULT_COLOR = "hsl(220 20% 20%)";
 const DEFAULT_OPACITY = 10;
@@ -13,6 +13,9 @@ export interface PanelNodeData {
   panelOpacity?: number;
   isSelected: boolean;
   isDragTarget?: boolean;
+  collapsed?: boolean;
+  childCount?: number;
+  onToggleCollapse?: () => void;
 }
 
 function colorWithAlpha(color: string, alpha: number): string {
@@ -36,10 +39,51 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
   const opacity = d.panelOpacity ?? DEFAULT_OPACITY;
   const isSelected = selected || d.isSelected;
   const isDragTarget = d.isDragTarget;
+  const collapsed = d.collapsed ?? false;
+  const childCount = d.childCount ?? 0;
+  const onToggle = d.onToggleCollapse;
 
   const bgAlpha = isDragTarget ? Math.min(opacity + 15, 40) / 100 : opacity / 100;
   const borderColor = isSelected || isDragTarget ? color : colorWithAlpha(color, 0.4);
   const borderStyle = isSelected ? "dashed" : "solid";
+
+  const selectedRing = "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110";
+  const unselectedClass = "opacity-90";
+
+  if (collapsed) {
+    return (
+      <div
+        className={`w-full h-full rounded-lg flex items-center gap-2 px-3 transition-all duration-200 ${isSelected ? selectedRing : unselectedClass}`}
+        style={{
+          backgroundColor: colorWithAlpha(color, Math.max(bgAlpha, 0.12)),
+          border: `2px ${borderStyle} ${borderColor}`,
+        }}
+      >
+        <Square className="h-4 w-4 shrink-0 opacity-80" style={{ color }} />
+        <div className="min-w-0 flex-1">
+          <span className="text-sm font-semibold text-foreground truncate block">
+            {d.name || "Painel"}
+          </span>
+          <span className="text-[10px] text-muted-foreground">
+            {childCount} {childCount === 1 ? "elemento" : "elementos"}
+          </span>
+        </div>
+        {onToggle && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggle();
+            }}
+            className="shrink-0 p-1 rounded hover:bg-black/10 text-muted-foreground hover:text-foreground"
+            title="Expandir"
+          >
+            <ChevronDown className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <>
@@ -52,7 +96,7 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
         handleStyle={{ backgroundColor: color }}
       />
       <div
-        className="w-full h-full rounded-xl backdrop-blur-sm transition-all duration-200 relative"
+        className={`w-full h-full rounded-xl backdrop-blur-sm transition-all duration-200 relative ${isSelected ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
         style={{
           backgroundColor: colorWithAlpha(color, bgAlpha),
           border: `2px ${borderStyle} ${borderColor}`,
@@ -76,6 +120,19 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
               </span>
             )}
           </div>
+          {onToggle && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggle();
+              }}
+              className="shrink-0 p-1 rounded hover:bg-black/10 text-muted-foreground hover:text-foreground"
+              title="Minimizar"
+            >
+              <ChevronUp className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
     </>
