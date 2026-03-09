@@ -21,11 +21,9 @@ export {
   getEffectiveConnectionStyle,
 } from "./model/connection-defaults";
 export { generateId } from "./model/diagram.utils";
-export {
-  computeServiceImpact,
-  parseMermaidToSteps,
-} from "./model/diagram.service";
+export { computeServiceImpact } from "./model/diagram.service";
 export type { ServiceImpact } from "./model/diagram.service";
+export { stepsToMermaid, parseMermaidToSteps } from "./model/flow.service";
 export {
   useDiagramStore,
   useDiagrams,

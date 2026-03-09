@@ -1,48 +1,8 @@
 import { useState, useCallback, useMemo } from "react";
-import { useComponents, useConnections } from "@/features/diagram";
-import type { FlowStep, Component, Connection, ConnectionIntent } from "@/features/diagram";
+import { useComponents, useConnections, stepsToMermaid } from "@/features/diagram";
+import type { FlowStep } from "@/features/diagram";
 import { X, GripVertical } from "lucide-react";
 import { toast } from "sonner";
-
-const INTENT_ARROW: Record<ConnectionIntent, string> = {
-  dependency: "-->",
-  call: "->>",
-  event: "-->>",
-  "data-flow": "=>>",
-  "async-message": "-->>",
-};
-
-export function stepsToMermaid(
-  steps: FlowStep[],
-  components: Record<string, Component>,
-  connections: Record<string, Connection>,
-): string {
-  const lines = ["sequenceDiagram"];
-  steps.forEach((step) => {
-    if (step.connectionId) {
-      const conn = connections[step.connectionId];
-      if (conn) {
-        const src = components[conn.sourceId]?.name ?? "?";
-        const tgt = components[conn.targetId]?.name ?? "?";
-        const arrow = INTENT_ARROW[conn.intent ?? "call"];
-        lines.push(`  ${src}${arrow}${tgt}: ${conn.label}`);
-        if (step.description) {
-          lines.push(`  Note over ${src}: ${step.description}`);
-        }
-        if (step.duration) {
-          lines.push(`  Note right of ${tgt}: ${step.duration}`);
-        }
-      }
-    } else if (step.componentId) {
-      const name = components[step.componentId]?.name ?? "?";
-      lines.push(`  Note over ${name}: ${step.description || `step ${step.order + 1}`}`);
-      if (step.duration) {
-        lines.push(`  Note right of ${name}: ${step.duration}`);
-      }
-    }
-  });
-  return lines.join("\n");
-}
 
 interface Props {
   name: string;

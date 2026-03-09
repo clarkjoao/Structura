@@ -3,8 +3,8 @@ import { ReactFlowProvider } from "@xyflow/react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Download, GitBranch } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel, stepsToMermaid } from "@/features/canvas";
-import { useActiveDiagram, useActiveDiagramId, useDiagramActions, useFlows } from "@/features/diagram";
+import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
+import { useActiveDiagram, useActiveDiagramId, useDiagramActions, useFlows, stepsToMermaid } from "@/features/diagram";
 import { exportJSON, exportDrawio, exportMermaid, downloadFile } from "@/lib/export-service";
 import type { Flow, FlowStep } from "@/features/diagram";
 
