@@ -4,6 +4,7 @@ export interface PatternComponent {
   type: ComponentType;
   name: string;
   description?: string;
+  technology?: string;
   awsService?: string;
 }
 
@@ -27,7 +28,8 @@ export type PatternCategory =
   | "api"
   | "resilience"
   | "data"
-  | "event-driven";
+  | "event-driven"
+  | "security";
 
 export const PATTERN_CATEGORY_LABELS: Record<PatternCategory, string> = {
   messaging: "Messaging",
@@ -35,6 +37,7 @@ export const PATTERN_CATEGORY_LABELS: Record<PatternCategory, string> = {
   resilience: "Resilience",
   data: "Data",
   "event-driven": "Event-Driven",
+  security: "Security",
 };
 
 export const PATTERNS: PatternTemplate[] = [
@@ -366,6 +369,343 @@ export const PATTERNS: PatternTemplate[] = [
       { fromIndex: 4, toIndex: 3, label: "Read" },
     ],
   },
+
+  // ── Messaging (new) ──────────────────────────────────────────────────────
+  {
+    id: "dead-letter-queue-aws",
+    name: "Dead Letter Queue (AWS)",
+    description:
+      "SQS → Lambda processor; failed messages go to DLQ; CloudWatch alarms on DLQ depth.",
+    category: "messaging",
+    components: [
+      {
+        type: "aws-integration",
+        name: "SQS Queue",
+        description: "Main message queue",
+        awsService: "sqs",
+      },
+      {
+        type: "aws-compute",
+        name: "Lambda Processor",
+        description: "Processes messages",
+        awsService: "lambda",
+      },
+      {
+        type: "aws-integration",
+        name: "Dead Letter Queue",
+        description: "Failed messages",
+        awsService: "sqs",
+      },
+      {
+        type: "aws-management",
+        name: "CloudWatch Alert",
+        description: "Alarm on DLQ depth",
+        awsService: "cloudwatch",
+      },
+    ],
+    connections: [
+      { fromIndex: 0, toIndex: 1, label: "Triggers" },
+      { fromIndex: 1, toIndex: 2, label: "Failed messages" },
+      { fromIndex: 2, toIndex: 3, label: "Alarm on depth" },
+    ],
+  },
+  {
+    id: "fan-out",
+    name: "Fan-out",
+    description: "SNS topic fans out to multiple SQS queues for parallel processing.",
+    category: "messaging",
+    components: [
+      {
+        type: "aws-integration",
+        name: "SNS Topic",
+        description: "Pub/sub topic",
+        awsService: "sns",
+      },
+      {
+        type: "aws-integration",
+        name: "SQS Queue A",
+        description: "Subscriber queue",
+        awsService: "sqs",
+      },
+      {
+        type: "aws-integration",
+        name: "SQS Queue B",
+        description: "Subscriber queue",
+        awsService: "sqs",
+      },
+      {
+        type: "aws-integration",
+        name: "SQS Queue C",
+        description: "Subscriber queue",
+        awsService: "sqs",
+      },
+    ],
+    connections: [
+      { fromIndex: 0, toIndex: 1, label: "Fan-out" },
+      { fromIndex: 0, toIndex: 2, label: "Fan-out" },
+      { fromIndex: 0, toIndex: 3, label: "Fan-out" },
+    ],
+  },
+  {
+    id: "competing-consumers",
+    name: "Competing Consumers",
+    description:
+      "Message broker distributes to multiple consumers; each writes to a shared database.",
+    category: "messaging",
+    components: [
+      {
+        type: "container",
+        name: "Message Broker",
+        description: "Distributes messages",
+        technology: "Kafka / RabbitMQ",
+      },
+      { type: "container", name: "Consumer A", description: "Competing consumer" },
+      { type: "container", name: "Consumer B", description: "Competing consumer" },
+      { type: "container", name: "Consumer C", description: "Competing consumer" },
+      {
+        type: "container",
+        name: "Database",
+        description: "Shared persistence",
+        technology: "PostgreSQL",
+      },
+    ],
+    connections: [
+      { fromIndex: 0, toIndex: 1, label: "Distribute" },
+      { fromIndex: 0, toIndex: 2, label: "Distribute" },
+      { fromIndex: 0, toIndex: 3, label: "Distribute" },
+      { fromIndex: 1, toIndex: 4, label: "Write" },
+      { fromIndex: 2, toIndex: 4, label: "Write" },
+      { fromIndex: 3, toIndex: 4, label: "Write" },
+    ],
+  },
+
+  // ── Data (new) ───────────────────────────────────────────────────────────
+  {
+    id: "event-sourcing-cqrs",
+    name: "Event Sourcing + CQRS",
+    description:
+      "Commands append to event store; event bus feeds projections; read model serves queries.",
+    category: "data",
+    components: [
+      {
+        type: "container",
+        name: "Command Handler",
+        description: "Validates and appends events",
+      },
+      {
+        type: "container",
+        name: "Event Store",
+        description: "Append-only event log",
+        technology: "EventStoreDB",
+      },
+      {
+        type: "container",
+        name: "Event Bus",
+        description: "Publishes domain events",
+        technology: "Kafka / EventBridge",
+      },
+      {
+        type: "container",
+        name: "Projection Builder",
+        description: "Consumes events, builds read model",
+      },
+      {
+        type: "container",
+        name: "Read Model",
+        description: "Query-optimised store",
+        technology: "PostgreSQL / Redis",
+      },
+      {
+        type: "container",
+        name: "Query Handler",
+        description: "Serves read-only queries",
+      },
+    ],
+    connections: [
+      { fromIndex: 0, toIndex: 1, label: "Append event" },
+      { fromIndex: 1, toIndex: 2, label: "Publish event" },
+      { fromIndex: 2, toIndex: 3, label: "Consume" },
+      { fromIndex: 3, toIndex: 4, label: "Update projection" },
+      { fromIndex: 5, toIndex: 4, label: "Query" },
+    ],
+  },
+  {
+    id: "read-replica",
+    name: "Read Replica",
+    description: "Application writes to primary DB; reads from replica; primary replicates to replica.",
+    category: "data",
+    components: [
+      { type: "container", name: "Application", description: "App service" },
+      {
+        type: "container",
+        name: "Primary DB",
+        description: "Source of truth",
+        technology: "PostgreSQL",
+      },
+      {
+        type: "container",
+        name: "Read Replica",
+        description: "Read-only copy",
+        technology: "PostgreSQL",
+      },
+    ],
+    connections: [
+      { fromIndex: 0, toIndex: 1, label: "Write" },
+      { fromIndex: 0, toIndex: 2, label: "Read" },
+      { fromIndex: 1, toIndex: 2, label: "Replicate" },
+    ],
+  },
+  {
+    id: "database-per-service",
+    name: "Database per Service",
+    description:
+      "Each service owns its database; services communicate via event bus.",
+    category: "data",
+    components: [
+      { type: "container", name: "Service A", description: "Bounded context A" },
+      {
+        type: "container",
+        name: "Database A",
+        description: "Service A data",
+        technology: "PostgreSQL",
+      },
+      { type: "container", name: "Service B", description: "Bounded context B" },
+      {
+        type: "container",
+        name: "Database B",
+        description: "Service B data",
+        technology: "MongoDB",
+      },
+      {
+        type: "container",
+        name: "Event Bus",
+        description: "Async communication",
+        technology: "Kafka",
+      },
+    ],
+    connections: [
+      { fromIndex: 0, toIndex: 1, label: "Read/Write" },
+      { fromIndex: 2, toIndex: 3, label: "Read/Write" },
+      { fromIndex: 0, toIndex: 4, label: "Publish" },
+      { fromIndex: 2, toIndex: 4, label: "Subscribe" },
+    ],
+  },
+  {
+    id: "multi-tier-cache",
+    name: "Multi-tier Cache",
+    description:
+      "L1 in-memory cache; on miss check L2 (Redis); on miss hit DB; populate back up the chain.",
+    category: "data",
+    components: [
+      { type: "container", name: "Application", description: "App service" },
+      {
+        type: "container",
+        name: "L1 Cache",
+        description: "In-process cache",
+        technology: "In-memory",
+      },
+      {
+        type: "container",
+        name: "L2 Cache",
+        description: "Distributed cache",
+        technology: "Redis",
+      },
+      {
+        type: "container",
+        name: "Database",
+        description: "Source of truth",
+        technology: "PostgreSQL",
+      },
+    ],
+    connections: [
+      { fromIndex: 0, toIndex: 1, label: "Check cache" },
+      { fromIndex: 1, toIndex: 2, label: "Cache miss" },
+      { fromIndex: 2, toIndex: 3, label: "Cache miss" },
+      { fromIndex: 3, toIndex: 2, label: "Populate" },
+      { fromIndex: 2, toIndex: 1, label: "Populate" },
+    ],
+  },
+
+  // ── Security ─────────────────────────────────────────────────────────────
+  {
+    id: "policy-enforcement-point-opa",
+    name: "Policy Enforcement Point (OPA)",
+    description:
+      "API Gateway delegates policy checks to OPA; OPA fetches policies from store; gateway forwards or denies.",
+    category: "security",
+    components: [
+      { type: "person", name: "Client", description: "Request origin" },
+      {
+        type: "container",
+        name: "API Gateway",
+        description: "Entry point",
+        technology: "Kong / Nginx",
+      },
+      {
+        type: "container",
+        name: "OPA Sidecar",
+        description: "Policy evaluation",
+        technology: "Open Policy Agent",
+      },
+      {
+        type: "container",
+        name: "Policy Store",
+        description: "Policies (Git / bundle)",
+        technology: "Git / Bundle",
+      },
+      { type: "container", name: "Service", description: "Backend service" },
+      { type: "container", name: "Data Store", description: "Persistence" },
+    ],
+    connections: [
+      { fromIndex: 0, toIndex: 1, label: "Request" },
+      { fromIndex: 1, toIndex: 2, label: "Check policy" },
+      { fromIndex: 2, toIndex: 3, label: "Fetch policies" },
+      { fromIndex: 2, toIndex: 1, label: "Allow / Deny" },
+      { fromIndex: 1, toIndex: 4, label: "Forward (if allowed)" },
+      { fromIndex: 4, toIndex: 5, label: "Read/Write" },
+    ],
+  },
+  {
+    id: "rbac-with-opa",
+    name: "RBAC with OPA",
+    description:
+      "User authenticates via Auth; OPA checks roles against Role Store; Auth issues token; user calls Resource with token.",
+    category: "security",
+    components: [
+      { type: "person", name: "User", description: "End user" },
+      {
+        type: "container",
+        name: "Auth Service",
+        description: "Issues tokens",
+        technology: "OAuth2 / OIDC",
+      },
+      {
+        type: "container",
+        name: "OPA Engine",
+        description: "Role-based policy",
+        technology: "Open Policy Agent",
+      },
+      {
+        type: "container",
+        name: "Role Store",
+        description: "Roles and permissions",
+        technology: "LDAP / DB",
+      },
+      {
+        type: "container",
+        name: "Resource Server",
+        description: "Protected API",
+      },
+    ],
+    connections: [
+      { fromIndex: 0, toIndex: 1, label: "Authenticate" },
+      { fromIndex: 1, toIndex: 2, label: "Check role" },
+      { fromIndex: 2, toIndex: 3, label: "Fetch roles" },
+      { fromIndex: 2, toIndex: 1, label: "Permit / Deny" },
+      { fromIndex: 1, toIndex: 4, label: "Access token" },
+      { fromIndex: 0, toIndex: 4, label: "Request + token" },
+    ],
+  },
 ];
 
 export const PATTERNS_BY_CATEGORY = PATTERNS.reduce<
@@ -381,5 +721,6 @@ export const PATTERNS_BY_CATEGORY = PATTERNS.reduce<
     resilience: [],
     data: [],
     "event-driven": [],
+    security: [],
   },
 );

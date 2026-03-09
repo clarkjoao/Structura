@@ -801,6 +801,7 @@ export const useDiagramStore = create<DiagramStore>()(
             type: c.type,
             description: c.description ?? "",
             parentId: null,
+            technology: c.technology ?? undefined,
             awsService: c.awsService ?? undefined,
           };
           d.snapshot.components[comp.id] = comp;
