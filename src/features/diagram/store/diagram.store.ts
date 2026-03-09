@@ -9,6 +9,7 @@ import type {
   Flow,
   FlowStep,
   Diagram,
+  Folder,
   ComponentType,
   Level,
   ModelDraft,
@@ -255,6 +256,7 @@ interface DiagramSnapshot {
 
 interface AppState {
   diagrams: Record<string, Diagram>;
+  folders: Record<string, Folder>;
   activeDiagramId: string | null;
   past: DiagramSnapshot[];
   future: DiagramSnapshot[];
@@ -262,9 +264,13 @@ interface AppState {
 }
 
 interface AppActions {
-  addDiagram: (name: string, level: Level, domain?: string) => Diagram;
+  addDiagram: (name: string, level: Level, domain?: string, folderId?: string | null) => Diagram;
   openDiagram: (id: string) => void;
   deleteDiagram: (id: string) => void;
+  addFolder: (name: string, parentId: string | null, domain?: string) => Folder;
+  renameFolder: (id: string, name: string) => void;
+  deleteFolder: (id: string) => void;
+  moveDiagram: (diagramId: string, folderId: string | null) => void;
 
   addComponent: (
     type: ComponentType,
@@ -311,6 +317,8 @@ interface AppActions {
     diagramId: string | undefined,
   ) => void;
   setParent: (childId: string, parentId: string | null) => void;
+  groupNodes: (componentIds: string[]) => string | null;
+  ungroupNodes: (panelId: string) => void;
 
   addFlow: (diagramId: string, name: string, mermaid: string, steps?: FlowStep[]) => Flow;
   updateFlow: (id: string, patch: Partial<Omit<Flow, "id">>) => void;
@@ -361,12 +369,13 @@ export const useDiagramStore = create<DiagramStore>()(
   persist(
     immer((set, get) => ({
       diagrams: buildSeedDiagrams(),
+      folders: {},
       activeDiagramId: null,
       past: [],
       future: [],
       _lastUndoRedoAt: 0,
 
-    addDiagram: (name, level, domain) => {
+    addDiagram: (name, level, domain, folderId) => {
       const diagram: Diagram = {
         id: generateId("d"),
         name,
@@ -381,11 +390,48 @@ export const useDiagramStore = create<DiagramStore>()(
         },
         nodeLayouts: [],
         viewport: { x: 0, y: 0, zoom: 1 },
+        folderId: folderId ?? undefined,
       };
       set((state) => {
         state.diagrams[diagram.id] = diagram;
       });
       return diagram;
+    },
+
+    addFolder: (name, parentId, domain) => {
+      const folder: Folder = {
+        id: generateId("folder"),
+        name,
+        parentId,
+        domain: domain || undefined,
+      };
+      set((state) => {
+        state.folders[folder.id] = folder;
+      });
+      return folder;
+    },
+
+    renameFolder: (id, name) => {
+      set((state) => {
+        const f = state.folders[id];
+        if (f) f.name = name;
+      });
+    },
+
+    deleteFolder: (id) => {
+      set((state) => {
+        const hasChildren = Object.values(state.folders).some((f) => f.parentId === id);
+        const hasDiagrams = Object.values(state.diagrams).some((d) => d.folderId === id);
+        if (hasChildren || hasDiagrams) return;
+        delete state.folders[id];
+      });
+    },
+
+    moveDiagram: (diagramId, folderId) => {
+      set((state) => {
+        const d = state.diagrams[diagramId];
+        if (d) d.folderId = folderId ?? undefined;
+      });
     },
 
     openDiagram: (id) => {
@@ -582,6 +628,120 @@ export const useDiagramStore = create<DiagramStore>()(
       });
     },
 
+    groupNodes: (componentIds) => {
+      const PADDING = 40;
+      const DEFAULT_NODE_W = 180;
+      const DEFAULT_NODE_H = 80;
+      let panelId: string | null = null;
+      set((state) => {
+        const d = activeDiagram(state);
+        const comps = d.snapshot.components;
+        const ids = componentIds.filter(
+          (id) => comps[id] && comps[id].type !== "panel",
+        );
+        if (ids.length < 2) return;
+
+        function getAbsPos(eid: string): { x: number; y: number } {
+          const layout = d.nodeLayouts.find((nl) => nl.elementId === eid);
+          const c = comps[eid];
+          if (!c || !layout) return { x: 0, y: 0 };
+          if (!c.parentId) return { x: layout.x, y: layout.y };
+          const parentPos = getAbsPos(c.parentId);
+          return { x: parentPos.x + layout.x, y: parentPos.y + layout.y };
+        }
+
+        function getSize(eid: string): { w: number; h: number } {
+          const c = comps[eid];
+          if (!c) return { w: DEFAULT_NODE_W, h: DEFAULT_NODE_H };
+          if (c.type === "panel")
+            return {
+              w: c.width ?? 600,
+              h: c.height ?? 400,
+            };
+          return {
+            w: (c as { width?: number }).width ?? DEFAULT_NODE_W,
+            h: (c as { height?: number }).height ?? DEFAULT_NODE_H,
+          };
+        }
+
+        const positions = ids.map((id) => getAbsPos(id));
+        const sizes = ids.map((id) => getSize(id));
+        const minX =
+          Math.min(...positions.map((p, i) => p.x)) - PADDING;
+        const minY =
+          Math.min(...positions.map((p, i) => p.y)) - PADDING;
+        const maxX =
+          Math.max(...positions.map((p, i) => p.x + sizes[i].w)) + PADDING;
+        const maxY =
+          Math.max(...positions.map((p, i) => p.y + sizes[i].h)) + PADDING;
+        const panelW = maxX - minX;
+        const panelH = maxY - minY;
+
+        pushHistory(state);
+        const panel: Component = {
+          id: generateId("el"),
+          name: "Grupo",
+          type: "panel",
+          description: "",
+          parentId: null,
+          width: panelW,
+          height: panelH,
+        };
+        d.snapshot.components[panel.id] = panel;
+        d.nodeLayouts.push({
+          elementId: panel.id,
+          x: minX,
+          y: minY,
+          zIndex: -1,
+        });
+        panelId = panel.id;
+
+        ids.forEach((eid, i) => {
+          const comp = comps[eid];
+          if (comp) comp.parentId = panel.id;
+          const layout = d.nodeLayouts.find((nl) => nl.elementId === eid);
+          if (layout) {
+            layout.x = positions[i].x - minX;
+            layout.y = positions[i].y - minY;
+          }
+        });
+        d.updatedAt = "agora";
+      });
+      return panelId;
+    },
+
+    ungroupNodes: (panelId) => {
+      set((state) => {
+        const d = activeDiagram(state);
+        const comps = d.snapshot.components;
+        const panel = comps[panelId];
+        if (!panel || panel.type !== "panel") return;
+        const children = Object.values(comps).filter(
+          (c) => c.parentId === panelId,
+        );
+        const panelLayout = d.nodeLayouts.find(
+          (nl) => nl.elementId === panelId,
+        );
+        if (!panelLayout) return;
+        pushHistory(state);
+        children.forEach((c) => {
+          c.parentId = null;
+          const childLayout = d.nodeLayouts.find(
+            (nl) => nl.elementId === c.id,
+          );
+          if (childLayout) {
+            childLayout.x = panelLayout.x + childLayout.x;
+            childLayout.y = panelLayout.y + childLayout.y;
+          }
+        });
+        delete d.snapshot.components[panelId];
+        d.nodeLayouts = d.nodeLayouts.filter(
+          (nl) => nl.elementId !== panelId,
+        );
+        d.updatedAt = "agora";
+      });
+    },
+
     addFlow: (diagramId, name, mermaid, precomputedSteps) => {
       const { diagrams } = get();
       const d = diagrams[diagramId];
@@ -641,6 +801,7 @@ export const useDiagramStore = create<DiagramStore>()(
             type: c.type,
             description: c.description ?? "",
             parentId: null,
+            technology: c.technology ?? undefined,
             awsService: c.awsService ?? undefined,
           };
           d.snapshot.components[comp.id] = comp;
@@ -711,6 +872,7 @@ export const useDiagramStore = create<DiagramStore>()(
         Object.values(state.diagrams ?? {}).forEach((d) => {
           if (!d.snapshot.serviceRegistry) d.snapshot.serviceRegistry = {};
         });
+        if (!state.folders) state.folders = {};
         return state;
       },
     },
@@ -722,6 +884,9 @@ export const useDiagramStore = create<DiagramStore>()(
 export const useDiagrams = () => useDiagramStore((s) => s.diagrams);
 export const useAllDiagrams = () =>
   useDiagramStore(useShallow((s) => Object.values(s.diagrams)));
+export const useFolders = () => useDiagramStore((s) => s.folders);
+export const useAllFolders = () =>
+  useDiagramStore(useShallow((s) => Object.values(s.folders)));
 export const useActiveDiagramId = () =>
   useDiagramStore((s) => s.activeDiagramId);
 
@@ -823,6 +988,12 @@ export const useDiagramActions = () =>
       addDiagram: s.addDiagram,
       openDiagram: s.openDiagram,
       deleteDiagram: s.deleteDiagram,
+      addFolder: s.addFolder,
+      renameFolder: s.renameFolder,
+      deleteFolder: s.deleteFolder,
+      moveDiagram: s.moveDiagram,
+      groupNodes: s.groupNodes,
+      ungroupNodes: s.ungroupNodes,
       addComponent: s.addComponent,
       updateComponent: s.updateComponent,
       removeComponent: s.removeComponent,
