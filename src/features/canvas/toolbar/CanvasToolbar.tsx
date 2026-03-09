@@ -11,11 +11,13 @@ import {
   Cloud,
   Square,
   StickyNote,
+  Puzzle,
 } from "lucide-react";
 import { useActiveDiagram, useDiagramActions } from "@/features/diagram";
 import type { ComponentType } from "@/features/diagram";
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/aws-catalog";
 import AwsIcon from "../nodes/AwsIcon";
+import PatternPicker from "../PatternPicker";
 
 const c4Options: {
   type: ComponentType;
@@ -40,6 +42,7 @@ const CanvasToolbar = ({ onDrillUp }: { onDrillUp?: () => void }) => {
   const [showAdd, setShowAdd] = useState(false);
   const [showAws, setShowAws] = useState(false);
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
+  const [showPatterns, setShowPatterns] = useState(false);
 
   const handleAddC4 = (type: ComponentType) => {
     const name = `Novo ${type.charAt(0).toUpperCase() + type.slice(1)}`;
@@ -78,6 +81,13 @@ const CanvasToolbar = ({ onDrillUp }: { onDrillUp?: () => void }) => {
           <ChevronUp className="h-3.5 w-3.5" /> Nível acima
         </button>
       )}
+
+      <button
+        onClick={() => { setShowPatterns(true); setShowAdd(false); }}
+        className="flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+      >
+        <Puzzle className="h-3.5 w-3.5" /> Patterns
+      </button>
 
       <div className="relative">
         <button
@@ -182,6 +192,8 @@ const CanvasToolbar = ({ onDrillUp }: { onDrillUp?: () => void }) => {
           </div>
         )}
       </div>
+
+      {showPatterns && <PatternPicker onClose={() => setShowPatterns(false)} />}
     </div>
   );
 };

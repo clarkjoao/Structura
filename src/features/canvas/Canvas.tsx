@@ -22,7 +22,6 @@ import {
   useServiceRegistry,
   useDiagramActions,
   useFlows,
-  generateId,
   type FlowStep,
 } from "@/features/diagram";
 import CustomNode from "./nodes/CustomNode";
@@ -315,7 +314,7 @@ const Canvas = ({
               ? flowHighlight.activeNodeId === comp.id
               : selectedNodeId === comp.id,
             serviceName: comp.serviceId
-              ? serviceRegistry[comp.serviceId]?.name
+              ? serviceRegistry?.[comp.serviceId]?.name
               : undefined,
             linkedDiagramName: isPlaying || isRecording ? undefined : linkedDiagramName,
             onDrillDown: isPlaying || isRecording
@@ -497,7 +496,7 @@ const Canvas = ({
     [nodes, setParent, updateNodeLayout],
   );
 
-  const onEdgesChange: OnEdgesChange = useCallback((changes) => {
+  const onEdgesChange: OnEdgesChange = useCallback((_changes) => {
     // Edge changes are handled by ReactFlow
   }, []);
 

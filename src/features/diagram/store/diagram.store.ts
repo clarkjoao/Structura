@@ -316,6 +316,11 @@ interface AppActions {
   updateFlow: (id: string, patch: Partial<Omit<Flow, "id">>) => void;
   removeFlow: (id: string) => void;
 
+  insertPattern: (
+    template: import("@/lib/patterns-catalog").PatternTemplate,
+    position: { x: number; y: number },
+  ) => void;
+
   undo: () => void;
   redo: () => void;
 }
@@ -531,14 +536,17 @@ export const useDiagramStore = create<DiagramStore>()(
     addService: (service) => {
       const svc: ServiceDefinition = { ...service, id: generateId("svc") };
       set((state) => {
-        activeDiagram(state).snapshot.serviceRegistry[svc.id] = svc;
+        const d = activeDiagram(state);
+        if (!d.snapshot.serviceRegistry) d.snapshot.serviceRegistry = {};
+        d.snapshot.serviceRegistry[svc.id] = svc;
       });
       return svc;
     },
 
     updateService: (id, patch) => {
       set((state) => {
-        Object.assign(activeDiagram(state).snapshot.serviceRegistry[id], patch);
+        const svc = activeDiagram(state).snapshot.serviceRegistry?.[id];
+        if (svc) Object.assign(svc, patch);
       });
     },
 
@@ -620,6 +628,41 @@ export const useDiagramStore = create<DiagramStore>()(
       });
     },
 
+    insertPattern: (template, position) => {
+      const GRID_X = 220;
+      const ids: string[] = template.components.map(() => generateId("el"));
+      set((state) => {
+        pushHistory(state);
+        const d = activeDiagram(state);
+        template.components.forEach((c, i) => {
+          const comp: Component = {
+            id: ids[i],
+            name: c.name,
+            type: c.type,
+            description: c.description ?? "",
+            parentId: null,
+            awsService: c.awsService ?? undefined,
+          };
+          d.snapshot.components[comp.id] = comp;
+          d.nodeLayouts.push({
+            elementId: comp.id,
+            x: position.x + i * GRID_X,
+            y: position.y,
+          });
+        });
+        template.connections.forEach((conn) => {
+          const connId = generateId("conn");
+          d.snapshot.connections[connId] = {
+            id: connId,
+            sourceId: ids[conn.fromIndex],
+            targetId: ids[conn.toIndex],
+            label: conn.label,
+          };
+        });
+        d.updatedAt = "agora";
+      });
+    },
+
     undo: () => {
       set((state) => {
         const entry = state.past.pop();
@@ -659,10 +702,17 @@ export const useDiagramStore = create<DiagramStore>()(
     {
       name: PERSIST_KEY,
       storage: createJSONStorage(() => defaultStorage),
-      merge: (persistedState, currentState) => ({
-        ...currentState,
-        ...(persistedState && (persistedState as Partial<DiagramStore>)),
-      }),
+      merge: (persistedState, currentState) => {
+        const state = {
+          ...currentState,
+          ...(persistedState && (persistedState as Partial<DiagramStore>)),
+        };
+        // Migrate: ensure every rehydrated diagram snapshot has serviceRegistry
+        Object.values(state.diagrams ?? {}).forEach((d) => {
+          if (!d.snapshot.serviceRegistry) d.snapshot.serviceRegistry = {};
+        });
+        return state;
+      },
     },
   ),
 );
@@ -727,7 +777,7 @@ export const useCanNavigateInto = (_elementId: string) => false;
 export const useServiceRegistry = () =>
   useDiagramStore((s) =>
     s.activeDiagramId
-      ? s.diagrams[s.activeDiagramId].snapshot.serviceRegistry
+      ? (s.diagrams[s.activeDiagramId].snapshot.serviceRegistry ?? {})
       : {},
   );
 
@@ -736,7 +786,7 @@ export const useAllServices = () =>
     useShallow((s) => {
       if (!s.activeDiagramId) return [];
       return Object.values(
-        s.diagrams[s.activeDiagramId].snapshot.serviceRegistry,
+        s.diagrams[s.activeDiagramId].snapshot.serviceRegistry ?? {},
       );
     }),
   );
@@ -792,6 +842,7 @@ export const useDiagramActions = () =>
       addFlow: s.addFlow,
       updateFlow: s.updateFlow,
       removeFlow: s.removeFlow,
+      insertPattern: s.insertPattern,
       undo: s.undo,
       redo: s.redo,
     })),
