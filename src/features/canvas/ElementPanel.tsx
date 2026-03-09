@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import debounce from "lodash.debounce";
 import {
   X,
@@ -19,6 +19,7 @@ import {
   useComponents,
   useAllServices,
   useAllDiagrams,
+  useActiveDiagram,
   useDiagramActions,
 } from "@/features/diagram";
 import type { Component, Connection, ComponentType } from "@/features/diagram";
@@ -345,7 +346,8 @@ const ComponentDetail = ({
 }) => {
   const allServices = useAllServices();
   const allDiagrams = useAllDiagrams();
-  const { linkComponentToService, linkComponentToDiagram } =
+  const activeDiagram = useActiveDiagram();
+  const { linkComponentToService, linkComponentToDiagram, addDiagram } =
     useDiagramActions();
   const [tab, setTab] = useState<Tab>("details");
   const [name, setName] = useState(component.name);
@@ -353,12 +355,15 @@ const ComponentDetail = ({
   const [tech, setTech] = useState(component.technology ?? "");
   const [type, setType] = useState<ComponentType>(component.type);
   const [awsService, setAwsService] = useState(component.awsService ?? "");
+  const [createdDiagramName, setCreatedDiagramName] = useState<string | null>(null);
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isPanel = component.type === "panel";
   const isNote = component.type === "note";
   const isSimple = isPanel || isNote;
   const isAws = isAwsType(type);
   const svcInfo = awsService ? AWS_SERVICE_MAP.get(awsService) : null;
+  const canCreateLinked = component.type === "system" || component.type === "container";
 
   const debouncedUpdate = useMemo(
     () =>
@@ -369,6 +374,21 @@ const ComponentDetail = ({
   );
 
   useEffect(() => () => debouncedUpdate.cancel(), [debouncedUpdate]);
+
+  useEffect(() => {
+    return () => {
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+    };
+  }, []);
+
+  const handleCreateLinked = () => {
+    const level = component.type === "system" ? "container" : "component";
+    const domain = activeDiagram?.domain;
+    const newDiagram = addDiagram(component.name, level, domain);
+    linkComponentToDiagram(component.id, newDiagram.id);
+    setCreatedDiagramName(newDiagram.name);
+    confirmTimerRef.current = setTimeout(() => setCreatedDiagramName(null), 3000);
+  };
 
   const handleRemove = () => {
     debouncedUpdate.cancel();
@@ -557,7 +577,29 @@ const ComponentDetail = ({
             </div>
           )}
 
-          {!isSimple && (
+          {!isSimple && canCreateLinked && !component.linkedDiagramId && (
+            <div>
+              <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+                <LayoutDashboard className="h-3 w-3 inline mr-1" />
+                Diagrama vinculado
+              </label>
+              {createdDiagramName ? (
+                <p className="text-xs text-primary bg-primary/10 rounded-md px-3 py-2">
+                  ✓ Diagrama &ldquo;{createdDiagramName}&rdquo; criado e vinculado.
+                </p>
+              ) : (
+                <button
+                  onClick={handleCreateLinked}
+                  className="flex items-center gap-1.5 w-full rounded-md border border-dashed border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
+                >
+                  <LayoutDashboard className="h-3.5 w-3.5" />
+                  Criar diagrama vinculado
+                </button>
+              )}
+            </div>
+          )}
+
+          {!isSimple && (!canCreateLinked || component.linkedDiagramId) && (
             <div>
               <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
                 <LayoutDashboard className="h-3 w-3 inline mr-1" />
