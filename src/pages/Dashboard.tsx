@@ -1,7 +1,18 @@
 import { useState, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Plus, Layers, Clock, Network, Trash2, FolderOpen, MoreHorizontal } from "lucide-react";
+import {
+  Plus,
+  Layers,
+  Clock,
+  Network,
+  Trash2,
+  FolderOpen,
+  MoreHorizontal,
+  LayoutGrid,
+  List,
+  ArrowUpDown,
+} from "lucide-react";
 import Navbar from "@/components/Navbar";
 import {
   useAllDiagrams,
@@ -25,14 +36,24 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { FolderTree } from "@/pages/FolderTree";
+import { cn } from "@/lib/utils";
 
 const levelLabels: Record<string, string> = {
-  context: "Level 1",
-  container: "Level 2",
-  component: "Level 3",
+  context: "L1 · Contexto",
+  container: "L2 · Container",
+  component: "L3 · Componente",
+};
+
+const levelColors: Record<string, string> = {
+  context: "bg-[hsl(var(--node-system)/0.15)] text-[hsl(var(--node-system))]",
+  container:
+    "bg-[hsl(var(--node-container)/0.15)] text-[hsl(var(--node-container))]",
+  component:
+    "bg-[hsl(var(--node-component)/0.15)] text-[hsl(var(--node-component))]",
 };
 
 type SortKey = "name" | "domain" | "level" | "updatedAt";
+type ViewMode = "grid" | "list";
 
 function buildBreadcrumbPath(
   folders: Record<string, Folder>,
@@ -48,6 +69,24 @@ function buildBreadcrumbPath(
   return path;
 }
 
+function formatDate(iso: string): string {
+  try {
+    const d = new Date(iso);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return "Agora";
+    if (diffMin < 60) return `${diffMin}min atrás`;
+    const diffH = Math.floor(diffMin / 60);
+    if (diffH < 24) return `${diffH}h atrás`;
+    const diffD = Math.floor(diffH / 24);
+    if (diffD < 7) return `${diffD}d atrás`;
+    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+  } catch {
+    return iso;
+  }
+}
+
 const Dashboard = () => {
   const diagrams = useAllDiagrams();
   const folders = useFolders();
@@ -60,8 +99,9 @@ const Dashboard = () => {
     string | null | undefined
   >(undefined);
   const [showAdd, setShowAdd] = useState(false);
-  const [sortKey, setSortKey] = useState<SortKey>("name");
-  const [sortAsc, setSortAsc] = useState(true);
+  const [sortKey, setSortKey] = useState<SortKey>("updatedAt");
+  const [sortAsc, setSortAsc] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [triggerAddFolder, setTriggerAddFolder] = useState(0);
   const folderTreeRef = useRef<HTMLDivElement>(null);
 
@@ -123,11 +163,6 @@ const Dashboard = () => {
     [addDiagram, openDiagram, navigate, selectedFolderId],
   );
 
-  const sortIcon = (key: SortKey) => {
-    if (sortKey !== key) return "";
-    return sortAsc ? " ↑" : " ↓";
-  };
-
   const handleDragStart = useCallback(
     (e: React.DragEvent, diagramId: string) => {
       e.dataTransfer.setData("application/x-archflow-diagram-id", diagramId);
@@ -144,12 +179,19 @@ const Dashboard = () => {
     setDropTargetFolderId(undefined);
   }, []);
 
+  const currentFolderName = selectedFolderId
+    ? folders[selectedFolderId]?.name ?? "—"
+    : "Todos os diagramas";
+
   return (
     <div className="min-h-screen pt-16">
       <Navbar />
       <div className="flex h-[calc(100vh-4rem)]">
-        {/* Tree sidebar */}
-        <div ref={folderTreeRef} className="w-56 shrink-0 overflow-hidden">
+        {/* Sidebar */}
+        <div
+          ref={folderTreeRef}
+          className="w-56 shrink-0 overflow-hidden border-r border-border"
+        >
           <FolderTree
             folders={folders}
             diagrams={diagrams}
@@ -166,217 +208,221 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* Main area */}
-        <div className="flex flex-1 flex-col min-w-0">
-          <div className="border-b border-border bg-card px-4 py-3">
+        {/* Main */}
+        <div className="flex flex-1 flex-col min-w-0 bg-background">
+          {/* Top bar */}
+          <div className="flex items-center justify-between border-b border-border px-5 py-2.5">
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink
-                    asChild
-                    onClick={() => setSelectedFolderId(null)}
-                    className="cursor-pointer"
-                  >
-                    <button type="button">Raiz</button>
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                {breadcrumbPath.map((folder) => (
-                  <BreadcrumbItem key={folder.id}>
-                    <BreadcrumbSeparator />
+                  {selectedFolderId ? (
                     <BreadcrumbLink
                       asChild
-                      onClick={() => setSelectedFolderId(folder.id)}
+                      onClick={() => setSelectedFolderId(null)}
                       className="cursor-pointer"
                     >
-                      <button type="button">{folder.name}</button>
+                      <button type="button" className="text-[13px]">
+                        Workspace
+                      </button>
                     </BreadcrumbLink>
-                  </BreadcrumbItem>
-                ))}
-                {selectedFolderId && breadcrumbPath.length > 0 && (
-                  <>
-                    <BreadcrumbSeparator />
-                    <BreadcrumbItem>
-                      <BreadcrumbPage>
-                        {folders[selectedFolderId]?.name ?? "—"}
-                      </BreadcrumbPage>
+                  ) : (
+                    <BreadcrumbPage className="text-[13px]">
+                      Workspace
+                    </BreadcrumbPage>
+                  )}
+                </BreadcrumbItem>
+                {breadcrumbPath.map((folder, i) => {
+                  const isLast = i === breadcrumbPath.length - 1;
+                  return (
+                    <BreadcrumbItem key={folder.id}>
+                      <BreadcrumbSeparator />
+                      {isLast ? (
+                        <BreadcrumbPage className="text-[13px]">
+                          {folder.name}
+                        </BreadcrumbPage>
+                      ) : (
+                        <BreadcrumbLink
+                          asChild
+                          onClick={() => setSelectedFolderId(folder.id)}
+                          className="cursor-pointer"
+                        >
+                          <button type="button" className="text-[13px]">
+                            {folder.name}
+                          </button>
+                        </BreadcrumbLink>
+                      )}
                     </BreadcrumbItem>
-                  </>
-                )}
+                  );
+                })}
               </BreadcrumbList>
             </Breadcrumb>
+
+            <div className="flex items-center gap-1.5">
+              {/* View toggle */}
+              <div className="flex items-center rounded-md border border-border bg-secondary/50 p-0.5">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={cn(
+                    "rounded p-1 transition-colors",
+                    viewMode === "grid"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={cn(
+                    "rounded p-1 transition-colors",
+                    viewMode === "list"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <List className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
+              {/* Sort */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1 text-xs text-muted-foreground"
+                  >
+                    <ArrowUpDown className="h-3 w-3" />
+                    Ordenar
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleSort("name")}>
+                    Nome
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleSort("updatedAt")}>
+                    Última edição
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleSort("level")}>
+                    Nível C4
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleSort("domain")}>
+                    Domínio
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">
-                {selectedFolderId
-                  ? folders[selectedFolderId]?.name ?? "—"
-                  : "Raiz"}
-              </h2>
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-5">
+            {/* Title + actions */}
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-foreground">
+                  {currentFolderName}
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {folderDiagrams.length} diagrama
+                  {folderDiagrams.length !== 1 ? "s" : ""}
+                  {childFolders.length > 0 &&
+                    ` · ${childFolders.length} pasta${childFolders.length !== 1 ? "s" : ""}`}
+                </p>
+              </div>
               <div className="flex gap-2">
                 <Button
                   onClick={() => setShowAdd(true)}
-                  className="inline-flex items-center gap-2"
+                  size="sm"
+                  className="gap-1.5 h-8"
                 >
-                  <Plus className="h-4 w-4" /> Novo diagrama
+                  <Plus className="h-3.5 w-3.5" /> Novo diagrama
                 </Button>
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={() => setTriggerAddFolder((t) => t + 1)}
-                  className="inline-flex items-center gap-2"
+                  className="gap-1.5 h-8"
                 >
-                  <Plus className="h-4 w-4" /> Nova pasta
+                  <Plus className="h-3.5 w-3.5" /> Nova pasta
                 </Button>
               </div>
             </div>
 
-            {/* Folder cards */}
+            {/* Subfolders */}
             {childFolders.length > 0 && (
-              <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {childFolders.map((folder) => {
-                  const subCount = Object.values(folders).filter(
-                    (f) => f.parentId === folder.id,
-                  ).length;
-                  const diagCount = diagrams.filter(
-                    (d) => d.folderId === folder.id,
-                  ).length;
-                  const total = subCount + diagCount;
-                  return (
-                    <div
-                      key={folder.id}
-                      onClick={() => setSelectedFolderId(folder.id)}
-                      className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:bg-muted/50"
-                    >
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
-                        <FolderOpen className="h-5 w-5 text-amber-600" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium truncate">{folder.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {total} {total === 1 ? "item" : "itens"}
-                        </p>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 shrink-0"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedFolderId(folder.id);
-                            }}
-                          >
-                            Abrir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  );
-                })}
+              <div className="mb-5">
+                <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                  {childFolders.map((folder) => {
+                    const subCount = Object.values(folders).filter(
+                      (f) => f.parentId === folder.id,
+                    ).length;
+                    const diagCount = diagrams.filter(
+                      (d) => d.folderId === folder.id,
+                    ).length;
+                    const total = subCount + diagCount;
+                    return (
+                      <motion.div
+                        key={folder.id}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setSelectedFolderId(folder.id)}
+                        className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border bg-card p-3 transition-colors hover:bg-muted/40 hover:border-border/80"
+                      >
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-amber-500/10">
+                          <FolderOpen className="h-4 w-4 text-amber-500" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate text-foreground">
+                            {folder.name}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {total} {total === 1 ? "item" : "itens"}
+                          </p>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
-            {/* Diagram table */}
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-secondary/50">
-                    <th className="w-10 px-4 py-3" />
-                    <th
-                      onClick={() => handleSort("name")}
-                      className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none"
-                    >
-                      Nome{sortIcon("name")}
-                    </th>
-                    <th
-                      onClick={() => handleSort("domain")}
-                      className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none"
-                    >
-                      Domínio{sortIcon("domain")}
-                    </th>
-                    <th
-                      onClick={() => handleSort("level")}
-                      className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none"
-                    >
-                      Nível C4{sortIcon("level")}
-                    </th>
-                    <th
-                      onClick={() => handleSort("updatedAt")}
-                      className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none"
-                    >
-                      Última edição{sortIcon("updatedAt")}
-                    </th>
-                    <th className="w-10 px-4 py-3" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {sorted.map((d) => (
-                    <tr
-                      key={d.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, d.id)}
-                      onClick={() => handleOpen(d)}
-                      className="border-b border-border last:border-0 cursor-pointer hover:bg-muted/50 transition-colors"
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 border border-primary/10">
-                          <Network className="h-4 w-4 text-primary" />
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 font-medium text-foreground">
-                        {d.name}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {d.domain ?? "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex items-center gap-1.5 text-xs">
-                          <Layers className="h-3.5 w-3.5 text-muted-foreground" />
-                          {levelLabels[d.level]}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <Clock className="h-3.5 w-3.5" /> {d.updatedAt}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={(e) => handleDelete(e, d.id)}
-                          className="text-muted-foreground hover:text-destructive transition-colors"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {sorted.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={6}
-                        className="px-4 py-8 text-center text-sm text-muted-foreground"
-                      >
-                        {childFolders.length === 0
-                          ? "Nenhum diagrama nesta pasta. Crie o primeiro!"
-                          : "Nenhum diagrama nesta pasta."}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-              <div className="border-t border-border px-4 py-2.5 text-xs text-muted-foreground bg-secondary/30">
-                {folderDiagrams.length} diagrama
-                {folderDiagrams.length !== 1 ? "s" : ""} nesta pasta
+            {/* Diagrams */}
+            {viewMode === "grid" ? (
+              <DiagramGrid
+                diagrams={sorted}
+                onOpen={handleOpen}
+                onDelete={handleDelete}
+                onDragStart={handleDragStart}
+              />
+            ) : (
+              <DiagramList
+                diagrams={sorted}
+                onOpen={handleOpen}
+                onDelete={handleDelete}
+                onDragStart={handleDragStart}
+              />
+            )}
+
+            {sorted.length === 0 && childFolders.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/50 mb-4">
+                  <Network className="h-7 w-7 text-muted-foreground/60" />
+                </div>
+                <p className="text-sm text-muted-foreground mb-1">
+                  Nenhum diagrama ainda
+                </p>
+                <p className="text-xs text-muted-foreground/60 mb-4">
+                  Crie seu primeiro diagrama de arquitetura
+                </p>
+                <Button
+                  size="sm"
+                  onClick={() => setShowAdd(true)}
+                  className="gap-1.5"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Criar diagrama
+                </Button>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -391,6 +437,188 @@ const Dashboard = () => {
   );
 };
 
+/* ── Grid view ── */
+function DiagramGrid({
+  diagrams,
+  onOpen,
+  onDelete,
+  onDragStart,
+}: {
+  diagrams: Diagram[];
+  onOpen: (d: Diagram) => void;
+  onDelete: (e: React.MouseEvent, id: string) => void;
+  onDragStart: (e: React.DragEvent, id: string) => void;
+}) {
+  if (diagrams.length === 0) return null;
+  return (
+    <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {diagrams.map((d, i) => (
+        <motion.div
+          key={d.id}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: i * 0.03 }}
+          draggable
+          onDragStart={(e) => onDragStart(e as unknown as React.DragEvent, d.id)}
+          onClick={() => onOpen(d)}
+          className="group cursor-pointer rounded-lg border border-border bg-card overflow-hidden transition-all hover:border-primary/30 hover:shadow-[0_0_20px_-6px_hsl(var(--primary)/0.15)]"
+        >
+          {/* Preview area */}
+          <div className="relative h-28 bg-muted/30 flex items-center justify-center border-b border-border/50">
+            <div className="flex items-center gap-3 opacity-40">
+              <div className="h-6 w-10 rounded border border-current" />
+              <div className="h-px w-6 bg-current" />
+              <div className="h-6 w-10 rounded border border-current" />
+            </div>
+            {/* Hover overlay */}
+            <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            {/* Actions */}
+            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <MoreHorizontal className="h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <DropdownMenuItem onClick={() => onOpen(d)}>
+                    Abrir
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={(e) => onDelete(e, d.id)}
+                  >
+                    Excluir
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+          {/* Info */}
+          <div className="p-3">
+            <p className="text-sm font-medium text-foreground truncate mb-1.5">
+              {d.name}
+            </p>
+            <div className="flex items-center gap-2">
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium",
+                  levelColors[d.level] ?? "bg-muted text-muted-foreground",
+                )}
+              >
+                {levelLabels[d.level]}
+              </span>
+              <span className="text-[11px] text-muted-foreground/60 ml-auto">
+                {formatDate(d.updatedAt)}
+              </span>
+            </div>
+            {d.domain && (
+              <p className="text-[11px] text-muted-foreground mt-1 truncate">
+                {d.domain}
+              </p>
+            )}
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+/* ── List view ── */
+function DiagramList({
+  diagrams,
+  onOpen,
+  onDelete,
+  onDragStart,
+}: {
+  diagrams: Diagram[];
+  onOpen: (d: Diagram) => void;
+  onDelete: (e: React.MouseEvent, id: string) => void;
+  onDragStart: (e: React.DragEvent, id: string) => void;
+}) {
+  if (diagrams.length === 0) return null;
+  return (
+    <div className="rounded-lg border border-border bg-card overflow-hidden">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-border bg-muted/30">
+            <th className="w-10 px-3 py-2.5" />
+            <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+              Nome
+            </th>
+            <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+              Domínio
+            </th>
+            <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+              Nível
+            </th>
+            <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+              Editado
+            </th>
+            <th className="w-10 px-3 py-2.5" />
+          </tr>
+        </thead>
+        <tbody>
+          {diagrams.map((d) => (
+            <tr
+              key={d.id}
+              draggable
+              onDragStart={(e) => onDragStart(e, d.id)}
+              onClick={() => onOpen(d)}
+              className="border-b border-border/50 last:border-0 cursor-pointer hover:bg-muted/30 transition-colors group"
+            >
+              <td className="px-3 py-2.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10">
+                  <Network className="h-3.5 w-3.5 text-primary" />
+                </div>
+              </td>
+              <td className="px-3 py-2.5 font-medium text-foreground">
+                {d.name}
+              </td>
+              <td className="px-3 py-2.5 text-muted-foreground">
+                {d.domain ?? "—"}
+              </td>
+              <td className="px-3 py-2.5">
+                <span
+                  className={cn(
+                    "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium",
+                    levelColors[d.level] ?? "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {levelLabels[d.level]}
+                </span>
+              </td>
+              <td className="px-3 py-2.5">
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <Clock className="h-3 w-3" />
+                  {formatDate(d.updatedAt)}
+                </span>
+              </td>
+              <td className="px-3 py-2.5">
+                <button
+                  onClick={(e) => onDelete(e, d.id)}
+                  className="text-muted-foreground/50 hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/* ── Add diagram dialog ── */
 const AddDiagramDialog = ({
   onClose,
   onAdd,
@@ -454,21 +682,19 @@ const AddDiagramDialog = ({
           </div>
         </div>
         <div className="flex justify-end gap-2 mt-4">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground rounded-md border border-border transition-colors"
-          >
+          <Button variant="outline" onClick={onClose} size="sm">
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => {
-              if (name.trim()) onAdd(name.trim(), level, domain.trim() || undefined);
+              if (name.trim())
+                onAdd(name.trim(), level, domain.trim() || undefined);
             }}
             disabled={!name.trim()}
-            className="px-4 py-2 text-sm font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+            size="sm"
           >
             Criar diagrama
-          </button>
+          </Button>
         </div>
       </motion.div>
     </div>
