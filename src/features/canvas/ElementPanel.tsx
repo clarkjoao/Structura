@@ -22,7 +22,14 @@ import {
   useActiveDiagram,
   useDiagramActions,
 } from "@/features/diagram";
-import type { Component, Connection, ComponentType } from "@/features/diagram";
+import type {
+  Component,
+  Connection,
+  ComponentType,
+  EdgeStyle,
+  StrokeStyle,
+  EdgeMarker,
+} from "@/features/diagram";
 import {
   isAwsType,
   AWS_CATEGORIES,
@@ -47,6 +54,17 @@ const PANEL_COLOR_PRESETS = [
 const DEFAULT_PANEL_COLOR = "hsl(220 20% 20%)";
 const DEFAULT_PANEL_OPACITY = 10;
 const DEFAULT_NOTE_COLOR = "hsl(48 96% 53%)";
+
+const COMMUNICATION_DEFAULTS: Record<
+  NonNullable<Connection["communicationType"]>,
+  Partial<Pick<Connection, "edgeStyle" | "strokeStyle" | "markerEnd">>
+> = {
+  sync: { edgeStyle: "straight", strokeStyle: "solid", markerEnd: "arrowclosed" },
+  async: { edgeStyle: "straight", strokeStyle: "dashed", markerEnd: "arrowclosed" },
+  event: { edgeStyle: "smoothstep", strokeStyle: "dashed", markerEnd: "arrow" },
+  tcp: { edgeStyle: "straight", strokeStyle: "solid", markerEnd: "arrow" },
+  udp: { edgeStyle: "straight", strokeStyle: "dotted", markerEnd: "arrow" },
+};
 
 interface Props {
   selectedElementId: string | null;
@@ -648,7 +666,30 @@ const ComponentDetail = ({
   );
 };
 
-// ── Connection detail (unchanged) ───────────────────────────────────────────
+// ── Edge style options (toolbar-style) ───────────────────────────────────────
+
+const EDGE_STYLE_OPTIONS: { value: EdgeStyle; label: string }[] = [
+  { value: "straight", label: "Reta" },
+  { value: "bezier", label: "Curva" },
+  { value: "step", label: "Step" },
+  { value: "smoothstep", label: "Suave" },
+];
+
+const STROKE_OPTIONS: { value: StrokeStyle; label: string }[] = [
+  { value: "solid", label: "Sólida" },
+  { value: "dashed", label: "Tracejada" },
+  { value: "dotted", label: "Pontilhada" },
+];
+
+const WIDTH_OPTIONS = [1, 2, 3] as const;
+
+const MARKER_OPTIONS: { value: EdgeMarker; label: string }[] = [
+  { value: "none", label: "Nenhum" },
+  { value: "arrow", label: "Seta" },
+  { value: "arrowclosed", label: "Seta fechada" },
+];
+
+// ── Connection detail ───────────────────────────────────────────────────────
 
 const ConnectionDetail = ({
   conn,
@@ -678,6 +719,10 @@ const ConnectionDetail = ({
 
   useEffect(() => () => debouncedUpdate.cancel(), [debouncedUpdate]);
 
+  const applyPatch = (patch: Partial<Omit<Connection, "id">>) => {
+    updateConnection(conn.id, patch);
+  };
+
   return (
     <div className="w-80 border-l border-border bg-card overflow-auto">
       <div className="flex items-center justify-between p-3 border-b border-border">
@@ -700,6 +745,128 @@ const ConnectionDetail = ({
             debouncedUpdate({ label: v });
           }}
         />
+
+        {/* Tipo de comunicação — aplica presets */}
+        <div>
+          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+            Tipo de comunicação
+          </label>
+          <select
+            value={conn.communicationType ?? ""}
+            onChange={(e) => {
+              const v = e.target.value as Connection["communicationType"] | "";
+              if (!v) {
+                applyPatch({ communicationType: undefined });
+                return;
+              }
+              const defaults = COMMUNICATION_DEFAULTS[v];
+              applyPatch({ communicationType: v, ...defaults });
+            }}
+            className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          >
+            <option value="">Personalizado</option>
+            <option value="sync">Síncrono</option>
+            <option value="async">Assíncrono</option>
+            <option value="event">Evento</option>
+            <option value="tcp">TCP</option>
+            <option value="udp">UDP</option>
+          </select>
+        </div>
+
+        {/* Estilo da aresta — toolbar compacto */}
+        <div className="space-y-2">
+          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold block">
+            Estilo da aresta
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <select
+              value={conn.edgeStyle ?? "straight"}
+              onChange={(e) =>
+                applyPatch({ edgeStyle: e.target.value as EdgeStyle })
+              }
+              className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0"
+              title="Tipo de linha"
+            >
+              {EDGE_STYLE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            <select
+              value={conn.strokeStyle ?? "solid"}
+              onChange={(e) =>
+                applyPatch({ strokeStyle: e.target.value as StrokeStyle })
+              }
+              className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0"
+              title="Traço"
+            >
+              {STROKE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            <select
+              value={conn.strokeWidth ?? 1}
+              onChange={(e) =>
+                applyPatch({ strokeWidth: Number(e.target.value) as 1 | 2 | 3 })
+              }
+              className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0"
+              title="Espessura"
+            >
+              {WIDTH_OPTIONS.map((w) => (
+                <option key={w} value={w}>
+                  {w}pt
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <select
+              value={conn.markerStart ?? "none"}
+              onChange={(e) =>
+                applyPatch({
+                  markerStart: (e.target.value === "none" ? undefined : e.target.value) as EdgeMarker | undefined,
+                })
+              }
+              className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0"
+              title="Marcador início"
+            >
+              {MARKER_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.value === "none" ? "Início: Nenhum" : `Início: ${o.label}`}
+                </option>
+              ))}
+            </select>
+            <select
+              value={conn.markerEnd ?? "arrowclosed"}
+              onChange={(e) =>
+                applyPatch({
+                  markerEnd: e.target.value as EdgeMarker,
+                })
+              }
+              className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0"
+              title="Marcador fim"
+            >
+              {MARKER_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.value === "none" ? "Fim: Nenhum" : `Fim: ${o.label}`}
+                </option>
+              ))}
+            </select>
+          </div>
+          <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
+            <input
+              type="checkbox"
+              checked={conn.animated ?? false}
+              onChange={(e) => applyPatch({ animated: e.target.checked })}
+              className="rounded border-border accent-primary"
+            />
+            Animado
+          </label>
+        </div>
+
         <Field
           label="Tecnologia"
           value={tech}

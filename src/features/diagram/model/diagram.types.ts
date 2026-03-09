@@ -29,6 +29,10 @@ export interface Component {
   panelOpacity?: number;
 }
 
+export type EdgeStyle = "straight" | "bezier" | "step" | "smoothstep";
+export type StrokeStyle = "solid" | "dashed" | "dotted";
+export type EdgeMarker = "arrow" | "arrowclosed" | "none";
+
 export interface Connection {
   id: string;
   sourceId: string;
@@ -36,6 +40,13 @@ export interface Connection {
   label: string;
   technology?: string;
   description?: string;
+  edgeStyle?: EdgeStyle;
+  strokeStyle?: StrokeStyle;
+  strokeWidth?: number;
+  markerEnd?: EdgeMarker;
+  markerStart?: EdgeMarker;
+  animated?: boolean;
+  communicationType?: "sync" | "async" | "event" | "tcp" | "udp";
 }
 
 export interface ViewNodeLayout {

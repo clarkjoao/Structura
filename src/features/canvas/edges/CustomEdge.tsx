@@ -3,8 +3,11 @@ import {
   BaseEdge,
   EdgeLabelRenderer,
   getStraightPath,
+  getBezierPath,
+  getSmoothStepPath,
   type EdgeProps,
 } from "@xyflow/react";
+import type { EdgeStyle, StrokeStyle } from "@/features/diagram";
 
 export interface EdgeData {
   label: string;
@@ -14,7 +17,16 @@ export interface EdgeData {
   isLastRecorded?: boolean;
   coverageFlowNames?: string[];
   playbackDuration?: string;
+  edgeStyle?: EdgeStyle;
+  strokeStyle?: StrokeStyle;
+  strokeWidth?: number;
 }
+
+const strokeDasharrayByStyle: Record<StrokeStyle | "solid", string | undefined> = {
+  solid: undefined,
+  dashed: "8 4",
+  dotted: "2 4",
+};
 
 const Edge = memo(
   ({
@@ -27,24 +39,47 @@ const Edge = memo(
     selected,
     sourcePosition,
     targetPosition,
+    markerEnd,
+    markerStart,
   }: EdgeProps) => {
     const d = data as unknown as EdgeData;
-    const [edgePath, labelX, labelY] = getStraightPath({
+    const pathParams = {
       sourceX,
       sourceY,
       targetX,
       targetY,
-    });
+      sourcePosition,
+      targetPosition,
+    };
+    const styleKey = d?.edgeStyle ?? "straight";
+    let edgePath: string;
+    let labelX: number;
+    let labelY: number;
+    if (styleKey === "step") {
+      [edgePath, labelX, labelY] = getSmoothStepPath({ ...pathParams, borderRadius: 0 });
+    } else if (styleKey === "smoothstep") {
+      [edgePath, labelX, labelY] = getSmoothStepPath(pathParams);
+    } else if (styleKey === "bezier") {
+      [edgePath, labelX, labelY] = getBezierPath(pathParams);
+    } else {
+      [edgePath, labelX, labelY] = getStraightPath(pathParams);
+    }
+
+    const strokeStyle = d?.strokeStyle ?? "solid";
+    const dashArray = strokeDasharrayByStyle[strokeStyle];
+    const strokeWidth = d?.strokeWidth ?? 1;
 
     return (
       <>
         <BaseEdge
           id={id}
           path={edgePath}
+          markerEnd={markerEnd}
+          markerStart={markerStart}
           style={{
             stroke: selected ? "hsl(187 72% 51%)" : (d?.coverageFlowNames?.length ? "hsl(160 40% 38%)" : "hsl(220 20% 30%)"),
-            strokeWidth: selected ? 2 : 1.5,
-            strokeDasharray: selected ? undefined : "6 4",
+            strokeWidth: selected ? Math.max(2, strokeWidth) : strokeWidth,
+            strokeDasharray: dashArray,
           }}
         />
         {d?.label && (

@@ -5,6 +5,7 @@ import {
   BackgroundVariant,
   Controls,
   useReactFlow,
+  MarkerType,
   type Node,
   type Edge,
   type OnNodesChange,
@@ -216,6 +217,38 @@ const Canvas = ({
     };
   }, [isRecording, recordingSteps]);
 
+  const connectionCountPerNode = useMemo(() => {
+    const counts: Record<string, { incoming: number; outgoing: number }> = {};
+    visibleConnections.forEach((conn) => {
+      if (!counts[conn.sourceId]) counts[conn.sourceId] = { incoming: 0, outgoing: 0 };
+      if (!counts[conn.targetId]) counts[conn.targetId] = { incoming: 0, outgoing: 0 };
+      counts[conn.sourceId].outgoing += 1;
+      counts[conn.targetId].incoming += 1;
+    });
+    return counts;
+  }, [visibleConnections]);
+
+  const edgeHandleAssignments = useMemo(() => {
+    const sourceUsage: Record<string, number> = {};
+    const targetUsage: Record<string, number> = {};
+    const maxHandles = 4;
+    return visibleConnections.map((conn) => {
+      const sKey = conn.sourceId;
+      const tKey = conn.targetId;
+      const outCount = Math.min(maxHandles, Math.max(1, connectionCountPerNode[sKey]?.outgoing ?? 1));
+      const inCount = Math.min(maxHandles, Math.max(1, connectionCountPerNode[tKey]?.incoming ?? 1));
+      const sIdx = (sourceUsage[sKey] ?? 0) % outCount;
+      const tIdx = (targetUsage[tKey] ?? 0) % inCount;
+      sourceUsage[sKey] = (sourceUsage[sKey] ?? 0) + 1;
+      targetUsage[tKey] = (targetUsage[tKey] ?? 0) + 1;
+      return {
+        connId: conn.id,
+        sourceHandle: `source-${sIdx}`,
+        targetHandle: `target-${tIdx}`,
+      };
+    });
+  }, [visibleConnections, connectionCountPerNode]);
+
   const nodes = useMemo(() => {
     if (!diagram) return [];
 
@@ -294,6 +327,10 @@ const Canvas = ({
             ? { opacity: recordingInfo?.recordedNodeIds.has(comp.id) ? 1 : 0.35 }
             : undefined;
 
+        const counts = connectionCountPerNode[comp.id] ?? { incoming: 0, outgoing: 0 };
+        const incomingCount = Math.min(4, Math.max(1, counts.incoming));
+        const outgoingCount = Math.min(4, Math.max(1, counts.outgoing));
+
         nodeList.push({
           id: comp.id,
           type: "c4",
@@ -333,6 +370,8 @@ const Canvas = ({
             activeHandleId: isPlaying && flowHighlight.activeNodeId === comp.id
               ? activeStep?.handleId ?? undefined
               : undefined,
+            incomingCount,
+            outgoingCount,
           } as Record<string, unknown>,
         });
       }
@@ -355,18 +394,37 @@ const Canvas = ({
     onRecordHandleClick,
     activeStep,
     coverage,
+    connectionCountPerNode,
   ]);
 
   const edges: Edge[] = useMemo(() => {
     if (!diagram) return [];
+    const assignmentMap = new Map(
+      edgeHandleAssignments.map((a) => [a.connId, a]),
+    );
     const edgeList: Edge[] = visibleConnections.map((conn) => {
+      const assignment = assignmentMap.get(conn.id);
       const isActiveConn = isPlaying && flowHighlight.activeConnId === conn.id;
       const isParticipantConn =
         isPlaying && flowHighlight.participantConnIds.has(conn.id);
+      const markerEndType =
+        conn.markerEnd === "none"
+          ? undefined
+          : conn.markerEnd === "arrow"
+            ? MarkerType.Arrow
+            : MarkerType.ArrowClosed;
+      const markerStartType =
+        conn.markerStart && conn.markerStart !== "none"
+          ? conn.markerStart === "arrowclosed"
+            ? MarkerType.ArrowClosed
+            : MarkerType.Arrow
+          : undefined;
       return {
         id: conn.id,
         source: conn.sourceId,
         target: conn.targetId,
+        sourceHandle: assignment?.sourceHandle,
+        targetHandle: assignment?.targetHandle,
         type: "c4",
         data: {
           label: conn.label,
@@ -376,9 +434,14 @@ const Canvas = ({
           isLastRecorded: recordingInfo?.lastEdgeId === conn.id,
           coverageFlowNames: coverage?.edgeFlows.get(conn.id),
           playbackDuration: isPlaying && flowHighlight.activeConnId === conn.id ? activeStep?.duration : undefined,
+          edgeStyle: conn.edgeStyle,
+          strokeStyle: conn.strokeStyle,
+          strokeWidth: conn.strokeWidth,
         },
         selected: selectedEdgeId === conn.id,
-        animated: isActiveConn,
+        animated: isActiveConn || (!!conn.animated && !isPlaying),
+        markerEnd: markerEndType !== undefined ? { type: markerEndType } : undefined,
+        markerStart: markerStartType !== undefined ? { type: markerStartType } : undefined,
         style: isPlaying
           ? { opacity: isActiveConn ? 1 : isParticipantConn ? 0.5 : 0.2 }
           : isRecording
@@ -388,7 +451,7 @@ const Canvas = ({
     });
 
     return edgeList;
-  }, [diagram, visibleConnections, selectedEdgeId, isPlaying, flowHighlight, isRecording, recordingInfo, coverage, activeStep]);
+  }, [diagram, visibleConnections, edgeHandleAssignments, selectedEdgeId, isPlaying, flowHighlight, isRecording, recordingInfo, coverage, activeStep]);
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
