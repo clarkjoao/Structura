@@ -12,30 +12,51 @@ export type ComponentType =
 
 export type Level = "context" | "container" | "component";
 
-export interface Component {
+// ── Component discriminated union ─────────────────────────────────────────
+
+interface BaseComponent {
   id: string;
   name: string;
-  type: ComponentType;
   description: string;
-  technology?: string;
   parentId: string | null;
   tags?: string[];
-  awsService?: string;
   serviceId?: string;
   linkedDiagramId?: string;
-  width?: number;
-  height?: number;
+  /** When true, node is hidden on canvas (e.g. child of collapsed panel). Never clear parentId. */
+  hidden?: boolean;
+}
+
+export interface C4Component extends BaseComponent {
+  type: "person" | "system" | "container" | "component";
+  technology?: string;
+}
+
+export interface PanelComponent extends BaseComponent {
+  type: "panel";
   panelColor?: string;
   panelOpacity?: number;
-  /** Only for type === "panel": when true, panel renders minimized (compact). */
+  /** When true, panel renders minimized (compact). */
   collapsed?: boolean;
   /** Internal: saved panel width before collapse; restored on expand. */
   collapsedWidth?: number;
   /** Internal: saved panel height before collapse; restored on expand. */
   collapsedHeight?: number;
-  /** When true, node is hidden on canvas (e.g. child of collapsed panel). Never clear parentId. */
-  hidden?: boolean;
 }
+
+export interface NoteComponent extends BaseComponent {
+  type: "note";
+  panelColor?: string;
+}
+
+export interface AwsComponent extends BaseComponent {
+  type: AwsCategoryId;
+  awsService?: string;
+  technology?: string;
+}
+
+export type Component = C4Component | PanelComponent | NoteComponent | AwsComponent;
+
+// ── Edge / Connection types ───────────────────────────────────────────────
 
 export type EdgeStyle = "straight" | "bezier" | "step" | "smoothstep";
 export type StrokeStyle = "solid" | "dashed" | "dotted";
@@ -53,6 +74,15 @@ export type ConnectionDirection =
   | "bidirectional"
   | "reverse";
 
+export interface ConnectionStyle {
+  edgeStyle?: EdgeStyle;
+  strokeStyle?: StrokeStyle;
+  strokeWidth?: number;
+  markerEnd?: EdgeMarker;
+  markerStart?: EdgeMarker;
+  animated?: boolean;
+}
+
 export interface Connection {
   id: string;
   sourceId: string;
@@ -62,24 +92,29 @@ export interface Connection {
   description?: string;
   intent?: ConnectionIntent;
   direction?: ConnectionDirection;
-  edgeStyle?: EdgeStyle;
-  strokeStyle?: StrokeStyle;
-  strokeWidth?: number;
-  markerEnd?: EdgeMarker;
-  markerStart?: EdgeMarker;
-  animated?: boolean;
-  /** When "custom", Estilo da Aresta is shown; when "standard" or unset, intent drives style. Default "standard". */
+  /** When "custom", Estilo da Aresta is shown; when "standard" or unset, intent drives style. */
   communicationType?: "standard" | "custom";
   /** Preset for sync/async/event/tcp/udp (Tipo de comunicação dropdown). */
   transportPreset?: "sync" | "async" | "event" | "tcp" | "udp";
+  /** Explicit visual style overrides. When absent, style is derived from intent + direction. */
+  style?: ConnectionStyle;
 }
 
-export interface ViewNodeLayout {
+// ── Layout ────────────────────────────────────────────────────────────────
+
+export interface NodeLayout {
   elementId: string;
   x: number;
   y: number;
   zIndex?: number;
+  width?: number;
+  height?: number;
 }
+
+/** @deprecated Use NodeLayout */
+export type ViewNodeLayout = NodeLayout;
+
+// ── Flow ──────────────────────────────────────────────────────────────────
 
 export interface FlowStep {
   order: number;
@@ -122,7 +157,7 @@ export interface Diagram {
   domain?: string;
   updatedAt: string;
   snapshot: ModelDraft;
-  nodeLayouts: ViewNodeLayout[];
+  nodeLayouts: NodeLayout[];
   viewport: { x: number; y: number; zoom: number };
   folderId?: string | null;
 }

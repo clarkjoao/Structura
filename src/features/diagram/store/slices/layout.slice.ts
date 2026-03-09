@@ -4,13 +4,17 @@ import { pushHistory } from "./history.slice";
 
 export function layoutSlice(set: (fn: (state: AppState) => void) => void) {
   return {
-    updateNodeLayout: (elementId: string, position: { x: number; y: number }) => {
+    updateNodeLayout: (elementId: string, position: { x: number; y: number }, dimensions?: { width: number; height: number }) => {
       set((state) => {
         const d = activeDiagram(state);
         const layout = d.nodeLayouts.find((nl) => nl.elementId === elementId);
         if (layout) {
           layout.x = position.x;
           layout.y = position.y;
+          if (dimensions) {
+            layout.width = dimensions.width;
+            layout.height = dimensions.height;
+          }
         }
       });
     },

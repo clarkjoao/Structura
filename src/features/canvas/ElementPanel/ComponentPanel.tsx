@@ -3,6 +3,7 @@ import debounce from "lodash.debounce";
 import { X, Trash2, Link2, LayoutDashboard } from "lucide-react";
 import { useAllServices, useAllDiagrams, useActiveDiagram, useDiagramActions } from "@/features/diagram";
 import type { Component, ComponentType } from "@/features/diagram";
+import { isPanelComponent, isNoteComponent } from "@/features/diagram";
 import { isAwsType, AWS_CATEGORIES, AWS_CATEGORY_MAP, AWS_SERVICE_MAP } from "@/lib/aws-catalog";
 import AwsIcon from "../nodes/AwsIcon";
 import Field from "./components/Field";
@@ -31,13 +32,13 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
   const [tab, setTab] = useState<Tab>("details");
   const [name, setName] = useState(component.name);
   const [desc, setDesc] = useState(component.description);
-  const [tech, setTech] = useState(component.technology ?? "");
+  const [tech, setTech] = useState((component as { technology?: string }).technology ?? "");
   const [type, setType] = useState<ComponentType>(component.type);
-  const [awsService, setAwsService] = useState(component.awsService ?? "");
+  const [awsService, setAwsService] = useState((component as { awsService?: string }).awsService ?? "");
   const [createdDiagramName, setCreatedDiagramName] = useState<string | null>(null);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isPanel = component.type === "panel";
-  const isNote = component.type === "note";
+  const isPanel = isPanelComponent(component);
+  const isNote = isNoteComponent(component);
   const isSimple = isPanel || isNote;
   const isAws = isAwsType(type);
   const svcInfo = awsService ? AWS_SERVICE_MAP.get(awsService) : null;
@@ -86,7 +87,7 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
           {!isSimple && (
             <div>
               <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">Tipo</label>
-              <select value={type} onChange={(e) => { const t = e.target.value as ComponentType; setType(t); if (!t.startsWith("aws-")) setAwsService(""); updateComponent(component.id, { type: t, awsService: t.startsWith("aws-") && awsService ? awsService : undefined }); }}
+              <select value={type} onChange={(e) => { const t = e.target.value as ComponentType; setType(t); if (!t.startsWith("aws-")) setAwsService(""); updateComponent(component.id, { type: t, awsService: t.startsWith("aws-") && awsService ? awsService : undefined } as Partial<Omit<Component, "id">>); }}
                 className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring">
                 <optgroup label="C4 Model"><option value="person">Person</option><option value="system">System</option><option value="container">Container</option><option value="component">Component</option></optgroup>
                 {AWS_CATEGORIES.map((cat) => (<optgroup key={cat.id} label={`AWS: ${cat.name}`}><option value={cat.id}>{cat.name}</option></optgroup>))}
@@ -96,7 +97,7 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
           {!isSimple && isAws && (
             <div>
               <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">Serviço AWS</label>
-              <select value={awsService} onChange={(e) => { const s = e.target.value; setAwsService(s); const svc = AWS_SERVICE_MAP.get(s); updateComponent(component.id, { awsService: s || undefined, ...(svc && (name.startsWith("Novo") || name === component.name) ? { name: svc.name } : {}) }); if (svc && (name.startsWith("Novo") || name === component.name)) setName(svc.name); }}
+              <select value={awsService} onChange={(e) => { const s = e.target.value; setAwsService(s); const svc = AWS_SERVICE_MAP.get(s); updateComponent(component.id, { awsService: s || undefined, ...(svc && (name.startsWith("Novo") || name === component.name) ? { name: svc.name } : {}) } as Partial<Omit<Component, "id">>); if (svc && (name.startsWith("Novo") || name === component.name)) setName(svc.name); }}
                 className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring">
                 <option value="">Selecionar serviço...</option>
                 {AWS_CATEGORY_MAP.get(type)?.services.map((svc) => (<option key={svc.id} value={svc.id}>{svc.name}</option>))}
@@ -104,9 +105,9 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
             </div>
           )}
           <Field label="Descrição" value={desc} onChange={(v) => { setDesc(v); debouncedUpdate({ description: v }); }} multiline />
-          {isPanel && <PanelColorPicker componentId={component.id} currentColor={component.panelColor ?? DEFAULT_PANEL_COLOR} currentOpacity={component.panelOpacity ?? DEFAULT_PANEL_OPACITY} updateComponent={updateComponent} />}
-          {isNote && <ColorSwatches componentId={component.id} currentColor={component.panelColor ?? DEFAULT_NOTE_COLOR} label="Cor da Nota" updateComponent={updateComponent} />}
-          {!isSimple && <Field label="Tecnologia" value={tech} onChange={(v) => { setTech(v); debouncedUpdate({ technology: v || undefined }); }} />}
+          {isPanelComponent(component) && <PanelColorPicker componentId={component.id} currentColor={component.panelColor ?? DEFAULT_PANEL_COLOR} currentOpacity={component.panelOpacity ?? DEFAULT_PANEL_OPACITY} updateComponent={updateComponent} />}
+          {isNoteComponent(component) && <ColorSwatches componentId={component.id} currentColor={component.panelColor ?? DEFAULT_NOTE_COLOR} label="Cor da Nota" updateComponent={updateComponent} />}
+          {!isSimple && <Field label="Tecnologia" value={tech} onChange={(v) => { setTech(v); debouncedUpdate({ technology: v || undefined } as Partial<Omit<Component, "id">>); }} />}
           {!isSimple && (
             <div>
               <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block"><Link2 className="h-3 w-3 inline mr-1" />Vincular ao Serviço</label>

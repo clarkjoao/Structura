@@ -1,10 +1,7 @@
-import type { Connection, ConnectionIntent, ConnectionDirection } from "./diagram.types";
+import type { Connection, ConnectionIntent, ConnectionDirection, ConnectionStyle } from "./diagram.types";
 
 /** Default visual style per intent. User-overridden style fields take precedence when rendering. */
-export const INTENT_DEFAULTS: Record<
-  ConnectionIntent,
-  Partial<Pick<Connection, "strokeStyle" | "strokeWidth" | "markerEnd" | "markerStart" | "animated">>
-> = {
+export const INTENT_DEFAULTS: Record<ConnectionIntent, Partial<ConnectionStyle>> = {
   dependency: {
     strokeStyle: "dashed",
     strokeWidth: 1,
@@ -54,7 +51,7 @@ export const DIRECTION_MARKERS: Record<
 
 /** Resolve effective style for a connection: intent defaults + direction markers + explicit overrides. */
 export function getEffectiveConnectionStyle(conn: Connection): {
-  strokeStyle: Connection["strokeStyle"];
+  strokeStyle: ConnectionStyle["strokeStyle"];
   strokeWidth: number;
   markerStart: "arrow" | "arrowclosed" | "none";
   markerEnd: "arrow" | "arrowclosed" | "none";
@@ -64,12 +61,13 @@ export function getEffectiveConnectionStyle(conn: Connection): {
   const direction = conn.direction ?? "unidirectional";
   const fromIntent = INTENT_DEFAULTS[intent];
   const fromDirection = DIRECTION_MARKERS[direction];
+  const s = conn.style;
 
   return {
-    strokeStyle: conn.strokeStyle ?? fromIntent.strokeStyle ?? "solid",
-    strokeWidth: conn.strokeWidth ?? fromIntent.strokeWidth ?? 1,
-    markerStart: conn.markerStart !== undefined ? conn.markerStart : fromDirection.markerStart,
-    markerEnd: conn.markerEnd !== undefined ? conn.markerEnd : fromDirection.markerEnd,
-    animated: conn.animated ?? fromIntent.animated ?? false,
+    strokeStyle: s?.strokeStyle ?? fromIntent.strokeStyle ?? "solid",
+    strokeWidth: s?.strokeWidth ?? fromIntent.strokeWidth ?? 1,
+    markerStart: s?.markerStart !== undefined ? s.markerStart : fromDirection.markerStart,
+    markerEnd: s?.markerEnd !== undefined ? s.markerEnd : fromDirection.markerEnd,
+    animated: s?.animated ?? fromIntent.animated ?? false,
   };
 }

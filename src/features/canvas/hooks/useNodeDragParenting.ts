@@ -1,13 +1,13 @@
 import { useCallback, useRef, useState } from "react";
 import type { Node, OnNodesChange } from "@xyflow/react";
 import type { Diagram } from "@/features/diagram";
+import { isPanelComponent, isNoteComponent } from "@/features/diagram";
 import { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../node-types";
 
 interface UseNodeDragParentingParams {
   diagram: Diagram | null | undefined;
   nodes: Node[];
-  updateNodeLayout: (elementId: string, position: { x: number; y: number }) => void;
-  updateComponent: (id: string, patch: Record<string, unknown>) => void;
+  updateNodeLayout: (elementId: string, position: { x: number; y: number }, dimensions?: { width: number; height: number }) => void;
   setParent: (childId: string, parentId: string | null) => void;
 }
 
@@ -22,7 +22,6 @@ export function useNodeDragParenting({
   diagram,
   nodes,
   updateNodeLayout,
-  updateComponent,
   setParent,
 }: UseNodeDragParentingParams): UseNodeDragParentingResult {
   const [dragTargetPanelId, setDragTargetPanelId] = useState<string | null>(null);
@@ -34,11 +33,12 @@ export function useNodeDragParenting({
       changes.forEach((change) => {
         if (change.type === "position" && change.position)
           updateNodeLayout(change.id, change.position);
-        if (change.type === "dimensions" && change.dimensions)
-          updateComponent(change.id, {
-            width: change.dimensions.width,
-            height: change.dimensions.height,
-          });
+        if (change.type === "dimensions" && change.dimensions) {
+          const layout = diagram?.nodeLayouts.find((nl) => nl.elementId === change.id);
+          if (layout) {
+            updateNodeLayout(change.id, { x: layout.x, y: layout.y }, change.dimensions);
+          }
+        }
 
         if (
           change.type === "position" &&
@@ -48,7 +48,7 @@ export function useNodeDragParenting({
         ) {
           const dragId = change.id;
           const comp = diagram?.snapshot.components[dragId];
-          if (!comp || comp.type === "panel" || comp.type === "note") return;
+          if (!comp || isPanelComponent(comp) || isNoteComponent(comp)) return;
 
           let absX = change.position.x;
           let absY = change.position.y;
@@ -94,7 +94,7 @@ export function useNodeDragParenting({
         }
       });
     },
-    [updateNodeLayout, updateComponent, diagram, nodes],
+    [updateNodeLayout, diagram, nodes],
   );
 
   const onNodeDragStop = useCallback(

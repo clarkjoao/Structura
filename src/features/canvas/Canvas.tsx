@@ -23,6 +23,7 @@ import {
   useServiceRegistry,
   useDiagramActions,
   useFlows,
+  isPanelComponent,
   type FlowStep,
 } from "@/features/diagram";
 import CustomEdge from "./edges/CustomEdge";
@@ -89,20 +90,21 @@ const Canvas = ({
   const handlePanelCollapseToggle = useCallback((panelId: string) => {
     if (!diagram) return;
     const comp = diagram.snapshot.components[panelId];
-    if (comp?.type !== "panel") return;
+    if (!isPanelComponent(comp)) return;
+    const layout = diagram.nodeLayouts.find((nl) => nl.elementId === panelId);
     const children = Object.values(diagram.snapshot.components).filter((c) => c.parentId === panelId);
     if (comp.collapsed) {
       updateComponent(panelId, { collapsed: false, width: comp.collapsedWidth ?? 600, height: comp.collapsedHeight ?? 400 });
       children.forEach((c) => updateComponent(c.id, { hidden: false }));
     } else {
-      updateComponent(panelId, { collapsed: true, collapsedWidth: comp.width, collapsedHeight: comp.height, width: 200, height: 60 });
+      updateComponent(panelId, { collapsed: true, collapsedWidth: layout?.width, collapsedHeight: layout?.height, width: 200, height: 60 });
       children.forEach((c) => updateComponent(c.id, { hidden: true }));
     }
   }, [diagram, updateComponent]);
 
   const panelIds = useMemo(() => {
     const ids = new Set<string>();
-    for (const c of visibleComponents) if (c.type === "panel") ids.add(c.id);
+    for (const c of visibleComponents) if (isPanelComponent(c)) ids.add(c.id);
     return ids;
   }, [visibleComponents]);
 
@@ -136,7 +138,7 @@ const Canvas = ({
     useFlowState({ activeFlow, currentStep, flows, isRecording, recordingSteps });
 
   const { dragTargetPanelId, unparentCandidatePanelId, onNodesChange, onNodeDragStop } =
-    useNodeDragParenting({ diagram, nodes: [], updateNodeLayout, updateComponent: updateComponent as (id: string, patch: Record<string, unknown>) => void, setParent });
+    useNodeDragParenting({ diagram, nodes: [], updateNodeLayout, setParent });
 
   const nodes = useCanvasNodes({
     diagram, visibleComponents, panelIds, selectedNodeId, selectedNodeIds,

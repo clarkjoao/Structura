@@ -2,12 +2,18 @@ export type {
   ComponentType,
   Level,
   Component,
+  C4Component,
+  PanelComponent,
+  NoteComponent,
+  AwsComponent,
   Connection,
+  ConnectionStyle,
   ConnectionIntent,
   ConnectionDirection,
   EdgeStyle,
   StrokeStyle,
   EdgeMarker,
+  NodeLayout,
   ViewNodeLayout,
   FlowStep,
   Flow,
@@ -24,6 +30,12 @@ export { generateId } from "./model/diagram.utils";
 export { computeServiceImpact } from "./model/diagram.service";
 export type { ServiceImpact } from "./model/diagram.service";
 export { stepsToMermaid, parseMermaidToSteps } from "./model/flow.service";
+export {
+  isPanelComponent,
+  isNoteComponent,
+  isC4Component,
+  isAwsComponent,
+} from "./model/component.guards";
 export {
   useDiagramStore,
   useDiagrams,

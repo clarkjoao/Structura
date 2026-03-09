@@ -65,7 +65,7 @@ export function useCanvasEdges({
           isLastRecorded: recordingInfo?.lastEdgeId === conn.id,
           coverageFlowNames: coverage?.edgeFlows.get(conn.id),
           playbackDuration: isPlaying && flowHighlight.activeConnId === conn.id ? activeStep?.duration : undefined,
-          edgeStyle: conn.edgeStyle,
+          edgeStyle: conn.style?.edgeStyle,
           strokeStyle: effective.strokeStyle,
           strokeWidth: effective.strokeWidth,
         },

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { Node } from "@xyflow/react";
 import type { Component, Diagram } from "@/features/diagram";
+import { isPanelComponent } from "@/features/diagram";
 import type { ServiceDefinition } from "@/features/registry";
 import { nodeTypes as _nodeTypes, getDescriptor, type NodeBuildContext } from "../node-types";
 
@@ -65,7 +66,7 @@ export function useCanvasNodes({
     if (!diagram) return [];
     const collapsedPanelIds = new Set(
       Object.values(diagram.snapshot.components)
-        .filter((c) => c.type === "panel" && c.collapsed)
+        .filter((c) => isPanelComponent(c) && c.collapsed)
         .map((c) => c.id),
     );
     const ctx: NodeBuildContext = {
@@ -88,7 +89,7 @@ export function useCanvasNodes({
       onPanelCollapseToggle: handlePanelCollapseToggle,
     };
     return [...visibleComponents]
-      .sort((a, b) => (a.type === "panel" ? -1 : b.type === "panel" ? 1 : 0))
+      .sort((a, b) => (isPanelComponent(a) ? -1 : isPanelComponent(b) ? 1 : 0))
       .map((comp): Node => {
         const d = getDescriptor(comp.type);
         const layout = diagram.nodeLayouts.find((nl) => nl.elementId === comp.id);

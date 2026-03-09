@@ -1,8 +1,12 @@
-import type { Component, ComponentType } from "../../model/diagram.types";
+import type { Component, ComponentType, PanelComponent } from "../../model/diagram.types";
 import { generateId } from "../../model/diagram.utils";
+import { isPanelComponent } from "../../model/component.guards";
 import type { AppState } from "../store.types";
-import { activeDiagram, } from "../store.types";
-import { deepClone, pushHistory } from "./history.slice";
+import { activeDiagram } from "../store.types";
+import { pushHistory } from "./history.slice";
+
+const PANEL_DEFAULT_W = 600;
+const PANEL_DEFAULT_H = 400;
 
 export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
   return {
@@ -13,16 +17,18 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
       position?: { x: number; y: number },
       awsService?: string,
     ): Component => {
-      const component: Component = {
-        id: generateId("el"),
-        name,
-        type,
-        description: "",
-        parentId,
-        awsService: awsService ?? undefined,
-        ...(type === "panel" ? { width: 600, height: 400 } : {}),
-        ...(type === "note" ? { panelColor: "hsl(48 96% 53%)" } : {}),
-      };
+      const base = { id: generateId("el"), name, description: "", parentId };
+      let component: Component;
+      if (type === "panel") {
+        component = { ...base, type: "panel" };
+      } else if (type === "note") {
+        component = { ...base, type: "note", panelColor: "hsl(48 96% 53%)" };
+      } else if (type === "person" || type === "system" || type === "container" || type === "component") {
+        component = { ...base, type };
+      } else {
+        // AWS type
+        component = { ...base, type, awsService: awsService ?? undefined };
+      }
       set((state) => {
         pushHistory(state);
         const d = activeDiagram(state);
@@ -31,7 +37,7 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
           elementId: component.id,
           x: position?.x ?? 300,
           y: position?.y ?? 300,
-          ...(type === "panel" ? { zIndex: -1 } : {}),
+          ...(type === "panel" ? { zIndex: -1, width: PANEL_DEFAULT_W, height: PANEL_DEFAULT_H } : {}),
         });
         d.updatedAt = "agora";
       });
@@ -39,13 +45,29 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
     },
 
     updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => {
-      const isDimensionOnly = Object.keys(patch).every(
-        (k) => k === "width" || k === "height",
-      );
+      const patchAny = patch as Record<string, unknown>;
+      const width = patchAny.width as number | undefined;
+      const height = patchAny.height as number | undefined;
+      const hasDimensions = width !== undefined || height !== undefined;
+      const isDimensionOnly = hasDimensions && Object.keys(patch).every((k) => k === "width" || k === "height");
+      // Build component patch without width/height
+      const compPatch: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(patchAny)) {
+        if (k !== "width" && k !== "height") compPatch[k] = v;
+      }
       set((state) => {
         if (!isDimensionOnly) pushHistory(state);
         const d = activeDiagram(state);
-        Object.assign(d.snapshot.components[id], patch);
+        if (Object.keys(compPatch).length > 0) {
+          Object.assign(d.snapshot.components[id], compPatch);
+        }
+        if (hasDimensions) {
+          const layout = d.nodeLayouts.find((nl) => nl.elementId === id);
+          if (layout) {
+            if (width !== undefined) layout.width = width;
+            if (height !== undefined) layout.height = height;
+          }
+        }
         d.updatedAt = "agora";
       });
     },
@@ -89,7 +111,7 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
         const d = activeDiagram(state);
         const comps = d.snapshot.components;
         const ids = componentIds.filter(
-          (id) => comps[id] && comps[id].type !== "panel",
+          (id) => comps[id] && !isPanelComponent(comps[id]),
         );
         if (ids.length < 2) return;
 
@@ -105,11 +127,11 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
         function getSize(eid: string): { w: number; h: number } {
           const c = comps[eid];
           if (!c) return { w: DEFAULT_NODE_W, h: DEFAULT_NODE_H };
-          if (c.type === "panel") return { w: c.width ?? 600, h: c.height ?? 400 };
-          return {
-            w: (c as { width?: number }).width ?? DEFAULT_NODE_W,
-            h: (c as { height?: number }).height ?? DEFAULT_NODE_H,
-          };
+          if (isPanelComponent(c)) {
+            const layout = d.nodeLayouts.find((nl) => nl.elementId === eid);
+            return { w: layout?.width ?? PANEL_DEFAULT_W, h: layout?.height ?? PANEL_DEFAULT_H };
+          }
+          return { w: DEFAULT_NODE_W, h: DEFAULT_NODE_H };
         }
 
         const positions = ids.map((id) => getAbsPos(id));
@@ -120,17 +142,15 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
         const maxY = Math.max(...positions.map((p, i) => p.y + sizes[i].h)) + PADDING;
 
         pushHistory(state);
-        const panel: Component = {
+        const panel: PanelComponent = {
           id: generateId("el"),
           name: "Grupo",
           type: "panel",
           description: "",
           parentId: null,
-          width: maxX - minX,
-          height: maxY - minY,
         };
         d.snapshot.components[panel.id] = panel;
-        d.nodeLayouts.push({ elementId: panel.id, x: minX, y: minY, zIndex: -1 });
+        d.nodeLayouts.push({ elementId: panel.id, x: minX, y: minY, zIndex: -1, width: maxX - minX, height: maxY - minY });
         panelId = panel.id;
 
         ids.forEach((eid, i) => {
@@ -152,7 +172,7 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
         const d = activeDiagram(state);
         const comps = d.snapshot.components;
         const panel = comps[panelId];
-        if (!panel || panel.type !== "panel") return;
+        if (!panel || !isPanelComponent(panel)) return;
         const children = Object.values(comps).filter((c) => c.parentId === panelId);
         const panelLayout = d.nodeLayouts.find((nl) => nl.elementId === panelId);
         if (!panelLayout) return;
@@ -172,3 +192,4 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
     },
   };
 }
+
