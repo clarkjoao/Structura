@@ -3,13 +3,10 @@ import { ReactFlowProvider } from "@xyflow/react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Download, GitBranch } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import Canvas from "@/components/canvas/Canvas";
-import FlowPanel from "@/components/canvas/FlowPanel";
-import FlowStepNavigator from "@/components/canvas/FlowStepNavigator";
-import FlowRecorderPanel, { stepsToMermaid } from "@/components/canvas/FlowRecorderPanel";
-import { useActiveDiagram, useActiveDiagramId, useDiagramActions, useFlows } from "@/lib/model-store";
+import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel, stepsToMermaid } from "@/features/canvas";
+import { useActiveDiagram, useActiveDiagramId, useDiagramActions, useFlows } from "@/features/diagram";
 import { exportJSON, exportDrawio, exportMermaid, downloadFile } from "@/lib/export-service";
-import type { Flow, FlowStep } from "@/lib/model-types";
+import type { Flow, FlowStep } from "@/features/diagram";
 
 const ModelExplorer = () => {
   const diagram = useActiveDiagram();

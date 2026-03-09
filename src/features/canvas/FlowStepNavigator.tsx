@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, X, MessageSquare, Clock } from "lucide-react";
-import type { Flow } from "@/lib/model-types";
+import type { Flow } from "@/features/diagram";
 
 interface Props {
   flow: Flow;

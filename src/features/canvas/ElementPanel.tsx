@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import debounce from "lodash.debounce";
 import {
   X,
@@ -12,6 +12,7 @@ import {
   Database,
   User,
   Palette,
+  ChevronsUpDown,
 } from "lucide-react";
 import {
   useComponent,
@@ -19,16 +20,41 @@ import {
   useComponents,
   useAllServices,
   useAllDiagrams,
+  useActiveDiagram,
   useDiagramActions,
-} from "@/lib/model-store";
-import type { Component, Connection, ComponentType } from "@/lib/model-types";
+  INTENT_DEFAULTS,
+} from "@/features/diagram";
+import type {
+  Component,
+  Connection,
+  ComponentType,
+  ConnectionIntent,
+  ConnectionDirection,
+  EdgeStyle,
+  StrokeStyle,
+  EdgeMarker,
+} from "@/features/diagram";
 import {
   isAwsType,
   AWS_CATEGORIES,
   AWS_CATEGORY_MAP,
   AWS_SERVICE_MAP,
 } from "@/lib/aws-catalog";
-import AwsIcon from "./AwsIcon";
+import AwsIcon from "./nodes/AwsIcon";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 // ── Panel color presets ─────────────────────────────────────────────────────
 
@@ -46,6 +72,39 @@ const PANEL_COLOR_PRESETS = [
 const DEFAULT_PANEL_COLOR = "hsl(220 20% 20%)";
 const DEFAULT_PANEL_OPACITY = 10;
 const DEFAULT_NOTE_COLOR = "hsl(48 96% 53%)";
+
+const TRANSPORT_PRESET_DEFAULTS: Record<
+  NonNullable<Connection["transportPreset"]>,
+  Partial<Pick<Connection, "edgeStyle" | "strokeStyle" | "markerEnd">>
+> = {
+  sync: { edgeStyle: "straight", strokeStyle: "solid", markerEnd: "arrowclosed" },
+  async: { edgeStyle: "straight", strokeStyle: "dashed", markerEnd: "arrowclosed" },
+  event: { edgeStyle: "smoothstep", strokeStyle: "dashed", markerEnd: "arrow" },
+  tcp: { edgeStyle: "straight", strokeStyle: "solid", markerEnd: "arrow" },
+  udp: { edgeStyle: "straight", strokeStyle: "dotted", markerEnd: "arrow" },
+};
+
+const INTENT_PILLS: { value: ConnectionIntent | "__custom__"; label: string }[] = [
+  { value: "__custom__", label: "Personalizado" },
+  { value: "dependency", label: "Dependência" },
+  { value: "call", label: "Chamada" },
+  { value: "event", label: "Evento" },
+  { value: "data-flow", label: "Fluxo" },
+  { value: "async-message", label: "Async" },
+];
+
+const DIRECTION_PILLS: { value: ConnectionDirection; label: string }[] = [
+  { value: "unidirectional", label: "→ Unidirecional" },
+  { value: "bidirectional", label: "↔ Bidirecional" },
+  { value: "reverse", label: "← Reverso" },
+];
+
+const TECHNOLOGY_OPTIONS: { group: string; options: string[] }[] = [
+  { group: "Sync", options: ["REST", "gRPC", "GraphQL", "SOAP"] },
+  { group: "Async", options: ["Kafka", "RabbitMQ", "SQS", "SNS", "EventBridge", "NATS"] },
+  { group: "Streaming", options: ["WebSocket", "SSE", "gRPC Stream"] },
+  { group: "Infra", options: ["TCP", "UDP", "AMQP", "MQTT"] },
+];
 
 interface Props {
   selectedElementId: string | null;
@@ -345,7 +404,8 @@ const ComponentDetail = ({
 }) => {
   const allServices = useAllServices();
   const allDiagrams = useAllDiagrams();
-  const { linkComponentToService, linkComponentToDiagram } =
+  const activeDiagram = useActiveDiagram();
+  const { linkComponentToService, linkComponentToDiagram, addDiagram } =
     useDiagramActions();
   const [tab, setTab] = useState<Tab>("details");
   const [name, setName] = useState(component.name);
@@ -353,12 +413,15 @@ const ComponentDetail = ({
   const [tech, setTech] = useState(component.technology ?? "");
   const [type, setType] = useState<ComponentType>(component.type);
   const [awsService, setAwsService] = useState(component.awsService ?? "");
+  const [createdDiagramName, setCreatedDiagramName] = useState<string | null>(null);
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isPanel = component.type === "panel";
   const isNote = component.type === "note";
   const isSimple = isPanel || isNote;
   const isAws = isAwsType(type);
   const svcInfo = awsService ? AWS_SERVICE_MAP.get(awsService) : null;
+  const canCreateLinked = component.type === "system" || component.type === "container";
 
   const debouncedUpdate = useMemo(
     () =>
@@ -369,6 +432,21 @@ const ComponentDetail = ({
   );
 
   useEffect(() => () => debouncedUpdate.cancel(), [debouncedUpdate]);
+
+  useEffect(() => {
+    return () => {
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+    };
+  }, []);
+
+  const handleCreateLinked = () => {
+    const level = component.type === "system" ? "container" : "component";
+    const domain = activeDiagram?.domain;
+    const newDiagram = addDiagram(component.name, level, domain);
+    linkComponentToDiagram(component.id, newDiagram.id);
+    setCreatedDiagramName(newDiagram.name);
+    confirmTimerRef.current = setTimeout(() => setCreatedDiagramName(null), 3000);
+  };
 
   const handleRemove = () => {
     debouncedUpdate.cancel();
@@ -557,7 +635,29 @@ const ComponentDetail = ({
             </div>
           )}
 
-          {!isSimple && (
+          {!isSimple && canCreateLinked && !component.linkedDiagramId && (
+            <div>
+              <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+                <LayoutDashboard className="h-3 w-3 inline mr-1" />
+                Diagrama vinculado
+              </label>
+              {createdDiagramName ? (
+                <p className="text-xs text-primary bg-primary/10 rounded-md px-3 py-2">
+                  ✓ Diagrama &ldquo;{createdDiagramName}&rdquo; criado e vinculado.
+                </p>
+              ) : (
+                <button
+                  onClick={handleCreateLinked}
+                  className="flex items-center gap-1.5 w-full rounded-md border border-dashed border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
+                >
+                  <LayoutDashboard className="h-3.5 w-3.5" />
+                  Criar diagrama vinculado
+                </button>
+              )}
+            </div>
+          )}
+
+          {!isSimple && (!canCreateLinked || component.linkedDiagramId) && (
             <div>
               <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
                 <LayoutDashboard className="h-3 w-3 inline mr-1" />
@@ -606,7 +706,120 @@ const ComponentDetail = ({
   );
 };
 
-// ── Connection detail (unchanged) ───────────────────────────────────────────
+// ── Edge style options (toolbar-style) ───────────────────────────────────────
+
+const EDGE_STYLE_OPTIONS: { value: EdgeStyle; label: string }[] = [
+  { value: "straight", label: "Reta" },
+  { value: "bezier", label: "Curva" },
+  { value: "step", label: "Step" },
+  { value: "smoothstep", label: "Suave" },
+];
+
+const STROKE_OPTIONS: { value: StrokeStyle; label: string }[] = [
+  { value: "solid", label: "Sólida" },
+  { value: "dashed", label: "Tracejada" },
+  { value: "dotted", label: "Pontilhada" },
+];
+
+const WIDTH_OPTIONS = [1, 2, 3] as const;
+
+const MARKER_OPTIONS: { value: EdgeMarker; label: string }[] = [
+  { value: "none", label: "Nenhum" },
+  { value: "arrow", label: "Seta" },
+  { value: "arrowclosed", label: "Seta fechada" },
+];
+
+// ── Technology combobox (Command + Popover) ─────────────────────────────────
+
+const TechnologyCombobox = ({
+  value,
+  onSelect,
+}: {
+  value: string;
+  onSelect: (v: string) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const allOptions = useMemo(
+    () => TECHNOLOGY_OPTIONS.flatMap((g) => g.options),
+    [],
+  );
+  const hasMatch =
+    search.trim() === "" ||
+    allOptions.some(
+      (o) => o.toLowerCase().includes(search.trim().toLowerCase()),
+    );
+  const customOption = search.trim() && !hasMatch ? search.trim() : null;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex w-full items-center justify-between rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+        >
+          <span className={value ? undefined : "text-muted-foreground"}>
+            {value || "Selecionar tecnologia..."}
+          </span>
+          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder="Buscar ou digitar..."
+            value={search}
+            onValueChange={setSearch}
+          />
+          <CommandList>
+            {customOption && (
+              <CommandGroup heading="Personalizado">
+                <CommandItem
+                  value={`__custom__${customOption}`}
+                  onSelect={() => {
+                    onSelect(customOption);
+                    setOpen(false);
+                    setSearch("");
+                  }}
+                >
+                  Usar &ldquo;{customOption}&rdquo;
+                </CommandItem>
+              </CommandGroup>
+            )}
+            {TECHNOLOGY_OPTIONS.map((group) => {
+              const filtered = group.options.filter(
+                (o) =>
+                  !search.trim() ||
+                  o.toLowerCase().includes(search.trim().toLowerCase()),
+              );
+              if (filtered.length === 0) return null;
+              return (
+                <CommandGroup key={group.group} heading={group.group}>
+                  {filtered.map((opt) => (
+                    <CommandItem
+                      key={opt}
+                      value={opt}
+                      onSelect={() => {
+                        onSelect(opt);
+                        setOpen(false);
+                        setSearch("");
+                      }}
+                    >
+                      {opt}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              );
+            })}
+            <CommandEmpty>Nenhum resultado.</CommandEmpty>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
+// ── Connection detail ───────────────────────────────────────────────────────
 
 const ConnectionDetail = ({
   conn,
@@ -623,7 +836,6 @@ const ConnectionDetail = ({
   removeConnection: (id: string) => void;
 }) => {
   const [label, setLabel] = useState(conn.label);
-  const [tech, setTech] = useState(conn.technology ?? "");
   const [desc, setDesc] = useState(conn.description ?? "");
 
   const debouncedUpdate = useMemo(
@@ -636,9 +848,13 @@ const ConnectionDetail = ({
 
   useEffect(() => () => debouncedUpdate.cancel(), [debouncedUpdate]);
 
+  const applyPatch = (patch: Partial<Omit<Connection, "id">>) => {
+    updateConnection(conn.id, patch);
+  };
+
   return (
-    <div className="w-80 border-l border-border bg-card overflow-auto">
-      <div className="flex items-center justify-between p-3 border-b border-border">
+    <div className="flex flex-col w-80 h-full border-l border-border bg-card overflow-hidden">
+      <div className="flex shrink-0 items-center justify-between p-3 border-b border-border">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Conexão
         </h3>
@@ -649,7 +865,7 @@ const ConnectionDetail = ({
           <X className="h-4 w-4" />
         </button>
       </div>
-      <div className="p-4 space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
         <Field
           label="Label"
           value={label}
@@ -658,14 +874,203 @@ const ConnectionDetail = ({
             debouncedUpdate({ label: v });
           }}
         />
-        <Field
-          label="Tecnologia"
-          value={tech}
-          onChange={(v) => {
-            setTech(v);
-            debouncedUpdate({ technology: v || undefined });
-          }}
-        />
+
+        {/* Intent — pills */}
+        <div>
+          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+            Intenção
+          </label>
+          <div className="flex flex-wrap gap-1">
+            {INTENT_PILLS.map((p) => {
+              const isCustom = p.value === "__custom__";
+              const isSelected = isCustom
+                ? conn.communicationType === "custom"
+                : (conn.intent ?? "call") === p.value && conn.communicationType !== "custom";
+              return (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() =>
+                    isCustom
+                      ? applyPatch({ communicationType: "custom" })
+                      : applyPatch({
+                          intent: p.value as ConnectionIntent,
+                          ...INTENT_DEFAULTS[p.value as ConnectionIntent],
+                          communicationType: "standard",
+                        })
+                  }
+                  className={cn(
+                    "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+                    isSelected
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
+                  )}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Direction — pills */}
+        <div>
+          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+            Direção
+          </label>
+          <div className="flex flex-wrap gap-1">
+            {DIRECTION_PILLS.map((p) => (
+              <button
+                key={p.value}
+                type="button"
+                onClick={() => applyPatch({ direction: p.value })}
+                className={cn(
+                  "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+                  (conn.direction ?? "unidirectional") === p.value
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
+                )}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Technology — Command combobox */}
+        <div>
+          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+            Tecnologia
+          </label>
+          <TechnologyCombobox
+            value={conn.technology ?? ""}
+            onSelect={(v) => applyPatch({ technology: v || undefined })}
+          />
+        </div>
+
+        {/* Tipo de transporte — aplica presets */}
+        <div>
+          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+            Tipo de transporte
+          </label>
+          <select
+            value={conn.transportPreset ?? ""}
+            onChange={(e) => {
+              const v = e.target.value as Connection["transportPreset"] | "";
+              if (!v) {
+                applyPatch({ transportPreset: undefined });
+                return;
+              }
+              const defaults = TRANSPORT_PRESET_DEFAULTS[v];
+              applyPatch({ transportPreset: v, ...defaults });
+            }}
+            className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          >
+            <option value="">Nenhum</option>
+            <option value="sync">Síncrono</option>
+            <option value="async">Assíncrono</option>
+            <option value="event">Evento</option>
+            <option value="tcp">TCP</option>
+            <option value="udp">UDP</option>
+          </select>
+        </div>
+
+        {/* Estilo da aresta — só quando communicationType === "custom" */}
+        {conn.communicationType === "custom" && (
+        <div className="space-y-2">
+          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold block">
+            Estilo da aresta
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <select
+              value={conn.edgeStyle ?? "straight"}
+              onChange={(e) =>
+                applyPatch({ edgeStyle: e.target.value as EdgeStyle })
+              }
+              className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0"
+              title="Tipo de linha"
+            >
+              {EDGE_STYLE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            <select
+              value={conn.strokeStyle ?? "solid"}
+              onChange={(e) =>
+                applyPatch({ strokeStyle: e.target.value as StrokeStyle })
+              }
+              className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0"
+              title="Traço"
+            >
+              {STROKE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            <select
+              value={conn.strokeWidth ?? 1}
+              onChange={(e) =>
+                applyPatch({ strokeWidth: Number(e.target.value) as 1 | 2 | 3 })
+              }
+              className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0"
+              title="Espessura"
+            >
+              {WIDTH_OPTIONS.map((w) => (
+                <option key={w} value={w}>
+                  {w}pt
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <select
+              value={conn.markerStart ?? "none"}
+              onChange={(e) =>
+                applyPatch({
+                  markerStart: (e.target.value === "none" ? undefined : e.target.value) as EdgeMarker | undefined,
+                })
+              }
+              className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0"
+              title="Marcador início"
+            >
+              {MARKER_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.value === "none" ? "Início: Nenhum" : `Início: ${o.label}`}
+                </option>
+              ))}
+            </select>
+            <select
+              value={conn.markerEnd ?? "arrowclosed"}
+              onChange={(e) =>
+                applyPatch({
+                  markerEnd: e.target.value as EdgeMarker,
+                })
+              }
+              className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0"
+              title="Marcador fim"
+            >
+              {MARKER_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.value === "none" ? "Fim: Nenhum" : `Fim: ${o.label}`}
+                </option>
+              ))}
+            </select>
+          </div>
+          <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
+            <input
+              type="checkbox"
+              checked={conn.animated ?? false}
+              onChange={(e) => applyPatch({ animated: e.target.checked })}
+              className="rounded border-border accent-primary"
+            />
+            Animado
+          </label>
+        </div>
+        )}
+
         <Field
           label="Descrição"
           value={desc}

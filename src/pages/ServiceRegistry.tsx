@@ -18,15 +18,16 @@ import {
   useAllServices,
   useAllComponents,
   useAllConnections,
-  useDiagramActions,
-} from "@/lib/model-store";
-import type { ServiceDefinition } from "@/lib/model-types";
+  useRegistryActions,
+} from "@/features/registry";
+import type { ServiceDefinition } from "@/features/registry";
+import { computeServiceImpact } from "@/features/diagram";
 import { importFromGitHub } from "@/lib/github-import";
 
 const ServiceRegistry = () => {
   const services = useAllServices();
   const components = useAllComponents();
-  const { addService } = useDiagramActions();
+  const { addService } = useRegistryActions();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -207,29 +208,12 @@ const ServiceDetail = ({
   const service = allServices.find((s) => s.id === serviceId);
   const components = useAllComponents();
   const connections = useAllConnections();
-  const { updateService, removeService } = useDiagramActions();
+  const { updateService, removeService } = useRegistryActions();
 
-  const impact = useMemo(() => {
-    if (!service) return { components: [], connections: [], systems: [] };
-
-    const linkedComps = components.filter((c) => c.serviceId === serviceId);
-    const linkedIds = new Set(linkedComps.map((c) => c.id));
-
-    const affectedConns = connections.filter(
-      (conn) => linkedIds.has(conn.sourceId) || linkedIds.has(conn.targetId),
-    );
-
-    const systemIds = new Set<string>();
-    for (const c of linkedComps) {
-      if (c.parentId) {
-        const parent = components.find((p) => p.id === c.parentId);
-        if (parent?.type === "system") systemIds.add(parent.id);
-      }
-    }
-    const systems = components.filter((c) => systemIds.has(c.id));
-
-    return { components: linkedComps, connections: affectedConns, systems };
-  }, [service, serviceId, components, connections]);
+  const impact = useMemo(
+    () => computeServiceImpact(serviceId, components, connections),
+    [serviceId, components, connections],
+  );
 
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(service?.name ?? "");

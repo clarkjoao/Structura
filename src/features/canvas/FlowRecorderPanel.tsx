@@ -1,8 +1,16 @@
 import { useState, useCallback, useMemo } from "react";
-import { useComponents, useConnections } from "@/lib/model-store";
-import type { FlowStep, Component, Connection } from "@/lib/model-types";
+import { useComponents, useConnections } from "@/features/diagram";
+import type { FlowStep, Component, Connection, ConnectionIntent } from "@/features/diagram";
 import { X, GripVertical } from "lucide-react";
 import { toast } from "sonner";
+
+const INTENT_ARROW: Record<ConnectionIntent, string> = {
+  dependency: "-->",
+  call: "->>",
+  event: "-->>",
+  "data-flow": "=>>",
+  "async-message": "-->>",
+};
 
 export function stepsToMermaid(
   steps: FlowStep[],
@@ -16,7 +24,8 @@ export function stepsToMermaid(
       if (conn) {
         const src = components[conn.sourceId]?.name ?? "?";
         const tgt = components[conn.targetId]?.name ?? "?";
-        lines.push(`  ${src}->>${tgt}: ${conn.label}`);
+        const arrow = INTENT_ARROW[conn.intent ?? "call"];
+        lines.push(`  ${src}${arrow}${tgt}: ${conn.label}`);
         if (step.description) {
           lines.push(`  Note over ${src}: ${step.description}`);
         }
