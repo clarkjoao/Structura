@@ -47,4 +47,4 @@ export {
   useFlows,
   useDiagramActions,
 } from "./store/diagram.store";
-export type { DiagramStore } from "./store/diagram.store";
+export type { DiagramStore, ClipboardEntry } from "./store/diagram.store";

@@ -31,6 +31,8 @@ export interface NodeBuildContext {
   allDiagrams: Record<string, Diagram>;
   selectedNodeId: string | null;
   dragTargetPanelId: string | null;
+  /** When a child is dragged outside this panel's bounds, show unparent warning. */
+  unparentCandidatePanelId: string | null;
   panelIds: Set<string>;
   connectionCounts: Record<string, { incoming: number; outgoing: number }>;
   isPlaying: boolean;

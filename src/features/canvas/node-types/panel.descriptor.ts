@@ -19,6 +19,7 @@ export const panelDescriptor: NodeTypeDescriptor = {
     panelOpacity: comp.panelOpacity,
     isSelected: ctx.selectedNodeId === comp.id,
     isDragTarget: ctx.dragTargetPanelId === comp.id,
+    isUnparentCandidate: ctx.unparentCandidatePanelId === comp.id,
     collapsed: comp.collapsed ?? false,
     childCount: Object.values(ctx.diagram.snapshot.components).filter(
       (c) => c.parentId === comp.id,
