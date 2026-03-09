@@ -102,13 +102,13 @@ const Edge = memo(
                     {d.recordingBadges.join(",")}
                   </div>
                 )}
-                {d.label}
+                <span>{d.label}</span>
                 {d.playbackDuration && (
                   <span className="ml-1 font-mono text-primary">· {d.playbackDuration}</span>
                 )}
                 {d.technology && (
-                  <span className="ml-1 font-mono opacity-60">
-                    [{d.technology}]
+                  <span className="block mt-0.5 font-mono text-[9px] bg-secondary px-1 rounded w-fit">
+                    {d.technology}
                   </span>
                 )}
               </div>

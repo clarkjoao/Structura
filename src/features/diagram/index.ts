@@ -3,6 +3,8 @@ export type {
   Level,
   Component,
   Connection,
+  ConnectionIntent,
+  ConnectionDirection,
   EdgeStyle,
   StrokeStyle,
   EdgeMarker,
@@ -12,6 +14,11 @@ export type {
   ModelDraft,
   Diagram,
 } from "./model/diagram.types";
+export {
+  INTENT_DEFAULTS,
+  DIRECTION_MARKERS,
+  getEffectiveConnectionStyle,
+} from "./model/connection-defaults";
 export { generateId } from "./model/diagram.utils";
 export {
   computeServiceImpact,

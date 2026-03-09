@@ -33,6 +33,18 @@ export type EdgeStyle = "straight" | "bezier" | "step" | "smoothstep";
 export type StrokeStyle = "solid" | "dashed" | "dotted";
 export type EdgeMarker = "arrow" | "arrowclosed" | "none";
 
+export type ConnectionIntent =
+  | "dependency"
+  | "call"
+  | "event"
+  | "data-flow"
+  | "async-message";
+
+export type ConnectionDirection =
+  | "unidirectional"
+  | "bidirectional"
+  | "reverse";
+
 export interface Connection {
   id: string;
   sourceId: string;
@@ -40,13 +52,18 @@ export interface Connection {
   label: string;
   technology?: string;
   description?: string;
+  intent?: ConnectionIntent;
+  direction?: ConnectionDirection;
   edgeStyle?: EdgeStyle;
   strokeStyle?: StrokeStyle;
   strokeWidth?: number;
   markerEnd?: EdgeMarker;
   markerStart?: EdgeMarker;
   animated?: boolean;
-  communicationType?: "sync" | "async" | "event" | "tcp" | "udp";
+  /** When "custom", Estilo da Aresta is shown; when "standard" or unset, intent drives style. Default "standard". */
+  communicationType?: "standard" | "custom";
+  /** Preset for sync/async/event/tcp/udp (Tipo de comunicação dropdown). */
+  transportPreset?: "sync" | "async" | "event" | "tcp" | "udp";
 }
 
 export interface ViewNodeLayout {

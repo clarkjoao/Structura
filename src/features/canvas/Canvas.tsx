@@ -23,6 +23,7 @@ import {
   useServiceRegistry,
   useDiagramActions,
   useFlows,
+  getEffectiveConnectionStyle,
   type FlowStep,
 } from "@/features/diagram";
 import CustomNode from "./nodes/CustomNode";
@@ -407,15 +408,16 @@ const Canvas = ({
       const isActiveConn = isPlaying && flowHighlight.activeConnId === conn.id;
       const isParticipantConn =
         isPlaying && flowHighlight.participantConnIds.has(conn.id);
+      const effective = getEffectiveConnectionStyle(conn);
       const markerEndType =
-        conn.markerEnd === "none"
+        effective.markerEnd === "none"
           ? undefined
-          : conn.markerEnd === "arrow"
+          : effective.markerEnd === "arrow"
             ? MarkerType.Arrow
             : MarkerType.ArrowClosed;
       const markerStartType =
-        conn.markerStart && conn.markerStart !== "none"
-          ? conn.markerStart === "arrowclosed"
+        effective.markerStart !== "none"
+          ? effective.markerStart === "arrowclosed"
             ? MarkerType.ArrowClosed
             : MarkerType.Arrow
           : undefined;
@@ -435,11 +437,11 @@ const Canvas = ({
           coverageFlowNames: coverage?.edgeFlows.get(conn.id),
           playbackDuration: isPlaying && flowHighlight.activeConnId === conn.id ? activeStep?.duration : undefined,
           edgeStyle: conn.edgeStyle,
-          strokeStyle: conn.strokeStyle,
-          strokeWidth: conn.strokeWidth,
+          strokeStyle: effective.strokeStyle,
+          strokeWidth: effective.strokeWidth,
         },
         selected: selectedEdgeId === conn.id,
-        animated: isActiveConn || (!!conn.animated && !isPlaying),
+        animated: isActiveConn || (effective.animated && !isPlaying),
         markerEnd: markerEndType !== undefined ? { type: markerEndType } : undefined,
         markerStart: markerStartType !== undefined ? { type: markerStartType } : undefined,
         style: isPlaying

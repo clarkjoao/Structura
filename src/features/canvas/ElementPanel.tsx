@@ -12,6 +12,7 @@ import {
   Database,
   User,
   Palette,
+  ChevronsUpDown,
 } from "lucide-react";
 import {
   useComponent,
@@ -21,11 +22,14 @@ import {
   useAllDiagrams,
   useActiveDiagram,
   useDiagramActions,
+  INTENT_DEFAULTS,
 } from "@/features/diagram";
 import type {
   Component,
   Connection,
   ComponentType,
+  ConnectionIntent,
+  ConnectionDirection,
   EdgeStyle,
   StrokeStyle,
   EdgeMarker,
@@ -37,6 +41,20 @@ import {
   AWS_SERVICE_MAP,
 } from "@/lib/aws-catalog";
 import AwsIcon from "./nodes/AwsIcon";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 // ── Panel color presets ─────────────────────────────────────────────────────
 
@@ -55,8 +73,8 @@ const DEFAULT_PANEL_COLOR = "hsl(220 20% 20%)";
 const DEFAULT_PANEL_OPACITY = 10;
 const DEFAULT_NOTE_COLOR = "hsl(48 96% 53%)";
 
-const COMMUNICATION_DEFAULTS: Record<
-  NonNullable<Connection["communicationType"]>,
+const TRANSPORT_PRESET_DEFAULTS: Record<
+  NonNullable<Connection["transportPreset"]>,
   Partial<Pick<Connection, "edgeStyle" | "strokeStyle" | "markerEnd">>
 > = {
   sync: { edgeStyle: "straight", strokeStyle: "solid", markerEnd: "arrowclosed" },
@@ -65,6 +83,28 @@ const COMMUNICATION_DEFAULTS: Record<
   tcp: { edgeStyle: "straight", strokeStyle: "solid", markerEnd: "arrow" },
   udp: { edgeStyle: "straight", strokeStyle: "dotted", markerEnd: "arrow" },
 };
+
+const INTENT_PILLS: { value: ConnectionIntent | "__custom__"; label: string }[] = [
+  { value: "__custom__", label: "Personalizado" },
+  { value: "dependency", label: "Dependência" },
+  { value: "call", label: "Chamada" },
+  { value: "event", label: "Evento" },
+  { value: "data-flow", label: "Fluxo" },
+  { value: "async-message", label: "Async" },
+];
+
+const DIRECTION_PILLS: { value: ConnectionDirection; label: string }[] = [
+  { value: "unidirectional", label: "→ Unidirecional" },
+  { value: "bidirectional", label: "↔ Bidirecional" },
+  { value: "reverse", label: "← Reverso" },
+];
+
+const TECHNOLOGY_OPTIONS: { group: string; options: string[] }[] = [
+  { group: "Sync", options: ["REST", "gRPC", "GraphQL", "SOAP"] },
+  { group: "Async", options: ["Kafka", "RabbitMQ", "SQS", "SNS", "EventBridge", "NATS"] },
+  { group: "Streaming", options: ["WebSocket", "SSE", "gRPC Stream"] },
+  { group: "Infra", options: ["TCP", "UDP", "AMQP", "MQTT"] },
+];
 
 interface Props {
   selectedElementId: string | null;
@@ -689,6 +729,96 @@ const MARKER_OPTIONS: { value: EdgeMarker; label: string }[] = [
   { value: "arrowclosed", label: "Seta fechada" },
 ];
 
+// ── Technology combobox (Command + Popover) ─────────────────────────────────
+
+const TechnologyCombobox = ({
+  value,
+  onSelect,
+}: {
+  value: string;
+  onSelect: (v: string) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const allOptions = useMemo(
+    () => TECHNOLOGY_OPTIONS.flatMap((g) => g.options),
+    [],
+  );
+  const hasMatch =
+    search.trim() === "" ||
+    allOptions.some(
+      (o) => o.toLowerCase().includes(search.trim().toLowerCase()),
+    );
+  const customOption = search.trim() && !hasMatch ? search.trim() : null;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex w-full items-center justify-between rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+        >
+          <span className={value ? undefined : "text-muted-foreground"}>
+            {value || "Selecionar tecnologia..."}
+          </span>
+          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder="Buscar ou digitar..."
+            value={search}
+            onValueChange={setSearch}
+          />
+          <CommandList>
+            {customOption && (
+              <CommandGroup heading="Personalizado">
+                <CommandItem
+                  value={`__custom__${customOption}`}
+                  onSelect={() => {
+                    onSelect(customOption);
+                    setOpen(false);
+                    setSearch("");
+                  }}
+                >
+                  Usar &ldquo;{customOption}&rdquo;
+                </CommandItem>
+              </CommandGroup>
+            )}
+            {TECHNOLOGY_OPTIONS.map((group) => {
+              const filtered = group.options.filter(
+                (o) =>
+                  !search.trim() ||
+                  o.toLowerCase().includes(search.trim().toLowerCase()),
+              );
+              if (filtered.length === 0) return null;
+              return (
+                <CommandGroup key={group.group} heading={group.group}>
+                  {filtered.map((opt) => (
+                    <CommandItem
+                      key={opt}
+                      value={opt}
+                      onSelect={() => {
+                        onSelect(opt);
+                        setOpen(false);
+                        setSearch("");
+                      }}
+                    >
+                      {opt}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              );
+            })}
+            <CommandEmpty>Nenhum resultado.</CommandEmpty>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
 // ── Connection detail ───────────────────────────────────────────────────────
 
 const ConnectionDetail = ({
@@ -706,7 +836,6 @@ const ConnectionDetail = ({
   removeConnection: (id: string) => void;
 }) => {
   const [label, setLabel] = useState(conn.label);
-  const [tech, setTech] = useState(conn.technology ?? "");
   const [desc, setDesc] = useState(conn.description ?? "");
 
   const debouncedUpdate = useMemo(
@@ -724,8 +853,8 @@ const ConnectionDetail = ({
   };
 
   return (
-    <div className="w-80 border-l border-border bg-card overflow-auto">
-      <div className="flex items-center justify-between p-3 border-b border-border">
+    <div className="flex flex-col w-80 h-full border-l border-border bg-card overflow-hidden">
+      <div className="flex shrink-0 items-center justify-between p-3 border-b border-border">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Conexão
         </h3>
@@ -736,7 +865,7 @@ const ConnectionDetail = ({
           <X className="h-4 w-4" />
         </button>
       </div>
-      <div className="p-4 space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
         <Field
           label="Label"
           value={label}
@@ -746,25 +875,98 @@ const ConnectionDetail = ({
           }}
         />
 
-        {/* Tipo de comunicação — aplica presets */}
+        {/* Intent — pills */}
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-            Tipo de comunicação
+            Intenção
+          </label>
+          <div className="flex flex-wrap gap-1">
+            {INTENT_PILLS.map((p) => {
+              const isCustom = p.value === "__custom__";
+              const isSelected = isCustom
+                ? conn.communicationType === "custom"
+                : (conn.intent ?? "call") === p.value && conn.communicationType !== "custom";
+              return (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() =>
+                    isCustom
+                      ? applyPatch({ communicationType: "custom" })
+                      : applyPatch({
+                          intent: p.value as ConnectionIntent,
+                          ...INTENT_DEFAULTS[p.value as ConnectionIntent],
+                          communicationType: "standard",
+                        })
+                  }
+                  className={cn(
+                    "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+                    isSelected
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
+                  )}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Direction — pills */}
+        <div>
+          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+            Direção
+          </label>
+          <div className="flex flex-wrap gap-1">
+            {DIRECTION_PILLS.map((p) => (
+              <button
+                key={p.value}
+                type="button"
+                onClick={() => applyPatch({ direction: p.value })}
+                className={cn(
+                  "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+                  (conn.direction ?? "unidirectional") === p.value
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
+                )}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Technology — Command combobox */}
+        <div>
+          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+            Tecnologia
+          </label>
+          <TechnologyCombobox
+            value={conn.technology ?? ""}
+            onSelect={(v) => applyPatch({ technology: v || undefined })}
+          />
+        </div>
+
+        {/* Tipo de transporte — aplica presets */}
+        <div>
+          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+            Tipo de transporte
           </label>
           <select
-            value={conn.communicationType ?? ""}
+            value={conn.transportPreset ?? ""}
             onChange={(e) => {
-              const v = e.target.value as Connection["communicationType"] | "";
+              const v = e.target.value as Connection["transportPreset"] | "";
               if (!v) {
-                applyPatch({ communicationType: undefined });
+                applyPatch({ transportPreset: undefined });
                 return;
               }
-              const defaults = COMMUNICATION_DEFAULTS[v];
-              applyPatch({ communicationType: v, ...defaults });
+              const defaults = TRANSPORT_PRESET_DEFAULTS[v];
+              applyPatch({ transportPreset: v, ...defaults });
             }}
             className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           >
-            <option value="">Personalizado</option>
+            <option value="">Nenhum</option>
             <option value="sync">Síncrono</option>
             <option value="async">Assíncrono</option>
             <option value="event">Evento</option>
@@ -773,7 +975,8 @@ const ConnectionDetail = ({
           </select>
         </div>
 
-        {/* Estilo da aresta — toolbar compacto */}
+        {/* Estilo da aresta — só quando communicationType === "custom" */}
+        {conn.communicationType === "custom" && (
         <div className="space-y-2">
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold block">
             Estilo da aresta
@@ -866,15 +1069,8 @@ const ConnectionDetail = ({
             Animado
           </label>
         </div>
+        )}
 
-        <Field
-          label="Tecnologia"
-          value={tech}
-          onChange={(v) => {
-            setTech(v);
-            debouncedUpdate({ technology: v || undefined });
-          }}
-        />
         <Field
           label="Descrição"
           value={desc}
