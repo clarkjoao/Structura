@@ -8,6 +8,7 @@ export type {
   FlowStep,
   Flow,
   ModelDraft,
+  Folder,
   Diagram,
 } from "@/features/diagram";
 export type { ServiceDefinition } from "@/features/registry";

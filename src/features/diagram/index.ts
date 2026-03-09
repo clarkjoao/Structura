@@ -12,6 +12,7 @@ export type {
   FlowStep,
   Flow,
   ModelDraft,
+  Folder,
   Diagram,
 } from "./model/diagram.types";
 export {
@@ -29,6 +30,8 @@ export {
   useDiagramStore,
   useDiagrams,
   useAllDiagrams,
+  useFolders,
+  useAllFolders,
   useActiveDiagramId,
   useActiveDiagram,
   useComponents,

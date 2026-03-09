@@ -9,6 +9,7 @@ import type {
   Flow,
   FlowStep,
   Diagram,
+  Folder,
   ComponentType,
   Level,
   ModelDraft,
@@ -255,6 +256,7 @@ interface DiagramSnapshot {
 
 interface AppState {
   diagrams: Record<string, Diagram>;
+  folders: Record<string, Folder>;
   activeDiagramId: string | null;
   past: DiagramSnapshot[];
   future: DiagramSnapshot[];
@@ -262,9 +264,13 @@ interface AppState {
 }
 
 interface AppActions {
-  addDiagram: (name: string, level: Level, domain?: string) => Diagram;
+  addDiagram: (name: string, level: Level, domain?: string, folderId?: string | null) => Diagram;
   openDiagram: (id: string) => void;
   deleteDiagram: (id: string) => void;
+  addFolder: (name: string, parentId: string | null, domain?: string) => Folder;
+  renameFolder: (id: string, name: string) => void;
+  deleteFolder: (id: string) => void;
+  moveDiagram: (diagramId: string, folderId: string | null) => void;
 
   addComponent: (
     type: ComponentType,
@@ -361,12 +367,13 @@ export const useDiagramStore = create<DiagramStore>()(
   persist(
     immer((set, get) => ({
       diagrams: buildSeedDiagrams(),
+      folders: {},
       activeDiagramId: null,
       past: [],
       future: [],
       _lastUndoRedoAt: 0,
 
-    addDiagram: (name, level, domain) => {
+    addDiagram: (name, level, domain, folderId) => {
       const diagram: Diagram = {
         id: generateId("d"),
         name,
@@ -381,11 +388,48 @@ export const useDiagramStore = create<DiagramStore>()(
         },
         nodeLayouts: [],
         viewport: { x: 0, y: 0, zoom: 1 },
+        folderId: folderId ?? undefined,
       };
       set((state) => {
         state.diagrams[diagram.id] = diagram;
       });
       return diagram;
+    },
+
+    addFolder: (name, parentId, domain) => {
+      const folder: Folder = {
+        id: generateId("folder"),
+        name,
+        parentId,
+        domain: domain || undefined,
+      };
+      set((state) => {
+        state.folders[folder.id] = folder;
+      });
+      return folder;
+    },
+
+    renameFolder: (id, name) => {
+      set((state) => {
+        const f = state.folders[id];
+        if (f) f.name = name;
+      });
+    },
+
+    deleteFolder: (id) => {
+      set((state) => {
+        const hasChildren = Object.values(state.folders).some((f) => f.parentId === id);
+        const hasDiagrams = Object.values(state.diagrams).some((d) => d.folderId === id);
+        if (hasChildren || hasDiagrams) return;
+        delete state.folders[id];
+      });
+    },
+
+    moveDiagram: (diagramId, folderId) => {
+      set((state) => {
+        const d = state.diagrams[diagramId];
+        if (d) d.folderId = folderId ?? undefined;
+      });
     },
 
     openDiagram: (id) => {
@@ -711,6 +755,7 @@ export const useDiagramStore = create<DiagramStore>()(
         Object.values(state.diagrams ?? {}).forEach((d) => {
           if (!d.snapshot.serviceRegistry) d.snapshot.serviceRegistry = {};
         });
+        if (!state.folders) state.folders = {};
         return state;
       },
     },
@@ -722,6 +767,9 @@ export const useDiagramStore = create<DiagramStore>()(
 export const useDiagrams = () => useDiagramStore((s) => s.diagrams);
 export const useAllDiagrams = () =>
   useDiagramStore(useShallow((s) => Object.values(s.diagrams)));
+export const useFolders = () => useDiagramStore((s) => s.folders);
+export const useAllFolders = () =>
+  useDiagramStore(useShallow((s) => Object.values(s.folders)));
 export const useActiveDiagramId = () =>
   useDiagramStore((s) => s.activeDiagramId);
 
@@ -823,6 +871,10 @@ export const useDiagramActions = () =>
       addDiagram: s.addDiagram,
       openDiagram: s.openDiagram,
       deleteDiagram: s.deleteDiagram,
+      addFolder: s.addFolder,
+      renameFolder: s.renameFolder,
+      deleteFolder: s.deleteFolder,
+      moveDiagram: s.moveDiagram,
       addComponent: s.addComponent,
       updateComponent: s.updateComponent,
       removeComponent: s.removeComponent,

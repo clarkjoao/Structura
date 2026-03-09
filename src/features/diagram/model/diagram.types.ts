@@ -100,6 +100,13 @@ export interface ModelDraft {
   flows: Record<string, Flow>;
 }
 
+export interface Folder {
+  id: string;
+  name: string;
+  parentId: string | null;
+  domain?: string;
+}
+
 export interface Diagram {
   id: string;
   name: string;
@@ -109,4 +116,5 @@ export interface Diagram {
   snapshot: ModelDraft;
   nodeLayouts: ViewNodeLayout[];
   viewport: { x: number; y: number; zoom: number };
+  folderId?: string | null;
 }
