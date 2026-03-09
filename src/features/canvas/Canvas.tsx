@@ -76,6 +76,7 @@ const Canvas = ({
     updateNodeLayout,
     updateViewport,
     addConnection,
+    updateConnection,
     bringToFront,
     sendToBack,
     openDiagram,
@@ -87,12 +88,17 @@ const Canvas = ({
     redo,
     groupNodes,
     ungroupNodes,
+    copyToClipboard,
+    pasteFromClipboard,
+    clearClipboard,
   } = useDiagramActions();
   const navigate = useNavigate();
   const reactFlowInstance = useReactFlow();
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
+  const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const reactFlowWrapperRef = useRef<HTMLDivElement>(null);
   // Wheel effect must run unconditionally (hooks order). Uses document.querySelector when diagram exists.
@@ -104,6 +110,9 @@ const Canvas = ({
   const [dragTargetPanelId, setDragTargetPanelId] = useState<string | null>(
     null,
   );
+  const [unparentCandidatePanelId, setUnparentCandidatePanelId] = useState<
+    string | null
+  >(null);
   const dragTargetRef = useRef<string | null>(null);
 
   const handleDrillDown = useCallback(
@@ -133,7 +142,8 @@ const Canvas = ({
   const isPlaying =
     !!activeFlow && currentStep !== undefined && currentStep >= 0;
 
-  const activeStep = isPlaying && activeFlow ? activeFlow.steps[currentStep!] : null;
+  const activeStep =
+    isPlaying && activeFlow ? activeFlow.steps[currentStep!] : null;
 
   const flowHighlight = useMemo(() => {
     if (!isPlaying || !activeFlow)
@@ -223,8 +233,10 @@ const Canvas = ({
   const connectionCountPerNode = useMemo(() => {
     const counts: Record<string, { incoming: number; outgoing: number }> = {};
     visibleConnections.forEach((conn) => {
-      if (!counts[conn.sourceId]) counts[conn.sourceId] = { incoming: 0, outgoing: 0 };
-      if (!counts[conn.targetId]) counts[conn.targetId] = { incoming: 0, outgoing: 0 };
+      if (!counts[conn.sourceId])
+        counts[conn.sourceId] = { incoming: 0, outgoing: 0 };
+      if (!counts[conn.targetId])
+        counts[conn.targetId] = { incoming: 0, outgoing: 0 };
       counts[conn.sourceId].outgoing += 1;
       counts[conn.targetId].incoming += 1;
     });
@@ -238,8 +250,14 @@ const Canvas = ({
     return visibleConnections.map((conn) => {
       const sKey = conn.sourceId;
       const tKey = conn.targetId;
-      const outCount = Math.min(maxHandles, Math.max(1, connectionCountPerNode[sKey]?.outgoing ?? 1));
-      const inCount = Math.min(maxHandles, Math.max(1, connectionCountPerNode[tKey]?.incoming ?? 1));
+      const outCount = Math.min(
+        maxHandles,
+        Math.max(1, connectionCountPerNode[sKey]?.outgoing ?? 1),
+      );
+      const inCount = Math.min(
+        maxHandles,
+        Math.max(1, connectionCountPerNode[tKey]?.incoming ?? 1),
+      );
       const sIdx = (sourceUsage[sKey] ?? 0) % outCount;
       const tIdx = (targetUsage[tKey] ?? 0) % inCount;
       sourceUsage[sKey] = (sourceUsage[sKey] ?? 0) + 1;
@@ -285,9 +303,9 @@ const Canvas = ({
     if (!diagram) return [];
 
     const collapsedPanelIds = new Set(
-      Object.values(diagram.snapshot.components).filter(
-        (c) => c.type === "panel" && c.collapsed,
-      ).map((c) => c.id),
+      Object.values(diagram.snapshot.components)
+        .filter((c) => c.type === "panel" && c.collapsed)
+        .map((c) => c.id),
     );
 
     const ctx: NodeBuildContext = {
@@ -296,6 +314,7 @@ const Canvas = ({
       allDiagrams,
       selectedNodeId,
       dragTargetPanelId,
+      unparentCandidatePanelId,
       panelIds,
       connectionCounts: connectionCountPerNode,
       isPlaying,
@@ -313,11 +332,16 @@ const Canvas = ({
       .sort((a, b) => (a.type === "panel" ? -1 : b.type === "panel" ? 1 : 0))
       .map((comp): Node => {
         const d = getDescriptor(comp.type);
-        const layout = diagram.nodeLayouts.find((nl) => nl.elementId === comp.id);
+        const layout = diagram.nodeLayouts.find(
+          (nl) => nl.elementId === comp.id,
+        );
         const isChild =
-          d.canHaveParent && comp.parentId !== null && panelIds.has(comp.parentId);
+          d.canHaveParent &&
+          comp.parentId !== null &&
+          panelIds.has(comp.parentId);
         const zIndex =
-          layout?.zIndex ?? (typeof d.zIndex === "function" ? d.zIndex(comp) : d.zIndex);
+          layout?.zIndex ??
+          (typeof d.zIndex === "function" ? d.zIndex(comp) : d.zIndex);
         const isHidden =
           comp.hidden === true ||
           (isChild &&
@@ -338,7 +362,9 @@ const Canvas = ({
           zIndex,
           connectable: d.connectable,
           selected: isSelected,
-          ...(isChild ? { parentId: comp.parentId!, extent: "parent" as const } : {}),
+          ...(isChild
+            ? { parentId: comp.parentId!, extent: "parent" as const }
+            : {}),
           hidden: isHidden,
           style,
           data: d.buildData(comp, ctx),
@@ -356,6 +382,7 @@ const Canvas = ({
     isPlaying,
     flowHighlight,
     dragTargetPanelId,
+    unparentCandidatePanelId,
     isRecording,
     recordingInfo,
     onRecordHandleClick,
@@ -414,15 +441,20 @@ const Canvas = ({
           recordingBadges: recordingInfo?.edgeSteps.get(conn.id),
           isLastRecorded: recordingInfo?.lastEdgeId === conn.id,
           coverageFlowNames: coverage?.edgeFlows.get(conn.id),
-          playbackDuration: isPlaying && flowHighlight.activeConnId === conn.id ? activeStep?.duration : undefined,
+          playbackDuration:
+            isPlaying && flowHighlight.activeConnId === conn.id
+              ? activeStep?.duration
+              : undefined,
           edgeStyle: conn.edgeStyle,
           strokeStyle: effective.strokeStyle,
           strokeWidth: effective.strokeWidth,
         },
         selected: selectedEdgeId === conn.id,
         animated: isActiveConn || (effective.animated && !isPlaying),
-        markerEnd: markerEndType !== undefined ? { type: markerEndType } : undefined,
-        markerStart: markerStartType !== undefined ? { type: markerStartType } : undefined,
+        markerEnd:
+          markerEndType !== undefined ? { type: markerEndType } : undefined,
+        markerStart:
+          markerStartType !== undefined ? { type: markerStartType } : undefined,
         style: isPlaying
           ? { opacity: isActiveConn ? 1 : isParticipantConn ? 0.5 : 0.2 }
           : isRecording
@@ -432,7 +464,18 @@ const Canvas = ({
     });
 
     return edgeList;
-  }, [diagram, visibleConnections, edgeHandleAssignments, selectedEdgeId, isPlaying, flowHighlight, isRecording, recordingInfo, coverage, activeStep]);
+  }, [
+    diagram,
+    visibleConnections,
+    edgeHandleAssignments,
+    selectedEdgeId,
+    isPlaying,
+    flowHighlight,
+    isRecording,
+    recordingInfo,
+    coverage,
+    activeStep,
+  ]);
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
@@ -459,6 +502,15 @@ const Canvas = ({
           let absY = change.position.y;
 
           if (comp.parentId) {
+            const parentNode = nodes.find((n) => n.id === comp.parentId);
+            const pw = (parentNode?.style?.width as number) ?? PANEL_DEFAULT_W;
+            const ph = (parentNode?.style?.height as number) ?? PANEL_DEFAULT_H;
+            const relX = change.position.x;
+            const relY = change.position.y;
+            const isOutsideParent =
+              relX < 0 || relY < 0 || relX > pw || relY > ph;
+            setUnparentCandidatePanelId(isOutsideParent ? comp.parentId : null);
+
             const parentLayout = diagram?.nodeLayouts.find(
               (nl) => nl.elementId === comp.parentId,
             );
@@ -466,6 +518,8 @@ const Canvas = ({
               absX += parentLayout.x;
               absY += parentLayout.y;
             }
+          } else {
+            setUnparentCandidatePanelId(null);
           }
 
           const panels = nodes.filter(
@@ -495,23 +549,23 @@ const Canvas = ({
 
   const onNodeDragStop = useCallback(
     (_: unknown, draggedNode: Node) => {
+      setUnparentCandidatePanelId(null);
       if (draggedNode.type === "panel") return;
       if (draggedNode.parentId) {
         const parent = nodes.find((n) => n.id === draggedNode.parentId);
         if (parent) {
           const pw = (parent.style?.width as number) ?? PANEL_DEFAULT_W;
           const ph = (parent.style?.height as number) ?? PANEL_DEFAULT_H;
-          if (
-            draggedNode.position.x < -20 ||
-            draggedNode.position.y < -20 ||
-            draggedNode.position.x > pw + 20 ||
-            draggedNode.position.y > ph + 20
-          ) {
+          const outside =
+            draggedNode.position.x < 0 ||
+            draggedNode.position.y < 0 ||
+            draggedNode.position.x > pw ||
+            draggedNode.position.y > ph;
+          if (outside) {
+            const absX = parent.position.x + draggedNode.position.x;
+            const absY = parent.position.y + draggedNode.position.y;
             setParent(draggedNode.id, null);
-            updateNodeLayout(draggedNode.id, {
-              x: parent.position.x + draggedNode.position.x,
-              y: parent.position.y + draggedNode.position.y,
-            });
+            updateNodeLayout(draggedNode.id, { x: absX, y: absY });
             return;
           }
         }
@@ -574,7 +628,12 @@ const Canvas = ({
           const next = new Set(prev);
           if (next.has(node.id)) next.delete(node.id);
           else next.add(node.id);
-          const primary = next.size === 0 ? null : (next.has(node.id) ? node.id : next.values().next().value);
+          const primary =
+            next.size === 0
+              ? null
+              : next.has(node.id)
+                ? node.id
+                : next.values().next().value;
           setSelectedNodeId(primary);
           return next;
         });
@@ -658,6 +717,7 @@ const Canvas = ({
 
       if (e.key === "Escape") {
         e.preventDefault();
+        clearClipboard();
         reactFlowInstance.setNodes((nds) =>
           nds.map((n) => ({ ...n, selected: false })),
         );
@@ -693,10 +753,10 @@ const Canvas = ({
         }
         return;
       }
-      if (mod && e.key === "d") {
+      if (mod && e.key === "c") {
         e.preventDefault();
         const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
-        const toDuplicate =
+        const toCopy =
           selected.length > 0
             ? selected
             : selectedNodeId
@@ -704,20 +764,72 @@ const Canvas = ({
                   .getNodes()
                   .filter((n) => n.id === selectedNodeId)
               : [];
-        if (toDuplicate.length === 0) return;
-        for (const n of toDuplicate) {
-          const comp = diagram.snapshot.components[n.id];
+        const ids = toCopy
+          .map((n) => n.id)
+          .filter((id) => {
+            const c = diagram.snapshot.components[id];
+            return c && c.type !== "panel" && c.type !== "note";
+          });
+        if (ids.length === 0) return;
+        copyToClipboard(ids);
+        return;
+      }
+      if (mod && e.key === "v") {
+        e.preventDefault();
+        const wrapper = reactFlowWrapperRef.current;
+        const center = wrapper
+          ? reactFlowInstance.screenToFlowPosition({
+              x: wrapper.getBoundingClientRect().width / 2,
+              y: wrapper.getBoundingClientRect().height / 2,
+            })
+          : { x: 300, y: 300 };
+        pasteFromClipboard(center);
+        return;
+      }
+      if (mod && e.key === "d") {
+        e.preventDefault();
+        const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
+        const toDup =
+          selected.length > 0
+            ? selected
+            : selectedNodeId
+              ? reactFlowInstance
+                  .getNodes()
+                  .filter((n) => n.id === selectedNodeId)
+              : [];
+        const ids = toDup
+          .map((n) => n.id)
+          .filter((id) => {
+            const c = diagram.snapshot.components[id];
+            return c && c.type !== "panel" && c.type !== "note";
+          });
+        if (ids.length === 0) return;
+        copyToClipboard(ids);
+        const layouts = diagram.nodeLayouts;
+        let cx = 0;
+        let cy = 0;
+        let n = 0;
+        for (const id of ids) {
+          const comp = diagram.snapshot.components[id];
           if (!comp) continue;
-          const layout = diagram.nodeLayouts.find(
-            (nl) => nl.elementId === n.id,
-          );
-          addComponent(
-            comp.type,
-            `${comp.name} (cópia)`,
-            comp.parentId,
-            { x: (layout?.x ?? 0) + 30, y: (layout?.y ?? 0) + 30 },
-            comp.awsService,
-          );
+          const layout = layouts.find((nl) => nl.elementId === id);
+          let x = layout?.x ?? 0;
+          let y = layout?.y ?? 0;
+          if (comp.parentId) {
+            const parentLayout = layouts.find(
+              (nl) => nl.elementId === comp.parentId,
+            );
+            if (parentLayout) {
+              x += parentLayout.x;
+              y += parentLayout.y;
+            }
+          }
+          cx += x;
+          cy += y;
+          n += 1;
+        }
+        if (n > 0) {
+          pasteFromClipboard({ x: cx / n + 20, y: cy / n + 20 });
         }
         return;
       }
@@ -760,8 +872,14 @@ const Canvas = ({
     redo,
     removeComponent,
     addComponent,
+    updateComponent,
+    addConnection,
+    updateConnection,
     groupNodes,
     ungroupNodes,
+    copyToClipboard,
+    pasteFromClipboard,
+    clearClipboard,
     isRecording,
     onRecordUndo,
   ]);
@@ -774,10 +892,7 @@ const Canvas = ({
       const { x, y, zoom } = reactFlowInstance.getViewport();
       if (e.ctrlKey || e.metaKey) {
         const delta = e.deltaY > 0 ? 0.9 : 1.1;
-        const nextZoom = Math.min(
-          4,
-          Math.max(0.1, zoom * delta),
-        );
+        const nextZoom = Math.min(4, Math.max(0.1, zoom * delta));
         reactFlowInstance.setViewport(
           { x, y, zoom: nextZoom },
           { duration: 0 },
@@ -880,16 +995,17 @@ const Canvas = ({
           onClose={() => setContextMenu(null)}
         />
       )}
-      {(selectedNodeId || selectedEdgeId || selectedCount > 0) && !isRecording && (
-        <ElementPanel
-          key={selectedNodeId ?? selectedEdgeId ?? "multi"}
-          selectedElementId={selectedNodeId}
-          selectedEdgeId={selectedEdgeId}
-          selectedNodeIds={Array.from(selectedNodeIds)}
-          selectedNodes={selectedNodes}
-          onClose={closePanel}
-        />
-      )}
+      {(selectedNodeId || selectedEdgeId || selectedCount > 0) &&
+        !isRecording && (
+          <ElementPanel
+            key={selectedNodeId ?? selectedEdgeId ?? "multi"}
+            selectedElementId={selectedNodeId}
+            selectedEdgeId={selectedEdgeId}
+            selectedNodeIds={Array.from(selectedNodeIds)}
+            selectedNodes={selectedNodes}
+            onClose={closePanel}
+          />
+        )}
     </div>
   );
 };

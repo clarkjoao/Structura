@@ -13,6 +13,8 @@ export interface PanelNodeData {
   panelOpacity?: number;
   isSelected: boolean;
   isDragTarget?: boolean;
+  /** Child is being dragged outside this panel — will unparent on drop */
+  isUnparentCandidate?: boolean;
   collapsed?: boolean;
   childCount?: number;
   onToggleCollapse?: () => void;
@@ -33,18 +35,25 @@ function colorWithAlpha(color: string, alpha: number): string {
   return color;
 }
 
+const UNPARENT_BORDER = "hsl(25 95% 53%)"; // orange
+
 const PanelNode = memo(({ data, selected }: NodeProps) => {
   const d = data as unknown as PanelNodeData;
   const color = d.panelColor || DEFAULT_COLOR;
   const opacity = d.panelOpacity ?? DEFAULT_OPACITY;
   const isSelected = selected || d.isSelected;
   const isDragTarget = d.isDragTarget;
+  const isUnparentCandidate = d.isUnparentCandidate ?? false;
   const collapsed = d.collapsed ?? false;
   const childCount = d.childCount ?? 0;
   const onToggle = d.onToggleCollapse;
 
   const bgAlpha = isDragTarget ? Math.min(opacity + 15, 40) / 100 : opacity / 100;
-  const borderColor = isSelected || isDragTarget ? color : colorWithAlpha(color, 0.4);
+  const borderColor = isUnparentCandidate
+    ? UNPARENT_BORDER
+    : isSelected || isDragTarget
+      ? color
+      : colorWithAlpha(color, 0.4);
   const borderStyle = isSelected ? "dashed" : "solid";
 
   const selectedRing = "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110";

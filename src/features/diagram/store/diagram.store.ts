@@ -261,6 +261,13 @@ interface AppState {
   past: DiagramSnapshot[];
   future: DiagramSnapshot[];
   _lastUndoRedoAt: number;
+  /** Root-level clipboard; not persisted. Persists across diagram navigation. */
+  clipboard: ClipboardEntry | null;
+}
+
+export interface ClipboardEntry {
+  components: Component[];
+  connections: Connection[];
 }
 
 interface AppActions {
@@ -331,6 +338,10 @@ interface AppActions {
 
   undo: () => void;
   redo: () => void;
+
+  copyToClipboard: (componentIds: string[]) => void;
+  pasteFromClipboard: (position?: { x: number; y: number }) => void;
+  clearClipboard: () => void;
 }
 
 export type DiagramStore = AppState & AppActions;
@@ -374,6 +385,72 @@ export const useDiagramStore = create<DiagramStore>()(
       past: [],
       future: [],
       _lastUndoRedoAt: 0,
+      clipboard: null,
+
+    copyToClipboard: (componentIds) => {
+      set((state) => {
+        if (!state.activeDiagramId) return;
+        const d = state.diagrams[state.activeDiagramId];
+        if (!d) return;
+        const idSet = new Set(componentIds);
+        const components = componentIds
+          .map((id) => d.snapshot.components[id])
+          .filter((c): c is Component => !!c)
+          .map((c) => deepClone(c));
+        const connections = Object.values(d.snapshot.connections)
+          .filter(
+            (c) => idSet.has(c.sourceId) && idSet.has(c.targetId),
+          )
+          .map((c) => deepClone(c));
+        state.clipboard = { components, connections };
+      });
+    },
+
+    pasteFromClipboard: (position) => {
+      set((state) => {
+        if (!state.clipboard || !state.activeDiagramId) return;
+        const d = state.diagrams[state.activeDiagramId];
+        if (!d) return;
+        pushHistory(state);
+        const idMap: Record<string, string> = {};
+        const baseX = position?.x ?? 300;
+        const baseY = position?.y ?? 300;
+        state.clipboard.components.forEach((c, i) => {
+          const newId = generateId("el");
+          idMap[c.id] = newId;
+          d.snapshot.components[newId] = {
+            ...deepClone(c),
+            id: newId,
+            parentId: null,
+          };
+          d.nodeLayouts.push({
+            elementId: newId,
+            x: baseX + i * 20,
+            y: baseY + i * 20,
+          });
+        });
+        state.clipboard.connections.forEach((conn) => {
+          const src = idMap[conn.sourceId];
+          const tgt = idMap[conn.targetId];
+          if (src && tgt) {
+            const newId = generateId("conn");
+            d.snapshot.connections[newId] = {
+              ...deepClone(conn),
+              id: newId,
+              sourceId: src,
+              targetId: tgt,
+            };
+          }
+        });
+        d.updatedAt = "agora";
+      });
+    },
+
+    clearClipboard: () => {
+      set((state) => {
+        state.clipboard = null;
+      });
+    },
 
     addDiagram: (name, level, domain, folderId) => {
       const diagram: Diagram = {
@@ -863,11 +940,20 @@ export const useDiagramStore = create<DiagramStore>()(
     {
       name: PERSIST_KEY,
       storage: createJSONStorage(() => defaultStorage),
+      partialize: (state) => ({
+        diagrams: state.diagrams,
+        folders: state.folders,
+        activeDiagramId: state.activeDiagramId,
+        past: state.past,
+        future: state.future,
+        _lastUndoRedoAt: state._lastUndoRedoAt,
+      }),
       merge: (persistedState, currentState) => {
         const state = {
           ...currentState,
           ...(persistedState && (persistedState as Partial<DiagramStore>)),
         };
+        state.clipboard = currentState.clipboard ?? null;
         // Migrate: ensure every rehydrated diagram snapshot has serviceRegistry
         Object.values(state.diagrams ?? {}).forEach((d) => {
           if (!d.snapshot.serviceRegistry) d.snapshot.serviceRegistry = {};
@@ -1016,5 +1102,8 @@ export const useDiagramActions = () =>
       insertPattern: s.insertPattern,
       undo: s.undo,
       redo: s.redo,
+      copyToClipboard: s.copyToClipboard,
+      pasteFromClipboard: s.pasteFromClipboard,
+      clearClipboard: s.clearClipboard,
     })),
   );
