@@ -138,7 +138,7 @@ const Canvas = ({
   const { isPlaying, activeStep, flowHighlight, coverage, recordingInfo } =
     useFlowState({ activeFlow, currentStep, flows, isRecording, recordingSteps });
 
-  const { dragTargetPanelId, unparentCandidatePanelId, onNodesChange, onNodeDragStop } =
+  const { dragTargetPanelId, unparentCandidatePanelId, onNodesChange: innerOnNodesChange, onNodeDragStop: innerOnNodeDragStop } =
     useNodeDragParenting({ diagram, nodes: [], updateNodeLayout, setParent });
 
   const nodes = useCanvasNodes({
@@ -148,6 +148,38 @@ const Canvas = ({
     dragTargetPanelId, unparentCandidatePanelId, connectionCountPerNode,
     flowHighlight, activeStep, recordingInfo, coverage, isViewingCoverage: !!isViewingCoverage,
   });
+
+  // Local drag position overrides for real-time visual feedback without hitting the store on every frame
+  const [dragPositions, setDragPositions] = useState<Record<string, { x: number; y: number }>>({});
+
+  const renderNodes = useMemo(() => {
+    if (Object.keys(dragPositions).length === 0) return nodes;
+    return nodes.map((n) => {
+      const dp = dragPositions[n.id];
+      return dp ? { ...n, position: dp } : n;
+    });
+  }, [nodes, dragPositions]);
+
+  const onNodesChange = useCallback((changes: Parameters<typeof innerOnNodesChange>[0]) => {
+    const overrides: Record<string, { x: number; y: number }> = {};
+    let hasDragEnd = false;
+    for (const c of changes) {
+      if (c.type === "position" && c.position) {
+        if (c.dragging) overrides[c.id] = c.position;
+        else hasDragEnd = true;
+      }
+    }
+    if (Object.keys(overrides).length > 0) {
+      setDragPositions((prev) => ({ ...prev, ...overrides }));
+    }
+    if (hasDragEnd) setDragPositions({});
+    innerOnNodesChange(changes);
+  }, [innerOnNodesChange]);
+
+  const onNodeDragStop = useCallback((_: unknown, draggedNode: Node) => {
+    setDragPositions({});
+    innerOnNodeDragStop(_, draggedNode);
+  }, [innerOnNodeDragStop]);
 
   const edges = useCanvasEdges({
     diagram, visibleConnections, edgeHandleAssignments, selectedEdgeId,
@@ -243,7 +275,7 @@ const Canvas = ({
         <CanvasToolbar onDrillUp={onDrillUp} isPanelOpen={isPanelOpen} selectedCount={selectedCount} />
         <div onContextMenu={(e) => e.preventDefault()} className="w-full h-full">
           <ReactFlow
-            nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
+            nodes={renderNodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
             onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect}
             onNodeClick={onNodeClick} onEdgeClick={onEdgeClick} onPaneClick={onPaneClick}
             onPaneContextMenu={(e) => e.preventDefault()} onNodeContextMenu={onNodeContextMenu}

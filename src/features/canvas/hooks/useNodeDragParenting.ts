@@ -31,7 +31,7 @@ export function useNodeDragParenting({
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
       changes.forEach((change) => {
-        if (change.type === "position" && change.position)
+        if (change.type === "position" && change.position && !change.dragging)
           updateNodeLayout(change.id, change.position);
         if (change.type === "dimensions" && change.dimensions) {
           const layout = diagram?.nodeLayouts.find((nl) => nl.elementId === change.id);
