@@ -1,4 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, lazy, Suspense } from "react";
+
+const DefectDojoPanel = lazy(() =>
+  import("@/integrations/defectdojo").then((m) => ({
+    default: m.DefectDojoPanel,
+  })),
+);
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -83,6 +89,14 @@ const ServiceRegistry = () => {
             className="w-full rounded-lg border border-border bg-card pl-10 pr-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           />
         </div>
+
+        {import.meta.env.VITE_ENABLE_DEFECTDOJO === "true" && (
+          <Suspense fallback={null}>
+            <div className="mb-6">
+              <DefectDojoPanel />
+            </div>
+          </Suspense>
+        )}
 
         <div className="flex gap-6">
           <div className="flex-1">
