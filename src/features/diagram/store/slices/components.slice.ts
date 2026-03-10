@@ -1,4 +1,4 @@
-import type { Component, ComponentType, PanelComponent } from "../../model/diagram.types";
+import type { Component, ComponentPatch, ComponentType, PanelComponent } from "../../model/diagram.types";
 import { generateId } from "../../model/diagram.utils";
 import { isPanelComponent } from "../../model/component.guards";
 import type { AppState } from "../store.types";
@@ -48,7 +48,7 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
       return component;
     },
 
-    updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => {
+    updateComponent: (id: string, patch: ComponentPatch) => {
       const patchAny = patch as Record<string, unknown>;
       const width = patchAny.width as number | undefined;
       const height = patchAny.height as number | undefined;

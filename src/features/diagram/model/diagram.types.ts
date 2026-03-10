@@ -56,6 +56,12 @@ export interface AwsComponent extends BaseComponent {
 
 export type Component = C4Component | PanelComponent | NoteComponent | AwsComponent;
 
+/** Patch for updateComponent: allows any property from any component variant, plus width/height (applied to NodeLayout). */
+export type ComponentPatch = Partial<Omit<C4Component, "id">> &
+  Partial<Omit<PanelComponent, "id">> &
+  Partial<Omit<NoteComponent, "id">> &
+  Partial<Omit<AwsComponent, "id">> & { width?: number; height?: number };
+
 // ── Edge / Connection types ───────────────────────────────────────────────
 
 export type EdgeStyle = "straight" | "bezier" | "step" | "smoothstep";

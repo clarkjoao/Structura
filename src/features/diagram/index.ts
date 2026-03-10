@@ -3,6 +3,7 @@ export type {
   ComponentType,
   Level,
   Component,
+  ComponentPatch,
   C4Component,
   PanelComponent,
   NoteComponent,

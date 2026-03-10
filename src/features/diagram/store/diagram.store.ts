@@ -5,6 +5,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { defaultStorage } from "@/infrastructure/persistence";
 import type {
   Component,
+  ComponentPatch,
   Connection,
   Flow,
   FlowStep,
@@ -47,7 +48,7 @@ interface AppActions {
     position?: { x: number; y: number },
     awsService?: string,
   ) => Component;
-  updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => void;
+  updateComponent: (id: string, patch: ComponentPatch) => void;
   removeComponent: (id: string) => void;
 
   addConnection: (sourceId: string, targetId: string, label: string) => Connection;
