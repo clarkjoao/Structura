@@ -138,8 +138,12 @@ const Canvas = ({
   const { isPlaying, activeStep, flowHighlight, coverage, recordingInfo } =
     useFlowState({ activeFlow, currentStep, flows, isRecording, recordingSteps });
 
+  // Ref holds the nodes from the previous render so useNodeDragParenting callbacks
+  // always have accurate panel bounds without a circular dependency on useCanvasNodes.
+  const nodesRef = useRef<import("@xyflow/react").Node[]>([]);
+
   const { dragTargetPanelId, unparentCandidatePanelId, onNodesChange: innerOnNodesChange, onNodeDragStop: innerOnNodeDragStop } =
-    useNodeDragParenting({ diagram, nodes: [], updateNodeLayout, setParent });
+    useNodeDragParenting({ diagram, nodes: nodesRef.current, updateNodeLayout, setParent });
 
   const nodes = useCanvasNodes({
     diagram, visibleComponents, panelIds, selectedNodeId, selectedNodeIds,
@@ -148,6 +152,8 @@ const Canvas = ({
     dragTargetPanelId, unparentCandidatePanelId, connectionCountPerNode,
     flowHighlight, activeStep, recordingInfo, coverage, isViewingCoverage: !!isViewingCoverage,
   });
+
+  nodesRef.current = nodes;
 
   // Local drag position overrides for real-time visual feedback without hitting the store on every frame
   const [dragPositions, setDragPositions] = useState<Record<string, { x: number; y: number }>>({});
