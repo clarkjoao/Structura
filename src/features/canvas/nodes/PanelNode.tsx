@@ -80,10 +80,9 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
         {onToggle && (
           <button
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggle();
-            }}
+            onClick={(e) => { e.stopPropagation(); onToggle(); }}
+            aria-label="Expandir painel"
+            aria-expanded={false}
             className="shrink-0 p-1 rounded hover:bg-black/10 text-muted-foreground hover:text-foreground"
             title="Expandir"
           >
@@ -132,10 +131,9 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
           {onToggle && (
             <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggle();
-              }}
+              onClick={(e) => { e.stopPropagation(); onToggle(); }}
+              aria-label="Minimizar painel"
+              aria-expanded={true}
               className="shrink-0 p-1 rounded hover:bg-black/10 text-muted-foreground hover:text-foreground"
               title="Minimizar"
             >

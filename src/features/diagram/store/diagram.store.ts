@@ -319,10 +319,12 @@ export const useVisibleConnections = () =>
 export const useCanNavigateInto = (_elementId: string) => false;
 
 export const useServiceRegistry = () =>
-  useDiagramStore((s) =>
-    s.activeDiagramId
-      ? (s.diagrams[s.activeDiagramId].snapshot.serviceRegistry ?? {})
-      : {},
+  useDiagramStore(
+    useShallow((s) =>
+      s.activeDiagramId
+        ? (s.diagrams[s.activeDiagramId].snapshot.serviceRegistry ?? {})
+        : {},
+    ),
   );
 
 export const useAllServices = () =>
@@ -355,6 +357,15 @@ export const useFlows = () =>
       if (!s.activeDiagramId) return [];
       return Object.values(s.diagrams[s.activeDiagramId].snapshot.flows);
     }),
+  );
+
+export const useAllComponentsAcrossDiagrams = () =>
+  useDiagramStore(
+    useShallow((s) =>
+      Object.values(s.diagrams).flatMap((d) =>
+        Object.values(d.snapshot.components).map((c) => ({ ...c, diagramId: d.id, diagramName: d.name })),
+      ),
+    ),
   );
 
 // ── Action hooks ───────────────────────────────────────────────────────────

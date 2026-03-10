@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import type { ReactFlowInstance, Node } from "@xyflow/react";
-import type { Diagram } from "@/features/diagram";
+import type { Diagram, ComponentType, Component } from "@/features/diagram";
+import { getViewportCenter } from "../viewport-utils";
 
 interface UseCanvasKeyboardParams {
   diagram: Diagram | null | undefined;
@@ -21,7 +22,17 @@ interface UseCanvasKeyboardParams {
   copyToClipboard: (ids: string[]) => void;
   pasteFromClipboard: (position?: { x: number; y: number }) => void;
   clearClipboard: () => void;
+  addComponent: (type: ComponentType, name: string, parentId: string | null, position?: { x: number; y: number }) => Component;
+  isPanelOpen: boolean;
+  onOpenSearch?: () => void;
 }
+
+const C4_SHORTCUT_MAP: Record<string, { type: ComponentType; name: string }> = {
+  "1": { type: "person", name: "Novo Person" },
+  "2": { type: "system", name: "Novo System" },
+  "3": { type: "container", name: "Novo Container" },
+  "4": { type: "component", name: "Novo Component" },
+};
 
 export function useCanvasKeyboard({
   diagram,
@@ -42,6 +53,9 @@ export function useCanvasKeyboard({
   copyToClipboard,
   pasteFromClipboard,
   clearClipboard,
+  addComponent,
+  isPanelOpen,
+  onOpenSearch,
 }: UseCanvasKeyboardParams) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -202,6 +216,18 @@ export function useCanvasKeyboard({
         }
         return;
       }
+      if (mod && e.key === "/") {
+        e.preventDefault();
+        onOpenSearch?.();
+        return;
+      }
+      if (mod && C4_SHORTCUT_MAP[e.key]) {
+        e.preventDefault();
+        const { type, name } = C4_SHORTCUT_MAP[e.key];
+        const pos = getViewportCenter(reactFlowInstance, isPanelOpen);
+        addComponent(type, name, null, pos);
+        return;
+      }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
@@ -224,5 +250,8 @@ export function useCanvasKeyboard({
     setSelectedNodeIds,
     setSelectedEdgeId,
     setContextMenu,
+    addComponent,
+    isPanelOpen,
+    onOpenSearch,
   ]);
 }

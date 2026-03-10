@@ -206,6 +206,7 @@ const DrillDownButton = ({
   return (
     <button
       onClick={handleClick}
+      aria-label={`Explorar interior do elemento ${elementId}`}
       className={`mt-2 flex items-center gap-1 text-[10px] font-medium ${colorClass} hover:underline`}
     >
       <MousePointerClick className="h-3 w-3" /> Explorar interior
@@ -238,6 +239,13 @@ const EmbedButton = ({
   );
 };
 
+const CoverageDot = ({ flowNames }: { flowNames: string[] }) => (
+  <div
+    className="absolute -top-1.5 -left-1.5 z-10 h-3 w-3 rounded-full bg-emerald-500 ring-1 ring-background"
+    title={`Coberto por: ${flowNames.join(", ")}`}
+  />
+);
+
 const CardNode = memo(({ data, selected }: NodeProps) => {
   const d = data as unknown as NodeData;
   const isAws = isAwsType(d.type);
@@ -263,8 +271,12 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
     const borderClass = awsCategoryBorders[d.type] ?? "border-l-aws-general";
     return (
       <div
+        aria-label={`${d.name} (${d.type})`}
         className={`relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${borderClass} border-l-[3px] transition-shadow duration-200 ${(selected || d.isSelected) ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
       >
+        {d.coverageFlowNames && d.coverageFlowNames.length > 0 && (
+          <CoverageDot flowNames={d.coverageFlowNames} />
+        )}
         {d.recordingBadges && d.recordingBadges.length > 0 && (
           <div
             className={`absolute -top-2.5 -right-2.5 z-10 flex items-center justify-center min-w-[20px] h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold px-1 ${d.isLastRecorded ? "animate-pulse" : ""}`}
@@ -325,8 +337,12 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
 
   return (
     <div
+      aria-label={`${d.name} (${d.type})`}
       className={`relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${cfg.borderColor} border-l-[3px] transition-shadow duration-200 ${(selected || d.isSelected) ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
     >
+      {d.coverageFlowNames && d.coverageFlowNames.length > 0 && (
+        <CoverageDot flowNames={d.coverageFlowNames} />
+      )}
       {d.recordingBadges && d.recordingBadges.length > 0 && (
         <div
           className={`absolute -top-2.5 -right-2.5 z-10 flex items-center justify-center min-w-[20px] h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold px-1 ${d.isLastRecorded ? "animate-pulse" : ""}`}

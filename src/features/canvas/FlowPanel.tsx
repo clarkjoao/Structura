@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { X, Plus, Play, Trash2, Pencil, Copy, Check } from "lucide-react";
-import { useFlows, useDiagramActions } from "@/features/diagram";
+import { X, Plus, Play, Trash2, Pencil, Copy, Check, Layers, BarChart2 } from "lucide-react";
+import { useFlows, useDiagramActions, useActiveDiagramId } from "@/features/diagram";
 import type { Flow } from "@/features/diagram";
 
 interface Props {
@@ -8,11 +8,14 @@ interface Props {
   onPlay: (flow: Flow) => void;
   onStartRecording: () => void;
   onEditFlow: (flow: Flow) => void;
+  isViewingCoverage?: boolean;
+  onToggleCoverage?: () => void;
 }
 
-const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow }: Props) => {
+const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow, isViewingCoverage, onToggleCoverage }: Props) => {
   const flows = useFlows();
-  const { removeFlow } = useDiagramActions();
+  const activeDiagramId = useActiveDiagramId();
+  const { removeFlow, addFlow, updateFlow } = useDiagramActions();
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -25,15 +28,34 @@ const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow }: Props) => 
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const handleDuplicate = (flow: Flow) => {
+    if (!activeDiagramId) return;
+    const newFlow = addFlow(activeDiagramId, `Cópia de ${flow.name}`, flow.mermaid, flow.steps);
+    if (flow.description || flow.tags?.length) {
+      updateFlow(newFlow.id, { description: flow.description, tags: flow.tags });
+    }
+  };
+
   return (
     <div className="w-80 border-l border-border bg-card overflow-auto">
       <div className="flex items-center justify-between p-3 border-b border-border">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Flows
         </h3>
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-          <X className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-1.5">
+          {onToggleCoverage && (
+            <button
+              onClick={onToggleCoverage}
+              title="Ver cobertura"
+              className={`text-xs rounded-md px-2 py-0.5 font-medium transition-colors flex items-center gap-1 ${isViewingCoverage ? "bg-emerald-500/20 text-emerald-400" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              <BarChart2 className="h-3.5 w-3.5" /> Cobertura
+            </button>
+          )}
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {allTags.length > 0 && (
@@ -75,6 +97,9 @@ const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow }: Props) => 
                 )}
                 <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                   <span className="text-[10px] text-muted-foreground">{flow.steps.length} passos</span>
+                  {new Set(flow.steps.filter((s) => s.componentId).map((s) => s.componentId)).size > 0 && (
+                    <span className="text-[10px] text-muted-foreground">· {new Set(flow.steps.filter((s) => s.componentId).map((s) => s.componentId)).size} participantes</span>
+                  )}
                   {flow.tags?.map((tag) => (
                     <span key={tag} className="text-[9px] rounded-full bg-secondary px-1.5 py-0.5 text-secondary-foreground">
                       {tag}
@@ -83,6 +108,9 @@ const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow }: Props) => 
                 </div>
               </div>
               <div className="flex items-center gap-1 shrink-0">
+                <button onClick={() => handleDuplicate(flow)} className="text-muted-foreground hover:text-foreground transition-colors" title="Duplicar flow">
+                  <Layers className="h-3.5 w-3.5" />
+                </button>
                 <button onClick={() => handleCopy(flow)} className="text-muted-foreground hover:text-foreground transition-colors" title="Copiar Mermaid">
                   {copiedId === flow.id
                     ? <Check className="h-3.5 w-3.5 text-emerald-500" />

@@ -50,12 +50,13 @@ interface CanvasProps {
   onRecordEdgeClick?: (edgeId: string, handleId?: string) => void;
   onRecordHandleClick?: (nodeId: string, handleId: string) => void;
   onRecordUndo?: () => void;
+  isViewingCoverage?: boolean;
 }
 
 const Canvas = ({
   activeFlow, currentStep, onOpenDiagram, onDrillUp,
   isRecording, recordingSteps, onRecordNodeClick, onRecordEdgeClick,
-  onRecordHandleClick, onRecordUndo,
+  onRecordHandleClick, onRecordUndo, isViewingCoverage,
 }: CanvasProps = {}) => {
   const diagram = useActiveDiagram();
   const allDiagrams = useDiagrams();
@@ -66,7 +67,7 @@ const Canvas = ({
   const {
     updateNodeLayout, updateViewport, addConnection,
     bringToFront, sendToBack, openDiagram, updateComponent,
-    setParent, removeComponent, undo, redo,
+    setParent, removeComponent, undo, redo, addComponent,
     groupNodes, ungroupNodes, copyToClipboard, pasteFromClipboard, clearClipboard,
   } = useDiagramActions();
   const navigate = useNavigate();
@@ -145,7 +146,7 @@ const Canvas = ({
     serviceRegistry: serviceRegistry ?? {}, allDiagrams, handleDrillDown,
     handlePanelCollapseToggle, isPlaying, isRecording: !!isRecording, onRecordHandleClick,
     dragTargetPanelId, unparentCandidatePanelId, connectionCountPerNode,
-    flowHighlight, activeStep, recordingInfo, coverage,
+    flowHighlight, activeStep, recordingInfo, coverage, isViewingCoverage: !!isViewingCoverage,
   });
 
   const edges = useCanvasEdges({
@@ -199,12 +200,15 @@ const Canvas = ({
 
   const closePanel = useCallback(() => { setSelectedNodeId(null); setSelectedEdgeId(null); }, []);
 
+  const isPanelOpen = !!(selectedNodeId || selectedEdgeId) && !isRecording;
+
   useCanvasKeyboard({
     diagram, selectedNodeId, reactFlowInstance, reactFlowWrapperRef,
     isRecording, onRecordUndo, setSelectedNodeId, setSelectedNodeIds,
     setSelectedEdgeId, setContextMenu: () => setContextMenu(null),
     undo, redo, removeComponent, groupNodes, ungroupNodes,
     copyToClipboard, pasteFromClipboard, clearClipboard,
+    addComponent, isPanelOpen,
   });
 
   useEffect(() => {
@@ -236,7 +240,7 @@ const Canvas = ({
         .react-flow__selection { background: rgba(59, 130, 246, 0.08); border: 1px solid #3b82f6; }
       `}</style>
       <div ref={reactFlowWrapperRef} className="flex-1 relative">
-        <CanvasToolbar onDrillUp={onDrillUp} isPanelOpen={!!(selectedNodeId || selectedEdgeId) && !isRecording} selectedCount={selectedCount} />
+        <CanvasToolbar onDrillUp={onDrillUp} isPanelOpen={isPanelOpen} selectedCount={selectedCount} />
         <div onContextMenu={(e) => e.preventDefault()} className="w-full h-full">
           <ReactFlow
             nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}

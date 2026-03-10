@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { useComponents, useConnections, stepsToMermaid } from "@/features/diagram";
 import type { FlowStep } from "@/features/diagram";
-import { X, GripVertical } from "lucide-react";
+import { X, GripVertical, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -44,6 +44,7 @@ const FlowRecorderPanel = ({
   const [expandedStep, setExpandedStep] = useState<number | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
+  const [copiedMermaid, setCopiedMermaid] = useState(false);
 
   const participants = useMemo(() => {
     return [...new Set(
@@ -209,7 +210,17 @@ const FlowRecorderPanel = ({
 
         {steps.length > 0 && (
           <div className="space-y-1">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Mermaid</p>
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Mermaid</p>
+              <button
+                type="button"
+                onClick={() => { navigator.clipboard.writeText(mermaidPreview); setCopiedMermaid(true); setTimeout(() => setCopiedMermaid(false), 2000); }}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                title="Copiar Mermaid"
+              >
+                {copiedMermaid ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+              </button>
+            </div>
             <pre className="rounded-md border border-border bg-secondary p-2 text-[10px] font-mono text-muted-foreground whitespace-pre-wrap overflow-auto max-h-32">
               {mermaidPreview}
             </pre>

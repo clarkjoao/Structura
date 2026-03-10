@@ -39,6 +39,7 @@ interface UseCanvasNodesParams {
     lastHandleId: string | null;
   } | null;
   coverage: { nodeFlows: Map<string, string[]>; edgeFlows: Map<string, string[]> } | null;
+  isViewingCoverage: boolean;
 }
 
 export function useCanvasNodes({
@@ -61,6 +62,7 @@ export function useCanvasNodes({
   activeStep,
   recordingInfo,
   coverage,
+  isViewingCoverage,
 }: UseCanvasNodesParams): Node[] {
   return useMemo(() => {
     if (!diagram) return [];
@@ -98,7 +100,8 @@ export function useCanvasNodes({
         const isHidden = comp.hidden === true || (isChild && comp.parentId !== null && collapsedPanelIds.has(comp.parentId));
         const isSelected = selectedNodeIds.has(comp.id);
         const dimWhenSelectionActive = selectedNodeIds.size > 0 && !isSelected && !isHidden;
-        const style = { ...d.buildStyle?.(comp, ctx), ...(dimWhenSelectionActive ? { opacity: 0.6 } : {}) };
+        const dimWhenCoverage = isViewingCoverage && !!coverage && !(coverage.nodeFlows.get(comp.id)?.length);
+        const style = { ...d.buildStyle?.(comp, ctx), ...((dimWhenSelectionActive || dimWhenCoverage) ? { opacity: 0.3 } : {}) };
         return {
           id: comp.id,
           type: d.rfType,
@@ -116,6 +119,6 @@ export function useCanvasNodes({
     diagram, visibleComponents, panelIds, selectedNodeId, selectedNodeIds,
     serviceRegistry, allDiagrams, handleDrillDown, isPlaying, flowHighlight,
     dragTargetPanelId, unparentCandidatePanelId, isRecording, recordingInfo,
-    onRecordHandleClick, activeStep, coverage, connectionCountPerNode, handlePanelCollapseToggle,
+    onRecordHandleClick, activeStep, coverage, connectionCountPerNode, handlePanelCollapseToggle, isViewingCoverage,
   ]);
 }

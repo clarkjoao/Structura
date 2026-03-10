@@ -15,6 +15,7 @@ const ModelExplorer = () => {
   const flows = useFlows();
   const navigate = useNavigate();
   const [showFlows, setShowFlows] = useState(false);
+  const [isViewingCoverage, setIsViewingCoverage] = useState(false);
   const [activeFlow, setActiveFlow] = useState<Flow | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [navStack, setNavStack] = useState<string[]>([]);
@@ -210,6 +211,7 @@ const ModelExplorer = () => {
               onRecordEdgeClick={handleRecordEdgeClick}
               onRecordHandleClick={handleRecordHandleClick}
               onRecordUndo={handleRecordUndo}
+              isViewingCoverage={isViewingCoverage}
             />
             {activeFlow && (
               <FlowStepNavigator flow={activeFlow} currentStep={currentStep} onPrev={handlePrev} onNext={handleNext} onExit={handleExit} />
@@ -230,7 +232,7 @@ const ModelExplorer = () => {
           />
         )}
         {showFlows && !activeFlow && !isRecording && (
-          <FlowPanel onClose={() => setShowFlows(false)} onPlay={handlePlay} onStartRecording={handleStartRecording} onEditFlow={handleEditFlow} />
+          <FlowPanel onClose={() => setShowFlows(false)} onPlay={handlePlay} onStartRecording={handleStartRecording} onEditFlow={handleEditFlow} isViewingCoverage={isViewingCoverage} onToggleCoverage={() => setIsViewingCoverage((v) => !v)} />
         )}
       </div>
     </div>

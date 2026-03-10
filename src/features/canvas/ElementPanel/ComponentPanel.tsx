@@ -33,6 +33,8 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
   const [name, setName] = useState(component.name);
   const [desc, setDesc] = useState(component.description);
   const [tech, setTech] = useState((component as { technology?: string }).technology ?? "");
+  const [tags, setTags] = useState<string[]>(component.tags ?? []);
+  const [tagInput, setTagInput] = useState("");
   const [type, setType] = useState<ComponentType>(component.type);
   const [awsService, setAwsService] = useState((component as { awsService?: string }).awsService ?? "");
   const [createdDiagramName, setCreatedDiagramName] = useState<string | null>(null);
@@ -108,6 +110,40 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
           {isPanelComponent(component) && <PanelColorPicker componentId={component.id} currentColor={component.panelColor ?? DEFAULT_PANEL_COLOR} currentOpacity={component.panelOpacity ?? DEFAULT_PANEL_OPACITY} updateComponent={updateComponent} />}
           {isNoteComponent(component) && <ColorSwatches componentId={component.id} currentColor={component.panelColor ?? DEFAULT_NOTE_COLOR} label="Cor da Nota" updateComponent={updateComponent} />}
           {!isSimple && <Field label="Tecnologia" value={tech} onChange={(v) => { setTech(v); debouncedUpdate({ technology: v || undefined } as Partial<Omit<Component, "id">>); }} />}
+          {!isSimple && (
+            <div>
+              <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">Tags</label>
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {tags.map((tag) => (
+                    <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      {tag}
+                      <button type="button" onClick={() => { const updated = tags.filter((t) => t !== tag); setTags(updated); debouncedUpdate({ tags: updated }); }} className="hover:text-foreground leading-none">×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && tagInput.trim()) {
+                    e.preventDefault();
+                    const newTag = tagInput.trim();
+                    if (!tags.includes(newTag)) {
+                      const updated = [...tags, newTag];
+                      setTags(updated);
+                      debouncedUpdate({ tags: updated });
+                    }
+                    setTagInput("");
+                  }
+                }}
+                placeholder="Adicionar tag e pressionar Enter"
+                className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+          )}
           {!isSimple && (
             <div>
               <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block"><Link2 className="h-3 w-3 inline mr-1" />Vincular ao Serviço</label>

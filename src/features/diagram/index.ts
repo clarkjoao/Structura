@@ -87,6 +87,8 @@ export {
   useAllConnections,
   /** Selector: flat array of all flows in the active diagram */
   useFlows,
+  /** Selector: flat array of ALL components across ALL diagrams, each annotated with diagramId + diagramName */
+  useAllComponentsAcrossDiagrams,
   /** Hook returning all mutation actions (add/update/remove/undo/redo/…) */
   useDiagramActions,
 } from "./store/diagram.store";
