@@ -1,73 +1,133 @@
-# Welcome to your Lovable project
+# Structura
 
-## Project info
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![React](https://img.shields.io/badge/React-18-61dafb.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6.svg)
+![Status](https://img.shields.io/badge/status-active-brightgreen.svg)
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+**Architecture diagramming for teams who think in systems.**
 
-## How can I edit this code?
+<!-- screenshot -->
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+## What is Structura?
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+Structura is an open source architecture diagramming tool built around the [C4 Model](https://c4model.com/) — a hierarchical approach to describing software systems at four levels of abstraction: Context, Container, Component, and Code. Structura focuses on the first three, giving teams a shared visual language for communicating architecture decisions.
 
-Changes made via Lovable will be committed automatically to this repo.
+Beyond static diagrams, Structura supports **flows**: named sequences of interactions across your components that can be recorded, played back step-by-step, and exported to Mermaid sequence diagrams. This lets you document not just the structure of a system, but the dynamic behavior — API calls, event flows, data pipelines — directly on the same canvas.
 
-**Use your preferred IDE**
+Structura also includes a built-in **AWS service catalog** so cloud-native teams can annotate components with real service types (Lambda, S3, RDS, and more) and keep diagrams close to the infrastructure they describe.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+---
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Features
 
-Follow these steps:
+- **C4 Model levels** — Context, Container, and Component diagrams in a single workspace, with drill-down navigation between levels
+- **AWS Services catalog** — 80+ AWS service types for annotating components with real infrastructure
+- **Flow recording & playback** — Record interaction sequences as flows, replay them step-by-step, and track coverage across your diagram
+- **Pattern library** — Reusable component panels and grouping to express architectural patterns
+- **Undo / Redo** — Full history stack scoped to each diagram
+- **Export** — Export to JSON, draw.io XML, or Mermaid sequence diagrams
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+---
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## Tech Stack
 
-# Step 3: Install the necessary dependencies.
-npm i
+| Layer | Technology |
+|-------|-----------|
+| UI Framework | [React 18](https://react.dev/) |
+| Language | [TypeScript 5](https://www.typescriptlang.org/) |
+| State Management | [Zustand](https://zustand-demo.pmnd.rs/) + Immer |
+| Canvas | [@xyflow/react](https://reactflow.dev/) (React Flow) |
+| Styling | [Tailwind CSS](https://tailwindcss.com/) + shadcn/ui |
+| Build | [Vite](https://vitejs.dev/) |
+| Tests | [Vitest](https://vitest.dev/) |
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- npm 9+
+
+### Installation
+
+```bash
+git clone https://github.com/your-org/structura.git
+cd structura/frontend
+npm install
 ```
 
-**Edit a file directly in GitHub**
+### Development
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+npm run dev        # Start dev server at http://localhost:8080
+npm run build      # Production build
+npm run lint       # Run ESLint
+npm run test       # Run tests
+```
 
-**Use GitHub Codespaces**
+The `@` path alias resolves to `./src`.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## Project Architecture
 
-This project is built with:
+```
+src/
+├── features/
+│   ├── diagram/       # Core data model, Zustand store, types, guards
+│   ├── canvas/        # ReactFlow canvas, node descriptors, hooks
+│   ├── flows/         # Flow parsing and Mermaid integration
+│   └── registry/      # Service definition registry
+├── infrastructure/
+│   └── persistence/   # Storage adapters (LocalStorage, InMemory)
+├── components/ui/     # shadcn/ui component library
+├── fixtures/          # Seed data for development
+└── lib/               # Export utilities, AWS catalog, GitHub import
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Diagram Store (`features/diagram`)
 
-## How can I deploy this project?
+The single source of truth is `useDiagramStore`, a Zustand store with Immer mutations and localStorage persistence. It is split into focused slices:
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+| Slice | Responsibility |
+|-------|---------------|
+| `components` | Add, update, remove, parent, group components |
+| `connections` | Manage edges between components |
+| `flows` | CRUD for named interaction flows |
+| `layout` | Node positions, dimensions, viewport, z-order |
+| `services` | Service registry and component-service linking |
+| `clipboard` | Copy/paste within and across diagrams |
+| `history` | Undo/redo via past/future snapshot stacks |
 
-## Can I connect a custom domain to my Lovable project?
+Each `Diagram` snapshot stores components as a **discriminated union** (`C4Component | PanelComponent | NoteComponent | AwsComponent`). Use the provided type guards (`isC4Component`, `isPanelComponent`, etc.) instead of checking `type` directly.
 
-Yes, you can!
+### Canvas (`features/canvas`)
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+`Canvas.tsx` bridges the diagram store to ReactFlow. Node rendering is driven by a **descriptor registry** — each node type implements `NodeTypeDescriptor` and registers itself. To add a new node type, see [`src/features/canvas/node-types/README.md`](src/features/canvas/node-types/README.md).
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Key hooks:
+
+| Hook | Purpose |
+|------|---------|
+| `useCanvasNodes` | Derives ReactFlow `Node[]` from visible components |
+| `useCanvasEdges` | Derives ReactFlow `Edge[]` from visible connections |
+| `useNodeDragParenting` | Handles drag-to-panel parenting and unparenting |
+| `useCanvasKeyboard` | Global keyboard shortcuts (undo, delete, duplicate, group) |
+| `useFlowState` | Computes playback highlights and coverage overlays |
+
+---
+
+## Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on opening issues, submitting pull requests, and the code style conventions used in this project.
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE) for details.
