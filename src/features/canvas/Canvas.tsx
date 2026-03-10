@@ -36,6 +36,7 @@ import { useNodeDragParenting } from "./hooks/useNodeDragParenting";
 import { useFlowState } from "./hooks/useFlowState";
 import { useCanvasNodes } from "./hooks/useCanvasNodes";
 import { useCanvasEdges } from "./hooks/useCanvasEdges";
+import { useDragSelect } from "./hooks/useDragSelect";
 
 const edgeTypes = { c4: CustomEdge };
 
@@ -138,8 +139,8 @@ const Canvas = ({
   const { isPlaying, activeStep, flowHighlight, coverage, recordingInfo } =
     useFlowState({ activeFlow, currentStep, flows, isRecording, recordingSteps });
 
-  const { dragTargetPanelId, unparentCandidatePanelId, onNodesChange: innerOnNodesChange, onNodeDragStop: innerOnNodeDragStop } =
-    useNodeDragParenting({ diagram, nodes: [], updateNodeLayout, setParent });
+  const { dragTargetPanelId, unparentCandidatePanelId, nodesRef, onNodesChange: innerOnNodesChange, onNodeDragStop: innerOnNodeDragStop } =
+    useNodeDragParenting({ diagram, updateNodeLayout, setParent });
 
   const nodes = useCanvasNodes({
     diagram, visibleComponents, panelIds, selectedNodeId, selectedNodeIds,
@@ -148,6 +149,7 @@ const Canvas = ({
     dragTargetPanelId, unparentCandidatePanelId, connectionCountPerNode,
     flowHighlight, activeStep, recordingInfo, coverage, isViewingCoverage: !!isViewingCoverage,
   });
+  nodesRef.current = nodes;
 
   // Local drag position overrides for real-time visual feedback without hitting the store on every frame
   const [dragPositions, setDragPositions] = useState<Record<string, { x: number; y: number }>>({});
@@ -167,6 +169,14 @@ const Canvas = ({
       if (c.type === "position" && c.position) {
         if (c.dragging) overrides[c.id] = c.position;
         else hasDragEnd = true;
+      }
+      if (c.type === "select") {
+        setSelectedNodeIds((prev) => {
+          const next = new Set(prev);
+          if (c.selected) next.add(c.id); else next.delete(c.id);
+          return next;
+        });
+        if (c.selected) setSelectedNodeId(c.id);
       }
     }
     if (Object.keys(overrides).length > 0) {
@@ -243,6 +253,16 @@ const Canvas = ({
     addComponent, isPanelOpen,
   });
 
+  const { selectionRect, onPointerDown: onDragSelectPointerDown, onPointerMove: onDragSelectPointerMove, onPointerUp: onDragSelectPointerUp } = useDragSelect({
+    reactFlowInstance,
+    wrapperRef: reactFlowWrapperRef,
+    selectionMode: SelectionMode.Partial,
+    setSelectedNodeIds,
+    setSelectedNodeId,
+    setSelectedEdgeId,
+    isRecording: !!isRecording,
+  });
+
   useEffect(() => {
     const el = document.querySelector(".react-flow__renderer");
     if (!el || !diagram) return;
@@ -271,7 +291,11 @@ const Canvas = ({
         .react-flow__pane:active { cursor: grabbing; }
         .react-flow__selection { background: rgba(59, 130, 246, 0.08); border: 1px solid #3b82f6; }
       `}</style>
-      <div ref={reactFlowWrapperRef} className="flex-1 relative">
+      <div ref={reactFlowWrapperRef} className="flex-1 relative"
+        onPointerDown={onDragSelectPointerDown}
+        onPointerMove={onDragSelectPointerMove}
+        onPointerUp={onDragSelectPointerUp}
+      >
         <CanvasToolbar onDrillUp={onDrillUp} isPanelOpen={isPanelOpen} selectedCount={selectedCount} />
         <div onContextMenu={(e) => e.preventDefault()} className="w-full h-full">
           <ReactFlow
@@ -281,7 +305,8 @@ const Canvas = ({
             onPaneContextMenu={(e) => e.preventDefault()} onNodeContextMenu={onNodeContextMenu}
             onNodeDragStop={onNodeDragStop} onSelectionChange={onSelectionChange}
             panOnDrag={[2]} panOnScroll panOnScrollMode={PanOnScrollMode.Free}
-            selectionOnDrag selectionMode={SelectionMode.Partial}
+            selectionMode={SelectionMode.Partial}
+            elevateNodesOnSelect={false}
             zoomOnScroll={false} zoomOnPinch zoomOnDoubleClick={false}
             minZoom={0.1} maxZoom={4} multiSelectionKeyCode="Meta"
             defaultViewport={diagram.viewport} fitView fitViewOptions={{ padding: 0.3 }}
@@ -292,6 +317,12 @@ const Canvas = ({
             <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
           </ReactFlow>
         </div>
+        {selectionRect && (
+          <div
+            className="absolute border border-blue-500 bg-blue-500/10 pointer-events-none"
+            style={{ left: selectionRect.x, top: selectionRect.y, width: selectionRect.width, height: selectionRect.height }}
+          />
+        )}
       </div>
       {contextMenu && (
         <NodeContextMenu x={contextMenu.x} y={contextMenu.y} elementId={contextMenu.elementId}

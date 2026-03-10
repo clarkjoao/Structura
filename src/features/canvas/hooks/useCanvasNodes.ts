@@ -90,6 +90,9 @@ export function useCanvasNodes({
       onRecordHandleClick,
       onPanelCollapseToggle: handlePanelCollapseToggle,
     };
+    const hasNonPanelSelection = [...selectedNodeIds].some(
+      (id) => { const c = diagram.snapshot.components[id]; return c && !isPanelComponent(c); },
+    );
     return [...visibleComponents]
       .sort((a, b) => (isPanelComponent(a) ? -1 : isPanelComponent(b) ? 1 : 0))
       .map((comp): Node => {
@@ -99,7 +102,8 @@ export function useCanvasNodes({
         const zIndex = layout?.zIndex ?? (typeof d.zIndex === "function" ? d.zIndex(comp) : d.zIndex);
         const isHidden = comp.hidden === true || (isChild && comp.parentId !== null && collapsedPanelIds.has(comp.parentId));
         const isSelected = selectedNodeIds.has(comp.id);
-        const dimWhenSelectionActive = selectedNodeIds.size > 0 && !isSelected && !isHidden;
+        const isParentSelected = comp.parentId !== null && selectedNodeIds.has(comp.parentId);
+        const dimWhenSelectionActive = hasNonPanelSelection && !isSelected && !isParentSelected && !isHidden;
         const dimWhenCoverage = isViewingCoverage && !!coverage && !(coverage.nodeFlows.get(comp.id)?.length);
         const style = { ...d.buildStyle?.(comp, ctx), ...((dimWhenSelectionActive || dimWhenCoverage) ? { opacity: 0.3 } : {}) };
         return {

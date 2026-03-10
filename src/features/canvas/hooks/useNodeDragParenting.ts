@@ -6,7 +6,6 @@ import { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../constants";
 
 interface UseNodeDragParentingParams {
   diagram: Diagram | null | undefined;
-  nodes: Node[];
   updateNodeLayout: (elementId: string, position: { x: number; y: number }, dimensions?: { width: number; height: number }) => void;
   setParent: (childId: string, parentId: string | null) => void;
 }
@@ -14,25 +13,50 @@ interface UseNodeDragParentingParams {
 interface UseNodeDragParentingResult {
   dragTargetPanelId: string | null;
   unparentCandidatePanelId: string | null;
+  nodesRef: React.MutableRefObject<Node[]>;
   onNodesChange: OnNodesChange;
   onNodeDragStop: (_: unknown, draggedNode: Node) => void;
 }
 
+function getPanelBounds(diagram: Diagram | null | undefined) {
+  if (!diagram) return [];
+  return Object.values(diagram.snapshot.components)
+    .filter(isPanelComponent)
+    .map((c) => {
+      const layout = diagram.nodeLayouts.find((nl) => nl.elementId === c.id);
+      return {
+        id: c.id,
+        x: layout?.x ?? 0,
+        y: layout?.y ?? 0,
+        w: layout?.width ?? PANEL_DEFAULT_W,
+        h: layout?.height ?? PANEL_DEFAULT_H,
+      };
+    });
+}
+
 export function useNodeDragParenting({
   diagram,
-  nodes,
   updateNodeLayout,
   setParent,
 }: UseNodeDragParentingParams): UseNodeDragParentingResult {
   const [dragTargetPanelId, setDragTargetPanelId] = useState<string | null>(null);
   const [unparentCandidatePanelId, setUnparentCandidatePanelId] = useState<string | null>(null);
   const dragTargetRef = useRef<string | null>(null);
+  const draggingNodeIds = useRef(new Set<string>());
+  const nodesRef = useRef<Node[]>([]);
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
       changes.forEach((change) => {
-        if (change.type === "position" && change.position && !change.dragging)
-          updateNodeLayout(change.id, change.position);
+        if (change.type === "position") {
+          if (change.dragging === true) {
+            draggingNodeIds.current.add(change.id);
+          }
+          if (change.position && change.dragging === false && draggingNodeIds.current.has(change.id)) {
+            draggingNodeIds.current.delete(change.id);
+            updateNodeLayout(change.id, change.position);
+          }
+        }
         if (change.type === "dimensions" && change.dimensions) {
           const layout = diagram?.nodeLayouts.find((nl) => nl.elementId === change.id);
           if (layout) {
@@ -42,8 +66,7 @@ export function useNodeDragParenting({
 
         if (
           change.type === "position" &&
-          "dragging" in change &&
-          change.dragging &&
+          change.dragging === true &&
           change.position
         ) {
           const dragId = change.id;
@@ -54,9 +77,11 @@ export function useNodeDragParenting({
           let absY = change.position.y;
 
           if (comp.parentId) {
-            const parentNode = nodes.find((n) => n.id === comp.parentId);
-            const pw = (parentNode?.style?.width as number) ?? PANEL_DEFAULT_W;
-            const ph = (parentNode?.style?.height as number) ?? PANEL_DEFAULT_H;
+            const parentLayout = diagram?.nodeLayouts.find(
+              (nl) => nl.elementId === comp.parentId,
+            );
+            const pw = parentLayout?.width ?? PANEL_DEFAULT_W;
+            const ph = parentLayout?.height ?? PANEL_DEFAULT_H;
             const isOutsideParent =
               change.position.x < 0 ||
               change.position.y < 0 ||
@@ -64,9 +89,6 @@ export function useNodeDragParenting({
               change.position.y > ph;
             setUnparentCandidatePanelId(isOutsideParent ? comp.parentId : null);
 
-            const parentLayout = diagram?.nodeLayouts.find(
-              (nl) => nl.elementId === comp.parentId,
-            );
             if (parentLayout) {
               absX += parentLayout.x;
               absY += parentLayout.y;
@@ -75,15 +97,15 @@ export function useNodeDragParenting({
             setUnparentCandidatePanelId(null);
           }
 
-          const panels = nodes.filter(
-            (n) => n.type === "panel" && n.id !== comp.parentId,
+          const panels = getPanelBounds(diagram).filter(
+            (p) => p.id !== comp.parentId,
           );
           const match = panels.find(
             (p) =>
-              absX > p.position.x &&
-              absY > p.position.y &&
-              absX < p.position.x + ((p.style?.width as number) ?? PANEL_DEFAULT_W) &&
-              absY < p.position.y + ((p.style?.height as number) ?? PANEL_DEFAULT_H),
+              absX > p.x &&
+              absY > p.y &&
+              absX < p.x + p.w &&
+              absY < p.y + p.h,
           );
 
           const newTarget = match?.id ?? null;
@@ -94,7 +116,7 @@ export function useNodeDragParenting({
         }
       });
     },
-    [updateNodeLayout, diagram, nodes],
+    [updateNodeLayout, diagram],
   );
 
   const onNodeDragStop = useCallback(
@@ -102,18 +124,20 @@ export function useNodeDragParenting({
       setUnparentCandidatePanelId(null);
       if (draggedNode.type === "panel") return;
       if (draggedNode.parentId) {
-        const parent = nodes.find((n) => n.id === draggedNode.parentId);
-        if (parent) {
-          const pw = (parent.style?.width as number) ?? PANEL_DEFAULT_W;
-          const ph = (parent.style?.height as number) ?? PANEL_DEFAULT_H;
+        const parentLayout = diagram?.nodeLayouts.find(
+          (nl) => nl.elementId === draggedNode.parentId,
+        );
+        if (parentLayout) {
+          const pw = parentLayout.width ?? PANEL_DEFAULT_W;
+          const ph = parentLayout.height ?? PANEL_DEFAULT_H;
           const outside =
             draggedNode.position.x < 0 ||
             draggedNode.position.y < 0 ||
             draggedNode.position.x > pw ||
             draggedNode.position.y > ph;
           if (outside) {
-            const absX = parent.position.x + draggedNode.position.x;
-            const absY = parent.position.y + draggedNode.position.y;
+            const absX = parentLayout.x + draggedNode.position.x;
+            const absY = parentLayout.y + draggedNode.position.y;
             setParent(draggedNode.id, null);
             updateNodeLayout(draggedNode.id, { x: absX, y: absY });
             return;
@@ -122,27 +146,25 @@ export function useNodeDragParenting({
         return;
       }
 
-      const panels = nodes.filter((n) => n.type === "panel");
+      const panels = getPanelBounds(diagram);
       const match = panels.find(
         (p) =>
-          draggedNode.position.x > p.position.x &&
-          draggedNode.position.y > p.position.y &&
-          draggedNode.position.x <
-            p.position.x + ((p.style?.width as number) ?? PANEL_DEFAULT_W) &&
-          draggedNode.position.y <
-            p.position.y + ((p.style?.height as number) ?? PANEL_DEFAULT_H),
+          draggedNode.position.x > p.x &&
+          draggedNode.position.y > p.y &&
+          draggedNode.position.x < p.x + p.w &&
+          draggedNode.position.y < p.y + p.h,
       );
 
       if (match) {
         setParent(draggedNode.id, match.id);
         updateNodeLayout(draggedNode.id, {
-          x: draggedNode.position.x - match.position.x,
-          y: draggedNode.position.y - match.position.y,
+          x: draggedNode.position.x - match.x,
+          y: draggedNode.position.y - match.y,
         });
       }
     },
-    [nodes, setParent, updateNodeLayout],
+    [diagram, setParent, updateNodeLayout],
   );
 
-  return { dragTargetPanelId, unparentCandidatePanelId, onNodesChange, onNodeDragStop };
+  return { dragTargetPanelId, unparentCandidatePanelId, nodesRef, onNodesChange, onNodeDragStop };
 }
