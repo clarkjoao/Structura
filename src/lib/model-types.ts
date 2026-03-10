@@ -1,4 +1,5 @@
-// Re-exports for backward compatibility. Prefer importing from @/features/diagram or @/features/registry.
+// @deprecated — importe de @/features/diagram (ou @/features/registry). Este arquivo existe apenas para compatibilidade.
+// throw new Error('Deprecated — import from @/features/diagram instead')
 export type {
   ComponentType,
   Level,

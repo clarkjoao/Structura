@@ -1,48 +1,8 @@
 import { useState, useCallback, useMemo } from "react";
-import { useComponents, useConnections } from "@/features/diagram";
-import type { FlowStep, Component, Connection, ConnectionIntent } from "@/features/diagram";
-import { X, GripVertical } from "lucide-react";
+import { useComponents, useConnections, stepsToMermaid } from "@/features/diagram";
+import type { FlowStep } from "@/features/diagram";
+import { X, GripVertical, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
-
-const INTENT_ARROW: Record<ConnectionIntent, string> = {
-  dependency: "-->",
-  call: "->>",
-  event: "-->>",
-  "data-flow": "=>>",
-  "async-message": "-->>",
-};
-
-export function stepsToMermaid(
-  steps: FlowStep[],
-  components: Record<string, Component>,
-  connections: Record<string, Connection>,
-): string {
-  const lines = ["sequenceDiagram"];
-  steps.forEach((step) => {
-    if (step.connectionId) {
-      const conn = connections[step.connectionId];
-      if (conn) {
-        const src = components[conn.sourceId]?.name ?? "?";
-        const tgt = components[conn.targetId]?.name ?? "?";
-        const arrow = INTENT_ARROW[conn.intent ?? "call"];
-        lines.push(`  ${src}${arrow}${tgt}: ${conn.label}`);
-        if (step.description) {
-          lines.push(`  Note over ${src}: ${step.description}`);
-        }
-        if (step.duration) {
-          lines.push(`  Note right of ${tgt}: ${step.duration}`);
-        }
-      }
-    } else if (step.componentId) {
-      const name = components[step.componentId]?.name ?? "?";
-      lines.push(`  Note over ${name}: ${step.description || `step ${step.order + 1}`}`);
-      if (step.duration) {
-        lines.push(`  Note right of ${name}: ${step.duration}`);
-      }
-    }
-  });
-  return lines.join("\n");
-}
 
 interface Props {
   name: string;
@@ -84,6 +44,7 @@ const FlowRecorderPanel = ({
   const [expandedStep, setExpandedStep] = useState<number | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
+  const [copiedMermaid, setCopiedMermaid] = useState(false);
 
   const participants = useMemo(() => {
     return [...new Set(
@@ -249,7 +210,17 @@ const FlowRecorderPanel = ({
 
         {steps.length > 0 && (
           <div className="space-y-1">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Mermaid</p>
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Mermaid</p>
+              <button
+                type="button"
+                onClick={() => { navigator.clipboard.writeText(mermaidPreview); setCopiedMermaid(true); setTimeout(() => setCopiedMermaid(false), 2000); }}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                title="Copiar Mermaid"
+              >
+                {copiedMermaid ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+              </button>
+            </div>
             <pre className="rounded-md border border-border bg-secondary p-2 text-[10px] font-mono text-muted-foreground whitespace-pre-wrap overflow-auto max-h-32">
               {mermaidPreview}
             </pre>

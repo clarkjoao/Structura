@@ -63,4 +63,8 @@ export interface NodeTypeDescriptor {
   buildData: (comp: Component, ctx: NodeBuildContext) => Record<string, unknown>;
   /** Build optional `style` overrides */
   buildStyle?: (comp: Component, ctx: NodeBuildContext) => CSSProperties | undefined;
+  /** Default node dimensions used when no layout size is stored. */
+  defaultSize?: { width: number; height: number };
+  /** Default extra data fields merged into buildData output for this type. */
+  defaultData?: Partial<Record<string, unknown>>;
 }

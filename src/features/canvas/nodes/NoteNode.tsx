@@ -45,6 +45,7 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
         handleClassName="!w-2 !h-2 !bg-gray-900/60 !border-white !rounded-full"
       />
       <div
+        aria-label={d.name ? `Nota: ${d.name}` : "Nota"}
         className={`min-w-[160px] max-w-[280px] rounded-lg shadow-md transition-shadow duration-200 ${
           isSelected ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"
         }`}

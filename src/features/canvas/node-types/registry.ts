@@ -25,6 +25,21 @@ export function getDescriptor(type: ComponentType): NodeTypeDescriptor {
 }
 
 /**
+ * Register a new descriptor at runtime.
+ * Inserts it before c4Descriptor (the catch-all) so it is evaluated first.
+ * Throws if a descriptor with the same rfType is already registered.
+ */
+export function registerDescriptor(descriptor: NodeTypeDescriptor): void {
+  if (NODE_TYPE_REGISTRY.some((d) => d.rfType === descriptor.rfType)) {
+    throw new Error(
+      `[node-types] A descriptor with rfType "${descriptor.rfType}" is already registered.`,
+    );
+  }
+  // Insert before the last element (c4Descriptor catch-all)
+  NODE_TYPE_REGISTRY.splice(NODE_TYPE_REGISTRY.length - 1, 0, descriptor);
+}
+
+/**
  * ReactFlow nodeTypes map, auto-derived from the registry.
  * Import this in Canvas.tsx instead of building the object by hand.
  */

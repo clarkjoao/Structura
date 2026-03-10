@@ -96,6 +96,7 @@ const Edge = memo(
                     ? "bg-primary/15 border-primary/30 text-primary"
                     : "bg-card border-border text-muted-foreground"
                 }`}
+                title={d?.coverageFlowNames?.length ? `Coberto por: ${d.coverageFlowNames.join(", ")}` : undefined}
               >
                 {d?.recordingBadges && d.recordingBadges.length > 0 && (
                   <div className={`absolute -top-2.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-primary text-primary-foreground text-[9px] font-bold px-0.5 ${d.isLastRecorded ? "animate-pulse" : ""}`}>

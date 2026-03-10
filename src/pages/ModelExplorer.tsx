@@ -3,8 +3,8 @@ import { ReactFlowProvider } from "@xyflow/react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Download, GitBranch } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel, stepsToMermaid } from "@/features/canvas";
-import { useActiveDiagram, useActiveDiagramId, useDiagramActions, useFlows } from "@/features/diagram";
+import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
+import { useActiveDiagram, useActiveDiagramId, useDiagramActions, useFlows, stepsToMermaid } from "@/features/diagram";
 import { exportJSON, exportDrawio, exportMermaid, downloadFile } from "@/lib/export-service";
 import type { Flow, FlowStep } from "@/features/diagram";
 
@@ -15,6 +15,7 @@ const ModelExplorer = () => {
   const flows = useFlows();
   const navigate = useNavigate();
   const [showFlows, setShowFlows] = useState(false);
+  const [isViewingCoverage, setIsViewingCoverage] = useState(false);
   const [activeFlow, setActiveFlow] = useState<Flow | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [navStack, setNavStack] = useState<string[]>([]);
@@ -210,6 +211,7 @@ const ModelExplorer = () => {
               onRecordEdgeClick={handleRecordEdgeClick}
               onRecordHandleClick={handleRecordHandleClick}
               onRecordUndo={handleRecordUndo}
+              isViewingCoverage={isViewingCoverage}
             />
             {activeFlow && (
               <FlowStepNavigator flow={activeFlow} currentStep={currentStep} onPrev={handlePrev} onNext={handleNext} onExit={handleExit} />
@@ -230,7 +232,7 @@ const ModelExplorer = () => {
           />
         )}
         {showFlows && !activeFlow && !isRecording && (
-          <FlowPanel onClose={() => setShowFlows(false)} onPlay={handlePlay} onStartRecording={handleStartRecording} onEditFlow={handleEditFlow} />
+          <FlowPanel onClose={() => setShowFlows(false)} onPlay={handlePlay} onStartRecording={handleStartRecording} onEditFlow={handleEditFlow} isViewingCoverage={isViewingCoverage} onToggleCoverage={() => setIsViewingCoverage((v) => !v)} />
         )}
       </div>
     </div>

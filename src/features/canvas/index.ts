@@ -1,8 +1,8 @@
 export { default as Canvas } from "./Canvas";
 export { default as FlowPanel } from "./FlowPanel";
 export { default as FlowStepNavigator } from "./FlowStepNavigator";
-export { default as FlowRecorderPanel, stepsToMermaid } from "./FlowRecorderPanel";
-export { default as ElementPanel } from "./ElementPanel";
+export { default as FlowRecorderPanel } from "./FlowRecorderPanel";
+export { default as ElementPanel } from "./ElementPanel/index";
 export { default as CanvasToolbar } from "./toolbar/CanvasToolbar";
 export { default as CustomNode } from "./nodes/CustomNode";
 export { default as CustomEdge } from "./edges/CustomEdge";

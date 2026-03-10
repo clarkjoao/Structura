@@ -12,6 +12,7 @@ import {
   LayoutGrid,
   List,
   ArrowUpDown,
+  Search,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import {
@@ -103,6 +104,8 @@ const Dashboard = () => {
   const [sortAsc, setSortAsc] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [triggerAddFolder, setTriggerAddFolder] = useState(0);
+  const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
+  const [globalSearch, setGlobalSearch] = useState("");
   const folderTreeRef = useRef<HTMLDivElement>(null);
 
   const breadcrumbPath = useMemo(
@@ -121,6 +124,20 @@ const Dashboard = () => {
     return { childFolders, folderDiagrams };
   }, [folders, diagrams, selectedFolderId]);
 
+  const globalSearchResults = useMemo(() => {
+    const q = globalSearch.trim().toLowerCase();
+    if (!q) return null;
+    return diagrams
+      .flatMap((d) => Object.values(d.snapshot.components).map((c) => ({ ...c, diagramId: d.id, diagramName: d.name })))
+      .filter((c) => c.name.toLowerCase().includes(q) || (c.description ?? "").toLowerCase().includes(q))
+      .slice(0, 50);
+  }, [globalSearch, diagrams]);
+
+  const allTags = useMemo(
+    () => [...new Set(diagrams.flatMap((d) => Object.values(d.snapshot.components).flatMap((c) => c.tags ?? [])))],
+    [diagrams],
+  );
+
   const sorted = useMemo(() => {
     const arr = [...folderDiagrams];
     arr.sort((a, b) => {
@@ -134,6 +151,13 @@ const Dashboard = () => {
     });
     return arr;
   }, [folderDiagrams, sortKey, sortAsc]);
+
+  const tagFiltered = useMemo(() => {
+    if (!activeTagFilter) return sorted;
+    return sorted.filter((d) =>
+      Object.values(d.snapshot.components).some((c) => c.tags?.includes(activeTagFilter)),
+    );
+  }, [sorted, activeTagFilter]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortAsc(!sortAsc);
@@ -258,6 +282,18 @@ const Dashboard = () => {
             </Breadcrumb>
 
             <div className="flex items-center gap-1.5">
+              {/* Global search */}
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                <input
+                  type="search"
+                  placeholder="Buscar componente..."
+                  value={globalSearch}
+                  onChange={(e) => setGlobalSearch(e.target.value)}
+                  className="h-7 w-48 rounded-md border border-border bg-secondary/50 pl-7 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+
               {/* View toggle */}
               <div className="flex items-center rounded-md border border-border bg-secondary/50 p-0.5">
                 <button
@@ -348,8 +384,66 @@ const Dashboard = () => {
               </div>
             </div>
 
+            {/* Global search results */}
+            {globalSearchResults !== null && (
+              <div className="mb-4">
+                <p className="text-xs text-muted-foreground mb-3">{globalSearchResults.length} resultado{globalSearchResults.length !== 1 ? "s" : ""} para &ldquo;{globalSearch}&rdquo;</p>
+                {globalSearchResults.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum componente encontrado.</p>
+                ) : (
+                  <div className="rounded-lg border border-border bg-card overflow-hidden divide-y divide-border">
+                    {globalSearchResults.map((c) => (
+                      <button
+                        key={`${c.diagramId}-${c.id}`}
+                        type="button"
+                        onClick={() => { openDiagram(c.diagramId); navigate(`/model/${c.diagramId}`); }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-muted/40 transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
+                          {c.description && <p className="text-[11px] text-muted-foreground truncate">{c.description}</p>}
+                        </div>
+                        <span className="shrink-0 text-[10px] text-muted-foreground bg-secondary rounded px-2 py-0.5">{c.diagramName}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tag filter */}
+            {globalSearchResults === null && allTags.length > 0 && (
+              <div className="mb-4 flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => setActiveTagFilter(null)}
+                  className={cn(
+                    "text-[10px] rounded-full px-2.5 py-0.5 font-medium transition-colors border",
+                    activeTagFilter === null
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-secondary text-secondary-foreground border-border hover:bg-secondary/80",
+                  )}
+                >
+                  Todos
+                </button>
+                {allTags.map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => setActiveTagFilter(activeTagFilter === tag ? null : tag)}
+                    className={cn(
+                      "text-[10px] rounded-full px-2.5 py-0.5 font-medium transition-colors border",
+                      activeTagFilter === tag
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-secondary text-secondary-foreground border-border hover:bg-secondary/80",
+                    )}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Subfolders */}
-            {childFolders.length > 0 && (
+            {globalSearchResults === null && childFolders.length > 0 && (
               <div className="mb-5">
                 <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {childFolders.map((folder) => {
@@ -387,23 +481,23 @@ const Dashboard = () => {
             )}
 
             {/* Diagrams */}
-            {viewMode === "grid" ? (
+            {globalSearchResults === null && (viewMode === "grid" ? (
               <DiagramGrid
-                diagrams={sorted}
+                diagrams={tagFiltered}
                 onOpen={handleOpen}
                 onDelete={handleDelete}
                 onDragStart={handleDragStart}
               />
             ) : (
               <DiagramList
-                diagrams={sorted}
+                diagrams={tagFiltered}
                 onOpen={handleOpen}
                 onDelete={handleDelete}
                 onDragStart={handleDragStart}
               />
-            )}
+            ))}
 
-            {sorted.length === 0 && childFolders.length === 0 && (
+            {globalSearchResults === null && tagFiltered.length === 0 && childFolders.length === 0 && (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/50 mb-4">
                   <Network className="h-7 w-7 text-muted-foreground/60" />

@@ -29,7 +29,7 @@ The codebase follows a feature-based layout under `src/features/`:
 
 - **`features/diagram`** — The core data layer. Exports all types (`Diagram`, `Component`, `Connection`, `Flow`, `FlowStep`, etc.) and the Zustand store (`useDiagramStore`). The store is the single source of truth for all diagram state and is persisted to `localStorage` via `LocalStorageAdapter` with the key `archflow_diagram-store`.
 
-- **`features/canvas`** — The interactive canvas built on `@xyflow/react`. `Canvas.tsx` is the main component that bridges the diagram store to ReactFlow nodes/edges. It handles: node drag-to-panel parenting, flow playback highlighting, flow recording mode, keyboard shortcuts (Cmd+Z/Shift+Z for undo/redo, Delete to remove, Cmd+D to duplicate).
+- **`features/canvas`** — The interactive canvas built on `@xyflow/react`. `Canvas.tsx` is the main component that bridges the diagram store to ReactFlow nodes/edges. Keyboard shortcuts (Cmd+Z/Shift+Z undo/redo, Delete remove, Cmd+D duplicate, Cmd+G group) are handled in `hooks/useCanvasKeyboard.ts`. Drag-to-panel parenting logic lives in `hooks/useNodeDragParenting.ts`.
 
 - **`features/registry`** — `ServiceDefinition` type and `registry.store.ts`. Services live inside each diagram's `snapshot.serviceRegistry` and can be linked to components via `serviceId`.
 
@@ -38,21 +38,51 @@ The codebase follows a feature-based layout under `src/features/`:
 ### Data Model
 
 Each `Diagram` contains a `snapshot` (`ModelDraft`) with:
-- `components`: Record of `Component` objects (person, system, container, component, panel, note, or AWS service types)
-- `connections`: Record of `Connection` objects between components
+- `components`: Record of `Component` objects — a **discriminated union** of `C4Component | PanelComponent | NoteComponent | AwsComponent`. Use the guards `isPanelComponent`, `isNoteComponent`, `isC4Component`, `isAwsComponent` from `@/features/diagram` instead of checking `type === "panel"` directly.
+- `connections`: Record of `Connection` objects between components. Visual style is nested under `connection.style?: ConnectionStyle` (6 fields: edgeStyle, strokeStyle, strokeWidth, markerEnd, markerStart, animated).
 - `flows`: Record of `Flow` objects (each with Mermaid text + parsed `FlowStep[]`)
 
-`serviceRegistry` (`Record<string, ServiceDefinition>`) lives at the **top level of the store**, not inside any diagram. Components reference services via `serviceId`. Deleting a service cleans up `serviceId` across all diagrams automatically.
+`serviceRegistry` (`Record<string, ServiceDefinition>`) lives inside each diagram's snapshot. Deleting a service cleans up `serviceId` across all components.
 
-Node positions are stored separately in `nodeLayouts: ViewNodeLayout[]` so layout can change without mutating business data. Viewport state (pan/zoom) is also persisted per diagram.
+Node positions and dimensions are stored separately in `nodeLayouts: NodeLayout[]` (each entry has `elementId`, `x`, `y`, and optional `width`, `height`, `zIndex`). Viewport state (pan/zoom) is also persisted per diagram.
 
 ### Store Pattern
 
-`useDiagramStore` (in `features/diagram/store/diagram.store.ts`) uses Zustand with `immer` middleware for mutations and `persist` middleware for localStorage (key `archflow_diagram-store`). It has granular selector hooks (`useActiveDiagram`, `useVisibleComponents`, `useServiceRegistry`, `useFlows`, etc.) and a single `useDiagramActions` hook that returns all mutation functions. Always use `useShallow` when selecting derived arrays/objects to avoid unnecessary re-renders.
+`useDiagramStore` (in `features/diagram/store/diagram.store.ts`) uses Zustand with `immer` middleware for mutations and `persist` middleware for localStorage (key `diagram-store`, prefixed to `archflow_diagram-store`).
 
-**Schema versioning**: the store tracks `schemaVersion: number` (currently `1`). The `persist.merge` function doubles as a migration runner — add future migrations there as `schemaVersion < N` guards. Migration v0→v1 extracted `serviceRegistry` from each diagram's snapshot into top-level state.
+**Factory**: `createDiagramStore(storage?)` accepts an optional `IStoragePort` (defaults to `defaultStorage`). Use this in tests with `InMemoryAdapter` from `@/infrastructure/persistence`.
 
-Undo/redo is implemented manually via `past`/`future` stacks of `DiagramSnapshot` objects (diagram-scoped only — service changes are not undoable by design). `pushHistory()` is called inside mutations that should be undoable.
+**Slices** (`features/diagram/store/slices/`):
+| Slice | Actions |
+|-------|---------|
+| `components.slice.ts` | `addComponent`, `updateComponent`, `removeComponent`, `setParent`, `groupNodes`, `ungroupNodes` |
+| `connections.slice.ts` | `addConnection`, `updateConnection`, `removeConnection` |
+| `flows.slice.ts` | `addFlow`, `updateFlow`, `removeFlow` |
+| `layout.slice.ts` | `updateNodeLayout`, `updateViewport`, `bringToFront`, `sendToBack` |
+| `services.slice.ts` | `addService`, `updateService`, `removeService`, `linkComponentToService`, `linkComponentToDiagram` |
+| `clipboard.slice.ts` | `copyToClipboard`, `pasteFromClipboard`, `clearClipboard` |
+| `history.slice.ts` | `undo`, `redo` + internal `pushHistory()` |
+
+**Selectors** live only in `diagram.store.ts`, never in slices. Use `useShallow` when selecting derived arrays/objects.
+
+**Schema versioning**: the `persist.merge` function doubles as a migration runner — add future migrations there as `schemaVersion < N` guards.
+
+Undo/redo is implemented via `past`/`future` stacks of `DiagramSnapshot` objects (diagram-scoped only — service changes are not undoable by design). `pushHistory()` is called inside mutations that should be undoable.
+
+### Canvas Hooks
+
+`src/features/canvas/hooks/`:
+- **`useCanvasKeyboard`** — Registers a global `keydown` listener for all canvas shortcuts. Skips when focus is in input/textarea. Delegates to store actions.
+- **`useNodeDragParenting`** — Tracks which panel a dragged node is hovering over (`dragTargetPanelId`) and whether a parented node is outside its panel bounds (`unparentCandidatePanelId`). Returns `onNodesChange` and `onNodeDragStop` handlers for ReactFlow.
+- **`useCanvasNodes`** — Derives the ReactFlow `Node[]` array from visible components via the descriptor system.
+- **`useCanvasEdges`** — Derives the ReactFlow `Edge[]` array from visible connections.
+- **`useFlowState`** — Computes playback highlights, recording badges, and coverage overlays.
+
+### Node Type Descriptors
+
+`src/features/canvas/node-types/` implements a descriptor registry. Each node type is a `NodeTypeDescriptor` (see `types.ts`). See `node-types/README.md` for how to add a new type. **`c4Descriptor` must always be last** — it is the catch-all fallback.
+
+Layout constants (`PANEL_DEFAULT_W/H`, `MIN/MAX_HANDLES`, `NODE_DRAG_PADDING`, `DEFAULT_NODE_W/H`) are centralised in `src/features/canvas/constants.ts`.
 
 ### Pages / Routes
 
@@ -67,10 +97,20 @@ Undo/redo is implemented manually via `past`/`future` stacks of `DiagramSnapshot
 
 ### Infrastructure
 
-`src/infrastructure/persistence/` contains `IStoragePort` interface and `LocalStorageAdapter` implementing it. The `defaultStorage` singleton is passed to Zustand's `createJSONStorage()`.
+`src/infrastructure/persistence/` contains:
+- `IStoragePort` — interface (getItem/setItem/removeItem + save/load/delete)
+- `LocalStorageAdapter` — production implementation
+- `InMemoryAdapter` — Map-backed implementation for tests and SSR
+- `defaultStorage` — singleton `LocalStorageAdapter` exported from the index
+
+Import only `defaultStorage` or `InMemoryAdapter` from `@/infrastructure/persistence`. Never import `LocalStorageAdapter` directly outside this directory.
 
 ### UI Components
 
 `src/components/ui/` is a standard shadcn/ui component library — do not modify these files directly; regenerate via shadcn CLI if updates are needed.
 
 `src/lib/aws-catalog.ts` defines AWS service categories used as `ComponentType` values. `src/lib/github-import.ts` handles importing architecture definitions from GitHub.
+
+### Deprecated Compatibility Files
+
+`src/lib/model-types.ts` and `src/lib/model-store.ts` exist only for backward compatibility. Do not add new imports from them — import from `@/features/diagram` or `@/features/registry` instead.

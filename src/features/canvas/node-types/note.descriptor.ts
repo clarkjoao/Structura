@@ -1,5 +1,6 @@
 import NoteNode from "../nodes/NoteNode";
 import type { NodeTypeDescriptor } from "./types";
+import { isNoteComponent } from "@/features/diagram";
 
 export const noteDescriptor: NodeTypeDescriptor = {
   rfType: "note",
@@ -14,7 +15,7 @@ export const noteDescriptor: NodeTypeDescriptor = {
     elementId: comp.id,
     name: comp.name,
     description: comp.description,
-    panelColor: comp.panelColor,
+    panelColor: isNoteComponent(comp) ? comp.panelColor : undefined,
     isSelected: ctx.selectedNodeId === comp.id,
   }),
 };
