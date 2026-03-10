@@ -11,6 +11,7 @@ import {
   type Edge,
   type OnEdgesChange,
   type OnConnect,
+  type OnConnectEnd,
   type Connection,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -36,6 +37,7 @@ import { useNodeDragParenting } from "./hooks/useNodeDragParenting";
 import { useFlowState } from "./hooks/useFlowState";
 import { useCanvasNodes } from "./hooks/useCanvasNodes";
 import { useCanvasEdges } from "./hooks/useCanvasEdges";
+import QuickInsertPopover from "./QuickInsertPopover";
 
 const edgeTypes = { c4: CustomEdge };
 
@@ -78,6 +80,12 @@ const Canvas = ({
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; elementId: string } | null>(null);
+  const [quickInsert, setQuickInsert] = useState<{
+    screenPos: { x: number; y: number };
+    flowPos: { x: number; y: number };
+    sourceNodeId: string;
+  } | null>(null);
+  const [pulseNodeId, setPulseNodeId] = useState<string | null>(null);
 
   const handleDrillDown = useCallback((elementId: string) => {
     if (!diagram) return;
@@ -159,12 +167,18 @@ const Canvas = ({
   const [dragPositions, setDragPositions] = useState<Record<string, { x: number; y: number }>>({});
 
   const renderNodes = useMemo(() => {
-    if (Object.keys(dragPositions).length === 0) return nodes;
+    if (Object.keys(dragPositions).length === 0 && !pulseNodeId) return nodes;
     return nodes.map((n) => {
       const dp = dragPositions[n.id];
-      return dp ? { ...n, position: dp } : n;
+      const isPulsing = n.id === pulseNodeId;
+      if (!dp && !isPulsing) return n;
+      return {
+        ...n,
+        ...(dp ? { position: dp } : {}),
+        ...(isPulsing ? { className: [n.className, "node-pulse"].filter(Boolean).join(" ") } : {}),
+      };
     });
-  }, [nodes, dragPositions]);
+  }, [nodes, dragPositions, pulseNodeId]);
 
   const onNodesChange = useCallback((changes: Parameters<typeof innerOnNodesChange>[0]) => {
     const overrides: Record<string, { x: number; y: number }> = {};
@@ -200,6 +214,39 @@ const Canvas = ({
   const onConnect: OnConnect = useCallback(
     (c: Connection) => { if (c.source && c.target) addConnection(c.source, c.target, "Usa"); },
     [addConnection],
+  );
+
+  const onConnectEnd: OnConnectEnd = useCallback(
+    (event, connectionState) => {
+      if (isRecording) return;
+      if (connectionState.fromNode === null || connectionState.toNode !== null) return;
+      if (!(event instanceof MouseEvent)) return;
+      const flowPos = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+      setQuickInsert({
+        screenPos: { x: event.clientX, y: event.clientY },
+        flowPos,
+        sourceNodeId: connectionState.fromNode.id,
+      });
+    },
+    [isRecording, reactFlowInstance],
+  );
+
+  const handleQuickInsert = useCallback(
+    (newNodeId: string) => {
+      setQuickInsert(null);
+      setPulseNodeId(newNodeId);
+      void reactFlowInstance.fitView({
+        nodes: [{ id: newNodeId }],
+        duration: 500,
+        padding: 0.5,
+        maxZoom: 1.5,
+      });
+      setTimeout(() => setPulseNodeId(null), 1500);
+    },
+    [reactFlowInstance],
   );
 
   const onNodeClick = useCallback((e: React.MouseEvent, node: Node) => {
@@ -276,13 +323,18 @@ const Canvas = ({
         .react-flow__pane { cursor: default; }
         .react-flow__pane:active { cursor: grabbing; }
         .react-flow__selection { background: rgba(59, 130, 246, 0.08); border: 1px solid #3b82f6; }
+        @keyframes quick-insert-pulse {
+          0%   { box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.7); }
+          100% { box-shadow: 0 0 0 0px rgba(99, 102, 241, 0); }
+        }
+        .node-pulse { animation: quick-insert-pulse 0.45s ease-out 3; }
       `}</style>
       <div ref={reactFlowWrapperRef} className="flex-1 relative">
         <CanvasToolbar onDrillUp={onDrillUp} isPanelOpen={isPanelOpen} selectedCount={selectedCount} />
         <div onContextMenu={(e) => e.preventDefault()} className="w-full h-full">
           <ReactFlow
             nodes={renderNodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
-            onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect}
+            onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onConnectEnd={onConnectEnd}
             onNodeClick={onNodeClick} onEdgeClick={onEdgeClick} onPaneClick={onPaneClick}
             onPaneContextMenu={(e) => e.preventDefault()} onNodeContextMenu={onNodeContextMenu}
             onNodeDragStop={onNodeDragStop} onSelectionChange={onSelectionChange}
@@ -302,6 +354,15 @@ const Canvas = ({
       {contextMenu && (
         <NodeContextMenu x={contextMenu.x} y={contextMenu.y} elementId={contextMenu.elementId}
           onBringToFront={bringToFront} onSendToBack={sendToBack} onClose={() => setContextMenu(null)} />
+      )}
+      {quickInsert && (
+        <QuickInsertPopover
+          screenPos={quickInsert.screenPos}
+          flowPos={quickInsert.flowPos}
+          sourceNodeId={quickInsert.sourceNodeId}
+          onInsert={handleQuickInsert}
+          onClose={() => setQuickInsert(null)}
+        />
       )}
       {(selectedNodeId || selectedEdgeId || selectedCount > 0) && !isRecording && (
         <ElementPanel key={selectedNodeId ?? selectedEdgeId ?? "multi"}
