@@ -4,9 +4,13 @@ import { isPanelComponent } from "../../model/component.guards";
 import type { AppState } from "../store.types";
 import { activeDiagram } from "../store.types";
 import { pushHistory } from "./history.slice";
-
-const PANEL_DEFAULT_W = 600;
-const PANEL_DEFAULT_H = 400;
+import {
+  PANEL_DEFAULT_W,
+  PANEL_DEFAULT_H,
+  NODE_DRAG_PADDING,
+  DEFAULT_NODE_W,
+  DEFAULT_NODE_H,
+} from "@/features/canvas/constants";
 
 export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
   return {
@@ -103,9 +107,6 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
     },
 
     groupNodes: (componentIds: string[]): string | null => {
-      const PADDING = 40;
-      const DEFAULT_NODE_W = 180;
-      const DEFAULT_NODE_H = 80;
       let panelId: string | null = null;
       set((state) => {
         const d = activeDiagram(state);
@@ -136,10 +137,10 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
 
         const positions = ids.map((id) => getAbsPos(id));
         const sizes = ids.map((id) => getSize(id));
-        const minX = Math.min(...positions.map((p) => p.x)) - PADDING;
-        const minY = Math.min(...positions.map((p) => p.y)) - PADDING;
-        const maxX = Math.max(...positions.map((p, i) => p.x + sizes[i].w)) + PADDING;
-        const maxY = Math.max(...positions.map((p, i) => p.y + sizes[i].h)) + PADDING;
+        const minX = Math.min(...positions.map((p) => p.x)) - NODE_DRAG_PADDING;
+        const minY = Math.min(...positions.map((p) => p.y)) - NODE_DRAG_PADDING;
+        const maxX = Math.max(...positions.map((p, i) => p.x + sizes[i].w)) + NODE_DRAG_PADDING;
+        const maxY = Math.max(...positions.map((p, i) => p.y + sizes[i].h)) + NODE_DRAG_PADDING;
 
         pushHistory(state);
         const panel: PanelComponent = {

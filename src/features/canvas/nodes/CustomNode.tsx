@@ -17,9 +17,7 @@ import {
   AWS_CATEGORY_MAP,
 } from "@/lib/aws-catalog";
 import AwsIcon from "./AwsIcon";
-
-const MIN_HANDLES = 1;
-const MAX_HANDLES = 4;
+import { MIN_HANDLES, MAX_HANDLES } from "../constants";
 
 export interface NodeData {
   elementId: string;

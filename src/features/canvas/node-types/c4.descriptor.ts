@@ -1,17 +1,23 @@
 import type { CSSProperties } from "react";
 import CustomNode from "../nodes/CustomNode";
 import type { NodeTypeDescriptor, NodeBuildContext } from "./types";
-import type { Component } from "@/features/diagram";
+import {
+  isAwsComponent,
+  isC4Component,
+  type Component,
+} from "@/features/diagram";
 
-function buildC4Style(
+export function buildC4Style(
   comp: Component,
   ctx: NodeBuildContext,
 ): CSSProperties | undefined {
   if (ctx.isPlaying) {
-    const { activeNodeId, visitedNodeIds, participantNodeIds } = ctx.flowHighlight;
+    const { activeNodeId, visitedNodeIds, participantNodeIds } =
+      ctx.flowHighlight;
     if (activeNodeId === comp.id) return { opacity: 1, filter: "none" };
     if (visitedNodeIds.has(comp.id)) return { opacity: 0.85, filter: "none" };
-    if (participantNodeIds.has(comp.id)) return { opacity: 0.5, filter: "none" };
+    if (participantNodeIds.has(comp.id))
+      return { opacity: 0.5, filter: "none" };
     return { opacity: 0.25, filter: "none" };
   }
   if (ctx.isRecording) {
@@ -54,15 +60,16 @@ export const c4Descriptor: NodeTypeDescriptor = {
       name: comp.name,
       type: comp.type,
       description: comp.description,
-      technology: comp.technology,
-      awsService: comp.awsService,
+      technology: isC4Component(comp) ? comp.technology : undefined,
+      awsService: isAwsComponent(comp) ? comp.awsService : undefined,
       isSelected: isPlaying
         ? flowHighlight.activeNodeId === comp.id
         : ctx.selectedNodeId === comp.id,
       serviceName: comp.serviceId
         ? ctx.serviceRegistry[comp.serviceId]?.name
         : undefined,
-      linkedDiagramName: isPlaying || isRecording ? undefined : linkedDiagramName,
+      linkedDiagramName:
+        isPlaying || isRecording ? undefined : linkedDiagramName,
       onDrillDown:
         isPlaying || isRecording
           ? undefined

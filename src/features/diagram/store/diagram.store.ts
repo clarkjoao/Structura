@@ -92,24 +92,25 @@ export type DiagramStore = AppState & AppActions;
 
 const PERSIST_KEY = "diagram-store";
 
-export const useDiagramStore = create<DiagramStore>()(
-  persist(
-    immer((set, get) => ({
-      diagrams: SEED_DIAGRAMS,
-      folders: {},
-      activeDiagramId: null,
-      past: [],
-      future: [],
-      _lastUndoRedoAt: 0,
-      clipboard: null,
+export function createDiagramStore(storage = defaultStorage) {
+  return create<DiagramStore>()(
+    persist(
+      immer((set, get) => ({
+        diagrams: SEED_DIAGRAMS,
+        folders: {},
+        activeDiagramId: null,
+        past: [],
+        future: [],
+        _lastUndoRedoAt: 0,
+        clipboard: null,
 
-      ...componentsSlice(set),
-      ...connectionsSlice(set),
-      ...flowsSlice(set, get as () => AppState),
-      ...layoutSlice(set),
-      ...servicesSlice(set),
-      ...clipboardSlice(set),
-      ...historySlice(set),
+        ...componentsSlice(set),
+        ...connectionsSlice(set),
+        ...flowsSlice(set, get as () => AppState),
+        ...layoutSlice(set),
+        ...servicesSlice(set),
+        ...clipboardSlice(set),
+        ...historySlice(set),
 
       addDiagram: (name, level, domain, folderId) => {
         const diagram: Diagram = {
@@ -206,7 +207,7 @@ export const useDiagramStore = create<DiagramStore>()(
     })),
     {
       name: PERSIST_KEY,
-      storage: createJSONStorage(() => defaultStorage),
+      storage: createJSONStorage(() => storage),
       partialize: (state) => ({
         diagrams: state.diagrams,
         folders: state.folders,
@@ -256,6 +257,9 @@ export const useDiagramStore = create<DiagramStore>()(
     },
   ),
 );
+}
+
+export const useDiagramStore = createDiagramStore();
 
 // ── Selectors ──────────────────────────────────────────────────────────────
 

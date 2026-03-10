@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import type { Node, OnNodesChange } from "@xyflow/react";
 import type { Diagram } from "@/features/diagram";
 import { isPanelComponent, isNoteComponent } from "@/features/diagram";
-import { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../node-types";
+import { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../constants";
 
 interface UseNodeDragParentingParams {
   diagram: Diagram | null | undefined;
