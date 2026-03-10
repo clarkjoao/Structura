@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Shield, ChevronDown, ChevronUp } from "lucide-react";
+import type { DDProductSearchField } from "../defectdojo.service";
 import { useDefectDojoConfig } from "../hooks/useDefectDojoConfig";
 import { useDefectDojoSearch } from "../hooks/useDefectDojoSearch";
 import { DefectDojoConfigForm } from "./DefectDojoConfigForm";
@@ -23,7 +24,7 @@ export function DefectDojoPanel() {
   const [configOpen, setConfigOpen] = useState(!isConfigured);
   const [lastQuery, setLastQuery] = useState<{
     query: string;
-    filters: { prodType?: number };
+    filters: { prodType?: number; searchField?: DDProductSearchField };
   } | null>(null);
 
   useEffect(() => {
@@ -32,7 +33,10 @@ export function DefectDojoPanel() {
     }
   }, [isConfigured, loadProductTypes]);
 
-  const handleSearch = (query: string, filters: { prodType?: number }) => {
+  const handleSearch = (
+    query: string,
+    filters: { prodType?: number; searchField?: DDProductSearchField },
+  ) => {
     setLastQuery({ query, filters });
     search(query, filters);
   };

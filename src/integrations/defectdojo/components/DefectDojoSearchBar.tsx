@@ -1,22 +1,44 @@
 import { useState } from "react";
 import { Search, Loader2 } from "lucide-react";
 import type { DDProductType } from "../types";
+import {
+  DD_PRODUCT_SEARCH_FIELDS,
+  type DDProductSearchField,
+} from "../defectdojo.service";
 
 interface Props {
   productTypes: DDProductType[];
   loading: boolean;
-  onSearch: (query: string, filters: { prodType?: number }) => void;
+  onSearch: (
+    query: string,
+    filters: { prodType?: number; searchField?: DDProductSearchField },
+  ) => void;
 }
 
-export function DefectDojoSearchBar({ productTypes, loading, onSearch }: Props) {
+export function DefectDojoSearchBar({
+  productTypes,
+  loading,
+  onSearch,
+}: Props) {
   const [query, setQuery] = useState("");
   const [prodType, setProdType] = useState<string>("");
+  const [searchField, setSearchField] = useState<DDProductSearchField>(
+    DD_PRODUCT_SEARCH_FIELDS[0].param as DDProductSearchField,
+  );
 
   const handleSearch = () => {
     onSearch(query, {
       prodType: prodType ? Number(prodType) : undefined,
+      searchField,
     });
   };
+
+  const currentField = DD_PRODUCT_SEARCH_FIELDS.find(
+    (f) => f.param === searchField,
+  );
+  const placeholder = currentField
+    ? `Buscar por ${currentField.label.toLowerCase()}...`
+    : "Buscar produto...";
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleSearch();
@@ -30,10 +52,22 @@ export function DefectDojoSearchBar({ productTypes, loading, onSearch }: Props) 
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Buscar por nome do produto..."
+          placeholder={placeholder}
           className="w-full rounded-lg border border-border bg-card py-2.5 pl-10 pr-4 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         />
       </div>
+
+      <select
+        value={searchField}
+        onChange={(e) => setSearchField(e.target.value as DDProductSearchField)}
+        className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+      >
+        {DD_PRODUCT_SEARCH_FIELDS.map((f) => (
+          <option key={f.param} value={f.param}>
+            {f.label}
+          </option>
+        ))}
+      </select>
 
       {productTypes.length > 0 && (
         <select

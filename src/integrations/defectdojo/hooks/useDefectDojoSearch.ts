@@ -1,7 +1,11 @@
 import { useState, useCallback } from "react";
 import { useDiagramStore } from "@/features/diagram";
 import { DefectDojoClient } from "../defectdojo.client";
-import { searchProducts, getProductTypes } from "../defectdojo.service";
+import {
+  searchProducts,
+  getProductTypes,
+  type DDProductSearchField,
+} from "../defectdojo.service";
 import type {
   DefectDojoConfig,
   DDSearchResult,
@@ -35,7 +39,10 @@ export function useDefectDojoSearch(config: DefectDojoConfig | null) {
   const [error, setError] = useState<string | null>(null);
 
   const search = useCallback(
-    async (query: string, filters: { prodType?: number }) => {
+    async (
+      query: string,
+      filters: { prodType?: number; searchField?: DDProductSearchField },
+    ) => {
       if (!config) return;
       setLoading(true);
       setError(null);

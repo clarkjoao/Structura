@@ -7,18 +7,44 @@ interface PaginatedResponse<T> {
   results: T[];
 }
 
+/**
+ * Todos os parâmetros de busca suportados pela API de produtos do DefectDojo.
+ * Inclui campos padrão do modelo Product + sigla/siglaApp (custom).
+ * @see https://defectdojo.github.io/django-DefectDojo/integrations/api-v2-docs/
+ */
+export const DD_PRODUCT_SEARCH_FIELDS = [
+  { param: "sigla", label: "Sigla" },
+  { param: "siglaApp", label: "Sigla App" },
+  { param: "name__icontains", label: "Nome (contém)" },
+  { param: "name", label: "Nome (exato)" },
+  { param: "id", label: "ID" },
+] as const;
+
+export type DDProductSearchField =
+  (typeof DD_PRODUCT_SEARCH_FIELDS)[number]["param"];
+
 export async function searchProducts(
   client: DefectDojoClient,
   query: string,
-  filters: { prodType?: number; limit?: number },
+  filters: {
+    prodType?: number;
+    limit?: number;
+    searchField?: DDProductSearchField;
+  },
 ): Promise<DDProduct[]> {
   const params: Record<string, string> = {
-    name__icontains: query,
-    limit: String(filters.limit ?? 50),
+    limit: String(filters.limit ?? 100),
   };
+
+  const field = filters.searchField ?? "name__icontains";
+  if (query) {
+    params[field] = query;
+  }
+
   if (filters.prodType !== undefined) {
     params.prod_type = String(filters.prodType);
   }
+
   const data = await client.get<PaginatedResponse<DDProduct>>(
     "/products/",
     params,
