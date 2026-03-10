@@ -115,17 +115,23 @@ export function useDragSelect({
 
   const onPointerUp = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
-      if ((e.currentTarget as Element).hasPointerCapture(e.pointerId)) {
+      const hadCapture = (e.currentTarget as Element).hasPointerCapture(e.pointerId);
+      if (hadCapture) {
         (e.currentTarget as Element).releasePointerCapture(e.pointerId);
       }
       if (!dragging.current) {
+        if (hadCapture) {
+          setSelectedNodeIds(new Set());
+          setSelectedNodeId(null);
+          setSelectedEdgeId(null);
+        }
         setSelectionRect(null);
         return;
       }
       dragging.current = false;
       setSelectionRect(null);
     },
-    [],
+    [setSelectedNodeIds, setSelectedNodeId, setSelectedEdgeId],
   );
 
   return { selectionRect, onPointerDown, onPointerMove, onPointerUp };

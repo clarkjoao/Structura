@@ -170,14 +170,6 @@ const Canvas = ({
         if (c.dragging) overrides[c.id] = c.position;
         else hasDragEnd = true;
       }
-      if (c.type === "select") {
-        setSelectedNodeIds((prev) => {
-          const next = new Set(prev);
-          if (c.selected) next.add(c.id); else next.delete(c.id);
-          return next;
-        });
-        if (c.selected) setSelectedNodeId(c.id);
-      }
     }
     if (Object.keys(overrides).length > 0) {
       setDragPositions((prev) => ({ ...prev, ...overrides }));
@@ -225,12 +217,6 @@ const Canvas = ({
     setSelectedEdgeId(edge.id); setSelectedNodeId(null); setContextMenu(null);
   }, [isRecording, onRecordEdgeClick]);
 
-  const onSelectionChange = useCallback(({ nodes: updatedNodes }: { nodes: Node[]; edges: Edge[] }) => {
-    const ids = new Set(updatedNodes.filter((n) => n.selected).map((n) => n.id));
-    setSelectedNodeIds(ids);
-    setSelectedNodeId(updatedNodes.find((n) => n.selected)?.id ?? null);
-  }, []);
-
   const onPaneClick = useCallback(() => { setSelectedNodeId(null); setSelectedNodeIds(new Set()); setSelectedEdgeId(null); setContextMenu(null); }, []);
 
   const onNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => {
@@ -262,6 +248,21 @@ const Canvas = ({
     setSelectedEdgeId,
     isRecording: !!isRecording,
   });
+
+  useEffect(() => {
+    const wrapper = reactFlowWrapperRef.current;
+    if (!wrapper) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!wrapper.contains(e.target as HTMLElement)) {
+        setSelectedNodeId(null);
+        setSelectedNodeIds(new Set());
+        setSelectedEdgeId(null);
+        setContextMenu(null);
+      }
+    };
+    document.addEventListener("pointerdown", handleClickOutside);
+    return () => document.removeEventListener("pointerdown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const el = document.querySelector(".react-flow__renderer");
@@ -303,7 +304,7 @@ const Canvas = ({
             onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect}
             onNodeClick={onNodeClick} onEdgeClick={onEdgeClick} onPaneClick={onPaneClick}
             onPaneContextMenu={(e) => e.preventDefault()} onNodeContextMenu={onNodeContextMenu}
-            onNodeDragStop={onNodeDragStop} onSelectionChange={onSelectionChange}
+            onNodeDragStop={onNodeDragStop}
             panOnDrag={[2]} panOnScroll panOnScrollMode={PanOnScrollMode.Free}
             selectionMode={SelectionMode.Partial}
             elevateNodesOnSelect={false}
