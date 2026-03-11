@@ -1,11 +1,11 @@
-import type { Component } from "@/features/diagram";
+import type { ComponentPatch } from "@/features/diagram";
 import ColorSwatches from "./ColorSwatches";
 
 interface PanelColorPickerProps {
   componentId: string;
   currentColor: string;
   currentOpacity: number;
-  updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => void;
+  updateComponent: (id: string, patch: ComponentPatch) => void;
 }
 
 const PanelColorPicker = ({ componentId, currentColor, currentOpacity, updateComponent }: PanelColorPickerProps) => (
