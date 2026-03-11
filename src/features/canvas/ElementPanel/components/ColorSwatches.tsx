@@ -1,12 +1,12 @@
 import { Palette } from "lucide-react";
-import type { Component } from "@/features/diagram";
+import type { ComponentPatch } from "@/features/diagram";
 import { PANEL_COLOR_PRESETS } from "./colorPresets";
 
 interface ColorSwatchesProps {
   componentId: string;
   currentColor: string;
   label: string;
-  updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => void;
+  updateComponent: (id: string, patch: ComponentPatch) => void;
 }
 
 const ColorSwatches = ({ componentId, currentColor, label, updateComponent }: ColorSwatchesProps) => (

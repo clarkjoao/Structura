@@ -67,8 +67,8 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
 
   const sharedTechnology = useMemo(() => {
     if (components.length === 0) return undefined;
-    const first = components[0].technology ?? "";
-    const allSame = components.every((c) => (c.technology ?? "") === first);
+    const first = ("technology" in components[0] ? (components[0] as any).technology : undefined) ?? "";
+    const allSame = components.every((c) => (("technology" in c ? (c as any).technology : undefined) ?? "") === first);
     return allSame ? first : null;
   }, [components]);
 
