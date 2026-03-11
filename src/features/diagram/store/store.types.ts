@@ -6,6 +6,7 @@ import type {
   ModelDraft,
   ViewNodeLayout,
 } from "../model/diagram.types";
+import type { ServiceDefinition } from "@/features/registry";
 
 export interface DiagramSnapshot {
   diagramId: string;
@@ -22,6 +23,7 @@ export interface ClipboardEntry {
 export interface AppState {
   diagrams: Record<string, Diagram>;
   folders: Record<string, Folder>;
+  serviceRegistry: Record<string, ServiceDefinition>;
   activeDiagramId: string | null;
   past: DiagramSnapshot[];
   future: DiagramSnapshot[];

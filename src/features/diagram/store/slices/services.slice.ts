@@ -8,26 +8,25 @@ export function servicesSlice(set: (fn: (state: AppState) => void) => void) {
     addService: (service: Omit<ServiceDefinition, "id">): ServiceDefinition => {
       const svc: ServiceDefinition = { ...service, id: generateId("svc") };
       set((state) => {
-        const d = activeDiagram(state);
-        if (!d.snapshot.serviceRegistry) d.snapshot.serviceRegistry = {};
-        d.snapshot.serviceRegistry[svc.id] = svc;
+        state.serviceRegistry[svc.id] = svc;
       });
       return svc;
     },
 
     updateService: (id: string, patch: Partial<Omit<ServiceDefinition, "id">>) => {
       set((state) => {
-        const svc = activeDiagram(state).snapshot.serviceRegistry?.[id];
+        const svc = state.serviceRegistry[id];
         if (svc) Object.assign(svc, patch);
       });
     },
 
     removeService: (id: string) => {
       set((state) => {
-        const d = activeDiagram(state);
-        delete d.snapshot.serviceRegistry[id];
-        Object.values(d.snapshot.components).forEach((c) => {
-          if (c.serviceId === id) c.serviceId = undefined;
+        delete state.serviceRegistry[id];
+        Object.values(state.diagrams).forEach((entry) => {
+          Object.values(entry.snapshot.components).forEach((c) => {
+            if (c.serviceId === id) c.serviceId = undefined;
+          });
         });
       });
     },

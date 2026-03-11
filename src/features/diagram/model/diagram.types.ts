@@ -1,5 +1,4 @@
 import type { AwsCategoryId } from "@/lib/aws-catalog";
-import type { ServiceDefinition } from "@/features/registry";
 
 export type ComponentType =
   | "person"
@@ -145,7 +144,6 @@ export interface Flow {
 export interface ModelDraft {
   components: Record<string, Component>;
   connections: Record<string, Connection>;
-  serviceRegistry: Record<string, ServiceDefinition>;
   flows: Record<string, Flow>;
 }
 

@@ -52,15 +52,13 @@ export function DefectDojoConfigForm({ config, onSave, onClear }: Props) {
 
   const handleClearRemoveSourceId = () => {
     const store = useDiagramStore.getState();
-    Object.values(store.diagrams).forEach((diagram) => {
-      Object.values(diagram.snapshot.serviceRegistry ?? {}).forEach((svc) => {
-        if (svc.source === "defectdojo") {
-          store.updateService(svc.id, {
-            source: undefined,
-            sourceId: undefined,
-          });
-        }
-      });
+    Object.values(store.serviceRegistry).forEach((svc) => {
+      if (svc.source === "defectdojo") {
+        store.updateService(svc.id, {
+          source: undefined,
+          sourceId: undefined,
+        });
+      }
     });
     onClear();
     setConfirmClear(false);
@@ -170,7 +168,7 @@ export function DefectDojoConfigForm({ config, onSave, onClear }: Props) {
         >
           {testResult.ok
             ? `✓ Conectado como ${testResult.username}`
-            : `✗ ${testResult.message}`}
+            : `✗ ${"message" in testResult ? testResult.message : ""}`}
         </p>
       )}
 

@@ -19,9 +19,7 @@ function resolveImportStatus(
   productDesc: string,
 ): { status: ImportStatus; existingServiceId?: string } {
   const state = useDiagramStore.getState();
-  const allServices = Object.values(state.diagrams).flatMap((d) =>
-    Object.values(d.snapshot.serviceRegistry ?? {}),
-  );
+  const allServices = Object.values(state.serviceRegistry);
   const existing = allServices.find(
     (s) => s.source === "defectdojo" && s.sourceId === String(productId),
   );

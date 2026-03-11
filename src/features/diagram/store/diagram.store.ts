@@ -16,7 +16,7 @@ import type {
 } from "../model/diagram.types";
 import { generateId } from "../model/diagram.utils";
 import type { ServiceDefinition } from "@/features/registry";
-import { SEED_DIAGRAMS } from "@/fixtures/seed";
+import { SEED_DIAGRAMS, SEED_SERVICE_REGISTRY } from "@/fixtures/seed";
 import type { AppState, DiagramSnapshot } from "./store.types";
 import { activeDiagram as _activeDiagram } from "./store.types";
 import { historySlice, pushHistory } from "./slices/history.slice";
@@ -99,6 +99,7 @@ export function createDiagramStore(storage = defaultStorage) {
       immer((set, get) => ({
         diagrams: SEED_DIAGRAMS,
         folders: {},
+        serviceRegistry: SEED_SERVICE_REGISTRY,
         activeDiagramId: null,
         past: [],
         future: [],
@@ -120,7 +121,7 @@ export function createDiagramStore(storage = defaultStorage) {
           level,
           domain: domain || undefined,
           updatedAt: "agora",
-          snapshot: { components: {}, connections: {}, serviceRegistry: {}, flows: {} },
+          snapshot: { components: {}, connections: {}, flows: {} },
           nodeLayouts: [],
           viewport: { x: 0, y: 0, zoom: 1 },
           folderId: folderId ?? undefined,
@@ -212,6 +213,7 @@ export function createDiagramStore(storage = defaultStorage) {
       partialize: (state) => ({
         diagrams: state.diagrams,
         folders: state.folders,
+        serviceRegistry: state.serviceRegistry,
         activeDiagramId: state.activeDiagramId,
         past: state.past,
         future: state.future,
@@ -223,9 +225,9 @@ export function createDiagramStore(storage = defaultStorage) {
           ...(persistedState && (persistedState as Partial<DiagramStore>)),
         };
         state.clipboard = currentState.clipboard ?? null;
+        if (!state.serviceRegistry) state.serviceRegistry = {};
         Object.values(state.diagrams ?? {}).forEach((d) => {
           const diagram = d as Diagram;
-          if (!diagram.snapshot.serviceRegistry) diagram.snapshot.serviceRegistry = {};
           // Migrate (ETAPA 6): move loose connection style fields into style: {}
           Object.values(diagram.snapshot.connections ?? {}).forEach((conn) => {
             type LegacyConn = Connection & { edgeStyle?: string; strokeStyle?: string; strokeWidth?: number; markerEnd?: string; markerStart?: string; animated?: boolean };
@@ -320,21 +322,10 @@ export const useVisibleConnections = () =>
 export const useCanNavigateInto = (_elementId: string) => false;
 
 export const useServiceRegistry = () =>
-  useDiagramStore(
-    useShallow((s) =>
-      s.activeDiagramId
-        ? (s.diagrams[s.activeDiagramId].snapshot.serviceRegistry ?? {})
-        : {},
-    ),
-  );
+  useDiagramStore(useShallow((s) => s.serviceRegistry));
 
 export const useAllServices = () =>
-  useDiagramStore(
-    useShallow((s) => {
-      if (!s.activeDiagramId) return [];
-      return Object.values(s.diagrams[s.activeDiagramId].snapshot.serviceRegistry ?? {});
-    }),
-  );
+  useDiagramStore(useShallow((s) => Object.values(s.serviceRegistry)));
 
 export const useAllComponents = () =>
   useDiagramStore(

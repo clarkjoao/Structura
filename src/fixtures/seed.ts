@@ -34,8 +34,6 @@ function buildSharedServiceRegistry(): Record<string, ServiceDefinition> {
 }
 
 function buildSeedDiagrams(): Record<string, Diagram> {
-  const registry = buildSharedServiceRegistry();
-
   return {
     "d-context": {
       id: "d-context",
@@ -82,7 +80,6 @@ function buildSeedDiagrams(): Record<string, Diagram> {
             label: "Processa pagamento via",
           },
         },
-        serviceRegistry: registry,
         flows: {
           "flow-order": {
             id: "flow-order",
@@ -169,7 +166,6 @@ function buildSeedDiagrams(): Record<string, Diagram> {
             label: "Lê e escreve em",
           },
         },
-        serviceRegistry: registry,
         flows: {},
       },
       nodeLayouts: [
@@ -213,7 +209,6 @@ function buildSeedDiagrams(): Record<string, Diagram> {
             label: "Verifica limite via",
           },
         },
-        serviceRegistry: registry,
         flows: {},
       },
       nodeLayouts: [
@@ -225,4 +220,6 @@ function buildSeedDiagrams(): Record<string, Diagram> {
   };
 }
 
+export const SEED_SERVICE_REGISTRY: Record<string, ServiceDefinition> =
+  buildSharedServiceRegistry();
 export const SEED_DIAGRAMS: Record<string, Diagram> = buildSeedDiagrams();
