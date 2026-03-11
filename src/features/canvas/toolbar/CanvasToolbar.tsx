@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ElementPickerModal from "./ElementPickerModal";
 import {
   Plus,
   User,
@@ -42,10 +43,12 @@ const CanvasToolbar = ({
   onDrillUp,
   isPanelOpen,
   selectedCount = 0,
+  onInsert,
 }: {
   onDrillUp?: () => void;
   isPanelOpen?: boolean;
   selectedCount?: number;
+  onInsert?: (nodeId: string) => void;
 }) => {
   const diagram = useActiveDiagram();
   const { addComponent } = useDiagramActions();
@@ -54,6 +57,7 @@ const CanvasToolbar = ({
   const [showAws, setShowAws] = useState(false);
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [showPatterns, setShowPatterns] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   const handleAddC4 = (type: ComponentType) => {
     const name = `Novo ${type.charAt(0).toUpperCase() + type.slice(1)}`;
@@ -107,14 +111,12 @@ const CanvasToolbar = ({
 
       <div className="relative">
         <button
-          onClick={() => {
-            setShowAdd(!showAdd);
-            setShowAws(false);
-          }}
+          onClick={() => setShowModal(true)}
           className="flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-primary hover:bg-surface-hover transition-colors"
         >
           <Plus className="h-3.5 w-3.5" /> Adicionar Elemento
         </button>
+        {/* <ElementDropdown /> — replaced by ElementPickerModal, kept for reference */}
         {showAdd && (
           <div className="absolute top-full left-0 mt-1 rounded-lg border border-border bg-card shadow-xl py-1 min-w-[200px]">
             <div className="px-3 py-1">
@@ -210,6 +212,9 @@ const CanvasToolbar = ({
       </div>
 
       {showPatterns && <PatternPicker onClose={() => setShowPatterns(false)} />}
+      {showModal && (
+        <ElementPickerModal onClose={() => setShowModal(false)} onInsert={onInsert} />
+      )}
     </div>
   );
 };
