@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import debounce from "lodash.debounce";
 import { X, Trash2, Link2, LayoutDashboard } from "lucide-react";
-import { useAllServices, useAllDiagrams, useActiveDiagram, useDiagramActions } from "@/features/diagram";
+import { useAllDiagrams, useActiveDiagram, useDiagramActions } from "@/features/diagram";
 import type { Component, ComponentType } from "@/features/diagram";
 import { isPanelComponent, isNoteComponent } from "@/features/diagram";
 import { isAwsType, AWS_CATEGORIES, AWS_CATEGORY_MAP, AWS_SERVICE_MAP } from "@/lib/aws-catalog";
@@ -11,6 +11,7 @@ import TabBar, { type Tab } from "./components/TabBar";
 import ColorSwatches from "./components/ColorSwatches";
 import PanelColorPicker from "./components/PanelColorPicker";
 import ConnectionsTab from "./components/ConnectionsTab";
+import ServiceRegistryCombobox from "./components/ServiceRegistryCombobox";
 
 const DEFAULT_PANEL_COLOR = "hsl(220 20% 20%)";
 const DEFAULT_PANEL_OPACITY = 10;
@@ -25,7 +26,6 @@ interface ComponentPanelProps {
 }
 
 const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, onUngroup }: ComponentPanelProps) => {
-  const allServices = useAllServices();
   const allDiagrams = useAllDiagrams();
   const activeDiagram = useActiveDiagram();
   const { linkComponentToService, linkComponentToDiagram, addDiagram } = useDiagramActions();
@@ -147,10 +147,10 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
           {!isSimple && (
             <div>
               <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block"><Link2 className="h-3 w-3 inline mr-1" />Vincular ao Serviço</label>
-              <select value={component.serviceId ?? ""} onChange={(e) => linkComponentToService(component.id, e.target.value || undefined)} className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring">
-                <option value="">Nenhum</option>
-                {allServices.map((svc) => (<option key={svc.id} value={svc.id}>{svc.name}</option>))}
-              </select>
+              <ServiceRegistryCombobox
+                value={component.serviceId ?? null}
+                onChange={(id) => linkComponentToService(component.id, id ?? undefined)}
+              />
             </div>
           )}
           {!isSimple && canCreateLinked && !component.linkedDiagramId && (
