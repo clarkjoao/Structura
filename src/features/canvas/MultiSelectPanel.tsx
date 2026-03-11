@@ -107,7 +107,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
           x: (layout?.x ?? 0) + 30 * (index + 1),
           y: (layout?.y ?? 0) + 30 * (index + 1),
         },
-        comp.awsService,
+        ("awsService" in comp) ? (comp as any).awsService : undefined,
       );
     });
     onClose();
