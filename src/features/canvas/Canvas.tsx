@@ -504,6 +504,51 @@ const Canvas = ({
     return () => el.removeEventListener("wheel", handleWheel);
   }, [reactFlowInstance, diagram]);
 
+  // Focus the canvas on the element referenced by the current flow step.
+  // Fires on every step change (including the initial step when playback starts).
+  useEffect(() => {
+    if (!activeFlow) return;
+    const step = activeFlow.steps[currentStep ?? 0];
+    if (!step) return;
+
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    if (step.componentId) {
+      const node = reactFlowInstance.getNode(step.componentId);
+      if (node) {
+        void reactFlowInstance.fitView({
+          nodes: [{ id: step.componentId }],
+          duration: 400,
+          padding: 0.35,
+          maxZoom: 1.5,
+        });
+        setPulseNodeId(step.componentId);
+        timeoutId = setTimeout(() => setPulseNodeId(null), 1500);
+      }
+    } else if (step.connectionId) {
+      const edge = reactFlowInstance.getEdge(step.connectionId);
+      if (edge) {
+        const srcNode = reactFlowInstance.getNode(edge.source);
+        const tgtNode = reactFlowInstance.getNode(edge.target);
+        if (srcNode && tgtNode) {
+          const sx = srcNode.position.x + (srcNode.measured?.width ?? 160) / 2;
+          const sy = srcNode.position.y + (srcNode.measured?.height ?? 80) / 2;
+          const tx = tgtNode.position.x + (tgtNode.measured?.width ?? 160) / 2;
+          const ty = tgtNode.position.y + (tgtNode.measured?.height ?? 80) / 2;
+          const { zoom } = reactFlowInstance.getViewport();
+          void reactFlowInstance.setCenter((sx + tx) / 2, (sy + ty) / 2, {
+            duration: 400,
+            zoom: Math.min(Math.max(zoom, 0.8), 1.5),
+          });
+        }
+      }
+    }
+
+    return () => {
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+    };
+  }, [activeFlow, currentStep, reactFlowInstance]);
+
   if (!diagram)
     return (
       <div className="flex-1 flex items-center justify-center text-muted-foreground">
