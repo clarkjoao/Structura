@@ -1,7 +1,18 @@
 import { useState, useMemo } from "react";
 import { ChevronsUpDown, X, Plus } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { useAllServices, useDiagramActions } from "@/features/diagram";
 import type { ServiceDefinition } from "@/features/registry";
 
@@ -10,7 +21,10 @@ interface ServiceRegistryComboboxProps {
   onChange: (serviceId: string | null) => void;
 }
 
-const ServiceRegistryCombobox = ({ value, onChange }: ServiceRegistryComboboxProps) => {
+const ServiceRegistryCombobox = ({
+  value,
+  onChange,
+}: ServiceRegistryComboboxProps) => {
   const allServices = useAllServices();
   const { addService } = useDiagramActions();
   const [open, setOpen] = useState(false);
@@ -20,7 +34,7 @@ const ServiceRegistryCombobox = ({ value, onChange }: ServiceRegistryComboboxPro
   const [newTags, setNewTags] = useState("");
 
   const linked = useMemo(
-    () => (value ? allServices.find((s) => s.id === value) ?? null : null),
+    () => (value ? (allServices.find((s) => s.id === value) ?? null) : null),
     [value, allServices],
   );
 
@@ -50,9 +64,19 @@ const ServiceRegistryCombobox = ({ value, onChange }: ServiceRegistryComboboxPro
     const name = newName.trim();
     if (!name) return;
     const tags = newTags
-      ? newTags.split(",").map((t) => t.trim()).filter(Boolean)
+      ? newTags
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean)
       : [];
-    const created = addService({ name, description: "", repositoryUrl: "", technology: [], tags, source: "manual" });
+    const created = addService({
+      name,
+      description: "",
+      repositoryUrl: "",
+      technology: [],
+      tags,
+      source: "manual",
+    });
     onChange(created.id);
     setOpen(false);
     setSearch("");
@@ -98,7 +122,10 @@ const ServiceRegistryCombobox = ({ value, onChange }: ServiceRegistryComboboxPro
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+      <PopoverContent
+        className="w-[var(--radix-popover-trigger-width)] p-0"
+        align="start"
+      >
         {showCreate ? (
           <div className="p-3 space-y-2">
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
@@ -111,7 +138,6 @@ const ServiceRegistryCombobox = ({ value, onChange }: ServiceRegistryComboboxPro
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") handleCreate();
                 if (e.key === "Escape") setShowCreate(false);
               }}
               className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
@@ -122,7 +148,6 @@ const ServiceRegistryCombobox = ({ value, onChange }: ServiceRegistryComboboxPro
               value={newTags}
               onChange={(e) => setNewTags(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") handleCreate();
                 if (e.key === "Escape") setShowCreate(false);
               }}
               className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
@@ -137,8 +162,9 @@ const ServiceRegistryCombobox = ({ value, onChange }: ServiceRegistryComboboxPro
               </button>
               <button
                 type="button"
-                onClick={handleCreate}
-                disabled={!newName.trim()}
+                // onClick={handleCreate}
+                disabled={true}
+                // disabled={!newName.trim()}
                 className="flex-1 rounded-md bg-primary px-2 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Criar e vincular
@@ -157,7 +183,9 @@ const ServiceRegistryCombobox = ({ value, onChange }: ServiceRegistryComboboxPro
                 <CommandEmpty>Nenhum serviço cadastrado.</CommandEmpty>
               )}
               {filtered.length === 0 && search && (
-                <CommandEmpty>Nenhum resultado para &ldquo;{search}&rdquo;.</CommandEmpty>
+                <CommandEmpty>
+                  Nenhum resultado para &ldquo;{search}&rdquo;.
+                </CommandEmpty>
               )}
               {filtered.length > 0 && (
                 <CommandGroup>
@@ -179,16 +207,6 @@ const ServiceRegistryCombobox = ({ value, onChange }: ServiceRegistryComboboxPro
                   ))}
                 </CommandGroup>
               )}
-              <CommandGroup>
-                <CommandItem
-                  value="__create__"
-                  onSelect={() => setShowCreate(true)}
-                  className="text-primary"
-                >
-                  <Plus className="h-3.5 w-3.5 mr-1.5 shrink-0" />
-                  Criar novo serviço
-                </CommandItem>
-              </CommandGroup>
             </CommandList>
           </Command>
         )}
