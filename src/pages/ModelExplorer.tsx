@@ -4,8 +4,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Download, GitBranch } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
-import { useActiveDiagram, useActiveDiagramId, useDiagramActions, useFlows, stepsToMermaid } from "@/features/diagram";
-import { exportJSON, exportDrawio, exportMermaid, downloadFile } from "@/lib/export-service";
+import { useActiveDiagram, useActiveDiagramId, useDiagramActions, useFlows, stepsToMermaid, useServiceRegistry } from "@/features/diagram";
+import { exportJSON, exportDrawioV2, exportMermaid, downloadFile } from "@/lib/export-service";
 import type { Flow, FlowStep } from "@/features/diagram";
 
 const ModelExplorer = () => {
@@ -13,6 +13,7 @@ const ModelExplorer = () => {
   const activeDiagramId = useActiveDiagramId();
   const { openDiagram, addFlow, updateFlow } = useDiagramActions();
   const flows = useFlows();
+  const serviceRegistry = useServiceRegistry();
   const navigate = useNavigate();
   const [showFlows, setShowFlows] = useState(false);
   const [isViewingCoverage, setIsViewingCoverage] = useState(false);
@@ -120,7 +121,7 @@ const ModelExplorer = () => {
     if (!diagram) return;
     const slug = diagram.name.toLowerCase().replace(/\s+/g, "-");
     downloadFile(exportJSON(diagram), `${slug}.json`, "application/json");
-    downloadFile(exportDrawio(diagram), `${slug}.drawio`, "application/xml");
+    downloadFile(exportDrawioV2(diagram, serviceRegistry), `${slug}.drawio`, "application/xml");
     if (flows.length > 0) {
       downloadFile(
         exportMermaid(flows, diagram.snapshot.components, diagram.snapshot.connections),
@@ -128,7 +129,7 @@ const ModelExplorer = () => {
         "text/markdown",
       );
     }
-  }, [diagram, flows]);
+  }, [diagram, flows, serviceRegistry]);
 
   useEffect(() => {
     if (!activeFlow) return;
