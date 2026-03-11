@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Database, Network, Search, Server, Square, StickyNote, User, X } from "lucide-react";
+import { Check, ChevronRight, Database, Network, Search, Server, Square, StickyNote, Star, User, X } from "lucide-react";
 import { useReactFlow } from "@xyflow/react";
 import { useDiagramActions, useAllServices, useAllComponents } from "@/features/diagram";
 import type { ComponentType } from "@/features/diagram";
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/aws-catalog";
 import AwsIcon from "../nodes/AwsIcon";
+import { trackUsage, getTopUsed } from "./element-usage-tracker";
 
 const C4_OPTIONS: { type: ComponentType; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { type: "person", label: "Person", icon: User },
@@ -25,6 +26,7 @@ interface ElementPickerModalProps {
 
 const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const [search, setSearch] = useState("");
+  const [expandedAwsCats, setExpandedAwsCats] = useState<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
   const rfInstance = useReactFlow();
   const { addComponent, linkComponentToService } = useDiagramActions();
@@ -35,6 +37,8 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     () => new Set(allComponents.map((c) => c.serviceId).filter((id): id is string => !!id)),
     [allComponents],
   );
+
+  const topUsed = useMemo(() => getTopUsed(8), []);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -84,6 +88,8 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   );
 
   const handleAddElement = (type: ComponentType, label: string) => {
+    const key = type === "panel" || type === "note" ? `canvas:${type}` : `c4:${type}`;
+    trackUsage(key);
     const name = type === "note" ? "" : `Novo ${label}`;
     const comp = addComponent(type, name, null, getInsertPos());
     onInsert?.(comp.id);
@@ -91,22 +97,64 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   };
 
   const handleAddAws = (categoryId: AwsCategoryId, serviceId: string, serviceName: string) => {
+    trackUsage(`aws:${serviceId}`);
     const comp = addComponent(categoryId, serviceName, null, getInsertPos(), serviceId);
     onInsert?.(comp.id);
     onClose();
   };
 
   const handleAddService = (serviceId: string, name: string) => {
+    trackUsage(`registry:${serviceId}`);
     const comp = addComponent("system", name, null, getInsertPos());
     linkComponentToService(comp.id, serviceId);
     onInsert?.(comp.id);
     onClose();
   };
 
+  const toggleAwsCat = (catId: string) => {
+    setExpandedAwsCats((prev) => {
+      const next = new Set(prev);
+      if (next.has(catId)) next.delete(catId);
+      else next.add(catId);
+      return next;
+    });
+  };
+
+  // Build "frequently used" items from tracked data
+  const frequentItems = useMemo(() => {
+    if (q) return []; // hide when searching
+    const allAwsServices = AWS_CATEGORIES.flatMap((cat) =>
+      cat.services.map((svc) => ({ ...svc, categoryId: cat.id })),
+    );
+    return topUsed
+      .map((entry) => {
+        const [prefix, id] = entry.key.split(":");
+        if (prefix === "c4") {
+          const opt = C4_OPTIONS.find((o) => o.type === id);
+          if (opt) return { kind: "c4" as const, opt, entry };
+        }
+        if (prefix === "canvas") {
+          const opt = CANVAS_OPTIONS.find((o) => o.type === id);
+          if (opt) return { kind: "canvas" as const, opt, entry };
+        }
+        if (prefix === "aws") {
+          const svc = allAwsServices.find((s) => s.id === id);
+          if (svc) return { kind: "aws" as const, svc, entry };
+        }
+        if (prefix === "registry") {
+          const svc = services.find((s) => s.id === id);
+          if (svc) return { kind: "registry" as const, svc, entry };
+        }
+        return null;
+      })
+      .filter(Boolean);
+  }, [topUsed, q, services]);
+
   const showC4 = filteredC4.length > 0;
   const showCanvas = filteredCanvas.length > 0;
   const showAws = filteredAwsCategories.length > 0;
   const showRegistry = services.length > 0 && filteredServices.length > 0;
+  const showFrequent = frequentItems.length > 0;
   const showEmpty = !!q && !showC4 && !showCanvas && !showAws && !showRegistry;
 
   return (
@@ -148,6 +196,72 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
             <p className="py-6 text-center text-xs text-muted-foreground">
               No results for &ldquo;{search.trim()}&rdquo;
             </p>
+          )}
+
+          {/* FREQUENTLY USED */}
+          {showFrequent && (
+            <section>
+              <p className="mb-2 flex items-center gap-1.5 text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
+                <Star className="h-3 w-3" /> Frequently Used
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {frequentItems.map((item) => {
+                  if (!item) return null;
+                  if (item.kind === "c4") {
+                    const { opt } = item;
+                    return (
+                      <button
+                        key={`freq-c4-${opt.type}`}
+                        onClick={() => handleAddElement(opt.type, opt.label)}
+                        className="flex items-center gap-1.5 rounded-md border border-border bg-secondary px-2.5 py-1.5 text-[11px] font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-surface-hover"
+                      >
+                        <opt.icon className="h-3.5 w-3.5 text-muted-foreground" />
+                        {opt.label}
+                      </button>
+                    );
+                  }
+                  if (item.kind === "canvas") {
+                    const { opt } = item;
+                    return (
+                      <button
+                        key={`freq-canvas-${opt.type}`}
+                        onClick={() => handleAddElement(opt.type, opt.label)}
+                        className="flex items-center gap-1.5 rounded-md border border-border bg-secondary px-2.5 py-1.5 text-[11px] font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-surface-hover"
+                      >
+                        <opt.icon className="h-3.5 w-3.5 text-muted-foreground" />
+                        {opt.label}
+                      </button>
+                    );
+                  }
+                  if (item.kind === "aws") {
+                    const { svc } = item;
+                    return (
+                      <button
+                        key={`freq-aws-${svc.id}`}
+                        onClick={() => handleAddAws(svc.categoryId as AwsCategoryId, svc.id, svc.name)}
+                        className="flex items-center gap-1.5 rounded-md border border-border bg-secondary px-2.5 py-1.5 text-[11px] text-foreground transition-colors hover:border-primary/40 hover:bg-surface-hover"
+                      >
+                        <AwsIcon iconName={svc.iconName} size={14} />
+                        <span className="max-w-[100px] truncate">{svc.name.replace(/^Amazon |^AWS /, "")}</span>
+                      </button>
+                    );
+                  }
+                  if (item.kind === "registry") {
+                    const { svc } = item;
+                    return (
+                      <button
+                        key={`freq-reg-${svc.id}`}
+                        onClick={() => handleAddService(svc.id, svc.name)}
+                        className="flex items-center gap-1.5 rounded-md border border-border bg-secondary px-2.5 py-1.5 text-[11px] font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-surface-hover"
+                      >
+                        {svc.name}
+                      </button>
+                    );
+                  }
+                  return null;
+                })}
+              </div>
+            </section>
           )}
 
           {/* C4 MODEL */}
@@ -192,32 +306,48 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
             </section>
           )}
 
-          {/* AWS SERVICES */}
+          {/* AWS SERVICES — collapsible categories */}
           {showAws && (
             <section>
               <p className="mb-2 text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
                 AWS Services
               </p>
-              <div className="space-y-3">
-                {filteredAwsCategories.map((cat) => (
-                  <div key={cat.id}>
-                    <p className="mb-1.5 text-[10px] text-muted-foreground">{cat.name}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {cat.services.map((svc) => (
-                        <button
-                          key={svc.id}
-                          onClick={() => handleAddAws(cat.id as AwsCategoryId, svc.id, svc.name)}
-                          className="flex items-center gap-1.5 rounded-md border border-border bg-secondary px-2 py-1 text-[11px] text-foreground transition-colors hover:bg-surface-hover"
-                        >
-                          <AwsIcon iconName={svc.iconName} size={16} />
-                          <span className="max-w-[100px] truncate">
-                            {svc.name.replace(/^Amazon |^AWS /, "")}
-                          </span>
-                        </button>
-                      ))}
+              <div className="space-y-0.5">
+                {filteredAwsCategories.map((cat) => {
+                  const isExpanded = expandedAwsCats.has(cat.id) || !!q;
+                  return (
+                    <div key={cat.id}>
+                      <button
+                        onClick={() => toggleAwsCat(cat.id)}
+                        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover"
+                      >
+                        <ChevronRight
+                          className={`h-3 w-3 text-muted-foreground transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                        />
+                        <span>{cat.name}</span>
+                        <span className="ml-auto text-[9px] font-mono text-muted-foreground">
+                          {cat.services.length}
+                        </span>
+                      </button>
+                      {isExpanded && (
+                        <div className="flex flex-wrap gap-1.5 pb-2 pl-6 pt-1">
+                          {cat.services.map((svc) => (
+                            <button
+                              key={svc.id}
+                              onClick={() => handleAddAws(cat.id as AwsCategoryId, svc.id, svc.name)}
+                              className="flex items-center gap-1.5 rounded-md border border-border bg-secondary px-2 py-1 text-[11px] text-foreground transition-colors hover:bg-surface-hover"
+                            >
+                              <AwsIcon iconName={svc.iconName} size={16} />
+                              <span className="max-w-[100px] truncate">
+                                {svc.name.replace(/^Amazon |^AWS /, "")}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
           )}
