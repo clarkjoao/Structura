@@ -20,13 +20,21 @@ import {
   RefreshCw,
   MoreHorizontal,
   Download,
+  ExternalLink,
+  GitBranch,
+  Star,
+  Tag,
+  Layers,
+  AlertCircle,
+  CheckCircle2,
+  Activity,
+  Link2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import {
   useAllServices,
   useDiagrams,
-  useActiveDiagramId,
   useDiagramActions,
 } from "@/features/diagram";
 import type { Diagram } from "@/features/diagram";
@@ -386,9 +394,90 @@ function getServiceUsage(
     );
 }
 
-// ── ServiceCard ───────────────────────────────────────────────────────────
+// ── Compact ServiceCard for grid ──────────────────────────────────────────
 
 interface ServiceCardProps {
+  svc: ServiceDefinition;
+  isSelected: boolean;
+  onClick: () => void;
+  usage: { diagramId: string; diagramName: string; nodeCount: number }[];
+}
+
+const ServiceCard = ({ svc, isSelected, onClick, usage }: ServiceCardProps) => {
+  const source = (svc.source ?? "manual") as Source;
+  const MAX_PILLS = 3;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full text-left rounded-xl border p-4 transition-all duration-150 hover:border-primary/40 hover:bg-accent/30 ${
+        isSelected
+          ? "border-primary/60 bg-accent/40 ring-1 ring-primary/20"
+          : "border-border bg-card"
+      }`}
+    >
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-1.5">
+        <span
+          className={`h-2 w-2 rounded-full shrink-0 ${SOURCE_DOT[source]}`}
+        />
+        <span className="font-semibold text-foreground text-sm truncate flex-1">
+          {svc.name}
+        </span>
+        <span
+          className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${SOURCE_BADGE[source]}`}
+        >
+          {SOURCE_LABEL[source]}
+        </span>
+      </div>
+
+      {/* Description */}
+      {svc.description && (
+        <p className="text-xs text-muted-foreground truncate mb-2">
+          {svc.description}
+        </p>
+      )}
+
+      {/* Tech pills */}
+      {svc.technology.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1 mb-2">
+          {svc.technology.slice(0, MAX_PILLS).map((t) => (
+            <span
+              key={t}
+              className="text-[10px] font-mono rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground"
+            >
+              {t}
+            </span>
+          ))}
+          {svc.technology.length > MAX_PILLS && (
+            <span className="text-[10px] text-muted-foreground">
+              +{svc.technology.length - MAX_PILLS}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Footer */}
+      <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+        {svc.owner && (
+          <span className="flex items-center gap-0.5">
+            <User className="h-3 w-3" />
+            {svc.owner}
+          </span>
+        )}
+        <span className="flex items-center gap-0.5">
+          <Layers className="h-3 w-3" />
+          {usage.length} diagrama{usage.length !== 1 ? "s" : ""}
+        </span>
+      </div>
+    </button>
+  );
+};
+
+// ── Detail Panel ──────────────────────────────────────────────────────────
+
+interface DetailPanelProps {
   svc: ServiceDefinition;
   diagrams: Record<string, Diagram>;
   onNavigateToDiagram: (id: string) => void;
@@ -397,59 +486,41 @@ interface ServiceCardProps {
     patch: Partial<Omit<ServiceDefinition, "id">>,
   ) => void;
   removeService: (id: string) => void;
+  onClose: () => void;
 }
 
-const ServiceCard = ({
+const DetailPanel = ({
   svc,
   diagrams,
   onNavigateToDiagram,
   updateService,
   removeService,
-}: ServiceCardProps) => {
+  onClose,
+}: DetailPanelProps) => {
   const source = (svc.source ?? "manual") as Source;
   const usage = useMemo(
     () => getServiceUsage(svc.id, diagrams),
     [svc.id, diagrams],
   );
 
-  const [showUsage, setShowUsage] = useState(false);
-  const [showActions, setShowActions] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [syncing, setSyncing] = useState(false);
-  const [syncFlash, setSyncFlash] = useState(false);
-  const [syncError, setSyncError] = useState("");
-
   const [editName, setEditName] = useState(svc.name);
   const [editDesc, setEditDesc] = useState(svc.description);
   const [editOwner, setEditOwner] = useState(svc.owner ?? "");
+  const [editRepo, setEditRepo] = useState(svc.repositoryUrl);
   const [editTech, setEditTech] = useState<string[]>(svc.technology);
   const [editTags, setEditTags] = useState<string[]>(svc.tags ?? []);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState("");
 
-  const actionsRef = useRef<HTMLDivElement>(null);
-  const MAX_PILLS = 3;
-
-  useEffect(() => {
-    if (!showActions) return;
-    const handler = (e: MouseEvent) => {
-      if (
-        actionsRef.current &&
-        !actionsRef.current.contains(e.target as Node)
-      ) {
-        setShowActions(false);
-        setConfirmDelete(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [showActions]);
-
-  // Keep edit state in sync when svc changes (e.g. after sync)
+  // Sync edit state when svc changes
   useEffect(() => {
     if (!editing) {
       setEditName(svc.name);
       setEditDesc(svc.description);
       setEditOwner(svc.owner ?? "");
+      setEditRepo(svc.repositoryUrl);
       setEditTech(svc.technology);
       setEditTags(svc.tags ?? []);
     }
@@ -459,6 +530,7 @@ const ServiceCard = ({
     updateService(svc.id, {
       name: editName.trim(),
       description: editDesc.trim(),
+      repositoryUrl: editRepo.trim(),
       owner: editOwner.trim() || undefined,
       technology: editTech,
       tags: editTags,
@@ -469,7 +541,6 @@ const ServiceCard = ({
   const handleSync = useCallback(async () => {
     setSyncError("");
     setSyncing(true);
-    setShowActions(false);
     try {
       if (source === "github" && svc.sourceId) {
         const res = await fetch(`https://api.github.com/repos/${svc.sourceId}`);
@@ -498,13 +569,13 @@ const ServiceCard = ({
             },
           },
         });
-        setSyncFlash(true);
-        setTimeout(() => setSyncFlash(false), 1200);
       } else if (source === "defectdojo" && svc.sourceId) {
-        const { DefectDojoClient } =
-          await import("@/integrations/defectdojo/defectdojo.client");
-        const { mapToServiceDefinition } =
-          await import("@/integrations/defectdojo/defectdojo.service");
+        const { DefectDojoClient } = await import(
+          "@/integrations/defectdojo/defectdojo.client"
+        );
+        const { mapToServiceDefinition } = await import(
+          "@/integrations/defectdojo/defectdojo.service"
+        );
         const rawConfig = localStorage.getItem("structura:defectdojo:config");
         if (!rawConfig) throw new Error("DefectDojo não configurado");
         const cfg = JSON.parse(rawConfig) as {
@@ -522,8 +593,6 @@ const ServiceCard = ({
           product as unknown as Parameters<typeof mapToServiceDefinition>[0],
         );
         updateService(svc.id, mapped);
-        setSyncFlash(true);
-        setTimeout(() => setSyncFlash(false), 1200);
       }
     } catch (err) {
       setSyncError(err instanceof Error ? err.message : "Erro ao sincronizar");
@@ -532,234 +601,456 @@ const ServiceCard = ({
     }
   }, [source, svc, updateService]);
 
-  if (editing) {
-    return (
-      <div className="rounded-xl border border-primary/40 bg-card p-4 space-y-3">
-        {(source === "github" || source === "defectdojo") && (
-          <p className="text-[10px] text-muted-foreground italic border border-border rounded-md px-3 py-1.5">
-            Alguns campos são sincronizados de {SOURCE_LABEL[source]} e podem
-            ser sobrescritos no próximo sync.
-          </p>
-        )}
-        <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-            Nome
-          </label>
-          <input
-            autoFocus
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+  // GitHub metadata
+  const ghMeta = svc.metadata?.github as
+    | {
+        language?: string;
+        updatedAt?: string;
+        stars?: number;
+        defaultBranch?: string;
+      }
+    | undefined;
+
+  // Insights
+  const totalNodes = usage.reduce((sum, u) => sum + u.nodeCount, 0);
+  const hasNoUsage = usage.length === 0;
+  const hasNoDescription = !svc.description.trim();
+  const hasNoOwner = !svc.owner;
+  const hasNoTags = !svc.tags || svc.tags.length === 0;
+
+  const completeness = [
+    !!svc.name,
+    !!svc.description.trim(),
+    !!svc.owner,
+    svc.technology.length > 0,
+    (svc.tags ?? []).length > 0,
+    !!svc.repositoryUrl,
+  ].filter(Boolean).length;
+  const completenessPercent = Math.round((completeness / 6) * 100);
+
+  return (
+    <motion.div
+      key={svc.id}
+      initial={{ opacity: 0, x: 12 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 12 }}
+      transition={{ duration: 0.15 }}
+      className="h-full flex flex-col overflow-hidden"
+    >
+      {/* Panel header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <span
+            className={`h-2.5 w-2.5 rounded-full shrink-0 ${SOURCE_DOT[source]}`}
           />
+          <h2 className="text-base font-bold text-foreground truncate">
+            {svc.name}
+          </h2>
         </div>
-        <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-            Descrição
-          </label>
-          <textarea
-            value={editDesc}
-            onChange={(e) => setEditDesc(e.target.value)}
-            rows={2}
-            className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring"
-          />
-        </div>
-        <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-            Owner
-          </label>
-          <input
-            value={editOwner}
-            onChange={(e) => setEditOwner(e.target.value)}
-            className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-          />
-        </div>
-        <ChipInput label="Tecnologia" items={editTech} onChange={setEditTech} />
-        <ChipInput label="Tags" items={editTags} onChange={setEditTags} />
-        <div className="flex justify-end gap-2 pt-1">
+        <div className="flex items-center gap-1 shrink-0">
+          {(source === "github" || source === "defectdojo") && svc.sourceId && (
+            <button
+              onClick={handleSync}
+              disabled={syncing}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              title="Sincronizar"
+            >
+              {syncing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+            </button>
+          )}
           <button
-            onClick={() => setEditing(false)}
-            className="px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md"
+            onClick={onClose}
+            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
           >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSave}
-            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <Save className="h-3 w-3" /> Salvar
+            <X className="h-4 w-4" />
           </button>
         </div>
       </div>
-    );
-  }
 
-  return (
-    <div
-      className={`rounded-xl border bg-card p-4 transition-colors duration-700 ${
-        syncFlash ? "border-green-500/50 bg-green-500/5" : "border-border"
-      }`}
-    >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <span
-            className={`h-2 w-2 rounded-full shrink-0 ${SOURCE_DOT[source]}`}
-          />
-          <span className="font-semibold text-foreground text-sm truncate">
-            {svc.name}
-          </span>
-          {syncing ? (
-            <Loader2 className="h-3 w-3 animate-spin text-muted-foreground shrink-0" />
-          ) : (
-            <span
-              className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${SOURCE_BADGE[source]}`}
-            >
-              {SOURCE_LABEL[source]}
-            </span>
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="px-5 py-4 space-y-5">
+          {syncError && (
+            <p className="text-xs text-destructive bg-destructive/10 rounded-md px-3 py-2">
+              {syncError}
+            </p>
           )}
-        </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <div ref={actionsRef} className="relative">
-            <button
-              type="button"
-              onClick={() => {
-                setShowActions((v) => !v);
-                setConfirmDelete(false);
-                setSyncError("");
-              }}
-              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </button>
-            {showActions && (
-              <div className="absolute right-0 top-full mt-1 z-10 w-44 rounded-lg border border-border bg-card shadow-lg py-1 text-sm">
+
+          {/* ─── Completeness bar ─── */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
+                Completude
+              </span>
+              <span className="text-[11px] font-bold text-foreground">
+                {completenessPercent}%
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  completenessPercent === 100
+                    ? "bg-green-500"
+                    : completenessPercent >= 60
+                      ? "bg-primary"
+                      : "bg-amber-500"
+                }`}
+                style={{ width: `${completenessPercent}%` }}
+              />
+            </div>
+          </div>
+
+          {/* ─── Insights ─── */}
+          <div className="space-y-1.5">
+            <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold block">
+              Insights
+            </span>
+            <div className="space-y-1">
+              {hasNoUsage && (
+                <div className="flex items-center gap-2 text-xs text-amber-400 bg-amber-500/5 border border-amber-500/10 rounded-md px-3 py-2">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                  <span>Serviço não vinculado a nenhum diagrama</span>
+                </div>
+              )}
+              {hasNoDescription && (
+                <div className="flex items-center gap-2 text-xs text-amber-400 bg-amber-500/5 border border-amber-500/10 rounded-md px-3 py-2">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                  <span>Sem descrição — adicione para melhor documentação</span>
+                </div>
+              )}
+              {hasNoOwner && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/50 rounded-md px-3 py-2">
+                  <User className="h-3.5 w-3.5 shrink-0" />
+                  <span>Nenhum owner definido</span>
+                </div>
+              )}
+              {hasNoTags && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/50 rounded-md px-3 py-2">
+                  <Tag className="h-3.5 w-3.5 shrink-0" />
+                  <span>Sem tags — facilite a busca adicionando tags</span>
+                </div>
+              )}
+              {!hasNoUsage && (
+                <div className="flex items-center gap-2 text-xs text-green-400 bg-green-500/5 border border-green-500/10 rounded-md px-3 py-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                  <span>
+                    Vinculado a {usage.length} diagrama{usage.length !== 1 ? "s" : ""} ({totalNodes} nó{totalNodes !== 1 ? "s" : ""})
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ─── Fields (view/edit) ─── */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
+                Detalhes
+              </span>
+              {!editing ? (
                 <button
-                  onClick={() => {
-                    setEditing(true);
-                    setShowActions(false);
-                  }}
-                  className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted/50 text-foreground"
+                  onClick={() => setEditing(true)}
+                  className="text-[11px] text-primary hover:underline font-medium"
                 >
                   Editar
                 </button>
-                {(source === "github" || source === "defectdojo") &&
-                  svc.sourceId && (
-                    <button
-                      onClick={handleSync}
-                      className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted/50 text-foreground flex items-center gap-1.5"
-                    >
-                      <RefreshCw className="h-3 w-3" /> Sync
-                    </button>
+              ) : (
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() => setEditing(false)}
+                    className="text-[11px] text-muted-foreground hover:text-foreground"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
+                  >
+                    <Save className="h-3 w-3" />
+                    Salvar
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {(source === "github" || source === "defectdojo") && editing && (
+              <p className="text-[10px] text-muted-foreground italic border border-border rounded-md px-3 py-1.5">
+                Alguns campos são sincronizados de {SOURCE_LABEL[source]} e
+                podem ser sobrescritos no próximo sync.
+              </p>
+            )}
+
+            {editing ? (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+                    Nome
+                  </label>
+                  <input
+                    autoFocus
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+                    Descrição
+                  </label>
+                  <textarea
+                    value={editDesc}
+                    onChange={(e) => setEditDesc(e.target.value)}
+                    rows={3}
+                    className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+                    Owner
+                  </label>
+                  <input
+                    value={editOwner}
+                    onChange={(e) => setEditOwner(e.target.value)}
+                    className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+                    Repositório
+                  </label>
+                  <input
+                    value={editRepo}
+                    onChange={(e) => setEditRepo(e.target.value)}
+                    placeholder="https://github.com/..."
+                    className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                </div>
+                <ChipInput
+                  label="Tecnologia"
+                  items={editTech}
+                  onChange={setEditTech}
+                />
+                <ChipInput
+                  label="Tags"
+                  items={editTags}
+                  onChange={setEditTags}
+                />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {/* Source badge */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-muted-foreground w-20 shrink-0">
+                    Fonte
+                  </span>
+                  <span
+                    className={`rounded px-2 py-0.5 text-[10px] font-semibold ${SOURCE_BADGE[source]}`}
+                  >
+                    {SOURCE_LABEL[source]}
+                  </span>
+                </div>
+
+                {/* Description */}
+                <div>
+                  <span className="text-[11px] text-muted-foreground block mb-0.5">
+                    Descrição
+                  </span>
+                  <p className="text-sm text-foreground">
+                    {svc.description || (
+                      <span className="text-muted-foreground italic">
+                        Sem descrição
+                      </span>
+                    )}
+                  </p>
+                </div>
+
+                {/* Owner */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-muted-foreground w-20 shrink-0">
+                    Owner
+                  </span>
+                  {svc.owner ? (
+                    <span className="text-sm text-foreground flex items-center gap-1">
+                      <User className="h-3 w-3 text-muted-foreground" />
+                      {svc.owner}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-muted-foreground italic">
+                      —
+                    </span>
                   )}
-                {confirmDelete ? (
-                  <button
-                    onClick={() => removeService(svc.id)}
-                    className="w-full text-left px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10 font-semibold"
-                  >
-                    Confirmar remoção
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => setConfirmDelete(true)}
-                    className="w-full text-left px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10"
-                  >
-                    Deletar
-                  </button>
+                </div>
+
+                {/* Repo */}
+                {svc.repositoryUrl && (
+                  <div className="flex items-start gap-2">
+                    <span className="text-[11px] text-muted-foreground w-20 shrink-0 pt-0.5">
+                      Repo
+                    </span>
+                    <a
+                      href={svc.repositoryUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline flex items-center gap-1 truncate"
+                    >
+                      <ExternalLink className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{svc.repositoryUrl}</span>
+                    </a>
+                  </div>
                 )}
+
+                {/* Technology */}
+                <div>
+                  <span className="text-[11px] text-muted-foreground block mb-1">
+                    Tecnologia
+                  </span>
+                  {svc.technology.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {svc.technology.map((t) => (
+                        <span
+                          key={t}
+                          className="text-[11px] font-mono rounded bg-secondary px-2 py-0.5 text-secondary-foreground"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-sm text-muted-foreground italic">
+                      —
+                    </span>
+                  )}
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <span className="text-[11px] text-muted-foreground block mb-1">
+                    Tags
+                  </span>
+                  {(svc.tags ?? []).length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {(svc.tags ?? []).map((t) => (
+                        <span
+                          key={t}
+                          className="text-[10px] rounded bg-secondary/60 px-2 py-0.5 text-muted-foreground"
+                        >
+                          #{t}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-sm text-muted-foreground italic">
+                      —
+                    </span>
+                  )}
+                </div>
               </div>
             )}
           </div>
-        </div>
-      </div>
 
-      {/* Body */}
-      {svc.description && (
-        <p className="text-xs text-muted-foreground truncate mb-1.5">
-          {svc.description}
-        </p>
-      )}
-      {svc.owner && (
-        <div className="flex items-center gap-1 mb-1.5 text-xs text-muted-foreground">
-          <User className="h-3 w-3 shrink-0" />
-          <span>{svc.owner}</span>
-        </div>
-      )}
-      {svc.technology.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1 mb-1.5">
-          {svc.technology.slice(0, MAX_PILLS).map((t) => (
-            <span
-              key={t}
-              className="text-[10px] font-mono rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground"
-            >
-              {t}
-            </span>
-          ))}
-          {svc.technology.length > MAX_PILLS && (
-            <span className="text-[10px] text-muted-foreground">
-              +{svc.technology.length - MAX_PILLS}
-            </span>
+          {/* ─── GitHub metadata ─── */}
+          {ghMeta && (
+            <div className="space-y-1.5">
+              <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold block">
+                GitHub
+              </span>
+              <div className="rounded-lg border border-border bg-secondary/30 p-3 space-y-2 text-xs">
+                {ghMeta.stars !== undefined && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Star className="h-3.5 w-3.5 text-amber-400" />
+                    <span>{ghMeta.stars} stars</span>
+                  </div>
+                )}
+                {ghMeta.defaultBranch && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <GitBranch className="h-3.5 w-3.5" />
+                    <span>{ghMeta.defaultBranch}</span>
+                  </div>
+                )}
+                {ghMeta.updatedAt && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Activity className="h-3.5 w-3.5" />
+                    <span>
+                      Último push:{" "}
+                      {new Date(ghMeta.updatedAt).toLocaleDateString("pt-BR")}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
-        </div>
-      )}
-      {svc.tags && svc.tags.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1 mb-2">
-          {svc.tags.slice(0, MAX_PILLS).map((t) => (
-            <span
-              key={t}
-              className="text-[10px] rounded bg-secondary/60 px-1.5 py-0.5 text-muted-foreground"
-            >
-              #{t}
-            </span>
-          ))}
-          {svc.tags.length > MAX_PILLS && (
-            <span className="text-[10px] text-muted-foreground">
-              +{svc.tags.length - MAX_PILLS}
-            </span>
-          )}
-        </div>
-      )}
 
-      {syncError && (
-        <p className="text-[10px] text-destructive mb-1.5">{syncError}</p>
-      )}
-
-      {/* Footer */}
-      <div className="border-t border-border pt-2 mt-1">
-        {usage.length === 0 ? (
-          <span className="text-[10px] text-muted-foreground">
-            Não usado em nenhum diagrama
-          </span>
-        ) : (
-          <div>
-            <button
-              type="button"
-              onClick={() => setShowUsage((v) => !v)}
-              className="flex items-center gap-0.5 text-[10px] text-primary hover:underline"
-            >
-              Usado em {usage.length} diagrama{usage.length !== 1 ? "s" : ""}
-              <ChevronRight
-                className={`h-3 w-3 transition-transform ${showUsage ? "rotate-90" : ""}`}
-              />
-            </button>
-            {showUsage && (
-              <div className="mt-1 space-y-0.5 pl-1">
+          {/* ─── Usage in diagrams ─── */}
+          <div className="space-y-1.5">
+            <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold block">
+              Uso em diagramas
+            </span>
+            {usage.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic rounded-lg border border-border bg-secondary/30 p-3">
+                Não vinculado a nenhum diagrama
+              </p>
+            ) : (
+              <div className="rounded-lg border border-border bg-secondary/30 divide-y divide-border">
                 {usage.map((u) => (
                   <button
                     key={u.diagramId}
                     type="button"
                     onClick={() => onNavigateToDiagram(u.diagramId)}
-                    className="w-full text-left text-[10px] text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+                    className="w-full flex items-center justify-between px-3 py-2.5 text-xs hover:bg-muted/50 transition-colors group"
                   >
-                    ↳ {u.diagramName} · {u.nodeCount} nó
-                    {u.nodeCount !== 1 ? "s" : ""}
+                    <span className="flex items-center gap-2 text-foreground truncate">
+                      <Link2 className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                      {u.diagramName}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground shrink-0">
+                      {u.nodeCount} nó{u.nodeCount !== 1 ? "s" : ""}
+                      <ChevronRight className="h-3 w-3 inline ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </span>
                   </button>
                 ))}
               </div>
             )}
           </div>
-        )}
+
+          {/* ─── Danger zone ─── */}
+          <div className="pt-2 border-t border-border">
+            {confirmDelete ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-destructive flex-1">
+                  Tem certeza? Esta ação é irreversível.
+                </span>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    removeService(svc.id);
+                    onClose();
+                  }}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Confirmar remoção
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="text-xs text-destructive hover:underline"
+              >
+                Deletar serviço
+              </button>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -820,7 +1111,8 @@ const AddServiceDropdown = ({
               onClick={() => select("defectdojo")}
               className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted/50 text-foreground text-left"
             >
-              <span className="text-orange-400">🛡</span> Importar do DefectDojo
+              <span className="text-orange-400">🛡</span> Importar do
+              DefectDojo
             </button>
           )}
         </div>
@@ -844,6 +1136,7 @@ const ServiceRegistry = () => {
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
   const [inlineForm, setInlineForm] = useState<InlineForm>(null);
   const [showDefectDojo, setShowDefectDojo] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     let result = services;
@@ -862,6 +1155,29 @@ const ServiceRegistry = () => {
     }
     return result;
   }, [services, search, sourceFilter]);
+
+  const selectedSvc = useMemo(
+    () => (selectedId ? services.find((s) => s.id === selectedId) : undefined),
+    [selectedId, services],
+  );
+
+  // If selected service was deleted, clear selection
+  useEffect(() => {
+    if (selectedId && !services.find((s) => s.id === selectedId)) {
+      setSelectedId(null);
+    }
+  }, [selectedId, services]);
+
+  const usageMap = useMemo(() => {
+    const map: Record<
+      string,
+      { diagramId: string; diagramName: string; nodeCount: number }[]
+    > = {};
+    for (const svc of services) {
+      map[svc.id] = getServiceUsage(svc.id, diagrams);
+    }
+    return map;
+  }, [services, diagrams]);
 
   const handleNavigateToDiagram = useCallback(
     (id: string) => {
@@ -882,8 +1198,9 @@ const ServiceRegistry = () => {
   };
 
   const handleCreate = (svc: Omit<ServiceDefinition, "id">) => {
-    addService(svc);
+    const created = addService(svc);
     setInlineForm(null);
+    setSelectedId(created.id);
   };
 
   const SOURCE_FILTERS: { value: SourceFilter; label: string }[] = [
@@ -893,125 +1210,171 @@ const ServiceRegistry = () => {
     { value: "defectdojo", label: "DefectDojo" },
   ];
 
+  const hasDetailPanel = !!selectedSvc;
+
   return (
     <div className="min-h-screen pt-16">
       <Navbar />
-      <div className="container py-8 max-w-5xl">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Registry</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Catálogo central de serviços e infraestrutura
-            </p>
-          </div>
-          <AddServiceDropdown onSelect={handleInlineFormSelect} />
-        </div>
-
-        {/* Search */}
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nome, tag, owner..."
-            className="w-full rounded-lg border border-border bg-card pl-10 pr-10 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-          />
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-
-        {/* Source filter pills + count */}
-        <div className="flex items-center gap-2 mb-6 flex-wrap">
-          {SOURCE_FILTERS.map((f) => (
-            <button
-              key={f.value}
-              onClick={() => setSourceFilter(f.value)}
-              className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                sourceFilter === f.value
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-          <span className="text-xs text-muted-foreground ml-auto">
-            · {filtered.length} {filtered.length === 1 ? "service" : "services"}
-          </span>
-        </div>
-
-        {/* Inline forms */}
-        <AnimatePresence mode="wait">
-          {inlineForm === "manual" && (
-            <ManualCreateForm
-              key="manual"
-              onCancel={() => setInlineForm(null)}
-              onCreate={handleCreate}
-            />
-          )}
-          {inlineForm === "github" && (
-            <GitHubImportForm
-              key="github"
-              onCancel={() => setInlineForm(null)}
-              onCreate={handleCreate}
-            />
-          )}
-        </AnimatePresence>
-
-        {/* DefectDojo panel */}
-        {showDefectDojo && (
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                DefectDojo
-              </span>
-              <button
-                onClick={() => setShowDefectDojo(false)}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
+      <div className="flex h-[calc(100vh-4rem)]">
+        {/* Main content */}
+        <div
+          className={`flex-1 overflow-y-auto transition-all duration-200 ${
+            hasDetailPanel ? "pr-0" : ""
+          }`}
+        >
+          <div
+            className={`py-8 px-6 ${hasDetailPanel ? "max-w-4xl" : "max-w-5xl mx-auto"}`}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h1 className="text-2xl font-bold">Registry</h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Catálogo central de serviços e infraestrutura
+                </p>
+              </div>
+              <AddServiceDropdown onSelect={handleInlineFormSelect} />
             </div>
-            <Suspense
-              fallback={
-                <div className="h-32 rounded-xl border border-border bg-card animate-pulse" />
-              }
-            >
-              <DefectDojoPanel />
-            </Suspense>
-          </div>
-        )}
 
-        {/* Service cards grid */}
-        {filtered.length === 0 ? (
-          <div className="rounded-xl border border-border bg-card px-4 py-12 text-center">
-            <p className="text-sm text-muted-foreground">
-              {services.length === 0
-                ? 'Nenhum serviço cadastrado. Clique em "Add Service" para começar.'
-                : "Nenhum serviço encontrado para os filtros aplicados."}
-            </p>
+            {/* Search */}
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por nome, tag, owner..."
+                className="w-full rounded-lg border border-border bg-card pl-10 pr-10 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Source filter pills + count */}
+            <div className="flex items-center gap-2 mb-6 flex-wrap">
+              {SOURCE_FILTERS.map((f) => (
+                <button
+                  key={f.value}
+                  onClick={() => setSourceFilter(f.value)}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                    sourceFilter === f.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+              <span className="text-xs text-muted-foreground ml-auto">
+                · {filtered.length}{" "}
+                {filtered.length === 1 ? "service" : "services"}
+              </span>
+            </div>
+
+            {/* Inline forms */}
+            <AnimatePresence mode="wait">
+              {inlineForm === "manual" && (
+                <ManualCreateForm
+                  key="manual"
+                  onCancel={() => setInlineForm(null)}
+                  onCreate={handleCreate}
+                />
+              )}
+              {inlineForm === "github" && (
+                <GitHubImportForm
+                  key="github"
+                  onCancel={() => setInlineForm(null)}
+                  onCreate={handleCreate}
+                />
+              )}
+            </AnimatePresence>
+
+            {/* DefectDojo panel */}
+            {showDefectDojo && (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    DefectDojo
+                  </span>
+                  <button
+                    onClick={() => setShowDefectDojo(false)}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <Suspense
+                  fallback={
+                    <div className="h-32 rounded-xl border border-border bg-card animate-pulse" />
+                  }
+                >
+                  <DefectDojoPanel />
+                </Suspense>
+              </div>
+            )}
+
+            {/* Service cards grid */}
+            {filtered.length === 0 ? (
+              <div className="rounded-xl border border-border bg-card px-4 py-12 text-center">
+                <p className="text-sm text-muted-foreground">
+                  {services.length === 0
+                    ? 'Nenhum serviço cadastrado. Clique em "Add Service" para começar.'
+                    : "Nenhum serviço encontrado para os filtros aplicados."}
+                </p>
+              </div>
+            ) : (
+              <div
+                className={`grid gap-3 ${
+                  hasDetailPanel
+                    ? "grid-cols-1 sm:grid-cols-2"
+                    : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                }`}
+              >
+                {filtered.map((svc) => (
+                  <ServiceCard
+                    key={svc.id}
+                    svc={svc}
+                    isSelected={selectedId === svc.id}
+                    onClick={() =>
+                      setSelectedId(
+                        selectedId === svc.id ? null : svc.id,
+                      )
+                    }
+                    usage={usageMap[svc.id] ?? []}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((svc) => (
-              <ServiceCard
-                key={svc.id}
-                svc={svc}
+        </div>
+
+        {/* Detail panel */}
+        <AnimatePresence>
+          {selectedSvc && (
+            <motion.aside
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 420, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+              className="shrink-0 border-l border-border bg-card overflow-hidden"
+            >
+              <DetailPanel
+                key={selectedSvc.id}
+                svc={selectedSvc}
                 diagrams={diagrams}
                 onNavigateToDiagram={handleNavigateToDiagram}
                 updateService={updateService}
                 removeService={removeService}
+                onClose={() => setSelectedId(null)}
               />
-            ))}
-          </div>
-        )}
+            </motion.aside>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
