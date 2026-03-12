@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { NodeResizer, type NodeProps } from "@xyflow/react";
 import { GripHorizontal } from "lucide-react";
+import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 
 const DEFAULT_NOTE_COLOR = "hsl(48 96% 53%)";
 
@@ -10,6 +11,7 @@ export interface NoteNodeData {
   description: string;
   panelColor?: string;
   isSelected: boolean;
+  isHighlighted?: boolean;
 }
 
 function isDarkBg(color: string): boolean {
@@ -29,8 +31,12 @@ function isDarkBg(color: string): boolean {
 
 const NoteNode = memo(({ data, selected }: NodeProps) => {
   const d = data as unknown as NoteNodeData;
+  const { highlightedNodeIds } = useHandleHighlight();
   const color = d.panelColor || DEFAULT_NOTE_COLOR;
   const isSelected = selected || d.isSelected;
+  const isHighlighted =
+    (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
+  const isActive = isSelected || isHighlighted;
   const dark = isDarkBg(color);
   const textClass = dark ? "text-white" : "text-gray-900";
   const mutedClass = dark ? "text-white/70" : "text-gray-900/60";
@@ -47,7 +53,7 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
       <div
         aria-label={d.name ? `Nota: ${d.name}` : "Nota"}
         className={`min-w-[160px] max-w-[280px] rounded-lg shadow-md transition-shadow duration-200 ${
-          isSelected ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"
+          isActive ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"
         }`}
         style={{ backgroundColor: color }}
       >

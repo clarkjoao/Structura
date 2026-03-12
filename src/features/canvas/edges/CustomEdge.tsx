@@ -23,7 +23,10 @@ export interface EdgeData {
   strokeWidth?: number;
 }
 
-const strokeDasharrayByStyle: Record<StrokeStyle | "solid", string | undefined> = {
+const strokeDasharrayByStyle: Record<
+  StrokeStyle | "solid",
+  string | undefined
+> = {
   solid: undefined,
   dashed: "8 4",
   dotted: "2 4",
@@ -58,7 +61,10 @@ const Edge = memo(
     let labelX: number;
     let labelY: number;
     if (styleKey === "step") {
-      [edgePath, labelX, labelY] = getSmoothStepPath({ ...pathParams, borderRadius: 0 });
+      [edgePath, labelX, labelY] = getSmoothStepPath({
+        ...pathParams,
+        borderRadius: 0,
+      });
     } else if (styleKey === "smoothstep") {
       [edgePath, labelX, labelY] = getSmoothStepPath(pathParams);
     } else if (styleKey === "bezier") {
@@ -70,7 +76,8 @@ const Edge = memo(
     const strokeStyle = d?.strokeStyle ?? "solid";
     const dashArray = strokeDasharrayByStyle[strokeStyle];
     const strokeWidth = d?.strokeWidth ?? 1;
-    const isHighlighted = selected || highlightedConnectionId === d.connectionId;
+    const isHighlighted =
+      selected || highlightedConnectionId === d.connectionId;
 
     return (
       <>
@@ -85,7 +92,9 @@ const Edge = memo(
               : d?.coverageFlowNames?.length
                 ? "hsl(160 40% 38%)"
                 : "hsl(220 20% 30%)",
-            strokeWidth: isHighlighted ? Math.max(2, strokeWidth + 1) : strokeWidth,
+            strokeWidth: isHighlighted
+              ? Math.max(2, strokeWidth + 1)
+              : strokeWidth,
             strokeDasharray: dashArray,
           }}
         />
@@ -103,16 +112,24 @@ const Edge = memo(
                     ? "bg-primary/15 border-primary/30 text-primary"
                     : "bg-card border-border text-muted-foreground"
                 }`}
-                title={d?.coverageFlowNames?.length ? `Coberto por: ${d.coverageFlowNames.join(", ")}` : undefined}
+                title={
+                  d?.coverageFlowNames?.length
+                    ? `Coberto por: ${d.coverageFlowNames.join(", ")}`
+                    : undefined
+                }
               >
                 {d?.recordingBadges && d.recordingBadges.length > 0 && (
-                  <div className={`absolute -top-2.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-primary text-primary-foreground text-[9px] font-bold px-0.5 ${d.isLastRecorded ? "animate-pulse" : ""}`}>
+                  <div
+                    className={`absolute -top-2.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-primary text-primary-foreground text-[9px] font-bold px-0.5 ${d.isLastRecorded ? "animate-pulse" : ""}`}
+                  >
                     {d.recordingBadges.join(",")}
                   </div>
                 )}
                 <span>{d.label}</span>
                 {d.playbackDuration && (
-                  <span className="ml-1 font-mono text-primary">· {d.playbackDuration}</span>
+                  <span className="ml-1 font-mono text-primary">
+                    · {d.playbackDuration}
+                  </span>
                 )}
                 {d.technology && (
                   <span className="block mt-0.5 font-mono text-[9px] bg-secondary px-1 rounded w-fit">

@@ -18,6 +18,7 @@ import {
 } from "@/lib/aws-catalog";
 import AwsIcon from "./AwsIcon";
 import { MIN_HANDLES, MAX_HANDLES } from "../constants";
+import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 
 export interface NodeData {
   elementId: string;
@@ -27,6 +28,7 @@ export interface NodeData {
   technology?: string;
   awsService?: string;
   isSelected: boolean;
+  isHighlighted?: boolean;
   serviceName?: string;
   linkedDiagramName?: string;
   onDrillDown?: (elementId: string) => void;
@@ -97,10 +99,7 @@ const awsCategoryBorders: Record<string, string> = {
   "aws-general": "border-l-aws-general",
 };
 
-function getHandleClass(
-  d: NodeData,
-  handleId: string,
-): string {
+function getHandleClass(d: NodeData, handleId: string): string {
   const base = "!border-background transition-all duration-150";
   const isRecHighlighted = d.isRecording && d.lastRecordedHandleId === handleId;
   const isPlayHighlighted = !d.isRecording && d.activeHandleId === handleId;
@@ -300,6 +299,9 @@ const EmbedButton = ({
 const CardNode = memo(({ data, selected }: NodeProps) => {
   const d = data as unknown as NodeData;
   const isAws = isAwsType(d.type);
+  const { highlightedNodeIds } = useHandleHighlight();
+  const isHighlighted = highlightedNodeIds.has(d.elementId);
+  const isActive = selected || d.isSelected || d.isHighlighted || isHighlighted;
   const hasDrillDown = !!d.linkedDiagramName && !!d.onDrillDown;
   const hasEmbed = !!d.linkedDiagramName && !!d.onEmbed;
 
@@ -326,7 +328,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
     return (
       <div
         aria-label={`${d.name} (${d.type})`}
-        className={`group relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${borderClass} border-l-[3px] transition-shadow duration-200 ${selected || d.isSelected ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
+        className={`group relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${borderClass} border-l-[3px] transition-shadow duration-200 ${isActive ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
       >
         {d.recordingBadges && d.recordingBadges.length > 0 && (
           <div
@@ -336,7 +338,8 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
           </div>
         )}
         {buildHandles(incomingCount, "target", Position.Left, d, handlePointer)}
-        {d.onReorderHandle && buildReorderControls(incomingIds, "incoming", d.onReorderHandle)}
+        {d.onReorderHandle &&
+          buildReorderControls(incomingIds, "incoming", d.onReorderHandle)}
         <div className="px-3 py-2.5">
           <div className="flex items-center gap-2 mb-1.5">
             {svcInfo?.iconName ? (
@@ -373,8 +376,15 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
             <EmbedButton elementId={d.elementId} onEmbed={d.onEmbed} />
           )}
         </div>
-        {buildHandles(outgoingCount, "source", Position.Right, d, handlePointer)}
-        {d.onReorderHandle && buildReorderControls(outgoingIds, "outgoing", d.onReorderHandle)}
+        {buildHandles(
+          outgoingCount,
+          "source",
+          Position.Right,
+          d,
+          handlePointer,
+        )}
+        {d.onReorderHandle &&
+          buildReorderControls(outgoingIds, "outgoing", d.onReorderHandle)}
       </div>
     );
   }
@@ -385,7 +395,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
   return (
     <div
       aria-label={`${d.name} (${d.type})`}
-      className={`group relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${cfg.borderColor} border-l-[3px] transition-shadow duration-200 ${selected || d.isSelected ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
+      className={`group relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${cfg.borderColor} border-l-[3px] transition-shadow duration-200 ${isActive ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
     >
       {d.recordingBadges && d.recordingBadges.length > 0 && (
         <div
@@ -395,7 +405,8 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
         </div>
       )}
       {buildHandles(incomingCount, "target", Position.Left, d, handlePointer)}
-      {d.onReorderHandle && buildReorderControls(incomingIds, "incoming", d.onReorderHandle)}
+      {d.onReorderHandle &&
+        buildReorderControls(incomingIds, "incoming", d.onReorderHandle)}
       <div className="px-3 py-2.5">
         <div className="flex items-center gap-2 mb-1.5">
           <Icon className={`h-4 w-4 ${cfg.textColor} shrink-0`} />
@@ -429,7 +440,8 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
         )}
       </div>
       {buildHandles(outgoingCount, "source", Position.Right, d, handlePointer)}
-      {d.onReorderHandle && buildReorderControls(outgoingIds, "outgoing", d.onReorderHandle)}
+      {d.onReorderHandle &&
+        buildReorderControls(outgoingIds, "outgoing", d.onReorderHandle)}
     </div>
   );
 });

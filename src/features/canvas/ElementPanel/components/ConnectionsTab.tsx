@@ -38,8 +38,16 @@ interface GroupProps {
   highlightedConnId: string | null;
   hasHighlight: boolean;
   onDragStart: (connId: string, side: "incoming" | "outgoing") => void;
-  onDragOver: (e: React.DragEvent, connId: string, side: "incoming" | "outgoing") => void;
-  onDrop: (e: React.DragEvent, targetConnId: string, side: "incoming" | "outgoing") => void;
+  onDragOver: (
+    e: React.DragEvent,
+    connId: string,
+    side: "incoming" | "outgoing",
+  ) => void;
+  onDrop: (
+    e: React.DragEvent,
+    targetConnId: string,
+    side: "incoming" | "outgoing",
+  ) => void;
   onDragEnd: () => void;
   onConnClick: (connId: string, side: "incoming" | "outgoing") => void;
 }
@@ -75,7 +83,8 @@ function ConnectionGroup({
         const peer = components[peerId];
         const source = isSource ? self : peer;
         const target = isSource ? peer : self;
-        const isDragging = dragState?.connId === conn.id && dragState.side === side;
+        const isDragging =
+          dragState?.connId === conn.id && dragState.side === side;
         const isOver =
           dragOverId === conn.id &&
           dragState?.side === side &&
@@ -97,7 +106,11 @@ function ConnectionGroup({
             onDragEnd={onDragEnd}
             onClick={() => onConnClick(conn.id, side)}
             className={`flex items-center gap-1.5 rounded-md bg-secondary/50 border px-2.5 py-2 text-xs cursor-pointer select-none transition-all duration-150 ${
-              isDragging ? "opacity-40" : dimmed ? "opacity-40 hover:opacity-70" : "opacity-100"
+              isDragging
+                ? "opacity-40"
+                : dimmed
+                  ? "opacity-40 hover:opacity-70"
+                  : "opacity-100"
             } ${isHighlighted ? "bg-cyan-500/10 border-l-2 border-cyan-500 border-border" : isOver ? "border-t-2 border-t-primary border-border" : "border-border"}`}
           >
             <GripVertical className="h-3.5 w-3.5 text-muted-foreground/40 hover:text-muted-foreground shrink-0 transition-colors" />
@@ -127,7 +140,9 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
   const [search, setSearch] = useState("");
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
-  const [highlightedConnId, setHighlightedConnId] = useState<string | null>(null);
+  const [highlightedConnId, setHighlightedConnId] = useState<string | null>(
+    null,
+  );
   const { setHighlight, clearHighlight } = useHandleHighlight();
 
   const { incoming, outgoing } = useMemo(() => {
@@ -171,7 +186,11 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
       clearHighlight();
     } else {
       setHighlightedConnId(connId);
-      setHighlight(connId);
+      const nodeIds = [
+        connections[connId].sourceId,
+        connections[connId].targetId,
+      ];
+      setHighlight(connId, nodeIds);
     }
   };
 

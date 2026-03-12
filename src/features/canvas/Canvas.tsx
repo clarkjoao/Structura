@@ -104,6 +104,12 @@ const Canvas = ({
     new Set(),
   );
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+  const [highlightedConnectionId, setHighlightedConnectionId] = useState<
+    string | null
+  >(null);
+  const [highlightedNodeIds, setHighlightedNodeIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -279,12 +285,26 @@ const Canvas = ({
     [isRecording, effectiveHandleOrder, updateHandleOrder],
   );
 
+  const setHighlight = useCallback(
+    (connectionId: string, nodeIds: string[]) => {
+      setHighlightedConnectionId(connectionId);
+      setHighlightedNodeIds(new Set(nodeIds));
+    },
+    [],
+  );
+
+  const clearHighlight = useCallback(() => {
+    setHighlightedConnectionId(null);
+    setHighlightedNodeIds(new Set());
+  }, []);
+
   const nodes = useCanvasNodes({
     diagram,
     visibleComponents,
     panelIds,
     selectedNodeId,
     selectedNodeIds,
+    highlightedNodeIds,
     serviceRegistry: serviceRegistry ?? {},
     allDiagrams,
     handleDrillDown,
@@ -429,6 +449,7 @@ const Canvas = ({
         return;
       }
       if (isPlaying) return;
+      clearHighlight();
       setSelectedEdgeId(null);
       setContextMenu(null);
       if (e.metaKey || e.ctrlKey) {
@@ -450,7 +471,7 @@ const Canvas = ({
         setSelectedNodeId(node.id);
       }
     },
-    [isPlaying, isRecording, onRecordNodeClick],
+    [clearHighlight, isPlaying, isRecording, onRecordNodeClick],
   );
 
   const onEdgeClick = useCallback(
@@ -459,11 +480,13 @@ const Canvas = ({
         onRecordEdgeClick?.(edge.id, edge.sourceHandle ?? undefined);
         return;
       }
+      clearHighlight();
       setSelectedEdgeId(edge.id);
       setSelectedNodeId(null);
+      setSelectedNodeIds(new Set());
       setContextMenu(null);
     },
-    [isRecording, onRecordEdgeClick],
+    [clearHighlight, isRecording, onRecordEdgeClick],
   );
 
   const onSelectionChange = useCallback(
@@ -478,16 +501,18 @@ const Canvas = ({
   );
 
   const onPaneClick = useCallback(() => {
+    clearHighlight();
     setSelectedNodeId(null);
     setSelectedNodeIds(new Set());
     setSelectedEdgeId(null);
     setContextMenu(null);
-  }, []);
+  }, [clearHighlight]);
 
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: Node) => {
       if (isRecording) return;
       event.preventDefault();
+      clearHighlight();
       setContextMenu({
         x: event.clientX,
         y: event.clientY,
@@ -496,13 +521,14 @@ const Canvas = ({
       setSelectedNodeId(node.id);
       setSelectedEdgeId(null);
     },
-    [isRecording],
+    [clearHighlight, isRecording],
   );
 
   const closePanel = useCallback(() => {
+    clearHighlight();
     setSelectedNodeId(null);
     setSelectedEdgeId(null);
-  }, []);
+  }, [clearHighlight]);
 
   const isPanelOpen = !!(selectedNodeId || selectedEdgeId) && !isRecording;
 
@@ -610,7 +636,14 @@ const Canvas = ({
     );
 
   return (
-    <HandleHighlightProvider>
+    <HandleHighlightProvider
+      value={{
+        highlightedConnectionId,
+        highlightedNodeIds,
+        setHighlight,
+        clearHighlight,
+      }}
+    >
     <div className="flex-1 flex relative">
       <style>{`
         .react-flow__pane { cursor: default; }

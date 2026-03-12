@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { NodeResizer, type NodeProps } from "@xyflow/react";
 import { Square, ChevronDown, ChevronUp } from "lucide-react";
+import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 
 const DEFAULT_COLOR = "hsl(220 20% 20%)";
 const DEFAULT_OPACITY = 10;
@@ -12,6 +13,7 @@ export interface PanelNodeData {
   panelColor?: string;
   panelOpacity?: number;
   isSelected: boolean;
+  isHighlighted?: boolean;
   isDragTarget?: boolean;
   /** Child is being dragged outside this panel — will unparent on drop */
   isUnparentCandidate?: boolean;
@@ -39,9 +41,13 @@ const UNPARENT_BORDER = "hsl(25 95% 53%)"; // orange
 
 const PanelNode = memo(({ data, selected }: NodeProps) => {
   const d = data as unknown as PanelNodeData;
+  const { highlightedNodeIds } = useHandleHighlight();
   const color = d.panelColor || DEFAULT_COLOR;
   const opacity = d.panelOpacity ?? DEFAULT_OPACITY;
   const isSelected = selected || d.isSelected;
+  const isHighlighted =
+    (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
+  const isActive = isSelected || isHighlighted;
   const isDragTarget = d.isDragTarget;
   const isUnparentCandidate = d.isUnparentCandidate ?? false;
   const collapsed = d.collapsed ?? false;
@@ -51,7 +57,7 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
   const bgAlpha = isDragTarget ? Math.min(opacity + 15, 40) / 100 : opacity / 100;
   const borderColor = isUnparentCandidate
     ? UNPARENT_BORDER
-    : isSelected || isDragTarget
+    : isActive || isDragTarget
       ? color
       : colorWithAlpha(color, 0.4);
   const borderStyle = isSelected ? "dashed" : "solid";
@@ -62,7 +68,7 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
   if (collapsed) {
     return (
       <div
-        className={`w-full h-full rounded-lg flex items-center gap-2 px-3 transition-all duration-200 ${isSelected ? selectedRing : unselectedClass}`}
+        className={`w-full h-full rounded-lg flex items-center gap-2 px-3 transition-all duration-200 ${isActive ? selectedRing : unselectedClass}`}
         style={{
           backgroundColor: colorWithAlpha(color, Math.max(bgAlpha, 0.12)),
           border: `2px ${borderStyle} ${borderColor}`,
@@ -104,7 +110,7 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
         handleStyle={{ backgroundColor: color }}
       />
       <div
-        className={`w-full h-full rounded-xl backdrop-blur-sm transition-all duration-200 relative ${isSelected ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
+        className={`w-full h-full rounded-xl backdrop-blur-sm transition-all duration-200 relative ${isActive ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
         style={{
           backgroundColor: colorWithAlpha(color, bgAlpha),
           border: `2px ${borderStyle} ${borderColor}`,

@@ -11,6 +11,7 @@ interface UseCanvasNodesParams {
   panelIds: Set<string>;
   selectedNodeId: string | null;
   selectedNodeIds: Set<string>;
+  highlightedNodeIds: Set<string>;
   serviceRegistry: Record<string, ServiceDefinition>;
   allDiagrams: Record<string, Diagram>;
   handleDrillDown: (id: string) => void;
@@ -50,6 +51,7 @@ export function useCanvasNodes({
   panelIds,
   selectedNodeId,
   selectedNodeIds,
+  highlightedNodeIds,
   serviceRegistry,
   allDiagrams,
   handleDrillDown,
@@ -105,7 +107,10 @@ export function useCanvasNodes({
         const zIndex = layout?.zIndex ?? (typeof d.zIndex === "function" ? d.zIndex(comp) : d.zIndex);
         const isHidden = comp.hidden === true || (isChild && comp.parentId !== null && collapsedPanelIds.has(comp.parentId));
         const isSelected = selectedNodeIds.has(comp.id);
-        const dimWhenSelectionActive = selectedNodeIds.size > 0 && !isSelected && !isHidden;
+        const isHighlighted = highlightedNodeIds.has(comp.id);
+        const hasFocusedNodes = selectedNodeIds.size > 0 || highlightedNodeIds.size > 0;
+        const dimWhenSelectionActive =
+          hasFocusedNodes && !isSelected && !isHighlighted && !isHidden;
         const dimWhenCoverage = isViewingCoverage && !!coverage && !(coverage.nodeFlows.get(comp.id)?.length);
         const style = { ...d.buildStyle?.(comp, ctx), ...((dimWhenSelectionActive || dimWhenCoverage) ? { opacity: 0.3 } : {}) };
         return {
@@ -122,7 +127,7 @@ export function useCanvasNodes({
         };
       });
   }, [
-    diagram, visibleComponents, panelIds, selectedNodeId, selectedNodeIds,
+    diagram, visibleComponents, panelIds, selectedNodeId, selectedNodeIds, highlightedNodeIds,
     serviceRegistry, allDiagrams, handleDrillDown, isPlaying, flowHighlight,
     dragTargetPanelId, unparentCandidatePanelId, isRecording, recordingInfo,
     onRecordHandleClick, activeStep, coverage, connectionCountPerNode, effectiveHandleOrder,

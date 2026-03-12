@@ -1,42 +1,32 @@
 import {
   createContext,
   useContext,
-  useState,
-  useCallback,
   type ReactNode,
 } from "react";
 
 interface HandleHighlightState {
   highlightedConnectionId: string | null;
-  setHighlight: (connectionId: string) => void;
+  highlightedNodeIds: Set<string>;
+  setHighlight: (connectionId: string, nodeIds: string[]) => void;
   clearHighlight: () => void;
 }
 
 const HandleHighlightContext = createContext<HandleHighlightState>({
   highlightedConnectionId: null,
+  highlightedNodeIds: new Set(),
   setHighlight: () => {},
   clearHighlight: () => {},
 });
 
-export function HandleHighlightProvider({ children }: { children: ReactNode }) {
-  const [highlightedConnectionId, setHighlightedConnectionId] = useState<
-    string | null
-  >(
-    null,
-  );
-
-  const setHighlight = useCallback((connectionId: string) => {
-    setHighlightedConnectionId(connectionId);
-  }, []);
-
-  const clearHighlight = useCallback(() => {
-    setHighlightedConnectionId(null);
-  }, []);
-
+export function HandleHighlightProvider({
+  children,
+  value,
+}: {
+  children: ReactNode;
+  value: HandleHighlightState;
+}) {
   return (
-    <HandleHighlightContext.Provider
-      value={{ highlightedConnectionId, setHighlight, clearHighlight }}
-    >
+    <HandleHighlightContext.Provider value={value}>
       {children}
     </HandleHighlightContext.Provider>
   );
