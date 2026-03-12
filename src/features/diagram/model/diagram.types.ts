@@ -37,8 +37,20 @@ export interface C4Component extends BaseComponent {
   panelColor?: string;
 }
 
+export type PanelKind =
+  | "default"
+  | "availability-zone"
+  | "eks-cluster"
+  | "ecs-cluster"
+  | "auto-scaling-group"
+  | "vpc"
+  | "public-subnet"
+  | "private-subnet";
+
 export interface PanelComponent extends BaseComponent {
   type: "panel";
+  /** Kind of infrastructure panel (AZ, EKS, VPC, subnet, etc.). Default: "default". */
+  panelKind?: PanelKind;
   panelColor?: string;
   panelOpacity?: number;
   /** When true, panel renders minimized (compact). */

@@ -5,6 +5,8 @@ import { useAllDiagrams, useActiveDiagram, useAllServices, useDiagramActions } f
 import type { Component, ComponentType } from "@/features/diagram";
 import { isPanelComponent, isNoteComponent, isC4Component } from "@/features/diagram";
 import { isAwsType, AWS_CATEGORIES, AWS_CATEGORY_MAP, AWS_SERVICE_MAP } from "@/lib/aws-catalog";
+import { PANEL_KINDS, getPanelKindDef } from "@/lib/panel-catalog";
+import type { PanelKind } from "@/features/diagram";
 import type { ServiceDefinition } from "@/features/registry";
 import AwsIcon from "../nodes/AwsIcon";
 import Field from "./components/Field";
@@ -166,7 +168,34 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
             placeholder={isNote ? "**Negrito**, *itálico*, listas, `código`..." : undefined}
             hint={isNote ? "Suporta Markdown" : undefined}
           />
-          {isPanelComponent(component) && <PanelColorPicker componentId={component.id} currentColor={component.panelColor ?? DEFAULT_PANEL_COLOR} currentOpacity={component.panelOpacity ?? DEFAULT_PANEL_OPACITY} updateComponent={updateComponent} />}
+          {isPanelComponent(component) && (
+            <>
+              <div>
+                <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+                  Tipo de agrupamento
+                </label>
+                <select
+                  value={component.panelKind ?? "default"}
+                  onChange={(e) => {
+                    const kind = e.target.value as PanelKind;
+                    const def = getPanelKindDef(kind);
+                    updateComponent(component.id, {
+                      panelKind: kind,
+                      panelColor: def.defaultColor,
+                    });
+                  }}
+                  className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  {PANEL_KINDS.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <PanelColorPicker componentId={component.id} currentColor={component.panelColor ?? getPanelKindDef(component.panelKind).defaultColor} currentOpacity={component.panelOpacity ?? DEFAULT_PANEL_OPACITY} updateComponent={updateComponent} />
+            </>
+          )}
           {isNoteComponent(component) && <ColorSwatches componentId={component.id} currentColor={component.panelColor ?? DEFAULT_NOTE_COLOR} label="Cor da Nota" presetGroup="note" updateComponent={updateComponent} />}
           {!isSimple && <Field label="Tecnologia" value={tech} onChange={(v) => { setTech(v); debouncedUpdate({ technology: v || undefined } as Partial<Omit<Component, "id">>); }} />}
           {!isSimple && (

@@ -47,6 +47,7 @@ interface AppActions {
     parentId: string | null,
     position?: { x: number; y: number },
     awsService?: string,
+    panelKind?: import("../model/diagram.types").PanelKind,
   ) => Component;
   updateComponent: (id: string, patch: ComponentPatch) => void;
   removeComponent: (id: string) => void;

@@ -6,6 +6,7 @@ export type {
   ComponentPatch,
   C4Component,
   PanelComponent,
+  PanelKind,
   NoteComponent,
   AwsComponent,
   Connection,

@@ -1,15 +1,19 @@
 import { memo } from "react";
 import { NodeResizer, type NodeProps } from "@xyflow/react";
-import { Square, ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
+import { getPanelKindDef } from "@/lib/panel-catalog";
+import AwsIcon from "./AwsIcon";
 
-const DEFAULT_COLOR = "hsl(220 20% 20%)";
 const DEFAULT_OPACITY = 10;
 
 export interface PanelNodeData {
   elementId: string;
   name: string;
   description?: string;
+  panelKind?: string;
+  /** AWS icon name — when set, AwsIcon is used instead of Lucide icon */
+  awsIconName?: string;
   panelColor?: string;
   panelOpacity?: number;
   isSelected: boolean;
@@ -42,7 +46,10 @@ const UNPARENT_BORDER = "hsl(25 95% 53%)"; // orange
 const PanelNode = memo(({ data, selected }: NodeProps) => {
   const d = data as unknown as PanelNodeData;
   const { highlightedNodeIds } = useHandleHighlight();
-  const color = d.panelColor || DEFAULT_COLOR;
+  const kindDef = getPanelKindDef(d.panelKind as import("@/features/diagram").PanelKind | undefined);
+  const color = d.panelColor || kindDef.defaultColor;
+  const useAwsIcon = d.awsIconName ?? kindDef.awsIconName;
+  const Icon = kindDef.icon;
   const opacity = d.panelOpacity ?? DEFAULT_OPACITY;
   const isSelected = selected || d.isSelected;
   const isHighlighted =
@@ -74,13 +81,19 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
           border: `2px ${borderStyle} ${borderColor}`,
         }}
       >
-        <Square className="h-4 w-4 shrink-0 opacity-80" style={{ color }} />
+        {useAwsIcon ? (
+          <div className="shrink-0 opacity-80" style={{ color }}>
+            <AwsIcon iconName={useAwsIcon} size={18} />
+          </div>
+        ) : (
+          <Icon className="h-4 w-4 shrink-0 opacity-80" style={{ color }} />
+        )}
         <div className="min-w-0 flex-1">
           <span className="text-sm font-semibold text-foreground truncate block">
             {d.name || "Painel"}
           </span>
-          <span className="text-[10px] text-muted-foreground">
-            {childCount} {childCount === 1 ? "elemento" : "elementos"}
+        <span className="text-[8px] text-muted-foreground text-nowrap truncate">
+          {d?.panelKind !== "default" ? `${kindDef.label}` :  ""} - {childCount} {childCount === 1 ? "elemento" : "elementos"}
           </span>
         </div>
         {onToggle && (
@@ -123,10 +136,16 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
           />
         )}
         <div className="flex items-start gap-2 px-3 py-2.5">
-          <Square className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color }} />
+          {useAwsIcon ? (
+            <div className="shrink-0 mt-0.5" style={{ color }}>
+              <AwsIcon iconName={useAwsIcon} size={18} />
+            </div>
+          ) : (
+            <Icon className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color }} />
+          )}
           <div className="min-w-0 flex-1">
             <span className="text-sm font-semibold text-foreground truncate block">
-              {d.name}
+              {d?.panelKind !== "default" ? `${kindDef.label} - ${d.name}` :  d.name}
             </span>
             {d.description && (
               <span className="text-xs text-muted-foreground line-clamp-1 block">

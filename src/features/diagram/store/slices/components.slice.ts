@@ -1,6 +1,7 @@
-import type { Component, ComponentPatch, ComponentType, PanelComponent } from "../../model/diagram.types";
+import type { Component, ComponentPatch, ComponentType, PanelComponent, PanelKind } from "../../model/diagram.types";
 import { generateId } from "../../model/diagram.utils";
 import { isPanelComponent } from "../../model/component.guards";
+import { getPanelKindDef } from "@/lib/panel-catalog";
 import type { AppState } from "../store.types";
 import { activeDiagram } from "../store.types";
 import { pushHistory } from "./history.slice";
@@ -22,11 +23,19 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
       parentId: string | null,
       position?: { x: number; y: number },
       awsService?: string,
+      panelKind?: PanelKind,
     ): Component => {
       const base = { id: generateId("el"), name, description: "", parentId };
       let component: Component;
       if (type === "panel") {
-        component = { ...base, type: "panel" };
+        const kind = panelKind ?? "default";
+        const def = getPanelKindDef(kind);
+        component = {
+          ...base,
+          type: "panel",
+          panelKind: kind,
+          panelColor: def.defaultColor,
+        } as PanelComponent;
       } else if (type === "note") {
         component = { ...base, type: "note", panelColor: "hsl(45 25% 97%)" };
       } else if (type === "person" || type === "system" || type === "container" || type === "component") {
@@ -165,6 +174,7 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
           id: generateId("el"),
           name: "Grupo",
           type: "panel",
+          panelKind: "default",
           description: "",
           parentId: null,
         };

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronRight, Database, Network, Search, Server, Square, StickyNote, Star, User, X } from "lucide-react";
+import type { PanelKind } from "@/features/diagram";
+import { PANEL_KINDS, getPanelKindForAwsService, getPanelKindDef } from "@/lib/panel-catalog";
 import { useReactFlow } from "@xyflow/react";
 import { useDiagramActions, useAllServices, useAllComponents } from "@/features/diagram";
 import type { ComponentType } from "@/features/diagram";
@@ -14,9 +16,22 @@ const C4_OPTIONS: { type: ComponentType; label: string; icon: React.ComponentTyp
   { type: "component", label: "Component", icon: Database },
 ];
 
-const CANVAS_OPTIONS: { type: ComponentType; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { type: "panel", label: "Panel", icon: Square },
-  { type: "note", label: "Note", icon: StickyNote },
+const CANVAS_OPTIONS: {
+  type: ComponentType;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  panelKind?: PanelKind;
+  awsIconName?: string;
+}[] = [
+  { type: "panel", label: "Painel", icon: Square, panelKind: "default" },
+  ...PANEL_KINDS.filter((p) => p.id !== "default").map((p) => ({
+    type: "panel" as const,
+    label: p.label,
+    icon: p.icon,
+    panelKind: p.id as PanelKind,
+    awsIconName: p.awsIconName,
+  })),
+  { type: "note", label: "Nota", icon: StickyNote },
 ];
 
 interface ElementPickerModalProps {
@@ -87,19 +102,29 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     [rfInstance],
   );
 
-  const handleAddElement = (type: ComponentType, label: string) => {
-    const key = type === "panel" || type === "note" ? `canvas:${type}` : `c4:${type}`;
+  const handleAddElement = (type: ComponentType, label: string, panelKind?: PanelKind) => {
+    const key = type === "panel" || type === "note" ? `canvas:${type}${panelKind ? `:${panelKind}` : ""}` : `c4:${type}`;
     trackUsage(key);
-    const name = type === "note" ? "" : `Novo ${label}`;
-    const comp = addComponent(type, name, null, getInsertPos());
+    const def = panelKind ? PANEL_KINDS.find((p) => p.id === panelKind) : null;
+    const name = type === "note" ? "" : def?.defaultName ?? `Novo ${label}`;
+    const comp = addComponent(type, name, null, getInsertPos(), undefined, panelKind);
     onInsert?.(comp.id);
     onClose();
   };
 
   const handleAddAws = (categoryId: AwsCategoryId, serviceId: string, serviceName: string) => {
-    trackUsage(`aws:${serviceId}`);
-    const comp = addComponent(categoryId, serviceName, null, getInsertPos(), serviceId);
-    onInsert?.(comp.id);
+    const panelKind = getPanelKindForAwsService(serviceId);
+    if (panelKind) {
+      trackUsage(`canvas:panel:${panelKind}`);
+      const def = getPanelKindDef(panelKind);
+      const name = def.defaultName;
+      const comp = addComponent("panel", name, null, getInsertPos(), undefined, panelKind);
+      onInsert?.(comp.id);
+    } else {
+      trackUsage(`aws:${serviceId}`);
+      const comp = addComponent(categoryId, serviceName, null, getInsertPos(), serviceId);
+      onInsert?.(comp.id);
+    }
     onClose();
   };
 
@@ -128,13 +153,16 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     );
     return topUsed
       .map((entry) => {
-        const [prefix, id] = entry.key.split(":");
+        const parts = entry.key.split(":");
+        const [prefix, id, panelKindPart] = parts;
         if (prefix === "c4") {
           const opt = C4_OPTIONS.find((o) => o.type === id);
           if (opt) return { kind: "c4" as const, opt, entry };
         }
         if (prefix === "canvas") {
-          const opt = CANVAS_OPTIONS.find((o) => o.type === id);
+          const opt = CANVAS_OPTIONS.find(
+            (o) => o.type === id && (id !== "panel" || (o.panelKind ?? "default") === (panelKindPart ?? "default")),
+          );
           if (opt) return { kind: "canvas" as const, opt, entry };
         }
         if (prefix === "aws") {
@@ -224,11 +252,15 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
                     const { opt } = item;
                     return (
                       <button
-                        key={`freq-canvas-${opt.type}`}
-                        onClick={() => handleAddElement(opt.type, opt.label)}
+                        key={`freq-canvas-${opt.type}-${opt.panelKind ?? "note"}`}
+                        onClick={() => handleAddElement(opt.type, opt.label, opt.panelKind)}
                         className="flex items-center gap-1.5 rounded-md border border-border bg-secondary px-2.5 py-1.5 text-[11px] font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-surface-hover"
                       >
-                        <opt.icon className="h-3.5 w-3.5 text-muted-foreground" />
+                        {opt.awsIconName ? (
+                          <AwsIcon iconName={opt.awsIconName} size={14} className="text-muted-foreground" />
+                        ) : (
+                          <opt.icon className="h-3.5 w-3.5 text-muted-foreground" />
+                        )}
                         {opt.label}
                       </button>
                     );
@@ -289,16 +321,20 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
           {showCanvas && (
             <section>
               <p className="mb-2 text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
-                Canvas
+                Canvas e Agrupamentos
               </p>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {filteredCanvas.map((opt) => (
                   <button
-                    key={opt.type}
-                    onClick={() => handleAddElement(opt.type, opt.label)}
-                    className="flex flex-col items-center gap-1.5 rounded-lg border border-border bg-secondary px-4 py-3 text-xs font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-surface-hover"
+                    key={opt.type === "panel" ? `panel-${opt.panelKind ?? "default"}` : "note"}
+                    onClick={() => handleAddElement(opt.type, opt.label, opt.panelKind)}
+                    className="flex flex-col items-center gap-1.5 rounded-lg border border-border bg-secondary px-2 py-3 text-xs font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-surface-hover"
                   >
-                    <opt.icon className="h-5 w-5 text-muted-foreground" />
+                    {opt.awsIconName ? (
+                      <AwsIcon iconName={opt.awsIconName} size={20} className="text-muted-foreground" />
+                    ) : (
+                      <opt.icon className="h-5 w-5 text-muted-foreground" />
+                    )}
                     {opt.label}
                   </button>
                 ))}

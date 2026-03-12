@@ -110,8 +110,14 @@ export function useCanvasNodes({
         const isSelected = selectedNodeIds.has(comp.id);
         const isHighlighted = highlightedNodeIds.has(comp.id);
         const hasFocusedNodes = selectedNodeIds.size > 0 || highlightedNodeIds.size > 0;
+        const isChildOfSelectedPanel =
+          isChild && comp.parentId !== null && selectedNodeIds.has(comp.parentId);
         const dimWhenSelectionActive =
-          hasFocusedNodes && !isSelected && !isHighlighted && !isHidden;
+          hasFocusedNodes &&
+          !isSelected &&
+          !isHighlighted &&
+          !isHidden &&
+          !isChildOfSelectedPanel;
         const dimWhenCoverage = isViewingCoverage && !!coverage && !(coverage.nodeFlows.get(comp.id)?.length);
         const style = { ...d.buildStyle?.(comp, ctx), ...((dimWhenSelectionActive || dimWhenCoverage) ? { opacity: 0.3 } : {}) };
         return {
