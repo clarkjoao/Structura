@@ -104,7 +104,9 @@ const Dashboard = () => {
   const [sortAsc, setSortAsc] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [triggerAddFolder, setTriggerAddFolder] = useState(0);
-  const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
+  const [activeDomainFilter, setActiveDomainFilter] = useState<string | null>(
+    null,
+  );
   const [globalSearch, setGlobalSearch] = useState("");
   const folderTreeRef = useRef<HTMLDivElement>(null);
 
@@ -133,8 +135,15 @@ const Dashboard = () => {
       .slice(0, 50);
   }, [globalSearch, diagrams]);
 
-  const allTags = useMemo(
-    () => [...new Set(diagrams.flatMap((d) => Object.values(d.snapshot.components).flatMap((c) => c.tags ?? [])))],
+  const allDomains = useMemo(
+    () =>
+      [
+        ...new Set(
+          diagrams
+            .map((d) => d.domain?.trim())
+            .filter((domain): domain is string => Boolean(domain)),
+        ),
+      ],
     [diagrams],
   );
 
@@ -152,12 +161,10 @@ const Dashboard = () => {
     return arr;
   }, [folderDiagrams, sortKey, sortAsc]);
 
-  const tagFiltered = useMemo(() => {
-    if (!activeTagFilter) return sorted;
-    return sorted.filter((d) =>
-      Object.values(d.snapshot.components).some((c) => c.tags?.includes(activeTagFilter)),
-    );
-  }, [sorted, activeTagFilter]);
+  const domainFiltered = useMemo(() => {
+    if (!activeDomainFilter) return sorted;
+    return sorted.filter((d) => d.domain === activeDomainFilter);
+  }, [sorted, activeDomainFilter]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortAsc(!sortAsc);
@@ -411,32 +418,36 @@ const Dashboard = () => {
               </div>
             )}
 
-            {/* Tag filter */}
-            {globalSearchResults === null && allTags.length > 0 && (
+            {/* Domain filter */}
+            {globalSearchResults === null && allDomains.length > 0 && (
               <div className="mb-4 flex flex-wrap gap-1.5">
                 <button
-                  onClick={() => setActiveTagFilter(null)}
+                  onClick={() => setActiveDomainFilter(null)}
                   className={cn(
                     "text-[10px] rounded-full px-2.5 py-0.5 font-medium transition-colors border",
-                    activeTagFilter === null
+                    activeDomainFilter === null
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-secondary text-secondary-foreground border-border hover:bg-secondary/80",
                   )}
                 >
                   Todos
                 </button>
-                {allTags.map((tag) => (
+                {allDomains.map((domain) => (
                   <button
-                    key={tag}
-                    onClick={() => setActiveTagFilter(activeTagFilter === tag ? null : tag)}
+                    key={domain}
+                    onClick={() =>
+                      setActiveDomainFilter(
+                        activeDomainFilter === domain ? null : domain,
+                      )
+                    }
                     className={cn(
                       "text-[10px] rounded-full px-2.5 py-0.5 font-medium transition-colors border",
-                      activeTagFilter === tag
+                      activeDomainFilter === domain
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-secondary text-secondary-foreground border-border hover:bg-secondary/80",
                     )}
                   >
-                    {tag}
+                    {domain}
                   </button>
                 ))}
               </div>
@@ -483,21 +494,23 @@ const Dashboard = () => {
             {/* Diagrams */}
             {globalSearchResults === null && (viewMode === "grid" ? (
               <DiagramGrid
-                diagrams={tagFiltered}
+                diagrams={domainFiltered}
                 onOpen={handleOpen}
                 onDelete={handleDelete}
                 onDragStart={handleDragStart}
               />
             ) : (
               <DiagramList
-                diagrams={tagFiltered}
+                diagrams={domainFiltered}
                 onOpen={handleOpen}
                 onDelete={handleDelete}
                 onDragStart={handleDragStart}
               />
             ))}
 
-            {globalSearchResults === null && tagFiltered.length === 0 && childFolders.length === 0 && (
+            {globalSearchResults === null &&
+              domainFiltered.length === 0 &&
+              childFolders.length === 0 && (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/50 mb-4">
                   <Network className="h-7 w-7 text-muted-foreground/60" />
