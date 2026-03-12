@@ -34,7 +34,21 @@ export function servicesSlice(set: (fn: (state: AppState) => void) => void) {
     linkComponentToService: (componentId: string, serviceId: string | undefined) => {
       set((state) => {
         const comp = activeDiagram(state).snapshot.components[componentId];
-        if (comp) comp.serviceId = serviceId;
+        if (!comp) return;
+        comp.serviceId = serviceId;
+        if (!serviceId) return;
+
+        const service = state.serviceRegistry[serviceId];
+        if (!service) return;
+
+        comp.name = service.name;
+        comp.description = service.description;
+        comp.tags = service.tags?.length ? service.tags : undefined;
+        if ("technology" in comp) {
+          comp.technology = service.technology.length
+            ? service.technology.join(", ")
+            : undefined;
+        }
       });
     },
 

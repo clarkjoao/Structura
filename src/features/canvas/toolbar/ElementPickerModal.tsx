@@ -29,8 +29,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const [expandedAwsCats, setExpandedAwsCats] = useState<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
   const rfInstance = useReactFlow();
-  const { addComponent, linkComponentToService, updateComponent } =
-    useDiagramActions();
+  const { addComponent, linkComponentToService } = useDiagramActions();
   const services = useAllServices();
   const allComponents = useAllComponents();
 
@@ -105,17 +104,9 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   };
 
   const handleAddService = (serviceId: string, name: string) => {
-    const service = services.find((svc) => svc.id === serviceId);
     trackUsage(`registry:${serviceId}`);
     const comp = addComponent("system", name, null, getInsertPos());
     linkComponentToService(comp.id, serviceId);
-    updateComponent(comp.id, {
-      description: service?.description ?? "",
-      technology: service?.technology.length
-        ? service.technology.join(", ")
-        : undefined,
-      tags: service?.tags?.length ? service.tags : undefined,
-    });
     onInsert?.(comp.id);
     onClose();
   };
