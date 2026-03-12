@@ -1088,20 +1088,16 @@ const ServiceRegistry = () => {
     { value: "defectdojo", label: "DefectDojo" },
   ];
 
-  const hasDetailPanel = !!selectedSvc;
-
   return (
     <div className="min-h-screen pt-16">
       <Navbar />
-      <div className="flex h-[calc(100vh-4rem)]">
+      <div className="relative h-[calc(100vh-4rem)]">
         {/* Main content */}
         <div
-          className={`flex-1 overflow-y-auto transition-all duration-200 ${
-            hasDetailPanel ? "pr-0" : ""
-          }`}
+          className={`h-full overflow-y-auto`}
         >
           <div
-            className={`py-8 px-6 ${hasDetailPanel ? "max-w-4xl" : "max-w-5xl mx-auto"}`}
+            className={`py-8 px-6 max-w-5xl mx-auto`}
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
@@ -1207,11 +1203,7 @@ const ServiceRegistry = () => {
               </div>
             ) : (
               <div
-                className={`grid gap-3 ${
-                  hasDetailPanel
-                    ? "grid-cols-1 sm:grid-cols-2"
-                    : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-                }`}
+                className={`grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`}
               >
                 {filtered.map((svc) => (
                   <div id={`registry-service-${svc.id}`} key={svc.id}>
@@ -1235,12 +1227,19 @@ const ServiceRegistry = () => {
         {/* Detail panel */}
         <AnimatePresence>
           {selectedSvc && (
+            <>
+            <motion.button
+              type="button"
+              aria-label="Close details"
+              onClick={() => setSelectedId(null)}
+              className="fixed inset-0 z-40 bg-black/30"
+            />
             <motion.aside
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 420, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
+              initial={{ x: 420, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: 420, opacity: 0 }}
               transition={{ duration: 0.2, ease: "easeInOut" }}
-              className="shrink-0 border-l border-border bg-card overflow-hidden"
+              className="fixed right-0 top-16 z-50 h-[calc(100vh-4rem)] w-[420px] border-l border-border bg-card overflow-hidden"
             >
               <DetailPanel
                 key={selectedSvc.id}
@@ -1252,6 +1251,7 @@ const ServiceRegistry = () => {
                 onClose={() => setSelectedId(null)}
               />
             </motion.aside>
+            </>
           )}
         </AnimatePresence>
       </div>
