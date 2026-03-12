@@ -21,13 +21,8 @@ import {
   MoreHorizontal,
   Download,
   ExternalLink,
-  GitBranch,
-  Star,
   Tag,
   Layers,
-  AlertCircle,
-  CheckCircle2,
-  Activity,
   Link2,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -278,9 +273,6 @@ const GitHubImportForm = ({
         description: string | null;
         html_url: string;
         language: string | null;
-        pushed_at: string;
-        stargazers_count: number;
-        default_branch: string;
         full_name: string;
       };
       onCreate({
@@ -294,9 +286,6 @@ const GitHubImportForm = ({
         metadata: {
           github: {
             language: repo.language,
-            updatedAt: repo.pushed_at,
-            stars: repo.stargazers_count,
-            defaultBranch: repo.default_branch,
           },
         },
       });
@@ -550,9 +539,6 @@ const DetailPanel = ({
           description: string | null;
           html_url: string;
           language: string | null;
-          pushed_at: string;
-          stargazers_count: number;
-          default_branch: string;
         };
         updateService(svc.id, {
           name: repo.name,
@@ -563,9 +549,6 @@ const DetailPanel = ({
             ...((svc.metadata ?? {}) as Record<string, unknown>),
             github: {
               language: repo.language,
-              updatedAt: repo.pushed_at,
-              stars: repo.stargazers_count,
-              defaultBranch: repo.default_branch,
             },
           },
         });
@@ -600,33 +583,6 @@ const DetailPanel = ({
       setSyncing(false);
     }
   }, [source, svc, updateService]);
-
-  // GitHub metadata
-  const ghMeta = svc.metadata?.github as
-    | {
-        language?: string;
-        updatedAt?: string;
-        stars?: number;
-        defaultBranch?: string;
-      }
-    | undefined;
-
-  // Insights
-  const totalNodes = usage.reduce((sum, u) => sum + u.nodeCount, 0);
-  const hasNoUsage = usage.length === 0;
-  const hasNoDescription = !svc.description.trim();
-  const hasNoOwner = !svc.owner;
-  const hasNoTags = !svc.tags || svc.tags.length === 0;
-
-  const completeness = [
-    !!svc.name,
-    !!svc.description.trim(),
-    !!svc.owner,
-    svc.technology.length > 0,
-    (svc.tags ?? []).length > 0,
-    !!svc.repositoryUrl,
-  ].filter(Boolean).length;
-  const completenessPercent = Math.round((completeness / 6) * 100);
 
   return (
     <motion.div
@@ -679,71 +635,6 @@ const DetailPanel = ({
               {syncError}
             </p>
           )}
-
-          {/* ─── Completeness bar ─── */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
-                Completude
-              </span>
-              <span className="text-[11px] font-bold text-foreground">
-                {completenessPercent}%
-              </span>
-            </div>
-            <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  completenessPercent === 100
-                    ? "bg-green-500"
-                    : completenessPercent >= 60
-                      ? "bg-primary"
-                      : "bg-amber-500"
-                }`}
-                style={{ width: `${completenessPercent}%` }}
-              />
-            </div>
-          </div>
-
-          {/* ─── Insights ─── */}
-          <div className="space-y-1.5">
-            <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold block">
-              Insights
-            </span>
-            <div className="space-y-1">
-              {hasNoUsage && (
-                <div className="flex items-center gap-2 text-xs text-amber-400 bg-amber-500/5 border border-amber-500/10 rounded-md px-3 py-2">
-                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                  <span>Serviço não vinculado a nenhum diagrama</span>
-                </div>
-              )}
-              {hasNoDescription && (
-                <div className="flex items-center gap-2 text-xs text-amber-400 bg-amber-500/5 border border-amber-500/10 rounded-md px-3 py-2">
-                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                  <span>Sem descrição — adicione para melhor documentação</span>
-                </div>
-              )}
-              {hasNoOwner && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/50 rounded-md px-3 py-2">
-                  <User className="h-3.5 w-3.5 shrink-0" />
-                  <span>Nenhum owner definido</span>
-                </div>
-              )}
-              {hasNoTags && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/50 rounded-md px-3 py-2">
-                  <Tag className="h-3.5 w-3.5 shrink-0" />
-                  <span>Sem tags — facilite a busca adicionando tags</span>
-                </div>
-              )}
-              {!hasNoUsage && (
-                <div className="flex items-center gap-2 text-xs text-green-400 bg-green-500/5 border border-green-500/10 rounded-md px-3 py-2">
-                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                  <span>
-                    Vinculado a {usage.length} diagrama{usage.length !== 1 ? "s" : ""} ({totalNodes} nó{totalNodes !== 1 ? "s" : ""})
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
 
           {/* ─── Fields (view/edit) ─── */}
           <div className="space-y-3">
@@ -951,38 +842,6 @@ const DetailPanel = ({
               </div>
             )}
           </div>
-
-          {/* ─── GitHub metadata ─── */}
-          {ghMeta && (
-            <div className="space-y-1.5">
-              <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold block">
-                GitHub
-              </span>
-              <div className="rounded-lg border border-border bg-secondary/30 p-3 space-y-2 text-xs">
-                {ghMeta.stars !== undefined && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Star className="h-3.5 w-3.5 text-amber-400" />
-                    <span>{ghMeta.stars} stars</span>
-                  </div>
-                )}
-                {ghMeta.defaultBranch && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <GitBranch className="h-3.5 w-3.5" />
-                    <span>{ghMeta.defaultBranch}</span>
-                  </div>
-                )}
-                {ghMeta.updatedAt && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Activity className="h-3.5 w-3.5" />
-                    <span>
-                      Último push:{" "}
-                      {new Date(ghMeta.updatedAt).toLocaleDateString("pt-BR")}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* ─── Usage in diagrams ─── */}
           <div className="space-y-1.5">
