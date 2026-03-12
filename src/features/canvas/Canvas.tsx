@@ -92,6 +92,7 @@ const Canvas = ({
     copyToClipboard,
     pasteFromClipboard,
     clearClipboard,
+    updateHandleOrder,
   } = useDiagramActions();
   const navigate = useNavigate();
   const reactFlowInstance = useReactFlow();
@@ -191,8 +192,22 @@ const Canvas = ({
         maxHandles,
         Math.max(1, connectionCountPerNode[conn.targetId]?.incoming ?? 1),
       );
-      const sIdx = (sourceUsage[conn.sourceId] ?? 0) % outCount;
-      const tIdx = (targetUsage[conn.targetId] ?? 0) % inCount;
+      const srcOrder = diagram?.snapshot.components[conn.sourceId]?.handleOrder?.outgoing;
+      const tgtOrder = diagram?.snapshot.components[conn.targetId]?.handleOrder?.incoming;
+      let sIdx: number;
+      if (srcOrder && srcOrder.length > 0) {
+        const orderIdx = srcOrder.indexOf(conn.id);
+        sIdx = orderIdx !== -1 ? Math.min(orderIdx, outCount - 1) : (sourceUsage[conn.sourceId] ?? 0) % outCount;
+      } else {
+        sIdx = (sourceUsage[conn.sourceId] ?? 0) % outCount;
+      }
+      let tIdx: number;
+      if (tgtOrder && tgtOrder.length > 0) {
+        const orderIdx = tgtOrder.indexOf(conn.id);
+        tIdx = orderIdx !== -1 ? Math.min(orderIdx, inCount - 1) : (targetUsage[conn.targetId] ?? 0) % inCount;
+      } else {
+        tIdx = (targetUsage[conn.targetId] ?? 0) % inCount;
+      }
       sourceUsage[conn.sourceId] = (sourceUsage[conn.sourceId] ?? 0) + 1;
       targetUsage[conn.targetId] = (targetUsage[conn.targetId] ?? 0) + 1;
       return {
@@ -201,7 +216,22 @@ const Canvas = ({
         targetHandle: `target-${tIdx}`,
       };
     });
-  }, [visibleConnections, connectionCountPerNode]);
+  }, [visibleConnections, connectionCountPerNode, diagram]);
+
+  const effectiveHandleOrder = useMemo(() => {
+    const result: Record<string, { incoming: string[]; outgoing: string[] }> = {};
+    for (const a of edgeHandleAssignments) {
+      const conn = visibleConnections.find((c) => c.id === a.connId);
+      if (!conn) continue;
+      const sIdx = parseInt(a.sourceHandle.split("-")[1]);
+      const tIdx = parseInt(a.targetHandle.split("-")[1]);
+      if (!result[conn.sourceId]) result[conn.sourceId] = { incoming: [], outgoing: [] };
+      if (!result[conn.targetId]) result[conn.targetId] = { incoming: [], outgoing: [] };
+      result[conn.sourceId].outgoing[sIdx] = conn.id;
+      result[conn.targetId].incoming[tIdx] = conn.id;
+    }
+    return result;
+  }, [edgeHandleAssignments, visibleConnections]);
 
   const { isPlaying, activeStep, flowHighlight, coverage, recordingInfo } =
     useFlowState({
@@ -228,6 +258,26 @@ const Canvas = ({
     setParent,
   });
 
+  const onReorderHandle = useCallback(
+    (
+      nodeId: string,
+      side: "incoming" | "outgoing",
+      connId: string,
+      direction: "up" | "down",
+    ) => {
+      if (isRecording) return;
+      const currentOrder = effectiveHandleOrder[nodeId]?.[side] ?? [];
+      const idx = currentOrder.indexOf(connId);
+      if (idx === -1) return;
+      const newOrder = [...currentOrder];
+      const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+      if (swapIdx < 0 || swapIdx >= newOrder.length) return;
+      [newOrder[idx], newOrder[swapIdx]] = [newOrder[swapIdx], newOrder[idx]];
+      updateHandleOrder(nodeId, side, newOrder);
+    },
+    [isRecording, effectiveHandleOrder, updateHandleOrder],
+  );
+
   const nodes = useCanvasNodes({
     diagram,
     visibleComponents,
@@ -244,6 +294,8 @@ const Canvas = ({
     dragTargetPanelId,
     unparentCandidatePanelId,
     connectionCountPerNode,
+    effectiveHandleOrder,
+    onReorderHandle,
     flowHighlight,
     activeStep,
     recordingInfo,

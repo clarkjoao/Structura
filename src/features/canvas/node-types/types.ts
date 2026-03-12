@@ -35,6 +35,10 @@ export interface NodeBuildContext {
   unparentCandidatePanelId: string | null;
   panelIds: Set<string>;
   connectionCounts: Record<string, { incoming: number; outgoing: number }>;
+  /** Effective handle→connection mapping after applying handleOrder (or round-robin fallback). */
+  effectiveHandleOrder: Record<string, { incoming: string[]; outgoing: string[] }>;
+  /** Callback to reorder a handle up or down on the canvas node. */
+  onReorderHandle?: (nodeId: string, side: "incoming" | "outgoing", connId: string, direction: "up" | "down") => void;
   isPlaying: boolean;
   isRecording: boolean;
   flowHighlight: FlowHighlight;

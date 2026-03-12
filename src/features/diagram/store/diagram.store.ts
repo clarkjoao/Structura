@@ -50,6 +50,7 @@ interface AppActions {
   ) => Component;
   updateComponent: (id: string, patch: ComponentPatch) => void;
   removeComponent: (id: string) => void;
+  updateHandleOrder: (componentId: string, side: "incoming" | "outgoing", orderedConnectionIds: string[]) => void;
 
   addConnection: (sourceId: string, targetId: string, label: string) => Connection;
   updateConnection: (id: string, patch: Partial<Omit<Connection, "id">>) => void;
@@ -377,6 +378,7 @@ export const useDiagramActions = () =>
       addComponent: s.addComponent,
       updateComponent: s.updateComponent,
       removeComponent: s.removeComponent,
+      updateHandleOrder: s.updateHandleOrder,
       addConnection: s.addConnection,
       updateConnection: s.updateConnection,
       removeConnection: s.removeConnection,

@@ -42,6 +42,14 @@ export interface NodeData {
   incomingCount?: number;
   /** Number of source (outgoing) handles; 1–4, default 1. */
   outgoingCount?: number;
+  /** Ordered connection ids per side — drives ↑↓ reorder controls. */
+  handleOrder?: { incoming: string[]; outgoing: string[] };
+  /** Move a connection one position up or down on a given side. */
+  onReorderHandle?: (
+    side: "incoming" | "outgoing",
+    connId: string,
+    direction: "up" | "down",
+  ) => void;
 }
 
 const TypeConfig: Record<
@@ -161,6 +169,53 @@ function buildHandles(
   });
 }
 
+function buildReorderControls(
+  connIds: string[],
+  side: "incoming" | "outgoing",
+  onReorderHandle: (
+    side: "incoming" | "outgoing",
+    connId: string,
+    direction: "up" | "down",
+  ) => void,
+): React.ReactNode {
+  const n = connIds.filter(Boolean).length;
+  if (n <= 1) return null;
+  const posClass = side === "incoming" ? "left-3" : "right-3";
+  return connIds.filter(Boolean).map((connId, i) => {
+    const topPct = ((i + 1) / (n + 1)) * 100;
+    return (
+      <div
+        key={`reorder-${side}-${i}`}
+        className={`absolute ${posClass} flex flex-col gap-px opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none group-hover:pointer-events-auto`}
+        style={{ top: `calc(${topPct}% - 10px)` }}
+      >
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onReorderHandle(side, connId, "up");
+          }}
+          disabled={i === 0}
+          className="flex items-center justify-center w-3.5 h-3.5 text-[7px] rounded-sm bg-card/90 border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+          aria-label={`Mover handle ${i + 1} para cima`}
+        >
+          ↑
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onReorderHandle(side, connId, "down");
+          }}
+          disabled={i === n - 1}
+          className="flex items-center justify-center w-3.5 h-3.5 text-[7px] rounded-sm bg-card/90 border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+          aria-label={`Mover handle ${i + 1} para baixo`}
+        >
+          ↓
+        </button>
+      </div>
+    );
+  });
+}
+
 const Badges = ({
   serviceName,
   linkedDiagramName,
@@ -258,6 +313,9 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
     Math.max(MIN_HANDLES, d.outgoingCount ?? 1),
   );
 
+  const incomingIds = d.handleOrder?.incoming ?? [];
+  const outgoingIds = d.handleOrder?.outgoing ?? [];
+
   if (isAws) {
     const svcInfo = d.awsService ? AWS_SERVICE_MAP.get(d.awsService) : null;
     const catInfo = AWS_CATEGORY_MAP.get(d.type);
@@ -265,7 +323,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
     return (
       <div
         aria-label={`${d.name} (${d.type})`}
-        className={`relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${borderClass} border-l-[3px] transition-shadow duration-200 ${selected || d.isSelected ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
+        className={`group relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${borderClass} border-l-[3px] transition-shadow duration-200 ${selected || d.isSelected ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
       >
         {d.recordingBadges && d.recordingBadges.length > 0 && (
           <div
@@ -275,6 +333,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
           </div>
         )}
         {buildHandles(incomingCount, "target", Position.Left, d, handlePointer)}
+        {d.onReorderHandle && buildReorderControls(incomingIds, "incoming", d.onReorderHandle)}
         <div className="px-3 py-2.5">
           <div className="flex items-center gap-2 mb-1.5">
             {svcInfo?.iconName ? (
@@ -311,13 +370,8 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
             <EmbedButton elementId={d.elementId} onEmbed={d.onEmbed} />
           )}
         </div>
-        {buildHandles(
-          outgoingCount,
-          "source",
-          Position.Right,
-          d,
-          handlePointer,
-        )}
+        {buildHandles(outgoingCount, "source", Position.Right, d, handlePointer)}
+        {d.onReorderHandle && buildReorderControls(outgoingIds, "outgoing", d.onReorderHandle)}
       </div>
     );
   }
@@ -328,7 +382,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
   return (
     <div
       aria-label={`${d.name} (${d.type})`}
-      className={`relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${cfg.borderColor} border-l-[3px] transition-shadow duration-200 ${selected || d.isSelected ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
+      className={`group relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${cfg.borderColor} border-l-[3px] transition-shadow duration-200 ${selected || d.isSelected ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
     >
       {d.recordingBadges && d.recordingBadges.length > 0 && (
         <div
@@ -338,6 +392,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
         </div>
       )}
       {buildHandles(incomingCount, "target", Position.Left, d, handlePointer)}
+      {d.onReorderHandle && buildReorderControls(incomingIds, "incoming", d.onReorderHandle)}
       <div className="px-3 py-2.5">
         <div className="flex items-center gap-2 mb-1.5">
           <Icon className={`h-4 w-4 ${cfg.textColor} shrink-0`} />
@@ -371,6 +426,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
         )}
       </div>
       {buildHandles(outgoingCount, "source", Position.Right, d, handlePointer)}
+      {d.onReorderHandle && buildReorderControls(outgoingIds, "outgoing", d.onReorderHandle)}
     </div>
   );
 });

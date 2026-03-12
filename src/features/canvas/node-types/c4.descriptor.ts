@@ -91,6 +91,17 @@ export const c4Descriptor: NodeTypeDescriptor = {
           : undefined,
       incomingCount: Math.min(4, Math.max(1, counts.incoming)),
       outgoingCount: Math.min(4, Math.max(1, counts.outgoing)),
+      handleOrder: ctx.effectiveHandleOrder[comp.id],
+      onReorderHandle:
+        isRecording || isPlaying
+          ? undefined
+          : ctx.onReorderHandle
+            ? (
+                side: "incoming" | "outgoing",
+                connId: string,
+                direction: "up" | "down",
+              ) => ctx.onReorderHandle!(comp.id, side, connId, direction)
+            : undefined,
     };
   },
 

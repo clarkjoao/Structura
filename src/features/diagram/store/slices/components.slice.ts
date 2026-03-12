@@ -98,6 +98,21 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
       });
     },
 
+    updateHandleOrder: (
+      componentId: string,
+      side: "incoming" | "outgoing",
+      orderedConnectionIds: string[],
+    ) => {
+      set((state) => {
+        const d = activeDiagram(state);
+        const comp = d.snapshot.components[componentId];
+        if (!comp) return;
+        if (!comp.handleOrder) comp.handleOrder = { incoming: [], outgoing: [] };
+        comp.handleOrder[side] = orderedConnectionIds;
+        d.updatedAt = "agora";
+      });
+    },
+
     setParent: (childId: string, parentId: string | null) => {
       set((state) => {
         pushHistory(state);

@@ -23,6 +23,11 @@ interface BaseComponent {
   linkedDiagramId?: string;
   /** When true, node is hidden on canvas (e.g. child of collapsed panel). Never clear parentId. */
   hidden?: boolean;
+  /** Explicit ordering of connections by handle position. Incoming = left side, outgoing = right side. */
+  handleOrder?: {
+    incoming: string[]; // connection ids, left side
+    outgoing: string[]; // connection ids, right side
+  };
 }
 
 export interface C4Component extends BaseComponent {

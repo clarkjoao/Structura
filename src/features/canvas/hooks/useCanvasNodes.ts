@@ -21,6 +21,8 @@ interface UseCanvasNodesParams {
   dragTargetPanelId: string | null;
   unparentCandidatePanelId: string | null;
   connectionCountPerNode: Record<string, { incoming: number; outgoing: number }>;
+  effectiveHandleOrder: Record<string, { incoming: string[]; outgoing: string[] }>;
+  onReorderHandle?: (nodeId: string, side: "incoming" | "outgoing", connId: string, direction: "up" | "down") => void;
   flowHighlight: {
     activeNodeId: string | null;
     activeConnId: string | null;
@@ -58,6 +60,8 @@ export function useCanvasNodes({
   dragTargetPanelId,
   unparentCandidatePanelId,
   connectionCountPerNode,
+  effectiveHandleOrder,
+  onReorderHandle,
   flowHighlight,
   activeStep,
   recordingInfo,
@@ -80,6 +84,8 @@ export function useCanvasNodes({
       unparentCandidatePanelId,
       panelIds,
       connectionCounts: connectionCountPerNode,
+      effectiveHandleOrder,
+      onReorderHandle,
       isPlaying,
       isRecording,
       flowHighlight,
@@ -119,6 +125,7 @@ export function useCanvasNodes({
     diagram, visibleComponents, panelIds, selectedNodeId, selectedNodeIds,
     serviceRegistry, allDiagrams, handleDrillDown, isPlaying, flowHighlight,
     dragTargetPanelId, unparentCandidatePanelId, isRecording, recordingInfo,
-    onRecordHandleClick, activeStep, coverage, connectionCountPerNode, handlePanelCollapseToggle, isViewingCoverage,
+    onRecordHandleClick, activeStep, coverage, connectionCountPerNode, effectiveHandleOrder,
+    onReorderHandle, handlePanelCollapseToggle, isViewingCoverage,
   ]);
 }
