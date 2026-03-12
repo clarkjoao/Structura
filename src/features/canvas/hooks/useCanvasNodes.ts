@@ -82,6 +82,7 @@ export function useCanvasNodes({
       serviceRegistry: serviceRegistry ?? {},
       allDiagrams,
       selectedNodeId,
+      selectedNodeIds,
       dragTargetPanelId,
       unparentCandidatePanelId,
       panelIds,

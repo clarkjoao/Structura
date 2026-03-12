@@ -453,6 +453,14 @@ const Canvas = ({
     [reactFlowInstance],
   );
 
+  const clearCanvasSelection = useCallback(() => {
+    clearHighlight();
+    setSelectedNodeId(null);
+    setSelectedNodeIds(new Set());
+    setSelectedEdgeId(null);
+    setContextMenu(null);
+  }, [clearHighlight]);
+
   const onNodeClick = useCallback(
     (e: React.MouseEvent, node: Node) => {
       if (isRecording) {
@@ -513,12 +521,8 @@ const Canvas = ({
   );
 
   const onPaneClick = useCallback(() => {
-    clearHighlight();
-    setSelectedNodeId(null);
-    setSelectedNodeIds(new Set());
-    setSelectedEdgeId(null);
-    setContextMenu(null);
-  }, [clearHighlight]);
+    clearCanvasSelection();
+  }, [clearCanvasSelection]);
 
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: Node) => {
@@ -672,6 +676,7 @@ const Canvas = ({
           onDrillUp={onDrillUp}
           isPanelOpen={isPanelOpen}
           selectedCount={selectedCount}
+          onClearSelection={clearCanvasSelection}
         />
         <div
           onContextMenu={(e) => e.preventDefault()}

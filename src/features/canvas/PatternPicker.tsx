@@ -24,6 +24,7 @@ const CATEGORY_ICONS: Record<PatternCategory, string> = {
 
 interface PatternPickerProps {
   onClose: () => void;
+  onBeforeInsert?: () => void;
 }
 
 /** Mini flow diagram preview */
@@ -48,7 +49,7 @@ const PatternFlowPreview = ({ pattern }: { pattern: PatternTemplate }) => {
   );
 };
 
-const PatternPicker = ({ onClose }: PatternPickerProps) => {
+const PatternPicker = ({ onClose, onBeforeInsert }: PatternPickerProps) => {
   const [activeCategory, setActiveCategory] = useState<PatternCategory | "all">("all");
   const [search, setSearch] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -102,6 +103,7 @@ const PatternPicker = ({ onClose }: PatternPickerProps) => {
   }, [q, categoryCounts]);
 
   const handleInsert = (template: PatternTemplate) => {
+    onBeforeInsert?.();
     insertPattern(template, getViewportCenter(rfInstance));
     onClose();
   };

@@ -44,11 +44,13 @@ const CanvasToolbar = ({
   isPanelOpen,
   selectedCount = 0,
   onInsert,
+  onClearSelection,
 }: {
   onDrillUp?: () => void;
   isPanelOpen?: boolean;
   selectedCount?: number;
   onInsert?: (nodeId: string) => void;
+  onClearSelection?: () => void;
 }) => {
   const diagram = useActiveDiagram();
   const { addComponent } = useDiagramActions();
@@ -103,7 +105,11 @@ const CanvasToolbar = ({
       )}
 
       <button
-        onClick={() => { setShowPatterns(true); setShowAdd(false); }}
+        onClick={() => {
+          onClearSelection?.();
+          setShowPatterns(true);
+          setShowAdd(false);
+        }}
         className="flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
       >
         <Puzzle className="h-3.5 w-3.5" /> Patterns
@@ -111,7 +117,10 @@ const CanvasToolbar = ({
 
       <div className="relative">
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+            onClearSelection?.();
+            setShowModal(true);
+          }}
           className="flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-primary hover:bg-surface-hover transition-colors"
         >
           <Plus className="h-3.5 w-3.5" /> Adicionar Elemento
@@ -211,7 +220,12 @@ const CanvasToolbar = ({
         )}
       </div>
 
-      {showPatterns && <PatternPicker onClose={() => setShowPatterns(false)} />}
+      {showPatterns && (
+        <PatternPicker
+          onClose={() => setShowPatterns(false)}
+          onBeforeInsert={onClearSelection}
+        />
+      )}
       {showModal && (
         <ElementPickerModal onClose={() => setShowModal(false)} onInsert={onInsert} />
       )}

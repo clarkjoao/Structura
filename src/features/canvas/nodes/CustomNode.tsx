@@ -30,6 +30,7 @@ export interface NodeData {
   awsService?: string;
   isSelected: boolean;
   isHighlighted?: boolean;
+  controlsDisabled?: boolean;
   serviceId?: string;
   serviceName?: string;
   linkedDiagramName?: string;
@@ -176,6 +177,7 @@ function buildHandles(
 function buildReorderControls(
   connIds: string[],
   side: "incoming" | "outgoing",
+  disabled: boolean,
   onReorderHandle: (
     side: "incoming" | "outgoing",
     connId: string,
@@ -190,7 +192,11 @@ function buildReorderControls(
     return (
       <div
         key={`reorder-${side}-${i}`}
-        className={`absolute ${posClass} flex flex-col gap-px opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none group-hover:pointer-events-auto`}
+        className={`absolute ${posClass} flex flex-col gap-px transition-opacity z-20 ${
+          disabled
+            ? "opacity-0 pointer-events-none"
+            : "opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
+        }`}
         style={{ top: `calc(${topPct}% - 10px)` }}
       >
         <button
@@ -198,7 +204,7 @@ function buildReorderControls(
             e.stopPropagation();
             onReorderHandle(side, connId, "up");
           }}
-          disabled={i === 0}
+          disabled={disabled || i === 0}
           className="flex items-center justify-center w-3.5 h-3.5 text-[7px] rounded-sm bg-card/90 border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
           aria-label={`Mover handle ${i + 1} para cima`}
         >
@@ -209,7 +215,7 @@ function buildReorderControls(
             e.stopPropagation();
             onReorderHandle(side, connId, "down");
           }}
-          disabled={i === n - 1}
+          disabled={disabled || i === n - 1}
           className="flex items-center justify-center w-3.5 h-3.5 text-[7px] rounded-sm bg-card/90 border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
           aria-label={`Mover handle ${i + 1} para baixo`}
         >
@@ -221,10 +227,12 @@ function buildReorderControls(
 }
 
 const Badges = ({
+  controlsDisabled,
   serviceId,
   serviceName,
   linkedDiagramName,
 }: {
+  controlsDisabled?: boolean;
   serviceId?: string;
   serviceName?: string;
   linkedDiagramName?: string;
@@ -247,8 +255,11 @@ const Badges = ({
           <button
             type="button"
             onClick={handleServiceClick}
-            className="mt-1.5 flex items-center gap-1 text-primary hover:underline"
+            className={`mt-1.5 flex items-center gap-1 text-primary ${
+              controlsDisabled ? "pointer-events-none" : "hover:underline"
+            }`}
             aria-label={`Abrir serviço ${serviceName} no registry`}
+            tabIndex={controlsDisabled ? -1 : 0}
           >
             <Link2 className="h-3 w-3 shrink-0" />
             <span className="text-[10px] truncate">{serviceName}</span>
@@ -276,10 +287,12 @@ const DrillDownButton = ({
   elementId,
   onDrillDown,
   colorClass,
+  disabled,
 }: {
   elementId: string;
   onDrillDown?: (id: string) => void;
   colorClass: string;
+  disabled?: boolean;
 }) => {
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
@@ -293,7 +306,10 @@ const DrillDownButton = ({
     <button
       onClick={handleClick}
       aria-label={`Explorar interior do elemento ${elementId}`}
-      className={`mt-2 flex items-center gap-1 text-[10px] font-medium ${colorClass} hover:underline`}
+      className={`mt-2 flex items-center gap-1 text-[10px] font-medium ${colorClass} ${
+        disabled ? "pointer-events-none" : "hover:underline"
+      }`}
+      tabIndex={disabled ? -1 : 0}
     >
       <MousePointerClick className="h-3 w-3" /> Explorar interior
     </button>
@@ -303,9 +319,11 @@ const DrillDownButton = ({
 const EmbedButton = ({
   elementId,
   onEmbed,
+  disabled,
 }: {
   elementId: string;
   onEmbed?: (id: string) => void;
+  disabled?: boolean;
 }) => {
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
@@ -318,7 +336,12 @@ const EmbedButton = ({
   return (
     <button
       onClick={handleClick}
-      className="mt-1 flex items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:underline"
+      className={`mt-1 flex items-center gap-1 text-[10px] font-medium text-muted-foreground ${
+        disabled
+          ? "pointer-events-none"
+          : "hover:text-foreground hover:underline"
+      }`}
+      tabIndex={disabled ? -1 : 0}
     >
       <Eye className="h-3 w-3" /> Incorporar diagrama
     </button>
@@ -333,9 +356,12 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
   const isActive = selected || d.isSelected || d.isHighlighted || isHighlighted;
   const hasDrillDown = !!d.linkedDiagramName && !!d.onDrillDown;
   const hasEmbed = !!d.linkedDiagramName && !!d.onEmbed;
+  const controlsDisabled = !!d.controlsDisabled;
 
   const handlePointer =
-    d.isRecording || !!d.activeHandleId
+    controlsDisabled
+      ? { pointerEvents: "none" as const }
+      : d.isRecording || !!d.activeHandleId
       ? { pointerEvents: "all" as const }
       : undefined;
   const incomingCount = Math.min(
@@ -368,7 +394,12 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
         )}
         {buildHandles(incomingCount, "target", Position.Left, d, handlePointer)}
         {d.onReorderHandle &&
-          buildReorderControls(incomingIds, "incoming", d.onReorderHandle)}
+          buildReorderControls(
+            incomingIds,
+            "incoming",
+            controlsDisabled,
+            d.onReorderHandle,
+          )}
         <div className="px-3 py-2.5">
           <div className="flex items-center gap-2 mb-1.5">
             {svcInfo?.iconName ? (
@@ -391,6 +422,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
             </span>
           )}
           <Badges
+            controlsDisabled={controlsDisabled}
             serviceId={d.serviceId}
             serviceName={d.serviceName}
             linkedDiagramName={d.linkedDiagramName}
@@ -400,10 +432,15 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
               elementId={d.elementId}
               onDrillDown={d.onDrillDown}
               colorClass="text-primary"
+              disabled={controlsDisabled}
             />
           )}
           {hasEmbed && (
-            <EmbedButton elementId={d.elementId} onEmbed={d.onEmbed} />
+            <EmbedButton
+              elementId={d.elementId}
+              onEmbed={d.onEmbed}
+              disabled={controlsDisabled}
+            />
           )}
         </div>
         {buildHandles(
@@ -414,7 +451,12 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
           handlePointer,
         )}
         {d.onReorderHandle &&
-          buildReorderControls(outgoingIds, "outgoing", d.onReorderHandle)}
+          buildReorderControls(
+            outgoingIds,
+            "outgoing",
+            controlsDisabled,
+            d.onReorderHandle,
+          )}
       </div>
     );
   }
@@ -436,7 +478,12 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
       )}
       {buildHandles(incomingCount, "target", Position.Left, d, handlePointer)}
       {d.onReorderHandle &&
-        buildReorderControls(incomingIds, "incoming", d.onReorderHandle)}
+        buildReorderControls(
+          incomingIds,
+          "incoming",
+          controlsDisabled,
+          d.onReorderHandle,
+        )}
       <div className="px-3 py-2.5">
         <div className="flex items-center gap-2 mb-1.5">
           <Icon className={`h-4 w-4 ${cfg.textColor} shrink-0`} />
@@ -455,6 +502,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
           </span>
         )}
         <Badges
+          controlsDisabled={controlsDisabled}
           serviceId={d.serviceId}
           serviceName={d.serviceName}
           linkedDiagramName={d.linkedDiagramName}
@@ -464,15 +512,25 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
             elementId={d.elementId}
             onDrillDown={d.onDrillDown}
             colorClass={cfg.textColor}
+            disabled={controlsDisabled}
           />
         )}
         {hasEmbed && (
-          <EmbedButton elementId={d.elementId} onEmbed={d.onEmbed} />
+          <EmbedButton
+            elementId={d.elementId}
+            onEmbed={d.onEmbed}
+            disabled={controlsDisabled}
+          />
         )}
       </div>
       {buildHandles(outgoingCount, "source", Position.Right, d, handlePointer)}
       {d.onReorderHandle &&
-        buildReorderControls(outgoingIds, "outgoing", d.onReorderHandle)}
+        buildReorderControls(
+          outgoingIds,
+          "outgoing",
+          controlsDisabled,
+          d.onReorderHandle,
+        )}
     </div>
   );
 });

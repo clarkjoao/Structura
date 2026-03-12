@@ -30,6 +30,7 @@ export interface NodeBuildContext {
   serviceRegistry: Record<string, ServiceDefinition>;
   allDiagrams: Record<string, Diagram>;
   selectedNodeId: string | null;
+  selectedNodeIds: Set<string>;
   dragTargetPanelId: string | null;
   /** When a child is dragged outside this panel's bounds, show unparent warning. */
   unparentCandidatePanelId: string | null;
