@@ -17,6 +17,10 @@ const DEFAULT_PANEL_COLOR = "hsl(220 20% 20%)";
 const DEFAULT_PANEL_OPACITY = 10;
 const DEFAULT_NOTE_COLOR = "hsl(48 96% 53%)";
 
+function shouldPreserveContent(name: string, description: string) {
+  return name.trim().length > 0 && description.trim().length > 0;
+}
+
 interface ComponentPanelProps {
   component: Component;
   onClose: () => void;
@@ -99,7 +103,7 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
           {!isSimple && isAws && (
             <div>
               <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">Serviço AWS</label>
-              <select value={awsService} onChange={(e) => { const s = e.target.value; setAwsService(s); const svc = AWS_SERVICE_MAP.get(s); updateComponent(component.id, { awsService: s || undefined, ...(svc && (name.startsWith("Novo") || name === component.name) ? { name: svc.name } : {}) } as Partial<Omit<Component, "id">>); if (svc && (name.startsWith("Novo") || name === component.name)) setName(svc.name); }}
+              <select value={awsService} onChange={(e) => { const s = e.target.value; setAwsService(s); const svc = AWS_SERVICE_MAP.get(s); const preserveContent = shouldPreserveContent(name, desc); const shouldRename = !!svc && !preserveContent && (name.trim() === "" || name.startsWith("Novo") || name === component.name); updateComponent(component.id, { awsService: s || undefined, ...(shouldRename ? { name: svc.name } : {}) } as Partial<Omit<Component, "id">>); if (shouldRename) setName(svc!.name); }}
                 className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring">
                 <option value="">Selecionar serviço...</option>
                 {AWS_CATEGORY_MAP.get(type)?.services.map((svc) => (<option key={svc.id} value={svc.id}>{svc.name}</option>))}

@@ -35,7 +35,8 @@ const QuickInsertPopover = ({
   const [search, setSearch] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { addComponent, addConnection, linkComponentToService } = useDiagramActions();
+  const { addComponent, addConnection, linkComponentToService, updateComponent } =
+    useDiagramActions();
   const services = useAllServices();
 
   useEffect(() => {
@@ -86,11 +87,19 @@ const QuickInsertPopover = ({
   };
 
   const handleSelectService = (serviceId: string, name: string) => {
+    const service = services.find((svc) => svc.id === serviceId);
     const comp = addComponent("system", name, null, {
       x: flowPos.x + 20,
       y: flowPos.y + 20,
     });
     linkComponentToService(comp.id, serviceId);
+    updateComponent(comp.id, {
+      description: service?.description ?? "",
+      technology: service?.technology.length
+        ? service.technology.join(", ")
+        : undefined,
+      tags: service?.tags?.length ? service.tags : undefined,
+    });
     addConnection(sourceNodeId, comp.id, "Usa");
     onInsert(comp.id);
   };
