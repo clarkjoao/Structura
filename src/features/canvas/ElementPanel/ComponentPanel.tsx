@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import debounce from "lodash.debounce";
-import { X, Trash2, Link2, LayoutDashboard } from "lucide-react";
-import { useAllDiagrams, useActiveDiagram, useDiagramActions } from "@/features/diagram";
+import { X, Trash2, Link2, LayoutDashboard, RefreshCw } from "lucide-react";
+import { useAllDiagrams, useActiveDiagram, useAllServices, useDiagramActions } from "@/features/diagram";
 import type { Component, ComponentType } from "@/features/diagram";
 import { isPanelComponent, isNoteComponent } from "@/features/diagram";
 import { isAwsType, AWS_CATEGORIES, AWS_CATEGORY_MAP, AWS_SERVICE_MAP } from "@/lib/aws-catalog";
+import type { ServiceDefinition } from "@/features/registry";
 import AwsIcon from "../nodes/AwsIcon";
 import Field from "./components/Field";
 import TabBar, { type Tab } from "./components/TabBar";
@@ -16,6 +17,29 @@ import ServiceRegistryCombobox from "./components/ServiceRegistryCombobox";
 const DEFAULT_PANEL_COLOR = "hsl(220 20% 20%)";
 const DEFAULT_PANEL_OPACITY = 10;
 const DEFAULT_NOTE_COLOR = "hsl(48 96% 53%)";
+
+function buildComponentSyncPatch(
+  service: ServiceDefinition,
+  component: Component,
+): Partial<Omit<Component, "id">> {
+  const patch: Partial<Omit<Component, "id">> = {
+    name: service.name,
+    description: service.description,
+    tags: service.tags?.length ? service.tags : undefined,
+  };
+
+  if ("technology" in component) {
+    (
+      patch as Partial<
+        Omit<Component, "id"> & { technology?: string | undefined }
+      >
+    ).technology = service.technology.length
+      ? service.technology.join(", ")
+      : undefined;
+  }
+
+  return patch;
+}
 
 function shouldPreserveContent(name: string, description: string) {
   return name.trim().length > 0 && description.trim().length > 0;
@@ -31,6 +55,7 @@ interface ComponentPanelProps {
 
 const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, onUngroup }: ComponentPanelProps) => {
   const allDiagrams = useAllDiagrams();
+  const allServices = useAllServices();
   const activeDiagram = useActiveDiagram();
   const { linkComponentToService, linkComponentToDiagram, addDiagram } = useDiagramActions();
   const [tab, setTab] = useState<Tab>("details");
@@ -49,6 +74,10 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
   const isAws = isAwsType(type);
   const svcInfo = awsService ? AWS_SERVICE_MAP.get(awsService) : null;
   const canCreateLinked = component.type === "system" || component.type === "container";
+  const linkedService = useMemo(
+    () => allServices.find((service) => service.id === component.serviceId) ?? null,
+    [allServices, component.serviceId],
+  );
 
   const debouncedUpdate = useMemo(() => debounce((patch: Partial<Omit<Component, "id">>) => { updateComponent(component.id, patch); }, 300), [component.id, updateComponent]);
   useEffect(() => () => debouncedUpdate.cancel(), [debouncedUpdate]);
@@ -60,6 +89,24 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
     linkComponentToDiagram(component.id, newDiagram.id);
     setCreatedDiagramName(newDiagram.name);
     confirmTimerRef.current = setTimeout(() => setCreatedDiagramName(null), 3000);
+  };
+
+  const syncFromService = (
+    service: ServiceDefinition,
+    options?: { persist?: boolean },
+  ) => {
+    const patch = buildComponentSyncPatch(service, component);
+    debouncedUpdate.cancel();
+    setName(service.name);
+    setDesc(service.description);
+    setTags(service.tags ?? []);
+    setTagInput("");
+    if ("technology" in component) {
+      setTech(service.technology.join(", "));
+    }
+    if (options?.persist !== false) {
+      updateComponent(component.id, patch);
+    }
   };
 
   return (
@@ -150,10 +197,29 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
           )}
           {!isSimple && (
             <div>
-              <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block"><Link2 className="h-3 w-3 inline mr-1" />Vincular ao Serviço</label>
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold block">
+                  <Link2 className="h-3 w-3 inline mr-1" />
+                  Vincular ao Serviço
+                </label>
+                <button
+                  type="button"
+                  onClick={() => linkedService && syncFromService(linkedService)}
+                  disabled={!linkedService}
+                  className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Sincronizar nome, descrição, tecnologia e tags com o serviço vinculado"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Sincronizar
+                </button>
+              </div>
               <ServiceRegistryCombobox
                 value={component.serviceId ?? null}
-                onChange={(id) => linkComponentToService(component.id, id ?? undefined)}
+                onChange={(id) => {
+                  linkComponentToService(component.id, id ?? undefined);
+                  const service = allServices.find((item) => item.id === id);
+                  if (service) syncFromService(service, { persist: false });
+                }}
               />
             </div>
           )}

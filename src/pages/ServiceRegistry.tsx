@@ -30,7 +30,7 @@ import {
   Activity,
   Link2,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import {
   useAllServices,
@@ -1131,12 +1131,14 @@ const ServiceRegistry = () => {
   const { addService, updateService, removeService } = useRegistryActions();
   const { openDiagram } = useDiagramActions();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [search, setSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
   const [inlineForm, setInlineForm] = useState<InlineForm>(null);
   const [showDefectDojo, setShowDefectDojo] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedFromQuery = searchParams.get("serviceId");
 
   const filtered = useMemo(() => {
     let result = services;
@@ -1167,6 +1169,23 @@ const ServiceRegistry = () => {
       setSelectedId(null);
     }
   }, [selectedId, services]);
+
+  useEffect(() => {
+    if (!selectedFromQuery) return;
+
+    const target = services.find((service) => service.id === selectedFromQuery);
+    if (!target) return;
+
+    setSearch("");
+    setSourceFilter("all");
+    setSelectedId(target.id);
+
+    requestAnimationFrame(() => {
+      document
+        .getElementById(`registry-service-${target.id}`)
+        ?.scrollIntoView({ block: "center", behavior: "smooth" });
+    });
+  }, [selectedFromQuery, services]);
 
   const usageMap = useMemo(() => {
     const map: Record<
@@ -1336,17 +1355,18 @@ const ServiceRegistry = () => {
                 }`}
               >
                 {filtered.map((svc) => (
-                  <ServiceCard
-                    key={svc.id}
-                    svc={svc}
-                    isSelected={selectedId === svc.id}
-                    onClick={() =>
-                      setSelectedId(
-                        selectedId === svc.id ? null : svc.id,
-                      )
-                    }
-                    usage={usageMap[svc.id] ?? []}
-                  />
+                  <div id={`registry-service-${svc.id}`} key={svc.id}>
+                    <ServiceCard
+                      svc={svc}
+                      isSelected={selectedId === svc.id}
+                      onClick={() =>
+                        setSelectedId(
+                          selectedId === svc.id ? null : svc.id,
+                        )
+                      }
+                      usage={usageMap[svc.id] ?? []}
+                    />
+                  </div>
                 ))}
               </div>
             )}

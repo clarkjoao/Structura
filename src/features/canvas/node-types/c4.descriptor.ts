@@ -65,6 +65,7 @@ export const c4Descriptor: NodeTypeDescriptor = {
       isSelected: isPlaying
         ? flowHighlight.activeNodeId === comp.id
         : ctx.selectedNodeId === comp.id,
+      serviceId: comp.serviceId,
       serviceName: comp.serviceId
         ? ctx.serviceRegistry[comp.serviceId]?.name
         : undefined,

@@ -1,5 +1,6 @@
 import { memo, useCallback } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { useNavigate } from "react-router-dom";
 import {
   Network,
   Server,
@@ -29,6 +30,7 @@ export interface NodeData {
   awsService?: string;
   isSelected: boolean;
   isHighlighted?: boolean;
+  serviceId?: string;
   serviceName?: string;
   linkedDiagramName?: string;
   onDrillDown?: (elementId: string) => void;
@@ -219,29 +221,56 @@ function buildReorderControls(
 }
 
 const Badges = ({
+  serviceId,
   serviceName,
   linkedDiagramName,
 }: {
+  serviceId?: string;
   serviceName?: string;
   linkedDiagramName?: string;
-}) => (
-  <>
-    {serviceName && (
-      <div className="flex items-center gap-1 mt-1.5">
-        <Link2 className="h-3 w-3 text-primary shrink-0" />
-        <span className="text-[10px] text-primary truncate">{serviceName}</span>
-      </div>
-    )}
-    {linkedDiagramName && (
-      <div className="flex items-center gap-1 mt-1">
-        <LayoutDashboard className="h-3 w-3 text-node-container shrink-0" />
-        <span className="text-[10px] text-node-container truncate">
-          {linkedDiagramName}
-        </span>
-      </div>
-    )}
-  </>
-);
+}) => {
+  const navigate = useNavigate();
+
+  const handleServiceClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      if (!serviceId) return;
+      navigate(`/registry?serviceId=${encodeURIComponent(serviceId)}`);
+    },
+    [navigate, serviceId],
+  );
+
+  return (
+    <>
+      {serviceName && (
+        serviceId ? (
+          <button
+            type="button"
+            onClick={handleServiceClick}
+            className="mt-1.5 flex items-center gap-1 text-primary hover:underline"
+            aria-label={`Abrir serviço ${serviceName} no registry`}
+          >
+            <Link2 className="h-3 w-3 shrink-0" />
+            <span className="text-[10px] truncate">{serviceName}</span>
+          </button>
+        ) : (
+          <div className="flex items-center gap-1 mt-1.5">
+            <Link2 className="h-3 w-3 text-primary shrink-0" />
+            <span className="text-[10px] text-primary truncate">{serviceName}</span>
+          </div>
+        )
+      )}
+      {linkedDiagramName && (
+        <div className="flex items-center gap-1 mt-1">
+          <LayoutDashboard className="h-3 w-3 text-node-container shrink-0" />
+          <span className="text-[10px] text-node-container truncate">
+            {linkedDiagramName}
+          </span>
+        </div>
+      )}
+    </>
+  );
+};
 
 const DrillDownButton = ({
   elementId,
@@ -362,6 +391,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
             </span>
           )}
           <Badges
+            serviceId={d.serviceId}
             serviceName={d.serviceName}
             linkedDiagramName={d.linkedDiagramName}
           />
@@ -425,6 +455,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
           </span>
         )}
         <Badges
+          serviceId={d.serviceId}
           serviceName={d.serviceName}
           linkedDiagramName={d.linkedDiagramName}
         />
