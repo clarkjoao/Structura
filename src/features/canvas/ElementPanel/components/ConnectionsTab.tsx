@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Search, ArrowRight, GripVertical } from "lucide-react";
 import {
   useConnections,
@@ -8,6 +8,7 @@ import {
   applyHandleOrder,
 } from "@/features/diagram";
 import type { ComponentType, Connection } from "@/features/diagram";
+import { useHandleHighlight } from "../../contexts/HandleHighlightContext";
 import { Network as NetworkIcon, Server, Database, User } from "lucide-react";
 
 const typeIcons: Record<string, typeof NetworkIcon> = {
@@ -34,10 +35,13 @@ interface GroupProps {
   componentId: string;
   dragState: DragState | null;
   dragOverId: string | null;
+  highlightedConnId: string | null;
+  hasHighlight: boolean;
   onDragStart: (connId: string, side: "incoming" | "outgoing") => void;
   onDragOver: (e: React.DragEvent, connId: string, side: "incoming" | "outgoing") => void;
   onDrop: (e: React.DragEvent, targetConnId: string, side: "incoming" | "outgoing") => void;
   onDragEnd: () => void;
+  onConnClick: (connId: string, side: "incoming" | "outgoing") => void;
 }
 
 function ConnectionGroup({
@@ -47,10 +51,13 @@ function ConnectionGroup({
   componentId,
   dragState,
   dragOverId,
+  highlightedConnId,
+  hasHighlight,
   onDragStart,
   onDragOver,
   onDrop,
   onDragEnd,
+  onConnClick,
 }: GroupProps) {
   const components = useComponents();
   const self = components[componentId];
@@ -74,6 +81,9 @@ function ConnectionGroup({
           dragState?.side === side &&
           dragState.connId !== conn.id;
 
+        const isHighlighted = highlightedConnId === conn.id;
+        const dimmed = hasHighlight && !isHighlighted;
+
         return (
           <div
             key={conn.id}
@@ -85,9 +95,10 @@ function ConnectionGroup({
             onDragOver={(e) => onDragOver(e, conn.id, side)}
             onDrop={(e) => onDrop(e, conn.id, side)}
             onDragEnd={onDragEnd}
-            className={`flex items-center gap-1.5 rounded-md bg-secondary/50 border px-2.5 py-2 text-xs cursor-grab active:cursor-grabbing select-none transition-opacity ${
-              isDragging ? "opacity-40" : "opacity-100"
-            } ${isOver ? "border-t-2 border-t-primary border-border" : "border-border"}`}
+            onClick={() => onConnClick(conn.id, side)}
+            className={`flex items-center gap-1.5 rounded-md bg-secondary/50 border px-2.5 py-2 text-xs cursor-pointer select-none transition-all duration-150 ${
+              isDragging ? "opacity-40" : dimmed ? "opacity-40 hover:opacity-70" : "opacity-100"
+            } ${isHighlighted ? "bg-cyan-500/10 border-l-2 border-cyan-500 border-border" : isOver ? "border-t-2 border-t-primary border-border" : "border-border"}`}
           >
             <GripVertical className="h-3.5 w-3.5 text-muted-foreground/40 hover:text-muted-foreground shrink-0 transition-colors" />
             {source && <NodeIcon type={source.type} />}
@@ -116,6 +127,8 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
   const [search, setSearch] = useState("");
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [highlightedConnId, setHighlightedConnId] = useState<string | null>(null);
+  const { setHighlight, clearHighlight } = useHandleHighlight();
 
   const { incoming, outgoing } = useMemo(() => {
     const allConns = Object.values(connections);
@@ -142,6 +155,25 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
     const q = search.toLowerCase();
     return outgoing.filter((conn) => conn.label.toLowerCase().includes(q));
   }, [outgoing, search]);
+
+  useEffect(() => {
+    setHighlightedConnId(null);
+    clearHighlight();
+  }, [componentId, clearHighlight]);
+
+  useEffect(() => {
+    return () => clearHighlight();
+  }, [clearHighlight]);
+
+  const handleConnClick = (connId: string) => {
+    if (highlightedConnId === connId) {
+      setHighlightedConnId(null);
+      clearHighlight();
+    } else {
+      setHighlightedConnId(connId);
+      setHighlight(connId);
+    }
+  };
 
   const handleDragStart = (connId: string, side: "incoming" | "outgoing") => {
     setDragState({ connId, side });
@@ -222,10 +254,13 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
           componentId={componentId}
           dragState={isSearching ? null : dragState}
           dragOverId={isSearching ? null : dragOverId}
+          highlightedConnId={highlightedConnId}
+          hasHighlight={highlightedConnId !== null}
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
           onDragEnd={handleDragEnd}
+          onConnClick={handleConnClick}
         />
         <ConnectionGroup
           label="Saídas"
@@ -234,10 +269,13 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
           componentId={componentId}
           dragState={isSearching ? null : dragState}
           dragOverId={isSearching ? null : dragOverId}
+          highlightedConnId={highlightedConnId}
+          hasHighlight={highlightedConnId !== null}
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
           onDragEnd={handleDragEnd}
+          onConnClick={handleConnClick}
         />
         {isSearching &&
           filteredIncoming.length === 0 &&

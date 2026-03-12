@@ -38,6 +38,7 @@ import { useFlowState } from "./hooks/useFlowState";
 import { useCanvasNodes } from "./hooks/useCanvasNodes";
 import { useCanvasEdges } from "./hooks/useCanvasEdges";
 import QuickInsertPopover from "./QuickInsertPopover";
+import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 
 const edgeTypes = { c4: CustomEdge };
 
@@ -609,6 +610,7 @@ const Canvas = ({
     );
 
   return (
+    <HandleHighlightProvider>
     <div className="flex-1 flex relative">
       <style>{`
         .react-flow__pane { cursor: default; }
@@ -707,6 +709,7 @@ const Canvas = ({
           />
         )}
     </div>
+    </HandleHighlightProvider>
   );
 };
 

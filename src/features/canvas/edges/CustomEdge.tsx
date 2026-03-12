@@ -8,6 +8,7 @@ import {
   type EdgeProps,
 } from "@xyflow/react";
 import type { EdgeStyle, StrokeStyle } from "@/features/diagram";
+import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 
 export interface EdgeData {
   label: string;
@@ -43,6 +44,7 @@ const Edge = memo(
     markerStart,
   }: EdgeProps) => {
     const d = data as unknown as EdgeData;
+    const { highlightedConnectionId } = useHandleHighlight();
     const pathParams = {
       sourceX,
       sourceY,
@@ -68,6 +70,7 @@ const Edge = memo(
     const strokeStyle = d?.strokeStyle ?? "solid";
     const dashArray = strokeDasharrayByStyle[strokeStyle];
     const strokeWidth = d?.strokeWidth ?? 1;
+    const isHighlighted = selected || highlightedConnectionId === d.connectionId;
 
     return (
       <>
@@ -77,8 +80,12 @@ const Edge = memo(
           markerEnd={markerEnd}
           markerStart={markerStart}
           style={{
-            stroke: selected ? "hsl(187 72% 51%)" : (d?.coverageFlowNames?.length ? "hsl(160 40% 38%)" : "hsl(220 20% 30%)"),
-            strokeWidth: selected ? Math.max(2, strokeWidth) : strokeWidth,
+            stroke: isHighlighted
+              ? "hsl(187 72% 51%)"
+              : d?.coverageFlowNames?.length
+                ? "hsl(160 40% 38%)"
+                : "hsl(220 20% 30%)",
+            strokeWidth: isHighlighted ? Math.max(2, strokeWidth + 1) : strokeWidth,
             strokeDasharray: dashArray,
           }}
         />
@@ -92,7 +99,7 @@ const Edge = memo(
             >
               <div
                 className={`relative rounded-md px-2 py-1 text-[10px] font-medium border transition-colors ${
-                  selected
+                  isHighlighted
                     ? "bg-primary/15 border-primary/30 text-primary"
                     : "bg-card border-border text-muted-foreground"
                 }`}

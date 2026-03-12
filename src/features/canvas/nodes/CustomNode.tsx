@@ -97,8 +97,11 @@ const awsCategoryBorders: Record<string, string> = {
   "aws-general": "border-l-aws-general",
 };
 
-function getHandleClass(d: NodeData, handleId: string): string {
-  const base = "!border-background";
+function getHandleClass(
+  d: NodeData,
+  handleId: string,
+): string {
+  const base = "!border-background transition-all duration-150";
   const isRecHighlighted = d.isRecording && d.lastRecordedHandleId === handleId;
   const isPlayHighlighted = !d.isRecording && d.activeHandleId === handleId;
 
@@ -109,7 +112,7 @@ function getHandleClass(d: NodeData, handleId: string): string {
     return `${base} !w-3.5 !h-3.5 !bg-primary ring-2 ring-primary animate-pulse`;
   }
   if (d.isRecording) {
-    return `${base} !w-3.5 !h-3.5 !bg-primary/60 cursor-pointer hover:!bg-primary hover:ring-2 hover:ring-primary transition-all`;
+    return `${base} !w-3.5 !h-3.5 !bg-primary/60 cursor-pointer hover:!bg-primary hover:ring-2 hover:ring-primary`;
   }
   return `${base} !w-2.5 !h-2.5 !bg-muted-foreground`;
 }
