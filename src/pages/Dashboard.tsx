@@ -189,7 +189,7 @@ const Dashboard = () => {
 
   const handleDragStart = useCallback(
     (e: React.DragEvent, diagramId: string) => {
-      e.dataTransfer.setData("application/x-archflow-diagram-id", diagramId);
+      e.dataTransfer.setData("application/x-structura-diagram-id", diagramId);
       e.dataTransfer.effectAllowed = "move";
     },
     [],

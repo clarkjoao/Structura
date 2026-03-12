@@ -1,4 +1,4 @@
-# CONTEXT.md — ArchFlow
+# CONTEXT.md — Structura
 
 ## Vision
 
@@ -140,7 +140,7 @@ src/
 ├── infrastructure/
 │   └── persistence/
 │       ├── IStoragePort.ts            # Interface: save, load, delete, getItem, setItem, removeItem
-│       ├── LocalStorageAdapter.ts     # Implementação browser; prefixo archflow_; defaultStorage
+│       ├── LocalStorageAdapter.ts     # Implementação browser; prefixo structura_; fallback para chaves legadas; defaultStorage
 │       └── index.ts
 │
 ├── pages/
@@ -184,7 +184,7 @@ src/
 | **features/canvas/toolbar** | `CanvasToolbar.tsx` | Nome do diagrama, nível; botão “Adicionar elemento” (C4, painel, nota, AWS por categoria). |
 | **features/flows** | `index.ts` | Placeholder; tipos de flow estão em diagram.types. |
 | **infrastructure/persistence** | `IStoragePort.ts` | Port: save(key, data), load\<T\>(key), delete(key); getItem/setItem/removeItem (raw) para Zustand persist. |
-| | `LocalStorageAdapter.ts` | Implementação: localStorage, prefixo `archflow_`; serialização em save/load; `defaultStorage` singleton. |
+| | `LocalStorageAdapter.ts` | Implementação: localStorage, prefixo `structura_` com fallback para chaves legadas; serialização em save/load; `defaultStorage` singleton. |
 | **lib** | `model-types.ts` | Reexporta tipos de diagram e registry + generateId (compatibilidade). |
 | | `model-store.ts` | Reexporta store e selectors do diagram (compatibilidade). |
 | | `aws-catalog.ts` | Catálogo AWS: categorias, serviços, ícones; AwsCategoryId, isAwsType, mapas. |

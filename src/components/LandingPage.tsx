@@ -274,10 +274,10 @@ const LandingPage = () => {
         <div className="container flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <Network className="h-4 w-4 text-primary" />
-            <span className="font-semibold text-foreground">ArchFlow</span>
+            <span className="font-semibold text-foreground">Structura</span>
           </div>
           <p className="font-mono text-xs">
-            © 2026 ArchFlow. Architecture as code.
+            © 2026 Structura. Architecture as code.
           </p>
         </div>
       </footer>

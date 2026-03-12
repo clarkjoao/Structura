@@ -10,16 +10,13 @@ const Navbar = () => {
             <Network className="h-4 w-4 text-primary" />
           </div>
           <span className="text-lg font-semibold tracking-tight">
-            Arch<span className="text-primary">Flow</span>
+            Structura<span className="text-primary">Architecture</span>
           </span>
         </Link>
 
         <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
-          <Link to="/" className="hover:text-foreground transition-colors">
-            Product
-          </Link>
           <Link
-            to="/dashboard"
+            to="/"
             className="hover:text-foreground transition-colors"
           >
             Workspaces

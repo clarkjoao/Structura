@@ -1,6 +1,6 @@
 import type { IStoragePort } from "./IStoragePort";
 
-const KEY_PREFIX = "archflow_";
+const KEY_PREFIX = "structura_";
 
 /**
  * Adapter de persistência usando localStorage.
@@ -13,9 +13,30 @@ export class LocalStorageAdapter implements IStoragePort {
     return `${this.prefix}${k}`;
   }
 
+  private fallbackKeys(k: string): string[] {
+    const currentKey = this.key(k);
+    const matches: string[] = [];
+
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const storageKey = localStorage.key(index);
+      if (!storageKey || storageKey === currentKey) continue;
+      if (storageKey.endsWith(k)) matches.push(storageKey);
+    }
+
+    return matches;
+  }
+
   async getItem(key: string): Promise<string | null> {
     try {
-      return localStorage.getItem(this.key(key));
+      const currentValue = localStorage.getItem(this.key(key));
+      if (currentValue !== null) return currentValue;
+
+      for (const fallbackKey of this.fallbackKeys(key)) {
+        const fallbackValue = localStorage.getItem(fallbackKey);
+        if (fallbackValue !== null) return fallbackValue;
+      }
+
+      return null;
     } catch {
       return null;
     }
@@ -32,6 +53,9 @@ export class LocalStorageAdapter implements IStoragePort {
   async removeItem(key: string): Promise<void> {
     try {
       localStorage.removeItem(this.key(key));
+      this.fallbackKeys(key).forEach((fallbackKey) => {
+        localStorage.removeItem(fallbackKey);
+      });
     } catch {
       // ignore
     }

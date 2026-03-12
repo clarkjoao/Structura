@@ -21,13 +21,13 @@ The `@` alias resolves to `./src` (configured in `vite.config.ts`).
 
 ## Architecture Overview
 
-**Archflow** is a C4-model architecture diagramming tool. Users create diagrams at three abstraction levels (context → container → component), define flows (sequences of interactions), and export to JSON/draw.io/Mermaid.
+**Structura** is a C4-model architecture diagramming tool. Users create diagrams at three abstraction levels (context → container → component), define flows (sequences of interactions), and export to JSON/draw.io/Mermaid.
 
 ### Feature Structure
 
 The codebase follows a feature-based layout under `src/features/`:
 
-- **`features/diagram`** — The core data layer. Exports all types (`Diagram`, `Component`, `Connection`, `Flow`, `FlowStep`, etc.) and the Zustand store (`useDiagramStore`). The store is the single source of truth for all diagram state and is persisted to `localStorage` via `LocalStorageAdapter` with the key `archflow_diagram-store`.
+- **`features/diagram`** — The core data layer. Exports all types (`Diagram`, `Component`, `Connection`, `Flow`, `FlowStep`, etc.) and the Zustand store (`useDiagramStore`). The store is the single source of truth for all diagram state and is persisted to `localStorage` via `LocalStorageAdapter` with the key `structura_diagram-store` (with fallback for legacy storage).
 
 - **`features/canvas`** — The interactive canvas built on `@xyflow/react`. `Canvas.tsx` is the main component that bridges the diagram store to ReactFlow nodes/edges. Keyboard shortcuts (Cmd+Z/Shift+Z undo/redo, Delete remove, Cmd+D duplicate, Cmd+G group) are handled in `hooks/useCanvasKeyboard.ts`. Drag-to-panel parenting logic lives in `hooks/useNodeDragParenting.ts`.
 
@@ -48,7 +48,7 @@ Node positions and dimensions are stored separately in `nodeLayouts: NodeLayout[
 
 ### Store Pattern
 
-`useDiagramStore` (in `features/diagram/store/diagram.store.ts`) uses Zustand with `immer` middleware for mutations and `persist` middleware for localStorage (key `diagram-store`, prefixed to `archflow_diagram-store`).
+`useDiagramStore` (in `features/diagram/store/diagram.store.ts`) uses Zustand with `immer` middleware for mutations and `persist` middleware for localStorage (key `diagram-store`, prefixed to `structura_diagram-store` with fallback support for previous storage keys).
 
 **Factory**: `createDiagramStore(storage?)` accepts an optional `IStoragePort` (defaults to `defaultStorage`). Use this in tests with `InMemoryAdapter` from `@/infrastructure/persistence`.
 

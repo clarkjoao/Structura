@@ -151,7 +151,7 @@ export function FolderTree({
   const handleDrop = (e: React.DragEvent, folderId: string | null) => {
     e.preventDefault();
     const diagramId = e.dataTransfer.getData(
-      "application/x-archflow-diagram-id",
+      "application/x-structura-diagram-id",
     );
     if (diagramId) onDropOnFolder(folderId, diagramId);
     onDragLeave();
@@ -385,7 +385,7 @@ function FolderTreeItem({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const diagramId = e.dataTransfer.getData(
-      "application/x-archflow-diagram-id",
+      "application/x-structura-diagram-id",
     );
     if (diagramId) onDropOnFolder(folder.id, diagramId);
     onDragLeave();
