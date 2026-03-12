@@ -18,10 +18,8 @@ import {
   Loader2,
   User,
   RefreshCw,
-  MoreHorizontal,
   Download,
   ExternalLink,
-  Tag,
   Layers,
   Link2,
 } from "lucide-react";
@@ -585,16 +583,9 @@ const DetailPanel = ({
   }, [source, svc, updateService]);
 
   return (
-    <motion.div
-      key={svc.id}
-      initial={{ opacity: 0, x: 12 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 12 }}
-      transition={{ duration: 0.15 }}
-      className="h-full flex flex-col overflow-hidden"
-    >
+    <div className="overflow-hidden rounded-2xl border border-border bg-card">
       {/* Panel header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+      <div className="flex items-center justify-between border-b border-border px-5 py-4">
         <div className="flex items-center gap-2 min-w-0">
           <span
             className={`h-2.5 w-2.5 rounded-full shrink-0 ${SOURCE_DOT[source]}`}
@@ -628,8 +619,8 @@ const DetailPanel = ({
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-5 py-4 space-y-5">
+      <div className="px-5 py-4">
+        <div className="space-y-5">
           {syncError && (
             <p className="text-xs text-destructive bg-destructive/10 rounded-md px-3 py-2">
               {syncError}
@@ -909,7 +900,7 @@ const DetailPanel = ({
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
@@ -1030,6 +1021,12 @@ const ServiceRegistry = () => {
   }, [selectedId, services]);
 
   useEffect(() => {
+    if (selectedId && !filtered.find((s) => s.id === selectedId)) {
+      setSelectedId(null);
+    }
+  }, [filtered, selectedId]);
+
+  useEffect(() => {
     if (!selectedFromQuery) return;
 
     const target = services.find((service) => service.id === selectedFromQuery);
@@ -1091,169 +1088,148 @@ const ServiceRegistry = () => {
   return (
     <div className="min-h-screen pt-16">
       <Navbar />
-      <div className="relative h-[calc(100vh-4rem)]">
-        {/* Main content */}
-        <div
-          className={`h-full overflow-y-auto`}
-        >
-          <div
-            className={`py-8 px-6 max-w-5xl mx-auto`}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h1 className="text-2xl font-bold">Registry</h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Catálogo central de serviços e infraestrutura
-                </p>
-              </div>
-              <AddServiceDropdown onSelect={handleInlineFormSelect} />
+      <div className="px-6 py-8">
+        <div className="mx-auto max-w-[1600px]">
+          {/* Header */}
+          <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">Registry</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Catálogo central de serviços e infraestrutura
+              </p>
             </div>
+            <AddServiceDropdown onSelect={handleInlineFormSelect} />
+          </div>
 
-            {/* Search */}
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por nome, tag, owner..."
-                className="w-full rounded-lg border border-border bg-card pl-10 pr-10 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-              {search && (
-                <button
-                  onClick={() => setSearch("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* Source filter pills + count */}
-            <div className="flex items-center gap-2 mb-6 flex-wrap">
-              {SOURCE_FILTERS.map((f) => (
-                <button
-                  key={f.value}
-                  onClick={() => setSourceFilter(f.value)}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                    sourceFilter === f.value
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
-              <span className="text-xs text-muted-foreground ml-auto">
-                · {filtered.length}{" "}
-                {filtered.length === 1 ? "service" : "services"}
-              </span>
-            </div>
-
-            {/* Inline forms */}
-            <AnimatePresence mode="wait">
-              {inlineForm === "manual" && (
-                <ManualCreateForm
-                  key="manual"
-                  onCancel={() => setInlineForm(null)}
-                  onCreate={handleCreate}
-                />
-              )}
-              {inlineForm === "github" && (
-                <GitHubImportForm
-                  key="github"
-                  onCancel={() => setInlineForm(null)}
-                  onCreate={handleCreate}
-                />
-              )}
-            </AnimatePresence>
-
-            {/* DefectDojo panel */}
-            {showDefectDojo && (
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    DefectDojo
-                  </span>
-                  <button
-                    onClick={() => setShowDefectDojo(false)}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-                <Suspense
-                  fallback={
-                    <div className="h-32 rounded-xl border border-border bg-card animate-pulse" />
-                  }
-                >
-                  <DefectDojoPanel />
-                </Suspense>
-              </div>
-            )}
-
-            {/* Service cards grid */}
-            {filtered.length === 0 ? (
-              <div className="rounded-xl border border-border bg-card px-4 py-12 text-center">
-                <p className="text-sm text-muted-foreground">
-                  {services.length === 0
-                    ? 'Nenhum serviço cadastrado. Clique em "Add Service" para começar.'
-                    : "Nenhum serviço encontrado para os filtros aplicados."}
-                </p>
-              </div>
-            ) : (
-              <div
-                className={`grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`}
+          {/* Search */}
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por nome, tag, owner..."
+              className="w-full rounded-lg border border-border bg-card pl-10 pr-10 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
-                {filtered.map((svc) => (
-                  <div id={`registry-service-${svc.id}`} key={svc.id}>
-                    <ServiceCard
-                      svc={svc}
-                      isSelected={selectedId === svc.id}
-                      onClick={() =>
-                        setSelectedId(
-                          selectedId === svc.id ? null : svc.id,
-                        )
-                      }
-                      usage={usageMap[svc.id] ?? []}
-                    />
-                  </div>
-                ))}
-              </div>
+                <X className="h-3.5 w-3.5" />
+              </button>
             )}
           </div>
-        </div>
 
-        {/* Detail panel */}
-        <AnimatePresence>
-          {selectedSvc && (
-            <>
-            <motion.button
-              type="button"
-              aria-label="Close details"
-              onClick={() => setSelectedId(null)}
-              className="fixed inset-0 z-40 bg-black/30"
-            />
-            <motion.aside
-              initial={{ x: 420, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 420, opacity: 0 }}
-              transition={{ duration: 0.2, ease: "easeInOut" }}
-              className="fixed right-0 top-16 z-50 h-[calc(100vh-4rem)] w-[420px] border-l border-border bg-card overflow-hidden"
-            >
-              <DetailPanel
-                key={selectedSvc.id}
-                svc={selectedSvc}
-                diagrams={diagrams}
-                onNavigateToDiagram={handleNavigateToDiagram}
-                updateService={updateService}
-                removeService={removeService}
-                onClose={() => setSelectedId(null)}
+          {/* Source filter pills + count */}
+          <div className="mb-6 flex flex-wrap items-center gap-2">
+            {SOURCE_FILTERS.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setSourceFilter(f.value)}
+                className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                  sourceFilter === f.value
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+            <span className="ml-auto text-xs text-muted-foreground">
+              · {filtered.length} {filtered.length === 1 ? "service" : "services"}
+            </span>
+          </div>
+
+          {/* Inline forms */}
+          <AnimatePresence mode="wait">
+            {inlineForm === "manual" && (
+              <ManualCreateForm
+                key="manual"
+                onCancel={() => setInlineForm(null)}
+                onCreate={handleCreate}
               />
-            </motion.aside>
-            </>
+            )}
+            {inlineForm === "github" && (
+              <GitHubImportForm
+                key="github"
+                onCancel={() => setInlineForm(null)}
+                onCreate={handleCreate}
+              />
+            )}
+          </AnimatePresence>
+
+          {/* DefectDojo panel */}
+          {showDefectDojo && (
+            <div className="mb-6">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  DefectDojo
+                </span>
+                <button
+                  onClick={() => setShowDefectDojo(false)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <Suspense
+                fallback={
+                  <div className="h-32 rounded-xl border border-border bg-card animate-pulse" />
+                }
+              >
+                <DefectDojoPanel />
+              </Suspense>
+            </div>
           )}
-        </AnimatePresence>
+
+          {/* Service cards grid */}
+          <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+            <div>
+              {filtered.length === 0 ? (
+                <div className="rounded-xl border border-border bg-card px-4 py-12 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    {services.length === 0
+                      ? 'Nenhum serviço cadastrado. Clique em "Add Service" para começar.'
+                      : "Nenhum serviço encontrado para os filtros aplicados."}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                  {filtered.map((svc) => (
+                    <div id={`registry-service-${svc.id}`} key={svc.id}>
+                      <ServiceCard
+                        svc={svc}
+                        isSelected={selectedId === svc.id}
+                        onClick={() =>
+                          setSelectedId(selectedId === svc.id ? null : svc.id)
+                        }
+                        usage={usageMap[svc.id] ?? []}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="xl:sticky xl:top-24">
+              {selectedSvc ? (
+                <DetailPanel
+                  key={selectedSvc.id}
+                  svc={selectedSvc}
+                  diagrams={diagrams}
+                  onNavigateToDiagram={handleNavigateToDiagram}
+                  updateService={updateService}
+                  removeService={removeService}
+                  onClose={() => setSelectedId(null)}
+                />
+              ) : (
+                <div className="rounded-2xl border border-dashed border-border bg-card/40 px-5 py-8 text-sm text-muted-foreground">
+                  Selecione um serviço para ver os detalhes.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
