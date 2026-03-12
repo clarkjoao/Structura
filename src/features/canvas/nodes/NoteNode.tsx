@@ -1,9 +1,12 @@
 import { memo } from "react";
 import { NodeResizer, type NodeProps } from "@xyflow/react";
-import { GripHorizontal } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import { FileText } from "lucide-react";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 
-const DEFAULT_NOTE_COLOR = "hsl(48 96% 53%)";
+import { NOTE_DEFAULT_W, NOTE_DEFAULT_H } from "../constants";
+
+const DEFAULT_PAPER_COLOR = "hsl(45 25% 97%)"; // papel ofuscado
 
 export interface NoteNodeData {
   elementId: string;
@@ -32,49 +35,144 @@ function isDarkBg(color: string): boolean {
 const NoteNode = memo(({ data, selected }: NodeProps) => {
   const d = data as unknown as NoteNodeData;
   const { highlightedNodeIds } = useHandleHighlight();
-  const color = d.panelColor || DEFAULT_NOTE_COLOR;
+  const paperColor = d.panelColor || DEFAULT_PAPER_COLOR;
   const isSelected = selected || d.isSelected;
   const isHighlighted =
     (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
   const isActive = isSelected || isHighlighted;
-  const dark = isDarkBg(color);
-  const textClass = dark ? "text-white" : "text-gray-900";
-  const mutedClass = dark ? "text-white/70" : "text-gray-900/60";
+  const dark = isDarkBg(paperColor);
+  const textClass = dark ? "text-white" : "text-foreground";
+  const mutedClass = dark ? "text-white/60" : "text-muted-foreground";
+
+  const content = d.description?.trim() ?? "";
+  const title = d.name?.trim() ?? "";
+  const hasContent = content.length > 0;
 
   return (
     <>
       <NodeResizer
-        minWidth={160}
-        minHeight={60}
+        minWidth={200}
+        minHeight={150}
         isVisible={isSelected}
         lineClassName="!border-transparent"
-        handleClassName="!w-2 !h-2 !bg-gray-900/60 !border-white !rounded-full"
+        handleClassName="!w-2 !h-2 !bg-foreground/40 !border-background !rounded-sm"
       />
       <div
-        aria-label={d.name ? `Nota: ${d.name}` : "Nota"}
-        className={`min-w-[160px] max-w-[280px] rounded-lg shadow-md transition-shadow duration-200 ${
-          isActive ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"
+        aria-label={title ? `Nota: ${title}` : "Nota"}
+        className={`relative flex flex-col w-full h-full overflow-hidden transition-shadow duration-200 ${
+          isActive
+            ? "ring-2 ring-primary shadow-[0_0_0_2px_hsl(var(--primary)/0.3)]"
+            : "shadow-md hover:shadow-lg"
         }`}
-        style={{ backgroundColor: color }}
+        style={{
+          backgroundColor: paperColor,
+          boxShadow: isActive
+            ? undefined
+            : "0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06)",
+        }}
       >
-        <div className={`flex justify-center py-1 ${mutedClass} cursor-grab`}>
-          <GripHorizontal className="h-3.5 w-3.5" />
+        {/* Margem superior — cabeçalho tipo folha A3 */}
+        <div
+          className={`flex items-center gap-2 px-5 py-2.5 border-b ${dark ? "border-white/20" : "border-border/60"}`}
+          style={{ minHeight: 36 }}
+        >
+          <FileText
+            className={`h-4 w-4 shrink-0 ${mutedClass}`}
+            strokeWidth={1.5}
+          />
+          <span
+            className={`text-xs font-medium truncate flex-1 ${mutedClass}`}
+          >
+            {title || "Nota"}
+          </span>
         </div>
-        <div className="px-3 pb-3 space-y-1">
-          {d.name && (
-            <p className={`text-xs font-semibold leading-tight ${textClass}`}>
-              {d.name}
+
+        {/* Área de conteúdo — corpo da folha */}
+        <div
+          className={`flex-1 overflow-auto px-5 py-4 min-h-0 ${textClass}`}
+          style={{ fontFamily: "ui-serif, Georgia, serif" }}
+        >
+          {hasContent ? (
+            <div className="prose prose-sm prose-neutral dark:prose-invert max-w-none">
+              <ReactMarkdown
+                components={{
+                  p: ({ children }) => (
+                    <p className="mb-2 last:mb-0 text-[13px] leading-relaxed">
+                      {children}
+                    </p>
+                  ),
+                  h1: ({ children }) => (
+                    <h1 className="text-base font-semibold mt-3 mb-1 first:mt-0">
+                      {children}
+                    </h1>
+                  ),
+                  h2: ({ children }) => (
+                    <h2 className="text-sm font-semibold mt-2 mb-1 first:mt-0">
+                      {children}
+                    </h2>
+                  ),
+                  h3: ({ children }) => (
+                    <h3 className="text-sm font-medium mt-2 mb-0.5 first:mt-0">
+                      {children}
+                    </h3>
+                  ),
+                  ul: ({ children }) => (
+                    <ul className="list-disc pl-4 mb-2 space-y-0.5 text-[13px]">
+                      {children}
+                    </ul>
+                  ),
+                  ol: ({ children }) => (
+                    <ol className="list-decimal pl-4 mb-2 space-y-0.5 text-[13px]">
+                      {children}
+                    </ol>
+                  ),
+                  li: ({ children }) => (
+                    <li className="leading-relaxed">{children}</li>
+                  ),
+                  code: ({ children }) => (
+                    <code className="px-1 py-0.5 rounded bg-foreground/10 text-[12px] font-mono">
+                      {children}
+                    </code>
+                  ),
+                  pre: ({ children }) => (
+                    <pre className="p-2 rounded-md bg-foreground/10 text-[12px] overflow-x-auto mb-2">
+                      {children}
+                    </pre>
+                  ),
+                  blockquote: ({ children }) => (
+                    <blockquote className="border-l-2 border-foreground/30 pl-3 my-2 italic text-[13px]">
+                      {children}
+                    </blockquote>
+                  ),
+                  strong: ({ children }) => (
+                    <strong className="font-semibold">{children}</strong>
+                  ),
+                  a: ({ href, children }) => (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline hover:no-underline"
+                    >
+                      {children}
+                    </a>
+                  ),
+                }}
+              >
+                {content}
+              </ReactMarkdown>
+            </div>
+          ) : (
+            <p className={`text-sm italic ${mutedClass}`}>
+              Clique para editar... Suporta **Markdown**.
             </p>
           )}
-          {d.description && (
-            <p className={`text-sm leading-snug whitespace-pre-wrap ${dark ? "text-white/90" : "text-gray-900/80"}`}>
-              {d.description}
-            </p>
-          )}
-          {!d.name && !d.description && (
-            <p className={`text-sm italic ${mutedClass}`}>Clique para editar...</p>
-          )}
         </div>
+
+        {/* Rodapé sutil — margem inferior */}
+        <div
+          className={`h-2 shrink-0 ${dark ? "bg-white/5" : "bg-foreground/[0.02]"}`}
+        />
       </div>
     </>
   );

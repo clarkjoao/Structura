@@ -16,7 +16,7 @@ import ServiceRegistryCombobox from "./components/ServiceRegistryCombobox";
 
 const DEFAULT_PANEL_COLOR = "hsl(220 20% 20%)";
 const DEFAULT_PANEL_OPACITY = 10;
-const DEFAULT_NOTE_COLOR = "hsl(48 96% 53%)";
+const DEFAULT_NOTE_COLOR = "hsl(45 25% 97%)";
 
 function buildComponentSyncPatch(
   service: ServiceDefinition,
@@ -157,7 +157,14 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
               </select>
             </div>
           )}
-          <Field label="Descrição" value={desc} onChange={(v) => { setDesc(v); debouncedUpdate({ description: v }); }} multiline />
+          <Field
+            label={isNote ? "Conteúdo" : "Descrição"}
+            value={desc}
+            onChange={(v) => { setDesc(v); debouncedUpdate({ description: v }); }}
+            multiline
+            placeholder={isNote ? "**Negrito**, *itálico*, listas, `código`..." : undefined}
+            hint={isNote ? "Suporta Markdown" : undefined}
+          />
           {isPanelComponent(component) && <PanelColorPicker componentId={component.id} currentColor={component.panelColor ?? DEFAULT_PANEL_COLOR} currentOpacity={component.panelOpacity ?? DEFAULT_PANEL_OPACITY} updateComponent={updateComponent} />}
           {isNoteComponent(component) && <ColorSwatches componentId={component.id} currentColor={component.panelColor ?? DEFAULT_NOTE_COLOR} label="Cor da Nota" updateComponent={updateComponent} />}
           {!isSimple && <Field label="Tecnologia" value={tech} onChange={(v) => { setTech(v); debouncedUpdate({ technology: v || undefined } as Partial<Omit<Component, "id">>); }} />}

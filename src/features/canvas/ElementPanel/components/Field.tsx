@@ -3,9 +3,11 @@ interface FieldProps {
   value: string;
   onChange: (v: string) => void;
   multiline?: boolean;
+  placeholder?: string;
+  hint?: string;
 }
 
-const Field = ({ label, value, onChange, multiline }: FieldProps) => {
+const Field = ({ label, value, onChange, multiline, placeholder, hint }: FieldProps) => {
   const id = `field-${label.toLowerCase().replace(/\s+/g, "-")}`;
   return (
     <div>
@@ -17,16 +19,21 @@ const Field = ({ label, value, onChange, multiline }: FieldProps) => {
           id={id}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          rows={3}
-          className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+          rows={5}
+          placeholder={placeholder}
+          className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
         />
       ) : (
         <input
           id={id}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          placeholder={placeholder}
+          className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
         />
+      )}
+      {hint && (
+        <p className="mt-1 text-[10px] text-muted-foreground">{hint}</p>
       )}
     </div>
   );

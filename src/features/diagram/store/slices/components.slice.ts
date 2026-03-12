@@ -7,6 +7,8 @@ import { pushHistory } from "./history.slice";
 import {
   PANEL_DEFAULT_W,
   PANEL_DEFAULT_H,
+  NOTE_DEFAULT_W,
+  NOTE_DEFAULT_H,
   NODE_DRAG_PADDING,
   DEFAULT_NODE_W,
   DEFAULT_NODE_H,
@@ -26,7 +28,7 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
       if (type === "panel") {
         component = { ...base, type: "panel" };
       } else if (type === "note") {
-        component = { ...base, type: "note", panelColor: "hsl(48 96% 53%)" };
+        component = { ...base, type: "note", panelColor: "hsl(45 25% 97%)" };
       } else if (type === "person" || type === "system" || type === "container" || type === "component") {
         component = { ...base, type };
       } else {
@@ -42,6 +44,7 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
           x: position?.x ?? 300,
           y: position?.y ?? 300,
           ...(type === "panel" ? { zIndex: -1, width: PANEL_DEFAULT_W, height: PANEL_DEFAULT_H } : {}),
+          ...(type === "note" ? { width: NOTE_DEFAULT_W, height: NOTE_DEFAULT_H } : {}),
         });
         d.updatedAt = "agora";
       });

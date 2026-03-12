@@ -23,8 +23,8 @@ const CONFIG = {
   },
   defaults: {
     panelColor: "#666666",
-    noteWidth: 200,
-    noteHeight: 100,
+    noteWidth: 336,
+    noteHeight: 475,
     panelWidth: 400,
     panelHeight: 300,
   },

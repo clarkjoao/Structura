@@ -12,3 +12,6 @@ export const NODE_DRAG_PADDING = 40;
 export const DEFAULT_NODE_W = 180;
 /** Default height for non-panel nodes (px). */
 export const DEFAULT_NODE_H = 80;
+/** A3 paper dimensions for notes (297×420mm ratio). */
+export const NOTE_DEFAULT_W = 336;
+export const NOTE_DEFAULT_H = 475;
