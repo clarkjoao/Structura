@@ -61,6 +61,7 @@ export const c4Descriptor: NodeTypeDescriptor = {
       type: comp.type,
       description: comp.description,
       technology: isC4Component(comp) ? comp.technology : undefined,
+      customColor: isC4Component(comp) && comp.panelColor ? comp.panelColor : undefined,
       awsService: isAwsComponent(comp) ? comp.awsService : undefined,
       isSelected: isPlaying
         ? flowHighlight.activeNodeId === comp.id

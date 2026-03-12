@@ -49,6 +49,8 @@ export interface NodeData {
   outgoingCount?: number;
   /** Ordered connection ids per side — drives ↑↓ reorder controls. */
   handleOrder?: { incoming: string[]; outgoing: string[] };
+  /** Cor customizada para C4 (borda e ícone). Sobrescreve a cor padrão do tipo. */
+  customColor?: string;
   /** Move a connection one position up or down on a given side. */
   onReorderHandle?: (
     side: "incoming" | "outgoing",
@@ -287,11 +289,13 @@ const DrillDownButton = ({
   elementId,
   onDrillDown,
   colorClass,
+  customColor,
   disabled,
 }: {
   elementId: string;
   onDrillDown?: (id: string) => void;
   colorClass: string;
+  customColor?: string;
   disabled?: boolean;
 }) => {
   const handleClick = useCallback(
@@ -309,6 +313,7 @@ const DrillDownButton = ({
       className={`mt-2 flex items-center gap-1 text-[10px] font-medium ${colorClass} ${
         disabled ? "pointer-events-none" : "hover:underline"
       }`}
+      style={customColor ? { color: customColor } : undefined}
       tabIndex={disabled ? -1 : 0}
     >
       <MousePointerClick className="h-3 w-3" /> Explorar interior
@@ -463,11 +468,13 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
 
   const cfg = TypeConfig[d.type] ?? TypeConfig.system;
   const Icon = cfg.icon;
+  const hasCustomColor = !!d.customColor;
 
   return (
     <div
       aria-label={`${d.name} (${d.type})`}
-      className={`group relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${cfg.borderColor} border-l-[3px] transition-shadow duration-200 ${isActive ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
+      className={`group relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${!hasCustomColor ? cfg.borderColor : ""} border-l-[3px] transition-shadow duration-200 ${isActive ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
+      style={hasCustomColor ? { borderLeftColor: d.customColor } : undefined}
     >
       {d.recordingBadges && d.recordingBadges.length > 0 && (
         <div
@@ -486,7 +493,10 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
         )}
       <div className="px-3 py-2.5">
         <div className="flex items-center gap-2 mb-1.5">
-          <Icon className={`h-4 w-4 ${cfg.textColor} shrink-0`} />
+          <Icon
+            className={`h-4 w-4 shrink-0 ${!hasCustomColor ? cfg.textColor : ""}`}
+            style={hasCustomColor ? { color: d.customColor } : undefined}
+          />
           <span className="text-sm font-bold text-foreground leading-tight truncate">
             {d.name}
           </span>
@@ -511,8 +521,9 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
           <DrillDownButton
             elementId={d.elementId}
             onDrillDown={d.onDrillDown}
-            colorClass={cfg.textColor}
+            colorClass={hasCustomColor ? "" : cfg.textColor}
             disabled={controlsDisabled}
+            customColor={d.customColor}
           />
         )}
         {hasEmbed && (

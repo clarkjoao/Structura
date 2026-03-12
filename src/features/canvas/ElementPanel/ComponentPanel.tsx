@@ -3,7 +3,7 @@ import debounce from "lodash.debounce";
 import { X, Trash2, Link2, LayoutDashboard, RefreshCw } from "lucide-react";
 import { useAllDiagrams, useActiveDiagram, useAllServices, useDiagramActions } from "@/features/diagram";
 import type { Component, ComponentType } from "@/features/diagram";
-import { isPanelComponent, isNoteComponent } from "@/features/diagram";
+import { isPanelComponent, isNoteComponent, isC4Component } from "@/features/diagram";
 import { isAwsType, AWS_CATEGORIES, AWS_CATEGORY_MAP, AWS_SERVICE_MAP } from "@/lib/aws-catalog";
 import type { ServiceDefinition } from "@/features/registry";
 import AwsIcon from "../nodes/AwsIcon";
@@ -11,6 +11,7 @@ import Field from "./components/Field";
 import TabBar, { type Tab } from "./components/TabBar";
 import ColorSwatches from "./components/ColorSwatches";
 import PanelColorPicker from "./components/PanelColorPicker";
+import { C4_DEFAULT_COLORS } from "./components/colorPresets";
 import ConnectionsTab from "./components/ConnectionsTab";
 import ServiceRegistryCombobox from "./components/ServiceRegistryCombobox";
 
@@ -166,7 +167,7 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
             hint={isNote ? "Suporta Markdown" : undefined}
           />
           {isPanelComponent(component) && <PanelColorPicker componentId={component.id} currentColor={component.panelColor ?? DEFAULT_PANEL_COLOR} currentOpacity={component.panelOpacity ?? DEFAULT_PANEL_OPACITY} updateComponent={updateComponent} />}
-          {isNoteComponent(component) && <ColorSwatches componentId={component.id} currentColor={component.panelColor ?? DEFAULT_NOTE_COLOR} label="Cor da Nota" updateComponent={updateComponent} />}
+          {isNoteComponent(component) && <ColorSwatches componentId={component.id} currentColor={component.panelColor ?? DEFAULT_NOTE_COLOR} label="Cor da Nota" presetGroup="note" updateComponent={updateComponent} />}
           {!isSimple && <Field label="Tecnologia" value={tech} onChange={(v) => { setTech(v); debouncedUpdate({ technology: v || undefined } as Partial<Omit<Component, "id">>); }} />}
           {!isSimple && (
             <div>
@@ -241,6 +242,16 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
                 </button>
               )}
             </div>
+          )}
+          {!isSimple && isC4Component(component) && (
+            <ColorSwatches
+              componentId={component.id}
+              currentColor={(component as { panelColor?: string }).panelColor ?? C4_DEFAULT_COLORS[component.type] ?? C4_DEFAULT_COLORS.system}
+              label="Cor da borda"
+              presetGroup="c4"
+              allowClear
+              updateComponent={updateComponent}
+            />
           )}
           {!isSimple && (!canCreateLinked || component.linkedDiagramId) && (
             <div>

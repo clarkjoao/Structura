@@ -14,6 +14,7 @@ const PanelColorPicker = ({ componentId, currentColor, currentOpacity, updateCom
       componentId={componentId}
       currentColor={currentColor}
       label="Cor do Painel"
+      presetGroup="panel"
       updateComponent={updateComponent}
     />
     <div>

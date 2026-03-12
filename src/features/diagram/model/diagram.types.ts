@@ -33,6 +33,8 @@ interface BaseComponent {
 export interface C4Component extends BaseComponent {
   type: "person" | "system" | "container" | "component";
   technology?: string;
+  /** Cor customizada (borda e ícone). Quando definida, sobrescreve a cor padrão do tipo. */
+  panelColor?: string;
 }
 
 export interface PanelComponent extends BaseComponent {
