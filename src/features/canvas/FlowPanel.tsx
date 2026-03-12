@@ -37,7 +37,7 @@ const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow, isViewingCov
   };
 
   return (
-    <div className="w-80 border-l border-border bg-card overflow-auto">
+    <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
       <div className="flex items-center justify-between p-3 border-b border-border">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Flows
@@ -86,7 +86,7 @@ const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow, isViewingCov
         </div>
       )}
 
-      <div className="p-3 space-y-2">
+      <div className="p-3 space-y-2 flex-1 min-h-0 overflow-y-auto">
         {filtered.map((flow) => (
           <div key={flow.id} className="rounded-lg border border-border p-2.5 hover:bg-surface-hover transition-colors">
             <div className="flex items-center gap-2">

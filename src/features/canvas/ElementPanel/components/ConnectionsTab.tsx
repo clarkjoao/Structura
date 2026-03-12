@@ -143,7 +143,8 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
   const [highlightedConnId, setHighlightedConnId] = useState<string | null>(
     null,
   );
-  const { setHighlight, clearHighlight } = useHandleHighlight();
+  const { highlightedConnectionId, setHighlight, clearHighlight } =
+    useHandleHighlight();
 
   const { incoming, outgoing } = useMemo(() => {
     const allConns = Object.values(connections);
@@ -179,6 +180,12 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
   useEffect(() => {
     return () => clearHighlight();
   }, [clearHighlight]);
+
+  useEffect(() => {
+    if (highlightedConnectionId === null) {
+      setHighlightedConnId(null);
+    }
+  }, [highlightedConnectionId]);
 
   const handleConnClick = (connId: string) => {
     if (highlightedConnId === connId) {

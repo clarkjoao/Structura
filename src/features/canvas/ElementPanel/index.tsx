@@ -43,7 +43,7 @@ const ElementPanel = ({
       Object.values(diagram.snapshot.components).some((c) => c.parentId === component.id);
 
     return (
-      <div className="w-80 border-l border-border bg-card overflow-auto flex flex-col">
+      <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
         {canGroup && (
           <div className="flex items-center gap-2 p-2 border-b border-border bg-secondary/30">
             <button

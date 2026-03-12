@@ -134,7 +134,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
   };
 
   return (
-    <div className="w-80 border-l border-border bg-card overflow-auto flex flex-col">
+    <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
       <div className="flex items-center justify-between p-3 border-b border-border shrink-0">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Seleção múltipla
@@ -190,7 +190,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
         </div>
       </div>
 
-      <div className="p-3 space-y-4">
+      <div className="p-3 space-y-4 flex-1 min-h-0 overflow-y-auto">
         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
           Propriedades comuns
         </p>

@@ -298,6 +298,18 @@ const Canvas = ({
     setHighlightedNodeIds(new Set());
   }, []);
 
+  useEffect(() => {
+    if (!isPlaying) return;
+    clearHighlight();
+    setSelectedNodeId(null);
+    setSelectedNodeIds(new Set());
+    setSelectedEdgeId(null);
+    setContextMenu(null);
+    reactFlowInstance.setNodes((nodes) =>
+      nodes.map((node) => ({ ...node, selected: false })),
+    );
+  }, [isPlaying, clearHighlight, reactFlowInstance]);
+
   const nodes = useCanvasNodes({
     diagram,
     visibleComponents,
@@ -732,14 +744,16 @@ const Canvas = ({
       )}
       {(selectedNodeId || selectedEdgeId || selectedCount > 0) &&
         !isRecording && (
-          <ElementPanel
-            key={selectedNodeId ?? selectedEdgeId ?? "multi"}
-            selectedElementId={selectedNodeId}
-            selectedEdgeId={selectedEdgeId}
-            selectedNodeIds={Array.from(selectedNodeIds)}
-            selectedNodes={selectedNodes}
-            onClose={closePanel}
-          />
+          <div className="absolute inset-y-0 right-0 z-20 flex">
+            <ElementPanel
+              key={selectedNodeId ?? selectedEdgeId ?? "multi"}
+              selectedElementId={selectedNodeId}
+              selectedEdgeId={selectedEdgeId}
+              selectedNodeIds={Array.from(selectedNodeIds)}
+              selectedNodes={selectedNodes}
+              onClose={closePanel}
+            />
+          </div>
         )}
     </div>
     </HandleHighlightProvider>

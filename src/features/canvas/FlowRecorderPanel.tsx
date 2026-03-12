@@ -91,7 +91,7 @@ const FlowRecorderPanel = ({
   const mermaidPreview = stepsToMermaid(steps, components, connections);
 
   return (
-    <div className="w-80 border-l border-border bg-card overflow-hidden flex flex-col">
+    <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
       <div className="flex items-center justify-between p-3 border-b border-border">
         <div className="flex items-center gap-2">
           <span className={`h-2 w-2 rounded-full ${isEditing ? "bg-amber-500" : "bg-red-500"} animate-pulse`} />
@@ -104,7 +104,7 @@ const FlowRecorderPanel = ({
         </button>
       </div>
 
-      <div className="p-3 space-y-3 flex-1 overflow-auto">
+      <div className="p-3 space-y-3 flex-1 min-h-0 overflow-y-auto">
         <input
           value={name}
           onChange={(e) => onNameChange(e.target.value)}

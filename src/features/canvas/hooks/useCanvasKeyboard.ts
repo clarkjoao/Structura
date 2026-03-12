@@ -22,7 +22,13 @@ interface UseCanvasKeyboardParams {
   copyToClipboard: (ids: string[]) => void;
   pasteFromClipboard: (position?: { x: number; y: number }) => void;
   clearClipboard: () => void;
-  addComponent: (type: ComponentType, name: string, parentId: string | null, position?: { x: number; y: number }) => Component;
+  addComponent: (
+    type: ComponentType,
+    name: string,
+    parentId: string | null,
+    position?: { x: number; y: number },
+    awsService?: string,
+  ) => Component;
   isPanelOpen: boolean;
   onOpenSearch?: () => void;
 }
