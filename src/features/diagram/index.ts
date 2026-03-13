@@ -38,10 +38,6 @@ export { generateId } from "./model/diagram.utils";
 /** Sort connections array by an explicit handle-order array of connection ids */
 export { applyHandleOrder } from "./utils/handle-order";
 
-/** Compute which components are impacted when a service changes */
-export { computeServiceImpact } from "./model/diagram.service";
-export type { ServiceImpact } from "./model/diagram.service";
-
 /** Convert FlowStep[] ↔ Mermaid sequence diagram text */
 export { stepsToMermaid, parseMermaidToSteps } from "./model/flow.service";
 
