@@ -13,8 +13,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { useAllServices, useDiagramActions } from "@/features/diagram";
-import type { ServiceDefinition } from "@/features/registry";
+import { useAllServices, useDiagramActions, ServiceDefinition} from "@/features/diagram";
 
 interface ServiceRegistryComboboxProps {
   value: string | null;

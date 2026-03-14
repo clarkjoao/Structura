@@ -6,7 +6,20 @@ import type {
   ModelDraft,
   ViewNodeLayout,
 } from "../model/diagram.types";
-import type { ServiceDefinition } from "@/features/registry";
+
+export interface ServiceDefinition {
+  id: string;
+  name: string;
+  description: string;
+  repositoryUrl: string;
+  technology: string[];
+  owner?: string;
+  tags?: string[];
+  source?: "defectdojo" | "github" | "manual";
+  sourceId?: string;
+  metadata?: Record<string, unknown>;
+}
+
 
 export interface DiagramSnapshot {
   diagramId: string;

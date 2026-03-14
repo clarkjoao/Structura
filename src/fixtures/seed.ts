@@ -1,5 +1,4 @@
-import type { Diagram } from "@/features/diagram";
-import type { ServiceDefinition } from "@/features/registry";
+import type { Diagram, ServiceDefinition} from "@/features/diagram";
 
 function buildSharedServiceRegistry(): Record<string, ServiceDefinition> {
   return {

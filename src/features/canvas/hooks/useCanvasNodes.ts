@@ -1,8 +1,7 @@
 import { useMemo } from "react";
 import type { Node } from "@xyflow/react";
-import type { Component, Diagram } from "@/features/diagram";
+import type { Component, Diagram, ServiceDefinition } from "@/features/diagram";
 import { isPanelComponent } from "@/features/diagram";
-import type { ServiceDefinition } from "@/features/registry";
 import { nodeTypes as _nodeTypes, getDescriptor, type NodeBuildContext } from "../node-types";
 
 interface UseCanvasNodesParams {

@@ -1,4 +1,4 @@
-import type { ServiceDefinition } from "@/features/registry";
+import type { ServiceDefinition } from "../store.types";
 import { generateId } from "../../model/diagram.utils";
 import type { AppState } from "../store.types";
 import { activeDiagram } from "../store.types";

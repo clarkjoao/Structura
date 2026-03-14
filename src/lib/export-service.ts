@@ -4,8 +4,8 @@ import {
   isPanelComponent,
   isC4Component,
   isAwsComponent,
+  ServiceDefinition
 } from "@/features/diagram";
-import type { ServiceDefinition } from "@/features/registry";
 import { AWS_SERVICE_MAP } from "@/lib/aws-catalog";
 
 const CONFIG = {
