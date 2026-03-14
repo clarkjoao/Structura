@@ -1,4 +1,4 @@
-import { SEED_DIAGRAMS, SEED_SERVICE_REGISTRY } from "@/fixtures/seed";
+import { SEED_DIAGRAMS } from "@/fixtures/seed";
 import { AppState } from "../store.types";
 import {Diagram, Level} from "../../model/diagram.types";
 import { generateId } from "../../model/diagram.utils";

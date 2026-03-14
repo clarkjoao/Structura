@@ -43,7 +43,3 @@ export interface AppState {
   _lastUndoRedoAt: number;
   clipboard: ClipboardEntry | null;
 }
-
-export function activeDiagram(state: AppState): Diagram {
-  return state.diagrams[state.activeDiagramId!];
-}

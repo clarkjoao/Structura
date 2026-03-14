@@ -14,12 +14,9 @@ import type {
   ComponentType,
   Level,
 } from "../model/diagram.types";
-import { generateId } from "../model/diagram.utils";
 import type { ServiceDefinition } from "./store.types";
-import { SEED_SERVICE_REGISTRY } from "@/fixtures/seed";
 import type { AppState, DiagramSnapshot } from "./store.types";
-import { activeDiagram as _activeDiagram } from "./store.types";
-import { historySlice, pushHistory } from "./slices/history.slice";
+import { historySlice } from "./slices/history.slice";
 import { componentsSlice } from "./slices/components.slice";
 import { connectionsSlice } from "./slices/connections.slice";
 import { flowsSlice } from "./slices/flows.slice";
@@ -28,6 +25,7 @@ import { servicesSlice } from "./slices/services.slice";
 import { clipboardSlice } from "./slices/clipboard.slice";
 import { diagramsSlice } from "./slices/diagram.slice";
 import { foldersSlice } from "./slices/folders.slice";
+import { patternsSlice } from "./slices/patterns.slice";
 
 export type { AppState, DiagramSnapshot };
 export type { ClipboardEntry } from "./store.types";
@@ -101,52 +99,19 @@ export function createDiagramStore(storage = defaultStorage) {
   return create<DiagramStore>()(
     persist(
       immer((set, get) => ({
-        serviceRegistry: SEED_SERVICE_REGISTRY,
         past: [],
         future: [],
         _lastUndoRedoAt: 0,
-        clipboard: null,
         ...diagramsSlice(set, get as () => AppState),
-        ...componentsSlice(set),
-        ...connectionsSlice(set),
+        ...componentsSlice(set, get as () => AppState),
+        ...connectionsSlice(set, get as () => AppState),
         ...flowsSlice(set, get as () => AppState),
-        ...layoutSlice(set),
-        ...servicesSlice(set),
-        ...clipboardSlice(set),
-        ...historySlice(set),
+        ...layoutSlice(set, get as () => AppState),
+        ...servicesSlice(set, get as () => AppState),
+        ...clipboardSlice(set, get as () => AppState),
+        ...historySlice(set, get as () => AppState),
         ...foldersSlice(set, get as () => AppState),
-
-      insertPattern: (template, position) => {
-        const GRID_X = 220;
-        const ids: string[] = template.components.map(() => generateId("el"));
-        set((state) => {
-          pushHistory(state);
-          const d = _activeDiagram(state);
-          template.components.forEach((c: { name: string; type: ComponentType; description?: string; technology?: string; awsService?: string }, i: number) => {
-            const comp: Component = {
-              id: ids[i],
-              name: c.name,
-              type: c.type,
-              description: c.description ?? "",
-              parentId: null,
-              technology: c.technology ?? undefined,
-              awsService: c.awsService ?? undefined,
-            };
-            d.snapshot.components[comp.id] = comp;
-            d.nodeLayouts.push({ elementId: comp.id, x: position.x + i * GRID_X, y: position.y });
-          });
-          template.connections.forEach((conn: { fromIndex: number; toIndex: number; label: string }) => {
-            const connId = generateId("conn");
-            d.snapshot.connections[connId] = {
-              id: connId,
-              sourceId: ids[conn.fromIndex],
-              targetId: ids[conn.toIndex],
-              label: conn.label,
-            };
-          });
-          d.updatedAt = "agora";
-        });
-      },
+        ...patternsSlice(set, get as () => AppState),
     })),
     {
       name: PERSIST_KEY,
@@ -169,7 +134,6 @@ export function createDiagramStore(storage = defaultStorage) {
         if (!state.serviceRegistry) state.serviceRegistry = {};
         Object.values(state.diagrams ?? {}).forEach((d) => {
           const diagram = d as Diagram;
-          // Migrate (ETAPA 6): move loose connection style fields into style: {}
           Object.values(diagram.snapshot.connections ?? {}).forEach((conn) => {
             type LegacyConn = Connection & { edgeStyle?: string; strokeStyle?: string; strokeWidth?: number; markerEnd?: string; markerStart?: string; animated?: boolean };
             const c = conn as LegacyConn;
@@ -180,7 +144,6 @@ export function createDiagramStore(storage = defaultStorage) {
               delete c.markerEnd; delete c.markerStart; delete c.animated;
             }
           });
-          // Migrate (ETAPA 7): move component width/height into nodeLayout
           Object.values(diagram.snapshot.components ?? {}).forEach((comp) => {
             type LegacyComp = Component & { width?: number; height?: number };
             const co = comp as LegacyComp;

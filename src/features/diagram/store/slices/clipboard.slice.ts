@@ -3,8 +3,11 @@ import { generateId } from "../../model/diagram.utils";
 import type { AppState } from "../store.types";
 import { deepClone, pushHistory } from "./history.slice";
 
-export function clipboardSlice(set: (fn: (state: AppState) => void) => void) {
-  return {
+export const clipboardSlice = (
+  set: (fn: (state: AppState) => void) => void,
+  get: () => AppState,
+) => ({
+    clipboard: null,
     copyToClipboard: (componentIds: string[]) => {
       set((state) => {
         if (!state.activeDiagramId) return;
@@ -54,5 +57,4 @@ export function clipboardSlice(set: (fn: (state: AppState) => void) => void) {
         state.clipboard = null;
       });
     },
-  };
-}
+});

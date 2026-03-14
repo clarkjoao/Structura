@@ -1,10 +1,14 @@
 import type { ServiceDefinition } from "../store.types";
 import { generateId } from "../../model/diagram.utils";
 import type { AppState } from "../store.types";
-import { activeDiagram } from "../store.types";
+import { SEED_SERVICE_REGISTRY } from "@/fixtures/seed";
 
-export function servicesSlice(set: (fn: (state: AppState) => void) => void) {
-  return {
+export const servicesSlice = (
+  set: (fn: (state: AppState) => void) => void,
+  get: () => AppState,
+) => ({
+    serviceRegistry: SEED_SERVICE_REGISTRY,
+  
     addService: (service: Omit<ServiceDefinition, "id">): ServiceDefinition => {
       const svc: ServiceDefinition = { ...service, id: generateId("svc") };
       set((state) => {
@@ -33,7 +37,7 @@ export function servicesSlice(set: (fn: (state: AppState) => void) => void) {
 
     linkComponentToService: (componentId: string, serviceId: string | undefined) => {
       set((state) => {
-        const comp = activeDiagram(state).snapshot.components[componentId];
+        const comp = state.diagrams[state.activeDiagramId!].snapshot.components[componentId];
         if (!comp) return;
         comp.serviceId = serviceId;
         if (!serviceId) return;
@@ -54,9 +58,8 @@ export function servicesSlice(set: (fn: (state: AppState) => void) => void) {
 
     linkComponentToDiagram: (componentId: string, diagramId: string | undefined) => {
       set((state) => {
-        const comp = activeDiagram(state).snapshot.components[componentId];
+        const comp = state.diagrams[state.activeDiagramId!].snapshot.components[componentId];
         if (comp) comp.linkedDiagramId = diagramId;
       });
     },
-  };
-}
+  });

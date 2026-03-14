@@ -3,7 +3,6 @@ import { generateId } from "../../model/diagram.utils";
 import { isPanelComponent } from "../../model/component.guards";
 import { getPanelKindDef } from "@/lib/panel-catalog";
 import type { AppState } from "../store.types";
-import { activeDiagram } from "../store.types";
 import { pushHistory } from "./history.slice";
 import {
   PANEL_DEFAULT_W,
@@ -15,8 +14,10 @@ import {
   DEFAULT_NODE_H,
 } from "@/features/canvas/constants";
 
-export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
-  return {
+export const componentsSlice = (
+  set: (fn: (state: AppState) => void) => void,
+  get: () => AppState,
+) => ({
     addComponent: (
       type: ComponentType,
       name: string,
@@ -46,7 +47,7 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
       }
       set((state) => {
         pushHistory(state);
-        const d = activeDiagram(state);
+        const d = state.diagrams[state.activeDiagramId]
         d.snapshot.components[component.id] = component;
         d.nodeLayouts.push({
           elementId: component.id,
@@ -73,7 +74,7 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
       }
       set((state) => {
         if (!isDimensionOnly) pushHistory(state);
-        const d = activeDiagram(state);
+        const d = state.diagrams[state.activeDiagramId]
         if (Object.keys(compPatch).length > 0) {
           Object.assign(d.snapshot.components[id], compPatch);
         }
@@ -91,7 +92,7 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
     removeComponent: (id: string) => {
       set((state) => {
         pushHistory(state);
-        const d = activeDiagram(state);
+        const d = state.diagrams[state.activeDiagramId]
         const toRemove = new Set<string>();
         const collect = (eid: string) => {
           toRemove.add(eid);
@@ -116,7 +117,7 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
       orderedConnectionIds: string[],
     ) => {
       set((state) => {
-        const d = activeDiagram(state);
+        const d = state.diagrams[state.activeDiagramId]
         const comp = d.snapshot.components[componentId];
         if (!comp) return;
         if (!comp.handleOrder) comp.handleOrder = { incoming: [], outgoing: [] };
@@ -128,7 +129,7 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
     setParent: (childId: string, parentId: string | null) => {
       set((state) => {
         pushHistory(state);
-        const comp = activeDiagram(state).snapshot.components[childId];
+        const comp = state.diagrams[state.activeDiagramId]!.snapshot.components[childId];
         if (comp) comp.parentId = parentId;
       });
     },
@@ -136,7 +137,7 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
     groupNodes: (componentIds: string[]): string | null => {
       let panelId: string | null = null;
       set((state) => {
-        const d = activeDiagram(state);
+        const d = state.diagrams[state.activeDiagramId]
         const comps = d.snapshot.components;
         const ids = componentIds.filter(
           (id) => comps[id] && !isPanelComponent(comps[id]),
@@ -198,7 +199,7 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
 
     ungroupNodes: (panelId: string) => {
       set((state) => {
-        const d = activeDiagram(state);
+        const d = state.diagrams[state.activeDiagramId]
         const comps = d.snapshot.components;
         const panel = comps[panelId];
         if (!panel || !isPanelComponent(panel)) return;
@@ -219,6 +220,6 @@ export function componentsSlice(set: (fn: (state: AppState) => void) => void) {
         d.updatedAt = "agora";
       });
     },
-  };
-}
+  });
+
 

@@ -20,9 +20,11 @@ export function pushHistory(state: AppState) {
   state.future = [];
 }
 
-export function historySlice(set: (fn: (state: AppState) => void) => void) {
-  return {
-    undo: () => {
+export const historySlice = 
+(set: (fn: (state: AppState) => void) => void,
+    get: () => AppState,
+) => ({
+    undo: () => { 
       set((state) => {
         const entry = state.past.pop();
         if (!entry) return;
@@ -57,5 +59,4 @@ export function historySlice(set: (fn: (state: AppState) => void) => void) {
         state._lastUndoRedoAt = Date.now();
       });
     },
-  };
-}
+  });
