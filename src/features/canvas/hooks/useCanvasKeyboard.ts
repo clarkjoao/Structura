@@ -1,7 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import type { ReactFlowInstance, Node } from "@xyflow/react";
 import type { Diagram, ComponentType, Component } from "@/features/diagram";
 import { getViewportCenter } from "../viewport-utils";
+
+// ── Types ─────────────────────────────────────────────────────────────────
 
 interface UseCanvasKeyboardParams {
   diagram: Diagram | null | undefined;
@@ -33,6 +35,8 @@ interface UseCanvasKeyboardParams {
   onOpenSearch?: () => void;
 }
 
+// ── Constants ─────────────────────────────────────────────────────────────
+
 const C4_SHORTCUT_MAP: Record<string, { type: ComponentType; name: string }> = {
   "1": { type: "person", name: "Novo Person" },
   "2": { type: "system", name: "Novo System" },
@@ -40,64 +44,180 @@ const C4_SHORTCUT_MAP: Record<string, { type: ComponentType; name: string }> = {
   "4": { type: "component", name: "Novo Component" },
 };
 
-export function useCanvasKeyboard({
-  diagram,
-  selectedNodeId,
-  reactFlowInstance,
-  reactFlowWrapperRef,
-  isRecording,
-  onRecordUndo,
-  setSelectedNodeId,
-  setSelectedNodeIds,
-  setSelectedEdgeId,
-  setContextMenu,
-  undo,
-  redo,
-  removeComponent,
-  groupNodes,
-  ungroupNodes,
-  copyToClipboard,
-  pasteFromClipboard,
-  clearClipboard,
-  addComponent,
-  isPanelOpen,
-  onOpenSearch,
-}: UseCanvasKeyboardParams) {
+const KEY = {
+  ESCAPE: "Escape",
+  DELETE: "Delete",
+  BACKSPACE: "Backspace",
+  A: "a",
+  C: "c",
+  D: "d",
+  G: "g",
+  V: "v",
+  Z: "z",
+  SLASH: "/",
+} as const;
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+
+type Platform = "mac" | "windows" | "linux";
+
+function getPlatform(): Platform {
+  if (typeof navigator === "undefined") return "windows";
+  const ua = navigator.userAgent.toLowerCase();
+  const platform = (navigator as { platform?: string }).platform?.toLowerCase() ?? "";
+  if (platform.includes("mac") || ua.includes("mac")) return "mac";
+  if (platform.includes("win") || ua.includes("win")) return "windows";
+  if (platform.includes("linux") || ua.includes("linux")) return "linux";
+  return "windows";
+}
+
+function isModKeyPressed(e: KeyboardEvent): boolean {
+  const platform = getPlatform();
+  return platform === "mac" ? e.metaKey : e.ctrlKey;
+}
+
+function isInputFocused(target: EventTarget | null): boolean {
+  const el = target as HTMLElement;
+  if (!el) return false;
+  return (
+    el.tagName === "INPUT" ||
+    el.tagName === "TEXTAREA" ||
+    el.tagName === "SELECT" ||
+    !!el.isContentEditable
+  );
+}
+
+function getSelectedNodes(rf: ReactFlowInstance, fallbackId: string | null): Node[] {
+  const nodes = rf.getNodes();
+  const selected = nodes.filter((n) => n.selected);
+  if (selected.length > 0) return selected;
+  if (fallbackId) {
+    const single = nodes.find((n) => n.id === fallbackId);
+    return single ? [single] : [];
+  }
+  return [];
+}
+
+function getCopyableIds(diagram: Diagram, nodes: Node[]): string[] {
+  return nodes
+    .map((n) => n.id)
+    .filter((id) => {
+      const c = diagram.snapshot.components[id];
+      return c && c.type !== "panel" && c.type !== "note";
+    });
+}
+
+function getPasteCenter(rf: ReactFlowInstance, wrapperRef: React.RefObject<HTMLDivElement | null>): { x: number; y: number } {
+  const wrapper = wrapperRef.current;
+  if (!wrapper) return { x: 300, y: 300 };
+  const rect = wrapper.getBoundingClientRect();
+  return rf.screenToFlowPosition({
+    x: rect.width / 2,
+    y: rect.height / 2,
+  });
+}
+
+function getCenterOfNodes(diagram: Diagram, ids: string[], offset = 20): { x: number; y: number } {
+  const layouts = diagram.nodeLayouts;
+  let sumX = 0;
+  let sumY = 0;
+  let count = 0;
+
+  for (const id of ids) {
+    const comp = diagram.snapshot.components[id];
+    if (!comp) continue;
+
+    const layout = layouts.find((nl) => nl.elementId === id);
+    let x = layout?.x ?? 0;
+    let y = layout?.y ?? 0;
+
+    if (comp.parentId) {
+      const parentLayout = layouts.find((nl) => nl.elementId === comp.parentId);
+      if (parentLayout) {
+        x += parentLayout.x;
+        y += parentLayout.y;
+      }
+    }
+
+    sumX += x;
+    sumY += y;
+    count += 1;
+  }
+
+  if (count === 0) return { x: 300, y: 300 };
+  return { x: sumX / count + offset, y: sumY / count + offset };
+}
+
+// ── Main hook ─────────────────────────────────────────────────────────────
+
+export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
+  const {
+    diagram,
+    selectedNodeId,
+    reactFlowInstance,
+    reactFlowWrapperRef,
+    isRecording,
+    onRecordUndo,
+    setSelectedNodeId,
+    setSelectedNodeIds,
+    setSelectedEdgeId,
+    setContextMenu,
+    undo,
+    redo,
+    removeComponent,
+    groupNodes,
+    ungroupNodes,
+    copyToClipboard,
+    pasteFromClipboard,
+    clearClipboard,
+    addComponent,
+    isPanelOpen,
+    onOpenSearch,
+  } = params;
+
+  const clearSelection = useCallback(() => {
+    clearClipboard();
+    reactFlowInstance.setNodes((nds: Node[]) =>
+      nds.map((n) => ({ ...n, selected: false })),
+    );
+    setSelectedNodeId(null);
+    setSelectedNodeIds(new Set());
+    setSelectedEdgeId(null);
+    setContextMenu(null);
+  }, [
+    clearClipboard,
+    reactFlowInstance,
+    setSelectedNodeId,
+    setSelectedNodeIds,
+    setSelectedEdgeId,
+    setContextMenu,
+  ]);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.tagName === "SELECT" ||
-        target.isContentEditable
-      )
-        return;
+      if (isInputFocused(e.target)) return;
       if (!diagram) return;
 
+      // Recording mode: only Backspace/Delete triggers undo
       if (isRecording) {
-        if (e.key === "Backspace" || e.key === "Delete") {
+        if (e.key === KEY.DELETE || e.key === KEY.BACKSPACE) {
           e.preventDefault();
           onRecordUndo?.();
         }
         return;
       }
 
-      const mod = e.metaKey || e.ctrlKey;
+      const mod = isModKeyPressed(e);
 
-      if (e.key === "Escape") {
+      // Escape — clear selection and context
+      if (e.key === KEY.ESCAPE) {
         e.preventDefault();
-        clearClipboard();
-        reactFlowInstance.setNodes((nds: Node[]) =>
-          nds.map((n) => ({ ...n, selected: false })),
-        );
-        setSelectedNodeId(null);
-        setSelectedNodeIds(new Set());
-        setSelectedEdgeId(null);
-        setContextMenu(null);
+        clearSelection();
         return;
       }
-      if (mod && e.key === "a") {
+
+      // Cmd/Ctrl+A — select all
+      if (mod && e.key === KEY.A) {
         e.preventDefault();
         reactFlowInstance.setNodes((nds: Node[]) => {
           const updated = nds.map((n) => ({ ...n, selected: true }));
@@ -107,114 +227,75 @@ export function useCanvasKeyboard({
         });
         return;
       }
-      if (e.key === "Delete" || e.key === "Backspace") {
+
+      // Delete / Backspace — remove selected
+      if (e.key === KEY.DELETE || e.key === KEY.BACKSPACE) {
         e.preventDefault();
-        const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
-        if (selected.length === 0 && selectedNodeId) {
-          removeComponent(selectedNodeId);
-          setSelectedNodeId(null);
-          setSelectedNodeIds(new Set());
-          return;
-        }
-        if (selected.length > 0) {
-          for (const n of selected) removeComponent(n.id);
-          setSelectedNodeId(null);
-          setSelectedNodeIds(new Set());
-        }
+        const selected = getSelectedNodes(reactFlowInstance, selectedNodeId);
+        if (selected.length === 0) return;
+
+        selected.forEach((n) => removeComponent(n.id));
+        setSelectedNodeId(null);
+        setSelectedNodeIds(new Set());
         return;
       }
-      if (mod && e.key === "c") {
+
+      // Cmd/Ctrl+C — copy
+      if (mod && e.key === KEY.C) {
         e.preventDefault();
-        const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
-        const toCopy =
-          selected.length > 0
-            ? selected
-            : selectedNodeId
-              ? reactFlowInstance.getNodes().filter((n) => n.id === selectedNodeId)
-              : [];
-        const ids = toCopy
-          .map((n) => n.id)
-          .filter((id) => {
-            const c = diagram.snapshot.components[id];
-            return c && c.type !== "panel" && c.type !== "note";
-          });
-        if (ids.length === 0) return;
-        copyToClipboard(ids);
+        const nodes = getSelectedNodes(reactFlowInstance, selectedNodeId);
+        const ids = getCopyableIds(diagram, nodes);
+        if (ids.length > 0) copyToClipboard(ids);
         return;
       }
-      if (mod && e.key === "v") {
+
+      // Cmd/Ctrl+V — paste at center
+      if (mod && e.key === KEY.V) {
         e.preventDefault();
-        const wrapper = reactFlowWrapperRef.current;
-        const center = wrapper
-          ? reactFlowInstance.screenToFlowPosition({
-              x: wrapper.getBoundingClientRect().width / 2,
-              y: wrapper.getBoundingClientRect().height / 2,
-            })
-          : { x: 300, y: 300 };
+        const center = getPasteCenter(reactFlowInstance, reactFlowWrapperRef);
         pasteFromClipboard(center);
         return;
       }
-      if (mod && e.key === "d") {
+
+      // Cmd/Ctrl+D — duplicate (copy + paste with offset)
+      if (mod && e.key === KEY.D) {
         e.preventDefault();
-        const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
-        const toDup =
-          selected.length > 0
-            ? selected
-            : selectedNodeId
-              ? reactFlowInstance.getNodes().filter((n) => n.id === selectedNodeId)
-              : [];
-        const ids = toDup
-          .map((n) => n.id)
-          .filter((id) => {
-            const c = diagram.snapshot.components[id];
-            return c && c.type !== "panel" && c.type !== "note";
-          });
+        const nodes = getSelectedNodes(reactFlowInstance, selectedNodeId);
+        const ids = getCopyableIds(diagram, nodes);
         if (ids.length === 0) return;
+
         copyToClipboard(ids);
-        const layouts = diagram.nodeLayouts;
-        let cx = 0;
-        let cy = 0;
-        let n = 0;
-        for (const id of ids) {
-          const comp = diagram.snapshot.components[id];
-          if (!comp) continue;
-          const layout = layouts.find((nl) => nl.elementId === id);
-          let x = layout?.x ?? 0;
-          let y = layout?.y ?? 0;
-          if (comp.parentId) {
-            const parentLayout = layouts.find((nl) => nl.elementId === comp.parentId);
-            if (parentLayout) {
-              x += parentLayout.x;
-              y += parentLayout.y;
-            }
-          }
-          cx += x;
-          cy += y;
-          n += 1;
-        }
-        if (n > 0) pasteFromClipboard({ x: cx / n + 20, y: cy / n + 20 });
+        const center = getCenterOfNodes(diagram, ids);
+        pasteFromClipboard(center);
         return;
       }
-      if (mod && e.shiftKey && (e.key === "z" || e.key === "Z")) {
+
+      // Cmd/Ctrl+Shift+Z — redo
+      if (mod && e.shiftKey && (e.key === KEY.Z || e.key === "Z")) {
         e.preventDefault();
         redo();
         return;
       }
-      if (mod && e.key === "z") {
+
+      // Cmd/Ctrl+Z — undo
+      if (mod && e.key === KEY.Z) {
         e.preventDefault();
         undo();
         return;
       }
-      if (mod && e.shiftKey && e.key === "g") {
+
+      // Cmd/Ctrl+Shift+G — ungroup panel
+      if (mod && e.shiftKey && e.key === KEY.G) {
         e.preventDefault();
-        const allNodes = reactFlowInstance.getNodes();
-        const selected = allNodes.filter((n) => n.selected);
+        const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
         if (selected.length === 1 && selected[0].type === "panel") {
           ungroupNodes(selected[0].id);
         }
         return;
       }
-      if (mod && e.key === "g") {
+
+      // Cmd/Ctrl+G — group selected
+      if (mod && e.key === KEY.G) {
         e.preventDefault();
         const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
         if (selected.length >= 2) {
@@ -222,11 +303,15 @@ export function useCanvasKeyboard({
         }
         return;
       }
-      if (mod && e.key === "/") {
+
+      // Cmd/Ctrl+/ — open search
+      if (mod && e.key === KEY.SLASH) {
         e.preventDefault();
         onOpenSearch?.();
         return;
       }
+
+      // Cmd/Ctrl+1–4 — add C4 component
       if (mod && C4_SHORTCUT_MAP[e.key]) {
         e.preventDefault();
         const { type, name } = C4_SHORTCUT_MAP[e.key];
@@ -235,6 +320,7 @@ export function useCanvasKeyboard({
         return;
       }
     };
+
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [
@@ -242,20 +328,20 @@ export function useCanvasKeyboard({
     selectedNodeId,
     reactFlowInstance,
     reactFlowWrapperRef,
-    undo,
-    redo,
+    isRecording,
+    onRecordUndo,
+    clearSelection,
+    setSelectedNodeId,
+    setSelectedNodeIds,
+    setSelectedEdgeId,
+    setContextMenu,
     removeComponent,
     groupNodes,
     ungroupNodes,
     copyToClipboard,
     pasteFromClipboard,
-    clearClipboard,
-    isRecording,
-    onRecordUndo,
-    setSelectedNodeId,
-    setSelectedNodeIds,
-    setSelectedEdgeId,
-    setContextMenu,
+    undo,
+    redo,
     addComponent,
     isPanelOpen,
     onOpenSearch,

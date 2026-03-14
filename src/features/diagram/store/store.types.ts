@@ -6,7 +6,8 @@ import type {
   ModelDraft,
   ViewNodeLayout,
 } from "../model/diagram.types";
-import type { ServiceDefinition } from "@/features/registry";
+import type { ServiceDefinition } from "../model/service.types";
+import type { AppActions } from "./actions.types";
 
 export interface DiagramSnapshot {
   diagramId: string;
@@ -31,6 +32,5 @@ export interface AppState {
   clipboard: ClipboardEntry | null;
 }
 
-export function activeDiagram(state: AppState): Diagram {
-  return state.diagrams[state.activeDiagramId!];
-}
+/** Store completo: estado + ações. */
+export type DiagramStore = AppState & AppActions;

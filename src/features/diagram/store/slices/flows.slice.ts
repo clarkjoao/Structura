@@ -1,14 +1,12 @@
 import type { Flow, FlowStep } from "../../model/diagram.types";
-import { generateId } from "../../model/diagram.utils";
-import { parseMermaidToSteps } from "../../model/flow.service";
+import { generateId } from "../../utils/generate-id";
+import { parseMermaidToSteps } from "../../utils/flow-mermaid";
 import type { AppState } from "../store.types";
-import { activeDiagram } from "../store.types";
 
-export function flowsSlice(
+export const flowsSlice = (
   set: (fn: (state: AppState) => void) => void,
   get: () => AppState,
-) {
-  return {
+) => ({
     addFlow: (diagramId: string, name: string, mermaid: string, precomputedSteps?: FlowStep[]): Flow => {
       const { diagrams } = get();
       const d = diagrams[diagramId];
@@ -31,7 +29,7 @@ export function flowsSlice(
 
     updateFlow: (id: string, patch: Partial<Omit<Flow, "id">>) => {
       set((state) => {
-        const d = activeDiagram(state);
+        const d = state.diagrams[state.activeDiagramId!];
         const flow = d.snapshot.flows[id];
         if (!flow) return;
         Object.assign(flow, patch);
@@ -47,8 +45,7 @@ export function flowsSlice(
 
     removeFlow: (id: string) => {
       set((state) => {
-        delete activeDiagram(state).snapshot.flows[id];
+        delete state.diagrams[state.activeDiagramId!].snapshot.flows[id];
       });
     },
-  };
-}
+});

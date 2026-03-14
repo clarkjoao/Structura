@@ -5,7 +5,7 @@ import { ArrowLeft, Download, GitBranch } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
 import { useActiveDiagram, useActiveDiagramId, useDiagramActions, useFlows, stepsToMermaid, useServiceRegistry } from "@/features/diagram";
-import { exportJSON, exportDrawioV2, exportMermaid, downloadFile } from "@/lib/export-service";
+import { exportJSON, exportDrawio, exportMermaid, downloadFile } from "@/lib/export-service";
 import type { Flow, FlowStep } from "@/features/diagram";
 
 const ModelExplorer = () => {
@@ -121,7 +121,7 @@ const ModelExplorer = () => {
     if (!diagram) return;
     const slug = diagram.name.toLowerCase().replace(/\s+/g, "-");
     downloadFile(exportJSON(diagram), `${slug}.json`, "application/json");
-    downloadFile(exportDrawioV2(diagram, serviceRegistry), `${slug}.drawio`, "application/xml");
+    downloadFile(exportDrawio(diagram, serviceRegistry), `${slug}.drawio`, "application/xml");
     if (flows.length > 0) {
       downloadFile(
         exportMermaid(flows, diagram.snapshot.components, diagram.snapshot.connections),

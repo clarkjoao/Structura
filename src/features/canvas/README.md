@@ -7,12 +7,15 @@ Componente Canvas refatorado com arquitetura modular, focado em performance, sin
 ```
 src/features/canvas/
 ├── hooks/
-│   ├── index.ts                    # Central exports
-│   ├── useCanvasStore.ts           # Acesso centralizado ao store
-│   ├── useCanvasNodeManager.ts     # Sincronização Zustand ↔ ReactFlow
-│   ├── useCanvasNodeDragManager.ts # Gerenciamento de drag & drop
-│   ├── useCanvasKeyboardManager.ts # Shortcuts de teclado
-│   └── useCanvasEventCoordinator.ts # Orquestração de eventos
+│   ├── useCanvasStore.ts              # Dados e actions do store (diagrama)
+│   ├── useCanvasVisualState.ts       # Estado visual (seleção, highlight, menus)
+│   ├── useCanvasConnectionDerivations.ts # Derivados (panelIds, handle order)
+│   ├── useCanvasEventHandlers.ts      # Handlers de click, connect, etc.
+│   ├── useCanvasNodes.ts             # Adapta components → ReactFlow Node[]
+│   ├── useCanvasEdges.ts             # Adapta connections → ReactFlow Edge[]
+│   ├── useFlowState.ts               # Playback, recording, coverage
+│   ├── useNodeDragParenting.ts       # Drag-to-panel parenting
+│   └── useCanvasKeyboard.ts          # Shortcuts de teclado
 ├── utils/
 │   ├── drag.utils.ts      # Utilitários de drag & detecção de panels
 │   ├── keyboard.utils.ts  # Utilitários de keybindings

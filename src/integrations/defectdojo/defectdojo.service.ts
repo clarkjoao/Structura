@@ -1,6 +1,6 @@
 import type { DefectDojoClient } from "./defectdojo.client";
 import type { DDProduct, DDProductType, DDUser } from "./types";
-import type { ServiceDefinition } from "@/features/registry";
+import type { ServiceDefinition } from "@/features/diagram";
 
 interface PaginatedResponse<T> {
   count: number;

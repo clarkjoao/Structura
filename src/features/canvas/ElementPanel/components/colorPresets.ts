@@ -79,6 +79,3 @@ export const C4_DEFAULT_COLORS: Record<string, string> = {
   container: "hsl(260 60% 55%)",
   component: "hsl(152 60% 45%)",
 };
-
-/** @deprecated Use PANEL_PRESETS or presetGroup */
-export const PANEL_COLOR_PRESETS: ColorPreset[] = VIBRANT_PRESETS.slice(0, 8);

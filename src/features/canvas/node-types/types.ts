@@ -1,6 +1,5 @@
 import type { CSSProperties, ComponentType as ReactComponentType } from "react";
-import type { Component, ComponentType, Diagram, FlowStep } from "@/features/diagram";
-import type { ServiceDefinition } from "@/features/registry";
+import type { Component, ComponentType, Diagram, FlowStep, ServiceDefinition } from "@/features/diagram";
 
 export interface FlowHighlight {
   activeNodeId: string | null;

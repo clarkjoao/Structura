@@ -2,7 +2,6 @@ const STORAGE_KEY = "structura_element-usage";
 const MAX_ENTRIES = 30;
 
 export interface UsageEntry {
-  /** e.g. "c4:person", "aws:ec2", "canvas:panel", "registry:svc-id" */
   key: string;
   count: number;
   lastUsed: number;

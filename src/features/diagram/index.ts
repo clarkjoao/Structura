@@ -30,20 +30,18 @@ export {
   INTENT_DEFAULTS,
   DIRECTION_MARKERS,
   getEffectiveConnectionStyle,
+  getIntentDefault,
 } from "./model/connection-defaults";
+export type { EffectiveConnectionStyle } from "./model/connection-defaults";
 
 /** Unique ID generator for diagram entities */
-export { generateId } from "./model/diagram.utils";
+export { generateId } from "./utils/generate-id";
 
 /** Sort connections array by an explicit handle-order array of connection ids */
 export { applyHandleOrder } from "./utils/handle-order";
 
-/** Compute which components are impacted when a service changes */
-export { computeServiceImpact } from "./model/diagram.service";
-export type { ServiceImpact } from "./model/diagram.service";
-
 /** Convert FlowStep[] ↔ Mermaid sequence diagram text */
-export { stepsToMermaid, parseMermaidToSteps } from "./model/flow.service";
+export { stepsToMermaid, parseMermaidToSteps } from "./utils/flow-mermaid";
 
 /** Type guards for the Component discriminated union */
 export {
@@ -56,8 +54,15 @@ export {
 /** Zustand store — single source of truth for all diagram state */
 export {
   useDiagramStore,
+  /** Hook returning all mutation actions (add/update/remove/undo/redo/…) */
+  useRegistryActions,
   /** Factory used in tests to create a store backed by a custom storage adapter */
   createDiagramStore,
+  /** Hook returning all mutation actions (add/update/remove/undo/redo/…) */
+  useDiagramActions,
+} from "./store/diagram.store";
+
+export {
   /** Selector: all diagrams keyed by id */
   useDiagrams,
   /** Selector: flat array of all diagrams */
@@ -80,22 +85,14 @@ export {
   useVisibleComponents,
   /** Selector: connections whose both endpoints are visible */
   useVisibleConnections,
-  /** Selector: whether an element can be drilled into */
-  useCanNavigateInto,
   /** Selector: serviceRegistry of the active diagram */
   useServiceRegistry,
+  /** Selector: flat array of all components in the active diagram */
+   useAllComponents,
   /** Selector: flat array of all services in the active diagram */
   useAllServices,
-  /** Selector: flat array of all components in the active diagram */
-  useAllComponents,
   /** Selector: flat array of all connections in the active diagram */
-  useAllConnections,
-  /** Selector: flat array of all flows in the active diagram */
   useFlows,
-  /** Selector: flat array of ALL components across ALL diagrams, each annotated with diagramId + diagramName */
-  useAllComponentsAcrossDiagrams,
-  /** Hook returning all mutation actions (add/update/remove/undo/redo/…) */
-  useDiagramActions,
-} from "./store/diagram.store";
-
-export type { DiagramStore, ClipboardEntry } from "./store/diagram.store";
+} from './store/selectors'
+export type { DiagramStore, ClipboardEntry } from "./store/store.types";
+export type { ServiceDefinition } from "./model/service.types";

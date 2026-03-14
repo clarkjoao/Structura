@@ -1,12 +1,13 @@
 import type { AppState } from "../store.types";
-import { activeDiagram } from "../store.types";
 import { pushHistory } from "./history.slice";
 
-export function layoutSlice(set: (fn: (state: AppState) => void) => void) {
-  return {
+export const layoutSlice = (
+    set: (fn: (state: AppState) => void) => void,
+    get: () => AppState,
+) => ({
     updateNodeLayout: (elementId: string, position: { x: number; y: number }, dimensions?: { width: number; height: number }) => {
       set((state) => {
-        const d = activeDiagram(state);
+        const d = state.diagrams[state.activeDiagramId!];
         const layout = d.nodeLayouts.find((nl) => nl.elementId === elementId);
         if (layout) {
           layout.x = position.x;
@@ -21,14 +22,14 @@ export function layoutSlice(set: (fn: (state: AppState) => void) => void) {
 
     updateViewport: (viewport: { x: number; y: number; zoom: number }) => {
       set((state) => {
-        activeDiagram(state).viewport = viewport;
+        state.diagrams[state.activeDiagramId!].viewport = viewport;
       });
     },
 
     bringToFront: (elementId: string) => {
       set((state) => {
         pushHistory(state);
-        const d = activeDiagram(state);
+        const d = state.diagrams[state.activeDiagramId!];
         const maxZ = Math.max(...d.nodeLayouts.map((nl) => nl.zIndex ?? 0));
         const layout = d.nodeLayouts.find((nl) => nl.elementId === elementId);
         if (layout) layout.zIndex = maxZ + 1;
@@ -38,11 +39,10 @@ export function layoutSlice(set: (fn: (state: AppState) => void) => void) {
     sendToBack: (elementId: string) => {
       set((state) => {
         pushHistory(state);
-        const d = activeDiagram(state);
+        const d = state.diagrams[state.activeDiagramId!];
         const minZ = Math.min(...d.nodeLayouts.map((nl) => nl.zIndex ?? 0));
         const layout = d.nodeLayouts.find((nl) => nl.elementId === elementId);
         if (layout) layout.zIndex = minZ - 1;
       });
     },
-  };
-}
+  });
