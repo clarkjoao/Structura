@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   ReactFlow,
   Background,
@@ -17,13 +17,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { useNavigate } from "react-router-dom";
 import {
-  useActiveDiagram,
-  useDiagrams,
-  useVisibleComponents,
-  useVisibleConnections,
-  useServiceRegistry,
   useDiagramActions,
-  useFlows,
   isPanelComponent,
   type FlowStep,
 } from "@/features/diagram";
@@ -37,6 +31,10 @@ import { useNodeDragParenting } from "./hooks/useNodeDragParenting";
 import { useFlowState } from "./hooks/useFlowState";
 import { useCanvasNodes } from "./hooks/useCanvasNodes";
 import { useCanvasEdges } from "./hooks/useCanvasEdges";
+import { useCanvasStore } from "./hooks/useCanvasStore";
+import { useCanvasVisualState } from "./hooks/useCanvasVisualState";
+import { useCanvasConnectionDerivations } from "./hooks/useCanvasConnectionDerivations";
+import { useCanvasEventHandlers } from "./hooks/useCanvasEventHandlers";
 import QuickInsertPopover from "./QuickInsertPopover";
 import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 
@@ -69,12 +67,21 @@ const Canvas = ({
   onRecordUndo,
   isViewingCoverage,
 }: CanvasProps = {}) => {
-  const diagram = useActiveDiagram();
-  const allDiagrams = useDiagrams();
-  const visibleComponents = useVisibleComponents();
-  const visibleConnections = useVisibleConnections();
-  const serviceRegistry = useServiceRegistry();
-  const flows = useFlows();
+  const navigate = useNavigate();
+  const reactFlowInstance = useReactFlow();
+  const reactFlowWrapperRef = useRef<HTMLDivElement>(null);
+
+  // ── Store (dados do diagrama) ─────────────────────────────────────────────
+  const {
+    diagram,
+    allDiagrams,
+    visibleComponents,
+    visibleConnections,
+    serviceRegistry,
+    flows,
+    actions,
+  } = useCanvasStore();
+
   const {
     updateNodeLayout,
     updateViewport,
@@ -94,34 +101,46 @@ const Canvas = ({
     pasteFromClipboard,
     clearClipboard,
     updateHandleOrder,
-  } = useDiagramActions();
-  const navigate = useNavigate();
-  const reactFlowInstance = useReactFlow();
-  const reactFlowWrapperRef = useRef<HTMLDivElement>(null);
+  } = actions;
 
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(
-    new Set(),
-  );
-  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
-  const [highlightedConnectionId, setHighlightedConnectionId] = useState<
-    string | null
-  >(null);
-  const [highlightedNodeIds, setHighlightedNodeIds] = useState<Set<string>>(
-    new Set(),
-  );
-  const [contextMenu, setContextMenu] = useState<{
-    x: number;
-    y: number;
-    elementId: string;
-  } | null>(null);
-  const [quickInsert, setQuickInsert] = useState<{
-    screenPos: { x: number; y: number };
-    flowPos: { x: number; y: number };
-    sourceNodeId: string;
-  } | null>(null);
-  const [pulseNodeId, setPulseNodeId] = useState<string | null>(null);
+  // ── Estado visual (seleção, highlight, menus) ────────────────────────────
+  const visualState = useCanvasVisualState();
+  const {
+    selectedNodeId,
+    setSelectedNodeId,
+    selectedNodeIds,
+    setSelectedNodeIds,
+    selectedEdgeId,
+    setSelectedEdgeId,
+    highlightedConnectionId,
+    highlightedNodeIds,
+    setHighlight,
+    clearHighlight,
+    contextMenu,
+    setContextMenu,
+    quickInsert,
+    setQuickInsert,
+    pulseNodeId,
+    setPulseNodeId,
+    dragPositions,
+    setDragPositions,
+    clearCanvasSelection,
+  } = visualState;
 
+  // ── Derivados de connections ────────────────────────────────────────────
+  const { panelIds, connectionCountPerNode, edgeHandleAssignments, effectiveHandleOrder } =
+    useCanvasConnectionDerivations({ visibleComponents, visibleConnections, diagram });
+
+  // ── Flow state (playback, recording, coverage) ───────────────────────────
+  const { isPlaying, activeStep, flowHighlight, coverage, recordingInfo } = useFlowState({
+    activeFlow,
+    currentStep,
+    flows,
+    isRecording,
+    recordingSteps,
+  });
+
+  // ── Handlers de drill/navegação (usados por useCanvasNodes) ──────────────
   const handleDrillDown = useCallback(
     (elementId: string) => {
       if (!diagram) return;
@@ -167,104 +186,6 @@ const Canvas = ({
     [diagram, updateComponent],
   );
 
-  const panelIds = useMemo(() => {
-    const ids = new Set<string>();
-    for (const c of visibleComponents) if (isPanelComponent(c)) ids.add(c.id);
-    return ids;
-  }, [visibleComponents]);
-
-  const connectionCountPerNode = useMemo(() => {
-    const counts: Record<string, { incoming: number; outgoing: number }> = {};
-    visibleConnections.forEach((conn) => {
-      if (!counts[conn.sourceId])
-        counts[conn.sourceId] = { incoming: 0, outgoing: 0 };
-      if (!counts[conn.targetId])
-        counts[conn.targetId] = { incoming: 0, outgoing: 0 };
-      counts[conn.sourceId].outgoing += 1;
-      counts[conn.targetId].incoming += 1;
-    });
-    return counts;
-  }, [visibleConnections]);
-
-  const edgeHandleAssignments = useMemo(() => {
-    const sourceUsage: Record<string, number> = {};
-    const targetUsage: Record<string, number> = {};
-    const maxHandles = 4;
-    return visibleConnections.map((conn) => {
-      const outCount = Math.min(
-        maxHandles,
-        Math.max(1, connectionCountPerNode[conn.sourceId]?.outgoing ?? 1),
-      );
-      const inCount = Math.min(
-        maxHandles,
-        Math.max(1, connectionCountPerNode[conn.targetId]?.incoming ?? 1),
-      );
-      const srcOrder = diagram?.snapshot.components[conn.sourceId]?.handleOrder?.outgoing;
-      const tgtOrder = diagram?.snapshot.components[conn.targetId]?.handleOrder?.incoming;
-      let sIdx: number;
-      if (srcOrder && srcOrder.length > 0) {
-        const orderIdx = srcOrder.indexOf(conn.id);
-        sIdx = orderIdx !== -1 ? Math.min(orderIdx, outCount - 1) : (sourceUsage[conn.sourceId] ?? 0) % outCount;
-      } else {
-        sIdx = (sourceUsage[conn.sourceId] ?? 0) % outCount;
-      }
-      let tIdx: number;
-      if (tgtOrder && tgtOrder.length > 0) {
-        const orderIdx = tgtOrder.indexOf(conn.id);
-        tIdx = orderIdx !== -1 ? Math.min(orderIdx, inCount - 1) : (targetUsage[conn.targetId] ?? 0) % inCount;
-      } else {
-        tIdx = (targetUsage[conn.targetId] ?? 0) % inCount;
-      }
-      sourceUsage[conn.sourceId] = (sourceUsage[conn.sourceId] ?? 0) + 1;
-      targetUsage[conn.targetId] = (targetUsage[conn.targetId] ?? 0) + 1;
-      return {
-        connId: conn.id,
-        sourceHandle: `source-${sIdx}`,
-        targetHandle: `target-${tIdx}`,
-      };
-    });
-  }, [visibleConnections, connectionCountPerNode, diagram]);
-
-  const effectiveHandleOrder = useMemo(() => {
-    const result: Record<string, { incoming: string[]; outgoing: string[] }> = {};
-    for (const a of edgeHandleAssignments) {
-      const conn = visibleConnections.find((c) => c.id === a.connId);
-      if (!conn) continue;
-      const sIdx = parseInt(a.sourceHandle.split("-")[1]);
-      const tIdx = parseInt(a.targetHandle.split("-")[1]);
-      if (!result[conn.sourceId]) result[conn.sourceId] = { incoming: [], outgoing: [] };
-      if (!result[conn.targetId]) result[conn.targetId] = { incoming: [], outgoing: [] };
-      result[conn.sourceId].outgoing[sIdx] = conn.id;
-      result[conn.targetId].incoming[tIdx] = conn.id;
-    }
-    return result;
-  }, [edgeHandleAssignments, visibleConnections]);
-
-  const { isPlaying, activeStep, flowHighlight, coverage, recordingInfo } =
-    useFlowState({
-      activeFlow,
-      currentStep,
-      flows,
-      isRecording,
-      recordingSteps,
-    });
-
-  // Ref holds the nodes from the previous render so useNodeDragParenting callbacks
-  // always have accurate panel bounds without a circular dependency on useCanvasNodes.
-  const nodesRef = useRef<import("@xyflow/react").Node[]>([]);
-
-  const {
-    dragTargetPanelId,
-    unparentCandidatePanelId,
-    onNodesChange: innerOnNodesChange,
-    onNodeDragStop: innerOnNodeDragStop,
-  } = useNodeDragParenting({
-    diagram,
-    nodes: nodesRef.current,
-    updateNodeLayout,
-    setParent,
-  });
-
   const onReorderHandle = useCallback(
     (
       nodeId: string,
@@ -285,31 +206,21 @@ const Canvas = ({
     [isRecording, effectiveHandleOrder, updateHandleOrder],
   );
 
-  const setHighlight = useCallback(
-    (connectionId: string, nodeIds: string[]) => {
-      setHighlightedConnectionId(connectionId);
-      setHighlightedNodeIds(new Set(nodeIds));
-    },
-    [],
-  );
+  // ── Node drag parenting ─────────────────────────────────────────────────
+  const nodesRef = useRef<Node[]>([]);
+  const {
+    dragTargetPanelId,
+    unparentCandidatePanelId,
+    onNodesChange: innerOnNodesChange,
+    onNodeDragStop: innerOnNodeDragStop,
+  } = useNodeDragParenting({
+    diagram,
+    nodes: nodesRef.current,
+    updateNodeLayout,
+    setParent,
+  });
 
-  const clearHighlight = useCallback(() => {
-    setHighlightedConnectionId(null);
-    setHighlightedNodeIds(new Set());
-  }, []);
-
-  useEffect(() => {
-    if (!isPlaying) return;
-    clearHighlight();
-    setSelectedNodeId(null);
-    setSelectedNodeIds(new Set());
-    setSelectedEdgeId(null);
-    setContextMenu(null);
-    reactFlowInstance.setNodes((nodes) =>
-      nodes.map((node) => ({ ...node, selected: false })),
-    );
-  }, [isPlaying, clearHighlight, reactFlowInstance]);
-
+  // ── Nodes e edges (adaptadores ReactFlow) ─────────────────────────────────
   const nodes = useCanvasNodes({
     diagram,
     visibleComponents,
@@ -317,7 +228,7 @@ const Canvas = ({
     selectedNodeId,
     selectedNodeIds,
     highlightedNodeIds,
-    serviceRegistry: serviceRegistry ?? {},
+    serviceRegistry,
     allDiagrams,
     handleDrillDown,
     handlePanelCollapseToggle,
@@ -335,13 +246,7 @@ const Canvas = ({
     coverage,
     isViewingCoverage: !!isViewingCoverage,
   });
-
   nodesRef.current = nodes;
-
-  // Local drag position overrides for real-time visual feedback without hitting the store on every frame
-  const [dragPositions, setDragPositions] = useState<
-    Record<string, { x: number; y: number }>
-  >({});
 
   const renderNodes = useMemo(() => {
     if (Object.keys(dragPositions).length === 0 && !pulseNodeId) return nodes;
@@ -375,7 +280,7 @@ const Canvas = ({
       if (hasDragEnd) setDragPositions({});
       innerOnNodesChange(changes);
     },
-    [innerOnNodesChange],
+    [innerOnNodesChange, setDragPositions],
   );
 
   const onNodeDragStop = useCallback(
@@ -383,7 +288,7 @@ const Canvas = ({
       setDragPositions({});
       innerOnNodeDragStop(_, draggedNode);
     },
-    [innerOnNodeDragStop],
+    [innerOnNodeDragStop, setDragPositions],
   );
 
   const edges = useCanvasEdges({
@@ -399,155 +304,35 @@ const Canvas = ({
     coverage,
   });
 
-  const selectedNodes = useMemo(
-    () => nodes.filter((n) => selectedNodeIds.has(n.id)),
-    [nodes, selectedNodeIds],
-  );
-  const selectedCount = selectedNodeIds.size;
-
-  const onEdgesChange: OnEdgesChange = useCallback((_changes) => {}, []);
-  const onMoveEnd = useCallback(
-    (_: unknown, vp: { x: number; y: number; zoom: number }) => {
-      updateViewport(vp);
+  // ── Event handlers ──────────────────────────────────────────────────────
+  const {
+    onEdgesChange,
+    onMoveEnd,
+    onConnect,
+    onConnectEnd,
+    onNodeClick,
+    onEdgeClick,
+    onSelectionChange,
+    onPaneClick,
+    onNodeContextMenu,
+    handleQuickInsert,
+    closePanel,
+  } = useCanvasEventHandlers({
+    visualState,
+    isPlaying,
+    isRecording,
+    updateViewport,
+    addConnection,
+    onRecordNodeClick,
+    onRecordEdgeClick,
+    screenToFlowPosition: (pos) => reactFlowInstance.screenToFlowPosition(pos),
+    fitView: async (opts) => {
+      await reactFlowInstance.fitView(opts);
     },
-    [updateViewport],
-  );
-  const onConnect: OnConnect = useCallback(
-    (c: Connection) => {
-      if (c.source && c.target) addConnection(c.source, c.target, "Usa");
-    },
-    [addConnection],
-  );
+  });
 
-  const onConnectEnd: OnConnectEnd = useCallback(
-    (event, connectionState) => {
-      if (isRecording) return;
-      if (connectionState.fromNode === null || connectionState.toNode !== null)
-        return;
-      if (!(event instanceof MouseEvent)) return;
-      const flowPos = reactFlowInstance.screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
-      setQuickInsert({
-        screenPos: { x: event.clientX, y: event.clientY },
-        flowPos,
-        sourceNodeId: connectionState.fromNode.id,
-      });
-    },
-    [isRecording, reactFlowInstance],
-  );
-
-  const handleQuickInsert = useCallback(
-    (newNodeId: string) => {
-      setQuickInsert(null);
-      setPulseNodeId(newNodeId);
-      void reactFlowInstance.fitView({
-        nodes: [{ id: newNodeId }],
-        duration: 500,
-        padding: 0.5,
-        maxZoom: 1.5,
-      });
-      setTimeout(() => setPulseNodeId(null), 1500);
-    },
-    [reactFlowInstance],
-  );
-
-  const clearCanvasSelection = useCallback(() => {
-    clearHighlight();
-    setSelectedNodeId(null);
-    setSelectedNodeIds(new Set());
-    setSelectedEdgeId(null);
-    setContextMenu(null);
-  }, [clearHighlight]);
-
-  const onNodeClick = useCallback(
-    (e: React.MouseEvent, node: Node) => {
-      if (isRecording) {
-        if (node.type !== "panel" && node.type !== "note")
-          onRecordNodeClick?.(node.id);
-        return;
-      }
-      if (isPlaying) return;
-      clearHighlight();
-      setSelectedEdgeId(null);
-      setContextMenu(null);
-      if (e.metaKey || e.ctrlKey) {
-        setSelectedNodeIds((prev) => {
-          const next = new Set(prev);
-          if (next.has(node.id)) next.delete(node.id);
-          else next.add(node.id);
-          setSelectedNodeId(
-            next.size === 0
-              ? null
-              : next.has(node.id)
-                ? node.id
-                : (next.values().next().value ?? null),
-          );
-          return next;
-        });
-      } else {
-        setSelectedNodeIds(new Set([node.id]));
-        setSelectedNodeId(node.id);
-      }
-    },
-    [clearHighlight, isPlaying, isRecording, onRecordNodeClick],
-  );
-
-  const onEdgeClick = useCallback(
-    (_: React.MouseEvent, edge: Edge) => {
-      if (isRecording) {
-        onRecordEdgeClick?.(edge.id, edge.sourceHandle ?? undefined);
-        return;
-      }
-      clearHighlight();
-      setSelectedEdgeId(edge.id);
-      setSelectedNodeId(null);
-      setSelectedNodeIds(new Set());
-      setContextMenu(null);
-    },
-    [clearHighlight, isRecording, onRecordEdgeClick],
-  );
-
-  const onSelectionChange = useCallback(
-    ({ nodes: updatedNodes }: { nodes: Node[]; edges: Edge[] }) => {
-      const ids = new Set(
-        updatedNodes.filter((n) => n.selected).map((n) => n.id),
-      );
-      setSelectedNodeIds(ids);
-      setSelectedNodeId(updatedNodes.find((n) => n.selected)?.id ?? null);
-    },
-    [],
-  );
-
-  const onPaneClick = useCallback(() => {
-    clearCanvasSelection();
-  }, [clearCanvasSelection]);
-
-  const onNodeContextMenu = useCallback(
-    (event: React.MouseEvent, node: Node) => {
-      if (isRecording) return;
-      event.preventDefault();
-      clearHighlight();
-      setContextMenu({
-        x: event.clientX,
-        y: event.clientY,
-        elementId: node.id,
-      });
-      setSelectedNodeId(node.id);
-      setSelectedEdgeId(null);
-    },
-    [clearHighlight, isRecording],
-  );
-
-  const closePanel = useCallback(() => {
-    clearHighlight();
-    setSelectedNodeId(null);
-    setSelectedEdgeId(null);
-  }, [clearHighlight]);
-
+  // ── Keyboard shortcuts ───────────────────────────────────────────────────
   const isPanelOpen = !!(selectedNodeId || selectedEdgeId) && !isRecording;
-
   useCanvasKeyboard({
     diagram,
     selectedNodeId,
@@ -570,6 +355,19 @@ const Canvas = ({
     addComponent,
     isPanelOpen,
   });
+
+  // ── Effects ───────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isPlaying) return;
+    clearHighlight();
+    setSelectedNodeId(null);
+    setSelectedNodeIds(new Set());
+    setSelectedEdgeId(null);
+    setContextMenu(null);
+    reactFlowInstance.setNodes((nodes) =>
+      nodes.map((node) => ({ ...node, selected: false })),
+    );
+  }, [isPlaying, clearHighlight, setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId, setContextMenu, reactFlowInstance]);
 
   useEffect(() => {
     const el = document.querySelector(".react-flow__renderer");
@@ -599,8 +397,6 @@ const Canvas = ({
     return () => el.removeEventListener("wheel", handleWheel);
   }, [reactFlowInstance, diagram]);
 
-  // Focus the canvas on the element referenced by the current flow step.
-  // Fires on every step change (including the initial step when playback starts).
   useEffect(() => {
     if (!activeFlow) return;
     const step = activeFlow.steps[currentStep ?? 0];
@@ -642,7 +438,14 @@ const Canvas = ({
     return () => {
       if (timeoutId !== undefined) clearTimeout(timeoutId);
     };
-  }, [activeFlow, currentStep, reactFlowInstance]);
+  }, [activeFlow, currentStep, reactFlowInstance, setPulseNodeId]);
+
+  // ── Render ──────────────────────────────────────────────────────────────
+  const selectedNodes = useMemo(
+    () => nodes.filter((n) => selectedNodeIds.has(n.id)),
+    [nodes, selectedNodeIds],
+  );
+  const selectedCount = selectedNodeIds.size;
 
   if (!diagram)
     return (
@@ -660,95 +463,94 @@ const Canvas = ({
         clearHighlight,
       }}
     >
-    <div className="flex-1 flex relative">
-      <style>{`
-        .react-flow__pane { cursor: default; }
-        .react-flow__pane:active { cursor: grabbing; }
-        .react-flow__selection { background: rgba(59, 130, 246, 0.08); border: 1px solid #3b82f6; }
-        @keyframes quick-insert-pulse {
-          0%   { box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.7); }
-          100% { box-shadow: 0 0 0 0px rgba(99, 102, 241, 0); }
-        }
-        .node-pulse { animation: quick-insert-pulse 0.45s ease-out 3; }
-      `}</style>
-      <div ref={reactFlowWrapperRef} className="flex-1 relative">
-        <CanvasToolbar
-          onDrillUp={onDrillUp}
-          isPanelOpen={isPanelOpen}
-          selectedCount={selectedCount}
-          onClearSelection={clearCanvasSelection}
-        />
-        <div
-          onContextMenu={(e) => e.preventDefault()}
-          className="w-full h-full"
-        >
-          <ReactFlow
-            nodes={renderNodes}
-            edges={edges}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onConnectEnd={onConnectEnd}
-            onNodeClick={onNodeClick}
-            onEdgeClick={onEdgeClick}
-            onPaneClick={onPaneClick}
-            onPaneContextMenu={(e) => e.preventDefault()}
-            onNodeContextMenu={onNodeContextMenu}
-            onNodeDragStop={onNodeDragStop}
-            onSelectionChange={onSelectionChange}
-            panOnDrag={[2]}
-            panOnScroll
-            panOnScrollMode={PanOnScrollMode.Free}
-            selectionOnDrag
-            selectionMode={SelectionMode.Partial}
-            zoomOnScroll={false}
-            zoomOnPinch
-            zoomOnDoubleClick={false}
-            minZoom={0.1}
-            maxZoom={4}
-            multiSelectionKeyCode="Meta"
-            defaultViewport={diagram.viewport}
-            fitView
-            fitViewOptions={{ padding: 0.3 }}
-            onMoveEnd={onMoveEnd}
-            nodesDraggable={!isRecording}
-            nodesConnectable={!isRecording}
-            proOptions={{ hideAttribution: true }}
-            className="bg-background"
+      <div className="flex-1 flex relative">
+        <style>{`
+          .react-flow__pane { cursor: default; }
+          .react-flow__pane:active { cursor: grabbing; }
+          .react-flow__selection { background: rgba(59, 130, 246, 0.08); border: 1px solid #3b82f6; }
+          @keyframes quick-insert-pulse {
+            0%   { box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.7); }
+            100% { box-shadow: 0 0 0 0px rgba(99, 102, 241, 0); }
+          }
+          .node-pulse { animation: quick-insert-pulse 0.45s ease-out 3; }
+        `}</style>
+        <div ref={reactFlowWrapperRef} className="flex-1 relative">
+          <CanvasToolbar
+            onDrillUp={onDrillUp}
+            isPanelOpen={isPanelOpen}
+            selectedCount={selectedCount}
+            onClearSelection={clearCanvasSelection}
+          />
+          <div
+            onContextMenu={(e) => e.preventDefault()}
+            className="w-full h-full"
           >
-            <Background
-              variant={BackgroundVariant.Dots}
-              gap={20}
-              size={1}
-              color="hsl(220 20% 18%)"
-            />
-            <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
-          </ReactFlow>
+            <ReactFlow
+              nodes={renderNodes}
+              edges={edges}
+              nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              onConnectEnd={onConnectEnd}
+              onNodeClick={onNodeClick}
+              onEdgeClick={onEdgeClick}
+              onPaneClick={onPaneClick}
+              onPaneContextMenu={(e) => e.preventDefault()}
+              onNodeContextMenu={onNodeContextMenu}
+              onNodeDragStop={onNodeDragStop}
+              onSelectionChange={onSelectionChange}
+              panOnDrag={[2]}
+              panOnScroll
+              panOnScrollMode={PanOnScrollMode.Free}
+              selectionOnDrag
+              selectionMode={SelectionMode.Partial}
+              zoomOnScroll={false}
+              zoomOnPinch
+              zoomOnDoubleClick={false}
+              minZoom={0.1}
+              maxZoom={4}
+              multiSelectionKeyCode="Meta"
+              defaultViewport={diagram.viewport}
+              fitView
+              fitViewOptions={{ padding: 0.3 }}
+              onMoveEnd={onMoveEnd}
+              nodesDraggable={!isRecording}
+              nodesConnectable={!isRecording}
+              proOptions={{ hideAttribution: true }}
+              className="bg-background"
+            >
+              <Background
+                variant={BackgroundVariant.Dots}
+                gap={20}
+                size={1}
+                color="hsl(220 20% 18%)"
+              />
+              <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
+            </ReactFlow>
+          </div>
         </div>
-      </div>
-      {contextMenu && (
-        <NodeContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          elementId={contextMenu.elementId}
-          onBringToFront={bringToFront}
-          onSendToBack={sendToBack}
-          onClose={() => setContextMenu(null)}
-        />
-      )}
-      {quickInsert && (
-        <QuickInsertPopover
-          screenPos={quickInsert.screenPos}
-          flowPos={quickInsert.flowPos}
-          sourceNodeId={quickInsert.sourceNodeId}
-          onInsert={handleQuickInsert}
-          onClose={() => setQuickInsert(null)}
-        />
-      )}
-      {(selectedNodeId || selectedEdgeId || selectedCount > 0) &&
-        !isRecording && (
+        {contextMenu && (
+          <NodeContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            elementId={contextMenu.elementId}
+            onBringToFront={bringToFront}
+            onSendToBack={sendToBack}
+            onClose={() => setContextMenu(null)}
+          />
+        )}
+        {quickInsert && (
+          <QuickInsertPopover
+            screenPos={quickInsert.screenPos}
+            flowPos={quickInsert.flowPos}
+            sourceNodeId={quickInsert.sourceNodeId}
+            onInsert={handleQuickInsert}
+            onClose={() => setQuickInsert(null)}
+          />
+        )}
+        {(selectedNodeId || selectedEdgeId || selectedCount > 0) && !isRecording && (
           <div className="absolute inset-y-0 right-0 z-20 flex">
             <ElementPanel
               key={selectedNodeId ?? selectedEdgeId ?? "multi"}
@@ -760,7 +562,7 @@ const Canvas = ({
             />
           </div>
         )}
-    </div>
+      </div>
     </HandleHighlightProvider>
   );
 };
