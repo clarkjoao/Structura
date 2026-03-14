@@ -39,7 +39,7 @@ export { generateId } from "./model/diagram.utils";
 export { applyHandleOrder } from "./utils/handle-order";
 
 /** Convert FlowStep[] ↔ Mermaid sequence diagram text */
-export { stepsToMermaid, parseMermaidToSteps } from "./model/flow.service";
+export { stepsToMermaid, parseMermaidToSteps } from "./utils/flow-mermaid";
 
 /** Type guards for the Component discriminated union */
 export {
@@ -92,4 +92,5 @@ export {
   /** Selector: flat array of all connections in the active diagram */
   useFlows,
 } from './store/selectors'
-export type { DiagramStore, ClipboardEntry } from "./store/diagram.store";
+export type { DiagramStore, ClipboardEntry } from "./store/store.types";
+export type { ServiceDefinition } from "./model/service.types";

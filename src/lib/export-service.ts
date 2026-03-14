@@ -714,7 +714,7 @@ export function exportJSON(diagram: Diagram): string {
   return JSON.stringify(diagram, null, 2);
 }
 
-export function exportDrawioV2(
+export function exportDrawio(
   diagram: Diagram,
   serviceRegistry: Record<string, ServiceDefinition>,
 ): string {
@@ -835,11 +835,6 @@ export function exportDrawioV2(
     `<root>${allCells}</root>` +
     `</mxGraphModel></diagram></mxfile>`
   );
-}
-
-/** @deprecated Use exportDrawioV2 */
-export function exportDrawio(diagram: Diagram): string {
-  return exportDrawioV2(diagram, {});
 }
 
 export function exportMermaid(

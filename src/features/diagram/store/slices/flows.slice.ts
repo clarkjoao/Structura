@@ -1,6 +1,6 @@
 import type { Flow, FlowStep } from "../../model/diagram.types";
 import { generateId } from "../../model/diagram.utils";
-import { parseMermaidToSteps } from "../../model/flow.service";
+import { parseMermaidToSteps } from "../../utils/flow-mermaid";
 import type { AppState } from "../store.types";
 
 export const flowsSlice = (

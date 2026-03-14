@@ -135,9 +135,6 @@ export interface NodeLayout {
   height?: number;
 }
 
-/** @deprecated Use NodeLayout */
-export type ViewNodeLayout = NodeLayout;
-
 // ── Flow ──────────────────────────────────────────────────────────────────
 
 export interface FlowStep {

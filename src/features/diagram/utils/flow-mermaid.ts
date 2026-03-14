@@ -1,4 +1,4 @@
-import type { Component, Connection, ConnectionIntent, FlowStep } from "./diagram.types";
+import type { Component, Connection, ConnectionIntent, FlowStep } from "../model/diagram.types";
 
 const INTENT_ARROW: Record<ConnectionIntent, string> = {
   dependency: "-->",

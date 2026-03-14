@@ -6,20 +6,8 @@ import type {
   ModelDraft,
   ViewNodeLayout,
 } from "../model/diagram.types";
-
-export interface ServiceDefinition {
-  id: string;
-  name: string;
-  description: string;
-  repositoryUrl: string;
-  technology: string[];
-  owner?: string;
-  tags?: string[];
-  source?: "defectdojo" | "github" | "manual";
-  sourceId?: string;
-  metadata?: Record<string, unknown>;
-}
-
+import type { ServiceDefinition } from "../model/service.types";
+import type { AppActions } from "./actions.types";
 
 export interface DiagramSnapshot {
   diagramId: string;
@@ -43,3 +31,6 @@ export interface AppState {
   _lastUndoRedoAt: number;
   clipboard: ClipboardEntry | null;
 }
+
+/** Store completo: estado + ações. */
+export type DiagramStore = AppState & AppActions;
