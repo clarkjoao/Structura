@@ -28,11 +28,11 @@ import Navbar from "@/components/Navbar";
 import {
   useAllServices,
   useDiagrams,
+  useRegistryActions,
   useDiagramActions,
 } from "@/features/diagram";
 import type { Diagram } from "@/features/diagram";
-import type { ServiceDefinition } from "@/features/registry";
-import { useRegistryActions } from "@/features/registry";
+import type { ServiceDefinition } from "@/features/diagram";
 
 const DefectDojoPanel = lazy(() =>
   import("@/integrations/defectdojo").then((m) => ({

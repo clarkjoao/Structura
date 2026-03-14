@@ -15,7 +15,7 @@ import type {
   Level,
 } from "../model/diagram.types";
 import { generateId } from "../model/diagram.utils";
-import type { ServiceDefinition } from "@/features/registry";
+import type { ServiceDefinition } from "../model/registry.types";
 import { SEED_DIAGRAMS, SEED_SERVICE_REGISTRY } from "@/fixtures/seed";
 import type { AppState, DiagramSnapshot } from "./store.types";
 import { activeDiagram as _activeDiagram } from "./store.types";
@@ -402,5 +402,15 @@ export const useDiagramActions = () =>
       copyToClipboard: s.copyToClipboard,
       pasteFromClipboard: s.pasteFromClipboard,
       clearClipboard: s.clearClipboard,
+    })),
+  );
+
+export const useRegistryActions = () =>
+  useDiagramStore(
+    useShallow((s) => ({
+      addService: s.addService,
+      updateService: s.updateService,
+      removeService: s.removeService,
+      linkComponentToService: s.linkComponentToService,
     })),
   );

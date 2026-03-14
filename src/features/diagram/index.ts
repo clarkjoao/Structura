@@ -52,6 +52,8 @@ export {
 /** Zustand store — single source of truth for all diagram state */
 export {
   useDiagramStore,
+  /** Hook returning all mutation actions (add/update/remove/undo/redo/…) */
+  useRegistryActions,
   /** Factory used in tests to create a store backed by a custom storage adapter */
   createDiagramStore,
   /** Selector: all diagrams keyed by id */
@@ -95,3 +97,5 @@ export {
 } from "./store/diagram.store";
 
 export type { DiagramStore, ClipboardEntry } from "./store/diagram.store";
+
+export type { ServiceDefinition } from "./model/registry.types";
