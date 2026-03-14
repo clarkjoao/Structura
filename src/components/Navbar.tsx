@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { GitBranch, Box, Layers, Network } from "lucide-react";
+import { Network } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Navbar = () => {
   return (
@@ -15,21 +16,17 @@ const Navbar = () => {
         </Link>
 
         <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
-          <Link
-            to="/"
-            className="hover:text-foreground transition-colors"
-          >
+          <Link to="/" className="hover:text-foreground transition-colors">
             Workspaces
           </Link>
-          <Link
-            to="/registry"
-            className="hover:text-foreground transition-colors"
-          >
+          <Link to="/registry" className="hover:text-foreground transition-colors">
             Registry
           </Link>
         </div>
 
-        <div className="flex items-center gap-3" />
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+        </div>
       </div>
     </nav>
   );
