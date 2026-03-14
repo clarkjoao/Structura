@@ -15,8 +15,8 @@ import type {
   Level,
 } from "../model/diagram.types";
 import { generateId } from "../model/diagram.utils";
-import type { ServiceDefinition } from "../model/registry.types";
-import { SEED_DIAGRAMS, SEED_SERVICE_REGISTRY } from "@/fixtures/seed";
+import type { ServiceDefinition } from "./store.types";
+import { SEED_SERVICE_REGISTRY } from "@/fixtures/seed";
 import type { AppState, DiagramSnapshot } from "./store.types";
 import { activeDiagram as _activeDiagram } from "./store.types";
 import { historySlice, pushHistory } from "./slices/history.slice";
@@ -26,6 +26,8 @@ import { flowsSlice } from "./slices/flows.slice";
 import { layoutSlice } from "./slices/layout.slice";
 import { servicesSlice } from "./slices/services.slice";
 import { clipboardSlice } from "./slices/clipboard.slice";
+import { diagramsSlice } from "./slices/diagram.slice";
+import { foldersSlice } from "./slices/folders.slice";
 
 export type { AppState, DiagramSnapshot };
 export type { ClipboardEntry } from "./store.types";
@@ -99,15 +101,12 @@ export function createDiagramStore(storage = defaultStorage) {
   return create<DiagramStore>()(
     persist(
       immer((set, get) => ({
-        diagrams: SEED_DIAGRAMS,
-        folders: {},
         serviceRegistry: SEED_SERVICE_REGISTRY,
-        activeDiagramId: null,
         past: [],
         future: [],
         _lastUndoRedoAt: 0,
         clipboard: null,
-
+        ...diagramsSlice(set, get as () => AppState),
         ...componentsSlice(set),
         ...connectionsSlice(set),
         ...flowsSlice(set, get as () => AppState),
@@ -115,67 +114,7 @@ export function createDiagramStore(storage = defaultStorage) {
         ...servicesSlice(set),
         ...clipboardSlice(set),
         ...historySlice(set),
-
-      addDiagram: (name, level, domain, folderId) => {
-        const diagram: Diagram = {
-          id: generateId("d"),
-          name,
-          level,
-          domain: domain || undefined,
-          updatedAt: "agora",
-          snapshot: { components: {}, connections: {}, flows: {} },
-          nodeLayouts: [],
-          viewport: { x: 0, y: 0, zoom: 1 },
-          folderId: folderId ?? undefined,
-        };
-        set((state) => { state.diagrams[diagram.id] = diagram; });
-        return diagram;
-      },
-
-      addFolder: (name, parentId, domain) => {
-        const folder: Folder = {
-          id: generateId("folder"),
-          name,
-          parentId,
-          domain: domain || undefined,
-        };
-        set((state) => { state.folders[folder.id] = folder; });
-        return folder;
-      },
-
-      renameFolder: (id, name) => {
-        set((state) => {
-          const f = state.folders[id];
-          if (f) f.name = name;
-        });
-      },
-
-      deleteFolder: (id) => {
-        set((state) => {
-          const hasChildren = Object.values(state.folders).some((f) => f.parentId === id);
-          const hasDiagrams = Object.values(state.diagrams).some((d) => d.folderId === id);
-          if (hasChildren || hasDiagrams) return;
-          delete state.folders[id];
-        });
-      },
-
-      moveDiagram: (diagramId, folderId) => {
-        set((state) => {
-          const d = state.diagrams[diagramId];
-          if (d) d.folderId = folderId ?? undefined;
-        });
-      },
-
-      openDiagram: (id) => {
-        set((state) => { state.activeDiagramId = id; });
-      },
-
-      deleteDiagram: (id) => {
-        set((state) => {
-          delete state.diagrams[id];
-          if (state.activeDiagramId === id) state.activeDiagramId = null;
-        });
-      },
+        ...foldersSlice(set, get as () => AppState),
 
       insertPattern: (template, position) => {
         const GRID_X = 220;

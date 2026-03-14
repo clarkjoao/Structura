@@ -9,7 +9,7 @@ export type ComponentType =
   | "note"
   | AwsCategoryId;
 
-export type Level = "context" | "container" | "component";
+export type Level = "context" | "container" | "component" | string;
 
 // ── Component discriminated union ─────────────────────────────────────────
 
