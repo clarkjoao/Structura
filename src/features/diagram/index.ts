@@ -56,6 +56,11 @@ export {
   useRegistryActions,
   /** Factory used in tests to create a store backed by a custom storage adapter */
   createDiagramStore,
+  /** Hook returning all mutation actions (add/update/remove/undo/redo/…) */
+  useDiagramActions,
+} from "./store/diagram.store";
+
+export {
   /** Selector: all diagrams keyed by id */
   useDiagrams,
   /** Selector: flat array of all diagrams */
@@ -80,14 +85,11 @@ export {
   useVisibleConnections,
   /** Selector: serviceRegistry of the active diagram */
   useServiceRegistry,
+  /** Selector: flat array of all components in the active diagram */
+   useAllComponents,
   /** Selector: flat array of all services in the active diagram */
   useAllServices,
-  /** Selector: flat array of all components in the active diagram */
-  useAllComponents,
   /** Selector: flat array of all connections in the active diagram */
   useFlows,
-  /** Hook returning all mutation actions (add/update/remove/undo/redo/…) */
-  useDiagramActions,
-} from "./store/diagram.store";
-
+} from './store/selectors'
 export type { DiagramStore, ClipboardEntry } from "./store/diagram.store";

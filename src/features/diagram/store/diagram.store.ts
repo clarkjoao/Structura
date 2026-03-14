@@ -169,68 +169,6 @@ export function createDiagramStore(storage = defaultStorage) {
 
 export const useDiagramStore = createDiagramStore();
 
-// ── Selectors ──────────────────────────────────────────────────────────────
-
-export const useDiagrams = () => useDiagramStore((s) => s.diagrams);
-export const useAllDiagrams = () => useDiagramStore(useShallow((s) => Object.values(s.diagrams)));
-export const useFolders = () => useDiagramStore((s) => s.folders);
-
-export const useAllFolders = () => useDiagramStore(useShallow((s) => Object.values(s.folders)));
-export const useActiveDiagramId = () => useDiagramStore((s) => s.activeDiagramId);
-export const useActiveDiagram = () => useDiagramStore((s) => s.activeDiagramId ? s.diagrams[s.activeDiagramId] : null);
-export const useComponents = () =>useDiagramStore((s) => s.activeDiagramId ? s.diagrams[s.activeDiagramId].snapshot.components : {});
-export const useComponent = (id: string) =>
-  useDiagramStore((s) =>
-    s.activeDiagramId
-      ? s.diagrams[s.activeDiagramId].snapshot.components[id]
-      : undefined,
-  );
-export const useConnections = () => useDiagramStore((s) => s.activeDiagramId ? s.diagrams[s.activeDiagramId].snapshot.connections : {});
-
-export const useVisibleComponents = () =>
-  useDiagramStore(
-    useShallow((s) => {
-      if (!s.activeDiagramId) return [];
-      const d = s.diagrams[s.activeDiagramId];
-      const visibleIds = new Set(d.nodeLayouts.map((nl) => nl.elementId));
-      return Object.values(d.snapshot.components).filter((c) => visibleIds.has(c.id));
-    }),
-  );
-
-export const useVisibleConnections = () =>
-  useDiagramStore(
-    useShallow((s) => {
-      if (!s.activeDiagramId) return [];
-      const d = s.diagrams[s.activeDiagramId];
-      const visibleIds = new Set(d.nodeLayouts.map((nl) => nl.elementId));
-      return Object.values(d.snapshot.connections).filter(
-        (conn) => visibleIds.has(conn.sourceId) && visibleIds.has(conn.targetId),
-      );
-    }),
-  );
-
-export const useServiceRegistry = () => useDiagramStore(useShallow((s) => s.serviceRegistry));
-
-export const useAllServices = () => useDiagramStore(useShallow((s) => Object.values(s.serviceRegistry)));
-
-export const useAllComponents = () =>
-  useDiagramStore(
-    useShallow((s) => {
-      if (!s.activeDiagramId) return [];
-      return Object.values(s.diagrams[s.activeDiagramId].snapshot.components);
-    }),
-  );
-
-export const useFlows = () =>
-  useDiagramStore(
-    useShallow((s) => {
-      if (!s.activeDiagramId) return [];
-      return Object.values(s.diagrams[s.activeDiagramId].snapshot.flows);
-    }),
-  );
-
-// ── Action hooks ───────────────────────────────────────────────────────────
-
 export const useDiagramActions = () =>
   useDiagramStore(
     useShallow((s) => ({
