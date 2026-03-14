@@ -22,14 +22,14 @@ export const useCanvasStore = () => {
     if (!activeDiag) return [];
     return Object.values(activeDiag.snapshot.connections).map((conn: Connection) => ({
       id: conn.id,
-      source: conn.fromComponentId,
-      target: conn.toComponentId,
+      source: conn.sourceId,
+      target: conn.targetId,
       style: conn.style,
     }));
   }, [activeDiag]);
 
-  const nodeLayouts = activeDiag?.snapshot.nodeLayouts ?? [];
-  const viewport = activeDiag?.snapshot.viewport;
+  const nodeLayouts = activeDiag?.nodeLayouts ?? [];
+  const viewport = activeDiag?.viewport;
 
   const updateComponent = useDiagramStore(state => state.updateComponent);
   const updateNodeLayout = useDiagramStore(state => state.updateNodeLayout);
