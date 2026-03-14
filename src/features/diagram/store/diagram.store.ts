@@ -16,21 +16,22 @@ import type {
 } from "../model/diagram.types";
 import type { ServiceDefinition } from "./store.types";
 import type { AppState, DiagramSnapshot } from "./store.types";
-import { historySlice } from "./slices/history.slice";
-import { componentsSlice } from "./slices/components.slice";
-import { connectionsSlice } from "./slices/connections.slice";
-import { flowsSlice } from "./slices/flows.slice";
-import { layoutSlice } from "./slices/layout.slice";
-import { servicesSlice } from "./slices/services.slice";
-import { clipboardSlice } from "./slices/clipboard.slice";
-import { diagramsSlice } from "./slices/diagram.slice";
-import { foldersSlice } from "./slices/folders.slice";
-import { patternsSlice } from "./slices/patterns.slice";
+import { 
+   historySlice,
+   componentsSlice,
+   connectionsSlice,
+   flowsSlice,
+   layoutSlice,
+   servicesSlice,
+   clipboardSlice,
+   diagramsSlice,
+   foldersSlice,
+   patternsSlice 
+} from "./slices";
 
 export type { AppState, DiagramSnapshot };
 export type { ClipboardEntry } from "./store.types";
 
-// ── Store interface ────────────────────────────────────────────────────────
 
 interface AppActions {
   addDiagram: (name: string, level: Level, domain?: string, folderId?: string | null) => Diagram;
@@ -171,35 +172,20 @@ export const useDiagramStore = createDiagramStore();
 // ── Selectors ──────────────────────────────────────────────────────────────
 
 export const useDiagrams = () => useDiagramStore((s) => s.diagrams);
-export const useAllDiagrams = () =>
-  useDiagramStore(useShallow((s) => Object.values(s.diagrams)));
+export const useAllDiagrams = () => useDiagramStore(useShallow((s) => Object.values(s.diagrams)));
 export const useFolders = () => useDiagramStore((s) => s.folders);
-export const useAllFolders = () =>
-  useDiagramStore(useShallow((s) => Object.values(s.folders)));
-export const useActiveDiagramId = () =>
-  useDiagramStore((s) => s.activeDiagramId);
 
-export const useActiveDiagram = () =>
-  useDiagramStore((s) =>
-    s.activeDiagramId ? s.diagrams[s.activeDiagramId] : null,
-  );
-
-export const useComponents = () =>
-  useDiagramStore((s) =>
-    s.activeDiagramId ? s.diagrams[s.activeDiagramId].snapshot.components : {},
-  );
-
+export const useAllFolders = () => useDiagramStore(useShallow((s) => Object.values(s.folders)));
+export const useActiveDiagramId = () => useDiagramStore((s) => s.activeDiagramId);
+export const useActiveDiagram = () => useDiagramStore((s) => s.activeDiagramId ? s.diagrams[s.activeDiagramId] : null);
+export const useComponents = () =>useDiagramStore((s) => s.activeDiagramId ? s.diagrams[s.activeDiagramId].snapshot.components : {});
 export const useComponent = (id: string) =>
   useDiagramStore((s) =>
     s.activeDiagramId
       ? s.diagrams[s.activeDiagramId].snapshot.components[id]
       : undefined,
   );
-
-export const useConnections = () =>
-  useDiagramStore((s) =>
-    s.activeDiagramId ? s.diagrams[s.activeDiagramId].snapshot.connections : {},
-  );
+export const useConnections = () => useDiagramStore((s) => s.activeDiagramId ? s.diagrams[s.activeDiagramId].snapshot.connections : {});
 
 export const useVisibleComponents = () =>
   useDiagramStore(
@@ -223,13 +209,9 @@ export const useVisibleConnections = () =>
     }),
   );
 
-export const useCanNavigateInto = (_elementId: string) => false;
+export const useServiceRegistry = () => useDiagramStore(useShallow((s) => s.serviceRegistry));
 
-export const useServiceRegistry = () =>
-  useDiagramStore(useShallow((s) => s.serviceRegistry));
-
-export const useAllServices = () =>
-  useDiagramStore(useShallow((s) => Object.values(s.serviceRegistry)));
+export const useAllServices = () => useDiagramStore(useShallow((s) => Object.values(s.serviceRegistry)));
 
 export const useAllComponents = () =>
   useDiagramStore(
@@ -239,29 +221,12 @@ export const useAllComponents = () =>
     }),
   );
 
-export const useAllConnections = () =>
-  useDiagramStore(
-    useShallow((s) => {
-      if (!s.activeDiagramId) return [];
-      return Object.values(s.diagrams[s.activeDiagramId].snapshot.connections);
-    }),
-  );
-
 export const useFlows = () =>
   useDiagramStore(
     useShallow((s) => {
       if (!s.activeDiagramId) return [];
       return Object.values(s.diagrams[s.activeDiagramId].snapshot.flows);
     }),
-  );
-
-export const useAllComponentsAcrossDiagrams = () =>
-  useDiagramStore(
-    useShallow((s) =>
-      Object.values(s.diagrams).flatMap((d) =>
-        Object.values(d.snapshot.components).map((c) => ({ ...c, diagramId: d.id, diagramName: d.name })),
-      ),
-    ),
   );
 
 // ── Action hooks ───────────────────────────────────────────────────────────

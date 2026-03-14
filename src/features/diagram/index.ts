@@ -78,8 +78,6 @@ export {
   useVisibleComponents,
   /** Selector: connections whose both endpoints are visible */
   useVisibleConnections,
-  /** Selector: whether an element can be drilled into */
-  useCanNavigateInto,
   /** Selector: serviceRegistry of the active diagram */
   useServiceRegistry,
   /** Selector: flat array of all services in the active diagram */
@@ -87,15 +85,9 @@ export {
   /** Selector: flat array of all components in the active diagram */
   useAllComponents,
   /** Selector: flat array of all connections in the active diagram */
-  useAllConnections,
-  /** Selector: flat array of all flows in the active diagram */
   useFlows,
-  /** Selector: flat array of ALL components across ALL diagrams, each annotated with diagramId + diagramName */
-  useAllComponentsAcrossDiagrams,
   /** Hook returning all mutation actions (add/update/remove/undo/redo/…) */
   useDiagramActions,
 } from "./store/diagram.store";
 
 export type { DiagramStore, ClipboardEntry } from "./store/diagram.store";
-
-export type { ServiceDefinition } from "./model/registry.types";
