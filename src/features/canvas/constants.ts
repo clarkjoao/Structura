@@ -2,6 +2,10 @@
 export const PANEL_DEFAULT_W = 600;
 /** Default height for panel nodes (px). */
 export const PANEL_DEFAULT_H = 400;
+/** Collapsed panel width (px). */
+export const PANEL_COLLAPSED_W = 200;
+/** Collapsed panel height (px). */
+export const PANEL_COLLAPSED_H = 60;
 /** Minimum number of handles per node side. */
 export const MIN_HANDLES = 1;
 /** Maximum number of handles per node side. */
