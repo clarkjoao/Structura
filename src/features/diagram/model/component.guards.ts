@@ -1,5 +1,5 @@
 import { isAwsType } from "@/lib/aws-catalog";
-import type { Component, C4Component, PanelComponent, NoteComponent, AwsComponent } from "./diagram.types";
+import type { Component, C4Component, PanelComponent, NoteComponent, AwsComponent } from "./component.types";
 
 export const isPanelComponent = (c: Component): c is PanelComponent => c.type === "panel";
 

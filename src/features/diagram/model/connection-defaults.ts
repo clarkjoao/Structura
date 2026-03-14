@@ -1,4 +1,4 @@
-import type { Connection, ConnectionIntent, ConnectionDirection, ConnectionStyle } from "./diagram.types";
+import type { Connection, ConnectionIntent, ConnectionDirection, ConnectionStyle } from "./connection.types";
 
 /** Default visual style per intent. User-overridden style fields take precedence when rendering. */
 export const INTENT_DEFAULTS: Record<ConnectionIntent, Partial<ConnectionStyle>> = {

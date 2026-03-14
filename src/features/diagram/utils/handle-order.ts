@@ -1,4 +1,4 @@
-import type { Connection } from "../model/diagram.types";
+import type { Connection } from "../model/connection.types";
 
 /**
  * Returns `conns` sorted by the given `order` (array of connection ids).
