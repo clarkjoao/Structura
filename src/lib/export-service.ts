@@ -6,7 +6,7 @@ import {
   isAwsComponent,
   ServiceDefinition
 } from "@/features/diagram";
-import { AWS_SERVICE_MAP } from "@/lib/aws-catalog";
+import { AWS_SERVICE_MAP } from "@/lib/catalogs/aws";
 
 const CONFIG = {
   swimlaneHeader: 30,

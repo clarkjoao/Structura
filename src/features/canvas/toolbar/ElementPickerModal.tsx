@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronRight, Database, Network, Search, Server, Square, StickyNote, Star, User, X } from "lucide-react";
 import type { PanelKind } from "@/features/diagram";
-import { PANEL_KINDS, getPanelKindForAwsService, getPanelKindDef } from "@/lib/panel-catalog";
+import { PANEL_KINDS, getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
 import { useReactFlow } from "@xyflow/react";
 import { useDiagramActions, useAllServices, useAllComponents } from "@/features/diagram";
 import type { ComponentType } from "@/features/diagram";
-import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/aws-catalog";
+import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/catalogs/aws";
 import AwsIcon from "../nodes/AwsIcon";
 import { trackUsage, getTopUsed } from "./element-usage-tracker";
 

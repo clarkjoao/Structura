@@ -2,7 +2,7 @@ import { memo } from "react";
 import { NodeResizer, type NodeProps } from "@xyflow/react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
-import { getPanelKindDef } from "@/lib/panel-catalog";
+import { getPanelKindDef } from "@/lib/catalogs/panels";
 import AwsIcon from "./AwsIcon";
 
 const DEFAULT_OPACITY = 10;

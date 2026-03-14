@@ -7,7 +7,7 @@ import {
   PATTERN_CATEGORY_LABELS,
   type PatternCategory,
   type PatternTemplate,
-} from "@/lib/patterns-catalog";
+} from "@/lib/catalogs/patterns";
 import { useDiagramActions } from "@/features/diagram";
 import { getViewportCenter } from "./viewport-utils";
 

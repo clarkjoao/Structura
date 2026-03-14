@@ -57,7 +57,7 @@ export interface AppActions {
   removeFlow: (id: string) => void;
 
   insertPattern: (
-    template: import("@/lib/patterns-catalog").PatternTemplate,
+    template: import("@/lib/catalogs/patterns").PatternTemplate,
     position: { x: number; y: number },
   ) => void;
 

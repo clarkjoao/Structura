@@ -16,7 +16,7 @@ import {
   isAwsType,
   AWS_SERVICE_MAP,
   AWS_CATEGORY_MAP,
-} from "@/lib/aws-catalog";
+} from "@/lib/catalogs/aws";
 import AwsIcon from "./AwsIcon";
 import { MIN_HANDLES, MAX_HANDLES } from "../constants";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";

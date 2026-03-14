@@ -1,4 +1,4 @@
-import type { AwsCategoryId } from "@/lib/aws-catalog";
+import type { AwsCategoryId } from "@/lib/catalogs/aws";
 
 export type ComponentType =
   | "person"
