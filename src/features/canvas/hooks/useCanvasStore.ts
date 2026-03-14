@@ -1,25 +1,36 @@
-import { useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useDiagramStore } from '@/features/diagram';
+import type { Component, Connection } from '@/features/diagram';
+
 /**
  * Centraliza acesso ao store com seletores otimizados
- * Evita re-renders desnecessários com useShallow
  */
 export const useCanvasStore = () => {
-  const diagramId = useDiagramStore(state => state.activeDiagram);
-  const nodes = useDiagramStore(state => Object.values(state.snapshot.components)
-    .filter(c => !c.parentId) // Top-level only (ReactFlow handles hierarchy)
-  );
-  const edges = useDiagramStore(state => Object.values(state.snapshot.connections).map(conn => ({
-    id: conn.id,
-    source: conn.fromComponentId,
-    target: conn.toComponentId,
-    style: conn.style,
-  }))
-  );
-  const nodeLayouts = useDiagramStore(state => state.snapshot.nodeLayouts);
-  const viewport = useDiagramStore(state => state.snapshot.viewport);
+  const diagramId = useDiagramStore(state => state.activeDiagramId);
 
-  // Actions com weak memoization
+  const activeDiag = useDiagramStore(state =>
+    state.activeDiagramId ? state.diagrams[state.activeDiagramId] : null
+  );
+
+  const nodes = useMemo(() => {
+    if (!activeDiag) return [];
+    return Object.values(activeDiag.snapshot.components)
+      .filter((c: Component) => !c.parentId);
+  }, [activeDiag]);
+
+  const edges = useMemo(() => {
+    if (!activeDiag) return [];
+    return Object.values(activeDiag.snapshot.connections).map((conn: Connection) => ({
+      id: conn.id,
+      source: conn.sourceId,
+      target: conn.targetId,
+      style: conn.style,
+    }));
+  }, [activeDiag]);
+
+  const nodeLayouts = activeDiag?.nodeLayouts ?? [];
+  const viewport = activeDiag?.viewport;
+
   const updateComponent = useDiagramStore(state => state.updateComponent);
   const updateNodeLayout = useDiagramStore(state => state.updateNodeLayout);
   const updateViewport = useDiagramStore(state => state.updateViewport);

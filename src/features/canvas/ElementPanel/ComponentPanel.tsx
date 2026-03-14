@@ -51,7 +51,7 @@ function shouldPreserveContent(name: string, description: string) {
 interface ComponentPanelProps {
   component: Component;
   onClose: () => void;
-  updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => void;
+  updateComponent: (id: string, patch: Record<string, unknown>) => void;
   removeComponent: (id: string) => void;
   onUngroup?: () => void;
 }
