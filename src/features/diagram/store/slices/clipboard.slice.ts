@@ -1,5 +1,5 @@
 import type { Component, Connection } from "../../model/diagram.types";
-import { generateId } from "../../model/diagram.utils";
+import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 import { deepClone, pushHistory } from "./history.slice";
 

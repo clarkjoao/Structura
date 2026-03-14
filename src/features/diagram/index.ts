@@ -30,10 +30,12 @@ export {
   INTENT_DEFAULTS,
   DIRECTION_MARKERS,
   getEffectiveConnectionStyle,
+  getIntentDefault,
 } from "./model/connection-defaults";
+export type { EffectiveConnectionStyle } from "./model/connection-defaults";
 
 /** Unique ID generator for diagram entities */
-export { generateId } from "./model/diagram.utils";
+export { generateId } from "./utils/generate-id";
 
 /** Sort connections array by an explicit handle-order array of connection ids */
 export { applyHandleOrder } from "./utils/handle-order";

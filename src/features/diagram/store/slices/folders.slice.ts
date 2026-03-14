@@ -1,5 +1,5 @@
 import type { Folder } from "../../model/diagram.types";
-import { generateId } from "../../model/diagram.utils";
+import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 
 export function foldersSlice(

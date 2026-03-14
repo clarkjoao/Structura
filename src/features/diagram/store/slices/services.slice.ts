@@ -1,5 +1,5 @@
 import type { ServiceDefinition } from "../../model/service.types";
-import { generateId } from "../../model/diagram.utils";
+import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 import { SEED_SERVICE_REGISTRY } from "@/fixtures/seed";
 

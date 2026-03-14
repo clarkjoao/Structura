@@ -1,5 +1,5 @@
 import { Component, ComponentType } from "../../model/diagram.types";
-import { generateId } from "../../model/diagram.utils";
+import { generateId } from "../../utils/generate-id";
 import { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
 

@@ -1,5 +1,5 @@
 import type { Component, ComponentPatch, ComponentType, PanelComponent, PanelKind } from "../../model/diagram.types";
-import { generateId } from "../../model/diagram.utils";
+import { generateId } from "../../utils/generate-id";
 import { isPanelComponent } from "../../model/component.guards";
 import { getPanelKindDef } from "@/lib/panel-catalog";
 import type { AppState } from "../store.types";

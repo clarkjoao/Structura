@@ -1,7 +1,7 @@
 import { SEED_DIAGRAMS } from "@/fixtures/seed";
 import { AppState } from "../store.types";
 import {Diagram, Level} from "../../model/diagram.types";
-import { generateId } from "../../model/diagram.utils";
+import { generateId } from "../../utils/generate-id";
 
 export const diagramsSlice = (
     set: (fn: (state: AppState) => void) => void,

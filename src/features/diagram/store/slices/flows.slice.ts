@@ -1,5 +1,5 @@
 import type { Flow, FlowStep } from "../../model/diagram.types";
-import { generateId } from "../../model/diagram.utils";
+import { generateId } from "../../utils/generate-id";
 import { parseMermaidToSteps } from "../../utils/flow-mermaid";
 import type { AppState } from "../store.types";
 
