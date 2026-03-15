@@ -12,7 +12,6 @@ interface UseCanvasEffectsParams {
   activeFlow?: Flow | null;
   currentStep?: number;
   onClearSelection: () => void;
-  setPulseNodeId: (id: string | null) => void;
 }
 
 const MIN_ZOOM = 0.1;
@@ -28,7 +27,6 @@ export function useCanvasEffects({
   activeFlow,
   currentStep,
   onClearSelection,
-  setPulseNodeId,
 }: UseCanvasEffectsParams) {
   // Clear selection when playback starts
   useEffect(() => {
@@ -77,8 +75,6 @@ export function useCanvasEffects({
     const step = activeFlow.steps[currentStep ?? 0];
     if (!step) return;
 
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-
     if (step.componentId) {
       const node = reactFlowInstance.getNode(step.componentId);
       if (node) {
@@ -88,8 +84,6 @@ export function useCanvasEffects({
           padding: 0.35,
           maxZoom: 1.5,
         });
-        setPulseNodeId(step.componentId);
-        timeoutId = setTimeout(() => setPulseNodeId(null), 1500);
       }
     } else if (step.connectionId) {
       const edge = reactFlowInstance.getEdge(step.connectionId);
@@ -109,9 +103,5 @@ export function useCanvasEffects({
         }
       }
     }
-
-    return () => {
-      if (timeoutId !== undefined) clearTimeout(timeoutId);
-    };
-  }, [activeFlow, currentStep, reactFlowInstance, setPulseNodeId]);
+  }, [activeFlow, currentStep, reactFlowInstance]);
 }

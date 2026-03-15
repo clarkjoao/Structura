@@ -1,6 +1,6 @@
 /**
  * Estado visual do canvas (não persiste no store).
- * Seleção, highlight, context menu, quick insert, pulse, drag positions.
+ * Seleção, highlight, context menu, quick insert.
  */
 import { useCallback, useState } from "react";
 
@@ -23,10 +23,6 @@ export interface CanvasVisualState {
     sourceNodeId: string;
   } | null;
   setQuickInsert: (value: CanvasVisualState["quickInsert"]) => void;
-  pulseNodeId: string | null;
-  setPulseNodeId: (id: string | null) => void;
-  dragPositions: Record<string, { x: number; y: number }>;
-  setDragPositions: React.Dispatch<React.SetStateAction<Record<string, { x: number; y: number }>>>;
   clearCanvasSelection: () => void;
 }
 
@@ -46,8 +42,6 @@ export function useCanvasVisualState(): CanvasVisualState {
     flowPos: { x: number; y: number };
     sourceNodeId: string;
   } | null>(null);
-  const [pulseNodeId, setPulseNodeId] = useState<string | null>(null);
-  const [dragPositions, setDragPositions] = useState<Record<string, { x: number; y: number }>>({});
 
   const setHighlight = useCallback((connectionId: string, nodeIds: string[]) => {
     setHighlightedConnectionId(connectionId);
@@ -82,10 +76,6 @@ export function useCanvasVisualState(): CanvasVisualState {
     setContextMenu,
     quickInsert,
     setQuickInsert,
-    pulseNodeId,
-    setPulseNodeId,
-    dragPositions,
-    setDragPositions,
     clearCanvasSelection,
   };
 }

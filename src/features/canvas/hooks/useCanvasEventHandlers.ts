@@ -15,7 +15,6 @@ interface UseCanvasEventHandlersParams {
   onRecordNodeClick?: (nodeId: string) => void;
   onRecordEdgeClick?: (edgeId: string, handleId?: string) => void;
   screenToFlowPosition: (pos: { x: number; y: number }) => { x: number; y: number };
-  fitView: (opts: { nodes: { id: string }[]; duration?: number; padding?: number; maxZoom?: number }) => Promise<void>;
 }
 
 export function useCanvasEventHandlers({
@@ -27,7 +26,6 @@ export function useCanvasEventHandlers({
   onRecordNodeClick,
   onRecordEdgeClick,
   screenToFlowPosition,
-  fitView,
 }: UseCanvasEventHandlersParams) {
   const {
     setSelectedNodeId,
@@ -35,7 +33,6 @@ export function useCanvasEventHandlers({
     setSelectedEdgeId,
     setContextMenu,
     setQuickInsert,
-    setPulseNodeId,
     clearHighlight,
     clearCanvasSelection,
   } = visualState;
@@ -75,18 +72,10 @@ export function useCanvasEventHandlers({
   );
 
   const handleQuickInsert = useCallback(
-    (newNodeId: string) => {
+    (_newNodeId: string) => {
       setQuickInsert(null);
-      setPulseNodeId(newNodeId);
-      void fitView({
-        nodes: [{ id: newNodeId }],
-        duration: 500,
-        padding: 0.5,
-        maxZoom: 1.5,
-      });
-      setTimeout(() => setPulseNodeId(null), 1500);
     },
-    [fitView, setQuickInsert, setPulseNodeId],
+    [setQuickInsert],
   );
 
   const onNodeClick = useCallback(

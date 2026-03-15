@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useCallback } from "react";
 import {
   ReactFlow,
   Background,
@@ -8,6 +8,7 @@ import {
   PanOnScrollMode,
   SelectionMode,
   type Node,
+  type OnNodesChange,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useNavigate } from "react-router-dom";
@@ -29,7 +30,6 @@ import { useCanvasEventHandlers } from "./hooks/useCanvasEventHandlers";
 import { useCanvasDrillHandlers } from "./hooks/useCanvasDrillHandlers";
 import { useCanvasHandleReorder } from "./hooks/useCanvasHandleReorder";
 import { useCanvasEffects } from "./hooks/useCanvasEffects";
-import { useCanvasRenderNodes } from "./hooks/useCanvasRenderNodes";
 import QuickInsertPopover from "./QuickInsertPopover";
 import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 
@@ -57,11 +57,6 @@ const CANVAS_STYLES = `
   .react-flow__pane { cursor: default; }
   .react-flow__pane:active { cursor: grabbing; }
   .react-flow__selection { background: rgba(59, 130, 246, 0.08); border: 1px solid #3b82f6; }
-  @keyframes quick-insert-pulse {
-    0%   { box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.7); }
-    100% { box-shadow: 0 0 0 0px rgba(99, 102, 241, 0); }
-  }
-  .node-pulse { animation: quick-insert-pulse 0.45s ease-out 3; }
 `;
 
 // ── Component ───────────────────────────────────────────────────────────────
@@ -112,7 +107,7 @@ const Canvas = ({
   });
 
   const nodesRef = useRef<Node[]>([]);
-  const { dragTargetPanelId, unparentCandidatePanelId, onNodesChange: innerOnNodesChange, onNodeDragStop: innerOnNodeDragStop } =
+  const { dragTargetPanelId, unparentCandidatePanelId, onNodesChange: innerOnNodesChange, onNodeDragStop } =
     useNodeDragParenting({
       diagram,
       nodes: nodesRef.current,
@@ -147,14 +142,10 @@ const Canvas = ({
   });
   nodesRef.current = nodes;
 
-  const { renderNodes, onNodesChange, onNodeDragStop } = useCanvasRenderNodes({
-    nodes,
-    dragPositions: visualState.dragPositions,
-    pulseNodeId: visualState.pulseNodeId,
-    setDragPositions: visualState.setDragPositions,
-    innerOnNodesChange,
-    innerOnNodeDragStop,
-  });
+  const onNodesChange: OnNodesChange = useCallback(
+    (changes) => innerOnNodesChange(changes),
+    [innerOnNodesChange],
+  );
 
   const edges = useCanvasEdges({
     diagram,
@@ -178,7 +169,6 @@ const Canvas = ({
     onRecordNodeClick,
     onRecordEdgeClick,
     screenToFlowPosition: (pos) => reactFlowInstance.screenToFlowPosition(pos),
-    fitView: async (opts) => { await reactFlowInstance.fitView(opts); },
   });
 
   const isPanelOpen = !!(visualState.selectedNodeId || visualState.selectedEdgeId) && !isRecording;
@@ -212,7 +202,6 @@ const Canvas = ({
     activeFlow,
     currentStep,
     onClearSelection: visualState.clearCanvasSelection,
-    setPulseNodeId: visualState.setPulseNodeId,
   });
 
   const selectedNodes = nodes.filter((n) => visualState.selectedNodeIds.has(n.id));
@@ -248,7 +237,7 @@ const Canvas = ({
           />
           <div onContextMenu={(e) => e.preventDefault()} className="w-full h-full">
             <ReactFlow
-              nodes={renderNodes}
+              nodes={nodes}
               edges={edges}
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}
