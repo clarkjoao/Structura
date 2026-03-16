@@ -95,44 +95,100 @@ src/
 │   │   │   ├── diagram.service.ts     # Lógica pura: computeServiceImpact, parseMermaidToSteps
 │   │   │   └── diagram.utils.ts       # generateId
 │   │   ├── store/
-│   │   │   └── diagram.store.ts       # Zustand + immer + persist; seed; ações e selectors
+│   │   │   ├── diagram.store.ts       # Zustand + immer + persist; seed; ações e selectors
+│   │   │   ├── store.types.ts         # AppState, StoreActions
+│   │   │   ├── actions.types.ts       # Tipos das actions
+│   │   │   ├── persist.config.ts      # Configuração de persistência
+│   │   │   ├── selectors/             # Seletores por domínio
+│   │   │   │   ├── component.selectors.ts
+│   │   │   │   ├── connection.selectors.ts
+│   │   │   │   ├── diagram.selectors.ts
+│   │   │   │   ├── flows.selectors.ts
+│   │   │   │   ├── folder.selectors.ts
+│   │   │   │   ├── layout.selectors.ts
+│   │   │   │   ├── registry.selectors.ts
+│   │   │   │   └── index.ts
+│   │   │   └── slices/                # Slices por domínio
+│   │   │       ├── diagram.slice.ts   # addDiagram, openDiagram, removeDiagram, commitVersion, restoreVersion
+│   │   │       ├── components.slice.ts
+│   │   │       ├── connections.slice.ts
+│   │   │       ├── flows.slice.ts
+│   │   │       ├── layout.slice.ts
+│   │   │       ├── services.slice.ts
+│   │   │       ├── clipboard.slice.ts
+│   │   │       ├── history.slice.ts
+│   │   │       ├── folders.slice.ts   # addFolder, updateFolder, removeFolder, moveFolder
+│   │   │       ├── patterns.slice.ts  # insertPattern
+│   │   │       └── index.ts
 │   │   └── index.ts                   # Reexporta tipos, utils, service, store
 │   ├── canvas/
+│   │   ├── Canvas.tsx                 # React Flow, integra todos os hooks
+│   │   ├── constants.ts               # Constantes de layout
+│   │   ├── viewport-utils.ts          # Utilitários de viewport
+│   │   ├── hooks/
+│   │   │   ├── useCanvasStore.ts      # Acesso centralizado ao store
+│   │   │   ├── useCanvasVisualState.ts # Estado visual local
+│   │   │   ├── useCanvasEventHandlers.ts
+│   │   │   ├── useCanvasEffects.ts    # Side-effects: viewport, layout
+│   │   │   ├── useCanvasDrillHandlers.ts
+│   │   │   ├── useCanvasKeyboard.ts   # Orquestra atalhos de teclado
+│   │   │   ├── useNodeDragParenting.ts
+│   │   │   └── keyboard/              # Sub-hooks de teclado por grupo
 │   │   ├── nodes/
-│   │   │   ├── CustomNode.tsx         # Nó C4 (person/system/container/component + AWS)
-│   │   │   ├── PanelNode.tsx          # Painel agrupador, redimensionável
-│   │   │   ├── NoteNode.tsx           # Nota adesiva, sem handles
-│   │   │   └── AwsIcon.tsx            # Ícone AWS lazy-loaded
+│   │   │   ├── CustomNode/            # Nó C4 + AWS (componentes internos)
+│   │   │   ├── PanelNode.tsx
+│   │   │   ├── NoteNode.tsx
+│   │   │   ├── AwsIcon.tsx
+│   │   │   ├── nodeVisibility.ts
+│   │   │   ├── useCanvasNodes.ts
+│   │   │   └── node-types/            # Sistema de descritores (c4, panel, note)
 │   │   ├── edges/
-│   │   │   └── CustomEdge.tsx         # Aresta reta com label
+│   │   │   ├── CustomEdge.tsx
+│   │   │   ├── edgeBuilding.ts
+│   │   │   ├── connectionDerivations.ts
+│   │   │   ├── useCanvasEdges.ts
+│   │   │   ├── useCanvasConnectionDerivations.ts
+│   │   │   └── useCanvasHandleReorder.ts
+│   │   ├── panels/
+│   │   │   ├── ElementPanel/          # Painel lateral de propriedades
+│   │   │   ├── MultiSelectPanel.tsx
+│   │   │   └── NodeContextMenu.tsx
+│   │   ├── flow/
+│   │   │   ├── FlowPanel.tsx
+│   │   │   ├── FlowRecorderPanel.tsx
+│   │   │   ├── FlowStepNavigator.tsx
+│   │   │   ├── flowState.ts
+│   │   │   ├── useFlowState.ts
+│   │   │   └── RecordingModeContext.tsx
 │   │   ├── toolbar/
-│   │   │   └── CanvasToolbar.tsx      # Barra: diagrama ativo, adicionar elemento (C4, painel, nota, AWS)
-│   │   ├── Canvas.tsx                 # React Flow, nós/arestas, drag, seleção, context menu
-│   │   ├── ElementPanel.tsx           # Painel lateral: propriedades e conexões do elemento
-│   │   ├── FlowPanel.tsx              # Lista de flows, play, editar, copiar Mermaid
-│   │   ├── FlowRecorderPanel.tsx      # Gravação de flow (steps), preview Mermaid, stepsToMermaid
-│   │   ├── FlowStepNavigator.tsx      # Barra de playback (anterior/próximo, nota do step)
-│   │   ├── NodeContextMenu.tsx        # Menu contexto: trazer frente / enviar atrás
-│   │   └── index.ts                   # Reexporta Canvas, FlowPanel, nodes, edges, toolbar
+│   │   │   ├── CanvasToolbar.tsx
+│   │   │   ├── ElementPickerModal.tsx
+│   │   │   ├── PatternPicker.tsx
+│   │   │   └── QuickInsertPopover.tsx
+│   │   ├── models/
+│   │   │   └── panelParenting.ts
+│   │   ├── contexts/
+│   │   │   └── HandleHighlightContext.tsx
+│   │   └── index.ts
 │   ├── registry/
 │   │   ├── model/
 │   │   │   └── registry.types.ts      # ServiceDefinition
 │   │   ├── store/
-│   │   │   └── registry.store.ts     # Reexporta selectors do diagram + useRegistryActions
-│   │   └── index.ts                   # Reexporta tipos e store (useServiceRegistry, useAllServices, useRegistryActions)
+│   │   │   └── registry.store.ts      # Reexporta selectors do diagram + useRegistryActions
+│   │   └── index.ts
 │   └── flows/
 │       └── index.ts                   # Placeholder (tipos Flow/FlowStep estão em diagram)
 │
 ├── components/                        # UI compartilhada (fora de features)
 │   ├── ui/                            # shadcn/ui
-│   ├── Navbar.tsx
+│   ├── Navbar.tsx                     # Inclui ThemeToggle
 │   ├── NavLink.tsx
 │   └── LandingPage.tsx
 │
 ├── lib/                               # Utilitários e catálogos globais
 │   ├── model-types.ts                 # Reexporta @/features/diagram e @/features/registry (compat)
 │   ├── model-store.ts                 # Reexporta @/features/diagram (compat)
-│   ├── aws-catalog.ts                 # AWS_CATEGORIES, AwsCategoryId, isAwsType, AWS_SERVICE_MAP, AWS_CATEGORY_MAP
+│   ├── aws-catalog.ts                 # AWS_CATEGORIES, AwsCategoryId, isAwsType, AWS_SERVICE_MAP
 │   ├── github-import.ts               # importFromGitHub (tech stack a partir de repo)
 │   ├── export-service.ts              # exportJSON, exportDrawio, exportMermaid, downloadFile
 │   └── utils.ts                       # cn() (tailwind-merge)
@@ -140,17 +196,21 @@ src/
 ├── infrastructure/
 │   └── persistence/
 │       ├── IStoragePort.ts            # Interface: save, load, delete, getItem, setItem, removeItem
-│       ├── LocalStorageAdapter.ts     # Implementação browser; prefixo structura_; fallback para chaves legadas; defaultStorage
+│       ├── LocalStorageAdapter.ts     # Implementação browser; prefixo structura_; defaultStorage
 │       └── index.ts
+│
+├── fixtures/
+│   └── seed.ts                        # Dados de seed para desenvolvimento
 │
 ├── pages/
 │   ├── Index.tsx                      # Landing
-│   ├── Dashboard.tsx                  # Lista de diagramas, abre /model/:id
+│   ├── Dashboard.tsx                  # Lista de diagramas + pastas; abre /model/:id
 │   ├── ModelExplorer.tsx              # Canvas + FlowPanel + FlowRecorder + export; rota /model/:id
-│   ├── ServiceRegistry.tsx            # Catálogo de serviços, impacto (computeServiceImpact), import GitHub
+│   ├── ServiceRegistry.tsx            # Catálogo de serviços, impacto, import GitHub
 │   └── NotFound.tsx
 │
 ├── hooks/
+│   ├── useTheme.ts                    # Toggle dark/light theme
 │   ├── use-toast.ts
 │   └── use-mobile.tsx
 │
@@ -165,23 +225,36 @@ src/
 | **features/diagram/model** | `diagram.types.ts` | Tipos do domínio: `Component`, `Connection`, `Diagram`, `ModelDraft`, `Flow`, `FlowStep`, `ViewNodeLayout`, `Level`, `ComponentType`. Importa `AwsCategoryId` de `aws-catalog` e `ServiceDefinition` do registry. |
 | | `diagram.service.ts` | Lógica de negócio pura: `computeServiceImpact(serviceId, components, connections)` (análise de impacto); `parseMermaidToSteps(mermaid, components, connections)` (Mermaid → steps para Flow). Sem Zustand. |
 | | `diagram.utils.ts` | `generateId(prefix)` para IDs únicos (elementos, diagramas, conexões, serviços, flows). |
-| **features/diagram/store** | `diagram.store.ts` | Store Zustand com immer + persist (LocalStorage via `defaultStorage`). Seed (buildSeedDiagrams) usado só quando não há dados persistidos. Ações: diagram CRUD, components, connections, layout, viewport, z-order, service registry, flows, undo/redo. Selectors com `useShallow` onde retornam array/objeto. |
+| **features/diagram/store** | `diagram.store.ts` | Store Zustand com immer + persist (LocalStorage via `defaultStorage`). Seed em `src/fixtures/seed.ts` usado só quando não há dados persistidos. Ações: diagram CRUD, components, connections, layout, viewport, z-order, service registry, flows, undo/redo, folders, patterns. Selectors com `useShallow` onde retornam array/objeto. |
+| | `slices/diagram.slice.ts` | Diagram CRUD: `addDiagram`, `openDiagram`, `updateDiagram`, `removeDiagram`, `setActiveDiagramId`, `commitVersion`, `restoreVersion`. |
+| | `slices/folders.slice.ts` | Hierarquia de pastas: `addFolder`, `updateFolder`, `removeFolder`, `moveFolder`. |
+| | `slices/patterns.slice.ts` | `insertPattern(template, position)` — instancia componentes/conexões do padrão no canvas ativo. |
 | **features/diagram** | `index.ts` | API pública: tipos, generateId, computeServiceImpact, parseMermaidToSteps, useDiagramStore, selectors, useDiagramActions. |
 | **features/registry/model** | `registry.types.ts` | Tipo `ServiceDefinition` (id, name, description, repositoryUrl, technology[], owner?, tags?). |
 | **features/registry/store** | `registry.store.ts` | Reexporta useDiagramStore, useServiceRegistry, useAllServices, useAllComponents, useAllConnections; define `useRegistryActions()` (addService, updateService, removeService, linkComponentToService) com useShallow. |
 | **features/registry** | `index.ts` | Reexporta ServiceDefinition e hooks do store. |
-| **features/canvas** | `Canvas.tsx` | Container React Flow: nodeTypes (c4, panel, note), edgeTypes; integra visibleComponents/visibleConnections, layout, viewport, drill-down, seleção, context menu, gravação de flow. |
-| | `ElementPanel.tsx` | Painel lateral: abas propriedades (nome, tipo, tecnologia, serviço, diagrama vinculado) e conexões; color picker para painéis/notas. |
-| | `FlowPanel.tsx` | Lista de flows do diagrama ativo; play, editar, remover, copiar Mermaid. |
+| **features/canvas** | `Canvas.tsx` | Container React Flow: nodeTypes (c4, panel, note), edgeTypes; integra todos os hooks de store, visual state, eventos, efeitos e teclado. |
+| **features/canvas/hooks** | `useCanvasStore.ts` | Acesso centralizado ao store via seletores `useShallow`. |
+| | `useCanvasVisualState.ts` | Estado visual local: seleção, context menu, highlights. |
+| | `useCanvasEventHandlers.ts` | Handlers de eventos ReactFlow: connect, click, context menu. |
+| | `useCanvasEffects.ts` | Side-effects: persistência de viewport e layout. |
+| | `useCanvasDrillHandlers.ts` | Drill-down para diagramas vinculados. |
+| | `useCanvasKeyboard.ts` + `keyboard/` | Atalhos de teclado decompostos em sub-hooks por grupo. |
+| | `useNodeDragParenting.ts` | Drag-to-panel parenting / unparenting. |
+| **features/canvas/panels** | `ElementPanel/` | Painel lateral: abas propriedades (nome, tipo, tecnologia, serviço, diagrama vinculado) e conexões; color picker para painéis/notas. |
+| | `NodeContextMenu.tsx` | Menu de contexto: trazer para frente / enviar para trás. |
+| | `MultiSelectPanel.tsx` | Painel de ações em multi-seleção. |
+| **features/canvas/flow** | `FlowPanel.tsx` | Lista de flows do diagrama ativo; play, editar, remover, copiar Mermaid. |
 | | `FlowRecorderPanel.tsx` | Modo gravação: steps, preview Mermaid, `stepsToMermaid()`; finalizar/cancelar. |
 | | `FlowStepNavigator.tsx` | Barra de playback: anterior/próximo, nome do flow, nota do step atual. |
-| | `NodeContextMenu.tsx` | Menu de contexto: trazer para frente / enviar para trás. |
-| **features/canvas/nodes** | `CustomNode.tsx` | Nó C4 (person, system, container, component) + nós AWS; handles; badges de serviço e diagrama vinculado; botão “Explorar interior”. |
+| | `useFlowState.ts` | Computa highlights de playback, badges de recording e coverage. |
+| **features/canvas/nodes** | `CustomNode/` | Nó C4 (person, system, container, component) + nós AWS; handles; badges de serviço e diagrama vinculado; botão “Explorar interior”. |
 | | `PanelNode.tsx` | Nó tipo painel: NodeResizer, cor/opacidade, destaque ao arrastar. |
 | | `NoteNode.tsx` | Nó tipo nota: NodeResizer, cor, texto. |
 | | `AwsIcon.tsx` | Lazy load de ícones `aws-react-icons` por nome. |
+| | `node-types/` | Sistema de descritores: `c4Descriptor`, `panelDescriptor`, `noteDescriptor` + registry. |
 | **features/canvas/edges** | `CustomEdge.tsx` | Aresta reta (getStraightPath), label, tecnologia, badges de gravação/playback. |
-| **features/canvas/toolbar** | `CanvasToolbar.tsx` | Nome do diagrama, nível; botão “Adicionar elemento” (C4, painel, nota, AWS por categoria). |
+| **features/canvas/toolbar** | `CanvasToolbar.tsx` | Nome do diagrama, nível; botão “Adicionar elemento” (C4, painel, nota, AWS); PatternPicker; QuickInsert. |
 | **features/flows** | `index.ts` | Placeholder; tipos de flow estão em diagram.types. |
 | **infrastructure/persistence** | `IStoragePort.ts` | Port: save(key, data), load\<T\>(key), delete(key); getItem/setItem/removeItem (raw) para Zustand persist. |
 | | `LocalStorageAdapter.ts` | Implementação: localStorage, prefixo `structura_` com fallback para chaves legadas; serialização em save/load; `defaultStorage` singleton. |

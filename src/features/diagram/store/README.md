@@ -8,10 +8,13 @@ Selectors and the `useDiagramActions` hook live **only** in `diagram.store.ts`.
 ```
 createDiagramStore()
 │
+├── diagramsSlice(set, get)    addDiagram · openDiagram · updateDiagram · removeDiagram
+│                              setActiveDiagramId · commitVersion · restoreVersion
+│
 ├── componentsSlice(set)       addComponent · updateComponent · removeComponent
 │                              setParent · groupNodes · ungroupNodes
 │
-├── connectionsSlice(set)      addComponent · updateConnection · removeConnection
+├── connectionsSlice(set)      addConnection · updateConnection · removeConnection
 │
 ├── flowsSlice(set, get)       addFlow · updateFlow · removeFlow
 │
@@ -23,14 +26,19 @@ createDiagramStore()
 │
 ├── clipboardSlice(set)        copyToClipboard · pasteFromClipboard · clearClipboard
 │
-└── historySlice(set)          undo · redo
-                               (internal: pushHistory, deepClone)
+├── historySlice(set)          undo · redo
+│                              (internal: pushHistory, deepClone)
+│
+├── foldersSlice(set, get)     addFolder · updateFolder · removeFolder · moveFolder
+│
+└── patternsSlice(set, get)    insertPattern
 ```
 
 ## Slice → Actions
 
 | Slice file | Actions |
 |-----------|---------|
+| `diagram.slice.ts` | `addDiagram`, `openDiagram`, `updateDiagram`, `removeDiagram`, `setActiveDiagramId`, `commitVersion`, `restoreVersion` |
 | `components.slice.ts` | `addComponent`, `updateComponent`, `removeComponent`, `setParent`, `groupNodes`, `ungroupNodes` |
 | `connections.slice.ts` | `addConnection`, `updateConnection`, `removeConnection` |
 | `flows.slice.ts` | `addFlow`, `updateFlow`, `removeFlow` |
@@ -38,6 +46,8 @@ createDiagramStore()
 | `services.slice.ts` | `addService`, `updateService`, `removeService`, `linkComponentToService`, `linkComponentToDiagram` |
 | `clipboard.slice.ts` | `copyToClipboard`, `pasteFromClipboard`, `clearClipboard` |
 | `history.slice.ts` | `undo`, `redo` |
+| `folders.slice.ts` | `addFolder`, `updateFolder`, `removeFolder`, `moveFolder` |
+| `patterns.slice.ts` | `insertPattern` |
 
 ## Selectors
 

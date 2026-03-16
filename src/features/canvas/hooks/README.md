@@ -5,13 +5,63 @@ They are not exported via `features/canvas/index.ts`.
 
 ---
 
+## useCanvasStore
+
+**File:** `useCanvasStore.ts`
+
+**Purpose:** Centralises all Zustand store access for the canvas. Returns memoized
+selectors via `useShallow` to avoid unnecessary re-renders.
+
+**Returns:** `{ diagram, visibleComponents, visibleConnections, nodeLayouts, viewport, actions }`
+
+---
+
+## useCanvasVisualState
+
+**File:** `useCanvasVisualState.ts`
+
+**Purpose:** Manages all local visual state: selected node/edge IDs, context menu
+position, recording highlights. Does not touch the Zustand store.
+
+**Returns:** selected node/edge state, context menu state, setters.
+
+---
+
+## useCanvasEventHandlers
+
+**File:** `useCanvasEventHandlers.ts`
+
+**Purpose:** Provides ReactFlow event handlers: `onConnect`, `onNodeClick`,
+`onEdgeClick`, `onPaneClick`, `onNodeContextMenu`. Calls store actions and updates
+visual state accordingly.
+
+---
+
+## useCanvasEffects
+
+**File:** `useCanvasEffects.ts`
+
+**Purpose:** Declarative side-effects tied to canvas lifecycle. Persists viewport
+to the store on `onMoveEnd`. Syncs node dimensions back to the store after resize.
+
+---
+
+## useCanvasDrillHandlers
+
+**File:** `useCanvasDrillHandlers.ts`
+
+**Purpose:** Handles drill-down navigation. When a node has `linkedDiagramId` the
+"Explorar interior" button calls `openDiagram(linkedDiagramId)` via this hook.
+
+---
+
 ## useCanvasKeyboard
 
 **File:** `useCanvasKeyboard.ts`
 
-**Purpose:** Registers a global `document` keydown listener that handles all
-canvas keyboard shortcuts. Skips when focus is inside an input, textarea, select,
-or contentEditable element.
+**Purpose:** Orchestrates all canvas keyboard shortcuts by composing the
+specialised sub-hooks in the `keyboard/` subdirectory. Registers a global
+`keydown` listener; skips when focus is inside an input/textarea/select/contentEditable.
 
 **Params:**
 
@@ -21,19 +71,10 @@ or contentEditable element.
 | `selectedNodeId` | `string \| null` | Last focused node |
 | `reactFlowInstance` | `ReactFlowInstance` | Used to read/mutate node selection |
 | `reactFlowWrapperRef` | `RefObject<HTMLDivElement>` | Used to calculate paste center position |
-| `isRecording` | `boolean` | When true, only Delete/Backspace (recording undo) is handled |
+| `isRecording` | `boolean` | When true, only recording shortcuts are active |
 | `onRecordUndo` | `() => void` | Called on Delete/Backspace during recording mode |
-| `setSelectedNodeId/Ids/EdgeId` | setters | Clear selection after delete/undo |
-| `setContextMenu` | `(v: null) => void` | Closes the context menu on Escape |
-| `undo / redo` | actions | Cmd+Z / Shift+Cmd+Z |
-| `removeComponent` | action | Delete / Backspace |
-| `groupNodes / ungroupNodes` | actions | Cmd+G / Shift+Cmd+G |
-| `copyToClipboard / pasteFromClipboard / clearClipboard` | actions | Cmd+C/V/D, Escape |
 
-**Side effects:** Adds/removes a `keydown` listener on `document`. Re-registers whenever
-any param in the dependency array changes.
-
-**Shortcuts:**
+**Keyboard shortcut map:**
 
 | Key | Action |
 |-----|--------|
@@ -75,47 +116,26 @@ Tracks hover targets in real time and commits parent assignment on drag stop.
 | `onNodesChange` | `OnNodesChange` | Pass directly to `<ReactFlow onNodesChange={...}>` |
 | `onNodeDragStop` | handler | Pass directly to `<ReactFlow onNodeDragStop={...}>` |
 
-**Internal state:**
-- `dragTargetPanelId` — reactive state mirroring `dragTargetRef` for rendering (avoids stale closures)
-- `dragTargetRef` — mutable ref for synchronous comparison inside `onNodesChange`
-- `unparentCandidatePanelId` — shows the "unparent" warning ring on the panel node
-
 **How it works:**
-1. `onNodesChange` intercepts `position` and `dimensions` change events. For `position` changes
-   with `dragging: true` it computes absolute coordinates (adding parent offset if parented),
-   then finds which panel (if any) the node overlaps.
+1. `onNodesChange` intercepts `position` change events with `dragging: true`, computes
+   absolute coordinates (adding parent offset if parented), then finds which panel (if any)
+   the node overlaps.
 2. `onNodeDragStop` commits the change: if the node is outside its current parent → unparent
    (convert relative coords to absolute); if the node is inside a new panel → reparent
    (convert absolute coords to relative).
 
 ---
 
-## useCanvasNodes
+## keyboard/ sub-hooks
 
-**File:** `useCanvasNodes.ts`
+Sub-hooks consumed by `useCanvasKeyboard`. Each handles one shortcut group.
 
-**Purpose:** Derives the ReactFlow `Node[]` array from `visibleComponents` using the
-descriptor registry (`getDescriptor`). Memoized — only recomputes when any of its ~15
-inputs change.
-
----
-
-## useCanvasEdges
-
-**File:** `useCanvasEdges.ts`
-
-**Purpose:** Derives the ReactFlow `Edge[]` array from `visibleConnections` with
-playback/recording styling applied. Memoized.
-
----
-
-## useFlowState
-
-**File:** `useFlowState.ts`
-
-**Purpose:** Given `activeFlow` and `currentStep`, computes:
-- `isPlaying` — whether playback is active
-- `activeStep` — the current `FlowStep`
-- `flowHighlight` — which nodes/edges are active, visited, participant, or dimmed
-- `recordingInfo` — step badges and last-recorded markers for recording mode
-- `coverage` — which flows cover each node/edge (for the coverage overlay)
+| File | Shortcuts |
+|------|-----------|
+| `useUndoRedoShortcuts.ts` | `Cmd+Z`, `Shift+Cmd+Z` |
+| `useSelectionShortcuts.ts` | `Cmd+A`, `Escape`, `Delete`, `Backspace` |
+| `useCopyPasteShortcuts.ts` | `Cmd+C`, `Cmd+V`, `Cmd+D` |
+| `useGroupShortcuts.ts` | `Cmd+G`, `Shift+Cmd+G` |
+| `useRecordingShortcuts.ts` | `Delete/Backspace` in recording mode |
+| `useQuickAddShortcuts.ts` | Quick-insert element shortcuts |
+| `helpers.ts` | Shared key detection utilities |

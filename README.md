@@ -29,6 +29,8 @@ Structura also includes a built-in **AWS service catalog** so cloud-native teams
 - **Pattern library** — Reusable component panels and grouping to express architectural patterns
 - **Undo / Redo** — Full history stack scoped to each diagram
 - **Export** — Export to JSON, draw.io XML, or Mermaid sequence diagrams
+- **Dark / Light theme** — Toggle between themes from the navigation bar
+- **Folder organization** — Organize diagrams into nested folders on the dashboard
 
 ---
 
@@ -81,12 +83,13 @@ src/
 ├── features/
 │   ├── diagram/       # Core data model, Zustand store, types, guards
 │   ├── canvas/        # ReactFlow canvas, node descriptors, hooks
-│   ├── flows/         # Flow parsing and Mermaid integration
+│   ├── flows/         # Flow re-exports
 │   └── registry/      # Service definition registry
 ├── infrastructure/
 │   └── persistence/   # Storage adapters (LocalStorage, InMemory)
 ├── components/ui/     # shadcn/ui component library
 ├── fixtures/          # Seed data for development
+├── hooks/             # Shared app hooks (useTheme, use-toast, use-mobile)
 └── lib/               # Export utilities, AWS catalog, GitHub import
 ```
 
@@ -96,6 +99,7 @@ The single source of truth is `useDiagramStore`, a Zustand store with Immer muta
 
 | Slice | Responsibility |
 |-------|---------------|
+| `diagram` | Diagram CRUD, active diagram, drill-down navigation |
 | `components` | Add, update, remove, parent, group components |
 | `connections` | Manage edges between components |
 | `flows` | CRUD for named interaction flows |
@@ -103,21 +107,26 @@ The single source of truth is `useDiagramStore`, a Zustand store with Immer muta
 | `services` | Service registry and component-service linking |
 | `clipboard` | Copy/paste within and across diagrams |
 | `history` | Undo/redo via past/future snapshot stacks |
+| `folders` | Nested folder hierarchy for the dashboard |
+| `patterns` | Insert pattern templates onto the canvas |
 
 Each `Diagram` snapshot stores components as a **discriminated union** (`C4Component | PanelComponent | NoteComponent | AwsComponent`). Use the provided type guards (`isC4Component`, `isPanelComponent`, etc.) instead of checking `type` directly.
 
 ### Canvas (`features/canvas`)
 
-`Canvas.tsx` bridges the diagram store to ReactFlow. Node rendering is driven by a **descriptor registry** — each node type implements `NodeTypeDescriptor` and registers itself. To add a new node type, see [`src/features/canvas/node-types/README.md`](src/features/canvas/node-types/README.md).
+`Canvas.tsx` bridges the diagram store to ReactFlow. Node rendering is driven by a **descriptor registry** — each node type implements `NodeTypeDescriptor` and registers itself. To add a new node type, see [`src/features/canvas/nodes/node-types/README.md`](src/features/canvas/nodes/node-types/README.md).
 
 Key hooks:
 
 | Hook | Purpose |
 |------|---------|
+| `useCanvasStore` | Centralised access to store data and actions |
 | `useCanvasNodes` | Derives ReactFlow `Node[]` from visible components |
 | `useCanvasEdges` | Derives ReactFlow `Edge[]` from visible connections |
 | `useNodeDragParenting` | Handles drag-to-panel parenting and unparenting |
-| `useCanvasKeyboard` | Global keyboard shortcuts (undo, delete, duplicate, group) |
+| `useCanvasKeyboard` | Orchestrates all canvas keyboard shortcuts |
+| `useCanvasVisualState` | Selection, highlights, context menu state |
+| `useCanvasEffects` | Side-effects: viewport sync, layout persistence |
 | `useFlowState` | Computes playback highlights and coverage overlays |
 
 ---
