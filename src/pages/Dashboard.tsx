@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from "react";
+import React, { useState, useMemo, useCallback, useRef } from "react";
 import { formatTimestamp } from "@/lib/format-date";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -249,8 +249,9 @@ const Dashboard = () => {
                 {breadcrumbPath.map((folder, i) => {
                   const isLast = i === breadcrumbPath.length - 1;
                   return (
-                    <BreadcrumbItem key={folder.id}>
-                      <BreadcrumbSeparator />
+                    <React.Fragment key={folder.id}>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
                       {isLast ? (
                         <BreadcrumbPage className="text-[13px]">
                           {folder.name}
@@ -267,6 +268,7 @@ const Dashboard = () => {
                         </BreadcrumbLink>
                       )}
                     </BreadcrumbItem>
+                    </React.Fragment>
                   );
                 })}
               </BreadcrumbList>
