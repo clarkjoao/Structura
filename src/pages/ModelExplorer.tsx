@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Download, GitBranch } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
-import { RecordingModeProvider } from "@/features/canvas/contexts/RecordingModeContext";
+import { RecordingModeProvider } from "@/features/canvas/flow/RecordingModeContext";
 import { useActiveDiagram, useActiveDiagramId, useDiagramActions, useFlows, stepsToMermaid, useServiceRegistry } from "@/features/diagram";
 import { exportJSON, exportDrawio, exportMermaid, downloadFile } from "@/lib/export-service";
 import type { Flow, FlowStep } from "@/features/diagram";

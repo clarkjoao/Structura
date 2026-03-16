@@ -2,7 +2,7 @@
  * Handler para reordenar handles de conexões (incoming/outgoing).
  */
 import { useCallback } from "react";
-import { useRecordingMode } from "../contexts/RecordingModeContext";
+import { useRecordingMode } from "../flow/RecordingModeContext";
 
 interface UseCanvasHandleReorderParams {
   effectiveHandleOrder: Record<string, { incoming: string[]; outgoing: string[] }>;

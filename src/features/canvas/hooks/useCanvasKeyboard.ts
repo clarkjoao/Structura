@@ -2,7 +2,7 @@ import { useEffect, useCallback } from "react";
 import type { ReactFlowInstance, Node } from "@xyflow/react";
 import type { Diagram, ComponentType, Component } from "@/features/diagram";
 import { getViewportCenter } from "../viewport-utils";
-import { useRecordingMode } from "../contexts/RecordingModeContext";
+import { useRecordingMode } from "../flow/RecordingModeContext";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 

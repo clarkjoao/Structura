@@ -1,6 +1,6 @@
 import type { CSSProperties, ComponentType as ReactComponentType } from "react";
 import type { Component, ComponentType, Diagram, FlowStep, ServiceDefinition } from "@/features/diagram";
-import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../models/flowState";
+import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../../flow/flowState";
 
 export type { FlowHighlight, RecordingInfo, CoverageInfo };
 

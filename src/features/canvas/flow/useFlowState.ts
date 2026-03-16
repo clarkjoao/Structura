@@ -1,12 +1,12 @@
 import { useMemo } from "react";
 import type { Flow } from "@/features/diagram";
-import { useRecordingMode } from "../contexts/RecordingModeContext";
+import { useRecordingMode } from "./RecordingModeContext";
 import {
   EMPTY_FLOW_HIGHLIGHT,
   buildFlowHighlight,
   buildCoverage,
   buildRecordingInfo,
-} from "../models/flowState";
+} from "./flowState";
 
 interface UseFlowStateParams {
   activeFlow?: Flow | null;

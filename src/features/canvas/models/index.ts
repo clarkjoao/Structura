@@ -6,7 +6,7 @@ export {
   buildFlowHighlight,
   buildCoverage,
   buildRecordingInfo,
-} from "./flowState";
+} from "../flow/flowState";
 
 export {
   type HandleAssignment,
@@ -16,7 +16,7 @@ export {
   resolveHandleIndex,
   buildEdgeHandleAssignments,
   buildEffectiveHandleOrder,
-} from "./connectionDerivations";
+} from "../edges/connectionDerivations";
 
 export {
   type EdgeBuildParams,
@@ -24,7 +24,7 @@ export {
   getEdgeOpacity,
   buildEdge,
   filterVisibleConnections,
-} from "./edgeBuilding";
+} from "../edges/edgeBuilding";
 
 export {
   getPanelDimensions,
@@ -39,4 +39,4 @@ export {
   type NodeVisibilityState,
   buildCollapsedPanelIds,
   computeNodeVisibility,
-} from "./nodeVisibility";
+} from "../nodes/nodeVisibility";

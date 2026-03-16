@@ -5,7 +5,7 @@ import {
   buildConnectionCountPerNode,
   buildEdgeHandleAssignments,
   buildEffectiveHandleOrder,
-} from "../models/connectionDerivations";
+} from "./connectionDerivations";
 
 interface UseCanvasConnectionDerivationsParams {
   visibleComponents: Component[];

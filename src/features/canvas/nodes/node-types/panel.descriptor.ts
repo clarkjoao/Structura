@@ -1,8 +1,8 @@
-import PanelNode from "../nodes/PanelNode";
+import PanelNode from "../PanelNode";
 import type { NodeTypeDescriptor } from "./types";
 import { isPanelComponent } from "@/features/diagram";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
-import { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../constants";
+import { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../../constants";
 
 export const panelDescriptor: NodeTypeDescriptor = {
   rfType: "panel",

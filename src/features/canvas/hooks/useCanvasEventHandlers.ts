@@ -5,7 +5,7 @@
 import { useCallback } from "react";
 import type { Node, Edge, OnEdgesChange, OnConnect, OnConnectEnd, Connection } from "@xyflow/react";
 import type { CanvasVisualState } from "./useCanvasVisualState";
-import { useRecordingMode } from "../contexts/RecordingModeContext";
+import { useRecordingMode } from "../flow/RecordingModeContext";
 
 interface UseCanvasEventHandlersParams {
   visualState: CanvasVisualState;

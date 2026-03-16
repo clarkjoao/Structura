@@ -1,7 +1,7 @@
 import { MarkerType, type Edge } from "@xyflow/react";
 import type { Connection, Diagram, FlowStep } from "@/features/diagram";
 import { getEffectiveConnectionStyle } from "@/features/diagram";
-import type { FlowHighlight, RecordingInfo, CoverageInfo } from "./flowState";
+import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
 
 export interface EdgeBuildParams {
   diagram: Diagram;

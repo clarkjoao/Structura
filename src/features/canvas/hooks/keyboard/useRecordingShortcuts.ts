@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useRecordingMode } from "../../contexts/RecordingModeContext";
+import { useRecordingMode } from "../../flow/RecordingModeContext";
 import type { KeyHandler } from "./helpers";
 
 /**

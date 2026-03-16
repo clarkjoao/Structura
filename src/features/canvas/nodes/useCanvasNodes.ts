@@ -2,10 +2,10 @@ import { useMemo } from "react";
 import type { Node } from "@xyflow/react";
 import type { Component, Diagram, ServiceDefinition } from "@/features/diagram";
 import { isPanelComponent } from "@/features/diagram";
-import { getDescriptor, type NodeBuildContext } from "../node-types";
-import { useRecordingMode } from "../contexts/RecordingModeContext";
-import { buildCollapsedPanelIds, computeNodeVisibility } from "../models/nodeVisibility";
-import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../models/flowState";
+import { getDescriptor, type NodeBuildContext } from "./node-types";
+import { useRecordingMode } from "../flow/RecordingModeContext";
+import { buildCollapsedPanelIds, computeNodeVisibility } from "./nodeVisibility";
+import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
 
 interface UseCanvasNodesParams {
   diagram: Diagram | null | undefined;

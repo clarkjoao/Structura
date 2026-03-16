@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import CustomNode from "../nodes/CustomNode";
+import CustomNode from "../CustomNode";
 import type { NodeTypeDescriptor, NodeBuildContext } from "./types";
 import {
   isAwsComponent,
