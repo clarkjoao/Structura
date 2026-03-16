@@ -2,7 +2,7 @@
  * Estado visual do canvas (não persiste no store).
  * Seleção, highlight, context menu, quick insert.
  */
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 export interface CanvasVisualState {
   selectedNodeId: string | null;
@@ -43,23 +43,25 @@ export function useCanvasVisualState(): CanvasVisualState {
     sourceNodeId: string;
   } | null>(null);
 
+  const emptySet = useRef(new Set<string>()).current;
+
   const setHighlight = useCallback((connectionId: string, nodeIds: string[]) => {
     setHighlightedConnectionId(connectionId);
     setHighlightedNodeIds(new Set(nodeIds));
   }, []);
 
   const clearHighlight = useCallback(() => {
-    setHighlightedConnectionId(null);
-    setHighlightedNodeIds(new Set());
-  }, []);
+    setHighlightedConnectionId((prev) => prev === null ? prev : null);
+    setHighlightedNodeIds((prev) => prev.size === 0 ? prev : emptySet);
+  }, [emptySet]);
 
   const clearCanvasSelection = useCallback(() => {
     clearHighlight();
-    setSelectedNodeId(null);
-    setSelectedNodeIds(new Set());
-    setSelectedEdgeId(null);
-    setContextMenu(null);
-  }, [clearHighlight]);
+    setSelectedNodeId((prev) => prev === null ? prev : null);
+    setSelectedNodeIds((prev) => prev.size === 0 ? prev : emptySet);
+    setSelectedEdgeId((prev) => prev === null ? prev : null);
+    setContextMenu((prev) => prev === null ? prev : null);
+  }, [clearHighlight, emptySet]);
 
   return {
     selectedNodeId,

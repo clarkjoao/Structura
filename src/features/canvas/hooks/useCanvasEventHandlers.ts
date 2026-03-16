@@ -113,7 +113,7 @@ export function useCanvasEventHandlers({
       clearHighlight();
       setSelectedEdgeId(edge.id);
       setSelectedNodeId(null);
-      setSelectedNodeIds(new Set());
+      setSelectedNodeIds((prev) => (prev.size === 0 ? prev : new Set()));
       setContextMenu(null);
     },
     [clearHighlight, isRecording, onRecordEdgeClick, setSelectedEdgeId, setSelectedNodeId, setSelectedNodeIds, setContextMenu],
@@ -144,6 +144,7 @@ export function useCanvasEventHandlers({
       if (isRecording) return;
       event.preventDefault();
       clearHighlight();
+      prevSelectionRef.current = node.id;
       setContextMenu({
         x: event.clientX,
         y: event.clientY,
@@ -156,10 +157,12 @@ export function useCanvasEventHandlers({
   );
 
   const closePanel = useCallback(() => {
+    prevSelectionRef.current = "";
     clearHighlight();
     setSelectedNodeId(null);
+    setSelectedNodeIds((prev) => (prev.size === 0 ? prev : new Set()));
     setSelectedEdgeId(null);
-  }, [clearHighlight, setSelectedNodeId, setSelectedEdgeId]);
+  }, [clearHighlight, setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId]);
 
   return {
     onEdgesChange,

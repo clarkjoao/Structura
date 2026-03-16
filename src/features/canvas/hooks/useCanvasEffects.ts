@@ -32,10 +32,7 @@ export function useCanvasEffects({
   useEffect(() => {
     if (!isPlaying) return;
     onClearSelection();
-    reactFlowInstance.setNodes((nodes) =>
-      nodes.map((node) => ({ ...node, selected: false })),
-    );
-  }, [isPlaying, onClearSelection, reactFlowInstance]);
+  }, [isPlaying, onClearSelection]);
 
   // Wheel: zoom (Ctrl/Cmd), horizontal pan (Shift), vertical pan
   useEffect(() => {

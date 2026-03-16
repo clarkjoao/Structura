@@ -126,13 +126,16 @@ const Canvas = ({
   if (storeNodes !== prevStoreNodesRef.current) {
     prevStoreNodesRef.current = storeNodes;
     setLocalNodes((prev) => {
-      if (prev.length === 0) return storeNodes;
+      if (prev.length === 0) {
+        localNodesRef.current = storeNodes;
+        return storeNodes;
+      }
       const localMap = new Map(prev.map((n) => [n.id, n]));
-      return storeNodes.map((sn) => {
+      const merged = storeNodes.map((sn) => {
         const ln = localMap.get(sn.id);
         if (!ln) return sn;
-        // Spread local first (preserves RF internals like measured/internals),
-        // then store props (data, style, hidden, zIndex, etc.), keep local position (drag)
+        // Spread local first (preserves RF internals like measured/internals + drag position),
+        // then store props (data, style, hidden, zIndex, etc.)
         return {
           ...ln,
           data: sn.data,
@@ -146,8 +149,9 @@ const Canvas = ({
           extent: sn.extent,
         };
       });
+      localNodesRef.current = merged;
+      return merged;
     });
-    localNodesRef.current = storeNodes;
   }
 
   const nodes = localNodes;
