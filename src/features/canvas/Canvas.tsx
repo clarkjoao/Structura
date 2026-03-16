@@ -1,4 +1,4 @@
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useState } from "react";
 import {
   ReactFlow,
   Background,
@@ -7,6 +7,7 @@ import {
   useReactFlow,
   PanOnScrollMode,
   SelectionMode,
+  applyNodeChanges,
   type Node,
   type OnNodesChange,
 } from "@xyflow/react";
@@ -35,8 +36,6 @@ import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 
 const edgeTypes = { c4: CustomEdge };
 
-// ── Types ─────────────────────────────────────────────────────────────────
-
 interface CanvasProps {
   activeFlow?: import("@/features/diagram").Flow | null;
   currentStep?: number;
@@ -51,15 +50,11 @@ interface CanvasProps {
   isViewingCoverage?: boolean;
 }
 
-// ── Styles ─────────────────────────────────────────────────────────────────
-
 const CANVAS_STYLES = `
   .react-flow__pane { cursor: default; }
   .react-flow__pane:active { cursor: grabbing; }
   .react-flow__selection { background: rgba(59, 130, 246, 0.08); border: 1px solid #3b82f6; }
 `;
-
-// ── Component ───────────────────────────────────────────────────────────────
 
 const Canvas = ({
   activeFlow,
@@ -106,16 +101,18 @@ const Canvas = ({
     updateHandleOrder: actions.updateHandleOrder,
   });
 
-  const nodesRef = useRef<Node[]>([]);
+  const [localNodes, setLocalNodes] = useState<Node[]>([]);
+  const localNodesRef = useRef<Node[]>([]);
+
   const { dragTargetPanelId, unparentCandidatePanelId, onNodesChange: innerOnNodesChange, onNodeDragStop } =
     useNodeDragParenting({
       diagram,
-      nodes: nodesRef.current,
+      nodes: localNodesRef.current,
       updateNodeLayout: actions.updateNodeLayout,
       setParent: actions.setParent,
     });
 
-  const nodes = useCanvasNodes({
+  const storeNodes = useCanvasNodes({
     diagram,
     visibleComponents,
     panelIds,
@@ -140,10 +137,25 @@ const Canvas = ({
     coverage,
     isViewingCoverage: !!isViewingCoverage,
   });
-  nodesRef.current = nodes;
+
+  const prevStoreNodesRef = useRef<Node[] | undefined>(undefined);
+  if (storeNodes !== prevStoreNodesRef.current) {
+    prevStoreNodesRef.current = storeNodes;
+    setLocalNodes(storeNodes);
+    localNodesRef.current = storeNodes;
+  }
+
+  const nodes = localNodes;
 
   const onNodesChange: OnNodesChange = useCallback(
-    (changes) => innerOnNodesChange(changes),
+    (changes) => {
+      innerOnNodesChange(changes);
+      setLocalNodes((nds) => {
+        const updated = applyNodeChanges(changes, nds);
+        localNodesRef.current = updated;
+        return updated;
+      });
+    },
     [innerOnNodesChange],
   );
 
