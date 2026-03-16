@@ -59,9 +59,7 @@ export function useNodeDragParenting({
           : false;
         setUnparentCandidatePanelId(outside ? comp.parentId : null);
 
-        const parentLayout = diagram?.nodeLayouts.find(
-          (nl) => nl.elementId === comp.parentId,
-        );
+        const parentLayout = comp.parentId ? diagram?.nodeLayouts[comp.parentId] : undefined;
         if (parentLayout) {
           const abs = toAbsolutePosition(change.position, parentLayout);
           absX = abs.x;
@@ -85,7 +83,7 @@ export function useNodeDragParenting({
   const handleDimensionsChange = useCallback(
     (change: NodeChange) => {
       if (change.type !== "dimensions" || !change.dimensions) return;
-      const layout = diagram?.nodeLayouts.find((nl) => nl.elementId === change.id);
+      const layout = diagram?.nodeLayouts[change.id];
       if (layout) {
         updateNodeLayout(change.id, { x: layout.x, y: layout.y }, change.dimensions);
       }

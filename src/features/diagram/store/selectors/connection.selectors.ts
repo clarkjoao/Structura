@@ -28,7 +28,7 @@ export const useVisibleComponents = () =>
     useShallow((s) => {
       if (!s.activeDiagramId) return [];
       const d = s.diagrams[s.activeDiagramId];
-      const visibleIds = new Set(d.nodeLayouts.map((nl) => nl.elementId));
+      const visibleIds = new Set(Object.keys(d.nodeLayouts));
       return Object.values(d.snapshot.components).filter((c) => visibleIds.has(c.id));
     }),
   );
@@ -38,7 +38,7 @@ export const useVisibleConnections = () =>
     useShallow((s) => {
       if (!s.activeDiagramId) return [];
       const d = s.diagrams[s.activeDiagramId];
-      const visibleIds = new Set(d.nodeLayouts.map((nl) => nl.elementId));
+      const visibleIds = new Set(Object.keys(d.nodeLayouts));
       return Object.values(d.snapshot.connections).filter(
         (conn) => visibleIds.has(conn.sourceId) && visibleIds.has(conn.targetId),
       );

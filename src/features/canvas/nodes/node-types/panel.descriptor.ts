@@ -37,7 +37,7 @@ export const panelDescriptor: NodeTypeDescriptor = {
 
   buildStyle: (comp, ctx) => {
     if (!isPanelComponent(comp)) return undefined;
-    const layout = ctx.diagram.nodeLayouts.find((nl) => nl.elementId === comp.id);
+    const layout = ctx.diagram.nodeLayouts[comp.id];
     return comp.collapsed
       ? { width: 200, height: 60 }
       : {

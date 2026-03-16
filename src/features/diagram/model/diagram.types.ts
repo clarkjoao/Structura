@@ -56,7 +56,7 @@ export interface Diagram {
   domain?: string;
   updatedAt: string;
   snapshot: ModelDraft;
-  nodeLayouts: NodeLayout[];
+  nodeLayouts: Record<string, NodeLayout>;
   viewport: { x: number; y: number; zoom: number };
   folderId?: string | null;
 }

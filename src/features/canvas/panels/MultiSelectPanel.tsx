@@ -98,7 +98,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
     ids.forEach((id, index) => {
       const comp = diagram.snapshot.components[id];
       if (!comp || comp.type === "panel") return;
-      const layout = diagram.nodeLayouts.find((nl) => nl.elementId === id);
+      const layout = diagram.nodeLayouts[id];
       addComponent(
         comp.type,
         `${comp.name} (cópia)`,

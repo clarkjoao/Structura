@@ -84,7 +84,7 @@ export function useCanvasNodes({
       .sort((a, b) => (isPanelComponent(a) ? -1 : isPanelComponent(b) ? 1 : 0))
       .map((comp): Node => {
         const d = getDescriptor(comp.type);
-        const layout = diagram.nodeLayouts.find((nl) => nl.elementId === comp.id);
+        const layout = diagram.nodeLayouts[comp.id];
         const vis = computeNodeVisibility(
           comp, d, layout, panelIds, selectedNodeIds, highlightedNodeIds,
           collapsedPanelIds, isViewingCoverage, coverage,

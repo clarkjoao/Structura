@@ -38,7 +38,7 @@ export const clipboardSlice = (
           const newId = generateId("el");
           idMap[c.id] = newId;
           d.snapshot.components[newId] = { ...deepClone(c), id: newId, parentId: null };
-          d.nodeLayouts.push({ elementId: newId, x: baseX + i * 20, y: baseY + i * 20 });
+          d.nodeLayouts[newId] = { elementId: newId, x: baseX + i * 20, y: baseY + i * 20 };
         });
         state.clipboard.connections.forEach((conn: Connection) => {
           const src = idMap[conn.sourceId];

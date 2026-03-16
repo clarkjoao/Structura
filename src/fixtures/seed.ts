@@ -108,11 +108,11 @@ function buildSeedDiagrams(): Record<string, Diagram> {
           },
         },
       },
-      nodeLayouts: [
-        { elementId: "e-user", x: 400, y: 50 },
-        { elementId: "e-orders", x: 200, y: 250 },
-        { elementId: "e-payments", x: 600, y: 250 },
-      ],
+      nodeLayouts: {
+        "e-user": { elementId: "e-user", x: 400, y: 50 },
+        "e-orders": { elementId: "e-orders", x: 200, y: 250 },
+        "e-payments": { elementId: "e-payments", x: 600, y: 250 },
+      },
       viewport: { x: 0, y: 0, zoom: 1 },
     },
     "d-orders": {
@@ -167,11 +167,11 @@ function buildSeedDiagrams(): Record<string, Diagram> {
         },
         flows: {},
       },
-      nodeLayouts: [
-        { elementId: "e-gateway", x: 100, y: 100 },
-        { elementId: "e-order-svc", x: 400, y: 100 },
-        { elementId: "e-db", x: 400, y: 300 },
-      ],
+      nodeLayouts: {
+        "e-gateway": { elementId: "e-gateway", x: 100, y: 100 },
+        "e-order-svc": { elementId: "e-order-svc", x: 400, y: 100 },
+        "e-db": { elementId: "e-db", x: 400, y: 300 },
+      },
       viewport: { x: 0, y: 0, zoom: 1 },
     },
     "d-gateway": {
@@ -210,10 +210,10 @@ function buildSeedDiagrams(): Record<string, Diagram> {
         },
         flows: {},
       },
-      nodeLayouts: [
-        { elementId: "e-auth", x: 100, y: 100 },
-        { elementId: "e-limiter", x: 400, y: 100 },
-      ],
+      nodeLayouts: {
+        "e-auth": { elementId: "e-auth", x: 100, y: 100 },
+        "e-limiter": { elementId: "e-limiter", x: 400, y: 100 },
+      },
       viewport: { x: 0, y: 0, zoom: 1 },
     },
   };

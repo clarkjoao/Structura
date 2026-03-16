@@ -31,6 +31,21 @@ export function mergePersistedState(
   if (!state.serviceRegistry) state.serviceRegistry = {};
   if (!state.folders) state.folders = {};
 
+  // Migrate nodeLayouts from legacy array format to Record<string, NodeLayout>
+  Object.values(state.diagrams ?? {}).forEach((d) => {
+    const diagram = d as Diagram & { nodeLayouts: unknown };
+    if (Array.isArray(diagram.nodeLayouts)) {
+      const arr = diagram.nodeLayouts as Array<{ elementId: string }>;
+      (diagram as Diagram).nodeLayouts = Object.fromEntries(arr.map((nl) => [nl.elementId, nl]));
+    }
+  });
+  [...(state.past ?? []), ...(state.future ?? [])].forEach((entry) => {
+    if (Array.isArray(entry.nodeLayouts)) {
+      const arr = entry.nodeLayouts as Array<{ elementId: string }>;
+      (entry as typeof entry & { nodeLayouts: unknown }).nodeLayouts = Object.fromEntries(arr.map((nl) => [nl.elementId, nl]));
+    }
+  });
+
   Object.values(state.diagrams ?? {}).forEach((d) => {
     const diagram = d as Diagram;
     Object.values(diagram.snapshot.connections ?? {}).forEach((conn) => {
@@ -72,7 +87,7 @@ export function mergePersistedState(
       type LegacyComp = Component & { width?: number; height?: number };
       const co = comp as LegacyComp;
       if (co.width !== undefined || co.height !== undefined) {
-        const layout = diagram.nodeLayouts.find((nl) => nl.elementId === co.id);
+        const layout = diagram.nodeLayouts[co.id];
         if (layout) {
           if (co.width !== undefined && layout.width === undefined)
             layout.width = co.width;

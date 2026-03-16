@@ -12,7 +12,7 @@ import type { AppActions } from "./actions.types";
 export interface DiagramSnapshot {
   diagramId: string;
   snapshot: ModelDraft;
-  nodeLayouts: ViewNodeLayout[];
+  nodeLayouts: Record<string, ViewNodeLayout>;
   timestamp: number;
 }
 

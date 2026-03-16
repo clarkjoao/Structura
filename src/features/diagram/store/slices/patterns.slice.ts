@@ -24,7 +24,7 @@ export const patternsSlice = (
               awsService: c.awsService ?? undefined,
             };
             d.snapshot.components[comp.id] = comp;
-            d.nodeLayouts.push({ elementId: comp.id, x: position.x + i * GRID_X, y: position.y });
+            d.nodeLayouts[comp.id] = { elementId: comp.id, x: position.x + i * GRID_X, y: position.y };
           });
           template.connections.forEach((conn: { fromIndex: number; toIndex: number; label: string }) => {
             const connId = generateId("conn");

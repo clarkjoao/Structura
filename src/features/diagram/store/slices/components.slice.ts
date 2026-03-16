@@ -49,13 +49,13 @@ export const componentsSlice = (
         pushHistory(state);
         const d = state.diagrams[state.activeDiagramId]
         d.snapshot.components[component.id] = component;
-        d.nodeLayouts.push({
+        d.nodeLayouts[component.id] = {
           elementId: component.id,
           x: position?.x ?? 300,
           y: position?.y ?? 300,
           ...(type === "panel" ? { zIndex: -1, width: PANEL_DEFAULT_W, height: PANEL_DEFAULT_H } : {}),
           ...(type === "note" ? { width: NOTE_DEFAULT_W, height: NOTE_DEFAULT_H } : {}),
-        });
+        };
         d.updatedAt = "agora";
       });
       return component;
@@ -79,7 +79,7 @@ export const componentsSlice = (
           Object.assign(d.snapshot.components[id], compPatch);
         }
         if (hasDimensions) {
-          const layout = d.nodeLayouts.find((nl) => nl.elementId === id);
+          const layout = d.nodeLayouts[id];
           if (layout) {
             if (width !== undefined) layout.width = width;
             if (height !== undefined) layout.height = height;
@@ -106,7 +106,7 @@ export const componentsSlice = (
           if (toRemove.has(conn.sourceId) || toRemove.has(conn.targetId))
             delete d.snapshot.connections[conn.id];
         });
-        d.nodeLayouts = d.nodeLayouts.filter((nl) => !toRemove.has(nl.elementId));
+        toRemove.forEach((eid) => delete d.nodeLayouts[eid]);
         d.updatedAt = "agora";
       });
     },
@@ -145,7 +145,7 @@ export const componentsSlice = (
         if (ids.length < 2) return;
 
         function getAbsPos(eid: string): { x: number; y: number } {
-          const layout = d.nodeLayouts.find((nl) => nl.elementId === eid);
+          const layout = d.nodeLayouts[eid];
           const c = comps[eid];
           if (!c || !layout) return { x: 0, y: 0 };
           if (!c.parentId) return { x: layout.x, y: layout.y };
@@ -157,7 +157,7 @@ export const componentsSlice = (
           const c = comps[eid];
           if (!c) return { w: DEFAULT_NODE_W, h: DEFAULT_NODE_H };
           if (isPanelComponent(c)) {
-            const layout = d.nodeLayouts.find((nl) => nl.elementId === eid);
+            const layout = d.nodeLayouts[eid];
             return { w: layout?.width ?? PANEL_DEFAULT_W, h: layout?.height ?? PANEL_DEFAULT_H };
           }
           return { w: DEFAULT_NODE_W, h: DEFAULT_NODE_H };
@@ -180,13 +180,13 @@ export const componentsSlice = (
           parentId: null,
         };
         d.snapshot.components[panel.id] = panel;
-        d.nodeLayouts.push({ elementId: panel.id, x: minX, y: minY, zIndex: -1, width: maxX - minX, height: maxY - minY });
+        d.nodeLayouts[panel.id] = { elementId: panel.id, x: minX, y: minY, zIndex: -1, width: maxX - minX, height: maxY - minY };
         panelId = panel.id;
 
         ids.forEach((eid, i) => {
           const comp = comps[eid];
           if (comp) comp.parentId = panel.id;
-          const layout = d.nodeLayouts.find((nl) => nl.elementId === eid);
+          const layout = d.nodeLayouts[eid];
           if (layout) {
             layout.x = positions[i].x - minX;
             layout.y = positions[i].y - minY;
@@ -204,19 +204,19 @@ export const componentsSlice = (
         const panel = comps[panelId];
         if (!panel || !isPanelComponent(panel)) return;
         const children = Object.values(comps).filter((c) => c.parentId === panelId);
-        const panelLayout = d.nodeLayouts.find((nl) => nl.elementId === panelId);
+        const panelLayout = d.nodeLayouts[panelId];
         if (!panelLayout) return;
         pushHistory(state);
         children.forEach((c) => {
           c.parentId = null;
-          const childLayout = d.nodeLayouts.find((nl) => nl.elementId === c.id);
+          const childLayout = d.nodeLayouts[c.id];
           if (childLayout) {
             childLayout.x = panelLayout.x + childLayout.x;
             childLayout.y = panelLayout.y + childLayout.y;
           }
         });
         delete d.snapshot.components[panelId];
-        d.nodeLayouts = d.nodeLayouts.filter((nl) => nl.elementId !== panelId);
+        delete d.nodeLayouts[panelId];
         d.updatedAt = "agora";
       });
     },

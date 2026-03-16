@@ -126,12 +126,12 @@ function getCenterOfNodes(diagram: Diagram, ids: string[], offset = 20): { x: nu
     const comp = diagram.snapshot.components[id];
     if (!comp) continue;
 
-    const layout = layouts.find((nl) => nl.elementId === id);
+    const layout = layouts[id];
     let x = layout?.x ?? 0;
     let y = layout?.y ?? 0;
 
     if (comp.parentId) {
-      const parentLayout = layouts.find((nl) => nl.elementId === comp.parentId);
+      const parentLayout = layouts[comp.parentId];
       if (parentLayout) {
         x += parentLayout.x;
         y += parentLayout.y;

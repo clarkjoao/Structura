@@ -8,7 +8,7 @@ export const layoutSlice = (
     updateNodeLayout: (elementId: string, position: { x: number; y: number }, dimensions?: { width: number; height: number }) => {
       set((state) => {
         const d = state.diagrams[state.activeDiagramId!];
-        const layout = d.nodeLayouts.find((nl) => nl.elementId === elementId);
+        const layout = d.nodeLayouts[elementId];
         if (layout) {
           layout.x = position.x;
           layout.y = position.y;
@@ -30,8 +30,8 @@ export const layoutSlice = (
       set((state) => {
         pushHistory(state);
         const d = state.diagrams[state.activeDiagramId!];
-        const maxZ = Math.max(...d.nodeLayouts.map((nl) => nl.zIndex ?? 0));
-        const layout = d.nodeLayouts.find((nl) => nl.elementId === elementId);
+        const maxZ = Math.max(...Object.values(d.nodeLayouts).map((nl) => nl.zIndex ?? 0));
+        const layout = d.nodeLayouts[elementId];
         if (layout) layout.zIndex = maxZ + 1;
       });
     },
@@ -40,8 +40,8 @@ export const layoutSlice = (
       set((state) => {
         pushHistory(state);
         const d = state.diagrams[state.activeDiagramId!];
-        const minZ = Math.min(...d.nodeLayouts.map((nl) => nl.zIndex ?? 0));
-        const layout = d.nodeLayouts.find((nl) => nl.elementId === elementId);
+        const minZ = Math.min(...Object.values(d.nodeLayouts).map((nl) => nl.zIndex ?? 0));
+        const layout = d.nodeLayouts[elementId];
         if (layout) layout.zIndex = minZ - 1;
       });
     },

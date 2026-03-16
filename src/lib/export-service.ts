@@ -723,9 +723,7 @@ export function exportDrawio(
   const { components, connections } = diagram.snapshot;
 
   // Build layout lookup
-  const layoutMap = new Map(
-    diagram.nodeLayouts.map((nl) => [nl.elementId, nl]),
-  );
+  const layoutMap = new Map(Object.entries(diagram.nodeLayouts));
 
   // Separate panels and collect layout info
   const panelIds = new Set<string>();

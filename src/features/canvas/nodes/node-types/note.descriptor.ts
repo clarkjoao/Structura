@@ -22,7 +22,7 @@ export const noteDescriptor: NodeTypeDescriptor = {
   }),
 
   buildStyle: (comp, ctx) => {
-    const layout = ctx.diagram.nodeLayouts.find((nl) => nl.elementId === comp.id);
+    const layout = ctx.diagram.nodeLayouts[comp.id];
     return {
       width: layout?.width ?? NOTE_DEFAULT_W,
       height: layout?.height ?? NOTE_DEFAULT_H,

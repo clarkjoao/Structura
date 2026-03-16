@@ -18,7 +18,7 @@ export const diagramsSlice = (
           domain: domain || undefined,
           updatedAt: "agora",
           snapshot: { components: {}, connections: {}, flows: {} },
-          nodeLayouts: [],
+          nodeLayouts: {},
           viewport: { x: 0, y: 0, zoom: 1 },
           folderId: folderId ?? undefined,
         };

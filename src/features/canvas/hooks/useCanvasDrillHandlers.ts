@@ -45,7 +45,7 @@ export function useCanvasDrillHandlers({
       const comp = diagram.snapshot.components[panelId];
       if (!isPanelComponent(comp)) return;
 
-      const layout = diagram.nodeLayouts.find((nl) => nl.elementId === panelId);
+      const layout = diagram.nodeLayouts[panelId];
       const children = Object.values(diagram.snapshot.components).filter(
         (c) => c.parentId === panelId,
       );
