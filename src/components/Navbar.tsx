@@ -1,7 +1,10 @@
 import { Link } from "react-router-dom";
-import { GitBranch, Box, Layers, Network } from "lucide-react";
+import { Network, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
 
 const Navbar = () => {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
       <div className="container flex h-16 items-center justify-between">
@@ -29,7 +32,15 @@ const Navbar = () => {
           </Link>
         </div>
 
-        <div className="flex items-center gap-3" />
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleTheme}
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+            title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+          >
+            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
     </nav>
   );

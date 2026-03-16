@@ -48,6 +48,7 @@ const CANVAS_STYLES = `
   .react-flow__pane { cursor: default; }
   .react-flow__pane:active { cursor: grabbing; }
   .react-flow__selection { background: rgba(59, 130, 246, 0.08); border: 1px solid #3b82f6; }
+  .react-flow__background pattern circle { fill: hsl(var(--grid-line)); }
 `;
 
 const Canvas = ({
@@ -276,8 +277,8 @@ const Canvas = ({
               zoomOnScroll={false}
               zoomOnPinch
               zoomOnDoubleClick={false}
-              minZoom={0.1}
-              maxZoom={4}
+              minZoom={0.3}
+              maxZoom={1}
               multiSelectionKeyCode="Meta"
               defaultViewport={diagram.viewport}
               fitView
@@ -288,7 +289,7 @@ const Canvas = ({
               proOptions={{ hideAttribution: true }}
               className="bg-background"
             >
-              <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="hsl(220 20% 18%)" />
+              <Background variant={BackgroundVariant.Dots} gap={18} size={1.5} />
               <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
             </ReactFlow>
           </div>
