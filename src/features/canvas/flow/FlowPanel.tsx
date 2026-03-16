@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { X, Plus, Play, Trash2, Pencil, Copy, Check, Layers, BarChart2 } from "lucide-react";
-import { useFlows, useDiagramActions, useActiveDiagramId } from "@/features/diagram";
+import { useFlows, useDiagramActions, useActiveDiagramId, useActiveDiagram } from "@/features/diagram";
 import type { Flow } from "@/features/diagram";
+import { validateFlow, type BrokenStep } from "./validateFlow";
+import BrokenFlowDialog from "./BrokenFlowDialog";
 
 interface Props {
   onClose: () => void;
@@ -14,10 +16,33 @@ interface Props {
 
 const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow, isViewingCoverage, onToggleCoverage }: Props) => {
   const flows = useFlows();
+  const diagram = useActiveDiagram();
   const activeDiagramId = useActiveDiagramId();
   const { removeFlow, addFlow, updateFlow } = useDiagramActions();
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [pendingPlay, setPendingPlay] = useState<{ flow: Flow; broken: BrokenStep[] } | null>(null);
+
+  const handlePlayWithValidation = (flow: Flow) => {
+    if (!diagram) { onPlay(flow); return; }
+    const broken = validateFlow(flow, diagram);
+    if (broken.length > 0) {
+      setPendingPlay({ flow, broken });
+    } else {
+      onPlay(flow);
+    }
+  };
+
+  const handleRemoveBrokenAndPlay = (indexes: number[]) => {
+    if (!pendingPlay) return;
+    const indexSet = new Set(indexes);
+    const newSteps = pendingPlay.flow.steps
+      .filter((_, i) => !indexSet.has(i))
+      .map((s, i) => ({ ...s, order: i }));
+    updateFlow(pendingPlay.flow.id, { steps: newSteps });
+    onPlay({ ...pendingPlay.flow, steps: newSteps });
+    setPendingPlay(null);
+  };
 
   const allTags = [...new Set(flows.flatMap((f) => f.tags ?? []))];
   const filtered = tagFilter ? flows.filter((f) => f.tags?.includes(tagFilter)) : flows;
@@ -119,7 +144,7 @@ const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow, isViewingCov
                 <button onClick={() => onEditFlow(flow)} className="text-muted-foreground hover:text-foreground transition-colors" title="Editar">
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
-                <button onClick={() => onPlay(flow)} className="text-primary hover:text-primary/80 transition-colors" title="Iniciar flow">
+                <button onClick={() => handlePlayWithValidation(flow)} className="text-primary hover:text-primary/80 transition-colors" title="Iniciar flow">
                   <Play className="h-4 w-4" />
                 </button>
                 <button onClick={() => removeFlow(flow.id)} className="text-muted-foreground hover:text-destructive transition-colors" title="Remover">
@@ -141,6 +166,15 @@ const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow, isViewingCov
           <Plus className="h-3.5 w-3.5" /> Novo Flow
         </button>
       </div>
+
+      {pendingPlay && (
+        <BrokenFlowDialog
+          flow={pendingPlay.flow}
+          brokenSteps={pendingPlay.broken}
+          onCancel={() => setPendingPlay(null)}
+          onRemoveSteps={handleRemoveBrokenAndPlay}
+        />
+      )}
     </div>
   );
 };
