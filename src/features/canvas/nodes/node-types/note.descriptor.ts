@@ -1,7 +1,7 @@
-import NoteNode from "../nodes/NoteNode";
+import NoteNode from "../NoteNode";
 import type { NodeTypeDescriptor } from "./types";
 import { isNoteComponent } from "@/features/diagram";
-import { NOTE_DEFAULT_W, NOTE_DEFAULT_H } from "../constants";
+import { NOTE_DEFAULT_W, NOTE_DEFAULT_H } from "../../constants";
 
 export const noteDescriptor: NodeTypeDescriptor = {
   rfType: "note",

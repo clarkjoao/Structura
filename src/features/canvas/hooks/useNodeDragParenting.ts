@@ -2,7 +2,12 @@ import { useCallback, useRef, useState } from "react";
 import type { Node, OnNodesChange, NodeChange } from "@xyflow/react";
 import type { Diagram } from "@/features/diagram";
 import { isPanelComponent, isNoteComponent } from "@/features/diagram";
-import { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../constants";
+import {
+  isOutsideParentBounds,
+  findPanelContainingPoint,
+  toAbsolutePosition,
+  toRelativePosition,
+} from "../models/panelParenting";
 
 interface UseNodeDragParentingParams {
   diagram: Diagram | null | undefined;
@@ -20,67 +25,6 @@ interface UseNodeDragParentingResult {
   unparentCandidatePanelId: string | null;
   onNodesChange: OnNodesChange;
   onNodeDragStop: (_: unknown, draggedNode: Node) => void;
-}
-
-function getPanelDimensions(node: Node): { width: number; height: number } {
-  const w = (node.style?.width as number) ?? PANEL_DEFAULT_W;
-  const h = (node.style?.height as number) ?? PANEL_DEFAULT_H;
-  return { width: w, height: h };
-}
-
-function isInsidePanel(node: Node, x: number, y: number): boolean {
-  const { width, height } = getPanelDimensions(node);
-  return (
-    x > node.position.x &&
-    y > node.position.y &&
-    x < node.position.x + width &&
-    y < node.position.y + height
-  );
-}
-
-function isOutsideParentBounds(
-  childPos: { x: number; y: number },
-  parent: Node,
-): boolean {
-  const { width, height } = getPanelDimensions(parent);
-  return (
-    childPos.x < 0 ||
-    childPos.y < 0 ||
-    childPos.x > width ||
-    childPos.y > height
-  );
-}
-
-function findPanelContainingPoint(
-  nodes: Node[],
-  absX: number,
-  absY: number,
-  excludeParentId?: string | null,
-): Node | undefined {
-  const panels = nodes.filter(
-    (n) => n.type === "panel" && n.id !== excludeParentId,
-  );
-  return panels.find((p) => isInsidePanel(p, absX, absY));
-}
-
-function toAbsolutePosition(
-  relativePos: { x: number; y: number },
-  parentLayout: { x: number; y: number },
-): { x: number; y: number } {
-  return {
-    x: relativePos.x + parentLayout.x,
-    y: relativePos.y + parentLayout.y,
-  };
-}
-
-function toRelativePosition(
-  absPos: { x: number; y: number },
-  parentPos: { x: number; y: number },
-): { x: number; y: number } {
-  return {
-    x: absPos.x - parentPos.x,
-    y: absPos.y - parentPos.y,
-  };
 }
 
 export function useNodeDragParenting({
@@ -119,8 +63,9 @@ export function useNodeDragParenting({
           (nl) => nl.elementId === comp.parentId,
         );
         if (parentLayout) {
-          absX = toAbsolutePosition(change.position, parentLayout).x;
-          absY = toAbsolutePosition(change.position, parentLayout).y;
+          const abs = toAbsolutePosition(change.position, parentLayout);
+          absX = abs.x;
+          absY = abs.y;
         }
       } else {
         setUnparentCandidatePanelId(null);

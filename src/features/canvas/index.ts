@@ -1,11 +1,11 @@
 export { default as Canvas } from "./Canvas";
-export { default as FlowPanel } from "./FlowPanel";
-export { default as FlowStepNavigator } from "./FlowStepNavigator";
-export { default as FlowRecorderPanel } from "./FlowRecorderPanel";
-export { default as ElementPanel } from "./ElementPanel/index";
+export { default as FlowPanel } from "./flow/FlowPanel";
+export { default as FlowStepNavigator } from "./flow/FlowStepNavigator";
+export { default as FlowRecorderPanel } from "./flow/FlowRecorderPanel";
+export { default as ElementPanel } from "./panels/ElementPanel/index";
 export { default as CanvasToolbar } from "./toolbar/CanvasToolbar";
 export { default as CustomNode } from "./nodes/CustomNode";
 export { default as CustomEdge } from "./edges/CustomEdge";
 export { default as PanelNode } from "./nodes/PanelNode";
 export { default as NoteNode } from "./nodes/NoteNode";
-export { default as NodeContextMenu } from "./NodeContextMenu";
+export { default as NodeContextMenu } from "./panels/NodeContextMenu";

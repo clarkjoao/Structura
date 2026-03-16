@@ -1,30 +1,19 @@
-/**
- * Derivados de connections: panelIds, contagem por nó, handle assignments.
- * Tudo que é computado a partir de visibleComponents + visibleConnections.
- */
-import { useMemo } from "react";
 import type { Component, Connection, Diagram } from "@/features/diagram";
 import { isPanelComponent } from "@/features/diagram";
 import { MAX_HANDLES } from "../constants";
 
-interface UseCanvasConnectionDerivationsParams {
-  visibleComponents: Component[];
-  visibleConnections: Connection[];
-  diagram: Diagram | null | undefined;
-}
-
-interface HandleAssignment {
+export interface HandleAssignment {
   connId: string;
   sourceHandle: string;
   targetHandle: string;
 }
 
-interface ConnectionCounts {
+export interface ConnectionCounts {
   incoming: number;
   outgoing: number;
 }
 
-function buildPanelIds(components: Component[]): Set<string> {
+export function buildPanelIds(components: Component[]): Set<string> {
   const ids = new Set<string>();
   for (const c of components) {
     if (isPanelComponent(c)) ids.add(c.id);
@@ -32,7 +21,7 @@ function buildPanelIds(components: Component[]): Set<string> {
   return ids;
 }
 
-function buildConnectionCountPerNode(
+export function buildConnectionCountPerNode(
   connections: Connection[],
 ): Record<string, ConnectionCounts> {
   const counts: Record<string, ConnectionCounts> = {};
@@ -45,7 +34,7 @@ function buildConnectionCountPerNode(
   return counts;
 }
 
-function resolveHandleIndex(
+export function resolveHandleIndex(
   connId: string,
   order: string[] | undefined,
   usageCount: number,
@@ -58,7 +47,7 @@ function resolveHandleIndex(
   return usageCount % slotCount;
 }
 
-function buildEdgeHandleAssignments(
+export function buildEdgeHandleAssignments(
   connections: Connection[],
   connectionCountPerNode: Record<string, ConnectionCounts>,
   diagram: Diagram | null | undefined,
@@ -104,7 +93,7 @@ function buildEdgeHandleAssignments(
   });
 }
 
-function buildEffectiveHandleOrder(
+export function buildEffectiveHandleOrder(
   assignments: HandleAssignment[],
   connections: Connection[],
 ): Record<string, { incoming: string[]; outgoing: string[] }> {
@@ -125,37 +114,4 @@ function buildEffectiveHandleOrder(
     result[conn.targetId].incoming[tIdx] = conn.id;
   }
   return result;
-}
-
-export function useCanvasConnectionDerivations({
-  visibleComponents,
-  visibleConnections,
-  diagram,
-}: UseCanvasConnectionDerivationsParams) {
-  const panelIds = useMemo(
-    () => buildPanelIds(visibleComponents),
-    [visibleComponents],
-  );
-
-  const connectionCountPerNode = useMemo(
-    () => buildConnectionCountPerNode(visibleConnections),
-    [visibleConnections],
-  );
-
-  const edgeHandleAssignments = useMemo(
-    () => buildEdgeHandleAssignments(visibleConnections, connectionCountPerNode, diagram),
-    [visibleConnections, connectionCountPerNode, diagram],
-  );
-
-  const effectiveHandleOrder = useMemo(
-    () => buildEffectiveHandleOrder(edgeHandleAssignments, visibleConnections),
-    [edgeHandleAssignments, visibleConnections],
-  );
-
-  return {
-    panelIds,
-    connectionCountPerNode,
-    edgeHandleAssignments,
-    effectiveHandleOrder,
-  };
 }

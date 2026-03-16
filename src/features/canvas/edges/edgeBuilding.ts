@@ -1,36 +1,32 @@
-import { useMemo } from "react";
 import { MarkerType, type Edge } from "@xyflow/react";
 import type { Connection, Diagram, FlowStep } from "@/features/diagram";
 import { getEffectiveConnectionStyle } from "@/features/diagram";
+import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
 
-interface UseCanvasEdgesParams {
-  diagram: Diagram | null | undefined;
-  visibleConnections: Connection[];
-  edgeHandleAssignments: { connId: string; sourceHandle: string; targetHandle: string }[];
+export interface EdgeBuildParams {
+  diagram: Diagram;
   selectedEdgeId: string | null;
   isPlaying: boolean;
-  isRecording: boolean | undefined;
+  isRecording: boolean;
   activeStep: FlowStep | null;
-  flowHighlight: { activeConnId: string | null; participantConnIds: Set<string> };
-  recordingInfo: {
-    edgeSteps: Map<string, number[]>;
-    recordedEdgeIds: Set<string>;
-    lastEdgeId: string | null;
-  } | null;
-  coverage: { edgeFlows: Map<string, string[]> } | null;
+  flowHighlight: Pick<FlowHighlight, "activeConnId" | "participantConnIds">;
+  recordingInfo: Pick<RecordingInfo, "edgeSteps" | "recordedEdgeIds" | "lastEdgeId"> | null;
+  coverage: Pick<CoverageInfo, "edgeFlows"> | null;
 }
 
-function toMarkerType(marker: string | undefined): typeof MarkerType.Arrow | typeof MarkerType.ArrowClosed | undefined {
+export function toMarkerType(
+  marker: string | undefined,
+): typeof MarkerType.Arrow | typeof MarkerType.ArrowClosed | undefined {
   if (!marker || marker === "none") return undefined;
   return marker === "arrowclosed" ? MarkerType.ArrowClosed : MarkerType.Arrow;
 }
 
-function getEdgeOpacity(
+export function getEdgeOpacity(
   connId: string,
   isPlaying: boolean,
-  isRecording: boolean | undefined,
-  flowHighlight: UseCanvasEdgesParams["flowHighlight"],
-  recordingInfo: UseCanvasEdgesParams["recordingInfo"],
+  isRecording: boolean,
+  flowHighlight: Pick<FlowHighlight, "activeConnId" | "participantConnIds">,
+  recordingInfo: Pick<RecordingInfo, "recordedEdgeIds"> | null,
 ): number | undefined {
   if (isPlaying) {
     const isActive = flowHighlight.activeConnId === connId;
@@ -43,19 +39,10 @@ function getEdgeOpacity(
   return undefined;
 }
 
-function buildEdge(
+export function buildEdge(
   conn: Connection,
   assignment: { sourceHandle: string; targetHandle: string } | undefined,
-  params: {
-    diagram: Diagram;
-    selectedEdgeId: string | null;
-    isPlaying: boolean;
-    isRecording: boolean | undefined;
-    activeStep: FlowStep | null;
-    flowHighlight: UseCanvasEdgesParams["flowHighlight"];
-    recordingInfo: UseCanvasEdgesParams["recordingInfo"];
-    coverage: UseCanvasEdgesParams["coverage"];
-  },
+  params: EdgeBuildParams,
 ): Edge {
   const effective = getEffectiveConnectionStyle(conn);
   const isActiveConn = params.isPlaying && params.flowHighlight.activeConnId === conn.id;
@@ -100,53 +87,13 @@ function buildEdge(
   };
 }
 
-export function useCanvasEdges({
-  diagram,
-  visibleConnections,
-  edgeHandleAssignments,
-  selectedEdgeId,
-  isPlaying,
-  isRecording,
-  activeStep,
-  flowHighlight,
-  recordingInfo,
-  coverage,
-}: UseCanvasEdgesParams): Edge[] {
-  return useMemo(() => {
-    if (!diagram) return [];
-
-    const comps = diagram.snapshot.components;
-    const visible = visibleConnections.filter((conn) => {
-      const src = comps[conn.sourceId];
-      const tgt = comps[conn.targetId];
-      return !src?.hidden && !tgt?.hidden;
-    });
-
-    const assignmentMap = new Map(edgeHandleAssignments.map((a) => [a.connId, a]));
-
-    return visible.map((conn) => {
-      const assignment = assignmentMap.get(conn.id);
-      return buildEdge(conn, assignment, {
-        diagram,
-        selectedEdgeId,
-        isPlaying,
-        isRecording,
-        activeStep,
-        flowHighlight,
-        recordingInfo,
-        coverage,
-      });
-    });
-  }, [
-    diagram,
-    visibleConnections,
-    edgeHandleAssignments,
-    selectedEdgeId,
-    isPlaying,
-    isRecording,
-    activeStep,
-    flowHighlight,
-    recordingInfo,
-    coverage,
-  ]);
+export function filterVisibleConnections(
+  connections: Connection[],
+  components: Record<string, { hidden?: boolean }>,
+): Connection[] {
+  return connections.filter((conn) => {
+    const src = components[conn.sourceId];
+    const tgt = components[conn.targetId];
+    return !src?.hidden && !tgt?.hidden;
+  });
 }

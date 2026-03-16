@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useCallback, useState } from "react";
 import {
   ReactFlow,
   Background,
@@ -7,81 +7,60 @@ import {
   useReactFlow,
   PanOnScrollMode,
   SelectionMode,
+  applyNodeChanges,
   type Node,
+  type OnNodesChange,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useNavigate } from "react-router-dom";
-import type { FlowStep } from "@/features/diagram";
 import CustomEdge from "./edges/CustomEdge";
 import CanvasToolbar from "./toolbar/CanvasToolbar";
-import ElementPanel from "./ElementPanel/index";
-import NodeContextMenu from "./NodeContextMenu";
-import { nodeTypes } from "./node-types";
+import ElementPanel from "./panels/ElementPanel/index";
+import NodeContextMenu from "./panels/NodeContextMenu";
+import { nodeTypes } from "./nodes/node-types";
 import { useCanvasKeyboard } from "./hooks/useCanvasKeyboard";
 import { useNodeDragParenting } from "./hooks/useNodeDragParenting";
-import { useFlowState } from "./hooks/useFlowState";
-import { useCanvasNodes } from "./hooks/useCanvasNodes";
-import { useCanvasEdges } from "./hooks/useCanvasEdges";
+import { useFlowState } from "./flow/useFlowState";
+import { useCanvasNodes } from "./nodes/useCanvasNodes";
+import { useCanvasEdges } from "./edges/useCanvasEdges";
 import { useCanvasStore } from "./hooks/useCanvasStore";
 import { useCanvasVisualState } from "./hooks/useCanvasVisualState";
-import { useCanvasConnectionDerivations } from "./hooks/useCanvasConnectionDerivations";
+import { useCanvasConnectionDerivations } from "./edges/useCanvasConnectionDerivations";
 import { useCanvasEventHandlers } from "./hooks/useCanvasEventHandlers";
 import { useCanvasDrillHandlers } from "./hooks/useCanvasDrillHandlers";
-import { useCanvasHandleReorder } from "./hooks/useCanvasHandleReorder";
+import { useCanvasHandleReorder } from "./edges/useCanvasHandleReorder";
 import { useCanvasEffects } from "./hooks/useCanvasEffects";
-import { useCanvasRenderNodes } from "./hooks/useCanvasRenderNodes";
-import QuickInsertPopover from "./QuickInsertPopover";
+import QuickInsertPopover from "./toolbar/QuickInsertPopover";
 import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
+import { useRecordingMode } from "./flow/RecordingModeContext";
 
 const edgeTypes = { c4: CustomEdge };
-
-// ── Types ─────────────────────────────────────────────────────────────────
 
 interface CanvasProps {
   activeFlow?: import("@/features/diagram").Flow | null;
   currentStep?: number;
   onOpenDiagram?: (id: string) => void;
   onDrillUp?: () => void;
-  isRecording?: boolean;
-  recordingSteps?: FlowStep[];
-  onRecordNodeClick?: (nodeId: string) => void;
-  onRecordEdgeClick?: (edgeId: string, handleId?: string) => void;
-  onRecordHandleClick?: (nodeId: string, handleId: string) => void;
-  onRecordUndo?: () => void;
   isViewingCoverage?: boolean;
 }
-
-// ── Styles ─────────────────────────────────────────────────────────────────
 
 const CANVAS_STYLES = `
   .react-flow__pane { cursor: default; }
   .react-flow__pane:active { cursor: grabbing; }
   .react-flow__selection { background: rgba(59, 130, 246, 0.08); border: 1px solid #3b82f6; }
-  @keyframes quick-insert-pulse {
-    0%   { box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.7); }
-    100% { box-shadow: 0 0 0 0px rgba(99, 102, 241, 0); }
-  }
-  .node-pulse { animation: quick-insert-pulse 0.45s ease-out 3; }
 `;
-
-// ── Component ───────────────────────────────────────────────────────────────
 
 const Canvas = ({
   activeFlow,
   currentStep,
   onOpenDiagram,
   onDrillUp,
-  isRecording,
-  recordingSteps,
-  onRecordNodeClick,
-  onRecordEdgeClick,
-  onRecordHandleClick,
-  onRecordUndo,
   isViewingCoverage,
 }: CanvasProps = {}) => {
   const navigate = useNavigate();
   const reactFlowInstance = useReactFlow();
   const reactFlowWrapperRef = useRef<HTMLDivElement>(null);
+  const { isRecording } = useRecordingMode();
 
   const { diagram, allDiagrams, visibleComponents, visibleConnections, serviceRegistry, flows, actions } =
     useCanvasStore();
@@ -92,8 +71,6 @@ const Canvas = ({
     activeFlow,
     currentStep,
     flows,
-    isRecording,
-    recordingSteps,
   });
 
   const { handleDrillDown, handlePanelCollapseToggle } = useCanvasDrillHandlers({
@@ -106,21 +83,22 @@ const Canvas = ({
   });
 
   const { onReorderHandle } = useCanvasHandleReorder({
-    isRecording,
     effectiveHandleOrder,
     updateHandleOrder: actions.updateHandleOrder,
   });
 
-  const nodesRef = useRef<Node[]>([]);
-  const { dragTargetPanelId, unparentCandidatePanelId, onNodesChange: innerOnNodesChange, onNodeDragStop: innerOnNodeDragStop } =
+  const [localNodes, setLocalNodes] = useState<Node[]>([]);
+  const localNodesRef = useRef<Node[]>([]);
+
+  const { dragTargetPanelId, unparentCandidatePanelId, onNodesChange: innerOnNodesChange, onNodeDragStop } =
     useNodeDragParenting({
       diagram,
-      nodes: nodesRef.current,
+      nodes: localNodesRef.current,
       updateNodeLayout: actions.updateNodeLayout,
       setParent: actions.setParent,
     });
 
-  const nodes = useCanvasNodes({
+  const storeNodes = useCanvasNodes({
     diagram,
     visibleComponents,
     panelIds,
@@ -132,8 +110,6 @@ const Canvas = ({
     handleDrillDown,
     handlePanelCollapseToggle,
     isPlaying,
-    isRecording: !!isRecording,
-    onRecordHandleClick,
     dragTargetPanelId,
     unparentCandidatePanelId,
     connectionCountPerNode,
@@ -145,16 +121,53 @@ const Canvas = ({
     coverage,
     isViewingCoverage: !!isViewingCoverage,
   });
-  nodesRef.current = nodes;
 
-  const { renderNodes, onNodesChange, onNodeDragStop } = useCanvasRenderNodes({
-    nodes,
-    dragPositions: visualState.dragPositions,
-    pulseNodeId: visualState.pulseNodeId,
-    setDragPositions: visualState.setDragPositions,
-    innerOnNodesChange,
-    innerOnNodeDragStop,
-  });
+  const prevStoreNodesRef = useRef<Node[] | undefined>(undefined);
+  if (storeNodes !== prevStoreNodesRef.current) {
+    prevStoreNodesRef.current = storeNodes;
+    setLocalNodes((prev) => {
+      if (prev.length === 0) {
+        localNodesRef.current = storeNodes;
+        return storeNodes;
+      }
+      const localMap = new Map(prev.map((n) => [n.id, n]));
+      const merged = storeNodes.map((sn) => {
+        const ln = localMap.get(sn.id);
+        if (!ln) return sn;
+        // Spread local first (preserves RF internals like measured/internals + drag position),
+        // then store props (data, style, hidden, zIndex, etc.)
+        return {
+          ...ln,
+          data: sn.data,
+          style: sn.style,
+          hidden: sn.hidden,
+          zIndex: sn.zIndex,
+          connectable: sn.connectable,
+          selected: sn.selected,
+          type: sn.type,
+          parentId: sn.parentId,
+          extent: sn.extent,
+        };
+      });
+      localNodesRef.current = merged;
+      return merged;
+    });
+  }
+
+  const nodes = localNodes;
+
+  const onNodesChange: OnNodesChange = useCallback(
+    (changes) => {
+      if(!changes.length) return;
+      innerOnNodesChange(changes);
+      setLocalNodes((nds) => {
+        const updated = applyNodeChanges(changes, nds);
+        localNodesRef.current = updated;
+        return updated;
+      });
+    },
+    [innerOnNodesChange],
+  );
 
   const edges = useCanvasEdges({
     diagram,
@@ -162,7 +175,6 @@ const Canvas = ({
     edgeHandleAssignments,
     selectedEdgeId: visualState.selectedEdgeId,
     isPlaying,
-    isRecording,
     activeStep,
     flowHighlight,
     recordingInfo,
@@ -172,13 +184,9 @@ const Canvas = ({
   const eventHandlers = useCanvasEventHandlers({
     visualState,
     isPlaying,
-    isRecording,
     updateViewport: actions.updateViewport,
     addConnection: actions.addConnection,
-    onRecordNodeClick,
-    onRecordEdgeClick,
     screenToFlowPosition: (pos) => reactFlowInstance.screenToFlowPosition(pos),
-    fitView: async (opts) => { await reactFlowInstance.fitView(opts); },
   });
 
   const isPanelOpen = !!(visualState.selectedNodeId || visualState.selectedEdgeId) && !isRecording;
@@ -187,8 +195,6 @@ const Canvas = ({
     selectedNodeId: visualState.selectedNodeId,
     reactFlowInstance,
     reactFlowWrapperRef,
-    isRecording,
-    onRecordUndo,
     setSelectedNodeId: visualState.setSelectedNodeId,
     setSelectedNodeIds: visualState.setSelectedNodeIds,
     setSelectedEdgeId: visualState.setSelectedEdgeId,
@@ -212,7 +218,6 @@ const Canvas = ({
     activeFlow,
     currentStep,
     onClearSelection: visualState.clearCanvasSelection,
-    setPulseNodeId: visualState.setPulseNodeId,
   });
 
   const selectedNodes = nodes.filter((n) => visualState.selectedNodeIds.has(n.id));
@@ -248,7 +253,7 @@ const Canvas = ({
           />
           <div onContextMenu={(e) => e.preventDefault()} className="w-full h-full">
             <ReactFlow
-              nodes={renderNodes}
+              nodes={nodes}
               edges={edges}
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}

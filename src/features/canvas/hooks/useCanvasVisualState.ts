@@ -1,8 +1,8 @@
 /**
  * Estado visual do canvas (não persiste no store).
- * Seleção, highlight, context menu, quick insert, pulse, drag positions.
+ * Seleção, highlight, context menu, quick insert.
  */
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 export interface CanvasVisualState {
   selectedNodeId: string | null;
@@ -23,10 +23,6 @@ export interface CanvasVisualState {
     sourceNodeId: string;
   } | null;
   setQuickInsert: (value: CanvasVisualState["quickInsert"]) => void;
-  pulseNodeId: string | null;
-  setPulseNodeId: (id: string | null) => void;
-  dragPositions: Record<string, { x: number; y: number }>;
-  setDragPositions: React.Dispatch<React.SetStateAction<Record<string, { x: number; y: number }>>>;
   clearCanvasSelection: () => void;
 }
 
@@ -46,8 +42,8 @@ export function useCanvasVisualState(): CanvasVisualState {
     flowPos: { x: number; y: number };
     sourceNodeId: string;
   } | null>(null);
-  const [pulseNodeId, setPulseNodeId] = useState<string | null>(null);
-  const [dragPositions, setDragPositions] = useState<Record<string, { x: number; y: number }>>({});
+
+  const emptySet = useRef(new Set<string>()).current;
 
   const setHighlight = useCallback((connectionId: string, nodeIds: string[]) => {
     setHighlightedConnectionId(connectionId);
@@ -55,17 +51,17 @@ export function useCanvasVisualState(): CanvasVisualState {
   }, []);
 
   const clearHighlight = useCallback(() => {
-    setHighlightedConnectionId(null);
-    setHighlightedNodeIds(new Set());
-  }, []);
+    setHighlightedConnectionId((prev) => prev === null ? prev : null);
+    setHighlightedNodeIds((prev) => prev.size === 0 ? prev : emptySet);
+  }, [emptySet]);
 
   const clearCanvasSelection = useCallback(() => {
     clearHighlight();
-    setSelectedNodeId(null);
-    setSelectedNodeIds(new Set());
-    setSelectedEdgeId(null);
-    setContextMenu(null);
-  }, [clearHighlight]);
+    setSelectedNodeId((prev) => prev === null ? prev : null);
+    setSelectedNodeIds((prev) => prev.size === 0 ? prev : emptySet);
+    setSelectedEdgeId((prev) => prev === null ? prev : null);
+    setContextMenu((prev) => prev === null ? prev : null);
+  }, [clearHighlight, emptySet]);
 
   return {
     selectedNodeId,
@@ -82,10 +78,6 @@ export function useCanvasVisualState(): CanvasVisualState {
     setContextMenu,
     quickInsert,
     setQuickInsert,
-    pulseNodeId,
-    setPulseNodeId,
-    dragPositions,
-    setDragPositions,
     clearCanvasSelection,
   };
 }

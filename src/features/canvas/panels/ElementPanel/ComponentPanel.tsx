@@ -7,7 +7,7 @@ import { isPanelComponent, isNoteComponent, isC4Component } from "@/features/dia
 import { isAwsType, AWS_CATEGORIES, AWS_CATEGORY_MAP, AWS_SERVICE_MAP } from "@/lib/catalogs/aws";
 import { PANEL_KINDS, getPanelKindDef } from "@/lib/catalogs/panels";
 import type { PanelKind } from "@/features/diagram";
-import AwsIcon from "../nodes/AwsIcon";
+import AwsIcon from "../../nodes/AwsIcon";
 import Field from "./components/Field";
 import TabBar, { type Tab } from "./components/TabBar";
 import ColorSwatches from "./components/ColorSwatches";

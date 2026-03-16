@@ -6,4 +6,4 @@ export type {
   RecordingInfo,
   CoverageInfo,
 } from "./types";
-export { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../constants";
+export { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../../constants";

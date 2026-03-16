@@ -19,7 +19,7 @@ import { useActiveDiagram, useDiagramActions } from "@/features/diagram";
 import type { ComponentType } from "@/features/diagram";
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/catalogs/aws";
 import AwsIcon from "../nodes/AwsIcon";
-import PatternPicker from "../PatternPicker";
+import PatternPicker from "./PatternPicker";
 import { getViewportCenter } from "../viewport-utils";
 
 const c4Options: {

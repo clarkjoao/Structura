@@ -8,7 +8,7 @@ import {
   applyHandleOrder,
 } from "@/features/diagram";
 import type { ComponentType, Connection } from "@/features/diagram";
-import { useHandleHighlight } from "../../contexts/HandleHighlightContext";
+import { useHandleHighlight } from "../../../contexts/HandleHighlightContext";
 import { Network as NetworkIcon, Server, Database, User } from "lucide-react";
 
 const typeIcons: Record<string, typeof NetworkIcon> = {

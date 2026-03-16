@@ -9,7 +9,7 @@ import {
   type PatternTemplate,
 } from "@/lib/catalogs/patterns";
 import { useDiagramActions } from "@/features/diagram";
-import { getViewportCenter } from "./viewport-utils";
+import { getViewportCenter } from "../viewport-utils";
 
 const CATEGORIES = Object.keys(PATTERN_CATEGORY_LABELS) as PatternCategory[];
 

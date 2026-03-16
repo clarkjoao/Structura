@@ -2,40 +2,33 @@
  * Handlers de eventos do canvas (click, selection, connect, etc.).
  * Recebe store, visual state e flow state para evitar duplicação no Canvas.
  */
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import type { Node, Edge, OnEdgesChange, OnConnect, OnConnectEnd, Connection } from "@xyflow/react";
 import type { CanvasVisualState } from "./useCanvasVisualState";
+import { useRecordingMode } from "../flow/RecordingModeContext";
 
 interface UseCanvasEventHandlersParams {
   visualState: CanvasVisualState;
   isPlaying: boolean;
-  isRecording: boolean | undefined;
   updateViewport: (vp: { x: number; y: number; zoom: number }) => void;
   addConnection: (source: string, target: string, label: string) => void;
-  onRecordNodeClick?: (nodeId: string) => void;
-  onRecordEdgeClick?: (edgeId: string, handleId?: string) => void;
   screenToFlowPosition: (pos: { x: number; y: number }) => { x: number; y: number };
-  fitView: (opts: { nodes: { id: string }[]; duration?: number; padding?: number; maxZoom?: number }) => Promise<void>;
 }
 
 export function useCanvasEventHandlers({
   visualState,
-  isRecording,
   isPlaying,
   updateViewport,
   addConnection,
-  onRecordNodeClick,
-  onRecordEdgeClick,
   screenToFlowPosition,
-  fitView,
 }: UseCanvasEventHandlersParams) {
+  const { isRecording, onRecordNodeClick, onRecordEdgeClick } = useRecordingMode();
   const {
     setSelectedNodeId,
     setSelectedNodeIds,
     setSelectedEdgeId,
     setContextMenu,
     setQuickInsert,
-    setPulseNodeId,
     clearHighlight,
     clearCanvasSelection,
   } = visualState;
@@ -75,18 +68,10 @@ export function useCanvasEventHandlers({
   );
 
   const handleQuickInsert = useCallback(
-    (newNodeId: string) => {
+    (_newNodeId: string) => {
       setQuickInsert(null);
-      setPulseNodeId(newNodeId);
-      void fitView({
-        nodes: [{ id: newNodeId }],
-        duration: 500,
-        padding: 0.5,
-        maxZoom: 1.5,
-      });
-      setTimeout(() => setPulseNodeId(null), 1500);
     },
-    [fitView, setQuickInsert, setPulseNodeId],
+    [setQuickInsert],
   );
 
   const onNodeClick = useCallback(
@@ -104,12 +89,14 @@ export function useCanvasEventHandlers({
           const next = new Set(prev);
           if (next.has(node.id)) next.delete(node.id);
           else next.add(node.id);
+          prevSelectionRef.current = [...next].sort().join(",");
           setSelectedNodeId(
             next.size === 0 ? null : next.has(node.id) ? node.id : (next.values().next().value ?? null),
           );
           return next;
         });
       } else {
+        prevSelectionRef.current = node.id;
         setSelectedNodeIds(new Set([node.id]));
         setSelectedNodeId(node.id);
       }
@@ -126,22 +113,29 @@ export function useCanvasEventHandlers({
       clearHighlight();
       setSelectedEdgeId(edge.id);
       setSelectedNodeId(null);
-      setSelectedNodeIds(new Set());
+      setSelectedNodeIds((prev) => (prev.size === 0 ? prev : new Set()));
       setContextMenu(null);
     },
     [clearHighlight, isRecording, onRecordEdgeClick, setSelectedEdgeId, setSelectedNodeId, setSelectedNodeIds, setContextMenu],
   );
 
+  const prevSelectionRef = useRef<string>("");
   const onSelectionChange = useCallback(
     ({ nodes: updatedNodes }: { nodes: Node[]; edges: Edge[] }) => {
-      const ids = new Set(updatedNodes.filter((n) => n.selected).map((n) => n.id));
-      setSelectedNodeIds(ids);
-      setSelectedNodeId(updatedNodes.find((n) => n.selected)?.id ?? null);
+      const selectedIds = updatedNodes.filter((n) => n.selected).map((n) => n.id);
+      // Skip empty selections (handled by onPaneClick) and duplicate firings
+      if (selectedIds.length === 0) return;
+      const key = selectedIds.sort().join(",");
+      if (key === prevSelectionRef.current) return;
+      prevSelectionRef.current = key;
+      setSelectedNodeIds(new Set(selectedIds));
+      setSelectedNodeId(selectedIds[0] ?? null);
     },
     [setSelectedNodeId, setSelectedNodeIds],
   );
 
   const onPaneClick = useCallback(() => {
+    prevSelectionRef.current = "";
     clearCanvasSelection();
   }, [clearCanvasSelection]);
 
@@ -150,6 +144,7 @@ export function useCanvasEventHandlers({
       if (isRecording) return;
       event.preventDefault();
       clearHighlight();
+      prevSelectionRef.current = node.id;
       setContextMenu({
         x: event.clientX,
         y: event.clientY,
@@ -162,10 +157,12 @@ export function useCanvasEventHandlers({
   );
 
   const closePanel = useCallback(() => {
+    prevSelectionRef.current = "";
     clearHighlight();
     setSelectedNodeId(null);
+    setSelectedNodeIds((prev) => (prev.size === 0 ? prev : new Set()));
     setSelectedEdgeId(null);
-  }, [clearHighlight, setSelectedNodeId, setSelectedEdgeId]);
+  }, [clearHighlight, setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId]);
 
   return {
     onEdgesChange,
