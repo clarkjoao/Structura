@@ -10,6 +10,7 @@ import { useRecordingMode } from "../flow/RecordingModeContext";
 interface UseCanvasEventHandlersParams {
   visualState: CanvasVisualState;
   isPlaying: boolean;
+  isFlowPanelOpen: boolean;
   updateViewport: (vp: { x: number; y: number; zoom: number }) => void;
   addConnection: (source: string, target: string, label: string) => void;
   screenToFlowPosition: (pos: { x: number; y: number }) => { x: number; y: number };
@@ -18,6 +19,7 @@ interface UseCanvasEventHandlersParams {
 export function useCanvasEventHandlers({
   visualState,
   isPlaying,
+  isFlowPanelOpen,
   updateViewport,
   addConnection,
   screenToFlowPosition,
@@ -80,7 +82,7 @@ export function useCanvasEventHandlers({
         if (node.type !== "panel" && node.type !== "note") onRecordNodeClick?.(node.id);
         return;
       }
-      if (isPlaying) return;
+      if (isPlaying || isFlowPanelOpen) return;
       clearHighlight();
       setSelectedEdgeId(null);
       setContextMenu(null);
@@ -101,7 +103,7 @@ export function useCanvasEventHandlers({
         setSelectedNodeId(node.id);
       }
     },
-    [clearHighlight, isPlaying, isRecording, onRecordNodeClick, setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId, setContextMenu],
+    [clearHighlight, isPlaying, isFlowPanelOpen, isRecording, onRecordNodeClick, setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId, setContextMenu],
   );
 
   const onEdgeClick = useCallback(
@@ -110,13 +112,14 @@ export function useCanvasEventHandlers({
         onRecordEdgeClick?.(edge.id, edge.sourceHandle ?? undefined);
         return;
       }
+      if (isFlowPanelOpen) return;
       clearHighlight();
       setSelectedEdgeId(edge.id);
       setSelectedNodeId(null);
       setSelectedNodeIds((prev) => (prev.size === 0 ? prev : new Set()));
       setContextMenu(null);
     },
-    [clearHighlight, isRecording, onRecordEdgeClick, setSelectedEdgeId, setSelectedNodeId, setSelectedNodeIds, setContextMenu],
+    [clearHighlight, isFlowPanelOpen, isRecording, onRecordEdgeClick, setSelectedEdgeId, setSelectedNodeId, setSelectedNodeIds, setContextMenu],
   );
 
   const prevSelectionRef = useRef<string>("");

@@ -154,13 +154,16 @@ export const componentsSlice = (
         }
 
         function getSize(eid: string): { w: number; h: number } {
+          const layout = d.nodeLayouts[eid];
+          if (layout?.width && layout?.height) {
+            return { w: layout.width, h: layout.height };
+          }
           const c = comps[eid];
           if (!c) return { w: DEFAULT_NODE_W, h: DEFAULT_NODE_H };
           if (isPanelComponent(c)) {
-            const layout = d.nodeLayouts[eid];
             return { w: layout?.width ?? PANEL_DEFAULT_W, h: layout?.height ?? PANEL_DEFAULT_H };
           }
-          return { w: DEFAULT_NODE_W, h: DEFAULT_NODE_H };
+          return { w: DEFAULT_NODE_W, h: 120 };
         }
 
         const positions = ids.map((id) => getAbsPos(id));
@@ -168,7 +171,7 @@ export const componentsSlice = (
         const minX = Math.min(...positions.map((p) => p.x)) - NODE_DRAG_PADDING;
         const minY = Math.min(...positions.map((p) => p.y)) - NODE_DRAG_PADDING;
         const maxX = Math.max(...positions.map((p, i) => p.x + sizes[i].w)) + NODE_DRAG_PADDING;
-        const maxY = Math.max(...positions.map((p, i) => p.y + sizes[i].h)) + NODE_DRAG_PADDING;
+        const maxY = Math.max(...positions.map((p, i) => p.y + sizes[i].h)) + NODE_DRAG_PADDING * 2;
 
         pushHistory(state);
         const panel: PanelComponent = {

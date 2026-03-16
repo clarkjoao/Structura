@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import {
   ReactFlow,
   Background,
@@ -43,6 +43,7 @@ interface CanvasProps {
   onOpenDiagram?: (id: string) => void;
   onDrillUp?: () => void;
   isViewingCoverage?: boolean;
+  isFlowPanelOpen?: boolean;
 }
 
 const CANVAS_STYLES = `
@@ -58,6 +59,7 @@ const Canvas = ({
   onOpenDiagram,
   onDrillUp,
   isViewingCoverage,
+  isFlowPanelOpen,
 }: CanvasProps = {}) => {
   const navigate = useNavigate();
   const reactFlowInstance = useReactFlow();
@@ -143,6 +145,7 @@ const Canvas = ({
   const eventHandlers = useCanvasEventHandlers({
     visualState,
     isPlaying,
+    isFlowPanelOpen: !!isFlowPanelOpen,
     updateViewport: actions.updateViewport,
     addConnection: actions.addConnection,
     screenToFlowPosition: (pos) => reactFlowInstance.screenToFlowPosition(pos),
@@ -152,6 +155,7 @@ const Canvas = ({
   useCanvasKeyboard({
     diagram,
     selectedNodeId: visualState.selectedNodeId,
+    selectedEdgeId: visualState.selectedEdgeId,
     reactFlowInstance,
     reactFlowWrapperRef,
     setSelectedNodeId: visualState.setSelectedNodeId,
@@ -161,6 +165,7 @@ const Canvas = ({
     undo: actions.undo,
     redo: actions.redo,
     removeComponent: actions.removeComponent,
+    removeConnection: actions.removeConnection,
     groupNodes: actions.groupNodes,
     ungroupNodes: actions.ungroupNodes,
     copyToClipboard: actions.copyToClipboard,
@@ -168,6 +173,7 @@ const Canvas = ({
     clearClipboard: actions.clearClipboard,
     addComponent: actions.addComponent,
     isPanelOpen,
+    isFlowPanelOpen: !!isFlowPanelOpen,
   });
 
   useCanvasEffects({
@@ -178,6 +184,10 @@ const Canvas = ({
     currentStep,
     onClearSelection: visualState.clearCanvasSelection,
   });
+
+  useEffect(() => {
+    if (isFlowPanelOpen) visualState.clearCanvasSelection();
+  }, [isFlowPanelOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectedNodes = nodes.filter((n) => visualState.selectedNodeIds.has(n.id));
   const selectedCount = visualState.selectedNodeIds.size;
@@ -234,6 +244,7 @@ const Canvas = ({
               selectionMode={SelectionMode.Partial}
               zoomOnScroll={false}
               zoomOnPinch
+              deleteKeyCode={null}
               zoomOnDoubleClick={false}
               minZoom={0.3}
               maxZoom={1}

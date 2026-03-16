@@ -17,6 +17,8 @@ interface Props {
   onFinalize: () => void;
   onUpdateStepDescription: (index: number, description: string) => void;
   onUpdateStepDuration: (index: number, duration: string) => void;
+  onUpdateStepPayload: (index: number, payload: string) => void;
+  onUpdateStepPayloadDirection: (index: number, direction: 'request' | 'response') => void;
   onDeleteStep: (index: number) => void;
   onReorderSteps: (fromIndex: number, toIndex: number) => void;
   isEditing?: boolean;
@@ -35,6 +37,8 @@ const FlowRecorderPanel = ({
   onFinalize,
   onUpdateStepDescription,
   onUpdateStepDuration,
+  onUpdateStepPayload,
+  onUpdateStepPayloadDirection,
   onDeleteStep,
   onReorderSteps,
   isEditing,
@@ -200,6 +204,48 @@ const FlowRecorderPanel = ({
                           onClick={(e) => e.stopPropagation()}
                         />
                       </div>
+                      {step.connectionId && (
+                        <>
+                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                            <span className="text-[10px] mt-0.5 shrink-0">📦</span>
+                            <div className="flex rounded border border-border overflow-hidden">
+                              <button
+                                type="button"
+                                onClick={() => onUpdateStepPayloadDirection(i, 'request')}
+                                className={`px-2 py-0.5 text-[9px] font-medium transition-colors ${
+                                  (step.payloadDirection ?? 'request') === 'request'
+                                    ? 'bg-cyan-500/20 text-cyan-400'
+                                    : 'bg-secondary text-muted-foreground hover:text-foreground'
+                                }`}
+                              >
+                                → Request
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => onUpdateStepPayloadDirection(i, 'response')}
+                                className={`px-2 py-0.5 text-[9px] font-medium transition-colors ${
+                                  step.payloadDirection === 'response'
+                                    ? 'bg-emerald-500/20 text-emerald-400'
+                                    : 'bg-secondary text-muted-foreground hover:text-foreground'
+                                }`}
+                              >
+                                ← Response
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-1">
+                            <span className="text-[10px] mt-1 shrink-0">{step.payloadDirection === 'response' ? '📥' : '📤'}</span>
+                            <textarea
+                              value={step.payload ?? ""}
+                              onChange={(e) => onUpdateStepPayload(i, e.target.value)}
+                              placeholder="Payload..."
+                              rows={2}
+                              className="w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-y"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
