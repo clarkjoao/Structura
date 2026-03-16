@@ -9,6 +9,9 @@ export type {
   PanelKind,
   NoteComponent,
   AwsComponent,
+  EndpointComponent,
+  EndpointHandler,
+  HttpMethod,
   Connection,
   ConnectionStyle,
   ConnectionIntent,
@@ -49,6 +52,7 @@ export {
   isNoteComponent,
   isC4Component,
   isAwsComponent,
+  isEndpointComponent,
 } from "./model/component.guards";
 
 /** Zustand store — single source of truth for all diagram state */

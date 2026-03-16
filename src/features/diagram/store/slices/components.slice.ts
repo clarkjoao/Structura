@@ -1,4 +1,4 @@
-import type { Component, ComponentPatch, ComponentType, PanelComponent, PanelKind } from "../../model/diagram.types";
+import type { Component, ComponentPatch, ComponentType, EndpointComponent, PanelComponent, PanelKind } from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
 import { isPanelComponent } from "../../model/component.guards";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
@@ -39,6 +39,14 @@ export const componentsSlice = (
         } as PanelComponent;
       } else if (type === "note") {
         component = { ...base, type: "note", panelColor: "hsl(45 25% 97%)" };
+      } else if (type === "endpoint") {
+        component = {
+          ...base,
+          type: "endpoint",
+          method: "GET",
+          path: "/novo-endpoint",
+          handlers: [],
+        } as EndpointComponent;
       } else if (type === "person" || type === "system" || type === "container" || type === "component") {
         component = { ...base, type };
       } else {
@@ -55,6 +63,7 @@ export const componentsSlice = (
           y: position?.y ?? 300,
           ...(type === "panel" ? { zIndex: -1, width: PANEL_DEFAULT_W, height: PANEL_DEFAULT_H } : {}),
           ...(type === "note" ? { width: NOTE_DEFAULT_W, height: NOTE_DEFAULT_H } : {}),
+          ...(type === "endpoint" ? { width: 260 } : {}),
         };
         d.updatedAt = new Date().toISOString();
       });

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronRight, Database, Network, Search, Server, Square, StickyNote, Star, User, X } from "lucide-react";
+import { Check, ChevronRight, Database, Globe, Network, Search, Server, Square, StickyNote, Star, User, X } from "lucide-react";
 import type { PanelKind } from "@/features/diagram";
 import { PANEL_KINDS, getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
 import { useReactFlow } from "@xyflow/react";
@@ -32,6 +32,7 @@ const CANVAS_OPTIONS: {
     awsIconName: p.awsIconName,
   })),
   { type: "note", label: "Nota", icon: StickyNote },
+  { type: "endpoint", label: "Endpoint", icon: Globe },
 ];
 
 interface ElementPickerModalProps {
@@ -103,10 +104,16 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   );
 
   const handleAddElement = (type: ComponentType, label: string, panelKind?: PanelKind) => {
-    const key = type === "panel" || type === "note" ? `canvas:${type}${panelKind ? `:${panelKind}` : ""}` : `c4:${type}`;
+    const key =
+      type === "panel" || type === "note"
+        ? `canvas:${type}${panelKind ? `:${panelKind}` : ""}`
+        : type === "endpoint"
+          ? "canvas:endpoint"
+          : `c4:${type}`;
     trackUsage(key);
     const def = panelKind ? PANEL_KINDS.find((p) => p.id === panelKind) : null;
-    const name = type === "note" ? "" : def?.defaultName ?? `Novo ${label}`;
+    const name =
+      type === "note" ? "" : type === "endpoint" ? "Novo Endpoint" : def?.defaultName ?? `Novo ${label}`;
     const comp = addComponent(type, name, null, getInsertPos(), undefined, panelKind);
     onInsert?.(comp.id);
     onClose();
@@ -326,7 +333,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {filteredCanvas.map((opt) => (
                   <button
-                    key={opt.type === "panel" ? `panel-${opt.panelKind ?? "default"}` : "note"}
+                    key={opt.type === "panel" ? `panel-${opt.panelKind ?? "default"}` : opt.type === "endpoint" ? "endpoint" : "note"}
                     onClick={() => handleAddElement(opt.type, opt.label, opt.panelKind)}
                     className="flex flex-col items-center gap-1.5 rounded-lg border border-border bg-secondary px-2 py-3 text-xs font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-surface-hover"
                   >

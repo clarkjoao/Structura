@@ -1,6 +1,7 @@
 import type { NodeTypes } from "@xyflow/react";
 import { panelDescriptor } from "./panel.descriptor";
 import { noteDescriptor } from "./note.descriptor";
+import { endpointDescriptor } from "./endpoint.descriptor";
 import { c4Descriptor } from "./c4.descriptor";
 import type { NodeTypeDescriptor } from "./types";
 import type { ComponentType } from "@/features/diagram";
@@ -16,6 +17,7 @@ import type { ComponentType } from "@/features/diagram";
 export const NODE_TYPE_REGISTRY: NodeTypeDescriptor[] = [
   panelDescriptor,
   noteDescriptor,
+  endpointDescriptor,
   c4Descriptor, // catch-all — must be last
 ];
 

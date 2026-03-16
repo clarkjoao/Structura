@@ -10,6 +10,9 @@ export type {
   PanelComponent,
   NoteComponent,
   AwsComponent,
+  EndpointComponent,
+  EndpointHandler,
+  HttpMethod,
   PanelKind,
 } from "./component.types";
 

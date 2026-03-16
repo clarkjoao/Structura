@@ -28,6 +28,10 @@ export interface NodeBuildContext {
   handleDrillDown: (id: string) => void;
   onRecordHandleClick?: (nodeId: string, handleId: string) => void;
   onPanelCollapseToggle?: (panelId: string) => void;
+  /** When playing a flow from an endpoint handler, the id of the flow currently playing. */
+  activeFlowId?: string | null;
+  /** Start playback of a flow (e.g. from endpoint handler click). */
+  onPlayFlow?: (flowId: string) => void;
 }
 
 export interface NodeTypeDescriptor {

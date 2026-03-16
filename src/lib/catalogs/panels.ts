@@ -4,7 +4,7 @@
  * When awsIconName is set, AwsIcon is used; otherwise the Lucide icon is used.
  */
 import type { LucideIcon } from "lucide-react";
-import { Square, MapPin } from "lucide-react";
+import { Square, MapPin, Globe } from "lucide-react";
 import type { PanelKind } from "@/features/diagram";
 
 export interface PanelKindDef {
@@ -25,6 +25,13 @@ export const PANEL_KINDS: PanelKindDef[] = [
     defaultName: "Novo Painel",
     defaultColor: "hsl(220 20% 20%)",
     icon: Square,
+  },
+  {
+    id: "api-group",
+    label: "API",
+    defaultName: "API Endpoints",
+    defaultColor: "hsl(250 70% 55%)",
+    icon: Globe,
   },
   {
     id: "availability-zone",

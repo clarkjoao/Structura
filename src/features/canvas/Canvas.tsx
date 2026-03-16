@@ -44,6 +44,7 @@ interface CanvasProps {
   onDrillUp?: () => void;
   isViewingCoverage?: boolean;
   isFlowPanelOpen?: boolean;
+  onPlayFlow?: (flowId: string) => void;
 }
 
 const CANVAS_STYLES = `
@@ -60,6 +61,7 @@ const Canvas = ({
   onDrillUp,
   isViewingCoverage,
   isFlowPanelOpen,
+  onPlayFlow,
 }: CanvasProps = {}) => {
   const navigate = useNavigate();
   const reactFlowInstance = useReactFlow();
@@ -124,6 +126,8 @@ const Canvas = ({
     recordingInfo,
     coverage,
     isViewingCoverage: !!isViewingCoverage,
+    activeFlowId: activeFlow?.id ?? null,
+    onPlayFlow,
   });
 
   const { nodes, onNodesChange } = useLocalNodes(storeNodes, innerOnNodesChange, localNodesRef);

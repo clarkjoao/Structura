@@ -29,6 +29,8 @@ interface UseCanvasNodesParams {
   recordingInfo: RecordingInfo | null;
   coverage: CoverageInfo | null;
   isViewingCoverage: boolean;
+  activeFlowId?: string | null;
+  onPlayFlow?: (flowId: string) => void;
 }
 
 export function useCanvasNodes({
@@ -53,6 +55,8 @@ export function useCanvasNodes({
   recordingInfo,
   coverage,
   isViewingCoverage,
+  activeFlowId,
+  onPlayFlow,
 }: UseCanvasNodesParams): Node[] {
   const { isRecording, onRecordHandleClick } = useRecordingMode();
   return useMemo(() => {
@@ -79,6 +83,8 @@ export function useCanvasNodes({
       handleDrillDown,
       onRecordHandleClick,
       onPanelCollapseToggle: handlePanelCollapseToggle,
+      activeFlowId,
+      onPlayFlow,
     };
     return [...visibleComponents]
       .sort((a, b) => (isPanelComponent(a) ? -1 : isPanelComponent(b) ? 1 : 0))
@@ -108,6 +114,6 @@ export function useCanvasNodes({
     serviceRegistry, allDiagrams, handleDrillDown, isPlaying, flowHighlight,
     dragTargetPanelId, unparentCandidatePanelId, isRecording, recordingInfo,
     onRecordHandleClick, activeStep, coverage, connectionCountPerNode, effectiveHandleOrder,
-    onReorderHandle, handlePanelCollapseToggle, isViewingCoverage,
+    onReorderHandle, handlePanelCollapseToggle, isViewingCoverage, activeFlowId, onPlayFlow,
   ]);
 }

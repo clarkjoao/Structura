@@ -7,6 +7,7 @@ export type ComponentType =
   | "component"
   | "panel"
   | "note"
+  | "endpoint"
   | AwsCategoryId;
 
 interface BaseComponent {
@@ -34,6 +35,7 @@ export interface C4Component extends BaseComponent {
 
 export type PanelKind =
   | "default"
+  | "api-group"
   | "availability-zone"
   | "eks-cluster"
   | "ecs-cluster"
@@ -63,9 +65,28 @@ export interface AwsComponent extends BaseComponent {
   technology?: string;
 }
 
-export type Component = C4Component | PanelComponent | NoteComponent | AwsComponent;
+export interface EndpointHandler {
+  id: string;
+  label: string;
+  flowId?: string;
+  description?: string;
+}
+
+export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "EVENT";
+
+export interface EndpointComponent extends BaseComponent {
+  type: "endpoint";
+  method: HttpMethod;
+  path: string;
+  /** Optional short description for the endpoint (base description is also used for general notes). */
+  endpointDescription?: string;
+  handlers: EndpointHandler[];
+}
+
+export type Component = C4Component | PanelComponent | NoteComponent | AwsComponent | EndpointComponent;
 
 export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<PanelComponent, "id">> &
   Partial<Omit<NoteComponent, "id">> &
-  Partial<Omit<AwsComponent, "id">> & { width?: number; height?: number };
+  Partial<Omit<AwsComponent, "id">> &
+  Partial<Omit<EndpointComponent, "id">> & { width?: number; height?: number };
