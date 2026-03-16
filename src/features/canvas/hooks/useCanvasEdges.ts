@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { MarkerType, type Edge } from "@xyflow/react";
 import type { Connection, Diagram, FlowStep } from "@/features/diagram";
 import { getEffectiveConnectionStyle } from "@/features/diagram";
+import { useRecordingMode } from "../contexts/RecordingModeContext";
 
 interface UseCanvasEdgesParams {
   diagram: Diagram | null | undefined;
@@ -9,7 +10,6 @@ interface UseCanvasEdgesParams {
   edgeHandleAssignments: { connId: string; sourceHandle: string; targetHandle: string }[];
   selectedEdgeId: string | null;
   isPlaying: boolean;
-  isRecording: boolean | undefined;
   activeStep: FlowStep | null;
   flowHighlight: { activeConnId: string | null; participantConnIds: Set<string> };
   recordingInfo: {
@@ -106,12 +106,12 @@ export function useCanvasEdges({
   edgeHandleAssignments,
   selectedEdgeId,
   isPlaying,
-  isRecording,
   activeStep,
   flowHighlight,
   recordingInfo,
   coverage,
 }: UseCanvasEdgesParams): Edge[] {
+  const { isRecording } = useRecordingMode();
   return useMemo(() => {
     if (!diagram) return [];
 

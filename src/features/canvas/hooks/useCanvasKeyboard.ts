@@ -2,6 +2,7 @@ import { useEffect, useCallback } from "react";
 import type { ReactFlowInstance, Node } from "@xyflow/react";
 import type { Diagram, ComponentType, Component } from "@/features/diagram";
 import { getViewportCenter } from "../viewport-utils";
+import { useRecordingMode } from "../contexts/RecordingModeContext";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -10,8 +11,6 @@ interface UseCanvasKeyboardParams {
   selectedNodeId: string | null;
   reactFlowInstance: ReactFlowInstance;
   reactFlowWrapperRef: React.RefObject<HTMLDivElement | null>;
-  isRecording: boolean | undefined;
-  onRecordUndo: (() => void) | undefined;
   setSelectedNodeId: (id: string | null) => void;
   setSelectedNodeIds: (ids: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
   setSelectedEdgeId: (id: string | null) => void;
@@ -151,13 +150,12 @@ function getCenterOfNodes(diagram: Diagram, ids: string[], offset = 20): { x: nu
 // ── Main hook ─────────────────────────────────────────────────────────────
 
 export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
+  const { isRecording, onRecordUndo } = useRecordingMode();
   const {
     diagram,
     selectedNodeId,
     reactFlowInstance,
     reactFlowWrapperRef,
-    isRecording,
-    onRecordUndo,
     setSelectedNodeId,
     setSelectedNodeIds,
     setSelectedEdgeId,

@@ -3,6 +3,7 @@ import type { Node } from "@xyflow/react";
 import type { Component, Diagram, ServiceDefinition } from "@/features/diagram";
 import { isPanelComponent } from "@/features/diagram";
 import { nodeTypes as _nodeTypes, getDescriptor, type NodeBuildContext } from "../node-types";
+import { useRecordingMode } from "../contexts/RecordingModeContext";
 
 interface UseCanvasNodesParams {
   diagram: Diagram | null | undefined;
@@ -16,8 +17,6 @@ interface UseCanvasNodesParams {
   handleDrillDown: (id: string) => void;
   handlePanelCollapseToggle: (id: string) => void;
   isPlaying: boolean;
-  isRecording: boolean;
-  onRecordHandleClick?: (nodeId: string, handleId: string) => void;
   dragTargetPanelId: string | null;
   unparentCandidatePanelId: string | null;
   connectionCountPerNode: Record<string, { incoming: number; outgoing: number }>;
@@ -56,8 +55,6 @@ export function useCanvasNodes({
   handleDrillDown,
   handlePanelCollapseToggle,
   isPlaying,
-  isRecording,
-  onRecordHandleClick,
   dragTargetPanelId,
   unparentCandidatePanelId,
   connectionCountPerNode,
@@ -69,6 +66,7 @@ export function useCanvasNodes({
   coverage,
   isViewingCoverage,
 }: UseCanvasNodesParams): Node[] {
+  const { isRecording, onRecordHandleClick } = useRecordingMode();
   return useMemo(() => {
     if (!diagram) return [];
     const collapsedPanelIds = new Set(

@@ -5,28 +5,24 @@
 import { useCallback } from "react";
 import type { Node, Edge, OnEdgesChange, OnConnect, OnConnectEnd, Connection } from "@xyflow/react";
 import type { CanvasVisualState } from "./useCanvasVisualState";
+import { useRecordingMode } from "../contexts/RecordingModeContext";
 
 interface UseCanvasEventHandlersParams {
   visualState: CanvasVisualState;
   isPlaying: boolean;
-  isRecording: boolean | undefined;
   updateViewport: (vp: { x: number; y: number; zoom: number }) => void;
   addConnection: (source: string, target: string, label: string) => void;
-  onRecordNodeClick?: (nodeId: string) => void;
-  onRecordEdgeClick?: (edgeId: string, handleId?: string) => void;
   screenToFlowPosition: (pos: { x: number; y: number }) => { x: number; y: number };
 }
 
 export function useCanvasEventHandlers({
   visualState,
-  isRecording,
   isPlaying,
   updateViewport,
   addConnection,
-  onRecordNodeClick,
-  onRecordEdgeClick,
   screenToFlowPosition,
 }: UseCanvasEventHandlersParams) {
+  const { isRecording, onRecordNodeClick, onRecordEdgeClick } = useRecordingMode();
   const {
     setSelectedNodeId,
     setSelectedNodeIds,

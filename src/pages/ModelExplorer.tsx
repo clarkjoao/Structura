@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Download, GitBranch } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
+import { RecordingModeProvider } from "@/features/canvas/contexts/RecordingModeContext";
 import { useActiveDiagram, useActiveDiagramId, useDiagramActions, useFlows, stepsToMermaid, useServiceRegistry } from "@/features/diagram";
 import { exportJSON, exportDrawio, exportMermaid, downloadFile } from "@/lib/export-service";
 import type { Flow, FlowStep } from "@/features/diagram";
@@ -199,6 +200,14 @@ const ModelExplorer = () => {
         </div>
       </div>
       <div className="flex-1 flex overflow-hidden">
+        <RecordingModeProvider value={{
+          isRecording,
+          recordingSteps,
+          onRecordNodeClick: handleRecordNodeClick,
+          onRecordEdgeClick: handleRecordEdgeClick,
+          onRecordHandleClick: handleRecordHandleClick,
+          onRecordUndo: handleRecordUndo,
+        }}>
         <ReactFlowProvider>
           <div className="flex-1 flex flex-col relative">
             <Canvas
@@ -206,12 +215,6 @@ const ModelExplorer = () => {
               currentStep={currentStep}
               onOpenDiagram={handleOpenDiagram}
               onDrillUp={navStack.length > 0 ? handleDrillUp : undefined}
-              isRecording={isRecording}
-              recordingSteps={recordingSteps}
-              onRecordNodeClick={handleRecordNodeClick}
-              onRecordEdgeClick={handleRecordEdgeClick}
-              onRecordHandleClick={handleRecordHandleClick}
-              onRecordUndo={handleRecordUndo}
               isViewingCoverage={isViewingCoverage}
             />
             {activeFlow && (
@@ -219,6 +222,7 @@ const ModelExplorer = () => {
             )}
           </div>
         </ReactFlowProvider>
+        </RecordingModeProvider>
         {isRecording && (
           <FlowRecorderPanel
             name={recordingName} onNameChange={setRecordingName}

@@ -13,7 +13,6 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useNavigate } from "react-router-dom";
-import type { FlowStep } from "@/features/diagram";
 import CustomEdge from "./edges/CustomEdge";
 import CanvasToolbar from "./toolbar/CanvasToolbar";
 import ElementPanel from "./ElementPanel/index";
@@ -33,6 +32,7 @@ import { useCanvasHandleReorder } from "./hooks/useCanvasHandleReorder";
 import { useCanvasEffects } from "./hooks/useCanvasEffects";
 import QuickInsertPopover from "./QuickInsertPopover";
 import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
+import { useRecordingMode } from "./contexts/RecordingModeContext";
 
 const edgeTypes = { c4: CustomEdge };
 
@@ -41,12 +41,6 @@ interface CanvasProps {
   currentStep?: number;
   onOpenDiagram?: (id: string) => void;
   onDrillUp?: () => void;
-  isRecording?: boolean;
-  recordingSteps?: FlowStep[];
-  onRecordNodeClick?: (nodeId: string) => void;
-  onRecordEdgeClick?: (edgeId: string, handleId?: string) => void;
-  onRecordHandleClick?: (nodeId: string, handleId: string) => void;
-  onRecordUndo?: () => void;
   isViewingCoverage?: boolean;
 }
 
@@ -61,17 +55,12 @@ const Canvas = ({
   currentStep,
   onOpenDiagram,
   onDrillUp,
-  isRecording,
-  recordingSteps,
-  onRecordNodeClick,
-  onRecordEdgeClick,
-  onRecordHandleClick,
-  onRecordUndo,
   isViewingCoverage,
 }: CanvasProps = {}) => {
   const navigate = useNavigate();
   const reactFlowInstance = useReactFlow();
   const reactFlowWrapperRef = useRef<HTMLDivElement>(null);
+  const { isRecording } = useRecordingMode();
 
   const { diagram, allDiagrams, visibleComponents, visibleConnections, serviceRegistry, flows, actions } =
     useCanvasStore();
@@ -82,8 +71,6 @@ const Canvas = ({
     activeFlow,
     currentStep,
     flows,
-    isRecording,
-    recordingSteps,
   });
 
   const { handleDrillDown, handlePanelCollapseToggle } = useCanvasDrillHandlers({
@@ -96,7 +83,6 @@ const Canvas = ({
   });
 
   const { onReorderHandle } = useCanvasHandleReorder({
-    isRecording,
     effectiveHandleOrder,
     updateHandleOrder: actions.updateHandleOrder,
   });
@@ -124,8 +110,6 @@ const Canvas = ({
     handleDrillDown,
     handlePanelCollapseToggle,
     isPlaying,
-    isRecording: !!isRecording,
-    onRecordHandleClick,
     dragTargetPanelId,
     unparentCandidatePanelId,
     connectionCountPerNode,
@@ -165,7 +149,6 @@ const Canvas = ({
     edgeHandleAssignments,
     selectedEdgeId: visualState.selectedEdgeId,
     isPlaying,
-    isRecording,
     activeStep,
     flowHighlight,
     recordingInfo,
@@ -175,11 +158,8 @@ const Canvas = ({
   const eventHandlers = useCanvasEventHandlers({
     visualState,
     isPlaying,
-    isRecording,
     updateViewport: actions.updateViewport,
     addConnection: actions.addConnection,
-    onRecordNodeClick,
-    onRecordEdgeClick,
     screenToFlowPosition: (pos) => reactFlowInstance.screenToFlowPosition(pos),
   });
 
@@ -189,8 +169,6 @@ const Canvas = ({
     selectedNodeId: visualState.selectedNodeId,
     reactFlowInstance,
     reactFlowWrapperRef,
-    isRecording,
-    onRecordUndo,
     setSelectedNodeId: visualState.setSelectedNodeId,
     setSelectedNodeIds: visualState.setSelectedNodeIds,
     setSelectedEdgeId: visualState.setSelectedEdgeId,
