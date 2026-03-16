@@ -1,28 +1,8 @@
 import type { CSSProperties, ComponentType as ReactComponentType } from "react";
 import type { Component, ComponentType, Diagram, FlowStep, ServiceDefinition } from "@/features/diagram";
+import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../models/flowState";
 
-export interface FlowHighlight {
-  activeNodeId: string | null;
-  activeConnId: string | null;
-  visitedNodeIds: Set<string>;
-  participantNodeIds: Set<string>;
-  participantConnIds: Set<string>;
-}
-
-export interface RecordingInfo {
-  nodeSteps: Map<string, number[]>;
-  edgeSteps: Map<string, number[]>;
-  recordedNodeIds: Set<string>;
-  recordedEdgeIds: Set<string>;
-  lastNodeId: string | null;
-  lastEdgeId: string | null;
-  lastHandleId: string | null;
-}
-
-export interface CoverageInfo {
-  nodeFlows: Map<string, string[]>;
-  edgeFlows: Map<string, string[]>;
-}
+export type { FlowHighlight, RecordingInfo, CoverageInfo };
 
 export interface NodeBuildContext {
   diagram: Diagram;
