@@ -1,15 +1,14 @@
-import { useRef, useCallback, useState } from "react";
+import { useRef } from "react";
 import {
   ReactFlow,
   Background,
   BackgroundVariant,
   Controls,
   useReactFlow,
+  useUpdateNodeInternals,
   PanOnScrollMode,
   SelectionMode,
-  applyNodeChanges,
   type Node,
-  type OnNodesChange,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useNavigate } from "react-router-dom";
@@ -30,6 +29,8 @@ import { useCanvasEventHandlers } from "./hooks/useCanvasEventHandlers";
 import { useCanvasDrillHandlers } from "./hooks/useCanvasDrillHandlers";
 import { useCanvasHandleReorder } from "./edges/useCanvasHandleReorder";
 import { useCanvasEffects } from "./hooks/useCanvasEffects";
+import { useLocalNodes } from "./hooks/useLocalNodes";
+import { useConnectionInternalsSync } from "./hooks/useConnectionInternalsSync";
 import QuickInsertPopover from "./toolbar/QuickInsertPopover";
 import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 import { useRecordingMode } from "./flow/RecordingModeContext";
@@ -60,6 +61,7 @@ const Canvas = ({
 }: CanvasProps = {}) => {
   const navigate = useNavigate();
   const reactFlowInstance = useReactFlow();
+  const updateNodeInternals = useUpdateNodeInternals();
   const reactFlowWrapperRef = useRef<HTMLDivElement>(null);
   const { isRecording } = useRecordingMode();
 
@@ -88,7 +90,6 @@ const Canvas = ({
     updateHandleOrder: actions.updateHandleOrder,
   });
 
-  const [localNodes, setLocalNodes] = useState<Node[]>([]);
   const localNodesRef = useRef<Node[]>([]);
 
   const { dragTargetPanelId, unparentCandidatePanelId, onNodesChange: innerOnNodesChange, onNodeDragStop } =
@@ -123,52 +124,7 @@ const Canvas = ({
     isViewingCoverage: !!isViewingCoverage,
   });
 
-  const prevStoreNodesRef = useRef<Node[] | undefined>(undefined);
-  if (storeNodes !== prevStoreNodesRef.current) {
-    prevStoreNodesRef.current = storeNodes;
-    setLocalNodes((prev) => {
-      if (prev.length === 0) {
-        localNodesRef.current = storeNodes;
-        return storeNodes;
-      }
-      const localMap = new Map(prev.map((n) => [n.id, n]));
-      const merged = storeNodes.map((sn) => {
-        const ln = localMap.get(sn.id);
-        if (!ln) return sn;
-        // Spread local first (preserves RF internals like measured/internals + drag position),
-        // then store props (data, style, hidden, zIndex, etc.)
-        return {
-          ...ln,
-          data: sn.data,
-          style: sn.style,
-          hidden: sn.hidden,
-          zIndex: sn.zIndex,
-          connectable: sn.connectable,
-          selected: sn.selected,
-          type: sn.type,
-          parentId: sn.parentId,
-          extent: sn.extent,
-        };
-      });
-      localNodesRef.current = merged;
-      return merged;
-    });
-  }
-
-  const nodes = localNodes;
-
-  const onNodesChange: OnNodesChange = useCallback(
-    (changes) => {
-      if(!changes.length) return;
-      innerOnNodesChange(changes);
-      setLocalNodes((nds) => {
-        const updated = applyNodeChanges(changes, nds);
-        localNodesRef.current = updated;
-        return updated;
-      });
-    },
-    [innerOnNodesChange],
-  );
+  const { nodes, onNodesChange } = useLocalNodes(storeNodes, innerOnNodesChange, localNodesRef);
 
   const edges = useCanvasEdges({
     diagram,
@@ -181,6 +137,8 @@ const Canvas = ({
     recordingInfo,
     coverage,
   });
+
+  useConnectionInternalsSync(connectionCountPerNode, updateNodeInternals);
 
   const eventHandlers = useCanvasEventHandlers({
     visualState,
