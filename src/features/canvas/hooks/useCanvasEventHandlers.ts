@@ -123,6 +123,7 @@ export function useCanvasEventHandlers({
 
   const onSelectionChange = useCallback(
     ({ nodes: updatedNodes }: { nodes: Node[]; edges: Edge[] }) => {
+      if(!updatedNodes.length) return;
       const ids = new Set(updatedNodes.filter((n) => n.selected).map((n) => n.id));
       setSelectedNodeIds(ids);
       setSelectedNodeId(updatedNodes.find((n) => n.selected)?.id ?? null);
