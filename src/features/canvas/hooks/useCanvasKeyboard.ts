@@ -9,6 +9,7 @@ import { useRecordingMode } from "../flow/RecordingModeContext";
 interface UseCanvasKeyboardParams {
   diagram: Diagram | null | undefined;
   selectedNodeId: string | null;
+  selectedEdgeId: string | null;
   reactFlowInstance: ReactFlowInstance;
   reactFlowWrapperRef: React.RefObject<HTMLDivElement | null>;
   setSelectedNodeId: (id: string | null) => void;
@@ -18,6 +19,7 @@ interface UseCanvasKeyboardParams {
   undo: () => void;
   redo: () => void;
   removeComponent: (id: string) => void;
+  removeConnection: (id: string) => void;
   groupNodes: (ids: string[]) => string | null;
   ungroupNodes: (panelId: string) => void;
   copyToClipboard: (ids: string[]) => void;
@@ -31,6 +33,7 @@ interface UseCanvasKeyboardParams {
     awsService?: string,
   ) => Component;
   isPanelOpen: boolean;
+  isFlowPanelOpen: boolean;
   onOpenSearch?: () => void;
 }
 
@@ -154,6 +157,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   const {
     diagram,
     selectedNodeId,
+    selectedEdgeId,
     reactFlowInstance,
     reactFlowWrapperRef,
     setSelectedNodeId,
@@ -163,6 +167,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     undo,
     redo,
     removeComponent,
+    removeConnection,
     groupNodes,
     ungroupNodes,
     copyToClipboard,
@@ -170,6 +175,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     clearClipboard,
     addComponent,
     isPanelOpen,
+    isFlowPanelOpen,
     onOpenSearch,
   } = params;
 
@@ -205,6 +211,9 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
         return;
       }
 
+      // Block shortcuts when flow panel is open
+      if (isFlowPanelOpen) return;
+
       const mod = isModKeyPressed(e);
 
       // Escape — clear selection and context
@@ -226,15 +235,19 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
         return;
       }
 
-      // Delete / Backspace — remove selected
+      // Delete / Backspace — remove selected nodes or edge
       if (e.key === KEY.DELETE || e.key === KEY.BACKSPACE) {
         e.preventDefault();
         const selected = getSelectedNodes(reactFlowInstance, selectedNodeId);
-        if (selected.length === 0) return;
-
-        selected.forEach((n) => removeComponent(n.id));
-        setSelectedNodeId(null);
-        setSelectedNodeIds(new Set());
+        if (selected.length > 0) {
+          selected.forEach((n) => removeComponent(n.id));
+          setSelectedNodeId(null);
+          setSelectedNodeIds(new Set());
+        }
+        if (selectedEdgeId) {
+          removeConnection(selectedEdgeId);
+          setSelectedEdgeId(null);
+        }
         return;
       }
 
@@ -324,9 +337,11 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   }, [
     diagram,
     selectedNodeId,
+    selectedEdgeId,
     reactFlowInstance,
     reactFlowWrapperRef,
     isRecording,
+    isFlowPanelOpen,
     onRecordUndo,
     clearSelection,
     setSelectedNodeId,
@@ -334,6 +349,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     setSelectedEdgeId,
     setContextMenu,
     removeComponent,
+    removeConnection,
     groupNodes,
     ungroupNodes,
     copyToClipboard,

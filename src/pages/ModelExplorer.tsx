@@ -241,6 +241,7 @@ const ModelExplorer = () => {
               onOpenDiagram={handleOpenDiagram}
               onDrillUp={navStack.length > 0 ? handleDrillUp : undefined}
               isViewingCoverage={isViewingCoverage}
+              isFlowPanelOpen={showFlows}
             />
             {activeFlow && (
               <FlowStepNavigator flow={activeFlow} currentStep={currentStep} onPrev={handlePrev} onNext={handleNext} onExit={handleExit} onGoToStep={handleGoToStep} />
