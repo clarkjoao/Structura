@@ -2,6 +2,7 @@ import { SEED_DIAGRAMS } from "@/fixtures/seed";
 import { AppState } from "../store.types";
 import {Diagram, Level} from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
+import { fileSystemAdapter } from "@/infrastructure/persistence";
 
 export const diagramsSlice = (
     set: (fn: (state: AppState) => void) => void,
@@ -34,11 +35,15 @@ export const diagramsSlice = (
     },
   
     deleteDiagram: (id: string) => {
-      set((state) => {
-        delete state.diagrams[id];
-  
-        if (state.activeDiagramId === id)
-          state.activeDiagramId = null;
+      const state = get();
+      const diagram = state.diagrams[id];
+      fileSystemAdapter.setFolders(state.folders);
+      set((s) => {
+        delete s.diagrams[id];
+
+        if (s.activeDiagramId === id)
+          s.activeDiagramId = null;
       });
+      fileSystemAdapter.deleteDiagram(id, diagram);
     },
   });
