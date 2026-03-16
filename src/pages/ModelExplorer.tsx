@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ReactFlowProvider } from "@xyflow/react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Download, GitBranch } from "lucide-react";
+import { ArrowLeft, Check, Clipboard, Download, GitBranch } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
 import { RecordingModeProvider } from "@/features/canvas/flow/RecordingModeContext";
@@ -118,6 +118,17 @@ const ModelExplorer = () => {
   const handleAddTag = useCallback((tag: string) => { setRecordingTags((prev) => prev.includes(tag) ? prev : [...prev, tag]); }, []);
   const handleRemoveTag = useCallback((index: number) => { setRecordingTags((prev) => prev.filter((_, i) => i !== index)); }, []);
 
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyDrawio = useCallback(() => {
+    if (!diagram) return;
+    const xml = exportDrawio(diagram, serviceRegistry);
+    navigator.clipboard.writeText(xml).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [diagram, serviceRegistry]);
+
   const handleExport = useCallback(() => {
     if (!diagram) return;
     const slug = diagram.name.toLowerCase().replace(/\s+/g, "-");
@@ -189,6 +200,13 @@ const ModelExplorer = () => {
               } ${isRecording ? "opacity-50 pointer-events-none" : ""}`}
             >
               <GitBranch className="h-3.5 w-3.5" /> Flows
+            </button>
+            <button
+              onClick={handleCopyDrawio}
+              className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all"
+            >
+              {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Clipboard className="h-3.5 w-3.5" />}
+              {copied ? "Copiado!" : "Copy"}
             </button>
             <button
               onClick={handleExport}
