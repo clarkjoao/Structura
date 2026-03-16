@@ -2,7 +2,7 @@
  * Handlers de eventos do canvas (click, selection, connect, etc.).
  * Recebe store, visual state e flow state para evitar duplicação no Canvas.
  */
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import type { Node, Edge, OnEdgesChange, OnConnect, OnConnectEnd, Connection } from "@xyflow/react";
 import type { CanvasVisualState } from "./useCanvasVisualState";
 import { useRecordingMode } from "../flow/RecordingModeContext";
@@ -89,12 +89,14 @@ export function useCanvasEventHandlers({
           const next = new Set(prev);
           if (next.has(node.id)) next.delete(node.id);
           else next.add(node.id);
+          prevSelectionRef.current = [...next].sort().join(",");
           setSelectedNodeId(
             next.size === 0 ? null : next.has(node.id) ? node.id : (next.values().next().value ?? null),
           );
           return next;
         });
       } else {
+        prevSelectionRef.current = node.id;
         setSelectedNodeIds(new Set([node.id]));
         setSelectedNodeId(node.id);
       }
@@ -117,17 +119,23 @@ export function useCanvasEventHandlers({
     [clearHighlight, isRecording, onRecordEdgeClick, setSelectedEdgeId, setSelectedNodeId, setSelectedNodeIds, setContextMenu],
   );
 
+  const prevSelectionRef = useRef<string>("");
   const onSelectionChange = useCallback(
     ({ nodes: updatedNodes }: { nodes: Node[]; edges: Edge[] }) => {
-      if(!updatedNodes.length) return;
-      const ids = new Set(updatedNodes.filter((n) => n.selected).map((n) => n.id));
-      setSelectedNodeIds(ids);
-      setSelectedNodeId(updatedNodes.find((n) => n.selected)?.id ?? null);
+      const selectedIds = updatedNodes.filter((n) => n.selected).map((n) => n.id);
+      // Skip empty selections (handled by onPaneClick) and duplicate firings
+      if (selectedIds.length === 0) return;
+      const key = selectedIds.sort().join(",");
+      if (key === prevSelectionRef.current) return;
+      prevSelectionRef.current = key;
+      setSelectedNodeIds(new Set(selectedIds));
+      setSelectedNodeId(selectedIds[0] ?? null);
     },
     [setSelectedNodeId, setSelectedNodeIds],
   );
 
   const onPaneClick = useCallback(() => {
+    prevSelectionRef.current = "";
     clearCanvasSelection();
   }, [clearCanvasSelection]);
 

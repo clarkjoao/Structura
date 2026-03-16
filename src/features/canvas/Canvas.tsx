@@ -125,7 +125,28 @@ const Canvas = ({
   const prevStoreNodesRef = useRef<Node[] | undefined>(undefined);
   if (storeNodes !== prevStoreNodesRef.current) {
     prevStoreNodesRef.current = storeNodes;
-    setLocalNodes(storeNodes);
+    setLocalNodes((prev) => {
+      if (prev.length === 0) return storeNodes;
+      const localMap = new Map(prev.map((n) => [n.id, n]));
+      return storeNodes.map((sn) => {
+        const ln = localMap.get(sn.id);
+        if (!ln) return sn;
+        // Spread local first (preserves RF internals like measured/internals),
+        // then store props (data, style, hidden, zIndex, etc.), keep local position (drag)
+        return {
+          ...ln,
+          data: sn.data,
+          style: sn.style,
+          hidden: sn.hidden,
+          zIndex: sn.zIndex,
+          connectable: sn.connectable,
+          selected: sn.selected,
+          type: sn.type,
+          parentId: sn.parentId,
+          extent: sn.extent,
+        };
+      });
+    });
     localNodesRef.current = storeNodes;
   }
 
@@ -133,6 +154,7 @@ const Canvas = ({
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
+      if(!changes.length) return;
       innerOnNodesChange(changes);
       setLocalNodes((nds) => {
         const updated = applyNodeChanges(changes, nds);
