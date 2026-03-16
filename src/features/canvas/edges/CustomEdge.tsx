@@ -18,6 +18,9 @@ export interface EdgeData {
   isLastRecorded?: boolean;
   coverageFlowNames?: string[];
   playbackDuration?: string;
+  isActivePlayback?: boolean;
+  activePayload?: string | null;
+  activePayloadDirection?: 'request' | 'response' | null;
   edgeStyle?: EdgeStyle;
   strokeStyle?: StrokeStyle;
   strokeWidth?: number;
@@ -98,6 +101,24 @@ const Edge = memo(
             strokeDasharray: dashArray,
           }}
         />
+        {d?.isActivePlayback && (
+          <>
+            <style>{`@keyframes flowParticle { 0% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -112; } }`}</style>
+            <path
+              d={edgePath}
+              fill="none"
+              stroke={d.activePayloadDirection === "response" ? "hsl(152 60% 45%)" : "hsl(187 72% 51%)"}
+              strokeWidth={2.5}
+              strokeDasharray="6 106"
+              strokeDashoffset={0}
+              strokeLinecap="round"
+              style={{
+                animation: `flowParticle 1.2s linear infinite${d.activePayloadDirection === "response" ? " reverse" : ""}`,
+                pointerEvents: "none",
+              }}
+            />
+          </>
+        )}
         {d?.label && (
           <EdgeLabelRenderer>
             <div
@@ -136,6 +157,33 @@ const Edge = memo(
                     {d.technology}
                   </span>
                 )}
+              </div>
+            </div>
+          </EdgeLabelRenderer>
+        )}
+        {d?.isActivePlayback && d?.activePayload && (
+          <EdgeLabelRenderer>
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY + (d?.label ? 52 : 16)}px)`,
+              }}
+            >
+              <div className={`rounded-md border bg-card/95 backdrop-blur-sm px-2.5 py-1.5 shadow-lg min-w-[160px] max-w-[260px] ${
+                d.activePayloadDirection === "response"
+                  ? "border-emerald-500/30"
+                  : "border-cyan-500/30"
+              }`}>
+                <div className="flex items-center gap-1 mb-1">
+                  <span className={`text-[9px] font-bold uppercase tracking-wider ${
+                    d.activePayloadDirection === "response" ? "text-emerald-400" : "text-cyan-400"
+                  }`}>
+                    {d.activePayloadDirection === "response" ? "← Response" : "→ Request"}
+                  </span>
+                </div>
+                <pre className="text-[10px] font-mono text-foreground/90 whitespace-pre-wrap line-clamp-3 overflow-hidden">
+                  {d.activePayload}
+                </pre>
               </div>
             </div>
           </EdgeLabelRenderer>

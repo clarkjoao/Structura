@@ -6,6 +6,8 @@ export interface FlowStep {
   description?: string;
   handleId?: string;
   duration?: string;
+  payload?: string;
+  payloadDirection?: 'request' | 'response';
 }
 
 export interface Flow {

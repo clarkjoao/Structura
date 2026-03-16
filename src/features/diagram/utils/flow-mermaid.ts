@@ -27,6 +27,13 @@ export function stepsToMermaid(
         if (step.description) {
           lines.push(`  Note over ${src}: ${step.description}`);
         }
+        if (step.payload) {
+          if (step.payloadDirection === 'response') {
+            lines.push(`  Note over ${tgt},${src}: ← ${step.payload}`);
+          } else {
+            lines.push(`  Note over ${src},${tgt}: → ${step.payload}`);
+          }
+        }
         if (step.duration) {
           lines.push(`  Note right of ${tgt}: ${step.duration}`);
         }

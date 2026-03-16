@@ -1,4 +1,5 @@
-import { ChevronLeft, ChevronRight, X, MessageSquare, Clock } from "lucide-react";
+import { useState } from "react";
+import { ChevronLeft, ChevronRight, X, MessageSquare, Clock, ChevronDown, ChevronUp } from "lucide-react";
 import type { Flow } from "@/features/diagram";
 
 interface Props {
@@ -7,14 +8,43 @@ interface Props {
   onPrev: () => void;
   onNext: () => void;
   onExit: () => void;
+  onGoToStep: (index: number) => void;
 }
 
-const FlowStepNavigator = ({ flow, currentStep, onPrev, onNext, onExit }: Props) => {
+const FlowStepNavigator = ({ flow, currentStep, onPrev, onNext, onExit, onGoToStep }: Props) => {
   const step = flow.steps[currentStep];
   const total = flow.steps.length;
+  const [showPayload, setShowPayload] = useState(false);
 
   return (
     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 w-[460px] rounded-xl border border-border bg-card/95 backdrop-blur-sm shadow-2xl">
+      <div className="px-4 py-2 flex items-center gap-1 overflow-x-auto border-b border-border">
+        {flow.steps.map((_, i) => (
+          <button key={i} onClick={() => onGoToStep(i)}
+            className="relative flex flex-col items-center gap-0.5 group shrink-0"
+          >
+            {i > 0 && (
+              <div
+                className="absolute right-full top-[7px] w-full h-px bg-border"
+                style={i <= currentStep ? { background: "hsl(var(--primary))" } : undefined}
+              />
+            )}
+            <div className={`
+              ${total > 20 ? "w-2 h-2" : "w-3.5 h-3.5"} rounded-full border-2 transition-all duration-200
+              ${i === currentStep
+                ? "bg-primary border-primary ring-2 ring-primary/30 scale-110"
+                : i < currentStep
+                  ? "bg-primary/60 border-primary/60"
+                  : "bg-background border-border"}
+            `} />
+            {total <= 20 && (
+              <span className="text-[9px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity absolute top-4">
+                {i + 1}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
         <div className="flex items-center gap-2 min-w-0">
           <button onClick={onPrev} disabled={currentStep === 0}
@@ -53,6 +83,23 @@ const FlowStepNavigator = ({ flow, currentStep, onPrev, onNext, onExit }: Props)
             <span className="inline-flex items-center gap-1 text-[10px] font-mono text-primary shrink-0">
               <Clock className="h-3 w-3" /> {step.duration}
             </span>
+          )}
+        </div>
+      )}
+
+      {step?.payload && (
+        <div className="px-4 pb-2">
+          <button
+            onClick={() => setShowPayload((v) => !v)}
+            className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {showPayload ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            <span>{step.payloadDirection === 'response' ? '← Response' : '→ Request'}</span>
+          </button>
+          {showPayload && (
+            <pre className="mt-1 rounded-md border border-border bg-secondary p-2 text-[10px] font-mono text-foreground whitespace-pre-wrap overflow-auto max-h-28">
+              {step.payload}
+            </pre>
           )}
         </div>
       )}

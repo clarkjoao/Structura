@@ -49,6 +49,7 @@ const ModelExplorer = () => {
   const handleExit = useCallback(() => { setActiveFlow(null); setCurrentStep(0); }, []);
   const handlePrev = useCallback(() => { setCurrentStep((s) => Math.max(0, s - 1)); }, []);
   const handleNext = useCallback(() => { if (!activeFlow) return; setCurrentStep((s) => Math.min(activeFlow.steps.length - 1, s + 1)); }, [activeFlow]);
+  const handleGoToStep = useCallback((i: number) => setCurrentStep(i), []);
 
   const resetRecordingState = useCallback(() => {
     setIsRecording(false);
@@ -107,6 +108,12 @@ const ModelExplorer = () => {
   }, []);
   const handleUpdateStepDuration = useCallback((index: number, duration: string) => {
     setRecordingSteps((prev) => prev.map((s, i) => (i === index ? { ...s, duration: duration || undefined } : s)));
+  }, []);
+  const handleUpdateStepPayload = useCallback((index: number, payload: string) => {
+    setRecordingSteps((prev) => prev.map((s, i) => (i === index ? { ...s, payload: payload || undefined } : s)));
+  }, []);
+  const handleUpdateStepPayloadDirection = useCallback((index: number, direction: 'request' | 'response') => {
+    setRecordingSteps((prev) => prev.map((s, i) => (i === index ? { ...s, payloadDirection: direction } : s)));
   }, []);
   const handleDeleteStep = useCallback((index: number) => {
     setRecordingSteps((prev) => prev.filter((_, i) => i !== index).map((s, i) => ({ ...s, order: i })));
@@ -236,7 +243,7 @@ const ModelExplorer = () => {
               isViewingCoverage={isViewingCoverage}
             />
             {activeFlow && (
-              <FlowStepNavigator flow={activeFlow} currentStep={currentStep} onPrev={handlePrev} onNext={handleNext} onExit={handleExit} />
+              <FlowStepNavigator flow={activeFlow} currentStep={currentStep} onPrev={handlePrev} onNext={handleNext} onExit={handleExit} onGoToStep={handleGoToStep} />
             )}
           </div>
         </ReactFlowProvider>
@@ -250,6 +257,8 @@ const ModelExplorer = () => {
             onCancel={handleCancelRecording} onFinalize={handleFinalizeRecording}
             onUpdateStepDescription={handleUpdateStepDescription}
             onUpdateStepDuration={handleUpdateStepDuration}
+            onUpdateStepPayload={handleUpdateStepPayload}
+            onUpdateStepPayloadDirection={handleUpdateStepPayloadDirection}
             onDeleteStep={handleDeleteStep} onReorderSteps={handleReorderSteps}
             isEditing={!!editingFlowId}
           />
