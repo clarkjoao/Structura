@@ -1,6 +1,6 @@
 import { createJSONStorage } from "zustand/middleware";
 import type { IStoragePort } from "@/infrastructure/persistence";
-import type { Diagram, Component, Connection } from "../model/diagram.types";
+import type { Diagram, Component, Connection, NodeLayout } from "../model/diagram.types";
 import type { DiagramStore } from "./store.types";
 
 export const PERSIST_KEY = "diagram-store";
@@ -31,17 +31,23 @@ export function mergePersistedState(
   if (!state.serviceRegistry) state.serviceRegistry = {};
   if (!state.folders) state.folders = {};
 
+  // Migrate diagrams missing createdAt
+  Object.values(state.diagrams ?? {}).forEach((d) => {
+    const diagram = d as Diagram & { createdAt?: string };
+    if (!diagram.createdAt) diagram.createdAt = diagram.updatedAt;
+  });
+
   // Migrate nodeLayouts from legacy array format to Record<string, NodeLayout>
   Object.values(state.diagrams ?? {}).forEach((d) => {
     const diagram = d as Diagram & { nodeLayouts: unknown };
     if (Array.isArray(diagram.nodeLayouts)) {
-      const arr = diagram.nodeLayouts as Array<{ elementId: string }>;
+      const arr = diagram.nodeLayouts as NodeLayout[];
       (diagram as Diagram).nodeLayouts = Object.fromEntries(arr.map((nl) => [nl.elementId, nl]));
     }
   });
   [...(state.past ?? []), ...(state.future ?? [])].forEach((entry) => {
     if (Array.isArray(entry.nodeLayouts)) {
-      const arr = entry.nodeLayouts as Array<{ elementId: string }>;
+      const arr = entry.nodeLayouts as NodeLayout[];
       (entry as typeof entry & { nodeLayouts: unknown }).nodeLayouts = Object.fromEntries(arr.map((nl) => [nl.elementId, nl]));
     }
   });

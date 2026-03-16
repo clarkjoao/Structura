@@ -56,7 +56,7 @@ export const componentsSlice = (
           ...(type === "panel" ? { zIndex: -1, width: PANEL_DEFAULT_W, height: PANEL_DEFAULT_H } : {}),
           ...(type === "note" ? { width: NOTE_DEFAULT_W, height: NOTE_DEFAULT_H } : {}),
         };
-        d.updatedAt = "agora";
+        d.updatedAt = new Date().toISOString();
       });
       return component;
     },
@@ -85,7 +85,7 @@ export const componentsSlice = (
             if (height !== undefined) layout.height = height;
           }
         }
-        d.updatedAt = "agora";
+        d.updatedAt = new Date().toISOString();
       });
     },
 
@@ -107,7 +107,7 @@ export const componentsSlice = (
             delete d.snapshot.connections[conn.id];
         });
         toRemove.forEach((eid) => delete d.nodeLayouts[eid]);
-        d.updatedAt = "agora";
+        d.updatedAt = new Date().toISOString();
       });
     },
 
@@ -122,7 +122,7 @@ export const componentsSlice = (
         if (!comp) return;
         if (!comp.handleOrder) comp.handleOrder = { incoming: [], outgoing: [] };
         comp.handleOrder[side] = orderedConnectionIds;
-        d.updatedAt = "agora";
+        d.updatedAt = new Date().toISOString();
       });
     },
 
@@ -192,7 +192,7 @@ export const componentsSlice = (
             layout.y = positions[i].y - minY;
           }
         });
-        d.updatedAt = "agora";
+        d.updatedAt = new Date().toISOString();
       });
       return panelId;
     },
@@ -217,7 +217,7 @@ export const componentsSlice = (
         });
         delete d.snapshot.components[panelId];
         delete d.nodeLayouts[panelId];
-        d.updatedAt = "agora";
+        d.updatedAt = new Date().toISOString();
       });
     },
   });

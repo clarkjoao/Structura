@@ -39,7 +39,8 @@ function buildSeedDiagrams(): Record<string, Diagram> {
       name: "System Context",
       level: "context",
       domain: "E-commerce",
-      updatedAt: "2h atrás",
+      createdAt: "2026-03-10T09:00:00.000Z",
+      updatedAt: "2026-03-16T14:00:00.000Z",
       snapshot: {
         components: {
           "e-user": {
@@ -120,7 +121,8 @@ function buildSeedDiagrams(): Record<string, Diagram> {
       name: "Orders – Containers",
       level: "container",
       domain: "E-commerce",
-      updatedAt: "1 dia",
+      createdAt: "2026-03-01T10:00:00.000Z",
+      updatedAt: "2026-03-15T10:00:00.000Z",
       snapshot: {
         components: {
           "e-gateway": {
@@ -179,7 +181,8 @@ function buildSeedDiagrams(): Record<string, Diagram> {
       name: "Gateway – Components",
       level: "component",
       domain: "E-commerce",
-      updatedAt: "3 dias",
+      createdAt: "2026-03-01T10:00:00.000Z",
+      updatedAt: "2026-03-13T10:00:00.000Z",
       snapshot: {
         components: {
           "e-auth": {

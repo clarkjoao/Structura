@@ -48,7 +48,7 @@ export const clipboardSlice = (
             d.snapshot.connections[newId] = { ...deepClone(conn), id: newId, sourceId: src, targetId: tgt };
           }
         });
-        d.updatedAt = "agora";
+        d.updatedAt = new Date().toISOString();
       });
     },
 

@@ -30,6 +30,7 @@ export const flowsSlice = (
     updateFlow: (id: string, patch: Partial<Omit<Flow, "id">>) => {
       set((state) => {
         const d = state.diagrams[state.activeDiagramId!];
+        if (!d) return;
         const flow = d.snapshot.flows[id];
         if (!flow) return;
         Object.assign(flow, patch);
@@ -45,7 +46,9 @@ export const flowsSlice = (
 
     removeFlow: (id: string) => {
       set((state) => {
-        delete state.diagrams[state.activeDiagramId!].snapshot.flows[id];
+        const d = state.diagrams[state.activeDiagramId!];
+        if (!d) return;
+        delete d.snapshot.flows[id];
       });
     },
 });

@@ -35,7 +35,7 @@ export const patternsSlice = (
               label: conn.label,
             };
           });
-          d.updatedAt = "agora";
+          d.updatedAt = new Date().toISOString();
         });
       },
   });

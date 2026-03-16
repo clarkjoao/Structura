@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useRef } from "react";
+import { formatTimestamp } from "@/lib/format-date";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -70,23 +71,6 @@ function buildBreadcrumbPath(
   return path;
 }
 
-function formatDate(iso: string): string {
-  try {
-    const d = new Date(iso);
-    const now = new Date();
-    const diffMs = now.getTime() - d.getTime();
-    const diffMin = Math.floor(diffMs / 60000);
-    if (diffMin < 1) return "Agora";
-    if (diffMin < 60) return `${diffMin}min atrás`;
-    const diffH = Math.floor(diffMin / 60);
-    if (diffH < 24) return `${diffH}h atrás`;
-    const diffD = Math.floor(diffH / 24);
-    if (diffD < 7) return `${diffD}d atrás`;
-    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
-  } catch {
-    return iso;
-  }
-}
 
 const Dashboard = () => {
   const diagrams = useAllDiagrams();
@@ -623,8 +607,11 @@ function DiagramGrid({
               >
                 {levelLabels[d.level]}
               </span>
-              <span className="text-[11px] text-muted-foreground/60 ml-auto">
-                {formatDate(d.updatedAt)}
+              <span
+                className="text-[11px] text-muted-foreground/60 ml-auto"
+                title={`Criado: ${formatTimestamp(d.createdAt)}`}
+              >
+                {formatTimestamp(d.updatedAt)}
               </span>
             </div>
             {d.domain && (
@@ -704,10 +691,15 @@ function DiagramList({
                 </span>
               </td>
               <td className="px-3 py-2.5">
-                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  {formatDate(d.updatedAt)}
-                </span>
+                <div className="flex flex-col gap-0.5">
+                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    {formatTimestamp(d.updatedAt)}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground/50 pl-4">
+                    Criado: {formatTimestamp(d.createdAt)}
+                  </span>
+                </div>
               </td>
               <td className="px-3 py-2.5">
                 <button

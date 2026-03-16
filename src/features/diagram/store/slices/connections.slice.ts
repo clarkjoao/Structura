@@ -15,29 +15,32 @@ export const connectionsSlice = (
         label,
       };
       set((state) => {
-        pushHistory(state);
         const d = state.diagrams[state.activeDiagramId!];
+        if (!d) return;
+        pushHistory(state);
         d.snapshot.connections[connection.id] = connection;
-        d.updatedAt = "agora";
+        d.updatedAt = new Date().toISOString();
       });
       return connection;
     },
 
     updateConnection: (id: string, patch: Partial<Omit<Connection, "id">>) => {
       set((state) => {
-        pushHistory(state);
         const d = state.diagrams[state.activeDiagramId!];
+        if (!d) return;
+        pushHistory(state);
         Object.assign(d.snapshot.connections[id], patch);
-        d.updatedAt = "agora";
+        d.updatedAt = new Date().toISOString();
       });
     },
 
     removeConnection: (id: string) => {
       set((state) => {
-        pushHistory(state);
         const d = state.diagrams[state.activeDiagramId!];
+        if (!d) return;
+        pushHistory(state);
         delete d.snapshot.connections[id];
-        d.updatedAt = "agora";
+        d.updatedAt = new Date().toISOString();
       });
     },
   });

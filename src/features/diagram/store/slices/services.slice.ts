@@ -37,7 +37,9 @@ export const servicesSlice = (
 
     linkComponentToService: (componentId: string, serviceId: string | undefined) => {
       set((state) => {
-        const comp = state.diagrams[state.activeDiagramId!].snapshot.components[componentId];
+        const d = state.diagrams[state.activeDiagramId!];
+        if (!d) return;
+        const comp = d.snapshot.components[componentId];
         if (!comp) return;
         comp.serviceId = serviceId;
         if (!serviceId) return;
@@ -58,7 +60,9 @@ export const servicesSlice = (
 
     linkComponentToDiagram: (componentId: string, diagramId: string | undefined) => {
       set((state) => {
-        const comp = state.diagrams[state.activeDiagramId!].snapshot.components[componentId];
+        const d = state.diagrams[state.activeDiagramId!];
+        if (!d) return;
+        const comp = d.snapshot.components[componentId];
         if (comp) comp.linkedDiagramId = diagramId;
       });
     },

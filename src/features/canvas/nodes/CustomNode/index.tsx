@@ -107,18 +107,49 @@ const NodeActions = ({ d, controlsDisabled, colorClass, customColor }: NodeActio
   );
 };
 
-const AwsNode = memo(({ data, selected }: NodeProps) => {
+const CardNode = memo(({ data, selected }: NodeProps) => {
   const { d, isActive, controlsDisabled, handlePointer, incomingCount, outgoingCount } =
     useNodeState(data, selected);
 
-  const svcInfo = d.awsService ? AWS_SERVICE_MAP.get(d.awsService) : null;
-  const catInfo = AWS_CATEGORY_MAP.get(d.type);
-  const borderClass = awsCategoryBorders[d.type] ?? "border-l-aws-general";
+  const isAws = isAwsType(d.type);
+
+  let borderClass: string;
+  let borderStyle: React.CSSProperties | undefined;
+  let icon: React.ReactNode;
+  let technologyLabel: string | undefined;
+  let actionColorClass: string;
+
+  if (isAws) {
+    const svcInfo = d.awsService ? AWS_SERVICE_MAP.get(d.awsService) : null;
+    const catInfo = AWS_CATEGORY_MAP.get(d.type);
+    borderClass = awsCategoryBorders[d.type] ?? "border-l-aws-general";
+    borderStyle = undefined;
+    icon = svcInfo?.iconName
+      ? <AwsIcon iconName={svcInfo.iconName} size={20} />
+      : <Network className="h-4 w-4 text-muted-foreground" />;
+    technologyLabel = d.technology ?? catInfo?.name ?? svcInfo?.name;
+    actionColorClass = "text-primary";
+  } else {
+    const cfg = TypeConfig[d.type] ?? TypeConfig.system;
+    const hasCustomColor = !!d.customColor;
+    const Icon = cfg.icon;
+    borderClass = !hasCustomColor ? cfg.borderColor : "";
+    borderStyle = hasCustomColor ? { borderLeftColor: d.customColor } : undefined;
+    icon = (
+      <Icon
+        className={`h-4 w-4 shrink-0 ${!hasCustomColor ? cfg.textColor : ""}`}
+        style={hasCustomColor ? { color: d.customColor } : undefined}
+      />
+    );
+    technologyLabel = d.technology;
+    actionColorClass = hasCustomColor ? "" : cfg.textColor;
+  }
 
   return (
     <div
       aria-label={`${d.name} (${d.type})`}
       className={`group relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${borderClass} border-l-[3px] transition-shadow duration-200 ${isActive ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
+      style={borderStyle}
     >
       {d.recordingBadges && d.recordingBadges.length > 0 && (
         <RecordingBadge badges={d.recordingBadges} isLastRecorded={d.isLastRecorded} />
@@ -132,11 +163,7 @@ const AwsNode = memo(({ data, selected }: NodeProps) => {
       />
       <div className="px-3 py-2.5">
         <div className="flex items-center gap-2 mb-1.5">
-          {svcInfo?.iconName ? (
-            <AwsIcon iconName={svcInfo.iconName} size={20} />
-          ) : (
-            <Network className="h-4 w-4 text-muted-foreground" />
-          )}
+          {icon}
           <span className="text-sm font-bold text-foreground leading-tight truncate">
             {d.name}
           </span>
@@ -146,82 +173,20 @@ const AwsNode = memo(({ data, selected }: NodeProps) => {
             {d.description}
           </p>
         )}
-        {(d.technology || svcInfo) && (
+        {technologyLabel && (
           <span className="inline-block text-[10px] font-mono rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground">
-            {d.technology ?? catInfo?.name ?? svcInfo?.name}
-          </span>
-        )}
-        <NodeActions d={d} controlsDisabled={controlsDisabled} colorClass="text-primary" />
-      </div>
-    </div>
-  );
-});
-AwsNode.displayName = "AwsNode";
-
-const C4Node = memo(({ data, selected }: NodeProps) => {
-  const { d, isActive, controlsDisabled, handlePointer, incomingCount, outgoingCount } =
-    useNodeState(data, selected);
-
-  const cfg = TypeConfig[d.type] ?? TypeConfig.system;
-  const Icon = cfg.icon;
-  const hasCustomColor = !!d.customColor;
-
-  return (
-    <div
-      aria-label={`${d.name} (${d.type})`}
-      className={`group relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${!hasCustomColor ? cfg.borderColor : ""} border-l-[3px] transition-shadow duration-200 ${isActive ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
-      style={hasCustomColor ? { borderLeftColor: d.customColor } : undefined}
-    >
-      {d.recordingBadges && d.recordingBadges.length > 0 && (
-        <RecordingBadge badges={d.recordingBadges} isLastRecorded={d.isLastRecorded} />
-      )}
-      <NodeHandles
-        d={d}
-        incomingCount={incomingCount}
-        outgoingCount={outgoingCount}
-        handlePointer={handlePointer}
-        controlsDisabled={controlsDisabled}
-      />
-      <div className="px-3 py-2.5">
-        <div className="flex items-center gap-2 mb-1.5">
-          <Icon
-            className={`h-4 w-4 shrink-0 ${!hasCustomColor ? cfg.textColor : ""}`}
-            style={hasCustomColor ? { color: d.customColor } : undefined}
-          />
-          <span className="text-sm font-bold text-foreground leading-tight truncate">
-            {d.name}
-          </span>
-        </div>
-        {d.description && (
-          <p className="text-xs text-muted-foreground leading-snug line-clamp-2 mb-1.5">
-            {d.description}
-          </p>
-        )}
-        {d.technology && (
-          <span className="inline-block text-[10px] font-mono rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground">
-            {d.technology}
+            {technologyLabel}
           </span>
         )}
         <NodeActions
           d={d}
           controlsDisabled={controlsDisabled}
-          colorClass={hasCustomColor ? "" : cfg.textColor}
-          customColor={d.customColor}
+          colorClass={actionColorClass}
+          customColor={isAws ? undefined : d.customColor}
         />
       </div>
     </div>
   );
-});
-C4Node.displayName = "C4Node";
-
-const CardNode = memo((props: NodeProps) => {
-  const d = props.data as unknown as NodeData;
-  const isAws = isAwsType(d.type);
-
-  if (isAws) {
-    return <AwsNode {...props} />;
-  }
-  return <C4Node {...props} />;
 });
 CardNode.displayName = "CardNode";
 

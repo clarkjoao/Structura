@@ -54,6 +54,7 @@ export interface Diagram {
   name: string;
   level: Level;
   domain?: string;
+  createdAt: string;
   updatedAt: string;
   snapshot: ModelDraft;
   nodeLayouts: Record<string, NodeLayout>;
