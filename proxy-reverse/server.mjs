@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import fetch from "node-fetch";
+import axios from "axios";
 import https from "https";
 import dotenv from "dotenv";
 import path from "path";
@@ -25,30 +25,40 @@ const httpsAgent = new https.Agent({
 
 app.use("/dojo", async (req, res) => {
   try {
-    const url = DEFECTDOJO_URL + req.originalUrl.replace("/dojo", "");
+    const tagertPath = req.originalUrl.replace("/dojo", "");
+    const url = `${DEFECTDOJO_URL}${tagertPath}`;
+    console.log(`Proxying ${req.method} request to: ${url}`);
 
-    const response = await fetch(url, {
+    const headers = {
+      ...req.headers,
+      host: undefined,
+      "Content-Type": "application/json",
+      Authorization: req.headers.authorization || `Token ${DEFECTDOJO_API_TOKEN}`,
+    };
+
+    const config = {
       method: req.method,
-      headers: {
-        ...req.headers,
-        host: undefined,
-        Authorization:
-          req.headers.authorization || `Token ${DEFECTDOJO_API_TOKEN}`,
-      },
-      body:
-        req.method === "GET" || req.method === "HEAD"
-          ? undefined
-          : JSON.stringify(req.body),
-      agent: httpsAgent,
-    });
+      url: url,
+      headers: headers,
+      httpsAgent: httpsAgent,
+      proxy: false,
+      validateStatus: () => true, // Accept all status codes
+    };
 
-    const data = await response.text();
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      config.data = req.body;
+    }
+
+    const response = await axios(config);
+
+    console.log(`Proxied ${req.method} ${url} - Status: ${response.status}`);
 
     res.status(response.status);
-    res.send(data);
+    res.set(response.headers);
+    res.send(response.data);
   } catch (error) {
-    console.error("Proxy error:", error);
-    res.status(500).json({ error: "Proxy failed" });
+    console.error("Proxy error:", error.message);
+    res.status(500).json({ error: "Proxy failed", details: error.message });
   }
 });
 
