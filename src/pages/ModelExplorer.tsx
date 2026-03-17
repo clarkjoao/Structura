@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { ReactFlowProvider } from "@xyflow/react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Check, Clipboard, Download, GitBranch } from "lucide-react";
+import { ArrowLeft, Check, Clipboard, Download, GitBranch, CircleHelp } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import ShortcutsModal from "@/components/ShortcutsModal";
 import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
 import { RecordingModeProvider } from "@/features/canvas/flow/RecordingModeContext";
 import { useActiveDiagram, useActiveDiagramId, useDiagramActions, useFlows, stepsToMermaid, useServiceRegistry } from "@/features/diagram";
@@ -20,6 +21,7 @@ const ModelExplorer = () => {
   const [isViewingCoverage, setIsViewingCoverage] = useState(false);
   const [activeFlow, setActiveFlow] = useState<Flow | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const [navStack, setNavStack] = useState<string[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSteps, setRecordingSteps] = useState<FlowStep[]>([]);
@@ -221,10 +223,19 @@ const ModelExplorer = () => {
             >
               <Download className="h-3.5 w-3.5" /> Exportar
             </button>
+            <button
+              onClick={() => setShowShortcuts(true)}
+              className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all"
+              aria-label="Atalhos"
+              title="Atalhos"
+            >
+              <CircleHelp className="h-3.5 w-3.5" /> Atalhos
+            </button>
           </div>
         </div>
       </div>
       <div className="flex-1 flex overflow-hidden">
+        <ShortcutsModal open={showShortcuts} onOpenChange={setShowShortcuts} />
         <RecordingModeProvider value={{
           isRecording,
           recordingSteps,

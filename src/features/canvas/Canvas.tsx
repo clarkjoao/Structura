@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import {
   ReactFlow,
   Background,
@@ -32,6 +32,7 @@ import { useCanvasEffects } from "./hooks/useCanvasEffects";
 import { useLocalNodes } from "./hooks/useLocalNodes";
 import { useConnectionInternalsSync } from "./hooks/useConnectionInternalsSync";
 import QuickInsertPopover from "./toolbar/QuickInsertPopover";
+import CanvasSearch from "./toolbar/CanvasSearch";
 import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 import { useRecordingMode } from "./flow/RecordingModeContext";
 
@@ -68,6 +69,7 @@ const Canvas = ({
   const updateNodeInternals = useUpdateNodeInternals();
   const reactFlowWrapperRef = useRef<HTMLDivElement>(null);
   const { isRecording } = useRecordingMode();
+  const [showSearch, setShowSearch] = useState(false);
 
   const { diagram, allDiagrams, visibleComponents, visibleConnections, serviceRegistry, flows, actions } =
     useCanvasStore();
@@ -164,6 +166,21 @@ const Canvas = ({
   });
 
   const isPanelOpen = !!(visualState.selectedNodeId || visualState.selectedEdgeId) && !isRecording;
+  const handleSearchSelect = useCallback(
+    (componentId: string) => {
+      setShowSearch(false);
+      visualState.setSelectedNodeId(componentId);
+      visualState.setSelectedNodeIds(new Set([componentId]));
+      visualState.setSelectedEdgeId(null);
+      void reactFlowInstance.fitView({
+        nodes: [{ id: componentId }],
+        duration: 400,
+        padding: 0.4,
+        maxZoom: 1,
+      });
+    },
+    [reactFlowInstance, visualState],
+  );
   useCanvasKeyboard({
     diagram,
     serviceRegistry,
@@ -187,6 +204,8 @@ const Canvas = ({
     addComponent: actions.addComponent,
     isPanelOpen,
     isFlowPanelOpen: !!isFlowPanelOpen,
+    isSearchOpen: showSearch,
+    onOpenSearch: () => setShowSearch(true),
   });
 
   useCanvasEffects({
@@ -233,6 +252,13 @@ const Canvas = ({
             selectedCount={selectedCount}
             onClearSelection={visualState.clearCanvasSelection}
           />
+          {showSearch && diagram && (
+            <CanvasSearch
+              onClose={() => setShowSearch(false)}
+              onSelectResult={handleSearchSelect}
+              components={diagram.snapshot.components}
+            />
+          )}
           <div onContextMenu={(e) => e.preventDefault()} className="w-full h-full">
             <ReactFlow
               nodes={nodes}

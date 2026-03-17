@@ -42,6 +42,7 @@ interface UseCanvasKeyboardParams {
   ) => Component;
   isPanelOpen: boolean;
   isFlowPanelOpen: boolean;
+  isSearchOpen?: boolean;
   onOpenSearch?: () => void;
 }
 
@@ -61,6 +62,7 @@ const KEY = {
   A: "a",
   C: "c",
   D: "d",
+  F: "f",
   G: "g",
   V: "v",
   Z: "z",
@@ -185,6 +187,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     addComponent,
     isPanelOpen,
     isFlowPanelOpen,
+    isSearchOpen,
     onOpenSearch,
   } = params;
 
@@ -240,6 +243,9 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
 
       // Block shortcuts when flow panel is open
       if (isFlowPanelOpen) return;
+
+      // Block all other canvas shortcuts while search is open
+      if (isSearchOpen) return;
 
       if (handleCopyPaste(e)) return;
 
@@ -314,6 +320,13 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
         return;
       }
 
+      // Cmd/Ctrl+F — open search
+      if (mod && (e.key === KEY.F || e.key === "F")) {
+        e.preventDefault();
+        onOpenSearch?.();
+        return;
+      }
+
       // Cmd/Ctrl+/ — open search
       if (mod && e.key === KEY.SLASH) {
         e.preventDefault();
@@ -342,6 +355,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     reactFlowWrapperRef,
     isRecording,
     isFlowPanelOpen,
+    isSearchOpen,
     onRecordUndo,
     handleCopyPaste,
     clearSelection,
