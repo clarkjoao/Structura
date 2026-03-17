@@ -6,6 +6,7 @@ import {
   useDiagramActions,
 } from "@/features/diagram";
 import type { ComponentType } from "@/features/diagram";
+import { isPanelType } from "@/features/diagram";
 import { cn } from "@/lib/utils";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -97,7 +98,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
     if (!diagram) return;
     ids.forEach((id, index) => {
       const comp = diagram.snapshot.components[id];
-      if (!comp || comp.type === "panel") return;
+      if (!comp || isPanelType(comp.type)) return;
       const layout = diagram.nodeLayouts[id];
       addComponent(
         comp.type,

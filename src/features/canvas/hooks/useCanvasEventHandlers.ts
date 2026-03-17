@@ -6,6 +6,7 @@ import { useCallback, useRef } from "react";
 import type { Node, Edge, OnEdgesChange, OnConnect, OnConnectEnd, Connection } from "@xyflow/react";
 import type { CanvasVisualState } from "./useCanvasVisualState";
 import { useRecordingMode } from "../flow/RecordingModeContext";
+import { isPanelType, isNoteType, isEndpointType } from "@/features/diagram";
 
 interface UseCanvasEventHandlersParams {
   visualState: CanvasVisualState;
@@ -78,7 +79,8 @@ export function useCanvasEventHandlers({
 
   const onNodeClick = useCallback(
     (e: React.MouseEvent, node: Node) => {
-      if (node.type === "endpoint" && node.parentId) {
+      const nodeType = (node.type as string) ?? "";
+      if (isEndpointType(nodeType) && node.parentId) {
         if (!isRecording) {
           clearHighlight();
           setSelectedEdgeId(null);
@@ -91,7 +93,7 @@ export function useCanvasEventHandlers({
         return;
       }
       if (isRecording) {
-        if (node.type !== "panel" && node.type !== "note") onRecordNodeClick?.(node.id);
+        if (!isPanelType(nodeType) && !isNoteType(nodeType)) onRecordNodeClick?.(node.id);
         return;
       }
       if (isPlaying || isFlowPanelOpen) return;

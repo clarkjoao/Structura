@@ -58,6 +58,31 @@ export {
   isEndpointComponent,
 } from "./model/component.guards";
 
+/** ComponentType / PanelKind constants and type guards */
+export {
+  C4_TYPES,
+  COMPONENT_TYPE_PANEL,
+  COMPONENT_TYPE_NOTE,
+  COMPONENT_TYPE_API_GROUP,
+  COMPONENT_TYPE_ENDPOINT,
+  CANVAS_PANEL_NOTE_TYPES,
+  CANVAS_API_TYPES,
+  PANEL_KIND_VALUES,
+  isPanelType,
+  isNoteType,
+  isC4Type,
+  isEndpointType,
+  isApiGroupType,
+  isSystemType,
+  isContainerType,
+  isCanvasStructuralType,
+  isCanvasApiType,
+  isPanelKind,
+  getUsageKeyForType,
+  getDefaultNameForNewComponent,
+} from "./model/component-type-constants";
+export type { C4Type } from "./model/component-type-constants";
+
 /** Zustand store — single source of truth for all diagram state */
 export {
   useDiagramStore,

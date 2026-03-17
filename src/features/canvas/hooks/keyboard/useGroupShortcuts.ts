@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import type { ReactFlowInstance } from "@xyflow/react";
+import { isPanelType } from "@/features/diagram";
 import { isModKeyPressed, type KeyHandler } from "./helpers";
 
 interface UseGroupShortcutsParams {
@@ -27,7 +28,7 @@ export function useGroupShortcuts({
       // Cmd/Ctrl+Shift+G — ungroup panel
       if (e.shiftKey) {
         const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
-        if (selected.length === 1 && selected[0].type === "panel") {
+        if (selected.length === 1 && isPanelType(selected[0].type as string)) {
           ungroupNodes(selected[0].id);
         }
         return true;

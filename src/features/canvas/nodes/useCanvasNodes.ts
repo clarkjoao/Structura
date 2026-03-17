@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { Node } from "@xyflow/react";
 import type { Component, Diagram, ServiceDefinition } from "@/features/diagram";
-import { isPanelComponent, isApiGroupComponent } from "@/features/diagram";
+import { isPanelComponent, isApiGroupComponent, isEndpointType } from "@/features/diagram";
 import { getDescriptor, type NodeBuildContext } from "./node-types";
 import { useRecordingMode } from "../flow/RecordingModeContext";
 import { buildCollapsedPanelIds, computeNodeVisibility } from "./nodeVisibility";
@@ -105,7 +105,7 @@ export function useCanvasNodes({
           collapsedPanelIds, isViewingCoverage, coverage,
         );
         const style = { ...d.buildStyle?.(comp, ctx), ...(vis.dimmed ? { opacity: 0.3 } : {}) };
-        const lockedInGroup = comp.type === 'endpoint' && comp.parentId != null
+        const lockedInGroup = isEndpointType(comp.type) && comp.parentId != null
           && isApiGroupComponent(diagram.snapshot.components[comp.parentId]);
         return {
           id: comp.id,

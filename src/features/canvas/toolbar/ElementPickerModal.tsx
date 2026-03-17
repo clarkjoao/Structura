@@ -5,6 +5,7 @@ import { PANEL_KINDS, getPanelKindForAwsService, getPanelKindDef } from "@/lib/c
 import { useReactFlow } from "@xyflow/react";
 import { useDiagramActions, useAllServices, useAllComponents } from "@/features/diagram";
 import type { ComponentType } from "@/features/diagram";
+import { getUsageKeyForType, getDefaultNameForNewComponent, isPanelType } from "@/features/diagram";
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/catalogs/aws";
 import AwsIcon from "../nodes/AwsIcon";
 import { trackUsage, getTopUsed } from "./element-usage-tracker";
@@ -106,19 +107,9 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   );
 
   const handleAddElement = (type: ComponentType, label: string, panelKind?: PanelKind) => {
-    const key =
-      type === "panel" || type === "note"
-        ? `canvas:${type}${panelKind ? `:${panelKind}` : ""}`
-        : type === "endpoint" || type === "api-group"
-          ? `canvas:${type}`
-          : `c4:${type}`;
-    trackUsage(key);
-    const def = panelKind ? PANEL_KINDS.find((p) => p.id === panelKind) : null;
-    const name =
-      type === "note" ? ""
-        : type === "endpoint" ? "Novo Endpoint"
-        : type === "api-group" ? "API Endpoints"
-        : def?.defaultName ?? `Novo ${label}`;
+    trackUsage(getUsageKeyForType(type, panelKind));
+    const panelDefaultName = panelKind ? getPanelKindDef(panelKind).defaultName : undefined;
+    const name = getDefaultNameForNewComponent(type, label, panelDefaultName);
     const comp = addComponent(type, name, null, getInsertPos(), undefined, panelKind);
     onInsert?.(comp.id);
     onClose();
@@ -339,7 +330,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
                 {filteredCanvas.map((opt) => (
                   <button
                     key={
-                      opt.type === "panel"
+                      isPanelType(opt.type)
                         ? `panel-${opt.panelKind ?? "default"}`
                         : opt.type
                     }

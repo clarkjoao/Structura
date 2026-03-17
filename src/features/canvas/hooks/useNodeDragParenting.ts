@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import type { Node, OnNodesChange, NodeChange } from "@xyflow/react";
 import type { Diagram } from "@/features/diagram";
-import { isPanelComponent, isNoteComponent, isEndpointComponent } from "@/features/diagram";
+import { isPanelComponent, isNoteComponent, isEndpointComponent, isPanelType, isEndpointType } from "@/features/diagram";
 import {
   isOutsideParentBounds,
   findPanelContainingPoint,
@@ -42,7 +42,7 @@ export function useNodeDragParenting({
       if (change.type !== "position" || !change.position) return;
 
       const comp = diagram?.snapshot.components[change.id];
-      if (comp?.type === "endpoint") return;
+      if (comp && isEndpointComponent(comp)) return;
 
       if (!change.dragging) {
         updateNodeLayout(change.id, change.position);
@@ -106,8 +106,9 @@ export function useNodeDragParenting({
   const onNodeDragStop = useCallback(
     (_: unknown, draggedNode: Node) => {
       setUnparentCandidatePanelId(null);
-      if (draggedNode.type === "panel") return;
-      if (draggedNode.type === "endpoint") return;
+      const nodeType = typeof draggedNode.type === "string" ? draggedNode.type : "";
+      if (isPanelType(nodeType)) return;
+      if (isEndpointType(nodeType)) return;
 
       const parent = draggedNode.parentId
         ? nodes.find((n) => n.id === draggedNode.parentId)

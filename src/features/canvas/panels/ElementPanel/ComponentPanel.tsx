@@ -3,7 +3,7 @@ import debounce from "lodash.debounce";
 import { X, Trash2, Link2, LayoutDashboard, RefreshCw } from "lucide-react";
 import { useAllDiagrams, useActiveDiagram, useAllServices, useDiagramActions } from "@/features/diagram";
 import type { Component, ComponentType, ServiceDefinition} from "@/features/diagram";
-import { isPanelComponent, isNoteComponent, isC4Component } from "@/features/diagram";
+import { isPanelComponent, isNoteComponent, isC4Component, isSystemType, isContainerType } from "@/features/diagram";
 import { isAwsType, AWS_CATEGORIES, AWS_CATEGORY_MAP, AWS_SERVICE_MAP } from "@/lib/catalogs/aws";
 import { PANEL_KINDS, getPanelKindDef } from "@/lib/catalogs/panels";
 import type { PanelKind } from "@/features/diagram";
@@ -75,7 +75,7 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
   const isSimple = isPanel || isNote;
   const isAws = isAwsType(type);
   const svcInfo = awsService ? AWS_SERVICE_MAP.get(awsService) : null;
-  const canCreateLinked = component.type === "system" || component.type === "container";
+  const canCreateLinked = isSystemType(component.type) || isContainerType(component.type);
   const linkedService = useMemo(
     () => allServices.find((service) => service.id === component.serviceId) ?? null,
     [allServices, component.serviceId],
@@ -86,7 +86,7 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
   useEffect(() => () => { if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current); }, []);
 
   const handleCreateLinked = () => {
-    const level = component.type === "system" ? "container" : "component";
+    const level = isSystemType(component.type) ? "container" : "component";
     const newDiagram = addDiagram(component.name, level, activeDiagram?.domain);
     linkComponentToDiagram(component.id, newDiagram.id);
     setCreatedDiagramName(newDiagram.name);

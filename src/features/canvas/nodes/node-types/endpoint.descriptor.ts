@@ -1,12 +1,12 @@
 import EndpointNode from "../EndpointNode";
-import { isEndpointComponent, isApiGroupComponent } from "@/features/diagram";
+import { isEndpointComponent, isApiGroupComponent, isEndpointType } from "@/features/diagram";
 import { ENDPOINT_H, FRAME_W } from "../ApiGroupNode/constants";
 import type { NodeTypeDescriptor } from "./types";
 
 export const endpointDescriptor: NodeTypeDescriptor = {
   rfType: "endpoint",
   component: EndpointNode,
-  matches: (type) => type === "endpoint",
+  matches: isEndpointType,
   zIndex: 1,
   connectable: true,
   canHaveParent: true,

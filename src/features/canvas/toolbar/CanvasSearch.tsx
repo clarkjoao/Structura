@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, X, Square, FileText, MessageSquare, Table2, Globe, Cloud, Box } from "lucide-react";
 import type { Component } from "@/features/diagram";
+import { isPanelType, isNoteType, isApiGroupType } from "@/features/diagram";
 import { isAwsType } from "@/lib/catalogs/aws";
 import { TypeConfig } from "@/features/canvas/nodes/CustomNode/TypeConfig";
 
@@ -191,11 +192,11 @@ function ComponentTypeIcon({ type, className }: { type: string; className?: stri
     const Icon = cfg.icon;
     return <Icon className={className} />;
   }
-  if (type === "panel") return <Square className={className} />;
-  if (type === "note") return <FileText className={className} />;
+  if (isPanelType(type)) return <Square className={className} />;
+  if (isNoteType(type)) return <FileText className={className} />;
   if (type === "callout") return <MessageSquare className={className} />;
   if (type === "table") return <Table2 className={className} />;
-  if (type === "api-group") return <Globe className={className} />;
+  if (isApiGroupType(type)) return <Globe className={className} />;
   if (isAwsType(type)) return <Cloud className={className} />;
   return <Box className={className} />;
 }

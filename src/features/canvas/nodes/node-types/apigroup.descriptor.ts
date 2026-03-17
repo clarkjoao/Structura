@@ -1,12 +1,12 @@
 import ApiGroupNode from "../ApiGroupNode";
-import { isApiGroupComponent } from "@/features/diagram";
+import { isApiGroupComponent, isApiGroupType, isEndpointType } from "@/features/diagram";
 import { computeApiGroupSize } from "../ApiGroupNode/useApiGroupSize";
 import type { NodeTypeDescriptor } from "./types";
 
 export const apiGroupDescriptor: NodeTypeDescriptor = {
   rfType: "api-group",
   component: ApiGroupNode,
-  matches: (type) => type === "api-group",
+  matches: isApiGroupType,
   zIndex: -1,
   connectable: false,
   canHaveParent: false,
@@ -16,7 +16,7 @@ export const apiGroupDescriptor: NodeTypeDescriptor = {
     if (!isApiGroupComponent(comp)) return {};
 
     const endpointCount = Object.values(ctx.diagram.snapshot.components).filter(
-      (c) => c.parentId === comp.id && c.type === "endpoint",
+      (c) => c.parentId === comp.id && isEndpointType(c.type),
     ).length;
 
     return {
@@ -38,7 +38,7 @@ export const apiGroupDescriptor: NodeTypeDescriptor = {
   buildStyle: (comp, ctx) => {
     if (!isApiGroupComponent(comp)) return undefined;
     const endpointCount = Object.values(ctx.diagram.snapshot.components).filter(
-      (c) => c.parentId === comp.id && c.type === "endpoint",
+      (c) => c.parentId === comp.id && isEndpointType(c.type),
     ).length;
     const { width, height } = computeApiGroupSize(endpointCount);
     return { width, height };

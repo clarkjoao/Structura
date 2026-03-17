@@ -1,12 +1,12 @@
 import NoteNode from "../NoteNode";
 import type { NodeTypeDescriptor } from "./types";
-import { isNoteComponent } from "@/features/diagram";
+import { isNoteComponent, isNoteType } from "@/features/diagram";
 import { NOTE_DEFAULT_W, NOTE_DEFAULT_H } from "../../constants";
 
 export const noteDescriptor: NodeTypeDescriptor = {
   rfType: "note",
   component: NoteNode,
-  matches: (type) => type === "note",
+  matches: isNoteType,
   zIndex: 1,
   connectable: false,
   canHaveParent: true,

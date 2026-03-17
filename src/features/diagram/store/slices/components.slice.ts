@@ -1,6 +1,7 @@
 import type { Component, ComponentPatch, ComponentType, ApiGroupComponent, EndpointComponent, PanelComponent, PanelKind } from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
 import { isPanelComponent, isApiGroupComponent } from "../../model/component.guards";
+import { isPanelType, isNoteType, isEndpointType, isApiGroupType, isC4Type } from "../../model/component-type-constants";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
@@ -30,7 +31,7 @@ export const componentsSlice = (
     ): Component => {
       const base = { id: generateId("el"), name, description: "", parentId };
       let component: Component;
-      if (type === "panel") {
+      if (isPanelType(type)) {
         const kind = panelKind ?? "default";
         const def = getPanelKindDef(kind);
         component = {
@@ -39,9 +40,9 @@ export const componentsSlice = (
           panelKind: kind,
           panelColor: def.defaultColor,
         } as PanelComponent;
-      } else if (type === "note") {
+      } else if (isNoteType(type)) {
         component = { ...base, type: "note", panelColor: "hsl(45 25% 97%)" };
-      } else if (type === "endpoint") {
+      } else if (isEndpointType(type)) {
         component = {
           ...base,
           type: "endpoint",
@@ -49,7 +50,7 @@ export const componentsSlice = (
           path: "/novo-endpoint",
           handlers: [],
         } as EndpointComponent;
-      } else if (type === "api-group") {
+      } else if (isApiGroupType(type)) {
         component = {
           ...base,
           type: "api-group",
@@ -57,7 +58,7 @@ export const componentsSlice = (
           basePath: "/api/v1",
           protocol: "REST",
         } as ApiGroupComponent;
-      } else if (type === "person" || type === "system" || type === "container" || type === "component") {
+      } else if (isC4Type(type)) {
         component = { ...base, type };
       } else {
         // AWS type
@@ -67,11 +68,11 @@ export const componentsSlice = (
         pushHistory(state);
         const d = state.diagrams[state.activeDiagramId]!;
 
-        if (type === "endpoint" && parentId) {
+        if (isEndpointType(type) && parentId) {
           const parent = d.snapshot.components[parentId];
-          if (parent?.type === "api-group") {
+          if (isApiGroupComponent(parent)) {
             const siblingCount = Object.values(d.snapshot.components).filter(
-              (c) => c.parentId === parentId && c.type === "endpoint",
+              (c) => c.parentId === parentId && isEndpointType(c.type),
             ).length;
             d.snapshot.components[component.id] = component;
             d.nodeLayouts[component.id] = {
@@ -82,7 +83,7 @@ export const componentsSlice = (
               height: ENDPOINT_H,
             };
             const childCount = Object.values(d.snapshot.components).filter(
-              (c) => c.parentId === parentId && c.type === "endpoint",
+              (c) => c.parentId === parentId && isEndpointType(c.type),
             ).length;
             const { width, height } = computeApiGroupSize(childCount);
             const groupLayout = d.nodeLayouts[parentId];
@@ -97,7 +98,7 @@ export const componentsSlice = (
 
         d.snapshot.components[component.id] = component;
 
-        if (type === "api-group") {
+        if (isApiGroupType(type)) {
           const { width, height } = computeApiGroupSize(0);
           d.nodeLayouts[component.id] = {
             elementId: component.id,
@@ -107,7 +108,7 @@ export const componentsSlice = (
             width,
             height,
           };
-        } else if (type === "endpoint") {
+        } else if (isEndpointType(type)) {
           d.nodeLayouts[component.id] = {
             elementId: component.id,
             x: position?.x ?? 300,
@@ -119,8 +120,8 @@ export const componentsSlice = (
             elementId: component.id,
             x: position?.x ?? 300,
             y: position?.y ?? 300,
-            ...(type === "panel" ? { zIndex: -1, width: PANEL_DEFAULT_W, height: PANEL_DEFAULT_H } : {}),
-            ...(type === "note" ? { width: NOTE_DEFAULT_W, height: NOTE_DEFAULT_H } : {}),
+            ...(isPanelType(type) ? { zIndex: -1, width: PANEL_DEFAULT_W, height: PANEL_DEFAULT_H } : {}),
+            ...(isNoteType(type) ? { width: NOTE_DEFAULT_W, height: NOTE_DEFAULT_H } : {}),
           };
         }
 
@@ -128,7 +129,7 @@ export const componentsSlice = (
 
         function syncApiGroupSize(groupId: string) {
           const childCount = Object.values(d.snapshot.components).filter(
-            (c) => c.parentId === groupId && c.type === "endpoint",
+            (c) => c.parentId === groupId && isEndpointType(c.type),
           ).length;
           const { width, height } = computeApiGroupSize(childCount);
           const layout = d.nodeLayouts[groupId];
@@ -203,7 +204,7 @@ export const componentsSlice = (
 
         function syncApiGroupSize(groupId: string) {
           const childCount = Object.values(d.snapshot.components).filter(
-            (c) => c.parentId === groupId && c.type === "endpoint",
+            (c) => c.parentId === groupId && isEndpointType(c.type),
           ).length;
           const { width, height } = computeApiGroupSize(childCount);
           const layout = d.nodeLayouts[groupId];
@@ -216,7 +217,7 @@ export const componentsSlice = (
         function reindexEndpoints(groupId: string) {
           if (toRemove.has(groupId)) return;
           const siblings = Object.values(d.snapshot.components)
-            .filter((c) => c.parentId === groupId && c.type === "endpoint")
+            .filter((c) => c.parentId === groupId && isEndpointType(c.type))
             .sort((a, b) => {
               const ay = d.nodeLayouts[a.id]?.y ?? 0;
               const by = d.nodeLayouts[b.id]?.y ?? 0;
@@ -301,7 +302,7 @@ export const componentsSlice = (
         const panel: PanelComponent = {
           id: generateId("el"),
           name: "Grupo",
-          type: "panel",
+          type: "panel" as const,
           panelKind: "default",
           description: "",
           parentId: null,

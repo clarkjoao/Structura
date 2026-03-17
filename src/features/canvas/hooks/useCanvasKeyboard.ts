@@ -6,6 +6,7 @@ import type {
   Component,
   ServiceDefinition,
 } from "@/features/diagram";
+import { isPanelType } from "@/features/diagram";
 import { getViewportCenter } from "../viewport-utils";
 import { useRecordingMode } from "../flow/RecordingModeContext";
 import { exportDrawio } from "@/lib/export-service";
@@ -304,7 +305,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       if (mod && e.shiftKey && e.key === KEY.G) {
         e.preventDefault();
         const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
-        if (selected.length === 1 && selected[0].type === "panel") {
+        if (selected.length === 1 && isPanelType(selected[0].type as string)) {
           ungroupNodes(selected[0].id);
         }
         return;
