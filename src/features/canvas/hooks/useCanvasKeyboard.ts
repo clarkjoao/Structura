@@ -1,13 +1,21 @@
 import { useEffect, useCallback } from "react";
 import type { ReactFlowInstance, Node } from "@xyflow/react";
-import type { Diagram, ComponentType, Component } from "@/features/diagram";
+import type {
+  Diagram,
+  ComponentType,
+  Component,
+  ServiceDefinition,
+} from "@/features/diagram";
 import { getViewportCenter } from "../viewport-utils";
 import { useRecordingMode } from "../flow/RecordingModeContext";
+import { exportDrawio } from "@/lib/export-service";
+import { useCopyPasteShortcuts } from "./keyboard/useCopyPasteShortcuts";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
 interface UseCanvasKeyboardParams {
   diagram: Diagram | null | undefined;
+  serviceRegistry: Record<string, ServiceDefinition>;
   selectedNodeId: string | null;
   selectedEdgeId: string | null;
   reactFlowInstance: ReactFlowInstance;
@@ -156,6 +164,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   const { isRecording, onRecordUndo } = useRecordingMode();
   const {
     diagram,
+    serviceRegistry,
     selectedNodeId,
     selectedEdgeId,
     reactFlowInstance,
@@ -178,6 +187,24 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     isFlowPanelOpen,
     onOpenSearch,
   } = params;
+
+  const exportDrawioXml = useCallback(
+    (ids: string[]): string => {
+      if (!diagram) return "";
+      return exportDrawio(diagram, serviceRegistry, { componentIds: ids });
+    },
+    [diagram, serviceRegistry],
+  );
+
+  const handleCopyPaste = useCopyPasteShortcuts({
+    diagram,
+    selectedNodeId,
+    reactFlowInstance,
+    reactFlowWrapperRef,
+    copyToClipboard,
+    pasteFromClipboard,
+    exportDrawioXml,
+  });
 
   const clearSelection = useCallback(() => {
     clearClipboard();
@@ -214,6 +241,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       // Block shortcuts when flow panel is open
       if (isFlowPanelOpen) return;
 
+      if (handleCopyPaste(e)) return;
+
       const mod = isModKeyPressed(e);
 
       // Escape — clear selection and context
@@ -248,36 +277,6 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
           removeConnection(selectedEdgeId);
           setSelectedEdgeId(null);
         }
-        return;
-      }
-
-      // Cmd/Ctrl+C — copy
-      if (mod && e.key === KEY.C) {
-        e.preventDefault();
-        const nodes = getSelectedNodes(reactFlowInstance, selectedNodeId);
-        const ids = getCopyableIds(diagram, nodes);
-        if (ids.length > 0) copyToClipboard(ids);
-        return;
-      }
-
-      // Cmd/Ctrl+V — paste at center
-      if (mod && e.key === KEY.V) {
-        e.preventDefault();
-        const center = getPasteCenter(reactFlowInstance, reactFlowWrapperRef);
-        pasteFromClipboard(center);
-        return;
-      }
-
-      // Cmd/Ctrl+D — duplicate (copy + paste with offset)
-      if (mod && e.key === KEY.D) {
-        e.preventDefault();
-        const nodes = getSelectedNodes(reactFlowInstance, selectedNodeId);
-        const ids = getCopyableIds(diagram, nodes);
-        if (ids.length === 0) return;
-
-        copyToClipboard(ids);
-        const center = getCenterOfNodes(diagram, ids);
-        pasteFromClipboard(center);
         return;
       }
 
@@ -336,6 +335,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     return () => document.removeEventListener("keydown", handler);
   }, [
     diagram,
+    serviceRegistry,
     selectedNodeId,
     selectedEdgeId,
     reactFlowInstance,
@@ -343,6 +343,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     isRecording,
     isFlowPanelOpen,
     onRecordUndo,
+    handleCopyPaste,
     clearSelection,
     setSelectedNodeId,
     setSelectedNodeIds,

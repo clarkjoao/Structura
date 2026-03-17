@@ -166,6 +166,7 @@ const Canvas = ({
   const isPanelOpen = !!(visualState.selectedNodeId || visualState.selectedEdgeId) && !isRecording;
   useCanvasKeyboard({
     diagram,
+    serviceRegistry,
     selectedNodeId: visualState.selectedNodeId,
     selectedEdgeId: visualState.selectedEdgeId,
     reactFlowInstance,

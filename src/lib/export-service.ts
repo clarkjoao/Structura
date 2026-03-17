@@ -717,13 +717,46 @@ export function exportJSON(diagram: Diagram): string {
 export function exportDrawio(
   diagram: Diagram,
   serviceRegistry: Record<string, ServiceDefinition>,
+  options?: { componentIds?: string[] },
 ): string {
   validateDiagram(diagram);
 
-  const { components, connections } = diagram.snapshot;
+  const shouldFilter =
+    options?.componentIds !== undefined && options.componentIds.length > 0;
+
+  const idSet = shouldFilter ? new Set(options!.componentIds) : null;
+
+  const diagramForExport: Diagram = shouldFilter
+    ? (() => {
+        const filteredComponents = Object.fromEntries(
+          Object.entries(diagram.snapshot.components).filter(([id]) =>
+            idSet!.has(id),
+          ),
+        );
+        const filteredConnections = Object.fromEntries(
+          Object.entries(diagram.snapshot.connections).filter(
+            ([, conn]) => idSet!.has(conn.sourceId) && idSet!.has(conn.targetId),
+          ),
+        );
+
+        return {
+          ...diagram,
+          snapshot: {
+            ...diagram.snapshot,
+            components: filteredComponents,
+            connections: filteredConnections,
+          },
+          nodeLayouts: Object.fromEntries(
+            Object.entries(diagram.nodeLayouts).filter(([id]) => idSet!.has(id)),
+          ),
+        };
+      })()
+    : diagram;
+
+  const { components, connections } = diagramForExport.snapshot;
 
   // Build layout lookup
-  const layoutMap = new Map(Object.entries(diagram.nodeLayouts));
+  const layoutMap = new Map(Object.entries(diagramForExport.nodeLayouts));
 
   // Separate panels and collect layout info
   const panelIds = new Set<string>();
@@ -824,7 +857,7 @@ export function exportDrawio(
     ...edgeCells,
   ].join("");
 
-  const slug = escXml(diagram.name);
+  const slug = escXml(diagramForExport.name);
 
   return (
     `<?xml version="1.0" encoding="UTF-8"?>` +

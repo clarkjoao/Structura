@@ -9,6 +9,7 @@ import {
   getCenterOfNodes,
   type KeyHandler,
 } from "./helpers";
+import { writeDrawioToClipboard } from "@/lib/clipboard-utils";
 
 interface UseCopyPasteShortcutsParams {
   diagram: Diagram | null | undefined;
@@ -17,6 +18,7 @@ interface UseCopyPasteShortcutsParams {
   reactFlowWrapperRef: React.RefObject<HTMLDivElement | null>;
   copyToClipboard: (ids: string[]) => void;
   pasteFromClipboard: (position?: { x: number; y: number }) => void;
+  exportDrawioXml: (componentIds: string[]) => string;
 }
 
 /**
@@ -31,6 +33,7 @@ export function useCopyPasteShortcuts({
   reactFlowWrapperRef,
   copyToClipboard,
   pasteFromClipboard,
+  exportDrawioXml,
 }: UseCopyPasteShortcutsParams): KeyHandler {
   return useCallback(
     (e: KeyboardEvent): boolean => {
@@ -43,7 +46,13 @@ export function useCopyPasteShortcuts({
         e.preventDefault();
         const nodes = getSelectedNodes(reactFlowInstance, selectedNodeId);
         const ids = getCopyableIds(diagram, nodes);
-        if (ids.length > 0) copyToClipboard(ids);
+        if (ids.length > 0) {
+          // 1. Write to Zustand clipboard (for canvas paste via Cmd+V)
+          copyToClipboard(ids);
+          // 2. Write drawio XML of selected nodes to system clipboard
+          const xml = exportDrawioXml(ids);
+          void writeDrawioToClipboard(xml);
+        }
         return true;
       }
 
@@ -76,6 +85,7 @@ export function useCopyPasteShortcuts({
       reactFlowWrapperRef,
       copyToClipboard,
       pasteFromClipboard,
+      exportDrawioXml,
     ],
   );
 }
