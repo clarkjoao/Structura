@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import {
   ReactFlow,
   Background,
@@ -89,6 +89,13 @@ const Canvas = ({
     onOpenDiagram,
   });
 
+  const handleAddEndpointToGroup = useCallback(
+    (groupId: string) => {
+      actions.addComponent("endpoint", "Novo Endpoint", groupId);
+    },
+    [actions],
+  );
+
   const { onReorderHandle } = useCanvasHandleReorder({
     effectiveHandleOrder,
     updateHandleOrder: actions.updateHandleOrder,
@@ -128,6 +135,7 @@ const Canvas = ({
     isViewingCoverage: !!isViewingCoverage,
     activeFlowId: activeFlow?.id ?? null,
     onPlayFlow,
+    onAddEndpointToGroup: handleAddEndpointToGroup,
   });
 
   const { nodes, onNodesChange } = useLocalNodes(storeNodes, innerOnNodesChange, localNodesRef);

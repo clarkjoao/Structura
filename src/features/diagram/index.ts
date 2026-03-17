@@ -9,6 +9,8 @@ export type {
   PanelKind,
   NoteComponent,
   AwsComponent,
+  ApiGroupComponent,
+  ApiProtocol,
   EndpointComponent,
   EndpointHandler,
   HttpMethod,
@@ -52,6 +54,7 @@ export {
   isNoteComponent,
   isC4Component,
   isAwsComponent,
+  isApiGroupComponent,
   isEndpointComponent,
 } from "./model/component.guards";
 

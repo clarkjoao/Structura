@@ -10,6 +10,8 @@ export type {
   PanelComponent,
   NoteComponent,
   AwsComponent,
+  ApiGroupComponent,
+  ApiProtocol,
   EndpointComponent,
   EndpointHandler,
   HttpMethod,

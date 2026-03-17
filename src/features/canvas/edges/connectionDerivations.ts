@@ -1,5 +1,5 @@
 import type { Component, Connection, Diagram } from "@/features/diagram";
-import { isPanelComponent } from "@/features/diagram";
+import { isPanelComponent, isApiGroupComponent } from "@/features/diagram";
 import { MAX_HANDLES } from "../constants";
 
 export interface HandleAssignment {
@@ -16,7 +16,7 @@ export interface ConnectionCounts {
 export function buildPanelIds(components: Component[]): Set<string> {
   const ids = new Set<string>();
   for (const c of components) {
-    if (isPanelComponent(c)) ids.add(c.id);
+    if (isPanelComponent(c) || isApiGroupComponent(c)) ids.add(c.id);
   }
   return ids;
 }

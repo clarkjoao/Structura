@@ -7,6 +7,7 @@ export type ComponentType =
   | "component"
   | "panel"
   | "note"
+  | "api-group"
   | "endpoint"
   | AwsCategoryId;
 
@@ -35,7 +36,6 @@ export interface C4Component extends BaseComponent {
 
 export type PanelKind =
   | "default"
-  | "api-group"
   | "availability-zone"
   | "eks-cluster"
   | "ecs-cluster"
@@ -74,6 +74,16 @@ export interface EndpointHandler {
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "EVENT";
 
+export type ApiProtocol = "REST" | "gRPC" | "GraphQL" | "WebSocket";
+
+export interface ApiGroupComponent extends BaseComponent {
+  type: "api-group";
+  serviceName: string;
+  basePath: string;
+  protocol: ApiProtocol;
+  sla?: string;
+}
+
 export interface EndpointComponent extends BaseComponent {
   type: "endpoint";
   method: HttpMethod;
@@ -83,10 +93,11 @@ export interface EndpointComponent extends BaseComponent {
   handlers: EndpointHandler[];
 }
 
-export type Component = C4Component | PanelComponent | NoteComponent | AwsComponent | EndpointComponent;
+export type Component = C4Component | PanelComponent | NoteComponent | AwsComponent | ApiGroupComponent | EndpointComponent;
 
 export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<PanelComponent, "id">> &
   Partial<Omit<NoteComponent, "id">> &
   Partial<Omit<AwsComponent, "id">> &
+  Partial<Omit<ApiGroupComponent, "id">> &
   Partial<Omit<EndpointComponent, "id">> & { width?: number; height?: number };

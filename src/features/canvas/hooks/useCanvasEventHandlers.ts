@@ -78,6 +78,18 @@ export function useCanvasEventHandlers({
 
   const onNodeClick = useCallback(
     (e: React.MouseEvent, node: Node) => {
+      if (node.type === "endpoint" && node.parentId) {
+        if (!isRecording) {
+          clearHighlight();
+          setSelectedEdgeId(null);
+          setContextMenu(null);
+          setSelectedNodeId(node.parentId);
+          setSelectedNodeIds(new Set([node.parentId]));
+        } else {
+          onRecordNodeClick?.(node.id);
+        }
+        return;
+      }
       if (isRecording) {
         if (node.type !== "panel" && node.type !== "note") onRecordNodeClick?.(node.id);
         return;

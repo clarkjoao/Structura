@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { Node } from "@xyflow/react";
 import type { Component, Diagram, ServiceDefinition } from "@/features/diagram";
-import { isPanelComponent } from "@/features/diagram";
+import { isPanelComponent, isApiGroupComponent } from "@/features/diagram";
 import { getDescriptor, type NodeBuildContext } from "./node-types";
 import { useRecordingMode } from "../flow/RecordingModeContext";
 import { buildCollapsedPanelIds, computeNodeVisibility } from "./nodeVisibility";
@@ -31,6 +31,7 @@ interface UseCanvasNodesParams {
   isViewingCoverage: boolean;
   activeFlowId?: string | null;
   onPlayFlow?: (flowId: string) => void;
+  onAddEndpointToGroup?: (groupId: string) => void;
 }
 
 export function useCanvasNodes({
@@ -57,6 +58,7 @@ export function useCanvasNodes({
   isViewingCoverage,
   activeFlowId,
   onPlayFlow,
+  onAddEndpointToGroup,
 }: UseCanvasNodesParams): Node[] {
   const { isRecording, onRecordHandleClick } = useRecordingMode();
   return useMemo(() => {
@@ -85,9 +87,16 @@ export function useCanvasNodes({
       onPanelCollapseToggle: handlePanelCollapseToggle,
       activeFlowId,
       onPlayFlow,
+      onAddEndpointToGroup,
     };
     return [...visibleComponents]
-      .sort((a, b) => (isPanelComponent(a) ? -1 : isPanelComponent(b) ? 1 : 0))
+      .sort((a, b) =>
+        isPanelComponent(a) || isApiGroupComponent(a)
+          ? -1
+          : isPanelComponent(b) || isApiGroupComponent(b)
+            ? 1
+            : 0,
+      )
       .map((comp): Node => {
         const d = getDescriptor(comp.type);
         const layout = diagram.nodeLayouts[comp.id];
@@ -96,6 +105,8 @@ export function useCanvasNodes({
           collapsedPanelIds, isViewingCoverage, coverage,
         );
         const style = { ...d.buildStyle?.(comp, ctx), ...(vis.dimmed ? { opacity: 0.3 } : {}) };
+        const lockedInGroup = comp.type === 'endpoint' && comp.parentId != null
+          && isApiGroupComponent(diagram.snapshot.components[comp.parentId]);
         return {
           id: comp.id,
           type: d.rfType,
@@ -103,6 +114,9 @@ export function useCanvasNodes({
           zIndex: vis.zIndex,
           connectable: d.connectable,
           selected: vis.isSelected,
+          draggable: d.draggable ?? !lockedInGroup,
+          selectable: d.selectable ?? !lockedInGroup,
+          focusable: d.focusable ?? !lockedInGroup,
           ...(vis.isChild ? { parentId: comp.parentId!, extent: "parent" as const } : {}),
           hidden: vis.isHidden,
           style,
@@ -114,6 +128,6 @@ export function useCanvasNodes({
     serviceRegistry, allDiagrams, handleDrillDown, isPlaying, flowHighlight,
     dragTargetPanelId, unparentCandidatePanelId, isRecording, recordingInfo,
     onRecordHandleClick, activeStep, coverage, connectionCountPerNode, effectiveHandleOrder,
-    onReorderHandle, handlePanelCollapseToggle, isViewingCoverage, activeFlowId, onPlayFlow,
+    onReorderHandle, handlePanelCollapseToggle, isViewingCoverage, activeFlowId, onPlayFlow, onAddEndpointToGroup,
   ]);
 }

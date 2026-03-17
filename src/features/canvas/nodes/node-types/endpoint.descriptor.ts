@@ -1,5 +1,6 @@
 import EndpointNode from "../EndpointNode";
-import { isEndpointComponent } from "@/features/diagram";
+import { isEndpointComponent, isApiGroupComponent } from "@/features/diagram";
+import { ENDPOINT_H, FRAME_W } from "../ApiGroupNode/constants";
 import type { NodeTypeDescriptor } from "./types";
 
 export const endpointDescriptor: NodeTypeDescriptor = {
@@ -30,7 +31,7 @@ export const endpointDescriptor: NodeTypeDescriptor = {
         ctx.selectedNodeIds.size > 0 &&
         !ctx.selectedNodeIds.has(comp.id),
       isPlaying: ctx.isPlaying,
-      activeFlowId: ctx.activeFlowId ?? null,
+      activeFlowId: ctx.activeFlowId ?? comp.handlers?.[0]?.flowId ?? null,
       availableFlows: allFlows.map((f) => ({ id: f.id, name: f.name })),
       onPlayHandler: ctx.onPlayFlow
         ? (flowId: string) => ctx.onPlayFlow!(flowId)
@@ -39,7 +40,11 @@ export const endpointDescriptor: NodeTypeDescriptor = {
   },
 
   buildStyle: (comp, ctx) => {
+    if (!isEndpointComponent(comp)) return undefined;
     const layout = ctx.diagram.nodeLayouts[comp.id];
+    if (comp.parentId && isApiGroupComponent(ctx.diagram.snapshot.components[comp.parentId])) {
+      return { width: FRAME_W, height: ENDPOINT_H };
+    }
     return {
       width: layout?.width ?? 260,
       minHeight: 80,
