@@ -12,6 +12,7 @@ interface Props {
   selectedEdgeId: string | null;
   selectedNodeIds?: string[];
   selectedNodes?: Node[];
+  focusTitleTrigger?: number;
   onClose: () => void;
 }
 
@@ -20,6 +21,7 @@ const ElementPanel = ({
   selectedEdgeId,
   selectedNodeIds = [],
   selectedNodes = [],
+  focusTitleTrigger = 0,
   onClose,
 }: Props) => {
   const component = useComponent(selectedElementId ?? "");
@@ -36,7 +38,7 @@ const ElementPanel = ({
   if (selectedEdgeId) {
     const conn = connections[selectedEdgeId];
     if (!conn) return null;
-    return <ConnectionPanel conn={conn} onClose={onClose} updateConnection={updateConnection} removeConnection={removeConnection} />;
+    return <ConnectionPanel conn={conn} onClose={onClose} updateConnection={updateConnection} removeConnection={removeConnection} focusTitleTrigger={focusTitleTrigger} />;
   }
 
   if (selectedElementId && component) {
@@ -93,6 +95,7 @@ const ElementPanel = ({
           updateComponent={updateComponent}
           removeComponent={removeComponent}
           onUngroup={isPanelWithChildren ? () => { ungroupNodes(component.id); onClose(); } : undefined}
+          focusTitleTrigger={focusTitleTrigger}
         />
       </div>
     );

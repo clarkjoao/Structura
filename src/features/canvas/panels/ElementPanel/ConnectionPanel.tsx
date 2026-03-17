@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import debounce from "lodash.debounce";
 import { X, Trash2 } from "lucide-react";
 import type { Connection, ConnectionIntent, ConnectionDirection, EdgeStyle, StrokeStyle, EdgeMarker, ConnectionStyle } from "@/features/diagram";
@@ -41,13 +41,26 @@ interface ConnectionPanelProps {
   onClose: () => void;
   updateConnection: (id: string, patch: Partial<Omit<Connection, "id">>) => void;
   removeConnection: (id: string) => void;
+  focusTitleTrigger?: number;
 }
 
-const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection }: ConnectionPanelProps) => {
+const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, focusTitleTrigger = 0 }: ConnectionPanelProps) => {
   const [label, setLabel] = useState(conn.label);
   const [desc, setDesc] = useState(conn.description ?? "");
+  const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   const debouncedUpdate = useMemo(() => debounce((patch: Partial<Omit<Connection, "id">>) => { updateConnection(conn.id, patch); }, 300), [conn.id, updateConnection]);
   useEffect(() => () => debouncedUpdate.cancel(), [debouncedUpdate]);
+  useEffect(() => {
+    if (focusTitleTrigger > 0) {
+      requestAnimationFrame(() => {
+        const el = titleInputRef.current;
+        if (el) {
+          el.focus();
+          el.select();
+        }
+      });
+    }
+  }, [focusTitleTrigger]);
   const applyPatch = (patch: Partial<Omit<Connection, "id">>) => updateConnection(conn.id, patch);
   const applyStyle = (stylePatch: Partial<ConnectionStyle>) =>
     applyPatch({ style: { ...conn.style, ...stylePatch } });
@@ -59,7 +72,7 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection }: 
         <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
-        <Field label="Label" value={label} onChange={(v) => { setLabel(v); debouncedUpdate({ label: v }); }} />
+        <Field label="Label" value={label} onChange={(v) => { setLabel(v); debouncedUpdate({ label: v }); }} inputRef={titleInputRef} />
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">Intenção</label>
           <div className="flex flex-wrap gap-1">

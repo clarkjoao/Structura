@@ -15,6 +15,7 @@ interface UseCanvasEventHandlersParams {
   updateViewport: (vp: { x: number; y: number; zoom: number }) => void;
   addConnection: (source: string, target: string, label: string) => void;
   screenToFlowPosition: (pos: { x: number; y: number }) => { x: number; y: number };
+  onRequestFocusTitle?: () => void;
 }
 
 export function useCanvasEventHandlers({
@@ -24,6 +25,7 @@ export function useCanvasEventHandlers({
   updateViewport,
   addConnection,
   screenToFlowPosition,
+  onRequestFocusTitle,
 }: UseCanvasEventHandlersParams) {
   const { isRecording, onRecordNodeClick, onRecordEdgeClick } = useRecordingMode();
   const {
@@ -154,6 +156,33 @@ export function useCanvasEventHandlers({
     [setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId, setContextMenu],
   );
 
+  const onNodeDoubleClick = useCallback(
+    (_: React.MouseEvent, node: Node) => {
+      if (isPlaying || isFlowPanelOpen || isRecording) return;
+      clearHighlight();
+      setSelectedEdgeId(null);
+      setContextMenu(null);
+      prevSelectionRef.current = node.id;
+      setSelectedNodeIds(new Set([node.id]));
+      setSelectedNodeId(node.id);
+      onRequestFocusTitle?.();
+    },
+    [isPlaying, isFlowPanelOpen, isRecording, clearHighlight, setSelectedEdgeId, setContextMenu, setSelectedNodeIds, setSelectedNodeId, onRequestFocusTitle],
+  );
+
+  const onEdgeDoubleClick = useCallback(
+    (_: React.MouseEvent, edge: Edge) => {
+      if (isPlaying || isFlowPanelOpen || isRecording) return;
+      clearHighlight();
+      setSelectedNodeId(null);
+      setSelectedNodeIds(new Set());
+      setContextMenu(null);
+      setSelectedEdgeId(edge.id);
+      onRequestFocusTitle?.();
+    },
+    [isPlaying, isFlowPanelOpen, isRecording, clearHighlight, setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId, setContextMenu, onRequestFocusTitle],
+  );
+
   const onPaneClick = useCallback(() => {
     prevSelectionRef.current = "";
     clearCanvasSelection();
@@ -191,6 +220,8 @@ export function useCanvasEventHandlers({
     onConnectEnd,
     onNodeClick,
     onEdgeClick,
+    onNodeDoubleClick,
+    onEdgeDoubleClick,
     onSelectionChange,
     onPaneClick,
     onNodeContextMenu,

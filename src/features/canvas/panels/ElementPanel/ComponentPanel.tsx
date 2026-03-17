@@ -53,9 +53,22 @@ interface ComponentPanelProps {
   updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => void;
   removeComponent: (id: string) => void;
   onUngroup?: () => void;
+  focusTitleTrigger?: number;
 }
 
-const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, onUngroup }: ComponentPanelProps) => {
+const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, onUngroup, focusTitleTrigger = 0 }: ComponentPanelProps) => {
+  const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  useEffect(() => {
+    if (focusTitleTrigger > 0) {
+      requestAnimationFrame(() => {
+        const el = titleInputRef.current;
+        if (el) {
+          el.focus();
+          el.select();
+        }
+      });
+    }
+  }, [focusTitleTrigger]);
   const allDiagrams = useAllDiagrams();
   const allServices = useAllServices();
   const activeDiagram = useActiveDiagram();
@@ -159,7 +172,7 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
               </div>
             </div>
           )}
-          <Field label="Nome" value={name} onChange={(v) => { setName(v); debouncedUpdate({ name: v }); }} />
+          <Field label="Nome" value={name} onChange={(v) => { setName(v); debouncedUpdate({ name: v }); }} inputRef={titleInputRef} />
           {!isSimple && (
             <div>
               <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">Tipo</label>

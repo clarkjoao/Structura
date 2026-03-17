@@ -70,6 +70,7 @@ const Canvas = ({
   const reactFlowWrapperRef = useRef<HTMLDivElement>(null);
   const { isRecording } = useRecordingMode();
   const [showSearch, setShowSearch] = useState(false);
+  const [focusTitleTrigger, setFocusTitleTrigger] = useState(0);
 
   const { diagram, allDiagrams, visibleComponents, visibleConnections, serviceRegistry, flows, actions } =
     useCanvasStore();
@@ -172,6 +173,10 @@ const Canvas = ({
 
   useConnectionInternalsSync(connectionCountPerNode, updateNodeInternals);
 
+  const handleRequestFocusTitle = useCallback(() => {
+    setFocusTitleTrigger((t) => t + 1);
+  }, []);
+
   const eventHandlers = useCanvasEventHandlers({
     visualState,
     isPlaying,
@@ -179,6 +184,7 @@ const Canvas = ({
     updateViewport: actions.updateViewport,
     addConnection: actions.addConnection,
     screenToFlowPosition: (pos) => reactFlowInstance.screenToFlowPosition(pos),
+    onRequestFocusTitle: handleRequestFocusTitle,
   });
 
   const isPanelOpen = !!(visualState.selectedNodeId || visualState.selectedEdgeId) && !isRecording;
@@ -197,6 +203,7 @@ const Canvas = ({
     },
     [reactFlowInstance, visualState],
   );
+
   useCanvasKeyboard({
     diagram,
     serviceRegistry,
@@ -289,6 +296,8 @@ const Canvas = ({
               onConnectEnd={eventHandlers.onConnectEnd}
               onNodeClick={eventHandlers.onNodeClick}
               onEdgeClick={eventHandlers.onEdgeClick}
+              onNodeDoubleClick={eventHandlers.onNodeDoubleClick}
+              onEdgeDoubleClick={eventHandlers.onEdgeDoubleClick}
               onPaneClick={eventHandlers.onPaneClick}
               onPaneContextMenu={(e) => e.preventDefault()}
               onNodeContextMenu={eventHandlers.onNodeContextMenu}
@@ -350,6 +359,7 @@ const Canvas = ({
               selectedEdgeId={visualState.selectedEdgeId}
               selectedNodeIds={Array.from(visualState.selectedNodeIds)}
               selectedNodes={selectedNodes}
+              focusTitleTrigger={focusTitleTrigger}
               onClose={eventHandlers.closePanel}
             />
           </div>
