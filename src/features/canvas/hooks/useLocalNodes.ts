@@ -11,12 +11,17 @@ import { applyNodeChanges, type Node, type OnNodesChange } from "@xyflow/react";
  * Accepts a shared `localNodesRef` so callers that need the ref before this
  * hook runs (e.g. `useNodeDragParenting`) can create it upfront.
  *
+ * When changes include multiple "select" changes (e.g. box selection), 
+ * `onSelectionFromChanges` is called synchronously so the panel updates in the same tick.
+ * Single-node toggles (Cmd+click) are left to onNodeClick/onSelectionChange to avoid overwriting.
+ *
  * Returns the merged `nodes` array and an `onNodesChange` handler.
  */
 export function useLocalNodes(
   storeNodes: Node[],
   innerOnNodesChange: OnNodesChange,
   localNodesRef: MutableRefObject<Node[]>,
+  onSelectionFromChanges?: (selectedIds: string[]) => void,
 ) {
   const [localNodes, setLocalNodes] = useState<Node[]>([]);
 
@@ -54,14 +59,22 @@ export function useLocalNodes(
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
       if (!changes.length) return;
+      const hasSelect = changes.some((c) => c.type === "select");
       innerOnNodesChange(changes);
       setLocalNodes((nds) => {
         const updated = applyNodeChanges(changes, nds);
         localNodesRef.current = updated;
+        if (hasSelect && onSelectionFromChanges) {
+          const selectChangeCount = changes.filter((c) => c.type === "select").length;
+          if (selectChangeCount >= 2) {
+            const selectedIds = updated.filter((n) => n.selected).map((n) => n.id);
+            onSelectionFromChanges(selectedIds);
+          }
+        }
         return updated;
       });
     },
-    [innerOnNodesChange, localNodesRef],
+    [innerOnNodesChange, localNodesRef, onSelectionFromChanges],
   );
 
   return { nodes: localNodes, onNodesChange };

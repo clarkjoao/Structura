@@ -140,7 +140,23 @@ const Canvas = ({
     onAddEndpointToGroup: handleAddEndpointToGroup,
   });
 
-  const { nodes, onNodesChange } = useLocalNodes(storeNodes, innerOnNodesChange, localNodesRef);
+  const onSelectionFromChanges = useCallback(
+    (selectedIds: string[]) => {
+      if (selectedIds.length === 0) return;
+      visualState.setSelectedEdgeId(null);
+      visualState.setContextMenu(null);
+      visualState.setSelectedNodeIds(new Set(selectedIds));
+      visualState.setSelectedNodeId(selectedIds[0] ?? null);
+    },
+    [visualState],
+  );
+
+  const { nodes, onNodesChange } = useLocalNodes(
+    storeNodes,
+    innerOnNodesChange,
+    localNodesRef,
+    onSelectionFromChanges,
+  );
 
   const edges = useCanvasEdges({
     diagram,

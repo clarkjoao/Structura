@@ -142,13 +142,16 @@ export function useCanvasEventHandlers({
       const selectedIds = updatedNodes.filter((n) => n.selected).map((n) => n.id);
       // Skip empty selections (handled by onPaneClick) and duplicate firings
       if (selectedIds.length === 0) return;
-      const key = selectedIds.sort().join(",");
+      const key = [...selectedIds].sort().join(",");
       if (key === prevSelectionRef.current) return;
       prevSelectionRef.current = key;
+
+      setSelectedEdgeId(null);
+      setContextMenu(null);
       setSelectedNodeIds(new Set(selectedIds));
       setSelectedNodeId(selectedIds[0] ?? null);
     },
-    [setSelectedNodeId, setSelectedNodeIds],
+    [setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId, setContextMenu],
   );
 
   const onPaneClick = useCallback(() => {
