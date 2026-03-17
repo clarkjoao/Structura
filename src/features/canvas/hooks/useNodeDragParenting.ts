@@ -6,7 +6,6 @@ import {
   isOutsideParentBounds,
   findPanelContainingPoint,
   toAbsolutePosition,
-  toRelativePosition,
 } from "../models/panelParenting";
 
 interface UseNodeDragParentingParams {
@@ -127,8 +126,12 @@ export function useNodeDragParenting({
       const match = findPanelContainingPoint(nodes, draggedNode.position.x, draggedNode.position.y);
       if (match) {
         setParent(draggedNode.id, match.id);
-        const relPos = toRelativePosition(draggedNode.position, match.position);
-        updateNodeLayout(draggedNode.id, relPos);
+
+        console.log(draggedNode.position.x, match.position.x, draggedNode.position.x - match.position.x)
+        updateNodeLayout(draggedNode.id, {
+          x: draggedNode.position.x - match.position.x,
+          y: draggedNode.position.y - match.position.y,
+        });
       }
     },
     [nodes, setParent, updateNodeLayout],

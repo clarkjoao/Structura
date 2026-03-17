@@ -68,6 +68,30 @@ export const componentsSlice = (
         pushHistory(state);
         const d = state.diagrams[state.activeDiagramId]!;
 
+        const parentComp = parentId ? d.snapshot.components[parentId] : undefined;
+        const parentLayout = parentId ? d.nodeLayouts[parentId] : undefined;
+        const isChildOfPanel = !!(parentId && parentComp && isPanelComponent(parentComp));
+        const centeredInParentPanel = {
+          x: (parentLayout?.width ?? PANEL_DEFAULT_W) / 2 - DEFAULT_NODE_W / 2,
+          y: (parentLayout?.height ?? PANEL_DEFAULT_H) / 2 - DEFAULT_NODE_H / 2,
+        };
+
+        // When parentId + absolute position are both provided, convert to relative
+        const resolvedPosition = (() => {
+          if (isChildOfPanel) return centeredInParentPanel;
+          if (!position) return { x: 300, y: 300 };
+          if (parentId && parentLayout) {
+            return {
+              x: position.x - parentLayout.x,
+              y: position.y - parentLayout.y,
+            };
+          }
+          if (parentId && !parentLayout) {
+            return { x: 40, y: 40 };
+          }
+          return position;
+        })();
+
         if (isEndpointType(type) && parentId) {
           const parent = d.snapshot.components[parentId];
           if (isApiGroupComponent(parent)) {
@@ -102,8 +126,8 @@ export const componentsSlice = (
           const { width, height } = computeApiGroupSize(0);
           d.nodeLayouts[component.id] = {
             elementId: component.id,
-            x: position?.x ?? 300,
-            y: position?.y ?? 300,
+            x: resolvedPosition.x,
+            y: resolvedPosition.y,
             zIndex: -1,
             width,
             height,
@@ -111,15 +135,15 @@ export const componentsSlice = (
         } else if (isEndpointType(type)) {
           d.nodeLayouts[component.id] = {
             elementId: component.id,
-            x: position?.x ?? 300,
-            y: position?.y ?? 300,
+            x: resolvedPosition.x,
+            y: resolvedPosition.y,
             width: 260,
           };
         } else {
           d.nodeLayouts[component.id] = {
             elementId: component.id,
-            x: position?.x ?? 300,
-            y: position?.y ?? 300,
+            x: resolvedPosition.x,
+            y: resolvedPosition.y,
             ...(isPanelType(type) ? { zIndex: -1, width: PANEL_DEFAULT_W, height: PANEL_DEFAULT_H } : {}),
             ...(isNoteType(type) ? { width: NOTE_DEFAULT_W, height: NOTE_DEFAULT_H } : {}),
           };

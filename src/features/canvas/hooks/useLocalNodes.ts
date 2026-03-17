@@ -41,6 +41,7 @@ export function useLocalNodes(
           connectable: sn.connectable,
           selected: sn.selected,
           type: sn.type,
+          position: sn.parentId !== ln.parentId ? sn.position : ln.position,
           parentId: sn.parentId,
           extent: sn.extent,
         };
