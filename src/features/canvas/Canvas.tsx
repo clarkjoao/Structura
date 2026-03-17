@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import {
   ReactFlow,
   Background,
@@ -44,6 +44,7 @@ interface CanvasProps {
   onDrillUp?: () => void;
   isViewingCoverage?: boolean;
   isFlowPanelOpen?: boolean;
+  onPlayFlow?: (flowId: string) => void;
 }
 
 const CANVAS_STYLES = `
@@ -60,6 +61,7 @@ const Canvas = ({
   onDrillUp,
   isViewingCoverage,
   isFlowPanelOpen,
+  onPlayFlow,
 }: CanvasProps = {}) => {
   const navigate = useNavigate();
   const reactFlowInstance = useReactFlow();
@@ -86,6 +88,13 @@ const Canvas = ({
     navigate,
     onOpenDiagram,
   });
+
+  const handleAddEndpointToGroup = useCallback(
+    (groupId: string) => {
+      actions.addComponent("endpoint", "Novo Endpoint", groupId);
+    },
+    [actions],
+  );
 
   const { onReorderHandle } = useCanvasHandleReorder({
     effectiveHandleOrder,
@@ -124,6 +133,9 @@ const Canvas = ({
     recordingInfo,
     coverage,
     isViewingCoverage: !!isViewingCoverage,
+    activeFlowId: activeFlow?.id ?? null,
+    onPlayFlow,
+    onAddEndpointToGroup: handleAddEndpointToGroup,
   });
 
   const { nodes, onNodesChange } = useLocalNodes(storeNodes, innerOnNodesChange, localNodesRef);

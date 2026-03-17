@@ -9,6 +9,11 @@ export type {
   PanelKind,
   NoteComponent,
   AwsComponent,
+  ApiGroupComponent,
+  ApiProtocol,
+  EndpointComponent,
+  EndpointHandler,
+  HttpMethod,
   Connection,
   ConnectionStyle,
   ConnectionIntent,
@@ -49,6 +54,8 @@ export {
   isNoteComponent,
   isC4Component,
   isAwsComponent,
+  isApiGroupComponent,
+  isEndpointComponent,
 } from "./model/component.guards";
 
 /** Zustand store — single source of truth for all diagram state */

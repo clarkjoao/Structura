@@ -28,6 +28,12 @@ export interface NodeBuildContext {
   handleDrillDown: (id: string) => void;
   onRecordHandleClick?: (nodeId: string, handleId: string) => void;
   onPanelCollapseToggle?: (panelId: string) => void;
+  /** When playing a flow from an endpoint handler, the id of the flow currently playing. */
+  activeFlowId?: string | null;
+  /** Start playback of a flow (e.g. from endpoint handler click). */
+  onPlayFlow?: (flowId: string) => void;
+  /** Add a new endpoint child to an api-group. */
+  onAddEndpointToGroup?: (groupId: string) => void;
 }
 
 export interface NodeTypeDescriptor {
@@ -51,4 +57,10 @@ export interface NodeTypeDescriptor {
   defaultSize?: { width: number; height: number };
   /** Default extra data fields merged into buildData output for this type. */
   defaultData?: Partial<Record<string, unknown>>;
+  /** ReactFlow node draggable (default true). */
+  draggable?: boolean;
+  /** ReactFlow node selectable (default true). */
+  selectable?: boolean;
+  /** ReactFlow node focusable (default true). */
+  focusable?: boolean;
 }

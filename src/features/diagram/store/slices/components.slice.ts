@@ -1,6 +1,6 @@
-import type { Component, ComponentPatch, ComponentType, PanelComponent, PanelKind } from "../../model/diagram.types";
+import type { Component, ComponentPatch, ComponentType, ApiGroupComponent, EndpointComponent, PanelComponent, PanelKind } from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
-import { isPanelComponent } from "../../model/component.guards";
+import { isPanelComponent, isApiGroupComponent } from "../../model/component.guards";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
@@ -13,6 +13,8 @@ import {
   DEFAULT_NODE_W,
   DEFAULT_NODE_H,
 } from "@/features/canvas/constants";
+import { HEADER_H, ENDPOINT_H, FRAME_W } from "@/features/canvas/nodes/ApiGroupNode/constants";
+import { computeApiGroupSize } from "@/features/canvas/nodes/ApiGroupNode/useApiGroupSize";
 
 export const componentsSlice = (
   set: (fn: (state: AppState) => void) => void,
@@ -39,6 +41,22 @@ export const componentsSlice = (
         } as PanelComponent;
       } else if (type === "note") {
         component = { ...base, type: "note", panelColor: "hsl(45 25% 97%)" };
+      } else if (type === "endpoint") {
+        component = {
+          ...base,
+          type: "endpoint",
+          method: "GET",
+          path: "/novo-endpoint",
+          handlers: [],
+        } as EndpointComponent;
+      } else if (type === "api-group") {
+        component = {
+          ...base,
+          type: "api-group",
+          serviceName: name,
+          basePath: "/api/v1",
+          protocol: "REST",
+        } as ApiGroupComponent;
       } else if (type === "person" || type === "system" || type === "container" || type === "component") {
         component = { ...base, type };
       } else {
@@ -47,16 +65,82 @@ export const componentsSlice = (
       }
       set((state) => {
         pushHistory(state);
-        const d = state.diagrams[state.activeDiagramId]
+        const d = state.diagrams[state.activeDiagramId]!;
+
+        if (type === "endpoint" && parentId) {
+          const parent = d.snapshot.components[parentId];
+          if (parent?.type === "api-group") {
+            const siblingCount = Object.values(d.snapshot.components).filter(
+              (c) => c.parentId === parentId && c.type === "endpoint",
+            ).length;
+            d.snapshot.components[component.id] = component;
+            d.nodeLayouts[component.id] = {
+              elementId: component.id,
+              x: 0,
+              y: HEADER_H + siblingCount * ENDPOINT_H,
+              width: FRAME_W,
+              height: ENDPOINT_H,
+            };
+            const childCount = Object.values(d.snapshot.components).filter(
+              (c) => c.parentId === parentId && c.type === "endpoint",
+            ).length;
+            const { width, height } = computeApiGroupSize(childCount);
+            const groupLayout = d.nodeLayouts[parentId];
+            if (groupLayout) {
+              groupLayout.width = width;
+              groupLayout.height = height;
+            }
+            d.updatedAt = new Date().toISOString();
+            return;
+          }
+        }
+
         d.snapshot.components[component.id] = component;
-        d.nodeLayouts[component.id] = {
-          elementId: component.id,
-          x: position?.x ?? 300,
-          y: position?.y ?? 300,
-          ...(type === "panel" ? { zIndex: -1, width: PANEL_DEFAULT_W, height: PANEL_DEFAULT_H } : {}),
-          ...(type === "note" ? { width: NOTE_DEFAULT_W, height: NOTE_DEFAULT_H } : {}),
-        };
+
+        if (type === "api-group") {
+          const { width, height } = computeApiGroupSize(0);
+          d.nodeLayouts[component.id] = {
+            elementId: component.id,
+            x: position?.x ?? 300,
+            y: position?.y ?? 300,
+            zIndex: -1,
+            width,
+            height,
+          };
+        } else if (type === "endpoint") {
+          d.nodeLayouts[component.id] = {
+            elementId: component.id,
+            x: position?.x ?? 300,
+            y: position?.y ?? 300,
+            width: 260,
+          };
+        } else {
+          d.nodeLayouts[component.id] = {
+            elementId: component.id,
+            x: position?.x ?? 300,
+            y: position?.y ?? 300,
+            ...(type === "panel" ? { zIndex: -1, width: PANEL_DEFAULT_W, height: PANEL_DEFAULT_H } : {}),
+            ...(type === "note" ? { width: NOTE_DEFAULT_W, height: NOTE_DEFAULT_H } : {}),
+          };
+        }
+
         d.updatedAt = new Date().toISOString();
+
+        function syncApiGroupSize(groupId: string) {
+          const childCount = Object.values(d.snapshot.components).filter(
+            (c) => c.parentId === groupId && c.type === "endpoint",
+          ).length;
+          const { width, height } = computeApiGroupSize(childCount);
+          const layout = d.nodeLayouts[groupId];
+          if (layout) {
+            layout.width = width;
+            layout.height = height;
+          }
+        }
+
+        if (parentId && isApiGroupComponent(d.snapshot.components[parentId])) {
+          syncApiGroupSize(parentId);
+        }
       });
       return component;
     },
@@ -92,7 +176,7 @@ export const componentsSlice = (
     removeComponent: (id: string) => {
       set((state) => {
         pushHistory(state);
-        const d = state.diagrams[state.activeDiagramId]
+        const d = state.diagrams[state.activeDiagramId]!;
         const toRemove = new Set<string>();
         const collect = (eid: string) => {
           toRemove.add(eid);
@@ -101,12 +185,52 @@ export const componentsSlice = (
             .forEach((c) => collect(c.id));
         };
         collect(id);
+
+        const apiGroupParentsToSync = new Set<string>();
+        toRemove.forEach((eid) => {
+          const comp = d.snapshot.components[eid];
+          if (comp?.parentId && isApiGroupComponent(d.snapshot.components[comp.parentId])) {
+            apiGroupParentsToSync.add(comp.parentId);
+          }
+        });
+
         toRemove.forEach((eid) => delete d.snapshot.components[eid]);
         Object.values(d.snapshot.connections).forEach((conn) => {
           if (toRemove.has(conn.sourceId) || toRemove.has(conn.targetId))
             delete d.snapshot.connections[conn.id];
         });
         toRemove.forEach((eid) => delete d.nodeLayouts[eid]);
+
+        function syncApiGroupSize(groupId: string) {
+          const childCount = Object.values(d.snapshot.components).filter(
+            (c) => c.parentId === groupId && c.type === "endpoint",
+          ).length;
+          const { width, height } = computeApiGroupSize(childCount);
+          const layout = d.nodeLayouts[groupId];
+          if (layout) {
+            layout.width = width;
+            layout.height = height;
+          }
+        }
+
+        function reindexEndpoints(groupId: string) {
+          if (toRemove.has(groupId)) return;
+          const siblings = Object.values(d.snapshot.components)
+            .filter((c) => c.parentId === groupId && c.type === "endpoint")
+            .sort((a, b) => {
+              const ay = d.nodeLayouts[a.id]?.y ?? 0;
+              const by = d.nodeLayouts[b.id]?.y ?? 0;
+              return ay - by;
+            });
+          siblings.forEach((sibling, i) => {
+            const layout = d.nodeLayouts[sibling.id];
+            if (layout) layout.y = HEADER_H + i * ENDPOINT_H;
+          });
+          syncApiGroupSize(groupId);
+        }
+
+        apiGroupParentsToSync.forEach(reindexEndpoints);
+
         d.updatedAt = new Date().toISOString();
       });
     },
@@ -140,7 +264,7 @@ export const componentsSlice = (
         const d = state.diagrams[state.activeDiagramId]
         const comps = d.snapshot.components;
         const ids = componentIds.filter(
-          (id) => comps[id] && !isPanelComponent(comps[id]),
+          (id) => comps[id] && !isPanelComponent(comps[id]) && !isApiGroupComponent(comps[id]),
         );
         if (ids.length < 2) return;
 

@@ -1,9 +1,11 @@
 import { LayoutDashboard } from "lucide-react";
-import { useComponent, useConnections, useDiagramActions, useActiveDiagram } from "@/features/diagram";
+import { useComponent, useConnections, useDiagramActions, useActiveDiagram, useFlows, isEndpointComponent, isApiGroupComponent } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
 import { MultiSelectPanel } from "../MultiSelectPanel";
 import ComponentPanel from "./ComponentPanel";
 import ConnectionPanel from "./ConnectionPanel";
+import EndpointPanel from "./EndpointPanel";
+import ApiGroupPanel from "./ApiGroupPanel";
 
 interface Props {
   selectedElementId: string | null;
@@ -22,8 +24,10 @@ const ElementPanel = ({
 }: Props) => {
   const component = useComponent(selectedElementId ?? "");
   const connections = useConnections();
+  const flows = useFlows();
   const { updateComponent, removeComponent, updateConnection, removeConnection, groupNodes, ungroupNodes } = useDiagramActions();
   const diagram = useActiveDiagram();
+  const availableFlows = flows.map((f) => ({ id: f.id, name: f.name }));
 
   if (selectedNodes.length > 1) {
     return <MultiSelectPanel selectedNodes={selectedNodes} onClose={onClose} />;
@@ -41,6 +45,33 @@ const ElementPanel = ({
       component.type === "panel" &&
       diagram &&
       Object.values(diagram.snapshot.components).some((c) => c.parentId === component.id);
+
+    if (isEndpointComponent(component)) {
+      return (
+        <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
+          <EndpointPanel
+            component={component}
+            onClose={onClose}
+            updateComponent={updateComponent}
+            removeComponent={removeComponent}
+            availableFlows={availableFlows}
+          />
+        </div>
+      );
+    }
+
+    if (isApiGroupComponent(component)) {
+      return (
+        <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
+          <ApiGroupPanel
+            component={component}
+            onClose={onClose}
+            updateComponent={updateComponent}
+            removeComponent={removeComponent}
+          />
+        </div>
+      );
+    }
 
     return (
       <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
