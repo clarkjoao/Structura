@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { useReactFlow } from "@xyflow/react";
 import { useActiveDiagram, useDiagramActions } from "@/features/diagram";
+import { useRecordingMode } from "@/features/canvas/flow/RecordingModeContext";
+import { useFlowPlayback } from "@/features/canvas/flow/FlowPlaybackContext";
 import type { ComponentType } from "@/features/diagram";
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/catalogs/aws";
 import AwsIcon from "../nodes/AwsIcon";
@@ -55,6 +57,9 @@ const CanvasToolbar = ({
   const diagram = useActiveDiagram();
   const { addComponent } = useDiagramActions();
   const rfInstance = useReactFlow();
+  const { isRecording } = useRecordingMode();
+  const { isPlaying } = useFlowPlayback();
+  const disabledWhileBusy = isRecording || isPlaying;
   const [showAdd, setShowAdd] = useState(false);
   const [showAws, setShowAws] = useState(false);
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
@@ -106,11 +111,13 @@ const CanvasToolbar = ({
 
       <button
         onClick={() => {
+          if (disabledWhileBusy) return;
           onClearSelection?.();
           setShowPatterns(true);
           setShowAdd(false);
         }}
-        className="flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+        disabled={disabledWhileBusy}
+        className={`flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors ${disabledWhileBusy ? "opacity-50 pointer-events-none" : ""}`}
       >
         <Puzzle className="h-3.5 w-3.5" /> Patterns
       </button>
@@ -118,10 +125,12 @@ const CanvasToolbar = ({
       <div className="relative">
         <button
           onClick={() => {
+            if (disabledWhileBusy) return;
             onClearSelection?.();
             setShowModal(true);
           }}
-          className="flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-primary hover:bg-surface-hover transition-colors"
+          disabled={disabledWhileBusy}
+          className={`flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-primary hover:bg-surface-hover transition-colors ${disabledWhileBusy ? "opacity-50 pointer-events-none" : ""}`}
         >
           <Plus className="h-3.5 w-3.5" /> Adicionar Elemento
         </button>

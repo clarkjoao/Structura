@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { Flow } from "@/features/diagram";
 import { useRecordingMode } from "./RecordingModeContext";
+import { useFlowPlayback } from "./FlowPlaybackContext";
 import {
   EMPTY_FLOW_HIGHLIGHT,
   buildFlowHighlight,
@@ -9,18 +10,12 @@ import {
 } from "./flowState";
 
 interface UseFlowStateParams {
-  activeFlow?: Flow | null;
-  currentStep?: number;
   flows: Flow[];
 }
 
-export function useFlowState({
-  activeFlow,
-  currentStep,
-  flows,
-}: UseFlowStateParams) {
+export function useFlowState({ flows }: UseFlowStateParams) {
   const { isRecording, recordingSteps } = useRecordingMode();
-  const isPlaying = !!activeFlow && currentStep !== undefined && currentStep >= 0;
+  const { activeFlow, currentStep, isPlaying } = useFlowPlayback();
   const stepIndex = currentStep ?? 0;
 
   const activeStep = isPlaying && activeFlow
@@ -42,5 +37,5 @@ export function useFlowState({
     return buildRecordingInfo(recordingSteps);
   }, [isRecording, recordingSteps]);
 
-  return { isPlaying, activeStep, flowHighlight, coverage, recordingInfo };
+  return { isPlaying, activeStep, flowHighlight, coverage, recordingInfo, activeFlow, currentStep };
 }

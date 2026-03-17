@@ -5,10 +5,160 @@ import { ArrowLeft, Check, Clipboard, Download, GitBranch, CircleHelp } from "lu
 import Navbar from "@/components/Navbar";
 import ShortcutsModal from "@/components/ShortcutsModal";
 import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
-import { RecordingModeProvider } from "@/features/canvas/flow/RecordingModeContext";
+import { RecordingModeStateProvider, useRecordingMode } from "@/features/canvas/flow/RecordingModeContext";
+import { FlowPlaybackProvider, useFlowPlayback } from "@/features/canvas/flow/FlowPlaybackContext";
 import { useActiveDiagram, useActiveDiagramId, useDiagramActions, useFlows, stepsToMermaid, useServiceRegistry } from "@/features/diagram";
 import { exportJSON, exportDrawio, exportMermaid, downloadFile } from "@/lib/export-service";
-import type { Flow, FlowStep } from "@/features/diagram";
+import type { Flow } from "@/features/diagram";
+
+function ModelExplorerContent({
+  showFlows,
+  setShowFlows,
+  isViewingCoverage,
+  setIsViewingCoverage,
+  showShortcuts,
+  setShowShortcuts,
+  navStack,
+  handleOpenDiagram,
+  handleDrillUp,
+  handleCopyDrawio,
+  handleExport,
+  copied,
+  flows,
+}: {
+  showFlows: boolean;
+  setShowFlows: (v: boolean) => void;
+  isViewingCoverage: boolean;
+  setIsViewingCoverage: (v: boolean | ((prev: boolean) => boolean)) => void;
+  showShortcuts: boolean;
+  setShowShortcuts: (v: boolean) => void;
+  navStack: string[];
+  handleOpenDiagram: (id: string) => void;
+  handleDrillUp: () => void;
+  handleCopyDrawio: () => void;
+  handleExport: () => void;
+  copied: boolean;
+  flows: Flow[];
+}) {
+  const diagram = useActiveDiagram();
+  const { isRecording, editingFlowId, startRecording, cancelRecording, finalizeRecording, ...recordingProps } = useRecordingMode();
+  const { activeFlow, currentStep, isPlaying, play, exit, prev, next, goToStep } = useFlowPlayback();
+
+  const disabledWhileBusy = isRecording || isPlaying;
+
+  return (
+    <>
+      <div className="border-b border-border bg-card shrink-0 mt-16">
+        <div className="container flex items-center justify-between h-12">
+          <div className="flex items-center gap-3 text-sm">
+            <Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+            {diagram?.domain && <span className="text-muted-foreground">{diagram.domain}</span>}
+            <span className="font-medium">{diagram?.name}</span>
+            {activeFlow && (
+              <span className="text-[10px] font-mono text-primary bg-primary/10 rounded px-1.5 py-0.5">
+                ▶ {activeFlow.name}{activeFlow.description ? ` · "${activeFlow.description}"` : ""}
+              </span>
+            )}
+            {isRecording && (
+              <span className={`text-[10px] font-mono rounded px-1.5 py-0.5 animate-pulse ${
+                editingFlowId ? "text-amber-400 bg-amber-400/10" : "text-red-400 bg-red-400/10"
+              }`}>
+                {editingFlowId ? "✎ EDIT" : "● REC"}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { if (!disabledWhileBusy) setShowFlows(!showFlows); }}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                showFlows ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground border border-transparent hover:border-border"
+              } ${disabledWhileBusy ? "opacity-50 pointer-events-none" : ""}`}
+            >
+              <GitBranch className="h-3.5 w-3.5" /> Flows
+            </button>
+            <button
+              onClick={handleCopyDrawio}
+              disabled={disabledWhileBusy}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all ${disabledWhileBusy ? "opacity-50 pointer-events-none" : ""}`}
+            >
+              {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Clipboard className="h-3.5 w-3.5" />}
+              {copied ? "Copiado!" : "Copy"}
+            </button>
+            <button
+              onClick={handleExport}
+              disabled={disabledWhileBusy}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all ${disabledWhileBusy ? "opacity-50 pointer-events-none" : ""}`}
+            >
+              <Download className="h-3.5 w-3.5" /> Exportar
+            </button>
+            <button
+              onClick={() => setShowShortcuts(true)}
+              disabled={disabledWhileBusy}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all ${disabledWhileBusy ? "opacity-50 pointer-events-none" : ""}`}
+              aria-label="Atalhos"
+              title="Atalhos"
+            >
+              <CircleHelp className="h-3.5 w-3.5" /> Atalhos
+            </button>
+          </div>
+        </div>
+      </div>
+      <div className="flex-1 flex overflow-hidden">
+        <ShortcutsModal open={showShortcuts} onOpenChange={setShowShortcuts} />
+        <ReactFlowProvider>
+          <div className="flex-1 flex flex-col relative">
+            <Canvas
+              onOpenDiagram={handleOpenDiagram}
+              onDrillUp={navStack.length > 0 ? handleDrillUp : undefined}
+              isViewingCoverage={isViewingCoverage}
+              isFlowPanelOpen={showFlows}
+              onPlayFlow={(flowId) => {
+                const flow = flows.find((f) => f.id === flowId);
+                if (flow) play(flow);
+              }}
+            />
+            {activeFlow && (
+              <FlowStepNavigator flow={activeFlow} currentStep={currentStep} onPrev={prev} onNext={next} onExit={exit} onGoToStep={goToStep} />
+            )}
+          </div>
+        </ReactFlowProvider>
+        {isRecording && (
+          <FlowRecorderPanel
+            name={recordingProps.recordingName}
+            onNameChange={recordingProps.setRecordingName}
+            description={recordingProps.recordingDescription}
+            onDescriptionChange={recordingProps.setRecordingDescription}
+            tags={recordingProps.recordingTags}
+            onAddTag={recordingProps.onAddTag}
+            onRemoveTag={recordingProps.onRemoveTag}
+            steps={recordingProps.recordingSteps}
+            onCancel={cancelRecording}
+            onFinalize={finalizeRecording}
+            onUpdateStepDescription={recordingProps.onUpdateStepDescription}
+            onUpdateStepDuration={recordingProps.onUpdateStepDuration}
+            onUpdateStepPayload={recordingProps.onUpdateStepPayload}
+            onUpdateStepPayloadDirection={recordingProps.onUpdateStepPayloadDirection}
+            onDeleteStep={recordingProps.onDeleteStep}
+            onReorderSteps={recordingProps.onReorderSteps}
+            isEditing={!!editingFlowId}
+          />
+        )}
+        {showFlows && !activeFlow && !isRecording && (
+          <FlowPanel
+            onClose={() => setShowFlows(false)}
+            onPlay={play}
+            onStartRecording={startRecording}
+            onEditFlow={recordingProps.editFlow}
+            isViewingCoverage={isViewingCoverage}
+            onToggleCoverage={() => setIsViewingCoverage((v) => !v)}
+          />
+        )}
+      </div>
+    </>
+  );
+}
 
 const ModelExplorer = () => {
   const diagram = useActiveDiagram();
@@ -23,12 +173,7 @@ const ModelExplorer = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [navStack, setNavStack] = useState<string[]>([]);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingSteps, setRecordingSteps] = useState<FlowStep[]>([]);
-  const [recordingName, setRecordingName] = useState("");
-  const [recordingDescription, setRecordingDescription] = useState("");
-  const [recordingTags, setRecordingTags] = useState<string[]>([]);
-  const [editingFlowId, setEditingFlowId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const handleOpenDiagram = useCallback(
     (id: string) => {
@@ -53,81 +198,21 @@ const ModelExplorer = () => {
   const handleNext = useCallback(() => { if (!activeFlow) return; setCurrentStep((s) => Math.min(activeFlow.steps.length - 1, s + 1)); }, [activeFlow]);
   const handleGoToStep = useCallback((i: number) => setCurrentStep(i), []);
 
-  const resetRecordingState = useCallback(() => {
-    setIsRecording(false);
-    setRecordingSteps([]);
-    setRecordingName("");
-    setRecordingDescription("");
-    setRecordingTags([]);
-    setEditingFlowId(null);
-  }, []);
-
-  const handleStartRecording = useCallback(() => {
-    resetRecordingState();
-    setIsRecording(true);
-    setShowFlows(false);
-  }, [resetRecordingState]);
-
-  const handleEditFlow = useCallback((flow: Flow) => {
-    setIsRecording(true);
-    setRecordingName(flow.name);
-    setRecordingDescription(flow.description ?? "");
-    setRecordingTags([...(flow.tags ?? [])]);
-    setRecordingSteps([...flow.steps]);
-    setEditingFlowId(flow.id);
-    setShowFlows(false);
-  }, []);
-
-  const handleCancelRecording = useCallback(() => { resetRecordingState(); }, [resetRecordingState]);
-
-  const handleFinalizeRecording = useCallback(() => {
-    if (!diagram) return;
-    const mermaid = stepsToMermaid(recordingSteps, diagram.snapshot.components, diagram.snapshot.connections);
-    const desc = recordingDescription || undefined;
-    const flowTags = recordingTags.length ? recordingTags : undefined;
-    if (editingFlowId) {
-      updateFlow(editingFlowId, { name: recordingName || "Flow sem nome", mermaid, steps: recordingSteps, description: desc, tags: flowTags });
-    } else {
-      const flow = addFlow(diagram.id, recordingName || "Flow sem nome", mermaid, recordingSteps);
-      if (desc || flowTags) updateFlow(flow.id, { description: desc, tags: flowTags });
-    }
-    resetRecordingState();
-  }, [diagram, recordingSteps, recordingName, recordingDescription, recordingTags, addFlow, updateFlow, editingFlowId, resetRecordingState]);
-
-  const handleRecordNodeClick = useCallback((nodeId: string) => {
-    setRecordingSteps((prev) => [...prev, { order: prev.length, componentId: nodeId }]);
-  }, []);
-  const handleRecordEdgeClick = useCallback((edgeId: string, handleId?: string) => {
-    setRecordingSteps((prev) => [...prev, { order: prev.length, connectionId: edgeId, handleId }]);
-  }, []);
-  const handleRecordHandleClick = useCallback((nodeId: string, handleId: string) => {
-    setRecordingSteps((prev) => [...prev, { order: prev.length, componentId: nodeId, handleId }]);
-  }, []);
-  const handleRecordUndo = useCallback(() => { setRecordingSteps((prev) => prev.slice(0, -1)); }, []);
-
-  const handleUpdateStepDescription = useCallback((index: number, description: string) => {
-    setRecordingSteps((prev) => prev.map((s, i) => (i === index ? { ...s, description } : s)));
-  }, []);
-  const handleUpdateStepDuration = useCallback((index: number, duration: string) => {
-    setRecordingSteps((prev) => prev.map((s, i) => (i === index ? { ...s, duration: duration || undefined } : s)));
-  }, []);
-  const handleUpdateStepPayload = useCallback((index: number, payload: string) => {
-    setRecordingSteps((prev) => prev.map((s, i) => (i === index ? { ...s, payload: payload || undefined } : s)));
-  }, []);
-  const handleUpdateStepPayloadDirection = useCallback((index: number, direction: 'request' | 'response') => {
-    setRecordingSteps((prev) => prev.map((s, i) => (i === index ? { ...s, payloadDirection: direction } : s)));
-  }, []);
-  const handleDeleteStep = useCallback((index: number) => {
-    setRecordingSteps((prev) => prev.filter((_, i) => i !== index).map((s, i) => ({ ...s, order: i })));
-  }, []);
-  const handleReorderSteps = useCallback((from: number, to: number) => {
-    setRecordingSteps((prev) => { const n = [...prev]; const [m] = n.splice(from, 1); n.splice(to, 0, m); return n.map((s, i) => ({ ...s, order: i })); });
-  }, []);
-
-  const handleAddTag = useCallback((tag: string) => { setRecordingTags((prev) => prev.includes(tag) ? prev : [...prev, tag]); }, []);
-  const handleRemoveTag = useCallback((index: number) => { setRecordingTags((prev) => prev.filter((_, i) => i !== index)); }, []);
-
-  const [copied, setCopied] = useState(false);
+  const handleFinalizeRecording = useCallback(
+    (data: { name: string; description: string; tags: string[]; steps: import("@/features/diagram").FlowStep[]; editingFlowId: string | null }) => {
+      if (!diagram) return;
+      const mermaid = stepsToMermaid(data.steps, diagram.snapshot.components, diagram.snapshot.connections);
+      const desc = data.description || undefined;
+      const flowTags = data.tags.length ? data.tags : undefined;
+      if (data.editingFlowId) {
+        updateFlow(data.editingFlowId, { name: data.name || "Flow sem nome", mermaid, steps: data.steps, description: desc, tags: flowTags });
+      } else {
+        const flow = addFlow(diagram.id, data.name || "Flow sem nome", mermaid, data.steps);
+        if (desc || flowTags) updateFlow(flow.id, { description: desc, tags: flowTags });
+      }
+    },
+    [diagram, addFlow, updateFlow],
+  );
 
   const handleCopyDrawio = useCallback(() => {
     if (!diagram) return;
@@ -177,112 +262,42 @@ const ModelExplorer = () => {
     );
   }
 
+  const playbackValue = {
+    activeFlow,
+    currentStep,
+    isPlaying: !!activeFlow && currentStep >= 0,
+    play: handlePlay,
+    exit: handleExit,
+    prev: handlePrev,
+    next: handleNext,
+    goToStep: handleGoToStep,
+  };
+
   return (
     <div className="h-screen flex flex-col">
       <Navbar />
-      <div className="border-b border-border bg-card shrink-0 mt-16">
-        <div className="container flex items-center justify-between h-12">
-          <div className="flex items-center gap-3 text-sm">
-            <Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-            {diagram.domain && <span className="text-muted-foreground">{diagram.domain}</span>}
-            <span className="font-medium">{diagram.name}</span>
-            {activeFlow && (
-              <span className="text-[10px] font-mono text-primary bg-primary/10 rounded px-1.5 py-0.5">
-                ▶ {activeFlow.name}{activeFlow.description ? ` · "${activeFlow.description}"` : ""}
-              </span>
-            )}
-            {isRecording && (
-              <span className={`text-[10px] font-mono rounded px-1.5 py-0.5 animate-pulse ${
-                editingFlowId ? "text-amber-400 bg-amber-400/10" : "text-red-400 bg-red-400/10"
-              }`}>
-                {editingFlowId ? "✎ EDIT" : "● REC"}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => { if (!isRecording) setShowFlows(!showFlows); }}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
-                showFlows ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground border border-transparent hover:border-border"
-              } ${isRecording ? "opacity-50 pointer-events-none" : ""}`}
-            >
-              <GitBranch className="h-3.5 w-3.5" /> Flows
-            </button>
-            <button
-              onClick={handleCopyDrawio}
-              className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all"
-            >
-              {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Clipboard className="h-3.5 w-3.5" />}
-              {copied ? "Copiado!" : "Copy"}
-            </button>
-            <button
-              onClick={handleExport}
-              className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all"
-            >
-              <Download className="h-3.5 w-3.5" /> Exportar
-            </button>
-            <button
-              onClick={() => setShowShortcuts(true)}
-              className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all"
-              aria-label="Atalhos"
-              title="Atalhos"
-            >
-              <CircleHelp className="h-3.5 w-3.5" /> Atalhos
-            </button>
-          </div>
-        </div>
-      </div>
-      <div className="flex-1 flex overflow-hidden">
-        <ShortcutsModal open={showShortcuts} onOpenChange={setShowShortcuts} />
-        <RecordingModeProvider value={{
-          isRecording,
-          recordingSteps,
-          onRecordNodeClick: handleRecordNodeClick,
-          onRecordEdgeClick: handleRecordEdgeClick,
-          onRecordHandleClick: handleRecordHandleClick,
-          onRecordUndo: handleRecordUndo,
-        }}>
-        <ReactFlowProvider>
-          <div className="flex-1 flex flex-col relative">
-            <Canvas
-              activeFlow={activeFlow}
-              currentStep={currentStep}
-              onOpenDiagram={handleOpenDiagram}
-              onDrillUp={navStack.length > 0 ? handleDrillUp : undefined}
-              isViewingCoverage={isViewingCoverage}
-              isFlowPanelOpen={showFlows}
-              onPlayFlow={(flowId) => {
-                const flow = flows.find((f) => f.id === flowId);
-                if (flow) handlePlay(flow);
-              }}
-            />
-            {activeFlow && (
-              <FlowStepNavigator flow={activeFlow} currentStep={currentStep} onPrev={handlePrev} onNext={handleNext} onExit={handleExit} onGoToStep={handleGoToStep} />
-            )}
-          </div>
-        </ReactFlowProvider>
-        </RecordingModeProvider>
-        {isRecording && (
-          <FlowRecorderPanel
-            name={recordingName} onNameChange={setRecordingName}
-            description={recordingDescription} onDescriptionChange={setRecordingDescription}
-            tags={recordingTags} onAddTag={handleAddTag} onRemoveTag={handleRemoveTag}
-            steps={recordingSteps}
-            onCancel={handleCancelRecording} onFinalize={handleFinalizeRecording}
-            onUpdateStepDescription={handleUpdateStepDescription}
-            onUpdateStepDuration={handleUpdateStepDuration}
-            onUpdateStepPayload={handleUpdateStepPayload}
-            onUpdateStepPayloadDirection={handleUpdateStepPayloadDirection}
-            onDeleteStep={handleDeleteStep} onReorderSteps={handleReorderSteps}
-            isEditing={!!editingFlowId}
+      <RecordingModeStateProvider
+        onFinalize={handleFinalizeRecording}
+        onStartRecording={() => setShowFlows(false)}
+      >
+        <FlowPlaybackProvider value={playbackValue}>
+          <ModelExplorerContent
+            showFlows={showFlows}
+            setShowFlows={setShowFlows}
+            isViewingCoverage={isViewingCoverage}
+            setIsViewingCoverage={setIsViewingCoverage}
+            showShortcuts={showShortcuts}
+            setShowShortcuts={setShowShortcuts}
+            navStack={navStack}
+            handleOpenDiagram={handleOpenDiagram}
+            handleDrillUp={handleDrillUp}
+            handleCopyDrawio={handleCopyDrawio}
+            handleExport={handleExport}
+            copied={copied}
+            flows={flows}
           />
-        )}
-        {showFlows && !activeFlow && !isRecording && (
-          <FlowPanel onClose={() => setShowFlows(false)} onPlay={handlePlay} onStartRecording={handleStartRecording} onEditFlow={handleEditFlow} isViewingCoverage={isViewingCoverage} onToggleCoverage={() => setIsViewingCoverage((v) => !v)} />
-        )}
-      </div>
+        </FlowPlaybackProvider>
+      </RecordingModeStateProvider>
     </div>
   );
 };

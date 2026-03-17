@@ -39,8 +39,6 @@ import { useRecordingMode } from "./flow/RecordingModeContext";
 const edgeTypes = { c4: CustomEdge };
 
 interface CanvasProps {
-  activeFlow?: import("@/features/diagram").Flow | null;
-  currentStep?: number;
   onOpenDiagram?: (id: string) => void;
   onDrillUp?: () => void;
   isViewingCoverage?: boolean;
@@ -56,8 +54,6 @@ const CANVAS_STYLES = `
 `;
 
 const Canvas = ({
-  activeFlow,
-  currentStep,
   onOpenDiagram,
   onDrillUp,
   isViewingCoverage,
@@ -77,9 +73,7 @@ const Canvas = ({
   const visualState = useCanvasVisualState();
   const { panelIds, connectionCountPerNode, edgeHandleAssignments, effectiveHandleOrder } =
     useCanvasConnectionDerivations({ visibleComponents, visibleConnections, diagram });
-  const { isPlaying, activeStep, flowHighlight, coverage, recordingInfo } = useFlowState({
-    activeFlow,
-    currentStep,
+  const { isPlaying, activeStep, flowHighlight, coverage, recordingInfo, activeFlow, currentStep } = useFlowState({
     flows,
   });
 
@@ -229,6 +223,7 @@ const Canvas = ({
     addComponent: actions.addComponent,
     isPanelOpen,
     isFlowPanelOpen: !!isFlowPanelOpen,
+    isPlaying,
     isSearchOpen: showSearch,
     onOpenSearch: () => setShowSearch(true),
   });

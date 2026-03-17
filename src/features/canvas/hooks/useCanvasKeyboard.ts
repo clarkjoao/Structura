@@ -45,6 +45,7 @@ interface UseCanvasKeyboardParams {
   ) => Component;
   isPanelOpen: boolean;
   isFlowPanelOpen: boolean;
+  isPlaying?: boolean;
   isSearchOpen?: boolean;
   onOpenSearch?: () => void;
 }
@@ -192,6 +193,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     addComponent,
     isPanelOpen,
     isFlowPanelOpen,
+    isPlaying = false,
     isSearchOpen,
     onOpenSearch,
   } = params;
@@ -246,8 +248,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
         return;
       }
 
-      // Block shortcuts when flow panel is open
-      if (isFlowPanelOpen) return;
+      // Block shortcuts when flow panel is open or when playing a flow
+      if (isFlowPanelOpen || isPlaying) return;
 
       // Block all other canvas shortcuts while search is open
       if (isSearchOpen) return;
@@ -377,6 +379,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     reactFlowWrapperRef,
     isRecording,
     isFlowPanelOpen,
+    isPlaying,
     isSearchOpen,
     onRecordUndo,
     handleCopyPaste,
