@@ -10,7 +10,7 @@ export const panelDescriptor: NodeTypeDescriptor = {
   matches: isPanelType,
   zIndex: -1,
   connectable: false,
-  canHaveParent: false,
+  canHaveParent: true,
   canBeParent: true,
 
   buildData: (comp, ctx) => {
@@ -24,6 +24,7 @@ export const panelDescriptor: NodeTypeDescriptor = {
       awsIconName: def.awsIconName,
       panelColor: comp.panelColor,
       panelOpacity: comp.panelOpacity,
+      borderStyle: comp.borderStyle ?? "solid",
       isSelected: ctx.selectedNodeId === comp.id,
       isDragTarget: ctx.dragTargetPanelId === comp.id,
       isUnparentCandidate: ctx.unparentCandidatePanelId === comp.id,

@@ -1,12 +1,29 @@
 import { useCallback, useRef, useState } from "react";
 import type { Node, OnNodesChange, NodeChange } from "@xyflow/react";
 import type { Diagram } from "@/features/diagram";
+import type { Component } from "@/features/diagram";
 import { isPanelComponent, isNoteComponent, isEndpointComponent, isPanelType, isEndpointType } from "@/features/diagram";
 import {
   isOutsideParentBounds,
   findPanelContainingPoint,
   toAbsolutePosition,
 } from "../models/panelParenting";
+
+/** Collect all descendant ids of a panel (recursive). */
+function getDescendantIds(panelId: string, components: Record<string, Component>): Set<string> {
+  const out = new Set<string>();
+  const stack = [panelId];
+  while (stack.length > 0) {
+    const id = stack.pop()!;
+    for (const c of Object.values(components)) {
+      if (c.parentId === id) {
+        out.add(c.id);
+        stack.push(c.id);
+      }
+    }
+  }
+  return out;
+}
 
 interface UseNodeDragParentingParams {
   diagram: Diagram | null | undefined;
@@ -48,7 +65,13 @@ export function useNodeDragParenting({
         return;
       }
 
-      if (!comp || isPanelComponent(comp) || isNoteComponent(comp) || isEndpointComponent(comp)) return;
+      if (!comp || isNoteComponent(comp) || isEndpointComponent(comp)) return;
+      if (isPanelComponent(comp)) {
+        const hasChildren = Object.values(diagram?.snapshot.components ?? {}).some(
+          (c) => c.parentId === comp.id,
+        );
+        if (hasChildren) return;
+      }
 
       let absX = change.position.x;
       let absY = change.position.y;
@@ -106,8 +129,15 @@ export function useNodeDragParenting({
     (_: unknown, draggedNode: Node) => {
       setUnparentCandidatePanelId(null);
       const nodeType = typeof draggedNode.type === "string" ? draggedNode.type : "";
-      if (isPanelType(nodeType)) return;
       if (isEndpointType(nodeType)) return;
+
+      const components = diagram?.snapshot.components ?? {};
+      const isDraggedPanel = isPanelType(nodeType);
+      if (isDraggedPanel) {
+        const descendantIds = getDescendantIds(draggedNode.id, components);
+        const match = findPanelContainingPoint(nodes, draggedNode.position.x, draggedNode.position.y);
+        if (match && descendantIds.has(match.id)) return;
+      }
 
       const parent = draggedNode.parentId
         ? nodes.find((n) => n.id === draggedNode.parentId)
@@ -126,15 +156,13 @@ export function useNodeDragParenting({
       const match = findPanelContainingPoint(nodes, draggedNode.position.x, draggedNode.position.y);
       if (match) {
         setParent(draggedNode.id, match.id);
-
-        console.log(draggedNode.position.x, match.position.x, draggedNode.position.x - match.position.x)
         updateNodeLayout(draggedNode.id, {
           x: draggedNode.position.x - match.position.x,
           y: draggedNode.position.y - match.position.y,
         });
       }
     },
-    [nodes, setParent, updateNodeLayout],
+    [diagram, nodes, setParent, updateNodeLayout],
   );
 
   return { dragTargetPanelId, unparentCandidatePanelId, onNodesChange, onNodeDragStop };

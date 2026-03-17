@@ -6,7 +6,7 @@ import type {
   Component,
   ServiceDefinition,
 } from "@/features/diagram";
-import { isPanelType } from "@/features/diagram";
+import { isPanelType, isPanelComponent } from "@/features/diagram";
 import { getViewportCenter } from "../viewport-utils";
 import { useRecordingMode } from "../flow/RecordingModeContext";
 import { exportDrawio } from "@/lib/export-service";
@@ -31,6 +31,8 @@ interface UseCanvasKeyboardParams {
   removeConnection: (id: string) => void;
   groupNodes: (ids: string[]) => string | null;
   ungroupNodes: (panelId: string) => void;
+  setParent: (childId: string, parentId: string | null) => void;
+  updateNodeLayout: (elementId: string, position: { x: number; y: number }, dimensions?: { width: number; height: number }) => void;
   copyToClipboard: (ids: string[]) => void;
   pasteFromClipboard: (position?: { x: number; y: number }) => void;
   clearClipboard: () => void;
@@ -182,6 +184,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     removeConnection,
     groupNodes,
     ungroupNodes,
+    setParent,
+    updateNodeLayout,
     copyToClipboard,
     pasteFromClipboard,
     clearClipboard,
@@ -301,12 +305,29 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
         return;
       }
 
-      // Cmd/Ctrl+Shift+G — ungroup panel
+      // Cmd/Ctrl+Shift+G — ungroup panel or remove from group
       if (mod && e.shiftKey && e.key === KEY.G) {
         e.preventDefault();
-        const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
-        if (selected.length === 1 && isPanelType(selected[0].type as string)) {
-          ungroupNodes(selected[0].id);
+        const selected = getSelectedNodes(reactFlowInstance, selectedNodeId);
+        if (selected.length === 1) {
+          const node = selected[0];
+          if (isPanelType(node.type as string)) {
+            ungroupNodes(node.id);
+          } else {
+            const comp = diagram.snapshot.components[node.id];
+            const parentComp = comp?.parentId ? diagram.snapshot.components[comp.parentId] : undefined;
+            if (comp?.parentId && parentComp && isPanelComponent(parentComp)) {
+              const parentLayout = diagram.nodeLayouts[comp.parentId];
+              const childLayout = diagram.nodeLayouts[node.id];
+              if (parentLayout && childLayout) {
+                setParent(node.id, null);
+                updateNodeLayout(node.id, {
+                  x: childLayout.x + parentLayout.x,
+                  y: childLayout.y + parentLayout.y,
+                });
+              }
+            }
+          }
         }
         return;
       }
@@ -368,6 +389,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     removeConnection,
     groupNodes,
     ungroupNodes,
+    setParent,
+    updateNodeLayout,
     copyToClipboard,
     pasteFromClipboard,
     undo,

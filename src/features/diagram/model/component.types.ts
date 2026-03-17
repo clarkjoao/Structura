@@ -49,6 +49,7 @@ export interface PanelComponent extends BaseComponent {
   panelKind?: PanelKind;
   panelColor?: string;
   panelOpacity?: number;
+  borderStyle?: "solid" | "dashed" | "dotted";
   collapsed?: boolean;
   collapsedWidth?: number;
   collapsedHeight?: number;

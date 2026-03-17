@@ -198,6 +198,8 @@ const Canvas = ({
     removeConnection: actions.removeConnection,
     groupNodes: actions.groupNodes,
     ungroupNodes: actions.ungroupNodes,
+    setParent: actions.setParent,
+    updateNodeLayout: actions.updateNodeLayout,
     copyToClipboard: actions.copyToClipboard,
     pasteFromClipboard: actions.pasteFromClipboard,
     clearClipboard: actions.clearClipboard,

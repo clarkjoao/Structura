@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import debounce from "lodash.debounce";
 import { X, Trash2, Link2, LayoutDashboard, RefreshCw } from "lucide-react";
 import { useAllDiagrams, useActiveDiagram, useAllServices, useDiagramActions } from "@/features/diagram";
-import type { Component, ComponentType, ServiceDefinition} from "@/features/diagram";
+import type { Component, ComponentPatch, ComponentType, ServiceDefinition } from "@/features/diagram";
 import { isPanelComponent, isNoteComponent, isC4Component, isSystemType, isContainerType } from "@/features/diagram";
 import { isAwsType, AWS_CATEGORIES, AWS_CATEGORY_MAP, AWS_SERVICE_MAP } from "@/lib/catalogs/aws";
 import { PANEL_KINDS, getPanelKindDef } from "@/lib/catalogs/panels";
@@ -59,7 +59,7 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
   const allDiagrams = useAllDiagrams();
   const allServices = useAllServices();
   const activeDiagram = useActiveDiagram();
-  const { linkComponentToService, linkComponentToDiagram, addDiagram } = useDiagramActions();
+  const { linkComponentToService, linkComponentToDiagram, addDiagram, setParent, updateNodeLayout } = useDiagramActions();
   const [tab, setTab] = useState<Tab>("details");
   const [name, setName] = useState(component.name);
   const [desc, setDesc] = useState(component.description);
@@ -80,6 +80,20 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
     () => allServices.find((service) => service.id === component.serviceId) ?? null,
     [allServices, component.serviceId],
   );
+  const parentComp = component.parentId ? activeDiagram?.snapshot.components[component.parentId] : undefined;
+  const isChildOfPanel = !!component.parentId && parentComp && isPanelComponent(parentComp);
+  const handleRemoveFromGroup = () => {
+    if (!component.parentId || !setParent || !updateNodeLayout || !activeDiagram) return;
+    const childLayout = activeDiagram.nodeLayouts[component.id];
+    const parentLayout = activeDiagram.nodeLayouts[component.parentId];
+    setParent(component.id, null);
+    if (childLayout && parentLayout) {
+      updateNodeLayout(component.id, {
+        x: childLayout.x + parentLayout.x,
+        y: childLayout.y + parentLayout.y,
+      });
+    }
+  };
 
   const debouncedUpdate = useMemo(() => debounce((patch: Partial<Omit<Component, "id">>) => { updateComponent(component.id, patch); }, 300), [component.id, updateComponent]);
   useEffect(() => () => debouncedUpdate.cancel(), [debouncedUpdate]);
@@ -122,6 +136,13 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
       {isPanel && onUngroup && (
         <div className="px-3 py-2 border-b border-border">
           <button type="button" onClick={onUngroup} className="w-full inline-flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50">Desagrupar</button>
+        </div>
+      )}
+      {isChildOfPanel && (
+        <div className="px-3 py-2 border-b border-border">
+          <button type="button" onClick={handleRemoveFromGroup} className="w-full inline-flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50" title="Remover do grupo (⌘⇧G)">
+            ↗ Remover do grupo
+          </button>
         </div>
       )}
       {!isSimple && <TabBar active={tab} onChange={setTab} />}
@@ -181,7 +202,7 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
                     updateComponent(component.id, {
                       panelKind: kind,
                       panelColor: def.defaultColor,
-                    });
+                    } as ComponentPatch);
                   }}
                   className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                 >
@@ -193,6 +214,20 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
                 </select>
               </div>
               <PanelColorPicker componentId={component.id} currentColor={component.panelColor ?? getPanelKindDef(component.panelKind).defaultColor} currentOpacity={component.panelOpacity ?? DEFAULT_PANEL_OPACITY} updateComponent={updateComponent} />
+              <div>
+                <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+                  Borda
+                </label>
+                <select
+                  value={component.borderStyle ?? "solid"}
+                  onChange={(e) => updateComponent(component.id, { borderStyle: e.target.value as "solid" | "dashed" | "dotted" } as ComponentPatch)}
+                  className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  <option value="solid">Sólida</option>
+                  <option value="dashed">Tracejada</option>
+                  <option value="dotted">Pontilhada</option>
+                </select>
+              </div>
             </>
           )}
           {isNoteComponent(component) && <ColorSwatches componentId={component.id} currentColor={component.panelColor ?? DEFAULT_NOTE_COLOR} label="Cor da Nota" presetGroup="note" updateComponent={updateComponent} />}

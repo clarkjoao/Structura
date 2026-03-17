@@ -23,16 +23,16 @@ const PanelColorPicker = ({ componentId, currentColor, currentOpacity, updateCom
       </label>
       <input
         type="range"
-        min={5}
-        max={40}
+        min={0}
+        max={100}
         step={1}
         value={currentOpacity}
         onChange={(e) => updateComponent(componentId, { panelOpacity: Number(e.target.value) })}
         className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
       />
       <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5">
-        <span>5%</span>
-        <span>40%</span>
+        <span>0%</span>
+        <span>100%</span>
       </div>
     </div>
   </div>
