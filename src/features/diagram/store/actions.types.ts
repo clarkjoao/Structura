@@ -15,6 +15,7 @@ import type { ServiceDefinition } from "../model/service.types";
 export interface AppActions {
   addDiagram: (name: string, level: Level, domain?: string, folderId?: string | null) => Diagram;
   openDiagram: (id: string) => void;
+  updateDiagram: (id: string, patch: Partial<Pick<Diagram, "name" | "domain">>) => void;
   deleteDiagram: (id: string) => void;
   addFolder: (name: string, parentId: string | null, domain?: string) => Folder;
   renameFolder: (id: string, name: string) => void;

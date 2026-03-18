@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import ElementPickerModal from "./ElementPickerModal";
 import {
   Plus,
@@ -55,7 +55,7 @@ const CanvasToolbar = ({
   onClearSelection?: () => void;
 }) => {
   const diagram = useActiveDiagram();
-  const { addComponent } = useDiagramActions();
+  const { addComponent, updateDiagram } = useDiagramActions();
   const rfInstance = useReactFlow();
   const { isRecording } = useRecordingMode();
   const { isPlaying } = useFlowPlayback();
@@ -65,6 +65,25 @@ const CanvasToolbar = ({
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [showPatterns, setShowPatterns] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editNameValue, setEditNameValue] = useState("");
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditingName && nameInputRef.current) {
+      nameInputRef.current.focus();
+      nameInputRef.current.select();
+    }
+  }, [isEditingName]);
+
+  const commitRename = () => {
+    if (!diagram) return;
+    const trimmed = editNameValue.trim();
+    if (trimmed && trimmed !== diagram.name) {
+      updateDiagram(diagram.id, { name: trimmed });
+    }
+    setIsEditingName(false);
+  };
 
   const handleAddC4 = (type: ComponentType) => {
     const name = `Novo ${type.charAt(0).toUpperCase() + type.slice(1)}`;
@@ -88,9 +107,36 @@ const CanvasToolbar = ({
   return (
     <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
       <div className="flex items-center gap-2 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2">
-        <Layers className="h-3.5 w-3.5 text-primary" />
-        <span className="text-xs font-semibold">{diagram.name}</span>
-        <span className="text-[10px] font-mono text-muted-foreground rounded bg-secondary px-1.5 py-0.5">
+        <Layers className="h-3.5 w-3.5 text-primary shrink-0" />
+        {isEditingName ? (
+          <input
+            ref={nameInputRef}
+            type="text"
+            value={editNameValue}
+            onChange={(e) => setEditNameValue(e.target.value)}
+            onBlur={commitRename}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commitRename();
+              if (e.key === "Escape") {
+                setEditNameValue(diagram.name);
+                setIsEditingName(false);
+              }
+            }}
+            className="text-xs font-semibold bg-transparent border-b border-primary/50 outline-none min-w-[80px] max-w-[200px]"
+          />
+        ) : (
+          <span
+            onDoubleClick={() => {
+              setEditNameValue(diagram.name);
+              setIsEditingName(true);
+            }}
+            className="text-xs font-semibold cursor-pointer select-none hover:text-primary/80"
+            title="Clique duas vezes para renomear"
+          >
+            {diagram.name}
+          </span>
+        )}
+        <span className="text-[10px] font-mono text-muted-foreground rounded bg-secondary px-1.5 py-0.5 shrink-0">
           {levelLabels[diagram.level]}
         </span>
         {selectedCount > 1 && (

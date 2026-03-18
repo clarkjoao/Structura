@@ -34,6 +34,16 @@ export const diagramsSlice = (
       });
     },
   
+    updateDiagram: (id: string, patch: { name?: string; domain?: string }) => {
+      set((s) => {
+        const d = s.diagrams[id];
+        if (!d) return;
+        if (patch.name !== undefined) d.name = patch.name.trim() || d.name;
+        if (patch.domain !== undefined) d.domain = patch.domain;
+        d.updatedAt = new Date().toISOString();
+      });
+    },
+
     deleteDiagram: (id: string) => {
       const state = get();
       const diagram = state.diagrams[id];

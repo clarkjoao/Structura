@@ -51,6 +51,7 @@ export const useDiagramActions = () =>
     useShallow((s) => ({
       addDiagram: s.addDiagram,
       openDiagram: s.openDiagram,
+      updateDiagram: s.updateDiagram,
       deleteDiagram: s.deleteDiagram,
       addFolder: s.addFolder,
       renameFolder: s.renameFolder,
