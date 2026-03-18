@@ -1,3 +1,4 @@
+import { SEED_FOLDERS } from "@/fixtures/seed";
 import type { Folder } from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
@@ -7,7 +8,7 @@ export function foldersSlice(
   get: () => AppState,
 ) {
   return {
-  folders: {},
+  folders: import.meta.env.VITE_DISABLE_SEEDS === "true" ? {} : SEED_FOLDERS,
 
   addFolder: (name, parentId, domain) => {
     const folder: Folder = {

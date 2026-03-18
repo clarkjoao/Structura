@@ -8,7 +8,7 @@ export const diagramsSlice = (
     set: (fn: (state: AppState) => void) => void,
     get: () => AppState,
 ) => ({
-    diagrams: SEED_DIAGRAMS,
+    diagrams: import.meta.env.VITE_DISABLE_SEEDS === "true" ? {} : SEED_DIAGRAMS,
     activeDiagramId: null,
   
     addDiagram: (name: string, level: Level, domain?: string, folderId?: string | null) => {

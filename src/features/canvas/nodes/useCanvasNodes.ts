@@ -90,13 +90,18 @@ export function useCanvasNodes({
       onAddEndpointToGroup,
     };
     return [...visibleComponents]
-      .sort((a, b) =>
-        isPanelComponent(a) || isApiGroupComponent(a)
-          ? -1
-          : isPanelComponent(b) || isApiGroupComponent(b)
-            ? 1
-            : 0,
-      )
+      .sort((a, b) => {
+        const aIsGroup = isPanelComponent(a) || isApiGroupComponent(a);
+        const bIsGroup = isPanelComponent(b) || isApiGroupComponent(b);
+        if (aIsGroup && !bIsGroup) return -1;
+        if (!aIsGroup && bIsGroup) return 1;
+        // Among groups, parents must come before children
+        if (aIsGroup && bIsGroup) {
+          if (b.parentId === a.id) return -1;
+          if (a.parentId === b.id) return 1;
+        }
+        return 0;
+      })
       .map((comp): Node => {
         const d = getDescriptor(comp.type);
         const layout = diagram.nodeLayouts[comp.id];

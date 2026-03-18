@@ -246,7 +246,28 @@ export class FileSystemAdapter {
       const dir = await getOrCreateDirectory(this.handle, segments);
       await dir.removeEntry(`${diagramId}.json`);
     } catch {
-      /* already gone */
+      // Fallback: logical delete by overwriting the file with a tombstone payload.
+      // This prevents the diagram from being re-imported on the next sync if physical deletion fails.
+      try {
+        const segments = diagram
+          ? resolveDiagramPathSegments(diagram, this.folders)
+          : [];
+        const dir = await getOrCreateDirectory(this.handle, segments);
+        const file = await dir.getFileHandle(`${diagramId}.json`, {
+          create: true,
+        });
+        const writable = await file.createWritable();
+        await writable.write(
+          JSON.stringify(
+            { deleted: true, id: diagramId, deletedAt: new Date().toISOString() },
+            null,
+            2
+          )
+        );
+        await writable.close();
+      } catch {
+        /* ignore */
+      }
     }
   }
 

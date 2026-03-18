@@ -29,6 +29,20 @@ export function useFileSystemStorage() {
   );
   const [pendingMerge, setPendingMerge] = useState(false);
   const [pendingDisconnect, setPendingDisconnect] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+
+  const clearStore = useCallback(() => {
+    useDiagramStore.setState({
+      diagrams: {},
+      folders: {},
+      serviceRegistry: {},
+      activeDiagramId: null,
+      past: [],
+      future: [],
+      _lastUndoRedoAt: 0,
+      clipboard: null,
+    });
+  }, []);
 
   // Silent reconnect on mount
   useEffect(() => {
@@ -154,15 +168,65 @@ export function useFileSystemStorage() {
   }, []);
 
   const confirmDisconnectWithBackup = useCallback(async () => {
-    const state = useDiagramStore.getState();
-    const toSave = partializeState(state);
-    await defaultStorage.forceSave(PERSIST_KEY, toSave);
-    await performDisconnect();
+    try {
+      const state = useDiagramStore.getState();
+      const toSave = partializeState(state);
+      await defaultStorage.forceSave(PERSIST_KEY, toSave);
+
+      const saved = await defaultStorage.getItem(PERSIST_KEY);
+      if (saved === null) {
+        setStatus("error");
+        setPendingDisconnect(false);
+        return;
+      }
+
+      await performDisconnect();
+    } catch {
+      setStatus("error");
+      setPendingDisconnect(false);
+    }
   }, [performDisconnect]);
 
   const confirmDisconnectWithoutBackup = useCallback(async () => {
+    clearStore();
+    await defaultStorage.delete(PERSIST_KEY);
     await performDisconnect();
-  }, [performDisconnect]);
+  }, [clearStore, performDisconnect]);
+
+  const syncFromFolder = useCallback(async () => {
+    if (!fileSystemAdapter.isConnected) return;
+    setSyncing(true);
+    try {
+      // Prefer manifest-based load (supports deletions).
+      const workspace = await fileSystemAdapter.loadWorkspace();
+      if (workspace) {
+        useDiagramStore.setState((s) => ({
+          ...s,
+          diagrams: workspace.diagrams as any,
+          serviceRegistry: workspace.serviceRegistry as any,
+          folders: workspace.folders as any,
+          activeDiagramId: workspace.activeDiagramId,
+          past: [],
+          future: [],
+        }));
+        fileSystemAdapter.setFolders(workspace.folders as any);
+      } else {
+        // No manifest: fall back to scanning diagrams only.
+        const scan = await fileSystemAdapter.scanWorkspace();
+        const validDiagrams = Object.fromEntries(scan.valid.map((d) => [d.id, d]));
+        useDiagramStore.setState((s) => ({
+          ...s,
+          diagrams: validDiagrams as any,
+          past: [],
+          future: [],
+        }));
+      }
+    } catch {
+      setStatus("error");
+    } finally {
+      setSyncing(false);
+    }
+  }, []);
 
   const cancelDisconnect = useCallback(() => {
     setPendingDisconnect(false);
@@ -172,6 +236,8 @@ export function useFileSystemStorage() {
     status,
     folderName,
     connect,
+    syncFromFolder,
+    syncing,
     requestDisconnect,
     confirmDisconnectWithBackup,
     confirmDisconnectWithoutBackup,

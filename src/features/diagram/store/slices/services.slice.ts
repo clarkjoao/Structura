@@ -7,7 +7,7 @@ export const servicesSlice = (
   set: (fn: (state: AppState) => void) => void,
   get: () => AppState,
 ) => ({
-    serviceRegistry: SEED_SERVICE_REGISTRY,
+    serviceRegistry: import.meta.env.VITE_DISABLE_SEEDS === "true" ? {} : SEED_SERVICE_REGISTRY,
   
     addService: (service: Omit<ServiceDefinition, "id">): ServiceDefinition => {
       const svc: ServiceDefinition = { ...service, id: generateId("svc") };

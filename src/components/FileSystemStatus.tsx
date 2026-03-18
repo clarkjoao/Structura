@@ -1,4 +1,4 @@
-import { FolderOpen, FolderX, Loader2, HardDrive, Database } from "lucide-react";
+import { FolderOpen, FolderX, Loader2, HardDrive, Database, RefreshCw } from "lucide-react";
 import {
   useFileSystemStorage,
   isFileSystemSupported,
@@ -13,6 +13,8 @@ export function FileSystemStatus() {
     status,
     folderName,
     connect,
+    syncFromFolder,
+    syncing,
     requestDisconnect,
     confirmDisconnectWithBackup,
     confirmDisconnectWithoutBackup,
@@ -47,6 +49,14 @@ export function FileSystemStatus() {
               </span>
             )}
           </div>
+          <button
+            onClick={syncFromFolder}
+            disabled={syncing}
+            className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+            title="Sync: puxar atualizações da pasta"
+          >
+            <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
+          </button>
           <button
             onClick={requestDisconnect}
             className="text-muted-foreground hover:text-foreground transition-colors"
