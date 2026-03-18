@@ -41,7 +41,7 @@ export function WorkspaceMergeDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-background/60 backdrop-blur-sm h-screen"
       onClick={onCancel}
     >
       <motion.div
@@ -128,8 +128,8 @@ export function WorkspaceMergeDialog({
           <div className="mb-4 flex items-start gap-2 text-[11px] text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-md px-3 py-2">
             <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
             <span>
-              {conflictCount} diagrama(s) já existem localmente. Em caso de
-              conflito, a versão da pasta será utilizada no merge.
+              {conflictCount} diagrama(s) já existem localmente (localStorage). Em caso de
+              conflito, a versão da pasta será priorizada sobre a versão local (localStorage) no merge.
             </span>
           </div>
         )}
@@ -140,21 +140,21 @@ export function WorkspaceMergeDialog({
             onClick={onCancel}
             className="rounded-md border border-border px-3 py-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
           >
-            Cancelar
+            Cancelar e manter local storage
           </button>
           <button
             onClick={onOverwriteLocal}
             className="rounded-md border border-destructive/40 px-3 py-1.5 text-[12px] font-medium text-destructive hover:bg-destructive/10 transition-colors"
-            title="Remove diagramas locais não presentes na pasta"
+            title="Descartar diagramas que estão só no app e carregar apenas os que estão na pasta"
           >
-            Substituir dados locais
+            Usar arquivos só pasta
           </button>
           <button
             onClick={onMerge}
             className="rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-            title="Mantém diagramas locais e adiciona os da pasta"
+            title="Manter os diagramas que já estão no app e adicionar os que estão na pasta"
           >
-            Mesclar com dados locais
+            Manter tudo (localStorage + pasta) e fazer merge
           </button>
         </div>
       </motion.div>

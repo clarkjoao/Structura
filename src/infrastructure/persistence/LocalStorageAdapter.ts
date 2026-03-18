@@ -7,6 +7,9 @@ const KEY_PREFIX = "structura_";
  * Implementa IStoragePort e pode ser usado pelo middleware persist do Zustand.
  */
 export class LocalStorageAdapter implements IStoragePort {
+  /** When true, setItem/save become no-ops (used when FileSystem storage is active). */
+  paused = false;
+
   constructor(private readonly prefix: string = KEY_PREFIX) {}
 
   private key(k: string): string {
@@ -43,6 +46,7 @@ export class LocalStorageAdapter implements IStoragePort {
   }
 
   async setItem(key: string, value: string): Promise<void> {
+    if (this.paused) return;
     try {
       localStorage.setItem(this.key(key), value);
     } catch {
@@ -65,6 +69,19 @@ export class LocalStorageAdapter implements IStoragePort {
     const value =
       typeof data === "string" ? data : JSON.stringify(data);
     await this.setItem(key, value);
+  }
+
+  /**
+   * Write data to localStorage even when paused (e.g. backup from memory before disconnecting file system).
+   */
+  async forceSave(key: string, data: unknown): Promise<void> {
+    const value =
+      typeof data === "string" ? data : JSON.stringify(data);
+    try {
+      localStorage.setItem(this.key(key), value);
+    } catch {
+      // localStorage pode estar cheio ou indisponível
+    }
   }
 
   async load<T>(key: string): Promise<T | null> {

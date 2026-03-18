@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { fileSystemAdapter } from "./FileSystemAdapter";
 import type { WorkspaceScanResult } from "./FileSystemAdapter";
 import { useDiagramStore } from "@/features/diagram";
+import { partializeState, PERSIST_KEY } from "@/features/diagram/store/persist.config";
+import { defaultStorage } from "./LocalStorageAdapter";
 
 export type FsStatus = "disconnected" | "connecting" | "connected" | "error";
 
@@ -26,12 +28,14 @@ export function useFileSystemStorage() {
     null
   );
   const [pendingMerge, setPendingMerge] = useState(false);
+  const [pendingDisconnect, setPendingDisconnect] = useState(false);
 
   // Silent reconnect on mount
   useEffect(() => {
     if (!isFileSystemSupported) return;
     fileSystemAdapter.tryReconnect().then((ok) => {
       if (ok) {
+        defaultStorage.paused = true;
         setStatus("connected");
         setFolderName(fileSystemAdapter.folderName);
         fileSystemAdapter.setFolders(useDiagramStore.getState().folders);
@@ -70,12 +74,14 @@ export function useFileSystemStorage() {
         await fileSystemAdapter.writeDiagram(diagram);
       }
       await fileSystemAdapter.writeManifest(buildManifest(state));
+      defaultStorage.paused = true;
       setStatus("connected");
       return;
     }
 
     if (scan.valid.length === 0) {
       // Folder has files but none are valid diagrams — just connect
+      defaultStorage.paused = true;
       setStatus("connected");
       return;
     }
@@ -83,6 +89,7 @@ export function useFileSystemStorage() {
     // Folder has valid diagrams — show merge dialog
     setScanResult(scan);
     setPendingMerge(true);
+    defaultStorage.paused = true;
     setStatus("connected");
   }, []);
 
@@ -127,23 +134,49 @@ export function useFileSystemStorage() {
 
   const cancelMerge = useCallback(async () => {
     await fileSystemAdapter.disconnect();
+    defaultStorage.paused = false;
     setScanResult(null);
     setPendingMerge(false);
     setStatus("disconnected");
     setFolderName(null);
   }, []);
 
-  const disconnect = useCallback(async () => {
+  const requestDisconnect = useCallback(() => {
+    setPendingDisconnect(true);
+  }, []);
+
+  const performDisconnect = useCallback(async () => {
     await fileSystemAdapter.disconnect();
+    defaultStorage.paused = false;
     setStatus("disconnected");
     setFolderName(null);
+    setPendingDisconnect(false);
+  }, []);
+
+  const confirmDisconnectWithBackup = useCallback(async () => {
+    const state = useDiagramStore.getState();
+    const toSave = partializeState(state);
+    await defaultStorage.forceSave(PERSIST_KEY, toSave);
+    await performDisconnect();
+  }, [performDisconnect]);
+
+  const confirmDisconnectWithoutBackup = useCallback(async () => {
+    await performDisconnect();
+  }, [performDisconnect]);
+
+  const cancelDisconnect = useCallback(() => {
+    setPendingDisconnect(false);
   }, []);
 
   return {
     status,
     folderName,
     connect,
-    disconnect,
+    requestDisconnect,
+    confirmDisconnectWithBackup,
+    confirmDisconnectWithoutBackup,
+    cancelDisconnect,
+    pendingDisconnect,
     scanResult,
     pendingMerge,
     confirmMerge,

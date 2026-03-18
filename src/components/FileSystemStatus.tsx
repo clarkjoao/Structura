@@ -1,9 +1,10 @@
-import { FolderOpen, FolderX, Loader2, HardDrive } from "lucide-react";
+import { FolderOpen, FolderX, Loader2, HardDrive, Database } from "lucide-react";
 import {
   useFileSystemStorage,
   isFileSystemSupported,
 } from "@/infrastructure/persistence/useFileSystemStorage";
 import { WorkspaceMergeDialog } from "@/infrastructure/persistence/WorkspaceMergeDialog";
+import { DisconnectConfirmDialog } from "@/infrastructure/persistence/DisconnectConfirmDialog";
 import { useDiagramStore } from "@/features/diagram";
 import { useShallow } from "zustand/react/shallow";
 
@@ -12,7 +13,11 @@ export function FileSystemStatus() {
     status,
     folderName,
     connect,
-    disconnect,
+    requestDisconnect,
+    confirmDisconnectWithBackup,
+    confirmDisconnectWithoutBackup,
+    cancelDisconnect,
+    pendingDisconnect,
     scanResult,
     pendingMerge,
     confirmMerge,
@@ -43,7 +48,7 @@ export function FileSystemStatus() {
             )}
           </div>
           <button
-            onClick={disconnect}
+            onClick={requestDisconnect}
             className="text-muted-foreground hover:text-foreground transition-colors"
             title="Desconectar pasta"
           >
@@ -60,16 +65,26 @@ export function FileSystemStatus() {
       )}
 
       {status === "disconnected" && (
-        <button
-          onClick={connect}
-          className="flex items-center gap-1.5 rounded-md border border-border
-            px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground
-            hover:text-foreground hover:border-primary/40 transition-all"
-          title="Sincronizar com pasta local"
-        >
-          <FolderOpen className="h-3.5 w-3.5" />
-          Conectar pasta
-        </button>
+        <div className="flex items-center gap-2">
+          <div
+            className="flex items-center gap-1.5 rounded-md border border-amber-500/30
+              bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-medium text-amber-400"
+            title="Dados salvos no navegador (localStorage)"
+          >
+            <Database className="h-3.5 w-3.5" />
+            <span>localStorage</span>
+          </div>
+          <button
+            onClick={connect}
+            className="flex items-center gap-1.5 rounded-md border border-border
+              px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground
+              hover:text-foreground hover:border-primary/40 transition-all"
+            title="Sincronizar com pasta local"
+          >
+            <FolderOpen className="h-3.5 w-3.5" />
+            Conectar pasta
+          </button>
+        </div>
       )}
 
       {pendingMerge && scanResult && (
@@ -79,6 +94,15 @@ export function FileSystemStatus() {
           onMerge={confirmMerge}
           onOverwriteLocal={confirmOverwrite}
           onCancel={cancelMerge}
+        />
+      )}
+
+      {pendingDisconnect && (
+        <DisconnectConfirmDialog
+          folderName={folderName}
+          onKeepCopy={confirmDisconnectWithBackup}
+          onDisconnectOnly={confirmDisconnectWithoutBackup}
+          onCancel={cancelDisconnect}
         />
       )}
     </>
