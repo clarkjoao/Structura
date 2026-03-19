@@ -5,6 +5,25 @@ import { mapToServiceDefinition } from "../defectdojo.service";
 import type { DDSearchResult } from "../types";
 import { DefectDojoProductCard } from "./DefectDojoProductCard";
 
+function dedupeStringsPreserveOrder(values: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const v of values) {
+    const key = v.trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(key);
+  }
+  return out;
+}
+
+function pickMoreCompleteString(a: string, b: string): string {
+  const la = a?.trim().length ?? 0;
+  const lb = b?.trim().length ?? 0;
+  if (la === lb) return a || b;
+  return la > lb ? a : b;
+}
+
 interface Props {
   results: DDSearchResult[];
   loading: boolean;
@@ -63,9 +82,53 @@ export function DefectDojoResultsList({
       if (product.status === "updated" && product.existingServiceId) {
         store.updateService(product.existingServiceId, svcData);
         updatedCount++;
+        continue;
       } else {
-        store.addService(svcData);
-        importedCount++;
+        // If the same repo is already imported from GitHub, merge into it.
+        const repositoryUrl = svcData.repositoryUrl?.trim();
+        const githubExisting =
+          repositoryUrl &&
+          Object.values(store.serviceRegistry).find(
+            (s) =>
+              s.source === "github" && s.repositoryUrl?.trim() === repositoryUrl,
+          );
+
+        if (githubExisting) {
+          const prevGithubMeta = githubExisting.metadata?.github;
+          const prevDefectDojoMeta = githubExisting.metadata?.defectdojo;
+          const nextDefectDojoMeta = svcData.metadata?.defectdojo ?? {};
+
+          store.updateService(githubExisting.id, {
+            // preserve repositoryUrl from existing github service
+            repositoryUrl: githubExisting.repositoryUrl,
+            name: pickMoreCompleteString(svcData.name, githubExisting.name),
+            description: pickMoreCompleteString(
+              svcData.description,
+              githubExisting.description,
+            ),
+            technology: dedupeStringsPreserveOrder([
+              ...(githubExisting.technology ?? []),
+              ...(svcData.technology ?? []),
+            ]),
+            tags: dedupeStringsPreserveOrder([
+              ...(githubExisting.tags ?? []),
+              ...(svcData.tags ?? []),
+            ]),
+            source: "defectdojo",
+            sourceId: svcData.sourceId,
+            metadata: {
+              github: prevGithubMeta,
+              defectdojo: {
+                ...(prevDefectDojoMeta ?? {}),
+                ...(nextDefectDojoMeta ?? {}),
+              },
+            },
+          });
+          updatedCount++;
+        } else {
+          store.addService(svcData);
+          importedCount++;
+        }
       }
     }
 

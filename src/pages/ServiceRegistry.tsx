@@ -25,6 +25,9 @@ import {
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
+import { GithubImportPanel } from "@/integrations/github/components/GithubImportPanel";
+import { useGithubConfig } from "@/integrations/github/hooks/useGithubConfig";
+import { createGithubClient } from "@/integrations/github/githubClient";
 import {
   useAllServices,
   useDiagrams,
@@ -240,6 +243,7 @@ const GitHubImportForm = ({
   onCancel: () => void;
   onCreate: (svc: Omit<ServiceDefinition, "id">) => void;
 }) => {
+  const { config: githubConfig } = useGithubConfig();
   const [repoUrl, setRepoUrl] = useState("");
   const [owner, setOwner] = useState("");
   const [loading, setLoading] = useState(false);
@@ -256,23 +260,10 @@ const GitHubImportForm = ({
       if (!match)
         throw new Error("URL inválida. Use: https://github.com/owner/repo");
       const [, repoOwner, repoName] = match;
-      const res = await fetch(
-        `https://api.github.com/repos/${repoOwner}/${repoName}`,
-      );
-      if (!res.ok) {
-        throw new Error(
-          res.status === 404
-            ? "Repositório não encontrado"
-            : `GitHub API erro ${res.status}`,
-        );
-      }
-      const repo = (await res.json()) as {
-        name: string;
-        description: string | null;
-        html_url: string;
-        language: string | null;
-        full_name: string;
-      };
+      const apiBase = githubConfig?.baseUrl ?? "https://api.github.com";
+      const token = githubConfig?.token ?? "";
+      const client = createGithubClient(apiBase, token);
+      const repo = await client.getRepository(`${repoOwner}/${repoName}`);
       onCreate({
         name: repo.name,
         description: repo.description ?? "",
@@ -281,9 +272,14 @@ const GitHubImportForm = ({
         owner: owner.trim() || undefined,
         source: "github",
         sourceId: repo.full_name,
+        tags: repo.topics ?? [],
         metadata: {
           github: {
+            repoId: repo.id,
+            fullName: repo.full_name,
+            topics: repo.topics ?? [],
             language: repo.language,
+            updatedAt: repo.updated_at,
           },
         },
       });
@@ -484,6 +480,7 @@ const DetailPanel = ({
   removeService,
   onClose,
 }: DetailPanelProps) => {
+  const { config: githubConfig } = useGithubConfig();
   const source = (svc.source ?? "manual") as Source;
   const usage = useMemo(
     () => getServiceUsage(svc.id, diagrams),
@@ -530,24 +527,24 @@ const DetailPanel = ({
     setSyncing(true);
     try {
       if (source === "github" && svc.sourceId) {
-        const res = await fetch(`https://api.github.com/repos/${svc.sourceId}`);
-        if (!res.ok) throw new Error(`GitHub API erro ${res.status}`);
-        const repo = (await res.json()) as {
-          name: string;
-          description: string | null;
-          html_url: string;
-          language: string | null;
-        };
+        const apiBase = githubConfig?.baseUrl ?? "https://api.github.com";
+        const token = githubConfig?.token ?? "";
+        const client = createGithubClient(apiBase, token);
+        const repo = await client.getRepository(svc.sourceId);
         updateService(svc.id, {
           name: repo.name,
           description: repo.description ?? svc.description,
           repositoryUrl: repo.html_url,
           technology: repo.language ? [repo.language] : svc.technology,
           metadata: {
-            ...((svc.metadata ?? {}) as Record<string, unknown>),
             github: {
+              repoId: repo.id,
+              fullName: repo.full_name,
+              topics: repo.topics ?? [],
               language: repo.language,
+              updatedAt: repo.updated_at,
             },
+            defectdojo: svc.metadata?.defectdojo,
           },
         });
       } else if (source === "defectdojo" && svc.sourceId) {
@@ -580,7 +577,7 @@ const DetailPanel = ({
     } finally {
       setSyncing(false);
     }
-  }, [source, svc, updateService]);
+  }, [source, svc, updateService, githubConfig?.baseUrl, githubConfig?.token]);
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card">
@@ -916,6 +913,7 @@ const AddServiceDropdown = ({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const showDefectDojo = import.meta.env.VITE_ENABLE_DEFECTDOJO === "true";
+  const showGithub = import.meta.env.VITE_ENABLE_GITHUB_IMPORT === "true";
 
   useEffect(() => {
     if (!open) return;
@@ -950,12 +948,14 @@ const AddServiceDropdown = ({
           >
             <span className="text-violet-400">✦</span> Criar manualmente
           </button>
-          <button
-            onClick={() => select("github")}
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted/50 text-foreground text-left"
-          >
-            <span className="text-blue-400">⌥</span> Importar do GitHub
-          </button>
+          {showGithub && (
+            <button
+              onClick={() => select("github")}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted/50 text-foreground text-left"
+            >
+              <span className="text-blue-400">⌥</span> Importar do GitHub
+            </button>
+          )}
           {showDefectDojo && (
             <button
               onClick={() => select("defectdojo")}
@@ -987,8 +987,71 @@ const ServiceRegistry = () => {
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
   const [inlineForm, setInlineForm] = useState<InlineForm>(null);
   const [showDefectDojo, setShowDefectDojo] = useState(false);
+  const showGithub = import.meta.env.VITE_ENABLE_GITHUB_IMPORT === "true";
+  const {
+    config: githubConfig,
+    saveConfig: saveGithubConfig,
+    clearConfig: clearGithubConfig,
+    isConfigured: isGithubConfigured,
+  } = useGithubConfig();
+  const [githubBaseUrl, setGithubBaseUrl] = useState("https://api.github.com");
+  const [githubToken, setGithubToken] = useState("");
+  const [githubConnectError, setGithubConnectError] = useState("");
+  const [githubConnecting, setGithubConnecting] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedFromQuery = searchParams.get("serviceId");
+
+  useEffect(() => {
+    if (githubConfig?.baseUrl) setGithubBaseUrl(githubConfig.baseUrl);
+  }, [githubConfig?.baseUrl]);
+
+  const handleGithubConnect = useCallback(async () => {
+    const baseUrl = githubBaseUrl.trim().replace(/\/+$/, "");
+    const token = githubToken.trim();
+    if (!baseUrl) {
+      setGithubConnectError("Informe um Base URL.");
+      return;
+    }
+    if (!token) {
+      setGithubConnectError("Informe um Personal Access Token.");
+      return;
+    }
+
+    setGithubConnecting(true);
+    setGithubConnectError("");
+    try {
+      const res = await fetch(`${baseUrl}/user`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+      });
+
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          throw new Error("Token inválido ou sem permissão.");
+        }
+        throw new Error(`GitHub API erro ${res.status}`);
+      }
+
+      await saveGithubConfig({ baseUrl, token });
+      setGithubToken("");
+    } catch (err) {
+      setGithubConnectError(
+        err instanceof Error ? err.message : "Erro ao conectar com GitHub",
+      );
+    } finally {
+      setGithubConnecting(false);
+    }
+  }, [githubBaseUrl, githubToken, saveGithubConfig]);
+
+  const handleGithubDisconnect = useCallback(async () => {
+    await clearGithubConfig();
+    setGithubToken("");
+    setGithubConnectError("");
+  }, [clearGithubConfig]);
 
   const filtered = useMemo(() => {
     let result = services;
@@ -1149,7 +1212,7 @@ const ServiceRegistry = () => {
                 onCreate={handleCreate}
               />
             )}
-            {inlineForm === "github" && (
+            {showGithub && inlineForm === "github" && (
               <GitHubImportForm
                 key="github"
                 onCancel={() => setInlineForm(null)}
@@ -1179,6 +1242,98 @@ const ServiceRegistry = () => {
               >
                 <DefectDojoPanel />
               </Suspense>
+            </div>
+          )}
+
+          {/* GitHub panel */}
+          {showGithub && (
+            <div className="mb-6">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  GitHub
+                </span>
+                {isGithubConfigured && (
+                  <button
+                    type="button"
+                    onClick={() => void handleGithubDisconnect()}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    Desconectar
+                  </button>
+                )}
+              </div>
+
+              {!isGithubConfigured ? (
+                <div className="rounded-xl border border-border bg-card p-4 space-y-3 mb-4">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Configuração da integração
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Conecte com GitHub (público ou Enterprise) para pesquisar e importar serviços.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+                      Base URL
+                    </label>
+                    <input
+                      value={githubBaseUrl}
+                      onChange={(e) => setGithubBaseUrl(e.target.value)}
+                      placeholder="https://api.github.com"
+                      className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+                      Personal Access Token
+                    </label>
+                    <input
+                      type="password"
+                      value={githubToken}
+                      onChange={(e) => setGithubToken(e.target.value)}
+                      placeholder="ghp_... ou equivalente"
+                      className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                    />
+                  </div>
+
+                  {githubConnectError && (
+                    <p className="text-xs text-destructive">{githubConnectError}</p>
+                  )}
+
+                  <div className="flex justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGithubBaseUrl("https://api.github.com");
+                        setGithubToken("");
+                        setGithubConnectError("");
+                      }}
+                      className="px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md"
+                      disabled={githubConnecting}
+                    >
+                      Limpar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleGithubConnect()}
+                      disabled={githubConnecting}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                    >
+                      {githubConnecting ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Download className="h-3.5 w-3.5" />
+                      )}
+                      Salvar e conectar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <GithubImportPanel />
+              )}
             </div>
           )}
 

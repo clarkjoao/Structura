@@ -74,16 +74,18 @@ export function mapToServiceDefinition(
   return {
     name: product.name,
     description: product.description || "",
-    repositoryUrl: "",
+    repositoryUrl: product?.metadata?.repositoryUrl as string ?? "",
     technology: [],
     tags: product.tags || [],
     source: "defectdojo",
     sourceId: String(product.id),
     metadata: {
-      businessCriticality: product.business_criticality,
-      platform: product.platform,
-      lifecycle: product.lifecycle,
-      prodType: product.prod_type?.name,
+      defectdojo: {
+        businessCriticality: product.business_criticality,
+        platform: product.platform,
+        lifecycle: product.lifecycle,
+        prodType: product.prod_type?.name,
+      },
     },
   };
 }

@@ -8,5 +8,15 @@ export interface ServiceDefinition {
   tags?: string[];
   source?: "defectdojo" | "github" | "manual";
   sourceId?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: {
+    github?: {
+      repoId: number;
+      fullName: string;
+      topics: string[];
+      language: string | null;
+      updatedAt: string;
+    };
+    // Preserve existing DefectDojo data when merging into GitHub services.
+    defectdojo?: Record<string, unknown>;
+  };
 }

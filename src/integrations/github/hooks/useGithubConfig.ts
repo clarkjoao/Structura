@@ -1,0 +1,2 @@
+export { useGithubConfig } from "../useGithubConfig";
+
