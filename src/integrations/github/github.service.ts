@@ -3,40 +3,7 @@ import type { ServiceDefinition } from "@/features/diagram";
 import type { MergeConflict } from "./detectMergeConflicts";
 import type { MergeResolution } from "./GithubMergeDialog";
 import { githubRepoToService } from "./githubMapper";
-
-function dedupeStringsPreserveOrder(values: string[]): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const v of values) {
-    const key = v.trim();
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
-    out.push(key);
-  }
-  return out;
-}
-
-function normalizeDefectDojoMetadata(
-  meta: unknown,
-): Record<string, unknown> | undefined {
-  if (!meta || typeof meta !== "object") return undefined;
-
-  const m = meta as Record<string, unknown>;
-  const defectdojo = m.defectdojo;
-  if (defectdojo && typeof defectdojo === "object") {
-    return defectdojo as Record<string, unknown>;
-  }
-
-  // Backward compatibility: older persisted services stored DefectDojo data at top-level metadata.
-  const hasKnownDefectDojoKeys =
-    m.businessCriticality !== undefined ||
-    m.platform !== undefined ||
-    m.lifecycle !== undefined ||
-    m.prodType !== undefined;
-  if (!hasKnownDefectDojoKeys) return undefined;
-
-  return m;
-}
+import { dedupeStringsPreserveOrder } from "../merge-utils";
 
 type CommitParams = {
   selectedRepos: GithubRepo[];
@@ -105,16 +72,20 @@ export async function commitGithubImport({
             : existing.tags ?? [];
 
       const prevGithub = existing.metadata?.github;
-      const prevDefectDojo = normalizeDefectDojoMetadata(existing.metadata);
+      const prevDefectDojo = existing.metadata?.defectdojo;
 
-      // Preserve repositoryUrl by not changing it explicitly.
+      // Preserva a source original: se o serviço veio do DefectDojo, mantém defectdojo.
+      // O GitHub apenas enriquece com metadata, não "rouba" a ownership.
+      const keepSource = existing.source === "defectdojo";
+
       updateService(existing.id, {
         name: mergedName,
         description: mergedDescription,
+        repositoryUrl: existing.repositoryUrl || githubService.repositoryUrl,
         technology: mergedTechnology,
         tags: mergedTags,
-        source: "github",
-        sourceId: githubService.sourceId,
+        source: keepSource ? existing.source : "github",
+        sourceId: keepSource ? existing.sourceId : githubService.sourceId,
         metadata: {
           github: {
             ...(prevGithub ?? {}),
@@ -128,4 +99,3 @@ export async function commitGithubImport({
     }
   }
 }
-

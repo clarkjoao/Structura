@@ -4,25 +4,11 @@ import { useDiagramStore } from "@/features/diagram";
 import { mapToServiceDefinition } from "../defectdojo.service";
 import type { DDSearchResult } from "../types";
 import { DefectDojoProductCard } from "./DefectDojoProductCard";
-
-function dedupeStringsPreserveOrder(values: string[]): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const v of values) {
-    const key = v.trim();
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
-    out.push(key);
-  }
-  return out;
-}
-
-function pickMoreCompleteString(a: string, b: string): string {
-  const la = a?.trim().length ?? 0;
-  const lb = b?.trim().length ?? 0;
-  if (la === lb) return a || b;
-  return la > lb ? a : b;
-}
+import {
+  dedupeStringsPreserveOrder,
+  pickMoreCompleteString,
+  repoUrlsMatch,
+} from "../../merge-utils";
 
 interface Props {
   results: DDSearchResult[];
@@ -85,13 +71,11 @@ export function DefectDojoResultsList({
         continue;
       } else {
         // If the same repo is already imported from GitHub, merge into it.
-        const repositoryUrl = svcData.repositoryUrl?.trim();
-        const githubExisting =
-          repositoryUrl &&
-          Object.values(store.serviceRegistry).find(
-            (s) =>
-              s.source === "github" && s.repositoryUrl?.trim() === repositoryUrl,
-          );
+        const githubExisting = Object.values(store.serviceRegistry).find(
+          (s) =>
+            s.source === "github" &&
+            repoUrlsMatch(s.repositoryUrl, svcData.repositoryUrl),
+        );
 
         if (githubExisting) {
           const prevGithubMeta = githubExisting.metadata?.github;
@@ -99,8 +83,7 @@ export function DefectDojoResultsList({
           const nextDefectDojoMeta = svcData.metadata?.defectdojo ?? {};
 
           store.updateService(githubExisting.id, {
-            // preserve repositoryUrl from existing github service
-            repositoryUrl: githubExisting.repositoryUrl,
+            repositoryUrl: githubExisting.repositoryUrl || svcData.repositoryUrl,
             name: pickMoreCompleteString(svcData.name, githubExisting.name),
             description: pickMoreCompleteString(
               svcData.description,
@@ -114,9 +97,11 @@ export function DefectDojoResultsList({
               ...(githubExisting.tags ?? []),
               ...(svcData.tags ?? []),
             ]),
+            // DefectDojo é a fonte primária de catálogo — assume a ownership
             source: "defectdojo",
             sourceId: svcData.sourceId,
             metadata: {
+              // Preserva metadata do GitHub (fullName, topics, etc.)
               github: prevGithubMeta,
               defectdojo: {
                 ...(prevDefectDojoMeta ?? {}),

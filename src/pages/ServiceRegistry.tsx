@@ -531,11 +531,18 @@ const DetailPanel = ({
         const token = githubConfig?.token ?? "";
         const client = createGithubClient(apiBase, token);
         const repo = await client.getRepository(svc.sourceId);
+
+        // Merge technology: language do GitHub + tecnologias existentes (preserva DefectDojo/manual)
+        const repoTech = repo.language ? [repo.language] : [];
+        const mergedTech = Array.from(
+          new Set([...repoTech, ...svc.technology]),
+        );
+
         updateService(svc.id, {
           name: repo.name,
           description: repo.description ?? svc.description,
           repositoryUrl: repo.html_url,
-          technology: repo.language ? [repo.language] : svc.technology,
+          technology: mergedTech,
           metadata: {
             github: {
               repoId: repo.id,
@@ -544,6 +551,7 @@ const DetailPanel = ({
               language: repo.language,
               updatedAt: repo.updated_at,
             },
+            // Preserva metadata de outras fontes
             defectdojo: svc.metadata?.defectdojo,
           },
         });
@@ -570,7 +578,19 @@ const DetailPanel = ({
         const mapped = mapToServiceDefinition(
           product as unknown as Parameters<typeof mapToServiceDefinition>[0],
         );
-        updateService(svc.id, mapped);
+        // Merge: preserva dados do GitHub e tecnologias existentes
+        const mergedTech = Array.from(
+          new Set([...svc.technology, ...(mapped.technology ?? [])]),
+        );
+        updateService(svc.id, {
+          ...mapped,
+          repositoryUrl: svc.repositoryUrl || mapped.repositoryUrl,
+          technology: mergedTech,
+          metadata: {
+            github: svc.metadata?.github,
+            defectdojo: mapped.metadata?.defectdojo,
+          },
+        });
       }
     } catch (err) {
       setSyncError(err instanceof Error ? err.message : "Erro ao sincronizar");

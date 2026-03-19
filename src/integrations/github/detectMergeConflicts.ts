@@ -1,5 +1,6 @@
 import type { GithubRepo } from "./github.types";
 import type { ServiceDefinition } from "@/features/diagram";
+import { repoUrlsMatch } from "../merge-utils";
 
 export interface MergeConflict {
   repo: GithubRepo;
@@ -13,8 +14,8 @@ export function detectConflicts(
   const conflicts: MergeConflict[] = [];
 
   for (const repo of repos) {
-    const existingService = existingServices.find(
-      (svc) => svc.repositoryUrl === repo.html_url,
+    const existingService = existingServices.find((svc) =>
+      repoUrlsMatch(svc.repositoryUrl, repo.html_url),
     );
 
     if (existingService) {
