@@ -1,12 +1,14 @@
-import type { GithubRepo, GithubSearchResult } from "./github.types";
+import type { GithubRepo, GithubSearchResult, GithubOrg } from "./github.types";
 
-type GithubClient = {
+export type GithubClient = {
   searchRepositories: (
     query: string,
     page: number,
     perPage: number,
   ) => Promise<GithubSearchResult>;
   getRepository: (fullName: string) => Promise<GithubRepo>;
+  listUserOrgs: () => Promise<GithubOrg[]>;
+  getAuthenticatedUser: () => Promise<{ login: string }>;
 };
 
 function normalizeBaseUrl(baseUrl: string): string {
@@ -59,10 +61,19 @@ export function createGithubClient(
     },
 
     async getRepository(fullName: string) {
-      // fullName is expected to be "owner/repo"
+      // fullName is "owner/repo" — encode each segment individually to preserve the slash
+      const [owner, repo] = fullName.split("/");
       return getJson<GithubRepo>(
-        `/repos/${encodeURIComponent(fullName)}`,
+        `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`,
       );
+    },
+
+    async listUserOrgs() {
+      return getJson<GithubOrg[]>("/user/orgs", { per_page: 100 });
+    },
+
+    async getAuthenticatedUser() {
+      return getJson<{ login: string }>("/user");
     },
   };
 }

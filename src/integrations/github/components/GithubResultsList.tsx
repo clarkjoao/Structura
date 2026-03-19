@@ -1,0 +1,1 @@
+export { GithubResultsList } from "../GithubResultsList";

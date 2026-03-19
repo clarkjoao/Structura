@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from "react";
-import type { GithubRepo } from "./github.types";
+import { useCallback, useMemo, useRef, useState } from "react";
+import type { GithubRepo, GHSearchFilters } from "./github.types";
+import { buildGithubQuery } from "./github.types";
 import { createGithubClient } from "./githubClient";
 import { detectConflicts } from "./detectMergeConflicts";
 import type { MergeConflict } from "./detectMergeConflicts";
@@ -20,7 +21,6 @@ export function useGithubImport() {
     return createGithubClient(config.baseUrl, config.token);
   }, [config]);
 
-  const [query, setQuery] = useState("");
   const [results, setResults] = useState<GithubRepo[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
@@ -34,6 +34,13 @@ export function useGithubImport() {
   const [autoResolutions, setAutoResolutions] = useState<
     MergeResolution[]
   >([]);
+  /** Pós-filtragem client-side para "inicia com" */
+  const [nameStartsFilter, setNameStartsFilter] = useState<string | undefined>(
+    undefined,
+  );
+
+  /** Guarda a última query montada para paginação */
+  const lastBuiltQuery = useRef("");
 
   const clearAll = useCallback(() => {
     setResults([]);
@@ -44,17 +51,30 @@ export function useGithubImport() {
     setAllConflictsForImport([]);
     setAutoResolutions([]);
     setError("");
+    setNameStartsFilter(undefined);
+    lastBuiltQuery.current = "";
   }, []);
 
   const search = useCallback(
-    async (q: string) => {
+    async (query: string, filters: GHSearchFilters) => {
       if (!client) {
         setError("GitHub não configurado. Conecte primeiro nas configurações.");
         return;
       }
 
-      const trimmed = q.trim();
-      setQuery(trimmed);
+      const builtQuery = buildGithubQuery(query, filters);
+      if (!builtQuery.trim()) {
+        setError("Informe um termo de busca.");
+        return;
+      }
+
+      lastBuiltQuery.current = builtQuery;
+
+      // "inicia com" usa pós-filtragem client-side
+      setNameStartsFilter(
+        filters.searchField === "name_starts" ? query.trim() : undefined,
+      );
+
       setLoading(true);
       setError("");
       setPage(1);
@@ -62,7 +82,7 @@ export function useGithubImport() {
       setSelected(new Set());
 
       try {
-        const res = await client.searchRepositories(trimmed, 1, PER_PAGE);
+        const res = await client.searchRepositories(builtQuery, 1, PER_PAGE);
         setResults(res.items);
         setTotalCount(res.total_count);
       } catch (err) {
@@ -85,7 +105,7 @@ export function useGithubImport() {
     setLoading(true);
     setError("");
     try {
-      const res = await client.searchRepositories(query, nextPage, PER_PAGE);
+      const res = await client.searchRepositories(lastBuiltQuery.current, nextPage, PER_PAGE);
       setResults((prev) => [...prev, ...res.items]);
       setPage(nextPage);
       setTotalCount(res.total_count);
@@ -94,7 +114,7 @@ export function useGithubImport() {
     } finally {
       setLoading(false);
     }
-  }, [client, loading, page, results.length, totalCount, query]);
+  }, [client, loading, page, results.length, totalCount]);
 
   const toggleSelect = useCallback((repoId: number) => {
     setSelected((prev) => {
@@ -229,8 +249,7 @@ export function useGithubImport() {
   );
 
   return {
-    query,
-    setQuery,
+    client,
     results,
     selected,
     loading,
@@ -238,6 +257,7 @@ export function useGithubImport() {
     page,
     totalCount,
     conflicts,
+    nameStartsFilter,
     search,
     loadMore,
     toggleSelect,
@@ -250,4 +270,3 @@ export function useGithubImport() {
     resolveConflicts,
   };
 }
-
