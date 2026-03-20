@@ -1,4 +1,5 @@
 import type { Diagram, Folder } from "@/features/diagram";
+import { FileSystemEntryKind } from "@/lib/enums";
 import {
   validateDiagramFile,
   validateManifest,
@@ -222,11 +223,11 @@ export class FileSystemAdapter {
     diagramId: string
   ): Promise<Diagram | null> {
     for await (const [name, entry] of (dir as any).entries()) {
-      if (entry.kind === "file" && name === `${diagramId}.json`) {
+      if (entry.kind === FileSystemEntryKind.File && name === `${diagramId}.json`) {
         const f = await (entry as FileSystemFileHandle).getFile();
         return JSON.parse(await f.text()) as Diagram;
       }
-      if (entry.kind === "directory") {
+      if (entry.kind === FileSystemEntryKind.Directory) {
         const result = await this._findDiagramFile(
           entry as FileSystemDirectoryHandle,
           diagramId
@@ -330,7 +331,7 @@ export class FileSystemAdapter {
     result: WorkspaceScanResult
   ): Promise<void> {
     for await (const [name, entry] of (dir as any).entries()) {
-      if (entry.kind === "file" && name.endsWith(".json")) {
+      if (entry.kind === FileSystemEntryKind.File && name.endsWith(".json")) {
         result.totalFilesScanned++;
         try {
           const f = await (entry as FileSystemFileHandle).getFile();
@@ -368,7 +369,7 @@ export class FileSystemAdapter {
         }
       }
 
-      if (entry.kind === "directory") {
+      if (entry.kind === FileSystemEntryKind.Directory) {
         await this._scanDirectory(
           entry as FileSystemDirectoryHandle,
           result
@@ -383,7 +384,7 @@ export class FileSystemAdapter {
     const result: Record<string, Diagram> = {};
     for await (const [name, entry] of (dir as any).entries()) {
       if (
-        entry.kind === "file" &&
+        entry.kind === FileSystemEntryKind.File &&
         name.endsWith(".json") &&
         name !== MANIFEST_FILE
       ) {
@@ -397,7 +398,7 @@ export class FileSystemAdapter {
           /* skip malformed files */
         }
       }
-      if (entry.kind === "directory") {
+      if (entry.kind === FileSystemEntryKind.Directory) {
         const nested = await this._scanAllDiagrams(
           entry as FileSystemDirectoryHandle
         );
