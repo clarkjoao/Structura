@@ -317,7 +317,17 @@
     "searchHelpPanel": "painel|panel",
     "searchHelpNote": "nota|note|sticky|postit",
     "searchHelpApiGroup": "api|grupo|group|openapi",
-    "searchHelpEndpoint": "endpoint|http|rest"
+    "searchHelpEndpoint": "endpoint|http|rest",
+    "searchHelpSwimlane": "swimlane|faixa|atores|domínio|time|pool|raia"
+  },
+  "swimlane": {
+    "title": "Faixa (swim lane)",
+    "defaultLaneLabel": "Nome da Faixa",
+    "laneLabel": "Rótulo da faixa",
+    "orientation": "Orientação",
+    "horizontal": "Horizontal",
+    "vertical": "Vertical",
+    "laneColor": "Cor da faixa"
   },
   "elementPicker": {
     "registry": "Registry",

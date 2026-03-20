@@ -24,7 +24,13 @@ function splitSearchHelp(raw: string): string[] {
 function canvasOptionMatchesQuery(
   opt: CanvasInsertOption,
   q: string,
-  synonyms: { panel: string[]; note: string[]; apiGroup: string[]; endpoint: string[] },
+  synonyms: {
+    panel: string[];
+    swimlane: string[];
+    note: string[];
+    apiGroup: string[];
+    endpoint: string[];
+  },
 ): boolean {
   const fields: string[] = [opt.label.toLowerCase()];
   if (opt.panelKind) {
@@ -32,6 +38,9 @@ function canvasOptionMatchesQuery(
   }
   if (opt.type === "panel") {
     fields.push(...synonyms.panel);
+    if (opt.panelKind === "swimlane") {
+      fields.push(...synonyms.swimlane);
+    }
   } else if (opt.type === "note") {
     fields.push(...synonyms.note);
   } else if (opt.type === "api-group") {
@@ -84,7 +93,7 @@ const QuickInsertPopover = ({
       { type: "panel", label: t("canvasToolbar.panel"), icon: Square, panelKind: "default" },
       ...PANEL_KINDS.filter((p) => p.id !== "default").map((p) => ({
         type: "panel" as const,
-        label: p.label,
+        label: p.id === "swimlane" ? t("swimlane.title") : p.label,
         icon: p.icon,
         panelKind: p.id as PanelKind,
         awsIconName: p.awsIconName,
@@ -122,6 +131,7 @@ const QuickInsertPopover = ({
   const searchSynonyms = useMemo(
     () => ({
       panel: splitSearchHelp(t("quickInsert.searchHelpPanel")),
+      swimlane: splitSearchHelp(t("quickInsert.searchHelpSwimlane")),
       note: splitSearchHelp(t("quickInsert.searchHelpNote")),
       apiGroup: splitSearchHelp(t("quickInsert.searchHelpApiGroup")),
       endpoint: splitSearchHelp(t("quickInsert.searchHelpEndpoint")),

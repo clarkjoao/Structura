@@ -1,5 +1,5 @@
 import type { Node } from "@xyflow/react";
-import { isPanelType } from "@/features/diagram";
+import { isReactFlowParentPanelType } from "@/features/diagram";
 import { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../constants";
 
 export function getPanelDimensions(node: Node): { width: number; height: number } {
@@ -38,7 +38,7 @@ export function findPanelContainingPoint(
   excludeParentId?: string | null,
 ): Node | undefined {
   const panels = nodes.filter(
-    (n) => isPanelType(n.type as string) && n.id !== excludeParentId,
+    (n) => isReactFlowParentPanelType(String(n.type)) && n.id !== excludeParentId,
   );
   return panels.find((p) => isInsidePanel(p, absX, absY));
 }

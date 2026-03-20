@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { Node } from "@xyflow/react";
 import type { Component, Diagram, ServiceDefinition } from "@/features/diagram";
 import { isPanelComponent, isApiGroupComponent, isEndpointType } from "@/features/diagram";
-import { getDescriptor, type NodeBuildContext } from "./node-types";
+import { resolveNodeDescriptor, type NodeBuildContext } from "./node-types";
 import { useRecordingMode } from "../flow/RecordingModeContext";
 import { buildCollapsedPanelIds, computeNodeVisibility } from "./nodeVisibility";
 import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
@@ -103,7 +103,7 @@ export function useCanvasNodes({
         return 0;
       })
       .map((comp): Node => {
-        const d = getDescriptor(comp.type);
+        const d = resolveNodeDescriptor(comp);
         const layout = diagram.nodeLayouts[comp.id];
         const vis = computeNodeVisibility(
           comp, d, layout, panelIds, selectedNodeIds, highlightedNodeIds,

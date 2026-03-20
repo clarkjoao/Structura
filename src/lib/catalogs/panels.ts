@@ -4,7 +4,7 @@
  * When awsIconName is set, AwsIcon is used; otherwise the Lucide icon is used.
  */
 import type { LucideIcon } from "lucide-react";
-import { Square, MapPin } from "lucide-react";
+import { Square, MapPin, LayoutList } from "lucide-react";
 import type { PanelKind } from "@/features/diagram";
 
 export interface PanelKindDef {
@@ -81,6 +81,13 @@ export const PANEL_KINDS: PanelKindDef[] = [
     defaultColor: "hsl(0 50% 38%)",
     icon: Square,
     awsIconName: "ArchitectureGroupPrivatesubnet",
+  },
+  {
+    id: "swimlane",
+    label: "Swim lane",
+    defaultName: "Swim lane",
+    defaultColor: "#6366f1",
+    icon: LayoutList,
   },
 ];
 

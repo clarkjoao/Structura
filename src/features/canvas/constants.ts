@@ -2,6 +2,10 @@
 export const PANEL_DEFAULT_W = 600;
 /** Default height for panel nodes (px). */
 export const PANEL_DEFAULT_H = 400;
+/** Default width for swimlane panel kind (px). */
+export const SWIMLANE_DEFAULT_W = 800;
+/** Default height for swimlane panel kind (px). */
+export const SWIMLANE_DEFAULT_H = 200;
 /** Collapsed panel width (px). */
 export const PANEL_COLLAPSED_W = 200;
 /** Collapsed panel height (px). */

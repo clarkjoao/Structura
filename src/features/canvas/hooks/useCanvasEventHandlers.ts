@@ -6,7 +6,7 @@ import { useCallback, useRef } from "react";
 import type { Node, Edge, OnEdgesChange, OnConnect, OnConnectEnd, Connection } from "@xyflow/react";
 import type { CanvasVisualState } from "./useCanvasVisualState";
 import { useRecordingMode } from "../flow/RecordingModeContext";
-import { isPanelType, isNoteType, isEndpointType } from "@/features/diagram";
+import { isReactFlowParentPanelType, isNoteType, isEndpointType } from "@/features/diagram";
 import type { EdgeStyle } from "@/features/diagram";
 import { getLastEdgeStyle } from "@/features/diagram/hooks/useLastEdgeStyle";
 
@@ -104,7 +104,7 @@ export function useCanvasEventHandlers({
         return;
       }
       if (isRecording) {
-        if (!isPanelType(nodeType) && !isNoteType(nodeType)) onRecordNodeClick?.(node.id);
+        if (!isReactFlowParentPanelType(nodeType) && !isNoteType(nodeType)) onRecordNodeClick?.(node.id);
         return;
       }
       if (isPlaying || isFlowPanelOpen) return;

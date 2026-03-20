@@ -6,6 +6,7 @@ export type {
   ComponentPatch,
   C4Component,
   PanelComponent,
+  SwimlaneStyle,
   PanelKind,
   NoteComponent,
   AwsComponent,
@@ -78,6 +79,7 @@ export {
   isCanvasStructuralType,
   isCanvasApiType,
   isPanelKind,
+  isReactFlowParentPanelType,
   getUsageKeyForType,
   getDefaultNameForNewComponent,
 } from "./model/component-type-constants";

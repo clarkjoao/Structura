@@ -43,7 +43,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
         { type: "panel" as const, label: t("canvasToolbar.panel"), icon: Square, panelKind: "default" as const },
         ...PANEL_KINDS.filter((p) => p.id !== "default").map((p) => ({
           type: "panel" as const,
-          label: p.label,
+          label: p.id === "swimlane" ? t("swimlane.title") : p.label,
           icon: p.icon,
           panelKind: p.id as PanelKind,
           awsIconName: p.awsIconName,

@@ -2,7 +2,13 @@ import { useCallback, useRef, useState } from "react";
 import type { Node, OnNodesChange, NodeChange } from "@xyflow/react";
 import type { Diagram } from "@/features/diagram";
 import type { Component } from "@/features/diagram";
-import { isPanelComponent, isNoteComponent, isEndpointComponent, isPanelType, isEndpointType } from "@/features/diagram";
+import {
+  isPanelComponent,
+  isNoteComponent,
+  isEndpointComponent,
+  isEndpointType,
+  isReactFlowParentPanelType,
+} from "@/features/diagram";
 import {
   isOutsideParentBounds,
   findPanelContainingPoint,
@@ -132,7 +138,7 @@ export function useNodeDragParenting({
       if (isEndpointType(nodeType)) return;
 
       const components = diagram?.snapshot.components ?? {};
-      const isDraggedPanel = isPanelType(nodeType);
+      const isDraggedPanel = isReactFlowParentPanelType(nodeType);
       if (isDraggedPanel) {
         const descendantIds = getDescendantIds(draggedNode.id, components);
         const match = findPanelContainingPoint(nodes, draggedNode.position.x, draggedNode.position.y);
