@@ -8,6 +8,7 @@ export interface DDProduct {
   lifecycle?: string;
   origin?: string;
   prod_type?: { id: number; name: string };
+  metadata?: Record<string, unknown>;
 }
 
 export interface DDProductType {

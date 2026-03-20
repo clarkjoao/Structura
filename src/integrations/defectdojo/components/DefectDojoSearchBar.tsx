@@ -11,7 +11,7 @@ interface Props {
   loading: boolean;
   onSearch: (
     query: string,
-    filters: { prodType?: number; searchField?: DDProductSearchField },
+    filters: { prodType?: number; searchField?: DDProductSearchField; limit?: number },
   ) => void;
 }
 
@@ -22,6 +22,7 @@ export function DefectDojoSearchBar({
 }: Props) {
   const [query, setQuery] = useState("");
   const [prodType, setProdType] = useState<string>("");
+  const [limit, setLimit] = useState("100");
   const [searchField, setSearchField] = useState<DDProductSearchField>(
     DD_PRODUCT_SEARCH_FIELDS[0].param as DDProductSearchField,
   );
@@ -30,6 +31,7 @@ export function DefectDojoSearchBar({
     onSearch(query, {
       prodType: prodType ? Number(prodType) : undefined,
       searchField,
+      limit: Number(limit),
     });
   };
 
@@ -83,6 +85,18 @@ export function DefectDojoSearchBar({
           ))}
         </select>
       )}
+
+      <select
+        value={limit}
+        onChange={(e) => setLimit(e.target.value)}
+        className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+      >
+        {[50, 100, 150, 200, 250].map((n) => (
+          <option key={n} value={String(n)}>
+            {n} resultados
+          </option>
+        ))}
+      </select>
 
       <button
         onClick={handleSearch}

@@ -2,6 +2,7 @@ import { createJSONStorage } from "zustand/middleware";
 import type { IStoragePort } from "@/infrastructure/persistence";
 import type { Diagram, Component, Connection, NodeLayout } from "../model/diagram.types";
 import type { DiagramStore } from "./store.types";
+import type { ServiceDefinition } from "../model/service.types";
 
 export const PERSIST_KEY = "diagram-store";
 
@@ -30,6 +31,17 @@ export function mergePersistedState(
 
   if (!state.serviceRegistry) state.serviceRegistry = {};
   if (!state.folders) state.folders = {};
+
+  // Migrate legacy service.source/sourceId into service.sources[]
+  Object.values(state.serviceRegistry).forEach((service) => {
+    const svc = service as ServiceDefinition;
+    if (svc.sources && svc.sources.length > 0) return;
+    if (svc.source) {
+      svc.sources = [{ type: svc.source, sourceId: svc.sourceId }];
+      return;
+    }
+    svc.sources = [{ type: "manual" }];
+  });
 
   // Migrate diagrams missing createdAt
   Object.values(state.diagrams ?? {}).forEach((d) => {

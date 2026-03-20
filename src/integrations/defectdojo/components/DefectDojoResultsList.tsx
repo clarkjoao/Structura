@@ -4,6 +4,13 @@ import { useDiagramStore } from "@/features/diagram";
 import { mapToServiceDefinition } from "../defectdojo.service";
 import type { DDSearchResult } from "../types";
 import { DefectDojoProductCard } from "./DefectDojoProductCard";
+import {
+  dedupeStringsPreserveOrder,
+  mergeSources,
+  normalizeSources,
+  pickMoreCompleteString,
+  repoUrlsMatch,
+} from "../../merge-utils";
 
 interface Props {
   results: DDSearchResult[];
@@ -61,11 +68,75 @@ export function DefectDojoResultsList({
     for (const product of toImport) {
       const svcData = mapToServiceDefinition(product);
       if (product.status === "updated" && product.existingServiceId) {
-        store.updateService(product.existingServiceId, svcData);
+        const existingService = store.serviceRegistry[product.existingServiceId];
+        const mergedTech = dedupeStringsPreserveOrder([
+          ...(existingService?.technology ?? []),
+          ...(svcData.technology ?? []),
+        ]);
+        const mergedTags = dedupeStringsPreserveOrder([
+          ...(existingService?.tags ?? []),
+          ...(svcData.tags ?? []),
+        ]);
+        store.updateService(product.existingServiceId, {
+          ...svcData,
+          repositoryUrl:
+            existingService?.repositoryUrl || svcData.repositoryUrl || "",
+          technology: mergedTech,
+          tags: mergedTags,
+          sources: mergeSources(existingService?.sources, svcData.sources),
+          metadata: {
+            github: existingService?.metadata?.github,
+            defectdojo: {
+              ...(existingService?.metadata?.defectdojo ?? {}),
+              ...(svcData.metadata?.defectdojo ?? {}),
+            },
+          },
+        });
         updatedCount++;
+        continue;
       } else {
-        store.addService(svcData);
-        importedCount++;
+        // If the same repo is already imported from GitHub, merge into it.
+        const githubExisting = Object.values(store.serviceRegistry).find(
+          (s) =>
+            normalizeSources(s).some((source) => source.type === "github") &&
+            repoUrlsMatch(s.repositoryUrl, svcData.repositoryUrl),
+        );
+
+        if (githubExisting) {
+          const prevGithubMeta = githubExisting.metadata?.github;
+          const prevDefectDojoMeta = githubExisting.metadata?.defectdojo;
+          const nextDefectDojoMeta = svcData.metadata?.defectdojo ?? {};
+
+          store.updateService(githubExisting.id, {
+            repositoryUrl: githubExisting.repositoryUrl || svcData.repositoryUrl,
+            name: pickMoreCompleteString(svcData.name, githubExisting.name),
+            description: pickMoreCompleteString(
+              svcData.description,
+              githubExisting.description,
+            ),
+            technology: dedupeStringsPreserveOrder([
+              ...(githubExisting.technology ?? []),
+              ...(svcData.technology ?? []),
+            ]),
+            tags: dedupeStringsPreserveOrder([
+              ...(githubExisting.tags ?? []),
+              ...(svcData.tags ?? []),
+            ]),
+            sources: mergeSources(githubExisting.sources, svcData.sources),
+            metadata: {
+              // Preserva metadata do GitHub (fullName, topics, etc.)
+              github: prevGithubMeta,
+              defectdojo: {
+                ...(prevDefectDojoMeta ?? {}),
+                ...(nextDefectDojoMeta ?? {}),
+              },
+            },
+          });
+          updatedCount++;
+        } else {
+          store.addService(svcData);
+          importedCount++;
+        }
       }
     }
 

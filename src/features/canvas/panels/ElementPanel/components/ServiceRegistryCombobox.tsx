@@ -74,7 +74,7 @@ const ServiceRegistryCombobox = ({
       repositoryUrl: "",
       technology: [],
       tags,
-      source: "manual",
+      sources: [{ type: "manual" }],
     });
     onChange(created.id);
     setOpen(false);

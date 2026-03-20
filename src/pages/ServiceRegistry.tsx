@@ -3,14 +3,12 @@ import {
   useMemo,
   lazy,
   Suspense,
-  useRef,
   useEffect,
   useCallback,
 } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Plus,
-  ChevronDown,
   ChevronRight,
   Search,
   X,
@@ -18,13 +16,22 @@ import {
   Loader2,
   User,
   RefreshCw,
-  Download,
   ExternalLink,
   Layers,
   Link2,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
+import { GithubImportPanel } from "@/integrations/github/components/GithubImportPanel";
+import { useGithubConfig } from "@/integrations/github/hooks/useGithubConfig";
+import { createGithubClient } from "@/integrations/github/githubClient";
+import type { GithubRepo } from "@/integrations/github/github.types";
+import {
+  dedupeStringsPreserveOrder,
+  mergeSources,
+  normalizeSources,
+  pickMoreCompleteString,
+} from "@/integrations/merge-utils";
 import {
   useAllServices,
   useDiagrams,
@@ -39,8 +46,6 @@ const DefectDojoPanel = lazy(() =>
     default: m.DefectDojoPanel,
   })),
 );
-
-// ── Source metadata ───────────────────────────────────────────────────────
 
 type Source = "manual" | "github" | "defectdojo";
 
@@ -61,8 +66,6 @@ const SOURCE_LABEL: Record<Source, string> = {
   github: "GitHub",
   defectdojo: "DefectDojo",
 };
-
-// ── Chip input ────────────────────────────────────────────────────────────
 
 const ChipInput = ({
   label,
@@ -129,8 +132,6 @@ const ChipInput = ({
   );
 };
 
-// ── Manual create inline form ─────────────────────────────────────────────
-
 const ManualCreateForm = ({
   onCancel,
   onCreate,
@@ -153,7 +154,7 @@ const ManualCreateForm = ({
       technology: tech,
       owner: owner.trim() || undefined,
       tags,
-      source: "manual",
+      sources: [{ type: "manual" }],
     });
   };
 
@@ -231,131 +232,6 @@ const ManualCreateForm = ({
   );
 };
 
-// ── GitHub import inline form ─────────────────────────────────────────────
-
-const GitHubImportForm = ({
-  onCancel,
-  onCreate,
-}: {
-  onCancel: () => void;
-  onCreate: (svc: Omit<ServiceDefinition, "id">) => void;
-}) => {
-  const [repoUrl, setRepoUrl] = useState("");
-  const [owner, setOwner] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleImport = async () => {
-    if (!repoUrl.trim()) return;
-    setLoading(true);
-    setError("");
-    try {
-      const match = repoUrl.match(
-        /github\.com\/([^/]+)\/([^/]+?)(?:\.git)?(?:\/|$)/,
-      );
-      if (!match)
-        throw new Error("URL inválida. Use: https://github.com/owner/repo");
-      const [, repoOwner, repoName] = match;
-      const res = await fetch(
-        `https://api.github.com/repos/${repoOwner}/${repoName}`,
-      );
-      if (!res.ok) {
-        throw new Error(
-          res.status === 404
-            ? "Repositório não encontrado"
-            : `GitHub API erro ${res.status}`,
-        );
-      }
-      const repo = (await res.json()) as {
-        name: string;
-        description: string | null;
-        html_url: string;
-        language: string | null;
-        full_name: string;
-      };
-      onCreate({
-        name: repo.name,
-        description: repo.description ?? "",
-        repositoryUrl: repo.html_url,
-        technology: repo.language ? [repo.language] : [],
-        owner: owner.trim() || undefined,
-        source: "github",
-        sourceId: repo.full_name,
-        metadata: {
-          github: {
-            language: repo.language,
-          },
-        },
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao importar");
-      setLoading(false);
-    }
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      className="rounded-xl border border-border bg-card p-4 space-y-3 mb-4"
-    >
-      <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">
-          Importar do GitHub
-        </p>
-        <p className="text-[10px] text-muted-foreground">
-          Limite: 60 req/h para repositórios públicos sem autenticação.
-        </p>
-      </div>
-      <div>
-        <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-          Repository URL
-        </label>
-        <input
-          autoFocus
-          value={repoUrl}
-          onChange={(e) => setRepoUrl(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleImport()}
-          placeholder="https://github.com/org/repo"
-          className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-        />
-      </div>
-      <div>
-        <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-          Owner (opcional)
-        </label>
-        <input
-          value={owner}
-          onChange={(e) => setOwner(e.target.value)}
-          className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-        />
-      </div>
-      {error && <p className="text-xs text-destructive">{error}</p>}
-      <div className="flex justify-end gap-2 pt-1">
-        <button
-          onClick={onCancel}
-          className="px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md"
-        >
-          Cancelar
-        </button>
-        <button
-          onClick={handleImport}
-          disabled={loading || !repoUrl.trim()}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-        >
-          {loading ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            <Download className="h-3 w-3" />
-          )}
-          Import &amp; Sync
-        </button>
-      </div>
-    </motion.div>
-  );
-};
-
 // ── Service usage ─────────────────────────────────────────────────────────
 
 function getServiceUsage(
@@ -381,8 +257,6 @@ function getServiceUsage(
     );
 }
 
-// ── Compact ServiceCard for grid ──────────────────────────────────────────
-
 interface ServiceCardProps {
   svc: ServiceDefinition;
   isSelected: boolean;
@@ -391,7 +265,7 @@ interface ServiceCardProps {
 }
 
 const ServiceCard = ({ svc, isSelected, onClick, usage }: ServiceCardProps) => {
-  const source = (svc.source ?? "manual") as Source;
+  const sources = normalizeSources(svc);
   const MAX_PILLS = 3;
 
   return (
@@ -406,17 +280,27 @@ const ServiceCard = ({ svc, isSelected, onClick, usage }: ServiceCardProps) => {
     >
       {/* Header */}
       <div className="flex items-center gap-2 mb-1.5">
-        <span
-          className={`h-2 w-2 rounded-full shrink-0 ${SOURCE_DOT[source]}`}
-        />
+        <div className="flex items-center gap-1 shrink-0">
+          {sources.map((source) => (
+            <span
+              key={source.type}
+              className={`h-2 w-2 rounded-full ${SOURCE_DOT[source.type]}`}
+            />
+          ))}
+        </div>
         <span className="font-semibold text-foreground text-sm truncate flex-1">
           {svc.name}
         </span>
-        <span
-          className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${SOURCE_BADGE[source]}`}
-        >
-          {SOURCE_LABEL[source]}
-        </span>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+          {sources.map((source) => (
+            <span
+              key={source.type}
+              className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${SOURCE_BADGE[source.type]}`}
+            >
+              {SOURCE_LABEL[source.type]}
+            </span>
+          ))}
+        </div>
       </div>
 
       {/* Description */}
@@ -484,7 +368,13 @@ const DetailPanel = ({
   removeService,
   onClose,
 }: DetailPanelProps) => {
-  const source = (svc.source ?? "manual") as Source;
+  const { config: githubConfig } = useGithubConfig();
+  const normalizedSources = normalizeSources(svc);
+  const hasGithubSource = normalizedSources.some((s) => s.type === "github");
+  const hasDefectDojoSource = normalizedSources.some(
+    (s) => s.type === "defectdojo",
+  );
+  const hasSyncSource = hasGithubSource || hasDefectDojoSource;
   const usage = useMemo(
     () => getServiceUsage(svc.id, diagrams),
     [svc.id, diagrams],
@@ -529,58 +419,153 @@ const DetailPanel = ({
     setSyncError("");
     setSyncing(true);
     try {
-      if (source === "github" && svc.sourceId) {
-        const res = await fetch(`https://api.github.com/repos/${svc.sourceId}`);
-        if (!res.ok) throw new Error(`GitHub API erro ${res.status}`);
-        const repo = (await res.json()) as {
-          name: string;
-          description: string | null;
-          html_url: string;
-          language: string | null;
-        };
-        updateService(svc.id, {
-          name: repo.name,
-          description: repo.description ?? svc.description,
-          repositoryUrl: repo.html_url,
-          technology: repo.language ? [repo.language] : svc.technology,
-          metadata: {
-            ...((svc.metadata ?? {}) as Record<string, unknown>),
-            github: {
-              language: repo.language,
-            },
-          },
-        });
-      } else if (source === "defectdojo" && svc.sourceId) {
+      const hasGithubData = Boolean(svc.metadata?.github) || hasGithubSource;
+      const hasDefectDojoData =
+        Boolean(svc.metadata?.defectdojo) || hasDefectDojoSource;
+
+      let githubRepo: GithubRepo | null = null;
+      let defectDojoMapped:
+        | Omit<ServiceDefinition, "id">
+        | null = null;
+      let syncedDefectDojoSourceId: string | undefined;
+
+      if (hasGithubData) {
+        const githubSourceId = normalizedSources.find(
+          (sourceEntry) => sourceEntry.type === "github",
+        )?.sourceId;
+        const githubIdentifier =
+          githubSourceId ??
+          (svc.metadata?.github as { fullName?: string } | undefined)
+                ?.fullName;
+
+        if (githubIdentifier) {
+        const apiBase = githubConfig?.baseUrl ?? "https://api.github.com";
+        const token = githubConfig?.token ?? "";
+        const client = createGithubClient(apiBase, token);
+          githubRepo = await client.getRepository(githubIdentifier);
+        }
+      }
+
+      if (hasDefectDojoData) {
         const { DefectDojoClient } = await import(
           "@/integrations/defectdojo/defectdojo.client"
         );
         const { mapToServiceDefinition } = await import(
           "@/integrations/defectdojo/defectdojo.service"
         );
-        const rawConfig = localStorage.getItem("structura:defectdojo:config");
+
+        const ddMeta = svc.metadata?.defectdojo as
+          | { productId?: string | number; productLink?: string }
+          | undefined;
+        const productIdFromLink = ddMeta?.productLink?.match(/\/product\/(\d+)(?:\/|$)/)?.[1];
+        const defectDojoSourceId = normalizedSources.find(
+          (sourceEntry) => sourceEntry.type === "defectdojo",
+        )?.sourceId;
+        const defectDojoProductId =
+          defectDojoSourceId ??
+          (ddMeta?.productId
+              ? String(ddMeta.productId)
+              : productIdFromLink);
+        syncedDefectDojoSourceId = defectDojoProductId;
+
+        const rawConfig = localStorage.getItem("structura_defectdojo:config") ?? localStorage.getItem("structura:defectdojo:config");
         if (!rawConfig) throw new Error("DefectDojo não configurado");
         const cfg = JSON.parse(rawConfig) as {
           baseUrl: string;
           apiToken: string;
         };
         const client = new DefectDojoClient(cfg);
-        const resp = await client.get<{ results: Record<string, unknown>[] }>(
-          "/api/v2/products/",
-          { id: String(svc.sourceId) },
-        );
-        const product = resp.results[0];
-        if (!product) throw new Error("Produto não encontrado no DefectDojo");
-        const mapped = mapToServiceDefinition(
-          product as unknown as Parameters<typeof mapToServiceDefinition>[0],
-        );
-        updateService(svc.id, mapped);
+        if (defectDojoProductId) {
+          const resp = await client.get<{ results: Record<string, unknown>[] }>(
+            "/api/v2/products/",
+            { id: String(defectDojoProductId) },
+          );
+          const product = resp.results[0];
+          if (product) {
+            defectDojoMapped = mapToServiceDefinition(
+              product as unknown as Parameters<typeof mapToServiceDefinition>[0],
+            );
+          }
+        }
       }
+
+      if (!githubRepo && !defectDojoMapped) {
+        throw new Error("Não foi possível sincronizar em nenhuma fonte");
+      }
+
+      const githubTech = githubRepo?.language ? [githubRepo.language] : [];
+      const githubTags = githubRepo?.topics ?? [];
+      const ddTags = defectDojoMapped?.tags ?? [];
+
+      const mergedTech = dedupeStringsPreserveOrder([
+        ...svc.technology,
+        ...githubTech,
+        ...(defectDojoMapped?.technology ?? []),
+      ]);
+      const mergedTags = dedupeStringsPreserveOrder([
+        ...(svc.tags ?? []),
+        ...githubTags,
+        ...ddTags,
+      ]);
+      const mergedSourceEntries = mergeSources(normalizeSources(svc), [
+        ...(githubRepo
+          ? [{ type: "github" as const, sourceId: githubRepo.full_name }]
+          : []),
+        ...(defectDojoMapped
+          ? [
+              {
+                type: "defectdojo" as const,
+                sourceId: syncedDefectDojoSourceId,
+              },
+            ]
+          : []),
+      ]);
+
+      updateService(svc.id, {
+        name: pickMoreCompleteString(
+          defectDojoMapped?.name ?? "",
+          githubRepo?.name ?? svc.name,
+        ),
+        description: pickMoreCompleteString(
+          defectDojoMapped?.description ?? "",
+          githubRepo?.description ?? svc.description,
+        ),
+        repositoryUrl:
+          githubRepo?.html_url ||
+          svc.repositoryUrl ||
+          defectDojoMapped?.repositoryUrl ||
+          "",
+        technology: mergedTech,
+        tags: mergedTags,
+        sources: mergedSourceEntries,
+        metadata: {
+          github: githubRepo
+            ? {
+                repoId: githubRepo.id,
+                fullName: githubRepo.full_name,
+                topics: githubRepo.topics ?? [],
+                language: githubRepo.language,
+                updatedAt: githubRepo.updated_at,
+              }
+            : svc.metadata?.github,
+          defectdojo:
+            defectDojoMapped?.metadata?.defectdojo ?? svc.metadata?.defectdojo,
+        },
+      });
     } catch (err) {
       setSyncError(err instanceof Error ? err.message : "Erro ao sincronizar");
     } finally {
       setSyncing(false);
     }
-  }, [source, svc, updateService]);
+  }, [
+    hasDefectDojoSource,
+    hasGithubSource,
+    normalizedSources,
+    svc,
+    updateService,
+    githubConfig?.baseUrl,
+    githubConfig?.token,
+  ]);
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card">
@@ -588,14 +573,14 @@ const DetailPanel = ({
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
         <div className="flex items-center gap-2 min-w-0">
           <span
-            className={`h-2.5 w-2.5 rounded-full shrink-0 ${SOURCE_DOT[source]}`}
+            className={`h-2.5 w-2.5 rounded-full shrink-0 ${SOURCE_DOT[normalizedSources[0]?.type ?? "manual"]}`}
           />
           <h2 className="text-base font-bold text-foreground truncate">
             {svc.name}
           </h2>
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          {(source === "github" || source === "defectdojo") && svc.sourceId && (
+          {hasSyncSource && (
             <button
               onClick={handleSync}
               disabled={syncing}
@@ -618,7 +603,6 @@ const DetailPanel = ({
         </div>
       </div>
 
-      {/* Scrollable content */}
       <div className="px-5 py-4">
         <div className="space-y-5">
           {syncError && (
@@ -627,7 +611,6 @@ const DetailPanel = ({
             </p>
           )}
 
-          {/* ─── Fields (view/edit) ─── */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
@@ -659,9 +642,9 @@ const DetailPanel = ({
               )}
             </div>
 
-            {(source === "github" || source === "defectdojo") && editing && (
+            {hasSyncSource && editing && (
               <p className="text-[10px] text-muted-foreground italic border border-border rounded-md px-3 py-1.5">
-                Alguns campos são sincronizados de {SOURCE_LABEL[source]} e
+                Alguns campos são sincronizados das fontes externas e
                 podem ser sobrescritos no próximo sync.
               </p>
             )}
@@ -724,19 +707,22 @@ const DetailPanel = ({
               </div>
             ) : (
               <div className="space-y-3">
-                {/* Source badge */}
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] text-muted-foreground w-20 shrink-0">
                     Fonte
                   </span>
-                  <span
-                    className={`rounded px-2 py-0.5 text-[10px] font-semibold ${SOURCE_BADGE[source]}`}
-                  >
-                    {SOURCE_LABEL[source]}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-1">
+                    {normalizedSources.map((source) => (
+                      <span
+                        key={source.type}
+                        className={`rounded px-2 py-0.5 text-[10px] font-semibold ${SOURCE_BADGE[source.type]}`}
+                      >
+                        {SOURCE_LABEL[source.type]}
+                      </span>
+                    ))}
+                  </div>
                 </div>
 
-                {/* Description */}
                 <div>
                   <span className="text-[11px] text-muted-foreground block mb-0.5">
                     Descrição
@@ -767,7 +753,6 @@ const DetailPanel = ({
                   )}
                 </div>
 
-                {/* Repo */}
                 {svc.repositoryUrl && (
                   <div className="flex items-start gap-2">
                     <span className="text-[11px] text-muted-foreground w-20 shrink-0 pt-0.5">
@@ -785,7 +770,40 @@ const DetailPanel = ({
                   </div>
                 )}
 
-                {/* Technology */}
+                {(
+                  (svc.metadata?.defectdojo as { productLink?: string } | undefined)
+                    ?.productLink
+                ) && (
+                  <div className="flex items-start gap-2">
+                    <span className="text-[11px] text-muted-foreground w-20 shrink-0 pt-0.5">
+                      Produto
+                    </span>
+                    <a
+                      href={
+                        (
+                          svc.metadata?.defectdojo as
+                            | { productLink?: string }
+                            | undefined
+                        )?.productLink
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline flex items-center gap-1 truncate"
+                    >
+                      <ExternalLink className="h-3 w-3 shrink-0" />
+                      <span className="truncate">
+                        {
+                          (
+                            svc.metadata?.defectdojo as
+                              | { productLink?: string }
+                              | undefined
+                          )?.productLink
+                        }
+                      </span>
+                    </a>
+                  </div>
+                )}
+
                 <div>
                   <span className="text-[11px] text-muted-foreground block mb-1">
                     Tecnologia
@@ -808,7 +826,6 @@ const DetailPanel = ({
                   )}
                 </div>
 
-                {/* Tags */}
                 <div>
                   <span className="text-[11px] text-muted-foreground block mb-1">
                     Tags
@@ -834,7 +851,6 @@ const DetailPanel = ({
             )}
           </div>
 
-          {/* ─── Usage in diagrams ─── */}
           <div className="space-y-1.5">
             <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold block">
               Uso em diagramas
@@ -866,7 +882,6 @@ const DetailPanel = ({
             )}
           </div>
 
-          {/* ─── Danger zone ─── */}
           <div className="pt-2 border-t border-border">
             {confirmDelete ? (
               <div className="flex items-center gap-2">
@@ -904,74 +919,6 @@ const DetailPanel = ({
   );
 };
 
-// ── Add Service dropdown ──────────────────────────────────────────────────
-
-type InlineForm = "manual" | "github" | "defectdojo" | null;
-
-const AddServiceDropdown = ({
-  onSelect,
-}: {
-  onSelect: (form: InlineForm) => void;
-}) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const showDefectDojo = import.meta.env.VITE_ENABLE_DEFECTDOJO === "true";
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node))
-        setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  const select = (form: InlineForm) => {
-    setOpen(false);
-    onSelect(form);
-  };
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-      >
-        <Plus className="h-4 w-4" />
-        Add Service
-        <ChevronDown className="h-3.5 w-3.5 opacity-70" />
-      </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-1.5 z-20 w-52 rounded-lg border border-border bg-card shadow-xl py-1">
-          <button
-            onClick={() => select("manual")}
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted/50 text-foreground text-left"
-          >
-            <span className="text-violet-400">✦</span> Criar manualmente
-          </button>
-          <button
-            onClick={() => select("github")}
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted/50 text-foreground text-left"
-          >
-            <span className="text-blue-400">⌥</span> Importar do GitHub
-          </button>
-          {showDefectDojo && (
-            <button
-              onClick={() => select("defectdojo")}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted/50 text-foreground text-left"
-            >
-              <span className="text-orange-400">🛡</span> Importar do
-              DefectDojo
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ── Main page ─────────────────────────────────────────────────────────────
 
 type SourceFilter = "all" | Source;
 
@@ -985,15 +932,21 @@ const ServiceRegistry = () => {
 
   const [search, setSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
-  const [inlineForm, setInlineForm] = useState<InlineForm>(null);
-  const [showDefectDojo, setShowDefectDojo] = useState(false);
+  const [importPanel, setImportPanel] = useState<
+    "manual" | "github" | "defectdojo" | null
+  >(null);
+  const showEnableGithub = import.meta.env.VITE_ENABLE_GITHUB_IMPORT === "true";
+  const showEnableDefectDojo = import.meta.env.VITE_ENABLE_DEFECTDOJO === "true";
+  const { config: githubConfig } = useGithubConfig();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedFromQuery = searchParams.get("serviceId");
 
   const filtered = useMemo(() => {
     let result = services;
     if (sourceFilter !== "all") {
-      result = result.filter((s) => (s.source ?? "manual") === sourceFilter);
+      result = result.filter((service) =>
+        normalizeSources(service).some((source) => source.type === sourceFilter),
+      );
     }
     if (search.trim()) {
       const q = search.trim().toLowerCase();
@@ -1013,7 +966,6 @@ const ServiceRegistry = () => {
     [selectedId, services],
   );
 
-  // If selected service was deleted, clear selection
   useEffect(() => {
     if (selectedId && !services.find((s) => s.id === selectedId)) {
       setSelectedId(null);
@@ -1062,19 +1014,9 @@ const ServiceRegistry = () => {
     [openDiagram, navigate],
   );
 
-  const handleInlineFormSelect = (form: InlineForm) => {
-    if (form === "defectdojo") {
-      setShowDefectDojo(true);
-      setInlineForm(null);
-    } else {
-      setInlineForm(form);
-      setShowDefectDojo(false);
-    }
-  };
-
   const handleCreate = (svc: Omit<ServiceDefinition, "id">) => {
     const created = addService(svc);
-    setInlineForm(null);
+    setImportPanel(null);
     setSelectedId(created.id);
   };
 
@@ -1098,7 +1040,15 @@ const ServiceRegistry = () => {
                 Catálogo central de serviços e infraestrutura
               </p>
             </div>
-            <AddServiceDropdown onSelect={handleInlineFormSelect} />
+            <button
+              onClick={() =>
+                setImportPanel((current) => (current ? null : "manual"))
+              }
+              className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Add Service
+            </button>
           </div>
 
           {/* Search */}
@@ -1140,33 +1090,47 @@ const ServiceRegistry = () => {
             </span>
           </div>
 
-          {/* Inline forms */}
-          <AnimatePresence mode="wait">
-            {inlineForm === "manual" && (
-              <ManualCreateForm
-                key="manual"
-                onCancel={() => setInlineForm(null)}
-                onCreate={handleCreate}
-              />
-            )}
-            {inlineForm === "github" && (
-              <GitHubImportForm
-                key="github"
-                onCancel={() => setInlineForm(null)}
-                onCreate={handleCreate}
-              />
-            )}
-          </AnimatePresence>
-
-          {/* DefectDojo panel */}
-          {showDefectDojo && (
-            <div className="mb-6">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  DefectDojo
-                </span>
+          {importPanel && (
+            <div className="mb-6 rounded-xl border border-border bg-card p-4">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex gap-1 rounded-lg bg-secondary p-1">
+                  <button
+                    onClick={() => setImportPanel("manual")}
+                    className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      importPanel === "manual"
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    ✦ Manual
+                  </button>
+                  {showEnableGithub && (
+                  <button
+                    onClick={() => setImportPanel("github")}
+                    className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      importPanel === "github"
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    ⌥ GitHub
+                  </button>
+                  )}
+                  {showEnableDefectDojo && (
+                    <button
+                      onClick={() => setImportPanel("defectdojo")}
+                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        importPanel === "defectdojo"
+                          ? "bg-card text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      🛡 DefectDojo
+                    </button>
+                  )}
+                </div>
                 <button
-                  onClick={() => setShowDefectDojo(false)}
+                  onClick={() => setImportPanel(null)}
                   className="text-muted-foreground hover:text-foreground"
                 >
                   <X className="h-4 w-4" />
@@ -1174,15 +1138,21 @@ const ServiceRegistry = () => {
               </div>
               <Suspense
                 fallback={
-                  <div className="h-32 rounded-xl border border-border bg-card animate-pulse" />
+                  <div className="h-32 animate-pulse rounded-xl bg-secondary" />
                 }
               >
-                <DefectDojoPanel />
+                {importPanel === "manual" && (
+                  <ManualCreateForm
+                    onCancel={() => setImportPanel(null)}
+                    onCreate={handleCreate}
+                  />
+                )}
+                {importPanel === "defectdojo" && <DefectDojoPanel />}
+                {importPanel === "github" && <GithubImportPanel />}
               </Suspense>
             </div>
           )}
 
-          {/* Service cards grid */}
           <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
             <div>
               {filtered.length === 0 ? (
