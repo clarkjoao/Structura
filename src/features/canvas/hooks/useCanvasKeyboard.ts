@@ -1,4 +1,5 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type { ReactFlowInstance, Node } from "@xyflow/react";
 import type {
   Diagram,
@@ -51,13 +52,6 @@ interface UseCanvasKeyboardParams {
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────
-
-const C4_SHORTCUT_MAP: Record<string, { type: ComponentType; name: string }> = {
-  "1": { type: "person", name: "Novo Person" },
-  "2": { type: "system", name: "Novo System" },
-  "3": { type: "container", name: "Novo Container" },
-  "4": { type: "component", name: "Novo Component" },
-};
 
 const KEY = {
   ESCAPE: "Escape",
@@ -167,6 +161,17 @@ function getCenterOfNodes(diagram: Diagram, ids: string[], offset = 20): { x: nu
 // ── Main hook ─────────────────────────────────────────────────────────────
 
 export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
+  const { t } = useTranslation();
+  const c4ShortcutMap = useMemo(
+    () =>
+      ({
+        "1": { type: "person" as const, name: t("keyboard.newPerson") },
+        "2": { type: "system" as const, name: t("keyboard.newSystem") },
+        "3": { type: "container" as const, name: t("keyboard.newContainer") },
+        "4": { type: "component" as const, name: t("keyboard.newComponent") },
+      }) satisfies Record<string, { type: ComponentType; name: string }>,
+    [t],
+  );
   const { isRecording, onRecordUndo } = useRecordingMode();
   const {
     diagram,
@@ -359,9 +364,9 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       }
 
       // Cmd/Ctrl+1–4 — add C4 component
-      if (mod && C4_SHORTCUT_MAP[e.key]) {
+      if (mod && c4ShortcutMap[e.key]) {
         e.preventDefault();
-        const { type, name } = C4_SHORTCUT_MAP[e.key];
+        const { type, name } = c4ShortcutMap[e.key];
         const pos = getViewportCenter(reactFlowInstance, isPanelOpen);
         addComponent(type, name, null, pos);
         return;
@@ -401,5 +406,6 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     addComponent,
     isPanelOpen,
     onOpenSearch,
+    c4ShortcutMap,
   ]);
 }

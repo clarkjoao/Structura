@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { ComponentPatch } from "@/features/diagram";
 import ColorSwatches from "./ColorSwatches";
 
@@ -8,18 +9,20 @@ interface PanelColorPickerProps {
   updateComponent: (id: string, patch: ComponentPatch) => void;
 }
 
-const PanelColorPicker = ({ componentId, currentColor, currentOpacity, updateComponent }: PanelColorPickerProps) => (
+const PanelColorPicker = ({ componentId, currentColor, currentOpacity, updateComponent }: PanelColorPickerProps) => {
+  const { t } = useTranslation();
+  return (
   <div className="space-y-3">
     <ColorSwatches
       componentId={componentId}
       currentColor={currentColor}
-      label="Cor do Painel"
+      label={t("elementPanel.panelColorLabel")}
       presetGroup="panel"
       updateComponent={updateComponent}
     />
     <div>
       <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-        Opacidade — {currentOpacity}%
+        {t("elementPanel.opacityLabel", { value: currentOpacity })}
       </label>
       <input
         type="range"
@@ -36,6 +39,7 @@ const PanelColorPicker = ({ componentId, currentColor, currentOpacity, updateCom
       </div>
     </div>
   </div>
-);
+  );
+};
 
 export default PanelColorPicker;

@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ReactFlow,
   Background,
@@ -60,6 +61,7 @@ const Canvas = ({
   isFlowPanelOpen,
   onPlayFlow,
 }: CanvasProps = {}) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const reactFlowInstance = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
@@ -88,9 +90,9 @@ const Canvas = ({
 
   const handleAddEndpointToGroup = useCallback(
     (groupId: string) => {
-      actions.addComponent("endpoint", "Novo Endpoint", groupId);
+      actions.addComponent("endpoint", t("canvas.newEndpoint"), groupId);
     },
-    [actions],
+    [actions, t],
   );
 
   const { onReorderHandle } = useCanvasHandleReorder({
@@ -249,7 +251,7 @@ const Canvas = ({
   if (!diagram) {
     return (
       <div className="flex-1 flex items-center justify-center text-muted-foreground">
-        Nenhum diagrama selecionado
+        {t("canvas.noDiagramSelected")}
       </div>
     );
   }

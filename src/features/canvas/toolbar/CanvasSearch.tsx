@@ -4,6 +4,7 @@ import type { Component } from "@/features/diagram";
 import { isPanelType, isNoteType, isApiGroupType } from "@/features/diagram";
 import { isAwsType } from "@/lib/catalogs/aws";
 import { TypeConfig } from "@/features/canvas/nodes/CustomNode/TypeConfig";
+import { useTranslation } from "react-i18next";
 
 interface CanvasSearchProps {
   onClose: () => void;
@@ -12,6 +13,7 @@ interface CanvasSearchProps {
 }
 
 export default function CanvasSearch({ onClose, onSelectResult, components }: CanvasSearchProps) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
@@ -86,7 +88,7 @@ export default function CanvasSearch({ onClose, onSelectResult, components }: Ca
               setQuery(e.target.value);
               setSelectedIndex(0);
             }}
-            placeholder="Buscar componente..."
+            placeholder={t("canvasSearch.placeholder")}
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
             autoFocus
             onKeyDown={handleKeyDown}
@@ -99,13 +101,13 @@ export default function CanvasSearch({ onClose, onSelectResult, components }: Ca
                 inputRef.current?.focus();
               }}
               className="text-muted-foreground hover:text-foreground"
-              aria-label="Limpar busca"
+              aria-label={t("canvasSearch.clearAria")}
             >
               <X className="h-3.5 w-3.5" />
             </button>
           )}
           <kbd className="text-[10px] text-muted-foreground border border-border rounded px-1.5 py-0.5">
-            esc
+            {t("canvasSearch.escKey")}
           </kbd>
         </div>
 
@@ -147,7 +149,7 @@ export default function CanvasSearch({ onClose, onSelectResult, components }: Ca
         {/* Empty state */}
         {query && results.length === 0 && (
           <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-            Nenhum resultado para &ldquo;{query}&rdquo;
+            {t("canvasSearch.noResultsFor", { query })}
           </div>
         )}
 
@@ -155,13 +157,13 @@ export default function CanvasSearch({ onClose, onSelectResult, components }: Ca
         {results.length > 0 && (
           <div className="px-4 py-2 border-t border-border flex items-center gap-3 text-[10px] text-muted-foreground">
             <span>
-              <kbd className="border border-border rounded px-1">↑↓</kbd> navegar
+              <kbd className="border border-border rounded px-1">↑↓</kbd> {t("canvasSearch.navigate")}
             </span>
             <span>
-              <kbd className="border border-border rounded px-1">Enter</kbd> ir para
+              <kbd className="border border-border rounded px-1">Enter</kbd> {t("canvasSearch.goTo")}
             </span>
             <span>
-              <kbd className="border border-border rounded px-1">Esc</kbd> fechar
+              <kbd className="border border-border rounded px-1">Esc</kbd> {t("canvasSearch.close")}
             </span>
           </div>
         )}

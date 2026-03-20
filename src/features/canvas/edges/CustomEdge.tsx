@@ -15,6 +15,7 @@ import {
   type StrokeStyle,
 } from "@/features/diagram";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
+import { useTranslation } from "react-i18next";
 
 export interface EdgeData {
   label: string;
@@ -108,6 +109,7 @@ const Edge = memo(
     markerEnd,
     markerStart,
   }: EdgeProps) => {
+    const { t } = useTranslation();
     const { screenToFlowPosition } = useReactFlow();
     const { updateConnection } = useDiagramActions();
     const dragPathRef = useRef<SVGPathElement | null>(null);
@@ -251,7 +253,7 @@ const Edge = memo(
                 }`}
                 title={
                   d?.coverageFlowNames?.length
-                    ? `Coberto por: ${d.coverageFlowNames.join(", ")}`
+                    ? t("customEdge.coveredBy", { names: d.coverageFlowNames.join(", ") })
                     : undefined
                 }
               >
@@ -294,7 +296,7 @@ const Edge = memo(
                   <span className={`text-[9px] font-bold uppercase tracking-wider ${
                     d.activePayloadDirection === "response" ? "text-emerald-400" : "text-cyan-400"
                   }`}>
-                    {d.activePayloadDirection === "response" ? "← Response" : "→ Request"}
+                    {d.activePayloadDirection === "response" ? t("customEdge.response") : t("customEdge.request")}
                   </span>
                 </div>
                 <pre className="text-[10px] font-mono text-foreground/90 whitespace-pre-wrap line-clamp-3 overflow-hidden">

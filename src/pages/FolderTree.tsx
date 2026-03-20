@@ -20,6 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { Folder as FolderType, Diagram } from "@/features/diagram";
 import { useDiagramActions } from "@/features/diagram";
+import { useTranslation } from "react-i18next";
 
 const ADD_AT_ROOT = "__add_at_root__";
 
@@ -68,6 +69,7 @@ export function FolderTree({
   onDropOnFolder,
   triggerAddFolderAtRoot = 0,
 }: FolderTreeProps) {
+  const { t } = useTranslation();
   const { addFolder, renameFolder, deleteFolder } = useDiagramActions();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -169,14 +171,14 @@ export function FolderTree({
       {/* Header */}
       <div className="flex items-center justify-between px-3 pt-3 pb-1">
         <span className="text-[11px] font-semibold text-sidebar-foreground/60 uppercase tracking-widest">
-          Workspace
+          {t("common.workspace")}
         </span>
         <Button
           variant="ghost"
           size="icon"
           className="h-6 w-6 text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent"
           onClick={addFolderAtRoot}
-          title="Nova pasta"
+          title={t("folderTree.newFolderTitle")}
         >
           <Plus className="h-3.5 w-3.5" />
         </Button>
@@ -187,7 +189,7 @@ export function FolderTree({
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-sidebar-foreground/30" />
           <Input
-            placeholder="Buscar pastas…"
+            placeholder={t("folderTree.searchFoldersPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="h-7 pl-7 text-xs bg-sidebar-accent/50 border-0 text-sidebar-foreground placeholder:text-sidebar-foreground/30 focus-visible:ring-1 focus-visible:ring-sidebar-ring/50"
@@ -213,7 +215,7 @@ export function FolderTree({
           onDrop={(e) => handleDrop(e, null)}
         >
           <Home className="h-4 w-4 shrink-0 opacity-60" />
-          <span className="flex-1 truncate">Todos os diagramas</span>
+          <span className="flex-1 truncate">{t("folderTree.allDiagrams")}</span>
           <span className="text-[11px] text-sidebar-foreground/40 tabular-nums">
             {totalDiagrams}
           </span>
@@ -265,7 +267,7 @@ export function FolderTree({
 
         {filteredRootFolders.length === 0 && searchQuery && (
           <p className="px-3 py-4 text-xs text-sidebar-foreground/40 text-center">
-            Nenhuma pasta encontrada
+            {t("folderTree.noFoldersFound")}
           </p>
         )}
       </div>
@@ -287,6 +289,7 @@ function NewFolderInput({
   onCancel: () => void;
   depth: number;
 }) {
+  const { t } = useTranslation();
   return (
     <div
       className="flex items-center gap-1.5 rounded-md px-2 py-1"
@@ -294,7 +297,7 @@ function NewFolderInput({
     >
       <Folder className="h-3.5 w-3.5 shrink-0 text-amber-500/70" />
       <Input
-        placeholder="Nome da pasta…"
+        placeholder={t("folderTree.folderNamePlaceholder")}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => {
@@ -368,6 +371,7 @@ function FolderTreeItem({
   submitAddFolder,
   setAddingUnderParent,
 }: FolderTreeItemProps) {
+  const { t } = useTranslation();
   const children = getChildFolders(folders, folder.id);
   const totalCount = countAllDescendantDiagrams(folders, diagrams, folder.id);
   const hasChildren = children.length > 0;
@@ -483,18 +487,18 @@ function FolderTreeItem({
                 onClick={(e) => e.stopPropagation()}
               >
                 <DropdownMenuItem onClick={() => startRename(folder)}>
-                  Renomear
+                  {t("folderTree.rename")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => startAddSubfolder(folder.id)}
                 >
-                  Nova subpasta
+                  {t("folderTree.newSubfolder")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-destructive focus:text-destructive"
                   onClick={() => handleDeleteFolder(folder.id)}
                 >
-                  Excluir
+                  {t("folderTree.delete")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -9,34 +9,7 @@ import { getUsageKeyForType, getDefaultNameForNewComponent, isPanelType } from "
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/catalogs/aws";
 import AwsIcon from "../nodes/AwsIcon";
 import { trackUsage, getTopUsed } from "./element-usage-tracker";
-
-const C4_OPTIONS: { type: ComponentType; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { type: "person", label: "Person", icon: User },
-  { type: "system", label: "System", icon: Network },
-  { type: "container", label: "Container", icon: Server },
-  { type: "component", label: "Component", icon: Database },
-];
-
-const CANVAS_OPTIONS: {
-  type: ComponentType;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  panelKind?: PanelKind;
-  awsIconName?: string;
-  description?: string;
-}[] = [
-  { type: "panel", label: "Painel", icon: Square, panelKind: "default" },
-  ...PANEL_KINDS.filter((p) => p.id !== "default").map((p) => ({
-    type: "panel" as const,
-    label: p.label,
-    icon: p.icon,
-    panelKind: p.id as PanelKind,
-    awsIconName: p.awsIconName,
-  })),
-  { type: "note", label: "Nota", icon: StickyNote },
-  { type: "api-group", label: "API Group", icon: Globe },
-  { type: "endpoint", label: "Endpoint", icon: Globe },
-];
+import { useTranslation } from "react-i18next";
 
 interface ElementPickerModalProps {
   onClose: () => void;
@@ -44,6 +17,7 @@ interface ElementPickerModalProps {
 }
 
 const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [expandedAwsCats, setExpandedAwsCats] = useState<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
@@ -51,6 +25,35 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const { addComponent, linkComponentToService } = useDiagramActions();
   const services = useAllServices();
   const allComponents = useAllComponents();
+
+  const C4_OPTIONS = useMemo(
+    () =>
+      [
+        { type: "person" as const, label: t("quickInsert.typePerson"), icon: User },
+        { type: "system" as const, label: t("quickInsert.typeSystem"), icon: Network },
+        { type: "container" as const, label: t("quickInsert.typeContainer"), icon: Server },
+        { type: "component" as const, label: t("quickInsert.typeComponent"), icon: Database },
+      ],
+    [t],
+  );
+
+  const CANVAS_OPTIONS = useMemo(
+    () =>
+      [
+        { type: "panel" as const, label: t("canvasToolbar.panel"), icon: Square, panelKind: "default" as const },
+        ...PANEL_KINDS.filter((p) => p.id !== "default").map((p) => ({
+          type: "panel" as const,
+          label: p.label,
+          icon: p.icon,
+          panelKind: p.id as PanelKind,
+          awsIconName: p.awsIconName,
+        })),
+        { type: "note" as const, label: t("canvasToolbar.note"), icon: StickyNote },
+        { type: "api-group" as const, label: t("quickInsert.typeApiGroup"), icon: Globe },
+        { type: "endpoint" as const, label: t("quickInsert.typeEndpoint"), icon: Globe },
+      ],
+    [t],
+  );
 
   const onCanvasServiceIds = useMemo(
     () => new Set(allComponents.map((c) => c.serviceId).filter((id): id is string => !!id)),
@@ -75,12 +78,12 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
 
   const filteredC4 = useMemo(
     () => (q ? C4_OPTIONS.filter((o) => o.label.toLowerCase().includes(q)) : C4_OPTIONS),
-    [q],
+    [q, C4_OPTIONS],
   );
 
   const filteredCanvas = useMemo(
     () => (q ? CANVAS_OPTIONS.filter((o) => o.label.toLowerCase().includes(q)) : CANVAS_OPTIONS),
-    [q],
+    [q, CANVAS_OPTIONS],
   );
 
   const filteredAwsCategories = useMemo(() => {
@@ -179,7 +182,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
         return null;
       })
       .filter(Boolean);
-  }, [topUsed, q, services]);
+  }, [topUsed, q, services, C4_OPTIONS, CANVAS_OPTIONS]);
 
   const showC4 = filteredC4.length > 0;
   const showCanvas = filteredCanvas.length > 0;
@@ -198,7 +201,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
       <div className="flex flex-col bg-card border border-border rounded-xl shadow-2xl w-[560px] max-h-[80vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-          <h2 className="text-sm font-semibold">Add Element</h2>
+          <h2 className="text-sm font-semibold">{t("elementPicker.modalTitle")}</h2>
           <button
             onClick={onClose}
             className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
@@ -215,7 +218,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
               ref={inputRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search elements and registry..."
+              placeholder={t("elementPicker.searchPlaceholder")}
               className="w-full rounded-md border border-border bg-secondary py-2 pl-8 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
@@ -225,7 +228,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
         <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4">
           {showEmpty && (
             <p className="py-6 text-center text-xs text-muted-foreground">
-              No results for &ldquo;{search.trim()}&rdquo;
+              {t("elementPicker.noResultsFor", { query: search.trim() })}
             </p>
           )}
 
@@ -233,7 +236,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
           {showFrequent && (
             <section>
               <p className="mb-2 flex items-center gap-1.5 text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
-                <Star className="h-3 w-3" /> Frequently Used
+                <Star className="h-3 w-3" /> {t("elementPicker.frequentlyUsed")}
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {frequentItems.map((item) => {
@@ -303,7 +306,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
           {showC4 && (
             <section>
               <p className="mb-2 text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
-                C4 Model
+                {t("elementPicker.c4Model")}
               </p>
               <div className="grid grid-cols-4 gap-2">
                 {filteredC4.map((opt) => (
@@ -324,7 +327,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
           {showCanvas && (
             <section>
               <p className="mb-2 text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
-                Canvas e Agrupamentos
+                {t("elementPicker.canvasGroups")}
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {filteredCanvas.map((opt) => (
@@ -353,7 +356,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
           {showAws && (
             <section>
               <p className="mb-2 text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
-                AWS Services
+                {t("canvasToolbar.awsServices")}
               </p>
               <div className="space-y-0.5">
                 {filteredAwsCategories.map((cat) => {
@@ -399,7 +402,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
           {showRegistry && (
             <section>
               <p className="mb-2 text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
-                Registry
+                {t("elementPicker.registry")}
               </p>
               <div className="space-y-1">
                 {filteredServices.map((svc) => {
@@ -419,14 +422,14 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
                       </div>
                       {isOnCanvas ? (
                         <span className="flex shrink-0 items-center gap-1 text-[10px] font-medium text-emerald-400">
-                          <Check className="h-3 w-3" /> On canvas
+                          <Check className="h-3 w-3" /> {t("elementPicker.onCanvas")}
                         </span>
                       ) : (
                         <button
                           onClick={() => handleAddService(svc.id, svc.name)}
                           className="shrink-0 rounded-md border border-border bg-card px-2 py-1 text-[11px] font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-surface-hover"
                         >
-                          + Add
+                          {t("elementPicker.addButton")}
                         </button>
                       )}
                     </div>

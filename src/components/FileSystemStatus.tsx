@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { FolderOpen, FolderX, Loader2, HardDrive, Database, RefreshCw } from "lucide-react";
 import {
   useFileSystemStorage,
@@ -9,6 +10,7 @@ import { useDiagramStore } from "@/features/diagram";
 import { useShallow } from "zustand/react/shallow";
 
 export function FileSystemStatus() {
+  const { t } = useTranslation();
   const {
     status,
     folderName,
@@ -42,7 +44,7 @@ export function FileSystemStatus() {
             bg-emerald-500/10 px-2.5 py-1.5 text-[11px] font-medium text-emerald-400"
           >
             <HardDrive className="h-3.5 w-3.5" />
-            <span>Pasta local</span>
+            <span>{t("filesystem.localFolder")}</span>
             {folderName && (
               <span className="text-emerald-400/70 font-mono truncate max-w-[120px]">
                 {folderName}
@@ -53,14 +55,14 @@ export function FileSystemStatus() {
             onClick={syncFromFolder}
             disabled={syncing}
             className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-            title="Sync: puxar atualizações da pasta"
+            title={t("filesystem.syncPullTitle")}
           >
             <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
           </button>
           <button
             onClick={requestDisconnect}
             className="text-muted-foreground hover:text-foreground transition-colors"
-            title="Desconectar pasta"
+            title={t("filesystem.disconnectTitle")}
           >
             <FolderX className="h-4 w-4" />
           </button>
@@ -70,7 +72,7 @@ export function FileSystemStatus() {
       {status === "connecting" && (
         <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          Conectando...
+          {t("filesystem.connecting")}
         </div>
       )}
 
@@ -79,20 +81,20 @@ export function FileSystemStatus() {
           <div
             className="flex items-center gap-1.5 rounded-md border border-amber-500/30
               bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-medium text-amber-400"
-            title="Dados salvos no navegador (localStorage)"
+            title={t("filesystem.localStorageTitle")}
           >
             <Database className="h-3.5 w-3.5" />
-            <span>localStorage</span>
+            <span>{t("filesystem.localStorageLabel")}</span>
           </div>
           <button
             onClick={connect}
             className="flex items-center gap-1.5 rounded-md border border-border
               px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground
               hover:text-foreground hover:border-primary/40 transition-all"
-            title="Sincronizar com pasta local"
+            title={t("filesystem.connectFolderTitle")}
           >
             <FolderOpen className="h-3.5 w-3.5" />
-            Conectar pasta
+            {t("filesystem.connectFolder")}
           </button>
         </div>
       )}

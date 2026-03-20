@@ -1,4 +1,5 @@
 import type { DDSearchResult } from "../types";
+import { useTranslation } from "react-i18next";
 
 const CRITICALITY_COLORS: Record<string, string> = {
   critical: "bg-destructive/10 text-destructive border-destructive/30",
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function DefectDojoProductCard({ product, selected, onToggle }: Props) {
+  const { t } = useTranslation();
   const isImported = product.status === "imported";
   const isUpdated = product.status === "updated";
   const critColor =
@@ -46,12 +48,12 @@ export function DefectDojoProductCard({ product, selected, onToggle }: Props) {
 
           {isImported && (
             <span className="inline-flex items-center rounded-full border border-green-500/30 bg-green-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-green-600">
-              ✓ Importado
+              {t("defectdojo.badgeImported")}
             </span>
           )}
           {isUpdated && (
             <span className="inline-flex items-center rounded-full border border-yellow-500/30 bg-yellow-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-600">
-              ↑ Atualizado
+              {t("defectdojo.badgeUpdated")}
             </span>
           )}
 

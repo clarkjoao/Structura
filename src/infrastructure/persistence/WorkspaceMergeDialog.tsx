@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import {
   FolderOpen,
@@ -28,6 +29,7 @@ export function WorkspaceMergeDialog({
   onOverwriteLocal,
   onCancel,
 }: WorkspaceMergeDialogProps) {
+  const { t } = useTranslation();
   const [showInvalid, setShowInvalid] = useState(false);
 
   const localDiagramIds = useDiagramStore(
@@ -58,10 +60,10 @@ export function WorkspaceMergeDialog({
           </div>
           <div>
             <h2 className="text-sm font-semibold">
-              Pasta com arquivos existentes
+              {t("workspaceMerge.title")}
             </h2>
             <p className="text-[11px] text-muted-foreground">
-              Encontramos {scanResult.valid.length} diagrama(s) nesta pasta.
+              {t("workspaceMerge.found", { count: scanResult.valid.length })}
             </p>
           </div>
         </div>
@@ -70,17 +72,17 @@ export function WorkspaceMergeDialog({
         <div className="flex items-center gap-2 mb-4">
           <div className="flex items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 text-[11px] font-medium text-emerald-400">
             <CheckCircle2 className="h-3.5 w-3.5" />
-            {scanResult.valid.length} válidos
+            {t("workspaceMerge.valid", { count: scanResult.valid.length })}
           </div>
           {scanResult.invalid.length > 0 && (
             <div className="flex items-center gap-1.5 rounded-md border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 text-[11px] font-medium text-red-400">
               <XCircle className="h-3.5 w-3.5" />
-              {scanResult.invalid.length} inválidos
+              {t("workspaceMerge.invalid", { count: scanResult.invalid.length })}
             </div>
           )}
           <div className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground">
             <FileBox className="h-3.5 w-3.5" />
-            {localDiagramCount} locais
+            {t("workspaceMerge.local", { count: localDiagramCount })}
           </div>
         </div>
 
@@ -96,7 +98,7 @@ export function WorkspaceMergeDialog({
               ) : (
                 <ChevronRight className="h-3.5 w-3.5" />
               )}
-              Ver arquivos inválidos ({scanResult.invalid.length})
+              {t("workspaceMerge.toggleInvalid", { count: scanResult.invalid.length })}
             </button>
             {showInvalid && (
               <div className="mt-2 max-h-32 overflow-y-auto space-y-1">
@@ -118,7 +120,7 @@ export function WorkspaceMergeDialog({
         {/* Manifest error */}
         {scanResult.manifestError && (
           <div className="mb-4 text-[11px] text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-md px-3 py-2">
-            <span className="font-medium">Aviso do manifest:</span>{" "}
+            <span className="font-medium">{t("workspaceMerge.manifestWarning")}</span>{" "}
             {scanResult.manifestError}
           </div>
         )}
@@ -128,8 +130,7 @@ export function WorkspaceMergeDialog({
           <div className="mb-4 flex items-start gap-2 text-[11px] text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-md px-3 py-2">
             <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
             <span>
-              {conflictCount} diagrama(s) já existem localmente (localStorage). Em caso de
-              conflito, a versão da pasta será priorizada sobre a versão local (localStorage) no merge.
+              {t("workspaceMerge.conflict", { count: conflictCount })}
             </span>
           </div>
         )}
@@ -140,21 +141,21 @@ export function WorkspaceMergeDialog({
             onClick={onCancel}
             className="rounded-md border border-border px-3 py-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
           >
-            Cancelar e manter local storage
+            {t("workspaceMerge.cancelKeepLocal")}
           </button>
           <button
             onClick={onOverwriteLocal}
             className="rounded-md border border-destructive/40 px-3 py-1.5 text-[12px] font-medium text-destructive hover:bg-destructive/10 transition-colors"
-            title="Descartar diagramas que estão só no app e carregar apenas os que estão na pasta"
+            title={t("workspaceMerge.overwriteTitle")}
           >
-            Usar arquivos só pasta
+            {t("workspaceMerge.overwrite")}
           </button>
           <button
             onClick={onMerge}
             className="rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-            title="Manter os diagramas que já estão no app e adicionar os que estão na pasta"
+            title={t("workspaceMerge.mergeTitle")}
           >
-            Manter tudo (localStorage + pasta) e fazer merge
+            {t("workspaceMerge.merge")}
           </button>
         </div>
       </motion.div>

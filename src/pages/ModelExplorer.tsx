@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { ReactFlowProvider } from "@xyflow/react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Check, Clipboard, Download, GitBranch, CircleHelp } from "lucide-react";
@@ -40,6 +41,7 @@ function ModelExplorerContent({
   copied: boolean;
   flows: Flow[];
 }) {
+  const { t } = useTranslation();
   const diagram = useActiveDiagram();
   const { isRecording, editingFlowId, startRecording, cancelRecording, finalizeRecording, ...recordingProps } = useRecordingMode();
   const { activeFlow, currentStep, isPlaying, play, exit, prev, next, goToStep } = useFlowPlayback();
@@ -65,7 +67,7 @@ function ModelExplorerContent({
               <span className={`text-[10px] font-mono rounded px-1.5 py-0.5 animate-pulse ${
                 editingFlowId ? "text-amber-400 bg-amber-400/10" : "text-red-400 bg-red-400/10"
               }`}>
-                {editingFlowId ? "✎ EDIT" : "● REC"}
+                {editingFlowId ? t("flows.recordingEdit") : t("flows.recordingRec")}
               </span>
             )}
           </div>
@@ -76,7 +78,7 @@ function ModelExplorerContent({
                 showFlows ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground border border-transparent hover:border-border"
               } ${disabledWhileBusy ? "opacity-50 pointer-events-none" : ""}`}
             >
-              <GitBranch className="h-3.5 w-3.5" /> Flows
+              <GitBranch className="h-3.5 w-3.5" /> {t("flows.panelTitle")}
             </button>
             <button
               onClick={handleCopyDrawio}
@@ -84,23 +86,23 @@ function ModelExplorerContent({
               className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all ${disabledWhileBusy ? "opacity-50 pointer-events-none" : ""}`}
             >
               {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Clipboard className="h-3.5 w-3.5" />}
-              {copied ? "Copiado!" : "Copy"}
+              {copied ? t("flows.copied") : t("flows.copyDrawio")}
             </button>
             <button
               onClick={handleExport}
               disabled={disabledWhileBusy}
               className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all ${disabledWhileBusy ? "opacity-50 pointer-events-none" : ""}`}
             >
-              <Download className="h-3.5 w-3.5" /> Exportar
+              <Download className="h-3.5 w-3.5" /> {t("flows.export")}
             </button>
             <button
               onClick={() => setShowShortcuts(true)}
               disabled={disabledWhileBusy}
               className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all ${disabledWhileBusy ? "opacity-50 pointer-events-none" : ""}`}
-              aria-label="Atalhos"
-              title="Atalhos"
+              aria-label={t("flows.shortcutsAria")}
+              title={t("flows.shortcuts")}
             >
-              <CircleHelp className="h-3.5 w-3.5" /> Atalhos
+              <CircleHelp className="h-3.5 w-3.5" /> {t("flows.shortcuts")}
             </button>
           </div>
         </div>
@@ -161,6 +163,7 @@ function ModelExplorerContent({
 }
 
 const ModelExplorer = () => {
+  const { t } = useTranslation();
   const diagram = useActiveDiagram();
   const activeDiagramId = useActiveDiagramId();
   const { openDiagram, addFlow, updateFlow } = useDiagramActions();
@@ -205,13 +208,13 @@ const ModelExplorer = () => {
       const desc = data.description || undefined;
       const flowTags = data.tags.length ? data.tags : undefined;
       if (data.editingFlowId) {
-        updateFlow(data.editingFlowId, { name: data.name || "Flow sem nome", mermaid, steps: data.steps, description: desc, tags: flowTags });
+        updateFlow(data.editingFlowId, { name: data.name || t("flows.unnamed"), mermaid, steps: data.steps, description: desc, tags: flowTags });
       } else {
-        const flow = addFlow(diagram.id, data.name || "Flow sem nome", mermaid, data.steps);
+        const flow = addFlow(diagram.id, data.name || t("flows.unnamed"), mermaid, data.steps);
         if (desc || flowTags) updateFlow(flow.id, { description: desc, tags: flowTags });
       }
     },
-    [diagram, addFlow, updateFlow],
+    [diagram, addFlow, updateFlow, t],
   );
 
   const handleCopyDrawio = useCallback(() => {
@@ -254,8 +257,8 @@ const ModelExplorer = () => {
         <Navbar />
         <div className="flex-1 flex items-center justify-center mt-16">
           <div className="text-center">
-            <p className="text-muted-foreground mb-4">Nenhum diagrama selecionado.</p>
-            <Link to="/dashboard" className="text-primary hover:underline text-sm">Voltar ao Dashboard</Link>
+            <p className="text-muted-foreground mb-4">{t("flows.noDiagram")}</p>
+            <Link to="/dashboard" className="text-primary hover:underline text-sm">{t("flows.backToDashboard")}</Link>
           </div>
         </div>
       </div>

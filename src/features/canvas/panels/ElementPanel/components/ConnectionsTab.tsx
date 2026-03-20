@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Search, ArrowRight, GripVertical } from "lucide-react";
 import {
   useConnections,
@@ -134,6 +135,7 @@ function ConnectionGroup({
 }
 
 const ConnectionsTab = ({ componentId }: { componentId: string }) => {
+  const { t } = useTranslation();
   const connections = useConnections();
   const component = useComponent(componentId);
   const { updateHandleOrder } = useDiagramActions();
@@ -249,7 +251,7 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
   if (totalCount === 0) {
     return (
       <div className="p-4 text-xs text-muted-foreground italic text-center">
-        Nenhuma conexão encontrada.
+        {t("connectionsTab.noneFound")}
       </div>
     );
   }
@@ -263,18 +265,18 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Filtrar por label..."
+          placeholder={t("connectionsTab.filterPlaceholder")}
           className="w-full rounded-md border border-border bg-secondary pl-8 pr-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         />
       </div>
       {!isSearching && (
         <p className="text-[10px] text-muted-foreground/60 italic">
-          Arraste as linhas para reordenar os handles.
+          {t("connectionsTab.dragReorderHint")}
         </p>
       )}
       <div className="space-y-3">
         <ConnectionGroup
-          label="Entradas"
+          label={t("connectionsTab.incoming")}
           conns={isSearching ? filteredIncoming : incoming}
           side="incoming"
           componentId={componentId}
@@ -289,7 +291,7 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
           onConnClick={handleConnClick}
         />
         <ConnectionGroup
-          label="Saídas"
+          label={t("connectionsTab.outgoing")}
           conns={isSearching ? filteredOutgoing : outgoing}
           side="outgoing"
           componentId={componentId}
@@ -307,7 +309,7 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
           filteredIncoming.length === 0 &&
           filteredOutgoing.length === 0 && (
             <p className="text-xs text-muted-foreground italic text-center py-2">
-              Nenhum resultado para &ldquo;{search}&rdquo;
+              {t("connectionsTab.noResultsFor", { query: search })}
             </p>
           )}
       </div>

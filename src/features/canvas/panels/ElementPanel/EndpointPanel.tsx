@@ -3,6 +3,7 @@ import { X, GripVertical, Plus } from "lucide-react";
 import { generateId } from "@/features/diagram";
 import type { EndpointComponent, EndpointHandler, HttpMethod, ComponentPatch } from "@/features/diagram";
 import { METHOD_COLORS } from "../../nodes/EndpointNode";
+import { useTranslation } from "react-i18next";
 
 const HTTP_METHODS: HttpMethod[] = ["GET", "POST", "PUT", "PATCH", "DELETE", "EVENT"];
 
@@ -21,6 +22,7 @@ export default function EndpointPanel({
   removeComponent,
   availableFlows,
 }: EndpointPanelProps) {
+  const { t } = useTranslation();
   const [expandedHandlerId, setExpandedHandlerId] = useState<string | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
@@ -45,7 +47,7 @@ export default function EndpointPanel({
     updateComponent(component.id, {
       handlers: [
         ...handlers,
-        { id: generateId("handler"), label: "Novo handler", flowId: undefined },
+        { id: generateId("handler"), label: t("endpointPanel.newHandler"), flowId: undefined },
       ],
     });
   };
@@ -61,7 +63,7 @@ export default function EndpointPanel({
     <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
       <div className="flex items-center justify-between p-3 border-b border-border shrink-0">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Endpoint
+          {t("endpointPanel.panelTitle")}
         </h3>
         <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
           <X className="h-4 w-4" />
@@ -72,7 +74,7 @@ export default function EndpointPanel({
         {/* Method */}
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-            Método
+            {t("endpointPanel.method")}
           </label>
           <div className="flex flex-wrap gap-1.5">
             {HTTP_METHODS.map((m) => (
@@ -92,12 +94,12 @@ export default function EndpointPanel({
         {/* Path */}
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-            Path
+            {t("endpointPanel.pathLabel")}
           </label>
           <input
             value={component.path}
             onChange={(e) => updateComponent(component.id, { path: e.target.value })}
-            placeholder="/users/:id"
+            placeholder={t("endpointPanel.pathPlaceholder")}
             className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           />
         </div>
@@ -105,12 +107,12 @@ export default function EndpointPanel({
         {/* Description */}
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-            Descrição
+            {t("endpointPanel.description")}
           </label>
           <textarea
             value={component.endpointDescription ?? ""}
             onChange={(e) => updateComponent(component.id, { endpointDescription: e.target.value || undefined })}
-            placeholder="Opcional"
+            placeholder={t("endpointPanel.optionalPlaceholder")}
             rows={2}
             className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
           />
@@ -120,14 +122,14 @@ export default function EndpointPanel({
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
-              Handlers
+              {t("endpointPanel.handlersLabel")}
             </label>
             <button
               type="button"
               onClick={addHandler}
               className="inline-flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-primary hover:bg-primary/10"
             >
-              <Plus className="h-3 w-3" /> Adicionar
+              <Plus className="h-3 w-3" /> {t("endpointPanel.add")}
             </button>
           </div>
           <div className="space-y-0.5 max-h-48 overflow-auto">
@@ -177,7 +179,7 @@ export default function EndpointPanel({
                       removeHandler(handler.id);
                     }}
                     className="shrink-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
-                    title="Remover handler"
+                    title={t("endpointPanel.removeHandlerTitle")}
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -186,19 +188,19 @@ export default function EndpointPanel({
                   <div className="pl-7 pr-2 pb-2 pt-0.5 space-y-2 border-l-2 border-border ml-2">
                     <div>
                       <label className="text-[10px] text-muted-foreground block mb-0.5">
-                        Label
+                        {t("endpointPanel.labelField")}
                       </label>
                       <input
                         value={handler.label}
                         onChange={(e) => updateHandler(handler.id, { label: e.target.value })}
-                        placeholder="Ex: Valida JWT"
+                        placeholder={t("endpointPanel.handlerLabelPlaceholder")}
                         className="w-full rounded border border-border bg-secondary px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                         onClick={(e) => e.stopPropagation()}
                       />
                     </div>
                     <div>
                       <label className="text-[10px] text-muted-foreground block mb-0.5">
-                        Descrição (opcional)
+                        {t("endpointPanel.descriptionOptional")}
                       </label>
                       <input
                         value={handler.description ?? ""}
@@ -207,13 +209,13 @@ export default function EndpointPanel({
                             description: e.target.value || undefined,
                           })
                         }
-                        placeholder="Opcional"
+                        placeholder={t("endpointPanel.optionalPlaceholder")}
                         className="w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                         onClick={(e) => e.stopPropagation()}
                       />
                     </div>
                     <div onClick={(e) => e.stopPropagation()}>
-                      <label className="text-[10px] text-muted-foreground block mb-0.5">Flow</label>
+                      <label className="text-[10px] text-muted-foreground block mb-0.5">{t("endpointPanel.flowLabel")}</label>
                       <select
                         value={handler.flowId ?? ""}
                         onChange={(e) =>
@@ -223,7 +225,7 @@ export default function EndpointPanel({
                         }
                         className="w-full rounded border border-border bg-secondary px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                       >
-                        <option value="">Nenhum</option>
+                        <option value="">{t("elementPanel.noneOption")}</option>
                         {availableFlows.map((f) => (
                           <option key={f.id} value={f.id}>
                             {f.name}
@@ -245,7 +247,7 @@ export default function EndpointPanel({
             onClick={() => removeComponent(component.id)}
             className="w-full inline-flex items-center justify-center gap-1.5 rounded-md border border-destructive/50 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10"
           >
-            <X className="h-3.5 w-3.5" /> Remover endpoint
+            <X className="h-3.5 w-3.5" /> {t("endpointPanel.removeEndpoint")}
           </button>
         </div>
       </div>

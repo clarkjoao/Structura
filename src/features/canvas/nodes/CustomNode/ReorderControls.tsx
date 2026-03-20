@@ -1,3 +1,5 @@
+import { i18n } from "@/infrastructure/i18n";
+
 export function buildReorderControls(
   connIds: string[],
   side: "incoming" | "outgoing",
@@ -31,7 +33,7 @@ export function buildReorderControls(
           }}
           disabled={disabled || i === 0}
           className="flex items-center justify-center w-3.5 h-3.5 text-[7px] rounded-sm bg-card/90 border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
-          aria-label={`Mover handle ${i + 1} para cima`}
+          aria-label={i18n.t("reorderHandles.moveUp", { index: i + 1 })}
         >
           ↑
         </button>
@@ -42,7 +44,7 @@ export function buildReorderControls(
           }}
           disabled={disabled || i === n - 1}
           className="flex items-center justify-center w-3.5 h-3.5 text-[7px] rounded-sm bg-card/90 border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
-          aria-label={`Mover handle ${i + 1} para baixo`}
+          aria-label={i18n.t("reorderHandles.moveDown", { index: i + 1 })}
         >
           ↓
         </button>

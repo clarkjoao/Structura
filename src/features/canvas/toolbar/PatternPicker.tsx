@@ -4,14 +4,15 @@ import { useReactFlow } from "@xyflow/react";
 import {
   PATTERNS,
   PATTERNS_BY_CATEGORY,
-  PATTERN_CATEGORY_LABELS,
+  PATTERN_CATEGORIES,
   type PatternCategory,
   type PatternTemplate,
 } from "@/lib/catalogs/patterns";
 import { useDiagramActions } from "@/features/diagram";
 import { getViewportCenter } from "../viewport-utils";
+import { useTranslation } from "react-i18next";
 
-const CATEGORIES = Object.keys(PATTERN_CATEGORY_LABELS) as PatternCategory[];
+const CATEGORIES = PATTERN_CATEGORIES;
 
 const CATEGORY_ICONS: Record<PatternCategory, string> = {
   messaging: "📨",
@@ -50,6 +51,7 @@ const PatternFlowPreview = ({ pattern }: { pattern: PatternTemplate }) => {
 };
 
 const PatternPicker = ({ onClose, onBeforeInsert }: PatternPickerProps) => {
+  const { t } = useTranslation();
   const [activeCategory, setActiveCategory] = useState<PatternCategory | "all">("all");
   const [search, setSearch] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -121,9 +123,9 @@ const PatternPicker = ({ onClose, onBeforeInsert }: PatternPickerProps) => {
           <div className="flex items-center gap-2">
             <Layers className="h-4 w-4 text-primary" />
             <div>
-              <h3 className="text-sm font-bold">Architecture Patterns</h3>
+              <h3 className="text-sm font-bold">{t("patterns.modalTitle")}</h3>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                Insira um conjunto pré-configurado de elementos no canvas
+                {t("patterns.subtitle")}
               </p>
             </div>
           </div>
@@ -143,7 +145,7 @@ const PatternPicker = ({ onClose, onBeforeInsert }: PatternPickerProps) => {
               ref={inputRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar patterns por nome, descrição ou componentes..."
+              placeholder={t("patterns.searchPlaceholder")}
               className="w-full rounded-md border border-border bg-secondary py-2 pl-8 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
@@ -161,7 +163,7 @@ const PatternPicker = ({ onClose, onBeforeInsert }: PatternPickerProps) => {
                   : "text-muted-foreground hover:text-foreground hover:bg-surface-hover"
               }`}
             >
-              <span>Todos</span>
+              <span>{t("patterns.categoryAll")}</span>
               <span className="text-[10px] font-mono text-muted-foreground">{totalCount}</span>
             </button>
             <div className="border-t border-border my-1" />
@@ -181,7 +183,7 @@ const PatternPicker = ({ onClose, onBeforeInsert }: PatternPickerProps) => {
                   }`}
                 >
                   <span className="text-sm">{CATEGORY_ICONS[cat]}</span>
-                  <span className="flex-1">{PATTERN_CATEGORY_LABELS[cat]}</span>
+                  <span className="flex-1">{t(`patterns.category.${cat}`)}</span>
                   <span className="text-[10px] font-mono text-muted-foreground">
                     {count}
                   </span>
@@ -195,8 +197,7 @@ const PatternPicker = ({ onClose, onBeforeInsert }: PatternPickerProps) => {
             {filteredPatterns.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <p className="text-xs text-muted-foreground">
-                  Nenhum pattern encontrado
-                  {q && <> para &ldquo;{search.trim()}&rdquo;</>}
+                  {q ? t("patterns.noneFoundForQuery", { query: search.trim() }) : t("patterns.noneFound")}
                 </p>
               </div>
             ) : (
@@ -221,10 +222,10 @@ const PatternPicker = ({ onClose, onBeforeInsert }: PatternPickerProps) => {
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         <span className="text-[10px] font-mono text-muted-foreground bg-secondary rounded px-1.5 py-0.5">
-                          {pattern.components.length} elem.
+                          {t("patterns.elementAbbrev", { count: pattern.components.length })}
                         </span>
                         <span className="text-[10px] font-mono text-muted-foreground bg-secondary rounded px-1.5 py-0.5">
-                          {pattern.connections.length} conn.
+                          {t("patterns.connAbbrev", { count: pattern.connections.length })}
                         </span>
                       </div>
                     </div>

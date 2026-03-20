@@ -5,6 +5,7 @@ import { FileText } from "lucide-react";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 
 import { NOTE_DEFAULT_W, NOTE_DEFAULT_H } from "../constants";
+import { useTranslation } from "react-i18next";
 
 const DEFAULT_PAPER_COLOR = "hsl(45 25% 97%)"; // papel ofuscado
 
@@ -33,6 +34,7 @@ function isDarkBg(color: string): boolean {
 }
 
 const NoteNode = memo(({ data, selected }: NodeProps) => {
+  const { t } = useTranslation();
   const d = data as unknown as NoteNodeData;
   const { highlightedNodeIds } = useHandleHighlight();
   const paperColor = d.panelColor || DEFAULT_PAPER_COLOR;
@@ -58,7 +60,7 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
         handleClassName="!w-2 !h-2 !bg-foreground/40 !border-background !rounded-sm"
       />
       <div
-        aria-label={title ? `Nota: ${title}` : "Nota"}
+        aria-label={title ? t("noteNode.ariaWithTitle", { title }) : t("noteNode.ariaDefault")}
         className={`relative flex flex-col w-full h-full overflow-hidden transition-shadow duration-200 ${
           isActive
             ? "ring-2 ring-primary shadow-[0_0_0_2px_hsl(var(--primary)/0.3)]"
@@ -83,7 +85,7 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
           <span
             className={`text-xs font-medium truncate flex-1 ${mutedClass}`}
           >
-            {title || "Nota"}
+            {title || t("noteNode.titleFallback")}
           </span>
         </div>
 
@@ -164,7 +166,7 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
             </div>
           ) : (
             <p className={`text-sm italic ${mutedClass}`}>
-              Clique para editar... Suporta **Markdown**.
+              {t("noteNode.emptyHint")}
             </p>
           )}
         </div>

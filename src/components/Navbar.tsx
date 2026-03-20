@@ -1,11 +1,14 @@
 import { Link } from "react-router-dom";
 import { Network, Sun, Moon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useTheme } from "@/hooks/useTheme";
 import { FileSystemStatus } from "./FileSystemStatus";
 import { useFileSystemSync } from "@/infrastructure/persistence";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 const Navbar = () => {
   const { theme, toggleTheme } = useTheme();
+  const { t } = useTranslation();
   useFileSystemSync();
 
   return (
@@ -16,7 +19,7 @@ const Navbar = () => {
             <Network className="h-4 w-4 text-primary" />
           </div>
           <span className="text-lg font-semibold tracking-tight">
-            Structura<span className="text-primary">Architecture</span>
+            Structura<span className="text-primary">{t("nav.brandSuffix")}</span>
           </span>
         </Link>
 
@@ -25,22 +28,23 @@ const Navbar = () => {
             to="/"
             className="hover:text-foreground transition-colors"
           >
-            Workspaces
+            {t("nav.workspaces")}
           </Link>
           <Link
             to="/registry"
             className="hover:text-foreground transition-colors"
           >
-            Registry
+            {t("nav.registry")}
           </Link>
         </div>
 
         <div className="flex items-center gap-3">
           <FileSystemStatus />
+          <LanguageSwitcher />
           <button
             onClick={toggleTheme}
             className="flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
-            title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+            title={theme === "dark" ? t("theme.lightMode") : t("theme.darkMode")}
           >
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>

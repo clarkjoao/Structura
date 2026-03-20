@@ -9,6 +9,7 @@ import { useAllServices, useRegistryActions } from "@/features/diagram";
 import { useGithubConfig } from "./useGithubConfig";
 import { commitGithubImport } from "../github.service";
 import { normalizeSources } from "../../merge-utils";
+import { i18n } from "@/infrastructure/i18n";
 
 const DEFAULT_PER_PAGE = 50;
 
@@ -60,13 +61,13 @@ export function useGithubImport() {
   const search = useCallback(
     async (query: string, filters: GHSearchFilters) => {
       if (!client) {
-        setError("GitHub não configurado. Conecte primeiro nas configurações.");
+        setError(i18n.t("github.notConfigured"));
         return;
       }
 
       const builtQuery = buildGithubQuery(query, filters);
       if (!builtQuery.trim()) {
-        setError("Informe um termo de busca.");
+        setError(i18n.t("github.enterSearch"));
         return;
       }
 
@@ -90,7 +91,7 @@ export function useGithubImport() {
         setResults(res.items);
         setTotalCount(res.total_count);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro ao buscar repositórios");
+        setError(err instanceof Error ? err.message : i18n.t("github.searchError"));
         setResults([]);
         setTotalCount(0);
       } finally {
@@ -114,7 +115,7 @@ export function useGithubImport() {
       setPage(nextPage);
       setTotalCount(res.total_count);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao carregar mais");
+      setError(err instanceof Error ? err.message : i18n.t("github.loadMoreError"));
     } finally {
       setLoading(false);
     }
@@ -146,7 +147,7 @@ export function useGithubImport() {
   const importSelected = useCallback(async () => {
     if (selected.size === 0) return;
     if (!client) {
-      setError("GitHub não configurado. Conecte primeiro nas configurações.");
+      setError(i18n.t("github.notConfigured"));
       return;
     }
 
@@ -217,7 +218,7 @@ export function useGithubImport() {
         setAutoResolutions([]);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao importar");
+      setError(err instanceof Error ? err.message : i18n.t("github.importError"));
     } finally {
       setLoading(false);
     }
@@ -244,7 +245,7 @@ export function useGithubImport() {
         setAllConflictsForImport([]);
         setAutoResolutions([]);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro ao confirmar importação");
+        setError(err instanceof Error ? err.message : i18n.t("github.confirmImportError"));
       } finally {
         setLoading(false);
       }

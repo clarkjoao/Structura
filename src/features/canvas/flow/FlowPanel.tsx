@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { X, Plus, Play, Trash2, Pencil, Copy, Check, Layers, BarChart2 } from "lucide-react";
 import { useFlows, useDiagramActions, useActiveDiagramId, useActiveDiagram } from "@/features/diagram";
 import type { Flow } from "@/features/diagram";
@@ -15,6 +16,7 @@ interface Props {
 }
 
 const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow, isViewingCoverage, onToggleCoverage }: Props) => {
+  const { t } = useTranslation();
   const flows = useFlows();
   const diagram = useActiveDiagram();
   const activeDiagramId = useActiveDiagramId();
@@ -55,7 +57,7 @@ const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow, isViewingCov
 
   const handleDuplicate = (flow: Flow) => {
     if (!activeDiagramId) return;
-    const newFlow = addFlow(activeDiagramId, `Cópia de ${flow.name}`, flow.mermaid, flow.steps);
+    const newFlow = addFlow(activeDiagramId, t("flowPanel.copyPrefix", { name: flow.name }), flow.mermaid, flow.steps);
     if (flow.description || flow.tags?.length) {
       updateFlow(newFlow.id, { description: flow.description, tags: flow.tags });
     }
@@ -65,16 +67,16 @@ const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow, isViewingCov
     <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
       <div className="flex items-center justify-between p-3 border-b border-border">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Flows
+          {t("flows.panelTitle")}
         </h3>
         <div className="flex items-center gap-1.5">
           {onToggleCoverage && (
             <button
               onClick={onToggleCoverage}
-              title="Ver cobertura"
+              title={t("flows.coverageTitle")}
               className={`text-xs rounded-md px-2 py-0.5 font-medium transition-colors flex items-center gap-1 ${isViewingCoverage ? "bg-emerald-500/20 text-emerald-400" : "text-muted-foreground hover:text-foreground"}`}
             >
-              <BarChart2 className="h-3.5 w-3.5" /> Cobertura
+              <BarChart2 className="h-3.5 w-3.5" /> {t("flowPanel.coverage")}
             </button>
           )}
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
@@ -93,7 +95,7 @@ const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow, isViewingCov
                 : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
             }`}
           >
-            Todos
+            {t("common.all")}
           </button>
           {allTags.map((tag) => (
             <button
@@ -121,9 +123,9 @@ const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow, isViewingCov
                   <p className="text-[10px] text-muted-foreground italic truncate mt-0.5">"{flow.description}"</p>
                 )}
                 <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                  <span className="text-[10px] text-muted-foreground">{flow.steps.length} passos</span>
+                  <span className="text-[10px] text-muted-foreground">{t("flowPanel.stepsCount", { count: flow.steps.length })}</span>
                   {new Set(flow.steps.filter((s) => s.componentId).map((s) => s.componentId)).size > 0 && (
-                    <span className="text-[10px] text-muted-foreground">· {new Set(flow.steps.filter((s) => s.componentId).map((s) => s.componentId)).size} participantes</span>
+                    <span className="text-[10px] text-muted-foreground">{t("flowPanel.participantsCount", { count: new Set(flow.steps.filter((s) => s.componentId).map((s) => s.componentId)).size })}</span>
                   )}
                   {flow.tags?.map((tag) => (
                     <span key={tag} className="text-[9px] rounded-full bg-secondary px-1.5 py-0.5 text-secondary-foreground">
@@ -133,21 +135,21 @@ const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow, isViewingCov
                 </div>
               </div>
               <div className="flex items-center gap-1 shrink-0">
-                <button onClick={() => handleDuplicate(flow)} className="text-muted-foreground hover:text-foreground transition-colors" title="Duplicar flow">
+                <button onClick={() => handleDuplicate(flow)} className="text-muted-foreground hover:text-foreground transition-colors" title={t("flows.duplicateTitle")}>
                   <Layers className="h-3.5 w-3.5" />
                 </button>
-                <button onClick={() => handleCopy(flow)} className="text-muted-foreground hover:text-foreground transition-colors" title="Copiar Mermaid">
+                <button onClick={() => handleCopy(flow)} className="text-muted-foreground hover:text-foreground transition-colors" title={t("flows.copyMermaidTitle")}>
                   {copiedId === flow.id
                     ? <Check className="h-3.5 w-3.5 text-emerald-500" />
                     : <Copy className="h-3.5 w-3.5" />}
                 </button>
-                <button onClick={() => onEditFlow(flow)} className="text-muted-foreground hover:text-foreground transition-colors" title="Editar">
+                <button onClick={() => onEditFlow(flow)} className="text-muted-foreground hover:text-foreground transition-colors" title={t("flows.editTitle")}>
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
-                <button onClick={() => handlePlayWithValidation(flow)} className="text-primary hover:text-primary/80 transition-colors" title="Iniciar flow">
+                <button onClick={() => handlePlayWithValidation(flow)} className="text-primary hover:text-primary/80 transition-colors" title={t("flows.playTitle")}>
                   <Play className="h-4 w-4" />
                 </button>
-                <button onClick={() => removeFlow(flow.id)} className="text-muted-foreground hover:text-destructive transition-colors" title="Remover">
+                <button onClick={() => removeFlow(flow.id)} className="text-muted-foreground hover:text-destructive transition-colors" title={t("flows.removeTitle")}>
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -157,13 +159,13 @@ const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow, isViewingCov
 
         {filtered.length === 0 && (
           <p className="text-xs text-muted-foreground italic text-center py-4">
-            {tagFilter ? "Nenhum flow com essa tag." : "Nenhum flow definido."}
+            {tagFilter ? t("flows.emptyTagged") : t("flows.emptyNone")}
           </p>
         )}
 
         <button onClick={onStartRecording}
           className="flex items-center gap-1.5 w-full justify-center rounded-md border border-dashed border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/20 transition-all">
-          <Plus className="h-3.5 w-3.5" /> Novo Flow
+          <Plus className="h-3.5 w-3.5" /> {t("flowPanel.newFlow")}
         </button>
       </div>
 

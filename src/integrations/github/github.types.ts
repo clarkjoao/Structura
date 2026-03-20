@@ -34,12 +34,13 @@ export interface GithubConfig {
  * Cada campo mapeia para qualificadores nativos da API.
  * @see https://docs.github.com/en/search-github/searching-on-github/searching-for-repositories
  */
+/** Search field keys — labels come from `githubSearchField.*` in i18n */
 export const GH_SEARCH_FIELDS = [
-  { param: "name_contains", label: "Nome do repo (contém)" },
-  { param: "name_starts", label: "Nome do repo (inicia com)" },
-  { param: "description", label: "Descrição (contém)" },
-  { param: "topic", label: "Tópico" },
-  { param: "raw", label: "Query avançada" },
+  { param: "name_contains" as const },
+  { param: "name_starts" as const },
+  { param: "description" as const },
+  { param: "topic" as const },
+  { param: "raw" as const },
 ] as const;
 
 export type GHSearchField = (typeof GH_SEARCH_FIELDS)[number]["param"];

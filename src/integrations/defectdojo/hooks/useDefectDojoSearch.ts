@@ -7,6 +7,7 @@ import {
   getProductTypes,
   type DDProductSearchField,
 } from "../defectdojo.service";
+import { i18n } from "@/infrastructure/i18n";
 import type {
   DefectDojoConfig,
   DDSearchResult,
@@ -63,7 +64,7 @@ export function useDefectDojoSearch(config: DefectDojoConfig | null) {
         setResults(withStatus);
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Erro ao buscar produtos",
+          err instanceof Error ? err.message : i18n.t("defectdojo.searchError"),
         );
       } finally {
         setLoading(false);

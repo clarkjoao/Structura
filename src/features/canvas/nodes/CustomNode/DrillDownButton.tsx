@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { MousePointerClick } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface DrillDownButtonProps {
   elementId: string;
@@ -16,6 +17,7 @@ export const DrillDownButton = ({
   customColor,
   disabled,
 }: DrillDownButtonProps) => {
+  const { t } = useTranslation();
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -27,14 +29,14 @@ export const DrillDownButton = ({
   return (
     <button
       onClick={handleClick}
-      aria-label={`Explorar interior do elemento ${elementId}`}
+      aria-label={t("customNode.drillAria", { id: elementId })}
       className={`mt-2 flex items-center gap-1 text-[10px] font-medium ${colorClass} ${
         disabled ? "pointer-events-none" : "hover:underline"
       }`}
       style={customColor ? { color: customColor } : undefined}
       tabIndex={disabled ? -1 : 0}
     >
-      <MousePointerClick className="h-3 w-3" /> Explorar interior
+      <MousePointerClick className="h-3 w-3" /> {t("customNode.drillExplore")}
     </button>
   );
 };

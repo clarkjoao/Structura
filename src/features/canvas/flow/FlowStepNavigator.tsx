@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, X, MessageSquare, Clock, ChevronDown, ChevronUp } from "lucide-react";
 import type { Flow } from "@/features/diagram";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   flow: Flow;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 const FlowStepNavigator = ({ flow, currentStep, onPrev, onNext, onExit, onGoToStep }: Props) => {
+  const { t } = useTranslation();
   const step = flow.steps[currentStep];
   const total = flow.steps.length;
   const [showPayload, setShowPayload] = useState(false);
@@ -55,7 +57,7 @@ const FlowStepNavigator = ({ flow, currentStep, onPrev, onNext, onExit, onGoToSt
             <span className="text-xs font-semibold text-foreground truncate">{flow.name}</span>
             {flow.description && (
               <span className="text-[10px] text-muted-foreground italic truncate hidden sm:inline">
-                · "{flow.description}"
+                {t("flowStepNav.inlineDescription", { text: flow.description })}
               </span>
             )}
           </div>
@@ -67,7 +69,7 @@ const FlowStepNavigator = ({ flow, currentStep, onPrev, onNext, onExit, onGoToSt
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
-        <button onClick={onExit} className="text-muted-foreground hover:text-foreground transition-colors" title="Sair do flow">
+        <button onClick={onExit} className="text-muted-foreground hover:text-foreground transition-colors" title={t("flowStepNav.exitTitle")}>
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -94,7 +96,7 @@ const FlowStepNavigator = ({ flow, currentStep, onPrev, onNext, onExit, onGoToSt
             className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             {showPayload ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-            <span>{step.payloadDirection === 'response' ? '← Response' : '→ Request'}</span>
+            <span>{step.payloadDirection === 'response' ? t("flowStepNav.response") : t("flowStepNav.request")}</span>
           </button>
           {showPayload && (
             <pre className="mt-1 rounded-md border border-border bg-secondary p-2 text-[10px] font-mono text-foreground whitespace-pre-wrap overflow-auto max-h-28">
@@ -107,11 +109,11 @@ const FlowStepNavigator = ({ flow, currentStep, onPrev, onNext, onExit, onGoToSt
       <div className="px-4 py-2 flex justify-center gap-2">
         <button onClick={onPrev} disabled={currentStep === 0}
           className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors">
-          <ChevronLeft className="h-3.5 w-3.5" /> Anterior
+          <ChevronLeft className="h-3.5 w-3.5" /> {t("common.previous")}
         </button>
         <button onClick={onNext} disabled={currentStep >= total - 1}
           className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
-          Próximo <ChevronRight className="h-3.5 w-3.5" />
+          {t("common.next")} <ChevronRight className="h-3.5 w-3.5" />
         </button>
       </div>
     </div>
