@@ -13,7 +13,8 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { useAllServices, useDiagramActions, ServiceDefinition} from "@/features/diagram";
+import { useAllServices, useDiagramActions, ServiceSource } from "@/features/diagram";
+import type { ServiceDefinition } from "@/features/diagram";
 import { useTranslation } from "react-i18next";
 
 interface ServiceRegistryComboboxProps {
@@ -76,7 +77,7 @@ const ServiceRegistryCombobox = ({
       repositoryUrl: "",
       technology: [],
       tags,
-      sources: [{ type: "manual" }],
+      sources: [{ type: ServiceSource.Manual }],
     });
     onChange(created.id);
     setOpen(false);

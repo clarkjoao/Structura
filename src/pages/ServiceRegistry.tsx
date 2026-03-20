@@ -40,6 +40,7 @@ import {
 } from "@/features/diagram";
 import type { Diagram } from "@/features/diagram";
 import type { ServiceDefinition } from "@/features/diagram";
+import { ServiceSource, ImportPanel } from "@/features/diagram";
 import { useTranslation } from "react-i18next";
 import { i18n } from "@/infrastructure/i18n";
 
@@ -49,30 +50,28 @@ const DefectDojoPanel = lazy(() =>
   })),
 );
 
-type Source = "manual" | "github" | "defectdojo";
-
-const SOURCE_DOT: Record<Source, string> = {
-  manual: "bg-violet-500",
-  github: "bg-blue-500",
-  defectdojo: "bg-orange-500",
+const SOURCE_DOT: Record<ServiceSource, string> = {
+  [ServiceSource.Manual]: "bg-violet-500",
+  [ServiceSource.Github]: "bg-blue-500",
+  [ServiceSource.Defectdojo]: "bg-orange-500",
 };
 
-const SOURCE_BADGE: Record<Source, string> = {
-  manual: "bg-violet-500/10 text-violet-400 border border-violet-500/20",
-  github: "bg-blue-500/10 text-blue-400 border border-blue-500/20",
-  defectdojo: "bg-orange-500/10 text-orange-400 border border-orange-500/20",
+const SOURCE_BADGE: Record<ServiceSource, string> = {
+  [ServiceSource.Manual]: "bg-violet-500/10 text-violet-400 border border-violet-500/20",
+  [ServiceSource.Github]: "bg-blue-500/10 text-blue-400 border border-blue-500/20",
+  [ServiceSource.Defectdojo]: "bg-orange-500/10 text-orange-400 border border-orange-500/20",
 };
 
-function sourceTypeLabel(t: (key: string) => string, type: Source): string {
+function sourceTypeLabel(t: (key: string) => string, type: ServiceSource): string {
   switch (type) {
-    case "manual":
+    case ServiceSource.Manual:
       return t("registry.sourceManual");
-    case "github":
+    case ServiceSource.Github:
       return t("registry.sourceGithub");
-    case "defectdojo":
+    case ServiceSource.Defectdojo:
       return t("registry.sourceDefectdojo");
     default:
-      return type;
+      return String(type);
   }
 }
 
@@ -166,7 +165,7 @@ const ManualCreateForm = ({
       technology: tech,
       owner: owner.trim() || undefined,
       tags,
-      sources: [{ type: "manual" }],
+      sources: [{ type: ServiceSource.Manual }],
     });
   };
 
@@ -384,9 +383,9 @@ const DetailPanel = ({
   const { t } = useTranslation();
   const { config: githubConfig } = useGithubConfig();
   const normalizedSources = normalizeSources(svc);
-  const hasGithubSource = normalizedSources.some((s) => s.type === "github");
+  const hasGithubSource = normalizedSources.some((s) => s.type === ServiceSource.Github);
   const hasDefectDojoSource = normalizedSources.some(
-    (s) => s.type === "defectdojo",
+    (s) => s.type === ServiceSource.Defectdojo,
   );
   const hasSyncSource = hasGithubSource || hasDefectDojoSource;
   const usage = useMemo(
@@ -445,7 +444,7 @@ const DetailPanel = ({
 
       if (hasGithubData) {
         const githubSourceId = normalizedSources.find(
-          (sourceEntry) => sourceEntry.type === "github",
+          (sourceEntry) => sourceEntry.type === ServiceSource.Github,
         )?.sourceId;
         const githubIdentifier =
           githubSourceId ??
@@ -473,7 +472,7 @@ const DetailPanel = ({
           | undefined;
         const productIdFromLink = ddMeta?.productLink?.match(/\/product\/(\d+)(?:\/|$)/)?.[1];
         const defectDojoSourceId = normalizedSources.find(
-          (sourceEntry) => sourceEntry.type === "defectdojo",
+          (sourceEntry) => sourceEntry.type === ServiceSource.Defectdojo,
         )?.sourceId;
         const defectDojoProductId =
           defectDojoSourceId ??
@@ -523,12 +522,12 @@ const DetailPanel = ({
       ]);
       const mergedSourceEntries = mergeSources(normalizeSources(svc), [
         ...(githubRepo
-          ? [{ type: "github" as const, sourceId: githubRepo.full_name }]
+          ? [{ type: ServiceSource.Github, sourceId: githubRepo.full_name }]
           : []),
         ...(defectDojoMapped
           ? [
               {
-                type: "defectdojo" as const,
+                type: ServiceSource.Defectdojo,
                 sourceId: syncedDefectDojoSourceId,
               },
             ]
@@ -587,7 +586,7 @@ const DetailPanel = ({
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
         <div className="flex items-center gap-2 min-w-0">
           <span
-            className={`h-2.5 w-2.5 rounded-full shrink-0 ${SOURCE_DOT[normalizedSources[0]?.type ?? "manual"]}`}
+            className={`h-2.5 w-2.5 rounded-full shrink-0 ${SOURCE_DOT[normalizedSources[0]?.type ?? ServiceSource.Manual]}`}
           />
           <h2 className="text-base font-bold text-foreground truncate">
             {svc.name}
@@ -933,7 +932,7 @@ const DetailPanel = ({
 };
 
 
-type SourceFilter = "all" | Source;
+type SourceFilter = "all" | ServiceSource;
 
 const ServiceRegistry = () => {
   const { t } = useTranslation();
@@ -946,9 +945,7 @@ const ServiceRegistry = () => {
 
   const [search, setSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
-  const [importPanel, setImportPanel] = useState<
-    "manual" | "github" | "defectdojo" | null
-  >(null);
+  const [importPanel, setImportPanel] = useState<ImportPanel | null>(null);
   const showEnableGithub = import.meta.env.VITE_ENABLE_GITHUB_IMPORT === "true";
   const showEnableDefectDojo = import.meta.env.VITE_ENABLE_DEFECTDOJO === "true";
   const { config: githubConfig } = useGithubConfig();
@@ -1036,9 +1033,9 @@ const ServiceRegistry = () => {
 
   const SOURCE_FILTERS: { value: SourceFilter; label: string }[] = [
     { value: "all", label: t("registry.filterAll") },
-    { value: "manual", label: t("registry.filterManual") },
-    { value: "github", label: t("registry.filterGithub") },
-    { value: "defectdojo", label: t("registry.filterDefectdojo") },
+    { value: ServiceSource.Manual, label: t("registry.filterManual") },
+    { value: ServiceSource.Github, label: t("registry.filterGithub") },
+    { value: ServiceSource.Defectdojo, label: t("registry.filterDefectdojo") },
   ];
 
   return (
@@ -1056,7 +1053,7 @@ const ServiceRegistry = () => {
             </div>
             <button
               onClick={() =>
-                setImportPanel((current) => (current ? null : "manual"))
+                setImportPanel((current) => (current ? null : ImportPanel.Manual))
               }
               className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
             >
@@ -1109,9 +1106,9 @@ const ServiceRegistry = () => {
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex gap-1 rounded-lg bg-secondary p-1">
                   <button
-                    onClick={() => setImportPanel("manual")}
+                    onClick={() => setImportPanel(ImportPanel.Manual)}
                     className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                      importPanel === "manual"
+                      importPanel === ImportPanel.Manual
                         ? "bg-card text-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
@@ -1120,9 +1117,9 @@ const ServiceRegistry = () => {
                   </button>
                   {showEnableGithub && (
                   <button
-                    onClick={() => setImportPanel("github")}
+                    onClick={() => setImportPanel(ImportPanel.Github)}
                     className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                      importPanel === "github"
+                      importPanel === ImportPanel.Github
                         ? "bg-card text-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
@@ -1132,9 +1129,9 @@ const ServiceRegistry = () => {
                   )}
                   {showEnableDefectDojo && (
                     <button
-                      onClick={() => setImportPanel("defectdojo")}
+                      onClick={() => setImportPanel(ImportPanel.Defectdojo)}
                       className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                        importPanel === "defectdojo"
+                        importPanel === ImportPanel.Defectdojo
                           ? "bg-card text-foreground shadow-sm"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
@@ -1155,14 +1152,14 @@ const ServiceRegistry = () => {
                   <div className="h-32 animate-pulse rounded-xl bg-secondary" />
                 }
               >
-                {importPanel === "manual" && (
+                {importPanel === ImportPanel.Manual && (
                   <ManualCreateForm
                     onCancel={() => setImportPanel(null)}
                     onCreate={handleCreate}
                   />
                 )}
-                {importPanel === "defectdojo" && <DefectDojoPanel />}
-                {importPanel === "github" && <GithubImportPanel />}
+                {importPanel === ImportPanel.Defectdojo && <DefectDojoPanel />}
+                {importPanel === ImportPanel.Github && <GithubImportPanel />}
               </Suspense>
             </div>
           )}

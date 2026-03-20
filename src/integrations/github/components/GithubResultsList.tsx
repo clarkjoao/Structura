@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { GithubRepo } from "../github.types";
 import type { ServiceDefinition } from "@/features/diagram";
+import { ServiceSource } from "@/features/diagram";
 import { normalizeRepoUrl, normalizeSources } from "../../merge-utils";
 import { GithubRepoCard } from "./GithubRepoCard";
 import { Button } from "@/components/ui/button";
@@ -111,7 +112,7 @@ export function GithubResultsList({
                 hasDefectDojoConflict={
                   existing
                     ? normalizeSources(existing).some(
-                        (source) => source.type === "defectdojo",
+                        (source) => source.type === ServiceSource.Defectdojo,
                       )
                     : false
                 }

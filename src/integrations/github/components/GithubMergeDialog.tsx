@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { MergeConflict } from "../detectMergeConflicts";
 import type { ServiceDefinition } from "@/features/diagram";
+import { ServiceSource } from "@/features/diagram";
 import { githubRepoToService } from "../githubMapper";
 import { normalizeSources } from "../../merge-utils";
 import {
@@ -84,7 +85,7 @@ export function GithubMergeDialog({
 }) {
   const { t } = useTranslation();
   const existingColumnLabel = (existingService: ServiceDefinition) =>
-    normalizeSources(existingService).some((source) => source.type === "defectdojo")
+    normalizeSources(existingService).some((source) => source.type === ServiceSource.Defectdojo)
       ? t("github.mergeExistingDefectDojo")
       : t("github.mergeExistingManual");
 
@@ -155,7 +156,7 @@ export function GithubMergeDialog({
                   </div>
                   <div className="shrink-0 text-xs text-muted-foreground">
                     {normalizeSources(existing).some(
-                      (source) => source.type === "defectdojo",
+                      (source) => source.type === ServiceSource.Defectdojo,
                     )
                       ? t("registry.sourceDefectdojo")
                       : t("github.sourceBadgeManual")}

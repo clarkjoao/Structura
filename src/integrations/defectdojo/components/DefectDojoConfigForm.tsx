@@ -3,7 +3,7 @@ import { Eye, EyeOff, Loader2, CheckCircle, Trash2 } from "lucide-react";
 import { DefectDojoClient } from "../defectdojo.client";
 import { getCurrentUser } from "../defectdojo.service";
 import type { DefectDojoConfig } from "../types";
-import { useDiagramStore } from "@/features/diagram";
+import { useDiagramStore, ServiceSource } from "@/features/diagram";
 import { normalizeSources } from "@/integrations/merge-utils";
 import { useTranslation } from "react-i18next";
 
@@ -61,7 +61,7 @@ export function DefectDojoConfigForm({ config, onSave, onClear }: Props) {
       );
       if (nextSources.length !== normalizeSources(svc).length) {
         store.updateService(svc.id, {
-          sources: nextSources.length > 0 ? nextSources : [{ type: "manual" }],
+          sources: nextSources.length > 0 ? nextSources : [{ type: ServiceSource.Manual }],
         });
       }
     });

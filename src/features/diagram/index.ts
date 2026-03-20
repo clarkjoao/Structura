@@ -1,3 +1,6 @@
+/** Enums for diagram domain (ServiceSource, ImportPanel, etc.) */
+export { ServiceSource, ImportPanel } from "./enums";
+
 /** All core domain types (Component, Connection, Flow, Diagram, etc.) */
 export type {
   ComponentType,

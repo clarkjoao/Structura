@@ -22,7 +22,7 @@ import type { LucideIcon } from "lucide-react";
 import type { PanelKind } from "@/features/diagram";
 import { PANEL_KINDS, getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
 import { useReactFlow } from "@xyflow/react";
-import { useDiagramActions, useAllServices, useAllComponents } from "@/features/diagram";
+import { useDiagramActions, useAllServices, useAllComponents, ServiceSource } from "@/features/diagram";
 import type { ComponentType } from "@/features/diagram";
 import type { ServiceDefinition } from "@/features/diagram";
 import { getUsageKeyForType, getDefaultNameForNewComponent, isPanelType } from "@/features/diagram";
@@ -116,17 +116,17 @@ interface ElementPickerModalProps {
   onInsert?: (nodeId: string) => void;
 }
 
-function servicePrimarySource(svc: ServiceDefinition): "manual" | "github" | "defectdojo" {
+function servicePrimarySource(svc: ServiceDefinition): ServiceSource {
   const ref = svc.sources?.[0];
   if (ref?.type) return ref.type;
   if (svc.source) return svc.source;
-  return "manual";
+  return ServiceSource.Manual;
 }
 
 function registrySourceDotClass(svc: ServiceDefinition): string {
   const src = servicePrimarySource(svc);
-  if (src === "github") return "bg-blue-500";
-  if (src === "defectdojo") return "bg-orange-500";
+  if (src === ServiceSource.Github) return "bg-blue-500";
+  if (src === ServiceSource.Defectdojo) return "bg-orange-500";
   return "bg-violet-500";
 }
 

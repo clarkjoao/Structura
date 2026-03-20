@@ -1,7 +1,7 @@
-export type ServiceSourceType = "defectdojo" | "github" | "manual";
+import type { ServiceSource } from "../enums";
 
 export interface ServiceSourceRef {
-  type: ServiceSourceType;
+  type: ServiceSource;
   sourceId?: string;
 }
 
@@ -15,7 +15,7 @@ export interface ServiceDefinition {
   tags?: string[];
   sources?: ServiceSourceRef[];
   /** @deprecated Legacy single-source field kept for migration compatibility. */
-  source?: ServiceSourceType;
+  source?: ServiceSource;
   /** @deprecated Legacy single-source field kept for migration compatibility. */
   sourceId?: string;
   metadata?: {

@@ -1,6 +1,7 @@
 import type { DefectDojoClient } from "./defectdojo.client";
 import type { DDProduct, DDProductType, DDUser } from "./types";
 import type { ServiceDefinition } from "@/features/diagram";
+import { ServiceSource } from "@/features/diagram";
 
 interface PaginatedResponse<T> {
   count: number;
@@ -107,7 +108,7 @@ export function mapToServiceDefinition(
     repositoryUrl: product?.metadata?.repositoryUrl as string ?? "",
     technology: [],
     tags: product.tags || [],
-    sources: [{ type: "defectdojo", sourceId: String(product.id) }],
+    sources: [{ type: ServiceSource.Defectdojo, sourceId: String(product.id) }],
     metadata: {
       defectdojo: {
         productId: product.id,

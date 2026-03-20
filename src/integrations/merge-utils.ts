@@ -1,3 +1,4 @@
+import { ServiceSource } from "@/features/diagram";
 import type {
   ServiceDefinition,
   ServiceSourceRef,
@@ -66,7 +67,7 @@ export function normalizeSources(
 ): ServiceSourceRef[] {
   if (svc.sources && svc.sources.length > 0) return svc.sources;
   if (svc.source) return [{ type: svc.source, sourceId: svc.sourceId }];
-  return [{ type: "manual" }];
+  return [{ type: ServiceSource.Manual }];
 }
 
 export function mergeSources(

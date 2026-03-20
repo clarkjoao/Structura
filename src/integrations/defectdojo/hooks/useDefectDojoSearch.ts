@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useDiagramStore } from "@/features/diagram";
+import { useDiagramStore, ServiceSource } from "@/features/diagram";
 import { normalizeSources } from "@/integrations/merge-utils";
 import { DefectDojoClient } from "../defectdojo.client";
 import {
@@ -26,7 +26,7 @@ function resolveImportStatus(
     (service) =>
       normalizeSources(service).some(
         (source) =>
-          source.type === "defectdojo" && source.sourceId === String(productId),
+          source.type === ServiceSource.Defectdojo && source.sourceId === String(productId),
       ),
   );
   if (!existing) return { status: "not-imported" };

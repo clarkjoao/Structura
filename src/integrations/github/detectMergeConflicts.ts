@@ -1,5 +1,6 @@
 import type { GithubRepo } from "./github.types";
 import type { ServiceDefinition } from "@/features/diagram";
+import { ServiceSource } from "@/features/diagram";
 import { normalizeSources, repoUrlsMatch } from "../merge-utils";
 
 export interface MergeConflict {
@@ -27,12 +28,12 @@ export function detectConflicts(
   // Priority: defectdojo first so the dialog suggests merging against it.
   conflicts.sort((a, b) => {
     const aPri = normalizeSources(a.existingService).some(
-      (source) => source.type === "defectdojo",
+      (source) => source.type === ServiceSource.Defectdojo,
     )
       ? 0
       : 1;
     const bPri = normalizeSources(b.existingService).some(
-      (source) => source.type === "defectdojo",
+      (source) => source.type === ServiceSource.Defectdojo,
     )
       ? 0
       : 1;

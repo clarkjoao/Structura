@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { Loader2, AlertTriangle, Download } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useDiagramStore } from "@/features/diagram";
+import { useDiagramStore, ServiceSource } from "@/features/diagram";
 import { mapToServiceDefinition } from "../defectdojo.service";
 import type { DDSearchResult } from "../types";
 import { DefectDojoProductCard } from "./DefectDojoProductCard";
@@ -100,7 +100,7 @@ export function DefectDojoResultsList({
         // If the same repo is already imported from GitHub, merge into it.
         const githubExisting = Object.values(store.serviceRegistry).find(
           (s) =>
-            normalizeSources(s).some((source) => source.type === "github") &&
+            normalizeSources(s).some((source) => source.type === ServiceSource.Github) &&
             repoUrlsMatch(s.repositoryUrl, svcData.repositoryUrl),
         );
 

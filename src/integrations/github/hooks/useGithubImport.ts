@@ -5,7 +5,7 @@ import { createGithubClient } from "../githubClient";
 import { detectConflicts } from "../detectMergeConflicts";
 import type { MergeConflict } from "../detectMergeConflicts";
 import type { MergeResolution } from "../components/GithubMergeDialog";
-import { useAllServices, useRegistryActions } from "@/features/diagram";
+import { useAllServices, useRegistryActions, ServiceSource } from "@/features/diagram";
 import { useGithubConfig } from "./useGithubConfig";
 import { commitGithubImport } from "../github.service";
 import { normalizeSources } from "../../merge-utils";
@@ -164,8 +164,8 @@ export function useGithubImport() {
       const bestByRepoId = new Map<number, MergeConflict>();
       const score = (c: MergeConflict) => {
         const sources = normalizeSources(c.existingService);
-        if (sources.some((source) => source.type === "defectdojo")) return 3;
-        if (sources.some((source) => source.type === "github")) return 2;
+        if (sources.some((source) => source.type === ServiceSource.Defectdojo)) return 3;
+        if (sources.some((source) => source.type === ServiceSource.Github)) return 2;
         return 1;
       };
 
@@ -180,13 +180,13 @@ export function useGithubImport() {
       const githubExistingConflicts = bestConflictsForImport.filter(
         (c) =>
           normalizeSources(c.existingService).some(
-            (source) => source.type === "github",
+            (source) => source.type === ServiceSource.Github,
           ),
       );
       const crossConflicts = bestConflictsForImport.filter(
         (c) =>
           !normalizeSources(c.existingService).some(
-            (source) => source.type === "github",
+            (source) => source.type === ServiceSource.Github,
           ),
       );
 

@@ -3,6 +3,7 @@ import type { IStoragePort } from "@/infrastructure/persistence";
 import type { Diagram, Component, Connection, NodeLayout } from "../model/diagram.types";
 import type { DiagramStore } from "./store.types";
 import type { ServiceDefinition } from "../model/service.types";
+import { ServiceSource } from "../enums";
 
 export const PERSIST_KEY = "diagram-store";
 
@@ -40,7 +41,7 @@ export function mergePersistedState(
       svc.sources = [{ type: svc.source, sourceId: svc.sourceId }];
       return;
     }
-    svc.sources = [{ type: "manual" }];
+    svc.sources = [{ type: ServiceSource.Manual }];
   });
 
   // Migrate diagrams missing createdAt

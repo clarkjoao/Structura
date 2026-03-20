@@ -1,5 +1,6 @@
 import type { GithubRepo } from "./github.types";
 import type { ServiceDefinition } from "@/features/diagram";
+import { ServiceSource } from "@/features/diagram";
 
 const TECHNOLOGY_TOPICS = new Set<string>([
   "kotlin",
@@ -74,7 +75,7 @@ export function githubRepoToService(
     repositoryUrl: repo.html_url,
     technology,
     tags: repo.topics,
-    sources: [{ type: "github", sourceId: repo.full_name }],
+    sources: [{ type: ServiceSource.Github, sourceId: repo.full_name }],
     metadata: {
       github: {
         repoId: repo.id,
