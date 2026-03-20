@@ -39,13 +39,9 @@ const CORPORATE_PROXY_URL =
 app.use(cors());
 app.use(express.json());
 
-const githubAgent = CORPORATE_PROXY_URL
+const proxyAgent = CORPORATE_PROXY_URL
   ? new HttpsProxyAgent(CORPORATE_PROXY_URL, { keepAlive: true })
-  : undefined;
-
-if (githubAgent) {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-}
+  : new HttpsProxyAgent({keepAlive: true, rejectUnauthorized: !INSECURE_TLS})
 
 function buildUpstreamUrl(upstreamBase, prefix, originalUrl) {
   const targetPath = originalUrl.slice(prefix.length);
@@ -125,12 +121,12 @@ function createProxy(prefix, upstreamBase, { fallbackAuth, authScheme, proxyAgen
   };
 }
 
-// Rotas
 app.use(
   "/dojo",
   createProxy("/dojo", DEFECTDOJO_URL, {
     fallbackAuth: DEFECTDOJO_API_TOKEN,
     authScheme: "Token",
+    proxyAgent,
   })
 );
 
@@ -139,11 +135,10 @@ app.use(
   createProxy("/github", GITHUB_URL, {
     fallbackAuth: GITHUB_API_TOKEN,
     authScheme: "Bearer",
-    proxyAgent: githubAgent,
+    proxyAgent,
   })
 );
 
-// Start
 app.listen(PORT, () => {
   console.log(`Proxy running on http://localhost:${PORT}`);
   console.log(`TLS insecure mode: ${INSECURE_TLS}`);

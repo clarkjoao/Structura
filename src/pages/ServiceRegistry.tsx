@@ -3,14 +3,12 @@ import {
   useMemo,
   lazy,
   Suspense,
-  useRef,
   useEffect,
   useCallback,
 } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Plus,
-  ChevronDown,
   ChevronRight,
   Search,
   X,
@@ -18,7 +16,6 @@ import {
   Loader2,
   User,
   RefreshCw,
-  Download,
   ExternalLink,
   Layers,
   Link2,
@@ -49,8 +46,6 @@ const DefectDojoPanel = lazy(() =>
   })),
 );
 
-// ── Source metadata ───────────────────────────────────────────────────────
-
 type Source = "manual" | "github" | "defectdojo";
 
 const SOURCE_DOT: Record<Source, string> = {
@@ -70,8 +65,6 @@ const SOURCE_LABEL: Record<Source, string> = {
   github: "GitHub",
   defectdojo: "DefectDojo",
 };
-
-// ── Chip input ────────────────────────────────────────────────────────────
 
 const ChipInput = ({
   label,
@@ -137,8 +130,6 @@ const ChipInput = ({
     </div>
   );
 };
-
-// ── Manual create inline form ─────────────────────────────────────────────
 
 const ManualCreateForm = ({
   onCancel,
@@ -240,124 +231,6 @@ const ManualCreateForm = ({
   );
 };
 
-// ── GitHub import inline form ─────────────────────────────────────────────
-
-const GitHubImportForm = ({
-  onCancel,
-  onCreate,
-}: {
-  onCancel: () => void;
-  onCreate: (svc: Omit<ServiceDefinition, "id">) => void;
-}) => {
-  const { config: githubConfig } = useGithubConfig();
-  const [repoUrl, setRepoUrl] = useState("");
-  const [owner, setOwner] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleImport = async () => {
-    if (!repoUrl.trim()) return;
-    setLoading(true);
-    setError("");
-    try {
-      const match = repoUrl.match(
-        /github\.com\/([^/]+)\/([^/]+?)(?:\.git)?(?:\/|$)/,
-      );
-      if (!match)
-        throw new Error("URL inválida. Use: https://github.com/owner/repo");
-      const [, repoOwner, repoName] = match;
-      const apiBase = githubConfig?.baseUrl ?? "https://api.github.com";
-      const token = githubConfig?.token ?? "";
-      const client = createGithubClient(apiBase, token);
-      const repo = await client.getRepository(`${repoOwner}/${repoName}`);
-      onCreate({
-        name: repo.name,
-        description: repo.description ?? "",
-        repositoryUrl: repo.html_url,
-        technology: repo.language ? [repo.language] : [],
-        owner: owner.trim() || undefined,
-        source: "github",
-        sourceId: repo.full_name,
-        tags: repo.topics ?? [],
-        metadata: {
-          github: {
-            repoId: repo.id,
-            fullName: repo.full_name,
-            topics: repo.topics ?? [],
-            language: repo.language,
-            updatedAt: repo.updated_at,
-          },
-        },
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao importar");
-      setLoading(false);
-    }
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      className="rounded-xl border border-border bg-card p-4 space-y-3 mb-4"
-    >
-      <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">
-          Importar do GitHub
-        </p>
-        <p className="text-[10px] text-muted-foreground">
-          Limite: 60 req/h para repositórios públicos sem autenticação.
-        </p>
-      </div>
-      <div>
-        <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-          Repository URL
-        </label>
-        <input
-          autoFocus
-          value={repoUrl}
-          onChange={(e) => setRepoUrl(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleImport()}
-          placeholder="https://github.com/org/repo"
-          className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-        />
-      </div>
-      <div>
-        <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-          Owner (opcional)
-        </label>
-        <input
-          value={owner}
-          onChange={(e) => setOwner(e.target.value)}
-          className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-        />
-      </div>
-      {error && <p className="text-xs text-destructive">{error}</p>}
-      <div className="flex justify-end gap-2 pt-1">
-        <button
-          onClick={onCancel}
-          className="px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md"
-        >
-          Cancelar
-        </button>
-        <button
-          onClick={handleImport}
-          disabled={loading || !repoUrl.trim()}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-        >
-          {loading ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            <Download className="h-3 w-3" />
-          )}
-          Import &amp; Sync
-        </button>
-      </div>
-    </motion.div>
-  );
-};
-
 // ── Service usage ─────────────────────────────────────────────────────────
 
 function getServiceUsage(
@@ -382,8 +255,6 @@ function getServiceUsage(
         x !== null,
     );
 }
-
-// ── Compact ServiceCard for grid ──────────────────────────────────────────
 
 interface ServiceCardProps {
   svc: ServiceDefinition;
@@ -689,7 +560,6 @@ const DetailPanel = ({
         </div>
       </div>
 
-      {/* Scrollable content */}
       <div className="px-5 py-4">
         <div className="space-y-5">
           {syncError && (
@@ -698,7 +568,6 @@ const DetailPanel = ({
             </p>
           )}
 
-          {/* ─── Fields (view/edit) ─── */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
@@ -795,7 +664,6 @@ const DetailPanel = ({
               </div>
             ) : (
               <div className="space-y-3">
-                {/* Source badge */}
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] text-muted-foreground w-20 shrink-0">
                     Fonte
@@ -807,7 +675,6 @@ const DetailPanel = ({
                   </span>
                 </div>
 
-                {/* Description */}
                 <div>
                   <span className="text-[11px] text-muted-foreground block mb-0.5">
                     Descrição
@@ -838,7 +705,6 @@ const DetailPanel = ({
                   )}
                 </div>
 
-                {/* Repo */}
                 {svc.repositoryUrl && (
                   <div className="flex items-start gap-2">
                     <span className="text-[11px] text-muted-foreground w-20 shrink-0 pt-0.5">
@@ -890,7 +756,6 @@ const DetailPanel = ({
                   </div>
                 )}
 
-                {/* Technology */}
                 <div>
                   <span className="text-[11px] text-muted-foreground block mb-1">
                     Tecnologia
@@ -913,7 +778,6 @@ const DetailPanel = ({
                   )}
                 </div>
 
-                {/* Tags */}
                 <div>
                   <span className="text-[11px] text-muted-foreground block mb-1">
                     Tags
@@ -939,7 +803,6 @@ const DetailPanel = ({
             )}
           </div>
 
-          {/* ─── Usage in diagrams ─── */}
           <div className="space-y-1.5">
             <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold block">
               Uso em diagramas
@@ -971,7 +834,6 @@ const DetailPanel = ({
             )}
           </div>
 
-          {/* ─── Danger zone ─── */}
           <div className="pt-2 border-t border-border">
             {confirmDelete ? (
               <div className="flex items-center gap-2">
@@ -1009,77 +871,6 @@ const DetailPanel = ({
   );
 };
 
-// ── Add Service dropdown ──────────────────────────────────────────────────
-
-type InlineForm = "manual" | "github" | "defectdojo" | null;
-
-const AddServiceDropdown = ({
-  onSelect,
-}: {
-  onSelect: (form: InlineForm) => void;
-}) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const showDefectDojo = import.meta.env.VITE_ENABLE_DEFECTDOJO === "true";
-  const showGithub = import.meta.env.VITE_ENABLE_GITHUB_IMPORT === "true";
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node))
-        setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  const select = (form: InlineForm) => {
-    setOpen(false);
-    onSelect(form);
-  };
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-      >
-        <Plus className="h-4 w-4" />
-        Add Service
-        <ChevronDown className="h-3.5 w-3.5 opacity-70" />
-      </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-1.5 z-20 w-52 rounded-lg border border-border bg-card shadow-xl py-1">
-          <button
-            onClick={() => select("manual")}
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted/50 text-foreground text-left"
-          >
-            <span className="text-violet-400">✦</span> Criar manualmente
-          </button>
-          {showGithub && (
-            <button
-              onClick={() => select("github")}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted/50 text-foreground text-left"
-            >
-              <span className="text-blue-400">⌥</span> Importar do GitHub
-            </button>
-          )}
-          {showDefectDojo && (
-            <button
-              onClick={() => select("defectdojo")}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted/50 text-foreground text-left"
-            >
-              <span className="text-orange-400">🛡</span> Importar do
-              DefectDojo
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ── Main page ─────────────────────────────────────────────────────────────
 
 type SourceFilter = "all" | Source;
 
@@ -1093,9 +884,11 @@ const ServiceRegistry = () => {
 
   const [search, setSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
-  const [inlineForm, setInlineForm] = useState<InlineForm>(null);
-  const [showDefectDojo, setShowDefectDojo] = useState(false);
-  const showGithub = import.meta.env.VITE_ENABLE_GITHUB_IMPORT === "true";
+  const [importPanel, setImportPanel] = useState<
+    "manual" | "github" | "defectdojo" | null
+  >(null);
+  const showEnableGithub = import.meta.env.VITE_ENABLE_GITHUB_IMPORT === "true";
+  const showEnableDefectDojo = import.meta.env.VITE_ENABLE_DEFECTDOJO === "true";
   const { config: githubConfig } = useGithubConfig();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedFromQuery = searchParams.get("serviceId");
@@ -1123,7 +916,6 @@ const ServiceRegistry = () => {
     [selectedId, services],
   );
 
-  // If selected service was deleted, clear selection
   useEffect(() => {
     if (selectedId && !services.find((s) => s.id === selectedId)) {
       setSelectedId(null);
@@ -1172,19 +964,9 @@ const ServiceRegistry = () => {
     [openDiagram, navigate],
   );
 
-  const handleInlineFormSelect = (form: InlineForm) => {
-    if (form === "defectdojo") {
-      setShowDefectDojo(true);
-      setInlineForm(null);
-    } else {
-      setInlineForm(form);
-      setShowDefectDojo(false);
-    }
-  };
-
   const handleCreate = (svc: Omit<ServiceDefinition, "id">) => {
     const created = addService(svc);
-    setInlineForm(null);
+    setImportPanel(null);
     setSelectedId(created.id);
   };
 
@@ -1208,7 +990,15 @@ const ServiceRegistry = () => {
                 Catálogo central de serviços e infraestrutura
               </p>
             </div>
-            <AddServiceDropdown onSelect={handleInlineFormSelect} />
+            <button
+              onClick={() =>
+                setImportPanel((current) => (current ? null : "manual"))
+              }
+              className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Add Service
+            </button>
           </div>
 
           {/* Search */}
@@ -1250,33 +1040,47 @@ const ServiceRegistry = () => {
             </span>
           </div>
 
-          {/* Inline forms */}
-          <AnimatePresence mode="wait">
-            {inlineForm === "manual" && (
-              <ManualCreateForm
-                key="manual"
-                onCancel={() => setInlineForm(null)}
-                onCreate={handleCreate}
-              />
-            )}
-            {showGithub && inlineForm === "github" && (
-              <GitHubImportForm
-                key="github"
-                onCancel={() => setInlineForm(null)}
-                onCreate={handleCreate}
-              />
-            )}
-          </AnimatePresence>
-
-          {/* DefectDojo panel */}
-          {showDefectDojo && (
-            <div className="mb-6">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  DefectDojo
-                </span>
+          {importPanel && (
+            <div className="mb-6 rounded-xl border border-border bg-card p-4">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex gap-1 rounded-lg bg-secondary p-1">
+                  <button
+                    onClick={() => setImportPanel("manual")}
+                    className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      importPanel === "manual"
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    ✦ Manual
+                  </button>
+                  {showEnableGithub && (
+                  <button
+                    onClick={() => setImportPanel("github")}
+                    className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      importPanel === "github"
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    ⌥ GitHub
+                  </button>
+                  )}
+                  {showEnableDefectDojo && (
+                    <button
+                      onClick={() => setImportPanel("defectdojo")}
+                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        importPanel === "defectdojo"
+                          ? "bg-card text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      🛡 DefectDojo
+                    </button>
+                  )}
+                </div>
                 <button
-                  onClick={() => setShowDefectDojo(false)}
+                  onClick={() => setImportPanel(null)}
                   className="text-muted-foreground hover:text-foreground"
                 >
                   <X className="h-4 w-4" />
@@ -1284,22 +1088,21 @@ const ServiceRegistry = () => {
               </div>
               <Suspense
                 fallback={
-                  <div className="h-32 rounded-xl border border-border bg-card animate-pulse" />
+                  <div className="h-32 animate-pulse rounded-xl bg-secondary" />
                 }
               >
-                <DefectDojoPanel />
+                {importPanel === "manual" && (
+                  <ManualCreateForm
+                    onCancel={() => setImportPanel(null)}
+                    onCreate={handleCreate}
+                  />
+                )}
+                {importPanel === "defectdojo" && <DefectDojoPanel />}
+                {importPanel === "github" && <GithubImportPanel />}
               </Suspense>
             </div>
           )}
 
-          {/* GitHub panel — config + search are self-contained inside GithubImportPanel */}
-          {showGithub && (
-            <div className="mb-6">
-              <GithubImportPanel />
-            </div>
-          )}
-
-          {/* Service cards grid */}
           <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
             <div>
               {filtered.length === 0 ? (
