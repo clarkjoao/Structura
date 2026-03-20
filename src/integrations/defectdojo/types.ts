@@ -28,9 +28,11 @@ export interface DefectDojoConfig {
   apiToken: string;
 }
 
-export type ImportStatus = "not-imported" | "imported" | "updated";
+import type { DefectDojoImportStatus } from "./enums";
+
+export type ImportStatus = DefectDojoImportStatus;
 
 export interface DDSearchResult extends DDProduct {
-  status: ImportStatus;
+  status: DefectDojoImportStatus;
   existingServiceId?: string;
 }

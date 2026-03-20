@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useDiagramStore, ServiceSource } from "@/features/diagram";
 import { mapToServiceDefinition } from "../defectdojo.service";
 import type { DDSearchResult } from "../types";
+import { DefectDojoImportStatus } from "../enums";
 import { DefectDojoProductCard } from "./DefectDojoProductCard";
 import {
   dedupeStringsPreserveOrder,
@@ -33,7 +34,7 @@ export function DefectDojoResultsList({
   const [importMessage, setImportMessage] = useState<string | null>(null);
 
   const selectableIds = results
-    .filter((r) => r.status !== "imported")
+    .filter((r) => r.status !== DefectDojoImportStatus.Imported)
     .map((r) => r.id);
 
   const allSelected =
@@ -69,7 +70,7 @@ export function DefectDojoResultsList({
 
     for (const product of toImport) {
       const svcData = mapToServiceDefinition(product);
-      if (product.status === "updated" && product.existingServiceId) {
+      if (product.status === DefectDojoImportStatus.Updated && product.existingServiceId) {
         const existingService = store.serviceRegistry[product.existingServiceId];
         const mergedTech = dedupeStringsPreserveOrder([
           ...(existingService?.technology ?? []),
@@ -156,7 +157,7 @@ export function DefectDojoResultsList({
     setTimeout(() => setImportMessage(null), 4000);
   };
 
-  const importedCount = results.filter((r) => r.status === "imported").length;
+  const importedCount = results.filter((r) => r.status === DefectDojoImportStatus.Imported).length;
 
   if (loading) {
     return (

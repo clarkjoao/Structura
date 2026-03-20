@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useDiagramStore, ServiceSource } from "@/features/diagram";
+import { DefectDojoImportStatus } from "../enums";
 import { normalizeSources } from "@/integrations/merge-utils";
 import { DefectDojoClient } from "../defectdojo.client";
 import {
@@ -29,11 +30,11 @@ function resolveImportStatus(
           source.type === ServiceSource.Defectdojo && source.sourceId === String(productId),
       ),
   );
-  if (!existing) return { status: "not-imported" };
+  if (!existing) return { status: DefectDojoImportStatus.NotImported };
   if (existing.name === productName && existing.description === productDesc) {
-    return { status: "imported", existingServiceId: existing.id };
+    return { status: DefectDojoImportStatus.Imported, existingServiceId: existing.id };
   }
-  return { status: "updated", existingServiceId: existing.id };
+  return { status: DefectDojoImportStatus.Updated, existingServiceId: existing.id };
 }
 
 export function useDefectDojoSearch(config: DefectDojoConfig | null) {

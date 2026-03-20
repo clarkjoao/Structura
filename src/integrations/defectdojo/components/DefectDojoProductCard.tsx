@@ -1,4 +1,5 @@
 import type { DDSearchResult } from "../types";
+import { DefectDojoImportStatus } from "../enums";
 import { useTranslation } from "react-i18next";
 
 const CRITICALITY_COLORS: Record<string, string> = {
@@ -16,8 +17,8 @@ interface Props {
 
 export function DefectDojoProductCard({ product, selected, onToggle }: Props) {
   const { t } = useTranslation();
-  const isImported = product.status === "imported";
-  const isUpdated = product.status === "updated";
+  const isImported = product.status === DefectDojoImportStatus.Imported;
+  const isUpdated = product.status === DefectDojoImportStatus.Updated;
   const critColor =
     CRITICALITY_COLORS[product.business_criticality?.toLowerCase() ?? ""] ??
     "bg-secondary text-secondary-foreground border-border";
