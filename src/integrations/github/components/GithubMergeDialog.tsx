@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 export interface MergeResolution {
   existingServiceId: string;
@@ -72,14 +73,6 @@ function resolveCompletenessTemplate(
   };
 }
 
-function getExistingLabel(existingService: ServiceDefinition) {
-  return normalizeSources(existingService).some(
-    (source) => source.type === "defectdojo",
-  )
-    ? "Existente (DefectDojo)"
-    : "Existente (manual)";
-}
-
 export function GithubMergeDialog({
   conflicts,
   onResolve,
@@ -89,6 +82,12 @@ export function GithubMergeDialog({
   onResolve: (resolutions: MergeResolution[]) => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
+  const existingColumnLabel = (existingService: ServiceDefinition) =>
+    normalizeSources(existingService).some((source) => source.type === "defectdojo")
+      ? t("github.mergeExistingDefectDojo")
+      : t("github.mergeExistingManual");
+
   const initial = useMemo(() => conflicts.map((c) => resolveCompletenessTemplate(c)), [conflicts]);
   const [draft, setDraft] = useState<MergeResolution[]>(initial);
 
@@ -113,9 +112,9 @@ export function GithubMergeDialog({
       <DialogContent className="max-w-[980px] p-0 overflow-hidden rounded-2xl">
         <div className="px-6 py-5 border-b border-border bg-card">
           <DialogHeader className="p-0">
-            <DialogTitle>Conflitos detectados</DialogTitle>
+            <DialogTitle>{t("github.mergeConflictsTitle")}</DialogTitle>
             <DialogDescription>
-              Existem repositórios do GitHub já importados no Registry. Selecione como deseja resolver.
+              {t("github.mergeIntro")}
             </DialogDescription>
           </DialogHeader>
           <div className="mt-4 flex items-center gap-2">
@@ -126,10 +125,10 @@ export function GithubMergeDialog({
               onClick={applyAllSame}
               disabled={draft.length === 0}
             >
-              Resolver todos igual
+              {t("github.mergeResolveAllSame")}
             </Button>
             <span className="text-xs text-muted-foreground">
-              {conflicts.length} conflito{conflicts.length !== 1 ? "s" : ""}
+              {t("github.mergeConflictCount", { count: conflicts.length })}
             </span>
           </div>
         </div>
@@ -151,34 +150,34 @@ export function GithubMergeDialog({
                       {conflict.repo.full_name}
                     </p>
                     <p className="text-sm text-foreground/90 truncate">
-                      {conflict.repo.description ?? "Sem descrição"}
+                      {conflict.repo.description ?? t("github.noDescription")}
                     </p>
                   </div>
                   <div className="shrink-0 text-xs text-muted-foreground">
                     {normalizeSources(existing).some(
                       (source) => source.type === "defectdojo",
                     )
-                      ? "DefectDojo"
-                      : "Manual"}
+                      ? t("registry.sourceDefectdojo")
+                      : t("github.sourceBadgeManual")}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-[180px_1fr_1fr_1fr] gap-x-3 gap-y-2 items-start text-sm">
                   <div className="text-xs font-semibold text-muted-foreground">
-                    Campo
+                    {t("github.mergeFieldColumn")}
                   </div>
                   <div className="text-xs font-semibold text-muted-foreground">
-                    GitHub
+                    {t("github.mergeGithubColumn")}
                   </div>
                   <div className="text-xs font-semibold text-muted-foreground">
-                    {getExistingLabel(existing)}
+                    {existingColumnLabel(existing)}
                   </div>
                   <div className="text-xs font-semibold text-muted-foreground text-center">
-                    Mesclar
+                    {t("github.mergeMergeColumn")}
                   </div>
 
                   {/* name */}
-                  <div className="text-xs text-muted-foreground mt-1">Nome</div>
+                  <div className="text-xs text-muted-foreground mt-1">{t("common.name")}</div>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
@@ -222,7 +221,7 @@ export function GithubMergeDialog({
                   <div />
 
                   {/* description */}
-                  <div className="text-xs text-muted-foreground mt-1">Descrição</div>
+                  <div className="text-xs text-muted-foreground mt-1">{t("common.description")}</div>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
@@ -244,7 +243,7 @@ export function GithubMergeDialog({
                       }
                       className="accent-primary"
                     />
-                    <span className="truncate">{githubService.description || "—"}</span>
+                    <span className="truncate">{githubService.description || t("common.emDash")}</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -267,12 +266,12 @@ export function GithubMergeDialog({
                       }
                       className="accent-primary"
                     />
-                    <span className="truncate">{existing.description || "—"}</span>
+                    <span className="truncate">{existing.description || t("common.emDash")}</span>
                   </label>
                   <div />
 
                   {/* technology */}
-                  <div className="text-xs text-muted-foreground mt-1">Tecnologia</div>
+                  <div className="text-xs text-muted-foreground mt-1">{t("common.technology")}</div>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
@@ -295,7 +294,7 @@ export function GithubMergeDialog({
                       className="accent-primary"
                     />
                     <span className="truncate">
-                      {githubService.technology.join(", ") || "—"}
+                      {githubService.technology.join(", ") || t("common.emDash")}
                     </span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -320,7 +319,7 @@ export function GithubMergeDialog({
                       className="accent-primary"
                     />
                     <span className="truncate">
-                      {existing.technology.join(", ") || "—"}
+                      {existing.technology.join(", ") || t("common.emDash")}
                     </span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer justify-center">
@@ -344,11 +343,11 @@ export function GithubMergeDialog({
                       }
                       className="accent-primary"
                     />
-                    <span className="text-xs text-muted-foreground">Mesclar</span>
+                    <span className="text-xs text-muted-foreground">{t("github.mergeMergeColumn")}</span>
                   </label>
 
                   {/* tags */}
-                  <div className="text-xs text-muted-foreground mt-1">Tags</div>
+                  <div className="text-xs text-muted-foreground mt-1">{t("common.tags")}</div>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
@@ -367,7 +366,7 @@ export function GithubMergeDialog({
                       }
                       className="accent-primary"
                     />
-                    <span className="truncate">{githubService.tags?.join(", ") || "—"}</span>
+                    <span className="truncate">{githubService.tags?.join(", ") || t("common.emDash")}</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -387,7 +386,7 @@ export function GithubMergeDialog({
                       }
                       className="accent-primary"
                     />
-                    <span className="truncate">{existing.tags?.join(", ") || "—"}</span>
+                    <span className="truncate">{existing.tags?.join(", ") || t("common.emDash")}</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer justify-center">
                     <input
@@ -407,7 +406,7 @@ export function GithubMergeDialog({
                       }
                       className="accent-primary"
                     />
-                    <span className="text-xs text-muted-foreground">Mesclar</span>
+                    <span className="text-xs text-muted-foreground">{t("github.mergeMergeColumn")}</span>
                   </label>
                 </div>
               </div>
@@ -422,10 +421,10 @@ export function GithubMergeDialog({
             disabled={draft.length === 0}
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            {conflicts.length} conflito{conflicts.length !== 1 ? "s" : ""} — Confirmar merge
+            {t("github.conflictsConfirm", { count: conflicts.length })}
           </Button>
           <Button type="button" variant="outline" onClick={onCancel}>
-            Cancelar
+            {t("github.cancel")}
           </Button>
         </div>
       </DialogContent>

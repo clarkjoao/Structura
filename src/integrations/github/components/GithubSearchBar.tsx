@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   loading: boolean;
@@ -25,6 +26,7 @@ interface Props {
 }
 
 export function GithubSearchBar({ loading, client, onSearch }: Props) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [searchField, setSearchField] = useState<GHSearchField>("name_contains");
   const [org, setOrg] = useState("__all__");
@@ -61,9 +63,12 @@ export function GithubSearchBar({ loading, client, onSearch }: Props) {
   }, [client]);
 
   const currentField = GH_SEARCH_FIELDS.find((f) => f.param === searchField);
+  const fieldLabel = currentField
+    ? t(`githubSearchField.${currentField.param}`)
+    : "";
   const placeholder = currentField
-    ? `Buscar por ${currentField.label.toLowerCase()}...`
-    : "Buscar repositório...";
+    ? t("githubSearch.searchByField", { field: fieldLabel.toLowerCase() })
+    : t("githubSearch.searchRepo");
 
   const resolvedOrg = org === "__all__" ? "" : org === "__user__" ? "" : org;
   const resolvedUser = org === "__user__" ? authenticatedUser : userFilter.trim();
@@ -108,12 +113,12 @@ export function GithubSearchBar({ loading, client, onSearch }: Props) {
           onValueChange={(v) => setSearchField(v as GHSearchField)}
         >
           <SelectTrigger className="w-[220px]">
-            <SelectValue placeholder="Campo de busca" />
+            <SelectValue placeholder={t("github.searchFieldPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
             {GH_SEARCH_FIELDS.map((f) => (
               <SelectItem key={f.param} value={f.param}>
-                {f.label}
+                {t(`githubSearchField.${f.param}`)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -129,7 +134,7 @@ export function GithubSearchBar({ loading, client, onSearch }: Props) {
           ) : (
             <Search className="h-4 w-4" />
           )}
-          Buscar
+          {t("github.searchButton")}
         </Button>
       </div>
 
@@ -137,18 +142,18 @@ export function GithubSearchBar({ loading, client, onSearch }: Props) {
       <div className="flex flex-wrap items-center gap-3">
         <Select value={org} onValueChange={setOrg}>
           <SelectTrigger className="w-[220px]">
-            <SelectValue placeholder="Organização / Escopo" />
+            <SelectValue placeholder={t("github.orgPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="__all__">Todas as orgs</SelectItem>
+            <SelectItem value="__all__">{t("github.allOrgs")}</SelectItem>
             {authenticatedUser && (
               <SelectItem value="__user__">
-                Meus repos ({authenticatedUser})
+                {t("github.myRepos", { user: authenticatedUser })}
               </SelectItem>
             )}
             {orgsLoading && (
               <SelectItem value="__loading__" disabled>
-                Carregando...
+                {t("github.loadingOrgs")}
               </SelectItem>
             )}
             {orgs.map((o) => (
@@ -165,7 +170,7 @@ export function GithubSearchBar({ loading, client, onSearch }: Props) {
             value={userFilter}
             onChange={(e) => setUserFilter(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Outro usuário"
+            placeholder={t("github.otherUserPlaceholder")}
             className="pl-9 text-sm"
             disabled={org === "__user__"}
           />
@@ -176,7 +181,7 @@ export function GithubSearchBar({ loading, client, onSearch }: Props) {
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Linguagem (ex: kotlin)"
+            placeholder={t("github.languagePlaceholder")}
             className="text-sm"
           />
         </div>
@@ -186,29 +191,29 @@ export function GithubSearchBar({ loading, client, onSearch }: Props) {
             value={minStars}
             onChange={(e) => setMinStars(e.target.value.replace(/\D/g, ""))}
             onKeyDown={handleKeyDown}
-            placeholder="Min. stars"
+            placeholder={t("github.minStarsPlaceholder")}
             className="text-sm"
           />
         </div>
 
         <div className="flex items-center gap-2">
           <Switch checked={hideArchived} onCheckedChange={setHideArchived} />
-          <span className="text-sm text-muted-foreground">Ocultar arquivados</span>
+          <span className="text-sm text-muted-foreground">{t("github.hideArchived")}</span>
         </div>
 
         <div className="flex items-center gap-2">
           <Switch checked={hideForks} onCheckedChange={setHideForks} />
-          <span className="text-sm text-muted-foreground">Ocultar forks</span>
+          <span className="text-sm text-muted-foreground">{t("github.hideForks")}</span>
         </div>
 
         <Select value={perPage} onValueChange={setPerPage}>
           <SelectTrigger className="w-[130px]">
-            <SelectValue placeholder="Limite" />
+            <SelectValue placeholder={t("github.limitPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
             {[50, 100, 150, 200, 250].map((n) => (
               <SelectItem key={n} value={String(n)}>
-                {n} por página
+                {t("github.perPage", { n })}
               </SelectItem>
             ))}
           </SelectContent>

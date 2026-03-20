@@ -4,6 +4,7 @@
  */
 import type { ComponentType, PanelKind } from "./component.types";
 import { isAwsType } from "@/lib/catalogs/aws";
+import i18n from "@/infrastructure/i18n";
 
 // --- C4 component types (person, system, container, component) ---
 export const C4_TYPES = ["person", "system", "container", "component"] as const;
@@ -109,8 +110,8 @@ export function getDefaultNameForNewComponent(
   panelDefaultName?: string,
 ): string {
   if (isNoteType(type)) return "";
-  if (isEndpointType(type)) return "Novo Endpoint";
-  if (isApiGroupType(type)) return "API Endpoints";
+  if (isEndpointType(type)) return i18n.t("canvas.newEndpoint");
+  if (isApiGroupType(type)) return i18n.t("canvas.apiGroupDefaultName");
   if (isPanelType(type) && panelDefaultName) return panelDefaultName;
-  return `Novo ${label}`;
+  return i18n.t("quickInsert.newNamed", { name: label });
 }

@@ -1,6 +1,7 @@
 import { AlertTriangle, ArrowRight, Box } from "lucide-react";
 import type { Flow } from "@/features/diagram";
 import type { BrokenStep } from "./validateFlow";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   flow: Flow;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 const BrokenFlowDialog = ({ flow, brokenSteps, onRemoveSteps, onCancel }: Props) => {
+  const { t } = useTranslation();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="w-[480px] rounded-xl border border-border bg-card shadow-2xl">
@@ -17,12 +19,10 @@ const BrokenFlowDialog = ({ flow, brokenSteps, onRemoveSteps, onCancel }: Props)
           <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0" />
           <div>
             <h2 className="text-sm font-semibold text-foreground">
-              Flow com referências inválidas
+              {t("brokenFlow.title")}
             </h2>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              <span className="font-medium text-foreground">{flow.name}</span>
-              {" — "}Os seguintes steps referenciam elementos que foram removidos
-              do diagrama. Remova-os para continuar.
+              {t("brokenFlow.descriptionWithName", { name: flow.name })}
             </p>
           </div>
         </div>
@@ -45,7 +45,7 @@ const BrokenFlowDialog = ({ flow, brokenSteps, onRemoveSteps, onCancel }: Props)
                 {b.label}
               </span>
               <span className="text-[10px] rounded bg-destructive/10 text-destructive px-1.5 py-0.5 shrink-0">
-                {b.reason === "component_deleted" ? "componente removido" : "conexão removida"}
+                {b.reason === "component_deleted" ? t("brokenFlow.componentDeleted") : t("brokenFlow.connectionRemoved")}
               </span>
             </div>
           ))}
@@ -56,13 +56,13 @@ const BrokenFlowDialog = ({ flow, brokenSteps, onRemoveSteps, onCancel }: Props)
             onClick={onCancel}
             className="px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md transition-colors"
           >
-            Cancelar
+            {t("brokenFlow.cancel")}
           </button>
           <button
             onClick={() => onRemoveSteps(brokenSteps.map((b) => b.stepIndex))}
             className="px-3 py-1.5 text-xs font-semibold text-primary-foreground bg-primary hover:bg-primary/90 rounded-md transition-colors"
           >
-            Remover steps inválidos e iniciar
+            {t("brokenFlow.removeInvalid")}
           </button>
         </div>
       </div>

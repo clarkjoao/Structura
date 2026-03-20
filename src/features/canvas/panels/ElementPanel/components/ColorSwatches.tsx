@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Palette, Check, Plus, Minus } from "lucide-react";
 import type { ComponentPatch } from "@/features/diagram";
 import {
@@ -121,6 +122,7 @@ const ColorSwatches = ({
   presetGroup = "vibrant",
   allowClear = false,
 }: ColorSwatchesProps) => {
+  const { t } = useTranslation();
   const [customHex, setCustomHex] = useState(() =>
     normalizeColor(currentColor).replace("#", ""),
   );
@@ -171,7 +173,7 @@ const ColorSwatches = ({
               onClick={() => updateComponent(componentId, { panelColor: undefined })}
               className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
             >
-              Padrão
+              {t("colorSwatches.default")}
             </button>
           )}
         </div>
@@ -183,7 +185,7 @@ const ColorSwatches = ({
             currentHex === normalizeColor(preset.color).toLowerCase();
           return (
             <button
-              key={`${preset.name}-${preset.color}`}
+              key={`${preset.nameKey}-${preset.color}`}
               onClick={() => handlePresetClick(preset.color)}
               className={`group relative h-7 rounded-md border-2 transition-all ${
                 isSelected
@@ -191,7 +193,7 @@ const ColorSwatches = ({
                   : "border-transparent hover:border-muted-foreground/50 hover:scale-105"
               }`}
               style={{ backgroundColor: preset.color }}
-              title={preset.name}
+              title={t(preset.nameKey)}
             >
               {isSelected && (
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -206,7 +208,7 @@ const ColorSwatches = ({
             type="button"
             onClick={() => setExpanded(true)}
             className="h-7 rounded-md border-2 border-dashed border-muted-foreground/40 hover:border-muted-foreground hover:bg-muted/50 transition-all flex items-center justify-center"
-            title="Mais cores"
+            title={t("colorSwatches.moreColors")}
           >
             <Plus className="h-4 w-4 text-muted-foreground" />
           </button>
@@ -217,16 +219,16 @@ const ColorSwatches = ({
         <div className="mt-3 pt-3 border-t border-border space-y-2">
           <div className="flex items-center justify-between">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
-              Cor customizada
+              {t("colorSwatches.customColor")}
             </p>
             <button
               type="button"
               onClick={() => setExpanded(false)}
               className="text-[10px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-              title="Ver menos"
+              title={t("colorSwatches.showLess")}
             >
               <Minus className="h-3 w-3" />
-              Ver menos
+              {t("colorSwatches.showLess")}
             </button>
           </div>
           <div className="flex gap-2 items-center">
@@ -252,7 +254,7 @@ const ColorSwatches = ({
                 }
                 onKeyDown={handleCustomKeyDown}
                 onBlur={handleCustomSubmit}
-                placeholder="ffffff"
+                placeholder={t("colorSwatches.hexPlaceholder")}
                 className="w-full pl-6 pr-2 py-1.5 rounded-md border border-border bg-secondary text-sm text-foreground font-mono focus:outline-none focus:ring-1 focus:ring-ring"
               />
             </div>

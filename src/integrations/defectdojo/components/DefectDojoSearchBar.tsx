@@ -5,6 +5,7 @@ import {
   DD_PRODUCT_SEARCH_FIELDS,
   type DDProductSearchField,
 } from "../defectdojo.service";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   productTypes: DDProductType[];
@@ -20,6 +21,7 @@ export function DefectDojoSearchBar({
   loading,
   onSearch,
 }: Props) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [prodType, setProdType] = useState<string>("");
   const [limit, setLimit] = useState("100");
@@ -38,9 +40,12 @@ export function DefectDojoSearchBar({
   const currentField = DD_PRODUCT_SEARCH_FIELDS.find(
     (f) => f.param === searchField,
   );
+  const fieldLabel = currentField
+    ? t(`defectdojo.productSearchField.${currentField.param}`)
+    : "";
   const placeholder = currentField
-    ? `Buscar por ${currentField.label.toLowerCase()}...`
-    : "Buscar produto...";
+    ? t("defectdojo.searchByField", { field: fieldLabel.toLowerCase() })
+    : t("defectdojo.searchProduct");
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleSearch();
@@ -66,7 +71,7 @@ export function DefectDojoSearchBar({
       >
         {DD_PRODUCT_SEARCH_FIELDS.map((f) => (
           <option key={f.param} value={f.param}>
-            {f.label}
+            {t(`defectdojo.productSearchField.${f.param}`)}
           </option>
         ))}
       </select>
@@ -77,7 +82,7 @@ export function DefectDojoSearchBar({
           onChange={(e) => setProdType(e.target.value)}
           className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         >
-          <option value="">Todos os tipos</option>
+          <option value="">{t("defectdojo.allProductTypes")}</option>
           {productTypes.map((pt) => (
             <option key={pt.id} value={String(pt.id)}>
               {pt.name}
@@ -93,7 +98,7 @@ export function DefectDojoSearchBar({
       >
         {[50, 100, 150, 200, 250].map((n) => (
           <option key={n} value={String(n)}>
-            {n} resultados
+            {t("defectdojo.limitResults", { n })}
           </option>
         ))}
       </select>
@@ -108,7 +113,7 @@ export function DefectDojoSearchBar({
         ) : (
           <Search className="h-4 w-4" />
         )}
-        Buscar
+        {t("defectdojo.searchButton")}
       </button>
     </div>
   );

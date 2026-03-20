@@ -12,12 +12,13 @@ interface PaginatedResponse<T> {
  * Inclui campos padrão do modelo Product + sigla/siglaApp (custom).
  * @see https://defectdojo.github.io/django-DefectDojo/integrations/api-v2-docs/
  */
+/** Field keys — labels from `defectdojo.productSearchField.*` in i18n */
 export const DD_PRODUCT_SEARCH_FIELDS = [
-  { param: "sigla", label: "Sigla" },
-  { param: "siglaApp", label: "Sigla App" },
-  { param: "name__icontains", label: "Nome (contém)" },
-  { param: "name", label: "Nome (exato)" },
-  { param: "id", label: "ID" },
+  { param: "sigla" as const },
+  { param: "siglaApp" as const },
+  { param: "name__icontains" as const },
+  { param: "name" as const },
+  { param: "id" as const },
 ] as const;
 
 export type DDProductSearchField =

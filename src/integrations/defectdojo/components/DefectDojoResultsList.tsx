@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { Loader2, AlertTriangle, Download } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useDiagramStore } from "@/features/diagram";
 import { mapToServiceDefinition } from "../defectdojo.service";
 import type { DDSearchResult } from "../types";
@@ -27,6 +28,7 @@ export function DefectDojoResultsList({
   onRetry,
   onRefreshStatuses,
 }: Props) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [importMessage, setImportMessage] = useState<string | null>(null);
 
@@ -145,10 +147,12 @@ export function DefectDojoResultsList({
 
     const parts: string[] = [];
     if (importedCount > 0)
-      parts.push(`${importedCount} serviço${importedCount > 1 ? "s" : ""} importado${importedCount > 1 ? "s" : ""}`);
+      parts.push(t("defectdojo.importToastImported", { count: importedCount }));
     if (updatedCount > 0)
-      parts.push(`${updatedCount} atualizado${updatedCount > 1 ? "s" : ""}`);
-    setImportMessage(parts.join(" e ") + " com sucesso");
+      parts.push(t("defectdojo.importToastUpdated", { count: updatedCount }));
+    setImportMessage(
+      parts.join(t("defectdojo.importToastJoin")) + t("defectdojo.importToastSuccessSuffix"),
+    );
     setTimeout(() => setImportMessage(null), 4000);
   };
 
@@ -176,7 +180,7 @@ export function DefectDojoResultsList({
           onClick={onRetry}
           className="rounded-md border border-destructive/30 px-3 py-1.5 text-xs text-destructive transition-colors hover:bg-destructive/10"
         >
-          Tentar novamente
+          {t("defectdojo.retryButton")}
         </button>
       </div>
     );
@@ -185,7 +189,7 @@ export function DefectDojoResultsList({
   if (results.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-muted-foreground">
-        Busque produtos acima para importar.
+        {t("defectdojo.emptyResultsHint")}
       </p>
     );
   }
@@ -201,11 +205,13 @@ export function DefectDojoResultsList({
               onChange={toggleSelectAll}
               className="h-4 w-4 accent-primary"
             />
-            Selecionar todos
+            {t("defectdojo.selectAll")}
           </label>
           <span className="text-xs text-muted-foreground">
-            {results.length} resultado{results.length !== 1 ? "s" : ""}
-            {importedCount > 0 && ` · ${importedCount} já importado${importedCount !== 1 ? "s" : ""}`}
+            {t("defectdojo.resultCount", { count: results.length })}
+            {importedCount > 0
+              ? t("defectdojo.footerImportedAddon", { count: importedCount })
+              : ""}
           </span>
         </div>
 
@@ -215,13 +221,13 @@ export function DefectDojoResultsList({
           className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
         >
           <Download className="h-3.5 w-3.5" />
-          Importar selecionados ({selected.size})
+          {t("defectdojo.importSelectedCount", { count: selected.size })}
         </button>
       </div>
 
       {importMessage && (
         <div className="rounded-md border border-green-500/30 bg-green-500/10 px-3 py-2 text-xs text-green-700">
-          ✓ {importMessage}
+          {t("defectdojo.importSuccessBanner", { message: importMessage })}
         </div>
       )}
 

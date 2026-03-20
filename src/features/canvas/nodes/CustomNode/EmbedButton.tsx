@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { Eye } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface EmbedButtonProps {
   elementId: string;
@@ -12,6 +13,7 @@ export const EmbedButton = ({
   onEmbed,
   disabled,
 }: EmbedButtonProps) => {
+  const { t } = useTranslation();
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -30,7 +32,7 @@ export const EmbedButton = ({
       }`}
       tabIndex={disabled ? -1 : 0}
     >
-      <Eye className="h-3 w-3" /> Incorporar diagrama
+      <Eye className="h-3 w-3" /> {t("customNode.embedDiagram")}
     </button>
   );
 };

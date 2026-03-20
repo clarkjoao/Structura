@@ -3,6 +3,7 @@ import { useComponents, useConnections, stepsToMermaid } from "@/features/diagra
 import type { FlowStep } from "@/features/diagram";
 import { X, GripVertical, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   name: string;
@@ -43,6 +44,7 @@ const FlowRecorderPanel = ({
   onReorderSteps,
   isEditing,
 }: Props) => {
+  const { t } = useTranslation();
   const components = useComponents();
   const connections = useConnections();
   const [expandedStep, setExpandedStep] = useState<number | null>(null);
@@ -62,19 +64,19 @@ const FlowRecorderPanel = ({
     (step: FlowStep): string => {
       if (step.connectionId) {
         const conn = connections[step.connectionId];
-        if (conn) return `→ ${conn.label}`;
+        if (conn) return `${t("flowRecorder.connectionLabelPrefix")}${conn.label}`;
       }
       if (step.componentId) {
-        return components[step.componentId]?.name ?? "?";
+        return components[step.componentId]?.name ?? t("flowRecorder.unknownStep");
       }
-      return "?";
+      return t("flowRecorder.unknownStep");
     },
-    [components, connections],
+    [components, connections, t],
   );
 
   const handleFinalize = () => {
-    if (!name.trim()) toast.warning("Nome do flow está vazio");
-    if (steps.length === 0) toast.warning("Nenhum passo gravado");
+    if (!name.trim()) toast.warning(t("flowRecorder.emptyNameWarning"));
+    if (steps.length === 0) toast.warning(t("flowRecorder.noStepsWarning"));
     onFinalize();
   };
 
@@ -100,7 +102,7 @@ const FlowRecorderPanel = ({
         <div className="flex items-center gap-2">
           <span className={`h-2 w-2 rounded-full ${isEditing ? "bg-amber-500" : "bg-red-500"} animate-pulse`} />
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            {isEditing ? "Editando Flow" : "Gravando Flow"}
+            {isEditing ? t("flowRecorder.editingTitle") : t("flowRecorder.recordingTitle")}
           </h3>
         </div>
         <button onClick={onCancel} className="text-muted-foreground hover:text-foreground">
@@ -112,7 +114,7 @@ const FlowRecorderPanel = ({
         <input
           value={name}
           onChange={(e) => onNameChange(e.target.value)}
-          placeholder="Nome do flow"
+          placeholder={t("flowRecorder.namePlaceholder")}
           className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           autoFocus
         />
@@ -120,12 +122,12 @@ const FlowRecorderPanel = ({
         <input
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
-          placeholder="Descrição do flow (opcional)"
+          placeholder={t("flowRecorder.descPlaceholder")}
           className="w-full rounded-md border border-border bg-secondary px-3 py-1.5 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         />
 
         <div className="space-y-1">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Tags</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{t("flowRecorder.tags")}</p>
           <div className="flex flex-wrap gap-1">
             {tags.map((tag, i) => (
               <span key={i} className="inline-flex items-center gap-0.5 text-[9px] rounded-full bg-secondary px-2 py-0.5 text-secondary-foreground">
@@ -135,7 +137,7 @@ const FlowRecorderPanel = ({
             ))}
           </div>
           <input
-            placeholder="Adicionar tag (Enter)..."
+            placeholder={t("flowRecorder.tagPlaceholder")}
             className="w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             onKeyDown={handleTagKey}
           />
@@ -149,11 +151,11 @@ const FlowRecorderPanel = ({
 
         <div className="space-y-1">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
-            Passos ({steps.length})
+            {t("flowRecorder.stepsHeading", { count: steps.length })}
           </p>
           {steps.length === 0 ? (
             <p className="text-xs text-muted-foreground italic py-2">
-              Clique em nós, handles ou conexões no canvas para gravar passos.
+              {t("flowRecorder.recordHint")}
             </p>
           ) : (
             <div className="space-y-0.5 max-h-48 overflow-auto">
@@ -178,7 +180,7 @@ const FlowRecorderPanel = ({
                     <span className="truncate flex-1">{getStepLabel(step)}</span>
                     {step.duration && <span className="text-[9px] font-mono text-primary/70 shrink-0">{step.duration}</span>}
                     {step.handleId && <span className="text-[9px] font-mono text-muted-foreground shrink-0">[{step.handleId}]</span>}
-                    <button onClick={(e) => handleDelete(i, e)} className="shrink-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all" title="Remover passo">
+                    <button onClick={(e) => handleDelete(i, e)} className="shrink-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all" title={t("flowRecorder.removeStepTitle")}>
                       <X className="h-3 w-3" />
                     </button>
                   </div>
@@ -189,7 +191,7 @@ const FlowRecorderPanel = ({
                         <input
                           value={step.description ?? ""}
                           onChange={(e) => onUpdateStepDescription(i, e.target.value)}
-                          placeholder="Descrição do passo..."
+                          placeholder={t("flowRecorder.stepDescPlaceholder")}
                           className="w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                           onClick={(e) => e.stopPropagation()}
                         />
@@ -199,7 +201,7 @@ const FlowRecorderPanel = ({
                         <input
                           value={step.duration ?? ""}
                           onChange={(e) => onUpdateStepDuration(i, e.target.value)}
-                          placeholder="~200ms, async..."
+                          placeholder={t("flowRecorder.durationPlaceholder")}
                           className="w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                           onClick={(e) => e.stopPropagation()}
                         />
@@ -218,7 +220,7 @@ const FlowRecorderPanel = ({
                                     : 'bg-secondary text-muted-foreground hover:text-foreground'
                                 }`}
                               >
-                                → Request
+                                {t("flowRecorder.request")}
                               </button>
                               <button
                                 type="button"
@@ -229,7 +231,7 @@ const FlowRecorderPanel = ({
                                     : 'bg-secondary text-muted-foreground hover:text-foreground'
                                 }`}
                               >
-                                ← Response
+                                {t("flowRecorder.response")}
                               </button>
                             </div>
                           </div>
@@ -238,7 +240,7 @@ const FlowRecorderPanel = ({
                             <textarea
                               value={step.payload ?? ""}
                               onChange={(e) => onUpdateStepPayload(i, e.target.value)}
-                              placeholder="Payload..."
+                              placeholder={t("flowRecorder.payloadPlaceholder")}
                               rows={2}
                               className="w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-y"
                               onClick={(e) => e.stopPropagation()}
@@ -257,12 +259,12 @@ const FlowRecorderPanel = ({
         {steps.length > 0 && (
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Mermaid</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{t("flowRecorder.mermaid")}</p>
               <button
                 type="button"
                 onClick={() => { navigator.clipboard.writeText(mermaidPreview); setCopiedMermaid(true); setTimeout(() => setCopiedMermaid(false), 2000); }}
                 className="text-muted-foreground hover:text-foreground transition-colors"
-                title="Copiar Mermaid"
+                title={t("flowRecorder.copyMermaidTitle")}
               >
                 {copiedMermaid ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
               </button>
@@ -276,10 +278,10 @@ const FlowRecorderPanel = ({
 
       <div className="p-3 border-t border-border flex gap-2">
         <button onClick={handleFinalize} className="flex-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-          Finalizar
+          {t("flowRecorder.finalize")}
         </button>
         <button onClick={onCancel} className="px-3 py-2 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md transition-colors">
-          Cancelar
+          {t("flowRecorder.cancel")}
         </button>
       </div>
     </div>

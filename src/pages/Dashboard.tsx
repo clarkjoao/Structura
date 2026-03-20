@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { formatTimestamp } from "@/lib/format-date";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -40,12 +41,6 @@ import { Button } from "@/components/ui/button";
 import { FolderTree } from "@/pages/FolderTree";
 import { cn } from "@/lib/utils";
 
-const levelLabels: Record<string, string> = {
-  context: "L1 · Contexto",
-  container: "L2 · Container",
-  component: "L3 · Componente",
-};
-
 const levelColors: Record<string, string> = {
   context: "bg-[hsl(var(--node-system)/0.15)] text-[hsl(var(--node-system))]",
   container:
@@ -73,6 +68,15 @@ function buildBreadcrumbPath(
 
 
 const Dashboard = () => {
+  const { t } = useTranslation();
+  const levelLabels = useMemo(
+    () => ({
+      context: t("dashboard.levelContextShort"),
+      container: t("dashboard.levelContainerShort"),
+      component: t("dashboard.levelComponentShort"),
+    }),
+    [t],
+  );
   const diagrams = useAllDiagrams();
   const folders = useFolders();
   const { addDiagram, openDiagram, deleteDiagram, moveDiagram } =
@@ -195,8 +199,8 @@ const Dashboard = () => {
   }, []);
 
   const currentFolderName = selectedFolderId
-    ? folders[selectedFolderId]?.name ?? "—"
-    : "Todos os diagramas";
+    ? folders[selectedFolderId]?.name ?? t("common.emDash")
+    : t("dashboard.allDiagrams");
 
   return (
     <div className="min-h-screen pt-16">
@@ -237,12 +241,12 @@ const Dashboard = () => {
                       className="cursor-pointer"
                     >
                       <button type="button" className="text-[13px]">
-                        Workspace
+                        {t("common.workspace")}
                       </button>
                     </BreadcrumbLink>
                   ) : (
                     <BreadcrumbPage className="text-[13px]">
-                      Workspace
+                      {t("common.workspace")}
                     </BreadcrumbPage>
                   )}
                 </BreadcrumbItem>
@@ -280,7 +284,7 @@ const Dashboard = () => {
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                 <input
                   type="search"
-                  placeholder="Buscar componente..."
+                  placeholder={t("dashboard.searchComponentPlaceholder")}
                   value={globalSearch}
                   onChange={(e) => setGlobalSearch(e.target.value)}
                   className="h-7 w-48 rounded-md border border-border bg-secondary/50 pl-7 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
@@ -322,21 +326,21 @@ const Dashboard = () => {
                     className="h-7 gap-1 text-xs text-muted-foreground"
                   >
                     <ArrowUpDown className="h-3 w-3" />
-                    Ordenar
+                    {t("common.sort")}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => handleSort("name")}>
-                    Nome
+                    {t("common.name")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleSort("updatedAt")}>
-                    Última edição
+                    {t("common.lastEdited")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleSort("level")}>
-                    Nível C4
+                    {t("common.c4Level")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleSort("domain")}>
-                    Domínio
+                    {t("common.domain")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -352,10 +356,21 @@ const Dashboard = () => {
                   {currentFolderName}
                 </h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {folderDiagrams.length} diagrama
-                  {folderDiagrams.length !== 1 ? "s" : ""}
-                  {childFolders.length > 0 &&
-                    ` · ${childFolders.length} pasta${childFolders.length !== 1 ? "s" : ""}`}
+                  {t("dashboard.diagramCount", {
+                    count: folderDiagrams.length,
+                    diagrams: t(
+                      folderDiagrams.length === 1 ? "common.diagram_one" : "common.diagram_other",
+                    ),
+                    folders:
+                      childFolders.length > 0
+                        ? t("dashboard.foldersSuffix", {
+                            count: childFolders.length,
+                            folders: t(
+                              childFolders.length === 1 ? "common.folder_one" : "common.folder_other",
+                            ),
+                          })
+                        : "",
+                  })}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -364,7 +379,7 @@ const Dashboard = () => {
                   size="sm"
                   className="gap-1.5 h-8"
                 >
-                  <Plus className="h-3.5 w-3.5" /> Novo diagrama
+                  <Plus className="h-3.5 w-3.5" /> {t("dashboard.newDiagram")}
                 </Button>
                 <Button
                   variant="outline"
@@ -372,7 +387,7 @@ const Dashboard = () => {
                   onClick={() => setTriggerAddFolder((t) => t + 1)}
                   className="gap-1.5 h-8"
                 >
-                  <Plus className="h-3.5 w-3.5" /> Nova pasta
+                  <Plus className="h-3.5 w-3.5" /> {t("dashboard.newFolder")}
                 </Button>
               </div>
             </div>
@@ -380,9 +395,17 @@ const Dashboard = () => {
             {/* Global search results */}
             {globalSearchResults !== null && (
               <div className="mb-4">
-                <p className="text-xs text-muted-foreground mb-3">{globalSearchResults.length} resultado{globalSearchResults.length !== 1 ? "s" : ""} para &ldquo;{globalSearch}&rdquo;</p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  {t("dashboard.resultsFor", {
+                    count: globalSearchResults.length,
+                    results: t(
+                      globalSearchResults.length === 1 ? "common.result_one" : "common.result_other",
+                    ),
+                    query: globalSearch,
+                  })}
+                </p>
                 {globalSearchResults.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nenhum componente encontrado.</p>
+                  <p className="text-sm text-muted-foreground">{t("dashboard.noComponentsFound")}</p>
                 ) : (
                   <div className="rounded-lg border border-border bg-card overflow-hidden divide-y divide-border">
                     {globalSearchResults.map((c) => (
@@ -416,7 +439,7 @@ const Dashboard = () => {
                       : "bg-secondary text-secondary-foreground border-border hover:bg-secondary/80",
                   )}
                 >
-                  Todos
+                  {t("common.all")}
                 </button>
                 {allDomains.map((domain) => (
                   <button
@@ -467,7 +490,8 @@ const Dashboard = () => {
                             {folder.name}
                           </p>
                           <p className="text-[11px] text-muted-foreground">
-                            {total} {total === 1 ? "item" : "itens"}
+                            {total}{" "}
+                            {t(total === 1 ? "common.item_one" : "common.item_other")}
                           </p>
                         </div>
                       </motion.div>
@@ -484,6 +508,7 @@ const Dashboard = () => {
                 onOpen={handleOpen}
                 onDelete={handleDelete}
                 onDragStart={handleDragStart}
+                levelLabels={levelLabels}
               />
             ) : (
               <DiagramList
@@ -491,6 +516,7 @@ const Dashboard = () => {
                 onOpen={handleOpen}
                 onDelete={handleDelete}
                 onDragStart={handleDragStart}
+                levelLabels={levelLabels}
               />
             ))}
 
@@ -502,17 +528,17 @@ const Dashboard = () => {
                   <Network className="h-7 w-7 text-muted-foreground/60" />
                 </div>
                 <p className="text-sm text-muted-foreground mb-1">
-                  Nenhum diagrama ainda
+                  {t("dashboard.noDiagramsYet")}
                 </p>
                 <p className="text-xs text-muted-foreground/60 mb-4">
-                  Crie seu primeiro diagrama de arquitetura
+                  {t("dashboard.createFirst")}
                 </p>
                 <Button
                   size="sm"
                   onClick={() => setShowAdd(true)}
                   className="gap-1.5"
                 >
-                  <Plus className="h-3.5 w-3.5" /> Criar diagrama
+                  <Plus className="h-3.5 w-3.5" /> {t("dashboard.createDiagram")}
                 </Button>
               </div>
             )}
@@ -536,12 +562,15 @@ function DiagramGrid({
   onOpen,
   onDelete,
   onDragStart,
+  levelLabels,
 }: {
   diagrams: Diagram[];
   onOpen: (d: Diagram) => void;
   onDelete: (e: React.MouseEvent, id: string) => void;
   onDragStart: (e: React.DragEvent, id: string) => void;
+  levelLabels: Record<string, string>;
 }) {
+  const { t } = useTranslation();
   if (diagrams.length === 0) return null;
   return (
     <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -583,13 +612,13 @@ function DiagramGrid({
                   onClick={(e) => e.stopPropagation()}
                 >
                   <DropdownMenuItem onClick={() => onOpen(d)}>
-                    Abrir
+                    {t("common.open")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
                     onClick={(e) => onDelete(e, d.id)}
                   >
-                    Excluir
+                    {t("common.delete")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -611,7 +640,7 @@ function DiagramGrid({
               </span>
               <span
                 className="text-[11px] text-muted-foreground/60 ml-auto"
-                title={`Criado: ${formatTimestamp(d.createdAt)}`}
+                title={`${t("common.created")}: ${formatTimestamp(d.createdAt)}`}
               >
                 {formatTimestamp(d.updatedAt)}
               </span>
@@ -634,12 +663,15 @@ function DiagramList({
   onOpen,
   onDelete,
   onDragStart,
+  levelLabels,
 }: {
   diagrams: Diagram[];
   onOpen: (d: Diagram) => void;
   onDelete: (e: React.MouseEvent, id: string) => void;
   onDragStart: (e: React.DragEvent, id: string) => void;
+  levelLabels: Record<string, string>;
 }) {
+  const { t } = useTranslation();
   if (diagrams.length === 0) return null;
   return (
     <div className="rounded-lg border border-border bg-card overflow-hidden">
@@ -648,16 +680,16 @@ function DiagramList({
           <tr className="border-b border-border bg-muted/30">
             <th className="w-10 px-3 py-2.5" />
             <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Nome
+              {t("common.name")}
             </th>
             <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Domínio
+              {t("common.domain")}
             </th>
             <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Nível
+              {t("common.c4Level")}
             </th>
             <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Editado
+              {t("common.edited")}
             </th>
             <th className="w-10 px-3 py-2.5" />
           </tr>
@@ -680,7 +712,7 @@ function DiagramList({
                 {d.name}
               </td>
               <td className="px-3 py-2.5 text-muted-foreground">
-                {d.domain ?? "—"}
+                {d.domain ?? t("common.emDash")}
               </td>
               <td className="px-3 py-2.5">
                 <span
@@ -699,7 +731,7 @@ function DiagramList({
                     {formatTimestamp(d.updatedAt)}
                   </span>
                   <span className="text-[10px] text-muted-foreground/50 pl-4">
-                    Criado: {formatTimestamp(d.createdAt)}
+                    {t("common.created")}: {formatTimestamp(d.createdAt)}
                   </span>
                 </div>
               </td>
@@ -727,6 +759,7 @@ const AddDiagramDialog = ({
   onClose: () => void;
   onAdd: (name: string, level: Level, domain?: string) => void;
 }) => {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [level, setLevel] = useState<Level>("context");
   const [domain, setDomain] = useState("");
@@ -742,49 +775,49 @@ const AddDiagramDialog = ({
         className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-lg font-bold mb-4">Novo diagrama</h3>
+        <h3 className="text-lg font-bold mb-4">{t("dashboard.addDiagramTitle")}</h3>
         <div className="space-y-3">
           <div>
             <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-              Nome
+              {t("common.name")}
             </label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="ex.: System Context"
+              placeholder={t("dashboard.namePlaceholder")}
               className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
               autoFocus
             />
           </div>
           <div>
             <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-              Nível C4
+              {t("common.c4Level")}
             </label>
             <select
               value={level}
               onChange={(e) => setLevel(e.target.value as Level)}
               className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             >
-              <option value="context">Nível 1 – Contexto de sistema</option>
-              <option value="container">Nível 2 – Container</option>
-              <option value="component">Nível 3 – Componente</option>
+              <option value="context">{t("dashboard.levelContext")}</option>
+              <option value="container">{t("dashboard.levelContainer")}</option>
+              <option value="component">{t("dashboard.levelComponent")}</option>
             </select>
           </div>
           <div>
             <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-              Domínio (opcional)
+              {t("dashboard.domainOptional")}
             </label>
             <input
               value={domain}
               onChange={(e) => setDomain(e.target.value)}
-              placeholder="ex.: E-commerce"
+              placeholder={t("dashboard.domainPlaceholder")}
               className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
         </div>
         <div className="flex justify-end gap-2 mt-4">
           <Button variant="outline" onClick={onClose} size="sm">
-            Cancelar
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={() => {
@@ -794,7 +827,7 @@ const AddDiagramDialog = ({
             disabled={!name.trim()}
             size="sm"
           >
-            Criar diagrama
+            {t("dashboard.createDiagram")}
           </Button>
         </div>
       </motion.div>

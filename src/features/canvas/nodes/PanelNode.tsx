@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import AwsIcon from "./AwsIcon";
+import { useTranslation } from "react-i18next";
 
 const DEFAULT_OPACITY = 10;
 
@@ -45,6 +46,7 @@ function colorWithAlpha(color: string, alpha: number): string {
 const UNPARENT_BORDER = "hsl(25 95% 53%)"; // orange
 
 const PanelNode = memo(({ data, selected }: NodeProps) => {
+  const { t } = useTranslation();
   const d = data as unknown as PanelNodeData;
   const { highlightedNodeIds } = useHandleHighlight();
   const kindDef = getPanelKindDef(d.panelKind as import("@/features/diagram").PanelKind | undefined);
@@ -95,20 +97,20 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
         )}
         <div className="min-w-0 flex-1">
           <span className="text-sm font-semibold text-foreground truncate block">
-            {d.name || "Painel"}
+            {d.name || t("panelNode.defaultName")}
           </span>
         <span className="text-[8px] text-muted-foreground text-nowrap truncate">
-          {d?.panelKind !== "default" ? `${kindDef.label}` :  ""} - {childCount} {childCount === 1 ? "elemento" : "elementos"}
+          {d?.panelKind !== "default" ? `${kindDef.label}` :  ""}{d?.panelKind !== "default" ? " - " : ""}{t("panelNode.childElements", { count: childCount })}
           </span>
         </div>
         {onToggle && (
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onToggle(); }}
-            aria-label="Expandir painel"
+            aria-label={t("panelNode.expandAria")}
             aria-expanded={false}
             className="shrink-0 p-1 rounded hover:bg-black/10 text-muted-foreground hover:text-foreground"
-            title="Expandir"
+            title={t("panelNode.expandTitle")}
           >
             <ChevronDown className="h-4 w-4" />
           </button>
@@ -162,10 +164,10 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onToggle(); }}
-              aria-label="Minimizar painel"
+              aria-label={t("panelNode.collapseAria")}
               aria-expanded={true}
               className="shrink-0 p-1 rounded hover:bg-black/10 text-muted-foreground hover:text-foreground"
-              title="Minimizar"
+              title={t("panelNode.collapseTitle")}
             >
               <ChevronUp className="h-4 w-4" />
             </button>

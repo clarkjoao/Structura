@@ -7,17 +7,7 @@ import { getLastEdgeStyle } from "@/features/diagram/hooks/useLastEdgeStyle";
 import { PANEL_KINDS, getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/catalogs/aws";
 import AwsIcon from "../nodes/AwsIcon";
-
-const C4_OPTIONS: {
-  type: ComponentType;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-}[] = [
-  { type: "person", label: "Person", icon: User },
-  { type: "system", label: "System", icon: Network },
-  { type: "container", label: "Container", icon: Server },
-  { type: "component", label: "Component", icon: Database },
-];
+import { useTranslation } from "react-i18next";
 
 type CanvasInsertOption = {
   type: ComponentType;
@@ -27,35 +17,29 @@ type CanvasInsertOption = {
   awsIconName?: string;
 };
 
-const CANVAS_OPTIONS: CanvasInsertOption[] = [
-  { type: "panel", label: "Painel", icon: Square, panelKind: "default" },
-  ...PANEL_KINDS.filter((p) => p.id !== "default").map((p) => ({
-    type: "panel" as const,
-    label: p.label,
-    icon: p.icon,
-    panelKind: p.id as PanelKind,
-    awsIconName: p.awsIconName,
-  })),
-  { type: "note", label: "Nota", icon: StickyNote },
-  { type: "api-group", label: "API Group", icon: Globe },
-  { type: "endpoint", label: "Endpoint", icon: Globe },
-];
+function splitSearchHelp(raw: string): string[] {
+  return raw.split("|").map((s) => s.trim().toLowerCase()).filter(Boolean);
+}
 
-function canvasOptionMatchesQuery(opt: CanvasInsertOption, q: string): boolean {
-  const fields: string[] = [opt.label];
+function canvasOptionMatchesQuery(
+  opt: CanvasInsertOption,
+  q: string,
+  synonyms: { panel: string[]; note: string[]; apiGroup: string[]; endpoint: string[] },
+): boolean {
+  const fields: string[] = [opt.label.toLowerCase()];
   if (opt.panelKind) {
-    fields.push(getPanelKindDef(opt.panelKind).defaultName);
+    fields.push(getPanelKindDef(opt.panelKind).defaultName.toLowerCase());
   }
   if (opt.type === "panel") {
-    fields.push("painel", "panel");
+    fields.push(...synonyms.panel);
   } else if (opt.type === "note") {
-    fields.push("nota", "note", "sticky", "postit");
+    fields.push(...synonyms.note);
   } else if (opt.type === "api-group") {
-    fields.push("api", "grupo", "group", "openapi");
+    fields.push(...synonyms.apiGroup);
   } else if (opt.type === "endpoint") {
-    fields.push("endpoint", "http", "rest");
+    fields.push(...synonyms.endpoint);
   }
-  return fields.some((f) => f.toLowerCase().includes(q));
+  return fields.some((f) => f.includes(q));
 }
 
 const POPOVER_W = 240;
@@ -76,12 +60,41 @@ const QuickInsertPopover = ({
   onInsert,
   onClose,
 }: QuickInsertPopoverProps) => {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { addComponent, addConnection, linkComponentToService } =
     useDiagramActions();
   const services = useAllServices();
+
+  const C4_OPTIONS = useMemo(
+    () =>
+      [
+        { type: "person" as const, label: t("quickInsert.typePerson"), icon: User },
+        { type: "system" as const, label: t("quickInsert.typeSystem"), icon: Network },
+        { type: "container" as const, label: t("quickInsert.typeContainer"), icon: Server },
+        { type: "component" as const, label: t("quickInsert.typeComponent"), icon: Database },
+      ],
+    [t],
+  );
+
+  const CANVAS_OPTIONS = useMemo(
+    (): CanvasInsertOption[] => [
+      { type: "panel", label: t("canvasToolbar.panel"), icon: Square, panelKind: "default" },
+      ...PANEL_KINDS.filter((p) => p.id !== "default").map((p) => ({
+        type: "panel" as const,
+        label: p.label,
+        icon: p.icon,
+        panelKind: p.id as PanelKind,
+        awsIconName: p.awsIconName,
+      })),
+      { type: "note", label: t("canvasToolbar.note"), icon: StickyNote },
+      { type: "api-group", label: t("quickInsert.typeApiGroup"), icon: Globe },
+      { type: "endpoint", label: t("quickInsert.typeEndpoint"), icon: Globe },
+    ],
+    [t],
+  );
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -106,15 +119,25 @@ const QuickInsertPopover = ({
 
   const q = search.trim().toLowerCase();
 
+  const searchSynonyms = useMemo(
+    () => ({
+      panel: splitSearchHelp(t("quickInsert.searchHelpPanel")),
+      note: splitSearchHelp(t("quickInsert.searchHelpNote")),
+      apiGroup: splitSearchHelp(t("quickInsert.searchHelpApiGroup")),
+      endpoint: splitSearchHelp(t("quickInsert.searchHelpEndpoint")),
+    }),
+    [t],
+  );
+
   const filteredC4 = useMemo(() => {
     if (!q) return C4_OPTIONS;
     return C4_OPTIONS.filter((o) => o.label.toLowerCase().includes(q));
-  }, [q]);
+  }, [q, C4_OPTIONS]);
 
   const filteredCanvas = useMemo(() => {
     if (!q) return [];
-    return CANVAS_OPTIONS.filter((o) => canvasOptionMatchesQuery(o, q));
-  }, [q]);
+    return CANVAS_OPTIONS.filter((o) => canvasOptionMatchesQuery(o, q, searchSynonyms));
+  }, [q, CANVAS_OPTIONS, searchSynonyms]);
 
   const filteredAws = useMemo(() => {
     if (!q) return [];
@@ -153,9 +176,9 @@ const QuickInsertPopover = ({
   const insertPos = { x: flowPos.x + 20, y: flowPos.y + 20 };
 
   const handleSelectC4 = (type: ComponentType, label: string) => {
-    const comp = addComponent(type, `Novo ${label}`, null, insertPos);
+    const comp = addComponent(type, t("quickInsert.newNamed", { name: label }), null, insertPos);
     if (sourceNodeId) {
-      addConnection(sourceNodeId, comp.id, "Usa", getLastEdgeStyle());
+      addConnection(sourceNodeId, comp.id, t("canvas.usesEdgeLabel"), getLastEdgeStyle());
     }
     onInsert(comp.id);
   };
@@ -165,7 +188,7 @@ const QuickInsertPopover = ({
     const name = getDefaultNameForNewComponent(type, label, panelDefaultName);
     const comp = addComponent(type, name, null, insertPos, undefined, panelKind);
     if (sourceNodeId) {
-      addConnection(sourceNodeId, comp.id, "Usa", getLastEdgeStyle());
+      addConnection(sourceNodeId, comp.id, t("canvas.usesEdgeLabel"), getLastEdgeStyle());
     }
     onInsert(comp.id);
   };
@@ -176,7 +199,7 @@ const QuickInsertPopover = ({
       ? addComponent("panel", getPanelKindDef(panelKind).defaultName, null, insertPos, undefined, panelKind)
       : addComponent(categoryId, serviceName, null, insertPos, serviceId);
     if (sourceNodeId) {
-      addConnection(sourceNodeId, comp.id, "Usa", getLastEdgeStyle());
+      addConnection(sourceNodeId, comp.id, t("canvas.usesEdgeLabel"), getLastEdgeStyle());
     }
     onInsert(comp.id);
   };
@@ -185,7 +208,7 @@ const QuickInsertPopover = ({
     const comp = addComponent("system", name, null, insertPos);
     linkComponentToService(comp.id, serviceId);
     if (sourceNodeId) {
-      addConnection(sourceNodeId, comp.id, "Usa", getLastEdgeStyle());
+      addConnection(sourceNodeId, comp.id, t("canvas.usesEdgeLabel"), getLastEdgeStyle());
     }
     onInsert(comp.id);
   };
@@ -211,7 +234,7 @@ const QuickInsertPopover = ({
           ref={inputRef}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar elemento..."
+          placeholder={t("quickInsert.searchPlaceholder")}
           className="w-full rounded-md border border-border bg-secondary px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         />
       </div>
@@ -220,7 +243,7 @@ const QuickInsertPopover = ({
           <>
             <div className="px-3 py-1">
               <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
-                C4 Model
+                {t("elementPicker.c4Model")}
               </span>
             </div>
             {filteredC4.map((opt) => (
@@ -240,7 +263,7 @@ const QuickInsertPopover = ({
             {filteredC4.length > 0 && <div className="border-t border-border my-1" />}
             <div className="px-3 py-1">
               <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
-                Canvas e Agrupamentos
+                {t("quickInsert.sectionCanvasGroups")}
               </span>
             </div>
             {filteredCanvas.map((opt) => (
@@ -270,7 +293,7 @@ const QuickInsertPopover = ({
             )}
             <div className="px-3 py-1">
               <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
-                AWS Services
+                {t("canvasToolbar.awsServices")}
               </span>
             </div>
             {filteredAws.map((row) => (
@@ -292,7 +315,7 @@ const QuickInsertPopover = ({
             )}
             <div className="px-3 py-1">
               <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
-                Registry
+                {t("elementPicker.registry")}
               </span>
             </div>
             {filteredServices.map((svc) => (
@@ -313,7 +336,7 @@ const QuickInsertPopover = ({
         )}
         {showEmpty && (
           <div className="px-3 py-4 text-center text-xs text-muted-foreground">
-            Nenhum resultado
+            {t("quickInsert.noResults")}
           </div>
         )}
       </div>

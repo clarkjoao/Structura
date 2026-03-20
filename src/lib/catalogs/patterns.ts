@@ -31,14 +31,15 @@ export type PatternCategory =
   | "event-driven"
   | "security";
 
-export const PATTERN_CATEGORY_LABELS: Record<PatternCategory, string> = {
-  messaging: "Messaging",
-  api: "API",
-  resilience: "Resilience",
-  data: "Data",
-  "event-driven": "Event-Driven",
-  security: "Security",
-};
+/** Category ids for sidebar — display labels from i18n `patterns.category.*` */
+export const PATTERN_CATEGORIES: PatternCategory[] = [
+  "messaging",
+  "api",
+  "resilience",
+  "data",
+  "event-driven",
+  "security",
+];
 
 export const PATTERNS: PatternTemplate[] = [
   // ── Messaging ────────────────────────────────────────────────────────────

@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { X, LayoutDashboard, Copy, Trash2 } from "lucide-react";
 import type { Node } from "@xyflow/react";
 import {
@@ -9,21 +10,24 @@ import type { ComponentType } from "@/features/diagram";
 import { isPanelType } from "@/features/diagram";
 import { cn } from "@/lib/utils";
 
-const TYPE_LABELS: Record<string, string> = {
-  person: "person",
-  system: "system",
-  container: "container",
-  component: "component",
-  panel: "panel",
-  note: "nota",
-};
-
 interface MultiSelectPanelProps {
   selectedNodes: Node[];
   onClose: () => void;
 }
 
 export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelProps) {
+  const { t } = useTranslation();
+  const typeLabelKeys: Record<string, string> = useMemo(
+    () => ({
+      person: "multiSelect.typePerson",
+      system: "multiSelect.typeSystem",
+      container: "multiSelect.typeContainer",
+      component: "multiSelect.typeComponent",
+      panel: "multiSelect.typePanel",
+      note: "multiSelect.typeNote",
+    }),
+    [],
+  );
   const diagram = useActiveDiagram();
   const {
     groupNodes,
@@ -53,9 +57,13 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
   const typeSummary = useMemo(
     () =>
       Object.entries(typeCounts)
-        .map(([type, count]) => `${count} ${TYPE_LABELS[type] ?? type}${count > 1 ? "s" : ""}`)
+        .map(([type, count]) => {
+          const key = typeLabelKeys[type];
+          const label = key ? t(key) : type;
+          return `${count} ${label}${count > 1 ? "s" : ""}`;
+        })
         .join(", "),
-    [typeCounts],
+    [typeCounts, t, typeLabelKeys],
   );
 
   const allSameType = useMemo(() => {
@@ -102,7 +110,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
       const layout = diagram.nodeLayouts[id];
       addComponent(
         comp.type,
-        `${comp.name} (cópia)`,
+        `${comp.name}${t("common.copySuffix")}`,
         comp.parentId,
         {
           x: (layout?.x ?? 0) + 30 * (index + 1),
@@ -138,7 +146,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
     <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
       <div className="flex items-center justify-between p-3 border-b border-border shrink-0">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Seleção múltipla
+          {t("multiSelect.title")}
         </h3>
         <button
           type="button"
@@ -151,15 +159,14 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
 
       <div className="p-3 border-b border-border">
         <p className="text-sm font-medium text-foreground">
-          {selectedNodes.length} elemento{selectedNodes.length !== 1 ? "s" : ""} selecionado
-          {selectedNodes.length !== 1 ? "s" : ""}
+          {t("multiSelect.selectedCount", { count: selectedNodes.length })}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5">{typeSummary}</p>
       </div>
 
       <div className="p-3 border-b border-border space-y-2">
         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-          Ações
+          {t("common.actions")}
         </p>
         <div className="flex flex-col gap-2">
           {ids.length >= 2 && (
@@ -169,7 +176,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
               className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
             >
               <LayoutDashboard className="h-3.5 w-3.5" />
-              Agrupar
+              {t("multiSelect.group")}
             </button>
           )}
           <button
@@ -178,7 +185,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
             className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-xs font-medium hover:bg-muted/50"
           >
             <Copy className="h-3.5 w-3.5" />
-            Duplicar
+            {t("multiSelect.duplicate")}
           </button>
           <button
             type="button"
@@ -186,27 +193,27 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
             className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-destructive/50 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10"
           >
             <Trash2 className="h-3.5 w-3.5" />
-            Deletar
+            {t("multiSelect.delete")}
           </button>
         </div>
       </div>
 
       <div className="p-3 space-y-4 flex-1 min-h-0 overflow-y-auto">
         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-          Propriedades comuns
+          {t("multiSelect.commonProps")}
         </p>
         <p className="text-[10px] text-muted-foreground italic">
-          (editar aplica a todos)
+          {t("multiSelect.editAllHint")}
         </p>
 
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-            Tags
+            {t("common.tags")}
           </label>
           <input
             value={sharedTags !== null ? sharedTags : ""}
             onChange={(e) => handleTagsChange(e.target.value)}
-            placeholder={sharedTags === null ? "Múltiplos valores" : "Tags separadas por vírgula"}
+            placeholder={sharedTags === null ? t("common.multipleValues") : t("common.commaSeparatedTags")}
             className={cn(
               "w-full rounded-md border bg-background px-3 py-2 text-sm",
               sharedTags === null && "italic text-muted-foreground",
@@ -218,12 +225,12 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
           <>
             <div>
               <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-                Tecnologia
+                {t("common.technology")}
               </label>
               <input
                 value={sharedTechnology ?? ""}
                 onChange={(e) => handleTechnologyChange(e.target.value)}
-                placeholder={sharedTechnology === null ? "Múltiplos valores" : "ex.: REST, gRPC"}
+                placeholder={sharedTechnology === null ? t("common.multipleValues") : t("common.techExample")}
                 className={cn(
                   "w-full rounded-md border bg-background px-3 py-2 text-sm",
                   sharedTechnology === null && "italic text-muted-foreground",
@@ -232,12 +239,12 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
             </div>
             <div>
               <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-                Descrição
+                {t("common.description")}
               </label>
               <textarea
                 value={sharedDescription ?? ""}
                 onChange={(e) => handleDescriptionChange(e.target.value)}
-                placeholder={sharedDescription === null ? "Múltiplos valores" : "Descrição"}
+                placeholder={sharedDescription === null ? t("common.multipleValues") : t("common.description")}
                 rows={2}
                 className={cn(
                   "w-full rounded-md border bg-background px-3 py-2 text-sm resize-none",

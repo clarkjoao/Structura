@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useTranslation } from "react-i18next";
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
@@ -46,24 +47,26 @@ export default function ShortcutsModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[760px] p-0 overflow-hidden rounded-2xl">
         <div className="border-b border-border px-6 py-5">
           <DialogHeader>
-            <DialogTitle>Atalhos do Canvas</DialogTitle>
+            <DialogTitle>{t("shortcutsModal.title")}</DialogTitle>
             <DialogDescription>
-              Dica: em Windows/Linux, use <Kbd>Ctrl</Kbd> no lugar de <Kbd>Cmd</Kbd>.
+              {t("shortcutsModal.descriptionBeforeKbd")}{" "}
+              <Kbd>Ctrl</Kbd> {t("shortcutsModal.descriptionAfterCtrl")} <Kbd>Cmd</Kbd>.
             </DialogDescription>
           </DialogHeader>
         </div>
 
         <div className="max-h-[70vh] overflow-y-auto px-6 py-5">
           <div className="grid gap-4 md:grid-cols-2">
-            <ShortcutCard title="Busca e navegação">
+            <ShortcutCard title={t("shortcutsModal.searchNav")}>
               <ShortcutRow
-                label="Buscar componente no canvas"
-                description="Busca por nome, descrição, tecnologia e tags"
+                label={t("shortcutsModal.searchCanvas")}
+                description={t("shortcutsModal.searchCanvasDesc")}
                 keys={
                   <span className="inline-flex items-center gap-1">
                     <Kbd>Cmd/Ctrl</Kbd>
@@ -72,7 +75,7 @@ export default function ShortcutsModal({
                 }
               />
               <ShortcutRow
-                label="Buscar (atalho alternativo)"
+                label={t("shortcutsModal.searchAlt")}
                 keys={
                   <span className="inline-flex items-center gap-1">
                     <Kbd>Cmd/Ctrl</Kbd>
@@ -82,10 +85,10 @@ export default function ShortcutsModal({
               />
             </ShortcutCard>
 
-            <ShortcutCard title="Seleção e edição">
-              <ShortcutRow label="Limpar seleção" keys={<Kbd>Esc</Kbd>} />
+            <ShortcutCard title={t("shortcutsModal.selection")}>
+              <ShortcutRow label={t("shortcutsModal.clearSelection")} keys={<Kbd>Esc</Kbd>} />
               <ShortcutRow
-                label="Selecionar tudo"
+                label={t("shortcutsModal.selectAll")}
                 keys={
                   <span className="inline-flex items-center gap-1">
                     <Kbd>Cmd/Ctrl</Kbd>
@@ -94,17 +97,17 @@ export default function ShortcutsModal({
                 }
               />
               <ShortcutRow
-                label="Excluir selecionados"
+                label={t("shortcutsModal.deleteSelected")}
                 keys={
                   <span className="inline-flex items-center gap-1">
                     <Kbd>Del</Kbd>
-                    <span className="text-muted-foreground">ou</span>
+                    <span className="text-muted-foreground">{t("common.or")}</span>
                     <Kbd>Backspace</Kbd>
                   </span>
                 }
               />
               <ShortcutRow
-                label="Desfazer"
+                label={t("shortcutsModal.undo")}
                 keys={
                   <span className="inline-flex items-center gap-1">
                     <Kbd>Cmd/Ctrl</Kbd>
@@ -113,7 +116,7 @@ export default function ShortcutsModal({
                 }
               />
               <ShortcutRow
-                label="Refazer"
+                label={t("shortcutsModal.redo")}
                 keys={
                   <span className="inline-flex items-center gap-1">
                     <Kbd>Cmd/Ctrl</Kbd>
@@ -124,9 +127,9 @@ export default function ShortcutsModal({
               />
             </ShortcutCard>
 
-            <ShortcutCard title="Agrupamento e clipboard">
+            <ShortcutCard title={t("shortcutsModal.clipboard")}>
               <ShortcutRow
-                label="Copiar"
+                label={t("shortcutsModal.copy")}
                 keys={
                   <span className="inline-flex items-center gap-1">
                     <Kbd>Cmd/Ctrl</Kbd>
@@ -135,7 +138,7 @@ export default function ShortcutsModal({
                 }
               />
               <ShortcutRow
-                label="Colar"
+                label={t("shortcutsModal.paste")}
                 keys={
                   <span className="inline-flex items-center gap-1">
                     <Kbd>Cmd/Ctrl</Kbd>
@@ -144,8 +147,8 @@ export default function ShortcutsModal({
                 }
               />
               <ShortcutRow
-                label="Duplicar"
-                description="Copia e cola com offset"
+                label={t("shortcutsModal.duplicate")}
+                description={t("shortcutsModal.duplicateDesc")}
                 keys={
                   <span className="inline-flex items-center gap-1">
                     <Kbd>Cmd/Ctrl</Kbd>
@@ -154,7 +157,7 @@ export default function ShortcutsModal({
                 }
               />
               <ShortcutRow
-                label="Agrupar selecionados (criar painel)"
+                label={t("shortcutsModal.group")}
                 keys={
                   <span className="inline-flex items-center gap-1">
                     <Kbd>Cmd/Ctrl</Kbd>
@@ -163,8 +166,8 @@ export default function ShortcutsModal({
                 }
               />
               <ShortcutRow
-                label="Desagrupar painel"
-                description="Quando um painel está selecionado"
+                label={t("shortcutsModal.ungroup")}
+                description={t("shortcutsModal.ungroupDesc")}
                 keys={
                   <span className="inline-flex items-center gap-1">
                     <Kbd>Cmd/Ctrl</Kbd>
@@ -175,14 +178,14 @@ export default function ShortcutsModal({
               />
             </ShortcutCard>
 
-            <ShortcutCard title="Criação rápida (C4)">
+            <ShortcutCard title={t("shortcutsModal.quickC4")}>
               <ShortcutRow
-                label="Abrir Quick Insert no canvas"
-                description="Clique com botão direito em área vazia (sem seleção e fora de flow play/record)"
-                keys={<Kbd>Botão direito</Kbd>}
+                label={t("shortcutsModal.quickInsertOpen")}
+                description={t("shortcutsModal.quickInsertDesc")}
+                keys={<Kbd>{t("shortcutsModal.rightClick")}</Kbd>}
               />
               <ShortcutRow
-                label="Adicionar Person"
+                label={t("shortcutsModal.addPerson")}
                 keys={
                   <span className="inline-flex items-center gap-1">
                     <Kbd>Cmd/Ctrl</Kbd>
@@ -191,7 +194,7 @@ export default function ShortcutsModal({
                 }
               />
               <ShortcutRow
-                label="Adicionar System"
+                label={t("shortcutsModal.addSystem")}
                 keys={
                   <span className="inline-flex items-center gap-1">
                     <Kbd>Cmd/Ctrl</Kbd>
@@ -200,7 +203,7 @@ export default function ShortcutsModal({
                 }
               />
               <ShortcutRow
-                label="Adicionar Container"
+                label={t("shortcutsModal.addContainer")}
                 keys={
                   <span className="inline-flex items-center gap-1">
                     <Kbd>Cmd/Ctrl</Kbd>
@@ -209,7 +212,7 @@ export default function ShortcutsModal({
                 }
               />
               <ShortcutRow
-                label="Adicionar Component"
+                label={t("shortcutsModal.addComponent")}
                 keys={
                   <span className="inline-flex items-center gap-1">
                     <Kbd>Cmd/Ctrl</Kbd>

@@ -40,6 +40,8 @@ import {
 } from "@/features/diagram";
 import type { Diagram } from "@/features/diagram";
 import type { ServiceDefinition } from "@/features/diagram";
+import { useTranslation } from "react-i18next";
+import { i18n } from "@/infrastructure/i18n";
 
 const DefectDojoPanel = lazy(() =>
   import("@/integrations/defectdojo").then((m) => ({
@@ -61,23 +63,32 @@ const SOURCE_BADGE: Record<Source, string> = {
   defectdojo: "bg-orange-500/10 text-orange-400 border border-orange-500/20",
 };
 
-const SOURCE_LABEL: Record<Source, string> = {
-  manual: "Manual",
-  github: "GitHub",
-  defectdojo: "DefectDojo",
-};
+function sourceTypeLabel(t: (key: string) => string, type: Source): string {
+  switch (type) {
+    case "manual":
+      return t("registry.sourceManual");
+    case "github":
+      return t("registry.sourceGithub");
+    case "defectdojo":
+      return t("registry.sourceDefectdojo");
+    default:
+      return type;
+  }
+}
 
 const ChipInput = ({
   label,
   items,
   onChange,
-  placeholder = "Adicionar...",
+  placeholder,
 }: {
   label: string;
   items: string[];
   onChange: (items: string[]) => void;
   placeholder?: string;
 }) => {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder ?? t("registry.chipAddPlaceholder");
   const [input, setInput] = useState("");
   const add = () => {
     const v = input.trim();
@@ -117,7 +128,7 @@ const ChipInput = ({
               add();
             }
           }}
-          placeholder={placeholder}
+          placeholder={resolvedPlaceholder}
           className="flex-1 rounded-md border border-border bg-secondary px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         />
         <button
@@ -125,7 +136,7 @@ const ChipInput = ({
           onClick={add}
           className="rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50"
         >
-          + add
+          {t("registry.chipAddButton")}
         </button>
       </div>
     </div>
@@ -139,6 +150,7 @@ const ManualCreateForm = ({
   onCancel: () => void;
   onCreate: (svc: Omit<ServiceDefinition, "id">) => void;
 }) => {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [owner, setOwner] = useState("");
@@ -166,11 +178,11 @@ const ManualCreateForm = ({
       className="rounded-xl border border-border bg-card p-4 space-y-3 mb-4"
     >
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-        Novo Serviço
+        {t("registry.newService")}
       </p>
       <div>
         <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-          Nome
+          {t("common.name")}
         </label>
         <input
           autoFocus
@@ -182,7 +194,7 @@ const ManualCreateForm = ({
       </div>
       <div>
         <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-          Descrição
+          {t("common.description")}
         </label>
         <textarea
           value={desc}
@@ -193,7 +205,7 @@ const ManualCreateForm = ({
       </div>
       <div>
         <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-          Owner
+          {t("common.owner")}
         </label>
         <input
           value={owner}
@@ -202,30 +214,30 @@ const ManualCreateForm = ({
         />
       </div>
       <ChipInput
-        label="Tecnologia"
+        label={t("common.technology")}
         items={tech}
         onChange={setTech}
-        placeholder="java, spring..."
+        placeholder={t("registry.techPlaceholder")}
       />
       <ChipInput
-        label="Tags"
+        label={t("common.tags")}
         items={tags}
         onChange={setTags}
-        placeholder="backend, auth..."
+        placeholder={t("registry.tagsPlaceholder")}
       />
       <div className="flex justify-end gap-2 pt-1">
         <button
           onClick={onCancel}
           className="px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md"
         >
-          Cancelar
+          {t("common.cancel")}
         </button>
         <button
           onClick={submit}
           disabled={!name.trim()}
           className="px-3 py-1.5 text-xs font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
-          Criar Serviço
+          {t("registry.createService")}
         </button>
       </div>
     </motion.div>
@@ -265,6 +277,7 @@ interface ServiceCardProps {
 }
 
 const ServiceCard = ({ svc, isSelected, onClick, usage }: ServiceCardProps) => {
+  const { t } = useTranslation();
   const sources = normalizeSources(svc);
   const MAX_PILLS = 3;
 
@@ -297,7 +310,7 @@ const ServiceCard = ({ svc, isSelected, onClick, usage }: ServiceCardProps) => {
               key={source.type}
               className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${SOURCE_BADGE[source.type]}`}
             >
-              {SOURCE_LABEL[source.type]}
+              {sourceTypeLabel(t, source.type)}
             </span>
           ))}
         </div>
@@ -313,12 +326,12 @@ const ServiceCard = ({ svc, isSelected, onClick, usage }: ServiceCardProps) => {
       {/* Tech pills */}
       {svc.technology.length > 0 && (
         <div className="flex flex-wrap items-center gap-1 mb-2">
-          {svc.technology.slice(0, MAX_PILLS).map((t) => (
+          {svc.technology.slice(0, MAX_PILLS).map((techStr) => (
             <span
-              key={t}
+              key={techStr}
               className="text-[10px] font-mono rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground"
             >
-              {t}
+              {techStr}
             </span>
           ))}
           {svc.technology.length > MAX_PILLS && (
@@ -339,7 +352,7 @@ const ServiceCard = ({ svc, isSelected, onClick, usage }: ServiceCardProps) => {
         )}
         <span className="flex items-center gap-0.5">
           <Layers className="h-3 w-3" />
-          {usage.length} diagrama{usage.length !== 1 ? "s" : ""}
+          {t("registry.diagramUsage", { count: usage.length })}
         </span>
       </div>
     </button>
@@ -368,6 +381,7 @@ const DetailPanel = ({
   removeService,
   onClose,
 }: DetailPanelProps) => {
+  const { t } = useTranslation();
   const { config: githubConfig } = useGithubConfig();
   const normalizedSources = normalizeSources(svc);
   const hasGithubSource = normalizedSources.some((s) => s.type === "github");
@@ -469,7 +483,7 @@ const DetailPanel = ({
         syncedDefectDojoSourceId = defectDojoProductId;
 
         const rawConfig = localStorage.getItem("structura_defectdojo:config") ?? localStorage.getItem("structura:defectdojo:config");
-        if (!rawConfig) throw new Error("DefectDojo não configurado");
+        if (!rawConfig) throw new Error(i18n.t("registry.errorDefectDojoNotConfigured"));
         const cfg = JSON.parse(rawConfig) as {
           baseUrl: string;
           apiToken: string;
@@ -490,7 +504,7 @@ const DetailPanel = ({
       }
 
       if (!githubRepo && !defectDojoMapped) {
-        throw new Error("Não foi possível sincronizar em nenhuma fonte");
+        throw new Error(i18n.t("registry.errorSyncNoSource"));
       }
 
       const githubTech = githubRepo?.language ? [githubRepo.language] : [];
@@ -553,7 +567,7 @@ const DetailPanel = ({
         },
       });
     } catch (err) {
-      setSyncError(err instanceof Error ? err.message : "Erro ao sincronizar");
+      setSyncError(err instanceof Error ? err.message : i18n.t("registry.errorSyncGeneric"));
     } finally {
       setSyncing(false);
     }
@@ -585,7 +599,7 @@ const DetailPanel = ({
               onClick={handleSync}
               disabled={syncing}
               className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-              title="Sincronizar"
+              title={t("registry.syncTitle")}
             >
               {syncing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -614,14 +628,14 @@ const DetailPanel = ({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
-                Detalhes
+                {t("common.details")}
               </span>
               {!editing ? (
                 <button
                   onClick={() => setEditing(true)}
                   className="text-[11px] text-primary hover:underline font-medium"
                 >
-                  Editar
+                  {t("common.edit")}
                 </button>
               ) : (
                 <div className="flex gap-1.5">
@@ -629,14 +643,14 @@ const DetailPanel = ({
                     onClick={() => setEditing(false)}
                     className="text-[11px] text-muted-foreground hover:text-foreground"
                   >
-                    Cancelar
+                    {t("common.cancel")}
                   </button>
                   <button
                     onClick={handleSave}
                     className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
                   >
                     <Save className="h-3 w-3" />
-                    Salvar
+                    {t("common.save")}
                   </button>
                 </div>
               )}
@@ -644,8 +658,7 @@ const DetailPanel = ({
 
             {hasSyncSource && editing && (
               <p className="text-[10px] text-muted-foreground italic border border-border rounded-md px-3 py-1.5">
-                Alguns campos são sincronizados das fontes externas e
-                podem ser sobrescritos no próximo sync.
+                {t("registry.syncFieldsHint")}
               </p>
             )}
 
@@ -653,7 +666,7 @@ const DetailPanel = ({
               <div className="space-y-3">
                 <div>
                   <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-                    Nome
+                    {t("common.name")}
                   </label>
                   <input
                     autoFocus
@@ -664,7 +677,7 @@ const DetailPanel = ({
                 </div>
                 <div>
                   <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-                    Descrição
+                    {t("common.description")}
                   </label>
                   <textarea
                     value={editDesc}
@@ -675,7 +688,7 @@ const DetailPanel = ({
                 </div>
                 <div>
                   <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-                    Owner
+                    {t("common.owner")}
                   </label>
                   <input
                     value={editOwner}
@@ -685,22 +698,22 @@ const DetailPanel = ({
                 </div>
                 <div>
                   <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-                    Repositório
+                    {t("registry.repoUrlLabel")}
                   </label>
                   <input
                     value={editRepo}
                     onChange={(e) => setEditRepo(e.target.value)}
-                    placeholder="https://github.com/..."
+                    placeholder={t("registry.repoPlaceholder")}
                     className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                   />
                 </div>
                 <ChipInput
-                  label="Tecnologia"
+                  label={t("common.technology")}
                   items={editTech}
                   onChange={setEditTech}
                 />
                 <ChipInput
-                  label="Tags"
+                  label={t("common.tags")}
                   items={editTags}
                   onChange={setEditTags}
                 />
@@ -709,7 +722,7 @@ const DetailPanel = ({
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] text-muted-foreground w-20 shrink-0">
-                    Fonte
+                    {t("common.source")}
                   </span>
                   <div className="flex flex-wrap items-center gap-1">
                     {normalizedSources.map((source) => (
@@ -717,7 +730,7 @@ const DetailPanel = ({
                         key={source.type}
                         className={`rounded px-2 py-0.5 text-[10px] font-semibold ${SOURCE_BADGE[source.type]}`}
                       >
-                        {SOURCE_LABEL[source.type]}
+                        {sourceTypeLabel(t, source.type)}
                       </span>
                     ))}
                   </div>
@@ -725,12 +738,12 @@ const DetailPanel = ({
 
                 <div>
                   <span className="text-[11px] text-muted-foreground block mb-0.5">
-                    Descrição
+                    {t("common.description")}
                   </span>
                   <p className="text-sm text-foreground">
                     {svc.description || (
                       <span className="text-muted-foreground italic">
-                        Sem descrição
+                        {t("common.noDescription")}
                       </span>
                     )}
                   </p>
@@ -739,7 +752,7 @@ const DetailPanel = ({
                 {/* Owner */}
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] text-muted-foreground w-20 shrink-0">
-                    Owner
+                    {t("common.owner")}
                   </span>
                   {svc.owner ? (
                     <span className="text-sm text-foreground flex items-center gap-1">
@@ -748,7 +761,7 @@ const DetailPanel = ({
                     </span>
                   ) : (
                     <span className="text-sm text-muted-foreground italic">
-                      —
+                      {t("common.emDash")}
                     </span>
                   )}
                 </div>
@@ -756,7 +769,7 @@ const DetailPanel = ({
                 {svc.repositoryUrl && (
                   <div className="flex items-start gap-2">
                     <span className="text-[11px] text-muted-foreground w-20 shrink-0 pt-0.5">
-                      Repo
+                      {t("common.repo")}
                     </span>
                     <a
                       href={svc.repositoryUrl}
@@ -776,7 +789,7 @@ const DetailPanel = ({
                 ) && (
                   <div className="flex items-start gap-2">
                     <span className="text-[11px] text-muted-foreground w-20 shrink-0 pt-0.5">
-                      Produto
+                      {t("registry.productLabel")}
                     </span>
                     <a
                       href={
@@ -806,44 +819,44 @@ const DetailPanel = ({
 
                 <div>
                   <span className="text-[11px] text-muted-foreground block mb-1">
-                    Tecnologia
+                    {t("common.technology")}
                   </span>
                   {svc.technology.length > 0 ? (
                     <div className="flex flex-wrap gap-1">
-                      {svc.technology.map((t) => (
+                      {svc.technology.map((techStr) => (
                         <span
-                          key={t}
+                          key={techStr}
                           className="text-[11px] font-mono rounded bg-secondary px-2 py-0.5 text-secondary-foreground"
                         >
-                          {t}
+                          {techStr}
                         </span>
                       ))}
                     </div>
                   ) : (
                     <span className="text-sm text-muted-foreground italic">
-                      —
+                      {t("common.emDash")}
                     </span>
                   )}
                 </div>
 
                 <div>
                   <span className="text-[11px] text-muted-foreground block mb-1">
-                    Tags
+                    {t("common.tags")}
                   </span>
                   {(svc.tags ?? []).length > 0 ? (
                     <div className="flex flex-wrap gap-1">
-                      {(svc.tags ?? []).map((t) => (
+                      {(svc.tags ?? []).map((tagStr) => (
                         <span
-                          key={t}
+                          key={tagStr}
                           className="text-[10px] rounded bg-secondary/60 px-2 py-0.5 text-muted-foreground"
                         >
-                          #{t}
+                          #{tagStr}
                         </span>
                       ))}
                     </div>
                   ) : (
                     <span className="text-sm text-muted-foreground italic">
-                      —
+                      {t("common.emDash")}
                     </span>
                   )}
                 </div>
@@ -853,11 +866,11 @@ const DetailPanel = ({
 
           <div className="space-y-1.5">
             <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold block">
-              Uso em diagramas
+              {t("registry.usageInDiagrams")}
             </span>
             {usage.length === 0 ? (
               <p className="text-xs text-muted-foreground italic rounded-lg border border-border bg-secondary/30 p-3">
-                Não vinculado a nenhum diagrama
+                {t("registry.notLinked")}
               </p>
             ) : (
               <div className="rounded-lg border border-border bg-secondary/30 divide-y divide-border">
@@ -873,7 +886,7 @@ const DetailPanel = ({
                       {u.diagramName}
                     </span>
                     <span className="text-[10px] text-muted-foreground shrink-0">
-                      {u.nodeCount} nó{u.nodeCount !== 1 ? "s" : ""}
+                      {t("registry.nodeCount", { count: u.nodeCount })}
                       <ChevronRight className="h-3 w-3 inline ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </span>
                   </button>
@@ -886,13 +899,13 @@ const DetailPanel = ({
             {confirmDelete ? (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-destructive flex-1">
-                  Tem certeza? Esta ação é irreversível.
+                  {t("registry.confirmDelete")}
                 </span>
                 <button
                   onClick={() => setConfirmDelete(false)}
                   className="px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md"
                 >
-                  Cancelar
+                  {t("common.cancel")}
                 </button>
                 <button
                   onClick={() => {
@@ -901,7 +914,7 @@ const DetailPanel = ({
                   }}
                   className="px-3 py-1.5 text-xs font-semibold rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
-                  Confirmar remoção
+                  {t("registry.confirmRemoval")}
                 </button>
               </div>
             ) : (
@@ -909,7 +922,7 @@ const DetailPanel = ({
                 onClick={() => setConfirmDelete(true)}
                 className="text-xs text-destructive hover:underline"
               >
-                Deletar serviço
+                {t("registry.deleteService")}
               </button>
             )}
           </div>
@@ -923,6 +936,7 @@ const DetailPanel = ({
 type SourceFilter = "all" | Source;
 
 const ServiceRegistry = () => {
+  const { t } = useTranslation();
   const services = useAllServices();
   const diagrams = useDiagrams();
   const { addService, updateService, removeService } = useRegistryActions();
@@ -1021,10 +1035,10 @@ const ServiceRegistry = () => {
   };
 
   const SOURCE_FILTERS: { value: SourceFilter; label: string }[] = [
-    { value: "all", label: "All" },
-    { value: "manual", label: "Manual" },
-    { value: "github", label: "GitHub" },
-    { value: "defectdojo", label: "DefectDojo" },
+    { value: "all", label: t("registry.filterAll") },
+    { value: "manual", label: t("registry.filterManual") },
+    { value: "github", label: t("registry.filterGithub") },
+    { value: "defectdojo", label: t("registry.filterDefectdojo") },
   ];
 
   return (
@@ -1035,9 +1049,9 @@ const ServiceRegistry = () => {
           {/* Header */}
           <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <h1 className="text-2xl font-bold">Registry</h1>
+              <h1 className="text-2xl font-bold">{t("registry.title")}</h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Catálogo central de serviços e infraestrutura
+                {t("registry.subtitle")}
               </p>
             </div>
             <button
@@ -1047,7 +1061,7 @@ const ServiceRegistry = () => {
               className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
             >
               <Plus className="h-4 w-4" />
-              Add Service
+              {t("registry.addService")}
             </button>
           </div>
 
@@ -1057,7 +1071,7 @@ const ServiceRegistry = () => {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por nome, tag, owner..."
+              placeholder={t("registry.searchPlaceholder")}
               className="w-full rounded-lg border border-border bg-card pl-10 pr-10 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
             {search && (
@@ -1086,7 +1100,7 @@ const ServiceRegistry = () => {
               </button>
             ))}
             <span className="ml-auto text-xs text-muted-foreground">
-              · {filtered.length} {filtered.length === 1 ? "service" : "services"}
+              · {filtered.length} {t("common.service", { count: filtered.length })}
             </span>
           </div>
 
@@ -1102,7 +1116,7 @@ const ServiceRegistry = () => {
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    ✦ Manual
+                    {t("registry.importManual")}
                   </button>
                   {showEnableGithub && (
                   <button
@@ -1113,7 +1127,7 @@ const ServiceRegistry = () => {
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    ⌥ GitHub
+                    {t("registry.importGithub")}
                   </button>
                   )}
                   {showEnableDefectDojo && (
@@ -1125,7 +1139,7 @@ const ServiceRegistry = () => {
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      🛡 DefectDojo
+                      {t("registry.importDefectDojo")}
                     </button>
                   )}
                 </div>
@@ -1159,8 +1173,8 @@ const ServiceRegistry = () => {
                 <div className="rounded-xl border border-border bg-card px-4 py-12 text-center">
                   <p className="text-sm text-muted-foreground">
                     {services.length === 0
-                      ? 'Nenhum serviço cadastrado. Clique em "Add Service" para começar.'
-                      : "Nenhum serviço encontrado para os filtros aplicados."}
+                      ? t("registry.emptyNoServices")
+                      : t("registry.emptyFiltered")}
                   </p>
                 </div>
               ) : (
@@ -1194,7 +1208,7 @@ const ServiceRegistry = () => {
                 />
               ) : (
                 <div className="rounded-2xl border border-dashed border-border bg-card/40 px-5 py-8 text-sm text-muted-foreground">
-                  Selecione um serviço para ver os detalhes.
+                  {t("registry.selectForDetails")}
                 </div>
               )}
             </div>

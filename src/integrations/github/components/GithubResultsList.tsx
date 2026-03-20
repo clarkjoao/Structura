@@ -5,6 +5,7 @@ import { normalizeRepoUrl, normalizeSources } from "../../merge-utils";
 import { GithubRepoCard } from "./GithubRepoCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   results: GithubRepo[];
@@ -33,6 +34,7 @@ export function GithubResultsList({
   onLoadMore,
   onImport,
 }: Props) {
+  const { t } = useTranslation();
   const importedByRepoUrl = useMemo(() => {
     const map = new Map<string, ServiceDefinition>();
     for (const svc of allServices) {
@@ -55,7 +57,7 @@ export function GithubResultsList({
   if (results.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-card/30 p-4 text-sm text-muted-foreground">
-        Nenhum repositório encontrado. Use a barra de busca acima.
+        {t("github.emptyRepoList")}
       </div>
     );
   }
@@ -71,7 +73,7 @@ export function GithubResultsList({
             onClick={onSelectAll}
             disabled={results.length === 0}
           >
-            Selecionar tudo
+            {t("github.selectAllRepos")}
           </Button>
           <Button
             type="button"
@@ -80,22 +82,22 @@ export function GithubResultsList({
             onClick={onClearSelection}
             disabled={selectedCount === 0}
           >
-            Limpar
+            {t("github.clearSelectionShort")}
           </Button>
           <Badge variant="secondary" className="bg-secondary/70">
-            {totalCount} resultado{totalCount !== 1 ? "s" : ""}
+            {t("github.resultsTotal", { count: totalCount })}
           </Badge>
         </div>
 
         <div className="text-sm text-muted-foreground">
-          {selectedCount} selecionado{selectedCount !== 1 ? "s" : ""}
+          {t("github.selectedTotal", { count: selectedCount })}
         </div>
       </div>
 
       <div className="space-y-2">
         {visibleResults.length === 0 ? (
           <div className="rounded-xl border border-border bg-card/30 p-4 text-sm text-muted-foreground">
-            Nenhum repositório corresponde ao filtro "inicia com".
+            {t("github.filterStartsWithEmpty")}
           </div>
         ) : (
           visibleResults.map((repo) => {
@@ -128,7 +130,7 @@ export function GithubResultsList({
             onClick={onLoadMore}
             disabled={loading}
           >
-            Carregar mais
+            {t("github.loadMore")}
           </Button>
         )}
 
@@ -137,7 +139,7 @@ export function GithubResultsList({
           onClick={onImport}
           disabled={selectedCount === 0 || loading}
         >
-          Importar selecionados ({selectedCount})
+          {t("github.importSelectedCount", { count: selectedCount })}
         </Button>
       </div>
     </div>

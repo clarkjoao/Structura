@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Eye, EyeOff, Loader2, CheckCircle, Trash2 } from "lucide-react";
 import { createGithubClient } from "../githubClient";
 import type { GithubConfig } from "../github.types";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   config: GithubConfig | null;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function GithubConfigForm({ config, onSave, onClear }: Props) {
+  const { t } = useTranslation();
   const [baseUrl, setBaseUrl] = useState(config?.baseUrl ?? "https://api.github.com");
   const [token, setToken] = useState("");
   const [showToken, setShowToken] = useState(false);
@@ -29,7 +31,7 @@ export function GithubConfigForm({ config, onSave, onClear }: Props) {
     } catch (err) {
       setTestResult({
         ok: false,
-        message: err instanceof Error ? err.message : "Falha na conexão",
+        message: err instanceof Error ? err.message : t("github.connectionFailed"),
       });
     } finally {
       setTesting(false);
@@ -47,7 +49,8 @@ export function GithubConfigForm({ config, onSave, onClear }: Props) {
         <div className="flex items-center gap-2 text-sm text-green-700">
           <CheckCircle className="h-4 w-4" />
           <span>
-            Conectado a <span className="font-semibold">{config.baseUrl}</span>
+            {t("github.connectedTo")}{" "}
+            <span className="font-semibold">{config.baseUrl}</span>
           </span>
         </div>
         <button
@@ -55,7 +58,7 @@ export function GithubConfigForm({ config, onSave, onClear }: Props) {
           className="flex items-center gap-1.5 rounded-md border border-destructive/30 px-3 py-1.5 text-xs text-destructive transition-colors hover:bg-destructive/10"
         >
           <Trash2 className="h-3.5 w-3.5" />
-          Desconectar
+          {t("github.disconnect")}
         </button>
       </div>
     );
@@ -65,23 +68,23 @@ export function GithubConfigForm({ config, onSave, onClear }: Props) {
     return (
       <div className="rounded-lg border border-border bg-card p-4 space-y-3">
         <p className="text-sm text-foreground font-medium">
-          Desconectar integração GitHub?
+          {t("github.disconnectTitle")}
         </p>
         <p className="text-xs text-muted-foreground">
-          Os serviços importados do GitHub serão mantidos no Registry.
+          {t("github.configNote")}
         </p>
         <div className="flex gap-2">
           <button
             onClick={() => { void onClear(); setConfirmClear(false); }}
             className="flex-1 rounded-md bg-destructive px-3 py-2 text-xs font-semibold text-destructive-foreground hover:bg-destructive/90 transition-colors"
           >
-            Confirmar
+            {t("github.confirm")}
           </button>
           <button
             onClick={() => setConfirmClear(false)}
             className="px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
-            Cancelar
+            {t("github.cancel")}
           </button>
         </div>
       </div>
@@ -91,31 +94,31 @@ export function GithubConfigForm({ config, onSave, onClear }: Props) {
   return (
     <div className="rounded-lg border border-border bg-card p-4 space-y-3">
       <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-        Configuração
+        {t("github.configuration")}
       </p>
 
       <div>
         <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Base URL
+          {t("github.baseUrlLabel")}
         </label>
         <input
           value={baseUrl}
           onChange={(e) => setBaseUrl(e.target.value)}
-          placeholder="https://api.github.com"
+          placeholder={t("github.baseUrlPlaceholder")}
           className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         />
       </div>
 
       <div>
         <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Personal Access Token
+          {t("github.personalAccessToken")}
         </label>
         <div className="relative">
           <input
             value={token}
             onChange={(e) => setToken(e.target.value)}
             type={showToken ? "text" : "password"}
-            placeholder="ghp_... ou equivalente"
+            placeholder={t("github.tokenPlaceholder")}
             className="w-full rounded-md border border-border bg-secondary px-3 py-2 pr-10 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           />
           <button
@@ -131,7 +134,7 @@ export function GithubConfigForm({ config, onSave, onClear }: Props) {
       {testResult && (
         <p className={`text-xs ${testResult.ok ? "text-green-600" : "text-destructive"}`}>
           {testResult.ok
-            ? `Conectado como ${testResult.username}`
+            ? t("github.connectedAs", { username: testResult.username })
             : `${"message" in testResult ? testResult.message : ""}`}
         </p>
       )}
@@ -143,14 +146,14 @@ export function GithubConfigForm({ config, onSave, onClear }: Props) {
           className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
         >
           {testing && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-          Testar conexão
+          {t("github.testConnection")}
         </button>
         <button
           onClick={() => void handleSave()}
           disabled={!baseUrl || !token}
           className="flex-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
         >
-          Salvar
+          {t("common.save")}
         </button>
       </div>
     </div>

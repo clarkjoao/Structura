@@ -14,6 +14,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { useAllServices, useDiagramActions, ServiceDefinition} from "@/features/diagram";
+import { useTranslation } from "react-i18next";
 
 interface ServiceRegistryComboboxProps {
   value: string | null;
@@ -24,6 +25,7 @@ const ServiceRegistryCombobox = ({
   value,
   onChange,
 }: ServiceRegistryComboboxProps) => {
+  const { t } = useTranslation();
   const allServices = useAllServices();
   const { addService } = useDiagramActions();
   const [open, setOpen] = useState(false);
@@ -102,7 +104,7 @@ const ServiceRegistryCombobox = ({
           type="button"
           onClick={handleClear}
           className="shrink-0 text-muted-foreground hover:text-foreground"
-          aria-label="Desvincular serviço"
+          aria-label={t("serviceCombobox.unlinkAria")}
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -117,7 +119,7 @@ const ServiceRegistryCombobox = ({
           type="button"
           className="flex w-full items-center justify-between rounded-md border border-border bg-secondary px-3 py-2 text-sm text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         >
-          <span>Vincular serviço...</span>
+          <span>{t("serviceCombobox.linkPrompt")}</span>
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
         </button>
       </PopoverTrigger>
@@ -128,12 +130,12 @@ const ServiceRegistryCombobox = ({
         {showCreate ? (
           <div className="p-3 space-y-2">
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Novo serviço
+              {t("serviceCombobox.createNewService")}
             </p>
             <input
               autoFocus
               type="text"
-              placeholder="Nome do serviço"
+              placeholder={t("serviceCombobox.newServiceName")}
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => {
@@ -143,7 +145,7 @@ const ServiceRegistryCombobox = ({
             />
             <input
               type="text"
-              placeholder="Tags (separadas por vírgula)"
+              placeholder={t("serviceCombobox.newServiceTags")}
               value={newTags}
               onChange={(e) => setNewTags(e.target.value)}
               onKeyDown={(e) => {
@@ -157,7 +159,7 @@ const ServiceRegistryCombobox = ({
                 onClick={() => setShowCreate(false)}
                 className="flex-1 rounded-md border border-border px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50"
               >
-                Cancelar
+                {t("common.cancel")}
               </button>
               <button
                 type="button"
@@ -166,24 +168,24 @@ const ServiceRegistryCombobox = ({
                 // disabled={!newName.trim()}
                 className="flex-1 rounded-md bg-primary px-2 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Criar e vincular
+                {t("serviceCombobox.createAndLink")}
               </button>
             </div>
           </div>
         ) : (
           <Command shouldFilter={false}>
             <CommandInput
-              placeholder="Buscar serviço..."
+              placeholder={t("serviceCombobox.searchPlaceholder")}
               value={search}
               onValueChange={setSearch}
             />
             <CommandList>
               {filtered.length === 0 && !search && (
-                <CommandEmpty>Nenhum serviço cadastrado.</CommandEmpty>
+                <CommandEmpty>{t("serviceCombobox.emptyRegistered")}</CommandEmpty>
               )}
               {filtered.length === 0 && search && (
                 <CommandEmpty>
-                  Nenhum resultado para &ldquo;{search}&rdquo;.
+                  {t("serviceCombobox.noResultsFor", { query: search })}
                 </CommandEmpty>
               )}
               {filtered.length > 0 && (

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Shield, ChevronDown, ChevronUp } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { DDProductSearchField } from "../defectdojo.service";
 import { useDefectDojoConfig } from "../hooks/useDefectDojoConfig";
 import { useDefectDojoSearch } from "../hooks/useDefectDojoSearch";
@@ -8,6 +9,7 @@ import { DefectDojoSearchBar } from "./DefectDojoSearchBar";
 import { DefectDojoResultsList } from "./DefectDojoResultsList";
 
 export function DefectDojoPanel() {
+  const { t } = useTranslation();
   const { config, saveConfig, clearConfig, isConfigured } =
     useDefectDojoConfig();
   const {
@@ -58,10 +60,10 @@ export function DefectDojoPanel() {
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
           <Shield className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold">DefectDojo</span>
+          <span className="text-sm font-semibold">{t("registry.sourceDefectdojo")}</span>
           {isConfigured && (
             <span className="rounded-full bg-green-500/10 border border-green-500/30 px-2 py-0.5 text-[10px] font-semibold text-green-600">
-              Conectado
+              {t("defectdojo.panelBadgeConnected")}
             </span>
           )}
         </div>
@@ -72,12 +74,12 @@ export function DefectDojoPanel() {
           {configOpen ? (
             <>
               <ChevronUp className="h-3.5 w-3.5" />
-              Ocultar config
+              {t("defectdojo.hideConfig")}
             </>
           ) : (
             <>
               <ChevronDown className="h-3.5 w-3.5" />
-              Configurar
+              {t("defectdojo.showConfig")}
             </>
           )}
         </button>
@@ -114,7 +116,7 @@ export function DefectDojoPanel() {
 
         {!isConfigured && !configOpen && (
           <p className="text-sm text-muted-foreground text-center py-4">
-            Configure a integração para importar produtos do DefectDojo.
+            {t("defectdojo.configureIntegrationPrompt")}
           </p>
         )}
       </div>

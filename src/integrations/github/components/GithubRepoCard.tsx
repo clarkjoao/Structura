@@ -2,6 +2,7 @@ import { Archive, Star } from "lucide-react";
 import type { GithubRepo } from "../github.types";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   repo: GithubRepo;
@@ -22,6 +23,7 @@ export function GithubRepoCard({
   hasDefectDojoConflict,
   onToggle,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <div
       className={`rounded-xl border border-border bg-card p-3 flex items-start gap-3 ${
@@ -45,7 +47,7 @@ export function GithubRepoCard({
               <div className="mt-1 inline-flex items-center gap-2">
                 <Badge className="bg-secondary/70 text-muted-foreground border border-border">
                   <Archive className="h-3.5 w-3.5 mr-1" />
-                  Arquivado
+                  {t("github.repoArchived")}
                 </Badge>
               </div>
             )}
@@ -54,12 +56,12 @@ export function GithubRepoCard({
           <div className="shrink-0 flex items-center gap-2">
             {alreadyImported && (
               <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                Já importado
+                {t("github.alreadyImported")}
               </Badge>
             )}
             {hasDefectDojoConflict && (
               <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                Conflito DefectDojo
+                {t("github.defectDojoConflictBadge")}
               </Badge>
             )}
           </div>
@@ -80,13 +82,13 @@ export function GithubRepoCard({
               {repo.language}
             </Badge>
           )}
-          {truncateTopics(repo.topics).map((t) => (
+          {truncateTopics(repo.topics).map((topic) => (
             <Badge
-              key={t}
+              key={topic}
               variant="outline"
               className="border-border text-muted-foreground rounded-full"
             >
-              {t}
+              {topic}
             </Badge>
           ))}
           {repo.topics.length > 3 && (
