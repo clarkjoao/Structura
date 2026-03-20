@@ -1,4 +1,10 @@
-export { NODE_TYPE_REGISTRY, getDescriptor, nodeTypes, registerDescriptor } from "./registry";
+export {
+  NODE_TYPE_REGISTRY,
+  getDescriptor,
+  resolveNodeDescriptor,
+  nodeTypes,
+  registerDescriptor,
+} from "./registry";
 export type {
   NodeBuildContext,
   NodeTypeDescriptor,

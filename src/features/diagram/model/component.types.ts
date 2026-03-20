@@ -42,7 +42,16 @@ export type PanelKind =
   | "auto-scaling-group"
   | "vpc"
   | "public-subnet"
-  | "private-subnet";
+  | "private-subnet"
+  | "swimlane";
+
+/** Visual / semantic options for {@link PanelKind} `"swimlane"` (actor / domain lanes). */
+export interface SwimlaneStyle {
+  /** Default: horizontal */
+  orientation?: "horizontal" | "vertical";
+  laneColor?: string;
+  laneLabel?: string;
+}
 
 export interface PanelComponent extends BaseComponent {
   type: "panel";
@@ -53,6 +62,7 @@ export interface PanelComponent extends BaseComponent {
   collapsed?: boolean;
   collapsedWidth?: number;
   collapsedHeight?: number;
+  swimlane?: SwimlaneStyle;
 }
 
 export interface NoteComponent extends BaseComponent {

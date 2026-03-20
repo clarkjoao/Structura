@@ -1,11 +1,13 @@
 import type { NodeTypes } from "@xyflow/react";
 import { panelDescriptor } from "./panel.descriptor";
+import { swimlaneDescriptor } from "./swimlane.descriptor";
 import { noteDescriptor } from "./note.descriptor";
 import { apiGroupDescriptor } from "./apigroup.descriptor";
 import { endpointDescriptor } from "./endpoint.descriptor";
 import { c4Descriptor } from "./c4.descriptor";
 import type { NodeTypeDescriptor } from "./types";
-import type { ComponentType } from "@/features/diagram";
+import type { Component, ComponentType } from "@/features/diagram";
+import { isPanelComponent } from "@/features/diagram";
 
 /**
  * Ordered list of node type descriptors.
@@ -17,6 +19,7 @@ import type { ComponentType } from "@/features/diagram";
  */
 export const NODE_TYPE_REGISTRY: NodeTypeDescriptor[] = [
   panelDescriptor,
+  swimlaneDescriptor,
   noteDescriptor,
   apiGroupDescriptor,
   endpointDescriptor,
@@ -26,6 +29,14 @@ export const NODE_TYPE_REGISTRY: NodeTypeDescriptor[] = [
 /** Returns the descriptor for the given component type. Falls back to c4. */
 export function getDescriptor(type: ComponentType): NodeTypeDescriptor {
   return NODE_TYPE_REGISTRY.find((d) => d.matches(type)) ?? c4Descriptor;
+}
+
+/** Resolves descriptor from full component (handles `panel` + `panelKind: "swimlane"`). */
+export function resolveNodeDescriptor(comp: Component): NodeTypeDescriptor {
+  if (isPanelComponent(comp) && comp.panelKind === "swimlane") {
+    return swimlaneDescriptor;
+  }
+  return getDescriptor(comp.type);
 }
 
 /**

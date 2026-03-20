@@ -8,12 +8,15 @@ import { pushHistory } from "./history.slice";
 import {
   PANEL_DEFAULT_W,
   PANEL_DEFAULT_H,
+  SWIMLANE_DEFAULT_W,
+  SWIMLANE_DEFAULT_H,
   NOTE_DEFAULT_W,
   NOTE_DEFAULT_H,
   NODE_DRAG_PADDING,
   DEFAULT_NODE_W,
   DEFAULT_NODE_H,
 } from "@/features/canvas/constants";
+import i18n from "@/infrastructure/i18n";
 import { HEADER_H, ENDPOINT_H, FRAME_W } from "@/features/canvas/nodes/ApiGroupNode/constants";
 import { computeApiGroupSize } from "@/features/canvas/nodes/ApiGroupNode/useApiGroupSize";
 
@@ -31,14 +34,27 @@ export const componentsSlice = (
     ): Component => {
       const base = { id: generateId("el"), name, description: "", parentId };
       let component: Component;
+      const resolvedPanelKind: PanelKind | undefined = isPanelType(type)
+        ? (panelKind ?? "default")
+        : undefined;
       if (isPanelType(type)) {
-        const kind = panelKind ?? "default";
+        const kind = resolvedPanelKind!;
         const def = getPanelKindDef(kind);
+        const isSwimlane = kind === "swimlane";
         component = {
           ...base,
           type: "panel",
           panelKind: kind,
           panelColor: def.defaultColor,
+          ...(isSwimlane
+            ? {
+                swimlane: {
+                  orientation: "horizontal",
+                  laneColor: "#6366f1",
+                  laneLabel: i18n.t("swimlane.defaultLaneLabel"),
+                },
+              }
+            : {}),
         } as PanelComponent;
       } else if (isNoteType(type)) {
         component = { ...base, type: "note", panelColor: "hsl(45 25% 97%)" };
@@ -144,7 +160,15 @@ export const componentsSlice = (
             elementId: component.id,
             x: resolvedPosition.x,
             y: resolvedPosition.y,
-            ...(isPanelType(type) ? { zIndex: -1, width: PANEL_DEFAULT_W, height: PANEL_DEFAULT_H } : {}),
+            ...(isPanelType(type)
+              ? {
+                  zIndex: -1,
+                  width:
+                    resolvedPanelKind === "swimlane" ? SWIMLANE_DEFAULT_W : PANEL_DEFAULT_W,
+                  height:
+                    resolvedPanelKind === "swimlane" ? SWIMLANE_DEFAULT_H : PANEL_DEFAULT_H,
+                }
+              : {}),
             ...(isNoteType(type) ? { width: NOTE_DEFAULT_W, height: NOTE_DEFAULT_H } : {}),
           };
         }

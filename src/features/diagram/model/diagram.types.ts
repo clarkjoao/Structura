@@ -8,6 +8,7 @@ export type {
   ComponentPatch,
   C4Component,
   PanelComponent,
+  SwimlaneStyle,
   NoteComponent,
   AwsComponent,
   ApiGroupComponent,

@@ -32,7 +32,13 @@ export const PANEL_KIND_VALUES: readonly PanelKind[] = [
   "vpc",
   "public-subnet",
   "private-subnet",
+  "swimlane",
 ];
+
+/** React Flow node `type` values that behave as parent panels (parenting / hit-testing). */
+export function isReactFlowParentPanelType(nodeType: string): boolean {
+  return nodeType === "panel" || nodeType === "swimlane";
+}
 
 // --- Type guards for ComponentType (string) ---
 

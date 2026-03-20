@@ -7,7 +7,7 @@ import type {
   Component,
   ServiceDefinition,
 } from "@/features/diagram";
-import { isPanelType, isPanelComponent } from "@/features/diagram";
+import { isPanelComponent, isReactFlowParentPanelType } from "@/features/diagram";
 import { getViewportCenter } from "../viewport-utils";
 import { useRecordingMode } from "../flow/RecordingModeContext";
 import { exportDrawio } from "@/lib/export-service";
@@ -318,7 +318,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
         const selected = getSelectedNodes(reactFlowInstance, selectedNodeId);
         if (selected.length === 1) {
           const node = selected[0];
-          if (isPanelType(node.type as string)) {
+          if (isReactFlowParentPanelType(node.type as string)) {
             ungroupNodes(node.id);
           } else {
             const comp = diagram.snapshot.components[node.id];

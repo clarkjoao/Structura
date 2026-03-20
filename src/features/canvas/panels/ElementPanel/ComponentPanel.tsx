@@ -2,7 +2,13 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import debounce from "lodash.debounce";
 import { X, Trash2, Link2, LayoutDashboard, RefreshCw } from "lucide-react";
 import { useAllDiagrams, useActiveDiagram, useAllServices, useDiagramActions } from "@/features/diagram";
-import type { Component, ComponentPatch, ComponentType, ServiceDefinition } from "@/features/diagram";
+import type {
+  Component,
+  ComponentPatch,
+  ComponentType,
+  ServiceDefinition,
+  SwimlaneStyle,
+} from "@/features/diagram";
 import { isPanelComponent, isNoteComponent, isC4Component, isSystemType, isContainerType } from "@/features/diagram";
 import { isAwsType, AWS_CATEGORIES, AWS_CATEGORY_MAP, AWS_SERVICE_MAP } from "@/lib/catalogs/aws";
 import { PANEL_KINDS, getPanelKindDef } from "@/lib/catalogs/panels";
@@ -13,10 +19,27 @@ import TabBar, { type Tab } from "./components/TabBar";
 import ColorSwatches from "./components/ColorSwatches";
 import PanelColorPicker from "./components/PanelColorPicker";
 import { C4_DEFAULT_COLORS } from "./components/colorPresets";
+import { LANE_COLORS } from "./swimlaneLaneColors";
+import { SWIMLANE_DEFAULT_H, SWIMLANE_DEFAULT_W } from "@/features/canvas/constants";
 import ConnectionsTab from "./components/ConnectionsTab";
 import ServiceRegistryCombobox from "./components/ServiceRegistryCombobox";
 import { useTranslation } from "react-i18next";
 import i18n from "@/infrastructure/i18n";
+
+function mergeSwimlane(
+  current: SwimlaneStyle | undefined,
+  partial: Partial<SwimlaneStyle>,
+): SwimlaneStyle {
+  return {
+    orientation: partial.orientation ?? current?.orientation ?? "horizontal",
+    laneColor: partial.laneColor ?? current?.laneColor ?? "#6366f1",
+    ...(partial.laneLabel !== undefined
+      ? { laneLabel: partial.laneLabel }
+      : current?.laneLabel !== undefined
+        ? { laneLabel: current.laneLabel }
+        : {}),
+  };
+}
 
 const DEFAULT_PANEL_COLOR = "hsl(220 20% 20%)";
 const DEFAULT_PANEL_OPACITY = 10;
@@ -215,35 +238,144 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
                   onChange={(e) => {
                     const kind = e.target.value as PanelKind;
                     const def = getPanelKindDef(kind);
-                    updateComponent(component.id, {
-                      panelKind: kind,
-                      panelColor: def.defaultColor,
-                    } as ComponentPatch);
+                    const layout = activeDiagram?.nodeLayouts[component.id];
+                    if (kind === "swimlane") {
+                      updateComponent(component.id, {
+                        panelKind: kind,
+                        panelColor: def.defaultColor,
+                        swimlane: {
+                          orientation: "horizontal",
+                          laneColor: "#6366f1",
+                          laneLabel: t("swimlane.defaultLaneLabel"),
+                        },
+                      } as ComponentPatch);
+                      if (layout) {
+                        updateNodeLayout(
+                          component.id,
+                          { x: layout.x, y: layout.y },
+                          { width: SWIMLANE_DEFAULT_W, height: SWIMLANE_DEFAULT_H },
+                        );
+                      }
+                    } else {
+                      updateComponent(component.id, {
+                        panelKind: kind,
+                        panelColor: def.defaultColor,
+                        swimlane: undefined,
+                      } as ComponentPatch);
+                    }
                   }}
                   className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                 >
                   {PANEL_KINDS.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.label}
+                      {p.id === "swimlane" ? t("swimlane.title") : p.label}
                     </option>
                   ))}
                 </select>
               </div>
-              <PanelColorPicker componentId={component.id} currentColor={component.panelColor ?? getPanelKindDef(component.panelKind).defaultColor} currentOpacity={component.panelOpacity ?? DEFAULT_PANEL_OPACITY} updateComponent={updateComponent} />
-              <div>
-                <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-                  {t("elementPanel.border")}
-                </label>
-                <select
-                  value={component.borderStyle ?? "solid"}
-                  onChange={(e) => updateComponent(component.id, { borderStyle: e.target.value as "solid" | "dashed" | "dotted" } as ComponentPatch)}
-                  className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                >
-                  <option value="solid">{t("common.strokeSolid")}</option>
-                  <option value="dashed">{t("common.strokeDashed")}</option>
-                  <option value="dotted">{t("common.strokeDotted")}</option>
-                </select>
-              </div>
+              {component.panelKind === "swimlane" ? (
+                <>
+                  <Field
+                    label={t("swimlane.laneLabel")}
+                    value={component.swimlane?.laneLabel ?? ""}
+                    onChange={(v) => {
+                      updateComponent(component.id, {
+                        swimlane: mergeSwimlane(component.swimlane, { laneLabel: v }),
+                      } as ComponentPatch);
+                    }}
+                  />
+                  <div>
+                    <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+                      {t("swimlane.orientation")}
+                    </label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateComponent(component.id, {
+                            swimlane: mergeSwimlane(component.swimlane, {
+                              orientation: "horizontal",
+                            }),
+                          } as ComponentPatch);
+                        }}
+                        className={`flex-1 rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
+                          (component.swimlane?.orientation ?? "horizontal") === "horizontal"
+                            ? "border-primary bg-primary/10 text-foreground"
+                            : "border-border bg-secondary text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {t("swimlane.horizontal")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateComponent(component.id, {
+                            swimlane: mergeSwimlane(component.swimlane, {
+                              orientation: "vertical",
+                            }),
+                          } as ComponentPatch);
+                        }}
+                        className={`flex-1 rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
+                          component.swimlane?.orientation === "vertical"
+                            ? "border-primary bg-primary/10 text-foreground"
+                            : "border-border bg-secondary text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {t("swimlane.vertical")}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+                      {t("swimlane.laneColor")}
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {LANE_COLORS.map((c) => {
+                        const current = component.swimlane?.laneColor ?? "#6366f1";
+                        const active = current === c.value;
+                        return (
+                          <button
+                            key={c.value}
+                            type="button"
+                            title={c.label}
+                            aria-label={c.label}
+                            onClick={() => {
+                              updateComponent(component.id, {
+                                swimlane: mergeSwimlane(component.swimlane, {
+                                  laneColor: c.value,
+                                }),
+                                panelColor: c.value,
+                              } as ComponentPatch);
+                            }}
+                            className={`h-7 w-7 rounded-full border-2 transition-transform hover:scale-105 ${
+                              active ? "ring-2 ring-offset-2 ring-offset-background ring-primary" : "border-border"
+                            }`}
+                            style={{ backgroundColor: c.value }}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <PanelColorPicker componentId={component.id} currentColor={component.panelColor ?? getPanelKindDef(component.panelKind).defaultColor} currentOpacity={component.panelOpacity ?? DEFAULT_PANEL_OPACITY} updateComponent={updateComponent} />
+                  <div>
+                    <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+                      {t("elementPanel.border")}
+                    </label>
+                    <select
+                      value={component.borderStyle ?? "solid"}
+                      onChange={(e) => updateComponent(component.id, { borderStyle: e.target.value as "solid" | "dashed" | "dotted" } as ComponentPatch)}
+                      className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                    >
+                      <option value="solid">{t("common.strokeSolid")}</option>
+                      <option value="dashed">{t("common.strokeDashed")}</option>
+                      <option value="dotted">{t("common.strokeDotted")}</option>
+                    </select>
+                  </div>
+                </>
+              )}
             </>
           )}
           {isNoteComponent(component) && <ColorSwatches componentId={component.id} currentColor={component.panelColor ?? DEFAULT_NOTE_COLOR} label={t("elementPanel.noteColorLabel")} presetGroup="note" updateComponent={updateComponent} />}

@@ -317,18 +317,36 @@
     "searchHelpPanel": "painel|panel",
     "searchHelpNote": "nota|note|sticky|postit",
     "searchHelpApiGroup": "api|grupo|group|openapi",
-    "searchHelpEndpoint": "endpoint|http|rest"
+    "searchHelpEndpoint": "endpoint|http|rest",
+    "searchHelpSwimlane": "swimlane|faixa|atores|domínio|time|pool|raia"
+  },
+  "swimlane": {
+    "title": "Faixa (swim lane)",
+    "defaultLaneLabel": "Nome da Faixa",
+    "laneLabel": "Rótulo da faixa",
+    "orientation": "Orientação",
+    "horizontal": "Horizontal",
+    "vertical": "Vertical",
+    "laneColor": "Cor da faixa"
   },
   "elementPicker": {
+    "categoryAll": "Todos",
+    "viewAll": "Ver todos",
+    "viewAllRegistry": "Ver todos no Registry",
     "registry": "Registry",
     "modalTitle": "Adicionar elemento",
     "searchPlaceholder": "Buscar elementos e registry...",
+    "searchPlaceholderUnified": "Buscar elementos, AWS, registry…",
     "frequentlyUsed": "Mais usados",
-    "noResultsFor": "Nenhum resultado para “{{query}}”",
+    "noResultsFor": "Nenhum elemento encontrado para “{{query}}”",
     "onCanvas": "No canvas",
     "addButton": "+ Adicionar",
+    "addAnotherInstance": "Adicionar outra instância ao canvas",
     "c4Model": "C4 Model",
-    "canvasGroups": "Canvas e Agrupamentos"
+    "canvasGroups": "Canvas e Agrupamentos",
+    "awsOther": "Outros",
+    "registryEmpty": "Nenhum serviço no registry ainda.",
+    "openRegistry": "Abrir registry"
   },
   "patterns": {
     "searchPlaceholder": "Buscar patterns por nome, descrição ou componentes...",
