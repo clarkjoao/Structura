@@ -1,3 +1,10 @@
+export type ServiceSourceType = "defectdojo" | "github" | "manual";
+
+export interface ServiceSourceRef {
+  type: ServiceSourceType;
+  sourceId?: string;
+}
+
 export interface ServiceDefinition {
   id: string;
   name: string;
@@ -6,7 +13,10 @@ export interface ServiceDefinition {
   technology: string[];
   owner?: string;
   tags?: string[];
-  source?: "defectdojo" | "github" | "manual";
+  sources?: ServiceSourceRef[];
+  /** @deprecated Legacy single-source field kept for migration compatibility. */
+  source?: ServiceSourceType;
+  /** @deprecated Legacy single-source field kept for migration compatibility. */
   sourceId?: string;
   metadata?: {
     github?: {

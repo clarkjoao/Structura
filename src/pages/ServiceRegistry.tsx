@@ -28,7 +28,8 @@ import { createGithubClient } from "@/integrations/github/githubClient";
 import type { GithubRepo } from "@/integrations/github/github.types";
 import {
   dedupeStringsPreserveOrder,
-  ensureMergedSourceTags,
+  mergeSources,
+  normalizeSources,
   pickMoreCompleteString,
 } from "@/integrations/merge-utils";
 import {
@@ -153,7 +154,7 @@ const ManualCreateForm = ({
       technology: tech,
       owner: owner.trim() || undefined,
       tags,
-      source: "manual",
+      sources: [{ type: "manual" }],
     });
   };
 
@@ -264,7 +265,7 @@ interface ServiceCardProps {
 }
 
 const ServiceCard = ({ svc, isSelected, onClick, usage }: ServiceCardProps) => {
-  const source = (svc.source ?? "manual") as Source;
+  const sources = normalizeSources(svc);
   const MAX_PILLS = 3;
 
   return (
@@ -279,17 +280,27 @@ const ServiceCard = ({ svc, isSelected, onClick, usage }: ServiceCardProps) => {
     >
       {/* Header */}
       <div className="flex items-center gap-2 mb-1.5">
-        <span
-          className={`h-2 w-2 rounded-full shrink-0 ${SOURCE_DOT[source]}`}
-        />
+        <div className="flex items-center gap-1 shrink-0">
+          {sources.map((source) => (
+            <span
+              key={source.type}
+              className={`h-2 w-2 rounded-full ${SOURCE_DOT[source.type]}`}
+            />
+          ))}
+        </div>
         <span className="font-semibold text-foreground text-sm truncate flex-1">
           {svc.name}
         </span>
-        <span
-          className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${SOURCE_BADGE[source]}`}
-        >
-          {SOURCE_LABEL[source]}
-        </span>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+          {sources.map((source) => (
+            <span
+              key={source.type}
+              className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${SOURCE_BADGE[source.type]}`}
+            >
+              {SOURCE_LABEL[source.type]}
+            </span>
+          ))}
+        </div>
       </div>
 
       {/* Description */}
@@ -358,7 +369,12 @@ const DetailPanel = ({
   onClose,
 }: DetailPanelProps) => {
   const { config: githubConfig } = useGithubConfig();
-  const source = (svc.source ?? "manual") as Source;
+  const normalizedSources = normalizeSources(svc);
+  const hasGithubSource = normalizedSources.some((s) => s.type === "github");
+  const hasDefectDojoSource = normalizedSources.some(
+    (s) => s.type === "defectdojo",
+  );
+  const hasSyncSource = hasGithubSource || hasDefectDojoSource;
   const usage = useMemo(
     () => getServiceUsage(svc.id, diagrams),
     [svc.id, diagrams],
@@ -403,20 +419,23 @@ const DetailPanel = ({
     setSyncError("");
     setSyncing(true);
     try {
-      const hasGithubData = Boolean(svc.metadata?.github) || source === "github";
+      const hasGithubData = Boolean(svc.metadata?.github) || hasGithubSource;
       const hasDefectDojoData =
-        Boolean(svc.metadata?.defectdojo) || source === "defectdojo";
+        Boolean(svc.metadata?.defectdojo) || hasDefectDojoSource;
 
       let githubRepo: GithubRepo | null = null;
       let defectDojoMapped:
         | Omit<ServiceDefinition, "id">
         | null = null;
+      let syncedDefectDojoSourceId: string | undefined;
 
       if (hasGithubData) {
+        const githubSourceId = normalizedSources.find(
+          (sourceEntry) => sourceEntry.type === "github",
+        )?.sourceId;
         const githubIdentifier =
-          source === "github"
-            ? svc.sourceId
-            : (svc.metadata?.github as { fullName?: string } | undefined)
+          githubSourceId ??
+          (svc.metadata?.github as { fullName?: string } | undefined)
                 ?.fullName;
 
         if (githubIdentifier) {
@@ -439,12 +458,15 @@ const DetailPanel = ({
           | { productId?: string | number; productLink?: string }
           | undefined;
         const productIdFromLink = ddMeta?.productLink?.match(/\/product\/(\d+)(?:\/|$)/)?.[1];
+        const defectDojoSourceId = normalizedSources.find(
+          (sourceEntry) => sourceEntry.type === "defectdojo",
+        )?.sourceId;
         const defectDojoProductId =
-          source === "defectdojo"
-            ? svc.sourceId
-            : ddMeta?.productId
+          defectDojoSourceId ??
+          (ddMeta?.productId
               ? String(ddMeta.productId)
-              : productIdFromLink;
+              : productIdFromLink);
+        syncedDefectDojoSourceId = defectDojoProductId;
 
         const rawConfig = localStorage.getItem("structura_defectdojo:config") ?? localStorage.getItem("structura:defectdojo:config");
         if (!rawConfig) throw new Error("DefectDojo não configurado");
@@ -485,7 +507,19 @@ const DetailPanel = ({
         ...githubTags,
         ...ddTags,
       ]);
-      const shouldMarkMerged = hasGithubData && hasDefectDojoData;
+      const mergedSourceEntries = mergeSources(normalizeSources(svc), [
+        ...(githubRepo
+          ? [{ type: "github" as const, sourceId: githubRepo.full_name }]
+          : []),
+        ...(defectDojoMapped
+          ? [
+              {
+                type: "defectdojo" as const,
+                sourceId: syncedDefectDojoSourceId,
+              },
+            ]
+          : []),
+      ]);
 
       updateService(svc.id, {
         name: pickMoreCompleteString(
@@ -502,7 +536,8 @@ const DetailPanel = ({
           defectDojoMapped?.repositoryUrl ||
           "",
         technology: mergedTech,
-        tags: shouldMarkMerged ? ensureMergedSourceTags(mergedTags) : mergedTags,
+        tags: mergedTags,
+        sources: mergedSourceEntries,
         metadata: {
           github: githubRepo
             ? {
@@ -522,7 +557,15 @@ const DetailPanel = ({
     } finally {
       setSyncing(false);
     }
-  }, [source, svc, updateService, githubConfig?.baseUrl, githubConfig?.token]);
+  }, [
+    hasDefectDojoSource,
+    hasGithubSource,
+    normalizedSources,
+    svc,
+    updateService,
+    githubConfig?.baseUrl,
+    githubConfig?.token,
+  ]);
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card">
@@ -530,14 +573,14 @@ const DetailPanel = ({
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
         <div className="flex items-center gap-2 min-w-0">
           <span
-            className={`h-2.5 w-2.5 rounded-full shrink-0 ${SOURCE_DOT[source]}`}
+            className={`h-2.5 w-2.5 rounded-full shrink-0 ${SOURCE_DOT[normalizedSources[0]?.type ?? "manual"]}`}
           />
           <h2 className="text-base font-bold text-foreground truncate">
             {svc.name}
           </h2>
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          {(source === "github" || source === "defectdojo") && svc.sourceId && (
+          {hasSyncSource && (
             <button
               onClick={handleSync}
               disabled={syncing}
@@ -599,9 +642,9 @@ const DetailPanel = ({
               )}
             </div>
 
-            {(source === "github" || source === "defectdojo") && editing && (
+            {hasSyncSource && editing && (
               <p className="text-[10px] text-muted-foreground italic border border-border rounded-md px-3 py-1.5">
-                Alguns campos são sincronizados de {SOURCE_LABEL[source]} e
+                Alguns campos são sincronizados das fontes externas e
                 podem ser sobrescritos no próximo sync.
               </p>
             )}
@@ -668,11 +711,16 @@ const DetailPanel = ({
                   <span className="text-[11px] text-muted-foreground w-20 shrink-0">
                     Fonte
                   </span>
-                  <span
-                    className={`rounded px-2 py-0.5 text-[10px] font-semibold ${SOURCE_BADGE[source]}`}
-                  >
-                    {SOURCE_LABEL[source]}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-1">
+                    {normalizedSources.map((source) => (
+                      <span
+                        key={source.type}
+                        className={`rounded px-2 py-0.5 text-[10px] font-semibold ${SOURCE_BADGE[source.type]}`}
+                      >
+                        {SOURCE_LABEL[source.type]}
+                      </span>
+                    ))}
+                  </div>
                 </div>
 
                 <div>
@@ -896,7 +944,9 @@ const ServiceRegistry = () => {
   const filtered = useMemo(() => {
     let result = services;
     if (sourceFilter !== "all") {
-      result = result.filter((s) => (s.source ?? "manual") === sourceFilter);
+      result = result.filter((service) =>
+        normalizeSources(service).some((source) => source.type === sourceFilter),
+      );
     }
     if (search.trim()) {
       const q = search.trim().toLowerCase();

@@ -2,6 +2,7 @@ import type { ServiceDefinition } from "../../model/service.types";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 import { SEED_SERVICE_REGISTRY } from "@/fixtures/seed";
+import { normalizeSources } from "@/integrations/merge-utils";
 
 export const servicesSlice = (
   set: (fn: (state: AppState) => void) => void,
@@ -10,7 +11,11 @@ export const servicesSlice = (
     serviceRegistry: import.meta.env.VITE_DISABLE_SEEDS === "true" ? {} : SEED_SERVICE_REGISTRY,
   
     addService: (service: Omit<ServiceDefinition, "id">): ServiceDefinition => {
-      const svc: ServiceDefinition = { ...service, id: generateId("svc") };
+      const svc: ServiceDefinition = {
+        ...service,
+        sources: normalizeSources(service),
+        id: generateId("svc"),
+      };
       set((state) => {
         state.serviceRegistry[svc.id] = svc;
       });
@@ -20,7 +25,10 @@ export const servicesSlice = (
     updateService: (id: string, patch: Partial<Omit<ServiceDefinition, "id">>) => {
       set((state) => {
         const svc = state.serviceRegistry[id];
-        if (svc) Object.assign(svc, patch);
+        if (svc) {
+          Object.assign(svc, patch);
+          svc.sources = normalizeSources(svc);
+        }
       });
     },
 

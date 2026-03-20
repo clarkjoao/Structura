@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useDiagramStore } from "@/features/diagram";
+import { normalizeSources } from "@/integrations/merge-utils";
 import { DefectDojoClient } from "../defectdojo.client";
 import {
   searchProducts,
@@ -21,7 +22,11 @@ function resolveImportStatus(
   const state = useDiagramStore.getState();
   const allServices = Object.values(state.serviceRegistry);
   const existing = allServices.find(
-    (s) => s.source === "defectdojo" && s.sourceId === String(productId),
+    (service) =>
+      normalizeSources(service).some(
+        (source) =>
+          source.type === "defectdojo" && source.sourceId === String(productId),
+      ),
   );
   if (!existing) return { status: "not-imported" };
   if (existing.name === productName && existing.description === productDesc) {

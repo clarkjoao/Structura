@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { GithubRepo } from "../github.types";
 import type { ServiceDefinition } from "@/features/diagram";
-import { normalizeRepoUrl } from "../../merge-utils";
+import { normalizeRepoUrl, normalizeSources } from "../../merge-utils";
 import { GithubRepoCard } from "./GithubRepoCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -106,7 +106,13 @@ export function GithubResultsList({
                 repo={repo}
                 selected={selected.has(repo.id)}
                 alreadyImported={Boolean(existing)}
-                hasDefectDojoConflict={existing?.source === "defectdojo"}
+                hasDefectDojoConflict={
+                  existing
+                    ? normalizeSources(existing).some(
+                        (source) => source.type === "defectdojo",
+                      )
+                    : false
+                }
                 onToggle={onToggleSelect}
               />
             );

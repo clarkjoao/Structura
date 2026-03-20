@@ -106,8 +106,7 @@ export function mapToServiceDefinition(
     repositoryUrl: product?.metadata?.repositoryUrl as string ?? "",
     technology: [],
     tags: product.tags || [],
-    source: "defectdojo",
-    sourceId: String(product.id),
+    sources: [{ type: "defectdojo", sourceId: String(product.id) }],
     metadata: {
       defectdojo: {
         productId: product.id,

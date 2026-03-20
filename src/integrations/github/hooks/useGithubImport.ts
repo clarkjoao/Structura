@@ -8,6 +8,7 @@ import type { MergeResolution } from "../components/GithubMergeDialog";
 import { useAllServices, useRegistryActions } from "@/features/diagram";
 import { useGithubConfig } from "./useGithubConfig";
 import { commitGithubImport } from "../github.service";
+import { normalizeSources } from "../../merge-utils";
 
 const DEFAULT_PER_PAGE = 50;
 
@@ -161,8 +162,9 @@ export function useGithubImport() {
       // For GitHub import, DefectDojo service has priority.
       const bestByRepoId = new Map<number, MergeConflict>();
       const score = (c: MergeConflict) => {
-        if (c.existingService.source === "defectdojo") return 3;
-        if (c.existingService.source === "github") return 2;
+        const sources = normalizeSources(c.existingService);
+        if (sources.some((source) => source.type === "defectdojo")) return 3;
+        if (sources.some((source) => source.type === "github")) return 2;
         return 1;
       };
 
@@ -175,10 +177,16 @@ export function useGithubImport() {
       setAllConflictsForImport(bestConflictsForImport);
 
       const githubExistingConflicts = bestConflictsForImport.filter(
-        (c) => c.existingService.source === "github",
+        (c) =>
+          normalizeSources(c.existingService).some(
+            (source) => source.type === "github",
+          ),
       );
       const crossConflicts = bestConflictsForImport.filter(
-        (c) => c.existingService.source !== "github",
+        (c) =>
+          !normalizeSources(c.existingService).some(
+            (source) => source.type === "github",
+          ),
       );
 
       const autoRes: MergeResolution[] = githubExistingConflicts.map((c) => ({

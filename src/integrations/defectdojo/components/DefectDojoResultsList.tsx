@@ -6,7 +6,8 @@ import type { DDSearchResult } from "../types";
 import { DefectDojoProductCard } from "./DefectDojoProductCard";
 import {
   dedupeStringsPreserveOrder,
-  ensureMergedSourceTags,
+  mergeSources,
+  normalizeSources,
   pickMoreCompleteString,
   repoUrlsMatch,
 } from "../../merge-utils";
@@ -76,16 +77,13 @@ export function DefectDojoResultsList({
           ...(existingService?.tags ?? []),
           ...(svcData.tags ?? []),
         ]);
-        const shouldKeepMergedTags = Boolean(existingService?.metadata?.github);
-
         store.updateService(product.existingServiceId, {
           ...svcData,
           repositoryUrl:
             existingService?.repositoryUrl || svcData.repositoryUrl || "",
           technology: mergedTech,
-          tags: shouldKeepMergedTags
-            ? ensureMergedSourceTags(mergedTags)
-            : mergedTags,
+          tags: mergedTags,
+          sources: mergeSources(existingService?.sources, svcData.sources),
           metadata: {
             github: existingService?.metadata?.github,
             defectdojo: {
@@ -100,7 +98,7 @@ export function DefectDojoResultsList({
         // If the same repo is already imported from GitHub, merge into it.
         const githubExisting = Object.values(store.serviceRegistry).find(
           (s) =>
-            s.source === "github" &&
+            normalizeSources(s).some((source) => source.type === "github") &&
             repoUrlsMatch(s.repositoryUrl, svcData.repositoryUrl),
         );
 
@@ -120,15 +118,11 @@ export function DefectDojoResultsList({
               ...(githubExisting.technology ?? []),
               ...(svcData.technology ?? []),
             ]),
-            tags: ensureMergedSourceTags(
-              dedupeStringsPreserveOrder([
-                ...(githubExisting.tags ?? []),
-                ...(svcData.tags ?? []),
-              ]),
-            ),
-            // DefectDojo é a fonte primária de catálogo — assume a ownership
-            source: "defectdojo",
-            sourceId: svcData.sourceId,
+            tags: dedupeStringsPreserveOrder([
+              ...(githubExisting.tags ?? []),
+              ...(svcData.tags ?? []),
+            ]),
+            sources: mergeSources(githubExisting.sources, svcData.sources),
             metadata: {
               // Preserva metadata do GitHub (fullName, topics, etc.)
               github: prevGithubMeta,

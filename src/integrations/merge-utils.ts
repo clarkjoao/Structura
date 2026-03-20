@@ -1,3 +1,8 @@
+import type {
+  ServiceDefinition,
+  ServiceSourceRef,
+} from "@/features/diagram/model/service.types";
+
 /**
  * Utilitários compartilhados entre integrações para merge de serviços.
  */
@@ -56,10 +61,23 @@ export function repoUrlsMatch(
   return na !== "" && na === nb;
 }
 
-export function ensureMergedSourceTags(tags: string[] | undefined): string[] {
-  return dedupeStringsPreserveOrder([
-    ...(tags ?? []),
-    "Defect Dojo",
-    "Github",
-  ]);
+export function normalizeSources(
+  svc: Pick<ServiceDefinition, "source" | "sourceId" | "sources">,
+): ServiceSourceRef[] {
+  if (svc.sources && svc.sources.length > 0) return svc.sources;
+  if (svc.source) return [{ type: svc.source, sourceId: svc.sourceId }];
+  return [{ type: "manual" }];
+}
+
+export function mergeSources(
+  existing: ServiceDefinition["sources"],
+  incoming: ServiceDefinition["sources"],
+): NonNullable<ServiceDefinition["sources"]> {
+  const merged = [...(existing ?? []), ...(incoming ?? [])];
+  const seen = new Set<string>();
+  return merged.filter((source) => {
+    if (seen.has(source.type)) return false;
+    seen.add(source.type);
+    return true;
+  });
 }

@@ -74,8 +74,7 @@ export function githubRepoToService(
     repositoryUrl: repo.html_url,
     technology,
     tags: repo.topics,
-    source: "github",
-    sourceId: repo.full_name,
+    sources: [{ type: "github", sourceId: repo.full_name }],
     metadata: {
       github: {
         repoId: repo.id,

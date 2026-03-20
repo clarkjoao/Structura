@@ -4,6 +4,7 @@ import { DefectDojoClient } from "../defectdojo.client";
 import { getCurrentUser } from "../defectdojo.service";
 import type { DefectDojoConfig } from "../types";
 import { useDiagramStore } from "@/features/diagram";
+import { normalizeSources } from "@/integrations/merge-utils";
 
 interface Props {
   config: DefectDojoConfig | null;
@@ -53,10 +54,12 @@ export function DefectDojoConfigForm({ config, onSave, onClear }: Props) {
   const handleClearRemoveSourceId = () => {
     const store = useDiagramStore.getState();
     Object.values(store.serviceRegistry).forEach((svc) => {
-      if (svc.source === "defectdojo") {
+      const nextSources = normalizeSources(svc).filter(
+        (source) => source.type !== "defectdojo",
+      );
+      if (nextSources.length !== normalizeSources(svc).length) {
         store.updateService(svc.id, {
-          source: undefined,
-          sourceId: undefined,
+          sources: nextSources.length > 0 ? nextSources : [{ type: "manual" }],
         });
       }
     });

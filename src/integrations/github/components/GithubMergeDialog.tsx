@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { MergeConflict } from "../detectMergeConflicts";
 import type { ServiceDefinition } from "@/features/diagram";
 import { githubRepoToService } from "../githubMapper";
+import { normalizeSources } from "../../merge-utils";
 import {
   Dialog,
   DialogContent,
@@ -72,7 +73,9 @@ function resolveCompletenessTemplate(
 }
 
 function getExistingLabel(existingService: ServiceDefinition) {
-  return existingService.source === "defectdojo"
+  return normalizeSources(existingService).some(
+    (source) => source.type === "defectdojo",
+  )
     ? "Existente (DefectDojo)"
     : "Existente (manual)";
 }
@@ -152,7 +155,9 @@ export function GithubMergeDialog({
                     </p>
                   </div>
                   <div className="shrink-0 text-xs text-muted-foreground">
-                    {existing.source === "defectdojo"
+                    {normalizeSources(existing).some(
+                      (source) => source.type === "defectdojo",
+                    )
                       ? "DefectDojo"
                       : "Manual"}
                   </div>
