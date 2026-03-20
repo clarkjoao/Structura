@@ -28,6 +28,12 @@ import Navbar from "@/components/Navbar";
 import { GithubImportPanel } from "@/integrations/github/components/GithubImportPanel";
 import { useGithubConfig } from "@/integrations/github/hooks/useGithubConfig";
 import { createGithubClient } from "@/integrations/github/githubClient";
+import type { GithubRepo } from "@/integrations/github/github.types";
+import {
+  dedupeStringsPreserveOrder,
+  ensureMergedSourceTags,
+  pickMoreCompleteString,
+} from "@/integrations/merge-utils";
 import {
   useAllServices,
   useDiagrams,
@@ -526,42 +532,49 @@ const DetailPanel = ({
     setSyncError("");
     setSyncing(true);
     try {
-      if (source === "github" && svc.sourceId) {
+      const hasGithubData = Boolean(svc.metadata?.github) || source === "github";
+      const hasDefectDojoData =
+        Boolean(svc.metadata?.defectdojo) || source === "defectdojo";
+
+      let githubRepo: GithubRepo | null = null;
+      let defectDojoMapped:
+        | Omit<ServiceDefinition, "id">
+        | null = null;
+
+      if (hasGithubData) {
+        const githubIdentifier =
+          source === "github"
+            ? svc.sourceId
+            : (svc.metadata?.github as { fullName?: string } | undefined)
+                ?.fullName;
+
+        if (githubIdentifier) {
         const apiBase = githubConfig?.baseUrl ?? "https://api.github.com";
         const token = githubConfig?.token ?? "";
         const client = createGithubClient(apiBase, token);
-        const repo = await client.getRepository(svc.sourceId);
+          githubRepo = await client.getRepository(githubIdentifier);
+        }
+      }
 
-        // Merge technology: language do GitHub + tecnologias existentes (preserva DefectDojo/manual)
-        const repoTech = repo.language ? [repo.language] : [];
-        const mergedTech = Array.from(
-          new Set([...repoTech, ...svc.technology]),
-        );
-
-        updateService(svc.id, {
-          name: repo.name,
-          description: repo.description ?? svc.description,
-          repositoryUrl: repo.html_url,
-          technology: mergedTech,
-          metadata: {
-            github: {
-              repoId: repo.id,
-              fullName: repo.full_name,
-              topics: repo.topics ?? [],
-              language: repo.language,
-              updatedAt: repo.updated_at,
-            },
-            // Preserva metadata de outras fontes
-            defectdojo: svc.metadata?.defectdojo,
-          },
-        });
-      } else if (source === "defectdojo" && svc.sourceId) {
+      if (hasDefectDojoData) {
         const { DefectDojoClient } = await import(
           "@/integrations/defectdojo/defectdojo.client"
         );
         const { mapToServiceDefinition } = await import(
           "@/integrations/defectdojo/defectdojo.service"
         );
+
+        const ddMeta = svc.metadata?.defectdojo as
+          | { productId?: string | number; productLink?: string }
+          | undefined;
+        const productIdFromLink = ddMeta?.productLink?.match(/\/product\/(\d+)(?:\/|$)/)?.[1];
+        const defectDojoProductId =
+          source === "defectdojo"
+            ? svc.sourceId
+            : ddMeta?.productId
+              ? String(ddMeta.productId)
+              : productIdFromLink;
+
         const rawConfig = localStorage.getItem("structura_defectdojo:config") ?? localStorage.getItem("structura:defectdojo:config");
         if (!rawConfig) throw new Error("DefectDojo não configurado");
         const cfg = JSON.parse(rawConfig) as {
@@ -569,29 +582,70 @@ const DetailPanel = ({
           apiToken: string;
         };
         const client = new DefectDojoClient(cfg);
-        const resp = await client.get<{ results: Record<string, unknown>[] }>(
-          "/api/v2/products/",
-          { id: String(svc.sourceId) },
-        );
-        const product = resp.results[0];
-        if (!product) throw new Error("Produto não encontrado no DefectDojo");
-        const mapped = mapToServiceDefinition(
-          product as unknown as Parameters<typeof mapToServiceDefinition>[0],
-        );
-        // Merge: preserva dados do GitHub e tecnologias existentes
-        const mergedTech = Array.from(
-          new Set([...svc.technology, ...(mapped.technology ?? [])]),
-        );
-        updateService(svc.id, {
-          ...mapped,
-          repositoryUrl: svc.repositoryUrl || mapped.repositoryUrl,
-          technology: mergedTech,
-          metadata: {
-            github: svc.metadata?.github,
-            defectdojo: mapped.metadata?.defectdojo,
-          },
-        });
+        if (defectDojoProductId) {
+          const resp = await client.get<{ results: Record<string, unknown>[] }>(
+            "/api/v2/products/",
+            { id: String(defectDojoProductId) },
+          );
+          const product = resp.results[0];
+          if (product) {
+            defectDojoMapped = mapToServiceDefinition(
+              product as unknown as Parameters<typeof mapToServiceDefinition>[0],
+            );
+          }
+        }
       }
+
+      if (!githubRepo && !defectDojoMapped) {
+        throw new Error("Não foi possível sincronizar em nenhuma fonte");
+      }
+
+      const githubTech = githubRepo?.language ? [githubRepo.language] : [];
+      const githubTags = githubRepo?.topics ?? [];
+      const ddTags = defectDojoMapped?.tags ?? [];
+
+      const mergedTech = dedupeStringsPreserveOrder([
+        ...svc.technology,
+        ...githubTech,
+        ...(defectDojoMapped?.technology ?? []),
+      ]);
+      const mergedTags = dedupeStringsPreserveOrder([
+        ...(svc.tags ?? []),
+        ...githubTags,
+        ...ddTags,
+      ]);
+      const shouldMarkMerged = hasGithubData && hasDefectDojoData;
+
+      updateService(svc.id, {
+        name: pickMoreCompleteString(
+          defectDojoMapped?.name ?? "",
+          githubRepo?.name ?? svc.name,
+        ),
+        description: pickMoreCompleteString(
+          defectDojoMapped?.description ?? "",
+          githubRepo?.description ?? svc.description,
+        ),
+        repositoryUrl:
+          githubRepo?.html_url ||
+          svc.repositoryUrl ||
+          defectDojoMapped?.repositoryUrl ||
+          "",
+        technology: mergedTech,
+        tags: shouldMarkMerged ? ensureMergedSourceTags(mergedTags) : mergedTags,
+        metadata: {
+          github: githubRepo
+            ? {
+                repoId: githubRepo.id,
+                fullName: githubRepo.full_name,
+                topics: githubRepo.topics ?? [],
+                language: githubRepo.language,
+                updatedAt: githubRepo.updated_at,
+              }
+            : svc.metadata?.github,
+          defectdojo:
+            defectDojoMapped?.metadata?.defectdojo ?? svc.metadata?.defectdojo,
+        },
+      });
     } catch (err) {
       setSyncError(err instanceof Error ? err.message : "Erro ao sincronizar");
     } finally {
@@ -798,6 +852,40 @@ const DetailPanel = ({
                     >
                       <ExternalLink className="h-3 w-3 shrink-0" />
                       <span className="truncate">{svc.repositoryUrl}</span>
+                    </a>
+                  </div>
+                )}
+
+                {(
+                  (svc.metadata?.defectdojo as { productLink?: string } | undefined)
+                    ?.productLink
+                ) && (
+                  <div className="flex items-start gap-2">
+                    <span className="text-[11px] text-muted-foreground w-20 shrink-0 pt-0.5">
+                      Produto
+                    </span>
+                    <a
+                      href={
+                        (
+                          svc.metadata?.defectdojo as
+                            | { productLink?: string }
+                            | undefined
+                        )?.productLink
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline flex items-center gap-1 truncate"
+                    >
+                      <ExternalLink className="h-3 w-3 shrink-0" />
+                      <span className="truncate">
+                        {
+                          (
+                            svc.metadata?.defectdojo as
+                              | { productLink?: string }
+                              | undefined
+                          )?.productLink
+                        }
+                      </span>
                     </a>
                   </div>
                 )}

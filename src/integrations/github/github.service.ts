@@ -3,7 +3,10 @@ import type { ServiceDefinition } from "@/features/diagram";
 import type { MergeConflict } from "./detectMergeConflicts";
 import type { MergeResolution } from "./components/GithubMergeDialog";
 import { githubRepoToService } from "./githubMapper";
-import { dedupeStringsPreserveOrder } from "../merge-utils";
+import {
+  dedupeStringsPreserveOrder,
+  ensureMergedSourceTags,
+} from "../merge-utils";
 
 type CommitParams = {
   selectedRepos: GithubRepo[];
@@ -71,8 +74,15 @@ export async function commitGithubImport({
             ? githubService.tags ?? []
             : existing.tags ?? [];
 
+      const isCrossSourceMerge =
+        existing.source === "defectdojo" || Boolean(existing.metadata?.defectdojo);
+      const finalTags = isCrossSourceMerge
+        ? ensureMergedSourceTags(mergedTags)
+        : mergedTags;
+
       const prevGithub = existing.metadata?.github;
       const prevDefectDojo = existing.metadata?.defectdojo;
+      const nextGithubMeta = githubService.metadata?.github ?? prevGithub;
 
       // Preserva a source original: se o serviço veio do DefectDojo, mantém defectdojo.
       // O GitHub apenas enriquece com metadata, não "rouba" a ownership.
@@ -83,14 +93,11 @@ export async function commitGithubImport({
         description: mergedDescription,
         repositoryUrl: existing.repositoryUrl || githubService.repositoryUrl,
         technology: mergedTechnology,
-        tags: mergedTags,
+        tags: finalTags,
         source: keepSource ? existing.source : "github",
         sourceId: keepSource ? existing.sourceId : githubService.sourceId,
         metadata: {
-          github: {
-            ...(prevGithub ?? {}),
-            ...(githubService.metadata?.github ?? {}),
-          },
+          github: nextGithubMeta,
           defectdojo: prevDefectDojo,
         },
       });

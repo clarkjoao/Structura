@@ -68,9 +68,38 @@ export async function getCurrentUser(
   return client.get<DDUser>("/users/me/");
 }
 
+const DEFECTDOJO_CONFIG_KEY = "structura_defectdojo:config";
+const DEFECTDOJO_CONFIG_LEGACY_KEY = "structura:defectdojo:config";
+
+function getStoredDefectDojoBaseUrl(): string {
+  try {
+    const raw =
+      localStorage.getItem(DEFECTDOJO_CONFIG_KEY) ??
+      localStorage.getItem(DEFECTDOJO_CONFIG_LEGACY_KEY);
+    if (!raw) return "";
+    const parsed = JSON.parse(raw) as { baseUrl?: string };
+    return (parsed.baseUrl ?? "").replace(/\/+$/, "");
+  } catch {
+    return "";
+  }
+}
+
+export function buildDefectDojoProductLink(
+  productId: number | string,
+  baseUrl?: string,
+): string {
+  const normalizedBase = (baseUrl ?? getStoredDefectDojoBaseUrl()).replace(
+    /\/+$/,
+    "",
+  );
+  if (!normalizedBase) return "";
+  return `${normalizedBase}/product/${productId}`;
+}
+
 export function mapToServiceDefinition(
   product: DDProduct,
 ): Omit<ServiceDefinition, "id"> {
+  const productLink = buildDefectDojoProductLink(product.id);
   return {
     name: product.name,
     description: product.description || "",
@@ -81,6 +110,8 @@ export function mapToServiceDefinition(
     sourceId: String(product.id),
     metadata: {
       defectdojo: {
+        productId: product.id,
+        productLink,
         businessCriticality: product.business_criticality,
         platform: product.platform,
         lifecycle: product.lifecycle,

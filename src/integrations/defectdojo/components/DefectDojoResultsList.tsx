@@ -6,6 +6,7 @@ import type { DDSearchResult } from "../types";
 import { DefectDojoProductCard } from "./DefectDojoProductCard";
 import {
   dedupeStringsPreserveOrder,
+  ensureMergedSourceTags,
   pickMoreCompleteString,
   repoUrlsMatch,
 } from "../../merge-utils";
@@ -66,7 +67,33 @@ export function DefectDojoResultsList({
     for (const product of toImport) {
       const svcData = mapToServiceDefinition(product);
       if (product.status === "updated" && product.existingServiceId) {
-        store.updateService(product.existingServiceId, svcData);
+        const existingService = store.serviceRegistry[product.existingServiceId];
+        const mergedTech = dedupeStringsPreserveOrder([
+          ...(existingService?.technology ?? []),
+          ...(svcData.technology ?? []),
+        ]);
+        const mergedTags = dedupeStringsPreserveOrder([
+          ...(existingService?.tags ?? []),
+          ...(svcData.tags ?? []),
+        ]);
+        const shouldKeepMergedTags = Boolean(existingService?.metadata?.github);
+
+        store.updateService(product.existingServiceId, {
+          ...svcData,
+          repositoryUrl:
+            existingService?.repositoryUrl || svcData.repositoryUrl || "",
+          technology: mergedTech,
+          tags: shouldKeepMergedTags
+            ? ensureMergedSourceTags(mergedTags)
+            : mergedTags,
+          metadata: {
+            github: existingService?.metadata?.github,
+            defectdojo: {
+              ...(existingService?.metadata?.defectdojo ?? {}),
+              ...(svcData.metadata?.defectdojo ?? {}),
+            },
+          },
+        });
         updatedCount++;
         continue;
       } else {
@@ -93,10 +120,12 @@ export function DefectDojoResultsList({
               ...(githubExisting.technology ?? []),
               ...(svcData.technology ?? []),
             ]),
-            tags: dedupeStringsPreserveOrder([
-              ...(githubExisting.tags ?? []),
-              ...(svcData.tags ?? []),
-            ]),
+            tags: ensureMergedSourceTags(
+              dedupeStringsPreserveOrder([
+                ...(githubExisting.tags ?? []),
+                ...(svcData.tags ?? []),
+              ]),
+            ),
             // DefectDojo é a fonte primária de catálogo — assume a ownership
             source: "defectdojo",
             sourceId: svcData.sourceId,

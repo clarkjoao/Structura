@@ -55,3 +55,11 @@ export function repoUrlsMatch(
   const nb = normalizeRepoUrl(b);
   return na !== "" && na === nb;
 }
+
+export function ensureMergedSourceTags(tags: string[] | undefined): string[] {
+  return dedupeStringsPreserveOrder([
+    ...(tags ?? []),
+    "Defect Dojo",
+    "Github",
+  ]);
+}
