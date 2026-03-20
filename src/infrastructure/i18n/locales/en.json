@@ -330,15 +330,23 @@
     "laneColor": "Lane color"
   },
   "elementPicker": {
+    "categoryAll": "All",
+    "viewAll": "View all",
+    "viewAllRegistry": "View all in Registry",
     "registry": "Registry",
     "modalTitle": "Add element",
     "searchPlaceholder": "Search elements and registry...",
+    "searchPlaceholderUnified": "Search elements, AWS, registry…",
     "frequentlyUsed": "Frequently used",
-    "noResultsFor": "No results for “{{query}}”",
+    "noResultsFor": "No element found for “{{query}}”",
     "onCanvas": "On canvas",
     "addButton": "+ Add",
+    "addAnotherInstance": "Add another instance to the canvas",
     "c4Model": "C4 Model",
-    "canvasGroups": "Canvas & groups"
+    "canvasGroups": "Canvas & Groups",
+    "awsOther": "Other",
+    "registryEmpty": "No services in the registry yet.",
+    "openRegistry": "Open registry"
   },
   "patterns": {
     "searchPlaceholder": "Search patterns by name, description or components...",
