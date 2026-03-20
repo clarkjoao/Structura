@@ -7,13 +7,20 @@ import type { Node, Edge, OnEdgesChange, OnConnect, OnConnectEnd, Connection } f
 import type { CanvasVisualState } from "./useCanvasVisualState";
 import { useRecordingMode } from "../flow/RecordingModeContext";
 import { isPanelType, isNoteType, isEndpointType } from "@/features/diagram";
+import type { EdgeStyle } from "@/features/diagram";
+import { getLastEdgeStyle } from "@/features/diagram/hooks/useLastEdgeStyle";
 
 interface UseCanvasEventHandlersParams {
   visualState: CanvasVisualState;
   isPlaying: boolean;
   isFlowPanelOpen: boolean;
   updateViewport: (vp: { x: number; y: number; zoom: number }) => void;
-  addConnection: (source: string, target: string, label: string) => void;
+  addConnection: (
+    source: string,
+    target: string,
+    label: string,
+    edgeStyle?: EdgeStyle,
+  ) => void;
   screenToFlowPosition: (pos: { x: number; y: number }) => { x: number; y: number };
   onRequestFocusTitle?: () => void;
 }
@@ -49,7 +56,9 @@ export function useCanvasEventHandlers({
 
   const onConnect: OnConnect = useCallback(
     (c: Connection) => {
-      if (c.source && c.target) addConnection(c.source, c.target, "Usa");
+      if (c.source && c.target) {
+        addConnection(c.source, c.target, "Usa", getLastEdgeStyle());
+      }
     },
     [addConnection],
   );

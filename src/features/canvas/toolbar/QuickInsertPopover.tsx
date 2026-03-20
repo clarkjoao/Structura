@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { User, Network, Server, Database } from "lucide-react";
 import { useDiagramActions, useAllServices } from "@/features/diagram";
 import type { ComponentType } from "@/features/diagram";
+import { getLastEdgeStyle } from "@/features/diagram/hooks/useLastEdgeStyle";
 
 const C4_OPTIONS: {
   type: ComponentType;
@@ -83,7 +84,7 @@ const QuickInsertPopover = ({
       y: flowPos.y + 20,
     });
     if (sourceNodeId) {
-      addConnection(sourceNodeId, comp.id, "Usa");
+      addConnection(sourceNodeId, comp.id, "Usa", getLastEdgeStyle());
     }
     onInsert(comp.id);
   };
@@ -95,7 +96,7 @@ const QuickInsertPopover = ({
     });
     linkComponentToService(comp.id, serviceId);
     if (sourceNodeId) {
-      addConnection(sourceNodeId, comp.id, "Usa");
+      addConnection(sourceNodeId, comp.id, "Usa", getLastEdgeStyle());
     }
     onInsert(comp.id);
   };

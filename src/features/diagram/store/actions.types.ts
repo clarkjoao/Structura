@@ -11,6 +11,7 @@ import type {
   PanelKind,
 } from "../model/diagram.types";
 import type { ServiceDefinition } from "../model/service.types";
+import type { EdgeStyle } from "../model/connection.types";
 
 export interface AppActions {
   addDiagram: (name: string, level: Level, domain?: string, folderId?: string | null) => Diagram;
@@ -34,7 +35,12 @@ export interface AppActions {
   removeComponent: (id: string) => void;
   updateHandleOrder: (componentId: string, side: "incoming" | "outgoing", orderedConnectionIds: string[]) => void;
 
-  addConnection: (sourceId: string, targetId: string, label: string) => Connection;
+  addConnection: (
+    sourceId: string,
+    targetId: string,
+    label: string,
+    edgeStyle?: EdgeStyle,
+  ) => Connection;
   updateConnection: (id: string, patch: Partial<Omit<Connection, "id">>) => void;
   removeConnection: (id: string) => void;
 

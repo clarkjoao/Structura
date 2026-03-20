@@ -1,4 +1,5 @@
 import type { Connection } from "../../model/diagram.types";
+import type { EdgeStyle } from "../../model/connection.types";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
@@ -7,12 +8,20 @@ export const connectionsSlice = (
   set: (fn: (state: AppState) => void) => void,
   get: () => AppState,
 ) => ({
-    addConnection: (sourceId: string, targetId: string, label: string): Connection => {
+    addConnection: (
+      sourceId: string,
+      targetId: string,
+      label: string,
+      edgeStyle: EdgeStyle = "smoothstep",
+    ): Connection => {
       const connection: Connection = {
         id: generateId("conn"),
         sourceId,
         targetId,
         label,
+        style: {
+          edgeStyle,
+        },
       };
       set((state) => {
         const d = state.diagrams[state.activeDiagramId!];

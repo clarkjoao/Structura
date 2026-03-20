@@ -59,7 +59,7 @@ const Edge = memo(
       sourcePosition,
       targetPosition,
     };
-    const styleKey = d?.edgeStyle ?? "straight";
+    const styleKey = d?.edgeStyle ?? "smoothstep";
     let edgePath: string;
     let labelX: number;
     let labelY: number;

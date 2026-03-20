@@ -3,6 +3,7 @@ import debounce from "lodash.debounce";
 import { X, Trash2 } from "lucide-react";
 import type { Connection, ConnectionIntent, ConnectionDirection, EdgeStyle, StrokeStyle, EdgeMarker, ConnectionStyle } from "@/features/diagram";
 import { INTENT_DEFAULTS } from "@/features/diagram";
+import { saveLastEdgeStyle } from "@/features/diagram/hooks/useLastEdgeStyle";
 import { cn } from "@/lib/utils";
 import Field from "./components/Field";
 import TechnologyCombobox from "./components/TechnologyCombobox";
@@ -25,8 +26,17 @@ const DIRECTION_PILLS: { value: ConnectionDirection; label: string }[] = [
   { value: "unidirectional", label: "→ Unidirecional" }, { value: "bidirectional", label: "↔ Bidirecional" }, { value: "reverse", label: "← Reverso" },
 ];
 
-const EDGE_STYLE_OPTIONS: { value: EdgeStyle; label: string }[] = [
-  { value: "straight", label: "Reta" }, { value: "bezier", label: "Curva" }, { value: "step", label: "Step" }, { value: "smoothstep", label: "Suave" },
+type EdgeStyleOption = {
+  value: "straight" | "bezier" | "step" | "smoothstep";
+  label: string;
+  icon: string;
+};
+
+const EDGE_STYLE_OPTIONS: EdgeStyleOption[] = [
+  { value: "straight", label: "Reta", icon: "M 4 20 L 20 4" },
+  { value: "bezier", label: "Ortogonal", icon: "M 4 20 H 12 V 4 H 20" },
+  { value: "step", label: "Degrau", icon: "M 4 20 H 12 V 4 H 20" },
+  { value: "smoothstep", label: "Suave", icon: "M 4 20 C 4 12 20 12 20 4" },
 ];
 const STROKE_OPTIONS: { value: StrokeStyle; label: string }[] = [
   { value: "solid", label: "Sólida" }, { value: "dashed", label: "Tracejada" }, { value: "dotted", label: "Pontilhada" },
@@ -64,6 +74,17 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
   const applyPatch = (patch: Partial<Omit<Connection, "id">>) => updateConnection(conn.id, patch);
   const applyStyle = (stylePatch: Partial<ConnectionStyle>) =>
     applyPatch({ style: { ...conn.style, ...stylePatch } });
+  const currentStyle = conn.style?.edgeStyle ?? "smoothstep";
+  const onUpdateEdgeStyle = (newStyle: EdgeStyleOption["value"]) => {
+    saveLastEdgeStyle(newStyle);
+    applyPatch({
+      style: {
+        ...(conn.style ?? {}),
+        edgeStyle: newStyle,
+        waypoints: undefined,
+      } as ConnectionStyle,
+    });
+  };
 
   return (
     <div className="flex flex-col w-80 h-full border-l border-border bg-card overflow-hidden">
@@ -97,6 +118,39 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
               <button key={p.value} type="button" onClick={() => applyPatch({ direction: p.value })}
                 className={cn("rounded-full px-2.5 py-1 text-xs font-medium transition-colors", (conn.direction ?? "unidirectional") === p.value ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground")}
               >{p.label}</button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Estilo da Linha
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {EDGE_STYLE_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => onUpdateEdgeStyle(opt.value)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                  currentStyle === opt.value
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                >
+                  <path d={opt.icon} />
+                </svg>
+                {opt.label}
+              </button>
             ))}
           </div>
         </div>

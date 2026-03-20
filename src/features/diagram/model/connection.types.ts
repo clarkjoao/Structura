@@ -2,6 +2,11 @@ export type EdgeStyle = "straight" | "bezier" | "step" | "smoothstep";
 export type StrokeStyle = "solid" | "dashed" | "dotted";
 export type EdgeMarker = "arrow" | "arrowclosed" | "none";
 
+export interface WaypointPosition {
+  x: number;
+  y: number;
+}
+
 export type ConnectionIntent =
   | "dependency"
   | "call"
@@ -21,6 +26,7 @@ export interface ConnectionStyle {
   markerEnd?: EdgeMarker;
   markerStart?: EdgeMarker;
   animated?: boolean;
+  waypoints?: WaypointPosition[];
 }
 
 export interface Connection {
