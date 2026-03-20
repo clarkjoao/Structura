@@ -188,6 +188,39 @@ export function useCanvasEventHandlers({
     clearCanvasSelection();
   }, [clearCanvasSelection]);
 
+  const onPaneContextMenu = useCallback(
+    (event: React.MouseEvent) => {
+      event.preventDefault();
+      if (isRecording || isPlaying || isFlowPanelOpen) return;
+      if (visualState.selectedNodeId || visualState.selectedEdgeId || visualState.selectedNodeIds.size > 0) {
+        return;
+      }
+      clearHighlight();
+      setContextMenu(null);
+      const flowPos = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+      setQuickInsert({
+        screenPos: { x: event.clientX, y: event.clientY },
+        flowPos,
+        sourceNodeId: null,
+      });
+    },
+    [
+      isRecording,
+      isPlaying,
+      isFlowPanelOpen,
+      visualState.selectedNodeId,
+      visualState.selectedEdgeId,
+      visualState.selectedNodeIds,
+      clearHighlight,
+      setContextMenu,
+      screenToFlowPosition,
+      setQuickInsert,
+    ],
+  );
+
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: Node) => {
       if (isRecording) return;
@@ -224,6 +257,7 @@ export function useCanvasEventHandlers({
     onEdgeDoubleClick,
     onSelectionChange,
     onPaneClick,
+    onPaneContextMenu,
     onNodeContextMenu,
     handleQuickInsert,
     closePanel,

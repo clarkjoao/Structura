@@ -177,6 +177,11 @@ export default function ShortcutsModal({
 
             <ShortcutCard title="Criação rápida (C4)">
               <ShortcutRow
+                label="Abrir Quick Insert no canvas"
+                description="Clique com botão direito em área vazia (sem seleção e fora de flow play/record)"
+                keys={<Kbd>Botão direito</Kbd>}
+              />
+              <ShortcutRow
                 label="Adicionar Person"
                 keys={
                   <span className="inline-flex items-center gap-1">

@@ -294,7 +294,7 @@ const Canvas = ({
               onNodeDoubleClick={eventHandlers.onNodeDoubleClick}
               onEdgeDoubleClick={eventHandlers.onEdgeDoubleClick}
               onPaneClick={eventHandlers.onPaneClick}
-              onPaneContextMenu={(e) => e.preventDefault()}
+              onPaneContextMenu={eventHandlers.onPaneContextMenu}
               onNodeContextMenu={eventHandlers.onNodeContextMenu}
               onNodeDragStop={onNodeDragStop}
               onSelectionChange={eventHandlers.onSelectionChange}

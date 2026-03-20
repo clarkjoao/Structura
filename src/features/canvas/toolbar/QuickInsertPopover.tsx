@@ -20,7 +20,7 @@ const POPOVER_H_MAX = 320;
 interface QuickInsertPopoverProps {
   screenPos: { x: number; y: number };
   flowPos: { x: number; y: number };
-  sourceNodeId: string;
+  sourceNodeId?: string | null;
   onInsert: (newNodeId: string) => void;
   onClose: () => void;
 }
@@ -82,7 +82,9 @@ const QuickInsertPopover = ({
       x: flowPos.x + 20,
       y: flowPos.y + 20,
     });
-    addConnection(sourceNodeId, comp.id, "Usa");
+    if (sourceNodeId) {
+      addConnection(sourceNodeId, comp.id, "Usa");
+    }
     onInsert(comp.id);
   };
 
@@ -92,7 +94,9 @@ const QuickInsertPopover = ({
       y: flowPos.y + 20,
     });
     linkComponentToService(comp.id, serviceId);
-    addConnection(sourceNodeId, comp.id, "Usa");
+    if (sourceNodeId) {
+      addConnection(sourceNodeId, comp.id, "Usa");
+    }
     onInsert(comp.id);
   };
 

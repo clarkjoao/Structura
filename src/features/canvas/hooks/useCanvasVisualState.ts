@@ -20,7 +20,7 @@ export interface CanvasVisualState {
   quickInsert: {
     screenPos: { x: number; y: number };
     flowPos: { x: number; y: number };
-    sourceNodeId: string;
+    sourceNodeId?: string | null;
   } | null;
   setQuickInsert: (value: CanvasVisualState["quickInsert"]) => void;
   clearCanvasSelection: () => void;
@@ -40,7 +40,7 @@ export function useCanvasVisualState(): CanvasVisualState {
   const [quickInsert, setQuickInsert] = useState<{
     screenPos: { x: number; y: number };
     flowPos: { x: number; y: number };
-    sourceNodeId: string;
+    sourceNodeId?: string | null;
   } | null>(null);
 
   const emptySet = useRef(new Set<string>()).current;
