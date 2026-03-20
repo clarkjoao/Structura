@@ -1,4 +1,5 @@
 import { i18n } from "@/infrastructure/i18n";
+import { HandleSide } from "@/features/canvas/enums";
 
 export function buildReorderControls(
   connIds: string[],
@@ -13,7 +14,7 @@ export function buildReorderControls(
   const filtered = connIds.filter(Boolean);
   const n = filtered.length;
   if (n <= 1) return null;
-  const posClass = side === "incoming" ? "left-3" : "right-3";
+  const posClass = side === HandleSide.Incoming ? "left-3" : "right-3";
   return filtered.map((connId, i) => {
     const topPct = ((i + 1) / (n + 1)) * 100;
     return (

@@ -8,6 +8,7 @@ import {
   useDiagramActions,
   applyHandleOrder,
 } from "@/features/diagram";
+import { HandleSide } from "@/features/canvas/enums";
 import type { ComponentType, Connection } from "@/features/diagram";
 import { useHandleHighlight } from "../../../contexts/HandleHighlightContext";
 import { Network as NetworkIcon, Server, Database, User } from "lucide-react";
@@ -225,7 +226,7 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
   ) => {
     e.preventDefault();
     if (!dragState || dragState.side !== side) return;
-    const list = side === "incoming" ? incoming : outgoing;
+    const list = side === HandleSide.Incoming ? incoming : outgoing;
     const oldIdx = list.findIndex((c) => c.id === dragState.connId);
     const newIdx = list.findIndex((c) => c.id === targetConnId);
     if (oldIdx === -1 || newIdx === -1 || oldIdx === newIdx) {

@@ -13,6 +13,7 @@ import { isPanelComponent, isNoteComponent, isC4Component, isSystemType, isConta
 import { isAwsType, AWS_CATEGORIES, AWS_CATEGORY_MAP, AWS_SERVICE_MAP } from "@/lib/catalogs/aws";
 import { PANEL_KINDS, getPanelKindDef } from "@/lib/catalogs/panels";
 import { PanelKind } from "@/features/diagram";
+import { SwimlaneOrientation } from "@/features/canvas/enums";
 import AwsIcon from "../../nodes/AwsIcon";
 import Field from "./components/Field";
 import TabBar, { type Tab } from "./components/TabBar";
@@ -31,7 +32,7 @@ function mergeSwimlane(
   partial: Partial<SwimlaneStyle>,
 ): SwimlaneStyle {
   return {
-    orientation: partial.orientation ?? current?.orientation ?? "horizontal",
+    orientation: partial.orientation ?? current?.orientation ?? SwimlaneOrientation.Horizontal,
     laneColor: partial.laneColor ?? current?.laneColor ?? "#6366f1",
     ...(partial.laneLabel !== undefined
       ? { laneLabel: partial.laneLabel }
@@ -244,7 +245,7 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
                         panelKind: kind,
                         panelColor: def.defaultColor,
                         swimlane: {
-                          orientation: "horizontal",
+                          orientation: SwimlaneOrientation.Horizontal,
                           laneColor: "#6366f1",
                           laneLabel: t("swimlane.defaultLaneLabel"),
                         },
@@ -294,12 +295,12 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
                         onClick={() => {
                           updateComponent(component.id, {
                             swimlane: mergeSwimlane(component.swimlane, {
-                              orientation: "horizontal",
+                              orientation: SwimlaneOrientation.Horizontal,
                             }),
                           } as ComponentPatch);
                         }}
                         className={`flex-1 rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
-                          (component.swimlane?.orientation ?? "horizontal") === "horizontal"
+                          (component.swimlane?.orientation ?? SwimlaneOrientation.Horizontal) === SwimlaneOrientation.Horizontal
                             ? "border-primary bg-primary/10 text-foreground"
                             : "border-border bg-secondary text-muted-foreground hover:text-foreground"
                         }`}
@@ -311,12 +312,12 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
                         onClick={() => {
                           updateComponent(component.id, {
                             swimlane: mergeSwimlane(component.swimlane, {
-                              orientation: "vertical",
+                              orientation: SwimlaneOrientation.Vertical,
                             }),
                           } as ComponentPatch);
                         }}
                         className={`flex-1 rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
-                          component.swimlane?.orientation === "vertical"
+                          component.swimlane?.orientation === SwimlaneOrientation.Vertical
                             ? "border-primary bg-primary/10 text-foreground"
                             : "border-border bg-secondary text-muted-foreground hover:text-foreground"
                         }`}
