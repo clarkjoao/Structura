@@ -24,7 +24,7 @@ export function DefectDojoPanel() {
   const [configOpen, setConfigOpen] = useState(!isConfigured);
   const [lastQuery, setLastQuery] = useState<{
     query: string;
-    filters: { prodType?: number; searchField?: DDProductSearchField };
+    filters: { prodType?: number; searchField?: DDProductSearchField; limit?: number };
   } | null>(null);
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export function DefectDojoPanel() {
 
   const handleSearch = (
     query: string,
-    filters: { prodType?: number; searchField?: DDProductSearchField },
+    filters: { prodType?: number; searchField?: DDProductSearchField; limit?: number },
   ) => {
     setLastQuery({ query, filters });
     search(query, filters);

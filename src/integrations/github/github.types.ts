@@ -50,6 +50,9 @@ export interface GHSearchFilters {
   user?: string;
   language?: string;
   hideArchived?: boolean;
+  hideForks?: boolean;
+  minStars?: number;
+  perPage?: number;
 }
 
 /**
@@ -98,6 +101,14 @@ export function buildGithubQuery(
 
   if (filters.hideArchived) {
     parts.push("archived:false");
+  }
+
+  if (filters.hideForks) {
+    parts.push("fork:false");
+  }
+
+  if (filters.minStars && filters.minStars > 0) {
+    parts.push(`stars:>=${filters.minStars}`);
   }
 
   return parts.join(" ");

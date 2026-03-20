@@ -14,11 +14,12 @@ export function detectConflicts(
   const conflicts: MergeConflict[] = [];
 
   for (const repo of repos) {
-    const existingService = existingServices.find((svc) =>
+    // Find ALL matching services (a repo may match both a GitHub and DefectDojo entry)
+    const matchingServices = existingServices.filter((svc) =>
       repoUrlsMatch(svc.repositoryUrl, repo.html_url),
     );
 
-    if (existingService) {
+    for (const existingService of matchingServices) {
       conflicts.push({ repo, existingService });
     }
   }

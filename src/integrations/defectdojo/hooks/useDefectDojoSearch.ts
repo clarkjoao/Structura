@@ -39,7 +39,7 @@ export function useDefectDojoSearch(config: DefectDojoConfig | null) {
   const search = useCallback(
     async (
       query: string,
-      filters: { prodType?: number; searchField?: DDProductSearchField },
+      filters: { prodType?: number; searchField?: DDProductSearchField; limit?: number },
     ) => {
       if (!config) return;
       setLoading(true);
