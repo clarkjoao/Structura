@@ -308,7 +308,7 @@ const Canvas = ({
               deleteKeyCode={null}
               zoomOnDoubleClick={false}
               minZoom={0.3}
-              maxZoom={1}
+              maxZoom={1.5}
               multiSelectionKeyCode="Meta"
               defaultViewport={diagram.viewport}
               fitView
