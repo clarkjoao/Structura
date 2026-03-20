@@ -81,6 +81,8 @@ export function buildEdge(
       edgeStyle: conn.style?.edgeStyle ?? "smoothstep",
       strokeStyle: effective.strokeStyle,
       strokeWidth: effective.strokeWidth,
+      labelPosition: conn.style?.labelPosition,
+      connectionStyle: conn.style,
     },
     selected: params.selectedEdgeId === conn.id,
     animated: isActiveConn || (effective.animated && !params.isPlaying),

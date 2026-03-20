@@ -1,13 +1,19 @@
-import { memo } from "react";
+import { memo, useMemo, useRef } from "react";
 import {
   BaseEdge,
   EdgeLabelRenderer,
   getStraightPath,
   getBezierPath,
   getSmoothStepPath,
+  useReactFlow,
   type EdgeProps,
 } from "@xyflow/react";
-import type { EdgeStyle, StrokeStyle } from "@/features/diagram";
+import {
+  useDiagramActions,
+  type ConnectionStyle,
+  type EdgeStyle,
+  type StrokeStyle,
+} from "@/features/diagram";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 
 export interface EdgeData {
@@ -24,6 +30,8 @@ export interface EdgeData {
   edgeStyle?: EdgeStyle;
   strokeStyle?: StrokeStyle;
   strokeWidth?: number;
+  labelPosition?: number;
+  connectionStyle?: ConnectionStyle;
 }
 
 const strokeDasharrayByStyle: Record<
@@ -34,6 +42,57 @@ const strokeDasharrayByStyle: Record<
   dashed: "8 4",
   dotted: "2 4",
 };
+
+function clampLabelPosition(value: number | undefined): number {
+  if (typeof value !== "number" || Number.isNaN(value)) return 0.5;
+  return Math.max(0, Math.min(1, value));
+}
+
+function getLabelPointOnPath(
+  path: string,
+  t: number,
+  fallbackX: number,
+  fallbackY: number,
+): { x: number; y: number } {
+  if (typeof document === "undefined") {
+    return { x: fallbackX, y: fallbackY };
+  }
+
+  try {
+    const svgPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    svgPath.setAttribute("d", path);
+    const length = svgPath.getTotalLength();
+    const point = svgPath.getPointAtLength(length * clampLabelPosition(t));
+    return { x: point.x, y: point.y };
+  } catch {
+    return { x: fallbackX, y: fallbackY };
+  }
+}
+
+function getClosestLabelPositionOnPath(
+  path: SVGPathElement,
+  x: number,
+  y: number,
+): number {
+  const totalLength = path.getTotalLength();
+  const samples = 80;
+  let bestT = 0.5;
+  let bestDistSq = Number.POSITIVE_INFINITY;
+
+  for (let i = 0; i <= samples; i += 1) {
+    const t = i / samples;
+    const p = path.getPointAtLength(totalLength * t);
+    const dx = p.x - x;
+    const dy = p.y - y;
+    const distSq = dx * dx + dy * dy;
+    if (distSq < bestDistSq) {
+      bestDistSq = distSq;
+      bestT = t;
+    }
+  }
+
+  return bestT;
+}
 
 const Edge = memo(
   ({
@@ -49,6 +108,12 @@ const Edge = memo(
     markerEnd,
     markerStart,
   }: EdgeProps) => {
+    const { screenToFlowPosition } = useReactFlow();
+    const { updateConnection } = useDiagramActions();
+    const dragPathRef = useRef<SVGPathElement | null>(null);
+    const lastSentPositionRef = useRef<number>(
+      clampLabelPosition((data as unknown as EdgeData | undefined)?.labelPosition),
+    );
     const d = data as unknown as EdgeData;
     const { highlightedConnectionId } = useHandleHighlight();
     const pathParams = {
@@ -79,8 +144,55 @@ const Edge = memo(
     const strokeStyle = d?.strokeStyle ?? "solid";
     const dashArray = strokeDasharrayByStyle[strokeStyle];
     const strokeWidth = d?.strokeWidth ?? 1;
+    const labelPosition = clampLabelPosition(d?.labelPosition);
+    const labelPoint = getLabelPointOnPath(edgePath, labelPosition, labelX, labelY);
+    const dragPath = useMemo(() => {
+      if (typeof document === "undefined") return null;
+      try {
+        const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        p.setAttribute("d", edgePath);
+        return p;
+      } catch {
+        return null;
+      }
+    }, [edgePath]);
     const isHighlighted =
       selected || highlightedConnectionId === d.connectionId;
+
+    const commitLabelPosition = (nextPosition: number) => {
+      const safePosition = clampLabelPosition(nextPosition);
+      if (Math.abs(lastSentPositionRef.current - safePosition) < 0.005) return;
+      lastSentPositionRef.current = safePosition;
+      updateConnection(d.connectionId, {
+        style: {
+          ...(d.connectionStyle ?? {}),
+          labelPosition: safePosition,
+        },
+      });
+    };
+
+    const handleLabelPointerDown: React.PointerEventHandler<HTMLDivElement> = (event) => {
+      if (!dragPath) return;
+      event.preventDefault();
+      event.stopPropagation();
+      dragPathRef.current = dragPath;
+      lastSentPositionRef.current = labelPosition;
+      event.currentTarget.setPointerCapture(event.pointerId);
+    };
+
+    const handleLabelPointerMove: React.PointerEventHandler<HTMLDivElement> = (event) => {
+      if (!dragPathRef.current || !event.currentTarget.hasPointerCapture(event.pointerId)) return;
+      const flowPoint = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      const position = getClosestLabelPositionOnPath(dragPathRef.current, flowPoint.x, flowPoint.y);
+      commitLabelPosition(position);
+    };
+
+    const handleLabelPointerUp: React.PointerEventHandler<HTMLDivElement> = (event) => {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+      dragPathRef.current = null;
+    };
 
     return (
       <>
@@ -122,9 +234,13 @@ const Edge = memo(
         {d?.label && (
           <EdgeLabelRenderer>
             <div
-              className="absolute pointer-events-auto cursor-pointer"
+              className="absolute pointer-events-auto cursor-grab active:cursor-grabbing"
+              onPointerDown={handleLabelPointerDown}
+              onPointerMove={handleLabelPointerMove}
+              onPointerUp={handleLabelPointerUp}
+              onPointerCancel={handleLabelPointerUp}
               style={{
-                transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+                transform: `translate(-50%, -50%) translate(${labelPoint.x}px, ${labelPoint.y}px)`,
               }}
             >
               <div
@@ -166,7 +282,7 @@ const Edge = memo(
             <div
               className="absolute pointer-events-none"
               style={{
-                transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY + (d?.label ? 52 : 16)}px)`,
+                transform: `translate(-50%, -50%) translate(${labelPoint.x}px, ${labelPoint.y + (d?.label ? 52 : 16)}px)`,
               }}
             >
               <div className={`rounded-md border bg-card/95 backdrop-blur-sm px-2.5 py-1.5 shadow-lg min-w-[160px] max-w-[260px] ${

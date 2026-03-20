@@ -26,6 +26,7 @@ export interface ConnectionStyle {
   markerEnd?: EdgeMarker;
   markerStart?: EdgeMarker;
   animated?: boolean;
+  labelPosition?: number;
   waypoints?: WaypointPosition[];
 }
 
