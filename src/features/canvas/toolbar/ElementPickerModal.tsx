@@ -22,6 +22,7 @@ import type { LucideIcon } from "lucide-react";
 import { PANEL_KINDS, getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
 import { useReactFlow } from "@xyflow/react";
 import { useDiagramActions, useAllServices, useAllComponents, ServiceSource, PanelKind } from "@/features/diagram";
+import { ElementCategory } from "../enums";
 import type { ComponentType } from "@/features/diagram";
 import type { ServiceDefinition } from "@/features/diagram";
 import { getUsageKeyForType, getDefaultNameForNewComponent, isPanelType } from "@/features/diagram";
@@ -37,8 +38,6 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 const LAST_CATEGORY_KEY = "structura:lastElementCategory";
-
-type Category = "all" | "c4" | "canvas" | "aws" | "registry";
 
 /** Popular AWS services shown on the "All" tab (order preserved). */
 const AWS_SPOTLIGHT_IDS: string[] = [
@@ -84,17 +83,18 @@ const AWS_PRIMARY_CATEGORY_IDS: string[] = [
 
 const OTHER_AWS_SECTION_KEY = "__aws_other__";
 
-function readStoredCategory(): Category {
+function readStoredCategory(): ElementCategory {
   try {
     const v = localStorage.getItem(LAST_CATEGORY_KEY);
-    if (v === "all" || v === "c4" || v === "canvas" || v === "aws" || v === "registry") return v;
+    const valid = Object.values(ElementCategory).includes(v as ElementCategory);
+    if (valid) return v as ElementCategory;
   } catch {
     /* ignore */
   }
-  return "all";
+  return ElementCategory.All;
 }
 
-function persistCategory(cat: Category) {
+function persistCategory(cat: ElementCategory) {
   try {
     localStorage.setItem(LAST_CATEGORY_KEY, cat);
   } catch {
@@ -167,7 +167,7 @@ function PickerSectionHeader({
 const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState<Category>(() => readStoredCategory());
+  const [activeCategory, setActiveCategory] = useState<ElementCategory>(() => readStoredCategory());
   const [expandedAwsSubcats, setExpandedAwsSubcats] = useState<Set<string>>(
     () => new Set(["aws-compute"]),
   );
@@ -363,31 +363,31 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const categoryItems = useMemo(
     () => [
       {
-        id: "all" as const,
+        id: ElementCategory.All,
         label: t("elementPicker.categoryAll"),
         icon: LayoutGrid,
         count: allCategoryTotalCount,
       },
       {
-        id: "c4" as const,
+        id: ElementCategory.C4,
         label: t("elementPicker.c4Model"),
         icon: Layers,
         count: C4_OPTIONS.length,
       },
       {
-        id: "canvas" as const,
+        id: ElementCategory.Canvas,
         label: t("elementPicker.canvasGroups"),
         icon: LayoutTemplate,
         count: CANVAS_OPTIONS.length,
       },
       {
-        id: "aws" as const,
+        id: ElementCategory.Aws,
         label: t("canvasToolbar.awsServices"),
         icon: Cloud,
         count: awsServiceCount,
       },
       {
-        id: "registry" as const,
+        id: ElementCategory.Registry,
         label: t("elementPicker.registry"),
         icon: Server,
         count: services.length,
@@ -396,7 +396,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     [t, allCategoryTotalCount, C4_OPTIONS.length, CANVAS_OPTIONS.length, awsServiceCount, services.length],
   );
 
-  const setCategory = (cat: Category) => {
+  const setCategory = (cat: ElementCategory) => {
     setActiveCategory(cat);
     setSearch("");
   };
@@ -420,7 +420,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     <button
       key={
         isPanelType(opt.type)
-          ? `panel-${opt.panelKind ?? "default"}`
+          ? `panel-${opt.panelKind ?? PanelKind.Default}`
           : opt.type
       }
       type="button"
@@ -579,7 +579,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
           sectionLabel={t("canvasToolbar.awsServices")}
           showViewAll
           viewAllLabel={t("elementPicker.viewAll")}
-          onViewAll={() => setCategory("aws")}
+          onViewAll={() => setCategory(ElementCategory.Aws)}
         />
         <div className="grid grid-cols-5 gap-2">
           {awsSpotlight.map(({ svc, categoryId }) => (
@@ -618,7 +618,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
               sectionLabel={t("elementPicker.registry")}
               showViewAll={services.length > REGISTRY_PREVIEW_LIMIT}
               viewAllLabel={t("elementPicker.viewAllRegistry")}
-              onViewAll={() => setCategory("registry")}
+              onViewAll={() => setCategory(ElementCategory.Registry)}
             />
             <div className="space-y-2">
               {services.slice(0, REGISTRY_PREVIEW_LIMIT).map((svc) => {
@@ -664,15 +664,15 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
 
   const renderCategoryBody = () => {
     switch (activeCategory) {
-      case "all":
+      case ElementCategory.All:
         return renderAllView();
-      case "c4":
+      case ElementCategory.C4:
         return <div className="grid grid-cols-4 gap-3">{C4_OPTIONS.map(c4GridCard)}</div>;
-      case "canvas":
+      case ElementCategory.Canvas:
         return <div className="grid grid-cols-4 gap-3">{CANVAS_OPTIONS.map(canvasGridCard)}</div>;
-      case "aws":
+      case ElementCategory.Aws:
         return renderAwsBrowse();
-      case "registry":
+      case ElementCategory.Registry:
         return renderRegistryList();
       default:
         return null;
