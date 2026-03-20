@@ -2,7 +2,8 @@
  * Central constants and type guards for ComponentType and PanelKind.
  * Use these instead of string literals (e.g. type === "panel") across the codebase.
  */
-import type { ComponentType, PanelKind } from "./component.types";
+import { PanelKind } from "../enums";
+import type { ComponentType } from "./component.types";
 import { isAwsType } from "@/lib/catalogs/aws";
 import i18n from "@/infrastructure/i18n";
 
@@ -24,20 +25,20 @@ export const CANVAS_API_TYPES = [COMPONENT_TYPE_API_GROUP, COMPONENT_TYPE_ENDPOI
 
 /** All PanelKind values for runtime validation */
 export const PANEL_KIND_VALUES: readonly PanelKind[] = [
-  "default",
-  "availability-zone",
-  "eks-cluster",
-  "ecs-cluster",
-  "auto-scaling-group",
-  "vpc",
-  "public-subnet",
-  "private-subnet",
-  "swimlane",
+  PanelKind.Default,
+  PanelKind.AvailabilityZone,
+  PanelKind.EksCluster,
+  PanelKind.EcsCluster,
+  PanelKind.AutoScalingGroup,
+  PanelKind.Vpc,
+  PanelKind.PublicSubnet,
+  PanelKind.PrivateSubnet,
+  PanelKind.Swimlane,
 ];
 
 /** React Flow node `type` values that behave as parent panels (parenting / hit-testing). */
 export function isReactFlowParentPanelType(nodeType: string): boolean {
-  return nodeType === "panel" || nodeType === "swimlane";
+  return nodeType === COMPONENT_TYPE_PANEL || nodeType === PanelKind.Swimlane;
 }
 
 // --- Type guards for ComponentType (string) ---
@@ -80,7 +81,7 @@ export function isCanvasApiType(type: string): type is "api-group" | "endpoint" 
 
 /** Runtime check that value is a valid PanelKind */
 export function isPanelKind(value: string): value is PanelKind {
-  return (PANEL_KIND_VALUES as readonly string[]).includes(value);
+  return Object.values(PanelKind).includes(value as PanelKind);
 }
 
 // --- Usage key for analytics (element-usage-tracker) ---

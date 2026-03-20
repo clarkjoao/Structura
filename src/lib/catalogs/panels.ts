@@ -5,7 +5,7 @@
  */
 import type { LucideIcon } from "lucide-react";
 import { Square, MapPin, LayoutList } from "lucide-react";
-import type { PanelKind } from "@/features/diagram";
+import { PanelKind } from "@/features/diagram";
 
 export interface PanelKindDef {
   id: PanelKind;
@@ -20,14 +20,14 @@ export interface PanelKindDef {
 
 export const PANEL_KINDS: PanelKindDef[] = [
   {
-    id: "default",
+    id: PanelKind.Default,
     label: "Painel",
     defaultName: "Novo Painel",
     defaultColor: "hsl(220 20% 20%)",
     icon: Square,
   },
   {
-    id: "availability-zone",
+    id: PanelKind.AvailabilityZone,
     label: "Availability Zone",
     defaultName: "AZ-1",
     defaultColor: "hsl(45 60% 45%)",
@@ -35,7 +35,7 @@ export const PANEL_KINDS: PanelKindDef[] = [
     awsIconName: "ArchitectureGroupRegion",
   },
   {
-    id: "eks-cluster",
+    id: PanelKind.EksCluster,
     label: "EKS Cluster",
     defaultName: "EKS Cluster",
     defaultColor: "hsl(260 60% 45%)",
@@ -43,7 +43,7 @@ export const PANEL_KINDS: PanelKindDef[] = [
     awsIconName: "ArchitectureServiceAmazonElasticKubernetesService",
   },
   {
-    id: "ecs-cluster",
+    id: PanelKind.EcsCluster,
     label: "ECS Cluster",
     defaultName: "ECS Cluster",
     defaultColor: "hsl(200 70% 45%)",
@@ -51,7 +51,7 @@ export const PANEL_KINDS: PanelKindDef[] = [
     awsIconName: "ArchitectureServiceAmazonElasticContainerService",
   },
   {
-    id: "auto-scaling-group",
+    id: PanelKind.AutoScalingGroup,
     label: "Auto Scaling Group",
     defaultName: "ASG",
     defaultColor: "hsl(25 80% 48%)",
@@ -59,7 +59,7 @@ export const PANEL_KINDS: PanelKindDef[] = [
     awsIconName: "ArchitectureServiceAWSAutoScaling",
   },
   {
-    id: "vpc",
+    id: PanelKind.Vpc,
     label: "VPC",
     defaultName: "VPC",
     defaultColor: "hsl(220 50% 35%)",
@@ -67,7 +67,7 @@ export const PANEL_KINDS: PanelKindDef[] = [
     awsIconName: "ArchitectureGroupVirtualprivatecloudVPC",
   },
   {
-    id: "public-subnet",
+    id: PanelKind.PublicSubnet,
     label: "Public Subnet",
     defaultName: "Public Subnet",
     defaultColor: "hsl(150 50% 35%)",
@@ -75,7 +75,7 @@ export const PANEL_KINDS: PanelKindDef[] = [
     awsIconName: "ArchitectureGroupPublicsubnet",
   },
   {
-    id: "private-subnet",
+    id: PanelKind.PrivateSubnet,
     label: "Private Subnet",
     defaultName: "Private Subnet",
     defaultColor: "hsl(0 50% 38%)",
@@ -83,7 +83,7 @@ export const PANEL_KINDS: PanelKindDef[] = [
     awsIconName: "ArchitectureGroupPrivatesubnet",
   },
   {
-    id: "swimlane",
+    id: PanelKind.Swimlane,
     label: "Swim lane",
     defaultName: "Swim lane",
     defaultColor: "#6366f1",
@@ -95,16 +95,16 @@ export const PANEL_KIND_MAP = new Map(PANEL_KINDS.map((p) => [p.id, p]));
 
 /** AWS service IDs that should be added as panels (PanelKind) instead of AWS components */
 export const AWS_SERVICE_TO_PANEL_KIND: Record<string, PanelKind> = {
-  "eks": "eks-cluster",
-  "eks-2": "eks-cluster",
-  "ecs": "ecs-cluster",
-  "ecs-2": "ecs-cluster",
-  "auto-scaling": "auto-scaling-group",
-  "vpc": "vpc",
-  "aws-vpc-group": "vpc",
-  "public-subnet": "public-subnet",
-  "private-subnet": "private-subnet",
-  "aws-region": "availability-zone",
+  "eks": PanelKind.EksCluster,
+  "eks-2": PanelKind.EksCluster,
+  "ecs": PanelKind.EcsCluster,
+  "ecs-2": PanelKind.EcsCluster,
+  "auto-scaling": PanelKind.AutoScalingGroup,
+  "vpc": PanelKind.Vpc,
+  "aws-vpc-group": PanelKind.Vpc,
+  "public-subnet": PanelKind.PublicSubnet,
+  "private-subnet": PanelKind.PrivateSubnet,
+  "aws-region": PanelKind.AvailabilityZone,
 };
 
 export function getPanelKindForAwsService(serviceId: string): PanelKind | undefined {
@@ -112,5 +112,5 @@ export function getPanelKindForAwsService(serviceId: string): PanelKind | undefi
 }
 
 export function getPanelKindDef(kind: PanelKind | undefined): PanelKindDef {
-  return PANEL_KIND_MAP.get(kind ?? "default") ?? PANEL_KINDS[0];
+  return PANEL_KIND_MAP.get(kind ?? PanelKind.Default) ?? PANEL_KINDS[0];
 }

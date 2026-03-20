@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { User, Network, Server, Database, Square, StickyNote, Globe } from "lucide-react";
 import { useDiagramActions, useAllServices } from "@/features/diagram";
-import type { ComponentType, PanelKind } from "@/features/diagram";
+import { PanelKind, COMPONENT_TYPE_PANEL, COMPONENT_TYPE_NOTE, COMPONENT_TYPE_API_GROUP, COMPONENT_TYPE_ENDPOINT } from "@/features/diagram";
+import type { ComponentType } from "@/features/diagram";
 import { getDefaultNameForNewComponent } from "@/features/diagram";
 import { getLastEdgeStyle } from "@/features/diagram/hooks/useLastEdgeStyle";
 import { PANEL_KINDS, getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
@@ -36,16 +37,16 @@ function canvasOptionMatchesQuery(
   if (opt.panelKind) {
     fields.push(getPanelKindDef(opt.panelKind).defaultName.toLowerCase());
   }
-  if (opt.type === "panel") {
+  if (opt.type === COMPONENT_TYPE_PANEL) {
     fields.push(...synonyms.panel);
-    if (opt.panelKind === "swimlane") {
+    if (opt.panelKind === PanelKind.Swimlane) {
       fields.push(...synonyms.swimlane);
     }
-  } else if (opt.type === "note") {
+  } else if (opt.type === COMPONENT_TYPE_NOTE) {
     fields.push(...synonyms.note);
-  } else if (opt.type === "api-group") {
+  } else if (opt.type === COMPONENT_TYPE_API_GROUP) {
     fields.push(...synonyms.apiGroup);
-  } else if (opt.type === "endpoint") {
+  } else if (opt.type === COMPONENT_TYPE_ENDPOINT) {
     fields.push(...synonyms.endpoint);
   }
   return fields.some((f) => f.includes(q));
@@ -90,17 +91,17 @@ const QuickInsertPopover = ({
 
   const CANVAS_OPTIONS = useMemo(
     (): CanvasInsertOption[] => [
-      { type: "panel", label: t("canvasToolbar.panel"), icon: Square, panelKind: "default" },
-      ...PANEL_KINDS.filter((p) => p.id !== "default").map((p) => ({
-        type: "panel" as const,
-        label: p.id === "swimlane" ? t("swimlane.title") : p.label,
+      { type: COMPONENT_TYPE_PANEL, label: t("canvasToolbar.panel"), icon: Square, panelKind: PanelKind.Default },
+      ...PANEL_KINDS.filter((p) => p.id !== PanelKind.Default).map((p) => ({
+        type: COMPONENT_TYPE_PANEL,
+        label: p.id === PanelKind.Swimlane ? t("swimlane.title") : p.label,
         icon: p.icon,
         panelKind: p.id as PanelKind,
         awsIconName: p.awsIconName,
       })),
-      { type: "note", label: t("canvasToolbar.note"), icon: StickyNote },
-      { type: "api-group", label: t("quickInsert.typeApiGroup"), icon: Globe },
-      { type: "endpoint", label: t("quickInsert.typeEndpoint"), icon: Globe },
+      { type: COMPONENT_TYPE_NOTE, label: t("canvasToolbar.note"), icon: StickyNote },
+      { type: COMPONENT_TYPE_API_GROUP, label: t("quickInsert.typeApiGroup"), icon: Globe },
+      { type: COMPONENT_TYPE_ENDPOINT, label: t("quickInsert.typeEndpoint"), icon: Globe },
     ],
     [t],
   );
@@ -206,7 +207,7 @@ const QuickInsertPopover = ({
   const handleSelectAws = (categoryId: AwsCategoryId, serviceId: string, serviceName: string) => {
     const panelKind = getPanelKindForAwsService(serviceId);
     const comp = panelKind
-      ? addComponent("panel", getPanelKindDef(panelKind).defaultName, null, insertPos, undefined, panelKind)
+      ? addComponent(COMPONENT_TYPE_PANEL, getPanelKindDef(panelKind).defaultName, null, insertPos, undefined, panelKind)
       : addComponent(categoryId, serviceName, null, insertPos, serviceId);
     if (sourceNodeId) {
       addConnection(sourceNodeId, comp.id, t("canvas.usesEdgeLabel"), getLastEdgeStyle());
@@ -279,8 +280,8 @@ const QuickInsertPopover = ({
             {filteredCanvas.map((opt) => (
               <button
                 key={
-                  opt.type === "panel"
-                    ? `panel-${opt.panelKind ?? "default"}`
+                  opt.type === COMPONENT_TYPE_PANEL
+                    ? `panel-${opt.panelKind ?? PanelKind.Default}`
                     : opt.type
                 }
                 onClick={() => handleSelectCanvas(opt.type, opt.label, opt.panelKind)}

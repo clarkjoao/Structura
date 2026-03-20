@@ -19,10 +19,9 @@ import {
   X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { PanelKind } from "@/features/diagram";
 import { PANEL_KINDS, getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
 import { useReactFlow } from "@xyflow/react";
-import { useDiagramActions, useAllServices, useAllComponents, ServiceSource } from "@/features/diagram";
+import { useDiagramActions, useAllServices, useAllComponents, ServiceSource, PanelKind } from "@/features/diagram";
 import type { ComponentType } from "@/features/diagram";
 import type { ServiceDefinition } from "@/features/diagram";
 import { getUsageKeyForType, getDefaultNameForNewComponent, isPanelType } from "@/features/diagram";
@@ -190,7 +189,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   );
 
   const CANVAS_OPTIONS = useMemo((): CanvasPickerOption[] => {
-    const swim = PANEL_KINDS.find((p) => p.id === "swimlane");
+    const swim = PANEL_KINDS.find((p) => p.id === PanelKind.Swimlane);
     const restPanels = PANEL_KINDS.filter((p) => p.id !== "default" && p.id !== "swimlane");
     const core: CanvasPickerOption[] = [
       { type: "panel", label: t("canvasToolbar.panel"), icon: Square, panelKind: "default" },

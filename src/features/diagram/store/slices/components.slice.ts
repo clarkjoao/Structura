@@ -1,4 +1,5 @@
-import type { Component, ComponentPatch, ComponentType, ApiGroupComponent, EndpointComponent, PanelComponent, PanelKind } from "../../model/diagram.types";
+import type { Component, ComponentPatch, ComponentType, ApiGroupComponent, EndpointComponent, PanelComponent } from "../../model/diagram.types";
+import { PanelKind } from "../../enums";
 import { generateId } from "../../utils/generate-id";
 import { isPanelComponent, isApiGroupComponent } from "../../model/component.guards";
 import { isPanelType, isNoteType, isEndpointType, isApiGroupType, isC4Type } from "../../model/component-type-constants";
@@ -35,12 +36,12 @@ export const componentsSlice = (
       const base = { id: generateId("el"), name, description: "", parentId };
       let component: Component;
       const resolvedPanelKind: PanelKind | undefined = isPanelType(type)
-        ? (panelKind ?? "default")
+        ? (panelKind ?? PanelKind.Default)
         : undefined;
       if (isPanelType(type)) {
         const kind = resolvedPanelKind!;
         const def = getPanelKindDef(kind);
-        const isSwimlane = kind === "swimlane";
+        const isSwimlane = kind === PanelKind.Swimlane;
         component = {
           ...base,
           type: "panel",
@@ -164,9 +165,9 @@ export const componentsSlice = (
               ? {
                   zIndex: -1,
                   width:
-                    resolvedPanelKind === "swimlane" ? SWIMLANE_DEFAULT_W : PANEL_DEFAULT_W,
+                    resolvedPanelKind === PanelKind.Swimlane ? SWIMLANE_DEFAULT_W : PANEL_DEFAULT_W,
                   height:
-                    resolvedPanelKind === "swimlane" ? SWIMLANE_DEFAULT_H : PANEL_DEFAULT_H,
+                    resolvedPanelKind === PanelKind.Swimlane ? SWIMLANE_DEFAULT_H : PANEL_DEFAULT_H,
                 }
               : {}),
             ...(isNoteType(type) ? { width: NOTE_DEFAULT_W, height: NOTE_DEFAULT_H } : {}),

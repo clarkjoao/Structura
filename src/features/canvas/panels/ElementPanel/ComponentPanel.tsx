@@ -12,7 +12,7 @@ import type {
 import { isPanelComponent, isNoteComponent, isC4Component, isSystemType, isContainerType } from "@/features/diagram";
 import { isAwsType, AWS_CATEGORIES, AWS_CATEGORY_MAP, AWS_SERVICE_MAP } from "@/lib/catalogs/aws";
 import { PANEL_KINDS, getPanelKindDef } from "@/lib/catalogs/panels";
-import type { PanelKind } from "@/features/diagram";
+import { PanelKind } from "@/features/diagram";
 import AwsIcon from "../../nodes/AwsIcon";
 import Field from "./components/Field";
 import TabBar, { type Tab } from "./components/TabBar";
@@ -239,7 +239,7 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
                     const kind = e.target.value as PanelKind;
                     const def = getPanelKindDef(kind);
                     const layout = activeDiagram?.nodeLayouts[component.id];
-                    if (kind === "swimlane") {
+                    if (kind === PanelKind.Swimlane) {
                       updateComponent(component.id, {
                         panelKind: kind,
                         panelColor: def.defaultColor,
@@ -268,12 +268,12 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
                 >
                   {PANEL_KINDS.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.id === "swimlane" ? t("swimlane.title") : p.label}
+                      {p.id === PanelKind.Swimlane ? t("swimlane.title") : p.label}
                     </option>
                   ))}
                 </select>
               </div>
-              {component.panelKind === "swimlane" ? (
+              {component.panelKind === PanelKind.Swimlane ? (
                 <>
                   <Field
                     label={t("swimlane.laneLabel")}

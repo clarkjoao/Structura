@@ -11,3 +11,16 @@ export enum ImportPanel {
   Github = "github",
   Defectdojo = "defectdojo",
 }
+
+/** Panel kind for infrastructure grouping (persisted in PanelComponent.panelKind) */
+export enum PanelKind {
+  Default = "default",
+  AvailabilityZone = "availability-zone",
+  EksCluster = "eks-cluster",
+  EcsCluster = "ecs-cluster",
+  AutoScalingGroup = "auto-scaling-group",
+  Vpc = "vpc",
+  PublicSubnet = "public-subnet",
+  PrivateSubnet = "private-subnet",
+  Swimlane = "swimlane",
+}

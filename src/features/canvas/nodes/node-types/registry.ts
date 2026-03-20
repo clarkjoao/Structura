@@ -7,7 +7,7 @@ import { endpointDescriptor } from "./endpoint.descriptor";
 import { c4Descriptor } from "./c4.descriptor";
 import type { NodeTypeDescriptor } from "./types";
 import type { Component, ComponentType } from "@/features/diagram";
-import { isPanelComponent } from "@/features/diagram";
+import { isPanelComponent, PanelKind } from "@/features/diagram";
 
 /**
  * Ordered list of node type descriptors.
@@ -33,7 +33,7 @@ export function getDescriptor(type: ComponentType): NodeTypeDescriptor {
 
 /** Resolves descriptor from full component (handles `panel` + `panelKind: "swimlane"`). */
 export function resolveNodeDescriptor(comp: Component): NodeTypeDescriptor {
-  if (isPanelComponent(comp) && comp.panelKind === "swimlane") {
+  if (isPanelComponent(comp) && comp.panelKind === PanelKind.Swimlane) {
     return swimlaneDescriptor;
   }
   return getDescriptor(comp.type);

@@ -1,4 +1,5 @@
 import type { AwsCategoryId } from "@/lib/catalogs/aws";
+import type { PanelKind } from "../enums";
 
 export type ComponentType =
   | "person"
@@ -34,16 +35,7 @@ export interface C4Component extends BaseComponent {
   panelColor?: string;
 }
 
-export type PanelKind =
-  | "default"
-  | "availability-zone"
-  | "eks-cluster"
-  | "ecs-cluster"
-  | "auto-scaling-group"
-  | "vpc"
-  | "public-subnet"
-  | "private-subnet"
-  | "swimlane";
+export type { PanelKind };
 
 /** Visual / semantic options for {@link PanelKind} `"swimlane"` (actor / domain lanes). */
 export interface SwimlaneStyle {
