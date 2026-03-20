@@ -1,5 +1,5 @@
 /** Enums for diagram domain (ServiceSource, ImportPanel, etc.) */
-export { ServiceSource, ImportPanel, PanelKind } from "./enums";
+export { ServiceSource, ImportPanel, PanelKind, EdgeStyle, StrokeStyle, EdgeMarker } from "./enums";
 
 /** All core domain types (Component, Connection, Flow, Diagram, etc.) */
 export type {

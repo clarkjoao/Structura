@@ -1,9 +1,9 @@
+import { StrokeStyle, EdgeMarker } from "../enums";
 import type {
   Connection,
   ConnectionIntent,
   ConnectionDirection,
   ConnectionStyle,
-  EdgeMarker,
 } from "./connection.types";
 
 /** Resolved connection style: intent defaults + direction markers + explicit overrides. */
@@ -16,45 +16,42 @@ export interface EffectiveConnectionStyle {
 }
 
 const DEFAULT_STROKE_WIDTH = 1;
-const DEFAULT_STROKE_STYLE = "solid" as const;
-const DEFAULT_MARKER_END = "arrowclosed" as const;
-const DEFAULT_MARKER_START = "none" as const;
 
 /** Default visual style per intent. User-overridden style fields take precedence when rendering. */
 export const INTENT_DEFAULTS: Record<ConnectionIntent, ConnectionStyle> = {
   dependency: {
-    strokeStyle: "dashed",
+    strokeStyle: StrokeStyle.Dashed,
     strokeWidth: DEFAULT_STROKE_WIDTH,
-    markerEnd: "arrow",
-    markerStart: DEFAULT_MARKER_START,
+    markerEnd: EdgeMarker.Arrow,
+    markerStart: EdgeMarker.None,
     animated: false,
   },
   call: {
-    strokeStyle: DEFAULT_STROKE_STYLE,
+    strokeStyle: StrokeStyle.Solid,
     strokeWidth: DEFAULT_STROKE_WIDTH,
-    markerEnd: DEFAULT_MARKER_END,
-    markerStart: DEFAULT_MARKER_START,
+    markerEnd: EdgeMarker.ArrowClosed,
+    markerStart: EdgeMarker.None,
     animated: false,
   },
   event: {
-    strokeStyle: DEFAULT_STROKE_STYLE,
+    strokeStyle: StrokeStyle.Solid,
     strokeWidth: DEFAULT_STROKE_WIDTH,
-    markerEnd: DEFAULT_MARKER_END,
-    markerStart: DEFAULT_MARKER_START,
+    markerEnd: EdgeMarker.ArrowClosed,
+    markerStart: EdgeMarker.None,
     animated: true,
   },
   "data-flow": {
-    strokeStyle: DEFAULT_STROKE_STYLE,
+    strokeStyle: StrokeStyle.Solid,
     strokeWidth: 3,
-    markerEnd: DEFAULT_MARKER_END,
-    markerStart: DEFAULT_MARKER_START,
+    markerEnd: EdgeMarker.ArrowClosed,
+    markerStart: EdgeMarker.None,
     animated: true,
   },
   "async-message": {
-    strokeStyle: "dashed",
+    strokeStyle: StrokeStyle.Dashed,
     strokeWidth: DEFAULT_STROKE_WIDTH,
-    markerEnd: DEFAULT_MARKER_END,
-    markerStart: DEFAULT_MARKER_START,
+    markerEnd: EdgeMarker.ArrowClosed,
+    markerStart: EdgeMarker.None,
     animated: true,
   },
 };
@@ -64,9 +61,9 @@ export const DIRECTION_MARKERS: Record<
   ConnectionDirection,
   { markerStart: EdgeMarker; markerEnd: EdgeMarker }
 > = {
-  unidirectional: { markerStart: "none", markerEnd: "arrowclosed" },
-  bidirectional: { markerStart: "arrowclosed", markerEnd: "arrowclosed" },
-  reverse: { markerStart: "arrowclosed", markerEnd: "none" },
+  unidirectional: { markerStart: EdgeMarker.None, markerEnd: EdgeMarker.ArrowClosed },
+  bidirectional: { markerStart: EdgeMarker.ArrowClosed, markerEnd: EdgeMarker.ArrowClosed },
+  reverse: { markerStart: EdgeMarker.ArrowClosed, markerEnd: EdgeMarker.None },
 };
 
 /**
@@ -82,7 +79,7 @@ export function getEffectiveConnectionStyle(conn: Connection): EffectiveConnecti
   const s = conn.style;
 
   return {
-    strokeStyle: s?.strokeStyle ?? fromIntent.strokeStyle ?? DEFAULT_STROKE_STYLE,
+    strokeStyle: s?.strokeStyle ?? fromIntent.strokeStyle ?? StrokeStyle.Solid,
     strokeWidth: s?.strokeWidth ?? fromIntent.strokeWidth ?? DEFAULT_STROKE_WIDTH,
     markerStart: s?.markerStart ?? fromDirection.markerStart,
     markerEnd: s?.markerEnd ?? fromDirection.markerEnd,

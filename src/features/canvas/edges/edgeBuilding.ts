@@ -1,6 +1,6 @@
 import { MarkerType, type Edge } from "@xyflow/react";
 import type { Connection, Diagram, FlowStep } from "@/features/diagram";
-import { getEffectiveConnectionStyle } from "@/features/diagram";
+import { getEffectiveConnectionStyle, EdgeMarker, EdgeStyle } from "@/features/diagram";
 import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
 
 export interface EdgeBuildParams {
@@ -17,8 +17,8 @@ export interface EdgeBuildParams {
 export function toMarkerType(
   marker: string | undefined,
 ): typeof MarkerType.Arrow | typeof MarkerType.ArrowClosed | undefined {
-  if (!marker || marker === "none") return undefined;
-  return marker === "arrowclosed" ? MarkerType.ArrowClosed : MarkerType.Arrow;
+  if (!marker || marker === EdgeMarker.None) return undefined;
+  return marker === EdgeMarker.ArrowClosed ? MarkerType.ArrowClosed : MarkerType.Arrow;
 }
 
 export function getEdgeOpacity(
@@ -48,7 +48,7 @@ export function buildEdge(
   const isActiveConn = params.isPlaying && params.flowHighlight.activeConnId === conn.id;
 
   const markerEnd = toMarkerType(effective.markerEnd);
-  const markerStart = effective.markerStart !== "none"
+  const markerStart = effective.markerStart !== EdgeMarker.None
     ? toMarkerType(effective.markerStart)
     : undefined;
 
@@ -78,7 +78,7 @@ export function buildEdge(
       isActivePlayback: isActiveConn,
       activePayload: isActiveConn ? (params.activeStep?.payload ?? null) : null,
       activePayloadDirection: isActiveConn ? (params.activeStep?.payloadDirection ?? null) : null,
-      edgeStyle: conn.style?.edgeStyle ?? "smoothstep",
+      edgeStyle: conn.style?.edgeStyle ?? EdgeStyle.Smoothstep,
       strokeStyle: effective.strokeStyle,
       strokeWidth: effective.strokeWidth,
       labelPosition: conn.style?.labelPosition,

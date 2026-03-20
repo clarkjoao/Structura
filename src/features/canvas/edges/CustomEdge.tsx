@@ -8,12 +8,7 @@ import {
   useReactFlow,
   type EdgeProps,
 } from "@xyflow/react";
-import {
-  useDiagramActions,
-  type ConnectionStyle,
-  type EdgeStyle,
-  type StrokeStyle,
-} from "@/features/diagram";
+import { useDiagramActions, EdgeStyle, StrokeStyle, type ConnectionStyle } from "@/features/diagram";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { useTranslation } from "react-i18next";
 
@@ -35,13 +30,10 @@ export interface EdgeData {
   connectionStyle?: ConnectionStyle;
 }
 
-const strokeDasharrayByStyle: Record<
-  StrokeStyle | "solid",
-  string | undefined
-> = {
-  solid: undefined,
-  dashed: "8 4",
-  dotted: "2 4",
+const strokeDasharrayByStyle: Record<StrokeStyle, string | undefined> = {
+  [StrokeStyle.Solid]: undefined,
+  [StrokeStyle.Dashed]: "8 4",
+  [StrokeStyle.Dotted]: "2 4",
 };
 
 function clampLabelPosition(value: number | undefined): number {
@@ -126,24 +118,24 @@ const Edge = memo(
       sourcePosition,
       targetPosition,
     };
-    const styleKey = d?.edgeStyle ?? "smoothstep";
+    const styleKey = d?.edgeStyle ?? EdgeStyle.Smoothstep;
     let edgePath: string;
     let labelX: number;
     let labelY: number;
-    if (styleKey === "step") {
+    if (styleKey === EdgeStyle.Step) {
       [edgePath, labelX, labelY] = getSmoothStepPath({
         ...pathParams,
         borderRadius: 0,
       });
-    } else if (styleKey === "smoothstep") {
+    } else if (styleKey === EdgeStyle.Smoothstep) {
       [edgePath, labelX, labelY] = getSmoothStepPath(pathParams);
-    } else if (styleKey === "bezier") {
+    } else if (styleKey === EdgeStyle.Bezier) {
       [edgePath, labelX, labelY] = getBezierPath(pathParams);
     } else {
       [edgePath, labelX, labelY] = getStraightPath(pathParams);
     }
 
-    const strokeStyle = d?.strokeStyle ?? "solid";
+    const strokeStyle = d?.strokeStyle ?? StrokeStyle.Solid;
     const dashArray = strokeDasharrayByStyle[strokeStyle];
     const strokeWidth = d?.strokeWidth ?? 1;
     const labelPosition = clampLabelPosition(d?.labelPosition);

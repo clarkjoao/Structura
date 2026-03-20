@@ -1,14 +1,13 @@
-import type { EdgeStyle } from "../model/connection.types";
+import { EdgeStyle } from "../enums";
 
 const STORAGE_KEY = "structura:lastEdgeStyle";
-const DEFAULT_STYLE: EdgeStyle = "smoothstep";
 
 function isEdgeStyle(value: string | null): value is EdgeStyle {
   return (
-    value === "straight" ||
-    value === "bezier" ||
-    value === "step" ||
-    value === "smoothstep"
+    value === EdgeStyle.Straight ||
+    value === EdgeStyle.Bezier ||
+    value === EdgeStyle.Step ||
+    value === EdgeStyle.Smoothstep
   );
 }
 
@@ -19,7 +18,7 @@ export function getLastEdgeStyle(): EdgeStyle {
   } catch {
     // noop
   }
-  return DEFAULT_STYLE;
+  return EdgeStyle.Smoothstep;
 }
 
 export function saveLastEdgeStyle(style: EdgeStyle): void {

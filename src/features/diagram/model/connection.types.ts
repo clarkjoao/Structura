@@ -1,6 +1,6 @@
-export type EdgeStyle = "straight" | "bezier" | "step" | "smoothstep";
-export type StrokeStyle = "solid" | "dashed" | "dotted";
-export type EdgeMarker = "arrow" | "arrowclosed" | "none";
+import type { EdgeStyle, StrokeStyle, EdgeMarker } from "../enums";
+
+export type { EdgeStyle, StrokeStyle, EdgeMarker };
 
 export interface WaypointPosition {
   x: number;

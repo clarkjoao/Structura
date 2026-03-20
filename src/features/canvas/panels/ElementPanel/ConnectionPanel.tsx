@@ -2,7 +2,8 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import debounce from "lodash.debounce";
 import { X, Trash2 } from "lucide-react";
-import type { Connection, ConnectionIntent, ConnectionDirection, EdgeStyle, StrokeStyle, EdgeMarker, ConnectionStyle } from "@/features/diagram";
+import type { Connection, ConnectionIntent, ConnectionDirection, ConnectionStyle } from "@/features/diagram";
+import { EdgeStyle, StrokeStyle, EdgeMarker } from "@/features/diagram";
 import { INTENT_DEFAULTS } from "@/features/diagram";
 import { saveLastEdgeStyle } from "@/features/diagram/hooks/useLastEdgeStyle";
 import { cn } from "@/lib/utils";
@@ -10,15 +11,15 @@ import Field from "./components/Field";
 import TechnologyCombobox from "./components/TechnologyCombobox";
 
 const TRANSPORT_PRESET_DEFAULTS: Record<NonNullable<Connection["transportPreset"]>, Partial<ConnectionStyle>> = {
-  sync: { edgeStyle: "straight", strokeStyle: "solid", markerEnd: "arrowclosed" },
-  async: { edgeStyle: "straight", strokeStyle: "dashed", markerEnd: "arrowclosed" },
-  event: { edgeStyle: "smoothstep", strokeStyle: "dashed", markerEnd: "arrow" },
-  tcp: { edgeStyle: "straight", strokeStyle: "solid", markerEnd: "arrow" },
-  udp: { edgeStyle: "straight", strokeStyle: "dotted", markerEnd: "arrow" },
+  sync: { edgeStyle: EdgeStyle.Straight, strokeStyle: StrokeStyle.Solid, markerEnd: EdgeMarker.ArrowClosed },
+  async: { edgeStyle: EdgeStyle.Straight, strokeStyle: StrokeStyle.Dashed, markerEnd: EdgeMarker.ArrowClosed },
+  event: { edgeStyle: EdgeStyle.Smoothstep, strokeStyle: StrokeStyle.Dashed, markerEnd: EdgeMarker.Arrow },
+  tcp: { edgeStyle: EdgeStyle.Straight, strokeStyle: StrokeStyle.Solid, markerEnd: EdgeMarker.Arrow },
+  udp: { edgeStyle: EdgeStyle.Straight, strokeStyle: StrokeStyle.Dotted, markerEnd: EdgeMarker.Arrow },
 };
 
 type EdgeStyleOption = {
-  value: "straight" | "bezier" | "step" | "smoothstep";
+  value: EdgeStyle;
   label: string;
   icon: string;
 };
@@ -64,10 +65,10 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
 
   const edgeStyleOptions: EdgeStyleOption[] = useMemo(
     () => [
-      { value: "straight", label: t("common.edgeStraight"), icon: "M 4 20 L 20 4" },
-      { value: "bezier", label: t("common.edgeBezier"), icon: "M 4 20 H 12 V 4 H 20" },
-      { value: "step", label: t("common.edgeStep"), icon: "M 4 20 H 12 V 4 H 20" },
-      { value: "smoothstep", label: t("common.edgeSmoothstep"), icon: "M 4 20 C 4 12 20 12 20 4" },
+      { value: EdgeStyle.Straight, label: t("common.edgeStraight"), icon: "M 4 20 L 20 4" },
+      { value: EdgeStyle.Bezier, label: t("common.edgeBezier"), icon: "M 4 20 H 12 V 4 H 20" },
+      { value: EdgeStyle.Step, label: t("common.edgeStep"), icon: "M 4 20 H 12 V 4 H 20" },
+      { value: EdgeStyle.Smoothstep, label: t("common.edgeSmoothstep"), icon: "M 4 20 C 4 12 20 12 20 4" },
     ],
     [t],
   );
@@ -75,9 +76,9 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
   const strokeOptions = useMemo(
     () =>
       [
-        { value: "solid" as const, label: t("common.strokeSolid") },
-        { value: "dashed" as const, label: t("common.strokeDashed") },
-        { value: "dotted" as const, label: t("common.strokeDotted") },
+        { value: StrokeStyle.Solid, label: t("common.strokeSolid") },
+        { value: StrokeStyle.Dashed, label: t("common.strokeDashed") },
+        { value: StrokeStyle.Dotted, label: t("common.strokeDotted") },
       ],
     [t],
   );
@@ -85,9 +86,9 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
   const markerOptions = useMemo(
     () =>
       [
-        { value: "none" as const, label: t("common.markerNone") },
-        { value: "arrow" as const, label: t("common.markerArrow") },
-        { value: "arrowclosed" as const, label: t("common.markerArrowClosed") },
+        { value: EdgeMarker.None, label: t("common.markerNone") },
+        { value: EdgeMarker.Arrow, label: t("common.markerArrow") },
+        { value: EdgeMarker.ArrowClosed, label: t("common.markerArrowClosed") },
       ],
     [t],
   );
@@ -108,7 +109,7 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
   const applyPatch = (patch: Partial<Omit<Connection, "id">>) => updateConnection(conn.id, patch);
   const applyStyle = (stylePatch: Partial<ConnectionStyle>) =>
     applyPatch({ style: { ...conn.style, ...stylePatch } });
-  const currentStyle = conn.style?.edgeStyle ?? "smoothstep";
+  const currentStyle = conn.style?.edgeStyle ?? EdgeStyle.Smoothstep;
   const onUpdateEdgeStyle = (newStyle: EdgeStyleOption["value"]) => {
     saveLastEdgeStyle(newStyle);
     applyPatch({
@@ -208,10 +209,10 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
           <div className="space-y-2">
             <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold block">{t("common.edgeStyleSection")}</label>
             <div className="flex flex-wrap gap-2">
-              <select value={conn.style?.edgeStyle ?? "straight"} onChange={(e) => applyStyle({ edgeStyle: e.target.value as EdgeStyle })} className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0" title={t("common.lineTypeTitle")}>
+              <select value={conn.style?.edgeStyle ?? EdgeStyle.Straight} onChange={(e) => applyStyle({ edgeStyle: e.target.value as EdgeStyle })} className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0" title={t("common.lineTypeTitle")}>
                 {edgeStyleOptions.map((o) => (<option key={o.value} value={o.value}>{o.label}</option>))}
               </select>
-              <select value={conn.style?.strokeStyle ?? "solid"} onChange={(e) => applyStyle({ strokeStyle: e.target.value as StrokeStyle })} className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0" title={t("common.strokeStyleTitle")}>
+              <select value={conn.style?.strokeStyle ?? StrokeStyle.Solid} onChange={(e) => applyStyle({ strokeStyle: e.target.value as StrokeStyle })} className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0" title={t("common.strokeStyleTitle")}>
                 {strokeOptions.map((o) => (<option key={o.value} value={o.value}>{o.label}</option>))}
               </select>
               <select value={conn.style?.strokeWidth ?? 1} onChange={(e) => applyStyle({ strokeWidth: Number(e.target.value) as 1 | 2 | 3 })} className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0" title={t("common.strokeWidthTitle")}>
@@ -219,11 +220,11 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
               </select>
             </div>
             <div className="flex flex-wrap gap-2">
-              <select value={conn.style?.markerStart ?? "none"} onChange={(e) => applyStyle({ markerStart: (e.target.value === "none" ? undefined : e.target.value) as EdgeMarker | undefined })} className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0" title={t("common.markerStartTitle")}>
-                {markerOptions.map((o) => (<option key={o.value} value={o.value}>{o.value === "none" ? t("common.markerStartNone") : t("common.markerStart", { label: o.label })}</option>))}
+              <select value={conn.style?.markerStart ?? EdgeMarker.None} onChange={(e) => applyStyle({ markerStart: (e.target.value === EdgeMarker.None ? undefined : e.target.value) as EdgeMarker | undefined })} className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0" title={t("common.markerStartTitle")}>
+                {markerOptions.map((o) => (<option key={o.value} value={o.value}>{o.value === EdgeMarker.None ? t("common.markerStartNone") : t("common.markerStart", { label: o.label })}</option>))}
               </select>
-              <select value={conn.style?.markerEnd ?? "arrowclosed"} onChange={(e) => applyStyle({ markerEnd: e.target.value as EdgeMarker })} className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0" title={t("common.markerEndTitle")}>
-                {markerOptions.map((o) => (<option key={o.value} value={o.value}>{o.value === "none" ? t("common.markerEndNone") : t("common.markerEnd", { label: o.label })}</option>))}
+              <select value={conn.style?.markerEnd ?? EdgeMarker.ArrowClosed} onChange={(e) => applyStyle({ markerEnd: e.target.value as EdgeMarker })} className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0" title={t("common.markerEndTitle")}>
+                {markerOptions.map((o) => (<option key={o.value} value={o.value}>{o.value === EdgeMarker.None ? t("common.markerEndNone") : t("common.markerEnd", { label: o.label })}</option>))}
               </select>
             </div>
             <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">

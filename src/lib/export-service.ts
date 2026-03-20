@@ -4,7 +4,9 @@ import {
   isPanelComponent,
   isC4Component,
   isAwsComponent,
-  ServiceDefinition
+  ServiceDefinition,
+  StrokeStyle,
+  EdgeMarker,
 } from "@/features/diagram";
 import { AWS_SERVICE_MAP } from "@/lib/catalogs/aws";
 
@@ -629,19 +631,19 @@ const cellBuilders: Record<string, CellBuilder> = {
 
 function buildEdgeCell(conn: Connection): string {
   const eff = getEffectiveConnectionStyle(conn);
-  const isDashed = eff.strokeStyle === "dashed" || eff.strokeStyle === "dotted";
-  const dashPattern = eff.strokeStyle === "dotted" ? "2 4" : "8 4";
+  const isDashed = eff.strokeStyle === StrokeStyle.Dashed || eff.strokeStyle === StrokeStyle.Dotted;
+  const dashPattern = eff.strokeStyle === StrokeStyle.Dotted ? "2 4" : "8 4";
 
   function toDrawioArrow(m: string): string {
-    if (m === "arrowclosed") return "block";
-    if (m === "arrow") return "open";
+    if (m === EdgeMarker.ArrowClosed) return "block";
+    if (m === EdgeMarker.Arrow) return "open";
     return "none";
   }
 
   const endArrow = toDrawioArrow(eff.markerEnd);
   const startArrow = toDrawioArrow(eff.markerStart);
   const bidir =
-    eff.markerStart !== "none"
+    eff.markerStart !== EdgeMarker.None
       ? `startArrow=${startArrow};startFill=${startArrow === "block" ? 1 : 0};`
       : "";
 
