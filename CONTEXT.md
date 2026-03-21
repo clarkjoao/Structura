@@ -122,7 +122,8 @@ src/
 │   │   │       └── index.ts
 │   │   └── index.ts                   # Reexporta tipos, utils, service, store
 │   ├── canvas/
-│   │   ├── Canvas.tsx                 # React Flow, integra todos os hooks
+│   │   ├── Canvas.tsx                 # Shell React Flow (JSX); lógica em hooks/useCanvasController.ts
+│   │   ├── canvas.constants.ts / canvas.types.ts / reactFlowConfig.tsx
 │   │   ├── constants.ts               # Constantes de layout
 │   │   ├── viewport-utils.ts          # Utilitários de viewport
 │   │   ├── hooks/
@@ -235,7 +236,7 @@ src/
 | **features/registry/model** | `registry.types.ts` | Tipo `ServiceDefinition` (id, name, description, repositoryUrl, technology[], owner?, tags?). |
 | **features/registry/store** | `registry.store.ts` | Reexporta useDiagramStore, useServiceRegistry, useAllServices, useAllComponents, useAllConnections; define `useRegistryActions()` (addService, updateService, removeService, linkComponentToService) com useShallow. |
 | **features/registry** | `index.ts` | Reexporta ServiceDefinition e hooks do store. |
-| **features/canvas** | `Canvas.tsx` | Container React Flow: nodeTypes (c4, panel, note), edgeTypes; integra todos os hooks de store, visual state, eventos, efeitos e teclado. |
+| **features/canvas** | `Canvas.tsx` + `useCanvasController` | Container React Flow: nodeTypes, edgeTypes; orquestra store, visual state, eventos, efeitos e teclado. |
 | **features/canvas/hooks** | `useCanvasStore.ts` | Acesso centralizado ao store via seletores `useShallow`. |
 | | `useCanvasVisualState.ts` | Estado visual local: seleção, context menu, highlights. |
 | | `useCanvasEventHandlers.ts` | Handlers de eventos ReactFlow: connect, click, context menu. |
