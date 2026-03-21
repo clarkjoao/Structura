@@ -204,7 +204,8 @@ src/
 │
 ├── pages/
 │   ├── Index.tsx                      # Landing
-│   ├── Dashboard.tsx                  # Lista de diagramas + pastas; abre /model/:id
+│   ├── Dashboard.tsx                  # Reexport → dashboard/DashboardPage.tsx
+│   ├── dashboard/                     # Lista de diagramas + pastas; subviews e diálogo “novo diagrama”
 │   ├── ModelExplorer.tsx              # Canvas + FlowPanel + FlowRecorder + export; rota /model/:id
 │   ├── ServiceRegistry.tsx            # Catálogo de serviços, impacto, import GitHub
 │   └── NotFound.tsx
@@ -263,7 +264,7 @@ src/
 | | `aws-catalog.ts` | Catálogo AWS: categorias, serviços, ícones; AwsCategoryId, isAwsType, mapas. |
 | | `github-import.ts` | `importFromGitHub(repoUrl, token?)`: detecta tech stack (package.json, pom.xml, etc.). |
 | | `export-service.ts` | exportJSON, exportDrawio, exportMermaid, downloadFile (usa tipos do diagram). |
-| **pages** | `Dashboard.tsx` | Lista diagramas (useAllDiagrams), abre diagrama (openDiagram → /model/:id). |
+| **pages** | `Dashboard.tsx` + `dashboard/` | Lista diagramas (useAllDiagrams), pastas, busca global; abre diagrama (openDiagram → /model/:id). |
 | | `ModelExplorer.tsx` | Canvas + flows + export; estado de playback e gravação; rota /model/:id. |
 | | `ServiceRegistry.tsx` | Lista serviços (useAllServices), impacto (computeServiceImpact), import GitHub; useRegistryActions. |
 | | `Index.tsx` | Landing; `NotFound.tsx` para 404. |

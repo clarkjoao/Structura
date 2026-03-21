@@ -17,10 +17,10 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/model/:id" element={<ModelExplorer />} />
-          <Route path="/registry" element={<ServiceRegistry />} />
+          <Route path="/" element={<Navigate to="/workspace" />} />
+          <Route path="/workspace" element={<Dashboard />} />
+          <Route path="/diagram/:id" element={<ModelExplorer />} />
+          <Route path="/catalog" element={<ServiceRegistry />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -18,10 +18,9 @@ import {
   User,
   X,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { PANEL_KINDS, getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
 import { useReactFlow } from "@xyflow/react";
-import { useDiagramActions, useAllServices, useAllComponents, ServiceSource, PanelKind } from "@/features/diagram";
+import { useDiagramActions, useAllServices, useAllComponents, PanelKind } from "@/features/diagram";
 import { ElementCategory } from "../enums";
 import type { ComponentType } from "@/features/diagram";
 import type { ServiceDefinition } from "@/features/diagram";
@@ -30,139 +29,24 @@ import {
   AWS_CATEGORIES,
   type AwsCategoryId,
   type AwsCategory,
-  type AwsService,
 } from "@/lib/catalogs/aws";
 import AwsIcon from "../nodes/AwsIcon";
 import { trackUsage } from "./element-usage-tracker";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-
-const LAST_CATEGORY_KEY = "structura:lastElementCategory";
-
-/** Popular AWS services shown on the "All" tab (order preserved). */
-const AWS_SPOTLIGHT_IDS: string[] = [
-  "ec2",
-  "lambda",
-  "s3",
-  "rds",
-  "elb",
-  "ecs",
-  "eks",
-  "vpc",
-  "cloudfront",
-  "dynamodb",
-  "sqs",
-  "api-gateway",
-];
-
-const REGISTRY_PREVIEW_LIMIT = 5;
-
-function resolveAwsSpotlight(): { svc: AwsService; categoryId: AwsCategoryId }[] {
-  const out: { svc: AwsService; categoryId: AwsCategoryId }[] = [];
-  for (const id of AWS_SPOTLIGHT_IDS) {
-    for (const cat of AWS_CATEGORIES) {
-      const svc = cat.services.find((s) => s.id === id);
-      if (svc) {
-        out.push({ svc, categoryId: cat.id as AwsCategoryId });
-        break;
-      }
-    }
-  }
-  return out;
-}
-
-/** Primary AWS groups shown first; remaining catalog categories roll into "Other". */
-const AWS_PRIMARY_CATEGORY_IDS: string[] = [
-  "aws-compute",
-  "aws-networking",
-  "aws-storage",
-  "aws-database",
-  "aws-security",
-  "aws-containers",
-];
-
-const OTHER_AWS_SECTION_KEY = "__aws_other__";
-
-function readStoredCategory(): ElementCategory {
-  try {
-    const v = localStorage.getItem(LAST_CATEGORY_KEY);
-    const valid = Object.values(ElementCategory).includes(v as ElementCategory);
-    if (valid) return v as ElementCategory;
-  } catch {
-    /* ignore */
-  }
-  return ElementCategory.All;
-}
-
-function persistCategory(cat: ElementCategory) {
-  try {
-    localStorage.setItem(LAST_CATEGORY_KEY, cat);
-  } catch {
-    /* ignore */
-  }
-}
-
-type CanvasPickerOption = {
-  type: ComponentType;
-  label: string;
-  icon: LucideIcon;
-  panelKind?: PanelKind;
-  awsIconName?: string;
-};
-
-interface ElementPickerModalProps {
-  onClose: () => void;
-  onInsert?: (nodeId: string) => void;
-}
-
-function servicePrimarySource(svc: ServiceDefinition): ServiceSource {
-  const ref = svc.sources?.[0];
-  if (ref?.type) return ref.type;
-  if (svc.source) return svc.source;
-  return ServiceSource.Manual;
-}
-
-function registrySourceDotClass(svc: ServiceDefinition): string {
-  const src = servicePrimarySource(svc);
-  if (src === ServiceSource.Github) return "bg-blue-500";
-  if (src === ServiceSource.Defectdojo) return "bg-orange-500";
-  return "bg-violet-500";
-}
-
-function shortAwsName(name: string): string {
-  return name.replace(/^Amazon |^AWS /, "");
-}
-
-function PickerSectionHeader({
-  sectionLabel,
-  showViewAll,
-  viewAllLabel,
-  onViewAll,
-}: {
-  sectionLabel: string;
-  showViewAll?: boolean;
-  viewAllLabel?: string;
-  onViewAll?: () => void;
-}) {
-  return (
-    <div className="mb-3 flex items-center gap-2">
-      <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-        {sectionLabel}
-      </span>
-      <div className="h-px flex-1 bg-border" />
-      {showViewAll && onViewAll && viewAllLabel ? (
-        <button
-          type="button"
-          onClick={onViewAll}
-          className="flex shrink-0 items-center gap-0.5 text-[11px] text-primary hover:underline"
-        >
-          {viewAllLabel}
-          <ChevronRight className="h-3 w-3" />
-        </button>
-      ) : null}
-    </div>
-  );
-}
+import {
+  AWS_PRIMARY_CATEGORY_IDS,
+  OTHER_AWS_SECTION_KEY,
+  REGISTRY_PREVIEW_LIMIT,
+} from "./element-picker/elementPickerModal.constants";
+import { persistCategory, readStoredCategory } from "./element-picker/elementPickerModal.storage";
+import {
+  registrySourceDotClass,
+  resolveAwsSpotlight,
+  shortAwsName,
+} from "./element-picker/elementPickerModal.utils";
+import type { CanvasPickerOption, ElementPickerModalProps } from "./element-picker/elementPickerModal.types";
+import { PickerSectionHeader } from "./element-picker/PickerSectionHeader";
 
 const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const { t } = useTranslation();
@@ -190,16 +74,18 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
 
   const CANVAS_OPTIONS = useMemo((): CanvasPickerOption[] => {
     const swim = PANEL_KINDS.find((p) => p.id === PanelKind.Swimlane);
-    const restPanels = PANEL_KINDS.filter((p) => p.id !== "default" && p.id !== "swimlane");
+    const restPanels = PANEL_KINDS.filter(
+      (p) => p.id !== PanelKind.Default && p.id !== PanelKind.Swimlane,
+    );
     const core: CanvasPickerOption[] = [
-      { type: "panel", label: t("canvasToolbar.panel"), icon: Square, panelKind: "default" },
+      { type: "panel", label: t("canvasToolbar.panel"), icon: Square, panelKind: PanelKind.Default },
     ];
     if (swim) {
       core.push({
         type: "panel",
         label: t("swimlane.title"),
         icon: swim.icon,
-        panelKind: "swimlane",
+        panelKind: PanelKind.Swimlane,
         awsIconName: swim.awsIconName,
       });
     }
@@ -517,7 +403,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
         <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
           <p className="text-sm text-muted-foreground">{t("elementPicker.registryEmpty")}</p>
           <Link
-            to="/registry"
+            to="/catalog"
             className="text-sm font-medium text-primary hover:underline"
             onClick={onClose}
           >
@@ -604,7 +490,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
             <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
               <p className="text-sm text-muted-foreground">{t("elementPicker.registryEmpty")}</p>
               <Link
-                to="/registry"
+                to="/workspace"
                 className="text-sm font-medium text-primary hover:underline"
                 onClick={onClose}
               >

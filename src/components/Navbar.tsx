@@ -31,7 +31,7 @@ const Navbar = () => {
             {t("nav.workspaces")}
           </Link>
           <Link
-            to="/registry"
+            to="/catalog"
             className="hover:text-foreground transition-colors"
           >
             {t("nav.registry")}
