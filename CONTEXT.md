@@ -190,7 +190,7 @@ src/
 │   ├── model-store.ts                 # Reexporta @/features/diagram (compat)
 │   ├── aws-catalog.ts                 # AWS_CATEGORIES, AwsCategoryId, isAwsType, AWS_SERVICE_MAP
 │   ├── github-import.ts               # importFromGitHub (tech stack a partir de repo)
-│   ├── export-service.ts              # exportJSON, exportDrawio, exportMermaid, downloadFile
+│   ├── export-service/                # exportJSON, exportDrawio, exportMermaid, downloadFile (+ submódulos)
 │   └── utils.ts                       # cn() (tailwind-merge)
 │
 ├── infrastructure/
@@ -263,7 +263,7 @@ src/
 | | `model-store.ts` | Reexporta store e selectors do diagram (compatibilidade). |
 | | `aws-catalog.ts` | Catálogo AWS: categorias, serviços, ícones; AwsCategoryId, isAwsType, mapas. |
 | | `github-import.ts` | `importFromGitHub(repoUrl, token?)`: detecta tech stack (package.json, pom.xml, etc.). |
-| | `export-service.ts` | exportJSON, exportDrawio, exportMermaid, downloadFile (usa tipos do diagram). |
+| | `export-service/` | `exportJSON`, `exportDrawio`, `exportMermaid`, `downloadFile` (tipos do diagram; draw.io em submódulos). |
 | **pages** | `Dashboard.tsx` + `dashboard/` | Lista diagramas (useAllDiagrams), pastas, busca global; abre diagrama (openDiagram → /model/:id). |
 | | `ModelExplorer.tsx` | Canvas + flows + export; estado de playback e gravação; rota /model/:id. |
 | | `ServiceRegistry.tsx` | Lista serviços (useAllServices), impacto (computeServiceImpact), import GitHub; useRegistryActions. |
