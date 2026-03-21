@@ -206,7 +206,8 @@ src/
 │   ├── Index.tsx                      # Landing
 │   ├── Dashboard.tsx                  # Reexport → dashboard/DashboardPage.tsx
 │   ├── dashboard/                     # Lista de diagramas + pastas; subviews e diálogo “novo diagrama”
-│   ├── ModelExplorer.tsx              # Canvas + FlowPanel + FlowRecorder + export; rota /model/:id
+│   ├── ModelExplorer.tsx              # Reexport → modelExplorer/ModelExplorerPage.tsx
+│   ├── modelExplorer/                 # Canvas + flows + export; conteúdo e estado de playback
 │   ├── ServiceRegistry.tsx            # Catálogo de serviços, impacto, import GitHub
 │   └── NotFound.tsx
 │
@@ -265,7 +266,7 @@ src/
 | | `github-import.ts` | `importFromGitHub(repoUrl, token?)`: detecta tech stack (package.json, pom.xml, etc.). |
 | | `export-service/` | `exportJSON`, `exportDrawio`, `exportMermaid`, `downloadFile` (tipos do diagram; draw.io em submódulos). |
 | **pages** | `Dashboard.tsx` + `dashboard/` | Lista diagramas (useAllDiagrams), pastas, busca global; abre diagrama (openDiagram → /model/:id). |
-| | `ModelExplorer.tsx` | Canvas + flows + export; estado de playback e gravação; rota /model/:id. |
+| | `ModelExplorer.tsx` + `modelExplorer/` | Canvas + flows + export; playback, gravação, export draw.io/JSON. |
 | | `ServiceRegistry.tsx` | Lista serviços (useAllServices), impacto (computeServiceImpact), import GitHub; useRegistryActions. |
 | | `Index.tsx` | Landing; `NotFound.tsx` para 404. |
 

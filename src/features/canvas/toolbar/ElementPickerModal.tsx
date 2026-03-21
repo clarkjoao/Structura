@@ -1,52 +1,50 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import {
-  Check,
-  ChevronDown,
-  ChevronRight,
-  Cloud,
-  Database,
-  Globe,
-  Layers,
-  LayoutGrid,
-  LayoutTemplate,
-  Network,
-  Search,
-  Server,
-  Square,
-  StickyNote,
-  User,
-  X,
-} from "lucide-react";
-import { PANEL_KINDS, getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
+import { Search, X } from "lucide-react";
 import { useReactFlow } from "@xyflow/react";
-import { useDiagramActions, useAllServices, useAllComponents, PanelKind } from "@/features/diagram";
+import {
+  useDiagramActions,
+  useAllServices,
+  useAllComponents,
+  PanelKind,
+} from "@/features/diagram";
 import { ElementCategory } from "../enums";
 import type { ComponentType } from "@/features/diagram";
-import type { ServiceDefinition } from "@/features/diagram";
-import { getUsageKeyForType, getDefaultNameForNewComponent, isPanelType } from "@/features/diagram";
+import type { CanvasPickerOption } from "./element-picker/elementPickerModal.types";
 import {
-  AWS_CATEGORIES,
-  type AwsCategoryId,
-  type AwsCategory,
-} from "@/lib/catalogs/aws";
-import AwsIcon from "../nodes/AwsIcon";
+  getUsageKeyForType,
+  getDefaultNameForNewComponent,
+} from "@/features/diagram";
+import { AWS_CATEGORIES, type AwsCategory } from "@/lib/catalogs/aws";
+import { getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
+import type { AwsCategoryId } from "@/lib/catalogs/aws";
 import { trackUsage } from "./element-usage-tracker";
 import { useTranslation } from "react-i18next";
-import { cn } from "@/lib/utils";
 import {
   AWS_PRIMARY_CATEGORY_IDS,
-  OTHER_AWS_SECTION_KEY,
-  REGISTRY_PREVIEW_LIMIT,
+  PICKER_CARD_CLASS,
 } from "./element-picker/elementPickerModal.constants";
 import { persistCategory, readStoredCategory } from "./element-picker/elementPickerModal.storage";
+import { resolveAwsSpotlight } from "./element-picker/elementPickerModal.utils";
+import type { ElementPickerModalProps } from "./element-picker/elementPickerModal.types";
 import {
-  registrySourceDotClass,
-  resolveAwsSpotlight,
-  shortAwsName,
-} from "./element-picker/elementPickerModal.utils";
-import type { CanvasPickerOption, ElementPickerModalProps } from "./element-picker/elementPickerModal.types";
-import { PickerSectionHeader } from "./element-picker/PickerSectionHeader";
+  buildC4PickerOptions,
+  buildCanvasPickerOptions,
+} from "./element-picker/buildPickerOptions";
+import {
+  filterC4ByQuery,
+  filterCanvasByQuery,
+  filterAwsCategoriesForQuery,
+  flattenAwsServices,
+  filterServicesByQuery,
+} from "./element-picker/pickerFilters";
+import { buildCategoryNavItems } from "./element-picker/buildCategoryNav";
+import { CategorySidebar } from "./element-picker/CategorySidebar";
+import { ElementPickerAllView } from "./element-picker/ElementPickerAllView";
+import { ElementPickerSearchResults } from "./element-picker/ElementPickerSearchResults";
+import { AwsBrowseView } from "./element-picker/AwsBrowseView";
+import { RegistryCategoryPanel } from "./element-picker/RegistryCategoryPanel";
+import AwsIcon from "../nodes/AwsIcon";
+import { isPanelType } from "@/features/diagram";
 
 const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const { t } = useTranslation();
@@ -61,50 +59,8 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const services = useAllServices();
   const allComponents = useAllComponents();
 
-  const C4_OPTIONS = useMemo(
-    () =>
-      [
-        { type: "person" as const, label: t("quickInsert.typePerson"), icon: User },
-        { type: "system" as const, label: t("quickInsert.typeSystem"), icon: Network },
-        { type: "container" as const, label: t("quickInsert.typeContainer"), icon: Server },
-        { type: "component" as const, label: t("quickInsert.typeComponent"), icon: Database },
-      ],
-    [t],
-  );
-
-  const CANVAS_OPTIONS = useMemo((): CanvasPickerOption[] => {
-    const swim = PANEL_KINDS.find((p) => p.id === PanelKind.Swimlane);
-    const restPanels = PANEL_KINDS.filter(
-      (p) => p.id !== PanelKind.Default && p.id !== PanelKind.Swimlane,
-    );
-    const core: CanvasPickerOption[] = [
-      { type: "panel", label: t("canvasToolbar.panel"), icon: Square, panelKind: PanelKind.Default },
-    ];
-    if (swim) {
-      core.push({
-        type: "panel",
-        label: t("swimlane.title"),
-        icon: swim.icon,
-        panelKind: PanelKind.Swimlane,
-        awsIconName: swim.awsIconName,
-      });
-    }
-    core.push(
-      { type: "note", label: t("canvasToolbar.note"), icon: StickyNote },
-      { type: "api-group", label: t("quickInsert.typeApiGroup"), icon: Globe },
-      { type: "endpoint", label: t("quickInsert.typeEndpoint"), icon: Globe },
-    );
-    for (const p of restPanels) {
-      core.push({
-        type: "panel",
-        label: p.label,
-        icon: p.icon,
-        panelKind: p.id as PanelKind,
-        awsIconName: p.awsIconName,
-      });
-    }
-    return core;
-  }, [t]);
+  const C4_OPTIONS = useMemo(() => buildC4PickerOptions(t), [t]);
+  const CANVAS_OPTIONS = useMemo(() => buildCanvasPickerOptions(t), [t]);
 
   const onCanvasServiceIds = useMemo(
     () => new Set(allComponents.map((c) => c.serviceId).filter((id): id is string => !!id)),
@@ -154,50 +110,30 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
 
   const q = search.trim().toLowerCase();
 
-  const canvasOptionMatchesQuery = useCallback(
-    (opt: CanvasPickerOption, query: string): boolean => {
-      const fields: string[] = [opt.label.toLowerCase()];
-      if (opt.panelKind) {
-        fields.push(getPanelKindDef(opt.panelKind).defaultName.toLowerCase());
-        fields.push(String(opt.panelKind).toLowerCase());
-      }
-      return fields.some((f) => f.includes(query));
-    },
-    [],
-  );
-
   const filteredC4 = useMemo(
-    () => (q ? C4_OPTIONS.filter((o) => o.label.toLowerCase().includes(q)) : C4_OPTIONS),
+    () => filterC4ByQuery(q, C4_OPTIONS),
     [q, C4_OPTIONS],
   );
 
   const filteredCanvas = useMemo(
-    () => (q ? CANVAS_OPTIONS.filter((o) => canvasOptionMatchesQuery(o, q)) : CANVAS_OPTIONS),
-    [q, CANVAS_OPTIONS, canvasOptionMatchesQuery],
+    () => filterCanvasByQuery(q, CANVAS_OPTIONS),
+    [q, CANVAS_OPTIONS],
   );
 
-  const filteredAwsCategories = useMemo(() => {
-    if (!q) return AWS_CATEGORIES;
-    return AWS_CATEGORIES.map((cat) => ({
-      ...cat,
-      services: cat.services.filter((s) => s.name.toLowerCase().includes(q) || s.id.includes(q)),
-    })).filter((cat) => cat.services.length > 0);
-  }, [q]);
+  const filteredAwsCategories = useMemo(
+    () => filterAwsCategoriesForQuery(q),
+    [q],
+  );
 
   const filteredAwsFlat = useMemo(
-    () => filteredAwsCategories.flatMap((cat) => cat.services.map((s) => ({ ...s, categoryId: cat.id }))),
+    () => flattenAwsServices(filteredAwsCategories),
     [filteredAwsCategories],
   );
 
-  const filteredServices = useMemo(() => {
-    if (!q) return services;
-    return services.filter(
-      (s) =>
-        s.name.toLowerCase().includes(q) ||
-        s.technology.some((tech) => tech.toLowerCase().includes(q)) ||
-        (s.tags ?? []).some((tag) => tag.toLowerCase().includes(q)),
-    );
-  }, [q, services]);
+  const filteredServices = useMemo(
+    () => filterServicesByQuery(q, services),
+    [q, services],
+  );
 
   const getInsertPos = useCallback(
     () => rfInstance.screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 }),
@@ -247,322 +183,20 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   };
 
   const categoryItems = useMemo(
-    () => [
-      {
-        id: ElementCategory.All,
-        label: t("elementPicker.categoryAll"),
-        icon: LayoutGrid,
-        count: allCategoryTotalCount,
-      },
-      {
-        id: ElementCategory.C4,
-        label: t("elementPicker.c4Model"),
-        icon: Layers,
-        count: C4_OPTIONS.length,
-      },
-      {
-        id: ElementCategory.Canvas,
-        label: t("elementPicker.canvasGroups"),
-        icon: LayoutTemplate,
-        count: CANVAS_OPTIONS.length,
-      },
-      {
-        id: ElementCategory.Aws,
-        label: t("canvasToolbar.awsServices"),
-        icon: Cloud,
-        count: awsServiceCount,
-      },
-      {
-        id: ElementCategory.Registry,
-        label: t("elementPicker.registry"),
-        icon: Server,
-        count: services.length,
-      },
-    ],
+    () =>
+      buildCategoryNavItems(t, {
+        all: allCategoryTotalCount,
+        c4: C4_OPTIONS.length,
+        canvas: CANVAS_OPTIONS.length,
+        aws: awsServiceCount,
+        registry: services.length,
+      }),
     [t, allCategoryTotalCount, C4_OPTIONS.length, CANVAS_OPTIONS.length, awsServiceCount, services.length],
   );
 
   const setCategory = (cat: ElementCategory) => {
     setActiveCategory(cat);
     setSearch("");
-  };
-
-  const cardClass =
-    "flex flex-col items-center justify-center rounded-xl border border-border/40 bg-muted/50 p-3 transition-colors hover:bg-muted text-center min-h-[104px]";
-
-  const c4GridCard = (opt: (typeof C4_OPTIONS)[number]) => (
-    <button
-      key={opt.type}
-      type="button"
-      onClick={() => handleAddElement(opt.type, opt.label)}
-      className={cardClass}
-    >
-      <opt.icon className="h-10 w-10 shrink-0 text-muted-foreground" />
-      <span className="mt-2 text-xs text-foreground">{opt.label}</span>
-    </button>
-  );
-
-  const canvasGridCard = (opt: CanvasPickerOption) => (
-    <button
-      key={
-        isPanelType(opt.type)
-          ? `panel-${opt.panelKind ?? PanelKind.Default}`
-          : opt.type
-      }
-      type="button"
-      onClick={() => handleAddElement(opt.type, opt.label, opt.panelKind)}
-      className={cardClass}
-    >
-      {opt.awsIconName ? (
-        <AwsIcon iconName={opt.awsIconName} size={40} className="text-muted-foreground" />
-      ) : (
-        <opt.icon className="h-10 w-10 shrink-0 text-muted-foreground" />
-      )}
-      <span className="mt-2 text-xs text-foreground">{opt.label}</span>
-    </button>
-  );
-
-  const renderAwsSubsection = (cat: AwsCategory) => {
-    const filtered = q
-      ? cat.services.filter((s) => s.name.toLowerCase().includes(q) || s.id.includes(q))
-      : cat.services;
-    if (filtered.length === 0) return null;
-    const expanded = expandedAwsSubcats.has(cat.id) || !!q;
-    return (
-      <div key={cat.id} className="border-b border-border/40 last:border-0 pb-2 last:pb-0">
-        <button
-          type="button"
-          onClick={() => toggleAwsSubcat(cat.id)}
-          className="flex w-full items-center gap-2 py-2 text-left"
-        >
-          {expanded ? (
-            <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-          ) : (
-            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-          )}
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {cat.name}
-          </span>
-          <span className="ml-auto text-[10px] font-mono text-muted-foreground tabular-nums">
-            {filtered.length}
-          </span>
-        </button>
-        {expanded && (
-          <div className="grid grid-cols-5 gap-2 pl-5 pb-2">
-            {filtered.map((svc) => (
-              <button
-                key={svc.id}
-                type="button"
-                onClick={() => handleAddAws(cat.id as AwsCategoryId, svc.id, svc.name)}
-                className="flex flex-col items-center gap-1 rounded-lg border border-border/40 bg-muted/40 p-2 transition-colors hover:bg-muted"
-              >
-                <AwsIcon iconName={svc.iconName} size={40} />
-                <span className="line-clamp-2 text-center text-[10px] leading-tight text-foreground">
-                  {shortAwsName(svc.name)}
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const renderAwsBrowse = () => (
-    <div className="space-y-1">
-      {awsPrimaryCategories.map((cat) => renderAwsSubsection(cat))}
-      {awsOtherCategories.length > 0 && (
-        <div className="border-b border-border/40 last:border-0 pb-2">
-          <button
-            type="button"
-            onClick={() => toggleAwsSubcat(OTHER_AWS_SECTION_KEY)}
-            className="flex w-full items-center gap-2 py-2 text-left"
-          >
-            {expandedAwsSubcats.has(OTHER_AWS_SECTION_KEY) || !!q ? (
-              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-            ) : (
-              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-            )}
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("elementPicker.awsOther")}
-            </span>
-            <span className="ml-auto text-[10px] font-mono text-muted-foreground tabular-nums">
-              {awsOtherCategories.reduce((n, c) => n + c.services.length, 0)}
-            </span>
-          </button>
-          {(expandedAwsSubcats.has(OTHER_AWS_SECTION_KEY) || !!q) &&
-            awsOtherCategories.map((cat) => renderAwsSubsection(cat))}
-        </div>
-      )}
-    </div>
-  );
-
-  const renderRegistryList = () => {
-    if (services.length === 0) {
-      return (
-        <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-          <p className="text-sm text-muted-foreground">{t("elementPicker.registryEmpty")}</p>
-          <Link
-            to="/catalog"
-            className="text-sm font-medium text-primary hover:underline"
-            onClick={onClose}
-          >
-            {t("elementPicker.openRegistry")}
-          </Link>
-        </div>
-      );
-    }
-    return (
-      <div className="space-y-2">
-        {filteredServices.map((svc) => {
-          const isOnCanvas = onCanvasServiceIds.has(svc.id);
-          const tech = svc.technology[0] ?? "";
-          return (
-            <div
-              key={svc.id}
-              className="flex items-center gap-3 rounded-lg border border-border/40 bg-muted/40 px-3 py-2"
-            >
-              <div className={cn("h-2 w-2 shrink-0 rounded-full", registrySourceDotClass(svc))} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-medium text-foreground text-sm">{svc.name}</p>
-                {tech && (
-                  <p className="truncate text-xs text-muted-foreground">{tech}</p>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => handleAddService(svc.id, svc.name)}
-                className="shrink-0 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover"
-                title={t("elementPicker.addAnotherInstance")}
-              >
-                {isOnCanvas ? (
-                  <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                    <Check className="h-3.5 w-3.5" />
-                  </span>
-                ) : (
-                  t("elementPicker.addButton")
-                )}
-              </button>
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
-  const renderAllView = () => (
-    <div className="space-y-8">
-      <section>
-        <PickerSectionHeader sectionLabel={t("elementPicker.c4Model")} />
-        <div className="grid grid-cols-4 gap-3">{C4_OPTIONS.map(c4GridCard)}</div>
-      </section>
-      <section>
-        <PickerSectionHeader sectionLabel={t("elementPicker.canvasGroups")} />
-        <div className="grid grid-cols-4 gap-3">{CANVAS_OPTIONS.map(canvasGridCard)}</div>
-      </section>
-      <section>
-        <PickerSectionHeader
-          sectionLabel={t("canvasToolbar.awsServices")}
-          showViewAll
-          viewAllLabel={t("elementPicker.viewAll")}
-          onViewAll={() => setCategory(ElementCategory.Aws)}
-        />
-        <div className="grid grid-cols-5 gap-2">
-          {awsSpotlight.map(({ svc, categoryId }) => (
-            <button
-              key={svc.id}
-              type="button"
-              onClick={() => handleAddAws(categoryId, svc.id, svc.name)}
-              className="flex flex-col items-center gap-1 rounded-lg border border-border/40 bg-muted/40 p-2 transition-colors hover:bg-muted"
-            >
-              <AwsIcon iconName={svc.iconName} size={40} />
-              <span className="line-clamp-2 text-center text-[10px] leading-tight text-foreground">
-                {shortAwsName(svc.name)}
-              </span>
-            </button>
-          ))}
-        </div>
-      </section>
-      <section>
-        {services.length === 0 ? (
-          <>
-            <PickerSectionHeader sectionLabel={t("elementPicker.registry")} />
-            <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
-              <p className="text-sm text-muted-foreground">{t("elementPicker.registryEmpty")}</p>
-              <Link
-                to="/workspace"
-                className="text-sm font-medium text-primary hover:underline"
-                onClick={onClose}
-              >
-                {t("elementPicker.openRegistry")}
-              </Link>
-            </div>
-          </>
-        ) : (
-          <>
-            <PickerSectionHeader
-              sectionLabel={t("elementPicker.registry")}
-              showViewAll={services.length > REGISTRY_PREVIEW_LIMIT}
-              viewAllLabel={t("elementPicker.viewAllRegistry")}
-              onViewAll={() => setCategory(ElementCategory.Registry)}
-            />
-            <div className="space-y-2">
-              {services.slice(0, REGISTRY_PREVIEW_LIMIT).map((svc) => {
-                const isOnCanvas = onCanvasServiceIds.has(svc.id);
-                const tech = svc.technology[0] ?? "";
-                return (
-                  <div
-                    key={svc.id}
-                    className="flex items-center gap-3 rounded-lg border border-border/40 bg-muted/40 px-3 py-2"
-                  >
-                    <div
-                      className={cn("h-2 w-2 shrink-0 rounded-full", registrySourceDotClass(svc))}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-foreground text-sm">{svc.name}</p>
-                      {tech && (
-                        <p className="truncate text-xs text-muted-foreground">{tech}</p>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleAddService(svc.id, svc.name)}
-                      className="shrink-0 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover"
-                      title={t("elementPicker.addAnotherInstance")}
-                    >
-                      {isOnCanvas ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                          <Check className="h-3.5 w-3.5" />
-                        </span>
-                      ) : (
-                        t("elementPicker.addButton")
-                      )}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </section>
-    </div>
-  );
-
-  const renderCategoryBody = () => {
-    switch (activeCategory) {
-      case ElementCategory.All:
-        return renderAllView();
-      case ElementCategory.C4:
-        return <div className="grid grid-cols-4 gap-3">{C4_OPTIONS.map(c4GridCard)}</div>;
-      case ElementCategory.Canvas:
-        return <div className="grid grid-cols-4 gap-3">{CANVAS_OPTIONS.map(canvasGridCard)}</div>;
-      case ElementCategory.Aws:
-        return renderAwsBrowse();
-      case ElementCategory.Registry:
-        return renderRegistryList();
-      default:
-        return null;
-    }
   };
 
   const showSearchEmpty =
@@ -572,101 +206,92 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     filteredAwsFlat.length === 0 &&
     filteredServices.length === 0;
 
-  const renderSearchResults = () => {
-    if (showSearchEmpty) {
-      return (
-        <p className="py-10 text-center text-sm text-muted-foreground">
-          {t("elementPicker.noResultsFor", { query: search.trim() })}
-        </p>
-      );
+  const onAddCanvas = (opt: CanvasPickerOption) => {
+    handleAddElement(opt.type, opt.label, opt.panelKind);
+  };
+
+  const renderCategoryBody = () => {
+    switch (activeCategory) {
+      case ElementCategory.All:
+        return (
+          <ElementPickerAllView
+            C4_OPTIONS={C4_OPTIONS}
+            CANVAS_OPTIONS={CANVAS_OPTIONS}
+            awsSpotlight={awsSpotlight}
+            services={services}
+            onCanvasServiceIds={onCanvasServiceIds}
+            onAddC4={(type, label) => handleAddElement(type, label)}
+            onAddCanvas={onAddCanvas}
+            onAddAws={handleAddAws}
+            onAddRegistry={handleAddService}
+            onClose={onClose}
+            setCategory={setCategory}
+          />
+        );
+      case ElementCategory.C4:
+        return (
+          <div className="grid grid-cols-4 gap-3">
+            {C4_OPTIONS.map((opt) => (
+              <button
+                key={opt.type}
+                type="button"
+                onClick={() => handleAddElement(opt.type, opt.label)}
+                className={PICKER_CARD_CLASS}
+              >
+                <opt.icon className="h-10 w-10 shrink-0 text-muted-foreground" />
+                <span className="mt-2 text-xs text-foreground">{opt.label}</span>
+              </button>
+            ))}
+          </div>
+        );
+      case ElementCategory.Canvas:
+        return (
+          <div className="grid grid-cols-4 gap-3">
+            {CANVAS_OPTIONS.map((opt) => (
+              <button
+                key={
+                  isPanelType(opt.type)
+                    ? `panel-${opt.panelKind ?? PanelKind.Default}`
+                    : opt.type
+                }
+                type="button"
+                onClick={() => onAddCanvas(opt)}
+                className={PICKER_CARD_CLASS}
+              >
+                {opt.awsIconName ? (
+                  <AwsIcon iconName={opt.awsIconName} size={40} className="text-muted-foreground" />
+                ) : (
+                  <opt.icon className="h-10 w-10 shrink-0 text-muted-foreground" />
+                )}
+                <span className="mt-2 text-xs text-foreground">{opt.label}</span>
+              </button>
+            ))}
+          </div>
+        );
+      case ElementCategory.Aws:
+        return (
+          <AwsBrowseView
+            awsPrimaryCategories={awsPrimaryCategories}
+            awsOtherCategories={awsOtherCategories}
+            expandedAwsSubcats={expandedAwsSubcats}
+            q={q}
+            toggleAwsSubcat={toggleAwsSubcat}
+            onPickAws={handleAddAws}
+          />
+        );
+      case ElementCategory.Registry:
+        return (
+          <RegistryCategoryPanel
+            services={services}
+            filteredServices={filteredServices}
+            onCanvasServiceIds={onCanvasServiceIds}
+            onAddRegistry={handleAddService}
+            onClose={onClose}
+          />
+        );
+      default:
+        return null;
     }
-    return (
-      <div className="space-y-8">
-        {filteredC4.length > 0 && (
-          <section>
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("elementPicker.c4Model")} · {filteredC4.length}
-            </h3>
-            <div className="grid grid-cols-4 gap-3">{filteredC4.map(c4GridCard)}</div>
-          </section>
-        )}
-        {filteredCanvas.length > 0 && (
-          <section>
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("elementPicker.canvasGroups")} · {filteredCanvas.length}
-            </h3>
-            <div className="grid grid-cols-4 gap-3">{filteredCanvas.map(canvasGridCard)}</div>
-          </section>
-        )}
-        {filteredAwsFlat.length > 0 && (
-          <section>
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("canvasToolbar.awsServices")} · {filteredAwsFlat.length}
-            </h3>
-            <div className="grid grid-cols-5 gap-2">
-              {filteredAwsFlat.map((svc) => (
-                <button
-                  key={`${svc.categoryId}-${svc.id}`}
-                  type="button"
-                  onClick={() =>
-                    handleAddAws(svc.categoryId as AwsCategoryId, svc.id, svc.name)
-                  }
-                  className="flex flex-col items-center gap-1 rounded-lg border border-border/40 bg-muted/40 p-2 transition-colors hover:bg-muted"
-                >
-                  <AwsIcon iconName={svc.iconName} size={40} />
-                  <span className="line-clamp-2 text-center text-[10px] leading-tight text-foreground">
-                    {shortAwsName(svc.name)}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-        {filteredServices.length > 0 && (
-          <section>
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("elementPicker.registry")} · {filteredServices.length}
-            </h3>
-            <div className="space-y-2">
-              {filteredServices.map((svc) => {
-                const isOnCanvas = onCanvasServiceIds.has(svc.id);
-                const tech = svc.technology[0] ?? "";
-                return (
-                  <div
-                    key={svc.id}
-                    className="flex items-center gap-3 rounded-lg border border-border/40 bg-muted/40 px-3 py-2"
-                  >
-                    <div
-                      className={cn("h-2 w-2 shrink-0 rounded-full", registrySourceDotClass(svc))}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-foreground text-sm">{svc.name}</p>
-                      {tech && (
-                        <p className="truncate text-xs text-muted-foreground">{tech}</p>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleAddService(svc.id, svc.name)}
-                      className="shrink-0 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium transition-colors hover:bg-surface-hover"
-                      title={t("elementPicker.addAnotherInstance")}
-                    >
-                      {isOnCanvas ? (
-                        <span className="inline-flex items-center text-emerald-600 dark:text-emerald-400">
-                          <Check className="h-3.5 w-3.5" />
-                        </span>
-                      ) : (
-                        t("elementPicker.addButton")
-                      )}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
-      </div>
-    );
   };
 
   return (
@@ -692,31 +317,12 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
         </div>
 
         <div className="flex min-h-0 flex-1">
-          <aside className="flex w-[160px] shrink-0 flex-col border-r border-border bg-muted/40 py-2">
-            {categoryItems.map((item) => {
-              const Icon = item.icon;
-              const active = !q && activeCategory === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setCategory(item.id)}
-                  className={cn(
-                    "flex h-10 w-full items-center gap-2 px-3 text-left text-sm transition-colors",
-                    active
-                      ? "border-r-2 border-primary bg-primary/10 font-medium text-primary"
-                      : "border-r-2 border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                  )}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                  <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-mono tabular-nums text-muted-foreground">
-                    {item.count}
-                  </span>
-                </button>
-              );
-            })}
-          </aside>
+          <CategorySidebar
+            items={categoryItems}
+            activeCategory={activeCategory}
+            q={q}
+            setCategory={setCategory}
+          />
 
           <div className="flex min-w-0 flex-1 flex-col">
             <div className="shrink-0 border-b border-border p-3">
@@ -733,7 +339,23 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
-              {q ? renderSearchResults() : renderCategoryBody()}
+              {q ? (
+                <ElementPickerSearchResults
+                  searchTrimmed={search.trim()}
+                  showSearchEmpty={showSearchEmpty}
+                  filteredC4={filteredC4}
+                  filteredCanvas={filteredCanvas}
+                  filteredAwsFlat={filteredAwsFlat}
+                  filteredServices={filteredServices}
+                  onCanvasServiceIds={onCanvasServiceIds}
+                  onAddC4={(type, label) => handleAddElement(type, label)}
+                  onAddCanvas={onAddCanvas}
+                  onAddAws={handleAddAws}
+                  onAddRegistry={handleAddService}
+                />
+              ) : (
+                renderCategoryBody()
+              )}
             </div>
           </div>
         </div>

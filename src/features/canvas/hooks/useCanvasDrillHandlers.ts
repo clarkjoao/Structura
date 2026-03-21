@@ -33,7 +33,7 @@ export function useCanvasDrillHandlers({
         onOpenDiagram(comp.linkedDiagramId);
       } else {
         openDiagram(comp.linkedDiagramId);
-        navigate(`/model/${comp.linkedDiagramId}`);
+        navigate(`/diagram/${comp.linkedDiagramId}`);
       }
     },
     [diagram, allDiagrams, openDiagram, navigate, onOpenDiagram],

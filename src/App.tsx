@@ -19,7 +19,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Navigate to="/workspace" />} />
           <Route path="/workspace" element={<Dashboard />} />
-          <Route path="/diagram/:id" element={<ModelExplorer />} />
+          <Route path="/model/:id" element={<ModelExplorer />} />
           <Route path="/catalog" element={<ServiceRegistry />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
