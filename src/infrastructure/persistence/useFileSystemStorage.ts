@@ -4,6 +4,17 @@ import type { WorkspaceScanResult } from "./FileSystemAdapter";
 import { useDiagramStore } from "@/features/diagram";
 import { partializeState, PERSIST_KEY } from "@/features/diagram/store/persist.config";
 import { defaultStorage } from "./LocalStorageAdapter";
+import {
+  bootFileSystem,
+  resetBootState,
+  startFileSystemSync,
+  stopFileSystemSync,
+} from "./fileSystemBoot";
+
+/** Remove the diagram-store key from localStorage so the folder becomes the sole source of truth. */
+async function clearLocalCache(): Promise<void> {
+  await defaultStorage.delete(PERSIST_KEY);
+}
 
 export type FsStatus = "disconnected" | "connecting" | "connected" | "error";
 
@@ -44,26 +55,23 @@ export function useFileSystemStorage() {
     });
   }, []);
 
-  // Silent reconnect on mount
+  // Silent reconnect on mount — delegates to the singleton so it runs only once
   useEffect(() => {
     if (!isFileSystemSupported) return;
-    fileSystemAdapter.tryReconnect().then((ok) => {
+
+    // If already connected (another mount already completed boot), just sync local state
+    if (fileSystemAdapter.isConnected) {
+      defaultStorage.paused = true;
+      setStatus("connected");
+      setFolderName(fileSystemAdapter.folderName);
+      return;
+    }
+
+    bootFileSystem().then((ok) => {
       if (ok) {
-        defaultStorage.paused = true;
         setStatus("connected");
         setFolderName(fileSystemAdapter.folderName);
-        fileSystemAdapter.setFolders(useDiagramStore.getState().folders);
-        fileSystemAdapter.loadWorkspace().then((workspace) => {
-          if (workspace) {
-            useDiagramStore.setState((s) => ({
-              ...s,
-              diagrams: { ...s.diagrams, ...workspace.diagrams },
-              serviceRegistry: workspace.serviceRegistry as any,
-              folders: workspace.folders as any,
-            }));
-            fileSystemAdapter.setFolders(workspace.folders as any);
-          }
-        });
+        startFileSystemSync();
       }
     });
   }, []);
@@ -89,6 +97,8 @@ export function useFileSystemStorage() {
       }
       await fileSystemAdapter.writeManifest(buildManifest(state));
       defaultStorage.paused = true;
+      await clearLocalCache();
+      startFileSystemSync();
       setStatus("connected");
       return;
     }
@@ -96,6 +106,8 @@ export function useFileSystemStorage() {
     if (scan.valid.length === 0) {
       // Folder has files but none are valid diagrams — just connect
       defaultStorage.paused = true;
+      await clearLocalCache();
+      startFileSystemSync();
       setStatus("connected");
       return;
     }
@@ -119,6 +131,8 @@ export function useFileSystemStorage() {
     if (scanResult.manifest) {
       fileSystemAdapter.setFolders(scanResult.manifest.folders as any);
     }
+    await clearLocalCache();
+    startFileSystemSync();
     setScanResult(null);
     setPendingMerge(false);
   }, [scanResult]);
@@ -142,6 +156,8 @@ export function useFileSystemStorage() {
     if (scanResult.manifest) {
       fileSystemAdapter.setFolders(scanResult.manifest.folders as any);
     }
+    await clearLocalCache();
+    startFileSystemSync();
     setScanResult(null);
     setPendingMerge(false);
   }, [scanResult]);
@@ -149,6 +165,7 @@ export function useFileSystemStorage() {
   const cancelMerge = useCallback(async () => {
     await fileSystemAdapter.disconnect();
     defaultStorage.paused = false;
+    resetBootState();
     setScanResult(null);
     setPendingMerge(false);
     setStatus("disconnected");
@@ -162,6 +179,7 @@ export function useFileSystemStorage() {
   const performDisconnect = useCallback(async () => {
     await fileSystemAdapter.disconnect();
     defaultStorage.paused = false;
+    resetBootState();
     setStatus("disconnected");
     setFolderName(null);
     setPendingDisconnect(false);

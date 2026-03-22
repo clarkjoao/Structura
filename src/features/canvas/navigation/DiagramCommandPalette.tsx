@@ -76,9 +76,9 @@ export function DiagramCommandPalette({ onClose, onSelectDiagram }: DiagramComma
     return recent
       .map((r) => {
         const d = diagramsById[r.id];
-        return d ? { ...r, name: d.name } : null;
+        return d ? { id: r.id, openedAt: r.openedAt, name: d.name } : null;
       })
-      .filter((x): x is (typeof recent)[0] & { name: string } => x !== null);
+      .filter((x): x is { id: string; openedAt: number; name: string } => x !== null);
   }, [recent, diagramsById]);
 
   const q = query.trim();

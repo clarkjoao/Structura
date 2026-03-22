@@ -178,7 +178,7 @@ export function useCanvasController({
   const isPanelOpen = !!(visualState.selectedNodeId || visualState.selectedEdgeId) && !isRecording;
   useEffect(() => {
     if (!diagram) return;
-    recordOpened(diagram.id, diagram.name);
+    recordOpened(diagram.id);
   }, [diagram, recordOpened]);
 
   const handleSelectDiagram = useCallback(
