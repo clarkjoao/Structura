@@ -53,6 +53,7 @@ export interface AppActions {
   updateViewport: (viewport: { x: number; y: number; zoom: number }) => void;
   updateEdgeWaypoints: (diagramId: string, connectionId: string, waypoints: Point[]) => void;
   clearEdgeWaypoints: (diagramId: string, connectionId: string) => void;
+  updateEdgeLabelOffset: (diagramId: string, connectionId: string, offset: number) => void;
 
   bringToFront: (elementId: string) => void;
   sendToBack: (elementId: string) => void;

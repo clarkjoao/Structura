@@ -590,7 +590,8 @@
     "request": "→ Request",
     "response": "← Response",
     "waypointHandleAria": "Ponto de rota da conexão {{index}}, arraste para mover, duplo clique para remover",
-    "midpointHandleAria": "Adicionar ponto no segmento {{segment}}, arraste para posicionar"
+    "midpointHandleAria": "Adicionar ponto no segmento {{segment}}, arraste para posicionar",
+    "segmentHitAria": "Segmento da conexão {{index}}, arraste para mover ortogonalmente"
   },
   "flows": {
     "panelTitle": "Flows",

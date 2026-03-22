@@ -6,6 +6,8 @@ export interface Point {
 export interface EdgeLayout {
   connectionId: string;
   waypoints: Point[];
+  /** Relative position along the knot polyline (0 = source, 1 = target). Default 0.5. */
+  labelOffset?: number;
 }
 
 export interface NodeLayout {

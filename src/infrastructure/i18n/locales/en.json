@@ -590,7 +590,8 @@
     "request": "→ Request",
     "response": "← Response",
     "waypointHandleAria": "Connection waypoint {{index}}, drag to move, double-click to remove",
-    "midpointHandleAria": "Add waypoint along segment {{segment}}, drag to position"
+    "midpointHandleAria": "Add waypoint along segment {{segment}}, drag to position",
+    "segmentHitAria": "Edge segment {{index}}, drag to move orthogonally"
   },
   "flows": {
     "panelTitle": "Flows",

@@ -74,6 +74,7 @@ export const useDiagramActions = () =>
       updateViewport: s.updateViewport,
       updateEdgeWaypoints: s.updateEdgeWaypoints,
       clearEdgeWaypoints: s.clearEdgeWaypoints,
+      updateEdgeLabelOffset: s.updateEdgeLabelOffset,
       bringToFront: s.bringToFront,
       sendToBack: s.sendToBack,
       addService: s.addService,

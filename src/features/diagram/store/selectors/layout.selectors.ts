@@ -15,6 +15,12 @@ export const useEdgeWaypoints = (connectionId: string): Point[] =>
     }),
   );
 
+export const useEdgeLabelOffset = (connectionId: string): number | undefined =>
+  useDiagramStore((state) => {
+    const diagram = state.diagrams[state.activeDiagramId ?? ""];
+    return diagram?.edgeLayouts.find((layout) => layout.connectionId === connectionId)?.labelOffset;
+  });
+
 export const useNodeLayouts = () =>
   useDiagramStore((s) => {
     if (!s.activeDiagramId) return {};

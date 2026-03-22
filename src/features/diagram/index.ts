@@ -184,6 +184,7 @@ export {
   useIconById,
   useComponentIcon,
   useEdgeWaypoints,
+  useEdgeLabelOffset,
 } from './store/selectors'
 export type { DiagramStore, ClipboardEntry } from "./store/store.types";
 export type { ServiceDefinition } from "./model/service.types";

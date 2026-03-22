@@ -64,6 +64,20 @@ export const layoutSlice = (
       });
     },
 
+    updateEdgeLabelOffset: (diagramId: string, connectionId: string, offset: number) => {
+      set((state) => {
+        const diagram = state.diagrams[diagramId];
+        if (!diagram) return;
+        const safe = Math.max(0, Math.min(1, offset));
+        const existing = diagram.edgeLayouts.find((layout) => layout.connectionId === connectionId);
+        if (existing) {
+          existing.labelOffset = safe;
+        } else {
+          diagram.edgeLayouts.push({ connectionId, waypoints: [], labelOffset: safe });
+        }
+      });
+    },
+
     bringToFront: (elementId: string) => {
       set((state) => {
         const d = state.diagrams[state.activeDiagramId!];
