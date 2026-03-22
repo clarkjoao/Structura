@@ -143,6 +143,9 @@ export function exportDrawio(
           nodeLayouts: Object.fromEntries(
             Object.entries(resolved.nodeLayouts).filter(([id]) => idSet.has(id)),
           ),
+          edgeLayouts: resolved.edgeLayouts.filter(
+            (layout) => filteredConnections[layout.connectionId] !== undefined,
+          ),
         };
       })()
     : resolved;
@@ -260,9 +263,22 @@ export function exportDrawio(
     vertexCells.push(cell);
   }
 
+  const edgeLayoutByConnectionId = new Map(
+    diagramForExport.edgeLayouts.map((layout) => [layout.connectionId, layout]),
+  );
+
   const edgeCells: string[] = [];
   for (const conn of Object.values(connections)) {
-    edgeCells.push(buildEdgeCell(conn));
+    const edgeLayout = edgeLayoutByConnectionId.get(conn.id);
+    const pointsAttribute =
+      edgeLayout && edgeLayout.waypoints.length > 0
+        ? edgeLayout.waypoints
+            .map((point) => `${Math.round(point.x)},${Math.round(point.y)}`)
+            .join(";")
+        : undefined;
+    edgeCells.push(
+      buildEdgeCell(conn, pointsAttribute ? { pointsAttribute } : undefined),
+    );
   }
 
   const allCells = [

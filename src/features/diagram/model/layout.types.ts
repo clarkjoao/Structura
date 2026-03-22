@@ -1,3 +1,13 @@
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export interface EdgeLayout {
+  connectionId: string;
+  waypoints: Point[];
+}
+
 export interface NodeLayout {
   elementId: string;
   x: number;

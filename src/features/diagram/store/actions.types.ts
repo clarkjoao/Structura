@@ -13,6 +13,7 @@ import type {
   SceneDiff,
   NodeLayout,
   IconDefinition,
+  Point,
 } from "../model/diagram.types";
 import type { ServiceDefinition } from "../model/service.types";
 import type { EdgeStyle } from "../model/connection.types";
@@ -50,6 +51,8 @@ export interface AppActions {
 
   updateNodeLayout: (elementId: string, position: { x: number; y: number }, dimensions?: { width: number; height: number }) => void;
   updateViewport: (viewport: { x: number; y: number; zoom: number }) => void;
+  updateEdgeWaypoints: (diagramId: string, connectionId: string, waypoints: Point[]) => void;
+  clearEdgeWaypoints: (diagramId: string, connectionId: string) => void;
 
   bringToFront: (elementId: string) => void;
   sendToBack: (elementId: string) => void;

@@ -72,6 +72,8 @@ export const useDiagramActions = () =>
       removeConnection: s.removeConnection,
       updateNodeLayout: s.updateNodeLayout,
       updateViewport: s.updateViewport,
+      updateEdgeWaypoints: s.updateEdgeWaypoints,
+      clearEdgeWaypoints: s.clearEdgeWaypoints,
       bringToFront: s.bringToFront,
       sendToBack: s.sendToBack,
       addService: s.addService,

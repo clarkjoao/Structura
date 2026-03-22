@@ -1,5 +1,5 @@
 import { MarkerType, type Edge } from "@xyflow/react";
-import type { Connection, Diagram, FlowStep } from "@/features/diagram";
+import type { Connection, Diagram, FlowStep, Point } from "@/features/diagram";
 import { getEffectiveConnectionStyle, EdgeMarker, EdgeStyle } from "@/features/diagram";
 import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
 
@@ -98,6 +98,47 @@ export function buildEdge(
     markerStart: markerStart !== undefined ? { type: markerStart } : undefined,
     style: opacity !== undefined ? { opacity } : undefined,
   };
+}
+
+/** Polyline path in flow coordinates: source → waypoints → target. */
+export function buildEdgePolylinePath(
+  sourceX: number,
+  sourceY: number,
+  targetX: number,
+  targetY: number,
+  waypoints: Point[],
+): string {
+  if (waypoints.length === 0) {
+    return `M ${sourceX} ${sourceY} L ${targetX} ${targetY}`;
+  }
+  const points: Point[] = [
+    { x: sourceX, y: sourceY },
+    ...waypoints,
+    { x: targetX, y: targetY },
+  ];
+  return points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
+}
+
+/** Midpoint of each segment along source → waypoints → target (for ghost handles). */
+export function buildEdgeMidpoints(
+  sourceX: number,
+  sourceY: number,
+  targetX: number,
+  targetY: number,
+  waypoints: Point[],
+): Point[] {
+  const points: Point[] = [
+    { x: sourceX, y: sourceY },
+    ...waypoints,
+    { x: targetX, y: targetY },
+  ];
+  return points.slice(0, -1).map((point, index) => {
+    const next = points[index + 1];
+    return {
+      x: (point.x + next.x) / 2,
+      y: (point.y + next.y) / 2,
+    };
+  });
 }
 
 export function filterVisibleConnections(

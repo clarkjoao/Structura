@@ -9,7 +9,7 @@ import { migrateFlow } from "../utils/flow-migration";
 export const PERSIST_KEY = "diagram-store";
 
 /** Must match `version` passed to zustand `persist` (used when writing localStorage manually). */
-export const PERSIST_SCHEMA_VERSION = 2;
+export const PERSIST_SCHEMA_VERSION = 3;
 
 /** Alias for consumers that refer to “current” schema version in docs or tooling. */
 export const CURRENT_SCHEMA_VERSION = PERSIST_SCHEMA_VERSION;
@@ -181,6 +181,13 @@ function migrateAddIconLibrary(state: Partial<DiagramStore>): void {
 /**
  * Idempotent: moves legacy top-level `svgContent` into `source: { kind: "svg", svgContent }`.
  */
+function migrateAddEdgeLayouts(state: Partial<DiagramStore>): void {
+  for (const diagram of Object.values(state.diagrams ?? {})) {
+    const diagramRecord = diagram as Diagram;
+    diagramRecord.edgeLayouts ??= [];
+  }
+}
+
 function migrateIconDefinitionToSource(state: Partial<DiagramStore>): void {
   const migrateLibrary = (library: Record<string, IconDefinition> | undefined): void => {
     if (!library) return;
@@ -242,12 +249,14 @@ export function mergePersistedState(
   next = migrateFlowsToGraph(next);
   migrateAddIconLibrary(next);
   migrateIconDefinitionToSource(next);
+  migrateAddEdgeLayouts(next);
 
   return next;
 }
 
 const SCHEMA_VERSION_WITH_ICON_LIBRARY = 1;
 const SCHEMA_VERSION_ICON_SOURCE = 2;
+const SCHEMA_VERSION_EDGE_LAYOUTS = 3;
 
 export function createPersistConfig(storage: IStoragePort) {
   return {
@@ -266,6 +275,9 @@ export function createPersistConfig(storage: IStoragePort) {
       }
       if (fromVersion < SCHEMA_VERSION_ICON_SOURCE) {
         migrateIconDefinitionToSource(partial);
+      }
+      if (fromVersion < SCHEMA_VERSION_EDGE_LAYOUTS) {
+        migrateAddEdgeLayouts(partial);
       }
       return persistedState as PersistedDiagramStoreSlice;
     },

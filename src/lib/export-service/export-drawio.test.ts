@@ -16,6 +16,7 @@ function minimalDiagram(overrides: Partial<Diagram> = {}): Diagram {
       iconLibrary: {},
     },
     nodeLayouts: {},
+    edgeLayouts: [],
     viewport: { x: 0, y: 0, zoom: 1 },
   };
   return { ...base, ...overrides, snapshot: { ...base.snapshot, ...overrides.snapshot } };

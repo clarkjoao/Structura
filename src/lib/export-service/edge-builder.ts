@@ -18,7 +18,12 @@ export function buildEdgeLabelPlain(conn: Connection): string {
   return rawLabel;
 }
 
-export function buildEdgeCell(conn: Connection): string {
+export interface BuildEdgeCellOptions {
+  /** draw.io `points` attribute: `x1,y1;x2,y2` in diagram coordinates */
+  pointsAttribute?: string;
+}
+
+export function buildEdgeCell(conn: Connection, options?: BuildEdgeCellOptions): string {
   const eff = getEffectiveConnectionStyle(conn);
   const isDashed =
     eff.strokeStyle === StrokeStyle.Dashed || eff.strokeStyle === StrokeStyle.Dotted;
@@ -52,9 +57,14 @@ export function buildEdgeCell(conn: Connection): string {
 
   const value = escXml(buildEdgeLabelPlain(conn));
 
+  const pointsAttr =
+    options?.pointsAttribute && options.pointsAttribute.length > 0
+      ? ` points="${escXml(options.pointsAttribute)}"`
+      : "";
+
   return (
     `<mxCell id="${escXml(conn.id)}" value="${value}" style="${style}" ` +
-    `edge="1" source="${escXml(conn.sourceId)}" target="${escXml(conn.targetId)}" parent="1">` +
+    `edge="1" source="${escXml(conn.sourceId)}" target="${escXml(conn.targetId)}" parent="1"${pointsAttr}>` +
     `<mxGeometry relative="1" as="geometry"/>` +
     `</mxCell>`
   );

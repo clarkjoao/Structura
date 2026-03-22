@@ -1,4 +1,12 @@
-import { memo, useMemo, useRef } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  type MouseEventHandler,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -8,9 +16,19 @@ import {
   useReactFlow,
   type EdgeProps,
 } from "@xyflow/react";
-import { useDiagramActions, EdgeStyle, StrokeStyle, type ConnectionStyle } from "@/features/diagram";
+import {
+  useActiveDiagramId,
+  useDiagramActions,
+  useEdgeWaypoints,
+  EdgeStyle,
+  StrokeStyle,
+  type ConnectionStyle,
+  type Point,
+} from "@/features/diagram";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { useTranslation } from "react-i18next";
+import { EdgeWaypointHandles } from "./EdgeWaypointHandles";
+import { buildEdgePolylinePath } from "./edgeBuilding";
 
 export interface EdgeData {
   label: string;
@@ -103,13 +121,28 @@ const Edge = memo(
   }: EdgeProps) => {
     const { t } = useTranslation();
     const { screenToFlowPosition } = useReactFlow();
-    const { updateConnection } = useDiagramActions();
+    const activeDiagramId = useActiveDiagramId();
+    const { updateConnection, updateEdgeWaypoints, clearEdgeWaypoints } = useDiagramActions();
     const dragPathRef = useRef<SVGPathElement | null>(null);
     const lastSentPositionRef = useRef<number>(
       clampLabelPosition((data as unknown as EdgeData | undefined)?.labelPosition),
     );
     const d = data as unknown as EdgeData;
     const { highlightedConnectionId } = useHandleHighlight();
+    const waypoints = useEdgeWaypoints(d?.connectionId ?? "");
+    const waypointsRef = useRef(waypoints);
+    const edgePointerDragCleanupRef = useRef<(() => void) | null>(null);
+    useEffect(() => {
+      waypointsRef.current = waypoints;
+    }, [waypoints]);
+    useEffect(
+      () => () => {
+        edgePointerDragCleanupRef.current?.();
+        edgePointerDragCleanupRef.current = null;
+      },
+      [],
+    );
+
     const pathParams = {
       sourceX,
       sourceY,
@@ -122,7 +155,10 @@ const Edge = memo(
     let edgePath: string;
     let labelX: number;
     let labelY: number;
-    if (styleKey === EdgeStyle.Step) {
+    if (waypoints.length > 0) {
+      edgePath = buildEdgePolylinePath(sourceX, sourceY, targetX, targetY, waypoints);
+      [, labelX, labelY] = getStraightPath(pathParams);
+    } else if (styleKey === EdgeStyle.Step) {
       [edgePath, labelX, labelY] = getSmoothStepPath({
         ...pathParams,
         borderRadius: 0,
@@ -134,6 +170,64 @@ const Edge = memo(
     } else {
       [edgePath, labelX, labelY] = getStraightPath(pathParams);
     }
+
+    const commitWaypoints = useCallback(
+      (next: Point[]) => {
+        if (!activeDiagramId || !d?.connectionId) return;
+        waypointsRef.current = next;
+        updateEdgeWaypoints(activeDiagramId, d.connectionId, next);
+      },
+      [activeDiagramId, d?.connectionId, updateEdgeWaypoints],
+    );
+
+    const handleWaypointDrag = useCallback(
+      (index: number, newPoint: Point) => {
+        const base = [...waypointsRef.current];
+        base[index] = newPoint;
+        commitWaypoints(base);
+      },
+      [commitWaypoints],
+    );
+
+    const handleMidpointPointerDown = useCallback(
+      (segmentIndex: number, midpoint: Point) => {
+        return (event: ReactPointerEvent<SVGCircleElement>) => {
+          if (!activeDiagramId || !d?.connectionId) return;
+          event.preventDefault();
+          event.stopPropagation();
+          edgePointerDragCleanupRef.current?.();
+
+          const inserted = [...waypointsRef.current];
+          inserted.splice(segmentIndex, 0, midpoint);
+          commitWaypoints(inserted);
+
+          const onPointerMove = (pointerEvent: PointerEvent) => {
+            const flow = screenToFlowPosition({
+              x: pointerEvent.clientX,
+              y: pointerEvent.clientY,
+            });
+            const base = [...waypointsRef.current];
+            base[segmentIndex] = flow;
+            commitWaypoints(base);
+          };
+
+          const onPointerUp = () => {
+            document.removeEventListener("pointermove", onPointerMove);
+            document.removeEventListener("pointerup", onPointerUp);
+            document.removeEventListener("pointercancel", onPointerUp);
+            document.body.style.cursor = "";
+            edgePointerDragCleanupRef.current = null;
+          };
+
+          document.body.style.cursor = "grabbing";
+          document.addEventListener("pointermove", onPointerMove);
+          document.addEventListener("pointerup", onPointerUp);
+          document.addEventListener("pointercancel", onPointerUp);
+          edgePointerDragCleanupRef.current = onPointerUp;
+        };
+      },
+      [activeDiagramId, commitWaypoints, d?.connectionId, screenToFlowPosition],
+    );
 
     const strokeStyle = d?.strokeStyle ?? StrokeStyle.Solid;
     const dashArray = strokeDasharrayByStyle[strokeStyle];
@@ -188,6 +282,14 @@ const Edge = memo(
       dragPathRef.current = null;
     };
 
+    const handleEdgePathDoubleClick: MouseEventHandler<SVGPathElement> = (event) => {
+      if (waypoints.length === 0) return;
+      if (!activeDiagramId || !d?.connectionId) return;
+      event.preventDefault();
+      event.stopPropagation();
+      clearEdgeWaypoints(activeDiagramId, d.connectionId);
+    };
+
     return (
       <>
         <BaseEdge
@@ -207,6 +309,16 @@ const Edge = memo(
             strokeDasharray: dashArray,
           }}
         />
+        {waypoints.length > 0 && (
+          <path
+            d={edgePath}
+            fill="none"
+            stroke="transparent"
+            strokeWidth={24}
+            style={{ pointerEvents: "stroke", cursor: "default" }}
+            onDoubleClick={handleEdgePathDoubleClick}
+          />
+        )}
         {d?.isActivePlayback && (
           <>
             <style>{`@keyframes flowParticle { 0% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -112; } }`}</style>
@@ -224,6 +336,24 @@ const Edge = memo(
               }}
             />
           </>
+        )}
+        {selected && activeDiagramId && d?.connectionId && (
+          <EdgeWaypointHandles
+            connectionId={d.connectionId}
+            sourceX={sourceX}
+            sourceY={sourceY}
+            targetX={targetX}
+            targetY={targetY}
+            waypoints={waypoints}
+            translate={t}
+            onWaypointDrag={handleWaypointDrag}
+            onWaypointRemoveAtIndex={(waypointIndex) => {
+              const next = waypointsRef.current.filter((_, index) => index !== waypointIndex);
+              commitWaypoints(next);
+            }}
+            onMidpointPointerDown={handleMidpointPointerDown}
+            onWaypointGestureClear={() => edgePointerDragCleanupRef.current?.()}
+          />
         )}
         {d?.label && (
           <EdgeLabelRenderer>

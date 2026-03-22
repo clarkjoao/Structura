@@ -588,7 +588,9 @@
   "customEdge": {
     "coveredBy": "Coberto por: {{names}}",
     "request": "→ Request",
-    "response": "← Response"
+    "response": "← Response",
+    "waypointHandleAria": "Ponto de rota da conexão {{index}}, arraste para mover, duplo clique para remover",
+    "midpointHandleAria": "Adicionar ponto no segmento {{segment}}, arraste para posicionar"
   },
   "flows": {
     "panelTitle": "Flows",

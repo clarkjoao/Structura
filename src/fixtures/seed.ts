@@ -150,6 +150,7 @@ function buildDiagrams(): Record<string, Diagram> {
           width: 340, height: 420,
         },
       },
+      edgeLayouts: [],
       snapshot: {
         iconLibrary: {},
         components: {
@@ -366,6 +367,7 @@ function buildDiagrams(): Record<string, Diagram> {
         "ct-kafka":            { elementId: "ct-kafka",            x: 1840, y: 580 },
         "ct-ledger-svc":       { elementId: "ct-ledger-svc",       x: 1840, y: 770 },
       },
+      edgeLayouts: [],
       snapshot: {
         iconLibrary: {},
         components: {
@@ -648,6 +650,7 @@ function buildDiagrams(): Record<string, Diagram> {
         // col 4 — infra
         "pm-event-publisher":     { elementId: "pm-event-publisher",     x: 1440, y: 320 },
       },
+      edgeLayouts: [],
       snapshot: {
         iconLibrary: {},
         components: {
@@ -834,6 +837,7 @@ function buildDiagrams(): Record<string, Diagram> {
         "gw-transformer":  { elementId: "gw-transformer",  x: 1280, y: 300 },
         "gw-logger":       { elementId: "gw-logger",       x: 680,  y: 580 },
       },
+      edgeLayouts: [],
       snapshot: {
         iconLibrary: {},
         components: {
@@ -971,6 +975,7 @@ function buildDiagrams(): Record<string, Diagram> {
         "bff-dataloader":        { elementId: "bff-dataloader",        x: 760,  y: 460 },
         "bff-cache":             { elementId: "bff-cache",             x: 1100, y: 460 },
       },
+      edgeLayouts: [],
       snapshot: {
         iconLibrary: {},
         components: {
@@ -1119,6 +1124,7 @@ function buildDiagrams(): Record<string, Diagram> {
           width: 340, height: 480,
         },
       },
+      edgeLayouts: [],
       snapshot: {
         iconLibrary: {},
         components: {

@@ -27,6 +27,8 @@ export type {
   EdgeMarker,
   NodeLayout,
   ViewNodeLayout,
+  Point,
+  EdgeLayout,
   FlowStep,
   FlowStepType,
   FlowBranch,
@@ -181,6 +183,7 @@ export {
   useIconLibrary,
   useIconById,
   useComponentIcon,
+  useEdgeWaypoints,
 } from './store/selectors'
 export type { DiagramStore, ClipboardEntry } from "./store/store.types";
 export type { ServiceDefinition } from "./model/service.types";
