@@ -1,19 +1,19 @@
 import { useShallow } from "zustand/react/shallow";
 import { useDiagramStore } from "../diagram.store";
-import { resolveCanvasSnapshot } from "../../utils/scene.utils";
+import { getCachedCanvasSnapshot } from "../../utils/snapshot-cache";
 
 export const useConnectionIds = () =>
   useDiagramStore((s) => {
     if (!s.activeDiagramId) return [];
     const d = s.diagrams[s.activeDiagramId];
-    return Object.keys(resolveCanvasSnapshot(d).connections);
+    return Object.keys(getCachedCanvasSnapshot(d).connections);
   });
 
 export const useConnection = (id: string) =>
   useDiagramStore((s) => {
     if (!s.activeDiagramId) return undefined;
     const d = s.diagrams[s.activeDiagramId];
-    return resolveCanvasSnapshot(d).connections[id];
+    return getCachedCanvasSnapshot(d).connections[id];
   });
 
 export const useConnections = () =>
@@ -21,7 +21,7 @@ export const useConnections = () =>
     useShallow((s) => {
       if (!s.activeDiagramId) return {};
       const d = s.diagrams[s.activeDiagramId];
-      return resolveCanvasSnapshot(d).connections;
+      return getCachedCanvasSnapshot(d).connections;
     }),
   );
 
@@ -30,7 +30,7 @@ export const useVisibleComponents = () =>
     useShallow((s) => {
       if (!s.activeDiagramId) return [];
       const d = s.diagrams[s.activeDiagramId];
-      const r = resolveCanvasSnapshot(d);
+      const r = getCachedCanvasSnapshot(d);
       const visibleIds = new Set(Object.keys(r.nodeLayouts));
       return Object.values(r.components).filter((c) => visibleIds.has(c.id));
     }),
@@ -41,7 +41,7 @@ export const useVisibleConnections = () =>
     useShallow((s) => {
       if (!s.activeDiagramId) return [];
       const d = s.diagrams[s.activeDiagramId];
-      const r = resolveCanvasSnapshot(d);
+      const r = getCachedCanvasSnapshot(d);
       const visibleIds = new Set(Object.keys(r.nodeLayouts));
       return Object.values(r.connections).filter(
         (conn) => visibleIds.has(conn.sourceId) && visibleIds.has(conn.targetId),

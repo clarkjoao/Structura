@@ -50,6 +50,11 @@ interface UseCanvasNodesParams {
   compareVisualByComponentId?: Record<string, CompareElementVisual>;
 }
 
+type NodeCtxBase = Omit<NodeBuildContext, "isPlaying" | "isRecording" | "flowHighlight" | "activeStep" | "recordingInfo" | "coverage"> & {
+  highlightedNodeIds: Set<string>;
+  isViewingCoverage: boolean;
+};
+
 export function useCanvasNodes({
   diagram,
   resolvedComponents,
@@ -82,10 +87,10 @@ export function useCanvasNodes({
   compareVisualByComponentId,
 }: UseCanvasNodesParams): Node[] {
   const { isRecording, onRecordHandleClick } = useRecordingMode();
-  return useMemo(() => {
-    if (!diagram) return [];
-    const collapsedPanelIds = buildCollapsedPanelIds(resolvedComponents);
-    const ctx: NodeBuildContext = {
+
+  const nodeCtxBase: NodeCtxBase | null = useMemo(() => {
+    if (!diagram) return null;
+    return {
       diagram,
       resolvedComponents,
       resolvedNodeLayouts,
@@ -102,26 +107,78 @@ export function useCanvasNodes({
       connectionCounts: connectionCountPerNode,
       effectiveHandleOrder,
       onReorderHandle,
-      isPlaying,
-      isRecording,
-      flowHighlight,
-      activeStep,
-      recordingInfo,
-      coverage,
       handleDrillDown,
       onRecordHandleClick,
       onPanelCollapseToggle: handlePanelCollapseToggle,
       activeFlowId,
       onPlayFlow,
       onAddEndpointToGroup,
+      highlightedNodeIds,
+      isViewingCoverage,
     };
+  }, [
+    diagram,
+    resolvedComponents,
+    resolvedNodeLayouts,
+    sceneBadgeByComponentId,
+    compareVisualByComponentId,
+    isCompareMode,
+    serviceRegistry,
+    allDiagrams,
+    selectedNodeId,
+    selectedNodeIds,
+    dragTargetPanelId,
+    unparentCandidatePanelId,
+    panelIds,
+    connectionCountPerNode,
+    effectiveHandleOrder,
+    onReorderHandle,
+    handleDrillDown,
+    onRecordHandleClick,
+    handlePanelCollapseToggle,
+    activeFlowId,
+    onPlayFlow,
+    onAddEndpointToGroup,
+    highlightedNodeIds,
+    isViewingCoverage,
+  ]);
+
+  const nodeCtxPlayback = useMemo(
+    () => ({
+      isPlaying,
+      isRecording,
+      flowHighlight,
+      activeStep,
+      recordingInfo,
+      coverage,
+    }),
+    [isPlaying, isRecording, flowHighlight, activeStep, recordingInfo, coverage],
+  );
+
+  return useMemo(() => {
+    if (!diagram || !nodeCtxBase) return [];
+
+    const {
+      highlightedNodeIds: hIds,
+      isViewingCoverage: viewingCov,
+      ...ctxBaseForBuild
+    } = nodeCtxBase;
+
+    const ctx: NodeBuildContext = {
+      ...ctxBaseForBuild,
+      ...nodeCtxPlayback,
+    };
+
+    const collapsedPanelIds = buildCollapsedPanelIds(nodeCtxBase.resolvedComponents);
+    const compareVisual = nodeCtxBase.compareVisualByComponentId;
+    const isCmp = nodeCtxBase.isCompareMode ?? false;
+
     return [...visibleComponents]
       .sort((a, b) => {
         const aIsGroup = isPanelComponent(a) || isApiGroupComponent(a);
         const bIsGroup = isPanelComponent(b) || isApiGroupComponent(b);
         if (aIsGroup && !bIsGroup) return -1;
         if (!aIsGroup && bIsGroup) return 1;
-        // Among groups, parents must come before children
         if (aIsGroup && bIsGroup) {
           if (b.parentId === a.id) return -1;
           if (a.parentId === b.id) return 1;
@@ -130,22 +187,31 @@ export function useCanvasNodes({
       })
       .map((comp): Node => {
         const d = resolveNodeDescriptor(comp);
-        const layout = resolvedNodeLayouts[comp.id];
+        const layout = nodeCtxBase.resolvedNodeLayouts[comp.id];
         const vis = computeNodeVisibility(
-          comp, d, layout, panelIds, selectedNodeIds, highlightedNodeIds,
-          collapsedPanelIds, isViewingCoverage, coverage,
+          comp,
+          d,
+          layout,
+          nodeCtxBase.panelIds,
+          nodeCtxBase.selectedNodeIds,
+          hIds,
+          collapsedPanelIds,
+          viewingCov,
+          nodeCtxPlayback.coverage,
         );
         const style: Record<string, unknown> = {
           ...d.buildStyle?.(comp, ctx),
           ...(vis.dimmed ? { opacity: 0.3 } : {}),
         };
-        const cmpVis = compareVisualByComponentId?.[comp.id];
+        const cmpVis = compareVisual?.[comp.id];
         if (cmpVis !== undefined) {
           const baseOp = typeof style.opacity === "number" ? style.opacity : 1;
           style.opacity = baseOp * cmpVis.opacity;
         }
-        const lockedInGroup = isEndpointType(comp.type) && comp.parentId != null
-          && isApiGroupComponent(resolvedComponents[comp.parentId]);
+        const lockedInGroup =
+          isEndpointType(comp.type) &&
+          comp.parentId != null &&
+          isApiGroupComponent(nodeCtxBase.resolvedComponents[comp.parentId]);
         const sceneActive =
           !!diagram.activeSceneId && !!diagram.scenes?.[diagram.activeSceneId];
         const sceneLocksBase =
@@ -155,33 +221,17 @@ export function useCanvasNodes({
           type: d.rfType,
           position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
           zIndex: vis.zIndex,
-          connectable: d.connectable && !isCompareMode,
+          connectable: d.connectable && !isCmp,
           selected: vis.isSelected,
-          draggable: (d.draggable ?? !lockedInGroup) && !sceneLocksBase && !isCompareMode,
-          selectable: (d.selectable ?? !lockedInGroup) && !isCompareMode,
-          focusable: (d.focusable ?? !lockedInGroup) && !isCompareMode,
-          className: isCompareMode ? "cursor-default" : undefined,
+          draggable: (d.draggable ?? !lockedInGroup) && !sceneLocksBase && !isCmp,
+          selectable: (d.selectable ?? !lockedInGroup) && !isCmp,
+          focusable: (d.focusable ?? !lockedInGroup) && !isCmp,
+          className: isCmp ? "cursor-default" : undefined,
           ...(vis.isChild ? { parentId: comp.parentId!, extent: "parent" as const } : {}),
           hidden: vis.isHidden,
           style: style as CSSProperties,
           data: d.buildData(comp, ctx),
         };
       });
-  }, [
-    diagram,
-    resolvedComponents,
-    resolvedNodeLayouts,
-    sceneBadgeByComponentId,
-    compareVisualByComponentId,
-    isCompareMode,
-    visibleComponents,
-    panelIds,
-    selectedNodeId,
-    selectedNodeIds,
-    highlightedNodeIds,
-    serviceRegistry, allDiagrams, handleDrillDown, isPlaying, flowHighlight,
-    dragTargetPanelId, unparentCandidatePanelId, isRecording, recordingInfo,
-    onRecordHandleClick, activeStep, coverage, connectionCountPerNode, effectiveHandleOrder,
-    onReorderHandle, handlePanelCollapseToggle, isViewingCoverage, activeFlowId, onPlayFlow, onAddEndpointToGroup,
-  ]);
+  }, [diagram, nodeCtxBase, nodeCtxPlayback, visibleComponents]);
 }

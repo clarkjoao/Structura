@@ -1,19 +1,19 @@
 import { useShallow } from "zustand/react/shallow";
 import { useDiagramStore } from "../diagram.store";
-import { resolveCanvasSnapshot } from "../../utils/scene.utils";
+import { getCachedCanvasSnapshot } from "../../utils/snapshot-cache";
 
 export const useComponentIds = () =>
   useDiagramStore((s) => {
     if (!s.activeDiagramId) return [];
     const d = s.diagrams[s.activeDiagramId];
-    return Object.keys(resolveCanvasSnapshot(d).components);
+    return Object.keys(getCachedCanvasSnapshot(d).components);
   });
 
 export const useComponent = (id: string) =>
   useDiagramStore((s) => {
     if (!s.activeDiagramId) return undefined;
     const d = s.diagrams[s.activeDiagramId];
-    return resolveCanvasSnapshot(d).components[id];
+    return getCachedCanvasSnapshot(d).components[id];
   });
 
 export const useComponents = () =>
@@ -21,7 +21,7 @@ export const useComponents = () =>
     useShallow((s) => {
       if (!s.activeDiagramId) return {};
       const d = s.diagrams[s.activeDiagramId];
-      return resolveCanvasSnapshot(d).components;
+      return getCachedCanvasSnapshot(d).components;
     }),
   );
 
@@ -30,6 +30,6 @@ export const useAllComponents = () =>
     useShallow((s) => {
       if (!s.activeDiagramId) return [];
       const d = s.diagrams[s.activeDiagramId];
-      return Object.values(resolveCanvasSnapshot(d).components);
+      return Object.values(getCachedCanvasSnapshot(d).components);
     }),
   );
