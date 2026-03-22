@@ -6,6 +6,8 @@ import type {
   EndpointComponent,
   PanelComponent,
   NodeLayout,
+  Diagram,
+  SceneDiff,
 } from "../../model/diagram.types";
 import { PanelKind } from "../../enums";
 import { generateId } from "../../utils/generate-id";
@@ -46,6 +48,135 @@ function countEndpointsUnderParent(
   return n;
 }
 
+function write(
+  scene: SceneDiff | null,
+  d: Diagram,
+  comp: Component,
+  layout: NodeLayout,
+): void {
+  if (scene) {
+    scene.addedComponents[comp.id] = comp;
+    scene.nodeLayouts[comp.id] = layout;
+  } else {
+    d.snapshot.components[comp.id] = comp;
+    d.nodeLayouts[comp.id] = layout;
+  }
+}
+
+function buildComponentForType(
+  id: string,
+  type: ComponentType,
+  name: string,
+  parentId: string | null,
+  panelKind: PanelKind | undefined,
+  awsService: string | undefined,
+): { component: Component; resolvedPanelKind: PanelKind | undefined } {
+  const base = { id, name, description: "", parentId };
+  let component: Component;
+  const resolvedPanelKind: PanelKind | undefined = isPanelType(type)
+    ? (panelKind ?? PanelKind.Default)
+    : undefined;
+  if (isPanelType(type)) {
+    const kind = resolvedPanelKind!;
+    const def = getPanelKindDef(kind);
+    const isSwimlane = kind === PanelKind.Swimlane;
+    component = {
+      ...base,
+      type: "panel",
+      panelKind: kind,
+      panelColor: def.defaultColor,
+      ...(isSwimlane
+        ? {
+            swimlane: {
+              orientation: "horizontal",
+              laneColor: "#6366f1",
+              laneLabel: i18n.t("swimlane.defaultLaneLabel"),
+            },
+          }
+        : {}),
+    } as PanelComponent;
+  } else if (isNoteType(type)) {
+    component = { ...base, type: "note", panelColor: "hsl(45 25% 97%)" };
+  } else if (isEndpointType(type)) {
+    component = {
+      ...base,
+      type: "endpoint",
+      method: "GET",
+      path: "/novo-endpoint",
+      handlers: [],
+    } as EndpointComponent;
+  } else if (isApiGroupType(type)) {
+    component = {
+      ...base,
+      type: "api-group",
+      serviceName: name,
+      basePath: "/api/v1",
+      protocol: "REST",
+    } as ApiGroupComponent;
+  } else if (isC4Type(type)) {
+    component = { ...base, type };
+  } else {
+    component = { ...base, type, awsService: awsService ?? undefined };
+  }
+  return { component, resolvedPanelKind };
+}
+
+function resolveInsertPosition(params: {
+  parentId: string | null;
+  position: { x: number; y: number } | undefined;
+  parentLayout: { x: number; y: number; width?: number; height?: number } | undefined;
+  parentComp: Component | undefined;
+}): { x: number; y: number } {
+  const { parentId, position, parentLayout, parentComp } = params;
+  const isChildOfPanel = !!(parentId && parentComp && isPanelComponent(parentComp));
+  const centeredInParentPanel = {
+    x: (parentLayout?.width ?? PANEL_DEFAULT_W) / 2 - DEFAULT_NODE_W / 2,
+    y: (parentLayout?.height ?? PANEL_DEFAULT_H) / 2 - DEFAULT_NODE_H / 2,
+  };
+  if (isChildOfPanel) return centeredInParentPanel;
+  if (!position) return { x: 300, y: 300 };
+  if (parentId && parentLayout) {
+    return {
+      x: position.x - parentLayout.x,
+      y: position.y - parentLayout.y,
+    };
+  }
+  if (parentId && !parentLayout) {
+    return { x: 40, y: 40 };
+  }
+  return position;
+}
+
+function buildLayoutForComponent(
+  componentId: string,
+  type: ComponentType,
+  resolvedPanelKind: PanelKind | undefined,
+  resolvedPosition: { x: number; y: number },
+): NodeLayout {
+  const { x, y } = resolvedPosition;
+  if (isApiGroupType(type)) {
+    const { width, height } = computeApiGroupSize(0);
+    return { elementId: componentId, x, y, zIndex: -1, width, height };
+  }
+  if (isEndpointType(type)) {
+    return { elementId: componentId, x, y, width: 260 };
+  }
+  if (isPanelType(type)) {
+    return {
+      elementId: componentId,
+      x,
+      y,
+      zIndex: -1,
+      width: resolvedPanelKind === PanelKind.Swimlane ? SWIMLANE_DEFAULT_W : PANEL_DEFAULT_W,
+      height: resolvedPanelKind === PanelKind.Swimlane ? SWIMLANE_DEFAULT_H : PANEL_DEFAULT_H,
+    };
+  }
+  if (isNoteType(type)) {
+    return { elementId: componentId, x, y, width: NOTE_DEFAULT_W, height: NOTE_DEFAULT_H };
+  }
+  return { elementId: componentId, x, y };
+}
+
 export const componentsSlice = (
   set: (fn: (state: AppState) => void) => void,
   get: () => AppState,
@@ -58,54 +189,16 @@ export const componentsSlice = (
       awsService?: string,
       panelKind?: PanelKind,
     ): Component => {
-      const base = { id: generateId("el"), name, description: "", parentId };
-      let component: Component;
-      const resolvedPanelKind: PanelKind | undefined = isPanelType(type)
-        ? (panelKind ?? PanelKind.Default)
-        : undefined;
-      if (isPanelType(type)) {
-        const kind = resolvedPanelKind!;
-        const def = getPanelKindDef(kind);
-        const isSwimlane = kind === PanelKind.Swimlane;
-        component = {
-          ...base,
-          type: "panel",
-          panelKind: kind,
-          panelColor: def.defaultColor,
-          ...(isSwimlane
-            ? {
-                swimlane: {
-                  orientation: "horizontal",
-                  laneColor: "#6366f1",
-                  laneLabel: i18n.t("swimlane.defaultLaneLabel"),
-                },
-              }
-            : {}),
-        } as PanelComponent;
-      } else if (isNoteType(type)) {
-        component = { ...base, type: "note", panelColor: "hsl(45 25% 97%)" };
-      } else if (isEndpointType(type)) {
-        component = {
-          ...base,
-          type: "endpoint",
-          method: "GET",
-          path: "/novo-endpoint",
-          handlers: [],
-        } as EndpointComponent;
-      } else if (isApiGroupType(type)) {
-        component = {
-          ...base,
-          type: "api-group",
-          serviceName: name,
-          basePath: "/api/v1",
-          protocol: "REST",
-        } as ApiGroupComponent;
-      } else if (isC4Type(type)) {
-        component = { ...base, type };
-      } else {
-        // AWS type
-        component = { ...base, type, awsService: awsService ?? undefined };
-      }
+      const id = generateId("el");
+      const { component, resolvedPanelKind } = buildComponentForType(
+        id,
+        type,
+        name,
+        parentId,
+        panelKind,
+        awsService,
+      );
+
       set((state) => {
         const d = state.diagrams[state.activeDiagramId]!;
         const sid = d.activeSceneId ?? null;
@@ -115,46 +208,17 @@ export const componentsSlice = (
 
         const resolveComp = (pid: string | null | undefined) =>
           pid ? scene?.addedComponents[pid] ?? d.snapshot.components[pid] : undefined;
+
         const parentComp = parentId ? resolveComp(parentId) : undefined;
         const parentLayout = parentId
           ? scene?.nodeLayouts[parentId] ?? d.nodeLayouts[parentId]
           : undefined;
-        const isChildOfPanel = !!(parentId && parentComp && isPanelComponent(parentComp));
-        const centeredInParentPanel = {
-          x: (parentLayout?.width ?? PANEL_DEFAULT_W) / 2 - DEFAULT_NODE_W / 2,
-          y: (parentLayout?.height ?? PANEL_DEFAULT_H) / 2 - DEFAULT_NODE_H / 2,
-        };
-
-        const resolvedPosition = (() => {
-          if (isChildOfPanel) return centeredInParentPanel;
-          if (!position) return { x: 300, y: 300 };
-          if (parentId && parentLayout) {
-            return {
-              x: position.x - parentLayout.x,
-              y: position.y - parentLayout.y,
-            };
-          }
-          if (parentId && !parentLayout) {
-            return { x: 40, y: 40 };
-          }
-          return position;
-        })();
-
-        const write = (comp: Component, layout: NodeLayout) => {
-          if (scene) {
-            scene.addedComponents[comp.id] = comp;
-            scene.nodeLayouts[comp.id] = layout;
-          } else {
-            d.snapshot.components[comp.id] = comp;
-            d.nodeLayouts[comp.id] = layout;
-          }
-        };
 
         if (isEndpointType(type) && parentId) {
           const parent = resolveComp(parentId);
           if (isApiGroupComponent(parent)) {
             const siblingCount = countEndpointsUnderParent(d, scene, parentId);
-            write(component, {
+            write(scene, d, component, {
               elementId: component.id,
               x: 0,
               y: HEADER_H + siblingCount * ENDPOINT_H,
@@ -173,56 +237,31 @@ export const componentsSlice = (
           }
         }
 
-        if (isApiGroupType(type)) {
-          const { width, height } = computeApiGroupSize(0);
-          write(component, {
-            elementId: component.id,
-            x: resolvedPosition.x,
-            y: resolvedPosition.y,
-            zIndex: -1,
-            width,
-            height,
-          });
-        } else if (isEndpointType(type)) {
-          write(component, {
-            elementId: component.id,
-            x: resolvedPosition.x,
-            y: resolvedPosition.y,
-            width: 260,
-          });
-        } else {
-          write(component, {
-            elementId: component.id,
-            x: resolvedPosition.x,
-            y: resolvedPosition.y,
-            ...(isPanelType(type)
-              ? {
-                  zIndex: -1,
-                  width:
-                    resolvedPanelKind === PanelKind.Swimlane ? SWIMLANE_DEFAULT_W : PANEL_DEFAULT_W,
-                  height:
-                    resolvedPanelKind === PanelKind.Swimlane ? SWIMLANE_DEFAULT_H : PANEL_DEFAULT_H,
-                }
-              : {}),
-            ...(isNoteType(type) ? { width: NOTE_DEFAULT_W, height: NOTE_DEFAULT_H } : {}),
-          });
-        }
+        const resolvedPosition = resolveInsertPosition({
+          parentId,
+          position,
+          parentLayout,
+          parentComp,
+        });
+        const layout = buildLayoutForComponent(
+          component.id,
+          type,
+          resolvedPanelKind,
+          resolvedPosition,
+        );
+        write(scene, d, component, layout);
 
         d.updatedAt = new Date().toISOString();
 
-        function syncApiGroupSize(groupId: string) {
-          const childCount = countEndpointsUnderParent(d, scene, groupId);
-          const { width, height } = computeApiGroupSize(childCount);
-          const layout = scene?.nodeLayouts[groupId] ?? d.nodeLayouts[groupId];
-          if (layout) {
-            layout.width = width;
-            layout.height = height;
-          }
-        }
-
         const p = parentId ? resolveComp(parentId) : undefined;
         if (parentId && p && isApiGroupComponent(p)) {
-          syncApiGroupSize(parentId);
+          const childCount = countEndpointsUnderParent(d, scene, parentId);
+          const { width, height } = computeApiGroupSize(childCount);
+          const groupLayout = scene?.nodeLayouts[parentId] ?? d.nodeLayouts[parentId];
+          if (groupLayout) {
+            groupLayout.width = width;
+            groupLayout.height = height;
+          }
         }
       });
       return component;
