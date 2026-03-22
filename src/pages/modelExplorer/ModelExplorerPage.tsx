@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { RecordingModeStateProvider } from "@/features/canvas/flow/RecordingModeContext";
 import { FlowPlaybackProvider } from "@/features/canvas/flow/FlowPlaybackContext";
+import { useFlowPlaybackState } from "@/features/canvas/flow/useFlowPlayback";
 import {
   useActiveDiagram,
   useActiveDiagramId,
@@ -12,10 +13,11 @@ import {
   useFlows,
   stepsToMermaid,
   useServiceRegistry,
+  buildFlowFromRecordingSnapshot,
   resolveSceneSnapshot,
   exportFilenameSlug,
 } from "@/features/diagram";
-import type { Flow, FlowStep } from "@/features/diagram";
+import type { Flow } from "@/features/diagram";
 import { exportJSON, exportDrawio, exportMermaid, downloadFile } from "@/lib/export-service";
 import { writeDrawioToClipboard } from "@/lib/clipboard-utils";
 import { ModelExplorerContent } from "./ModelExplorerContent";
@@ -33,10 +35,11 @@ export default function ModelExplorerPage() {
   const [showFlows, setShowFlows] = useState(false);
   const [isViewingCoverage, setIsViewingCoverage] = useState(false);
   const [activeFlow, setActiveFlow] = useState<Flow | null>(null);
-  const [currentStep, setCurrentStep] = useState(0);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [navStack, setNavStack] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
+
+  const playback = useFlowPlaybackState(activeFlow);
 
   // Sync URL :id → store.activeDiagramId (handles page refresh / direct link)
   useEffect(() => {
@@ -71,24 +74,54 @@ export default function ModelExplorerPage() {
     navigate(`/model/${prev}`);
   }, [navStack, openDiagram, navigate]);
 
-  const handlePlay = useCallback((flow: Flow) => { setActiveFlow(flow); setCurrentStep(0); setShowFlows(false); }, []);
-  const handleExit = useCallback(() => { setActiveFlow(null); setCurrentStep(0); }, []);
-  const handlePrev = useCallback(() => { setCurrentStep((s) => Math.max(0, s - 1)); }, []);
-  const handleNext = useCallback(() => { if (!activeFlow) return; setCurrentStep((s) => Math.min(activeFlow.steps.length - 1, s + 1)); }, [activeFlow]);
-  const handleGoToStep = useCallback((i: number) => setCurrentStep(i), []);
+  const handlePlay = useCallback((flow: Flow) => {
+    setActiveFlow(flow);
+    setShowFlows(false);
+  }, []);
+
+  // Start playback when activeFlow changes
+  useEffect(() => {
+    if (activeFlow) playback.start();
+  }, [activeFlow]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleExit = useCallback(() => {
+    playback.exit();
+    setActiveFlow(null);
+  }, [playback]);
 
   const handleFinalizeRecording = useCallback(
-    (data: { name: string; description: string; tags: string[]; steps: FlowStep[]; editingFlowId: string | null }) => {
+    (data: import("@/features/canvas/flow/RecordingModeContext").RecordingFinalizeData) => {
       if (!diagram) return;
+
+      const tempFlow = buildFlowFromRecordingSnapshot(data.steps, data.branchOwnership, {
+        id: "temp",
+        name: data.name,
+        diagramId: diagram.id,
+      });
+      const stepsRecord = tempFlow.steps;
+      const entryStepId = data.entryStepId ?? data.steps[0]?.id ?? tempFlow.entryStepId;
       const r = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
-      const mermaid = stepsToMermaid(data.steps, r.components, r.connections);
+      const mermaid = stepsToMermaid(
+        { ...tempFlow, entryStepId },
+        r.components,
+        r.connections,
+      );
       const desc = data.description || undefined;
       const flowTags = data.tags.length ? data.tags : undefined;
       if (data.editingFlowId) {
-        updateFlow(data.editingFlowId, { name: data.name || t("flows.unnamed"), mermaid, steps: data.steps, description: desc, tags: flowTags });
+        updateFlow(data.editingFlowId, {
+          name: data.name || t("flows.unnamed"),
+          mermaid,
+          steps: stepsRecord,
+          description: desc,
+          tags: flowTags,
+          entryStepId,
+        });
       } else {
-        const flow = addFlow(diagram.id, data.name || t("flows.unnamed"), mermaid, data.steps);
-        if (desc || flowTags) updateFlow(flow.id, { description: desc, tags: flowTags });
+        const flow = addFlow(diagram.id, data.name || t("flows.unnamed"), mermaid, stepsRecord);
+        if (desc || flowTags || entryStepId) {
+          updateFlow(flow.id, { description: desc, tags: flowTags, entryStepId });
+        }
       }
     },
     [diagram, addFlow, updateFlow, t],
@@ -121,12 +154,16 @@ export default function ModelExplorerPage() {
     if (!activeFlow) return;
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") { e.preventDefault(); handleExit(); return; }
-      if (e.key === "ArrowLeft") { e.preventDefault(); handlePrev(); return; }
-      if (e.key === "ArrowRight") { e.preventDefault(); handleNext(); return; }
+      if (e.key === "ArrowLeft") { e.preventDefault(); playback.goBack(); return; }
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        if (!playback.isCondition) playback.goNext();
+        return;
+      }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [activeFlow, handleExit, handlePrev, handleNext]);
+  }, [activeFlow, handleExit, playback]);
 
   if (!diagram) {
     return (
@@ -144,13 +181,18 @@ export default function ModelExplorerPage() {
 
   const playbackValue = {
     activeFlow,
-    currentStep,
-    isPlaying: !!activeFlow && currentStep >= 0,
+    currentStepId: playback.currentStepId,
+    currentStep: playback.currentStep,
+    isPlaying: !!activeFlow && playback.currentStepId !== null,
+    isCondition: playback.isCondition,
+    canGoBack: playback.canGoBack,
+    canGoForward: playback.canGoForward,
+    history: playback.history,
     play: handlePlay,
     exit: handleExit,
-    prev: handlePrev,
-    next: handleNext,
-    goToStep: handleGoToStep,
+    goBack: playback.goBack,
+    goNext: playback.goNext,
+    chooseBranch: playback.chooseBranch,
   };
 
   return (

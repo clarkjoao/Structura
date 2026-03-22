@@ -7,7 +7,6 @@ import {
   buildFlowHighlight,
   buildCoverage,
   buildRecordingInfo,
-  safeFlowSteps,
 } from "./flowState";
 
 interface UseFlowStateParams {
@@ -15,27 +14,33 @@ interface UseFlowStateParams {
 }
 
 export function useFlowState({ flows }: UseFlowStateParams) {
-  const { isRecording, recordingSteps } = useRecordingMode();
-  const { activeFlow, currentStep, isPlaying } = useFlowPlayback();
-  const stepIndex = currentStep ?? 0;
-
-  const activeStep =
-    isPlaying && activeFlow ? safeFlowSteps(activeFlow)[stepIndex] ?? null : null;
+  const { isRecording, recordingSteps, recordingContext, branchOwnership } = useRecordingMode();
+  const { activeFlow, currentStepId, currentStep, isPlaying, history } = useFlowPlayback();
 
   const flowHighlight = useMemo(() => {
-    if (!isPlaying || !activeFlow) return EMPTY_FLOW_HIGHLIGHT;
-    return buildFlowHighlight(activeFlow, stepIndex);
-  }, [isPlaying, activeFlow, stepIndex]);
+    if (!isPlaying || !activeFlow || !currentStepId) return EMPTY_FLOW_HIGHLIGHT;
+    return buildFlowHighlight(activeFlow, currentStepId, history);
+  }, [isPlaying, activeFlow, currentStepId, history]);
 
   const coverage = useMemo(() => {
     if (isPlaying || isRecording) return null;
     return buildCoverage(flows);
   }, [flows, isPlaying, isRecording]);
 
-  const recordingInfo = useMemo(() => {
-    if (!isRecording || !recordingSteps?.length) return null;
-    return buildRecordingInfo(recordingSteps);
-  }, [isRecording, recordingSteps]);
+  const stepsForRecordingOverlay = useMemo(() => {
+    if (!isRecording || !recordingSteps?.length) return [];
+    if (recordingContext.mode !== "branch-record") return recordingSteps;
+    const { conditionStepId, branchIndex } = recordingContext;
+    return recordingSteps.filter((s) => {
+      const o = branchOwnership.get(s.id);
+      return o && o.conditionStepId === conditionStepId && o.branchIndex === branchIndex;
+    });
+  }, [isRecording, recordingSteps, recordingContext, branchOwnership]);
 
-  return { isPlaying, activeStep, flowHighlight, coverage, recordingInfo, activeFlow, currentStep };
+  const recordingInfo = useMemo(() => {
+    if (!isRecording || !stepsForRecordingOverlay?.length) return null;
+    return buildRecordingInfo(stepsForRecordingOverlay);
+  }, [isRecording, stepsForRecordingOverlay]);
+
+  return { isPlaying, activeStep: currentStep, flowHighlight, coverage, recordingInfo, activeFlow, currentStepId };
 }

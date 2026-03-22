@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 interface Props {
   flow: Flow;
   brokenSteps: BrokenStep[];
-  onRemoveSteps: (indexes: number[]) => void;
+  onRemoveSteps: (stepIds: string[]) => void;
   onCancel: () => void;
 }
 
@@ -30,11 +30,11 @@ const BrokenFlowDialog = ({ flow, brokenSteps, onRemoveSteps, onCancel }: Props)
         <div className="px-5 py-3 max-h-[280px] overflow-y-auto space-y-1.5">
           {brokenSteps.map((b) => (
             <div
-              key={b.stepIndex}
+              key={b.stepId}
               className="flex items-center gap-2 rounded-md border border-border bg-secondary/50 px-3 py-2"
             >
               <span className="flex items-center justify-center w-6 h-6 rounded bg-amber-500/10 text-amber-400 text-[10px] font-bold shrink-0">
-                {b.stepIndex + 1}
+                {b.stepId.slice(0, 4)}
               </span>
               {b.reason === "component_deleted" ? (
                 <Box className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -59,7 +59,7 @@ const BrokenFlowDialog = ({ flow, brokenSteps, onRemoveSteps, onCancel }: Props)
             {t("brokenFlow.cancel")}
           </button>
           <button
-            onClick={() => onRemoveSteps(brokenSteps.map((b) => b.stepIndex))}
+            onClick={() => onRemoveSteps(brokenSteps.map((b) => b.stepId))}
             className="px-3 py-1.5 text-xs font-semibold text-primary-foreground bg-primary hover:bg-primary/90 rounded-md transition-colors"
           >
             {t("brokenFlow.removeInvalid")}

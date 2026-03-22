@@ -31,7 +31,7 @@ export type {
 
 export type { NodeLayout, ViewNodeLayout } from "./layout.types";
 
-export type { FlowStep, Flow } from "./flow.types";
+export type { FlowStep, FlowStepType, FlowBranch, Flow } from "./flow.types";
 
 // ── Aggregate types ────────────────────────────────────────────────────────
 

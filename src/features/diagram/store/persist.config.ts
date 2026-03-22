@@ -4,6 +4,7 @@ import type { Diagram, Component, Connection, NodeLayout } from "../model/diagra
 import type { DiagramStore } from "./store.types";
 import type { ServiceDefinition } from "../model/service.types";
 import { ServiceSource } from "../enums";
+import { migrateFlow } from "../utils/flow-migration";
 
 export const PERSIST_KEY = "diagram-store";
 
@@ -117,6 +118,16 @@ export function mergePersistedState(
         delete co.height;
       }
     });
+  });
+
+  // Migrate flows from legacy array-based format to graph-based format
+  Object.values(state.diagrams ?? {}).forEach((d) => {
+    const diagram = d as Diagram;
+    if (diagram.snapshot?.flows) {
+      for (const flowId of Object.keys(diagram.snapshot.flows)) {
+        diagram.snapshot.flows[flowId] = migrateFlow(diagram.snapshot.flows[flowId]);
+      }
+    }
   });
 
   return state;

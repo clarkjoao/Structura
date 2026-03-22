@@ -28,6 +28,8 @@ export type {
   NodeLayout,
   ViewNodeLayout,
   FlowStep,
+  FlowStepType,
+  FlowBranch,
   Flow,
   ModelDraft,
   Folder,
@@ -50,8 +52,30 @@ export { generateId } from "./utils/generate-id";
 /** Sort connections array by an explicit handle-order array of connection ids */
 export { applyHandleOrder } from "./utils/handle-order";
 
-/** Convert FlowStep[] ↔ Mermaid sequence diagram text */
+/** Convert Flow graph ↔ Mermaid sequence diagram text */
 export { stepsToMermaid, parseMermaidToSteps } from "./utils/flow-mermaid";
+
+/** Flow graph traversal utilities */
+export {
+  getStepById,
+  getNextSteps,
+  isConditionStep,
+  getEntryStep,
+  walkFlow,
+  getFlowParticipants,
+  validateFlowGraph,
+  getOrderedStepIds,
+  getStepCount,
+  getBranchStepCount,
+} from "./utils/flow-traversal";
+
+/** Build a Flow graph from in-progress recording data (same linking as finalize). */
+export { buildFlowFromRecordingSnapshot } from "./utils/recording-to-flow";
+export type { BranchOwnershipMap } from "./utils/recording-to-flow";
+export type { BrokenStep } from "./utils/flow-traversal";
+
+/** Flow migration from legacy array format */
+export { migrateFlow } from "./utils/flow-migration";
 
 export {
   resolveSceneSnapshot,
