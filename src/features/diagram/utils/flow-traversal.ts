@@ -1,5 +1,6 @@
 import type { Flow, FlowStep } from "../model/flow.types";
 import type { Diagram } from "../model/diagram.types";
+import { resolveSceneSnapshot } from "./scene.utils";
 
 export function getStepById(flow: Flow, id: string): FlowStep | undefined {
   return flow.steps[id];
@@ -76,7 +77,10 @@ export interface BrokenStep {
 
 export function validateFlowGraph(flow: Flow, diagram: Diagram): BrokenStep[] {
   const broken: BrokenStep[] = [];
-  const { components, connections } = diagram.snapshot;
+  const { components, connections } = resolveSceneSnapshot(
+    diagram,
+    diagram.activeSceneId ?? null,
+  );
 
   walkFlow(flow, (step) => {
     if (step.componentId && !components[step.componentId]) {

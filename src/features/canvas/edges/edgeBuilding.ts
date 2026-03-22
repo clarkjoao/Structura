@@ -8,6 +8,9 @@ export interface EdgeBuildParams {
   selectedEdgeId: string | null;
   isPlaying: boolean;
   isRecording: boolean;
+  isCompareMode?: boolean;
+  /** Per-connection opacity multiplier when comparing two scenes */
+  compareConnectionOpacity?: Record<string, number>;
   activeStep: FlowStep | null;
   flowHighlight: Pick<FlowHighlight, "activeConnId" | "participantConnIds">;
   recordingInfo: Pick<RecordingInfo, "edgeSteps" | "recordedEdgeIds" | "lastEdgeId"> | null;
@@ -52,13 +55,18 @@ export function buildEdge(
     ? toMarkerType(effective.markerStart)
     : undefined;
 
-  const opacity = getEdgeOpacity(
+  const flowOpacity = getEdgeOpacity(
     conn.id,
     params.isPlaying,
     params.isRecording,
     params.flowHighlight,
     params.recordingInfo,
   );
+  const compareOp =
+    params.isCompareMode && params.compareConnectionOpacity
+      ? params.compareConnectionOpacity[conn.id]
+      : undefined;
+  const opacity = compareOp !== undefined ? compareOp : flowOpacity;
 
   return {
     id: conn.id,

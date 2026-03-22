@@ -14,6 +14,8 @@ import {
   stepsToMermaid,
   useServiceRegistry,
   buildFlowFromRecordingSnapshot,
+  resolveSceneSnapshot,
+  exportFilenameSlug,
 } from "@/features/diagram";
 import type { Flow } from "@/features/diagram";
 import { exportJSON, exportDrawio, exportMermaid, downloadFile } from "@/lib/export-service";
@@ -45,7 +47,6 @@ export default function ModelExplorerPage() {
       openDiagram(urlId);
     }
   }, [urlId, urlDiagramExists, activeDiagramId, openDiagram]);
-  
 
   const handleOpenDiagram = useCallback(
     (id: string) => {
@@ -99,12 +100,12 @@ export default function ModelExplorerPage() {
       });
       const stepsRecord = tempFlow.steps;
       const entryStepId = data.entryStepId ?? data.steps[0]?.id ?? tempFlow.entryStepId;
+      const r = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
       const mermaid = stepsToMermaid(
         { ...tempFlow, entryStepId },
-        diagram.snapshot.components,
-        diagram.snapshot.connections,
+        r.components,
+        r.connections,
       );
-
       const desc = data.description || undefined;
       const flowTags = data.tags.length ? data.tags : undefined;
       if (data.editingFlowId) {
@@ -136,12 +137,13 @@ export default function ModelExplorerPage() {
 
   const handleExport = useCallback(() => {
     if (!diagram) return;
-    const slug = diagram.name.toLowerCase().replace(/\s+/g, "-");
+    const slug = exportFilenameSlug(diagram);
+    const r = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
     downloadFile(exportJSON(diagram), `${slug}.json`, "application/json");
     downloadFile(exportDrawio(diagram, serviceRegistry), `${slug}.drawio`, "application/xml");
     if (flows.length > 0) {
       downloadFile(
-        exportMermaid(flows, diagram.snapshot.components, diagram.snapshot.connections),
+        exportMermaid(flows, r.components, r.connections),
         `${slug}-flows.md`,
         "text/markdown",
       );

@@ -1,5 +1,5 @@
 import type { Flow, FlowStep } from "@/features/diagram";
-import { getStepById, getFlowParticipants, walkFlow } from "@/features/diagram";
+import { getStepById, getFlowParticipants, getOrderedStepIds } from "@/features/diagram";
 
 export interface FlowHighlight {
   activeNodeId: string | null;
@@ -31,6 +31,16 @@ export const EMPTY_FLOW_HIGHLIGHT: FlowHighlight = {
   participantNodeIds: new Set(),
   participantConnIds: new Set(),
 };
+
+/** Legacy / partial persisted data may omit `steps` or store an array instead of a graph record. */
+export function safeFlowSteps(flow: Flow): FlowStep[] {
+  const s = flow.steps;
+  if (Array.isArray(s)) return s;
+  if (!s || typeof s !== "object") return [];
+  const ordered = getOrderedStepIds(flow);
+  if (ordered.length > 0) return ordered.map((id) => flow.steps[id]).filter((x): x is FlowStep => !!x);
+  return Object.values(s);
+}
 
 function addFlowToMap(map: Map<string, string[]>, key: string, flowName: string): void {
   const arr = map.get(key) ?? [];

@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import CustomNode from "../CustomNode";
 import type { NodeTypeDescriptor, NodeBuildContext } from "./types";
+import { sceneBadgePropsForNode } from "./compare-node-badges";
 import {
   isAwsComponent,
   isC4Component,
@@ -11,6 +12,7 @@ export function buildC4Style(
   comp: Component,
   ctx: NodeBuildContext,
 ): CSSProperties | undefined {
+  if (ctx.isCompareMode) return undefined;
   if (ctx.isPlaying) {
     const { activeNodeId, visitedNodeIds, participantNodeIds } =
       ctx.flowHighlight;
@@ -109,6 +111,7 @@ export const c4Descriptor: NodeTypeDescriptor = {
                 direction: "up" | "down",
               ) => ctx.onReorderHandle!(comp.id, side, connId, direction)
             : undefined,
+      ...sceneBadgePropsForNode(ctx, comp.id),
     };
   },
 

@@ -1,6 +1,8 @@
 import type { Flow, FlowStep, FlowBranch } from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
+import { parseMermaidToSteps } from "../../utils/flow-mermaid";
 import type { AppState } from "../store.types";
+import { resolveSceneSnapshot } from "../../utils/scene.utils";
 
 export const flowsSlice = (
   set: (fn: (state: AppState) => void) => void,
@@ -10,24 +12,35 @@ export const flowsSlice = (
       const { diagrams } = get();
       const d = diagrams[diagramId];
       if (!d) throw new Error("Diagram not found");
+      const activeId = get().activeDiagramId;
+      const r = resolveSceneSnapshot(
+        d,
+        activeId === diagramId ? d.activeSceneId ?? null : null,
+      );
 
       let steps: Record<string, FlowStep>;
       let entryStepId: string | undefined;
 
       if (precomputedSteps && Object.keys(precomputedSteps).length > 0) {
         steps = precomputedSteps;
-        // Find the entry step: look for entryStepId hint or pick first step
         const firstKey = Object.keys(steps)[0];
         entryStepId = firstKey;
+      } else if (mermaid.trim()) {
+        steps = parseMermaidToSteps(mermaid, r.components, r.connections);
+        const inbound = new Set<string>();
+        for (const s of Object.values(steps)) {
+          if (s.next) inbound.add(s.next);
+          s.branches?.forEach((b) => inbound.add(b.nextId));
+        }
+        const roots = Object.keys(steps).filter((id) => !inbound.has(id));
+        entryStepId = roots[0] ?? Object.keys(steps)[0];
       } else {
-        // Create a single initial step
         const stepId = generateId("step");
         steps = {
-          [stepId]: { id: stepId, type: 'action' },
+          [stepId]: { id: stepId, type: "action" },
         };
         entryStepId = stepId;
       }
-
       const flow: Flow = {
         id: generateId("flow"),
         name,
@@ -49,6 +62,14 @@ export const flowsSlice = (
         const flow = d.snapshot.flows[id];
         if (!flow) return;
         Object.assign(flow, patch);
+        if (patch.mermaid !== undefined && patch.steps === undefined) {
+          const r = resolveSceneSnapshot(d, d.activeSceneId ?? null);
+          flow.steps = parseMermaidToSteps(
+            patch.mermaid ?? flow.mermaid,
+            r.components,
+            r.connections,
+          );
+        }
       });
     },
 

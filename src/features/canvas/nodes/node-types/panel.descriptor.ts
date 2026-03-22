@@ -1,5 +1,6 @@
 import PanelNode from "../PanelNode";
 import type { NodeTypeDescriptor } from "./types";
+import { sceneBadgePropsForNode } from "./compare-node-badges";
 import { isPanelComponent, isPanelType } from "@/features/diagram";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../../constants";
@@ -29,16 +30,17 @@ export const panelDescriptor: NodeTypeDescriptor = {
       isDragTarget: ctx.dragTargetPanelId === comp.id,
       isUnparentCandidate: ctx.unparentCandidatePanelId === comp.id,
       collapsed: comp.collapsed ?? false,
-      childCount: Object.values(ctx.diagram.snapshot.components).filter(
+      childCount: Object.values(ctx.resolvedComponents).filter(
         (c) => c.parentId === comp.id,
       ).length,
       onToggleCollapse: () => ctx.onPanelCollapseToggle?.(comp.id),
+      ...sceneBadgePropsForNode(ctx, comp.id),
     };
   },
 
   buildStyle: (comp, ctx) => {
     if (!isPanelComponent(comp)) return undefined;
-    const layout = ctx.diagram.nodeLayouts[comp.id];
+    const layout = ctx.resolvedNodeLayouts[comp.id];
     return comp.collapsed
       ? { width: 200, height: 60 }
       : {

@@ -18,6 +18,7 @@ import { DrillDownButton } from "./DrillDownButton";
 import { EmbedButton } from "./EmbedButton";
 import { RecordingBadge } from "./RecordingBadge";
 import { useTranslation } from "react-i18next";
+import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
 
 function useNodeState(data: NodeProps["data"], selected: boolean | undefined) {
   const d = data as unknown as NodeData;
@@ -153,6 +154,12 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
       className={`group relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${borderClass} border-l-[3px] transition-shadow duration-200 ${isActive ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
       style={borderStyle}
     >
+      {d.compareBadges && (
+        <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
+      )}
+      {!d.compareBadges && d.sceneBadge && (
+        <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
+      )}
       {d.recordingBadges && d.recordingBadges.length > 0 && (
         <RecordingBadge badges={d.recordingBadges} isLastRecorded={d.isLastRecorded} />
       )}

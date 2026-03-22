@@ -34,6 +34,7 @@ export type {
   ModelDraft,
   Folder,
   Diagram,
+  SceneDiff,
 } from "./model/diagram.types";
 
 /** Default styles and helpers for connection intent/direction resolution */
@@ -75,6 +76,22 @@ export type { BrokenStep } from "./utils/flow-traversal";
 
 /** Flow migration from legacy array format */
 export { migrateFlow } from "./utils/flow-migration";
+
+export {
+  resolveSceneSnapshot,
+  resolveCanvasSnapshot,
+  resolveCompareSnapshot,
+  diagramWithResolvedScene,
+  exportFilenameSlug,
+  canMoveNodeInSceneMode,
+  isComponentAddedInActiveScene,
+  isDiagramCompareMode,
+  buildCompareComponentVisuals,
+  buildCompareConnectionVisuals,
+  computeMergePreview,
+  sceneHasDiff,
+} from "./utils/scene.utils";
+export type { CompareSnapshotResult, CompareElementVisual, MergePreview } from "./utils/scene.utils";
 
 /** Type guards for the Component discriminated union */
 export {

@@ -1,5 +1,6 @@
 import type { Component, Diagram } from "@/features/diagram";
 import {
+  diagramWithResolvedScene,
   isApiGroupComponent,
   isAwsComponent,
   isC4Component,
@@ -110,40 +111,41 @@ export function exportDrawio(
   serviceRegistry: Record<string, ServiceDefinition>,
   options?: { componentIds?: string[] },
 ): string {
-  validateDiagram(diagram);
+  const resolved = diagramWithResolvedScene(diagram);
+  validateDiagram(resolved);
 
   const shouldFilter =
     options?.componentIds !== undefined && options!.componentIds.length > 0;
 
   const expandedIds = shouldFilter
-    ? expandWithContainerAncestors(options!.componentIds!, diagram.snapshot.components)
+    ? expandWithContainerAncestors(options!.componentIds!, resolved.snapshot.components)
     : null;
 
   const diagramForExport: Diagram = shouldFilter
     ? (() => {
         const idSet = new Set(expandedIds!);
         const filteredComponents = Object.fromEntries(
-          Object.entries(diagram.snapshot.components).filter(([id]) => idSet.has(id)),
+          Object.entries(resolved.snapshot.components).filter(([id]) => idSet.has(id)),
         );
         const filteredConnections = Object.fromEntries(
-          Object.entries(diagram.snapshot.connections).filter(
+          Object.entries(resolved.snapshot.connections).filter(
             ([, conn]) => idSet.has(conn.sourceId) && idSet.has(conn.targetId),
           ),
         );
 
         return {
-          ...diagram,
+          ...resolved,
           snapshot: {
-            ...diagram.snapshot,
+            ...resolved.snapshot,
             components: filteredComponents,
             connections: filteredConnections,
           },
           nodeLayouts: Object.fromEntries(
-            Object.entries(diagram.nodeLayouts).filter(([id]) => idSet.has(id)),
+            Object.entries(resolved.nodeLayouts).filter(([id]) => idSet.has(id)),
           ),
         };
       })()
-    : diagram;
+    : resolved;
 
   const { components, connections } = diagramForExport.snapshot;
 

@@ -3,7 +3,7 @@
  */
 import { useCallback } from "react";
 import type { Diagram } from "@/features/diagram";
-import { isPanelComponent } from "@/features/diagram";
+import { isPanelComponent, resolveCanvasSnapshot } from "@/features/diagram";
 import { PANEL_DEFAULT_W, PANEL_DEFAULT_H, PANEL_COLLAPSED_W, PANEL_COLLAPSED_H } from "../constants";
 
 interface UseCanvasDrillHandlersParams {
@@ -28,7 +28,8 @@ export function useCanvasDrillHandlers({
   const handleDrillDown = useCallback(
     (elementId: string) => {
       if (!diagram) return;
-      const comp = diagram.snapshot.components[elementId];
+      const r = resolveCanvasSnapshot(diagram);
+      const comp = r.components[elementId];
       if (!comp?.linkedDiagramId || !allDiagrams[comp.linkedDiagramId]) return;
 
       if (onDrillDownToDiagram) {
@@ -46,13 +47,12 @@ export function useCanvasDrillHandlers({
   const handlePanelCollapseToggle = useCallback(
     (panelId: string) => {
       if (!diagram) return;
-      const comp = diagram.snapshot.components[panelId];
+      const r = resolveCanvasSnapshot(diagram);
+      const comp = r.components[panelId];
       if (!isPanelComponent(comp)) return;
 
-      const layout = diagram.nodeLayouts[panelId];
-      const children = Object.values(diagram.snapshot.components).filter(
-        (c) => c.parentId === panelId,
-      );
+      const layout = r.nodeLayouts[panelId];
+      const children = Object.values(r.components).filter((c) => c.parentId === panelId);
 
       if (comp.collapsed) {
         updateComponent(panelId, {
