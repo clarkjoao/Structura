@@ -17,6 +17,8 @@ interface BaseComponent {
   name: string;
   description: string;
   parentId: string | null;
+  /** Id of an entry in the diagram snapshot `iconLibrary`. */
+  customIconId?: string;
   tags?: string[];
   serviceId?: string;
   linkedDiagramId?: string;

@@ -32,6 +32,7 @@ export type {
   FlowBranch,
   Flow,
   ModelDraft,
+  IconDefinition,
   Folder,
   Diagram,
   SceneDiff,
@@ -138,6 +139,8 @@ export {
   createDiagramStore,
   /** Hook returning all mutation actions (add/update/remove/undo/redo/…) */
   useDiagramActions,
+  /** Custom icon library mutations (add/remove/rename/usage counters) */
+  useIconActions,
 } from "./store/diagram.store";
 
 export {
@@ -171,6 +174,10 @@ export {
   useAllServices,
   /** Selector: flat array of all connections in the active diagram */
   useFlows,
+  /** Custom icons for the active diagram, sorted by usage then name */
+  useIconLibrary,
+  useIconById,
+  useComponentIcon,
 } from './store/selectors'
 export type { DiagramStore, ClipboardEntry } from "./store/store.types";
 export type { ServiceDefinition } from "./model/service.types";

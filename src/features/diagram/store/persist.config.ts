@@ -9,7 +9,10 @@ import { migrateFlow } from "../utils/flow-migration";
 export const PERSIST_KEY = "diagram-store";
 
 /** Must match `version` passed to zustand `persist` (used when writing localStorage manually). */
-export const PERSIST_SCHEMA_VERSION = 0;
+export const PERSIST_SCHEMA_VERSION = 1;
+
+/** Alias for consumers that refer to “current” schema version in docs or tooling. */
+export const CURRENT_SCHEMA_VERSION = PERSIST_SCHEMA_VERSION;
 
 export type PersistedDiagramStoreSlice = ReturnType<typeof partializeState>;
 
@@ -150,6 +153,31 @@ function migrateFlowsToGraph(state: DiagramStore): DiagramStore {
   return state;
 }
 
+/**
+ * Idempotent: ensures `iconLibrary` exists and legacy components expose `customIconId`.
+ * Used for persist rehydration and for schema upgrades from version &lt; 1.
+ */
+function migrateAddIconLibrary(state: Partial<DiagramStore>): void {
+  const touchSnapshot = (snapshot: Diagram["snapshot"] | undefined): void => {
+    if (!snapshot) return;
+    if (!snapshot.iconLibrary) {
+      snapshot.iconLibrary = {};
+    }
+    for (const component of Object.values(snapshot.components ?? {})) {
+      if (!("customIconId" in component)) {
+        (component as Component).customIconId = undefined;
+      }
+    }
+  };
+
+  for (const diagram of Object.values(state.diagrams ?? {})) {
+    touchSnapshot((diagram as Diagram).snapshot);
+  }
+  for (const entry of [...(state.past ?? []), ...(state.future ?? [])]) {
+    touchSnapshot(entry.snapshot);
+  }
+}
+
 export function mergePersistedState(
   persistedState: unknown,
   currentState: DiagramStore,
@@ -171,9 +199,12 @@ export function mergePersistedState(
   next = migrateConnectionStyles(next);
   next = migrateComponentDimensions(next);
   next = migrateFlowsToGraph(next);
+  migrateAddIconLibrary(next);
 
   return next;
 }
+
+const SCHEMA_VERSION_WITH_ICON_LIBRARY = 1;
 
 export function createPersistConfig(storage: IStoragePort) {
   return {
@@ -182,5 +213,14 @@ export function createPersistConfig(storage: IStoragePort) {
     partialize: partializeState,
     merge: mergePersistedState,
     version: PERSIST_SCHEMA_VERSION,
+    migrate: (persistedState, fromVersion) => {
+      if (
+        typeof fromVersion === "number" &&
+        fromVersion < SCHEMA_VERSION_WITH_ICON_LIBRARY
+      ) {
+        migrateAddIconLibrary(persistedState as Partial<DiagramStore>);
+      }
+      return persistedState as PersistedDiagramStoreSlice;
+    },
   };
 }

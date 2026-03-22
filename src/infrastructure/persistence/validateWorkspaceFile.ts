@@ -1,4 +1,5 @@
 import type { Diagram } from "@/features/diagram";
+import { normalizeImportedDiagram } from "@/lib/export-service/normalize-imported-diagram";
 import type { WorkspaceManifest } from "./FileSystemAdapter";
 
 // ── Result types ──
@@ -78,7 +79,7 @@ export function validateDiagramFile(raw: unknown): ValidationResult {
     return { valid: false, reason: '"id" field is empty', raw };
   }
 
-  return { valid: true, diagram: raw as Diagram };
+  return { valid: true, diagram: normalizeImportedDiagram(raw as Diagram) };
 }
 
 // ── Manifest validator ──

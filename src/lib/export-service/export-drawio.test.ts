@@ -13,6 +13,7 @@ function minimalDiagram(overrides: Partial<Diagram> = {}): Diagram {
       components: {},
       connections: {},
       flows: {},
+      iconLibrary: {},
     },
     nodeLayouts: {},
     viewport: { x: 0, y: 0, zoom: 1 },
@@ -57,6 +58,7 @@ describe("exportDrawio", () => {
         },
         connections: {},
         flows: {},
+        iconLibrary: {},
       },
       nodeLayouts: {
         [panelId]: {
@@ -113,6 +115,7 @@ describe("exportDrawio", () => {
         },
         connections: {},
         flows: {},
+        iconLibrary: {},
       },
       nodeLayouts: {
         [groupId]: {
@@ -165,6 +168,7 @@ describe("exportDrawio", () => {
         },
         connections: {},
         flows: {},
+        iconLibrary: {},
       },
       nodeLayouts: {
         [panelId]: { elementId: panelId, x: 0, y: 0, width: 200, height: 200 },
@@ -198,6 +202,7 @@ describe("exportDrawio", () => {
         },
         connections: {},
         flows: {},
+        iconLibrary: {},
       },
       nodeLayouts: {
         a: { elementId: "a", x: -100, y: -50, width: 240, height: 120 },

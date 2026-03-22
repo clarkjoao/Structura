@@ -29,6 +29,7 @@ import { C4_DEFAULT_COLORS } from "./components/colorPresets";
 import { LANE_COLORS } from "./swimlaneLaneColors";
 import { SWIMLANE_DEFAULT_H, SWIMLANE_DEFAULT_W } from "@/features/canvas/constants";
 import ConnectionsTab from "./components/ConnectionsTab";
+import { ComponentIconTab } from "./components/ComponentIconTab";
 import ServiceRegistryCombobox from "./components/ServiceRegistryCombobox";
 import { useTranslation } from "react-i18next";
 import i18n from "@/infrastructure/i18n";
@@ -151,6 +152,9 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
   const debouncedUpdate = useMemo(() => debounce((patch: Partial<Omit<Component, "id">>) => { updateComponent(component.id, patch); }, 300), [component.id, updateComponent]);
   useEffect(() => () => debouncedUpdate.cancel(), [debouncedUpdate]);
   useEffect(() => () => { if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current); }, []);
+  useEffect(() => {
+    setTab("details");
+  }, [component.id]);
 
   const handleCreateLinked = () => {
     const level = isSystemType(component.type) ? "container" : "component";
@@ -198,9 +202,15 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
           </button>
         </div>
       )}
-      {!isSimple && <TabBar active={tab} onChange={setTab} />}
-      {!isSimple && tab === "connections" ? (
+      <TabBar active={tab} onChange={setTab} showConnections={!isSimple} />
+      {tab === "connections" && !isSimple ? (
         <ConnectionsTab componentId={component.id} />
+      ) : tab === "icon" ? (
+        <ComponentIconTab
+          component={component}
+          diagramId={activeDiagram?.id ?? ""}
+          updateComponent={updateComponent}
+        />
       ) : (
         <div className="p-4 space-y-4 overflow-auto flex-1">
           {!isSimple && isAws && svcInfo && (

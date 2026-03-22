@@ -12,6 +12,7 @@ import type {
   PanelKind,
   SceneDiff,
   NodeLayout,
+  IconDefinition,
 } from "../model/diagram.types";
 import type { ServiceDefinition } from "../model/service.types";
 import type { EdgeStyle } from "../model/connection.types";
@@ -102,4 +103,10 @@ export interface AppActions {
     position: { x: number; y: number },
     dimensions?: { width: number; height: number },
   ) => void;
+
+  addIcon: (diagramId: string, icon: IconDefinition) => void;
+  removeIcon: (diagramId: string, iconId: string) => void;
+  updateIconName: (diagramId: string, iconId: string, name: string) => void;
+  incrementIconUsage: (diagramId: string, iconId: string) => void;
+  decrementIconUsage: (diagramId: string, iconId: string) => void;
 }

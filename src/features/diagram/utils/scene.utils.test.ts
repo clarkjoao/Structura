@@ -9,7 +9,7 @@ function emptyDiagram(overrides: Partial<Diagram> = {}): Diagram {
     level: "context",
     createdAt: "",
     updatedAt: "",
-    snapshot: { components: {}, connections: {}, flows: {} },
+    snapshot: { components: {}, connections: {}, flows: {}, iconLibrary: {} },
     nodeLayouts: {},
     viewport: { x: 0, y: 0, zoom: 1 },
     ...overrides,
@@ -23,6 +23,7 @@ describe("resolveSceneSnapshot", () => {
         components: { a: { id: "a", name: "A", type: "system", description: "", parentId: null } },
         connections: {},
         flows: {},
+        iconLibrary: {},
       },
       nodeLayouts: { a: { elementId: "a", x: 1, y: 2 } },
     });
@@ -41,6 +42,7 @@ describe("resolveSceneSnapshot", () => {
         },
         connections: {},
         flows: {},
+        iconLibrary: {},
       },
       nodeLayouts: {
         base1: { elementId: "base1", x: 0, y: 0 },
@@ -117,6 +119,7 @@ describe("computeMergePreview", () => {
         },
         connections: {},
         flows: {},
+        iconLibrary: {},
       },
       nodeLayouts: { old: { elementId: "old", x: 0, y: 0 } },
       scenes: {

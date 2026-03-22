@@ -1,4 +1,5 @@
 import type { Diagram, Folder } from "@/features/diagram";
+import { normalizeImportedDiagram } from "@/lib/export-service/normalize-imported-diagram";
 import { FileSystemEntryKind } from "@/lib/enums";
 import {
   validateDiagramFile,
@@ -225,7 +226,7 @@ export class FileSystemAdapter {
     for await (const [name, entry] of (dir as any).entries()) {
       if (entry.kind === FileSystemEntryKind.File && name === `${diagramId}.json`) {
         const f = await (entry as FileSystemFileHandle).getFile();
-        return JSON.parse(await f.text()) as Diagram;
+        return normalizeImportedDiagram(JSON.parse(await f.text()) as Diagram);
       }
       if (entry.kind === FileSystemEntryKind.Directory) {
         const result = await this._findDiagramFile(
@@ -393,7 +394,7 @@ export class FileSystemAdapter {
       ) {
         try {
           const f = await (entry as FileSystemFileHandle).getFile();
-          const diagram = JSON.parse(await f.text()) as Diagram;
+          const diagram = normalizeImportedDiagram(JSON.parse(await f.text()) as Diagram);
           if (diagram && diagram.id) {
             result[diagram.id] = diagram;
           }
