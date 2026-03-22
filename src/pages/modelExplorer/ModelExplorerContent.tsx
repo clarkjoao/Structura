@@ -19,6 +19,7 @@ export function ModelExplorerContent({
   setShowShortcuts,
   navStack,
   handleOpenDiagram,
+  handleDrillDownToDiagram,
   handleDrillUp,
   handleCopyDrawio,
   handleExport,
@@ -40,9 +41,18 @@ export function ModelExplorerContent({
           <div className="flex items-center gap-3 text-sm">
             <button
               type="button"
+              disabled={disabledWhileBusy}
               onClick={() => setDiagramSidebarOpen((v) => !v)}
-              className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-              title={t("diagramNav.openSidebar")}
+              className={`rounded-md p-1 text-muted-foreground transition-colors ${
+                disabledWhileBusy
+                  ? "opacity-50"
+                  : "hover:bg-muted hover:text-foreground"
+              }`}
+              title={
+                disabledWhileBusy
+                  ? t("diagramNav.unavailableWhileRecordingOrPlayback")
+                  : t("diagramNav.openSidebar")
+              }
               aria-expanded={diagramSidebarOpen}
               aria-label={t("diagramNav.openSidebar")}
             >
@@ -108,6 +118,7 @@ export function ModelExplorerContent({
           <div className="flex-1 flex flex-col relative">
             <Canvas
               onOpenDiagram={handleOpenDiagram}
+              onDrillDownToDiagram={handleDrillDownToDiagram}
               onDrillUp={navStack.length > 0 ? handleDrillUp : undefined}
               isViewingCoverage={isViewingCoverage}
               isFlowPanelOpen={showFlows}

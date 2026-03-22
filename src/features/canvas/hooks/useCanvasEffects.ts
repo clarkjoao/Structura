@@ -1,5 +1,5 @@
 /**
- * Effects do canvas: wheel zoom/pan, flow playback focus, clear selection on play.
+ * Canvas effects: fit view when the active diagram changes, wheel zoom/pan, flow playback focus, clear selection on play.
  */
 import { useEffect } from "react";
 import type { ReactFlowInstance } from "@xyflow/react";
@@ -18,6 +18,11 @@ interface UseCanvasEffectsParams {
 const MIN_ZOOM = 0.3;
 const MAX_ZOOM = 1;
 const ZOOM_FACTOR = 1.1;
+const DEFAULT_NODE_W = 160;
+const DEFAULT_NODE_H = 80;
+/** Matches Canvas.tsx ReactFlow fitViewOptions / maxZoom */
+const FIT_VIEW_PADDING = 0.3;
+const FIT_VIEW_MAX_ZOOM = 1.5;
 
 export function useCanvasEffects({
   diagram,
@@ -27,6 +32,27 @@ export function useCanvasEffects({
   currentStepId,
   onClearSelection,
 }: UseCanvasEffectsParams) {
+
+  useEffect(() => {
+    if (!diagram) return;
+    let cancelled = false;
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (cancelled) return;
+        void reactFlowInstance.fitView({
+          padding: FIT_VIEW_PADDING,
+          minZoom: MIN_ZOOM,
+          maxZoom: FIT_VIEW_MAX_ZOOM,
+          duration: 0,
+        });
+      });
+    });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(id);
+    };
+  }, [diagram?.id, reactFlowInstance]);
+
   // Clear selection when playback starts
   useEffect(() => {
     if (!isPlaying) return;
