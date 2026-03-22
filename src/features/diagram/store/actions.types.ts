@@ -86,6 +86,7 @@ export interface AppActions {
   clearClipboard: () => void;
 
   addScene: (name: string) => SceneDiff;
+  duplicateScene: (sceneId: string, name?: string) => SceneDiff | null;
   removeScene: (sceneId: string) => void;
   mergeSceneIntoBase: (sceneId: string) => void;
   setActiveScene: (sceneId: string | null) => void;

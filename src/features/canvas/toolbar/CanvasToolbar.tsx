@@ -13,6 +13,7 @@ import {
   Square,
   StickyNote,
   Puzzle,
+  GitBranch,
 } from "lucide-react";
 import { useReactFlow } from "@xyflow/react";
 import { useActiveDiagram, useDiagramActions } from "@/features/diagram";
@@ -31,12 +32,14 @@ const CanvasToolbar = ({
   selectedCount = 0,
   onInsert,
   onClearSelection,
+  onOpenScenes,
 }: {
   onDrillUp?: () => void;
   isPanelOpen?: boolean;
   selectedCount?: number;
   onInsert?: (nodeId: string) => void;
   onClearSelection?: () => void;
+  onOpenScenes?: () => void;
 }) => {
   const { t } = useTranslation();
   const diagram = useActiveDiagram();
@@ -110,6 +113,12 @@ const CanvasToolbar = ({
 
   if (!diagram) return null;
 
+  const sceneRecord = diagram.scenes ?? {};
+  const activeScene =
+    diagram.activeSceneId && sceneRecord[diagram.activeSceneId]
+      ? sceneRecord[diagram.activeSceneId]
+      : null;
+
   return (
     <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
       <div className="flex items-center gap-2 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2">
@@ -145,6 +154,29 @@ const CanvasToolbar = ({
         <span className="text-[10px] font-mono text-muted-foreground rounded bg-secondary px-1.5 py-0.5 shrink-0">
           {levelLabels[diagram.level]}
         </span>
+        {onOpenScenes &&
+          (activeScene ? (
+            <button
+              type="button"
+              onClick={() => onOpenScenes()}
+              className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium border border-border bg-secondary hover:bg-surface-hover transition-colors shrink-0 max-w-[140px]"
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full shrink-0"
+                style={{ backgroundColor: activeScene.color }}
+              />
+              <span className="truncate">{activeScene.name}</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onOpenScenes()}
+              className="text-[10px] text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded shrink-0"
+              title={t("scenes.viewVersionsTitle")}
+            >
+              <GitBranch className="h-3 w-3" />
+            </button>
+          ))}
         {selectedCount > 1 && (
           <span className="text-xs text-muted-foreground ml-1">
             {t("canvasToolbar.selectedCount", { count: selectedCount })}

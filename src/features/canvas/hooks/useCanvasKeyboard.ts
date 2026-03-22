@@ -53,6 +53,8 @@ interface UseCanvasKeyboardParams {
   isPlaying?: boolean;
   isSearchOpen?: boolean;
   onOpenSearch?: () => void;
+  isScenesDrawerOpen?: boolean;
+  onCloseScenesDrawer?: () => void;
   isCommandPaletteOpen?: boolean;
   onToggleDiagramSidebar?: () => void;
   onOpenCommandPalette?: () => void;
@@ -161,6 +163,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     isFlowPanelOpen,
     isPlaying = false,
     isSearchOpen,
+    isScenesDrawerOpen,
+    onCloseScenesDrawer,
     isCommandPaletteOpen,
     onOpenSearch,
     onToggleDiagramSidebar,
@@ -206,6 +210,15 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (isInputFocused(e.target)) return;
+
+      if (isScenesDrawerOpen) {
+        if (e.key === KEY.ESCAPE) {
+          e.preventDefault();
+          onCloseScenesDrawer?.();
+        }
+        return;
+      }
+
       if (!diagram) return;
 
       // Recording mode: only Backspace/Delete triggers undo
@@ -407,6 +420,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     isFlowPanelOpen,
     isPlaying,
     isSearchOpen,
+    isScenesDrawerOpen,
+    onCloseScenesDrawer,
     isCommandPaletteOpen,
     onRecordUndo,
     handleCopyPaste,

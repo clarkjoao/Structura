@@ -94,6 +94,7 @@ export const useDiagramActions = () =>
       pasteFromClipboard: s.pasteFromClipboard,
       clearClipboard: s.clearClipboard,
       addScene: s.addScene,
+      duplicateScene: s.duplicateScene,
       removeScene: s.removeScene,
       mergeSceneIntoBase: s.mergeSceneIntoBase,
       setActiveScene: s.setActiveScene,

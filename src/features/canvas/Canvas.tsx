@@ -8,7 +8,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import CanvasToolbar from "./toolbar/CanvasToolbar";
-import { SceneToolbarStrip } from "./toolbar/SceneToolbarStrip";
+import { ConnectedSceneDrawer } from "./toolbar/SceneDrawer";
 import ElementPanel from "./panels/ElementPanel/index";
 import NodeContextMenu from "./panels/NodeContextMenu";
 import { nodeTypes } from "./nodes/node-types";
@@ -43,6 +43,8 @@ const Canvas = (props: CanvasProps = {}) => {
     setShowDiagramSidebar,
     showCommandPalette,
     setShowCommandPalette,
+    showScenes,
+    setShowScenes,
     handleSelectDiagram,
     handleSearchSelect,
     focusTitleTrigger,
@@ -74,14 +76,13 @@ const Canvas = (props: CanvasProps = {}) => {
       <div className="flex-1 flex relative">
         <style>{CANVAS_STYLES}</style>
         <div ref={reactFlowWrapperRef} className="flex-1 relative">
-          <div className="absolute top-4 right-4 z-10">
-            <SceneToolbarStrip />
-          </div>
+          {showScenes && <ConnectedSceneDrawer onClose={() => setShowScenes(false)} />}
           <CanvasToolbar
             onDrillUp={onDrillUp}
             isPanelOpen={isPanelOpen}
             selectedCount={selectedCount}
             onClearSelection={visualState.clearCanvasSelection}
+            onOpenScenes={() => setShowScenes(true)}
           />
           {showSearch && diagram && (
             <CanvasSearch

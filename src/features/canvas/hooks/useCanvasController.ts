@@ -62,6 +62,7 @@ export function useCanvasController({
     [controlledDiagramSidebarOpen, diagramSidebarControlled, onDiagramSidebarOpenChange],
   );
   const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showScenes, setShowScenes] = useState(false);
   const [focusTitleTrigger, setFocusTitleTrigger] = useState(0);
 
   const { recordOpened } = useRecentDiagrams();
@@ -262,6 +263,7 @@ export function useCanvasController({
     setShowCommandPalette(false);
     setShowSearch(false);
     setShowDiagramSidebar(false);
+    setShowScenes(false);
   }, [diagramNavLocked, setShowDiagramSidebar]);
 
   const handleSearchSelect = useCallback(
@@ -313,6 +315,8 @@ export function useCanvasController({
       setShowCommandPalette(false);
       setShowSearch(true);
     },
+    isScenesDrawerOpen: showScenes,
+    onCloseScenesDrawer: () => setShowScenes(false),
     isCommandPaletteOpen: showCommandPalette,
     onToggleDiagramSidebar: () => {
       if (diagramNavLocked) return;
@@ -390,6 +394,8 @@ export function useCanvasController({
     setShowDiagramSidebar,
     showCommandPalette,
     setShowCommandPalette,
+    showScenes,
+    setShowScenes,
     handleSelectDiagram,
     handleSearchSelect,
     focusTitleTrigger,

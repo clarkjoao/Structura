@@ -14,6 +14,28 @@ export const scenesSlice = (
   set: (fn: (state: AppState) => void) => void,
   _get: () => AppState,
 ) => ({
+  duplicateScene: (sceneId: string, name?: string): SceneDiff | null => {
+    let created: SceneDiff | null = null;
+    set((state) => {
+      const d = state.diagrams[state.activeDiagramId!];
+      const src = d?.scenes?.[sceneId];
+      if (!src) return;
+      const scenes = ensureScenes(d);
+      const index = Object.keys(scenes).length;
+      const id = generateId("scene");
+      const copy = structuredClone(src) as SceneDiff;
+      copy.id = id;
+      const baseName = name?.trim() || `${src.name} (copy)`;
+      copy.name = baseName;
+      copy.createdAt = new Date().toISOString();
+      copy.color = nextSceneColor(index);
+      scenes[id] = copy;
+      created = copy;
+      d.updatedAt = new Date().toISOString();
+    });
+    return created;
+  },
+
   addScene: (name: string): SceneDiff => {
     let created!: SceneDiff;
     set((state) => {

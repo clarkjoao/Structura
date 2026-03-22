@@ -319,7 +319,14 @@
     "mergeDialogSceneDeleted": "A cena \"{{name}}\" será deletada.",
     "mergeAcknowledge": "Entendo que esta operação é irreversível.",
     "mergeCancel": "Cancelar",
-    "mergeConfirm": "Confirmar merge"
+    "mergeConfirm": "Confirmar merge",
+    "drawerTitle": "Versões",
+    "drawerSceneCount": "{{count}} cena(s)",
+    "drawerActiveBadge": "ativo",
+    "viewVersionsTitle": "Ver versões",
+    "duplicate": "Duplicar",
+    "duplicatedSceneName": "{{name}} (cópia)",
+    "duplicateSuccess": "Cena \"{{name}}\" duplicada"
   },
   "canvasSearch": {
     "placeholder": "Buscar componente...",
