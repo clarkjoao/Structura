@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { X, Plus, Play, Trash2, Pencil, Copy, Check, Layers, BarChart2 } from "lucide-react";
 import { useFlows, useDiagramActions, useActiveDiagramId, useActiveDiagram, getStepCount, getFlowParticipants } from "@/features/diagram";
-import type { Flow } from "@/features/diagram";
+import type { Flow, FlowStep } from "@/features/diagram";
 import { validateFlow, type BrokenStep } from "./validateFlow";
 import BrokenFlowDialog from "./BrokenFlowDialog";
 
@@ -38,19 +38,28 @@ const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow, isViewingCov
   const handleRemoveBrokenAndPlay = (stepIds: string[]) => {
     if (!pendingPlay) return;
     const idSet = new Set(stepIds);
-    const newSteps = { ...pendingPlay.flow.steps };
-    for (const sid of idSet) {
-      delete newSteps[sid];
+    const newSteps: Record<string, FlowStep> = {};
+    for (const [id, step] of Object.entries(pendingPlay.flow.steps)) {
+      if (idSet.has(id)) continue;
+      newSteps[id] = {
+        ...step,
+        branches: step.branches?.map((b) => ({ ...b })),
+      };
     }
-    // Clean up references to removed steps
-    for (const s of Object.values(newSteps)) {
-      if (s.next && idSet.has(s.next)) s.next = undefined;
-      if (s.branches) {
-        s.branches = s.branches.filter((b) => !idSet.has(b.nextId));
+    for (const id of Object.keys(newSteps)) {
+      const s = newSteps[id];
+      const next = s.next && idSet.has(s.next) ? undefined : s.next;
+      const branches = s.branches?.filter((b) => !idSet.has(b.nextId));
+      if (next !== s.next || branches !== s.branches) {
+        newSteps[id] = { ...s, next, branches };
       }
     }
-    updateFlow(pendingPlay.flow.id, { steps: newSteps });
-    onPlay({ ...pendingPlay.flow, steps: newSteps });
+    let entryStepId = pendingPlay.flow.entryStepId;
+    if (entryStepId && idSet.has(entryStepId)) {
+      entryStepId = Object.keys(newSteps)[0];
+    }
+    updateFlow(pendingPlay.flow.id, { steps: newSteps, entryStepId });
+    onPlay({ ...pendingPlay.flow, steps: newSteps, entryStepId });
     setPendingPlay(null);
   };
 
