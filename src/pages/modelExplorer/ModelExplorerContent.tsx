@@ -136,6 +136,8 @@ export function ModelExplorerContent({
         </ReactFlowProvider>
         {isRecording && (
           <FlowRecorderPanel
+            recordingContext={recordingProps.recordingContext}
+            setRecordingContext={recordingProps.setRecordingContext}
             name={recordingProps.recordingName}
             onNameChange={recordingProps.setRecordingName}
             description={recordingProps.recordingDescription}
@@ -143,7 +145,9 @@ export function ModelExplorerContent({
             tags={recordingProps.recordingTags}
             onAddTag={recordingProps.onAddTag}
             onRemoveTag={recordingProps.onRemoveTag}
-            steps={recordingProps.recordingSteps}
+            steps={recordingProps.recordingStepsForPanel}
+            recordingSteps={recordingProps.recordingSteps}
+            branchOwnership={recordingProps.branchOwnership}
             onCancel={cancelRecording}
             onFinalize={finalizeRecording}
             onUpdateStepDescription={recordingProps.onUpdateStepDescription}
@@ -159,10 +163,8 @@ export function ModelExplorerContent({
             onRemoveBranchLabel={recordingProps.onRemoveBranchLabel}
             onUpdateBranchLabel={recordingProps.onUpdateBranchLabel}
             onAddConditionStep={recordingProps.onAddConditionStep}
-            onEnterBranch={recordingProps.onEnterBranch}
-            onExitBranch={recordingProps.onExitBranch}
-            activeBranch={recordingProps.activeBranch}
-            branchOwnership={recordingProps.branchOwnership}
+            onEnterBranchRecording={recordingProps.onEnterBranchRecording}
+            onOpenBranchSelect={recordingProps.onOpenBranchSelect}
             isEditing={!!editingFlowId}
           />
         )}

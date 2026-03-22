@@ -65,7 +65,12 @@ export {
   validateFlowGraph,
   getOrderedStepIds,
   getStepCount,
+  getBranchStepCount,
 } from "./utils/flow-traversal";
+
+/** Build a Flow graph from in-progress recording data (same linking as finalize). */
+export { buildFlowFromRecordingSnapshot } from "./utils/recording-to-flow";
+export type { BranchOwnershipMap } from "./utils/recording-to-flow";
 export type { BrokenStep } from "./utils/flow-traversal";
 
 /** Flow migration from legacy array format */

@@ -113,3 +113,20 @@ export function getStepCount(flow: Flow): number {
   walkFlow(flow, () => count++);
   return count;
 }
+
+/** Count steps in the subgraph reachable from `fromStepId` (inclusive), following `next` and all branch targets. */
+export function getBranchStepCount(flow: Flow, fromStepId: string): number {
+  let count = 0;
+  const visited = new Set<string>();
+  const walk = (id: string) => {
+    if (!id || visited.has(id)) return;
+    const step = flow.steps[id];
+    if (!step) return;
+    visited.add(id);
+    count++;
+    if (step.next) walk(step.next);
+    step.branches?.forEach((b) => walk(b.nextId));
+  };
+  walk(fromStepId);
+  return count;
+}

@@ -12,6 +12,7 @@ import {
   useFlows,
   stepsToMermaid,
   useServiceRegistry,
+  buildFlowFromRecordingSnapshot,
 } from "@/features/diagram";
 import type { Flow, FlowStep } from "@/features/diagram";
 import { exportJSON, exportDrawio, exportMermaid, downloadFile } from "@/lib/export-service";
@@ -71,63 +72,18 @@ export default function ModelExplorerPage() {
     (data: import("@/features/canvas/flow/RecordingModeContext").RecordingFinalizeData) => {
       if (!diagram) return;
 
-      // Convert the recording steps array to a Record
-      const stepsRecord: Record<string, FlowStep> = {};
-      for (const s of data.steps) {
-        stepsRecord[s.id] = { ...s };
-      }
-
-      // Build graph links using branchOwnership
-      // 1. Identify condition steps and trunk steps
-      const conditionSteps = data.steps.filter((s) => s.type === 'condition');
-
-      // 2. Link trunk steps sequentially (skipping condition steps — they link via branches)
-      const trunkAndCondition = data.steps.filter((s) => !data.branchOwnership.has(s.id));
-      for (let i = 0; i < trunkAndCondition.length - 1; i++) {
-        const step = trunkAndCondition[i];
-        if (step.type !== 'condition') {
-          stepsRecord[step.id] = { ...stepsRecord[step.id], next: trunkAndCondition[i + 1].id };
-        }
-      }
-
-      // 3. For each condition step, link its branch steps
-      for (const condStep of conditionSteps) {
-        if (!condStep.branches) continue;
-        for (let bi = 0; bi < condStep.branches.length; bi++) {
-          // Find steps owned by this branch, in array order
-          const branchSteps = data.steps.filter((s) => {
-            const info = data.branchOwnership.get(s.id);
-            return info && info.conditionStepId === condStep.id && info.branchIndex === bi;
-          });
-
-          if (branchSteps.length > 0) {
-            // Point the branch's nextId to the first step
-            stepsRecord[condStep.id] = {
-              ...stepsRecord[condStep.id],
-              branches: stepsRecord[condStep.id].branches?.map((b, idx) =>
-                idx === bi ? { ...b, nextId: branchSteps[0].id } : b
-              ),
-            };
-            // Link branch steps sequentially
-            for (let j = 0; j < branchSteps.length - 1; j++) {
-              stepsRecord[branchSteps[j].id] = { ...stepsRecord[branchSteps[j].id], next: branchSteps[j + 1].id };
-            }
-          }
-        }
-      }
-
-      const entryStepId = data.entryStepId ?? data.steps[0]?.id;
-
-      // Build a temporary flow for mermaid generation
-      const tempFlow: Flow = {
+      const tempFlow = buildFlowFromRecordingSnapshot(data.steps, data.branchOwnership, {
         id: "temp",
         name: data.name,
-        mermaid: "",
         diagramId: diagram.id,
-        entryStepId,
-        steps: stepsRecord,
-      };
-      const mermaid = stepsToMermaid(tempFlow, diagram.snapshot.components, diagram.snapshot.connections);
+      });
+      const stepsRecord = tempFlow.steps;
+      const entryStepId = data.entryStepId ?? data.steps[0]?.id ?? tempFlow.entryStepId;
+      const mermaid = stepsToMermaid(
+        { ...tempFlow, entryStepId },
+        diagram.snapshot.components,
+        diagram.snapshot.connections,
+      );
 
       const desc = data.description || undefined;
       const flowTags = data.tags.length ? data.tags : undefined;

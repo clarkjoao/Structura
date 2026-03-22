@@ -14,7 +14,7 @@ interface UseFlowStateParams {
 }
 
 export function useFlowState({ flows }: UseFlowStateParams) {
-  const { isRecording, recordingSteps } = useRecordingMode();
+  const { isRecording, recordingSteps, recordingContext, branchOwnership } = useRecordingMode();
   const { activeFlow, currentStepId, currentStep, isPlaying, history } = useFlowPlayback();
 
   const flowHighlight = useMemo(() => {
@@ -27,10 +27,20 @@ export function useFlowState({ flows }: UseFlowStateParams) {
     return buildCoverage(flows);
   }, [flows, isPlaying, isRecording]);
 
+  const stepsForRecordingOverlay = useMemo(() => {
+    if (!isRecording || !recordingSteps?.length) return [];
+    if (recordingContext.mode !== "branch-record") return recordingSteps;
+    const { conditionStepId, branchIndex } = recordingContext;
+    return recordingSteps.filter((s) => {
+      const o = branchOwnership.get(s.id);
+      return o && o.conditionStepId === conditionStepId && o.branchIndex === branchIndex;
+    });
+  }, [isRecording, recordingSteps, recordingContext, branchOwnership]);
+
   const recordingInfo = useMemo(() => {
-    if (!isRecording || !recordingSteps?.length) return null;
-    return buildRecordingInfo(recordingSteps);
-  }, [isRecording, recordingSteps]);
+    if (!isRecording || !stepsForRecordingOverlay?.length) return null;
+    return buildRecordingInfo(stepsForRecordingOverlay);
+  }, [isRecording, stepsForRecordingOverlay]);
 
   return { isPlaying, activeStep: currentStep, flowHighlight, coverage, recordingInfo, activeFlow, currentStepId };
 }

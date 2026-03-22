@@ -63,7 +63,7 @@ export function useCanvasController({
   const visualState = useCanvasVisualState();
   const { panelIds, connectionCountPerNode, edgeHandleAssignments, effectiveHandleOrder } =
     useCanvasConnectionDerivations({ visibleComponents, visibleConnections, diagram });
-  const { isPlaying, activeStep, flowHighlight, coverage, recordingInfo, activeFlow, currentStep } = useFlowState({
+  const { isPlaying, activeStep, flowHighlight, coverage, recordingInfo, activeFlow, currentStepId } = useFlowState({
     flows,
   });
 
@@ -264,7 +264,7 @@ export function useCanvasController({
     reactFlowInstance,
     isPlaying,
     activeFlow,
-    currentStep,
+    currentStepId,
     onClearSelection: visualState.clearCanvasSelection,
   });
 
