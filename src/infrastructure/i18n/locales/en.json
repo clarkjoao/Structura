@@ -288,6 +288,17 @@
     "levelContainer": "Level 2",
     "levelComponent": "Level 3"
   },
+  "scenes": {
+    "base": "Base",
+    "newScene": "New scene",
+    "newNamePlaceholder": "Scene name",
+    "defaultSceneName": "New scene",
+    "rename": "Rename",
+    "remove": "Remove",
+    "sceneMenu": "Scene menu",
+    "baseMoveBlocked": "Moving base nodes is not allowed while a scene is active",
+    "groupBlockedInScene": "Grouping is not available while a scene is active"
+  },
   "canvasSearch": {
     "placeholder": "Search component...",
     "clearAria": "Clear search",

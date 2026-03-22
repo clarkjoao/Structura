@@ -1,5 +1,5 @@
 import { LayoutDashboard } from "lucide-react";
-import { useComponent, useConnections, useDiagramActions, useActiveDiagram, useFlows, isEndpointComponent, isApiGroupComponent, isPanelComponent } from "@/features/diagram";
+import { useComponent, useConnections, useComponents, useDiagramActions, useActiveDiagram, useFlows, isEndpointComponent, isApiGroupComponent, isPanelComponent } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
 import { MultiSelectPanel } from "../MultiSelectPanel";
 import ComponentPanel from "./ComponentPanel";
@@ -25,6 +25,7 @@ const ElementPanel = ({
   onClose,
 }: Props) => {
   const component = useComponent(selectedElementId ?? "");
+  const resolvedComponents = useComponents();
   const connections = useConnections();
   const flows = useFlows();
   const { updateComponent, removeComponent, updateConnection, removeConnection, groupNodes, ungroupNodes } = useDiagramActions();
@@ -45,8 +46,7 @@ const ElementPanel = ({
     const canGroup = selectedNodeIds.length >= 2;
     const isPanelWithChildren =
       isPanelComponent(component) &&
-      diagram &&
-      Object.values(diagram.snapshot.components).some((c) => c.parentId === component.id);
+      Object.values(resolvedComponents).some((c) => c.parentId === component.id);
 
     if (isEndpointComponent(component)) {
       return (

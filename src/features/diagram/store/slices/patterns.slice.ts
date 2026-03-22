@@ -11,8 +11,10 @@ export const patternsSlice = (
         const GRID_X = 220;
         const ids: string[] = template.components.map(() => generateId("el"));
         set((state) => {
-          pushHistory(state);
           const d = state.diagrams[state.activeDiagramId!];
+          const sid = d.activeSceneId ?? null;
+          const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+          if (!scene) pushHistory(state);
           template.components.forEach((c: { name: string; type: ComponentType; description?: string; technology?: string; awsService?: string }, i: number) => {
             const comp: Component = {
               id: ids[i],
@@ -23,17 +25,28 @@ export const patternsSlice = (
               technology: c.technology ?? undefined,
               awsService: c.awsService ?? undefined,
             };
-            d.snapshot.components[comp.id] = comp;
-            d.nodeLayouts[comp.id] = { elementId: comp.id, x: position.x + i * GRID_X, y: position.y };
+            const layout = { elementId: comp.id, x: position.x + i * GRID_X, y: position.y };
+            if (scene) {
+              scene.addedComponents[comp.id] = comp;
+              scene.nodeLayouts[comp.id] = layout;
+            } else {
+              d.snapshot.components[comp.id] = comp;
+              d.nodeLayouts[comp.id] = layout;
+            }
           });
           template.connections.forEach((conn: { fromIndex: number; toIndex: number; label: string }) => {
             const connId = generateId("conn");
-            d.snapshot.connections[connId] = {
+            const next = {
               id: connId,
               sourceId: ids[conn.fromIndex],
               targetId: ids[conn.toIndex],
               label: conn.label,
             };
+            if (scene) {
+              scene.addedConnections[connId] = next;
+            } else {
+              d.snapshot.connections[connId] = next;
+            }
           });
           d.updatedAt = new Date().toISOString();
         });

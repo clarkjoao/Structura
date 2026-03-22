@@ -36,13 +36,16 @@ export const endpointDescriptor: NodeTypeDescriptor = {
       onPlayHandler: ctx.onPlayFlow
         ? (flowId: string) => ctx.onPlayFlow!(flowId)
         : undefined,
+      ...(ctx.sceneBadgeByComponentId[comp.id]
+        ? { sceneBadge: ctx.sceneBadgeByComponentId[comp.id] }
+        : {}),
     };
   },
 
   buildStyle: (comp, ctx) => {
     if (!isEndpointComponent(comp)) return undefined;
-    const layout = ctx.diagram.nodeLayouts[comp.id];
-    if (comp.parentId && isApiGroupComponent(ctx.diagram.snapshot.components[comp.parentId])) {
+    const layout = ctx.resolvedNodeLayouts[comp.id];
+    if (comp.parentId && isApiGroupComponent(ctx.resolvedComponents[comp.parentId])) {
       return { width: FRAME_W, height: ENDPOINT_H };
     }
     return {

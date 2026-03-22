@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useState, type SetStateAction } from "react";
+import { useRef, useEffect, useCallback, useState, useMemo, type SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 import { useReactFlow, useUpdateNodeInternals, type Node } from "@xyflow/react";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +19,7 @@ import { useConnectionInternalsSync } from "./useConnectionInternalsSync";
 import { useRecordingMode } from "../flow/RecordingModeContext";
 import { useRecentDiagrams } from "../navigation/useRecentDiagrams";
 import type { CanvasProps } from "../canvas.types";
+import { resolveSceneSnapshot } from "@/features/diagram";
 
 export function useCanvasController({
   onOpenDiagram,
@@ -61,6 +62,20 @@ export function useCanvasController({
   const { diagram, allDiagrams, visibleComponents, visibleConnections, serviceRegistry, flows, actions } =
     useCanvasStore();
   const visualState = useCanvasVisualState();
+
+  const resolved = useMemo(
+    () =>
+      diagram ? resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null) : null,
+    [diagram],
+  );
+
+  const sceneBadgeByComponentId = useMemo(() => {
+    if (!diagram?.activeSceneId || !diagram.scenes?.[diagram.activeSceneId]) return {};
+    const sc = diagram.scenes[diagram.activeSceneId];
+    return Object.fromEntries(
+      Object.keys(sc.addedComponents).map((id) => [id, { name: sc.name, color: sc.color }]),
+    );
+  }, [diagram]);
   const { panelIds, connectionCountPerNode, edgeHandleAssignments, effectiveHandleOrder } =
     useCanvasConnectionDerivations({ visibleComponents, visibleConnections, diagram });
   const { isPlaying, activeStep, flowHighlight, coverage, recordingInfo, activeFlow, currentStep } = useFlowState({
@@ -100,6 +115,9 @@ export function useCanvasController({
 
   const storeNodes = useCanvasNodes({
     diagram,
+    resolvedComponents: resolved?.components ?? {},
+    resolvedNodeLayouts: resolved?.nodeLayouts ?? {},
+    sceneBadgeByComponentId,
     visibleComponents,
     panelIds,
     selectedNodeId: visualState.selectedNodeId,

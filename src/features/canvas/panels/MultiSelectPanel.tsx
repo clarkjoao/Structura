@@ -5,6 +5,7 @@ import type { Node } from "@xyflow/react";
 import {
   useActiveDiagram,
   useDiagramActions,
+  resolveSceneSnapshot,
 } from "@/features/diagram";
 import type { ComponentType } from "@/features/diagram";
 import { isPanelType } from "@/features/diagram";
@@ -37,12 +38,14 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
   } = useDiagramActions();
 
   const ids = useMemo(() => selectedNodes.map((n) => n.id), [selectedNodes]);
-  const components = useMemo(
+  const resolved = useMemo(
     () =>
-      diagram
-        ? ids.map((id) => diagram.snapshot.components[id]).filter(Boolean)
-        : [],
-    [diagram, ids],
+      diagram ? resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null) : null,
+    [diagram],
+  );
+  const components = useMemo(
+    () => (resolved ? ids.map((id) => resolved.components[id]).filter(Boolean) : []),
+    [resolved, ids],
   );
 
   const typeCounts = useMemo(() => {
@@ -103,11 +106,11 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
   };
 
   const handleDuplicate = () => {
-    if (!diagram) return;
+    if (!diagram || !resolved) return;
     ids.forEach((id, index) => {
-      const comp = diagram.snapshot.components[id];
+      const comp = resolved.components[id];
       if (!comp || isPanelType(comp.type)) return;
-      const layout = diagram.nodeLayouts[id];
+      const layout = resolved.nodeLayouts[id];
       addComponent(
         comp.type,
         `${comp.name}${t("common.copySuffix")}`,

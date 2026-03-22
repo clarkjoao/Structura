@@ -2,6 +2,7 @@ import { memo } from "react";
 import { NodeResizer, type NodeProps } from "@xyflow/react";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { useTranslation } from "react-i18next";
+import { SceneElementBadge } from "./SceneElementBadge";
 
 export interface SwimlaneNodeData {
   elementId: string;
@@ -13,6 +14,7 @@ export interface SwimlaneNodeData {
   isHighlighted?: boolean;
   isDragTarget?: boolean;
   isUnparentCandidate?: boolean;
+  sceneBadge?: { name: string; color: string };
 }
 
 const UNPARENT_BORDER = "hsl(25 95% 53%)";
@@ -61,6 +63,9 @@ const SwimlaneNode = memo(({ data, selected }: NodeProps) => {
           ...(isUnparentCandidate ? { borderColor: UNPARENT_BORDER } : {}),
         }}
       >
+        {d.sceneBadge && (
+          <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
+        )}
         <div
           className={`absolute z-[1] pointer-events-none ${
             isHorizontal

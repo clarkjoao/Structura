@@ -109,6 +109,9 @@ export const c4Descriptor: NodeTypeDescriptor = {
                 direction: "up" | "down",
               ) => ctx.onReorderHandle!(comp.id, side, connId, direction)
             : undefined,
+      ...(ctx.sceneBadgeByComponentId[comp.id]
+        ? { sceneBadge: ctx.sceneBadgeByComponentId[comp.id] }
+        : {}),
     };
   },
 

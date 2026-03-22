@@ -288,6 +288,17 @@
     "levelContainer": "Nível 2",
     "levelComponent": "Nível 3"
   },
+  "scenes": {
+    "base": "Base",
+    "newScene": "Nova cena",
+    "newNamePlaceholder": "Nome da cena",
+    "defaultSceneName": "Nova cena",
+    "rename": "Renomear",
+    "remove": "Remover",
+    "sceneMenu": "Menu da cena",
+    "baseMoveBlocked": "Mover nós da base não é permitido em cenas",
+    "groupBlockedInScene": "Agrupar não está disponível com uma cena ativa"
+  },
   "canvasSearch": {
     "placeholder": "Buscar componente...",
     "clearAria": "Limpar busca",

@@ -3,6 +3,7 @@ import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { Play } from "lucide-react";
 import type { EndpointHandler, HttpMethod } from "@/features/diagram";
 import { ENDPOINT_H, METHOD_COLORS } from "./ApiGroupNode/constants";
+import { SceneElementBadge } from "./SceneElementBadge";
 
 export { METHOD_COLORS } from "./ApiGroupNode/constants";
 
@@ -19,6 +20,7 @@ export interface EndpointNodeData {
   onPlayHandler?: (flowId: string) => void;
   onStopPlay?: () => void;
   availableFlows?: { id: string; name: string }[];
+  sceneBadge?: { name: string; color: string };
 }
 
 const EndpointNode = memo(({ data }: NodeProps) => {
@@ -27,9 +29,12 @@ const EndpointNode = memo(({ data }: NodeProps) => {
 
   return (
     <div
-      className="w-full h-full flex items-center gap-2 px-3 border-b border-border/50 bg-card hover:bg-surface-hover transition-colors"
+      className="relative w-full h-full flex items-center gap-2 px-3 border-b border-border/50 bg-card hover:bg-surface-hover transition-colors"
       style={{ height: ENDPOINT_H }}
     >
+      {d.sceneBadge && (
+        <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
+      )}
       <Handle
         id="target-0"
         type="target"

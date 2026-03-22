@@ -36,4 +36,5 @@ export interface NodeData {
     connId: string,
     direction: "up" | "down",
   ) => void;
+  sceneBadge?: { name: string; color: string };
 }

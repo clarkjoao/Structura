@@ -1,11 +1,23 @@
 import type { CSSProperties, ComponentType as ReactComponentType } from "react";
-import type { Component, ComponentType, Diagram, FlowStep, ServiceDefinition } from "@/features/diagram";
+import type {
+  Component,
+  ComponentType,
+  Diagram,
+  FlowStep,
+  NodeLayout,
+  ServiceDefinition,
+} from "@/features/diagram";
 import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../../flow/flowState";
 
 export type { FlowHighlight, RecordingInfo, CoverageInfo };
 
 export interface NodeBuildContext {
   diagram: Diagram;
+  /** Merged base + active scene (same as canvas visibility). */
+  resolvedComponents: Record<string, Component>;
+  resolvedNodeLayouts: Record<string, NodeLayout>;
+  /** Scene-only elements in the active scene → badge { name, color }. */
+  sceneBadgeByComponentId: Record<string, { name: string; color: string }>;
   serviceRegistry: Record<string, ServiceDefinition>;
   allDiagrams: Record<string, Diagram>;
   selectedNodeId: string | null;

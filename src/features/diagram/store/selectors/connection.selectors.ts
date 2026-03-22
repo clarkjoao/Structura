@@ -1,26 +1,28 @@
 import { useShallow } from "zustand/react/shallow";
 import { useDiagramStore } from "../diagram.store";
+import { resolveSceneSnapshot } from "../../utils/scene.utils";
 
 export const useConnectionIds = () =>
   useDiagramStore((s) => {
     if (!s.activeDiagramId) return [];
-
-    return Object.keys(
-      s.diagrams[s.activeDiagramId].snapshot.connections,
-    );
+    const d = s.diagrams[s.activeDiagramId];
+    return Object.keys(resolveSceneSnapshot(d, d.activeSceneId ?? null).connections);
   });
 
 export const useConnection = (id: string) =>
   useDiagramStore((s) => {
     if (!s.activeDiagramId) return undefined;
-
-    return s.diagrams[s.activeDiagramId]
-      .snapshot.connections[id];
+    const d = s.diagrams[s.activeDiagramId];
+    return resolveSceneSnapshot(d, d.activeSceneId ?? null).connections[id];
   });
 
 export const useConnections = () =>
-  useDiagramStore((s) =>
-    s.activeDiagramId ? s.diagrams[s.activeDiagramId].snapshot.connections : {},
+  useDiagramStore(
+    useShallow((s) => {
+      if (!s.activeDiagramId) return {};
+      const d = s.diagrams[s.activeDiagramId];
+      return resolveSceneSnapshot(d, d.activeSceneId ?? null).connections;
+    }),
   );
 
 export const useVisibleComponents = () =>
@@ -28,8 +30,9 @@ export const useVisibleComponents = () =>
     useShallow((s) => {
       if (!s.activeDiagramId) return [];
       const d = s.diagrams[s.activeDiagramId];
-      const visibleIds = new Set(Object.keys(d.nodeLayouts));
-      return Object.values(d.snapshot.components).filter((c) => visibleIds.has(c.id));
+      const r = resolveSceneSnapshot(d, d.activeSceneId ?? null);
+      const visibleIds = new Set(Object.keys(r.nodeLayouts));
+      return Object.values(r.components).filter((c) => visibleIds.has(c.id));
     }),
   );
 
@@ -38,8 +41,9 @@ export const useVisibleConnections = () =>
     useShallow((s) => {
       if (!s.activeDiagramId) return [];
       const d = s.diagrams[s.activeDiagramId];
-      const visibleIds = new Set(Object.keys(d.nodeLayouts));
-      return Object.values(d.snapshot.connections).filter(
+      const r = resolveSceneSnapshot(d, d.activeSceneId ?? null);
+      const visibleIds = new Set(Object.keys(r.nodeLayouts));
+      return Object.values(r.connections).filter(
         (conn) => visibleIds.has(conn.sourceId) && visibleIds.has(conn.targetId),
       );
     }),

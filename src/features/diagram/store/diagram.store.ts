@@ -15,6 +15,7 @@ import {
   diagramsSlice,
   foldersSlice,
   patternsSlice,
+  scenesSlice,
 } from "./slices";
 import { createPersistConfig } from "./persist.config";
 
@@ -38,6 +39,7 @@ export function createDiagramStore(storage = defaultStorage) {
         ...historySlice(set, get as () => AppState),
         ...foldersSlice(set, get as () => AppState),
         ...patternsSlice(set, get as () => AppState),
+        ...scenesSlice(set),
       })),
       createPersistConfig(storage),
     ),
@@ -85,6 +87,15 @@ export const useDiagramActions = () =>
       copyToClipboard: s.copyToClipboard,
       pasteFromClipboard: s.pasteFromClipboard,
       clearClipboard: s.clearClipboard,
+      addScene: s.addScene,
+      removeScene: s.removeScene,
+      setActiveScene: s.setActiveScene,
+      renameScene: s.renameScene,
+      addComponentToScene: s.addComponentToScene,
+      removeComponentFromScene: s.removeComponentFromScene,
+      addConnectionToScene: s.addConnectionToScene,
+      removeConnectionFromScene: s.removeConnectionFromScene,
+      updateSceneNodeLayout: s.updateSceneNodeLayout,
     })),
   );
 

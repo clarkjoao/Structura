@@ -1,7 +1,12 @@
 import { useMemo } from "react";
 import type { Node } from "@xyflow/react";
-import type { Component, Diagram, ServiceDefinition } from "@/features/diagram";
-import { isPanelComponent, isApiGroupComponent, isEndpointType } from "@/features/diagram";
+import type { Component, Diagram, NodeLayout, ServiceDefinition } from "@/features/diagram";
+import {
+  isPanelComponent,
+  isApiGroupComponent,
+  isEndpointType,
+  isComponentAddedInActiveScene,
+} from "@/features/diagram";
 import { resolveNodeDescriptor, type NodeBuildContext } from "./node-types";
 import { useRecordingMode } from "../flow/RecordingModeContext";
 import { buildCollapsedPanelIds, computeNodeVisibility } from "./nodeVisibility";
@@ -9,6 +14,9 @@ import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowSta
 
 interface UseCanvasNodesParams {
   diagram: Diagram | null | undefined;
+  resolvedComponents: Record<string, Component>;
+  resolvedNodeLayouts: Record<string, NodeLayout>;
+  sceneBadgeByComponentId: Record<string, { name: string; color: string }>;
   visibleComponents: Component[];
   panelIds: Set<string>;
   selectedNodeId: string | null;
@@ -36,6 +44,9 @@ interface UseCanvasNodesParams {
 
 export function useCanvasNodes({
   diagram,
+  resolvedComponents,
+  resolvedNodeLayouts,
+  sceneBadgeByComponentId,
   visibleComponents,
   panelIds,
   selectedNodeId,
@@ -63,9 +74,12 @@ export function useCanvasNodes({
   const { isRecording, onRecordHandleClick } = useRecordingMode();
   return useMemo(() => {
     if (!diagram) return [];
-    const collapsedPanelIds = buildCollapsedPanelIds(diagram.snapshot.components);
+    const collapsedPanelIds = buildCollapsedPanelIds(resolvedComponents);
     const ctx: NodeBuildContext = {
       diagram,
+      resolvedComponents,
+      resolvedNodeLayouts,
+      sceneBadgeByComponentId,
       serviceRegistry: serviceRegistry ?? {},
       allDiagrams,
       selectedNodeId,
@@ -104,14 +118,18 @@ export function useCanvasNodes({
       })
       .map((comp): Node => {
         const d = resolveNodeDescriptor(comp);
-        const layout = diagram.nodeLayouts[comp.id];
+        const layout = resolvedNodeLayouts[comp.id];
         const vis = computeNodeVisibility(
           comp, d, layout, panelIds, selectedNodeIds, highlightedNodeIds,
           collapsedPanelIds, isViewingCoverage, coverage,
         );
         const style = { ...d.buildStyle?.(comp, ctx), ...(vis.dimmed ? { opacity: 0.3 } : {}) };
         const lockedInGroup = isEndpointType(comp.type) && comp.parentId != null
-          && isApiGroupComponent(diagram.snapshot.components[comp.parentId]);
+          && isApiGroupComponent(resolvedComponents[comp.parentId]);
+        const sceneActive =
+          !!diagram.activeSceneId && !!diagram.scenes?.[diagram.activeSceneId];
+        const sceneLocksBase =
+          sceneActive && !isComponentAddedInActiveScene(diagram, comp.id);
         return {
           id: comp.id,
           type: d.rfType,
@@ -119,7 +137,7 @@ export function useCanvasNodes({
           zIndex: vis.zIndex,
           connectable: d.connectable,
           selected: vis.isSelected,
-          draggable: d.draggable ?? !lockedInGroup,
+          draggable: (d.draggable ?? !lockedInGroup) && !sceneLocksBase,
           selectable: d.selectable ?? !lockedInGroup,
           focusable: d.focusable ?? !lockedInGroup,
           ...(vis.isChild ? { parentId: comp.parentId!, extent: "parent" as const } : {}),
@@ -129,7 +147,15 @@ export function useCanvasNodes({
         };
       });
   }, [
-    diagram, visibleComponents, panelIds, selectedNodeId, selectedNodeIds, highlightedNodeIds,
+    diagram,
+    resolvedComponents,
+    resolvedNodeLayouts,
+    sceneBadgeByComponentId,
+    visibleComponents,
+    panelIds,
+    selectedNodeId,
+    selectedNodeIds,
+    highlightedNodeIds,
     serviceRegistry, allDiagrams, handleDrillDown, isPlaying, flowHighlight,
     dragTargetPanelId, unparentCandidatePanelId, isRecording, recordingInfo,
     onRecordHandleClick, activeStep, coverage, connectionCountPerNode, effectiveHandleOrder,

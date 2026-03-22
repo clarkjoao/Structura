@@ -8,6 +8,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import CanvasToolbar from "./toolbar/CanvasToolbar";
+import { SceneToolbarStrip } from "./toolbar/SceneToolbarStrip";
 import ElementPanel from "./panels/ElementPanel/index";
 import NodeContextMenu from "./panels/NodeContextMenu";
 import { nodeTypes } from "./nodes/node-types";
@@ -17,6 +18,7 @@ import { DiagramSidebar } from "./navigation/DiagramSidebar";
 import { DiagramCommandPalette } from "./navigation/DiagramCommandPalette";
 import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 import { useCanvasController } from "./hooks/useCanvasController";
+import { resolveSceneSnapshot } from "@/features/diagram";
 import { CANVAS_STYLES } from "./canvas.constants";
 import { canvasEdgeTypes } from "./reactFlowConfig";
 import type { CanvasProps } from "./canvas.types";
@@ -70,6 +72,9 @@ const Canvas = (props: CanvasProps = {}) => {
       <div className="flex-1 flex relative">
         <style>{CANVAS_STYLES}</style>
         <div ref={reactFlowWrapperRef} className="flex-1 relative">
+          <div className="absolute top-4 right-4 z-10">
+            <SceneToolbarStrip />
+          </div>
           <CanvasToolbar
             onDrillUp={onDrillUp}
             isPanelOpen={isPanelOpen}
@@ -80,7 +85,9 @@ const Canvas = (props: CanvasProps = {}) => {
             <CanvasSearch
               onClose={() => setShowSearch(false)}
               onSelectResult={handleSearchSelect}
-              components={diagram.snapshot.components}
+              components={
+                resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null).components
+              }
             />
           )}
           <div className="absolute inset-y-0 left-0 z-30 flex">

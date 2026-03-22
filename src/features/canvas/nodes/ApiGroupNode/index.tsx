@@ -3,6 +3,7 @@ import type { NodeProps } from "@xyflow/react";
 import { Plus } from "lucide-react";
 import type { ApiProtocol } from "@/features/diagram";
 import { HEADER_H, FOOTER_H, PROTOCOL_COLORS } from "./constants";
+import { SceneElementBadge } from "../SceneElementBadge";
 
 export { PROTOCOL_COLORS } from "./constants";
 
@@ -15,6 +16,7 @@ export interface ApiGroupNodeData {
   isSelected: boolean;
   controlsDisabled?: boolean;
   onAddEndpoint?: () => void;
+  sceneBadge?: { name: string; color: string };
 }
 
 const ApiGroupNode = memo(({ data, selected }: NodeProps) => {
@@ -28,6 +30,9 @@ const ApiGroupNode = memo(({ data, selected }: NodeProps) => {
         }`}
         style={{ borderColor: isSelected ? undefined : `${PROTOCOL_COLORS[d.protocol]}66` }}
       >
+        {d.sceneBadge && (
+          <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
+        )}
         <div
           style={{ height: HEADER_H }}
           className="px-3 py-2.5 border-b border-border bg-card/80 rounded-t-xl flex flex-col justify-center"

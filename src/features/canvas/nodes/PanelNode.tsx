@@ -5,6 +5,7 @@ import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import AwsIcon from "./AwsIcon";
 import { useTranslation } from "react-i18next";
+import { SceneElementBadge } from "./SceneElementBadge";
 
 const DEFAULT_OPACITY = 10;
 
@@ -26,6 +27,7 @@ export interface PanelNodeData {
   collapsed?: boolean;
   childCount?: number;
   onToggleCollapse?: () => void;
+  sceneBadge?: { name: string; color: string };
 }
 
 function colorWithAlpha(color: string, alpha: number): string {
@@ -82,12 +84,15 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
   if (collapsed) {
     return (
       <div
-        className={`w-full h-full rounded-lg flex items-center gap-2 px-3 transition-all duration-200 ${isActive ? selectedRing : unselectedClass}`}
+        className={`relative w-full h-full rounded-lg flex items-center gap-2 px-3 transition-all duration-200 ${isActive ? selectedRing : unselectedClass}`}
         style={{
           backgroundColor,
           border: `2px ${borderStyle} ${borderColor}`,
         }}
       >
+        {d.sceneBadge && (
+          <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
+        )}
         {useAwsIcon ? (
           <div className="shrink-0 opacity-80" style={{ color }}>
             <AwsIcon iconName={useAwsIcon} size={18} />
@@ -136,6 +141,9 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
           border: `2px ${borderStyle} ${borderColor}`,
         }}
       >
+        {d.sceneBadge && (
+          <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
+        )}
         {isDragTarget && (
           <div
             className="absolute inset-0 rounded-xl animate-pulse-glow pointer-events-none"

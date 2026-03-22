@@ -1,4 +1,5 @@
 import type { Flow, Diagram } from "@/features/diagram";
+import { resolveSceneSnapshot } from "@/features/diagram";
 
 export interface BrokenStep {
   stepIndex: number;
@@ -10,7 +11,10 @@ export interface BrokenStep {
 
 export function validateFlow(flow: Flow, diagram: Diagram): BrokenStep[] {
   const broken: BrokenStep[] = [];
-  const { components, connections } = diagram.snapshot;
+  const { components, connections } = resolveSceneSnapshot(
+    diagram,
+    diagram.activeSceneId ?? null,
+  );
 
   flow.steps.forEach((step, i) => {
     if (step.componentId && !components[step.componentId]) {

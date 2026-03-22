@@ -9,6 +9,8 @@ import type {
   Level,
   Folder,
   PanelKind,
+  SceneDiff,
+  NodeLayout,
 } from "../model/diagram.types";
 import type { ServiceDefinition } from "../model/service.types";
 import type { EdgeStyle } from "../model/connection.types";
@@ -74,4 +76,19 @@ export interface AppActions {
   copyToClipboard: (componentIds: string[]) => void;
   pasteFromClipboard: (position?: { x: number; y: number }) => void;
   clearClipboard: () => void;
+
+  addScene: (name: string) => SceneDiff;
+  removeScene: (sceneId: string) => void;
+  setActiveScene: (sceneId: string | null) => void;
+  renameScene: (sceneId: string, name: string) => void;
+  addComponentToScene: (sceneId: string, component: Component, layout: NodeLayout) => void;
+  removeComponentFromScene: (sceneId: string, componentId: string) => void;
+  addConnectionToScene: (sceneId: string, connection: Connection) => void;
+  removeConnectionFromScene: (sceneId: string, connectionId: string) => void;
+  updateSceneNodeLayout: (
+    sceneId: string,
+    elementId: string,
+    position: { x: number; y: number },
+    dimensions?: { width: number; height: number },
+  ) => void;
 }

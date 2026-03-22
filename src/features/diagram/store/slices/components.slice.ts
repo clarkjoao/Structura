@@ -1,4 +1,12 @@
-import type { Component, ComponentPatch, ComponentType, ApiGroupComponent, EndpointComponent, PanelComponent } from "../../model/diagram.types";
+import type {
+  Component,
+  ComponentPatch,
+  ComponentType,
+  ApiGroupComponent,
+  EndpointComponent,
+  PanelComponent,
+  NodeLayout,
+} from "../../model/diagram.types";
 import { PanelKind } from "../../enums";
 import { generateId } from "../../utils/generate-id";
 import { isPanelComponent, isApiGroupComponent } from "../../model/component.guards";
@@ -20,6 +28,23 @@ import {
 import i18n from "@/infrastructure/i18n";
 import { HEADER_H, ENDPOINT_H, FRAME_W } from "@/features/canvas/nodes/ApiGroupNode/constants";
 import { computeApiGroupSize } from "@/features/canvas/nodes/ApiGroupNode/useApiGroupSize";
+import { mutateRemoveComponentInScene } from "../../utils/scene-mutations";
+
+function countEndpointsUnderParent(
+  d: { snapshot: { components: Record<string, Component> } },
+  scene: { addedComponents: Record<string, Component> } | null,
+  parentId: string,
+): number {
+  let n = Object.values(d.snapshot.components).filter(
+    (c) => c.parentId === parentId && isEndpointType(c.type),
+  ).length;
+  if (scene) {
+    n += Object.values(scene.addedComponents).filter(
+      (c) => c.parentId === parentId && isEndpointType(c.type),
+    ).length;
+  }
+  return n;
+}
 
 export const componentsSlice = (
   set: (fn: (state: AppState) => void) => void,
@@ -82,18 +107,24 @@ export const componentsSlice = (
         component = { ...base, type, awsService: awsService ?? undefined };
       }
       set((state) => {
-        pushHistory(state);
         const d = state.diagrams[state.activeDiagramId]!;
+        const sid = d.activeSceneId ?? null;
+        const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
 
-        const parentComp = parentId ? d.snapshot.components[parentId] : undefined;
-        const parentLayout = parentId ? d.nodeLayouts[parentId] : undefined;
+        if (!scene) pushHistory(state);
+
+        const resolveComp = (pid: string | null | undefined) =>
+          pid ? scene?.addedComponents[pid] ?? d.snapshot.components[pid] : undefined;
+        const parentComp = parentId ? resolveComp(parentId) : undefined;
+        const parentLayout = parentId
+          ? scene?.nodeLayouts[parentId] ?? d.nodeLayouts[parentId]
+          : undefined;
         const isChildOfPanel = !!(parentId && parentComp && isPanelComponent(parentComp));
         const centeredInParentPanel = {
           x: (parentLayout?.width ?? PANEL_DEFAULT_W) / 2 - DEFAULT_NODE_W / 2,
           y: (parentLayout?.height ?? PANEL_DEFAULT_H) / 2 - DEFAULT_NODE_H / 2,
         };
 
-        // When parentId + absolute position are both provided, convert to relative
         const resolvedPosition = (() => {
           if (isChildOfPanel) return centeredInParentPanel;
           if (!position) return { x: 300, y: 300 };
@@ -109,25 +140,30 @@ export const componentsSlice = (
           return position;
         })();
 
+        const write = (comp: Component, layout: NodeLayout) => {
+          if (scene) {
+            scene.addedComponents[comp.id] = comp;
+            scene.nodeLayouts[comp.id] = layout;
+          } else {
+            d.snapshot.components[comp.id] = comp;
+            d.nodeLayouts[comp.id] = layout;
+          }
+        };
+
         if (isEndpointType(type) && parentId) {
-          const parent = d.snapshot.components[parentId];
+          const parent = resolveComp(parentId);
           if (isApiGroupComponent(parent)) {
-            const siblingCount = Object.values(d.snapshot.components).filter(
-              (c) => c.parentId === parentId && isEndpointType(c.type),
-            ).length;
-            d.snapshot.components[component.id] = component;
-            d.nodeLayouts[component.id] = {
+            const siblingCount = countEndpointsUnderParent(d, scene, parentId);
+            write(component, {
               elementId: component.id,
               x: 0,
               y: HEADER_H + siblingCount * ENDPOINT_H,
               width: FRAME_W,
               height: ENDPOINT_H,
-            };
-            const childCount = Object.values(d.snapshot.components).filter(
-              (c) => c.parentId === parentId && isEndpointType(c.type),
-            ).length;
+            });
+            const childCount = siblingCount + 1;
             const { width, height } = computeApiGroupSize(childCount);
-            const groupLayout = d.nodeLayouts[parentId];
+            const groupLayout = scene?.nodeLayouts[parentId] ?? d.nodeLayouts[parentId];
             if (groupLayout) {
               groupLayout.width = width;
               groupLayout.height = height;
@@ -137,27 +173,25 @@ export const componentsSlice = (
           }
         }
 
-        d.snapshot.components[component.id] = component;
-
         if (isApiGroupType(type)) {
           const { width, height } = computeApiGroupSize(0);
-          d.nodeLayouts[component.id] = {
+          write(component, {
             elementId: component.id,
             x: resolvedPosition.x,
             y: resolvedPosition.y,
             zIndex: -1,
             width,
             height,
-          };
+          });
         } else if (isEndpointType(type)) {
-          d.nodeLayouts[component.id] = {
+          write(component, {
             elementId: component.id,
             x: resolvedPosition.x,
             y: resolvedPosition.y,
             width: 260,
-          };
+          });
         } else {
-          d.nodeLayouts[component.id] = {
+          write(component, {
             elementId: component.id,
             x: resolvedPosition.x,
             y: resolvedPosition.y,
@@ -171,24 +205,23 @@ export const componentsSlice = (
                 }
               : {}),
             ...(isNoteType(type) ? { width: NOTE_DEFAULT_W, height: NOTE_DEFAULT_H } : {}),
-          };
+          });
         }
 
         d.updatedAt = new Date().toISOString();
 
         function syncApiGroupSize(groupId: string) {
-          const childCount = Object.values(d.snapshot.components).filter(
-            (c) => c.parentId === groupId && isEndpointType(c.type),
-          ).length;
+          const childCount = countEndpointsUnderParent(d, scene, groupId);
           const { width, height } = computeApiGroupSize(childCount);
-          const layout = d.nodeLayouts[groupId];
+          const layout = scene?.nodeLayouts[groupId] ?? d.nodeLayouts[groupId];
           if (layout) {
             layout.width = width;
             layout.height = height;
           }
         }
 
-        if (parentId && isApiGroupComponent(d.snapshot.components[parentId])) {
+        const p = parentId ? resolveComp(parentId) : undefined;
+        if (parentId && p && isApiGroupComponent(p)) {
           syncApiGroupSize(parentId);
         }
       });
@@ -207,16 +240,36 @@ export const componentsSlice = (
         if (k !== "width" && k !== "height") compPatch[k] = v;
       }
       set((state) => {
-        if (!isDimensionOnly) pushHistory(state);
-        const d = state.diagrams[state.activeDiagramId]
-        if (Object.keys(compPatch).length > 0) {
-          Object.assign(d.snapshot.components[id], compPatch);
+        const d = state.diagrams[state.activeDiagramId]!;
+        const sid = d.activeSceneId ?? null;
+        const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+        const inSceneAdds = !!(scene && scene.addedComponents[id]);
+
+        if (!isDimensionOnly) {
+          if (!scene || !inSceneAdds) pushHistory(state);
         }
-        if (hasDimensions) {
-          const layout = d.nodeLayouts[id];
-          if (layout) {
-            if (width !== undefined) layout.width = width;
-            if (height !== undefined) layout.height = height;
+
+        if (inSceneAdds) {
+          if (Object.keys(compPatch).length > 0) {
+            Object.assign(scene!.addedComponents[id], compPatch);
+          }
+          if (hasDimensions) {
+            const layout = scene!.nodeLayouts[id];
+            if (layout) {
+              if (width !== undefined) layout.width = width;
+              if (height !== undefined) layout.height = height;
+            }
+          }
+        } else {
+          if (Object.keys(compPatch).length > 0) {
+            Object.assign(d.snapshot.components[id], compPatch);
+          }
+          if (hasDimensions) {
+            const layout = d.nodeLayouts[id];
+            if (layout) {
+              if (width !== undefined) layout.width = width;
+              if (height !== undefined) layout.height = height;
+            }
           }
         }
         d.updatedAt = new Date().toISOString();
@@ -225,8 +278,16 @@ export const componentsSlice = (
 
     removeComponent: (id: string) => {
       set((state) => {
-        pushHistory(state);
         const d = state.diagrams[state.activeDiagramId]!;
+        const sid = d.activeSceneId ?? null;
+        const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+        if (scene) {
+          mutateRemoveComponentInScene(d, sid!, id);
+          d.updatedAt = new Date().toISOString();
+          return;
+        }
+
+        pushHistory(state);
         const toRemove = new Set<string>();
         const collect = (eid: string) => {
           toRemove.add(eid);
@@ -291,8 +352,11 @@ export const componentsSlice = (
       orderedConnectionIds: string[],
     ) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId]
-        const comp = d.snapshot.components[componentId];
+        const d = state.diagrams[state.activeDiagramId]!;
+        const sid = d.activeSceneId ?? null;
+        const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+        const comp =
+          scene?.addedComponents[componentId] ?? d.snapshot.components[componentId];
         if (!comp) return;
         if (!comp.handleOrder) comp.handleOrder = { incoming: [], outgoing: [] };
         comp.handleOrder[side] = orderedConnectionIds;
@@ -302,8 +366,12 @@ export const componentsSlice = (
 
     setParent: (childId: string, parentId: string | null) => {
       set((state) => {
-        pushHistory(state);
-        const comp = state.diagrams[state.activeDiagramId]!.snapshot.components[childId];
+        const d = state.diagrams[state.activeDiagramId]!;
+        const sid = d.activeSceneId ?? null;
+        const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+        if (scene && !scene.addedComponents[childId]) return;
+        if (!scene) pushHistory(state);
+        const comp = scene?.addedComponents[childId] ?? d.snapshot.components[childId];
         if (comp) comp.parentId = parentId;
       });
     },
@@ -311,7 +379,8 @@ export const componentsSlice = (
     groupNodes: (componentIds: string[]): string | null => {
       let panelId: string | null = null;
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId]
+        const d = state.diagrams[state.activeDiagramId]!;
+        if (d.activeSceneId && d.scenes?.[d.activeSceneId]) return;
         const comps = d.snapshot.components;
         const ids = componentIds.filter(
           (id) => comps[id] && !isPanelComponent(comps[id]) && !isApiGroupComponent(comps[id]),
@@ -376,7 +445,31 @@ export const componentsSlice = (
 
     ungroupNodes: (panelId: string) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId]
+        const d = state.diagrams[state.activeDiagramId];
+        const sid = d.activeSceneId ?? null;
+        const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+
+        if (scene) {
+          if (!scene.addedComponents[panelId]) return;
+          const panel = scene.addedComponents[panelId];
+          if (!panel || !isPanelComponent(panel)) return;
+          const panelLayout = scene.nodeLayouts[panelId];
+          if (!panelLayout) return;
+          const children = Object.values(scene.addedComponents).filter((c) => c.parentId === panelId);
+          children.forEach((c) => {
+            c.parentId = null;
+            const childLayout = scene.nodeLayouts[c.id];
+            if (childLayout) {
+              childLayout.x = panelLayout.x + childLayout.x;
+              childLayout.y = panelLayout.y + childLayout.y;
+            }
+          });
+          delete scene.addedComponents[panelId];
+          delete scene.nodeLayouts[panelId];
+          d.updatedAt = new Date().toISOString();
+          return;
+        }
+
         const comps = d.snapshot.components;
         const panel = comps[panelId];
         if (!panel || !isPanelComponent(panel)) return;

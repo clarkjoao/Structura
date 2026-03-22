@@ -15,10 +15,6 @@ export const apiGroupDescriptor: NodeTypeDescriptor = {
   buildData: (comp, ctx) => {
     if (!isApiGroupComponent(comp)) return {};
 
-    const endpointCount = Object.values(ctx.diagram.snapshot.components).filter(
-      (c) => c.parentId === comp.id && isEndpointType(c.type),
-    ).length;
-
     return {
       elementId: comp.id,
       serviceName: comp.serviceName,
@@ -32,12 +28,15 @@ export const apiGroupDescriptor: NodeTypeDescriptor = {
         ctx.selectedNodeIds.size > 0 &&
         !ctx.selectedNodeIds.has(comp.id),
       onAddEndpoint: ctx.onAddEndpointToGroup ? () => ctx.onAddEndpointToGroup!(comp.id) : undefined,
+      ...(ctx.sceneBadgeByComponentId[comp.id]
+        ? { sceneBadge: ctx.sceneBadgeByComponentId[comp.id] }
+        : {}),
     };
   },
 
   buildStyle: (comp, ctx) => {
     if (!isApiGroupComponent(comp)) return undefined;
-    const endpointCount = Object.values(ctx.diagram.snapshot.components).filter(
+    const endpointCount = Object.values(ctx.resolvedComponents).filter(
       (c) => c.parentId === comp.id && isEndpointType(c.type),
     ).length;
     const { width, height } = computeApiGroupSize(endpointCount);
