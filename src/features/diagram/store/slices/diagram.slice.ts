@@ -1,4 +1,5 @@
 import { SEED_DIAGRAMS } from "@/fixtures/seed";
+import { deletePreview } from "@/lib/diagram-preview/previewCache";
 import { AppState } from "../store.types";
 import {Diagram, Level} from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
@@ -54,6 +55,7 @@ export const diagramsSlice = (
     },
 
     deleteDiagram: (id: string) => {
+      deletePreview(id);
       const state = get();
       const diagram = state.diagrams[id];
       fileSystemAdapter.setFolders(state.folders);

@@ -179,7 +179,8 @@
     "levelComponent": "Nível 3 – Componente",
     "levelContextShort": "L1 · Contexto",
     "levelContainerShort": "L2 · Container",
-    "levelComponentShort": "L3 · Componente"
+    "levelComponentShort": "L3 · Componente",
+    "diagramPreviewAlt": "Pré-visualização de {{name}}"
   },
   "folderTree": {
     "newFolderTitle": "Nova pasta",

@@ -179,7 +179,8 @@
     "levelComponent": "Level 3 – Component",
     "levelContextShort": "L1 · Context",
     "levelContainerShort": "L2 · Container",
-    "levelComponentShort": "L3 · Component"
+    "levelComponentShort": "L3 · Component",
+    "diagramPreviewAlt": "Preview of {{name}}"
   },
   "folderTree": {
     "newFolderTitle": "New folder",
