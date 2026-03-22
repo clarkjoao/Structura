@@ -4,7 +4,6 @@ import { DiagramCard } from "./DiagramCard";
 export function DiagramGrid({
   diagrams,
   onOpen,
-  onDelete,
   onDragStart,
   levelLabels,
 }: DiagramGridProps) {
@@ -17,7 +16,6 @@ export function DiagramGrid({
           diagram={d}
           index={i}
           onOpen={onOpen}
-          onDelete={onDelete}
           onDragStart={onDragStart}
           levelLabels={levelLabels}
         />

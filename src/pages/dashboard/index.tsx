@@ -479,7 +479,6 @@ export default function DashboardPage() {
               <DiagramGrid
                 diagrams={domainFiltered}
                 onOpen={handleOpen}
-                onDelete={handleDelete}
                 onDragStart={handleDragStart}
                 levelLabels={levelLabels}
               />

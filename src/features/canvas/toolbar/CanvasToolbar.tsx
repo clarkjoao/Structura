@@ -22,6 +22,7 @@ import type { ComponentType } from "@/features/diagram";
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/catalogs/aws";
 import AwsIcon from "../nodes/AwsIcon";
 import PatternPicker from "./PatternPicker";
+import { DiagramDescriptionField } from "./DiagramDescriptionField";
 import { LayerFilterPopover } from "./LayerFilterPopover";
 import { getViewportCenter } from "../viewport-utils";
 import { useTranslation } from "react-i18next";
@@ -137,85 +138,90 @@ const CanvasToolbar = ({
 
   return (
     <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
-      <div className="flex items-center gap-2 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2">
-        <Layers className="h-3.5 w-3.5 text-primary shrink-0" />
-        {isEditingName ? (
-          <input
-            ref={nameInputRef}
-            type="text"
-            value={editNameValue}
-            onChange={(e) => setEditNameValue(e.target.value)}
-            onBlur={commitRename}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") commitRename();
-              if (e.key === "Escape") {
-                setEditNameValue(diagram.name);
-                setIsEditingName(false);
-              }
-            }}
-            className="text-xs font-semibold bg-transparent border-b border-primary/50 outline-none min-w-[80px] max-w-[200px]"
-          />
-        ) : (
-          <span
-            onDoubleClick={() => {
-              if (toolbarEditLocked) return;
-              setEditNameValue(diagram.name);
-              setIsEditingName(true);
-            }}
-            className={`text-xs font-semibold select-none ${toolbarEditLocked ? "cursor-default opacity-80" : "cursor-pointer hover:text-primary/80"}`}
-            title={toolbarEditLocked ? t("diagramNav.unavailableWhileRecordingOrPlayback") : t("canvasToolbar.renameTitle")}
-          >
-            {diagram.name}
-          </span>
-        )}
-        <span className="text-[10px] font-mono text-muted-foreground rounded bg-secondary px-1.5 py-0.5 shrink-0">
-          {levelLabels[diagram.level]}
-        </span>
-        {onOpenScenes &&
-          (activeScene ? (
-            <button
-              type="button"
-              disabled={scenesPickerLocked}
-              onClick={() => {
-                if (scenesPickerLocked) return;
-                onOpenScenes();
+      <div className="flex flex-col gap-1 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2">
+        <div className="flex items-center gap-2">
+          <Layers className="h-3.5 w-3.5 text-primary shrink-0" />
+          {isEditingName ? (
+            <input
+              ref={nameInputRef}
+              type="text"
+              value={editNameValue}
+              onChange={(e) => setEditNameValue(e.target.value)}
+              onBlur={commitRename}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commitRename();
+                if (e.key === "Escape") {
+                  setEditNameValue(diagram.name);
+                  setIsEditingName(false);
+                }
               }}
-              title={
-                scenesPickerLocked
-                  ? t("diagramNav.unavailableWhileRecordingOrPlayback")
-                  : undefined
-              }
-              className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium border border-border bg-secondary hover:bg-surface-hover transition-colors shrink-0 max-w-[140px] ${scenesPickerLocked ? "opacity-50 pointer-events-none" : ""}`}
-            >
-              <span
-                className="w-1.5 h-1.5 rounded-full shrink-0"
-                style={{ backgroundColor: activeScene.color }}
-              />
-              <span className="truncate">{activeScene.name}</span>
-            </button>
+              className="text-xs font-semibold bg-transparent border-b border-primary/50 outline-none min-w-[80px] max-w-[200px]"
+            />
           ) : (
-            <button
-              type="button"
-              disabled={scenesPickerLocked}
-              onClick={() => {
-                if (scenesPickerLocked) return;
-                onOpenScenes();
+            <span
+              onDoubleClick={() => {
+                if (toolbarEditLocked) return;
+                setEditNameValue(diagram.name);
+                setIsEditingName(true);
               }}
-              className={`text-[10px] text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded shrink-0 ${scenesPickerLocked ? "opacity-50 pointer-events-none" : ""}`}
-              title={
-                scenesPickerLocked
-                  ? t("diagramNav.unavailableWhileRecordingOrPlayback")
-                  : t("scenes.viewVersionsTitle")
-              }
+              className={`text-xs font-semibold select-none ${toolbarEditLocked ? "cursor-default opacity-80" : "cursor-pointer hover:text-primary/80"}`}
+              title={toolbarEditLocked ? t("diagramNav.unavailableWhileRecordingOrPlayback") : t("canvasToolbar.renameTitle")}
             >
-              <GitBranch className="h-3 w-3" />
-            </button>
-          ))}
-        {selectedCount > 1 && (
-          <span className="text-xs text-muted-foreground ml-1">
-            {t("canvasToolbar.selectedCount", { count: selectedCount })}
+              {diagram.name}
+            </span>
+          )}
+          <span className="text-[10px] font-mono text-muted-foreground rounded bg-secondary px-1.5 py-0.5 shrink-0">
+            {levelLabels[diagram.level]}
           </span>
-        )}
+          {onOpenScenes &&
+            (activeScene ? (
+              <button
+                type="button"
+                disabled={scenesPickerLocked}
+                onClick={() => {
+                  if (scenesPickerLocked) return;
+                  onOpenScenes();
+                }}
+                title={
+                  scenesPickerLocked
+                    ? t("diagramNav.unavailableWhileRecordingOrPlayback")
+                    : undefined
+                }
+                className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium border border-border bg-secondary hover:bg-surface-hover transition-colors shrink-0 max-w-[140px] ${scenesPickerLocked ? "opacity-50 pointer-events-none" : ""}`}
+              >
+                <span
+                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{ backgroundColor: activeScene.color }}
+                />
+                <span className="truncate">{activeScene.name}</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={scenesPickerLocked}
+                onClick={() => {
+                  if (scenesPickerLocked) return;
+                  onOpenScenes();
+                }}
+                className={`text-[10px] text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded shrink-0 ${scenesPickerLocked ? "opacity-50 pointer-events-none" : ""}`}
+                title={
+                  scenesPickerLocked
+                    ? t("diagramNav.unavailableWhileRecordingOrPlayback")
+                    : t("scenes.viewVersionsTitle")
+                }
+              >
+                <GitBranch className="h-3 w-3" />
+              </button>
+            ))}
+          {selectedCount > 1 && (
+            <span className="text-xs text-muted-foreground ml-1">
+              {t("canvasToolbar.selectedCount", { count: selectedCount })}
+            </span>
+          )}
+        </div>
+        <div className="min-w-0 pl-[22px]">
+          <DiagramDescriptionField editLocked={toolbarEditLocked} />
+        </div>
       </div>
 
 

@@ -50,12 +50,18 @@ export function createDiagramStore(storage = defaultStorage) {
 
 export const useDiagramStore = createDiagramStore();
 
+export function updateDiagramDescription(diagramId: string, description: string): void {
+  useDiagramStore.getState().updateDiagramDescription(diagramId, description);
+}
+
 export const useDiagramActions = () =>
   useDiagramStore(
     useShallow((s) => ({
       addDiagram: s.addDiagram,
+      duplicateDiagram: s.duplicateDiagram,
       openDiagram: s.openDiagram,
       updateDiagram: s.updateDiagram,
+      updateDiagramDescription: s.updateDiagramDescription,
       deleteDiagram: s.deleteDiagram,
       addFolder: s.addFolder,
       renameFolder: s.renameFolder,

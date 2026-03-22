@@ -180,7 +180,20 @@
     "levelContextShort": "L1 · Context",
     "levelContainerShort": "L2 · Container",
     "levelComponentShort": "L3 · Component",
-    "diagramPreviewAlt": "Preview of {{name}}"
+    "diagramPreviewAlt": "Preview of {{name}}",
+    "card": {
+      "rename": "Rename",
+      "renamePrompt": "Diagram name",
+      "duplicate": "Duplicate",
+      "duplicatedDiagramName": "{{name}} (copy)",
+      "move": "Move",
+      "moveDialogTitle": "Move to folder",
+      "delete": "Delete",
+      "deleteConfirm": "Delete \"{{name}}\"?",
+      "components": "components",
+      "connections": "connections",
+      "flows": "flows"
+    }
   },
   "folderTree": {
     "newFolderTitle": "New folder",
@@ -281,7 +294,9 @@
     "toolbar": {
       "filterByTag": "Filter by tag",
       "noTags": "No tags in this diagram",
-      "showAll": "Show all"
+      "showAll": "Show all",
+      "descriptionPlaceholder": "Add description...",
+      "editDescription": "Click to edit description"
     }
   },
   "canvasToolbar": {

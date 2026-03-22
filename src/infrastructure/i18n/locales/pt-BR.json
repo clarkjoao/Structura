@@ -180,7 +180,20 @@
     "levelContextShort": "L1 · Contexto",
     "levelContainerShort": "L2 · Container",
     "levelComponentShort": "L3 · Componente",
-    "diagramPreviewAlt": "Pré-visualização de {{name}}"
+    "diagramPreviewAlt": "Pré-visualização de {{name}}",
+    "card": {
+      "rename": "Renomear",
+      "renamePrompt": "Nome do diagrama",
+      "duplicate": "Duplicar",
+      "duplicatedDiagramName": "{{name}} (cópia)",
+      "move": "Mover",
+      "moveDialogTitle": "Mover para pasta",
+      "delete": "Excluir",
+      "deleteConfirm": "Excluir \"{{name}}\"?",
+      "components": "componentes",
+      "connections": "conexões",
+      "flows": "fluxos"
+    }
   },
   "folderTree": {
     "newFolderTitle": "Nova pasta",
@@ -281,7 +294,9 @@
     "toolbar": {
       "filterByTag": "Filtrar por tag",
       "noTags": "Nenhuma tag neste diagrama",
-      "showAll": "Mostrar todos"
+      "showAll": "Mostrar todos",
+      "descriptionPlaceholder": "Adicionar descrição...",
+      "editDescription": "Clique para editar a descrição"
     }
   },
   "canvasToolbar": {

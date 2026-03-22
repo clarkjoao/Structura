@@ -103,6 +103,7 @@ export interface SceneDiff {
 export interface Diagram {
   id: string;
   name: string;
+  description?: string;
   level: Level;
   domain?: string;
   createdAt: string;

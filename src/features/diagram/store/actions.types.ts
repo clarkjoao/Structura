@@ -19,8 +19,10 @@ import type { EdgeStyle } from "../model/connection.types";
 
 export interface AppActions {
   addDiagram: (name: string, level: Level, domain?: string, folderId?: string | null) => Diagram;
+  duplicateDiagram: (sourceId: string, name: string) => Diagram | null;
   openDiagram: (id: string) => void;
   updateDiagram: (id: string, patch: Partial<Pick<Diagram, "name" | "domain">>) => void;
+  updateDiagramDescription: (diagramId: string, description: string) => void;
   deleteDiagram: (id: string) => void;
   addFolder: (name: string, parentId: string | null, domain?: string) => Folder;
   renameFolder: (id: string, name: string) => void;

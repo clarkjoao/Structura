@@ -144,6 +144,7 @@ export {
   useDiagramActions,
   /** Custom icon library mutations (add/remove/rename/usage counters) */
   useIconActions,
+  updateDiagramDescription,
 } from "./store/diagram.store";
 
 export {
