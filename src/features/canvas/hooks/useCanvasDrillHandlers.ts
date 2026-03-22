@@ -3,8 +3,7 @@
  */
 import { useCallback } from "react";
 import type { Diagram } from "@/features/diagram";
-import { isPanelComponent } from "@/features/diagram";
-import { resolveCanvasSnapshot } from "@/features/diagram";
+import { isPanelComponent, resolveCanvasSnapshot } from "@/features/diagram";
 import { PANEL_DEFAULT_W, PANEL_DEFAULT_H, PANEL_COLLAPSED_W, PANEL_COLLAPSED_H } from "../constants";
 
 interface UseCanvasDrillHandlersParams {
