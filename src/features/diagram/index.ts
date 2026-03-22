@@ -37,6 +37,8 @@ export type {
   Folder,
   Diagram,
   SceneDiff,
+  UserTemplate,
+  UserTemplateComponent,
 } from "./model/diagram.types";
 
 export { isAwsIcon, isLucideIcon, isSvgIcon } from "./model/diagram.types";
@@ -145,6 +147,9 @@ export {
   /** Custom icon library mutations (add/remove/rename/usage counters) */
   useIconActions,
   updateDiagramDescription,
+  saveUserTemplate,
+  updateUserTemplate,
+  deleteUserTemplate,
 } from "./store/diagram.store";
 
 export {
@@ -182,6 +187,7 @@ export {
   useIconLibrary,
   useIconById,
   useComponentIcon,
-} from './store/selectors'
+  useAllUserTemplates,
+} from "./store/selectors";
 export type { DiagramStore, ClipboardEntry } from "./store/store.types";
 export type { ServiceDefinition } from "./model/service.types";

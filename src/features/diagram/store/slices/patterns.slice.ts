@@ -1,54 +1,169 @@
-import { Component, ComponentType } from "../../model/diagram.types";
+import type { PatternComponent, PatternTemplate } from "@/lib/catalogs/patterns";
+import type { Connection } from "../../model/connection.types";
+import type { Component, UserTemplate, UserTemplateComponent } from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
-import { AppState } from "../store.types";
+import { computeUserTemplateNodeLayouts } from "../../utils/user-template-insert-layout";
+import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
 
+type InsertablePattern = PatternTemplate | UserTemplate;
+
+function getConnectionEndpoints(
+  conn: PatternTemplate["connections"][number] | UserTemplate["connections"][number],
+): { from: number; to: number } {
+  if ("fromIndex" in conn) {
+    return { from: conn.fromIndex, to: conn.toIndex };
+  }
+  return { from: conn.sourceIndex, to: conn.targetIndex };
+}
+
+function buildConnectionRecord(
+  conn: InsertablePattern["connections"][number],
+  connId: string,
+  sourceId: string,
+  targetId: string,
+): Connection {
+  if ("fromIndex" in conn) {
+    return {
+      id: connId,
+      sourceId,
+      targetId,
+      label: conn.label,
+    };
+  }
+  const { sourceIndex, targetIndex, ...rest } = conn;
+  return {
+    ...(rest as Omit<Connection, "id" | "sourceId" | "targetId">),
+    id: connId,
+    sourceId,
+    targetId,
+  };
+}
+
+function isUserTemplatePayload(template: InsertablePattern): template is UserTemplate {
+  return "createdAt" in template && typeof template.createdAt === "number";
+}
+
+function buildUserTemplateComponentPayload(
+  raw: UserTemplate["components"][number],
+  newId: string,
+  allNewIds: string[],
+): Component {
+  const row = raw as UserTemplateComponent & { x?: number; y?: number };
+  const {
+    _relX: _rx,
+    _relY: _ry,
+    parentIndex,
+    width: _w,
+    height: _h,
+    x: _legacyX,
+    y: _legacyY,
+    ...rest
+  } = row;
+  const resolvedParentId =
+    parentIndex !== undefined &&
+    Number.isInteger(parentIndex) &&
+    parentIndex >= 0 &&
+    parentIndex < allNewIds.length
+      ? allNewIds[parentIndex]
+      : null;
+  return {
+    ...rest,
+    id: newId,
+    parentId: resolvedParentId,
+    description:
+      "description" in rest && typeof rest.description === "string" ? rest.description : "",
+  } as Component;
+}
+
+function buildCatalogPatternComponentAndLayout(
+  raw: PatternComponent,
+  newId: string,
+  index: number,
+  position: { x: number; y: number },
+  gridX: number,
+): { component: Component; layout: { elementId: string; x: number; y: number } } {
+  const component = {
+    id: newId,
+    name: raw.name,
+    type: raw.type,
+    description: raw.description ?? "",
+    parentId: null,
+    technology: raw.technology,
+    awsService: raw.awsService,
+  } as Component;
+  return {
+    component,
+    layout: {
+      elementId: newId,
+      x: position.x + index * gridX,
+      y: position.y,
+    },
+  };
+}
+
 export const patternsSlice = (
-    set: (fn: (state: AppState) => void) => void,
-    get: () => AppState,
+  set: (fn: (state: AppState) => void) => void,
+  _get: () => AppState,
 ) => ({
-    insertPattern: (template, position) => {
-        const GRID_X = 220;
-        const ids: string[] = template.components.map(() => generateId("el"));
-        set((state) => {
-          const d = state.diagrams[state.activeDiagramId!];
-          const sid = d.activeSceneId ?? null;
-          const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
-          if (!scene) pushHistory(state);
-          template.components.forEach((c: { name: string; type: ComponentType; description?: string; technology?: string; awsService?: string }, i: number) => {
-            const comp: Component = {
-              id: ids[i],
-              name: c.name,
-              type: c.type,
-              description: c.description ?? "",
-              parentId: null,
-              technology: c.technology ?? undefined,
-              awsService: c.awsService ?? undefined,
-            };
-            const layout = { elementId: comp.id, x: position.x + i * GRID_X, y: position.y };
-            if (scene) {
-              scene.addedComponents[comp.id] = comp;
-              scene.nodeLayouts[comp.id] = layout;
-            } else {
-              d.snapshot.components[comp.id] = comp;
-              d.nodeLayouts[comp.id] = layout;
-            }
-          });
-          template.connections.forEach((conn: { fromIndex: number; toIndex: number; label: string }) => {
-            const connId = generateId("conn");
-            const next = {
-              id: connId,
-              sourceId: ids[conn.fromIndex],
-              targetId: ids[conn.toIndex],
-              label: conn.label,
-            };
-            if (scene) {
-              scene.addedConnections[connId] = next;
-            } else {
-              d.snapshot.connections[connId] = next;
-            }
-          });
-          d.updatedAt = new Date().toISOString();
-        });
-      },
-  });
+  insertPattern: (template: InsertablePattern, position: { x: number; y: number }) => {
+    const GRID_X = 220;
+    const fromUserLibrary = isUserTemplatePayload(template);
+    const ids: string[] = template.components.map(() => generateId("el"));
+    const userLayouts = fromUserLibrary
+      ? computeUserTemplateNodeLayouts(template.components, position)
+      : null;
+
+    set((state) => {
+      const d = state.diagrams[state.activeDiagramId!];
+      const sid = d.activeSceneId ?? null;
+      const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+      if (!scene) pushHistory(state);
+      template.components.forEach((raw, i) => {
+        let component: Component;
+        let layout: { elementId: string; x: number; y: number; width?: number; height?: number };
+
+        if (fromUserLibrary && userLayouts) {
+          component = buildUserTemplateComponentPayload(raw, ids[i], ids);
+          const dims = userLayouts[i];
+          layout = {
+            elementId: ids[i],
+            x: dims.x,
+            y: dims.y,
+            ...(dims.width !== undefined ? { width: dims.width } : {}),
+            ...(dims.height !== undefined ? { height: dims.height } : {}),
+          };
+        } else {
+          const built = buildCatalogPatternComponentAndLayout(
+            raw as PatternComponent,
+            ids[i],
+            i,
+            position,
+            GRID_X,
+          );
+          component = built.component;
+          layout = built.layout;
+        }
+
+        if (scene) {
+          scene.addedComponents[component.id] = component;
+          scene.nodeLayouts[component.id] = layout;
+        } else {
+          d.snapshot.components[component.id] = component;
+          d.nodeLayouts[component.id] = layout;
+        }
+      });
+      template.connections.forEach((rawConn) => {
+        const { from, to } = getConnectionEndpoints(rawConn);
+        const connId = generateId("conn");
+        const next = buildConnectionRecord(rawConn, connId, ids[from], ids[to]);
+        if (scene) {
+          scene.addedConnections[connId] = next;
+        } else {
+          d.snapshot.connections[connId] = next;
+        }
+      });
+      d.updatedAt = new Date().toISOString();
+    });
+  },
+});

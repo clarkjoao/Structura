@@ -3,6 +3,7 @@ import { useShallow } from "zustand/react/shallow";
 import { immer } from "zustand/middleware/immer";
 import { persist } from "zustand/middleware";
 import { defaultStorage } from "@/infrastructure/persistence";
+import type { UserTemplate } from "../model/diagram.types";
 import type { AppState } from "./store.types";
 import {
   historySlice,
@@ -17,6 +18,7 @@ import {
   patternsSlice,
   scenesSlice,
   iconsSlice,
+  userTemplatesSlice,
 } from "./slices";
 import { createPersistConfig } from "./persist.config";
 
@@ -42,6 +44,7 @@ export function createDiagramStore(storage = defaultStorage) {
         ...patternsSlice(set, get as () => AppState),
         ...scenesSlice(set, get as () => AppState),
         ...iconsSlice(set, get as () => AppState),
+        ...userTemplatesSlice(set, get as () => AppState),
       })),
       createPersistConfig(storage),
     ),
@@ -52,6 +55,21 @@ export const useDiagramStore = createDiagramStore();
 
 export function updateDiagramDescription(diagramId: string, description: string): void {
   useDiagramStore.getState().updateDiagramDescription(diagramId, description);
+}
+
+export function saveUserTemplate(template: UserTemplate): void {
+  useDiagramStore.getState().saveUserTemplate(template);
+}
+
+export function updateUserTemplate(
+  id: string,
+  patch: Partial<Pick<UserTemplate, "name" | "description" | "category">>,
+): void {
+  useDiagramStore.getState().updateUserTemplate(id, patch);
+}
+
+export function deleteUserTemplate(id: string): void {
+  useDiagramStore.getState().deleteUserTemplate(id);
 }
 
 export const useDiagramActions = () =>
@@ -113,6 +131,9 @@ export const useDiagramActions = () =>
       addConnectionToScene: s.addConnectionToScene,
       removeConnectionFromScene: s.removeConnectionFromScene,
       updateSceneNodeLayout: s.updateSceneNodeLayout,
+      saveUserTemplate: s.saveUserTemplate,
+      updateUserTemplate: s.updateUserTemplate,
+      deleteUserTemplate: s.deleteUserTemplate,
     })),
   );
 

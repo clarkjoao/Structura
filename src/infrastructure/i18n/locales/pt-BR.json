@@ -299,6 +299,9 @@
       "showAll": "Mostrar todos",
       "descriptionPlaceholder": "Adicionar descrição...",
       "editDescription": "Clique para editar a descrição"
+    },
+    "multiSelect": {
+      "saveAsTemplate": "Salvar como template"
     }
   },
   "canvasToolbar": {
@@ -448,7 +451,16 @@
     },
     "noneFoundForQuery": "Nenhum pattern encontrado para “{{query}}”",
     "elementAbbrev": "{{count}} elem.",
-    "connAbbrev": "{{count}} conn."
+    "connAbbrev": "{{count}} conn.",
+    "categories": {
+      "userTemplates": "Meus templates"
+    },
+    "userTemplates": {
+      "empty": "Nenhum template salvo",
+      "emptyHint": "Selecione nodes no canvas e clique em 'Salvar como template'",
+      "delete": "Excluir template",
+      "deleteConfirm": "Excluir '{{name}}'? Esta ação não pode ser desfeita."
+    }
   },
   "connectionPanel": {
     "technologyLabel": "Tecnologia",
@@ -577,6 +589,16 @@
     "typeComponent": "component",
     "typePanel": "panel",
     "typeNote": "nota"
+  },
+  "saveTemplate": {
+    "title": "Salvar seleção como template",
+    "namePlaceholder": "Nome do template",
+    "descriptionPlaceholder": "Descrição (opcional)",
+    "categoryPlaceholder": "Categoria (opcional)",
+    "nodesIncluded_one": "{{count}} nó incluído",
+    "nodesIncluded_other": "{{count}} nós incluídos",
+    "childrenIncluded": "+{{count}} filho(s) de panel incluído(s) automaticamente",
+    "saved": "Template salvo"
   },
   "nodeContextMenu": {
     "ordering": "Ordenação",

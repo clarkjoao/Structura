@@ -29,6 +29,9 @@ interface BaseComponent {
     incoming: string[];
     outgoing: string[];
   };
+  /** Relative position in a user template capture (centroid-normalized); not used on live canvas. */
+  x?: number;
+  y?: number;
 }
 
 export interface C4Component extends BaseComponent {

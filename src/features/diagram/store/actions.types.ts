@@ -13,6 +13,7 @@ import type {
   SceneDiff,
   NodeLayout,
   IconDefinition,
+  UserTemplate,
 } from "../model/diagram.types";
 import type { ServiceDefinition } from "../model/service.types";
 import type { EdgeStyle } from "../model/connection.types";
@@ -77,7 +78,9 @@ export interface AppActions {
   convertStepToCondition: (flowId: string, stepId: string, conditionLabel: string, branchLabels: string[]) => void;
 
   insertPattern: (
-    template: import("@/lib/catalogs/patterns").PatternTemplate,
+    template:
+      | import("@/lib/catalogs/patterns").PatternTemplate
+      | import("../model/diagram.types").UserTemplate,
     position: { x: number; y: number },
   ) => void;
 
@@ -111,4 +114,11 @@ export interface AppActions {
   updateIconName: (diagramId: string, iconId: string, name: string) => void;
   incrementIconUsage: (diagramId: string, iconId: string) => void;
   decrementIconUsage: (diagramId: string, iconId: string) => void;
+
+  saveUserTemplate: (template: UserTemplate) => void;
+  updateUserTemplate: (
+    id: string,
+    patch: Partial<Pick<UserTemplate, "name" | "description" | "category">>,
+  ) => void;
+  deleteUserTemplate: (id: string) => void;
 }

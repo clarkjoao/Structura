@@ -1,15 +1,32 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { X, LayoutDashboard, Copy, Trash2 } from "lucide-react";
+import { X, LayoutDashboard, Copy, Trash2, BookmarkPlus } from "lucide-react";
+import { toast } from "sonner";
 import type { Node } from "@xyflow/react";
 import {
   useActiveDiagram,
   useDiagramActions,
   resolveSceneSnapshot,
 } from "@/features/diagram";
-import type { ComponentType } from "@/features/diagram";
+import type { Component, ComponentType } from "@/features/diagram";
 import { isPanelType } from "@/features/diagram";
+import { captureSelectionAsTemplate } from "@/features/canvas/utils/capture-template";
+import { SaveTemplateModal } from "@/features/canvas/components/SaveTemplateModal";
 import { cn } from "@/lib/utils";
+
+function readTechnology(component: Component): string | undefined {
+  if ("technology" in component && typeof component.technology === "string") {
+    return component.technology;
+  }
+  return undefined;
+}
+
+function readAwsService(component: Component): string | undefined {
+  if ("awsService" in component && typeof component.awsService === "string") {
+    return component.awsService;
+  }
+  return undefined;
+}
 
 interface MultiSelectPanelProps {
   selectedNodes: Node[];
@@ -18,6 +35,7 @@ interface MultiSelectPanelProps {
 
 export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelProps) {
   const { t } = useTranslation();
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const typeLabelKeys: Record<string, string> = useMemo(
     () => ({
       person: "multiSelect.typePerson",
@@ -35,6 +53,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
     removeComponent,
     addComponent,
     updateComponent,
+    saveUserTemplate,
   } = useDiagramActions();
 
   const ids = useMemo(() => selectedNodes.map((n) => n.id), [selectedNodes]);
@@ -79,8 +98,8 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
 
   const sharedTechnology = useMemo(() => {
     if (components.length === 0) return undefined;
-    const first = ("technology" in components[0] ? (components[0] as any).technology : undefined) ?? "";
-    const allSame = components.every((c) => (("technology" in c ? (c as any).technology : undefined) ?? "") === first);
+    const first = readTechnology(components[0]) ?? "";
+    const allSame = components.every((c) => (readTechnology(c) ?? "") === first);
     return allSame ? first : null;
   }, [components]);
 
@@ -119,7 +138,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
           x: (layout?.x ?? 0) + 30 * (index + 1),
           y: (layout?.y ?? 0) + 30 * (index + 1),
         },
-        ("awsService" in comp) ? (comp as any).awsService : undefined,
+        readAwsService(comp),
       );
     });
     onClose();
@@ -143,6 +162,22 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
       ? value.split(",").map((s) => s.trim()).filter(Boolean)
       : [];
     ids.forEach((id) => updateComponent(id, { tags }));
+  };
+
+  const handleSaveTemplate = (name: string, description: string, category: string) => {
+    if (!resolved) return;
+    const template = captureSelectionAsTemplate(
+      ids,
+      resolved.components,
+      resolved.connections,
+      Object.values(resolved.nodeLayouts),
+      name,
+      description || undefined,
+      category || undefined,
+    );
+    saveUserTemplate(template);
+    setSaveTemplateOpen(false);
+    toast.success(t("saveTemplate.saved"));
   };
 
   return (
@@ -180,6 +215,17 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
             >
               <LayoutDashboard className="h-3.5 w-3.5" />
               {t("multiSelect.group")}
+            </button>
+          )}
+          {selectedNodes.length >= 2 && resolved && (
+            <button
+              type="button"
+              onClick={() => setSaveTemplateOpen(true)}
+              title={t("canvas.multiSelect.saveAsTemplate")}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-xs font-medium hover:bg-muted/50"
+            >
+              <BookmarkPlus size={14} className="shrink-0" aria-hidden />
+              {t("canvas.multiSelect.saveAsTemplate")}
             </button>
           )}
           <button
@@ -258,6 +304,15 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
           </>
         )}
       </div>
+
+      {saveTemplateOpen && resolved && (
+        <SaveTemplateModal
+          selectedComponentIds={ids}
+          components={resolved.components}
+          onSave={handleSaveTemplate}
+          onClose={() => setSaveTemplateOpen(false)}
+        />
+      )}
     </div>
   );
 }
