@@ -1,4 +1,5 @@
 import type { Flow, FlowStep } from "@/features/diagram";
+import { getStepById, getFlowParticipants, walkFlow } from "@/features/diagram";
 
 export interface FlowHighlight {
   activeNodeId: string | null;
@@ -39,17 +40,17 @@ function addFlowToMap(map: Map<string, string[]>, key: string, flowName: string)
 
 export function buildFlowHighlight(
   activeFlow: Flow,
-  currentStep: number,
+  currentStepId: string,
+  visitedStepIds: string[],
 ): FlowHighlight {
-  const step = activeFlow.steps[currentStep];
-  const visitedNodeIds = new Set<string>();
-  const participantNodeIds = new Set<string>();
-  const participantConnIds = new Set<string>();
+  const step = getStepById(activeFlow, currentStepId);
+  const { componentIds: participantNodeIds, connectionIds: participantConnIds } =
+    getFlowParticipants(activeFlow);
 
-  for (const s of activeFlow.steps) {
-    if (s.componentId) participantNodeIds.add(s.componentId);
-    if (s.connectionId) participantConnIds.add(s.connectionId);
-    if (s.order < currentStep && s.componentId) visitedNodeIds.add(s.componentId);
+  const visitedNodeIds = new Set<string>();
+  for (const vid of visitedStepIds) {
+    const vs = activeFlow.steps[vid];
+    if (vs?.componentId) visitedNodeIds.add(vs.componentId);
   }
 
   return {
@@ -66,10 +67,9 @@ export function buildCoverage(flows: Flow[]): CoverageInfo {
   const edgeFlows = new Map<string, string[]>();
 
   for (const flow of flows) {
-    for (const step of flow.steps) {
-      if (step.componentId) addFlowToMap(nodeFlows, step.componentId, flow.name);
-      if (step.connectionId) addFlowToMap(edgeFlows, step.connectionId, flow.name);
-    }
+    const { componentIds, connectionIds } = getFlowParticipants(flow);
+    for (const cid of componentIds) addFlowToMap(nodeFlows, cid, flow.name);
+    for (const eid of connectionIds) addFlowToMap(edgeFlows, eid, flow.name);
   }
 
   return { nodeFlows, edgeFlows };
@@ -81,20 +81,20 @@ export function buildRecordingInfo(steps: FlowStep[]): RecordingInfo {
   const recordedNodeIds = new Set<string>();
   const recordedEdgeIds = new Set<string>();
 
-  for (const step of steps) {
+  steps.forEach((step, i) => {
     if (step.componentId) {
       recordedNodeIds.add(step.componentId);
       const arr = nodeSteps.get(step.componentId) ?? [];
-      arr.push(step.order + 1);
+      arr.push(i + 1);
       nodeSteps.set(step.componentId, arr);
     }
     if (step.connectionId) {
       recordedEdgeIds.add(step.connectionId);
       const arr = edgeSteps.get(step.connectionId) ?? [];
-      arr.push(step.order + 1);
+      arr.push(i + 1);
       edgeSteps.set(step.connectionId, arr);
     }
-  }
+  });
 
   const lastStep = steps[steps.length - 1];
   return {

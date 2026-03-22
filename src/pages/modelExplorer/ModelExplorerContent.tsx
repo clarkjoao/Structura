@@ -28,7 +28,7 @@ export function ModelExplorerContent({
   const { t } = useTranslation();
   const diagram = useActiveDiagram();
   const { isRecording, editingFlowId, startRecording, cancelRecording, finalizeRecording, ...recordingProps } = useRecordingMode();
-  const { activeFlow, currentStep, isPlaying, play, exit, prev, next, goToStep } = useFlowPlayback();
+  const { activeFlow, currentStepId, currentStep, isPlaying, isCondition, canGoBack, canGoForward, play, exit, goBack, goNext, chooseBranch } = useFlowPlayback();
 
   const disabledWhileBusy = isRecording || isPlaying;
   const [diagramSidebarOpen, setDiagramSidebarOpen] = useState(false);
@@ -119,7 +119,18 @@ export function ModelExplorerContent({
               }}
             />
             {activeFlow && (
-              <FlowStepNavigator flow={activeFlow} currentStep={currentStep} onPrev={prev} onNext={next} onExit={exit} onGoToStep={goToStep} />
+              <FlowStepNavigator
+                flow={activeFlow}
+                currentStepId={currentStepId}
+                currentStep={currentStep}
+                isCondition={isCondition}
+                canGoBack={canGoBack}
+                canGoForward={canGoForward}
+                onGoNext={goNext}
+                onGoBack={goBack}
+                onChooseBranch={chooseBranch}
+                onExit={exit}
+              />
             )}
           </div>
         </ReactFlowProvider>
@@ -139,8 +150,19 @@ export function ModelExplorerContent({
             onUpdateStepDuration={recordingProps.onUpdateStepDuration}
             onUpdateStepPayload={recordingProps.onUpdateStepPayload}
             onUpdateStepPayloadDirection={recordingProps.onUpdateStepPayloadDirection}
+            onUpdateStepIsAsync={recordingProps.onUpdateStepIsAsync}
             onDeleteStep={recordingProps.onDeleteStep}
             onReorderSteps={recordingProps.onReorderSteps}
+            onConvertStepToCondition={recordingProps.onConvertStepToCondition}
+            onUpdateConditionLabel={recordingProps.onUpdateConditionLabel}
+            onAddBranchLabel={recordingProps.onAddBranchLabel}
+            onRemoveBranchLabel={recordingProps.onRemoveBranchLabel}
+            onUpdateBranchLabel={recordingProps.onUpdateBranchLabel}
+            onAddConditionStep={recordingProps.onAddConditionStep}
+            onEnterBranch={recordingProps.onEnterBranch}
+            onExitBranch={recordingProps.onExitBranch}
+            activeBranch={recordingProps.activeBranch}
+            branchOwnership={recordingProps.branchOwnership}
             isEditing={!!editingFlowId}
           />
         )}

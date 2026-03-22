@@ -15,17 +15,12 @@ interface UseFlowStateParams {
 
 export function useFlowState({ flows }: UseFlowStateParams) {
   const { isRecording, recordingSteps } = useRecordingMode();
-  const { activeFlow, currentStep, isPlaying } = useFlowPlayback();
-  const stepIndex = currentStep ?? 0;
-
-  const activeStep = isPlaying && activeFlow
-    ? activeFlow.steps[stepIndex] ?? null
-    : null;
+  const { activeFlow, currentStepId, currentStep, isPlaying, history } = useFlowPlayback();
 
   const flowHighlight = useMemo(() => {
-    if (!isPlaying || !activeFlow) return EMPTY_FLOW_HIGHLIGHT;
-    return buildFlowHighlight(activeFlow, stepIndex);
-  }, [isPlaying, activeFlow, stepIndex]);
+    if (!isPlaying || !activeFlow || !currentStepId) return EMPTY_FLOW_HIGHLIGHT;
+    return buildFlowHighlight(activeFlow, currentStepId, history);
+  }, [isPlaying, activeFlow, currentStepId, history]);
 
   const coverage = useMemo(() => {
     if (isPlaying || isRecording) return null;
@@ -37,5 +32,5 @@ export function useFlowState({ flows }: UseFlowStateParams) {
     return buildRecordingInfo(recordingSteps);
   }, [isRecording, recordingSteps]);
 
-  return { isPlaying, activeStep, flowHighlight, coverage, recordingInfo, activeFlow, currentStep };
+  return { isPlaying, activeStep: currentStep, flowHighlight, coverage, recordingInfo, activeFlow, currentStepId };
 }

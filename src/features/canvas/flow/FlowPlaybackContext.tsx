@@ -1,27 +1,37 @@
 import { createContext, useContext } from "react";
-import type { Flow } from "@/features/diagram";
+import type { Flow, FlowStep } from "@/features/diagram";
 
 export interface FlowPlaybackState {
   activeFlow: Flow | null;
-  currentStep: number;
+  currentStepId: string | null;
+  currentStep: FlowStep | null;
   isPlaying: boolean;
+  isCondition: boolean;
+  canGoBack: boolean;
+  canGoForward: boolean;
+  history: string[];
   play: (flow: Flow) => void;
   exit: () => void;
-  prev: () => void;
-  next: () => void;
-  goToStep: (index: number) => void;
+  goBack: () => void;
+  goNext: () => void;
+  chooseBranch: (branchIndex: number) => void;
 }
 
 const noop = () => {};
 const defaultState: FlowPlaybackState = {
   activeFlow: null,
-  currentStep: 0,
+  currentStepId: null,
+  currentStep: null,
   isPlaying: false,
+  isCondition: false,
+  canGoBack: false,
+  canGoForward: false,
+  history: [],
   play: noop,
   exit: noop,
-  prev: noop,
-  next: noop,
-  goToStep: noop,
+  goBack: noop,
+  goNext: noop,
+  chooseBranch: noop,
 };
 
 const FlowPlaybackContext = createContext<FlowPlaybackState>(defaultState);

@@ -5,6 +5,7 @@ import type {
   Diagram,
   Flow,
   FlowStep,
+  FlowBranch,
   ComponentType,
   Level,
   Folder,
@@ -59,9 +60,16 @@ export interface AppActions {
   groupNodes: (componentIds: string[]) => string | null;
   ungroupNodes: (panelId: string) => void;
 
-  addFlow: (diagramId: string, name: string, mermaid: string, steps?: FlowStep[]) => Flow;
+  addFlow: (diagramId: string, name: string, mermaid: string, steps?: Record<string, FlowStep>) => Flow;
   updateFlow: (id: string, patch: Partial<Omit<Flow, "id">>) => void;
   removeFlow: (id: string) => void;
+
+  addFlowStep: (flowId: string, step: Omit<FlowStep, 'id'>) => string;
+  updateFlowStep: (flowId: string, stepId: string, patch: Partial<FlowStep>) => void;
+  removeFlowStep: (flowId: string, stepId: string) => void;
+  addFlowBranch: (flowId: string, conditionStepId: string, branch: FlowBranch) => void;
+  removeFlowBranch: (flowId: string, conditionStepId: string, branchIndex: number) => void;
+  convertStepToCondition: (flowId: string, stepId: string, conditionLabel: string, branchLabels: string[]) => void;
 
   insertPattern: (
     template: import("@/lib/catalogs/patterns").PatternTemplate,
