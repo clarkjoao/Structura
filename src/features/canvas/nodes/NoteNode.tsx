@@ -2,6 +2,8 @@ import { memo } from "react";
 import { NodeResizer, type NodeProps } from "@xyflow/react";
 import ReactMarkdown from "react-markdown";
 import { FileText } from "lucide-react";
+import { useComponentIcon } from "@/features/diagram";
+import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 
 import { NOTE_DEFAULT_W, NOTE_DEFAULT_H } from "../constants";
@@ -42,6 +44,7 @@ function isDarkBg(color: string): boolean {
 const NoteNode = memo(({ data, selected }: NodeProps) => {
   const { t } = useTranslation();
   const d = data as unknown as NoteNodeData;
+  const customDiagramIcon = useComponentIcon(d.elementId);
   const { highlightedNodeIds } = useHandleHighlight();
   const paperColor = d.panelColor || DEFAULT_PAPER_COLOR;
   const isSelected = selected || d.isSelected;
@@ -89,10 +92,18 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
           className={`flex items-center gap-2 px-5 py-2.5 border-b ${dark ? "border-white/20" : "border-border/60"}`}
           style={{ minHeight: 36 }}
         >
-          <FileText
-            className={`h-4 w-4 shrink-0 ${mutedClass}`}
-            strokeWidth={1.5}
-          />
+          {customDiagramIcon ? (
+            <CustomIconRenderer
+              icon={customDiagramIcon}
+              size={24}
+              className={`shrink-0 ${mutedClass}`}
+            />
+          ) : (
+            <FileText
+              className={`h-4 w-4 shrink-0 ${mutedClass}`}
+              strokeWidth={1.5}
+            />
+          )}
           <span
             className={`text-xs font-medium truncate flex-1 ${mutedClass}`}
           >

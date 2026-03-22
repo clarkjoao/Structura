@@ -1,6 +1,9 @@
 import { memo } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { Position, type NodeProps } from "@xyflow/react";
 import { Network } from "lucide-react";
+import { useComponentIcon } from "@/features/diagram";
+import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
 import {
   isAwsType,
   AWS_SERVICE_MAP,
@@ -50,7 +53,7 @@ interface NodeHandlesProps {
   d: NodeData;
   incomingCount: number;
   outgoingCount: number;
-  handlePointer: React.CSSProperties | undefined;
+  handlePointer: CSSProperties | undefined;
   controlsDisabled: boolean;
 }
 
@@ -113,16 +116,36 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
   const { t } = useTranslation();
   const { d, isActive, controlsDisabled, handlePointer, incomingCount, outgoingCount } =
     useNodeState(data, selected);
+  const customDiagramIcon = useComponentIcon(d.elementId);
 
   const isAws = isAwsType(d.type);
 
   let borderClass: string;
-  let borderStyle: React.CSSProperties | undefined;
-  let icon: React.ReactNode;
+  let borderStyle: CSSProperties | undefined;
+  let icon: ReactNode;
   let technologyLabel: string | undefined;
   let actionColorClass: string;
 
-  if (isAws) {
+  if (customDiagramIcon) {
+    icon = (
+      <CustomIconRenderer icon={customDiagramIcon} size={24} className="shrink-0" />
+    );
+    if (isAws) {
+      const svcInfo = d.awsService ? AWS_SERVICE_MAP.get(d.awsService) : null;
+      const catInfo = AWS_CATEGORY_MAP.get(d.type);
+      borderClass = awsCategoryBorders[d.type] ?? "border-l-aws-general";
+      borderStyle = undefined;
+      technologyLabel = d.technology ?? catInfo?.name ?? svcInfo?.name;
+      actionColorClass = "text-primary";
+    } else {
+      const cfg = TypeConfig[d.type] ?? TypeConfig.system;
+      const hasCustomColor = !!d.customColor;
+      borderClass = !hasCustomColor ? cfg.borderColor : "";
+      borderStyle = hasCustomColor ? { borderLeftColor: d.customColor } : undefined;
+      technologyLabel = d.technology;
+      actionColorClass = hasCustomColor ? "" : cfg.textColor;
+    }
+  } else if (isAws) {
     const svcInfo = d.awsService ? AWS_SERVICE_MAP.get(d.awsService) : null;
     const catInfo = AWS_CATEGORY_MAP.get(d.type);
     borderClass = awsCategoryBorders[d.type] ?? "border-l-aws-general";

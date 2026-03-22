@@ -456,7 +456,10 @@
     "linkedDiagramCreated": "✓ Diagram “{{name}}” created and linked.",
     "createLinkedDiagram": "Create linked diagram",
     "linkToDiagram": "Link to diagram",
-    "opacityLabel": "Opacity — {{value}}%"
+    "opacityLabel": "Opacity — {{value}}%",
+    "tabs": {
+      "icon": "Icon"
+    }
   },
   "apiGroup": {
     "panelTitle": "API group",
@@ -875,5 +878,30 @@
     "coverage": "Coverage",
     "stepsCount": "{{count}} steps",
     "participantsCount": "· {{count}} participants"
+  },
+  "icons": {
+    "pickerTitle": "Choose icon",
+    "addNew": "Add new",
+    "invalidSvg": "Invalid or unsafe SVG file",
+    "searchPlaceholder": "Search icons…",
+    "emptyLibrary": "No icons yet, or none match your search",
+    "uploadButton": "Upload SVG",
+    "changeIcon": "Change icon",
+    "removeIcon": "Remove icon",
+    "addIcon": "Add icon",
+    "tabs": {
+      "library": "Library",
+      "lucide": "Lucide",
+      "aws": "AWS",
+      "upload": "Upload SVG"
+    },
+    "lucide": {
+      "searchPlaceholder": "Search Lucide icons…",
+      "resultsCount": "Showing {{shown}} of {{total}}"
+    },
+    "aws": {
+      "searchPlaceholder": "Search AWS services…",
+      "allCategories": "All categories"
+    }
   }
 }

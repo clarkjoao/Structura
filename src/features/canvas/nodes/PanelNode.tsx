@@ -1,6 +1,8 @@
 import { memo } from "react";
 import { NodeResizer, type NodeProps } from "@xyflow/react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { useComponentIcon } from "@/features/diagram";
+import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import AwsIcon from "./AwsIcon";
@@ -54,6 +56,7 @@ const UNPARENT_BORDER = "hsl(25 95% 53%)"; // orange
 const PanelNode = memo(({ data, selected }: NodeProps) => {
   const { t } = useTranslation();
   const d = data as unknown as PanelNodeData;
+  const customDiagramIcon = useComponentIcon(d.elementId);
   const { highlightedNodeIds } = useHandleHighlight();
   const kindDef = getPanelKindDef(d.panelKind as import("@/features/diagram").PanelKind | undefined);
   const color = d.panelColor || kindDef.defaultColor;
@@ -100,7 +103,11 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
         {!d.compareBadges && d.sceneBadge && (
           <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
         )}
-        {useAwsIcon ? (
+        {customDiagramIcon ? (
+          <div className="shrink-0 opacity-80" style={{ color }}>
+            <CustomIconRenderer icon={customDiagramIcon} size={24} />
+          </div>
+        ) : useAwsIcon ? (
           <div className="shrink-0 opacity-80" style={{ color }}>
             <AwsIcon iconName={useAwsIcon} size={18} />
           </div>
@@ -161,7 +168,11 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
           />
         )}
         <div className="flex items-start gap-2 px-3 py-2.5">
-          {useAwsIcon ? (
+          {customDiagramIcon ? (
+            <div className="shrink-0 mt-0.5" style={{ color }}>
+              <CustomIconRenderer icon={customDiagramIcon} size={24} />
+            </div>
+          ) : useAwsIcon ? (
             <div className="shrink-0 mt-0.5" style={{ color }}>
               <AwsIcon iconName={useAwsIcon} size={18} />
             </div>

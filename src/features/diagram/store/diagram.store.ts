@@ -16,6 +16,7 @@ import {
   foldersSlice,
   patternsSlice,
   scenesSlice,
+  iconsSlice,
 } from "./slices";
 import { createPersistConfig } from "./persist.config";
 
@@ -40,6 +41,7 @@ export function createDiagramStore(storage = defaultStorage) {
         ...foldersSlice(set, get as () => AppState),
         ...patternsSlice(set, get as () => AppState),
         ...scenesSlice(set, get as () => AppState),
+        ...iconsSlice(set, get as () => AppState),
       })),
       createPersistConfig(storage),
     ),
@@ -105,6 +107,17 @@ export const useDiagramActions = () =>
       addConnectionToScene: s.addConnectionToScene,
       removeConnectionFromScene: s.removeConnectionFromScene,
       updateSceneNodeLayout: s.updateSceneNodeLayout,
+    })),
+  );
+
+export const useIconActions = () =>
+  useDiagramStore(
+    useShallow((s) => ({
+      addIcon: s.addIcon,
+      removeIcon: s.removeIcon,
+      updateIconName: s.updateIconName,
+      incrementIconUsage: s.incrementIconUsage,
+      decrementIconUsage: s.decrementIconUsage,
     })),
   );
 

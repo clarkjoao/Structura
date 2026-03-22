@@ -1,6 +1,6 @@
 import { createJSONStorage } from "zustand/middleware";
 import type { IStoragePort } from "@/infrastructure/persistence";
-import type { Diagram, Component, Connection, NodeLayout } from "../model/diagram.types";
+import type { Diagram, Component, Connection, IconDefinition, NodeLayout } from "../model/diagram.types";
 import type { DiagramStore } from "./store.types";
 import type { ServiceDefinition } from "../model/service.types";
 import { ServiceSource } from "../enums";
@@ -9,7 +9,10 @@ import { migrateFlow } from "../utils/flow-migration";
 export const PERSIST_KEY = "diagram-store";
 
 /** Must match `version` passed to zustand `persist` (used when writing localStorage manually). */
-export const PERSIST_SCHEMA_VERSION = 0;
+export const PERSIST_SCHEMA_VERSION = 2;
+
+/** Alias for consumers that refer to “current” schema version in docs or tooling. */
+export const CURRENT_SCHEMA_VERSION = PERSIST_SCHEMA_VERSION;
 
 export type PersistedDiagramStoreSlice = ReturnType<typeof partializeState>;
 
@@ -150,6 +153,72 @@ function migrateFlowsToGraph(state: DiagramStore): DiagramStore {
   return state;
 }
 
+/**
+ * Idempotent: ensures `iconLibrary` exists and legacy components expose `customIconId`.
+ * Used for persist rehydration and for schema upgrades from version &lt; 1.
+ */
+function migrateAddIconLibrary(state: Partial<DiagramStore>): void {
+  const touchSnapshot = (snapshot: Diagram["snapshot"] | undefined): void => {
+    if (!snapshot) return;
+    if (!snapshot.iconLibrary) {
+      snapshot.iconLibrary = {};
+    }
+    for (const component of Object.values(snapshot.components ?? {})) {
+      if (!("customIconId" in component)) {
+        (component as Component).customIconId = undefined;
+      }
+    }
+  };
+
+  for (const diagram of Object.values(state.diagrams ?? {})) {
+    touchSnapshot((diagram as Diagram).snapshot);
+  }
+  for (const entry of [...(state.past ?? []), ...(state.future ?? [])]) {
+    touchSnapshot(entry.snapshot);
+  }
+}
+
+/**
+ * Idempotent: moves legacy top-level `svgContent` into `source: { kind: "svg", svgContent }`.
+ */
+function migrateIconDefinitionToSource(state: Partial<DiagramStore>): void {
+  const migrateLibrary = (library: Record<string, IconDefinition> | undefined): void => {
+    if (!library) return;
+    for (const [id, icon] of Object.entries(library)) {
+      const entry = icon as unknown as Record<string, unknown>;
+      if (
+        typeof entry.svgContent === "string" &&
+        entry.svgContent.length > 0 &&
+        !("source" in entry)
+      ) {
+        const svgContent = entry.svgContent as string;
+        library[id] = {
+          id: typeof entry.id === "string" && entry.id.length > 0 ? entry.id : id,
+          name: typeof entry.name === "string" ? entry.name : id,
+          createdAt:
+            typeof entry.createdAt === "number" && Number.isFinite(entry.createdAt)
+              ? entry.createdAt
+              : Date.now(),
+          usageCount:
+            typeof entry.usageCount === "number" &&
+            entry.usageCount >= 0 &&
+            Number.isFinite(entry.usageCount)
+              ? entry.usageCount
+              : 0,
+          source: { kind: "svg", svgContent },
+        };
+      }
+    }
+  };
+
+  for (const diagram of Object.values(state.diagrams ?? {})) {
+    migrateLibrary((diagram as Diagram)?.snapshot?.iconLibrary);
+  }
+  for (const entry of [...(state.past ?? []), ...(state.future ?? [])]) {
+    migrateLibrary(entry.snapshot?.iconLibrary);
+  }
+}
+
 export function mergePersistedState(
   persistedState: unknown,
   currentState: DiagramStore,
@@ -171,9 +240,14 @@ export function mergePersistedState(
   next = migrateConnectionStyles(next);
   next = migrateComponentDimensions(next);
   next = migrateFlowsToGraph(next);
+  migrateAddIconLibrary(next);
+  migrateIconDefinitionToSource(next);
 
   return next;
 }
+
+const SCHEMA_VERSION_WITH_ICON_LIBRARY = 1;
+const SCHEMA_VERSION_ICON_SOURCE = 2;
 
 export function createPersistConfig(storage: IStoragePort) {
   return {
@@ -182,5 +256,18 @@ export function createPersistConfig(storage: IStoragePort) {
     partialize: partializeState,
     merge: mergePersistedState,
     version: PERSIST_SCHEMA_VERSION,
+    migrate: (persistedState, fromVersion) => {
+      if (typeof fromVersion !== "number") {
+        return persistedState as PersistedDiagramStoreSlice;
+      }
+      const partial = persistedState as Partial<DiagramStore>;
+      if (fromVersion < SCHEMA_VERSION_WITH_ICON_LIBRARY) {
+        migrateAddIconLibrary(partial);
+      }
+      if (fromVersion < SCHEMA_VERSION_ICON_SOURCE) {
+        migrateIconDefinitionToSource(partial);
+      }
+      return persistedState as PersistedDiagramStoreSlice;
+    },
   };
 }

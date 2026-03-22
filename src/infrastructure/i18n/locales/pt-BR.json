@@ -456,7 +456,10 @@
     "linkedDiagramCreated": "✓ Diagrama “{{name}}” criado e vinculado.",
     "createLinkedDiagram": "Criar diagrama vinculado",
     "linkToDiagram": "Vincular ao Diagrama",
-    "opacityLabel": "Opacidade — {{value}}%"
+    "opacityLabel": "Opacidade — {{value}}%",
+    "tabs": {
+      "icon": "Ícone"
+    }
   },
   "apiGroup": {
     "panelTitle": "API Group",
@@ -875,5 +878,30 @@
     "coverage": "Cobertura",
     "stepsCount": "{{count}} passos",
     "participantsCount": "· {{count}} participantes"
+  },
+  "icons": {
+    "pickerTitle": "Escolher ícone",
+    "addNew": "Adicionar novo",
+    "invalidSvg": "Arquivo SVG inválido ou inseguro",
+    "searchPlaceholder": "Buscar ícones…",
+    "emptyLibrary": "Ainda não há ícones ou nenhum corresponde à busca",
+    "uploadButton": "Enviar SVG",
+    "changeIcon": "Trocar ícone",
+    "removeIcon": "Remover ícone",
+    "addIcon": "Adicionar ícone",
+    "tabs": {
+      "library": "Biblioteca",
+      "lucide": "Lucide",
+      "aws": "AWS",
+      "upload": "Enviar SVG"
+    },
+    "lucide": {
+      "searchPlaceholder": "Buscar ícones Lucide…",
+      "resultsCount": "Mostrando {{shown}} de {{total}}"
+    },
+    "aws": {
+      "searchPlaceholder": "Buscar serviços AWS…",
+      "allCategories": "Todas as categorias"
+    }
   }
 }

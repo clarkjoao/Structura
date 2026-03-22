@@ -151,6 +151,7 @@ function buildDiagrams(): Record<string, Diagram> {
         },
       },
       snapshot: {
+        iconLibrary: {},
         components: {
           "ctx-customer": {
             id: "ctx-customer",
@@ -366,6 +367,7 @@ function buildDiagrams(): Record<string, Diagram> {
         "ct-ledger-svc":       { elementId: "ct-ledger-svc",       x: 1840, y: 770 },
       },
       snapshot: {
+        iconLibrary: {},
         components: {
           "ct-mobile-user": {
             id: "ct-mobile-user",
@@ -647,6 +649,7 @@ function buildDiagrams(): Record<string, Diagram> {
         "pm-event-publisher":     { elementId: "pm-event-publisher",     x: 1440, y: 320 },
       },
       snapshot: {
+        iconLibrary: {},
         components: {
           "pm-pix-controller": {
             id: "pm-pix-controller",
@@ -832,6 +835,7 @@ function buildDiagrams(): Record<string, Diagram> {
         "gw-logger":       { elementId: "gw-logger",       x: 680,  y: 580 },
       },
       snapshot: {
+        iconLibrary: {},
         components: {
           "gw-cors": {
             id: "gw-cors",
@@ -968,6 +972,7 @@ function buildDiagrams(): Record<string, Diagram> {
         "bff-cache":             { elementId: "bff-cache",             x: 1100, y: 460 },
       },
       snapshot: {
+        iconLibrary: {},
         components: {
           "bff-gql-server": {
             id: "bff-gql-server",
@@ -1115,6 +1120,7 @@ function buildDiagrams(): Record<string, Diagram> {
         },
       },
       snapshot: {
+        iconLibrary: {},
         components: {
           /* ── CDN / Edge ── */
           "dep-cloudfront": {
