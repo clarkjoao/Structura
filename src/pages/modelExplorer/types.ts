@@ -9,6 +9,7 @@ export interface ModelExplorerContentProps {
   setShowShortcuts: (v: boolean) => void;
   navStack: string[];
   handleOpenDiagram: (id: string) => void;
+  handleDrillDownToDiagram: (id: string) => void;
   handleDrillUp: () => void;
   handleCopyDrawio: () => void;
   handleExport: () => void;

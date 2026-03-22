@@ -308,6 +308,7 @@
     "emptyRecent": "No diagrams opened recently",
     "noMatches": "No results",
     "commandPalette": "Diagram palette",
+    "unavailableWhileRecordingOrPlayback": "Unavailable while recording or playing a flow",
     "palettePlaceholder": "Search diagrams or folders…",
     "folderHitHint": "folder"
   },

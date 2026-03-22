@@ -35,6 +35,15 @@ export default function ModelExplorerPage() {
 
   const handleOpenDiagram = useCallback(
     (id: string) => {
+      setNavStack([]);
+      openDiagram(id);
+      navigate(`/model/${id}`);
+    },
+    [openDiagram, navigate],
+  );
+
+  const handleDrillDownToDiagram = useCallback(
+    (id: string) => {
       if (activeDiagramId) setNavStack((prev) => [...prev, activeDiagramId]);
       openDiagram(id);
       navigate(`/model/${id}`);
@@ -147,6 +156,7 @@ export default function ModelExplorerPage() {
             setShowShortcuts={setShowShortcuts}
             navStack={navStack}
             handleOpenDiagram={handleOpenDiagram}
+            handleDrillDownToDiagram={handleDrillDownToDiagram}
             handleDrillUp={handleDrillUp}
             handleCopyDrawio={handleCopyDrawio}
             handleExport={handleExport}
