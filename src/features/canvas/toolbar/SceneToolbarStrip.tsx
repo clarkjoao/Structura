@@ -1,7 +1,15 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { Circle, MoreHorizontal, Plus, X } from "lucide-react";
-import { useActiveDiagram, useDiagramActions } from "@/features/diagram";
+import {
+  computeMergePreview,
+  sceneHasDiff,
+  useActiveDiagram,
+  useDiagramActions,
+  type MergePreview,
+  type SceneDiff,
+} from "@/features/diagram";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,15 +17,27 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { MergeSceneDialog } from "./MergeSceneDialog";
 
 export function SceneToolbarStrip() {
   const { t } = useTranslation();
   const diagram = useActiveDiagram();
-  const { addScene, removeScene, setActiveScene, renameScene, setCompareScene } = useDiagramActions();
+  const {
+    addScene,
+    removeScene,
+    setActiveScene,
+    renameScene,
+    setCompareScene,
+    mergeSceneIntoBase,
+  } = useDiagramActions();
   const [newOpen, setNewOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
+  const [mergeDialog, setMergeDialog] = useState<{
+    scene: SceneDiff;
+    preview: MergePreview;
+  } | null>(null);
 
   if (!diagram) {
     return null;
@@ -72,6 +92,31 @@ export function SceneToolbarStrip() {
     if (trimmed) renameScene(id, trimmed);
     setRenamingId(null);
     setRenameDraft("");
+  };
+
+  const openMergeDialog = (sc: SceneDiff) => {
+    try {
+      const preview = computeMergePreview(diagram, sc.id);
+      setMergeDialog({ scene: sc, preview });
+    } catch {
+      toast.error(t("scenes.mergePreviewError"));
+    }
+  };
+
+  const handleMergeConfirm = () => {
+    if (!mergeDialog) return;
+    const { scene, preview } = mergeDialog;
+    const conflictCount = preview.conflicts.length;
+    mergeSceneIntoBase(scene.id);
+    toast.success(t("scenes.mergeSuccess", { name: scene.name }), {
+      description:
+        conflictCount > 0 ? t("scenes.mergeSuccessConflicts", { count: conflictCount }) : undefined,
+    });
+  };
+
+  const handleDeleteEmptyScene = (sc: SceneDiff) => {
+    removeScene(sc.id);
+    toast.success(t("scenes.emptySceneDeleted", { name: sc.name }));
   };
 
   return (
@@ -197,7 +242,7 @@ export function SceneToolbarStrip() {
                 <MoreHorizontal className="h-3 w-3" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem
                 onClick={() => {
                   setRenamingId(sc.id);
@@ -206,16 +251,41 @@ export function SceneToolbarStrip() {
               >
                 {t("scenes.rename")}
               </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={() => removeScene(sc.id)}
-              >
-                {t("scenes.remove")}
-              </DropdownMenuItem>
+              {sceneHasDiff(sc) ? (
+                <DropdownMenuItem onClick={() => openMergeDialog(sc)}>
+                  {t("scenes.mergeIntoBase")}
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={() => handleDeleteEmptyScene(sc)}>
+                  {t("scenes.deleteEmptyScene")}
+                </DropdownMenuItem>
+              )}
+              {sceneHasDiff(sc) && (
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => removeScene(sc.id)}
+                >
+                  {t("scenes.remove")}
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       ))}
+
+      {mergeDialog && (
+        <MergeSceneDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setMergeDialog(null);
+          }}
+          diagram={diagram}
+          scene={mergeDialog.scene}
+          preview={mergeDialog.preview}
+          onConfirm={handleMergeConfirm}
+          onCancel={() => setMergeDialog(null)}
+        />
+      )}
 
       {newOpen ? (
         <input

@@ -1,15 +1,19 @@
 import type { Component, Connection, Diagram, NodeLayout, SceneDiff } from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
-import { nextSceneColor } from "../../utils/scene.utils";
+import { computeMergePreview, nextSceneColor } from "../../utils/scene.utils";
 import { mutateRemoveComponentInScene, mutateRemoveConnectionInScene } from "../../utils/scene-mutations";
+import { pushHistory } from "./history.slice";
 
 function ensureScenes(d: Diagram): Record<string, SceneDiff> {
   if (!d.scenes) d.scenes = {};
   return d.scenes;
 }
 
-export const scenesSlice = (set: (fn: (state: AppState) => void) => void) => ({
+export const scenesSlice = (
+  set: (fn: (state: AppState) => void) => void,
+  _get: () => AppState,
+) => ({
   addScene: (name: string): SceneDiff => {
     let created!: SceneDiff;
     set((state) => {
@@ -102,6 +106,70 @@ export const scenesSlice = (set: (fn: (state: AppState) => void) => void) => ({
       if (!sc) return;
       const t = name.trim();
       if (t) sc.name = t;
+      d.updatedAt = new Date().toISOString();
+    });
+  },
+
+  mergeSceneIntoBase: (sceneId: string) => {
+    set((state) => {
+      const d = state.diagrams[state.activeDiagramId!];
+      if (!d?.scenes?.[sceneId]) return;
+      let preview: ReturnType<typeof computeMergePreview>;
+      try {
+        preview = computeMergePreview(d, sceneId);
+      } catch {
+        return;
+      }
+
+      pushHistory(state);
+
+      for (const comp of preview.componentsToAdd) {
+        d.snapshot.components[comp.id] = comp;
+      }
+      for (const conn of preview.connectionsToAdd) {
+        d.snapshot.connections[conn.id] = conn;
+      }
+      Object.assign(d.nodeLayouts, preview.layoutsToAdd);
+
+      for (const id of preview.componentIdsToRemove) {
+        delete d.snapshot.components[id];
+        delete d.nodeLayouts[id];
+      }
+      for (const id of preview.connectionIdsToRemove) {
+        delete d.snapshot.connections[id];
+      }
+
+      const removeCompSet = new Set(preview.componentIdsToRemove);
+      const removeConnSet = new Set(preview.connectionIdsToRemove);
+      const scenesMap = d.scenes!;
+
+      for (const other of Object.values(scenesMap)) {
+        if (other.id === sceneId) continue;
+        other.removedComponentIds = other.removedComponentIds.filter((id) => !removeCompSet.has(id));
+        other.removedConnectionIds = other.removedConnectionIds.filter((id) => !removeConnSet.has(id));
+        for (const comp of preview.componentsToAdd) {
+          if (other.addedComponents[comp.id]) {
+            delete other.addedComponents[comp.id];
+            delete other.nodeLayouts[comp.id];
+          }
+        }
+        for (const conn of preview.connectionsToAdd) {
+          if (other.addedConnections[conn.id]) {
+            delete other.addedConnections[conn.id];
+          }
+        }
+      }
+
+      delete scenesMap[sceneId];
+      if (Object.keys(scenesMap).length === 0) {
+        d.scenes = undefined;
+      }
+      if (d.activeSceneId === sceneId) {
+        d.activeSceneId = null;
+      }
+      if (d.compareSceneId === sceneId) {
+        d.compareSceneId = null;
+      }
       d.updatedAt = new Date().toISOString();
     });
   },

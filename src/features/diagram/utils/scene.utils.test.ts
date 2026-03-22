@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Diagram } from "../model/diagram.types";
-import { resolveSceneSnapshot } from "./scene.utils";
+import { computeMergePreview, resolveSceneSnapshot, sceneHasDiff } from "./scene.utils";
 
 function emptyDiagram(overrides: Partial<Diagram> = {}): Diagram {
   return {
@@ -67,5 +67,88 @@ describe("resolveSceneSnapshot", () => {
     expect(r.components.hide).toBeUndefined();
     expect(r.components.add1?.name).toBe("A1");
     expect(r.nodeLayouts.add1?.x).toBe(10);
+  });
+});
+
+describe("sceneHasDiff", () => {
+  it("is false for empty scene diff", () => {
+    const sc = {
+      id: "s",
+      name: "S",
+      color: "#000",
+      createdAt: "",
+      addedComponents: {},
+      addedConnections: {},
+      removedComponentIds: [],
+      removedConnectionIds: [],
+      nodeLayouts: {},
+    };
+    expect(sceneHasDiff(sc)).toBe(false);
+  });
+
+  it("is true when scene has additions or removals", () => {
+    const sc = {
+      id: "s",
+      name: "S",
+      color: "#000",
+      createdAt: "",
+      addedComponents: { x: { id: "x", name: "X", type: "system", description: "", parentId: null } },
+      addedConnections: {},
+      removedComponentIds: [],
+      removedConnectionIds: [],
+      nodeLayouts: {},
+    };
+    expect(sceneHasDiff(sc)).toBe(true);
+  });
+});
+
+describe("computeMergePreview", () => {
+  it("throws when scene is missing", () => {
+    const d = emptyDiagram();
+    expect(() => computeMergePreview(d, "missing")).toThrow("not found");
+  });
+
+  it("lists adds, removes, and component conflicts across scenes", () => {
+    const shared = { id: "dup", name: "Dup", type: "container" as const, description: "", parentId: null };
+    const d = emptyDiagram({
+      snapshot: {
+        components: {
+          old: { id: "old", name: "Old", type: "system", description: "", parentId: null },
+        },
+        connections: {},
+        flows: {},
+      },
+      nodeLayouts: { old: { elementId: "old", x: 0, y: 0 } },
+      scenes: {
+        s1: {
+          id: "s1",
+          name: "A",
+          color: "#111",
+          createdAt: "",
+          addedComponents: { dup: { ...shared } },
+          addedConnections: {},
+          removedComponentIds: ["old"],
+          removedConnectionIds: [],
+          nodeLayouts: { dup: { elementId: "dup", x: 1, y: 1 } },
+        },
+        s2: {
+          id: "s2",
+          name: "B",
+          color: "#222",
+          createdAt: "",
+          addedComponents: { dup: { ...shared } },
+          addedConnections: {},
+          removedComponentIds: [],
+          removedConnectionIds: [],
+          nodeLayouts: {},
+        },
+      },
+    });
+    const p = computeMergePreview(d, "s1");
+    expect(p.componentsToAdd).toHaveLength(1);
+    expect(p.componentIdsToRemove).toEqual(["old"]);
+    expect(p.conflicts).toHaveLength(1);
+    expect(p.conflicts[0]!.conflictingSceneId).toBe("s2");
+    expect(p.conflicts[0]!.elementId).toBe("dup");
   });
 });

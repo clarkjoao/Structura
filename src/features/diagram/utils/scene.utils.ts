@@ -1,4 +1,4 @@
-import type { Component, Connection, Diagram, NodeLayout } from "../model/diagram.types";
+import type { Component, Connection, Diagram, NodeLayout, SceneDiff } from "../model/diagram.types";
 
 export const SCENE_COLOR_PALETTE = [
   "#10b981",
@@ -334,4 +334,76 @@ export function isDiagramCompareMode(diagram: Diagram | null | undefined): boole
     diagram.scenes?.[a] &&
     diagram.scenes?.[b]
   );
+}
+
+export function sceneHasDiff(scene: SceneDiff): boolean {
+  return (
+    Object.keys(scene.addedComponents).length > 0 ||
+    Object.keys(scene.addedConnections).length > 0 ||
+    scene.removedComponentIds.length > 0 ||
+    scene.removedConnectionIds.length > 0
+  );
+}
+
+export interface MergePreview {
+  componentsToAdd: Component[];
+  connectionsToAdd: Connection[];
+  layoutsToAdd: Record<string, NodeLayout>;
+  componentIdsToRemove: string[];
+  connectionIdsToRemove: string[];
+  conflicts: Array<{
+    elementId: string;
+    elementName: string;
+    conflictingSceneId: string;
+    conflictingSceneName: string;
+    resolution: "merge";
+  }>;
+}
+
+export function computeMergePreview(diagram: Diagram, sceneId: string): MergePreview {
+  const scene = diagram.scenes?.[sceneId];
+  if (!scene) {
+    throw new Error(`Scene ${sceneId} not found`);
+  }
+
+  const otherScenes = Object.values(diagram.scenes ?? {}).filter((s) => s.id !== sceneId);
+  const conflicts: MergePreview["conflicts"] = [];
+
+  for (const comp of Object.values(scene.addedComponents)) {
+    for (const other of otherScenes) {
+      if (other.addedComponents[comp.id]) {
+        conflicts.push({
+          elementId: comp.id,
+          elementName: comp.name,
+          conflictingSceneId: other.id,
+          conflictingSceneName: other.name,
+          resolution: "merge",
+        });
+      }
+    }
+  }
+
+  for (const conn of Object.values(scene.addedConnections)) {
+    const label = conn.label?.trim() || conn.technology?.trim() || conn.id;
+    for (const other of otherScenes) {
+      if (other.addedConnections[conn.id]) {
+        conflicts.push({
+          elementId: conn.id,
+          elementName: label,
+          conflictingSceneId: other.id,
+          conflictingSceneName: other.name,
+          resolution: "merge",
+        });
+      }
+    }
+  }
+
+  return {
+    componentsToAdd: Object.values(scene.addedComponents),
+    connectionsToAdd: Object.values(scene.addedConnections),
+    layoutsToAdd: { ...scene.nodeLayouts },
+    componentIdsToRemove: [...scene.removedComponentIds],
+    connectionIdsToRemove: [...scene.removedConnectionIds],
+    conflicts,
+  };
 }

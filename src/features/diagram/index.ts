@@ -64,8 +64,10 @@ export {
   isDiagramCompareMode,
   buildCompareComponentVisuals,
   buildCompareConnectionVisuals,
+  computeMergePreview,
+  sceneHasDiff,
 } from "./utils/scene.utils";
-export type { CompareSnapshotResult, CompareElementVisual } from "./utils/scene.utils";
+export type { CompareSnapshotResult, CompareElementVisual, MergePreview } from "./utils/scene.utils";
 
 /** Type guards for the Component discriminated union */
 export {

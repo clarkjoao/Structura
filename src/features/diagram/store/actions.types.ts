@@ -79,6 +79,7 @@ export interface AppActions {
 
   addScene: (name: string) => SceneDiff;
   removeScene: (sceneId: string) => void;
+  mergeSceneIntoBase: (sceneId: string) => void;
   setActiveScene: (sceneId: string | null) => void;
   setCompareScene: (sceneId: string | null) => void;
   renameScene: (sceneId: string, name: string) => void;
