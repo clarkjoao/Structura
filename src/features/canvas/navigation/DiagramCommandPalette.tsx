@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { Diagram, Folder as FolderType } from "@/features/diagram";
 import { useAllDiagrams, useFolders } from "@/features/diagram";
-import { buildBreadcrumbPath } from "@/pages/Dashboard/dashboard.utils";
+import { buildBreadcrumbPath } from "@/pages/dashboard/dashboard.utils";
 import { useRecentDiagrams } from "./useRecentDiagrams";
 
 type FolderRecord = Record<string, FolderType>;

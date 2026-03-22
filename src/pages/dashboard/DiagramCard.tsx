@@ -5,9 +5,9 @@ import { useTranslation } from "react-i18next";
 import type { Diagram } from "@/features/diagram";
 import { useDiagramActions, useFolders } from "@/features/diagram";
 import { getPreview } from "@/lib/diagram-preview";
-import { DiagramCardFooter } from "./components/diagram-card/DiagramCardFooter";
-import { DiagramCardPreview } from "./components/diagram-card/DiagramCardPreview";
-import { MoveDiagramDialog } from "./components/diagram-card/MoveDiagramDialog";
+import { DiagramCardFooter } from "@/pages/dashboard/components/diagram-card/DiagramCardFooter";
+import { DiagramCardPreview } from "@/pages/dashboard/components/diagram-card/DiagramCardPreview";
+import { MoveDiagramDialog } from "@/pages/dashboard/components/diagram-card/MoveDiagramDialog";
 
 interface DiagramCardProps {
   diagram: Diagram;

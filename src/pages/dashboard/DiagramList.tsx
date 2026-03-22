@@ -2,8 +2,8 @@ import { Clock, Network, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatTimestamp } from "@/lib/format-date";
 import { cn } from "@/lib/utils";
-import { levelColors } from "./dashboard.constants";
-import type { DiagramListProps } from "./dashboard.types";
+import { levelColors } from "@/pages/dashboard/dashboard.constants";
+import type { DiagramListProps } from "@/pages/dashboard/dashboard.types";
 
 export function DiagramList({
   diagrams,

@@ -177,9 +177,11 @@
     "levelContext": "Nível 1 – Contexto de sistema",
     "levelContainer": "Nível 2 – Container",
     "levelComponent": "Nível 3 – Componente",
+    "levelDeployment": "Nível 4 – Deployment",
     "levelContextShort": "L1 · Contexto",
     "levelContainerShort": "L2 · Container",
     "levelComponentShort": "L3 · Componente",
+    "levelDeploymentShort": "L4 · Deployment",
     "diagramPreviewAlt": "Pré-visualização de {{name}}",
     "card": {
       "rename": "Renomear",
@@ -312,7 +314,8 @@
     "selectedCount": "{{count}} selecionados",
     "levelContext": "Nível 1",
     "levelContainer": "Nível 2",
-    "levelComponent": "Nível 3"
+    "levelComponent": "Nível 3",
+    "levelDeployment": "Nível 4"
   },
   "scenes": {
     "base": "Base",

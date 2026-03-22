@@ -36,11 +36,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { FolderTree } from "@/pages/FolderTree";
 import { cn } from "@/lib/utils";
-import { AddDiagramDialog } from "./AddDiagramDialog";
-import { DiagramGrid } from "./DiagramGrid";
-import { DiagramList } from "./DiagramList";
-import type { GlobalSearchHit, SortKey, ViewMode } from "./dashboard.types";
-import { buildBreadcrumbPath } from "./dashboard.utils";
+import { AddDiagramDialog } from "@/pages/dashboard/AddDiagramDialog";
+import { DiagramGrid } from "@/pages/dashboard/DiagramGrid";
+import { DiagramList } from "@/pages/dashboard/DiagramList";
+import type { GlobalSearchHit, SortKey, ViewMode } from "@/pages/dashboard/dashboard.types";
+import { buildBreadcrumbPath } from "@/pages/dashboard/dashboard.utils";
 
 export default function DashboardPage() {
   const { t } = useTranslation();
@@ -49,6 +49,7 @@ export default function DashboardPage() {
       context: t("dashboard.levelContextShort"),
       container: t("dashboard.levelContainerShort"),
       component: t("dashboard.levelComponentShort"),
+      deployment: t("dashboard.levelDeploymentShort"),
     }),
     [t],
   );

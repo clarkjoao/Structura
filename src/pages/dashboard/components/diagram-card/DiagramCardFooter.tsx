@@ -3,7 +3,7 @@ import { ArrowRight, Box, Play } from "lucide-react";
 import type { Diagram } from "@/features/diagram";
 import { formatTimestamp } from "@/lib/format-date";
 import { cn } from "@/lib/utils";
-import { levelColors } from "../../dashboard.constants";
+import { levelColors } from "@/pages/dashboard/dashboard.constants";
 import { StatChip } from "./StatChip";
 
 export interface DiagramCardFooterProps {

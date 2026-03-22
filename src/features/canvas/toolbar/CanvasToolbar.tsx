@@ -83,6 +83,7 @@ const CanvasToolbar = ({
       context: t("canvasToolbar.levelContext"),
       container: t("canvasToolbar.levelContainer"),
       component: t("canvasToolbar.levelComponent"),
+      deployment: t("canvasToolbar.levelDeployment"),
     }),
     [t],
   );

@@ -177,9 +177,11 @@
     "levelContext": "Level 1 – System context",
     "levelContainer": "Level 2 – Container",
     "levelComponent": "Level 3 – Component",
+    "levelDeployment": "Level 4 – Deployment",
     "levelContextShort": "L1 · Context",
     "levelContainerShort": "L2 · Container",
     "levelComponentShort": "L3 · Component",
+    "levelDeploymentShort": "L4 · Deployment",
     "diagramPreviewAlt": "Preview of {{name}}",
     "card": {
       "rename": "Rename",
@@ -312,7 +314,8 @@
     "selectedCount": "{{count}} selected",
     "levelContext": "Level 1",
     "levelContainer": "Level 2",
-    "levelComponent": "Level 3"
+    "levelComponent": "Level 3",
+    "levelDeployment": "Level 4"
   },
   "scenes": {
     "base": "Base",

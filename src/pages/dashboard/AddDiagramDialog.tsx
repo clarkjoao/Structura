@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import type { Level } from "@/features/diagram";
 import { Button } from "@/components/ui/button";
-import type { AddDiagramDialogProps } from "./dashboard.types";
+import type { AddDiagramDialogProps } from "@/pages/dashboard/dashboard.types";
 
 export function AddDiagramDialog({ onClose, onAdd }: AddDiagramDialogProps) {
   const { t } = useTranslation();
@@ -48,6 +48,7 @@ export function AddDiagramDialog({ onClose, onAdd }: AddDiagramDialogProps) {
               <option value="context">{t("dashboard.levelContext")}</option>
               <option value="container">{t("dashboard.levelContainer")}</option>
               <option value="component">{t("dashboard.levelComponent")}</option>
+              <option value="deployment">{t("dashboard.levelDeployment")}</option>
             </select>
           </div>
           <div>
