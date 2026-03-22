@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { Diagram, Folder as FolderType, Flow } from "@/features/diagram";
 import { useAllDiagrams, useFolders, useFlows } from "@/features/diagram";
-import { useFlowPlayback } from "@/features/canvas/flow/FlowPlaybackContext";
+import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
 import { buildBreadcrumbPath } from "@/pages/Dashboard/dashboard.utils";
 import { useRecentDiagrams } from "./useRecentDiagrams";
 import {
@@ -36,13 +36,13 @@ type FolderRecord = Record<string, FolderType>;
 
 function getChildFolders(folders: FolderRecord, parentId: string | null): FolderType[] {
   return Object.values(folders)
-    .filter((f) => f.parentId === parentId)
+    .filter((folder) => folder.parentId === parentId)
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function getDiagramsInFolder(diagrams: Diagram[], folderId: string | null): Diagram[] {
   return diagrams
-    .filter((d) => (d.folderId ?? null) === folderId)
+    .filter((diagram) => (diagram.folderId ?? null) === folderId)
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -57,15 +57,15 @@ function ancestorFolderIds(folders: FolderRecord, folderId: string | null): stri
 }
 
 function diagramMatchesSearch(
-  d: Diagram,
+  diagram: Diagram,
   folders: FolderRecord,
   q: string,
 ): boolean {
   const lc = q.trim().toLowerCase();
   if (!lc) return true;
-  if (d.name.toLowerCase().includes(lc)) return true;
-  const path = buildBreadcrumbPath(folders, d.folderId ?? null);
-  return path.some((p) => p.name.toLowerCase().includes(lc));
+  if (diagram.name.toLowerCase().includes(lc)) return true;
+  const path = buildBreadcrumbPath(folders, diagram.folderId ?? null);
+  return path.some((crumb) => crumb.name.toLowerCase().includes(lc));
 }
 
 export interface DiagramSidebarProps {
@@ -85,7 +85,10 @@ export function DiagramSidebar({
   const folders = useFolders();
   const allDiagrams = useAllDiagrams();
   const flows = useFlows();
-  const { activeFlow, play } = useFlowPlayback();
+  const flowMode = useFlowMode();
+  const playbackState = flowMode.mode.kind === "playing" ? flowMode.mode : null;
+  const activeFlow = playbackState?.flow ?? null;
+  const play = flowMode.play;
   const { recent } = useRecentDiagrams();
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(readSidebarExpandedFolderIds);
@@ -94,17 +97,23 @@ export function DiagramSidebar({
   const locale = i18n.language.startsWith("pt") ? ptBR : enUS;
 
   const diagramsById = useMemo(
-    () => Object.fromEntries(allDiagrams.map((d) => [d.id, d])) as Record<string, Diagram>,
+    () =>
+      Object.fromEntries(allDiagrams.map((diagram) => [diagram.id, diagram])) as Record<
+        string,
+        Diagram
+      >,
     [allDiagrams],
   );
 
   const recentResolved = useMemo(() => {
     return recent
-      .map((r) => {
-        const d = diagramsById[r.id];
-        return d ? { id: r.id, openedAt: r.openedAt, name: d.name } : null;
+      .map((entry) => {
+        const diagram = diagramsById[entry.id];
+        return diagram
+          ? { id: entry.id, openedAt: entry.openedAt, name: diagram.name }
+          : null;
       })
-      .filter((x): x is { id: string; openedAt: number; name: string } => x !== null);
+      .filter((row): row is { id: string; openedAt: number; name: string } => row !== null);
   }, [recent, diagramsById]);
 
   const toggleExpand = useCallback((id: string) => {
@@ -119,9 +128,9 @@ export function DiagramSidebar({
 
   useEffect(() => {
     if (!isOpen || !currentDiagramId) return;
-    const d = diagramsById[currentDiagramId];
-    if (!d?.folderId) return;
-    const chain = ancestorFolderIds(folders, d.folderId);
+    const activeDiagram = diagramsById[currentDiagramId];
+    if (!activeDiagram?.folderId) return;
+    const chain = ancestorFolderIds(folders, activeDiagram.folderId);
     setExpandedIds((prev) => {
       const next = new Set(prev);
       chain.forEach((id) => next.add(id));
@@ -151,7 +160,7 @@ export function DiagramSidebar({
 
   const matchingDiagrams = useMemo(() => {
     if (!showSearchResults) return [];
-    return allDiagrams.filter((d) => diagramMatchesSearch(d, folders, searchTrim));
+    return allDiagrams.filter((diagram) => diagramMatchesSearch(diagram, folders, searchTrim));
   }, [allDiagrams, folders, searchTrim, showSearchResults]);
 
   return (
@@ -208,16 +217,16 @@ export function DiagramSidebar({
                   {t("diagramNav.noMatches")}
                 </p>
               ) : (
-                matchingDiagrams.map((d) => {
-                  const path = buildBreadcrumbPath(folders, d.folderId ?? null);
-                  const pathLabel = path.map((f) => f.name).join(" / ");
-                  const isActive = d.id === currentDiagramId;
+                matchingDiagrams.map((diagram) => {
+                  const path = buildBreadcrumbPath(folders, diagram.folderId ?? null);
+                  const pathLabel = path.map((crumb) => crumb.name).join(" / ");
+                  const isActive = diagram.id === currentDiagramId;
                   return (
                     <button
-                      key={d.id}
+                      key={diagram.id}
                       type="button"
                       ref={isActive ? activeDiagramRef : undefined}
-                      onClick={() => handleSelectDiagram(d.id)}
+                      onClick={() => handleSelectDiagram(diagram.id)}
                       className={cn(
                         "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors",
                         isActive
@@ -226,7 +235,7 @@ export function DiagramSidebar({
                       )}
                     >
                       <FileText className="h-3.5 w-3.5 shrink-0 opacity-70" />
-                      <span className="min-w-0 flex-1 truncate">{d.name}</span>
+                      <span className="min-w-0 flex-1 truncate">{diagram.name}</span>
                       {pathLabel && (
                         <span className="shrink-0 text-[10px] text-muted-foreground">
                           {pathLabel}
@@ -248,13 +257,13 @@ export function DiagramSidebar({
                   {recentResolved.length === 0 ? (
                     <p className="px-2 py-1 text-xs text-muted-foreground">{t("diagramNav.emptyRecent")}</p>
                   ) : (
-                    recentResolved.map((r) => {
-                      const isActive = r.id === currentDiagramId;
+                    recentResolved.map((recentEntry) => {
+                      const isActive = recentEntry.id === currentDiagramId;
                       return (
                         <button
-                          key={r.id}
+                          key={recentEntry.id}
                           type="button"
-                          onClick={() => handleSelectDiagram(r.id)}
+                          onClick={() => handleSelectDiagram(recentEntry.id)}
                           className={cn(
                             "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors",
                             isActive
@@ -263,9 +272,9 @@ export function DiagramSidebar({
                           )}
                         >
                           <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                          <span className="min-w-0 flex-1 truncate">{r.name}</span>
+                          <span className="min-w-0 flex-1 truncate">{recentEntry.name}</span>
                           <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
-                            {formatDistanceToNow(r.openedAt, { addSuffix: true, locale })}
+                            {formatDistanceToNow(recentEntry.openedAt, { addSuffix: true, locale })}
                           </span>
                         </button>
                       );
@@ -338,16 +347,16 @@ function SidebarFolderTree({
 
   return (
     <div className="space-y-0.5">
-      {diagramsHere.map((d) => (
-        <div key={d.id}>
+      {diagramsHere.map((diagram) => (
+        <div key={diagram.id}>
           <DiagramTreeRow
-            diagram={d}
+            diagram={diagram}
             depth={depth}
-            isActive={d.id === currentDiagramId}
-            onSelect={() => onSelectDiagram(d.id)}
+            isActive={diagram.id === currentDiagramId}
+            onSelect={() => onSelectDiagram(diagram.id)}
             activeDiagramRef={activeDiagramRef}
           />
-          {d.id === currentDiagramId && flows.length > 0 && (
+          {diagram.id === currentDiagramId && flows.length > 0 && (
             <div
               className="ml-2 border-l border-border/70 pl-2"
               style={{ marginLeft: `${10 + depth * 14}px` }}

@@ -5,7 +5,7 @@
 import { useCallback, useRef } from "react";
 import type { Node, Edge, OnEdgesChange, OnConnect, OnConnectEnd, Connection } from "@xyflow/react";
 import type { CanvasVisualState } from "./useCanvasVisualState";
-import { useRecordingMode } from "../flow/RecordingModeContext";
+import { useFlowMode } from "../flow/FlowModeContext";
 import { isReactFlowParentPanelType, isNoteType, isEndpointType } from "@/features/diagram";
 import type { EdgeStyle } from "@/features/diagram";
 import { getLastEdgeStyle } from "@/features/diagram/hooks/useLastEdgeStyle";
@@ -36,7 +36,7 @@ export function useCanvasEventHandlers({
   screenToFlowPosition,
   onRequestFocusTitle,
 }: UseCanvasEventHandlersParams) {
-  const { isRecording, onRecordNodeClick, onRecordEdgeClick } = useRecordingMode();
+  const { isRecording, onRecordNodeClick, onRecordEdgeClick } = useFlowMode();
   const {
     setSelectedNodeId,
     setSelectedNodeIds,

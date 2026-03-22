@@ -17,8 +17,7 @@ import {
 } from "lucide-react";
 import { useReactFlow } from "@xyflow/react";
 import { isDiagramCompareMode, useActiveDiagram, useDiagramActions } from "@/features/diagram";
-import { useRecordingMode } from "@/features/canvas/flow/RecordingModeContext";
-import { useFlowPlayback } from "@/features/canvas/flow/FlowPlaybackContext";
+import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
 import type { ComponentType } from "@/features/diagram";
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/catalogs/aws";
 import AwsIcon from "../nodes/AwsIcon";
@@ -45,8 +44,7 @@ const CanvasToolbar = ({
   const diagram = useActiveDiagram();
   const { addComponent, updateDiagram } = useDiagramActions();
   const rfInstance = useReactFlow();
-  const { isRecording } = useRecordingMode();
-  const { isPlaying } = useFlowPlayback();
+  const { isRecording, isPlaying } = useFlowMode();
   const toolbarEditLocked =
     isRecording || isPlaying || (diagram ? isDiagramCompareMode(diagram) : false);
   const scenesPickerLocked = isRecording || isPlaying;

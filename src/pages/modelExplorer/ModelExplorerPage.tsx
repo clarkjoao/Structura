@@ -1,23 +1,20 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
-import { RecordingModeStateProvider } from "@/features/canvas/flow/RecordingModeContext";
-import { FlowPlaybackProvider } from "@/features/canvas/flow/FlowPlaybackContext";
-import { useFlowPlaybackState } from "@/features/canvas/flow/useFlowPlayback";
+import { FlowModeProvider } from "@/features/canvas/flow/FlowModeContext";
 import {
   useActiveDiagram,
   useActiveDiagramId,
   useDiagramActions,
   useDiagramStore,
   useFlows,
-  stepsToMermaid,
   useServiceRegistry,
   buildFlowFromRecordingSnapshot,
   resolveSceneSnapshot,
   exportFilenameSlug,
+  stepsToMermaid,
 } from "@/features/diagram";
-import type { Flow } from "@/features/diagram";
 import { exportJSON, exportDrawio, exportMermaid, downloadFile } from "@/lib/export-service";
 import { writeDrawioToClipboard } from "@/lib/clipboard-utils";
 import { ModelExplorerContent } from "./ModelExplorerContent";
@@ -34,12 +31,9 @@ export default function ModelExplorerPage() {
   const navigate = useNavigate();
   const [showFlows, setShowFlows] = useState(false);
   const [isViewingCoverage, setIsViewingCoverage] = useState(false);
-  const [activeFlow, setActiveFlow] = useState<Flow | null>(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [navStack, setNavStack] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
-
-  const playback = useFlowPlaybackState(activeFlow);
 
   // Sync URL :id → store.activeDiagramId (handles page refresh / direct link)
   useEffect(() => {
@@ -74,23 +68,8 @@ export default function ModelExplorerPage() {
     navigate(`/model/${prev}`);
   }, [navStack, openDiagram, navigate]);
 
-  const handlePlay = useCallback((flow: Flow) => {
-    setActiveFlow(flow);
-    setShowFlows(false);
-  }, []);
-
-  // Start playback when activeFlow changes
-  useEffect(() => {
-    if (activeFlow) playback.start();
-  }, [activeFlow]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleExit = useCallback(() => {
-    playback.exit();
-    setActiveFlow(null);
-  }, [playback]);
-
   const handleFinalizeRecording = useCallback(
-    (data: import("@/features/canvas/flow/RecordingModeContext").RecordingFinalizeData) => {
+    (data: import("@/features/canvas/flow/FlowModeContext").RecordingFinalizeData) => {
       if (!diagram) return;
 
       const tempFlow = buildFlowFromRecordingSnapshot(data.steps, data.branchOwnership, {
@@ -150,21 +129,6 @@ export default function ModelExplorerPage() {
     }
   }, [diagram, flows, serviceRegistry]);
 
-  useEffect(() => {
-    if (!activeFlow) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { e.preventDefault(); handleExit(); return; }
-      if (e.key === "ArrowLeft") { e.preventDefault(); playback.goBack(); return; }
-      if (e.key === "ArrowRight") {
-        e.preventDefault();
-        if (!playback.isCondition) playback.goNext();
-        return;
-      }
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [activeFlow, handleExit, playback]);
-
   if (!diagram) {
     return (
       <div className="h-screen flex flex-col">
@@ -179,48 +143,30 @@ export default function ModelExplorerPage() {
     );
   }
 
-  const playbackValue = {
-    activeFlow,
-    currentStepId: playback.currentStepId,
-    currentStep: playback.currentStep,
-    isPlaying: !!activeFlow && playback.currentStepId !== null,
-    isCondition: playback.isCondition,
-    canGoBack: playback.canGoBack,
-    canGoForward: playback.canGoForward,
-    history: playback.history,
-    play: handlePlay,
-    exit: handleExit,
-    goBack: playback.goBack,
-    goNext: playback.goNext,
-    chooseBranch: playback.chooseBranch,
-  };
-
   return (
     <div className="h-screen flex flex-col">
       <Navbar />
-      <RecordingModeStateProvider
+      <FlowModeProvider
         onFinalize={handleFinalizeRecording}
         onStartRecording={() => setShowFlows(false)}
       >
-        <FlowPlaybackProvider value={playbackValue}>
-          <ModelExplorerContent
-            showFlows={showFlows}
-            setShowFlows={setShowFlows}
-            isViewingCoverage={isViewingCoverage}
-            setIsViewingCoverage={setIsViewingCoverage}
-            showShortcuts={showShortcuts}
-            setShowShortcuts={setShowShortcuts}
-            navStack={navStack}
-            handleOpenDiagram={handleOpenDiagram}
-            handleDrillDownToDiagram={handleDrillDownToDiagram}
-            handleDrillUp={handleDrillUp}
-            handleCopyDrawio={handleCopyDrawio}
-            handleExport={handleExport}
-            copied={copied}
-            flows={flows}
-          />
-        </FlowPlaybackProvider>
-      </RecordingModeStateProvider>
+        <ModelExplorerContent
+          showFlows={showFlows}
+          setShowFlows={setShowFlows}
+          isViewingCoverage={isViewingCoverage}
+          setIsViewingCoverage={setIsViewingCoverage}
+          showShortcuts={showShortcuts}
+          setShowShortcuts={setShowShortcuts}
+          navStack={navStack}
+          handleOpenDiagram={handleOpenDiagram}
+          handleDrillDownToDiagram={handleDrillDownToDiagram}
+          handleDrillUp={handleDrillUp}
+          handleCopyDrawio={handleCopyDrawio}
+          handleExport={handleExport}
+          copied={copied}
+          flows={flows}
+        />
+      </FlowModeProvider>
     </div>
   );
 }

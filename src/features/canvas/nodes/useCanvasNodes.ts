@@ -14,7 +14,7 @@ import {
   isComponentAddedInActiveScene,
 } from "@/features/diagram";
 import { resolveNodeDescriptor, type NodeBuildContext } from "./node-types";
-import { useRecordingMode } from "../flow/RecordingModeContext";
+import { useFlowMode } from "../flow/FlowModeContext";
 import { buildCollapsedPanelIds, computeNodeVisibility } from "./nodeVisibility";
 import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
 
@@ -86,7 +86,7 @@ export function useCanvasNodes({
   isCompareMode = false,
   compareVisualByComponentId,
 }: UseCanvasNodesParams): Node[] {
-  const { isRecording, onRecordHandleClick } = useRecordingMode();
+  const { isRecording, onRecordHandleClick } = useFlowMode();
 
   const nodeCtxBase: NodeCtxBase | null = useMemo(() => {
     if (!diagram) return null;

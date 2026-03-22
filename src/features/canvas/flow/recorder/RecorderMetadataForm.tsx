@@ -1,6 +1,6 @@
 import type { KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
-import type { RecordingContext } from "../RecordingModeContext";
+import type { RecordingContext } from "../FlowModeContext";
 
 export interface RecorderMetadataFormProps {
   name: string;

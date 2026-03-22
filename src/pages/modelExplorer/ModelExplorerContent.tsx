@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { ReactFlowProvider } from "@xyflow/react";
@@ -6,10 +6,13 @@ import { toast } from "sonner";
 import { ArrowLeft, Check, Clipboard, Download, GitBranch, CircleHelp, FolderTree } from "lucide-react";
 import ShortcutsModal from "@/components/ShortcutsModal";
 import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
-import { useRecordingMode } from "@/features/canvas/flow/RecordingModeContext";
-import { useFlowPlayback } from "@/features/canvas/flow/FlowPlaybackContext";
+import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
+import type { BranchOwnerInfo, RecordingContext } from "@/features/canvas/flow/FlowModeContext";
 import { isDiagramCompareMode, useActiveDiagram, type Flow } from "@/features/diagram";
 import type { ModelExplorerContentProps } from "./types";
+
+const TRUNK_CONTEXT: RecordingContext = { mode: "trunk" };
+const EMPTY_BRANCH_MAP = new Map<string, BranchOwnerInfo>();
 
 export function ModelExplorerContent({
   showFlows,
@@ -29,18 +32,81 @@ export function ModelExplorerContent({
 }: ModelExplorerContentProps) {
   const { t } = useTranslation();
   const diagram = useActiveDiagram();
+  const flowMode = useFlowMode();
+  const playbackState = flowMode.mode.kind === "playing" ? flowMode.mode : null;
+  const activeFlow = playbackState?.flow ?? null;
+  const currentStepId = playbackState?.currentStepId ?? null;
+  const recordingState = flowMode.mode.kind === "recording" ? flowMode.mode : null;
+  const editingFlowId = recordingState?.editingFlowId ?? null;
+
   const {
     isRecording,
-    editingFlowId,
+    isIdle,
+    isPlaying,
+    currentStep,
+    isCondition,
+    canGoBack,
+    canGoForward,
+    play,
+    exitPlay,
+    goBack,
+    goNext,
+    chooseBranch,
     startRecording,
     cancelRecording,
     finalizeRecording,
     editFlow,
-    ...recordingProps
-  } = useRecordingMode();
-  const { activeFlow, currentStepId, currentStep, isPlaying, isCondition, canGoBack, canGoForward, play, exit, goBack, goNext, chooseBranch } = useFlowPlayback();
+    recordingStepsForPanel,
+    setRecordingContext,
+    setRecordingName,
+    setRecordingDescription,
+    onAddTag,
+    onRemoveTag,
+    onUpdateStepDescription,
+    onUpdateStepDuration,
+    onUpdateStepPayload,
+    onUpdateStepPayloadDirection,
+    onUpdateStepIsAsync,
+    onDeleteStep,
+    onReorderSteps,
+    onConvertStepToCondition,
+    onUpdateConditionLabel,
+    onAddBranchLabel,
+    onRemoveBranchLabel,
+    onUpdateBranchLabel,
+    onAddConditionStep,
+    onEnterBranchRecording,
+    onOpenBranchSelect,
+  } = flowMode;
 
-  const canvasInteractionLocked = isRecording || isPlaying || isDiagramCompareMode(diagram);
+  useEffect(() => {
+    if (isPlaying) setShowFlows(false);
+  }, [isPlaying, setShowFlows]);
+
+  useEffect(() => {
+    if (flowMode.mode.kind !== "playing") return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        exitPlay();
+        return;
+      }
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        goBack();
+        return;
+      }
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        if (!isCondition) goNext();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [flowMode.mode.kind, isCondition, exitPlay, goBack, goNext]);
+
+  const canvasInteractionLocked = !isIdle || isDiagramCompareMode(diagram);
+
   const compareModeBlocksRecorder = isDiagramCompareMode(diagram);
 
   const startRecordingWhenAllowed = useCallback(() => {
@@ -63,6 +129,13 @@ export function ModelExplorerContent({
   );
   const [diagramSidebarOpen, setDiagramSidebarOpen] = useState(false);
 
+  const recordingContext = recordingState?.context ?? TRUNK_CONTEXT;
+  const recordingName = recordingState?.name ?? "";
+  const recordingDescription = recordingState?.description ?? "";
+  const recordingTags = recordingState?.tags ?? [];
+  const recordingSteps = recordingState?.steps ?? [];
+  const branchOwnership = recordingState?.branchOwnership ?? EMPTY_BRANCH_MAP;
+
   return (
     <>
       <div className="border-b border-border bg-card shrink-0 mt-16">
@@ -71,7 +144,7 @@ export function ModelExplorerContent({
             <button
               type="button"
               disabled={canvasInteractionLocked}
-              onClick={() => setDiagramSidebarOpen((v) => !v)}
+              onClick={() => setDiagramSidebarOpen((open) => !open)}
               className={`rounded-md p-1 text-muted-foreground transition-colors ${
                 canvasInteractionLocked
                   ? "opacity-50"
@@ -154,8 +227,8 @@ export function ModelExplorerContent({
               diagramSidebarOpen={diagramSidebarOpen}
               onDiagramSidebarOpenChange={setDiagramSidebarOpen}
               onPlayFlow={(flowId) => {
-                const flow = flows.find((f) => f.id === flowId);
-                if (flow) play(flow);
+                const targetFlow = flows.find((candidate) => candidate.id === flowId);
+                if (targetFlow) play(targetFlow);
               }}
             />
             {activeFlow && (
@@ -169,42 +242,42 @@ export function ModelExplorerContent({
                 onGoNext={goNext}
                 onGoBack={goBack}
                 onChooseBranch={chooseBranch}
-                onExit={exit}
+                onExit={exitPlay}
               />
             )}
           </div>
         </ReactFlowProvider>
         {isRecording && (
           <FlowRecorderPanel
-            recordingContext={recordingProps.recordingContext}
-            setRecordingContext={recordingProps.setRecordingContext}
-            name={recordingProps.recordingName}
-            onNameChange={recordingProps.setRecordingName}
-            description={recordingProps.recordingDescription}
-            onDescriptionChange={recordingProps.setRecordingDescription}
-            tags={recordingProps.recordingTags}
-            onAddTag={recordingProps.onAddTag}
-            onRemoveTag={recordingProps.onRemoveTag}
-            steps={recordingProps.recordingStepsForPanel}
-            recordingSteps={recordingProps.recordingSteps}
-            branchOwnership={recordingProps.branchOwnership}
+            recordingContext={recordingContext}
+            setRecordingContext={setRecordingContext}
+            name={recordingName}
+            onNameChange={setRecordingName}
+            description={recordingDescription}
+            onDescriptionChange={setRecordingDescription}
+            tags={recordingTags}
+            onAddTag={onAddTag}
+            onRemoveTag={onRemoveTag}
+            steps={recordingStepsForPanel}
+            recordingSteps={recordingSteps}
+            branchOwnership={branchOwnership}
             onCancel={cancelRecording}
             onFinalize={finalizeRecording}
-            onUpdateStepDescription={recordingProps.onUpdateStepDescription}
-            onUpdateStepDuration={recordingProps.onUpdateStepDuration}
-            onUpdateStepPayload={recordingProps.onUpdateStepPayload}
-            onUpdateStepPayloadDirection={recordingProps.onUpdateStepPayloadDirection}
-            onUpdateStepIsAsync={recordingProps.onUpdateStepIsAsync}
-            onDeleteStep={recordingProps.onDeleteStep}
-            onReorderSteps={recordingProps.onReorderSteps}
-            onConvertStepToCondition={recordingProps.onConvertStepToCondition}
-            onUpdateConditionLabel={recordingProps.onUpdateConditionLabel}
-            onAddBranchLabel={recordingProps.onAddBranchLabel}
-            onRemoveBranchLabel={recordingProps.onRemoveBranchLabel}
-            onUpdateBranchLabel={recordingProps.onUpdateBranchLabel}
-            onAddConditionStep={recordingProps.onAddConditionStep}
-            onEnterBranchRecording={recordingProps.onEnterBranchRecording}
-            onOpenBranchSelect={recordingProps.onOpenBranchSelect}
+            onUpdateStepDescription={onUpdateStepDescription}
+            onUpdateStepDuration={onUpdateStepDuration}
+            onUpdateStepPayload={onUpdateStepPayload}
+            onUpdateStepPayloadDirection={onUpdateStepPayloadDirection}
+            onUpdateStepIsAsync={onUpdateStepIsAsync}
+            onDeleteStep={onDeleteStep}
+            onReorderSteps={onReorderSteps}
+            onConvertStepToCondition={onConvertStepToCondition}
+            onUpdateConditionLabel={onUpdateConditionLabel}
+            onAddBranchLabel={onAddBranchLabel}
+            onRemoveBranchLabel={onRemoveBranchLabel}
+            onUpdateBranchLabel={onUpdateBranchLabel}
+            onAddConditionStep={onAddConditionStep}
+            onEnterBranchRecording={onEnterBranchRecording}
+            onOpenBranchSelect={onOpenBranchSelect}
             isEditing={!!editingFlowId}
           />
         )}
@@ -215,7 +288,7 @@ export function ModelExplorerContent({
             onStartRecording={startRecordingWhenAllowed}
             onEditFlow={editFlowWhenAllowed}
             isViewingCoverage={isViewingCoverage}
-            onToggleCoverage={() => setIsViewingCoverage((v) => !v)}
+            onToggleCoverage={() => setIsViewingCoverage((viewing) => !viewing)}
             panelActionsLocked={compareModeBlocksRecorder}
             panelActionsLockedTitle={t("diagramNav.unavailableWhileRecordingOrPlayback")}
           />

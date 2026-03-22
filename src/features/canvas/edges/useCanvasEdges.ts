@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { Edge } from "@xyflow/react";
 import type { Connection, Diagram, FlowStep } from "@/features/diagram";
 import { resolveCanvasSnapshot } from "@/features/diagram";
-import { useRecordingMode } from "../flow/RecordingModeContext";
+import { useFlowMode } from "../flow/FlowModeContext";
 import { buildEdge, filterVisibleConnections } from "./edgeBuilding";
 import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
 
@@ -33,7 +33,7 @@ export function useCanvasEdges({
   recordingInfo,
   coverage,
 }: UseCanvasEdgesParams): Edge[] {
-  const { isRecording } = useRecordingMode();
+  const { isRecording } = useFlowMode();
   return useMemo(() => {
     if (!diagram) return [];
 

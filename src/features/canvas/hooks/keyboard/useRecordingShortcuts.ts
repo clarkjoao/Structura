@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useRecordingMode } from "../../flow/RecordingModeContext";
+import { useFlowMode } from "../../flow/FlowModeContext";
 import type { KeyHandler } from "./helpers";
 
 /**
@@ -7,7 +7,7 @@ import type { KeyHandler } from "./helpers";
  * Returns a handler that consumes ALL events when recording (blocking other shortcuts).
  */
 export function useRecordingShortcuts(): KeyHandler {
-  const { isRecording, onRecordUndo } = useRecordingMode();
+  const { isRecording, onRecordUndo } = useFlowMode();
 
   return useCallback(
     (e: KeyboardEvent): boolean => {

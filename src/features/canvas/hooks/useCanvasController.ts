@@ -16,7 +16,7 @@ import { useCanvasHandleReorder } from "../edges/useCanvasHandleReorder";
 import { useCanvasEffects } from "./useCanvasEffects";
 import { useLocalNodes } from "./useLocalNodes";
 import { useConnectionInternalsSync } from "./useConnectionInternalsSync";
-import { useRecordingMode } from "../flow/RecordingModeContext";
+import { useFlowMode } from "../flow/FlowModeContext";
 import { useCanvasCompareMode } from "./useCanvasCompareMode";
 import { useCanvasDiagramNavigation } from "./useCanvasDiagramNavigation";
 import { useCanvasCompareModeGuards } from "./useCanvasCompareModeGuards";
@@ -38,7 +38,7 @@ export function useCanvasController({
   const reactFlowInstance = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
   const reactFlowWrapperRef = useRef<HTMLDivElement>(null);
-  const { isRecording } = useRecordingMode();
+  const { isRecording } = useFlowMode();
   const [showScenes, setShowScenes] = useState(false);
   const [focusTitleTrigger, setFocusTitleTrigger] = useState(0);
 

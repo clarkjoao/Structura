@@ -3,8 +3,7 @@
  */
 import { useCallback } from "react";
 import { isDiagramCompareMode, useActiveDiagram } from "@/features/diagram";
-import { useRecordingMode } from "../flow/RecordingModeContext";
-import { useFlowPlayback } from "../flow/FlowPlaybackContext";
+import { useFlowMode } from "../flow/FlowModeContext";
 
 interface UseCanvasHandleReorderParams {
   effectiveHandleOrder: Record<string, { incoming: string[]; outgoing: string[] }>;
@@ -16,8 +15,7 @@ export function useCanvasHandleReorder({
   updateHandleOrder,
 }: UseCanvasHandleReorderParams) {
   const diagram = useActiveDiagram();
-  const { isRecording } = useRecordingMode();
-  const { isPlaying } = useFlowPlayback();
+  const { isRecording, isPlaying } = useFlowMode();
   const onReorderHandle = useCallback(
     (
       nodeId: string,

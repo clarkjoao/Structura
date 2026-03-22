@@ -9,7 +9,7 @@ import type {
 } from "@/features/diagram";
 import { isPanelComponent, isReactFlowParentPanelType } from "@/features/diagram";
 import { getViewportCenter } from "../viewport-utils";
-import { useRecordingMode } from "../flow/RecordingModeContext";
+import { useFlowMode } from "../flow/FlowModeContext";
 import { exportDrawio } from "@/lib/export-service";
 import { useCopyPasteShortcuts } from "./keyboard/useCopyPasteShortcuts";
 import { getSelectedNodes, isInputFocused, isModKeyPressed } from "./keyboard/helpers";
@@ -93,7 +93,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       }) satisfies Record<string, { type: ComponentType; name: string }>,
     [t],
   );
-  const { isRecording, onRecordUndo } = useRecordingMode();
+  const { isRecording, onRecordUndo } = useFlowMode();
   const {
     diagram,
     setCompareScene,

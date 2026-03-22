@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { X, Plus, Play, Trash2, Pencil, Copy, Check, Layers, BarChart2 } from "lucide-react";
+import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
 import { useFlows, useDiagramActions, useActiveDiagramId, useActiveDiagram, getStepCount, getFlowParticipants } from "@/features/diagram";
 import type { Flow, FlowStep } from "@/features/diagram";
 import { validateFlow, type BrokenStep } from "./validateFlow";
@@ -29,6 +30,8 @@ const FlowPanel = ({
   panelActionsLockedTitle,
 }: Props) => {
   const { t } = useTranslation();
+  const { isIdle } = useFlowMode();
+  const flowOrCompareLocked = !isIdle || panelActionsLocked;
   const flows = useFlows();
   const diagram = useActiveDiagram();
   const activeDiagramId = useActiveDiagramId();
@@ -102,9 +105,9 @@ const FlowPanel = ({
           {onToggleCoverage && (
             <button
               type="button"
-              disabled={panelActionsLocked}
+              disabled={flowOrCompareLocked}
               onClick={onToggleCoverage}
-              title={panelActionsLocked ? panelActionsLockedTitle : t("flows.coverageTitle")}
+              title={flowOrCompareLocked ? panelActionsLockedTitle : t("flows.coverageTitle")}
               className={`text-xs rounded-md px-2 py-0.5 font-medium transition-colors flex items-center gap-1 disabled:opacity-40 disabled:pointer-events-none ${isViewingCoverage ? "bg-emerald-500/20 text-emerald-400" : "text-muted-foreground hover:text-foreground"}`}
             >
               <BarChart2 className="h-3.5 w-3.5" /> {t("flowPanel.coverage")}
@@ -120,7 +123,7 @@ const FlowPanel = ({
         <div className="px-3 pt-2 flex flex-wrap gap-1">
           <button
             type="button"
-            disabled={panelActionsLocked}
+            disabled={flowOrCompareLocked}
             onClick={() => setTagFilter(null)}
             className={`text-[9px] rounded-full px-2 py-0.5 font-medium transition-colors disabled:opacity-40 disabled:pointer-events-none ${
               tagFilter === null
@@ -134,7 +137,7 @@ const FlowPanel = ({
             <button
               type="button"
               key={tag}
-              disabled={panelActionsLocked}
+              disabled={flowOrCompareLocked}
               onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
               className={`text-[9px] rounded-full px-2 py-0.5 font-medium transition-colors disabled:opacity-40 disabled:pointer-events-none ${
                 tagFilter === tag
@@ -175,19 +178,19 @@ const FlowPanel = ({
                 <div className="flex items-center gap-1 shrink-0">
                   <button
                     type="button"
-                    disabled={panelActionsLocked}
+                    disabled={flowOrCompareLocked}
                     onClick={() => handleDuplicate(flow)}
                     className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 disabled:pointer-events-none"
-                    title={panelActionsLocked ? panelActionsLockedTitle : t("flows.duplicateTitle")}
+                    title={flowOrCompareLocked ? panelActionsLockedTitle : t("flows.duplicateTitle")}
                   >
                     <Layers className="h-3.5 w-3.5" />
                   </button>
                   <button
                     type="button"
-                    disabled={panelActionsLocked}
+                    disabled={flowOrCompareLocked}
                     onClick={() => handleCopy(flow)}
                     className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 disabled:pointer-events-none"
-                    title={panelActionsLocked ? panelActionsLockedTitle : t("flows.copyMermaidTitle")}
+                    title={flowOrCompareLocked ? panelActionsLockedTitle : t("flows.copyMermaidTitle")}
                   >
                     {copiedId === flow.id
                       ? <Check className="h-3.5 w-3.5 text-emerald-500" />
@@ -195,28 +198,28 @@ const FlowPanel = ({
                   </button>
                   <button
                     type="button"
-                    disabled={panelActionsLocked}
+                    disabled={flowOrCompareLocked}
                     onClick={() => onEditFlow(flow)}
                     className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 disabled:pointer-events-none"
-                    title={panelActionsLocked ? panelActionsLockedTitle : t("flows.editTitle")}
+                    title={flowOrCompareLocked ? panelActionsLockedTitle : t("flows.editTitle")}
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
                   <button
                     type="button"
-                    disabled={panelActionsLocked}
+                    disabled={flowOrCompareLocked}
                     onClick={() => handlePlayWithValidation(flow)}
                     className="text-primary hover:text-primary/80 transition-colors disabled:opacity-40 disabled:pointer-events-none"
-                    title={panelActionsLocked ? panelActionsLockedTitle : t("flows.playTitle")}
+                    title={flowOrCompareLocked ? panelActionsLockedTitle : t("flows.playTitle")}
                   >
                     <Play className="h-4 w-4" />
                   </button>
                   <button
                     type="button"
-                    disabled={panelActionsLocked}
+                    disabled={flowOrCompareLocked}
                     onClick={() => removeFlow(flow.id)}
                     className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-40 disabled:pointer-events-none"
-                    title={panelActionsLocked ? panelActionsLockedTitle : t("flows.removeTitle")}
+                    title={flowOrCompareLocked ? panelActionsLockedTitle : t("flows.removeTitle")}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -234,9 +237,9 @@ const FlowPanel = ({
 
         <button
           type="button"
-          disabled={panelActionsLocked}
+          disabled={flowOrCompareLocked}
           onClick={onStartRecording}
-          title={panelActionsLocked ? panelActionsLockedTitle : undefined}
+          title={flowOrCompareLocked ? panelActionsLockedTitle : undefined}
           className="flex items-center gap-1.5 w-full justify-center rounded-md border border-dashed border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/20 transition-all disabled:opacity-40 disabled:pointer-events-none"
         >
           <Plus className="h-3.5 w-3.5" /> {t("flowPanel.newFlow")}

@@ -18,8 +18,7 @@ import {
   type MergePreview,
   type SceneDiff,
 } from "@/features/diagram";
-import { useRecordingMode } from "@/features/canvas/flow/RecordingModeContext";
-import { useFlowPlayback } from "@/features/canvas/flow/FlowPlaybackContext";
+import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
 import { cn } from "@/lib/utils";
 import { MergeSceneDialog } from "./MergeSceneDialog";
 
@@ -378,9 +377,8 @@ export function SceneDrawer({
 export function ConnectedSceneDrawer({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const diagram = useActiveDiagram();
-  const { isRecording } = useRecordingMode();
-  const { isPlaying } = useFlowPlayback();
-  const scenesLocked = isRecording || isPlaying;
+  const { isIdle } = useFlowMode();
+  const scenesLocked = !isIdle;
   const {
     addScene,
     removeScene,
