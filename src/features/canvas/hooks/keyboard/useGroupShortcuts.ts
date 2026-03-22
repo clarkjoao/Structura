@@ -1,46 +1,109 @@
 import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import type { ReactFlowInstance } from "@xyflow/react";
-import { isReactFlowParentPanelType } from "@/features/diagram";
-import { isModKeyPressed, type KeyHandler } from "./helpers";
+import { toast } from "sonner";
+import type { Diagram } from "@/features/diagram";
+import {
+  isDiagramCompareMode,
+  isPanelComponent,
+  isReactFlowParentPanelType,
+  resolveCanvasSnapshot,
+} from "@/features/diagram";
+import { getSelectedNodes, isModKeyPressed, type KeyHandler } from "./helpers";
+
+type ResolvedCanvasSnapshot = ReturnType<typeof resolveCanvasSnapshot>;
 
 interface UseGroupShortcutsParams {
+  diagram: Diagram | null | undefined;
   reactFlowInstance: ReactFlowInstance;
+  selectedNodeId: string | null;
   groupNodes: (ids: string[]) => string | null;
   ungroupNodes: (panelId: string) => void;
+  setParent: (childId: string, parentId: string | null) => void;
+  updateNodeLayout: (
+    elementId: string,
+    position: { x: number; y: number },
+    dimensions?: { width: number; height: number },
+  ) => void;
+  resolvedSnapshot: ResolvedCanvasSnapshot | null;
 }
 
 /**
  * Cmd+G — group selected nodes into a panel
- * Cmd+Shift+G — ungroup panel
+ * Cmd+Shift+G — ungroup panel or remove child from panel (when parent is a panel)
  */
 export function useGroupShortcuts({
+  diagram,
   reactFlowInstance,
+  selectedNodeId,
   groupNodes,
   ungroupNodes,
+  setParent,
+  updateNodeLayout,
+  resolvedSnapshot,
 }: UseGroupShortcutsParams): KeyHandler {
+  const { t } = useTranslation();
+
   return useCallback(
     (e: KeyboardEvent): boolean => {
       const mod = isModKeyPressed(e);
-      if (!mod || e.key !== "g") return false;
+      if (!mod) return false;
+      if (e.key !== "g" && e.key !== "G") return false;
 
       e.preventDefault();
 
-      // Cmd/Ctrl+Shift+G — ungroup panel
+      // Cmd/Ctrl+Shift+G — ungroup panel or detach child from panel
       if (e.shiftKey) {
-        const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
-        if (selected.length === 1 && isReactFlowParentPanelType(selected[0].type as string)) {
-          ungroupNodes(selected[0].id);
+        const selected = getSelectedNodes(reactFlowInstance, selectedNodeId);
+        if (selected.length === 1 && resolvedSnapshot) {
+          const node = selected[0];
+          if (isReactFlowParentPanelType(node.type as string)) {
+            ungroupNodes(node.id);
+          } else {
+            const comp = resolvedSnapshot.components[node.id];
+            const parentComp = comp?.parentId ? resolvedSnapshot.components[comp.parentId] : undefined;
+            if (comp?.parentId && parentComp && isPanelComponent(parentComp)) {
+              const parentLayout = resolvedSnapshot.nodeLayouts[comp.parentId];
+              const childLayout = resolvedSnapshot.nodeLayouts[node.id];
+              if (parentLayout && childLayout) {
+                setParent(node.id, null);
+                updateNodeLayout(node.id, {
+                  x: childLayout.x + parentLayout.x,
+                  y: childLayout.y + parentLayout.y,
+                });
+              }
+            }
+          }
         }
         return true;
       }
 
       // Cmd/Ctrl+G — group selected
+      if (
+        diagram &&
+        ((diagram.activeSceneId && diagram.scenes?.[diagram.activeSceneId]) ||
+          isDiagramCompareMode(diagram))
+      ) {
+        toast.error(t("scenes.groupBlockedInScene"));
+        return true;
+      }
+
       const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
       if (selected.length >= 2) {
         groupNodes(selected.map((n) => n.id));
       }
       return true;
     },
-    [reactFlowInstance, groupNodes, ungroupNodes],
+    [
+      diagram,
+      reactFlowInstance,
+      selectedNodeId,
+      groupNodes,
+      ungroupNodes,
+      setParent,
+      updateNodeLayout,
+      resolvedSnapshot,
+      t,
+    ],
   );
 }

@@ -1,20 +1,21 @@
-import { useEffect, useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { ReactFlowInstance, Node } from "@xyflow/react";
+import type { ReactFlowInstance } from "@xyflow/react";
 import type {
   Diagram,
   ComponentType,
   Component,
   ServiceDefinition,
 } from "@/features/diagram";
-import { isPanelComponent, isReactFlowParentPanelType } from "@/features/diagram";
+import { resolveCanvasSnapshot } from "@/features/diagram";
 import { getViewportCenter } from "../viewport-utils";
-import { useFlowMode } from "../flow/FlowModeContext";
 import { exportDrawio } from "@/lib/export-service";
 import { useCopyPasteShortcuts } from "./keyboard/useCopyPasteShortcuts";
-import { getSelectedNodes, isInputFocused, isModKeyPressed } from "./keyboard/helpers";
-import { toast } from "sonner";
-import { isDiagramCompareMode, resolveCanvasSnapshot } from "@/features/diagram";
+import { isInputFocused, isModKeyPressed } from "./keyboard/helpers";
+import { useRecordingShortcuts } from "./keyboard/useRecordingShortcuts";
+import { useSelectionShortcuts } from "./keyboard/useSelectionShortcuts";
+import { useUndoRedoShortcuts } from "./keyboard/useUndoRedoShortcuts";
+import { useGroupShortcuts } from "./keyboard/useGroupShortcuts";
 
 interface UseCanvasKeyboardParams {
   diagram: Diagram | null | undefined;
@@ -36,7 +37,11 @@ interface UseCanvasKeyboardParams {
   groupNodes: (ids: string[]) => string | null;
   ungroupNodes: (panelId: string) => void;
   setParent: (childId: string, parentId: string | null) => void;
-  updateNodeLayout: (elementId: string, position: { x: number; y: number }, dimensions?: { width: number; height: number }) => void;
+  updateNodeLayout: (
+    elementId: string,
+    position: { x: number; y: number },
+    dimensions?: { width: number; height: number },
+  ) => void;
   copyToClipboard: (ids: string[]) => void;
   pasteFromClipboard: (position?: { x: number; y: number }) => void;
   clearClipboard: () => void;
@@ -87,7 +92,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       }) satisfies Record<string, { type: ComponentType; name: string }>,
     [t],
   );
-  const { isRecording, onRecordUndo } = useFlowMode();
+
   const {
     diagram,
     setCompareScene,
@@ -125,6 +130,11 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     onOpenCommandPalette,
   } = params;
 
+  const resolvedSnapshot = useMemo(
+    () => (diagram ? resolveCanvasSnapshot(diagram) : null),
+    [diagram],
+  );
+
   const exportDrawioXml = useCallback(
     (ids: string[]): string => {
       if (!diagram) return "";
@@ -143,23 +153,34 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     exportDrawioXml,
   });
 
-  const clearSelection = useCallback(() => {
-    clearClipboard();
-    reactFlowInstance.setNodes((nds: Node[]) =>
-      nds.map((n) => ({ ...n, selected: false })),
-    );
-    setSelectedNodeId(null);
-    setSelectedNodeIds(new Set());
-    setSelectedEdgeId(null);
-    setContextMenu(null);
-  }, [
-    clearClipboard,
+  const recordingHandler = useRecordingShortcuts();
+
+  const selectionHandler = useSelectionShortcuts({
+    diagram,
+    selectedNodeId,
+    selectedEdgeId,
     reactFlowInstance,
     setSelectedNodeId,
     setSelectedNodeIds,
     setSelectedEdgeId,
     setContextMenu,
-  ]);
+    clearClipboard,
+    removeComponent,
+    removeConnection,
+  });
+
+  const undoRedoHandler = useUndoRedoShortcuts({ undo, redo });
+
+  const groupHandler = useGroupShortcuts({
+    diagram,
+    reactFlowInstance,
+    selectedNodeId,
+    groupNodes,
+    ungroupNodes,
+    setParent,
+    updateNodeLayout,
+    resolvedSnapshot,
+  });
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -175,14 +196,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
 
       if (!diagram) return;
 
-      // Recording mode: only Backspace/Delete triggers undo
-      if (isRecording) {
-        if (e.key === KEY.DELETE || e.key === KEY.BACKSPACE) {
-          e.preventDefault();
-          onRecordUndo?.();
-        }
-        return;
-      }
+      if (recordingHandler(e)) return;
 
       if (e.key === KEY.ESCAPE && isCompareMode) {
         if (isPlaying) {
@@ -213,113 +227,19 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
         }
       }
 
-      // Block shortcuts when flow panel is open, playing a flow, or comparing versions (same as play/record lock)
       if (isFlowPanelOpen || isPlaying || isCompareMode) return;
 
-      // Block canvas shortcuts while search or command palette is open
       if (isSearchOpen || isCommandPaletteOpen) return;
 
       if (handleCopyPaste(e)) return;
 
+      if (selectionHandler(e)) return;
+
+      if (undoRedoHandler(e)) return;
+
+      if (groupHandler(e)) return;
+
       const mod = isModKeyPressed(e);
-
-      // Escape — clear selection and context
-      if (e.key === KEY.ESCAPE) {
-        e.preventDefault();
-        clearSelection();
-        return;
-      }
-
-      // Cmd/Ctrl+A — select all
-      if (mod && e.key === KEY.A) {
-        if (isCompareMode) {
-          e.preventDefault();
-          return;
-        }
-        e.preventDefault();
-        reactFlowInstance.setNodes((nds: Node[]) => {
-          const updated = nds.map((n) => ({ ...n, selected: true }));
-          setSelectedNodeIds(new Set(updated.map((n) => n.id)));
-          setSelectedNodeId(updated[0]?.id ?? null);
-          return updated;
-        });
-        return;
-      }
-
-      // Delete / Backspace — remove selected nodes or edge
-      if (e.key === KEY.DELETE || e.key === KEY.BACKSPACE) {
-        e.preventDefault();
-        const selected = getSelectedNodes(reactFlowInstance, selectedNodeId);
-        if (selected.length > 0) {
-          selected.forEach((n) => removeComponent(n.id));
-          setSelectedNodeId(null);
-          setSelectedNodeIds(new Set());
-        }
-        if (selectedEdgeId) {
-          removeConnection(selectedEdgeId);
-          setSelectedEdgeId(null);
-        }
-        return;
-      }
-
-      // Cmd/Ctrl+Shift+Z — redo
-      if (mod && e.shiftKey && (e.key === KEY.Z || e.key === "Z")) {
-        e.preventDefault();
-        redo();
-        return;
-      }
-
-      // Cmd/Ctrl+Z — undo
-      if (mod && e.key === KEY.Z) {
-        e.preventDefault();
-        undo();
-        return;
-      }
-
-      // Cmd/Ctrl+Shift+G — ungroup panel or remove from group
-      if (mod && e.shiftKey && e.key === KEY.G) {
-        e.preventDefault();
-        const selected = getSelectedNodes(reactFlowInstance, selectedNodeId);
-        if (selected.length === 1) {
-          const node = selected[0];
-          if (isReactFlowParentPanelType(node.type as string)) {
-            ungroupNodes(node.id);
-          } else {
-            const r = resolveCanvasSnapshot(diagram);
-            const comp = r.components[node.id];
-            const parentComp = comp?.parentId ? r.components[comp.parentId] : undefined;
-            if (comp?.parentId && parentComp && isPanelComponent(parentComp)) {
-              const parentLayout = r.nodeLayouts[comp.parentId];
-              const childLayout = r.nodeLayouts[node.id];
-              if (parentLayout && childLayout) {
-                setParent(node.id, null);
-                updateNodeLayout(node.id, {
-                  x: childLayout.x + parentLayout.x,
-                  y: childLayout.y + parentLayout.y,
-                });
-              }
-            }
-          }
-        }
-        return;
-      }
-
-      // Cmd/Ctrl+G — group selected
-      if (mod && e.key === KEY.G) {
-        e.preventDefault();
-        if (
-          (diagram.activeSceneId && diagram.scenes?.[diagram.activeSceneId]) ||
-          isDiagramCompareMode(diagram)
-        ) {
-          toast.error(t("scenes.groupBlockedInScene"));
-          return;
-        }
-        const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
-        if (selected.length >= 2) {
-          groupNodes(selected.map((n) => n.id));
-        }
-        return;
-      }
 
       // Cmd/Ctrl+F — open search
       if (mod && (e.key === KEY.F || e.key === "F")) {
@@ -351,10 +271,6 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
 
       // Cmd/Ctrl+1–4 — add C4 component
       if (mod && c4ShortcutMap[e.key]) {
-        if (isCompareMode) {
-          e.preventDefault();
-          return;
-        }
         e.preventDefault();
         const { type, name } = c4ShortcutMap[e.key];
         const pos = getViewportCenter(reactFlowInstance, isPanelOpen);
@@ -369,41 +285,23 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     diagram,
     setCompareScene,
     isCompareMode,
-    serviceRegistry,
-    selectedNodeId,
-    selectedEdgeId,
-    reactFlowInstance,
-    reactFlowWrapperRef,
-    isRecording,
-    isFlowPanelOpen,
     isPlaying,
+    isFlowPanelOpen,
     isSearchOpen,
     isScenesDrawerOpen,
     onCloseScenesDrawer,
     isCommandPaletteOpen,
-    onRecordUndo,
+    recordingHandler,
     handleCopyPaste,
-    clearSelection,
-    setSelectedNodeId,
-    setSelectedNodeIds,
-    setSelectedEdgeId,
-    setContextMenu,
-    removeComponent,
-    removeConnection,
-    groupNodes,
-    ungroupNodes,
-    setParent,
-    updateNodeLayout,
-    copyToClipboard,
-    pasteFromClipboard,
-    undo,
-    redo,
-    addComponent,
-    isPanelOpen,
+    selectionHandler,
+    undoRedoHandler,
+    groupHandler,
     onOpenSearch,
     onToggleDiagramSidebar,
     onOpenCommandPalette,
     c4ShortcutMap,
-    t,
+    reactFlowInstance,
+    isPanelOpen,
+    addComponent,
   ]);
 }

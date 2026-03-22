@@ -6,6 +6,7 @@ import { isModKeyPressed, getSelectedNodes, type KeyHandler } from "./helpers";
 interface UseSelectionShortcutsParams {
   diagram: Diagram | null | undefined;
   selectedNodeId: string | null;
+  selectedEdgeId: string | null;
   reactFlowInstance: ReactFlowInstance;
   setSelectedNodeId: (id: string | null) => void;
   setSelectedNodeIds: (ids: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
@@ -13,16 +14,18 @@ interface UseSelectionShortcutsParams {
   setContextMenu: (v: null) => void;
   clearClipboard: () => void;
   removeComponent: (id: string) => void;
+  removeConnection: (id: string) => void;
 }
 
 /**
  * Escape — clear selection
- * Cmd+A — select all
- * Delete/Backspace — remove selected nodes
+ * Cmd+A — select all nodes
+ * Delete/Backspace — remove selected nodes and selected edge
  */
 export function useSelectionShortcuts({
   diagram,
   selectedNodeId,
+  selectedEdgeId,
   reactFlowInstance,
   setSelectedNodeId,
   setSelectedNodeIds,
@@ -30,6 +33,7 @@ export function useSelectionShortcuts({
   setContextMenu,
   clearClipboard,
   removeComponent,
+  removeConnection,
 }: UseSelectionShortcutsParams): KeyHandler {
   return useCallback(
     (e: KeyboardEvent): boolean => {
@@ -62,14 +66,19 @@ export function useSelectionShortcuts({
         return true;
       }
 
-      // Delete / Backspace — remove selected
+      // Delete / Backspace — remove selected nodes or edge
       if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
         const selected = getSelectedNodes(reactFlowInstance, selectedNodeId);
-        if (selected.length === 0) return true;
-        selected.forEach((n) => removeComponent(n.id));
-        setSelectedNodeId(null);
-        setSelectedNodeIds(new Set());
+        if (selected.length > 0) {
+          selected.forEach((n) => removeComponent(n.id));
+          setSelectedNodeId(null);
+          setSelectedNodeIds(new Set());
+        }
+        if (selectedEdgeId) {
+          removeConnection(selectedEdgeId);
+          setSelectedEdgeId(null);
+        }
         return true;
       }
 
@@ -78,6 +87,7 @@ export function useSelectionShortcuts({
     [
       diagram,
       selectedNodeId,
+      selectedEdgeId,
       reactFlowInstance,
       setSelectedNodeId,
       setSelectedNodeIds,
@@ -85,6 +95,7 @@ export function useSelectionShortcuts({
       setContextMenu,
       clearClipboard,
       removeComponent,
+      removeConnection,
     ],
   );
 }
