@@ -10,6 +10,65 @@ const INTENT_ARROW: Record<ConnectionIntent, string> = {
   "async-message": "-->>",
 };
 
+function toAlias(name: string): string {
+  return (
+    name
+      .replace(/[^a-zA-Z0-9\s]/g, "")
+      .split(/\s+/)
+      .map((word) => word[0]?.toUpperCase() ?? "")
+      .join("")
+      .slice(0, 6) || "P"
+  );
+}
+
+function buildParticipantAliasMap(
+  steps: FlowStep[],
+  components: Record<string, Component>,
+  connections: Record<string, Connection>,
+): Map<string, string> {
+  const namesOrdered: string[] = [];
+  const seen = new Set<string>();
+
+  const addName = (name: string) => {
+    if (!seen.has(name)) {
+      seen.add(name);
+      namesOrdered.push(name);
+    }
+  };
+
+  for (const step of steps) {
+    if (step.componentId) {
+      const name = components[step.componentId]?.name;
+      if (name) addName(name);
+    }
+    if (step.connectionId) {
+      const conn = connections[step.connectionId];
+      if (conn) {
+        const srcName = components[conn.sourceId]?.name;
+        const tgtName = components[conn.targetId]?.name;
+        if (srcName) addName(srcName);
+        if (tgtName) addName(tgtName);
+      }
+    }
+  }
+
+  const aliasMap = new Map<string, string>();
+  const usedAliases = new Set<string>();
+
+  for (const name of namesOrdered) {
+    let alias = toAlias(name);
+    let counter = 2;
+    while (usedAliases.has(alias)) {
+      alias = `${toAlias(name)}${counter}`;
+      counter += 1;
+    }
+    usedAliases.add(alias);
+    aliasMap.set(name, alias);
+  }
+
+  return aliasMap;
+}
+
 /**
  * Walk the flow graph starting from entryStepId and produce Mermaid sequence diagram text.
  */
@@ -21,55 +80,89 @@ export function stepsToMermaid(
   const lines = ["sequenceDiagram"];
   const visited = new Set<string>();
 
-  function emitStep(step: FlowStep) {
+  const orderedSteps: FlowStep[] = [];
+  const collectVisited = new Set<string>();
+
+  function collectSteps(stepId: string) {
+    if (!stepId || collectVisited.has(stepId)) return;
+    collectVisited.add(stepId);
+    const step = flow.steps[stepId];
+    if (!step) return;
+    orderedSteps.push(step);
+    if (step.branches) {
+      step.branches.forEach((branch) => collectSteps(branch.nextId));
+    }
+    if (step.next) collectSteps(step.next);
+  }
+
+  if (flow.entryStepId) collectSteps(flow.entryStepId);
+
+  const aliasMap = buildParticipantAliasMap(orderedSteps, components, connections);
+
+  aliasMap.forEach((participantAlias, name) => {
+    lines.push(`  participant ${participantAlias} as ${name}`);
+  });
+
+  const alias = (name: string) => aliasMap.get(name) ?? name;
+
+  function emitStep(step: FlowStep, indent = "  ") {
     if (step.connectionId) {
-      const conn = connections[step.connectionId];
-      if (conn) {
-        const src = components[conn.sourceId]?.name ?? "?";
-        const tgt = components[conn.targetId]?.name ?? "?";
-        const arrow = step.isAsync ? "-)" : INTENT_ARROW[conn.intent ?? "call"];
-        lines.push(`  ${src}${arrow}${tgt}: ${conn.label}`);
+      const connection = connections[step.connectionId];
+      if (connection) {
+        const sourceName = components[connection.sourceId]?.name ?? "?";
+        const targetName = components[connection.targetId]?.name ?? "?";
+        const arrow = step.isAsync ? "-)" : INTENT_ARROW[connection.intent ?? "call"];
+        lines.push(`${indent}${alias(sourceName)}${arrow}${alias(targetName)}: ${connection.label}`);
         if (step.description) {
-          lines.push(`  Note over ${src}: ${step.description}`);
+          lines.push(`${indent}Note over ${alias(sourceName)}: ${step.description}`);
         }
         if (step.payload) {
-          if (step.payloadDirection === 'response') {
-            lines.push(`  Note over ${tgt},${src}: ← ${step.payload}`);
-          } else {
-            lines.push(`  Note over ${src},${tgt}: → ${step.payload}`);
-          }
+          const payloadNote =
+            step.payloadDirection === "response"
+              ? `${indent}Note over ${alias(targetName)},${alias(sourceName)}: ← ${step.payload}`
+              : `${indent}Note over ${alias(sourceName)},${alias(targetName)}: → ${step.payload}`;
+          lines.push(payloadNote);
         }
         if (step.duration) {
-          lines.push(`  Note right of ${tgt}: ${step.duration}`);
+          lines.push(`${indent}Note right of ${alias(targetName)}: ${step.duration}`);
         }
       }
     } else if (step.componentId) {
-      const name = components[step.componentId]?.name ?? "?";
-      lines.push(`  Note over ${name}: ${step.description || step.id}`);
+      const componentName = components[step.componentId]?.name ?? "?";
+      const content = step.note ?? step.description;
+      if (content) {
+        lines.push(`${indent}Note over ${alias(componentName)}: ${content}`);
+      }
+      if (step.payload) {
+        const payloadNote =
+          step.payloadDirection === "response"
+            ? `${indent}Note over ${alias(componentName)}: ← ${step.payload}`
+            : `${indent}Note over ${alias(componentName)}: → ${step.payload}`;
+        lines.push(payloadNote);
+      }
       if (step.duration) {
-        lines.push(`  Note right of ${name}: ${step.duration}`);
+        lines.push(`${indent}Note right of ${alias(componentName)}: ${step.duration}`);
       }
     }
   }
 
-  function walk(stepId: string) {
+  function walk(stepId: string, indent = "  ") {
     if (visited.has(stepId)) return;
     visited.add(stepId);
 
     const step = flow.steps[stepId];
     if (!step) return;
 
-    if (step.type === 'condition' && step.branches && step.branches.length > 0) {
-      lines.push(`  alt ${step.conditionLabel ?? "condition"}`);
-      step.branches.forEach((branch, i) => {
-        if (i > 0) lines.push(`  else ${branch.label}`);
-        else lines.push(`  Note over ${step.conditionLabel ?? "condition"}: ${branch.label}`);
-        walk(branch.nextId);
+    if (step.type === "condition" && step.branches && step.branches.length > 0) {
+      lines.push(`${indent}alt ${step.conditionLabel ?? "condition"}`);
+      step.branches.forEach((branch, branchIndex) => {
+        if (branchIndex > 0) lines.push(`${indent}else ${branch.label}`);
+        walk(branch.nextId, `${indent}  `);
       });
-      lines.push("  end");
+      lines.push(`${indent}end`);
     } else {
-      emitStep(step);
-      if (step.next) walk(step.next);
+      emitStep(step, indent);
+      if (step.next) walk(step.next, indent);
     }
   }
 
@@ -109,7 +202,7 @@ export function parseMermaidToSteps(
       const compId = compByName.get(name);
       const id = `parsed-${order}`;
       stepIds.push(id);
-      steps[id] = { id, type: 'action', componentId: compId, note };
+      steps[id] = { id, type: "action", componentId: compId, note };
       order++;
       continue;
     }
@@ -134,7 +227,7 @@ export function parseMermaidToSteps(
       stepIds.push(id);
       steps[id] = {
         id,
-        type: 'action',
+        type: "action",
         componentId: srcId,
         connectionId: connId,
         note: label,
