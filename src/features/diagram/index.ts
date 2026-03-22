@@ -32,6 +32,7 @@ export type {
   ModelDraft,
   Folder,
   Diagram,
+  SceneDiff,
 } from "./model/diagram.types";
 
 /** Default styles and helpers for connection intent/direction resolution */
@@ -51,6 +52,22 @@ export { applyHandleOrder } from "./utils/handle-order";
 
 /** Convert FlowStep[] ↔ Mermaid sequence diagram text */
 export { stepsToMermaid, parseMermaidToSteps } from "./utils/flow-mermaid";
+
+export {
+  resolveSceneSnapshot,
+  resolveCanvasSnapshot,
+  resolveCompareSnapshot,
+  diagramWithResolvedScene,
+  exportFilenameSlug,
+  canMoveNodeInSceneMode,
+  isComponentAddedInActiveScene,
+  isDiagramCompareMode,
+  buildCompareComponentVisuals,
+  buildCompareConnectionVisuals,
+  computeMergePreview,
+  sceneHasDiff,
+} from "./utils/scene.utils";
+export type { CompareSnapshotResult, CompareElementVisual, MergePreview } from "./utils/scene.utils";
 
 /** Type guards for the Component discriminated union */
 export {

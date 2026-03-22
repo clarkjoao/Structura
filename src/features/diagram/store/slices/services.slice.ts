@@ -39,6 +39,11 @@ export const servicesSlice = (
           Object.values(entry.snapshot.components).forEach((c) => {
             if (c.serviceId === id) c.serviceId = undefined;
           });
+          Object.values(entry.scenes ?? {}).forEach((sc) => {
+            Object.values(sc.addedComponents).forEach((c) => {
+              if (c.serviceId === id) c.serviceId = undefined;
+            });
+          });
         });
       });
     },
@@ -47,7 +52,10 @@ export const servicesSlice = (
       set((state) => {
         const d = state.diagrams[state.activeDiagramId!];
         if (!d) return;
-        const comp = d.snapshot.components[componentId];
+        const sid = d.activeSceneId ?? null;
+        const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+        const comp =
+          scene?.addedComponents[componentId] ?? d.snapshot.components[componentId];
         if (!comp) return;
         comp.serviceId = serviceId;
         if (!serviceId) return;
@@ -70,7 +78,10 @@ export const servicesSlice = (
       set((state) => {
         const d = state.diagrams[state.activeDiagramId!];
         if (!d) return;
-        const comp = d.snapshot.components[componentId];
+        const sid = d.activeSceneId ?? null;
+        const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+        const comp =
+          scene?.addedComponents[componentId] ?? d.snapshot.components[componentId];
         if (comp) comp.linkedDiagramId = diagramId;
       });
     },

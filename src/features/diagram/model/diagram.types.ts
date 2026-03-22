@@ -55,6 +55,20 @@ export interface Folder {
   domain?: string;
 }
 
+/** Declarative diff over the immutable base snapshot (cel / scene). */
+export interface SceneDiff {
+  id: string;
+  name: string;
+  color: string;
+  createdAt: string;
+  addedComponents: Record<string, Component>;
+  addedConnections: Record<string, Connection>;
+  removedComponentIds: string[];
+  removedConnectionIds: string[];
+  viewport?: { x: number; y: number; zoom: number };
+  nodeLayouts: Record<string, NodeLayout>;
+}
+
 export interface Diagram {
   id: string;
   name: string;
@@ -66,4 +80,8 @@ export interface Diagram {
   nodeLayouts: Record<string, NodeLayout>;
   viewport: { x: number; y: number; zoom: number };
   folderId?: string | null;
+  scenes?: Record<string, SceneDiff>;
+  activeSceneId?: string | null;
+  /** Second scene for overlay compare mode (requires activeSceneId). */
+  compareSceneId?: string | null;
 }

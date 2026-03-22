@@ -7,6 +7,7 @@ import {
   buildFlowHighlight,
   buildCoverage,
   buildRecordingInfo,
+  safeFlowSteps,
 } from "./flowState";
 
 interface UseFlowStateParams {
@@ -18,9 +19,8 @@ export function useFlowState({ flows }: UseFlowStateParams) {
   const { activeFlow, currentStep, isPlaying } = useFlowPlayback();
   const stepIndex = currentStep ?? 0;
 
-  const activeStep = isPlaying && activeFlow
-    ? activeFlow.steps[stepIndex] ?? null
-    : null;
+  const activeStep =
+    isPlaying && activeFlow ? safeFlowSteps(activeFlow)[stepIndex] ?? null : null;
 
   const flowHighlight = useMemo(() => {
     if (!isPlaying || !activeFlow) return EMPTY_FLOW_HIGHLIGHT;

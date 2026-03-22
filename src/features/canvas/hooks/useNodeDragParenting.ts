@@ -14,6 +14,9 @@ import {
   findPanelContainingPoint,
   toAbsolutePosition,
 } from "../models/panelParenting";
+import { resolveCanvasSnapshot, canMoveNodeInSceneMode } from "@/features/diagram";
+import { toast } from "sonner";
+import i18n from "@/infrastructure/i18n";
 
 /** Collect all descendant ids of a panel (recursive). */
 function getDescendantIds(panelId: string, components: Record<string, Component>): Set<string> {
@@ -62,20 +65,28 @@ export function useNodeDragParenting({
   const handlePositionChange = useCallback(
     (change: NodeChange) => {
       if (change.type !== "position" || !change.position) return;
+      if (!diagram) return;
 
-      const comp = diagram?.snapshot.components[change.id];
+      const r = resolveCanvasSnapshot(diagram);
+      const comp = r.components[change.id];
       if (comp && isEndpointComponent(comp)) return;
 
       if (!change.dragging) {
+        if (!canMoveNodeInSceneMode(diagram, change.id)) {
+          toast.error(i18n.t("scenes.baseMoveBlocked"));
+          return;
+        }
         updateNodeLayout(change.id, change.position);
+        return;
+      }
+
+      if (!canMoveNodeInSceneMode(diagram, change.id)) {
         return;
       }
 
       if (!comp || isNoteComponent(comp) || isEndpointComponent(comp)) return;
       if (isPanelComponent(comp)) {
-        const hasChildren = Object.values(diagram?.snapshot.components ?? {}).some(
-          (c) => c.parentId === comp.id,
-        );
+        const hasChildren = Object.values(r.components).some((c) => c.parentId === comp.id);
         if (hasChildren) return;
       }
 
@@ -89,7 +100,7 @@ export function useNodeDragParenting({
           : false;
         setUnparentCandidatePanelId(outside ? comp.parentId : null);
 
-        const parentLayout = comp.parentId ? diagram?.nodeLayouts[comp.parentId] : undefined;
+        const parentLayout = comp.parentId ? r.nodeLayouts[comp.parentId] : undefined;
         if (parentLayout) {
           const abs = toAbsolutePosition(change.position, parentLayout);
           absX = abs.x;
@@ -113,7 +124,13 @@ export function useNodeDragParenting({
   const handleDimensionsChange = useCallback(
     (change: NodeChange) => {
       if (change.type !== "dimensions" || !change.dimensions) return;
-      const layout = diagram?.nodeLayouts[change.id];
+      if (!diagram) return;
+      if (!canMoveNodeInSceneMode(diagram, change.id)) {
+        toast.error(i18n.t("scenes.baseMoveBlocked"));
+        return;
+      }
+      const r = resolveCanvasSnapshot(diagram);
+      const layout = r.nodeLayouts[change.id];
       if (layout) {
         updateNodeLayout(change.id, { x: layout.x, y: layout.y }, change.dimensions);
       }
@@ -137,7 +154,12 @@ export function useNodeDragParenting({
       const nodeType = typeof draggedNode.type === "string" ? draggedNode.type : "";
       if (isEndpointType(nodeType)) return;
 
-      const components = diagram?.snapshot.components ?? {};
+      if (!diagram) return;
+      const r = resolveCanvasSnapshot(diagram);
+      if (!canMoveNodeInSceneMode(diagram, draggedNode.id)) {
+        return;
+      }
+      const components = r.components;
       const isDraggedPanel = isReactFlowParentPanelType(nodeType);
       if (isDraggedPanel) {
         const descendantIds = getDescendantIds(draggedNode.id, components);

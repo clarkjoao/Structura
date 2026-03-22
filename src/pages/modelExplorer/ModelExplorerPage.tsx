@@ -12,6 +12,8 @@ import {
   useFlows,
   stepsToMermaid,
   useServiceRegistry,
+  resolveSceneSnapshot,
+  exportFilenameSlug,
 } from "@/features/diagram";
 import type { Flow, FlowStep } from "@/features/diagram";
 import { exportJSON, exportDrawio, exportMermaid, downloadFile } from "@/lib/export-service";
@@ -78,7 +80,8 @@ export default function ModelExplorerPage() {
   const handleFinalizeRecording = useCallback(
     (data: { name: string; description: string; tags: string[]; steps: FlowStep[]; editingFlowId: string | null }) => {
       if (!diagram) return;
-      const mermaid = stepsToMermaid(data.steps, diagram.snapshot.components, diagram.snapshot.connections);
+      const r = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
+      const mermaid = stepsToMermaid(data.steps, r.components, r.connections);
       const desc = data.description || undefined;
       const flowTags = data.tags.length ? data.tags : undefined;
       if (data.editingFlowId) {
@@ -101,12 +104,13 @@ export default function ModelExplorerPage() {
 
   const handleExport = useCallback(() => {
     if (!diagram) return;
-    const slug = diagram.name.toLowerCase().replace(/\s+/g, "-");
+    const slug = exportFilenameSlug(diagram);
+    const r = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
     downloadFile(exportJSON(diagram), `${slug}.json`, "application/json");
     downloadFile(exportDrawio(diagram, serviceRegistry), `${slug}.drawio`, "application/xml");
     if (flows.length > 0) {
       downloadFile(
-        exportMermaid(flows, diagram.snapshot.components, diagram.snapshot.connections),
+        exportMermaid(flows, r.components, r.connections),
         `${slug}-flows.md`,
         "text/markdown",
       );

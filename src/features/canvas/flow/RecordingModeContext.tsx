@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback } from "react";
 import type { FlowStep, Flow } from "@/features/diagram";
+import { safeFlowSteps } from "./flowState";
 
 export interface RecordingFinalizeData {
   name: string;
@@ -128,7 +129,7 @@ export function RecordingModeStateProvider({
     setRecordingNameState(flow.name);
     setRecordingDescriptionState(flow.description ?? "");
     setRecordingTags([...(flow.tags ?? [])]);
-    setRecordingSteps([...flow.steps]);
+    setRecordingSteps([...safeFlowSteps(flow)]);
     setEditingFlowId(flow.id);
     setIsRecording(true);
     onStartRecording?.();

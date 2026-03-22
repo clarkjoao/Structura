@@ -271,7 +271,8 @@
     "noDiagramSelected": "No diagram selected",
     "newEndpoint": "New endpoint",
     "usesEdgeLabel": "Uses",
-    "apiGroupDefaultName": "API Endpoints"
+    "apiGroupDefaultName": "API Endpoints",
+    "compareViewBanner": "View mode — editing disabled"
   },
   "canvasToolbar": {
     "renameTitle": "Double-click to rename",
@@ -287,6 +288,38 @@
     "levelContext": "Level 1",
     "levelContainer": "Level 2",
     "levelComponent": "Level 3"
+  },
+  "scenes": {
+    "base": "Base",
+    "newScene": "New scene",
+    "newNamePlaceholder": "Scene name",
+    "defaultSceneName": "New scene",
+    "rename": "Rename",
+    "remove": "Remove",
+    "sceneMenu": "Scene menu",
+    "baseMoveBlocked": "Moving base nodes is not allowed while a scene is active",
+    "groupBlockedInScene": "Grouping is not available while a scene is active",
+    "comparing": "Comparing",
+    "compareModeTooltip": "Comparison mode active — click × to exit",
+    "clearSceneAndCompare": "Back to base",
+    "removeFromCompare": "Remove from comparison",
+    "mergeIntoBase": "Merge into base",
+    "deleteEmptyScene": "Delete empty scene",
+    "mergePreviewError": "Could not prepare merge preview",
+    "mergeSuccess": "Scene \"{{name}}\" merged into base successfully",
+    "mergeSuccessConflicts": "{{count}} conflict(s) resolved automatically",
+    "emptySceneDeleted": "Empty scene \"{{name}}\" removed",
+    "mergeDialogTitle": "Merge \"{{name}}\" into base",
+    "mergeDialogIrreversible": "This operation is irreversible.",
+    "mergeDialogIntro": "The following will be applied to the base diagram:",
+    "mergeSectionAdded": "Added ({{count}})",
+    "mergeSectionRemoved": "Removed ({{count}})",
+    "mergeSectionConflicts": "Resolved conflicts ({{count}})",
+    "mergeConflictLine": "\"{{element}}\" also exists in \"{{otherScene}}\" — it will stay on the base and be removed from \"{{otherScene}}\".",
+    "mergeDialogSceneDeleted": "The scene \"{{name}}\" will be deleted.",
+    "mergeAcknowledge": "I understand this operation is irreversible.",
+    "mergeCancel": "Cancel",
+    "mergeConfirm": "Confirm merge"
   },
   "canvasSearch": {
     "placeholder": "Search component...",

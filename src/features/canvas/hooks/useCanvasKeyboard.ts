@@ -12,11 +12,15 @@ import { getViewportCenter } from "../viewport-utils";
 import { useRecordingMode } from "../flow/RecordingModeContext";
 import { exportDrawio } from "@/lib/export-service";
 import { useCopyPasteShortcuts } from "./keyboard/useCopyPasteShortcuts";
+import { toast } from "sonner";
+import { isDiagramCompareMode, resolveCanvasSnapshot } from "@/features/diagram";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
 interface UseCanvasKeyboardParams {
   diagram: Diagram | null | undefined;
+  setCompareScene: (sceneId: string | null) => void;
+  isCompareMode?: boolean;
   serviceRegistry: Record<string, ServiceDefinition>;
   selectedNodeId: string | null;
   selectedEdgeId: string | null;
@@ -113,56 +117,6 @@ function getSelectedNodes(rf: ReactFlowInstance, fallbackId: string | null): Nod
   return [];
 }
 
-function getCopyableIds(diagram: Diagram, nodes: Node[]): string[] {
-  return nodes
-    .map((n) => n.id)
-    .filter((id) => {
-      const c = diagram.snapshot.components[id];
-      return c && c.type !== "panel" && c.type !== "note";
-    });
-}
-
-function getPasteCenter(rf: ReactFlowInstance, wrapperRef: React.RefObject<HTMLDivElement | null>): { x: number; y: number } {
-  const wrapper = wrapperRef.current;
-  if (!wrapper) return { x: 300, y: 300 };
-  const rect = wrapper.getBoundingClientRect();
-  return rf.screenToFlowPosition({
-    x: rect.width / 2,
-    y: rect.height / 2,
-  });
-}
-
-function getCenterOfNodes(diagram: Diagram, ids: string[], offset = 20): { x: number; y: number } {
-  const layouts = diagram.nodeLayouts;
-  let sumX = 0;
-  let sumY = 0;
-  let count = 0;
-
-  for (const id of ids) {
-    const comp = diagram.snapshot.components[id];
-    if (!comp) continue;
-
-    const layout = layouts[id];
-    let x = layout?.x ?? 0;
-    let y = layout?.y ?? 0;
-
-    if (comp.parentId) {
-      const parentLayout = layouts[comp.parentId];
-      if (parentLayout) {
-        x += parentLayout.x;
-        y += parentLayout.y;
-      }
-    }
-
-    sumX += x;
-    sumY += y;
-    count += 1;
-  }
-
-  if (count === 0) return { x: 300, y: 300 };
-  return { x: sumX / count + offset, y: sumY / count + offset };
-}
-
 // ── Main hook ─────────────────────────────────────────────────────────────
 
 export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
@@ -180,6 +134,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   const { isRecording, onRecordUndo } = useRecordingMode();
   const {
     diagram,
+    setCompareScene,
+    isCompareMode = false,
     serviceRegistry,
     selectedNodeId,
     selectedEdgeId,
@@ -261,6 +217,31 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
         return;
       }
 
+      if (e.key === KEY.ESCAPE && isCompareMode) {
+        e.preventDefault();
+        setCompareScene(null);
+        return;
+      }
+
+      if (isCompareMode) {
+        if (e.key === KEY.DELETE || e.key === KEY.BACKSPACE) {
+          e.preventDefault();
+          return;
+        }
+        if (
+          isModKeyPressed(e) &&
+          (e.key === "v" ||
+            e.key === "V" ||
+            e.key === "d" ||
+            e.key === "D" ||
+            e.key === "c" ||
+            e.key === "C")
+        ) {
+          e.preventDefault();
+          return;
+        }
+      }
+
       // Block shortcuts when flow panel is open or when playing a flow
       if (isFlowPanelOpen || isPlaying) return;
 
@@ -280,6 +261,10 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
 
       // Cmd/Ctrl+A — select all
       if (mod && e.key === KEY.A) {
+        if (isCompareMode) {
+          e.preventDefault();
+          return;
+        }
         e.preventDefault();
         reactFlowInstance.setNodes((nds: Node[]) => {
           const updated = nds.map((n) => ({ ...n, selected: true }));
@@ -329,11 +314,12 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
           if (isReactFlowParentPanelType(node.type as string)) {
             ungroupNodes(node.id);
           } else {
-            const comp = diagram.snapshot.components[node.id];
-            const parentComp = comp?.parentId ? diagram.snapshot.components[comp.parentId] : undefined;
+            const r = resolveCanvasSnapshot(diagram);
+            const comp = r.components[node.id];
+            const parentComp = comp?.parentId ? r.components[comp.parentId] : undefined;
             if (comp?.parentId && parentComp && isPanelComponent(parentComp)) {
-              const parentLayout = diagram.nodeLayouts[comp.parentId];
-              const childLayout = diagram.nodeLayouts[node.id];
+              const parentLayout = r.nodeLayouts[comp.parentId];
+              const childLayout = r.nodeLayouts[node.id];
               if (parentLayout && childLayout) {
                 setParent(node.id, null);
                 updateNodeLayout(node.id, {
@@ -350,6 +336,13 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       // Cmd/Ctrl+G — group selected
       if (mod && e.key === KEY.G) {
         e.preventDefault();
+        if (
+          (diagram.activeSceneId && diagram.scenes?.[diagram.activeSceneId]) ||
+          isDiagramCompareMode(diagram)
+        ) {
+          toast.error(t("scenes.groupBlockedInScene"));
+          return;
+        }
         const selected = reactFlowInstance.getNodes().filter((n) => n.selected);
         if (selected.length >= 2) {
           groupNodes(selected.map((n) => n.id));
@@ -387,6 +380,10 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
 
       // Cmd/Ctrl+1–4 — add C4 component
       if (mod && c4ShortcutMap[e.key]) {
+        if (isCompareMode) {
+          e.preventDefault();
+          return;
+        }
         e.preventDefault();
         const { type, name } = c4ShortcutMap[e.key];
         const pos = getViewportCenter(reactFlowInstance, isPanelOpen);
@@ -399,6 +396,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     return () => document.removeEventListener("keydown", handler);
   }, [
     diagram,
+    setCompareScene,
+    isCompareMode,
     serviceRegistry,
     selectedNodeId,
     selectedEdgeId,
@@ -432,5 +431,6 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     onToggleDiagramSidebar,
     onOpenCommandPalette,
     c4ShortcutMap,
+    t,
   ]);
 }

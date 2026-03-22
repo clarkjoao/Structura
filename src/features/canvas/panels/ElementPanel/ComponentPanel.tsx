@@ -1,7 +1,13 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import debounce from "lodash.debounce";
 import { X, Trash2, Link2, LayoutDashboard, RefreshCw } from "lucide-react";
-import { useAllDiagrams, useActiveDiagram, useAllServices, useDiagramActions } from "@/features/diagram";
+import {
+  useAllDiagrams,
+  useActiveDiagram,
+  useAllServices,
+  useDiagramActions,
+  resolveSceneSnapshot,
+} from "@/features/diagram";
 import type {
   Component,
   ComponentPatch,
@@ -99,6 +105,13 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
   const allDiagrams = useAllDiagrams();
   const allServices = useAllServices();
   const activeDiagram = useActiveDiagram();
+  const resolved = useMemo(
+    () =>
+      activeDiagram
+        ? resolveSceneSnapshot(activeDiagram, activeDiagram.activeSceneId ?? null)
+        : null,
+    [activeDiagram],
+  );
   const { linkComponentToService, linkComponentToDiagram, addDiagram, setParent, updateNodeLayout } = useDiagramActions();
   const [tab, setTab] = useState<Tab>("details");
   const [name, setName] = useState(component.name);
@@ -120,12 +133,12 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
     () => allServices.find((service) => service.id === component.serviceId) ?? null,
     [allServices, component.serviceId],
   );
-  const parentComp = component.parentId ? activeDiagram?.snapshot.components[component.parentId] : undefined;
+  const parentComp = component.parentId ? resolved?.components[component.parentId] : undefined;
   const isChildOfPanel = !!component.parentId && parentComp && isPanelComponent(parentComp);
   const handleRemoveFromGroup = () => {
-    if (!component.parentId || !setParent || !updateNodeLayout || !activeDiagram) return;
-    const childLayout = activeDiagram.nodeLayouts[component.id];
-    const parentLayout = activeDiagram.nodeLayouts[component.parentId];
+    if (!component.parentId || !setParent || !updateNodeLayout || !activeDiagram || !resolved) return;
+    const childLayout = resolved.nodeLayouts[component.id];
+    const parentLayout = resolved.nodeLayouts[component.parentId];
     setParent(component.id, null);
     if (childLayout && parentLayout) {
       updateNodeLayout(component.id, {
@@ -239,7 +252,7 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
                   onChange={(e) => {
                     const kind = e.target.value as PanelKind;
                     const def = getPanelKindDef(kind);
-                    const layout = activeDiagram?.nodeLayouts[component.id];
+                    const layout = resolved?.nodeLayouts[component.id];
                     if (kind === PanelKind.Swimlane) {
                       updateComponent(component.id, {
                         panelKind: kind,
