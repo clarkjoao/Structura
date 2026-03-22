@@ -9,7 +9,7 @@ import {
 } from "@/features/diagram";
 import { ElementCategory } from "../enums";
 import type { ComponentType } from "@/features/diagram";
-import type { CanvasPickerOption } from "./element-picker/elementPickerModal.types";
+import type { CanvasPickerOption, ElementPickerModalProps } from "./element-picker/types";
 import {
   getUsageKeyForType,
   getDefaultNameForNewComponent,
@@ -22,10 +22,9 @@ import { useTranslation } from "react-i18next";
 import {
   AWS_PRIMARY_CATEGORY_IDS,
   PICKER_CARD_CLASS,
-} from "./element-picker/elementPickerModal.constants";
-import { persistCategory, readStoredCategory } from "./element-picker/elementPickerModal.storage";
-import { resolveAwsSpotlight } from "./element-picker/elementPickerModal.utils";
-import type { ElementPickerModalProps } from "./element-picker/elementPickerModal.types";
+} from "./element-picker/constants";
+import { persistCategory, readStoredCategory } from "./element-picker/storage";
+import { resolveAwsSpotlight } from "./element-picker/utils";
 import {
   buildC4PickerOptions,
   buildCanvasPickerOptions,

@@ -26,9 +26,9 @@ interface ColorSwatchesProps {
   currentColor: string;
   label: string;
   updateComponent: (id: string, patch: ComponentPatch) => void;
-  /** Grupo de presets. "panel" = vibrantes+neutros, "note" = papel+vibrantes. */
+  /** Preset group: `panel` = vibrant + neutral; `note` = paper + vibrant subset. */
   presetGroup?: ColorPresetGroup;
-  /** Quando true, mostra botão "Padrão" para limpar cor customizada. */
+  /** When true, show a "Default" control to clear a custom color. */
   allowClear?: boolean;
 }
 

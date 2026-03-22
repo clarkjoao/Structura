@@ -19,7 +19,7 @@ import { useConnectionInternalsSync } from "./useConnectionInternalsSync";
 import { useFlowMode } from "../flow/FlowModeContext";
 import { useCanvasCompareMode } from "./useCanvasCompareMode";
 import { useCanvasDiagramNavigation } from "./useCanvasDiagramNavigation";
-import { useCanvasCompareModeGuards } from "./useCanvasCompareModeGuards";
+import { useCanvasCompareModeEffects } from "./useCanvasCompareModeEffects";
 import type { CanvasProps } from "../canvas.types";
 import { resolveCanvasSnapshot } from "@/features/diagram";
 
@@ -86,7 +86,7 @@ export function useCanvasController({
     setShowScenes,
   });
 
-  useCanvasCompareModeGuards({
+  useCanvasCompareModeEffects({
     isCompareMode,
     isFlowPanelOpen: !!isFlowPanelOpen,
     clearCanvasSelection: visualState.clearCanvasSelection,

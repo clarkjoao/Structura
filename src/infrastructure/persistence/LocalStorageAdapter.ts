@@ -3,8 +3,8 @@ import type { IStoragePort } from "./IStoragePort";
 const KEY_PREFIX = "structura_";
 
 /**
- * Adapter de persistência usando localStorage.
- * Implementa IStoragePort e pode ser usado pelo middleware persist do Zustand.
+ * localStorage-backed persistence adapter implementing IStoragePort.
+ * Suitable for Zustand `persist` middleware and similar keyed storage.
  */
 export class LocalStorageAdapter implements IStoragePort {
   /** When true, setItem/save become no-ops (used when FileSystem storage is active). */
@@ -50,7 +50,7 @@ export class LocalStorageAdapter implements IStoragePort {
     try {
       localStorage.setItem(this.key(key), value);
     } catch {
-      // localStorage pode estar cheio ou indisponível (privado, etc.)
+      // Quota full, private mode, or other storage failures
     }
   }
 
@@ -101,5 +101,5 @@ export class LocalStorageAdapter implements IStoragePort {
   }
 }
 
-/** Instância singleton para uso na aplicação. */
+/** Application-wide default storage instance. */
 export const defaultStorage = new LocalStorageAdapter();

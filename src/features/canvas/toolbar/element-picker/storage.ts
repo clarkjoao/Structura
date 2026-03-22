@@ -1,5 +1,5 @@
 import { ElementCategory } from "../../enums";
-import { LAST_CATEGORY_KEY } from "./elementPickerModal.constants";
+import { LAST_CATEGORY_KEY } from "./constants";
 
 export function readStoredCategory(): ElementCategory {
   try {

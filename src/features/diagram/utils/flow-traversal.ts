@@ -88,7 +88,7 @@ export function validateFlowGraph(flow: Flow, diagram: Diagram): BrokenStep[] {
         stepId: step.id,
         reason: "component_deleted",
         missingId: step.componentId,
-        label: `Step ${step.id.slice(0, 8)}… — componente removido (${step.componentId.slice(0, 8)}…)`,
+        label: `Step ${step.id.slice(0, 8)}… — component removed (${step.componentId.slice(0, 8)}…)`,
       });
     }
     if (step.connectionId && !connections[step.connectionId]) {
@@ -96,7 +96,7 @@ export function validateFlowGraph(flow: Flow, diagram: Diagram): BrokenStep[] {
         stepId: step.id,
         reason: "connection_deleted",
         missingId: step.connectionId,
-        label: `Step ${step.id.slice(0, 8)}… — conexão removida (${step.connectionId.slice(0, 8)}…)`,
+        label: `Step ${step.id.slice(0, 8)}… — connection removed (${step.connectionId.slice(0, 8)}…)`,
       });
     }
   });

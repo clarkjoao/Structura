@@ -15,7 +15,7 @@ export type ManifestValidationResult =
 
 export function validateDiagramFile(raw: unknown): ValidationResult {
   if (!raw || typeof raw !== "object") {
-    return { valid: false, reason: "Arquivo não é um objeto JSON válido", raw };
+    return { valid: false, reason: "File is not a valid JSON object", raw };
   }
 
   const obj = raw as Record<string, unknown>;
@@ -32,7 +32,7 @@ export function validateDiagramFile(raw: unknown): ValidationResult {
     if (typeof obj[field] !== type) {
       return {
         valid: false,
-        reason: `Campo obrigatório ausente ou inválido: "${field}" (esperado ${type})`,
+        reason: `Missing or invalid required field: "${field}" (expected ${type})`,
         raw,
       };
     }
@@ -40,13 +40,13 @@ export function validateDiagramFile(raw: unknown): ValidationResult {
 
   const snapshot = obj.snapshot as Record<string, unknown> | undefined;
   if (!snapshot || typeof snapshot !== "object") {
-    return { valid: false, reason: 'Campo "snapshot" ausente ou inválido', raw };
+    return { valid: false, reason: 'Missing or invalid "snapshot" field', raw };
   }
   for (const key of ["components", "connections", "flows"]) {
     if (!snapshot[key] || typeof snapshot[key] !== "object") {
       return {
         valid: false,
-        reason: `snapshot.${key} ausente ou inválido`,
+        reason: `snapshot.${key} is missing or invalid`,
         raw,
       };
     }
@@ -55,7 +55,7 @@ export function validateDiagramFile(raw: unknown): ValidationResult {
   if (!obj.nodeLayouts || typeof obj.nodeLayouts !== "object") {
     return {
       valid: false,
-      reason: 'Campo "nodeLayouts" ausente ou inválido',
+      reason: 'Missing or invalid "nodeLayouts" field',
       raw,
     };
   }
@@ -69,13 +69,13 @@ export function validateDiagramFile(raw: unknown): ValidationResult {
   ) {
     return {
       valid: false,
-      reason: 'Campo "viewport" ausente ou inválido (x, y, zoom)',
+      reason: 'Missing or invalid "viewport" (x, y, zoom)',
       raw,
     };
   }
 
   if (!(obj.id as string).trim()) {
-    return { valid: false, reason: 'Campo "id" está vazio', raw };
+    return { valid: false, reason: '"id" field is empty', raw };
   }
 
   return { valid: true, diagram: raw as Diagram };
@@ -85,19 +85,19 @@ export function validateDiagramFile(raw: unknown): ValidationResult {
 
 export function validateManifest(raw: unknown): ManifestValidationResult {
   if (!raw || typeof raw !== "object") {
-    return { valid: false, reason: "Manifest não é um objeto JSON válido" };
+    return { valid: false, reason: "Manifest is not a valid JSON object" };
   }
   const obj = raw as Record<string, unknown>;
   if (obj.version !== 1) {
     return {
       valid: false,
-      reason: `Versão do manifest inválida: ${obj.version}`,
+      reason: `Invalid manifest version: ${obj.version}`,
     };
   }
   if (!Array.isArray(obj.diagramIds)) {
     return {
       valid: false,
-      reason: 'Campo "diagramIds" inválido no manifest',
+      reason: 'Invalid "diagramIds" field in manifest',
     };
   }
   return { valid: true, manifest: raw as WorkspaceManifest };

@@ -4,10 +4,6 @@ import type {
   ServiceSourceRef,
 } from "@/features/diagram/model/service.types";
 
-/**
- * Utilitários compartilhados entre integrações para merge de serviços.
- */
-
 export function dedupeStringsPreserveOrder(values: string[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
@@ -28,8 +24,8 @@ export function pickMoreCompleteString(a: string, b: string): string {
 }
 
 /**
- * Normaliza repositoryUrl para comparação robusta entre fontes (GitHub, DefectDojo, manual).
- * Remove: trailing slashes, .git suffix, protocolo ssh/https, www prefix, e converte para lowercase.
+ * Normalize `repositoryUrl` for matching across sources (GitHub, DefectDojo, manual):
+ * trailing slashes, `.git` suffix, ssh/https/git protocols, `www.` prefix, lowercased.
  */
 export function normalizeRepoUrl(url: string | undefined): string {
   if (!url) return "";

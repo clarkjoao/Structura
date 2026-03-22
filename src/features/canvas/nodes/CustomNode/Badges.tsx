@@ -36,7 +36,7 @@ export const Badges = ({
             className={`mt-1.5 flex items-center gap-1 text-primary ${
               controlsDisabled ? "pointer-events-none" : "hover:underline"
             }`}
-            aria-label={`Abrir serviço ${serviceName} no registry`}
+            aria-label={`Open service ${serviceName} in registry`}
             tabIndex={controlsDisabled ? -1 : 0}
           >
             <Link2 className="h-3 w-3 shrink-0" />

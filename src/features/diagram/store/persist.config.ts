@@ -36,21 +36,7 @@ export function buildPersistStoragePayload(state: DiagramStore): {
   };
 }
 
-export function mergePersistedState(
-  persistedState: unknown,
-  currentState: DiagramStore,
-): DiagramStore {
-  const state = {
-    ...currentState,
-    ...(persistedState && (persistedState as Partial<DiagramStore>)),
-  } as DiagramStore;
-
-  state.clipboard = currentState.clipboard ?? null;
-
-  if (!state.serviceRegistry) state.serviceRegistry = {};
-  if (!state.folders) state.folders = {};
-
-  // Migrate legacy service.source/sourceId into service.sources[]
+function migrateServiceSources(state: DiagramStore): DiagramStore {
   Object.values(state.serviceRegistry).forEach((service) => {
     const svc = service as ServiceDefinition;
     if (svc.sources && svc.sources.length > 0) return;
@@ -60,14 +46,18 @@ export function mergePersistedState(
     }
     svc.sources = [{ type: ServiceSource.Manual }];
   });
+  return state;
+}
 
-  // Migrate diagrams missing createdAt
+function migrateDiagramCreatedAt(state: DiagramStore): DiagramStore {
   Object.values(state.diagrams ?? {}).forEach((d) => {
     const diagram = d as Diagram & { createdAt?: string };
     if (!diagram.createdAt) diagram.createdAt = diagram.updatedAt;
   });
+  return state;
+}
 
-  // Migrate nodeLayouts from legacy array format to Record<string, NodeLayout>
+function migrateNodeLayoutsFromArray(state: DiagramStore): DiagramStore {
   Object.values(state.diagrams ?? {}).forEach((d) => {
     const diagram = d as Diagram & { nodeLayouts: unknown };
     if (Array.isArray(diagram.nodeLayouts)) {
@@ -78,10 +68,15 @@ export function mergePersistedState(
   [...(state.past ?? []), ...(state.future ?? [])].forEach((entry) => {
     if (Array.isArray(entry.nodeLayouts)) {
       const arr = entry.nodeLayouts as NodeLayout[];
-      (entry as typeof entry & { nodeLayouts: unknown }).nodeLayouts = Object.fromEntries(arr.map((nl) => [nl.elementId, nl]));
+      (entry as typeof entry & { nodeLayouts: unknown }).nodeLayouts = Object.fromEntries(
+        arr.map((nl) => [nl.elementId, nl]),
+      );
     }
   });
+  return state;
+}
 
+function migrateConnectionStyles(state: DiagramStore): DiagramStore {
   Object.values(state.diagrams ?? {}).forEach((d) => {
     const diagram = d as Diagram;
     Object.values(diagram.snapshot.connections ?? {}).forEach((conn) => {
@@ -119,24 +114,31 @@ export function mergePersistedState(
         delete c.animated;
       }
     });
+  });
+  return state;
+}
+
+function migrateComponentDimensions(state: DiagramStore): DiagramStore {
+  Object.values(state.diagrams ?? {}).forEach((d) => {
+    const diagram = d as Diagram;
     Object.values(diagram.snapshot.components ?? {}).forEach((comp) => {
       type LegacyComp = Component & { width?: number; height?: number };
       const co = comp as LegacyComp;
       if (co.width !== undefined || co.height !== undefined) {
         const layout = diagram.nodeLayouts[co.id];
         if (layout) {
-          if (co.width !== undefined && layout.width === undefined)
-            layout.width = co.width;
-          if (co.height !== undefined && layout.height === undefined)
-            layout.height = co.height;
+          if (co.width !== undefined && layout.width === undefined) layout.width = co.width;
+          if (co.height !== undefined && layout.height === undefined) layout.height = co.height;
         }
         delete co.width;
         delete co.height;
       }
     });
   });
+  return state;
+}
 
-  // Migrate flows from legacy array-based format to graph-based format
+function migrateFlowsToGraph(state: DiagramStore): DiagramStore {
   Object.values(state.diagrams ?? {}).forEach((d) => {
     const diagram = d as Diagram;
     if (diagram.snapshot?.flows) {
@@ -145,8 +147,32 @@ export function mergePersistedState(
       }
     }
   });
-
   return state;
+}
+
+export function mergePersistedState(
+  persistedState: unknown,
+  currentState: DiagramStore,
+): DiagramStore {
+  const state = {
+    ...currentState,
+    ...(persistedState && (persistedState as Partial<DiagramStore>)),
+  } as DiagramStore;
+
+  state.clipboard = currentState.clipboard ?? null;
+
+  if (!state.serviceRegistry) state.serviceRegistry = {};
+  if (!state.folders) state.folders = {};
+
+  let next = state;
+  next = migrateServiceSources(next);
+  next = migrateDiagramCreatedAt(next);
+  next = migrateNodeLayoutsFromArray(next);
+  next = migrateConnectionStyles(next);
+  next = migrateComponentDimensions(next);
+  next = migrateFlowsToGraph(next);
+
+  return next;
 }
 
 export function createPersistConfig(storage: IStoragePort) {

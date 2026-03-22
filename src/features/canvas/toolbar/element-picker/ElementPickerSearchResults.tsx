@@ -4,9 +4,9 @@ import { PanelKind } from "@/features/diagram";
 import { isPanelType } from "@/features/diagram";
 import type { AwsCategoryId } from "@/lib/catalogs/aws";
 import AwsIcon from "../../nodes/AwsIcon";
-import { PICKER_CARD_CLASS } from "./elementPickerModal.constants";
-import { shortAwsName } from "./elementPickerModal.utils";
-import type { CanvasPickerOption } from "./elementPickerModal.types";
+import { PICKER_CARD_CLASS } from "./constants";
+import { shortAwsName } from "./utils";
+import type { CanvasPickerOption } from "./types";
 import type { C4PickerOption } from "./buildPickerOptions";
 import { RegistryServiceRow } from "./RegistryServiceRow";
 

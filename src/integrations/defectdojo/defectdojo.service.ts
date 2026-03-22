@@ -9,8 +9,8 @@ interface PaginatedResponse<T> {
 }
 
 /**
- * Todos os parâmetros de busca suportados pela API de produtos do DefectDojo.
- * Inclui campos padrão do modelo Product + sigla/siglaApp (custom).
+ * Product search parameters supported by the DefectDojo API:
+ * standard Product model fields plus custom `sigla` / `siglaApp`.
  * @see https://defectdojo.github.io/django-DefectDojo/integrations/api-v2-docs/
  */
 /** Field keys — labels from `defectdojo.productSearchField.*` in i18n */

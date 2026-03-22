@@ -1,7 +1,3 @@
-/**
- * Centraliza acesso ao store do diagrama.
- * Separa claramente dados (store) vs estado visual (useCanvasVisualState).
- */
 import {
   useActiveDiagram,
   useDiagrams,

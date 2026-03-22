@@ -9,9 +9,9 @@ import { PickerSectionHeader } from "./PickerSectionHeader";
 import {
   PICKER_CARD_CLASS,
   REGISTRY_PREVIEW_LIMIT,
-} from "./elementPickerModal.constants";
-import { shortAwsName } from "./elementPickerModal.utils";
-import type { CanvasPickerOption } from "./elementPickerModal.types";
+} from "./constants";
+import { shortAwsName } from "./utils";
+import type { CanvasPickerOption } from "./types";
 import { ElementCategory } from "../../enums";
 import type { C4PickerOption } from "./buildPickerOptions";
 import { RegistryServiceRow } from "./RegistryServiceRow";

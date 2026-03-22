@@ -1,6 +1,3 @@
-/**
- * Canvas effects: fit view when the active diagram changes, wheel zoom/pan, flow playback focus, clear selection on play.
- */
 import { useEffect } from "react";
 import type { ReactFlowInstance } from "@xyflow/react";
 import type { Diagram, Flow } from "@/features/diagram";

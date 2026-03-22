@@ -2,7 +2,7 @@ import { getPanelKindDef } from "@/lib/catalogs/panels";
 import { AWS_CATEGORIES } from "@/lib/catalogs/aws";
 import type { AwsCategory } from "@/lib/catalogs/aws";
 import type { ServiceDefinition } from "@/features/diagram";
-import type { CanvasPickerOption } from "./elementPickerModal.types";
+import type { CanvasPickerOption } from "./types";
 import type { C4PickerOption } from "./buildPickerOptions";
 
 export function canvasOptionMatchesQuery(

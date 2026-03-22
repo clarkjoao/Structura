@@ -1342,7 +1342,7 @@ function buildDiagrams(): Record<string, Diagram> {
           "dep-r8":  { id: "dep-r8",  sourceId: "dep-pod-payment",  targetId: "dep-redis",        label: "Idempotência / cache",     intent: "data-flow" },
           "dep-r9":  { id: "dep-r9",  sourceId: "dep-pod-payment",  targetId: "dep-msk",          label: "Produz eventos",          intent: "event",     style: { animated: true } },
           "dep-r10": { id: "dep-r10", sourceId: "dep-pod-gateway",  targetId: "dep-redis",        label: "Contadores de rate limit",     intent: "data-flow" },
-          // Origem em pods (nós com handles). Panels como dep-eks não expõem handles no React Flow.
+          // Edge source on pods (nodes with handles); panels like dep-eks do not expose handles in React Flow.
           "dep-r11": { id: "dep-r11", sourceId: "dep-pod-gateway",  targetId: "dep-cloudwatch",   label: "Logs e métricas",          intent: "async-message", style: { strokeStyle: StrokeStyle.Dashed, animated: true } },
           "dep-r12": { id: "dep-r12", sourceId: "dep-pod-payment",  targetId: "dep-nat",          label: "Saída via NAT",          intent: "dependency" },
           "dep-r13": { id: "dep-r13", sourceId: "dep-pod-payment",  targetId: "dep-secrets",      label: "Busca secrets (IRSA)",    intent: "call",      style: { strokeStyle: StrokeStyle.Dashed } },

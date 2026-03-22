@@ -1,7 +1,3 @@
-/**
- * Handlers de eventos do canvas (click, selection, connect, etc.).
- * Recebe store, visual state e flow state para evitar duplicação no Canvas.
- */
 import { useCallback, useRef } from "react";
 import type { Node, Edge, OnEdgesChange, OnConnect, OnConnectEnd, Connection } from "@xyflow/react";
 import type { CanvasVisualState } from "./useCanvasVisualState";

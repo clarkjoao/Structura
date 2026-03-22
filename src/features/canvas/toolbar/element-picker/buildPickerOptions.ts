@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { PANEL_KINDS } from "@/lib/catalogs/panels";
 import { PanelKind } from "@/features/diagram";
-import type { CanvasPickerOption } from "./elementPickerModal.types";
+import type { CanvasPickerOption } from "./types";
 
 export type C4PickerOption = {
   type: "person" | "system" | "container" | "component";

@@ -1,7 +1,3 @@
-/**
- * Estado visual do canvas (não persiste no store).
- * Seleção, highlight, context menu, quick insert.
- */
 import { useCallback, useRef, useState } from "react";
 
 export interface CanvasVisualState {

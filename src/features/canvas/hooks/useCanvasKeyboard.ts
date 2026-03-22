@@ -16,8 +16,6 @@ import { getSelectedNodes, isInputFocused, isModKeyPressed } from "./keyboard/he
 import { toast } from "sonner";
 import { isDiagramCompareMode, resolveCanvasSnapshot } from "@/features/diagram";
 
-// ── Types ─────────────────────────────────────────────────────────────────
-
 interface UseCanvasKeyboardParams {
   diagram: Diagram | null | undefined;
   setCompareScene: (sceneId: string | null) => void;
@@ -61,8 +59,6 @@ interface UseCanvasKeyboardParams {
   onOpenCommandPalette?: () => void;
 }
 
-// ── Constants ─────────────────────────────────────────────────────────────
-
 const KEY = {
   ESCAPE: "Escape",
   DELETE: "Delete",
@@ -78,8 +74,6 @@ const KEY = {
   Z: "z",
   SLASH: "/",
 } as const;
-
-// ── Main hook ─────────────────────────────────────────────────────────────
 
 export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   const { t } = useTranslation();

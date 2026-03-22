@@ -32,5 +32,5 @@ export interface AppState {
   clipboard: ClipboardEntry | null;
 }
 
-/** Store completo: estado + ações. */
+/** Full Zustand slice: app state plus diagram actions. */
 export type DiagramStore = AppState & AppActions;

@@ -44,7 +44,7 @@ export async function commitGithubImport({
 
       if (!resolution) {
         throw new Error(
-          "Resolução ausente para um conflito. Feche e tente novamente.",
+          "Missing resolution for a conflict. Close the dialog and try again.",
         );
       }
 

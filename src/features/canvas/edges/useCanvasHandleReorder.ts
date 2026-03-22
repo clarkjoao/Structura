@@ -1,6 +1,3 @@
-/**
- * Handler para reordenar handles de conexões (incoming/outgoing).
- */
 import { useCallback } from "react";
 import { isDiagramCompareMode, useActiveDiagram } from "@/features/diagram";
 import { useFlowMode } from "../flow/FlowModeContext";

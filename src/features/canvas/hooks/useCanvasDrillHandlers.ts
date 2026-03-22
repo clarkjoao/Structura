@@ -1,6 +1,3 @@
-/**
- * Handlers de drill/navegação: abrir diagrama linkado, expandir/colapsar painéis.
- */
 import { useCallback } from "react";
 import type { Diagram } from "@/features/diagram";
 import { isPanelComponent, resolveCanvasSnapshot } from "@/features/diagram";

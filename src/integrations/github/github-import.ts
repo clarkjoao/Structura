@@ -96,7 +96,7 @@ export async function importFromGitHub(
 ): Promise<GitHubImportResult> {
   const parsed = parseOwnerRepo(repoUrl);
   if (!parsed) {
-    throw new Error("URL inválida. Use: https://github.com/owner/repo");
+    throw new Error("Invalid URL. Use: https://github.com/owner/repo");
   }
 
   const { owner, repo } = parsed;

@@ -2,14 +2,14 @@ import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import type { TFunction } from "i18next";
 
-interface UseCanvasCompareModeGuardsParams {
+interface UseCanvasCompareModeEffectsParams {
   isCompareMode: boolean;
   isFlowPanelOpen: boolean;
   clearCanvasSelection: () => void;
   t: TFunction;
 }
 
-export function useCanvasCompareModeGuards(params: UseCanvasCompareModeGuardsParams): void {
+export function useCanvasCompareModeEffects(params: UseCanvasCompareModeEffectsParams): void {
   const { isCompareMode, isFlowPanelOpen, clearCanvasSelection, t } = params;
 
   const compareModeEnteredRef = useRef(false);

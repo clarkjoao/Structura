@@ -85,7 +85,6 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
         {!d.compareBadges && d.sceneBadge && (
           <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
         )}
-        {/* Margem superior — cabeçalho tipo folha A3 */}
         <div
           className={`flex items-center gap-2 px-5 py-2.5 border-b ${dark ? "border-white/20" : "border-border/60"}`}
           style={{ minHeight: 36 }}
@@ -101,7 +100,6 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
           </span>
         </div>
 
-        {/* Área de conteúdo — corpo da folha */}
         <div
           className={`flex-1 overflow-auto px-5 py-4 min-h-0 ${textClass}`}
           style={{ fontFamily: "ui-serif, Georgia, serif" }}
@@ -183,7 +181,6 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
           )}
         </div>
 
-        {/* Rodapé sutil — margem inferior */}
         <div
           className={`h-2 shrink-0 ${dark ? "bg-white/5" : "bg-foreground/[0.02]"}`}
         />

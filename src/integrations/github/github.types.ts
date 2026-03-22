@@ -30,8 +30,7 @@ export interface GithubConfig {
 }
 
 /**
- * Campos de busca estruturados para a GitHub Search API.
- * Cada campo mapeia para qualificadores nativos da API.
+ * Structured GitHub Search API fields; each maps to native query qualifiers.
  * @see https://docs.github.com/en/search-github/searching-on-github/searching-for-repositories
  */
 /** Search field keys — labels come from `githubSearchField.*` in i18n */
@@ -57,11 +56,10 @@ export interface GHSearchFilters {
 }
 
 /**
- * Monta a query string para a GitHub Search API a partir do campo + valor + filtros.
+ * Build the GitHub Search API query string from field, value, and filters.
  *
- * Os filtros `org`, `user` e `language` são qualificadores combinados com o campo
- * de busca principal. Quando `org` ou `user` estão preenchidos e o campo principal
- * está vazio, a busca retorna todos os repos daquela org/user.
+ * `org`, `user`, and `language` are combined with the main search field. If `org` or
+ * `user` is set and the main field is empty, the query lists all repos for that org/user.
  */
 export function buildGithubQuery(
   query: string,

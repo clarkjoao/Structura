@@ -5,7 +5,7 @@ import {
   type AwsCategoryId,
   type AwsService,
 } from "@/lib/catalogs/aws";
-import { AWS_SPOTLIGHT_IDS } from "./elementPickerModal.constants";
+import { AWS_SPOTLIGHT_IDS } from "./constants";
 
 export function resolveAwsSpotlight(): { svc: AwsService; categoryId: AwsCategoryId }[] {
   const out: { svc: AwsService; categoryId: AwsCategoryId }[] = [];

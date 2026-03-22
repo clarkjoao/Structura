@@ -2,7 +2,7 @@ import { Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import type { ServiceDefinition } from "@/features/diagram";
-import { registrySourceDotClass } from "./elementPickerModal.utils";
+import { registrySourceDotClass } from "./utils";
 
 type Variant = "default" | "search";
 

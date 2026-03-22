@@ -4,7 +4,7 @@ export interface ColorPreset {
   color: string;
 }
 
-/** Cores vibrantes — painéis e destaques */
+/** Bold accent colors for panels and highlights */
 export const VIBRANT_PRESETS: ColorPreset[] = [
   { nameKey: "colors.blue", color: "hsl(220 70% 50%)" },
   { nameKey: "colors.indigo", color: "hsl(250 70% 55%)" },
@@ -23,7 +23,7 @@ export const VIBRANT_PRESETS: ColorPreset[] = [
   { nameKey: "colors.sky", color: "hsl(200 75% 50%)" },
 ];
 
-/** Tons de papel — notas e fundos suaves */
+/** Paper-like tones for notes and soft backgrounds */
 export const PAPER_PRESETS: ColorPreset[] = [
   { nameKey: "colors.white", color: "hsl(0 0% 98%)" },
   { nameKey: "colors.ivory", color: "hsl(45 25% 97%)" },
@@ -39,7 +39,7 @@ export const PAPER_PRESETS: ColorPreset[] = [
   { nameKey: "colors.lightGray", color: "hsl(220 15% 92%)" },
 ];
 
-/** Cores C4 — alinhadas aos tipos do modelo */
+/** C4 palette aligned with diagram type colors */
 export const C4_PRESETS: ColorPreset[] = [
   { nameKey: "colors.c4Person", color: "hsl(38 92% 50%)" },
   { nameKey: "colors.c4System", color: "hsl(187 72% 51%)" },
@@ -51,7 +51,7 @@ export const C4_PRESETS: ColorPreset[] = [
   { nameKey: "colors.darkAmber", color: "hsl(35 80% 42%)" },
 ];
 
-/** Neutros — painéis discretos */
+/** Neutral tones for low-key panels */
 export const NEUTRAL_PRESETS: ColorPreset[] = [
   { nameKey: "colors.grayDark", color: "hsl(220 20% 20%)" },
   { nameKey: "colors.slate", color: "hsl(215 25% 25%)" },
@@ -61,19 +61,19 @@ export const NEUTRAL_PRESETS: ColorPreset[] = [
   { nameKey: "colors.gray", color: "hsl(220 10% 45%)" },
 ];
 
-/** Painéis — vibrantes + neutros */
+/** Panel presets: vibrant + neutral */
 export const PANEL_PRESETS: ColorPreset[] = [
   ...VIBRANT_PRESETS,
   ...NEUTRAL_PRESETS,
 ];
 
-/** Notas — papel + vibrantes para variedade */
+/** Note presets: paper tones plus a vibrant subset */
 export const NOTE_PRESETS: ColorPreset[] = [
   ...PAPER_PRESETS,
   ...VIBRANT_PRESETS.slice(0, 8),
 ];
 
-/** Cores padrão por tipo C4 (person, system, container, component) */
+/** Default C4 colors by component kind */
 export const C4_DEFAULT_COLORS: Record<string, string> = {
   person: "hsl(38 92% 50%)",
   system: "hsl(187 72% 51%)",

@@ -749,7 +749,8 @@
     "sourceBadgeManual": "Manual",
     "repoArchived": "Archived",
     "alreadyImported": "Already imported",
-    "defectDojoConflictBadge": "DefectDojo conflict"
+    "defectDojoConflictBadge": "DefectDojo conflict",
+    "configureIntegrationSearchImport": "Configure the integration to search and import GitHub repositories."
   },
   "defectdojo": {
     "connectionFailed": "Connection failed",

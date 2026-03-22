@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AwsCategory, AwsCategoryId } from "@/lib/catalogs/aws";
-import { OTHER_AWS_SECTION_KEY } from "./elementPickerModal.constants";
+import { OTHER_AWS_SECTION_KEY } from "./constants";
 import { AwsCategoryBlock } from "./AwsCategoryBlock";
 
 export function AwsBrowseView({

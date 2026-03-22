@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Code2, ChevronDown, ChevronUp } from "lucide-react";
 import type { MergeResolution } from "./GithubMergeDialog";
 import { GithubMergeDialog } from "./GithubMergeDialog";
@@ -10,6 +11,7 @@ import { useGithubImport } from "../hooks/useGithubImport";
 import { useGithubConfig } from "../hooks/useGithubConfig";
 
 export function GithubImportPanel() {
+  const { t } = useTranslation();
   const { config, saveConfig, clearConfig, isConfigured } = useGithubConfig();
   const {
     client,
@@ -111,7 +113,7 @@ export function GithubImportPanel() {
 
         {!isConfigured && !configOpen && (
           <p className="text-sm text-muted-foreground text-center py-4">
-            Configure a integração para pesquisar e importar repositórios do GitHub.
+            {t("github.configureIntegrationSearchImport")}
           </p>
         )}
 

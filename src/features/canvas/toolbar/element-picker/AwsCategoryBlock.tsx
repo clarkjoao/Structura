@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronRight } from "lucide-react";
 import type { AwsCategory, AwsCategoryId } from "@/lib/catalogs/aws";
 import AwsIcon from "../../nodes/AwsIcon";
-import { shortAwsName } from "./elementPickerModal.utils";
+import { shortAwsName } from "./utils";
 
 export function AwsCategoryBlock({
   cat,

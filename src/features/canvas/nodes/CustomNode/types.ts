@@ -28,7 +28,7 @@ export interface NodeData {
   outgoingCount?: number;
   /** Ordered connection ids per side — drives ↑↓ reorder controls. */
   handleOrder?: { incoming: string[]; outgoing: string[] };
-  /** Cor customizada para C4 (borda e ícone). Sobrescreve a cor padrão do tipo. */
+  /** Custom C4 accent (border and icon); overrides the default type color. */
   customColor?: string;
   /** Move a connection one position up or down on a given side. */
   onReorderHandle?: (
