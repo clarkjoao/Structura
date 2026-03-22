@@ -8,7 +8,7 @@ import {
 import type { FlowStep, Flow } from "@/features/diagram";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import type { BranchOwnerInfo, RecordingContext } from "./FlowModeContext";
+import type { BranchOwnerInfo, RecordingContext } from "./flowMode.types";
 import { RecorderHeader } from "./recorder/RecorderHeader";
 import { RecorderMetadataForm } from "./recorder/RecorderMetadataForm";
 import { BranchRecordingStrip } from "./recorder/BranchRecordingStrip";

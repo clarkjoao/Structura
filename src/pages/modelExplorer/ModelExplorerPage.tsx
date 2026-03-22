@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
-import { FlowModeProvider } from "@/features/canvas/flow/FlowModeContext";
+import { FlowModeProvider, type RecordingFinalizeData } from "@/features/canvas/flow";
 import {
   useActiveDiagram,
   useActiveDiagramId,
@@ -69,7 +69,7 @@ export default function ModelExplorerPage() {
   }, [navStack, openDiagram, navigate]);
 
   const handleFinalizeRecording = useCallback(
-    (data: import("@/features/canvas/flow/FlowModeContext").RecordingFinalizeData) => {
+    (data: RecordingFinalizeData) => {
       if (!diagram) return;
 
       const tempFlow = buildFlowFromRecordingSnapshot(data.steps, data.branchOwnership, {

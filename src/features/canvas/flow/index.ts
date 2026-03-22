@@ -1,18 +1,16 @@
 export { default as FlowPanel } from "./FlowPanel";
 export { default as FlowRecorderPanel } from "./FlowRecorderPanel";
 export { default as FlowStepNavigator } from "./FlowStepNavigator";
-export {
-  FlowModeProvider,
-  useFlowMode,
-  getDisplayStepsFromRecording,
-} from "./FlowModeContext";
+export { FlowModeProvider, useFlowMode } from "./FlowModeContext";
+export { getDisplayStepsFromRecording } from "./useFlowModeRecording";
 export type {
   FlowMode,
   FlowModeState,
   BranchOwnerInfo,
   RecordingContext,
   RecordingFinalizeData,
-} from "./FlowModeContext";
+  FlowModeProviderProps,
+} from "./flowMode.types";
 export { getBranchColor, BRANCH_COLORS } from "./branchColors";
 export { useFlowState } from "./useFlowState";
 export type { FlowHighlight, RecordingInfo, CoverageInfo } from "./flowState";

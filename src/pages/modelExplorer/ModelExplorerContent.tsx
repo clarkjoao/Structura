@@ -6,8 +6,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Check, Clipboard, Download, GitBranch, CircleHelp, FolderTree } from "lucide-react";
 import ShortcutsModal from "@/components/ShortcutsModal";
 import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
-import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
-import type { BranchOwnerInfo, RecordingContext } from "@/features/canvas/flow/FlowModeContext";
+import { useFlowMode, type BranchOwnerInfo, type RecordingContext } from "@/features/canvas/flow";
 import { isDiagramCompareMode, useActiveDiagram, type Flow } from "@/features/diagram";
 import type { ModelExplorerContentProps } from "./types";
 

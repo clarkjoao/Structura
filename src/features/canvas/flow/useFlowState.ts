@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { Flow, FlowStep } from "@/features/diagram";
 import { useFlowMode } from "./FlowModeContext";
-import type { BranchOwnerInfo, RecordingContext } from "./FlowModeContext";
+import type { BranchOwnerInfo, RecordingContext } from "./flowMode.types";
 import {
   EMPTY_FLOW_HIGHLIGHT,
   buildFlowHighlight,
