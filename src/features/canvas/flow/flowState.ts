@@ -31,6 +31,12 @@ export const EMPTY_FLOW_HIGHLIGHT: FlowHighlight = {
   participantConnIds: new Set(),
 };
 
+/** Legacy / partial persisted data may omit `steps` or store a non-array. */
+export function safeFlowSteps(flow: Flow): FlowStep[] {
+  const s = flow.steps;
+  return Array.isArray(s) ? s : [];
+}
+
 function addFlowToMap(map: Map<string, string[]>, key: string, flowName: string): void {
   const arr = map.get(key) ?? [];
   if (!arr.includes(flowName)) arr.push(flowName);
@@ -41,12 +47,13 @@ export function buildFlowHighlight(
   activeFlow: Flow,
   currentStep: number,
 ): FlowHighlight {
-  const step = activeFlow.steps[currentStep];
+  const steps = safeFlowSteps(activeFlow);
+  const step = steps[currentStep];
   const visitedNodeIds = new Set<string>();
   const participantNodeIds = new Set<string>();
   const participantConnIds = new Set<string>();
 
-  for (const s of activeFlow.steps) {
+  for (const s of steps) {
     if (s.componentId) participantNodeIds.add(s.componentId);
     if (s.connectionId) participantConnIds.add(s.connectionId);
     if (s.order < currentStep && s.componentId) visitedNodeIds.add(s.componentId);
@@ -66,7 +73,7 @@ export function buildCoverage(flows: Flow[]): CoverageInfo {
   const edgeFlows = new Map<string, string[]>();
 
   for (const flow of flows) {
-    for (const step of flow.steps) {
+    for (const step of safeFlowSteps(flow)) {
       if (step.componentId) addFlowToMap(nodeFlows, step.componentId, flow.name);
       if (step.connectionId) addFlowToMap(edgeFlows, step.connectionId, flow.name);
     }
