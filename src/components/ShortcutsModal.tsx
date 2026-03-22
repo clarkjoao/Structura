@@ -83,10 +83,34 @@ export default function ShortcutsModal({
                   </span>
                 }
               />
+              <ShortcutRow
+                label={t("shortcutsModal.commandPalette")}
+                description={t("shortcutsModal.commandPaletteDesc")}
+                keys={
+                  <span className="inline-flex items-center gap-1">
+                    <Kbd>Cmd/Ctrl</Kbd>
+                    <Kbd>K</Kbd>
+                  </span>
+                }
+              />
+              <ShortcutRow
+                label={t("shortcutsModal.toggleSidebar")}
+                description={t("shortcutsModal.toggleSidebarDesc")}
+                keys={
+                  <span className="inline-flex items-center gap-1">
+                    <Kbd>Cmd/Ctrl</Kbd>
+                    <Kbd>B</Kbd>
+                  </span>
+                }
+              />
             </ShortcutCard>
 
             <ShortcutCard title={t("shortcutsModal.selection")}>
-              <ShortcutRow label={t("shortcutsModal.clearSelection")} keys={<Kbd>Esc</Kbd>} />
+              <ShortcutRow
+                label={t("shortcutsModal.clearSelection")}
+                description={t("shortcutsModal.clearSelectionDesc")}
+                keys={<Kbd>Esc</Kbd>}
+              />
               <ShortcutRow
                 label={t("shortcutsModal.selectAll")}
                 keys={
@@ -219,6 +243,18 @@ export default function ShortcutsModal({
                     <Kbd>4</Kbd>
                   </span>
                 }
+              />
+            </ShortcutCard>
+
+            <ShortcutCard title={t("shortcutsModal.flowPlayback")}>
+              <ShortcutRow
+                label={t("shortcutsModal.flowStepBack")}
+                keys={<Kbd>←</Kbd>}
+              />
+              <ShortcutRow
+                label={t("shortcutsModal.flowStepNext")}
+                description={t("shortcutsModal.flowStepNextDesc")}
+                keys={<Kbd>→</Kbd>}
               />
             </ShortcutCard>
           </div>
