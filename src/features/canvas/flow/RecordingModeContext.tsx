@@ -379,19 +379,19 @@ export function RecordingModeStateProvider({
 
   const onDeleteStep = useCallback(
     (index: number) => {
+      let removedId: string | null = null;
       setRecordingSteps((prev) => {
         const panel = getDisplayStepsFromRecording(prev, recordingContext, branchOwnership);
         const step = panel[index];
         if (!step) return prev;
-        setBranchOwnership((om) => {
-          if (om.has(step.id)) {
-            const next = new Map(om);
-            next.delete(step.id);
-            return next;
-          }
-          return om;
-        });
+        removedId = step.id;
         return prev.filter((s) => s.id !== step.id);
+      });
+      setBranchOwnership((om) => {
+        if (!removedId || !om.has(removedId)) return om;
+        const next = new Map(om);
+        next.delete(removedId);
+        return next;
       });
     },
     [recordingContext, branchOwnership],

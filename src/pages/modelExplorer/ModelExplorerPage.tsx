@@ -15,7 +15,7 @@ import {
   useServiceRegistry,
   buildFlowFromRecordingSnapshot,
 } from "@/features/diagram";
-import type { Flow, FlowStep } from "@/features/diagram";
+import type { Flow } from "@/features/diagram";
 import { exportJSON, exportDrawio, exportMermaid, downloadFile } from "@/lib/export-service";
 import { writeDrawioToClipboard } from "@/lib/clipboard-utils";
 import { ModelExplorerContent } from "./ModelExplorerContent";
@@ -38,12 +38,14 @@ export default function ModelExplorerPage() {
   const [copied, setCopied] = useState(false);
 
   const playback = useFlowPlaybackState(activeFlow);
+
   // Sync URL :id → store.activeDiagramId (handles page refresh / direct link)
   useEffect(() => {
     if (urlId && urlDiagramExists && activeDiagramId !== urlId) {
       openDiagram(urlId);
     }
   }, [urlId, urlDiagramExists, activeDiagramId, openDiagram]);
+  
 
   const handleOpenDiagram = useCallback(
     (id: string) => {
