@@ -1,177 +1,216 @@
-import type { Diagram, Folder, ServiceDefinition } from "@/features/diagram";
+import {
+  PanelKind,
+  ServiceSource,
+  StrokeStyle,
+  type Diagram,
+  type Folder,
+  type ServiceDefinition,
+} from "@/features/diagram";
 
-/* ─────────────────────── Folder ─────────────────────── */
+/* ─────────────────────────────────────────────────────────────
+   FOLDERS
+───────────────────────────────────────────────────────────── */
 
-const SEED_FOLDER_ID = "folder-seed-ecommerce";
+const FOLDER_ID = "folder-fintech";
 
-function buildSeedFolders(): Record<string, Folder> {
+function buildFolders(): Record<string, Folder> {
   return {
-    [SEED_FOLDER_ID]: {
-      id: SEED_FOLDER_ID,
-      name: "Example - Ecommerce",
+    [FOLDER_ID]: {
+      id: FOLDER_ID,
+      name: "Exemplo – Pagamentos Fintech",
       parentId: null,
       domain: "seed",
     },
   };
 }
 
-/* ─────────────────────── Service Registry ─────────────────────── */
+/* ─────────────────────────────────────────────────────────────
+   SERVICE REGISTRY
+───────────────────────────────────────────────────────────── */
 
-function buildSharedServiceRegistry(): Record<string, ServiceDefinition> {
+function buildServiceRegistry(): Record<string, ServiceDefinition> {
   return {
-    "svc-order": {
-      id: "svc-order",
-      name: "order-service",
-      description: "Microserviço de processamento e gerenciamento de pedidos",
-      repositoryUrl: "https://github.com/acme/order-service",
-      technology: ["Java", "Spring Boot", "PostgreSQL"],
-      owner: "team-orders",
-      tags: ["backend", "core", "domain"],
-    },
-    "svc-gateway": {
-      id: "svc-gateway",
+    "svc-api-gateway": {
+      id: "svc-api-gateway",
       name: "api-gateway",
-      description:
-        "Gateway de entrada para roteamento, rate limiting e autenticação",
-      repositoryUrl: "https://github.com/acme/api-gateway",
+      description: "Ponto de entrada para todo tráfego de clientes. Gerencia autenticação, rate limiting e roteamento.",
+      repositoryUrl: "https://github.com/fintech/api-gateway",
       technology: ["Kong", "Nginx", "Lua"],
-      owner: "team-platform",
-      tags: ["infra", "gateway"],
-    },
-    "svc-auth": {
-      id: "svc-auth",
-      name: "auth-service",
-      description: "Serviço de autenticação OAuth2/OIDC e validação JWT",
-      repositoryUrl: "https://github.com/acme/auth-service",
-      technology: ["Node.js", "Express", "jsonwebtoken", "Redis"],
-      owner: "team-security",
-      tags: ["security", "auth"],
-    },
-    "svc-inventory": {
-      id: "svc-inventory",
-      name: "inventory-service",
-      description: "Controle de estoque e reserva de produtos",
-      repositoryUrl: "https://github.com/acme/inventory-service",
-      technology: ["Go", "gRPC", "DynamoDB"],
-      owner: "team-catalog",
-      tags: ["backend", "domain"],
-    },
-    "svc-notification": {
-      id: "svc-notification",
-      name: "notification-service",
-      description: "Envio de notificações por email, SMS e push",
-      repositoryUrl: "https://github.com/acme/notification-service",
-      technology: ["Python", "FastAPI", "Celery", "Redis"],
-      owner: "team-engagement",
-      tags: ["backend", "messaging"],
+      owner: "time-plataforma",
+      tags: ["infra", "gateway", "platform"],
+      source: ServiceSource.Manual,
     },
     "svc-payment": {
       id: "svc-payment",
       name: "payment-service",
-      description:
-        "Processamento de pagamentos e integração com gateways financeiros",
-      repositoryUrl: "https://github.com/acme/payment-service",
-      technology: ["Java", "Spring Boot", "Stripe SDK"],
-      owner: "team-payments",
-      tags: ["backend", "financial", "pci"],
+      description: "Orquestração central de pagamentos. Processa transações e gerencia idempotência.",
+      repositoryUrl: "https://github.com/fintech/payment-service",
+      technology: ["Kotlin", "Spring Boot", "PostgreSQL"],
+      owner: "time-pagamentos",
+      tags: ["backend", "core", "pci", "domain"],
+      source: ServiceSource.Manual,
     },
-    "svc-webapp": {
-      id: "svc-webapp",
-      name: "web-app",
-      description: "Aplicação web SPA do e-commerce",
-      repositoryUrl: "https://github.com/acme/web-app",
-      technology: ["React", "TypeScript", "Vite"],
-      owner: "team-frontend",
-      tags: ["frontend", "spa"],
+    "svc-account": {
+      id: "svc-account",
+      name: "account-service",
+      description: "Gerenciamento de contas, saldos e histórico de transações.",
+      repositoryUrl: "https://github.com/fintech/account-service",
+      technology: ["Kotlin", "Spring Boot", "PostgreSQL"],
+      owner: "time-contas",
+      tags: ["backend", "core", "domain"],
+      source: ServiceSource.Manual,
+    },
+    "svc-fraud": {
+      id: "svc-fraud",
+      name: "fraud-detection-service",
+      description: "Real-time fraud scoring using ML models. Async enrichment via Kafka.",
+      repositoryUrl: "https://github.com/fintech/fraud-detection",
+      technology: ["Python", "FastAPI", "TensorFlow", "Kafka"],
+      owner: "time-risco",
+      tags: ["backend", "ml", "risk"],
+      source: ServiceSource.Manual,
+    },
+    "svc-notification": {
+      id: "svc-notification",
+      name: "notification-service",
+      description: "Entrega de notificações multicanal: push, email, SMS.",
+      repositoryUrl: "https://github.com/fintech/notification-service",
+      technology: ["Node.js", "NestJS", "Kafka", "Redis"],
+      owner: "time-engajamento",
+      tags: ["backend", "messaging"],
+      source: ServiceSource.Manual,
+    },
+    "svc-ledger": {
+      id: "svc-ledger",
+      name: "ledger-service",
+      description: "Ledger de partidas dobradas para registros financeiros imutáveis.",
+      repositoryUrl: "https://github.com/fintech/ledger-service",
+      technology: ["Kotlin", "Spring Boot", "PostgreSQL"],
+      owner: "time-financeiro",
+      tags: ["backend", "core", "compliance"],
+      source: ServiceSource.Manual,
+    },
+    "svc-mobile": {
+      id: "svc-mobile",
+      name: "mobile-app",
+      description: "React Native mobile application for iOS and Android.",
+      repositoryUrl: "https://github.com/fintech/mobile-app",
+      technology: ["React Native", "TypeScript", "Expo"],
+      owner: "time-mobile",
+      tags: ["frontend", "mobile"],
+      source: ServiceSource.Manual,
     },
     "svc-bff": {
       id: "svc-bff",
-      name: "bff-service",
-      description:
-        "Backend-for-Frontend agregando chamadas para a SPA",
-      repositoryUrl: "https://github.com/acme/bff-service",
+      name: "mobile-bff",
+      description: "Backend-for-Frontend optimised for mobile clients.",
+      repositoryUrl: "https://github.com/fintech/mobile-bff",
       technology: ["Node.js", "NestJS", "GraphQL"],
-      owner: "team-frontend",
-      tags: ["backend", "aggregation"],
+      owner: "time-mobile",
+      tags: ["backend", "bff", "aggregation"],
+      source: ServiceSource.Manual,
     },
   };
 }
 
-/* ─────────────────────── Diagrams ─────────────────────── */
+/* ─────────────────────────────────────────────────────────────
+   DIAGRAMS
+───────────────────────────────────────────────────────────── */
 
-function buildSeedDiagrams(): Record<string, Diagram> {
+function buildDiagrams(): Record<string, Diagram> {
   return {
+
     /* ═══════════════════════════════════════════════════════
-       C1 — System Context
+       C1 — System Context  (left → right)
        ═══════════════════════════════════════════════════════ */
     "d-context": {
       id: "d-context",
-      name: "E-commerce – Contexto",
+      name: "Fintech – Contexto do Sistema",
       level: "context",
       domain: "seed",
-      folderId: SEED_FOLDER_ID,
-      createdAt: "2026-02-15T09:00:00.000Z",
-      updatedAt: "2026-03-17T14:30:00.000Z",
+      folderId: FOLDER_ID,
+      createdAt: "2026-01-10T09:00:00.000Z",
+      updatedAt: "2026-03-20T10:00:00.000Z",
+      viewport: { x: 0, y: 0, zoom: 0.55 },
+      nodeLayouts: {
+        // Actors — left column
+        "ctx-customer":     { elementId: "ctx-customer",     x: 80,   y: 300 },
+        "ctx-merchant":     { elementId: "ctx-merchant",     x: 80,   y: 600 },
+        // Core system — center
+        "ctx-platform":     { elementId: "ctx-platform",     x: 500,  y: 420 },
+        // External systems — right column
+        "ctx-card-network": { elementId: "ctx-card-network", x: 1000, y: 180 },
+        "ctx-bank":         { elementId: "ctx-bank",         x: 1000, y: 380 },
+        "ctx-kyc":          { elementId: "ctx-kyc",          x: 1000, y: 580 },
+        "ctx-sms-gw":       { elementId: "ctx-sms-gw",       x: 1000, y: 740 },
+        // Note — far right
+        "ctx-note": {
+          elementId: "ctx-note",
+          x: 1320, y: 80,
+          width: 340, height: 420,
+        },
+      },
       snapshot: {
         components: {
           "ctx-customer": {
             id: "ctx-customer",
             name: "Cliente",
             type: "person",
-            description:
-              "Usuário final que navega pelo catálogo, adiciona produtos ao carrinho e realiza compras.",
+            description: "Usuário final que realiza pagamentos, transferências e gerencia sua conta pelo app mobile.",
             parentId: null,
           },
-          "ctx-admin": {
-            id: "ctx-admin",
-            name: "Administrador",
+          "ctx-merchant": {
+            id: "ctx-merchant",
+            name: "Lojista",
             type: "person",
-            description:
-              "Operador interno que gerencia catálogo, pedidos e configurações da plataforma.",
+            description: "Empresa que aceita pagamentos. Integra via REST API ou link de pagamento.",
             parentId: null,
           },
-          "ctx-ecommerce": {
-            id: "ctx-ecommerce",
-            name: "Plataforma E-commerce",
+          "ctx-platform": {
+            id: "ctx-platform",
+            name: "Plataforma Fintech Pagamentos",
             type: "system",
-            description:
-              "Sistema central que processa pedidos, gerencia catálogo, estoque e pagamentos.",
+            description: "Plataforma central que processa pagamentos, gerencia contas, detecta fraudes e registra entradas no ledger.",
             parentId: null,
             linkedDiagramId: "d-containers",
           },
-          "ctx-payment-gw": {
-            id: "ctx-payment-gw",
-            name: "Gateway de Pagamento",
+          "ctx-card-network": {
+            id: "ctx-card-network",
+            name: "Rede de Cartões",
             type: "system",
-            description:
-              "Sistema externo (Stripe/PagSeguro) para processamento de transações financeiras.",
+            description: "Rede Visa / Mastercard para autorização e liquidação de transações com cartão.",
             parentId: null,
             tags: ["externo"],
           },
-          "ctx-email": {
-            id: "ctx-email",
-            name: "Serviço de Email",
+          "ctx-bank": {
+            id: "ctx-bank",
+            name: "Banco Parceiro",
             type: "system",
-            description:
-              "Provedor externo de envio de emails transacionais (SendGrid).",
+            description: "Banco parceiro para emissão de contas, PIX e transferências TED/DOC.",
             parentId: null,
             tags: ["externo"],
           },
-          "ctx-erp": {
-            id: "ctx-erp",
-            name: "ERP Legado",
+          "ctx-kyc": {
+            id: "ctx-kyc",
+            name: "Provedor KYC",
             type: "system",
-            description:
-              "Sistema legado de gestão empresarial que mantém dados fiscais e contábeis.",
+            description: "Verificação de identidade e conformidade AML/CFT (Serpro / Serasa).",
             parentId: null,
-            tags: ["externo", "legado"],
+            tags: ["externo", "compliance"],
+          },
+          "ctx-sms-gw": {
+            id: "ctx-sms-gw",
+            name: "Gateway SMS / Push",
+            type: "system",
+            description: "Twilio / Firebase para entrega de OTP e notificações push.",
+            parentId: null,
+            tags: ["externo"],
           },
           "ctx-note": {
             id: "ctx-note",
-            name: "Notas de Contexto",
+            name: "Notas de Arquitetura",
             type: "note",
-            description:
-              "## Decisões\n- Gateway de Pagamento: Stripe como primário, PagSeguro como fallback para PIX.\n- ERP será substituído por módulo interno no Q3 2026.\n\n## Restrições\n- PCI-DSS compliance obrigatório para todos os fluxos de pagamento.\n- Dados de cartão nunca devem trafegar pelos nossos servidores.",
+            description: "## Principles\n- PCI-DSS Level 1 compliance\n- Card data never stored on our servers (tokenised via Card Network)\n- All financial operations are idempotent\n\n## Key decisions\n- PIX as primary payment rail (real-time, 24/7)\n- Double-entry ledger for auditability\n- Fraud scoring is async — does not block the payment path\n\n## Roadmap\n- Q3 2026: Multi-currency support\n- Q4 2026: Open Finance integration",
             parentId: null,
           },
         },
@@ -179,1000 +218,762 @@ function buildSeedDiagrams(): Record<string, Diagram> {
           "ctx-r1": {
             id: "ctx-r1",
             sourceId: "ctx-customer",
-            targetId: "ctx-ecommerce",
-            label: "Navega, busca produtos e faz pedidos",
+            targetId: "ctx-platform",
+            label: "Realiza pagamentos e transferências",
+            technology: "HTTPS / Mobile App",
             intent: "call",
             direction: "unidirectional",
           },
           "ctx-r2": {
             id: "ctx-r2",
-            sourceId: "ctx-admin",
-            targetId: "ctx-ecommerce",
-            label: "Gerencia catálogo e pedidos",
+            sourceId: "ctx-merchant",
+            targetId: "ctx-platform",
+            label: "Aceita pagamentos via API",
+            technology: "HTTPS / REST",
             intent: "call",
             direction: "unidirectional",
           },
           "ctx-r3": {
             id: "ctx-r3",
-            sourceId: "ctx-ecommerce",
-            targetId: "ctx-payment-gw",
-            label: "Processa cobrança",
-            technology: "HTTPS / REST",
+            sourceId: "ctx-platform",
+            targetId: "ctx-card-network",
+            label: "Autoriza e liquida transações de cartão",
+            technology: "ISO 8583 / HTTPS",
             intent: "call",
             direction: "unidirectional",
           },
           "ctx-r4": {
             id: "ctx-r4",
-            sourceId: "ctx-ecommerce",
-            targetId: "ctx-email",
-            label: "Dispara emails transacionais",
+            sourceId: "ctx-platform",
+            targetId: "ctx-bank",
+            label: "PIX e transferências bancárias",
+            technology: "PIX / SPI / HTTPS",
+            intent: "call",
+            direction: "bidirectional",
+          },
+          "ctx-r5": {
+            id: "ctx-r5",
+            sourceId: "ctx-platform",
+            targetId: "ctx-kyc",
+            label: "Verificação de identidade",
+            technology: "HTTPS / REST",
+            intent: "call",
+            direction: "unidirectional",
+          },
+          "ctx-r6": {
+            id: "ctx-r6",
+            sourceId: "ctx-platform",
+            targetId: "ctx-sms-gw",
+            label: "OTP e notificações push",
             technology: "HTTPS / API",
             intent: "async-message",
             direction: "unidirectional",
           },
-          "ctx-r5": {
-            id: "ctx-r5",
-            sourceId: "ctx-ecommerce",
-            targetId: "ctx-erp",
-            label: "Sincroniza dados fiscais",
-            technology: "SFTP / Batch",
-            intent: "data-flow",
-            direction: "bidirectional",
-            style: {
-              strokeStyle: "dashed",
-              strokeWidth: 2,
-              animated: true,
-            },
-          },
         },
         flows: {
-          "flow-purchase": {
-            id: "flow-purchase",
-            name: "Fluxo de Compra Completo",
+          "flow-ctx-payment": {
+            id: "flow-ctx-payment",
+            name: "Pagamento PIX – Visão de Contexto",
             diagramId: "d-context",
-            description:
-              "Fluxo end-to-end desde a navegação do cliente até a confirmação do pedido.",
-            tags: ["core", "happy-path"],
-            mermaid:
-              "Cliente->>Plataforma E-commerce: Adiciona itens ao carrinho\nNote over Plataforma E-commerce: Valida estoque\nPlataforma E-commerce->>Gateway de Pagamento: Processa cobrança\nGateway de Pagamento-->>Plataforma E-commerce: Confirmação\nPlataforma E-commerce->>Serviço de Email: Envia confirmação\nPlataforma E-commerce->>ERP Legado: Registra venda",
+            description: "Pagamento PIX ponta a ponta da perspectiva do cliente.",
+            tags: ["core", "pix", "caminho-feliz"],
+            mermaid: "sequenceDiagram",
             steps: [
               {
                 order: 0,
                 componentId: "ctx-customer",
                 connectionId: "ctx-r1",
-                note: "Cliente adiciona produtos e finaliza o pedido",
+                description: "Cliente inicia transferência PIX no app mobile",
               },
               {
                 order: 1,
-                componentId: "ctx-ecommerce",
-                note: "Plataforma valida disponibilidade de estoque",
+                componentId: "ctx-platform",
+                description: "Plataforma valida KYC e saldo da conta",
               },
               {
                 order: 2,
-                componentId: "ctx-payment-gw",
-                connectionId: "ctx-r3",
-                note: "Gateway processa cobrança no cartão",
-                duration: "~2s",
+                componentId: "ctx-platform",
+                connectionId: "ctx-r5",
+                description: "Plataforma solicita verificação de identidade ao Provedor KYC",
+                duration: "~200ms",
               },
               {
                 order: 3,
-                componentId: "ctx-ecommerce",
-                note: "Recebe confirmação de pagamento",
+                componentId: "ctx-platform",
+                connectionId: "ctx-r4",
+                description: "Plataforma envia instrução PIX ao Banco Parceiro",
+                duration: "~800ms",
+                payload: '{ "amount": 250.00, "pixKey": "recipient@email.com", "description": "Pagamento serviço" }',
+                payloadDirection: "request",
               },
               {
                 order: 4,
-                componentId: "ctx-email",
-                connectionId: "ctx-r4",
-                note: "Envia email de confirmação ao cliente",
+                componentId: "ctx-bank",
+                description: "Banco Parceiro processa PIX via SPI e confirma liquidação",
+                duration: "~2s",
+                payload: '{ "e2eId": "E1234567890", "status": "SETTLED" }',
+                payloadDirection: "response",
               },
               {
                 order: 5,
-                componentId: "ctx-erp",
-                connectionId: "ctx-r5",
-                note: "Sincroniza registro fiscal com o ERP",
+                componentId: "ctx-platform",
+                connectionId: "ctx-r6",
+                description: "Plataforma envia notificação push confirmando a transferência",
               },
             ],
           },
         },
       },
-      nodeLayouts: {
-        "ctx-customer": { elementId: "ctx-customer", x: 200, y: 50 },
-        "ctx-admin": { elementId: "ctx-admin", x: 900, y: 50 },
-        "ctx-ecommerce": { elementId: "ctx-ecommerce", x: 550, y: 400 },
-        "ctx-payment-gw": { elementId: "ctx-payment-gw", x: 50, y: 800 },
-        "ctx-email": { elementId: "ctx-email", x: 550, y: 800 },
-        "ctx-erp": { elementId: "ctx-erp", x: 1050, y: 800 },
-        "ctx-note": {
-          elementId: "ctx-note",
-          x: 1350,
-          y: 50,
-          width: 336,
-          height: 475,
-        },
-      },
-      viewport: { x: 0, y: 0, zoom: 0.55 },
     },
 
     /* ═══════════════════════════════════════════════════════
-       C2 — Container Diagram
+       C2 — Container Diagram  (left → right)
        ═══════════════════════════════════════════════════════ */
     "d-containers": {
       id: "d-containers",
-      name: "E-commerce – Containers",
+      name: "Fintech – Containers",
       level: "container",
       domain: "seed",
-      folderId: SEED_FOLDER_ID,
-      createdAt: "2026-02-20T10:00:00.000Z",
-      updatedAt: "2026-03-17T11:00:00.000Z",
+      folderId: FOLDER_ID,
+      createdAt: "2026-01-15T10:00:00.000Z",
+      updatedAt: "2026-03-20T11:00:00.000Z",
+      viewport: { x: 0, y: 0, zoom: 0.4 },
+      nodeLayouts: {
+        // Actors — col 0
+        "ct-mobile-user":      { elementId: "ct-mobile-user",      x: 60,   y: 600 },
+
+        // Frontend — col 1
+        "ct-panel-frontend":   { elementId: "ct-panel-frontend",   x: 280,  y: 80,  width: 480,  height: 900, zIndex: -1 },
+        "ct-mobile-app":       { elementId: "ct-mobile-app",       x: 340,  y: 200 },
+        "ct-bff":              { elementId: "ct-bff",              x: 340,  y: 480 },
+        "ct-web-app":          { elementId: "ct-web-app",          x: 340,  y: 720 },
+
+        // Gateway — col 2
+        "ct-gateway":          { elementId: "ct-gateway",          x: 860,  y: 480 },
+
+        // Backend — col 3
+        "ct-panel-backend":    { elementId: "ct-panel-backend",    x: 1120, y: 80,  width: 560,  height: 900, zIndex: -1 },
+        "ct-payment-svc":      { elementId: "ct-payment-svc",      x: 1180, y: 160 },
+        "ct-account-svc":      { elementId: "ct-account-svc",      x: 1180, y: 380 },
+        "ct-fraud-svc":        { elementId: "ct-fraud-svc",        x: 1180, y: 600 },
+        "ct-notification-svc": { elementId: "ct-notification-svc", x: 1180, y: 780 },
+
+        // Data — col 4
+        "ct-panel-data":       { elementId: "ct-panel-data",       x: 1780, y: 80,  width: 480,  height: 900, zIndex: -1 },
+        "ct-postgres":         { elementId: "ct-postgres",         x: 1840, y: 160 },
+        "ct-redis":            { elementId: "ct-redis",            x: 1840, y: 380 },
+        "ct-kafka":            { elementId: "ct-kafka",            x: 1840, y: 580 },
+        "ct-ledger-svc":       { elementId: "ct-ledger-svc",       x: 1840, y: 770 },
+      },
       snapshot: {
         components: {
-          /* ── Frontend tier ── */
+          "ct-mobile-user": {
+            id: "ct-mobile-user",
+            name: "Cliente",
+            type: "person",
+            description: "End user on iOS or Android.",
+            parentId: null,
+          },
+
+          /* ── Frontend panel ── */
           "ct-panel-frontend": {
             id: "ct-panel-frontend",
-            name: "Frontend Tier",
+            name: "Frontend",
             type: "panel",
-            description: "Camada de apresentação",
+            panelKind: PanelKind.Default,
+            panelColor: "hsl(220 60% 50%)",
+            panelOpacity: 8,
+            description: "",
             parentId: null,
-            panelKind: "default",
-            panelColor: "#e3f2fd",
-            panelOpacity: 0.3,
-            borderStyle: "solid",
           },
-          "ct-webapp": {
-            id: "ct-webapp",
-            name: "Web App (SPA)",
+          "ct-mobile-app": {
+            id: "ct-mobile-app",
+            name: "App Mobile",
             type: "container",
-            description:
-              "Aplicação React SPA servida via CDN. Responsável pela experiência do usuário.",
-            technology: "React / TypeScript / Vite",
+            description: "App React Native para iOS/Android. Cobre todas as jornadas do cliente: onboarding, pagamentos e gestão de conta.",
+            technology: "React Native / TypeScript",
             parentId: "ct-panel-frontend",
-            serviceId: "svc-webapp",
+            serviceId: "svc-mobile",
           },
           "ct-bff": {
             id: "ct-bff",
-            name: "BFF (GraphQL)",
+            name: "BFF Mobile",
             type: "container",
-            description:
-              "Backend-for-Frontend que agrega chamadas dos microserviços para a SPA.",
+            description: "Backend-for-Frontend que agrega chamadas para o cliente mobile. Reduz round-trips e adapta payloads.",
             technology: "Node.js / NestJS / GraphQL",
             parentId: "ct-panel-frontend",
             serviceId: "svc-bff",
             linkedDiagramId: "d-bff-components",
           },
+          "ct-web-app": {
+            id: "ct-web-app",
+            name: "Dashboard Lojista",
+            type: "container",
+            description: "SPA web para lojistas gerenciarem transações, reembolsos e relatórios.",
+            technology: "React / TypeScript / Vite",
+            parentId: "ct-panel-frontend",
+          },
 
-          /* ── API Gateway ── */
+          /* ── Gateway ── */
           "ct-gateway": {
             id: "ct-gateway",
             name: "API Gateway",
             type: "container",
-            description:
-              "Roteamento, autenticação, rate limiting e load balancing.",
+            description: "Ponto de entrada único. Validação JWT, rate limiting, terminação TLS e roteamento.",
             technology: "Kong / Nginx",
             parentId: null,
-            serviceId: "svc-gateway",
+            serviceId: "svc-api-gateway",
             linkedDiagramId: "d-gateway-components",
           },
 
-          /* ── Backend services panel ── */
+          /* ── Backend panel ── */
           "ct-panel-backend": {
             id: "ct-panel-backend",
-            name: "Backend Microservices",
+            name: "Serviços Backend",
             type: "panel",
-            description: "Domínio de negócio",
+            panelKind: PanelKind.Default,
+            panelColor: "hsl(38 92% 50%)",
+            panelOpacity: 8,
+            description: "",
             parentId: null,
-            panelKind: "default",
-            panelColor: "#fff3e0",
-            panelOpacity: 0.3,
-            borderStyle: "dashed",
-          },
-          "ct-order-svc": {
-            id: "ct-order-svc",
-            name: "Order Service",
-            type: "container",
-            description:
-              "CRUD de pedidos, máquina de estados do pedido, cálculo de frete e impostos.",
-            technology: "Java / Spring Boot",
-            parentId: "ct-panel-backend",
-            serviceId: "svc-order",
-          },
-          "ct-inventory-svc": {
-            id: "ct-inventory-svc",
-            name: "Inventory Service",
-            type: "container",
-            description:
-              "Controle de estoque, reservas temporárias e notificação de reposição.",
-            technology: "Go / gRPC",
-            parentId: "ct-panel-backend",
-            serviceId: "svc-inventory",
           },
           "ct-payment-svc": {
             id: "ct-payment-svc",
-            name: "Payment Service",
+            name: "Serviço de Pagamento",
             type: "container",
-            description:
-              "Orquestração de pagamentos, retry com idempotência, integração com Stripe.",
-            technology: "Java / Spring Boot",
+            description: "Orquestra transações de pagamento: PIX, cartão, TED. Garante idempotência e gerencia retentativas.",
+            technology: "Kotlin / Spring Boot",
             parentId: "ct-panel-backend",
             serviceId: "svc-payment",
+            linkedDiagramId: "d-payment-components",
           },
-          "ct-auth-svc": {
-            id: "ct-auth-svc",
-            name: "Auth Service",
+          "ct-account-svc": {
+            id: "ct-account-svc",
+            name: "Serviço de Conta",
             type: "container",
-            description:
-              "Autenticação OAuth2, emissão e validação de tokens JWT, gerenciamento de sessões.",
-            technology: "Node.js / Express",
+            description: "Gerencia contas, saldos, limites e histórico de transações. Aplica regras de negócio.",
+            technology: "Kotlin / Spring Boot",
             parentId: "ct-panel-backend",
-            serviceId: "svc-auth",
+            serviceId: "svc-account",
+          },
+          "ct-fraud-svc": {
+            id: "ct-fraud-svc",
+            name: "Detecção de Fraude",
+            type: "container",
+            description: "Score de fraude em tempo real baseado em ML. Consome eventos de transação e enriquece com score de risco assincronamente.",
+            technology: "Python / FastAPI / TensorFlow",
+            parentId: "ct-panel-backend",
+            serviceId: "svc-fraud",
           },
           "ct-notification-svc": {
             id: "ct-notification-svc",
-            name: "Notification Service",
+            name: "Serviço de Notificação",
             type: "container",
-            description:
-              "Envio assíncrono de notificações por email, SMS e push notifications.",
-            technology: "Python / FastAPI / Celery",
+            description: "Entrega notificações push, email e SMS. Consome eventos do Kafka.",
+            technology: "Node.js / NestJS",
             parentId: "ct-panel-backend",
             serviceId: "svc-notification",
           },
 
-          /* ── Data tier panel ── */
+          /* ── Data panel ── */
           "ct-panel-data": {
             id: "ct-panel-data",
-            name: "Data Tier",
+            name: "Dados & Mensageria",
             type: "panel",
-            description: "Armazenamento e mensageria",
+            panelKind: PanelKind.Default,
+            panelColor: "hsl(152 60% 45%)",
+            panelOpacity: 8,
+            description: "",
             parentId: null,
-            panelKind: "default",
-            panelColor: "#f3e5f5",
-            panelOpacity: 0.25,
-            borderStyle: "solid",
           },
           "ct-postgres": {
             id: "ct-postgres",
             name: "PostgreSQL",
             type: "container",
-            description:
-              "Banco relacional principal para pedidos, usuários e catálogo.",
-            technology: "PostgreSQL 16",
-            parentId: "ct-panel-data",
-          },
-          "ct-dynamodb": {
-            id: "ct-dynamodb",
-            name: "DynamoDB",
-            type: "container",
-            description:
-              "Armazenamento NoSQL para inventário com baixa latência.",
-            technology: "AWS DynamoDB",
+            description: "Banco relacional principal. Tabelas de contas, pagamentos e auditoria. Multi-AZ com réplicas de leitura.",
+            technology: "PostgreSQL 16 / RDS",
             parentId: "ct-panel-data",
           },
           "ct-redis": {
             id: "ct-redis",
             name: "Redis",
             type: "container",
-            description:
-              "Cache distribuído para sessões, rate limiting e carrinhos temporários.",
-            technology: "Redis 7 (ElastiCache)",
+            description: "Chaves de idempotência, cache de sessão, contadores de rate limit e armazenamento de OTP.",
+            technology: "Redis 7 / ElastiCache",
             parentId: "ct-panel-data",
           },
           "ct-kafka": {
             id: "ct-kafka",
             name: "Kafka",
             type: "container",
-            description:
-              "Broker de eventos para comunicação assíncrona entre serviços.",
-            technology: "Apache Kafka (MSK)",
+            description: "Espinha dorsal de streaming de eventos. Tópicos: payment.processed, payment.failed, fraud.scored, account.updated.",
+            technology: "Apache Kafka / MSK",
             parentId: "ct-panel-data",
+          },
+          "ct-ledger-svc": {
+            id: "ct-ledger-svc",
+            name: "Serviço de Ledger",
+            type: "container",
+            description: "Ledger de partidas dobradas imutável para todos os movimentos financeiros. Schema append-only no PostgreSQL.",
+            technology: "Kotlin / Spring Boot",
+            parentId: "ct-panel-data",
+            serviceId: "svc-ledger",
           },
         },
         connections: {
-          "ct-r1": {
-            id: "ct-r1",
-            sourceId: "ct-webapp",
-            targetId: "ct-bff",
-            label: "Queries e mutations",
-            technology: "GraphQL / HTTPS",
-            intent: "call",
-          },
-          "ct-r2": {
-            id: "ct-r2",
-            sourceId: "ct-bff",
-            targetId: "ct-gateway",
-            label: "Proxy de APIs",
-            technology: "HTTPS / REST",
-            intent: "call",
-          },
-          "ct-r3": {
-            id: "ct-r3",
-            sourceId: "ct-gateway",
-            targetId: "ct-auth-svc",
-            label: "Valida token",
-            technology: "gRPC",
-            intent: "call",
-          },
-          "ct-r4": {
-            id: "ct-r4",
-            sourceId: "ct-gateway",
-            targetId: "ct-order-svc",
-            label: "Roteia pedidos",
-            technology: "HTTPS / REST",
-            intent: "call",
-          },
-          "ct-r5": {
-            id: "ct-r5",
-            sourceId: "ct-gateway",
-            targetId: "ct-inventory-svc",
-            label: "Roteia consultas de estoque",
-            technology: "gRPC",
-            intent: "call",
-          },
-          "ct-r6": {
-            id: "ct-r6",
-            sourceId: "ct-order-svc",
-            targetId: "ct-payment-svc",
-            label: "Solicita cobrança",
-            technology: "HTTPS / REST",
-            intent: "call",
-          },
-          "ct-r7": {
-            id: "ct-r7",
-            sourceId: "ct-order-svc",
-            targetId: "ct-inventory-svc",
-            label: "Reserva estoque",
-            technology: "gRPC",
-            intent: "call",
-          },
-          "ct-r8": {
-            id: "ct-r8",
-            sourceId: "ct-order-svc",
-            targetId: "ct-kafka",
-            label: "Publica OrderCreated",
-            technology: "Kafka Producer",
-            intent: "event",
-            style: { animated: true },
-          },
-          "ct-r9": {
-            id: "ct-r9",
-            sourceId: "ct-kafka",
-            targetId: "ct-notification-svc",
-            label: "Consome eventos de pedido",
-            technology: "Kafka Consumer",
-            intent: "event",
-            style: { animated: true },
-          },
-          "ct-r10": {
-            id: "ct-r10",
-            sourceId: "ct-order-svc",
-            targetId: "ct-postgres",
-            label: "Persiste pedidos",
-            technology: "JDBC",
-            intent: "data-flow",
-          },
-          "ct-r11": {
-            id: "ct-r11",
-            sourceId: "ct-auth-svc",
-            targetId: "ct-postgres",
-            label: "Lê/escreve usuários",
-            technology: "JDBC",
-            intent: "data-flow",
-          },
-          "ct-r12": {
-            id: "ct-r12",
-            sourceId: "ct-inventory-svc",
-            targetId: "ct-dynamodb",
-            label: "Lê/escreve estoque",
-            technology: "AWS SDK",
-            intent: "data-flow",
-          },
-          "ct-r13": {
-            id: "ct-r13",
-            sourceId: "ct-auth-svc",
-            targetId: "ct-redis",
-            label: "Cache de sessões",
-            technology: "ioredis",
-            intent: "data-flow",
-          },
-          "ct-r14": {
-            id: "ct-r14",
-            sourceId: "ct-gateway",
-            targetId: "ct-redis",
-            label: "Rate limiting counters",
-            technology: "Redis Protocol",
-            intent: "data-flow",
-          },
+          "ct-r1":  { id: "ct-r1",  sourceId: "ct-mobile-user",      targetId: "ct-mobile-app",       label: "Usa",                    technology: "iOS / Android",      intent: "call" },
+          "ct-r2":  { id: "ct-r2",  sourceId: "ct-mobile-app",       targetId: "ct-bff",              label: "Queries GraphQL",         technology: "GraphQL / HTTPS",    intent: "call" },
+          "ct-r3":  { id: "ct-r3",  sourceId: "ct-web-app",          targetId: "ct-gateway",          label: "Chamadas REST",          technology: "HTTPS / REST",       intent: "call" },
+          "ct-r4":  { id: "ct-r4",  sourceId: "ct-bff",              targetId: "ct-gateway",          label: "Proxia requisições",        technology: "HTTPS / REST",       intent: "call" },
+          "ct-r5":  { id: "ct-r5",  sourceId: "ct-gateway",          targetId: "ct-payment-svc",      label: "Roteia requisições de pagamento", technology: "HTTPS / REST",       intent: "call" },
+          "ct-r6":  { id: "ct-r6",  sourceId: "ct-gateway",          targetId: "ct-account-svc",      label: "Roteia requisições de conta", technology: "HTTPS / REST",       intent: "call" },
+          "ct-r7":  { id: "ct-r7",  sourceId: "ct-payment-svc",      targetId: "ct-account-svc",      label: "Verifica saldo e limites",  technology: "gRPC",               intent: "call" },
+          "ct-r8":  { id: "ct-r8",  sourceId: "ct-payment-svc",      targetId: "ct-redis",            label: "Chaves de idempotência",        technology: "Redis Protocol",     intent: "data-flow" },
+          "ct-r9":  { id: "ct-r9",  sourceId: "ct-payment-svc",      targetId: "ct-postgres",         label: "Persiste transações",    technology: "JDBC",               intent: "data-flow" },
+          "ct-r10": { id: "ct-r10", sourceId: "ct-payment-svc",      targetId: "ct-kafka",            label: "Publica payment.processed", technology: "Kafka Producer",   intent: "event",        style: { animated: true } },
+          "ct-r11": { id: "ct-r11", sourceId: "ct-account-svc",      targetId: "ct-postgres",         label: "Lê / escreve contas",   technology: "JDBC",               intent: "data-flow" },
+          "ct-r12": { id: "ct-r12", sourceId: "ct-kafka",            targetId: "ct-fraud-svc",        label: "Consome eventos de pagamento",  technology: "Kafka Consumer",     intent: "event",        style: { animated: true } },
+          "ct-r13": { id: "ct-r13", sourceId: "ct-kafka",            targetId: "ct-notification-svc", label: "Consome eventos de pagamento",  technology: "Kafka Consumer",     intent: "event",        style: { animated: true } },
+          "ct-r14": { id: "ct-r14", sourceId: "ct-kafka",            targetId: "ct-ledger-svc",       label: "Consome todos os eventos financeiros",  technology: "Kafka Consumer",     intent: "event",        style: { animated: true } },
+          "ct-r15": { id: "ct-r15", sourceId: "ct-ledger-svc",       targetId: "ct-postgres",         label: "Registra entradas no ledger",   technology: "JDBC",               intent: "data-flow" },
+          "ct-r16": { id: "ct-r16", sourceId: "ct-fraud-svc",        targetId: "ct-kafka",            label: "Publica fraud.scored",    technology: "Kafka Producer",     intent: "event",        style: { animated: true } },
         },
         flows: {
-          "flow-create-order": {
-            id: "flow-create-order",
-            name: "Criação de Pedido",
+          "flow-pix-payment": {
+            id: "flow-pix-payment",
+            name: "Pagamento PIX – Visão de Containers",
             diagramId: "d-containers",
-            description:
-              "Fluxo completo de criação de um pedido, desde a SPA até a persistência e notificação.",
-            tags: ["core", "happy-path"],
-            mermaid:
-              "Web App->>BFF: mutation createOrder\nBFF->>API Gateway: POST /orders\nAPI Gateway->>Auth Service: validateToken\nAPI Gateway->>Order Service: POST /orders\nOrder Service->>Inventory Service: reserveStock\nOrder Service->>Payment Service: processPayment\nOrder Service->>PostgreSQL: persist order\nOrder Service->>Kafka: publish OrderCreated\nKafka->>Notification Service: consume OrderCreated\nNotification Service->>Cliente: email de confirmação",
+            description: "Fluxo completo de pagamento PIX do toque no mobile até o registro no ledger.",
+            tags: ["core", "pix", "caminho-feliz"],
+            mermaid: "sequenceDiagram",
             steps: [
               {
                 order: 0,
-                componentId: "ct-webapp",
-                connectionId: "ct-r1",
-                note: "Usuário clica em 'Finalizar Pedido' na SPA",
+                componentId: "ct-mobile-app",
+                connectionId: "ct-r2",
+                description: "Cliente toca em 'Pagar via PIX' — app envia mutation GraphQL ao BFF",
+                payload: '{ "mutation": "createPixPayment", "amount": 250.00, "pixKey": "recipient@email.com" }',
+                payloadDirection: "request",
               },
               {
                 order: 1,
                 componentId: "ct-bff",
-                connectionId: "ct-r2",
-                note: "BFF transforma a mutation GraphQL em chamada REST",
+                connectionId: "ct-r4",
+                description: "BFF valida sessão e proxia para o API Gateway",
               },
               {
                 order: 2,
                 componentId: "ct-gateway",
-                connectionId: "ct-r3",
-                note: "Gateway valida JWT com o Auth Service",
-                duration: "~50ms",
+                connectionId: "ct-r5",
+                description: "Gateway valida JWT e roteia para o Serviço de Pagamento",
+                duration: "~10ms",
               },
               {
                 order: 3,
-                componentId: "ct-gateway",
-                connectionId: "ct-r4",
-                note: "Gateway roteia para o Order Service",
+                componentId: "ct-payment-svc",
+                connectionId: "ct-r8",
+                description: "Serviço de Pagamento verifica chave de idempotência no Redis",
+                duration: "~5ms",
               },
               {
                 order: 4,
-                componentId: "ct-order-svc",
+                componentId: "ct-payment-svc",
                 connectionId: "ct-r7",
-                note: "Order Service reserva estoque via gRPC",
-                duration: "~100ms",
+                description: "Verifica saldo e limite diário PIX via Serviço de Conta",
+                duration: "~30ms",
+                payload: '{ "accountId": "acc-123", "checkBalance": 250.00, "checkLimit": "PIX_DAILY" }',
+                payloadDirection: "request",
               },
               {
                 order: 5,
-                componentId: "ct-order-svc",
-                connectionId: "ct-r6",
-                note: "Order Service solicita cobrança ao Payment Service",
-                duration: "~2s",
+                componentId: "ct-payment-svc",
+                connectionId: "ct-r9",
+                description: "Persiste pagamento com status PENDENTE",
+                duration: "~15ms",
               },
               {
                 order: 6,
-                componentId: "ct-order-svc",
+                componentId: "ct-payment-svc",
                 connectionId: "ct-r10",
-                note: "Persiste pedido com status CONFIRMED",
+                description: "Publica evento payment.processed no Kafka",
+                payload: '{ "paymentId": "pay-789", "status": "PROCESSED", "amount": 250.00, "rail": "PIX" }',
+                payloadDirection: "request",
               },
               {
                 order: 7,
-                componentId: "ct-order-svc",
-                connectionId: "ct-r8",
-                note: "Publica evento OrderCreated no Kafka",
+                componentId: "ct-ledger-svc",
+                connectionId: "ct-r14",
+                description: "Ledger consome evento e cria registros de partida dobrada",
+                duration: "~20ms",
               },
               {
                 order: 8,
                 componentId: "ct-notification-svc",
-                connectionId: "ct-r9",
-                note: "Consome evento e envia email de confirmação",
+                connectionId: "ct-r13",
+                description: "Serviço de notificação envia confirmação push ao cliente",
               },
             ],
           },
         },
       },
-      nodeLayouts: {
-        // Frontend tier
-        "ct-panel-frontend": {
-          elementId: "ct-panel-frontend",
-          x: 100,
-          y: 50,
-          width: 900,
-          height: 300,
-        },
-        "ct-webapp": { elementId: "ct-webapp", x: 150, y: 130 },
-        "ct-bff": { elementId: "ct-bff", x: 600, y: 130 },
-        // Gateway
-        "ct-gateway": { elementId: "ct-gateway", x: 450, y: 500 },
-        // Backend panel
-        "ct-panel-backend": {
-          elementId: "ct-panel-backend",
-          x: 50,
-          y: 750,
-          width: 1800,
-          height: 300,
-        },
-        "ct-auth-svc": { elementId: "ct-auth-svc", x: 100, y: 830 },
-        "ct-order-svc": { elementId: "ct-order-svc", x: 450, y: 830 },
-        "ct-inventory-svc": {
-          elementId: "ct-inventory-svc",
-          x: 800,
-          y: 830,
-        },
-        "ct-payment-svc": { elementId: "ct-payment-svc", x: 1150, y: 830 },
-        "ct-notification-svc": {
-          elementId: "ct-notification-svc",
-          x: 1500,
-          y: 830,
-        },
-        // Data tier panel
-        "ct-panel-data": {
-          elementId: "ct-panel-data",
-          x: 50,
-          y: 1200,
-          width: 1800,
-          height: 300,
-        },
-        "ct-postgres": { elementId: "ct-postgres", x: 100, y: 1280 },
-        "ct-dynamodb": { elementId: "ct-dynamodb", x: 500, y: 1280 },
-        "ct-redis": { elementId: "ct-redis", x: 900, y: 1280 },
-        "ct-kafka": { elementId: "ct-kafka", x: 1300, y: 1280 },
-      },
-      viewport: { x: 0, y: 0, zoom: 0.45 },
     },
 
     /* ═══════════════════════════════════════════════════════
-       C2 — AWS Infrastructure
+       C3 — Payment Service Components  (left → right)
        ═══════════════════════════════════════════════════════ */
-    "d-aws-infra": {
-      id: "d-aws-infra",
-      name: "Infraestrutura AWS",
-      level: "container",
+    "d-payment-components": {
+      id: "d-payment-components",
+      name: "Serviço de Pagamento – Componentes",
+      level: "component",
       domain: "seed",
-      folderId: SEED_FOLDER_ID,
-      createdAt: "2026-03-08T14:00:00.000Z",
-      updatedAt: "2026-03-17T15:00:00.000Z",
+      folderId: FOLDER_ID,
+      createdAt: "2026-02-01T09:00:00.000Z",
+      updatedAt: "2026-03-20T12:00:00.000Z",
+      viewport: { x: 0, y: 0, zoom: 0.55 },
+      nodeLayouts: {
+        // col 0 — inbound
+        "pm-pix-controller":      { elementId: "pm-pix-controller",      x: 80,   y: 200 },
+        "pm-card-controller":     { elementId: "pm-card-controller",      x: 80,   y: 480 },
+        // col 1 — orchestration
+        "pm-payment-orchestrator":{ elementId: "pm-payment-orchestrator", x: 420,  y: 320 },
+        // col 2 — domain
+        "pm-idempotency":         { elementId: "pm-idempotency",         x: 760,  y: 120 },
+        "pm-balance-checker":     { elementId: "pm-balance-checker",     x: 760,  y: 320 },
+        "pm-limit-checker":       { elementId: "pm-limit-checker",       x: 760,  y: 520 },
+        // col 3 — outbound adapters
+        "pm-pix-adapter":         { elementId: "pm-pix-adapter",         x: 1100, y: 200 },
+        "pm-card-adapter":        { elementId: "pm-card-adapter",        x: 1100, y: 480 },
+        // col 4 — infra
+        "pm-event-publisher":     { elementId: "pm-event-publisher",     x: 1440, y: 320 },
+      },
       snapshot: {
         components: {
-          /* ── VPC ── */
-          "aws-vpc": {
-            id: "aws-vpc",
-            name: "Production VPC",
-            type: "panel",
-            description: "VPC principal em us-east-1 (10.0.0.0/16)",
+          "pm-pix-controller": {
+            id: "pm-pix-controller",
+            name: "PIX Controller",
+            type: "component",
+            description: "Controller REST para iniciação, cancelamento e consulta de status PIX. Valida DTO e delega ao orquestrador.",
+            technology: "Kotlin / Spring MVC",
             parentId: null,
-            panelKind: "vpc",
-            panelColor: "#e8f5e9",
-            panelOpacity: 0.2,
-            borderStyle: "solid",
+            serviceId: "svc-payment",
           },
-
-          /* ── Load Balancer & NAT (inside VPC) ── */
-          "aws-alb": {
-            id: "aws-alb",
-            name: "Application Load Balancer",
-            type: "aws-networking",
-            awsService: "Elastic Load Balancing",
-            description:
-              "ALB com TLS termination e path-based routing para os serviços.",
-            technology: "ALB",
-            parentId: "aws-vpc",
-          },
-          "aws-nat": {
-            id: "aws-nat",
-            name: "NAT Gateway",
-            type: "aws-networking",
-            awsService: "VPC",
-            description:
-              "NAT Gateway para saída de internet das subnets privadas.",
-            technology: "NAT Gateway",
-            parentId: "aws-vpc",
-          },
-
-          /* ── EKS Cluster (inside VPC) ── */
-          "aws-eks": {
-            id: "aws-eks",
-            name: "EKS Cluster",
-            type: "panel",
-            description:
-              "Kubernetes cluster gerenciado rodando os microserviços.",
-            parentId: "aws-vpc",
-            panelKind: "eks-cluster",
-            panelColor: "#e3f2fd",
-            panelOpacity: 0.3,
-            borderStyle: "solid",
-          },
-          "aws-order-pod": {
-            id: "aws-order-pod",
-            name: "Order Service Pods",
-            type: "aws-containers",
-            awsService: "Amazon EKS",
-            description: "3 réplicas do Order Service (HPA: 3-10 pods)",
-            technology: "Kubernetes / Docker",
-            parentId: "aws-eks",
-          },
-          "aws-inventory-pod": {
-            id: "aws-inventory-pod",
-            name: "Inventory Service Pods",
-            type: "aws-containers",
-            awsService: "Amazon EKS",
-            description: "2 réplicas do Inventory Service (HPA: 2-6 pods)",
-            technology: "Kubernetes / Docker",
-            parentId: "aws-eks",
-          },
-          "aws-payment-pod": {
-            id: "aws-payment-pod",
-            name: "Payment Service Pods",
-            type: "aws-containers",
-            awsService: "Amazon EKS",
-            description: "2 réplicas do Payment Service (HPA: 2-8 pods)",
-            technology: "Kubernetes / Docker",
-            parentId: "aws-eks",
-          },
-
-          /* ── Data stores (inside VPC) ── */
-          "aws-rds": {
-            id: "aws-rds",
-            name: "RDS PostgreSQL",
-            type: "aws-database",
-            awsService: "Amazon RDS",
-            description:
-              "Multi-AZ PostgreSQL 16 com read replica para queries analíticas.",
-            technology: "RDS / PostgreSQL 16",
-            parentId: "aws-vpc",
-          },
-          "aws-dynamo": {
-            id: "aws-dynamo",
-            name: "DynamoDB",
-            type: "aws-database",
-            awsService: "Amazon DynamoDB",
-            description:
-              "Tabela de inventário com on-demand capacity e DAX cache.",
-            technology: "DynamoDB / DAX",
-            parentId: "aws-vpc",
-          },
-          "aws-elasticache": {
-            id: "aws-elasticache",
-            name: "ElastiCache Redis",
-            type: "aws-database",
-            awsService: "Amazon ElastiCache",
-            description:
-              "Redis 7 cluster mode para sessões, cache e rate limiting.",
-            technology: "ElastiCache / Redis 7",
-            parentId: "aws-vpc",
-          },
-
-          /* ── Messaging (inside VPC) ── */
-          "aws-msk": {
-            id: "aws-msk",
-            name: "MSK (Kafka)",
-            type: "aws-integration",
-            awsService: "Amazon MSK",
-            description:
-              "Kafka managed para eventos entre microserviços (3 brokers, 7 dias retenção).",
-            technology: "MSK / Kafka 3.5",
-            parentId: "aws-vpc",
-          },
-
-          /* ── External services ── */
-          "aws-cloudwatch": {
-            id: "aws-cloudwatch",
-            name: "CloudWatch",
-            type: "aws-management",
-            awsService: "Amazon CloudWatch",
-            description:
-              "Métricas, logs e alarmes. Dashboards de latência e error rate.",
-            technology: "CloudWatch",
+          "pm-card-controller": {
+            id: "pm-card-controller",
+            name: "Card Controller",
+            type: "component",
+            description: "Controller REST para pagamentos com cartão: captura, autorização, void e reembolso.",
+            technology: "Kotlin / Spring MVC",
             parentId: null,
+            serviceId: "svc-payment",
           },
-          "aws-s3": {
-            id: "aws-s3",
-            name: "S3 (Assets)",
-            type: "aws-storage",
-            awsService: "Amazon S3",
-            description:
-              "Bucket para assets estáticos da SPA e imagens de produtos (+ CloudFront).",
-            technology: "S3 / CloudFront",
+          "pm-payment-orchestrator": {
+            id: "pm-payment-orchestrator",
+            name: "Payment Orchestrator",
+            type: "component",
+            description: "Serviço de domínio central. Coordena verificação de idempotência, saldo, limites e invocação de adaptadores em fluxo transacional.",
+            technology: "Kotlin / Spring Service",
             parentId: null,
+            serviceId: "svc-payment",
           },
-
-          /* ── Note ── */
-          "aws-note": {
-            id: "aws-note",
-            name: "Notas de Infra",
-            type: "note",
-            description:
-              "## Custos estimados\n- EKS: ~$350/mês (3 m5.large)\n- RDS: ~$280/mês (db.r6g.large multi-AZ)\n- MSK: ~$200/mês (kafka.m5.large x3)\n\n## TODO\n- Migrar para Graviton instances no próximo quarter\n- Avaliar Karpenter para autoscaling de nodes",
+          "pm-idempotency": {
+            id: "pm-idempotency",
+            name: "Idempotency Guard",
+            type: "component",
+            description: "Verifica e armazena chaves de idempotência no Redis com TTL. Retorna resposta em cache para requisições duplicadas.",
+            technology: "Kotlin / Redis",
             parentId: null,
+            serviceId: "svc-payment",
+          },
+          "pm-balance-checker": {
+            id: "pm-balance-checker",
+            name: "Balance Checker",
+            type: "component",
+            description: "Chama o Serviço de Conta via gRPC para verificar saldo disponível antes do processamento.",
+            technology: "Kotlin / gRPC Client",
+            parentId: null,
+            serviceId: "svc-payment",
+          },
+          "pm-limit-checker": {
+            id: "pm-limit-checker",
+            name: "Limit Checker",
+            type: "component",
+            description: "Aplica limites diários/mensais de transação por modalidade de pagamento e nível do cliente.",
+            technology: "Kotlin / Redis",
+            parentId: null,
+            serviceId: "svc-payment",
+          },
+          "pm-pix-adapter": {
+            id: "pm-pix-adapter",
+            name: "PIX Adapter",
+            type: "component",
+            description: "Integra com a API PIX do Banco Parceiro (SPI). Gerencia autenticação, assinatura de mensagens e callbacks webhook assíncronos.",
+            technology: "Kotlin / WebClient",
+            parentId: null,
+            serviceId: "svc-payment",
+          },
+          "pm-card-adapter": {
+            id: "pm-card-adapter",
+            name: "Card Network Adapter",
+            type: "component",
+            description: "Cliente ISO 8583 para rede de cartões. Gerencia mensagens de autorização, captura e estorno.",
+            technology: "Kotlin / ISO 8583",
+            parentId: null,
+            serviceId: "svc-payment",
+          },
+          "pm-event-publisher": {
+            id: "pm-event-publisher",
+            name: "Event Publisher",
+            type: "component",
+            description: "Publica eventos de domínio no Kafka após persistência bem-sucedida. Padrão outbox garante entrega at-least-once.",
+            technology: "Kotlin / Kafka Producer",
+            parentId: null,
+            serviceId: "svc-payment",
           },
         },
         connections: {
-          "aws-r1": {
-            id: "aws-r1",
-            sourceId: "aws-alb",
-            targetId: "aws-order-pod",
-            label: "Roteia /api/orders",
-            intent: "call",
-          },
-          "aws-r2": {
-            id: "aws-r2",
-            sourceId: "aws-alb",
-            targetId: "aws-inventory-pod",
-            label: "Roteia /api/inventory",
-            intent: "call",
-          },
-          "aws-r3": {
-            id: "aws-r3",
-            sourceId: "aws-order-pod",
-            targetId: "aws-payment-pod",
-            label: "Solicita pagamento",
-            intent: "call",
-          },
-          "aws-r4": {
-            id: "aws-r4",
-            sourceId: "aws-order-pod",
-            targetId: "aws-rds",
-            label: "JDBC",
-            intent: "data-flow",
-            style: { strokeWidth: 2 },
-          },
-          "aws-r5": {
-            id: "aws-r5",
-            sourceId: "aws-inventory-pod",
-            targetId: "aws-dynamo",
-            label: "AWS SDK",
-            intent: "data-flow",
-            style: { strokeWidth: 2 },
-          },
-          "aws-r6": {
-            id: "aws-r6",
-            sourceId: "aws-order-pod",
-            targetId: "aws-elasticache",
-            label: "Cache / Sessions",
-            intent: "data-flow",
-          },
-          "aws-r7": {
-            id: "aws-r7",
-            sourceId: "aws-order-pod",
-            targetId: "aws-msk",
-            label: "Produce events",
-            intent: "event",
-            style: { animated: true },
-          },
-          "aws-r8": {
-            id: "aws-r8",
-            sourceId: "aws-order-pod",
-            targetId: "aws-cloudwatch",
-            label: "Logs e métricas",
-            intent: "async-message",
-            style: { strokeStyle: "dashed", animated: true },
-          },
-          "aws-r9": {
-            id: "aws-r9",
-            sourceId: "aws-order-pod",
-            targetId: "aws-nat",
-            label: "Internet egress",
-            intent: "dependency",
-            direction: "unidirectional",
-          },
+          "pm-r1": { id: "pm-r1", sourceId: "pm-pix-controller",       targetId: "pm-payment-orchestrator", label: "iniciarPagamento()",    intent: "call" },
+          "pm-r2": { id: "pm-r2", sourceId: "pm-card-controller",      targetId: "pm-payment-orchestrator", label: "autorizarCartao()",      intent: "call" },
+          "pm-r3": { id: "pm-r3", sourceId: "pm-payment-orchestrator", targetId: "pm-idempotency",          label: "verificarChave()",           intent: "call" },
+          "pm-r4": { id: "pm-r4", sourceId: "pm-payment-orchestrator", targetId: "pm-balance-checker",      label: "verificarSaldo()",       intent: "call" },
+          "pm-r5": { id: "pm-r5", sourceId: "pm-payment-orchestrator", targetId: "pm-limit-checker",        label: "verificarLimites()",        intent: "call" },
+          "pm-r6": { id: "pm-r6", sourceId: "pm-payment-orchestrator", targetId: "pm-pix-adapter",          label: "enviarInstrucaoPix()", intent: "call" },
+          "pm-r7": { id: "pm-r7", sourceId: "pm-payment-orchestrator", targetId: "pm-card-adapter",         label: "autorizar()",          intent: "call" },
+          "pm-r8": { id: "pm-r8", sourceId: "pm-payment-orchestrator", targetId: "pm-event-publisher",      label: "publicar(evento)",       intent: "event",  style: { animated: true } },
         },
-        flows: {},
-      },
-      nodeLayouts: {
-        "aws-vpc": {
-          elementId: "aws-vpc",
-          x: 50,
-          y: 30,
-          width: 2200,
-          height: 1800,
-        },
-        "aws-alb": { elementId: "aws-alb", x: 200, y: 120 },
-        "aws-nat": { elementId: "aws-nat", x: 1400, y: 120 },
-        "aws-eks": {
-          elementId: "aws-eks",
-          x: 100,
-          y: 400,
-          width: 1500,
-          height: 300,
-        },
-        "aws-order-pod": { elementId: "aws-order-pod", x: 150, y: 500 },
-        "aws-inventory-pod": {
-          elementId: "aws-inventory-pod",
-          x: 650,
-          y: 500,
-        },
-        "aws-payment-pod": { elementId: "aws-payment-pod", x: 1150, y: 500 },
-        "aws-rds": { elementId: "aws-rds", x: 150, y: 950 },
-        "aws-dynamo": { elementId: "aws-dynamo", x: 600, y: 950 },
-        "aws-elasticache": { elementId: "aws-elasticache", x: 1050, y: 950 },
-        "aws-msk": { elementId: "aws-msk", x: 1500, y: 950 },
-        "aws-cloudwatch": { elementId: "aws-cloudwatch", x: 2500, y: 400 },
-        "aws-s3": { elementId: "aws-s3", x: 2500, y: 100 },
-        "aws-note": {
-          elementId: "aws-note",
-          x: 2500,
-          y: 900,
-          width: 336,
-          height: 475,
+        flows: {
+          "flow-pix-component": {
+            id: "flow-pix-component",
+            name: "Pagamento PIX – Fluxo de Componentes",
+            diagramId: "d-payment-components",
+            description: "Fluxo interno detalhado de um pagamento PIX pelos componentes do Serviço de Pagamento.",
+            tags: ["core", "pix"],
+            mermaid: "sequenceDiagram",
+            steps: [
+              {
+                order: 0,
+                componentId: "pm-pix-controller",
+                connectionId: "pm-r1",
+                description: "PIX Controller recebe POST /pix/payments e delega ao orquestrador",
+                payload: '{ "amount": 250.00, "pixKey": "recipient@email.com", "idempotencyKey": "idem-abc-123" }',
+                payloadDirection: "request",
+              },
+              {
+                order: 1,
+                componentId: "pm-payment-orchestrator",
+                connectionId: "pm-r3",
+                description: "Idempotency Guard verifica Redis por requisição duplicada",
+                duration: "~3ms",
+              },
+              {
+                order: 2,
+                componentId: "pm-payment-orchestrator",
+                connectionId: "pm-r4",
+                description: "Balance Checker chama Serviço de Conta para verificar R$ 250,00 disponível",
+                duration: "~25ms",
+                payload: '{ "accountId": "acc-123", "requiredAmount": 250.00 }',
+                payloadDirection: "request",
+              },
+              {
+                order: 3,
+                componentId: "pm-payment-orchestrator",
+                connectionId: "pm-r5",
+                description: "Limit Checker valida contra o limite diário PIX (R$ 5.000)",
+                duration: "~5ms",
+              },
+              {
+                order: 4,
+                componentId: "pm-pix-adapter",
+                connectionId: "pm-r6",
+                description: "PIX Adapter assina e envia instrução ao SPI do Banco Parceiro",
+                duration: "~600ms",
+                payload: '{ "endToEndId": "E1234567890", "amount": 250.00, "creditParty": { "pixKey": "recipient@email.com" } }',
+                payloadDirection: "request",
+              },
+              {
+                order: 5,
+                componentId: "pm-pix-adapter",
+                description: "Banco confirma liquidação via webhook callback",
+                duration: "~1.2s",
+                payload: '{ "endToEndId": "E1234567890", "status": "ACCC", "settledAt": "2026-03-20T14:30:00Z" }',
+                payloadDirection: "response",
+              },
+              {
+                order: 6,
+                componentId: "pm-event-publisher",
+                connectionId: "pm-r8",
+                description: "Publica evento payment.processed via padrão outbox",
+                payload: '{ "paymentId": "pay-789", "type": "PIX", "status": "SETTLED", "amount": 250.00 }',
+                payloadDirection: "request",
+              },
+            ],
+          },
         },
       },
-      viewport: { x: 0, y: 0, zoom: 0.35 },
     },
 
     /* ═══════════════════════════════════════════════════════
-       C3 — Gateway Components
+       C3 — API Gateway Components  (left → right)
        ═══════════════════════════════════════════════════════ */
     "d-gateway-components": {
       id: "d-gateway-components",
       name: "API Gateway – Componentes",
       level: "component",
       domain: "seed",
-      folderId: SEED_FOLDER_ID,
-      createdAt: "2026-03-01T10:00:00.000Z",
-      updatedAt: "2026-03-16T16:00:00.000Z",
+      folderId: FOLDER_ID,
+      createdAt: "2026-02-10T09:00:00.000Z",
+      updatedAt: "2026-03-20T10:00:00.000Z",
+      viewport: { x: 0, y: 0, zoom: 0.6 },
+      nodeLayouts: {
+        "gw-cors":         { elementId: "gw-cors",         x: 80,   y: 300 },
+        "gw-auth":         { elementId: "gw-auth",         x: 380,  y: 300 },
+        "gw-rate-limiter": { elementId: "gw-rate-limiter", x: 680,  y: 300 },
+        "gw-router":       { elementId: "gw-router",       x: 980,  y: 300 },
+        "gw-transformer":  { elementId: "gw-transformer",  x: 1280, y: 300 },
+        "gw-logger":       { elementId: "gw-logger",       x: 680,  y: 580 },
+      },
       snapshot: {
         components: {
-          "gw-auth-plugin": {
-            id: "gw-auth-plugin",
-            name: "Auth Plugin",
+          "gw-cors": {
+            id: "gw-cors",
+            name: "CORS Handler",
             type: "component",
-            description:
-              "Plugin do Kong que intercepta requisições, extrai o JWT do header e valida via Auth Service.",
-            technology: "Lua / Kong Plugin",
+            description: "Valida header Origin contra lista de permissão. Trata preflight OPTIONS com respostas em cache.",
+            technology: "Kong Plugin / Lua",
             parentId: null,
-            serviceId: "svc-gateway",
+            serviceId: "svc-api-gateway",
+          },
+          "gw-auth": {
+            id: "gw-auth",
+            name: "JWT Validator",
+            type: "component",
+            description: "Valida assinatura, expiração e claims do Bearer token. Injeta userId e roles nos headers upstream.",
+            technology: "Kong Plugin / Lua",
+            parentId: null,
+            serviceId: "svc-api-gateway",
           },
           "gw-rate-limiter": {
             id: "gw-rate-limiter",
             name: "Rate Limiter",
             type: "component",
-            description:
-              "Controle de taxa usando sliding window com Redis. Limites por IP e por API key.",
-            technology: "Lua / Redis",
+            description: "Rate limiting de janela deslizante por API key e IP. Limites armazenados no Redis. Retorna 429 quando excedido.",
+            technology: "Kong Plugin / Redis",
             parentId: null,
+            serviceId: "svc-api-gateway",
           },
           "gw-router": {
             id: "gw-router",
             name: "Router",
             type: "component",
-            description:
-              "Roteamento baseado em path prefix e headers. Suporta canary releases com weights.",
+            description: "Roteamento baseado em path para serviços upstream. Suporta canary releases via roteamento ponderado.",
             technology: "Kong / Nginx",
             parentId: null,
-          },
-          "gw-cors": {
-            id: "gw-cors",
-            name: "CORS Handler",
-            type: "component",
-            description:
-              "Plugin de CORS com whitelist de origens e suporte a preflight caching.",
-            technology: "Lua / Kong Plugin",
-            parentId: null,
-          },
-          "gw-logger": {
-            id: "gw-logger",
-            name: "Request Logger",
-            type: "component",
-            description:
-              "Log estruturado de todas as requisições para observabilidade. Envia para CloudWatch.",
-            technology: "Lua / CloudWatch",
-            parentId: null,
+            serviceId: "svc-api-gateway",
           },
           "gw-transformer": {
             id: "gw-transformer",
             name: "Response Transformer",
             type: "component",
-            description:
-              "Remove headers internos, adiciona security headers (HSTS, CSP) e compressão gzip.",
-            technology: "Lua / Kong Plugin",
+            description: "Remove headers internos, adiciona headers de segurança (HSTS, CSP, X-Frame-Options) e aplica compressão gzip.",
+            technology: "Kong Plugin / Lua",
             parentId: null,
+            serviceId: "svc-api-gateway",
+          },
+          "gw-logger": {
+            id: "gw-logger",
+            name: "Audit Logger",
+            type: "component",
+            description: "Log JSON estruturado de todas as requisições e respostas para o CloudWatch. Mascara campos sensíveis (números de cartão, CPF).",
+            technology: "Kong Plugin / CloudWatch",
+            parentId: null,
+            serviceId: "svc-api-gateway",
           },
         },
         connections: {
-          "gw-r1": {
-            id: "gw-r1",
-            sourceId: "gw-cors",
-            targetId: "gw-auth-plugin",
-            label: "Passa request validado (CORS OK)",
-            intent: "call",
-          },
-          "gw-r2": {
-            id: "gw-r2",
-            sourceId: "gw-auth-plugin",
-            targetId: "gw-rate-limiter",
-            label: "Request autenticado",
-            intent: "call",
-          },
-          "gw-r3": {
-            id: "gw-r3",
-            sourceId: "gw-rate-limiter",
-            targetId: "gw-router",
-            label: "Request permitido (dentro do limite)",
-            intent: "call",
-          },
-          "gw-r4": {
-            id: "gw-r4",
-            sourceId: "gw-router",
-            targetId: "gw-transformer",
-            label: "Response do upstream",
-            intent: "call",
-            direction: "reverse",
-          },
-          "gw-r5": {
-            id: "gw-r5",
-            sourceId: "gw-router",
-            targetId: "gw-logger",
-            label: "Registra request/response",
-            intent: "async-message",
-            style: { strokeStyle: "dashed", animated: true },
-          },
+          "gw-r1": { id: "gw-r1", sourceId: "gw-cors",        targetId: "gw-auth",        label: "CORS aprovado",       intent: "call" },
+          "gw-r2": { id: "gw-r2", sourceId: "gw-auth",        targetId: "gw-rate-limiter", label: "Token válido",       intent: "call" },
+          "gw-r3": { id: "gw-r3", sourceId: "gw-rate-limiter", targetId: "gw-router",      label: "Dentro do limite",      intent: "call" },
+          "gw-r4": { id: "gw-r4", sourceId: "gw-router",      targetId: "gw-transformer",  label: "Resposta do upstream", intent: "call",         direction: "reverse" },
+          "gw-r5": { id: "gw-r5", sourceId: "gw-router",      targetId: "gw-logger",       label: "Log de auditoria assíncrono",   intent: "async-message", style: { strokeStyle: StrokeStyle.Dashed, animated: true } },
         },
         flows: {
-          "flow-gw-pipeline": {
-            id: "flow-gw-pipeline",
-            name: "Pipeline de Request",
+          "flow-gw-request": {
+            id: "flow-gw-request",
+            name: "Pipeline de Requisição de Entrada",
             diagramId: "d-gateway-components",
-            description:
-              "Fluxo de uma requisição HTTP passando por todos os plugins do gateway.",
+            description: "Como uma requisição percorre todos os plugins do gateway antes de chegar ao serviço upstream.",
             tags: ["infra", "pipeline"],
-            mermaid:
-              "CORS->>Auth Plugin: preflight OK\nAuth Plugin->>Rate Limiter: JWT válido\nRate Limiter->>Router: dentro do limite\nRouter->>Upstream: proxy\nRouter->>Request Logger: log async\nRouter->>Response Transformer: response",
+            mermaid: "sequenceDiagram",
             steps: [
               {
                 order: 0,
                 componentId: "gw-cors",
                 connectionId: "gw-r1",
-                note: "CORS valida origem e método",
+                description: "CORS valida origem e passa requisição adiante",
                 duration: "~1ms",
               },
               {
                 order: 1,
-                componentId: "gw-auth-plugin",
+                componentId: "gw-auth",
                 connectionId: "gw-r2",
-                note: "Valida JWT e extrai claims",
-                duration: "~5ms",
+                description: "JWT Validator verifica assinatura, expiração e injeta header userId",
+                duration: "~8ms",
+                payload: '{ "sub": "usr-456", "roles": ["customer"], "exp": 1742479200 }',
+                payloadDirection: "request",
               },
               {
                 order: 2,
                 componentId: "gw-rate-limiter",
                 connectionId: "gw-r3",
-                note: "Verifica sliding window no Redis",
-                duration: "~2ms",
+                description: "Rate Limiter verifica contador de janela deslizante no Redis — dentro do limite",
+                duration: "~3ms",
               },
               {
                 order: 3,
                 componentId: "gw-router",
-                note: "Roteia para o upstream service",
-                duration: "~1ms",
+                connectionId: "gw-r5",
+                description: "Router proxia para o Serviço de Pagamento e loga assincronamente no CloudWatch",
+                duration: "~2ms",
               },
               {
                 order: 4,
-                componentId: "gw-logger",
-                connectionId: "gw-r5",
-                note: "Log assíncrono enviado ao CloudWatch",
-              },
-              {
-                order: 5,
                 componentId: "gw-transformer",
                 connectionId: "gw-r4",
-                note: "Adiciona security headers e compressão",
+                description: "Transformer adiciona headers de segurança e comprime resposta antes de retornar",
+                duration: "~2ms",
               },
             ],
           },
         },
       },
-      nodeLayouts: {
-        "gw-cors": { elementId: "gw-cors", x: 100, y: 80 },
-        "gw-auth-plugin": { elementId: "gw-auth-plugin", x: 550, y: 80 },
-        "gw-rate-limiter": { elementId: "gw-rate-limiter", x: 1000, y: 80 },
-        "gw-router": { elementId: "gw-router", x: 550, y: 450 },
-        "gw-logger": { elementId: "gw-logger", x: 100, y: 800 },
-        "gw-transformer": { elementId: "gw-transformer", x: 1000, y: 800 },
-      },
-      viewport: { x: 0, y: 0, zoom: 0.55 },
     },
 
     /* ═══════════════════════════════════════════════════════
-       C3 — BFF Components
+       C3 — Mobile BFF Components  (left → right)
        ═══════════════════════════════════════════════════════ */
     "d-bff-components": {
       id: "d-bff-components",
-      name: "BFF – Componentes",
+      name: "BFF Mobile – Componentes",
       level: "component",
       domain: "seed",
-      folderId: SEED_FOLDER_ID,
-      createdAt: "2026-03-05T08:00:00.000Z",
-      updatedAt: "2026-03-17T09:00:00.000Z",
+      folderId: FOLDER_ID,
+      createdAt: "2026-02-15T09:00:00.000Z",
+      updatedAt: "2026-03-20T10:00:00.000Z",
+      viewport: { x: 0, y: 0, zoom: 0.6 },
+      nodeLayouts: {
+        "bff-gql-server":        { elementId: "bff-gql-server",        x: 80,   y: 360 },
+        "bff-auth-guard":        { elementId: "bff-auth-guard",        x: 420,  y: 120 },
+        "bff-payment-resolver":  { elementId: "bff-payment-resolver",  x: 420,  y: 360 },
+        "bff-account-resolver":  { elementId: "bff-account-resolver",  x: 420,  y: 580 },
+        "bff-dataloader":        { elementId: "bff-dataloader",        x: 760,  y: 460 },
+        "bff-cache":             { elementId: "bff-cache",             x: 1100, y: 460 },
+      },
       snapshot: {
         components: {
           "bff-gql-server": {
             id: "bff-gql-server",
             name: "GraphQL Server",
             type: "component",
-            description:
-              "Apollo Server com schema-first approach. Resolve queries e mutations via DataLoaders.",
+            description: "Apollo Server com design schema-first. Endpoint único para todas as queries e mutations mobile.",
             technology: "NestJS / Apollo Server",
             parentId: null,
             serviceId: "svc-bff",
@@ -1181,372 +982,381 @@ function buildSeedDiagrams(): Record<string, Diagram> {
             id: "bff-auth-guard",
             name: "Auth Guard",
             type: "component",
-            description:
-              "NestJS Guard que extrai e valida o JWT antes de resolver queries protegidas.",
+            description: "Guard NestJS que valida o Bearer token antes de resolver operações protegidas.",
             technology: "NestJS / Passport",
             parentId: null,
+            serviceId: "svc-bff",
           },
-          "bff-order-resolver": {
-            id: "bff-order-resolver",
-            name: "Order Resolver",
+          "bff-payment-resolver": {
+            id: "bff-payment-resolver",
+            name: "Payment Resolver",
             type: "component",
-            description:
-              "Resolver GraphQL para queries e mutations de pedidos. Agrega dados de múltiplos serviços.",
+            description: "Resolve queries e mutations de pagamento. Mapeia tipos GraphQL para DTOs REST do Serviço de Pagamento.",
             technology: "NestJS / GraphQL",
             parentId: null,
+            serviceId: "svc-bff",
           },
-          "bff-catalog-resolver": {
-            id: "bff-catalog-resolver",
-            name: "Catalog Resolver",
+          "bff-account-resolver": {
+            id: "bff-account-resolver",
+            name: "Account Resolver",
             type: "component",
-            description:
-              "Resolver para listagem de produtos, busca e detalhes. Usa DataLoader para N+1.",
+            description: "Resolve saldo, limites e histórico de transações da conta. Agrega dados do Serviço de Conta.",
             technology: "NestJS / GraphQL",
             parentId: null,
+            serviceId: "svc-bff",
+          },
+          "bff-dataloader": {
+            id: "bff-dataloader",
+            name: "DataLoader",
+            type: "component",
+            description: "Agrupa e desduplicata chamadas REST downstream dentro de uma única requisição GraphQL para evitar N+1.",
+            technology: "DataLoader / Node.js",
+            parentId: null,
+            serviceId: "svc-bff",
           },
           "bff-cache": {
             id: "bff-cache",
-            name: "Cache Layer",
+            name: "Response Cache",
             type: "component",
-            description:
-              "Cache em memória (LRU) + Redis para respostas de catálogo com TTL de 5min.",
-            technology: "NestJS / CacheManager / Redis",
+            description: "Cache LRU em memória para saldo e limites da conta. TTL 30s. Invalidado em eventos de pagamento.",
+            technology: "NestJS CacheManager / Redis",
             parentId: null,
+            serviceId: "svc-bff",
           },
         },
         connections: {
-          "bff-r1": {
-            id: "bff-r1",
-            sourceId: "bff-gql-server",
-            targetId: "bff-auth-guard",
-            label: "Intercepta requests protegidos",
-            intent: "call",
-          },
-          "bff-r2": {
-            id: "bff-r2",
-            sourceId: "bff-gql-server",
-            targetId: "bff-order-resolver",
-            label: "Delega queries de pedido",
-            intent: "call",
-          },
-          "bff-r3": {
-            id: "bff-r3",
-            sourceId: "bff-gql-server",
-            targetId: "bff-catalog-resolver",
-            label: "Delega queries de catálogo",
-            intent: "call",
-          },
-          "bff-r4": {
-            id: "bff-r4",
-            sourceId: "bff-catalog-resolver",
-            targetId: "bff-cache",
-            label: "Cache hit/miss",
-            intent: "data-flow",
-            style: { strokeWidth: 2, animated: true },
-          },
+          "bff-r1": { id: "bff-r1", sourceId: "bff-gql-server",       targetId: "bff-auth-guard",       label: "Protege operações",    intent: "call" },
+          "bff-r2": { id: "bff-r2", sourceId: "bff-gql-server",       targetId: "bff-payment-resolver", label: "Resolve operações de pagamento",    intent: "call" },
+          "bff-r3": { id: "bff-r3", sourceId: "bff-gql-server",       targetId: "bff-account-resolver", label: "Resolve operações de conta",    intent: "call" },
+          "bff-r4": { id: "bff-r4", sourceId: "bff-payment-resolver", targetId: "bff-dataloader",       label: "Agrupa chamadas de API",       intent: "call" },
+          "bff-r5": { id: "bff-r5", sourceId: "bff-account-resolver", targetId: "bff-dataloader",       label: "Agrupa chamadas de API",       intent: "call" },
+          "bff-r6": { id: "bff-r6", sourceId: "bff-dataloader",       targetId: "bff-cache",            label: "Cache hit / miss",        intent: "data-flow", style: { animated: true } },
         },
         flows: {},
       },
-      nodeLayouts: {
-        "bff-gql-server": { elementId: "bff-gql-server", x: 500, y: 50 },
-        "bff-auth-guard": { elementId: "bff-auth-guard", x: 50, y: 450 },
-        "bff-order-resolver": {
-          elementId: "bff-order-resolver",
-          x: 500,
-          y: 450,
-        },
-        "bff-catalog-resolver": {
-          elementId: "bff-catalog-resolver",
-          x: 950,
-          y: 450,
-        },
-        "bff-cache": { elementId: "bff-cache", x: 950, y: 800 },
-      },
-      viewport: { x: 0, y: 0, zoom: 0.55 },
     },
 
     /* ═══════════════════════════════════════════════════════
-       C3 — Order Service API
+       Deployment — AWS Infrastructure  (left → right)
        ═══════════════════════════════════════════════════════ */
-    "d-order-api": {
-      id: "d-order-api",
-      name: "Order Service – API",
-      level: "component",
+    "d-deployment": {
+      id: "d-deployment",
+      name: "Deployment – Infraestrutura AWS",
+      level: "container",
       domain: "seed",
-      folderId: SEED_FOLDER_ID,
-      createdAt: "2026-03-10T09:00:00.000Z",
-      updatedAt: "2026-03-17T12:00:00.000Z",
+      folderId: FOLDER_ID,
+      createdAt: "2026-03-01T09:00:00.000Z",
+      updatedAt: "2026-03-20T14:00:00.000Z",
+      viewport: { x: 0, y: 0, zoom: 0.35 },
+      nodeLayouts: {
+        // Edge / CDN — col 0
+        "dep-cloudfront":     { elementId: "dep-cloudfront",     x: 60,   y: 400 },
+        "dep-waf":            { elementId: "dep-waf",            x: 60,   y: 600 },
+
+        // VPC wrapper
+        "dep-vpc": {
+          elementId: "dep-vpc",
+          x: 360, y: 60,
+          width: 2600, height: 1800,
+          zIndex: -1,
+        },
+
+        // Public subnet — col 1 (inside vpc)
+        "dep-panel-public": {
+          elementId: "dep-panel-public",
+          x: 80, y: 120,
+          width: 440, height: 1560,
+          zIndex: -1,
+        },
+        "dep-alb":            { elementId: "dep-alb",            x: 140,  y: 280 },
+        "dep-nat":            { elementId: "dep-nat",            x: 140,  y: 560 },
+        "dep-bastion":        { elementId: "dep-bastion",        x: 140,  y: 840 },
+
+        // Private subnet — col 2 (inside vpc)
+        "dep-panel-private": {
+          elementId: "dep-panel-private",
+          x: 600, y: 120,
+          width: 660, height: 1560,
+          zIndex: -1,
+        },
+        "dep-eks": {
+          elementId: "dep-eks",
+          x: 660, y: 200,
+          width: 540, height: 820,
+          zIndex: 0,
+        },
+        "dep-pod-gateway":    { elementId: "dep-pod-gateway",    x: 700,  y: 320 },
+        "dep-pod-payment":    { elementId: "dep-pod-payment",    x: 700,  y: 540 },
+        "dep-pod-account":    { elementId: "dep-pod-account",    x: 700,  y: 760 },
+        "dep-pod-bff":        { elementId: "dep-pod-bff",        x: 700,  y: 980 },
+
+        // Data subnet — col 3 (inside vpc)
+        "dep-panel-data": {
+          elementId: "dep-panel-data",
+          x: 1340, y: 120,
+          width: 560, height: 1560,
+          zIndex: -1,
+        },
+        "dep-rds":            { elementId: "dep-rds",            x: 1400, y: 240 },
+        "dep-redis":          { elementId: "dep-redis",          x: 1400, y: 540 },
+        "dep-msk":            { elementId: "dep-msk",            x: 1400, y: 840 },
+        "dep-dynamo":         { elementId: "dep-dynamo",         x: 1400, y: 1140 },
+
+        // Outside VPC — col 4
+        "dep-s3":             { elementId: "dep-s3",             x: 3100, y: 200 },
+        "dep-cloudwatch":     { elementId: "dep-cloudwatch",     x: 3100, y: 500 },
+        "dep-secrets":        { elementId: "dep-secrets",        x: 3100, y: 800 },
+
+        // Deployment note
+        "dep-note": {
+          elementId: "dep-note",
+          x: 3100, y: 1100,
+          width: 340, height: 480,
+        },
+      },
       snapshot: {
         components: {
-          "api-orders": {
-            id: "api-orders",
-            name: "Orders API",
-            type: "api-group",
-            description: "API REST de gerenciamento de pedidos",
+          /* ── CDN / Edge ── */
+          "dep-cloudfront": {
+            id: "dep-cloudfront",
+            name: "CloudFront",
+            type: "aws-networking",
+            awsService: "Amazon CloudFront",
+            description: "CDN para assets estáticos (SPA do Dashboard Lojista). Terminação TLS e restrição geográfica.",
+            technology: "CloudFront",
             parentId: null,
-            serviceName: "order-service",
-            basePath: "/api/v1/orders",
-            protocol: "REST" as const,
-            sla: "99.9% uptime, p99 < 500ms",
           },
-          "ep-list-orders": {
-            id: "ep-list-orders",
-            name: "GET /api/v1/orders",
-            type: "endpoint",
-            description: "Lista pedidos do usuário com paginação e filtros",
-            parentId: "api-orders",
-            method: "GET" as const,
-            path: "/api/v1/orders",
-            endpointDescription:
-              "Retorna lista paginada de pedidos. Suporta filtros por status, data e valor.",
-            handlers: [
-              {
-                id: "h-list-1",
-                label: "AuthGuard",
-                description: "Valida JWT e extrai userId",
-              },
-              {
-                id: "h-list-2",
-                label: "PaginationPipe",
-                description:
-                  "Valida e normaliza parâmetros de paginação (page, limit, sort)",
-              },
-              {
-                id: "h-list-3",
-                label: "OrderController.list",
-                description: "Busca pedidos no repositório com filtros",
-              },
-            ],
+          "dep-waf": {
+            id: "dep-waf",
+            name: "AWS WAF",
+            type: "aws-security",
+            awsService: "AWS WAF",
+            description: "Web Application Firewall. Regras OWASP, reputação de IP e mitigação de bots.",
+            technology: "WAF v2",
+            parentId: null,
           },
-          "ep-create-order": {
-            id: "ep-create-order",
-            name: "POST /api/v1/orders",
-            type: "endpoint",
-            description: "Cria um novo pedido",
-            parentId: "api-orders",
-            method: "POST" as const,
-            path: "/api/v1/orders",
-            endpointDescription:
-              "Cria um pedido novo. Reserva estoque, processa pagamento e envia evento.",
-            handlers: [
-              {
-                id: "h-create-1",
-                label: "AuthGuard",
-                description: "Valida JWT",
-              },
-              {
-                id: "h-create-2",
-                label: "ValidationPipe",
-                description:
-                  "Valida body (items, shippingAddress, paymentMethod)",
-              },
-              {
-                id: "h-create-3",
-                label: "OrderController.create",
-                description: "Orquestra criação do pedido",
-                flowId: "flow-create-order-detail",
-              },
-            ],
+
+          /* ── VPC ── */
+          "dep-vpc": {
+            id: "dep-vpc",
+            name: "VPC de Produção (us-east-1)",
+            type: "panel",
+            panelKind: PanelKind.Vpc,
+            panelColor: "hsl(152 50% 40%)",
+            panelOpacity: 8,
+            description: "10.0.0.0/16 — Multi-AZ em us-east-1a, 1b, 1c",
+            parentId: null,
           },
-          "ep-get-order": {
-            id: "ep-get-order",
-            name: "GET /api/v1/orders/:id",
-            type: "endpoint",
-            description: "Retorna detalhes de um pedido específico",
-            parentId: "api-orders",
-            method: "GET" as const,
-            path: "/api/v1/orders/:id",
-            endpointDescription:
-              "Busca pedido por ID. Inclui itens, status de pagamento e tracking.",
-            handlers: [
-              {
-                id: "h-get-1",
-                label: "AuthGuard",
-                description: "Valida JWT e verifica ownership",
-              },
-              {
-                id: "h-get-2",
-                label: "OrderController.findOne",
-                description: "Busca pedido e agrega dados de serviços",
-              },
-            ],
+
+          /* ── Public subnet ── */
+          "dep-panel-public": {
+            id: "dep-panel-public",
+            name: "Subnets Públicas",
+            type: "panel",
+            panelKind: PanelKind.PublicSubnet,
+            panelColor: "hsl(200 70% 50%)",
+            panelOpacity: 10,
+            description: "10.0.0.0/20 — Roteia para o Internet Gateway",
+            parentId: "dep-vpc",
           },
-          "ep-cancel-order": {
-            id: "ep-cancel-order",
-            name: "PATCH /api/v1/orders/:id/cancel",
-            type: "endpoint",
-            description: "Cancela um pedido existente",
-            parentId: "api-orders",
-            method: "PATCH" as const,
-            path: "/api/v1/orders/:id/cancel",
-            endpointDescription:
-              "Cancela o pedido se ainda estiver em status cancelável. Libera estoque e processa reembolso.",
-            handlers: [
-              {
-                id: "h-cancel-1",
-                label: "AuthGuard",
-                description: "Valida JWT e ownership",
-              },
-              {
-                id: "h-cancel-2",
-                label: "OrderController.cancel",
-                description:
-                  "Executa cancelamento: libera estoque, solicita refund, publica evento",
-                flowId: "flow-cancel-order",
-              },
-            ],
+          "dep-alb": {
+            id: "dep-alb",
+            name: "Application Load Balancer",
+            type: "aws-networking",
+            awsService: "Elastic Load Balancing",
+            description: "ALB com terminação TLS 1.3, roteamento baseado em path e integração com WAF.",
+            technology: "ALB",
+            parentId: "dep-panel-public",
           },
-          "ep-order-events": {
-            id: "ep-order-events",
-            name: "OrderCreated Event",
-            type: "endpoint",
-            description: "Evento publicado quando um pedido é criado",
-            parentId: "api-orders",
-            method: "EVENT" as const,
-            path: "orders.created",
-            endpointDescription:
-              "Evento Kafka publicado no tópico 'orders.created' após persistência do pedido.",
-            handlers: [
-              {
-                id: "h-event-1",
-                label: "EventPublisher",
-                description:
-                  "Serializa OrderCreatedEvent e publica no Kafka com garantia at-least-once",
-              },
-            ],
+          "dep-nat": {
+            id: "dep-nat",
+            name: "NAT Gateway",
+            type: "aws-networking",
+            awsService: "VPC",
+            description: "NAT de alta disponibilidade para saída das subnets privadas. Um por AZ.",
+            technology: "NAT Gateway",
+            parentId: "dep-panel-public",
+          },
+          "dep-bastion": {
+            id: "dep-bastion",
+            name: "Bastion Host",
+            type: "aws-compute",
+            awsService: "Amazon EC2",
+            description: "Servidor de salto para acesso emergencial ao BD. Session Manager é preferido.",
+            technology: "EC2 t3.micro",
+            parentId: "dep-panel-public",
+          },
+
+          /* ── Private subnet / EKS ── */
+          "dep-panel-private": {
+            id: "dep-panel-private",
+            name: "Subnets Privadas",
+            type: "panel",
+            panelKind: PanelKind.PrivateSubnet,
+            panelColor: "hsl(38 80% 50%)",
+            panelOpacity: 10,
+            description: "10.0.16.0/20 — Sem acesso direto à internet",
+            parentId: "dep-vpc",
+          },
+          "dep-eks": {
+            id: "dep-eks",
+            name: "Cluster EKS (v1.29)",
+            type: "panel",
+            panelKind: PanelKind.EksCluster,
+            panelColor: "hsl(220 60% 50%)",
+            panelOpacity: 12,
+            description: "Kubernetes gerenciado. Karpenter para autoscaling de nós. IRSA para IAM de pods.",
+            parentId: "dep-panel-private",
+          },
+          "dep-pod-gateway": {
+            id: "dep-pod-gateway",
+            name: "pods api-gateway",
+            type: "aws-containers",
+            awsService: "Amazon EKS",
+            description: "3–10 pods (HPA por CPU/RPS). Kong rodando como Kubernetes Ingress Controller.",
+            technology: "Kong / Docker",
+            parentId: "dep-eks",
+          },
+          "dep-pod-payment": {
+            id: "dep-pod-payment",
+            name: "pods payment-service",
+            type: "aws-containers",
+            awsService: "Amazon EKS",
+            description: "2–8 pods (HPA por CPU). JVM ajustada para baixa latência. Memória 512Mi–2Gi.",
+            technology: "Kotlin / JVM / Docker",
+            parentId: "dep-eks",
+          },
+          "dep-pod-account": {
+            id: "dep-pod-account",
+            name: "pods account-service",
+            type: "aws-containers",
+            awsService: "Amazon EKS",
+            description: "2–6 pods. Réplicas de leitura usadas para consultas de saldo, reduzindo carga no BD de escrita.",
+            technology: "Kotlin / JVM / Docker",
+            parentId: "dep-eks",
+          },
+          "dep-pod-bff": {
+            id: "dep-pod-bff",
+            name: "pods mobile-bff",
+            type: "aws-containers",
+            awsService: "Amazon EKS",
+            description: "3–12 pods (HPA por RPS). Node.js com cluster mode desabilitado (single-threaded por pod).",
+            technology: "Node.js / Docker",
+            parentId: "dep-eks",
+          },
+
+          /* ── Data subnet ── */
+          "dep-panel-data": {
+            id: "dep-panel-data",
+            name: "Subnets de Dados",
+            type: "panel",
+            panelKind: PanelKind.PrivateSubnet,
+            panelColor: "hsl(270 50% 50%)",
+            panelOpacity: 10,
+            description: "10.0.32.0/20 — Camada de dados isolada, sem acesso direto de pods",
+            parentId: "dep-vpc",
+          },
+          "dep-rds": {
+            id: "dep-rds",
+            name: "RDS PostgreSQL 16",
+            type: "aws-database",
+            awsService: "Amazon RDS",
+            description: "Multi-AZ db.r7g.large. Backups automatizados (30 dias). Performance Insights habilitado.",
+            technology: "PostgreSQL 16 / RDS",
+            parentId: "dep-panel-data",
+          },
+          "dep-redis": {
+            id: "dep-redis",
+            name: "ElastiCache Redis 7",
+            type: "aws-database",
+            awsService: "Amazon ElastiCache",
+            description: "Cluster mode habilitado. 3 shards × 2 nós. Usado para idempotência, rate limiting e sessões.",
+            technology: "Redis 7 / ElastiCache",
+            parentId: "dep-panel-data",
+          },
+          "dep-msk": {
+            id: "dep-msk",
+            name: "MSK Kafka 3.6",
+            type: "aws-integration",
+            awsService: "Amazon MSK",
+            description: "3 brokers kafka.m5.large. Retenção de 7 dias. TLS em trânsito, criptografia em repouso.",
+            technology: "MSK / Kafka 3.6",
+            parentId: "dep-panel-data",
+          },
+          "dep-dynamo": {
+            id: "dep-dynamo",
+            name: "DynamoDB",
+            type: "aws-database",
+            awsService: "Amazon DynamoDB",
+            description: "Capacidade on-demand. Usado pela Detecção de Fraude para feature store e cache de regras.",
+            technology: "DynamoDB",
+            parentId: "dep-panel-data",
+          },
+
+          /* ── Outside VPC ── */
+          "dep-s3": {
+            id: "dep-s3",
+            name: "S3",
+            type: "aws-storage",
+            awsService: "Amazon S3",
+            description: "Bucket de assets estáticos (versionado, replicado). Bucket de estado do Terraform. Arquivo de logs de auditoria.",
+            technology: "S3",
+            parentId: null,
+          },
+          "dep-cloudwatch": {
+            id: "dep-cloudwatch",
+            name: "CloudWatch",
+            type: "aws-management",
+            awsService: "Amazon CloudWatch",
+            description: "Logs, métricas e alarmes centralizados. Dashboards de latência, taxa de erro e throughput.",
+            technology: "CloudWatch / X-Ray",
+            parentId: null,
+          },
+          "dep-secrets": {
+            id: "dep-secrets",
+            name: "Secrets Manager",
+            type: "aws-security",
+            awsService: "AWS Secrets Manager",
+            description: "Credenciais de BD, chaves de API e certificados PKI. Rotação habilitada para senhas do RDS.",
+            technology: "Secrets Manager",
+            parentId: null,
+          },
+
+          /* ── Note ── */
+          "dep-note": {
+            id: "dep-note",
+            name: "Notas de Deployment",
+            type: "note",
+            description: "## Cost estimates (monthly)\n- EKS nodes: ~$480 (6× m5.xlarge, Karpenter)\n- RDS: ~$380 (Multi-AZ r7g.large)\n- MSK: ~$240 (m5.large × 3)\n- ElastiCache: ~$180\n\n## IaC\n- Terraform modules in `infra/` repo\n- ArgoCD for GitOps deployment\n- Helm charts per service\n\n## On-call\n- PagerDuty integration on P1/P2 alarms\n- RTO: 15min, RPO: 1min",
+            parentId: null,
           },
         },
         connections: {
-          "api-r1": {
-            id: "api-r1",
-            sourceId: "ep-create-order",
-            targetId: "ep-order-events",
-            label: "Publica após criação",
-            intent: "event",
-            style: { animated: true },
-          },
-          "api-r2": {
-            id: "api-r2",
-            sourceId: "ep-cancel-order",
-            targetId: "ep-order-events",
-            label: "Publica após cancelamento",
-            intent: "event",
-            style: { animated: true },
-          },
+          "dep-r1":  { id: "dep-r1",  sourceId: "dep-waf",          targetId: "dep-alb",          label: "Inspeciona tráfego",        intent: "call" },
+          "dep-r2":  { id: "dep-r2",  sourceId: "dep-alb",          targetId: "dep-pod-gateway",  label: "Roteia HTTPS",            intent: "call" },
+          "dep-r3":  { id: "dep-r3",  sourceId: "dep-pod-gateway",  targetId: "dep-pod-payment",  label: "Roteia /pagamentos",        intent: "call" },
+          "dep-r4":  { id: "dep-r4",  sourceId: "dep-pod-gateway",  targetId: "dep-pod-account",  label: "Roteia /contas",        intent: "call" },
+          "dep-r5":  { id: "dep-r5",  sourceId: "dep-pod-gateway",  targetId: "dep-pod-bff",      label: "Roteia /graphql",         intent: "call" },
+          "dep-r6":  { id: "dep-r6",  sourceId: "dep-pod-payment",  targetId: "dep-rds",          label: "JDBC (escrita)",            intent: "data-flow", style: { strokeWidth: 2 } },
+          "dep-r7":  { id: "dep-r7",  sourceId: "dep-pod-account",  targetId: "dep-rds",          label: "JDBC (leitura/escrita)",       intent: "data-flow", style: { strokeWidth: 2 } },
+          "dep-r8":  { id: "dep-r8",  sourceId: "dep-pod-payment",  targetId: "dep-redis",        label: "Idempotência / cache",     intent: "data-flow" },
+          "dep-r9":  { id: "dep-r9",  sourceId: "dep-pod-payment",  targetId: "dep-msk",          label: "Produz eventos",          intent: "event",     style: { animated: true } },
+          "dep-r10": { id: "dep-r10", sourceId: "dep-pod-gateway",  targetId: "dep-redis",        label: "Contadores de rate limit",     intent: "data-flow" },
+          // Origem em pods (nós com handles). Panels como dep-eks não expõem handles no React Flow.
+          "dep-r11": { id: "dep-r11", sourceId: "dep-pod-gateway",  targetId: "dep-cloudwatch",   label: "Logs e métricas",          intent: "async-message", style: { strokeStyle: StrokeStyle.Dashed, animated: true } },
+          "dep-r12": { id: "dep-r12", sourceId: "dep-pod-payment",  targetId: "dep-nat",          label: "Saída via NAT",          intent: "dependency" },
+          "dep-r13": { id: "dep-r13", sourceId: "dep-pod-payment",  targetId: "dep-secrets",      label: "Busca secrets (IRSA)",    intent: "call",      style: { strokeStyle: StrokeStyle.Dashed } },
         },
-        flows: {
-          "flow-create-order-detail": {
-            id: "flow-create-order-detail",
-            name: "Criação de Pedido (detalhe)",
-            diagramId: "d-order-api",
-            description:
-              "Fluxo detalhado da criação de pedido dentro do Order Service.",
-            tags: ["core"],
-            mermaid:
-              "Client->>POST /orders: request\nPOST /orders->>Inventory: reserveStock\nPOST /orders->>Payment: processPayment\nPOST /orders->>Database: persist\nPOST /orders->>OrderCreated: publish event",
-            steps: [
-              {
-                order: 0,
-                componentId: "ep-create-order",
-                note: "Recebe request validado pelo AuthGuard e ValidationPipe",
-              },
-              {
-                order: 1,
-                componentId: "ep-create-order",
-                note: "Chama Inventory Service para reservar estoque",
-                duration: "~100ms",
-                payload: '{ "items": [{ "sku": "ABC-123", "qty": 2 }] }',
-                payloadDirection: "request",
-              },
-              {
-                order: 2,
-                componentId: "ep-create-order",
-                note: "Chama Payment Service para processar pagamento",
-                duration: "~2s",
-                payload:
-                  '{ "amount": 199.90, "currency": "BRL", "method": "credit_card" }',
-                payloadDirection: "request",
-              },
-              {
-                order: 3,
-                componentId: "ep-create-order",
-                note: "Persiste pedido no PostgreSQL com status CONFIRMED",
-              },
-              {
-                order: 4,
-                componentId: "ep-order-events",
-                connectionId: "api-r1",
-                note: "Publica OrderCreated no Kafka",
-                payload:
-                  '{ "orderId": "ord-456", "status": "CONFIRMED", "total": 199.90 }',
-                payloadDirection: "response",
-              },
-            ],
-          },
-          "flow-cancel-order": {
-            id: "flow-cancel-order",
-            name: "Cancelamento de Pedido",
-            diagramId: "d-order-api",
-            description:
-              "Fluxo de cancelamento com liberação de estoque e reembolso.",
-            tags: ["core", "compensation"],
-            mermaid:
-              "Client->>PATCH /orders/:id/cancel: request\nPATCH cancel->>Inventory: releaseStock\nPATCH cancel->>Payment: refund\nPATCH cancel->>Database: update status\nPATCH cancel->>OrderCancelled: publish event",
-            steps: [
-              {
-                order: 0,
-                componentId: "ep-cancel-order",
-                note: "Valida que pedido está em status cancelável (CONFIRMED ou PROCESSING)",
-              },
-              {
-                order: 1,
-                componentId: "ep-cancel-order",
-                note: "Chama Inventory Service para liberar estoque reservado",
-                duration: "~80ms",
-              },
-              {
-                order: 2,
-                componentId: "ep-cancel-order",
-                note: "Solicita reembolso ao Payment Service",
-                duration: "~3s",
-              },
-              {
-                order: 3,
-                componentId: "ep-cancel-order",
-                note: "Atualiza status para CANCELLED no PostgreSQL",
-              },
-              {
-                order: 4,
-                componentId: "ep-order-events",
-                connectionId: "api-r2",
-                note: "Publica OrderCancelled no Kafka",
-              },
-            ],
-          },
-        },
+        flows: {},
       },
-      nodeLayouts: {
-        "api-orders": {
-          elementId: "api-orders",
-          x: 50,
-          y: 30,
-          width: 1200,
-          height: 1100,
-        },
-        "ep-list-orders": { elementId: "ep-list-orders", x: 100, y: 120 },
-        "ep-create-order": { elementId: "ep-create-order", x: 100, y: 350 },
-        "ep-get-order": { elementId: "ep-get-order", x: 100, y: 580 },
-        "ep-cancel-order": { elementId: "ep-cancel-order", x: 100, y: 810 },
-        "ep-order-events": { elementId: "ep-order-events", x: 800, y: 450 },
-      },
-      viewport: { x: 0, y: 0, zoom: 0.5 },
     },
   };
 }
 
-/* ─────────────────────── Exports ─────────────────────── */
+/* ─────────────────────────────────────────────────────────────
+   EXPORTS
+───────────────────────────────────────────────────────────── */
 
-export const SEED_SERVICE_REGISTRY: Record<string, ServiceDefinition> =
-  buildSharedServiceRegistry();
-export const SEED_DIAGRAMS: Record<string, Diagram> = buildSeedDiagrams();
-export const SEED_FOLDERS: Record<string, Folder> = buildSeedFolders();
+export const SEED_SERVICE_REGISTRY: Record<string, ServiceDefinition> = buildServiceRegistry();
+export const SEED_DIAGRAMS: Record<string, Diagram>                    = buildDiagrams();
+export const SEED_FOLDERS: Record<string, Folder>                      = buildFolders();
