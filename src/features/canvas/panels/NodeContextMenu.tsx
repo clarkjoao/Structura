@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { ArrowUpToLine, ArrowDownToLine } from "lucide-react";
 
 interface Props {
@@ -18,6 +19,7 @@ const NodeContextMenu = ({
   onSendToBack,
   onClose,
 }: Props) => {
+  const { t } = useTranslation();
   const menuRef = useRef<HTMLDivElement>(null);
 
   const handleClickOutside = useCallback(
@@ -42,7 +44,7 @@ const NodeContextMenu = ({
     >
       <div className="px-3 py-1.5">
         <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
-          Ordenação
+          {t("nodeContextMenu.ordering")}
         </span>
       </div>
       <button
@@ -53,7 +55,7 @@ const NodeContextMenu = ({
         className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-surface-hover transition-colors text-foreground"
       >
         <ArrowUpToLine className="h-3.5 w-3.5 text-muted-foreground" />
-        Trazer para frente
+        {t("nodeContextMenu.bringToFront")}
       </button>
       <button
         onClick={() => {
@@ -63,7 +65,7 @@ const NodeContextMenu = ({
         className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-surface-hover transition-colors text-foreground"
       >
         <ArrowDownToLine className="h-3.5 w-3.5 text-muted-foreground" />
-        Enviar para trás
+        {t("nodeContextMenu.sendToBack")}
       </button>
     </div>
   );

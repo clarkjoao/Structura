@@ -164,9 +164,8 @@ const ServiceRegistryCombobox = ({
               </button>
               <button
                 type="button"
-                // onClick={handleCreate}
-                disabled={true}
-                // disabled={!newName.trim()}
+                onClick={handleCreate}
+                disabled={!newName.trim()}
                 className="flex-1 rounded-md bg-primary px-2 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t("serviceCombobox.createAndLink")}

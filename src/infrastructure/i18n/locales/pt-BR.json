@@ -546,6 +546,11 @@
     "typePanel": "panel",
     "typeNote": "nota"
   },
+  "nodeContextMenu": {
+    "ordering": "Ordenação",
+    "bringToFront": "Trazer para frente",
+    "sendToBack": "Enviar para trás"
+  },
   "panelNode": {
     "expandAria": "Expandir painel",
     "expandTitle": "Expandir",

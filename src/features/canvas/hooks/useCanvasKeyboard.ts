@@ -12,6 +12,7 @@ import { getViewportCenter } from "../viewport-utils";
 import { useRecordingMode } from "../flow/RecordingModeContext";
 import { exportDrawio } from "@/lib/export-service";
 import { useCopyPasteShortcuts } from "./keyboard/useCopyPasteShortcuts";
+import { getSelectedNodes, isInputFocused, isModKeyPressed } from "./keyboard/helpers";
 import { toast } from "sonner";
 import { isDiagramCompareMode, resolveCanvasSnapshot } from "@/features/diagram";
 
@@ -77,47 +78,6 @@ const KEY = {
   Z: "z",
   SLASH: "/",
 } as const;
-
-// ── Helpers ───────────────────────────────────────────────────────────────
-
-type Platform = "mac" | "windows" | "linux";
-
-function getPlatform(): Platform {
-  if (typeof navigator === "undefined") return "windows";
-  const ua = navigator.userAgent.toLowerCase();
-  const platform = (navigator as { platform?: string }).platform?.toLowerCase() ?? "";
-  if (platform.includes("mac") || ua.includes("mac")) return "mac";
-  if (platform.includes("win") || ua.includes("win")) return "windows";
-  if (platform.includes("linux") || ua.includes("linux")) return "linux";
-  return "windows";
-}
-
-function isModKeyPressed(e: KeyboardEvent): boolean {
-  const platform = getPlatform();
-  return platform === "mac" ? e.metaKey : e.ctrlKey;
-}
-
-function isInputFocused(target: EventTarget | null): boolean {
-  const el = target as HTMLElement;
-  if (!el) return false;
-  return (
-    el.tagName === "INPUT" ||
-    el.tagName === "TEXTAREA" ||
-    el.tagName === "SELECT" ||
-    !!el.isContentEditable
-  );
-}
-
-function getSelectedNodes(rf: ReactFlowInstance, fallbackId: string | null): Node[] {
-  const nodes = rf.getNodes();
-  const selected = nodes.filter((n) => n.selected);
-  if (selected.length > 0) return selected;
-  if (fallbackId) {
-    const single = nodes.find((n) => n.id === fallbackId);
-    return single ? [single] : [];
-  }
-  return [];
-}
 
 // ── Main hook ─────────────────────────────────────────────────────────────
 

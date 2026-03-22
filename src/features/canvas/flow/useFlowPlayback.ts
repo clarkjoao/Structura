@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import type { Flow, FlowStep } from "@/features/diagram";
+import type { Flow } from "@/features/diagram";
 import { getStepById, getEntryStep, isConditionStep } from "@/features/diagram";
 
 export function useFlowPlaybackState(flow: Flow | null) {
@@ -23,23 +23,33 @@ export function useFlowPlaybackState(flow: Flow | null) {
   }, [flow]);
 
   const goNext = useCallback(() => {
-    if (!currentStep?.next || isCondition) return;
-    setHistory((prev) => [...prev, currentStepId!]);
-    setCurrentStepId(currentStep.next);
-  }, [currentStep, currentStepId, isCondition]);
+    setCurrentStepId((prevStepId) => {
+      if (!prevStepId || !flow) return prevStepId;
+      const step = getStepById(flow, prevStepId);
+      if (!step?.next || isConditionStep(step)) return prevStepId;
+      setHistory((prev) => [...prev, prevStepId]);
+      return step.next;
+    });
+  }, [flow]);
 
   const chooseBranch = useCallback((branchIndex: number) => {
-    if (!currentStep?.branches?.[branchIndex]) return;
-    setHistory((prev) => [...prev, currentStepId!]);
-    setCurrentStepId(currentStep.branches[branchIndex].nextId);
-  }, [currentStep, currentStepId]);
+    setCurrentStepId((prevStepId) => {
+      if (!prevStepId || !flow) return prevStepId;
+      const step = getStepById(flow, prevStepId);
+      if (!step?.branches?.[branchIndex]) return prevStepId;
+      setHistory((prev) => [...prev, prevStepId]);
+      return step.branches[branchIndex].nextId;
+    });
+  }, [flow]);
 
   const goBack = useCallback(() => {
-    if (history.length === 0) return;
-    const prevId = history[history.length - 1];
-    setHistory((prev) => prev.slice(0, -1));
-    setCurrentStepId(prevId);
-  }, [history]);
+    setHistory((prev) => {
+      if (prev.length === 0) return prev;
+      const prevId = prev[prev.length - 1];
+      setCurrentStepId(prevId);
+      return prev.slice(0, -1);
+    });
+  }, []);
 
   const exit = useCallback(() => {
     setCurrentStepId(null);

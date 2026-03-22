@@ -4,9 +4,9 @@ import { resolveCanvasSnapshot } from "@/features/diagram";
 
 export type KeyHandler = (e: KeyboardEvent) => boolean;
 
-type Platform = "mac" | "windows" | "linux";
+export type Platform = "mac" | "windows" | "linux";
 
-function getPlatform(): Platform {
+export function getPlatform(): Platform {
   if (typeof navigator === "undefined") return "windows";
   const ua = navigator.userAgent.toLowerCase();
   const platform = (navigator as { platform?: string }).platform?.toLowerCase() ?? "";
