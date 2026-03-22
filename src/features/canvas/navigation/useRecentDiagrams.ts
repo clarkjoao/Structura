@@ -1,41 +1,61 @@
 import { useCallback, useState } from "react";
 
-export interface RecentDiagramEntry {
+/** Stored entry — only the diagram ID and when it was opened. */
+export interface RecentDiagramRef {
   id: string;
-  name: string;
   openedAt: number;
 }
 
 const STORAGE_KEY = "structura:recentDiagrams";
 const MAX_RECENT = 5;
 
-export function readRecentDiagrams(): RecentDiagramEntry[] {
+export function readRecentRefs(): RecentDiagramRef[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
-    const parsed = JSON.parse(raw) as RecentDiagramEntry[];
+    const parsed = JSON.parse(raw) as RecentDiagramRef[];
     if (!Array.isArray(parsed)) return [];
     return parsed
-      .filter((x) => x && typeof x.id === "string" && typeof x.name === "string")
+      .filter((x) => x && typeof x.id === "string" && typeof x.openedAt === "number")
       .slice(0, MAX_RECENT);
   } catch {
     return [];
   }
 }
 
-export function useRecentDiagrams() {
-  const [recent, setRecent] = useState<RecentDiagramEntry[]>(() => readRecentDiagrams());
+function writeRecentRefs(refs: RecentDiagramRef[]): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(refs));
+}
 
-  const recordOpened = useCallback((id: string, name: string) => {
+/** Remove a diagram from the recent list (e.g. after deletion). */
+export function removeRecentRef(id: string): void {
+  const refs = readRecentRefs().filter((r) => r.id !== id);
+  writeRecentRefs(refs);
+}
+
+// ── React hook ──
+
+export function useRecentDiagrams() {
+  const [recent, setRecent] = useState<RecentDiagramRef[]>(() => readRecentRefs());
+
+  const recordOpened = useCallback((id: string) => {
     setRecent((prev) => {
       const next = [
-        { id, name, openedAt: Date.now() },
+        { id, openedAt: Date.now() },
         ...prev.filter((x) => x.id !== id),
       ].slice(0, MAX_RECENT);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      writeRecentRefs(next);
       return next;
     });
   }, []);
 
-  return { recent, recordOpened };
+  const removeRecent = useCallback((id: string) => {
+    setRecent((prev) => {
+      const next = prev.filter((x) => x.id !== id);
+      writeRecentRefs(next);
+      return next;
+    });
+  }, []);
+
+  return { recent, recordOpened, removeRecent };
 }

@@ -3,6 +3,7 @@ import { AppState } from "../store.types";
 import {Diagram, Level} from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
 import { fileSystemAdapter } from "@/infrastructure/persistence";
+import { removeRecentRef } from "@/features/canvas/navigation/useRecentDiagrams";
 
 export const diagramsSlice = (
     set: (fn: (state: AppState) => void) => void,
@@ -25,6 +26,14 @@ export const diagramsSlice = (
           folderId: folderId ?? undefined,
         };
         set((state) => { state.diagrams[diagram.id] = diagram; });
+
+        // Write immediately to connected folder so the diagram exists on disk
+        // before any navigation (the debounced sync may not fire in time).
+        if (fileSystemAdapter.isConnected) {
+          fileSystemAdapter.setFolders(get().folders);
+          fileSystemAdapter.writeDiagram(diagram);
+        }
+
         return diagram;
       },
   
@@ -55,5 +64,6 @@ export const diagramsSlice = (
           s.activeDiagramId = null;
       });
       fileSystemAdapter.deleteDiagram(id, diagram);
+      removeRecentRef(id);
     },
   });
