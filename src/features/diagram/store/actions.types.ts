@@ -80,6 +80,7 @@ export interface AppActions {
   addScene: (name: string) => SceneDiff;
   removeScene: (sceneId: string) => void;
   setActiveScene: (sceneId: string | null) => void;
+  setCompareScene: (sceneId: string | null) => void;
   renameScene: (sceneId: string, name: string) => void;
   addComponentToScene: (sceneId: string, component: Component, layout: NodeLayout) => void;
   removeComponentFromScene: (sceneId: string, componentId: string) => void;

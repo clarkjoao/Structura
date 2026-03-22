@@ -1,5 +1,6 @@
 import SwimlaneNode from "../SwimlaneNode";
 import type { NodeTypeDescriptor } from "./types";
+import { sceneBadgePropsForNode } from "./compare-node-badges";
 import type { ComponentType } from "@/features/diagram";
 import { isPanelComponent } from "@/features/diagram";
 import { SWIMLANE_DEFAULT_H, SWIMLANE_DEFAULT_W } from "../../constants";
@@ -29,9 +30,7 @@ export const swimlaneDescriptor: NodeTypeDescriptor = {
       isSelected: ctx.selectedNodeId === comp.id,
       isDragTarget: ctx.dragTargetPanelId === comp.id,
       isUnparentCandidate: ctx.unparentCandidatePanelId === comp.id,
-      ...(ctx.sceneBadgeByComponentId[comp.id]
-        ? { sceneBadge: ctx.sceneBadgeByComponentId[comp.id] }
-        : {}),
+      ...sceneBadgePropsForNode(ctx, comp.id),
     };
   },
 

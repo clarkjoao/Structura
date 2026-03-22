@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { MoreHorizontal, Plus } from "lucide-react";
+import { Circle, MoreHorizontal, Plus, X } from "lucide-react";
 import { useActiveDiagram, useDiagramActions } from "@/features/diagram";
 import {
   DropdownMenu,
@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 export function SceneToolbarStrip() {
   const { t } = useTranslation();
   const diagram = useActiveDiagram();
-  const { addScene, removeScene, setActiveScene, renameScene } = useDiagramActions();
+  const { addScene, removeScene, setActiveScene, renameScene, setCompareScene } = useDiagramActions();
   const [newOpen, setNewOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -31,14 +31,41 @@ export function SceneToolbarStrip() {
     diagram.activeSceneId && sceneRecord[diagram.activeSceneId]
       ? diagram.activeSceneId
       : null;
+  const compareId =
+    diagram.compareSceneId && sceneRecord[diagram.compareSceneId]
+      ? diagram.compareSceneId
+      : null;
+  const isCompareModeUi = activeId !== null && compareId !== null;
 
-  const pillClass = (active: boolean) =>
+  const pillClass = (active: boolean, opts?: { dashed?: boolean }) =>
     cn(
       "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors max-w-[140px]",
+      opts?.dashed && "border-dashed",
       active
         ? "border-primary bg-primary/10 text-foreground"
         : "border-border bg-card/90 text-muted-foreground hover:text-foreground hover:bg-surface-hover",
     );
+
+  const handleScenePillClick = (sceneId: string) => {
+    if (activeId === null) {
+      setActiveScene(sceneId);
+      return;
+    }
+    if (activeId === sceneId) {
+      setActiveScene(null);
+      setCompareScene(null);
+      return;
+    }
+    if (compareId === sceneId) {
+      setCompareScene(null);
+      return;
+    }
+    if (compareId === null) {
+      setCompareScene(sceneId);
+      return;
+    }
+    setCompareScene(sceneId);
+  };
 
   const commitRename = (id: string) => {
     const trimmed = renameDraft.trim();
@@ -49,9 +76,20 @@ export function SceneToolbarStrip() {
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-1.5 max-w-[min(100vw-2rem,480px)]">
+      {isCompareModeUi && (
+        <span
+          className="mr-1 border-r border-border px-2 text-[10px] font-medium text-muted-foreground"
+          aria-live="polite"
+        >
+          {t("scenes.comparing")}
+        </span>
+      )}
       <button
         type="button"
-        onClick={() => setActiveScene(null)}
+        onClick={() => {
+          setActiveScene(null);
+          setCompareScene(null);
+        }}
         className={pillClass(activeId === null)}
       >
         {t("scenes.base")}
@@ -77,16 +115,76 @@ export function SceneToolbarStrip() {
           ) : (
             <button
               type="button"
-              onClick={() => setActiveScene(activeId === sc.id ? null : sc.id)}
-              className={pillClass(activeId === sc.id)}
+              onClick={() => handleScenePillClick(sc.id)}
+              className={pillClass(
+                activeId === sc.id || compareId === sc.id,
+                { dashed: isCompareModeUi && compareId === sc.id },
+              )}
               title={sc.name}
             >
-              <span
-                className="h-1.5 w-1.5 shrink-0 rounded-full"
-                style={{ background: sc.color }}
-                aria-hidden
-              />
+              {isCompareModeUi && activeId === sc.id ? (
+                <Circle
+                  className="h-2 w-2 shrink-0 fill-primary text-primary"
+                  aria-hidden
+                />
+              ) : isCompareModeUi && compareId === sc.id ? (
+                <span className="shrink-0 text-[11px] font-bold leading-none" aria-hidden>
+                  ≠
+                </span>
+              ) : (
+                <span
+                  className="h-1.5 w-1.5 shrink-0 rounded-full"
+                  style={{ background: sc.color }}
+                  aria-hidden
+                />
+              )}
               <span className="truncate">{sc.name}</span>
+              {isCompareModeUi && activeId === sc.id && (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  className="ml-0.5 shrink-0 rounded p-0.5 hover:bg-primary/20"
+                  title={t("scenes.clearSceneAndCompare")}
+                  aria-label={t("scenes.clearSceneAndCompare")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveScene(null);
+                    setCompareScene(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setActiveScene(null);
+                      setCompareScene(null);
+                    }
+                  }}
+                >
+                  <X className="h-3 w-3" />
+                </span>
+              )}
+              {isCompareModeUi && compareId === sc.id && (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  className="ml-0.5 shrink-0 rounded p-0.5 hover:bg-muted"
+                  title={t("scenes.removeFromCompare")}
+                  aria-label={t("scenes.removeFromCompare")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCompareScene(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setCompareScene(null);
+                    }
+                  }}
+                >
+                  <X className="h-3 w-3" />
+                </span>
+              )}
             </button>
           )}
           <DropdownMenu>

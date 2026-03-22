@@ -271,7 +271,8 @@
     "noDiagramSelected": "Nenhum diagrama selecionado",
     "newEndpoint": "Novo Endpoint",
     "usesEdgeLabel": "Usa",
-    "apiGroupDefaultName": "API Endpoints"
+    "apiGroupDefaultName": "API Endpoints",
+    "compareViewBanner": "Modo visualização — edição desativada"
   },
   "canvasToolbar": {
     "renameTitle": "Clique duas vezes para renomear",
@@ -297,7 +298,11 @@
     "remove": "Remover",
     "sceneMenu": "Menu da cena",
     "baseMoveBlocked": "Mover nós da base não é permitido em cenas",
-    "groupBlockedInScene": "Agrupar não está disponível com uma cena ativa"
+    "groupBlockedInScene": "Agrupar não está disponível com uma cena ativa",
+    "comparing": "Comparando",
+    "compareModeTooltip": "Modo comparação ativo — clique em × para sair",
+    "clearSceneAndCompare": "Voltar à base",
+    "removeFromCompare": "Remover da comparação"
   },
   "canvasSearch": {
     "placeholder": "Buscar componente...",

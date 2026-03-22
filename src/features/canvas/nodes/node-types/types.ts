@@ -1,5 +1,6 @@
 import type { CSSProperties, ComponentType as ReactComponentType } from "react";
 import type {
+  CompareElementVisual,
   Component,
   ComponentType,
   Diagram,
@@ -18,6 +19,9 @@ export interface NodeBuildContext {
   resolvedNodeLayouts: Record<string, NodeLayout>;
   /** Scene-only elements in the active scene → badge { name, color }. */
   sceneBadgeByComponentId: Record<string, { name: string; color: string }>;
+  /** Compare mode: per-node opacity + badge metadata (scene A = active). */
+  compareVisualByComponentId?: Record<string, CompareElementVisual>;
+  isCompareMode?: boolean;
   serviceRegistry: Record<string, ServiceDefinition>;
   allDiagrams: Record<string, Diagram>;
   selectedNodeId: string | null;

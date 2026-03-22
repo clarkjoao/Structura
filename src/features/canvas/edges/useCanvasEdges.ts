@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { Edge } from "@xyflow/react";
 import type { Connection, Diagram, FlowStep } from "@/features/diagram";
-import { resolveSceneSnapshot } from "@/features/diagram";
+import { resolveCanvasSnapshot } from "@/features/diagram";
 import { useRecordingMode } from "../flow/RecordingModeContext";
 import { buildEdge, filterVisibleConnections } from "./edgeBuilding";
 import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
@@ -12,6 +12,8 @@ interface UseCanvasEdgesParams {
   edgeHandleAssignments: { connId: string; sourceHandle: string; targetHandle: string }[];
   selectedEdgeId: string | null;
   isPlaying: boolean;
+  isCompareMode?: boolean;
+  compareConnectionOpacity?: Record<string, number>;
   activeStep: FlowStep | null;
   flowHighlight: Pick<FlowHighlight, "activeConnId" | "participantConnIds">;
   recordingInfo: Pick<RecordingInfo, "edgeSteps" | "recordedEdgeIds" | "lastEdgeId"> | null;
@@ -24,6 +26,8 @@ export function useCanvasEdges({
   edgeHandleAssignments,
   selectedEdgeId,
   isPlaying,
+  isCompareMode,
+  compareConnectionOpacity,
   activeStep,
   flowHighlight,
   recordingInfo,
@@ -33,7 +37,7 @@ export function useCanvasEdges({
   return useMemo(() => {
     if (!diagram) return [];
 
-    const r = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
+    const r = resolveCanvasSnapshot(diagram);
     const visible = filterVisibleConnections(visibleConnections, r.components);
     const assignmentMap = new Map(edgeHandleAssignments.map((a) => [a.connId, a]));
 
@@ -44,6 +48,8 @@ export function useCanvasEdges({
         selectedEdgeId,
         isPlaying,
         isRecording,
+        isCompareMode,
+        compareConnectionOpacity,
         activeStep,
         flowHighlight,
         recordingInfo,
@@ -56,6 +62,8 @@ export function useCanvasEdges({
     edgeHandleAssignments,
     selectedEdgeId,
     isPlaying,
+    isCompareMode,
+    compareConnectionOpacity,
     isRecording,
     activeStep,
     flowHighlight,

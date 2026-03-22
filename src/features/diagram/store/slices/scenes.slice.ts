@@ -46,6 +46,9 @@ export const scenesSlice = (set: (fn: (state: AppState) => void) => void) => ({
       if (d.activeSceneId === sceneId) {
         d.activeSceneId = null;
       }
+      if (d.compareSceneId === sceneId) {
+        d.compareSceneId = null;
+      }
       d.updatedAt = new Date().toISOString();
     });
   },
@@ -55,6 +58,8 @@ export const scenesSlice = (set: (fn: (state: AppState) => void) => void) => ({
       const d = state.diagrams[state.activeDiagramId!];
       if (!d) return;
       if (sceneId !== null && !d.scenes?.[sceneId]) return;
+
+      d.compareSceneId = null;
 
       const prev = d.activeSceneId ?? null;
       const vp = { ...d.viewport };
@@ -68,6 +73,24 @@ export const scenesSlice = (set: (fn: (state: AppState) => void) => void) => ({
         const next = d.scenes[sceneId].viewport!;
         d.viewport = { x: next.x, y: next.y, zoom: next.zoom };
       }
+      d.updatedAt = new Date().toISOString();
+    });
+  },
+
+  setCompareScene: (sceneId: string | null) => {
+    set((state) => {
+      const d = state.diagrams[state.activeDiagramId!];
+      if (!d) return;
+      if (sceneId === null) {
+        d.compareSceneId = null;
+        d.updatedAt = new Date().toISOString();
+        return;
+      }
+      const active = d.activeSceneId;
+      if (!active || !d.scenes?.[active]) return;
+      if (sceneId === active) return;
+      if (!d.scenes?.[sceneId]) return;
+      d.compareSceneId = sceneId;
       d.updatedAt = new Date().toISOString();
     });
   },

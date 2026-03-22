@@ -90,6 +90,7 @@ export const useDiagramActions = () =>
       addScene: s.addScene,
       removeScene: s.removeScene,
       setActiveScene: s.setActiveScene,
+      setCompareScene: s.setCompareScene,
       renameScene: s.renameScene,
       addComponentToScene: s.addComponentToScene,
       removeComponentFromScene: s.removeComponentFromScene,

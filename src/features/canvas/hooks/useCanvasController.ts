@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback, useState, useMemo, type SetStateAction } from "react";
+import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { useReactFlow, useUpdateNodeInternals, type Node } from "@xyflow/react";
 import { useNavigate } from "react-router-dom";
@@ -19,7 +20,12 @@ import { useConnectionInternalsSync } from "./useConnectionInternalsSync";
 import { useRecordingMode } from "../flow/RecordingModeContext";
 import { useRecentDiagrams } from "../navigation/useRecentDiagrams";
 import type { CanvasProps } from "../canvas.types";
-import { resolveSceneSnapshot } from "@/features/diagram";
+import {
+  buildCompareComponentVisuals,
+  buildCompareConnectionVisuals,
+  isDiagramCompareMode,
+  resolveCanvasSnapshot,
+} from "@/features/diagram";
 
 export function useCanvasController({
   onOpenDiagram,
@@ -63,11 +69,27 @@ export function useCanvasController({
     useCanvasStore();
   const visualState = useCanvasVisualState();
 
+  const isCompareMode = useMemo(() => isDiagramCompareMode(diagram), [diagram]);
+
   const resolved = useMemo(
-    () =>
-      diagram ? resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null) : null,
+    () => (diagram ? resolveCanvasSnapshot(diagram) : null),
     [diagram],
   );
+
+  const compareVisualByComponentId = useMemo(() => {
+    if (!diagram || !isCompareMode) return undefined;
+    const a = diagram.activeSceneId!;
+    const b = diagram.compareSceneId!;
+    return buildCompareComponentVisuals(diagram, a, b);
+  }, [diagram, isCompareMode]);
+
+  const compareConnectionOpacity = useMemo(() => {
+    if (!diagram || !isCompareMode) return undefined;
+    const a = diagram.activeSceneId!;
+    const b = diagram.compareSceneId!;
+    const v = buildCompareConnectionVisuals(diagram, a, b);
+    return Object.fromEntries(Object.entries(v).map(([id, cv]) => [id, cv.opacity]));
+  }, [diagram, isCompareMode]);
 
   const sceneBadgeByComponentId = useMemo(() => {
     if (!diagram?.activeSceneId || !diagram.scenes?.[diagram.activeSceneId]) return {};
@@ -81,6 +103,8 @@ export function useCanvasController({
   const { isPlaying, activeStep, flowHighlight, coverage, recordingInfo, activeFlow, currentStep } = useFlowState({
     flows,
   });
+
+  const isPlayingEffective = isCompareMode ? false : isPlaying;
 
   const { handleDrillDown, handlePanelCollapseToggle } = useCanvasDrillHandlers({
     diagram,
@@ -118,6 +142,8 @@ export function useCanvasController({
     resolvedComponents: resolved?.components ?? {},
     resolvedNodeLayouts: resolved?.nodeLayouts ?? {},
     sceneBadgeByComponentId,
+    compareVisualByComponentId,
+    isCompareMode,
     visibleComponents,
     panelIds,
     selectedNodeId: visualState.selectedNodeId,
@@ -127,7 +153,7 @@ export function useCanvasController({
     allDiagrams,
     handleDrillDown,
     handlePanelCollapseToggle,
-    isPlaying,
+    isPlaying: isPlayingEffective,
     dragTargetPanelId,
     unparentCandidatePanelId,
     connectionCountPerNode,
@@ -166,7 +192,9 @@ export function useCanvasController({
     visibleConnections,
     edgeHandleAssignments,
     selectedEdgeId: visualState.selectedEdgeId,
-    isPlaying,
+    isPlaying: isPlayingEffective,
+    isCompareMode,
+    compareConnectionOpacity,
     activeStep,
     flowHighlight,
     recordingInfo,
@@ -182,6 +210,7 @@ export function useCanvasController({
   const eventHandlers = useCanvasEventHandlers({
     visualState,
     isPlaying,
+    isCompareMode,
     isFlowPanelOpen: !!isFlowPanelOpen,
     updateViewport: actions.updateViewport,
     addConnection: actions.addConnection,
@@ -189,7 +218,8 @@ export function useCanvasController({
     onRequestFocusTitle: handleRequestFocusTitle,
   });
 
-  const isPanelOpen = !!(visualState.selectedNodeId || visualState.selectedEdgeId) && !isRecording;
+  const isPanelOpen =
+    !!(visualState.selectedNodeId || visualState.selectedEdgeId) && !isRecording && !isCompareMode;
   useEffect(() => {
     if (!diagram) return;
     recordOpened(diagram.id, diagram.name);
@@ -240,6 +270,8 @@ export function useCanvasController({
 
   useCanvasKeyboard({
     diagram,
+    setCompareScene: actions.setCompareScene,
+    isCompareMode,
     serviceRegistry,
     selectedNodeId: visualState.selectedNodeId,
     selectedEdgeId: visualState.selectedEdgeId,
@@ -293,7 +325,36 @@ export function useCanvasController({
   const selectedNodes = nodes.filter((n) => visualState.selectedNodeIds.has(n.id));
   const selectedCount = visualState.selectedNodeIds.size;
   const showElementPanel =
-    (visualState.selectedNodeId || visualState.selectedEdgeId || selectedCount > 0) && !isRecording;
+    (visualState.selectedNodeId || visualState.selectedEdgeId || selectedCount > 0) &&
+    !isRecording &&
+    !isCompareMode;
+
+  const compareModeEnteredRef = useRef(false);
+  useEffect(() => {
+    if (!isCompareMode) {
+      compareModeEnteredRef.current = false;
+      return;
+    }
+    if (compareModeEnteredRef.current) return;
+    compareModeEnteredRef.current = true;
+    try {
+      const k = "structura:compareTooltipSeen";
+      if (typeof localStorage !== "undefined" && !localStorage.getItem(k)) {
+        localStorage.setItem(k, "1");
+        toast.message(t("scenes.compareModeTooltip"));
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [isCompareMode, t]);
+
+  const prevCompareRef = useRef(false);
+  useEffect(() => {
+    if (isCompareMode && !prevCompareRef.current) {
+      visualState.clearCanvasSelection();
+    }
+    prevCompareRef.current = isCompareMode;
+  }, [isCompareMode, visualState]);
 
   return {
     t,
@@ -321,5 +382,6 @@ export function useCanvasController({
     selectedCount,
     showElementPanel,
     onDrillUp,
+    isCompareMode,
   };
 }

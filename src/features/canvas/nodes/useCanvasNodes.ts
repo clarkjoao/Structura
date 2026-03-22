@@ -1,6 +1,12 @@
-import { useMemo } from "react";
+import { useMemo, type CSSProperties } from "react";
 import type { Node } from "@xyflow/react";
-import type { Component, Diagram, NodeLayout, ServiceDefinition } from "@/features/diagram";
+import type {
+  CompareElementVisual,
+  Component,
+  Diagram,
+  NodeLayout,
+  ServiceDefinition,
+} from "@/features/diagram";
 import {
   isPanelComponent,
   isApiGroupComponent,
@@ -40,6 +46,8 @@ interface UseCanvasNodesParams {
   activeFlowId?: string | null;
   onPlayFlow?: (flowId: string) => void;
   onAddEndpointToGroup?: (groupId: string) => void;
+  isCompareMode?: boolean;
+  compareVisualByComponentId?: Record<string, CompareElementVisual>;
 }
 
 export function useCanvasNodes({
@@ -70,6 +78,8 @@ export function useCanvasNodes({
   activeFlowId,
   onPlayFlow,
   onAddEndpointToGroup,
+  isCompareMode = false,
+  compareVisualByComponentId,
 }: UseCanvasNodesParams): Node[] {
   const { isRecording, onRecordHandleClick } = useRecordingMode();
   return useMemo(() => {
@@ -80,6 +90,8 @@ export function useCanvasNodes({
       resolvedComponents,
       resolvedNodeLayouts,
       sceneBadgeByComponentId,
+      compareVisualByComponentId,
+      isCompareMode,
       serviceRegistry: serviceRegistry ?? {},
       allDiagrams,
       selectedNodeId,
@@ -123,7 +135,15 @@ export function useCanvasNodes({
           comp, d, layout, panelIds, selectedNodeIds, highlightedNodeIds,
           collapsedPanelIds, isViewingCoverage, coverage,
         );
-        const style = { ...d.buildStyle?.(comp, ctx), ...(vis.dimmed ? { opacity: 0.3 } : {}) };
+        const style: Record<string, unknown> = {
+          ...d.buildStyle?.(comp, ctx),
+          ...(vis.dimmed ? { opacity: 0.3 } : {}),
+        };
+        const cmpVis = compareVisualByComponentId?.[comp.id];
+        if (cmpVis !== undefined) {
+          const baseOp = typeof style.opacity === "number" ? style.opacity : 1;
+          style.opacity = baseOp * cmpVis.opacity;
+        }
         const lockedInGroup = isEndpointType(comp.type) && comp.parentId != null
           && isApiGroupComponent(resolvedComponents[comp.parentId]);
         const sceneActive =
@@ -135,14 +155,15 @@ export function useCanvasNodes({
           type: d.rfType,
           position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
           zIndex: vis.zIndex,
-          connectable: d.connectable,
+          connectable: d.connectable && !isCompareMode,
           selected: vis.isSelected,
-          draggable: (d.draggable ?? !lockedInGroup) && !sceneLocksBase,
-          selectable: d.selectable ?? !lockedInGroup,
-          focusable: d.focusable ?? !lockedInGroup,
+          draggable: (d.draggable ?? !lockedInGroup) && !sceneLocksBase && !isCompareMode,
+          selectable: (d.selectable ?? !lockedInGroup) && !isCompareMode,
+          focusable: (d.focusable ?? !lockedInGroup) && !isCompareMode,
+          className: isCompareMode ? "cursor-default" : undefined,
           ...(vis.isChild ? { parentId: comp.parentId!, extent: "parent" as const } : {}),
           hidden: vis.isHidden,
-          style,
+          style: style as CSSProperties,
           data: d.buildData(comp, ctx),
         };
       });
@@ -151,6 +172,8 @@ export function useCanvasNodes({
     resolvedComponents,
     resolvedNodeLayouts,
     sceneBadgeByComponentId,
+    compareVisualByComponentId,
+    isCompareMode,
     visibleComponents,
     panelIds,
     selectedNodeId,

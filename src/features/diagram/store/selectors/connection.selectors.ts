@@ -1,19 +1,19 @@
 import { useShallow } from "zustand/react/shallow";
 import { useDiagramStore } from "../diagram.store";
-import { resolveSceneSnapshot } from "../../utils/scene.utils";
+import { resolveCanvasSnapshot } from "../../utils/scene.utils";
 
 export const useConnectionIds = () =>
   useDiagramStore((s) => {
     if (!s.activeDiagramId) return [];
     const d = s.diagrams[s.activeDiagramId];
-    return Object.keys(resolveSceneSnapshot(d, d.activeSceneId ?? null).connections);
+    return Object.keys(resolveCanvasSnapshot(d).connections);
   });
 
 export const useConnection = (id: string) =>
   useDiagramStore((s) => {
     if (!s.activeDiagramId) return undefined;
     const d = s.diagrams[s.activeDiagramId];
-    return resolveSceneSnapshot(d, d.activeSceneId ?? null).connections[id];
+    return resolveCanvasSnapshot(d).connections[id];
   });
 
 export const useConnections = () =>
@@ -21,7 +21,7 @@ export const useConnections = () =>
     useShallow((s) => {
       if (!s.activeDiagramId) return {};
       const d = s.diagrams[s.activeDiagramId];
-      return resolveSceneSnapshot(d, d.activeSceneId ?? null).connections;
+      return resolveCanvasSnapshot(d).connections;
     }),
   );
 
@@ -30,7 +30,7 @@ export const useVisibleComponents = () =>
     useShallow((s) => {
       if (!s.activeDiagramId) return [];
       const d = s.diagrams[s.activeDiagramId];
-      const r = resolveSceneSnapshot(d, d.activeSceneId ?? null);
+      const r = resolveCanvasSnapshot(d);
       const visibleIds = new Set(Object.keys(r.nodeLayouts));
       return Object.values(r.components).filter((c) => visibleIds.has(c.id));
     }),
@@ -41,7 +41,7 @@ export const useVisibleConnections = () =>
     useShallow((s) => {
       if (!s.activeDiagramId) return [];
       const d = s.diagrams[s.activeDiagramId];
-      const r = resolveSceneSnapshot(d, d.activeSceneId ?? null);
+      const r = resolveCanvasSnapshot(d);
       const visibleIds = new Set(Object.keys(r.nodeLayouts));
       return Object.values(r.connections).filter(
         (conn) => visibleIds.has(conn.sourceId) && visibleIds.has(conn.targetId),

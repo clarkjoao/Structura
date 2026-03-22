@@ -6,7 +6,7 @@ import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 
 import { NOTE_DEFAULT_W, NOTE_DEFAULT_H } from "../constants";
 import { useTranslation } from "react-i18next";
-import { SceneElementBadge } from "./SceneElementBadge";
+import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
 
 const DEFAULT_PAPER_COLOR = "hsl(45 25% 97%)"; // papel ofuscado
 
@@ -18,6 +18,10 @@ export interface NoteNodeData {
   isSelected: boolean;
   isHighlighted?: boolean;
   sceneBadge?: { name: string; color: string };
+  compareBadges?: {
+    a: { name: string; color: string };
+    b: { name: string; color: string };
+  };
 }
 
 function isDarkBg(color: string): boolean {
@@ -75,7 +79,10 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
             : "0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06)",
         }}
       >
-        {d.sceneBadge && (
+        {d.compareBadges && (
+          <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
+        )}
+        {!d.compareBadges && d.sceneBadge && (
           <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
         )}
         {/* Margem superior — cabeçalho tipo folha A3 */}

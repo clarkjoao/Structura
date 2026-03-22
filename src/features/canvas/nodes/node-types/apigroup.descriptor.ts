@@ -2,6 +2,7 @@ import ApiGroupNode from "../ApiGroupNode";
 import { isApiGroupComponent, isApiGroupType, isEndpointType } from "@/features/diagram";
 import { computeApiGroupSize } from "../ApiGroupNode/useApiGroupSize";
 import type { NodeTypeDescriptor } from "./types";
+import { sceneBadgePropsForNode } from "./compare-node-badges";
 
 export const apiGroupDescriptor: NodeTypeDescriptor = {
   rfType: "api-group",
@@ -23,14 +24,13 @@ export const apiGroupDescriptor: NodeTypeDescriptor = {
       sla: comp.sla,
       isSelected: ctx.selectedNodeId === comp.id,
       controlsDisabled:
-        !ctx.isPlaying &&
-        !ctx.isRecording &&
-        ctx.selectedNodeIds.size > 0 &&
-        !ctx.selectedNodeIds.has(comp.id),
+        !!ctx.isCompareMode ||
+        (!ctx.isPlaying &&
+          !ctx.isRecording &&
+          ctx.selectedNodeIds.size > 0 &&
+          !ctx.selectedNodeIds.has(comp.id)),
       onAddEndpoint: ctx.onAddEndpointToGroup ? () => ctx.onAddEndpointToGroup!(comp.id) : undefined,
-      ...(ctx.sceneBadgeByComponentId[comp.id]
-        ? { sceneBadge: ctx.sceneBadgeByComponentId[comp.id] }
-        : {}),
+      ...sceneBadgePropsForNode(ctx, comp.id),
     };
   },
 

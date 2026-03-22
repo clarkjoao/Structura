@@ -1,6 +1,6 @@
 import type { ReactFlowInstance, Node } from "@xyflow/react";
 import type { Diagram } from "@/features/diagram";
-import { resolveSceneSnapshot } from "@/features/diagram";
+import { resolveCanvasSnapshot } from "@/features/diagram";
 
 export type KeyHandler = (e: KeyboardEvent) => boolean;
 
@@ -44,7 +44,7 @@ export function getSelectedNodes(rf: ReactFlowInstance, fallbackId: string | nul
 }
 
 export function getCopyableIds(diagram: Diagram, nodes: Node[]): string[] {
-  const r = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
+  const r = resolveCanvasSnapshot(diagram);
   return nodes
     .map((n) => n.id)
     .filter((id) => {
@@ -71,7 +71,7 @@ export function getCenterOfNodes(
   ids: string[],
   offset = 20,
 ): { x: number; y: number } {
-  const r = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
+  const r = resolveCanvasSnapshot(diagram);
   const layouts = r.nodeLayouts;
   let sumX = 0;
   let sumY = 0;

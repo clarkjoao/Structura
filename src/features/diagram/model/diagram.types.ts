@@ -82,4 +82,6 @@ export interface Diagram {
   folderId?: string | null;
   scenes?: Record<string, SceneDiff>;
   activeSceneId?: string | null;
+  /** Second scene for overlay compare mode (requires activeSceneId). */
+  compareSceneId?: string | null;
 }

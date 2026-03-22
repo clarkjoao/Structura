@@ -13,12 +13,14 @@ import { useRecordingMode } from "../flow/RecordingModeContext";
 import { exportDrawio } from "@/lib/export-service";
 import { useCopyPasteShortcuts } from "./keyboard/useCopyPasteShortcuts";
 import { toast } from "sonner";
-import { resolveSceneSnapshot } from "@/features/diagram";
+import { isDiagramCompareMode, resolveCanvasSnapshot } from "@/features/diagram";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
 interface UseCanvasKeyboardParams {
   diagram: Diagram | null | undefined;
+  setCompareScene: (sceneId: string | null) => void;
+  isCompareMode?: boolean;
   serviceRegistry: Record<string, ServiceDefinition>;
   selectedNodeId: string | null;
   selectedEdgeId: string | null;
@@ -132,6 +134,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   const { isRecording, onRecordUndo } = useRecordingMode();
   const {
     diagram,
+    setCompareScene,
+    isCompareMode = false,
     serviceRegistry,
     selectedNodeId,
     selectedEdgeId,
@@ -213,6 +217,31 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
         return;
       }
 
+      if (e.key === KEY.ESCAPE && isCompareMode) {
+        e.preventDefault();
+        setCompareScene(null);
+        return;
+      }
+
+      if (isCompareMode) {
+        if (e.key === KEY.DELETE || e.key === KEY.BACKSPACE) {
+          e.preventDefault();
+          return;
+        }
+        if (
+          isModKeyPressed(e) &&
+          (e.key === "v" ||
+            e.key === "V" ||
+            e.key === "d" ||
+            e.key === "D" ||
+            e.key === "c" ||
+            e.key === "C")
+        ) {
+          e.preventDefault();
+          return;
+        }
+      }
+
       // Block shortcuts when flow panel is open or when playing a flow
       if (isFlowPanelOpen || isPlaying) return;
 
@@ -232,6 +261,10 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
 
       // Cmd/Ctrl+A — select all
       if (mod && e.key === KEY.A) {
+        if (isCompareMode) {
+          e.preventDefault();
+          return;
+        }
         e.preventDefault();
         reactFlowInstance.setNodes((nds: Node[]) => {
           const updated = nds.map((n) => ({ ...n, selected: true }));
@@ -281,7 +314,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
           if (isReactFlowParentPanelType(node.type as string)) {
             ungroupNodes(node.id);
           } else {
-            const r = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
+            const r = resolveCanvasSnapshot(diagram);
             const comp = r.components[node.id];
             const parentComp = comp?.parentId ? r.components[comp.parentId] : undefined;
             if (comp?.parentId && parentComp && isPanelComponent(parentComp)) {
@@ -303,7 +336,10 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       // Cmd/Ctrl+G — group selected
       if (mod && e.key === KEY.G) {
         e.preventDefault();
-        if (diagram.activeSceneId && diagram.scenes?.[diagram.activeSceneId]) {
+        if (
+          (diagram.activeSceneId && diagram.scenes?.[diagram.activeSceneId]) ||
+          isDiagramCompareMode(diagram)
+        ) {
           toast.error(t("scenes.groupBlockedInScene"));
           return;
         }
@@ -344,6 +380,10 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
 
       // Cmd/Ctrl+1–4 — add C4 component
       if (mod && c4ShortcutMap[e.key]) {
+        if (isCompareMode) {
+          e.preventDefault();
+          return;
+        }
         e.preventDefault();
         const { type, name } = c4ShortcutMap[e.key];
         const pos = getViewportCenter(reactFlowInstance, isPanelOpen);
@@ -356,6 +396,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     return () => document.removeEventListener("keydown", handler);
   }, [
     diagram,
+    setCompareScene,
+    isCompareMode,
     serviceRegistry,
     selectedNodeId,
     selectedEdgeId,

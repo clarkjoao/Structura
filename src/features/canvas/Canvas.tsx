@@ -17,8 +17,9 @@ import CanvasSearch from "./toolbar/CanvasSearch";
 import { DiagramSidebar } from "./navigation/DiagramSidebar";
 import { DiagramCommandPalette } from "./navigation/DiagramCommandPalette";
 import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
+import { Eye } from "lucide-react";
 import { useCanvasController } from "./hooks/useCanvasController";
-import { resolveSceneSnapshot } from "@/features/diagram";
+import { resolveCanvasSnapshot } from "@/features/diagram";
 import { CANVAS_STYLES } from "./canvas.constants";
 import { canvasEdgeTypes } from "./reactFlowConfig";
 import type { CanvasProps } from "./canvas.types";
@@ -50,6 +51,7 @@ const Canvas = (props: CanvasProps = {}) => {
     selectedCount,
     showElementPanel,
     onDrillUp,
+    isCompareMode,
   } = useCanvasController(props);
 
   if (!diagram) {
@@ -85,9 +87,7 @@ const Canvas = (props: CanvasProps = {}) => {
             <CanvasSearch
               onClose={() => setShowSearch(false)}
               onSelectResult={handleSearchSelect}
-              components={
-                resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null).components
-              }
+              components={resolveCanvasSnapshot(diagram).components}
             />
           )}
           <div className="absolute inset-y-0 left-0 z-30 flex">
@@ -99,6 +99,12 @@ const Canvas = (props: CanvasProps = {}) => {
             />
           </div>
           <div onContextMenu={(e) => e.preventDefault()} className="w-full h-full">
+            {isCompareMode && (
+              <div className="absolute top-12 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs text-muted-foreground shadow-sm">
+                <Eye className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                {t("canvas.compareViewBanner")}
+              </div>
+            )}
             <ReactFlow
               nodes={nodes}
               edges={edges}
@@ -133,8 +139,9 @@ const Canvas = (props: CanvasProps = {}) => {
               fitView
               fitViewOptions={{ padding: 0.3 }}
               onMoveEnd={eventHandlers.onMoveEnd}
-              nodesDraggable={!isRecording}
-              nodesConnectable={!isRecording}
+              nodesDraggable={!isRecording && !isCompareMode}
+              nodesConnectable={!isRecording && !isCompareMode}
+              elementsSelectable={!isRecording && !isCompareMode}
               proOptions={{ hideAttribution: true }}
               className="bg-background"
             >

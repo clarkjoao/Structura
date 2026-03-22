@@ -55,11 +55,17 @@ export { stepsToMermaid, parseMermaidToSteps } from "./utils/flow-mermaid";
 
 export {
   resolveSceneSnapshot,
+  resolveCanvasSnapshot,
+  resolveCompareSnapshot,
   diagramWithResolvedScene,
   exportFilenameSlug,
   canMoveNodeInSceneMode,
   isComponentAddedInActiveScene,
+  isDiagramCompareMode,
+  buildCompareComponentVisuals,
+  buildCompareConnectionVisuals,
 } from "./utils/scene.utils";
+export type { CompareSnapshotResult, CompareElementVisual } from "./utils/scene.utils";
 
 /** Type guards for the Component discriminated union */
 export {

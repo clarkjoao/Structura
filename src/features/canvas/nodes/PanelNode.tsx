@@ -5,7 +5,7 @@ import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import AwsIcon from "./AwsIcon";
 import { useTranslation } from "react-i18next";
-import { SceneElementBadge } from "./SceneElementBadge";
+import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
 
 const DEFAULT_OPACITY = 10;
 
@@ -28,6 +28,10 @@ export interface PanelNodeData {
   childCount?: number;
   onToggleCollapse?: () => void;
   sceneBadge?: { name: string; color: string };
+  compareBadges?: {
+    a: { name: string; color: string };
+    b: { name: string; color: string };
+  };
 }
 
 function colorWithAlpha(color: string, alpha: number): string {
@@ -90,7 +94,10 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
           border: `2px ${borderStyle} ${borderColor}`,
         }}
       >
-        {d.sceneBadge && (
+        {d.compareBadges && (
+          <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
+        )}
+        {!d.compareBadges && d.sceneBadge && (
           <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
         )}
         {useAwsIcon ? (
@@ -141,7 +148,10 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
           border: `2px ${borderStyle} ${borderColor}`,
         }}
       >
-        {d.sceneBadge && (
+        {d.compareBadges && (
+          <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
+        )}
+        {!d.compareBadges && d.sceneBadge && (
           <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
         )}
         {isDragTarget && (

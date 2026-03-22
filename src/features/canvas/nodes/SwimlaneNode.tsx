@@ -2,7 +2,7 @@ import { memo } from "react";
 import { NodeResizer, type NodeProps } from "@xyflow/react";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { useTranslation } from "react-i18next";
-import { SceneElementBadge } from "./SceneElementBadge";
+import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
 
 export interface SwimlaneNodeData {
   elementId: string;
@@ -15,6 +15,10 @@ export interface SwimlaneNodeData {
   isDragTarget?: boolean;
   isUnparentCandidate?: boolean;
   sceneBadge?: { name: string; color: string };
+  compareBadges?: {
+    a: { name: string; color: string };
+    b: { name: string; color: string };
+  };
 }
 
 const UNPARENT_BORDER = "hsl(25 95% 53%)";
@@ -63,7 +67,10 @@ const SwimlaneNode = memo(({ data, selected }: NodeProps) => {
           ...(isUnparentCandidate ? { borderColor: UNPARENT_BORDER } : {}),
         }}
       >
-        {d.sceneBadge && (
+        {d.compareBadges && (
+          <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
+        )}
+        {!d.compareBadges && d.sceneBadge && (
           <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
         )}
         <div

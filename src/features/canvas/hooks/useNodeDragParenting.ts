@@ -14,7 +14,7 @@ import {
   findPanelContainingPoint,
   toAbsolutePosition,
 } from "../models/panelParenting";
-import { resolveSceneSnapshot, canMoveNodeInSceneMode } from "@/features/diagram";
+import { resolveCanvasSnapshot, canMoveNodeInSceneMode } from "@/features/diagram";
 import { toast } from "sonner";
 import i18n from "@/infrastructure/i18n";
 
@@ -67,7 +67,7 @@ export function useNodeDragParenting({
       if (change.type !== "position" || !change.position) return;
       if (!diagram) return;
 
-      const r = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
+      const r = resolveCanvasSnapshot(diagram);
       const comp = r.components[change.id];
       if (comp && isEndpointComponent(comp)) return;
 
@@ -129,7 +129,7 @@ export function useNodeDragParenting({
         toast.error(i18n.t("scenes.baseMoveBlocked"));
         return;
       }
-      const r = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
+      const r = resolveCanvasSnapshot(diagram);
       const layout = r.nodeLayouts[change.id];
       if (layout) {
         updateNodeLayout(change.id, { x: layout.x, y: layout.y }, change.dimensions);
@@ -155,7 +155,7 @@ export function useNodeDragParenting({
       if (isEndpointType(nodeType)) return;
 
       if (!diagram) return;
-      const r = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
+      const r = resolveCanvasSnapshot(diagram);
       if (!canMoveNodeInSceneMode(diagram, draggedNode.id)) {
         return;
       }

@@ -71,6 +71,7 @@ export function diagramWithResolvedScene(diagram: Diagram): Diagram {
     },
     nodeLayouts: r.nodeLayouts,
     activeSceneId: undefined,
+    compareSceneId: undefined,
     scenes: undefined,
   };
 }
@@ -101,6 +102,7 @@ export function isBaseSnapshotComponent(diagram: Diagram, componentId: string): 
 }
 
 export function canMoveNodeInSceneMode(diagram: Diagram, componentId: string): boolean {
+  if (isDiagramCompareMode(diagram)) return false;
   if (!diagram.activeSceneId || !diagram.scenes?.[diagram.activeSceneId]) return true;
   return isComponentAddedInActiveScene(diagram, componentId);
 }
@@ -129,4 +131,207 @@ export function baseConnectionsTouchingAny(
   return Object.values(baseConnections)
     .filter((c) => componentIds.has(c.sourceId) || componentIds.has(c.targetId))
     .map((c) => c.id);
+}
+
+export interface CompareSnapshotResult {
+  onlyInA: { components: string[]; connections: string[] };
+  onlyInB: { components: string[]; connections: string[] };
+  inBoth: { components: string[]; connections: string[] };
+  onlyInBase: { components: string[]; connections: string[] };
+  mergedComponents: Record<string, Component>;
+  mergedConnections: Record<string, Connection>;
+  mergedLayouts: Record<string, NodeLayout>;
+}
+
+export function resolveCompareSnapshot(
+  diagram: Diagram,
+  sceneAId: string,
+  sceneBId: string,
+): CompareSnapshotResult {
+  const snapA = resolveSceneSnapshot(diagram, sceneAId);
+  const snapB = resolveSceneSnapshot(diagram, sceneBId);
+  const sceneA = diagram.scenes![sceneAId]!;
+  const sceneB = diagram.scenes![sceneBId]!;
+
+  const idsA = new Set(Object.keys(snapA.components));
+  const idsB = new Set(Object.keys(snapB.components));
+  const onlyInAComp = [...idsA].filter((id) => !idsB.has(id));
+  const onlyInBComp = [...idsB].filter((id) => !idsA.has(id));
+  const inBothComp = [...idsA].filter((id) => idsB.has(id));
+
+  const connIdsA = new Set(Object.keys(snapA.connections));
+  const connIdsB = new Set(Object.keys(snapB.connections));
+  const onlyInAConn = [...connIdsA].filter((id) => !connIdsB.has(id));
+  const onlyInBConn = [...connIdsB].filter((id) => !connIdsA.has(id));
+  const inBothConn = [...connIdsA].filter((id) => connIdsB.has(id));
+
+  const mergedComponents: Record<string, Component> = {
+    ...snapB.components,
+    ...snapA.components,
+  };
+  const mergedLayouts: Record<string, NodeLayout> = {
+    ...snapB.nodeLayouts,
+    ...snapA.nodeLayouts,
+  };
+  const mergedConnections: Record<string, Connection> = {
+    ...snapB.connections,
+    ...snapA.connections,
+  };
+
+  const baseC = diagram.snapshot.components;
+  const baseConn = diagram.snapshot.connections;
+  const onlyInBaseComp = Object.keys(mergedComponents).filter(
+    (id) =>
+      id in baseC &&
+      !sceneA.addedComponents[id] &&
+      !sceneB.addedComponents[id],
+  );
+  const onlyInBaseConn = Object.keys(mergedConnections).filter(
+    (id) =>
+      id in baseConn &&
+      !sceneA.addedConnections[id] &&
+      !sceneB.addedConnections[id],
+  );
+
+  return {
+    onlyInA: { components: onlyInAComp, connections: onlyInAConn },
+    onlyInB: { components: onlyInBComp, connections: onlyInBConn },
+    inBoth: { components: inBothComp, connections: inBothConn },
+    onlyInBase: { components: onlyInBaseComp, connections: onlyInBaseConn },
+    mergedComponents,
+    mergedConnections,
+    mergedLayouts,
+  };
+}
+
+/** Single-scene or merged compare snapshot for canvas visibility. */
+export function resolveCanvasSnapshot(diagram: Diagram): {
+  components: Record<string, Component>;
+  connections: Record<string, Connection>;
+  nodeLayouts: Record<string, NodeLayout>;
+} {
+  const a = diagram.activeSceneId ?? null;
+  const b = diagram.compareSceneId ?? null;
+  if (
+    a &&
+    b &&
+    a !== b &&
+    diagram.scenes?.[a] &&
+    diagram.scenes?.[b]
+  ) {
+    const c = resolveCompareSnapshot(diagram, a, b);
+    return {
+      components: c.mergedComponents,
+      connections: c.mergedConnections,
+      nodeLayouts: c.mergedLayouts,
+    };
+  }
+  const r = resolveSceneSnapshot(diagram, a);
+  return {
+    components: r.components,
+    connections: r.connections,
+    nodeLayouts: r.nodeLayouts,
+  };
+}
+
+export interface CompareElementVisual {
+  opacity: number;
+  /** Show badge(s) for scene A / B in compare mode */
+  badgeA?: { name: string; color: string };
+  badgeB?: { name: string; color: string };
+}
+
+export function buildCompareComponentVisuals(
+  diagram: Diagram,
+  sceneAId: string,
+  sceneBId: string,
+): Record<string, CompareElementVisual> {
+  const snapA = resolveSceneSnapshot(diagram, sceneAId);
+  const snapB = resolveSceneSnapshot(diagram, sceneBId);
+  const sceneA = diagram.scenes![sceneAId]!;
+  const sceneB = diagram.scenes![sceneBId]!;
+  const idsA = new Set(Object.keys(snapA.components));
+  const idsB = new Set(Object.keys(snapB.components));
+  const mergedIds = new Set([...idsA, ...idsB]);
+  const out: Record<string, CompareElementVisual> = {};
+
+  const metaA = { name: sceneA.name, color: sceneA.color };
+  const metaB = { name: sceneB.name, color: sceneB.color };
+
+  for (const id of mergedIds) {
+    const inA = idsA.has(id);
+    const inB = idsB.has(id);
+    const addedA = !!sceneA.addedComponents[id];
+    const addedB = !!sceneB.addedComponents[id];
+
+    if (inA && inB) {
+      if (addedA || addedB) {
+        out[id] = { opacity: 1, badgeA: metaA, badgeB: metaB };
+      } else {
+        out[id] = { opacity: 0.25 };
+      }
+    } else if (inA) {
+      out[id] = { opacity: 1, badgeA: metaA };
+    } else if (inB) {
+      out[id] = { opacity: 0.55, badgeB: metaB };
+    } else {
+      out[id] = { opacity: 0.25 };
+    }
+  }
+
+  return out;
+}
+
+export function buildCompareConnectionVisuals(
+  diagram: Diagram,
+  sceneAId: string,
+  sceneBId: string,
+): Record<string, CompareElementVisual> {
+  const snapA = resolveSceneSnapshot(diagram, sceneAId);
+  const snapB = resolveSceneSnapshot(diagram, sceneBId);
+  const sceneA = diagram.scenes![sceneAId]!;
+  const sceneB = diagram.scenes![sceneBId]!;
+  const idsA = new Set(Object.keys(snapA.connections));
+  const idsB = new Set(Object.keys(snapB.connections));
+  const mergedIds = new Set([...idsA, ...idsB]);
+  const out: Record<string, CompareElementVisual> = {};
+
+  const metaA = { name: sceneA.name, color: sceneA.color };
+  const metaB = { name: sceneB.name, color: sceneB.color };
+
+  for (const id of mergedIds) {
+    const inA = idsA.has(id);
+    const inB = idsB.has(id);
+    const addedA = !!sceneA.addedConnections[id];
+    const addedB = !!sceneB.addedConnections[id];
+
+    if (inA && inB) {
+      if (addedA || addedB) {
+        out[id] = { opacity: 1, badgeA: metaA, badgeB: metaB };
+      } else {
+        out[id] = { opacity: 0.25 };
+      }
+    } else if (inA) {
+      out[id] = { opacity: 1, badgeA: metaA };
+    } else if (inB) {
+      out[id] = { opacity: 0.55, badgeB: metaB };
+    } else {
+      out[id] = { opacity: 0.25 };
+    }
+  }
+
+  return out;
+}
+
+export function isDiagramCompareMode(diagram: Diagram | null | undefined): boolean {
+  if (!diagram) return false;
+  const a = diagram.activeSceneId ?? null;
+  const b = diagram.compareSceneId ?? null;
+  return !!(
+    a &&
+    b &&
+    a !== b &&
+    diagram.scenes?.[a] &&
+    diagram.scenes?.[b]
+  );
 }

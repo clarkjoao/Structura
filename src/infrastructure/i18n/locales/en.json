@@ -271,7 +271,8 @@
     "noDiagramSelected": "No diagram selected",
     "newEndpoint": "New endpoint",
     "usesEdgeLabel": "Uses",
-    "apiGroupDefaultName": "API Endpoints"
+    "apiGroupDefaultName": "API Endpoints",
+    "compareViewBanner": "View mode — editing disabled"
   },
   "canvasToolbar": {
     "renameTitle": "Double-click to rename",
@@ -297,7 +298,11 @@
     "remove": "Remove",
     "sceneMenu": "Scene menu",
     "baseMoveBlocked": "Moving base nodes is not allowed while a scene is active",
-    "groupBlockedInScene": "Grouping is not available while a scene is active"
+    "groupBlockedInScene": "Grouping is not available while a scene is active",
+    "comparing": "Comparing",
+    "compareModeTooltip": "Comparison mode active — click × to exit",
+    "clearSceneAndCompare": "Back to base",
+    "removeFromCompare": "Remove from comparison"
   },
   "canvasSearch": {
     "placeholder": "Search component...",
