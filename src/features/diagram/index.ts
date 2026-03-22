@@ -33,10 +33,13 @@ export type {
   Flow,
   ModelDraft,
   IconDefinition,
+  IconSource,
   Folder,
   Diagram,
   SceneDiff,
 } from "./model/diagram.types";
+
+export { isAwsIcon, isLucideIcon, isSvgIcon } from "./model/diagram.types";
 
 /** Default styles and helpers for connection intent/direction resolution */
 export {

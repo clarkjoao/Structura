@@ -128,11 +128,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
 
   if (customDiagramIcon) {
     icon = (
-      <CustomIconRenderer
-        svgContent={customDiagramIcon.svgContent}
-        size={24}
-        className="shrink-0"
-      />
+      <CustomIconRenderer icon={customDiagramIcon} size={24} className="shrink-0" />
     );
     if (isAws) {
       const svcInfo = d.awsService ? AWS_SERVICE_MAP.get(d.awsService) : null;

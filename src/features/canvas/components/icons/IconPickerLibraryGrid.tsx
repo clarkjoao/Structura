@@ -30,7 +30,7 @@ export function IconPickerLibraryGrid({
           )}
         >
           <div className="flex h-16 w-16 shrink-0 items-center justify-center">
-            <CustomIconRenderer svgContent={icon.svgContent} size={56} className="shrink-0" />
+            <CustomIconRenderer icon={icon} size={56} className="shrink-0" />
           </div>
           <span className="line-clamp-2 w-full text-center text-xs text-muted-foreground">
             {icon.name}

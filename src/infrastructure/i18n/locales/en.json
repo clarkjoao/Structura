@@ -888,6 +888,20 @@
     "uploadButton": "Upload SVG",
     "changeIcon": "Change icon",
     "removeIcon": "Remove icon",
-    "addIcon": "Add icon"
+    "addIcon": "Add icon",
+    "tabs": {
+      "library": "Library",
+      "lucide": "Lucide",
+      "aws": "AWS",
+      "upload": "Upload SVG"
+    },
+    "lucide": {
+      "searchPlaceholder": "Search Lucide icons…",
+      "resultsCount": "Showing {{shown}} of {{total}}"
+    },
+    "aws": {
+      "searchPlaceholder": "Search AWS services…",
+      "allCategories": "All categories"
+    }
   }
 }

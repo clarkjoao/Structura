@@ -94,7 +94,7 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
         >
           {customDiagramIcon ? (
             <CustomIconRenderer
-              svgContent={customDiagramIcon.svgContent}
+              icon={customDiagramIcon}
               size={24}
               className={`shrink-0 ${mutedClass}`}
             />

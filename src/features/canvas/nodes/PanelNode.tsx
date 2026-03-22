@@ -105,7 +105,7 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
         )}
         {customDiagramIcon ? (
           <div className="shrink-0 opacity-80" style={{ color }}>
-            <CustomIconRenderer svgContent={customDiagramIcon.svgContent} size={24} />
+            <CustomIconRenderer icon={customDiagramIcon} size={24} />
           </div>
         ) : useAwsIcon ? (
           <div className="shrink-0 opacity-80" style={{ color }}>
@@ -170,7 +170,7 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
         <div className="flex items-start gap-2 px-3 py-2.5">
           {customDiagramIcon ? (
             <div className="shrink-0 mt-0.5" style={{ color }}>
-              <CustomIconRenderer svgContent={customDiagramIcon.svgContent} size={24} />
+              <CustomIconRenderer icon={customDiagramIcon} size={24} />
             </div>
           ) : useAwsIcon ? (
             <div className="shrink-0 mt-0.5" style={{ color }}>

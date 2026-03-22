@@ -888,6 +888,20 @@
     "uploadButton": "Enviar SVG",
     "changeIcon": "Trocar ícone",
     "removeIcon": "Remover ícone",
-    "addIcon": "Adicionar ícone"
+    "addIcon": "Adicionar ícone",
+    "tabs": {
+      "library": "Biblioteca",
+      "lucide": "Lucide",
+      "aws": "AWS",
+      "upload": "Enviar SVG"
+    },
+    "lucide": {
+      "searchPlaceholder": "Buscar ícones Lucide…",
+      "resultsCount": "Mostrando {{shown}} de {{total}}"
+    },
+    "aws": {
+      "searchPlaceholder": "Buscar serviços AWS…",
+      "allCategories": "Todas as categorias"
+    }
   }
 }

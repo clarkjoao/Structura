@@ -69,7 +69,7 @@ export function ComponentIconTab({
       {customIconId && libraryIcon ? (
         <>
           <div className="flex flex-col items-center gap-2">
-            <CustomIconRenderer svgContent={libraryIcon.svgContent} size={64} />
+            <CustomIconRenderer icon={libraryIcon} size={64} />
             <p className="max-w-full truncate text-center text-sm font-medium text-foreground">
               {libraryIcon.name}
             </p>
