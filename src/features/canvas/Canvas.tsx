@@ -13,6 +13,8 @@ import NodeContextMenu from "./panels/NodeContextMenu";
 import { nodeTypes } from "./nodes/node-types";
 import QuickInsertPopover from "./toolbar/QuickInsertPopover";
 import CanvasSearch from "./toolbar/CanvasSearch";
+import { DiagramSidebar } from "./navigation/DiagramSidebar";
+import { DiagramCommandPalette } from "./navigation/DiagramCommandPalette";
 import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 import { useCanvasController } from "./hooks/useCanvasController";
 import { CANVAS_STYLES } from "./canvas.constants";
@@ -34,6 +36,11 @@ const Canvas = (props: CanvasProps = {}) => {
     actions,
     showSearch,
     setShowSearch,
+    showDiagramSidebar,
+    setShowDiagramSidebar,
+    showCommandPalette,
+    setShowCommandPalette,
+    handleSelectDiagram,
     handleSearchSelect,
     focusTitleTrigger,
     isPanelOpen,
@@ -76,6 +83,14 @@ const Canvas = (props: CanvasProps = {}) => {
               components={diagram.snapshot.components}
             />
           )}
+          <div className="absolute inset-y-0 left-0 z-30 flex">
+            <DiagramSidebar
+              isOpen={showDiagramSidebar}
+              onClose={() => setShowDiagramSidebar(false)}
+              currentDiagramId={diagram.id}
+              onSelectDiagram={handleSelectDiagram}
+            />
+          </div>
           <div onContextMenu={(e) => e.preventDefault()} className="w-full h-full">
             <ReactFlow
               nodes={nodes}
@@ -140,6 +155,13 @@ const Canvas = (props: CanvasProps = {}) => {
             sourceNodeId={visualState.quickInsert.sourceNodeId}
             onInsert={eventHandlers.handleQuickInsert}
             onClose={() => visualState.setQuickInsert(null)}
+          />
+        )}
+
+        {showCommandPalette && (
+          <DiagramCommandPalette
+            onClose={() => setShowCommandPalette(false)}
+            onSelectDiagram={handleSelectDiagram}
           />
         )}
 

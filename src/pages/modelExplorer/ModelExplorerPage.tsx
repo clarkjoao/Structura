@@ -112,7 +112,7 @@ export default function ModelExplorerPage() {
         <div className="flex-1 flex items-center justify-center mt-16">
           <div className="text-center">
             <p className="text-muted-foreground mb-4">{t("flows.noDiagram")}</p>
-            <Link to="/dashboard" className="text-primary hover:underline text-sm">{t("flows.backToDashboard")}</Link>
+            <Link to="/workspace" className="text-primary hover:underline text-sm">{t("flows.backToDashboard")}</Link>
           </div>
         </div>
       </div>

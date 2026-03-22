@@ -297,6 +297,20 @@
     "close": "close",
     "escKey": "esc"
   },
+  "diagramNav": {
+    "closeSidebar": "Close diagram panel",
+    "openSidebar": "Open diagram navigation",
+    "searchDiagrams": "Filter diagrams…",
+    "recent": "Recent",
+    "folders": "Folders",
+    "diagrams": "Diagrams",
+    "mostUsed": "Recently edited",
+    "emptyRecent": "No diagrams opened recently",
+    "noMatches": "No results",
+    "commandPalette": "Diagram palette",
+    "palettePlaceholder": "Search diagrams or folders…",
+    "folderHitHint": "folder"
+  },
   "quickInsert": {
     "searchPlaceholder": "Search element...",
     "sectionC4": "C4",

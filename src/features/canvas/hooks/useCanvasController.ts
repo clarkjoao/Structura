@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useState } from "react";
+import { useRef, useEffect, useCallback, useState, type SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 import { useReactFlow, useUpdateNodeInternals, type Node } from "@xyflow/react";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +17,7 @@ import { useCanvasEffects } from "./useCanvasEffects";
 import { useLocalNodes } from "./useLocalNodes";
 import { useConnectionInternalsSync } from "./useConnectionInternalsSync";
 import { useRecordingMode } from "../flow/RecordingModeContext";
+import { useRecentDiagrams } from "../navigation/useRecentDiagrams";
 import type { CanvasProps } from "../canvas.types";
 
 export function useCanvasController({
@@ -25,6 +26,8 @@ export function useCanvasController({
   isViewingCoverage,
   isFlowPanelOpen,
   onPlayFlow,
+  diagramSidebarOpen: controlledDiagramSidebarOpen,
+  onDiagramSidebarOpenChange,
 }: CanvasProps = {}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -33,7 +36,27 @@ export function useCanvasController({
   const reactFlowWrapperRef = useRef<HTMLDivElement>(null);
   const { isRecording } = useRecordingMode();
   const [showSearch, setShowSearch] = useState(false);
+  const [internalDiagramSidebar, setInternalDiagramSidebar] = useState(false);
+  const diagramSidebarControlled = typeof onDiagramSidebarOpenChange === "function";
+  const showDiagramSidebar = diagramSidebarControlled
+    ? Boolean(controlledDiagramSidebarOpen)
+    : internalDiagramSidebar;
+  const setShowDiagramSidebar = useCallback(
+    (value: SetStateAction<boolean>) => {
+      if (diagramSidebarControlled) {
+        const next =
+          typeof value === "function" ? value(Boolean(controlledDiagramSidebarOpen)) : value;
+        onDiagramSidebarOpenChange?.(next);
+      } else {
+        setInternalDiagramSidebar(value);
+      }
+    },
+    [controlledDiagramSidebarOpen, diagramSidebarControlled, onDiagramSidebarOpenChange],
+  );
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [focusTitleTrigger, setFocusTitleTrigger] = useState(0);
+
+  const { recordOpened } = useRecentDiagrams();
 
   const { diagram, allDiagrams, visibleComponents, visibleConnections, serviceRegistry, flows, actions } =
     useCanvasStore();
@@ -149,6 +172,38 @@ export function useCanvasController({
   });
 
   const isPanelOpen = !!(visualState.selectedNodeId || visualState.selectedEdgeId) && !isRecording;
+  useEffect(() => {
+    if (!diagram) return;
+    recordOpened(diagram.id, diagram.name);
+  }, [diagram, recordOpened]);
+
+  const handleSelectDiagram = useCallback(
+    (id: string) => {
+      const target = allDiagrams[id];
+      if (!target) return;
+      if (id === diagram?.id) {
+        setShowDiagramSidebar(false);
+        setShowCommandPalette(false);
+        return;
+      }
+      if (onOpenDiagram) {
+        onOpenDiagram(id);
+      } else {
+        actions.openDiagram(id);
+        navigate(`/model/${id}`);
+      }
+    },
+    [
+      actions,
+      allDiagrams,
+      diagram?.id,
+      navigate,
+      onOpenDiagram,
+      setShowCommandPalette,
+      setShowDiagramSidebar,
+    ],
+  );
+
   const handleSearchSelect = useCallback(
     (componentId: string) => {
       setShowSearch(false);
@@ -192,7 +247,16 @@ export function useCanvasController({
     isFlowPanelOpen: !!isFlowPanelOpen,
     isPlaying,
     isSearchOpen: showSearch,
-    onOpenSearch: () => setShowSearch(true),
+    onOpenSearch: () => {
+      setShowCommandPalette(false);
+      setShowSearch(true);
+    },
+    isCommandPaletteOpen: showCommandPalette,
+    onToggleDiagramSidebar: () => setShowDiagramSidebar((v) => !v),
+    onOpenCommandPalette: () => {
+      setShowSearch(false);
+      setShowCommandPalette(true);
+    },
   });
 
   useCanvasEffects({
@@ -227,6 +291,11 @@ export function useCanvasController({
     actions,
     showSearch,
     setShowSearch,
+    showDiagramSidebar,
+    setShowDiagramSidebar,
+    showCommandPalette,
+    setShowCommandPalette,
+    handleSelectDiagram,
     handleSearchSelect,
     focusTitleTrigger,
     isPanelOpen,

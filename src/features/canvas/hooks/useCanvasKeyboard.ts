@@ -49,6 +49,9 @@ interface UseCanvasKeyboardParams {
   isPlaying?: boolean;
   isSearchOpen?: boolean;
   onOpenSearch?: () => void;
+  isCommandPaletteOpen?: boolean;
+  onToggleDiagramSidebar?: () => void;
+  onOpenCommandPalette?: () => void;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────
@@ -62,6 +65,8 @@ const KEY = {
   D: "d",
   F: "f",
   G: "g",
+  K: "k",
+  B: "b",
   V: "v",
   Z: "z",
   SLASH: "/",
@@ -200,7 +205,10 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     isFlowPanelOpen,
     isPlaying = false,
     isSearchOpen,
+    isCommandPaletteOpen,
     onOpenSearch,
+    onToggleDiagramSidebar,
+    onOpenCommandPalette,
   } = params;
 
   const exportDrawioXml = useCallback(
@@ -256,8 +264,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       // Block shortcuts when flow panel is open or when playing a flow
       if (isFlowPanelOpen || isPlaying) return;
 
-      // Block all other canvas shortcuts while search is open
-      if (isSearchOpen) return;
+      // Block canvas shortcuts while search or command palette is open
+      if (isSearchOpen || isCommandPaletteOpen) return;
 
       if (handleCopyPaste(e)) return;
 
@@ -356,6 +364,20 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
         return;
       }
 
+      // Cmd/Ctrl+K — open diagram command palette
+      if (mod && (e.key === KEY.K || e.key === "K")) {
+        e.preventDefault();
+        onOpenCommandPalette?.();
+        return;
+      }
+
+      // Cmd/Ctrl+B — toggle diagram sidebar
+      if (mod && (e.key === KEY.B || e.key === "B")) {
+        e.preventDefault();
+        onToggleDiagramSidebar?.();
+        return;
+      }
+
       // Cmd/Ctrl+/ — open search
       if (mod && e.key === KEY.SLASH) {
         e.preventDefault();
@@ -386,6 +408,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     isFlowPanelOpen,
     isPlaying,
     isSearchOpen,
+    isCommandPaletteOpen,
     onRecordUndo,
     handleCopyPaste,
     clearSelection,
@@ -406,6 +429,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     addComponent,
     isPanelOpen,
     onOpenSearch,
+    onToggleDiagramSidebar,
+    onOpenCommandPalette,
     c4ShortcutMap,
   ]);
 }

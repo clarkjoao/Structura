@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { ReactFlowProvider } from "@xyflow/react";
-import { ArrowLeft, Check, Clipboard, Download, GitBranch, CircleHelp } from "lucide-react";
+import { ArrowLeft, Check, Clipboard, Download, GitBranch, CircleHelp, FolderTree } from "lucide-react";
 import ShortcutsModal from "@/components/ShortcutsModal";
 import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
 import { useRecordingMode } from "@/features/canvas/flow/RecordingModeContext";
@@ -30,13 +31,24 @@ export function ModelExplorerContent({
   const { activeFlow, currentStep, isPlaying, play, exit, prev, next, goToStep } = useFlowPlayback();
 
   const disabledWhileBusy = isRecording || isPlaying;
+  const [diagramSidebarOpen, setDiagramSidebarOpen] = useState(false);
 
   return (
     <>
       <div className="border-b border-border bg-card shrink-0 mt-16">
         <div className="container flex items-center justify-between h-12">
           <div className="flex items-center gap-3 text-sm">
-            <Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
+            <button
+              type="button"
+              onClick={() => setDiagramSidebarOpen((v) => !v)}
+              className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              title={t("diagramNav.openSidebar")}
+              aria-expanded={diagramSidebarOpen}
+              aria-label={t("diagramNav.openSidebar")}
+            >
+              <FolderTree className="h-4 w-4" />
+            </button>
+            <Link to="/workspace" className="text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="h-4 w-4" />
             </Link>
             {diagram?.domain && <span className="text-muted-foreground">{diagram.domain}</span>}
@@ -99,6 +111,8 @@ export function ModelExplorerContent({
               onDrillUp={navStack.length > 0 ? handleDrillUp : undefined}
               isViewingCoverage={isViewingCoverage}
               isFlowPanelOpen={showFlows}
+              diagramSidebarOpen={diagramSidebarOpen}
+              onDiagramSidebarOpenChange={setDiagramSidebarOpen}
               onPlayFlow={(flowId) => {
                 const flow = flows.find((f) => f.id === flowId);
                 if (flow) play(flow);

@@ -297,6 +297,20 @@
     "close": "fechar",
     "escKey": "esc"
   },
+  "diagramNav": {
+    "closeSidebar": "Fechar painel de diagramas",
+    "openSidebar": "Abrir navegação de diagramas",
+    "searchDiagrams": "Filtrar diagramas…",
+    "recent": "Recentes",
+    "folders": "Pastas",
+    "diagrams": "Diagramas",
+    "mostUsed": "Mais editados",
+    "emptyRecent": "Nenhum diagrama aberto recentemente",
+    "noMatches": "Nenhum resultado",
+    "commandPalette": "Paleta de diagramas",
+    "palettePlaceholder": "Buscar diagramas ou pastas…",
+    "folderHitHint": "pasta"
+  },
   "quickInsert": {
     "searchPlaceholder": "Buscar elemento...",
     "sectionC4": "C4",
