@@ -376,7 +376,6 @@ export function RecordingModeStateProvider({
     },
     [recordingContext, branchOwnership],
   );
-
   const onDeleteStep = useCallback(
     (index: number) => {
       let removedId: string | null = null;
@@ -396,7 +395,6 @@ export function RecordingModeStateProvider({
     },
     [recordingContext, branchOwnership],
   );
-
   const onReorderSteps = useCallback(
     (from: number, to: number) => {
       setRecordingSteps((prev) => {

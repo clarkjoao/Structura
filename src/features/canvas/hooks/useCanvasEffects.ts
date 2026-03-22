@@ -18,8 +18,6 @@ interface UseCanvasEffectsParams {
 const MIN_ZOOM = 0.3;
 const MAX_ZOOM = 1;
 const ZOOM_FACTOR = 1.1;
-const DEFAULT_NODE_W = 160;
-const DEFAULT_NODE_H = 80;
 /** Matches Canvas.tsx ReactFlow fitViewOptions / maxZoom */
 const FIT_VIEW_PADDING = 0.3;
 const FIT_VIEW_MAX_ZOOM = 1.5;
