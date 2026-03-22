@@ -8,6 +8,11 @@ import { migrateFlow } from "../utils/flow-migration";
 
 export const PERSIST_KEY = "diagram-store";
 
+/** Must match `version` passed to zustand `persist` (used when writing localStorage manually). */
+export const PERSIST_SCHEMA_VERSION = 0;
+
+export type PersistedDiagramStoreSlice = ReturnType<typeof partializeState>;
+
 export function partializeState(state: DiagramStore) {
   return {
     diagrams: state.diagrams,
@@ -17,6 +22,17 @@ export function partializeState(state: DiagramStore) {
     past: state.past,
     future: state.future,
     _lastUndoRedoAt: state._lastUndoRedoAt,
+  };
+}
+
+/** Same shape zustand `persist` writes via `setItem` — required for rehydration after `forceSave`. */
+export function buildPersistStoragePayload(state: DiagramStore): {
+  state: PersistedDiagramStoreSlice;
+  version: number;
+} {
+  return {
+    state: partializeState(state),
+    version: PERSIST_SCHEMA_VERSION,
   };
 }
 
@@ -139,5 +155,6 @@ export function createPersistConfig(storage: IStoragePort) {
     storage: createJSONStorage(() => storage),
     partialize: partializeState,
     merge: mergePersistedState,
+    version: PERSIST_SCHEMA_VERSION,
   };
 }

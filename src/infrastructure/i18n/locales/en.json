@@ -199,7 +199,11 @@
     "localStorageTitle": "Data saved in the browser (localStorage)",
     "localStorageLabel": "localStorage",
     "connectFolderTitle": "Sync with local folder",
-    "connectFolder": "Connect folder"
+    "connectFolder": "Connect folder",
+    "backupFailedSerialize": "Could not serialize diagrams for localStorage. Check the console for details.",
+    "backupFailedQuota": "Browser storage is full or blocked. Free space or allow storage, then try again.",
+    "backupFailedVerify": "Backup was not found in localStorage after saving. Check site permissions.",
+    "backupFailedGeneric": "Could not save a copy to the browser. Try again or export JSON manually."
   },
   "workspaceMerge": {
     "title": "Folder with existing files",

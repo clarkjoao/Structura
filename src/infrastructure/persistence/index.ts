@@ -15,6 +15,7 @@ export {
 export type { FsStatus } from "./useFileSystemStorage";
 export {
   bootFileSystem,
+  flushWorkspaceToConnectedFolder,
   hasReconnected,
   startFileSystemSync,
   stopFileSystemSync,

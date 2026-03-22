@@ -12,6 +12,35 @@ import { fileSystemAdapter } from "./FileSystemAdapter";
 import { defaultStorage } from "./LocalStorageAdapter";
 import { PERSIST_KEY } from "@/features/diagram/store/persist.config";
 
+type DiagramStoreState = ReturnType<typeof useDiagramStore.getState>;
+
+/**
+ * Writes every diagram, folders, and manifest to the connected folder.
+ * Used after merge/overwrite so local-only or unchanged-reference diagrams are not skipped
+ * (the debounced subscriber only writes when `diagram !== prevDiagrams[id]`).
+ */
+export async function flushWorkspaceToConnectedFolder(
+  state: DiagramStoreState,
+): Promise<void> {
+  if (!fileSystemAdapter.isConnected) return;
+
+  fileSystemAdapter.setFolders(state.folders);
+
+  for (const diagram of Object.values(state.diagrams)) {
+    await fileSystemAdapter.writeDiagram(diagram);
+  }
+
+  await fileSystemAdapter.writeManifest({
+    version: 1,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    diagramIds: Object.keys(state.diagrams),
+    serviceRegistry: state.serviceRegistry,
+    folders: state.folders,
+    activeDiagramId: state.activeDiagramId,
+  });
+}
+
 // ── Global state ──
 
 let _reconnected = false;

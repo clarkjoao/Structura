@@ -199,7 +199,11 @@
     "localStorageTitle": "Dados salvos no navegador (localStorage)",
     "localStorageLabel": "localStorage",
     "connectFolderTitle": "Sincronizar com pasta local",
-    "connectFolder": "Conectar pasta"
+    "connectFolder": "Conectar pasta",
+    "backupFailedSerialize": "Não foi possível serializar os diagramas para o localStorage. Veja o console.",
+    "backupFailedQuota": "Armazenamento do navegador cheio ou bloqueado. Libere espaço ou permita armazenamento e tente de novo.",
+    "backupFailedVerify": "O backup não apareceu no localStorage após salvar. Verifique permissões do site.",
+    "backupFailedGeneric": "Não foi possível salvar cópia no navegador. Tente de novo ou exporte JSON manualmente."
   },
   "workspaceMerge": {
     "title": "Pasta com arquivos existentes",

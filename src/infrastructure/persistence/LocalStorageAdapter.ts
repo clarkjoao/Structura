@@ -73,14 +73,16 @@ export class LocalStorageAdapter implements IStoragePort {
 
   /**
    * Write data to localStorage even when paused (e.g. backup from memory before disconnecting file system).
+   * @returns false if write failed (quota, private mode, etc.)
    */
-  async forceSave(key: string, data: unknown): Promise<void> {
+  async forceSave(key: string, data: unknown): Promise<boolean> {
     const value =
       typeof data === "string" ? data : JSON.stringify(data);
     try {
       localStorage.setItem(this.key(key), value);
+      return true;
     } catch {
-      // localStorage pode estar cheio ou indisponível
+      return false;
     }
   }
 

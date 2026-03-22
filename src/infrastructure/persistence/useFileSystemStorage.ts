@@ -1,14 +1,19 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { fileSystemAdapter } from "./FileSystemAdapter";
 import type { WorkspaceScanResult } from "./FileSystemAdapter";
 import { useDiagramStore } from "@/features/diagram";
-import { partializeState, PERSIST_KEY } from "@/features/diagram/store/persist.config";
+import {
+  buildPersistStoragePayload,
+  PERSIST_KEY,
+} from "@/features/diagram/store/persist.config";
 import { defaultStorage } from "./LocalStorageAdapter";
 import {
   bootFileSystem,
+  flushWorkspaceToConnectedFolder,
   resetBootState,
   startFileSystemSync,
-  stopFileSystemSync,
 } from "./fileSystemBoot";
 
 /** Remove the diagram-store key from localStorage so the folder becomes the sole source of truth. */
@@ -33,6 +38,7 @@ function buildManifest(state: ReturnType<typeof useDiagramStore.getState>) {
 }
 
 export function useFileSystemStorage() {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<FsStatus>("disconnected");
   const [folderName, setFolderName] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<WorkspaceScanResult | null>(
@@ -72,7 +78,24 @@ export function useFileSystemStorage() {
         setStatus("connected");
         setFolderName(fileSystemAdapter.folderName);
         startFileSystemSync();
+        return;
       }
+
+      defaultStorage.paused = false;
+
+      queueMicrotask(async () => {
+        const existing = await defaultStorage.getItem(PERSIST_KEY);
+        if (existing !== null) return;
+
+        const diagramCount = Object.keys(useDiagramStore.getState().diagrams).length;
+        if (diagramCount === 0) return;
+
+        const payload = buildPersistStoragePayload(useDiagramStore.getState());
+        const written = await defaultStorage.forceSave(PERSIST_KEY, payload);
+        if (!written) {
+          console.warn("[Structura] Could not seed localStorage from in-memory diagrams (quota or blocked).");
+        }
+      });
     });
   }, []);
 
@@ -124,13 +147,27 @@ export function useFileSystemStorage() {
     const validDiagrams = Object.fromEntries(
       scanResult.valid.map((d) => [d.id, d])
     );
+    const manifest = scanResult.manifest;
     useDiagramStore.setState((s) => ({
       ...s,
       diagrams: { ...s.diagrams, ...validDiagrams },
+      ...(manifest
+        ? {
+            folders: {
+              ...s.folders,
+              ...(manifest.folders as typeof s.folders),
+            },
+            serviceRegistry: {
+              ...s.serviceRegistry,
+              ...(manifest.serviceRegistry as typeof s.serviceRegistry),
+            },
+          }
+        : {}),
     }));
-    if (scanResult.manifest) {
-      fileSystemAdapter.setFolders(scanResult.manifest.folders as any);
-    }
+
+    const merged = useDiagramStore.getState();
+    await flushWorkspaceToConnectedFolder(merged);
+
     await clearLocalCache();
     startFileSystemSync();
     setScanResult(null);
@@ -153,9 +190,9 @@ export function useFileSystemStorage() {
           }
         : {}),
     }));
-    if (scanResult.manifest) {
-      fileSystemAdapter.setFolders(scanResult.manifest.folders as any);
-    }
+    const overwritten = useDiagramStore.getState();
+    await flushWorkspaceToConnectedFolder(overwritten);
+
     await clearLocalCache();
     startFileSystemSync();
     setScanResult(null);
@@ -188,22 +225,71 @@ export function useFileSystemStorage() {
   const confirmDisconnectWithBackup = useCallback(async () => {
     try {
       const state = useDiagramStore.getState();
-      const toSave = partializeState(state);
-      await defaultStorage.forceSave(PERSIST_KEY, toSave);
+      let payload: ReturnType<typeof buildPersistStoragePayload>;
+      try {
+        payload = buildPersistStoragePayload(state);
+        JSON.stringify(payload);
+      } catch {
+        toast.error(t("filesystem.backupFailedSerialize"));
+        setStatus("error");
+        setPendingDisconnect(false);
+        return;
+      }
+
+      const wrote = await defaultStorage.forceSave(PERSIST_KEY, payload);
+      if (!wrote) {
+        toast.error(t("filesystem.backupFailedQuota"));
+        setStatus("error");
+        setPendingDisconnect(false);
+        return;
+      }
 
       const saved = await defaultStorage.getItem(PERSIST_KEY);
       if (saved === null) {
+        toast.error(t("filesystem.backupFailedVerify"));
+        setStatus("error");
+        setPendingDisconnect(false);
+        return;
+      }
+
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(saved) as unknown;
+      } catch {
+        toast.error(t("filesystem.backupFailedVerify"));
+        setStatus("error");
+        setPendingDisconnect(false);
+        return;
+      }
+
+      const hasPersistShape =
+        typeof parsed === "object" &&
+        parsed !== null &&
+        "state" in parsed &&
+        typeof (parsed as { state: unknown }).state === "object" &&
+        (parsed as { state: object | null }).state !== null;
+
+      if (!hasPersistShape) {
+        toast.error(t("filesystem.backupFailedVerify"));
         setStatus("error");
         setPendingDisconnect(false);
         return;
       }
 
       await performDisconnect();
+
+      const after = useDiagramStore.getState();
+      const flushPayload = buildPersistStoragePayload(after);
+      const flushed = await defaultStorage.forceSave(PERSIST_KEY, flushPayload);
+      if (!flushed) {
+        toast.error(t("filesystem.backupFailedQuota"));
+      }
     } catch {
+      toast.error(t("filesystem.backupFailedGeneric"));
       setStatus("error");
       setPendingDisconnect(false);
     }
-  }, [performDisconnect]);
+  }, [performDisconnect, t]);
 
   const confirmDisconnectWithoutBackup = useCallback(async () => {
     clearStore();
