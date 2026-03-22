@@ -1,3 +1,7 @@
+import {
+  METHOD_COLORS,
+  PROTOCOL_COLORS,
+} from "@/features/canvas/nodes/ApiGroupNode/constants";
 import { BOX_POINTS, C4_SHAPE_POINTS } from "./constants";
 import type { AwsServiceInfo, C4MetaInfo } from "./types";
 import { buildStyle, escXml } from "./xml-utils";
@@ -59,6 +63,25 @@ export function buildPanelStyle(stroke: string): string {
 
 export function buildNoteStyle(): string {
   return "text;html=1;strokeColor=#cccccc;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;whiteSpace=wrap;rounded=1;arcSize=5;fontColor=#000000;fontSize=12;";
+}
+
+export function buildApiGroupStyle(protocol: string): string {
+  const stroke = PROTOCOL_COLORS[protocol as keyof typeof PROTOCOL_COLORS] ?? "#6366f1";
+  const baseStyle =
+    "rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=8;fontSize=11;fontStyle=1;fillColor=#f8fafc;";
+  return buildStyle(baseStyle, {
+    strokeColor: stroke,
+    fontColor: "#0f172a",
+  });
+}
+
+export function buildEndpointStyle(method: string): string {
+  const accent = METHOD_COLORS[method as keyof typeof METHOD_COLORS] ?? "#64748b";
+  const baseStyle =
+    "rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;spacingLeft=8;spacingRight=8;fontSize=11;strokeColor=#e2e8f0;fillColor=#ffffff;";
+  return buildStyle(baseStyle, {
+    fontColor: accent,
+  });
 }
 
 export function buildEdgeStyle(

@@ -8,6 +8,16 @@ import { THEME } from "./constants";
 import { buildEdgeStyle } from "./styles";
 import { escXml } from "./xml-utils";
 
+/** Plain-text edge label for draw.io (no HTML inside the XML attribute). */
+export function buildEdgeLabelPlain(conn: Connection): string {
+  const rawLabel = (conn.label ?? "").trim();
+  const rawTech = (conn.technology ?? "").trim();
+  if (rawTech) {
+    return rawLabel ? `${rawLabel}\n(${rawTech})` : `(${rawTech})`;
+  }
+  return rawLabel;
+}
+
 export function buildEdgeCell(conn: Connection): string {
   const eff = getEffectiveConnectionStyle(conn);
   const isDashed =
@@ -40,10 +50,7 @@ export function buildEdgeCell(conn: Connection): string {
     bidir,
   );
 
-  const tech = conn.technology
-    ? `<div><i>${escXml(conn.technology)}</i></div>`
-    : "";
-  const value = conn.label ? `${escXml(conn.label)}${tech}` : tech;
+  const value = escXml(buildEdgeLabelPlain(conn));
 
   return (
     `<mxCell id="${escXml(conn.id)}" value="${value}" style="${style}" ` +

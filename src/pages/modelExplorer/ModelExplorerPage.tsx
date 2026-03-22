@@ -14,6 +14,7 @@ import {
 } from "@/features/diagram";
 import type { Flow, FlowStep } from "@/features/diagram";
 import { exportJSON, exportDrawio, exportMermaid, downloadFile } from "@/lib/export-service";
+import { writeDrawioToClipboard } from "@/lib/clipboard-utils";
 import { ModelExplorerContent } from "./ModelExplorerContent";
 
 export default function ModelExplorerPage() {
@@ -73,8 +74,7 @@ export default function ModelExplorerPage() {
 
   const handleCopyDrawio = useCallback(() => {
     if (!diagram) return;
-    const xml = exportDrawio(diagram, serviceRegistry);
-    navigator.clipboard.writeText(xml).then(() => {
+    void writeDrawioToClipboard(exportDrawio(diagram, serviceRegistry)).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });

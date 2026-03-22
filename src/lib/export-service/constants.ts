@@ -1,7 +1,6 @@
 import type { C4MetaInfo } from "./types";
 
 export const CONFIG = {
-  swimlaneHeader: 30,
   minDimensions: {
     c4: { width: 240, height: 120 },
     aws: { width: 90, height: 120 },

@@ -1,4 +1,4 @@
-import type { Component } from "@/features/diagram";
+import type { ApiGroupComponent, Component, EndpointComponent } from "@/features/diagram";
 import {
   C4_LABEL_TEMPLATE,
   C4_META,
@@ -8,10 +8,12 @@ import {
 import { awsServiceCache } from "./aws-cache";
 import type { CellBuilder, GeometryInfo } from "./types";
 import {
+  buildApiGroupStyle,
   buildAwsStyle,
   buildC4Line2,
   buildC4RegistryBadge,
   buildC4Style,
+  buildEndpointStyle,
   buildNoteStyle,
   buildPanelStyle,
   c4TypeLabel,
@@ -90,7 +92,7 @@ class PanelCellBuilder implements CellBuilder {
   build(
     c: Component & { type: "panel"; panelColor?: string },
     geometry: GeometryInfo,
-    _parentId: string,
+    parentId: string,
   ): string {
     const { x, y, width, height } = geometry;
     const stroke = c.panelColor ?? CONFIG.defaults.panelColor;
@@ -113,10 +115,52 @@ class PanelCellBuilder implements CellBuilder {
       `c4Application="Software System" ` +
       `label="${escXml(appliedLabel)}" ` +
       `id="${escXml(c.id)}">` +
-      `<mxCell style="${style}" vertex="1" parent="1">` +
+      `<mxCell style="${style}" vertex="1" parent="${escXml(parentId)}">` +
       `<mxGeometry x="${x}" y="${y}" width="${width}" height="${height}" as="geometry"/>` +
       `</mxCell>` +
       `</object>`
+    );
+  }
+}
+
+class ApiGroupCellBuilder implements CellBuilder {
+  build(
+    c: ApiGroupComponent,
+    geometry: GeometryInfo,
+    parentId: string,
+  ): string {
+    const { x, y, width, height } = geometry;
+    const w = Math.max(width, 300);
+    const h = Math.max(height, 120);
+    const style = buildApiGroupStyle(c.protocol);
+    const label = `${c.serviceName}\n${c.basePath} · ${c.protocol}`;
+    return (
+      `<mxCell id="${escXml(c.id)}" value="${escXml(label)}" style="${style}" ` +
+      `vertex="1" parent="${escXml(parentId)}">` +
+      `<mxGeometry x="${x}" y="${y}" width="${w}" height="${h}" as="geometry"/>` +
+      `</mxCell>`
+    );
+  }
+}
+
+class EndpointCellBuilder implements CellBuilder {
+  build(
+    c: EndpointComponent,
+    geometry: GeometryInfo,
+    parentId: string,
+  ): string {
+    const { x, y, width, height } = geometry;
+    const style = buildEndpointStyle(c.method);
+    const pathLine = c.endpointDescription?.trim()
+      ? `${c.method}  ${c.path}\n${c.endpointDescription}`
+      : `${c.method}  ${c.path}`;
+    const finalW = Math.max(width, 260);
+    const finalH = Math.max(height, 40);
+    return (
+      `<mxCell id="${escXml(c.id)}" value="${escXml(pathLine)}" style="${style}" ` +
+      `vertex="1" parent="${escXml(parentId)}">` +
+      `<mxGeometry x="${x}" y="${y}" width="${finalW}" height="${finalH}" as="geometry"/>` +
+      `</mxCell>`
     );
   }
 }
@@ -144,5 +188,7 @@ export const cellBuilders: Record<string, CellBuilder> = {
   c4: new C4CellBuilder(),
   aws: new AwsCellBuilder(),
   panel: new PanelCellBuilder(),
+  apiGroup: new ApiGroupCellBuilder(),
+  endpoint: new EndpointCellBuilder(),
   note: new NoteCellBuilder(),
 };

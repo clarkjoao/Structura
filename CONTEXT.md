@@ -559,6 +559,26 @@ InfraType =
 
 ---
 
+## Roadmap — frontend quality (refactor)
+
+Numeração **independente** do roadmap backend/infrastructure (mais abaixo). Fases 4–5 aqui referem-se só à **qualidade e organização do código SPA**.
+
+### Phase 4 — Separação de responsabilidades
+
+- **Componentes:** só JSX + hooks; sem regras de negócio pesadas inline (extrair para hooks, serviço de domínio ou utilitários).
+- **Store (Zustand):** sem React — slices/selectors/actions sem `useState` / JSX; efeitos colaterais claros e localizados.
+- **Funções puras:** cálculos, normalização e derivadas em `*.utils.ts` (ou `*.service.ts` no domínio, ex. `diagram.service.ts`), testáveis sem montar árvore React.
+
+### Phase 5 — Clean code
+
+- **Nomes:** booleanos com prefixos `is*` / `has*` onde legível (`isPanelOpen`, `hasGithubSource`).
+- **Funções:** preferencialmente ≤ 30 linhas; quando não couber, extrair helpers ou documentar o motivo.
+- **Menos `as`:** preferir type guards, narrowing e tipos explícitos em vez de assertions.
+- **Imports:** agrupados (ex.: externos → `@/` → relativos) e ordem consistente no projeto.
+- **Barrels:** `index.ts` por **feature** exportando apenas a API pública; evitar barris “catch-all” que escondem dependências.
+
+---
+
 ## Roadmap — backend and infrastructure
 
 ### Phase 1 — Foundation (current, client-side)
