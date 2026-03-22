@@ -341,6 +341,7 @@
     "emptyRecent": "Nenhum diagrama aberto recentemente",
     "noMatches": "Nenhum resultado",
     "commandPalette": "Paleta de diagramas",
+    "unavailableWhileRecordingOrPlayback": "Indisponível durante gravação ou reprodução de fluxo",
     "palettePlaceholder": "Buscar diagramas ou pastas…",
     "folderHitHint": "pasta"
   },

@@ -1,5 +1,7 @@
 export interface CanvasProps {
   onOpenDiagram?: (id: string) => void;
+  /** Open linked diagram from canvas drill-down (pushes “level up” stack); sidebar / Command K use `onOpenDiagram` only. */
+  onDrillDownToDiagram?: (id: string) => void;
   onDrillUp?: () => void;
   isViewingCoverage?: boolean;
   isFlowPanelOpen?: boolean;

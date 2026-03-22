@@ -14,6 +14,7 @@ interface UseCanvasDrillHandlersParams {
   openDiagram: (id: string) => void;
   navigate: (path: string) => void;
   onOpenDiagram?: (id: string) => void;
+  onDrillDownToDiagram?: (id: string) => void;
 }
 
 export function useCanvasDrillHandlers({
@@ -23,6 +24,7 @@ export function useCanvasDrillHandlers({
   openDiagram,
   navigate,
   onOpenDiagram,
+  onDrillDownToDiagram,
 }: UseCanvasDrillHandlersParams) {
   const handleDrillDown = useCallback(
     (elementId: string) => {
@@ -31,14 +33,16 @@ export function useCanvasDrillHandlers({
       const comp = r.components[elementId];
       if (!comp?.linkedDiagramId || !allDiagrams[comp.linkedDiagramId]) return;
 
-      if (onOpenDiagram) {
+      if (onDrillDownToDiagram) {
+        onDrillDownToDiagram(comp.linkedDiagramId);
+      } else if (onOpenDiagram) {
         onOpenDiagram(comp.linkedDiagramId);
       } else {
         openDiagram(comp.linkedDiagramId);
         navigate(`/diagram/${comp.linkedDiagramId}`);
       }
     },
-    [diagram, allDiagrams, openDiagram, navigate, onOpenDiagram],
+    [diagram, allDiagrams, openDiagram, navigate, onDrillDownToDiagram, onOpenDiagram],
   );
 
   const handlePanelCollapseToggle = useCallback(

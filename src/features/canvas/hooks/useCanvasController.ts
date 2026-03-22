@@ -29,6 +29,7 @@ import {
 
 export function useCanvasController({
   onOpenDiagram,
+  onDrillDownToDiagram,
   onDrillUp,
   isViewingCoverage,
   isFlowPanelOpen,
@@ -105,6 +106,7 @@ export function useCanvasController({
   });
 
   const isPlayingEffective = isCompareMode ? false : isPlaying;
+  const diagramNavLocked = isRecording || isPlaying;
 
   const { handleDrillDown, handlePanelCollapseToggle } = useCanvasDrillHandlers({
     diagram,
@@ -113,6 +115,7 @@ export function useCanvasController({
     openDiagram: actions.openDiagram,
     navigate,
     onOpenDiagram,
+    onDrillDownToDiagram,
   });
 
   const handleAddEndpointToGroup = useCallback(
@@ -227,6 +230,7 @@ export function useCanvasController({
 
   const handleSelectDiagram = useCallback(
     (id: string) => {
+      if (diagramNavLocked) return;
       const target = allDiagrams[id];
       if (!target) return;
       if (id === diagram?.id) {
@@ -249,8 +253,16 @@ export function useCanvasController({
       onOpenDiagram,
       setShowCommandPalette,
       setShowDiagramSidebar,
+      diagramNavLocked,
     ],
   );
+
+  useEffect(() => {
+    if (!diagramNavLocked) return;
+    setShowCommandPalette(false);
+    setShowSearch(false);
+    setShowDiagramSidebar(false);
+  }, [diagramNavLocked, setShowDiagramSidebar]);
 
   const handleSearchSelect = useCallback(
     (componentId: string) => {
@@ -302,8 +314,12 @@ export function useCanvasController({
       setShowSearch(true);
     },
     isCommandPaletteOpen: showCommandPalette,
-    onToggleDiagramSidebar: () => setShowDiagramSidebar((v) => !v),
+    onToggleDiagramSidebar: () => {
+      if (diagramNavLocked) return;
+      setShowDiagramSidebar((v) => !v);
+    },
     onOpenCommandPalette: () => {
+      if (diagramNavLocked) return;
       setShowSearch(false);
       setShowCommandPalette(true);
     },
