@@ -6,8 +6,8 @@ export function readStoredCategory(): ElementCategory {
     const v = localStorage.getItem(LAST_CATEGORY_KEY);
     const valid = Object.values(ElementCategory).includes(v as ElementCategory);
     if (valid) return v as ElementCategory;
-  } catch {
-    /* ignore */
+  } catch (error) {
+    console.warn("[StructuraContext] element picker readStoredCategory", error);
   }
   return ElementCategory.All;
 }
@@ -15,7 +15,7 @@ export function readStoredCategory(): ElementCategory {
 export function persistCategory(cat: ElementCategory) {
   try {
     localStorage.setItem(LAST_CATEGORY_KEY, cat);
-  } catch {
-    /* ignore */
+  } catch (error) {
+    console.warn("[StructuraContext] element picker persistCategory", error);
   }
 }

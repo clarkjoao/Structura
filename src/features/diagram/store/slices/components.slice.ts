@@ -32,6 +32,36 @@ import { HEADER_H, ENDPOINT_H, FRAME_W } from "@/features/canvas/nodes/ApiGroupN
 import { computeApiGroupSize } from "@/features/canvas/nodes/ApiGroupNode/useApiGroupSize";
 import { mutateRemoveComponentInScene } from "../../utils/scene-mutations";
 
+function handleEndpointInsertion(
+  state: AppState,
+  d: Diagram,
+  scene: SceneDiff | null,
+  component: Component,
+  parentId: string,
+): boolean {
+  void state;
+  const parent = scene?.addedComponents[parentId] ?? d.snapshot.components[parentId];
+  if (!isApiGroupComponent(parent)) return false;
+
+  const siblingCount = countEndpointsUnderParent(d, scene, parentId);
+  write(scene, d, component, {
+    elementId: component.id,
+    x: 0,
+    y: HEADER_H + siblingCount * ENDPOINT_H,
+    width: FRAME_W,
+    height: ENDPOINT_H,
+  });
+  const childCount = siblingCount + 1;
+  const { width, height } = computeApiGroupSize(childCount);
+  const groupLayout = scene?.nodeLayouts[parentId] ?? d.nodeLayouts[parentId];
+  if (groupLayout) {
+    groupLayout.width = width;
+    groupLayout.height = height;
+  }
+  d.updatedAt = new Date().toISOString();
+  return true;
+}
+
 function countEndpointsUnderParent(
   d: { snapshot: { components: Record<string, Component> } },
   scene: { addedComponents: Record<string, Component> } | null,
@@ -214,27 +244,12 @@ export const componentsSlice = (
           ? scene?.nodeLayouts[parentId] ?? d.nodeLayouts[parentId]
           : undefined;
 
-        if (isEndpointType(type) && parentId) {
-          const parent = resolveComp(parentId);
-          if (isApiGroupComponent(parent)) {
-            const siblingCount = countEndpointsUnderParent(d, scene, parentId);
-            write(scene, d, component, {
-              elementId: component.id,
-              x: 0,
-              y: HEADER_H + siblingCount * ENDPOINT_H,
-              width: FRAME_W,
-              height: ENDPOINT_H,
-            });
-            const childCount = siblingCount + 1;
-            const { width, height } = computeApiGroupSize(childCount);
-            const groupLayout = scene?.nodeLayouts[parentId] ?? d.nodeLayouts[parentId];
-            if (groupLayout) {
-              groupLayout.width = width;
-              groupLayout.height = height;
-            }
-            d.updatedAt = new Date().toISOString();
-            return;
-          }
+        if (
+          isEndpointType(type) &&
+          parentId &&
+          handleEndpointInsertion(state, d, scene, component, parentId)
+        ) {
+          return;
         }
 
         const resolvedPosition = resolveInsertPosition({

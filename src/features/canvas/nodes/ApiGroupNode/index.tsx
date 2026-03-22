@@ -1,6 +1,7 @@
 import { memo } from "react";
 import type { NodeProps } from "@xyflow/react";
 import { Plus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { ApiProtocol } from "@/features/diagram";
 import { HEADER_H, FOOTER_H, PROTOCOL_COLORS } from "./constants";
 import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
@@ -24,6 +25,7 @@ export interface ApiGroupNodeData {
 }
 
 const ApiGroupNode = memo(({ data, selected }: NodeProps) => {
+  const { t } = useTranslation();
   const d = data as unknown as ApiGroupNodeData;
   const isSelected = selected || d.isSelected;
 
@@ -76,7 +78,7 @@ const ApiGroupNode = memo(({ data, selected }: NodeProps) => {
               }}
               className="w-full h-full flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors rounded-b-xl"
             >
-              <Plus className="h-3.5 w-3.5" /> Adicionar endpoint
+              <Plus className="h-3.5 w-3.5" /> {t("apiGroup.addEndpoint")}
             </button>
           )}
         </div>

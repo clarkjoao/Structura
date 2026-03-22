@@ -29,7 +29,11 @@ export function useDefectDojoConfig() {
   const clearConfig = useCallback(async () => {
     await defaultStorage.removeItem(STORAGE_KEY);
     // Also clean legacy key
-    try { localStorage.removeItem(LEGACY_KEY); } catch { /* ignore */ }
+    try {
+      localStorage.removeItem(LEGACY_KEY);
+    } catch (error) {
+      console.warn("[StructuraContext] DefectDojo clearConfig legacy localStorage key", error);
+    }
     setConfig(null);
   }, []);
 

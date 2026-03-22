@@ -26,8 +26,8 @@ export function useCanvasCompareModeEffects(params: UseCanvasCompareModeEffectsP
         localStorage.setItem(k, "1");
         toast.message(t("scenes.compareModeTooltip"));
       }
-    } catch {
-      /* ignore */
+    } catch (error) {
+      console.warn("[StructuraContext] compare mode localStorage tooltip flag", error);
     }
   }, [isCompareMode, t]);
 
@@ -41,5 +41,5 @@ export function useCanvasCompareModeEffects(params: UseCanvasCompareModeEffectsP
 
   useEffect(() => {
     if (isFlowPanelOpen) clearCanvasSelection();
-  }, [isFlowPanelOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isFlowPanelOpen, clearCanvasSelection]);
 }

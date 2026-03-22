@@ -266,8 +266,11 @@ export class FileSystemAdapter {
           )
         );
         await writable.close();
-      } catch {
-        /* ignore */
+      } catch (error) {
+        console.warn(
+          "[StructuraContext] FileSystemAdapter deleteDiagram tombstone fallback failed",
+          error,
+        );
       }
     }
   }
@@ -394,8 +397,8 @@ export class FileSystemAdapter {
           if (diagram && diagram.id) {
             result[diagram.id] = diagram;
           }
-        } catch {
-          /* skip malformed files */
+        } catch (error) {
+          console.warn("[StructuraContext] FileSystemAdapter scan diagram file skipped", name, error);
         }
       }
       if (entry.kind === FileSystemEntryKind.Directory) {

@@ -60,8 +60,8 @@ export class LocalStorageAdapter implements IStoragePort {
       this.fallbackKeys(key).forEach((fallbackKey) => {
         localStorage.removeItem(fallbackKey);
       });
-    } catch {
-      // ignore
+    } catch (error) {
+      console.warn("[StructuraContext] LocalStorageAdapter removeItem", error);
     }
   }
 

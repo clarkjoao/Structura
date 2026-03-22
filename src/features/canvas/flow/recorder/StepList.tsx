@@ -48,7 +48,6 @@ export function StepList({
   onConvertStepToCondition,
   onAddConditionStep,
 }: StepListProps) {
-  void _connections;
   const { t } = useTranslation();
   const [expandedStep, setExpandedStep] = useState<number | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
