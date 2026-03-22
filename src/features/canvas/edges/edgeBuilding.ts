@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { MarkerType, type Edge } from "@xyflow/react";
 import type { Connection, Diagram, FlowStep } from "@/features/diagram";
 import { getEffectiveConnectionStyle, EdgeMarker, EdgeStyle } from "@/features/diagram";
@@ -15,6 +16,8 @@ export interface EdgeBuildParams {
   flowHighlight: Pick<FlowHighlight, "activeConnId" | "participantConnIds">;
   recordingInfo: Pick<RecordingInfo, "edgeSteps" | "recordedEdgeIds" | "lastEdgeId"> | null;
   coverage: Pick<CoverageInfo, "edgeFlows"> | null;
+  /** True when either endpoint is dimmed by the canvas tag filter */
+  tagFilterEdgeDimmed?: boolean;
 }
 
 export function toMarkerType(
@@ -67,6 +70,16 @@ export function buildEdge(
       ? params.compareConnectionOpacity[conn.id]
       : undefined;
   const opacity = compareOp !== undefined ? compareOp : flowOpacity;
+  const tagDimmed = params.tagFilterEdgeDimmed === true;
+  const edgeStyle: CSSProperties | undefined = tagDimmed
+    ? {
+        opacity: 0.1,
+        pointerEvents: "none",
+        transition: "opacity 0.2s ease",
+      }
+    : opacity !== undefined
+      ? { opacity }
+      : undefined;
 
   return {
     id: conn.id,
@@ -96,7 +109,7 @@ export function buildEdge(
     animated: isActiveConn || (effective.animated && !params.isPlaying),
     markerEnd: markerEnd !== undefined ? { type: markerEnd } : undefined,
     markerStart: markerStart !== undefined ? { type: markerStart } : undefined,
-    style: opacity !== undefined ? { opacity } : undefined,
+    style: edgeStyle,
   };
 }
 

@@ -277,7 +277,12 @@
     "newEndpoint": "New endpoint",
     "usesEdgeLabel": "Uses",
     "apiGroupDefaultName": "API Endpoints",
-    "compareViewBanner": "View mode — editing disabled"
+    "compareViewBanner": "View mode — editing disabled",
+    "toolbar": {
+      "filterByTag": "Filter by tag",
+      "noTags": "No tags in this diagram",
+      "showAll": "Show all"
+    }
   },
   "canvasToolbar": {
     "renameTitle": "Double-click to rename",

@@ -44,7 +44,7 @@ export function useCanvasController({
 
   const { diagram, allDiagrams, visibleComponents, visibleConnections, serviceRegistry, flows, actions } =
     useCanvasStore();
-  const visualState = useCanvasVisualState();
+  const visualState = useCanvasVisualState(diagram?.id ?? null);
 
   const {
     isCompareMode,
@@ -57,6 +57,17 @@ export function useCanvasController({
     () => (diagram ? resolveCanvasSnapshot(diagram) : null),
     [diagram],
   );
+
+  const allDiagramTags = useMemo(() => {
+    if (!resolved?.components) {
+      return [];
+    }
+    const tags = new Set<string>();
+    Object.values(resolved.components).forEach((component) => {
+      component.tags?.forEach((tag) => tags.add(tag));
+    });
+    return Array.from(tags).sort();
+  }, [resolved?.components]);
 
   const { isPlaying, activeStep, flowHighlight, coverage, recordingInfo, activeFlow, currentStepId } = useFlowState({
     flows,
@@ -158,6 +169,7 @@ export function useCanvasController({
     activeFlowId: activeFlow?.id ?? null,
     onPlayFlow,
     onAddEndpointToGroup: handleAddEndpointToGroup,
+    isNodeHiddenByTagFilter: visualState.isNodeHiddenByTagFilter,
   });
 
   const onSelectionFromChanges = useCallback(
@@ -191,6 +203,7 @@ export function useCanvasController({
     flowHighlight,
     recordingInfo,
     coverage,
+    hiddenTags: visualState.hiddenTags,
   });
 
   useConnectionInternalsSync(connectionCountPerNode, updateNodeInternals);
@@ -321,5 +334,6 @@ export function useCanvasController({
     showElementPanel,
     onDrillUp,
     isCompareMode,
+    allDiagramTags,
   };
 }

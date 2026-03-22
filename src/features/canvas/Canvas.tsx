@@ -56,6 +56,7 @@ const Canvas = (props: CanvasProps = {}) => {
     showElementPanel,
     onDrillUp,
     isCompareMode,
+    allDiagramTags,
   } = useCanvasController(props);
 
   if (!diagram) {
@@ -85,6 +86,10 @@ const Canvas = (props: CanvasProps = {}) => {
             selectedCount={selectedCount}
             onClearSelection={visualState.clearCanvasSelection}
             onOpenScenes={() => setShowScenes(true)}
+            allTags={allDiagramTags}
+            hiddenTags={visualState.hiddenTags}
+            onToggleTag={visualState.toggleTag}
+            onShowAllTags={visualState.showAllTags}
           />
           {showSearch && diagram && (
             <CanvasSearch

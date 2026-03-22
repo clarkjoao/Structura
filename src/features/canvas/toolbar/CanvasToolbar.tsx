@@ -22,6 +22,7 @@ import type { ComponentType } from "@/features/diagram";
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/catalogs/aws";
 import AwsIcon from "../nodes/AwsIcon";
 import PatternPicker from "./PatternPicker";
+import { LayerFilterPopover } from "./LayerFilterPopover";
 import { getViewportCenter } from "../viewport-utils";
 import { useTranslation } from "react-i18next";
 
@@ -32,6 +33,10 @@ const CanvasToolbar = ({
   onInsert,
   onClearSelection,
   onOpenScenes,
+  allTags,
+  hiddenTags,
+  onToggleTag,
+  onShowAllTags,
 }: {
   onDrillUp?: () => void;
   isPanelOpen?: boolean;
@@ -39,6 +44,10 @@ const CanvasToolbar = ({
   onInsert?: (nodeId: string) => void;
   onClearSelection?: () => void;
   onOpenScenes?: () => void;
+  allTags: string[];
+  hiddenTags: Set<string>;
+  onToggleTag: (tag: string) => void;
+  onShowAllTags: () => void;
 }) => {
   const { t } = useTranslation();
   const diagram = useActiveDiagram();
@@ -208,6 +217,14 @@ const CanvasToolbar = ({
           </span>
         )}
       </div>
+
+
+      <LayerFilterPopover
+        allTags={allTags}
+        hiddenTags={hiddenTags}
+        onToggle={onToggleTag}
+        onShowAll={onShowAllTags}
+      />
 
       {onDrillUp && (
         <button
