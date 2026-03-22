@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useMemo } from "react";
+import { createContext, useContext, useState, useCallback, useMemo, useRef } from "react";
 import type { FlowStep, Flow } from "@/features/diagram";
 import { generateId } from "@/features/diagram";
 
@@ -157,6 +157,18 @@ export function RecordingModeStateProvider({
   const [editingFlowId, setEditingFlowId] = useState<string | null>(null);
   const [recordingContext, setRecordingContext] = useState<RecordingContext>({ mode: "trunk" });
   const [branchOwnership, setBranchOwnership] = useState<Map<string, BranchOwnerInfo>>(new Map());
+  const branchOwnershipRef = useRef<Map<string, BranchOwnerInfo>>(new Map());
+
+  const updateBranchOwnership = useCallback(
+    (updater: (prev: Map<string, BranchOwnerInfo>) => Map<string, BranchOwnerInfo>) => {
+      setBranchOwnership((prev) => {
+        const next = updater(prev);
+        branchOwnershipRef.current = next;
+        return next;
+      });
+    },
+    [],
+  );
 
   const recordingStepsForPanel = useMemo(
     () => getDisplayStepsFromRecording(recordingSteps, recordingContext, branchOwnership),
@@ -171,8 +183,8 @@ export function RecordingModeStateProvider({
     setRecordingTags([]);
     setEditingFlowId(null);
     setRecordingContext({ mode: "trunk" });
-    setBranchOwnership(new Map());
-  }, []);
+    updateBranchOwnership(() => new Map());
+  }, [updateBranchOwnership]);
 
   const startRecording = useCallback(() => {
     onStartRecording?.();
@@ -238,13 +250,13 @@ export function RecordingModeStateProvider({
       setRecordingDescriptionState(flow.description ?? "");
       setRecordingTags([...(flow.tags ?? [])]);
       setRecordingSteps(ordered);
-      setBranchOwnership(ownership);
+      updateBranchOwnership(() => ownership);
       setEditingFlowId(flow.id);
       setIsRecording(true);
       setRecordingContext({ mode: "trunk" });
       onStartRecording?.();
     },
-    [onStartRecording],
+    [onStartRecording, updateBranchOwnership],
   );
 
   const addRecordingStep = useCallback(
@@ -254,21 +266,26 @@ export function RecordingModeStateProvider({
           return [...prev, step];
         }
         const { conditionStepId, branchIndex } = recordingContext;
-        const insertAfterIdx = findLastBranchStepIndex(prev, conditionStepId, branchIndex, branchOwnership);
+        const insertAfterIdx = findLastBranchStepIndex(
+          prev,
+          conditionStepId,
+          branchIndex,
+          branchOwnershipRef.current,
+        );
         const newArr = [...prev];
         newArr.splice(insertAfterIdx + 1, 0, step);
         return newArr;
       });
       if (recordingContext.mode === "branch-record") {
         const { conditionStepId, branchIndex } = recordingContext;
-        setBranchOwnership((prev) => {
+        updateBranchOwnership((prev) => {
           const next = new Map(prev);
           next.set(step.id, { conditionStepId, branchIndex });
           return next;
         });
       }
     },
-    [recordingContext, branchOwnership],
+    [recordingContext, updateBranchOwnership],
   );
 
   const onRecordNodeClick = useCallback(
@@ -299,7 +316,7 @@ export function RecordingModeStateProvider({
     setRecordingSteps((prev) => {
       if (prev.length === 0) return prev;
       const last = prev[prev.length - 1];
-      setBranchOwnership((om) => {
+      updateBranchOwnership((om) => {
         if (om.has(last.id)) {
           const next = new Map(om);
           next.delete(last.id);
@@ -309,7 +326,7 @@ export function RecordingModeStateProvider({
       });
       return prev.slice(0, -1);
     });
-  }, []);
+  }, [updateBranchOwnership]);
 
   const setRecordingName = useCallback((name: string) => setRecordingNameState(name), []);
   const setRecordingDescription = useCallback((desc: string) => setRecordingDescriptionState(desc), []);
@@ -324,81 +341,81 @@ export function RecordingModeStateProvider({
   const onUpdateStepDescription = useCallback(
     (index: number, description: string) => {
       setRecordingSteps((prev) => {
-        const panel = getDisplayStepsFromRecording(prev, recordingContext, branchOwnership);
+        const panel = getDisplayStepsFromRecording(prev, recordingContext, branchOwnershipRef.current);
         const step = panel[index];
         if (!step) return prev;
         return prev.map((s) => (s.id === step.id ? { ...s, description } : s));
       });
     },
-    [recordingContext, branchOwnership],
+    [recordingContext],
   );
   const onUpdateStepDuration = useCallback(
     (index: number, duration: string) => {
       setRecordingSteps((prev) => {
-        const panel = getDisplayStepsFromRecording(prev, recordingContext, branchOwnership);
+        const panel = getDisplayStepsFromRecording(prev, recordingContext, branchOwnershipRef.current);
         const step = panel[index];
         if (!step) return prev;
         return prev.map((s) => (s.id === step.id ? { ...s, duration: duration || undefined } : s));
       });
     },
-    [recordingContext, branchOwnership],
+    [recordingContext],
   );
   const onUpdateStepPayload = useCallback(
     (index: number, payload: string) => {
       setRecordingSteps((prev) => {
-        const panel = getDisplayStepsFromRecording(prev, recordingContext, branchOwnership);
+        const panel = getDisplayStepsFromRecording(prev, recordingContext, branchOwnershipRef.current);
         const step = panel[index];
         if (!step) return prev;
         return prev.map((s) => (s.id === step.id ? { ...s, payload: payload || undefined } : s));
       });
     },
-    [recordingContext, branchOwnership],
+    [recordingContext],
   );
   const onUpdateStepPayloadDirection = useCallback(
     (index: number, direction: "request" | "response") => {
       setRecordingSteps((prev) => {
-        const panel = getDisplayStepsFromRecording(prev, recordingContext, branchOwnership);
+        const panel = getDisplayStepsFromRecording(prev, recordingContext, branchOwnershipRef.current);
         const step = panel[index];
         if (!step) return prev;
         return prev.map((s) => (s.id === step.id ? { ...s, payloadDirection: direction } : s));
       });
     },
-    [recordingContext, branchOwnership],
+    [recordingContext],
   );
   const onUpdateStepIsAsync = useCallback(
     (index: number, isAsync: boolean) => {
       setRecordingSteps((prev) => {
-        const panel = getDisplayStepsFromRecording(prev, recordingContext, branchOwnership);
+        const panel = getDisplayStepsFromRecording(prev, recordingContext, branchOwnershipRef.current);
         const step = panel[index];
         if (!step) return prev;
         return prev.map((s) => (s.id === step.id ? { ...s, isAsync } : s));
       });
     },
-    [recordingContext, branchOwnership],
+    [recordingContext],
   );
   const onDeleteStep = useCallback(
     (index: number) => {
       let removedId: string | null = null;
       setRecordingSteps((prev) => {
-        const panel = getDisplayStepsFromRecording(prev, recordingContext, branchOwnership);
+        const panel = getDisplayStepsFromRecording(prev, recordingContext, branchOwnershipRef.current);
         const step = panel[index];
         if (!step) return prev;
         removedId = step.id;
         return prev.filter((s) => s.id !== step.id);
       });
-      setBranchOwnership((om) => {
+      updateBranchOwnership((om) => {
         if (!removedId || !om.has(removedId)) return om;
         const next = new Map(om);
         next.delete(removedId);
         return next;
       });
     },
-    [recordingContext, branchOwnership],
+    [recordingContext, updateBranchOwnership],
   );
   const onReorderSteps = useCallback(
     (from: number, to: number) => {
       setRecordingSteps((prev) => {
-        const panel = getDisplayStepsFromRecording(prev, recordingContext, branchOwnership);
+        const panel = getDisplayStepsFromRecording(prev, recordingContext, branchOwnershipRef.current);
         const idFrom = panel[from]?.id;
         const idTo = panel[to]?.id;
         if (!idFrom || !idTo || idFrom === idTo) return prev;
@@ -413,14 +430,14 @@ export function RecordingModeStateProvider({
         return n;
       });
     },
-    [recordingContext, branchOwnership],
+    [recordingContext],
   );
 
   const onConvertStepToCondition = useCallback(
     (index: number, conditionLabel: string, branchLabels: string[]) => {
       let convertedId: string | null = null;
       setRecordingSteps((prev) => {
-        const panel = getDisplayStepsFromRecording(prev, recordingContext, branchOwnership);
+        const panel = getDisplayStepsFromRecording(prev, recordingContext, branchOwnershipRef.current);
         const target = panel[index];
         if (!target) return prev;
         convertedId = target.id;
@@ -437,19 +454,19 @@ export function RecordingModeStateProvider({
         setRecordingContext({ mode: "branch-select", conditionStepId: convertedId });
       }
     },
-    [recordingContext, branchOwnership],
+    [recordingContext],
   );
 
   const onUpdateConditionLabel = useCallback(
     (index: number, label: string) => {
       setRecordingSteps((prev) => {
-        const panel = getDisplayStepsFromRecording(prev, recordingContext, branchOwnership);
+        const panel = getDisplayStepsFromRecording(prev, recordingContext, branchOwnershipRef.current);
         const target = panel[index];
         if (!target) return prev;
         return prev.map((s) => (s.id === target.id ? { ...s, conditionLabel: label } : s));
       });
     },
-    [recordingContext, branchOwnership],
+    [recordingContext],
   );
 
   const onAddBranchLabel = useCallback(
@@ -474,7 +491,7 @@ export function RecordingModeStateProvider({
 
         return prev
           .filter((s) => {
-            const info = branchOwnership.get(s.id);
+            const info = branchOwnershipRef.current.get(s.id);
             if (info && info.conditionStepId === condStep.id && info.branchIndex === branchIndex) {
               return false;
             }
@@ -485,7 +502,7 @@ export function RecordingModeStateProvider({
             return { ...s, branches: s.branches!.filter((_, bi) => bi !== branchIndex) };
           });
       });
-      setBranchOwnership((prev) => {
+      updateBranchOwnership((prev) => {
         const next = new Map<string, BranchOwnerInfo>();
         for (const [sid, info] of prev) {
           if (info.conditionStepId !== conditionStepId) {
@@ -499,7 +516,7 @@ export function RecordingModeStateProvider({
         return next;
       });
     },
-    [branchOwnership],
+    [updateBranchOwnership],
   );
 
   const onUpdateBranchLabel = useCallback(
@@ -533,7 +550,12 @@ export function RecordingModeStateProvider({
           return [...prev, newStep];
         }
         const { conditionStepId, branchIndex } = recordingContext;
-        const insertAfterIdx = findLastBranchStepIndex(prev, conditionStepId, branchIndex, branchOwnership);
+        const insertAfterIdx = findLastBranchStepIndex(
+          prev,
+          conditionStepId,
+          branchIndex,
+          branchOwnershipRef.current,
+        );
         const newArr = [...prev];
         newArr.splice(insertAfterIdx + 1, 0, newStep);
         return newArr;
@@ -541,7 +563,7 @@ export function RecordingModeStateProvider({
 
       if (recordingContext.mode === "branch-record") {
         const { conditionStepId, branchIndex } = recordingContext;
-        setBranchOwnership((prev) => {
+        updateBranchOwnership((prev) => {
           const next = new Map(prev);
           next.set(id, { conditionStepId, branchIndex });
           return next;
@@ -550,7 +572,7 @@ export function RecordingModeStateProvider({
 
       setRecordingContext({ mode: "branch-select", conditionStepId: id });
     },
-    [recordingContext, branchOwnership],
+    [recordingContext, updateBranchOwnership],
   );
 
   const onEnterBranchRecording = useCallback(
