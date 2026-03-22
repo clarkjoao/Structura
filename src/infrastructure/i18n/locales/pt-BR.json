@@ -326,7 +326,8 @@
     "viewVersionsTitle": "Ver versões",
     "duplicate": "Duplicar",
     "duplicatedSceneName": "{{name}} (cópia)",
-    "duplicateSuccess": "Cena \"{{name}}\" duplicada"
+    "duplicateSuccess": "Cena \"{{name}}\" duplicada",
+    "switchBlockedDuringFlow": "Não é possível alterar cenas durante reprodução, gravação de fluxo ou comparação de versões"
   },
   "canvasSearch": {
     "placeholder": "Buscar componente...",
@@ -348,7 +349,7 @@
     "emptyRecent": "Nenhum diagrama aberto recentemente",
     "noMatches": "Nenhum resultado",
     "commandPalette": "Paleta de diagramas",
-    "unavailableWhileRecordingOrPlayback": "Indisponível durante gravação ou reprodução de fluxo",
+    "unavailableWhileRecordingOrPlayback": "Indisponível durante gravação, reprodução de fluxo ou comparação de versões",
     "palettePlaceholder": "Buscar diagramas ou pastas…",
     "folderHitHint": "pasta"
   },
@@ -600,7 +601,8 @@
     "playTitle": "Iniciar flow",
     "removeTitle": "Remover",
     "emptyTagged": "Nenhum flow com essa tag.",
-    "emptyNone": "Nenhum flow definido."
+    "emptyNone": "Nenhum flow definido.",
+    "recorderBlockedInCompare": "Saia do modo de comparação de versões para gravar ou editar um flow"
   },
   "flowRecorder": {
     "editingTitle": "Editando Flow",

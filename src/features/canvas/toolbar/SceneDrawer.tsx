@@ -18,6 +18,8 @@ import {
   type MergePreview,
   type SceneDiff,
 } from "@/features/diagram";
+import { useRecordingMode } from "@/features/canvas/flow/RecordingModeContext";
+import { useFlowPlayback } from "@/features/canvas/flow/FlowPlaybackContext";
 import { cn } from "@/lib/utils";
 import { MergeSceneDialog } from "./MergeSceneDialog";
 
@@ -35,12 +37,15 @@ export interface SceneDrawerProps {
   onDelete: (id: string) => void;
   onMerge: (scene: SceneDiff) => void;
   onSelectBase: () => void;
+  /** When true, switching scenes/compare/base and structural actions are disabled (flow playing/recording). */
+  scenesLocked?: boolean;
 }
 
 function SceneRow({
   scene,
   isActive,
   isCompare,
+  scenesLocked,
   onSelect,
   onRename,
   onDuplicate,
@@ -50,6 +55,7 @@ function SceneRow({
   scene: SceneDrawerScene;
   isActive: boolean;
   isCompare: boolean;
+  scenesLocked?: boolean;
   onSelect: () => void;
   onRename: () => void;
   onDuplicate: () => void;
@@ -63,14 +69,18 @@ function SceneRow({
   return (
     <div
       className={cn(
-        "group flex items-center gap-3 rounded-lg px-3 py-2.5 cursor-pointer transition-colors",
+        "group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors",
+        scenesLocked ? "cursor-not-allowed opacity-60" : "cursor-pointer",
         isActive
           ? "bg-primary/10 text-primary"
           : isCompare
             ? "border border-dashed border-border bg-muted/30 hover:bg-surface-hover text-foreground"
             : "hover:bg-surface-hover text-foreground",
       )}
-      onClick={onSelect}
+      onClick={() => {
+        if (scenesLocked) return;
+        onSelect();
+      }}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
@@ -113,8 +123,9 @@ function SceneRow({
           </button>
           <button
             type="button"
+            disabled={scenesLocked}
             onClick={onDuplicate}
-            className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:pointer-events-none disabled:opacity-40"
             title={t("scenes.duplicate")}
           >
             <Copy className="h-3 w-3" />
@@ -122,8 +133,9 @@ function SceneRow({
           {hasDiff && (
             <button
               type="button"
+              disabled={scenesLocked}
               onClick={onMerge}
-              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:pointer-events-none disabled:opacity-40"
               title={t("scenes.mergeIntoBase")}
             >
               <GitMerge className="h-3 w-3" />
@@ -131,8 +143,9 @@ function SceneRow({
           )}
           <button
             type="button"
+            disabled={scenesLocked}
             onClick={onDelete}
-            className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-secondary transition-colors"
+            className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-secondary transition-colors disabled:pointer-events-none disabled:opacity-40"
             title={hasDiff ? t("scenes.remove") : t("scenes.deleteEmptyScene")}
           >
             <Trash2 className="h-3 w-3" />
@@ -155,6 +168,7 @@ export function SceneDrawer({
   onDelete,
   onMerge,
   onSelectBase,
+  scenesLocked = false,
 }: SceneDrawerProps) {
   const { t } = useTranslation();
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -220,15 +234,23 @@ export function SceneDrawer({
           </button>
         </div>
 
+        {scenesLocked && (
+          <div className="px-4 py-2 text-[11px] text-muted-foreground border-b border-border bg-muted/20">
+            {t("scenes.switchBlockedDuringFlow")}
+          </div>
+        )}
+
         <div className="p-2 space-y-0.5 max-h-[320px] overflow-y-auto">
           <button
             type="button"
+            disabled={scenesLocked}
             onClick={() => {
               onSelectBase();
               onClose();
             }}
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2.5 w-full text-left transition-colors",
+              scenesLocked && "opacity-60 cursor-not-allowed",
               activeSceneId === null && !compareSceneId
                 ? "bg-primary/10 text-primary"
                 : "hover:bg-surface-hover text-foreground",
@@ -267,6 +289,7 @@ export function SceneDrawer({
                 scene={scene}
                 isActive={scene.id === activeSceneId}
                 isCompare={scene.id === compareSceneId}
+                scenesLocked={scenesLocked}
                 onSelect={() => {
                   onSelectScene(scene.id);
                   onClose();
@@ -310,10 +333,11 @@ export function SceneDrawer({
           ) : (
             <button
               type="button"
+              disabled={scenesLocked}
               onClick={() => {
                 setNewOpen(true);
               }}
-              className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+              className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors disabled:opacity-50 disabled:pointer-events-none"
             >
               <Plus className="h-3.5 w-3.5" />
               {t("scenes.newScene")}
@@ -354,6 +378,9 @@ export function SceneDrawer({
 export function ConnectedSceneDrawer({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const diagram = useActiveDiagram();
+  const { isRecording } = useRecordingMode();
+  const { isPlaying } = useFlowPlayback();
+  const scenesLocked = isRecording || isPlaying;
   const {
     addScene,
     removeScene,
@@ -380,6 +407,10 @@ export function ConnectedSceneDrawer({ onClose }: { onClose: () => void }) {
       : null;
 
   const handleScenePillClick = (sceneId: string) => {
+    if (scenesLocked) {
+      toast.warning(t("scenes.switchBlockedDuringFlow"));
+      return;
+    }
     if (activeId === null) {
       setActiveScene(sceneId);
       return;
@@ -411,14 +442,23 @@ export function ConnectedSceneDrawer({ onClose }: { onClose: () => void }) {
       activeSceneId={activeId}
       compareSceneId={compareId}
       onClose={onClose}
+      scenesLocked={scenesLocked}
       onSelectScene={(id) => handleScenePillClick(id)}
       onAddScene={(trimmed) => {
+        if (scenesLocked) {
+          toast.warning(t("scenes.switchBlockedDuringFlow"));
+          return;
+        }
         const name = trimmed.trim() || t("scenes.defaultSceneName");
         const created = addScene(name);
         setActiveScene(created.id);
       }}
       onRename={(id, name) => renameScene(id, name)}
       onDuplicate={(id) => {
+        if (scenesLocked) {
+          toast.warning(t("scenes.switchBlockedDuringFlow"));
+          return;
+        }
         const src = sceneRecord[id];
         const dupName = t("scenes.duplicatedSceneName", { name: src?.name ?? "" });
         const created = duplicateScene(id, dupName);
@@ -428,6 +468,10 @@ export function ConnectedSceneDrawer({ onClose }: { onClose: () => void }) {
         }
       }}
       onDelete={(id) => {
+        if (scenesLocked) {
+          toast.warning(t("scenes.switchBlockedDuringFlow"));
+          return;
+        }
         const sc = sceneRecord[id];
         if (!sc) return;
         if (sceneHasDiff(sc)) {
@@ -437,9 +481,17 @@ export function ConnectedSceneDrawer({ onClose }: { onClose: () => void }) {
         }
       }}
       onMerge={(scene) => {
+        if (scenesLocked) {
+          toast.warning(t("scenes.switchBlockedDuringFlow"));
+          return;
+        }
         mergeSceneIntoBase(scene.id);
       }}
       onSelectBase={() => {
+        if (scenesLocked) {
+          toast.warning(t("scenes.switchBlockedDuringFlow"));
+          return;
+        }
         setActiveScene(null);
         setCompareScene(null);
       }}

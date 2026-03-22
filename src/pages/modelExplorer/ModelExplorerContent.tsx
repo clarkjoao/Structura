@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { ReactFlowProvider } from "@xyflow/react";
+import { toast } from "sonner";
 import { ArrowLeft, Check, Clipboard, Download, GitBranch, CircleHelp, FolderTree } from "lucide-react";
 import ShortcutsModal from "@/components/ShortcutsModal";
 import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
 import { useRecordingMode } from "@/features/canvas/flow/RecordingModeContext";
 import { useFlowPlayback } from "@/features/canvas/flow/FlowPlaybackContext";
-import { useActiveDiagram } from "@/features/diagram";
+import { isDiagramCompareMode, useActiveDiagram, type Flow } from "@/features/diagram";
 import type { ModelExplorerContentProps } from "./types";
 
 export function ModelExplorerContent({
@@ -28,10 +29,38 @@ export function ModelExplorerContent({
 }: ModelExplorerContentProps) {
   const { t } = useTranslation();
   const diagram = useActiveDiagram();
-  const { isRecording, editingFlowId, startRecording, cancelRecording, finalizeRecording, ...recordingProps } = useRecordingMode();
+  const {
+    isRecording,
+    editingFlowId,
+    startRecording,
+    cancelRecording,
+    finalizeRecording,
+    editFlow,
+    ...recordingProps
+  } = useRecordingMode();
   const { activeFlow, currentStepId, currentStep, isPlaying, isCondition, canGoBack, canGoForward, play, exit, goBack, goNext, chooseBranch } = useFlowPlayback();
 
-  const disabledWhileBusy = isRecording || isPlaying;
+  const canvasInteractionLocked = isRecording || isPlaying || isDiagramCompareMode(diagram);
+  const compareModeBlocksRecorder = isDiagramCompareMode(diagram);
+
+  const startRecordingWhenAllowed = useCallback(() => {
+    if (compareModeBlocksRecorder) {
+      toast.warning(t("flows.recorderBlockedInCompare"));
+      return;
+    }
+    startRecording();
+  }, [compareModeBlocksRecorder, startRecording, t]);
+
+  const editFlowWhenAllowed = useCallback(
+    (flow: Flow) => {
+      if (compareModeBlocksRecorder) {
+        toast.warning(t("flows.recorderBlockedInCompare"));
+        return;
+      }
+      editFlow(flow);
+    },
+    [compareModeBlocksRecorder, editFlow, t],
+  );
   const [diagramSidebarOpen, setDiagramSidebarOpen] = useState(false);
 
   return (
@@ -41,15 +70,15 @@ export function ModelExplorerContent({
           <div className="flex items-center gap-3 text-sm">
             <button
               type="button"
-              disabled={disabledWhileBusy}
+              disabled={canvasInteractionLocked}
               onClick={() => setDiagramSidebarOpen((v) => !v)}
               className={`rounded-md p-1 text-muted-foreground transition-colors ${
-                disabledWhileBusy
+                canvasInteractionLocked
                   ? "opacity-50"
                   : "hover:bg-muted hover:text-foreground"
               }`}
               title={
-                disabledWhileBusy
+                canvasInteractionLocked
                   ? t("diagramNav.unavailableWhileRecordingOrPlayback")
                   : t("diagramNav.openSidebar")
               }
@@ -78,32 +107,32 @@ export function ModelExplorerContent({
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => { if (!disabledWhileBusy) setShowFlows(!showFlows); }}
+              onClick={() => { if (!canvasInteractionLocked) setShowFlows(!showFlows); }}
               className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
                 showFlows ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground border border-transparent hover:border-border"
-              } ${disabledWhileBusy ? "opacity-50 pointer-events-none" : ""}`}
+              } ${canvasInteractionLocked ? "opacity-50 pointer-events-none" : ""}`}
             >
               <GitBranch className="h-3.5 w-3.5" /> {t("flows.panelTitle")}
             </button>
             <button
               onClick={handleCopyDrawio}
-              disabled={disabledWhileBusy}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all ${disabledWhileBusy ? "opacity-50 pointer-events-none" : ""}`}
+              disabled={canvasInteractionLocked}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all ${canvasInteractionLocked ? "opacity-50 pointer-events-none" : ""}`}
             >
               {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Clipboard className="h-3.5 w-3.5" />}
               {copied ? t("flows.copied") : t("flows.copyDrawio")}
             </button>
             <button
               onClick={handleExport}
-              disabled={disabledWhileBusy}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all ${disabledWhileBusy ? "opacity-50 pointer-events-none" : ""}`}
+              disabled={canvasInteractionLocked}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all ${canvasInteractionLocked ? "opacity-50 pointer-events-none" : ""}`}
             >
               <Download className="h-3.5 w-3.5" /> {t("flows.export")}
             </button>
             <button
               onClick={() => setShowShortcuts(true)}
-              disabled={disabledWhileBusy}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all ${disabledWhileBusy ? "opacity-50 pointer-events-none" : ""}`}
+              disabled={canvasInteractionLocked}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all ${canvasInteractionLocked ? "opacity-50 pointer-events-none" : ""}`}
               aria-label={t("flows.shortcutsAria")}
               title={t("flows.shortcuts")}
             >
@@ -183,10 +212,12 @@ export function ModelExplorerContent({
           <FlowPanel
             onClose={() => setShowFlows(false)}
             onPlay={play}
-            onStartRecording={startRecording}
-            onEditFlow={recordingProps.editFlow}
+            onStartRecording={startRecordingWhenAllowed}
+            onEditFlow={editFlowWhenAllowed}
             isViewingCoverage={isViewingCoverage}
             onToggleCoverage={() => setIsViewingCoverage((v) => !v)}
+            panelActionsLocked={compareModeBlocksRecorder}
+            panelActionsLockedTitle={t("diagramNav.unavailableWhileRecordingOrPlayback")}
           />
         )}
       </div>

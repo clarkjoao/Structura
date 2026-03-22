@@ -1,5 +1,21 @@
 import { useRef, useState, useCallback, type MutableRefObject } from "react";
-import { applyNodeChanges, type Node, type OnNodesChange } from "@xyflow/react";
+import { applyNodeChanges, type Node, type NodeChange, type OnNodesChange } from "@xyflow/react";
+import type { Diagram } from "@/features/diagram";
+import { canMoveNodeInSceneMode } from "@/features/diagram";
+
+/** Drop position/dimension updates that the store rejects (e.g. base nodes in an active scene). */
+function filterNodeChangesForSceneMoveLock(
+  diagram: Diagram | null | undefined,
+  changes: NodeChange[],
+): NodeChange[] {
+  if (!diagram) return changes;
+  return changes.filter((c) => {
+    if (c.type === "position" || c.type === "dimensions") {
+      return canMoveNodeInSceneMode(diagram, c.id);
+    }
+    return true;
+  });
+}
 
 /**
  * Manages local ReactFlow node state that stays in sync with store-derived nodes.
@@ -16,12 +32,16 @@ import { applyNodeChanges, type Node, type OnNodesChange } from "@xyflow/react";
  * Single-node toggles (Cmd+click) are left to onNodeClick/onSelectionChange to avoid overwriting.
  *
  * Returns the merged `nodes` array and an `onNodesChange` handler.
+ *
+ * When `diagram` is set, position/dimension changes blocked by {@link canMoveNodeInSceneMode}
+ * are not applied to local nodes (the parenting hook still runs for toasts/side effects).
  */
 export function useLocalNodes(
   storeNodes: Node[],
   innerOnNodesChange: OnNodesChange,
   localNodesRef: MutableRefObject<Node[]>,
   onSelectionFromChanges?: (selectedIds: string[]) => void,
+  diagram?: Diagram | null,
 ) {
   const [localNodes, setLocalNodes] = useState<Node[]>([]);
 
@@ -61,8 +81,9 @@ export function useLocalNodes(
       if (!changes.length) return;
       const hasSelect = changes.some((c) => c.type === "select");
       innerOnNodesChange(changes);
+      const forApply = filterNodeChangesForSceneMoveLock(diagram, changes);
       setLocalNodes((nds) => {
-        const updated = applyNodeChanges(changes, nds);
+        const updated = applyNodeChanges(forApply, nds);
         localNodesRef.current = updated;
         if (hasSelect && onSelectionFromChanges) {
           const selectChangeCount = changes.filter((c) => c.type === "select").length;
@@ -74,7 +95,7 @@ export function useLocalNodes(
         return updated;
       });
     },
-    [innerOnNodesChange, localNodesRef, onSelectionFromChanges],
+    [diagram, innerOnNodesChange, localNodesRef, onSelectionFromChanges],
   );
 
   return { nodes: localNodes, onNodesChange };

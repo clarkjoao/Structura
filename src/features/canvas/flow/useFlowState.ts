@@ -11,9 +11,11 @@ import {
 
 interface UseFlowStateParams {
   flows: Flow[];
+  /** When true (version comparison on canvas), coverage overlay matches play/record (hidden). */
+  isCompareMode?: boolean;
 }
 
-export function useFlowState({ flows }: UseFlowStateParams) {
+export function useFlowState({ flows, isCompareMode = false }: UseFlowStateParams) {
   const { isRecording, recordingSteps, recordingContext, branchOwnership } = useRecordingMode();
   const { activeFlow, currentStepId, currentStep, isPlaying, history } = useFlowPlayback();
 
@@ -23,9 +25,9 @@ export function useFlowState({ flows }: UseFlowStateParams) {
   }, [isPlaying, activeFlow, currentStepId, history]);
 
   const coverage = useMemo(() => {
-    if (isPlaying || isRecording) return null;
+    if (isPlaying || isRecording || isCompareMode) return null;
     return buildCoverage(flows);
-  }, [flows, isPlaying, isRecording]);
+  }, [flows, isPlaying, isRecording, isCompareMode]);
 
   const stepsForRecordingOverlay = useMemo(() => {
     if (!isRecording || !recordingSteps?.length) return [];

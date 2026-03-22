@@ -191,6 +191,10 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       }
 
       if (e.key === KEY.ESCAPE && isCompareMode) {
+        if (isPlaying) {
+          e.preventDefault();
+          return;
+        }
         e.preventDefault();
         setCompareScene(null);
         return;
@@ -215,8 +219,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
         }
       }
 
-      // Block shortcuts when flow panel is open or when playing a flow
-      if (isFlowPanelOpen || isPlaying) return;
+      // Block shortcuts when flow panel is open, playing a flow, or comparing versions (same as play/record lock)
+      if (isFlowPanelOpen || isPlaying || isCompareMode) return;
 
       // Block canvas shortcuts while search or command palette is open
       if (isSearchOpen || isCommandPaletteOpen) return;

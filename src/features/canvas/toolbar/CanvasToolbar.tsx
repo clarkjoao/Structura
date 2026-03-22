@@ -16,7 +16,7 @@ import {
   GitBranch,
 } from "lucide-react";
 import { useReactFlow } from "@xyflow/react";
-import { useActiveDiagram, useDiagramActions } from "@/features/diagram";
+import { isDiagramCompareMode, useActiveDiagram, useDiagramActions } from "@/features/diagram";
 import { useRecordingMode } from "@/features/canvas/flow/RecordingModeContext";
 import { useFlowPlayback } from "@/features/canvas/flow/FlowPlaybackContext";
 import type { ComponentType } from "@/features/diagram";
@@ -47,7 +47,9 @@ const CanvasToolbar = ({
   const rfInstance = useReactFlow();
   const { isRecording } = useRecordingMode();
   const { isPlaying } = useFlowPlayback();
-  const disabledWhileBusy = isRecording || isPlaying;
+  const toolbarEditLocked =
+    isRecording || isPlaying || (diagram ? isDiagramCompareMode(diagram) : false);
+  const scenesPickerLocked = isRecording || isPlaying;
   const [showAdd, setShowAdd] = useState(false);
   const [showAws, setShowAws] = useState(false);
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
@@ -83,6 +85,13 @@ const CanvasToolbar = ({
       nameInputRef.current.select();
     }
   }, [isEditingName]);
+
+  useEffect(() => {
+    if (toolbarEditLocked && isEditingName && diagram) {
+      setEditNameValue(diagram.name);
+      setIsEditingName(false);
+    }
+  }, [toolbarEditLocked, isEditingName, diagram]);
 
   const commitRename = () => {
     if (!diagram) return;
@@ -142,11 +151,12 @@ const CanvasToolbar = ({
         ) : (
           <span
             onDoubleClick={() => {
+              if (toolbarEditLocked) return;
               setEditNameValue(diagram.name);
               setIsEditingName(true);
             }}
-            className="text-xs font-semibold cursor-pointer select-none hover:text-primary/80"
-            title={t("canvasToolbar.renameTitle")}
+            className={`text-xs font-semibold select-none ${toolbarEditLocked ? "cursor-default opacity-80" : "cursor-pointer hover:text-primary/80"}`}
+            title={toolbarEditLocked ? t("diagramNav.unavailableWhileRecordingOrPlayback") : t("canvasToolbar.renameTitle")}
           >
             {diagram.name}
           </span>
@@ -158,8 +168,17 @@ const CanvasToolbar = ({
           (activeScene ? (
             <button
               type="button"
-              onClick={() => onOpenScenes()}
-              className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium border border-border bg-secondary hover:bg-surface-hover transition-colors shrink-0 max-w-[140px]"
+              disabled={scenesPickerLocked}
+              onClick={() => {
+                if (scenesPickerLocked) return;
+                onOpenScenes();
+              }}
+              title={
+                scenesPickerLocked
+                  ? t("diagramNav.unavailableWhileRecordingOrPlayback")
+                  : undefined
+              }
+              className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium border border-border bg-secondary hover:bg-surface-hover transition-colors shrink-0 max-w-[140px] ${scenesPickerLocked ? "opacity-50 pointer-events-none" : ""}`}
             >
               <span
                 className="w-1.5 h-1.5 rounded-full shrink-0"
@@ -170,9 +189,17 @@ const CanvasToolbar = ({
           ) : (
             <button
               type="button"
-              onClick={() => onOpenScenes()}
-              className="text-[10px] text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded shrink-0"
-              title={t("scenes.viewVersionsTitle")}
+              disabled={scenesPickerLocked}
+              onClick={() => {
+                if (scenesPickerLocked) return;
+                onOpenScenes();
+              }}
+              className={`text-[10px] text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded shrink-0 ${scenesPickerLocked ? "opacity-50 pointer-events-none" : ""}`}
+              title={
+                scenesPickerLocked
+                  ? t("diagramNav.unavailableWhileRecordingOrPlayback")
+                  : t("scenes.viewVersionsTitle")
+              }
             >
               <GitBranch className="h-3 w-3" />
             </button>
@@ -195,13 +222,13 @@ const CanvasToolbar = ({
 
       <button
         onClick={() => {
-          if (disabledWhileBusy) return;
+          if (toolbarEditLocked) return;
           onClearSelection?.();
           setShowPatterns(true);
           setShowAdd(false);
         }}
-        disabled={disabledWhileBusy}
-        className={`flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors ${disabledWhileBusy ? "opacity-50 pointer-events-none" : ""}`}
+        disabled={toolbarEditLocked}
+        className={`flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors ${toolbarEditLocked ? "opacity-50 pointer-events-none" : ""}`}
       >
         <Puzzle className="h-3.5 w-3.5" /> {t("canvasToolbar.patterns")}
       </button>
@@ -209,12 +236,12 @@ const CanvasToolbar = ({
       <div className="relative">
         <button
           onClick={() => {
-            if (disabledWhileBusy) return;
+            if (toolbarEditLocked) return;
             onClearSelection?.();
             setShowModal(true);
           }}
-          disabled={disabledWhileBusy}
-          className={`flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-primary hover:bg-surface-hover transition-colors ${disabledWhileBusy ? "opacity-50 pointer-events-none" : ""}`}
+          disabled={toolbarEditLocked}
+          className={`flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-primary hover:bg-surface-hover transition-colors ${toolbarEditLocked ? "opacity-50 pointer-events-none" : ""}`}
         >
           <Plus className="h-3.5 w-3.5" /> {t("canvasToolbar.addElement")}
         </button>

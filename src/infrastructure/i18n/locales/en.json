@@ -326,7 +326,8 @@
     "viewVersionsTitle": "View versions",
     "duplicate": "Duplicate",
     "duplicatedSceneName": "{{name}} (copy)",
-    "duplicateSuccess": "Scene \"{{name}}\" duplicated"
+    "duplicateSuccess": "Scene \"{{name}}\" duplicated",
+    "switchBlockedDuringFlow": "You can't change scenes while a flow is playing, recording, or while version comparison is active"
   },
   "canvasSearch": {
     "placeholder": "Search component...",
@@ -348,7 +349,7 @@
     "emptyRecent": "No diagrams opened recently",
     "noMatches": "No results",
     "commandPalette": "Diagram palette",
-    "unavailableWhileRecordingOrPlayback": "Unavailable while recording or playing a flow",
+    "unavailableWhileRecordingOrPlayback": "Unavailable while recording, playing a flow, or comparing versions",
     "palettePlaceholder": "Search diagrams or folders…",
     "folderHitHint": "folder"
   },
@@ -600,7 +601,8 @@
     "playTitle": "Start flow",
     "removeTitle": "Remove",
     "emptyTagged": "No flows with this tag.",
-    "emptyNone": "No flows defined."
+    "emptyNone": "No flows defined.",
+    "recorderBlockedInCompare": "Exit version comparison mode to record or edit a flow"
   },
   "flowRecorder": {
     "editingTitle": "Editing flow",

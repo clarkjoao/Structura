@@ -60,10 +60,11 @@ export function useCanvasController({
 
   const { isPlaying, activeStep, flowHighlight, coverage, recordingInfo, activeFlow, currentStepId } = useFlowState({
     flows,
+    isCompareMode,
   });
 
   const isPlayingEffective = isCompareMode ? false : isPlaying;
-  const diagramNavLocked = isRecording || isPlaying;
+  const diagramNavLocked = isRecording || isPlaying || isCompareMode;
 
   const {
     showSearch,
@@ -175,6 +176,7 @@ export function useCanvasController({
     innerOnNodesChange,
     localNodesRef,
     onSelectionFromChanges,
+    diagram,
   );
 
   const edges = useCanvasEdges({

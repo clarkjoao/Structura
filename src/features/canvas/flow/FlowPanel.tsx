@@ -13,9 +13,21 @@ interface Props {
   onEditFlow: (flow: Flow) => void;
   isViewingCoverage?: boolean;
   onToggleCoverage?: () => void;
+  /** True when canvas is in comparison mode — same actions blocked as during play/record on the panel. */
+  panelActionsLocked?: boolean;
+  panelActionsLockedTitle?: string;
 }
 
-const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow, isViewingCoverage, onToggleCoverage }: Props) => {
+const FlowPanel = ({
+  onClose,
+  onPlay,
+  onStartRecording,
+  onEditFlow,
+  isViewingCoverage,
+  onToggleCoverage,
+  panelActionsLocked = false,
+  panelActionsLockedTitle,
+}: Props) => {
   const { t } = useTranslation();
   const flows = useFlows();
   const diagram = useActiveDiagram();
@@ -89,9 +101,11 @@ const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow, isViewingCov
         <div className="flex items-center gap-1.5">
           {onToggleCoverage && (
             <button
+              type="button"
+              disabled={panelActionsLocked}
               onClick={onToggleCoverage}
-              title={t("flows.coverageTitle")}
-              className={`text-xs rounded-md px-2 py-0.5 font-medium transition-colors flex items-center gap-1 ${isViewingCoverage ? "bg-emerald-500/20 text-emerald-400" : "text-muted-foreground hover:text-foreground"}`}
+              title={panelActionsLocked ? panelActionsLockedTitle : t("flows.coverageTitle")}
+              className={`text-xs rounded-md px-2 py-0.5 font-medium transition-colors flex items-center gap-1 disabled:opacity-40 disabled:pointer-events-none ${isViewingCoverage ? "bg-emerald-500/20 text-emerald-400" : "text-muted-foreground hover:text-foreground"}`}
             >
               <BarChart2 className="h-3.5 w-3.5" /> {t("flowPanel.coverage")}
             </button>
@@ -105,8 +119,10 @@ const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow, isViewingCov
       {allTags.length > 0 && (
         <div className="px-3 pt-2 flex flex-wrap gap-1">
           <button
+            type="button"
+            disabled={panelActionsLocked}
             onClick={() => setTagFilter(null)}
-            className={`text-[9px] rounded-full px-2 py-0.5 font-medium transition-colors ${
+            className={`text-[9px] rounded-full px-2 py-0.5 font-medium transition-colors disabled:opacity-40 disabled:pointer-events-none ${
               tagFilter === null
                 ? "bg-primary text-primary-foreground"
                 : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
@@ -116,9 +132,11 @@ const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow, isViewingCov
           </button>
           {allTags.map((tag) => (
             <button
+              type="button"
               key={tag}
+              disabled={panelActionsLocked}
               onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
-              className={`text-[9px] rounded-full px-2 py-0.5 font-medium transition-colors ${
+              className={`text-[9px] rounded-full px-2 py-0.5 font-medium transition-colors disabled:opacity-40 disabled:pointer-events-none ${
                 tagFilter === tag
                   ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
@@ -155,21 +173,51 @@ const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow, isViewingCov
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => handleDuplicate(flow)} className="text-muted-foreground hover:text-foreground transition-colors" title={t("flows.duplicateTitle")}>
+                  <button
+                    type="button"
+                    disabled={panelActionsLocked}
+                    onClick={() => handleDuplicate(flow)}
+                    className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                    title={panelActionsLocked ? panelActionsLockedTitle : t("flows.duplicateTitle")}
+                  >
                     <Layers className="h-3.5 w-3.5" />
                   </button>
-                  <button onClick={() => handleCopy(flow)} className="text-muted-foreground hover:text-foreground transition-colors" title={t("flows.copyMermaidTitle")}>
+                  <button
+                    type="button"
+                    disabled={panelActionsLocked}
+                    onClick={() => handleCopy(flow)}
+                    className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                    title={panelActionsLocked ? panelActionsLockedTitle : t("flows.copyMermaidTitle")}
+                  >
                     {copiedId === flow.id
                       ? <Check className="h-3.5 w-3.5 text-emerald-500" />
                       : <Copy className="h-3.5 w-3.5" />}
                   </button>
-                  <button onClick={() => onEditFlow(flow)} className="text-muted-foreground hover:text-foreground transition-colors" title={t("flows.editTitle")}>
+                  <button
+                    type="button"
+                    disabled={panelActionsLocked}
+                    onClick={() => onEditFlow(flow)}
+                    className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                    title={panelActionsLocked ? panelActionsLockedTitle : t("flows.editTitle")}
+                  >
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
-                  <button onClick={() => handlePlayWithValidation(flow)} className="text-primary hover:text-primary/80 transition-colors" title={t("flows.playTitle")}>
+                  <button
+                    type="button"
+                    disabled={panelActionsLocked}
+                    onClick={() => handlePlayWithValidation(flow)}
+                    className="text-primary hover:text-primary/80 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                    title={panelActionsLocked ? panelActionsLockedTitle : t("flows.playTitle")}
+                  >
                     <Play className="h-4 w-4" />
                   </button>
-                  <button onClick={() => removeFlow(flow.id)} className="text-muted-foreground hover:text-destructive transition-colors" title={t("flows.removeTitle")}>
+                  <button
+                    type="button"
+                    disabled={panelActionsLocked}
+                    onClick={() => removeFlow(flow.id)}
+                    className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                    title={panelActionsLocked ? panelActionsLockedTitle : t("flows.removeTitle")}
+                  >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -184,8 +232,13 @@ const FlowPanel = ({ onClose, onPlay, onStartRecording, onEditFlow, isViewingCov
           </p>
         )}
 
-        <button onClick={onStartRecording}
-          className="flex items-center gap-1.5 w-full justify-center rounded-md border border-dashed border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/20 transition-all">
+        <button
+          type="button"
+          disabled={panelActionsLocked}
+          onClick={onStartRecording}
+          title={panelActionsLocked ? panelActionsLockedTitle : undefined}
+          className="flex items-center gap-1.5 w-full justify-center rounded-md border border-dashed border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/20 transition-all disabled:opacity-40 disabled:pointer-events-none"
+        >
           <Plus className="h-3.5 w-3.5" /> {t("flowPanel.newFlow")}
         </button>
       </div>

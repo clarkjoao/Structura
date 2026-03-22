@@ -2,7 +2,9 @@
  * Handler para reordenar handles de conexões (incoming/outgoing).
  */
 import { useCallback } from "react";
+import { isDiagramCompareMode, useActiveDiagram } from "@/features/diagram";
 import { useRecordingMode } from "../flow/RecordingModeContext";
+import { useFlowPlayback } from "../flow/FlowPlaybackContext";
 
 interface UseCanvasHandleReorderParams {
   effectiveHandleOrder: Record<string, { incoming: string[]; outgoing: string[] }>;
@@ -13,7 +15,9 @@ export function useCanvasHandleReorder({
   effectiveHandleOrder,
   updateHandleOrder,
 }: UseCanvasHandleReorderParams) {
+  const diagram = useActiveDiagram();
   const { isRecording } = useRecordingMode();
+  const { isPlaying } = useFlowPlayback();
   const onReorderHandle = useCallback(
     (
       nodeId: string,
@@ -21,7 +25,7 @@ export function useCanvasHandleReorder({
       connId: string,
       direction: "up" | "down",
     ) => {
-      if (isRecording) return;
+      if (isRecording || isPlaying || (diagram ? isDiagramCompareMode(diagram) : false)) return;
 
       const currentOrder = effectiveHandleOrder[nodeId]?.[side] ?? [];
       const idx = currentOrder.indexOf(connId);
@@ -34,7 +38,7 @@ export function useCanvasHandleReorder({
       [newOrder[idx], newOrder[swapIdx]] = [newOrder[swapIdx], newOrder[idx]];
       updateHandleOrder(nodeId, side, newOrder);
     },
-    [isRecording, effectiveHandleOrder, updateHandleOrder],
+    [diagram, isRecording, isPlaying, effectiveHandleOrder, updateHandleOrder],
   );
 
   return { onReorderHandle };
