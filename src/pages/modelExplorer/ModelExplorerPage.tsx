@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { RecordingModeStateProvider } from "@/features/canvas/flow/RecordingModeContext";
 import { FlowPlaybackProvider } from "@/features/canvas/flow/FlowPlaybackContext";
@@ -8,6 +8,7 @@ import {
   useActiveDiagram,
   useActiveDiagramId,
   useDiagramActions,
+  useDiagramStore,
   useFlows,
   stepsToMermaid,
   useServiceRegistry,
@@ -21,8 +22,10 @@ import { ModelExplorerContent } from "./ModelExplorerContent";
 
 export default function ModelExplorerPage() {
   const { t } = useTranslation();
+  const { id: urlId } = useParams<{ id: string }>();
   const diagram = useActiveDiagram();
   const activeDiagramId = useActiveDiagramId();
+  const urlDiagramExists = useDiagramStore((s) => !!(urlId && s.diagrams[urlId]));
   const { openDiagram, addFlow, updateFlow } = useDiagramActions();
   const flows = useFlows();
   const serviceRegistry = useServiceRegistry();
@@ -34,6 +37,13 @@ export default function ModelExplorerPage() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [navStack, setNavStack] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
+
+  // Sync URL :id → store.activeDiagramId (handles page refresh / direct link)
+  useEffect(() => {
+    if (urlId && urlDiagramExists && activeDiagramId !== urlId) {
+      openDiagram(urlId);
+    }
+  }, [urlId, urlDiagramExists, activeDiagramId, openDiagram]);
 
   const handleOpenDiagram = useCallback(
     (id: string) => {

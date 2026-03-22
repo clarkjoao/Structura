@@ -14,6 +14,13 @@ export {
 } from "./useFileSystemStorage";
 export type { FsStatus } from "./useFileSystemStorage";
 export {
+  bootFileSystem,
+  hasReconnected,
+  startFileSystemSync,
+  stopFileSystemSync,
+  resetBootState,
+} from "./fileSystemBoot";
+export {
   validateDiagramFile,
   validateManifest,
 } from "./validateWorkspaceFile";

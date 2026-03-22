@@ -225,7 +225,7 @@ export function useCanvasController({
     !!(visualState.selectedNodeId || visualState.selectedEdgeId) && !isRecording && !isCompareMode;
   useEffect(() => {
     if (!diagram) return;
-    recordOpened(diagram.id, diagram.name);
+    recordOpened(diagram.id);
   }, [diagram, recordOpened]);
 
   const handleSelectDiagram = useCallback(
