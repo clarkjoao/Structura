@@ -1,5 +1,4 @@
-import { useRef, useEffect, useCallback, useState, useMemo, type SetStateAction } from "react";
-import { toast } from "sonner";
+import { useRef, useCallback, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useReactFlow, useUpdateNodeInternals, type Node } from "@xyflow/react";
 import { useNavigate } from "react-router-dom";
@@ -18,14 +17,11 @@ import { useCanvasEffects } from "./useCanvasEffects";
 import { useLocalNodes } from "./useLocalNodes";
 import { useConnectionInternalsSync } from "./useConnectionInternalsSync";
 import { useRecordingMode } from "../flow/RecordingModeContext";
-import { useRecentDiagrams } from "../navigation/useRecentDiagrams";
+import { useCanvasCompareMode } from "./useCanvasCompareMode";
+import { useCanvasDiagramNavigation } from "./useCanvasDiagramNavigation";
+import { useCanvasCompareModeGuards } from "./useCanvasCompareModeGuards";
 import type { CanvasProps } from "../canvas.types";
-import {
-  buildCompareComponentVisuals,
-  buildCompareConnectionVisuals,
-  isDiagramCompareMode,
-  resolveCanvasSnapshot,
-} from "@/features/diagram";
+import { resolveCanvasSnapshot } from "@/features/diagram";
 
 export function useCanvasController({
   onOpenDiagram,
@@ -43,71 +39,61 @@ export function useCanvasController({
   const updateNodeInternals = useUpdateNodeInternals();
   const reactFlowWrapperRef = useRef<HTMLDivElement>(null);
   const { isRecording } = useRecordingMode();
-  const [showSearch, setShowSearch] = useState(false);
-  const [internalDiagramSidebar, setInternalDiagramSidebar] = useState(false);
-  const diagramSidebarControlled = typeof onDiagramSidebarOpenChange === "function";
-  const showDiagramSidebar = diagramSidebarControlled
-    ? Boolean(controlledDiagramSidebarOpen)
-    : internalDiagramSidebar;
-  const setShowDiagramSidebar = useCallback(
-    (value: SetStateAction<boolean>) => {
-      if (diagramSidebarControlled) {
-        const next =
-          typeof value === "function" ? value(Boolean(controlledDiagramSidebarOpen)) : value;
-        onDiagramSidebarOpenChange?.(next);
-      } else {
-        setInternalDiagramSidebar(value);
-      }
-    },
-    [controlledDiagramSidebarOpen, diagramSidebarControlled, onDiagramSidebarOpenChange],
-  );
-  const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showScenes, setShowScenes] = useState(false);
   const [focusTitleTrigger, setFocusTitleTrigger] = useState(0);
-
-  const { recordOpened } = useRecentDiagrams();
 
   const { diagram, allDiagrams, visibleComponents, visibleConnections, serviceRegistry, flows, actions } =
     useCanvasStore();
   const visualState = useCanvasVisualState();
 
-  const isCompareMode = useMemo(() => isDiagramCompareMode(diagram), [diagram]);
+  const {
+    isCompareMode,
+    compareVisualByComponentId,
+    compareConnectionOpacity,
+    sceneBadgeByComponentId,
+  } = useCanvasCompareMode(diagram);
 
   const resolved = useMemo(
     () => (diagram ? resolveCanvasSnapshot(diagram) : null),
     [diagram],
   );
 
-  const compareVisualByComponentId = useMemo(() => {
-    if (!diagram || !isCompareMode) return undefined;
-    const a = diagram.activeSceneId!;
-    const b = diagram.compareSceneId!;
-    return buildCompareComponentVisuals(diagram, a, b);
-  }, [diagram, isCompareMode]);
-
-  const compareConnectionOpacity = useMemo(() => {
-    if (!diagram || !isCompareMode) return undefined;
-    const a = diagram.activeSceneId!;
-    const b = diagram.compareSceneId!;
-    const v = buildCompareConnectionVisuals(diagram, a, b);
-    return Object.fromEntries(Object.entries(v).map(([id, cv]) => [id, cv.opacity]));
-  }, [diagram, isCompareMode]);
-
-  const sceneBadgeByComponentId = useMemo(() => {
-    if (!diagram?.activeSceneId || !diagram.scenes?.[diagram.activeSceneId]) return {};
-    const sc = diagram.scenes[diagram.activeSceneId];
-    return Object.fromEntries(
-      Object.keys(sc.addedComponents).map((id) => [id, { name: sc.name, color: sc.color }]),
-    );
-  }, [diagram]);
-  const { panelIds, connectionCountPerNode, edgeHandleAssignments, effectiveHandleOrder } =
-    useCanvasConnectionDerivations({ visibleComponents, visibleConnections, diagram });
   const { isPlaying, activeStep, flowHighlight, coverage, recordingInfo, activeFlow, currentStepId } = useFlowState({
     flows,
   });
 
   const isPlayingEffective = isCompareMode ? false : isPlaying;
   const diagramNavLocked = isRecording || isPlaying;
+
+  const {
+    showSearch,
+    setShowSearch,
+    showDiagramSidebar,
+    setShowDiagramSidebar,
+    showCommandPalette,
+    setShowCommandPalette,
+    handleSelectDiagram,
+  } = useCanvasDiagramNavigation({
+    diagram,
+    allDiagrams,
+    diagramNavLocked,
+    actions,
+    onOpenDiagram,
+    diagramSidebarOpen: controlledDiagramSidebarOpen,
+    onDiagramSidebarOpenChange,
+    navigate,
+    setShowScenes,
+  });
+
+  useCanvasCompareModeGuards({
+    isCompareMode,
+    isFlowPanelOpen: !!isFlowPanelOpen,
+    clearCanvasSelection: visualState.clearCanvasSelection,
+    t,
+  });
+
+  const { panelIds, connectionCountPerNode, edgeHandleAssignments, effectiveHandleOrder } =
+    useCanvasConnectionDerivations({ visibleComponents, visibleConnections, diagram });
 
   const { handleDrillDown, handlePanelCollapseToggle } = useCanvasDrillHandlers({
     diagram,
@@ -224,47 +210,6 @@ export function useCanvasController({
 
   const isPanelOpen =
     !!(visualState.selectedNodeId || visualState.selectedEdgeId) && !isRecording && !isCompareMode;
-  useEffect(() => {
-    if (!diagram) return;
-    recordOpened(diagram.id);
-  }, [diagram, recordOpened]);
-
-  const handleSelectDiagram = useCallback(
-    (id: string) => {
-      if (diagramNavLocked) return;
-      const target = allDiagrams[id];
-      if (!target) return;
-      if (id === diagram?.id) {
-        setShowDiagramSidebar(false);
-        setShowCommandPalette(false);
-        return;
-      }
-      if (onOpenDiagram) {
-        onOpenDiagram(id);
-      } else {
-        actions.openDiagram(id);
-        navigate(`/model/${id}`);
-      }
-    },
-    [
-      actions,
-      allDiagrams,
-      diagram?.id,
-      navigate,
-      onOpenDiagram,
-      setShowCommandPalette,
-      setShowDiagramSidebar,
-      diagramNavLocked,
-    ],
-  );
-
-  useEffect(() => {
-    if (!diagramNavLocked) return;
-    setShowCommandPalette(false);
-    setShowSearch(false);
-    setShowDiagramSidebar(false);
-    setShowScenes(false);
-  }, [diagramNavLocked, setShowDiagramSidebar]);
 
   const handleSearchSelect = useCallback(
     (componentId: string) => {
@@ -279,7 +224,7 @@ export function useCanvasController({
         maxZoom: 1,
       });
     },
-    [reactFlowInstance, visualState],
+    [reactFlowInstance, setShowSearch, visualState],
   );
 
   useCanvasKeyboard({
@@ -338,43 +283,12 @@ export function useCanvasController({
     onClearSelection: visualState.clearCanvasSelection,
   });
 
-  useEffect(() => {
-    if (isFlowPanelOpen) visualState.clearCanvasSelection();
-  }, [isFlowPanelOpen]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const selectedNodes = nodes.filter((n) => visualState.selectedNodeIds.has(n.id));
   const selectedCount = visualState.selectedNodeIds.size;
   const showElementPanel =
     (visualState.selectedNodeId || visualState.selectedEdgeId || selectedCount > 0) &&
     !isRecording &&
     !isCompareMode;
-
-  const compareModeEnteredRef = useRef(false);
-  useEffect(() => {
-    if (!isCompareMode) {
-      compareModeEnteredRef.current = false;
-      return;
-    }
-    if (compareModeEnteredRef.current) return;
-    compareModeEnteredRef.current = true;
-    try {
-      const k = "structura:compareTooltipSeen";
-      if (typeof localStorage !== "undefined" && !localStorage.getItem(k)) {
-        localStorage.setItem(k, "1");
-        toast.message(t("scenes.compareModeTooltip"));
-      }
-    } catch {
-      /* ignore */
-    }
-  }, [isCompareMode, t]);
-
-  const prevCompareRef = useRef(false);
-  useEffect(() => {
-    if (isCompareMode && !prevCompareRef.current) {
-      visualState.clearCanvasSelection();
-    }
-    prevCompareRef.current = isCompareMode;
-  }, [isCompareMode, visualState]);
 
   return {
     t,
