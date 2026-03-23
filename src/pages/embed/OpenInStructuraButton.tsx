@@ -1,16 +1,17 @@
 import { ExternalLink } from "lucide-react";
-import { getStructuraAppUrl } from "@/lib/embed-url";
+import type { Diagram } from "@/features/diagram";
+import { buildOpenInStructuraUrl } from "@/lib/embed-url";
 
 interface OpenInStructuraButtonProps {
-  diagramName: string;
+  diagram: Diagram;
 }
 
-export const OpenInStructuraButton = ({ diagramName }: OpenInStructuraButtonProps) => (
+export const OpenInStructuraButton = ({ diagram }: OpenInStructuraButtonProps) => (
   <a
-    href={getStructuraAppUrl()}
+    href={buildOpenInStructuraUrl(diagram)}
     target="_blank"
     rel="noopener noreferrer"
-    aria-label={`Abrir ${diagramName} no Structura`}
+    aria-label={`Abrir ${diagram.name} no Structura`}
     style={{
       position: "absolute",
       top: 12,

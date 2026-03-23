@@ -100,7 +100,9 @@ function buildNode(
     id: component.id,
     type: resolveNodeType(component),
     position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
-    ...(component.parentId ? { parentId: component.parentId, extent: "parent" as const } : {}),
+    ...(component.parentId
+      ? { parentId: component.parentId, extent: "parent" as const }
+      : {}),
     draggable: false,
     selectable: false,
     connectable: false,
@@ -129,26 +131,54 @@ function buildEdge(connection: Connection): Edge {
   };
 }
 
-export function useDiagramToFlow(diagram: Diagram): { nodes: Node[]; edges: Edge[] } {
+function sortComponentsTopologically(components: Component[]): Component[] {
+  const idToComponent = new Map<string, Component>(
+    components.map((c) => [c.id, c]),
+  );
+
+  const visited = new Set<string>();
+  const sorted: Component[] = [];
+
+  function visit(component: Component): void {
+    if (visited.has(component.id)) return;
+    visited.add(component.id);
+
+    if (component.parentId) {
+      const parent = idToComponent.get(component.parentId);
+      if (parent) visit(parent);
+    }
+
+    sorted.push(component);
+  }
+
+  for (const component of components) {
+    visit(component);
+  }
+
+  return sorted;
+}
+
+export function useDiagramToFlow(diagram: Diagram): {
+  nodes: Node[];
+  edges: Edge[];
+} {
   return useMemo(() => {
     const resolvedSnapshot = resolveSceneSnapshot(
       diagram,
       diagram.activeSceneId ?? null,
     );
 
-    const components = Object.values(resolvedSnapshot.components)
-      .filter((component) => !component.hidden)
-      .sort((componentA, componentB) => {
-        if (componentB.parentId === componentA.id) return -1;
-        if (componentA.parentId === componentB.id) return 1;
-        return 0;
-      });
-    const connections = Object.values(resolvedSnapshot.connections);
+    const visibleComponents = Object.values(resolvedSnapshot.components).filter(
+      (component) => !component.hidden,
+    );
 
-    const nodes = components.map((component) =>
+    const sortedComponents = sortComponentsTopologically(visibleComponents);
+
+    const nodes = sortedComponents.map((component) =>
       buildNode(component, resolvedSnapshot.nodeLayouts),
     );
-    const edges = connections.map((connection) => buildEdge(connection));
+
+    const edges = Object.values(resolvedSnapshot.connections).map(buildEdge);
 
     return { nodes, edges };
   }, [diagram]);

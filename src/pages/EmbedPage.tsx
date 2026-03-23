@@ -3,8 +3,34 @@ import { AlertCircle, LayoutDashboard, Loader2 } from "lucide-react";
 import type { Diagram } from "@/features/diagram";
 import { EmbedCanvas } from "./embed/EmbedCanvas";
 
-interface EmbedErrorProps {
-  message: string;
+
+function assertDiagram(value: unknown): asserts value is Diagram {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    !("id" in value) ||
+    !("snapshot" in value)
+  ) {
+    throw new Error("Missing required fields: id, snapshot");
+  }
+}
+
+function parseDiagramFromBase64(encoded: string): Diagram {
+  const json = JSON.parse(atob(encoded));
+  if (!json || typeof json !== "object") throw new Error("Invalid diagram");
+  return json as Diagram;
+}
+
+function parseDiagramFromJson(encoded: string): Diagram {
+  const parsed = JSON.parse(decodeURIComponent(encoded));
+  assertDiagram(parsed);
+  return parsed;
+}
+
+function parseDiagramFromSrcString(src: string): Diagram {
+  const parsed = JSON.parse(src);
+  assertDiagram(parsed);
+  return parsed;
 }
 
 const EmbedLoading = () => (
@@ -41,7 +67,7 @@ const EmbedWaiting = () => (
   </div>
 );
 
-const EmbedError = ({ message }: EmbedErrorProps) => (
+const EmbedError = ({ message }: { message: string }) => (
   <div
     style={{
       display: "flex",
@@ -59,10 +85,14 @@ const EmbedError = ({ message }: EmbedErrorProps) => (
   </div>
 );
 
+type EmbedState =
+  | { status: "loading" }
+  | { status: "waiting" }
+  | { status: "ready"; diagram: Diagram }
+  | { status: "error"; message: string };
+
 const EmbedPage = () => {
-  const [diagram, setDiagram] = useState<Diagram | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [state, setState] = useState<EmbedState>({ status: "loading" });
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -70,75 +100,55 @@ const EmbedPage = () => {
     const dataParam = params.get("data");
     if (dataParam) {
       try {
-        const json = JSON.parse(atob(dataParam));
-        if (!json || typeof json !== "object") throw new Error("Invalid diagram");
-        setDiagram(json as Diagram);
-        setLoading(false);
-        return;
+        setState({ status: "ready", diagram: parseDiagramFromBase64(dataParam) });
       } catch {
-        setError("Invalid base64 diagram data");
-        setLoading(false);
-        return;
+        setState({ status: "error", message: "Invalid base64 diagram data" });
       }
+      return;
     }
 
     const jsonParam = params.get("json");
     if (jsonParam) {
       try {
-        const decoded = decodeURIComponent(jsonParam);
-        const parsed = JSON.parse(decoded);
-        if (
-          !parsed ||
-          typeof parsed !== "object" ||
-          !("id" in parsed) ||
-          !("snapshot" in parsed)
-        ) {
-          throw new Error("Missing id or snapshot");
-        }
-        setDiagram(parsed as Diagram);
-        setLoading(false);
-      } catch (error) {
-        setError(
-          `Invalid JSON: ${error instanceof Error ? error.message : "parse error"}`,
-        );
-        setLoading(false);
+        setState({ status: "ready", diagram: parseDiagramFromJson(jsonParam) });
+      } catch (err) {
+        setState({
+          status: "error",
+          message: `Invalid JSON: ${err instanceof Error ? err.message : "parse error"}`,
+        });
       }
       return;
     }
 
     const srcParam = params.get("src");
     if (srcParam) {
-      const trimmedSource = srcParam.trim();
+      const trimmed = srcParam.trim();
 
-      if (trimmedSource.startsWith("{")) {
+      if (trimmed.startsWith("{")) {
         try {
-          const json = JSON.parse(trimmedSource);
-          setDiagram(json as Diagram);
-          setLoading(false);
+          setState({ status: "ready", diagram: parseDiagramFromSrcString(trimmed) });
         } catch {
-          setError("Invalid JSON in ?src parameter");
-          setLoading(false);
+          setState({ status: "error", message: "Invalid JSON in ?src parameter" });
         }
         return;
       }
 
       void fetch(srcParam)
-        .then((response) => {
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          return response.json();
+        .then((res) => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
         })
         .then((json: unknown) => {
-          setDiagram(json as Diagram);
-          setLoading(false);
+          assertDiagram(json);
+          setState({ status: "ready", diagram: json });
         })
-        .catch((fetchError: Error) => {
-          setError(`Failed to load diagram: ${fetchError.message}`);
-          setLoading(false);
+        .catch((err: Error) => {
+          setState({ status: "error", message: `Failed to load diagram: ${err.message}` });
         });
       return;
     }
 
-    setLoading(false);
+    setState({ status: "waiting" });
 
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type !== "STRUCTURA_LOAD") return;
@@ -147,30 +157,21 @@ const EmbedPage = () => {
       const replyOrigin =
         event.origin && event.origin !== "null" ? event.origin : "*";
 
-      if (
-        !json ||
-        typeof json !== "object" ||
-        !("id" in json) ||
-        !("snapshot" in json)
-      ) {
-        setError("Invalid diagram data received");
+      try {
+        assertDiagram(json);
+        setState({ status: "ready", diagram: json });
         event.source?.postMessage(
-          {
-            type: "STRUCTURA_LOADED",
-            success: false,
-            error: "Missing id or snapshot",
-          },
+          { type: "STRUCTURA_LOADED", success: true },
           { targetOrigin: replyOrigin },
         );
-        return;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Invalid diagram";
+        setState({ status: "error", message });
+        event.source?.postMessage(
+          { type: "STRUCTURA_LOADED", success: false, error: message },
+          { targetOrigin: replyOrigin },
+        );
       }
-
-      setDiagram(json as Diagram);
-      setError(null);
-      event.source?.postMessage(
-        { type: "STRUCTURA_LOADED", success: true },
-        { targetOrigin: replyOrigin },
-      );
     };
 
     window.addEventListener("message", handleMessage);
@@ -179,10 +180,16 @@ const EmbedPage = () => {
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
-  if (error) return <EmbedError message={error} />;
-  if (!diagram && loading) return <EmbedLoading />;
-  if (!diagram) return <EmbedWaiting />;
-  return <EmbedCanvas diagram={diagram} />;
+  switch (state.status) {
+    case "loading":
+      return <EmbedLoading />;
+    case "waiting":
+      return <EmbedWaiting />;
+    case "error":
+      return <EmbedError message={state.message} />;
+    case "ready":
+      return <EmbedCanvas diagram={state.diagram} />;
+  }
 };
 
 export default EmbedPage;
