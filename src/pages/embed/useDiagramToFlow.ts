@@ -100,7 +100,7 @@ function buildNode(
     id: component.id,
     type: resolveNodeType(component),
     position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
-    parentId: component.parentId ?? undefined,
+    ...(component.parentId ? { parentId: component.parentId, extent: "parent" as const } : {}),
     draggable: false,
     selectable: false,
     connectable: false,
@@ -136,9 +136,13 @@ export function useDiagramToFlow(diagram: Diagram): { nodes: Node[]; edges: Edge
       diagram.activeSceneId ?? null,
     );
 
-    const components = Object.values(resolvedSnapshot.components).filter(
-      (component) => !component.hidden,
-    );
+    const components = Object.values(resolvedSnapshot.components)
+      .filter((component) => !component.hidden)
+      .sort((componentA, componentB) => {
+        if (componentB.parentId === componentA.id) return -1;
+        if (componentA.parentId === componentB.id) return 1;
+        return 0;
+      });
     const connections = Object.values(resolvedSnapshot.connections);
 
     const nodes = components.map((component) =>

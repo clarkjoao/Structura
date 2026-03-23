@@ -51,22 +51,13 @@ const EmbedCanvasContent = ({
         zoomOnScroll
         zoomOnPinch
         zoomOnDoubleClick={false}
-        minZoom={0.05}
-        maxZoom={4}
-        proOptions={{ hideAttribution: false }}
+        minZoom={0.3}
+        maxZoom={1.5}
+        proOptions={{ hideAttribution: true }}
+        className="bg-background"
       >
-        <Background
-          variant={BackgroundVariant.Dots}
-          gap={20}
-          size={1}
-          color="var(--color-border-tertiary)"
-        />
-        <Controls
-          position="bottom-right"
-          showZoom
-          showFitView
-          showInteractive={false}
-        />
+       <Background variant={BackgroundVariant.Dots} gap={18} size={1.5} />
+       <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
       </ReactFlow>
       {showOpenInStructuraButton ? (
         <OpenInStructuraButton diagramName={diagram.name} />
