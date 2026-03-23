@@ -3,9 +3,10 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { ReactFlowProvider } from "@xyflow/react";
 import { toast } from "sonner";
-import { ArrowLeft, Check, Clipboard, Download, GitBranch, CircleHelp, FolderTree } from "lucide-react";
+import { ArrowLeft, Check, Clipboard, Download, GitBranch, CircleHelp, FolderTree, Code2 } from "lucide-react";
 import ShortcutsModal from "@/components/ShortcutsModal";
 import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
+import { EmbedModal } from "@/features/canvas/components/EmbedModal";
 import { useFlowMode, type BranchOwnerInfo, type RecordingContext } from "@/features/canvas/flow";
 import { isDiagramCompareMode, useActiveDiagram, type Flow } from "@/features/diagram";
 import type { ModelExplorerContentProps } from "./types";
@@ -127,6 +128,7 @@ export function ModelExplorerContent({
     [compareModeBlocksRecorder, editFlow, t],
   );
   const [diagramSidebarOpen, setDiagramSidebarOpen] = useState(false);
+  const [embedModalOpen, setEmbedModalOpen] = useState(false);
 
   const recordingContext = recordingState?.context ?? TRUNK_CONTEXT;
   const recordingName = recordingState?.name ?? "";
@@ -195,6 +197,13 @@ export function ModelExplorerContent({
               {copied ? t("flows.copied") : t("flows.copyDrawio")}
             </button>
             <button
+              onClick={() => setEmbedModalOpen(true)}
+              disabled={canvasInteractionLocked}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all ${canvasInteractionLocked ? "opacity-50 pointer-events-none" : ""}`}
+            >
+              <Code2 className="h-3.5 w-3.5" /> {t("export.embed.menuItem")}
+            </button>
+            <button
               onClick={handleExport}
               disabled={canvasInteractionLocked}
               className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all ${canvasInteractionLocked ? "opacity-50 pointer-events-none" : ""}`}
@@ -215,6 +224,9 @@ export function ModelExplorerContent({
       </div>
       <div className="flex-1 flex overflow-hidden">
         <ShortcutsModal open={showShortcuts} onOpenChange={setShowShortcuts} />
+        {diagram ? (
+          <EmbedModal open={embedModalOpen} onOpenChange={setEmbedModalOpen} diagram={diagram} />
+        ) : null}
         <ReactFlowProvider>
           <div className="flex-1 flex flex-col relative">
             <Canvas

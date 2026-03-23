@@ -657,6 +657,19 @@
     "emptyNone": "No flows defined.",
     "recorderBlockedInCompare": "Exit version comparison mode to record or edit a flow"
   },
+  "export": {
+    "embed": {
+      "title": "Embed diagram",
+      "menuItem": "Embed (iframe)",
+      "copied": "Embed code copied!",
+      "tabs": {
+        "direct": "Direct (iframe)",
+        "postMessage": "Via code",
+        "src": "Via URL"
+      },
+      "urlTooLong": "URL is large — we recommend using Via code"
+    }
+  },
   "flowRecorder": {
     "editingTitle": "Editing flow",
     "recordingTitle": "Recording flow",

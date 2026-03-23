@@ -140,3 +140,66 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for gu
 ## License
 
 MIT — see [LICENSE](LICENSE) for details.
+
+---
+
+## Embedding a diagram
+
+### HTML
+
+```html
+<iframe id="structura" src="https://app.structura.dev/embed" height="500"></iframe>
+<script>
+  const iframe = document.getElementById("structura");
+  const diagram = /* your diagram JSON */;
+  iframe.addEventListener("load", () => {
+    iframe.contentWindow.postMessage(
+      { type: "STRUCTURA_LOAD", diagram },
+      "https://app.structura.dev"
+    );
+  });
+</script>
+```
+
+### React / Docusaurus
+
+```jsx
+import { useEffect, useRef } from "react";
+import diagram from "./my-diagram.json";
+
+export function ArchitectureDiagram() {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const iframe = ref.current;
+    if (!iframe) return;
+    const send = () => iframe.contentWindow.postMessage(
+      { type: "STRUCTURA_LOAD", diagram },
+      "https://app.structura.dev"
+    );
+    iframe.addEventListener("load", send);
+    return () => iframe.removeEventListener("load", send);
+  }, []);
+
+  return <iframe ref={ref} src="https://app.structura.dev/embed" height={500} />;
+}
+```
+
+### StructuraEmbed helper
+
+You can also use the helper component in this repository:
+
+```tsx
+import { StructuraEmbed } from "@/components/StructuraEmbed";
+import diagram from "./my-diagram.json";
+
+export function ArchitectureDiagram() {
+  return (
+    <StructuraEmbed
+      diagram={diagram}
+      appOrigin="https://app.structura.dev"
+      height={500}
+    />
+  );
+}
+```

@@ -7,6 +7,7 @@ import { useDiagramPreviewSync } from "@/lib/diagram-preview";
 import Dashboard from "@/pages/dashboard";
 import ModelExplorer from "@/pages/modelExplorer";
 import ServiceRegistry from "@/pages/serviceRegistry";
+import EmbedPage from "./pages/EmbedPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -16,23 +17,40 @@ function DiagramPreviewSync() {
   return null;
 }
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+function isEmbedMode(): boolean {
+  return new URLSearchParams(window.location.search).get("embed") === "true";
+}
+
+function MainApp() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
         <DiagramPreviewSync />
-        <Routes>
-          <Route path="/" element={<Navigate to="/workspace" />} />
-          <Route path="/workspace" element={<Dashboard />} />
-          <Route path="/model/:id" element={<ModelExplorer />} />
-          <Route path="/catalog" element={<ServiceRegistry />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+      <Routes>
+        <Route path="/" element={<Navigate to="/workspace" />} />
+        <Route path="/workspace" element={<Dashboard />} />
+        <Route path="/model/:id" element={<ModelExplorer />} />
+        <Route path="/catalog" element={<ServiceRegistry />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+const App = () => (
+  isEmbedMode() ? (
+    <EmbedPage />
+  ) : (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/embed" element={<EmbedPage />} />
+        <Route path="*" element={<MainApp />} />
+      </Routes>
+    </BrowserRouter>
+  )
 );
 
 export default App;
