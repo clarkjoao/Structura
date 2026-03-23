@@ -17,6 +17,10 @@ function DiagramPreviewSync() {
   return null;
 }
 
+function isEmbedMode(): boolean {
+  return new URLSearchParams(window.location.search).get("embed") === "true";
+}
+
 function MainApp() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -37,12 +41,16 @@ function MainApp() {
 }
 
 const App = () => (
-  <BrowserRouter>
-    <Routes>
-      <Route path="/embed" element={<EmbedPage />} />
-      <Route path="*" element={<MainApp />} />
-    </Routes>
-  </BrowserRouter>
+  isEmbedMode() ? (
+    <EmbedPage />
+  ) : (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/embed" element={<EmbedPage />} />
+        <Route path="*" element={<MainApp />} />
+      </Routes>
+    </BrowserRouter>
+  )
 );
 
 export default App;

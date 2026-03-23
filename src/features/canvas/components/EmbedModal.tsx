@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
+import { generateEmbedSrcUrl, generateEmbedUrl } from "@/lib/embed-url";
 
 type EmbedMethod = "iframe-base64" | "iframe-postmessage" | "iframe-src";
 
@@ -25,16 +26,6 @@ interface EmbedModalProps {
 
 function isEmbedMethod(value: string): value is EmbedMethod {
   return value === "iframe-base64" || value === "iframe-postmessage" || value === "iframe-src";
-}
-
-function encodeDiagramToBase64(diagram: Diagram): string {
-  const json = JSON.stringify(diagram);
-  const utf8 = new TextEncoder().encode(json);
-  let binary = "";
-  utf8.forEach((byte) => {
-    binary += String.fromCharCode(byte);
-  });
-  return btoa(binary);
 }
 
 function buildIframeCode(embedUrl: string): string {
@@ -54,10 +45,9 @@ export function EmbedModal({ open, onOpenChange, diagram }: EmbedModalProps) {
   const origin = window.location.origin;
 
   const base64IframeCode = useMemo(() => {
-    const base64 = encodeDiagramToBase64(diagram);
-    const embedUrl = `${origin}/embed?data=${encodeURIComponent(base64)}`;
+    const embedUrl = generateEmbedUrl(diagram, "base64");
     return buildIframeCode(embedUrl);
-  }, [diagram, origin]);
+  }, [diagram]);
 
   const base64UrlLength = useMemo(() => {
     const match = base64IframeCode.match(/src="([^"]+)"/);
@@ -65,12 +55,9 @@ export function EmbedModal({ open, onOpenChange, diagram }: EmbedModalProps) {
   }, [base64IframeCode]);
 
   const sourceIframeCode = useMemo(() => {
-    const normalizedSourceUrl = sourceUrl.trim();
-    const embedUrl = normalizedSourceUrl
-      ? `${origin}/embed?src=${encodeURIComponent(normalizedSourceUrl)}`
-      : `${origin}/embed`;
+    const embedUrl = generateEmbedSrcUrl(sourceUrl);
     return buildIframeCode(embedUrl);
-  }, [origin, sourceUrl]);
+  }, [sourceUrl]);
 
   const reactSnippet = useMemo(
     () => `import { useEffect, useRef } from "react";
@@ -97,7 +84,7 @@ function StructuraDiagramEmbed() {
   return (
     <iframe
       ref={iframeRef}
-      src="${origin}/embed"
+      src="${generateEmbedUrl(null, "postmessage")}"
       width="100%"
       height="500"
       frameBorder="0"

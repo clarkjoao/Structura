@@ -11,18 +11,7 @@ export default defineConfig(() => ({
       overlay: false,
     },
   },
-  plugins: [
-    react(),
-    {
-      name: "embed-raw-url",
-      configureServer(server) {
-        server.middlewares.use("/embed", (_req, _res, next) => {
-          // Keep embed route middleware chain simple; React Router handles query parsing.
-          next();
-        });
-      },
-    },
-  ],
+  plugins: [react()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
