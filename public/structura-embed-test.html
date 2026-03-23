@@ -401,6 +401,10 @@
         </button>
         <button class="btn btn-ghost" onclick="loadSample('simple')">Exemplo simples (C4)</button>
         <button class="btn btn-ghost" onclick="loadSample('complex')">Exemplo complexo (EKS + API)</button>
+        <button class="btn btn-ghost" onclick="openAsJsonUrl()" style="margin-top:4px;border-color:rgba(56,189,248,0.3);color:var(--accent)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;vertical-align:middle"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Abrir como ?json= URL
+        </button>
       </div>
 
       <!-- base64 -->
@@ -700,6 +704,12 @@
     const url = document.getElementById('src-url').value.trim();
     if (!url) { showToast('Cole a URL do arquivo JSON.'); return; }
 
+    if (url.startsWith('{') || url.startsWith('[')) {
+      showToast('Para JSON direto, use a aba postMessage ou base64.');
+      addLog('err', 'src URL não aceita JSON direto — use postMessage ou base64');
+      return;
+    }
+
     const embedUrl = `http://localhost:8080/embed?src=${encodeURIComponent(url)}`;
     addLog('out', `Loading via src: ${url}`);
     setStatus('loading', 'carregando via URL...');
@@ -726,6 +736,27 @@
     if (document.getElementById('toggle-reload').checked) {
       iframe.src = iframe.src; // reload
     }
+  }
+
+  // ── Open as ?json= URL ──
+  function openAsJsonUrl() {
+    const raw = document.getElementById('json-input').value.trim();
+    if (!raw) { showToast('Carregue um diagrama primeiro.'); return; }
+
+    let diagram;
+    try { diagram = JSON.parse(raw); }
+    catch(e) { showToast('JSON inválido: ' + e.message); return; }
+
+    const encoded = encodeURIComponent(JSON.stringify(diagram));
+    const url = `http://localhost:8080/embed?json=${encoded}`;
+
+    addLog('out', `Opening ?json= URL (${encoded.length} chars encoded)`);
+
+    // Copia a URL para o clipboard e abre numa nova aba
+    navigator.clipboard.writeText(url).then(() => {
+      showToast('URL copiada! Abrindo em nova aba...');
+    });
+    window.open(url, '_blank');
   }
 
   // ── Copy embed code ──

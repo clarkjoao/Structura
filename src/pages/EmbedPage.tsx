@@ -82,15 +82,52 @@ const EmbedPage = () => {
       }
     }
 
+    const jsonParam = params.get("json");
+    if (jsonParam) {
+      try {
+        const decoded = decodeURIComponent(jsonParam);
+        const parsed = JSON.parse(decoded);
+        if (
+          !parsed ||
+          typeof parsed !== "object" ||
+          !("id" in parsed) ||
+          !("snapshot" in parsed)
+        ) {
+          throw new Error("Missing id or snapshot");
+        }
+        setDiagram(parsed as Diagram);
+        setLoading(false);
+      } catch (error) {
+        setError(
+          `Invalid JSON: ${error instanceof Error ? error.message : "parse error"}`,
+        );
+        setLoading(false);
+      }
+      return;
+    }
+
     const srcParam = params.get("src");
     if (srcParam) {
+      const trimmedSource = srcParam.trim();
+
+      if (trimmedSource.startsWith("{")) {
+        try {
+          const json = JSON.parse(trimmedSource);
+          setDiagram(json as Diagram);
+          setLoading(false);
+        } catch {
+          setError("Invalid JSON in ?src parameter");
+          setLoading(false);
+        }
+        return;
+      }
+
       void fetch(srcParam)
         .then((response) => {
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
           return response.json();
         })
         .then((json: unknown) => {
-          if (!json || typeof json !== "object") throw new Error("Invalid diagram");
           setDiagram(json as Diagram);
           setLoading(false);
         })

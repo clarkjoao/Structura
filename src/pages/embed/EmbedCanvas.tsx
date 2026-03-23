@@ -2,6 +2,7 @@ import {
   Background,
   BackgroundVariant,
   Controls,
+  PanOnScrollMode,
   ReactFlow,
   ReactFlowProvider,
 } from "@xyflow/react";
@@ -9,6 +10,7 @@ import type { Diagram } from "@/features/diagram";
 import { EMBED_EDGE_TYPES, EMBED_NODE_TYPES } from "./embedNodeTypes";
 import { OpenInStructuraButton } from "./OpenInStructuraButton";
 import { useDiagramToFlow } from "./useDiagramToFlow";
+import "./EmbedCanvas.css";
 
 interface EmbedCanvasProps {
   diagram: Diagram;
@@ -25,15 +27,17 @@ const EmbedCanvasContent = ({ diagram }: EmbedCanvasProps) => {
         nodeTypes={EMBED_NODE_TYPES}
         edgeTypes={EMBED_EDGE_TYPES}
         fitView
-        fitViewOptions={{ padding: 0.1 }}
+        fitViewOptions={{ padding: 0.12 }}
         nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable={false}
-        panOnScroll={false}
-        zoomOnDoubleClick={false}
         panOnDrag
+        panOnScroll
+        panOnScrollMode={PanOnScrollMode.Free}
         zoomOnScroll
-        minZoom={0.1}
+        zoomOnPinch
+        zoomOnDoubleClick={false}
+        minZoom={0.05}
         maxZoom={4}
         proOptions={{ hideAttribution: false }}
       >
@@ -43,7 +47,12 @@ const EmbedCanvasContent = ({ diagram }: EmbedCanvasProps) => {
           size={1}
           color="var(--color-border-tertiary)"
         />
-        <Controls showInteractive={false} position="bottom-right" />
+        <Controls
+          position="bottom-right"
+          showZoom
+          showFitView
+          showInteractive={false}
+        />
       </ReactFlow>
       <OpenInStructuraButton diagramName={diagram.name} />
     </div>
