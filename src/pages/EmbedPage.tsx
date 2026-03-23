@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AlertCircle, LayoutDashboard, Loader2 } from "lucide-react";
 import type { Diagram } from "@/features/diagram";
+import { decodeDiagramPayload } from "@/lib/embed-url";
 import { EmbedCanvas } from "./embed/EmbedCanvas";
 
 
@@ -15,11 +16,6 @@ function assertDiagram(value: unknown): asserts value is Diagram {
   }
 }
 
-function parseDiagramFromBase64(encoded: string): Diagram {
-  const json = JSON.parse(atob(encoded));
-  if (!json || typeof json !== "object") throw new Error("Invalid diagram");
-  return json as Diagram;
-}
 
 function parseDiagramFromJson(encoded: string): Diagram {
   const parsed = JSON.parse(decodeURIComponent(encoded));
@@ -100,7 +96,7 @@ const EmbedPage = () => {
     const dataParam = params.get("data");
     if (dataParam) {
       try {
-        setState({ status: "ready", diagram: parseDiagramFromBase64(dataParam) });
+        setState({ status: "ready", diagram: decodeDiagramPayload(dataParam) });
       } catch {
         setState({ status: "error", message: "Invalid base64 diagram data" });
       }

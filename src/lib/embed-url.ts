@@ -1,3 +1,4 @@
+import LZString from "lz-string";
 import type { Diagram } from "@/features/diagram";
 
 export type EmbedUrlMethod = "base64" | "json" | "postmessage";
@@ -8,7 +9,55 @@ function encodeUtf8ToBase64(value: string): string {
   utf8.forEach((byte) => {
     binary += String.fromCharCode(byte);
   });
-  return btoa(binary);
+  return btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
+}
+
+function decodeBase64ToUtf8(value: string): string {
+  const base64 = value
+    .replace(/-/g, "+")
+    .replace(/_/g, "/")
+    .padEnd(value.length + ((4 - (value.length % 4)) % 4), "=");
+  const binary = atob(base64);
+  const bytes = Uint8Array.from(binary, (ch) => ch.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+/**
+ * Encodes a diagram into a URL-safe payload string.
+ *
+ * Format: `base64url(lz-string(JSON(diagram)))`
+ *
+ * @param diagram - The diagram to encode.
+ * @returns A base64url-encoded, lz-string-compressed payload string.
+ */
+export function encodeDiagramPayload(diagram: Diagram): string {
+  const compressed = LZString.compress(JSON.stringify(diagram));
+  return encodeUtf8ToBase64(compressed);
+}
+
+/**
+ * Decodes a payload string back into a Diagram.
+ *
+ * Supports both the current format `base64url(lz-string(JSON(diagram)))` and
+ * legacy payloads (plain `base64(JSON(diagram))`) for backwards compatibility.
+ *
+ * @param encoded - The base64url (or legacy base64) encoded payload string.
+ * @returns The decoded Diagram.
+ */
+export function decodeDiagramPayload(encoded: string): Diagram {
+  const raw = decodeBase64ToUtf8(encoded);
+
+  // Try lz-string decompression first (current format)
+  const decompressed = LZString.decompress(raw);
+  if (decompressed) {
+    return JSON.parse(decompressed) as Diagram;
+  }
+
+  // Fallback: legacy plain base64-encoded JSON (no compression)
+  return JSON.parse(raw) as Diagram;
 }
 
 function getCurrentBaseUrl(): string {
@@ -39,8 +88,8 @@ export function generateEmbedUrl(
     return `${baseUrl}?embed=true&json=${encodedJson}`;
   }
 
-  const encodedDiagram = encodeUtf8ToBase64(JSON.stringify(diagram));
-  return `${baseUrl}?embed=true&data=${encodeURIComponent(encodedDiagram)}`;
+  const encodedDiagram = encodeDiagramPayload(diagram);
+  return `${baseUrl}?embed=true&data=${encodedDiagram}`;
 }
 
 export function generateEmbedSrcUrl(sourceUrl: string): string {
@@ -80,7 +129,7 @@ export function buildOpenInStructuraUrl(diagram: Diagram): string {
     return base;
   }
 
-  const encoded = encodeUtf8ToBase64(JSON.stringify(diagram));
+  const encoded = encodeDiagramPayload(diagram);
   const url = new URL("/", window.location.origin);
   url.searchParams.set(IMPORT_PARAM, encoded);
   return url.toString();
@@ -116,8 +165,7 @@ export function consumeImportPayload(
 
   const timerId = window.setTimeout(() => {
     try {
-      const decoded = atob(encoded);
-      const diagram = JSON.parse(decoded) as Diagram;
+      const diagram = decodeDiagramPayload(encoded);
       onDiagram(diagram);
     } catch {
       console.error("[Structura] Failed to parse ?import payload");
