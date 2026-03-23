@@ -657,6 +657,19 @@
     "emptyNone": "Nenhum flow definido.",
     "recorderBlockedInCompare": "Saia do modo de comparação de versões para gravar ou editar um flow"
   },
+  "export": {
+    "embed": {
+      "title": "Incorporar diagrama",
+      "menuItem": "Embed (iframe)",
+      "copied": "Código embed copiado!",
+      "tabs": {
+        "direct": "Direto (iframe)",
+        "postMessage": "Via código",
+        "src": "Via URL"
+      },
+      "urlTooLong": "URL grande — recomendamos usar Via código"
+    }
+  },
   "flowRecorder": {
     "editingTitle": "Editando Flow",
     "recordingTitle": "Gravando Flow",

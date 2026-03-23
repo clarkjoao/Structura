@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Structura Embed — Test Page</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #181c27;
+      --border: rgba(255,255,255,0.08);
+      --text: #e8eaf0;
+      --muted: #6b7280;
+      --accent: #38bdf8;
+      --accent-dim: rgba(56,189,248,0.12);
+      --green: #34d399;
+      --green-dim: rgba(52,211,153,0.12);
+      --red: #f87171;
+      --red-dim: rgba(248,113,113,0.12);
+      --amber: #fbbf24;
+      --amber-dim: rgba(251,191,36,0.12);
+      --radius: 10px;
+      --mono: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      grid-template-rows: 56px 1fr;
+    }
+
+    /* ── Header ── */
+    header {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 15px;
+      letter-spacing: -0.01em;
+    }
+
+    .logo svg { color: var(--accent); }
+
+    .badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+    }
+
+    .badge-dev {
+      background: var(--amber-dim);
+      color: var(--amber);
+      border: 1px solid rgba(251,191,36,0.2);
+    }
+
+    header .status {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.3s;
+    }
+    .dot.ready { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .dot.loading { background: var(--amber); animation: pulse 1s infinite; }
+    .dot.error { background: var(--red); }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    /* ── Sidebar ── */
+    aside {
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-section {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-section h3 {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    /* Methods */
+    .method-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+
+    .method-tab {
+      flex: 1;
+      padding: 6px 0;
+      font-size: 11px;
+      font-weight: 500;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .method-tab.active {
+      background: var(--accent-dim);
+      border-color: rgba(56,189,248,0.3);
+      color: var(--accent);
+    }
+
+    /* JSON editor */
+    .json-area {
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.6;
+      width: 100%;
+      background: var(--bg);
+      color: #a5f3fc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      resize: vertical;
+      min-height: 180px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .json-area:focus { border-color: rgba(56,189,248,0.4); }
+
+    .json-area.error-state { border-color: rgba(248,113,113,0.4); }
+
+    /* URL input */
+    .url-input {
+      width: 100%;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .url-input:focus { border-color: rgba(56,189,248,0.4); }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      padding: 9px 16px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #0f1117;
+    }
+    .btn-primary:hover { filter: brightness(1.1); }
+    .btn-primary:active { transform: scale(0.98); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      margin-top: 6px;
+    }
+    .btn-ghost:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+    /* Log */
+    .log-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .log-entry {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      font-size: 11px;
+      font-family: var(--mono);
+      line-height: 1.5;
+    }
+
+    .log-time { color: var(--muted); flex-shrink: 0; }
+    .log-arrow { flex-shrink: 0; }
+    .log-in .log-arrow { color: var(--green); }
+    .log-out .log-arrow { color: var(--accent); }
+    .log-err .log-arrow { color: var(--red); }
+    .log-msg { color: var(--text); word-break: break-all; }
+
+    /* Settings row */
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .toggle {
+      position: relative;
+      width: 32px; height: 18px;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute; inset: 0;
+      background: var(--border);
+      border-radius: 9px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle input:checked + .toggle-track { background: var(--accent); }
+    .toggle-thumb {
+      position: absolute;
+      top: 2px; left: 2px;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: white;
+      transition: transform 0.2s;
+      pointer-events: none;
+    }
+    .toggle input:checked ~ .toggle-thumb { transform: translateX(14px); }
+
+    /* ── Main ── */
+    main {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .embed-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .size-presets {
+      display: flex;
+      gap: 4px;
+      margin-left: auto;
+    }
+
+    .preset-btn {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .preset-btn.active {
+      background: var(--accent-dim);
+      border-color: rgba(56,189,248,0.3);
+      color: var(--accent);
+    }
+
+    .embed-wrapper {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 8px,
+        rgba(255,255,255,0.015) 8px,
+        rgba(255,255,255,0.015) 9px
+      );
+    }
+
+    .iframe-container {
+      background: var(--surface);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+      transition: all 0.3s ease;
+    }
+
+    .iframe-container iframe {
+      display: block;
+      border: none;
+    }
+
+    /* Error toast */
+    .toast {
+      position: fixed;
+      bottom: 20px; right: 20px;
+      background: var(--red-dim);
+      border: 1px solid rgba(248,113,113,0.3);
+      color: var(--red);
+      padding: 10px 16px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: all 0.2s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9,22 9,12 15,12 15,22"/>
+      </svg>
+      Structura Embed
+    </div>
+    <span class="badge badge-dev">DEV TEST</span>
+    <div class="status">
+      <div class="dot" id="status-dot"></div>
+      <span id="status-text">aguardando iframe</span>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside>
+
+    <!-- Method -->
+    <div class="sidebar-section">
+      <h3>Método de carregamento</h3>
+      <div class="method-tabs">
+        <button class="method-tab active" onclick="setMethod('postmessage')">postMessage</button>
+        <button class="method-tab" onclick="setMethod('base64')">base64</button>
+        <button class="method-tab" onclick="setMethod('src')">src URL</button>
+      </div>
+
+      <!-- postMessage -->
+      <div id="panel-postmessage">
+        <textarea
+          class="json-area"
+          id="json-input"
+          placeholder='{ "id": "...", "name": "...", "snapshot": { ... } }'
+          spellcheck="false"
+        ></textarea>
+        <div id="json-error" style="font-size:11px;color:var(--red);margin:6px 0 0;display:none"></div>
+        <button class="btn btn-primary" style="margin-top:10px" onclick="sendPostMessage()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/></svg>
+          Enviar via postMessage
+        </button>
+        <button class="btn btn-ghost" onclick="loadSample('simple')">Exemplo simples (C4)</button>
+        <button class="btn btn-ghost" onclick="loadSample('complex')">Exemplo complexo (EKS + API)</button>
+      </div>
+
+      <!-- base64 -->
+      <div id="panel-base64" style="display:none">
+        <p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">
+          Cole o JSON do diagrama abaixo. Ele será codificado em base64 e carregado via
+          <code style="color:var(--accent);font-family:var(--mono)">?data=</code> na URL do iframe.
+        </p>
+        <textarea
+          class="json-area"
+          id="json-base64-input"
+          placeholder='{ "id": "...", "name": "..." }'
+          spellcheck="false"
+        ></textarea>
+        <button class="btn btn-primary" style="margin-top:10px" onclick="loadBase64()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16,16 12,12 8,16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+          Carregar via base64
+        </button>
+        <button class="btn btn-ghost" onclick="loadSampleBase64()">Carregar diagrama de exemplo</button>
+      </div>
+
+      <!-- src URL -->
+      <div id="panel-src" style="display:none">
+        <p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">
+          URL pública de um arquivo <code style="color:var(--accent);font-family:var(--mono)">.json</code> do diagrama.
+          O embed fará fetch diretamente.
+        </p>
+        <input
+          class="url-input"
+          id="src-url"
+          type="url"
+          placeholder="https://raw.githubusercontent.com/..."
+        />
+        <button class="btn btn-primary" style="margin-top:10px" onclick="loadSrc()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Abrir via src URL
+        </button>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="sidebar-section">
+      <h3>Configurações</h3>
+      <div class="settings-row" style="margin-bottom:8px">
+        <span>Tema escuro no embed</span>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-dark" checked onchange="updateEmbedUrl()">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="settings-row">
+        <span>Recarregar ao redimensionar</span>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-reload">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div class="sidebar-section" style="border-bottom:none;padding-bottom:6px">
+      <h3>Log de mensagens</h3>
+    </div>
+    <div class="log-area" id="log"></div>
+
+  </aside>
+
+  <!-- Main -->
+  <main>
+    <div class="embed-toolbar">
+      <span style="font-size:11px;color:var(--muted)">Tamanho:</span>
+      <div class="size-presets">
+        <button class="preset-btn" onclick="setSize(400,300)">400×300</button>
+        <button class="preset-btn active" onclick="setSize(760,480)">760×480</button>
+        <button class="preset-btn" onclick="setSize(1024,600)">1024×600</button>
+        <button class="preset-btn" onclick="setSize('100%',500)">Full</button>
+      </div>
+      <button
+        onclick="copyEmbedCode()"
+        style="margin-left:8px;font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer"
+        title="Copiar código iframe"
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;vertical-align:middle"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copiar iframe
+      </button>
+    </div>
+
+    <div class="embed-wrapper">
+      <div class="iframe-container" id="iframe-container" style="width:760px">
+        <iframe
+          id="embed-iframe"
+          src="http://localhost:8080/embed"
+          width="760"
+          height="480"
+          title="Structura Embed"
+          allow="fullscreen"
+        ></iframe>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+  // Detecta origem automaticamente — funciona em file://, localhost e produção
+  const EMBED_ORIGIN = window.location.protocol === 'file:'
+    ? '*'
+    : 'http://localhost:8080';
+  const iframe = document.getElementById('embed-iframe');
+  const log = document.getElementById('log');
+  const statusDot = document.getElementById('status-dot');
+  const statusText = document.getElementById('status-text');
+  let currentMethod = 'postmessage';
+  let iframeReady = false;
+  let currentW = 760, currentH = 480;
+
+  // ── Sample diagram ──
+  const SAMPLE_DIAGRAM = {
+    id: "embed-test-001",
+    name: "Arquitetura de Exemplo",
+    level: "container",
+    domain: "embed-test",
+    updatedAt: Date.now(),
+    viewport: { x: 0, y: 0, zoom: 1 },
+    versions: [],
+    edgeLayouts: [],
+    nodeLayouts: [
+      { elementId: "c1", x: 80,  y: 180, width: 160, height: 80 },
+      { elementId: "c2", x: 320, y: 80,  width: 160, height: 80 },
+      { elementId: "c3", x: 320, y: 280, width: 160, height: 80 },
+      { elementId: "c4", x: 560, y: 180, width: 160, height: 80 },
+    ],
+    snapshot: {
+      serviceRegistry: {},
+      flows: {},
+      components: {
+        c1: { id: "c1", name: "Cliente Web", type: "person", description: "Usuário final", parentId: null, tags: [] },
+        c2: { id: "c2", name: "API Gateway", type: "system", description: "Ponto de entrada", technology: "REST / HTTPS", parentId: null, tags: ["api"] },
+        c3: { id: "c3", name: "Auth Service", type: "container", description: "Autenticação JWT", technology: "Node.js", parentId: null, tags: ["auth"] },
+        c4: { id: "c4", name: "PostgreSQL", type: "component", description: "Banco principal", technology: "PostgreSQL 16", parentId: null, tags: ["data"] },
+      },
+      connections: {
+        e1: { id: "e1", sourceId: "c1", targetId: "c2", label: "Usa", technology: "HTTPS" },
+        e2: { id: "e2", sourceId: "c2", targetId: "c3", label: "Autentica", technology: "JWT" },
+        e3: { id: "e3", sourceId: "c2", targetId: "c4", label: "Persiste", technology: "SQL" },
+      }
+    }
+  };
+
+  // ── Log ──
+  function addLog(direction, message) {
+    const entry = document.createElement('div');
+    const time = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+    const arrow = direction === 'in' ? '←' : direction === 'out' ? '→' : '✕';
+    entry.className = `log-entry log-${direction}`;
+    entry.innerHTML = `
+      <span class="log-time">${time}</span>
+      <span class="log-arrow">${arrow}</span>
+      <span class="log-msg">${message}</span>
+    `;
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  // ── Status ──
+  function setStatus(state, text) {
+    statusDot.className = `dot ${state}`;
+    statusText.textContent = text;
+  }
+
+  // ── Toast ──
+  function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+
+  // ── Listen for messages from iframe ──
+  window.addEventListener('message', (event) => {
+    // Aceita null origin (file://) e localhost
+    const validOrigin = event.origin === 'null' || event.origin === '' ||
+      event.origin === 'http://localhost:8080' || event.origin === window.location.origin;
+    if (!validOrigin) return;
+
+    const { type } = event.data ?? {};
+    addLog('in', `${type} ${JSON.stringify(event.data).slice(0,80)}`);
+
+    if (type === 'STRUCTURA_READY') {
+      iframeReady = true;
+      setStatus('ready', 'iframe pronto');
+    }
+
+    if (type === 'STRUCTURA_LOADED') {
+      if (event.data.success) {
+        setStatus('ready', 'diagrama carregado');
+      } else {
+        setStatus('error', 'erro ao carregar');
+        showToast('Erro ao carregar o diagrama no embed.');
+      }
+    }
+  });
+
+  // ── iframe load ──
+  iframe.addEventListener('load', () => {
+    setStatus('loading', 'aguardando READY...');
+    addLog('in', 'iframe onload disparado');
+  });
+
+  // ── Methods ──
+  function setMethod(method) {
+    currentMethod = method;
+    document.querySelectorAll('.method-tab').forEach((t, i) => {
+      t.classList.toggle('active', ['postmessage','base64','src'][i] === method);
+    });
+    document.getElementById('panel-postmessage').style.display = method === 'postmessage' ? '' : 'none';
+    document.getElementById('panel-base64').style.display = method === 'base64' ? '' : 'none';
+    document.getElementById('panel-src').style.display = method === 'src' ? '' : 'none';
+  }
+
+  // ── Complex sample (k'k diagram from real export) ──
+  const COMPLEX_DIAGRAM = {"id":"d-mn2bs2hs-a","name":"k'k","level":"context","createdAt":"2026-03-22T22:25:21.568Z","updatedAt":"2026-03-22T23:04:29.219Z","snapshot":{"components":{"el-mn2bs4qk-b":{"id":"el-mn2bs4qk-b","name":"EKS Cluster","description":"","parentId":null,"type":"panel","panelKind":"eks-cluster","panelColor":"hsl(260 60% 45%)"},"el-mn2bsij3-d":{"id":"el-mn2bsij3-d","name":"Amazon EC2","description":"","parentId":"el-mn2bs4qk-b","type":"aws-compute","awsService":"ec2"},"el-mn2bsr1o-e":{"id":"el-mn2bsr1o-e","name":"Producer","type":"container","description":"Sends messages","parentId":"el-mn2bs4qk-b"},"el-mn2bsr1o-f":{"id":"el-mn2bsr1o-f","name":"SQS FIFO Queue","type":"aws-integration","description":"Ordered message queue","parentId":"el-mn2bs4qk-b","awsService":"sqs"},"el-mn2bsr1o-g":{"id":"el-mn2bsr1o-g","name":"Consumer","type":"container","description":"Processes messages","parentId":"el-mn2bs4qk-b"},"el-mn2btbso-j":{"id":"el-mn2btbso-j","name":"API Endpoints","description":"","parentId":null,"type":"api-group","serviceName":"API Endpoints","basePath":"/api/v1","protocol":"REST"},"el-mn2bteen-k":{"id":"el-mn2bteen-k","name":"Novo Endpoint","description":"","parentId":"el-mn2btbso-j","type":"endpoint","method":"GET","path":"/novo-endpoint","handlers":[]}},"connections":{"conn-mn2bsr1p-h":{"id":"conn-mn2bsr1p-h","sourceId":"el-mn2bsr1o-e","targetId":"el-mn2bsr1o-f","label":"Enqueue"},"conn-mn2bsr1p-i":{"id":"conn-mn2bsr1p-i","sourceId":"el-mn2bsr1o-f","targetId":"el-mn2bsr1o-g","label":"Dequeue"},"conn-mn2btkcg-l":{"id":"conn-mn2btkcg-l","sourceId":"el-mn2bteen-k","targetId":"el-mn2bsij3-d","label":"Usa","style":{"edgeStyle":"straight"}},"conn-mn2btpoo-m":{"id":"conn-mn2btpoo-m","sourceId":"el-mn2bsij3-d","targetId":"el-mn2bsr1o-e","label":"Usa","style":{"edgeStyle":"bezier"}}},"flows":{},"iconLibrary":{}},"nodeLayouts":{"el-mn2bs4qk-b":{"elementId":"el-mn2bs4qk-b","x":756,"y":264,"zIndex":-1,"width":1065,"height":400},"el-mn2bsij3-d":{"elementId":"el-mn2bsij3-d","x":111.55,"y":99.71,"width":200,"height":72},"el-mn2bsr1o-e":{"elementId":"el-mn2bsr1o-e","x":41.81,"y":256.56,"width":200,"height":68},"el-mn2bsr1o-f":{"elementId":"el-mn2bsr1o-f","x":368.48,"y":242.82,"width":200,"height":95},"el-mn2bsr1o-g":{"elementId":"el-mn2bsr1o-g","x":724.24,"y":253.33,"width":200,"height":68},"el-mn2btbso-j":{"elementId":"el-mn2btbso-j","x":329.33,"y":306.82,"zIndex":-1,"width":300,"height":148},"el-mn2bteen-k":{"elementId":"el-mn2bteen-k","x":0,"y":68,"width":300,"height":40}},"viewport":{"x":350,"y":-62,"zoom":0.3}};
+
+  // ── loadSample ──
+  function loadSample(type = 'simple') {
+    const diagram = type === 'complex' ? COMPLEX_DIAGRAM : SAMPLE_DIAGRAM;
+    document.getElementById('json-input').value = JSON.stringify(diagram, null, 2);
+    document.getElementById('json-error').style.display = 'none';
+    document.getElementById('json-input').classList.remove('error-state');
+    addLog('out', `Sample "${type}" loaded into editor`);
+  }
+
+  // ── sendPostMessage ──
+  function sendPostMessage() {
+    const raw = document.getElementById('json-input').value.trim();
+    const errEl = document.getElementById('json-error');
+    const area = document.getElementById('json-input');
+
+    if (!raw) {
+      errEl.textContent = 'Cole o JSON do diagrama antes de enviar.';
+      errEl.style.display = '';
+      area.classList.add('error-state');
+      return;
+    }
+
+    let diagram;
+    try {
+      diagram = JSON.parse(raw);
+      errEl.style.display = 'none';
+      area.classList.remove('error-state');
+    } catch(e) {
+      errEl.textContent = `JSON inválido: ${e.message}`;
+      errEl.style.display = '';
+      area.classList.add('error-state');
+      return;
+    }
+
+    setStatus('loading', 'enviando...');
+    addLog('out', `STRUCTURA_LOAD → ${diagram.name ?? 'diagrama'}`);
+    // Usa '*' como fallback para desenvolvimento local
+    const targetOrigin = EMBED_ORIGIN === '*' ? '*' : EMBED_ORIGIN;
+    iframe.contentWindow.postMessage({ type: 'STRUCTURA_LOAD', diagram }, targetOrigin);
+  }
+
+  // ── base64 ──
+  function loadBase64() {
+    const raw = document.getElementById('json-base64-input').value.trim();
+    if (!raw) { showToast('Cole o JSON antes de carregar.'); return; }
+
+    let diagram;
+    try { diagram = JSON.parse(raw); }
+    catch(e) { showToast(`JSON inválido: ${e.message}`); return; }
+
+    const LOCALHOST = 'http://localhost:8080';
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(diagram))));
+    const url = `${LOCALHOST}/embed?data=${encoded}`;
+
+    if (url.length > 8000) {
+      showToast('URL muito longa para este diagrama. Use postMessage.');
+      addLog('err', `URL length: ${url.length} chars — too long`);
+      return;
+    }
+
+    addLog('out', `Loading via base64 URL (${encoded.length} chars)`);
+    setStatus('loading', 'carregando via base64...');
+    iframe.src = url;
+  }
+
+  function loadSampleBase64() {
+    document.getElementById('json-base64-input').value = JSON.stringify(SAMPLE_DIAGRAM, null, 2);
+  }
+
+  // ── src URL ──
+  function loadSrc() {
+    const url = document.getElementById('src-url').value.trim();
+    if (!url) { showToast('Cole a URL do arquivo JSON.'); return; }
+
+    const embedUrl = `http://localhost:8080/embed?src=${encodeURIComponent(url)}`;
+    addLog('out', `Loading via src: ${url}`);
+    setStatus('loading', 'carregando via URL...');
+    iframe.src = embedUrl;
+  }
+
+  // ── Size ──
+  function setSize(w, h) {
+    currentW = w; currentH = h;
+    const container = document.getElementById('iframe-container');
+
+    if (w === '100%') {
+      container.style.width = '100%';
+      iframe.width = '100%';
+    } else {
+      container.style.width = `${w}px`;
+      iframe.width = w;
+    }
+    iframe.height = h;
+
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+
+    if (document.getElementById('toggle-reload').checked) {
+      iframe.src = iframe.src; // reload
+    }
+  }
+
+  // ── Copy embed code ──
+  function copyEmbedCode() {
+    const src = iframe.src;
+    const code = `<iframe\n  src="${src}"\n  width="${currentW}"\n  height="${currentH}"\n  frameborder="0"\n  allowfullscreen\n></iframe>`;
+    navigator.clipboard.writeText(code).then(() => {
+      showToast('Código iframe copiado!');
+      addLog('out', 'Embed code copied to clipboard');
+    });
+  }
+</script>
+
+</body>
+</html>
