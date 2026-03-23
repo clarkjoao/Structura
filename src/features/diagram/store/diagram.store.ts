@@ -76,6 +76,8 @@ export const useDiagramActions = () =>
   useDiagramStore(
     useShallow((s) => ({
       addDiagram: s.addDiagram,
+      addImportedDiagram: s.addImportedDiagram,
+      importDiagram: s.importDiagram,
       duplicateDiagram: s.duplicateDiagram,
       openDiagram: s.openDiagram,
       updateDiagram: s.updateDiagram,

@@ -38,6 +38,44 @@ export const diagramsSlice = (
         return diagram;
       },
 
+    addImportedDiagram: (diagramInput: Diagram) => {
+      const importedDiagram: Diagram = {
+        ...structuredClone(diagramInput),
+      };
+
+      set((state) => {
+        state.diagrams[importedDiagram.id] = importedDiagram;
+      });
+
+      if (fileSystemAdapter.isConnected) {
+        fileSystemAdapter.setFolders(get().folders);
+        fileSystemAdapter.writeDiagram(importedDiagram);
+      }
+
+      return importedDiagram;
+    },
+
+    importDiagram: (diagramInput: Diagram) => {
+      const now = new Date().toISOString();
+      const importedDiagram: Diagram = {
+        ...structuredClone(diagramInput),
+        id: generateId("d"),
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      set((state) => {
+        state.diagrams[importedDiagram.id] = importedDiagram;
+      });
+
+      if (fileSystemAdapter.isConnected) {
+        fileSystemAdapter.setFolders(get().folders);
+        fileSystemAdapter.writeDiagram(importedDiagram);
+      }
+
+      return importedDiagram;
+    },
+
     duplicateDiagram: (sourceId: string, name: string) => {
       const source = get().diagrams[sourceId];
       if (!source) return null;

@@ -670,6 +670,33 @@
       "urlTooLong": "URL grande — recomendamos usar Via código"
     }
   },
+  "toolbar": {
+    "shareExport": "Exportar",
+    "exportGroup": "Exportar como"
+  },
+  "share": {
+    "button": "Compartilhar",
+    "modalTitle": "Compartilhar diagrama",
+    "linkLabel": "Link de visualização",
+    "linkDescription": "Abre o diagrama em modo preview com opção de importar",
+    "embedLabel": "Link de embed (iframe)",
+    "embedDescription": "Use em iframes, Docusaurus ou qualquer HTML",
+    "copied": "Link copiado!",
+    "smaller": "menor",
+    "urlLargeWarning": "Diagrama grande — o link pode não funcionar em produção (GitHub Pages). Funciona normalmente em localhost.",
+    "urlTooLargeError": "Diagrama muito grande para compartilhar via URL. Exporte o JSON e compartilhe o arquivo diretamente.",
+    "urlSize": "Tamanho do link: {{size}}",
+    "previewPrefix": "Preview compartilhado:",
+    "importedSuffix": "(importado {{date}})",
+    "import": "Importar",
+    "previewBanner": {
+      "title": "Você está visualizando \"{{name}}\"",
+      "subtitle": "modo somente leitura",
+      "import": "Importar para meu workspace",
+      "openInStructura": "Abrir no Structura",
+      "close": "Fechar"
+    }
+  },
   "flowRecorder": {
     "editingTitle": "Editando Flow",
     "recordingTitle": "Gravando Flow",
