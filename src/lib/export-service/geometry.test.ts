@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Component } from "@/features/diagram";
+import { PanelKind, type Component } from "@/features/diagram";
 import type { NodeLayout } from "@/features/diagram";
 import {
   computeBoundingBox,
@@ -15,7 +15,14 @@ function layout(x: number, y: number, w?: number, h?: number): NodeLayout {
 describe("computeBoundingBox", () => {
   it("uses only root nodes for extents", () => {
     const components: Record<string, Component> = {
-      p: { id: "p", name: "P", type: "panel", panelKind: "default", description: "", parentId: null },
+      p: {
+        id: "p",
+        name: "P",
+        type: "panel",
+        panelKind: PanelKind.Default,
+        description: "",
+        parentId: null,
+      },
       c: { id: "c", name: "C", type: "system", description: "", parentId: "p" },
     };
     const containerIds = new Set<string>(["p"]);

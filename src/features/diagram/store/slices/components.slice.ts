@@ -475,7 +475,7 @@ export const componentsSlice = (
           id: generateId("el"),
           name: "Grupo",
           type: "panel" as const,
-          panelKind: "default",
+          panelKind: PanelKind.Default,
           description: "",
           parentId: null,
         };

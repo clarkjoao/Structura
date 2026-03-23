@@ -1,5 +1,6 @@
 import type { Connection } from "../../model/diagram.types";
 import type { EdgeStyle } from "../../model/connection.types";
+import { EdgeStyle as EdgeStyleEnum } from "../../enums";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
@@ -13,7 +14,7 @@ export const connectionsSlice = (
       sourceId: string,
       targetId: string,
       label: string,
-      edgeStyle: EdgeStyle = "smoothstep",
+      edgeStyle: EdgeStyle = EdgeStyleEnum.Smoothstep,
     ): Connection => {
       const connection: Connection = {
         id: generateId("conn"),

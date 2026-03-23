@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import type { Dispatch, RefObject, SetStateAction } from "react";
+import type { Dispatch, MutableRefObject, RefObject, SetStateAction } from "react";
 import type { Flow, FlowStep } from "@/features/diagram";
 import { generateId } from "@/features/diagram";
 import type {
@@ -74,7 +74,7 @@ function findLastBranchStepIndex(
 export function useFlowModeRecording(
   _mode: FlowMode,
   setMode: Dispatch<SetStateAction<FlowMode>>,
-  branchOwnershipRef: RefObject<Map<string, BranchOwnerInfo>>,
+  branchOwnershipRef: MutableRefObject<Map<string, BranchOwnerInfo>>,
   onFinalizeRef: RefObject<(data: RecordingFinalizeData) => void>,
   onStartRecordingRef: RefObject<(() => void) | undefined>,
 ): FlowModeRecordingSlice {
@@ -93,7 +93,7 @@ export function useFlowModeRecording(
         branchOwnership: new Map(),
       };
     });
-  }, [setMode]);
+  }, [onStartRecordingRef, setMode]);
 
   const cancelRecording = useCallback(() => {
     setMode((prevMode) => {
@@ -164,7 +164,7 @@ export function useFlowModeRecording(
         branchOwnership: ownership,
       });
     },
-    [branchOwnershipRef, setMode],
+    [branchOwnershipRef, onStartRecordingRef, setMode],
   );
 
   const onRecordNodeClick = useCallback(
