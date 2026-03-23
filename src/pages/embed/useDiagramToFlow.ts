@@ -5,9 +5,11 @@ import {
   isEndpointComponent,
   isNoteComponent,
   isPanelComponent,
+  resolveSceneSnapshot,
   type Component,
   type Connection,
   type Diagram,
+  type NodeLayout,
 } from "@/features/diagram";
 
 function resolveNodeType(component: Component): string {
@@ -86,8 +88,11 @@ function buildNodeData(component: Component): Record<string, unknown> {
   };
 }
 
-function buildNode(component: Component, diagram: Diagram): Node {
-  const layout = diagram.nodeLayouts[component.id];
+function buildNode(
+  component: Component,
+  nodeLayouts: Record<string, NodeLayout>,
+): Node {
+  const layout = nodeLayouts[component.id];
   const width = layout?.width ?? 260;
   const height = layout?.height ?? 120;
 
@@ -126,12 +131,19 @@ function buildEdge(connection: Connection): Edge {
 
 export function useDiagramToFlow(diagram: Diagram): { nodes: Node[]; edges: Edge[] } {
   return useMemo(() => {
-    const components = Object.values(diagram.snapshot.components).filter(
+    const resolvedSnapshot = resolveSceneSnapshot(
+      diagram,
+      diagram.activeSceneId ?? null,
+    );
+
+    const components = Object.values(resolvedSnapshot.components).filter(
       (component) => !component.hidden,
     );
-    const connections = Object.values(diagram.snapshot.connections);
+    const connections = Object.values(resolvedSnapshot.connections);
 
-    const nodes = components.map((component) => buildNode(component, diagram));
+    const nodes = components.map((component) =>
+      buildNode(component, resolvedSnapshot.nodeLayouts),
+    );
     const edges = connections.map((connection) => buildEdge(connection));
 
     return { nodes, edges };

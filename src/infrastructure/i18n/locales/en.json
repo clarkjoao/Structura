@@ -670,6 +670,33 @@
       "urlTooLong": "URL is large — we recommend using Via code"
     }
   },
+  "toolbar": {
+    "shareExport": "Export",
+    "exportGroup": "Export as"
+  },
+  "share": {
+    "button": "Share",
+    "modalTitle": "Share diagram",
+    "linkLabel": "View link",
+    "linkDescription": "Opens the diagram in preview mode with import option",
+    "embedLabel": "Embed link (iframe)",
+    "embedDescription": "Use in iframes, Docusaurus, or any HTML",
+    "copied": "Link copied!",
+    "smaller": "smaller",
+    "urlLargeWarning": "Large diagram — link may not work in production (GitHub Pages). Works fine on localhost.",
+    "urlTooLargeError": "Diagram too large to share via URL. Export the JSON and share the file directly.",
+    "urlSize": "Link size: {{size}}",
+    "previewPrefix": "Shared preview:",
+    "importedSuffix": "(imported {{date}})",
+    "import": "Import",
+    "previewBanner": {
+      "title": "You're viewing \"{{name}}\"",
+      "subtitle": "read-only mode",
+      "import": "Import to my workspace",
+      "openInStructura": "Open in Structura",
+      "close": "Close"
+    }
+  },
   "flowRecorder": {
     "editingTitle": "Editing flow",
     "recordingTitle": "Recording flow",

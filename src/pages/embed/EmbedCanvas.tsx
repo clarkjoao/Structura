@@ -14,13 +14,27 @@ import "./EmbedCanvas.css";
 
 interface EmbedCanvasProps {
   diagram: Diagram;
+  offsetTop?: number;
+  showOpenInStructuraButton?: boolean;
 }
 
-const EmbedCanvasContent = ({ diagram }: EmbedCanvasProps) => {
+const EmbedCanvasContent = ({
+  diagram,
+  offsetTop = 0,
+  showOpenInStructuraButton = true,
+}: EmbedCanvasProps) => {
   const { nodes, edges } = useDiagramToFlow(diagram);
 
   return (
-    <div style={{ width: "100%", height: "100vh", position: "relative" }}>
+    <div
+      style={{
+        width: "100%",
+        height: "100vh",
+        position: "relative",
+        paddingTop: offsetTop,
+        boxSizing: "border-box",
+      }}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -54,13 +68,23 @@ const EmbedCanvasContent = ({ diagram }: EmbedCanvasProps) => {
           showInteractive={false}
         />
       </ReactFlow>
-      <OpenInStructuraButton diagramName={diagram.name} />
+      {showOpenInStructuraButton ? (
+        <OpenInStructuraButton diagramName={diagram.name} />
+      ) : null}
     </div>
   );
 };
 
-export const EmbedCanvas = ({ diagram }: EmbedCanvasProps) => (
+export const EmbedCanvas = ({
+  diagram,
+  offsetTop = 0,
+  showOpenInStructuraButton = true,
+}: EmbedCanvasProps) => (
   <ReactFlowProvider>
-    <EmbedCanvasContent diagram={diagram} />
+    <EmbedCanvasContent
+      diagram={diagram}
+      offsetTop={offsetTop}
+      showOpenInStructuraButton={showOpenInStructuraButton}
+    />
   </ReactFlowProvider>
 );

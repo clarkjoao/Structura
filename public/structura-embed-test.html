@@ -498,7 +498,7 @@
       <div class="iframe-container" id="iframe-container" style="width:760px">
         <iframe
           id="embed-iframe"
-          src="http://localhost:8080/embed"
+          src="/?embed=true"
           width="760"
           height="480"
           title="Structura Embed"
@@ -512,9 +512,13 @@
 
 <script>
   // Detecta origem automaticamente — funciona em file://, localhost e produção
-  const EMBED_ORIGIN = window.location.protocol === 'file:'
-    ? '*'
-    : 'http://localhost:8080';
+  const EMBED_ORIGIN = window.location.protocol === 'file:' ? '*' : window.location.origin;
+  const TEST_PAGE_NAME = '/structura-embed-test.html';
+  const appBasePath = window.location.pathname.endsWith(TEST_PAGE_NAME)
+    ? window.location.pathname.slice(0, -TEST_PAGE_NAME.length)
+    : '';
+  const appBaseUrl = `${window.location.origin}${appBasePath}`;
+  const EMBED_BASE = `${appBaseUrl}/?embed=true`;
   const iframe = document.getElementById('embed-iframe');
   const log = document.getElementById('log');
   const statusDot = document.getElementById('status-dot');
@@ -589,7 +593,7 @@
   window.addEventListener('message', (event) => {
     // Aceita null origin (file://) e localhost
     const validOrigin = event.origin === 'null' || event.origin === '' ||
-      event.origin === 'http://localhost:8080' || event.origin === window.location.origin;
+      event.origin === EMBED_ORIGIN || event.origin === window.location.origin;
     if (!validOrigin) return;
 
     const { type } = event.data ?? {};
@@ -680,9 +684,8 @@
     try { diagram = JSON.parse(raw); }
     catch(e) { showToast(`JSON inválido: ${e.message}`); return; }
 
-    const LOCALHOST = 'http://localhost:8080';
     const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(diagram))));
-    const url = `${LOCALHOST}/embed?data=${encoded}`;
+    const url = `${EMBED_BASE}&data=${encodeURIComponent(encoded)}`;
 
     if (url.length > 8000) {
       showToast('URL muito longa para este diagrama. Use postMessage.');
@@ -710,7 +713,7 @@
       return;
     }
 
-    const embedUrl = `http://localhost:8080/embed?src=${encodeURIComponent(url)}`;
+    const embedUrl = `${EMBED_BASE}&src=${encodeURIComponent(url)}`;
     addLog('out', `Loading via src: ${url}`);
     setStatus('loading', 'carregando via URL...');
     iframe.src = embedUrl;
@@ -748,7 +751,7 @@
     catch(e) { showToast('JSON inválido: ' + e.message); return; }
 
     const encoded = encodeURIComponent(JSON.stringify(diagram));
-    const url = `http://localhost:8080/embed?json=${encoded}`;
+    const url = `${EMBED_BASE}&json=${encoded}`;
 
     addLog('out', `Opening ?json= URL (${encoded.length} chars encoded)`);
 
@@ -768,6 +771,11 @@
       addLog('out', 'Embed code copied to clipboard');
     });
   }
+</script>
+
+<script>
+  // Inicializa iframe com a estratégia atual (?embed=true na raiz)
+  iframe.src = EMBED_BASE;
 </script>
 
 </body>
