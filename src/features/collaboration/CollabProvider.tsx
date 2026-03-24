@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 import type * as Y from "yjs";
 import type { WebrtcProvider } from "y-webrtc";
 import { useActiveDiagramId } from "@/features/diagram";
@@ -6,7 +6,7 @@ import { useCollabAwareness } from "./useCollabAwareness";
 import { useCollabSession } from "./useCollabSession";
 import { useCollabUrlParam } from "./useCollabUrlParam";
 import { useYjsZustandBridge } from "./useYjsZustandBridge";
-import type { CollabSession } from "./types";
+import type { CollabSession, CollabUser } from "./types";
 
 interface CollabContextValue {
   session: CollabSession | null;
@@ -17,6 +17,8 @@ interface CollabContextValue {
   updateCursor: (cursor: { x: number; y: number } | null) => void;
   updateSelectedNode: (id: string | null) => void;
   updateViewport: (viewport: { x: number; y: number; zoom: number }) => void;
+  updateEditingComponent: (componentId: string | null) => void;
+  editingComponents: Map<string, CollabUser>;
 }
 
 const CollabContext = createContext<CollabContextValue>({
@@ -28,6 +30,8 @@ const CollabContext = createContext<CollabContextValue>({
   updateCursor: () => {},
   updateSelectedNode: () => {},
   updateViewport: () => {},
+  updateEditingComponent: () => {},
+  editingComponents: new Map(),
 });
 
 export function useCollab() {
@@ -55,7 +59,20 @@ export function CollabProvider({ children, guestRoomId }: CollabProviderProps) {
 
   useYjsZustandBridge(ydoc, bridgeDiagramId);
 
-  const { updateCursor, updateSelectedNode, updateViewport } = useCollabAwareness(provider);
+  const { updateCursor, updateSelectedNode, updateViewport, updateEditingComponent } =
+    useCollabAwareness(provider);
+
+  const editingComponents = useMemo(() => {
+    const map = new Map<string, CollabUser>();
+    if (!session) return map;
+
+    session.peers.forEach((peer) => {
+      if (peer.editingComponentId && peer.user) {
+        map.set(peer.editingComponentId, peer.user);
+      }
+    });
+    return map;
+  }, [session]);
 
   const collabUrl = activeDiagramId ? generateCollabUrl(activeDiagramId) : "";
 
@@ -70,6 +87,8 @@ export function CollabProvider({ children, guestRoomId }: CollabProviderProps) {
         updateCursor,
         updateSelectedNode,
         updateViewport,
+        updateEditingComponent,
+        editingComponents,
       }}
     >
       {children}

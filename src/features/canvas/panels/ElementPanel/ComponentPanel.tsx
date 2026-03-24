@@ -33,6 +33,7 @@ import { ComponentIconTab } from "./components/ComponentIconTab";
 import ServiceRegistryCombobox from "./components/ServiceRegistryCombobox";
 import { useTranslation } from "react-i18next";
 import i18n from "@/infrastructure/i18n";
+import { useCollab } from "@/features/collaboration";
 
 function mergeSwimlane(
   current: SwimlaneStyle | undefined,
@@ -91,6 +92,7 @@ interface ComponentPanelProps {
 
 const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, onUngroup, focusTitleTrigger = 0 }: ComponentPanelProps) => {
   const { t } = useTranslation();
+  const { updateEditingComponent, editingComponents } = useCollab();
   const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   useEffect(() => {
     if (focusTitleTrigger > 0) {
@@ -136,6 +138,8 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
   );
   const parentComp = component.parentId ? resolved?.components[component.parentId] : undefined;
   const isChildOfPanel = !!component.parentId && parentComp && isPanelComponent(parentComp);
+  const lockingPeer = editingComponents.get(component.id);
+  const isLockedByPeer = Boolean(lockingPeer);
   const handleRemoveFromGroup = () => {
     if (!component.parentId || !setParent || !updateNodeLayout || !activeDiagram || !resolved) return;
     const childLayout = resolved.nodeLayouts[component.id];
@@ -155,6 +159,10 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
   useEffect(() => {
     setTab("details");
   }, [component.id]);
+  useEffect(() => {
+    updateEditingComponent(component.id);
+    return () => updateEditingComponent(null);
+  }, [component.id, updateEditingComponent]);
 
   const handleCreateLinked = () => {
     const level = isSystemType(component.type) ? "container" : "component";
@@ -200,6 +208,15 @@ const ComponentPanel = ({ component, onClose, updateComponent, removeComponent, 
           <button type="button" onClick={handleRemoveFromGroup} className="w-full inline-flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50" title={t("elementPanel.removeFromGroupTitle")}>
             {t("endpointPanel.removeFromGroup")}
           </button>
+        </div>
+      )}
+      {isLockedByPeer && lockingPeer && (
+        <div
+          className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-white"
+          style={{ backgroundColor: lockingPeer.color }}
+        >
+          <span className="h-2 w-2 rounded-full bg-white/80 animate-pulse" />
+          {t("collaboration.peerEditing", { name: lockingPeer.name })}
         </div>
       )}
       <TabBar active={tab} onChange={setTab} showConnections={!isSimple} />

@@ -9,6 +9,7 @@ export interface PeerAwareness {
   cursor?: { x: number; y: number } | null;
   viewport?: { x: number; y: number; zoom: number };
   selectedNodeId?: string | null;
+  editingComponentId?: string | null;
 }
 
 export interface CollabSession {

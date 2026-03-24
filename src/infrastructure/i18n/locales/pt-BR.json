@@ -704,6 +704,7 @@
     "waitingPeers": "Aguardando peers...",
     "copyLink": "Copiar link de colaboração",
     "peerFallback": "Peer",
+    "peerEditing": "{{name}} está editando",
     "connecting": "Conectando ao servidor de colaboração...",
     "syncing": "Sincronizando diagrama...",
     "loading": "Carregando diagrama...",

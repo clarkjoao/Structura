@@ -29,5 +29,14 @@ export function useCollabAwareness(provider: WebrtcProvider | null) {
     [provider],
   );
 
-  return { updateCursor, updateSelectedNode, updateViewport };
+  const updateEditingComponent = useCallback(
+    (componentId: string | null) => {
+      if (!provider) return;
+      const previousState = provider.awareness.getLocalState() ?? {};
+      provider.awareness.setLocalState({ ...previousState, editingComponentId: componentId });
+    },
+    [provider],
+  );
+
+  return { updateCursor, updateSelectedNode, updateViewport, updateEditingComponent };
 }

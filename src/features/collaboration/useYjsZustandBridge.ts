@@ -1,7 +1,12 @@
 import { useEffect, useRef } from "react";
 import * as Y from "yjs";
 import { useDiagramStore } from "@/features/diagram/store/diagram.store";
-import { resolveCanvasSnapshot } from "@/features/diagram";
+
+/**
+ * Node ids with remote layout updates from Yjs.
+ * Consumed by useLocalNodes to accept remote position updates.
+ */
+export const remoteLayoutUpdates = new Set<string>();
 
 function parseMapEntries(map: Y.Map<unknown>): Record<string, unknown> {
   const values: Record<string, unknown> = {};
@@ -33,15 +38,21 @@ export function useYjsZustandBridge(ydoc: Y.Doc | null, activeDiagramId: string 
     const nodeLayoutsMap = ydoc.getMap("nodeLayouts");
     const metaMap = ydoc.getMap("meta");
 
-    const unsubscribeStore = useDiagramStore.subscribe((state) => {
+    const unsubscribeStore = useDiagramStore.subscribe((state, previousState) => {
       if (isApplyingRemoteRef.current) return;
 
       const diagramId = state.activeDiagramId;
       if (!diagramId) return;
-      const diagram = state.diagrams[diagramId];
-      if (!diagram) return;
 
-      const snapshot = resolveCanvasSnapshot(diagram);
+      const diagram = state.diagrams[diagramId];
+      const previousDiagram = previousState.diagrams[diagramId];
+      if (!diagram) return;
+      if (diagram === previousDiagram) return;
+
+      const components = diagram.snapshot.components;
+      const connections = diagram.snapshot.connections;
+      const flows = diagram.snapshot.flows;
+      const nodeLayouts = diagram.nodeLayouts;
 
       ydoc.transact(() => {
         metaMap.set("diagramId", diagramId);
@@ -49,51 +60,47 @@ export function useYjsZustandBridge(ydoc: Y.Doc | null, activeDiagramId: string 
         metaMap.set("level", diagram.level);
 
         const remoteComponentIds = new Set(componentsMap.keys());
-        const localComponentIds = new Set(Object.keys(snapshot.components));
-        for (const [componentId, component] of Object.entries(snapshot.components)) {
+        for (const [componentId, component] of Object.entries(components)) {
           const serializedComponent = JSON.stringify(component);
           if (componentsMap.get(componentId) !== serializedComponent) {
             componentsMap.set(componentId, serializedComponent);
           }
         }
         for (const componentId of remoteComponentIds) {
-          if (!localComponentIds.has(componentId)) componentsMap.delete(componentId);
+          if (!components[componentId]) componentsMap.delete(componentId);
         }
 
         const remoteConnectionIds = new Set(connectionsMap.keys());
-        const localConnectionIds = new Set(Object.keys(snapshot.connections));
-        for (const [connectionId, connection] of Object.entries(snapshot.connections)) {
+        for (const [connectionId, connection] of Object.entries(connections)) {
           const serializedConnection = JSON.stringify(connection);
           if (connectionsMap.get(connectionId) !== serializedConnection) {
             connectionsMap.set(connectionId, serializedConnection);
           }
         }
         for (const connectionId of remoteConnectionIds) {
-          if (!localConnectionIds.has(connectionId)) connectionsMap.delete(connectionId);
+          if (!connections[connectionId]) connectionsMap.delete(connectionId);
         }
 
         const remoteNodeLayoutIds = new Set(nodeLayoutsMap.keys());
-        const localNodeLayoutIds = new Set(Object.keys(snapshot.nodeLayouts));
-        for (const [nodeId, nodeLayout] of Object.entries(snapshot.nodeLayouts)) {
+        for (const [nodeId, nodeLayout] of Object.entries(nodeLayouts)) {
           const serializedNodeLayout = JSON.stringify(nodeLayout);
           if (nodeLayoutsMap.get(nodeId) !== serializedNodeLayout) {
             nodeLayoutsMap.set(nodeId, serializedNodeLayout);
           }
         }
         for (const nodeId of remoteNodeLayoutIds) {
-          if (!localNodeLayoutIds.has(nodeId)) nodeLayoutsMap.delete(nodeId);
+          if (!nodeLayouts[nodeId]) nodeLayoutsMap.delete(nodeId);
         }
 
         const remoteFlowIds = new Set(flowsMap.keys());
-        const localFlowIds = new Set(Object.keys(diagram.snapshot.flows));
-        for (const [flowId, flow] of Object.entries(diagram.snapshot.flows)) {
+        for (const [flowId, flow] of Object.entries(flows)) {
           const serializedFlow = JSON.stringify(flow);
           if (flowsMap.get(flowId) !== serializedFlow) {
             flowsMap.set(flowId, serializedFlow);
           }
         }
         for (const flowId of remoteFlowIds) {
-          if (!localFlowIds.has(flowId)) flowsMap.delete(flowId);
+          if (!flows[flowId]) flowsMap.delete(flowId);
         }
       });
     });
@@ -114,6 +121,15 @@ export function useYjsZustandBridge(ydoc: Y.Doc | null, activeDiagramId: string 
         const flows = parseMapEntries(flowsMap);
 
         if (Object.keys(components).length === 0 && Object.keys(connections).length === 0) return;
+
+        const currentLayouts = diagram.nodeLayouts;
+        for (const [layoutId, newLayoutValue] of Object.entries(nodeLayouts)) {
+          const newLayout = newLayoutValue as { x: number; y: number };
+          const currentLayout = currentLayouts[layoutId] as { x: number; y: number } | undefined;
+          if (!currentLayout || currentLayout.x !== newLayout.x || currentLayout.y !== newLayout.y) {
+            remoteLayoutUpdates.add(layoutId);
+          }
+        }
 
         useDiagramStore.setState((previousState) => ({
           ...previousState,

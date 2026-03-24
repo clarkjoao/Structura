@@ -704,6 +704,7 @@
     "waitingPeers": "Waiting for peers...",
     "copyLink": "Copy collaboration link",
     "peerFallback": "Peer",
+    "peerEditing": "{{name}} is editing",
     "connecting": "Connecting to collaboration server...",
     "syncing": "Syncing diagram...",
     "loading": "Loading diagram...",
