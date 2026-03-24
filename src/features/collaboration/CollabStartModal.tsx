@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { readCollabPreferences, writeCollabPreferences } from "./collabPreferences";
+import { buildCollabInviteUrl } from "./collabUrl";
 import { testSignalingServer } from "./testSignalingServer";
 
 interface CollabStartModalProps {
@@ -38,7 +39,7 @@ export function CollabStartModal({
   const [isCopied, setIsCopied] = useState(false);
   const [testStatus, setTestStatus] = useState<TestStatus>("idle");
 
-  const guestUrl = `${window.location.origin}/collab/${diagramId}`;
+  const guestUrl = buildCollabInviteUrl(window.location.origin, diagramId, signalingUrl);
 
   const handleStart = () => {
     const trimmedName = userName.trim();

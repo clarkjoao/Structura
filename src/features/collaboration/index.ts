@@ -6,6 +6,7 @@ export { CollabJoinModal } from "./CollabJoinModal";
 export { CollabSessionClosedModal } from "./CollabSessionClosedModal";
 export { CollabStatusIndicator } from "./CollabStatusIndicator";
 export { testSignalingServer } from "./testSignalingServer";
+export { buildCollabInviteUrl, readSignalingUrlFromParams } from "./collabUrl";
 export { readCollabPreferences, writeCollabPreferences } from "./collabPreferences";
 export type {
   CollabConnectionStatus,

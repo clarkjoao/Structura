@@ -142,6 +142,10 @@ export function useCollabSession({
       if (destroyedRef.current) return;
       connectedOnce = true;
       retryCountRef.current = 0;
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
       setIsReady(true);
       setStatus("connected");
     };
@@ -150,6 +154,8 @@ export function useCollabSession({
     if (!isHost) {
       syncTimeout = setTimeout(() => {
         if (!connectedOnce && !destroyedRef.current) {
+          // Keep UI responsive even when synced event is delayed/missed.
+          setIsReady(true);
           const retryDelay =
             RETRY_DELAYS_MS[Math.min(retryCountRef.current, RETRY_DELAYS_MS.length - 1)];
           retryCountRef.current += 1;
@@ -177,6 +183,9 @@ export function useCollabSession({
           peers.set(clientId, awarenessState as PeerAwareness);
         }
       });
+      if (!isHost) {
+        setIsReady(true);
+      }
 
       setSession((previousSession) => ({
         roomId,

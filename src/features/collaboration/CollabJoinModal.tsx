@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { readCollabPreferences, writeCollabPreferences } from "./collabPreferences";
+import { readSignalingUrlFromParams } from "./collabUrl";
 
 interface CollabJoinModalProps {
   open: boolean;
@@ -22,8 +23,11 @@ interface CollabJoinModalProps {
 export function CollabJoinModal({ open, roomId, onJoin }: CollabJoinModalProps) {
   const { t } = useTranslation();
   const defaultPreferences = readCollabPreferences();
+  const signalingUrlFromParams = readSignalingUrlFromParams();
   const [userName, setUserName] = useState(defaultPreferences.userName);
-  const [signalingUrl, setSignalingUrl] = useState(defaultPreferences.signalingUrl);
+  const [signalingUrl, setSignalingUrl] = useState(
+    signalingUrlFromParams ?? defaultPreferences.signalingUrl,
+  );
 
   const handleJoin = () => {
     const trimmedName = userName.trim();
