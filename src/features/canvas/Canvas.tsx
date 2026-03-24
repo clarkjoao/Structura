@@ -23,6 +23,7 @@ import { resolveCanvasSnapshot } from "@/features/diagram";
 import { CANVAS_STYLES } from "./constants";
 import CustomEdge from "./edges/CustomEdge";
 import type { CanvasProps } from "./canvas.types";
+import { CollabCursors, useCollab } from "@/features/collaboration";
 
 const canvasEdgeTypes = { c4: CustomEdge };
 
@@ -58,6 +59,7 @@ const Canvas = (props: CanvasProps = {}) => {
     isCompareMode,
     allDiagramTags,
   } = useCanvasController(props);
+  const { updateCursor, session } = useCollab();
 
   if (!diagram) {
     return (
@@ -106,7 +108,22 @@ const Canvas = (props: CanvasProps = {}) => {
               onSelectDiagram={handleSelectDiagram}
             />
           </div>
-          <div onContextMenu={(e) => e.preventDefault()} className="w-full h-full">
+          <div
+              onContextMenu={(e) => e.preventDefault()}
+              onMouseMove={(e) => {
+                if (!session) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                updateCursor({
+                  x: e.clientX - rect.left,
+                  y: e.clientY - rect.top,
+                });
+              }}
+              onMouseLeave={() => {
+                if (!session) return;
+                updateCursor(null);
+              }}
+              className="w-full h-full"
+            >
             {isCompareMode && (
               <div className="absolute top-12 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs text-muted-foreground shadow-sm">
                 <Eye className="h-3.5 w-3.5 shrink-0" aria-hidden />
@@ -156,6 +173,7 @@ const Canvas = (props: CanvasProps = {}) => {
               <Background variant={BackgroundVariant.Dots} gap={18} size={1.5} />
               <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
             </ReactFlow>
+            {session && <CollabCursors peers={session.peers} />}
           </div>
         </div>
 

@@ -29,6 +29,7 @@ import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/featu
 import { EmbedModal } from "@/features/canvas/components/EmbedModal";
 import { useFlowMode, type BranchOwnerInfo, type RecordingContext } from "@/features/canvas/flow";
 import { isDiagramCompareMode, useActiveDiagram, type Flow } from "@/features/diagram";
+import { CollabCursors, CollabToolbar, useCollab } from "@/features/collaboration";
 import { ShareModal } from "./ShareModal";
 import type { ModelExplorerContentProps } from "./types";
 
@@ -48,10 +49,12 @@ export function ModelExplorerContent({
   handleDrillUp,
   handleCopyDrawio,
   handleExport,
+  onStartCollab,
   copied,
   flows,
 }: ModelExplorerContentProps) {
   const { t } = useTranslation();
+  const { session, isReady, collabUrl } = useCollab();
   const diagram = useActiveDiagram();
   const flowMode = useFlowMode();
   const playbackState = flowMode.mode.kind === "playing" ? flowMode.mode : null;
@@ -202,6 +205,12 @@ export function ModelExplorerContent({
             )}
           </div>
           <div className="flex items-center gap-2">
+            <CollabToolbar
+              session={session}
+              isReady={isReady}
+              collabUrl={collabUrl}
+              onStartCollab={onStartCollab}
+            />
             <button
               onClick={() => { if (!canvasInteractionLocked) setShowFlows(!showFlows); }}
               className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
@@ -314,6 +323,7 @@ export function ModelExplorerContent({
                 onExit={exitPlay}
               />
             )}
+            {session && <CollabCursors peers={session.peers} />}
           </div>
         </ReactFlowProvider>
         {isRecording && (
