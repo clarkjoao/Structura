@@ -17,6 +17,7 @@ import {
 } from "@/features/diagram";
 import { exportJSON, exportDrawio, exportMermaid, downloadFile } from "@/lib/export-service";
 import { writeDrawioToClipboard } from "@/lib/clipboard-utils";
+import { CollabProvider } from "@/features/collaboration";
 import { ModelExplorerContent } from "./ModelExplorerContent";
 
 export default function ModelExplorerPage() {
@@ -150,22 +151,24 @@ export default function ModelExplorerPage() {
         onFinalize={handleFinalizeRecording}
         onStartRecording={() => setShowFlows(false)}
       >
-        <ModelExplorerContent
-          showFlows={showFlows}
-          setShowFlows={setShowFlows}
-          isViewingCoverage={isViewingCoverage}
-          setIsViewingCoverage={setIsViewingCoverage}
-          showShortcuts={showShortcuts}
-          setShowShortcuts={setShowShortcuts}
-          navStack={navStack}
-          handleOpenDiagram={handleOpenDiagram}
-          handleDrillDownToDiagram={handleDrillDownToDiagram}
-          handleDrillUp={handleDrillUp}
-          handleCopyDrawio={handleCopyDrawio}
-          handleExport={handleExport}
-          copied={copied}
-          flows={flows}
-        />
+        <CollabProvider>
+          <ModelExplorerContent
+            showFlows={showFlows}
+            setShowFlows={setShowFlows}
+            isViewingCoverage={isViewingCoverage}
+            setIsViewingCoverage={setIsViewingCoverage}
+            showShortcuts={showShortcuts}
+            setShowShortcuts={setShowShortcuts}
+            navStack={navStack}
+            handleOpenDiagram={handleOpenDiagram}
+            handleDrillDownToDiagram={handleDrillDownToDiagram}
+            handleDrillUp={handleDrillUp}
+            handleCopyDrawio={handleCopyDrawio}
+            handleExport={handleExport}
+            copied={copied}
+            flows={flows}
+          />
+        </CollabProvider>
       </FlowModeProvider>
     </div>
   );

@@ -697,6 +697,14 @@
       "close": "Fechar"
     }
   },
+  "collaboration": {
+    "start": "Colaborar",
+    "onlineCount_one": "{{count}} online",
+    "onlineCount_other": "{{count}} online",
+    "waitingPeers": "Aguardando peers...",
+    "copyLink": "Copiar link de colaboração",
+    "peerFallback": "Peer"
+  },
   "flowRecorder": {
     "editingTitle": "Editando Flow",
     "recordingTitle": "Gravando Flow",

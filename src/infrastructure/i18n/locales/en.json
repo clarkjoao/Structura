@@ -697,6 +697,14 @@
       "close": "Close"
     }
   },
+  "collaboration": {
+    "start": "Collaborate",
+    "onlineCount_one": "{{count}} online",
+    "onlineCount_other": "{{count}} online",
+    "waitingPeers": "Waiting for peers...",
+    "copyLink": "Copy collaboration link",
+    "peerFallback": "Peer"
+  },
   "flowRecorder": {
     "editingTitle": "Editing flow",
     "recordingTitle": "Recording flow",
