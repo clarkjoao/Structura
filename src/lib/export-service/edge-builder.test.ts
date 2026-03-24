@@ -54,4 +54,12 @@ describe("buildEdgeCell", () => {
     expect(xml).toContain('value="(Kafka)"');
     expect(xml.startsWith("<mxCell")).toBe(true);
   });
+
+  it("adds draw.io points attribute when waypoints are provided", () => {
+    const xml = buildEdgeCell(conn({ id: "e3", sourceId: "a", targetId: "b", label: "L" }), {
+      pointsAttribute: "10,20;30,40",
+    });
+    expect(xml).toContain('points="10,20;30,40"');
+    expect(xml).toContain('edge="1"');
+  });
 });

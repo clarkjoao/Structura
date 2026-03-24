@@ -182,6 +182,13 @@ function migrateAddIconLibrary(state: Partial<DiagramStore>): void {
 /**
  * Idempotent: moves legacy top-level `svgContent` into `source: { kind: "svg", svgContent }`.
  */
+function migrateAddEdgeLayouts(state: Partial<DiagramStore>): void {
+  for (const diagram of Object.values(state.diagrams ?? {})) {
+    const diagramRecord = diagram as Diagram;
+    diagramRecord.edgeLayouts ??= [];
+  }
+}
+
 function migrateAddDiagramDescription(state: Partial<DiagramStore>): void {
   for (const diagram of Object.values(state.diagrams ?? {})) {
     const diagramRecord = diagram as Diagram;
@@ -255,6 +262,7 @@ export function mergePersistedState(
   next = migrateFlowsToGraph(next);
   migrateAddIconLibrary(next);
   migrateIconDefinitionToSource(next);
+  migrateAddEdgeLayouts(next);
   migrateAddDiagramDescription(next);
 
   return next;
@@ -262,6 +270,7 @@ export function mergePersistedState(
 
 const SCHEMA_VERSION_WITH_ICON_LIBRARY = 1;
 const SCHEMA_VERSION_ICON_SOURCE = 2;
+const SCHEMA_VERSION_EDGE_LAYOUTS = 3;
 const SCHEMA_VERSION_DIAGRAM_DESCRIPTION = 3;
 const SCHEMA_VERSION_USER_TEMPLATES = 4;
 
@@ -282,6 +291,9 @@ export function createPersistConfig(storage: IStoragePort) {
       }
       if (fromVersion < SCHEMA_VERSION_ICON_SOURCE) {
         migrateIconDefinitionToSource(partial);
+      }
+      if (fromVersion < SCHEMA_VERSION_EDGE_LAYOUTS) {
+        migrateAddEdgeLayouts(partial);
       }
       if (fromVersion < SCHEMA_VERSION_DIAGRAM_DESCRIPTION) {
         migrateAddDiagramDescription(partial);

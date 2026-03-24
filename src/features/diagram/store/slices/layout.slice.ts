@@ -1,3 +1,4 @@
+import type { Point } from "../../model/diagram.types";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
 import { resolveActiveScene } from "./scene-helpers";
@@ -37,6 +38,43 @@ export const layoutSlice = (
     updateViewport: (viewport: { x: number; y: number; zoom: number }) => {
       set((state) => {
         state.diagrams[state.activeDiagramId!].viewport = viewport;
+      });
+    },
+
+    updateEdgeWaypoints: (diagramId: string, connectionId: string, waypoints: Point[]) => {
+      set((state) => {
+        const diagram = state.diagrams[diagramId];
+        if (!diagram) return;
+        const existing = diagram.edgeLayouts.find((layout) => layout.connectionId === connectionId);
+        if (existing) {
+          existing.waypoints = waypoints;
+        } else {
+          diagram.edgeLayouts.push({ connectionId, waypoints });
+        }
+      });
+    },
+
+    clearEdgeWaypoints: (diagramId: string, connectionId: string) => {
+      set((state) => {
+        const diagram = state.diagrams[diagramId];
+        if (!diagram?.edgeLayouts?.length) return;
+        const index = diagram.edgeLayouts.findIndex((layout) => layout.connectionId === connectionId);
+        if (index === -1) return;
+        diagram.edgeLayouts.splice(index, 1);
+      });
+    },
+
+    updateEdgeLabelOffset: (diagramId: string, connectionId: string, offset: number) => {
+      set((state) => {
+        const diagram = state.diagrams[diagramId];
+        if (!diagram) return;
+        const safe = Math.max(0, Math.min(1, offset));
+        const existing = diagram.edgeLayouts.find((layout) => layout.connectionId === connectionId);
+        if (existing) {
+          existing.labelOffset = safe;
+        } else {
+          diagram.edgeLayouts.push({ connectionId, waypoints: [], labelOffset: safe });
+        }
       });
     },
 

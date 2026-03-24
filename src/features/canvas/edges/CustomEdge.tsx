@@ -1,4 +1,13 @@
-import { memo, useMemo, useRef } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -8,9 +17,28 @@ import {
   useReactFlow,
   type EdgeProps,
 } from "@xyflow/react";
-import { useDiagramActions, EdgeStyle, StrokeStyle, type ConnectionStyle } from "@/features/diagram";
+import {
+  useActiveDiagramId,
+  useDiagramActions,
+  useEdgeLabelOffset,
+  useEdgeWaypoints,
+  EdgeStyle,
+  StrokeStyle,
+  type ConnectionStyle,
+  type Point,
+} from "@/features/diagram";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { useTranslation } from "react-i18next";
+import {
+  buildOrthogonalPath,
+  buildSegments,
+  computeSegmentDrag,
+  getClosestOffsetOnPath,
+  getPointAtOffset,
+  type Segment,
+} from "./edgeBuilding";
+
+const SEGMENT_HIT_STROKE_WIDTH = 12;
 
 export interface EdgeData {
   label: string;
@@ -22,7 +50,7 @@ export interface EdgeData {
   playbackDuration?: string;
   isActivePlayback?: boolean;
   activePayload?: string | null;
-  activePayloadDirection?: 'request' | 'response' | null;
+  activePayloadDirection?: "request" | "response" | null;
   edgeStyle?: EdgeStyle;
   strokeStyle?: StrokeStyle;
   strokeWidth?: number;
@@ -41,52 +69,6 @@ function clampLabelPosition(value: number | undefined): number {
   return Math.max(0, Math.min(1, value));
 }
 
-function getLabelPointOnPath(
-  path: string,
-  t: number,
-  fallbackX: number,
-  fallbackY: number,
-): { x: number; y: number } {
-  if (typeof document === "undefined") {
-    return { x: fallbackX, y: fallbackY };
-  }
-
-  try {
-    const svgPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    svgPath.setAttribute("d", path);
-    const length = svgPath.getTotalLength();
-    const point = svgPath.getPointAtLength(length * clampLabelPosition(t));
-    return { x: point.x, y: point.y };
-  } catch {
-    return { x: fallbackX, y: fallbackY };
-  }
-}
-
-function getClosestLabelPositionOnPath(
-  path: SVGPathElement,
-  x: number,
-  y: number,
-): number {
-  const totalLength = path.getTotalLength();
-  const samples = 80;
-  let bestT = 0.5;
-  let bestDistSq = Number.POSITIVE_INFINITY;
-
-  for (let i = 0; i <= samples; i += 1) {
-    const t = i / samples;
-    const p = path.getPointAtLength(totalLength * t);
-    const dx = p.x - x;
-    const dy = p.y - y;
-    const distSq = dx * dx + dy * dy;
-    if (distSq < bestDistSq) {
-      bestDistSq = distSq;
-      bestT = t;
-    }
-  }
-
-  return bestT;
-}
-
 const Edge = memo(
   ({
     id,
@@ -103,13 +85,30 @@ const Edge = memo(
   }: EdgeProps) => {
     const { t } = useTranslation();
     const { screenToFlowPosition } = useReactFlow();
-    const { updateConnection } = useDiagramActions();
-    const dragPathRef = useRef<SVGPathElement | null>(null);
-    const lastSentPositionRef = useRef<number>(
-      clampLabelPosition((data as unknown as EdgeData | undefined)?.labelPosition),
-    );
+    const activeDiagramId = useActiveDiagramId();
+    const { updateEdgeWaypoints, clearEdgeWaypoints, updateEdgeLabelOffset } =
+      useDiagramActions();
+    const lastSentLabelOffsetRef = useRef<number>(0.5);
     const d = data as unknown as EdgeData;
     const { highlightedConnectionId } = useHandleHighlight();
+    const waypoints = useEdgeWaypoints(d?.connectionId ?? "");
+    const layoutLabelOffset = useEdgeLabelOffset(d?.connectionId ?? "");
+    const [hoveredSegmentIndex, setHoveredSegmentIndex] = useState<number | null>(null);
+    const waypointsRef = useRef(waypoints);
+    const windowPointerCleanupRef = useRef<(() => void) | null>(null);
+
+    useEffect(() => {
+      waypointsRef.current = waypoints;
+    }, [waypoints]);
+
+    useEffect(
+      () => () => {
+        windowPointerCleanupRef.current?.();
+        windowPointerCleanupRef.current = null;
+      },
+      [],
+    );
+
     const pathParams = {
       sourceX,
       sourceY,
@@ -120,119 +119,289 @@ const Edge = memo(
     };
     const styleKey = d?.edgeStyle ?? EdgeStyle.Smoothstep;
     let edgePath: string;
-    let labelX: number;
-    let labelY: number;
-    if (styleKey === EdgeStyle.Step) {
-      [edgePath, labelX, labelY] = getSmoothStepPath({
+    if (waypoints.length > 0) {
+      edgePath = buildOrthogonalPath(sourceX, sourceY, targetX, targetY, waypoints);
+    } else if (styleKey === EdgeStyle.Step) {
+      [edgePath] = getSmoothStepPath({
         ...pathParams,
         borderRadius: 0,
       });
     } else if (styleKey === EdgeStyle.Smoothstep) {
-      [edgePath, labelX, labelY] = getSmoothStepPath(pathParams);
+      [edgePath] = getSmoothStepPath(pathParams);
     } else if (styleKey === EdgeStyle.Bezier) {
-      [edgePath, labelX, labelY] = getBezierPath(pathParams);
+      [edgePath] = getBezierPath(pathParams);
     } else {
-      [edgePath, labelX, labelY] = getStraightPath(pathParams);
+      [edgePath] = getStraightPath(pathParams);
     }
+
+    const effectiveLabelOffset = useMemo(() => {
+      if (typeof layoutLabelOffset === "number" && !Number.isNaN(layoutLabelOffset)) {
+        return clampLabelPosition(layoutLabelOffset);
+      }
+      return clampLabelPosition(d?.labelPosition);
+    }, [layoutLabelOffset, d?.labelPosition]);
+
+    const labelPoint = useMemo(
+      () =>
+        getPointAtOffset(
+          sourceX,
+          sourceY,
+          targetX,
+          targetY,
+          waypoints,
+          effectiveLabelOffset,
+        ),
+      [sourceX, sourceY, targetX, targetY, waypoints, effectiveLabelOffset],
+    );
+
+    const commitWaypoints = useCallback(
+      (next: Point[]) => {
+        if (!activeDiagramId || !d?.connectionId) return;
+        waypointsRef.current = next;
+        updateEdgeWaypoints(activeDiagramId, d.connectionId, next);
+      },
+      [activeDiagramId, d?.connectionId, updateEdgeWaypoints],
+    );
+
+    const endWindowPointerDrag = useCallback(() => {
+      windowPointerCleanupRef.current?.();
+      windowPointerCleanupRef.current = null;
+      document.body.style.cursor = "";
+    }, []);
+
+    const startWindowPointerDrag = useCallback(
+      (onMove: (pointerEvent: PointerEvent) => void, dragCursor: string) => {
+        endWindowPointerDrag();
+        const onUp = () => {
+          window.removeEventListener("pointermove", onMove);
+          window.removeEventListener("pointerup", onUp);
+          window.removeEventListener("pointercancel", onUp);
+          windowPointerCleanupRef.current = null;
+          document.body.style.cursor = "";
+        };
+        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointerup", onUp);
+        window.addEventListener("pointercancel", onUp);
+        windowPointerCleanupRef.current = onUp;
+        document.body.style.cursor = dragCursor;
+      },
+      [endWindowPointerDrag],
+    );
+
+    const handleSegmentPointerDown = useCallback(
+      (segment: Segment) => {
+        return (event: ReactPointerEvent<SVGLineElement>) => {
+          if (!activeDiagramId || !d?.connectionId) return;
+          event.preventDefault();
+          event.stopPropagation();
+          const initialWaypoints = waypointsRef.current.map((point) => ({ ...point }));
+          const startPos = screenToFlowPosition({
+            x: event.clientX,
+            y: event.clientY,
+          });
+          const dragCursor =
+            segment.orientation === "horizontal" ? "ns-resize" : "ew-resize";
+          const onMove = (pointerEvent: PointerEvent) => {
+            const currentPos = screenToFlowPosition({
+              x: pointerEvent.clientX,
+              y: pointerEvent.clientY,
+            });
+            const delta: Point = {
+              x: currentPos.x - startPos.x,
+              y: currentPos.y - startPos.y,
+            };
+            const next = computeSegmentDrag(
+              sourceX,
+              sourceY,
+              targetX,
+              targetY,
+              initialWaypoints,
+              segment,
+              delta,
+            );
+            commitWaypoints(next);
+          };
+          startWindowPointerDrag(onMove, dragCursor);
+        };
+      },
+      [
+        activeDiagramId,
+        commitWaypoints,
+        d?.connectionId,
+        screenToFlowPosition,
+        sourceX,
+        sourceY,
+        startWindowPointerDrag,
+        targetX,
+        targetY,
+      ],
+    );
+
+    const segments = useMemo(
+      () => buildSegments(sourceX, sourceY, targetX, targetY, waypoints),
+      [sourceX, sourceY, targetX, targetY, waypoints],
+    );
+
+    const isHighlighted =
+      selected || highlightedConnectionId === d.connectionId;
 
     const strokeStyle = d?.strokeStyle ?? StrokeStyle.Solid;
     const dashArray = strokeDasharrayByStyle[strokeStyle];
     const strokeWidth = d?.strokeWidth ?? 1;
-    const labelPosition = clampLabelPosition(d?.labelPosition);
-    const labelPoint = getLabelPointOnPath(edgePath, labelPosition, labelX, labelY);
-    const dragPath = useMemo(() => {
-      if (typeof document === "undefined") return null;
-      try {
-        const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        p.setAttribute("d", edgePath);
-        return p;
-      } catch {
-        return null;
-      }
-    }, [edgePath]);
-    const isHighlighted =
-      selected || highlightedConnectionId === d.connectionId;
 
-    const commitLabelPosition = (nextPosition: number) => {
-      const safePosition = clampLabelPosition(nextPosition);
-      if (Math.abs(lastSentPositionRef.current - safePosition) < 0.005) return;
-      lastSentPositionRef.current = safePosition;
-      updateConnection(d.connectionId, {
-        style: {
-          ...(d.connectionStyle ?? {}),
-          labelPosition: safePosition,
-        },
-      });
-    };
+    const canDragLabelAlongPath = Boolean(
+      d?.label && activeDiagramId && d?.connectionId,
+    );
 
-    const handleLabelPointerDown: React.PointerEventHandler<HTMLDivElement> = (event) => {
-      if (!dragPath) return;
-      event.preventDefault();
-      event.stopPropagation();
-      dragPathRef.current = dragPath;
-      lastSentPositionRef.current = labelPosition;
-      event.currentTarget.setPointerCapture(event.pointerId);
-    };
+    const handleLabelPointerDown = useCallback(
+      (event: ReactPointerEvent<HTMLDivElement>) => {
+        if (!canDragLabelAlongPath || !activeDiagramId || !d?.connectionId) return;
+        event.preventDefault();
+        event.stopPropagation();
+        lastSentLabelOffsetRef.current = effectiveLabelOffset;
+        const onMove = (pointerEvent: PointerEvent) => {
+          const flowPoint = screenToFlowPosition({
+            x: pointerEvent.clientX,
+            y: pointerEvent.clientY,
+          });
+          const raw = getClosestOffsetOnPath(
+            sourceX,
+            sourceY,
+            targetX,
+            targetY,
+            waypointsRef.current,
+            flowPoint,
+          );
+          const clamped = Math.max(0.05, Math.min(0.95, raw));
+          if (Math.abs(clamped - lastSentLabelOffsetRef.current) < 0.003) return;
+          lastSentLabelOffsetRef.current = clamped;
+          updateEdgeLabelOffset(activeDiagramId, d.connectionId, clamped);
+        };
+        startWindowPointerDrag(onMove, "grabbing");
+      },
+      [
+        activeDiagramId,
+        canDragLabelAlongPath,
+        d?.connectionId,
+        effectiveLabelOffset,
+        screenToFlowPosition,
+        sourceX,
+        sourceY,
+        startWindowPointerDrag,
+        targetX,
+        targetY,
+        updateEdgeLabelOffset,
+      ],
+    );
 
-    const handleLabelPointerMove: React.PointerEventHandler<HTMLDivElement> = (event) => {
-      if (!dragPathRef.current || !event.currentTarget.hasPointerCapture(event.pointerId)) return;
-      const flowPoint = screenToFlowPosition({ x: event.clientX, y: event.clientY });
-      const position = getClosestLabelPositionOnPath(dragPathRef.current, flowPoint.x, flowPoint.y);
-      commitLabelPosition(position);
-    };
+    const handleEdgeWaypointsDoubleClick = useCallback(
+      (event: ReactMouseEvent<SVGPathElement | SVGLineElement>) => {
+        if (waypoints.length === 0) return;
+        if (!activeDiagramId || !d?.connectionId) return;
+        event.preventDefault();
+        event.stopPropagation();
+        clearEdgeWaypoints(activeDiagramId, d.connectionId);
+      },
+      [activeDiagramId, clearEdgeWaypoints, d?.connectionId, waypoints.length],
+    );
 
-    const handleLabelPointerUp: React.PointerEventHandler<HTMLDivElement> = (event) => {
-      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-        event.currentTarget.releasePointerCapture(event.pointerId);
-      }
-      dragPathRef.current = null;
-    };
+    const showSegmentHitTargets = Boolean(activeDiagramId && d?.connectionId);
 
     return (
       <>
-        <BaseEdge
-          id={id}
-          path={edgePath}
-          markerEnd={markerEnd}
-          markerStart={markerStart}
-          style={{
-            stroke: isHighlighted
-              ? "hsl(187 72% 51%)"
-              : d?.coverageFlowNames?.length
-                ? "hsl(160 40% 38%)"
-                : "hsl(220 20% 30%)",
-            strokeWidth: isHighlighted
-              ? Math.max(2, strokeWidth + 1)
-              : strokeWidth,
-            strokeDasharray: dashArray,
-          }}
-        />
-        {d?.isActivePlayback && (
-          <>
-            <style>{`@keyframes flowParticle { 0% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -112; } }`}</style>
-            <path
-              d={edgePath}
-              fill="none"
-              stroke={d.activePayloadDirection === "response" ? "hsl(152 60% 45%)" : "hsl(187 72% 51%)"}
-              strokeWidth={2.5}
-              strokeDasharray="6 106"
-              strokeDashoffset={0}
-              strokeLinecap="round"
-              style={{
-                animation: `flowParticle 1.2s linear infinite${d.activePayloadDirection === "response" ? " reverse" : ""}`,
-                pointerEvents: "none",
-              }}
-            />
-          </>
-        )}
+        <g>
+          <BaseEdge
+            id={id}
+            path={edgePath}
+            markerEnd={markerEnd}
+            markerStart={markerStart}
+            style={{
+              stroke: isHighlighted
+                ? "hsl(187 72% 51%)"
+                : d?.coverageFlowNames?.length
+                  ? "hsl(160 40% 38%)"
+                  : "hsl(220 20% 30%)",
+              strokeWidth: isHighlighted
+                ? Math.max(2, strokeWidth + 1)
+                : strokeWidth,
+              strokeDasharray: dashArray,
+            }}
+          />
+          <path
+            d={edgePath}
+            fill="none"
+            stroke="transparent"
+            strokeWidth={20}
+            style={{ pointerEvents: "stroke", cursor: "default" }}
+            onDoubleClick={waypoints.length > 0 ? handleEdgeWaypointsDoubleClick : undefined}
+          />
+          {showSegmentHitTargets &&
+            segments.map((segment) => (
+              <g key={segment.index}>
+                <line
+                  x1={segment.x1}
+                  y1={segment.y1}
+                  x2={segment.x2}
+                  y2={segment.y2}
+                  stroke="transparent"
+                  strokeWidth={SEGMENT_HIT_STROKE_WIDTH}
+                  strokeLinecap="round"
+                  aria-label={t("customEdge.segmentHitAria", { index: segment.index + 1 })}
+                  role="button"
+                  tabIndex={0}
+                  style={{
+                    cursor:
+                      segment.orientation === "horizontal" ? "ns-resize" : "ew-resize",
+                    pointerEvents: "stroke",
+                  }}
+                  onPointerDown={handleSegmentPointerDown(segment)}
+                  onMouseEnter={() => {
+                    setHoveredSegmentIndex(segment.index);
+                  }}
+                  onMouseLeave={() => {
+                    setHoveredSegmentIndex(null);
+                  }}
+                  onDoubleClick={waypoints.length > 0 ? handleEdgeWaypointsDoubleClick : undefined}
+                />
+                {(selected || hoveredSegmentIndex === segment.index) && (
+                  <line
+                    x1={segment.x1}
+                    y1={segment.y1}
+                    x2={segment.x2}
+                    y2={segment.y2}
+                    stroke="var(--color-text-info)"
+                    strokeWidth={3}
+                    strokeOpacity={0.35}
+                    strokeLinecap="round"
+                    style={{ pointerEvents: "none" }}
+                  />
+                )}
+              </g>
+            ))}
+          {d?.isActivePlayback && (
+            <>
+              <style>{`@keyframes flowParticle { 0% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -112; } }`}</style>
+              <path
+                d={edgePath}
+                fill="none"
+                stroke={d.activePayloadDirection === "response" ? "hsl(152 60% 45%)" : "hsl(187 72% 51%)"}
+                strokeWidth={2.5}
+                strokeDasharray="6 106"
+                strokeDashoffset={0}
+                strokeLinecap="round"
+                style={{
+                  animation: `flowParticle 1.2s linear infinite${d.activePayloadDirection === "response" ? " reverse" : ""}`,
+                  pointerEvents: "none",
+                }}
+              />
+            </>
+          )}
+        </g>
         {d?.label && (
           <EdgeLabelRenderer>
             <div
-              className="absolute pointer-events-auto cursor-grab active:cursor-grabbing"
+              className={`nodrag nopan absolute pointer-events-auto ${canDragLabelAlongPath ? "cursor-grab active:cursor-grabbing" : ""}`}
               onPointerDown={handleLabelPointerDown}
-              onPointerMove={handleLabelPointerMove}
-              onPointerUp={handleLabelPointerUp}
-              onPointerCancel={handleLabelPointerUp}
               style={{
                 transform: `translate(-50%, -50%) translate(${labelPoint.x}px, ${labelPoint.y}px)`,
               }}

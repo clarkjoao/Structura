@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import debounce from "lodash.debounce";
 import { X, Trash2 } from "lucide-react";
 import type { Connection, ConnectionIntent, ConnectionDirection, ConnectionStyle } from "@/features/diagram";
-import { EdgeStyle, StrokeStyle, EdgeMarker } from "@/features/diagram";
+import { EdgeStyle, StrokeStyle, EdgeMarker, useActiveDiagramId, useDiagramActions } from "@/features/diagram";
 import { INTENT_DEFAULTS } from "@/features/diagram";
 import { saveLastEdgeStyle } from "@/features/diagram/hooks/useLastEdgeStyle";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,9 @@ type EdgeStyleOption = {
 
 const WIDTH_OPTIONS = [1, 2, 3] as const;
 
+/** Matches default label position along edge path after clearing custom layout. */
+const EDGE_LABEL_OFFSET_CENTER = 0.5;
+
 interface ConnectionPanelProps {
   conn: Connection;
   onClose: () => void;
@@ -36,6 +39,8 @@ interface ConnectionPanelProps {
 
 const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, focusTitleTrigger = 0 }: ConnectionPanelProps) => {
   const { t } = useTranslation();
+  const activeDiagramId = useActiveDiagramId();
+  const { clearEdgeWaypoints, updateEdgeLabelOffset } = useDiagramActions();
   const [label, setLabel] = useState(conn.label);
   const [desc, setDesc] = useState(conn.description ?? "");
   const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
@@ -110,15 +115,34 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
   const applyStyle = (stylePatch: Partial<ConnectionStyle>) =>
     applyPatch({ style: { ...conn.style, ...stylePatch } });
   const currentStyle = conn.style?.edgeStyle ?? EdgeStyle.Smoothstep;
+
+  const resetEdgeLayoutAfterEdgeStyleChange = () => {
+    if (!activeDiagramId) return;
+    clearEdgeWaypoints(activeDiagramId, conn.id);
+    updateEdgeLabelOffset(activeDiagramId, conn.id, EDGE_LABEL_OFFSET_CENTER);
+  };
+
   const onUpdateEdgeStyle = (newStyle: EdgeStyleOption["value"]) => {
+    const previousEdgeStyle = conn.style?.edgeStyle;
+    if (previousEdgeStyle === newStyle) return;
     saveLastEdgeStyle(newStyle);
-    applyPatch({
+    updateConnection(conn.id, {
       style: {
         ...(conn.style ?? {}),
         edgeStyle: newStyle,
         waypoints: undefined,
       } as ConnectionStyle,
     });
+    resetEdgeLayoutAfterEdgeStyleChange();
+  };
+
+  const handleEdgeStyleSelectChange = (newEdgeStyle: EdgeStyle) => {
+    const previousEdgeStyle = conn.style?.edgeStyle;
+    if (previousEdgeStyle === newEdgeStyle) return;
+    updateConnection(conn.id, {
+      style: { ...conn.style, edgeStyle: newEdgeStyle },
+    });
+    resetEdgeLayoutAfterEdgeStyleChange();
   };
 
   return (
@@ -195,7 +219,19 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
         </div>
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">{t("common.transportTypeTitle")}</label>
-          <select value={conn.transportPreset ?? ""} onChange={(e) => { const v = e.target.value as Connection["transportPreset"] | ""; if (!v) { applyPatch({ transportPreset: undefined }); return; } applyPatch({ transportPreset: v, style: { ...conn.style, ...TRANSPORT_PRESET_DEFAULTS[v] } }); }}
+          <select value={conn.transportPreset ?? ""} onChange={(e) => {
+            const v = e.target.value as Connection["transportPreset"] | "";
+            if (!v) {
+              applyPatch({ transportPreset: undefined });
+              return;
+            }
+            const mergedStyle = { ...conn.style, ...TRANSPORT_PRESET_DEFAULTS[v] } as ConnectionStyle;
+            const previousEdgeStyle = conn.style?.edgeStyle;
+            applyPatch({ transportPreset: v, style: mergedStyle });
+            if (previousEdgeStyle !== mergedStyle.edgeStyle) {
+              resetEdgeLayoutAfterEdgeStyleChange();
+            }
+          }}
             className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring">
             <option value="">{t("common.none")}</option>
             <option value="sync">{t("common.transportSync")}</option>
@@ -209,7 +245,7 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
           <div className="space-y-2">
             <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold block">{t("common.edgeStyleSection")}</label>
             <div className="flex flex-wrap gap-2">
-              <select value={conn.style?.edgeStyle ?? EdgeStyle.Straight} onChange={(e) => applyStyle({ edgeStyle: e.target.value as EdgeStyle })} className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0" title={t("common.lineTypeTitle")}>
+              <select value={conn.style?.edgeStyle ?? EdgeStyle.Straight} onChange={(e) => handleEdgeStyleSelectChange(e.target.value as EdgeStyle)} className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0" title={t("common.lineTypeTitle")}>
                 {edgeStyleOptions.map((o) => (<option key={o.value} value={o.value}>{o.label}</option>))}
               </select>
               <select value={conn.style?.strokeStyle ?? StrokeStyle.Solid} onChange={(e) => applyStyle({ strokeStyle: e.target.value as StrokeStyle })} className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0" title={t("common.strokeStyleTitle")}>

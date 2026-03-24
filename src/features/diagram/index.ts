@@ -23,6 +23,8 @@ export type {
   ConnectionDirection,
   NodeLayout,
   ViewNodeLayout,
+  Point,
+  EdgeLayout,
   FlowStep,
   FlowStepType,
   FlowBranch,
@@ -183,6 +185,8 @@ export {
   useIconLibrary,
   useIconById,
   useComponentIcon,
+  useEdgeWaypoints,
+  useEdgeLabelOffset,
   useAllUserTemplates,
 } from "./store/selectors";
 export type { DiagramStore, ClipboardEntry } from "./store/store.types";

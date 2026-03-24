@@ -23,6 +23,7 @@ export const diagramsSlice = (
           updatedAt: new Date().toISOString(),
           snapshot: { components: {}, connections: {}, flows: {}, iconLibrary: {} },
           nodeLayouts: {},
+          edgeLayouts: [],
           viewport: { x: 0, y: 0, zoom: 1 },
           folderId: folderId ?? undefined,
         };

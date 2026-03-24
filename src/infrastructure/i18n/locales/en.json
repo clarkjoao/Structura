@@ -633,7 +633,10 @@
   "customEdge": {
     "coveredBy": "Covered by: {{names}}",
     "request": "→ Request",
-    "response": "← Response"
+    "response": "← Response",
+    "waypointHandleAria": "Connection waypoint {{index}}, drag to move, double-click to remove",
+    "midpointHandleAria": "Add waypoint along segment {{segment}}, drag to position",
+    "segmentHitAria": "Edge segment {{index}}, drag to move orthogonally"
   },
   "flows": {
     "panelTitle": "Flows",

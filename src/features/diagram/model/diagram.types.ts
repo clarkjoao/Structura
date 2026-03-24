@@ -29,7 +29,7 @@ export type {
   EdgeMarker,
 } from "./connection.types";
 
-export type { NodeLayout, ViewNodeLayout } from "./layout.types";
+export type { NodeLayout, ViewNodeLayout, Point, EdgeLayout } from "./layout.types";
 
 export type { FlowStep, FlowStepType, FlowBranch, Flow } from "./flow.types";
 
@@ -38,7 +38,7 @@ export type { FlowStep, FlowStepType, FlowBranch, Flow } from "./flow.types";
 import type { Component } from "./component.types";
 import type { Connection } from "./connection.types";
 import type { Flow } from "./flow.types";
-import type { NodeLayout } from "./layout.types";
+import type { EdgeLayout, NodeLayout } from "./layout.types";
 
 export type Level = "context" | "container" | "component" | string;
 
@@ -146,6 +146,7 @@ export interface Diagram {
   updatedAt: string;
   snapshot: ModelDraft;
   nodeLayouts: Record<string, NodeLayout>;
+  edgeLayouts: EdgeLayout[];
   viewport: { x: number; y: number; zoom: number };
   folderId?: string | null;
   scenes?: Record<string, SceneDiff>;
