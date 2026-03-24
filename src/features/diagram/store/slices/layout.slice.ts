@@ -1,6 +1,7 @@
 import type { Point } from "../../model/diagram.types";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
+import { resolveActiveScene } from "./scene-helpers";
 
 export const layoutSlice = (
     set: (fn: (state: AppState) => void) => void,
@@ -9,8 +10,7 @@ export const layoutSlice = (
     updateNodeLayout: (elementId: string, position: { x: number; y: number }, dimensions?: { width: number; height: number }) => {
       set((state) => {
         const d = state.diagrams[state.activeDiagramId!];
-        const sid = d.activeSceneId ?? null;
-        const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+        const scene = resolveActiveScene(d);
         if (scene && scene.addedComponents[elementId]) {
           const layout = scene.nodeLayouts[elementId];
           if (layout) {
@@ -81,8 +81,7 @@ export const layoutSlice = (
     bringToFront: (elementId: string) => {
       set((state) => {
         const d = state.diagrams[state.activeDiagramId!];
-        const sid = d.activeSceneId ?? null;
-        const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+        const scene = resolveActiveScene(d);
         if (scene && scene.addedComponents[elementId]) {
           const merged = { ...d.nodeLayouts, ...scene.nodeLayouts };
           const maxZ = Math.max(...Object.values(merged).map((nl) => nl.zIndex ?? 0));
@@ -100,8 +99,7 @@ export const layoutSlice = (
     sendToBack: (elementId: string) => {
       set((state) => {
         const d = state.diagrams[state.activeDiagramId!];
-        const sid = d.activeSceneId ?? null;
-        const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+        const scene = resolveActiveScene(d);
         if (scene && scene.addedComponents[elementId]) {
           const merged = { ...d.nodeLayouts, ...scene.nodeLayouts };
           const minZ = Math.min(...Object.values(merged).map((nl) => nl.zIndex ?? 0));

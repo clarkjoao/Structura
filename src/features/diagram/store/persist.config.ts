@@ -10,6 +10,7 @@ export const PERSIST_KEY = "diagram-store";
 
 /** Must match `version` passed to zustand `persist` (used when writing localStorage manually). */
 export const PERSIST_SCHEMA_VERSION = 3;
+export const PERSIST_SCHEMA_VERSION = 4;
 
 /** Alias for consumers that refer to “current” schema version in docs or tooling. */
 export const CURRENT_SCHEMA_VERSION = PERSIST_SCHEMA_VERSION;
@@ -20,6 +21,7 @@ export function partializeState(state: DiagramStore) {
   return {
     diagrams: state.diagrams,
     folders: state.folders,
+    userTemplates: state.userTemplates,
     serviceRegistry: state.serviceRegistry,
     activeDiagramId: state.activeDiagramId,
     past: state.past,
@@ -188,6 +190,17 @@ function migrateAddEdgeLayouts(state: Partial<DiagramStore>): void {
   }
 }
 
+function migrateAddDiagramDescription(state: Partial<DiagramStore>): void {
+  for (const diagram of Object.values(state.diagrams ?? {})) {
+    const diagramRecord = diagram as Diagram;
+    diagramRecord.description ??= undefined;
+  }
+}
+
+function migrateAddUserTemplates(state: Partial<DiagramStore>): void {
+  state.userTemplates ??= {};
+}
+
 function migrateIconDefinitionToSource(state: Partial<DiagramStore>): void {
   const migrateLibrary = (library: Record<string, IconDefinition> | undefined): void => {
     if (!library) return;
@@ -239,6 +252,7 @@ export function mergePersistedState(
 
   if (!state.serviceRegistry) state.serviceRegistry = {};
   if (!state.folders) state.folders = {};
+  migrateAddUserTemplates(state);
 
   let next = state;
   next = migrateServiceSources(next);
@@ -250,6 +264,7 @@ export function mergePersistedState(
   migrateAddIconLibrary(next);
   migrateIconDefinitionToSource(next);
   migrateAddEdgeLayouts(next);
+  migrateAddDiagramDescription(next);
 
   return next;
 }
@@ -257,6 +272,8 @@ export function mergePersistedState(
 const SCHEMA_VERSION_WITH_ICON_LIBRARY = 1;
 const SCHEMA_VERSION_ICON_SOURCE = 2;
 const SCHEMA_VERSION_EDGE_LAYOUTS = 3;
+const SCHEMA_VERSION_DIAGRAM_DESCRIPTION = 3;
+const SCHEMA_VERSION_USER_TEMPLATES = 4;
 
 export function createPersistConfig(storage: IStoragePort) {
   return {
@@ -278,6 +295,11 @@ export function createPersistConfig(storage: IStoragePort) {
       }
       if (fromVersion < SCHEMA_VERSION_EDGE_LAYOUTS) {
         migrateAddEdgeLayouts(partial);
+      if (fromVersion < SCHEMA_VERSION_DIAGRAM_DESCRIPTION) {
+        migrateAddDiagramDescription(partial);
+      }
+      if (fromVersion < SCHEMA_VERSION_USER_TEMPLATES) {
+        migrateAddUserTemplates(partial);
       }
       return persistedState as PersistedDiagramStoreSlice;
     },

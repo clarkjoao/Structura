@@ -86,6 +86,42 @@ export interface Folder {
   domain?: string;
 }
 
+/**
+ * Template snapshot entry: no live `id`/`parentId`/`x`/`y`; geometry is centroid-relative.
+ */
+export type UserTemplateComponent = Omit<Component, "id" | "parentId" | "x" | "y"> & {
+  /** Index of the parent in `UserTemplate.components` when the parent is part of the template. */
+  parentIndex?: number;
+  /** Flow X / Y relative to selection centroid (internal template fields). */
+  _relX?: number;
+  _relY?: number;
+  /** Copied from `nodeLayout` when captured (optional). */
+  width?: number;
+  height?: number;
+};
+
+/**
+ * User-defined diagram fragment; connections reference entries by index into `components`
+ * (same indexing idea as pattern catalog templates).
+ */
+export interface UserTemplate {
+  /** From `generateId("tpl")`. */
+  id: string;
+  name: string;
+  description?: string;
+  /** Free-form; defined by the user. */
+  category?: string;
+  /** Unix timestamp (ms). */
+  createdAt: number;
+  components: UserTemplateComponent[];
+  connections: Array<
+    Omit<Connection, "id" | "sourceId" | "targetId"> & {
+      sourceIndex: number;
+      targetIndex: number;
+    }
+  >;
+}
+
 /** Declarative diff over the immutable base snapshot (cel / scene). */
 export interface SceneDiff {
   id: string;
@@ -103,6 +139,7 @@ export interface SceneDiff {
 export interface Diagram {
   id: string;
   name: string;
+  description?: string;
   level: Level;
   domain?: string;
   createdAt: string;

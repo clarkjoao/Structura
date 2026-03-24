@@ -1,10 +1,9 @@
-import type { DiagramGridProps } from "./dashboard.types";
-import { DiagramCard } from "./DiagramCard";
+import type { DiagramGridProps } from "@/pages/dashboard/dashboard.types";
+import { DiagramCard } from "@/pages/dashboard/DiagramCard";
 
 export function DiagramGrid({
   diagrams,
   onOpen,
-  onDelete,
   onDragStart,
   levelLabels,
 }: DiagramGridProps) {
@@ -17,7 +16,6 @@ export function DiagramGrid({
           diagram={d}
           index={i}
           onOpen={onOpen}
-          onDelete={onDelete}
           onDragStart={onDragStart}
           levelLabels={levelLabels}
         />

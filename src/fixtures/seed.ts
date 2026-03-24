@@ -3,6 +3,7 @@ import {
   ServiceSource,
   StrokeStyle,
   type Diagram,
+  type FlowStep,
   type Folder,
   type ServiceDefinition,
 } from "@/features/diagram";
@@ -12,6 +13,19 @@ import {
 ───────────────────────────────────────────────────────────── */
 
 const FOLDER_ID = "folder-fintech";
+
+function toFlowSteps(stepList: FlowStep[]): Record<string, FlowStep> {
+  const steps: Record<string, FlowStep> = {};
+  for (let stepIndex = 0; stepIndex < stepList.length; stepIndex += 1) {
+    const step = stepList[stepIndex]!;
+    const nextStepId = stepList[stepIndex + 1]?.id;
+    steps[step.id] = {
+      ...step,
+      next: nextStepId,
+    };
+  }
+  return steps;
+}
 
 function buildFolders(): Record<string, Folder> {
   return {
@@ -280,27 +294,31 @@ function buildDiagrams(): Record<string, Diagram> {
             description: "Pagamento PIX ponta a ponta da perspectiva do cliente.",
             tags: ["core", "pix", "caminho-feliz"],
             mermaid: "sequenceDiagram",
-            steps: [
+            steps: toFlowSteps([
               {
-                order: 0,
+                id: "flow-ctx-payment-step-0",
+                type: "action",
                 componentId: "ctx-customer",
                 connectionId: "ctx-r1",
                 description: "Cliente inicia transferência PIX no app mobile",
               },
               {
-                order: 1,
+                id: "flow-ctx-payment-step-1",
+                type: "action",
                 componentId: "ctx-platform",
                 description: "Plataforma valida KYC e saldo da conta",
               },
               {
-                order: 2,
+                id: "flow-ctx-payment-step-2",
+                type: "action",
                 componentId: "ctx-platform",
                 connectionId: "ctx-r5",
                 description: "Plataforma solicita verificação de identidade ao Provedor KYC",
                 duration: "~200ms",
               },
               {
-                order: 3,
+                id: "flow-ctx-payment-step-3",
+                type: "action",
                 componentId: "ctx-platform",
                 connectionId: "ctx-r4",
                 description: "Plataforma envia instrução PIX ao Banco Parceiro",
@@ -309,7 +327,8 @@ function buildDiagrams(): Record<string, Diagram> {
                 payloadDirection: "request",
               },
               {
-                order: 4,
+                id: "flow-ctx-payment-step-4",
+                type: "action",
                 componentId: "ctx-bank",
                 description: "Banco Parceiro processa PIX via SPI e confirma liquidação",
                 duration: "~2s",
@@ -317,12 +336,13 @@ function buildDiagrams(): Record<string, Diagram> {
                 payloadDirection: "response",
               },
               {
-                order: 5,
+                id: "flow-ctx-payment-step-5",
+                type: "action",
                 componentId: "ctx-platform",
                 connectionId: "ctx-r6",
                 description: "Plataforma envia notificação push confirmando a transferência",
               },
-            ],
+            ]),
           },
         },
       },
@@ -550,9 +570,10 @@ function buildDiagrams(): Record<string, Diagram> {
             description: "Fluxo completo de pagamento PIX do toque no mobile até o registro no ledger.",
             tags: ["core", "pix", "caminho-feliz"],
             mermaid: "sequenceDiagram",
-            steps: [
+            steps: toFlowSteps([
               {
-                order: 0,
+                id: "flow-pix-payment-step-0",
+                type: "action",
                 componentId: "ct-mobile-app",
                 connectionId: "ct-r2",
                 description: "Cliente toca em 'Pagar via PIX' — app envia mutation GraphQL ao BFF",
@@ -560,27 +581,31 @@ function buildDiagrams(): Record<string, Diagram> {
                 payloadDirection: "request",
               },
               {
-                order: 1,
+                id: "flow-pix-payment-step-1",
+                type: "action",
                 componentId: "ct-bff",
                 connectionId: "ct-r4",
                 description: "BFF valida sessão e proxia para o API Gateway",
               },
               {
-                order: 2,
+                id: "flow-pix-payment-step-2",
+                type: "action",
                 componentId: "ct-gateway",
                 connectionId: "ct-r5",
                 description: "Gateway valida JWT e roteia para o Serviço de Pagamento",
                 duration: "~10ms",
               },
               {
-                order: 3,
+                id: "flow-pix-payment-step-3",
+                type: "action",
                 componentId: "ct-payment-svc",
                 connectionId: "ct-r8",
                 description: "Serviço de Pagamento verifica chave de idempotência no Redis",
                 duration: "~5ms",
               },
               {
-                order: 4,
+                id: "flow-pix-payment-step-4",
+                type: "action",
                 componentId: "ct-payment-svc",
                 connectionId: "ct-r7",
                 description: "Verifica saldo e limite diário PIX via Serviço de Conta",
@@ -589,14 +614,16 @@ function buildDiagrams(): Record<string, Diagram> {
                 payloadDirection: "request",
               },
               {
-                order: 5,
+                id: "flow-pix-payment-step-5",
+                type: "action",
                 componentId: "ct-payment-svc",
                 connectionId: "ct-r9",
                 description: "Persiste pagamento com status PENDENTE",
                 duration: "~15ms",
               },
               {
-                order: 6,
+                id: "flow-pix-payment-step-6",
+                type: "action",
                 componentId: "ct-payment-svc",
                 connectionId: "ct-r10",
                 description: "Publica evento payment.processed no Kafka",
@@ -604,19 +631,21 @@ function buildDiagrams(): Record<string, Diagram> {
                 payloadDirection: "request",
               },
               {
-                order: 7,
+                id: "flow-pix-payment-step-7",
+                type: "action",
                 componentId: "ct-ledger-svc",
                 connectionId: "ct-r14",
                 description: "Ledger consome evento e cria registros de partida dobrada",
                 duration: "~20ms",
               },
               {
-                order: 8,
+                id: "flow-pix-payment-step-8",
+                type: "action",
                 componentId: "ct-notification-svc",
                 connectionId: "ct-r13",
                 description: "Serviço de notificação envia confirmação push ao cliente",
               },
-            ],
+            ]),
           },
         },
       },
@@ -754,9 +783,10 @@ function buildDiagrams(): Record<string, Diagram> {
             description: "Fluxo interno detalhado de um pagamento PIX pelos componentes do Serviço de Pagamento.",
             tags: ["core", "pix"],
             mermaid: "sequenceDiagram",
-            steps: [
+            steps: toFlowSteps([
               {
-                order: 0,
+                id: "flow-pix-component-step-0",
+                type: "action",
                 componentId: "pm-pix-controller",
                 connectionId: "pm-r1",
                 description: "PIX Controller recebe POST /pix/payments e delega ao orquestrador",
@@ -764,14 +794,16 @@ function buildDiagrams(): Record<string, Diagram> {
                 payloadDirection: "request",
               },
               {
-                order: 1,
+                id: "flow-pix-component-step-1",
+                type: "action",
                 componentId: "pm-payment-orchestrator",
                 connectionId: "pm-r3",
                 description: "Idempotency Guard verifica Redis por requisição duplicada",
                 duration: "~3ms",
               },
               {
-                order: 2,
+                id: "flow-pix-component-step-2",
+                type: "action",
                 componentId: "pm-payment-orchestrator",
                 connectionId: "pm-r4",
                 description: "Balance Checker chama Serviço de Conta para verificar R$ 250,00 disponível",
@@ -780,14 +812,16 @@ function buildDiagrams(): Record<string, Diagram> {
                 payloadDirection: "request",
               },
               {
-                order: 3,
+                id: "flow-pix-component-step-3",
+                type: "action",
                 componentId: "pm-payment-orchestrator",
                 connectionId: "pm-r5",
                 description: "Limit Checker valida contra o limite diário PIX (R$ 5.000)",
                 duration: "~5ms",
               },
               {
-                order: 4,
+                id: "flow-pix-component-step-4",
+                type: "action",
                 componentId: "pm-pix-adapter",
                 connectionId: "pm-r6",
                 description: "PIX Adapter assina e envia instrução ao SPI do Banco Parceiro",
@@ -796,7 +830,8 @@ function buildDiagrams(): Record<string, Diagram> {
                 payloadDirection: "request",
               },
               {
-                order: 5,
+                id: "flow-pix-component-step-5",
+                type: "action",
                 componentId: "pm-pix-adapter",
                 description: "Banco confirma liquidação via webhook callback",
                 duration: "~1.2s",
@@ -804,14 +839,15 @@ function buildDiagrams(): Record<string, Diagram> {
                 payloadDirection: "response",
               },
               {
-                order: 6,
+                id: "flow-pix-component-step-6",
+                type: "action",
                 componentId: "pm-event-publisher",
                 connectionId: "pm-r8",
                 description: "Publica evento payment.processed via padrão outbox",
                 payload: '{ "paymentId": "pay-789", "type": "PIX", "status": "SETTLED", "amount": 250.00 }',
                 payloadDirection: "request",
               },
-            ],
+            ]),
           },
         },
       },
@@ -911,16 +947,18 @@ function buildDiagrams(): Record<string, Diagram> {
             description: "Como uma requisição percorre todos os plugins do gateway antes de chegar ao serviço upstream.",
             tags: ["infra", "pipeline"],
             mermaid: "sequenceDiagram",
-            steps: [
+            steps: toFlowSteps([
               {
-                order: 0,
+                id: "flow-gw-request-step-0",
+                type: "action",
                 componentId: "gw-cors",
                 connectionId: "gw-r1",
                 description: "CORS valida origem e passa requisição adiante",
                 duration: "~1ms",
               },
               {
-                order: 1,
+                id: "flow-gw-request-step-1",
+                type: "action",
                 componentId: "gw-auth",
                 connectionId: "gw-r2",
                 description: "JWT Validator verifica assinatura, expiração e injeta header userId",
@@ -929,27 +967,30 @@ function buildDiagrams(): Record<string, Diagram> {
                 payloadDirection: "request",
               },
               {
-                order: 2,
+                id: "flow-gw-request-step-2",
+                type: "action",
                 componentId: "gw-rate-limiter",
                 connectionId: "gw-r3",
                 description: "Rate Limiter verifica contador de janela deslizante no Redis — dentro do limite",
                 duration: "~3ms",
               },
               {
-                order: 3,
+                id: "flow-gw-request-step-3",
+                type: "action",
                 componentId: "gw-router",
                 connectionId: "gw-r5",
                 description: "Router proxia para o Serviço de Pagamento e loga assincronamente no CloudWatch",
                 duration: "~2ms",
               },
               {
-                order: 4,
+                id: "flow-gw-request-step-4",
+                type: "action",
                 componentId: "gw-transformer",
                 connectionId: "gw-r4",
                 description: "Transformer adiciona headers de segurança e comprime resposta antes de retornar",
                 duration: "~2ms",
               },
-            ],
+            ]),
           },
         },
       },

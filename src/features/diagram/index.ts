@@ -10,7 +10,6 @@ export type {
   C4Component,
   PanelComponent,
   SwimlaneStyle,
-  PanelKind,
   NoteComponent,
   AwsComponent,
   ApiGroupComponent,
@@ -22,9 +21,6 @@ export type {
   ConnectionStyle,
   ConnectionIntent,
   ConnectionDirection,
-  EdgeStyle,
-  StrokeStyle,
-  EdgeMarker,
   NodeLayout,
   ViewNodeLayout,
   Point,
@@ -39,6 +35,8 @@ export type {
   Folder,
   Diagram,
   SceneDiff,
+  UserTemplate,
+  UserTemplateComponent,
 } from "./model/diagram.types";
 
 export { isAwsIcon, isLucideIcon, isSvgIcon } from "./model/diagram.types";
@@ -146,6 +144,10 @@ export {
   useDiagramActions,
   /** Custom icon library mutations (add/remove/rename/usage counters) */
   useIconActions,
+  updateDiagramDescription,
+  saveUserTemplate,
+  updateUserTemplate,
+  deleteUserTemplate,
 } from "./store/diagram.store";
 
 export {
@@ -185,6 +187,7 @@ export {
   useComponentIcon,
   useEdgeWaypoints,
   useEdgeLabelOffset,
-} from './store/selectors'
+  useAllUserTemplates,
+} from "./store/selectors";
 export type { DiagramStore, ClipboardEntry } from "./store/store.types";
 export type { ServiceDefinition } from "./model/service.types";

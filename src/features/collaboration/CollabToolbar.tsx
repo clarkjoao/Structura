@@ -1,0 +1,80 @@
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Check, Link, Users } from "lucide-react";
+import type { CollabSession } from "./types";
+
+interface CollabToolbarProps {
+  session: CollabSession | null;
+  isReady: boolean;
+  collabUrl: string;
+  onStartCollab: () => void;
+}
+
+export function CollabToolbar({
+  session,
+  isReady,
+  collabUrl,
+  onStartCollab,
+}: CollabToolbarProps) {
+  const { t } = useTranslation();
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopyLink = () => {
+    if (!collabUrl) return;
+    void navigator.clipboard.writeText(collabUrl);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  if (!session) {
+    return (
+      <button
+        type="button"
+        onClick={onStartCollab}
+        className="flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+      >
+        <Users className="h-3.5 w-3.5" />
+        {t("collaboration.start")}
+      </button>
+    );
+  }
+
+  const peerCount = session.peers.size;
+
+  return (
+    <div className="flex items-center gap-2 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2">
+      <div className="flex items-center gap-1.5">
+        <span
+          className={`h-2 w-2 rounded-full ${isReady ? "bg-emerald-500" : "bg-amber-500 animate-pulse"}`}
+        />
+        <span className="text-xs font-medium text-foreground">
+          {peerCount > 0
+            ? t("collaboration.onlineCount", { count: peerCount + 1 })
+            : t("collaboration.waitingPeers")}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-1">
+        {[...session.peers.values()].slice(0, 4).map((peer, index) => (
+          <div
+            key={`${peer.user.id}-${index}`}
+            className="h-5 w-5 rounded-full border-2 border-background flex items-center justify-center text-[8px] text-white font-bold"
+            style={{ backgroundColor: peer.user?.color ?? "#6366f1" }}
+            title={peer.user?.name}
+          >
+            {peer.user?.name?.[0]?.toUpperCase() ?? "?"}
+          </div>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={handleCopyLink}
+        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        title={t("collaboration.copyLink")}
+      >
+        {isCopied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Link className="h-3.5 w-3.5" />}
+      </button>
+    </div>
+  );
+}

@@ -11,6 +11,18 @@ const DB_STORE = "handles";
 const HANDLE_KEY = "workspace-handle";
 const MANIFEST_FILE = "structura-manifest.json";
 
+type FileSystemPermissionMode = "read" | "readwrite";
+type FileSystemPermissionState = "granted" | "denied" | "prompt";
+
+interface FileSystemPermissionRequest {
+  mode?: FileSystemPermissionMode;
+}
+
+interface FileSystemDirectoryHandleWithPermissions extends FileSystemDirectoryHandle {
+  queryPermission?: (descriptor?: FileSystemPermissionRequest) => Promise<FileSystemPermissionState>;
+  requestPermission?: (descriptor?: FileSystemPermissionRequest) => Promise<FileSystemPermissionState>;
+}
+
 // ── IndexedDB helpers (store FileSystemDirectoryHandle) ──
 
 function openIDB(): Promise<IDBDatabase> {
@@ -62,9 +74,10 @@ async function verifyPermission(
   handle: FileSystemDirectoryHandle,
   mode: FileSystemPermissionMode = "readwrite"
 ): Promise<boolean> {
+  const directoryHandle = handle as FileSystemDirectoryHandleWithPermissions;
   const opts = { mode };
-  if ((await handle.queryPermission(opts)) === "granted") return true;
-  if ((await handle.requestPermission(opts)) === "granted") return true;
+  if ((await directoryHandle.queryPermission?.(opts)) === "granted") return true;
+  if ((await directoryHandle.requestPermission?.(opts)) === "granted") return true;
   return false;
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Diagram } from "@/features/diagram";
+import { PanelKind, type Diagram } from "@/features/diagram";
 import { exportDrawio, extractMxGraphModelXml } from "./export-drawio";
 
 function minimalDiagram(overrides: Partial<Diagram> = {}): Diagram {
@@ -45,7 +45,7 @@ describe("exportDrawio", () => {
             id: panelId,
             name: "Boundary",
             type: "panel",
-            panelKind: "default",
+            panelKind: PanelKind.Default,
             description: "",
             parentId: null,
           },
@@ -155,7 +155,7 @@ describe("exportDrawio", () => {
             id: panelId,
             name: "P",
             type: "panel",
-            panelKind: "default",
+            panelKind: PanelKind.Default,
             description: "",
             parentId: null,
           },

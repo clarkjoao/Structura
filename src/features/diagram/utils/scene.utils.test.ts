@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Diagram } from "../model/diagram.types";
+import type { SceneDiff } from "../model/diagram.types";
 import { computeMergePreview, resolveSceneSnapshot, sceneHasDiff } from "./scene.utils";
 
 function emptyDiagram(overrides: Partial<Diagram> = {}): Diagram {
@@ -75,7 +76,7 @@ describe("resolveSceneSnapshot", () => {
 
 describe("sceneHasDiff", () => {
   it("is false for empty scene diff", () => {
-    const sc = {
+    const sc: SceneDiff = {
       id: "s",
       name: "S",
       color: "#000",
@@ -90,7 +91,7 @@ describe("sceneHasDiff", () => {
   });
 
   it("is true when scene has additions or removals", () => {
-    const sc = {
+    const sc: SceneDiff = {
       id: "s",
       name: "S",
       color: "#000",

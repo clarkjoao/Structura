@@ -1,3 +1,4 @@
+export { resolveActiveScene } from "./scene-helpers";
 export { historySlice } from "./history.slice";
 export { componentsSlice } from "./components.slice";
 export { connectionsSlice } from "./connections.slice";
@@ -10,3 +11,4 @@ export { foldersSlice } from "./folders.slice";
 export { patternsSlice } from "./patterns.slice";
 export { scenesSlice } from "./scenes.slice";
 export { iconsSlice } from "./icons.slice";
+export { userTemplatesSlice } from "./userTemplates.slice";

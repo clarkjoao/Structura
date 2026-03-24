@@ -38,6 +38,66 @@ export const diagramsSlice = (
 
         return diagram;
       },
+
+    addImportedDiagram: (diagramInput: Diagram) => {
+      const importedDiagram: Diagram = {
+        ...structuredClone(diagramInput),
+      };
+
+      set((state) => {
+        state.diagrams[importedDiagram.id] = importedDiagram;
+      });
+
+      if (fileSystemAdapter.isConnected) {
+        fileSystemAdapter.setFolders(get().folders);
+        fileSystemAdapter.writeDiagram(importedDiagram);
+      }
+
+      return importedDiagram;
+    },
+
+    importDiagram: (diagramInput: Diagram) => {
+      const now = new Date().toISOString();
+      const importedDiagram: Diagram = {
+        ...structuredClone(diagramInput),
+        id: generateId("d"),
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      set((state) => {
+        state.diagrams[importedDiagram.id] = importedDiagram;
+      });
+
+      if (fileSystemAdapter.isConnected) {
+        fileSystemAdapter.setFolders(get().folders);
+        fileSystemAdapter.writeDiagram(importedDiagram);
+      }
+
+      return importedDiagram;
+    },
+
+    duplicateDiagram: (sourceId: string, name: string) => {
+      const source = get().diagrams[sourceId];
+      if (!source) return null;
+      const newId = generateId("d");
+      const now = new Date().toISOString();
+      const diagram: Diagram = {
+        ...structuredClone(source),
+        id: newId,
+        name: name.trim() || source.name,
+        createdAt: now,
+        updatedAt: now,
+      };
+      set((state) => {
+        state.diagrams[newId] = diagram;
+      });
+      if (fileSystemAdapter.isConnected) {
+        fileSystemAdapter.setFolders(get().folders);
+        fileSystemAdapter.writeDiagram(diagram);
+      }
+      return diagram;
+    },
   
     openDiagram: (id: string) => {
       set((state) => {
@@ -52,6 +112,15 @@ export const diagramsSlice = (
         if (patch.name !== undefined) d.name = patch.name.trim() || d.name;
         if (patch.domain !== undefined) d.domain = patch.domain;
         d.updatedAt = new Date().toISOString();
+      });
+    },
+
+    updateDiagramDescription: (diagramId: string, description: string) => {
+      set((state) => {
+        const diagram = state.diagrams[diagramId];
+        if (!diagram) return;
+        diagram.description = description;
+        diagram.updatedAt = new Date().toISOString();
       });
     },
 

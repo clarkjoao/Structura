@@ -177,10 +177,25 @@
     "levelContext": "Nível 1 – Contexto de sistema",
     "levelContainer": "Nível 2 – Container",
     "levelComponent": "Nível 3 – Componente",
+    "levelDeployment": "Nível 4 – Deployment",
     "levelContextShort": "L1 · Contexto",
     "levelContainerShort": "L2 · Container",
     "levelComponentShort": "L3 · Componente",
-    "diagramPreviewAlt": "Pré-visualização de {{name}}"
+    "levelDeploymentShort": "L4 · Deployment",
+    "diagramPreviewAlt": "Pré-visualização de {{name}}",
+    "card": {
+      "rename": "Renomear",
+      "renamePrompt": "Nome do diagrama",
+      "duplicate": "Duplicar",
+      "duplicatedDiagramName": "{{name}} (cópia)",
+      "move": "Mover",
+      "moveDialogTitle": "Mover para pasta",
+      "delete": "Excluir",
+      "deleteConfirm": "Excluir \"{{name}}\"?",
+      "components": "componentes",
+      "connections": "conexões",
+      "flows": "fluxos"
+    }
   },
   "folderTree": {
     "newFolderTitle": "Nova pasta",
@@ -277,7 +292,17 @@
     "newEndpoint": "Novo Endpoint",
     "usesEdgeLabel": "Usa",
     "apiGroupDefaultName": "API Endpoints",
-    "compareViewBanner": "Modo visualização — edição desativada"
+    "compareViewBanner": "Modo visualização — edição desativada",
+    "toolbar": {
+      "filterByTag": "Filtrar por tag",
+      "noTags": "Nenhuma tag neste diagrama",
+      "showAll": "Mostrar todos",
+      "descriptionPlaceholder": "Adicionar descrição...",
+      "editDescription": "Clique para editar a descrição"
+    },
+    "multiSelect": {
+      "saveAsTemplate": "Salvar como template"
+    }
   },
   "canvasToolbar": {
     "renameTitle": "Clique duas vezes para renomear",
@@ -292,7 +317,8 @@
     "selectedCount": "{{count}} selecionados",
     "levelContext": "Nível 1",
     "levelContainer": "Nível 2",
-    "levelComponent": "Nível 3"
+    "levelComponent": "Nível 3",
+    "levelDeployment": "Nível 4"
   },
   "scenes": {
     "base": "Base",
@@ -425,7 +451,16 @@
     },
     "noneFoundForQuery": "Nenhum pattern encontrado para “{{query}}”",
     "elementAbbrev": "{{count}} elem.",
-    "connAbbrev": "{{count}} conn."
+    "connAbbrev": "{{count}} conn.",
+    "categories": {
+      "userTemplates": "Meus templates"
+    },
+    "userTemplates": {
+      "empty": "Nenhum template salvo",
+      "emptyHint": "Selecione nodes no canvas e clique em 'Salvar como template'",
+      "delete": "Excluir template",
+      "deleteConfirm": "Excluir '{{name}}'? Esta ação não pode ser desfeita."
+    }
   },
   "connectionPanel": {
     "technologyLabel": "Tecnologia",
@@ -555,6 +590,16 @@
     "typePanel": "panel",
     "typeNote": "nota"
   },
+  "saveTemplate": {
+    "title": "Salvar seleção como template",
+    "namePlaceholder": "Nome do template",
+    "descriptionPlaceholder": "Descrição (opcional)",
+    "categoryPlaceholder": "Categoria (opcional)",
+    "nodesIncluded_one": "{{count}} nó incluído",
+    "nodesIncluded_other": "{{count}} nós incluídos",
+    "childrenIncluded": "+{{count}} filho(s) de panel incluído(s) automaticamente",
+    "saved": "Template salvo"
+  },
   "nodeContextMenu": {
     "ordering": "Ordenação",
     "bringToFront": "Trazer para frente",
@@ -614,6 +659,92 @@
     "emptyTagged": "Nenhum flow com essa tag.",
     "emptyNone": "Nenhum flow definido.",
     "recorderBlockedInCompare": "Saia do modo de comparação de versões para gravar ou editar um flow"
+  },
+  "export": {
+    "embed": {
+      "title": "Incorporar diagrama",
+      "menuItem": "Embed (iframe)",
+      "copied": "Código embed copiado!",
+      "tabs": {
+        "direct": "Direto (iframe)",
+        "postMessage": "Via código",
+        "src": "Via URL"
+      },
+      "urlTooLong": "URL grande — recomendamos usar Via código"
+    }
+  },
+  "toolbar": {
+    "shareExport": "Exportar",
+    "exportGroup": "Exportar como"
+  },
+  "share": {
+    "button": "Compartilhar",
+    "modalTitle": "Compartilhar diagrama",
+    "linkLabel": "Link de visualização",
+    "linkDescription": "Abre o diagrama em modo preview com opção de importar",
+    "embedLabel": "Link de embed (iframe)",
+    "embedDescription": "Use em iframes, Docusaurus ou qualquer HTML",
+    "copied": "Link copiado!",
+    "smaller": "menor",
+    "urlLargeWarning": "Diagrama grande — o link pode não funcionar em produção (GitHub Pages). Funciona normalmente em localhost.",
+    "urlTooLargeError": "Diagrama muito grande para compartilhar via URL. Exporte o JSON e compartilhe o arquivo diretamente.",
+    "urlSize": "Tamanho do link: {{size}}",
+    "previewPrefix": "Preview compartilhado:",
+    "importedSuffix": "(importado {{date}})",
+    "import": "Importar",
+    "previewBanner": {
+      "title": "Você está visualizando \"{{name}}\"",
+      "subtitle": "modo somente leitura",
+      "import": "Importar para meu workspace",
+      "openInStructura": "Abrir no Structura",
+      "close": "Fechar"
+    }
+  },
+  "collaboration": {
+    "start": "Colaborar",
+    "startSession": "Iniciar sessão de colaboração",
+    "startSessionDesc": "Compartilhe \"{{name}}\" com seus peers em tempo real.",
+    "yourName": "Seu nome",
+    "namePlaceholder": "ex.: Alice",
+    "signalingServer": "Servidor de signaling",
+    "signalingHint": "Use seu servidor WebSocket de signaling para descoberta de peers.",
+    "testServer": "Testar servidor",
+    "serverOnline": "Servidor online",
+    "serverOffline": "Servidor offline",
+    "inviteLink": "Link de convite",
+    "inviteLinkHint": "Compartilhe este link para outros entrarem na sala.",
+    "startButton": "Iniciar sessão",
+    "joinSession": "Entrar na sessão de colaboração",
+    "joinSessionDesc": "Você está entrando na sala {{roomId}}.",
+    "joinButton": "Entrar na sessão",
+    "onlineCount_one": "{{count}} online",
+    "onlineCount_other": "{{count}} online",
+    "waitingPeers": "Aguardando peers...",
+    "copyLink": "Copiar link de colaboração",
+    "peerFallback": "Peer",
+    "peerEditing": "{{name}} está editando",
+    "connecting": "Conectando ao servidor de colaboração...",
+    "syncing": "Sincronizando diagrama...",
+    "loading": "Carregando diagrama...",
+    "invalidRoom": "Room ID inválido.",
+    "importToWorkspace": "Importar para workspace",
+    "importedDiagramName": "{{name}} - importado da colaboração {{host}}",
+    "importSuccess": "\"{{name}}\" importado para seu workspace",
+    "importError": "Não foi possível importar o diagrama compartilhado",
+    "backToWorkspace": "Voltar ao workspace",
+    "sessionEnded": "Sessão encerrada",
+    "sessionEndedDesc": "{{host}} encerrou a sessão de colaboração.",
+    "importAndContinue": "Importar e continuar",
+    "endSession": "Encerrar sessão",
+    "confirmClose": "Encerrar esta sessão de colaboração?",
+    "status": {
+      "idle": "Inativo",
+      "connecting": "Conectando",
+      "connected": "Conectado",
+      "reconnecting": "Reconectando",
+      "disconnected": "Desconectado",
+      "closed": "Encerrado"
+    }
   },
   "flowRecorder": {
     "editingTitle": "Editando Flow",

@@ -4,6 +4,7 @@ import type { AppState } from "../store.types";
 import { computeMergePreview, nextSceneColor } from "../../utils/scene.utils";
 import { mutateRemoveComponentInScene, mutateRemoveConnectionInScene } from "../../utils/scene-mutations";
 import { pushHistory } from "./history.slice";
+import { resolveActiveScene } from "./scene-helpers";
 
 function ensureScenes(d: Diagram): Record<string, SceneDiff> {
   if (!d.scenes) d.scenes = {};
@@ -112,9 +113,9 @@ export const scenesSlice = (
         d.updatedAt = new Date().toISOString();
         return;
       }
-      const active = d.activeSceneId;
-      if (!active || !d.scenes?.[active]) return;
-      if (sceneId === active) return;
+      const activeScene = resolveActiveScene(d);
+      if (!activeScene) return;
+      if (sceneId === activeScene.id) return;
       if (!d.scenes?.[sceneId]) return;
       d.compareSceneId = sceneId;
       d.updatedAt = new Date().toISOString();

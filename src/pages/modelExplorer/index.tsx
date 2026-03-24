@@ -17,6 +17,7 @@ import {
 } from "@/features/diagram";
 import { exportJSON, exportDrawio, exportMermaid, downloadFile } from "@/lib/export-service";
 import { writeDrawioToClipboard } from "@/lib/clipboard-utils";
+import { CollabProvider, CollabStartModal } from "@/features/collaboration";
 import { ModelExplorerContent } from "./ModelExplorerContent";
 
 export default function ModelExplorerPage() {
@@ -34,6 +35,10 @@ export default function ModelExplorerPage() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [navStack, setNavStack] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
+  const [showStartModal, setShowStartModal] = useState(false);
+  const [collabActive, setCollabActive] = useState(false);
+  const [collabUserName, setCollabUserName] = useState("");
+  const [collabSignalingUrl, setCollabSignalingUrl] = useState("");
 
   // Sync URL :id → store.activeDiagramId (handles page refresh / direct link)
   useEffect(() => {
@@ -129,6 +134,12 @@ export default function ModelExplorerPage() {
     }
   }, [diagram, flows, serviceRegistry]);
 
+  const handleStartCollab = useCallback((name: string, signalingUrl: string) => {
+    setCollabUserName(name);
+    setCollabSignalingUrl(signalingUrl);
+    setCollabActive(true);
+  }, []);
+
   if (!diagram) {
     return (
       <div className="h-screen flex flex-col">
@@ -150,22 +161,36 @@ export default function ModelExplorerPage() {
         onFinalize={handleFinalizeRecording}
         onStartRecording={() => setShowFlows(false)}
       >
-        <ModelExplorerContent
-          showFlows={showFlows}
-          setShowFlows={setShowFlows}
-          isViewingCoverage={isViewingCoverage}
-          setIsViewingCoverage={setIsViewingCoverage}
-          showShortcuts={showShortcuts}
-          setShowShortcuts={setShowShortcuts}
-          navStack={navStack}
-          handleOpenDiagram={handleOpenDiagram}
-          handleDrillDownToDiagram={handleDrillDownToDiagram}
-          handleDrillUp={handleDrillUp}
-          handleCopyDrawio={handleCopyDrawio}
-          handleExport={handleExport}
-          copied={copied}
-          flows={flows}
-        />
+        <CollabProvider
+          enabled={collabActive}
+          userName={collabUserName}
+          signalingUrl={collabSignalingUrl}
+        >
+          <ModelExplorerContent
+            showFlows={showFlows}
+            setShowFlows={setShowFlows}
+            isViewingCoverage={isViewingCoverage}
+            setIsViewingCoverage={setIsViewingCoverage}
+            showShortcuts={showShortcuts}
+            setShowShortcuts={setShowShortcuts}
+            navStack={navStack}
+            handleOpenDiagram={handleOpenDiagram}
+            handleDrillDownToDiagram={handleDrillDownToDiagram}
+            handleDrillUp={handleDrillUp}
+            handleCopyDrawio={handleCopyDrawio}
+            handleExport={handleExport}
+            onStartCollab={() => setShowStartModal(true)}
+            copied={copied}
+            flows={flows}
+          />
+          <CollabStartModal
+            open={showStartModal}
+            onOpenChange={setShowStartModal}
+            diagramId={diagram.id}
+            diagramName={diagram.name}
+            onStart={handleStartCollab}
+          />
+        </CollabProvider>
       </FlowModeProvider>
     </div>
   );

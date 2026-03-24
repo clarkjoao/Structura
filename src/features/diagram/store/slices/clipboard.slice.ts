@@ -2,6 +2,7 @@ import type { Component, Connection } from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 import { deepClone, pushHistory } from "./history.slice";
+import { resolveActiveScene } from "./scene-helpers";
 import { resolveSceneSnapshot } from "../../utils/scene.utils";
 
 export const clipboardSlice = (
@@ -32,8 +33,7 @@ export const clipboardSlice = (
         if (!state.clipboard || !state.activeDiagramId) return;
         const d = state.diagrams[state.activeDiagramId];
         if (!d) return;
-        const sid = d.activeSceneId ?? null;
-        const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+        const scene = resolveActiveScene(d);
         if (!scene) pushHistory(state);
         const idMap: Record<string, string> = {};
         const baseX = position?.x ?? 300;

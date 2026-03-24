@@ -1,8 +1,10 @@
 import type { Connection } from "../../model/diagram.types";
 import type { EdgeStyle } from "../../model/connection.types";
+import { EdgeStyle as EdgeStyleEnum } from "../../enums";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
+import { resolveActiveScene } from "./scene-helpers";
 import { mutateRemoveConnectionInScene } from "../../utils/scene-mutations";
 
 export const connectionsSlice = (
@@ -13,7 +15,7 @@ export const connectionsSlice = (
       sourceId: string,
       targetId: string,
       label: string,
-      edgeStyle: EdgeStyle = "smoothstep",
+      edgeStyle: EdgeStyle = EdgeStyleEnum.Smoothstep,
     ): Connection => {
       const connection: Connection = {
         id: generateId("conn"),
@@ -27,8 +29,7 @@ export const connectionsSlice = (
       set((state) => {
         const d = state.diagrams[state.activeDiagramId!];
         if (!d) return;
-        const sid = d.activeSceneId ?? null;
-        const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+        const scene = resolveActiveScene(d);
         if (!scene) pushHistory(state);
         if (scene) {
           scene.addedConnections[connection.id] = connection;
@@ -44,8 +45,7 @@ export const connectionsSlice = (
       set((state) => {
         const d = state.diagrams[state.activeDiagramId!];
         if (!d) return;
-        const sid = d.activeSceneId ?? null;
-        const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+        const scene = resolveActiveScene(d);
         const inScene = !!(scene && scene.addedConnections[id]);
         if (!inScene) pushHistory(state);
         const conn = inScene ? scene!.addedConnections[id] : d.snapshot.connections[id];
@@ -58,10 +58,9 @@ export const connectionsSlice = (
       set((state) => {
         const d = state.diagrams[state.activeDiagramId!];
         if (!d) return;
-        const sid = d.activeSceneId ?? null;
-        const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+        const scene = resolveActiveScene(d);
         if (scene) {
-          mutateRemoveConnectionInScene(d, sid!, id);
+          mutateRemoveConnectionInScene(d, scene.id, id);
           d.updatedAt = new Date().toISOString();
           return;
         }

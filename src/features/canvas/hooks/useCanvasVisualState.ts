@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { Component } from "@/features/diagram";
 
 export interface CanvasVisualState {
   selectedNodeId: string | null;
@@ -20,9 +21,13 @@ export interface CanvasVisualState {
   } | null;
   setQuickInsert: (value: CanvasVisualState["quickInsert"]) => void;
   clearCanvasSelection: () => void;
+  hiddenTags: Set<string>;
+  toggleTag: (tag: string) => void;
+  showAllTags: () => void;
+  isNodeHiddenByTagFilter: (component: Component) => boolean;
 }
 
-export function useCanvasVisualState(): CanvasVisualState {
+export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisualState {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
@@ -38,6 +43,37 @@ export function useCanvasVisualState(): CanvasVisualState {
     flowPos: { x: number; y: number };
     sourceNodeId?: string | null;
   } | null>(null);
+  const [hiddenTags, setHiddenTags] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    setHiddenTags(new Set());
+  }, [activeDiagramId]);
+
+  const toggleTag = useCallback((tag: string) => {
+    setHiddenTags((previous) => {
+      const next = new Set(previous);
+      if (next.has(tag)) {
+        next.delete(tag);
+      } else {
+        next.add(tag);
+      }
+      return next;
+    });
+  }, []);
+
+  const showAllTags = useCallback(() => {
+    setHiddenTags(new Set());
+  }, []);
+
+  const isNodeHiddenByTagFilter = useCallback(
+    (component: Component): boolean => {
+      if (!component.tags?.length) {
+        return false;
+      }
+      return component.tags.some((tag) => hiddenTags.has(tag));
+    },
+    [hiddenTags],
+  );
 
   const emptySet = useRef(new Set<string>()).current;
 
@@ -75,5 +111,9 @@ export function useCanvasVisualState(): CanvasVisualState {
     quickInsert,
     setQuickInsert,
     clearCanvasSelection,
+    hiddenTags,
+    toggleTag,
+    showAllTags,
+    isNodeHiddenByTagFilter,
   };
 }

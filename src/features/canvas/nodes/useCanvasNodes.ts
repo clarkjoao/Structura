@@ -48,6 +48,7 @@ interface UseCanvasNodesParams {
   onAddEndpointToGroup?: (groupId: string) => void;
   isCompareMode?: boolean;
   compareVisualByComponentId?: Record<string, CompareElementVisual>;
+  isNodeHiddenByTagFilter: (component: Component) => boolean;
 }
 
 type NodeCtxBase = Omit<NodeBuildContext, "isPlaying" | "isRecording" | "flowHighlight" | "activeStep" | "recordingInfo" | "coverage"> & {
@@ -85,6 +86,7 @@ export function useCanvasNodes({
   onAddEndpointToGroup,
   isCompareMode = false,
   compareVisualByComponentId,
+  isNodeHiddenByTagFilter,
 }: UseCanvasNodesParams): Node[] {
   const { isRecording, onRecordHandleClick } = useFlowMode();
 
@@ -208,6 +210,12 @@ export function useCanvasNodes({
           const baseOp = typeof style.opacity === "number" ? style.opacity : 1;
           style.opacity = baseOp * cmpVis.opacity;
         }
+        const tagFilteredHidden = isNodeHiddenByTagFilter(comp);
+        if (tagFilteredHidden) {
+          style.opacity = 0.15;
+          style.pointerEvents = "none";
+          style.transition = "opacity 0.2s ease";
+        }
         const lockedInGroup =
           isEndpointType(comp.type) &&
           comp.parentId != null &&
@@ -221,11 +229,11 @@ export function useCanvasNodes({
           type: d.rfType,
           position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
           zIndex: vis.zIndex,
-          connectable: d.connectable && !isCmp,
+          connectable: d.connectable && !isCmp && !tagFilteredHidden,
           selected: vis.isSelected,
-          draggable: (d.draggable ?? !lockedInGroup) && !sceneLocksBase && !isCmp,
-          selectable: (d.selectable ?? !lockedInGroup) && !isCmp,
-          focusable: (d.focusable ?? !lockedInGroup) && !isCmp,
+          draggable: (d.draggable ?? !lockedInGroup) && !sceneLocksBase && !isCmp && !tagFilteredHidden,
+          selectable: (d.selectable ?? !lockedInGroup) && !isCmp && !tagFilteredHidden,
+          focusable: (d.focusable ?? !lockedInGroup) && !isCmp && !tagFilteredHidden,
           className: isCmp ? "cursor-default" : undefined,
           ...(vis.isChild ? { parentId: comp.parentId!, extent: "parent" as const } : {}),
           hidden: vis.isHidden,
@@ -233,5 +241,5 @@ export function useCanvasNodes({
           data: d.buildData(comp, ctx),
         };
       });
-  }, [diagram, nodeCtxBase, nodeCtxPlayback, visibleComponents]);
+  }, [diagram, nodeCtxBase, nodeCtxPlayback, visibleComponents, isNodeHiddenByTagFilter]);
 }

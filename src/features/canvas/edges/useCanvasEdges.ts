@@ -18,6 +18,8 @@ interface UseCanvasEdgesParams {
   flowHighlight: Pick<FlowHighlight, "activeConnId" | "participantConnIds">;
   recordingInfo: Pick<RecordingInfo, "edgeSteps" | "recordedEdgeIds" | "lastEdgeId"> | null;
   coverage: Pick<CoverageInfo, "edgeFlows"> | null;
+  /** Tags toggled off in the canvas tag filter (local state, not persisted) */
+  hiddenTags: Set<string>;
 }
 
 export function useCanvasEdges({
@@ -32,6 +34,7 @@ export function useCanvasEdges({
   flowHighlight,
   recordingInfo,
   coverage,
+  hiddenTags,
 }: UseCanvasEdgesParams): Edge[] {
   const { isRecording } = useFlowMode();
   return useMemo(() => {
@@ -41,8 +44,18 @@ export function useCanvasEdges({
     const visible = filterVisibleConnections(visibleConnections, r.components);
     const assignmentMap = new Map(edgeHandleAssignments.map((a) => [a.connId, a]));
 
+    const isEndpointHiddenByTag = (componentId: string): boolean => {
+      const component = r.components[componentId];
+      if (!component?.tags?.length) {
+        return false;
+      }
+      return component.tags.some((tag) => hiddenTags.has(tag));
+    };
+
     return visible.map((conn) => {
       const assignment = assignmentMap.get(conn.id);
+      const sourceHidden = isEndpointHiddenByTag(conn.sourceId);
+      const targetHidden = isEndpointHiddenByTag(conn.targetId);
       return buildEdge(conn, assignment, {
         diagram,
         selectedEdgeId,
@@ -54,6 +67,7 @@ export function useCanvasEdges({
         flowHighlight,
         recordingInfo,
         coverage,
+        tagFilterEdgeDimmed: sourceHidden || targetHidden,
       });
     });
   }, [
@@ -69,5 +83,6 @@ export function useCanvasEdges({
     flowHighlight,
     recordingInfo,
     coverage,
+    hiddenTags,
   ]);
 }

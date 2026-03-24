@@ -93,15 +93,15 @@ const QuickInsertPopover = ({
     (): CanvasInsertOption[] => [
       { type: COMPONENT_TYPE_PANEL, label: t("canvasToolbar.panel"), icon: Square, panelKind: PanelKind.Default },
       ...PANEL_KINDS.filter((p) => p.id !== PanelKind.Default).map((p) => ({
-        type: COMPONENT_TYPE_PANEL,
+        type: COMPONENT_TYPE_PANEL as ComponentType,
         label: p.id === PanelKind.Swimlane ? t("swimlane.title") : p.label,
         icon: p.icon,
-        panelKind: p.id as PanelKind,
+        panelKind: p.id,
         awsIconName: p.awsIconName,
       })),
-      { type: COMPONENT_TYPE_NOTE, label: t("canvasToolbar.note"), icon: StickyNote },
-      { type: COMPONENT_TYPE_API_GROUP, label: t("quickInsert.typeApiGroup"), icon: Globe },
-      { type: COMPONENT_TYPE_ENDPOINT, label: t("quickInsert.typeEndpoint"), icon: Globe },
+      { type: COMPONENT_TYPE_NOTE as ComponentType, label: t("canvasToolbar.note"), icon: StickyNote },
+      { type: COMPONENT_TYPE_API_GROUP as ComponentType, label: t("quickInsert.typeApiGroup"), icon: Globe },
+      { type: COMPONENT_TYPE_ENDPOINT as ComponentType, label: t("quickInsert.typeEndpoint"), icon: Globe },
     ],
     [t],
   );
