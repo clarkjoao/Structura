@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Copy, Users } from "lucide-react";
+import { Check, Copy, Loader2, Users, Wifi, WifiOff } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { readCollabPreferences, writeCollabPreferences } from "./collabPreferences";
+import { testSignalingServer } from "./testSignalingServer";
 
 interface CollabStartModalProps {
   open: boolean;
@@ -20,6 +21,8 @@ interface CollabStartModalProps {
   diagramName: string;
   onStart: (userName: string, signalingUrl: string) => void;
 }
+
+type TestStatus = "idle" | "testing" | "ok" | "fail";
 
 export function CollabStartModal({
   open,
@@ -33,6 +36,7 @@ export function CollabStartModal({
   const [userName, setUserName] = useState(defaultPreferences.userName);
   const [signalingUrl, setSignalingUrl] = useState(defaultPreferences.signalingUrl);
   const [isCopied, setIsCopied] = useState(false);
+  const [testStatus, setTestStatus] = useState<TestStatus>("idle");
 
   const guestUrl = `${window.location.origin}/collab/${diagramId}`;
 
@@ -48,6 +52,13 @@ export function CollabStartModal({
     void navigator.clipboard.writeText(guestUrl);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  const handleTestServer = async () => {
+    setTestStatus("testing");
+    const isOnline = await testSignalingServer(signalingUrl);
+    setTestStatus(isOnline ? "ok" : "fail");
+    setTimeout(() => setTestStatus("idle"), 4000);
   };
 
   return (
@@ -78,15 +89,50 @@ export function CollabStartModal({
 
           <div className="space-y-1.5">
             <Label htmlFor="collab-ws">{t("collaboration.signalingServer")}</Label>
-            <Input
-              id="collab-ws"
-              value={signalingUrl}
-              onChange={(event) => setSignalingUrl(event.target.value)}
-              placeholder="ws://localhost:4444"
-            />
-            <p className="text-[11px] text-muted-foreground">
-              {t("collaboration.signalingHint")}
-            </p>
+            <div className="flex gap-2">
+              <Input
+                id="collab-ws"
+                value={signalingUrl}
+                onChange={(event) => {
+                  setSignalingUrl(event.target.value);
+                  setTestStatus("idle");
+                }}
+                placeholder="ws://localhost:4444"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={handleTestServer}
+                disabled={testStatus === "testing" || !signalingUrl}
+                title={t("collaboration.testServer")}
+              >
+                {testStatus === "testing" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : testStatus === "ok" ? (
+                  <Wifi className="h-4 w-4 text-emerald-500" />
+                ) : testStatus === "fail" ? (
+                  <WifiOff className="h-4 w-4 text-destructive" />
+                ) : (
+                  <Wifi className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+            {testStatus === "ok" && (
+              <p className="text-[11px] text-emerald-600">
+                {t("collaboration.serverOnline")}
+              </p>
+            )}
+            {testStatus === "fail" && (
+              <p className="text-[11px] text-destructive">
+                {t("collaboration.serverOffline")}
+              </p>
+            )}
+            {testStatus === "idle" && (
+              <p className="text-[11px] text-muted-foreground">
+                {t("collaboration.signalingHint")}
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5">

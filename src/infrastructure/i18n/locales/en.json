@@ -705,6 +705,9 @@
     "namePlaceholder": "e.g. Alice",
     "signalingServer": "Signaling server",
     "signalingHint": "Use your WebSocket signaling server for peer discovery.",
+    "testServer": "Test server",
+    "serverOnline": "Server is online",
+    "serverOffline": "Server is offline",
     "inviteLink": "Invite link",
     "inviteLinkHint": "Share this link so others can join this room.",
     "startButton": "Start session",
@@ -722,9 +725,23 @@
     "loading": "Loading diagram...",
     "invalidRoom": "Invalid room ID.",
     "importToWorkspace": "Import to workspace",
+    "importedDiagramName": "{{name}} - imported from collab {{host}}",
     "importSuccess": "\"{{name}}\" imported to your workspace",
     "importError": "Could not import shared diagram",
-    "backToWorkspace": "Back to workspace"
+    "backToWorkspace": "Back to workspace",
+    "sessionEnded": "Session ended",
+    "sessionEndedDesc": "{{host}} ended the collaboration session.",
+    "importAndContinue": "Import and continue",
+    "endSession": "End session",
+    "confirmClose": "End this collaboration session?",
+    "status": {
+      "idle": "Idle",
+      "connecting": "Connecting",
+      "connected": "Connected",
+      "reconnecting": "Reconnecting",
+      "disconnected": "Disconnected",
+      "closed": "Closed"
+    }
   },
   "flowRecorder": {
     "editingTitle": "Editing flow",

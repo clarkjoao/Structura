@@ -6,11 +6,14 @@ import { useCollabAwareness } from "./useCollabAwareness";
 import { useCollabSession } from "./useCollabSession";
 import { useCollabUrlParam } from "./useCollabUrlParam";
 import { useYjsZustandBridge } from "./useYjsZustandBridge";
-import type { CollabSession, CollabUser } from "./types";
+import type { CollabConnectionStatus, CollabSession, CollabUser } from "./types";
 
 interface CollabContextValue {
   session: CollabSession | null;
   isReady: boolean;
+  status: CollabConnectionStatus;
+  sessionClosedByHost: boolean;
+  closeSession: () => void;
   provider: WebrtcProvider | null;
   ydoc: Y.Doc | null;
   collabUrl: string;
@@ -24,6 +27,9 @@ interface CollabContextValue {
 const CollabContext = createContext<CollabContextValue>({
   session: null,
   isReady: false,
+  status: "idle",
+  sessionClosedByHost: false,
+  closeSession: () => {},
   provider: null,
   ydoc: null,
   collabUrl: "",
@@ -61,7 +67,15 @@ export function CollabProvider({
   const bridgeDiagramId = enabled ? guestRoomId ?? urlCollabId ?? activeDiagramId : null;
   const isHost = !isGuest;
 
-  const { ydoc, provider, session, isReady } = useCollabSession({
+  const {
+    ydoc,
+    provider,
+    session,
+    isReady,
+    status,
+    sessionClosedByHost,
+    closeSession,
+  } = useCollabSession({
     diagramId: bridgeDiagramId,
     isHost,
     userName,
@@ -92,6 +106,9 @@ export function CollabProvider({
       value={{
         session,
         isReady,
+        status,
+        sessionClosedByHost,
+        closeSession,
         provider,
         ydoc,
         collabUrl,

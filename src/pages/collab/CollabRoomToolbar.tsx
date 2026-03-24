@@ -1,11 +1,15 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import type { Diagram } from "@/features/diagram";
 import { useDiagramActions } from "@/features/diagram";
-import { CollabToolbar, useCollab } from "@/features/collaboration";
+import {
+  CollabStatusIndicator,
+  CollabToolbar,
+  useCollab,
+} from "@/features/collaboration";
 
 interface CollabRoomToolbarProps {
   diagram: Diagram | null;
@@ -14,15 +18,23 @@ interface CollabRoomToolbarProps {
 export function CollabRoomToolbar({ diagram }: CollabRoomToolbarProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { session, isReady, collabUrl } = useCollab();
+  const { session, isReady, status, collabUrl, closeSession } = useCollab();
   const { importDiagram } = useDiagramActions();
   const [isImporting, setIsImporting] = useState(false);
+  const isHost = session?.isHost ?? false;
 
   const handleImportDiagram = () => {
     if (!diagram) return;
     setIsImporting(true);
     try {
-      const importedDiagram = importDiagram(diagram);
+      const hostName = session?.localUser?.name ?? "collab";
+      const importedDiagram = importDiagram({
+        ...diagram,
+        name: t("collaboration.importedDiagramName", {
+          name: diagram.name,
+          host: hostName,
+        }),
+      });
       toast.success(t("collaboration.importSuccess", { name: importedDiagram.name }));
       navigate(`/model/${importedDiagram.id}`);
     } catch {
@@ -30,6 +42,12 @@ export function CollabRoomToolbar({ diagram }: CollabRoomToolbarProps) {
     } finally {
       setIsImporting(false);
     }
+  };
+
+  const handleCloseSession = () => {
+    if (!window.confirm(t("collaboration.confirmClose"))) return;
+    closeSession();
+    navigate("/workspace");
   };
 
   return (
@@ -51,9 +69,12 @@ export function CollabRoomToolbar({ diagram }: CollabRoomToolbarProps) {
         </span>
       )}
 
+      <div className="h-4 w-px bg-border mx-1" />
+      <CollabStatusIndicator status={status} />
+
       <div className="flex-1" />
 
-      {diagram && (
+      {!isHost && diagram && (
         <button
           type="button"
           onClick={handleImportDiagram}
@@ -63,6 +84,17 @@ export function CollabRoomToolbar({ diagram }: CollabRoomToolbarProps) {
         >
           <Download className="h-3.5 w-3.5" />
           {t("collaboration.importToWorkspace")}
+        </button>
+      )}
+
+      {isHost && (
+        <button
+          type="button"
+          onClick={handleCloseSession}
+          className="flex items-center gap-1.5 rounded-lg border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors"
+        >
+          <X className="h-3.5 w-3.5" />
+          {t("collaboration.endSession")}
         </button>
       )}
 

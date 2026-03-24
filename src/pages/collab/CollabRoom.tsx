@@ -1,22 +1,49 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { ReactFlowProvider } from "@xyflow/react";
+import { toast } from "sonner";
 import { Canvas } from "@/features/canvas";
 import { FlowModeProvider } from "@/features/canvas/flow";
 import { CollabProvider, useCollab } from "@/features/collaboration";
 import { CollabJoinModal } from "@/features/collaboration/CollabJoinModal";
+import { CollabSessionClosedModal } from "@/features/collaboration/CollabSessionClosedModal";
+import { useDiagramActions } from "@/features/diagram";
 import { useDiagramStore } from "@/features/diagram/store/diagram.store";
 import { CollabRoomToolbar } from "./CollabRoomToolbar";
 
 function CollabRoomInner() {
   const { t } = useTranslation();
-  const { session, isReady } = useCollab();
+  const navigate = useNavigate();
+  const { session, isReady, sessionClosedByHost } = useCollab();
+  const { importDiagram } = useDiagramActions();
   const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
   const diagrams = useDiagramStore((state) => state.diagrams);
   const diagram = activeDiagramId ? diagrams[activeDiagramId] ?? null : null;
   const diagramExists = Boolean(diagram);
+  const hostName = session?.isHost ? session.localUser.name : "Host";
+
+  const handleImportAndContinue = () => {
+    if (!diagram) {
+      navigate("/workspace");
+      return;
+    }
+    try {
+      const importedDiagram = importDiagram({
+        ...diagram,
+        name: t("collaboration.importedDiagramName", {
+          name: diagram.name,
+          host: hostName,
+        }),
+      });
+      toast.success(t("collaboration.importSuccess", { name: importedDiagram.name }));
+      navigate(`/model/${importedDiagram.id}`);
+    } catch {
+      toast.error(t("collaboration.importError"));
+      navigate("/workspace");
+    }
+  };
 
   if (!isReady || !diagramExists) {
     return (
@@ -43,6 +70,12 @@ function CollabRoomInner() {
           </ReactFlowProvider>
         </FlowModeProvider>
       </div>
+      <CollabSessionClosedModal
+        open={sessionClosedByHost}
+        hostName={hostName}
+        onImportAndContinue={handleImportAndContinue}
+        onBackToWorkspace={() => navigate("/workspace")}
+      />
     </div>
   );
 }
@@ -65,7 +98,7 @@ function CollabRoomSession({ roomId }: CollabRoomSessionProps) {
   if (!joined) {
     return (
       <>
-        <div className="flex flex-1 items-center justify-center text-muted-foreground" />
+        <div className="flex flex-1 items-center justify-center" />
         <CollabJoinModal open roomId={roomId} onJoin={handleJoin} />
       </>
     );

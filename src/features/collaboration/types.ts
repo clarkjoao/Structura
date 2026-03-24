@@ -12,10 +12,19 @@ export interface PeerAwareness {
   editingComponentId?: string | null;
 }
 
+export type CollabConnectionStatus =
+  | "idle"
+  | "connecting"
+  | "connected"
+  | "reconnecting"
+  | "disconnected"
+  | "closed";
+
 export interface CollabSession {
   roomId: string;
   isHost: boolean;
   localUser: CollabUser;
   peers: Map<number, PeerAwareness>;
   isReady: boolean;
+  status: CollabConnectionStatus;
 }

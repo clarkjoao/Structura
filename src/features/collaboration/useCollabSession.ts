@@ -1,8 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import * as Y from "yjs";
 import { WebrtcProvider } from "y-webrtc";
 import { IndexeddbPersistence } from "y-indexeddb";
-import type { CollabUser, CollabSession, PeerAwareness } from "./types";
+import type {
+  CollabConnectionStatus,
+  CollabSession,
+  CollabUser,
+  PeerAwareness,
+} from "./types";
 import { readCollabPreferences } from "./collabPreferences";
 
 const PEER_COLORS = [
@@ -17,6 +22,9 @@ function randomColor(): string {
 function generateUserId(): string {
   return `user-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
+
+const SESSION_CLOSED_KEY = "sessionClosed";
+const RETRY_DELAYS_MS = [2000, 4000, 8000, 15000, 30000];
 
 interface UseCollabSessionParams {
   diagramId: string | null;
@@ -44,32 +52,68 @@ export function useCollabSession({
 
   const [ydoc, setYdoc] = useState<Y.Doc | null>(null);
   const [provider, setProvider] = useState<WebrtcProvider | null>(null);
+  const [session, setSession] = useState<CollabSession | null>(null);
+  const [isReady, setIsReady] = useState(false);
+  const [status, setStatus] = useState<CollabConnectionStatus>("idle");
+  const [sessionClosedByHost, setSessionClosedByHost] = useState(false);
 
   const localUserRef = useRef<CollabUser>({
     id: generateUserId(),
     name: resolvedUserName,
     color: randomColor(),
   });
-  if (resolvedUserName && localUserRef.current.name !== resolvedUserName) {
+  if (localUserRef.current.name !== resolvedUserName && resolvedUserName) {
     localUserRef.current = { ...localUserRef.current, name: resolvedUserName };
   }
 
-  const [session, setSession] = useState<CollabSession | null>(null);
-  const [isReady, setIsReady] = useState(false);
+  const retryCountRef = useRef(0);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const destroyedRef = useRef(false);
+  const currentProviderRef = useRef<WebrtcProvider | null>(null);
+  const currentYdocRef = useRef<Y.Doc | null>(null);
 
-  useEffect(() => {
-    if (!diagramId) return;
-    setIsReady(false);
+  const cleanup = useCallback(() => {
+    if (retryTimerRef.current) {
+      clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+    if (currentProviderRef.current) {
+      try {
+        currentProviderRef.current.destroy();
+      } catch {
+        // Ignore destroy errors.
+      }
+      currentProviderRef.current = null;
+    }
+    if (currentYdocRef.current) {
+      try {
+        currentYdocRef.current.destroy();
+      } catch {
+        // Ignore destroy errors.
+      }
+      currentYdocRef.current = null;
+    }
+  }, []);
+
+  const connect = useCallback(() => {
+    if (destroyedRef.current || !diagramId) return undefined;
+
+    cleanup();
 
     const roomId = diagramId.startsWith("structura-")
       ? diagramId
       : `structura-${diagramId}`;
+
+    setStatus(retryCountRef.current === 0 ? "connecting" : "reconnecting");
 
     const newYdoc = new Y.Doc();
     const newProvider = new WebrtcProvider(roomId, newYdoc, {
       signaling: [resolvedSignalingUrl],
     });
     const persistence = new IndexeddbPersistence(roomId, newYdoc);
+
+    currentYdocRef.current = newYdoc;
+    currentProviderRef.current = newProvider;
 
     const localUser = localUserRef.current;
     newProvider.awareness.setLocalState({
@@ -79,59 +123,137 @@ export function useCollabSession({
       editingComponentId: null,
     });
 
-    // ── Expor via state para trigger correto no useYjsZustandBridge ──
     setYdoc(newYdoc);
     setProvider(newProvider);
 
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-    const handleProviderSynced = () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      setIsReady(true);
+    const metaMap = newYdoc.getMap("meta");
+    const onMetaChange = () => {
+      if (!isHost && metaMap.get(SESSION_CLOSED_KEY) === true) {
+        setSessionClosedByHost(true);
+        setStatus("closed");
+      }
     };
+    metaMap.observe(onMetaChange);
+
+    let connectedOnce = false;
+    let syncTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const onSynced = () => {
+      if (destroyedRef.current) return;
+      connectedOnce = true;
+      retryCountRef.current = 0;
+      setIsReady(true);
+      setStatus("connected");
+    };
+    newProvider.on("synced", onSynced);
 
     if (!isHost) {
-      timeoutId = setTimeout(() => setIsReady(true), 3000);
-      newProvider.on("synced", handleProviderSynced);
+      syncTimeout = setTimeout(() => {
+        if (!connectedOnce && !destroyedRef.current) {
+          const retryDelay =
+            RETRY_DELAYS_MS[Math.min(retryCountRef.current, RETRY_DELAYS_MS.length - 1)];
+          retryCountRef.current += 1;
+          setStatus("reconnecting");
+          retryTimerRef.current = setTimeout(() => {
+            if (!destroyedRef.current) connect();
+          }, retryDelay);
+        }
+      }, 5000);
     } else {
-      persistence.on("synced", () => setIsReady(true));
+      persistence.on("synced", () => {
+        if (!destroyedRef.current) {
+          setIsReady(true);
+          setStatus("connected");
+        }
+      });
     }
 
     const onAwarenessChange = () => {
+      if (destroyedRef.current) return;
       const peers = new Map<number, PeerAwareness>();
-      newProvider.awareness.getStates().forEach((state, clientId) => {
+      newProvider.awareness.getStates().forEach((awarenessState, clientId) => {
         if (clientId === newProvider.awareness.clientID) return;
-        if (state?.user) {
-          peers.set(clientId, state as PeerAwareness);
+        if (awarenessState?.user) {
+          peers.set(clientId, awarenessState as PeerAwareness);
         }
       });
 
-      setSession((prev) => ({
+      setSession((previousSession) => ({
         roomId,
         isHost,
         localUser,
         peers,
-        isReady: prev?.isReady ?? false,
+        isReady: previousSession?.isReady ?? false,
+        status: previousSession?.status ?? "connecting",
       }));
     };
-
     newProvider.awareness.on("change", onAwarenessChange);
-    setSession({ roomId, isHost, localUser, peers: new Map(), isReady: false });
+
+    setSession({
+      roomId,
+      isHost,
+      localUser,
+      peers: new Map(),
+      isReady: false,
+      status: "connecting",
+    });
 
     return () => {
-      if (timeoutId) clearTimeout(timeoutId);
+      if (syncTimeout) clearTimeout(syncTimeout);
       newProvider.awareness.off("change", onAwarenessChange);
-      newProvider.off("synced", handleProviderSynced);
-      newProvider.destroy();
-      newYdoc.destroy();
-      setYdoc(null);
-      setProvider(null);
+      newProvider.off("synced", onSynced);
+      metaMap.unobserve(onMetaChange);
     };
-  }, [diagramId, isHost, resolvedSignalingUrl]);
+  }, [cleanup, diagramId, isHost, resolvedSignalingUrl]);
 
   useEffect(() => {
-    setSession((prev) => (prev ? { ...prev, isReady } : prev));
-  }, [isReady]);
+    if (!diagramId) return;
+    destroyedRef.current = false;
+    retryCountRef.current = 0;
+    setIsReady(false);
+    setStatus("idle");
+    setSessionClosedByHost(false);
 
-  return { ydoc, provider, session, isReady, localUser: localUserRef.current };
+    const unsubscribeConnect = connect();
+
+    return () => {
+      destroyedRef.current = true;
+      unsubscribeConnect?.();
+      cleanup();
+      setYdoc(null);
+      setProvider(null);
+      setSession(null);
+    };
+  }, [cleanup, connect, diagramId, isHost, resolvedSignalingUrl]);
+
+  const closeSession = useCallback(() => {
+    if (!isHost || !currentYdocRef.current) return;
+    const metaMap = currentYdocRef.current.getMap("meta");
+    metaMap.set(SESSION_CLOSED_KEY, true);
+    setTimeout(() => {
+      cleanup();
+      setSession(null);
+      setIsReady(false);
+      setStatus("closed");
+      setYdoc(null);
+      setProvider(null);
+    }, 500);
+  }, [cleanup, isHost]);
+
+  useEffect(() => {
+    setSession((previousSession) =>
+      previousSession ? { ...previousSession, isReady, status } : previousSession,
+    );
+  }, [isReady, status]);
+
+  return {
+    ydoc,
+    provider,
+    session,
+    isReady,
+    status,
+    sessionClosedByHost,
+    closeSession,
+    localUser: localUserRef.current,
+  };
 }
