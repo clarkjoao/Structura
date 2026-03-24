@@ -1,0 +1,16 @@
+---
+description: Structura stack and pointer to layered rules
+alwaysApply: true
+---
+
+# Structura — project context
+
+Open source **architecture diagramming** tool built with:
+
+- React + TypeScript
+- Zustand (Immer) for global state
+- React Flow (`@xyflow/react`) for canvas
+- react-i18next
+- Tailwind CSS
+
+Detailed conventions live in scoped `.cursor/rules/structura-*.mdc` files. The long-form reference is `.cursor/rules.md`.

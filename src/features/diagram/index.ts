@@ -81,6 +81,12 @@ export type { BrokenStep } from "./utils/flow-traversal";
 /** Flow migration from legacy array format */
 export { migrateFlow } from "./utils/flow-migration";
 
+/** Repair a flow by removing broken steps and cleaning up references */
+export { repairFlow } from "./utils/flow-repair";
+
+/** Build a pure-data patch for duplicating a flow */
+export { buildFlowDuplicatePatch } from "./utils/flow-duplicate";
+
 export {
   resolveSceneSnapshot,
   resolveCanvasSnapshot,

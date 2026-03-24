@@ -1,0 +1,26 @@
+---
+description: Structura naming — variables, functions, file names
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Naming conventions
+
+## Variables
+
+- No single-letter names except `i`, `j` in loops and `x`, `y`, `z` in geometry.
+- Hook results: descriptive names (`flowMode`, `activeDiagram`), not `m`, `d`.
+- Discriminated extractions: name by meaning (`recordingState`, `playbackState`), not `rec`, `playing`.
+- Forbidden single-letter names: `m`, `r`, `d`, `p`, `s`, `c`, `n`, `v`, `e` (except in `catch`).
+
+## Functions
+
+- Booleans: `is*`, `has*`, `can*`, `should*`.
+- Handlers: `handle*` in definitions, `on*` on props.
+- Avoid abbreviations: `connection` not `conn`, `diagram` not `diag`.
+
+## File names
+
+- Components: PascalCase (`FlowRecorderPanel.tsx`).
+- Hooks: `use` + camelCase (`useCanvasNodes.ts`).
+- Utils / types / constants: camelCase (`scene.utils.ts`, `diagram.types.ts`, `canvas.constants.ts`).
