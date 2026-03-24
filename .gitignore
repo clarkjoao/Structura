@@ -30,3 +30,6 @@ dist-ssr
 .env.production
 
 .ai/
+
+tsconfig.app.tsbuildinfo
+tsconfig.node.tsbuildinfo

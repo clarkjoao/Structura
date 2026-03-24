@@ -11,6 +11,7 @@ import Dashboard from "@/pages/dashboard";
 import ModelExplorer from "@/pages/modelExplorer";
 import ServiceRegistry from "@/pages/serviceRegistry";
 import SharedDiagramView from "@/pages/SharedDiagramView";
+import CollabRoom from "@/pages/collab/CollabRoom";
 import EmbedPage from "./pages/EmbedPage";
 import NotFound from "@/pages/NotFound";
 
@@ -44,6 +45,7 @@ function MainApp() {
         <Route path="/" element={<Navigate to="/workspace" />} />
         <Route path="/workspace" element={<Dashboard />} />
         <Route path="/model/:id" element={<ModelExplorer />} />
+        <Route path="/collab/:roomId" element={<CollabRoom />} />
         <Route path="/catalog" element={<ServiceRegistry />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

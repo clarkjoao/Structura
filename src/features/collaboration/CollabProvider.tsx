@@ -36,14 +36,16 @@ export function useCollab() {
 
 interface CollabProviderProps {
   children: ReactNode;
+  /** Forces guest mode with a specific room id (used by /collab/:roomId). */
+  guestRoomId?: string;
 }
 
-export function CollabProvider({ children }: CollabProviderProps) {
+export function CollabProvider({ children, guestRoomId }: CollabProviderProps) {
   const activeDiagramId = useActiveDiagramId();
-  const { collabDiagramId, isGuest, generateCollabUrl } = useCollabUrlParam();
+  const { collabDiagramId: urlCollabId, generateCollabUrl } = useCollabUrlParam();
 
-  // Guest uses the URL diagram id; host uses active local diagram.
-  const bridgeDiagramId = isGuest ? collabDiagramId : activeDiagramId;
+  const isGuest = Boolean(guestRoomId) || Boolean(urlCollabId);
+  const bridgeDiagramId = guestRoomId ?? urlCollabId ?? activeDiagramId;
   const isHost = !isGuest;
 
   const { ydoc, provider, session, isReady } = useCollabSession({

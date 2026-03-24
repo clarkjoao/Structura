@@ -703,7 +703,11 @@
     "onlineCount_other": "{{count}} online",
     "waitingPeers": "Waiting for peers...",
     "copyLink": "Copy collaboration link",
-    "peerFallback": "Peer"
+    "peerFallback": "Peer",
+    "connecting": "Connecting to collaboration server...",
+    "syncing": "Syncing diagram...",
+    "loading": "Loading diagram...",
+    "invalidRoom": "Invalid room ID."
   },
   "flowRecorder": {
     "editingTitle": "Editing flow",

@@ -703,7 +703,11 @@
     "onlineCount_other": "{{count}} online",
     "waitingPeers": "Aguardando peers...",
     "copyLink": "Copiar link de colaboração",
-    "peerFallback": "Peer"
+    "peerFallback": "Peer",
+    "connecting": "Conectando ao servidor de colaboração...",
+    "syncing": "Sincronizando diagrama...",
+    "loading": "Carregando diagrama...",
+    "invalidRoom": "Room ID inválido."
   },
   "flowRecorder": {
     "editingTitle": "Editando Flow",

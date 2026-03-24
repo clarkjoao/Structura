@@ -1,22 +1,11 @@
-import { useEffect, useState } from "react";
-
 export function useCollabUrlParam() {
-  const [collabDiagramId, setCollabDiagramId] = useState<string | null>(null);
-  const [isGuest, setIsGuest] = useState(false);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const collab = params.get("collab");
-    if (collab) {
-      setCollabDiagramId(collab);
-      setIsGuest(true);
-    }
-  }, []);
+  const params = new URLSearchParams(window.location.search);
+  const collab = params.get("collab");
+  const collabDiagramId = collab ?? null;
+  const isGuest = Boolean(collab);
 
   const generateCollabUrl = (diagramId: string): string => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("collab", diagramId);
-    return url.toString();
+    return `${window.location.origin}/collab/${diagramId}`;
   };
 
   return { collabDiagramId, isGuest, generateCollabUrl };
