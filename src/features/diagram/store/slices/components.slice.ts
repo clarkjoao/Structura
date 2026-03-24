@@ -16,6 +16,7 @@ import { isPanelType, isNoteType, isEndpointType, isApiGroupType, isC4Type } fro
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
+import { resolveActiveScene } from "./scene-helpers";
 import {
   PANEL_DEFAULT_W,
   PANEL_DEFAULT_H,
@@ -231,8 +232,7 @@ export const componentsSlice = (
 
       set((state) => {
         const d = state.diagrams[state.activeDiagramId]!;
-        const sid = d.activeSceneId ?? null;
-        const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+        const scene = resolveActiveScene(d);
 
         if (!scene) pushHistory(state);
 
@@ -295,8 +295,7 @@ export const componentsSlice = (
       }
       set((state) => {
         const d = state.diagrams[state.activeDiagramId]!;
-        const sid = d.activeSceneId ?? null;
-        const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+        const scene = resolveActiveScene(d);
         const inSceneAdds = !!(scene && scene.addedComponents[id]);
 
         if (!isDimensionOnly) {
@@ -333,10 +332,9 @@ export const componentsSlice = (
     removeComponent: (id: string) => {
       set((state) => {
         const d = state.diagrams[state.activeDiagramId]!;
-        const sid = d.activeSceneId ?? null;
-        const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+        const scene = resolveActiveScene(d);
         if (scene) {
-          mutateRemoveComponentInScene(d, sid!, id);
+          mutateRemoveComponentInScene(d, scene.id, id);
           d.updatedAt = new Date().toISOString();
           return;
         }
@@ -407,8 +405,7 @@ export const componentsSlice = (
     ) => {
       set((state) => {
         const d = state.diagrams[state.activeDiagramId]!;
-        const sid = d.activeSceneId ?? null;
-        const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+        const scene = resolveActiveScene(d);
         const comp =
           scene?.addedComponents[componentId] ?? d.snapshot.components[componentId];
         if (!comp) return;
@@ -421,8 +418,7 @@ export const componentsSlice = (
     setParent: (childId: string, parentId: string | null) => {
       set((state) => {
         const d = state.diagrams[state.activeDiagramId]!;
-        const sid = d.activeSceneId ?? null;
-        const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+        const scene = resolveActiveScene(d);
         if (scene && !scene.addedComponents[childId]) return;
         if (!scene) pushHistory(state);
         const comp = scene?.addedComponents[childId] ?? d.snapshot.components[childId];
@@ -499,9 +495,8 @@ export const componentsSlice = (
 
     ungroupNodes: (panelId: string) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId];
-        const sid = d.activeSceneId ?? null;
-        const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+        const d = state.diagrams[state.activeDiagramId!];
+        const scene = resolveActiveScene(d);
 
         if (scene) {
           if (!scene.addedComponents[panelId]) return;

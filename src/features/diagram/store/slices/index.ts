@@ -1,3 +1,4 @@
+export { resolveActiveScene } from "./scene-helpers";
 export { historySlice } from "./history.slice";
 export { componentsSlice } from "./components.slice";
 export { connectionsSlice } from "./connections.slice";
