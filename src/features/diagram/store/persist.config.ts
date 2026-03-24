@@ -9,7 +9,6 @@ import { migrateFlow } from "../utils/flow-migration";
 export const PERSIST_KEY = "diagram-store";
 
 /** Must match `version` passed to zustand `persist` (used when writing localStorage manually). */
-export const PERSIST_SCHEMA_VERSION = 3;
 export const PERSIST_SCHEMA_VERSION = 4;
 
 /** Alias for consumers that refer to “current” schema version in docs or tooling. */
@@ -295,6 +294,7 @@ export function createPersistConfig(storage: IStoragePort) {
       }
       if (fromVersion < SCHEMA_VERSION_EDGE_LAYOUTS) {
         migrateAddEdgeLayouts(partial);
+      }
       if (fromVersion < SCHEMA_VERSION_DIAGRAM_DESCRIPTION) {
         migrateAddDiagramDescription(partial);
       }
