@@ -19,6 +19,7 @@ import { ComponentIconTab } from "./components/ComponentIconTab";
 import { useTranslation } from "react-i18next";
 import i18n from "@/infrastructure/i18n";
 import { useCollab } from "@/features/collaboration";
+import { FIELD_DEBOUNCE_MS } from "@/features/canvas/canvas.constants";
 import {
   BasicFieldsSection,
   ServiceLinkSection,
@@ -137,7 +138,8 @@ const ComponentPanel = ({
   };
 
   const debouncedUpdate = useMemo(
-    () => debounce((patch: Partial<Omit<Component, "id">>) => updateComponent(component.id, patch), 300),
+    () =>
+      debounce((patch: Partial<Omit<Component, "id">>) => updateComponent(component.id, patch), FIELD_DEBOUNCE_MS),
     [component.id, updateComponent],
   );
   useEffect(() => () => debouncedUpdate.cancel(), [debouncedUpdate]);

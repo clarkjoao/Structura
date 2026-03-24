@@ -1,0 +1,37 @@
+/** Opacity of elements out of focus (flow playback, recording, tag filter). */
+export const OPACITY_DIM = 0.25;
+export const OPACITY_RECORDING_DIM = 0.35;
+export const OPACITY_TAG_FILTER_DIM = 0.15;
+
+/** Flow playback: edges not active (and recording: edges not yet recorded). */
+export const OPACITY_FLOW_PLAYBACK_EDGE_DIM = 0.2;
+/** Flow playback: edges (and C4 nodes) in the current step’s participant set. */
+export const OPACITY_FLOW_PLAYBACK_PARTICIPANT = 0.5;
+/** Tag filter: edge dim when an endpoint is hidden by tag filter. */
+export const OPACITY_TAG_FILTER_EDGE_DIM = 0.1;
+
+/** Flow playback: nodes dimmed when not in the highlighted set. */
+export const OPACITY_FLOW_PLAYBACK_NODE_DIM = 0.3;
+
+/** CustomEdge: segment guide stroke when selected/hovered. */
+export const EDGE_SEGMENT_HIGHLIGHT_STROKE_OPACITY = 0.35;
+
+/** Animated fit (e.g. flow step focus). */
+export const FIT_VIEW_DURATION_MS = 400;
+export const FIT_VIEW_PADDING = 0.35;
+export const FIT_VIEW_MAX_ZOOM = 1.5;
+
+/** Initial diagram fit + wheel zoom clamp (tighter than step highlight fit). */
+export const VIEWPORT_MIN_ZOOM = 0.3;
+export const FIT_VIEW_INITIAL_PADDING = 0.3;
+
+/** File system sync debounce after store updates. */
+export const VIEWPORT_DEBOUNCE_MS = 800;
+/** Element / connection field edits in panels. */
+export const FIELD_DEBOUNCE_MS = 300;
+
+export const MAX_HISTORY_STEPS = 50;
+export const HISTORY_COALESCE_MS = 1000;
+export const UNDO_REDO_COOLDOWN_MS = 500;
+
+export const FLOW_PARTICLE_DURATION_MS = 1200;

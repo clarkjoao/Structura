@@ -7,6 +7,7 @@ import { EdgeStyle, StrokeStyle, EdgeMarker, useActiveDiagramId, useDiagramActio
 import { INTENT_DEFAULTS } from "@/features/diagram";
 import { saveLastEdgeStyle } from "@/features/diagram/hooks/useLastEdgeStyle";
 import { cn } from "@/lib/utils";
+import { FIELD_DEBOUNCE_MS } from "@/features/canvas/canvas.constants";
 import Field from "./components/Field";
 import TechnologyCombobox from "./components/TechnologyCombobox";
 
@@ -98,7 +99,13 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
     [t],
   );
 
-  const debouncedUpdate = useMemo(() => debounce((patch: Partial<Omit<Connection, "id">>) => { updateConnection(conn.id, patch); }, 300), [conn.id, updateConnection]);
+  const debouncedUpdate = useMemo(
+    () =>
+      debounce((patch: Partial<Omit<Connection, "id">>) => {
+        updateConnection(conn.id, patch);
+      }, FIELD_DEBOUNCE_MS),
+    [conn.id, updateConnection],
+  );
   useEffect(() => () => debouncedUpdate.cancel(), [debouncedUpdate]);
   useEffect(() => {
     if (focusTitleTrigger > 0) {

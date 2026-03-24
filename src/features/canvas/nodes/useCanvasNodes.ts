@@ -17,6 +17,7 @@ import { resolveNodeDescriptor, type NodeBuildContext } from "./node-types";
 import { useFlowMode } from "../flow/FlowModeContext";
 import { buildCollapsedPanelIds, computeNodeVisibility } from "./nodeVisibility";
 import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
+import { OPACITY_FLOW_PLAYBACK_NODE_DIM, OPACITY_TAG_FILTER_DIM } from "../canvas.constants";
 
 interface UseCanvasNodesParams {
   diagram: Diagram | null | undefined;
@@ -203,7 +204,7 @@ export function useCanvasNodes({
         );
         const style: Record<string, unknown> = {
           ...d.buildStyle?.(comp, ctx),
-          ...(vis.dimmed ? { opacity: 0.3 } : {}),
+          ...(vis.dimmed ? { opacity: OPACITY_FLOW_PLAYBACK_NODE_DIM } : {}),
         };
         const cmpVis = compareVisual?.[comp.id];
         if (cmpVis !== undefined) {
@@ -212,7 +213,7 @@ export function useCanvasNodes({
         }
         const tagFilteredHidden = isNodeHiddenByTagFilter(comp);
         if (tagFilteredHidden) {
-          style.opacity = 0.15;
+          style.opacity = OPACITY_TAG_FILTER_DIM;
           style.pointerEvents = "none";
           style.transition = "opacity 0.2s ease";
         }

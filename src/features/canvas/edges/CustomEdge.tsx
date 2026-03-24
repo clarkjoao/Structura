@@ -37,6 +37,7 @@ import {
   getPointAtOffset,
   type Segment,
 } from "./edgeBuilding";
+import { EDGE_SEGMENT_HIGHLIGHT_STROKE_OPACITY, FLOW_PARTICLE_DURATION_MS } from "../canvas.constants";
 
 const SEGMENT_HIT_STROKE_WIDTH = 12;
 
@@ -371,7 +372,7 @@ const Edge = memo(
                     y2={segment.y2}
                     stroke="var(--color-text-info)"
                     strokeWidth={3}
-                    strokeOpacity={0.35}
+                    strokeOpacity={EDGE_SEGMENT_HIGHLIGHT_STROKE_OPACITY}
                     strokeLinecap="round"
                     style={{ pointerEvents: "none" }}
                   />
@@ -390,7 +391,7 @@ const Edge = memo(
                 strokeDashoffset={0}
                 strokeLinecap="round"
                 style={{
-                  animation: `flowParticle 1.2s linear infinite${d.activePayloadDirection === "response" ? " reverse" : ""}`,
+                  animation: `flowParticle ${FLOW_PARTICLE_DURATION_MS}ms linear infinite${d.activePayloadDirection === "response" ? " reverse" : ""}`,
                   pointerEvents: "none",
                 }}
               />

@@ -7,6 +7,11 @@ import {
   isC4Component,
   type Component,
 } from "@/features/diagram";
+import {
+  OPACITY_DIM,
+  OPACITY_FLOW_PLAYBACK_PARTICIPANT,
+  OPACITY_RECORDING_DIM,
+} from "../../canvas.constants";
 
 export function buildC4Style(
   comp: Component,
@@ -19,12 +24,12 @@ export function buildC4Style(
     if (activeNodeId === comp.id) return { opacity: 1, filter: "none" };
     if (visitedNodeIds.has(comp.id)) return { opacity: 0.85, filter: "none" };
     if (participantNodeIds.has(comp.id))
-      return { opacity: 0.5, filter: "none" };
-    return { opacity: 0.25, filter: "none" };
+      return { opacity: OPACITY_FLOW_PLAYBACK_PARTICIPANT, filter: "none" };
+    return { opacity: OPACITY_DIM, filter: "none" };
   }
   if (ctx.isRecording) {
     return {
-      opacity: ctx.recordingInfo?.recordedNodeIds.has(comp.id) ? 1 : 0.35,
+      opacity: ctx.recordingInfo?.recordedNodeIds.has(comp.id) ? 1 : OPACITY_RECORDING_DIM,
     };
   }
   return undefined;

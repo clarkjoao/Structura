@@ -2,6 +2,13 @@ import { useEffect } from "react";
 import type { ReactFlowInstance } from "@xyflow/react";
 import type { Diagram, Flow } from "@/features/diagram";
 import { getStepById } from "@/features/diagram";
+import {
+  FIT_VIEW_DURATION_MS,
+  FIT_VIEW_INITIAL_PADDING,
+  FIT_VIEW_MAX_ZOOM,
+  FIT_VIEW_PADDING,
+  VIEWPORT_MIN_ZOOM,
+} from "../canvas.constants";
 
 interface UseCanvasEffectsParams {
   diagram: Diagram | null | undefined;
@@ -12,12 +19,8 @@ interface UseCanvasEffectsParams {
   onClearSelection: () => void;
 }
 
-const MIN_ZOOM = 0.3;
 const MAX_ZOOM = 1;
 const ZOOM_FACTOR = 1.1;
-/** Matches Canvas.tsx ReactFlow fitViewOptions / maxZoom */
-const FIT_VIEW_PADDING = 0.3;
-const FIT_VIEW_MAX_ZOOM = 1.5;
 
 export function useCanvasEffects({
   diagram,
@@ -35,8 +38,8 @@ export function useCanvasEffects({
       requestAnimationFrame(() => {
         if (cancelled) return;
         void reactFlowInstance.fitView({
-          padding: FIT_VIEW_PADDING,
-          minZoom: MIN_ZOOM,
+          padding: FIT_VIEW_INITIAL_PADDING,
+          minZoom: VIEWPORT_MIN_ZOOM,
           maxZoom: FIT_VIEW_MAX_ZOOM,
           duration: 0,
         });
@@ -66,7 +69,7 @@ export function useCanvasEffects({
       if (e.ctrlKey || e.metaKey) {
         const factor = e.deltaY > 0 ? 1 / ZOOM_FACTOR : ZOOM_FACTOR;
         reactFlowInstance.setViewport(
-          { x, y, zoom: Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * factor)) },
+          { x, y, zoom: Math.min(MAX_ZOOM, Math.max(VIEWPORT_MIN_ZOOM, zoom * factor)) },
           { duration: 0 },
         );
       } else if (e.shiftKey) {
@@ -97,9 +100,9 @@ export function useCanvasEffects({
       if (node) {
         void reactFlowInstance.fitView({
           nodes: [{ id: step.componentId }],
-          duration: 400,
-          padding: 0.35,
-          maxZoom: 1.5,
+          duration: FIT_VIEW_DURATION_MS,
+          padding: FIT_VIEW_PADDING,
+          maxZoom: FIT_VIEW_MAX_ZOOM,
         });
       }
     } else if (step.connectionId) {
@@ -110,9 +113,9 @@ export function useCanvasEffects({
         if (srcNode && tgtNode) {
           void reactFlowInstance.fitView({
             nodes: [{ id: edge.source }, { id: edge.target }],
-            duration: 400,
-            padding: 0.35,
-            maxZoom: 1.5,
+            duration: FIT_VIEW_DURATION_MS,
+            padding: FIT_VIEW_PADDING,
+            maxZoom: FIT_VIEW_MAX_ZOOM,
           });
         }
       }
