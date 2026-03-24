@@ -699,6 +699,18 @@
   },
   "collaboration": {
     "start": "Colaborar",
+    "startSession": "Iniciar sessão de colaboração",
+    "startSessionDesc": "Compartilhe \"{{name}}\" com seus peers em tempo real.",
+    "yourName": "Seu nome",
+    "namePlaceholder": "ex.: Alice",
+    "signalingServer": "Servidor de signaling",
+    "signalingHint": "Use seu servidor WebSocket de signaling para descoberta de peers.",
+    "inviteLink": "Link de convite",
+    "inviteLinkHint": "Compartilhe este link para outros entrarem na sala.",
+    "startButton": "Iniciar sessão",
+    "joinSession": "Entrar na sessão de colaboração",
+    "joinSessionDesc": "Você está entrando na sala {{roomId}}.",
+    "joinButton": "Entrar na sessão",
     "onlineCount_one": "{{count}} online",
     "onlineCount_other": "{{count}} online",
     "waitingPeers": "Aguardando peers...",
@@ -708,7 +720,11 @@
     "connecting": "Conectando ao servidor de colaboração...",
     "syncing": "Sincronizando diagrama...",
     "loading": "Carregando diagrama...",
-    "invalidRoom": "Room ID inválido."
+    "invalidRoom": "Room ID inválido.",
+    "importToWorkspace": "Importar para workspace",
+    "importSuccess": "\"{{name}}\" importado para seu workspace",
+    "importError": "Não foi possível importar o diagrama compartilhado",
+    "backToWorkspace": "Voltar ao workspace"
   },
   "flowRecorder": {
     "editingTitle": "Editando Flow",

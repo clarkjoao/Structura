@@ -42,19 +42,30 @@ interface CollabProviderProps {
   children: ReactNode;
   /** Forces guest mode with a specific room id (used by /collab/:roomId). */
   guestRoomId?: string;
+  enabled?: boolean;
+  userName?: string;
+  signalingUrl?: string;
 }
 
-export function CollabProvider({ children, guestRoomId }: CollabProviderProps) {
+export function CollabProvider({
+  children,
+  guestRoomId,
+  enabled = true,
+  userName,
+  signalingUrl,
+}: CollabProviderProps) {
   const activeDiagramId = useActiveDiagramId();
   const { collabDiagramId: urlCollabId, generateCollabUrl } = useCollabUrlParam();
 
   const isGuest = Boolean(guestRoomId) || Boolean(urlCollabId);
-  const bridgeDiagramId = guestRoomId ?? urlCollabId ?? activeDiagramId;
+  const bridgeDiagramId = enabled ? guestRoomId ?? urlCollabId ?? activeDiagramId : null;
   const isHost = !isGuest;
 
   const { ydoc, provider, session, isReady } = useCollabSession({
     diagramId: bridgeDiagramId,
     isHost,
+    userName,
+    signalingUrl,
   });
 
   useYjsZustandBridge(ydoc, bridgeDiagramId);

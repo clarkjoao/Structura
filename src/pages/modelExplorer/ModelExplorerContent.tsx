@@ -49,6 +49,7 @@ export function ModelExplorerContent({
   handleDrillUp,
   handleCopyDrawio,
   handleExport,
+  onStartCollab,
   copied,
   flows,
 }: ModelExplorerContentProps) {
@@ -208,10 +209,7 @@ export function ModelExplorerContent({
               session={session}
               isReady={isReady}
               collabUrl={collabUrl}
-              onStartCollab={() => {
-                if (!collabUrl) return;
-                void navigator.clipboard.writeText(collabUrl);
-              }}
+              onStartCollab={onStartCollab}
             />
             <button
               onClick={() => { if (!canvasInteractionLocked) setShowFlows(!showFlows); }}

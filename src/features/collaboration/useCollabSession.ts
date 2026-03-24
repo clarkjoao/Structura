@@ -3,8 +3,7 @@ import * as Y from "yjs";
 import { WebrtcProvider } from "y-webrtc";
 import { IndexeddbPersistence } from "y-indexeddb";
 import type { CollabUser, CollabSession, PeerAwareness } from "./types";
-
-const SIGNALING_URL = import.meta.env.VITE_SIGNALING_URL ?? "ws://localhost:4444";
+import { readCollabPreferences } from "./collabPreferences";
 
 const PEER_COLORS = [
   "#6366f1", "#f59e0b", "#10b981", "#ef4444",
@@ -22,20 +21,38 @@ function generateUserId(): string {
 interface UseCollabSessionParams {
   diagramId: string | null;
   isHost: boolean;
+  userName?: string;
+  signalingUrl?: string;
 }
 
-export function useCollabSession({ diagramId, isHost }: UseCollabSessionParams) {
-  // ── CORREÇÃO: usar useState em vez de useRef para ydoc e provider ──
-  // useRef retorna null no primeiro render e o CollabProvider passa null
-  // para useYjsZustandBridge que nunca re-executa.
+export function useCollabSession({
+  diagramId,
+  isHost,
+  userName: userNameProp,
+  signalingUrl: signalingUrlProp,
+}: UseCollabSessionParams) {
+  const preferences = readCollabPreferences();
+  const resolvedSignalingUrl =
+    signalingUrlProp ??
+    preferences.signalingUrl ??
+    import.meta.env.VITE_SIGNALING_URL ??
+    "ws://localhost:4444";
+  const resolvedUserName =
+    userNameProp ??
+    preferences.userName ??
+    `User-${Math.floor(Math.random() * 1000)}`;
+
   const [ydoc, setYdoc] = useState<Y.Doc | null>(null);
   const [provider, setProvider] = useState<WebrtcProvider | null>(null);
 
   const localUserRef = useRef<CollabUser>({
     id: generateUserId(),
-    name: `User-${Math.floor(Math.random() * 1000)}`,
+    name: resolvedUserName,
     color: randomColor(),
   });
+  if (resolvedUserName && localUserRef.current.name !== resolvedUserName) {
+    localUserRef.current = { ...localUserRef.current, name: resolvedUserName };
+  }
 
   const [session, setSession] = useState<CollabSession | null>(null);
   const [isReady, setIsReady] = useState(false);
@@ -50,7 +67,7 @@ export function useCollabSession({ diagramId, isHost }: UseCollabSessionParams) 
 
     const newYdoc = new Y.Doc();
     const newProvider = new WebrtcProvider(roomId, newYdoc, {
-      signaling: [SIGNALING_URL],
+      signaling: [resolvedSignalingUrl],
     });
     const persistence = new IndexeddbPersistence(roomId, newYdoc);
 
@@ -59,6 +76,7 @@ export function useCollabSession({ diagramId, isHost }: UseCollabSessionParams) 
       user: localUser,
       cursor: null,
       selectedNodeId: null,
+      editingComponentId: null,
     });
 
     // ── Expor via state para trigger correto no useYjsZustandBridge ──
@@ -109,7 +127,7 @@ export function useCollabSession({ diagramId, isHost }: UseCollabSessionParams) 
       setYdoc(null);
       setProvider(null);
     };
-  }, [diagramId, isHost]);
+  }, [diagramId, isHost, resolvedSignalingUrl]);
 
   useEffect(() => {
     setSession((prev) => (prev ? { ...prev, isReady } : prev));
