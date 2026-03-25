@@ -1,0 +1,43 @@
+---
+description: Structura anti-patterns to avoid in TS/TSX
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Anti-patterns (never)
+
+```ts
+// ❌ Single-letter / forbidden names
+const m = useFlowMode();
+const d = useActiveDiagram();
+
+// ❌ Hardcoded UI strings
+<button>Trazer para frente</button>
+
+// ❌ disabled={true} constant
+<button disabled={true}>
+
+// ❌ Heavy logic in component body
+const FlowPanel = () => {
+  const steps = Object.values(flow.steps).filter(...).sort(...);
+};
+
+// ❌ I/O in Zustand slices
+deleteDiagram: (id) => {
+  fileSystemAdapter.deleteDiagram(id);
+};
+
+// ❌ Representable invalid combo state
+interface State {
+  isPlaying: boolean;
+  isRecording: boolean;
+}
+
+// ❌ Feature internals import
+import { buildEdge } from "@/features/canvas/edges/edgeBuilding";
+
+// ❌ resolveCanvasSnapshot in selectors
+const r = resolveCanvasSnapshot(diagram);
+```
+
+Use hooks/utils, `t()`, state-derived `disabled`, discriminated unions, `@/features/...` public `index.ts`, and `getCachedCanvasSnapshot`.

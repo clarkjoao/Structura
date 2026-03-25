@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { X, Plus, Play, Trash2, Pencil, Copy, Check, Layers, BarChart2 } from "lucide-react";
 import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
-import { useFlows, useDiagramActions, useActiveDiagramId, useActiveDiagram, getStepCount, getFlowParticipants } from "@/features/diagram";
-import type { Flow, FlowStep } from "@/features/diagram";
+import { useFlows, useDiagramActions, useActiveDiagramId, useActiveDiagram, getStepCount, getFlowParticipants, repairFlow, buildFlowDuplicatePatch } from "@/features/diagram";
+import type { Flow } from "@/features/diagram";
 import { validateFlow, type BrokenStep } from "./validateFlow";
 import BrokenFlowDialog from "./BrokenFlowDialog";
 
@@ -52,29 +52,9 @@ const FlowPanel = ({
 
   const handleRemoveBrokenAndPlay = (stepIds: string[]) => {
     if (!pendingPlay) return;
-    const idSet = new Set(stepIds);
-    const newSteps: Record<string, FlowStep> = {};
-    for (const [id, step] of Object.entries(pendingPlay.flow.steps)) {
-      if (idSet.has(id)) continue;
-      newSteps[id] = {
-        ...step,
-        branches: step.branches?.map((b) => ({ ...b })),
-      };
-    }
-    for (const id of Object.keys(newSteps)) {
-      const s = newSteps[id];
-      const next = s.next && idSet.has(s.next) ? undefined : s.next;
-      const branches = s.branches?.filter((b) => !idSet.has(b.nextId));
-      if (next !== s.next || branches !== s.branches) {
-        newSteps[id] = { ...s, next, branches };
-      }
-    }
-    let entryStepId = pendingPlay.flow.entryStepId;
-    if (entryStepId && idSet.has(entryStepId)) {
-      entryStepId = Object.keys(newSteps)[0];
-    }
-    updateFlow(pendingPlay.flow.id, { steps: newSteps, entryStepId });
-    onPlay({ ...pendingPlay.flow, steps: newSteps, entryStepId });
+    const { steps, entryStepId } = repairFlow(pendingPlay.flow, stepIds);
+    updateFlow(pendingPlay.flow.id, { steps, entryStepId });
+    onPlay({ ...pendingPlay.flow, steps, entryStepId });
     setPendingPlay(null);
   };
 
@@ -89,9 +69,10 @@ const FlowPanel = ({
 
   const handleDuplicate = (flow: Flow) => {
     if (!activeDiagramId) return;
-    const newFlow = addFlow(activeDiagramId, t("flowPanel.copyPrefix", { name: flow.name }), flow.mermaid, flow.steps);
-    if (flow.description || flow.tags?.length) {
-      updateFlow(newFlow.id, { description: flow.description, tags: flow.tags, entryStepId: flow.entryStepId });
+    const patch = buildFlowDuplicatePatch(flow, t("flowPanel.copyPrefix", { name: flow.name }));
+    const newFlow = addFlow(activeDiagramId, patch.name, patch.mermaid, patch.steps);
+    if (patch.description || patch.tags?.length) {
+      updateFlow(newFlow.id, { description: patch.description, tags: patch.tags, entryStepId: patch.entryStepId });
     }
   };
 

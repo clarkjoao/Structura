@@ -690,7 +690,7 @@
     "urlTooLargeError": "Diagrama muito grande para compartilhar via URL. Exporte o JSON e compartilhe o arquivo diretamente.",
     "urlSize": "Tamanho do link: {{size}}",
     "previewPrefix": "Preview compartilhado:",
-    "importedSuffix": "(importado {{date}})",
+    "importedDiagramName": "{{name}} - importado {{date}}",
     "import": "Importar",
     "previewBanner": {
       "title": "Você está visualizando \"{{name}}\"",
@@ -698,6 +698,14 @@
       "import": "Importar para meu workspace",
       "openInStructura": "Abrir no Structura",
       "close": "Fechar"
+    }
+  },
+  "embedPage": {
+    "loading": "Carregando diagrama...",
+    "waiting": "Aguardando diagrama...",
+    "errors": {
+      "invalidShare": "Link de compartilhamento inválido ou corrompido",
+      "invalidDiagram": "Diagrama inválido"
     }
   },
   "collaboration": {

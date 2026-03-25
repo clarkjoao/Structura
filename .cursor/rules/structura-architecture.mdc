@@ -1,0 +1,54 @@
+---
+description: Structura FSD, Zustand, canvas/diagram, flow, i18n, performance
+globs: "src/**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Architecture (Structura)
+
+## Feature layout (`src/features/<feature>/`)
+
+- `index.ts` = public API only; do not import another feature’s internals — use its `index.ts`.
+- Typical folders: `hooks/`, `components/`, `utils/`, `<feature>.types.ts`.
+
+## Layers
+
+- **`src/features/diagram/`** — domain: **no** React, UI, or React Flow.
+- **`src/features/canvas/`** — UI bridge to React Flow.
+
+## Zustand store
+
+- Slices: pure transforms only — no I/O, fetch, or side effects.
+- `pushHistory` at the start of every **undoable** mutation; not for layout/viewport.
+- Selectors returning objects/arrays: `useShallow`.
+- Don’t derive inside slices — selectors or hooks.
+- Actions: verb names (`addComponent`, `updateDiagram`).
+
+## Node types
+
+- Register via `NodeTypeDescriptor` in `nodes/node-types/`.
+- No node-type conditionals in `useCanvasNodes` or `Canvas.tsx`.
+- `c4Descriptor` last in `NODE_TYPE_REGISTRY` (catch-all).
+
+## Flow mode
+
+- `playing` and `recording` mutually exclusive (discriminated union).
+- Idle-only actions: guard with `flowMode.isIdle`; use `!flowMode.isIdle` instead of `isPlaying && isRecording`.
+- UI guards: `withFlowModeGuard` + toast.
+
+## Scenes
+
+- Scene mutations blocked while playing/recording (`scenesLocked = !flowMode.isIdle`).
+- FlowRecorder closed in compare mode; compare vs active scene exclusive at store.
+
+## i18n
+
+- No hardcoded user-facing copy — `t("feature.key")`.
+- New keys in **all** locale files.
+- Don’t hardcode `disabled={true}` — derive from state.
+
+## Performance
+
+- Selectors: `getCachedCanvasSnapshot`, not raw `resolveCanvasSnapshot`.
+- `useCanvasNodes`: split static vs playback context in memos.
+- Expensive derivations by reference: `WeakMap` cache pattern.

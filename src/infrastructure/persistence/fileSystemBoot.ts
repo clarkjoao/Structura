@@ -8,6 +8,7 @@
  */
 
 import { useDiagramStore } from "@/features/diagram";
+import { VIEWPORT_DEBOUNCE_MS } from "@/features/canvas/canvas.constants";
 import { fileSystemAdapter } from "./FileSystemAdapter";
 import { defaultStorage } from "./LocalStorageAdapter";
 import { PERSIST_KEY } from "@/features/diagram/store/persist.config";
@@ -154,7 +155,7 @@ export function startFileSystemSync(): void {
       } catch (e) {
         console.error("[FileSystemSync] write failed:", e);
       }
-    }, 800);
+    }, VIEWPORT_DEBOUNCE_MS);
   });
 }
 

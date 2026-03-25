@@ -1,0 +1,36 @@
+---
+description: Structura React — components, hooks, context, effects
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# React rules
+
+## Components
+
+- One component per file; subcomponents in `components/`.
+- Over **150 lines** → split into subcomponents.
+- No business logic in the component body — hooks or utils.
+- No direct store access — use hooks.
+- Props: explicit `interface` (e.g. `FlowPanelProps`), never inline object types on the parameter.
+- Optional props: explicit defaults or guards before use.
+
+## Hooks
+
+- Over **100 lines** → decompose.
+- Single responsibility; never call hooks conditionally.
+- `useCallback` / `useMemo`: always pass dependency arrays.
+- `useMemo` with **>8** dependencies → split memos.
+- Derived values: `useMemo`, not `useState` + `useEffect`.
+
+## Context
+
+- Split state vs actions when consumers only need one side.
+- Memoize context functions with `useCallback`.
+- Mutually exclusive UI state: discriminated unions (`kind: "idle" | "playing" | "recording"`), not paired booleans.
+
+## Effects
+
+- One purpose per `useEffect`.
+- No `useEffect` for derived state (use `useMemo`) or for primary event handling (use handlers).
+- Subscriptions: always return a cleanup.

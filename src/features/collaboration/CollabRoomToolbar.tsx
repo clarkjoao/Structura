@@ -5,11 +5,9 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import type { Diagram } from "@/features/diagram";
 import { useDiagramActions } from "@/features/diagram";
-import {
-  CollabStatusIndicator,
-  CollabToolbar,
-  useCollab,
-} from "@/features/collaboration";
+import { CollabStatusIndicator } from "./CollabStatusIndicator";
+import { CollabToolbar } from "./CollabToolbar";
+import { useCollab } from "./CollabProvider";
 
 interface CollabRoomToolbarProps {
   diagram: Diagram | null;

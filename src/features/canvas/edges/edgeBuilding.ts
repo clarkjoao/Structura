@@ -3,6 +3,11 @@ import { MarkerType, type Edge } from "@xyflow/react";
 import type { Connection, Diagram, FlowStep, Point } from "@/features/diagram";
 import { getEffectiveConnectionStyle, EdgeMarker, EdgeStyle } from "@/features/diagram";
 import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
+import {
+  OPACITY_FLOW_PLAYBACK_EDGE_DIM,
+  OPACITY_FLOW_PLAYBACK_PARTICIPANT,
+  OPACITY_TAG_FILTER_EDGE_DIM,
+} from "../canvas.constants";
 
 export interface EdgeBuildParams {
   diagram: Diagram;
@@ -37,10 +42,10 @@ export function getEdgeOpacity(
   if (isPlaying) {
     const isActive = flowHighlight.activeConnId === connId;
     const isParticipant = flowHighlight.participantConnIds.has(connId);
-    return isActive ? 1 : isParticipant ? 0.5 : 0.2;
+    return isActive ? 1 : isParticipant ? OPACITY_FLOW_PLAYBACK_PARTICIPANT : OPACITY_FLOW_PLAYBACK_EDGE_DIM;
   }
   if (isRecording && recordingInfo) {
-    return recordingInfo.recordedEdgeIds.has(connId) ? 1 : 0.2;
+    return recordingInfo.recordedEdgeIds.has(connId) ? 1 : OPACITY_FLOW_PLAYBACK_EDGE_DIM;
   }
   return undefined;
 }
@@ -73,7 +78,7 @@ export function buildEdge(
   const tagDimmed = params.tagFilterEdgeDimmed === true;
   const edgeStyle: CSSProperties | undefined = tagDimmed
     ? {
-        opacity: 0.1,
+        opacity: OPACITY_TAG_FILTER_EDGE_DIM,
         pointerEvents: "none",
         transition: "opacity 0.2s ease",
       }

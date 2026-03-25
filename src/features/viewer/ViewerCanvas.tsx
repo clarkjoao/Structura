@@ -10,19 +10,19 @@ import type { Diagram } from "@/features/diagram";
 import { EMBED_EDGE_TYPES, EMBED_NODE_TYPES } from "./embedNodeTypes";
 import { OpenInStructuraButton } from "./OpenInStructuraButton";
 import { useDiagramToFlow } from "./useDiagramToFlow";
-import "./EmbedCanvas.css";
+import "./ViewerCanvas.css";
 
-interface EmbedCanvasProps {
+interface ViewerCanvasProps {
   diagram: Diagram;
   offsetTop?: number;
   showOpenInStructuraButton?: boolean;
 }
 
-const EmbedCanvasContent = ({
+const ViewerCanvasContent = ({
   diagram,
   offsetTop = 0,
   showOpenInStructuraButton = true,
-}: EmbedCanvasProps) => {
+}: ViewerCanvasProps) => {
   const { nodes, edges } = useDiagramToFlow(diagram);
 
   return (
@@ -67,13 +67,13 @@ const EmbedCanvasContent = ({
   );
 };
 
-export const EmbedCanvas = ({
+export const ViewerCanvas = ({
   diagram,
   offsetTop = 0,
   showOpenInStructuraButton = true,
-}: EmbedCanvasProps) => (
+}: ViewerCanvasProps) => (
   <ReactFlowProvider>
-    <EmbedCanvasContent
+    <ViewerCanvasContent
       diagram={diagram}
       offsetTop={offsetTop}
       showOpenInStructuraButton={showOpenInStructuraButton}

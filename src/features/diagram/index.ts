@@ -53,6 +53,13 @@ export type { EffectiveConnectionStyle } from "./model/connection-defaults";
 /** Unique ID generator for diagram entities */
 export { generateId } from "./utils/generate-id";
 
+/** Shared preview → workspace import (id collision, flow diagramId) */
+export {
+  formatDiagramImportCalendarDate,
+  resolveUniqueDiagramId,
+  cloneDiagramForImportWithId,
+} from "./utils/shared-import";
+
 /** Sort connections array by an explicit handle-order array of connection ids */
 export { applyHandleOrder } from "./utils/handle-order";
 
@@ -80,6 +87,12 @@ export type { BrokenStep } from "./utils/flow-traversal";
 
 /** Flow migration from legacy array format */
 export { migrateFlow } from "./utils/flow-migration";
+
+/** Repair a flow by removing broken steps and cleaning up references */
+export { repairFlow } from "./utils/flow-repair";
+
+/** Build a pure-data patch for duplicating a flow */
+export { buildFlowDuplicatePatch } from "./utils/flow-duplicate";
 
 export {
   resolveSceneSnapshot,

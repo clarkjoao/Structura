@@ -1,0 +1,23 @@
+---
+description: Structura TypeScript — types, assertions, exports
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# TypeScript rules
+
+- No `any` — use `unknown` + type guards when needed.
+- No `as Type` except at untyped external boundaries; prefer guards (`isPanelComponent(component)`).
+- **Exported** functions: explicit return types; internal may infer.
+- **Persisted** domain values: enums (e.g. `EdgeStyle`, `PanelKind`).
+- **UI-only** discriminated state: union types.
+
+```ts
+// ✅
+if (isPanelComponent(component)) {
+  /* panel */
+}
+
+// ❌
+const panel = component as PanelComponent;
+```
