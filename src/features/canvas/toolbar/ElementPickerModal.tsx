@@ -45,6 +45,7 @@ import { RegistryCategoryPanel } from "./element-picker/RegistryCategoryPanel";
 import AwsIcon from "../nodes/AwsIcon";
 import { isPanelType } from "@/features/diagram";
 import { useCustomComponentLibrary } from "@/features/custom-components/hooks/useCustomComponentLibrary";
+import { NodeTemplatePreviewCard } from "@/features/custom-components/components/NodeTemplatePreviewCard";
 
 const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const { t } = useTranslation();
@@ -322,9 +323,8 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
         ) : (
           <div className="grid grid-cols-2 gap-3">
             {filteredTemplates.map((template) => (
-              <button
+              <NodeTemplatePreviewCard
                 key={template.id}
-                type="button"
                 onClick={() => {
                   const insertedNodeId = instantiateTemplate({
                     templateId: template.id,
@@ -335,18 +335,8 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
                     onClose();
                   }
                 }}
-                className="rounded-md border border-border bg-card p-3 text-left hover:bg-surface-hover transition-colors"
-              >
-                <p className="text-xs font-medium truncate">{template.name}</p>
-                {template.description ? (
-                  <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">
-                    {template.description}
-                  </p>
-                ) : null}
-                <span className="mt-2 inline-flex text-[10px] rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">
-                  {template.baseType}
-                </span>
-              </button>
+                template={template}
+              />
             ))}
           </div>
         );

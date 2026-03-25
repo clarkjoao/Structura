@@ -24,7 +24,7 @@ export function buildCategoryNavItems(
     canvas: number;
     aws: number;
     registry: number;
-    myComponents: number;
+    nodeTemplates: number;
   },
 ): CategoryNavItem[] {
   return [
@@ -62,7 +62,7 @@ export function buildCategoryNavItems(
       id: ElementCategory.NodeTemplate,
       label: t("customComponents.customComponents"),
       icon: Bookmark,
-      count: counts.myComponents,
+      count: counts.nodeTemplates,
     },
   ];
 }

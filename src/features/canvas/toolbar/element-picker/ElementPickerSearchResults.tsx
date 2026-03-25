@@ -10,6 +10,7 @@ import type { CanvasPickerOption } from "./types";
 import type { C4PickerOption } from "./buildPickerOptions";
 import { RegistryServiceRow } from "./RegistryServiceRow";
 import type { CustomComponentTemplate } from "@/features/custom-components";
+import { NodeTemplatePreviewCard } from "@/features/custom-components/components/NodeTemplatePreviewCard";
 
 export function ElementPickerSearchResults({
   searchTrimmed,
@@ -136,22 +137,11 @@ export function ElementPickerSearchResults({
           </h3>
           <div className="grid grid-cols-2 gap-3">
             {filteredTemplates.map((template) => (
-              <button
+              <NodeTemplatePreviewCard
                 key={template.id}
-                type="button"
+                template={template}
                 onClick={() => onAddTemplate(template.id)}
-                className="rounded-md border border-border bg-card p-3 text-left hover:bg-surface-hover transition-colors"
-              >
-                <p className="text-xs font-medium truncate">{template.name}</p>
-                {template.description ? (
-                  <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">
-                    {template.description}
-                  </p>
-                ) : null}
-                <span className="mt-2 inline-flex text-[10px] rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">
-                  {template.baseType}
-                </span>
-              </button>
+              />
             ))}
           </div>
         </section>

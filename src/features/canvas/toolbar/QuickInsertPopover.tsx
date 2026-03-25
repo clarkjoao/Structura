@@ -386,7 +386,7 @@ const QuickInsertPopover = ({
             )}
             <div className="px-3 py-1">
               <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
-                {t("customComponents.myComponents")}
+                {t("customComponents.customComponents")}
               </span>
             </div>
             {filteredTemplates.map((template) => (
