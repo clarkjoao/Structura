@@ -9,6 +9,7 @@ import { shortAwsName } from "./utils";
 import type { CanvasPickerOption } from "./types";
 import type { C4PickerOption } from "./buildPickerOptions";
 import { RegistryServiceRow } from "./RegistryServiceRow";
+import type { CustomComponentTemplate } from "@/features/custom-components";
 
 export function ElementPickerSearchResults({
   searchTrimmed,
@@ -17,11 +18,13 @@ export function ElementPickerSearchResults({
   filteredCanvas,
   filteredAwsFlat,
   filteredServices,
+  filteredTemplates,
   onCanvasServiceIds,
   onAddC4,
   onAddCanvas,
   onAddAws,
   onAddRegistry,
+  onAddTemplate,
 }: {
   searchTrimmed: string;
   showSearchEmpty: boolean;
@@ -34,11 +37,13 @@ export function ElementPickerSearchResults({
     iconName: string;
   }[];
   filteredServices: import("@/features/diagram").ServiceDefinition[];
+  filteredTemplates: CustomComponentTemplate[];
   onCanvasServiceIds: Set<string>;
   onAddC4: (type: ComponentType, label: string) => void;
   onAddCanvas: (opt: CanvasPickerOption) => void;
   onAddAws: (categoryId: AwsCategoryId, serviceId: string, serviceName: string) => void;
   onAddRegistry: (serviceId: string, name: string) => void;
+  onAddTemplate: (templateId: string) => void;
 }) {
   const { t } = useTranslation();
 
@@ -118,6 +123,33 @@ export function ElementPickerSearchResults({
                 <AwsIcon iconName={svc.iconName} size={40} />
                 <span className="line-clamp-2 text-center text-[10px] leading-tight text-foreground">
                   {shortAwsName(svc.name)}
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+      {filteredTemplates.length > 0 && (
+        <section>
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {t("customComponents.customComponents")} · {filteredTemplates.length}
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            {filteredTemplates.map((template) => (
+              <button
+                key={template.id}
+                type="button"
+                onClick={() => onAddTemplate(template.id)}
+                className="rounded-md border border-border bg-card p-3 text-left hover:bg-surface-hover transition-colors"
+              >
+                <p className="text-xs font-medium truncate">{template.name}</p>
+                {template.description ? (
+                  <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">
+                    {template.description}
+                  </p>
+                ) : null}
+                <span className="mt-2 inline-flex text-[10px] rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">
+                  {template.baseType}
                 </span>
               </button>
             ))}

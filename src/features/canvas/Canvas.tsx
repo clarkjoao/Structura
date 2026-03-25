@@ -1,5 +1,7 @@
+import { useState } from "react";
 import {
   ReactFlow,
+  useReactFlow,
   Background,
   BackgroundVariant,
   Controls,
@@ -24,10 +26,19 @@ import { CANVAS_STYLES } from "./constants";
 import CustomEdge from "./edges/CustomEdge";
 import type { CanvasProps } from "./canvas.types";
 import { CollabCursors, useCollab } from "@/features/collaboration";
+import { SaveCustomComponentModal } from "@/features/custom-components/SaveCustomComponentModal";
+import { useCustomComponentStore } from "@/features/custom-components";
+import { createTemplateDataFromNode } from "@/features/custom-components/utils/customComponentTemplate.utils";
+import { CUSTOM_COMPONENT_DRAG_MIME } from "@/features/custom-components/customComponent.constants";
+import { useCustomComponentLibrary } from "@/features/custom-components/hooks/useCustomComponentLibrary";
 
 const canvasEdgeTypes = { c4: CustomEdge };
 
 const Canvas = (props: CanvasProps = {}) => {
+  const [templateNodeId, setTemplateNodeId] = useState<string | null>(null);
+  const reactFlowInstance = useReactFlow();
+  const addTemplate = useCustomComponentStore((state) => state.addTemplate);
+  const { instantiateTemplate } = useCustomComponentLibrary();
   const {
     t,
     diagram,
@@ -60,6 +71,10 @@ const Canvas = (props: CanvasProps = {}) => {
     allDiagramTags,
   } = useCanvasController(props);
   const { updateCursor, session } = useCollab();
+  
+  const templateSourceNode = templateNodeId
+    ? nodes.find((node) => node.id === templateNodeId) ?? null
+    : null;
 
   if (!diagram) {
     return (
@@ -110,6 +125,22 @@ const Canvas = (props: CanvasProps = {}) => {
           </div>
           <div
               onContextMenu={(e) => e.preventDefault()}
+              onDragOver={(event) => {
+                if (event.dataTransfer.types.includes(CUSTOM_COMPONENT_DRAG_MIME)) {
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = "copy";
+                }
+              }}
+              onDrop={(event) => {
+                const templateId = event.dataTransfer.getData(CUSTOM_COMPONENT_DRAG_MIME);
+                if (!templateId) return;
+                event.preventDefault();
+                const position = reactFlowInstance.screenToFlowPosition({
+                  x: event.clientX,
+                  y: event.clientY,
+                });
+                instantiateTemplate({ templateId, position });
+              }}
               onMouseMove={(e) => {
                 if (!session) return;
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -184,6 +215,7 @@ const Canvas = (props: CanvasProps = {}) => {
             elementId={visualState.contextMenu.elementId}
             onBringToFront={actions.bringToFront}
             onSendToBack={actions.sendToBack}
+            onSaveAsTemplate={setTemplateNodeId}
             onClose={() => visualState.setContextMenu(null)}
           />
         )}
@@ -204,6 +236,32 @@ const Canvas = (props: CanvasProps = {}) => {
             onSelectDiagram={handleSelectDiagram}
           />
         )}
+
+        {templateSourceNode ? (
+          <SaveCustomComponentModal
+            defaultName={String(templateSourceNode.data?.name ?? "")}
+            defaultDescription={
+              typeof templateSourceNode.data?.description === "string"
+                ? templateSourceNode.data.description
+                : undefined
+            }
+            onClose={() => setTemplateNodeId(null)}
+            onSave={(name, description) => {
+              const templateData = createTemplateDataFromNode(templateSourceNode);
+              addTemplate({
+                id: crypto.randomUUID(),
+                name,
+                description,
+                baseType: templateData.baseType,
+                data: templateData.data,
+                registryServiceId: templateData.registryServiceId,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+              });
+              setTemplateNodeId(null);
+            }}
+          />
+        ) : null}
 
         {showElementPanel && (
           <div className="absolute inset-y-0 right-0 z-20 flex">

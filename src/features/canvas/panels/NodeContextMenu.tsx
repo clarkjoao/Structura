@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowUpToLine, ArrowDownToLine } from "lucide-react";
+import { ArrowUpToLine, ArrowDownToLine, BookmarkPlus } from "lucide-react";
 
 interface Props {
   x: number;
@@ -8,6 +8,7 @@ interface Props {
   elementId: string;
   onBringToFront: (elementId: string) => void;
   onSendToBack: (elementId: string) => void;
+  onSaveAsTemplate?: (elementId: string) => void;
   onClose: () => void;
 }
 
@@ -17,6 +18,7 @@ const NodeContextMenu = ({
   elementId,
   onBringToFront,
   onSendToBack,
+  onSaveAsTemplate,
   onClose,
 }: Props) => {
   const { t } = useTranslation();
@@ -67,6 +69,21 @@ const NodeContextMenu = ({
         <ArrowDownToLine className="h-3.5 w-3.5 text-muted-foreground" />
         {t("nodeContextMenu.sendToBack")}
       </button>
+      {onSaveAsTemplate ? (
+        <>
+          <div className="mx-2 my-1 border-t border-border" />
+          <button
+            onClick={() => {
+              onSaveAsTemplate(elementId);
+              onClose();
+            }}
+            className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-surface-hover transition-colors text-foreground"
+          >
+            <BookmarkPlus className="h-3.5 w-3.5 text-muted-foreground" />
+            {t("customComponents.saveAsTemplate")}
+          </button>
+        </>
+      ) : null}
     </div>
   );
 };

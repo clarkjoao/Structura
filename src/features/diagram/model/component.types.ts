@@ -32,6 +32,10 @@ interface BaseComponent {
   /** Relative position in a user template capture (centroid-normalized); not used on live canvas. */
   x?: number;
   y?: number;
+  /** Custom component template origin. Cleared when node data diverges from template. */
+  templateId?: string;
+  /** Optional custom-template registry reference used during instantiation. */
+  registryServiceId?: string;
 }
 
 export interface C4Component extends BaseComponent {

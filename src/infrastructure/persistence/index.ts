@@ -30,3 +30,7 @@ export type {
   ManifestValidationResult,
 } from "./validateWorkspaceFile";
 export { WorkspaceMergeDialog } from "./WorkspaceMergeDialog";
+export {
+  CustomComponentRepository,
+  customComponentRepository,
+} from "./CustomComponentRepository";

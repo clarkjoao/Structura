@@ -600,6 +600,10 @@
     "childrenIncluded": "+{{count}} filho(s) de panel incluído(s) automaticamente",
     "saved": "Template salvo"
   },
+  "customComponents": {
+    "customComponents": "Componentes salvos",
+    "saveAsTemplate": "Salvar como template"
+  },
   "nodeContextMenu": {
     "ordering": "Ordenação",
     "bringToFront": "Trazer para frente",

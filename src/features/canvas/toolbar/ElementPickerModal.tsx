@@ -44,6 +44,7 @@ import { AwsBrowseView } from "./element-picker/AwsBrowseView";
 import { RegistryCategoryPanel } from "./element-picker/RegistryCategoryPanel";
 import AwsIcon from "../nodes/AwsIcon";
 import { isPanelType } from "@/features/diagram";
+import { useCustomComponentLibrary } from "@/features/custom-components/hooks/useCustomComponentLibrary";
 
 const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const { t } = useTranslation();
@@ -57,6 +58,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const { addComponent, linkComponentToService } = useDiagramActions();
   const services = useAllServices();
   const allComponents = useAllComponents();
+  const { templates, instantiateTemplate } = useCustomComponentLibrary();
 
   const C4_OPTIONS = useMemo(() => buildC4PickerOptions(t), [t]);
   const CANVAS_OPTIONS = useMemo(() => buildCanvasPickerOptions(t), [t]);
@@ -74,8 +76,13 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const awsSpotlight = useMemo(() => resolveAwsSpotlight(), []);
 
   const allCategoryTotalCount = useMemo(
-    () => C4_OPTIONS.length + CANVAS_OPTIONS.length + awsServiceCount + services.length,
-    [C4_OPTIONS.length, CANVAS_OPTIONS.length, awsServiceCount, services.length],
+    () =>
+      C4_OPTIONS.length +
+      CANVAS_OPTIONS.length +
+      awsServiceCount +
+      services.length +
+      templates.length,
+    [C4_OPTIONS.length, CANVAS_OPTIONS.length, awsServiceCount, services.length, templates.length],
   );
 
   const awsPrimaryCategories = useMemo(
@@ -133,6 +140,17 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     () => filterServicesByQuery(q, services),
     [q, services],
   );
+  const filteredTemplates = useMemo(() => {
+    if (!q) return templates;
+    return templates.filter((template) => {
+      const normalizedBaseType = String(template.baseType).toLowerCase();
+      return (
+        template.name.toLowerCase().includes(q) ||
+        (template.description?.toLowerCase().includes(q) ?? false) ||
+        normalizedBaseType.includes(q)
+      );
+    });
+  }, [q, templates]);
 
   const getInsertPos = useCallback(
     () => rfInstance.screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 }),
@@ -189,8 +207,17 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
         canvas: CANVAS_OPTIONS.length,
         aws: awsServiceCount,
         registry: services.length,
+        myComponents: templates.length,
       }),
-    [t, allCategoryTotalCount, C4_OPTIONS.length, CANVAS_OPTIONS.length, awsServiceCount, services.length],
+    [
+      t,
+      allCategoryTotalCount,
+      C4_OPTIONS.length,
+      CANVAS_OPTIONS.length,
+      awsServiceCount,
+      services.length,
+      templates.length,
+    ],
   );
 
   const setCategory = (cat: ElementCategory) => {
@@ -203,7 +230,8 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     filteredC4.length === 0 &&
     filteredCanvas.length === 0 &&
     filteredAwsFlat.length === 0 &&
-    filteredServices.length === 0;
+    filteredServices.length === 0 &&
+    filteredTemplates.length === 0;
 
   const onAddCanvas = (opt: CanvasPickerOption) => {
     handleAddElement(opt.type, opt.label, opt.panelKind);
@@ -288,6 +316,40 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
             onClose={onClose}
           />
         );
+      case ElementCategory.NodeTemplate:
+        return filteredTemplates.length === 0 ? (
+          <div className="text-xs text-muted-foreground">{t("patterns.userTemplates.empty")}</div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {filteredTemplates.map((template) => (
+              <button
+                key={template.id}
+                type="button"
+                onClick={() => {
+                  const insertedNodeId = instantiateTemplate({
+                    templateId: template.id,
+                    position: getInsertPos(),
+                  });
+                  if (insertedNodeId) {
+                    onInsert?.(insertedNodeId);
+                    onClose();
+                  }
+                }}
+                className="rounded-md border border-border bg-card p-3 text-left hover:bg-surface-hover transition-colors"
+              >
+                <p className="text-xs font-medium truncate">{template.name}</p>
+                {template.description ? (
+                  <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">
+                    {template.description}
+                  </p>
+                ) : null}
+                <span className="mt-2 inline-flex text-[10px] rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">
+                  {template.baseType}
+                </span>
+              </button>
+            ))}
+          </div>
+        );
       default:
         return null;
     }
@@ -346,11 +408,22 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
                   filteredCanvas={filteredCanvas}
                   filteredAwsFlat={filteredAwsFlat}
                   filteredServices={filteredServices}
+                  filteredTemplates={filteredTemplates}
                   onCanvasServiceIds={onCanvasServiceIds}
                   onAddC4={(type, label) => handleAddElement(type, label)}
                   onAddCanvas={onAddCanvas}
                   onAddAws={handleAddAws}
                   onAddRegistry={handleAddService}
+                  onAddTemplate={(templateId) => {
+                    const insertedNodeId = instantiateTemplate({
+                      templateId,
+                      position: getInsertPos(),
+                    });
+                    if (insertedNodeId) {
+                      onInsert?.(insertedNodeId);
+                      onClose();
+                    }
+                  }}
                 />
               ) : (
                 renderCategoryBody()

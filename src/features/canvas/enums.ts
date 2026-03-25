@@ -5,6 +5,7 @@ export enum ElementCategory {
   Canvas = "canvas",
   Aws = "aws",
   Registry = "registry",
+  NodeTemplate = "node-template",
 }
 
 /** Connection handle side (incoming vs outgoing) */

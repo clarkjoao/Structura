@@ -293,6 +293,9 @@ export const componentsSlice = (
       for (const [k, v] of Object.entries(patchAny)) {
         if (k !== "width" && k !== "height") compPatch[k] = v;
       }
+      const shouldDetachTemplate = Object.keys(compPatch).some(
+        (key) => key !== "templateId",
+      );
       set((state) => {
         const d = state.diagrams[state.activeDiagramId]!;
         const scene = resolveActiveScene(d);
@@ -305,6 +308,9 @@ export const componentsSlice = (
         if (inSceneAdds) {
           if (Object.keys(compPatch).length > 0) {
             Object.assign(scene!.addedComponents[id], compPatch);
+            if (shouldDetachTemplate && scene!.addedComponents[id].templateId) {
+              delete scene!.addedComponents[id].templateId;
+            }
           }
           if (hasDimensions) {
             const layout = scene!.nodeLayouts[id];
@@ -316,6 +322,9 @@ export const componentsSlice = (
         } else {
           if (Object.keys(compPatch).length > 0) {
             Object.assign(d.snapshot.components[id], compPatch);
+            if (shouldDetachTemplate && d.snapshot.components[id].templateId) {
+              delete d.snapshot.components[id].templateId;
+            }
           }
           if (hasDimensions) {
             const layout = d.nodeLayouts[id];

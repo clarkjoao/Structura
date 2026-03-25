@@ -224,6 +224,26 @@ const PatternPicker = ({ onClose, onBeforeInsert }: PatternPickerProps) => {
               <span>{t("patterns.categoryAll")}</span>
               <span className="text-[10px] font-mono text-muted-foreground">{allRowCount}</span>
             </button>
+             {userTemplates.length > 0 ? (
+              <>
+                <div className="border-t border-border my-1" />
+                <button
+                  type="button"
+                  onClick={() => setActiveCategory("user-templates")}
+                  className={`w-full text-left px-4 py-2 text-xs font-medium transition-colors flex items-center gap-2 ${
+                    activeCategory === "user-templates"
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-surface-hover"
+                  }`}
+                >
+                  <Bookmark className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  <span className="flex-1">{t("patterns.categories.userTemplates")}</span>
+                  <span className="text-[10px] font-mono text-muted-foreground">
+                    {q ? filteredUserTemplates.length : userTemplates.length}
+                  </span>
+                </button>
+              </>
+            ) : null}
             <div className="border-t border-border my-1" />
             {CATEGORIES.map((cat) => {
               const count = categoryCounts[cat];
@@ -247,26 +267,6 @@ const PatternPicker = ({ onClose, onBeforeInsert }: PatternPickerProps) => {
                 </button>
               );
             })}
-            {userTemplates.length > 0 ? (
-              <>
-                <div className="border-t border-border my-1" />
-                <button
-                  type="button"
-                  onClick={() => setActiveCategory("user-templates")}
-                  className={`w-full text-left px-4 py-2 text-xs font-medium transition-colors flex items-center gap-2 ${
-                    activeCategory === "user-templates"
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-surface-hover"
-                  }`}
-                >
-                  <Bookmark className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                  <span className="flex-1">{t("patterns.categories.userTemplates")}</span>
-                  <span className="text-[10px] font-mono text-muted-foreground">
-                    {q ? filteredUserTemplates.length : userTemplates.length}
-                  </span>
-                </button>
-              </>
-            ) : null}
           </nav>
 
           <div className="flex-1 overflow-y-auto p-3 min-w-0">

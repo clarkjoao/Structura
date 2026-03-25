@@ -9,6 +9,7 @@ import { PANEL_KINDS, getPanelKindForAwsService, getPanelKindDef } from "@/lib/c
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/catalogs/aws";
 import AwsIcon from "../nodes/AwsIcon";
 import { useTranslation } from "react-i18next";
+import { useCustomComponentLibrary } from "@/features/custom-components/hooks/useCustomComponentLibrary";
 
 type CanvasInsertOption = {
   type: ComponentType;
@@ -77,6 +78,7 @@ const QuickInsertPopover = ({
   const { addComponent, addConnection, linkComponentToService } =
     useDiagramActions();
   const services = useAllServices();
+  const { templates, instantiateTemplate } = useCustomComponentLibrary();
 
   const C4_OPTIONS = useMemo(
     () =>
@@ -183,6 +185,18 @@ const QuickInsertPopover = ({
         (s.tags ?? []).some((t) => t.toLowerCase().includes(q)),
     );
   }, [q, services]);
+  
+  const filteredTemplates = useMemo(() => {
+    if (!q) return []
+    return templates.filter((template) => {
+      const normalizedBaseType = String(template.baseType).toLowerCase();
+      return (
+        template.name.toLowerCase().includes(q) ||
+        (template.description?.toLowerCase().includes(q) ?? false) ||
+        normalizedBaseType.includes(q)
+      );
+    });
+  }, [q, templates]);
 
   const insertPos = { x: flowPos.x + 20, y: flowPos.y + 20 };
 
@@ -223,6 +237,22 @@ const QuickInsertPopover = ({
     }
     onInsert(comp.id);
   };
+  const handleSelectTemplate = (templateId: string) => {
+    const insertedNodeId = instantiateTemplate({
+      templateId,
+      position: insertPos,
+    });
+    if (!insertedNodeId) return;
+    if (sourceNodeId) {
+      addConnection(
+        sourceNodeId,
+        insertedNodeId,
+        t("canvas.usesEdgeLabel"),
+        getLastEdgeStyle(),
+      );
+    }
+    onInsert(insertedNodeId);
+  };
 
   const left = Math.min(screenPos.x + 8, window.innerWidth - POPOVER_W - 8);
   const top = Math.min(screenPos.y + 8, window.innerHeight - POPOVER_H_MAX - 8);
@@ -232,7 +262,8 @@ const QuickInsertPopover = ({
     filteredC4.length === 0 &&
     filteredCanvas.length === 0 &&
     filteredAws.length === 0 &&
-    filteredServices.length === 0;
+    filteredServices.length === 0 &&
+    filteredTemplates.length === 0;
 
   return (
     <div
@@ -340,6 +371,37 @@ const QuickInsertPopover = ({
                   <span className="text-muted-foreground">
                     {svc.technology.slice(0, 2).join(", ")}
                   </span>
+                )}
+              </button>
+            ))}
+          </>
+        )}
+        {filteredTemplates.length > 0 && (
+          <>
+            {(filteredC4.length > 0 ||
+              filteredCanvas.length > 0 ||
+              filteredAws.length > 0 ||
+              filteredServices.length > 0) && (
+              <div className="border-t border-border my-1" />
+            )}
+            <div className="px-3 py-1">
+              <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
+                {t("customComponents.myComponents")}
+              </span>
+            </div>
+            {filteredTemplates.map((template) => (
+              <button
+                key={template.id}
+                onClick={() => handleSelectTemplate(template.id)}
+                className="flex flex-col w-full px-3 py-2 text-xs hover:bg-surface-hover transition-colors text-left"
+              >
+                <span className="font-medium text-foreground">{template.name}</span>
+                {template.description ? (
+                  <span className="text-muted-foreground line-clamp-1">
+                    {template.description}
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">{template.baseType}</span>
                 )}
               </button>
             ))}

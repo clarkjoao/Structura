@@ -86,9 +86,41 @@ export function useLocalNodes(
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
       if (!changes.length) return;
+      const sanitizedChanges = changes.map((change) => {
+        if (change.type !== "replace") return change;
+        const previousNode = localNodesRef.current.find(
+          (node) => node.id === change.item.id,
+        );
+        const previousData = previousNode?.data as Record<string, unknown> | undefined;
+        const nextData = change.item.data as Record<string, unknown> | undefined;
+        if (!previousData || !nextData) return change;
+        const templateId =
+          typeof previousData.templateId === "string"
+            ? previousData.templateId
+            : undefined;
+        if (!templateId) return change;
+        const keys = new Set([
+          ...Object.keys(previousData),
+          ...Object.keys(nextData),
+        ]);
+        const changedAnyField = [...keys].some((key) => {
+          if (key === "templateId") return false;
+          return previousData[key] !== nextData[key];
+        });
+        if (!changedAnyField) return change;
+        const nextItemData = { ...nextData };
+        delete nextItemData.templateId;
+        return {
+          ...change,
+          item: {
+            ...change.item,
+            data: nextItemData,
+          },
+        };
+      });
       const hasSelect = changes.some((c) => c.type === "select");
-      innerOnNodesChange(changes);
-      const forApply = filterNodeChangesForSceneMoveLock(diagram, changes);
+      innerOnNodesChange(sanitizedChanges);
+      const forApply = filterNodeChangesForSceneMoveLock(diagram, sanitizedChanges);
       setLocalNodes((nds) => {
         const updated = applyNodeChanges(forApply, nds);
         localNodesRef.current = updated;

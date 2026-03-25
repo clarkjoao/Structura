@@ -5,6 +5,7 @@ import {
   LayoutTemplate,
   Layers,
   Server,
+  Bookmark,
 } from "lucide-react";
 import { ElementCategory } from "../../enums";
 
@@ -23,6 +24,7 @@ export function buildCategoryNavItems(
     canvas: number;
     aws: number;
     registry: number;
+    myComponents: number;
   },
 ): CategoryNavItem[] {
   return [
@@ -55,6 +57,12 @@ export function buildCategoryNavItems(
       label: t("elementPicker.registry"),
       icon: Server,
       count: counts.registry,
+    },
+    {
+      id: ElementCategory.NodeTemplate,
+      label: t("customComponents.customComponents"),
+      icon: Bookmark,
+      count: counts.myComponents,
     },
   ];
 }
