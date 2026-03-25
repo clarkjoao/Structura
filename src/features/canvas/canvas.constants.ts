@@ -32,6 +32,6 @@ export const FIELD_DEBOUNCE_MS = 300;
 
 export const MAX_HISTORY_STEPS = 50;
 export const HISTORY_COALESCE_MS = 1000;
-export const UNDO_REDO_COOLDOWN_MS = 500;
+export const UNDO_REDO_COOLDOWN_MS = 50;
 
 export const FLOW_PARTICLE_DURATION_MS = 1200;

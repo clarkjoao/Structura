@@ -46,7 +46,7 @@ const CanvasToolbar = ({
   if (!diagram) return null;
 
   return (
-    <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+    <div className="absolute top-4 left-4 z-10 flex flex-col gap-2 max-w-[200px]">
       <CanvasToolbarDiagramPanel
         diagram={diagram}
         toolbarEditLocked={toolbarEditLocked}
