@@ -21,7 +21,7 @@ export const Badges = ({
     (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
       if (!serviceId) return;
-      navigate(`/registry?serviceId=${encodeURIComponent(serviceId)}`);
+      navigate(`/catalog?serviceId=${encodeURIComponent(serviceId)}`);
     },
     [navigate, serviceId],
   );
