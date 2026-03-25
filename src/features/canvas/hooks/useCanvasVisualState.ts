@@ -21,9 +21,10 @@ export interface CanvasVisualState {
   } | null;
   setQuickInsert: (value: CanvasVisualState["quickInsert"]) => void;
   clearCanvasSelection: () => void;
-  hiddenTags: Set<string>;
+  visibleTags: Set<string>;
   toggleTag: (tag: string) => void;
   showAllTags: () => void;
+  showNoTags: () => void;
   isNodeHiddenByTagFilter: (component: Component) => boolean;
 }
 
@@ -43,36 +44,32 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
     flowPos: { x: number; y: number };
     sourceNodeId?: string | null;
   } | null>(null);
-  const [hiddenTags, setHiddenTags] = useState<Set<string>>(() => new Set());
+  const [visibleTags, setVisibleTags] = useState<Set<string> | null>(null);
 
   useEffect(() => {
-    setHiddenTags(new Set());
+    setVisibleTags(null);
   }, [activeDiagramId]);
 
   const toggleTag = useCallback((tag: string) => {
-    setHiddenTags((previous) => {
-      const next = new Set(previous);
-      if (next.has(tag)) {
-        next.delete(tag);
-      } else {
-        next.add(tag);
-      }
+    setVisibleTags((prev) => {
+      const next = new Set(prev ?? []);
+      if (next.has(tag)) next.delete(tag);
+      else next.add(tag);
       return next;
     });
   }, []);
 
-  const showAllTags = useCallback(() => {
-    setHiddenTags(new Set());
-  }, []);
+  const showAllTags = useCallback(() => setVisibleTags(null), []);
+
+  const showNoTags = useCallback(() => setVisibleTags(new Set()), []);
 
   const isNodeHiddenByTagFilter = useCallback(
     (component: Component): boolean => {
-      if (!component.tags?.length) {
-        return false;
-      }
-      return component.tags.some((tag) => hiddenTags.has(tag));
+      if (visibleTags === null) return false; // "Todos" — nada oculto
+      if (visibleTags.size === 0) return !!component.tags?.length; // "Sem Tags"
+      return !component.tags?.some((tag) => visibleTags.has(tag)); // whitelist
     },
-    [hiddenTags],
+    [visibleTags],
   );
 
   const emptySet = useRef(new Set<string>()).current;
@@ -111,7 +108,8 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
     quickInsert,
     setQuickInsert,
     clearCanvasSelection,
-    hiddenTags,
+    visibleTags,
+    showNoTags,
     toggleTag,
     showAllTags,
     isNodeHiddenByTagFilter,

@@ -104,9 +104,10 @@ const Canvas = (props: CanvasProps = {}) => {
             onClearSelection={visualState.clearCanvasSelection}
             onOpenScenes={() => setShowScenes(true)}
             allTags={allDiagramTags}
-            hiddenTags={visualState.hiddenTags}
+            visibleTags={visualState.visibleTags}
             onToggleTag={visualState.toggleTag}
             onShowAllTags={visualState.showAllTags}
+            onShowNoTags={visualState.showNoTags}
           />
           {showSearch && diagram && (
             <CanvasSearch

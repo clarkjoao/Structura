@@ -16,9 +16,10 @@ interface CanvasToolbarProps {
   onClearSelection?: () => void;
   onOpenScenes?: () => void;
   allTags: string[];
-  hiddenTags: Set<string>;
+  visibleTags: Set<string>;
   onToggleTag: (tag: string) => void;
   onShowAllTags: () => void;
+  onShowNoTags: () => void;
 }
 
 const CanvasToolbar = ({
@@ -28,9 +29,10 @@ const CanvasToolbar = ({
   onClearSelection,
   onOpenScenes,
   allTags,
-  hiddenTags,
+  visibleTags,
   onToggleTag,
   onShowAllTags,
+  onShowNoTags,
 }: CanvasToolbarProps) => {
   const { t } = useTranslation();
   const diagram = useActiveDiagram();
@@ -55,10 +57,11 @@ const CanvasToolbar = ({
 
       <LayerFilterPopover
         allTags={allTags}
-        hiddenTags={hiddenTags}
+        visibleTags={visibleTags}
         scenesPickerLocked={scenesPickerLocked}
         onToggle={onToggleTag}
         onShowAll={onShowAllTags}
+        onShowNoTags={onShowNoTags}
       />
 
       {onDrillUp && (

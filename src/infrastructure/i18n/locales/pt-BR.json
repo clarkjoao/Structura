@@ -294,6 +294,8 @@
     "apiGroupDefaultName": "API Endpoints",
     "compareViewBanner": "Modo visualização — edição desativada",
     "toolbar": {
+      "allTags": "Todos",
+      "noTagsFilter": "Nenhuma tag",
       "filterByTag": "Filtrar por tag",
       "noTags": "Nenhuma tag neste diagrama",
       "showAll": "Mostrar todos",
