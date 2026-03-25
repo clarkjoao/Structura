@@ -1,0 +1,133 @@
+import LZString from "lz-string";
+import type { Diagram } from "@/features/diagram";
+
+// ---------------------------------------------------------------------------
+// Encoding
+// ---------------------------------------------------------------------------
+
+export function encodeDiagramPayload(diagram: Diagram): string {
+  return LZString.compressToEncodedURIComponent(JSON.stringify(diagram));
+}
+
+export function decodeDiagramPayload(encoded: string): Diagram {
+  const json = LZString.decompressFromEncodedURIComponent(encoded);
+  if (json) {
+    return JSON.parse(json) as Diagram;
+  }
+  throw new Error("Failed to decompress diagram payload");
+}
+
+// ---------------------------------------------------------------------------
+// URL helpers
+// ---------------------------------------------------------------------------
+
+function getBasePath(): string {
+  return import.meta.env.BASE_URL.replace(/\/$/, "");
+}
+
+export function getAppUrl(): string {
+  const pathnameWithoutTrailingSlash = window.location.pathname.replace(/\/$/, "");
+  return `${window.location.origin}${pathnameWithoutTrailingSlash}`;
+}
+
+// ---------------------------------------------------------------------------
+// Share URLs  —  standalone view with import banner  (/#share=<encoded>)
+// ---------------------------------------------------------------------------
+
+export interface ShareUrlResult {
+  url: string;
+  compressedLength: number;
+  originalLength: number;
+  compressionRatio: number;
+  isSafeForAllEnvs: boolean;
+}
+
+const WARN_THRESHOLD = 8_000;
+
+function stripForShare(diagram: Diagram): Record<string, unknown> {
+  return JSON.parse(
+    JSON.stringify(diagram, (key: string, value: unknown) => {
+      if (key === "iconLibrary") return undefined;
+      if (key === "hidden" && value === false) return undefined;
+      return value;
+    }),
+  ) as Record<string, unknown>;
+}
+
+export function generateShareUrl(diagram: Diagram): ShareUrlResult {
+  const json = JSON.stringify(stripForShare(diagram));
+  const encoded = LZString.compressToEncodedURIComponent(json);
+  const base = `${window.location.origin}${getBasePath()}`;
+  const url = `${base}#share=${encoded}`;
+
+  return {
+    url,
+    compressedLength: url.length,
+    originalLength: json.length,
+    compressionRatio: Math.max(0, 1 - encoded.length / Math.max(json.length, 1)),
+    isSafeForAllEnvs: url.length < WARN_THRESHOLD,
+  };
+}
+
+export function getShareParamFromUrl(): string | null {
+  const hash = window.location.hash.startsWith("#")
+    ? window.location.hash.slice(1)
+    : window.location.hash;
+  const params = new URLSearchParams(hash);
+  return params.get("share");
+}
+
+export function decodeShareParam(shareParam: string): Diagram | null {
+  try {
+    const json = LZString.decompressFromEncodedURIComponent(shareParam);
+    if (json) {
+      const parsed = JSON.parse(json);
+      if (!parsed?.id || !parsed?.snapshot) return null;
+      return {
+        ...parsed,
+        snapshot: {
+          iconLibrary: {},
+          ...parsed.snapshot,
+        },
+      } as Diagram;
+    }
+  } catch {
+    // Fall through to legacy base64.
+  }
+
+  try {
+    const json = decodeURIComponent(escape(atob(shareParam)));
+    const parsed = JSON.parse(json);
+    if (!parsed?.id || !parsed?.snapshot) return null;
+    return parsed as Diagram;
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Viewer URLs  —  iframe / documentation embed  (/viewer#data=<encoded>)
+// ---------------------------------------------------------------------------
+
+export function getViewerPostMessageUrl(): string {
+  return `${window.location.origin}${getBasePath()}/viewer`;
+}
+
+export function generateViewerUrl(diagram: Diagram): string {
+  const encoded = encodeDiagramPayload(diagram);
+  return `${window.location.origin}${getBasePath()}/viewer#data=${encoded}`;
+}
+
+export function getViewerDataFromHash(): Diagram | null {
+  const hash = window.location.hash.startsWith("#")
+    ? window.location.hash.slice(1)
+    : window.location.hash;
+  const params = new URLSearchParams(hash);
+  const encoded = params.get("data");
+  if (!encoded) return null;
+  try {
+    return decodeDiagramPayload(encoded);
+  } catch {
+    return null;
+  }
+}

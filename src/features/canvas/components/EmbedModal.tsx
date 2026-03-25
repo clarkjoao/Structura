@@ -10,13 +10,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
-import { generateEmbedSrcUrl, generateEmbedUrl } from "@/lib/embed-url";
+import { generateViewerUrl, getViewerPostMessageUrl } from "@/lib/diagram-url";
 
-type EmbedMethod = "iframe-base64" | "iframe-postmessage" | "iframe-src";
+type EmbedMethod = "iframe-hash" | "iframe-postmessage";
 
 interface EmbedModalProps {
   open: boolean;
@@ -25,7 +24,7 @@ interface EmbedModalProps {
 }
 
 function isEmbedMethod(value: string): value is EmbedMethod {
-  return value === "iframe-base64" || value === "iframe-postmessage" || value === "iframe-src";
+  return value === "iframe-hash" || value === "iframe-postmessage";
 }
 
 function buildIframeCode(embedUrl: string): string {
@@ -40,24 +39,13 @@ function buildIframeCode(embedUrl: string): string {
 
 export function EmbedModal({ open, onOpenChange, diagram }: EmbedModalProps) {
   const { t } = useTranslation();
-  const [activeMethod, setActiveMethod] = useState<EmbedMethod>("iframe-base64");
-  const [sourceUrl, setSourceUrl] = useState("");
+  const [activeMethod, setActiveMethod] = useState<EmbedMethod>("iframe-hash");
   const origin = window.location.origin;
 
-  const base64IframeCode = useMemo(() => {
-    const embedUrl = generateEmbedUrl(diagram, "base64");
+  const hashIframeCode = useMemo(() => {
+    const embedUrl = generateViewerUrl(diagram);
     return buildIframeCode(embedUrl);
   }, [diagram]);
-
-  const base64UrlLength = useMemo(() => {
-    const match = base64IframeCode.match(/src="([^"]+)"/);
-    return match?.[1]?.length ?? 0;
-  }, [base64IframeCode]);
-
-  const sourceIframeCode = useMemo(() => {
-    const embedUrl = generateEmbedSrcUrl(sourceUrl);
-    return buildIframeCode(embedUrl);
-  }, [sourceUrl]);
 
   const reactSnippet = useMemo(
     () => `import { useEffect, useRef } from "react";
@@ -84,7 +72,7 @@ function StructuraDiagramEmbed() {
   return (
     <iframe
       ref={iframeRef}
-      src="${generateEmbedUrl(null, "postmessage")}"
+      src="${getViewerPostMessageUrl()}"
       width="100%"
       height="500"
       frameBorder="0"
@@ -96,11 +84,7 @@ function StructuraDiagramEmbed() {
   );
 
   const activeSnippet =
-    activeMethod === "iframe-base64"
-      ? base64IframeCode
-      : activeMethod === "iframe-postmessage"
-        ? reactSnippet
-        : sourceIframeCode;
+    activeMethod === "iframe-hash" ? hashIframeCode : reactSnippet;
 
   const handleCopyEmbed = () => {
     void navigator.clipboard.writeText(activeSnippet).then(() => {
@@ -122,26 +106,17 @@ function StructuraDiagramEmbed() {
             if (isEmbedMethod(value)) setActiveMethod(value);
           }}
         >
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="iframe-base64">{t("export.embed.tabs.direct")}</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="iframe-hash">{t("export.embed.tabs.direct")}</TabsTrigger>
             <TabsTrigger value="iframe-postmessage">{t("export.embed.tabs.postMessage")}</TabsTrigger>
-            <TabsTrigger value="iframe-src">{t("export.embed.tabs.src")}</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="iframe-base64" className="space-y-3">
-            {base64UrlLength > 2000 ? (
-              <p className="text-xs text-amber-500">{t("export.embed.urlTooLong")}</p>
-            ) : null}
-            <Textarea value={base64IframeCode} readOnly className="min-h-[180px] font-mono text-xs" />
+          <TabsContent value="iframe-hash" className="space-y-3">
+            <Textarea value={hashIframeCode} readOnly className="min-h-[180px] font-mono text-xs" />
           </TabsContent>
 
           <TabsContent value="iframe-postmessage">
             <Textarea value={reactSnippet} readOnly className="min-h-[260px] font-mono text-xs" />
-          </TabsContent>
-
-          <TabsContent value="iframe-src" className="space-y-3">
-            <Input value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} />
-            <Textarea value={sourceIframeCode} readOnly className="min-h-[180px] font-mono text-xs" />
           </TabsContent>
         </Tabs>
 

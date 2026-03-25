@@ -6,9 +6,9 @@ import { ReactFlowProvider } from "@xyflow/react";
 import { toast } from "sonner";
 import { Canvas } from "@/features/canvas";
 import { FlowModeProvider } from "@/features/canvas/flow";
-import { CollabProvider, useCollab } from "@/features/collaboration";
-import { CollabJoinModal } from "@/features/collaboration/CollabJoinModal";
-import { CollabSessionClosedModal } from "@/features/collaboration/CollabSessionClosedModal";
+import { CollabProvider, useCollab } from "./CollabProvider";
+import { CollabJoinModal } from "./CollabJoinModal";
+import { CollabSessionClosedModal } from "./CollabSessionClosedModal";
 import { useDiagramActions } from "@/features/diagram";
 import { useDiagramStore } from "@/features/diagram/store/diagram.store";
 import { CollabRoomToolbar } from "./CollabRoomToolbar";
@@ -111,7 +111,7 @@ function CollabRoomSession({ roomId }: CollabRoomSessionProps) {
   );
 }
 
-export default function CollabRoom() {
+export function CollabRoom() {
   const { t } = useTranslation();
   const { roomId } = useParams<{ roomId: string }>();
 

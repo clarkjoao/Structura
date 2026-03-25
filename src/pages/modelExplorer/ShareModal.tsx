@@ -13,9 +13,9 @@ import {
 } from "@/components/ui/dialog";
 import {
   type ShareUrlResult,
-  generateEmbedShareUrl,
   generateShareUrl,
-} from "@/lib/share-url";
+  generateViewerUrl,
+} from "@/lib/diagram-url";
 
 interface ShareModalProps {
   diagram: Diagram;
@@ -36,7 +36,7 @@ export function ShareModal({ diagram, open, onOpenChange }: ShareModalProps) {
   );
   const shareUrl = shareResult.url;
   const embedUrl = useMemo(
-    () => generateEmbedShareUrl(diagram),
+    () => generateViewerUrl(diagram),
     // We intentionally memoize by id to avoid unnecessary recomputation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [diagram.id],

@@ -53,6 +53,13 @@ export type { EffectiveConnectionStyle } from "./model/connection-defaults";
 /** Unique ID generator for diagram entities */
 export { generateId } from "./utils/generate-id";
 
+/** Shared preview → workspace import (id collision, flow diagramId) */
+export {
+  formatDiagramImportCalendarDate,
+  resolveUniqueDiagramId,
+  cloneDiagramForImportWithId,
+} from "./utils/shared-import";
+
 /** Sort connections array by an explicit handle-order array of connection ids */
 export { applyHandleOrder } from "./utils/handle-order";
 
