@@ -3,11 +3,10 @@ import { useTranslation } from "react-i18next";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
-
 export interface LayerFilterPopoverProps {
   allTags: string[];
   hiddenTags: Set<string>;
+  scenesPickerLocked?: boolean;
   onToggle: (tag: string) => void;
   onShowAll: () => void;
 }
@@ -15,33 +14,33 @@ export interface LayerFilterPopoverProps {
 export function LayerFilterPopover({
   allTags,
   hiddenTags,
+  scenesPickerLocked,
   onToggle,
   onShowAll,
 }: LayerFilterPopoverProps) {
   const { t } = useTranslation();
-  const { isPlaying, isRecording } = useFlowMode();
   const noTags = allTags.length === 0;
-  const flowLocked = isPlaying || isRecording;
 
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
-          disabled={noTags || flowLocked}
+          disabled={noTags || scenesPickerLocked}
           title={
             noTags
               ? t("canvas.toolbar.noTags")
-              : flowLocked
+              : scenesPickerLocked
                 ? t("diagramNav.unavailableWhileRecordingOrPlayback")
                 : t("canvas.toolbar.filterByTag")
           }
           className={cn(
             "relative flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors",
-            (noTags || flowLocked) && "opacity-50 pointer-events-none",
+            (noTags || scenesPickerLocked) && "opacity-50 pointer-events-none",
           )}
         >
           <Tag className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          {t("canvas.toolbar.filterByTag")}
           {hiddenTags.size > 0 && (
             <span
               className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-[9px] font-medium text-primary-foreground"

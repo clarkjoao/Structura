@@ -56,6 +56,7 @@ const CanvasToolbar = ({
       <LayerFilterPopover
         allTags={allTags}
         hiddenTags={hiddenTags}
+        scenesPickerLocked={scenesPickerLocked}
         onToggle={onToggleTag}
         onShowAll={onShowAllTags}
       />
