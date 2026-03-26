@@ -143,7 +143,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     flowHighlight: flowState.flowHighlight,
     recordingInfo: flowState.recordingInfo,
     coverage: flowState.coverage,
-    hiddenTags: visualState.hiddenTags,
+    visibleTags: visualState.visibleTags,
   });
 
   useConnectionInternalsSync(connectionCountPerNode, updateNodeInternals);

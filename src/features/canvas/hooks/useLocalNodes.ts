@@ -19,24 +19,19 @@ function filterNodeChangesForSceneMoveLock(
 }
 
 /**
- * Manages local ReactFlow node state that stays in sync with store-derived nodes.
- *
- * When `storeNodes` changes (by reference), the hook merges new store data
- * (data, style, hidden, zIndex, etc.) onto existing local nodes so that
- * ReactFlow internals (measured dimensions, drag position) are preserved.
- *
- * Accepts a shared `localNodesRef` so callers that need the ref before this
- * hook runs (e.g. `useNodeDragParenting`) can create it upfront.
- *
- * When changes include multiple "select" changes (e.g. box selection), 
- * `onSelectionFromChanges` is called synchronously so the panel updates in the same tick.
- * Single-node toggles (Cmd+click) are left to onNodeClick/onSelectionChange to avoid overwriting.
- *
- * Returns the merged `nodes` array and an `onNodesChange` handler.
- *
- * When `diagram` is set, position/dimension changes blocked by {@link canMoveNodeInSceneMode}
- * are not applied to local nodes (the parenting hook still runs for toasts/side effects).
+ * Returns true when the diagram's nodeLayouts reference changed but the diagram id
+ * did NOT change — this is the fingerprint of an undo/redo operation (Immer replaces
+ * snapshot + nodeLayouts on the same Diagram object).
  */
+function isUndoRedoTransition(
+  prevDiagram: Diagram | null | undefined,
+  nextDiagram: Diagram | null | undefined,
+): boolean {
+  if (!prevDiagram || !nextDiagram) return false;
+  if (prevDiagram.id !== nextDiagram.id) return false;
+  return prevDiagram.nodeLayouts !== nextDiagram.nodeLayouts;
+}
+
 export function useLocalNodes(
   storeNodes: Node[],
   innerOnNodesChange: OnNodesChange,
@@ -47,14 +42,22 @@ export function useLocalNodes(
   const [localNodes, setLocalNodes] = useState<Node[]>([]);
 
   const prevStoreNodesRef = useRef<Node[] | undefined>(undefined);
+  const prevDiagramRef = useRef<Diagram | null | undefined>(undefined);
+
   if (storeNodes !== prevStoreNodesRef.current) {
     prevStoreNodesRef.current = storeNodes;
+
+    const undoRedo = isUndoRedoTransition(prevDiagramRef.current, diagram);
+    prevDiagramRef.current = diagram;
+
     setLocalNodes((prev) => {
-      if (prev.length === 0) {
+      // First load or undo/redo: take store nodes as-is, discarding all local positions
+      if (prev.length === 0 || undoRedo) {
         localNodesRef.current = storeNodes;
         remoteLayoutUpdates.clear();
         return storeNodes;
       }
+
       const localMap = new Map(prev.map((n) => [n.id, n]));
       const merged = storeNodes.map((sn) => {
         const ln = localMap.get(sn.id);

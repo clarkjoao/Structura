@@ -109,6 +109,7 @@ export const useDiagramActions = () =>
       linkComponentToService: s.linkComponentToService,
       linkComponentToDiagram: s.linkComponentToDiagram,
       setParent: s.setParent,
+      commitNodeDrag: s.commitNodeDrag,
       addFlow: s.addFlow,
       updateFlow: s.updateFlow,
       removeFlow: s.removeFlow,

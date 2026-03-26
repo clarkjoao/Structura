@@ -19,7 +19,7 @@ interface UseCanvasEdgesParams {
   recordingInfo: Pick<RecordingInfo, "edgeSteps" | "recordedEdgeIds" | "lastEdgeId"> | null;
   coverage: Pick<CoverageInfo, "edgeFlows"> | null;
   /** Tags toggled off in the canvas tag filter (local state, not persisted) */
-  hiddenTags: Set<string>;
+  visibleTags: Set<string>;
 }
 
 export function useCanvasEdges({
@@ -34,7 +34,7 @@ export function useCanvasEdges({
   flowHighlight,
   recordingInfo,
   coverage,
-  hiddenTags,
+  visibleTags,
 }: UseCanvasEdgesParams): Edge[] {
   const { isRecording } = useFlowMode();
   return useMemo(() => {
@@ -49,7 +49,7 @@ export function useCanvasEdges({
       if (!component?.tags?.length) {
         return false;
       }
-      return component.tags.some((tag) => hiddenTags.has(tag));
+      return component.tags.some((tag) => visibleTags.has(tag));
     };
 
     return visible.map((conn) => {
@@ -83,6 +83,6 @@ export function useCanvasEdges({
     flowHighlight,
     recordingInfo,
     coverage,
-    hiddenTags,
+    visibleTags,
   ]);
 }

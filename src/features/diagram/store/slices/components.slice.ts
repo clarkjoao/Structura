@@ -300,7 +300,6 @@ export const componentsSlice = (
         const d = state.diagrams[state.activeDiagramId]!;
         const scene = resolveActiveScene(d);
         const inSceneAdds = !!(scene && scene.addedComponents[id]);
-
         if (!isDimensionOnly) {
           if (!scene || !inSceneAdds) pushHistory(state);
         }
@@ -435,6 +434,45 @@ export const componentsSlice = (
       });
     },
 
+    /**
+     * Atomic drag-commit: pushes ONE history entry then applies parentId + position
+     * in the same Immer transaction. Use this from onNodeDragStop instead of calling
+     * setParent + updateNodeLayout separately to avoid the double-history / stale-position bug.
+     */
+    commitNodeDrag: (
+      nodeId: string,
+      newParentId: string | null,
+      newPosition: { x: number; y: number },
+    ) => {
+      set((state) => {
+        const d = state.diagrams[state.activeDiagramId]!;
+        const scene = resolveActiveScene(d);
+
+        // Scene-mode guard: only allow moving scene-owned components
+        if (scene && !scene.addedComponents[nodeId]) return;
+
+        // Single pushHistory for the whole drag operation
+        if (!scene) pushHistory(state);
+
+        // 1. Update parentId
+        const comp = scene?.addedComponents[nodeId] ?? d.snapshot.components[nodeId];
+        if (comp) comp.parentId = newParentId;
+
+        // 2. Update position
+        const layoutTarget = scene?.addedComponents[nodeId]
+          ? scene!.nodeLayouts
+          : d.nodeLayouts;
+
+        const layout = layoutTarget[nodeId];
+        if (layout) {
+          layout.x = newPosition.x;
+          layout.y = newPosition.y;
+        }
+
+        d.updatedAt = new Date().toISOString();
+      });
+    },
+
     groupNodes: (componentIds: string[]): string | null => {
       let panelId: string | null = null;
       set((state) => {
@@ -549,5 +587,3 @@ export const componentsSlice = (
       });
     },
   });
-
-

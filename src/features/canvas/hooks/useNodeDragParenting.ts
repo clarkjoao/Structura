@@ -42,7 +42,15 @@ interface UseNodeDragParentingParams {
     position: { x: number; y: number },
     dimensions?: { width: number; height: number },
   ) => void;
-  setParent: (childId: string, parentId: string | null) => void;
+  /**
+   * Atomic action: one pushHistory + parentId change + position update in a single
+   * store transaction. Provided by the new commitNodeDrag action in components.slice.
+   */
+  commitNodeDrag: (
+    nodeId: string,
+    newParentId: string | null,
+    newPosition: { x: number; y: number },
+  ) => void;
 }
 
 interface UseNodeDragParentingResult {
@@ -56,11 +64,18 @@ export function useNodeDragParenting({
   diagram,
   nodes,
   updateNodeLayout,
-  setParent,
+  commitNodeDrag,
 }: UseNodeDragParentingParams): UseNodeDragParentingResult {
   const [dragTargetPanelId, setDragTargetPanelId] = useState<string | null>(null);
   const [unparentCandidatePanelId, setUnparentCandidatePanelId] = useState<string | null>(null);
   const dragTargetRef = useRef<string | null>(null);
+
+  /**
+   * Track whether a drag-stop is in progress so handlePositionChange can skip the
+   * redundant updateNodeLayout call that ReactFlow fires with dragging=false right
+   * before onNodeDragStop.
+   */
+  const dragStopPendingRef = useRef(false);
 
   const handlePositionChange = useCallback(
     (change: NodeChange) => {
@@ -72,6 +87,11 @@ export function useNodeDragParenting({
       if (comp && isEndpointComponent(comp)) return;
 
       if (!change.dragging) {
+        // ReactFlow fires dragging=false immediately before onNodeDragStop.
+        // If a drag-stop is incoming, skip this write — onNodeDragStop will
+        // handle the final position atomically via commitNodeDrag.
+        if (dragStopPendingRef.current) return;
+
         if (!canMoveNodeInSceneMode(diagram, change.id)) {
           toast.error(i18n.t("scenes.baseMoveBlocked"));
           return;
@@ -140,6 +160,19 @@ export function useNodeDragParenting({
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
+      // Signal that a drag stop is about to fire so handlePositionChange skips
+      // the redundant dragging=false write on the same batch.
+      const hasDragStop = changes.some(
+        (c) => c.type === "position" && !c.dragging,
+      );
+      if (hasDragStop) {
+        dragStopPendingRef.current = true;
+        // Clear after React has processed — the real commit happens in onNodeDragStop
+        requestAnimationFrame(() => {
+          dragStopPendingRef.current = false;
+        });
+      }
+
       changes.forEach((change) => {
         if (change.type === "position") handlePositionChange(change);
         if (change.type === "dimensions") handleDimensionsChange(change);
@@ -150,17 +183,20 @@ export function useNodeDragParenting({
 
   const onNodeDragStop = useCallback(
     (_: unknown, draggedNode: Node) => {
+      setDragTargetPanelId(null);
+      dragTargetRef.current = null;
       setUnparentCandidatePanelId(null);
+
       const nodeType = typeof draggedNode.type === "string" ? draggedNode.type : "";
       if (isEndpointType(nodeType)) return;
-
       if (!diagram) return;
+
       const r = resolveCanvasSnapshot(diagram);
-      if (!canMoveNodeInSceneMode(diagram, draggedNode.id)) {
-        return;
-      }
+      if (!canMoveNodeInSceneMode(diagram, draggedNode.id)) return;
+
       const components = r.components;
       const isDraggedPanel = isReactFlowParentPanelType(nodeType);
+
       if (isDraggedPanel) {
         const descendantIds = getDescendantIds(draggedNode.id, components);
         const match = findPanelContainingPoint(nodes, draggedNode.position.x, draggedNode.position.y);
@@ -172,25 +208,33 @@ export function useNodeDragParenting({
         : null;
 
       if (parent) {
+        // Node already has a parent — check if it dragged outside
         const outside = isOutsideParentBounds(draggedNode.position, parent);
         if (outside) {
+          // Unparent: convert relative → absolute and commit atomically
           const absPos = toAbsolutePosition(draggedNode.position, parent.position);
-          setParent(draggedNode.id, null);
-          updateNodeLayout(draggedNode.id, absPos);
+          commitNodeDrag(draggedNode.id, null, absPos);
         }
+        // Still inside parent — position was already written by updateNodeLayout
+        // during the drag (dragging=true changes), no commit needed here.
         return;
       }
 
+      // Node has no parent — check if dropped onto a panel
       const match = findPanelContainingPoint(nodes, draggedNode.position.x, draggedNode.position.y);
       if (match) {
-        setParent(draggedNode.id, match.id);
-        updateNodeLayout(draggedNode.id, {
+        // Reparent: convert absolute → relative and commit atomically
+        const relPos = {
           x: draggedNode.position.x - match.position.x,
           y: draggedNode.position.y - match.position.y,
-        });
+        };
+        commitNodeDrag(draggedNode.id, match.id, relPos);
+      } else {
+        // Plain move — no parent change, just commit the position with history
+        commitNodeDrag(draggedNode.id, null, draggedNode.position);
       }
     },
-    [diagram, nodes, setParent, updateNodeLayout],
+    [diagram, nodes, commitNodeDrag],
   );
 
   return { dragTargetPanelId, unparentCandidatePanelId, onNodesChange, onNodeDragStop };

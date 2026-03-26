@@ -208,7 +208,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
         canvas: CANVAS_OPTIONS.length,
         aws: awsServiceCount,
         registry: services.length,
-        myComponents: templates.length,
+        nodeTemplates: templates.length,
       }),
     [
       t,
