@@ -12,6 +12,8 @@ import { VIEWPORT_DEBOUNCE_MS } from "@/features/canvas/canvas.constants";
 import { fileSystemAdapter } from "./FileSystemAdapter";
 import { defaultStorage } from "./LocalStorageAdapter";
 import { PERSIST_KEY } from "@/features/diagram/store/persist.config";
+import { useCustomComponentStore } from "@/features/custom-components/store";
+import type { CustomComponentTemplate } from "@/features/custom-components/customComponent.types";
 
 type DiagramStoreState = ReturnType<typeof useDiagramStore.getState>;
 
@@ -31,6 +33,8 @@ export async function flushWorkspaceToConnectedFolder(
     await fileSystemAdapter.writeDiagram(diagram);
   }
 
+  const customComponentTemplates = useCustomComponentStore.getState().templates;
+
   await fileSystemAdapter.writeManifest({
     version: 1,
     createdAt: new Date().toISOString(),
@@ -39,6 +43,7 @@ export async function flushWorkspaceToConnectedFolder(
     serviceRegistry: state.serviceRegistry,
     folders: state.folders,
     activeDiagramId: state.activeDiagramId,
+    customComponentTemplates,
   });
 }
 
@@ -86,14 +91,26 @@ async function doReconnect(): Promise<boolean> {
     if (workspace) {
       useDiagramStore.setState((s) => ({
         ...s,
-        diagrams: workspace.diagrams as any,
-        serviceRegistry: workspace.serviceRegistry as any,
-        folders: workspace.folders as any,
+        diagrams: workspace.diagrams as typeof s.diagrams,
+        serviceRegistry: workspace.serviceRegistry as typeof s.serviceRegistry,
+        folders: workspace.folders as typeof s.folders,
         activeDiagramId: workspace.activeDiagramId,
         past: [],
         future: [],
       }));
-      fileSystemAdapter.setFolders(workspace.folders as any);
+      fileSystemAdapter.setFolders(
+        workspace.folders as unknown as DiagramStoreState["folders"],
+      );
+
+      const workspaceTemplates: Record<string, CustomComponentTemplate> | undefined =
+        workspace.customComponentTemplates;
+      if (workspaceTemplates && Object.keys(workspaceTemplates).length > 0) {
+        useCustomComponentStore.setState((state) => {
+          const existingTemplates = state.templates;
+          if (Object.keys(existingTemplates).length > 0) return state;
+          return { templates: workspaceTemplates };
+        });
+      }
     }
     await clearLocalCache();
 
@@ -128,35 +145,55 @@ let _syncTimer: ReturnType<typeof setTimeout> | null = null;
 export function startFileSystemSync(): void {
   if (_syncUnsub) return; // already running
 
-  _syncUnsub = useDiagramStore.subscribe((state, prevState) => {
+  const scheduleWorkspaceWrite = (
+    diagramState: DiagramStoreState,
+    previousDiagramState: DiagramStoreState,
+  ): void => {
     if (!fileSystemAdapter.isConnected) return;
 
     if (_syncTimer) clearTimeout(_syncTimer);
     _syncTimer = setTimeout(async () => {
       try {
-        fileSystemAdapter.setFolders(state.folders);
+        fileSystemAdapter.setFolders(diagramState.folders);
 
-        const prevDiagrams = prevState.diagrams;
-        for (const [id, diagram] of Object.entries(state.diagrams)) {
+        const prevDiagrams = previousDiagramState.diagrams;
+        for (const [id, diagram] of Object.entries(diagramState.diagrams)) {
           if (diagram !== prevDiagrams[id]) {
             await fileSystemAdapter.writeDiagram(diagram);
           }
         }
 
+        const customComponentTemplates = useCustomComponentStore.getState().templates;
+
         await fileSystemAdapter.writeManifest({
           version: 1,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          diagramIds: Object.keys(state.diagrams),
-          serviceRegistry: state.serviceRegistry,
-          folders: state.folders,
-          activeDiagramId: state.activeDiagramId,
+          diagramIds: Object.keys(diagramState.diagrams),
+          serviceRegistry: diagramState.serviceRegistry,
+          folders: diagramState.folders,
+          activeDiagramId: diagramState.activeDiagramId,
+          customComponentTemplates,
         });
-      } catch (e) {
-        console.error("[FileSystemSync] write failed:", e);
+      } catch (error) {
+        console.error("[FileSystemSync] write failed:", error);
       }
     }, VIEWPORT_DEBOUNCE_MS);
+  };
+
+  const diagramUnsubscribe = useDiagramStore.subscribe((state, prevState) => {
+    scheduleWorkspaceWrite(state, prevState);
   });
+
+  const customComponentUnsubscribe = useCustomComponentStore.subscribe(() => {
+    const currentDiagramState = useDiagramStore.getState();
+    scheduleWorkspaceWrite(currentDiagramState, currentDiagramState);
+  });
+
+  _syncUnsub = () => {
+    diagramUnsubscribe();
+    customComponentUnsubscribe();
+  };
 }
 
 /** Stop the sync subscription (called on disconnect). */

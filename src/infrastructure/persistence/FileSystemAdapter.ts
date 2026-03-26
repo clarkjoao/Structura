@@ -1,6 +1,7 @@
 import type { Diagram, Folder } from "@/features/diagram";
 import { normalizeImportedDiagram } from "@/lib/export-service/normalize-imported-diagram";
 import { FileSystemEntryKind } from "@/lib/enums";
+import type { CustomComponentTemplate } from "@/features/custom-components/customComponent.types";
 import {
   validateDiagramFile,
   validateManifest,
@@ -23,7 +24,17 @@ interface FileSystemDirectoryHandleWithPermissions extends FileSystemDirectoryHa
   requestPermission?: (descriptor?: FileSystemPermissionRequest) => Promise<FileSystemPermissionState>;
 }
 
-// ── IndexedDB helpers (store FileSystemDirectoryHandle) ──
+interface WindowWithDirectoryPicker extends Window {
+  showDirectoryPicker?: (options?: unknown) => Promise<FileSystemDirectoryHandle>;
+}
+
+type DirectoryEntryTuple = [string, FileSystemHandle];
+
+function directoryEntries(
+  dir: FileSystemDirectoryHandle,
+): AsyncIterable<DirectoryEntryTuple> {
+  return (dir as unknown as { entries: () => AsyncIterable<DirectoryEntryTuple> }).entries();
+}
 
 function openIDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -68,8 +79,6 @@ async function clearHandleFromIDB(): Promise<void> {
   });
 }
 
-// ── Permission helper ──
-
 async function verifyPermission(
   handle: FileSystemDirectoryHandle,
   mode: FileSystemPermissionMode = "readwrite"
@@ -81,8 +90,6 @@ async function verifyPermission(
   return false;
 }
 
-// ── Slug helper ──
-
 function slugify(name: string): string {
   return name
     .normalize("NFD")
@@ -91,8 +98,6 @@ function slugify(name: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
-
-// ── Path resolver ──
 
 function resolveDiagramPathSegments(
   diagram: Diagram,
@@ -130,7 +135,6 @@ async function getOrCreateDirectory(
   return current;
 }
 
-// ── Manifest type ──
 
 export interface WorkspaceManifest {
   version: 1;
@@ -140,6 +144,7 @@ export interface WorkspaceManifest {
   serviceRegistry: Record<string, unknown>;
   folders: Record<string, unknown>;
   activeDiagramId: string | null;
+  customComponentTemplates?: Record<string, CustomComponentTemplate>;
 }
 
 export type WorkspacePayload = {
@@ -147,6 +152,7 @@ export type WorkspacePayload = {
   serviceRegistry: Record<string, unknown>;
   folders: Record<string, unknown>;
   activeDiagramId: string | null;
+  customComponentTemplates?: Record<string, CustomComponentTemplate>;
 };
 
 // ── Scan result type ──
@@ -192,7 +198,11 @@ export class FileSystemAdapter {
 
   async connect(): Promise<boolean> {
     try {
-      const handle = await (window as any).showDirectoryPicker({
+      const windowWithDirectoryPicker = window as unknown as WindowWithDirectoryPicker;
+      const picker = windowWithDirectoryPicker.showDirectoryPicker;
+      if (!picker) return false;
+
+      const handle = await picker({
         mode: "readwrite",
         startIn: "documents",
       });
@@ -236,7 +246,7 @@ export class FileSystemAdapter {
     dir: FileSystemDirectoryHandle,
     diagramId: string
   ): Promise<Diagram | null> {
-    for await (const [name, entry] of (dir as any).entries()) {
+    for await (const [name, entry] of directoryEntries(dir)) {
       if (entry.kind === FileSystemEntryKind.File && name === `${diagramId}.json`) {
         const f = await (entry as FileSystemFileHandle).getFile();
         return normalizeImportedDiagram(JSON.parse(await f.text()) as Diagram);
@@ -325,6 +335,7 @@ export class FileSystemAdapter {
       serviceRegistry: manifest.serviceRegistry,
       folders: manifest.folders,
       activeDiagramId: manifest.activeDiagramId,
+      customComponentTemplates: manifest.customComponentTemplates,
     };
   }
 
@@ -347,7 +358,7 @@ export class FileSystemAdapter {
     dir: FileSystemDirectoryHandle,
     result: WorkspaceScanResult
   ): Promise<void> {
-    for await (const [name, entry] of (dir as any).entries()) {
+    for await (const [name, entry] of directoryEntries(dir)) {
       if (entry.kind === FileSystemEntryKind.File && name.endsWith(".json")) {
         result.totalFilesScanned++;
         try {
@@ -399,7 +410,7 @@ export class FileSystemAdapter {
     dir: FileSystemDirectoryHandle
   ): Promise<Record<string, Diagram>> {
     const result: Record<string, Diagram> = {};
-    for await (const [name, entry] of (dir as any).entries()) {
+    for await (const [name, entry] of directoryEntries(dir)) {
       if (
         entry.kind === FileSystemEntryKind.File &&
         name.endsWith(".json") &&

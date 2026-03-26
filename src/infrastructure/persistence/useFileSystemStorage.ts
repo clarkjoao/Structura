@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { fileSystemAdapter } from "./FileSystemAdapter";
 import type { WorkspaceScanResult } from "./FileSystemAdapter";
 import { useDiagramStore } from "@/features/diagram";
+import { useCustomComponentStore } from "@/features/custom-components/store";
+import type { CustomComponentTemplate } from "@/features/custom-components/customComponent.types";
 import {
   buildPersistStoragePayload,
   PERSIST_KEY,
@@ -26,6 +28,7 @@ export type FsStatus = "disconnected" | "connecting" | "connected" | "error";
 export const isFileSystemSupported = "showDirectoryPicker" in globalThis;
 
 function buildManifest(state: ReturnType<typeof useDiagramStore.getState>) {
+  const customComponentTemplates = useCustomComponentStore.getState().templates;
   return {
     version: 1 as const,
     createdAt: new Date().toISOString(),
@@ -34,6 +37,7 @@ function buildManifest(state: ReturnType<typeof useDiagramStore.getState>) {
     serviceRegistry: state.serviceRegistry,
     folders: state.folders,
     activeDiagramId: state.activeDiagramId,
+    customComponentTemplates,
   };
 }
 
@@ -57,8 +61,9 @@ export function useFileSystemStorage() {
       past: [],
       future: [],
       _lastUndoRedoAt: 0,
-      clipboard: null,
+      clipboard: null,  
     });
+    useCustomComponentStore.setState({ templates: {} });
   }, []);
 
   // Silent reconnect on mount — delegates to the singleton so it runs only once
@@ -165,6 +170,15 @@ export function useFileSystemStorage() {
         : {}),
     }));
 
+    const manifestTemplates = manifest?.customComponentTemplates as
+      | Record<string, CustomComponentTemplate>
+      | undefined;
+    if (manifestTemplates && Object.keys(manifestTemplates).length > 0) {
+      useCustomComponentStore.setState((state) => ({
+        templates: { ...state.templates, ...manifestTemplates },
+      }));
+    }
+
     const merged = useDiagramStore.getState();
     await flushWorkspaceToConnectedFolder(merged);
 
@@ -179,17 +193,26 @@ export function useFileSystemStorage() {
     const validDiagrams = Object.fromEntries(
       scanResult.valid.map((d) => [d.id, d])
     );
+    const manifest = scanResult.manifest;
     useDiagramStore.setState((s) => ({
       ...s,
       diagrams: validDiagrams,
-      ...(scanResult.manifest
+      ...(manifest
         ? {
-            serviceRegistry: scanResult.manifest.serviceRegistry as any,
-            folders: scanResult.manifest.folders as any,
-            activeDiagramId: scanResult.manifest.activeDiagramId,
+            serviceRegistry: manifest.serviceRegistry as typeof s.serviceRegistry,
+            folders: manifest.folders as typeof s.folders,
+            activeDiagramId: manifest.activeDiagramId,
           }
         : {}),
     }));
+
+    const manifestTemplates = manifest?.customComponentTemplates as
+      | Record<string, CustomComponentTemplate>
+      | undefined;
+    if (manifestTemplates) {
+      useCustomComponentStore.setState({ templates: manifestTemplates });
+    }
+
     const overwritten = useDiagramStore.getState();
     await flushWorkspaceToConnectedFolder(overwritten);
 
@@ -225,6 +248,7 @@ export function useFileSystemStorage() {
   const confirmDisconnectWithBackup = useCallback(async () => {
     try {
       const state = useDiagramStore.getState();
+      const customComponentTemplates = useCustomComponentStore.getState().templates;
       let payload: ReturnType<typeof buildPersistStoragePayload>;
       try {
         payload = buildPersistStoragePayload(state);
@@ -284,6 +308,9 @@ export function useFileSystemStorage() {
       if (!flushed) {
         toast.error(t("filesystem.backupFailedQuota"));
       }
+
+      // Also backup custom-components (they're stored via localStorage persist + repository).
+      await defaultStorage.forceSave("custom_components", customComponentTemplates);
     } catch {
       toast.error(t("filesystem.backupFailedGeneric"));
       setStatus("error");
@@ -306,24 +333,38 @@ export function useFileSystemStorage() {
       if (workspace) {
         useDiagramStore.setState((s) => ({
           ...s,
-          diagrams: workspace.diagrams as any,
-          serviceRegistry: workspace.serviceRegistry as any,
-          folders: workspace.folders as any,
+          diagrams: workspace.diagrams as typeof s.diagrams,
+          serviceRegistry: workspace.serviceRegistry as typeof s.serviceRegistry,
+          folders: workspace.folders as typeof s.folders,
           activeDiagramId: workspace.activeDiagramId,
           past: [],
           future: [],
         }));
-        fileSystemAdapter.setFolders(workspace.folders as any);
+        fileSystemAdapter.setFolders(
+          workspace.folders as unknown as ReturnType<typeof useDiagramStore.getState>["folders"],
+        );
+
+        const workspaceTemplates = workspace.customComponentTemplates;
+        if (workspaceTemplates) {
+          useCustomComponentStore.setState({ templates: workspaceTemplates });
+        }
       } else {
         // No manifest: fall back to scanning diagrams only.
         const scan = await fileSystemAdapter.scanWorkspace();
         const validDiagrams = Object.fromEntries(scan.valid.map((d) => [d.id, d]));
         useDiagramStore.setState((s) => ({
           ...s,
-          diagrams: validDiagrams as any,
+          diagrams: validDiagrams as typeof s.diagrams,
           past: [],
           future: [],
         }));
+
+        const scannedManifestTemplates = scan.manifest?.customComponentTemplates as
+          | Record<string, CustomComponentTemplate>
+          | undefined;
+        if (scannedManifestTemplates) {
+          useCustomComponentStore.setState({ templates: scannedManifestTemplates });
+        }
       }
     } catch {
       setStatus("error");

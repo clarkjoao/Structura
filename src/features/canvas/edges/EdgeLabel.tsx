@@ -42,7 +42,7 @@ export function EdgeLabel({
   return (
     <EdgeLabelRenderer>
       <div
-        className={`nodrag nopan absolute pointer-events-auto ${canDrag ? "cursor-grab active:cursor-grabbing" : ""}`}
+        className={`z-10 nodrag nopan absolute pointer-events-auto ${canDrag ? "cursor-grab active:cursor-grabbing" : ""}`}
         data-connection-id={connectionId}
         data-label-position={labelPosition}
         data-drag-hit-path={dragPath ? "1" : "0"}

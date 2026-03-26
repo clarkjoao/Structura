@@ -4,7 +4,7 @@ import type {
   CustomComponentStoreState,
   CustomComponentTemplate,
 } from "./customComponent.types";
-import { customComponentRepository } from "@/infrastructure/persistence";
+import { customComponentRepository } from "@/infrastructure/persistence/CustomComponentRepository";
 
 function syncRepository(templates: Record<string, CustomComponentTemplate>): void {
   void customComponentRepository.save(templates);
