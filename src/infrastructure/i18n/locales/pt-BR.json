@@ -1017,6 +1017,7 @@
     "gray": "Cinza"
   },
   "elementPanelTab": {
+    "suggestedNudge": "Você pode vincular este {{name}} a um diagrama.",
     "details": "Detalhes",
     "connections": "Conexões"
   },

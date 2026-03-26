@@ -1,5 +1,6 @@
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, Plus, Sparkles, ChevronDown, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useRef, useState } from "react";
 
 export interface LinkedDiagramOption {
   id: string;
@@ -7,38 +8,155 @@ export interface LinkedDiagramOption {
 }
 
 export interface LinkedDiagramSectionProps {
-  mode: "create" | "select";
   componentId: string;
   linkedDiagramId: string | null | undefined;
   canCreateLinked: boolean;
   createdDiagramName: string | null;
-  /** Required when `mode === "select"`. */
   diagrams?: ReadonlyArray<LinkedDiagramOption>;
+  suggestedDiagram?: LinkedDiagramOption | null;
   onCreateLinked: () => void;
   onChangeLinked: (diagramId: string | undefined) => void;
 }
 
 export function LinkedDiagramSection({
-  mode,
   componentId,
   linkedDiagramId,
   canCreateLinked,
   createdDiagramName,
   diagrams = [],
+  suggestedDiagram,
   onCreateLinked,
   onChangeLinked,
 }: LinkedDiagramSectionProps) {
   const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  if (mode === "create") {
-    if (!canCreateLinked || linkedDiagramId) return null;
-    return (
-      <div id={`element-panel-linked-create-${componentId}`}>
-        <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-          <LayoutDashboard className="h-3 w-3 inline mr-1" />
-          {t("elementPanel.linkedDiagram")}
-        </label>
-        {createdDiagramName ? (
+  const hasLinked = Boolean(linkedDiagramId);
+
+  const selectedDiagram =
+    diagrams.find((d) => d.id === linkedDiagramId) ??
+    (suggestedDiagram?.id === linkedDiagramId ? suggestedDiagram : null);
+
+  const showSuggestion =
+    suggestedDiagram &&
+    (diagrams.some(
+      (d) =>
+        d.id === suggestedDiagram.id ||
+        d.name.toLowerCase().includes(suggestedDiagram.name.toLowerCase())
+    ) ||
+      !diagrams.some((d) => d.id === suggestedDiagram.id));
+
+  const isSuggestionSelected = linkedDiagramId === suggestedDiagram?.id;
+
+  function select(id: string | undefined) {
+    onChangeLinked(id);
+    setOpen(false);
+  }
+
+  return (
+    <div id={`element-panel-linked-${componentId}`} className="flex flex-col gap-2">
+
+      <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold flex items-center gap-1">
+        <LayoutDashboard className="h-3 w-3" />
+        {t("elementPanel.linkToDiagram")}
+      </label>
+
+      {/* Nudge — only when unlinked and there's a suggestion */}
+      {!hasLinked && showSuggestion && (
+        <p className="text-[11px] text-primary/70 flex items-center gap-1">
+          <Sparkles className="h-3 w-3 shrink-0" />
+          {t("elementPanel.suggestedNudge", { name: suggestedDiagram?.name })}
+        </p>
+      )}
+
+      <div ref={containerRef} className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className={[
+            "w-full flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition-colors",
+            "focus:outline-none focus:ring-1 focus:ring-ring",
+            isSuggestionSelected
+              ? "border-primary/50 bg-primary/5 text-primary font-medium"
+              : hasLinked
+              ? "border-border bg-secondary text-foreground"
+              : "border-dashed border-border bg-secondary text-muted-foreground",
+          ].join(" ")}
+        >
+          <span className="flex items-center gap-1.5 truncate">
+            {isSuggestionSelected && <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary" />}
+            {selectedDiagram ? selectedDiagram.name : t("elementPanel.noneOption")}
+          </span>
+          <span className="flex items-center gap-1 shrink-0">
+            {hasLinked && (
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  select(undefined);
+                }}
+                onKeyDown={(e) => e.key === "Enter" && (e.stopPropagation(), select(undefined))}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="h-3.5 w-3.5" />
+              </span>
+            )}
+            <ChevronDown
+              className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`}
+            />
+          </span>
+        </button>
+
+        {open && (
+          <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-md overflow-hidden">
+
+            {showSuggestion && suggestedDiagram && (
+              <button
+                type="button"
+                onClick={() => select(suggestedDiagram.id)}
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left transition-colors bg-primary/10 hover:bg-primary/15 text-primary font-medium border-b border-primary/20"
+              >
+                <Sparkles className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{suggestedDiagram.name}</span>
+                <span className="ml-auto shrink-0 text-[10px] font-semibold uppercase tracking-wide bg-primary/20 text-primary rounded px-1.5 py-0.5">
+                  {t("elementPanel.suggested")}
+                </span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => select(undefined)}
+              className="w-full flex items-center px-3 py-2 text-sm text-left text-muted-foreground hover:bg-accent transition-colors"
+            >
+              {t("elementPanel.noneOption")}
+            </button>
+
+            {diagrams
+              .filter((d) => d.id !== suggestedDiagram?.id)
+              .map((diagram) => (
+                <button
+                  key={diagram.id}
+                  type="button"
+                  onClick={() => select(diagram.id)}
+                  className={[
+                    "w-full flex items-center px-3 py-2 text-sm text-left transition-colors",
+                    diagram.id === linkedDiagramId
+                      ? "bg-accent text-foreground font-medium"
+                      : "hover:bg-accent text-foreground",
+                  ].join(" ")}
+                >
+                  {diagram.name}
+                </button>
+              ))}
+          </div>
+        )}
+      </div>
+
+      {canCreateLinked && !hasLinked && (
+        createdDiagramName ? (
           <p className="text-xs text-primary bg-primary/10 rounded-md px-3 py-2">
             {t("elementPanel.linkedDiagramCreated", { name: createdDiagramName })}
           </p>
@@ -46,36 +164,13 @@ export function LinkedDiagramSection({
           <button
             type="button"
             onClick={onCreateLinked}
-            className="flex items-center gap-1.5 w-full rounded-md border border-dashed border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
+            className="flex items-center justify-center gap-1.5 w-full rounded-md border border-dashed border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
           >
-            <LayoutDashboard className="h-3.5 w-3.5" />
+            <Plus className="h-3.5 w-3.5" />
             {t("elementPanel.createLinkedDiagram")}
           </button>
-        )}
-      </div>
-    );
-  }
-
-  if (!(!canCreateLinked || linkedDiagramId)) return null;
-
-  return (
-    <div id={`element-panel-linked-select-${componentId}`}>
-      <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-        <LayoutDashboard className="h-3 w-3 inline mr-1" />
-        {t("elementPanel.linkToDiagram")}
-      </label>
-      <select
-        value={linkedDiagramId ?? ""}
-        onChange={(event) => onChangeLinked(event.target.value || undefined)}
-        className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-      >
-        <option value="">{t("elementPanel.noneOption")}</option>
-        {diagrams.map((diagram) => (
-          <option key={diagram.id} value={diagram.id}>
-            {diagram.name}
-          </option>
-        ))}
-      </select>
+        )
+      )}
     </div>
   );
 }

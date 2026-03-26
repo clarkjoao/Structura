@@ -63,6 +63,10 @@ export function isContainerType(type: string): type is "container" {
   return type === "container";
 }
 
+export function isComponentType(type: string): type is "component" {
+  return type === "component";
+}
+
 export function isEndpointType(type: string): type is "endpoint" {
   return type === COMPONENT_TYPE_ENDPOINT;
 }

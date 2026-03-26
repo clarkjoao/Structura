@@ -472,6 +472,7 @@
     "idLabel": "ID"
   },
   "elementPanel": {
+    "suggestedNudge": "You can link this {{name}} to a diagram.",
     "panelHeaderPanel": "Panel",
     "panelHeaderNote": "Note",
     "c4ModelGroup": "C4 Model",

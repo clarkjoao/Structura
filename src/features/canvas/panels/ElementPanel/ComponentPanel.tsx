@@ -27,6 +27,7 @@ import {
   PanelStyleSection,
   ColorAccentSection,
 } from "./sections";
+import { isComponentType } from "@/features/diagram/model/component-type-constants";
 
 const DEFAULT_NOTE_COLOR = "hsl(45 25% 97%)";
 
@@ -115,7 +116,7 @@ const ComponentPanel = ({
   const isSimple = isPanel || isNote;
   const isAws = isAwsType(type);
   const serviceInfo = awsService ? AWS_SERVICE_MAP.get(awsService) : null;
-  const canCreateLinked = isSystemType(component.type) || isContainerType(component.type);
+  const canCreateLinked = isSystemType(component.type) || isContainerType(component.type)|| isComponentType(component.type) || isAwsType(component.type);
   const linkedService = useMemo(
     () => allServices.find((service) => service.id === component.serviceId) ?? null,
     [allServices, component.serviceId],
@@ -435,6 +436,19 @@ const ComponentPanel = ({
               updateComponent={updateComponent}
             />
           )}
+          {!isSimple && isC4Component(component) && (
+            <ColorAccentSection
+              componentId={component.id}
+              type="c4"
+              currentColor={
+                (component as { panelColor?: string }).panelColor ??
+                C4_DEFAULT_COLORS[component.type] ??
+                C4_DEFAULT_COLORS.system
+              }
+              allowClear
+              updateComponent={updateComponent}
+            />
+          )}
           {!isSimple && (
             <ServiceLinkSection
               componentId={component.id}
@@ -450,40 +464,17 @@ const ComponentPanel = ({
           )}
           {!isSimple && (
             <LinkedDiagramSection
-              mode="create"
-              componentId={component.id}
-              linkedDiagramId={component.linkedDiagramId}
-              canCreateLinked={canCreateLinked}
-              createdDiagramName={createdDiagramName}
-              onCreateLinked={handleCreateLinked}
-              onChangeLinked={(diagramId) => linkComponentToDiagram(component.id, diagramId)}
+            componentId={component.id}
+            linkedDiagramId={component.linkedDiagramId}
+            canCreateLinked={canCreateLinked}
+            createdDiagramName={createdDiagramName}
+            diagrams={allDiagrams}
+            suggestedDiagram={allDiagrams.find(d => d.id === component.id || d.name.toLowerCase().includes(component.name.toLowerCase())) ?? null}
+            onCreateLinked={handleCreateLinked}
+            onChangeLinked={(diagramId) => linkComponentToDiagram(component.id, diagramId)}
             />
           )}
-          {!isSimple && isC4Component(component) && (
-            <ColorAccentSection
-              componentId={component.id}
-              type="c4"
-              currentColor={
-                (component as { panelColor?: string }).panelColor ??
-                C4_DEFAULT_COLORS[component.type] ??
-                C4_DEFAULT_COLORS.system
-              }
-              allowClear
-              updateComponent={updateComponent}
-            />
-          )}
-          {!isSimple && (
-            <LinkedDiagramSection
-              mode="select"
-              componentId={component.id}
-              linkedDiagramId={component.linkedDiagramId}
-              canCreateLinked={canCreateLinked}
-              createdDiagramName={createdDiagramName}
-              diagrams={diagramOptions}
-              onCreateLinked={handleCreateLinked}
-              onChangeLinked={(diagramId) => linkComponentToDiagram(component.id, diagramId)}
-            />
-          )}
+         
           <div>
             <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
               {t("elementPanel.idLabel")}
