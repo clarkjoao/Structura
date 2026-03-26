@@ -245,6 +245,15 @@
     "keepCopy": "Save in browser and disconnect",
     "disconnectOnly": "Disconnect without saving"
   },
+  "bulkDelete": {
+    "title": "Delete selected items",
+    "warning": "This action is irreversible. All selected items will be permanently deleted from storage and from the connected folder (if any).",
+    "itemSummary": "{{diagrams}} diagrams, {{folders}} folders, {{services}} services",
+    "confirm": "Delete all",
+    "selectionBar": "{{count}} items selected",
+    "clearSelection": "Clear selection",
+    "deleteSelected": "Delete selected"
+  },
   "registry": {
     "title": "Registry",
     "subtitle": "Central catalog of services and infrastructure",

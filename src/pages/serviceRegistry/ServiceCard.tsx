@@ -1,6 +1,7 @@
 import { Layers, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { normalizeSources } from "@/integrations/merge-utils";
+import { cn } from "@/lib/utils";
 import { SOURCE_BADGE, SOURCE_DOT } from "./registry.constants";
 import { sourceTypeLabel } from "./registryLabels";
 import type { ServiceCardProps } from "./types";
@@ -8,6 +9,7 @@ import type { ServiceCardProps } from "./types";
 export const ServiceCard = ({
   svc,
   isSelected,
+  isBulkSelected,
   onClick,
   usage,
 }: ServiceCardProps) => {
@@ -19,11 +21,12 @@ export const ServiceCard = ({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full text-left rounded-xl border p-4 transition-all duration-150 hover:border-primary/40 hover:bg-accent/30 ${
-        isSelected
-          ? "border-primary/60 bg-accent/40 ring-1 ring-primary/20"
-          : "border-border bg-card"
-      }`}
+      className={cn(
+        "w-full text-left rounded-xl border p-4 transition-all duration-150 hover:border-primary/40 hover:bg-accent/30",
+        isSelected ? "border-primary/60 bg-accent/40" : "border-border bg-card",
+        isBulkSelected && "ring-2 ring-primary",
+        isSelected && !isBulkSelected && "ring-1 ring-primary/20",
+      )}
     >
       <div className="flex items-center gap-2 mb-1.5">
         <div className="flex items-center gap-1 shrink-0">

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Plus,
   Layers,
@@ -33,7 +33,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { BulkDeleteConfirmDialog } from "@/components/BulkDeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
+import { useModifierKey } from "@/hooks/useModifierKey";
+import { useMultiSelect } from "@/hooks/useMultiSelect";
 import { FolderTree } from "@/pages/FolderTree";
 import { cn } from "@/lib/utils";
 import { AddDiagramDialog } from "@/pages/dashboard/AddDiagramDialog";
@@ -55,7 +58,7 @@ export default function DashboardPage() {
   );
   const diagrams = useAllDiagrams();
   const folders = useFolders();
-  const { addDiagram, openDiagram, deleteDiagram, moveDiagram } =
+  const { addDiagram, openDiagram, deleteDiagram, moveDiagram, deleteFolder } =
     useDiagramActions();
   const navigate = useNavigate();
 
@@ -73,6 +76,37 @@ export default function DashboardPage() {
   );
   const [globalSearch, setGlobalSearch] = useState("");
   const folderTreeRef = useRef<HTMLDivElement>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+
+  const isModifierActive = useModifierKey();
+  const {
+    selectedIds,
+    toggleSelect,
+    clearSelection,
+    isSelected: isBulkIdSelected,
+  } = useMultiSelect();
+
+  const diagramIdSet = useMemo(
+    () => new Set(diagrams.map((diagram) => diagram.id)),
+    [diagrams],
+  );
+
+  const dashboardBulkCounts = useMemo(() => {
+    let diagramsCount = 0;
+    let foldersCount = 0;
+    for (const id of selectedIds) {
+      if (diagramIdSet.has(id)) {
+        diagramsCount += 1;
+      } else if (folders[id]) {
+        foldersCount += 1;
+      }
+    }
+    return {
+      diagrams: diagramsCount,
+      folders: foldersCount,
+      services: 0,
+    };
+  }, [diagramIdSet, folders, selectedIds]);
 
   const breadcrumbPath = useMemo(
     () => buildBreadcrumbPath(folders, selectedFolderId),
@@ -148,10 +182,63 @@ export default function DashboardPage() {
     }
   };
 
-  const handleOpen = (d: Diagram) => {
-    openDiagram(d.id);
-    navigate(`/model/${d.id}`);
-  };
+  const handleOpen = useCallback(
+    (diagram: Diagram) => {
+      openDiagram(diagram.id);
+      navigate(`/model/${diagram.id}`);
+    },
+    [navigate, openDiagram],
+  );
+
+  const isModifierClick = useCallback(
+    (event: React.MouseEvent<HTMLElement>) =>
+      event.ctrlKey || event.metaKey || isModifierActive,
+    [isModifierActive],
+  );
+
+  const handleDiagramCardSelect = useCallback(
+    (diagram: Diagram, event: React.MouseEvent<HTMLElement>) => {
+      if (isModifierClick(event)) {
+        event.preventDefault();
+        toggleSelect(diagram.id, true);
+        return;
+      }
+      handleOpen(diagram);
+    },
+    [handleOpen, isModifierClick, toggleSelect],
+  );
+
+  const handleFolderCardClick = useCallback(
+    (folderId: string, event: React.MouseEvent<HTMLElement>) => {
+      if (isModifierClick(event)) {
+        event.preventDefault();
+        toggleSelect(folderId, true);
+        return;
+      }
+      setSelectedFolderId(folderId);
+    },
+    [isModifierClick, toggleSelect],
+  );
+
+  const handleDashboardBulkDeleteConfirm = useCallback(() => {
+    const diagramIds = [...selectedIds].filter((id) => diagramIdSet.has(id));
+    const folderIds = [...selectedIds].filter((id) => folders[id]);
+    for (const id of diagramIds) {
+      deleteDiagram(id);
+    }
+    for (const id of folderIds) {
+      deleteFolder(id);
+    }
+    clearSelection();
+    setBulkDeleteOpen(false);
+  }, [
+    clearSelection,
+    deleteDiagram,
+    deleteFolder,
+    diagramIdSet,
+    folders,
+    selectedIds,
+  ]);
 
   const handleDelete = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -454,8 +541,11 @@ export default function DashboardPage() {
                         key={folder.id}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => setSelectedFolderId(folder.id)}
-                        className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border bg-card p-3 transition-colors hover:bg-muted/40 hover:border-border/80"
+                        onClick={(event) => handleFolderCardClick(folder.id, event)}
+                        className={cn(
+                          "flex cursor-pointer items-center gap-2.5 rounded-lg border border-border bg-card p-3 transition-colors hover:bg-muted/40 hover:border-border/80",
+                          isBulkIdSelected(folder.id) && "ring-2 ring-primary",
+                        )}
                       >
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-amber-500/10">
                           <FolderOpen className="h-4 w-4 text-amber-500" />
@@ -479,7 +569,8 @@ export default function DashboardPage() {
             {globalSearchResults === null && (viewMode === "grid" ? (
               <DiagramGrid
                 diagrams={domainFiltered}
-                onOpen={handleOpen}
+                onSelect={handleDiagramCardSelect}
+                isDiagramSelected={isBulkIdSelected}
                 onDragStart={handleDragStart}
                 levelLabels={levelLabels}
               />
@@ -523,6 +614,48 @@ export default function DashboardPage() {
         <AddDiagramDialog
           onClose={() => setShowAdd(false)}
           onAdd={handleAddDiagram}
+        />
+      )}
+
+      <AnimatePresence>
+        {selectedIds.size > 0 && (
+          <motion.div
+            key="dashboard-selection-bar"
+            role="toolbar"
+            aria-label={t("bulkDelete.selectionBar", {
+              count: selectedIds.size,
+            })}
+            initial={{ y: 24, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 24, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            className="fixed bottom-6 left-1/2 z-50 flex w-[min(100%-1.5rem,36rem)] -translate-x-1/2 items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-2xl"
+          >
+            <p className="text-xs font-medium text-foreground truncate">
+              {t("bulkDelete.selectionBar", { count: selectedIds.size })}
+            </p>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={clearSelection}>
+                {t("bulkDelete.clearSelection")}
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={() => setBulkDeleteOpen(true)}
+              >
+                {t("bulkDelete.deleteSelected")}
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {bulkDeleteOpen && (
+        <BulkDeleteConfirmDialog
+          counts={dashboardBulkCounts}
+          onCancel={() => setBulkDeleteOpen(false)}
+          onConfirm={handleDashboardBulkDeleteConfirm}
         />
       )}
     </div>

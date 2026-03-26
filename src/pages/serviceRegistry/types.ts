@@ -1,9 +1,11 @@
+import type { MouseEvent } from "react";
 import type { Diagram, ServiceDefinition, ServiceSource } from "@/features/diagram";
 
 export interface ServiceCardProps {
   svc: ServiceDefinition;
   isSelected: boolean;
-  onClick: () => void;
+  isBulkSelected: boolean;
+  onClick: (event: MouseEvent<HTMLButtonElement>) => void;
   usage: { diagramId: string; diagramName: string; nodeCount: number }[];
 }
 

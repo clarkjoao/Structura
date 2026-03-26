@@ -3,19 +3,21 @@ import { DiagramCard } from "@/pages/dashboard/DiagramCard";
 
 export function DiagramGrid({
   diagrams,
-  onOpen,
+  onSelect,
+  isDiagramSelected,
   onDragStart,
   levelLabels,
 }: DiagramGridProps) {
   if (diagrams.length === 0) return null;
   return (
     <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {diagrams.map((d, i) => (
+      {diagrams.map((d, index) => (
         <DiagramCard
           key={d.id}
           diagram={d}
-          index={i}
-          onOpen={onOpen}
+          index={index}
+          isSelected={isDiagramSelected(d.id)}
+          onSelect={onSelect}
           onDragStart={onDragStart}
           levelLabels={levelLabels}
         />

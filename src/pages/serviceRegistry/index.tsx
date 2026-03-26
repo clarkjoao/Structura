@@ -6,9 +6,14 @@ import {
   Suspense,
   useState,
 } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Plus, Search, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { BulkDeleteConfirmDialog } from "@/components/BulkDeleteConfirmDialog";
+import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
+import { useModifierKey } from "@/hooks/useModifierKey";
+import { useMultiSelect } from "@/hooks/useMultiSelect";
 import { GithubImportPanel } from "@/integrations/github/components/GithubImportPanel";
 import { normalizeSources } from "@/integrations/merge-utils";
 import {
@@ -48,6 +53,25 @@ export default function ServiceRegistryPage() {
   const showEnableDefectDojo = import.meta.env.VITE_ENABLE_DEFECTDOJO === "true";
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedFromQuery = searchParams.get("serviceId");
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+
+  const isModifierActive = useModifierKey();
+  const {
+    selectedIds,
+    toggleSelect,
+    clearSelection,
+    isSelected: isBulkIdSelected,
+  } = useMultiSelect();
+
+  const registryBulkCounts = useMemo(() => {
+    let servicesCount = 0;
+    for (const id of selectedIds) {
+      if (services.some((service) => service.id === id)) {
+        servicesCount += 1;
+      }
+    }
+    return { diagrams: 0, folders: 0, services: servicesCount };
+  }, [selectedIds, services]);
 
   const filtered = useMemo(() => {
     let result = services;
@@ -121,6 +145,32 @@ export default function ServiceRegistryPage() {
     },
     [openDiagram, navigate],
   );
+
+  const isModifierClick = useCallback(
+    (event: React.MouseEvent<HTMLElement>) =>
+      event.ctrlKey || event.metaKey || isModifierActive,
+    [isModifierActive],
+  );
+
+  const handleServiceCardClick = useCallback(
+    (svc: ServiceDefinition, event: React.MouseEvent<HTMLButtonElement>) => {
+      if (isModifierClick(event)) {
+        event.preventDefault();
+        toggleSelect(svc.id, true);
+        return;
+      }
+      setSelectedId((current) => (current === svc.id ? null : svc.id));
+    },
+    [isModifierClick, toggleSelect],
+  );
+
+  const handleRegistryBulkDeleteConfirm = useCallback(() => {
+    for (const id of selectedIds) {
+      removeService(id);
+    }
+    clearSelection();
+    setBulkDeleteOpen(false);
+  }, [clearSelection, removeService, selectedIds]);
 
   const handleCreate = (svc: Omit<ServiceDefinition, "id">) => {
     const created = addService(svc);
@@ -275,9 +325,8 @@ export default function ServiceRegistryPage() {
                       <ServiceCard
                         svc={svc}
                         isSelected={selectedId === svc.id}
-                        onClick={() =>
-                          setSelectedId(selectedId === svc.id ? null : svc.id)
-                        }
+                        isBulkSelected={isBulkIdSelected(svc.id)}
+                        onClick={(event) => handleServiceCardClick(svc, event)}
                         usage={usageMap[svc.id] ?? []}
                       />
                     </div>
@@ -306,6 +355,48 @@ export default function ServiceRegistryPage() {
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {selectedIds.size > 0 && (
+          <motion.div
+            key="registry-selection-bar"
+            role="toolbar"
+            aria-label={t("bulkDelete.selectionBar", {
+              count: selectedIds.size,
+            })}
+            initial={{ y: 24, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 24, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            className="fixed bottom-6 left-1/2 z-50 flex w-[min(100%-1.5rem,36rem)] -translate-x-1/2 items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-2xl"
+          >
+            <p className="text-xs font-medium text-foreground truncate">
+              {t("bulkDelete.selectionBar", { count: selectedIds.size })}
+            </p>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={clearSelection}>
+                {t("bulkDelete.clearSelection")}
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={() => setBulkDeleteOpen(true)}
+              >
+                {t("bulkDelete.deleteSelected")}
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {bulkDeleteOpen && (
+        <BulkDeleteConfirmDialog
+          counts={registryBulkCounts}
+          onCancel={() => setBulkDeleteOpen(false)}
+          onConfirm={handleRegistryBulkDeleteConfirm}
+        />
+      )}
     </div>
   );
 }

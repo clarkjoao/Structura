@@ -245,6 +245,15 @@
     "keepCopy": "Salvar no navegador e desconectar",
     "disconnectOnly": "Desconectar sem salvar"
   },
+  "bulkDelete": {
+    "title": "Excluir itens selecionados",
+    "warning": "Esta ação é irreversível. Todos os itens selecionados serão excluídos permanentemente do armazenamento e da pasta conectada (se houver).",
+    "itemSummary": "{{diagrams}} diagramas, {{folders}} pastas, {{services}} serviços",
+    "confirm": "Deletar tudo",
+    "selectionBar": "{{count}} itens selecionados",
+    "clearSelection": "Limpar seleção",
+    "deleteSelected": "Deletar selecionados"
+  },
   "registry": {
     "title": "Registry",
     "subtitle": "Catálogo central de serviços e infraestrutura",

@@ -1,10 +1,11 @@
-import type { DragEvent, MouseEvent } from "react";
+import type { DragEvent, MouseEvent as ReactMouseEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import type { Diagram } from "@/features/diagram";
 import { useDiagramActions, useFolders } from "@/features/diagram";
 import { getPreview } from "@/lib/diagram-preview";
+import { cn } from "@/lib/utils";
 import { DiagramCardFooter } from "@/pages/dashboard/components/diagram-card/DiagramCardFooter";
 import { DiagramCardPreview } from "@/pages/dashboard/components/diagram-card/DiagramCardPreview";
 import { MoveDiagramDialog } from "@/pages/dashboard/components/diagram-card/MoveDiagramDialog";
@@ -12,7 +13,8 @@ import { MoveDiagramDialog } from "@/pages/dashboard/components/diagram-card/Mov
 interface DiagramCardProps {
   diagram: Diagram;
   index: number;
-  onOpen: (diagram: Diagram) => void;
+  isSelected: boolean;
+  onSelect: (diagram: Diagram, event: ReactMouseEvent<HTMLElement>) => void;
   onDragStart: (event: DragEvent, diagramId: string) => void;
   levelLabels: Record<string, string>;
 }
@@ -20,7 +22,8 @@ interface DiagramCardProps {
 export function DiagramCard({
   diagram,
   index,
-  onOpen,
+  isSelected,
+  onSelect,
   onDragStart,
   levelLabels,
 }: DiagramCardProps) {
@@ -45,13 +48,13 @@ export function DiagramCard({
     setPreview(getPreview(diagram.id));
   }, [diagram.updatedAt, diagram.id]);
 
-  const handleRename = (event: MouseEvent) => {
+  const handleRename = (event: ReactMouseEvent) => {
     event.stopPropagation();
     const newName = window.prompt(t("dashboard.card.renamePrompt"), diagram.name);
     if (newName?.trim()) updateDiagram(diagram.id, { name: newName.trim() });
   };
 
-  const handleDuplicate = (event: MouseEvent) => {
+  const handleDuplicate = (event: ReactMouseEvent) => {
     event.stopPropagation();
     duplicateDiagram(
       diagram.id,
@@ -59,19 +62,19 @@ export function DiagramCard({
     );
   };
 
-  const handleMove = (event: MouseEvent) => {
+  const handleMove = (event: ReactMouseEvent) => {
     event.stopPropagation();
     setMoveFolderOpen(true);
   };
 
-  const handleDelete = (event: MouseEvent) => {
+  const handleDelete = (event: ReactMouseEvent) => {
     event.stopPropagation();
     if (window.confirm(t("dashboard.card.deleteConfirm", { name: diagram.name }))) {
       deleteDiagram(diagram.id);
     }
   };
 
-  const handleSelectMoveFolder = (event: MouseEvent, folderId: string | null) => {
+  const handleSelectMoveFolder = (event: ReactMouseEvent, folderId: string | null) => {
     event.stopPropagation();
     moveDiagram(diagram.id, folderId);
     setMoveFolderOpen(false);
@@ -85,8 +88,11 @@ export function DiagramCard({
         transition={{ delay: index * 0.03 }}
         draggable={!isPreviewHovered}
         onDragStart={(event) => onDragStart(event as unknown as DragEvent, diagram.id)}
-        onClick={() => onOpen(diagram)}
-        className="group cursor-pointer rounded-lg border border-border bg-card overflow-hidden transition-all hover:border-primary/30 hover:shadow-[0_0_20px_-6px_hsl(var(--primary)/0.15)]"
+        onClick={(event) => onSelect(diagram, event)}
+        className={cn(
+          "group cursor-pointer rounded-lg border border-border bg-card overflow-hidden transition-all hover:border-primary/30 hover:shadow-[0_0_20px_-6px_hsl(var(--primary)/0.15)]",
+          isSelected && "ring-2 ring-primary",
+        )}
       >
         <DiagramCardPreview
           diagram={diagram}

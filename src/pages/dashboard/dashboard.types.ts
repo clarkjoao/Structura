@@ -6,7 +6,8 @@ export type ViewMode = "grid" | "list";
 
 export interface DiagramGridProps {
   diagrams: Diagram[];
-  onOpen: (d: Diagram) => void;
+  onSelect: (d: Diagram, event: MouseEvent<HTMLElement>) => void;
+  isDiagramSelected: (id: string) => boolean;
   onDragStart: (e: DragEvent, id: string) => void;
   levelLabels: Record<string, string>;
 }
