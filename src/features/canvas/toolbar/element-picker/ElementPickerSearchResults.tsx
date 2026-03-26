@@ -9,7 +9,7 @@ import { shortAwsName } from "./utils";
 import type { CanvasPickerOption } from "./types";
 import type { C4PickerOption } from "./buildPickerOptions";
 import { RegistryServiceRow } from "./RegistryServiceRow";
-import type { CustomComponentTemplate } from "@/features/custom-components";
+import { useCustomComponentStore, type CustomComponentTemplate } from "@/features/custom-components";
 import { NodeTemplatePreviewCard } from "@/features/custom-components/components/NodeTemplatePreviewCard";
 
 export function ElementPickerSearchResults({
@@ -47,6 +47,7 @@ export function ElementPickerSearchResults({
   onAddTemplate: (templateId: string) => void;
 }) {
   const { t } = useTranslation();
+  const deleteTemplate = useCustomComponentStore((state) => state.deleteTemplate);
 
   if (showSearchEmpty) {
     return (
@@ -141,6 +142,7 @@ export function ElementPickerSearchResults({
                 key={template.id}
                 template={template}
                 onClick={() => onAddTemplate(template.id)}
+                onDelete={() => deleteTemplate(template.id)}
               />
             ))}
           </div>

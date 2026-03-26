@@ -24,7 +24,7 @@ const App = () => {
   if (sharedDiagram) {
     return (
       <ShareProvider>
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_relativeSplatPath: true }}>
           <SharedDiagramView diagram={sharedDiagram} />
         </BrowserRouter>
       </ShareProvider>
@@ -53,7 +53,7 @@ const App = () => {
 
 
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_relativeSplatPath: true }}>
       <Routes>
         <Route path="/viewer" element={<ViewerPage />} />
         <Route path="*" element={<MainPages />} />

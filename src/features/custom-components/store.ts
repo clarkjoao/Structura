@@ -10,15 +10,28 @@ function syncRepository(templates: Record<string, CustomComponentTemplate>): voi
   void customComponentRepository.save(templates);
 }
 
+function isC4Subtype(value: unknown): value is "person" | "system" | "container" | "component" {
+  return (
+    value === "person" ||
+    value === "system" ||
+    value === "container" ||
+    value === "component"
+  );
+}
+
 export const useCustomComponentStore = create<CustomComponentStoreState>()(
   persist(
     (set, get) => ({
       templates: {},
       addTemplate: (template) => {
+        const dataType = template.data?.type;
+        const resolvedBaseType =
+          isC4Subtype(dataType) ? dataType : template.baseType;
+        const normalized = { ...template, baseType: resolvedBaseType };
         set((state) => ({
           templates: {
             ...state.templates,
-            [template.id]: template,
+            [normalized.id]: normalized,
           },
         }));
         syncRepository(get().templates);

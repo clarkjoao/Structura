@@ -46,6 +46,7 @@ import AwsIcon from "../nodes/AwsIcon";
 import { isPanelType } from "@/features/diagram";
 import { useCustomComponentLibrary } from "@/features/custom-components/hooks/useCustomComponentLibrary";
 import { NodeTemplatePreviewCard } from "@/features/custom-components/components/NodeTemplatePreviewCard";
+import { useCustomComponentStore } from "@/features/custom-components";
 
 const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const { t } = useTranslation();
@@ -60,6 +61,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const services = useAllServices();
   const allComponents = useAllComponents();
   const { templates, instantiateTemplate } = useCustomComponentLibrary();
+  const deleteTemplate = useCustomComponentStore((state) => state.deleteTemplate);
 
   const C4_OPTIONS = useMemo(() => buildC4PickerOptions(t), [t]);
   const CANVAS_OPTIONS = useMemo(() => buildCanvasPickerOptions(t), [t]);
@@ -335,6 +337,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
                     onClose();
                   }
                 }}
+                onDelete={() => deleteTemplate(template.id)}
                 template={template}
               />
             ))}

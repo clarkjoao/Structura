@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Box, FileText } from "lucide-react";
+import { Box, FileText, X } from "lucide-react";
 import { PICKER_CARD_CLASS } from "@/features/canvas/toolbar/element-picker/constants";
 import type { CustomComponentTemplate } from "../customComponent.types";
 import { resolveTemplateAccentColor } from "../utils/resolveTemplateAccentColor";
@@ -16,6 +16,7 @@ type NodeTemplate = CustomComponentTemplate;
 export interface NodeTemplatePreviewCardProps {
   template: NodeTemplate;
   onClick: () => void;
+  onDelete?: () => void;
 }
 
 function readNonEmptyString(value: unknown): string | undefined {
@@ -25,7 +26,11 @@ function readNonEmptyString(value: unknown): string | undefined {
   return trimmed;
 }
 
-export function NodeTemplatePreviewCard({ template, onClick }: NodeTemplatePreviewCardProps) {
+export function NodeTemplatePreviewCard({
+  template,
+  onClick,
+  onDelete,
+}: NodeTemplatePreviewCardProps) {
   const customIconIdFromData = readNonEmptyString(template.data.customIconId) ?? "";
   const customIconDefinition = useIconById(customIconIdFromData);
 
@@ -80,10 +85,23 @@ export function NodeTemplatePreviewCard({ template, onClick }: NodeTemplatePrevi
       onClick={onClick}
       className={cn(
         PICKER_CARD_CLASS,
-        "items-start justify-start text-left",
+        "group relative items-start justify-start text-left",
         accentColorClassName,
       )}
     >
+      {onDelete ? (
+        <button
+          type="button"
+          className="absolute right-2 top-2 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 p-0.5 opacity-0 transition-opacity group-hover:opacity-100"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+        >
+          <X className="h-3 w-3" />
+        </button>
+      ) : null}
+
       <div className="w-full flex items-center gap-2">
         {iconNode}
         <span className="text-xs font-medium truncate">{template.name}</span>
