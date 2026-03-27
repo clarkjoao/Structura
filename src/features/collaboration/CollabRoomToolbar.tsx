@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Download, X } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import type { Diagram } from "@/features/diagram";
@@ -85,23 +85,13 @@ export function CollabRoomToolbar({ diagram }: CollabRoomToolbarProps) {
         </button>
       )}
 
-      {isHost && (
-        <button
-          type="button"
-          onClick={handleCloseSession}
-          className="flex items-center gap-1.5 rounded-lg border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors"
-        >
-          <X className="h-3.5 w-3.5" />
-          {t("collaboration.endSession")}
-        </button>
-      )}
-
       <CollabToolbar
         session={session}
         isReady={isReady}
         collabUrl={collabUrl}
         peerLimitReached={peerLimitReached}
         onStartCollab={() => {}}
+        onEndCollab={isHost ? handleCloseSession : undefined}
       />
     </div>
   );

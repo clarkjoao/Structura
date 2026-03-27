@@ -45,6 +45,7 @@ export function useCanvasEdges({
     const assignmentMap = new Map(edgeHandleAssignments.map((a) => [a.connId, a]));
 
     const isEndpointHiddenByTag = (componentId: string): boolean => {
+      if (!visibleTags) return false;
       const component = r.components[componentId];
       if (!component?.tags?.length) {
         return false;

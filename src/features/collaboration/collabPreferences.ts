@@ -1,3 +1,5 @@
+import { resolveDefaultSignalingUrl } from "./resolveDefaultSignalingUrl";
+
 const STORAGE_KEY = "structura:collabPreferences";
 
 export interface CollabPreferences {
@@ -7,7 +9,7 @@ export interface CollabPreferences {
 
 const DEFAULTS: CollabPreferences = {
   userName: "",
-  signalingUrl: import.meta.env.VITE_SIGNALING_URL ?? "ws://localhost:3000/ws",
+  signalingUrl: resolveDefaultSignalingUrl(),
 };
 
 export function readCollabPreferences(): CollabPreferences {

@@ -25,7 +25,8 @@ function generateUserId(): string {
 
 const SESSION_CLOSED_KEY = "sessionClosed";
 const RETRY_DELAYS_MS = [2000, 4000, 8000, 15000, 30000];
-const MAX_PEERS = 5;
+const MAX_PARTICIPANTS = 5;
+const MAX_PEER_CONNECTIONS = Math.max(1, MAX_PARTICIPANTS - 1);
 
 interface UseCollabSessionParams {
   diagramId: string | null;
@@ -57,7 +58,9 @@ export function useCollabSession({
   const [isReady, setIsReady] = useState(false);
   const [status, setStatus] = useState<CollabConnectionStatus>("idle");
   const [sessionClosedByHost, setSessionClosedByHost] = useState(false);
+  const [hostDisconnected, setHostDisconnected] = useState(false);
   const [peerLimitReached, setPeerLimitReached] = useState(false);
+  const hostSeenRef = useRef(false);
 
   const localUserRef = useRef<CollabUser>({
     id: generateUserId(),
@@ -71,6 +74,7 @@ export function useCollabSession({
   const retryCountRef = useRef(0);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const destroyedRef = useRef(false);
+  const sessionTerminatedRef = useRef(false);
   const currentProviderRef = useRef<WebrtcProvider | null>(null);
   const currentYdocRef = useRef<Y.Doc | null>(null);
 
@@ -98,7 +102,7 @@ export function useCollabSession({
   }, []);
 
   const connect = useCallback(() => {
-    if (destroyedRef.current || !diagramId) return undefined;
+    if (destroyedRef.current || sessionTerminatedRef.current || !diagramId) return undefined;
 
     cleanup();
 
@@ -111,7 +115,7 @@ export function useCollabSession({
     const newYdoc = new Y.Doc();
     const newProvider = new WebrtcProvider(roomId, newYdoc, {
       signaling: [resolvedSignalingUrl],
-      maxConns: MAX_PEERS,
+      maxConns: MAX_PEER_CONNECTIONS,
     });
     const persistence = new IndexeddbPersistence(roomId, newYdoc);
 
@@ -124,6 +128,7 @@ export function useCollabSession({
       cursor: null,
       selectedNodeId: null,
       editingComponentId: null,
+      isHost,
     });
 
     setYdoc(newYdoc);
@@ -173,7 +178,7 @@ export function useCollabSession({
 
     if (!isHost) {
       syncTimeout = setTimeout(() => {
-        if (!connectedOnce && !destroyedRef.current) {
+        if (!connectedOnce && !destroyedRef.current && !sessionTerminatedRef.current) {
           // Keep UI responsive even when synced event is delayed/missed.
           setIsReady(true);
           const retryDelay =
@@ -181,7 +186,7 @@ export function useCollabSession({
           retryCountRef.current += 1;
           setStatus("reconnecting");
           retryTimerRef.current = setTimeout(() => {
-            if (!destroyedRef.current) connect();
+            if (!destroyedRef.current && !sessionTerminatedRef.current) connect();
           }, retryDelay);
         }
       }, 5000);
@@ -197,14 +202,34 @@ export function useCollabSession({
     const onAwarenessChange = () => {
       if (destroyedRef.current) return;
       const peers = new Map<number, PeerAwareness>();
+      let hostPresent = false;
       newProvider.awareness.getStates().forEach((awarenessState, clientId) => {
         if (clientId === newProvider.awareness.clientID) return;
         if (awarenessState?.user) {
           peers.set(clientId, awarenessState as PeerAwareness);
+          if (awarenessState.isHost) hostPresent = true;
         }
       });
-      setPeerLimitReached(peers.size >= MAX_PEERS);
+      setPeerLimitReached(peers.size >= MAX_PARTICIPANTS - 1);
+
+      // Track host presence for crash detection (guests only).
       if (!isHost) {
+        if (hostPresent) {
+          hostSeenRef.current = true;
+          setHostDisconnected(false);
+        } else if (hostSeenRef.current && !hostPresent) {
+          // Host was seen before but is now gone — crash or browser close.
+          setHostDisconnected(true);
+          sessionTerminatedRef.current = true;
+          cleanup();
+          setSession(null);
+          setIsReady(false);
+          setStatus("closed");
+          setPeerLimitReached(false);
+          setYdoc(null);
+          setProvider(null);
+          return;
+        }
         setIsReady(true);
       }
 
@@ -241,9 +266,12 @@ export function useCollabSession({
     if (!diagramId) return;
     destroyedRef.current = false;
     retryCountRef.current = 0;
+    sessionTerminatedRef.current = false;
     setIsReady(false);
     setStatus("idle");
     setSessionClosedByHost(false);
+    setHostDisconnected(false);
+    hostSeenRef.current = false;
 
     const unsubscribeConnect = connect();
 
@@ -259,6 +287,7 @@ export function useCollabSession({
 
   const closeSession = useCallback(() => {
     if (!isHost || !currentYdocRef.current) return;
+    sessionTerminatedRef.current = true;
     const metaMap = currentYdocRef.current.getMap("meta");
     metaMap.set(SESSION_CLOSED_KEY, true);
     setTimeout(() => {
@@ -284,6 +313,7 @@ export function useCollabSession({
     isReady,
     status,
     sessionClosedByHost,
+    hostDisconnected,
     peerLimitReached,
     closeSession,
     localUser: localUserRef.current,

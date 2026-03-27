@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 interface CollabSessionClosedModalProps {
   open: boolean;
   hostName: string;
+  /** True when the host crashed/closed browser (vs explicit session end). */
+  hostCrashed?: boolean;
   onImportAndContinue: () => void;
   onBackToWorkspace: () => void;
 }
@@ -19,6 +21,7 @@ interface CollabSessionClosedModalProps {
 export function CollabSessionClosedModal({
   open,
   hostName,
+  hostCrashed,
   onImportAndContinue,
   onBackToWorkspace,
 }: CollabSessionClosedModalProps) {
@@ -35,10 +38,14 @@ export function CollabSessionClosedModal({
             <WifiOff className="h-6 w-6 text-amber-500" />
           </div>
           <DialogTitle className="text-center">
-            {t("collaboration.sessionEnded")}
+            {hostCrashed
+              ? t("collaboration.hostDisconnected")
+              : t("collaboration.sessionEnded")}
           </DialogTitle>
           <DialogDescription className="text-center">
-            {t("collaboration.sessionEndedDesc", { host: hostName })}
+            {hostCrashed
+              ? t("collaboration.hostDisconnectedDesc", { host: hostName })
+              : t("collaboration.sessionEndedDesc", { host: hostName })}
           </DialogDescription>
         </DialogHeader>
 

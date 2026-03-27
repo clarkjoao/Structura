@@ -13,6 +13,7 @@ interface CollabContextValue {
   isReady: boolean;
   status: CollabConnectionStatus;
   sessionClosedByHost: boolean;
+  hostDisconnected: boolean;
   peerLimitReached: boolean;
   closeSession: () => void;
   provider: WebrtcProvider | null;
@@ -30,6 +31,7 @@ const CollabContext = createContext<CollabContextValue>({
   isReady: false,
   status: "idle",
   sessionClosedByHost: false,
+  hostDisconnected: false,
   peerLimitReached: false,
   closeSession: () => {},
   provider: null,
@@ -76,6 +78,7 @@ export function CollabProvider({
     isReady,
     status,
     sessionClosedByHost,
+    hostDisconnected,
     peerLimitReached,
     closeSession,
   } = useCollabSession({
@@ -111,6 +114,7 @@ export function CollabProvider({
         isReady,
         status,
         sessionClosedByHost,
+        hostDisconnected,
         peerLimitReached,
         closeSession,
         provider,

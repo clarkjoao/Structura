@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Copy, Loader2, Users, Wifi, WifiOff } from "lucide-react";
+import { AlertTriangle, Check, Copy, Loader2, Users, Wifi, WifiOff } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { readCollabPreferences, writeCollabPreferences } from "./collabPreferences";
 import { buildCollabInviteUrl } from "./collabUrl";
 import { testSignalingServer } from "./testSignalingServer";
+import { resolveDefaultSignalingUrl, isLocalhostSignaling } from "./resolveDefaultSignalingUrl";
 
 interface CollabStartModalProps {
   open: boolean;
@@ -35,10 +36,19 @@ export function CollabStartModal({
   const { t } = useTranslation();
   const defaultPreferences = readCollabPreferences();
   const [userName, setUserName] = useState(defaultPreferences.userName);
-  const [signalingUrl, setSignalingUrl] = useState(defaultPreferences.signalingUrl);
+  const [signalingUrl, setSignalingUrl] = useState(() => {
+    const saved = defaultPreferences.signalingUrl;
+    // If saved preference is localhost but we can auto-detect a better URL, prefer that.
+    if (isLocalhostSignaling(saved)) {
+      const resolved = resolveDefaultSignalingUrl();
+      if (!isLocalhostSignaling(resolved)) return resolved;
+    }
+    return saved;
+  });
   const [isCopied, setIsCopied] = useState(false);
   const [testStatus, setTestStatus] = useState<TestStatus>("idle");
 
+  const isLocalhost = isLocalhostSignaling(signalingUrl);
   const guestUrl = buildCollabInviteUrl(window.location.origin, diagramId, signalingUrl);
 
   const handleStart = () => {
@@ -134,17 +144,24 @@ export function CollabStartModal({
                 {t("collaboration.signalingHint")}
               </p>
             )}
-            {signalingUrl.includes("localhost") && (
-              <p className="text-[11px] text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-md px-3 py-2">
-                {t("collaboration.localhostHint")}
-              </p>
+            {isLocalhost && (
+              <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+                <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-amber-500/90">
+                  {t("collaboration.localhostWarning")}
+                </p>
+              </div>
             )}
           </div>
 
           <div className="space-y-1.5">
             <Label>{t("collaboration.inviteLink")}</Label>
             <div className="flex gap-2">
-              <Input value={guestUrl} readOnly className="font-mono text-xs bg-muted" />
+              <Input
+                value={guestUrl}
+                readOnly
+                className={`font-mono text-xs bg-muted ${isLocalhost ? "border-amber-500/50" : ""}`}
+              />
               <Button
                 type="button"
                 variant="outline"
@@ -159,9 +176,15 @@ export function CollabStartModal({
                 )}
               </Button>
             </div>
-            <p className="text-[11px] text-muted-foreground">
-              {t("collaboration.inviteLinkHint")}
-            </p>
+            {isLocalhost ? (
+              <p className="text-[11px] text-amber-500/90">
+                {t("collaboration.localhostInviteWarning")}
+              </p>
+            ) : (
+              <p className="text-[11px] text-muted-foreground">
+                {t("collaboration.inviteLinkHint")}
+              </p>
+            )}
           </div>
         </div>
 

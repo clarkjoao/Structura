@@ -10,6 +10,7 @@ export interface PeerAwareness {
   viewport?: { x: number; y: number; zoom: number };
   selectedNodeId?: string | null;
   editingComponentId?: string | null;
+  isHost?: boolean;
 }
 
 export type CollabConnectionStatus =

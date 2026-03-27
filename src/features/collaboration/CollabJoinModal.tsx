@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Users } from "lucide-react";
+import { AlertTriangle, Users } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { readCollabPreferences, writeCollabPreferences } from "./collabPreferences";
 import { readSignalingUrlFromParams } from "./collabUrl";
+import { isLocalhostSignaling } from "./resolveDefaultSignalingUrl";
 
 interface CollabJoinModalProps {
   open: boolean;
@@ -28,6 +29,8 @@ export function CollabJoinModal({ open, roomId, onJoin }: CollabJoinModalProps) 
   const [signalingUrl, setSignalingUrl] = useState(
     signalingUrlFromParams ?? defaultPreferences.signalingUrl,
   );
+
+  const isLocalhost = isLocalhostSignaling(signalingUrl);
 
   const handleJoin = () => {
     const trimmedName = userName.trim();
@@ -76,10 +79,13 @@ export function CollabJoinModal({ open, roomId, onJoin }: CollabJoinModalProps) 
             <p className="text-[11px] text-muted-foreground">
               {t("collaboration.signalingHint")}
             </p>
-            {signalingUrl.includes("localhost") && (
-              <p className="text-[11px] text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-md px-3 py-2">
-                {t("collaboration.localhostHint")}
-              </p>
+            {isLocalhost && (
+              <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+                <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-amber-500/90">
+                  {t("collaboration.localhostWarning")}
+                </p>
+              </div>
             )}
           </div>
         </div>

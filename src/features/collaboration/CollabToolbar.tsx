@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AlertTriangle, Check, Link, Users } from "lucide-react";
+import { AlertTriangle, Check, Link, Users, X } from "lucide-react";
 import type { CollabSession } from "./types";
 
 interface CollabToolbarProps {
@@ -9,6 +9,7 @@ interface CollabToolbarProps {
   collabUrl: string;
   peerLimitReached?: boolean;
   onStartCollab: () => void;
+  onEndCollab?: () => void;
 }
 
 export function CollabToolbar({
@@ -17,6 +18,7 @@ export function CollabToolbar({
   collabUrl,
   peerLimitReached,
   onStartCollab,
+  onEndCollab,
 }: CollabToolbarProps) {
   const { t } = useTranslation();
   const [isCopied, setIsCopied] = useState(false);
@@ -86,6 +88,16 @@ export function CollabToolbar({
       >
         {isCopied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Link className="h-3.5 w-3.5" />}
       </button>
+      {session.isHost && (
+        <button
+          type="button"
+          onClick={onEndCollab}
+          className="flex items-center gap-1 text-xs text-destructive hover:text-destructive/90 transition-colors"
+          title={t("collaboration.endSession")}
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
     </div>
   );
 }

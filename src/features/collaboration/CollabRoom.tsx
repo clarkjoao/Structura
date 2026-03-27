@@ -16,13 +16,14 @@ import { CollabRoomToolbar } from "./CollabRoomToolbar";
 function CollabRoomInner() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { session, isReady, status, sessionClosedByHost } = useCollab();
+  const { session, isReady, status, sessionClosedByHost, hostDisconnected } = useCollab();
   const { importDiagram } = useDiagramActions();
   const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
   const diagrams = useDiagramStore((state) => state.diagrams);
   const diagram = activeDiagramId ? diagrams[activeDiagramId] ?? null : null;
   const diagramExists = Boolean(diagram);
   const hostName = session?.isHost ? session.localUser.name : "Host";
+  const isSessionClosed = sessionClosedByHost || hostDisconnected;
 
   const handleImportAndContinue = () => {
     if (!diagram) {
@@ -45,7 +46,7 @@ function CollabRoomInner() {
     }
   };
 
-  if (!isReady || !diagramExists) {
+  if ((!isReady || !diagramExists) && !isSessionClosed) {
     const isDisconnected = status === "disconnected";
     return (
       <div className="flex flex-col flex-1 items-center justify-center gap-3 text-muted-foreground">
@@ -74,17 +75,24 @@ function CollabRoomInner() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <CollabRoomToolbar diagram={diagram} />
-      <div className="flex flex-1 min-h-0">
-        <FlowModeProvider onFinalize={() => {}}>
-          <ReactFlowProvider>
-            <Canvas />
-          </ReactFlowProvider>
-        </FlowModeProvider>
-      </div>
+      {diagram ? (
+        <>
+          <CollabRoomToolbar diagram={diagram} />
+          <div className="flex flex-1 min-h-0">
+            <FlowModeProvider onFinalize={() => {}}>
+              <ReactFlowProvider>
+                <Canvas />
+              </ReactFlowProvider>
+            </FlowModeProvider>
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-1 items-center justify-center text-muted-foreground" />
+      )}
       <CollabSessionClosedModal
-        open={sessionClosedByHost}
+        open={isSessionClosed}
         hostName={hostName}
+        hostCrashed={hostDisconnected && !sessionClosedByHost}
         onImportAndContinue={handleImportAndContinue}
         onBackToWorkspace={() => navigate("/workspace")}
       />
