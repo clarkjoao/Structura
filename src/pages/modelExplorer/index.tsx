@@ -15,7 +15,7 @@ import {
   exportFilenameSlug,
   stepsToMermaid,
 } from "@/features/diagram";
-import { exportJSON, exportDrawio, exportMermaid, downloadFile } from "@/lib/export-service";
+import { exportJSON, exportDrawio, exportMermaid, downloadZip } from "@/lib/export-service";
 import { writeDrawioToClipboard } from "@/lib/clipboard-utils";
 import { CollabProvider, CollabStartModal } from "@/features/collaboration";
 import { ModelExplorerContent } from "./ModelExplorerContent";
@@ -121,17 +121,22 @@ export default function ModelExplorerPage() {
 
   const handleExport = useCallback(() => {
     if (!diagram) return;
+
     const slug = exportFilenameSlug(diagram);
-    const r = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
-    downloadFile(exportJSON(diagram), `${slug}.json`, "application/json");
-    downloadFile(exportDrawio(diagram, serviceRegistry), `${slug}.drawio`, "application/xml");
+    const sceneSnapshot = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
+    const files = [
+      { filename: `${slug}.json`, content: exportJSON(diagram) },
+      { filename: `${slug}.drawio`, content: exportDrawio(diagram, serviceRegistry) },
+    ];
+
     if (flows.length > 0) {
-      downloadFile(
-        exportMermaid(flows, r.components, r.connections),
-        `${slug}-flows.md`,
-        "text/markdown",
-      );
+      files.push({
+        filename: `${slug}-flows.md`,
+        content: exportMermaid(flows, sceneSnapshot.components, sceneSnapshot.connections),
+      });
     }
+
+    void downloadZip(files, `${slug}.zip`);
   }, [diagram, flows, serviceRegistry]);
 
   const handleStartCollab = useCallback((name: string, signalingUrl: string) => {
