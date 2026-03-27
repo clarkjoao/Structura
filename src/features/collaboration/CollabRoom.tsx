@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, WifiOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { ReactFlowProvider } from "@xyflow/react";
@@ -16,7 +16,7 @@ import { CollabRoomToolbar } from "./CollabRoomToolbar";
 function CollabRoomInner() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { session, isReady, sessionClosedByHost } = useCollab();
+  const { session, isReady, status, sessionClosedByHost } = useCollab();
   const { importDiagram } = useDiagramActions();
   const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
   const diagrams = useDiagramStore((state) => state.diagrams);
@@ -46,16 +46,28 @@ function CollabRoomInner() {
   };
 
   if (!isReady || !diagramExists) {
+    const isDisconnected = status === "disconnected";
     return (
       <div className="flex flex-col flex-1 items-center justify-center gap-3 text-muted-foreground">
-        <Loader2 className="h-6 w-6 animate-spin" />
+        {isDisconnected ? (
+          <WifiOff className="h-6 w-6 text-destructive" />
+        ) : (
+          <Loader2 className="h-6 w-6 animate-spin" />
+        )}
         <p className="text-sm">
-          {!session
-            ? t("collaboration.connecting")
-            : !isReady
-              ? t("collaboration.syncing")
-              : t("collaboration.loading")}
+          {isDisconnected
+            ? t("collaboration.signalingFailed")
+            : !session
+              ? t("collaboration.connecting")
+              : !isReady
+                ? t("collaboration.syncing")
+                : t("collaboration.loading")}
         </p>
+        {isDisconnected && (
+          <p className="text-xs text-muted-foreground max-w-sm text-center">
+            {t("collaboration.localhostHint")}
+          </p>
+        )}
       </div>
     );
   }

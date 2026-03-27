@@ -71,11 +71,16 @@ export function CollabJoinModal({ open, roomId, onJoin }: CollabJoinModalProps) 
               id="guest-ws"
               value={signalingUrl}
               onChange={(event) => setSignalingUrl(event.target.value)}
-              placeholder="ws://localhost:4444"
+              placeholder="ws://localhost:3000/ws"
             />
             <p className="text-[11px] text-muted-foreground">
               {t("collaboration.signalingHint")}
             </p>
+            {signalingUrl.includes("localhost") && (
+              <p className="text-[11px] text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-md px-3 py-2">
+                {t("collaboration.localhostHint")}
+              </p>
+            )}
           </div>
         </div>
 

@@ -761,6 +761,8 @@
     "importAndContinue": "Import and continue",
     "endSession": "End session",
     "confirmClose": "End this collaboration session?",
+    "localhostHint": "For local collaboration, run `npm run signal` in the project terminal before starting the session.",
+    "signalingFailed": "Check if the signaling server is running.",
     "status": {
       "idle": "Idle",
       "connecting": "Connecting",

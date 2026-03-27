@@ -760,6 +760,8 @@
     "importAndContinue": "Importar e continuar",
     "endSession": "Encerrar sessão",
     "confirmClose": "Encerrar esta sessão de colaboração?",
+    "localhostHint": "Para colaborar localmente, rode `npm run signal` no terminal antes de iniciar.",
+    "signalingFailed": "Verifique se o servidor de sinalização está rodando.",
     "status": {
       "idle": "Inativo",
       "connecting": "Conectando",

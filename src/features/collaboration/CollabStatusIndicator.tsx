@@ -38,6 +38,11 @@ export function CollabStatusIndicator({ status }: CollabStatusIndicatorProps) {
         <WifiOff className="h-3 w-3" />
       )}
       <span>{label}</span>
+      {status === "disconnected" && (
+        <span className="text-[10px] text-muted-foreground ml-1">
+          {t("collaboration.signalingFailed")}
+        </span>
+      )}
     </div>
   );
 }

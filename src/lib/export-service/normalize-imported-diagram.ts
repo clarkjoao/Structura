@@ -89,8 +89,9 @@ function sanitizeIconLibrary(raw: unknown): Record<string, IconDefinition> {
  * Invalid icon entries are dropped (no throw).
  */
 export function normalizeImportedDiagram(diagram: Diagram): Diagram {
-  const iconLibrary = sanitizeIconLibrary(diagram.snapshot.iconLibrary);
-  const components = { ...diagram.snapshot.components };
+  const snapshot = diagram.snapshot ?? { components: {}, connections: {}, flows: {}, iconLibrary: {} };
+  const iconLibrary = sanitizeIconLibrary(snapshot.iconLibrary);
+  const components = { ...snapshot.components };
   for (const key of Object.keys(components)) {
     const comp = components[key];
     if (comp && !("customIconId" in comp)) {
@@ -101,7 +102,7 @@ export function normalizeImportedDiagram(diagram: Diagram): Diagram {
     ...diagram,
     edgeLayouts: Array.isArray(diagram.edgeLayouts) ? diagram.edgeLayouts : [],
     snapshot: {
-      ...diagram.snapshot,
+      ...snapshot,
       iconLibrary,
       components,
     },

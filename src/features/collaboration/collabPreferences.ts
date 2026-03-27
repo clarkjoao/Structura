@@ -7,7 +7,7 @@ export interface CollabPreferences {
 
 const DEFAULTS: CollabPreferences = {
   userName: "",
-  signalingUrl: "ws://localhost:4444",
+  signalingUrl: import.meta.env.VITE_SIGNALING_URL ?? "ws://localhost:3000/ws",
 };
 
 export function readCollabPreferences(): CollabPreferences {

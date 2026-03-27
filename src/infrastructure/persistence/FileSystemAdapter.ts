@@ -418,7 +418,9 @@ export class FileSystemAdapter {
       ) {
         try {
           const f = await (entry as FileSystemFileHandle).getFile();
-          const diagram = normalizeImportedDiagram(JSON.parse(await f.text()) as Diagram);
+          const raw = JSON.parse(await f.text()) as Record<string, unknown>;
+          if (raw.deleted) continue;
+          const diagram = normalizeImportedDiagram(raw as unknown as Diagram);
           if (diagram && diagram.id) {
             result[diagram.id] = diagram;
           }

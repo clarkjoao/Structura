@@ -36,6 +36,7 @@ export function useYjsZustandBridge(ydoc: Y.Doc | null, activeDiagramId: string 
     const connectionsMap = ydoc.getMap("connections");
     const flowsMap = ydoc.getMap("flows");
     const nodeLayoutsMap = ydoc.getMap("nodeLayouts");
+    const edgeLayoutsArray = ydoc.getArray("edgeLayouts");
     const metaMap = ydoc.getMap("meta");
 
     const unsubscribeStore = useDiagramStore.subscribe((state, previousState) => {
@@ -53,11 +54,14 @@ export function useYjsZustandBridge(ydoc: Y.Doc | null, activeDiagramId: string 
       const connections = diagram.snapshot.connections;
       const flows = diagram.snapshot.flows;
       const nodeLayouts = diagram.nodeLayouts;
+      const edgeLayouts = diagram.edgeLayouts;
 
       ydoc.transact(() => {
         metaMap.set("diagramId", diagramId);
         metaMap.set("diagramName", diagram.name);
         metaMap.set("level", diagram.level);
+        metaMap.set("domain", diagram.domain ?? "");
+        metaMap.set("description", diagram.description ?? "");
 
         const remoteComponentIds = new Set(componentsMap.keys());
         for (const [componentId, component] of Object.entries(components)) {
@@ -102,6 +106,15 @@ export function useYjsZustandBridge(ydoc: Y.Doc | null, activeDiagramId: string 
         for (const flowId of remoteFlowIds) {
           if (!flows[flowId]) flowsMap.delete(flowId);
         }
+
+        const serializedEdgeLayouts = JSON.stringify(edgeLayouts);
+        const currentRemoteEdgeLayouts = edgeLayoutsArray.length > 0
+          ? (edgeLayoutsArray.get(0) as string)
+          : undefined;
+        if (currentRemoteEdgeLayouts !== serializedEdgeLayouts) {
+          edgeLayoutsArray.delete(0, edgeLayoutsArray.length);
+          edgeLayoutsArray.push([serializedEdgeLayouts]);
+        }
       });
     });
 
@@ -131,22 +144,44 @@ export function useYjsZustandBridge(ydoc: Y.Doc | null, activeDiagramId: string 
           }
         }
 
-        useDiagramStore.setState((previousState) => ({
-          ...previousState,
-          diagrams: {
-            ...previousState.diagrams,
-            [currentDiagramId]: {
-              ...previousState.diagrams[currentDiagramId],
-              snapshot: {
-                ...previousState.diagrams[currentDiagramId].snapshot,
-                components: components as typeof diagram.snapshot.components,
-                connections: connections as typeof diagram.snapshot.connections,
-                flows: flows as typeof diagram.snapshot.flows,
+        // Parse remote edge layouts
+        let remoteEdgeLayouts: typeof diagram.edgeLayouts | undefined;
+        if (edgeLayoutsArray.length > 0) {
+          try {
+            remoteEdgeLayouts = JSON.parse(edgeLayoutsArray.get(0) as string);
+          } catch {
+            // Ignore malformed edge layouts from peers.
+          }
+        }
+
+        // Parse remote metadata
+        const remoteName = metaMap.get("diagramName");
+        const remoteDomain = metaMap.get("domain");
+        const remoteDescription = metaMap.get("description");
+
+        useDiagramStore.setState((previousState) => {
+          const prev = previousState.diagrams[currentDiagramId];
+          return {
+            ...previousState,
+            diagrams: {
+              ...previousState.diagrams,
+              [currentDiagramId]: {
+                ...prev,
+                ...(typeof remoteName === "string" && remoteName ? { name: remoteName } : {}),
+                ...(typeof remoteDomain === "string" ? { domain: remoteDomain || undefined } : {}),
+                ...(typeof remoteDescription === "string" ? { description: remoteDescription || undefined } : {}),
+                snapshot: {
+                  ...prev.snapshot,
+                  components: components as typeof diagram.snapshot.components,
+                  connections: connections as typeof diagram.snapshot.connections,
+                  flows: flows as typeof diagram.snapshot.flows,
+                },
+                nodeLayouts: nodeLayouts as typeof diagram.nodeLayouts,
+                ...(remoteEdgeLayouts ? { edgeLayouts: remoteEdgeLayouts } : {}),
               },
-              nodeLayouts: nodeLayouts as typeof diagram.nodeLayouts,
             },
-          },
-        }));
+          };
+        });
       } finally {
         isApplyingRemoteRef.current = false;
       }
@@ -156,44 +191,52 @@ export function useYjsZustandBridge(ydoc: Y.Doc | null, activeDiagramId: string 
       const remoteDiagramId = metaMap.get("diagramId");
       if (typeof remoteDiagramId !== "string") return;
 
-      const state = useDiagramStore.getState();
-      if (!state.diagrams[remoteDiagramId]) {
-        // Create guest diagram with the same host id so /model/<id> resolves.
-        const remoteDiagramNameValue = metaMap.get("diagramName");
-        const remoteDiagramName =
-          typeof remoteDiagramNameValue === "string" ? remoteDiagramNameValue : "Shared Diagram";
-        const remoteDiagramLevelValue = metaMap.get("level");
-        const remoteDiagramLevel =
-          typeof remoteDiagramLevelValue === "string" ? remoteDiagramLevelValue : "context";
-        const currentTimestamp = new Date().toISOString();
+      // Guard the entire bootstrap so the Zustand→Yjs subscriber does NOT
+      // react to the empty diagram creation and wipe the host's data.
+      isApplyingRemoteRef.current = true;
+      try {
+        const state = useDiagramStore.getState();
+        if (!state.diagrams[remoteDiagramId]) {
+          // Create guest diagram with the same host id so /model/<id> resolves.
+          const remoteDiagramNameValue = metaMap.get("diagramName");
+          const remoteDiagramName =
+            typeof remoteDiagramNameValue === "string" ? remoteDiagramNameValue : "Shared Diagram";
+          const remoteDiagramLevelValue = metaMap.get("level");
+          const remoteDiagramLevel =
+            typeof remoteDiagramLevelValue === "string" ? remoteDiagramLevelValue : "context";
+          const currentTimestamp = new Date().toISOString();
 
-        useDiagramStore.setState((previousState) => ({
-          ...previousState,
-          diagrams: {
-            ...previousState.diagrams,
-            [remoteDiagramId]: {
-              id: remoteDiagramId,
-              name: remoteDiagramName,
-              level: remoteDiagramLevel,
-              createdAt: currentTimestamp,
-              updatedAt: currentTimestamp,
-              snapshot: {
-                components: {},
-                connections: {},
-                flows: {},
-                iconLibrary: {},
+          useDiagramStore.setState((previousState) => ({
+            ...previousState,
+            diagrams: {
+              ...previousState.diagrams,
+              [remoteDiagramId]: {
+                id: remoteDiagramId,
+                name: remoteDiagramName,
+                level: remoteDiagramLevel,
+                createdAt: currentTimestamp,
+                updatedAt: currentTimestamp,
+                snapshot: {
+                  components: {},
+                  connections: {},
+                  flows: {},
+                  iconLibrary: {},
+                },
+                nodeLayouts: {},
+                edgeLayouts: [],
+                viewport: { x: 0, y: 0, zoom: 1 },
               },
-              nodeLayouts: {},
-              viewport: { x: 0, y: 0, zoom: 1 },
             },
-          },
-          activeDiagramId: remoteDiagramId,
-        }));
-      } else if (state.activeDiagramId !== remoteDiagramId) {
-        useDiagramStore.setState((previousState) => ({
-          ...previousState,
-          activeDiagramId: remoteDiagramId,
-        }));
+            activeDiagramId: remoteDiagramId,
+          }));
+        } else if (state.activeDiagramId !== remoteDiagramId) {
+          useDiagramStore.setState((previousState) => ({
+            ...previousState,
+            activeDiagramId: remoteDiagramId,
+          }));
+        }
+      } finally {
+        isApplyingRemoteRef.current = false;
       }
 
       applyRemote();
@@ -204,6 +247,7 @@ export function useYjsZustandBridge(ydoc: Y.Doc | null, activeDiagramId: string 
     connectionsMap.observe(applyRemote);
     flowsMap.observe(applyRemote);
     nodeLayoutsMap.observe(applyRemote);
+    edgeLayoutsArray.observe(applyRemote);
 
     return () => {
       unsubscribeStore();
@@ -212,6 +256,7 @@ export function useYjsZustandBridge(ydoc: Y.Doc | null, activeDiagramId: string 
       connectionsMap.unobserve(applyRemote);
       flowsMap.unobserve(applyRemote);
       nodeLayoutsMap.unobserve(applyRemote);
+      edgeLayoutsArray.unobserve(applyRemote);
     };
   }, [ydoc, activeDiagramId]);
 }

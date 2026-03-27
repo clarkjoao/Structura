@@ -9,6 +9,7 @@
     "build:dev": "vite build --mode development",
     "proxy:install": "npm --prefix server install",
     "proxy:dev": "npm --prefix server run dev",
+    "collab": "npm --prefix server run dev",
     "proxy": "npm run proxy:install && npm run proxy:dev",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -101,6 +102,7 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
     "vite": "^8.0.2",
+    "concurrently": "^9.1.2",
     "vitest": "^4.1.1"
   }
 }

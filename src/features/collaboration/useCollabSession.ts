@@ -44,7 +44,7 @@ export function useCollabSession({
     signalingUrlProp ??
     preferences.signalingUrl ??
     import.meta.env.VITE_SIGNALING_URL ??
-    "ws://localhost:4444";
+    "ws://localhost:3000/ws";
   const resolvedUserName =
     userNameProp ??
     preferences.userName ??
@@ -137,6 +137,7 @@ export function useCollabSession({
 
     let connectedOnce = false;
     let syncTimeout: ReturnType<typeof setTimeout> | null = null;
+    let signalingTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const onSynced = () => {
       if (destroyedRef.current) return;
@@ -146,10 +147,26 @@ export function useCollabSession({
         clearTimeout(retryTimerRef.current);
         retryTimerRef.current = null;
       }
+      if (signalingTimeout) {
+        clearTimeout(signalingTimeout);
+        signalingTimeout = null;
+      }
       setIsReady(true);
       setStatus("connected");
     };
     newProvider.on("synced", onSynced);
+
+    // Detect unreachable signaling server: if after 8s the provider
+    // never synced and no peers appeared, surface a disconnected status
+    // so the UI can guide the user.
+    signalingTimeout = setTimeout(() => {
+      if (!connectedOnce && !destroyedRef.current && retryCountRef.current === 0) {
+        const peerCount = newProvider.awareness.getStates().size - 1;
+        if (peerCount <= 0) {
+          setStatus("disconnected");
+        }
+      }
+    }, 8000);
 
     if (!isHost) {
       syncTimeout = setTimeout(() => {
@@ -209,6 +226,7 @@ export function useCollabSession({
 
     return () => {
       if (syncTimeout) clearTimeout(syncTimeout);
+      if (signalingTimeout) clearTimeout(signalingTimeout);
       newProvider.awareness.off("change", onAwarenessChange);
       newProvider.off("synced", onSynced);
       metaMap.unobserve(onMetaChange);
