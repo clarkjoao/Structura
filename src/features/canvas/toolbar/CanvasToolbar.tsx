@@ -7,6 +7,7 @@ import PatternPicker from "./PatternPicker";
 import { LayerFilterPopover } from "./LayerFilterPopover";
 import { useTranslation } from "react-i18next";
 import { CanvasToolbarDiagramPanel } from "./components/CanvasToolbarDiagramPanel";
+import { CanvasToolbarScenesButton } from "./components/CanvasToolbarScenesButton";
 
 interface CanvasToolbarProps {
   onDrillUp?: () => void;
@@ -50,9 +51,13 @@ const CanvasToolbar = ({
       <CanvasToolbarDiagramPanel
         diagram={diagram}
         toolbarEditLocked={toolbarEditLocked}
+        selectedCount={selectedCount}
+      />
+
+      <CanvasToolbarScenesButton
+        diagram={diagram}
         scenesPickerLocked={scenesPickerLocked}
         onOpenScenes={onOpenScenes}
-        selectedCount={selectedCount}
       />
 
       <LayerFilterPopover

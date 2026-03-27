@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Layers, GitBranch } from "lucide-react";
+import { Layers } from "lucide-react";
 import type { Diagram } from "@/features/diagram";
 import { useDiagramActions } from "@/features/diagram";
 import { DiagramDescriptionField } from "../DiagramDescriptionField";
@@ -8,16 +8,12 @@ import { useTranslation } from "react-i18next";
 export interface CanvasToolbarDiagramPanelProps {
   diagram: Diagram;
   toolbarEditLocked: boolean;
-  scenesPickerLocked: boolean;
-  onOpenScenes?: () => void;
   selectedCount: number;
 }
 
 export function CanvasToolbarDiagramPanel({
   diagram,
   toolbarEditLocked,
-  scenesPickerLocked,
-  onOpenScenes,
   selectedCount,
 }: CanvasToolbarDiagramPanelProps) {
   const { t } = useTranslation();
@@ -57,12 +53,6 @@ export function CanvasToolbarDiagramPanel({
     }
     setIsEditingName(false);
   };
-
-  const sceneRecord = diagram.scenes ?? {};
-  const activeScene =
-    diagram.activeSceneId && sceneRecord[diagram.activeSceneId]
-      ? sceneRecord[diagram.activeSceneId]
-      : null;
 
   return (
     <div className="flex flex-col gap-1 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2">
@@ -104,46 +94,6 @@ export function CanvasToolbarDiagramPanel({
         <span className="text-[10px] font-mono text-muted-foreground rounded bg-secondary px-1.5 py-0.5 shrink-0">
           {levelLabels[diagram.level]}
         </span>
-        {onOpenScenes &&
-          (activeScene ? (
-            <button
-              type="button"
-              disabled={scenesPickerLocked}
-              onClick={() => {
-                if (scenesPickerLocked) return;
-                onOpenScenes();
-              }}
-              title={
-                scenesPickerLocked
-                  ? t("diagramNav.unavailableWhileRecordingOrPlayback")
-                  : undefined
-              }
-              className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium border border-border bg-secondary hover:bg-surface-hover transition-colors shrink-0 max-w-[140px] ${scenesPickerLocked ? "opacity-50 pointer-events-none" : ""}`}
-            >
-              <span
-                className="w-1.5 h-1.5 rounded-full shrink-0"
-                style={{ backgroundColor: activeScene.color }}
-              />
-              <span className="truncate">{activeScene.name}</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              disabled={scenesPickerLocked}
-              onClick={() => {
-                if (scenesPickerLocked) return;
-                onOpenScenes();
-              }}
-              className={`text-[10px] text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded shrink-0 ${scenesPickerLocked ? "opacity-50 pointer-events-none" : ""}`}
-              title={
-                scenesPickerLocked
-                  ? t("diagramNav.unavailableWhileRecordingOrPlayback")
-                  : t("scenes.viewVersionsTitle")
-              }
-            >
-              <GitBranch className="h-3 w-3" />
-            </button>
-          ))}
         {selectedCount > 1 && (
           <span className="text-xs text-muted-foreground ml-1">
             {t("canvasToolbar.selectedCount", { count: selectedCount })}
