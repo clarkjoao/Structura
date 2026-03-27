@@ -2,7 +2,6 @@ import { useRef, useState, useCallback, type MutableRefObject } from "react";
 import { applyNodeChanges, type Node, type NodeChange, type OnNodesChange } from "@xyflow/react";
 import type { Diagram } from "@/features/diagram";
 import { canMoveNodeInSceneMode } from "@/features/diagram";
-import { remoteLayoutUpdates } from "@/features/collaboration/useYjsZustandBridge";
 
 /** Drop position/dimension updates that the store rejects (e.g. base nodes in an active scene). */
 function filterNodeChangesForSceneMoveLock(
@@ -54,7 +53,6 @@ export function useLocalNodes(
       // First load or undo/redo: take store nodes as-is, discarding all local positions
       if (prev.length === 0 || undoRedo) {
         localNodesRef.current = storeNodes;
-        remoteLayoutUpdates.clear();
         return storeNodes;
       }
 
@@ -63,8 +61,7 @@ export function useLocalNodes(
         const ln = localMap.get(sn.id);
         if (!ln) return sn;
 
-        const useRemotePosition =
-          sn.parentId !== ln.parentId || remoteLayoutUpdates.has(sn.id);
+        const useRemotePosition = sn.parentId !== ln.parentId;
 
         return {
           ...ln,
@@ -80,7 +77,6 @@ export function useLocalNodes(
           extent: sn.extent,
         };
       });
-      remoteLayoutUpdates.clear();
       localNodesRef.current = merged;
       return merged;
     });

@@ -22,7 +22,6 @@ import { EmbedButton } from "./EmbedButton";
 import { RecordingBadge } from "./RecordingBadge";
 import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
-import { useCollab } from "@/features/collaboration";
 
 function useNodeState(data: NodeProps["data"], selected: boolean | undefined) {
   const d = data as unknown as NodeData;
@@ -117,9 +116,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
   const { t } = useTranslation();
   const { d, isActive, controlsDisabled, handlePointer, incomingCount, outgoingCount } =
     useNodeState(data, selected);
-  const { editingComponents } = useCollab();
   const customDiagramIcon = useComponentIcon(d.elementId);
-  const editingPeer = editingComponents.get(d.elementId);
 
   const isAws = isAwsType(d.type);
 
@@ -180,18 +177,10 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
       className={`group relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${borderClass} border-l-[3px] transition-shadow duration-200 ${
         isActive
           ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110"
-          : editingPeer
-            ? "ring-2 shadow-md"
-            : "opacity-90"
+          : "opacity-90"
       }`}
       style={{
         ...borderStyle,
-        ...(editingPeer
-          ? {
-              boxShadow: `0 0 0 2px ${editingPeer.color}`,
-              ["--tw-ring-color" as const]: editingPeer.color,
-            }
-          : {}),
       }}
     >
       {d.compareBadges && (

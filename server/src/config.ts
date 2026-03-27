@@ -45,4 +45,3 @@ export const proxyAgent = CORPORATE_PROXY_URL
   ? new HttpsProxyAgent(CORPORATE_PROXY_URL, { keepAlive: true })
   : new https.Agent({ keepAlive: true, rejectUnauthorized: !INSECURE_TLS });
 
-export const WS_PATH = process.env.WS_PATH ?? "/ws";
