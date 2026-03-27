@@ -13,6 +13,7 @@ interface CollabContextValue {
   isReady: boolean;
   status: CollabConnectionStatus;
   sessionClosedByHost: boolean;
+  peerLimitReached: boolean;
   closeSession: () => void;
   provider: WebrtcProvider | null;
   ydoc: Y.Doc | null;
@@ -29,6 +30,7 @@ const CollabContext = createContext<CollabContextValue>({
   isReady: false,
   status: "idle",
   sessionClosedByHost: false,
+  peerLimitReached: false,
   closeSession: () => {},
   provider: null,
   ydoc: null,
@@ -74,6 +76,7 @@ export function CollabProvider({
     isReady,
     status,
     sessionClosedByHost,
+    peerLimitReached,
     closeSession,
   } = useCollabSession({
     diagramId: bridgeDiagramId,
@@ -108,6 +111,7 @@ export function CollabProvider({
         isReady,
         status,
         sessionClosedByHost,
+        peerLimitReached,
         closeSession,
         provider,
         ydoc,

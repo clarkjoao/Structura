@@ -25,6 +25,7 @@ function generateUserId(): string {
 
 const SESSION_CLOSED_KEY = "sessionClosed";
 const RETRY_DELAYS_MS = [2000, 4000, 8000, 15000, 30000];
+const MAX_PEERS = 5;
 
 interface UseCollabSessionParams {
   diagramId: string | null;
@@ -56,6 +57,7 @@ export function useCollabSession({
   const [isReady, setIsReady] = useState(false);
   const [status, setStatus] = useState<CollabConnectionStatus>("idle");
   const [sessionClosedByHost, setSessionClosedByHost] = useState(false);
+  const [peerLimitReached, setPeerLimitReached] = useState(false);
 
   const localUserRef = useRef<CollabUser>({
     id: generateUserId(),
@@ -109,6 +111,7 @@ export function useCollabSession({
     const newYdoc = new Y.Doc();
     const newProvider = new WebrtcProvider(roomId, newYdoc, {
       signaling: [resolvedSignalingUrl],
+      maxConns: MAX_PEERS,
     });
     const persistence = new IndexeddbPersistence(roomId, newYdoc);
 
@@ -200,6 +203,7 @@ export function useCollabSession({
           peers.set(clientId, awarenessState as PeerAwareness);
         }
       });
+      setPeerLimitReached(peers.size >= MAX_PEERS);
       if (!isHost) {
         setIsReady(true);
       }
@@ -280,6 +284,7 @@ export function useCollabSession({
     isReady,
     status,
     sessionClosedByHost,
+    peerLimitReached,
     closeSession,
     localUser: localUserRef.current,
   };

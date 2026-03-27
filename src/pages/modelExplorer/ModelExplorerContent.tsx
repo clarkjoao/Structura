@@ -54,7 +54,7 @@ export function ModelExplorerContent({
   flows,
 }: ModelExplorerContentProps) {
   const { t } = useTranslation();
-  const { session, isReady, collabUrl } = useCollab();
+  const { session, isReady, collabUrl, peerLimitReached } = useCollab();
   const diagram = useActiveDiagram();
   const flowMode = useFlowMode();
   const playbackState = flowMode.mode.kind === "playing" ? flowMode.mode : null;
@@ -209,6 +209,7 @@ export function ModelExplorerContent({
               session={session}
               isReady={isReady}
               collabUrl={collabUrl}
+              peerLimitReached={peerLimitReached}
               onStartCollab={onStartCollab}
             />
             <button

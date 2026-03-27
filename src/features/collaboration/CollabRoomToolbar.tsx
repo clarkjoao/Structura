@@ -16,7 +16,7 @@ interface CollabRoomToolbarProps {
 export function CollabRoomToolbar({ diagram }: CollabRoomToolbarProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { session, isReady, status, collabUrl, closeSession } = useCollab();
+  const { session, isReady, status, collabUrl, peerLimitReached, closeSession } = useCollab();
   const { importDiagram } = useDiagramActions();
   const [isImporting, setIsImporting] = useState(false);
   const isHost = session?.isHost ?? false;
@@ -100,6 +100,7 @@ export function CollabRoomToolbar({ diagram }: CollabRoomToolbarProps) {
         session={session}
         isReady={isReady}
         collabUrl={collabUrl}
+        peerLimitReached={peerLimitReached}
         onStartCollab={() => {}}
       />
     </div>

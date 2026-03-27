@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Link, Users } from "lucide-react";
+import { AlertTriangle, Check, Link, Users } from "lucide-react";
 import type { CollabSession } from "./types";
 
 interface CollabToolbarProps {
   session: CollabSession | null;
   isReady: boolean;
   collabUrl: string;
+  peerLimitReached?: boolean;
   onStartCollab: () => void;
 }
 
@@ -14,6 +15,7 @@ export function CollabToolbar({
   session,
   isReady,
   collabUrl,
+  peerLimitReached,
   onStartCollab,
 }: CollabToolbarProps) {
   const { t } = useTranslation();
@@ -66,6 +68,15 @@ export function CollabToolbar({
           </div>
         ))}
       </div>
+
+      {peerLimitReached && (
+        <div
+          className="flex items-center gap-1 text-[10px] text-amber-500"
+          title={t("collaboration.peerLimitReached")}
+        >
+          <AlertTriangle className="h-3 w-3" />
+        </div>
+      )}
 
       <button
         type="button"

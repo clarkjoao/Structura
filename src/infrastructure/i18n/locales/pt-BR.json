@@ -762,6 +762,7 @@
     "confirmClose": "Encerrar esta sessão de colaboração?",
     "localhostHint": "Para colaborar localmente, rode `npm run signal` no terminal antes de iniciar.",
     "signalingFailed": "Verifique se o servidor de sinalização está rodando.",
+    "peerLimitReached": "Limite de peers atingido. Novas conexões podem ser recusadas.",
     "status": {
       "idle": "Inativo",
       "connecting": "Conectando",

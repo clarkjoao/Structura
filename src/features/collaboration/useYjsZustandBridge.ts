@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import * as Y from "yjs";
 import { useDiagramStore } from "@/features/diagram/store/diagram.store";
+import type { Component, Connection, Flow, IconDefinition, NodeLayout, EdgeLayout, SceneDiff } from "@/features/diagram";
 
 /**
  * Node ids with remote layout updates from Yjs.
@@ -8,17 +9,108 @@ import { useDiagramStore } from "@/features/diagram/store/diagram.store";
  */
 export const remoteLayoutUpdates = new Set<string>();
 
-function parseMapEntries(map: Y.Map<unknown>): Record<string, unknown> {
-  const values: Record<string, unknown> = {};
+// ── Lightweight validation ──────────────────────────────────────────────────
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isValidComponent(value: unknown): value is Component {
+  if (!isRecord(value)) return false;
+  return typeof value.id === "string" && typeof value.name === "string" && typeof value.type === "string";
+}
+
+function isValidConnection(value: unknown): value is Connection {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.id === "string" &&
+    typeof value.sourceId === "string" &&
+    typeof value.targetId === "string"
+  );
+}
+
+function isValidFlow(value: unknown): value is Flow {
+  if (!isRecord(value)) return false;
+  return typeof value.id === "string" && typeof value.name === "string";
+}
+
+function isValidNodeLayout(value: unknown): value is NodeLayout {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.elementId === "string" &&
+    typeof value.x === "number" &&
+    typeof value.y === "number"
+  );
+}
+
+function isValidIconDefinition(value: unknown): value is IconDefinition {
+  if (!isRecord(value)) return false;
+  return typeof value.id === "string" && typeof value.name === "string" && isRecord(value.source);
+}
+
+function isValidSceneDiff(value: unknown): value is SceneDiff {
+  if (!isRecord(value)) return false;
+  return typeof value.id === "string" && typeof value.name === "string" && typeof value.color === "string";
+}
+
+// ── Map parsing with validation ─────────────────────────────────────────────
+
+function parseMapEntries<T>(
+  map: Y.Map<unknown>,
+  validator: (v: unknown) => v is T,
+): Record<string, T> {
+  const values: Record<string, T> = {};
   map.forEach((rawValue, key) => {
     if (typeof rawValue !== "string") return;
     try {
-      values[key] = JSON.parse(rawValue);
+      const parsed = JSON.parse(rawValue);
+      if (validator(parsed)) {
+        values[key] = parsed;
+      }
     } catch {
       // Ignore malformed payloads from peers.
     }
   });
   return values;
+}
+
+// ── Sync helpers for Y.Map ↔ Record ─────────────────────────────────────────
+
+function syncMapToYjs<T>(
+  ymap: Y.Map<unknown>,
+  local: Record<string, T>,
+) {
+  const remoteIds = new Set(ymap.keys());
+  for (const [id, entry] of Object.entries(local)) {
+    const serialized = JSON.stringify(entry);
+    if (ymap.get(id) !== serialized) {
+      ymap.set(id, serialized);
+    }
+  }
+  for (const id of remoteIds) {
+    if (!local[id]) ymap.delete(id);
+  }
+}
+
+// ── Debounce via requestAnimationFrame ──────────────────────────────────────
+
+function createRafDebounce() {
+  let rafId: number | null = null;
+  return {
+    schedule(fn: () => void) {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        fn();
+      });
+    },
+    cancel() {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+    },
+  };
 }
 
 /**
@@ -37,8 +129,56 @@ export function useYjsZustandBridge(ydoc: Y.Doc | null, activeDiagramId: string 
     const flowsMap = ydoc.getMap("flows");
     const nodeLayoutsMap = ydoc.getMap("nodeLayouts");
     const edgeLayoutsArray = ydoc.getArray("edgeLayouts");
+    const iconLibraryMap = ydoc.getMap("iconLibrary");
+    const scenesMap = ydoc.getMap("scenes");
     const metaMap = ydoc.getMap("meta");
 
+    const raf = createRafDebounce();
+
+    const pushToYjs = () => {
+      const state = useDiagramStore.getState();
+      if (isApplyingRemoteRef.current) return;
+
+      const diagramId = state.activeDiagramId;
+      if (!diagramId) return;
+
+      const diagram = state.diagrams[diagramId];
+      if (!diagram) return;
+
+      ydoc.transact(() => {
+        // Meta
+        metaMap.set("diagramId", diagramId);
+        metaMap.set("diagramName", diagram.name);
+        metaMap.set("level", diagram.level);
+        metaMap.set("domain", diagram.domain ?? "");
+        metaMap.set("description", diagram.description ?? "");
+        metaMap.set("activeSceneId", diagram.activeSceneId ?? null);
+        metaMap.set("compareSceneId", diagram.compareSceneId ?? null);
+
+        // Snapshot maps
+        syncMapToYjs(componentsMap, diagram.snapshot.components);
+        syncMapToYjs(connectionsMap, diagram.snapshot.connections);
+        syncMapToYjs(flowsMap, diagram.snapshot.flows);
+        syncMapToYjs(iconLibraryMap, diagram.snapshot.iconLibrary);
+        syncMapToYjs(nodeLayoutsMap, diagram.nodeLayouts);
+
+        // Scenes
+        const scenes = diagram.scenes ?? {};
+        syncMapToYjs(scenesMap, scenes);
+
+        // Edge layouts (serialized as single array entry)
+        const serializedEdgeLayouts = JSON.stringify(diagram.edgeLayouts);
+        const currentRemoteEdgeLayouts = edgeLayoutsArray.length > 0
+          ? (edgeLayoutsArray.get(0) as string)
+          : undefined;
+        if (currentRemoteEdgeLayouts !== serializedEdgeLayouts) {
+          edgeLayoutsArray.delete(0, edgeLayoutsArray.length);
+          edgeLayoutsArray.push([serializedEdgeLayouts]);
+        }
+      });
+    };
+
+    let prevDiagramRef: unknown = undefined;
     const unsubscribeStore = useDiagramStore.subscribe((state, previousState) => {
       if (isApplyingRemoteRef.current) return;
 
@@ -48,75 +188,14 @@ export function useYjsZustandBridge(ydoc: Y.Doc | null, activeDiagramId: string 
       const diagram = state.diagrams[diagramId];
       const previousDiagram = previousState.diagrams[diagramId];
       if (!diagram) return;
-      if (diagram === previousDiagram) return;
+      if (diagram === previousDiagram && diagram === prevDiagramRef) return;
+      prevDiagramRef = diagram;
 
-      const components = diagram.snapshot.components;
-      const connections = diagram.snapshot.connections;
-      const flows = diagram.snapshot.flows;
-      const nodeLayouts = diagram.nodeLayouts;
-      const edgeLayouts = diagram.edgeLayouts;
-
-      ydoc.transact(() => {
-        metaMap.set("diagramId", diagramId);
-        metaMap.set("diagramName", diagram.name);
-        metaMap.set("level", diagram.level);
-        metaMap.set("domain", diagram.domain ?? "");
-        metaMap.set("description", diagram.description ?? "");
-
-        const remoteComponentIds = new Set(componentsMap.keys());
-        for (const [componentId, component] of Object.entries(components)) {
-          const serializedComponent = JSON.stringify(component);
-          if (componentsMap.get(componentId) !== serializedComponent) {
-            componentsMap.set(componentId, serializedComponent);
-          }
-        }
-        for (const componentId of remoteComponentIds) {
-          if (!components[componentId]) componentsMap.delete(componentId);
-        }
-
-        const remoteConnectionIds = new Set(connectionsMap.keys());
-        for (const [connectionId, connection] of Object.entries(connections)) {
-          const serializedConnection = JSON.stringify(connection);
-          if (connectionsMap.get(connectionId) !== serializedConnection) {
-            connectionsMap.set(connectionId, serializedConnection);
-          }
-        }
-        for (const connectionId of remoteConnectionIds) {
-          if (!connections[connectionId]) connectionsMap.delete(connectionId);
-        }
-
-        const remoteNodeLayoutIds = new Set(nodeLayoutsMap.keys());
-        for (const [nodeId, nodeLayout] of Object.entries(nodeLayouts)) {
-          const serializedNodeLayout = JSON.stringify(nodeLayout);
-          if (nodeLayoutsMap.get(nodeId) !== serializedNodeLayout) {
-            nodeLayoutsMap.set(nodeId, serializedNodeLayout);
-          }
-        }
-        for (const nodeId of remoteNodeLayoutIds) {
-          if (!nodeLayouts[nodeId]) nodeLayoutsMap.delete(nodeId);
-        }
-
-        const remoteFlowIds = new Set(flowsMap.keys());
-        for (const [flowId, flow] of Object.entries(flows)) {
-          const serializedFlow = JSON.stringify(flow);
-          if (flowsMap.get(flowId) !== serializedFlow) {
-            flowsMap.set(flowId, serializedFlow);
-          }
-        }
-        for (const flowId of remoteFlowIds) {
-          if (!flows[flowId]) flowsMap.delete(flowId);
-        }
-
-        const serializedEdgeLayouts = JSON.stringify(edgeLayouts);
-        const currentRemoteEdgeLayouts = edgeLayoutsArray.length > 0
-          ? (edgeLayoutsArray.get(0) as string)
-          : undefined;
-        if (currentRemoteEdgeLayouts !== serializedEdgeLayouts) {
-          edgeLayoutsArray.delete(0, edgeLayoutsArray.length);
-          edgeLayoutsArray.push([serializedEdgeLayouts]);
-        }
-      });
+      raf.schedule(pushToYjs);
     });
+
+    // Initial push so the host's state is in Y.Doc before any guest joins.
+    pushToYjs();
 
     const applyRemote = () => {
       const currentDiagramId = useDiagramStore.getState().activeDiagramId ?? activeDiagramId;
@@ -128,10 +207,12 @@ export function useYjsZustandBridge(ydoc: Y.Doc | null, activeDiagramId: string 
         const diagram = state.diagrams[currentDiagramId];
         if (!diagram) return;
 
-        const components = parseMapEntries(componentsMap);
-        const connections = parseMapEntries(connectionsMap);
-        const nodeLayouts = parseMapEntries(nodeLayoutsMap);
-        const flows = parseMapEntries(flowsMap);
+        const components = parseMapEntries(componentsMap, isValidComponent);
+        const connections = parseMapEntries(connectionsMap, isValidConnection);
+        const nodeLayouts = parseMapEntries(nodeLayoutsMap, isValidNodeLayout);
+        const flows = parseMapEntries(flowsMap, isValidFlow);
+        const iconLibrary = parseMapEntries(iconLibraryMap, isValidIconDefinition);
+        const scenes = parseMapEntries(scenesMap, isValidSceneDiff);
 
         if (Object.keys(components).length === 0 && Object.keys(connections).length === 0) return;
 
@@ -145,7 +226,7 @@ export function useYjsZustandBridge(ydoc: Y.Doc | null, activeDiagramId: string 
         }
 
         // Parse remote edge layouts
-        let remoteEdgeLayouts: typeof diagram.edgeLayouts | undefined;
+        let remoteEdgeLayouts: EdgeLayout[] | undefined;
         if (edgeLayoutsArray.length > 0) {
           try {
             remoteEdgeLayouts = JSON.parse(edgeLayoutsArray.get(0) as string);
@@ -158,6 +239,8 @@ export function useYjsZustandBridge(ydoc: Y.Doc | null, activeDiagramId: string 
         const remoteName = metaMap.get("diagramName");
         const remoteDomain = metaMap.get("domain");
         const remoteDescription = metaMap.get("description");
+        const remoteActiveSceneId = metaMap.get("activeSceneId");
+        const remoteCompareSceneId = metaMap.get("compareSceneId");
 
         useDiagramStore.setState((previousState) => {
           const prev = previousState.diagrams[currentDiagramId];
@@ -170,14 +253,18 @@ export function useYjsZustandBridge(ydoc: Y.Doc | null, activeDiagramId: string 
                 ...(typeof remoteName === "string" && remoteName ? { name: remoteName } : {}),
                 ...(typeof remoteDomain === "string" ? { domain: remoteDomain || undefined } : {}),
                 ...(typeof remoteDescription === "string" ? { description: remoteDescription || undefined } : {}),
+                ...(remoteActiveSceneId !== undefined ? { activeSceneId: remoteActiveSceneId as string | null } : {}),
+                ...(remoteCompareSceneId !== undefined ? { compareSceneId: remoteCompareSceneId as string | null } : {}),
                 snapshot: {
                   ...prev.snapshot,
                   components: components as typeof diagram.snapshot.components,
                   connections: connections as typeof diagram.snapshot.connections,
                   flows: flows as typeof diagram.snapshot.flows,
+                  iconLibrary: iconLibrary as typeof diagram.snapshot.iconLibrary,
                 },
                 nodeLayouts: nodeLayouts as typeof diagram.nodeLayouts,
                 ...(remoteEdgeLayouts ? { edgeLayouts: remoteEdgeLayouts } : {}),
+                ...(Object.keys(scenes).length > 0 ? { scenes: scenes as Record<string, SceneDiff> } : {}),
               },
             },
           };
@@ -248,8 +335,11 @@ export function useYjsZustandBridge(ydoc: Y.Doc | null, activeDiagramId: string 
     flowsMap.observe(applyRemote);
     nodeLayoutsMap.observe(applyRemote);
     edgeLayoutsArray.observe(applyRemote);
+    iconLibraryMap.observe(applyRemote);
+    scenesMap.observe(applyRemote);
 
     return () => {
+      raf.cancel();
       unsubscribeStore();
       metaMap.unobserve(bootstrapObserver);
       componentsMap.unobserve(applyRemote);
@@ -257,6 +347,8 @@ export function useYjsZustandBridge(ydoc: Y.Doc | null, activeDiagramId: string 
       flowsMap.unobserve(applyRemote);
       nodeLayoutsMap.unobserve(applyRemote);
       edgeLayoutsArray.unobserve(applyRemote);
+      iconLibraryMap.unobserve(applyRemote);
+      scenesMap.unobserve(applyRemote);
     };
   }, [ydoc, activeDiagramId]);
 }
