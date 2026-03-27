@@ -1,7 +1,26 @@
 {
   "name": "structura",
   "private": true,
-  "version": "0.0.0",
+  "author": "clark.joao@gmail.com",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/clark-joao/structura"
+  },
+  "homepage": "https://github.com/clark-joao/structura",
+  "bugs": {
+    "url": "https://github.com/clark-joao/structura/issues"
+  },
+  "keywords": [
+    "architecture",
+    "diagram",
+    "modeling",
+    "modeling-tool",
+    "modeling-tool-for-architecture",
+    "modeling-tool-for-architecture-diagram",
+    "modeling-tool-for-architecture-diagram-tool"
+  ],
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
