@@ -239,14 +239,6 @@ export function ModelExplorerContent({
             >
               <GitBranch className="h-3.5 w-3.5" /> {t("flows.panelTitle")}
             </button>
-            <button
-              onClick={handleCopyDrawio}
-              disabled={canvasInteractionLocked}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all ${canvasInteractionLocked ? "opacity-50 pointer-events-none" : ""}`}
-            >
-              {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Clipboard className="h-3.5 w-3.5" />}
-              {copied ? t("flows.copied") : t("flows.copyDrawio")}
-            </button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -277,6 +269,17 @@ export function ModelExplorerContent({
                 <DropdownMenuLabel className="px-2 py-1 text-xs font-normal text-muted-foreground">
                   {t("toolbar.exportGroup")}
                 </DropdownMenuLabel>
+                <DropdownMenuItem
+                  onClick={handleCopyDrawio}
+                  className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm"
+                >
+                  {copied ? (
+                    <Check size={14} className="shrink-0 text-green-500" />
+                  ) : (
+                    <Clipboard size={14} className="shrink-0 text-muted-foreground" />
+                  )}
+                  <span>{t("flows.copyDrawio")}</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={handleExport}
                   className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm"

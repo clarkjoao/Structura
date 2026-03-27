@@ -655,7 +655,7 @@
   },
   "flows": {
     "panelTitle": "Flows",
-    "copyDrawio": "Copy",
+    "copyDrawio": "Copiar para Drawio",
     "copied": "Copiado!",
     "export": "Exportar",
     "shortcuts": "Atalhos",
