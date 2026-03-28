@@ -704,7 +704,8 @@
     "emptyHint": "No content available"
   },
   "svgNode": {
-    "aria": "SVG graphic: {{name}}"
+    "aria": "SVG element: {{name}}",
+    "defaultName": "SVG"
   },
   "customNode": {
     "drillAria": "Drill into element {{id}}",

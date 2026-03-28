@@ -6,13 +6,22 @@ export interface TabBarProps {
   active: Tab;
   onChange: (next: Tab) => void;
   showConnections: boolean;
+  /** When false, the icon tab is omitted (e.g. SVG nodes where the graphic is the visual). */
+  showIconTab?: boolean;
 }
 
-const TabBar = ({ active, onChange, showConnections }: TabBarProps) => {
+const TabBar = ({
+  active,
+  onChange,
+  showConnections,
+  showIconTab = true,
+}: TabBarProps) => {
   const { t } = useTranslation();
-  const tabs = showConnections
-    ? (["details", "connections", "icon"] as const)
-    : (["details", "icon"] as const);
+  const tabs = (
+    showConnections
+      ? (["details", "connections", "icon"] as const)
+      : (["details", "icon"] as const)
+  ).filter((tab) => showIconTab || tab !== "icon");
 
   const labelFor = (tab: (typeof tabs)[number]) => {
     if (tab === "details") return t("elementPanelTab.details");

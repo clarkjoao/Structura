@@ -703,7 +703,8 @@
     "emptyHint": "Sem conteúdo disponível"
   },
   "svgNode": {
-    "aria": "Gráfico SVG: {{name}}"
+    "aria": "Elemento SVG: {{name}}",
+    "defaultName": "SVG"
   },
   "customNode": {
     "drillAria": "Explorar interior do elemento {{id}}",

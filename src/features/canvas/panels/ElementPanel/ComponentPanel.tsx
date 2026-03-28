@@ -9,7 +9,14 @@ import {
   resolveSceneSnapshot,
 } from "@/features/diagram";
 import type { Component, ComponentType, ServiceDefinition } from "@/features/diagram";
-import { isPanelComponent, isNoteComponent, isC4Component, isSystemType, isContainerType } from "@/features/diagram";
+import {
+  isPanelComponent,
+  isNoteComponent,
+  isC4Component,
+  isSystemType,
+  isContainerType,
+  isSvgComponentType,
+} from "@/features/diagram";
 import { isAwsType, AWS_CATEGORIES, AWS_CATEGORY_MAP, AWS_SERVICE_MAP } from "@/lib/catalogs/aws";
 import AwsIcon from "../../nodes/AwsIcon";
 import TabBar, { type Tab } from "./components/TabBar";
@@ -112,6 +119,7 @@ const ComponentPanel = ({
   const isPanel = isPanelComponent(component);
   const isNote = isNoteComponent(component);
   const isSimple = isPanel || isNote;
+  const showIconTab = !isSvgComponentType(component.type);
   const isAws = isAwsType(type);
   const serviceInfo = awsService ? AWS_SERVICE_MAP.get(awsService) : null;
   const canCreateLinked = isSystemType(component.type) || isContainerType(component.type)|| isComponentType(component.type) || isAwsType(component.type);
@@ -149,6 +157,12 @@ const ComponentPanel = ({
   useEffect(() => {
     setTab("details");
   }, [component.id]);
+
+  useEffect(() => {
+    if (!showIconTab && tab === "icon") {
+      setTab("details");
+    }
+  }, [showIconTab, tab]);
 
   const handleCreateLinked = () => {
     const level = isSystemType(component.type) ? "container" : "component";
@@ -228,10 +242,15 @@ const ComponentPanel = ({
           </button>
         </div>
       )}
-      <TabBar active={tab} onChange={setTab} showConnections={!isSimple} />
+      <TabBar
+        active={tab}
+        onChange={setTab}
+        showConnections={!isSimple}
+        showIconTab={showIconTab}
+      />
       {tab === "connections" && !isSimple ? (
         <ConnectionsTab componentId={component.id} />
-      ) : tab === "icon" ? (
+      ) : tab === "icon" && showIconTab ? (
         <ComponentIconTab
           component={component}
           diagramId={activeDiagram?.id ?? ""}

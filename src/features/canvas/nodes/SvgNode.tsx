@@ -5,9 +5,6 @@ import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
 import { useCollabHighlight } from "@/features/collaboration/useCollabHighlight";
 
-const HANDLE_BASE =
-  "!border-background transition-all duration-150 !w-2.5 !h-2.5 !bg-muted-foreground";
-
 export interface SvgNodeData {
   elementId: string;
   name: string;
@@ -20,6 +17,8 @@ export interface SvgNodeData {
     b: { name: string; color: string };
   };
 }
+
+const SVG_ACCENT = "#f97316";
 
 const SvgNode = memo(({ data, selected }: NodeProps) => {
   const { t } = useTranslation();
@@ -34,23 +33,38 @@ const SvgNode = memo(({ data, selected }: NodeProps) => {
   return (
     <>
       <NodeResizer
-        minWidth={80}
-        minHeight={80}
+        minWidth={120}
+        minHeight={120}
         isVisible={isSelected}
         lineClassName="!border-transparent"
         handleClassName="!w-2 !h-2 !bg-foreground/40 !border-background !rounded-sm"
       />
+
+      <Handle
+        id="target-0"
+        type="target"
+        position={Position.Left}
+        className="!w-2.5 !h-2.5 !border-2 !border-background !bg-muted-foreground"
+      />
+      <Handle
+        id="source-0"
+        type="source"
+        position={Position.Right}
+        className="!w-2.5 !h-2.5 !border-2 !border-background !bg-muted-foreground"
+      />
+
       <div
         aria-label={t("svgNode.aria", { name: d.name })}
-        className={`relative w-full h-full min-h-0 transition-shadow duration-200 ${
+        className={`group relative w-full h-full rounded-lg bg-card border border-border border-l-[3px] transition-shadow duration-200 flex flex-col overflow-hidden ${
           isActive
-            ? "ring-2 ring-primary shadow-[0_0_0_2px_hsl(var(--primary)/0.3)]"
+            ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110"
             : "opacity-90"
         }`}
+        style={{ borderLeftColor: SVG_ACCENT }}
       >
         {collabHighlight && (
           <div
-            className="absolute inset-0 pointer-events-none z-10"
+            className="absolute inset-0 pointer-events-none rounded-lg z-10"
             style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
           />
         )}
@@ -60,23 +74,18 @@ const SvgNode = memo(({ data, selected }: NodeProps) => {
         {!d.compareBadges && d.sceneBadge && (
           <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
         )}
+
+        <div className="px-3 pt-2.5 pb-1 shrink-0">
+          <span className="text-sm font-bold text-foreground leading-tight truncate block">
+            {d.name || t("svgNode.defaultName")}
+          </span>
+        </div>
+
         <div
-          className="w-full h-full min-h-0 flex items-center justify-center overflow-hidden [&_svg]:block [&_svg]:max-h-full [&_svg]:max-w-full [&_svg]:h-full [&_svg]:w-full"
+          className="flex-1 flex items-center justify-center px-3 pb-2.5 min-h-0 overflow-hidden [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto"
           style={{ pointerEvents: "none" }}
           // svgContent is sanitized before being stored in SvgComponent
           dangerouslySetInnerHTML={{ __html: d.svgContent }}
-        />
-        <Handle
-          id="target-0"
-          type="target"
-          position={Position.Left}
-          className={HANDLE_BASE}
-        />
-        <Handle
-          id="source-0"
-          type="source"
-          position={Position.Right}
-          className={HANDLE_BASE}
         />
       </div>
     </>
