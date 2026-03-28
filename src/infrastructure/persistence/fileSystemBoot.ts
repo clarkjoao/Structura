@@ -17,6 +17,20 @@ import type { CustomComponentTemplate } from "@/features/custom-components/custo
 
 type DiagramStoreState = ReturnType<typeof useDiagramStore.getState>;
 
+function mergeTemplates(
+  local: Record<string, CustomComponentTemplate>,
+  remote: Record<string, CustomComponentTemplate>,
+): Record<string, CustomComponentTemplate> {
+  const result = { ...local };
+  for (const [id, remoteTemplate] of Object.entries(remote)) {
+    const localTemplate = result[id];
+    if (!localTemplate || remoteTemplate.updatedAt > localTemplate.updatedAt) {
+      result[id] = remoteTemplate;
+    }
+  }
+  return result;
+}
+
 /**
  * Writes every diagram, folders, and manifest to the connected folder.
  * Used after merge/overwrite so local-only or unchanged-reference diagrams are not skipped
@@ -104,12 +118,10 @@ async function doReconnect(): Promise<boolean> {
 
       const workspaceTemplates: Record<string, CustomComponentTemplate> | undefined =
         workspace.customComponentTemplates;
-      if (workspaceTemplates && Object.keys(workspaceTemplates).length > 0) {
-        useCustomComponentStore.setState((state) => {
-          const existingTemplates = state.templates;
-          if (Object.keys(existingTemplates).length > 0) return state;
-          return { templates: workspaceTemplates };
-        });
+      if (workspaceTemplates) {
+        useCustomComponentStore.setState((state) => ({
+          templates: mergeTemplates(state.templates, workspaceTemplates),
+        }));
       }
     }
     await clearLocalCache();

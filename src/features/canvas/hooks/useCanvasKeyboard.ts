@@ -43,7 +43,7 @@ interface UseCanvasKeyboardParams {
     dimensions?: { width: number; height: number },
   ) => void;
   copyToClipboard: (ids: string[]) => void;
-  pasteFromClipboard: (position?: { x: number; y: number }) => void;
+  pasteFromClipboard: (position?: { x: number; y: number }) => string[];
   clearClipboard: () => void;
   addComponent: (
     type: ComponentType,
@@ -151,6 +151,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     copyToClipboard,
     pasteFromClipboard,
     exportDrawioXml,
+    setSelectedNodeIds,
   });
 
   const recordingHandler = useRecordingShortcuts();

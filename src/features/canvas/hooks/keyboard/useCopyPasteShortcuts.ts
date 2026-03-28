@@ -1,12 +1,13 @@
 import { useCallback } from "react";
 import type { ReactFlowInstance } from "@xyflow/react";
-import type { Diagram } from "@/features/diagram";
+import { useDiagramStore, type Diagram } from "@/features/diagram";
 import {
   isModKeyPressed,
   getSelectedNodes,
   getCopyableIds,
   getPasteCenter,
   getCenterOfNodes,
+  getOffsetPositionOfNodes,
   type KeyHandler,
 } from "./helpers";
 import { writeDrawioToClipboard } from "@/lib/clipboard-utils";
@@ -17,13 +18,14 @@ interface UseCopyPasteShortcutsParams {
   reactFlowInstance: ReactFlowInstance;
   reactFlowWrapperRef: React.RefObject<HTMLDivElement | null>;
   copyToClipboard: (ids: string[]) => void;
-  pasteFromClipboard: (position?: { x: number; y: number }) => void;
+  pasteFromClipboard: (position?: { x: number; y: number }) => string[];
   exportDrawioXml: (componentIds: string[]) => string;
+  setSelectedNodeIds: (ids: Set<string>) => void;
 }
 
 /**
  * Cmd+C — copy selected
- * Cmd+V — paste at viewport center
+ * Cmd+V — paste offset from copied component positions (or viewport center if no clipboard / anchor)
  * Cmd+D — duplicate (copy + paste with offset)
  */
 export function useCopyPasteShortcuts({
@@ -34,6 +36,7 @@ export function useCopyPasteShortcuts({
   copyToClipboard,
   pasteFromClipboard,
   exportDrawioXml,
+  setSelectedNodeIds,
 }: UseCopyPasteShortcutsParams): KeyHandler {
   return useCallback(
     (e: KeyboardEvent): boolean => {
@@ -56,11 +59,27 @@ export function useCopyPasteShortcuts({
         return true;
       }
 
-      // Cmd/Ctrl+V — paste at center
+      // Cmd/Ctrl+V — anchor paste position from Zustand clipboard ids, not current selection
       if (e.key === "v") {
         e.preventDefault();
-        const center = getPasteCenter(reactFlowInstance, reactFlowWrapperRef);
-        pasteFromClipboard(center);
+        const clipboardIds =
+          useDiagramStore.getState().clipboard?.components.map((component) => component.id) ??
+          [];
+
+        const offsetPos =
+          diagram && clipboardIds.length > 0
+            ? getOffsetPositionOfNodes(diagram, clipboardIds)
+            : null;
+
+        const pastePos =
+          offsetPos ?? getPasteCenter(reactFlowInstance, reactFlowWrapperRef);
+        const newIds = pasteFromClipboard(pastePos);
+        if (newIds.length > 0) {
+          reactFlowInstance.setNodes((nodes) =>
+            nodes.map((node) => ({ ...node, selected: newIds.includes(node.id) })),
+          );
+          setSelectedNodeIds(new Set(newIds));
+        }
         return true;
       }
 
@@ -72,7 +91,13 @@ export function useCopyPasteShortcuts({
         if (ids.length === 0) return true;
         copyToClipboard(ids);
         const center = getCenterOfNodes(diagram, ids);
-        pasteFromClipboard(center);
+        const newIds = pasteFromClipboard(center);
+        if (newIds.length > 0) {
+          reactFlowInstance.setNodes((nodes) =>
+            nodes.map((node) => ({ ...node, selected: newIds.includes(node.id) })),
+          );
+          setSelectedNodeIds(new Set(newIds));
+        }
         return true;
       }
 
@@ -86,6 +111,7 @@ export function useCopyPasteShortcuts({
       copyToClipboard,
       pasteFromClipboard,
       exportDrawioXml,
+      setSelectedNodeIds,
     ],
   );
 }

@@ -95,7 +95,7 @@ export interface AppActions {
   redo: () => void;
 
   copyToClipboard: (componentIds: string[]) => void;
-  pasteFromClipboard: (position?: { x: number; y: number }) => void;
+  pasteFromClipboard: (position?: { x: number; y: number }) => string[];
   clearClipboard: () => void;
 
   addScene: (name: string) => SceneDiff;

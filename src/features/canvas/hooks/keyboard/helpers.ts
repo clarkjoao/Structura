@@ -2,6 +2,8 @@ import type { ReactFlowInstance, Node } from "@xyflow/react";
 import type { Diagram } from "@/features/diagram";
 import { resolveCanvasSnapshot } from "@/features/diagram";
 
+export const PASTE_OFFSET = 20;
+
 export type KeyHandler = (e: KeyboardEvent) => boolean;
 
 export type Platform = "mac" | "windows" | "linux";
@@ -51,6 +53,42 @@ export function getCopyableIds(diagram: Diagram, nodes: Node[]): string[] {
       const c = r.components[id];
       return c && c.type !== "panel" && c.type !== "note";
     });
+}
+
+/**
+ * Returns the top-left bounding position of the given diagram component ids,
+ * offset by PASTE_OFFSET in both axes. Pass ids from the internal clipboard at copy time,
+ * not React Flow selection.
+ * Returns null when ids is empty or no valid layouts are found (caller should use viewport center).
+ */
+export function getOffsetPositionOfNodes(
+  diagram: Diagram,
+  ids: string[],
+): { x: number; y: number } | null {
+  const r = resolveCanvasSnapshot(diagram);
+  const layouts = r.nodeLayouts;
+  let minX = Infinity;
+  let minY = Infinity;
+
+  for (const id of ids) {
+    const comp = r.components[id];
+    if (!comp) continue;
+    const layout = layouts[id];
+    let x = layout?.x ?? 0;
+    let y = layout?.y ?? 0;
+    if (comp.parentId) {
+      const parentLayout = layouts[comp.parentId];
+      if (parentLayout) {
+        x += parentLayout.x;
+        y += parentLayout.y;
+      }
+    }
+    if (x < minX) minX = x;
+    if (y < minY) minY = y;
+  }
+
+  if (!isFinite(minX) || !isFinite(minY)) return null;
+  return { x: minX + PASTE_OFFSET, y: minY + PASTE_OFFSET };
 }
 
 export function getPasteCenter(

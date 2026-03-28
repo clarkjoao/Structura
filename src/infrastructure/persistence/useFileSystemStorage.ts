@@ -22,6 +22,20 @@ async function clearLocalCache(): Promise<void> {
   await defaultStorage.delete(PERSIST_KEY);
 }
 
+function mergeTemplates(
+  local: Record<string, CustomComponentTemplate>,
+  remote: Record<string, CustomComponentTemplate>,
+): Record<string, CustomComponentTemplate> {
+  const result = { ...local };
+  for (const [id, remoteTemplate] of Object.entries(remote)) {
+    const localTemplate = result[id];
+    if (!localTemplate || remoteTemplate.updatedAt > localTemplate.updatedAt) {
+      result[id] = remoteTemplate;
+    }
+  }
+  return result;
+}
+
 export type FsStatus = "disconnected" | "connecting" | "connected" | "error";
 
 export const isFileSystemSupported = "showDirectoryPicker" in globalThis;
@@ -172,9 +186,9 @@ export function useFileSystemStorage() {
     const manifestTemplates = manifest?.customComponentTemplates as
       | Record<string, CustomComponentTemplate>
       | undefined;
-    if (manifestTemplates && Object.keys(manifestTemplates).length > 0) {
+    if (manifestTemplates) {
       useCustomComponentStore.setState((state) => ({
-        templates: { ...state.templates, ...manifestTemplates },
+        templates: mergeTemplates(state.templates, manifestTemplates),
       }));
     }
 
@@ -345,7 +359,9 @@ export function useFileSystemStorage() {
 
         const workspaceTemplates = workspace.customComponentTemplates;
         if (workspaceTemplates) {
-          useCustomComponentStore.setState({ templates: workspaceTemplates });
+          useCustomComponentStore.setState((state) => ({
+            templates: mergeTemplates(state.templates, workspaceTemplates),
+          }));
         }
       } else {
         // No manifest: fall back to scanning diagrams only.
@@ -362,7 +378,9 @@ export function useFileSystemStorage() {
           | Record<string, CustomComponentTemplate>
           | undefined;
         if (scannedManifestTemplates) {
-          useCustomComponentStore.setState({ templates: scannedManifestTemplates });
+          useCustomComponentStore.setState((state) => ({
+            templates: mergeTemplates(state.templates, scannedManifestTemplates),
+          }));
         }
       }
     } catch {
