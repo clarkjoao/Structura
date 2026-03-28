@@ -1,4 +1,4 @@
-import type { Component, Connection } from "../../model/diagram.types";
+import type { Component, Connection, NodeLayout } from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 import { deepClone, pushHistory } from "./history.slice";
@@ -108,6 +108,31 @@ export const clipboardSlice = (
           .filter((id): id is string => Boolean(id));
       });
       return pastedIds;
+    },
+
+    importDrawioResult: (
+      components: Component[],
+      connections: Connection[],
+      layouts: NodeLayout[],
+    ): string[] => {
+      let ids: string[] = [];
+      set((state) => {
+        if (!state.activeDiagramId) return;
+        const d = state.diagrams[state.activeDiagramId];
+        if (!d) return;
+        pushHistory(state);
+        components.forEach((comp, index) => {
+          d.snapshot.components[comp.id] = comp;
+          const layout = layouts[index];
+          if (layout) d.nodeLayouts[comp.id] = { ...layout, elementId: comp.id };
+        });
+        connections.forEach((conn) => {
+          d.snapshot.connections[conn.id] = conn;
+        });
+        ids = components.map((component) => component.id);
+        d.updatedAt = new Date().toISOString();
+      });
+      return ids;
     },
 
     clearClipboard: () => {

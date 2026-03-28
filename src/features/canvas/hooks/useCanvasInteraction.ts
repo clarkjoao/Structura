@@ -170,6 +170,7 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
     updateNodeLayout: actions.updateNodeLayout,
     copyToClipboard: actions.copyToClipboard,
     pasteFromClipboard: actions.pasteFromClipboard,
+    importDrawioResult: actions.importDrawioResult,
     clearClipboard: actions.clearClipboard,
     addComponent: actions.addComponent,
     isPanelOpen,

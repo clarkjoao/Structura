@@ -1,4 +1,5 @@
 import {
+  EdgeStyle,
   getEffectiveConnectionStyle,
   StrokeStyle,
   EdgeMarker,
@@ -45,6 +46,8 @@ export function buildEdgeCell(conn: Connection, options?: BuildEdgeCellOptions):
   const strokeColor = getStrokeColor(conn.intent);
   const strokeWidth = eff.strokeWidth ?? 1;
 
+  const resolvedEdgeStyle = conn.style?.edgeStyle ?? EdgeStyle.Smoothstep;
+
   const style = buildEdgeStyle(
     strokeColor,
     isDashed,
@@ -53,6 +56,7 @@ export function buildEdgeCell(conn: Connection, options?: BuildEdgeCellOptions):
     endArrow,
     startArrow,
     bidir,
+    resolvedEdgeStyle,
   );
 
   const value = escXml(buildEdgeLabelPlain(conn));

@@ -124,6 +124,7 @@ export const useDiagramActions = () =>
       redo: s.redo,
       copyToClipboard: s.copyToClipboard,
       pasteFromClipboard: s.pasteFromClipboard,
+      importDrawioResult: s.importDrawioResult,
       clearClipboard: s.clearClipboard,
       addScene: s.addScene,
       duplicateScene: s.duplicateScene,

@@ -4,7 +4,7 @@ import { resolveCanvasSnapshot } from "@/features/diagram";
 
 export const PASTE_OFFSET = 20;
 
-export type KeyHandler = (e: KeyboardEvent) => boolean;
+export type KeyHandler = (e: KeyboardEvent) => boolean | Promise<boolean>;
 
 export type Platform = "mac" | "windows" | "linux";
 

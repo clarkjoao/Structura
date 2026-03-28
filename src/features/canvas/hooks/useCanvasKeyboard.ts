@@ -5,6 +5,8 @@ import type {
   Diagram,
   ComponentType,
   Component,
+  Connection,
+  NodeLayout,
   ServiceDefinition,
 } from "@/features/diagram";
 import { resolveCanvasSnapshot } from "@/features/diagram";
@@ -44,6 +46,11 @@ interface UseCanvasKeyboardParams {
   ) => void;
   copyToClipboard: (ids: string[]) => void;
   pasteFromClipboard: (position?: { x: number; y: number }) => string[];
+  importDrawioResult: (
+    components: Component[],
+    connections: Connection[],
+    layouts: NodeLayout[],
+  ) => string[];
   clearClipboard: () => void;
   addComponent: (
     type: ComponentType,
@@ -116,6 +123,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     updateNodeLayout,
     copyToClipboard,
     pasteFromClipboard,
+    importDrawioResult,
     clearClipboard,
     addComponent,
     isPanelOpen,
@@ -150,6 +158,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     reactFlowWrapperRef,
     copyToClipboard,
     pasteFromClipboard,
+    importDrawioResult,
+    serviceRegistry,
     exportDrawioXml,
     setSelectedNodeIds,
   });
@@ -184,12 +194,12 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   });
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (isInputFocused(e.target)) return;
+    const handler = async (event: KeyboardEvent) => {
+      if (isInputFocused(event.target)) return;
 
       if (isScenesDrawerOpen) {
-        if (e.key === KEY.ESCAPE) {
-          e.preventDefault();
+        if (event.key === KEY.ESCAPE) {
+          event.preventDefault();
           onCloseScenesDrawer?.();
         }
         return;
@@ -197,33 +207,33 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
 
       if (!diagram) return;
 
-      if (recordingHandler(e)) return;
+      if (recordingHandler(event)) return;
 
-      if (e.key === KEY.ESCAPE && isCompareMode) {
+      if (event.key === KEY.ESCAPE && isCompareMode) {
         if (isPlaying) {
-          e.preventDefault();
+          event.preventDefault();
           return;
         }
-        e.preventDefault();
+        event.preventDefault();
         setCompareScene(null);
         return;
       }
 
       if (isCompareMode) {
-        if (e.key === KEY.DELETE || e.key === KEY.BACKSPACE) {
-          e.preventDefault();
+        if (event.key === KEY.DELETE || event.key === KEY.BACKSPACE) {
+          event.preventDefault();
           return;
         }
         if (
-          isModKeyPressed(e) &&
-          (e.key === "v" ||
-            e.key === "V" ||
-            e.key === "d" ||
-            e.key === "D" ||
-            e.key === "c" ||
-            e.key === "C")
+          isModKeyPressed(event) &&
+          (event.key === "v" ||
+            event.key === "V" ||
+            event.key === "d" ||
+            event.key === "D" ||
+            event.key === "c" ||
+            event.key === "C")
         ) {
-          e.preventDefault();
+          event.preventDefault();
           return;
         }
       }
@@ -232,48 +242,48 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
 
       if (isSearchOpen || isCommandPaletteOpen) return;
 
-      if (handleCopyPaste(e)) return;
+      if (await handleCopyPaste(event)) return;
 
-      if (selectionHandler(e)) return;
+      if (selectionHandler(event)) return;
 
-      if (undoRedoHandler(e)) return;
+      if (undoRedoHandler(event)) return;
 
-      if (groupHandler(e)) return;
+      if (groupHandler(event)) return;
 
-      const mod = isModKeyPressed(e);
+      const mod = isModKeyPressed(event);
 
       // Cmd/Ctrl+F — open search
-      if (mod && (e.key === KEY.F || e.key === "F")) {
-        e.preventDefault();
+      if (mod && (event.key === KEY.F || event.key === "F")) {
+        event.preventDefault();
         onOpenSearch?.();
         return;
       }
 
       // Cmd/Ctrl+K — open diagram command palette
-      if (mod && (e.key === KEY.K || e.key === "K")) {
-        e.preventDefault();
+      if (mod && (event.key === KEY.K || event.key === "K")) {
+        event.preventDefault();
         onOpenCommandPalette?.();
         return;
       }
 
       // Cmd/Ctrl+B — toggle diagram sidebar
-      if (mod && (e.key === KEY.B || e.key === "B")) {
-        e.preventDefault();
+      if (mod && (event.key === KEY.B || event.key === "B")) {
+        event.preventDefault();
         onToggleDiagramSidebar?.();
         return;
       }
 
       // Cmd/Ctrl+/ — open search
-      if (mod && e.key === KEY.SLASH) {
-        e.preventDefault();
+      if (mod && event.key === KEY.SLASH) {
+        event.preventDefault();
         onOpenSearch?.();
         return;
       }
 
       // Cmd/Ctrl+1–4 — add C4 component
-      if (mod && c4ShortcutMap[e.key]) {
-        e.preventDefault();
-        const { type, name } = c4ShortcutMap[e.key];
+      if (mod && c4ShortcutMap[event.key]) {
+        event.preventDefault();
+        const { type, name } = c4ShortcutMap[event.key];
         const pos = getViewportCenter(reactFlowInstance, isPanelOpen);
         addComponent(type, name, null, pos);
         return;
@@ -294,6 +304,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     isCommandPaletteOpen,
     recordingHandler,
     handleCopyPaste,
+    importDrawioResult,
+    serviceRegistry,
     selectionHandler,
     undoRedoHandler,
     groupHandler,

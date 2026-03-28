@@ -96,6 +96,11 @@ export interface AppActions {
 
   copyToClipboard: (componentIds: string[]) => void;
   pasteFromClipboard: (position?: { x: number; y: number }) => string[];
+  importDrawioResult: (
+    components: Component[],
+    connections: Connection[],
+    layouts: NodeLayout[],
+  ) => string[];
   clearClipboard: () => void;
 
   addScene: (name: string) => SceneDiff;

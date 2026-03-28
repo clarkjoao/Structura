@@ -1,3 +1,4 @@
+import { EdgeStyle } from "@/features/diagram";
 import {
   METHOD_COLORS,
   PROTOCOL_COLORS,
@@ -84,6 +85,20 @@ export function buildEndpointStyle(method: string): string {
   });
 }
 
+function resolveDrawioEdgeStyle(edgeStyle: EdgeStyle | undefined): string {
+  switch (edgeStyle) {
+    case EdgeStyle.Straight:
+      return "edgeStyle=none;html=1;";
+    case EdgeStyle.Step:
+      return "edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;";
+    case EdgeStyle.Bezier:
+      return "edgeStyle=entityRelationEdgeStyle;html=1;";
+    case EdgeStyle.Smoothstep:
+    default:
+      return "edgeStyle=elbowEdgeStyle;elbow=orthogonal;curved=1;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;";
+  }
+}
+
 export function buildEdgeStyle(
   strokeColor: string,
   isDashed: boolean,
@@ -92,8 +107,9 @@ export function buildEdgeStyle(
   endArrow: string,
   startArrow: string,
   bidir: string,
+  edgeStyle?: EdgeStyle,
 ): string {
-  const baseStyle = `edgeStyle=elbowEdgeStyle;elbow=orthogonal;curved=1;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;`;
+  const baseStyle = resolveDrawioEdgeStyle(edgeStyle);
 
   return buildStyle(baseStyle, {
     endArrow: endArrow,

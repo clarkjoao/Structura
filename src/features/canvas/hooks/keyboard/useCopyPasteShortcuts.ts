@@ -1,6 +1,12 @@
 import { useCallback } from "react";
 import type { ReactFlowInstance } from "@xyflow/react";
-import { useDiagramStore, type Diagram } from "@/features/diagram";
+import {
+  useDiagramStore,
+  type Component,
+  type Connection,
+  type Diagram,
+  type NodeLayout,
+} from "@/features/diagram";
 import {
   isModKeyPressed,
   getSelectedNodes,
@@ -10,7 +16,8 @@ import {
   getOffsetPositionOfNodes,
   type KeyHandler,
 } from "./helpers";
-import { writeDrawioToClipboard } from "@/lib/clipboard-utils";
+import { readDrawioFromClipboard, writeDrawioToClipboard } from "@/lib/clipboard-utils";
+import { parseDrawioXml } from "@/lib/export-service/import-drawio";
 
 interface UseCopyPasteShortcutsParams {
   diagram: Diagram | null | undefined;
@@ -19,6 +26,12 @@ interface UseCopyPasteShortcutsParams {
   reactFlowWrapperRef: React.RefObject<HTMLDivElement | null>;
   copyToClipboard: (ids: string[]) => void;
   pasteFromClipboard: (position?: { x: number; y: number }) => string[];
+  importDrawioResult: (
+    components: Component[],
+    connections: Connection[],
+    layouts: NodeLayout[],
+  ) => string[];
+  serviceRegistry: Record<string, { id: string; name: string }>;
   exportDrawioXml: (componentIds: string[]) => string;
   setSelectedNodeIds: (ids: Set<string>) => void;
 }
@@ -35,18 +48,20 @@ export function useCopyPasteShortcuts({
   reactFlowWrapperRef,
   copyToClipboard,
   pasteFromClipboard,
+  importDrawioResult,
+  serviceRegistry,
   exportDrawioXml,
   setSelectedNodeIds,
 }: UseCopyPasteShortcutsParams): KeyHandler {
   return useCallback(
-    (e: KeyboardEvent): boolean => {
+    async (event: KeyboardEvent): Promise<boolean> => {
       if (!diagram) return false;
-      const mod = isModKeyPressed(e);
+      const mod = isModKeyPressed(event);
       if (!mod) return false;
 
       // Cmd/Ctrl+C — copy
-      if (e.key === "c") {
-        e.preventDefault();
+      if (event.key === "c") {
+        event.preventDefault();
         const nodes = getSelectedNodes(reactFlowInstance, selectedNodeId);
         const ids = getCopyableIds(diagram, nodes);
         if (ids.length > 0) {
@@ -59,9 +74,32 @@ export function useCopyPasteShortcuts({
         return true;
       }
 
-      // Cmd/Ctrl+V — anchor paste position from Zustand clipboard ids, not current selection
-      if (e.key === "v") {
-        e.preventDefault();
+      // Cmd/Ctrl+V — draw.io clipboard first, then internal Zustand clipboard
+      if (event.key === "v") {
+        event.preventDefault();
+
+        // 1. Try draw.io clipboard first
+        const drawioXml = await readDrawioFromClipboard();
+        if (drawioXml) {
+          const pasteCenter = getPasteCenter(reactFlowInstance, reactFlowWrapperRef);
+          const result = parseDrawioXml(drawioXml, pasteCenter, serviceRegistry);
+          if (result.components.length > 0 || result.connections.length > 0) {
+            const newIds = importDrawioResult(
+              result.components,
+              result.connections,
+              result.layouts,
+            );
+            if (newIds.length > 0) {
+              reactFlowInstance.setNodes((nodes) =>
+                nodes.map((node) => ({ ...node, selected: newIds.includes(node.id) })),
+              );
+              setSelectedNodeIds(new Set(newIds));
+            }
+            return true;
+          }
+        }
+
+        // 2. Fall back to internal Zustand clipboard
         const clipboardIds =
           useDiagramStore.getState().clipboard?.components.map((component) => component.id) ??
           [];
@@ -84,8 +122,8 @@ export function useCopyPasteShortcuts({
       }
 
       // Cmd/Ctrl+D — duplicate
-      if (e.key === "d") {
-        e.preventDefault();
+      if (event.key === "d") {
+        event.preventDefault();
         const nodes = getSelectedNodes(reactFlowInstance, selectedNodeId);
         const ids = getCopyableIds(diagram, nodes);
         if (ids.length === 0) return true;
@@ -110,6 +148,8 @@ export function useCopyPasteShortcuts({
       reactFlowWrapperRef,
       copyToClipboard,
       pasteFromClipboard,
+      importDrawioResult,
+      serviceRegistry,
       exportDrawioXml,
       setSelectedNodeIds,
     ],
