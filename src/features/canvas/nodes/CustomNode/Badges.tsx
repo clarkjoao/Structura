@@ -34,7 +34,7 @@ export const Badges = ({
             type="button"
             onClick={handleServiceClick}
             className={`mt-1.5 flex items-center gap-1 text-primary ${
-              controlsDisabled ? "pointer-events-none" : "hover:underline"
+              controlsDisabled ? "pointer-events-none text-gray-500 opacity-50" : "hover:underline"
             }`}
             aria-label={`Open service ${serviceName} in registry`}
             tabIndex={controlsDisabled ? -1 : 0}

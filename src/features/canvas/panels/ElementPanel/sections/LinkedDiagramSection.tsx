@@ -1,6 +1,7 @@
-import { LayoutDashboard, Plus, Sparkles, ChevronDown, X } from "lucide-react";
+import { LayoutDashboard, Lock, Plus, Sparkles, ChevronDown, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useRef, useState } from "react";
+import { useCollab } from "@/features/collaboration";
 
 export interface LinkedDiagramOption {
   id: string;
@@ -29,6 +30,7 @@ export function LinkedDiagramSection({
   onChangeLinked,
 }: LinkedDiagramSectionProps) {
   const { t } = useTranslation();
+  const { isGuest } = useCollab();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -43,7 +45,7 @@ export function LinkedDiagramSection({
     (diagrams.some(
       (d) =>
         d.id === suggestedDiagram.id ||
-        d.name.toLowerCase().includes(suggestedDiagram.name.toLowerCase())
+        d.name.toLowerCase().includes(suggestedDiagram.name.toLowerCase()),
     ) ||
       !diagrams.some((d) => d.id === suggestedDiagram.id));
 
@@ -55,14 +57,24 @@ export function LinkedDiagramSection({
   }
 
   return (
-    <div id={`element-panel-linked-${componentId}`} className="flex flex-col gap-2">
+    <div id={`element-panel-linked-${componentId}`} className="relative flex flex-col gap-2">
+      {isGuest && (
+        <div
+          className="absolute inset-0 z-10 cursor-not-allowed rounded-md bg-background/60 backdrop-blur-[1px] flex items-center justify-center"
+          title={t("collaboration.notAvailableInCollab")}
+        >
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-card border border-border rounded-md px-2 py-1 shadow-sm">
+            <Lock className="h-3 w-3" />
+            {t("collaboration.notAvailableInCollab")}
+          </div>
+        </div>
+      )}
 
       <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold flex items-center gap-1">
         <LayoutDashboard className="h-3 w-3" />
         {t("elementPanel.linkToDiagram")}
       </label>
 
-      {/* Nudge — only when unlinked and there's a suggestion */}
       {!hasLinked && showSuggestion && (
         <p className="text-[11px] text-primary/70 flex items-center gap-1">
           <Sparkles className="h-3 w-3 shrink-0" />
@@ -80,8 +92,8 @@ export function LinkedDiagramSection({
             isSuggestionSelected
               ? "border-primary/50 bg-primary/5 text-primary font-medium"
               : hasLinked
-              ? "border-border bg-secondary text-foreground"
-              : "border-dashed border-border bg-secondary text-muted-foreground",
+                ? "border-border bg-secondary text-foreground"
+                : "border-dashed border-border bg-secondary text-muted-foreground",
           ].join(" ")}
         >
           <span className="flex items-center gap-1.5 truncate">
@@ -111,7 +123,7 @@ export function LinkedDiagramSection({
 
         {open && (
           <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-md overflow-hidden">
-
+            
             {showSuggestion && suggestedDiagram && (
               <button
                 type="button"

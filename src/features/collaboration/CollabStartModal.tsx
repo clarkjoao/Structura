@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, Check, Copy, Loader2, Users, Wifi, WifiOff } from "lucide-react";
 import {
@@ -12,12 +12,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { readPrefs, writePrefs } from "./collabPreferences";
+import { testServer } from "./collabUtils";
 import { copyText } from "./copyText";
+import { useCollab } from "./CollabProvider";
 
 interface CollabStartModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  diagramId: string;
   diagramName: string;
   onStart: (userName: string, serverUrl: string) => void;
 }
@@ -28,53 +29,14 @@ function isLocalhostServer(url: string): boolean {
   return url.includes("localhost") || url.includes("127.0.0.1");
 }
 
-function testServer(wsUrl: string, timeoutMs = 4000): Promise<boolean> {
-  return new Promise((resolve) => {
-    let done = false;
-    let ws: WebSocket | null = null;
-
-    const settle = (result: boolean) => {
-      if (done) return;
-      done = true;
-      try {
-        ws?.close();
-      } catch {
-        // Ignore close errors.
-      }
-      resolve(result);
-    };
-
-    const timeout = setTimeout(() => settle(false), timeoutMs);
-
-    try {
-      ws = new WebSocket(wsUrl);
-      ws.onopen = () => {
-        clearTimeout(timeout);
-        settle(true);
-      };
-      ws.onerror = () => {
-        clearTimeout(timeout);
-        settle(false);
-      };
-      ws.onclose = () => {
-        clearTimeout(timeout);
-        settle(false);
-      };
-    } catch {
-      clearTimeout(timeout);
-      settle(false);
-    }
-  });
-}
-
 export function CollabStartModal({
   open,
   onOpenChange,
-  diagramId,
   diagramName,
   onStart,
 }: CollabStartModalProps) {
   const { t } = useTranslation();
+  const { collabUrl } = useCollab();
   const defaults = readPrefs();
 
   const [userName, setUserName] = useState(defaults.userName);
@@ -82,12 +44,9 @@ export function CollabStartModal({
   const [isCopied, setIsCopied] = useState(false);
   const [testStatus, setTestStatus] = useState<TestStatus>("idle");
 
-  const guestUrl = useMemo(
-    () => `${window.location.origin}/collab/${diagramId}`,
-    [diagramId],
-  );
-
-  const isLocalhost = isLocalhostServer(serverUrl);
+  const guestUrl = collabUrl;
+  const isLocalhostSignaling = isLocalhostServer(serverUrl);
+  const isLocalhostInvite = guestUrl ? isLocalhostServer(guestUrl) : false;
 
   const handleStart = () => {
     const trimmedName = userName.trim();
@@ -99,6 +58,7 @@ export function CollabStartModal({
   };
 
   const handleCopyLink = async () => {
+    if (!guestUrl) return;
     const copied = await copyText(guestUrl);
     if (!copied) return;
     setIsCopied(true);
@@ -184,7 +144,7 @@ export function CollabStartModal({
                 {t("collaboration.signalingHint")}
               </p>
             )}
-            {isLocalhost && (
+            {isLocalhostSignaling && (
               <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2">
                 <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
                 <p className="text-[11px] text-amber-500/90">
@@ -200,13 +160,15 @@ export function CollabStartModal({
               <Input
                 value={guestUrl}
                 readOnly
-                className={`font-mono text-xs bg-muted ${isLocalhost ? "border-amber-500/50" : ""}`}
+                placeholder={t("collaboration.inviteLinkPending")}
+                className={`font-mono text-xs bg-muted ${isLocalhostInvite ? "border-amber-500/50" : ""}`}
               />
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
                 onClick={handleCopyLink}
+                disabled={!guestUrl}
                 title={t("collaboration.copyLink")}
               >
                 {isCopied ? (
@@ -216,7 +178,7 @@ export function CollabStartModal({
                 )}
               </Button>
             </div>
-            {isLocalhost ? (
+            {isLocalhostInvite ? (
               <p className="text-[11px] text-amber-500/90">
                 {t("collaboration.localhostInviteWarning")}
               </p>

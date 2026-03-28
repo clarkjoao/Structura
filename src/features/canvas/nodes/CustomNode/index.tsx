@@ -23,6 +23,7 @@ import { EmbedButton } from "./EmbedButton";
 import { RecordingBadge } from "./RecordingBadge";
 import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
+import { useCollab } from "@/features/collaboration";
 
 function useNodeState(data: NodeProps["data"], selected: boolean | undefined) {
   const d = data as unknown as NodeData;
@@ -117,6 +118,8 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
   const { t } = useTranslation();
   const { d, isActive, controlsDisabled, handlePointer, incomingCount, outgoingCount } =
     useNodeState(data, selected);
+  const {isGuest} = useCollab();
+  
   const customDiagramIcon = useComponentIcon(d.elementId);
   const collabHighlight = useCollabHighlight(d.elementId);
 
@@ -226,7 +229,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
         )}
         <NodeActions
           d={d}
-          controlsDisabled={controlsDisabled}
+          controlsDisabled={controlsDisabled || isGuest}
           colorClass={actionColorClass}
           customColor={isAws ? undefined : d.customColor}
         />

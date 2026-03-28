@@ -168,6 +168,7 @@ export default function ModelExplorerPage() {
       >
         <CollabProvider
           enabled={collabActive}
+          reserveEphemeralRoomId={showStartModal}
           userName={collabUserName}
           signalingUrl={collabServerUrl}
         >
@@ -185,13 +186,13 @@ export default function ModelExplorerPage() {
             handleCopyDrawio={handleCopyDrawio}
             handleExport={handleExport}
             onStartCollab={() => setShowStartModal(true)}
+            onCollabSessionEnded={() => setCollabActive(false)}
             copied={copied}
             flows={flows}
           />
           <CollabStartModal
             open={showStartModal}
             onOpenChange={setShowStartModal}
-            diagramId={diagram.id}
             diagramName={diagram.name}
             onStart={handleStartCollab}
           />

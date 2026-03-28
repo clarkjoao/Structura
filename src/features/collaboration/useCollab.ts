@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { CollabSession, CollabStatus, CollabUser, PeerState } from "./types";
 import { randomColor } from "./collabColors";
 import { readPrefs } from "./collabPreferences";
@@ -27,8 +27,10 @@ export type CollabPatch = Partial<Omit<CollabSnapshot, "diagramId">>;
 // ── Hook params ───────────────────────────────────────────────────────────────
 
 export interface UseCollabParams {
-  /** The diagram id to use as roomId (prefix with "structura-") */
+  /** WebSocket room id (ephemeral UUID for host, or UUID from guest invite URL). */
   diagramId: string | null;
+  /** Host only: real diagram id for snapshots and server metadata (not the room id). */
+  activeDiagramId?: string | null;
   isHost: boolean;
   userName: string;
   serverUrl: string;
@@ -62,7 +64,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function randomId(): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
   }
   return `user-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
@@ -137,6 +139,7 @@ function parseSnapshot(value: unknown): CollabSnapshot | null {
 
 export function useCollab({
   diagramId,
+  activeDiagramId = null,
   isHost,
   userName,
   serverUrl,
@@ -144,15 +147,7 @@ export function useCollab({
   onSnapshot,
   onPatch,
 }: UseCollabParams): UseCollabReturn {
-  const roomId = useMemo(
-    () =>
-      diagramId
-        ? diagramId.startsWith("structura-")
-          ? diagramId
-          : `structura-${diagramId}`
-        : null,
-    [diagramId],
-  );
+  const roomId = diagramId ?? null;
 
   const initialName = userName.trim() || readPrefs().userName.trim() || "User";
   const localUserRef = useRef<CollabUser>({
@@ -281,39 +276,38 @@ export function useCollab({
       setHostDisconnected(false);
 
       if (isHost) {
-        const snapshot = getSnapshotRef.current() ?? {
-          diagramId: roomId,
-          diagramName: "",
-          level: "context",
-          components: {},
-          connections: {},
-          flows: {},
-          nodeLayouts: {},
-          edgeLayouts: [],
-          iconLibrary: {},
-          scenes: {},
-          activeSceneId: null,
-          compareSceneId: null,
-        };
+        const existingSnapshot = getSnapshotRef.current();
+        const resolvedDiagramId =
+          existingSnapshot?.diagramId ??
+          (typeof activeDiagramId === "string" && activeDiagramId.length > 0 ? activeDiagramId : "");
+        const snapshot =
+          existingSnapshot ??
+          {
+            diagramId: resolvedDiagramId,
+            diagramName: "",
+            level: "context",
+            components: {},
+            connections: {},
+            flows: {},
+            nodeLayouts: {},
+            edgeLayouts: [],
+            iconLibrary: {},
+            scenes: {},
+            activeSceneId: null,
+            compareSceneId: null,
+          };
 
         ws.send(
           JSON.stringify({
             type: "host:join",
             roomId,
+            diagramId:
+              typeof activeDiagramId === "string" && activeDiagramId.length > 0 ? activeDiagramId : null,
             user: localUserRef.current,
             snapshot,
           }),
         );
 
-        setStatus("connected");
-        setIsReady(true);
-        setSession({
-          roomId,
-          isHost,
-          localUser: localUserRef.current,
-          peers: [],
-          status: "connected",
-        });
         return;
       }
 
@@ -341,6 +335,33 @@ export function useCollab({
 
       switch (messageType) {
         case "host:ack": {
+          if (message.resumed === true && isRecord(message.snapshot)) {
+            const snapshot = parseSnapshot(message.snapshot as Record<string, unknown>);
+            if (snapshot) {
+              onSnapshotRef.current(snapshot);
+            }
+          }
+          if (isHost) {
+            setStatus("connected");
+            setIsReady(true);
+            setSession({
+              roomId,
+              isHost,
+              localUser: localUserRef.current,
+              peers: [],
+              status: "connected",
+            });
+          }
+          return;
+        }
+        case "host:reconnecting": {
+          setStatus("reconnecting");
+          setIsReady(false);
+          return;
+        }
+        case "host:reconnected": {
+          setStatus("connected");
+          setIsReady(true);
           return;
         }
         case "session:init": {
@@ -527,7 +548,16 @@ export function useCollab({
     ws.onerror = () => {
       // Close handler drives reconnect flow.
     };
-  }, [clearClientHeartbeat, clearReconnectTimer, isHost, roomId, serverUrl, upsertPeer, removePeer]);
+  }, [
+    activeDiagramId,
+    clearClientHeartbeat,
+    clearReconnectTimer,
+    isHost,
+    roomId,
+    serverUrl,
+    upsertPeer,
+    removePeer,
+  ]);
 
   useEffect(() => {
     setSession((previous) => {
@@ -565,13 +595,16 @@ export function useCollab({
       wsRef.current = null;
       if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
         try {
+          if (isHost && roomId) {
+            ws.send(JSON.stringify({ type: "host:close", roomId }));
+          }
           ws.close(1000, "unmount");
         } catch {
           // Ignore close errors.
         }
       }
     };
-  }, [clearClientHeartbeat, clearReconnectTimer, connect, roomId]);
+  }, [clearClientHeartbeat, clearReconnectTimer, connect, isHost, roomId]);
 
   const sendPatch = useCallback(
     (patch: CollabPatch) => {
@@ -606,17 +639,21 @@ export function useCollab({
     intentionalCloseRef.current = true;
     sendRaw({ type: "host:close", roomId });
 
-    const ws = wsRef.current;
-    if (!ws) return;
-    try {
-      ws.close(1000);
-    } catch {
-      // Ignore close errors.
-    }
-
     setStatus("closed");
     setIsReady(false);
-  }, [isHost, roomId, sendRaw]);
+    setSession(null);
+    clearClientHeartbeat();
+
+    const ws = wsRef.current;
+    wsRef.current = null;
+    if (ws) {
+      try {
+        ws.close(1000);
+      } catch {
+        // Ignore close errors.
+      }
+    }
+  }, [clearClientHeartbeat, isHost, roomId, sendRaw]);
 
   return {
     session,

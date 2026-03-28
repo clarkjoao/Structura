@@ -56,6 +56,7 @@ export function ModelExplorerContent({
   handleCopyDrawio,
   handleExport,
   onStartCollab,
+  onCollabSessionEnded,
   copied,
   flows,
 }: ModelExplorerContentProps) {
@@ -166,9 +167,9 @@ export function ModelExplorerContent({
     [compareModeBlocksRecorder, editFlow, t],
   );
   const handleEndCollab = useCallback(() => {
-    if (!window.confirm(t("collaboration.confirmClose"))) return;
     closeSession();
-  }, [closeSession, t]);
+    onCollabSessionEnded?.();
+  }, [closeSession, onCollabSessionEnded]);
   const [diagramSidebarOpen, setDiagramSidebarOpen] = useState(false);
   const [embedModalOpen, setEmbedModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);

@@ -9,10 +9,11 @@ interface User {
 }
 
 interface Room {
-  hostWs: WebSocket;
+  hostWs: WebSocket | null;
   hostUser: User;
   snapshot: Record<string, unknown>;
   guests: Map<string, { ws: WebSocket; user: User }>;
+  reconnectTimer?: ReturnType<typeof setTimeout>;
 }
 
 type JsonMessage = Record<string, unknown>;
@@ -112,6 +113,11 @@ function closeRoom(roomId: string, reason: "session:closed" | "host:disconnected
   const room = rooms.get(roomId);
   if (!room) return;
 
+  if (room.reconnectTimer) {
+    clearTimeout(room.reconnectTimer);
+    room.reconnectTimer = undefined;
+  }
+
   rooms.delete(roomId);
 
   const msgType = reason === "session:closed" ? "session:closed" : "host:disconnected";
@@ -121,10 +127,12 @@ function closeRoom(roomId: string, reason: "session:closed" | "host:disconnected
 
   closeGuestSockets(room);
 
-  const hostState = socketStates.get(room.hostWs);
-  if (hostState) {
-    clearSocketHeartbeat(hostState);
-    socketStates.delete(room.hostWs);
+  if (room.hostWs) {
+    const hostState = socketStates.get(room.hostWs);
+    if (hostState) {
+      clearSocketHeartbeat(hostState);
+      socketStates.delete(room.hostWs);
+    }
   }
 
   console.log(`[collab] room closed: room=${roomId}, reason=${reason}`);
@@ -147,7 +155,7 @@ function broadcastToRoom(
 ): void {
   const { exceptClientId } = options;
 
-  if (exceptClientId !== room.hostUser.id) {
+  if (exceptClientId !== room.hostUser.id && room.hostWs && room.hostWs.readyState === room.hostWs.OPEN) {
     safeSend(room.hostWs, payload);
   }
 
@@ -174,11 +182,55 @@ function applyPatch(snapshot: Record<string, unknown>, patch: Record<string, unk
 
 function handleHostJoin(ws: WebSocket, message: JsonMessage): void {
   const roomId = typeof message.roomId === "string" ? message.roomId : null;
+  const diagramIdMeta = typeof message.diagramId === "string" ? message.diagramId : null;
   const user = parseUser(message.user);
   const snapshot = parsePatch(message.snapshot);
 
   if (!roomId || !user || !snapshot) {
     sendError(ws, "invalid_host_join", "Invalid host:join payload");
+    return;
+  }
+
+  const existingRoom = rooms.get(roomId);
+
+  if (existingRoom && existingRoom.hostWs === null) {
+    if (existingRoom.reconnectTimer) {
+      clearTimeout(existingRoom.reconnectTimer);
+      existingRoom.reconnectTimer = undefined;
+    }
+
+    existingRoom.hostWs = ws;
+    existingRoom.hostUser = user;
+
+    socketStates.set(ws, {
+      roomId,
+      clientId: user.id,
+      role: "host",
+      awaitingPong: false,
+      pongTimeout: null,
+    });
+
+    safeSend(ws, {
+      type: "host:ack",
+      resumed: true,
+      snapshot: existingRoom.snapshot,
+    });
+
+    for (const [clientId, guest] of existingRoom.guests.entries()) {
+      safeSend(ws, {
+        type: "peer:joined",
+        clientId,
+        user: guest.user,
+      });
+    }
+
+    for (const guest of existingRoom.guests.values()) {
+      safeSend(guest.ws, { type: "host:reconnected" });
+    }
+
+    console.log(
+      `[collab] host reconnected: room=${roomId}, diagram=${diagramIdMeta ?? "n/a"}, host=${user.id}`,
+    );
     return;
   }
 
@@ -203,8 +255,10 @@ function handleHostJoin(ws: WebSocket, message: JsonMessage): void {
     pongTimeout: null,
   });
 
-  safeSend(ws, { type: "host:ack" });
-  console.log(`[collab] host joined: room=${roomId}, host=${user.id}`);
+  safeSend(ws, { type: "host:ack", resumed: false });
+  console.log(
+    `[collab] host joined: room=${roomId}, diagram=${diagramIdMeta ?? "none"}, host=${user.id}`,
+  );
 }
 
 function handleGuestJoin(ws: WebSocket, message: JsonMessage): void {
@@ -267,7 +321,7 @@ function handleHostPatch(ws: WebSocket, message: JsonMessage): void {
   }
 
   const room = rooms.get(roomId);
-  if (!room) {
+  if (!room || !room.hostWs) {
     sendError(ws, "room_not_found", "Room not found");
     return;
   }
@@ -367,7 +421,17 @@ function handleSocketClose(ws: WebSocket): void {
   if (!room) return;
 
   if (state.role === "host") {
-    closeRoom(state.roomId, "host:disconnected");
+    for (const guest of room.guests.values()) {
+      safeSend(guest.ws, { type: "host:reconnecting" });
+    }
+
+    room.reconnectTimer = setTimeout(() => {
+      room.reconnectTimer = undefined;
+      console.log(`[collab] host reconnect timeout: room=${state.roomId}`);
+      closeRoom(state.roomId, "host:disconnected");
+    }, 10_000);
+
+    room.hostWs = null;
     return;
   }
 

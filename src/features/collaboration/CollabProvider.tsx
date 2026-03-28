@@ -2,13 +2,16 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
+  useState,
   type ReactNode,
 } from "react";
 import { useActiveDiagramId, useDiagramStore } from "@/features/diagram";
 import type { CollabPatch, CollabSnapshot } from "./useCollab";
 import { useCollab as useWsCollab } from "./useCollab";
+import { newCollabRoomId } from "./collabUtils";
 import { readPrefs } from "./collabPreferences";
 import { useCollabStoreSync } from "./useCollabStoreSync";
 import type { CollabSession, CollabStatus, CollabUser } from "./types";
@@ -17,10 +20,10 @@ interface CollabContextValue {
   session: CollabSession | null;
   isReady: boolean;
   status: CollabStatus;
+  isGuest: boolean;
   sessionClosedByHost: boolean;
   hostDisconnected: boolean;
   closeSession: () => void;
-  // always null — kept for API compat
   provider: null;
   ydoc: null;
   collabUrl: string;
@@ -35,6 +38,7 @@ interface CollabContextValue {
 const CollabContext = createContext<CollabContextValue>({
   session: null,
   isReady: false,
+  isGuest: false,
   status: "idle",
   sessionClosedByHost: false,
   hostDisconnected: false,
@@ -58,6 +62,8 @@ interface CollabProviderProps {
   children: ReactNode;
   guestRoomId?: string;
   enabled?: boolean;
+  /** Host: allocate invite URL room id while the start modal is open (before `enabled`). */
+  reserveEphemeralRoomId?: boolean;
   userName?: string;
   signalingUrl?: string; // maps to serverUrl
 }
@@ -66,14 +72,50 @@ export function CollabProvider({
   children,
   guestRoomId,
   enabled = true,
+  reserveEphemeralRoomId = false,
   userName,
   signalingUrl,
 }: CollabProviderProps) {
   const activeDiagramId = useActiveDiagramId();
   const storePrefs = readPrefs();
+  const [ephemeralRoomId, setEphemeralRoomId] = useState<string | null>(null);
+  const pairedDiagramIdRef = useRef<string | null>(null);
 
-  const diagramId = enabled ? guestRoomId ?? activeDiagramId : null;
   const isHost = !guestRoomId;
+
+  useEffect(() => {
+    if (!isHost) {
+      return;
+    }
+
+    if (!activeDiagramId) {
+      setEphemeralRoomId(null);
+      pairedDiagramIdRef.current = null;
+      return;
+    }
+
+    if (!enabled && !reserveEphemeralRoomId) {
+      setEphemeralRoomId(null);
+      pairedDiagramIdRef.current = null;
+      return;
+    }
+
+    if (pairedDiagramIdRef.current !== activeDiagramId) {
+      pairedDiagramIdRef.current = activeDiagramId;
+      setEphemeralRoomId(newCollabRoomId());
+      return;
+    }
+
+    setEphemeralRoomId((previous) => (previous === null ? newCollabRoomId() : previous));
+  }, [activeDiagramId, enabled, isHost, reserveEphemeralRoomId]);
+
+  const roomIdForWs = enabled
+    ? isHost
+      ? ephemeralRoomId
+      : (guestRoomId ?? null)
+    : null;
+
+  const storeDiagramId = enabled && activeDiagramId ? activeDiagramId : null;
 
   const resolvedUserName =
     userName?.trim() || storePrefs.userName.trim() || `User-${Math.floor(Math.random() * 1000)}`;
@@ -82,7 +124,7 @@ export function CollabProvider({
   const sendPatchRef = useRef<(patch: CollabPatch) => void>(() => {});
 
   const { getSnapshot, onPatch } = useCollabStoreSync({
-    diagramId,
+    diagramId: storeDiagramId,
     sendPatchRef,
   });
 
@@ -130,9 +172,10 @@ export function CollabProvider({
     sendPatch,
     sendCursor,
     setActiveElement,
-    closeSession,
+    closeSession: closeWsSession,
   } = useWsCollab({
-    diagramId,
+    diagramId: roomIdForWs,
+    activeDiagramId: isHost ? activeDiagramId : null,
     isHost,
     userName: resolvedUserName,
     serverUrl: resolvedServerUrl,
@@ -143,7 +186,30 @@ export function CollabProvider({
 
   sendPatchRef.current = sendPatch;
 
-  const collabUrl = diagramId ? `${window.location.origin}/collab/${diagramId}` : "";
+  const handleCloseSession = useCallback(() => {
+    closeWsSession();
+    setEphemeralRoomId(null);
+    pairedDiagramIdRef.current = null;
+  }, [closeWsSession]);
+
+  useEffect(() => {
+    if (!isHost || !session) {
+      return;
+    }
+
+    const handleBeforeUnload = () => {
+      handleCloseSession();
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [handleCloseSession, isHost, session]);
+
+  const collabUrl = useMemo(() => {
+    if (!isHost || !ephemeralRoomId || typeof window === "undefined") return "";
+    const url = new URL(window.location.href);
+    return `${url.protocol}//${url.host}/collab/${ephemeralRoomId}`;
+  }, [ephemeralRoomId, isHost]);
 
   const updateCursor = useCallback(
     (cursor: { x: number; y: number } | null) => {
@@ -183,9 +249,10 @@ export function CollabProvider({
         session,
         isReady,
         status,
+        isGuest: isHost ? false : session !== null && !session.isHost,
         sessionClosedByHost,
         hostDisconnected,
-        closeSession,
+        closeSession: handleCloseSession,
         provider: null,
         ydoc: null,
         collabUrl,
