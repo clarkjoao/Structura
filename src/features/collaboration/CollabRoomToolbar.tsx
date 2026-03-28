@@ -42,8 +42,7 @@ export function CollabRoomToolbar({ diagram }: CollabRoomToolbarProps) {
     }
   };
 
-  const handleCloseSession = () => {
-    if (!window.confirm(t("collaboration.confirmClose"))) return;
+  const handleEndHostSession = () => {
     closeSession();
     navigate("/workspace");
   };
@@ -91,7 +90,7 @@ export function CollabRoomToolbar({ diagram }: CollabRoomToolbarProps) {
         collabUrl={collabUrl}
         peerLimitReached={peerLimitReached}
         onStartCollab={() => {}}
-        onEndCollab={isHost ? handleCloseSession : undefined}
+        onEndCollab={isHost ? handleEndHostSession : undefined}
       />
     </div>
   );

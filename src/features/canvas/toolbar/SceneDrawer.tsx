@@ -5,6 +5,7 @@ import {
   Copy,
   GitBranch,
   GitMerge,
+  Lock,
   Pencil,
   Plus,
   Trash2,
@@ -19,6 +20,7 @@ import {
   type SceneDiff,
 } from "@/features/diagram";
 import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
+import { useCollab } from "@/features/collaboration";
 import { cn } from "@/lib/utils";
 import { MergeSceneDialog } from "./MergeSceneDialog";
 
@@ -38,6 +40,8 @@ export interface SceneDrawerProps {
   onSelectBase: () => void;
   /** When true, switching scenes/compare/base and structural actions are disabled (flow playing/recording). */
   scenesLocked?: boolean;
+  /** When true, create/rename/duplicate/delete/merge are disabled (collab guest); scene switching stays enabled. */
+  scenesGuestReadOnly?: boolean;
 }
 
 function SceneRow({
@@ -45,6 +49,7 @@ function SceneRow({
   isActive,
   isCompare,
   scenesLocked,
+  scenesGuestReadOnly,
   onSelect,
   onRename,
   onDuplicate,
@@ -55,6 +60,7 @@ function SceneRow({
   isActive: boolean;
   isCompare: boolean;
   scenesLocked?: boolean;
+  scenesGuestReadOnly?: boolean;
   onSelect: () => void;
   onRename: () => void;
   onDuplicate: () => void;
@@ -64,6 +70,8 @@ function SceneRow({
   const { t } = useTranslation();
   const [showActions, setShowActions] = useState(false);
   const hasDiff = sceneHasDiff(scene);
+  const structuralDisabled = Boolean(scenesLocked || scenesGuestReadOnly);
+  const readOnlyTitle = scenesGuestReadOnly ? t("collaboration.scenesReadOnly") : undefined;
 
   return (
     <div
@@ -114,38 +122,45 @@ function SceneRow({
         >
           <button
             type="button"
+            disabled={structuralDisabled}
             onClick={onRename}
-            className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-            title={t("scenes.rename")}
+            className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:pointer-events-none disabled:opacity-40"
+            title={structuralDisabled && readOnlyTitle ? readOnlyTitle : t("scenes.rename")}
           >
             <Pencil className="h-3 w-3" />
           </button>
           <button
             type="button"
-            disabled={scenesLocked}
+            disabled={structuralDisabled}
             onClick={onDuplicate}
             className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:pointer-events-none disabled:opacity-40"
-            title={t("scenes.duplicate")}
+            title={structuralDisabled && readOnlyTitle ? readOnlyTitle : t("scenes.duplicate")}
           >
             <Copy className="h-3 w-3" />
           </button>
           {hasDiff && (
             <button
               type="button"
-              disabled={scenesLocked}
+              disabled={structuralDisabled}
               onClick={onMerge}
               className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:pointer-events-none disabled:opacity-40"
-              title={t("scenes.mergeIntoBase")}
+              title={structuralDisabled && readOnlyTitle ? readOnlyTitle : t("scenes.mergeIntoBase")}
             >
               <GitMerge className="h-3 w-3" />
             </button>
           )}
           <button
             type="button"
-            disabled={scenesLocked}
+            disabled={structuralDisabled}
             onClick={onDelete}
             className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-secondary transition-colors disabled:pointer-events-none disabled:opacity-40"
-            title={hasDiff ? t("scenes.remove") : t("scenes.deleteEmptyScene")}
+            title={
+              structuralDisabled && readOnlyTitle
+                ? readOnlyTitle
+                : hasDiff
+                  ? t("scenes.remove")
+                  : t("scenes.deleteEmptyScene")
+            }
           >
             <Trash2 className="h-3 w-3" />
           </button>
@@ -168,6 +183,7 @@ export function SceneDrawer({
   onMerge,
   onSelectBase,
   scenesLocked = false,
+  scenesGuestReadOnly = false,
 }: SceneDrawerProps) {
   const { t } = useTranslation();
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -219,6 +235,13 @@ export function SceneDrawer({
             <span className="text-xs font-semibold text-foreground truncate">
               {t("scenes.drawerTitle")}
             </span>
+            {scenesGuestReadOnly && (
+              <Lock
+                className="h-3.5 w-3.5 text-muted-foreground shrink-0"
+                aria-hidden
+                title={t("collaboration.scenesReadOnly")}
+              />
+            )}
             <span className="text-[10px] text-muted-foreground shrink-0">
               {t("scenes.drawerSceneCount", { count: scenes.length })}
             </span>
@@ -236,6 +259,13 @@ export function SceneDrawer({
         {scenesLocked && (
           <div className="px-4 py-2 text-[11px] text-muted-foreground border-b border-border bg-muted/20">
             {t("scenes.switchBlockedDuringFlow")}
+          </div>
+        )}
+
+        {scenesGuestReadOnly && (
+          <div className="px-4 py-2 text-[11px] text-muted-foreground border-b border-border bg-muted/20 flex items-center gap-2">
+            <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            <span>{t("collaboration.scenesReadOnly")}</span>
           </div>
         )}
 
@@ -289,6 +319,7 @@ export function SceneDrawer({
                 isActive={scene.id === activeSceneId}
                 isCompare={scene.id === compareSceneId}
                 scenesLocked={scenesLocked}
+                scenesGuestReadOnly={scenesGuestReadOnly}
                 onSelect={() => {
                   onSelectScene(scene.id);
                   onClose();
@@ -332,7 +363,8 @@ export function SceneDrawer({
           ) : (
             <button
               type="button"
-              disabled={scenesLocked}
+              disabled={scenesLocked || scenesGuestReadOnly}
+              title={scenesGuestReadOnly ? t("collaboration.scenesReadOnly") : undefined}
               onClick={() => {
                 setNewOpen(true);
               }}
@@ -378,6 +410,8 @@ export function ConnectedSceneDrawer({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const diagram = useActiveDiagram();
   const { isIdle } = useFlowMode();
+  const { session } = useCollab();
+  const scenesGuestReadOnly = session !== null && !session.isHost;
   const scenesLocked = !isIdle;
   const {
     addScene,
@@ -441,8 +475,10 @@ export function ConnectedSceneDrawer({ onClose }: { onClose: () => void }) {
       compareSceneId={compareId}
       onClose={onClose}
       scenesLocked={scenesLocked}
+      scenesGuestReadOnly={scenesGuestReadOnly}
       onSelectScene={(id) => handleScenePillClick(id)}
       onAddScene={(trimmed) => {
+        if (scenesGuestReadOnly) return;
         if (scenesLocked) {
           toast.warning(t("scenes.switchBlockedDuringFlow"));
           return;
@@ -451,8 +487,12 @@ export function ConnectedSceneDrawer({ onClose }: { onClose: () => void }) {
         const created = addScene(name);
         setActiveScene(created.id);
       }}
-      onRename={(id, name) => renameScene(id, name)}
+      onRename={(id, name) => {
+        if (scenesGuestReadOnly) return;
+        renameScene(id, name);
+      }}
       onDuplicate={(id) => {
+        if (scenesGuestReadOnly) return;
         if (scenesLocked) {
           toast.warning(t("scenes.switchBlockedDuringFlow"));
           return;
@@ -466,6 +506,7 @@ export function ConnectedSceneDrawer({ onClose }: { onClose: () => void }) {
         }
       }}
       onDelete={(id) => {
+        if (scenesGuestReadOnly) return;
         if (scenesLocked) {
           toast.warning(t("scenes.switchBlockedDuringFlow"));
           return;
@@ -479,6 +520,7 @@ export function ConnectedSceneDrawer({ onClose }: { onClose: () => void }) {
         }
       }}
       onMerge={(scene) => {
+        if (scenesGuestReadOnly) return;
         if (scenesLocked) {
           toast.warning(t("scenes.switchBlockedDuringFlow"));
           return;

@@ -9,6 +9,7 @@ import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { NOTE_DEFAULT_W, NOTE_DEFAULT_H } from "../constants";
 import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
+import { useCollabHighlight } from "@/features/collaboration/useCollabHighlight";
 
 const DEFAULT_PAPER_COLOR = "hsl(45 25% 97%)"; // papel ofuscado
 
@@ -52,6 +53,7 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
     (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
   const isActive = isSelected || isHighlighted;
   const dark = isDarkBg(paperColor);
+  const collabHighlight = useCollabHighlight(d.elementId);
   const textClass = dark ? "text-white" : "text-foreground";
   const mutedClass = dark ? "text-white/60" : "text-muted-foreground";
 
@@ -82,6 +84,12 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
             : "0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06)",
         }}
       >
+        {collabHighlight && (
+          <div
+            className="absolute inset-0 pointer-events-none z-10"
+            style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
+          />
+        )}
         {d.compareBadges && (
           <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
         )}

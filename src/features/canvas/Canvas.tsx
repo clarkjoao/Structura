@@ -25,7 +25,6 @@ import { resolveCanvasSnapshot } from "@/features/diagram";
 import { CANVAS_STYLES } from "./constants";
 import CustomEdge from "./edges/CustomEdge";
 import type { CanvasProps } from "./canvas.types";
-import { CollabCursors, useCollab } from "@/features/collaboration";
 import { SaveCustomComponentModal } from "@/features/custom-components/SaveCustomComponentModal";
 import { useCustomComponentStore } from "@/features/custom-components";
 import { createTemplateDataFromNode } from "@/features/custom-components/utils/customComponentTemplate.utils";
@@ -70,8 +69,7 @@ const Canvas = (props: CanvasProps = {}) => {
     isCompareMode,
     allDiagramTags,
   } = useCanvasController(props);
-  const { updateCursor, session } = useCollab();
-  
+
   const templateSourceNode = templateNodeId
     ? nodes.find((node) => node.id === templateNodeId) ?? null
     : null;
@@ -142,18 +140,6 @@ const Canvas = (props: CanvasProps = {}) => {
                 });
                 instantiateTemplate({ templateId, position });
               }}
-              onMouseMove={(e) => {
-                if (!session) return;
-                const rect = e.currentTarget.getBoundingClientRect();
-                updateCursor({
-                  x: e.clientX - rect.left,
-                  y: e.clientY - rect.top,
-                });
-              }}
-              onMouseLeave={() => {
-                if (!session) return;
-                updateCursor(null);
-              }}
               className="w-full h-full"
             >
             {isCompareMode && (
@@ -205,7 +191,6 @@ const Canvas = (props: CanvasProps = {}) => {
               <Background variant={BackgroundVariant.Dots} gap={18} size={1.5} />
               <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
             </ReactFlow>
-            {session && <CollabCursors peers={session.peers} />}
           </div>
         </div>
 

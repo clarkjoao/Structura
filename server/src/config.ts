@@ -20,6 +20,10 @@ if (foundPath) {
 }
 
 export const PORT = Number(process.env.PORT ?? process.env.PROXY_REVERSE_PORT ?? 3000);
+export const WS_PATH = (() => {
+  const value = process.env.WS_PATH?.trim() || "/ws";
+  return value.startsWith("/") ? value : `/${value}`;
+})();
 
 export const DEFECTDOJO_URL        = process.env.PROXY_REVERSE_DEFECTDOJO_URL ?? "";
 export const DEFECTDOJO_API_TOKEN  = process.env.PROXY_REVERSE_DEFECTDOJO_API_TOKEN;
@@ -44,5 +48,3 @@ const CORPORATE_PROXY_URL =
 export const proxyAgent = CORPORATE_PROXY_URL
   ? new HttpsProxyAgent(CORPORATE_PROXY_URL, { keepAlive: true })
   : new https.Agent({ keepAlive: true, rejectUnauthorized: !INSECURE_TLS });
-
-export const WS_PATH = process.env.WS_PATH ?? "/ws";

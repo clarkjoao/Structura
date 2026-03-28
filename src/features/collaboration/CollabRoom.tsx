@@ -1,4 +1,9 @@
-import { useState } from "react";
+import {
+  useCallback,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { Loader2, WifiOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
@@ -7,6 +12,7 @@ import { toast } from "sonner";
 import { Canvas } from "@/features/canvas";
 import { FlowModeProvider } from "@/features/canvas/flow";
 import { CollabProvider, useCollab } from "./CollabProvider";
+import { CollabCursors } from "./CollabCursors";
 import { CollabJoinModal } from "./CollabJoinModal";
 import { CollabSessionClosedModal } from "./CollabSessionClosedModal";
 import { useDiagramActions } from "@/features/diagram";
@@ -16,7 +22,14 @@ import { CollabRoomToolbar } from "./CollabRoomToolbar";
 function CollabRoomInner() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { session, isReady, status, sessionClosedByHost, hostDisconnected } = useCollab();
+  const {
+    session,
+    isReady,
+    status,
+    sessionClosedByHost,
+    hostDisconnected,
+    updateCursor,
+  } = useCollab();
   const { importDiagram } = useDiagramActions();
   const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
   const diagrams = useDiagramStore((state) => state.diagrams);
@@ -24,6 +37,29 @@ function CollabRoomInner() {
   const diagramExists = Boolean(diagram);
   const hostName = session?.isHost ? session.localUser.name : "Host";
   const isSessionClosed = sessionClosedByHost || hostDisconnected;
+  const lastCursorAtRef = useRef(0);
+
+  const handleCanvasPointerMove = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (!session) return;
+
+      const now = performance.now();
+      if (now - lastCursorAtRef.current >= 33) {
+        const rect = event.currentTarget.getBoundingClientRect();
+        updateCursor({
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top,
+        });
+        lastCursorAtRef.current = now;
+      }
+    },
+    [session, updateCursor],
+  );
+
+  const handleCanvasPointerLeave = useCallback(() => {
+    if (!session) return;
+    updateCursor(null);
+  }, [session, updateCursor]);
 
   const handleImportAndContinue = () => {
     if (!diagram) {
@@ -78,12 +114,17 @@ function CollabRoomInner() {
       {diagram ? (
         <>
           <CollabRoomToolbar diagram={diagram} />
-          <div className="flex flex-1 min-h-0">
+          <div
+            className="flex flex-1 min-h-0 relative"
+            onPointerMove={handleCanvasPointerMove}
+            onPointerLeave={handleCanvasPointerLeave}
+          >
             <FlowModeProvider onFinalize={() => {}}>
               <ReactFlowProvider>
                 <Canvas />
               </ReactFlowProvider>
             </FlowModeProvider>
+            {session && <CollabCursors peers={session.peers} />}
           </div>
         </>
       ) : (
@@ -107,11 +148,11 @@ interface CollabRoomSessionProps {
 function CollabRoomSession({ roomId }: CollabRoomSessionProps) {
   const [joined, setJoined] = useState(false);
   const [userName, setUserName] = useState("");
-  const [signalingUrl, setSignalingUrl] = useState("");
+  const [serverUrl, setServerUrl] = useState("");
 
   const handleJoin = (name: string, wsUrl: string) => {
     setUserName(name);
-    setSignalingUrl(wsUrl);
+    setServerUrl(wsUrl);
     setJoined(true);
   };
 
@@ -125,7 +166,7 @@ function CollabRoomSession({ roomId }: CollabRoomSessionProps) {
   }
 
   return (
-    <CollabProvider guestRoomId={roomId} userName={userName} signalingUrl={signalingUrl}>
+    <CollabProvider guestRoomId={roomId} userName={userName} signalingUrl={serverUrl}>
       <CollabRoomInner />
     </CollabProvider>
   );

@@ -1,39 +1,31 @@
-import { resolveDefaultSignalingUrl } from "./resolveDefaultSignalingUrl";
+const KEY = "structura:collab";
 
-const STORAGE_KEY = "structura:collabPreferences";
-
-export interface CollabPreferences {
+interface CollabPrefs {
   userName: string;
-  signalingUrl: string;
+  serverUrl: string;
 }
 
-const DEFAULTS: CollabPreferences = {
+const DEFAULTS: CollabPrefs = {
   userName: "",
-  signalingUrl: resolveDefaultSignalingUrl(),
+  serverUrl: `ws://${window.location.hostname}:3000/ws`,
 };
 
-export function readCollabPreferences(): CollabPreferences {
+export function readPrefs(): CollabPrefs {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(KEY);
     if (!raw) return { ...DEFAULTS };
-    const parsed = JSON.parse(raw) as Partial<CollabPreferences>;
-    return {
-      userName: parsed.userName ?? DEFAULTS.userName,
-      signalingUrl: parsed.signalingUrl ?? DEFAULTS.signalingUrl,
-    };
+    return { ...DEFAULTS, ...JSON.parse(raw) };
   } catch {
     return { ...DEFAULTS };
   }
 }
 
-export function writeCollabPreferences(preferences: Partial<CollabPreferences>): void {
+export function writePrefs(prefs: Partial<CollabPrefs>): void {
   try {
-    const currentPreferences = readCollabPreferences();
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ ...currentPreferences, ...preferences }),
-    );
+    localStorage.setItem(KEY, JSON.stringify({ ...readPrefs(), ...prefs }));
   } catch {
     // Ignore localStorage errors.
   }
 }
+
+export type { CollabPrefs };

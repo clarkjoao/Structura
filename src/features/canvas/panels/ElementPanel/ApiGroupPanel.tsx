@@ -37,7 +37,7 @@ export default function ApiGroupPanel({
     }) as EndpointComponent[];
 
   return (
-    <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
+    <div className="flex flex-1 min-h-0 w-full flex-col overflow-hidden">
       <div className="flex items-center justify-between p-3 border-b border-border shrink-0">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           {t("apiGroup.panelTitle")}

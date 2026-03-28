@@ -18,7 +18,6 @@ import ConnectionsTab from "./components/ConnectionsTab";
 import { ComponentIconTab } from "./components/ComponentIconTab";
 import { useTranslation } from "react-i18next";
 import i18n from "@/infrastructure/i18n";
-import { useCollab } from "@/features/collaboration";
 import { FIELD_DEBOUNCE_MS } from "@/features/canvas/canvas.constants";
 import {
   BasicFieldsSection,
@@ -76,7 +75,6 @@ const ComponentPanel = ({
   focusTitleTrigger = 0,
 }: ComponentPanelProps) => {
   const { t } = useTranslation();
-  const { updateEditingComponent, editingComponents } = useCollab();
   const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   useEffect(() => {
     if (focusTitleTrigger > 0) {
@@ -123,8 +121,6 @@ const ComponentPanel = ({
   );
   const parentComp = component.parentId ? resolved?.components[component.parentId] : undefined;
   const isChildOfPanel = !!component.parentId && parentComp && isPanelComponent(parentComp);
-  const lockingPeer = editingComponents.get(component.id);
-  const isLockedByPeer = Boolean(lockingPeer);
   const handleRemoveFromGroup = () => {
     if (!component.parentId || !setParent || !updateNodeLayout || !activeDiagram || !resolved) return;
     const childLayout = resolved.nodeLayouts[component.id];
@@ -153,10 +149,6 @@ const ComponentPanel = ({
   useEffect(() => {
     setTab("details");
   }, [component.id]);
-  useEffect(() => {
-    updateEditingComponent(component.id);
-    return () => updateEditingComponent(null);
-  }, [component.id, updateEditingComponent]);
 
   const handleCreateLinked = () => {
     const level = isSystemType(component.type) ? "container" : "component";
@@ -234,15 +226,6 @@ const ComponentPanel = ({
           >
             {t("endpointPanel.removeFromGroup")}
           </button>
-        </div>
-      )}
-      {isLockedByPeer && lockingPeer && (
-        <div
-          className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-white"
-          style={{ backgroundColor: lockingPeer.color }}
-        >
-          <span className="h-2 w-2 rounded-full bg-white/80 animate-pulse" />
-          {t("collaboration.peerEditing", { name: lockingPeer.name })}
         </div>
       )}
       <TabBar active={tab} onChange={setTab} showConnections={!isSimple} />

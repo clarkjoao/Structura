@@ -1,5 +1,6 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useCollab } from "@/features/collaboration";
 import { useReactFlow, useUpdateNodeInternals } from "@xyflow/react";
 import { useNavigate } from "react-router-dom";
 import { resolveCanvasSnapshot } from "@/features/diagram";
@@ -21,6 +22,7 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
   const [focusTitleTrigger, setFocusTitleTrigger] = useState(0);
   const { diagram, allDiagrams, visibleComponents, visibleConnections, serviceRegistry, flows, actions } = useCanvasStore();
   const visualState = useCanvasVisualState(diagram?.id ?? null);
+  const { updateSelectedNode } = useCollab();
   const compareState = useCanvasCompareState({ diagram, isFlowPanelOpen: !!canvasProps.isFlowPanelOpen, clearCanvasSelection: visualState.clearCanvasSelection, t });
   const resolved = useMemo(() => (diagram ? resolveCanvasSnapshot(diagram) : null), [diagram]);
   const allDiagramTags = useMemo(() => {
@@ -30,6 +32,10 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     return Array.from(tags).sort();
   }, [resolved?.components]);
   const flowState = useCanvasFlowState({ flows, isCompareMode: compareState.isCompareMode });
+  const activeCollabElementId = visualState.selectedEdgeId ?? visualState.selectedNodeId;
+  useEffect(() => {
+    updateSelectedNode(activeCollabElementId);
+  }, [activeCollabElementId, updateSelectedNode]);
   const interaction = useCanvasInteraction({ canvasProps, navigate, reactFlowInstance, reactFlowWrapperRef, visualState, diagram, allDiagrams, actions, serviceRegistry, compareState, flowState, showScenes, setShowScenes, setFocusTitleTrigger });
   const graphState = useCanvasGraphState({ diagram, resolved, visualState, localNodesRef: interaction.localNodesRef, innerOnNodesChange: interaction.innerOnNodesChange, dragTargetPanelId: interaction.dragTargetPanelId, unparentCandidatePanelId: interaction.unparentCandidatePanelId, visibleComponents, visibleConnections, serviceRegistry, allDiagrams, compareState, flowState, handleDrillDown: interaction.handleDrillDown, handlePanelCollapseToggle: interaction.handlePanelCollapseToggle, actions, isViewingCoverage: !!canvasProps.isViewingCoverage, onPlayFlow: canvasProps.onPlayFlow, updateNodeInternals, t });
   const selectedNodes = graphState.nodes.filter((node) => visualState.selectedNodeIds.has(node.id));

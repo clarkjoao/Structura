@@ -1,6 +1,7 @@
 import { memo } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { Position, type NodeProps } from "@xyflow/react";
+import { useCollabHighlight } from "@/features/collaboration/useCollabHighlight";
 import { Network } from "lucide-react";
 import { useComponentIcon } from "@/features/diagram";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
@@ -117,9 +118,10 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
   const { t } = useTranslation();
   const { d, isActive, controlsDisabled, handlePointer, incomingCount, outgoingCount } =
     useNodeState(data, selected);
-  const { editingComponents } = useCollab();
+  const {isGuest} = useCollab();
+  
   const customDiagramIcon = useComponentIcon(d.elementId);
-  const editingPeer = editingComponents.get(d.elementId);
+  const collabHighlight = useCollabHighlight(d.elementId);
 
   const isAws = isAwsType(d.type);
 
@@ -180,20 +182,18 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
       className={`group relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${borderClass} border-l-[3px] transition-shadow duration-200 ${
         isActive
           ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110"
-          : editingPeer
-            ? "ring-2 shadow-md"
-            : "opacity-90"
+          : "opacity-90"
       }`}
       style={{
         ...borderStyle,
-        ...(editingPeer
-          ? {
-              boxShadow: `0 0 0 2px ${editingPeer.color}`,
-              ["--tw-ring-color" as const]: editingPeer.color,
-            }
-          : {}),
       }}
     >
+      {collabHighlight && (
+        <div
+          className="absolute inset-0 pointer-events-none rounded-lg z-10"
+          style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
+        />
+      )}
       {d.compareBadges && (
         <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
       )}
@@ -229,7 +229,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
         )}
         <NodeActions
           d={d}
-          controlsDisabled={controlsDisabled}
+          controlsDisabled={controlsDisabled || isGuest}
           colorClass={actionColorClass}
           customColor={isAws ? undefined : d.customColor}
         />

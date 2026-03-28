@@ -5,11 +5,13 @@ import { EdgePayloadOverlay } from "./EdgePayloadOverlay";
 import { EdgeSvgLayer } from "./EdgeSvgLayer";
 import { useCustomEdge } from "./useCustomEdge";
 import type { EdgeData } from "./edgeData.types";
+import { useCollabHighlight } from "@/features/collaboration/useCollabHighlight";
 
 export type { EdgeData };
 
 const Edge = memo((props: EdgeProps) => {
   const core = useCustomEdge(props);
+  const collabHighlight = useCollabHighlight(core.edgeData?.connectionId ?? core.id);
   return (
     <>
       <EdgeSvgLayer
@@ -34,6 +36,30 @@ const Edge = memo((props: EdgeProps) => {
         activePayloadDirection={core.edgeData?.activePayloadDirection ?? null}
         dragPathRef={core.labelDrag.dragPathRef}
       />
+      {collabHighlight && (
+        <>
+          <path
+            d={core.edgePath}
+            strokeWidth={4}
+            stroke={collabHighlight.color}
+            fill="none"
+            strokeOpacity={0.5}
+            style={{ pointerEvents: "none" }}
+          />
+          <EdgeLabelRenderer>
+            <div
+              className="absolute pointer-events-none z-50 text-[9px] font-semibold
+                         text-white px-1.5 py-0.5 rounded-full whitespace-nowrap"
+              style={{
+                transform: `translate(-50%, -50%) translate(${core.labelPoint.x}px, ${core.labelPoint.y}px)`,
+                backgroundColor: collabHighlight.color,
+              }}
+            >
+              {collabHighlight.userName}
+            </div>
+          </EdgeLabelRenderer>
+        </>
+      )}
       {core.edgeData?.label && (
         <EdgeLabel
           labelPoint={core.labelPoint}

@@ -1,255 +1,205 @@
-# Cursor Rules — Architecture & Code Standards
+# Structura — Project Context for LLMs
 
-## Project Context
+## What it is
+Structura is an open source C4 architecture diagramming SPA.
+No backend, no database, no external services. All state is client-side.
 
-Open source software architecture diagramming tool built with:
-- React + TypeScript
-- Zustand (with Immer) for global state
-- React Flow (@xyflow/react) for canvas
-- react-i18next for internationalization
-- Tailwind CSS for styling
+## Tech Stack
+- React 18 + TypeScript (strict)
+- Vite as bundler (dev port 8080)
+- Zustand + Immer for global state
+- React Flow (@xyflow/react) for canvas rendering
+- Tailwind + shadcn/ui for UI
+- react-i18next — pt-BR default, en secondary
+- NO backend — persistence via localStorage + pluggable adapter (IStoragePort)
 
----
-
-## Naming Conventions
-
-### Variables
-- No single-letter variables except `i`, `j` in loops and `x`, `y`, `z` in geometric contexts
-- Hook results must use descriptive names that reflect what they represent:
-```ts
-  // ✅
-  const flowMode = useFlowMode();
-  const diagram = useActiveDiagram();
-  const { isPlaying, isRecording } = useFlowMode();
-
-  // ❌
-  const m = useFlowMode();
-  const d = useActiveDiagram();
-```
-- Discriminated state extractions must be named after what they represent:
-```ts
-  // ✅
-  const recordingState = flowMode.mode.kind === "recording" ? flowMode.mode : null;
-  const playbackState = flowMode.mode.kind === "playing" ? flowMode.mode : null;
-
-  // ❌
-  const rec = flowMode.mode.kind === "recording" ? flowMode.mode : null;
-  const playing = flowMode.mode.kind === "playing" ? flowMode.mode : null;
-```
-- Forbidden single-letter variable names: `m`, `r`, `d`, `p`, `s`, `c`, `n`, `v`, `e` (outside catch blocks)
-
-### Functions
-- Boolean returning functions must start with `is`, `has`, `can`, `should`:
-```ts
-  // ✅
-  function isRecording() {}
-  function hasChildren() {}
-  function canMoveNode() {}
-
-  // ❌
-  function recording() {}
-  function children() {}
-```
-- Event handlers must start with `handle` (definitions) or `on` (props):
-```ts
-  // ✅ definition
-  const handleNodeClick = () => {};
-  // ✅ prop
-  <Node onClick={handleNodeClick} onNodeClick={handleNodeClick} />
-
-  // ❌
-  const nodeClick = () => {};
-  const clickNode = () => {};
-```
-- Avoid abbreviations in any context:
-```ts
-  // ✅
-  const connection = ...;
-  const component = ...;
-  const diagram = ...;
-
-  // ❌
-  const conn = ...;
-  const comp = ...;
-  const diag = ...;
-```
-
-### Components
-- Component files use PascalCase: `FlowRecorderPanel.tsx`
-- Hook files use camelCase prefixed with `use`: `useCanvasNodes.ts`
-- Utility files use camelCase: `scene.utils.ts`, `flow-traversal.ts`
-- Type/interface files use camelCase: `diagram.types.ts`
-- Constants files use camelCase: `canvas.constants.ts`
+## Key folder structure
+src/
+├── features/
+│   ├── diagram/       # Pure domain — types, Zustand store, slices, selectors
+│   │                  # NO React, NO UI here
+│   ├── canvas/        # UI layer — React Flow, nodes, edges, toolbar, panels, hooks
+│   └── registry/      # ServiceDefinition + registry store
+├── infrastructure/
+│   └── persistence/   # IStoragePort, LocalStorageAdapter, InMemoryAdapter
+├── pages/             # Dashboard, ModelExplorer, ServiceRegistry, Index
+├── components/        # Shared UI (shadcn/ui + Navbar)
+└── lib/               # aws-catalog, export-service, github-import, utils
 
 ---
 
-## React Rules
+## Absolute Code Rules
 
-### Components
-- One component per file (sub-components can live in a `components/` subfolder)
-- Components over 150 lines must be decomposed into subcomponents
-- No business logic inside components — extract to hooks or utils
-- No direct store access inside components — always go through hooks
-- Props interfaces must be explicitly typed, never inlined:
-```ts
-  // ✅
-  interface FlowPanelProps {
-    onClose: () => void;
-    isCompareMode?: boolean;
-  }
-  const FlowPanel = ({ onClose, isCompareMode }: FlowPanelProps) => {};
+### Type guards — NEVER use raw strings
+# WRONG
+if (component.type === "panel") { ... }
+# RIGHT
+import { isPanelComponent, isPanelType } from "@/features/diagram"
+if (isPanelComponent(component)) { ... }
 
-  // ❌
-  const FlowPanel = ({ onClose, isCompareMode }: { onClose: () => void; isCompareMode?: boolean }) => {};
-```
-- Optional props must have explicit defaults or be guarded before use
+### Imports — deprecated modules are forbidden
+# NEVER import from:
+src/lib/model-types.ts   → use @/features/diagram
+src/lib/model-store.ts   → use @/features/diagram
 
-### Hooks
-- Hooks over 100 lines should be decomposed
-- Each hook has a single responsibility
-- Never call hooks conditionally
-- `useCallback` and `useMemo` must always have explicit dependency arrays
-- `useMemo` with more than 8 dependencies must be split into smaller memos
-- Derived state must be computed via `useMemo`, never stored in `useState`
-```ts
-  // ✅
-  const isVisible = useMemo(() => selectedIds.has(node.id), [selectedIds, node.id]);
+### User-visible strings — NEVER hardcode
+# WRONG
+<button>Save</button>
+# RIGHT
+const { t } = useTranslation()
+<button>{t("common.save")}</button>
 
-  // ❌
-  const [isVisible, setIsVisible] = useState(false);
-  useEffect(() => setIsVisible(selectedIds.has(node.id)), [selectedIds]);
-```
-
-### Context
-- Split context into state and actions when consumers only need one or the other
-- Context values that contain functions must memoize those functions with `useCallback`
-- Discriminated union for mutually exclusive states:
-```ts
-  // ✅
-  type FlowMode =
-    | { kind: "idle" }
-    | { kind: "playing"; flow: Flow; currentStepId: string }
-    | { kind: "recording"; steps: FlowStep[] };
-
-  // ❌ — allows invalid states
-  interface FlowState {
-    isPlaying: boolean;
-    isRecording: boolean; // can be true simultaneously with isPlaying
-  }
-```
-
-### Effects
-- `useEffect` must have a single purpose
-- No `useEffect` for derived state — use `useMemo`
-- No `useEffect` for event handling — use event handlers
-- Always return cleanup functions when subscribing to events
+### Path alias
+@ → resolves to ./src
 
 ---
 
-## TypeScript Rules
+## Store Architecture (Zustand + Immer)
 
-- No `any` — use `unknown` with type guards if type is truly unknown
-- No type assertions (`as Type`) except when interfacing with untyped external libs
-- Prefer type guards over assertions:
-```ts
-  // ✅
-  if (isPanelComponent(component)) { ... }
+### Slices
+diagramsSlice, componentsSlice, connectionsSlice, flowsSlice,
+layoutSlice, servicesSlice, clipboardSlice, historySlice,
+foldersSlice, patternsSlice, scenesSlice, iconsSlice, userTemplatesSlice
 
-  // ❌
-  const panel = component as PanelComponent;
-```
-- Exported functions must have explicit return types
-- Internal/private functions may infer return types
-- Enums for domain values that are persisted (EdgeStyle, PanelKind, etc.)
-- Union types for UI-only discriminated states
+### Undo/Redo — critical rule
+# pushHistory() MUST be called at the START of any undoable mutation,
+# inside the set() Immer callback, BEFORE any data modification.
+set((state) => {
+  pushHistory(state)   // ← first
+  state.diagrams[id].snapshot.components[compId] = ...  // ← then
+})
 
----
+### What is/is not persisted
+Persisted to localStorage:
+  diagrams, folders, userTemplates, serviceRegistry,
+  activeDiagramId, past, future, _lastUndoRedoAt
 
-## Architecture Rules (Project-Specific)
+NOT persisted (intentional):
+  clipboard  ← cleared on every reload
 
-### Feature Structure
-```
-src/features/<feature>/
-├── index.ts              # public API only — never import internals directly
-├── <Feature>.tsx         # top-level component
-├── hooks/                # feature-private hooks
-├── components/           # subcomponents
-├── utils/                # pure functions
-└── <feature>.types.ts    # types private to the feature
-```
-
-- Never import from another feature's internals — only from its `index.ts`
-- `src/features/diagram/` is the domain layer — no React, no UI, no React Flow imports
-- `src/features/canvas/` is the UI layer — bridges diagram domain to React Flow
-
-### Store (Zustand) Rules
-- Slices are pure state transformations — no side effects, no I/O, no fetch calls
-- `pushHistory` must be called at the start of every undoable mutation
-- Never call `pushHistory` for layout/viewport updates (not undoable by design)
-- Selectors use `useShallow` when returning objects or arrays
-- Never derive state inside a slice — derive in selectors or hooks
-- Actions are named as verbs: `addComponent`, `removeConnection`, `updateDiagram`
-
-### Node Type System
-- New node types are added via `NodeTypeDescriptor` in `nodes/node-types/`
-- Never add node type conditionals directly in `useCanvasNodes` or `Canvas.tsx`
-- `c4Descriptor` must always be last in `NODE_TYPE_REGISTRY` (catch-all)
-
-### Flow Mode (FlowModeContext)
-- `playing` and `recording` are mutually exclusive — enforced by discriminated union
-- Any action requiring idle state must guard with `flowMode.isIdle`
-- Never check `isPlaying && isRecording` — use `!flowMode.isIdle`
-- Guards for UI actions use `withFlowModeGuard` pattern (toast feedback)
-
-### Scene / Branch Rules
-- Scene mutations are blocked during playing and recording (`scenesLocked = !flowMode.isIdle`)
-- FlowRecorder cannot be opened in compare mode (`isCompareMode`)
-- Compare mode and active scene are mutually exclusive at the store level
-
-### Internationalization
-- No hardcoded user-facing strings — always use `t("key")`
-- Translation keys use dot notation by feature: `"flowRecorder.finalize"`, `"scenes.lockedWhilePlaying"`
-- New keys must be added to all locale files simultaneously
-- Never use `disabled={true}` hardcoded — always derive from state
-
-### Performance
-- `resolveCanvasSnapshot` must go through `getCachedCanvasSnapshot` in selectors
-- `useMemo` in `useCanvasNodes` splits static context from playback context
-- `WeakMap` cache is the pattern for expensive derivations keyed by object reference
+### Current schema version: 4
+Idempotent migrations covering:
+  v1 → iconLibrary
+  v2 → icon source structure
+  v3 → edgeLayouts, diagram description
+  v4 → userTemplates
 
 ---
 
-## Anti-patterns (Never Do)
-```ts
-// ❌ Single-letter variables
-const m = useFlowMode();
-const d = useActiveDiagram();
+## Canvas Render Pipeline
 
-// ❌ Hardcoded strings
-<button>Trazer para frente</button>
+### Derivation flow
+Zustand store
+  → useVisibleComponents / useVisibleConnections
+    (filters: only components that have a nodeLayout)
+  → useCanvasNodes
+    (resolves NodeTypeDescriptor → buildData → buildStyle → computeNodeVisibility)
+  → useLocalNodes
+    (local position buffer for lag-free drag without store roundtrip)
+  → React Flow renders nodes/edges
 
-// ❌ disabled hardcoded
-<button disabled={true}>
+### Node position — critical drag pattern
+useLocalNodes does smart merging:
+  - During drag: preserves local position (no lag)
+  - After undo/redo: discards local, accepts everything from store
+  - After reparenting: accepts remote position
+  - Collaboration (Yjs): accepts if id is in remoteLayoutUpdates
 
-// ❌ Business logic in component body
-const FlowPanel = () => {
-  const steps = Object.values(flow.steps).filter(...).sort(...); // extract to hook/util
-};
+# NEVER call setParent + updateNodeLayout separately during drag
+# This causes double-history and a race condition
+# RIGHT: use commitNodeDrag() — atomic: pushHistory + parentId + position in one transaction
 
-// ❌ Side effects in Zustand slices
-deleteDiagram: (id) => {
-  fileSystemAdapter.deleteDiagram(id); // no I/O in slices
-}
+---
 
-// ❌ Invalid state representable
-interface State {
-  isPlaying: boolean;
-  isRecording: boolean; // both true = invalid, use discriminated union
-}
+## NodeTypeDescriptor System
 
-// ❌ Direct feature internals import
-import { buildEdge } from "@/features/canvas/edges/edgeBuilding"; // use index.ts
+Each node type is a descriptor registered in:
+  src/features/canvas/nodes/node-types/registry.ts
 
-// ❌ resolveCanvasSnapshot in selectors directly
-const r = resolveCanvasSnapshot(diagram); // use getCachedCanvasSnapshot
-```
+Interface:
+  rfType: string           # key in the React Flow nodeTypes map
+  matches(type): boolean
+  buildData(comp, ctx): Record<string, unknown>
+  buildStyle(comp, ctx): CSSProperties | undefined
+  zIndex, connectable, canHaveParent, canBeParent
+
+### Registry order — critical rule
+c4Descriptor MUST always be LAST (it is the catch-all, matches() returns true for everything)
+New descriptors are inserted BEFORE c4Descriptor.
+
+Current descriptors (in order):
+  panelDescriptor → swimlaneDescriptor → noteDescriptor
+  → apiGroupDescriptor → endpointDescriptor → c4Descriptor
+
+---
+
+## Scene System (Diagram Versioning)
+
+SceneDiff: declarative diff over the immutable base snapshot
+  addedComponents: Record<string, Component>
+  addedConnections: Record<string, Connection>
+  removedComponentIds: string[]
+  removedConnectionIds: string[]
+  nodeLayouts: Record<string, NodeLayout>
+
+Key functions:
+  resolveSceneSnapshot(diagram, sceneId)   → merged snapshot for one scene
+  resolveCanvasSnapshot(diagram)           → handles compare mode (2 scenes overlay)
+  canMoveNodeInSceneMode(diagram, compId)  → blocks moving base nodes when scene is active
+
+---
+
+## Flow Playback / Recording
+
+States: idle | playing | recording (via FlowModeProvider)
+
+Recording mode:
+  - Blocks drag, undo/redo, copy/paste
+  - Only active shortcut: Delete/Backspace → onRecordUndo (removes last step)
+  - Nodes/edges outside the flow get reduced opacity overlay
+
+Playing mode:
+  - Blocks everything on canvas
+  - Opacity overlay: active=1, participant=0.5, rest=dim
+
+---
+
+## Collaboration (WebRTC + Yjs — optional)
+
+Bidirectional bridge Zustand ↔ Yjs:
+  - Anti-loop guard: isApplyingRemoteRef (synchronous useRef, NOT useState)
+  - remoteLayoutUpdates: global Set<string> — signals to useLocalNodes
+    which node ids should accept positions coming from Yjs
+
+---
+
+## i18n Conventions
+
+Key format: "feature.subFeature.description"
+Files: src/infrastructure/i18n/locales/{pt-BR,en}.json
+Rule: NEVER hardcode user-visible strings
+
+---
+
+## Commands
+npm run dev      # port 8080
+npm run lint     # 3 pre-existing errors in shadcn/ui and tailwind.config.ts — DO NOT fix
+npm run test
+npx vitest run src/test/example.test.ts   # single file
+npm run build
+
+---
+
+## Project skill files (read before coding)
+.ai/skills/new-feature.md        # creating a new feature (FSD)
+.ai/skills/new-node-type.md      # adding a new node type to the canvas
+.ai/skills/store-patterns.md     # Zustand slices, selectors, history
+.ai/skills/code-standards.md     # naming, TypeScript, anti-patterns
+.ai/skills/i18n.md               # adding strings and translations
+
+---
+
+## IMPORTANT: AGENTS.md instruction
+Before any response or implementation, always ask the user:
+"Do you want a prompt for Cursor to implement the feature,
+or do you prefer that I provide the files directly?"

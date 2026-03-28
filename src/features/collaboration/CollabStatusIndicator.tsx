@@ -1,9 +1,9 @@
 import { useTranslation } from "react-i18next";
 import { Loader2, Wifi, WifiOff } from "lucide-react";
-import type { CollabConnectionStatus } from "./types";
+import type { CollabStatus } from "./types";
 
 interface CollabStatusIndicatorProps {
-  status: CollabConnectionStatus;
+  status: CollabStatus;
 }
 
 const STATUS_CONFIG = {

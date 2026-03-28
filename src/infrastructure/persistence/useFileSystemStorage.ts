@@ -18,7 +18,6 @@ import {
   startFileSystemSync,
 } from "./fileSystemBoot";
 
-/** Remove the diagram-store key from localStorage so the folder becomes the sole source of truth. */
 async function clearLocalCache(): Promise<void> {
   await defaultStorage.delete(PERSIST_KEY);
 }

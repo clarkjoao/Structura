@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import type { ApiProtocol } from "@/features/diagram";
 import { HEADER_H, FOOTER_H, PROTOCOL_COLORS } from "./constants";
 import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
+import { useCollabHighlight } from "@/features/collaboration/useCollabHighlight";
 
 export { PROTOCOL_COLORS } from "./constants";
 
@@ -28,6 +29,7 @@ const ApiGroupNode = memo(({ data, selected }: NodeProps) => {
   const { t } = useTranslation();
   const d = data as unknown as ApiGroupNodeData;
   const isSelected = selected || d.isSelected;
+  const collabHighlight = useCollabHighlight(d.elementId);
 
   return (
     <div
@@ -36,6 +38,12 @@ const ApiGroupNode = memo(({ data, selected }: NodeProps) => {
         }`}
         style={{ borderColor: isSelected ? undefined : `${PROTOCOL_COLORS[d.protocol]}66` }}
       >
+        {collabHighlight && (
+          <div
+            className="absolute inset-0 pointer-events-none rounded-xl z-10"
+            style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
+          />
+        )}
         {d.compareBadges && (
           <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
         )}

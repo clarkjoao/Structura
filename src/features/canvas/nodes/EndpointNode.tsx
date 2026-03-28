@@ -4,6 +4,7 @@ import { Play } from "lucide-react";
 import type { EndpointHandler, HttpMethod } from "@/features/diagram";
 import { ENDPOINT_H, METHOD_COLORS } from "./ApiGroupNode/constants";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
+import { useCollabHighlight } from "@/features/collaboration/useCollabHighlight";
 
 export { METHOD_COLORS } from "./ApiGroupNode/constants";
 
@@ -30,12 +31,19 @@ export interface EndpointNodeData {
 const EndpointNode = memo(({ data }: NodeProps) => {
   const d = data as unknown as EndpointNodeData;
   const { method, path } = d;
+  const collabHighlight = useCollabHighlight(d.elementId);
 
   return (
     <div
       className="relative w-full h-full flex items-center gap-2 px-3 border-b border-border/50 bg-card hover:bg-surface-hover transition-colors"
       style={{ height: ENDPOINT_H }}
     >
+      {collabHighlight && (
+        <div
+          className="absolute inset-0 pointer-events-none z-10"
+          style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
+        />
+      )}
       {d.compareBadges && (
         <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
       )}

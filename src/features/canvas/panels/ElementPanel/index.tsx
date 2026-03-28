@@ -1,4 +1,5 @@
 import { LayoutDashboard } from "lucide-react";
+import { CollabEditingWarning } from "@/features/collaboration";
 import { useComponent, useConnections, useComponents, useDiagramActions, useActiveDiagram, useFlows, isEndpointComponent, isApiGroupComponent, isPanelComponent } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
 import { MultiSelectPanel } from "../MultiSelectPanel";
@@ -39,7 +40,12 @@ const ElementPanel = ({
   if (selectedEdgeId) {
     const conn = connections[selectedEdgeId];
     if (!conn) return null;
-    return <ConnectionPanel conn={conn} onClose={onClose} updateConnection={updateConnection} removeConnection={removeConnection} focusTitleTrigger={focusTitleTrigger} />;
+    return (
+      <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
+        <CollabEditingWarning elementId={selectedEdgeId} />
+        <ConnectionPanel conn={conn} onClose={onClose} updateConnection={updateConnection} removeConnection={removeConnection} focusTitleTrigger={focusTitleTrigger} />
+      </div>
+    );
   }
 
   if (selectedElementId && component) {
@@ -51,6 +57,7 @@ const ElementPanel = ({
     if (isEndpointComponent(component)) {
       return (
         <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
+          <CollabEditingWarning elementId={selectedElementId} />
           <EndpointPanel
             component={component}
             onClose={onClose}
@@ -65,6 +72,7 @@ const ElementPanel = ({
     if (isApiGroupComponent(component)) {
       return (
         <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
+          <CollabEditingWarning elementId={selectedElementId} />
           <ApiGroupPanel
             component={component}
             onClose={onClose}
@@ -77,6 +85,7 @@ const ElementPanel = ({
 
     return (
       <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
+        <CollabEditingWarning elementId={selectedElementId} />
         {canGroup && (
           <div className="flex items-center gap-2 p-2 border-b border-border bg-secondary/30">
             <button

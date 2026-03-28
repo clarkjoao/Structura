@@ -1,6 +1,7 @@
-import { Link2, RefreshCw } from "lucide-react";
+import { Link2, Lock, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ServiceDefinition } from "@/features/diagram";
+import { useCollab } from "@/features/collaboration";
 import ServiceRegistryCombobox from "../components/ServiceRegistryCombobox";
 
 export interface ServiceLinkSectionProps {
@@ -19,9 +20,21 @@ export function ServiceLinkSection({
   onServiceChange,
 }: ServiceLinkSectionProps) {
   const { t } = useTranslation();
+  const { isGuest } = useCollab();
 
   return (
-    <div id={`element-panel-service-${componentId}`}>
+    <div id={`element-panel-service-${componentId}`} className="relative">
+      {isGuest && (
+        <div
+          className="absolute inset-0 z-10 cursor-not-allowed rounded-md bg-background/60 backdrop-blur-[1px] flex items-center justify-center"
+          title={t("collaboration.notAvailableInCollab")}
+        >
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-card border border-border rounded-md px-2 py-1 shadow-sm">
+            <Lock className="h-3 w-3" />
+            {t("collaboration.notAvailableInCollab")}
+          </div>
+        </div>
+      )}
       <div className="mb-1 flex items-center justify-between gap-2">
         <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold block">
           <Link2 className="h-3 w-3 inline mr-1" />

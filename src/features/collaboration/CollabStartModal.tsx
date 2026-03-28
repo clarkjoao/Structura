@@ -11,64 +11,64 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { readCollabPreferences, writeCollabPreferences } from "./collabPreferences";
-import { buildCollabInviteUrl } from "./collabUrl";
-import { testSignalingServer } from "./testSignalingServer";
-import { resolveDefaultSignalingUrl, isLocalhostSignaling } from "./resolveDefaultSignalingUrl";
+import { readPrefs, writePrefs } from "./collabPreferences";
+import { testServer } from "./collabUtils";
+import { copyText } from "./copyText";
+import { useCollab } from "./CollabProvider";
 
 interface CollabStartModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  diagramId: string;
   diagramName: string;
-  onStart: (userName: string, signalingUrl: string) => void;
+  onStart: (userName: string, serverUrl: string) => void;
 }
 
 type TestStatus = "idle" | "testing" | "ok" | "fail";
 
+function isLocalhostServer(url: string): boolean {
+  return url.includes("localhost") || url.includes("127.0.0.1");
+}
+
 export function CollabStartModal({
   open,
   onOpenChange,
-  diagramId,
   diagramName,
   onStart,
 }: CollabStartModalProps) {
   const { t } = useTranslation();
-  const defaultPreferences = readCollabPreferences();
-  const [userName, setUserName] = useState(defaultPreferences.userName);
-  const [signalingUrl, setSignalingUrl] = useState(() => {
-    const saved = defaultPreferences.signalingUrl;
-    // If saved preference is localhost but we can auto-detect a better URL, prefer that.
-    if (isLocalhostSignaling(saved)) {
-      const resolved = resolveDefaultSignalingUrl();
-      if (!isLocalhostSignaling(resolved)) return resolved;
-    }
-    return saved;
-  });
+  const { collabUrl } = useCollab();
+  const defaults = readPrefs();
+
+  const [userName, setUserName] = useState(defaults.userName);
+  const [serverUrl, setServerUrl] = useState(defaults.serverUrl);
   const [isCopied, setIsCopied] = useState(false);
   const [testStatus, setTestStatus] = useState<TestStatus>("idle");
 
-  const isLocalhost = isLocalhostSignaling(signalingUrl);
-  const guestUrl = buildCollabInviteUrl(window.location.origin, diagramId, signalingUrl);
+  const guestUrl = collabUrl;
+  const isLocalhostSignaling = isLocalhostServer(serverUrl);
+  const isLocalhostInvite = guestUrl ? isLocalhostServer(guestUrl) : false;
 
   const handleStart = () => {
     const trimmedName = userName.trim();
     if (!trimmedName) return;
-    writeCollabPreferences({ userName: trimmedName, signalingUrl });
-    onStart(trimmedName, signalingUrl);
+
+    writePrefs({ userName: trimmedName, serverUrl });
+    onStart(trimmedName, serverUrl);
     onOpenChange(false);
   };
 
-  const handleCopyLink = () => {
-    void navigator.clipboard.writeText(guestUrl);
+  const handleCopyLink = async () => {
+    if (!guestUrl) return;
+    const copied = await copyText(guestUrl);
+    if (!copied) return;
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
   };
 
   const handleTestServer = async () => {
     setTestStatus("testing");
-    const isOnline = await testSignalingServer(signalingUrl);
-    setTestStatus(isOnline ? "ok" : "fail");
+    const ok = await testServer(serverUrl);
+    setTestStatus(ok ? "ok" : "fail");
     setTimeout(() => setTestStatus("idle"), 4000);
   };
 
@@ -103,9 +103,9 @@ export function CollabStartModal({
             <div className="flex gap-2">
               <Input
                 id="collab-ws"
-                value={signalingUrl}
+                value={serverUrl}
                 onChange={(event) => {
-                  setSignalingUrl(event.target.value);
+                  setServerUrl(event.target.value);
                   setTestStatus("idle");
                 }}
                 placeholder="ws://localhost:3000/ws"
@@ -115,7 +115,7 @@ export function CollabStartModal({
                 variant="outline"
                 size="icon"
                 onClick={handleTestServer}
-                disabled={testStatus === "testing" || !signalingUrl}
+                disabled={testStatus === "testing" || !serverUrl}
                 title={t("collaboration.testServer")}
               >
                 {testStatus === "testing" ? (
@@ -144,7 +144,7 @@ export function CollabStartModal({
                 {t("collaboration.signalingHint")}
               </p>
             )}
-            {isLocalhost && (
+            {isLocalhostSignaling && (
               <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2">
                 <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
                 <p className="text-[11px] text-amber-500/90">
@@ -160,13 +160,15 @@ export function CollabStartModal({
               <Input
                 value={guestUrl}
                 readOnly
-                className={`font-mono text-xs bg-muted ${isLocalhost ? "border-amber-500/50" : ""}`}
+                placeholder={t("collaboration.inviteLinkPending")}
+                className={`font-mono text-xs bg-muted ${isLocalhostInvite ? "border-amber-500/50" : ""}`}
               />
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
-                onClick={handleCopyLink}
+                onClick={() => handleCopyLink()}
+                disabled={!guestUrl}
                 title={t("collaboration.copyLink")}
               >
                 {isCopied ? (
@@ -176,7 +178,7 @@ export function CollabStartModal({
                 )}
               </Button>
             </div>
-            {isLocalhost ? (
+            {isLocalhostInvite ? (
               <p className="text-[11px] text-amber-500/90">
                 {t("collaboration.localhostInviteWarning")}
               </p>

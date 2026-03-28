@@ -14,6 +14,7 @@ export interface ModelExplorerContentProps {
   handleCopyDrawio: () => void;
   handleExport: () => void;
   onStartCollab: () => void;
+  onCollabSessionEnded?: () => void;
   copied: boolean;
   flows: Flow[];
 }

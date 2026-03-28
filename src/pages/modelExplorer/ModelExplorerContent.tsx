@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { ReactFlowProvider } from "@xyflow/react";
@@ -24,14 +30,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import ShortcutsModal from "@/components/ShortcutsModal";
 import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
 import { EmbedModal } from "@/features/canvas/components/EmbedModal";
@@ -58,11 +56,20 @@ export function ModelExplorerContent({
   handleCopyDrawio,
   handleExport,
   onStartCollab,
+  onCollabSessionEnded,
   copied,
   flows,
 }: ModelExplorerContentProps) {
   const { t } = useTranslation();
-  const { session, isReady, collabUrl, peerLimitReached, closeSession } = useCollab();
+  const {
+    session,
+    isReady,
+    collabUrl,
+    peerLimitReached,
+    closeSession,
+    updateCursor,
+    updateSelectedNode,
+  } = useCollab();
   const diagram = useActiveDiagram();
   const flowMode = useFlowMode();
   const playbackState = flowMode.mode.kind === "playing" ? flowMode.mode : null;
@@ -159,19 +166,46 @@ export function ModelExplorerContent({
     },
     [compareModeBlocksRecorder, editFlow, t],
   );
+  const handleEndCollab = useCallback(() => {
+    closeSession();
+    onCollabSessionEnded?.();
+  }, [closeSession, onCollabSessionEnded]);
   const [diagramSidebarOpen, setDiagramSidebarOpen] = useState(false);
   const [embedModalOpen, setEmbedModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [closeCollabModalOpen, setCloseCollabModalOpen] = useState(false);
+  const lastCursorAtRef = useRef(0);
 
-  const handleEndCollab = useCallback(() => {
-    setCloseCollabModalOpen(true);
-  }, []);
+  const handleCanvasPointerMove = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (!session) return;
 
-  const handleConfirmEndCollab = useCallback(() => {
-    closeSession();
-    setCloseCollabModalOpen(false);
-  }, [closeSession]);
+      const now = performance.now();
+      if (now - lastCursorAtRef.current >= 33) {
+        const rect = event.currentTarget.getBoundingClientRect();
+        updateCursor({
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top,
+        });
+        lastCursorAtRef.current = now;
+      }
+
+      const target = event.target as HTMLElement | null;
+      const nodeElement = target?.closest?.(".react-flow__node");
+      const edgeElement = target?.closest?.(".react-flow__edge");
+      const activeId =
+        nodeElement?.getAttribute("data-id") ??
+        edgeElement?.getAttribute("data-id") ??
+        null;
+      updateSelectedNode(activeId);
+    },
+    [session, updateCursor, updateSelectedNode],
+  );
+
+  const handleCanvasPointerLeave = useCallback(() => {
+    if (!session) return;
+    updateCursor(null);
+    updateSelectedNode(null);
+  }, [session, updateCursor, updateSelectedNode]);
 
   const recordingContext = recordingState?.context ?? TRUNK_CONTEXT;
   const recordingName = recordingState?.name ?? "";
@@ -311,30 +345,6 @@ export function ModelExplorerContent({
       </div>
       <div className="flex-1 flex overflow-hidden">
         <ShortcutsModal open={showShortcuts} onOpenChange={setShowShortcuts} />
-        <Dialog open={closeCollabModalOpen} onOpenChange={setCloseCollabModalOpen}>
-          <DialogContent className="max-w-sm">
-            <DialogHeader>
-              <DialogTitle>{t("collaboration.endSession")}</DialogTitle>
-              <DialogDescription>{t("collaboration.confirmClose")}</DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <button
-                type="button"
-                onClick={() => setCloseCollabModalOpen(false)}
-                className="inline-flex items-center justify-center rounded-md border border-border px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {t("common.cancel")}
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmEndCollab}
-                className="inline-flex items-center justify-center rounded-md bg-destructive px-3 py-2 text-sm text-destructive-foreground hover:bg-destructive/90 transition-colors"
-              >
-                {t("collaboration.endSession")}
-              </button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
         {diagram ? (
           <>
             <EmbedModal open={embedModalOpen} onOpenChange={setEmbedModalOpen} diagram={diagram} />
@@ -342,7 +352,11 @@ export function ModelExplorerContent({
           </>
         ) : null}
         <ReactFlowProvider>
-          <div className="flex-1 flex flex-col relative">
+          <div
+            className="flex-1 flex flex-col relative"
+            onPointerMove={handleCanvasPointerMove}
+            onPointerLeave={handleCanvasPointerLeave}
+          >
             <Canvas
               onOpenDiagram={handleOpenDiagram}
               onDrillDownToDiagram={handleDrillDownToDiagram}

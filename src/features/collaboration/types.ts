@@ -4,16 +4,7 @@ export interface CollabUser {
   color: string;
 }
 
-export interface PeerAwareness {
-  user: CollabUser;
-  cursor?: { x: number; y: number } | null;
-  viewport?: { x: number; y: number; zoom: number };
-  selectedNodeId?: string | null;
-  editingComponentId?: string | null;
-  isHost?: boolean;
-}
-
-export type CollabConnectionStatus =
+export type CollabStatus =
   | "idle"
   | "connecting"
   | "connected"
@@ -21,11 +12,17 @@ export type CollabConnectionStatus =
   | "disconnected"
   | "closed";
 
+export interface PeerState {
+  clientId: string;
+  user: CollabUser;
+  cursor: { x: number; y: number } | null;
+  activeElementId: string | null;
+}
+
 export interface CollabSession {
   roomId: string;
   isHost: boolean;
   localUser: CollabUser;
-  peers: Map<number, PeerAwareness>;
-  isReady: boolean;
-  status: CollabConnectionStatus;
+  peers: PeerState[];
+  status: CollabStatus;
 }

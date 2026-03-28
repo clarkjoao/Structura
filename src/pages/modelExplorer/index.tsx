@@ -38,9 +38,8 @@ export default function ModelExplorerPage() {
   const [showStartModal, setShowStartModal] = useState(false);
   const [collabActive, setCollabActive] = useState(false);
   const [collabUserName, setCollabUserName] = useState("");
-  const [collabSignalingUrl, setCollabSignalingUrl] = useState("");
+  const [collabServerUrl, setCollabServerUrl] = useState("");
 
-  // Sync URL :id → store.activeDiagramId (handles page refresh / direct link)
   useEffect(() => {
     if (urlId && urlDiagramExists && activeDiagramId !== urlId) {
       openDiagram(urlId);
@@ -139,9 +138,9 @@ export default function ModelExplorerPage() {
     void downloadZip(files, `${slug}.zip`);
   }, [diagram, flows, serviceRegistry]);
 
-  const handleStartCollab = useCallback((name: string, signalingUrl: string) => {
+  const handleStartCollab = useCallback((name: string, serverUrl: string) => {
     setCollabUserName(name);
-    setCollabSignalingUrl(signalingUrl);
+    setCollabServerUrl(serverUrl);
     setCollabActive(true);
   }, []);
 
@@ -168,8 +167,9 @@ export default function ModelExplorerPage() {
       >
         <CollabProvider
           enabled={collabActive}
+          reserveEphemeralRoomId={showStartModal}
           userName={collabUserName}
-          signalingUrl={collabSignalingUrl}
+          signalingUrl={collabServerUrl}
         >
           <ModelExplorerContent
             showFlows={showFlows}
@@ -185,13 +185,13 @@ export default function ModelExplorerPage() {
             handleCopyDrawio={handleCopyDrawio}
             handleExport={handleExport}
             onStartCollab={() => setShowStartModal(true)}
+            onCollabSessionEnded={() => setCollabActive(false)}
             copied={copied}
             flows={flows}
           />
           <CollabStartModal
             open={showStartModal}
             onOpenChange={setShowStartModal}
-            diagramId={diagram.id}
             diagramName={diagram.name}
             onStart={handleStartCollab}
           />
