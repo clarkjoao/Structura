@@ -6,6 +6,7 @@ import type { WorkspaceScanResult } from "./FileSystemAdapter";
 import { useDiagramStore } from "@/features/diagram";
 import { useCustomComponentStore } from "@/features/custom-components/store";
 import type { CustomComponentTemplate } from "@/features/custom-components/customComponent.types";
+import { useIconStore } from "@/features/icons/store";
 import {
   buildPersistStoragePayload,
   PERSIST_KEY,
@@ -14,6 +15,7 @@ import { defaultStorage } from "./LocalStorageAdapter";
 import {
   bootFileSystem,
   flushWorkspaceToConnectedFolder,
+  hydrateIconStoreFromWorkspace,
   resetBootState,
   startFileSystemSync,
 } from "./fileSystemBoot";
@@ -42,6 +44,7 @@ export const isFileSystemSupported = "showDirectoryPicker" in globalThis;
 
 function buildManifest(state: ReturnType<typeof useDiagramStore.getState>) {
   const customComponentTemplates = useCustomComponentStore.getState().templates;
+  const iconLibrary = useIconStore.getState().icons;
   return {
     version: 1 as const,
     createdAt: new Date().toISOString(),
@@ -51,6 +54,7 @@ function buildManifest(state: ReturnType<typeof useDiagramStore.getState>) {
     folders: state.folders,
     activeDiagramId: state.activeDiagramId,
     customComponentTemplates,
+    iconLibrary,
   };
 }
 
@@ -192,6 +196,11 @@ export function useFileSystemStorage() {
       }));
     }
 
+    hydrateIconStoreFromWorkspace({
+      diagrams: useDiagramStore.getState().diagrams,
+      iconLibrary: manifest?.iconLibrary,
+    });
+
     const merged = useDiagramStore.getState();
     await flushWorkspaceToConnectedFolder(merged);
 
@@ -225,6 +234,11 @@ export function useFileSystemStorage() {
     if (manifestTemplates) {
       useCustomComponentStore.setState({ templates: manifestTemplates });
     }
+
+    hydrateIconStoreFromWorkspace({
+      diagrams: useDiagramStore.getState().diagrams,
+      iconLibrary: manifest?.iconLibrary,
+    });
 
     const overwritten = useDiagramStore.getState();
     await flushWorkspaceToConnectedFolder(overwritten);
@@ -363,6 +377,8 @@ export function useFileSystemStorage() {
             templates: mergeTemplates(state.templates, workspaceTemplates),
           }));
         }
+
+        hydrateIconStoreFromWorkspace(workspace);
       } else {
         // No manifest: fall back to scanning diagrams only.
         const scan = await fileSystemAdapter.scanWorkspace();
@@ -382,6 +398,11 @@ export function useFileSystemStorage() {
             templates: mergeTemplates(state.templates, scannedManifestTemplates),
           }));
         }
+
+        hydrateIconStoreFromWorkspace({
+          diagrams: validDiagrams,
+          iconLibrary: scan.manifest?.iconLibrary,
+        });
       }
     } catch {
       setStatus("error");

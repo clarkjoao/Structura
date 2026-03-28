@@ -1,5 +1,5 @@
 import type { Node } from "@xyflow/react";
-import type { ComponentPatch, ComponentType } from "@/features/diagram";
+import type { Component, ComponentPatch, ComponentType } from "@/features/diagram";
 import type { CustomComponentTemplate } from "../customComponent.types";
 
 const ALLOWED_COMPONENT_PATCH_KEYS = new Set<string>([
@@ -51,20 +51,90 @@ function resolveBaseType(node: Node, nodeData: Record<string, unknown>): Compone
   return "component";
 }
 
-export function createTemplateDataFromNode(node: Node): {
+/** React Flow node.data fields that are UI-only and must not be persisted on templates. */
+const NODE_DATA_UI_ONLY_KEYS = new Set<string>([
+  "isSelected",
+  "controlsDisabled",
+  "incomingCount",
+  "outgoingCount",
+  "isRecording",
+  "isLastRecorded",
+  "recordingBadges",
+  "onDrillDown",
+  "onEmbed",
+  "onReorderHandle",
+  "onHandleClick",
+  "coverageFlowNames",
+  "activeHandleId",
+  "lastRecordedHandleId",
+  "compareBadges",
+  "sceneBadge",
+  "elementId",
+]);
+
+function removeUndefinedEntries(record: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(record).filter(([, value]) => value !== undefined));
+}
+
+function templateRecordFromDomainComponent(component: Component): Record<string, unknown> {
+  const skipKeys = new Set<string>(["id", "templateId"]);
+  const next: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(component)) {
+    if (skipKeys.has(key)) {
+      continue;
+    }
+    if (value === undefined) {
+      continue;
+    }
+    if (key === "type" || ALLOWED_COMPONENT_PATCH_KEYS.has(key)) {
+      next[key] = value;
+    }
+  }
+  next.type = component.type;
+  return removeUndefinedEntries(next);
+}
+
+function templateRecordFromStrippedNodeData(
+  nodeData: Record<string, unknown>,
+  baseType: ComponentType,
+): Record<string, unknown> {
+  const next: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(nodeData)) {
+    if (NODE_DATA_UI_ONLY_KEYS.has(key)) {
+      continue;
+    }
+    if (value === undefined) {
+      continue;
+    }
+    if (key === "type" || ALLOWED_COMPONENT_PATCH_KEYS.has(key)) {
+      next[key] = value;
+    }
+  }
+  next.type = baseType;
+  return removeUndefinedEntries(next);
+}
+
+export function createTemplateDataFromNode(
+  node: Node,
+  domainComponent?: Component,
+): {
   baseType: ComponentType;
   data: Record<string, unknown>;
   registryServiceId?: string;
 } {
   const nodeData = asRecord(node.data);
-  const baseType = resolveBaseType(node, nodeData);
-  const serviceId = typeof nodeData.serviceId === "string" ? nodeData.serviceId : undefined;
+  const baseType = domainComponent?.type ?? resolveBaseType(node, nodeData);
+  const serviceId =
+    domainComponent?.serviceId ??
+    (typeof nodeData.serviceId === "string" ? nodeData.serviceId : undefined);
+
+  const data = domainComponent
+    ? templateRecordFromDomainComponent(domainComponent)
+    : templateRecordFromStrippedNodeData(nodeData, baseType);
+
   return {
     baseType,
-    data: {
-      ...nodeData,
-      type: baseType,
-    },
+    data,
     registryServiceId: serviceId,
   };
 }

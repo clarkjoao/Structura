@@ -16,7 +16,11 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { readFileAsText } from "@/features/canvas/utils/read-file-as-text";
 import { sanitizeSvg } from "@/features/canvas/utils/svg.sanitizer";
-import { generateIconId, normalizeSvgForStorage } from "@/features/canvas/utils/svg.utils";
+import {
+  generateIconId,
+  normalizeSvgForStorage,
+  validateSvgSize,
+} from "@/features/canvas/utils/svg.utils";
 import { AwsIconPickerPanel } from "./AwsIconPickerPanel";
 import { IconPickerLibraryGrid } from "./IconPickerLibraryGrid";
 import { LucidePickerPanel } from "./LucidePickerPanel";
@@ -58,7 +62,16 @@ export function IconPickerModal({
   const [activeTab, setActiveTab] = React.useState<IconTab>("library");
   const [librarySearchQuery, setLibrarySearchQuery] = React.useState("");
   const [isUploading, setIsUploading] = React.useState(false);
+  const [pasteMode, setPasteMode] = React.useState(false);
+  const [pasteValue, setPasteValue] = React.useState("");
+  const [pasteError, setPasteError] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const resetPasteState = React.useCallback(() => {
+    setPasteMode(false);
+    setPasteValue("");
+    setPasteError(null);
+  }, []);
 
   const filteredIcons = React.useMemo(() => {
     const query = librarySearchQuery.trim().toLowerCase();
@@ -78,6 +91,15 @@ export function IconPickerModal({
       setIsUploading(true);
       try {
         const text = await readFileAsText(file);
+        const validation = validateSvgSize(text);
+        if (!validation.valid) {
+          toast.error(
+            validation.reason === "too_large"
+              ? t("icons.svgTooLarge")
+              : t("icons.svgDimensionExceeded"),
+          );
+          return;
+        }
         const cleaned = sanitizeSvg(text);
         if (cleaned === null) {
           toast.error(t("icons.invalidSvg"));
@@ -104,6 +126,43 @@ export function IconPickerModal({
     },
     [addIcon, diagramId, onSelect, t],
   );
+
+  const handlePasteConfirm = React.useCallback(() => {
+    const text = pasteValue.trim();
+    if (!text) {
+      return;
+    }
+
+    const validation = validateSvgSize(text);
+    if (!validation.valid) {
+      setPasteError(
+        validation.reason === "too_large"
+          ? t("icons.svgTooLarge")
+          : t("icons.svgDimensionExceeded"),
+      );
+      return;
+    }
+
+    const cleaned = sanitizeSvg(text);
+    if (cleaned === null) {
+      setPasteError(t("icons.invalidSvg"));
+      return;
+    }
+
+    const newId = generateIconId();
+    addIcon(diagramId, {
+      id: newId,
+      name: "custom-icon",
+      source: {
+        kind: "svg",
+        svgContent: normalizeSvgForStorage(cleaned),
+      },
+      createdAt: Date.now(),
+      usageCount: 0,
+    });
+    onSelect(newId);
+    resetPasteState();
+  }, [addIcon, diagramId, onSelect, pasteValue, resetPasteState, t]);
 
   const handleLucideIconPick = React.useCallback(
     (iconName: string) => {
@@ -143,7 +202,10 @@ export function IconPickerModal({
     <Dialog
       open
       onOpenChange={(open) => {
-        if (!open) onClose();
+        if (!open) {
+          resetPasteState();
+          onClose();
+        }
       }}
     >
       <DialogContent className="flex max-h-[85vh] max-w-2xl flex-col gap-4">
@@ -154,7 +216,10 @@ export function IconPickerModal({
 
         <Tabs
           value={activeTab}
-          onValueChange={(value) => setActiveTab(value as IconTab)}
+          onValueChange={(value) => {
+            setActiveTab(value as IconTab);
+            resetPasteState();
+          }}
           className="flex flex-col gap-2"
         >
           <TabsList className="grid w-full shrink-0 grid-cols-2 gap-1 sm:grid-cols-4">
@@ -202,24 +267,78 @@ export function IconPickerModal({
 
             {activeTab === "upload" ? (
               <div className="flex flex-col gap-3 pb-1">
-                <p className="text-sm text-muted-foreground">{t("icons.addNew")}</p>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".svg"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={isUploading}
-                  onClick={handleOpenFilePicker}
-                  className="w-full sm:w-auto"
-                >
-                  {isUploading ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden /> : null}
-                  <span>{t("icons.uploadButton")}</span>
-                </Button>
+                {!pasteMode ? (
+                  <>
+                    <p className="text-sm text-muted-foreground">{t("icons.addNew")}</p>
+                    <div className="flex gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".svg"
+                        className="hidden"
+                        onChange={handleFileChange}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={isUploading}
+                        onClick={handleOpenFilePicker}
+                        className="flex flex-1 items-center justify-center gap-2"
+                      >
+                        {isUploading ? (
+                          <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+                        ) : null}
+                        <span>{t("icons.uploadButton")}</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={isUploading}
+                        onClick={() => {
+                          setPasteMode(true);
+                          setPasteError(null);
+                        }}
+                        className="flex-1"
+                      >
+                        {t("icons.pasteButton")}
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-muted-foreground">{t("icons.pasteHint")}</p>
+                    <textarea
+                      className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      rows={8}
+                      placeholder='<svg xmlns="http://www.w3.org/2000/svg" ...>...</svg>'
+                      value={pasteValue}
+                      onChange={(event) => {
+                        setPasteValue(event.target.value);
+                        setPasteError(null);
+                      }}
+                      autoFocus
+                    />
+                    {pasteError ? <p className="text-xs text-destructive">{pasteError}</p> : null}
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={resetPasteState}
+                        className="flex-1"
+                      >
+                        {t("common.cancel")}
+                      </Button>
+                      <Button
+                        type="button"
+                        disabled={!pasteValue.trim()}
+                        onClick={handlePasteConfirm}
+                        className="flex-1"
+                      >
+                        {t("icons.pasteConfirm")}
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             ) : null}
           </div>

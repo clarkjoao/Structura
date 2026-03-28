@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { Box, FileText, X } from "lucide-react";
-import { PICKER_CARD_CLASS } from "@/features/canvas/toolbar/element-picker/constants";
 import type { CustomComponentTemplate } from "../customComponent.types";
 import { resolveTemplateAccentColor } from "../utils/resolveTemplateAccentColor";
 import { cn } from "@/lib/utils";
@@ -44,7 +43,10 @@ export function NodeTemplatePreviewCard({
 
   const accentColorClassName = resolveTemplateAccentColor(template.baseType);
 
-  const iconClassName = "h-5 w-5 shrink-0 text-muted-foreground";
+  const iconColorClass = isC4Type(resolvedTemplateType)
+    ? (TypeConfig[resolvedTemplateType]?.textColor ?? "text-muted-foreground")
+    : "text-muted-foreground";
+  const iconClassName = cn("h-5 w-5 shrink-0", iconColorClass);
 
   let iconNode: ReactNode = <Box className={iconClassName} />;
 
@@ -84,17 +86,18 @@ export function NodeTemplatePreviewCard({
       type="button"
       onClick={onClick}
       className={cn(
-        PICKER_CARD_CLASS,
-        "group relative items-start justify-start text-left",
+        "group relative flex flex-col gap-1 rounded-lg border border-border bg-card text-left",
+        "border-l-[3px] px-2.5 py-2 transition-all duration-150",
+        "hover:shadow-sm hover:brightness-105 active:scale-[0.98]",
         accentColorClassName,
       )}
     >
       {onDelete ? (
         <button
           type="button"
-          className="absolute right-2 top-2 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 p-0.5 opacity-0 transition-opacity group-hover:opacity-100"
-          onClick={(e) => {
-            e.stopPropagation();
+          className="absolute right-2 top-2 rounded-full bg-destructive/10 p-0.5 text-destructive opacity-0 transition-opacity hover:bg-destructive/20 group-hover:opacity-100"
+          onClick={(event) => {
+            event.stopPropagation();
             onDelete();
           }}
         >
@@ -102,17 +105,17 @@ export function NodeTemplatePreviewCard({
         </button>
       ) : null}
 
-      <div className="w-full flex items-center gap-2">
+      <div className="flex items-center gap-2 pr-4">
         {iconNode}
-        <span className="text-xs font-medium truncate">{template.name}</span>
+        <span className="truncate text-sm font-bold leading-tight text-foreground">{template.name}</span>
       </div>
 
       {template.description ? (
-        <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">{template.description}</p>
+        <p className="line-clamp-1 text-xs leading-snug text-muted-foreground">{template.description}</p>
       ) : null}
 
-      <div className="mt-auto w-full">
-        <span className="inline-flex text-[10px] rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">
+      <div className="mt-auto pt-1">
+        <span className="inline-flex rounded bg-secondary px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
           {template.baseType}
         </span>
       </div>

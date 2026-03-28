@@ -1,4 +1,5 @@
 import type { Diagram, IconDefinition } from "@/features/diagram";
+import { useIconStore } from "@/features/icons/store";
 
 function normalizeOneIconEntry(key: string, value: unknown): IconDefinition | null {
   if (!value || typeof value !== "object") return null;
@@ -85,12 +86,27 @@ function sanitizeIconLibrary(raw: unknown): Record<string, IconDefinition> {
 }
 
 /**
- * Ensures imported diagram JSON has a valid `snapshot.iconLibrary` and optional `customIconId` on components.
- * Invalid icon entries are dropped (no throw).
+ * Ensures imported diagram JSON has optional `customIconId` on components.
+ * Sanitized embedded `snapshot.iconLibrary` entries are merged into the global icon store when missing there,
+ * then cleared from the snapshot (`{}`) for schema compatibility.
  */
 export function normalizeImportedDiagram(diagram: Diagram): Diagram {
   const snapshot = diagram.snapshot ?? { components: {}, connections: {}, flows: {}, iconLibrary: {} };
   const iconLibrary = sanitizeIconLibrary(snapshot.iconLibrary);
+
+  try {
+    if (Object.keys(iconLibrary).length > 0) {
+      for (const [id, icon] of Object.entries(iconLibrary)) {
+        const globalIcons = useIconStore.getState().icons;
+        if (!globalIcons[id]) {
+          useIconStore.getState().addIcon(icon);
+        }
+      }
+    }
+  } catch {
+    // Icon store unavailable (e.g. unusual init order) — still return normalized diagram.
+  }
+
   const components = { ...snapshot.components };
   for (const key of Object.keys(components)) {
     const comp = components[key];
@@ -103,7 +119,7 @@ export function normalizeImportedDiagram(diagram: Diagram): Diagram {
     edgeLayouts: Array.isArray(diagram.edgeLayouts) ? diagram.edgeLayouts : [],
     snapshot: {
       ...snapshot,
-      iconLibrary,
+      iconLibrary: {},
       components,
     },
   };

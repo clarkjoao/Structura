@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import type { ReactFlowInstance } from "@xyflow/react";
 import type {
   Diagram,
@@ -15,7 +16,6 @@ import {
   generateId,
   resolveCanvasSnapshot,
 } from "@/features/diagram";
-import DOMPurify from "dompurify";
 import { getViewportCenter } from "../viewport-utils";
 import { exportDrawio } from "@/lib/export-service";
 import { useCopyPasteShortcuts } from "./keyboard/useCopyPasteShortcuts";
@@ -24,6 +24,33 @@ import { useRecordingShortcuts } from "./keyboard/useRecordingShortcuts";
 import { useSelectionShortcuts } from "./keyboard/useSelectionShortcuts";
 import { useUndoRedoShortcuts } from "./keyboard/useUndoRedoShortcuts";
 import { useGroupShortcuts } from "./keyboard/useGroupShortcuts";
+import { validateSvgSize } from "../utils/svg.utils";
+import { sanitizeSvg } from "../utils/svg.sanitizer";
+
+/**
+ * Validates SVG size, then sanitizes. Shows toasts on failure.
+ * `translate` should be `t` from react-i18next for icon message keys.
+ */
+function prepareImportedSvgMarkup(
+  svgContent: string,
+  translate: (key: string) => string,
+): string | null {
+  const validation = validateSvgSize(svgContent);
+  if (!validation.valid) {
+    if (validation.reason === "too_large") {
+      toast.error(translate("icons.svgTooLarge"));
+    } else {
+      toast.error(translate("icons.svgDimensionExceeded"));
+    }
+    return null;
+  }
+  const sanitized = sanitizeSvg(svgContent);
+  if (sanitized === null) {
+    toast.error(translate("icons.invalidSvg"));
+    return null;
+  }
+  return sanitized;
+}
 
 interface UseCanvasKeyboardParams {
   diagram: Diagram | null | undefined;
@@ -157,13 +184,11 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     [diagram, serviceRegistry],
   );
 
-  const importSvgComponent = useCallback(
+  const pasteSvgAsCanvasNode = useCallback(
     (rawSvg: string, position: { x: number; y: number }): string | null => {
       if (!diagram) return null;
 
-      const clean = DOMPurify.sanitize(rawSvg, {
-        USE_PROFILES: { svg: true, svgFilters: true },
-      }).trim();
+      const clean = prepareImportedSvgMarkup(rawSvg, t);
       if (!clean) return null;
 
       const parser = new DOMParser();
@@ -209,8 +234,15 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       );
       return newIds[0] ?? null;
     },
-    [diagram, importDrawioResult],
+    [diagram, importDrawioResult, t],
   );
+
+  const importSvgForIconLibrary = useCallback(
+    (svgContent: string) => prepareImportedSvgMarkup(svgContent, t),
+    [t],
+  );
+
+  const pastedSvgDefaultName = t("icons.pastedSvgDefaultName");
 
   const handleCopyPaste = useCopyPasteShortcuts({
     diagram,
@@ -220,10 +252,12 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     copyToClipboard,
     pasteFromClipboard,
     importDrawioResult,
-    importSvgComponent,
+    pasteSvgAsCanvasNode,
+    importSvgForIconLibrary,
     serviceRegistry,
     exportDrawioXml,
     setSelectedNodeIds,
+    pastedSvgDefaultName,
   });
 
   const recordingHandler = useRecordingShortcuts();
