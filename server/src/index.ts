@@ -6,7 +6,6 @@ import { attachCollabServer } from "./collab.js";
 
 const app = express();
 
-// HTTP reverse-proxy routes  (/dojo, /github)
 app.use(createProxyRouter());
 
 const httpServer = createServer(app);

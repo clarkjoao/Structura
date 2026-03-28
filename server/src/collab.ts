@@ -492,11 +492,11 @@ export function attachCollabServer(httpServer: HttpServer): void {
       }
 
       const messageType = typeof message.type === "string" ? message.type : null;
+      
       if (!messageType) {
         sendError(ws, "missing_type", "Message type is required");
         return;
       }
-
       switch (messageType) {
         case "host:join":
           handleHostJoin(ws, message);

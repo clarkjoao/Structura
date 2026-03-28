@@ -40,7 +40,6 @@ export default function ModelExplorerPage() {
   const [collabUserName, setCollabUserName] = useState("");
   const [collabServerUrl, setCollabServerUrl] = useState("");
 
-  // Sync URL :id → store.activeDiagramId (handles page refresh / direct link)
   useEffect(() => {
     if (urlId && urlDiagramExists && activeDiagramId !== urlId) {
       openDiagram(urlId);

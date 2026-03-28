@@ -38,7 +38,10 @@ export function CollabToolbar({
   const handleCopyLink = async () => {
     if (!collabUrl) return;
     const copied = await copyText(collabUrl);
-    if (!copied) return;
+    if (!copied) {
+      window.prompt(t("collaboration.copyLink"), collabUrl);
+      return;
+    }
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
   };

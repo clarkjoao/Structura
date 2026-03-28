@@ -167,7 +167,7 @@ export function CollabStartModal({
                 type="button"
                 variant="outline"
                 size="icon"
-                onClick={handleCopyLink}
+                onClick={() => handleCopyLink()}
                 disabled={!guestUrl}
                 title={t("collaboration.copyLink")}
               >
