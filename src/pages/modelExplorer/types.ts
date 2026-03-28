@@ -13,6 +13,7 @@ export interface ModelExplorerContentProps {
   handleDrillUp: () => void;
   handleCopyDrawio: () => void;
   handleExport: () => void;
+  onStartCollab: () => void;
   copied: boolean;
   flows: Flow[];
 }

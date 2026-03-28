@@ -3,6 +3,7 @@ import { NodeResizer, type NodeProps } from "@xyflow/react";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
+import { useCollabHighlight } from "@/features/collaboration/useCollabHighlight";
 
 export interface SwimlaneNodeData {
   elementId: string;
@@ -47,6 +48,7 @@ const SwimlaneNode = memo(({ data, selected }: NodeProps) => {
   const isActive = isSelected || isHighlighted;
   const isDragTarget = d.isDragTarget;
   const isUnparentCandidate = d.isUnparentCandidate ?? false;
+  const collabHighlight = useCollabHighlight(d.elementId);
 
   return (
     <>
@@ -67,6 +69,12 @@ const SwimlaneNode = memo(({ data, selected }: NodeProps) => {
           ...(isUnparentCandidate ? { borderColor: UNPARENT_BORDER } : {}),
         }}
       >
+        {collabHighlight && (
+          <div
+            className="absolute inset-0 pointer-events-none rounded-lg z-10"
+            style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
+          />
+        )}
         {d.compareBadges && (
           <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
         )}

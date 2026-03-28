@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { ReactFlowProvider } from "@xyflow/react";
@@ -29,6 +35,7 @@ import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/featu
 import { EmbedModal } from "@/features/canvas/components/EmbedModal";
 import { useFlowMode, type BranchOwnerInfo, type RecordingContext } from "@/features/canvas/flow";
 import { isDiagramCompareMode, useActiveDiagram, type Flow } from "@/features/diagram";
+import { CollabCursors, CollabToolbar, useCollab } from "@/features/collaboration";
 import { ShareModal } from "./ShareModal";
 import type { ModelExplorerContentProps } from "./types";
 
@@ -48,10 +55,20 @@ export function ModelExplorerContent({
   handleDrillUp,
   handleCopyDrawio,
   handleExport,
+  onStartCollab,
   copied,
   flows,
 }: ModelExplorerContentProps) {
   const { t } = useTranslation();
+  const {
+    session,
+    isReady,
+    collabUrl,
+    peerLimitReached,
+    closeSession,
+    updateCursor,
+    updateSelectedNode,
+  } = useCollab();
   const diagram = useActiveDiagram();
   const flowMode = useFlowMode();
   const playbackState = flowMode.mode.kind === "playing" ? flowMode.mode : null;
@@ -148,9 +165,46 @@ export function ModelExplorerContent({
     },
     [compareModeBlocksRecorder, editFlow, t],
   );
+  const handleEndCollab = useCallback(() => {
+    if (!window.confirm(t("collaboration.confirmClose"))) return;
+    closeSession();
+  }, [closeSession, t]);
   const [diagramSidebarOpen, setDiagramSidebarOpen] = useState(false);
   const [embedModalOpen, setEmbedModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const lastCursorAtRef = useRef(0);
+
+  const handleCanvasPointerMove = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (!session) return;
+
+      const now = performance.now();
+      if (now - lastCursorAtRef.current >= 33) {
+        const rect = event.currentTarget.getBoundingClientRect();
+        updateCursor({
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top,
+        });
+        lastCursorAtRef.current = now;
+      }
+
+      const target = event.target as HTMLElement | null;
+      const nodeElement = target?.closest?.(".react-flow__node");
+      const edgeElement = target?.closest?.(".react-flow__edge");
+      const activeId =
+        nodeElement?.getAttribute("data-id") ??
+        edgeElement?.getAttribute("data-id") ??
+        null;
+      updateSelectedNode(activeId);
+    },
+    [session, updateCursor, updateSelectedNode],
+  );
+
+  const handleCanvasPointerLeave = useCallback(() => {
+    if (!session) return;
+    updateCursor(null);
+    updateSelectedNode(null);
+  }, [session, updateCursor, updateSelectedNode]);
 
   const recordingContext = recordingState?.context ?? TRUNK_CONTEXT;
   const recordingName = recordingState?.name ?? "";
@@ -202,6 +256,14 @@ export function ModelExplorerContent({
             )}
           </div>
           <div className="flex items-center gap-2">
+            <CollabToolbar
+              session={session}
+              isReady={isReady}
+              collabUrl={collabUrl}
+              peerLimitReached={peerLimitReached}
+              onStartCollab={onStartCollab}
+              onEndCollab={handleEndCollab}
+            />
             <button
               onClick={() => { if (!canvasInteractionLocked) setShowFlows(!showFlows); }}
               className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
@@ -289,7 +351,11 @@ export function ModelExplorerContent({
           </>
         ) : null}
         <ReactFlowProvider>
-          <div className="flex-1 flex flex-col relative">
+          <div
+            className="flex-1 flex flex-col relative"
+            onPointerMove={handleCanvasPointerMove}
+            onPointerLeave={handleCanvasPointerLeave}
+          >
             <Canvas
               onOpenDiagram={handleOpenDiagram}
               onDrillDownToDiagram={handleDrillDownToDiagram}
@@ -317,6 +383,7 @@ export function ModelExplorerContent({
                 onExit={exitPlay}
               />
             )}
+            {session && <CollabCursors peers={session.peers} />}
           </div>
         </ReactFlowProvider>
         {isRecording && (
