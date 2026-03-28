@@ -696,6 +696,15 @@
     "titleFallback": "Nota",
     "emptyHint": "Clique para editar... Suporta **Markdown**."
   },
+  "unknownNode": {
+    "aria": "Elemento desconhecido: {{name}}",
+    "defaultName": "Elemento desconhecido",
+    "badge": "desconhecido",
+    "emptyHint": "Sem conteúdo disponível"
+  },
+  "svgNode": {
+    "aria": "Gráfico SVG: {{name}}"
+  },
   "customNode": {
     "drillAria": "Explorar interior do elemento {{id}}",
     "ariaNamed": "{{name}} ({{type}})",

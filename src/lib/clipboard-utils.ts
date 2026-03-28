@@ -86,3 +86,37 @@ export async function readDrawioFromClipboard(): Promise<string | null> {
   }
   return null;
 }
+
+/**
+ * Reads SVG content from the system clipboard.
+ * Returns null if clipboard does not contain SVG or permission denied.
+ */
+export async function readSvgFromClipboard(): Promise<string | null> {
+  try {
+    if (navigator.clipboard?.read) {
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        if (item.types.includes("image/svg+xml")) {
+          const blob = await item.getType("image/svg+xml");
+          return await blob.text();
+        }
+        // Fallback: text/plain that looks like SVG
+        if (item.types.includes("text/plain")) {
+          const blob = await item.getType("text/plain");
+          const text = await blob.text();
+          const trimmed = text.trim();
+          // Do not consume draw.io XML — handled by readDrawioFromClipboard
+          if (trimmed.includes("<mxGraphModel") || trimmed.includes("<mxfile")) {
+            continue;
+          }
+          if (trimmed.startsWith("<svg") || trimmed.startsWith("<?xml")) {
+            return trimmed;
+          }
+        }
+      }
+    }
+  } catch {
+    // Permission denied or API unavailable
+  }
+  return null;
+}

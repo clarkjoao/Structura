@@ -4,6 +4,8 @@ import { swimlaneDescriptor } from "./swimlane.descriptor";
 import { noteDescriptor } from "./note.descriptor";
 import { apiGroupDescriptor } from "./apigroup.descriptor";
 import { endpointDescriptor } from "./endpoint.descriptor";
+import { svgDescriptor } from "./svg.descriptor";
+import { unknownDescriptor } from "./unknown.descriptor";
 import { c4Descriptor } from "./c4.descriptor";
 import type { NodeTypeDescriptor } from "./types";
 import type { Component, ComponentType } from "@/features/diagram";
@@ -23,6 +25,8 @@ export const NODE_TYPE_REGISTRY: NodeTypeDescriptor[] = [
   noteDescriptor,
   apiGroupDescriptor,
   endpointDescriptor,
+  svgDescriptor,
+  unknownDescriptor, // before catch-all
   c4Descriptor, // catch-all — must be last
 ];
 

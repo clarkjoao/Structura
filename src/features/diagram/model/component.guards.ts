@@ -1,6 +1,24 @@
 import { isAwsType } from "@/lib/catalogs/aws";
-import type { Component, C4Component, PanelComponent, NoteComponent, AwsComponent, ApiGroupComponent, EndpointComponent } from "./component.types";
-import { isPanelType, isNoteType, isC4Type, isApiGroupType, isEndpointType } from "./component-type-constants";
+import type {
+  Component,
+  C4Component,
+  PanelComponent,
+  NoteComponent,
+  AwsComponent,
+  ApiGroupComponent,
+  EndpointComponent,
+  UnknownComponent,
+  SvgComponent,
+} from "./component.types";
+import {
+  isPanelType,
+  isNoteType,
+  isC4Type,
+  isApiGroupType,
+  isEndpointType,
+  isUnknownType,
+  isSvgComponentType,
+} from "./component-type-constants";
 
 export const isPanelComponent = (c: Component): c is PanelComponent => isPanelType(c.type);
 
@@ -13,3 +31,7 @@ export const isAwsComponent = (c: Component): c is AwsComponent => isAwsType(c.t
 export const isApiGroupComponent = (c: Component): c is ApiGroupComponent => isApiGroupType(c.type);
 
 export const isEndpointComponent = (c: Component): c is EndpointComponent => isEndpointType(c.type);
+
+export const isUnknownComponent = (c: Component): c is UnknownComponent => isUnknownType(c.type);
+
+export const isSvgComponent = (c: Component): c is SvgComponent => isSvgComponentType(c.type);

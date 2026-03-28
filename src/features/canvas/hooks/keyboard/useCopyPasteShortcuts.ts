@@ -16,7 +16,11 @@ import {
   getOffsetPositionOfNodes,
   type KeyHandler,
 } from "./helpers";
-import { readDrawioFromClipboard, writeDrawioToClipboard } from "@/lib/clipboard-utils";
+import {
+  readDrawioFromClipboard,
+  readSvgFromClipboard,
+  writeDrawioToClipboard,
+} from "@/lib/clipboard-utils";
 import { parseDrawioXml } from "@/lib/export-service/import-drawio";
 
 interface UseCopyPasteShortcutsParams {
@@ -31,6 +35,7 @@ interface UseCopyPasteShortcutsParams {
     connections: Connection[],
     layouts: NodeLayout[],
   ) => string[];
+  importSvgComponent: (svgContent: string, position: { x: number; y: number }) => string | null;
   serviceRegistry: Record<string, { id: string; name: string }>;
   exportDrawioXml: (componentIds: string[]) => string;
   setSelectedNodeIds: (ids: Set<string>) => void;
@@ -49,6 +54,7 @@ export function useCopyPasteShortcuts({
   copyToClipboard,
   pasteFromClipboard,
   importDrawioResult,
+  importSvgComponent,
   serviceRegistry,
   exportDrawioXml,
   setSelectedNodeIds,
@@ -74,11 +80,25 @@ export function useCopyPasteShortcuts({
         return true;
       }
 
-      // Cmd/Ctrl+V — draw.io clipboard first, then internal Zustand clipboard
+      // Cmd/Ctrl+V — SVG clipboard, then draw.io, then internal Zustand clipboard
       if (event.key === "v") {
         event.preventDefault();
 
-        // 1. Try draw.io clipboard first
+        // 1. Try SVG clipboard first
+        const svgContent = await readSvgFromClipboard();
+        if (svgContent) {
+          const pastePos = getPasteCenter(reactFlowInstance, reactFlowWrapperRef);
+          const newId = importSvgComponent(svgContent, pastePos);
+          if (newId) {
+            reactFlowInstance.setNodes((nodes) =>
+              nodes.map((n) => ({ ...n, selected: n.id === newId })),
+            );
+            setSelectedNodeIds(new Set([newId]));
+          }
+          return true;
+        }
+
+        // 2. Try draw.io clipboard
         const drawioXml = await readDrawioFromClipboard();
         if (drawioXml) {
           const pasteCenter = getPasteCenter(reactFlowInstance, reactFlowWrapperRef);
@@ -99,7 +119,7 @@ export function useCopyPasteShortcuts({
           }
         }
 
-        // 2. Fall back to internal Zustand clipboard
+        // 3. Fall back to internal Zustand clipboard
         const clipboardIds =
           useDiagramStore.getState().clipboard?.components.map((component) => component.id) ??
           [];
@@ -149,6 +169,7 @@ export function useCopyPasteShortcuts({
       copyToClipboard,
       pasteFromClipboard,
       importDrawioResult,
+      importSvgComponent,
       serviceRegistry,
       exportDrawioXml,
       setSelectedNodeIds,

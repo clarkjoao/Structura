@@ -10,6 +10,8 @@ export type ComponentType =
   | "note"
   | "api-group"
   | "endpoint"
+  | "unknown"
+  | "svg"
   | AwsCategoryId;
 
 interface BaseComponent {
@@ -105,11 +107,33 @@ export interface EndpointComponent extends BaseComponent {
   handlers: EndpointHandler[];
 }
 
-export type Component = C4Component | PanelComponent | NoteComponent | AwsComponent | ApiGroupComponent | EndpointComponent;
+export interface UnknownComponent extends BaseComponent {
+  type: "unknown";
+  /** Raw content from the original source (ex: draw.io XML value attribute). */
+  rawContent?: string;
+}
+
+export interface SvgComponent extends BaseComponent {
+  type: "svg";
+  /** Sanitized SVG markup rendered as the node body. */
+  svgContent: string;
+}
+
+export type Component =
+  | C4Component
+  | PanelComponent
+  | NoteComponent
+  | AwsComponent
+  | ApiGroupComponent
+  | EndpointComponent
+  | UnknownComponent
+  | SvgComponent;
 
 export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<PanelComponent, "id">> &
   Partial<Omit<NoteComponent, "id">> &
   Partial<Omit<AwsComponent, "id">> &
   Partial<Omit<ApiGroupComponent, "id">> &
-  Partial<Omit<EndpointComponent, "id">> & { width?: number; height?: number };
+  Partial<Omit<EndpointComponent, "id">> &
+  Partial<Omit<UnknownComponent, "id">> &
+  Partial<Omit<SvgComponent, "id">> & { width?: number; height?: number };
