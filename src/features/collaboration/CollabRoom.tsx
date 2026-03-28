@@ -29,7 +29,6 @@ function CollabRoomInner() {
     sessionClosedByHost,
     hostDisconnected,
     updateCursor,
-    updateSelectedNode,
   } = useCollab();
   const { importDiagram } = useDiagramActions();
   const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
@@ -53,24 +52,14 @@ function CollabRoomInner() {
         });
         lastCursorAtRef.current = now;
       }
-
-      const target = event.target as HTMLElement | null;
-      const nodeElement = target?.closest?.(".react-flow__node");
-      const edgeElement = target?.closest?.(".react-flow__edge");
-      const activeId =
-        nodeElement?.getAttribute("data-id") ??
-        edgeElement?.getAttribute("data-id") ??
-        null;
-      updateSelectedNode(activeId);
     },
-    [session, updateCursor, updateSelectedNode],
+    [session, updateCursor],
   );
 
   const handleCanvasPointerLeave = useCallback(() => {
     if (!session) return;
     updateCursor(null);
-    updateSelectedNode(null);
-  }, [session, updateCursor, updateSelectedNode]);
+  }, [session, updateCursor]);
 
   const handleImportAndContinue = () => {
     if (!diagram) {

@@ -153,7 +153,7 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
   };
 
   return (
-    <div className="flex flex-col w-80 h-full border-l border-border bg-card overflow-hidden">
+    <div className="flex flex-col flex-1 min-h-0 w-full overflow-hidden">
       <div className="flex shrink-0 items-center justify-between p-3 border-b border-border">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("common.connection")}</h3>
         <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>

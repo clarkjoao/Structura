@@ -1,4 +1,5 @@
 export { CollabProvider, useCollab } from "./CollabProvider";
+export { CollabEditingWarning } from "./CollabEditingWarning";
 export { CollabCursors } from "./CollabCursors";
 export { CollabToolbar } from "./CollabToolbar";
 export { CollabStartModal } from "./CollabStartModal";

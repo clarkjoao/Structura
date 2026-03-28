@@ -170,6 +170,7 @@ export function useCollab({
   const isUnmountedRef = useRef(false);
   const roomNotFoundRetryRef = useRef(false);
   const activeElementIdRef = useRef<string | null>(null);
+  const lastCursorRef = useRef<{ x: number; y: number } | null>(null);
 
   const [session, setSession] = useState<CollabSession | null>(null);
   const [status, setStatus] = useState<CollabStatus>("idle");
@@ -435,7 +436,25 @@ export function useCollab({
               : null;
 
           if (!clientId || !user?.id || !user.name) return;
-          upsertPeer({ clientId, user, cursor, activeElementId });
+
+          setSession((previous) => {
+            if (!previous) return previous;
+            const index = previous.peers.findIndex((peerState) => peerState.clientId === clientId);
+            const existingCursor = index >= 0 ? previous.peers[index].cursor : null;
+            const resolvedCursor = cursor !== null ? cursor : existingCursor;
+            const updatedPeer: PeerState = {
+              clientId,
+              user,
+              cursor: resolvedCursor,
+              activeElementId,
+            };
+            if (index === -1) {
+              return { ...previous, peers: [...previous.peers, updatedPeer] };
+            }
+            const nextPeers = [...previous.peers];
+            nextPeers[index] = updatedPeer;
+            return { ...previous, peers: nextPeers };
+          });
           return;
         }
         case "session:closed": {
@@ -618,6 +637,7 @@ export function useCollab({
   const sendCursor = useCallback(
     (cursor: { x: number; y: number } | null) => {
       if (!roomId) return;
+      if (cursor) lastCursorRef.current = cursor;
       sendRaw({
         type: "peer:cursor",
         roomId,
@@ -628,9 +648,28 @@ export function useCollab({
     [roomId, sendRaw],
   );
 
-  const setActiveElement = useCallback((elementId: string | null) => {
-    activeElementIdRef.current = elementId;
-  }, []);
+  const sendActiveElement = useCallback(
+    (elementId: string | null) => {
+      if (!roomId) return;
+      sendRaw({
+        type: "peer:cursor",
+        roomId,
+        cursor: lastCursorRef.current,
+        activeElementId: elementId,
+      });
+    },
+    [roomId, sendRaw],
+  );
+
+  const setActiveElement = useCallback(
+    (elementId: string | null) => {
+      activeElementIdRef.current = elementId;
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        sendActiveElement(elementId);
+      }
+    },
+    [sendActiveElement],
+  );
 
   const closeSession = useCallback(() => {
     if (!roomId || !isHost) return;
