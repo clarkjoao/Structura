@@ -101,6 +101,23 @@
     "copySuffix": " (cópia)",
     "defaultNamePrefix": "Novo"
   },
+  "externalLinks": {
+    "sectionTitle": "Links",
+    "addButton": "Adicionar link",
+    "labelField": "Rótulo",
+    "labelPlaceholder": "ex: Docs da API",
+    "urlField": "URL",
+    "urlPlaceholder": "https://...",
+    "typeField": "Tipo",
+    "typeConfluence": "Confluence",
+    "typeGithub": "GitHub",
+    "typeJira": "Jira",
+    "typeGeneric": "Genérico",
+    "confirmAdd": "Adicionar",
+    "cancelAdd": "Cancelar",
+    "removeTitle": "Remover link",
+    "openLink": "Abrir"
+  },
   "nav": {
     "workspaces": "Workspaces",
     "registry": "Registry",

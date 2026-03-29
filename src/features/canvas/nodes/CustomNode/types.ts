@@ -1,4 +1,4 @@
-import type { ComponentType } from "@/features/diagram";
+import type { ComponentType, ExternalLink } from "@/features/diagram";
 
 export interface NodeData {
   elementId: string;
@@ -13,6 +13,7 @@ export interface NodeData {
   serviceId?: string;
   serviceName?: string;
   linkedDiagramName?: string;
+  externalLinks?: ExternalLink[];
   onDrillDown?: (elementId: string) => void;
   onEmbed?: (elementId: string) => void;
   recordingBadges?: number[];

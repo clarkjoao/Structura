@@ -17,6 +17,7 @@ export type {
   EndpointHandler,
   HttpMethod,
   PanelKind,
+  ExternalLink,
 } from "./component.types";
 
 export type {

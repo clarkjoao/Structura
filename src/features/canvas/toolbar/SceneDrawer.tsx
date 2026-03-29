@@ -236,11 +236,12 @@ export function SceneDrawer({
               {t("scenes.drawerTitle")}
             </span>
             {scenesGuestReadOnly && (
-              <Lock
-                className="h-3.5 w-3.5 text-muted-foreground shrink-0"
-                aria-hidden
-                title={t("collaboration.scenesReadOnly")}
-              />
+              <span className="shrink-0" title={t("collaboration.scenesReadOnly")}>
+                <Lock
+                  className="h-3.5 w-3.5 text-muted-foreground shrink-0"
+                  aria-hidden
+                />
+              </span>
             )}
             <span className="text-[10px] text-muted-foreground shrink-0">
               {t("scenes.drawerSceneCount", { count: scenes.length })}

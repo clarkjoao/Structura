@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ChevronRight,
   ExternalLink,
+  ExternalLink as ExternalLinkIcon,
   Link2,
   Loader2,
   RefreshCw,
@@ -20,8 +21,9 @@ import {
   normalizeSources,
   pickMoreCompleteString,
 } from "@/integrations/merge-utils";
-import type { ServiceDefinition } from "@/features/diagram";
+import type { ExternalLink as DiagramExternalLink, ServiceDefinition } from "@/features/diagram";
 import { ServiceSource } from "@/features/diagram";
+import { ExternalLinksSection } from "@/features/canvas/panels/ElementPanel/sections";
 import { ChipInput } from "./ChipInput";
 import { SOURCE_BADGE, SOURCE_DOT } from "./registry.constants";
 import { sourceTypeLabel } from "./registryLabels";
@@ -56,6 +58,7 @@ export function DetailPanel({
   const [editRepo, setEditRepo] = useState(svc.repositoryUrl);
   const [editTech, setEditTech] = useState<string[]>(svc.technology);
   const [editTags, setEditTags] = useState<string[]>(svc.tags ?? []);
+  const [editLinks, setEditLinks] = useState<DiagramExternalLink[]>(svc.externalLinks ?? []);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState("");
@@ -69,6 +72,7 @@ export function DetailPanel({
       setEditRepo(svc.repositoryUrl);
       setEditTech(svc.technology);
       setEditTags(svc.tags ?? []);
+      setEditLinks(svc.externalLinks ?? []);
     }
   }, [svc, editing]);
 
@@ -80,6 +84,7 @@ export function DetailPanel({
       owner: editOwner.trim() || undefined,
       technology: editTech,
       tags: editTags,
+      externalLinks: editLinks,
     });
     setEditing(false);
   };
@@ -372,6 +377,27 @@ export function DetailPanel({
                   items={editTags}
                   onChange={setEditTags}
                 />
+                <ExternalLinksSection
+                  componentId={svc.id}
+                  links={editLinks}
+                  onAdd={(link) =>
+                    setEditLinks((previous) => [
+                      ...previous,
+                      {
+                        ...link,
+                        id: `lnk_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+                      },
+                    ])
+                  }
+                  onUpdate={(linkId, patch) =>
+                    setEditLinks((previous) =>
+                      previous.map((item) => (item.id === linkId ? { ...item, ...patch } : item)),
+                    )
+                  }
+                  onRemove={(linkId) =>
+                    setEditLinks((previous) => previous.filter((item) => item.id !== linkId))
+                  }
+                />
               </div>
             ) : (
               <div className="space-y-3">
@@ -515,6 +541,28 @@ export function DetailPanel({
                     </span>
                   )}
                 </div>
+
+                {(svc.externalLinks ?? []).length > 0 && (
+                  <div>
+                    <span className="text-[11px] text-muted-foreground block mb-1">
+                      {t("externalLinks.sectionTitle")}
+                    </span>
+                    <div className="flex flex-col gap-1">
+                      {(svc.externalLinks ?? []).map((link) => (
+                        <a
+                          key={link.id}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-primary hover:underline flex items-center gap-1.5 truncate"
+                        >
+                          <ExternalLinkIcon className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{link.label || link.url}</span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

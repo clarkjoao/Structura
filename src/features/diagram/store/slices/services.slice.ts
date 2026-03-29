@@ -1,8 +1,105 @@
+import type { Component } from "../../model/diagram.types";
 import type { ServiceDefinition } from "../../model/service.types";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 import { SEED_SERVICE_REGISTRY } from "@/fixtures/seed";
 import { normalizeSources } from "@/integrations/merge-utils";
+
+function patchTouchesLinkedComponentFields(
+  patch: Partial<Omit<ServiceDefinition, "id">>,
+): boolean {
+  return (
+    "name" in patch ||
+    "description" in patch ||
+    "tags" in patch ||
+    "technology" in patch ||
+    "externalLinks" in patch
+  );
+}
+
+/** Core fields copied from registry when linking or when the service is updated. */
+function copyServiceCoreFieldsToComponent(
+  comp: Component,
+  service: ServiceDefinition,
+): void {
+  comp.name = service.name;
+  comp.description = service.description;
+  comp.tags = service.tags?.length ? service.tags : undefined;
+  if ("technology" in comp) {
+    comp.technology = service.technology.length
+      ? service.technology.join(", ")
+      : undefined;
+  }
+}
+
+/** Used when first linking: add any service URLs missing on the component. */
+function mergeServiceExternalLinksIntoComponent(
+  comp: Component,
+  service: ServiceDefinition,
+): void {
+  if (!service.externalLinks?.length) return;
+  const existing = new Set((comp.externalLinks ?? []).map((link) => link.url));
+  const toAdd = service.externalLinks.filter((link) => !existing.has(link.url));
+  if (toAdd.length) {
+    comp.externalLinks = [...(comp.externalLinks ?? []), ...toAdd];
+  }
+}
+
+/** Used when registry externalLinks change: drop removed service URLs, merge new. */
+function reconcileExternalLinksFromRegistry(
+  comp: Component,
+  previousServiceUrls: Set<string>,
+  service: ServiceDefinition,
+): void {
+  const newServiceLinks = service.externalLinks ?? [];
+  const newUrls = new Set(newServiceLinks.map((link) => link.url));
+
+  let links = [...(comp.externalLinks ?? [])];
+  links = links.filter(
+    (link) => !previousServiceUrls.has(link.url) || newUrls.has(link.url),
+  );
+
+  const existing = new Set(links.map((link) => link.url));
+  for (const serviceLink of newServiceLinks) {
+    if (!existing.has(serviceLink.url)) {
+      links.push({ ...serviceLink });
+      existing.add(serviceLink.url);
+    }
+  }
+
+  comp.externalLinks = links.length > 0 ? links : undefined;
+}
+
+function syncLinkedComponentsFromRegistry(
+  state: AppState,
+  serviceId: string,
+  service: ServiceDefinition,
+  previousExternalLinkUrls: Set<string> | null,
+): void {
+  const apply = (comp: Component): boolean => {
+    if (comp.serviceId !== serviceId) return false;
+    copyServiceCoreFieldsToComponent(comp, service);
+    if (previousExternalLinkUrls !== null) {
+      reconcileExternalLinksFromRegistry(comp, previousExternalLinkUrls, service);
+    }
+    return true;
+  };
+
+  for (const diagram of Object.values(state.diagrams)) {
+    let touched = false;
+    for (const comp of Object.values(diagram.snapshot.components)) {
+      if (apply(comp)) touched = true;
+    }
+    for (const scene of Object.values(diagram.scenes ?? {})) {
+      for (const comp of Object.values(scene.addedComponents)) {
+        if (apply(comp)) touched = true;
+      }
+    }
+    if (touched) {
+      diagram.updatedAt = new Date().toISOString();
+    }
+  }
+}
 
 export const servicesSlice = (
   set: (fn: (state: AppState) => void) => void,
@@ -25,9 +122,24 @@ export const servicesSlice = (
     updateService: (id: string, patch: Partial<Omit<ServiceDefinition, "id">>) => {
       set((state) => {
         const svc = state.serviceRegistry[id];
-        if (svc) {
-          Object.assign(svc, patch);
-          svc.sources = normalizeSources(svc);
+        if (!svc) return;
+
+        const shouldSyncDiagrams = patchTouchesLinkedComponentFields(patch);
+        const previousExternalLinkUrls =
+          shouldSyncDiagrams && "externalLinks" in patch
+            ? new Set((svc.externalLinks ?? []).map((link) => link.url))
+            : null;
+
+        Object.assign(svc, patch);
+        svc.sources = normalizeSources(svc);
+
+        if (shouldSyncDiagrams) {
+          syncLinkedComponentsFromRegistry(
+            state,
+            id,
+            svc,
+            previousExternalLinkUrls,
+          );
         }
       });
     },
@@ -63,14 +175,8 @@ export const servicesSlice = (
         const service = state.serviceRegistry[serviceId];
         if (!service) return;
 
-        comp.name = service.name;
-        comp.description = service.description;
-        comp.tags = service.tags?.length ? service.tags : undefined;
-        if ("technology" in comp) {
-          comp.technology = service.technology.length
-            ? service.technology.join(", ")
-            : undefined;
-        }
+        copyServiceCoreFieldsToComponent(comp, service);
+        mergeServiceExternalLinksIntoComponent(comp, service);
       });
     },
 
