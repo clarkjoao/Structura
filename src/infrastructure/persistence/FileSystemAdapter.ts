@@ -1,4 +1,4 @@
-import type { Diagram, Folder } from "@/features/diagram";
+import type { Diagram, Folder, IconDefinition } from "@/features/diagram";
 import { normalizeImportedDiagram } from "@/lib/export-service/normalize-imported-diagram";
 import { FileSystemEntryKind } from "@/lib/enums";
 import type { CustomComponentTemplate } from "@/features/custom-components/customComponent.types";
@@ -145,6 +145,7 @@ export interface WorkspaceManifest {
   folders: Record<string, unknown>;
   activeDiagramId: string | null;
   customComponentTemplates?: Record<string, CustomComponentTemplate>;
+  iconLibrary?: Record<string, IconDefinition>;
 }
 
 export type WorkspacePayload = {
@@ -153,6 +154,7 @@ export type WorkspacePayload = {
   folders: Record<string, unknown>;
   activeDiagramId: string | null;
   customComponentTemplates?: Record<string, CustomComponentTemplate>;
+  iconLibrary?: Record<string, IconDefinition>;
 };
 
 // ── Scan result type ──
@@ -336,6 +338,7 @@ export class FileSystemAdapter {
       folders: manifest.folders,
       activeDiagramId: manifest.activeDiagramId,
       customComponentTemplates: manifest.customComponentTemplates,
+      iconLibrary: manifest.iconLibrary,
     };
   }
 

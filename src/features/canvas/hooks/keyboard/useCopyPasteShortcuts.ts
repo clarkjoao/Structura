@@ -18,6 +18,7 @@ import {
 } from "./helpers";
 import { readDrawioFromClipboard, writeDrawioToClipboard } from "@/lib/clipboard-utils";
 import { parseDrawioXml } from "@/lib/export-service/import-drawio";
+import { generateIconId, normalizeSvgForStorage } from "@/features/canvas/utils/svg.utils";
 
 interface UseCopyPasteShortcutsParams {
   diagram: Diagram | null | undefined;
@@ -34,6 +35,9 @@ interface UseCopyPasteShortcutsParams {
   serviceRegistry: Record<string, { id: string; name: string }>;
   exportDrawioXml: (componentIds: string[]) => string;
   setSelectedNodeIds: (ids: Set<string>) => void;
+  /** Validates size, then sanitizes SVG; returns markup safe for storage or null (toasts on failure). */
+  importSvgComponent: (svgContent: string) => string | null;
+  pastedSvgDefaultName: string;
 }
 
 /**
@@ -52,6 +56,8 @@ export function useCopyPasteShortcuts({
   serviceRegistry,
   exportDrawioXml,
   setSelectedNodeIds,
+  importSvgComponent,
+  pastedSvgDefaultName,
 }: UseCopyPasteShortcutsParams): KeyHandler {
   return useCallback(
     async (event: KeyboardEvent): Promise<boolean> => {
@@ -99,7 +105,37 @@ export function useCopyPasteShortcuts({
           }
         }
 
-        // 2. Fall back to internal Zustand clipboard
+        // 2. Inline SVG from system clipboard → global icon library
+        let clipboardPlain: string | null = null;
+        try {
+          clipboardPlain = await navigator.clipboard.readText();
+        } catch {
+          clipboardPlain = null;
+        }
+        if (clipboardPlain && /<svg(\s|>)/i.test(clipboardPlain)) {
+          const cleanedMarkup = importSvgComponent(clipboardPlain);
+          if (cleanedMarkup === null) {
+            return true;
+          }
+          const store = useDiagramStore.getState();
+          const activeDiagramId = store.activeDiagramId;
+          if (activeDiagramId) {
+            const newIconId = generateIconId();
+            store.addIcon(activeDiagramId, {
+              id: newIconId,
+              name: pastedSvgDefaultName,
+              source: {
+                kind: "svg",
+                svgContent: normalizeSvgForStorage(cleanedMarkup),
+              },
+              createdAt: Date.now(),
+              usageCount: 0,
+            });
+          }
+          return true;
+        }
+
+        // 3. Fall back to internal Zustand clipboard
         const clipboardIds =
           useDiagramStore.getState().clipboard?.components.map((component) => component.id) ??
           [];
@@ -152,6 +188,8 @@ export function useCopyPasteShortcuts({
       serviceRegistry,
       exportDrawioXml,
       setSelectedNodeIds,
+      importSvgComponent,
+      pastedSvgDefaultName,
     ],
   );
 }

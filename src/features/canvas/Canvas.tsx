@@ -82,6 +82,8 @@ const Canvas = (props: CanvasProps = {}) => {
     );
   }
 
+  const resolvedSnapshot = resolveCanvasSnapshot(diagram);
+
   return (
     <HandleHighlightProvider
       value={{
@@ -111,7 +113,7 @@ const Canvas = (props: CanvasProps = {}) => {
             <CanvasSearch
               onClose={() => setShowSearch(false)}
               onSelectResult={handleSearchSelect}
-              components={resolveCanvasSnapshot(diagram).components}
+              components={resolvedSnapshot.components}
             />
           )}
           <div className="absolute inset-y-0 left-0 z-30 flex">
@@ -225,15 +227,21 @@ const Canvas = (props: CanvasProps = {}) => {
 
         {templateSourceNode ? (
           <SaveCustomComponentModal
-            defaultName={String(templateSourceNode.data?.name ?? "")}
+            defaultName={String(
+              resolvedSnapshot.components[templateSourceNode.id]?.name ??
+                templateSourceNode.data?.name ??
+                "",
+            )}
             defaultDescription={
-              typeof templateSourceNode.data?.description === "string"
+              resolvedSnapshot.components[templateSourceNode.id]?.description ??
+              (typeof templateSourceNode.data?.description === "string"
                 ? templateSourceNode.data.description
-                : undefined
+                : undefined)
             }
             onClose={() => setTemplateNodeId(null)}
             onSave={(name, description) => {
-              const templateData = createTemplateDataFromNode(templateSourceNode);
+              const domainComponent = resolvedSnapshot.components[templateSourceNode.id];
+              const templateData = createTemplateDataFromNode(templateSourceNode, domainComponent);
               addTemplate({
                 id: crypto.randomUUID(),
                 name,

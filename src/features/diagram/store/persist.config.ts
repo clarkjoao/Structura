@@ -1,7 +1,8 @@
 import { createJSONStorage } from "zustand/middleware";
 import type { IStoragePort } from "@/infrastructure/persistence";
+import { useIconStore } from "@/features/icons/store";
 import type { Diagram, Component, Connection, IconDefinition, NodeLayout } from "../model/diagram.types";
-import type { DiagramStore } from "./store.types";
+import type { DiagramSnapshot, DiagramStore } from "./store.types";
 import type { ServiceDefinition } from "../model/service.types";
 import { ServiceSource } from "../enums";
 import { migrateFlow } from "../utils/flow-migration";
@@ -238,6 +239,36 @@ function migrateIconDefinitionToSource(state: Partial<DiagramStore>): void {
   }
 }
 
+function migrateIconLibraryToGlobalStore(state: DiagramStore): void {
+  try {
+    const migrateSnapshot = (snapshot: Diagram["snapshot"] | undefined): void => {
+      if (!snapshot) {
+        return;
+      }
+      const library = snapshot.iconLibrary;
+      if (!library || Object.keys(library).length === 0) {
+        return;
+      }
+      const globalIcons = useIconStore.getState().icons;
+      for (const [iconId, icon] of Object.entries(library)) {
+        if (!globalIcons[iconId]) {
+          useIconStore.getState().addIcon(icon);
+        }
+      }
+      snapshot.iconLibrary = {};
+    };
+
+    for (const diagram of Object.values(state.diagrams ?? {})) {
+      migrateSnapshot((diagram as Diagram).snapshot);
+    }
+    for (const entry of [...(state.past ?? []), ...(state.future ?? [])]) {
+      migrateSnapshot((entry as DiagramSnapshot).snapshot);
+    }
+  } catch {
+    // Store may not be ready; rehydration must not block.
+  }
+}
+
 export function mergePersistedState(
   persistedState: unknown,
   currentState: DiagramStore,
@@ -264,6 +295,7 @@ export function mergePersistedState(
   migrateIconDefinitionToSource(next);
   migrateAddEdgeLayouts(next);
   migrateAddDiagramDescription(next);
+  migrateIconLibraryToGlobalStore(next);
 
   return next;
 }

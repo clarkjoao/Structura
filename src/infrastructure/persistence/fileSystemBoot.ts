@@ -7,13 +7,14 @@
  * `useFileSystemSync`) simply read/drive this global state.
  */
 
-import { useDiagramStore } from "@/features/diagram";
+import { useDiagramStore, type Diagram, type IconDefinition } from "@/features/diagram";
 import { VIEWPORT_DEBOUNCE_MS } from "@/features/canvas/canvas.constants";
 import { fileSystemAdapter } from "./FileSystemAdapter";
 import { defaultStorage } from "./LocalStorageAdapter";
 import { PERSIST_KEY } from "@/features/diagram/store/persist.config";
 import { useCustomComponentStore } from "@/features/custom-components/store";
 import type { CustomComponentTemplate } from "@/features/custom-components/customComponent.types";
+import { useIconStore } from "@/features/icons/store";
 
 type DiagramStoreState = ReturnType<typeof useDiagramStore.getState>;
 
@@ -29,6 +30,46 @@ function mergeTemplates(
     }
   }
   return result;
+}
+
+export interface WorkspaceIconSource {
+  diagrams: Record<string, Diagram>;
+  iconLibrary?: Record<string, IconDefinition>;
+}
+
+/**
+ * Merges manifest `iconLibrary` into the global icon store (existing store entries win),
+ * then moves any per-diagram `snapshot.iconLibrary` entries into the global store and clears them.
+ * Safe to call multiple times; failures are swallowed so FS / UI flows are not blocked.
+ */
+export function hydrateIconStoreFromWorkspace(workspace: WorkspaceIconSource): void {
+  try {
+    if (workspace.iconLibrary) {
+      useIconStore.setState((state) => ({
+        icons: { ...workspace.iconLibrary, ...state.icons },
+      }));
+    }
+  } catch {
+    // Icon store not ready — do not block caller.
+  }
+
+  try {
+    for (const diagram of Object.values(workspace.diagrams)) {
+      const library = diagram.snapshot?.iconLibrary ?? {};
+      if (Object.keys(library).length === 0) {
+        continue;
+      }
+      const globalIcons = useIconStore.getState().icons;
+      for (const [iconId, icon] of Object.entries(library)) {
+        if (!globalIcons[iconId]) {
+          useIconStore.getState().addIcon(icon as IconDefinition);
+        }
+      }
+      diagram.snapshot.iconLibrary = {};
+    }
+  } catch {
+    // Do not block caller.
+  }
 }
 
 /**
@@ -49,6 +90,8 @@ export async function flushWorkspaceToConnectedFolder(
 
   const customComponentTemplates = useCustomComponentStore.getState().templates;
 
+  const iconLibrary = useIconStore.getState().icons;
+
   await fileSystemAdapter.writeManifest({
     version: 1,
     createdAt: new Date().toISOString(),
@@ -58,6 +101,7 @@ export async function flushWorkspaceToConnectedFolder(
     folders: state.folders,
     activeDiagramId: state.activeDiagramId,
     customComponentTemplates,
+    iconLibrary,
   });
 }
 
@@ -123,6 +167,8 @@ async function doReconnect(): Promise<boolean> {
           templates: mergeTemplates(state.templates, workspaceTemplates),
         }));
       }
+
+      hydrateIconStoreFromWorkspace(workspace);
     }
     await clearLocalCache();
 
@@ -176,6 +222,7 @@ export function startFileSystemSync(): void {
         }
 
         const customComponentTemplates = useCustomComponentStore.getState().templates;
+        const iconLibrary = useIconStore.getState().icons;
 
         await fileSystemAdapter.writeManifest({
           version: 1,
@@ -186,6 +233,7 @@ export function startFileSystemSync(): void {
           folders: diagramState.folders,
           activeDiagramId: diagramState.activeDiagramId,
           customComponentTemplates,
+          iconLibrary,
         });
       } catch (error) {
         console.error("[FileSystemSync] write failed:", error);
@@ -202,9 +250,15 @@ export function startFileSystemSync(): void {
     scheduleWorkspaceWrite(currentDiagramState, currentDiagramState);
   });
 
+  const iconLibraryUnsubscribe = useIconStore.subscribe(() => {
+    const currentDiagramState = useDiagramStore.getState();
+    scheduleWorkspaceWrite(currentDiagramState, currentDiagramState);
+  });
+
   _syncUnsub = () => {
     diagramUnsubscribe();
     customComponentUnsubscribe();
+    iconLibraryUnsubscribe();
   };
 }
 

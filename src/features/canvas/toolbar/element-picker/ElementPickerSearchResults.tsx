@@ -136,7 +136,7 @@ export function ElementPickerSearchResults({
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             {t("customComponents.customComponents")} · {filteredTemplates.length}
           </h3>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             {filteredTemplates.map((template) => (
               <NodeTemplatePreviewCard
                 key={template.id}

@@ -323,7 +323,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
         return filteredTemplates.length === 0 ? (
           <div className="text-xs text-muted-foreground">{t("patterns.userTemplates.empty")}</div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             {filteredTemplates.map((template) => (
               <NodeTemplatePreviewCard
                 key={template.id}

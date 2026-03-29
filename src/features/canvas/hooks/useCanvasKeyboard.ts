@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import type { ReactFlowInstance } from "@xyflow/react";
 import type {
   Diagram,
@@ -18,6 +19,33 @@ import { useRecordingShortcuts } from "./keyboard/useRecordingShortcuts";
 import { useSelectionShortcuts } from "./keyboard/useSelectionShortcuts";
 import { useUndoRedoShortcuts } from "./keyboard/useUndoRedoShortcuts";
 import { useGroupShortcuts } from "./keyboard/useGroupShortcuts";
+import { validateSvgSize } from "../utils/svg.utils";
+import { sanitizeSvg } from "../utils/svg.sanitizer";
+
+/**
+ * Validates SVG size, then sanitizes. Shows toasts on failure.
+ * `translate` should be `t` from react-i18next for icon message keys.
+ */
+export function importSvgComponent(
+  svgContent: string,
+  translate: (key: string) => string,
+): string | null {
+  const validation = validateSvgSize(svgContent);
+  if (!validation.valid) {
+    if (validation.reason === "too_large") {
+      toast.error(translate("icons.svgTooLarge"));
+    } else {
+      toast.error(translate("icons.svgDimensionExceeded"));
+    }
+    return null;
+  }
+  const sanitized = sanitizeSvg(svgContent);
+  if (sanitized === null) {
+    toast.error(translate("icons.invalidSvg"));
+    return null;
+  }
+  return sanitized;
+}
 
 interface UseCanvasKeyboardParams {
   diagram: Diagram | null | undefined;
@@ -151,6 +179,13 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     [diagram, serviceRegistry],
   );
 
+  const importSvgForPaste = useCallback(
+    (svgContent: string) => importSvgComponent(svgContent, t),
+    [t],
+  );
+
+  const pastedSvgDefaultName = t("icons.pastedSvgDefaultName");
+
   const handleCopyPaste = useCopyPasteShortcuts({
     diagram,
     selectedNodeId,
@@ -162,6 +197,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     serviceRegistry,
     exportDrawioXml,
     setSelectedNodeIds,
+    importSvgComponent: importSvgForPaste,
+    pastedSvgDefaultName,
   });
 
   const recordingHandler = useRecordingShortcuts();
