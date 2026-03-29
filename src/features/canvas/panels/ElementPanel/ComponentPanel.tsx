@@ -25,6 +25,7 @@ import {
   LinkedDiagramSection,
   PanelStyleSection,
   ColorAccentSection,
+  ExternalLinksSection,
 } from "./sections";
 import { isComponentType } from "@/features/diagram/model/component-type-constants";
 
@@ -97,8 +98,16 @@ const ComponentPanel = ({
         : null,
     [activeDiagram],
   );
-  const { linkComponentToService, linkComponentToDiagram, addDiagram, setParent, updateNodeLayout } =
-    useDiagramActions();
+  const {
+    linkComponentToService,
+    linkComponentToDiagram,
+    addDiagram,
+    setParent,
+    updateNodeLayout,
+    addExternalLink,
+    updateExternalLink,
+    removeExternalLink,
+  } = useDiagramActions();
   const [tab, setTab] = useState<Tab>("details");
   const [name, setName] = useState(component.name);
   const [desc, setDesc] = useState(component.description);
@@ -457,7 +466,16 @@ const ComponentPanel = ({
             onChangeLinked={(diagramId) => linkComponentToDiagram(component.id, diagramId)}
             />
           )}
-         
+          {!isSimple && (
+            <ExternalLinksSection
+              componentId={component.id}
+              links={component.externalLinks ?? []}
+              onAdd={(link) => addExternalLink(component.id, link)}
+              onUpdate={(linkId, patch) => updateExternalLink(component.id, linkId, patch)}
+              onRemove={(linkId) => removeExternalLink(component.id, linkId)}
+            />
+          )}
+
           <div>
             <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
               {t("elementPanel.idLabel")}

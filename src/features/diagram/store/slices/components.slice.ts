@@ -8,6 +8,7 @@ import type {
   NodeLayout,
   Diagram,
   SceneDiff,
+  ExternalLink,
 } from "../../model/diagram.types";
 import { PanelKind } from "../../enums";
 import { generateId } from "../../utils/generate-id";
@@ -419,6 +420,56 @@ export const componentsSlice = (
         if (!comp) return;
         if (!comp.handleOrder) comp.handleOrder = { incoming: [], outgoing: [] };
         comp.handleOrder[side] = orderedConnectionIds;
+        d.updatedAt = new Date().toISOString();
+      });
+    },
+
+    addExternalLink: (componentId: string, link: Omit<ExternalLink, "id">) => {
+      set((state) => {
+        const d = state.diagrams[state.activeDiagramId!];
+        if (!d) return;
+        const scene = resolveActiveScene(d);
+        const inSceneAdds = !!(scene && scene.addedComponents[componentId]);
+        if (!scene || !inSceneAdds) pushHistory(state);
+        const comp = inSceneAdds
+          ? scene!.addedComponents[componentId]
+          : d.snapshot.components[componentId];
+        if (!comp) return;
+        if (!comp.externalLinks) comp.externalLinks = [];
+        comp.externalLinks.push({ ...link, id: generateId("lnk") });
+        d.updatedAt = new Date().toISOString();
+      });
+    },
+
+    updateExternalLink: (componentId: string, linkId: string, patch: Partial<Omit<ExternalLink, "id">>) => {
+      set((state) => {
+        const d = state.diagrams[state.activeDiagramId!];
+        if (!d) return;
+        const scene = resolveActiveScene(d);
+        const inSceneAdds = !!(scene && scene.addedComponents[componentId]);
+        if (!scene || !inSceneAdds) pushHistory(state);
+        const comp = inSceneAdds
+          ? scene!.addedComponents[componentId]
+          : d.snapshot.components[componentId];
+        if (!comp) return;
+        const link = comp.externalLinks?.find((l) => l.id === linkId);
+        if (link) Object.assign(link, patch);
+        d.updatedAt = new Date().toISOString();
+      });
+    },
+
+    removeExternalLink: (componentId: string, linkId: string) => {
+      set((state) => {
+        const d = state.diagrams[state.activeDiagramId!];
+        if (!d) return;
+        const scene = resolveActiveScene(d);
+        const inSceneAdds = !!(scene && scene.addedComponents[componentId]);
+        if (!scene || !inSceneAdds) pushHistory(state);
+        const comp = inSceneAdds
+          ? scene!.addedComponents[componentId]
+          : d.snapshot.components[componentId];
+        if (!comp) return;
+        comp.externalLinks = (comp.externalLinks ?? []).filter((l) => l.id !== linkId);
         d.updatedAt = new Date().toISOString();
       });
     },

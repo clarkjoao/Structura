@@ -1,5 +1,5 @@
 import type { AwsCategoryId } from "@/lib/catalogs/aws";
-import type { PanelKind } from "../enums";
+import type { ExternalLinkType, PanelKind } from "../enums";
 
 export type ComponentType =
   | "person"
@@ -11,6 +11,13 @@ export type ComponentType =
   | "api-group"
   | "endpoint"
   | AwsCategoryId;
+
+export interface ExternalLink {
+  id: string;
+  label: string;
+  url: string;
+  type: ExternalLinkType;
+}
 
 interface BaseComponent {
   id: string;
@@ -36,6 +43,7 @@ interface BaseComponent {
   templateId?: string;
   /** Optional custom-template registry reference used during instantiation. */
   registryServiceId?: string;
+  externalLinks?: ExternalLink[];
 }
 
 export interface C4Component extends BaseComponent {

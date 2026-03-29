@@ -46,3 +46,11 @@ export enum PanelKind {
   PrivateSubnet = "private-subnet",
   Swimlane = "swimlane",
 }
+
+/** Type of an external link attached to a component or service. */
+export enum ExternalLinkType {
+  Confluence = "confluence",
+  Github = "github",
+  Jira = "jira",
+  Generic = "generic",
+}
