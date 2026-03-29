@@ -50,6 +50,8 @@ interface UseCanvasNodesParams {
   isCompareMode?: boolean;
   compareVisualByComponentId?: Record<string, CompareElementVisual>;
   isNodeHiddenByTagFilter: (component: Component) => boolean;
+  onNoteStartEdit?: (noteId: string) => void;
+  setNoteInlineEditingId?: (id: string | null) => void;
 }
 
 type NodeCtxBase = Omit<NodeBuildContext, "isPlaying" | "isRecording" | "flowHighlight" | "activeStep" | "recordingInfo" | "coverage"> & {
@@ -88,6 +90,8 @@ export function useCanvasNodes({
   isCompareMode = false,
   compareVisualByComponentId,
   isNodeHiddenByTagFilter,
+  onNoteStartEdit,
+  setNoteInlineEditingId,
 }: UseCanvasNodesParams): Node[] {
   const { isRecording, onRecordHandleClick } = useFlowMode();
 
@@ -116,6 +120,8 @@ export function useCanvasNodes({
       activeFlowId,
       onPlayFlow,
       onAddEndpointToGroup,
+      onNoteStartEdit,
+      setNoteInlineEditingId,
       highlightedNodeIds,
       isViewingCoverage,
     };
@@ -142,6 +148,8 @@ export function useCanvasNodes({
     activeFlowId,
     onPlayFlow,
     onAddEndpointToGroup,
+    onNoteStartEdit,
+    setNoteInlineEditingId,
     highlightedNodeIds,
     isViewingCoverage,
   ]);

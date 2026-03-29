@@ -20,6 +20,7 @@ interface UseCanvasEventHandlersParams {
   ) => void;
   screenToFlowPosition: (pos: { x: number; y: number }) => { x: number; y: number };
   onRequestFocusTitle?: () => void;
+  onNoteStartEdit?: (noteId: string) => void;
 }
 
 export function useCanvasEventHandlers({
@@ -197,6 +198,15 @@ export function useCanvasEventHandlers({
       prevSelectionRef.current = node.id;
       setSelectedNodeIds(new Set([node.id]));
       setSelectedNodeId(node.id);
+
+      if (isNoteType(node.type ?? "")) {
+        const startEdit = node.data?.onStartEdit;
+        if (typeof startEdit === "function") {
+          startEdit();
+        }
+        return;
+      }
+
       onRequestFocusTitle?.();
     },
     [

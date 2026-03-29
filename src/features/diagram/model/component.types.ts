@@ -77,6 +77,9 @@ export interface PanelComponent extends BaseComponent {
 export interface NoteComponent extends BaseComponent {
   type: "note";
   panelColor?: string;
+  collapsed?: boolean;
+  collapsedWidth?: number;
+  collapsedHeight?: number;
 }
 
 export interface AwsComponent extends BaseComponent {

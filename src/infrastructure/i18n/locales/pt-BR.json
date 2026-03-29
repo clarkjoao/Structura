@@ -711,7 +711,11 @@
     "ariaWithTitle": "Nota: {{title}}",
     "ariaDefault": "Nota",
     "titleFallback": "Nota",
-    "emptyHint": "Clique para editar... Suporta **Markdown**."
+    "emptyHint": "Clique para editar... Suporta **Markdown**.",
+    "expandAria": "Expandir nota",
+    "expandTitle": "Expandir",
+    "collapseAria": "Recolher nota",
+    "collapseTitle": "Recolher"
   },
   "customNode": {
     "drillAria": "Explorar interior do elemento {{id}}",

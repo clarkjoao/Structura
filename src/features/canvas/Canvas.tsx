@@ -63,7 +63,6 @@ const Canvas = (props: CanvasProps = {}) => {
     focusTitleTrigger,
     isPanelOpen,
     selectedNodes,
-    selectedCount,
     showElementPanel,
     onDrillUp,
     isCompareMode,
@@ -100,7 +99,6 @@ const Canvas = (props: CanvasProps = {}) => {
           <CanvasToolbar
             onDrillUp={onDrillUp}
             isPanelOpen={isPanelOpen}
-            selectedCount={selectedCount}
             onClearSelection={visualState.clearCanvasSelection}
             onOpenScenes={() => setShowScenes(true)}
             allTags={allDiagramTags}

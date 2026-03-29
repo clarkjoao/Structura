@@ -44,6 +44,7 @@ function buildNodeData(component: Component): Record<string, unknown> {
       name: component.name,
       description: component.description,
       panelColor: component.panelColor,
+      collapsed: component.collapsed ?? false,
       isSelected: false,
     };
   }

@@ -8,13 +8,11 @@ import { useTranslation } from "react-i18next";
 export interface CanvasToolbarDiagramPanelProps {
   diagram: Diagram;
   toolbarEditLocked: boolean;
-  selectedCount: number;
 }
 
 export function CanvasToolbarDiagramPanel({
   diagram,
   toolbarEditLocked,
-  selectedCount,
 }: CanvasToolbarDiagramPanelProps) {
   const { t } = useTranslation();
   const { updateDiagram } = useDiagramActions();
@@ -94,11 +92,6 @@ export function CanvasToolbarDiagramPanel({
         <span className="text-[10px] font-mono text-muted-foreground rounded bg-secondary px-1.5 py-0.5 shrink-0">
           {levelLabels[diagram.level]}
         </span>
-        {selectedCount > 1 && (
-          <span className="text-xs text-muted-foreground ml-1">
-            {t("canvasToolbar.selectedCount", { count: selectedCount })}
-          </span>
-        )}
       </div>
       <div className="min-w-0 pl-[22px]">
         <DiagramDescriptionField editLocked={toolbarEditLocked} />

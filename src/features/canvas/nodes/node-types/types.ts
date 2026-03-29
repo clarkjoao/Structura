@@ -50,6 +50,10 @@ export interface NodeBuildContext {
   onPlayFlow?: (flowId: string) => void;
   /** Add a new endpoint child to an api-group. */
   onAddEndpointToGroup?: (groupId: string) => void;
+  /** Trigger inline editing on a NoteNode (called on double-click). */
+  onNoteStartEdit?: (noteId: string) => void;
+  /** Track which note is in inline edit (hides ElementPanel while non-null). */
+  setNoteInlineEditingId?: (id: string | null) => void;
 }
 
 export interface NodeTypeDescriptor {

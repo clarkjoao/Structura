@@ -12,7 +12,6 @@ import { CanvasToolbarScenesButton } from "./components/CanvasToolbarScenesButto
 interface CanvasToolbarProps {
   onDrillUp?: () => void;
   isPanelOpen?: boolean;
-  selectedCount?: number;
   onInsert?: (nodeId: string) => void;
   onClearSelection?: () => void;
   onOpenScenes?: () => void;
@@ -25,7 +24,6 @@ interface CanvasToolbarProps {
 
 const CanvasToolbar = ({
   onDrillUp,
-  selectedCount = 0,
   onInsert,
   onClearSelection,
   onOpenScenes,
@@ -51,7 +49,6 @@ const CanvasToolbar = ({
       <CanvasToolbarDiagramPanel
         diagram={diagram}
         toolbarEditLocked={toolbarEditLocked}
-        selectedCount={selectedCount}
       />
 
       <CanvasToolbarScenesButton

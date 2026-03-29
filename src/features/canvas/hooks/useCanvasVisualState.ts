@@ -26,6 +26,9 @@ export interface CanvasVisualState {
   showAllTags: () => void;
   showNoTags: () => void;
   isNodeHiddenByTagFilter: (component: Component) => boolean;
+  /** When set, a note is in inline markdown edit — ElementPanel stays closed. */
+  noteInlineEditingId: string | null;
+  setNoteInlineEditingId: (id: string | null) => void;
 }
 
 export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisualState {
@@ -45,6 +48,7 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
     sourceNodeId?: string | null;
   } | null>(null);
   const [visibleTags, setVisibleTags] = useState<Set<string> | null>(null);
+  const [noteInlineEditingId, setNoteInlineEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     setVisibleTags(null);
@@ -90,6 +94,7 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
     setSelectedNodeIds((prev) => prev.size === 0 ? prev : emptySet);
     setSelectedEdgeId((prev) => prev === null ? prev : null);
     setContextMenu((prev) => prev === null ? prev : null);
+    setNoteInlineEditingId(null);
   }, [clearHighlight, emptySet]);
 
   return {
@@ -113,5 +118,7 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
     toggleTag,
     showAllTags,
     isNodeHiddenByTagFilter,
+    noteInlineEditingId,
+    setNoteInlineEditingId,
   };
 }
