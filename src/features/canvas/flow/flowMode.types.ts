@@ -1,6 +1,13 @@
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import type { Flow, FlowStep } from "@/features/diagram";
 
+export interface PendingFlowLink {
+  targetFlowId: string;
+  targetFlowName: string;
+  targetDiagramId: string;
+  targetDiagramName: string;
+}
+
 export interface BranchOwnerInfo {
   conditionStepId: string;
   branchIndex: number;
@@ -28,6 +35,7 @@ export type FlowMode =
       flow: Flow;
       currentStepId: string | null;
       history: string[];
+      pendingFlowLink: PendingFlowLink | null;
     }
   | {
       kind: "recording";
@@ -52,16 +60,20 @@ export interface FlowModeState {
   goNext: () => void;
   goBack: () => void;
   chooseBranch: (branchIndex: number) => void;
+  followFlowLink: (flow: Flow) => void;
+  dismissPendingFlowLink: () => void;
+  clearPendingFlowLink: () => void;
 
   currentStep: FlowStep | null;
   isCondition: boolean;
   canGoBack: boolean;
   canGoForward: boolean;
+  pendingFlowLink: PendingFlowLink | null;
 
   startRecording: () => void;
   cancelRecording: () => void;
   finalizeRecording: () => void;
-  editFlow: (flow: Flow) => void;
+  editFlow: (flow: Flow, jumpToCondition?: string) => void;
   setRecordingName: (name: string) => void;
   setRecordingDescription: (desc: string) => void;
   onAddTag: (tag: string) => void;
@@ -86,8 +98,22 @@ export interface FlowModeState {
   onAddConditionStep: (conditionLabel: string, branchLabels: string[]) => void;
   onEnterBranchRecording: (conditionStepId: string, branchIndex: number) => void;
   onOpenBranchSelect: (conditionStepId: string) => void;
+  onSetFlowLink: (
+    stepId: string,
+    target: {
+      targetFlowId: string;
+      targetFlowName: string;
+      targetDiagramId: string;
+      targetDiagramName: string;
+    },
+  ) => void;
+  onRemoveFlowLink: (stepId: string) => void;
+  onSetConditionMerge: (conditionStepId: string, mergeStepId: string | null) => void;
 
   recordingStepsForPanel: FlowStep[];
+
+  /** Step ids already visited during playback (derived from history stack). */
+  visitedStepIds: Set<string>;
 
   onFinalize: (data: RecordingFinalizeData) => void;
 }

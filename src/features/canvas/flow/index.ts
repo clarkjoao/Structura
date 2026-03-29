@@ -1,6 +1,11 @@
 export { default as FlowPanel } from "./FlowPanel";
 export { default as FlowRecorderPanel } from "./FlowRecorderPanel";
 export { default as FlowStepNavigator } from "./FlowStepNavigator";
+export { FlowBranchGraphPanel } from "./FlowBranchGraphPanel";
+export { FlowMapOverlay } from "./FlowMapOverlay";
+export { FlowBranchGraph } from "./FlowBranchGraph";
+export { useBranchGraphLayout, computeBranchGraphLayout } from "./useBranchGraphLayout";
+export type { GraphLayout, GraphNode, GraphEdge } from "./useBranchGraphLayout";
 export { FlowModeProvider, useFlowMode } from "./FlowModeContext";
 export { getDisplayStepsFromRecording } from "./useFlowModeRecording";
 export type {

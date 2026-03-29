@@ -19,6 +19,7 @@ import {
   type Point,
 } from "@/features/diagram";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
+import { useFlowMode } from "../flow/FlowModeContext";
 import { useTranslation } from "react-i18next";
 import { buildOrthogonalPath, buildSegments, computeSegmentDrag, type Segment } from "./edgeBuilding";
 import { clampLabelPosition, getLabelPointOnPath } from "./edgeGeometry";
@@ -43,6 +44,8 @@ export function useCustomEdge(props: EdgeProps) {
   } = props;
 
   const { t } = useTranslation();
+  const { isRecording, isPlaying } = useFlowMode();
+  const canvasFlowLocked = isRecording || isPlaying;
   const { screenToFlowPosition } = useReactFlow();
   const activeDiagramId = useActiveDiagramId();
   const { updateEdgeWaypoints, clearEdgeWaypoints, updateEdgeLabelOffset } = useDiagramActions();
@@ -138,7 +141,7 @@ export function useCustomEdge(props: EdgeProps) {
   const handleSegmentPointerDown = useCallback(
     (segment: Segment) => {
       return (event: ReactPointerEvent<SVGLineElement>) => {
-        if (!activeDiagramId || !edgeData?.connectionId) return;
+        if (canvasFlowLocked || !activeDiagramId || !edgeData?.connectionId) return;
         event.preventDefault();
         event.stopPropagation();
         const initialWaypoints = waypointsRef.current.map((point) => ({ ...point }));
@@ -170,6 +173,7 @@ export function useCustomEdge(props: EdgeProps) {
       startWindowPointerDrag,
       targetX,
       targetY,
+      canvasFlowLocked,
     ],
   );
 
@@ -181,7 +185,9 @@ export function useCustomEdge(props: EdgeProps) {
   const isHighlighted = selected || highlightedConnectionId === edgeData.connectionId;
   const strokeStyle = edgeData?.strokeStyle ?? StrokeStyle.Solid;
   const strokeWidth = edgeData?.strokeWidth ?? 1;
-  const canDragLabelAlongPath = Boolean(edgeData?.label && activeDiagramId && edgeData?.connectionId);
+  const canDragLabelAlongPath = Boolean(
+    edgeData?.label && activeDiagramId && edgeData?.connectionId && !canvasFlowLocked,
+  );
 
   const labelDrag = useLabelDrag({
     edgePath,
@@ -202,16 +208,16 @@ export function useCustomEdge(props: EdgeProps) {
 
   const handleEdgeWaypointsDoubleClick = useCallback(
     (event: ReactMouseEvent<SVGPathElement | SVGLineElement>) => {
-      if (waypoints.length === 0) return;
+      if (canvasFlowLocked || waypoints.length === 0) return;
       if (!activeDiagramId || !edgeData?.connectionId) return;
       event.preventDefault();
       event.stopPropagation();
       clearEdgeWaypoints(activeDiagramId, edgeData.connectionId);
     },
-    [activeDiagramId, clearEdgeWaypoints, edgeData?.connectionId, waypoints.length],
+    [activeDiagramId, canvasFlowLocked, clearEdgeWaypoints, edgeData?.connectionId, waypoints.length],
   );
 
-  const showSegmentHitTargets = Boolean(activeDiagramId && edgeData?.connectionId);
+  const showSegmentHitTargets = Boolean(activeDiagramId && edgeData?.connectionId && !canvasFlowLocked);
 
   return {
     t,

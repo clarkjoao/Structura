@@ -28,10 +28,14 @@ function createDefaultFlowModeState(): FlowModeState {
     goNext: noop,
     goBack: noop,
     chooseBranch: noop,
+    followFlowLink: noop,
+    dismissPendingFlowLink: noop,
+    clearPendingFlowLink: noop,
     currentStep: null,
     isCondition: false,
     canGoBack: false,
     canGoForward: false,
+    pendingFlowLink: null,
     startRecording: noop,
     cancelRecording: noop,
     finalizeRecording: noop,
@@ -60,7 +64,11 @@ function createDefaultFlowModeState(): FlowModeState {
     onAddConditionStep: noop,
     onEnterBranchRecording: noop,
     onOpenBranchSelect: noop,
+    onSetFlowLink: noop,
+    onRemoveFlowLink: noop,
+    onSetConditionMerge: noop,
     recordingStepsForPanel: [],
+    visitedStepIds: new Set(),
     onFinalize: noop,
   };
 }
@@ -107,6 +115,11 @@ export function FlowModeProvider({
     return getDisplayStepsFromRecording(mode.steps, mode.context, mode.branchOwnership);
   }, [mode]);
 
+  const visitedStepIds = useMemo(
+    () => (mode.kind === "playing" ? new Set(mode.history) : new Set<string>()),
+    [mode],
+  );
+
   const value: FlowModeState = useMemo(
     () => ({
       mode,
@@ -116,6 +129,7 @@ export function FlowModeProvider({
       ...playback,
       ...recording,
       recordingStepsForPanel,
+      visitedStepIds,
       onFinalize: onFinalizeProp,
     }),
     [
@@ -126,6 +140,7 @@ export function FlowModeProvider({
       playback,
       recording,
       recordingStepsForPanel,
+      visitedStepIds,
       onFinalizeProp,
     ],
   );

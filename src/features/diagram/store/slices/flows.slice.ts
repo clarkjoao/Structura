@@ -29,8 +29,8 @@ export const flowsSlice = (
         steps = parseMermaidToSteps(mermaid, r.components, r.connections);
         const inbound = new Set<string>();
         for (const s of Object.values(steps)) {
-          if (s.next) inbound.add(s.next);
-          s.branches?.forEach((b) => inbound.add(b.nextId));
+          if ("next" in s && s.next) inbound.add(s.next);
+          if ("branches" in s && s.branches) s.branches.forEach((b) => inbound.add(b.nextId));
         }
         const roots = Object.keys(steps).filter((id) => !inbound.has(id));
         entryStepId = roots[0] ?? Object.keys(steps)[0];
@@ -88,7 +88,7 @@ export const flowsSlice = (
         if (!d) return;
         const flow = d.snapshot.flows[flowId];
         if (!flow) return;
-        flow.steps[stepId] = { ...step, id: stepId };
+        flow.steps[stepId] = { ...step, id: stepId } as FlowStep;
       });
       return stepId;
     },
@@ -112,8 +112,8 @@ export const flowsSlice = (
 
         // Remove all references pointing to this step
         for (const s of Object.values(flow.steps)) {
-          if (s.next === stepId) s.next = undefined;
-          if (s.branches) {
+          if ("next" in s && s.next === stepId) s.next = undefined;
+          if ("branches" in s && s.branches) {
             s.branches = s.branches.filter((b) => b.nextId !== stepId);
           }
         }
@@ -135,6 +135,7 @@ export const flowsSlice = (
         if (!flow) return;
         const step = flow.steps[conditionStepId];
         if (!step) return;
+        if (!("branches" in step)) return;
         if (!step.branches) step.branches = [];
         step.branches.push(branch);
       });
@@ -147,7 +148,7 @@ export const flowsSlice = (
         const flow = d.snapshot.flows[flowId];
         if (!flow) return;
         const step = flow.steps[conditionStepId];
-        if (!step || !step.branches) return;
+        if (!step || !("branches" in step) || !step.branches) return;
         const removed = step.branches[branchIndex];
         step.branches.splice(branchIndex, 1);
         // Clean up orphaned branch target step
@@ -156,8 +157,9 @@ export const flowsSlice = (
           if (targetStep) {
             // Check if any other step still references this target
             const stillReferenced = Object.values(flow.steps).some((s) => {
-              if (s.next === removed.nextId) return true;
-              return s.branches?.some((b) => b.nextId === removed.nextId);
+              if ("next" in s && s.next === removed.nextId) return true;
+              if ("branches" in s && s.branches) return s.branches.some((b) => b.nextId === removed.nextId);
+              return false;
             });
             if (!stillReferenced && flow.entryStepId !== removed.nextId) {
               delete flow.steps[removed.nextId];
@@ -176,17 +178,19 @@ export const flowsSlice = (
         const step = flow.steps[stepId];
         if (!step) return;
 
-        step.type = 'condition';
-        step.conditionLabel = conditionLabel;
-        step.next = undefined;
-
         const branches: FlowBranch[] = [];
         for (const label of branchLabels) {
           const branchStepId = generateId("step");
           flow.steps[branchStepId] = { id: branchStepId, type: 'action' };
           branches.push({ label, nextId: branchStepId });
         }
-        step.branches = branches;
+        flow.steps[stepId] = {
+          id: stepId,
+          type: "condition",
+          conditionLabel,
+          next: undefined,
+          branches,
+        };
       });
     },
 });

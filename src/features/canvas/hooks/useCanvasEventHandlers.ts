@@ -2,7 +2,7 @@ import { useCallback, useRef } from "react";
 import type { Node, Edge, OnEdgesChange, OnConnect, OnConnectEnd, Connection } from "@xyflow/react";
 import type { CanvasVisualState } from "./useCanvasVisualState";
 import { useFlowMode } from "../flow/FlowModeContext";
-import { isReactFlowParentPanelType, isNoteType, isEndpointType } from "@/features/diagram";
+import { isEndpointType } from "@/features/diagram";
 import type { EdgeStyle } from "@/features/diagram";
 import { getLastEdgeStyle } from "@/features/diagram/hooks/useLastEdgeStyle";
 
@@ -32,7 +32,7 @@ export function useCanvasEventHandlers({
   screenToFlowPosition,
   onRequestFocusTitle,
 }: UseCanvasEventHandlersParams) {
-  const { isRecording, onRecordNodeClick, onRecordEdgeClick } = useFlowMode();
+  const { isRecording } = useFlowMode();
   const {
     setSelectedNodeId,
     setSelectedNodeIds,
@@ -54,16 +54,17 @@ export function useCanvasEventHandlers({
 
   const onConnect: OnConnect = useCallback(
     (c: Connection) => {
+      if (isRecording || isPlaying) return;
       if (c.source && c.target) {
         addConnection(c.source, c.target, "Usa", getLastEdgeStyle());
       }
     },
-    [addConnection],
+    [addConnection, isPlaying, isRecording],
   );
 
   const onConnectEnd = useCallback(
     (event: MouseEvent | TouchEvent, connectionState: { fromNode: Node | null; toNode: Node | null }) => {
-      if (isRecording) return;
+      if (isRecording || isPlaying) return;
       if (connectionState.fromNode === null || connectionState.toNode !== null) return;
       if (!(event instanceof MouseEvent)) return;
       const flowPos = screenToFlowPosition({
@@ -76,7 +77,7 @@ export function useCanvasEventHandlers({
         sourceNodeId: connectionState.fromNode.id,
       });
     },
-    [isRecording, screenToFlowPosition, setQuickInsert],
+    [isPlaying, isRecording, screenToFlowPosition, setQuickInsert],
   );
 
   const handleQuickInsert = useCallback(
@@ -88,26 +89,16 @@ export function useCanvasEventHandlers({
 
   const onNodeClick = useCallback(
     (e: React.MouseEvent, node: Node) => {
+      if (isRecording || isPlaying || isCompareMode || isFlowPanelOpen) return;
       const nodeType = (node.type as string) ?? "";
       if (isEndpointType(nodeType) && node.parentId) {
-        if (isCompareMode) return;
-        if (!isRecording) {
-          clearHighlight();
-          setSelectedEdgeId(null);
-          setContextMenu(null);
-          setSelectedNodeId(node.parentId);
-          setSelectedNodeIds(new Set([node.parentId]));
-        } else {
-          onRecordNodeClick?.(node.id);
-        }
+        clearHighlight();
+        setSelectedEdgeId(null);
+        setContextMenu(null);
+        setSelectedNodeId(node.parentId);
+        setSelectedNodeIds(new Set([node.parentId]));
         return;
       }
-      if (isRecording) {
-        if (!isReactFlowParentPanelType(nodeType) && !isNoteType(nodeType)) onRecordNodeClick?.(node.id);
-        return;
-      }
-      if (isCompareMode) return;
-      if (isPlaying || isFlowPanelOpen) return;
       clearHighlight();
       setSelectedEdgeId(null);
       setContextMenu(null);
@@ -131,25 +122,19 @@ export function useCanvasEventHandlers({
     [
       clearHighlight,
       isCompareMode,
-      isPlaying,
       isFlowPanelOpen,
+      isPlaying,
       isRecording,
-      onRecordNodeClick,
+      setContextMenu,
+      setSelectedEdgeId,
       setSelectedNodeId,
       setSelectedNodeIds,
-      setSelectedEdgeId,
-      setContextMenu,
     ],
   );
 
   const onEdgeClick = useCallback(
     (_: React.MouseEvent, edge: Edge) => {
-      if (isRecording) {
-        onRecordEdgeClick?.(edge.id, edge.sourceHandle ?? undefined);
-        return;
-      }
-      if (isCompareMode) return;
-      if (isFlowPanelOpen) return;
+      if (isRecording || isPlaying || isCompareMode || isFlowPanelOpen) return;
       clearHighlight();
       setSelectedEdgeId(edge.id);
       setSelectedNodeId(null);
@@ -160,12 +145,12 @@ export function useCanvasEventHandlers({
       clearHighlight,
       isCompareMode,
       isFlowPanelOpen,
+      isPlaying,
       isRecording,
-      onRecordEdgeClick,
+      setContextMenu,
       setSelectedEdgeId,
       setSelectedNodeId,
       setSelectedNodeIds,
-      setContextMenu,
     ],
   );
 
@@ -185,7 +170,7 @@ export function useCanvasEventHandlers({
       setSelectedNodeIds(new Set(selectedIds));
       setSelectedNodeId(selectedIds[0] ?? null);
     },
-    [isCompareMode, setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId, setContextMenu],
+    [isCompareMode, isPlaying, isRecording, setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId, setContextMenu],
   );
 
   const onNodeDoubleClick = useCallback(
@@ -278,7 +263,7 @@ export function useCanvasEventHandlers({
 
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: Node) => {
-      if (isRecording || isCompareMode) return;
+      if (isRecording || isPlaying || isCompareMode) return;
       event.preventDefault();
       clearHighlight();
       prevSelectionRef.current = node.id;
@@ -290,7 +275,7 @@ export function useCanvasEventHandlers({
       setSelectedNodeId(node.id);
       setSelectedEdgeId(null);
     },
-    [clearHighlight, isCompareMode, isRecording, setContextMenu, setSelectedNodeId, setSelectedEdgeId],
+    [clearHighlight, isCompareMode, isPlaying, isRecording, setContextMenu, setSelectedNodeId, setSelectedEdgeId],
   );
 
   const closePanel = useCallback(() => {

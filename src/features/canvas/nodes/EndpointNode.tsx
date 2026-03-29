@@ -66,7 +66,7 @@ const EndpointNode = memo(({ data }: NodeProps) => {
 
       <span className="text-[11px] font-mono text-foreground truncate flex-1">{path}</span>
 
-      {d.activeFlowId && (
+      {d.activeFlowId && !d.controlsDisabled && (
         <button
           type="button"
           onClick={(e) => {

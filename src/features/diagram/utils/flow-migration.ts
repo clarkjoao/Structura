@@ -49,7 +49,10 @@ export function migrateFlow(raw: unknown): Flow {
 
   // Link sequentially
   for (let i = 0; i < stepIds.length - 1; i++) {
-    newSteps[stepIds[i]].next = stepIds[i + 1];
+    const step = newSteps[stepIds[i]];
+    if (!step) continue;
+    if (!("next" in step)) continue;
+    step.next = stepIds[i + 1];
   }
 
   return {

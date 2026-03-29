@@ -1,4 +1,6 @@
 import type { Flow, FlowStep } from "../model/flow.types";
+import { isFlowLinkStep } from "../model/flow.types";
+import { isConditionStep } from "./flow-traversal";
 
 /** Maps step id → which condition branch owns it during recording. */
 export type BranchOwnershipMap = Map<string, { conditionStepId: string; branchIndex: number }>;
@@ -17,49 +19,65 @@ export function buildFlowFromRecordingSnapshot(
     stepsRecord[s.id] = { ...s };
   }
 
-  const conditionSteps = steps.filter((s) => s.type === "condition");
-
-  const trunkAndCondition = steps.filter((s) => !branchOwnership.has(s.id));
-  for (let i = 0; i < trunkAndCondition.length - 1; i++) {
-    const step = trunkAndCondition[i];
-    if (step.type !== "condition") {
-      stepsRecord[step.id] = { ...stepsRecord[step.id], next: trunkAndCondition[i + 1].id };
+  const conditionBranches = new Map<string, NonNullable<Extract<FlowStep, { type: "condition" }>["branches"]>>();
+  for (const s of steps) {
+    if (isConditionStep(s) && s.branches) {
+      conditionBranches.set(s.id, s.branches.map((b) => ({ ...b })));
     }
   }
 
+  const conditionSteps = steps.filter(isConditionStep);
   for (const condStep of conditionSteps) {
     if (!condStep.branches) continue;
+    const mutableBranches = conditionBranches.get(condStep.id);
+    if (!mutableBranches) continue;
+
     for (let bi = 0; bi < condStep.branches.length; bi++) {
       const branchSteps = steps.filter((s) => {
         const info = branchOwnership.get(s.id);
-        return info && info.conditionStepId === condStep.id && info.branchIndex === bi;
+        return (
+          info !== undefined &&
+          info.conditionStepId === condStep.id &&
+          info.branchIndex === bi
+        );
       });
 
-      if (branchSteps.length > 0) {
-        stepsRecord[condStep.id] = {
-          ...stepsRecord[condStep.id],
-          branches: stepsRecord[condStep.id].branches?.map((b, idx) =>
-            idx === bi ? { ...b, nextId: branchSteps[0].id } : b,
-          ),
-        };
-        for (let j = 0; j < branchSteps.length - 1; j++) {
-          stepsRecord[branchSteps[j].id] = {
-            ...stepsRecord[branchSteps[j].id],
-            next: branchSteps[j + 1].id,
-          };
+      if (branchSteps.length === 0) continue;
+
+      mutableBranches[bi] = { ...mutableBranches[bi], nextId: branchSteps[0].id };
+
+      for (let j = 0; j < branchSteps.length - 1; j++) {
+        const branchStep = branchSteps[j];
+        if (isFlowLinkStep(branchStep)) break;
+        const branchRecord = stepsRecord[branchStep.id];
+        if (!isFlowLinkStep(branchRecord)) {
+          stepsRecord[branchStep.id] = { ...branchRecord, next: branchSteps[j + 1].id };
         }
       }
     }
+
+    const conditionRecord = stepsRecord[condStep.id];
+    if (isConditionStep(conditionRecord)) {
+      stepsRecord[condStep.id] = { ...conditionRecord, branches: mutableBranches };
+    }
   }
 
-  const entryStepId = steps[0]?.id;
+  const trunkSteps = steps.filter((s) => !branchOwnership.has(s.id));
+  for (let i = 0; i < trunkSteps.length - 1; i++) {
+    const step = trunkSteps[i];
+    if (isConditionStep(step) || isFlowLinkStep(step)) continue;
+    const trunkRecord = stepsRecord[step.id];
+    if (!isConditionStep(trunkRecord) && !isFlowLinkStep(trunkRecord)) {
+      stepsRecord[step.id] = { ...trunkRecord, next: trunkSteps[i + 1].id };
+    }
+  }
 
   return {
     id: opts?.id ?? "recording-preview",
     name: opts?.name ?? "",
     mermaid: "",
     diagramId: opts?.diagramId ?? "",
-    entryStepId,
+    entryStepId: steps[0]?.id,
     steps: stepsRecord,
   };
 }

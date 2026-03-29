@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import type { ReactFlowInstance } from "@xyflow/react";
 import type { Diagram, Flow } from "@/features/diagram";
-import { getStepById } from "@/features/diagram";
+import { getStepById, isFlowLinkStep } from "@/features/diagram";
 import {
   FIT_VIEW_DURATION_MS,
   FIT_VIEW_INITIAL_PADDING,
@@ -94,6 +94,7 @@ export function useCanvasEffects({
     if (!isPlaying || !activeFlow || !currentStepId) return;
     const step = getStepById(activeFlow, currentStepId);
     if (!step) return;
+    if (isFlowLinkStep(step)) return;
 
     if (step.componentId) {
       const node = reactFlowInstance.getNode(step.componentId);

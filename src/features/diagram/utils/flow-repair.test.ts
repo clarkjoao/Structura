@@ -40,7 +40,9 @@ describe("repairFlow", () => {
 
     const result = repairFlow(flow, ["s2"]);
 
-    expect(result.steps.s1.next).toBeUndefined();
+    const s1 = result.steps.s1;
+    if (!s1 || s1.type !== "action") throw new Error("Expected action step");
+    expect(s1.next).toBeUndefined();
     expect(result.steps).not.toHaveProperty("s2");
   });
 
@@ -63,7 +65,9 @@ describe("repairFlow", () => {
 
     const result = repairFlow(flow, ["s2"]);
 
-    expect(result.steps.s1.branches).toEqual([{ label: "no", nextId: "s3" }]);
+    const s1 = result.steps.s1;
+    if (!s1 || s1.type !== "condition") throw new Error("Expected condition step");
+    expect(s1.branches).toEqual([{ label: "no", nextId: "s3" }]);
     expect(result.steps).not.toHaveProperty("s2");
   });
 
@@ -88,8 +92,12 @@ describe("repairFlow", () => {
     const result = repairFlow(flow, ["s2", "s4"]);
 
     expect(Object.keys(result.steps)).toEqual(["s1", "s3"]);
-    expect(result.steps.s1.next).toBeUndefined();
-    expect(result.steps.s3.branches).toEqual([{ label: "b", nextId: "s1" }]);
+    const s1 = result.steps.s1;
+    if (!s1 || s1.type !== "action") throw new Error("Expected action step");
+    expect(s1.next).toBeUndefined();
+    const s3 = result.steps.s3;
+    if (!s3 || s3.type !== "condition") throw new Error("Expected condition step");
+    expect(s3.branches).toEqual([{ label: "b", nextId: "s1" }]);
     expect(result.entryStepId).toBe("s1");
   });
 
@@ -111,8 +119,10 @@ describe("repairFlow", () => {
 
     expect(result.entryStepId).toBe("s1");
     expect(Object.keys(result.steps)).toEqual(["s1", "s2"]);
-    expect(result.steps.s1.next).toBe("s2");
-    expect(result.steps.s1.branches).toEqual([{ label: "alt", nextId: "s2" }]);
+    const s1 = result.steps.s1;
+    if (!s1 || s1.type !== "condition") throw new Error("Expected condition step");
+    expect(s1.next).toBe("s2");
+    expect(s1.branches).toEqual([{ label: "alt", nextId: "s2" }]);
   });
 
   it("returns undefined entryStepId when all steps are removed", () => {

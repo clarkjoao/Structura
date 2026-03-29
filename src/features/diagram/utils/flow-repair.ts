@@ -1,4 +1,6 @@
 import type { Flow, FlowStep } from "../model/flow.types";
+import { isFlowLinkStep } from "../model/flow.types";
+import { isConditionStep } from "./flow-traversal";
 
 /**
  * Remove steps inválidos de um flow e reconstrói as ligações
@@ -15,10 +17,21 @@ export function repairFlow(
   const steps: Record<string, FlowStep> = {};
   for (const [id, step] of Object.entries(flow.steps)) {
     if (idSet.has(id)) continue;
+    if (isFlowLinkStep(step)) {
+      steps[id] = { ...step };
+      continue;
+    }
+    if (isConditionStep(step)) {
+      steps[id] = {
+        ...step,
+        next: step.next && idSet.has(step.next) ? undefined : step.next,
+        branches: step.branches.filter((b) => !idSet.has(b.nextId)),
+      };
+      continue;
+    }
     steps[id] = {
       ...step,
       next: step.next && idSet.has(step.next) ? undefined : step.next,
-      branches: step.branches?.filter((b) => !idSet.has(b.nextId)),
     };
   }
 

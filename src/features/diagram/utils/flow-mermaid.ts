@@ -1,6 +1,8 @@
 import type { Component } from "../model/component.types";
 import type { Connection, ConnectionIntent } from "../model/connection.types";
 import type { Flow, FlowStep } from "../model/flow.types";
+import { isFlowLinkStep } from "../model/flow.types";
+import { isConditionStep } from "./flow-traversal";
 
 const INTENT_ARROW: Record<ConnectionIntent, string> = {
   dependency: "-->",
@@ -37,6 +39,10 @@ function buildParticipantAliasMap(
   };
 
   for (const step of steps) {
+    if (isFlowLinkStep(step)) {
+      addName(step.targetFlowName);
+      continue;
+    }
     if (step.componentId) {
       const name = components[step.componentId]?.name;
       if (name) addName(name);
@@ -89,8 +95,10 @@ export function stepsToMermaid(
     const step = flow.steps[stepId];
     if (!step) return;
     orderedSteps.push(step);
-    if (step.branches) {
+    if (isFlowLinkStep(step)) return;
+    if (isConditionStep(step)) {
       step.branches.forEach((branch) => collectSteps(branch.nextId));
+      return;
     }
     if (step.next) collectSteps(step.next);
   }
@@ -106,6 +114,12 @@ export function stepsToMermaid(
   const alias = (name: string) => aliasMap.get(name) ?? name;
 
   function emitStep(step: FlowStep, indent = "  ") {
+    if (isFlowLinkStep(step)) {
+      // Terminal leaf that points to another flow (possibly cross-diagram).
+      // Mermaid sequence diagrams don't have native "link nodes", so we render a labeled terminal node.
+      lines.push(`${indent}${step.id}[\"→ ${step.targetFlowName}\"]`);
+      return;
+    }
     if (step.connectionId) {
       const connection = connections[step.connectionId];
       if (connection) {
@@ -153,7 +167,7 @@ export function stepsToMermaid(
     const step = flow.steps[stepId];
     if (!step) return;
 
-    if (step.type === "condition" && step.branches && step.branches.length > 0) {
+    if (isConditionStep(step)) {
       lines.push(`${indent}alt ${step.conditionLabel ?? "condition"}`);
       step.branches.forEach((branch, branchIndex) => {
         if (branchIndex > 0) lines.push(`${indent}else ${branch.label}`);
@@ -162,7 +176,7 @@ export function stepsToMermaid(
       lines.push(`${indent}end`);
     } else {
       emitStep(step, indent);
-      if (step.next) walk(step.next, indent);
+      if (!isFlowLinkStep(step) && step.next) walk(step.next, indent);
     }
   }
 
@@ -239,7 +253,9 @@ export function parseMermaidToSteps(
 
   // Link sequentially
   for (let i = 0; i < stepIds.length - 1; i++) {
-    steps[stepIds[i]].next = stepIds[i + 1];
+    const step = steps[stepIds[i]];
+    if (!step || isFlowLinkStep(step) || isConditionStep(step)) continue;
+    step.next = stepIds[i + 1];
   }
 
   return steps;

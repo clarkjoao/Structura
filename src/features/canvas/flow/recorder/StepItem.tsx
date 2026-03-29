@@ -1,8 +1,8 @@
-import type { DragEvent, MouseEvent } from "react";
+import { useEffect, useState, type DragEvent, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import type { FlowStep } from "@/features/diagram";
-import { X, GripVertical, GitBranch } from "lucide-react";
-import { getBranchColor } from "../branchColors";
+import { isConditionStep, isFlowLinkStep, useActiveDiagram, useDiagrams } from "@/features/diagram";
+import { X, GripVertical } from "lucide-react";
 
 export interface StepItemProps {
   step: FlowStep;
@@ -10,6 +10,8 @@ export interface StepItemProps {
   isLast: boolean;
   isExpanded: boolean;
   isBranchStep: boolean;
+  /** Row highlighted when this step is chosen on the flow map. */
+  isSelectedFromMap?: boolean;
   isDragging: boolean;
   isDragOver: boolean;
   onToggleExpand: () => void;
@@ -23,13 +25,20 @@ export interface StepItemProps {
   onUpdatePayload: (index: number, value: string) => void;
   onUpdatePayloadDirection: (index: number, direction: "request" | "response") => void;
   onUpdateIsAsync: (index: number, value: boolean) => void;
-  onUpdateConditionLabel: (index: number, label: string) => void;
-  onAddBranchLabel: (conditionStepId: string, label: string) => void;
-  onRemoveBranchLabel: (conditionStepId: string, branchIndex: number) => void;
-  onUpdateBranchLabel: (conditionStepId: string, branchIndex: number, label: string) => void;
-  onOpenBranchSelect: (conditionStepId: string) => void;
-  onConvertToCondition: (index: number) => void;
   getStepLabel: (step: FlowStep) => string;
+  editingFlowId: string | null;
+  /** True when this step is a leaf in the preview flow graph (can attach a flow link). */
+  isFlowGraphLeaf: boolean;
+  onSetFlowLink: (
+    stepId: string,
+    target: {
+      targetFlowId: string;
+      targetFlowName: string;
+      targetDiagramId: string;
+      targetDiagramName: string;
+    },
+  ) => void;
+  onRemoveFlowLink: (stepId: string) => void;
 }
 
 export function StepItem({
@@ -38,6 +47,7 @@ export function StepItem({
   isLast,
   isExpanded,
   isBranchStep,
+  isSelectedFromMap = false,
   isDragging,
   isDragOver,
   onToggleExpand,
@@ -51,18 +61,30 @@ export function StepItem({
   onUpdatePayload,
   onUpdatePayloadDirection,
   onUpdateIsAsync,
-  onUpdateConditionLabel,
-  onAddBranchLabel,
-  onRemoveBranchLabel,
-  onUpdateBranchLabel,
-  onOpenBranchSelect,
-  onConvertToCondition,
   getStepLabel,
+  editingFlowId,
+  isFlowGraphLeaf,
+  onSetFlowLink,
+  onRemoveFlowLink,
 }: StepItemProps) {
   const { t } = useTranslation();
+  const diagrams = useDiagrams();
+  const activeDiagram = useActiveDiagram();
+  const [selectedDiagramId, setSelectedDiagramId] = useState<string>(() => activeDiagram?.id ?? "");
+  const [selectedFlowId, setSelectedFlowId] = useState<string>("");
+
+  useEffect(() => {
+    if (isFlowLinkStep(step)) {
+      setSelectedDiagramId(step.targetDiagramId);
+      setSelectedFlowId(step.targetFlowId);
+      return;
+    }
+    if (activeDiagram?.id) setSelectedDiagramId(activeDiagram.id);
+    setSelectedFlowId("");
+  }, [step, activeDiagram?.id]);
 
   return (
-    <div>
+    <div data-step-id={step.id}>
       <div
         draggable
         onDragStart={(e) => onDragStart(e, index)}
@@ -72,19 +94,27 @@ export function StepItem({
         onClick={onToggleExpand}
         className={`group flex items-center gap-1 rounded-md px-1.5 py-1.5 text-xs cursor-pointer hover:bg-secondary/50 transition-colors ${
           isLast ? "bg-primary/10 text-primary" : "text-foreground"
-        } ${step.type === "condition" ? "border-l-2 border-amber-400" : ""} ${
-          isBranchStep ? "ml-3 border-l border-amber-400/30" : ""
-        } ${isDragging ? "opacity-40" : ""} ${
+        } ${isConditionStep(step) ? "border-l-2 border-amber-400" : ""} ${
+          isFlowLinkStep(step) ? "border-l-2 border-amber-500/80" : ""
+        } ${isBranchStep ? "ml-3 border-l border-amber-400/30" : ""} ${
+          isDragging ? "opacity-40" : ""
+        } ${
           isDragOver ? "ring-1 ring-primary/50" : ""
-        }`}
+        } ${isSelectedFromMap ? "ring-1 ring-primary/40 bg-primary/5" : ""}`}
       >
         <GripVertical className="h-3 w-3 text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 cursor-grab transition-opacity" />
         <span className="text-[10px] text-muted-foreground shrink-0">{isExpanded ? "▾" : "▸"}</span>
         <span className="font-mono text-[10px] text-muted-foreground w-4 text-right shrink-0">{index + 1}.</span>
         <span className="truncate flex-1">{getStepLabel(step)}</span>
-        {step.duration && <span className="text-[9px] font-mono text-primary/70 shrink-0">{step.duration}</span>}
-        {step.isAsync && <span className="text-[9px] font-mono text-amber-400 shrink-0">async</span>}
-        {step.handleId && <span className="text-[9px] font-mono text-muted-foreground shrink-0">[{step.handleId}]</span>}
+        {"duration" in step && step.duration ? (
+          <span className="text-[9px] font-mono text-primary/70 shrink-0">{step.duration}</span>
+        ) : null}
+        {"isAsync" in step && step.isAsync ? (
+          <span className="text-[9px] font-mono text-amber-400 shrink-0">async</span>
+        ) : null}
+        {"handleId" in step && step.handleId ? (
+          <span className="text-[9px] font-mono text-muted-foreground shrink-0">[{step.handleId}]</span>
+        ) : null}
         <button
           type="button"
           onClick={onDelete}
@@ -94,70 +124,17 @@ export function StepItem({
           <X className="h-3 w-3" />
         </button>
       </div>
-      {isExpanded && (
+      {isExpanded && !isConditionStep(step) && (
         <div className="pl-7 pr-2 pb-1 pt-0.5 space-y-1">
-          {step.type === "condition" ? (
+          {isFlowLinkStep(step) ? (
             <>
-              <div className="flex items-start gap-1">
-                <span className="text-[10px] mt-1 shrink-0">◇</span>
-                <input
-                  value={step.conditionLabel ?? ""}
-                  onChange={(e) => onUpdateConditionLabel(index, e.target.value)}
-                  placeholder={t("flowRecorder.conditionLabelPlaceholder", "Condition label")}
-                  className="w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </div>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenBranchSelect(step.id);
-                }}
-                className="w-full rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-[10px] font-semibold text-amber-400 hover:bg-amber-500/15"
-              >
-                {t("flowRecorder.openBranchSelect", "Gravar branches")}
-              </button>
-              <div className="space-y-0.5 pt-1">
-                <p className="text-[9px] text-muted-foreground font-semibold uppercase">
-                  {t("flowRecorder.branches", "Branches")}
+              <div className="rounded-md border border-amber-500/35 bg-amber-500/10 px-2 py-2 space-y-1">
+                <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 truncate">
+                  ↗ {step.targetFlowName}
                 </p>
-                {step.branches?.map((branch, bi) => {
-                  const color = getBranchColor(bi);
-                  return (
-                    <div key={bi} className="flex items-center gap-1">
-                      <div className="w-1 h-6 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                      <input
-                        value={branch.label}
-                        onChange={(e) => onUpdateBranchLabel(step.id, bi, e.target.value)}
-                        className="flex-1 rounded border border-border bg-secondary px-2 py-0.5 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      {(step.branches?.length ?? 0) > 2 && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onRemoveBranchLabel(step.id, bi);
-                          }}
-                          className="text-muted-foreground hover:text-destructive"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAddBranchLabel(step.id, t("flowRecorder.newBranch", "New branch"));
-                  }}
-                  className="text-[9px] text-primary hover:underline"
-                >
-                  + {t("flowRecorder.addBranch", "Add branch")}
-                </button>
+                <p className="text-[10px] text-muted-foreground truncate">
+                  {step.targetDiagramName}
+                </p>
               </div>
             </>
           ) : (
@@ -182,7 +159,7 @@ export function StepItem({
                   onClick={(e) => e.stopPropagation()}
                 />
               </div>
-              {step.connectionId && (
+              {"connectionId" in step && step.connectionId && (
                 <>
                   <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                     <span className="text-[10px] mt-0.5 shrink-0">📦</span>
@@ -232,22 +209,87 @@ export function StepItem({
                         onChange={(e) => onUpdateIsAsync(index, e.target.checked)}
                         className="rounded"
                       />
-                      Async
+                      {t("common.asyncMessage")}
                     </label>
                   </div>
                 </>
               )}
-              {!step.branches && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onConvertToCondition(index);
-                  }}
-                  className="flex items-center gap-1 text-[9px] text-amber-400 hover:text-amber-300 mt-1"
+              {isFlowGraphLeaf && (
+                <div
+                  className="pt-2 mt-1 border-t border-border space-y-2"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <GitBranch className="h-3 w-3" /> {t("flowRecorder.convertToCondition", "Convert to condition")}
-                </button>
+                  <p className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wide">
+                    {t("flowLink.sectionTitle")}
+                  </p>
+
+                  <label className="block space-y-1">
+                    <span className="text-[9px] text-muted-foreground">{t("flowLink.diagramLabel")}</span>
+                    <select
+                      value={selectedDiagramId}
+                      onChange={(event) => {
+                        setSelectedDiagramId(event.target.value);
+                        setSelectedFlowId("");
+                      }}
+                      className="w-full rounded border border-border bg-secondary px-2 py-1.5 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                    >
+                      <option value="">{t("flowLink.selectDiagram")}</option>
+                      {Object.values(diagrams).map((diagram) => (
+                        <option key={diagram.id} value={diagram.id}>
+                          {diagram.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="block space-y-1">
+                    <span className="text-[9px] text-muted-foreground">{t("flowLink.flowLabel")}</span>
+                    <select
+                      value={selectedFlowId}
+                      onChange={(event) => setSelectedFlowId(event.target.value)}
+                      disabled={!selectedDiagramId}
+                      className="w-full rounded border border-border bg-secondary px-2 py-1.5 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
+                    >
+                      <option value="">{t("flowLink.selectFlow")}</option>
+                      {Object.values(diagrams[selectedDiagramId ?? ""]?.snapshot.flows ?? {})
+                        .filter((flow) => flow.id !== editingFlowId)
+                        .map((flow) => (
+                          <option key={flow.id} value={flow.id}>
+                            {flow.name}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={!selectedDiagramId || !selectedFlowId}
+                      onClick={() => {
+                        const diagram = diagrams[selectedDiagramId];
+                        const targetFlow = diagram?.snapshot.flows?.[selectedFlowId];
+                        if (!diagram || !targetFlow) return;
+                        onSetFlowLink(step.id, {
+                          targetFlowId: targetFlow.id,
+                          targetFlowName: targetFlow.name,
+                          targetDiagramId: diagram.id,
+                          targetDiagramName: diagram.name,
+                        });
+                      }}
+                      className="flex-1 rounded-md bg-amber-500 px-2 py-1.5 text-[10px] font-semibold text-amber-950 hover:bg-amber-500/90 disabled:opacity-50"
+                    >
+                      {t("flowLink.linkButton")}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!isFlowLinkStep(step)}
+                      onClick={() => onRemoveFlowLink(step.id)}
+                      className="flex-1 rounded-md border border-border bg-card px-2 py-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground disabled:opacity-50"
+                    >
+                      {t("flowLink.removeButton")}
+                    </button>
+                  </div>
+                </div>
               )}
             </>
           )}

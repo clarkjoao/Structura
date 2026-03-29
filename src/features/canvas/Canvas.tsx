@@ -30,6 +30,7 @@ import { useCustomComponentStore } from "@/features/custom-components";
 import { createTemplateDataFromNode } from "@/features/custom-components/utils/customComponentTemplate.utils";
 import { CUSTOM_COMPONENT_DRAG_MIME } from "@/features/custom-components/customComponent.constants";
 import { useCustomComponentLibrary } from "@/features/custom-components/hooks/useCustomComponentLibrary";
+import { cn } from "@/lib/utils";
 
 const canvasEdgeTypes = { c4: CustomEdge };
 
@@ -49,6 +50,7 @@ const Canvas = (props: CanvasProps = {}) => {
     onNodeDragStop,
     eventHandlers,
     isRecording,
+    isPlaying,
     actions,
     showSearch,
     setShowSearch,
@@ -73,6 +75,8 @@ const Canvas = (props: CanvasProps = {}) => {
   const templateSourceNode = templateNodeId
     ? nodes.find((node) => node.id === templateNodeId) ?? null
     : null;
+
+  const canvasFlowLocked = isRecording || isPlaying;
 
   if (!diagram) {
     return (
@@ -142,7 +146,7 @@ const Canvas = (props: CanvasProps = {}) => {
                 });
                 instantiateTemplate({ templateId, position });
               }}
-              className="w-full h-full"
+              className={cn("w-full h-full", isRecording ? "cursor-crosshair" : "cursor-default")}
             >
             {isCompareMode && (
               <div className="absolute top-12 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs text-muted-foreground shadow-sm">
@@ -159,34 +163,37 @@ const Canvas = (props: CanvasProps = {}) => {
               onEdgesChange={eventHandlers.onEdgesChange}
               onConnect={eventHandlers.onConnect}
               onConnectEnd={eventHandlers.onConnectEnd}
-              onNodeClick={eventHandlers.onNodeClick}
-              onEdgeClick={eventHandlers.onEdgeClick}
-              onNodeDoubleClick={eventHandlers.onNodeDoubleClick}
-              onEdgeDoubleClick={eventHandlers.onEdgeDoubleClick}
+              onNodeClick={canvasFlowLocked && isCompareMode ? undefined : eventHandlers.onNodeClick}
+              onEdgeClick={canvasFlowLocked && isCompareMode ? undefined : eventHandlers.onEdgeClick}
+              onNodeDoubleClick={canvasFlowLocked && isCompareMode ? undefined : eventHandlers.onNodeDoubleClick}
+              onEdgeDoubleClick={canvasFlowLocked && isCompareMode ? undefined : eventHandlers.onEdgeDoubleClick}
               onPaneClick={eventHandlers.onPaneClick}
               onPaneContextMenu={eventHandlers.onPaneContextMenu}
               onNodeContextMenu={eventHandlers.onNodeContextMenu}
               onNodeDragStop={onNodeDragStop}
-              onSelectionChange={eventHandlers.onSelectionChange}
-              panOnDrag={[2]}
+              onSelectionChange={canvasFlowLocked && isCompareMode ? undefined : eventHandlers.onSelectionChange}
+              panOnDrag={canvasFlowLocked ? [1, 2] : true}
               panOnScroll
               panOnScrollMode={PanOnScrollMode.Free}
-              selectionOnDrag
+              selectionOnDrag={!canvasFlowLocked && !isCompareMode}
               selectionMode={SelectionMode.Partial}
+              selectNodesOnDrag={!canvasFlowLocked && !isCompareMode}
               zoomOnScroll={false}
               zoomOnPinch
               deleteKeyCode={null}
               zoomOnDoubleClick={false}
               minZoom={0.3}
               maxZoom={1.5}
-              multiSelectionKeyCode="Meta"
+              multiSelectionKeyCode={canvasFlowLocked || isCompareMode ? null : "Meta"}
               defaultViewport={diagram.viewport}
               fitView
               fitViewOptions={{ padding: 0.3 }}
               onMoveEnd={eventHandlers.onMoveEnd}
-              nodesDraggable={!isRecording && !isCompareMode}
-              nodesConnectable={!isRecording && !isCompareMode}
-              elementsSelectable={!isRecording && !isCompareMode}
+              nodesDraggable={!canvasFlowLocked && !isCompareMode}
+              nodesConnectable={!canvasFlowLocked && !isCompareMode}
+              elementsSelectable={!canvasFlowLocked && !isCompareMode}
+              edgesReconnectable={!canvasFlowLocked && !isCompareMode}
+              autoPanOnNodeDrag={!canvasFlowLocked && !isCompareMode}
               proOptions={{ hideAttribution: true }}
               className="bg-background"
             >

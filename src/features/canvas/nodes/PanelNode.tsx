@@ -9,6 +9,7 @@ import AwsIcon from "./AwsIcon";
 import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
 import { useCollabHighlight } from "@/features/collaboration/useCollabHighlight";
+import { useFlowMode } from "../flow/FlowModeContext";
 
 const DEFAULT_OPACITY = 10;
 
@@ -56,6 +57,8 @@ const UNPARENT_BORDER = "hsl(25 95% 53%)"; // orange
 
 const PanelNode = memo(({ data, selected }: NodeProps) => {
   const { t } = useTranslation();
+  const { isRecording, isPlaying } = useFlowMode();
+  const canvasFlowLocked = isRecording || isPlaying;
   const d = data as unknown as PanelNodeData;
   const customDiagramIcon = useComponentIcon(d.elementId);
   const { highlightedNodeIds } = useHandleHighlight();
@@ -151,7 +154,7 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
       <NodeResizer
         minWidth={200}
         minHeight={150}
-        isVisible={isSelected}
+        isVisible={isSelected && !canvasFlowLocked}
         lineClassName="!border-transparent"
         handleClassName="!w-2.5 !h-2.5 !border-background !rounded-sm"
         handleStyle={{ backgroundColor: color }}

@@ -29,6 +29,8 @@ export type {
   FlowStepType,
   FlowBranch,
   Flow,
+  FlowLinkStep,
+  FlowLinkTarget,
   ModelDraft,
   IconDefinition,
   IconSource,
@@ -39,7 +41,7 @@ export type {
   UserTemplateComponent,
 } from "./model/diagram.types";
 
-export { isAwsIcon, isLucideIcon, isSvgIcon } from "./model/diagram.types";
+export { isAwsIcon, isLucideIcon, isSvgIcon, isFlowLinkStep } from "./model/diagram.types";
 
 /** Default styles and helpers for connection intent/direction resolution */
 export {

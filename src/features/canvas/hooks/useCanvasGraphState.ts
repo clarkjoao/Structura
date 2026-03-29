@@ -123,12 +123,15 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     [visualState],
   );
 
+  const canvasEditLocked = flowState.isRecording || flowState.isPlaying;
+
   const { nodes, onNodesChange } = useLocalNodes(
     storeNodes,
     innerOnNodesChange,
     localNodesRef,
     onSelectionFromChanges,
     diagram,
+    canvasEditLocked,
   );
 
   const edges = useCanvasEdges({

@@ -40,6 +40,41 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
   const graphState = useCanvasGraphState({ diagram, resolved, visualState, localNodesRef: interaction.localNodesRef, innerOnNodesChange: interaction.innerOnNodesChange, dragTargetPanelId: interaction.dragTargetPanelId, unparentCandidatePanelId: interaction.unparentCandidatePanelId, visibleComponents, visibleConnections, serviceRegistry, allDiagrams, compareState, flowState, handleDrillDown: interaction.handleDrillDown, handlePanelCollapseToggle: interaction.handlePanelCollapseToggle, actions, isViewingCoverage: !!canvasProps.isViewingCoverage, onPlayFlow: canvasProps.onPlayFlow, updateNodeInternals, t });
   const selectedNodes = graphState.nodes.filter((node) => visualState.selectedNodeIds.has(node.id));
   const selectedCount = visualState.selectedNodeIds.size;
-  const showElementPanel = (visualState.selectedNodeId || visualState.selectedEdgeId || selectedCount > 0) && !flowState.isRecording && !compareState.isCompareMode;
-  return { t, diagram, reactFlowWrapperRef, visualState, nodes: graphState.nodes, edges: graphState.edges, onNodesChange: graphState.onNodesChange, onNodeDragStop: interaction.onNodeDragStop, eventHandlers: interaction.eventHandlers, isRecording: flowState.isRecording, actions, showSearch: interaction.showSearch, setShowSearch: interaction.setShowSearch, showDiagramSidebar: interaction.showDiagramSidebar, setShowDiagramSidebar: interaction.setShowDiagramSidebar, showCommandPalette: interaction.showCommandPalette, setShowCommandPalette: interaction.setShowCommandPalette, showScenes, setShowScenes, handleSelectDiagram: interaction.handleSelectDiagram, handleSearchSelect: interaction.handleSearchSelect, focusTitleTrigger, isPanelOpen: interaction.isPanelOpen, selectedNodes, selectedCount, showElementPanel, onDrillUp: canvasProps.onDrillUp, isCompareMode: compareState.isCompareMode, allDiagramTags };
+  const showElementPanel =
+    (visualState.selectedNodeId || visualState.selectedEdgeId || selectedCount > 0) &&
+    !flowState.isRecording &&
+    !flowState.isPlaying &&
+    !compareState.isCompareMode;
+  return {
+    t,
+    diagram,
+    reactFlowWrapperRef,
+    visualState,
+    nodes: graphState.nodes,
+    edges: graphState.edges,
+    onNodesChange: graphState.onNodesChange,
+    onNodeDragStop: interaction.onNodeDragStop,
+    eventHandlers: interaction.eventHandlers,
+    isRecording: flowState.isRecording,
+    isPlaying: flowState.isPlaying,
+    actions,
+    showSearch: interaction.showSearch,
+    setShowSearch: interaction.setShowSearch,
+    showDiagramSidebar: interaction.showDiagramSidebar,
+    setShowDiagramSidebar: interaction.setShowDiagramSidebar,
+    showCommandPalette: interaction.showCommandPalette,
+    setShowCommandPalette: interaction.setShowCommandPalette,
+    showScenes,
+    setShowScenes,
+    handleSelectDiagram: interaction.handleSelectDiagram,
+    handleSearchSelect: interaction.handleSearchSelect,
+    focusTitleTrigger,
+    isPanelOpen: interaction.isPanelOpen,
+    selectedNodes,
+    selectedCount,
+    showElementPanel,
+    onDrillUp: canvasProps.onDrillUp,
+    isCompareMode: compareState.isCompareMode,
+    allDiagramTags,
+  };
 }

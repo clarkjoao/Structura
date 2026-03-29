@@ -6,6 +6,7 @@ import {
   isAwsComponent,
   isC4Component,
   type Component,
+  isFlowLinkStep,
 } from "@/features/diagram";
 import {
   OPACITY_DIM,
@@ -74,10 +75,8 @@ export const c4Descriptor: NodeTypeDescriptor = {
         ? flowHighlight.activeNodeId === comp.id
         : ctx.selectedNodeId === comp.id,
       controlsDisabled:
-        !isPlaying &&
-        !isRecording &&
-        ctx.selectedNodeIds.size > 0 &&
-        !ctx.selectedNodeIds.has(comp.id),
+        !!isPlaying ||
+        (!isRecording && ctx.selectedNodeIds.size > 0 && !ctx.selectedNodeIds.has(comp.id)),
       serviceId: comp.serviceId,
       serviceName: comp.serviceId
         ? ctx.serviceRegistry[comp.serviceId]?.name
@@ -100,8 +99,8 @@ export const c4Descriptor: NodeTypeDescriptor = {
           ? (recordingInfo?.lastHandleId ?? undefined)
           : undefined,
       activeHandleId:
-        isPlaying && flowHighlight.activeNodeId === comp.id
-          ? (activeStep?.handleId ?? undefined)
+        isPlaying && flowHighlight.activeNodeId === comp.id && activeStep && !isFlowLinkStep(activeStep)
+          ? (activeStep.handleId ?? undefined)
           : undefined,
       incomingCount: Math.min(4, Math.max(1, counts.incoming)),
       outgoingCount: Math.min(4, Math.max(1, counts.outgoing)),

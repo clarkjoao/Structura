@@ -1,17 +1,15 @@
 import { useState, useCallback, type DragEvent, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import type { FlowStep, Connection } from "@/features/diagram";
 import type { BranchOwnerInfo } from "../flowMode.types";
-import { GitBranch } from "lucide-react";
 import { StepItem } from "./StepItem";
-import { ConditionStepForm, type ConditionFormState } from "./ConditionStepForm";
 
 export interface StepListProps {
   steps: FlowStep[];
   connections: Record<string, Connection>;
   branchOwnership: Map<string, BranchOwnerInfo>;
   getStepLabel: (step: FlowStep) => string;
+  selectedStepId?: string | null;
   onDeleteStep: (index: number) => void;
   onReorderSteps: (from: number, to: number) => void;
   onUpdateStepDescription: (index: number, value: string) => void;
@@ -19,13 +17,19 @@ export interface StepListProps {
   onUpdateStepPayload: (index: number, value: string) => void;
   onUpdateStepPayloadDirection: (index: number, direction: "request" | "response") => void;
   onUpdateStepIsAsync: (index: number, value: boolean) => void;
-  onUpdateConditionLabel: (index: number, label: string) => void;
-  onAddBranchLabel: (conditionStepId: string, label: string) => void;
-  onRemoveBranchLabel: (conditionStepId: string, branchIndex: number) => void;
-  onUpdateBranchLabel: (conditionStepId: string, branchIndex: number, label: string) => void;
-  onOpenBranchSelect: (conditionStepId: string) => void;
-  onConvertStepToCondition: (index: number, conditionLabel: string, branchLabels: string[]) => void;
-  onAddConditionStep: (conditionLabel: string, branchLabels: string[]) => void;
+  editingFlowId: string | null;
+  /** Step ids that are leaves in the preview graph (eligible for a flow link). */
+  leafStepIds: Set<string>;
+  onSetFlowLink: (
+    stepId: string,
+    target: {
+      targetFlowId: string;
+      targetFlowName: string;
+      targetDiagramId: string;
+      targetDiagramName: string;
+    },
+  ) => void;
+  onRemoveFlowLink: (stepId: string) => void;
 }
 
 export function StepList({
@@ -33,6 +37,7 @@ export function StepList({
   connections: _connections,
   branchOwnership,
   getStepLabel,
+  selectedStepId = null,
   onDeleteStep,
   onReorderSteps,
   onUpdateStepDescription,
@@ -40,19 +45,15 @@ export function StepList({
   onUpdateStepPayload,
   onUpdateStepPayloadDirection,
   onUpdateStepIsAsync,
-  onUpdateConditionLabel,
-  onAddBranchLabel,
-  onRemoveBranchLabel,
-  onUpdateBranchLabel,
-  onOpenBranchSelect,
-  onConvertStepToCondition,
-  onAddConditionStep,
+  editingFlowId,
+  leafStepIds,
+  onSetFlowLink,
+  onRemoveFlowLink,
 }: StepListProps) {
   const { t } = useTranslation();
   const [expandedStep, setExpandedStep] = useState<number | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
-  const [conditionForm, setConditionForm] = useState<ConditionFormState | null>(null);
 
   const handleDelete = useCallback(
     (i: number, e: MouseEvent) => {
@@ -63,23 +64,6 @@ export function StepList({
     },
     [expandedStep, onDeleteStep],
   );
-
-  const handleConditionFormSubmit = useCallback(() => {
-    if (!conditionForm) return;
-    const validBranches = conditionForm.branches.filter((b) => b.trim());
-    if (validBranches.length < 2) {
-      toast.warning(t("flowRecorder.minBranchesWarning", "At least 2 branches required"));
-      return;
-    }
-    if (conditionForm.index === -1) {
-      onAddConditionStep(conditionForm.label, validBranches);
-    } else {
-      onConvertStepToCondition(conditionForm.index, conditionForm.label, validBranches);
-    }
-    setConditionForm(null);
-  }, [conditionForm, onAddConditionStep, onConvertStepToCondition, t]);
-
-  const cancelConditionDialog = useCallback(() => setConditionForm(null), []);
 
   const onDragStart = useCallback((e: DragEvent, i: number) => {
     e.dataTransfer.effectAllowed = "move";
@@ -132,6 +116,7 @@ export function StepList({
                   isLast={i === steps.length - 1}
                   isExpanded={expandedStep === i}
                   isBranchStep={isBranchStep}
+                  isSelectedFromMap={step.id === selectedStepId}
                   isDragging={dragIdx === i}
                   isDragOver={isDragOver}
                   onToggleExpand={() => setExpandedStep(expandedStep === i ? null : i)}
@@ -145,38 +130,17 @@ export function StepList({
                   onUpdatePayload={onUpdateStepPayload}
                   onUpdatePayloadDirection={onUpdateStepPayloadDirection}
                   onUpdateIsAsync={onUpdateStepIsAsync}
-                  onUpdateConditionLabel={onUpdateConditionLabel}
-                  onAddBranchLabel={onAddBranchLabel}
-                  onRemoveBranchLabel={onRemoveBranchLabel}
-                  onUpdateBranchLabel={onUpdateBranchLabel}
-                  onOpenBranchSelect={onOpenBranchSelect}
-                  onConvertToCondition={(idx) => setConditionForm({ index: idx, label: "", branches: ["", ""] })}
                   getStepLabel={getStepLabel}
+                  editingFlowId={editingFlowId}
+                  isFlowGraphLeaf={leafStepIds.has(step.id)}
+                  onSetFlowLink={onSetFlowLink}
+                  onRemoveFlowLink={onRemoveFlowLink}
                 />
               );
             })}
           </div>
         )}
       </div>
-
-      {!conditionForm && (
-        <button
-          type="button"
-          onClick={() => setConditionForm({ index: -1, label: "", branches: ["", ""] })}
-          className="flex items-center gap-1 text-[10px] text-amber-400 hover:text-amber-300 font-medium"
-        >
-          <GitBranch className="h-3 w-3" /> {t("flowRecorder.addCondition", "Add condition step")}
-        </button>
-      )}
-
-      {conditionForm && (
-        <ConditionStepForm
-          conditionForm={conditionForm}
-          onChange={setConditionForm}
-          onSubmit={handleConditionFormSubmit}
-          onCancel={cancelConditionDialog}
-        />
-      )}
     </>
   );
 }

@@ -1,5 +1,5 @@
 import type { Flow, FlowStep } from "@/features/diagram";
-import { getStepById, getFlowParticipants, getOrderedStepIds } from "@/features/diagram";
+import { getStepById, getFlowParticipants, getOrderedStepIds, isFlowLinkStep } from "@/features/diagram";
 
 export interface FlowHighlight {
   activeNodeId: string | null;
@@ -60,12 +60,15 @@ export function buildFlowHighlight(
   const visitedNodeIds = new Set<string>();
   for (const vid of visitedStepIds) {
     const vs = activeFlow.steps[vid];
-    if (vs?.componentId) visitedNodeIds.add(vs.componentId);
+    if (vs && !isFlowLinkStep(vs) && vs.componentId) visitedNodeIds.add(vs.componentId);
   }
 
+  const activeNodeId = step && !isFlowLinkStep(step) ? step.componentId ?? null : null;
+  const activeConnId = step && !isFlowLinkStep(step) ? step.connectionId ?? null : null;
+
   return {
-    activeNodeId: step?.componentId ?? null,
-    activeConnId: step?.connectionId ?? null,
+    activeNodeId,
+    activeConnId,
     visitedNodeIds,
     participantNodeIds,
     participantConnIds,
@@ -91,7 +94,10 @@ export function buildRecordingInfo(steps: FlowStep[]): RecordingInfo {
   const recordedNodeIds = new Set<string>();
   const recordedEdgeIds = new Set<string>();
 
+  let lastNonFlowLinkStep: Exclude<FlowStep, { type: "flow-link" }> | null = null;
   steps.forEach((step, i) => {
+    if (isFlowLinkStep(step)) return;
+    lastNonFlowLinkStep = step;
     if (step.componentId) {
       recordedNodeIds.add(step.componentId);
       const arr = nodeSteps.get(step.componentId) ?? [];
@@ -106,7 +112,7 @@ export function buildRecordingInfo(steps: FlowStep[]): RecordingInfo {
     }
   });
 
-  const lastStep = steps[steps.length - 1];
+  const lastStep = lastNonFlowLinkStep;
   return {
     nodeSteps,
     edgeSteps,

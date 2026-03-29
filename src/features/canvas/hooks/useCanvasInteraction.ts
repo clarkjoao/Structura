@@ -129,7 +129,10 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
   });
 
   const isPanelOpen =
-    !!(visualState.selectedNodeId || visualState.selectedEdgeId) && !flowState.isRecording && !compareState.isCompareMode;
+    !!(visualState.selectedNodeId || visualState.selectedEdgeId) &&
+    !flowState.isRecording &&
+    !flowState.isPlaying &&
+    !compareState.isCompareMode;
 
   const handleSearchSelect = useCallback(
     (componentId: string) => {
@@ -176,6 +179,7 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
     isPanelOpen,
     isFlowPanelOpen: !!canvasProps.isFlowPanelOpen,
     isPlaying: flowState.isPlaying,
+    isRecording: flowState.isRecording,
     isSearchOpen: showSearch,
     onOpenSearch: () => {
       setShowCommandPalette(false);

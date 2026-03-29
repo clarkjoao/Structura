@@ -61,7 +61,7 @@ function useCloseAllOnNavLock({
     setShowSearch(false);
     setShowDiagramSidebar(false);
     setShowScenes(false);
-  }, [diagramNavLocked, setShowDiagramSidebar, setShowScenes]);
+  }, [diagramNavLocked, setShowCommandPalette, setShowDiagramSidebar, setShowScenes, setShowSearch]);
 }
 
 // ---------------------------------------------------------------------------

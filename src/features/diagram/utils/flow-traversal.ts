@@ -1,6 +1,13 @@
 import type { Flow, FlowStep } from "../model/flow.types";
+import { isFlowLinkStep } from "../model/flow.types";
 import type { Diagram } from "../model/diagram.types";
 import { resolveSceneSnapshot } from "./scene.utils";
+
+type ConditionFlowStep = Extract<FlowStep, { type: "condition" }>;
+
+export function isConditionStep(step: FlowStep): step is ConditionFlowStep {
+  return step.type === "condition" && !!step.branches && step.branches.length > 0;
+}
 
 export function getStepById(flow: Flow, id: string): FlowStep | undefined {
   return flow.steps[id];
@@ -10,7 +17,11 @@ export function getNextSteps(flow: Flow, stepId: string): FlowStep[] {
   const step = flow.steps[stepId];
   if (!step) return [];
 
-  if (step.branches && step.branches.length > 0) {
+  if (isFlowLinkStep(step)) {
+    return [];
+  }
+
+  if (isConditionStep(step)) {
     return step.branches
       .map((b) => flow.steps[b.nextId])
       .filter((s): s is FlowStep => !!s);
@@ -22,10 +33,6 @@ export function getNextSteps(flow: Flow, stepId: string): FlowStep[] {
   }
 
   return [];
-}
-
-export function isConditionStep(step: FlowStep): boolean {
-  return step.type === 'condition' && !!step.branches && step.branches.length > 0;
 }
 
 export function getEntryStep(flow: Flow): FlowStep | undefined {
@@ -61,6 +68,7 @@ export function getFlowParticipants(flow: Flow): {
   const connectionIds = new Set<string>();
 
   walkFlow(flow, (step) => {
+    if (isFlowLinkStep(step)) return;
     if (step.componentId) componentIds.add(step.componentId);
     if (step.connectionId) connectionIds.add(step.connectionId);
   });
@@ -83,6 +91,7 @@ export function validateFlowGraph(flow: Flow, diagram: Diagram): BrokenStep[] {
   );
 
   walkFlow(flow, (step) => {
+    if (isFlowLinkStep(step)) return;
     if (step.componentId && !components[step.componentId]) {
       broken.push({
         stepId: step.id,
@@ -128,8 +137,12 @@ export function getBranchStepCount(flow: Flow, fromStepId: string): number {
     if (!step) return;
     visited.add(id);
     count++;
+    if (isFlowLinkStep(step)) return;
+    if (isConditionStep(step)) {
+      step.branches.forEach((branch) => walk(branch.nextId));
+      return;
+    }
     if (step.next) walk(step.next);
-    step.branches?.forEach((b) => walk(b.nextId));
   };
   walk(fromStepId);
   return count;

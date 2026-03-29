@@ -6,6 +6,7 @@ import {
   type FlowStep,
   type Folder,
   type ServiceDefinition,
+  isFlowLinkStep,
 } from "@/features/diagram";
 
 /* ─────────────────────────────────────────────────────────────
@@ -21,7 +22,7 @@ function toFlowSteps(stepList: FlowStep[]): Record<string, FlowStep> {
     const nextStepId = stepList[stepIndex + 1]?.id;
     steps[step.id] = {
       ...step,
-      next: nextStepId,
+      ...(isFlowLinkStep(step) ? {} : { next: nextStepId }),
     };
   }
   return steps;

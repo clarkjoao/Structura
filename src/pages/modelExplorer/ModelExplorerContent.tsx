@@ -31,10 +31,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import ShortcutsModal from "@/components/ShortcutsModal";
-import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
+import { Canvas, FlowMapOverlay, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
 import { EmbedModal } from "@/features/canvas/components/EmbedModal";
 import { useFlowMode, type BranchOwnerInfo, type RecordingContext } from "@/features/canvas/flow";
-import { isDiagramCompareMode, useActiveDiagram, type Flow } from "@/features/diagram";
+import {
+  isDiagramCompareMode,
+  useActiveDiagram,
+  useActiveDiagramId,
+  useDiagramActions,
+  useDiagrams,
+  type Flow,
+} from "@/features/diagram";
 import { CollabCursors, CollabToolbar, useCollab } from "@/features/collaboration";
 import { ShareModal } from "./ShareModal";
 import type { ModelExplorerContentProps } from "./types";
@@ -71,6 +78,9 @@ export function ModelExplorerContent({
     updateSelectedNode,
   } = useCollab();
   const diagram = useActiveDiagram();
+  const activeDiagramId = useActiveDiagramId();
+  const diagrams = useDiagrams();
+  const { openDiagram } = useDiagramActions();
   const flowMode = useFlowMode();
   const playbackState = flowMode.mode.kind === "playing" ? flowMode.mode : null;
   const activeFlow = playbackState?.flow ?? null;
@@ -96,7 +106,6 @@ export function ModelExplorerContent({
     finalizeRecording,
     editFlow,
     recordingStepsForPanel,
-    setRecordingContext,
     setRecordingName,
     setRecordingDescription,
     onAddTag,
@@ -108,15 +117,25 @@ export function ModelExplorerContent({
     onUpdateStepIsAsync,
     onDeleteStep,
     onReorderSteps,
+    visitedStepIds,
+    pendingFlowLink,
+    followFlowLink,
+    dismissPendingFlowLink,
+    clearPendingFlowLink,
+    onSetFlowLink,
+    onRemoveFlowLink,
     onConvertStepToCondition,
-    onUpdateConditionLabel,
-    onAddBranchLabel,
-    onRemoveBranchLabel,
-    onUpdateBranchLabel,
-    onAddConditionStep,
-    onEnterBranchRecording,
-    onOpenBranchSelect,
   } = flowMode;
+
+  const [selectedRecordingStepId, setSelectedRecordingStepId] = useState<string | null>(null);
+
+  const handleClearSelectedRecordingStep = useCallback(() => {
+    setSelectedRecordingStepId(null);
+  }, []);
+
+  useEffect(() => {
+    if (!isRecording) setSelectedRecordingStepId(null);
+  }, [isRecording]);
 
   useEffect(() => {
     if (isPlaying) setShowFlows(false);
@@ -145,6 +164,7 @@ export function ModelExplorerContent({
   }, [flowMode.mode.kind, isCondition, exitPlay, goBack, goNext]);
 
   const canvasInteractionLocked = !isIdle || isDiagramCompareMode(diagram);
+  const flowButtonLocked = canvasInteractionLocked || !!session;
 
   const compareModeBlocksRecorder = isDiagramCompareMode(diagram);
 
@@ -157,12 +177,12 @@ export function ModelExplorerContent({
   }, [compareModeBlocksRecorder, startRecording, t]);
 
   const editFlowWhenAllowed = useCallback(
-    (flow: Flow) => {
+    (flow: Flow, jumpToCondition?: string) => {
       if (compareModeBlocksRecorder) {
         toast.warning(t("flows.recorderBlockedInCompare"));
         return;
       }
-      editFlow(flow);
+      editFlow(flow, jumpToCondition);
     },
     [compareModeBlocksRecorder, editFlow, t],
   );
@@ -213,6 +233,29 @@ export function ModelExplorerContent({
   const recordingTags = recordingState?.tags ?? [];
   const recordingSteps = recordingState?.steps ?? [];
   const branchOwnership = recordingState?.branchOwnership ?? EMPTY_BRANCH_MAP;
+
+  const handleFollowFlowLink = useCallback(
+    ({ targetFlowId, targetDiagramId }: { targetFlowId: string; targetDiagramId: string }) => {
+      const targetDiagram = diagrams[targetDiagramId];
+      if (!targetDiagram) {
+        toast.error(t("flowLink.diagramNotFound"));
+        clearPendingFlowLink();
+        return;
+      }
+      const targetFlow = targetDiagram.snapshot.flows?.[targetFlowId];
+      if (!targetFlow) {
+        toast.error(t("flowLink.flowNotFound"));
+        clearPendingFlowLink();
+        return;
+      }
+      exitPlay();
+      if (targetDiagramId !== activeDiagramId) {
+        openDiagram(targetDiagramId);
+      }
+      play(targetFlow);
+    },
+    [activeDiagramId, clearPendingFlowLink, diagrams, exitPlay, openDiagram, play, t],
+  );
 
   return (
     <>
@@ -266,10 +309,11 @@ export function ModelExplorerContent({
               onEndCollab={handleEndCollab}
             />
             <button
-              onClick={() => { if (!canvasInteractionLocked) setShowFlows(!showFlows); }}
+              disabled={flowButtonLocked}
+              onClick={() => { if (!flowButtonLocked) setShowFlows(!showFlows); }}
               className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
                 showFlows ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground border border-transparent hover:border-border"
-              } ${canvasInteractionLocked ? "opacity-50 pointer-events-none" : ""}`}
+              } ${flowButtonLocked ? "opacity-50 pointer-events-none" : ""}`}
             >
               <GitBranch className="h-3.5 w-3.5" /> {t("flows.panelTitle")}
             </button>
@@ -378,9 +422,13 @@ export function ModelExplorerContent({
                 isCondition={isCondition}
                 canGoBack={canGoBack}
                 canGoForward={canGoForward}
+                visitedStepIds={visitedStepIds}
+                pendingFlowLink={pendingFlowLink}
                 onGoNext={goNext}
                 onGoBack={goBack}
                 onChooseBranch={chooseBranch}
+                onFollowFlowLink={handleFollowFlowLink}
+                onClearPendingFlowLink={clearPendingFlowLink}
                 onExit={exitPlay}
               />
             )}
@@ -388,9 +436,14 @@ export function ModelExplorerContent({
           </div>
         </ReactFlowProvider>
         {isRecording && (
+          <FlowMapOverlay
+            selectedStepId={selectedRecordingStepId}
+            onStepSelect={setSelectedRecordingStepId}
+          />
+        )}
+        {isRecording && (
           <FlowRecorderPanel
             recordingContext={recordingContext}
-            setRecordingContext={setRecordingContext}
             name={recordingName}
             onNameChange={setRecordingName}
             description={recordingDescription}
@@ -401,6 +454,8 @@ export function ModelExplorerContent({
             steps={recordingStepsForPanel}
             recordingSteps={recordingSteps}
             branchOwnership={branchOwnership}
+            selectedStepId={selectedRecordingStepId}
+            onClearSelectedStep={handleClearSelectedRecordingStep}
             onCancel={cancelRecording}
             onFinalize={finalizeRecording}
             onUpdateStepDescription={onUpdateStepDescription}
@@ -410,14 +465,10 @@ export function ModelExplorerContent({
             onUpdateStepIsAsync={onUpdateStepIsAsync}
             onDeleteStep={onDeleteStep}
             onReorderSteps={onReorderSteps}
+            editingFlowId={editingFlowId}
+            onSetFlowLink={onSetFlowLink}
+            onRemoveFlowLink={onRemoveFlowLink}
             onConvertStepToCondition={onConvertStepToCondition}
-            onUpdateConditionLabel={onUpdateConditionLabel}
-            onAddBranchLabel={onAddBranchLabel}
-            onRemoveBranchLabel={onRemoveBranchLabel}
-            onUpdateBranchLabel={onUpdateBranchLabel}
-            onAddConditionStep={onAddConditionStep}
-            onEnterBranchRecording={onEnterBranchRecording}
-            onOpenBranchSelect={onOpenBranchSelect}
             isEditing={!!editingFlowId}
           />
         )}

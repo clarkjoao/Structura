@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Check, ChevronRight, ArrowLeft } from "lucide-react";
 import type { FlowStep, Flow } from "@/features/diagram";
-import { getBranchStepCount } from "@/features/diagram";
+import { getBranchStepCount, isConditionStep } from "@/features/diagram";
 import { getBranchColor } from "../branchColors";
 
 export interface BranchSelectViewProps {
@@ -20,8 +20,9 @@ export function BranchSelectView({
   onContinueMainFlow,
 }: BranchSelectViewProps) {
   const { t } = useTranslation();
+  if (!isConditionStep(branchSelectCondition)) return null;
   const allBranchesDone =
-    branchSelectCondition.branches?.every((b) => getBranchStepCount(previewFlow, b.nextId) > 0) ?? false;
+    branchSelectCondition.branches.every((b) => getBranchStepCount(previewFlow, b.nextId) > 0);
 
   return (
     <div className="flex-1 flex flex-col p-4 space-y-4">
@@ -31,11 +32,11 @@ export function BranchSelectView({
       </div>
 
       <p className="text-xs text-muted-foreground">
-        {t("flowRecorder.selectBranchPrompt", "Selecione um branch para gravar:")}
+        {t("flowRecorder.selectBranchPrompt")}
       </p>
 
       <div className="space-y-2">
-        {branchSelectCondition.branches?.map((branch, i) => {
+        {branchSelectCondition.branches.map((branch, i) => {
           const stepCount = getBranchStepCount(previewFlow, branch.nextId);
           const isDone = stepCount > 0;
           const color = getBranchColor(i);
@@ -54,9 +55,8 @@ export function BranchSelectView({
                   {isDone
                     ? t("flowRecorder.branchStepCount", {
                         count: stepCount,
-                        defaultValue: `${stepCount} passo(s)`,
                       })
-                    : t("flowRecorder.branchEmptyHint", "Vazio — clique para gravar")}
+                    : t("flowRecorder.branchEmptyHint")}
                 </p>
               </div>
               {isDone ? (
@@ -75,7 +75,7 @@ export function BranchSelectView({
           onClick={onContinueMainFlow}
           className="flex items-center gap-2 text-sm font-medium text-primary hover:underline"
         >
-          <ArrowLeft className="h-4 w-4" /> {t("flowRecorder.continueMainFlow", "Continuar fluxo principal")}
+          <ArrowLeft className="h-4 w-4" /> {t("flowRecorder.continueMainFlow")}
         </button>
       )}
     </div>

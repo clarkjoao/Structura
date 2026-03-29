@@ -4,6 +4,7 @@ import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
 import { useCollabHighlight } from "@/features/collaboration/useCollabHighlight";
+import { useFlowMode } from "../flow/FlowModeContext";
 
 export interface SwimlaneNodeData {
   elementId: string;
@@ -34,6 +35,8 @@ function swimlaneFill(color: string): string {
 
 const SwimlaneNode = memo(({ data, selected }: NodeProps) => {
   const { t } = useTranslation();
+  const { isRecording, isPlaying } = useFlowMode();
+  const canvasFlowLocked = isRecording || isPlaying;
   const d = data as unknown as SwimlaneNodeData;
   const { highlightedNodeIds } = useHandleHighlight();
   const isHorizontal = d.orientation !== "vertical";
@@ -55,7 +58,7 @@ const SwimlaneNode = memo(({ data, selected }: NodeProps) => {
       <NodeResizer
         minWidth={200}
         minHeight={120}
-        isVisible={isSelected}
+        isVisible={isSelected && !canvasFlowLocked}
         lineClassName="!border-transparent"
         handleClassName="!w-2.5 !h-2.5 !border-background !rounded-sm"
         handleStyle={{ backgroundColor: laneColor }}

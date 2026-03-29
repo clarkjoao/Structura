@@ -10,6 +10,7 @@ import { NOTE_DEFAULT_W, NOTE_DEFAULT_H } from "../constants";
 import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
 import { useCollabHighlight } from "@/features/collaboration/useCollabHighlight";
+import { useFlowMode } from "../flow/FlowModeContext";
 
 const DEFAULT_PAPER_COLOR = "hsl(45 25% 97%)"; // papel ofuscado
 
@@ -44,6 +45,8 @@ function isDarkBg(color: string): boolean {
 
 const NoteNode = memo(({ data, selected }: NodeProps) => {
   const { t } = useTranslation();
+  const { isRecording, isPlaying } = useFlowMode();
+  const canvasFlowLocked = isRecording || isPlaying;
   const d = data as unknown as NoteNodeData;
   const customDiagramIcon = useComponentIcon(d.elementId);
   const { highlightedNodeIds } = useHandleHighlight();
@@ -66,7 +69,7 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
       <NodeResizer
         minWidth={200}
         minHeight={150}
-        isVisible={isSelected}
+        isVisible={isSelected && !canvasFlowLocked}
         lineClassName="!border-transparent"
         handleClassName="!w-2 !h-2 !bg-foreground/40 !border-background !rounded-sm"
       />

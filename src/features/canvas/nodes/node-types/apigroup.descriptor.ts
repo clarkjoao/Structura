@@ -25,10 +25,9 @@ export const apiGroupDescriptor: NodeTypeDescriptor = {
       isSelected: ctx.selectedNodeId === comp.id,
       controlsDisabled:
         !!ctx.isCompareMode ||
-        (!ctx.isPlaying &&
-          !ctx.isRecording &&
-          ctx.selectedNodeIds.size > 0 &&
-          !ctx.selectedNodeIds.has(comp.id)),
+        !!ctx.isPlaying ||
+        !!ctx.isRecording ||
+        (ctx.selectedNodeIds.size > 0 && !ctx.selectedNodeIds.has(comp.id)),
       onAddEndpoint: ctx.onAddEndpointToGroup ? () => ctx.onAddEndpointToGroup!(comp.id) : undefined,
       ...sceneBadgePropsForNode(ctx, comp.id),
     };

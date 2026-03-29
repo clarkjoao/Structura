@@ -239,7 +239,6 @@ export function SceneDrawer({
               <Lock
                 className="h-3.5 w-3.5 text-muted-foreground shrink-0"
                 aria-hidden
-                title={t("collaboration.scenesReadOnly")}
               />
             )}
             <span className="text-[10px] text-muted-foreground shrink-0">

@@ -89,7 +89,8 @@ export function useCanvasNodes({
   compareVisualByComponentId,
   isNodeHiddenByTagFilter,
 }: UseCanvasNodesParams): Node[] {
-  const { isRecording, onRecordHandleClick } = useFlowMode();
+  const { isRecording, isPlaying: isFlowPlaying, onRecordHandleClick } = useFlowMode();
+  const canvasFlowLocked = isRecording || isFlowPlaying;
 
   const nodeCtxBase: NodeCtxBase | null = useMemo(() => {
     if (!diagram) return null;
@@ -230,9 +231,14 @@ export function useCanvasNodes({
           type: d.rfType,
           position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
           zIndex: vis.zIndex,
-          connectable: d.connectable && !isCmp && !tagFilteredHidden,
+          connectable: d.connectable && !isCmp && !tagFilteredHidden && !canvasFlowLocked,
           selected: vis.isSelected,
-          draggable: (d.draggable ?? !lockedInGroup) && !sceneLocksBase && !isCmp && !tagFilteredHidden,
+          draggable:
+            (d.draggable ?? !lockedInGroup) &&
+            !sceneLocksBase &&
+            !isCmp &&
+            !tagFilteredHidden &&
+            !canvasFlowLocked,
           selectable: (d.selectable ?? !lockedInGroup) && !isCmp && !tagFilteredHidden,
           focusable: (d.focusable ?? !lockedInGroup) && !isCmp && !tagFilteredHidden,
           className: isCmp ? "cursor-default" : undefined,
@@ -242,5 +248,5 @@ export function useCanvasNodes({
           data: d.buildData(comp, ctx),
         };
       });
-  }, [diagram, nodeCtxBase, nodeCtxPlayback, visibleComponents, isNodeHiddenByTagFilter]);
+  }, [canvasFlowLocked, diagram, nodeCtxBase, nodeCtxPlayback, visibleComponents, isNodeHiddenByTagFilter]);
 }

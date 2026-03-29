@@ -28,10 +28,9 @@ export const endpointDescriptor: NodeTypeDescriptor = {
       isSelected: ctx.selectedNodeId === comp.id,
       controlsDisabled:
         !!ctx.isCompareMode ||
-        (!ctx.isPlaying &&
-          !ctx.isRecording &&
-          ctx.selectedNodeIds.size > 0 &&
-          !ctx.selectedNodeIds.has(comp.id)),
+        !!ctx.isPlaying ||
+        !!ctx.isRecording ||
+        (ctx.selectedNodeIds.size > 0 && !ctx.selectedNodeIds.has(comp.id)),
       isPlaying: ctx.isCompareMode ? false : ctx.isPlaying,
       activeFlowId: ctx.activeFlowId ?? comp.handlers?.[0]?.flowId ?? null,
       availableFlows: allFlows.map((f) => ({ id: f.id, name: f.name })),

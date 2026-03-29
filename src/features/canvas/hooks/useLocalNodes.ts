@@ -31,12 +31,14 @@ function isUndoRedoTransition(
   return prevDiagram.nodeLayouts !== nextDiagram.nodeLayouts;
 }
 
+/** When true, only selection changes apply — no position/dimensions/replace (canvas read-only). */
 export function useLocalNodes(
   storeNodes: Node[],
   innerOnNodesChange: OnNodesChange,
   localNodesRef: MutableRefObject<Node[]>,
   onSelectionFromChanges?: (selectedIds: string[]) => void,
   diagram?: Diagram | null,
+  canvasEditLocked?: boolean,
 ) {
   const [localNodes, setLocalNodes] = useState<Node[]>([]);
 
@@ -85,7 +87,9 @@ export function useLocalNodes(
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
       if (!changes.length) return;
-      const sanitizedChanges = changes.map((change) => {
+      const effectiveChanges = canvasEditLocked ? changes.filter((c) => c.type === "select") : changes;
+      if (!effectiveChanges.length) return;
+      const sanitizedChanges = effectiveChanges.map((change) => {
         if (change.type !== "replace") return change;
         const previousNode = localNodesRef.current.find(
           (node) => node.id === change.item.id,
@@ -117,14 +121,14 @@ export function useLocalNodes(
           },
         };
       });
-      const hasSelect = changes.some((c) => c.type === "select");
+      const hasSelect = effectiveChanges.some((c) => c.type === "select");
       innerOnNodesChange(sanitizedChanges);
       const forApply = filterNodeChangesForSceneMoveLock(diagram, sanitizedChanges);
       setLocalNodes((nds) => {
         const updated = applyNodeChanges(forApply, nds);
         localNodesRef.current = updated;
         if (hasSelect && onSelectionFromChanges) {
-          const selectChangeCount = changes.filter((c) => c.type === "select").length;
+          const selectChangeCount = effectiveChanges.filter((c) => c.type === "select").length;
           if (selectChangeCount >= 2) {
             const selectedIds = updated.filter((n) => n.selected).map((n) => n.id);
             onSelectionFromChanges(selectedIds);
@@ -133,7 +137,7 @@ export function useLocalNodes(
         return updated;
       });
     },
-    [diagram, innerOnNodesChange, localNodesRef, onSelectionFromChanges],
+    [canvasEditLocked, diagram, innerOnNodesChange, localNodesRef, onSelectionFromChanges],
   );
 
   return { nodes: localNodes, onNodesChange };

@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import type { Dispatch, MutableRefObject, RefObject, SetStateAction } from "react";
 import type { Flow, FlowStep } from "@/features/diagram";
-import { generateId } from "@/features/diagram";
+import { generateId, isConditionStep, isFlowLinkStep } from "@/features/diagram";
 import type {
   BranchOwnerInfo,
   FlowMode,
@@ -40,6 +40,9 @@ export type FlowModeRecordingSlice = Pick<
   | "onAddConditionStep"
   | "onEnterBranchRecording"
   | "onOpenBranchSelect"
+  | "onSetFlowLink"
+  | "onRemoveFlowLink"
+  | "onSetConditionMerge"
 >;
 
 export function getDisplayStepsFromRecording(
@@ -121,7 +124,7 @@ export function useFlowModeRecording(
   }, [branchOwnershipRef, onFinalizeRef, setMode]);
 
   const editFlow = useCallback(
-    (flow: Flow) => {
+    (flow: Flow, jumpToCondition?: string) => {
       const stepValues = Object.values(flow.steps);
       const ordered: FlowStep[] = [];
       const visited = new Set<string>();
@@ -136,7 +139,7 @@ export function useFlowModeRecording(
         if (branchInfo) {
           ownership.set(flowStep.id, branchInfo);
         }
-        if (flowStep.branches) {
+        if (isConditionStep(flowStep)) {
           for (let branchIdx = 0; branchIdx < flowStep.branches.length; branchIdx++) {
             visit(flowStep.branches[branchIdx].nextId, {
               conditionStepId: flowStep.id,
@@ -144,7 +147,7 @@ export function useFlowModeRecording(
             });
           }
         }
-        if (flowStep.next) visit(flowStep.next, branchInfo);
+        if (!isFlowLinkStep(flowStep) && flowStep.next) visit(flowStep.next, branchInfo);
       }
       visit(flow.entryStepId);
       for (const flowStep of stepValues) {
@@ -156,7 +159,9 @@ export function useFlowModeRecording(
       setMode({
         kind: "recording",
         steps: ordered,
-        context: { mode: "trunk" },
+        context: jumpToCondition
+          ? { mode: "branch-select", conditionStepId: jumpToCondition }
+          : { mode: "trunk" },
         name: flow.name,
         description: flow.description ?? "",
         tags: [...(flow.tags ?? [])],
@@ -493,14 +498,14 @@ export function useFlowModeRecording(
       setMode((prev) => {
         if (prev.kind !== "recording") return prev;
         const condStep = prev.steps.find((flowStep) => flowStep.id === conditionStepId);
-        if (!condStep || condStep.type !== "condition") return prev;
+        if (!condStep || !isConditionStep(condStep)) return prev;
         return {
           ...prev,
           steps: prev.steps.map((flowStep) => {
             if (flowStep.id !== condStep.id) return flowStep;
             return {
-              ...flowStep,
-              branches: [...(flowStep.branches ?? []), { label, nextId: generateId("step") }],
+              ...condStep,
+              branches: [...(condStep.branches ?? []), { label, nextId: generateId("step") }],
             };
           }),
         };
@@ -514,7 +519,7 @@ export function useFlowModeRecording(
       setMode((prev) => {
         if (prev.kind !== "recording") return prev;
         const condStep = prev.steps.find((flowStep) => flowStep.id === conditionStepId);
-        if (!condStep?.branches || condStep.branches.length <= 2) return prev;
+        if (!condStep || !isConditionStep(condStep) || condStep.branches.length <= 2) return prev;
         const ownership = prev.branchOwnership;
         const nextSteps = prev
           .steps.filter((flowStep) => {
@@ -531,8 +536,8 @@ export function useFlowModeRecording(
           .map((flowStep) => {
             if (flowStep.id !== condStep.id) return flowStep;
             return {
-              ...flowStep,
-              branches: flowStep.branches!.filter((_, bi) => bi !== branchIndex),
+              ...condStep,
+              branches: condStep.branches.filter((_, bi) => bi !== branchIndex),
             };
           });
         const nextOwnership = new Map<string, BranchOwnerInfo>();
@@ -557,14 +562,14 @@ export function useFlowModeRecording(
       setMode((prev) => {
         if (prev.kind !== "recording") return prev;
         const condStep = prev.steps.find((flowStep) => flowStep.id === conditionStepId);
-        if (!condStep?.branches) return prev;
+        if (!condStep || !isConditionStep(condStep)) return prev;
         return {
           ...prev,
           steps: prev.steps.map((flowStep) => {
             if (flowStep.id !== condStep.id) return flowStep;
             return {
-              ...flowStep,
-              branches: flowStep.branches!.map((branch, bi) =>
+              ...condStep,
+              branches: condStep.branches.map((branch, bi) =>
                 bi === branchIndex ? { ...branch, label } : branch,
               ),
             };
@@ -646,6 +651,76 @@ export function useFlowModeRecording(
     [setMode],
   );
 
+  const onSetFlowLink = useCallback(
+    (
+      stepId: string,
+      target: {
+        targetFlowId: string;
+        targetFlowName: string;
+        targetDiagramId: string;
+        targetDiagramName: string;
+      },
+    ) => {
+      setMode((prev) => {
+        if (prev.kind !== "recording") return prev;
+        const current = prev.steps.find((flowStep) => flowStep.id === stepId);
+        if (!current || current.type === "condition" || isFlowLinkStep(current)) return prev;
+        const linkStep: FlowStep = {
+          id: stepId,
+          type: "flow-link",
+          targetFlowId: target.targetFlowId,
+          targetFlowName: target.targetFlowName,
+          targetDiagramId: target.targetDiagramId,
+          targetDiagramName: target.targetDiagramName,
+        };
+        return {
+          ...prev,
+          steps: prev.steps.map((flowStep) => (flowStep.id === stepId ? linkStep : flowStep)),
+        };
+      });
+    },
+    [setMode],
+  );
+
+  const onRemoveFlowLink = useCallback(
+    (stepId: string) => {
+      setMode((prev) => {
+        if (prev.kind !== "recording") return prev;
+        const current = prev.steps.find((flowStep) => flowStep.id === stepId);
+        if (!isFlowLinkStep(current)) return prev;
+        const actionStep: FlowStep = {
+          id: stepId,
+          type: "action",
+        };
+        return {
+          ...prev,
+          steps: prev.steps.map((flowStep) => (flowStep.id === stepId ? actionStep : flowStep)),
+        };
+      });
+    },
+    [setMode],
+  );
+
+  const onSetConditionMerge = useCallback(
+    (conditionStepId: string, mergeStepId: string | null) => {
+      setMode((prev) => {
+        if (prev.kind !== "recording") return prev;
+        return {
+          ...prev,
+          steps: prev.steps.map((flowStep) => {
+            if (flowStep.id !== conditionStepId) return flowStep;
+            if (!isConditionStep(flowStep)) return flowStep;
+            return {
+              ...flowStep,
+              next: mergeStepId ?? undefined,
+            };
+          }),
+        };
+      });
+    },
+    [setMode],
+  );
+
   return useMemo(
     () => ({
       startRecording,
@@ -676,6 +751,9 @@ export function useFlowModeRecording(
       onAddConditionStep,
       onEnterBranchRecording,
       onOpenBranchSelect,
+      onSetFlowLink,
+      onRemoveFlowLink,
+      onSetConditionMerge,
     }),
     [
       startRecording,
@@ -706,6 +784,9 @@ export function useFlowModeRecording(
       onAddConditionStep,
       onEnterBranchRecording,
       onOpenBranchSelect,
+      onSetFlowLink,
+      onRemoveFlowLink,
+      onSetConditionMerge,
     ],
   );
 }

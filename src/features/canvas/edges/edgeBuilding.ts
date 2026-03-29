@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { MarkerType, type Edge } from "@xyflow/react";
 import type { Connection, Diagram, FlowStep, Point } from "@/features/diagram";
-import { getEffectiveConnectionStyle, EdgeMarker, EdgeStyle } from "@/features/diagram";
+import { getEffectiveConnectionStyle, EdgeMarker, EdgeStyle, isFlowLinkStep } from "@/features/diagram";
 import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
 import {
   OPACITY_FLOW_PLAYBACK_EDGE_DIM,
@@ -100,10 +100,19 @@ export function buildEdge(
       recordingBadges: params.recordingInfo?.edgeSteps.get(conn.id),
       isLastRecorded: params.recordingInfo?.lastEdgeId === conn.id,
       coverageFlowNames: params.coverage?.edgeFlows.get(conn.id),
-      playbackDuration: isActiveConn ? params.activeStep?.duration : undefined,
+      playbackDuration:
+        isActiveConn && params.activeStep && !isFlowLinkStep(params.activeStep)
+          ? params.activeStep.duration
+          : undefined,
       isActivePlayback: isActiveConn,
-      activePayload: isActiveConn ? (params.activeStep?.payload ?? null) : null,
-      activePayloadDirection: isActiveConn ? (params.activeStep?.payloadDirection ?? null) : null,
+      activePayload:
+        isActiveConn && params.activeStep && !isFlowLinkStep(params.activeStep)
+          ? (params.activeStep.payload ?? null)
+          : null,
+      activePayloadDirection:
+        isActiveConn && params.activeStep && !isFlowLinkStep(params.activeStep)
+          ? (params.activeStep.payloadDirection ?? null)
+          : null,
       edgeStyle: conn.style?.edgeStyle ?? EdgeStyle.Smoothstep,
       strokeStyle: effective.strokeStyle,
       strokeWidth: effective.strokeWidth,
