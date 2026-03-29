@@ -5,6 +5,7 @@ import {
   isC4Component,
   isEndpointComponent,
   isDbTableComponent,
+  isJsonViewerComponent,
   isNoteComponent,
   isPanelComponent,
 } from "@/features/diagram";
@@ -76,6 +77,12 @@ function defaultSize(component: Component, layout: NodeLayout): { width: number;
     return {
       width: layout.width ?? defaultW,
       height: layout.height ?? dbTableFixedH + component.columns.length * dbTableRowH,
+    };
+  }
+  if (isJsonViewerComponent(component)) {
+    return {
+      width: layout.width ?? 240,
+      height: layout.height ?? 88,
     };
   }
   return {
@@ -199,6 +206,7 @@ function shapeForComponent(
   if (isC4Component(component)) return renderC4Rect(component.type, bounds);
   if (isEndpointComponent(component)) return renderC4Rect("component", bounds);
   if (isDbTableComponent(component)) return renderC4Rect("component", bounds);
+  if (isJsonViewerComponent(component)) return renderC4Rect("container", bounds);
   return renderC4Rect("component", bounds);
 }
 

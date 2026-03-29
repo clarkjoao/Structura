@@ -5,6 +5,7 @@ import type {
   ApiGroupComponent,
   EndpointComponent,
   DbTableComponent,
+  JsonViewerComponent,
   PanelComponent,
   NodeLayout,
   Diagram,
@@ -21,6 +22,7 @@ import {
   isApiGroupType,
   isC4Type,
   isDbTableType,
+  isJsonViewerType,
 } from "../../model/component-type-constants";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import type { AppState } from "../store.types";
@@ -162,6 +164,12 @@ function buildComponentForType(
       tableName,
       columns: [],
     } as DbTableComponent;
+  } else if (isJsonViewerType(type)) {
+    component = {
+      ...base,
+      type: "json-viewer",
+      jsonContent: "{}",
+    } as JsonViewerComponent;
   } else if (isC4Type(type)) {
     component = { ...base, type };
   } else {
@@ -232,6 +240,9 @@ function buildLayoutForComponent(
       width: 406,
       height: dbTableFixedH,
     };
+  }
+  if (isJsonViewerType(type)) {
+    return { elementId: componentId, x, y, width: 240, height: 88 };
   }
   return { elementId: componentId, x, y };
 }

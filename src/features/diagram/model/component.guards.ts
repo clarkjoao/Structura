@@ -8,6 +8,7 @@ import type {
   ApiGroupComponent,
   EndpointComponent,
   DbTableComponent,
+  JsonViewerComponent,
 } from "./component.types";
 import {
   isPanelType,
@@ -16,6 +17,7 @@ import {
   isApiGroupType,
   isEndpointType,
   isDbTableType,
+  isJsonViewerType,
 } from "./component-type-constants";
 
 export const isPanelComponent = (c: Component): c is PanelComponent => isPanelType(c.type);
@@ -31,3 +33,6 @@ export const isApiGroupComponent = (c: Component): c is ApiGroupComponent => isA
 export const isEndpointComponent = (c: Component): c is EndpointComponent => isEndpointType(c.type);
 
 export const isDbTableComponent = (c: Component): c is DbTableComponent => isDbTableType(c.type);
+
+export const isJsonViewerComponent = (c: Component): c is JsonViewerComponent =>
+  isJsonViewerType(c.type);

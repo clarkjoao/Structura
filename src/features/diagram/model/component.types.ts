@@ -11,6 +11,7 @@ export type ComponentType =
   | "api-group"
   | "endpoint"
   | "db-table"
+  | "json-viewer"
   | AwsCategoryId;
 
 export interface ExternalLink {
@@ -138,6 +139,14 @@ export interface DbTableComponent extends BaseComponent {
   collapsedHeight?: number;
 }
 
+export interface JsonViewerComponent extends BaseComponent {
+  type: "json-viewer";
+  /** JSON raw string — stored as string, validated in the UI node */
+  jsonContent: string;
+  /** Optional external schema reference (URL or name) */
+  schemaRef?: string;
+}
+
 export type Component =
   | C4Component
   | PanelComponent
@@ -145,7 +154,8 @@ export type Component =
   | AwsComponent
   | ApiGroupComponent
   | EndpointComponent
-  | DbTableComponent;
+  | DbTableComponent
+  | JsonViewerComponent;
 
 export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<PanelComponent, "id">> &
@@ -153,4 +163,5 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<AwsComponent, "id">> &
   Partial<Omit<ApiGroupComponent, "id">> &
   Partial<Omit<EndpointComponent, "id">> &
-  Partial<Omit<DbTableComponent, "id">> & { width?: number; height?: number };
+  Partial<Omit<DbTableComponent, "id">> &
+  Partial<Omit<JsonViewerComponent, "id">> & { width?: number; height?: number };

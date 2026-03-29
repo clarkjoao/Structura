@@ -14,6 +14,7 @@ import {
   isNoteComponent,
   isC4Component,
   isDbTableComponent,
+  isJsonViewerComponent,
   isSystemType,
   isContainerType,
 } from "@/features/diagram";
@@ -222,7 +223,9 @@ const ComponentPanel = ({
               ? t("elementPanel.panelHeaderNote")
               : isDbTableComponent(component)
                 ? component.tableName
-                : component.name}
+                : isJsonViewerComponent(component)
+                  ? component.name || t("jsonViewer.unnamed")
+                  : component.name}
         </h3>
         <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
           <X className="h-4 w-4" />

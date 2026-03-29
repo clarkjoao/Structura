@@ -2,7 +2,12 @@ import { useCallback, useRef } from "react";
 import type { Node, Edge, OnEdgesChange, OnConnect, OnConnectEnd, Connection } from "@xyflow/react";
 import type { CanvasVisualState } from "./useCanvasVisualState";
 import { useFlowMode } from "../flow/FlowModeContext";
-import { isReactFlowParentPanelType, isNoteType, isEndpointType } from "@/features/diagram";
+import {
+  isReactFlowParentPanelType,
+  isNoteType,
+  isEndpointType,
+  isJsonViewerType,
+} from "@/features/diagram";
 import type { EdgeStyle } from "@/features/diagram";
 import { getLastEdgeStyle } from "@/features/diagram/hooks/useLastEdgeStyle";
 
@@ -104,7 +109,13 @@ export function useCanvasEventHandlers({
         return;
       }
       if (isRecording) {
-        if (!isReactFlowParentPanelType(nodeType) && !isNoteType(nodeType)) onRecordNodeClick?.(node.id);
+        if (
+          !isReactFlowParentPanelType(nodeType) &&
+          !isNoteType(nodeType) &&
+          !isJsonViewerType(nodeType)
+        ) {
+          onRecordNodeClick?.(node.id);
+        }
         return;
       }
       if (isCompareMode) return;
@@ -204,6 +215,12 @@ export function useCanvasEventHandlers({
         if (typeof startEdit === "function") {
           startEdit();
         }
+        return;
+      }
+
+      if (isJsonViewerType(node.type ?? "")) {
+        const startEdit = node.data?.onStartEdit as (() => void) | undefined;
+        startEdit?.();
         return;
       }
 

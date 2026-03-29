@@ -3,6 +3,7 @@ import type {
   Component,
   DbTableComponent,
   EndpointComponent,
+  JsonViewerComponent,
 } from "@/features/diagram";
 import {
   C4_LABEL_TEMPLATE,
@@ -213,6 +214,35 @@ class NoteCellBuilder implements CellBuilder {
   }
 }
 
+class JsonViewerCellBuilder implements CellBuilder {
+  build(
+    c: JsonViewerComponent,
+    geometry: GeometryInfo,
+    parentId: string,
+  ): string {
+    const { x, y, width, height } = geometry;
+    let preview = c.jsonContent;
+    try {
+      preview = JSON.stringify(JSON.parse(c.jsonContent), null, 2);
+    } catch {
+      /* keep raw */
+    }
+    const truncated = preview.length > 400 ? `${preview.slice(0, 400)}…` : preview;
+    const schemaLine = c.schemaRef ? `${c.schemaRef}\n` : "";
+    const value = `${c.name}\n${schemaLine}${truncated}`;
+    const finalW = Math.max(width, 220);
+    const finalH = Math.max(height, 80);
+    const style =
+      "rounded=1;whiteSpace=wrap;html=1;align=left;spacingLeft=8;spacingTop=6;fontSize=10;fontFamily=Courier New;fillColor=#f1f5f9;strokeColor=#64748b;";
+    return (
+      `<mxCell id="${escXml(c.id)}" value="${escXml(value)}" style="${style}" ` +
+      `vertex="1" parent="${escXml(parentId)}">` +
+      `<mxGeometry x="${x}" y="${y}" width="${finalW}" height="${finalH}" as="geometry"/>` +
+      `</mxCell>`
+    );
+  }
+}
+
 export const cellBuilders: Record<string, CellBuilder> = {
   c4: new C4CellBuilder(),
   aws: new AwsCellBuilder(),
@@ -221,4 +251,5 @@ export const cellBuilders: Record<string, CellBuilder> = {
   endpoint: new EndpointCellBuilder(),
   dbTable: new DbTableCellBuilder(),
   note: new NoteCellBuilder(),
+  jsonViewer: new JsonViewerCellBuilder(),
 };

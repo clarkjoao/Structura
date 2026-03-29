@@ -25,6 +25,7 @@ export type {
   EndpointComponent,
   DbTableComponent,
   DbColumn,
+  JsonViewerComponent,
   EndpointHandler,
   HttpMethod,
   Connection,
@@ -130,6 +131,7 @@ export {
   isApiGroupComponent,
   isEndpointComponent,
   isDbTableComponent,
+  isJsonViewerComponent,
 } from "./model/component.guards";
 
 /** ComponentType / PanelKind constants and type guards */
@@ -140,6 +142,7 @@ export {
   COMPONENT_TYPE_API_GROUP,
   COMPONENT_TYPE_ENDPOINT,
   COMPONENT_TYPE_DB_TABLE,
+  COMPONENT_TYPE_JSON_VIEWER,
   CANVAS_PANEL_NOTE_TYPES,
   CANVAS_API_TYPES,
   PANEL_KIND_VALUES,
@@ -149,6 +152,7 @@ export {
   isEndpointType,
   isApiGroupType,
   isDbTableType,
+  isJsonViewerType,
   isSystemType,
   isContainerType,
   isCanvasStructuralType,

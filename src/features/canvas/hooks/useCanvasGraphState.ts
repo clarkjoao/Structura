@@ -38,6 +38,7 @@ export interface UseCanvasGraphStateParams {
   updateNodeInternals: (nodeIds: string[]) => void;
   t: TFunction;
   onNoteStartEdit?: (noteId: string) => void;
+  onJsonViewerStartEdit?: (nodeId: string) => void;
 }
 
 /** Derives React Flow nodes and edges from the diagram store and canvas-specific layout state. */
@@ -64,6 +65,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     updateNodeInternals,
     t,
     onNoteStartEdit,
+    onJsonViewerStartEdit,
   } = params;
 
   const { panelIds, connectionCountPerNode, edgeHandleAssignments, effectiveHandleOrder } =
@@ -114,6 +116,8 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     isNodeHiddenByTagFilter: visualState.isNodeHiddenByTagFilter,
     onNoteStartEdit,
     setNoteInlineEditingId: visualState.setNoteInlineEditingId,
+    onJsonViewerStartEdit,
+    setJsonViewerInlineEditingId: visualState.setJsonViewerInlineEditingId,
     updateComponent: actions.updateComponent,
   });
 

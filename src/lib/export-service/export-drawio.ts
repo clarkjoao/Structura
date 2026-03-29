@@ -6,6 +6,7 @@ import {
   isC4Component,
   isEndpointComponent,
   isDbTableComponent,
+  isJsonViewerComponent,
   isNoteComponent,
   isPanelComponent,
   ServiceDefinition,
@@ -250,6 +251,8 @@ export function exportDrawio(
       cell = cellBuilders.endpoint.build(c, geometry, parentMx);
     } else if (isDbTableComponent(c)) {
       cell = cellBuilders.dbTable.build(c, geometry, parentMx);
+    } else if (isJsonViewerComponent(c)) {
+      cell = cellBuilders.jsonViewer.build(c, geometry, parentMx);
     } else if (isNoteComponent(c)) {
       const finalWidth = geometry.width || CONFIG.defaults.noteWidth;
       const finalHeight = geometry.height || CONFIG.defaults.noteHeight;

@@ -36,6 +36,9 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     // Ensures note `data.onStartEdit` exists so NoteNode can replace it with inline edit.
     // Double-click invokes the patched handler on `node.data`.
   }, []);
+  const onJsonViewerStartEdit = useCallback((_nodeId: string) => {
+    // Ensures json-viewer `data.onStartEdit` exists so JsonViewerNode can replace it with inline edit.
+  }, []);
   const activeCollabElementId = visualState.selectedEdgeId ?? visualState.selectedNodeId;
   useEffect(() => {
     updateSelectedNode(activeCollabElementId);
@@ -79,6 +82,7 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     updateNodeInternals,
     t,
     onNoteStartEdit,
+    onJsonViewerStartEdit,
   });
   const selectedNodes = graphState.nodes.filter((node) => visualState.selectedNodeIds.has(node.id));
   const selectedCount = visualState.selectedNodeIds.size;
@@ -86,6 +90,7 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     (visualState.selectedNodeId || visualState.selectedEdgeId || selectedCount > 0) &&
     !flowState.isRecording &&
     !compareState.isCompareMode &&
-    visualState.noteInlineEditingId === null;
+    visualState.noteInlineEditingId === null &&
+    visualState.jsonViewerInlineEditingId === null;
   return { t, diagram, reactFlowWrapperRef, visualState, nodes: graphState.nodes, edges: graphState.edges, onNodesChange: graphState.onNodesChange, onNodeDragStop: interaction.onNodeDragStop, eventHandlers: interaction.eventHandlers, isRecording: flowState.isRecording, actions, showSearch: interaction.showSearch, setShowSearch: interaction.setShowSearch, showDiagramSidebar: interaction.showDiagramSidebar, setShowDiagramSidebar: interaction.setShowDiagramSidebar, showCommandPalette: interaction.showCommandPalette, setShowCommandPalette: interaction.setShowCommandPalette, showScenes, setShowScenes, handleSelectDiagram: interaction.handleSelectDiagram, handleSearchSelect: interaction.handleSearchSelect, focusTitleTrigger, isPanelOpen: interaction.isPanelOpen, selectedNodes, selectedCount, showElementPanel, onDrillUp: canvasProps.onDrillUp, isCompareMode: compareState.isCompareMode, allDiagramTags };
 }

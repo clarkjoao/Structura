@@ -29,6 +29,9 @@ export interface CanvasVisualState {
   /** When set, a note is in inline markdown edit — ElementPanel stays closed. */
   noteInlineEditingId: string | null;
   setNoteInlineEditingId: (id: string | null) => void;
+  /** When set, a JSON viewer is in inline Monaco edit — ElementPanel stays closed. */
+  jsonViewerInlineEditingId: string | null;
+  setJsonViewerInlineEditingId: (id: string | null) => void;
 }
 
 export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisualState {
@@ -49,6 +52,7 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
   } | null>(null);
   const [visibleTags, setVisibleTags] = useState<Set<string> | null>(null);
   const [noteInlineEditingId, setNoteInlineEditingId] = useState<string | null>(null);
+  const [jsonViewerInlineEditingId, setJsonViewerInlineEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     setVisibleTags(null);
@@ -95,6 +99,7 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
     setSelectedEdgeId((prev) => prev === null ? prev : null);
     setContextMenu((prev) => prev === null ? prev : null);
     setNoteInlineEditingId(null);
+    setJsonViewerInlineEditingId(null);
   }, [clearHighlight, emptySet]);
 
   return {
@@ -120,5 +125,7 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
     isNodeHiddenByTagFilter,
     noteInlineEditingId,
     setNoteInlineEditingId,
+    jsonViewerInlineEditingId,
+    setJsonViewerInlineEditingId,
   };
 }

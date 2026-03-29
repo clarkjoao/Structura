@@ -2,6 +2,7 @@ import type { Component, Connection, Diagram } from "@/features/diagram";
 import {
   isApiGroupComponent,
   isDbTableType,
+  isJsonViewerType,
   isNoteType,
   isPanelComponent,
 } from "@/features/diagram";
@@ -75,10 +76,12 @@ export function buildEdgeHandleAssignments(
       Math.max(1, connectionCountPerNode[conn.sourceId]?.outgoing ?? 1),
     );
     const targetComp = components[conn.targetId];
-    /** Note e db-table: um handle de entrada por nó (`in-<nodeId>`); várias arestas reutilizam o mesmo id. */
+    /** Note, db-table, json-viewer: um handle de entrada por nó (`in-<nodeId>`). */
     const usesSingleIncomingHandle =
       targetComp !== undefined &&
-      (isNoteType(targetComp.type) || isDbTableType(targetComp.type));
+      (isNoteType(targetComp.type) ||
+        isDbTableType(targetComp.type) ||
+        isJsonViewerType(targetComp.type));
     const inCount = usesSingleIncomingHandle
       ? 1
       : Math.min(

@@ -53,6 +53,8 @@ interface UseCanvasNodesParams {
   isNodeHiddenByTagFilter: (component: Component) => boolean;
   onNoteStartEdit?: (noteId: string) => void;
   setNoteInlineEditingId?: (id: string | null) => void;
+  onJsonViewerStartEdit?: (nodeId: string) => void;
+  setJsonViewerInlineEditingId?: (id: string | null) => void;
   updateComponent: (id: string, patch: ComponentPatch) => void;
 }
 
@@ -94,6 +96,8 @@ export function useCanvasNodes({
   isNodeHiddenByTagFilter,
   onNoteStartEdit,
   setNoteInlineEditingId,
+  onJsonViewerStartEdit,
+  setJsonViewerInlineEditingId,
   updateComponent,
 }: UseCanvasNodesParams): Node[] {
   const { isRecording, onRecordHandleClick } = useFlowMode();
@@ -125,6 +129,8 @@ export function useCanvasNodes({
       onAddEndpointToGroup,
       onNoteStartEdit,
       setNoteInlineEditingId,
+      onJsonViewerStartEdit,
+      setJsonViewerInlineEditingId,
       updateComponent,
       highlightedNodeIds,
       isViewingCoverage,
@@ -154,6 +160,8 @@ export function useCanvasNodes({
     onAddEndpointToGroup,
     onNoteStartEdit,
     setNoteInlineEditingId,
+    onJsonViewerStartEdit,
+    setJsonViewerInlineEditingId,
     updateComponent,
     highlightedNodeIds,
     isViewingCoverage,
@@ -249,6 +257,7 @@ export function useCanvasNodes({
           selectable: (d.selectable ?? !lockedInGroup) && !isCmp && !tagFilteredHidden,
           focusable: (d.focusable ?? !lockedInGroup) && !isCmp && !tagFilteredHidden,
           className: isCmp ? "cursor-default" : undefined,
+          ...(d.dragHandle ? { dragHandle: d.dragHandle } : {}),
           ...(vis.isChild ? { parentId: comp.parentId!, extent: "parent" as const } : {}),
           hidden: vis.isHidden,
           style: style as CSSProperties,

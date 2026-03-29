@@ -32,6 +32,8 @@ const ALLOWED_COMPONENT_PATCH_KEYS = new Set<string>([
   "handlers",
   "tableName",
   "columns",
+  "jsonContent",
+  "schemaRef",
   "templateId",
   "registryServiceId",
 ]);
@@ -73,6 +75,10 @@ const NODE_DATA_UI_ONLY_KEYS = new Set<string>([
   "compareBadges",
   "sceneBadge",
   "elementId",
+  "onStartEdit",
+  "onInlineEditingChange",
+  "layoutWidth",
+  "layoutHeight",
 ]);
 
 function removeUndefinedEntries(record: Record<string, unknown>): Record<string, unknown> {

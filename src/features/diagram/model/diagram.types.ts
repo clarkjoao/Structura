@@ -20,6 +20,7 @@ export type {
   ExternalLink,
   DbTableComponent,
   DbColumn,
+  JsonViewerComponent,
 } from "./component.types";
 
 export type {

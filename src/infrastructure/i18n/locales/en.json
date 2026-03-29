@@ -467,8 +467,23 @@
       "uq": "UQ"
     }
   },
+  "jsonViewer": {
+    "ariaLabel": "JSON Viewer: {{name}}",
+    "unnamed": "Unnamed JSON",
+    "panelTitle": "JSON Viewer",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "edit": "Edit",
+    "confirm": "Confirm",
+    "format": "Format",
+    "invalidJson": "Invalid JSON — fix before saving",
+    "schemaRef": "Schema / Reference",
+    "schemaRefPlaceholder": "e.g. https://schema.org/...",
+    "jsonContent": "JSON Content"
+  },
   "nodeTypes": {
-    "db-table": "Database table"
+    "db-table": "Database table",
+    "json-viewer": "JSON Viewer"
   },
   "elementPicker": {
     "categoryAll": "All",

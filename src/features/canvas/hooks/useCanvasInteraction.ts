@@ -135,7 +135,8 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
     !!(visualState.selectedNodeId || visualState.selectedEdgeId) &&
     !flowState.isRecording &&
     !compareState.isCompareMode &&
-    visualState.noteInlineEditingId === null;
+    visualState.noteInlineEditingId === null &&
+    visualState.jsonViewerInlineEditingId === null;
 
   const handleSearchSelect = useCallback(
     (componentId: string) => {

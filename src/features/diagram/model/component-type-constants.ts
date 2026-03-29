@@ -17,6 +17,7 @@ export const COMPONENT_TYPE_NOTE = "note";
 export const COMPONENT_TYPE_API_GROUP = "api-group";
 export const COMPONENT_TYPE_ENDPOINT = "endpoint";
 export const COMPONENT_TYPE_DB_TABLE = "db-table";
+export const COMPONENT_TYPE_JSON_VIEWER = "json-viewer";
 
 /** Types that use the "canvas:…" usage key and support panelKind in key */
 export const CANVAS_PANEL_NOTE_TYPES = [COMPONENT_TYPE_PANEL, COMPONENT_TYPE_NOTE] as const;
@@ -80,6 +81,10 @@ export function isDbTableType(type: string): type is "db-table" {
   return type === COMPONENT_TYPE_DB_TABLE;
 }
 
+export function isJsonViewerType(type: string): type is "json-viewer" {
+  return type === COMPONENT_TYPE_JSON_VIEWER;
+}
+
 export function isCanvasStructuralType(type: string): type is "panel" | "note" {
   return isPanelType(type) || isNoteType(type);
 }
@@ -102,7 +107,12 @@ export function getUsageKeyForType(
   if (isPanelType(type) || isNoteType(type)) {
     return `canvas:${type}${panelKind ? `:${panelKind}` : ""}`;
   }
-  if (isEndpointType(type) || isApiGroupType(type) || isDbTableType(type)) {
+  if (
+    isEndpointType(type) ||
+    isApiGroupType(type) ||
+    isDbTableType(type) ||
+    isJsonViewerType(type)
+  ) {
     return `canvas:${type}`;
   }
   if (isC4Type(type)) {
@@ -131,6 +141,10 @@ export function getDefaultNameForNewComponent(
   if (isDbTableType(type))
     return i18n.t("quickInsert.newNamed", {
       name: i18n.t("nodeTypes.db-table"),
+    });
+  if (isJsonViewerType(type))
+    return i18n.t("quickInsert.newNamed", {
+      name: i18n.t("nodeTypes.json-viewer"),
     });
   if (isPanelType(type) && panelDefaultName) return panelDefaultName;
   return i18n.t("quickInsert.newNamed", { name: label });

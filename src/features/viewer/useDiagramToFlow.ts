@@ -4,6 +4,7 @@ import {
   isApiGroupComponent,
   isDbTableComponent,
   isEndpointComponent,
+  isJsonViewerComponent,
   isNoteComponent,
   isPanelComponent,
   resolveSceneSnapshot,
@@ -22,6 +23,7 @@ function resolveNodeType(component: Component): string {
   if (isApiGroupComponent(component)) return "api-group";
   if (isEndpointComponent(component)) return "endpoint";
   if (isDbTableComponent(component)) return "db-table";
+  if (isJsonViewerComponent(component)) return "json-viewer";
   return "c4";
 }
 
@@ -96,6 +98,18 @@ function buildNodeData(component: Component): Record<string, unknown> {
     };
   }
 
+  if (isJsonViewerComponent(component)) {
+    return {
+      elementId: component.id,
+      name: component.name,
+      jsonContent: component.jsonContent,
+      schemaRef: component.schemaRef,
+      isSelected: false,
+      layoutWidth: 240,
+      layoutHeight: 88,
+    };
+  }
+
   return {
     elementId: component.id,
     name: component.name,
@@ -121,12 +135,16 @@ function buildNode(
   const dbTableRowH = 24;
   const width = isDbTableComponent(component)
     ? layout?.width ?? 406
-    : layout?.width ?? 260;
+    : isJsonViewerComponent(component)
+      ? layout?.width ?? 240
+      : layout?.width ?? 260;
   const height = isDbTableComponent(component)
     ? component.collapsed
       ? DB_TABLE_COLLAPSED_H
       : dbTableFixedH + component.columns.length * dbTableRowH
-    : layout?.height ?? 120;
+    : isJsonViewerComponent(component)
+      ? layout?.height ?? 88
+      : layout?.height ?? 120;
 
   return {
     id: component.id,

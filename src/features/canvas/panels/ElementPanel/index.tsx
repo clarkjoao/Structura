@@ -1,12 +1,24 @@
 import { LayoutDashboard } from "lucide-react";
 import { CollabEditingWarning } from "@/features/collaboration";
-import { useComponent, useConnections, useComponents, useDiagramActions, useActiveDiagram, useFlows, isEndpointComponent, isApiGroupComponent, isPanelComponent } from "@/features/diagram";
+import {
+  useComponent,
+  useConnections,
+  useComponents,
+  useDiagramActions,
+  useActiveDiagram,
+  useFlows,
+  isEndpointComponent,
+  isApiGroupComponent,
+  isJsonViewerComponent,
+  isPanelComponent,
+} from "@/features/diagram";
 import type { Node } from "@xyflow/react";
 import { MultiSelectPanel } from "../MultiSelectPanel";
 import ComponentPanel from "./ComponentPanel";
 import ConnectionPanel from "./ConnectionPanel";
 import EndpointPanel from "./EndpointPanel";
 import ApiGroupPanel from "./ApiGroupPanel";
+import JsonViewerPanel from "./JsonViewerPanel";
 
 interface Props {
   selectedElementId: string | null;
@@ -64,6 +76,21 @@ const ElementPanel = ({
             updateComponent={updateComponent}
             removeComponent={removeComponent}
             availableFlows={availableFlows}
+          />
+        </div>
+      );
+    }
+
+    if (isJsonViewerComponent(component)) {
+      return (
+        <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
+          <CollabEditingWarning elementId={selectedElementId} />
+          <JsonViewerPanel
+            component={component}
+            onClose={onClose}
+            updateComponent={updateComponent}
+            removeComponent={removeComponent}
+            focusTitleTrigger={focusTitleTrigger}
           />
         </div>
       );
