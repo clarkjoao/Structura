@@ -23,6 +23,8 @@ export type {
   ApiGroupComponent,
   ApiProtocol,
   EndpointComponent,
+  DbTableComponent,
+  DbColumn,
   EndpointHandler,
   HttpMethod,
   Connection,
@@ -127,6 +129,7 @@ export {
   isAwsComponent,
   isApiGroupComponent,
   isEndpointComponent,
+  isDbTableComponent,
 } from "./model/component.guards";
 
 /** ComponentType / PanelKind constants and type guards */
@@ -136,6 +139,7 @@ export {
   COMPONENT_TYPE_NOTE,
   COMPONENT_TYPE_API_GROUP,
   COMPONENT_TYPE_ENDPOINT,
+  COMPONENT_TYPE_DB_TABLE,
   CANVAS_PANEL_NOTE_TYPES,
   CANVAS_API_TYPES,
   PANEL_KIND_VALUES,
@@ -144,6 +148,7 @@ export {
   isC4Type,
   isEndpointType,
   isApiGroupType,
+  isDbTableType,
   isSystemType,
   isContainerType,
   isCanvasStructuralType,

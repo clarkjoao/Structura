@@ -5,6 +5,7 @@ import {
   isAwsComponent,
   isC4Component,
   isEndpointComponent,
+  isDbTableComponent,
   isNoteComponent,
   isPanelComponent,
   ServiceDefinition,
@@ -247,6 +248,8 @@ export function exportDrawio(
       cell = cellBuilders.c4.build(c, geometry, parentMx, serviceName);
     } else if (isEndpointComponent(c)) {
       cell = cellBuilders.endpoint.build(c, geometry, parentMx);
+    } else if (isDbTableComponent(c)) {
+      cell = cellBuilders.dbTable.build(c, geometry, parentMx);
     } else if (isNoteComponent(c)) {
       const finalWidth = geometry.width || CONFIG.defaults.noteWidth;
       const finalHeight = geometry.height || CONFIG.defaults.noteHeight;

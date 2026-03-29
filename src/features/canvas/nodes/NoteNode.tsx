@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { NodeResizer, type NodeProps } from "@xyflow/react";
+import { Handle, NodeResizer, Position, type NodeProps } from "@xyflow/react";
 import ReactMarkdown from "react-markdown";
 import { ChevronDown, ChevronUp, FileText } from "lucide-react";
 import { useComponentIcon, useDiagramActions } from "@/features/diagram";
@@ -9,8 +9,23 @@ import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
 import { useCollabHighlight } from "@/features/collaboration/useCollabHighlight";
+import { singleIncomingTargetHandleId } from "../edges/connectionDerivations";
 
 const DEFAULT_PAPER_COLOR = "hsl(45 25% 97%)"; // papel ofuscado
+
+const noteIncomingHandleClassName =
+  "!border-background transition-all duration-150 !w-2.5 !h-2.5 !bg-muted-foreground";
+
+function NoteIncomingHandle({ elementId }: { elementId: string }) {
+  return (
+    <Handle
+      id={singleIncomingTargetHandleId(elementId)}
+      type="target"
+      position={Position.Left}
+      className={noteIncomingHandleClassName}
+    />
+  );
+}
 
 export interface NoteNodeData {
   elementId: string;
@@ -159,6 +174,7 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
             : "0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06)",
         }}
       >
+        <NoteIncomingHandle elementId={elementId} />
         {collabHighlight && (
           <div
             className="absolute inset-0 pointer-events-none rounded-lg z-10"
@@ -233,6 +249,7 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
             : "0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06)",
         }}
       >
+        <NoteIncomingHandle elementId={elementId} />
         {collabHighlight && (
           <div
             className="absolute inset-0 pointer-events-none z-10"

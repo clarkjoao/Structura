@@ -30,6 +30,8 @@ const ALLOWED_COMPONENT_PATCH_KEYS = new Set<string>([
   "path",
   "endpointDescription",
   "handlers",
+  "tableName",
+  "columns",
   "templateId",
   "registryServiceId",
 ]);
@@ -63,6 +65,7 @@ const NODE_DATA_UI_ONLY_KEYS = new Set<string>([
   "onDrillDown",
   "onEmbed",
   "onReorderHandle",
+  "onCommit",
   "onHandleClick",
   "coverageFlowNames",
   "activeHandleId",

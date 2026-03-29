@@ -10,6 +10,7 @@ export type ComponentType =
   | "note"
   | "api-group"
   | "endpoint"
+  | "db-table"
   | AwsCategoryId;
 
 export interface ExternalLink {
@@ -116,11 +117,40 @@ export interface EndpointComponent extends BaseComponent {
   handlers: EndpointHandler[];
 }
 
-export type Component = C4Component | PanelComponent | NoteComponent | AwsComponent | ApiGroupComponent | EndpointComponent;
+export interface DbColumn {
+  id: string;
+  name: string;
+  dataType: string;
+  isPrimaryKey?: boolean;
+  isForeignKey?: boolean;
+  /** id de outro DbTableComponent referenciado por esta FK */
+  foreignTableId?: string;
+  nullable?: boolean;
+  unique?: boolean;
+}
+
+export interface DbTableComponent extends BaseComponent {
+  type: "db-table";
+  tableName: string;
+  columns: DbColumn[];
+  collapsed?: boolean;
+  collapsedWidth?: number;
+  collapsedHeight?: number;
+}
+
+export type Component =
+  | C4Component
+  | PanelComponent
+  | NoteComponent
+  | AwsComponent
+  | ApiGroupComponent
+  | EndpointComponent
+  | DbTableComponent;
 
 export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<PanelComponent, "id">> &
   Partial<Omit<NoteComponent, "id">> &
   Partial<Omit<AwsComponent, "id">> &
   Partial<Omit<ApiGroupComponent, "id">> &
-  Partial<Omit<EndpointComponent, "id">> & { width?: number; height?: number };
+  Partial<Omit<EndpointComponent, "id">> &
+  Partial<Omit<DbTableComponent, "id">> & { width?: number; height?: number };

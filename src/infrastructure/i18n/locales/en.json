@@ -444,6 +444,32 @@
     "vertical": "Vertical",
     "laneColor": "Lane color"
   },
+  "dbTable": {
+    "ariaLabel": "Table {{name}}",
+    "unnamedTable": "Unnamed table",
+    "columnCount": "{{count}} column",
+    "columnCount_plural": "{{count}} columns",
+    "noColumns": "No columns defined",
+    "addRow": "Add row",
+    "addCol": "Add column",
+    "removeRow": "Remove row",
+    "removeCol": "Remove column",
+    "expandAria": "Expand table",
+    "expandTitle": "Expand",
+    "collapseAria": "Collapse table",
+    "collapseTitle": "Collapse",
+    "col": {
+      "name": "Name",
+      "dataType": "Type",
+      "pk": "PK",
+      "fk": "FK",
+      "nn": "NN",
+      "uq": "UQ"
+    }
+  },
+  "nodeTypes": {
+    "db-table": "Database table"
+  },
   "elementPicker": {
     "categoryAll": "All",
     "viewAll": "View all",
@@ -461,7 +487,10 @@
     "canvasGroups": "Canvas & Groups",
     "awsOther": "Other",
     "registryEmpty": "No services in the registry yet.",
-    "openRegistry": "Open registry"
+    "openRegistry": "Open registry",
+    "categories": {
+      "data": "Data"
+    }
   },
   "patterns": {
     "searchPlaceholder": "Search patterns by name, description or components...",

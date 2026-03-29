@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { Edge, Node } from "@xyflow/react";
 import {
   isApiGroupComponent,
+  isDbTableComponent,
   isEndpointComponent,
   isNoteComponent,
   isPanelComponent,
@@ -11,6 +12,7 @@ import {
   type Diagram,
   type NodeLayout,
 } from "@/features/diagram";
+import { DB_TABLE_COLLAPSED_H } from "@/features/canvas/constants";
 
 function resolveNodeType(component: Component): string {
   if (isPanelComponent(component)) {
@@ -19,6 +21,7 @@ function resolveNodeType(component: Component): string {
   if (isNoteComponent(component)) return "note";
   if (isApiGroupComponent(component)) return "api-group";
   if (isEndpointComponent(component)) return "endpoint";
+  if (isDbTableComponent(component)) return "db-table";
   return "c4";
 }
 
@@ -73,6 +76,26 @@ function buildNodeData(component: Component): Record<string, unknown> {
     };
   }
 
+  if (isDbTableComponent(component)) {
+    return {
+      elementId: component.id,
+      tableName: component.tableName || component.name,
+      columns: component.columns.map((col) => ({
+        id: col.id,
+        name: col.name,
+        dataType: col.dataType,
+        isPrimaryKey: col.isPrimaryKey ?? false,
+        isForeignKey: col.isForeignKey ?? false,
+        nullable: col.nullable ?? true,
+        unique: col.unique ?? false,
+      })),
+      isSelected: false,
+      collapsed: component.collapsed ?? false,
+      onToggleCollapse: () => {},
+      onCommit: () => {},
+    };
+  }
+
   return {
     elementId: component.id,
     name: component.name,
@@ -94,8 +117,16 @@ function buildNode(
   nodeLayouts: Record<string, NodeLayout>,
 ): Node {
   const layout = nodeLayouts[component.id];
-  const width = layout?.width ?? 260;
-  const height = layout?.height ?? 120;
+  const dbTableFixedH = 32 + 22 + 20 + 2;
+  const dbTableRowH = 24;
+  const width = isDbTableComponent(component)
+    ? layout?.width ?? 406
+    : layout?.width ?? 260;
+  const height = isDbTableComponent(component)
+    ? component.collapsed
+      ? DB_TABLE_COLLAPSED_H
+      : dbTableFixedH + component.columns.length * dbTableRowH
+    : layout?.height ?? 120;
 
   return {
     id: component.id,

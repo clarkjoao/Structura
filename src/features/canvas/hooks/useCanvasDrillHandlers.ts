@@ -1,6 +1,11 @@
 import { useCallback } from "react";
 import type { Diagram } from "@/features/diagram";
-import { isNoteComponent, isPanelComponent, resolveCanvasSnapshot } from "@/features/diagram";
+import {
+  isDbTableComponent,
+  isNoteComponent,
+  isPanelComponent,
+  resolveCanvasSnapshot,
+} from "@/features/diagram";
 import {
   NOTE_DEFAULT_W,
   NOTE_DEFAULT_H,
@@ -10,7 +15,17 @@ import {
   PANEL_DEFAULT_H,
   PANEL_COLLAPSED_W,
   PANEL_COLLAPSED_H,
+  DB_TABLE_COLLAPSED_W,
+  DB_TABLE_COLLAPSED_H,
 } from "../constants";
+
+const DB_TABLE_EXPAND_FIXED_H = 32 + 22 + 20 + 2;
+const DB_TABLE_EXPAND_ROW_H = 24;
+const DB_TABLE_EXPAND_DEFAULT_W = 406;
+
+function defaultExpandedDbTableHeight(columnCount: number): number {
+  return DB_TABLE_EXPAND_FIXED_H + columnCount * DB_TABLE_EXPAND_ROW_H;
+}
 
 interface UseCanvasDrillHandlersParams {
   diagram: Diagram | null | undefined;
@@ -94,6 +109,27 @@ export function useCanvasDrillHandlers({
             collapsedHeight: layout?.height,
             width: NOTE_COLLAPSED_W,
             height: NOTE_COLLAPSED_H,
+          });
+        }
+        return;
+      }
+
+      if (isDbTableComponent(comp)) {
+        if (comp.collapsed) {
+          updateComponent(nodeId, {
+            collapsed: false,
+            width: comp.collapsedWidth ?? DB_TABLE_EXPAND_DEFAULT_W,
+            height:
+              comp.collapsedHeight ??
+              defaultExpandedDbTableHeight(comp.columns.length),
+          });
+        } else {
+          updateComponent(nodeId, {
+            collapsed: true,
+            collapsedWidth: layout?.width,
+            collapsedHeight: layout?.height,
+            width: DB_TABLE_COLLAPSED_W,
+            height: DB_TABLE_COLLAPSED_H,
           });
         }
       }

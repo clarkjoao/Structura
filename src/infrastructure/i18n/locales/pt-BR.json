@@ -444,6 +444,32 @@
     "vertical": "Vertical",
     "laneColor": "Cor da faixa"
   },
+  "dbTable": {
+    "ariaLabel": "Tabela {{name}}",
+    "unnamedTable": "Tabela sem nome",
+    "columnCount": "{{count}} coluna",
+    "columnCount_plural": "{{count}} colunas",
+    "noColumns": "Nenhuma coluna definida",
+    "addRow": "Adicionar linha",
+    "addCol": "Adicionar coluna",
+    "removeRow": "Remover linha",
+    "removeCol": "Remover coluna",
+    "expandAria": "Expandir tabela",
+    "expandTitle": "Expandir",
+    "collapseAria": "Recolher tabela",
+    "collapseTitle": "Recolher",
+    "col": {
+      "name": "Nome",
+      "dataType": "Tipo",
+      "pk": "PK",
+      "fk": "FK",
+      "nn": "NN",
+      "uq": "UQ"
+    }
+  },
+  "nodeTypes": {
+    "db-table": "Tabela de banco de dados"
+  },
   "elementPicker": {
     "categoryAll": "Todos",
     "viewAll": "Ver todos",
@@ -461,7 +487,10 @@
     "canvasGroups": "Canvas e Agrupamentos",
     "awsOther": "Outros",
     "registryEmpty": "Nenhum serviço no registry ainda.",
-    "openRegistry": "Abrir registry"
+    "openRegistry": "Abrir registry",
+    "categories": {
+      "data": "Dados"
+    }
   },
   "patterns": {
     "searchPlaceholder": "Buscar patterns por nome, descrição ou componentes...",

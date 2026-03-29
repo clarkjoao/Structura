@@ -114,6 +114,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     isNodeHiddenByTagFilter: visualState.isNodeHiddenByTagFilter,
     onNoteStartEdit,
     setNoteInlineEditingId: visualState.setNoteInlineEditingId,
+    updateComponent: actions.updateComponent,
   });
 
   const onSelectionFromChanges = useCallback(

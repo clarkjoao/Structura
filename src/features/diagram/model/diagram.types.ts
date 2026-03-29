@@ -18,6 +18,8 @@ export type {
   HttpMethod,
   PanelKind,
   ExternalLink,
+  DbTableComponent,
+  DbColumn,
 } from "./component.types";
 
 export type {

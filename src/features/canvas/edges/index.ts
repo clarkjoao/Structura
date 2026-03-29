@@ -24,6 +24,7 @@ export {
   resolveHandleIndex,
   buildEdgeHandleAssignments,
   buildEffectiveHandleOrder,
+  singleIncomingTargetHandleId,
 } from "./connectionDerivations";
 export {
   type EdgeBuildParams,

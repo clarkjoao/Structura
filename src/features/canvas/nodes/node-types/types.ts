@@ -2,6 +2,7 @@ import type { CSSProperties, ComponentType as ReactComponentType } from "react";
 import type {
   CompareElementVisual,
   Component,
+  ComponentPatch,
   ComponentType,
   Diagram,
   FlowStep,
@@ -54,6 +55,8 @@ export interface NodeBuildContext {
   onNoteStartEdit?: (noteId: string) => void;
   /** Track which note is in inline edit (hides ElementPanel while non-null). */
   setNoteInlineEditingId?: (id: string | null) => void;
+  /** Persiste patch de um componente — injetado pelo useCanvasNodes para callbacks inline */
+  updateComponent?: (id: string, patch: ComponentPatch) => void;
 }
 
 export interface NodeTypeDescriptor {

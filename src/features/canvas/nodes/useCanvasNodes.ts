@@ -3,6 +3,7 @@ import type { Node } from "@xyflow/react";
 import type {
   CompareElementVisual,
   Component,
+  ComponentPatch,
   Diagram,
   NodeLayout,
   ServiceDefinition,
@@ -52,6 +53,7 @@ interface UseCanvasNodesParams {
   isNodeHiddenByTagFilter: (component: Component) => boolean;
   onNoteStartEdit?: (noteId: string) => void;
   setNoteInlineEditingId?: (id: string | null) => void;
+  updateComponent: (id: string, patch: ComponentPatch) => void;
 }
 
 type NodeCtxBase = Omit<NodeBuildContext, "isPlaying" | "isRecording" | "flowHighlight" | "activeStep" | "recordingInfo" | "coverage"> & {
@@ -92,6 +94,7 @@ export function useCanvasNodes({
   isNodeHiddenByTagFilter,
   onNoteStartEdit,
   setNoteInlineEditingId,
+  updateComponent,
 }: UseCanvasNodesParams): Node[] {
   const { isRecording, onRecordHandleClick } = useFlowMode();
 
@@ -122,6 +125,7 @@ export function useCanvasNodes({
       onAddEndpointToGroup,
       onNoteStartEdit,
       setNoteInlineEditingId,
+      updateComponent,
       highlightedNodeIds,
       isViewingCoverage,
     };
@@ -150,6 +154,7 @@ export function useCanvasNodes({
     onAddEndpointToGroup,
     onNoteStartEdit,
     setNoteInlineEditingId,
+    updateComponent,
     highlightedNodeIds,
     isViewingCoverage,
   ]);

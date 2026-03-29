@@ -14,7 +14,7 @@ export const noteDescriptor: NodeTypeDescriptor = {
   component: NoteNode,
   matches: isNoteType,
   zIndex: 1,
-  connectable: false,
+  connectable: true,
   canHaveParent: true,
   canBeParent: false,
   defaultSize: { width: NOTE_DEFAULT_W, height: NOTE_DEFAULT_H },
