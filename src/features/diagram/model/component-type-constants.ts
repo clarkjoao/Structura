@@ -19,6 +19,14 @@ export const COMPONENT_TYPE_ENDPOINT = "endpoint";
 export const COMPONENT_TYPE_DB_TABLE = "db-table";
 export const COMPONENT_TYPE_JSON_VIEWER = "json-viewer";
 
+export const COMPONENT_TYPE_UNKNOWN = "unknown";
+
+export const COMPONENT_TYPE_SVG = "svg";
+
+export function isSvgComponentType(type: string): type is "svg" {
+  return type === COMPONENT_TYPE_SVG;
+}
+
 /** Types that use the "canvas:…" usage key and support panelKind in key */
 export const CANVAS_PANEL_NOTE_TYPES = [COMPONENT_TYPE_PANEL, COMPONENT_TYPE_NOTE] as const;
 
@@ -75,6 +83,10 @@ export function isEndpointType(type: string): type is "endpoint" {
 
 export function isApiGroupType(type: string): type is "api-group" {
   return type === COMPONENT_TYPE_API_GROUP;
+}
+
+export function isUnknownType(type: string): type is "unknown" {
+  return type === COMPONENT_TYPE_UNKNOWN;
 }
 
 export function isDbTableType(type: string): type is "db-table" {

@@ -4,6 +4,8 @@ import { swimlaneDescriptor } from "./swimlane.descriptor";
 import { noteDescriptor } from "./note.descriptor";
 import { apiGroupDescriptor } from "./apigroup.descriptor";
 import { endpointDescriptor } from "./endpoint.descriptor";
+import { svgDescriptor } from "./svg.descriptor";
+import { unknownDescriptor } from "./unknown.descriptor";
 import { dbTableDescriptor } from "./dbtable.descriptor";
 import { jsonViewerDescriptor } from "./jsonviewer.descriptor";
 import { c4Descriptor } from "./c4.descriptor";
@@ -27,6 +29,8 @@ export const NODE_TYPE_REGISTRY: NodeTypeDescriptor[] = [
   endpointDescriptor,
   dbTableDescriptor,
   jsonViewerDescriptor,
+  svgDescriptor,
+  unknownDescriptor, // before catch-all
   c4Descriptor, // catch-all — must be last
 ];
 

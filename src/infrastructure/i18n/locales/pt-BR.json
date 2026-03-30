@@ -767,6 +767,16 @@
     "collapseAria": "Recolher nota",
     "collapseTitle": "Recolher"
   },
+  "unknownNode": {
+    "aria": "Elemento desconhecido: {{name}}",
+    "defaultName": "Elemento desconhecido",
+    "badge": "desconhecido",
+    "emptyHint": "Sem conteúdo disponível"
+  },
+  "svgNode": {
+    "aria": "Elemento SVG: {{name}}",
+    "defaultName": "SVG"
+  },
   "customNode": {
     "drillAria": "Explorar interior do elemento {{id}}",
     "ariaNamed": "{{name}} ({{type}})",

@@ -7,6 +7,8 @@ import type {
   AwsComponent,
   ApiGroupComponent,
   EndpointComponent,
+  UnknownComponent,
+  SvgComponent,
   DbTableComponent,
   JsonViewerComponent,
 } from "./component.types";
@@ -16,6 +18,8 @@ import {
   isC4Type,
   isApiGroupType,
   isEndpointType,
+  isUnknownType,
+  isSvgComponentType,
   isDbTableType,
   isJsonViewerType,
 } from "./component-type-constants";
@@ -32,6 +36,9 @@ export const isApiGroupComponent = (c: Component): c is ApiGroupComponent => isA
 
 export const isEndpointComponent = (c: Component): c is EndpointComponent => isEndpointType(c.type);
 
+export const isUnknownComponent = (c: Component): c is UnknownComponent => isUnknownType(c.type);
+
+export const isSvgComponent = (c: Component): c is SvgComponent => isSvgComponentType(c.type);
 export const isDbTableComponent = (c: Component): c is DbTableComponent => isDbTableType(c.type);
 
 export const isJsonViewerComponent = (c: Component): c is JsonViewerComponent =>

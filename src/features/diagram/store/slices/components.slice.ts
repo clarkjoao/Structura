@@ -6,6 +6,8 @@ import type {
   EndpointComponent,
   DbTableComponent,
   JsonViewerComponent,
+  UnknownComponent,
+  SvgComponent,
   PanelComponent,
   NodeLayout,
   Diagram,
@@ -23,8 +25,11 @@ import {
   isC4Type,
   isDbTableType,
   isJsonViewerType,
+  isUnknownType,
+  isSvgComponentType,
 } from "../../model/component-type-constants";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
+import { isAwsType } from "@/lib/catalogs/aws";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
 import { resolveActiveScene } from "./scene-helpers";
@@ -172,8 +177,18 @@ function buildComponentForType(
     } as JsonViewerComponent;
   } else if (isC4Type(type)) {
     component = { ...base, type };
-  } else {
+  } else if (isAwsType(type)) {
     component = { ...base, type, awsService: awsService ?? undefined };
+  } else if (isUnknownType(type)) {
+    component = { ...base, type: "unknown", rawContent: "" } as UnknownComponent;
+  } else if (isSvgComponentType(type)) {
+    component = {
+      ...base,
+      type: "svg",
+      svgContent: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"></svg>',
+    } as SvgComponent;
+  } else {
+    component = { ...base, type: "unknown", rawContent: "" } as UnknownComponent;
   }
   return { component, resolvedPanelKind };
 }

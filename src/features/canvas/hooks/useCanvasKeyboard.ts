@@ -9,8 +9,13 @@ import type {
   Connection,
   NodeLayout,
   ServiceDefinition,
+  SvgComponent,
 } from "@/features/diagram";
-import { resolveCanvasSnapshot } from "@/features/diagram";
+import {
+  COMPONENT_TYPE_SVG,
+  generateId,
+  resolveCanvasSnapshot,
+} from "@/features/diagram";
 import { getViewportCenter } from "../viewport-utils";
 import { exportDrawio } from "@/lib/export-service";
 import { useCopyPasteShortcuts } from "./keyboard/useCopyPasteShortcuts";
@@ -26,7 +31,7 @@ import { sanitizeSvg } from "../utils/svg.sanitizer";
  * Validates SVG size, then sanitizes. Shows toasts on failure.
  * `translate` should be `t` from react-i18next for icon message keys.
  */
-export function importSvgComponent(
+function prepareImportedSvgMarkup(
   svgContent: string,
   translate: (key: string) => string,
 ): string | null {
@@ -179,8 +184,61 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     [diagram, serviceRegistry],
   );
 
-  const importSvgForPaste = useCallback(
-    (svgContent: string) => importSvgComponent(svgContent, t),
+  const pasteSvgAsCanvasNode = useCallback(
+    (rawSvg: string, position: { x: number; y: number }): string | null => {
+      if (!diagram) return null;
+
+      const clean = prepareImportedSvgMarkup(rawSvg, t);
+      if (!clean) return null;
+
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(clean, "image/svg+xml");
+      const svgEl = doc.querySelector("svg");
+      let width = 200;
+      let height = 200;
+      if (svgEl) {
+        const vb = svgEl.getAttribute("viewBox")?.trim().split(/[\s,]+/);
+        if (vb && vb.length === 4) {
+          const vw = parseFloat(vb[2] ?? "");
+          const vh = parseFloat(vb[3] ?? "");
+          if (vw > 0) width = Math.round(vw);
+          if (vh > 0) height = Math.round(vh);
+        } else {
+          const w = parseFloat(svgEl.getAttribute("width") ?? "");
+          const h = parseFloat(svgEl.getAttribute("height") ?? "");
+          if (w > 0) width = Math.round(w);
+          if (h > 0) height = Math.round(h);
+        }
+        const MAX = 800;
+        if (width > MAX || height > MAX) {
+          const ratio = Math.min(MAX / width, MAX / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+      }
+
+      const id = generateId("el");
+      const comp: SvgComponent = {
+        id,
+        name: "SVG",
+        description: "",
+        parentId: null,
+        type: COMPONENT_TYPE_SVG,
+        svgContent: clean,
+      };
+
+      const newIds = importDrawioResult(
+        [comp],
+        [],
+        [{ elementId: id, x: position.x, y: position.y, width, height }],
+      );
+      return newIds[0] ?? null;
+    },
+    [diagram, importDrawioResult, t],
+  );
+
+  const importSvgForIconLibrary = useCallback(
+    (svgContent: string) => prepareImportedSvgMarkup(svgContent, t),
     [t],
   );
 
@@ -194,10 +252,11 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     copyToClipboard,
     pasteFromClipboard,
     importDrawioResult,
+    pasteSvgAsCanvasNode,
+    importSvgForIconLibrary,
     serviceRegistry,
     exportDrawioXml,
     setSelectedNodeIds,
-    importSvgComponent: importSvgForPaste,
     pastedSvgDefaultName,
   });
 

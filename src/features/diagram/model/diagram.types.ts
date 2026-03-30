@@ -14,6 +14,8 @@ export type {
   ApiGroupComponent,
   ApiProtocol,
   EndpointComponent,
+  UnknownComponent,
+  SvgComponent,
   EndpointHandler,
   HttpMethod,
   PanelKind,

@@ -768,6 +768,16 @@
     "collapseAria": "Collapse note",
     "collapseTitle": "Collapse"
   },
+  "unknownNode": {
+    "aria": "Unknown element: {{name}}",
+    "defaultName": "Unknown element",
+    "badge": "unknown",
+    "emptyHint": "No content available"
+  },
+  "svgNode": {
+    "aria": "SVG element: {{name}}",
+    "defaultName": "SVG"
+  },
   "customNode": {
     "drillAria": "Drill into element {{id}}",
     "ariaNamed": "{{name}} ({{type}})",

@@ -839,8 +839,10 @@ export type AwsCategoryId =
   | "aws-media"
   | "aws-migration"
   | "aws-iot"
-  | "aws-end-user"
   | "aws-general";
+
+/** Category id for imported / generic AWS shapes (e.g. draw.io AWS3 or product icons). */
+export const AWS_CATEGORY_ID_GENERAL = "aws-general" as const satisfies AwsCategoryId;
 
 /** Check if a ElementType is an AWS category */
 export const isAwsType = (type: string): type is AwsCategoryId =>

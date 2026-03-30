@@ -16,7 +16,11 @@ import {
   getOffsetPositionOfNodes,
   type KeyHandler,
 } from "./helpers";
-import { readDrawioFromClipboard, writeDrawioToClipboard } from "@/lib/clipboard-utils";
+import {
+  readDrawioFromClipboard,
+  readSvgFromClipboard,
+  writeDrawioToClipboard,
+} from "@/lib/clipboard-utils";
 import { parseDrawioXml } from "@/lib/export-service/import-drawio";
 import { generateIconId, normalizeSvgForStorage } from "@/features/canvas/utils/svg.utils";
 
@@ -32,11 +36,12 @@ interface UseCopyPasteShortcutsParams {
     connections: Connection[],
     layouts: NodeLayout[],
   ) => string[];
+  pasteSvgAsCanvasNode: (svgContent: string, position: { x: number; y: number }) => string | null;
+  /** Validates size, then sanitizes SVG; returns markup safe for storage or null (toasts on failure). */
+  importSvgForIconLibrary: (svgContent: string) => string | null;
   serviceRegistry: Record<string, { id: string; name: string }>;
   exportDrawioXml: (componentIds: string[]) => string;
   setSelectedNodeIds: (ids: Set<string>) => void;
-  /** Validates size, then sanitizes SVG; returns markup safe for storage or null (toasts on failure). */
-  importSvgComponent: (svgContent: string) => string | null;
   pastedSvgDefaultName: string;
 }
 
@@ -53,10 +58,11 @@ export function useCopyPasteShortcuts({
   copyToClipboard,
   pasteFromClipboard,
   importDrawioResult,
+  pasteSvgAsCanvasNode,
+  importSvgForIconLibrary,
   serviceRegistry,
   exportDrawioXml,
   setSelectedNodeIds,
-  importSvgComponent,
   pastedSvgDefaultName,
 }: UseCopyPasteShortcutsParams): KeyHandler {
   return useCallback(
@@ -80,11 +86,25 @@ export function useCopyPasteShortcuts({
         return true;
       }
 
-      // Cmd/Ctrl+V — draw.io clipboard first, then internal Zustand clipboard
+      // Cmd/Ctrl+V — SVG clipboard, then draw.io, then plain-text SVG → icon library, then internal clipboard
       if (event.key === "v") {
         event.preventDefault();
 
-        // 1. Try draw.io clipboard first
+        // 1. Try SVG clipboard first (image/svg+xml or text/plain SVG via Clipboard API)
+        const svgContent = await readSvgFromClipboard();
+        if (svgContent) {
+          const pastePos = getPasteCenter(reactFlowInstance, reactFlowWrapperRef);
+          const newId = pasteSvgAsCanvasNode(svgContent, pastePos);
+          if (newId) {
+            reactFlowInstance.setNodes((nodes) =>
+              nodes.map((n) => ({ ...n, selected: n.id === newId })),
+            );
+            setSelectedNodeIds(new Set([newId]));
+          }
+          return true;
+        }
+
+        // 2. Try draw.io clipboard
         const drawioXml = await readDrawioFromClipboard();
         if (drawioXml) {
           const pasteCenter = getPasteCenter(reactFlowInstance, reactFlowWrapperRef);
@@ -105,7 +125,7 @@ export function useCopyPasteShortcuts({
           }
         }
 
-        // 2. Inline SVG from system clipboard → global icon library
+        // 3. Inline SVG from system clipboard text → diagram icon library (fallback when readSvgFromClipboard is empty)
         let clipboardPlain: string | null = null;
         try {
           clipboardPlain = await navigator.clipboard.readText();
@@ -113,7 +133,7 @@ export function useCopyPasteShortcuts({
           clipboardPlain = null;
         }
         if (clipboardPlain && /<svg(\s|>)/i.test(clipboardPlain)) {
-          const cleanedMarkup = importSvgComponent(clipboardPlain);
+          const cleanedMarkup = importSvgForIconLibrary(clipboardPlain);
           if (cleanedMarkup === null) {
             return true;
           }
@@ -135,7 +155,7 @@ export function useCopyPasteShortcuts({
           return true;
         }
 
-        // 3. Fall back to internal Zustand clipboard
+        // 4. Fall back to internal Zustand clipboard
         const clipboardIds =
           useDiagramStore.getState().clipboard?.components.map((component) => component.id) ??
           [];
@@ -185,10 +205,11 @@ export function useCopyPasteShortcuts({
       copyToClipboard,
       pasteFromClipboard,
       importDrawioResult,
+      pasteSvgAsCanvasNode,
+      importSvgForIconLibrary,
       serviceRegistry,
       exportDrawioXml,
       setSelectedNodeIds,
-      importSvgComponent,
       pastedSvgDefaultName,
     ],
   );

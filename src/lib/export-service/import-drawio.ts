@@ -1,5 +1,11 @@
-import type { Component, Connection, NodeLayout } from "@/features/diagram";
-import { EdgeStyle, PanelKind, generateId } from "@/features/diagram";
+import type { C4Type, Component, Connection, NodeLayout, UnknownComponent } from "@/features/diagram";
+import {
+  COMPONENT_TYPE_UNKNOWN,
+  EdgeStyle,
+  PanelKind,
+  generateId,
+} from "@/features/diagram";
+import { AWS_CATEGORY_ID_GENERAL } from "@/lib/catalogs/aws";
 
 export interface DrawioImportResult {
   components: Component[];
@@ -48,8 +54,8 @@ function parseNumber(value: string, fallback = 0): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function readGeometry(mxCell: Element): { x: number; y: number; width: number; height: number } {
-  const geometry = mxCell.querySelector("mxGeometry");
+function readGeometry(element: Element): { x: number; y: number; width: number; height: number } {
+  const geometry = element.querySelector("mxGeometry");
   if (!geometry) {
     return { x: 0, y: 0, width: 0, height: 0 };
   }
@@ -59,6 +65,118 @@ function readGeometry(mxCell: Element): { x: number; y: number; width: number; h
     width: parseNumber(getAttr(geometry, "width")),
     height: parseNumber(getAttr(geometry, "height")),
   };
+}
+
+/** Style source for draw.io conversion: object → child mxCell, else the element itself. */
+function extractStyle(el: Element): string {
+  const cell =
+    el.tagName.toLowerCase() === "object" ? el.querySelector("mxCell") : el;
+  return cell?.getAttribute("style") ?? "";
+}
+
+function extractGeometry(el: Element): { x: number; y: number; width: number; height: number } {
+  const geom =
+    el.querySelector("mxGeometry") ?? el.querySelector("mxCell > mxGeometry");
+  return {
+    x: parseFloat(geom?.getAttribute("x") ?? "0"),
+    y: parseFloat(geom?.getAttribute("y") ?? "0"),
+    width: parseFloat(geom?.getAttribute("width") ?? "240"),
+    height: parseFloat(geom?.getAttribute("height") ?? "120"),
+  };
+}
+
+type ConversionResult =
+  | {
+      kind: "c4";
+      componentType: C4Type;
+      name: string;
+      description: string;
+      technology?: string;
+    }
+  | { kind: "aws"; name: string; awsService: string }
+  | { kind: "unknown"; name: string; rawContent: string };
+
+function plainTextLabelFromElement(el: Element): string {
+  if (el.tagName.toLowerCase() === "object") {
+    const fromLabel = stripHtmlTags(getAttr(el, "label"));
+    const fromValue = stripHtmlTags(getAttr(el, "value"));
+    const c4Name = getAttr(el, "c4Name").trim();
+    const vertexCell = getVertexMxCellFromObject(el);
+    const fromCell = vertexCell ? stripHtmlTags(getAttr(vertexCell, "value")) : "";
+    return (fromLabel || fromValue || c4Name || fromCell).trim();
+  }
+  return (stripHtmlTags(getAttr(el, "label")) || stripHtmlTags(getAttr(el, "value"))).trim();
+}
+
+function tryConvertUnknownCell(el: Element): ConversionResult {
+  const style = extractStyle(el);
+  const name = plainTextLabelFromElement(el);
+
+  if (style.includes("shape=umlActor")) {
+    return {
+      kind: "c4",
+      componentType: "person",
+      name: name || "Person",
+      description: "",
+    };
+  }
+
+  if (style.includes("shape=mxgraph.aws4.productIcon")) {
+    const m = style.match(/prIcon=mxgraph\.aws4\.(\w+)/);
+    const iconName = m?.[1] ?? "";
+    return {
+      kind: "aws",
+      name: name || iconName || "AWS",
+      awsService: iconName,
+    };
+  }
+
+  const aws3 = style.match(/shape=mxgraph\.aws3\.(\w+)/);
+  if (aws3) {
+    const iconName = aws3[1];
+    return {
+      kind: "aws",
+      name: name || iconName,
+      awsService: iconName,
+    };
+  }
+
+  const shape = style.match(/shape=([\w.]+)/);
+  if (shape) {
+    return {
+      kind: "c4",
+      componentType: "component",
+      name: name || shape[1],
+      description: "",
+      technology: shape[1],
+    };
+  }
+
+  const rawForUnknown =
+    el.tagName.toLowerCase() === "object"
+      ? unknownRawContent(el)
+      : getAttr(el, "label") || getAttr(el, "value") || style;
+
+  return {
+    kind: "unknown",
+    name: name || "Unknown",
+    rawContent: rawForUnknown.slice(0, 1000),
+  };
+}
+
+function stripHtmlTags(value: string): string {
+  return value.replace(/<[^>]*>/g, "").trim();
+}
+
+function unknownRawContent(element: Element): string {
+  if (element.tagName.toLowerCase() === "object") {
+    const label = getAttr(element, "label");
+    const vertexCell = getVertexMxCellFromObject(element);
+    const value = vertexCell ? getAttr(vertexCell, "value") : "";
+    const style = vertexCell ? getAttr(vertexCell, "style") : "";
+    return label || value || style || "";
+  }
+  return getAttr(element, "label") || getAttr(element, "value") || getAttr(element, "style") || "";
 }
 
 function resolveEdgeStyle(style: string): EdgeStyle {
@@ -131,10 +249,10 @@ function resolveRegistryServiceId(
 
 interface PendingVertex {
   drawioId: string;
-  kind: "c4" | "panel" | "aws" | "panel-mxcell";
+  kind: "c4" | "panel" | "aws" | "panel-mxcell" | "unknown";
   parentDrawioId: string;
   rawGeometry: { x: number; y: number; width: number; height: number };
-  /** Object element for c4/panel-from-object; mxCell for aws / standalone panel */
+  /** Object element for c4/panel-from-object; mxCell for aws / standalone panel / unknown */
   sourceElement: Element;
 }
 
@@ -177,7 +295,13 @@ export function parseDrawioXml(
 
     const vertexCell = getVertexMxCellFromObject(objectEl);
     if (!vertexCell) {
-      skipped.push(drawioId);
+      pendingVertices.push({
+        drawioId,
+        kind: "unknown",
+        parentDrawioId: "1",
+        rawGeometry: readGeometry(objectEl),
+        sourceElement: objectEl,
+      });
       continue;
     }
     innerMxCellsFromObjects.add(vertexCell);
@@ -208,7 +332,13 @@ export function parseDrawioXml(
       continue;
     }
 
-    skipped.push(drawioId);
+    pendingVertices.push({
+      drawioId,
+      kind: "unknown",
+      parentDrawioId,
+      rawGeometry,
+      sourceElement: objectEl,
+    });
   }
 
   const mxCellNodes = document.getElementsByTagName("mxCell");
@@ -265,7 +395,16 @@ export function parseDrawioXml(
       continue;
     }
 
-    if (cellId) skipped.push(cellId);
+    if (!cellId) {
+      continue;
+    }
+    pendingVertices.push({
+      drawioId: cellId,
+      kind: "unknown",
+      parentDrawioId: getAttr(mxCell, "parent"),
+      rawGeometry: readGeometry(mxCell),
+      sourceElement: mxCell,
+    });
   }
 
   for (const pending of pendingVertices) {
@@ -357,7 +496,7 @@ export function parseDrawioXml(
         name,
         description: "",
         parentId,
-        type: "aws-general",
+        type: AWS_CATEGORY_ID_GENERAL,
         ...(awsService ? { awsService } : {}),
       });
       layouts.push({
@@ -393,6 +532,72 @@ export function parseDrawioXml(
         width: positioned.width || undefined,
         height: positioned.height || undefined,
       });
+      continue;
+    }
+
+    if (pending.kind === "unknown") {
+      const sourceEl = pending.sourceElement;
+      const conversion = tryConvertUnknownCell(sourceEl);
+      const fallbackGeom = extractGeometry(sourceEl);
+      const layoutWidth =
+        positioned.width > 0 ? positioned.width : fallbackGeom.width;
+      const layoutHeight =
+        positioned.height > 0 ? positioned.height : fallbackGeom.height;
+
+      if (conversion.kind === "c4") {
+        const base = {
+          id: newId,
+          name: conversion.name,
+          description: conversion.description,
+          parentId,
+          type: conversion.componentType,
+        };
+        components.push(
+          conversion.technology !== undefined
+            ? { ...base, technology: conversion.technology }
+            : base,
+        );
+        layouts.push({
+          elementId: newId,
+          x: positioned.x,
+          y: positioned.y,
+          width: positioned.width || undefined,
+          height: positioned.height || undefined,
+        });
+      } else if (conversion.kind === "aws") {
+        components.push({
+          id: newId,
+          name: conversion.name,
+          description: "",
+          parentId,
+          type: AWS_CATEGORY_ID_GENERAL,
+          ...(conversion.awsService ? { awsService: conversion.awsService } : {}),
+        });
+        layouts.push({
+          elementId: newId,
+          x: positioned.x,
+          y: positioned.y,
+          width: positioned.width || undefined,
+          height: positioned.height || undefined,
+        });
+      } else {
+        const unknownComp: UnknownComponent = {
+          id: newId,
+          name: conversion.name,
+          description: "",
+          parentId,
+          type: COMPONENT_TYPE_UNKNOWN,
+          ...(conversion.rawContent.length > 0 ? { rawContent: conversion.rawContent } : {}),
+        };
+        components.push(unknownComp);
+        layouts.push({
+          elementId: newId,
+          x: positioned.x,
+          y: positioned.y,
+          width: layoutWidth,
+          height: layoutHeight,
+        });
+      }
     }
   }
 
