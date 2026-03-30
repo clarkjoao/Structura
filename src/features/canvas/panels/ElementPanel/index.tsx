@@ -8,9 +8,11 @@ import {
   useActiveDiagram,
   useFlows,
   isEndpointComponent,
+  isDbTableComponent,
   isApiGroupComponent,
   isJsonViewerComponent,
   isPanelComponent,
+  type DbTableComponent,
 } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
 import { MultiSelectPanel } from "../MultiSelectPanel";
@@ -19,6 +21,7 @@ import ConnectionPanel from "./ConnectionPanel";
 import EndpointPanel from "./EndpointPanel";
 import ApiGroupPanel from "./ApiGroupPanel";
 import JsonViewerPanel from "./JsonViewerPanel";
+import DbTablePanel from "./DbTablePanel";
 
 interface Props {
   selectedElementId: string | null;
@@ -76,6 +79,26 @@ const ElementPanel = ({
             updateComponent={updateComponent}
             removeComponent={removeComponent}
             availableFlows={availableFlows}
+          />
+        </div>
+      );
+    }
+
+    if (isDbTableComponent(component)) {
+      return (
+        <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
+          <CollabEditingWarning elementId={selectedElementId} />
+          <DbTablePanel
+            component={component}
+            onClose={onClose}
+            updateComponent={
+              updateComponent as (
+                id: string,
+                patch: Partial<Omit<DbTableComponent, "id">>,
+              ) => void
+            }
+            removeComponent={removeComponent}
+            focusTitleTrigger={focusTitleTrigger}
           />
         </div>
       );

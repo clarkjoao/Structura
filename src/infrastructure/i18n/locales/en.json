@@ -445,6 +445,10 @@
     "laneColor": "Lane color"
   },
   "dbTable": {
+    "panelTitle": "Database table",
+    "columnsLabel": "Columns",
+    "reorderHint": "Drag to reorder",
+    "unnamedColumn": "Unnamed column",
     "ariaLabel": "Table {{name}}",
     "unnamedTable": "Unnamed table",
     "columnCount": "{{count}} column",

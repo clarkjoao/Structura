@@ -445,6 +445,10 @@
     "laneColor": "Cor da faixa"
   },
   "dbTable": {
+    "panelTitle": "Tabela de banco de dados",
+    "columnsLabel": "Colunas",
+    "reorderHint": "Arraste para reordenar",
+    "unnamedColumn": "Coluna sem nome",
     "ariaLabel": "Tabela {{name}}",
     "unnamedTable": "Tabela sem nome",
     "columnCount": "{{count}} coluna",
