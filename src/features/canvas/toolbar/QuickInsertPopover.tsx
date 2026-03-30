@@ -1,7 +1,27 @@
 import { useEffect, useRef, useState, useMemo } from "react";
-import { User, Network, Server, Database, Square, StickyNote, Globe } from "lucide-react";
+import {
+  User,
+  Network,
+  Server,
+  Database,
+  Square,
+  StickyNote,
+  Globe,
+  Table,
+  Braces,
+} from "lucide-react";
 import { useDiagramActions, useAllServices } from "@/features/diagram";
-import { PanelKind, COMPONENT_TYPE_PANEL, COMPONENT_TYPE_NOTE, COMPONENT_TYPE_API_GROUP, COMPONENT_TYPE_ENDPOINT } from "@/features/diagram";
+import {
+  PanelKind,
+  COMPONENT_TYPE_PANEL,
+  COMPONENT_TYPE_NOTE,
+  COMPONENT_TYPE_API_GROUP,
+  COMPONENT_TYPE_ENDPOINT,
+  COMPONENT_TYPE_DB_TABLE,
+  COMPONENT_TYPE_JSON_VIEWER,
+  isDbTableType,
+  isJsonViewerType,
+} from "@/features/diagram";
 import type { ComponentType } from "@/features/diagram";
 import { getDefaultNameForNewComponent } from "@/features/diagram";
 import { getLastEdgeStyle } from "@/features/diagram/hooks/useLastEdgeStyle";
@@ -32,6 +52,8 @@ function canvasOptionMatchesQuery(
     note: string[];
     apiGroup: string[];
     endpoint: string[];
+    dbTable: string[];
+    jsonViewer: string[];
   },
 ): boolean {
   const fields: string[] = [opt.label.toLowerCase()];
@@ -45,6 +67,10 @@ function canvasOptionMatchesQuery(
     }
   } else if (opt.type === COMPONENT_TYPE_NOTE) {
     fields.push(...synonyms.note);
+  } else if (isDbTableType(opt.type)) {
+    fields.push(...synonyms.dbTable);
+  } else if (isJsonViewerType(opt.type)) {
+    fields.push(...synonyms.jsonViewer);
   } else if (opt.type === COMPONENT_TYPE_API_GROUP) {
     fields.push(...synonyms.apiGroup);
   } else if (opt.type === COMPONENT_TYPE_ENDPOINT) {
@@ -102,6 +128,16 @@ const QuickInsertPopover = ({
         awsIconName: p.awsIconName,
       })),
       { type: COMPONENT_TYPE_NOTE as ComponentType, label: t("canvasToolbar.note"), icon: StickyNote },
+      {
+        type: COMPONENT_TYPE_DB_TABLE as ComponentType,
+        label: t("nodeTypes.db-table"),
+        icon: Table,
+      },
+      {
+        type: COMPONENT_TYPE_JSON_VIEWER as ComponentType,
+        label: t("nodeTypes.json-viewer"),
+        icon: Braces,
+      },
       { type: COMPONENT_TYPE_API_GROUP as ComponentType, label: t("quickInsert.typeApiGroup"), icon: Globe },
       { type: COMPONENT_TYPE_ENDPOINT as ComponentType, label: t("quickInsert.typeEndpoint"), icon: Globe },
     ],
@@ -136,6 +172,8 @@ const QuickInsertPopover = ({
       panel: splitSearchHelp(t("quickInsert.searchHelpPanel")),
       swimlane: splitSearchHelp(t("quickInsert.searchHelpSwimlane")),
       note: splitSearchHelp(t("quickInsert.searchHelpNote")),
+      dbTable: splitSearchHelp(t("quickInsert.searchHelpDbTable")),
+      jsonViewer: splitSearchHelp(t("quickInsert.searchHelpJsonViewer")),
       apiGroup: splitSearchHelp(t("quickInsert.searchHelpApiGroup")),
       endpoint: splitSearchHelp(t("quickInsert.searchHelpEndpoint")),
     }),

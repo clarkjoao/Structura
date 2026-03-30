@@ -30,6 +30,9 @@ export const noteDescriptor: NodeTypeDescriptor = {
     onStartEdit: ctx.onNoteStartEdit
       ? () => ctx.onNoteStartEdit!(comp.id)
       : undefined,
+    onClickBody: ctx.onNoteStartEdit
+      ? () => ctx.onNoteStartEdit!(comp.id)
+      : undefined,
     onInlineEditingChange: ctx.setNoteInlineEditingId
       ? (editing: boolean) => ctx.setNoteInlineEditingId!(editing ? comp.id : null)
       : undefined,

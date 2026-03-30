@@ -210,14 +210,6 @@ export function useCanvasEventHandlers({
       setSelectedNodeIds(new Set([node.id]));
       setSelectedNodeId(node.id);
 
-      if (isNoteType(node.type ?? "")) {
-        const startEdit = node.data?.onStartEdit;
-        if (typeof startEdit === "function") {
-          startEdit();
-        }
-        return;
-      }
-
       if (isJsonViewerType(node.type ?? "")) {
         const startEdit = node.data?.onStartEdit as (() => void) | undefined;
         startEdit?.();

@@ -35,6 +35,8 @@ export interface NoteNodeData {
   isSelected: boolean;
   isHighlighted?: boolean;
   onStartEdit?: () => void;
+  /** Called when the user clicks directly on the note body (render mode). */
+  onClickBody?: () => void;
   onInlineEditingChange?: (editing: boolean) => void;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
@@ -109,6 +111,12 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
     // Descriptor supplies a stub; replace with the handler so double-click starts inline edit.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (d as any).onStartEdit = handleStartEdit;
+  }, [d, handleStartEdit]);
+
+  useEffect(() => {
+    if (!d.onClickBody) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (d as any).onClickBody = handleStartEdit;
   }, [d, handleStartEdit]);
 
   useEffect(() => {
@@ -299,7 +307,14 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
           )}
         </div>
 
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div
+          className="flex-1 min-h-0 overflow-hidden"
+          onClick={(e) => {
+            if (isEditing) return;
+            e.stopPropagation();
+            handleStartEdit();
+          }}
+        >
           {isEditing ? (
             <textarea
               ref={textareaRef}

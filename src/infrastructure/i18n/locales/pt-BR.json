@@ -431,6 +431,8 @@
     "newNamed": "Novo {{name}}",
     "searchHelpPanel": "painel|panel",
     "searchHelpNote": "nota|note|sticky|postit",
+    "searchHelpDbTable": "tabela|banco de dados|db|schema|sql|colunas",
+    "searchHelpJsonViewer": "json|payload|contrato|schema|evento|api",
     "searchHelpApiGroup": "api|grupo|group|openapi",
     "searchHelpEndpoint": "endpoint|http|rest",
     "searchHelpSwimlane": "swimlane|faixa|atores|domínio|time|pool|raia"
