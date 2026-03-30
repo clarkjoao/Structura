@@ -1406,10 +1406,6 @@ function buildDiagrams(): Record<string, Diagram> {
   };
 }
 
-/* ─────────────────────────────────────────────────────────────
-   EXPORTS
-───────────────────────────────────────────────────────────── */
-
-export const SEED_SERVICE_REGISTRY: Record<string, ServiceDefinition> = buildServiceRegistry();
-export const SEED_DIAGRAMS: Record<string, Diagram>                    = buildDiagrams();
-export const SEED_FOLDERS: Record<string, Folder>                      = buildFolders();
+export const SEED_FTECH_SERVICE_REGISTRY: Record<string, ServiceDefinition> = buildServiceRegistry();
+export const SEED_FTECH_DIAGRAMS: Record<string, Diagram>                   = buildDiagrams();
+export const SEED_FTECH_FOLDERS: Record<string, Folder>                     = buildFolders();

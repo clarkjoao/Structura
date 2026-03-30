@@ -2,7 +2,7 @@ import type { Component } from "../../model/diagram.types";
 import type { ServiceDefinition } from "../../model/service.types";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
-import { SEED_SERVICE_REGISTRY } from "@/fixtures/seed";
+import { SEED_SERVICE_REGISTRY } from "@/fixtures/seeds";
 import { normalizeSources } from "@/integrations/merge-utils";
 
 function patchTouchesLinkedComponentFields(

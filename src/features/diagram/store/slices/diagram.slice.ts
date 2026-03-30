@@ -1,4 +1,4 @@
-import { SEED_DIAGRAMS } from "@/fixtures/seed";
+import { SEED_DIAGRAMS } from "@/fixtures/seeds";
 import { deletePreview } from "@/lib/diagram-preview/previewCache";
 import { AppState } from "../store.types";
 import {Diagram, Level} from "../../model/diagram.types";
