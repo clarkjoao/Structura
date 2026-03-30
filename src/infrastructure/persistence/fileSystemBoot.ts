@@ -8,7 +8,7 @@
  */
 
 import { useDiagramStore, type Diagram, type IconDefinition } from "@/features/diagram";
-import { VIEWPORT_DEBOUNCE_MS } from "@/features/canvas/canvas.constants";
+import { VIEWPORT_DEBOUNCE_MS } from "@/features/diagram/store/store.constants";
 import { fileSystemAdapter } from "./FileSystemAdapter";
 import { defaultStorage } from "./LocalStorageAdapter";
 import { PERSIST_KEY } from "@/features/diagram/store/persist.config";
@@ -215,6 +215,14 @@ export function startFileSystemSync(): void {
         fileSystemAdapter.setFolders(diagramState.folders);
 
         const prevDiagrams = previousDiagramState.diagrams;
+        for (const [id, previousDiagram] of Object.entries(prevDiagrams)) {
+          if (!diagramState.diagrams[id]) {
+            fileSystemAdapter.setFolders(previousDiagramState.folders);
+            await fileSystemAdapter.deleteDiagram(id, previousDiagram);
+          }
+        }
+
+        fileSystemAdapter.setFolders(diagramState.folders);
         for (const [id, diagram] of Object.entries(diagramState.diagrams)) {
           if (diagram !== prevDiagrams[id]) {
             await fileSystemAdapter.writeDiagram(diagram);

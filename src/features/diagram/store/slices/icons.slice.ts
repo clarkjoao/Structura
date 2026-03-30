@@ -1,4 +1,3 @@
-import { useIconStore } from "@/features/icons/store";
 import type { IconDefinition } from "../../model/diagram.types";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
@@ -18,12 +17,9 @@ export const iconsSlice = (
   set: (fn: (state: AppState) => void) => void,
   _get: () => AppState,
 ) => ({
-  addIcon: (_diagramId: string, icon: IconDefinition): void => {
-    useIconStore.getState().addIcon(icon);
-  },
+  addIcon: (_diagramId: string, _icon: IconDefinition): void => {},
 
-  removeIcon: (diagramId: string, iconId: string): void => {
-    useIconStore.getState().removeIcon(iconId);
+  removeIconReferences: (diagramId: string, iconId: string): void => {
     set((state) => {
       if (state.activeDiagramId === diagramId) {
         pushHistory(state);
@@ -42,15 +38,11 @@ export const iconsSlice = (
     });
   },
 
-  updateIconName: (_diagramId: string, iconId: string, name: string): void => {
-    useIconStore.getState().updateIconName(iconId, name);
-  },
+  removeIcon: (_diagramId: string, _iconId: string): void => {},
 
-  incrementIconUsage: (_diagramId: string, iconId: string): void => {
-    useIconStore.getState().incrementIconUsage(iconId);
-  },
+  updateIconName: (_diagramId: string, _iconId: string, _name: string): void => {},
 
-  decrementIconUsage: (_diagramId: string, iconId: string): void => {
-    useIconStore.getState().decrementIconUsage(iconId);
-  },
+  incrementIconUsage: (_diagramId: string, _iconId: string): void => {},
+
+  decrementIconUsage: (_diagramId: string, _iconId: string): void => {},
 });

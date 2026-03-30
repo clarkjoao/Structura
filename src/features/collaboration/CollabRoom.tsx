@@ -9,14 +9,12 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { ReactFlowProvider } from "@xyflow/react";
 import { toast } from "sonner";
-import { Canvas } from "@/features/canvas";
-import { FlowModeProvider } from "@/features/canvas/flow";
+import { Canvas, FlowModeProvider } from "@/features/canvas";
 import { CollabProvider, useCollab } from "./CollabProvider";
 import { CollabCursors } from "./CollabCursors";
 import { CollabJoinModal } from "./CollabJoinModal";
 import { CollabSessionClosedModal } from "./CollabSessionClosedModal";
-import { useDiagramActions } from "@/features/diagram";
-import { useDiagramStore } from "@/features/diagram/store/diagram.store";
+import { useActiveDiagram, useDiagramActions } from "@/features/diagram";
 import { CollabRoomToolbar } from "./CollabRoomToolbar";
 
 function CollabRoomInner() {
@@ -31,11 +29,9 @@ function CollabRoomInner() {
     updateCursor,
   } = useCollab();
   const { importDiagram } = useDiagramActions();
-  const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
-  const diagrams = useDiagramStore((state) => state.diagrams);
-  const diagram = activeDiagramId ? diagrams[activeDiagramId] ?? null : null;
+  const diagram = useActiveDiagram();
   const diagramExists = Boolean(diagram);
-  const hostName = session?.isHost ? session.localUser.name : "Host";
+  const hostName = session?.isHost ? session.localUser.name : t("collaboration.hostFallback");
   const isSessionClosed = sessionClosedByHost || hostDisconnected;
   const lastCursorAtRef = useRef(0);
 

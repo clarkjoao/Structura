@@ -3,6 +3,7 @@ import { useShallow } from "zustand/react/shallow";
 import { immer } from "zustand/middleware/immer";
 import { persist } from "zustand/middleware";
 import { defaultStorage } from "@/infrastructure/persistence";
+import { useIconStore } from "@/features/icons/store";
 import type { UserTemplate } from "../model/diagram.types";
 import type { AppState } from "./store.types";
 import {
@@ -45,6 +46,23 @@ export function createDiagramStore(storage = defaultStorage) {
         ...scenesSlice(set, get as () => AppState),
         ...iconsSlice(set, get as () => AppState),
         ...userTemplatesSlice(set, get as () => AppState),
+        addIcon: (_diagramId, icon) => {
+          useIconStore.getState().addIcon(icon);
+        },
+        removeIcon: (diagramId, iconId) => {
+          useIconStore.getState().removeIcon(iconId);
+          (get() as AppState & { removeIconReferences?: (diagramId: string, iconId: string) => void })
+            .removeIconReferences?.(diagramId, iconId);
+        },
+        updateIconName: (_diagramId, iconId, name) => {
+          useIconStore.getState().updateIconName(iconId, name);
+        },
+        incrementIconUsage: (_diagramId, iconId) => {
+          useIconStore.getState().incrementIconUsage(iconId);
+        },
+        decrementIconUsage: (_diagramId, iconId) => {
+          useIconStore.getState().decrementIconUsage(iconId);
+        },
       })),
       createPersistConfig(storage),
     ),

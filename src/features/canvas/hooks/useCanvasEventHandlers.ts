@@ -1,5 +1,6 @@
 import { useCallback, useRef } from "react";
 import type { Node, Edge, OnEdgesChange, OnConnect, OnConnectEnd, Connection } from "@xyflow/react";
+import { useTranslation } from "react-i18next";
 import type { CanvasVisualState } from "./useCanvasVisualState";
 import { useFlowMode } from "../flow/FlowModeContext";
 import {
@@ -38,6 +39,7 @@ export function useCanvasEventHandlers({
   screenToFlowPosition,
   onRequestFocusTitle,
 }: UseCanvasEventHandlersParams) {
+  const { t } = useTranslation();
   const { isRecording, onRecordNodeClick, onRecordEdgeClick } = useFlowMode();
   const {
     setSelectedNodeId,
@@ -61,10 +63,10 @@ export function useCanvasEventHandlers({
   const onConnect: OnConnect = useCallback(
     (c: Connection) => {
       if (c.source && c.target) {
-        addConnection(c.source, c.target, "Usa", getLastEdgeStyle());
+        addConnection(c.source, c.target, t("canvas.usesEdgeLabel"), getLastEdgeStyle());
       }
     },
-    [addConnection],
+    [addConnection, t],
   );
 
   const onConnectEnd = useCallback(

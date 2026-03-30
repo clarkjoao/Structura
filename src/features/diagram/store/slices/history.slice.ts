@@ -3,7 +3,7 @@ import {
   HISTORY_COALESCE_MS,
   MAX_HISTORY_STEPS,
   UNDO_REDO_COOLDOWN_MS,
-} from "@/features/canvas/canvas.constants";
+} from "../store.constants";
 
 export function deepClone<T>(v: T): T {
   return JSON.parse(JSON.stringify(v));

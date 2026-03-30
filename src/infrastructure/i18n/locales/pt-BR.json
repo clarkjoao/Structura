@@ -251,7 +251,12 @@
     "overwriteTitle": "Descartar diagramas que estão só no app e carregar apenas os que estão na pasta",
     "overwrite": "Usar arquivos só pasta",
     "mergeTitle": "Manter os diagramas que já estão no app e adicionar os que estão na pasta",
-    "merge": "Manter tudo (localStorage + pasta) e fazer merge"
+    "merge": "Manter tudo (localStorage + pasta) e fazer merge",
+    "errors": {
+      "invalidJson": "JSON malformado",
+      "readFile": "Erro ao ler arquivo: {{message}}",
+      "unknown": "desconhecido"
+    }
   },
   "disconnect": {
     "title": "Desconectar pasta",
@@ -316,6 +321,7 @@
   "canvas": {
     "noDiagramSelected": "Nenhum diagrama selecionado",
     "newEndpoint": "Novo Endpoint",
+    "defaultEndpointPath": "/novo-endpoint",
     "usesEdgeLabel": "Usa",
     "apiGroupDefaultName": "API Endpoints",
     "compareViewBanner": "Modo visualização — edição desativada",
@@ -709,6 +715,7 @@
     "and": "e",
     "alsoEditingSuffix_one": "também está editando este elemento",
     "alsoEditingSuffix_other": "também estão editando este elemento",
+    "hostFallback": "Host",
     "peerFallback": "Convidado",
     "importedDiagramName": "{{name}} (de {{host}})",
     "importSuccess": "Importamos “{{name}}”",

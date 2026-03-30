@@ -71,6 +71,38 @@ function findLastBranchStepIndex(
   return lastIdx;
 }
 
+type RecordingMode = Extract<FlowModeState["mode"], { kind: "recording" }>;
+
+function appendRecordedStep(
+  previousMode: RecordingMode,
+  nextStep: FlowStep,
+  branchOwnershipRef: MutableRefObject<Map<string, BranchOwnerInfo>>,
+): RecordingMode {
+  if (previousMode.context.mode !== "branch-record") {
+    return { ...previousMode, steps: [...previousMode.steps, nextStep] };
+  }
+
+  const { conditionStepId, branchIndex } = previousMode.context;
+  const insertAfterIndex = findLastBranchStepIndex(
+    previousMode.steps,
+    conditionStepId,
+    branchIndex,
+    previousMode.branchOwnership,
+  );
+  const nextSteps = [...previousMode.steps];
+  nextSteps.splice(insertAfterIndex + 1, 0, nextStep);
+
+  const nextBranchOwnership = new Map(previousMode.branchOwnership);
+  nextBranchOwnership.set(nextStep.id, { conditionStepId, branchIndex });
+  branchOwnershipRef.current = nextBranchOwnership;
+
+  return {
+    ...previousMode,
+    steps: nextSteps,
+    branchOwnership: nextBranchOwnership,
+  };
+}
+
 export function useFlowModeRecording(
   _mode: FlowMode,
   setMode: Dispatch<SetStateAction<FlowMode>>,
@@ -172,22 +204,7 @@ export function useFlowModeRecording(
       setMode((prev) => {
         if (prev.kind !== "recording" || prev.context.mode === "branch-select") return prev;
         const step: FlowStep = { id: generateId("step"), type: "action", componentId: nodeId };
-        if (prev.context.mode !== "branch-record") {
-          return { ...prev, steps: [...prev.steps, step] };
-        }
-        const { conditionStepId, branchIndex } = prev.context;
-        const insertAfterIdx = findLastBranchStepIndex(
-          prev.steps,
-          conditionStepId,
-          branchIndex,
-          prev.branchOwnership,
-        );
-        const newArr = [...prev.steps];
-        newArr.splice(insertAfterIdx + 1, 0, step);
-        const nextOwnership = new Map(prev.branchOwnership);
-        nextOwnership.set(step.id, { conditionStepId, branchIndex });
-        branchOwnershipRef.current = nextOwnership;
-        return { ...prev, steps: newArr, branchOwnership: nextOwnership };
+        return appendRecordedStep(prev, step, branchOwnershipRef);
       });
     },
     [branchOwnershipRef, setMode],
@@ -198,22 +215,7 @@ export function useFlowModeRecording(
       setMode((prev) => {
         if (prev.kind !== "recording" || prev.context.mode === "branch-select") return prev;
         const step: FlowStep = { id: generateId("step"), type: "action", connectionId: edgeId, handleId };
-        if (prev.context.mode !== "branch-record") {
-          return { ...prev, steps: [...prev.steps, step] };
-        }
-        const { conditionStepId, branchIndex } = prev.context;
-        const insertAfterIdx = findLastBranchStepIndex(
-          prev.steps,
-          conditionStepId,
-          branchIndex,
-          prev.branchOwnership,
-        );
-        const newArr = [...prev.steps];
-        newArr.splice(insertAfterIdx + 1, 0, step);
-        const nextOwnership = new Map(prev.branchOwnership);
-        nextOwnership.set(step.id, { conditionStepId, branchIndex });
-        branchOwnershipRef.current = nextOwnership;
-        return { ...prev, steps: newArr, branchOwnership: nextOwnership };
+        return appendRecordedStep(prev, step, branchOwnershipRef);
       });
     },
     [branchOwnershipRef, setMode],
@@ -224,22 +226,7 @@ export function useFlowModeRecording(
       setMode((prev) => {
         if (prev.kind !== "recording" || prev.context.mode === "branch-select") return prev;
         const step: FlowStep = { id: generateId("step"), type: "action", componentId: nodeId, handleId };
-        if (prev.context.mode !== "branch-record") {
-          return { ...prev, steps: [...prev.steps, step] };
-        }
-        const { conditionStepId, branchIndex } = prev.context;
-        const insertAfterIdx = findLastBranchStepIndex(
-          prev.steps,
-          conditionStepId,
-          branchIndex,
-          prev.branchOwnership,
-        );
-        const newArr = [...prev.steps];
-        newArr.splice(insertAfterIdx + 1, 0, step);
-        const nextOwnership = new Map(prev.branchOwnership);
-        nextOwnership.set(step.id, { conditionStepId, branchIndex });
-        branchOwnershipRef.current = nextOwnership;
-        return { ...prev, steps: newArr, branchOwnership: nextOwnership };
+        return appendRecordedStep(prev, step, branchOwnershipRef);
       });
     },
     [branchOwnershipRef, setMode],

@@ -29,7 +29,6 @@ export type {
   ValidationResult,
   ManifestValidationResult,
 } from "./validateWorkspaceFile";
-export { WorkspaceMergeDialog } from "./WorkspaceMergeDialog";
 export {
   CustomComponentRepository,
   customComponentRepository,

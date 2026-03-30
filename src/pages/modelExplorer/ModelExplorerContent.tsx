@@ -32,8 +32,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import ShortcutsModal from "@/components/ShortcutsModal";
 import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
-import { EmbedModal } from "@/features/canvas/components/EmbedModal";
-import { useFlowMode, type BranchOwnerInfo, type RecordingContext } from "@/features/canvas/flow";
+import {
+  EmbedModal,
+  useFlowMode,
+  type BranchOwnerInfo,
+  type RecordingContext,
+} from "@/features/canvas";
 import { isDiagramCompareMode, useActiveDiagram, type Flow } from "@/features/diagram";
 import { CollabCursors, CollabToolbar, useCollab } from "@/features/collaboration";
 import { ShareModal } from "./ShareModal";

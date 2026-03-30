@@ -5,7 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useDiagramPreviewSync } from "@/lib/diagram-preview";
-import { CollabRoom } from "@/features/collaboration/CollabRoom";
+import { CollabRoom } from "@/features/collaboration";
 import Dashboard from "@/pages/dashboard";
 import ModelExplorer from "@/pages/modelExplorer";
 import ServiceRegistry from "@/pages/serviceRegistry";

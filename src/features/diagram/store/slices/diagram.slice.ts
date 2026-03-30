@@ -3,8 +3,7 @@ import { deletePreview } from "@/lib/diagram-preview/previewCache";
 import { AppState } from "../store.types";
 import {Diagram, Level} from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
-import { fileSystemAdapter } from "@/infrastructure/persistence";
-import { removeRecentRef } from "@/features/canvas/navigation/useRecentDiagrams";
+import { removeRecentRef } from "../../utils/recent-diagrams";
 
 export const diagramsSlice = (
     set: (fn: (state: AppState) => void) => void,
@@ -29,13 +28,6 @@ export const diagramsSlice = (
         };
         set((state) => { state.diagrams[diagram.id] = diagram; });
 
-        // Write immediately to connected folder so the diagram exists on disk
-        // before any navigation (the debounced sync may not fire in time).
-        if (fileSystemAdapter.isConnected) {
-          fileSystemAdapter.setFolders(get().folders);
-          fileSystemAdapter.writeDiagram(diagram);
-        }
-
         return diagram;
       },
 
@@ -47,11 +39,6 @@ export const diagramsSlice = (
       set((state) => {
         state.diagrams[importedDiagram.id] = importedDiagram;
       });
-
-      if (fileSystemAdapter.isConnected) {
-        fileSystemAdapter.setFolders(get().folders);
-        fileSystemAdapter.writeDiagram(importedDiagram);
-      }
 
       return importedDiagram;
     },
@@ -68,11 +55,6 @@ export const diagramsSlice = (
       set((state) => {
         state.diagrams[importedDiagram.id] = importedDiagram;
       });
-
-      if (fileSystemAdapter.isConnected) {
-        fileSystemAdapter.setFolders(get().folders);
-        fileSystemAdapter.writeDiagram(importedDiagram);
-      }
 
       return importedDiagram;
     },
@@ -92,10 +74,6 @@ export const diagramsSlice = (
       set((state) => {
         state.diagrams[newId] = diagram;
       });
-      if (fileSystemAdapter.isConnected) {
-        fileSystemAdapter.setFolders(get().folders);
-        fileSystemAdapter.writeDiagram(diagram);
-      }
       return diagram;
     },
   
@@ -126,16 +104,12 @@ export const diagramsSlice = (
 
     deleteDiagram: (id: string) => {
       deletePreview(id);
-      const state = get();
-      const diagram = state.diagrams[id];
-      fileSystemAdapter.setFolders(state.folders);
       set((s) => {
         delete s.diagrams[id];
 
         if (s.activeDiagramId === id)
           s.activeDiagramId = null;
       });
-      fileSystemAdapter.deleteDiagram(id, diagram);
       removeRecentRef(id);
     },
   });

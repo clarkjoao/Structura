@@ -2,6 +2,7 @@ import type { Diagram, Folder, IconDefinition } from "@/features/diagram";
 import { normalizeImportedDiagram } from "@/lib/export-service/normalize-imported-diagram";
 import { FileSystemEntryKind } from "@/lib/enums";
 import type { CustomComponentTemplate } from "@/features/custom-components/customComponent.types";
+import i18n from "@/infrastructure/i18n";
 import {
   validateDiagramFile,
   validateManifest,
@@ -372,7 +373,10 @@ export class FileSystemAdapter {
           try {
             raw = JSON.parse(text);
           } catch {
-            result.invalid.push({ fileName: name, reason: "JSON malformado" });
+            result.invalid.push({
+              fileName: name,
+              reason: i18n.t("workspaceMerge.errors.invalidJson"),
+            });
             continue;
           }
 
@@ -395,7 +399,12 @@ export class FileSystemAdapter {
         } catch (e) {
           result.invalid.push({
             fileName: name,
-            reason: `Erro ao ler arquivo: ${e instanceof Error ? e.message : "desconhecido"}`,
+            reason: i18n.t("workspaceMerge.errors.readFile", {
+              message:
+                e instanceof Error
+                  ? e.message
+                  : i18n.t("workspaceMerge.errors.unknown"),
+            }),
           });
         }
       }

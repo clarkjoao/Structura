@@ -1,6 +1,5 @@
 import type { EdgeTypes, NodeTypes } from "@xyflow/react";
-import { NODE_TYPE_REGISTRY } from "@/features/canvas/nodes/node-types/registry";
-import CustomEdge from "@/features/canvas/edges/CustomEdge";
+import { NODE_TYPE_REGISTRY, CustomEdge } from "@/features/canvas";
 
 export const EMBED_NODE_TYPES: NodeTypes = Object.fromEntries(
   NODE_TYPE_REGISTRY.map((descriptor) => [descriptor.rfType, descriptor.component]),
