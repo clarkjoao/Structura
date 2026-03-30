@@ -8,7 +8,7 @@
  */
 
 import { useDiagramStore, type Diagram, type IconDefinition } from "@/features/diagram";
-import { VIEWPORT_DEBOUNCE_MS } from "@/features/canvas/canvas.constants";
+import { VIEWPORT_DEBOUNCE_MS } from "@/features/diagram/store/store.constants";
 import { fileSystemAdapter } from "./FileSystemAdapter";
 import { defaultStorage } from "./LocalStorageAdapter";
 import { PERSIST_KEY } from "@/features/diagram/store/persist.config";

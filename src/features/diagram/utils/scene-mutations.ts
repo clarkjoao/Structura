@@ -1,7 +1,7 @@
 import type { Component, Diagram } from "../model/diagram.types";
 import { isEndpointType } from "../model/component-type-constants";
 import { isApiGroupComponent } from "../model/component.guards";
-import { computeApiGroupSize } from "@/features/canvas/nodes/ApiGroupNode/useApiGroupSize";
+import { computeApiGroupSize } from "./api-group-size";
 import { baseConnectionsTouchingAny, collectBaseDescendantIds } from "./scene.utils";
 
 /** Mutate diagram draft: remove/hide component within a scene (same rules as removeComponentFromScene). */

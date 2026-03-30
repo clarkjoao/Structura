@@ -43,10 +43,12 @@ import {
   NODE_DRAG_PADDING,
   DEFAULT_NODE_W,
   DEFAULT_NODE_H,
-} from "@/features/canvas/constants";
+  API_GROUP_HEADER_H,
+  API_GROUP_ENDPOINT_H,
+  API_GROUP_FRAME_W,
+} from "../../model/layout.constants";
 import i18n from "@/infrastructure/i18n";
-import { HEADER_H, ENDPOINT_H, FRAME_W } from "@/features/canvas/nodes/ApiGroupNode/constants";
-import { computeApiGroupSize } from "@/features/canvas/nodes/ApiGroupNode/useApiGroupSize";
+import { computeApiGroupSize } from "../../utils/api-group-size";
 import { mutateRemoveComponentInScene } from "../../utils/scene-mutations";
 
 function handleEndpointInsertion(
@@ -64,9 +66,9 @@ function handleEndpointInsertion(
   write(scene, d, component, {
     elementId: component.id,
     x: 0,
-    y: HEADER_H + siblingCount * ENDPOINT_H,
-    width: FRAME_W,
-    height: ENDPOINT_H,
+    y: API_GROUP_HEADER_H + siblingCount * API_GROUP_ENDPOINT_H,
+    width: API_GROUP_FRAME_W,
+    height: API_GROUP_ENDPOINT_H,
   });
   const childCount = siblingCount + 1;
   const { width, height } = computeApiGroupSize(childCount);
@@ -449,7 +451,7 @@ export const componentsSlice = (
             });
           siblings.forEach((sibling, i) => {
             const layout = d.nodeLayouts[sibling.id];
-            if (layout) layout.y = HEADER_H + i * ENDPOINT_H;
+            if (layout) layout.y = API_GROUP_HEADER_H + i * API_GROUP_ENDPOINT_H;
           });
           syncApiGroupSize(groupId);
         }

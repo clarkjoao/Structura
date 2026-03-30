@@ -1,7 +1,9 @@
-export const HEADER_H = 68;
-export const ENDPOINT_H = 40;
-export const FOOTER_H = 40;
-export const FRAME_W = 300;
+export {
+  API_GROUP_HEADER_H as HEADER_H,
+  API_GROUP_ENDPOINT_H as ENDPOINT_H,
+  API_GROUP_FOOTER_H as FOOTER_H,
+  API_GROUP_FRAME_W as FRAME_W,
+} from "@/features/diagram/model/layout.constants";
 
 export const METHOD_COLORS: Record<string, string> = {
   GET: "#1D9E75",

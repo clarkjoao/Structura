@@ -4,7 +4,7 @@ import { AppState } from "../store.types";
 import {Diagram, Level} from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
 import { fileSystemAdapter } from "@/infrastructure/persistence";
-import { removeRecentRef } from "@/features/canvas/navigation/useRecentDiagrams";
+import { removeRecentRef } from "../../utils/recent-diagrams";
 
 export const diagramsSlice = (
     set: (fn: (state: AppState) => void) => void,
