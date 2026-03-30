@@ -744,7 +744,8 @@
       "reconnecting": "Reconectando",
       "disconnected": "Desconectado",
       "closed": "Encerrado"
-    }
+    },
+    "unavailableDuringFlowMode": "A colaboração fica indisponível enquanto a reprodução ou gravação de flow estiver ativa."
   },
   "customComponents": {
     "customComponents": "Componentes salvos",
@@ -822,7 +823,8 @@
     "removeTitle": "Remover",
     "emptyTagged": "Nenhum flow com essa tag.",
     "emptyNone": "Nenhum flow definido.",
-    "recorderBlockedInCompare": "Saia do modo de comparação de versões para gravar ou editar um flow"
+    "recorderBlockedInCompare": "Saia do modo de comparação de versões para gravar ou editar um flow",
+    "unavailableDuringCollaboration": "Flows ficam indisponíveis durante a colaboração porque a edição ao vivo pode alterar o estado do canvas."
   },
   "export": {
     "embed": {

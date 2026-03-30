@@ -9,6 +9,7 @@ import { useCanvasCompareState } from "./useCanvasCompareState";
 import { useCanvasFlowState } from "./useCanvasFlowState";
 import { useCanvasGraphState } from "./useCanvasGraphState";
 import { useCanvasInteraction } from "./useCanvasInteraction";
+import { useCanvasInteractionCapabilities } from "./useCanvasInteractionCapabilities";
 import { useCanvasStore } from "./useCanvasStore";
 import { useCanvasVisualState } from "./useCanvasVisualState";
 
@@ -32,6 +33,9 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     return Array.from(tags).sort();
   }, [resolved?.components]);
   const flowState = useCanvasFlowState({ flows, isCompareMode: compareState.isCompareMode });
+  const capabilities = useCanvasInteractionCapabilities({
+    isCompareMode: compareState.isCompareMode,
+  });
   const onNoteStartEdit = useCallback((_noteId: string) => {
     // Ensures note `data.onStartEdit` exists so NoteNode can replace it with inline edit.
     // Double-click invokes the patched handler on `node.data`.
@@ -92,5 +96,5 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     !compareState.isCompareMode &&
     visualState.noteInlineEditingId === null &&
     visualState.jsonViewerInlineEditingId === null;
-  return { t, diagram, reactFlowWrapperRef, visualState, nodes: graphState.nodes, edges: graphState.edges, onNodesChange: graphState.onNodesChange, onNodeDragStop: interaction.onNodeDragStop, eventHandlers: interaction.eventHandlers, isRecording: flowState.isRecording, actions, showSearch: interaction.showSearch, setShowSearch: interaction.setShowSearch, showDiagramSidebar: interaction.showDiagramSidebar, setShowDiagramSidebar: interaction.setShowDiagramSidebar, showCommandPalette: interaction.showCommandPalette, setShowCommandPalette: interaction.setShowCommandPalette, showScenes, setShowScenes, handleSelectDiagram: interaction.handleSelectDiagram, handleSearchSelect: interaction.handleSearchSelect, focusTitleTrigger, isPanelOpen: interaction.isPanelOpen, selectedNodes, selectedCount, showElementPanel, onDrillUp: canvasProps.onDrillUp, isCompareMode: compareState.isCompareMode, allDiagramTags };
+  return { t, diagram, reactFlowWrapperRef, visualState, nodes: graphState.nodes, edges: graphState.edges, onNodesChange: graphState.onNodesChange, onNodeDragStop: interaction.onNodeDragStop, eventHandlers: interaction.eventHandlers, isRecording: flowState.isRecording, isPlaying: flowState.isPlaying, actions, showSearch: interaction.showSearch, setShowSearch: interaction.setShowSearch, showDiagramSidebar: interaction.showDiagramSidebar, setShowDiagramSidebar: interaction.setShowDiagramSidebar, showCommandPalette: interaction.showCommandPalette, setShowCommandPalette: interaction.setShowCommandPalette, showScenes, setShowScenes, handleSelectDiagram: interaction.handleSelectDiagram, handleSearchSelect: interaction.handleSearchSelect, focusTitleTrigger, isPanelOpen: interaction.isPanelOpen, selectedNodes, selectedCount, showElementPanel, onDrillUp: canvasProps.onDrillUp, isCompareMode: compareState.isCompareMode, allDiagramTags, canEditCanvas: capabilities.canEditCanvas, canSelectCanvasElements: capabilities.canSelectCanvasElements };
 }

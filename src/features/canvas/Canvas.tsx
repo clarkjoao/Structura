@@ -48,7 +48,8 @@ const Canvas = (props: CanvasProps = {}) => {
     onNodesChange,
     onNodeDragStop,
     eventHandlers,
-    isRecording,
+    canEditCanvas,
+    canSelectCanvasElements,
     actions,
     showSearch,
     setShowSearch,
@@ -131,6 +132,7 @@ const Canvas = (props: CanvasProps = {}) => {
                 }
               }}
               onDrop={(event) => {
+                if (!canEditCanvas) return;
                 const templateId = event.dataTransfer.getData(CUSTOM_COMPONENT_DRAG_MIME);
                 if (!templateId) return;
                 event.preventDefault();
@@ -182,9 +184,9 @@ const Canvas = (props: CanvasProps = {}) => {
               fitView
               fitViewOptions={{ padding: 0.3 }}
               onMoveEnd={eventHandlers.onMoveEnd}
-              nodesDraggable={!isRecording && !isCompareMode}
-              nodesConnectable={!isRecording && !isCompareMode}
-              elementsSelectable={!isRecording && !isCompareMode}
+              nodesDraggable={canEditCanvas}
+              nodesConnectable={canEditCanvas}
+              elementsSelectable={canSelectCanvasElements}
               proOptions={{ hideAttribution: true }}
               className="bg-background"
             >

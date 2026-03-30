@@ -21,6 +21,8 @@ interface CollabToolbarProps {
   peerLimitReached?: boolean;
   onStartCollab: () => void;
   onEndCollab?: () => void;
+  startDisabled?: boolean;
+  startDisabledReason?: string;
 }
 
 export function CollabToolbar({
@@ -30,6 +32,8 @@ export function CollabToolbar({
   peerLimitReached,
   onStartCollab,
   onEndCollab,
+  startDisabled = false,
+  startDisabledReason,
 }: CollabToolbarProps) {
   const { t } = useTranslation();
   const [isCopied, setIsCopied] = useState(false);
@@ -56,7 +60,9 @@ export function CollabToolbar({
       <button
         type="button"
         onClick={onStartCollab}
-        className="flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+        disabled={startDisabled}
+        title={startDisabled ? startDisabledReason : undefined}
+        className="flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors disabled:opacity-50 disabled:pointer-events-none"
       >
         <Users className="h-3.5 w-3.5" />
         {t("collaboration.start")}

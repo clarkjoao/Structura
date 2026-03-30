@@ -95,6 +95,7 @@ interface UseCanvasKeyboardParams {
   isPanelOpen: boolean;
   isFlowPanelOpen: boolean;
   isPlaying?: boolean;
+  isCanvasEditLocked?: boolean;
   isSearchOpen?: boolean;
   onOpenSearch?: () => void;
   isScenesDrawerOpen?: boolean;
@@ -162,6 +163,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     isPanelOpen,
     isFlowPanelOpen,
     isPlaying = false,
+    isCanvasEditLocked = false,
     isSearchOpen,
     isScenesDrawerOpen,
     onCloseScenesDrawer,
@@ -334,7 +336,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
         }
       }
 
-      if (isFlowPanelOpen || isPlaying || isCompareMode) return;
+      if (isFlowPanelOpen || isCanvasEditLocked || isPlaying || isCompareMode) return;
 
       if (isSearchOpen || isCommandPaletteOpen) return;
 
@@ -394,6 +396,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     isCompareMode,
     isPlaying,
     isFlowPanelOpen,
+    isCanvasEditLocked,
     isSearchOpen,
     isScenesDrawerOpen,
     onCloseScenesDrawer,

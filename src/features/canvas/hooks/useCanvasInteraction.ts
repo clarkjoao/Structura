@@ -1,5 +1,4 @@
 import { useCallback, useRef, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
-import type { TFunction } from "i18next";
 import type { Node, ReactFlowInstance } from "@xyflow/react";
 import type { NavigateFunction } from "react-router-dom";
 import type { Diagram, ServiceDefinition } from "@/features/diagram";
@@ -11,6 +10,7 @@ import { useCanvasEventHandlers } from "./useCanvasEventHandlers";
 import { useCanvasKeyboard } from "./useCanvasKeyboard";
 import { useCanvasEffects } from "./useCanvasEffects";
 import { useNodeDragParenting } from "./useNodeDragParenting";
+import { useCanvasInteractionCapabilities } from "./useCanvasInteractionCapabilities";
 
 type FlowSlice = ReturnType<typeof import("./useCanvasFlowState").useCanvasFlowState>;
 type CompareSlice = ReturnType<typeof import("./useCanvasCompareState").useCanvasCompareState>;
@@ -74,7 +74,10 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
     onNoteStartEdit,
   } = params;
 
-  const diagramNavLocked = flowState.isRecording || flowState.isPlaying || compareState.isCompareMode;
+  const capabilities = useCanvasInteractionCapabilities({
+    isCompareMode: compareState.isCompareMode,
+  });
+  const diagramNavLocked = !capabilities.canEditCanvas;
 
   const {
     showSearch,
@@ -122,6 +125,9 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
   const eventHandlers = useCanvasEventHandlers({
     visualState,
     isPlaying: flowState.isPlaying,
+    isFlowInteractionLocked: capabilities.isFlowInteractionLocked,
+    canEditCanvas: capabilities.canEditCanvas,
+    canSelectCanvasElements: capabilities.canSelectCanvasElements,
     isCompareMode: compareState.isCompareMode,
     isFlowPanelOpen: !!canvasProps.isFlowPanelOpen,
     updateViewport: actions.updateViewport,
@@ -183,6 +189,7 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
     isPanelOpen,
     isFlowPanelOpen: !!canvasProps.isFlowPanelOpen,
     isPlaying: flowState.isPlaying,
+    isCanvasEditLocked: !capabilities.canEditCanvas,
     isSearchOpen: showSearch,
     onOpenSearch: () => {
       setShowCommandPalette(false);

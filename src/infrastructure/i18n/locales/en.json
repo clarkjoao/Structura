@@ -745,7 +745,8 @@
       "reconnecting": "Reconnecting",
       "disconnected": "Disconnected",
       "closed": "Closed"
-    }
+    },
+    "unavailableDuringFlowMode": "Collaboration is unavailable while flow playback or recording is active."
   },
   "customComponents": {
     "customComponents": "Custom Components",
@@ -823,7 +824,8 @@
     "removeTitle": "Remove",
     "emptyTagged": "No flows with this tag.",
     "emptyNone": "No flows defined.",
-    "recorderBlockedInCompare": "Exit version comparison mode to record or edit a flow"
+    "recorderBlockedInCompare": "Exit version comparison mode to record or edit a flow",
+    "unavailableDuringCollaboration": "Flows are unavailable during collaboration because live collaborative editing can change the canvas state."
   },
   "export": {
     "embed": {

@@ -15,6 +15,9 @@ import { getLastEdgeStyle } from "@/features/diagram/hooks/useLastEdgeStyle";
 interface UseCanvasEventHandlersParams {
   visualState: CanvasVisualState;
   isPlaying: boolean;
+  isFlowInteractionLocked: boolean;
+  canEditCanvas: boolean;
+  canSelectCanvasElements: boolean;
   isCompareMode?: boolean;
   isFlowPanelOpen: boolean;
   updateViewport: (vp: { x: number; y: number; zoom: number }) => void;
@@ -32,6 +35,9 @@ interface UseCanvasEventHandlersParams {
 export function useCanvasEventHandlers({
   visualState,
   isPlaying,
+  isFlowInteractionLocked,
+  canEditCanvas,
+  canSelectCanvasElements,
   isCompareMode = false,
   isFlowPanelOpen,
   updateViewport,
@@ -62,16 +68,17 @@ export function useCanvasEventHandlers({
 
   const onConnect: OnConnect = useCallback(
     (c: Connection) => {
+      if (!canEditCanvas) return;
       if (c.source && c.target) {
         addConnection(c.source, c.target, t("canvas.usesEdgeLabel"), getLastEdgeStyle());
       }
     },
-    [addConnection, t],
+    [addConnection, canEditCanvas, t],
   );
 
   const onConnectEnd = useCallback(
     (event: MouseEvent | TouchEvent, connectionState: { fromNode: Node | null; toNode: Node | null }) => {
-      if (isRecording) return;
+      if (!canEditCanvas || isRecording) return;
       if (connectionState.fromNode === null || connectionState.toNode !== null) return;
       if (!(event instanceof MouseEvent)) return;
       const flowPos = screenToFlowPosition({
@@ -84,7 +91,7 @@ export function useCanvasEventHandlers({
         sourceNodeId: connectionState.fromNode.id,
       });
     },
-    [isRecording, screenToFlowPosition, setQuickInsert],
+    [canEditCanvas, isRecording, screenToFlowPosition, setQuickInsert],
   );
 
   const handleQuickInsert = useCallback(
@@ -98,7 +105,7 @@ export function useCanvasEventHandlers({
     (e: React.MouseEvent, node: Node) => {
       const nodeType = (node.type as string) ?? "";
       if (isEndpointType(nodeType) && node.parentId) {
-        if (isCompareMode) return;
+        if (isCompareMode || !canSelectCanvasElements) return;
         if (!isRecording) {
           clearHighlight();
           setSelectedEdgeId(null);
@@ -120,7 +127,7 @@ export function useCanvasEventHandlers({
         }
         return;
       }
-      if (isCompareMode) return;
+      if (isCompareMode || !canSelectCanvasElements) return;
       if (isPlaying || isFlowPanelOpen) return;
       clearHighlight();
       setSelectedEdgeId(null);
@@ -147,6 +154,7 @@ export function useCanvasEventHandlers({
       isCompareMode,
       isPlaying,
       isFlowPanelOpen,
+      canSelectCanvasElements,
       isRecording,
       onRecordNodeClick,
       setSelectedNodeId,
@@ -162,7 +170,7 @@ export function useCanvasEventHandlers({
         onRecordEdgeClick?.(edge.id, edge.sourceHandle ?? undefined);
         return;
       }
-      if (isCompareMode) return;
+      if (isCompareMode || !canSelectCanvasElements) return;
       if (isFlowPanelOpen) return;
       clearHighlight();
       setSelectedEdgeId(edge.id);
@@ -174,6 +182,7 @@ export function useCanvasEventHandlers({
       clearHighlight,
       isCompareMode,
       isFlowPanelOpen,
+      canSelectCanvasElements,
       isRecording,
       onRecordEdgeClick,
       setSelectedEdgeId,
@@ -189,7 +198,7 @@ export function useCanvasEventHandlers({
       const selectedIds = updatedNodes.filter((n) => n.selected).map((n) => n.id);
       // Skip empty selections (handled by onPaneClick) and duplicate firings
       if (selectedIds.length === 0) return;
-      if (isCompareMode) return;
+      if (isCompareMode || !canSelectCanvasElements) return;
       const key = [...selectedIds].sort().join(",");
       if (key === prevSelectionRef.current) return;
       prevSelectionRef.current = key;
@@ -199,7 +208,7 @@ export function useCanvasEventHandlers({
       setSelectedNodeIds(new Set(selectedIds));
       setSelectedNodeId(selectedIds[0] ?? null);
     },
-    [isCompareMode, setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId, setContextMenu],
+    [canSelectCanvasElements, isCompareMode, setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId, setContextMenu],
   );
 
   const onNodeDoubleClick = useCallback(
@@ -266,7 +275,7 @@ export function useCanvasEventHandlers({
   const onPaneContextMenu = useCallback(
     (event: React.MouseEvent) => {
       event.preventDefault();
-      if (isRecording || isCompareMode || isPlaying || isFlowPanelOpen) return;
+      if (isRecording || isCompareMode || isPlaying || isFlowPanelOpen || !canEditCanvas) return;
       if (visualState.selectedNodeId || visualState.selectedEdgeId || visualState.selectedNodeIds.size > 0) {
         return;
       }
@@ -287,6 +296,7 @@ export function useCanvasEventHandlers({
       isCompareMode,
       isPlaying,
       isFlowPanelOpen,
+      canEditCanvas,
       visualState.selectedNodeId,
       visualState.selectedEdgeId,
       visualState.selectedNodeIds,
@@ -299,7 +309,7 @@ export function useCanvasEventHandlers({
 
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: Node) => {
-      if (isRecording || isCompareMode) return;
+      if (isRecording || isCompareMode || isFlowInteractionLocked || !canEditCanvas) return;
       event.preventDefault();
       clearHighlight();
       prevSelectionRef.current = node.id;
@@ -311,7 +321,7 @@ export function useCanvasEventHandlers({
       setSelectedNodeId(node.id);
       setSelectedEdgeId(null);
     },
-    [clearHighlight, isCompareMode, isRecording, setContextMenu, setSelectedNodeId, setSelectedEdgeId],
+    [canEditCanvas, clearHighlight, isCompareMode, isFlowInteractionLocked, isRecording, setContextMenu, setSelectedNodeId, setSelectedEdgeId],
   );
 
   const closePanel = useCallback(() => {

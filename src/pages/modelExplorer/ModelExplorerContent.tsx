@@ -35,6 +35,7 @@ import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/featu
 import {
   EmbedModal,
   useFlowMode,
+  useCanvasInteractionCapabilities,
   type BranchOwnerInfo,
   type RecordingContext,
 } from "@/features/canvas";
@@ -122,9 +123,19 @@ export function ModelExplorerContent({
     onOpenBranchSelect,
   } = flowMode;
 
+  const canvasCapabilities = useCanvasInteractionCapabilities({
+    isCompareMode: isDiagramCompareMode(diagram),
+  });
+
   useEffect(() => {
     if (isPlaying) setShowFlows(false);
   }, [isPlaying, setShowFlows]);
+
+  useEffect(() => {
+    if (canvasCapabilities.isCollaborationActive && showFlows) {
+      setShowFlows(false);
+    }
+  }, [canvasCapabilities.isCollaborationActive, setShowFlows, showFlows]);
 
   useEffect(() => {
     if (flowMode.mode.kind !== "playing") return;
@@ -157,8 +168,12 @@ export function ModelExplorerContent({
       toast.warning(t("flows.recorderBlockedInCompare"));
       return;
     }
+    if (!canvasCapabilities.canUseFlows) {
+      toast.warning(t("flows.unavailableDuringCollaboration"));
+      return;
+    }
     startRecording();
-  }, [compareModeBlocksRecorder, startRecording, t]);
+  }, [canvasCapabilities.canUseFlows, compareModeBlocksRecorder, startRecording, t]);
 
   const editFlowWhenAllowed = useCallback(
     (flow: Flow) => {
@@ -166,9 +181,13 @@ export function ModelExplorerContent({
         toast.warning(t("flows.recorderBlockedInCompare"));
         return;
       }
+      if (!canvasCapabilities.canUseFlows) {
+        toast.warning(t("flows.unavailableDuringCollaboration"));
+        return;
+      }
       editFlow(flow);
     },
-    [compareModeBlocksRecorder, editFlow, t],
+    [canvasCapabilities.canUseFlows, compareModeBlocksRecorder, editFlow, t],
   );
   const handleEndCollab = useCallback(() => {
     closeSession();
@@ -268,12 +287,17 @@ export function ModelExplorerContent({
               peerLimitReached={peerLimitReached}
               onStartCollab={onStartCollab}
               onEndCollab={handleEndCollab}
+              startDisabled={!canvasCapabilities.canStartCollaboration}
+              startDisabledReason={t("collaboration.unavailableDuringFlowMode")}
             />
             <button
-              onClick={() => { if (!canvasInteractionLocked) setShowFlows(!showFlows); }}
+              type="button"
+              onClick={() => { if (!canvasInteractionLocked && canvasCapabilities.canUseFlows) setShowFlows(!showFlows); }}
+              disabled={canvasInteractionLocked || !canvasCapabilities.canUseFlows}
+              title={!canvasCapabilities.canUseFlows ? t("flows.unavailableDuringCollaboration") : undefined}
               className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
                 showFlows ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground border border-transparent hover:border-border"
-              } ${canvasInteractionLocked ? "opacity-50 pointer-events-none" : ""}`}
+              } ${(canvasInteractionLocked || !canvasCapabilities.canUseFlows) ? "opacity-50 pointer-events-none" : ""}`}
             >
               <GitBranch className="h-3.5 w-3.5" /> {t("flows.panelTitle")}
             </button>
@@ -433,8 +457,10 @@ export function ModelExplorerContent({
             onEditFlow={editFlowWhenAllowed}
             isViewingCoverage={isViewingCoverage}
             onToggleCoverage={() => setIsViewingCoverage((viewing) => !viewing)}
-            panelActionsLocked={compareModeBlocksRecorder}
-            panelActionsLockedTitle={t("diagramNav.unavailableWhileRecordingOrPlayback")}
+            panelActionsLocked={compareModeBlocksRecorder || !canvasCapabilities.canUseFlows}
+            panelActionsLockedTitle={!canvasCapabilities.canUseFlows
+              ? t("flows.unavailableDuringCollaboration")
+              : t("diagramNav.unavailableWhileRecordingOrPlayback")}
           />
         )}
       </div>
