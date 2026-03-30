@@ -7,6 +7,8 @@ import {
   isEndpointComponent,
   isDbTableComponent,
   isJsonViewerComponent,
+  isSvgComponent,
+  isUnknownComponent,
   isNoteComponent,
   isPanelComponent,
   ServiceDefinition,
@@ -261,6 +263,10 @@ export function exportDrawio(
         { ...geometry, width: finalWidth, height: finalHeight },
         parentMx,
       );
+    } else if (isUnknownComponent(c) || isSvgComponent(c)) {
+      // These can exist in the diagram store (e.g. imported / clipboard SVG),
+      // but draw.io export doesn't currently support them.
+      throw new Error(`Unsupported component for draw.io export: ${c.type}`);
     } else {
       const _: never = c;
       throw new Error("Unsupported component for draw.io export");
