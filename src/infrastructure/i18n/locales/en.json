@@ -251,7 +251,12 @@
     "overwriteTitle": "Discard diagrams that exist only in the app and load only those from the folder",
     "overwrite": "Use folder files only",
     "mergeTitle": "Keep diagrams already in the app and add those from the folder",
-    "merge": "Keep all (localStorage + folder) and merge"
+    "merge": "Keep all (localStorage + folder) and merge",
+    "errors": {
+      "invalidJson": "Malformed JSON",
+      "readFile": "Error reading file: {{message}}",
+      "unknown": "unknown"
+    }
   },
   "disconnect": {
     "title": "Disconnect folder",
@@ -316,6 +321,7 @@
   "canvas": {
     "noDiagramSelected": "No diagram selected",
     "newEndpoint": "New endpoint",
+    "defaultEndpointPath": "/new-endpoint",
     "usesEdgeLabel": "Uses",
     "apiGroupDefaultName": "API Endpoints",
     "compareViewBanner": "View mode — editing disabled",

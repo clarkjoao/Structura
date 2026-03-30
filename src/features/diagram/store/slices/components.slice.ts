@@ -147,13 +147,13 @@ function buildComponentForType(
   } else if (isNoteType(type)) {
     component = { ...base, type: "note", panelColor: "hsl(45 25% 97%)" };
   } else if (isEndpointType(type)) {
-    component = {
-      ...base,
-      type: "endpoint",
-      method: "GET",
-      path: "/novo-endpoint",
-      handlers: [],
-    } as EndpointComponent;
+      component = {
+        ...base,
+        type: "endpoint",
+        method: "GET",
+        path: i18n.t("canvas.defaultEndpointPath"),
+        handlers: [],
+      } as EndpointComponent;
   } else if (isApiGroupType(type)) {
     component = {
       ...base,

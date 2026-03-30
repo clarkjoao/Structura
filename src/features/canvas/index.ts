@@ -9,3 +9,4 @@ export { default as CustomEdge } from "./edges/CustomEdge";
 export { default as PanelNode } from "./nodes/PanelNode";
 export { default as NoteNode } from "./nodes/NoteNode";
 export { default as NodeContextMenu } from "./panels/NodeContextMenu";
+export { nodeTypes, NODE_TYPE_REGISTRY } from "./nodes/node-types";

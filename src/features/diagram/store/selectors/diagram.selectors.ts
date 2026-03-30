@@ -10,7 +10,7 @@ export const useActiveDiagram = () =>
   );
 
 export const useDiagramIds = () =>
-  useDiagramStore((s) => Object.keys(s.diagrams));
+  useDiagramStore(useShallow((s) => Object.keys(s.diagrams)));
 
 export const useDiagram = (id: string) =>
   useDiagramStore((s) => s.diagrams[id]);

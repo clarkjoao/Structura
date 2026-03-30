@@ -6,6 +6,7 @@ export { CollabStartModal } from "./CollabStartModal";
 export { CollabJoinModal } from "./CollabJoinModal";
 export { CollabSessionClosedModal } from "./CollabSessionClosedModal";
 export { CollabStatusIndicator } from "./CollabStatusIndicator";
+export { CollabRoom } from "./CollabRoom";
 export { remoteLayoutUpdates } from "./useCollabStoreSync";
 export { useCollabHighlight } from "./useCollabHighlight";
 export type { CollabElementHighlight } from "./useCollabHighlight";

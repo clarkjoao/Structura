@@ -15,8 +15,7 @@ import { CollabProvider, useCollab } from "./CollabProvider";
 import { CollabCursors } from "./CollabCursors";
 import { CollabJoinModal } from "./CollabJoinModal";
 import { CollabSessionClosedModal } from "./CollabSessionClosedModal";
-import { useDiagramActions } from "@/features/diagram";
-import { useDiagramStore } from "@/features/diagram/store/diagram.store";
+import { useActiveDiagram, useDiagramActions } from "@/features/diagram";
 import { CollabRoomToolbar } from "./CollabRoomToolbar";
 
 function CollabRoomInner() {
@@ -31,9 +30,7 @@ function CollabRoomInner() {
     updateCursor,
   } = useCollab();
   const { importDiagram } = useDiagramActions();
-  const activeDiagramId = useDiagramStore((state) => state.activeDiagramId);
-  const diagrams = useDiagramStore((state) => state.diagrams);
-  const diagram = activeDiagramId ? diagrams[activeDiagramId] ?? null : null;
+  const diagram = useActiveDiagram();
   const diagramExists = Boolean(diagram);
   const hostName = session?.isHost ? session.localUser.name : "Host";
   const isSessionClosed = sessionClosedByHost || hostDisconnected;
