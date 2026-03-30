@@ -1,5 +1,5 @@
 import type { AwsCategoryId } from "@/lib/catalogs/aws";
-import type { PanelKind } from "../enums";
+import type { ExternalLinkType, PanelKind } from "../enums";
 
 export type ComponentType =
   | "person"
@@ -12,7 +12,16 @@ export type ComponentType =
   | "endpoint"
   | "unknown"
   | "svg"
+  | "db-table"
+  | "json-viewer"
   | AwsCategoryId;
+
+export interface ExternalLink {
+  id: string;
+  label: string;
+  url: string;
+  type: ExternalLinkType;
+}
 
 interface BaseComponent {
   id: string;
@@ -38,6 +47,7 @@ interface BaseComponent {
   templateId?: string;
   /** Optional custom-template registry reference used during instantiation. */
   registryServiceId?: string;
+  externalLinks?: ExternalLink[];
 }
 
 export interface C4Component extends BaseComponent {
@@ -71,6 +81,9 @@ export interface PanelComponent extends BaseComponent {
 export interface NoteComponent extends BaseComponent {
   type: "note";
   panelColor?: string;
+  collapsed?: boolean;
+  collapsedWidth?: number;
+  collapsedHeight?: number;
 }
 
 export interface AwsComponent extends BaseComponent {
@@ -119,6 +132,35 @@ export interface SvgComponent extends BaseComponent {
   svgContent: string;
 }
 
+export interface DbColumn {
+  id: string;
+  name: string;
+  dataType: string;
+  isPrimaryKey?: boolean;
+  isForeignKey?: boolean;
+  /** id de outro DbTableComponent referenciado por esta FK */
+  foreignTableId?: string;
+  nullable?: boolean;
+  unique?: boolean;
+}
+
+export interface DbTableComponent extends BaseComponent {
+  type: "db-table";
+  tableName: string;
+  columns: DbColumn[];
+  collapsed?: boolean;
+  collapsedWidth?: number;
+  collapsedHeight?: number;
+}
+
+export interface JsonViewerComponent extends BaseComponent {
+  type: "json-viewer";
+  /** JSON raw string — stored as string, validated in the UI node */
+  jsonContent: string;
+  /** Optional external schema reference (URL or name) */
+  schemaRef?: string;
+}
+
 export type Component =
   | C4Component
   | PanelComponent
@@ -126,6 +168,9 @@ export type Component =
   | AwsComponent
   | ApiGroupComponent
   | EndpointComponent
+  | UnknownComponent
+  | DbTableComponent
+  | JsonViewerComponent
   | UnknownComponent
   | SvgComponent;
 
@@ -136,4 +181,6 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<ApiGroupComponent, "id">> &
   Partial<Omit<EndpointComponent, "id">> &
   Partial<Omit<UnknownComponent, "id">> &
+  Partial<Omit<DbTableComponent, "id">> &
+  Partial<Omit<JsonViewerComponent, "id">> &
   Partial<Omit<SvgComponent, "id">> & { width?: number; height?: number };

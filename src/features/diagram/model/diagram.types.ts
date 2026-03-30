@@ -19,6 +19,10 @@ export type {
   EndpointHandler,
   HttpMethod,
   PanelKind,
+  ExternalLink,
+  DbTableComponent,
+  DbColumn,
+  JsonViewerComponent,
 } from "./component.types";
 
 export type {

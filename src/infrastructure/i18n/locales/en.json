@@ -101,6 +101,23 @@
     "copySuffix": " (copy)",
     "defaultNamePrefix": "New"
   },
+  "externalLinks": {
+    "sectionTitle": "Links",
+    "addButton": "Add link",
+    "labelField": "Label",
+    "labelPlaceholder": "e.g. API Docs",
+    "urlField": "URL",
+    "urlPlaceholder": "https://...",
+    "typeField": "Type",
+    "typeConfluence": "Confluence",
+    "typeGithub": "GitHub",
+    "typeJira": "Jira",
+    "typeGeneric": "Generic",
+    "confirmAdd": "Add",
+    "cancelAdd": "Cancel",
+    "removeTitle": "Remove link",
+    "openLink": "Open"
+  },
   "nav": {
     "workspaces": "Workspaces",
     "registry": "Registry",
@@ -414,6 +431,8 @@
     "newNamed": "New {{name}}",
     "searchHelpPanel": "panel|painel",
     "searchHelpNote": "note|nota|sticky|postit",
+    "searchHelpDbTable": "table|database|db|schema|sql|columns",
+    "searchHelpJsonViewer": "json|payload|contract|schema|event|api",
     "searchHelpApiGroup": "api|group|grupo|openapi",
     "searchHelpEndpoint": "endpoint|http|rest",
     "searchHelpSwimlane": "swimlane|lane|strip|actor|pool|domain|team|faixa"
@@ -426,6 +445,51 @@
     "horizontal": "Horizontal",
     "vertical": "Vertical",
     "laneColor": "Lane color"
+  },
+  "dbTable": {
+    "panelTitle": "Database table",
+    "columnsLabel": "Columns",
+    "reorderHint": "Drag to reorder",
+    "unnamedColumn": "Unnamed column",
+    "ariaLabel": "Table {{name}}",
+    "unnamedTable": "Unnamed table",
+    "columnCount": "{{count}} column",
+    "columnCount_plural": "{{count}} columns",
+    "noColumns": "No columns defined",
+    "addRow": "Add row",
+    "addCol": "Add column",
+    "removeRow": "Remove row",
+    "removeCol": "Remove column",
+    "expandAria": "Expand table",
+    "expandTitle": "Expand",
+    "collapseAria": "Collapse table",
+    "collapseTitle": "Collapse",
+    "col": {
+      "name": "Name",
+      "dataType": "Type",
+      "pk": "PK",
+      "fk": "FK",
+      "nn": "NN",
+      "uq": "UQ"
+    }
+  },
+  "jsonViewer": {
+    "ariaLabel": "JSON Viewer: {{name}}",
+    "unnamed": "Unnamed JSON",
+    "panelTitle": "JSON Viewer",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "edit": "Edit",
+    "confirm": "Confirm",
+    "format": "Format",
+    "invalidJson": "Invalid JSON — fix before saving",
+    "schemaRef": "Schema / Reference",
+    "schemaRefPlaceholder": "e.g. https://schema.org/...",
+    "jsonContent": "JSON Content"
+  },
+  "nodeTypes": {
+    "db-table": "Database table",
+    "json-viewer": "JSON Viewer"
   },
   "elementPicker": {
     "categoryAll": "All",
@@ -444,7 +508,10 @@
     "canvasGroups": "Canvas & Groups",
     "awsOther": "Other",
     "registryEmpty": "No services in the registry yet.",
-    "openRegistry": "Open registry"
+    "openRegistry": "Open registry",
+    "categories": {
+      "data": "Data"
+    }
   },
   "patterns": {
     "searchPlaceholder": "Search patterns by name, description or components...",
@@ -695,7 +762,11 @@
     "ariaWithTitle": "Note: {{title}}",
     "ariaDefault": "Note",
     "titleFallback": "Note",
-    "emptyHint": "Click to edit... Supports **Markdown**."
+    "emptyHint": "Click to edit... Supports **Markdown**.",
+    "expandAria": "Expand note",
+    "expandTitle": "Expand",
+    "collapseAria": "Collapse note",
+    "collapseTitle": "Collapse"
   },
   "unknownNode": {
     "aria": "Unknown element: {{name}}",

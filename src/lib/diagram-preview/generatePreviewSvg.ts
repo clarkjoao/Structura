@@ -4,10 +4,14 @@ import {
   isAwsComponent,
   isC4Component,
   isEndpointComponent,
+  isDbTableComponent,
+  isJsonViewerComponent,
   isNoteComponent,
   isPanelComponent,
 } from "@/features/diagram";
 import {
+  DB_TABLE_COLLAPSED_H,
+  DB_TABLE_COLLAPSED_W,
   DEFAULT_NODE_H,
   DEFAULT_NODE_W,
   NOTE_DEFAULT_H,
@@ -58,6 +62,27 @@ function defaultSize(component: Component, layout: NodeLayout): { width: number;
     return {
       width: layout.width ?? NOTE_DEFAULT_W,
       height: layout.height ?? NOTE_DEFAULT_H,
+    };
+  }
+  if (isDbTableComponent(component)) {
+    if (component.collapsed) {
+      return {
+        width: layout.width ?? DB_TABLE_COLLAPSED_W,
+        height: layout.height ?? DB_TABLE_COLLAPSED_H,
+      };
+    }
+    const dbTableFixedH = 32 + 22 + 20 + 2;
+    const dbTableRowH = 24;
+    const defaultW = 406;
+    return {
+      width: layout.width ?? defaultW,
+      height: layout.height ?? dbTableFixedH + component.columns.length * dbTableRowH,
+    };
+  }
+  if (isJsonViewerComponent(component)) {
+    return {
+      width: layout.width ?? 240,
+      height: layout.height ?? 88,
     };
   }
   return {
@@ -180,6 +205,8 @@ function shapeForComponent(
   if (component.type === "person") return renderPersonShape(bounds);
   if (isC4Component(component)) return renderC4Rect(component.type, bounds);
   if (isEndpointComponent(component)) return renderC4Rect("component", bounds);
+  if (isDbTableComponent(component)) return renderC4Rect("component", bounds);
+  if (isJsonViewerComponent(component)) return renderC4Rect("container", bounds);
   return renderC4Rect("component", bounds);
 }
 

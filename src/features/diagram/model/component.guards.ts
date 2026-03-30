@@ -9,6 +9,8 @@ import type {
   EndpointComponent,
   UnknownComponent,
   SvgComponent,
+  DbTableComponent,
+  JsonViewerComponent,
 } from "./component.types";
 import {
   isPanelType,
@@ -18,6 +20,8 @@ import {
   isEndpointType,
   isUnknownType,
   isSvgComponentType,
+  isDbTableType,
+  isJsonViewerType,
 } from "./component-type-constants";
 
 export const isPanelComponent = (c: Component): c is PanelComponent => isPanelType(c.type);
@@ -35,3 +39,7 @@ export const isEndpointComponent = (c: Component): c is EndpointComponent => isE
 export const isUnknownComponent = (c: Component): c is UnknownComponent => isUnknownType(c.type);
 
 export const isSvgComponent = (c: Component): c is SvgComponent => isSvgComponentType(c.type);
+export const isDbTableComponent = (c: Component): c is DbTableComponent => isDbTableType(c.type);
+
+export const isJsonViewerComponent = (c: Component): c is JsonViewerComponent =>
+  isJsonViewerType(c.type);

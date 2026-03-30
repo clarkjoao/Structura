@@ -18,6 +18,7 @@ export interface ServiceDefinition {
   source?: ServiceSource;
   /** @deprecated Legacy single-source field kept for migration compatibility. */
   sourceId?: string;
+  externalLinks?: import("./component.types").ExternalLink[];
   metadata?: {
     github?: {
       repoId: number;

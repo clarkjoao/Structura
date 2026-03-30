@@ -2,6 +2,7 @@ import type { CSSProperties, ComponentType as ReactComponentType } from "react";
 import type {
   CompareElementVisual,
   Component,
+  ComponentPatch,
   ComponentType,
   Diagram,
   FlowStep,
@@ -50,6 +51,16 @@ export interface NodeBuildContext {
   onPlayFlow?: (flowId: string) => void;
   /** Add a new endpoint child to an api-group. */
   onAddEndpointToGroup?: (groupId: string) => void;
+  /** Trigger inline editing on a NoteNode (called on double-click). */
+  onNoteStartEdit?: (noteId: string) => void;
+  /** Track which note is in inline edit (hides ElementPanel while non-null). */
+  setNoteInlineEditingId?: (id: string | null) => void;
+  /** Trigger inline editing on a JsonViewerNode (called on double-click). */
+  onJsonViewerStartEdit?: (nodeId: string) => void;
+  /** Track which JSON viewer is in inline edit (hides ElementPanel while non-null). */
+  setJsonViewerInlineEditingId?: (id: string | null) => void;
+  /** Persiste patch de um componente — injetado pelo useCanvasNodes para callbacks inline */
+  updateComponent?: (id: string, patch: ComponentPatch) => void;
 }
 
 export interface NodeTypeDescriptor {
@@ -79,4 +90,6 @@ export interface NodeTypeDescriptor {
   selectable?: boolean;
   /** ReactFlow node focusable (default true). */
   focusable?: boolean;
+  /** When set, the node is only draggable from this selector (e.g. `.drag-handle`). */
+  dragHandle?: string;
 }

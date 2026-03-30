@@ -1,11 +1,13 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Braces,
   Database,
   Globe,
   Network,
   Server,
   Square,
   StickyNote,
+  Table,
   User,
 } from "lucide-react";
 import { PANEL_KINDS } from "@/lib/catalogs/panels";
@@ -57,6 +59,8 @@ export function buildCanvasPickerOptions(
     { type: "note", label: t("canvasToolbar.note"), icon: StickyNote },
     { type: "api-group", label: t("quickInsert.typeApiGroup"), icon: Globe },
     { type: "endpoint", label: t("quickInsert.typeEndpoint"), icon: Globe },
+    { type: "db-table", label: t("nodeTypes.db-table"), icon: Table },
+    { type: "json-viewer", label: t("nodeTypes.json-viewer"), icon: Braces },
   );
   for (const p of restPanels) {
     core.push({

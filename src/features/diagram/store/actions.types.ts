@@ -15,6 +15,7 @@ import type {
   IconDefinition,
   Point,
   UserTemplate,
+  ExternalLink,
 } from "../model/diagram.types";
 import type { ServiceDefinition } from "../model/service.types";
 import type { EdgeStyle } from "../model/connection.types";
@@ -44,6 +45,10 @@ export interface AppActions {
   updateComponent: (id: string, patch: ComponentPatch) => void;
   removeComponent: (id: string) => void;
   updateHandleOrder: (componentId: string, side: "incoming" | "outgoing", orderedConnectionIds: string[]) => void;
+
+  addExternalLink: (componentId: string, link: Omit<ExternalLink, "id">) => void;
+  updateExternalLink: (componentId: string, linkId: string, patch: Partial<Omit<ExternalLink, "id">>) => void;
+  removeExternalLink: (componentId: string, linkId: string) => void;
 
   addConnection: (
     sourceId: string,

@@ -1,6 +1,20 @@
 import type { Component, Connection, Diagram } from "@/features/diagram";
-import { isPanelComponent, isApiGroupComponent } from "@/features/diagram";
+import {
+  isApiGroupComponent,
+  isDbTableType,
+  isJsonViewerType,
+  isNoteType,
+  isPanelComponent,
+} from "@/features/diagram";
 import { MAX_HANDLES } from "../constants";
+
+/**
+ * Id do único handle de entrada em note / db-table — único por nó (`elementId`), estável no tempo.
+ * Várias arestas podem apontar para o mesmo handle.
+ */
+export function singleIncomingTargetHandleId(nodeId: string): string {
+  return `in-${nodeId}`;
+}
 
 export interface HandleAssignment {
   connId: string;
@@ -61,10 +75,19 @@ export function buildEdgeHandleAssignments(
       MAX_HANDLES,
       Math.max(1, connectionCountPerNode[conn.sourceId]?.outgoing ?? 1),
     );
-    const inCount = Math.min(
-      MAX_HANDLES,
-      Math.max(1, connectionCountPerNode[conn.targetId]?.incoming ?? 1),
-    );
+    const targetComp = components[conn.targetId];
+    /** Note, db-table, json-viewer: um handle de entrada por nó (`in-<nodeId>`). */
+    const usesSingleIncomingHandle =
+      targetComp !== undefined &&
+      (isNoteType(targetComp.type) ||
+        isDbTableType(targetComp.type) ||
+        isJsonViewerType(targetComp.type));
+    const inCount = usesSingleIncomingHandle
+      ? 1
+      : Math.min(
+          MAX_HANDLES,
+          Math.max(1, connectionCountPerNode[conn.targetId]?.incoming ?? 1),
+        );
 
     const srcOrder = components[conn.sourceId]?.handleOrder?.outgoing;
     const tgtOrder = components[conn.targetId]?.handleOrder?.incoming;
@@ -88,7 +111,9 @@ export function buildEdgeHandleAssignments(
     return {
       connId: conn.id,
       sourceHandle: `source-${sIdx}`,
-      targetHandle: `target-${tIdx}`,
+      targetHandle: usesSingleIncomingHandle
+        ? singleIncomingTargetHandleId(conn.targetId)
+        : `target-${tIdx}`,
     };
   });
 }
@@ -104,8 +129,10 @@ export function buildEffectiveHandleOrder(
     const conn = connMap.get(a.connId);
     if (!conn) continue;
 
-    const sIdx = parseInt(a.sourceHandle.split("-")[1], 10);
-    const tIdx = parseInt(a.targetHandle.split("-")[1], 10);
+    const sourceSlot = /^source-(\d+)$/.exec(a.sourceHandle);
+    const targetSlot = /^target-(\d+)$/.exec(a.targetHandle);
+    const sIdx = sourceSlot ? parseInt(sourceSlot[1], 10) : 0;
+    const tIdx = targetSlot ? parseInt(targetSlot[1], 10) : 0;
 
     if (!result[conn.sourceId]) result[conn.sourceId] = { incoming: [], outgoing: [] };
     if (!result[conn.targetId]) result[conn.targetId] = { incoming: [], outgoing: [] };

@@ -93,6 +93,7 @@ const NodeActions = ({ d, controlsDisabled, colorClass, customColor }: NodeActio
         serviceId={d.serviceId}
         serviceName={d.serviceName}
         linkedDiagramName={d.linkedDiagramName}
+        externalLinks={d.externalLinks}
       />
       {hasDrillDown && (
         <DrillDownButton

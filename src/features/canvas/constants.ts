@@ -24,6 +24,13 @@ export const DEFAULT_NODE_H = 80;
 export const NOTE_DEFAULT_W = 336;
 export const NOTE_DEFAULT_H = 475;
 
+export const NOTE_COLLAPSED_W = 200;
+export const NOTE_COLLAPSED_H = 60;
+
+/** Collapsed database table node (px) — alinhado ao note colapsado. */
+export const DB_TABLE_COLLAPSED_W = 200;
+export const DB_TABLE_COLLAPSED_H = 60;
+
 /** Injected alongside React Flow to match app theme and selection affordances */
 export const CANVAS_STYLES = `
   .react-flow__pane { cursor: default; }

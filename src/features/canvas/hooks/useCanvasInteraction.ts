@@ -31,6 +31,7 @@ export interface UseCanvasInteractionParams {
   showScenes: boolean;
   setShowScenes: Dispatch<SetStateAction<boolean>>;
   setFocusTitleTrigger: Dispatch<SetStateAction<number>>;
+  onNoteStartEdit?: (noteId: string) => void;
 }
 
 export interface UseCanvasInteractionResult {
@@ -70,6 +71,7 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
     showScenes,
     setShowScenes,
     setFocusTitleTrigger,
+    onNoteStartEdit,
   } = params;
 
   const diagramNavLocked = flowState.isRecording || flowState.isPlaying || compareState.isCompareMode;
@@ -126,10 +128,15 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
     addConnection: actions.addConnection,
     screenToFlowPosition: (pos) => reactFlowInstance.screenToFlowPosition(pos),
     onRequestFocusTitle: handleRequestFocusTitle,
+    onNoteStartEdit,
   });
 
   const isPanelOpen =
-    !!(visualState.selectedNodeId || visualState.selectedEdgeId) && !flowState.isRecording && !compareState.isCompareMode;
+    !!(visualState.selectedNodeId || visualState.selectedEdgeId) &&
+    !flowState.isRecording &&
+    !compareState.isCompareMode &&
+    visualState.noteInlineEditingId === null &&
+    visualState.jsonViewerInlineEditingId === null;
 
   const handleSearchSelect = useCallback(
     (componentId: string) => {

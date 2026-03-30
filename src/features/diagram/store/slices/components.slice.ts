@@ -4,15 +4,26 @@ import type {
   ComponentType,
   ApiGroupComponent,
   EndpointComponent,
+  DbTableComponent,
+  JsonViewerComponent,
   PanelComponent,
   NodeLayout,
   Diagram,
   SceneDiff,
+  ExternalLink,
 } from "../../model/diagram.types";
 import { PanelKind } from "../../enums";
 import { generateId } from "../../utils/generate-id";
 import { isPanelComponent, isApiGroupComponent } from "../../model/component.guards";
-import { isPanelType, isNoteType, isEndpointType, isApiGroupType, isC4Type } from "../../model/component-type-constants";
+import {
+  isPanelType,
+  isNoteType,
+  isEndpointType,
+  isApiGroupType,
+  isC4Type,
+  isDbTableType,
+  isJsonViewerType,
+} from "../../model/component-type-constants";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
@@ -144,6 +155,21 @@ function buildComponentForType(
       basePath: "/api/v1",
       protocol: "REST",
     } as ApiGroupComponent;
+  } else if (isDbTableType(type)) {
+    const tableName = name.trim().length > 0 ? name : i18n.t("dbTable.unnamedTable");
+    component = {
+      ...base,
+      name: tableName,
+      type: "db-table",
+      tableName,
+      columns: [],
+    } as DbTableComponent;
+  } else if (isJsonViewerType(type)) {
+    component = {
+      ...base,
+      type: "json-viewer",
+      jsonContent: "{}",
+    } as JsonViewerComponent;
   } else if (isC4Type(type)) {
     component = { ...base, type };
   } else {
@@ -204,6 +230,19 @@ function buildLayoutForComponent(
   }
   if (isNoteType(type)) {
     return { elementId: componentId, x, y, width: NOTE_DEFAULT_W, height: NOTE_DEFAULT_H };
+  }
+  if (isDbTableType(type)) {
+    const dbTableFixedH = 32 + 22 + 20 + 2;
+    return {
+      elementId: componentId,
+      x,
+      y,
+      width: 406,
+      height: dbTableFixedH,
+    };
+  }
+  if (isJsonViewerType(type)) {
+    return { elementId: componentId, x, y, width: 240, height: 88 };
   }
   return { elementId: componentId, x, y };
 }
@@ -419,6 +458,56 @@ export const componentsSlice = (
         if (!comp) return;
         if (!comp.handleOrder) comp.handleOrder = { incoming: [], outgoing: [] };
         comp.handleOrder[side] = orderedConnectionIds;
+        d.updatedAt = new Date().toISOString();
+      });
+    },
+
+    addExternalLink: (componentId: string, link: Omit<ExternalLink, "id">) => {
+      set((state) => {
+        const d = state.diagrams[state.activeDiagramId!];
+        if (!d) return;
+        const scene = resolveActiveScene(d);
+        const inSceneAdds = !!(scene && scene.addedComponents[componentId]);
+        if (!scene || !inSceneAdds) pushHistory(state);
+        const comp = inSceneAdds
+          ? scene!.addedComponents[componentId]
+          : d.snapshot.components[componentId];
+        if (!comp) return;
+        if (!comp.externalLinks) comp.externalLinks = [];
+        comp.externalLinks.push({ ...link, id: generateId("lnk") });
+        d.updatedAt = new Date().toISOString();
+      });
+    },
+
+    updateExternalLink: (componentId: string, linkId: string, patch: Partial<Omit<ExternalLink, "id">>) => {
+      set((state) => {
+        const d = state.diagrams[state.activeDiagramId!];
+        if (!d) return;
+        const scene = resolveActiveScene(d);
+        const inSceneAdds = !!(scene && scene.addedComponents[componentId]);
+        if (!scene || !inSceneAdds) pushHistory(state);
+        const comp = inSceneAdds
+          ? scene!.addedComponents[componentId]
+          : d.snapshot.components[componentId];
+        if (!comp) return;
+        const link = comp.externalLinks?.find((l) => l.id === linkId);
+        if (link) Object.assign(link, patch);
+        d.updatedAt = new Date().toISOString();
+      });
+    },
+
+    removeExternalLink: (componentId: string, linkId: string) => {
+      set((state) => {
+        const d = state.diagrams[state.activeDiagramId!];
+        if (!d) return;
+        const scene = resolveActiveScene(d);
+        const inSceneAdds = !!(scene && scene.addedComponents[componentId]);
+        if (!scene || !inSceneAdds) pushHistory(state);
+        const comp = inSceneAdds
+          ? scene!.addedComponents[componentId]
+          : d.snapshot.components[componentId];
+        if (!comp) return;
+        comp.externalLinks = (comp.externalLinks ?? []).filter((l) => l.id !== linkId);
         d.updatedAt = new Date().toISOString();
       });
     },

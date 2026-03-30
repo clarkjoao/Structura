@@ -8,11 +8,13 @@ import {
   useDiagramActions,
   resolveSceneSnapshot,
 } from "@/features/diagram";
-import type { Component, ComponentType, ServiceDefinition } from "@/features/diagram";
+import type { Component, ComponentPatch, ComponentType, ServiceDefinition } from "@/features/diagram";
 import {
   isPanelComponent,
   isNoteComponent,
   isC4Component,
+  isDbTableComponent,
+  isJsonViewerComponent,
   isSystemType,
   isContainerType,
   isSvgComponentType,
@@ -32,6 +34,7 @@ import {
   LinkedDiagramSection,
   PanelStyleSection,
   ColorAccentSection,
+  ExternalLinksSection,
 } from "./sections";
 import { isComponentType } from "@/features/diagram/model/component-type-constants";
 
@@ -104,8 +107,16 @@ const ComponentPanel = ({
         : null,
     [activeDiagram],
   );
-  const { linkComponentToService, linkComponentToDiagram, addDiagram, setParent, updateNodeLayout } =
-    useDiagramActions();
+  const {
+    linkComponentToService,
+    linkComponentToDiagram,
+    addDiagram,
+    setParent,
+    updateNodeLayout,
+    addExternalLink,
+    updateExternalLink,
+    removeExternalLink,
+  } = useDiagramActions();
   const [tab, setTab] = useState<Tab>("details");
   const [name, setName] = useState(component.name);
   const [desc, setDesc] = useState(component.description);
@@ -118,6 +129,7 @@ const ComponentPanel = ({
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isPanel = isPanelComponent(component);
   const isNote = isNoteComponent(component);
+  const isDbTable = isDbTableComponent(component);
   const isSimple = isPanel || isNote;
   const showIconTab = !isSvgComponentType(component.type);
   const isAws = isAwsType(type);
@@ -144,7 +156,7 @@ const ComponentPanel = ({
 
   const debouncedUpdate = useMemo(
     () =>
-      debounce((patch: Partial<Omit<Component, "id">>) => updateComponent(component.id, patch), FIELD_DEBOUNCE_MS),
+      debounce((patch: ComponentPatch) => updateComponent(component.id, patch), FIELD_DEBOUNCE_MS),
     [component.id, updateComponent],
   );
   useEffect(() => () => debouncedUpdate.cancel(), [debouncedUpdate]);
@@ -213,7 +225,15 @@ const ComponentPanel = ({
     <div className="flex-1 flex flex-col min-h-0">
       <div className="flex items-center justify-between p-3 border-b border-border shrink-0">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          {isPanel ? t("elementPanel.panelHeaderPanel") : isNote ? t("elementPanel.panelHeaderNote") : component.name}
+          {isPanel
+            ? t("elementPanel.panelHeaderPanel")
+            : isNote
+              ? t("elementPanel.panelHeaderNote")
+              : isDbTableComponent(component)
+                ? component.tableName
+                : isJsonViewerComponent(component)
+                  ? component.name || t("jsonViewer.unnamed")
+                  : component.name}
         </h3>
         <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
           <X className="h-4 w-4" />
@@ -282,7 +302,9 @@ const ComponentPanel = ({
               titleInputRef={titleInputRef}
               onChangeName={(value) => {
                 setName(value);
-                debouncedUpdate({ name: value });
+                debouncedUpdate(
+                  isDbTable ? { name: value, tableName: value } : { name: value },
+                );
               }}
               onChangeDesc={(value) => {
                 setDesc(value);
@@ -290,7 +312,7 @@ const ComponentPanel = ({
               }}
               onChangeTech={(value) => {
                 setTech(value);
-                debouncedUpdate({ technology: value || undefined } as Partial<Omit<Component, "id">>);
+                debouncedUpdate({ technology: value || undefined } as ComponentPatch);
               }}
               onChangeTagInput={setTagInput}
               onRemoveTag={handleRemoveTag}
@@ -313,7 +335,9 @@ const ComponentPanel = ({
                 titleInputRef={titleInputRef}
                 onChangeName={(value) => {
                   setName(value);
-                  debouncedUpdate({ name: value });
+                  debouncedUpdate(
+                    isDbTable ? { name: value, tableName: value } : { name: value },
+                  );
                 }}
                 onChangeDesc={(value) => {
                   setDesc(value);
@@ -321,42 +345,44 @@ const ComponentPanel = ({
                 }}
                 onChangeTech={(value) => {
                   setTech(value);
-                  debouncedUpdate({ technology: value || undefined } as Partial<Omit<Component, "id">>);
+                  debouncedUpdate({ technology: value || undefined } as ComponentPatch);
                 }}
                 onChangeTagInput={setTagInput}
                 onRemoveTag={handleRemoveTag}
                 onCommitTagInput={handleCommitTagInput}
               />
-              <div>
-                <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-                  {t("endpointPanel.type")}
-                </label>
-                <select
-                  value={type}
-                  onChange={(event) => {
-                    const nextType = event.target.value as ComponentType;
-                    setType(nextType);
-                    if (!nextType.startsWith("aws-")) setAwsService("");
-                    updateComponent(component.id, {
-                      type: nextType,
-                      awsService: nextType.startsWith("aws-") && awsService ? awsService : undefined,
-                    } as Partial<Omit<Component, "id">>);
-                  }}
-                  className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                >
-                  <optgroup label={t("elementPanel.c4ModelGroup")}>
-                    <option value="person">{t("colors.c4Person")}</option>
-                    <option value="system">{t("colors.c4System")}</option>
-                    <option value="container">{t("colors.c4Container")}</option>
-                    <option value="component">{t("colors.c4Component")}</option>
-                  </optgroup>
-                  {AWS_CATEGORIES.map((category) => (
-                    <optgroup key={category.id} label={t("endpointPanel.awsCategory", { name: category.name })}>
-                      <option value={category.id}>{category.name}</option>
+              {!isDbTable && (
+                <div>
+                  <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+                    {t("endpointPanel.type")}
+                  </label>
+                  <select
+                    value={type}
+                    onChange={(event) => {
+                      const nextType = event.target.value as ComponentType;
+                      setType(nextType);
+                      if (!nextType.startsWith("aws-")) setAwsService("");
+                      updateComponent(component.id, {
+                        type: nextType,
+                        awsService: nextType.startsWith("aws-") && awsService ? awsService : undefined,
+                      } as Partial<Omit<Component, "id">>);
+                    }}
+                    className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  >
+                    <optgroup label={t("elementPanel.c4ModelGroup")}>
+                      <option value="person">{t("colors.c4Person")}</option>
+                      <option value="system">{t("colors.c4System")}</option>
+                      <option value="container">{t("colors.c4Container")}</option>
+                      <option value="component">{t("colors.c4Component")}</option>
                     </optgroup>
-                  ))}
-                </select>
-              </div>
+                    {AWS_CATEGORIES.map((category) => (
+                      <optgroup key={category.id} label={t("endpointPanel.awsCategory", { name: category.name })}>
+                        <option value={category.id}>{category.name}</option>
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
+              )}
               {isAws && (
                 <div>
                   <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
@@ -406,7 +432,9 @@ const ComponentPanel = ({
                 showTags
                 onChangeName={(value) => {
                   setName(value);
-                  debouncedUpdate({ name: value });
+                  debouncedUpdate(
+                    isDbTable ? { name: value, tableName: value } : { name: value },
+                  );
                 }}
                 onChangeDesc={(value) => {
                   setDesc(value);
@@ -414,7 +442,7 @@ const ComponentPanel = ({
                 }}
                 onChangeTech={(value) => {
                   setTech(value);
-                  debouncedUpdate({ technology: value || undefined } as Partial<Omit<Component, "id">>);
+                  debouncedUpdate({ technology: value || undefined } as ComponentPatch);
                 }}
                 onChangeTagInput={setTagInput}
                 onRemoveTag={handleRemoveTag}
@@ -476,7 +504,16 @@ const ComponentPanel = ({
             onChangeLinked={(diagramId) => linkComponentToDiagram(component.id, diagramId)}
             />
           )}
-         
+          {!isSimple && (
+            <ExternalLinksSection
+              componentId={component.id}
+              links={component.externalLinks ?? []}
+              onAdd={(link) => addExternalLink(component.id, link)}
+              onUpdate={(linkId, patch) => updateExternalLink(component.id, linkId, patch)}
+              onRemove={(linkId) => removeExternalLink(component.id, linkId)}
+            />
+          )}
+
           <div>
             <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
               {t("elementPanel.idLabel")}

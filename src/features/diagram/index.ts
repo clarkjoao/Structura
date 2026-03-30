@@ -1,5 +1,13 @@
 /** Enums for diagram domain (ServiceSource, ImportPanel, etc.) */
-export { ServiceSource, ImportPanel, PanelKind, EdgeStyle, StrokeStyle, EdgeMarker } from "./enums";
+export {
+  ServiceSource,
+  ImportPanel,
+  PanelKind,
+  EdgeStyle,
+  StrokeStyle,
+  EdgeMarker,
+  ExternalLinkType,
+} from "./enums";
 
 /** All core domain types (Component, Connection, Flow, Diagram, etc.) */
 export type {
@@ -17,6 +25,9 @@ export type {
   EndpointComponent,
   UnknownComponent,
   SvgComponent,
+  DbTableComponent,
+  DbColumn,
+  JsonViewerComponent,
   EndpointHandler,
   HttpMethod,
   Connection,
@@ -39,6 +50,7 @@ export type {
   SceneDiff,
   UserTemplate,
   UserTemplateComponent,
+  ExternalLink,
 } from "./model/diagram.types";
 
 export { isAwsIcon, isLucideIcon, isSvgIcon } from "./model/diagram.types";
@@ -122,6 +134,8 @@ export {
   isEndpointComponent,
   isUnknownComponent,
   isSvgComponent,
+  isDbTableComponent,
+  isJsonViewerComponent,
 } from "./model/component.guards";
 
 /** ComponentType / PanelKind constants and type guards */
@@ -133,6 +147,8 @@ export {
   COMPONENT_TYPE_ENDPOINT,
   COMPONENT_TYPE_UNKNOWN,
   COMPONENT_TYPE_SVG,
+  COMPONENT_TYPE_DB_TABLE,
+  COMPONENT_TYPE_JSON_VIEWER,
   CANVAS_PANEL_NOTE_TYPES,
   CANVAS_API_TYPES,
   PANEL_KIND_VALUES,
@@ -143,6 +159,8 @@ export {
   isSvgComponentType,
   isEndpointType,
   isApiGroupType,
+  isDbTableType,
+  isJsonViewerType,
   isSystemType,
   isContainerType,
   isCanvasStructuralType,

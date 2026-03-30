@@ -30,6 +30,10 @@ const ALLOWED_COMPONENT_PATCH_KEYS = new Set<string>([
   "path",
   "endpointDescription",
   "handlers",
+  "tableName",
+  "columns",
+  "jsonContent",
+  "schemaRef",
   "templateId",
   "registryServiceId",
 ]);
@@ -63,6 +67,7 @@ const NODE_DATA_UI_ONLY_KEYS = new Set<string>([
   "onDrillDown",
   "onEmbed",
   "onReorderHandle",
+  "onCommit",
   "onHandleClick",
   "coverageFlowNames",
   "activeHandleId",
@@ -70,6 +75,10 @@ const NODE_DATA_UI_ONLY_KEYS = new Set<string>([
   "compareBadges",
   "sceneBadge",
   "elementId",
+  "onStartEdit",
+  "onInlineEditingChange",
+  "layoutWidth",
+  "layoutHeight",
 ]);
 
 function removeUndefinedEntries(record: Record<string, unknown>): Record<string, unknown> {
