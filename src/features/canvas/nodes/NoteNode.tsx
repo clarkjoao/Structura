@@ -109,14 +109,12 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
 
   useEffect(() => {
     // Descriptor supplies a stub; replace with the handler so double-click starts inline edit.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (d as any).onStartEdit = handleStartEdit;
+    d.onStartEdit = handleStartEdit;
   }, [d, handleStartEdit]);
 
   useEffect(() => {
     if (!d.onClickBody) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (d as any).onClickBody = handleStartEdit;
+    d.onClickBody = handleStartEdit;
   }, [d, handleStartEdit]);
 
   useEffect(() => {

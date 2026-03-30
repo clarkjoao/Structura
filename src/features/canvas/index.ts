@@ -10,3 +10,6 @@ export { default as PanelNode } from "./nodes/PanelNode";
 export { default as NoteNode } from "./nodes/NoteNode";
 export { default as NodeContextMenu } from "./panels/NodeContextMenu";
 export { nodeTypes, NODE_TYPE_REGISTRY } from "./nodes/node-types";
+export { FlowModeProvider, useFlowMode } from "./flow";
+export type { BranchOwnerInfo, RecordingContext, RecordingFinalizeData } from "./flow";
+export { EmbedModal } from "./components/EmbedModal";

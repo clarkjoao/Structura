@@ -9,8 +9,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { ReactFlowProvider } from "@xyflow/react";
 import { toast } from "sonner";
-import { Canvas } from "@/features/canvas";
-import { FlowModeProvider } from "@/features/canvas/flow";
+import { Canvas, FlowModeProvider } from "@/features/canvas";
 import { CollabProvider, useCollab } from "./CollabProvider";
 import { CollabCursors } from "./CollabCursors";
 import { CollabJoinModal } from "./CollabJoinModal";
@@ -32,7 +31,7 @@ function CollabRoomInner() {
   const { importDiagram } = useDiagramActions();
   const diagram = useActiveDiagram();
   const diagramExists = Boolean(diagram);
-  const hostName = session?.isHost ? session.localUser.name : "Host";
+  const hostName = session?.isHost ? session.localUser.name : t("collaboration.hostFallback");
   const isSessionClosed = sessionClosedByHost || hostDisconnected;
   const lastCursorAtRef = useRef(0);
 

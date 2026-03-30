@@ -111,8 +111,7 @@ const JsonViewerNode = memo(({ data, selected }: NodeProps) => {
 
   useEffect(() => {
     // Descriptor supplies a stub; replace so double-click invokes real inline edit.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (diagramNodeData as any).onStartEdit = handleStartEdit;
+    diagramNodeData.onStartEdit = handleStartEdit;
   }, [diagramNodeData, handleStartEdit]);
 
   const handleToggleExpand = useCallback(() => {

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
-import { FlowModeProvider, type RecordingFinalizeData } from "@/features/canvas/flow";
+import { FlowModeProvider, type RecordingFinalizeData } from "@/features/canvas";
 import {
   useActiveDiagram,
   useActiveDiagramId,

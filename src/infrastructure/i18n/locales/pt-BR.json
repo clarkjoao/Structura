@@ -715,6 +715,7 @@
     "and": "e",
     "alsoEditingSuffix_one": "também está editando este elemento",
     "alsoEditingSuffix_other": "também estão editando este elemento",
+    "hostFallback": "Host",
     "peerFallback": "Convidado",
     "importedDiagramName": "{{name}} (de {{host}})",
     "importSuccess": "Importamos “{{name}}”",

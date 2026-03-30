@@ -215,6 +215,14 @@ export function startFileSystemSync(): void {
         fileSystemAdapter.setFolders(diagramState.folders);
 
         const prevDiagrams = previousDiagramState.diagrams;
+        for (const [id, previousDiagram] of Object.entries(prevDiagrams)) {
+          if (!diagramState.diagrams[id]) {
+            fileSystemAdapter.setFolders(previousDiagramState.folders);
+            await fileSystemAdapter.deleteDiagram(id, previousDiagram);
+          }
+        }
+
+        fileSystemAdapter.setFolders(diagramState.folders);
         for (const [id, diagram] of Object.entries(diagramState.diagrams)) {
           if (diagram !== prevDiagrams[id]) {
             await fileSystemAdapter.writeDiagram(diagram);
