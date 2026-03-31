@@ -3,8 +3,12 @@ import { isReactFlowParentPanelType } from "@/features/diagram";
 import { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../constants";
 
 export function getPanelDimensions(node: Node): { width: number; height: number } {
-  const w = (node.style?.width as number) ?? PANEL_DEFAULT_W;
-  const h = (node.style?.height as number) ?? PANEL_DEFAULT_H;
+  const widthFromStyle =
+    typeof node.style?.width === "number" ? node.style.width : undefined;
+  const heightFromStyle =
+    typeof node.style?.height === "number" ? node.style.height : undefined;
+  const w = widthFromStyle ?? node.measured?.width ?? PANEL_DEFAULT_W;
+  const h = heightFromStyle ?? node.measured?.height ?? PANEL_DEFAULT_H;
   return { width: w, height: h };
 }
 

@@ -8,6 +8,7 @@ import {
   isEndpointComponent,
   isEndpointType,
   isReactFlowParentPanelType,
+  isApiGroupComponent,
 } from "@/features/diagram";
 import {
   isOutsideParentBounds,
@@ -85,6 +86,7 @@ export function useNodeDragParenting({
       const r = resolveCanvasSnapshot(diagram);
       const comp = r.components[change.id];
       if (comp && isEndpointComponent(comp)) return;
+      if (comp && isApiGroupComponent(comp)) return;
 
       if (!change.dragging) {
         // ReactFlow fires dragging=false immediately before onNodeDragStop.
@@ -193,6 +195,13 @@ export function useNodeDragParenting({
 
       const r = resolveCanvasSnapshot(diagram);
       if (!canMoveNodeInSceneMode(diagram, draggedNode.id)) return;
+      const component = r.components[draggedNode.id];
+
+      // ApiGroup cannot be parented to panel by design. Persist plain move only.
+      if (component && isApiGroupComponent(component)) {
+        commitNodeDrag(draggedNode.id, null, draggedNode.position);
+        return;
+      }
 
       const components = r.components;
       const isDraggedPanel = isReactFlowParentPanelType(nodeType);
