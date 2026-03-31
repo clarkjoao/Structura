@@ -39,6 +39,7 @@ export function useLocalNodes(
   diagram?: Diagram | null,
 ) {
   const [localNodes, setLocalNodes] = useState<Node[]>([]);
+  const draggingNodeIdsRef = useRef(new Set<string>());
 
   const prevStoreNodesRef = useRef<Node[] | undefined>(undefined);
   const prevDiagramRef = useRef<Diagram | null | undefined>(undefined);
@@ -61,7 +62,9 @@ export function useLocalNodes(
         const ln = localMap.get(sn.id);
         if (!ln) return sn;
 
-        const useRemotePosition = sn.parentId !== ln.parentId;
+        const useRemotePosition =
+          sn.parentId !== ln.parentId ||
+          !draggingNodeIdsRef.current.has(sn.id);
 
         return {
           ...ln,
@@ -85,6 +88,16 @@ export function useLocalNodes(
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
       if (!changes.length) return;
+
+      for (const change of changes) {
+        if (change.type !== "position") continue;
+        if (change.dragging) {
+          draggingNodeIdsRef.current.add(change.id);
+        } else {
+          draggingNodeIdsRef.current.delete(change.id);
+        }
+      }
+
       const sanitizedChanges = changes.map((change) => {
         if (change.type !== "replace") return change;
         const previousNode = localNodesRef.current.find(

@@ -195,11 +195,45 @@ export function useNodeDragParenting({
 
       const r = resolveCanvasSnapshot(diagram);
       if (!canMoveNodeInSceneMode(diagram, draggedNode.id)) return;
+
+      const persistOtherSelectedNodes = () => {
+        const otherSelectedNodes = nodes.filter(
+          (node) =>
+            node.selected &&
+            node.id !== draggedNode.id &&
+            !node.parentId,
+        );
+
+        for (const node of otherSelectedNodes) {
+          const otherType = typeof node.type === "string" ? node.type : "";
+          if (isEndpointType(otherType)) continue;
+          if (!canMoveNodeInSceneMode(diagram, node.id)) continue;
+          updateNodeLayout(node.id, node.position);
+        }
+      };
+      const persistSelectedChildren = () => {
+        const selectedChildren = nodes.filter(
+          (node) =>
+            node.selected &&
+            node.id !== draggedNode.id &&
+            !!node.parentId,
+        );
+
+        for (const childNode of selectedChildren) {
+          const childType = typeof childNode.type === "string" ? childNode.type : "";
+          if (isEndpointType(childType)) continue;
+          if (!canMoveNodeInSceneMode(diagram, childNode.id)) continue;
+          updateNodeLayout(childNode.id, childNode.position);
+        }
+      };
+
       const component = r.components[draggedNode.id];
 
       // ApiGroup cannot be parented to panel by design. Persist plain move only.
       if (component && isApiGroupComponent(component)) {
         commitNodeDrag(draggedNode.id, null, draggedNode.position);
+        persistOtherSelectedNodes();
+        persistSelectedChildren();
         return;
       }
 
@@ -209,7 +243,11 @@ export function useNodeDragParenting({
       if (isDraggedPanel) {
         const descendantIds = getDescendantIds(draggedNode.id, components);
         const match = findPanelContainingPoint(nodes, draggedNode.position.x, draggedNode.position.y);
-        if (match && descendantIds.has(match.id)) return;
+        if (match && descendantIds.has(match.id)) {
+          persistOtherSelectedNodes();
+          persistSelectedChildren();
+          return;
+        }
       }
 
       const parent = draggedNode.parentId
@@ -226,6 +264,8 @@ export function useNodeDragParenting({
         }
         // Still inside parent — position was already written by updateNodeLayout
         // during the drag (dragging=true changes), no commit needed here.
+        persistOtherSelectedNodes();
+        persistSelectedChildren();
         return;
       }
 
@@ -242,8 +282,11 @@ export function useNodeDragParenting({
         // Plain move — no parent change, just commit the position with history
         commitNodeDrag(draggedNode.id, null, draggedNode.position);
       }
+
+      persistOtherSelectedNodes();
+      persistSelectedChildren();
     },
-    [diagram, nodes, commitNodeDrag],
+    [diagram, nodes, commitNodeDrag, updateNodeLayout],
   );
 
   return { dragTargetPanelId, unparentCandidatePanelId, onNodesChange, onNodeDragStop };
