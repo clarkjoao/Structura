@@ -3,7 +3,7 @@ export {
   API_GROUP_ENDPOINT_H as ENDPOINT_H,
   API_GROUP_FOOTER_H as FOOTER_H,
   API_GROUP_FRAME_W as FRAME_W,
-} from "@/features/diagram/model/layout.constants";
+} from "@/features/diagram";
 
 export const METHOD_COLORS: Record<string, string> = {
   GET: "#1D9E75",

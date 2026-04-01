@@ -5,7 +5,7 @@ import { EdgePayloadOverlay } from "./EdgePayloadOverlay";
 import { EdgeSvgLayer } from "./EdgeSvgLayer";
 import { useCustomEdge } from "./useCustomEdge";
 import type { EdgeData } from "./edgeData.types";
-import { useCollabHighlight } from "@/features/collaboration/useCollabHighlight";
+import { useCollabHighlight } from "@/features/collaboration";
 
 export type { EdgeData };
 

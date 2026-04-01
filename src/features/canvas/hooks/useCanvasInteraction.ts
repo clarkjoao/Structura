@@ -1,4 +1,4 @@
-import { useCallback, useRef, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
+import { useCallback, useEffect, useRef, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
 import type { TFunction } from "i18next";
 import type { Node, ReactFlowInstance } from "@xyflow/react";
 import type { NavigateFunction } from "react-router-dom";
@@ -118,6 +118,10 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
   const handleRequestFocusTitle = useCallback(() => {
     setFocusTitleTrigger((value) => value + 1);
   }, [setFocusTitleTrigger]);
+
+  useEffect(() => {
+    setFocusTitleTrigger(0);
+  }, [visualState.selectedNodeId, visualState.selectedEdgeId, setFocusTitleTrigger]);
 
   const eventHandlers = useCanvasEventHandlers({
     visualState,

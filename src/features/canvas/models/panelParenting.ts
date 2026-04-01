@@ -1,10 +1,15 @@
 import type { Node } from "@xyflow/react";
+import type { Component, NodeLayout } from "@/features/diagram";
 import { isReactFlowParentPanelType } from "@/features/diagram";
 import { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../constants";
 
 export function getPanelDimensions(node: Node): { width: number; height: number } {
-  const w = (node.style?.width as number) ?? PANEL_DEFAULT_W;
-  const h = (node.style?.height as number) ?? PANEL_DEFAULT_H;
+  const widthFromStyle =
+    typeof node.style?.width === "number" ? node.style.width : undefined;
+  const heightFromStyle =
+    typeof node.style?.height === "number" ? node.style.height : undefined;
+  const w = widthFromStyle ?? node.measured?.width ?? PANEL_DEFAULT_W;
+  const h = heightFromStyle ?? node.measured?.height ?? PANEL_DEFAULT_H;
   return { width: w, height: h };
 }
 
@@ -36,11 +41,31 @@ export function findPanelContainingPoint(
   absX: number,
   absY: number,
   excludeParentId?: string | null,
+  nodeLayouts?: Record<string, NodeLayout>,
+  components?: Record<string, Component>,
 ): Node | undefined {
   const panels = nodes.filter(
     (n) => isReactFlowParentPanelType(String(n.type)) && n.id !== excludeParentId,
   );
-  return panels.find((p) => isInsidePanel(p, absX, absY));
+  return panels.find((panel) => {
+    let absolutePosition = panel.position;
+    if (panel.parentId && nodeLayouts && components) {
+      absolutePosition = resolveAbsolutePosition(
+        panel.id,
+        panel.position,
+        components,
+        nodeLayouts,
+      );
+    }
+
+    const { width, height } = getPanelDimensions(panel);
+    return (
+      absX > absolutePosition.x &&
+      absY > absolutePosition.y &&
+      absX < absolutePosition.x + width &&
+      absY < absolutePosition.y + height
+    );
+  });
 }
 
 export function toAbsolutePosition(
@@ -61,4 +86,27 @@ export function toRelativePosition(
     x: absPos.x - parentPos.x,
     y: absPos.y - parentPos.y,
   };
+}
+
+/**
+ * Converts a node relative position to absolute by walking parent chain.
+ * Pure function without side effects.
+ */
+export function resolveAbsolutePosition(
+  nodeId: string,
+  relPos: { x: number; y: number },
+  components: Record<string, Component>,
+  nodeLayouts: Record<string, NodeLayout>,
+): { x: number; y: number } {
+  const component = components[nodeId];
+  if (!component?.parentId) return relPos;
+  const parentLayout = nodeLayouts[component.parentId];
+  if (!parentLayout) return relPos;
+
+  return resolveAbsolutePosition(
+    component.parentId,
+    { x: relPos.x + parentLayout.x, y: relPos.y + parentLayout.y },
+    components,
+    nodeLayouts,
+  );
 }

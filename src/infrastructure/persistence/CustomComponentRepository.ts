@@ -1,5 +1,5 @@
 import { defaultStorage } from "./LocalStorageAdapter";
-import type { CustomComponentTemplate } from "@/features/custom-components/customComponent.types";
+import type { CustomComponentTemplate } from "@/features/custom-components";
 
 const CUSTOM_COMPONENTS_STORAGE_KEY = "custom_components";
 

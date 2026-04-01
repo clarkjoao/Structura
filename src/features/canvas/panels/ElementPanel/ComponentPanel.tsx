@@ -36,7 +36,7 @@ import {
   ColorAccentSection,
   ExternalLinksSection,
 } from "./sections";
-import { isComponentType } from "@/features/diagram/model/component-type-constants";
+import { isComponentType } from "@/features/diagram";
 
 const DEFAULT_NOTE_COLOR = "hsl(45 25% 97%)";
 

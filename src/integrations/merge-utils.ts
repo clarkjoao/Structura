@@ -1,8 +1,5 @@
 import { ServiceSource } from "@/features/diagram";
-import type {
-  ServiceDefinition,
-  ServiceSourceRef,
-} from "@/features/diagram/model/service.types";
+import type { ServiceDefinition, ServiceSourceRef } from "@/features/diagram";
 
 export function dedupeStringsPreserveOrder(values: string[]): string[] {
   const seen = new Set<string>();

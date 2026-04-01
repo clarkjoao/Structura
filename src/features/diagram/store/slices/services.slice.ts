@@ -4,6 +4,7 @@ import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 import { SEED_SERVICE_REGISTRY } from "@/fixtures/seeds";
 import { normalizeSources } from "@/integrations/merge-utils";
+import { getActiveDiagram } from "./get-active-diagram";
 
 function patchTouchesLinkedComponentFields(
   patch: Partial<Omit<ServiceDefinition, "id">>,
@@ -162,7 +163,7 @@ export const servicesSlice = (
 
     linkComponentToService: (componentId: string, serviceId: string | undefined) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId!];
+        const d = getActiveDiagram(state);
         if (!d) return;
         const sid = d.activeSceneId ?? null;
         const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
@@ -182,7 +183,7 @@ export const servicesSlice = (
 
     linkComponentToDiagram: (componentId: string, diagramId: string | undefined) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId!];
+        const d = getActiveDiagram(state);
         if (!d) return;
         const sid = d.activeSceneId ?? null;
         const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;

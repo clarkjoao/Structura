@@ -17,7 +17,9 @@ import {
   useAllDiagrams,
   useFolders,
   useDiagramActions,
+  removeRecentRef,
 } from "@/features/diagram";
+import { deletePreview } from "@/lib/diagram-preview/previewCache";
 import type { Level, Diagram } from "@/features/diagram";
 import {
   Breadcrumb,
@@ -224,7 +226,9 @@ export default function DashboardPage() {
     const diagramIds = [...selectedIds].filter((id) => diagramIdSet.has(id));
     const folderIds = [...selectedIds].filter((id) => folders[id]);
     for (const id of diagramIds) {
+      deletePreview(id);
       deleteDiagram(id);
+      removeRecentRef(id);
     }
     for (const id of folderIds) {
       deleteFolder(id);
@@ -242,7 +246,9 @@ export default function DashboardPage() {
 
   const handleDelete = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
+    deletePreview(id);
     deleteDiagram(id);
+    removeRecentRef(id);
   };
 
   const handleAddDiagram = useCallback(

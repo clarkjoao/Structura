@@ -21,15 +21,17 @@ import { DiagramCommandPalette } from "./navigation/DiagramCommandPalette";
 import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 import { Eye } from "lucide-react";
 import { useCanvasController } from "./hooks/useCanvasController";
-import { resolveCanvasSnapshot } from "@/features/diagram";
+import { getCachedCanvasSnapshot } from "@/features/diagram";
 import { CANVAS_STYLES } from "./constants";
 import CustomEdge from "./edges/CustomEdge";
 import type { CanvasProps } from "./canvas.types";
-import { SaveCustomComponentModal } from "@/features/custom-components/SaveCustomComponentModal";
-import { useCustomComponentStore } from "@/features/custom-components";
-import { createTemplateDataFromNode } from "@/features/custom-components/utils/customComponentTemplate.utils";
-import { CUSTOM_COMPONENT_DRAG_MIME } from "@/features/custom-components/customComponent.constants";
-import { useCustomComponentLibrary } from "@/features/custom-components/hooks/useCustomComponentLibrary";
+import {
+  SaveCustomComponentModal,
+  useCustomComponentStore,
+  createTemplateDataFromNode,
+  CUSTOM_COMPONENT_DRAG_MIME,
+  useCustomComponentLibrary,
+} from "@/features/custom-components";
 
 const canvasEdgeTypes = { c4: CustomEdge };
 
@@ -48,6 +50,7 @@ const Canvas = (props: CanvasProps = {}) => {
     onNodesChange,
     onNodeDragStop,
     eventHandlers,
+    interactionMode,
     isRecording,
     actions,
     showSearch,
@@ -81,7 +84,7 @@ const Canvas = (props: CanvasProps = {}) => {
     );
   }
 
-  const resolvedSnapshot = resolveCanvasSnapshot(diagram);
+  const resolvedSnapshot = getCachedCanvasSnapshot(diagram);
 
   return (
     <HandleHighlightProvider
@@ -125,12 +128,14 @@ const Canvas = (props: CanvasProps = {}) => {
           <div
               onContextMenu={(e) => e.preventDefault()}
               onDragOver={(event) => {
+                if (!interactionMode.canEditCanvas) return;
                 if (event.dataTransfer.types.includes(CUSTOM_COMPONENT_DRAG_MIME)) {
                   event.preventDefault();
                   event.dataTransfer.dropEffect = "copy";
                 }
               }}
               onDrop={(event) => {
+                if (!interactionMode.canEditCanvas) return;
                 const templateId = event.dataTransfer.getData(CUSTOM_COMPONENT_DRAG_MIME);
                 if (!templateId) return;
                 event.preventDefault();
@@ -182,9 +187,9 @@ const Canvas = (props: CanvasProps = {}) => {
               fitView
               fitViewOptions={{ padding: 0.3 }}
               onMoveEnd={eventHandlers.onMoveEnd}
-              nodesDraggable={!isRecording && !isCompareMode}
-              nodesConnectable={!isRecording && !isCompareMode}
-              elementsSelectable={!isRecording && !isCompareMode}
+              nodesDraggable={interactionMode.canEditCanvas}
+              nodesConnectable={interactionMode.canEditCanvas}
+              elementsSelectable={interactionMode.canEditCanvas}
               proOptions={{ hideAttribution: true }}
               className="bg-background"
             >

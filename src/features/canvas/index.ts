@@ -13,3 +13,5 @@ export { nodeTypes, NODE_TYPE_REGISTRY } from "./nodes/node-types";
 export { FlowModeProvider, useFlowMode } from "./flow";
 export type { BranchOwnerInfo, RecordingContext, RecordingFinalizeData } from "./flow";
 export { EmbedModal } from "./components/EmbedModal";
+export { useInteractionMode } from "./hooks/useInteractionMode";
+export type { InteractionMode } from "./hooks/useInteractionMode";

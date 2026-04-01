@@ -4,7 +4,7 @@ import { Play } from "lucide-react";
 import type { EndpointHandler, HttpMethod } from "@/features/diagram";
 import { ENDPOINT_H, METHOD_COLORS } from "./ApiGroupNode/constants";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
-import { useCollabHighlight } from "@/features/collaboration/useCollabHighlight";
+import { useCollabHighlight } from "@/features/collaboration";
 
 export { METHOD_COLORS } from "./ApiGroupNode/constants";
 

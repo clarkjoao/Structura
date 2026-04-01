@@ -1,6 +1,11 @@
 import type { ReactFlowInstance, Node } from "@xyflow/react";
 import type { Diagram } from "@/features/diagram";
-import { resolveCanvasSnapshot } from "@/features/diagram";
+import {
+  isApiGroupComponent,
+  isEndpointComponent,
+  isPanelComponent,
+  getCachedCanvasSnapshot,
+} from "@/features/diagram";
 
 export const PASTE_OFFSET = 20;
 
@@ -46,13 +51,35 @@ export function getSelectedNodes(rf: ReactFlowInstance, fallbackId: string | nul
 }
 
 export function getCopyableIds(diagram: Diagram, nodes: Node[]): string[] {
-  const r = resolveCanvasSnapshot(diagram);
-  return nodes
+  const r = getCachedCanvasSnapshot(diagram);
+  const selectedIds = nodes
     .map((n) => n.id)
     .filter((id) => {
-      const c = r.components[id];
-      return c && c.type !== "panel" && c.type !== "note";
+      const component = r.components[id];
+      if (!component) return false;
+      if (isEndpointComponent(component)) return false;
+      return true;
     });
+
+  const expandedIds = new Set(selectedIds);
+
+  const addChildrenRecursively = (parentId: string): void => {
+    for (const component of Object.values(r.components)) {
+      if (component.parentId !== parentId || expandedIds.has(component.id)) continue;
+      expandedIds.add(component.id);
+      addChildrenRecursively(component.id);
+    }
+  };
+
+  for (const selectedId of selectedIds) {
+    const component = r.components[selectedId];
+    if (!component) continue;
+    if (isPanelComponent(component) || isApiGroupComponent(component)) {
+      addChildrenRecursively(selectedId);
+    }
+  }
+
+  return [...expandedIds];
 }
 
 /**
@@ -65,7 +92,7 @@ export function getOffsetPositionOfNodes(
   diagram: Diagram,
   ids: string[],
 ): { x: number; y: number } | null {
-  const r = resolveCanvasSnapshot(diagram);
+  const r = getCachedCanvasSnapshot(diagram);
   const layouts = r.nodeLayouts;
   let minX = Infinity;
   let minY = Infinity;
@@ -109,7 +136,7 @@ export function getCenterOfNodes(
   ids: string[],
   offset = 20,
 ): { x: number; y: number } {
-  const r = resolveCanvasSnapshot(diagram);
+  const r = getCachedCanvasSnapshot(diagram);
   const layouts = r.nodeLayouts;
   let sumX = 0;
   let sumY = 0;

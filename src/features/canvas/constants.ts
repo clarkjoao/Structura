@@ -16,7 +16,7 @@ export {
   NOTE_COLLAPSED_H,
   DB_TABLE_COLLAPSED_W,
   DB_TABLE_COLLAPSED_H,
-} from "@/features/diagram/model/layout.constants";
+} from "@/features/diagram";
 
 /** Injected alongside React Flow to match app theme and selection affordances */
 export const CANVAS_STYLES = `

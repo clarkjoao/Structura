@@ -3,11 +3,13 @@ import { useDiagramStore } from "../diagram.store";
 import { getCachedCanvasSnapshot } from "../../utils/snapshot-cache";
 
 export const useConnectionIds = () =>
-  useDiagramStore((s) => {
-    if (!s.activeDiagramId) return [];
-    const d = s.diagrams[s.activeDiagramId];
-    return Object.keys(getCachedCanvasSnapshot(d).connections);
-  });
+  useDiagramStore(
+    useShallow((s) => {
+      if (!s.activeDiagramId) return [];
+      const d = s.diagrams[s.activeDiagramId];
+      return Object.keys(getCachedCanvasSnapshot(d).connections);
+    }),
+  );
 
 export const useConnection = (id: string) =>
   useDiagramStore((s) => {

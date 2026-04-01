@@ -7,11 +7,10 @@ import {
   isDiagramCompareMode,
   isPanelComponent,
   isReactFlowParentPanelType,
-  resolveCanvasSnapshot,
+  getCachedCanvasSnapshot,
 } from "@/features/diagram";
+import type { ResolvedSnapshot } from "@/features/diagram";
 import { getSelectedNodes, isModKeyPressed, type KeyHandler } from "./helpers";
-
-type ResolvedCanvasSnapshot = ReturnType<typeof resolveCanvasSnapshot>;
 
 interface UseGroupShortcutsParams {
   diagram: Diagram | null | undefined;
@@ -25,7 +24,7 @@ interface UseGroupShortcutsParams {
     position: { x: number; y: number },
     dimensions?: { width: number; height: number },
   ) => void;
-  resolvedSnapshot: ResolvedCanvasSnapshot | null;
+  resolvedSnapshot: ResolvedSnapshot | null;
 }
 
 /**

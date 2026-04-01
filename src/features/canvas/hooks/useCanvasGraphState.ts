@@ -13,7 +13,7 @@ import { useConnectionInternalsSync } from "./useConnectionInternalsSync";
 type FlowSlice = ReturnType<typeof import("./useCanvasFlowState").useCanvasFlowState>;
 type CompareSlice = ReturnType<typeof import("./useCanvasCompareState").useCanvasCompareState>;
 type DiagramActions = ReturnType<typeof import("@/features/diagram").useDiagramActions>;
-type ResolvedSnapshot = ReturnType<typeof import("@/features/diagram").resolveCanvasSnapshot>;
+type ResolvedSnapshot = import("@/features/diagram").ResolvedSnapshot;
 type NodeDragParenting = ReturnType<typeof import("./useNodeDragParenting").useNodeDragParenting>;
 
 export interface UseCanvasGraphStateParams {

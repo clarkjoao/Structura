@@ -44,9 +44,11 @@ import { AwsBrowseView } from "./element-picker/AwsBrowseView";
 import { RegistryCategoryPanel } from "./element-picker/RegistryCategoryPanel";
 import AwsIcon from "../nodes/AwsIcon";
 import { isPanelType } from "@/features/diagram";
-import { useCustomComponentLibrary } from "@/features/custom-components/hooks/useCustomComponentLibrary";
-import { NodeTemplatePreviewCard } from "@/features/custom-components/components/NodeTemplatePreviewCard";
-import { useCustomComponentStore } from "@/features/custom-components";
+import {
+  useCustomComponentLibrary,
+  NodeTemplatePreviewCard,
+  useCustomComponentStore,
+} from "@/features/custom-components";
 
 const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const { t } = useTranslation();
@@ -111,10 +113,14 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        onClose();
+      }
     };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [onClose]);
 
   const q = search.trim().toLowerCase();

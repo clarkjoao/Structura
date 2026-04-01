@@ -6,6 +6,7 @@ export { flowsSlice } from "./flows.slice";
 export { layoutSlice } from "./layout.slice";
 export { servicesSlice } from "./services.slice";
 export { clipboardSlice } from "./clipboard.slice";
+export { getActiveDiagram } from "./get-active-diagram";
 export { diagramsSlice } from "./diagram.slice";
 export { foldersSlice } from "./folders.slice";
 export { patternsSlice } from "./patterns.slice";

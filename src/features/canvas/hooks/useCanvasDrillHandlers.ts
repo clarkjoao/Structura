@@ -4,7 +4,7 @@ import {
   isDbTableComponent,
   isNoteComponent,
   isPanelComponent,
-  resolveCanvasSnapshot,
+  getCachedCanvasSnapshot,
 } from "@/features/diagram";
 import {
   NOTE_DEFAULT_W,
@@ -49,7 +49,7 @@ export function useCanvasDrillHandlers({
   const handleDrillDown = useCallback(
     (elementId: string) => {
       if (!diagram) return;
-      const r = resolveCanvasSnapshot(diagram);
+      const r = getCachedCanvasSnapshot(diagram);
       const comp = r.components[elementId];
       if (!comp?.linkedDiagramId || !allDiagrams[comp.linkedDiagramId]) return;
 
@@ -68,7 +68,7 @@ export function useCanvasDrillHandlers({
   const handlePanelCollapseToggle = useCallback(
     (nodeId: string) => {
       if (!diagram) return;
-      const r = resolveCanvasSnapshot(diagram);
+      const r = getCachedCanvasSnapshot(diagram);
       const comp = r.components[nodeId];
       const layout = r.nodeLayouts[nodeId];
 

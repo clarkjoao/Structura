@@ -9,11 +9,16 @@ export function escXml(s: string): string {
 }
 
 export function buildStyle(baseStyle: string, options: StyleOption): string {
+  const normalizedBaseStyle = baseStyle.endsWith(";")
+    ? baseStyle
+    : `${baseStyle};`;
+
   const stylePairs = Object.entries(options)
     .filter(([_, value]) => value !== undefined)
-    .map(([key, value]) => `${key}=${value}`);
+    .map(([key, value]) => `${key}=${value};`)
+    .join("");
 
-  return [baseStyle, ...stylePairs].filter(Boolean).join(";");
+  return `${normalizedBaseStyle}${stylePairs}`;
 }
 
 export function applyTemplate(

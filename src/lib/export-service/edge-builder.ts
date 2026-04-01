@@ -20,8 +20,7 @@ export function buildEdgeLabelPlain(conn: Connection): string {
 }
 
 export interface BuildEdgeCellOptions {
-  /** draw.io `points` attribute: `x1,y1;x2,y2` in diagram coordinates */
-  pointsAttribute?: string;
+  waypoints?: { x: number; y: number }[];
 }
 
 export function buildEdgeCell(conn: Connection, options?: BuildEdgeCellOptions): string {
@@ -38,10 +37,7 @@ export function buildEdgeCell(conn: Connection, options?: BuildEdgeCellOptions):
 
   const endArrow = toDrawioArrow(eff.markerEnd);
   const startArrow = toDrawioArrow(eff.markerStart);
-  const bidir =
-    eff.markerStart !== EdgeMarker.None
-      ? `startArrow=${startArrow};startFill=${startArrow === "block" ? 1 : 0};`
-      : "";
+  const hasStartArrow = eff.markerStart !== EdgeMarker.None;
 
   const strokeColor = getStrokeColor(conn.intent);
   const strokeWidth = eff.strokeWidth ?? 1;
@@ -54,22 +50,26 @@ export function buildEdgeCell(conn: Connection, options?: BuildEdgeCellOptions):
     dashPattern,
     strokeWidth,
     endArrow,
-    startArrow,
-    bidir,
+    hasStartArrow ? startArrow : "none",
     resolvedEdgeStyle,
   );
 
   const value = escXml(buildEdgeLabelPlain(conn));
 
-  const pointsAttr =
-    options?.pointsAttribute && options.pointsAttribute.length > 0
-      ? ` points="${escXml(options.pointsAttribute)}"`
+  const waypointsXml =
+    options?.waypoints && options.waypoints.length > 0
+      ? (() => {
+          const points = options.waypoints
+            .map((waypoint) => `<mxPoint x="${waypoint.x}" y="${waypoint.y}"/>`)
+            .join("");
+          return `<Array as="points">${points}</Array>`;
+        })()
       : "";
 
   return (
     `<mxCell id="${escXml(conn.id)}" value="${value}" style="${style}" ` +
-    `edge="1" source="${escXml(conn.sourceId)}" target="${escXml(conn.targetId)}" parent="1"${pointsAttr}>` +
-    `<mxGeometry relative="1" as="geometry"/>` +
+    `edge="1" source="${escXml(conn.sourceId)}" target="${escXml(conn.targetId)}" parent="1">` +
+    `<mxGeometry relative="1" as="geometry">${waypointsXml}</mxGeometry>` +
     `</mxCell>`
   );
 }

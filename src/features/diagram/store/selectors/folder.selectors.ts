@@ -7,7 +7,7 @@ export const useFolderIds = () =>
 export const useFolder = (id: string) =>
   useDiagramStore((s) => s.folders[id]);
 
-export const useFolders = () => useDiagramStore((s) => s.folders);
+export const useFolders = () => useDiagramStore(useShallow((s) => s.folders));
 
 export const useAllFolders = () =>
   useDiagramStore(

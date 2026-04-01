@@ -5,6 +5,7 @@ import { generateId } from "../../utils/generate-id";
 import { computeUserTemplateNodeLayouts } from "../../utils/user-template-insert-layout";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
+import { getActiveDiagram } from "./get-active-diagram";
 
 type InsertablePattern = PatternTemplate | UserTemplate;
 
@@ -115,7 +116,8 @@ export const patternsSlice = (
       : null;
 
     set((state) => {
-      const d = state.diagrams[state.activeDiagramId!];
+      const d = getActiveDiagram(state);
+      if (!d) return;
       const sid = d.activeSceneId ?? null;
       const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
       if (!scene) pushHistory(state);

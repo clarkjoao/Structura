@@ -19,8 +19,8 @@ import {
   type MergePreview,
   type SceneDiff,
 } from "@/features/diagram";
-import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
 import { useCollab } from "@/features/collaboration";
+import { useInteractionMode } from "../hooks/useInteractionMode";
 import { cn } from "@/lib/utils";
 import { MergeSceneDialog } from "./MergeSceneDialog";
 
@@ -410,10 +410,10 @@ export function SceneDrawer({
 export function ConnectedSceneDrawer({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const diagram = useActiveDiagram();
-  const { isIdle } = useFlowMode();
   const { session } = useCollab();
-  const scenesGuestReadOnly = session !== null && !session.isHost;
-  const scenesLocked = !isIdle;
+  const { canEditScenes, isCollabGuest } = useInteractionMode(diagram);
+  const scenesGuestReadOnly = isCollabGuest;
+  const scenesLocked = !canEditScenes;
   const {
     addScene,
     removeScene,

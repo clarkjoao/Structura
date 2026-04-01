@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import type { ApiProtocol } from "@/features/diagram";
 import { HEADER_H, FOOTER_H, PROTOCOL_COLORS } from "./constants";
 import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
-import { useCollabHighlight } from "@/features/collaboration/useCollabHighlight";
+import { useCollabHighlight } from "@/features/collaboration";
 
 export { PROTOCOL_COLORS } from "./constants";
 

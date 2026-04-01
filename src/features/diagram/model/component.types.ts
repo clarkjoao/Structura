@@ -171,9 +171,13 @@ export type Component =
   | UnknownComponent
   | DbTableComponent
   | JsonViewerComponent
-  | UnknownComponent
   | SvgComponent;
 
+/**
+ * Permissive component patch — accepts any combination of fields from all
+ * component subtypes. Kept for backward compatibility; prefer
+ * {@link TypedComponentPatch} for new code that can narrow by type.
+ */
 export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<PanelComponent, "id">> &
   Partial<Omit<NoteComponent, "id">> &
@@ -184,3 +188,23 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<DbTableComponent, "id">> &
   Partial<Omit<JsonViewerComponent, "id">> &
   Partial<Omit<SvgComponent, "id">> & { width?: number; height?: number };
+
+/**
+ * Type-safe component patch discriminated by `type`. Each variant only
+ * allows fields from its own component subtype, plus optional dimensions.
+ *
+ * Usage: `{ type: "endpoint", path: "/new" }` — `tableName` would be a
+ * type error here, unlike the permissive {@link ComponentPatch}.
+ */
+export type TypedComponentPatch =
+  | (Partial<Omit<C4Component, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<PanelComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<NoteComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<AwsComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<ApiGroupComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<EndpointComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<UnknownComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<DbTableComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<JsonViewerComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<SvgComponent, "id">> & { width?: number; height?: number })
+  | { width?: number; height?: number };

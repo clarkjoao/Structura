@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import {
   User,
   Network,
@@ -23,13 +23,12 @@ import {
   isJsonViewerType,
 } from "@/features/diagram";
 import type { ComponentType } from "@/features/diagram";
-import { getDefaultNameForNewComponent } from "@/features/diagram";
-import { getLastEdgeStyle } from "@/features/diagram/hooks/useLastEdgeStyle";
+import { getDefaultNameForNewComponent, getLastEdgeStyle } from "@/features/diagram";
 import { PANEL_KINDS, getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/catalogs/aws";
 import AwsIcon from "../nodes/AwsIcon";
 import { useTranslation } from "react-i18next";
-import { useCustomComponentLibrary } from "@/features/custom-components/hooks/useCustomComponentLibrary";
+import { useCustomComponentLibrary } from "@/features/custom-components";
 
 type CanvasInsertOption = {
   type: ComponentType;
@@ -39,6 +38,30 @@ type CanvasInsertOption = {
   awsIconName?: string;
 };
 
+type FlatOption =
+  | { kind: "c4"; type: ComponentType; label: string }
+  | { kind: "canvas"; opt: CanvasInsertOption }
+  | { kind: "aws"; categoryId: AwsCategoryId; serviceId: string; serviceName: string }
+  | { kind: "service"; id: string; name: string }
+  | { kind: "template"; id: string };
+
+type SearchSynonyms = {
+  panel: string[];
+  swimlane: string[];
+  note: string[];
+  apiGroup: string[];
+  endpoint: string[];
+  dbTable: string[];
+  jsonViewer: string[];
+};
+
+type AwsSearchRow = {
+  categoryId: AwsCategoryId;
+  serviceId: string;
+  serviceName: string;
+  iconName: string;
+};
+
 function splitSearchHelp(raw: string): string[] {
   return raw.split("|").map((s) => s.trim().toLowerCase()).filter(Boolean);
 }
@@ -46,15 +69,7 @@ function splitSearchHelp(raw: string): string[] {
 function canvasOptionMatchesQuery(
   opt: CanvasInsertOption,
   q: string,
-  synonyms: {
-    panel: string[];
-    swimlane: string[];
-    note: string[];
-    apiGroup: string[];
-    endpoint: string[];
-    dbTable: string[];
-    jsonViewer: string[];
-  },
+  synonyms: SearchSynonyms,
 ): boolean {
   const fields: string[] = [opt.label.toLowerCase()];
   if (opt.panelKind) {
@@ -79,6 +94,37 @@ function canvasOptionMatchesQuery(
   return fields.some((f) => f.includes(q));
 }
 
+function toFlatOptions(
+  filteredC4: { type: ComponentType; label: string }[],
+  filteredCanvas: CanvasInsertOption[],
+  filteredAws: AwsSearchRow[],
+  filteredServices: { id: string; name: string }[],
+  filteredTemplates: { id: string }[],
+): FlatOption[] {
+  const result: FlatOption[] = [];
+  for (const option of filteredC4) {
+    result.push({ kind: "c4", type: option.type, label: option.label });
+  }
+  for (const option of filteredCanvas) {
+    result.push({ kind: "canvas", opt: option });
+  }
+  for (const option of filteredAws) {
+    result.push({
+      kind: "aws",
+      categoryId: option.categoryId,
+      serviceId: option.serviceId,
+      serviceName: option.serviceName,
+    });
+  }
+  for (const option of filteredServices) {
+    result.push({ kind: "service", id: option.id, name: option.name });
+  }
+  for (const option of filteredTemplates) {
+    result.push({ kind: "template", id: option.id });
+  }
+  return result;
+}
+
 const POPOVER_W = 240;
 const POPOVER_H_MAX = 320;
 
@@ -99,8 +145,10 @@ const QuickInsertPopover = ({
 }: QuickInsertPopoverProps) => {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const { addComponent, addConnection, linkComponentToService } =
     useDiagramActions();
   const services = useAllServices();
@@ -168,7 +216,7 @@ const QuickInsertPopover = ({
   const q = search.trim().toLowerCase();
 
   const searchSynonyms = useMemo(
-    () => ({
+    (): SearchSynonyms => ({
       panel: splitSearchHelp(t("quickInsert.searchHelpPanel")),
       swimlane: splitSearchHelp(t("quickInsert.searchHelpSwimlane")),
       note: splitSearchHelp(t("quickInsert.searchHelpNote")),
@@ -192,7 +240,7 @@ const QuickInsertPopover = ({
 
   const filteredAws = useMemo(() => {
     if (!q) return [];
-    const rows: { categoryId: AwsCategoryId; serviceId: string; serviceName: string; iconName: string }[] = [];
+    const rows: AwsSearchRow[] = [];
     for (const cat of AWS_CATEGORIES) {
       const catMatch = cat.name.toLowerCase().includes(q);
       for (const s of cat.services) {
@@ -225,7 +273,7 @@ const QuickInsertPopover = ({
   }, [q, services]);
   
   const filteredTemplates = useMemo(() => {
-    if (!q) return []
+    if (!q) return [];
     return templates.filter((template) => {
       const normalizedBaseType = String(template.baseType).toLowerCase();
       return (
@@ -236,61 +284,99 @@ const QuickInsertPopover = ({
     });
   }, [q, templates]);
 
-  const insertPos = { x: flowPos.x + 20, y: flowPos.y + 20 };
+  const flatOptions = useMemo((): FlatOption[] => {
+    return toFlatOptions(filteredC4, filteredCanvas, filteredAws, filteredServices, filteredTemplates);
+  }, [filteredC4, filteredCanvas, filteredAws, filteredServices, filteredTemplates]);
 
-  const handleSelectC4 = (type: ComponentType, label: string) => {
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [flatOptions.length]);
+
+  const insertPos = useMemo(
+    () => ({ x: flowPos.x + 20, y: flowPos.y + 20 }),
+    [flowPos.x, flowPos.y],
+  );
+
+  const connectFromSource = useCallback(
+    (targetNodeId: string) => {
+      if (!sourceNodeId) return;
+      addConnection(sourceNodeId, targetNodeId, t("canvas.usesEdgeLabel"), getLastEdgeStyle());
+    },
+    [addConnection, sourceNodeId, t],
+  );
+
+  const finalizeInsertion = useCallback(
+    (newNodeId: string) => {
+      connectFromSource(newNodeId);
+      onInsert(newNodeId);
+    },
+    [connectFromSource, onInsert],
+  );
+
+  const handleSelectC4 = useCallback((type: ComponentType, label: string) => {
     const comp = addComponent(type, t("quickInsert.newNamed", { name: label }), null, insertPos);
-    if (sourceNodeId) {
-      addConnection(sourceNodeId, comp.id, t("canvas.usesEdgeLabel"), getLastEdgeStyle());
-    }
-    onInsert(comp.id);
-  };
+    finalizeInsertion(comp.id);
+  }, [addComponent, t, insertPos, finalizeInsertion]);
 
-  const handleSelectCanvas = (type: ComponentType, label: string, panelKind?: PanelKind) => {
+  const handleSelectCanvas = useCallback((type: ComponentType, label: string, panelKind?: PanelKind) => {
     const panelDefaultName = panelKind ? getPanelKindDef(panelKind).defaultName : undefined;
     const name = getDefaultNameForNewComponent(type, label, panelDefaultName);
     const comp = addComponent(type, name, null, insertPos, undefined, panelKind);
-    if (sourceNodeId) {
-      addConnection(sourceNodeId, comp.id, t("canvas.usesEdgeLabel"), getLastEdgeStyle());
-    }
-    onInsert(comp.id);
-  };
+    finalizeInsertion(comp.id);
+  }, [addComponent, insertPos, finalizeInsertion]);
 
-  const handleSelectAws = (categoryId: AwsCategoryId, serviceId: string, serviceName: string) => {
+  const handleSelectAws = useCallback((categoryId: AwsCategoryId, serviceId: string, serviceName: string) => {
     const panelKind = getPanelKindForAwsService(serviceId);
     const comp = panelKind
       ? addComponent(COMPONENT_TYPE_PANEL, getPanelKindDef(panelKind).defaultName, null, insertPos, undefined, panelKind)
       : addComponent(categoryId, serviceName, null, insertPos, serviceId);
-    if (sourceNodeId) {
-      addConnection(sourceNodeId, comp.id, t("canvas.usesEdgeLabel"), getLastEdgeStyle());
-    }
-    onInsert(comp.id);
-  };
+    finalizeInsertion(comp.id);
+  }, [addComponent, insertPos, finalizeInsertion]);
 
-  const handleSelectService = (serviceId: string, name: string) => {
+  const handleSelectService = useCallback((serviceId: string, name: string) => {
     const comp = addComponent("system", name, null, insertPos);
     linkComponentToService(comp.id, serviceId);
-    if (sourceNodeId) {
-      addConnection(sourceNodeId, comp.id, t("canvas.usesEdgeLabel"), getLastEdgeStyle());
-    }
-    onInsert(comp.id);
-  };
-  const handleSelectTemplate = (templateId: string) => {
+    finalizeInsertion(comp.id);
+  }, [addComponent, insertPos, linkComponentToService, finalizeInsertion]);
+
+  const handleSelectTemplate = useCallback((templateId: string) => {
     const insertedNodeId = instantiateTemplate({
       templateId,
       position: insertPos,
     });
     if (!insertedNodeId) return;
-    if (sourceNodeId) {
-      addConnection(
-        sourceNodeId,
-        insertedNodeId,
-        t("canvas.usesEdgeLabel"),
-        getLastEdgeStyle(),
-      );
-    }
-    onInsert(insertedNodeId);
-  };
+    finalizeInsertion(insertedNodeId);
+  }, [instantiateTemplate, insertPos, finalizeInsertion]);
+
+  const selectOption = useCallback(
+    (option: FlatOption) => {
+      switch (option.kind) {
+        case "c4":
+          handleSelectC4(option.type, option.label);
+          break;
+        case "canvas":
+          handleSelectCanvas(option.opt.type, option.opt.label, option.opt.panelKind);
+          break;
+        case "aws":
+          handleSelectAws(option.categoryId, option.serviceId, option.serviceName);
+          break;
+        case "service":
+          handleSelectService(option.id, option.name);
+          break;
+        case "template":
+          handleSelectTemplate(option.id);
+          break;
+      }
+    },
+    [handleSelectC4, handleSelectCanvas, handleSelectAws, handleSelectService, handleSelectTemplate],
+  );
+
+  useEffect(() => {
+    const container = listRef.current;
+    if (!container) return;
+    const selectedItem = container.querySelector('[data-selected="true"]');
+    selectedItem?.scrollIntoView({ block: "nearest" });
+  }, [selectedIndex]);
 
   const left = Math.min(screenPos.x + 8, window.innerWidth - POPOVER_W - 8);
   const top = Math.min(screenPos.y + 8, window.innerHeight - POPOVER_H_MAX - 8);
@@ -303,6 +389,12 @@ const QuickInsertPopover = ({
     filteredServices.length === 0 &&
     filteredTemplates.length === 0;
 
+  const c4Offset = 0;
+  const canvasOffset = filteredC4.length;
+  const awsOffset = canvasOffset + filteredCanvas.length;
+  const servicesOffset = awsOffset + filteredAws.length;
+  const templatesOffset = servicesOffset + filteredServices.length;
+
   return (
     <div
       ref={containerRef}
@@ -314,11 +406,32 @@ const QuickInsertPopover = ({
           ref={inputRef}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              onClose();
+              return;
+            }
+            if (e.key === "ArrowDown") {
+              e.preventDefault();
+              setSelectedIndex((index) => Math.min(index + 1, flatOptions.length - 1));
+              return;
+            }
+            if (e.key === "ArrowUp") {
+              e.preventDefault();
+              setSelectedIndex((index) => Math.max(index - 1, 0));
+              return;
+            }
+            if (e.key === "Enter") {
+              e.preventDefault();
+              const option = flatOptions[selectedIndex];
+              if (option) selectOption(option);
+            }
+          }}
           placeholder={t("quickInsert.searchPlaceholder")}
           className="w-full rounded-md border border-border bg-secondary px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         />
       </div>
-      <div className="max-h-64 overflow-y-auto pb-1">
+      <div ref={listRef} className="max-h-64 overflow-y-auto pb-1">
         {filteredC4.length > 0 && (
           <>
             <div className="px-3 py-1">
@@ -326,11 +439,16 @@ const QuickInsertPopover = ({
                 {t("elementPicker.c4Model")}
               </span>
             </div>
-            {filteredC4.map((opt) => (
+            {filteredC4.map((opt, index) => (
               <button
                 key={opt.type}
+                data-selected={selectedIndex === c4Offset + index}
                 onClick={() => handleSelectC4(opt.type, opt.label)}
-                className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-surface-hover transition-colors text-left"
+                className={`flex items-center gap-2 w-full px-3 py-2 text-xs transition-colors text-left ${
+                  selectedIndex === c4Offset + index
+                    ? "bg-primary/10 text-primary"
+                    : "hover:bg-surface-hover"
+                }`}
               >
                 <opt.icon className="h-3.5 w-3.5 text-muted-foreground" />
                 {opt.label}
@@ -346,15 +464,20 @@ const QuickInsertPopover = ({
                 {t("quickInsert.sectionCanvasGroups")}
               </span>
             </div>
-            {filteredCanvas.map((opt) => (
+            {filteredCanvas.map((opt, index) => (
               <button
                 key={
                   opt.type === COMPONENT_TYPE_PANEL
                     ? `panel-${opt.panelKind ?? PanelKind.Default}`
                     : opt.type
                 }
+                data-selected={selectedIndex === canvasOffset + index}
                 onClick={() => handleSelectCanvas(opt.type, opt.label, opt.panelKind)}
-                className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-surface-hover transition-colors text-left"
+                className={`flex items-center gap-2 w-full px-3 py-2 text-xs transition-colors text-left ${
+                  selectedIndex === canvasOffset + index
+                    ? "bg-primary/10 text-primary"
+                    : "hover:bg-surface-hover"
+                }`}
               >
                 {opt.awsIconName ? (
                   <AwsIcon iconName={opt.awsIconName} size={14} className="shrink-0 text-muted-foreground" />
@@ -376,11 +499,16 @@ const QuickInsertPopover = ({
                 {t("canvasToolbar.awsServices")}
               </span>
             </div>
-            {filteredAws.map((row) => (
+            {filteredAws.map((row, index) => (
               <button
                 key={row.serviceId}
+                data-selected={selectedIndex === awsOffset + index}
                 onClick={() => handleSelectAws(row.categoryId, row.serviceId, row.serviceName)}
-                className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-surface-hover transition-colors text-left"
+                className={`flex items-center gap-2 w-full px-3 py-2 text-xs transition-colors text-left ${
+                  selectedIndex === awsOffset + index
+                    ? "bg-primary/10 text-primary"
+                    : "hover:bg-surface-hover"
+                }`}
               >
                 <AwsIcon iconName={row.iconName} size={14} className="shrink-0" />
                 <span className="truncate text-foreground">{row.serviceName}</span>
@@ -398,11 +526,16 @@ const QuickInsertPopover = ({
                 {t("elementPicker.registry")}
               </span>
             </div>
-            {filteredServices.map((svc) => (
+            {filteredServices.map((svc, index) => (
               <button
                 key={svc.id}
+                data-selected={selectedIndex === servicesOffset + index}
                 onClick={() => handleSelectService(svc.id, svc.name)}
-                className="flex flex-col w-full px-3 py-2 text-xs hover:bg-surface-hover transition-colors text-left"
+                className={`flex flex-col w-full px-3 py-2 text-xs transition-colors text-left ${
+                  selectedIndex === servicesOffset + index
+                    ? "bg-primary/10 text-primary"
+                    : "hover:bg-surface-hover"
+                }`}
               >
                 <span className="font-medium text-foreground">{svc.name}</span>
                 {svc.technology.length > 0 && (
@@ -427,11 +560,16 @@ const QuickInsertPopover = ({
                 {t("customComponents.customComponents")}
               </span>
             </div>
-            {filteredTemplates.map((template) => (
+            {filteredTemplates.map((template, index) => (
               <button
                 key={template.id}
+                data-selected={selectedIndex === templatesOffset + index}
                 onClick={() => handleSelectTemplate(template.id)}
-                className="flex flex-col w-full px-3 py-2 text-xs hover:bg-surface-hover transition-colors text-left"
+                className={`flex flex-col w-full px-3 py-2 text-xs transition-colors text-left ${
+                  selectedIndex === templatesOffset + index
+                    ? "bg-primary/10 text-primary"
+                    : "hover:bg-surface-hover"
+                }`}
               >
                 <span className="font-medium text-foreground">{template.name}</span>
                 {template.description ? (

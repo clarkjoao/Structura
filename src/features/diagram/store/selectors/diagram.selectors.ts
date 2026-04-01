@@ -15,7 +15,7 @@ export const useDiagramIds = () =>
 export const useDiagram = (id: string) =>
   useDiagramStore((s) => s.diagrams[id]);
 
-export const useDiagrams = () => useDiagramStore((s) => s.diagrams);
+export const useDiagrams = () => useDiagramStore(useShallow((s) => s.diagrams));
 
 export const useAllDiagrams = () =>
   useDiagramStore(

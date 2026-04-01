@@ -10,7 +10,7 @@ import {
   isJsonViewerType,
 } from "@/features/diagram";
 import type { EdgeStyle } from "@/features/diagram";
-import { getLastEdgeStyle } from "@/features/diagram/hooks/useLastEdgeStyle";
+import { getLastEdgeStyle } from "@/features/diagram";
 
 interface UseCanvasEventHandlersParams {
   visualState: CanvasVisualState;
@@ -96,6 +96,7 @@ export function useCanvasEventHandlers({
 
   const onNodeClick = useCallback(
     (e: React.MouseEvent, node: Node) => {
+      setQuickInsert(null);
       const nodeType = (node.type as string) ?? "";
       if (isEndpointType(nodeType) && node.parentId) {
         if (isCompareMode) return;
@@ -153,11 +154,13 @@ export function useCanvasEventHandlers({
       setSelectedNodeIds,
       setSelectedEdgeId,
       setContextMenu,
+      setQuickInsert,
     ],
   );
 
   const onEdgeClick = useCallback(
     (_: React.MouseEvent, edge: Edge) => {
+      setQuickInsert(null);
       if (isRecording) {
         onRecordEdgeClick?.(edge.id, edge.sourceHandle ?? undefined);
         return;
@@ -180,6 +183,7 @@ export function useCanvasEventHandlers({
       setSelectedNodeId,
       setSelectedNodeIds,
       setContextMenu,
+      setQuickInsert,
     ],
   );
 
@@ -260,8 +264,9 @@ export function useCanvasEventHandlers({
 
   const onPaneClick = useCallback(() => {
     prevSelectionRef.current = "";
+    setQuickInsert(null);
     clearCanvasSelection();
-  }, [clearCanvasSelection]);
+  }, [clearCanvasSelection, setQuickInsert]);
 
   const onPaneContextMenu = useCallback(
     (event: React.MouseEvent) => {

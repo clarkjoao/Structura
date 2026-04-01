@@ -3,7 +3,7 @@ import { NodeResizer, type NodeProps } from "@xyflow/react";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
-import { useCollabHighlight } from "@/features/collaboration/useCollabHighlight";
+import { useCollabHighlight } from "@/features/collaboration";
 
 export interface SwimlaneNodeData {
   elementId: string;
