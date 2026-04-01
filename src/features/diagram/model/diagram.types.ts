@@ -6,6 +6,7 @@ export type {
   ComponentType,
   Component,
   ComponentPatch,
+  TypedComponentPatch,
   C4Component,
   PanelComponent,
   SwimlaneStyle,

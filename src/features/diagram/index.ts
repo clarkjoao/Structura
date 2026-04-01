@@ -15,6 +15,7 @@ export type {
   Level,
   Component,
   ComponentPatch,
+  TypedComponentPatch,
   C4Component,
   PanelComponent,
   SwimlaneStyle,
