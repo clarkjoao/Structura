@@ -2,8 +2,8 @@ import { useShallow } from "zustand/react/shallow";
 import { useDiagramStore } from "../diagram.store";
 
 export const useServiceIds = () =>
-  useDiagramStore((s) =>
-    Object.keys(s.serviceRegistry)
+  useDiagramStore(
+    useShallow((s) => Object.keys(s.serviceRegistry)),
   );
 
 export const useService = (id: string) =>
