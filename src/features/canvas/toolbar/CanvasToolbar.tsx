@@ -1,8 +1,8 @@
 import { useState } from "react";
 import ElementPickerModal from "./ElementPickerModal";
 import { Plus, ChevronUp, Puzzle } from "lucide-react";
-import { isDiagramCompareMode, useActiveDiagram } from "@/features/diagram";
-import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
+import { useActiveDiagram } from "@/features/diagram";
+import { useInteractionMode } from "../hooks/useInteractionMode";
 import PatternPicker from "./PatternPicker";
 import { LayerFilterPopover } from "./LayerFilterPopover";
 import { useTranslation } from "react-i18next";
@@ -35,10 +35,9 @@ const CanvasToolbar = ({
 }: CanvasToolbarProps) => {
   const { t } = useTranslation();
   const diagram = useActiveDiagram();
-  const { isRecording, isPlaying } = useFlowMode();
-  const toolbarEditLocked =
-    isRecording || isPlaying || (diagram ? isDiagramCompareMode(diagram) : false);
-  const scenesPickerLocked = isRecording || isPlaying;
+  const { canEditCanvas, canEditScenes } = useInteractionMode(diagram);
+  const toolbarEditLocked = !canEditCanvas;
+  const scenesPickerLocked = !canEditScenes;
   const [showPatterns, setShowPatterns] = useState(false);
   const [showModal, setShowModal] = useState(false);
 

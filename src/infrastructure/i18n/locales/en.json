@@ -823,7 +823,8 @@
     "removeTitle": "Remove",
     "emptyTagged": "No flows with this tag.",
     "emptyNone": "No flows defined.",
-    "recorderBlockedInCompare": "Exit version comparison mode to record or edit a flow"
+    "recorderBlockedInCompare": "Exit version comparison mode to record or edit a flow",
+    "unavailableDuringCollab": "Flows are unavailable during a collaboration session"
   },
   "export": {
     "embed": {
