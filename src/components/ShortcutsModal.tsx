@@ -206,7 +206,12 @@ export default function ShortcutsModal({
               <ShortcutRow
                 label={t("shortcutsModal.quickInsertOpen")}
                 description={t("shortcutsModal.quickInsertDesc")}
-                keys={<Kbd>{t("shortcutsModal.rightClick")}</Kbd>}
+                keys={
+                  <span className="inline-flex items-center gap-1">
+                    <Kbd>Cmd/Ctrl</Kbd>
+                    <Kbd>E</Kbd>
+                  </span>
+                }
               />
               <ShortcutRow
                 label={t("shortcutsModal.addPerson")}

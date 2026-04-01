@@ -187,6 +187,7 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
     isPanelOpen,
     isFlowPanelOpen: !!canvasProps.isFlowPanelOpen,
     isPlaying: flowState.isPlaying,
+    isRecording: flowState.isRecording,
     isSearchOpen: showSearch,
     onOpenSearch: () => {
       setShowCommandPalette(false);
@@ -203,6 +204,10 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
       if (diagramNavLocked) return;
       setShowSearch(false);
       setShowCommandPalette(true);
+    },
+    onOpenQuickInsert: ({ screenPos, flowPos }) => {
+      if (diagramNavLocked || !!canvasProps.isFlowPanelOpen) return;
+      visualState.setQuickInsert({ screenPos, flowPos });
     },
   });
 

@@ -95,6 +95,7 @@ interface UseCanvasKeyboardParams {
   isPanelOpen: boolean;
   isFlowPanelOpen: boolean;
   isPlaying?: boolean;
+  isRecording?: boolean;
   isSearchOpen?: boolean;
   onOpenSearch?: () => void;
   isScenesDrawerOpen?: boolean;
@@ -102,6 +103,10 @@ interface UseCanvasKeyboardParams {
   isCommandPaletteOpen?: boolean;
   onToggleDiagramSidebar?: () => void;
   onOpenCommandPalette?: () => void;
+  onOpenQuickInsert?: (params: {
+    screenPos: { x: number; y: number };
+    flowPos: { x: number; y: number };
+  }) => void;
 }
 
 const KEY = {
@@ -111,13 +116,18 @@ const KEY = {
   A: "a",
   C: "c",
   D: "d",
+  Q: "q",
+  E: "e",
   F: "f",
   G: "g",
   K: "k",
+  N: "n",
   B: "b",
   V: "v",
   Z: "z",
   SLASH: "/",
+  BACKTICK: "`",
+  PLUS_SIGN: "+",
 } as const;
 
 export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
@@ -162,6 +172,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     isPanelOpen,
     isFlowPanelOpen,
     isPlaying = false,
+    isRecording = false,
     isSearchOpen,
     isScenesDrawerOpen,
     onCloseScenesDrawer,
@@ -169,6 +180,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     onOpenSearch,
     onToggleDiagramSidebar,
     onOpenCommandPalette,
+    onOpenQuickInsert,
   } = params;
 
   const resolvedSnapshot = useMemo(
@@ -334,7 +346,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
         }
       }
 
-      if (isFlowPanelOpen || isPlaying || isCompareMode) return;
+      if (isFlowPanelOpen || isPlaying || isCompareMode || isRecording) return;
 
       if (isSearchOpen || isCommandPaletteOpen) return;
 
@@ -384,6 +396,14 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
         addComponent(type, name, null, pos);
         return;
       }
+      if (mod && event.key === KEY.E) {
+        event.preventDefault();
+        onOpenQuickInsert?.({
+          screenPos: { x: window.innerWidth / 2, y: window.innerHeight / 2 },
+          flowPos: getViewportCenter(reactFlowInstance, isPanelOpen),
+        });
+        return;
+      }
     };
 
     document.addEventListener("keydown", handler);
@@ -393,6 +413,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     setCompareScene,
     isCompareMode,
     isPlaying,
+    isRecording,
     isFlowPanelOpen,
     isSearchOpen,
     isScenesDrawerOpen,
@@ -408,6 +429,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     onOpenSearch,
     onToggleDiagramSidebar,
     onOpenCommandPalette,
+    onOpenQuickInsert,
     c4ShortcutMap,
     reactFlowInstance,
     isPanelOpen,
