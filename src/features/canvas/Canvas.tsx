@@ -25,11 +25,13 @@ import { getCachedCanvasSnapshot } from "@/features/diagram";
 import { CANVAS_STYLES } from "./constants";
 import CustomEdge from "./edges/CustomEdge";
 import type { CanvasProps } from "./canvas.types";
-import { SaveCustomComponentModal } from "@/features/custom-components/SaveCustomComponentModal";
-import { useCustomComponentStore } from "@/features/custom-components";
-import { createTemplateDataFromNode } from "@/features/custom-components/utils/customComponentTemplate.utils";
-import { CUSTOM_COMPONENT_DRAG_MIME } from "@/features/custom-components/customComponent.constants";
-import { useCustomComponentLibrary } from "@/features/custom-components/hooks/useCustomComponentLibrary";
+import {
+  SaveCustomComponentModal,
+  useCustomComponentStore,
+  createTemplateDataFromNode,
+  CUSTOM_COMPONENT_DRAG_MIME,
+  useCustomComponentLibrary,
+} from "@/features/custom-components";
 
 const canvasEdgeTypes = { c4: CustomEdge };
 

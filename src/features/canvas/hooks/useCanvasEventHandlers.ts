@@ -10,7 +10,7 @@ import {
   isJsonViewerType,
 } from "@/features/diagram";
 import type { EdgeStyle } from "@/features/diagram";
-import { getLastEdgeStyle } from "@/features/diagram/hooks/useLastEdgeStyle";
+import { getLastEdgeStyle } from "@/features/diagram";
 
 interface UseCanvasEventHandlersParams {
   visualState: CanvasVisualState;

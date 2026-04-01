@@ -7,14 +7,11 @@
  * `useFileSystemSync`) simply read/drive this global state.
  */
 
-import { useDiagramStore, type Diagram, type IconDefinition } from "@/features/diagram";
-import { VIEWPORT_DEBOUNCE_MS } from "@/features/diagram/store/store.constants";
+import { useDiagramStore, VIEWPORT_DEBOUNCE_MS, PERSIST_KEY, type Diagram, type IconDefinition } from "@/features/diagram";
 import { fileSystemAdapter } from "./FileSystemAdapter";
 import { defaultStorage } from "./LocalStorageAdapter";
-import { PERSIST_KEY } from "@/features/diagram/store/persist.config";
-import { useCustomComponentStore } from "@/features/custom-components/store";
-import type { CustomComponentTemplate } from "@/features/custom-components/customComponent.types";
-import { useIconStore } from "@/features/icons/store";
+import { useCustomComponentStore, type CustomComponentTemplate } from "@/features/custom-components";
+import { useIconStore } from "@/features/icons";
 
 type DiagramStoreState = ReturnType<typeof useDiagramStore.getState>;
 

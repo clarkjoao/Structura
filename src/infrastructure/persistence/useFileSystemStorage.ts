@@ -4,13 +4,9 @@ import { toast } from "sonner";
 import { fileSystemAdapter } from "./FileSystemAdapter";
 import type { WorkspaceScanResult } from "./FileSystemAdapter";
 import { useDiagramStore } from "@/features/diagram";
-import { useCustomComponentStore } from "@/features/custom-components/store";
-import type { CustomComponentTemplate } from "@/features/custom-components/customComponent.types";
-import { useIconStore } from "@/features/icons/store";
-import {
-  buildPersistStoragePayload,
-  PERSIST_KEY,
-} from "@/features/diagram/store/persist.config";
+import { useCustomComponentStore, type CustomComponentTemplate } from "@/features/custom-components";
+import { useIconStore } from "@/features/icons";
+import { buildPersistStoragePayload, PERSIST_KEY } from "@/features/diagram";
 import { defaultStorage } from "./LocalStorageAdapter";
 import {
   bootFileSystem,

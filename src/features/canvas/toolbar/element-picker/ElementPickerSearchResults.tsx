@@ -9,8 +9,7 @@ import { shortAwsName } from "./utils";
 import type { CanvasPickerOption } from "./types";
 import type { C4PickerOption } from "./buildPickerOptions";
 import { RegistryServiceRow } from "./RegistryServiceRow";
-import { useCustomComponentStore, type CustomComponentTemplate } from "@/features/custom-components";
-import { NodeTemplatePreviewCard } from "@/features/custom-components/components/NodeTemplatePreviewCard";
+import { useCustomComponentStore, NodeTemplatePreviewCard, type CustomComponentTemplate } from "@/features/custom-components";
 
 export function ElementPickerSearchResults({
   searchTrimmed,

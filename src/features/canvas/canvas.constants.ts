@@ -26,16 +26,16 @@ export const VIEWPORT_MIN_ZOOM = 0.3;
 export const FIT_VIEW_INITIAL_PADDING = 0.3;
 
 /** File system sync debounce after store updates. */
-export { VIEWPORT_DEBOUNCE_MS } from "@/features/diagram/store/store.constants";
+export { VIEWPORT_DEBOUNCE_MS } from "@/features/diagram";
 /** Element / connection field edits in panels. */
 export const FIELD_DEBOUNCE_MS = 300;
 
 /** Maximum number of history steps to store. */
-export { MAX_HISTORY_STEPS } from "@/features/diagram/store/store.constants";
+export { MAX_HISTORY_STEPS } from "@/features/diagram";
 /** Time to wait before coalescing history entries. */
-export { HISTORY_COALESCE_MS } from "@/features/diagram/store/store.constants";
+export { HISTORY_COALESCE_MS } from "@/features/diagram";
 /** Time to wait before allowing a new undo/redo operation after a previous one. */
-export { UNDO_REDO_COOLDOWN_MS } from "@/features/diagram/store/store.constants";
+export { UNDO_REDO_COOLDOWN_MS } from "@/features/diagram";
 
 /** Duration of flow particle animation. */
 export const FLOW_PARTICLE_DURATION_MS = 1200;

@@ -1,7 +1,7 @@
 import type { Diagram, Folder, IconDefinition } from "@/features/diagram";
 import { normalizeImportedDiagram } from "@/lib/export-service/normalize-imported-diagram";
 import { FileSystemEntryKind } from "@/lib/enums";
-import type { CustomComponentTemplate } from "@/features/custom-components/customComponent.types";
+import type { CustomComponentTemplate } from "@/features/custom-components";
 import i18n from "@/infrastructure/i18n";
 import {
   validateDiagramFile,
