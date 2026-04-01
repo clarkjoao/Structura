@@ -1,6 +1,8 @@
 import { useCallback } from "react";
 import type { ReactFlowInstance } from "@xyflow/react";
 import {
+  isPanelComponent,
+  resolveCanvasSnapshot,
   useDiagramStore,
   type Component,
   type Connection,
@@ -30,7 +32,10 @@ interface UseCopyPasteShortcutsParams {
   reactFlowInstance: ReactFlowInstance;
   reactFlowWrapperRef: React.RefObject<HTMLDivElement | null>;
   copyToClipboard: (ids: string[]) => void;
-  pasteFromClipboard: (position?: { x: number; y: number }) => string[];
+  pasteFromClipboard: (
+    position?: { x: number; y: number },
+    options?: { preserveParentWhenMissing?: boolean },
+  ) => string[];
   importDrawioResult: (
     components: Component[],
     connections: Connection[],
@@ -180,12 +185,35 @@ export function useCopyPasteShortcuts({
       // Cmd/Ctrl+D — duplicate
       if (event.key === "d") {
         event.preventDefault();
-        const nodes = getSelectedNodes(reactFlowInstance, selectedNodeId);
-        const ids = getCopyableIds(diagram, nodes);
+        const selectedNodes = getSelectedNodes(reactFlowInstance, selectedNodeId);
+        const ids = getCopyableIds(diagram, selectedNodes);
         if (ids.length === 0) return true;
+
+        const canvasSnapshot = resolveCanvasSnapshot(diagram);
+        const originalSelectedIds = selectedNodes
+          .map((node) => node.id)
+          .filter((id) => Boolean(canvasSnapshot.components[id]));
+        const originalSelectedComponents = originalSelectedIds
+          .map((id) => canvasSnapshot.components[id])
+          .filter((component): component is NonNullable<typeof component> => Boolean(component));
+        const parentIds = new Set(
+          originalSelectedComponents
+            .map((component) => component.parentId)
+            .filter((parentId): parentId is string => Boolean(parentId)),
+        );
+        const allChildrenOfSamePanel =
+          parentIds.size === 1 &&
+          originalSelectedComponents.every((component) => component.parentId !== null) &&
+          !originalSelectedComponents.some((component) => isPanelComponent(component));
+
         copyToClipboard(ids);
-        const center = getCenterOfNodes(diagram, ids);
-        const newIds = pasteFromClipboard(center);
+        const center = getCenterOfNodes(
+          diagram,
+          allChildrenOfSamePanel ? originalSelectedIds : ids,
+        );
+        const newIds = allChildrenOfSamePanel
+          ? pasteFromClipboard(center, { preserveParentWhenMissing: true })
+          : pasteFromClipboard(center);
         if (newIds.length > 0) {
           reactFlowInstance.setNodes((nodes) =>
             nodes.map((node) => ({ ...node, selected: newIds.includes(node.id) })),

@@ -222,6 +222,7 @@ export function useCanvasNodes({
           collapsedPanelIds,
           viewingCov,
           nodeCtxPlayback.coverage,
+          nodeCtxBase.resolvedComponents,
         );
         const style: Record<string, unknown> = {
           ...d.buildStyle?.(comp, ctx),

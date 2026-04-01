@@ -33,6 +33,7 @@ export {
   findPanelContainingPoint,
   toAbsolutePosition,
   toRelativePosition,
+  resolveAbsolutePosition,
 } from "./panelParenting";
 
 export {

@@ -100,7 +100,10 @@ export interface AppActions {
   redo: () => void;
 
   copyToClipboard: (componentIds: string[]) => void;
-  pasteFromClipboard: (position?: { x: number; y: number }) => string[];
+  pasteFromClipboard: (
+    position?: { x: number; y: number },
+    options?: { preserveParentWhenMissing?: boolean },
+  ) => string[];
   importDrawioResult: (
     components: Component[],
     connections: Connection[],

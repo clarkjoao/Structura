@@ -586,7 +586,7 @@ export const componentsSlice = (
         if (d.activeSceneId && d.scenes?.[d.activeSceneId]) return;
         const comps = d.snapshot.components;
         const ids = componentIds.filter(
-          (id) => comps[id] && !isPanelComponent(comps[id]) && !isApiGroupComponent(comps[id]),
+          (id) => comps[id] && !isApiGroupComponent(comps[id]),
         );
         if (ids.length < 2) return;
 

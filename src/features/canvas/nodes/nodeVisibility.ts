@@ -22,6 +22,25 @@ export function buildCollapsedPanelIds(
   );
 }
 
+/**
+ * Returns true when any ancestor in the parent chain is collapsed or hidden.
+ */
+function hasCollapsedOrHiddenAncestor(
+  comp: Component,
+  components: Record<string, Component>,
+  collapsedPanelIds: Set<string>,
+): boolean {
+  let currentParentId = comp.parentId;
+  while (currentParentId !== null && currentParentId !== undefined) {
+    const parent = components[currentParentId];
+    if (!parent) break;
+    if (collapsedPanelIds.has(currentParentId)) return true;
+    if (parent.hidden === true) return true;
+    currentParentId = parent.parentId;
+  }
+  return false;
+}
+
 export function computeNodeVisibility(
   comp: Component,
   descriptor: NodeTypeDescriptor,
@@ -32,10 +51,13 @@ export function computeNodeVisibility(
   collapsedPanelIds: Set<string>,
   isViewingCoverage: boolean,
   coverage: CoverageInfo | null,
+  components: Record<string, Component>,
 ): NodeVisibilityState {
   const isChild = descriptor.canHaveParent && comp.parentId !== null && panelIds.has(comp.parentId);
   const zIndex = layout?.zIndex ?? (typeof descriptor.zIndex === "function" ? descriptor.zIndex(comp) : descriptor.zIndex);
-  const isHidden = comp.hidden === true || (isChild && comp.parentId !== null && collapsedPanelIds.has(comp.parentId));
+  const isHidden =
+    comp.hidden === true ||
+    hasCollapsedOrHiddenAncestor(comp, components, collapsedPanelIds);
   const isSelected = selectedNodeIds.has(comp.id);
   const isHighlighted = highlightedNodeIds.has(comp.id);
   const hasFocusedNodes = selectedNodeIds.size > 0 || highlightedNodeIds.size > 0;

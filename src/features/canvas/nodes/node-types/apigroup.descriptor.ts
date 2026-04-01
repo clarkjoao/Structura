@@ -10,7 +10,7 @@ export const apiGroupDescriptor: NodeTypeDescriptor = {
   matches: isApiGroupType,
   zIndex: -1,
   connectable: false,
-  canHaveParent: false,
+  canHaveParent: true,
   canBeParent: true,
 
   buildData: (comp, ctx) => {

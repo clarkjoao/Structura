@@ -59,7 +59,10 @@ export const clipboardSlice = (
       });
     },
 
-    pasteFromClipboard: (position?: { x: number; y: number }): string[] => {
+    pasteFromClipboard: (
+      position?: { x: number; y: number },
+      options?: { preserveParentWhenMissing?: boolean },
+    ): string[] => {
       let pastedIds: string[] = [];
       set((state) => {
         if (!state.clipboard || !state.activeDiagramId) return;
@@ -71,10 +74,19 @@ export const clipboardSlice = (
         const baseX = position?.x ?? 300;
         const baseY = position?.y ?? 300;
         const pasteOffsets = state.clipboard._pasteOffsets;
+        const pastedSourceIds = new Set(state.clipboard.components.map((component) => component.id));
+        const activeComponents = scene ? resolveSceneSnapshot(d, d.activeSceneId ?? null).components : d.snapshot.components;
         state.clipboard.components.forEach((c: Component, index: number) => {
           const newId = generateId("el");
           idMap[c.id] = newId;
-          const comp = { ...deepClone(c), id: newId, parentId: null };
+          const parentIsAlsoPasted = c.parentId ? pastedSourceIds.has(c.parentId) : false;
+          const parentExistsInActiveDiagram = c.parentId ? Boolean(activeComponents[c.parentId]) : false;
+          const parentId = parentIsAlsoPasted
+            ? c.parentId
+            : options?.preserveParentWhenMissing && parentExistsInActiveDiagram
+              ? c.parentId
+              : null;
+          const comp = { ...deepClone(c), id: newId, parentId };
           const offset = pasteOffsets?.[index];
           const layout = {
             elementId: newId,
@@ -88,6 +100,41 @@ export const clipboardSlice = (
             d.snapshot.components[newId] = comp;
             d.nodeLayouts[newId] = layout;
           }
+        });
+        for (const originalComponent of state.clipboard.components) {
+          const newComponentId = idMap[originalComponent.id];
+          if (!newComponentId) continue;
+          const newParentId =
+            originalComponent.parentId && idMap[originalComponent.parentId]
+              ? idMap[originalComponent.parentId]
+              : null;
+          if (!newParentId) continue;
+          if (scene) {
+            const existing = scene.addedComponents[newComponentId];
+            if (existing) existing.parentId = newParentId;
+          } else {
+            const existing = d.snapshot.components[newComponentId];
+            if (existing) existing.parentId = newParentId;
+          }
+        }
+        state.clipboard.components.forEach((originalComponent) => {
+          const newComponentId = idMap[originalComponent.id];
+          if (!newComponentId) return;
+
+          const newParentId =
+            originalComponent.parentId && idMap[originalComponent.parentId]
+              ? idMap[originalComponent.parentId]
+              : null;
+          if (!newParentId) return;
+
+          const parentLayout = scene ? scene.nodeLayouts[newParentId] : d.nodeLayouts[newParentId];
+          if (!parentLayout) return;
+
+          const childLayout = scene ? scene.nodeLayouts[newComponentId] : d.nodeLayouts[newComponentId];
+          if (!childLayout) return;
+
+          childLayout.x -= parentLayout.x;
+          childLayout.y -= parentLayout.y;
         });
         state.clipboard.connections.forEach((conn: Connection) => {
           const src = idMap[conn.sourceId];
