@@ -1,6 +1,8 @@
-let _counter = 0;
-
 /** Generate a unique ID with optional prefix (e.g. "el", "conn", "d", "flow", "folder", "svc"). */
 export function generateId(prefix: string = "el"): string {
-  return `${prefix}-${Date.now().toString(36)}-${(++_counter).toString(36)}`;
+  const randomPart =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID().replace(/-/g, "").slice(0, 16)
+      : Math.random().toString(36).slice(2, 18);
+  return `${prefix}-${randomPart}`;
 }

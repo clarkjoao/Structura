@@ -1,12 +1,13 @@
 import { useCallback, useRef, useState } from "react";
 import type { Node, OnNodesChange, NodeChange } from "@xyflow/react";
 import type { Diagram } from "@/features/diagram";
-import type { Component } from "@/features/diagram";
 import {
   isNoteComponent,
   isEndpointComponent,
   isEndpointType,
   isReactFlowParentPanelType,
+  buildChildrenIndex,
+  getDescendantIdsFromIndex,
 } from "@/features/diagram";
 import {
   isOutsideParentBounds,
@@ -16,22 +17,6 @@ import {
 import { resolveCanvasSnapshot, canMoveNodeInSceneMode } from "@/features/diagram";
 import { toast } from "sonner";
 import i18n from "@/infrastructure/i18n";
-
-/** Collect all descendant ids of a panel (recursive). */
-function getDescendantIds(panelId: string, components: Record<string, Component>): Set<string> {
-  const out = new Set<string>();
-  const stack = [panelId];
-  while (stack.length > 0) {
-    const id = stack.pop()!;
-    for (const c of Object.values(components)) {
-      if (c.parentId === id) {
-        out.add(c.id);
-        stack.push(c.id);
-      }
-    }
-  }
-  return out;
-}
 
 interface UseNodeDragParentingParams {
   diagram: Diagram | null | undefined;
@@ -243,7 +228,11 @@ export function useNodeDragParenting({
       const isDraggedPanel = isReactFlowParentPanelType(nodeType);
 
       if (isDraggedPanel) {
-        const descendantIds = getDescendantIds(draggedNode.id, components);
+        const childrenIndex = buildChildrenIndex(components);
+        const descendantIds = getDescendantIdsFromIndex(
+          draggedNode.id,
+          childrenIndex,
+        );
         const match = findPanelContainingPoint(
           nodes,
           absX,

@@ -32,6 +32,7 @@ import { getPanelKindDef } from "@/lib/catalogs/panels";
 import { isAwsType } from "@/lib/catalogs/aws";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
+import { getActiveDiagram } from "./get-active-diagram";
 import { resolveActiveScene } from "./scene-helpers";
 import {
   PANEL_DEFAULT_W,
@@ -49,8 +50,16 @@ import {
 } from "../../model/layout.constants";
 import i18n from "@/infrastructure/i18n";
 import { computeApiGroupSize } from "../../utils/api-group-size";
+import { buildChildrenIndex, getDescendantIdsFromIndex } from "../../utils/children-index";
 import { mutateRemoveComponentInScene } from "../../utils/scene-mutations";
 
+/**
+ * Este slice usa Immer via Zustand middleware.
+ * Mutacoes diretas dentro de `set((state) => { ... })` sao seguras
+ * e produzem novo estado imutavel automaticamente.
+ * Nao usar spread/Object.assign para substituir objetos inteiros -
+ * prefira mutacoes diretas: `state.field = value`.
+ */
 function handleEndpointInsertion(
   state: AppState,
   d: Diagram,
@@ -287,7 +296,8 @@ export const componentsSlice = (
       );
 
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId]!;
+        const d = getActiveDiagram(state);
+        if (!d) return;
         const scene = resolveActiveScene(d);
 
         if (!scene) pushHistory(state);
@@ -353,7 +363,8 @@ export const componentsSlice = (
         (key) => key !== "templateId",
       );
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId]!;
+        const d = getActiveDiagram(state);
+        if (!d) return;
         const scene = resolveActiveScene(d);
         const inSceneAdds = !!(scene && scene.addedComponents[id]);
         if (!isDimensionOnly) {
@@ -395,7 +406,8 @@ export const componentsSlice = (
 
     removeComponent: (id: string) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId]!;
+        const d = getActiveDiagram(state);
+        if (!d) return;
         const scene = resolveActiveScene(d);
         if (scene) {
           mutateRemoveComponentInScene(d, scene.id, id);
@@ -404,14 +416,9 @@ export const componentsSlice = (
         }
 
         pushHistory(state);
-        const toRemove = new Set<string>();
-        const collect = (eid: string) => {
-          toRemove.add(eid);
-          Object.values(d.snapshot.components)
-            .filter((c) => c.parentId === eid)
-            .forEach((c) => collect(c.id));
-        };
-        collect(id);
+        const childrenIndex = buildChildrenIndex(d.snapshot.components);
+        const toRemove = getDescendantIdsFromIndex(id, childrenIndex);
+        toRemove.add(id);
 
         const apiGroupParentsToSync = new Set<string>();
         toRemove.forEach((eid) => {
@@ -468,7 +475,8 @@ export const componentsSlice = (
       orderedConnectionIds: string[],
     ) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId]!;
+        const d = getActiveDiagram(state);
+        if (!d) return;
         const scene = resolveActiveScene(d);
         const comp =
           scene?.addedComponents[componentId] ?? d.snapshot.components[componentId];
@@ -481,7 +489,7 @@ export const componentsSlice = (
 
     addExternalLink: (componentId: string, link: Omit<ExternalLink, "id">) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId!];
+        const d = getActiveDiagram(state);
         if (!d) return;
         const scene = resolveActiveScene(d);
         const inSceneAdds = !!(scene && scene.addedComponents[componentId]);
@@ -498,7 +506,7 @@ export const componentsSlice = (
 
     updateExternalLink: (componentId: string, linkId: string, patch: Partial<Omit<ExternalLink, "id">>) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId!];
+        const d = getActiveDiagram(state);
         if (!d) return;
         const scene = resolveActiveScene(d);
         const inSceneAdds = !!(scene && scene.addedComponents[componentId]);
@@ -515,7 +523,7 @@ export const componentsSlice = (
 
     removeExternalLink: (componentId: string, linkId: string) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId!];
+        const d = getActiveDiagram(state);
         if (!d) return;
         const scene = resolveActiveScene(d);
         const inSceneAdds = !!(scene && scene.addedComponents[componentId]);
@@ -531,7 +539,8 @@ export const componentsSlice = (
 
     setParent: (childId: string, parentId: string | null) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId]!;
+        const d = getActiveDiagram(state);
+        if (!d) return;
         const scene = resolveActiveScene(d);
         if (scene && !scene.addedComponents[childId]) return;
         if (!scene) pushHistory(state);
@@ -551,7 +560,8 @@ export const componentsSlice = (
       newPosition: { x: number; y: number },
     ) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId]!;
+        const d = getActiveDiagram(state);
+        if (!d) return;
         const scene = resolveActiveScene(d);
 
         // Scene-mode guard: only allow moving scene-owned components
@@ -582,7 +592,8 @@ export const componentsSlice = (
     groupNodes: (componentIds: string[]): string | null => {
       let panelId: string | null = null;
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId]!;
+        const d = getActiveDiagram(state);
+        if (!d) return;
         if (d.activeSceneId && d.scenes?.[d.activeSceneId]) return;
         const comps = d.snapshot.components;
         const ids = componentIds.filter(
@@ -648,7 +659,8 @@ export const componentsSlice = (
 
     ungroupNodes: (panelId: string) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId!];
+        const d = getActiveDiagram(state);
+        if (!d) return;
         const scene = resolveActiveScene(d);
 
         if (scene) {

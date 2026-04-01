@@ -4,6 +4,7 @@ import type { AppState } from "../store.types";
 import { computeMergePreview, nextSceneColor } from "../../utils/scene.utils";
 import { mutateRemoveComponentInScene, mutateRemoveConnectionInScene } from "../../utils/scene-mutations";
 import { pushHistory } from "./history.slice";
+import { getActiveDiagram } from "./get-active-diagram";
 import { resolveActiveScene } from "./scene-helpers";
 
 function ensureScenes(d: Diagram): Record<string, SceneDiff> {
@@ -18,7 +19,8 @@ export const scenesSlice = (
   duplicateScene: (sceneId: string, name?: string): SceneDiff | null => {
     let created: SceneDiff | null = null;
     set((state) => {
-      const d = state.diagrams[state.activeDiagramId!];
+      const d = getActiveDiagram(state);
+      if (!d) return;
       const src = d?.scenes?.[sceneId];
       if (!src) return;
       const scenes = ensureScenes(d);
@@ -40,7 +42,7 @@ export const scenesSlice = (
   addScene: (name: string): SceneDiff => {
     let created!: SceneDiff;
     set((state) => {
-      const d = state.diagrams[state.activeDiagramId!];
+      const d = getActiveDiagram(state);
       if (!d) return;
       const scenes = ensureScenes(d);
       const index = Object.keys(scenes).length;
@@ -64,7 +66,7 @@ export const scenesSlice = (
 
   removeScene: (sceneId: string) => {
     set((state) => {
-      const d = state.diagrams[state.activeDiagramId!];
+      const d = getActiveDiagram(state);
       if (!d?.scenes?.[sceneId]) return;
       delete d.scenes[sceneId];
       if (Object.keys(d.scenes).length === 0) {
@@ -82,7 +84,7 @@ export const scenesSlice = (
 
   setActiveScene: (sceneId: string | null) => {
     set((state) => {
-      const d = state.diagrams[state.activeDiagramId!];
+      const d = getActiveDiagram(state);
       if (!d) return;
       if (sceneId !== null && !d.scenes?.[sceneId]) return;
 
@@ -106,7 +108,7 @@ export const scenesSlice = (
 
   setCompareScene: (sceneId: string | null) => {
     set((state) => {
-      const d = state.diagrams[state.activeDiagramId!];
+      const d = getActiveDiagram(state);
       if (!d) return;
       if (sceneId === null) {
         d.compareSceneId = null;
@@ -124,7 +126,7 @@ export const scenesSlice = (
 
   renameScene: (sceneId: string, name: string) => {
     set((state) => {
-      const d = state.diagrams[state.activeDiagramId!];
+      const d = getActiveDiagram(state);
       const sc = d?.scenes?.[sceneId];
       if (!sc) return;
       const t = name.trim();
@@ -135,7 +137,7 @@ export const scenesSlice = (
 
   mergeSceneIntoBase: (sceneId: string) => {
     set((state) => {
-      const d = state.diagrams[state.activeDiagramId!];
+      const d = getActiveDiagram(state);
       if (!d?.scenes?.[sceneId]) return;
       let preview: ReturnType<typeof computeMergePreview>;
       try {
@@ -199,7 +201,7 @@ export const scenesSlice = (
 
   addComponentToScene: (sceneId: string, component: Component, layout: NodeLayout) => {
     set((state) => {
-      const d = state.diagrams[state.activeDiagramId!];
+      const d = getActiveDiagram(state);
       const sc = d?.scenes?.[sceneId];
       if (!sc) return;
       sc.addedComponents[component.id] = component;
@@ -210,7 +212,7 @@ export const scenesSlice = (
 
   removeComponentFromScene: (sceneId: string, componentId: string) => {
     set((state) => {
-      const d = state.diagrams[state.activeDiagramId!];
+      const d = getActiveDiagram(state);
       if (!d?.scenes?.[sceneId]) return;
       mutateRemoveComponentInScene(d, sceneId, componentId);
       d.updatedAt = new Date().toISOString();
@@ -219,7 +221,7 @@ export const scenesSlice = (
 
   addConnectionToScene: (sceneId: string, connection: Connection) => {
     set((state) => {
-      const d = state.diagrams[state.activeDiagramId!];
+      const d = getActiveDiagram(state);
       const sc = d?.scenes?.[sceneId];
       if (!sc) return;
       sc.addedConnections[connection.id] = connection;
@@ -229,7 +231,7 @@ export const scenesSlice = (
 
   removeConnectionFromScene: (sceneId: string, connectionId: string) => {
     set((state) => {
-      const d = state.diagrams[state.activeDiagramId!];
+      const d = getActiveDiagram(state);
       if (!d?.scenes?.[sceneId]) return;
       mutateRemoveConnectionInScene(d, sceneId, connectionId);
       d.updatedAt = new Date().toISOString();
@@ -243,7 +245,7 @@ export const scenesSlice = (
     dimensions?: { width: number; height: number },
   ) => {
     set((state) => {
-      const d = state.diagrams[state.activeDiagramId!];
+      const d = getActiveDiagram(state);
       const sc = d?.scenes?.[sceneId];
       if (!sc) return;
       const layout = sc.nodeLayouts[elementId];

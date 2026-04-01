@@ -4,6 +4,7 @@ import { EdgeStyle as EdgeStyleEnum } from "../../enums";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
+import { getActiveDiagram } from "./get-active-diagram";
 import { resolveActiveScene } from "./scene-helpers";
 import { mutateRemoveConnectionInScene } from "../../utils/scene-mutations";
 
@@ -27,7 +28,7 @@ export const connectionsSlice = (
         },
       };
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId!];
+        const d = getActiveDiagram(state);
         if (!d) return;
         const scene = resolveActiveScene(d);
         if (!scene) pushHistory(state);
@@ -43,7 +44,7 @@ export const connectionsSlice = (
 
     updateConnection: (id: string, patch: Partial<Omit<Connection, "id">>) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId!];
+        const d = getActiveDiagram(state);
         if (!d) return;
         const scene = resolveActiveScene(d);
         const inScene = !!(scene && scene.addedConnections[id]);
@@ -56,7 +57,7 @@ export const connectionsSlice = (
 
     removeConnection: (id: string) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId!];
+        const d = getActiveDiagram(state);
         if (!d) return;
         const scene = resolveActiveScene(d);
         if (scene) {

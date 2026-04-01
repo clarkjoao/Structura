@@ -4,13 +4,14 @@ import {
   MAX_HISTORY_STEPS,
   UNDO_REDO_COOLDOWN_MS,
 } from "../store.constants";
+import { getActiveDiagram } from "./get-active-diagram";
 
 export function deepClone<T>(v: T): T {
   return JSON.parse(JSON.stringify(v));
 }
 
-export function pushHistory(state: AppState) {
-  const d = state.diagrams[state.activeDiagramId!];
+export function pushHistory(state: AppState): void {
+  const d = getActiveDiagram(state);
   if (!d) return;
   if (Date.now() - state._lastUndoRedoAt < UNDO_REDO_COOLDOWN_MS) return;
   const last = state.past[state.past.length - 1];

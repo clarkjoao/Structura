@@ -3,6 +3,7 @@ import { generateId } from "../../utils/generate-id";
 import { parseMermaidToSteps } from "../../utils/flow-mermaid";
 import type { AppState } from "../store.types";
 import { resolveSceneSnapshot } from "../../utils/scene.utils";
+import { getActiveDiagram } from "./get-active-diagram";
 
 export const flowsSlice = (
   set: (fn: (state: AppState) => void) => void,
@@ -57,7 +58,7 @@ export const flowsSlice = (
 
     updateFlow: (id: string, patch: Partial<Omit<Flow, "id">>) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId!];
+        const d = getActiveDiagram(state);
         if (!d) return;
         const flow = d.snapshot.flows[id];
         if (!flow) return;
@@ -75,7 +76,7 @@ export const flowsSlice = (
 
     removeFlow: (id: string) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId!];
+        const d = getActiveDiagram(state);
         if (!d) return;
         delete d.snapshot.flows[id];
       });
@@ -84,7 +85,7 @@ export const flowsSlice = (
     addFlowStep: (flowId: string, step: Omit<FlowStep, 'id'>): string => {
       const stepId = generateId("step");
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId!];
+        const d = getActiveDiagram(state);
         if (!d) return;
         const flow = d.snapshot.flows[flowId];
         if (!flow) return;
@@ -95,7 +96,7 @@ export const flowsSlice = (
 
     updateFlowStep: (flowId: string, stepId: string, patch: Partial<FlowStep>) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId!];
+        const d = getActiveDiagram(state);
         if (!d) return;
         const flow = d.snapshot.flows[flowId];
         if (!flow || !flow.steps[stepId]) return;
@@ -105,7 +106,7 @@ export const flowsSlice = (
 
     removeFlowStep: (flowId: string, stepId: string) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId!];
+        const d = getActiveDiagram(state);
         if (!d) return;
         const flow = d.snapshot.flows[flowId];
         if (!flow) return;
@@ -129,7 +130,7 @@ export const flowsSlice = (
 
     addFlowBranch: (flowId: string, conditionStepId: string, branch: FlowBranch) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId!];
+        const d = getActiveDiagram(state);
         if (!d) return;
         const flow = d.snapshot.flows[flowId];
         if (!flow) return;
@@ -142,7 +143,7 @@ export const flowsSlice = (
 
     removeFlowBranch: (flowId: string, conditionStepId: string, branchIndex: number) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId!];
+        const d = getActiveDiagram(state);
         if (!d) return;
         const flow = d.snapshot.flows[flowId];
         if (!flow) return;
@@ -169,7 +170,7 @@ export const flowsSlice = (
 
     convertStepToCondition: (flowId: string, stepId: string, conditionLabel: string, branchLabels: string[]) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId!];
+        const d = getActiveDiagram(state);
         if (!d) return;
         const flow = d.snapshot.flows[flowId];
         if (!flow) return;

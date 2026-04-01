@@ -123,6 +123,7 @@ export {
   sceneHasDiff,
 } from "./utils/scene.utils";
 export type { CompareSnapshotResult, CompareElementVisual, MergePreview } from "./utils/scene.utils";
+export { buildChildrenIndex, getDescendantIdsFromIndex } from "./utils/children-index";
 
 /** Type guards for the Component discriminated union */
 export {

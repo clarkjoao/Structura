@@ -1,6 +1,7 @@
 import type { Point } from "../../model/diagram.types";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
+import { getActiveDiagram } from "./get-active-diagram";
 import { resolveActiveScene } from "./scene-helpers";
 
 export const layoutSlice = (
@@ -9,7 +10,8 @@ export const layoutSlice = (
 ) => ({
     updateNodeLayout: (elementId: string, position: { x: number; y: number }, dimensions?: { width: number; height: number }) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId!];
+        const d = getActiveDiagram(state);
+        if (!d) return;
         const scene = resolveActiveScene(d);
         if (scene && scene.addedComponents[elementId]) {
           const layout = scene.nodeLayouts[elementId];
@@ -37,7 +39,9 @@ export const layoutSlice = (
 
     updateViewport: (viewport: { x: number; y: number; zoom: number }) => {
       set((state) => {
-        state.diagrams[state.activeDiagramId!].viewport = viewport;
+        const d = getActiveDiagram(state);
+        if (!d) return;
+        d.viewport = viewport;
       });
     },
 
@@ -80,7 +84,9 @@ export const layoutSlice = (
 
     bringToFront: (elementId: string) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId!];
+        const d = getActiveDiagram(state);
+        if (!d) return;
+        pushHistory(state);
         const scene = resolveActiveScene(d);
         if (scene && scene.addedComponents[elementId]) {
           const merged = { ...d.nodeLayouts, ...scene.nodeLayouts };
@@ -89,7 +95,6 @@ export const layoutSlice = (
           if (layout) layout.zIndex = maxZ + 1;
           return;
         }
-        pushHistory(state);
         const maxZ = Math.max(...Object.values(d.nodeLayouts).map((nl) => nl.zIndex ?? 0));
         const layout = d.nodeLayouts[elementId];
         if (layout) layout.zIndex = maxZ + 1;
@@ -98,7 +103,9 @@ export const layoutSlice = (
 
     sendToBack: (elementId: string) => {
       set((state) => {
-        const d = state.diagrams[state.activeDiagramId!];
+        const d = getActiveDiagram(state);
+        if (!d) return;
+        pushHistory(state);
         const scene = resolveActiveScene(d);
         if (scene && scene.addedComponents[elementId]) {
           const merged = { ...d.nodeLayouts, ...scene.nodeLayouts };
@@ -107,7 +114,6 @@ export const layoutSlice = (
           if (layout) layout.zIndex = minZ - 1;
           return;
         }
-        pushHistory(state);
         const minZ = Math.min(...Object.values(d.nodeLayouts).map((nl) => nl.zIndex ?? 0));
         const layout = d.nodeLayouts[elementId];
         if (layout) layout.zIndex = minZ - 1;

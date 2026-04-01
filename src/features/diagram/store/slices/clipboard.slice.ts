@@ -1,9 +1,27 @@
 import type { Component, Connection, NodeLayout } from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
-import { deepClone, pushHistory } from "./history.slice";
+import { pushHistory } from "./history.slice";
 import { resolveActiveScene } from "./scene-helpers";
 import { resolveSceneSnapshot } from "../../utils/scene.utils";
+
+function resolveAbsoluteLayoutPosition(
+  id: string,
+  layouts: Record<string, { x: number; y: number }>,
+  components: Record<string, { parentId?: string | null }>,
+): { x: number; y: number } {
+  const layout = layouts[id];
+  const x = layout?.x ?? 0;
+  const y = layout?.y ?? 0;
+  const component = components[id];
+  if (!component?.parentId) return { x, y };
+  const parentAbsolutePosition = resolveAbsoluteLayoutPosition(
+    component.parentId,
+    layouts,
+    components,
+  );
+  return { x: x + parentAbsolutePosition.x, y: y + parentAbsolutePosition.y };
+}
 
 export const clipboardSlice = (
   set: (fn: (state: AppState) => void) => void,
@@ -24,24 +42,14 @@ export const clipboardSlice = (
         for (const id of componentIds) {
           const comp = r.components[id];
           if (!comp) continue;
-          components.push(deepClone(comp));
-
-          const layout = r.nodeLayouts[id];
-          let x = layout?.x ?? 0;
-          let y = layout?.y ?? 0;
-          if (comp.parentId) {
-            const parentLayout = r.nodeLayouts[comp.parentId];
-            if (parentLayout) {
-              x += parentLayout.x;
-              y += parentLayout.y;
-            }
-          }
-          absPositions.push({ x, y });
+          components.push(structuredClone(comp));
+          const abs = resolveAbsoluteLayoutPosition(id, r.nodeLayouts, r.components);
+          absPositions.push(abs);
         }
 
         const connections = Object.values(r.connections)
           .filter((c) => idSet.has(c.sourceId) && idSet.has(c.targetId))
-          .map((c) => deepClone(c));
+          .map((c) => structuredClone(c));
 
         const _pasteOffsets =
           absPositions.length > 0
@@ -68,8 +76,8 @@ export const clipboardSlice = (
         if (!state.clipboard || !state.activeDiagramId) return;
         const d = state.diagrams[state.activeDiagramId];
         if (!d) return;
+        pushHistory(state);
         const scene = resolveActiveScene(d);
-        if (!scene) pushHistory(state);
         const idMap: Record<string, string> = {};
         const baseX = position?.x ?? 300;
         const baseY = position?.y ?? 300;
@@ -86,7 +94,7 @@ export const clipboardSlice = (
             : options?.preserveParentWhenMissing && parentExistsInActiveDiagram
               ? c.parentId
               : null;
-          const comp = { ...deepClone(c), id: newId, parentId };
+          const comp = { ...structuredClone(c), id: newId, parentId };
           const offset = pasteOffsets?.[index];
           const layout = {
             elementId: newId,
@@ -141,7 +149,7 @@ export const clipboardSlice = (
           const tgt = idMap[conn.targetId];
           if (src && tgt) {
             const newId = generateId("conn");
-            const next = { ...deepClone(conn), id: newId, sourceId: src, targetId: tgt };
+            const next = { ...structuredClone(conn), id: newId, sourceId: src, targetId: tgt };
             if (scene) {
               scene.addedConnections[newId] = next;
             } else {
