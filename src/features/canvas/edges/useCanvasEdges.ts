@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { Edge } from "@xyflow/react";
 import type { Connection, Diagram, FlowStep } from "@/features/diagram";
-import { resolveCanvasSnapshot } from "@/features/diagram";
+import { getCachedCanvasSnapshot } from "@/features/diagram";
 import { useFlowMode } from "../flow/FlowModeContext";
 import { buildEdge, filterVisibleConnections } from "./edgeBuilding";
 import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
@@ -40,7 +40,7 @@ export function useCanvasEdges({
   return useMemo(() => {
     if (!diagram) return [];
 
-    const r = resolveCanvasSnapshot(diagram);
+    const r = getCachedCanvasSnapshot(diagram);
     const visible = filterVisibleConnections(visibleConnections, r.components);
     const assignmentMap = new Map(edgeHandleAssignments.map((a) => [a.connId, a]));
 

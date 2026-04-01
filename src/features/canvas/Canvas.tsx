@@ -21,7 +21,7 @@ import { DiagramCommandPalette } from "./navigation/DiagramCommandPalette";
 import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 import { Eye } from "lucide-react";
 import { useCanvasController } from "./hooks/useCanvasController";
-import { resolveCanvasSnapshot } from "@/features/diagram";
+import { getCachedCanvasSnapshot } from "@/features/diagram";
 import { CANVAS_STYLES } from "./constants";
 import CustomEdge from "./edges/CustomEdge";
 import type { CanvasProps } from "./canvas.types";
@@ -81,7 +81,7 @@ const Canvas = (props: CanvasProps = {}) => {
     );
   }
 
-  const resolvedSnapshot = resolveCanvasSnapshot(diagram);
+  const resolvedSnapshot = getCachedCanvasSnapshot(diagram);
 
   return (
     <HandleHighlightProvider

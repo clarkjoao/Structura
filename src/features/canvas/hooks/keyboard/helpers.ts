@@ -4,7 +4,7 @@ import {
   isApiGroupComponent,
   isEndpointComponent,
   isPanelComponent,
-  resolveCanvasSnapshot,
+  getCachedCanvasSnapshot,
 } from "@/features/diagram";
 
 export const PASTE_OFFSET = 20;
@@ -51,7 +51,7 @@ export function getSelectedNodes(rf: ReactFlowInstance, fallbackId: string | nul
 }
 
 export function getCopyableIds(diagram: Diagram, nodes: Node[]): string[] {
-  const r = resolveCanvasSnapshot(diagram);
+  const r = getCachedCanvasSnapshot(diagram);
   const selectedIds = nodes
     .map((n) => n.id)
     .filter((id) => {
@@ -92,7 +92,7 @@ export function getOffsetPositionOfNodes(
   diagram: Diagram,
   ids: string[],
 ): { x: number; y: number } | null {
-  const r = resolveCanvasSnapshot(diagram);
+  const r = getCachedCanvasSnapshot(diagram);
   const layouts = r.nodeLayouts;
   let minX = Infinity;
   let minY = Infinity;
@@ -136,7 +136,7 @@ export function getCenterOfNodes(
   ids: string[],
   offset = 20,
 ): { x: number; y: number } {
-  const r = resolveCanvasSnapshot(diagram);
+  const r = getCachedCanvasSnapshot(diagram);
   const layouts = r.nodeLayouts;
   let sumX = 0;
   let sumY = 0;

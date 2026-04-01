@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useCollab } from "@/features/collaboration";
 import { useReactFlow, useUpdateNodeInternals } from "@xyflow/react";
 import { useNavigate } from "react-router-dom";
-import { resolveCanvasSnapshot } from "@/features/diagram";
+import { getCachedCanvasSnapshot } from "@/features/diagram";
 import type { CanvasProps } from "../canvas.types";
 import { useCanvasCompareState } from "./useCanvasCompareState";
 import { useCanvasFlowState } from "./useCanvasFlowState";
@@ -24,7 +24,7 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
   const visualState = useCanvasVisualState(diagram?.id ?? null);
   const { updateSelectedNode } = useCollab();
   const compareState = useCanvasCompareState({ diagram, isFlowPanelOpen: !!canvasProps.isFlowPanelOpen, clearCanvasSelection: visualState.clearCanvasSelection, t });
-  const resolved = useMemo(() => (diagram ? resolveCanvasSnapshot(diagram) : null), [diagram]);
+  const resolved = useMemo(() => (diagram ? getCachedCanvasSnapshot(diagram) : null), [diagram]);
   const allDiagramTags = useMemo(() => {
     if (!resolved?.components) return [];
     const tags = new Set<string>();

@@ -14,7 +14,7 @@ import type {
 import {
   COMPONENT_TYPE_SVG,
   generateId,
-  resolveCanvasSnapshot,
+  getCachedCanvasSnapshot,
 } from "@/features/diagram";
 import { getViewportCenter } from "../viewport-utils";
 import { exportDrawio } from "@/lib/export-service";
@@ -172,7 +172,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   } = params;
 
   const resolvedSnapshot = useMemo(
-    () => (diagram ? resolveCanvasSnapshot(diagram) : null),
+    () => (diagram ? getCachedCanvasSnapshot(diagram) : null),
     [diagram],
   );
 
