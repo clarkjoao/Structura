@@ -1,9 +1,7 @@
 import { SEED_DIAGRAMS } from "@/fixtures/seeds";
-import { deletePreview } from "@/lib/diagram-preview/previewCache";
 import { AppState } from "../store.types";
 import {Diagram, Level} from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
-import { removeRecentRef } from "../../utils/recent-diagrams";
 
 export const diagramsSlice = (
     set: (fn: (state: AppState) => void) => void,
@@ -103,13 +101,11 @@ export const diagramsSlice = (
     },
 
     deleteDiagram: (id: string) => {
-      deletePreview(id);
       set((s) => {
         delete s.diagrams[id];
 
         if (s.activeDiagramId === id)
           s.activeDiagramId = null;
       });
-      removeRecentRef(id);
     },
   });

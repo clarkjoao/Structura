@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import type { Diagram } from "@/features/diagram";
-import { useDiagramActions, useFolders } from "@/features/diagram";
+import { useDiagramActions, useFolders, removeRecentRef } from "@/features/diagram";
+import { deletePreview } from "@/lib/diagram-preview/previewCache";
 import { getPreview } from "@/lib/diagram-preview";
 import { cn } from "@/lib/utils";
 import { DiagramCardFooter } from "@/pages/dashboard/components/diagram-card/DiagramCardFooter";
@@ -70,7 +71,9 @@ export function DiagramCard({
   const handleDelete = (event: ReactMouseEvent) => {
     event.stopPropagation();
     if (window.confirm(t("dashboard.card.deleteConfirm", { name: diagram.name }))) {
+      deletePreview(diagram.id);
       deleteDiagram(diagram.id);
+      removeRecentRef(diagram.id);
     }
   };
 

@@ -601,6 +601,8 @@ export const componentsSlice = (
         );
         if (ids.length < 2) return;
 
+        pushHistory(state);
+
         function getAbsPos(eid: string): { x: number; y: number } {
           const layout = d.nodeLayouts[eid];
           const c = comps[eid];
@@ -630,10 +632,9 @@ export const componentsSlice = (
         const maxX = Math.max(...positions.map((p, i) => p.x + sizes[i].w)) + NODE_DRAG_PADDING;
         const maxY = Math.max(...positions.map((p, i) => p.y + sizes[i].h)) + NODE_DRAG_PADDING * 2;
 
-        pushHistory(state);
         const panel: PanelComponent = {
           id: generateId("el"),
-          name: "Grupo",
+          name: "Group",
           type: "panel" as const,
           panelKind: PanelKind.Default,
           description: "",
