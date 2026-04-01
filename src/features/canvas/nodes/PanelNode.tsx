@@ -8,7 +8,7 @@ import { getPanelKindDef } from "@/lib/catalogs/panels";
 import AwsIcon from "./AwsIcon";
 import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
-import { useCollabHighlight } from "@/features/collaboration/useCollabHighlight";
+import { useCollabHighlight } from "@/features/collaboration";
 
 const DEFAULT_OPACITY = 10;
 

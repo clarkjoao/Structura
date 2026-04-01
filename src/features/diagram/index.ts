@@ -15,6 +15,7 @@ export type {
   Level,
   Component,
   ComponentPatch,
+  TypedComponentPatch,
   C4Component,
   PanelComponent,
   SwimlaneStyle,
@@ -63,6 +64,9 @@ export {
   getIntentDefault,
 } from "./model/connection-defaults";
 export type { EffectiveConnectionStyle } from "./model/connection-defaults";
+
+/** Last-used edge style (localStorage persistence) */
+export { getLastEdgeStyle, saveLastEdgeStyle } from "./hooks/useLastEdgeStyle";
 
 /** Unique ID generator for diagram entities */
 export { generateId } from "./utils/generate-id";
@@ -125,6 +129,65 @@ export {
 export type { CompareSnapshotResult, CompareElementVisual, MergePreview } from "./utils/scene.utils";
 export { buildChildrenIndex, getDescendantIdsFromIndex } from "./utils/children-index";
 
+/** Cached resolveCanvasSnapshot — use instead of resolveCanvasSnapshot in render paths */
+export { getCachedCanvasSnapshot } from "./utils/snapshot-cache";
+export type { ResolvedSnapshot } from "./utils/snapshot-cache";
+
+/** Recent diagrams tracking (localStorage) */
+export {
+  readRecentRefs,
+  writeRecentRefs,
+  removeRecentRef,
+  appendRecentRef,
+} from "./utils/recent-diagrams";
+export type { RecentDiagramRef } from "./utils/recent-diagrams";
+
+/** Compute API group node dimensions from endpoint count */
+export { computeApiGroupSize } from "./utils/api-group-size";
+
+/** Shared geometry/layout constants */
+export {
+  PANEL_DEFAULT_W,
+  PANEL_DEFAULT_H,
+  SWIMLANE_DEFAULT_W,
+  SWIMLANE_DEFAULT_H,
+  PANEL_COLLAPSED_W,
+  PANEL_COLLAPSED_H,
+  NOTE_DEFAULT_W,
+  NOTE_DEFAULT_H,
+  NOTE_COLLAPSED_W,
+  NOTE_COLLAPSED_H,
+  DB_TABLE_COLLAPSED_W,
+  DB_TABLE_COLLAPSED_H,
+  MIN_HANDLES,
+  MAX_HANDLES,
+  NODE_DRAG_PADDING,
+  DEFAULT_NODE_W,
+  DEFAULT_NODE_H,
+  API_GROUP_HEADER_H,
+  API_GROUP_ENDPOINT_H,
+  API_GROUP_FOOTER_H,
+  API_GROUP_FRAME_W,
+} from "./model/layout.constants";
+
+/** Store constants */
+export {
+  VIEWPORT_DEBOUNCE_MS,
+  MAX_HISTORY_STEPS,
+  HISTORY_COALESCE_MS,
+  UNDO_REDO_COOLDOWN_MS,
+} from "./store/store.constants";
+
+/** Persist config (for infrastructure adapters) */
+export {
+  PERSIST_KEY,
+  PERSIST_SCHEMA_VERSION,
+  CURRENT_SCHEMA_VERSION,
+  buildPersistStoragePayload,
+  partializeState,
+} from "./store/persist.config";
+export type { PersistedDiagramStoreSlice } from "./store/persist.config";
+
 /** Type guards for the Component discriminated union */
 export {
   isPanelComponent,
@@ -168,6 +231,7 @@ export {
   isCanvasApiType,
   isPanelKind,
   isReactFlowParentPanelType,
+  isComponentType,
   getUsageKeyForType,
   getDefaultNameForNewComponent,
 } from "./model/component-type-constants";
@@ -230,4 +294,4 @@ export {
   useAllUserTemplates,
 } from "./store/selectors";
 export type { DiagramStore, ClipboardEntry } from "./store/store.types";
-export type { ServiceDefinition } from "./model/service.types";
+export type { ServiceDefinition, ServiceSourceRef } from "./model/service.types";

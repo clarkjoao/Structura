@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import type { ReactFlowInstance } from "@xyflow/react";
 import {
   isPanelComponent,
-  resolveCanvasSnapshot,
+  getCachedCanvasSnapshot,
   useDiagramStore,
   type Component,
   type Connection,
@@ -189,7 +189,7 @@ export function useCopyPasteShortcuts({
         const ids = getCopyableIds(diagram, selectedNodes);
         if (ids.length === 0) return true;
 
-        const canvasSnapshot = resolveCanvasSnapshot(diagram);
+        const canvasSnapshot = getCachedCanvasSnapshot(diagram);
         const originalSelectedIds = selectedNodes
           .map((node) => node.id)
           .filter((id) => Boolean(canvasSnapshot.components[id]));

@@ -2,9 +2,9 @@ import { useCallback, useState } from "react";
 import {
   appendRecentRef,
   readRecentRefs,
-  type RecentDiagramRef,
   writeRecentRefs,
-} from "@/features/diagram/utils/recent-diagrams";
+  type RecentDiagramRef,
+} from "@/features/diagram";
 
 // ── React hook ──
 

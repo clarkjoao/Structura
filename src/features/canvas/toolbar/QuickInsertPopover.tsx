@@ -23,13 +23,12 @@ import {
   isJsonViewerType,
 } from "@/features/diagram";
 import type { ComponentType } from "@/features/diagram";
-import { getDefaultNameForNewComponent } from "@/features/diagram";
-import { getLastEdgeStyle } from "@/features/diagram/hooks/useLastEdgeStyle";
+import { getDefaultNameForNewComponent, getLastEdgeStyle } from "@/features/diagram";
 import { PANEL_KINDS, getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/catalogs/aws";
 import AwsIcon from "../nodes/AwsIcon";
 import { useTranslation } from "react-i18next";
-import { useCustomComponentLibrary } from "@/features/custom-components/hooks/useCustomComponentLibrary";
+import { useCustomComponentLibrary } from "@/features/custom-components";
 
 type CanvasInsertOption = {
   type: ComponentType;

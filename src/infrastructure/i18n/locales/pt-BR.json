@@ -822,7 +822,8 @@
     "removeTitle": "Remover",
     "emptyTagged": "Nenhum flow com essa tag.",
     "emptyNone": "Nenhum flow definido.",
-    "recorderBlockedInCompare": "Saia do modo de comparação de versões para gravar ou editar um flow"
+    "recorderBlockedInCompare": "Saia do modo de comparação de versões para gravar ou editar um flow",
+    "unavailableDuringCollab": "Flows não estão disponíveis durante uma sessão de colaboração"
   },
   "export": {
     "embed": {

@@ -49,7 +49,7 @@ export const scenesSlice = (
       const id = generateId("scene");
       created = {
         id,
-        name: name.trim() || `Cena ${index + 1}`,
+        name: name.trim() || `Scene ${index + 1}`,
         color: nextSceneColor(index),
         createdAt: new Date().toISOString(),
         addedComponents: {},

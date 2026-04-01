@@ -1,7 +1,7 @@
 import { memo } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { Position, type NodeProps } from "@xyflow/react";
-import { useCollabHighlight } from "@/features/collaboration/useCollabHighlight";
+import { useCollabHighlight } from "@/features/collaboration";
 import { Network } from "lucide-react";
 import { useComponentIcon } from "@/features/diagram";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";

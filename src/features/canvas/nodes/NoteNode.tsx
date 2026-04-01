@@ -8,7 +8,7 @@ import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 
 import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
-import { useCollabHighlight } from "@/features/collaboration/useCollabHighlight";
+import { useCollabHighlight } from "@/features/collaboration";
 import { singleIncomingTargetHandleId } from "../edges/connectionDerivations";
 
 const DEFAULT_PAPER_COLOR = "hsl(45 25% 97%)"; // papel ofuscado
