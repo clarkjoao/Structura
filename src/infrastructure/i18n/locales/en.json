@@ -576,6 +576,8 @@
     "linkedDiagramCreated": "✓ Diagram “{{name}}” created and linked.",
     "createLinkedDiagram": "Create linked diagram",
     "linkToDiagram": "Link to diagram",
+    "searchDiagramPlaceholder": "Search diagram...",
+    "noDomain": "No domain",
     "opacityLabel": "Opacity — {{value}}%",
     "tabs": {
       "icon": "Icon"

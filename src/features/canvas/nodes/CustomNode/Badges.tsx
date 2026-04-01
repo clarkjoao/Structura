@@ -29,10 +29,14 @@ function ExternalLinkRow({ link, disabled }: ExternalLinkRowProps) {
       target="_blank"
       rel="noopener noreferrer"
       onClick={(e) => e.stopPropagation()}
-      className={linkClass(disabled)}
+      className={`${linkClass(disabled)} min-w-0 overflow-hidden`}
     >
       <Link className="h-3 w-3 shrink-0" />
-      <span className="text-[10px] truncate">{link.label || link.url}</span>
+      <span className="min-w-0 flex-1">
+        <span className="text-[10px] truncate" title={link.label || link.url}>
+          {link.label || link.url}
+        </span>
+      </span>
     </a>
   );
 }
@@ -70,7 +74,7 @@ export const Badges = ({
   return (
     <div className="flex flex-col gap-0.5 mt-1.5">
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 min-w-0 overflow-hidden">
         {serviceName && (
           serviceId ? (
             <button
@@ -78,15 +82,23 @@ export const Badges = ({
               onClick={handleServiceClick}
               aria-label={`Open service ${serviceName} in registry`}
               tabIndex={controlsDisabled ? -1 : 0}
-              className={linkClass(controlsDisabled)}
+              className={`${linkClass(controlsDisabled)} min-w-0 overflow-hidden`}
             >
               <Link2 className="h-3 w-3 shrink-0" />
-              <span className="text-[10px] truncate">{serviceName}</span>
+              <span className="min-w-0 flex-1">
+                <span className="text-[10px] truncate" title={serviceName}>
+                  {serviceName}
+                </span>
+              </span>
             </button>
           ) : (
-            <div className={linkClass(true)}>
+            <div className={`${linkClass(true)} min-w-0 overflow-hidden`}>
               <Link2 className="h-3 w-3 shrink-0" />
-              <span className="text-[10px] truncate">{serviceName}</span>
+              <span className="min-w-0 flex-1">
+                <span className="text-[10px] truncate" title={serviceName}>
+                  {serviceName}
+                </span>
+              </span>
             </div>
           )
         )}

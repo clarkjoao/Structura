@@ -1,11 +1,12 @@
 import { LayoutDashboard, Lock, Plus, Sparkles, ChevronDown, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useCollab } from "@/features/collaboration";
 
 export interface LinkedDiagramOption {
   id: string;
   name: string;
+  domain?: string;
 }
 
 export interface LinkedDiagramSectionProps {
@@ -32,6 +33,7 @@ export function LinkedDiagramSection({
   const { t } = useTranslation();
   const { isGuest } = useCollab();
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
 
   const hasLinked = Boolean(linkedDiagramId);
@@ -50,6 +52,52 @@ export function LinkedDiagramSection({
       !diagrams.some((d) => d.id === suggestedDiagram.id));
 
   const isSuggestionSelected = linkedDiagramId === suggestedDiagram?.id;
+
+  useEffect(() => {
+    if (!open) {
+      setSearchQuery("");
+    }
+  }, [open]);
+
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+
+  const filteredDiagrams = useMemo(
+    () =>
+      diagrams.filter((diagram) => {
+        if (diagram.id === suggestedDiagram?.id) return false;
+        if (!normalizedSearchQuery) return true;
+        return diagram.name.toLowerCase().includes(normalizedSearchQuery);
+      }),
+    [diagrams, normalizedSearchQuery, suggestedDiagram?.id],
+  );
+
+  const groupedFilteredDiagrams = useMemo(() => {
+    const groupedByDomain = new Map<string, LinkedDiagramOption[]>();
+    const noDomainDiagrams: LinkedDiagramOption[] = [];
+
+    for (const diagram of filteredDiagrams) {
+      const domainLabel = diagram.domain?.trim();
+      if (!domainLabel) {
+        noDomainDiagrams.push(diagram);
+        continue;
+      }
+      if (!groupedByDomain.has(domainLabel)) {
+        groupedByDomain.set(domainLabel, []);
+      }
+      groupedByDomain.get(domainLabel)?.push(diagram);
+    }
+
+    const sortedDomainEntries = Array.from(groupedByDomain.entries()).sort(([domainA], [domainB]) =>
+      domainA.localeCompare(domainB),
+    );
+
+    return [
+      ...sortedDomainEntries.map(([domain, domainDiagrams]) => ({ domain, diagrams: domainDiagrams })),
+      ...(noDomainDiagrams.length > 0
+        ? [{ domain: t("elementPanel.noDomain"), diagrams: noDomainDiagrams }]
+        : []),
+    ];
+  }, [filteredDiagrams, t]);
 
   function select(id: string | undefined) {
     onChangeLinked(id);
@@ -123,7 +171,15 @@ export function LinkedDiagramSection({
 
         {open && (
           <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-md overflow-hidden">
-            
+            <div className="border-b border-border px-2 py-2">
+              <input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder={t("elementPanel.searchDiagramPlaceholder")}
+                className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+
             {showSuggestion && suggestedDiagram && (
               <button
                 type="button"
@@ -146,23 +202,30 @@ export function LinkedDiagramSection({
               {t("elementPanel.noneOption")}
             </button>
 
-            {diagrams
-              .filter((d) => d.id !== suggestedDiagram?.id)
-              .map((diagram) => (
-                <button
-                  key={diagram.id}
-                  type="button"
-                  onClick={() => select(diagram.id)}
-                  className={[
-                    "w-full flex items-center px-3 py-2 text-sm text-left transition-colors",
-                    diagram.id === linkedDiagramId
-                      ? "bg-accent text-foreground font-medium"
-                      : "hover:bg-accent text-foreground",
-                  ].join(" ")}
-                >
-                  {diagram.name}
-                </button>
+            <div className="max-h-64 overflow-y-auto">
+              {groupedFilteredDiagrams.map((group) => (
+                <div key={group.domain}>
+                  <div className="px-3 py-1.5 text-[11px] uppercase tracking-wider font-semibold text-muted-foreground bg-secondary/50 border-y border-border">
+                    {group.domain}
+                  </div>
+                  {group.diagrams.map((diagram) => (
+                    <button
+                      key={diagram.id}
+                      type="button"
+                      onClick={() => select(diagram.id)}
+                      className={[
+                        "w-full flex items-center px-3 py-2 text-sm text-left transition-colors",
+                        diagram.id === linkedDiagramId
+                          ? "bg-accent text-foreground font-medium"
+                          : "hover:bg-accent text-foreground",
+                      ].join(" ")}
+                    >
+                      {diagram.name}
+                    </button>
+                  ))}
+                </div>
               ))}
+            </div>
           </div>
         )}
       </div>
