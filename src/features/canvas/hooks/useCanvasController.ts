@@ -11,6 +11,7 @@ import { useCanvasGraphState } from "./useCanvasGraphState";
 import { useCanvasInteraction } from "./useCanvasInteraction";
 import { useCanvasStore } from "./useCanvasStore";
 import { useCanvasVisualState } from "./useCanvasVisualState";
+import { useInteractionMode } from "./useInteractionMode";
 
 export function useCanvasController(canvasProps: CanvasProps = {}) {
   const { t } = useTranslation();
@@ -84,13 +85,45 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     onNoteStartEdit,
     onJsonViewerStartEdit,
   });
+  const interactionMode = useInteractionMode(diagram);
+
   const selectedNodes = graphState.nodes.filter((node) => visualState.selectedNodeIds.has(node.id));
   const selectedCount = visualState.selectedNodeIds.size;
   const showElementPanel =
     (visualState.selectedNodeId || visualState.selectedEdgeId || selectedCount > 0) &&
-    !flowState.isRecording &&
-    !compareState.isCompareMode &&
+    interactionMode.canEditCanvas &&
     visualState.noteInlineEditingId === null &&
     visualState.jsonViewerInlineEditingId === null;
-  return { t, diagram, reactFlowWrapperRef, visualState, nodes: graphState.nodes, edges: graphState.edges, onNodesChange: graphState.onNodesChange, onNodeDragStop: interaction.onNodeDragStop, eventHandlers: interaction.eventHandlers, isRecording: flowState.isRecording, actions, showSearch: interaction.showSearch, setShowSearch: interaction.setShowSearch, showDiagramSidebar: interaction.showDiagramSidebar, setShowDiagramSidebar: interaction.setShowDiagramSidebar, showCommandPalette: interaction.showCommandPalette, setShowCommandPalette: interaction.setShowCommandPalette, showScenes, setShowScenes, handleSelectDiagram: interaction.handleSelectDiagram, handleSearchSelect: interaction.handleSearchSelect, focusTitleTrigger, isPanelOpen: interaction.isPanelOpen, selectedNodes, selectedCount, showElementPanel, onDrillUp: canvasProps.onDrillUp, isCompareMode: compareState.isCompareMode, allDiagramTags };
+  return {
+    t,
+    diagram,
+    reactFlowWrapperRef,
+    visualState,
+    nodes: graphState.nodes,
+    edges: graphState.edges,
+    onNodesChange: graphState.onNodesChange,
+    onNodeDragStop: interaction.onNodeDragStop,
+    eventHandlers: interaction.eventHandlers,
+    interactionMode,
+    isRecording: flowState.isRecording,
+    actions,
+    showSearch: interaction.showSearch,
+    setShowSearch: interaction.setShowSearch,
+    showDiagramSidebar: interaction.showDiagramSidebar,
+    setShowDiagramSidebar: interaction.setShowDiagramSidebar,
+    showCommandPalette: interaction.showCommandPalette,
+    setShowCommandPalette: interaction.setShowCommandPalette,
+    showScenes,
+    setShowScenes,
+    handleSelectDiagram: interaction.handleSelectDiagram,
+    handleSearchSelect: interaction.handleSearchSelect,
+    focusTitleTrigger,
+    isPanelOpen: interaction.isPanelOpen,
+    selectedNodes,
+    selectedCount,
+    showElementPanel,
+    onDrillUp: canvasProps.onDrillUp,
+    isCompareMode: compareState.isCompareMode,
+    allDiagramTags,
+  };
 }
