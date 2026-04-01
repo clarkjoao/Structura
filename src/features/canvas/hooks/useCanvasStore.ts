@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   useActiveDiagram,
   useDiagrams,
@@ -8,6 +9,8 @@ import {
   useFlows,
 } from "@/features/diagram";
 
+const EMPTY_REGISTRY: Record<string, never> = {};
+
 export function useCanvasStore() {
   const diagram = useActiveDiagram();
   const allDiagrams = useDiagrams();
@@ -17,13 +20,18 @@ export function useCanvasStore() {
   const flows = useFlows();
   const actions = useDiagramActions();
 
-  return {
-    diagram,
-    allDiagrams,
-    visibleComponents,
-    visibleConnections,
-    serviceRegistry: serviceRegistry ?? {},
-    flows,
-    actions,
-  };
+  const stableRegistry = serviceRegistry ?? EMPTY_REGISTRY;
+
+  return useMemo(
+    () => ({
+      diagram,
+      allDiagrams,
+      visibleComponents,
+      visibleConnections,
+      serviceRegistry: stableRegistry,
+      flows,
+      actions,
+    }),
+    [diagram, allDiagrams, visibleComponents, visibleConnections, stableRegistry, flows, actions],
+  );
 }
