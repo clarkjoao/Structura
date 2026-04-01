@@ -55,11 +55,12 @@ export function useNodeDragParenting({
   const dragTargetRef = useRef<string | null>(null);
 
   /**
-   * Track whether a drag-stop is in progress so handlePositionChange can skip the
-   * redundant updateNodeLayout call that ReactFlow fires with dragging=false right
-   * before onNodeDragStop.
+   * Track node ids that are currently dragging and ids with a pending drag-stop
+   * position event. This keeps keyboard nudges (dragging=false without prior
+   * dragging=true) persisted while still skipping the redundant drag-stop write.
    */
-  const dragStopPendingRef = useRef(false);
+  const draggingNodeIdsRef = useRef(new Set<string>());
+  const dragStopPendingNodeIdsRef = useRef(new Set<string>());
 
   const handlePositionChange = useCallback(
     (change: NodeChange) => {
@@ -74,7 +75,10 @@ export function useNodeDragParenting({
         // ReactFlow fires dragging=false immediately before onNodeDragStop.
         // If a drag-stop is incoming, skip this write — onNodeDragStop will
         // handle the final position atomically via commitNodeDrag.
-        if (dragStopPendingRef.current) return;
+        if (dragStopPendingNodeIdsRef.current.has(change.id)) {
+          dragStopPendingNodeIdsRef.current.delete(change.id);
+          return;
+        }
 
         if (!canMoveNodeInSceneMode(diagram, change.id)) {
           toast.error(i18n.t("scenes.baseMoveBlocked"));
@@ -149,23 +153,26 @@ export function useNodeDragParenting({
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
-      // Signal that a drag stop is about to fire so handlePositionChange skips
-      // the redundant dragging=false write on the same batch.
-      const hasDragStop = changes.some(
-        (c) => c.type === "position" && !c.dragging,
-      );
-      if (hasDragStop) {
-        dragStopPendingRef.current = true;
-        // Clear after React has processed — the real commit happens in onNodeDragStop
-        requestAnimationFrame(() => {
-          dragStopPendingRef.current = false;
-        });
+      for (const change of changes) {
+        if (change.type !== "position") continue;
+        if (!change.dragging && draggingNodeIdsRef.current.has(change.id)) {
+          dragStopPendingNodeIdsRef.current.add(change.id);
+        }
       }
 
       changes.forEach((change) => {
         if (change.type === "position") handlePositionChange(change);
         if (change.type === "dimensions") handleDimensionsChange(change);
       });
+
+      for (const change of changes) {
+        if (change.type !== "position") continue;
+        if (change.dragging) {
+          draggingNodeIdsRef.current.add(change.id);
+        } else {
+          draggingNodeIdsRef.current.delete(change.id);
+        }
+      }
     },
     [handlePositionChange, handleDimensionsChange],
   );
@@ -177,6 +184,8 @@ export function useNodeDragParenting({
       setUnparentCandidatePanelId(null);
 
       const nodeType = typeof draggedNode.type === "string" ? draggedNode.type : "";
+      draggingNodeIdsRef.current.delete(draggedNode.id);
+      dragStopPendingNodeIdsRef.current.delete(draggedNode.id);
       if (isEndpointType(nodeType)) return;
       if (!diagram) return;
 
