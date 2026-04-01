@@ -17,6 +17,7 @@ import { CONFIG } from "./constants";
 import { cellBuilders } from "./cell-builders";
 import { buildEdgeCell } from "./edge-builder";
 import {
+  type BoundingBox,
   computeBoundingBox,
   computeScaleFactor,
   DRAWIO_MIN_MARGIN,
@@ -108,6 +109,18 @@ function sortExportOrder(
     if (la.y !== lb.y) return la.y - lb.y;
     return la.x - lb.x;
   });
+}
+
+function transformCanvasPoint(
+  x: number,
+  y: number,
+  bbox: BoundingBox,
+  scale: number,
+): { x: number; y: number } {
+  return {
+    x: Math.round((x - bbox.minX) * scale + DRAWIO_MIN_MARGIN),
+    y: Math.round((y - bbox.minY) * scale + DRAWIO_MIN_MARGIN),
+  };
 }
 
 export function exportDrawio(
@@ -282,15 +295,12 @@ export function exportDrawio(
   const edgeCells: string[] = [];
   for (const conn of Object.values(connections)) {
     const edgeLayout = edgeLayoutByConnectionId.get(conn.id);
-    const pointsAttribute =
+    const waypoints =
       edgeLayout && edgeLayout.waypoints.length > 0
         ? edgeLayout.waypoints
-            .map((point) => `${Math.round(point.x)},${Math.round(point.y)}`)
-            .join(";")
-        : undefined;
-    edgeCells.push(
-      buildEdgeCell(conn, pointsAttribute ? { pointsAttribute } : undefined),
-    );
+            .map((point) => transformCanvasPoint(point.x, point.y, bbox, scale))
+        : [];
+    edgeCells.push(buildEdgeCell(conn, { waypoints }));
   }
 
   const allCells = [

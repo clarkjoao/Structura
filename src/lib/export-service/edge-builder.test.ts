@@ -55,11 +55,16 @@ describe("buildEdgeCell", () => {
     expect(xml.startsWith("<mxCell")).toBe(true);
   });
 
-  it("adds draw.io points attribute when waypoints are provided", () => {
+  it("adds draw.io waypoint array when waypoints are provided", () => {
     const xml = buildEdgeCell(conn({ id: "e3", sourceId: "a", targetId: "b", label: "L" }), {
-      pointsAttribute: "10,20;30,40",
+      waypoints: [
+        { x: 10, y: 20 },
+        { x: 30, y: 40 },
+      ],
     });
-    expect(xml).toContain('points="10,20;30,40"');
+    expect(xml).toContain('<Array as="points">');
+    expect(xml).toContain('<mxPoint x="10" y="20"/>');
+    expect(xml).toContain('<mxPoint x="30" y="40"/>');
     expect(xml).toContain('edge="1"');
   });
 });

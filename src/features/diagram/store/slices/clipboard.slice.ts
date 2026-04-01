@@ -1,4 +1,5 @@
 import type { Component, Connection, NodeLayout } from "../../model/diagram.types";
+import { current } from "immer";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
@@ -42,14 +43,14 @@ export const clipboardSlice = (
         for (const id of componentIds) {
           const comp = r.components[id];
           if (!comp) continue;
-          components.push(structuredClone(comp));
+          components.push(current(comp));
           const abs = resolveAbsoluteLayoutPosition(id, r.nodeLayouts, r.components);
           absPositions.push(abs);
         }
 
         const connections = Object.values(r.connections)
           .filter((c) => idSet.has(c.sourceId) && idSet.has(c.targetId))
-          .map((c) => structuredClone(c));
+          .map((connection) => current(connection));
 
         const _pasteOffsets =
           absPositions.length > 0
@@ -94,7 +95,7 @@ export const clipboardSlice = (
             : options?.preserveParentWhenMissing && parentExistsInActiveDiagram
               ? c.parentId
               : null;
-          const comp = { ...structuredClone(c), id: newId, parentId };
+          const comp = { ...current(c), id: newId, parentId };
           const offset = pasteOffsets?.[index];
           const layout = {
             elementId: newId,
@@ -149,7 +150,7 @@ export const clipboardSlice = (
           const tgt = idMap[conn.targetId];
           if (src && tgt) {
             const newId = generateId("conn");
-            const next = { ...structuredClone(conn), id: newId, sourceId: src, targetId: tgt };
+            const next = { ...current(conn), id: newId, sourceId: src, targetId: tgt };
             if (scene) {
               scene.addedConnections[newId] = next;
             } else {

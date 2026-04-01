@@ -85,7 +85,12 @@ export function buildEndpointStyle(method: string): string {
   });
 }
 
-function resolveDrawioEdgeStyle(edgeStyle: EdgeStyle | undefined): string {
+function resolveDrawioEdgeStyle(
+  edgeStyle: EdgeStyle | undefined,
+  isDashed = false,
+): string {
+  const curvedSuffix = isDashed ? "" : "curved=1;";
+
   switch (edgeStyle) {
     case EdgeStyle.Straight:
       return "edgeStyle=none;html=1;";
@@ -95,7 +100,7 @@ function resolveDrawioEdgeStyle(edgeStyle: EdgeStyle | undefined): string {
       return "edgeStyle=entityRelationEdgeStyle;html=1;";
     case EdgeStyle.Smoothstep:
     default:
-      return "edgeStyle=elbowEdgeStyle;elbow=orthogonal;curved=1;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;";
+      return `edgeStyle=elbowEdgeStyle;elbow=orthogonal;${curvedSuffix}rounded=1;orthogonalLoop=1;jettySize=auto;html=1;`;
   }
 }
 
@@ -106,21 +111,20 @@ export function buildEdgeStyle(
   strokeWidth: number,
   endArrow: string,
   startArrow: string,
-  bidir: string,
   edgeStyle?: EdgeStyle,
 ): string {
-  const baseStyle = resolveDrawioEdgeStyle(edgeStyle);
+  const baseStyle = resolveDrawioEdgeStyle(edgeStyle, isDashed);
 
   return buildStyle(baseStyle, {
-    endArrow: endArrow,
+    endArrow,
     endFill: endArrow === "block" ? 1 : 0,
-    ...(bidir && {
-      startArrow: startArrow,
+    ...(startArrow !== "none" && {
+      startArrow,
       startFill: startArrow === "block" ? 1 : 0,
     }),
-    ...(isDashed && { dashed: 1, dashPattern: dashPattern }),
-    ...(strokeWidth !== 1 && { strokeWidth: strokeWidth }),
-    strokeColor: strokeColor,
+    ...(isDashed && { dashed: 1, dashPattern, rounded: 0 }),
+    ...(strokeWidth !== 1 && { strokeWidth }),
+    strokeColor,
     fontColor: "#000000",
     fontSize: 11,
     labelBackgroundColor: "#ffffff",
