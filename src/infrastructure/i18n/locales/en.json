@@ -578,6 +578,11 @@
     "linkToDiagram": "Link to diagram",
     "searchDiagramPlaceholder": "Search diagram...",
     "noDomain": "No domain",
+    "widthLabel": "Width",
+    "heightLabel": "Height",
+    "lock": "Lock element",
+    "unlock": "Unlock element",
+    "lockedDragBlocked": "This element is locked and cannot be moved",
     "opacityLabel": "Opacity — {{value}}%",
     "tabs": {
       "icon": "Icon"

@@ -28,6 +28,8 @@ interface BaseComponent {
   name: string;
   description: string;
   parentId: string | null;
+  /** When true, element cannot be dragged on canvas. */
+  locked?: boolean;
   /** Id of an entry in the diagram snapshot `iconLibrary`. */
   customIconId?: string;
   tags?: string[];

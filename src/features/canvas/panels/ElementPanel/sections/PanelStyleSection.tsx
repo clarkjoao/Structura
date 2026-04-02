@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Component, PanelComponent, SwimlaneStyle } from "@/features/diagram";
 import { PanelKind } from "@/features/diagram";
@@ -10,6 +11,8 @@ import PanelColorPicker from "../components/PanelColorPicker";
 import { LANE_COLORS } from "../swimlaneLaneColors";
 
 const DEFAULT_PANEL_OPACITY = 10;
+const MIN_PANEL_WIDTH = 200;
+const MIN_PANEL_HEIGHT = 150;
 
 function mergeSwimlane(
   current: SwimlaneStyle | undefined,
@@ -44,6 +47,40 @@ export function PanelStyleSection({
   componentNodeLayout,
 }: PanelStyleSectionProps) {
   const { t } = useTranslation();
+  const [widthInput, setWidthInput] = useState<string>("");
+  const [heightInput, setHeightInput] = useState<string>("");
+
+  useEffect(() => {
+    if (!componentNodeLayout) {
+      setWidthInput("");
+      setHeightInput("");
+      return;
+    }
+    setWidthInput(String(Math.round(componentNodeLayout.width)));
+    setHeightInput(String(Math.round(componentNodeLayout.height)));
+  }, [componentNodeLayout]);
+
+  useEffect(() => {
+    if (!componentNodeLayout) return;
+    const timeoutId = window.setTimeout(() => {
+      const parsedWidth = Number(widthInput);
+      const parsedHeight = Number(heightInput);
+      if (!Number.isFinite(parsedWidth) || !Number.isFinite(parsedHeight)) return;
+
+      const clampedWidth = Math.max(MIN_PANEL_WIDTH, Math.round(parsedWidth));
+      const clampedHeight = Math.max(MIN_PANEL_HEIGHT, Math.round(parsedHeight));
+
+      if (clampedWidth === componentNodeLayout.width && clampedHeight === componentNodeLayout.height) return;
+
+      updateNodeLayout(
+        component.id,
+        { x: componentNodeLayout.x, y: componentNodeLayout.y },
+        { width: clampedWidth, height: clampedHeight },
+      );
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [component.id, componentNodeLayout, heightInput, updateNodeLayout, widthInput]);
 
   return (
     <>
@@ -184,6 +221,34 @@ export function PanelStyleSection({
             currentOpacity={component.panelOpacity ?? DEFAULT_PANEL_OPACITY}
             updateComponent={updateComponent}
           />
+          {componentNodeLayout && (
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+                  {t("elementPanel.widthLabel")}
+                </label>
+                <input
+                  type="number"
+                  min={MIN_PANEL_WIDTH}
+                  value={widthInput}
+                  onChange={(event) => setWidthInput(event.target.value)}
+                  className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+                  {t("elementPanel.heightLabel")}
+                </label>
+                <input
+                  type="number"
+                  min={MIN_PANEL_HEIGHT}
+                  value={heightInput}
+                  onChange={(event) => setHeightInput(event.target.value)}
+                  className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+            </div>
+          )}
           <div>
             <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
               {t("elementPanel.border")}

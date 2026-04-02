@@ -13,6 +13,7 @@ import {
   isApiGroupComponent,
   isEndpointType,
   isComponentAddedInActiveScene,
+  isAncestorLocked,
 } from "@/features/diagram";
 import { resolveNodeDescriptor, type NodeBuildContext } from "./node-types";
 import { useFlowMode } from "../flow/FlowModeContext";
@@ -247,6 +248,14 @@ export function useCanvasNodes({
           !!diagram.activeSceneId && !!diagram.scenes?.[diagram.activeSceneId];
         const sceneLocksBase =
           sceneActive && !isComponentAddedInActiveScene(diagram, comp.id);
+        const isLockedBySelfOrAncestor =
+          comp.locked === true || isAncestorLocked(comp, nodeCtxBase.resolvedComponents);
+        const nodeClassNames = [
+          isCmp ? "cursor-default" : "",
+          isLockedBySelfOrAncestor ? "cursor-not-allowed" : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
         return {
           id: comp.id,
           type: d.rfType,
@@ -254,10 +263,19 @@ export function useCanvasNodes({
           zIndex: vis.zIndex,
           connectable: d.connectable && !isCmp && !tagFilteredHidden,
           selected: vis.isSelected,
-          draggable: (d.draggable ?? !lockedInGroup) && !sceneLocksBase && !isCmp && !tagFilteredHidden,
-          selectable: (d.selectable ?? !lockedInGroup) && !isCmp && !tagFilteredHidden,
+          draggable:
+            !isLockedBySelfOrAncestor &&
+            (d.draggable ?? !lockedInGroup) &&
+            !sceneLocksBase &&
+            !isCmp &&
+            !tagFilteredHidden,
+          selectable:
+            !isLockedBySelfOrAncestor &&
+            (d.selectable ?? !lockedInGroup) &&
+            !isCmp &&
+            !tagFilteredHidden,
           focusable: (d.focusable ?? !lockedInGroup) && !isCmp && !tagFilteredHidden,
-          className: isCmp ? "cursor-default" : undefined,
+          className: nodeClassNames || undefined,
           ...(d.dragHandle ? { dragHandle: d.dragHandle } : {}),
           ...(vis.isChild ? { parentId: comp.parentId!, extent: "parent" as const } : {}),
           hidden: vis.isHidden,

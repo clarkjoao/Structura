@@ -132,6 +132,7 @@ export { buildChildrenIndex, getDescendantIdsFromIndex } from "./utils/children-
 /** Cached resolveCanvasSnapshot — use instead of resolveCanvasSnapshot in render paths */
 export { getCachedCanvasSnapshot } from "./utils/snapshot-cache";
 export type { ResolvedSnapshot } from "./utils/snapshot-cache";
+export { isAncestorLocked } from "./utils/component-lock";
 
 /** Recent diagrams tracking (localStorage) */
 export {

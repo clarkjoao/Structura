@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import debounce from "lodash.debounce";
-import { X, Trash2 } from "lucide-react";
+import { X, Trash2, Lock, Unlock } from "lucide-react";
 import {
   useAllDiagrams,
   useActiveDiagram,
@@ -235,9 +235,23 @@ const ComponentPanel = ({
                   ? component.name || t("jsonViewer.unnamed")
                   : component.name}
         </h3>
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-          <X className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => updateComponent(component.id, { locked: !component.locked })}
+            title={component.locked ? t("elementPanel.unlock") : t("elementPanel.lock")}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {component.locked ? (
+              <Lock className="h-4 w-4 text-amber-500" />
+            ) : (
+              <Unlock className="h-4 w-4" />
+            )}
+          </button>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
       {isPanel && onUngroup && (
         <div className="px-3 py-2 border-b border-border">

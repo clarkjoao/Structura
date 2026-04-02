@@ -577,6 +577,11 @@
     "linkToDiagram": "Vincular ao Diagrama",
     "searchDiagramPlaceholder": "Buscar diagrama...",
     "noDomain": "Sem domínio",
+    "widthLabel": "Largura",
+    "heightLabel": "Altura",
+    "lock": "Bloquear elemento",
+    "unlock": "Desbloquear elemento",
+    "lockedDragBlocked": "Este elemento está bloqueado e não pode ser movido",
     "opacityLabel": "Opacidade — {{value}}%",
     "tabs": {
       "icon": "Ícone"

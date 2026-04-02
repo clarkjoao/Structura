@@ -5,7 +5,6 @@ import {
   useConnections,
   useComponents,
   useDiagramActions,
-  useActiveDiagram,
   useFlows,
   isEndpointComponent,
   isDbTableComponent,
@@ -45,7 +44,6 @@ const ElementPanel = ({
   const connections = useConnections();
   const flows = useFlows();
   const { updateComponent, removeComponent, updateConnection, removeConnection, groupNodes, ungroupNodes } = useDiagramActions();
-  const diagram = useActiveDiagram();
   const availableFlows = flows.map((f) => ({ id: f.id, name: f.name }));
 
   if (selectedNodes.length > 1) {

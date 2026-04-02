@@ -8,6 +8,7 @@ import {
   isReactFlowParentPanelType,
   buildChildrenIndex,
   getDescendantIdsFromIndex,
+  isAncestorLocked,
 } from "@/features/diagram";
 import {
   isOutsideParentBounds,
@@ -61,6 +62,8 @@ export function useNodeDragParenting({
    */
   const draggingNodeIdsRef = useRef(new Set<string>());
   const dragStopPendingNodeIdsRef = useRef(new Set<string>());
+  const lockToastShownRef = useRef(false);
+  const lockToastTimeoutRef = useRef<number | null>(null);
 
   const handlePositionChange = useCallback(
     (change: NodeChange) => {
@@ -84,11 +87,40 @@ export function useNodeDragParenting({
           toast.error(i18n.t("scenes.baseMoveBlocked"));
           return;
         }
+        if (comp && (comp.locked === true || isAncestorLocked(comp, r.components))) {
+          if (!lockToastShownRef.current) {
+            lockToastShownRef.current = true;
+            toast.error(i18n.t("elementPanel.lockedDragBlocked"));
+            if (lockToastTimeoutRef.current !== null) {
+              window.clearTimeout(lockToastTimeoutRef.current);
+            }
+            lockToastTimeoutRef.current = window.setTimeout(() => {
+              lockToastShownRef.current = false;
+              lockToastTimeoutRef.current = null;
+            }, 1500);
+          }
+          return;
+        }
         updateNodeLayout(change.id, change.position);
         return;
       }
 
       if (!canMoveNodeInSceneMode(diagram, change.id)) {
+        return;
+      }
+
+      if (comp && (comp.locked === true || isAncestorLocked(comp, r.components))) {
+        if (!lockToastShownRef.current) {
+          lockToastShownRef.current = true;
+          toast.error(i18n.t("elementPanel.lockedDragBlocked"));
+          if (lockToastTimeoutRef.current !== null) {
+            window.clearTimeout(lockToastTimeoutRef.current);
+          }
+          lockToastTimeoutRef.current = window.setTimeout(() => {
+            lockToastShownRef.current = false;
+            lockToastTimeoutRef.current = null;
+          }, 1500);
+        }
         return;
       }
 
@@ -191,6 +223,13 @@ export function useNodeDragParenting({
 
       const r = getCachedCanvasSnapshot(diagram);
       if (!canMoveNodeInSceneMode(diagram, draggedNode.id)) return;
+      const draggedComponent = r.components[draggedNode.id];
+      if (
+        draggedComponent &&
+        (draggedComponent.locked === true || isAncestorLocked(draggedComponent, r.components))
+      ) {
+        return;
+      }
       const components = r.components;
       const draggedAbsPos = draggedNode.parentId
         ? resolveAbsolutePosition(
@@ -215,6 +254,10 @@ export function useNodeDragParenting({
           const otherType = typeof node.type === "string" ? node.type : "";
           if (isEndpointType(otherType)) continue;
           if (!canMoveNodeInSceneMode(diagram, node.id)) continue;
+          const otherComponent = components[node.id];
+          if (otherComponent && (otherComponent.locked === true || isAncestorLocked(otherComponent, components))) {
+            continue;
+          }
           updateNodeLayout(node.id, node.position);
         }
       };
@@ -230,6 +273,10 @@ export function useNodeDragParenting({
           const childType = typeof childNode.type === "string" ? childNode.type : "";
           if (isEndpointType(childType)) continue;
           if (!canMoveNodeInSceneMode(diagram, childNode.id)) continue;
+          const childComponent = components[childNode.id];
+          if (childComponent && (childComponent.locked === true || isAncestorLocked(childComponent, components))) {
+            continue;
+          }
           updateNodeLayout(childNode.id, childNode.position);
         }
       };
