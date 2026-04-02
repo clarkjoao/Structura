@@ -10,6 +10,7 @@ export function AddDiagramDialog({ onClose, onAdd }: AddDiagramDialogProps) {
   const [name, setName] = useState("");
   const [level, setLevel] = useState<Level>("context");
   const [domain, setDomain] = useState("");
+  const [description, setDescription] = useState("");
 
   return (
     <div
@@ -62,6 +63,17 @@ export function AddDiagramDialog({ onClose, onAdd }: AddDiagramDialogProps) {
               className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+              {t("dashboard.createModal.descriptionLabel")}
+            </label>
+            <textarea
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder={t("dashboard.createModal.descriptionPlaceholder")}
+              className="resize-none w-full min-h-20 rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
         </div>
         <div className="flex justify-end gap-2 mt-4">
           <Button variant="outline" onClick={onClose} size="sm">
@@ -70,7 +82,12 @@ export function AddDiagramDialog({ onClose, onAdd }: AddDiagramDialogProps) {
           <Button
             onClick={() => {
               if (name.trim())
-                onAdd(name.trim(), level, domain.trim() || undefined);
+                onAdd(
+                  name.trim(),
+                  level,
+                  domain.trim() || undefined,
+                  description.trim() || undefined,
+                );
             }}
             disabled={!name.trim()}
             size="sm"

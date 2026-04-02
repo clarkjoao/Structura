@@ -10,12 +10,19 @@ export const diagramsSlice = (
     diagrams: import.meta.env.VITE_DISABLE_SEEDS === "true" ? {} : SEED_DIAGRAMS,
     activeDiagramId: null,
   
-    addDiagram: (name: string, level: Level, domain?: string, folderId?: string | null) => {
+    addDiagram: (
+      name: string,
+      level: Level,
+      domain?: string,
+      folderId?: string | null,
+      description?: string,
+    ) => {
         const diagram: Diagram = {
           id: generateId("d"),
           name,
           level,
           domain: domain || undefined,
+          description: description || undefined,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           snapshot: { components: {}, connections: {}, flows: {}, iconLibrary: {} },

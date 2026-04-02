@@ -188,6 +188,17 @@
     "diagramCount": "{{count}} {{diagrams}}{{folders}}",
     "foldersSuffix": " · {{count}} {{folders}}",
     "addDiagramTitle": "New diagram",
+    "renameModal": {
+      "title": "Edit diagram",
+      "namePlaceholder": "Diagram name",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Optional description...",
+      "save": "Save"
+    },
+    "createModal": {
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Optional diagram description..."
+    },
     "namePlaceholder": "e.g. System Context",
     "domainOptional": "Domain (optional)",
     "domainPlaceholder": "e.g. E-commerce",

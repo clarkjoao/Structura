@@ -252,8 +252,8 @@ export default function DashboardPage() {
   };
 
   const handleAddDiagram = useCallback(
-    (name: string, level: Level, domain?: string) => {
-      const d = addDiagram(name, level, domain, selectedFolderId);
+    (name: string, level: Level, domain?: string, description?: string) => {
+      const d = addDiagram(name, level, domain, selectedFolderId, description);
       openDiagram(d.id);
       navigate(`/model/${d.id}`);
       setShowAdd(false);

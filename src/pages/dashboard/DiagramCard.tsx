@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { DiagramCardFooter } from "@/pages/dashboard/components/diagram-card/DiagramCardFooter";
 import { DiagramCardPreview } from "@/pages/dashboard/components/diagram-card/DiagramCardPreview";
 import { MoveDiagramDialog } from "@/pages/dashboard/components/diagram-card/MoveDiagramDialog";
+import { RenameDiagramModal } from "@/pages/dashboard/RenameDiagramModal";
 
 interface DiagramCardProps {
   diagram: Diagram;
@@ -35,6 +36,7 @@ export function DiagramCard({
   const [preview, setPreview] = useState<string | null>(() => getPreview(diagram.id));
   const [isPreviewHovered, setIsPreviewHovered] = useState(false);
   const [moveFolderOpen, setMoveFolderOpen] = useState(false);
+  const [renamingDiagram, setRenamingDiagram] = useState<Diagram | null>(null);
 
   const sortedFolders = useMemo(
     () => Object.values(folders).sort((folderA, folderB) => folderA.name.localeCompare(folderB.name)),
@@ -51,8 +53,7 @@ export function DiagramCard({
 
   const handleRename = (event: ReactMouseEvent) => {
     event.stopPropagation();
-    const newName = window.prompt(t("dashboard.card.renamePrompt"), diagram.name);
-    if (newName?.trim()) updateDiagram(diagram.id, { name: newName.trim() });
+    setRenamingDiagram(diagram);
   };
 
   const handleDuplicate = (event: ReactMouseEvent) => {
@@ -122,6 +123,19 @@ export function DiagramCard({
         onOpenChange={setMoveFolderOpen}
         sortedFolders={sortedFolders}
         onSelectFolder={handleSelectMoveFolder}
+      />
+
+      <RenameDiagramModal
+        open={!!renamingDiagram}
+        onOpenChange={(open) => {
+          if (!open) setRenamingDiagram(null);
+        }}
+        diagram={renamingDiagram}
+        onSave={(name, description) => {
+          if (!renamingDiagram) return;
+          updateDiagram(renamingDiagram.id, { name, description });
+          setRenamingDiagram(null);
+        }}
       />
     </>
   );

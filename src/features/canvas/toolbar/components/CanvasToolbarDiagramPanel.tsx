@@ -53,8 +53,8 @@ export function CanvasToolbarDiagramPanel({
   };
 
   return (
-    <div className="flex flex-col gap-1 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2">
-      <div className="flex items-center gap-2">
+    <div className="w-[220px] flex flex-col gap-1 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2">
+      <div className="flex items-center gap-1.5 min-w-0">
         <Layers className="h-3.5 w-3.5 text-primary shrink-0" />
         {isEditingName ? (
           <input
@@ -70,7 +70,7 @@ export function CanvasToolbarDiagramPanel({
                 setIsEditingName(false);
               }
             }}
-            className="text-xs font-semibold bg-transparent border-b border-primary/50 outline-none min-w-[80px] max-w-[200px]"
+            className="text-xs font-semibold bg-transparent border-b border-primary/50 outline-none min-w-0 w-full"
           />
         ) : (
           <span
@@ -79,21 +79,22 @@ export function CanvasToolbarDiagramPanel({
               setEditNameValue(diagram.name);
               setIsEditingName(true);
             }}
-            className={`text-xs font-semibold select-none ${toolbarEditLocked ? "cursor-default opacity-80" : "cursor-pointer hover:text-primary/80"}`}
-            title={
-              toolbarEditLocked
-                ? t("diagramNav.unavailableWhileRecordingOrPlayback")
-                : t("canvasToolbar.renameTitle")
-            }
+            className={`min-w-0 flex-1 text-xs font-semibold select-none ${toolbarEditLocked ? "cursor-default opacity-80" : "cursor-pointer hover:text-primary/80"}`}
+            title={diagram.name}
           >
-            {diagram.name}
+            <span
+              className="truncate min-w-0 flex-1 text-xs font-semibold block"
+              title={diagram.name}
+            >
+              {diagram.name}
+            </span>
           </span>
         )}
         <span className="text-[10px] font-mono text-muted-foreground rounded bg-secondary px-1.5 py-0.5 shrink-0">
           {levelLabels[diagram.level]}
         </span>
       </div>
-      <div className="min-w-0 pl-[22px]">
+      <div className="min-w-0">
         <DiagramDescriptionField editLocked={toolbarEditLocked} />
       </div>
     </div>

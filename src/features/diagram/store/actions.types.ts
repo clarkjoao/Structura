@@ -21,7 +21,13 @@ import type { ServiceDefinition } from "../model/service.types";
 import type { EdgeStyle } from "../model/connection.types";
 
 export interface AppActions {
-  addDiagram: (name: string, level: Level, domain?: string, folderId?: string | null) => Diagram;
+  addDiagram: (
+    name: string,
+    level: Level,
+    domain?: string,
+    folderId?: string | null,
+    description?: string,
+  ) => Diagram;
   addImportedDiagram: (diagram: Diagram) => Diagram;
   importDiagram: (diagram: Diagram) => Diagram;
   duplicateDiagram: (sourceId: string, name: string) => Diagram | null;

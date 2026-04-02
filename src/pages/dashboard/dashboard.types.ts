@@ -22,7 +22,7 @@ export interface DiagramListProps {
 
 export interface AddDiagramDialogProps {
   onClose: () => void;
-  onAdd: (name: string, level: Level, domain?: string) => void;
+  onAdd: (name: string, level: Level, domain?: string, description?: string) => void;
 }
 
 export type GlobalSearchHit = Component & {
