@@ -13,15 +13,8 @@ import {
 import { useTranslation } from "react-i18next";
 import { i18n } from "@/infrastructure/i18n";
 import { useGithubConfig } from "@/integrations/github/hooks/useGithubConfig";
-import { createGithubClient } from "@/integrations/github/githubClient";
-import type { GithubRepo } from "@/integrations/github/github.types";
-import {
-  dedupeStringsPreserveOrder,
-  mergeSources,
-  normalizeSources,
-  pickMoreCompleteString,
-} from "@/integrations/merge-utils";
-import type { ExternalLink as DiagramExternalLink, ServiceDefinition } from "@/features/diagram";
+import { normalizeSources } from "@/integrations/merge-utils";
+import type { ExternalLink as DiagramExternalLink } from "@/features/diagram";
 import { ServiceSource } from "@/features/diagram";
 import { ExternalLinksSection } from "@/features/canvas/panels/ElementPanel/sections";
 import { ChipInput } from "./ChipInput";
@@ -29,6 +22,7 @@ import { SOURCE_BADGE, SOURCE_DOT } from "./registry.constants";
 import { sourceTypeLabel } from "./registryLabels";
 import { getServiceUsage } from "./serviceUsage";
 import type { DetailPanelProps } from "./types";
+import { syncServiceFromSources } from "./application/syncServiceFromSources";
 
 export function DetailPanel({
   svc,
@@ -93,152 +87,20 @@ export function DetailPanel({
     setSyncError("");
     setSyncing(true);
     try {
-      const hasGithubData = Boolean(svc.metadata?.github) || hasGithubSource;
-      const hasDefectDojoData =
-        Boolean(svc.metadata?.defectdojo) || hasDefectDojoSource;
-
-      let githubRepo: GithubRepo | null = null;
-      let defectDojoMapped:
-        | Omit<ServiceDefinition, "id">
-        | null = null;
-      let syncedDefectDojoSourceId: string | undefined;
-
-      if (hasGithubData) {
-        const githubSourceId = normalizedSources.find(
-          (sourceEntry) => sourceEntry.type === ServiceSource.Github,
-        )?.sourceId;
-        const githubIdentifier =
-          githubSourceId ??
-          (svc.metadata?.github as { fullName?: string } | undefined)
-                ?.fullName;
-
-        if (githubIdentifier) {
-        const apiBase = githubConfig?.baseUrl ?? "https://api.github.com";
-        const token = githubConfig?.token ?? "";
-        const client = createGithubClient(apiBase, token);
-          githubRepo = await client.getRepository(githubIdentifier);
-        }
-      }
-
-      if (hasDefectDojoData) {
-        const { DefectDojoClient } = await import(
-          "@/integrations/defectdojo/defectdojo.client"
-        );
-        const { mapToServiceDefinition } = await import(
-          "@/integrations/defectdojo/defectdojo.service"
-        );
-
-        const ddMeta = svc.metadata?.defectdojo as
-          | { productId?: string | number; productLink?: string }
-          | undefined;
-        const productIdFromLink = ddMeta?.productLink?.match(/\/product\/(\d+)(?:\/|$)/)?.[1];
-        const defectDojoSourceId = normalizedSources.find(
-          (sourceEntry) => sourceEntry.type === ServiceSource.Defectdojo,
-        )?.sourceId;
-        const defectDojoProductId =
-          defectDojoSourceId ??
-          (ddMeta?.productId
-              ? String(ddMeta.productId)
-              : productIdFromLink);
-        syncedDefectDojoSourceId = defectDojoProductId;
-
-        const rawConfig = localStorage.getItem("structura_defectdojo:config") ?? localStorage.getItem("structura:defectdojo:config");
-        if (!rawConfig) throw new Error(i18n.t("registry.errorDefectDojoNotConfigured"));
-        const cfg = JSON.parse(rawConfig) as {
-          baseUrl: string;
-          apiToken: string;
-        };
-        const client = new DefectDojoClient(cfg);
-        if (defectDojoProductId) {
-          const resp = await client.get<{ results: Record<string, unknown>[] }>(
-            "/api/v2/products/",
-            { id: String(defectDojoProductId) },
-          );
-          const product = resp.results[0];
-          if (product) {
-            defectDojoMapped = mapToServiceDefinition(
-              product as unknown as Parameters<typeof mapToServiceDefinition>[0],
-            );
-          }
-        }
-      }
-
-      if (!githubRepo && !defectDojoMapped) {
-        throw new Error(i18n.t("registry.errorSyncNoSource"));
-      }
-
-      const githubTech = githubRepo?.language ? [githubRepo.language] : [];
-      const githubTags = githubRepo?.topics ?? [];
-      const ddTags = defectDojoMapped?.tags ?? [];
-
-      const mergedTech = dedupeStringsPreserveOrder([
-        ...svc.technology,
-        ...githubTech,
-        ...(defectDojoMapped?.technology ?? []),
-      ]);
-      const mergedTags = dedupeStringsPreserveOrder([
-        ...(svc.tags ?? []),
-        ...githubTags,
-        ...ddTags,
-      ]);
-      const mergedSourceEntries = mergeSources(normalizeSources(svc), [
-        ...(githubRepo
-          ? [{ type: ServiceSource.Github, sourceId: githubRepo.full_name }]
-          : []),
-        ...(defectDojoMapped
-          ? [
-              {
-                type: ServiceSource.Defectdojo,
-                sourceId: syncedDefectDojoSourceId,
-              },
-            ]
-          : []),
-      ]);
-
-      updateService(svc.id, {
-        name: pickMoreCompleteString(
-          defectDojoMapped?.name ?? "",
-          githubRepo?.name ?? svc.name,
-        ),
-        description: pickMoreCompleteString(
-          defectDojoMapped?.description ?? "",
-          githubRepo?.description ?? svc.description,
-        ),
-        repositoryUrl:
-          githubRepo?.html_url ||
-          svc.repositoryUrl ||
-          defectDojoMapped?.repositoryUrl ||
-          "",
-        technology: mergedTech,
-        tags: mergedTags,
-        sources: mergedSourceEntries,
-        metadata: {
-          github: githubRepo
-            ? {
-                repoId: githubRepo.id,
-                fullName: githubRepo.full_name,
-                topics: githubRepo.topics ?? [],
-                language: githubRepo.language,
-                updatedAt: githubRepo.updated_at,
-              }
-            : svc.metadata?.github,
-          defectdojo:
-            defectDojoMapped?.metadata?.defectdojo ?? svc.metadata?.defectdojo,
-        },
+      const patch = await syncServiceFromSources({
+        service: svc,
+        githubConfig,
       });
+      updateService(svc.id, patch);
     } catch (err) {
       setSyncError(err instanceof Error ? err.message : i18n.t("registry.errorSyncGeneric"));
     } finally {
       setSyncing(false);
     }
   }, [
-    hasDefectDojoSource,
-    hasGithubSource,
-    normalizedSources,
     svc,
     updateService,
-    githubConfig?.baseUrl,
-    githubConfig?.token,
+    githubConfig,
   ]);
 
   return (

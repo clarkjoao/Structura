@@ -4,6 +4,7 @@ import type { MergeConflict } from "../detectMergeConflicts";
 import type { ServiceDefinition } from "@/features/diagram";
 import { ServiceSource } from "@/features/diagram";
 import { githubRepoToService } from "../githubMapper";
+import type { MergeResolution } from "../github-merge.types";
 import { normalizeSources } from "../../merge-utils";
 import {
   Dialog,
@@ -14,16 +15,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
-
-export interface MergeResolution {
-  existingServiceId: string;
-  fields: {
-    name: "github" | "existing";
-    description: "github" | "existing";
-    technology: "github" | "existing" | "merge";
-    tags: "github" | "existing" | "merge";
-  };
-}
 
 function pickStringCompleter(a: string, b: string): "github" | "existing" {
   const la = a?.trim().length ?? 0;
@@ -432,4 +423,3 @@ export function GithubMergeDialog({
     </Dialog>
   );
 }
-

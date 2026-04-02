@@ -1032,7 +1032,10 @@
     "repoArchived": "Arquivado",
     "alreadyImported": "Já importado",
     "defectDojoConflictBadge": "Conflito DefectDojo",
-    "configureIntegrationSearchImport": "Configure a integração para pesquisar e importar repositórios do GitHub."
+    "configureIntegrationSearchImport": "Configure a integração para pesquisar e importar repositórios do GitHub.",
+    "connected": "Conectado",
+    "hideConfig": "Ocultar config",
+    "configure": "Configurar"
   },
   "defectdojo": {
     "connectionFailed": "Falha na conexão",
