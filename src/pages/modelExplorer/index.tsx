@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
-import { FlowModeProvider, type RecordingFinalizeData } from "@/features/canvas";
 import {
   useActiveDiagram,
   useActiveDiagramId,
@@ -10,10 +9,8 @@ import {
   useDiagramStore,
   useFlows,
   useServiceRegistry,
-  buildFlowFromRecordingSnapshot,
   resolveSceneSnapshot,
   exportFilenameSlug,
-  stepsToMermaid,
 } from "@/features/diagram";
 import { exportJSON, exportDrawio, exportMermaid, downloadZip } from "@/lib/export-service";
 import { writeDrawioToClipboard } from "@/lib/clipboard-utils";
@@ -26,7 +23,7 @@ export default function ModelExplorerPage() {
   const diagram = useActiveDiagram();
   const activeDiagramId = useActiveDiagramId();
   const urlDiagramExists = useDiagramStore((s) => !!(urlId && s.diagrams[urlId]));
-  const { openDiagram, addFlow, updateFlow } = useDiagramActions();
+  const { openDiagram } = useDiagramActions();
   const flows = useFlows();
   const serviceRegistry = useServiceRegistry();
   const navigate = useNavigate();
@@ -71,44 +68,6 @@ export default function ModelExplorerPage() {
     openDiagram(prev);
     navigate(`/model/${prev}`);
   }, [navStack, openDiagram, navigate]);
-
-  const handleFinalizeRecording = useCallback(
-    (data: RecordingFinalizeData) => {
-      if (!diagram) return;
-
-      const tempFlow = buildFlowFromRecordingSnapshot(data.steps, data.branchOwnership, {
-        id: "temp",
-        name: data.name,
-        diagramId: diagram.id,
-      });
-      const stepsRecord = tempFlow.steps;
-      const entryStepId = data.entryStepId ?? data.steps[0]?.id ?? tempFlow.entryStepId;
-      const r = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
-      const mermaid = stepsToMermaid(
-        { ...tempFlow, entryStepId },
-        r.components,
-        r.connections,
-      );
-      const desc = data.description || undefined;
-      const flowTags = data.tags.length ? data.tags : undefined;
-      if (data.editingFlowId) {
-        updateFlow(data.editingFlowId, {
-          name: data.name || t("flows.unnamed"),
-          mermaid,
-          steps: stepsRecord,
-          description: desc,
-          tags: flowTags,
-          entryStepId,
-        });
-      } else {
-        const flow = addFlow(diagram.id, data.name || t("flows.unnamed"), mermaid, stepsRecord);
-        if (desc || flowTags || entryStepId) {
-          updateFlow(flow.id, { description: desc, tags: flowTags, entryStepId });
-        }
-      }
-    },
-    [diagram, addFlow, updateFlow, t],
-  );
 
   const handleCopyDrawio = useCallback(() => {
     if (!diagram) return;
@@ -161,17 +120,13 @@ export default function ModelExplorerPage() {
   return (
     <div className="h-screen flex flex-col">
       <Navbar />
-      <FlowModeProvider
-        onFinalize={handleFinalizeRecording}
-        onStartRecording={() => setShowFlows(false)}
+      <CollabProvider
+        enabled={collabActive}
+        reserveEphemeralRoomId={showStartModal}
+        userName={collabUserName}
+        signalingUrl={collabServerUrl}
       >
-        <CollabProvider
-          enabled={collabActive}
-          reserveEphemeralRoomId={showStartModal}
-          userName={collabUserName}
-          signalingUrl={collabServerUrl}
-        >
-          <ModelExplorerContent
+        <ModelExplorerContent
             showFlows={showFlows}
             setShowFlows={setShowFlows}
             isViewingCoverage={isViewingCoverage}
@@ -189,14 +144,13 @@ export default function ModelExplorerPage() {
             copied={copied}
             flows={flows}
           />
-          <CollabStartModal
-            open={showStartModal}
-            onOpenChange={setShowStartModal}
-            diagramName={diagram.name}
-            onStart={handleStartCollab}
-          />
-        </CollabProvider>
-      </FlowModeProvider>
+        <CollabStartModal
+          open={showStartModal}
+          onOpenChange={setShowStartModal}
+          diagramName={diagram.name}
+          onStart={handleStartCollab}
+        />
+      </CollabProvider>
     </div>
   );
 }

@@ -128,6 +128,10 @@ export function ModelExplorerContent({
   }, [isPlaying, setShowFlows]);
 
   useEffect(() => {
+    if (isRecording) setShowFlows(false);
+  }, [isRecording, setShowFlows]);
+
+  useEffect(() => {
     if (flowMode.mode.kind !== "playing") return;
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {

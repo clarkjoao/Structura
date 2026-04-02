@@ -10,6 +10,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import CanvasToolbar from "./toolbar/CanvasToolbar";
+import { JourneysInDiagramPanel } from "./panels/JourneysInDiagramPanel";
 import { ConnectedSceneDrawer } from "./toolbar/SceneDrawer";
 import ElementPanel from "./panels/ElementPanel/index";
 import NodeContextMenu from "./panels/NodeContextMenu";
@@ -22,6 +23,7 @@ import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 import { Eye } from "lucide-react";
 import { useCanvasController } from "./hooks/useCanvasController";
 import { getCachedCanvasSnapshot } from "@/features/diagram";
+import { useJourneysByDiagramId } from "@/features/journeys";
 import { CANVAS_STYLES } from "./constants";
 import CustomEdge from "./edges/CustomEdge";
 import type { CanvasProps } from "./canvas.types";
@@ -37,6 +39,7 @@ const canvasEdgeTypes = { c4: CustomEdge };
 
 const Canvas = (props: CanvasProps = {}) => {
   const [templateNodeId, setTemplateNodeId] = useState<string | null>(null);
+  const [showJourneysPanel, setShowJourneysPanel] = useState(false);
   const reactFlowInstance = useReactFlow();
   const addTemplate = useCustomComponentStore((state) => state.addTemplate);
   const { instantiateTemplate } = useCustomComponentLibrary();
@@ -71,6 +74,8 @@ const Canvas = (props: CanvasProps = {}) => {
     isCompareMode,
     allDiagramTags,
   } = useCanvasController(props);
+
+  const journeysInThisDiagram = useJourneysByDiagramId(diagram?.id ?? "");
 
   const templateSourceNode = templateNodeId
     ? nodes.find((node) => node.id === templateNodeId) ?? null
@@ -109,7 +114,18 @@ const Canvas = (props: CanvasProps = {}) => {
             onToggleTag={visualState.toggleTag}
             onShowAllTags={visualState.showAllTags}
             onShowNoTags={visualState.showNoTags}
+            journeysInDiagramCount={journeysInThisDiagram.length}
+            journeysPanelOpen={showJourneysPanel}
+            onToggleJourneysPanel={() =>
+              setShowJourneysPanel((previous) => !previous)
+            }
           />
+          {showJourneysPanel ? (
+            <JourneysInDiagramPanel
+              diagramId={diagram.id}
+              onClose={() => setShowJourneysPanel(false)}
+            />
+          ) : null}
           {showSearch && diagram && (
             <CanvasSearch
               onClose={() => setShowSearch(false)}

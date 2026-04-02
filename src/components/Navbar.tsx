@@ -1,6 +1,7 @@
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { Network, Sun, Moon } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/useTheme";
 import { FileSystemStatus } from "./FileSystemStatus";
 import { useFileSystemSync } from "@/infrastructure/persistence";
@@ -30,6 +31,17 @@ const Navbar = () => {
           >
             {t("nav.workspaces")}
           </Link>
+          <NavLink
+            to="/journeys"
+            className={({ isActive }) =>
+              cn(
+                "hover:text-foreground transition-colors",
+                isActive ? "text-foreground" : "text-muted-foreground",
+              )
+            }
+          >
+            {t("nav.journeys")}
+          </NavLink>
           <Link
             to="/catalog"
             className="hover:text-foreground transition-colors"

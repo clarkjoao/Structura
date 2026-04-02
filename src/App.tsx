@@ -7,6 +7,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useDiagramPreviewSync } from "@/lib/diagram-preview";
 import { CollabRoom } from "@/features/collaboration";
 import Dashboard from "@/pages/dashboard";
+import JourneyEditorPage from "@/pages/journeys/JourneyEditorPage";
+import JourneysPage from "@/pages/journeys/JourneysPage";
+import { JourneyPlayerBar, JourneyPlayerProvider } from "@/features/journeys";
 import ModelExplorer from "@/pages/modelExplorer";
 import ServiceRegistry from "@/pages/serviceRegistry";
 import NotFound from "@/pages/NotFound";
@@ -41,6 +44,8 @@ const App = () => {
           <Routes>
             <Route path="/" element={<Navigate to="/workspace" />} />
             <Route path="/workspace" element={<Dashboard />} />
+            <Route path="/journeys" element={<JourneysPage />} />
+            <Route path="/journeys/:id/edit" element={<JourneyEditorPage />} />
             <Route path="/model/:id" element={<ModelExplorer />} />
             <Route path="/collab/:roomId" element={<CollabRoom />} />
             <Route path="/catalog" element={<ServiceRegistry />} />
@@ -51,13 +56,15 @@ const App = () => {
     );
   }
 
-
   return (
     <BrowserRouter future={{ v7_relativeSplatPath: true }}>
-      <Routes>
-        <Route path="/viewer" element={<ViewerPage />} />
-        <Route path="*" element={<MainPages />} />
-      </Routes>
+      <JourneyPlayerProvider>
+        <JourneyPlayerBar />
+        <Routes>
+          <Route path="/viewer" element={<ViewerPage />} />
+          <Route path="*" element={<MainPages />} />
+        </Routes>
+      </JourneyPlayerProvider>
     </BrowserRouter>
   );
 };

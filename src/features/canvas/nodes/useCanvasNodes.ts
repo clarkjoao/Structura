@@ -15,6 +15,8 @@ import {
   isComponentAddedInActiveScene,
   isAncestorLocked,
 } from "@/features/diagram";
+import type { Journey } from "@/features/journeys";
+import { useJourneys } from "@/features/journeys";
 import { resolveNodeDescriptor, type NodeBuildContext } from "./node-types";
 import { useFlowMode } from "../flow/FlowModeContext";
 import { buildCollapsedPanelIds, computeNodeVisibility } from "./nodeVisibility";
@@ -64,6 +66,27 @@ type NodeCtxBase = Omit<NodeBuildContext, "isPlaying" | "isRecording" | "flowHig
   isViewingCoverage: boolean;
 };
 
+function buildJourneysByComponentId(
+  allJourneys: Journey[],
+): Record<string, { name: string }[]> {
+  const map: Record<string, Map<string, { name: string }>> = {};
+  for (const journey of allJourneys) {
+    for (const step of Object.values(journey.steps)) {
+      const componentId = step.componentId;
+      if (!componentId) continue;
+      if (!map[componentId]) {
+        map[componentId] = new Map();
+      }
+      map[componentId].set(journey.id, { name: journey.name });
+    }
+  }
+  const result: Record<string, { name: string }[]> = {};
+  for (const [componentId, journeyMap] of Object.entries(map)) {
+    result[componentId] = Array.from(journeyMap.values());
+  }
+  return result;
+}
+
 export function useCanvasNodes({
   diagram,
   resolvedComponents,
@@ -102,6 +125,11 @@ export function useCanvasNodes({
   updateComponent,
 }: UseCanvasNodesParams): Node[] {
   const { isRecording, onRecordHandleClick } = useFlowMode();
+  const allJourneys = useJourneys();
+  const journeysByComponentId = useMemo(
+    () => buildJourneysByComponentId(allJourneys),
+    [allJourneys],
+  );
 
   const nodeCtxBase: NodeCtxBase | null = useMemo(() => {
     if (!diagram) return null;
@@ -135,6 +163,7 @@ export function useCanvasNodes({
       updateComponent,
       highlightedNodeIds,
       isViewingCoverage,
+      journeysByComponentId,
     };
   }, [
     diagram,
@@ -166,6 +195,7 @@ export function useCanvasNodes({
     updateComponent,
     highlightedNodeIds,
     isViewingCoverage,
+    journeysByComponentId,
   ]);
 
   const nodeCtxPlayback = useMemo(
