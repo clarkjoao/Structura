@@ -197,6 +197,15 @@
       "addStepTitle": "Add step",
       "addStepSubmit": "Add",
       "diagramSearchPlaceholder": "Search diagrams…",
+      "diagramFlowCount_one": "{{count}} flow",
+      "diagramFlowCount_other": "{{count}} flows",
+      "diagramLevel": {
+        "context": "L1 Context",
+        "container": "L2 Container",
+        "component": "L3 Component",
+        "deployment": "Deployment",
+        "unknown": "{{level}}"
+      },
       "flowPickerTitle": "Choose a flow",
       "flowSearchPlaceholder": "Search flows…",
       "visualStateTitle": "Visual state",
@@ -204,7 +213,10 @@
       "expandVisualPanel": "Expand visual panel",
       "collapseVisualPanel": "Collapse visual panel",
       "journeyNotFound": "Journey not found.",
-      "backToList": "Back to journeys"
+      "backToList": "Back to journeys",
+      "flowCompleted": "Flow completed",
+      "nextStep": "Next step",
+      "journeyCompleted": "✓ Journey completed"
     },
     "player": {
       "stepProgress": "Step {{current}} of {{total}}",

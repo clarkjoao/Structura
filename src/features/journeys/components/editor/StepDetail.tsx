@@ -1,14 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import debounce from "lodash.debounce";
-import { Link2, Mic, Play, Square, X } from "lucide-react";
+import { ArrowRight, Check, Link2, Mic, Play, Square, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useFlowMode } from "@/features/canvas/flow";
 import { getCachedCanvasSnapshot, useDiagrams } from "@/features/diagram";
 import { useJourneyPlayer } from "../../player/useJourneyPlayer";
-import { useJourney, useJourneyActions } from "../../selectors";
+import { useJourney, useJourneyActions, useJourneySteps } from "../../selectors";
 import type { JourneyStep } from "../../types";
 import { AddStepModal } from "./AddStepModal";
 import { StepFlowPickerDialog } from "./StepFlowPickerDialog";
@@ -18,9 +18,14 @@ const FIELD_DEBOUNCE_MS = 300;
 interface StepDetailProps {
   journeyId: string;
   stepId: string;
+  onSelectStep: (stepId: string) => void;
 }
 
-export function StepDetail({ journeyId, stepId }: StepDetailProps) {
+export function StepDetail({
+  journeyId,
+  stepId,
+  onSelectStep,
+}: StepDetailProps) {
   const { t } = useTranslation();
   const flowMode = useFlowMode();
   const journeyPlayer = useJourneyPlayer();
@@ -32,12 +37,31 @@ export function StepDetail({ journeyId, stepId }: StepDetailProps) {
     : undefined;
 
   const { updateJourneyStep } = useJourneyActions();
+  const sortedSteps = useJourneySteps(journeyId);
 
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
   const [duration, setDuration] = useState("");
   const [replaceOpen, setReplaceOpen] = useState(false);
   const [flowPickerOpen, setFlowPickerOpen] = useState(false);
+  const [flowJustEnded, setFlowJustEnded] = useState(false);
+  const prevIsPlaying = useRef(false);
+
+  useEffect(() => {
+    setFlowJustEnded(false);
+    prevIsPlaying.current = false;
+  }, [stepId]);
+
+  useEffect(() => {
+    const isPlaying = flowMode.isPlaying;
+    if (isPlaying) {
+      setFlowJustEnded(false);
+    }
+    if (prevIsPlaying.current && !isPlaying) {
+      setFlowJustEnded(true);
+    }
+    prevIsPlaying.current = isPlaying;
+  }, [flowMode.isPlaying]);
 
   useEffect(() => {
     if (!step) return;
@@ -115,6 +139,12 @@ export function StepDetail({ journeyId, stepId }: StepDetailProps) {
   const handleStopPlay = () => {
     flowMode.exitPlay();
   };
+
+  const currentStepIndex = sortedSteps.findIndex((item) => item.id === stepId);
+  const nextStepRecord =
+    currentStepIndex >= 0 && currentStepIndex < sortedSteps.length - 1
+      ? sortedSteps[currentStepIndex + 1]
+      : null;
 
   if (!journey || !step) {
     return (
@@ -299,6 +329,39 @@ export function StepDetail({ journeyId, stepId }: StepDetailProps) {
           </div>
         ) : null}
       </div>
+
+      {flowJustEnded && step.flowId ? (
+        <div className="grid gap-3 rounded-md border border-border p-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+            {t("journeys.editor.flowCompleted")}
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="w-full justify-start gap-2"
+            disabled={nextStepRecord === null}
+            onClick={() => {
+              if (nextStepRecord) {
+                onSelectStep(nextStepRecord.id);
+              }
+            }}
+          >
+            {nextStepRecord ? (
+              <>
+                <ArrowRight className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                {t("journeys.editor.nextStep")}
+              </>
+            ) : (
+              <>
+                <Check className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                {t("journeys.editor.journeyCompleted")}
+              </>
+            )}
+          </Button>
+        </div>
+      ) : null}
 
       {step.diagramId || step.componentId ? (
         <div className="grid gap-2 rounded-md border border-border p-3">

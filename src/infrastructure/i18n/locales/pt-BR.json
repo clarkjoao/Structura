@@ -197,6 +197,15 @@
       "addStepTitle": "Adicionar step",
       "addStepSubmit": "Adicionar",
       "diagramSearchPlaceholder": "Buscar diagramas…",
+      "diagramFlowCount_one": "{{count}} fluxo",
+      "diagramFlowCount_other": "{{count}} fluxos",
+      "diagramLevel": {
+        "context": "L1 Contexto",
+        "container": "L2 Container",
+        "component": "L3 Componente",
+        "deployment": "Deployment",
+        "unknown": "{{level}}"
+      },
       "flowPickerTitle": "Escolher flow",
       "flowSearchPlaceholder": "Buscar flows…",
       "visualStateTitle": "Estado visual",
@@ -204,7 +213,10 @@
       "expandVisualPanel": "Expandir painel visual",
       "collapseVisualPanel": "Recolher painel visual",
       "journeyNotFound": "Jornada não encontrada.",
-      "backToList": "Voltar às jornadas"
+      "backToList": "Voltar às jornadas",
+      "flowCompleted": "Flow concluído",
+      "nextStep": "Próximo step",
+      "journeyCompleted": "✓ Jornada concluída"
     },
     "player": {
       "stepProgress": "Passo {{current}} de {{total}}",

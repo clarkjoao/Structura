@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
+import { useFlowMode } from "@/features/canvas";
 import { useAllDiagrams } from "@/features/diagram";
 import {
   JourneyEditorCanvas,
@@ -25,11 +26,13 @@ export default function JourneyEditorPage() {
   const allDiagrams = useAllDiagrams();
   const { updateJourney, addJourneyStep, updateJourneyStep } =
     useJourneyActions();
+  const flowMode = useFlowMode();
   const journeyPlayer = useJourneyPlayer();
   const {
     setPlaybackContext,
     selectStep: journeySelectStep,
     mode: journeyPlayerMode,
+    cancelJourneyRecording,
   } = journeyPlayer;
 
   const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
@@ -55,6 +58,19 @@ export default function JourneyEditorPage() {
     if (!id) return;
     setPlaybackContext(id, selectedStepId);
   }, [journey?.id, selectedStepId, setPlaybackContext]);
+
+  useEffect(() => {
+    if (flowMode.isPlaying) {
+      flowMode.exitPlay();
+    }
+    if (journeyPlayerMode.kind === "recording") {
+      cancelJourneyRecording();
+    } else if (flowMode.isRecording) {
+      flowMode.cancelRecording();
+    }
+    // Only when the selected step changes — do not depend on play/recording flags
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see comment
+  }, [selectedStepId]);
 
   const handleSelectStep = useCallback(
     (stepId: string) => {
@@ -206,7 +222,11 @@ export default function JourneyEditorPage() {
               onSelectStep={handleSelectStep}
             />
             {selectedStepId ? (
-              <StepDetail journeyId={journey.id} stepId={selectedStepId} />
+              <StepDetail
+                journeyId={journey.id}
+                stepId={selectedStepId}
+                onSelectStep={handleSelectStep}
+              />
             ) : (
               <div className="border-t border-border p-3 text-xs text-muted-foreground">
                 {t("journeys.editor.selectStepDetail")}
