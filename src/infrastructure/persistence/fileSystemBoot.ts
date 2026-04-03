@@ -8,6 +8,7 @@
  */
 
 import { useDiagramStore, VIEWPORT_DEBOUNCE_MS, PERSIST_KEY, type Diagram, type IconDefinition } from "@/features/diagram";
+import { useJourneyStore } from "@/features/journeys";
 import { fileSystemAdapter } from "./FileSystemAdapter";
 import { clearLocalStorageDiagramSyncTimestamp } from "./localStorageSyncTimestamp";
 import {
@@ -106,6 +107,9 @@ export async function flushWorkspaceToConnectedFolder(
     iconLibrary,
   });
 
+  const journeys = useJourneyStore.getState().journeys;
+  await fileSystemAdapter.writeJourneys(journeys);
+
   recordFolderSyncSuccess();
 }
 
@@ -174,6 +178,13 @@ async function doReconnect(): Promise<boolean> {
       }
 
       hydrateIconStoreFromWorkspace(workspace);
+
+      const fsJourneys = await fileSystemAdapter.readJourneys();
+      if (fsJourneys) {
+        useJourneyStore.setState((state) => ({
+          journeys: { ...state.journeys, ...fsJourneys },
+        }));
+      }
     }
     await clearLocalCache();
 
@@ -249,6 +260,9 @@ export function startFileSystemSync(): void {
           iconLibrary,
         });
 
+        const journeys = useJourneyStore.getState().journeys;
+        await fileSystemAdapter.writeJourneys(journeys);
+
         recordFolderSyncSuccess();
       } catch (error) {
         console.error("[FileSystemSync] write failed:", error);
@@ -270,10 +284,16 @@ export function startFileSystemSync(): void {
     scheduleWorkspaceWrite(currentDiagramState, currentDiagramState);
   });
 
+  const journeyUnsubscribe = useJourneyStore.subscribe(() => {
+    const currentDiagramState = useDiagramStore.getState();
+    scheduleWorkspaceWrite(currentDiagramState, currentDiagramState);
+  });
+
   _syncUnsub = () => {
     diagramUnsubscribe();
     customComponentUnsubscribe();
     iconLibraryUnsubscribe();
+    journeyUnsubscribe();
   };
 }
 

@@ -167,7 +167,7 @@
       "openEditor": "Open journey editor"
     },
     "editor": {
-      "canvasHint": "Click an element to add it to the journey",
+      "canvasHint": "While recording a flow, click canvas elements to add steps",
       "recordingCanvasHint": "Click elements in sequence to record the flow",
       "recordNewFlow": "Record new flow",
       "finishRecording": "Finish",
@@ -216,7 +216,8 @@
       "backToList": "Back to journeys",
       "flowCompleted": "Flow completed",
       "nextStep": "Next step",
-      "journeyCompleted": "✓ Journey completed"
+      "journeyCompleted": "✓ Journey completed",
+      "playJourney": "Play journey"
     },
     "player": {
       "stepProgress": "Step {{current}} of {{total}}",

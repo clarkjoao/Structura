@@ -37,5 +37,5 @@ export { HISTORY_COALESCE_MS } from "@/features/diagram";
 /** Time to wait before allowing a new undo/redo operation after a previous one. */
 export { UNDO_REDO_COOLDOWN_MS } from "@/features/diagram";
 
-/** Duration of flow particle animation. */
-export const FLOW_PARTICLE_DURATION_MS = 1200;
+/** Duration of flow particle animation (re-exported from leaf module — safe under circular loads). */
+export { FLOW_PARTICLE_DURATION_MS } from "./flowParticle.constants";

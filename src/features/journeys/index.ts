@@ -1,4 +1,7 @@
 export type { Journey, JourneyStep } from "./types";
+export { useJourneyStore } from "./store";
+export type { SelectStepPlaybackOptions } from "./hooks/useJourneyGlobalPlayer";
+export { useJourneyGlobalPlayer } from "./hooks/useJourneyGlobalPlayer";
 export { CreateJourneyModal } from "./components/CreateJourneyModal";
 export { JourneyCard } from "./components/JourneyCard";
 export { AddStepModal } from "./components/editor/AddStepModal.tsx";
@@ -11,7 +14,6 @@ export {
   useJourney,
   useJourneySteps,
   useJourneys,
-  useJourneysByComponentId,
   useJourneysByDiagramId,
 } from "./selectors";
 export {

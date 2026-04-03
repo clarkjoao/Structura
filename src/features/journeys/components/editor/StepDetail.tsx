@@ -6,11 +6,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useFlowMode } from "@/features/canvas/flow";
-import { getCachedCanvasSnapshot, useDiagrams } from "@/features/diagram";
+import { useDiagrams } from "@/features/diagram";
 import { useJourneyPlayer } from "../../player/useJourneyPlayer";
 import { useJourney, useJourneyActions, useJourneySteps } from "../../selectors";
 import type { JourneyStep } from "../../types";
-import { AddStepModal } from "./AddStepModal";
 import { StepFlowPickerDialog } from "./StepFlowPickerDialog";
 
 const FIELD_DEBOUNCE_MS = 300;
@@ -19,12 +18,15 @@ interface StepDetailProps {
   journeyId: string;
   stepId: string;
   onSelectStep: (stepId: string) => void;
+  /** When set (e.g. global journey play), advances to the next step with playback. */
+  onNextStep?: () => void;
 }
 
 export function StepDetail({
   journeyId,
   stepId,
   onSelectStep,
+  onNextStep,
 }: StepDetailProps) {
   const { t } = useTranslation();
   const flowMode = useFlowMode();
@@ -42,7 +44,6 @@ export function StepDetail({
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
   const [duration, setDuration] = useState("");
-  const [replaceOpen, setReplaceOpen] = useState(false);
   const [flowPickerOpen, setFlowPickerOpen] = useState(false);
   const [flowJustEnded, setFlowJustEnded] = useState(false);
   const prevIsPlaying = useRef(false);
@@ -80,12 +81,6 @@ export function StepDetail({
 
   useEffect(() => () => debouncedPatch.cancel(), [debouncedPatch]);
 
-  const snapshot =
-    step?.diagramId && diagram ? getCachedCanvasSnapshot(diagram) : null;
-  const componentName =
-    step?.componentId && snapshot
-      ? snapshot.components[step.componentId]?.name
-      : undefined;
   const flowName =
     step?.flowId && diagram
       ? diagram.snapshot.flows[step.flowId]?.name
@@ -223,6 +218,10 @@ export function StepDetail({
           ) : null}
         </div>
 
+        {diagram?.name ? (
+          <p className="text-xs text-muted-foreground">{diagram.name}</p>
+        ) : null}
+
         {isRecordingThisStep ? (
           <>
             <p className="text-sm text-muted-foreground">
@@ -343,7 +342,9 @@ export function StepDetail({
             className="w-full justify-start gap-2"
             disabled={nextStepRecord === null}
             onClick={() => {
-              if (nextStepRecord) {
+              if (onNextStep) {
+                onNextStep();
+              } else if (nextStepRecord) {
                 onSelectStep(nextStepRecord.id);
               }
             }}
@@ -362,54 +363,6 @@ export function StepDetail({
           </Button>
         </div>
       ) : null}
-
-      {step.diagramId || step.componentId ? (
-        <div className="grid gap-2 rounded-md border border-border p-3">
-          <span className="text-xs font-semibold text-foreground">
-            {t("journeys.step.reference")}
-          </span>
-          <p className="text-sm text-muted-foreground">
-            {step.diagramId ? (
-              <>
-                {diagram?.name ?? step.diagramId}
-                {step.componentId ? (
-                  <>
-                    <span className="text-muted-foreground/80"> · </span>
-                    {componentName ?? step.componentId}
-                  </>
-                ) : null}
-              </>
-            ) : (
-              <>{componentName ?? step.componentId}</>
-            )}
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="w-fit"
-            onClick={() => setReplaceOpen(true)}
-          >
-            {t("journeys.step.changeElement")}
-          </Button>
-        </div>
-      ) : null}
-
-      <AddStepModal
-        open={replaceOpen}
-        onOpenChange={setReplaceOpen}
-        journeyId={journeyId}
-        onConfirm={(next) => {
-          updateJourneyStep(journeyId, stepId, {
-            label: next.label,
-            description: next.description,
-            diagramId: next.diagramId,
-            componentId: undefined,
-            flowId: undefined,
-          });
-          setReplaceOpen(false);
-        }}
-      />
 
       <StepFlowPickerDialog
         open={flowPickerOpen}

@@ -5,7 +5,6 @@ export interface JourneyStep {
   duration?: string;
   order: number;
   diagramId?: string;
-  componentId?: string;
   flowId?: string;
   svgContent?: string;
 }

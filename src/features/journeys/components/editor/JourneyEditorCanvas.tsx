@@ -2,21 +2,16 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useState,
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
 } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  applyEdgeChanges,
-  applyNodeChanges,
   Background,
   BackgroundVariant,
   Controls,
   type Edge,
-  type EdgeChange,
   type Node,
-  type NodeChange,
   PanOnScrollMode,
   ReactFlow,
   ReactFlowProvider,
@@ -26,6 +21,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { GitBranch } from "lucide-react";
 import {
+  getStepById,
   isEndpointType,
   isJsonViewerType,
   isNoteType,
@@ -33,6 +29,12 @@ import {
   useActiveDiagramId,
   useDiagrams,
 } from "@/features/diagram";
+import type { Flow } from "@/features/diagram";
+import {
+  FIT_VIEW_DURATION_MS,
+  FIT_VIEW_MAX_ZOOM,
+  FIT_VIEW_PADDING,
+} from "@/features/canvas/canvas.constants";
 import CustomEdge from "@/features/canvas/edges/CustomEdge";
 import FlowStepNavigator from "@/features/canvas/flow/FlowStepNavigator";
 import { useFlowMode, useFlowState } from "@/features/canvas/flow";
@@ -55,18 +57,73 @@ interface JourneyEditorCanvasProps {
   diagramId: string | null;
   /** When false, the diagram canvas is hidden in favor of an empty state. */
   hasSelectedStep: boolean;
-  selectedStepId: string | null;
-  selectedComponentId: string | null;
-  onSelectComponent: (componentId: string, name: string) => void;
-  /** When this step id changes and `fitComponentId` is set, canvas pans to that node. */
-  fitOnStepId: string | null;
-  fitComponentId: string | null;
 }
 
-type JourneyEditorCanvasInnerProps = Omit<
-  JourneyEditorCanvasProps,
-  "hasSelectedStep"
->;
+type JourneyEditorCanvasInnerProps = Omit<JourneyEditorCanvasProps, "hasSelectedStep">;
+
+interface JourneyEditorPlaybackFitViewProps {
+  diagramId: string;
+  isPlaying: boolean;
+  isRecording: boolean;
+  activeFlow: Flow | null;
+  currentStepId: string | null;
+}
+
+function JourneyEditorPlaybackFitView({
+  diagramId,
+  isPlaying,
+  isRecording,
+  activeFlow,
+  currentStepId,
+}: JourneyEditorPlaybackFitViewProps) {
+  const { fitView, getNode, getEdge } = useReactFlow();
+
+  useEffect(() => {
+    if (!isPlaying || isRecording) return;
+    if (!activeFlow || activeFlow.diagramId !== diagramId || !currentStepId) {
+      return;
+    }
+    const step = getStepById(activeFlow, currentStepId);
+    if (!step) return;
+
+    if (step.componentId) {
+      const node = getNode(step.componentId);
+      if (node) {
+        void fitView({
+          nodes: [{ id: step.componentId }],
+          duration: FIT_VIEW_DURATION_MS,
+          padding: FIT_VIEW_PADDING,
+          maxZoom: FIT_VIEW_MAX_ZOOM,
+        });
+      }
+    } else if (step.connectionId) {
+      const edge = getEdge(step.connectionId);
+      if (edge) {
+        const sourceNode = getNode(edge.source);
+        const targetNode = getNode(edge.target);
+        if (sourceNode && targetNode) {
+          void fitView({
+            nodes: [{ id: edge.source }, { id: edge.target }],
+            duration: FIT_VIEW_DURATION_MS,
+            padding: FIT_VIEW_PADDING,
+            maxZoom: FIT_VIEW_MAX_ZOOM,
+          });
+        }
+      }
+    }
+  }, [
+    activeFlow,
+    currentStepId,
+    diagramId,
+    fitView,
+    getEdge,
+    getNode,
+    isPlaying,
+    isRecording,
+  ]);
+
+  return null;
+}
 
 function JourneyEditorNoStepEmptyState() {
   const { t } = useTranslation();
@@ -89,16 +146,8 @@ function JourneyEditorNoStepEmptyState() {
   );
 }
 
-function JourneyEditorCanvasInner({
-  diagramId,
-  selectedStepId,
-  selectedComponentId,
-  onSelectComponent,
-  fitOnStepId,
-  fitComponentId,
-}: JourneyEditorCanvasInnerProps) {
+function JourneyEditorCanvasInner({ diagramId }: JourneyEditorCanvasInnerProps) {
   const { t } = useTranslation();
-  const { fitView } = useReactFlow();
   const diagramsRecord = useDiagrams();
   const activeDiagramIdStore = useActiveDiagramId();
   const flowMode = useFlowMode();
@@ -148,89 +197,40 @@ function JourneyEditorCanvasInner({
     recordingInfo,
   ]);
 
-  const computedNodes = useMemo(() => {
+  const nodes = useMemo(() => {
     if (!diagram) return [];
     return buildJourneyEditorNodes(
       diagram,
-      selectedComponentId,
+      null,
       diagramsRecord,
       flowVisuals,
     );
-  }, [diagramsRecord, diagram, flowVisuals, selectedComponentId]);
+  }, [diagramsRecord, diagram, flowVisuals]);
 
-  const computedEdges = useMemo(() => {
+  const edges = useMemo(() => {
     if (!diagram) return [];
     return buildJourneyEditorEdges(diagram, flowVisuals);
   }, [diagram, flowVisuals]);
 
-  const [nodes, setNodes] = useState<Node[]>(computedNodes);
-  const [edges, setEdges] = useState<Edge[]>(computedEdges);
-
-  useEffect(() => {
-    setNodes(computedNodes);
-  }, [computedNodes]);
-
-  useEffect(() => {
-    setEdges(computedEdges);
-  }, [computedEdges]);
-
-  useEffect(() => {
-    if (!fitOnStepId || !fitComponentId) return;
-    void fitView({
-      nodes: [{ id: fitComponentId }],
-      duration: 300,
-      padding: 0.2,
-    });
-  }, [fitComponentId, fitOnStepId, fitView]);
-
-  const onNodesChange = useCallback((changes: NodeChange[]) => {
-    setNodes((previous) => applyNodeChanges(changes, previous));
-  }, []);
-
-  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
-    setEdges((previous) => applyEdgeChanges(changes, previous));
-  }, []);
-
-  const flowBlocksJourneyGestures =
-    flowMode.isPlaying || flowMode.isRecording;
-
   const handleNodeClick = useCallback(
     (_: ReactMouseEvent, node: Node) => {
-      const recordingThisDiagram =
-        isRecording && diagram?.id === activeDiagramIdStore;
-
-      if (flowBlocksJourneyGestures) {
-        if (recordingThisDiagram) {
-          const nodeType = (node.type as string) ?? "";
-          if (isEndpointType(nodeType) && node.parentId) {
-            flowMode.onRecordNodeClick(node.id);
-            return;
-          }
-          if (
-            !isReactFlowParentPanelType(nodeType) &&
-            !isNoteType(nodeType) &&
-            !isJsonViewerType(nodeType)
-          ) {
-            flowMode.onRecordNodeClick(node.id);
-          }
-        }
+      if (!isRecording) return;
+      const recordingThisDiagram = diagram?.id === activeDiagramIdStore;
+      if (!recordingThisDiagram) return;
+      const nodeType = (node.type as string) ?? "";
+      if (isEndpointType(nodeType) && node.parentId) {
+        flowMode.onRecordNodeClick(node.id);
         return;
       }
-
-      const nodeName =
-        typeof node.data.name === "string"
-          ? node.data.name
-          : String(node.data.name ?? "");
-      onSelectComponent(node.id, nodeName);
+      if (
+        !isReactFlowParentPanelType(nodeType) &&
+        !isNoteType(nodeType) &&
+        !isJsonViewerType(nodeType)
+      ) {
+        flowMode.onRecordNodeClick(node.id);
+      }
     },
-    [
-      activeDiagramIdStore,
-      diagram?.id,
-      flowBlocksJourneyGestures,
-      flowMode,
-      isRecording,
-      onSelectComponent,
-    ],
+    [activeDiagramIdStore, diagram?.id, flowMode, isRecording],
   );
 
   const handleEdgeClick = useCallback(
@@ -267,15 +267,15 @@ function JourneyEditorCanvasInner({
     ? null
     : showRecordingOverlay
       ? t("journeys.editor.recordingCanvasHint")
-      : t("journeys.editor.canvasHint");
+      : null;
+
+  const elementsSelectable = isRecording || isPlaying;
 
   return (
     <div className="relative h-full w-full">
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         edgeTypes={journeyEdgeTypes}
         onNodeClick={handleNodeClick}
@@ -284,7 +284,7 @@ function JourneyEditorCanvasInner({
         fitViewOptions={{ padding: 0.12 }}
         nodesDraggable={false}
         nodesConnectable={false}
-        elementsSelectable={!flowBlocksJourneyGestures}
+        elementsSelectable={elementsSelectable}
         deleteKeyCode={null}
         zoomOnScroll={false}
         panOnScroll
@@ -292,6 +292,13 @@ function JourneyEditorCanvasInner({
         proOptions={{ hideAttribution: true }}
         className="bg-background"
       >
+        <JourneyEditorPlaybackFitView
+          diagramId={diagramId}
+          isPlaying={isPlaying}
+          isRecording={isRecording}
+          activeFlow={activeFlow}
+          currentStepId={currentStepId}
+        />
         <Background variant={BackgroundVariant.Dots} gap={18} size={1.5} />
         <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
       </ReactFlow>

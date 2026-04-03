@@ -53,15 +53,3 @@ export const useJourneysByDiagramId = (diagramId: string): Journey[] =>
       return sortJourneysByUpdatedAtDesc(matches);
     }),
   );
-
-export const useJourneysByComponentId = (componentId: string): Journey[] =>
-  useJourneyStore(
-    useShallow((state) => {
-      const matches = Object.values(state.journeys).filter((journey) =>
-        Object.values(journey.steps).some(
-          (step) => step.componentId === componentId,
-        ),
-      );
-      return sortJourneysByUpdatedAtDesc(matches);
-    }),
-  );

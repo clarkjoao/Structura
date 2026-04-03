@@ -113,7 +113,8 @@ export function StepList({
   const [addModalOpen, setAddModalOpen] = useState(false);
 
   const handleAddConfirm = (step: Omit<JourneyStep, "id" | "order">) => {
-    addJourneyStep(journeyId, step);
+    const created = addJourneyStep(journeyId, step);
+    onSelectStep(created.id);
     setAddModalOpen(false);
   };
 

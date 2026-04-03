@@ -167,7 +167,7 @@
       "openEditor": "Abrir editor da jornada"
     },
     "editor": {
-      "canvasHint": "Clique em um elemento para adicionar ao fluxo",
+      "canvasHint": "Durante a gravação do fluxo, clique nos elementos do diagrama para registrar passos",
       "recordingCanvasHint": "Clique nos elementos em sequência para gravar o flow",
       "recordNewFlow": "Gravar novo flow",
       "finishRecording": "Finalizar",
@@ -216,7 +216,8 @@
       "backToList": "Voltar às jornadas",
       "flowCompleted": "Flow concluído",
       "nextStep": "Próximo step",
-      "journeyCompleted": "✓ Jornada concluída"
+      "journeyCompleted": "✓ Jornada concluída",
+      "playJourney": "Reproduzir jornada"
     },
     "player": {
       "stepProgress": "Passo {{current}} de {{total}}",

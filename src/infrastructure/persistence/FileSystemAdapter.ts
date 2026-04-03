@@ -1,4 +1,5 @@
 import type { Diagram, Folder, IconDefinition } from "@/features/diagram";
+import type { Journey } from "@/features/journeys";
 import { normalizeImportedDiagram } from "@/lib/export-service/normalize-imported-diagram";
 import { FileSystemEntryKind } from "@/lib/enums";
 import type { CustomComponentTemplate } from "@/features/custom-components";
@@ -12,6 +13,7 @@ const DB_NAME = "structura-fs";
 const DB_STORE = "handles";
 const HANDLE_KEY = "workspace-handle";
 const MANIFEST_FILE = "structura-manifest.json";
+const JOURNEYS_FILE = "structura-journeys.json";
 
 type FileSystemPermissionMode = "read" | "readwrite";
 type FileSystemPermissionState = "granted" | "denied" | "prompt";
@@ -316,6 +318,31 @@ export class FileSystemAdapter {
     }
   }
 
+  async writeJourneys(journeys: Record<string, Journey>): Promise<void> {
+    if (!this.handle) return;
+    try {
+      const file = await this.handle.getFileHandle(JOURNEYS_FILE, {
+        create: true,
+      });
+      const writable = await file.createWritable();
+      await writable.write(JSON.stringify(journeys, null, 2));
+      await writable.close();
+    } catch (e) {
+      console.error("[FileSystemAdapter] writeJourneys failed:", e);
+    }
+  }
+
+  async readJourneys(): Promise<Record<string, Journey> | null> {
+    if (!this.handle) return null;
+    try {
+      const file = await this.handle.getFileHandle(JOURNEYS_FILE);
+      const fileBody = await file.getFile();
+      return JSON.parse(await fileBody.text()) as Record<string, Journey>;
+    } catch {
+      return null;
+    }
+  }
+
   async readManifest(): Promise<WorkspaceManifest | null> {
     if (!this.handle) return null;
     try {
@@ -390,6 +417,10 @@ export class FileSystemAdapter {
             continue;
           }
 
+          if (name === JOURNEYS_FILE) {
+            continue;
+          }
+
           const dv = validateDiagramFile(raw);
           if (dv.valid === true) {
             result.valid.push(dv.diagram);
@@ -426,7 +457,8 @@ export class FileSystemAdapter {
       if (
         entry.kind === FileSystemEntryKind.File &&
         name.endsWith(".json") &&
-        name !== MANIFEST_FILE
+        name !== MANIFEST_FILE &&
+        name !== JOURNEYS_FILE
       ) {
         try {
           const f = await (entry as FileSystemFileHandle).getFile();

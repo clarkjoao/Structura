@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight, Play, Square } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { useFlowMode } from "@/features/canvas";
@@ -14,7 +13,9 @@ import {
   StepList,
   useJourney,
   useJourneyActions,
+  useJourneyGlobalPlayer,
   useJourneyPlayer,
+  useJourneySteps,
 } from "@/features/journeys";
 
 export default function JourneyEditorPage() {
@@ -23,9 +24,9 @@ export default function JourneyEditorPage() {
   const params = useParams();
   const journeyId = params.id ?? "";
   const journey = useJourney(journeyId);
+  const steps = useJourneySteps(journeyId);
   const allDiagrams = useAllDiagrams();
-  const { updateJourney, addJourneyStep, updateJourneyStep } =
-    useJourneyActions();
+  const { updateJourney } = useJourneyActions();
   const flowMode = useFlowMode();
   const journeyPlayer = useJourneyPlayer();
   const {
@@ -49,6 +50,19 @@ export default function JourneyEditorPage() {
   }, [journeyKey]);
 
   useEffect(() => {
+    if (steps.length === 0) {
+      setSelectedStepId(null);
+    }
+  }, [steps.length]);
+
+  useEffect(() => {
+    if (!selectedStepId) return;
+    if (!journey?.steps[selectedStepId]) {
+      setSelectedStepId(null);
+    }
+  }, [selectedStepId, journey?.steps]);
+
+  useEffect(() => {
     if (!journey) return;
     setNameDraft(journey.name);
   }, [journey]);
@@ -59,28 +73,44 @@ export default function JourneyEditorPage() {
     setPlaybackContext(id, selectedStepId);
   }, [journey?.id, selectedStepId, setPlaybackContext]);
 
-  useEffect(() => {
-    if (flowMode.isPlaying) {
-      flowMode.exitPlay();
-    }
-    if (journeyPlayerMode.kind === "recording") {
-      cancelJourneyRecording();
-    } else if (flowMode.isRecording) {
-      flowMode.cancelRecording();
-    }
-    // Only when the selected step changes — do not depend on play/recording flags
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- see comment
-  }, [selectedStepId]);
-
   const handleSelectStep = useCallback(
-    (stepId: string) => {
+    (stepId: string, options?: { preserveFlowPlayback?: boolean }) => {
       setSelectedStepId(stepId);
       if (journeyPlayerMode.kind === "playing") {
         journeySelectStep(stepId);
       }
+      if (options?.preserveFlowPlayback) {
+        return;
+      }
+      if (flowMode.isPlaying) {
+        flowMode.exitPlay();
+      }
+      if (journeyPlayerMode.kind === "recording") {
+        cancelJourneyRecording();
+      } else if (flowMode.isRecording) {
+        flowMode.cancelRecording();
+      }
     },
-    [journeyPlayerMode.kind, journeySelectStep],
+    [
+      cancelJourneyRecording,
+      flowMode,
+      journeyPlayerMode.kind,
+      journeySelectStep,
+    ],
   );
+
+  const {
+    isGlobalPlaying,
+    startGlobalPlay,
+    stopGlobalPlay,
+    goToNextStep,
+    hasNextStep,
+    isLastStep,
+  } = useJourneyGlobalPlayer({
+    journeyId,
+    selectedStepId,
+    onSelectStep: handleSelectStep,
+  });
 
   const selectedStep =
     journey && selectedStepId ? journey.steps[selectedStepId] : null;
@@ -94,54 +124,6 @@ export default function JourneyEditorPage() {
     const fromSteps = ordered.find((step) => step.diagramId)?.diagramId;
     return fromSteps ?? allDiagrams[0]?.id ?? null;
   }, [allDiagrams, journey, selectedStep?.diagramId]);
-
-  const selectedComponentForCanvas =
-    selectedStep?.diagramId === activeDiagramId && selectedStep?.componentId
-      ? selectedStep.componentId
-      : null;
-
-  const handleCanvasSelectComponent = useCallback(
-    (componentId: string, nodeName: string) => {
-      if (!journey) return;
-      if (selectedStepId === null) {
-        const created = addJourneyStep(journey.id, {
-          label: nodeName,
-          diagramId: activeDiagramId ?? undefined,
-          componentId,
-        });
-        setSelectedStepId(created.id);
-        return;
-      }
-      const step = journey.steps[selectedStepId];
-      if (!step) return;
-      if (!step.componentId) {
-        const labelTrimmed = step.label?.trim() ?? "";
-        updateJourneyStep(journey.id, selectedStepId, {
-          componentId,
-          ...(labelTrimmed === "" ? { label: nodeName } : {}),
-          ...(!step.diagramId && activeDiagramId
-            ? { diagramId: activeDiagramId }
-            : {}),
-        });
-        toast.success(t("journeys.editor.elementLinked"));
-        return;
-      }
-      const created = addJourneyStep(journey.id, {
-        label: nodeName,
-        diagramId: activeDiagramId ?? undefined,
-        componentId,
-      });
-      setSelectedStepId(created.id);
-    },
-    [
-      activeDiagramId,
-      addJourneyStep,
-      journey,
-      selectedStepId,
-      t,
-      updateJourneyStep,
-    ],
-  );
 
   const handleNameSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -212,6 +194,49 @@ export default function JourneyEditorPage() {
               {journey.name}
             </button>
           )}
+
+          {isGlobalPlaying ? (
+            <div className="flex shrink-0 items-center gap-2">
+              {hasNextStep ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 gap-1.5"
+                  onClick={goToNextStep}
+                >
+                  <ArrowRight className="h-3.5 w-3.5" />
+                  {t("journeys.editor.nextStep")}
+                </Button>
+              ) : isLastStep ? (
+                <span className="text-xs text-muted-foreground">
+                  {t("journeys.editor.journeyCompleted")}
+                </span>
+              ) : null}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 text-muted-foreground"
+                onClick={stopGlobalPlay}
+              >
+                <Square className="h-3.5 w-3.5 fill-current" />
+                {t("journeys.player.exit")}
+              </Button>
+            </div>
+          ) : (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="h-8 shrink-0 gap-1.5"
+              disabled={Object.keys(journey.steps).length === 0}
+              onClick={startGlobalPlay}
+            >
+              <Play className="h-3.5 w-3.5" />
+              {t("journeys.editor.playJourney")}
+            </Button>
+          )}
         </header>
 
         <div className="flex min-h-0 flex-1">
@@ -226,6 +251,7 @@ export default function JourneyEditorPage() {
                 journeyId={journey.id}
                 stepId={selectedStepId}
                 onSelectStep={handleSelectStep}
+                onNextStep={isGlobalPlaying ? goToNextStep : undefined}
               />
             ) : (
               <div className="border-t border-border p-3 text-xs text-muted-foreground">
@@ -238,16 +264,6 @@ export default function JourneyEditorPage() {
             <JourneyEditorCanvas
               diagramId={activeDiagramId}
               hasSelectedStep={selectedStepId !== null}
-              selectedStepId={selectedStepId}
-              selectedComponentId={selectedComponentForCanvas}
-              onSelectComponent={handleCanvasSelectComponent}
-              fitOnStepId={selectedStepId}
-              fitComponentId={
-                selectedStep?.componentId &&
-                selectedStep.diagramId === activeDiagramId
-                  ? selectedStep.componentId
-                  : null
-              }
             />
           </div>
 

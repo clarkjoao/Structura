@@ -152,12 +152,6 @@ export function buildJourneyEditorNodes(
     const style: Record<string, unknown> = {
       ...descriptor.buildStyle?.(component, ctx),
       ...(vis.dimmed ? { opacity: OPACITY_FLOW_PLAYBACK_NODE_DIM } : {}),
-      ...(component.id === selectedComponentId
-        ? {
-            outline: "2px solid hsl(var(--primary))",
-            borderRadius: 8,
-          }
-        : {}),
     };
 
     const lockedInGroup =
