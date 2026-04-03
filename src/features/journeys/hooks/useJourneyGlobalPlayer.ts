@@ -31,6 +31,9 @@ export function useJourneyGlobalPlayer({
 
   const playStep = useCallback(
     (step: JourneyStep) => {
+      if (flowMode.isPlaying) {
+        flowMode.exitPlay();
+      }
       onSelectStep(step.id, { preserveFlowPlayback: true });
       journeyPlayer.setPlaybackContext(journeyId, step.id);
       if (step.diagramId) {
@@ -40,7 +43,7 @@ export function useJourneyGlobalPlayer({
         journeyPlayer.startFlowPlayback(step.flowId, step.diagramId);
       }
     },
-    [journeyId, journeyPlayer, onSelectStep, openDiagram],
+    [flowMode, journeyId, journeyPlayer, onSelectStep, openDiagram],
   );
 
   const startGlobalPlay = useCallback(() => {
@@ -67,9 +70,18 @@ export function useJourneyGlobalPlayer({
     playStep(next);
   }, [playStep, selectedStepId, steps]);
 
+  const goToPrevStep = useCallback(() => {
+    const currentIndex = steps.findIndex((item) => item.id === selectedStepId);
+    if (currentIndex <= 0) return;
+    const prev = steps[currentIndex - 1];
+    if (!prev) return;
+    playStep(prev);
+  }, [playStep, selectedStepId, steps]);
+
   const currentStepIndex = steps.findIndex((item) => item.id === selectedStepId);
   const hasNextStep =
     currentStepIndex >= 0 && currentStepIndex < steps.length - 1;
+  const hasPrevStep = currentStepIndex > 0;
   const isLastStep = currentStepIndex === steps.length - 1;
 
   return {
@@ -77,7 +89,9 @@ export function useJourneyGlobalPlayer({
     startGlobalPlay,
     stopGlobalPlay,
     goToNextStep,
+    goToPrevStep,
     hasNextStep,
+    hasPrevStep,
     isLastStep,
     steps,
   };

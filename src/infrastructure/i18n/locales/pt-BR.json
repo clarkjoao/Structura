@@ -155,7 +155,8 @@
       "recordFlow": "Gravar novo flow",
       "unlinkFlow": "Desvincular",
       "playFlow": "Reproduzir flow",
-      "flowSection": "Flow"
+      "flowSection": "Flow",
+      "detailsTitle": "Detalhes"
     },
     "badge": {
       "tooltip": "Presente em: {{names}}"
@@ -212,9 +213,14 @@
       "removeSvg": "Remover",
       "expandVisualPanel": "Expandir painel visual",
       "collapseVisualPanel": "Recolher painel visual",
+      "flowSectionTitle": "Flow",
+      "selectStepForFlow": "Selecione um step para ver o flow",
+      "expandFlowPanel": "Expandir seção de flow",
+      "collapseFlowPanel": "Recolher seção de flow",
       "journeyNotFound": "Jornada não encontrada.",
       "backToList": "Voltar às jornadas",
       "flowCompleted": "Flow concluído",
+      "prevStep": "Step anterior",
       "nextStep": "Próximo step",
       "journeyCompleted": "✓ Jornada concluída",
       "playJourney": "Reproduzir jornada"

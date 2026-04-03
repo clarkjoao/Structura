@@ -155,7 +155,8 @@
       "recordFlow": "Record new flow",
       "unlinkFlow": "Unlink",
       "playFlow": "Play flow",
-      "flowSection": "Flow"
+      "flowSection": "Flow",
+      "detailsTitle": "Details"
     },
     "badge": {
       "tooltip": "In journeys: {{names}}"
@@ -212,9 +213,14 @@
       "removeSvg": "Remove",
       "expandVisualPanel": "Expand visual panel",
       "collapseVisualPanel": "Collapse visual panel",
+      "flowSectionTitle": "Flow",
+      "selectStepForFlow": "Select a step to see its flow",
+      "expandFlowPanel": "Expand flow section",
+      "collapseFlowPanel": "Collapse flow section",
       "journeyNotFound": "Journey not found.",
       "backToList": "Back to journeys",
       "flowCompleted": "Flow completed",
+      "prevStep": "Previous step",
       "nextStep": "Next step",
       "journeyCompleted": "✓ Journey completed",
       "playJourney": "Play journey"

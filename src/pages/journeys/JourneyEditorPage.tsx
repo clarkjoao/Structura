@@ -10,6 +10,7 @@ import {
   JourneyEditorCanvas,
   RightPanel,
   StepDetail,
+  StepFlowSection,
   StepList,
   useJourney,
   useJourneyActions,
@@ -37,7 +38,6 @@ export default function JourneyEditorPage() {
   } = journeyPlayer;
 
   const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
-  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
 
@@ -104,7 +104,9 @@ export default function JourneyEditorPage() {
     startGlobalPlay,
     stopGlobalPlay,
     goToNextStep,
+    goToPrevStep,
     hasNextStep,
+    hasPrevStep,
     isLastStep,
   } = useJourneyGlobalPlayer({
     journeyId,
@@ -149,7 +151,7 @@ export default function JourneyEditorPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col overflow-hidden pt-16">
+    <div className="flex h-screen flex-col overflow-hidden pt-16">
       <Navbar />
       <div className="flex min-h-0 h-[calc(100vh-4rem)] flex-1 flex-col">
         <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-card px-3">
@@ -197,6 +199,17 @@ export default function JourneyEditorPage() {
 
           {isGlobalPlaying ? (
             <div className="flex shrink-0 items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 text-muted-foreground"
+                disabled={!hasPrevStep}
+                onClick={goToPrevStep}
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                {t("journeys.editor.prevStep")}
+              </Button>
               {hasNextStep ? (
                 <Button
                   type="button"
@@ -240,24 +253,22 @@ export default function JourneyEditorPage() {
         </header>
 
         <div className="flex min-h-0 flex-1">
-          <div className="flex w-[280px] shrink-0 flex-col border-r border-border bg-card">
+          <div className="flex min-h-0 w-[280px] shrink-0 flex-col overflow-hidden border-r border-border bg-card">
             <StepList
               journeyId={journey.id}
               selectedStepId={selectedStepId}
               onSelectStep={handleSelectStep}
             />
-            {selectedStepId ? (
+            {selectedStepId && !isGlobalPlaying ? (
               <StepDetail
                 journeyId={journey.id}
                 stepId={selectedStepId}
-                onSelectStep={handleSelectStep}
-                onNextStep={isGlobalPlaying ? goToNextStep : undefined}
               />
-            ) : (
+            ) : !isGlobalPlaying ? (
               <div className="border-t border-border p-3 text-xs text-muted-foreground">
                 {t("journeys.editor.selectStepDetail")}
               </div>
-            )}
+            ) : null}
           </div>
 
           <div className="min-w-0 flex-1">
@@ -270,9 +281,20 @@ export default function JourneyEditorPage() {
           <RightPanel
             journeyId={journey.id}
             step={selectedStep}
-            collapsed={rightPanelCollapsed}
-            onToggleCollapse={() =>
-              setRightPanelCollapsed((previous) => !previous)
+            flowSection={
+              selectedStepId ? (
+                <StepFlowSection
+                  journeyId={journey.id}
+                  stepId={selectedStepId}
+                  onSelectStep={handleSelectStep}
+                  onNextStep={isGlobalPlaying ? goToNextStep : undefined}
+                  onPrevStep={isGlobalPlaying ? goToPrevStep : undefined}
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {t("journeys.editor.selectStepForFlow")}
+                </p>
+              )
             }
           />
         </div>

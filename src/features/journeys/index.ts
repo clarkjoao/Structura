@@ -8,6 +8,7 @@ export { AddStepModal } from "./components/editor/AddStepModal.tsx";
 export { JourneyEditorCanvas } from "./components/editor/JourneyEditorCanvas.tsx";
 export { RightPanel } from "./components/editor/RightPanel.tsx";
 export { StepDetail } from "./components/editor/StepDetail.tsx";
+export { StepFlowSection } from "./components/editor/StepFlowSection.tsx";
 export { StepList } from "./components/editor/StepList.tsx";
 export {
   useJourneyActions,

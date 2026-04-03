@@ -1,68 +1,33 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import debounce from "lodash.debounce";
-import { ArrowRight, Check, Link2, Mic, Play, Square, X } from "lucide-react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useFlowMode } from "@/features/canvas/flow";
-import { useDiagrams } from "@/features/diagram";
-import { useJourneyPlayer } from "../../player/useJourneyPlayer";
-import { useJourney, useJourneyActions, useJourneySteps } from "../../selectors";
+import { useJourney, useJourneyActions } from "../../selectors";
 import type { JourneyStep } from "../../types";
-import { StepFlowPickerDialog } from "./StepFlowPickerDialog";
 
 const FIELD_DEBOUNCE_MS = 300;
 
 interface StepDetailProps {
   journeyId: string;
   stepId: string;
-  onSelectStep: (stepId: string) => void;
-  /** When set (e.g. global journey play), advances to the next step with playback. */
-  onNextStep?: () => void;
 }
 
-export function StepDetail({
-  journeyId,
-  stepId,
-  onSelectStep,
-  onNextStep,
-}: StepDetailProps) {
+export function StepDetail({ journeyId, stepId }: StepDetailProps) {
   const { t } = useTranslation();
-  const flowMode = useFlowMode();
-  const journeyPlayer = useJourneyPlayer();
   const journey = useJourney(journeyId);
   const step = journey?.steps[stepId];
-  const diagramsRecord = useDiagrams();
-  const diagram = step?.diagramId
-    ? diagramsRecord[step.diagramId]
-    : undefined;
 
   const { updateJourneyStep } = useJourneyActions();
-  const sortedSteps = useJourneySteps(journeyId);
 
+  const [collapsed, setCollapsed] = useState(false);
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
   const [duration, setDuration] = useState("");
-  const [flowPickerOpen, setFlowPickerOpen] = useState(false);
-  const [flowJustEnded, setFlowJustEnded] = useState(false);
-  const prevIsPlaying = useRef(false);
 
   useEffect(() => {
-    setFlowJustEnded(false);
-    prevIsPlaying.current = false;
+    setCollapsed(false);
   }, [stepId]);
-
-  useEffect(() => {
-    const isPlaying = flowMode.isPlaying;
-    if (isPlaying) {
-      setFlowJustEnded(false);
-    }
-    if (prevIsPlaying.current && !isPlaying) {
-      setFlowJustEnded(true);
-    }
-    prevIsPlaying.current = isPlaying;
-  }, [flowMode.isPlaying]);
 
   useEffect(() => {
     if (!step) return;
@@ -81,66 +46,6 @@ export function StepDetail({
 
   useEffect(() => () => debouncedPatch.cancel(), [debouncedPatch]);
 
-  const flowName =
-    step?.flowId && diagram
-      ? diagram.snapshot.flows[step.flowId]?.name
-      : undefined;
-
-  const flowForStep =
-    step?.flowId && diagram
-      ? diagram.snapshot.flows[step.flowId]
-      : undefined;
-
-  const journeyAndFlowIdle =
-    flowMode.isIdle && journeyPlayer.mode.kind === "idle";
-
-  const isRecordingThisStep =
-    journeyPlayer.mode.kind === "recording" &&
-    journeyPlayer.mode.journeyId === journeyId &&
-    journeyPlayer.mode.targetStepId === stepId;
-
-  const activePlayingFlow =
-    flowMode.mode.kind === "playing" ? flowMode.mode.flow : null;
-  const isPlayingThisStep =
-    flowMode.isPlaying &&
-    !!step?.flowId &&
-    activePlayingFlow?.id === step?.flowId;
-
-  const handleRecordNewFlow = () => {
-    if (!step?.diagramId) return;
-    if (!journeyAndFlowIdle) {
-      toast.error(t("flows.alreadyActive"));
-      return;
-    }
-    if (
-      step.flowId &&
-      typeof window !== "undefined" &&
-      !window.confirm(t("journeys.editor.replaceFlowConfirm"))
-    ) {
-      return;
-    }
-    journeyPlayer.startRecording(journeyId, stepId);
-  };
-
-  const handlePlayFlow = () => {
-    if (!flowForStep) return;
-    if (!journeyAndFlowIdle) {
-      toast.error(t("flows.alreadyActive"));
-      return;
-    }
-    flowMode.play(flowForStep);
-  };
-
-  const handleStopPlay = () => {
-    flowMode.exitPlay();
-  };
-
-  const currentStepIndex = sortedSteps.findIndex((item) => item.id === stepId);
-  const nextStepRecord =
-    currentStepIndex >= 0 && currentStepIndex < sortedSteps.length - 1
-      ? sortedSteps[currentStepIndex + 1]
-      : null;
-
   if (!journey || !step) {
     return (
       <div className="border-t border-border p-3 text-xs text-muted-foreground">
@@ -150,228 +55,76 @@ export function StepDetail({
   }
 
   return (
-    <div className="flex max-h-[42vh] shrink-0 flex-col gap-3 overflow-y-auto border-t border-border bg-card p-3">
-      <div className="grid gap-2">
-        <label className="text-xs font-medium text-muted-foreground">
-          {t("journeys.step.label")}
-        </label>
-        <Input
-          value={label}
-          onChange={(event) => {
-            const value = event.target.value;
-            setLabel(value);
-            debouncedPatch({ label: value });
-          }}
-        />
-      </div>
+    <div className="shrink-0 border-t border-border bg-card">
+      <button
+        type="button"
+        className="flex w-full items-center justify-between px-3 py-2 text-left"
+        onClick={() => setCollapsed((previous) => !previous)}
+      >
+        <span className="text-xs font-semibold text-foreground">
+          {t("journeys.step.detailsTitle")}
+        </span>
+        {collapsed ? (
+          <ChevronDown
+            className="h-3.5 w-3.5 text-muted-foreground"
+            aria-hidden
+          />
+        ) : (
+          <ChevronUp
+            className="h-3.5 w-3.5 text-muted-foreground"
+            aria-hidden
+          />
+        )}
+      </button>
 
-      <div className="grid gap-2">
-        <label className="text-xs font-medium text-muted-foreground">
-          {t("journeys.step.description")}
-        </label>
-        <textarea
-          value={description}
-          onChange={(event) => {
-            const value = event.target.value;
-            setDescription(value);
-            debouncedPatch({ description: value || undefined });
-          }}
-          rows={3}
-          className="w-full resize-none rounded-md border border-border bg-secondary px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-        />
-      </div>
-
-      <div className="grid gap-2">
-        <label className="text-xs font-medium text-muted-foreground">
-          {t("journeys.step.duration")}
-        </label>
-        <Input
-          value={duration}
-          placeholder={t("journeys.step.durationPlaceholder")}
-          onChange={(event) => {
-            const value = event.target.value;
-            setDuration(value);
-            debouncedPatch({ duration: value || undefined });
-          }}
-        />
-      </div>
-
-      <div className="grid gap-2 rounded-md border border-border p-3">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-xs font-semibold text-foreground">
-            {t("journeys.step.flowSection")}
-          </span>
-          {isRecordingThisStep ? (
-            <span
-              className="text-destructive"
-              aria-hidden
-              title={t("journeys.editor.recording")}
-            >
-              ●
-            </span>
-          ) : null}
-          {isPlayingThisStep ? (
-            <Play
-              className="h-3.5 w-3.5 shrink-0 text-primary"
-              aria-hidden
+      {!collapsed ? (
+        <div className="flex max-h-[38vh] flex-col gap-3 overflow-y-auto border-t border-border px-3 pb-3 pt-2">
+          <div className="grid gap-2">
+            <label className="text-xs font-medium text-muted-foreground">
+              {t("journeys.step.label")}
+            </label>
+            <Input
+              value={label}
+              onChange={(event) => {
+                const value = event.target.value;
+                setLabel(value);
+                debouncedPatch({ label: value });
+              }}
             />
-          ) : null}
-        </div>
-
-        {diagram?.name ? (
-          <p className="text-xs text-muted-foreground">{diagram.name}</p>
-        ) : null}
-
-        {isRecordingThisStep ? (
-          <>
-            <p className="text-sm text-muted-foreground">
-              {t("journeys.editor.recording")}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="gap-1"
-                onClick={() => journeyPlayer.finalizeJourneyRecording()}
-              >
-                <Square className="h-3.5 w-3.5 fill-current" />
-                {t("journeys.editor.finishRecording")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="gap-1"
-                onClick={() => journeyPlayer.cancelJourneyRecording()}
-              >
-                <X className="h-3.5 w-3.5" />
-                {t("journeys.editor.cancelRecording")}
-              </Button>
-            </div>
-          </>
-        ) : null}
-
-        {!isRecordingThisStep && isPlayingThisStep ? (
-          <>
-            <p className="text-sm text-foreground">
-              {flowName ?? step.flowId}
-            </p>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="w-fit gap-1"
-              onClick={handleStopPlay}
-            >
-              <Square className="h-3.5 w-3.5 fill-current" />
-              {t("journeys.editor.stopPlay")}
-            </Button>
-          </>
-        ) : null}
-
-        {!isRecordingThisStep && !isPlayingThisStep && step.flowId ? (
-          <>
-            <p className="text-sm text-foreground">
-              {flowName ?? step.flowId}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="gap-1"
-                onClick={handlePlayFlow}
-                disabled={!flowForStep}
-              >
-                <Play className="h-3.5 w-3.5" />
-                {t("journeys.step.playFlow")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  updateJourneyStep(journeyId, stepId, { flowId: undefined })
-                }
-              >
-                {t("journeys.step.unlinkFlow")}
-              </Button>
-            </div>
-          </>
-        ) : null}
-
-        {!isRecordingThisStep && !isPlayingThisStep && !step.flowId ? (
-          <div className="flex flex-col gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="w-full justify-start gap-2"
-              onClick={() => setFlowPickerOpen(true)}
-              disabled={!step.diagramId}
-            >
-              <Link2 className="h-3.5 w-3.5 shrink-0" aria-hidden />
-              {t("journeys.step.linkFlow")}
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="w-full justify-start gap-2"
-              onClick={handleRecordNewFlow}
-              disabled={!step.diagramId}
-            >
-              <Mic className="h-3.5 w-3.5 shrink-0" aria-hidden />
-              {t("journeys.editor.recordNewFlow")}
-            </Button>
           </div>
-        ) : null}
-      </div>
 
-      {flowJustEnded && step.flowId ? (
-        <div className="grid gap-3 rounded-md border border-border p-3">
-          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden />
-            {t("journeys.editor.flowCompleted")}
+          <div className="grid gap-2">
+            <label className="text-xs font-medium text-muted-foreground">
+              {t("journeys.step.description")}
+            </label>
+            <textarea
+              value={description}
+              onChange={(event) => {
+                const value = event.target.value;
+                setDescription(value);
+                debouncedPatch({ description: value || undefined });
+              }}
+              rows={3}
+              className="w-full resize-none rounded-md border border-border bg-secondary px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            />
           </div>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="w-full justify-start gap-2"
-            disabled={nextStepRecord === null}
-            onClick={() => {
-              if (onNextStep) {
-                onNextStep();
-              } else if (nextStepRecord) {
-                onSelectStep(nextStepRecord.id);
-              }
-            }}
-          >
-            {nextStepRecord ? (
-              <>
-                <ArrowRight className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                {t("journeys.editor.nextStep")}
-              </>
-            ) : (
-              <>
-                <Check className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                {t("journeys.editor.journeyCompleted")}
-              </>
-            )}
-          </Button>
+
+          <div className="grid gap-2">
+            <label className="text-xs font-medium text-muted-foreground">
+              {t("journeys.step.duration")}
+            </label>
+            <Input
+              value={duration}
+              placeholder={t("journeys.step.durationPlaceholder")}
+              onChange={(event) => {
+                const value = event.target.value;
+                setDuration(value);
+                debouncedPatch({ duration: value || undefined });
+              }}
+            />
+          </div>
         </div>
       ) : null}
-
-      <StepFlowPickerDialog
-        open={flowPickerOpen}
-        onOpenChange={setFlowPickerOpen}
-        diagramId={step.diagramId ?? null}
-        onSelectFlow={(flowId) => {
-          updateJourneyStep(journeyId, stepId, { flowId });
-        }}
-      />
     </div>
   );
 }
