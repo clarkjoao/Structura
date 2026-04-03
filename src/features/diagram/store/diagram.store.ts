@@ -3,6 +3,7 @@ import { useShallow } from "zustand/react/shallow";
 import { immer } from "zustand/middleware/immer";
 import { persist } from "zustand/middleware";
 import { defaultStorage } from "@/infrastructure/persistence";
+import { recordLocalStorageDiagramSyncSuccess } from "@/infrastructure/persistence/localStorageSyncTimestamp";
 import { useIconStore } from "@/features/icons/store";
 import type { UserTemplate } from "../model/diagram.types";
 import type { AppState } from "./store.types";
@@ -21,7 +22,11 @@ import {
   iconsSlice,
   userTemplatesSlice,
 } from "./slices";
-import { createPersistConfig } from "./persist.config";
+import {
+  buildPersistStoragePayload,
+  createPersistConfig,
+  PERSIST_KEY,
+} from "./persist.config";
 
 export type { AppState, DiagramSnapshot } from "./store.types";
 export type { ClipboardEntry, DiagramStore } from "./store.types";
@@ -70,6 +75,28 @@ export function createDiagramStore(storage = defaultStorage) {
 }
 
 export const useDiagramStore = createDiagramStore();
+
+/**
+ * Writes the current diagram store snapshot to the default localStorage adapter
+ * (including when FS mode has paused normal persist). Updates last-sync metadata on success.
+ */
+export async function flushDiagramStoreToLocalStorageNow(): Promise<boolean> {
+  const payload = buildPersistStoragePayload(useDiagramStore.getState());
+  if (defaultStorage.paused) {
+    const ok = await defaultStorage.forceSave(PERSIST_KEY, payload);
+    if (ok) {
+      recordLocalStorageDiagramSyncSuccess();
+    }
+    return ok;
+  }
+  const json = JSON.stringify({
+    state: payload.state,
+    version: payload.version,
+  });
+  await defaultStorage.setItem(PERSIST_KEY, json);
+  recordLocalStorageDiagramSyncSuccess();
+  return true;
+}
 
 export function updateDiagramDescription(diagramId: string, description: string): void {
   useDiagramStore.getState().updateDiagramDescription(diagramId, description);

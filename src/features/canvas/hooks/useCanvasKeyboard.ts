@@ -107,6 +107,7 @@ interface UseCanvasKeyboardParams {
     screenPos: { x: number; y: number };
     flowPos: { x: number; y: number };
   }) => void;
+  forceSaveToFolder: () => void | Promise<void>;
 }
 
 const KEY = {
@@ -117,6 +118,7 @@ const KEY = {
   C: "c",
   D: "d",
   Q: "q",
+  S: "s",
   E: "e",
   F: "f",
   G: "g",
@@ -181,6 +183,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     onToggleDiagramSidebar,
     onOpenCommandPalette,
     onOpenQuickInsert,
+    forceSaveToFolder,
   } = params;
 
   const resolvedSnapshot = useMemo(
@@ -313,6 +316,22 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
         return;
       }
 
+      const modForFolderSave = isModKeyPressed(event);
+      if (
+        modForFolderSave &&
+        (event.key === KEY.S || event.key === "S") &&
+        !isFlowPanelOpen &&
+        !isPlaying &&
+        !isCompareMode &&
+        !isRecording &&
+        !isSearchOpen &&
+        !isCommandPaletteOpen
+      ) {
+        event.preventDefault();
+        void forceSaveToFolder();
+        return;
+      }
+
       if (!diagram) return;
 
       if (recordingHandler(event)) return;
@@ -419,6 +438,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     isScenesDrawerOpen,
     onCloseScenesDrawer,
     isCommandPaletteOpen,
+    forceSaveToFolder,
     recordingHandler,
     handleCopyPaste,
     importDrawioResult,

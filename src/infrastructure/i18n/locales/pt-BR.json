@@ -338,8 +338,21 @@
     "rename": "Renomear",
     "delete": "Excluir"
   },
+  "localStorage": {
+    "savedSuccess": "Estado salvo no localStorage",
+    "syncNow": "· sync agora",
+    "syncAgo": "· sync {{time}}",
+    "neverSynced": "· nunca sincronizado"
+  },
   "filesystem": {
     "localFolder": "Pasta local",
+    "noFolderConnected": "Nenhuma pasta conectada. Use 'Conectar pasta' para sincronizar.",
+    "savedSuccess": "Salvo na pasta local",
+    "saveError": "Erro ao salvar na pasta. Verifique as permissões.",
+    "syncNow": "· sync agora",
+    "syncAgo": "· sync {{time}}",
+    "neverSynced": "· nunca sincronizado",
+    "saveShortcutHint": "Salvar na pasta (Cmd+S)",
     "syncPullTitle": "Sync: puxar atualizações da pasta",
     "disconnectTitle": "Desconectar pasta",
     "connecting": "Conectando...",

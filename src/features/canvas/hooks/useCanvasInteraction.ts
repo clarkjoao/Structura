@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useRef, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
-import type { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import type { Node, ReactFlowInstance } from "@xyflow/react";
 import type { NavigateFunction } from "react-router-dom";
-import type { Diagram, ServiceDefinition } from "@/features/diagram";
+import {
+  flushDiagramStoreToLocalStorageNow,
+  type Diagram,
+  type ServiceDefinition,
+} from "@/features/diagram";
 import type { CanvasProps } from "../canvas.types";
 import type { CanvasVisualState } from "./useCanvasVisualState";
 import { useCanvasDiagramNavigation } from "./useCanvasDiagramNavigation";
@@ -11,6 +16,7 @@ import { useCanvasEventHandlers } from "./useCanvasEventHandlers";
 import { useCanvasKeyboard } from "./useCanvasKeyboard";
 import { useCanvasEffects } from "./useCanvasEffects";
 import { useNodeDragParenting } from "./useNodeDragParenting";
+import { forceSaveToConnectedFolder } from "@/infrastructure/persistence";
 
 type FlowSlice = ReturnType<typeof import("./useCanvasFlowState").useCanvasFlowState>;
 type CompareSlice = ReturnType<typeof import("./useCanvasCompareState").useCanvasCompareState>;
@@ -73,6 +79,25 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
     setFocusTitleTrigger,
     onNoteStartEdit,
   } = params;
+
+  const { t } = useTranslation();
+
+  const forceSaveToFolder = useCallback(async () => {
+    const fsResult = await forceSaveToConnectedFolder();
+    const localOk = await flushDiagramStoreToLocalStorageNow();
+
+    if (fsResult === "ok") {
+      toast.success(t("filesystem.savedSuccess"));
+    } else if (fsResult === "no_folder") {
+      toast.info(t("filesystem.noFolderConnected"));
+    } else {
+      toast.error(t("filesystem.saveError"));
+    }
+
+    if (localOk) {
+      toast.success(t("localStorage.savedSuccess"));
+    }
+  }, [t]);
 
   const diagramNavLocked = flowState.isRecording || flowState.isPlaying || compareState.isCompareMode;
 
@@ -209,6 +234,7 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
       if (diagramNavLocked || !!canvasProps.isFlowPanelOpen) return;
       visualState.setQuickInsert({ screenPos, flowPos });
     },
+    forceSaveToFolder,
   });
 
   useCanvasEffects({

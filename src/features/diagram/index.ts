@@ -249,6 +249,7 @@ export {
   useDiagramActions,
   /** Custom icon library mutations (add/remove/rename/usage counters) */
   useIconActions,
+  flushDiagramStoreToLocalStorageNow,
   updateDiagramDescription,
   saveUserTemplate,
   updateUserTemplate,
