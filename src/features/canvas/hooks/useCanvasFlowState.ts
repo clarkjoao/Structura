@@ -1,6 +1,6 @@
 import type { Flow } from "@/features/diagram";
-import { useFlowState } from "../flow/useFlowState";
-import { useFlowMode } from "../flow/FlowModeContext";
+import { useFlowState } from "@/features/flows";
+import { useFlowMode } from "@/features/flows";
 
 /** Derives flow playback, recording overlays, and related flags for the canvas. */
 export function useCanvasFlowState(params: { flows: Flow[]; isCompareMode: boolean }) {

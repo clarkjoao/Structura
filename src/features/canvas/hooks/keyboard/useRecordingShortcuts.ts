@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useFlowMode } from "../../flow/FlowModeContext";
+import { useFlowMode } from "@/features/flows";
 import type { KeyHandler } from "./helpers";
 
 /**

@@ -2,7 +2,7 @@ import type { DragEvent, MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import type { FlowStep } from "@/features/diagram";
 import { X, GripVertical, GitBranch } from "lucide-react";
-import { getBranchColor } from "../branchColors";
+import { getBranchColor } from "../../utils/branchColors";
 
 export interface StepItemProps {
   step: FlowStep;

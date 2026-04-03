@@ -16,9 +16,9 @@ import {
   isAncestorLocked,
 } from "@/features/diagram";
 import { resolveNodeDescriptor, type NodeBuildContext } from "./node-types";
-import { useFlowMode } from "../flow/FlowModeContext";
+import { useFlowMode } from "@/features/flows";
 import { buildCollapsedPanelIds, computeNodeVisibility } from "./nodeVisibility";
-import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
+import type { FlowHighlight, RecordingInfo, CoverageInfo } from "@/features/flows";
 import { OPACITY_FLOW_PLAYBACK_NODE_DIM, OPACITY_TAG_FILTER_DIM } from "../canvas.constants";
 
 interface UseCanvasNodesParams {

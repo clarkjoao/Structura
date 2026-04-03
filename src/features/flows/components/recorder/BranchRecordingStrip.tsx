@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Check } from "lucide-react";
-import { getBranchColor } from "../branchColors";
+import { getBranchColor } from "../../utils/branchColors";
 
 export interface BranchRecordingStripProps {
   conditionStepId: string;

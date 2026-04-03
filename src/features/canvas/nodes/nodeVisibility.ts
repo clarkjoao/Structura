@@ -1,7 +1,7 @@
 import type { Component } from "@/features/diagram";
 import { isPanelComponent } from "@/features/diagram";
 import type { NodeTypeDescriptor } from "./node-types/types";
-import type { CoverageInfo } from "../flow/flowState";
+import type { CoverageInfo } from "@/features/flows";
 
 export interface NodeVisibilityState {
   isChild: boolean;

@@ -6,7 +6,7 @@ export {
   buildFlowHighlight,
   buildCoverage,
   buildRecordingInfo,
-} from "../flow/flowState";
+} from "@/features/flows";
 
 export {
   type HandleAssignment,

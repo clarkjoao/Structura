@@ -1,5 +1,7 @@
 # Canvas Feature
 
+> Note (2026-04-03): Flow UI/state moved to `src/features/flows`. `src/features/canvas/flow` now contains compatibility re-exports only.
+
 The canvas feature wraps `@xyflow/react` (React Flow) and bridges the diagram Zustand store to an interactive canvas. `Canvas.tsx` is the top-level component.
 
 ## Estrutura

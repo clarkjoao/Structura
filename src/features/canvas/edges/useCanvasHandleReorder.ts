@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { isDiagramCompareMode, useActiveDiagram } from "@/features/diagram";
-import { useFlowMode } from "../flow/FlowModeContext";
+import { useFlowMode } from "@/features/flows";
 
 interface UseCanvasHandleReorderParams {
   effectiveHandleOrder: Record<string, { incoming: string[]; outgoing: string[] }>;

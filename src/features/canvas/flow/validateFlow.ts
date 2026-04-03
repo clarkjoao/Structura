@@ -1,7 +1,3 @@
-import type { Flow, Diagram } from "@/features/diagram";
-import { validateFlowGraph } from "@/features/diagram";
-export type { BrokenStep } from "@/features/diagram";
-
-export function validateFlow(flow: Flow, diagram: Diagram) {
-  return validateFlowGraph(flow, diagram);
-}
+/** @deprecated Use `@/features/flows` imports instead. */
+export { validateFlow } from "@/features/flows/domain/validateFlow";
+export type { BrokenStep } from "@/features/flows/domain/validateFlow";

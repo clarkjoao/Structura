@@ -2,9 +2,9 @@ import { useMemo } from "react";
 import type { Edge } from "@xyflow/react";
 import type { Connection, Diagram, FlowStep } from "@/features/diagram";
 import { getCachedCanvasSnapshot } from "@/features/diagram";
-import { useFlowMode } from "../flow/FlowModeContext";
+import { useFlowMode } from "@/features/flows";
 import { buildEdge, filterVisibleConnections } from "./edgeBuilding";
-import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
+import type { FlowHighlight, RecordingInfo, CoverageInfo } from "@/features/flows";
 
 interface UseCanvasEdgesParams {
   diagram: Diagram | null | undefined;

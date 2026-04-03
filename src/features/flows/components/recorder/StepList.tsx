@@ -2,7 +2,7 @@ import { useState, useCallback, type DragEvent, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { FlowStep, Connection } from "@/features/diagram";
-import type { BranchOwnerInfo } from "../flowMode.types";
+import type { BranchOwnerInfo } from "../../state/flowMode.types";
 import { GitBranch } from "lucide-react";
 import { StepItem } from "./StepItem";
 import { ConditionStepForm, type ConditionFormState } from "./ConditionStepForm";

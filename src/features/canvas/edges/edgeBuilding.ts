@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import { MarkerType, type Edge } from "@xyflow/react";
 import type { Connection, Diagram, FlowStep, Point } from "@/features/diagram";
 import { getEffectiveConnectionStyle, EdgeMarker, EdgeStyle } from "@/features/diagram";
-import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
+import type { FlowHighlight, RecordingInfo, CoverageInfo } from "@/features/flows";
 import {
   OPACITY_FLOW_PLAYBACK_EDGE_DIM,
   OPACITY_FLOW_PLAYBACK_PARTICIPANT,

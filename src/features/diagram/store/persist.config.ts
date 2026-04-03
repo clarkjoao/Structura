@@ -5,7 +5,7 @@ import {
   clearLocalStorageDiagramSyncTimestamp,
   recordLocalStorageDiagramSyncSuccess,
 } from "@/infrastructure/persistence/localStorageSyncTimestamp";
-import { useIconStore } from "@/features/icons/store";
+import { useIconStore } from "@/features/icons";
 import type { Diagram, Component, Connection, IconDefinition, NodeLayout } from "../model/diagram.types";
 import type { DiagramSnapshot, DiagramStore } from "./store.types";
 import type { ServiceDefinition } from "../model/service.types";

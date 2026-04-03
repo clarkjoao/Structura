@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { Diagram, Folder as FolderType, Flow } from "@/features/diagram";
 import { useAllDiagrams, useFolders, useFlows } from "@/features/diagram";
-import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
+import { useFlowMode } from "@/features/flows";
 import { buildBreadcrumbPath } from "@/pages/dashboard/dashboard.utils";
 import { useRecentDiagrams } from "./useRecentDiagrams";
 import {

@@ -9,7 +9,7 @@ import type {
   NodeLayout,
   ServiceDefinition,
 } from "@/features/diagram";
-import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../../flow/flowState";
+import type { FlowHighlight, RecordingInfo, CoverageInfo } from "@/features/flows";
 
 export type { FlowHighlight, RecordingInfo, CoverageInfo };
 

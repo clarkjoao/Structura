@@ -2,7 +2,7 @@ import { useCallback, useRef } from "react";
 import type { Node, Edge, OnEdgesChange, OnConnect, OnConnectEnd, Connection } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import type { CanvasVisualState } from "./useCanvasVisualState";
-import { useFlowMode } from "../flow/FlowModeContext";
+import { useFlowMode } from "@/features/flows";
 import {
   isReactFlowParentPanelType,
   isNoteType,

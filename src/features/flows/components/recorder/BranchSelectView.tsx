@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Check, ChevronRight, ArrowLeft } from "lucide-react";
 import type { FlowStep, Flow } from "@/features/diagram";
 import { getBranchStepCount } from "@/features/diagram";
-import { getBranchColor } from "../branchColors";
+import { getBranchColor } from "../../utils/branchColors";
 
 export interface BranchSelectViewProps {
   branchSelectCondition: FlowStep;

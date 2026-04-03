@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useFlowMode } from "../flow/FlowModeContext";
+import { useFlowMode } from "@/features/flows";
 import { useCollab } from "@/features/collaboration";
 import { isDiagramCompareMode, type Diagram } from "@/features/diagram";
 

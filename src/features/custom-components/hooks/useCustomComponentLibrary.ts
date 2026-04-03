@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useAllServices, useDiagramActions } from "@/features/diagram";
-import { useCustomComponentStore } from "../store";
+import { useCustomComponentStore } from "../state/store";
 import { buildComponentPatchFromTemplate } from "../utils/customComponentTemplate.utils";
 
 interface InstantiateTemplateParams {

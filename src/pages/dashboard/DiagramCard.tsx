@@ -31,7 +31,7 @@ export function DiagramCard({
 }: DiagramCardProps) {
   const { t } = useTranslation();
   const folders = useFolders();
-  const { updateDiagram, duplicateDiagram, moveDiagram, deleteDiagram } =
+  const { updateDiagram, updateDiagramDescription, duplicateDiagram, moveDiagram, deleteDiagram } =
     useDiagramActions();
   const [preview, setPreview] = useState<string | null>(() => getPreview(diagram.id));
   const [isPreviewHovered, setIsPreviewHovered] = useState(false);
@@ -133,7 +133,8 @@ export function DiagramCard({
         diagram={renamingDiagram}
         onSave={(name, description) => {
           if (!renamingDiagram) return;
-          updateDiagram(renamingDiagram.id, { name, description });
+          updateDiagram(renamingDiagram.id, { name });
+          updateDiagramDescription(renamingDiagram.id, description);
           setRenamingDiagram(null);
         }}
       />
