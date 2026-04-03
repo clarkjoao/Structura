@@ -235,8 +235,21 @@
     "rename": "Rename",
     "delete": "Delete"
   },
+  "localStorage": {
+    "savedSuccess": "State saved to localStorage",
+    "syncNow": "· synced now",
+    "syncAgo": "· synced {{time}}",
+    "neverSynced": "· never synced"
+  },
   "filesystem": {
     "localFolder": "Local folder",
+    "noFolderConnected": "No folder connected. Use 'Connect folder' to sync.",
+    "savedSuccess": "Saved to local folder",
+    "saveError": "Error saving to folder. Check permissions.",
+    "syncNow": "· synced now",
+    "syncAgo": "· synced {{time}}",
+    "neverSynced": "· never synced",
+    "saveShortcutHint": "Save to folder (Cmd+S)",
     "syncPullTitle": "Sync: pull updates from folder",
     "disconnectTitle": "Disconnect folder",
     "connecting": "Connecting...",

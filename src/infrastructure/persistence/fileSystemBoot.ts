@@ -9,6 +9,11 @@
 
 import { useDiagramStore, VIEWPORT_DEBOUNCE_MS, PERSIST_KEY, type Diagram, type IconDefinition } from "@/features/diagram";
 import { fileSystemAdapter } from "./FileSystemAdapter";
+import { clearLocalStorageDiagramSyncTimestamp } from "./localStorageSyncTimestamp";
+import {
+  clearFolderSyncTimestamp,
+  recordFolderSyncSuccess,
+} from "./folderSyncTimestamp";
 import { defaultStorage } from "./LocalStorageAdapter";
 import { useCustomComponentStore, type CustomComponentTemplate } from "@/features/custom-components";
 import { useIconStore } from "@/features/icons";
@@ -100,6 +105,8 @@ export async function flushWorkspaceToConnectedFolder(
     customComponentTemplates,
     iconLibrary,
   });
+
+  recordFolderSyncSuccess();
 }
 
 // ── Global state ──
@@ -121,6 +128,7 @@ export function getReconnectPromise(): Promise<boolean> | null {
 
 async function clearLocalCache(): Promise<void> {
   await defaultStorage.delete(PERSIST_KEY);
+  clearLocalStorageDiagramSyncTimestamp();
 }
 
 async function doReconnect(): Promise<boolean> {
@@ -240,6 +248,8 @@ export function startFileSystemSync(): void {
           customComponentTemplates,
           iconLibrary,
         });
+
+        recordFolderSyncSuccess();
       } catch (error) {
         console.error("[FileSystemSync] write failed:", error);
       }
@@ -287,4 +297,21 @@ export function resetBootState(): void {
   _reconnected = false;
   _reconnecting = null;
   stopFileSystemSync();
+  clearFolderSyncTimestamp();
+}
+
+export type ForceSaveToFolderResult = "ok" | "no_folder" | "error";
+
+/**
+ * Writes the full workspace (all diagrams, manifest, templates, icons) to the connected folder.
+ * Updates last-sync metadata on success (same as the debounced auto-sync).
+ */
+export async function forceSaveToConnectedFolder(): Promise<ForceSaveToFolderResult> {
+  if (!fileSystemAdapter.isConnected) return "no_folder";
+  try {
+    await flushWorkspaceToConnectedFolder(useDiagramStore.getState());
+    return "ok";
+  } catch {
+    return "error";
+  }
 }

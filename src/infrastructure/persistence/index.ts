@@ -16,11 +16,13 @@ export type { FsStatus } from "./useFileSystemStorage";
 export {
   bootFileSystem,
   flushWorkspaceToConnectedFolder,
+  forceSaveToConnectedFolder,
   hasReconnected,
   startFileSystemSync,
   stopFileSystemSync,
   resetBootState,
 } from "./fileSystemBoot";
+export type { ForceSaveToFolderResult } from "./fileSystemBoot";
 export {
   validateDiagramFile,
   validateManifest,

@@ -9,15 +9,21 @@ import { useIconStore } from "@/features/icons";
 import { buildPersistStoragePayload, PERSIST_KEY } from "@/features/diagram";
 import { defaultStorage } from "./LocalStorageAdapter";
 import {
+  clearLocalStorageDiagramSyncTimestamp,
+  recordLocalStorageDiagramSyncSuccess,
+} from "./localStorageSyncTimestamp";
+import {
   bootFileSystem,
   flushWorkspaceToConnectedFolder,
   hydrateIconStoreFromWorkspace,
   resetBootState,
   startFileSystemSync,
 } from "./fileSystemBoot";
+import { recordFolderSyncSuccess } from "./folderSyncTimestamp";
 
 async function clearLocalCache(): Promise<void> {
   await defaultStorage.delete(PERSIST_KEY);
+  clearLocalStorageDiagramSyncTimestamp();
 }
 
 function mergeTemplates(
@@ -112,6 +118,8 @@ export function useFileSystemStorage() {
         const written = await defaultStorage.forceSave(PERSIST_KEY, payload);
         if (!written) {
           console.warn("[Structura] Could not seed localStorage from in-memory diagrams (quota or blocked).");
+        } else {
+          recordLocalStorageDiagramSyncSuccess();
         }
       });
     });
@@ -137,6 +145,7 @@ export function useFileSystemStorage() {
         await fileSystemAdapter.writeDiagram(diagram);
       }
       await fileSystemAdapter.writeManifest(buildManifest(state));
+      recordFolderSyncSuccess();
       defaultStorage.paused = true;
       await clearLocalCache();
       startFileSystemSync();
@@ -323,6 +332,8 @@ export function useFileSystemStorage() {
         return;
       }
 
+      recordLocalStorageDiagramSyncSuccess();
+
       await performDisconnect();
 
       const after = useDiagramStore.getState();
@@ -330,6 +341,8 @@ export function useFileSystemStorage() {
       const flushed = await defaultStorage.forceSave(PERSIST_KEY, flushPayload);
       if (!flushed) {
         toast.error(t("filesystem.backupFailedQuota"));
+      } else {
+        recordLocalStorageDiagramSyncSuccess();
       }
 
       // Also backup custom-components (they're stored via localStorage persist + repository).
@@ -344,6 +357,7 @@ export function useFileSystemStorage() {
   const confirmDisconnectWithoutBackup = useCallback(async () => {
     clearStore();
     await defaultStorage.delete(PERSIST_KEY);
+    clearLocalStorageDiagramSyncTimestamp();
     await performDisconnect();
   }, [clearStore, performDisconnect]);
 

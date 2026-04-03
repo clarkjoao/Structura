@@ -1,5 +1,10 @@
 import { createJSONStorage } from "zustand/middleware";
 import type { IStoragePort } from "@/infrastructure/persistence";
+import { LocalStorageAdapter } from "@/infrastructure/persistence/LocalStorageAdapter";
+import {
+  clearLocalStorageDiagramSyncTimestamp,
+  recordLocalStorageDiagramSyncSuccess,
+} from "@/infrastructure/persistence/localStorageSyncTimestamp";
 import { useIconStore } from "@/features/icons/store";
 import type { Diagram, Component, Connection, IconDefinition, NodeLayout } from "../model/diagram.types";
 import type { DiagramSnapshot, DiagramStore } from "./store.types";
@@ -306,10 +311,43 @@ const SCHEMA_VERSION_EDGE_LAYOUTS = 3;
 const SCHEMA_VERSION_DIAGRAM_DESCRIPTION = 3;
 const SCHEMA_VERSION_USER_TEMPLATES = 4;
 
+/**
+ * Wraps the diagram persist storage so each successful write of `PERSIST_KEY`
+ * updates `structura:lastLocalStorageSync` (and matching window event).
+ */
+export function wrapIStoragePortWithDiagramPersistTracking(
+  storage: IStoragePort,
+): IStoragePort {
+  return {
+    getItem: (key) => storage.getItem(key),
+    setItem: async (name, value) => {
+      await storage.setItem(name, value);
+      if (name !== PERSIST_KEY) return;
+      if (storage instanceof LocalStorageAdapter && storage.paused) return;
+      recordLocalStorageDiagramSyncSuccess();
+    },
+    removeItem: async (key) => {
+      await storage.removeItem(key);
+      if (key === PERSIST_KEY) {
+        clearLocalStorageDiagramSyncTimestamp();
+      }
+    },
+    save: (key, data) => storage.save(key, data),
+    load: (key) => storage.load(key),
+    delete: async (key) => {
+      await storage.delete(key);
+      if (key === PERSIST_KEY) {
+        clearLocalStorageDiagramSyncTimestamp();
+      }
+    },
+  };
+}
+
 export function createPersistConfig(storage: IStoragePort) {
+  const trackedStorage = wrapIStoragePortWithDiagramPersistTracking(storage);
   return {
     name: PERSIST_KEY,
-    storage: createJSONStorage(() => storage),
+    storage: createJSONStorage(() => trackedStorage),
     partialize: partializeState,
     merge: mergePersistedState,
     version: PERSIST_SCHEMA_VERSION,
