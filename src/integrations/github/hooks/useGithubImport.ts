@@ -2,14 +2,13 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import type { GithubRepo, GHSearchFilters } from "../github.types";
 import { buildGithubQuery } from "../github.types";
 import { createGithubClient } from "../githubClient";
-import { detectConflicts } from "../detectMergeConflicts";
 import type { MergeConflict } from "../detectMergeConflicts";
-import type { MergeResolution } from "../components/GithubMergeDialog";
-import { useAllServices, useRegistryActions, ServiceSource } from "@/features/diagram";
+import type { MergeResolution } from "../github-merge.types";
+import { useAllServices, useRegistryActions } from "@/features/diagram";
 import { useGithubConfig } from "./useGithubConfig";
-import { commitGithubImport } from "../github.service";
-import { normalizeSources } from "../../merge-utils";
 import { i18n } from "@/infrastructure/i18n";
+import { buildGithubImportPlan } from "../application/buildGithubImportPlan";
+import { executeGithubImportPlan } from "../application/executeGithubImportPlan";
 
 const DEFAULT_PER_PAGE = 50;
 
@@ -157,58 +156,16 @@ export function useGithubImport() {
     setLoading(true);
     setError("");
     try {
-      const detectedAll = detectConflicts(selectedRepos, allServices);
+      const plan = buildGithubImportPlan({ selectedRepos, allServices });
+      setAllConflictsForImport(plan.conflictsForImport);
+      setAutoResolutions(plan.autoResolutions);
 
-      // If multiple services match the same repo URL, pick a single merge target.
-      // For GitHub import, DefectDojo service has priority.
-      const bestByRepoId = new Map<number, MergeConflict>();
-      const score = (c: MergeConflict) => {
-        const sources = normalizeSources(c.existingService);
-        if (sources.some((source) => source.type === ServiceSource.Defectdojo)) return 3;
-        if (sources.some((source) => source.type === ServiceSource.Github)) return 2;
-        return 1;
-      };
-
-      for (const c of detectedAll) {
-        const prev = bestByRepoId.get(c.repo.id);
-        if (!prev || score(c) > score(prev)) bestByRepoId.set(c.repo.id, c);
-      }
-
-      const bestConflictsForImport = Array.from(bestByRepoId.values());
-      setAllConflictsForImport(bestConflictsForImport);
-
-      const githubExistingConflicts = bestConflictsForImport.filter(
-        (c) =>
-          normalizeSources(c.existingService).some(
-            (source) => source.type === ServiceSource.Github,
-          ),
-      );
-      const crossConflicts = bestConflictsForImport.filter(
-        (c) =>
-          !normalizeSources(c.existingService).some(
-            (source) => source.type === ServiceSource.Github,
-          ),
-      );
-
-      const autoRes: MergeResolution[] = githubExistingConflicts.map((c) => ({
-        existingServiceId: c.existingService.id,
-        fields: {
-          name: "github",
-          description: "github",
-          technology: "merge",
-          tags: "merge",
-        },
-      }));
-
-      setAutoResolutions(autoRes);
-
-      if (crossConflicts.length > 0) {
-        setConflicts(crossConflicts);
+      if (plan.crossConflicts.length > 0) {
+        setConflicts(plan.crossConflicts);
       } else {
-        await commitGithubImport({
+        await executeGithubImportPlan({
           selectedRepos,
-          conflictsForImport: bestConflictsForImport,
-          resolutions: autoRes,
+          plan,
           addService,
           updateService,
         });
@@ -232,10 +189,14 @@ export function useGithubImport() {
       setLoading(true);
       setError("");
       try {
-        await commitGithubImport({
+        await executeGithubImportPlan({
           selectedRepos,
-          conflictsForImport: allConflictsForImport,
-          resolutions,
+          plan: {
+            conflictsForImport: allConflictsForImport,
+            crossConflicts: [],
+            autoResolutions,
+          },
+          userResolutions: resolutions,
           addService,
           updateService,
         });
@@ -250,14 +211,14 @@ export function useGithubImport() {
         setLoading(false);
       }
     },
-    [addService, updateService, allConflictsForImport, results, selected],
+    [addService, updateService, allConflictsForImport, autoResolutions, results, selected],
   );
 
   const resolveConflicts = useCallback(
     async (userResolutions: MergeResolution[]) => {
-      await commitImport([...autoResolutions, ...userResolutions]);
+      await commitImport(userResolutions);
     },
-    [autoResolutions, commitImport],
+    [commitImport],
   );
 
   return {

@@ -1046,7 +1046,10 @@
     "repoArchived": "Archived",
     "alreadyImported": "Already imported",
     "defectDojoConflictBadge": "DefectDojo conflict",
-    "configureIntegrationSearchImport": "Configure the integration to search and import GitHub repositories."
+    "configureIntegrationSearchImport": "Configure the integration to search and import GitHub repositories.",
+    "connected": "Connected",
+    "hideConfig": "Hide config",
+    "configure": "Configure"
   },
   "defectdojo": {
     "connectionFailed": "Connection failed",

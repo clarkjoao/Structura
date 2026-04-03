@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Code2, ChevronDown, ChevronUp } from "lucide-react";
-import type { MergeResolution } from "./GithubMergeDialog";
+import type { MergeResolution } from "../github-merge.types";
 import { GithubMergeDialog } from "./GithubMergeDialog";
 import { GithubSearchBar } from "./GithubSearchBar";
 import { GithubResultsList } from "./GithubResultsList";
@@ -49,10 +49,10 @@ export function GithubImportPanel() {
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
           <Code2 className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold">GitHub</span>
+          <span className="text-sm font-semibold">{t("registry.sourceGithub")}</span>
           {isConfigured && (
             <span className="rounded-full bg-green-500/10 border border-green-500/30 px-2 py-0.5 text-[10px] font-semibold text-green-600">
-              Conectado
+              {t("github.connected")}
             </span>
           )}
         </div>
@@ -63,12 +63,12 @@ export function GithubImportPanel() {
           {configOpen ? (
             <>
               <ChevronUp className="h-3.5 w-3.5" />
-              Ocultar config
+              {t("github.hideConfig")}
             </>
           ) : (
             <>
               <ChevronDown className="h-3.5 w-3.5" />
-              Configurar
+              {t("github.configure")}
             </>
           )}
         </button>

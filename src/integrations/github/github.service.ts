@@ -1,7 +1,7 @@
 import type { GithubRepo } from "./github.types";
 import type { ServiceDefinition } from "@/features/diagram";
 import type { MergeConflict } from "./detectMergeConflicts";
-import type { MergeResolution } from "./components/GithubMergeDialog";
+import type { MergeResolution } from "./github-merge.types";
 import { githubRepoToService } from "./githubMapper";
 import {
   dedupeStringsPreserveOrder,
