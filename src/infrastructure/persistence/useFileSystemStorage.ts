@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { fileSystemAdapter } from "./FileSystemAdapter";
 import type { WorkspaceScanResult } from "./FileSystemAdapter";
 import { useDiagramStore } from "@/features/diagram";
+import { useJourneyStore } from "@/features/journeys";
 import { useCustomComponentStore, type CustomComponentTemplate } from "@/features/custom-components";
 import { useIconStore } from "@/features/icons";
 import { buildPersistStoragePayload, PERSIST_KEY } from "@/features/diagram";
@@ -24,6 +25,15 @@ import { recordFolderSyncSuccess } from "./folderSyncTimestamp";
 async function clearLocalCache(): Promise<void> {
   await defaultStorage.delete(PERSIST_KEY);
   clearLocalStorageDiagramSyncTimestamp();
+}
+
+async function mergeJourneysFromConnectedFolder(): Promise<void> {
+  const fsJourneys = await fileSystemAdapter.readJourneys();
+  if (fsJourneys) {
+    useJourneyStore.setState((state) => ({
+      journeys: { ...state.journeys, ...fsJourneys },
+    }));
+  }
 }
 
 function mergeTemplates(
@@ -148,6 +158,7 @@ export function useFileSystemStorage() {
       recordFolderSyncSuccess();
       defaultStorage.paused = true;
       await clearLocalCache();
+      await mergeJourneysFromConnectedFolder();
       startFileSystemSync();
       setStatus("connected");
       return;
@@ -157,6 +168,7 @@ export function useFileSystemStorage() {
       // Folder has files but none are valid diagrams — just connect
       defaultStorage.paused = true;
       await clearLocalCache();
+      await mergeJourneysFromConnectedFolder();
       startFileSystemSync();
       setStatus("connected");
       return;
@@ -206,6 +218,8 @@ export function useFileSystemStorage() {
       iconLibrary: manifest?.iconLibrary,
     });
 
+    await mergeJourneysFromConnectedFolder();
+
     const merged = useDiagramStore.getState();
     await flushWorkspaceToConnectedFolder(merged);
 
@@ -244,6 +258,8 @@ export function useFileSystemStorage() {
       diagrams: useDiagramStore.getState().diagrams,
       iconLibrary: manifest?.iconLibrary,
     });
+
+    await mergeJourneysFromConnectedFolder();
 
     const overwritten = useDiagramStore.getState();
     await flushWorkspaceToConnectedFolder(overwritten);

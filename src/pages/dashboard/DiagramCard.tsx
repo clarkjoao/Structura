@@ -3,7 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import type { Diagram } from "@/features/diagram";
-import { useDiagramActions, useFolders, removeRecentRef } from "@/features/diagram";
+import {
+  removeRecentRef,
+  useDiagramActions,
+  useFolders,
+} from "@/features/diagram";
 import { deletePreview } from "@/lib/diagram-preview/previewCache";
 import { getPreview } from "@/lib/diagram-preview";
 import { cn } from "@/lib/utils";
@@ -31,8 +35,13 @@ export function DiagramCard({
 }: DiagramCardProps) {
   const { t } = useTranslation();
   const folders = useFolders();
-  const { updateDiagram, duplicateDiagram, moveDiagram, deleteDiagram } =
-    useDiagramActions();
+  const {
+    updateDiagram,
+    updateDiagramDescription,
+    duplicateDiagram,
+    moveDiagram,
+    deleteDiagram,
+  } = useDiagramActions();
   const [preview, setPreview] = useState<string | null>(() => getPreview(diagram.id));
   const [isPreviewHovered, setIsPreviewHovered] = useState(false);
   const [moveFolderOpen, setMoveFolderOpen] = useState(false);
@@ -133,7 +142,8 @@ export function DiagramCard({
         diagram={renamingDiagram}
         onSave={(name, description) => {
           if (!renamingDiagram) return;
-          updateDiagram(renamingDiagram.id, { name, description });
+          updateDiagram(renamingDiagram.id, { name });
+          updateDiagramDescription(renamingDiagram.id, description);
           setRenamingDiagram(null);
         }}
       />

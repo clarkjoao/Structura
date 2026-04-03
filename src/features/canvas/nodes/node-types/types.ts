@@ -61,6 +61,8 @@ export interface NodeBuildContext {
   setJsonViewerInlineEditingId?: (id: string | null) => void;
   /** Persiste patch de um componente — injetado pelo useCanvasNodes para callbacks inline */
   updateComponent?: (id: string, patch: ComponentPatch) => void;
+  /** Optional per-component journey badges on C4 nodes (journey steps are diagram-scoped). */
+  journeysByComponentId?: Record<string, { name: string }[]>;
 }
 
 export interface NodeTypeDescriptor {

@@ -6,6 +6,7 @@ import { useInteractionMode } from "../hooks/useInteractionMode";
 import PatternPicker from "./PatternPicker";
 import { LayerFilterPopover } from "./LayerFilterPopover";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
 import { CanvasToolbarDiagramPanel } from "./components/CanvasToolbarDiagramPanel";
 import { CanvasToolbarScenesButton } from "./components/CanvasToolbarScenesButton";
 
@@ -20,6 +21,9 @@ interface CanvasToolbarProps {
   onToggleTag: (tag: string) => void;
   onShowAllTags: () => void;
   onShowNoTags: () => void;
+  journeysInDiagramCount?: number;
+  journeysPanelOpen?: boolean;
+  onToggleJourneysPanel?: () => void;
 }
 
 const CanvasToolbar = ({
@@ -32,6 +36,9 @@ const CanvasToolbar = ({
   onToggleTag,
   onShowAllTags,
   onShowNoTags,
+  journeysInDiagramCount = 0,
+  journeysPanelOpen = false,
+  onToggleJourneysPanel,
 }: CanvasToolbarProps) => {
   const { t } = useTranslation();
   const diagram = useActiveDiagram();
@@ -55,6 +62,27 @@ const CanvasToolbar = ({
         scenesPickerLocked={scenesPickerLocked}
         onOpenScenes={onOpenScenes}
       />
+
+      {onToggleJourneysPanel ? (
+        <button
+          type="button"
+          onClick={onToggleJourneysPanel}
+          className={cn(
+            "flex items-center gap-1.5 rounded-lg border border-border bg-card/90 px-3 py-2 text-xs font-medium backdrop-blur-sm transition-colors",
+            journeysPanelOpen
+              ? "border-primary bg-primary/10 text-primary"
+              : "text-muted-foreground hover:bg-surface-hover hover:text-foreground",
+          )}
+        >
+          <span aria-hidden>✦</span>
+          <span>{t("journeys.inDiagram.title")}</span>
+          {journeysInDiagramCount > 0 ? (
+            <span className="ml-0.5 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-secondary-foreground">
+              {journeysInDiagramCount}
+            </span>
+          ) : null}
+        </button>
+      ) : null}
 
       <LayerFilterPopover
         allTags={allTags}

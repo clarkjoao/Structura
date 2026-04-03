@@ -64,6 +64,9 @@ type NodeCtxBase = Omit<NodeBuildContext, "isPlaying" | "isRecording" | "flowHig
   isViewingCoverage: boolean;
 };
 
+const EMPTY_JOURNEYS_BY_COMPONENT_ID: Record<string, { name: string }[]> =
+  Object.freeze({});
+
 export function useCanvasNodes({
   diagram,
   resolvedComponents,
@@ -135,6 +138,7 @@ export function useCanvasNodes({
       updateComponent,
       highlightedNodeIds,
       isViewingCoverage,
+      journeysByComponentId: EMPTY_JOURNEYS_BY_COMPONENT_ID,
     };
   }, [
     diagram,
