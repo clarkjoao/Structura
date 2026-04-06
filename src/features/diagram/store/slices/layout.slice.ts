@@ -90,12 +90,14 @@ export const layoutSlice = (
         const scene = resolveActiveScene(d);
         if (scene && scene.addedComponents[elementId]) {
           const merged = { ...d.nodeLayouts, ...scene.nodeLayouts };
-          const maxZ = Math.max(...Object.values(merged).map((nl) => nl.zIndex ?? 0));
+          const vals = Object.values(merged).map((nl) => nl.zIndex ?? 0);
+          const maxZ = vals.length > 0 ? Math.max(...vals) : 0;
           const layout = scene.nodeLayouts[elementId];
           if (layout) layout.zIndex = maxZ + 1;
           return;
         }
-        const maxZ = Math.max(...Object.values(d.nodeLayouts).map((nl) => nl.zIndex ?? 0));
+        const vals = Object.values(d.nodeLayouts).map((nl) => nl.zIndex ?? 0);
+        const maxZ = vals.length > 0 ? Math.max(...vals) : 0;
         const layout = d.nodeLayouts[elementId];
         if (layout) layout.zIndex = maxZ + 1;
       });
@@ -109,12 +111,14 @@ export const layoutSlice = (
         const scene = resolveActiveScene(d);
         if (scene && scene.addedComponents[elementId]) {
           const merged = { ...d.nodeLayouts, ...scene.nodeLayouts };
-          const minZ = Math.min(...Object.values(merged).map((nl) => nl.zIndex ?? 0));
+          const vals = Object.values(merged).map((nl) => nl.zIndex ?? 0);
+          const minZ = vals.length > 0 ? Math.min(...vals) : 0;
           const layout = scene.nodeLayouts[elementId];
           if (layout) layout.zIndex = minZ - 1;
           return;
         }
-        const minZ = Math.min(...Object.values(d.nodeLayouts).map((nl) => nl.zIndex ?? 0));
+        const vals = Object.values(d.nodeLayouts).map((nl) => nl.zIndex ?? 0);
+        const minZ = vals.length > 0 ? Math.min(...vals) : 0;
         const layout = d.nodeLayouts[elementId];
         if (layout) layout.zIndex = minZ - 1;
       });

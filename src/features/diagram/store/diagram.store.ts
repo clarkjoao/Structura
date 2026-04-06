@@ -10,6 +10,8 @@ import type { AppState } from "./store.types";
 import {
   historySlice,
   componentsSlice,
+  componentParentingSlice,
+  componentLinksSlice,
   connectionsSlice,
   flowsSlice,
   layoutSlice,
@@ -40,6 +42,8 @@ export function createDiagramStore(storage = defaultStorage) {
         _lastUndoRedoAt: 0,
         ...diagramsSlice(set, get as () => AppState),
         ...componentsSlice(set, get as () => AppState),
+        ...componentParentingSlice(set, get as () => AppState),
+        ...componentLinksSlice(set, get as () => AppState),
         ...connectionsSlice(set, get as () => AppState),
         ...flowsSlice(set, get as () => AppState),
         ...layoutSlice(set, get as () => AppState),

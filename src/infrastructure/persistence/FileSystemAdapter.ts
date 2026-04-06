@@ -1,7 +1,7 @@
 import type { Diagram, Folder, IconDefinition } from "@/features/diagram";
 import type { Journey } from "@/features/journeys";
 import { normalizeImportedDiagram } from "@/lib/export-service/normalize-imported-diagram";
-import { FileSystemEntryKind } from "@/lib/enums";
+import { FileSystemEntryKind } from "@/features/diagram";
 import type { CustomComponentTemplate } from "@/features/custom-components";
 import i18n from "@/infrastructure/i18n";
 import {

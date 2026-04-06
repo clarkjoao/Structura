@@ -7,6 +7,7 @@ export {
   StrokeStyle,
   EdgeMarker,
   ExternalLinkType,
+  FileSystemEntryKind,
 } from "./enums";
 
 /** All core domain types (Component, Connection, Flow, Diagram, etc.) */
@@ -226,6 +227,7 @@ export {
   isApiGroupType,
   isDbTableType,
   isJsonViewerType,
+  isPersonType,
   isSystemType,
   isContainerType,
   isCanvasStructuralType,

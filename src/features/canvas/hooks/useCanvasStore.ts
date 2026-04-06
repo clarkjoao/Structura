@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import {
   useActiveDiagram,
   useDiagrams,
@@ -22,16 +21,13 @@ export function useCanvasStore() {
 
   const stableRegistry = serviceRegistry ?? EMPTY_REGISTRY;
 
-  return useMemo(
-    () => ({
-      diagram,
-      allDiagrams,
-      visibleComponents,
-      visibleConnections,
-      serviceRegistry: stableRegistry,
-      flows,
-      actions,
-    }),
-    [diagram, allDiagrams, visibleComponents, visibleConnections, stableRegistry, flows, actions],
-  );
+  return {
+    diagram,
+    allDiagrams,
+    visibleComponents,
+    visibleConnections,
+    serviceRegistry: stableRegistry,
+    flows,
+    actions,
+  };
 }

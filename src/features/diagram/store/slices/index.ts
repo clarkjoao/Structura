@@ -1,6 +1,8 @@
 export { resolveActiveScene } from "./scene-helpers";
 export { historySlice } from "./history.slice";
 export { componentsSlice } from "./components.slice";
+export { componentParentingSlice } from "./component-parenting.slice";
+export { componentLinksSlice } from "./component-links.slice";
 export { connectionsSlice } from "./connections.slice";
 export { flowsSlice } from "./flows.slice";
 export { layoutSlice } from "./layout.slice";

@@ -11,6 +11,7 @@ import {
 } from "@/features/diagram";
 import type { ResolvedSnapshot } from "@/features/diagram";
 import { getSelectedNodes, isModKeyPressed, type KeyHandler } from "./helpers";
+import { getNodeType } from "../../utils/node-type-utils";
 
 interface UseGroupShortcutsParams {
   diagram: Diagram | null | undefined;
@@ -56,7 +57,7 @@ export function useGroupShortcuts({
         const selected = getSelectedNodes(reactFlowInstance, selectedNodeId);
         if (selected.length === 1 && resolvedSnapshot) {
           const node = selected[0];
-          if (isReactFlowParentPanelType(node.type as string)) {
+          if (isReactFlowParentPanelType(getNodeType(node))) {
             ungroupNodes(node.id);
           } else {
             const comp = resolvedSnapshot.components[node.id];

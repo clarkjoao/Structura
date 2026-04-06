@@ -11,6 +11,7 @@ import {
 } from "@/features/diagram";
 import type { EdgeStyle } from "@/features/diagram";
 import { getLastEdgeStyle } from "@/features/diagram";
+import { getNodeType } from "../utils/node-type-utils";
 
 interface UseCanvasEventHandlersParams {
   visualState: CanvasVisualState;
@@ -97,7 +98,7 @@ export function useCanvasEventHandlers({
   const onNodeClick = useCallback(
     (e: React.MouseEvent, node: Node) => {
       setQuickInsert(null);
-      const nodeType = (node.type as string) ?? "";
+      const nodeType = getNodeType(node);
       if (isEndpointType(nodeType) && node.parentId) {
         if (isCompareMode) return;
         if (!isRecording) {
@@ -216,7 +217,7 @@ export function useCanvasEventHandlers({
       setSelectedNodeIds(new Set([node.id]));
       setSelectedNodeId(node.id);
 
-      if (isJsonViewerType(node.type ?? "")) {
+      if (isJsonViewerType(getNodeType(node))) {
         const startEdit = node.data?.onStartEdit as (() => void) | undefined;
         startEdit?.();
         return;

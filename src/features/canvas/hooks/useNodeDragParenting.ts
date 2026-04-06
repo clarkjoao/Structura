@@ -16,6 +16,7 @@ import {
   resolveAbsolutePosition,
 } from "../models/panelParenting";
 import { getCachedCanvasSnapshot, canMoveNodeInSceneMode } from "@/features/diagram";
+import { getNodeType } from "../utils/node-type-utils";
 import { toast } from "sonner";
 import i18n from "@/infrastructure/i18n";
 
@@ -215,7 +216,7 @@ export function useNodeDragParenting({
       dragTargetRef.current = null;
       setUnparentCandidatePanelId(null);
 
-      const nodeType = typeof draggedNode.type === "string" ? draggedNode.type : "";
+      const nodeType = getNodeType(draggedNode);
       draggingNodeIdsRef.current.delete(draggedNode.id);
       dragStopPendingNodeIdsRef.current.delete(draggedNode.id);
       if (isEndpointType(nodeType)) return;
@@ -251,7 +252,7 @@ export function useNodeDragParenting({
         );
 
         for (const node of otherSelectedNodes) {
-          const otherType = typeof node.type === "string" ? node.type : "";
+          const otherType = getNodeType(node);
           if (isEndpointType(otherType)) continue;
           if (!canMoveNodeInSceneMode(diagram, node.id)) continue;
           const otherComponent = components[node.id];
@@ -270,7 +271,7 @@ export function useNodeDragParenting({
         );
 
         for (const childNode of selectedChildren) {
-          const childType = typeof childNode.type === "string" ? childNode.type : "";
+          const childType = getNodeType(childNode);
           if (isEndpointType(childType)) continue;
           if (!canMoveNodeInSceneMode(diagram, childNode.id)) continue;
           const childComponent = components[childNode.id];

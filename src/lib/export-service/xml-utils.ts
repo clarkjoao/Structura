@@ -1,3 +1,4 @@
+// Internal — do not import outside lib/export-service/.
 import type { StyleOption } from "./types";
 
 export function escXml(s: string): string {

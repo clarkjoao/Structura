@@ -1,3 +1,4 @@
+// Internal — do not import outside lib/export-service/.
 import type { Component } from "@/features/diagram";
 import type { NodeLayout } from "@/features/diagram";
 import { isApiGroupComponent, isPanelComponent } from "@/features/diagram";
@@ -106,7 +107,7 @@ export function resolveOverlaps(
   positions: Map<string, RootPosition>,
   minGap: number,
 ): Map<string, RootPosition> {
-  let resolved = new Map(positions);
+  const resolved = new Map(positions);
   let changed = true;
   let guard = 0;
   while (changed && guard++ < 50) {

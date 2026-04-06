@@ -458,6 +458,7 @@
     "defaultEndpointPath": "/new-endpoint",
     "usesEdgeLabel": "Uses",
     "apiGroupDefaultName": "API Endpoints",
+    "defaultGroupName": "Group",
     "compareViewBanner": "View mode — editing disabled",
     "toolbar": {
       "allTags": "All tags",
@@ -493,6 +494,7 @@
     "newScene": "New scene",
     "newNamePlaceholder": "Scene name",
     "defaultSceneName": "New scene",
+    "numberedDefaultName": "Scene {{number}}",
     "rename": "Rename",
     "remove": "Remove",
     "sceneMenu": "Scene menu",

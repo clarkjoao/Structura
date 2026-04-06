@@ -6,6 +6,7 @@ import { mutateRemoveComponentInScene, mutateRemoveConnectionInScene } from "../
 import { pushHistory } from "./history.slice";
 import { getActiveDiagram } from "./get-active-diagram";
 import { resolveActiveScene } from "./scene-helpers";
+import i18n from "@/infrastructure/i18n";
 
 function ensureScenes(d: Diagram): Record<string, SceneDiff> {
   if (!d.scenes) d.scenes = {};
@@ -28,7 +29,7 @@ export const scenesSlice = (
       const id = generateId("scene");
       const copy = structuredClone(src) as SceneDiff;
       copy.id = id;
-      const baseName = name?.trim() || `${src.name} (copy)`;
+      const baseName = name?.trim() || i18n.t("scenes.duplicatedSceneName", { name: src.name });
       copy.name = baseName;
       copy.createdAt = new Date().toISOString();
       copy.color = nextSceneColor(index);
@@ -49,7 +50,7 @@ export const scenesSlice = (
       const id = generateId("scene");
       created = {
         id,
-        name: name.trim() || `Scene ${index + 1}`,
+        name: name.trim() || i18n.t("scenes.numberedDefaultName", { number: index + 1 }),
         color: nextSceneColor(index),
         createdAt: new Date().toISOString(),
         addedComponents: {},

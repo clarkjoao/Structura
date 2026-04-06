@@ -19,26 +19,32 @@ type NodeDragParenting = ReturnType<typeof import("./useNodeDragParenting").useN
 export interface UseCanvasGraphStateParams {
   diagram: Diagram | null | undefined;
   resolved: ResolvedSnapshot | null;
-  visualState: CanvasVisualState;
+  visualContext: {
+    visualState: CanvasVisualState;
+    dragTargetPanelId: string | null;
+    unparentCandidatePanelId: string | null;
+    onNoteStartEdit?: (noteId: string) => void;
+    onJsonViewerStartEdit?: (nodeId: string) => void;
+  };
   localNodesRef: MutableRefObject<Node[]>;
   innerOnNodesChange: NodeDragParenting["onNodesChange"];
-  dragTargetPanelId: string | null;
-  unparentCandidatePanelId: string | null;
   visibleComponents: Component[];
   visibleConnections: Connection[];
   serviceRegistry: Record<string, ServiceDefinition>;
   allDiagrams: Record<string, Diagram>;
-  compareState: CompareSlice;
-  flowState: FlowSlice;
+  compareContext: {
+    compareState: CompareSlice;
+  };
+  flowContext: {
+    flowState: FlowSlice;
+    isViewingCoverage: boolean;
+    onPlayFlow?: (flowId: string) => void;
+  };
   handleDrillDown: (elementId: string) => void;
   handlePanelCollapseToggle: (panelId: string) => void;
   actions: DiagramActions;
-  isViewingCoverage: boolean;
-  onPlayFlow?: (flowId: string) => void;
   updateNodeInternals: (nodeIds: string[]) => void;
   t: TFunction;
-  onNoteStartEdit?: (noteId: string) => void;
-  onJsonViewerStartEdit?: (nodeId: string) => void;
 }
 
 /** Derives React Flow nodes and edges from the diagram store and canvas-specific layout state. */
@@ -46,27 +52,30 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
   const {
     diagram,
     resolved,
-    visualState,
+    visualContext,
     localNodesRef,
     innerOnNodesChange,
-    dragTargetPanelId,
-    unparentCandidatePanelId,
     visibleComponents,
     visibleConnections,
     serviceRegistry,
     allDiagrams,
-    compareState,
-    flowState,
+    compareContext,
+    flowContext,
     handleDrillDown,
     handlePanelCollapseToggle,
     actions,
-    isViewingCoverage,
-    onPlayFlow,
     updateNodeInternals,
     t,
+  } = params;
+  const {
+    visualState,
+    dragTargetPanelId,
+    unparentCandidatePanelId,
     onNoteStartEdit,
     onJsonViewerStartEdit,
-  } = params;
+  } = visualContext;
+  const { compareState } = compareContext;
+  const { flowState, isViewingCoverage, onPlayFlow } = flowContext;
 
   const { panelIds, connectionCountPerNode, edgeHandleAssignments, effectiveHandleOrder } =
     useCanvasConnectionDerivations({ visibleComponents, visibleConnections, diagram });

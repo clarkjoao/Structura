@@ -61,29 +61,53 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     setFocusTitleTrigger,
     onNoteStartEdit,
   });
+  const flowContext = useMemo(
+    () => ({
+      flowState,
+      isViewingCoverage: !!canvasProps.isViewingCoverage,
+      onPlayFlow: canvasProps.onPlayFlow,
+    }),
+    [canvasProps.isViewingCoverage, canvasProps.onPlayFlow, flowState],
+  );
+  const compareContext = useMemo(
+    () => ({
+      compareState,
+    }),
+    [compareState],
+  );
+  const visualContext = useMemo(
+    () => ({
+      visualState,
+      dragTargetPanelId: interaction.dragTargetPanelId,
+      unparentCandidatePanelId: interaction.unparentCandidatePanelId,
+      onNoteStartEdit,
+      onJsonViewerStartEdit,
+    }),
+    [
+      interaction.dragTargetPanelId,
+      interaction.unparentCandidatePanelId,
+      onJsonViewerStartEdit,
+      onNoteStartEdit,
+      visualState,
+    ],
+  );
   const graphState = useCanvasGraphState({
     diagram,
     resolved,
-    visualState,
+    visualContext,
     localNodesRef: interaction.localNodesRef,
     innerOnNodesChange: interaction.innerOnNodesChange,
-    dragTargetPanelId: interaction.dragTargetPanelId,
-    unparentCandidatePanelId: interaction.unparentCandidatePanelId,
     visibleComponents,
     visibleConnections,
     serviceRegistry,
     allDiagrams,
-    compareState,
-    flowState,
+    compareContext,
+    flowContext,
     handleDrillDown: interaction.handleDrillDown,
     handlePanelCollapseToggle: interaction.handlePanelCollapseToggle,
     actions,
-    isViewingCoverage: !!canvasProps.isViewingCoverage,
-    onPlayFlow: canvasProps.onPlayFlow,
     updateNodeInternals,
     t,
-    onNoteStartEdit,
-    onJsonViewerStartEdit,
   });
   const interactionMode = useInteractionMode(diagram);
 

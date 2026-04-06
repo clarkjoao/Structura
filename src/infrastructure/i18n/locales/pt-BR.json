@@ -458,6 +458,7 @@
     "defaultEndpointPath": "/novo-endpoint",
     "usesEdgeLabel": "Usa",
     "apiGroupDefaultName": "API Endpoints",
+    "defaultGroupName": "Grupo",
     "compareViewBanner": "Modo visualização — edição desativada",
     "toolbar": {
       "allTags": "Todos",
@@ -493,6 +494,7 @@
     "newScene": "Nova cena",
     "newNamePlaceholder": "Nome da cena",
     "defaultSceneName": "Nova cena",
+    "numberedDefaultName": "Cena {{number}}",
     "rename": "Renomear",
     "remove": "Remover",
     "sceneMenu": "Menu da cena",

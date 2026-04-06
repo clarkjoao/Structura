@@ -12,7 +12,7 @@ import {
   resolveSceneSnapshot,
   exportFilenameSlug,
 } from "@/features/diagram";
-import { exportJSON, exportDrawio, exportMermaid, downloadZip } from "@/lib/export-service";
+import { exportJson, exportDrawio, exportMermaid, downloadZip } from "@/lib/export-service";
 import { writeDrawioToClipboard } from "@/lib/clipboard-utils";
 import { CollabProvider, CollabStartModal } from "@/features/collaboration";
 import { ModelExplorerContent } from "./ModelExplorerContent";
@@ -83,7 +83,7 @@ export default function ModelExplorerPage() {
     const slug = exportFilenameSlug(diagram);
     const sceneSnapshot = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
     const files = [
-      { filename: `${slug}.json`, content: exportJSON(diagram) },
+      { filename: `${slug}.json`, content: exportJson(diagram) },
       { filename: `${slug}.drawio`, content: exportDrawio(diagram, serviceRegistry) },
     ];
 

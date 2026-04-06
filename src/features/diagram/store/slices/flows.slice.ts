@@ -9,10 +9,13 @@ export const flowsSlice = (
   set: (fn: (state: AppState) => void) => void,
   get: () => AppState,
 ) => ({
-    addFlow: (diagramId: string, name: string, mermaid: string, precomputedSteps?: Record<string, FlowStep>): Flow => {
+    addFlow: (diagramId: string, name: string, mermaid: string, precomputedSteps?: Record<string, FlowStep>): Flow | null => {
       const { diagrams } = get();
       const d = diagrams[diagramId];
-      if (!d) throw new Error("Diagram not found");
+      if (!d) {
+        console.warn("[addFlow] Diagram not found:", diagramId);
+        return null as unknown as Flow;
+      }
       const activeId = get().activeDiagramId;
       const r = resolveSceneSnapshot(
         d,

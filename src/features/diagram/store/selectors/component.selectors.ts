@@ -12,11 +12,13 @@ export const useComponentIds = () =>
   );
 
 export const useComponent = (id: string) =>
-  useDiagramStore((s) => {
-    if (!s.activeDiagramId) return undefined;
-    const d = s.diagrams[s.activeDiagramId];
-    return getCachedCanvasSnapshot(d).components[id];
-  });
+  useDiagramStore(
+    useShallow((s) => {
+      if (!s.activeDiagramId) return undefined;
+      const d = s.diagrams[s.activeDiagramId];
+      return getCachedCanvasSnapshot(d).components[id];
+    }),
+  );
 
 export const useComponents = () =>
   useDiagramStore(

@@ -65,6 +65,10 @@ export function isC4Type(type: string): type is C4Type {
   return C4_TYPES.includes(type as C4Type);
 }
 
+export function isPersonType(type: string): type is "person" {
+  return type === "person";
+}
+
 export function isSystemType(type: string): type is "system" {
   return type === "system";
 }

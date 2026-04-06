@@ -8,6 +8,7 @@ import {
   isJsonViewerComponent,
   isNoteComponent,
   isPanelComponent,
+  isPersonType,
 } from "@/features/diagram";
 import {
   DB_TABLE_COLLAPSED_H,
@@ -202,7 +203,7 @@ function shapeForComponent(
   if (isNoteComponent(component)) return renderNoteShape(component, bounds);
   if (isApiGroupComponent(component)) return renderApiGroupShape(bounds);
   if (isAwsComponent(component)) return renderAwsShape(bounds);
-  if (component.type === "person") return renderPersonShape(bounds);
+  if (isPersonType(component.type)) return renderPersonShape(bounds);
   if (isC4Component(component)) return renderC4Rect(component.type, bounds);
   if (isEndpointComponent(component)) return renderC4Rect("component", bounds);
   if (isDbTableComponent(component)) return renderC4Rect("component", bounds);
