@@ -489,6 +489,58 @@
     "levelComponent": "Nível 3",
     "levelDeployment": "Nível 4"
   },
+  "llmChat": {
+    "title": "Assistente de Diagrama",
+    "openSettings": "Abrir configurações de LLM",
+    "close": "Fechar chat",
+    "emptyState": "Converse sobre sua arquitetura ou peça melhorias no diagrama.",
+    "inputPlaceholder": "Digite sua mensagem...",
+    "submitHint": "Use Cmd/Ctrl + Enter para enviar",
+    "sending": "Enviando...",
+    "send": "Enviar",
+    "settings": {
+      "title": "Configurações de LLM",
+      "mode": "Modo",
+      "modeDirect": "Direto",
+      "modeProxy": "Proxy",
+      "provider": "Provedor",
+      "providerOpenAI": "OpenAI",
+      "providerAnthropic": "Anthropic",
+      "apiKey": "Chave de API",
+      "proxyUrl": "URL do Proxy",
+      "model": "Modelo"
+    },
+    "suggestion": {
+      "accept": "Aceitar",
+      "reject": "Rejeitar",
+      "action": {
+        "addNode": "Adicionar nó {{nodeType}} \"{{nodeName}}\"",
+        "removeNode": "Remover nó {{nodeId}}",
+        "updateNode": "Atualizar nó {{nodeId}}",
+        "addEdge": "Adicionar conexão {{sourceId}} -> {{targetId}}",
+        "removeEdge": "Remover conexão {{edgeId}}"
+      }
+    },
+    "mention": {
+      "noResults": "Nenhum nó ou conexão encontrado",
+      "removeTag": "Remover menção {{label}}",
+      "pickerLabel": "Seletor de menções"
+    },
+    "selector": {
+      "proxy": "Proxy",
+      "label": "Selecionar modelo LLM",
+      "providerOpenai": "OpenAI",
+      "providerAnthropic": "Anthropic"
+    },
+    "floatingButton": {
+      "open": "Abrir assistente de chat",
+      "close": "Fechar assistente de chat"
+    },
+    "preview": {
+      "keep": "Manter",
+      "discard": "Descartar"
+    }
+  },
   "scenes": {
     "base": "Base",
     "newScene": "Nova cena",

@@ -36,3 +36,4 @@ export type { BranchOwnerInfo, RecordingContext, RecordingFinalizeData } from ".
 export { EmbedModal } from "./components/EmbedModal";
 export { useInteractionMode } from "./hooks/useInteractionMode";
 export type { InteractionMode } from "./hooks/useInteractionMode";
+export { useDiagramContext, useLLMChat } from "./chat";

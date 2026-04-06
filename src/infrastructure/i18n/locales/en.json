@@ -489,6 +489,58 @@
     "levelComponent": "Level 3",
     "levelDeployment": "Level 4"
   },
+  "llmChat": {
+    "title": "Diagram Assistant",
+    "openSettings": "Open LLM settings",
+    "close": "Close chat",
+    "emptyState": "Ask about your architecture or request a diagram improvement.",
+    "inputPlaceholder": "Type your message...",
+    "submitHint": "Use Cmd/Ctrl + Enter to send",
+    "sending": "Sending...",
+    "send": "Send",
+    "settings": {
+      "title": "LLM Settings",
+      "mode": "Mode",
+      "modeDirect": "Direct",
+      "modeProxy": "Proxy",
+      "provider": "Provider",
+      "providerOpenAI": "OpenAI",
+      "providerAnthropic": "Anthropic",
+      "apiKey": "API key",
+      "proxyUrl": "Proxy URL",
+      "model": "Model"
+    },
+    "suggestion": {
+      "accept": "Accept",
+      "reject": "Reject",
+      "action": {
+        "addNode": "Add node {{nodeType}} \"{{nodeName}}\"",
+        "removeNode": "Remove node {{nodeId}}",
+        "updateNode": "Update node {{nodeId}}",
+        "addEdge": "Add edge {{sourceId}} -> {{targetId}}",
+        "removeEdge": "Remove edge {{edgeId}}"
+      }
+    },
+    "mention": {
+      "noResults": "No matching nodes or edges",
+      "removeTag": "Remove mention {{label}}",
+      "pickerLabel": "Mention picker"
+    },
+    "selector": {
+      "proxy": "Proxy",
+      "label": "Select LLM model",
+      "providerOpenai": "OpenAI",
+      "providerAnthropic": "Anthropic"
+    },
+    "floatingButton": {
+      "open": "Open chat assistant",
+      "close": "Close chat assistant"
+    },
+    "preview": {
+      "keep": "Keep",
+      "discard": "Discard"
+    }
+  },
   "scenes": {
     "base": "Base",
     "newScene": "New scene",
