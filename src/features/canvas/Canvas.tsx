@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ReactFlow,
   useReactFlow,
@@ -48,7 +48,7 @@ const Canvas = (props: CanvasProps = {}) => {
   const [hasUnread, setHasUnread] = useState(false);
   const previousAssistantMessageCountRef = useRef(0);
   const messages = useLLMStore((state) => state.messages);
-  const { pendingPreviews, accept, reject } = useLLMChat();
+  const { pendingPreviews, accept: acceptSuggestion, reject: rejectSuggestion } = useLLMChat();
   const pendingNodeIds = useMemo(
     () => Array.from(getPendingNodeIds(pendingPreviews)),
     [pendingPreviews],
@@ -105,6 +105,18 @@ const Canvas = (props: CanvasProps = {}) => {
     }
     previousAssistantMessageCountRef.current = assistantMessageCount;
   }, [assistantMessageCount, isChatOpen]);
+
+  const accept = useCallback(
+    (suggestionId: string) => {
+      acceptSuggestion(suggestionId);
+      setTimeout(() => {
+        reactFlowInstance.setNodes((previousNodes) =>
+          previousNodes.map((node) => ({ ...node })),
+        );
+      }, 50);
+    },
+    [acceptSuggestion, reactFlowInstance],
+  );
 
   if (!diagram) {
     return (
@@ -246,7 +258,7 @@ const Canvas = (props: CanvasProps = {}) => {
                     nodeId={nodeId}
                     suggestionId={suggestionId}
                     onKeep={accept}
-                    onDiscard={reject}
+                    onDiscard={rejectSuggestion}
                   />
                 );
               })}
@@ -316,8 +328,25 @@ const Canvas = (props: CanvasProps = {}) => {
           />
         ) : null}
 
-        {showElementPanel && (
-          <div className="absolute inset-y-0 right-0 z-20 flex">
+        <div className="absolute inset-y-0 right-0 z-20 flex items-stretch">
+          <div className="flex items-end pb-5 pr-4 pointer-events-none">
+            <div className="pointer-events-auto">
+              <FloatingChatButton
+                isOpen={isChatOpen}
+                hasUnread={hasUnread}
+                onClick={() => {
+                  setIsChatOpen((previous) => {
+                    const next = !previous;
+                    if (next) {
+                      setHasUnread(false);
+                    }
+                    return next;
+                  });
+                }}
+              />
+            </div>
+          </div>
+          {showElementPanel && (
             <ElementPanel
               key={visualState.selectedNodeId ?? visualState.selectedEdgeId ?? "multi"}
               selectedElementId={visualState.selectedNodeId}
@@ -327,28 +356,11 @@ const Canvas = (props: CanvasProps = {}) => {
               focusTitleTrigger={focusTitleTrigger}
               onClose={eventHandlers.closePanel}
             />
-          </div>
-        )}
-
-        {isChatOpen ? (
-          <div className="fixed bottom-20 right-5 z-40 h-[600px] max-h-[80vh] w-96">
+          )}
+          {isChatOpen ? (
             <ChatPanel onClose={() => setIsChatOpen(false)} />
-          </div>
-        ) : null}
-
-        <FloatingChatButton
-          isOpen={isChatOpen}
-          hasUnread={hasUnread}
-          onClick={() => {
-            setIsChatOpen((previous) => {
-              const next = !previous;
-              if (next) {
-                setHasUnread(false);
-              }
-              return next;
-            });
-          }}
-        />
+          ) : null}
+        </div>
       </div>
     </HandleHighlightProvider>
   );

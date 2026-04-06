@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { useDiagramStore } from "@/features/diagram";
+import { pushHistory } from "@/features/diagram/store/slices/history.slice";
 import { buildSystemPrompt } from "./prompt-builder";
 import { parseLLMResponse } from "./patch-parser";
 import type {
@@ -146,26 +147,9 @@ function applyDiagramPatchAction(action: DiagramPatchAction): AppliedPatchResult
 }
 
 function ensureHistoryBoundary(): void {
-  const diagramState = useDiagramStore.getState();
-  const activeDiagramId = diagramState.activeDiagramId;
-  if (!activeDiagramId) {
-    return;
-  }
-  const activeDiagram = diagramState.diagrams[activeDiagramId];
-  if (!activeDiagram) {
-    return;
-  }
-
-  const firstConnection = Object.values(activeDiagram.snapshot.connections)[0];
-  if (firstConnection) {
-    diagramState.updateConnection(firstConnection.id, {});
-    return;
-  }
-
-  const firstComponent = Object.values(activeDiagram.snapshot.components)[0];
-  if (firstComponent) {
-    diagramState.updateComponent(firstComponent.id, {});
-  }
+  useDiagramStore.setState((state) => {
+    pushHistory(state);
+  });
 }
 
 async function executeLLMMessage(

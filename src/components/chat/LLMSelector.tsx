@@ -1,4 +1,4 @@
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronUp } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -11,18 +11,15 @@ interface LLMSelectorProps {
   onChange: (config: LLMConfig) => void;
 }
 
-function getProviderBadgeClass(provider: "openai" | "anthropic"): string {
-  return provider === "anthropic"
-    ? "text-orange-600 bg-orange-500/15"
-    : "text-muted-foreground bg-muted";
+function truncateLabel(label: string, maxLength: number): string {
+  if (label.length <= maxLength) {
+    return label;
+  }
+  return `${label.slice(0, maxLength - 1)}…`;
 }
 
 export function LLMSelector({ config, onChange }: LLMSelectorProps) {
   const { t } = useTranslation();
-  const getProviderLabel = (provider: "openai" | "anthropic") =>
-    provider === "anthropic"
-      ? t("llmChat.selector.providerAnthropic")
-      : t("llmChat.selector.providerOpenai");
   const currentLabel = useMemo(() => {
     if (config.mode === "proxy") {
       return t("llmChat.selector.proxy");
@@ -30,7 +27,7 @@ export function LLMSelector({ config, onChange }: LLMSelectorProps) {
     const preset = MODEL_PRESETS.find(
       (item) => item.provider === config.provider && item.model === config.model,
     );
-    return preset?.label ?? config.model;
+    return truncateLabel(preset?.label ?? config.model, 14);
   }, [config.mode, config.model, config.provider, t]);
 
   return (
@@ -38,16 +35,16 @@ export function LLMSelector({ config, onChange }: LLMSelectorProps) {
       <PopoverTrigger asChild>
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="sm"
           aria-label={t("llmChat.selector.label")}
-          className="h-7 max-w-[165px] px-2 text-xs"
+          className="h-6 max-w-[140px] px-1.5 text-xs text-muted-foreground gap-1"
         >
-          <span className="truncate">{currentLabel}</span>
-          <ChevronDown className="ml-1 h-3 w-3" />
+          <span className="truncate max-w-[120px]">{currentLabel}</span>
+          <ChevronUp className="h-3 w-3 shrink-0" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-72 p-1">
+      <PopoverContent align="start" side="top" className="w-72 p-1">
         <div className="space-y-1">
           {MODEL_PRESETS.map((preset) => {
             const isSelected =
@@ -75,17 +72,7 @@ export function LLMSelector({ config, onChange }: LLMSelectorProps) {
                     : "hover:bg-accent hover:text-accent-foreground",
                 )}
               >
-                <span className="flex items-center gap-2 min-w-0">
-                  <span
-                    className={cn(
-                      "rounded px-1 py-0.5 text-[10px] font-medium",
-                      getProviderBadgeClass(preset.provider),
-                    )}
-                  >
-                    {getProviderLabel(preset.provider)}
-                  </span>
-                  <span className="truncate">{preset.label}</span>
-                </span>
+                <span className="truncate">{preset.label}</span>
                 {isSelected ? <Check className="h-3.5 w-3.5 shrink-0" /> : null}
               </button>
             );

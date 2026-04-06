@@ -11,11 +11,53 @@ interface LLMSettingsProps {
   onClose: () => void;
 }
 
+const PROVIDER_KEY_STORAGE = "structura:llm:keys";
+
+function loadSavedKeyForProvider(provider: LLMProvider): string {
+  try {
+    const rawValue = localStorage.getItem(PROVIDER_KEY_STORAGE);
+    if (!rawValue) {
+      return "";
+    }
+    const parsedValue: unknown = JSON.parse(rawValue);
+    if (typeof parsedValue !== "object" || parsedValue === null) {
+      return "";
+    }
+    const maybeKey = Reflect.get(parsedValue, provider);
+    return typeof maybeKey === "string" ? maybeKey : "";
+  } catch {
+    return "";
+  }
+}
+
+function saveKeyForProvider(provider: LLMProvider, key: string): void {
+  try {
+    const rawValue = localStorage.getItem(PROVIDER_KEY_STORAGE);
+    const parsedValue: unknown = rawValue ? JSON.parse(rawValue) : null;
+    const parsedObject = typeof parsedValue === "object" && parsedValue !== null
+      ? parsedValue
+      : {};
+    const nextKeys = {
+      openai: typeof Reflect.get(parsedObject, "openai") === "string"
+        ? String(Reflect.get(parsedObject, "openai"))
+        : "",
+      anthropic: typeof Reflect.get(parsedObject, "anthropic") === "string"
+        ? String(Reflect.get(parsedObject, "anthropic"))
+        : "",
+      [provider]: key,
+    };
+    localStorage.setItem(PROVIDER_KEY_STORAGE, JSON.stringify(nextKeys));
+  } catch {
+    // ignore localStorage failures in settings UI
+  }
+}
+
 export function LLMSettings({ config, onSave, onClose }: LLMSettingsProps) {
   const { t } = useTranslation();
   const [mode, setMode] = useState<LLMMode>(config.mode);
   const [provider, setProvider] = useState<LLMProvider>(config.provider);
-  const [apiKey, setApiKey] = useState(config.apiKey);
+  const [apiKey, setApiKey] = useState(() => config.apiKey || loadSavedKeyForProvider(config.provider));
+  const [apiKeyDirty, setApiKeyDirty] = useState(false);
   const [model, setModel] = useState(config.model);
   const proxyEndpoint = useMemo(() => getProxyEndpoint(), []);
 
@@ -27,11 +69,19 @@ export function LLMSettings({ config, onSave, onClose }: LLMSettingsProps) {
 
   const handleProviderChange = (value: string) => {
     if (value === "openai" || value === "anthropic") {
+      if (value !== provider) {
+        if (apiKeyDirty) {
+          saveKeyForProvider(provider, apiKey);
+        }
+        setApiKey(loadSavedKeyForProvider(value));
+        setApiKeyDirty(false);
+      }
       setProvider(value);
     }
   };
 
   const handleSave = () => {
+    saveKeyForProvider(provider, apiKey);
     onSave({
       mode,
       provider,
@@ -86,8 +136,18 @@ export function LLMSettings({ config, onSave, onClose }: LLMSettingsProps) {
                 id="llm-api-key"
                 type="password"
                 value={apiKey}
-                onChange={(event) => setApiKey(event.target.value)}
+                onChange={(event) => {
+                  setApiKey(event.target.value);
+                  setApiKeyDirty(true);
+                }}
               />
+              {apiKey === "" ? (
+                <p className="text-xs text-amber-600">
+                  {t("llmChat.settings.apiKeyRequired", {
+                    provider: provider === "openai" ? "OpenAI" : "Anthropic",
+                  })}
+                </p>
+              ) : null}
             </div>
           </>
         ) : (
@@ -114,7 +174,12 @@ export function LLMSettings({ config, onSave, onClose }: LLMSettingsProps) {
           <Button type="button" variant="outline" size="sm" onClick={onClose}>
             {t("common.cancel")}
           </Button>
-          <Button type="button" size="sm" onClick={handleSave}>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleSave}
+            disabled={mode === "direct" && !apiKey.trim()}
+          >
             {t("common.save")}
           </Button>
         </div>

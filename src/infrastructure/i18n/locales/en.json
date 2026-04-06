@@ -507,6 +507,7 @@
       "providerOpenAI": "OpenAI",
       "providerAnthropic": "Anthropic",
       "apiKey": "API key",
+      "apiKeyRequired": "Enter your {{provider}} API key",
       "proxyUrl": "Proxy URL",
       "model": "Model"
     },

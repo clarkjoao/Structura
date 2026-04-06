@@ -90,7 +90,6 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
       <div className="flex items-center justify-between px-3 py-2 border-b border-border">
         <div className="flex items-center gap-2 min-w-0">
           <h3 className="text-sm font-semibold truncate">{t("llmChat.title")}</h3>
-          <LLMSelector config={config} onChange={setConfig} />
         </div>
         <div className="flex items-center gap-1">
           <Button
@@ -196,12 +195,15 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
           />
         </div>
         <div className="flex items-center justify-between">
-          <p className="text-[11px] text-muted-foreground">
-            {t("llmChat.submitHint")}
-          </p>
-          <Button type="button" onClick={() => void handleSend()} disabled={isLoading}>
-            {isLoading ? t("llmChat.sending") : t("llmChat.send")}
-          </Button>
+          <LLMSelector config={config} onChange={setConfig} />
+          <div className="flex items-center gap-3">
+            <p className="text-[11px] text-muted-foreground">
+              {t("llmChat.submitHint")}
+            </p>
+            <Button type="button" onClick={() => void handleSend()} disabled={isLoading}>
+              {isLoading ? t("llmChat.sending") : t("llmChat.send")}
+            </Button>
+          </div>
         </div>
       </div>
 
