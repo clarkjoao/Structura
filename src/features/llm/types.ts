@@ -25,6 +25,7 @@ export type DiagramPatchAction =
         name: string;
         parentId: string | null;
         position?: { x: number; y: number };
+        awsService?: string;
       };
     }
   | { type: "REMOVE_NODE"; payload: { nodeId: string } }

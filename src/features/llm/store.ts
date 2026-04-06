@@ -51,6 +51,54 @@ function saveConfigToLocalStorage(config: LLMConfig): void {
   localStorage.setItem(LLM_CONFIG_STORAGE_KEY, JSON.stringify(config));
 }
 
+function sanitizeMessagesForLLM(messages: ChatMessage[]): ChatMessage[] {
+  return messages.map((message) => {
+    if (message.role !== "assistant") {
+      return message;
+    }
+    const trimmed = message.content.trim();
+    if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) {
+      return message;
+    }
+    try {
+      const parsed = JSON.parse(trimmed) as unknown;
+      if (
+        typeof parsed === "object" &&
+        parsed !== null &&
+        "message" in parsed &&
+        typeof (parsed as { message?: unknown }).message === "string"
+      ) {
+        return { ...message, content: (parsed as { message: string }).message };
+      }
+    } catch {
+      // keep original
+    }
+    return message;
+  });
+}
+
+function resolveRef(value: string, nameToIdMap: Map<string, string>): string {
+  const match = value.match(/^@ref:(.+)$/i);
+  if (!match) {
+    return value;
+  }
+  return nameToIdMap.get(match[1].toLowerCase()) ?? value;
+}
+
+function computeGridPositions(
+  count: number,
+  startX = 200,
+  startY = 200,
+): Array<{ x: number; y: number }> {
+  const COL_GAP = 320;
+  const ROW_GAP = 160;
+  const COLS = 3;
+  return Array.from({ length: count }, (_, index) => ({
+    x: startX + (index % COLS) * COL_GAP,
+    y: startY + Math.floor(index / COLS) * ROW_GAP,
+  }));
+}
+
 interface AppliedPatchResult {
   addedNodeId: string | null;
   addedEdgeId: string | null;
@@ -63,11 +111,12 @@ function applyDiagramPatchAction(action: DiagramPatchAction): AppliedPatchResult
     case "ADD_NODE":
       return {
         addedNodeId: diagramState.addComponent(
-        action.payload.nodeType,
-        action.payload.name,
-        action.payload.parentId,
-        action.payload.position,
-      ).id,
+          action.payload.nodeType,
+          action.payload.name,
+          action.payload.parentId,
+          action.payload.position,
+          action.payload.awsService,
+        ).id,
         addedEdgeId: null,
       };
     case "REMOVE_NODE":
@@ -181,9 +230,10 @@ export const useLLMStore = create<LLMStoreState>((set, get) => ({
 
     try {
       const systemPrompt = buildSystemPrompt(diagramContext);
+      const sanitizedMessages = sanitizeMessagesForLLM(outgoingMessages);
       const rawAssistantResponse = await executeLLMMessage(
         state.config,
-        outgoingMessages,
+        sanitizedMessages,
         systemPrompt,
       );
       const parsedResponse = parseLLMResponse(rawAssistantResponse);
@@ -206,20 +256,73 @@ export const useLLMStore = create<LLMStoreState>((set, get) => ({
         };
         nextSuggestions.push(suggestion);
 
+        const addNodeActions = parsedResponse.patch.actions.filter(
+          (action) => action.type === "ADD_NODE",
+        );
+        const addEdgeActions = parsedResponse.patch.actions.filter(
+          (action) => action.type === "ADD_EDGE",
+        );
+
         const previewNodeIds: string[] = [];
         const previewEdgeIds: string[] = [];
-        for (const action of parsedResponse.patch.actions) {
-          if (action.type !== "ADD_NODE" && action.type !== "ADD_EDGE") {
-            continue;
-          }
+
+        const nameToIdMap = new Map<string, string>();
+        const nodesMissingPosition: string[] = [];
+
+        for (const action of addNodeActions) {
           const applied = applyDiagramPatchAction(action);
           if (applied.addedNodeId) {
             previewNodeIds.push(applied.addedNodeId);
+            const name = action.payload.name?.trim();
+            if (name) {
+              nameToIdMap.set(name.toLowerCase(), applied.addedNodeId);
+            }
+            if (!action.payload.position) {
+              nodesMissingPosition.push(applied.addedNodeId);
+            }
           }
+        }
+
+        for (const action of addEdgeActions) {
+          const resolvedSourceId = resolveRef(action.payload.sourceId, nameToIdMap);
+          const resolvedTargetId = resolveRef(action.payload.targetId, nameToIdMap);
+          if (resolvedSourceId.startsWith("@ref:") || resolvedTargetId.startsWith("@ref:")) {
+            console.warn(
+              "[LLM] Unresolved @ref in ADD_EDGE - action skipped",
+              action.payload.sourceId,
+              action.payload.targetId,
+            );
+            continue;
+          }
+          const applied = applyDiagramPatchAction({
+            ...action,
+            payload: { ...action.payload, sourceId: resolvedSourceId, targetId: resolvedTargetId },
+          });
           if (applied.addedEdgeId) {
             previewEdgeIds.push(applied.addedEdgeId);
           }
         }
+
+        if (nodesMissingPosition.length > 0) {
+          const diagramState = useDiagramStore.getState();
+          const activeDiagramId = diagramState.activeDiagramId;
+          const activeDiagram = activeDiagramId ? diagramState.diagrams[activeDiagramId] : null;
+          const viewport = activeDiagram?.viewport ?? { x: 0, y: 0, zoom: 1 };
+          const startX = 200 - viewport.x;
+          const startY = 200 - viewport.y;
+          const gridPositions = computeGridPositions(
+            nodesMissingPosition.length,
+            startX,
+            startY,
+          );
+          for (let index = 0; index < nodesMissingPosition.length; index += 1) {
+            const nodeId = nodesMissingPosition[index];
+            const pos = gridPositions[index];
+            if (!nodeId || !pos) continue;
+            diagramState.updateNodeLayout(nodeId, pos);
+          }
+        }
+
         nextPreviews.push({
           suggestionId: suggestion.id,
           nodeIds: previewNodeIds,
@@ -343,7 +446,7 @@ export function summarizePatchActions(patch: DiagramPatch): string[] {
       case "REMOVE_EDGE":
         return `REMOVE_EDGE ${action.payload.edgeId}`;
       default:
-        return action.type;
+        return "UNKNOWN_ACTION";
     }
   });
 }

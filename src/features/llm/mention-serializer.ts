@@ -18,7 +18,9 @@ export function buildMentionContextBlock(
     return "";
   }
 
-  const lines = ["--- Mentioned context ---"];
+  const lines = [
+    "[SYSTEM: The following nodes/edges are explicitly referenced by the user for context]",
+  ];
   for (const item of selectedItems) {
     lines.push(serializeMentionItem(item));
   }

@@ -27,11 +27,50 @@ Respond with a JSON object and nothing else — no markdown fences, no text outs
 }
 
 Valid action types:
-- { "type": "ADD_NODE", "payload": { "nodeType": "<type>", "name": "<name>", "parentId": "<id or null>" } }
+- { "type": "ADD_NODE", "payload": { "nodeType": "<type>", "name": "<name>", "parentId": "<id or null>", "position": { "x": 0, "y": 0 }, "awsService": "<optional>" } }
 - { "type": "REMOVE_NODE", "payload": { "nodeId": "<id>" } }
 - { "type": "UPDATE_NODE", "payload": { "nodeId": "<id>", "patch": { "name": "..." } } }
 - { "type": "ADD_EDGE", "payload": { "sourceId": "<id>", "targetId": "<id>", "label": "<label>" } }
 - { "type": "REMOVE_EDGE", "payload": { "edgeId": "<id>" } }
+
+Position guidance for ADD_NODE:
+- Always include "position": { "x": number, "y": number } in ADD_NODE payloads
+- Arrange nodes left-to-right following data flow: client -> gateway -> service -> database
+- Horizontal spacing: 300px between connected nodes
+- Vertical spacing: 150px between sibling nodes
+- Start positions around x:200, y:200 unless the diagram already has nodes (then offset from existing)
+- When adding multiple nodes, space them so they don't overlap
+
+## Connection inference rules
+
+When adding multiple nodes that have an obvious architectural relationship,
+ALWAYS include ADD_EDGE actions to connect them.
+
+Common patterns (always apply these):
+- API Gateway -> BFF/Backend service -> Database: add edges left to right
+- Load Balancer -> Service: add edge
+- Service -> Cache (ElastiCache, Redis): add edge
+- Service -> Message Queue (SQS, SNS, EventBridge): add edge
+- Client/Person -> API Gateway or Frontend: add edge
+
+Edge label guidance:
+- HTTP calls: use the protocol (e.g. "HTTPS", "REST", "gRPC")
+- Database calls: "reads/writes", "queries"
+- Async: "publishes", "subscribes", "triggers"
+- Generic: use empty string "" if unsure
+
+ADD_EDGE payload requires sourceId and targetId.
+When adding new nodes in the same patch, reference them by the NAME you gave them,
+since IDs are not known yet. Use a special syntax: "@ref:<name>" as the sourceId/targetId.
+The system will resolve these references after nodes are created.
+
+CRITICAL: Your response must be either:
+1. Plain text only (no JSON anywhere) — for questions and analysis
+2. A single JSON object only (no text outside the JSON) — for diagram changes
+
+Never mix. Never add explanation text outside the JSON object.
+If you previously responded with JSON, your next response can be plain text.
+Previous JSON in history is context, not a format requirement.
 
 Rules:
 - Use real node IDs from the diagram context when referencing existing nodes

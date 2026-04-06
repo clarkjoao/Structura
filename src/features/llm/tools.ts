@@ -36,6 +36,11 @@ export const ALL_TOOLS: LLMTool[] = [
         },
         name: { type: "string" },
         parentId: { type: ["string", "null"] },
+        awsService: {
+          type: "string",
+          description:
+            'Required for AWS node types. The specific AWS service id (e.g. "api-gateway", "rds", "elb", "s3"). Must match a service id from the AWS catalog.',
+        },
         position: {
           type: "object",
           properties: {

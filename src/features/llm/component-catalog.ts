@@ -4,6 +4,7 @@ export interface ComponentTypeDefinition {
   nodeType: string;
   displayName: string;
   description: string;
+  awsService?: string;
   requiredFields?: string[];
   example?: string;
 }
@@ -86,48 +87,75 @@ export const C4_TYPES: ComponentTypeDefinition[] = [
   },
 ];
 
-const AWS_CATEGORY_DESCRIPTIONS: Record<AwsCategoryId, string> = {
-  "aws-compute":
-    "Compute workloads such as EC2, Lambda, ECS, and EKS.",
-  "aws-storage":
-    "Storage workloads such as S3, EBS, EFS, and S3 Glacier.",
-  "aws-database":
-    "Database and caching workloads such as RDS, Aurora, DynamoDB, and ElastiCache.",
-  "aws-networking":
-    "Networking and edge services such as API Gateway, VPC, CloudFront, and Route 53.",
-  "aws-security":
-    "Identity and security services such as IAM and Cognito.",
-  "aws-analytics":
-    "Analytics and streaming services such as Athena, Kinesis, and OpenSearch.",
-  "aws-ml":
-    "Machine learning and AI services such as SageMaker and Bedrock.",
-  "aws-integration":
-    "Application integration and messaging services such as SQS, SNS, and EventBridge.",
-  "aws-management":
-    "Management and governance services such as CloudWatch and CloudFormation.",
-  "aws-developer":
-    "Developer and CI/CD services such as CodeBuild and CodePipeline.",
-  "aws-containers":
-    "Container platform services such as ECR, ECS, and EKS.",
-  "aws-media":
-    "Media processing and streaming services such as MediaLive and MediaConvert.",
-  "aws-migration":
-    "Migration and transfer services such as Migration Hub and Transfer Family.",
-  "aws-iot":
-    "IoT services such as IoT Core and Greengrass.",
-  "aws-general":
-    "General AWS infrastructure groups such as VPC, private subnet, and public subnet.",
-};
+function getAwsServiceDescription(serviceId: string, categoryName: string): string {
+  if (serviceId === "api-gateway") {
+    return "AWS managed API Gateway. Use for REST/HTTP/WebSocket API management and routing.";
+  }
+  if (serviceId === "elb") {
+    return "AWS load balancer. Use for distributing traffic across services.";
+  }
+  if (serviceId === "rds") {
+    return "AWS managed relational database. Use for PostgreSQL, MySQL, SQL Server.";
+  }
+  if (serviceId === "aurora") {
+    return "AWS managed relational database (Aurora). Use for high-performance MySQL/PostgreSQL-compatible clusters.";
+  }
+  if (serviceId === "s3") {
+    return "AWS object storage. Use for blobs, file storage, and static assets.";
+  }
+  if (serviceId === "lambda") {
+    return "Serverless compute function. Use for event-driven workloads.";
+  }
+  if (serviceId === "sqs") {
+    return "Managed message queue. Use for async decoupling and buffering.";
+  }
+  if (serviceId === "sns") {
+    return "Managed pub/sub notifications. Use for fan-out events.";
+  }
+  if (serviceId === "eventbridge") {
+    return "Managed event bus. Use for routing domain events.";
+  }
+  if (serviceId === "ecs" || serviceId === "ecs-2") {
+    return "Container orchestration. Use for running containerized services.";
+  }
+  if (serviceId === "eks" || serviceId === "eks-2") {
+    return "Managed Kubernetes. Use for running containerized services on Kubernetes.";
+  }
+  if (serviceId === "cloudfront") {
+    return "CDN and edge caching. Use to serve content globally with low latency.";
+  }
+  if (serviceId === "vpc") {
+    return "Virtual private network. Use to isolate and connect AWS resources.";
+  }
+  if (serviceId === "dynamodb") {
+    return "Managed NoSQL database. Use for key-value / document workloads.";
+  }
+  if (serviceId === "elasticache") {
+    return "Managed in-memory cache. Use for Redis/Memcached caching.";
+  }
+  if (serviceId === "cognito") {
+    return "Managed user identity. Use for auth, user pools, and federation.";
+  }
+  if (serviceId === "iam") {
+    return "Identity and access management. Use for roles, policies, and permissions.";
+  }
+  return `AWS ${categoryName} service.`;
+}
 
-export const AWS_TYPES: ComponentTypeDefinition[] = AWS_CATEGORIES.filter(
-  (category): category is (typeof AWS_CATEGORIES)[number] & { id: AwsCategoryId } =>
-    category.id in AWS_CATEGORY_DESCRIPTIONS,
-).map((category) => ({
-  nodeType: category.id,
-  displayName: category.name,
-  description: AWS_CATEGORY_DESCRIPTIONS[category.id],
-  example: `{ "nodeType": "${category.id}", "name": "${category.services[0]?.name ?? category.name}", "parentId": null }`,
-}));
+export const AWS_TYPES: ComponentTypeDefinition[] = AWS_CATEGORIES.flatMap((category) =>
+  category.services.map((service) => ({
+    nodeType: category.id as AwsCategoryId,
+    awsService: service.id,
+    displayName: service.name,
+    description: getAwsServiceDescription(service.id, category.name),
+    example: JSON.stringify({
+      nodeType: category.id,
+      awsService: service.id,
+      name: service.name,
+      parentId: null,
+    }),
+  })),
+);
 
 export const ALL_COMPONENT_TYPES: ComponentTypeDefinition[] = [
   ...STRUCTURAL_TYPES,
@@ -140,6 +168,9 @@ function formatTypeDef(def: ComponentTypeDefinition): string {
     `nodeType: "${def.nodeType}" - ${def.displayName}`,
     `  Use when: ${def.description}`,
   ];
+  if (def.awsService) {
+    lines.push(`  awsService: "${def.awsService}"`);
+  }
   if (def.requiredFields && def.requiredFields.length > 0) {
     lines.push(`  Required fields: ${def.requiredFields.join(", ")}`);
   }
