@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Settings, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { PendingSuggestion } from "@/features/llm";
+import { useActiveDiagram } from "@/features/diagram";
+import { getLLMErrorI18nKey, type PendingSuggestion } from "@/features/llm";
 import { useLLMChat, useMentionInput, useMentionSearch } from "@/features/canvas/chat";
 import { ChatMessage } from "./ChatMessage";
 import { SuggestionCard } from "./SuggestionCard";
@@ -11,6 +12,7 @@ import { MentionPicker } from "./MentionPicker";
 import { MentionTag } from "./MentionTag";
 import { LLMSelector } from "./LLMSelector";
 import { MentionInput } from "./MentionInput";
+import { ChatSuggestionsEmptyState } from "./ChatSuggestionsEmptyState";
 
 interface ChatPanelProps {
   onClose: () => void;
@@ -24,6 +26,7 @@ function buildSuggestionByMessageIdMap(pendingSuggestions: PendingSuggestion[]):
 
 export function ChatPanel({ onClose }: ChatPanelProps) {
   const { t } = useTranslation();
+  const activeDiagram = useActiveDiagram();
   const [showSettings, setShowSettings] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const { search } = useMentionSearch();
@@ -48,6 +51,8 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
     pendingSuggestions,
     accept,
     reject,
+    streamingContent,
+    error,
     config,
     setConfig,
   } = useLLMChat();
@@ -55,11 +60,21 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
     () => (isPickerOpen ? search(mentionQuery) : []),
     [isPickerOpen, mentionQuery, search],
   );
+  const diagramName = activeDiagram?.name ?? "";
 
   const suggestionByMessageId = useMemo(
     () => buildSuggestionByMessageIdMap(pendingSuggestions),
     [pendingSuggestions],
   );
+  const lastAssistantMessageId = useMemo(() => {
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      const message = messages[index];
+      if (message?.role === "assistant") {
+        return message.id;
+      }
+    }
+    return null;
+  }, [messages]);
 
   const handleSend = async () => {
     if (!resolvedText.trim()) {
@@ -117,13 +132,22 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
 
       <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2">
         {messages.length === 0 ? (
-          <p className="text-xs text-muted-foreground">{t("llmChat.emptyState")}</p>
+          <ChatSuggestionsEmptyState
+            diagramName={diagramName}
+            onSelectSuggestion={(text) => {
+              void send(text, []);
+            }}
+          />
         ) : (
           messages.map((message) => {
             const suggestion = suggestionByMessageId.get(message.id);
+            const isStreamingMessage =
+              streamingContent !== null &&
+              message.role === "assistant" &&
+              message.id === lastAssistantMessageId;
             return (
               <div key={message.id} className="space-y-2">
-                <ChatMessage message={message} />
+                <ChatMessage message={message} isStreaming={isStreamingMessage} />
                 {suggestion ? (
                   <SuggestionCard
                     suggestion={suggestion}
@@ -136,6 +160,20 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
           })
         )}
       </div>
+      {error ? (
+        <div className="mx-3 mb-2 space-y-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
+          <p className="text-xs font-medium text-destructive">{t(getLLMErrorI18nKey(error))}</p>
+          {error === "auth" || error === "cors" || error === "model" ? (
+            <button
+              type="button"
+              className="text-xs text-primary underline"
+              onClick={() => setShowSettings(true)}
+            >
+              {t("llmChat.error.action.settings")}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="border-t border-border p-3 space-y-2 relative">
         {activeMentions.length > 0 ? (

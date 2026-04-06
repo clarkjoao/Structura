@@ -2,6 +2,9 @@ import { isWriteTool } from "./tools";
 import { isValidNodeType } from "./component-catalog";
 import type { DiagramPatchAction, LLMToolCall, ParsedLLMResponse } from "./types";
 
+/** Shown when the model returns JSON we cannot map to a user-facing message (no i18n in this module). */
+const PARSE_FALLBACK_MESSAGE = "[Resposta não processada. Tente novamente.]";
+
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -112,7 +115,7 @@ function tryParseEnvelope(candidate: string): ParsedLLMResponse | null {
     }
 
     let parsedMessage =
-      typeof parsedValue.message === "string" ? parsedValue.message : candidate;
+      typeof parsedValue.message === "string" ? parsedValue.message : "";
     const trimmedParsedMessage = parsedMessage.trim();
     if (
       trimmedParsedMessage.startsWith("{") &&
@@ -181,6 +184,14 @@ export function parseLLMResponse(rawResponse: string): ParsedLLMResponse {
     return directParse;
   }
 
+  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    const extractedParse = tryParseEnvelope(jsonMatch[0]);
+    if (extractedParse) {
+      return extractedParse;
+    }
+  }
+
   const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
   if (fencedMatch?.[1]) {
     const fencedParse = tryParseEnvelope(fencedMatch[1].trim());
@@ -189,10 +200,12 @@ export function parseLLMResponse(rawResponse: string): ParsedLLMResponse {
     }
   }
 
-  console.warn(
-    "[LLM] parseLLMResponse fallback — raw response:",
-    rawResponse.slice(0, 200),
-  );
-  return { message: rawResponse, patch: null };
+  const fallbackMessage =
+    trimmed.startsWith("{") && trimmed.endsWith("}")
+      ? PARSE_FALLBACK_MESSAGE
+      : trimmed;
+
+  console.warn("[LLM] parseLLMResponse fallback:", rawResponse.slice(0, 200));
+  return { message: fallbackMessage, patch: null };
 }
 

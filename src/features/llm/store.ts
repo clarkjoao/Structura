@@ -3,6 +3,7 @@ import { useDiagramStore } from "@/features/diagram";
 import { pushHistory } from "@/features/diagram/store/slices/history.slice";
 import { buildSystemPrompt } from "./prompt-builder";
 import { parseLLMResponse } from "./patch-parser";
+import { LLMProviderError, type LLMErrorKind } from "./errors";
 import type {
   ChatMessage,
   DiagramPatch,
@@ -72,9 +73,9 @@ function sanitizeMessagesForLLM(messages: ChatMessage[]): ChatMessage[] {
         return { ...message, content: (parsed as { message: string }).message };
       }
     } catch {
-      // keep original
+      // fall through to placeholder for LLM history
     }
-    return message;
+    return { ...message, content: "[previous diagram suggestion]" };
   });
 }
 
@@ -156,14 +157,15 @@ async function executeLLMMessage(
   config: LLMConfig,
   messages: ChatMessage[],
   systemPrompt: string,
+  onChunk: (chunk: string) => void,
 ): Promise<string> {
   if (config.mode === "proxy") {
-    return sendProxyMessage(config, messages, systemPrompt);
+    return sendProxyMessage(config, messages, systemPrompt, onChunk);
   }
   if (config.provider === "anthropic") {
-    return sendAnthropicMessage(config, messages, systemPrompt);
+    return sendAnthropicMessage(config, messages, systemPrompt, onChunk);
   }
-  return sendOpenAIMessage(config, messages, systemPrompt);
+  return sendOpenAIMessage(config, messages, systemPrompt, onChunk);
 }
 
 interface LLMStoreState {
@@ -171,8 +173,9 @@ interface LLMStoreState {
   messages: ChatMessage[];
   pendingSuggestions: PendingSuggestion[];
   pendingPreviews: PendingNodePreview[];
+  streamingContent: string | null;
   isLoading: boolean;
-  error: string | null;
+  error: LLMErrorKind | null;
   setLLMConfig: (config: LLMConfig) => void;
   sendMessage: (userText: string, diagramContext: string) => Promise<void>;
   acceptSuggestion: (suggestionId: string) => void;
@@ -185,6 +188,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => ({
   messages: [],
   pendingSuggestions: [],
   pendingPreviews: [],
+  streamingContent: null,
   isLoading: false,
   error: null,
 
@@ -206,8 +210,16 @@ export const useLLMStore = create<LLMStoreState>((set, get) => ({
     };
     const state = get();
     const outgoingMessages = [...state.messages, userMessage];
+    const assistantMessageId = crypto.randomUUID();
+    const placeholderMessage: ChatMessage = {
+      id: assistantMessageId,
+      role: "assistant",
+      content: "",
+      timestamp: Date.now(),
+    };
     set({
-      messages: outgoingMessages,
+      messages: [...outgoingMessages, placeholderMessage],
+      streamingContent: "",
       isLoading: true,
       error: null,
     });
@@ -215,26 +227,36 @@ export const useLLMStore = create<LLMStoreState>((set, get) => ({
     try {
       const systemPrompt = buildSystemPrompt(diagramContext);
       const sanitizedMessages = sanitizeMessagesForLLM(outgoingMessages);
+      let fullResponse = "";
       const rawAssistantResponse = await executeLLMMessage(
         state.config,
         sanitizedMessages,
         systemPrompt,
+        (chunk) => {
+          fullResponse += chunk;
+          const trimmedAccumulated = fullResponse.trim();
+          const looksLikeJsonEnvelope = trimmedAccumulated.startsWith("{");
+          set((streamingState) => ({
+            streamingContent: fullResponse,
+            messages: streamingState.messages.map((message) =>
+              message.id === assistantMessageId
+                ? {
+                    ...message,
+                    content: looksLikeJsonEnvelope ? "" : fullResponse,
+                  }
+                : message,
+            ),
+          }));
+        },
       );
       const parsedResponse = parseLLMResponse(rawAssistantResponse);
-
-      const assistantMessage: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: parsedResponse.message,
-        timestamp: Date.now(),
-      };
 
       const nextSuggestions = [...get().pendingSuggestions];
       const nextPreviews = [...get().pendingPreviews];
       if (parsedResponse.patch) {
         const suggestion: PendingSuggestion = {
           id: crypto.randomUUID(),
-          messageId: assistantMessage.id,
+          messageId: assistantMessageId,
           patch: parsedResponse.patch,
           status: "pending",
         };
@@ -315,16 +337,25 @@ export const useLLMStore = create<LLMStoreState>((set, get) => ({
       }
 
       set({
-        messages: [...outgoingMessages, assistantMessage],
+        messages: get().messages.map((message) =>
+          message.id === assistantMessageId
+            ? { ...message, content: parsedResponse.message }
+            : message,
+        ),
         pendingSuggestions: nextSuggestions,
         pendingPreviews: nextPreviews,
+        streamingContent: null,
         isLoading: false,
         error: null,
       });
     } catch (error) {
+      const errorKind: LLMErrorKind =
+        error instanceof LLMProviderError ? error.kind : "unknown";
       set({
+        messages: outgoingMessages,
+        streamingContent: null,
         isLoading: false,
-        error: error instanceof Error ? error.message : "Unknown LLM error",
+        error: errorKind,
       });
     }
   },
@@ -398,6 +429,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => ({
       messages: [],
       pendingSuggestions: [],
       pendingPreviews: [],
+      streamingContent: null,
       error: null,
       isLoading: false,
       config: state.config,

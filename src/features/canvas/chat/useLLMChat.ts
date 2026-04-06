@@ -11,6 +11,8 @@ export function useLLMChat() {
   const isLoading = useLLMStore((state) => state.isLoading);
   const pendingSuggestions = useLLMStore((state) => state.pendingSuggestions);
   const pendingPreviews = useLLMStore((state) => state.pendingPreviews);
+  const streamingContent = useLLMStore((state) => state.streamingContent);
+  const error = useLLMStore((state) => state.error);
   const config = useLLMStore((state) => state.config);
   const setLLMConfig = useLLMStore((state) => state.setLLMConfig);
   const sendMessage = useLLMStore((state) => state.sendMessage);
@@ -34,6 +36,8 @@ export function useLLMChat() {
     isLoading,
     pendingSuggestions,
     pendingPreviews,
+    streamingContent,
+    error,
     accept: acceptSuggestion,
     reject: rejectSuggestion,
     config,
