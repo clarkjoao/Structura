@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import debounce from "lodash.debounce";
-import { X, Trash2 } from "lucide-react";
+import { X, Trash2, RotateCcw } from "lucide-react";
 import type { Connection, ConnectionIntent, ConnectionDirection, ConnectionStyle } from "@/features/diagram";
 import { EdgeStyle, StrokeStyle, EdgeMarker, useActiveDiagramId, useDiagramActions } from "@/features/diagram";
 import { INTENT_DEFAULTS, saveLastEdgeStyle } from "@/features/diagram";
@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { FIELD_DEBOUNCE_MS } from "@/features/canvas/canvas.constants";
 import Field from "./components/Field";
 import TechnologyCombobox from "./components/TechnologyCombobox";
+import { VIBRANT_PRESETS } from "./components/colorPresets";
 
 const TRANSPORT_PRESET_DEFAULTS: Record<NonNullable<Connection["transportPreset"]>, Partial<ConnectionStyle>> = {
   sync: { edgeStyle: EdgeStyle.Straight, strokeStyle: StrokeStyle.Solid, markerEnd: EdgeMarker.ArrowClosed },
@@ -122,7 +123,7 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
     applyPatch({ style: { ...conn.style, ...stylePatch } });
   const currentStyle = conn.style?.edgeStyle ?? EdgeStyle.Smoothstep;
 
-  const resetEdgeLayoutAfterEdgeStyleChange = () => {
+  const resetEdgeLayout = () => {
     if (!activeDiagramId) return;
     clearEdgeWaypoints(activeDiagramId, conn.id);
     updateEdgeLabelOffset(activeDiagramId, conn.id, EDGE_LABEL_OFFSET_CENTER);
@@ -139,16 +140,7 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
         waypoints: undefined,
       } as ConnectionStyle,
     });
-    resetEdgeLayoutAfterEdgeStyleChange();
-  };
-
-  const handleEdgeStyleSelectChange = (newEdgeStyle: EdgeStyle) => {
-    const previousEdgeStyle = conn.style?.edgeStyle;
-    if (previousEdgeStyle === newEdgeStyle) return;
-    updateConnection(conn.id, {
-      style: { ...conn.style, edgeStyle: newEdgeStyle },
-    });
-    resetEdgeLayoutAfterEdgeStyleChange();
+    resetEdgeLayout();
   };
 
   return (
@@ -186,39 +178,6 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
             ))}
           </div>
         </div>
-        <div className="space-y-2">
-          <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {t("connectionPanel.lineStyle")}
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {edgeStyleOptions.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => onUpdateEdgeStyle(opt.value)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-                  currentStyle === opt.value
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-muted-foreground hover:text-foreground",
-                )}
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                >
-                  <path d={opt.icon} />
-                </svg>
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">{t("connectionPanel.technologyLabel")}</label>
           <TechnologyCombobox value={conn.technology ?? ""} onSelect={(v) => applyPatch({ technology: v || undefined })} />
@@ -235,7 +194,7 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
             const previousEdgeStyle = conn.style?.edgeStyle;
             applyPatch({ transportPreset: v, style: mergedStyle });
             if (previousEdgeStyle !== mergedStyle.edgeStyle) {
-              resetEdgeLayoutAfterEdgeStyleChange();
+              resetEdgeLayout();
             }
           }}
             className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring">
@@ -247,13 +206,73 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
             <option value="udp">{t("common.transportUdp")}</option>
           </select>
         </div>
+        <div>
+          <div className="mb-2 flex items-center justify-between">
+            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
+              {t("connectionPanel.colorLabel")}
+            </label>
+            <button
+              type="button"
+              onClick={() => applyStyle({ color: undefined })}
+              className="text-[10px] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {t("colorSwatches.default")}
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {VIBRANT_PRESETS.map((preset) => {
+              const isSelected = conn.style?.color === preset.color;
+              return (
+                <button
+                  key={preset.color}
+                  type="button"
+                  onClick={() => applyStyle({ color: preset.color })}
+                  title={t(preset.nameKey)}
+                  className={cn(
+                    "h-5 w-5 rounded-full border-2 transition-all hover:scale-110",
+                    isSelected ? "scale-110 border-foreground" : "border-transparent",
+                  )}
+                  style={{ backgroundColor: preset.color }}
+                />
+              );
+            })}
+          </div>
+        </div>
         {conn.communicationType === "custom" && (
           <div className="space-y-2">
             <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold block">{t("common.edgeStyleSection")}</label>
             <div className="flex flex-wrap gap-2">
-              <select value={conn.style?.edgeStyle ?? EdgeStyle.Straight} onChange={(e) => handleEdgeStyleSelectChange(e.target.value as EdgeStyle)} className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0" title={t("common.lineTypeTitle")}>
-                {edgeStyleOptions.map((o) => (<option key={o.value} value={o.value}>{o.label}</option>))}
-              </select>
+              {edgeStyleOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => onUpdateEdgeStyle(opt.value)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                    currentStyle === opt.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  >
+                    <path d={opt.icon} />
+                  </svg>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <label className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium block mt-2 mb-1">
+              {t("connectionPanel.strokeLabel")}
+            </label>
+            <div className="flex flex-wrap gap-2">
               <select value={conn.style?.strokeStyle ?? StrokeStyle.Solid} onChange={(e) => applyStyle({ strokeStyle: e.target.value as StrokeStyle })} className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0" title={t("common.strokeStyleTitle")}>
                 {strokeOptions.map((o) => (<option key={o.value} value={o.value}>{o.label}</option>))}
               </select>
@@ -261,6 +280,9 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
                 {WIDTH_OPTIONS.map((w) => (<option key={w} value={w}>{w}pt</option>))}
               </select>
             </div>
+            <label className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium block mt-2 mb-1">
+              {t("connectionPanel.markersLabel")}
+            </label>
             <div className="flex flex-wrap gap-2">
               <select value={conn.style?.markerStart ?? EdgeMarker.None} onChange={(e) => applyStyle({ markerStart: (e.target.value === EdgeMarker.None ? undefined : e.target.value) as EdgeMarker | undefined })} className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0" title={t("common.markerStartTitle")}>
                 {markerOptions.map((o) => (<option key={o.value} value={o.value}>{o.value === EdgeMarker.None ? t("common.markerStartNone") : t("common.markerStart", { label: o.label })}</option>))}
@@ -276,7 +298,15 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
         )}
         <Field label={t("common.description")} value={desc} onChange={(v) => { setDesc(v); debouncedUpdate({ description: v || undefined }); }} multiline />
         <div><label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">{t("connectionPanel.idLabel")}</label><p className="text-xs font-mono text-muted-foreground bg-secondary rounded px-2 py-1.5">{conn.id}</p></div>
-        <div className="pt-2">
+        <div className="pt-2 space-y-2">
+          <button
+            type="button"
+            onClick={resetEdgeLayout}
+            className="flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-muted-foreground transition-colors w-full"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            {t("connectionPanel.resetPath")}
+          </button>
           <button onClick={() => { debouncedUpdate.cancel(); removeConnection(conn.id); onClose(); }} className="flex items-center justify-center gap-1.5 rounded-md border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors w-full">
             <Trash2 className="h-3.5 w-3.5" /> {t("connectionPanel.removeConnection")}
           </button>

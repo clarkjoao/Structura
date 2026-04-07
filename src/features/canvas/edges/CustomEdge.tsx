@@ -30,6 +30,7 @@ const Edge = memo((props: EdgeProps) => {
         isHighlighted={core.isHighlighted}
         strokeWidth={core.strokeWidth}
         strokeStyle={core.strokeStyle}
+        color={core.edgeData?.color}
         coverageFlowNamesLength={core.edgeData?.coverageFlowNames?.length ?? 0}
         segmentHitAriaLabel={(index) => core.t("customEdge.segmentHitAria", { index: index + 1 })}
         isActivePlayback={Boolean(core.edgeData?.isActivePlayback)}

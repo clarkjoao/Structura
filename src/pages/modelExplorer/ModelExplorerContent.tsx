@@ -132,6 +132,12 @@ export function ModelExplorerContent({
   }, [isRecording, setShowFlows]);
 
   useEffect(() => {
+    if (session) {
+      setShowFlows(false);
+    }
+  }, [session, setShowFlows]);
+
+  useEffect(() => {
     if (flowMode.mode.kind !== "playing") return;
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {

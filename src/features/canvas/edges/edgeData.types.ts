@@ -3,6 +3,7 @@ import type { EdgeStyle, StrokeStyle, ConnectionStyle } from "@/features/diagram
 export interface EdgeData {
   label: string;
   technology?: string;
+  color?: string;
   connectionId: string;
   recordingBadges?: number[];
   isLastRecorded?: boolean;

@@ -783,6 +783,10 @@
   "connectionPanel": {
     "technologyLabel": "Technology",
     "lineStyle": "Line style",
+    "colorLabel": "Color",
+    "resetPath": "Reset path",
+    "strokeLabel": "Stroke",
+    "markersLabel": "Markers",
     "animated": "Animated",
     "removeConnection": "Remove",
     "idLabel": "ID"

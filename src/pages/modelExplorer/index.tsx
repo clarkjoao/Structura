@@ -101,6 +101,7 @@ export default function ModelExplorerPage() {
     setCollabUserName(name);
     setCollabServerUrl(serverUrl);
     setCollabActive(true);
+    setShowFlows(false);
   }, []);
 
   if (!diagram) {
@@ -139,7 +140,10 @@ export default function ModelExplorerPage() {
             handleDrillUp={handleDrillUp}
             handleCopyDrawio={handleCopyDrawio}
             handleExport={handleExport}
-            onStartCollab={() => setShowStartModal(true)}
+            onStartCollab={() => {
+              setShowStartModal(true);
+              setShowFlows(false);
+            }}
             onCollabSessionEnded={() => setCollabActive(false)}
             copied={copied}
             flows={flows}

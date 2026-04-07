@@ -76,15 +76,21 @@ export function buildEdge(
       : undefined;
   const opacity = compareOp !== undefined ? compareOp : flowOpacity;
   const tagDimmed = params.tagFilterEdgeDimmed === true;
+  const edgeColor = conn.style?.color;
+  const stylePayload =
+    opacity !== undefined || edgeColor
+      ? {
+          ...(opacity !== undefined ? { opacity } : {}),
+          ...(edgeColor ? { stroke: edgeColor } : {}),
+        }
+      : undefined;
   const edgeStyle: CSSProperties | undefined = tagDimmed
     ? {
         opacity: OPACITY_TAG_FILTER_EDGE_DIM,
         pointerEvents: "none",
         transition: "opacity 0.2s ease",
       }
-    : opacity !== undefined
-      ? { opacity }
-      : undefined;
+    : stylePayload;
 
   return {
     id: conn.id,
@@ -96,6 +102,7 @@ export function buildEdge(
     data: {
       label: conn.label,
       technology: conn.technology,
+      color: conn.style?.color,
       connectionId: conn.id,
       recordingBadges: params.recordingInfo?.edgeSteps.get(conn.id),
       isLastRecorded: params.recordingInfo?.lastEdgeId === conn.id,

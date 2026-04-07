@@ -30,6 +30,7 @@ export interface EdgeSvgLayerProps {
   isHighlighted: boolean;
   strokeWidth: number;
   strokeStyle: StrokeStyle;
+  color?: string;
   coverageFlowNamesLength: number;
   segmentHitAriaLabel: (index: number) => string;
   isActivePlayback: boolean;
@@ -53,6 +54,7 @@ export function EdgeSvgLayer({
   isHighlighted,
   strokeWidth,
   strokeStyle,
+  color,
   coverageFlowNamesLength,
   segmentHitAriaLabel,
   isActivePlayback,
@@ -60,9 +62,8 @@ export function EdgeSvgLayer({
   dragPathRef,
 }: EdgeSvgLayerProps) {
   const dashArray = strokeDasharrayByStyle[strokeStyle];
-  const dataStroke = coverageFlowNamesLength
-    ? "hsl(160 40% 38%)"
-    : "hsl(220 20% 30%)";
+  const defaultDataStroke = "hsl(220 20% 30%)";
+  const baseStroke = color ?? defaultDataStroke;
 
   return (
     <g>
@@ -72,7 +73,7 @@ export function EdgeSvgLayer({
         markerEnd={markerEnd}
         markerStart={markerStart}
         style={{
-          stroke: isHighlighted ? "hsl(187 72% 51%)" : dataStroke,
+          stroke: isHighlighted ? "hsl(187 72% 51%)" : baseStroke,
           strokeWidth: isHighlighted ? Math.max(2, strokeWidth + 1) : strokeWidth,
           strokeDasharray: dashArray,
         }}

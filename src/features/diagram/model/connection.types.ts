@@ -21,6 +21,7 @@ export type ConnectionDirection =
 
 export interface ConnectionStyle {
   edgeStyle?: EdgeStyle;
+  color?: string;
   strokeStyle?: StrokeStyle;
   strokeWidth?: number;
   markerEnd?: EdgeMarker;
