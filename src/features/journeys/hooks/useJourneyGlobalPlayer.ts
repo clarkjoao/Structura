@@ -1,8 +1,8 @@
 import { useCallback } from "react";
 import { useFlowMode } from "@/features/canvas";
 import { useDiagramActions } from "@/features/diagram";
-import { useJourneyPlayer } from "../player/useJourneyPlayer";
-import { useJourneySteps } from "../selectors";
+import { useJourneyPlayer } from "./useJourneyPlayer";
+import { useJourneySteps } from "../store/selectors/journeys.selectors";
 import type { JourneyStep } from "../types";
 
 export interface SelectStepPlaybackOptions {
@@ -36,10 +36,10 @@ export function useJourneyGlobalPlayer({
       }
       onSelectStep(step.id, { preserveFlowPlayback: true });
       journeyPlayer.setPlaybackContext(journeyId, step.id);
-      if (step.diagramId) {
+      if (step.diagramId.length > 0) {
         openDiagram(step.diagramId);
       }
-      if (step.flowId && step.diagramId) {
+      if (step.flowId && step.diagramId.length > 0) {
         journeyPlayer.startFlowPlayback(step.flowId, step.diagramId);
       }
     },

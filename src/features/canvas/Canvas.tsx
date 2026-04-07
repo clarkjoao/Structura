@@ -12,7 +12,7 @@ import "@xyflow/react/dist/style.css";
 import CanvasToolbar from "./toolbar/CanvasToolbar";
 import { JourneysInDiagramPanel } from "./panels/JourneysInDiagramPanel";
 import { ConnectedSceneDrawer } from "./toolbar/SceneDrawer";
-import ElementPanel from "./panels/ElementPanel/index";
+import ElementPanel, { type FocusCanvasElementTarget } from "./panels/ElementPanel/index";
 import NodeContextMenu from "./panels/NodeContextMenu";
 import { nodeTypes } from "./nodes/node-types";
 import QuickInsertPopover from "./toolbar/QuickInsertPopover";
@@ -22,6 +22,7 @@ import { DiagramCommandPalette } from "./navigation/DiagramCommandPalette";
 import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 import { Eye } from "lucide-react";
 import { useCanvasController } from "./hooks/useCanvasController";
+import { useJourneyViewportSync } from "./hooks/useJourneyViewportSync";
 import { getCachedCanvasSnapshot } from "@/features/diagram";
 import { useJourneysByDiagramId } from "@/features/journeys";
 import { CANVAS_STYLES } from "./constants";
@@ -91,7 +92,24 @@ const Canvas = (props: CanvasProps = {}) => {
     allDiagramTags,
   } = useCanvasController(props);
 
+  useJourneyViewportSync();
+
   const journeysInThisDiagram = useJourneysByDiagramId(diagram?.id ?? "");
+
+  const handleFocusCanvasElement = useCallback(
+    (target: FocusCanvasElementTarget) => {
+      if (target.kind === "node") {
+        visualState.setSelectedNodeId(target.id);
+        visualState.setSelectedNodeIds(new Set([target.id]));
+        visualState.setSelectedEdgeId(null);
+      } else {
+        visualState.setSelectedEdgeId(target.id);
+        visualState.setSelectedNodeId(null);
+        visualState.setSelectedNodeIds(new Set());
+      }
+    },
+    [visualState],
+  );
 
   const templateSourceNode = templateNodeId
     ? nodes.find((node) => node.id === templateNodeId) ?? null
@@ -201,9 +219,25 @@ const Canvas = (props: CanvasProps = {}) => {
               className="w-full h-full"
             >
             {isCompareMode && (
-              <div className="absolute top-12 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs text-muted-foreground shadow-sm">
-                <Eye className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                {t("canvas.compareViewBanner")}
+              <div className="absolute top-12 left-1/2 z-20 flex max-w-[min(100vw-2rem,42rem)] -translate-x-1/2 flex-col items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-xs text-muted-foreground shadow-sm sm:flex-row sm:flex-wrap sm:justify-center">
+                <div className="flex items-center gap-2">
+                  <Eye className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  <span>{t("canvas.compareViewBanner")}</span>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-3 text-[11px]">
+                  <span className="flex items-center gap-1">
+                    <span className="h-3 w-3 shrink-0 rounded-full bg-green-500" aria-hidden />
+                    {t("compareMode.added")}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="h-3 w-3 shrink-0 rounded-full bg-red-500" aria-hidden />
+                    {t("compareMode.removed")}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="h-3 w-3 shrink-0 rounded-full bg-amber-500" aria-hidden />
+                    {t("compareMode.modified")}
+                  </span>
+                </div>
               </div>
             )}
             <ReactFlow
@@ -320,6 +354,8 @@ const Canvas = (props: CanvasProps = {}) => {
                 baseType: templateData.baseType,
                 data: templateData.data,
                 registryServiceId: templateData.registryServiceId,
+                templateVersion: 1,
+                category: "general",
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
               });
@@ -355,6 +391,7 @@ const Canvas = (props: CanvasProps = {}) => {
               selectedNodes={selectedNodes}
               focusTitleTrigger={focusTitleTrigger}
               onClose={eventHandlers.closePanel}
+              onFocusCanvasElement={handleFocusCanvasElement}
             />
           )}
           {isChatOpen ? (

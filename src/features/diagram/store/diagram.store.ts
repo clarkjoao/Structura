@@ -2,9 +2,9 @@ import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 import { immer } from "zustand/middleware/immer";
 import { persist } from "zustand/middleware";
-import { defaultStorage } from "@/infrastructure/persistence";
+import { defaultStorage, type IStoragePort } from "@/infrastructure/persistence";
 import { recordLocalStorageDiagramSyncSuccess } from "@/infrastructure/persistence/localStorageSyncTimestamp";
-import { useIconStore } from "@/features/icons/store";
+import { useIconStore } from "@/features/icons";
 import type { UserTemplate } from "../model/diagram.types";
 import type { AppState } from "./store.types";
 import {
@@ -33,7 +33,7 @@ import {
 export type { AppState, DiagramSnapshot } from "./store.types";
 export type { ClipboardEntry, DiagramStore } from "./store.types";
 
-export function createDiagramStore(storage = defaultStorage) {
+export function createDiagramStore(storage: IStoragePort = defaultStorage) {
   return create<import("./store.types").DiagramStore>()(
     persist(
       immer((set, get) => ({

@@ -24,4 +24,17 @@ export const CANVAS_STYLES = `
   .react-flow__pane:active { cursor: grabbing; }
   .react-flow__selection { background: rgba(59, 130, 246, 0.08); border: 1px solid #3b82f6; }
   .react-flow__background pattern circle { fill: hsl(var(--grid-line)); }
+  .node-diff-added {
+    outline: 2px solid #22c55e;
+    outline-offset: 3px;
+  }
+  .node-diff-removed {
+    outline: 2px solid #ef4444;
+    outline-offset: 3px;
+    opacity: 0.5;
+  }
+  .node-diff-modified {
+    outline: 2px solid #f59e0b;
+    outline-offset: 3px;
+  }
 `;

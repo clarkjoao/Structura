@@ -8,6 +8,8 @@
     "search": "Buscar",
     "add": "Adicionar",
     "close": "Fechar",
+    "copy": "Copiar",
+    "copied": "Copiado!",
     "back": "Voltar",
     "next": "Próximo",
     "previous": "Anterior",
@@ -473,6 +475,20 @@
       "saveAsTemplate": "Salvar como template"
     }
   },
+  "compareMode": {
+    "added": "Adicionado",
+    "removed": "Removido",
+    "modified": "Modificado"
+  },
+  "impactAnalysis": {
+    "title": "Análise de Impacto",
+    "directDependents": "Dependentes diretos",
+    "transitive": "Dependências transitivas",
+    "brokenConnections": "Conexões afetadas",
+    "noDependents": "Nenhum dependente encontrado",
+    "button": "Analisar impacto",
+    "unavailable": "Não foi possível analisar — sem snapshot do diagrama."
+  },
   "canvasToolbar": {
     "renameTitle": "Clique duas vezes para renomear",
     "drillUp": "Nível acima",
@@ -498,6 +514,11 @@
     "submitHint": "Use Cmd/Ctrl + Enter para enviar",
     "sending": "Enviando...",
     "send": "Enviar",
+    "scrollToBottom": "Nova mensagem",
+    "showMore": "Ver mais",
+    "showLess": "Ver menos",
+    "newThread": "Nova conversa",
+    "generating": "Gerando resposta...",
     "settings": {
       "title": "Configurações de LLM",
       "mode": "Modo",

@@ -12,7 +12,7 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { sanitizeSvg } from "@/features/canvas";
-import { useJourneyActions } from "../../selectors";
+import { useJourneyActions } from "../../store/selectors/journeys.selectors";
 import type { JourneyStep } from "../../types";
 
 interface RightPanelProps {

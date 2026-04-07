@@ -3,6 +3,7 @@ import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 import { computeMergePreview, nextSceneColor } from "../../utils/scene.utils";
 import { mutateRemoveComponentInScene, mutateRemoveConnectionInScene } from "../../utils/scene-mutations";
+import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
 import { getActiveDiagram } from "./get-active-diagram";
 import { resolveActiveScene } from "./scene-helpers";
@@ -147,7 +148,7 @@ export const scenesSlice = (
         return;
       }
 
-      pushHistory(state);
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
 
       for (const comp of preview.componentsToAdd) {
         d.snapshot.components[comp.id] = comp;

@@ -2,6 +2,8 @@ import { memo } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { Position, type NodeProps } from "@xyflow/react";
 import { useCollabHighlight } from "@/features/collaboration";
+import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPresence";
+import { usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
 import { Network } from "lucide-react";
 import { useComponentIcon } from "@/features/diagram";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
@@ -123,6 +125,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
   
   const customDiagramIcon = useComponentIcon(d.elementId);
   const collabHighlight = useCollabHighlight(d.elementId);
+  const activePeer = usePeerOnNode(d.elementId);
 
   const isAws = isAwsType(d.type);
 
@@ -195,6 +198,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
           style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
         />
       )}
+      {activePeer && <CollabPeerPresence activePeer={activePeer} roundedClassName="rounded-lg" />}
       {d.compareBadges && (
         <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
       )}

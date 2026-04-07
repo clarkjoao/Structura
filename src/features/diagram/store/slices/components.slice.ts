@@ -30,6 +30,7 @@ import {
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import { isAwsType } from "@/lib/catalogs/aws";
 import type { AppState } from "../store.types";
+import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
 import { getActiveDiagram } from "./get-active-diagram";
 import { resolveActiveScene } from "./scene-helpers";
@@ -51,6 +52,7 @@ import i18n from "@/infrastructure/i18n";
 import { computeApiGroupSize } from "../../utils/api-group-size";
 import { buildChildrenIndex, getDescendantIdsFromIndex } from "../../utils/children-index";
 import { mutateRemoveComponentInScene } from "../../utils/scene-mutations";
+import { repairFlowsAfterRemovingDiagramElements } from "../../utils/flow-repair";
 
 /**
  * Este slice usa Immer via Zustand middleware.
@@ -299,7 +301,7 @@ export const componentsSlice = (
         if (!d) return;
         const scene = resolveActiveScene(d);
 
-        if (!scene) pushHistory(state);
+        if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
 
         const resolveComp = (pid: string | null | undefined) =>
           pid ? scene?.addedComponents[pid] ?? d.snapshot.components[pid] : undefined;
@@ -414,7 +416,7 @@ export const componentsSlice = (
           return;
         }
 
-        pushHistory(state);
+        pushHistory(state, STRUCTURAL_MUTATION_MARKER);
         const childrenIndex = buildChildrenIndex(d.snapshot.components);
         const toRemove = getDescendantIdsFromIndex(id, childrenIndex);
         toRemove.add(id);
@@ -427,12 +429,24 @@ export const componentsSlice = (
           }
         });
 
+        const removedConnectionIds = new Set<string>();
+        for (const connection of Object.values(d.snapshot.connections)) {
+          if (toRemove.has(connection.sourceId) || toRemove.has(connection.targetId)) {
+            removedConnectionIds.add(connection.id);
+          }
+        }
+
         toRemove.forEach((eid) => delete d.snapshot.components[eid]);
-        Object.values(d.snapshot.connections).forEach((conn) => {
-          if (toRemove.has(conn.sourceId) || toRemove.has(conn.targetId))
-            delete d.snapshot.connections[conn.id];
+        removedConnectionIds.forEach((connectionId) => {
+          delete d.snapshot.connections[connectionId];
         });
         toRemove.forEach((eid) => delete d.nodeLayouts[eid]);
+
+        repairFlowsAfterRemovingDiagramElements(
+          d.snapshot.flows,
+          toRemove,
+          removedConnectionIds,
+        );
 
         function syncApiGroupSize(groupId: string) {
           const childCount = Object.values(d.snapshot.components).filter(

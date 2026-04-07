@@ -31,6 +31,11 @@ Structura also includes a built-in **AWS service catalog** so cloud-native teams
 - **Export** — Export to JSON, draw.io XML, or Mermaid sequence diagrams
 - **Dark / Light theme** — Toggle between themes from the navigation bar
 - **Folder organization** — Organize diagrams into nested folders on the dashboard
+- **LLM Diagram Assistant** — Conversational AI assistant grounded in the current diagram; suggests and applies changes with canvas preview and explicit user confirmation
+- **Collaboration** — Real-time collaborative sessions via WebRTC + Yjs with presence cursors
+- **Journeys** — Cross-diagram step sequences that document user flows or business processes across diagrams
+- **Scenes** — Declarative diagram variants (diffs) for environments, scenarios, or alternate architectural views
+- **Custom component templates** — Capture groups of nodes as reusable templates
 
 ---
 
@@ -59,7 +64,7 @@ Structura also includes a built-in **AWS service catalog** so cloud-native teams
 
 ```bash
 git clone https://github.com/your-org/structura.git
-cd structura/frontend
+cd structura
 npm install
 ```
 
@@ -81,16 +86,22 @@ The `@` path alias resolves to `./src`.
 ```
 src/
 ├── features/
-│   ├── diagram/       # Core data model, Zustand store, types, guards
-│   ├── canvas/        # ReactFlow canvas, node descriptors, hooks
-│   ├── flows/         # Flow re-exports
-│   └── registry/      # Service definition registry
+│   ├── diagram/           # Core domain — types, Zustand store, slices, selectors
+│   │                      # NO React, NO JSX allowed here
+│   ├── canvas/            # ReactFlow canvas, node descriptors, toolbar, hooks
+│   ├── collaboration/     # Real-time collab via WebRTC + Yjs
+│   ├── journeys/          # Journey sequences (cross-diagram user flows)
+│   ├── custom-components/ # User-defined component templates
+│   ├── viewer/            # Read-only shared diagram viewer
+│   ├── icons/             # Icon library store
+│   └── llm/               # LLM Assistant — domain logic only (no React)
+├── components/
+│   ├── ui/                # shadcn/ui component library
+│   └── chat/              # LLM chat UI components (stateless)
 ├── infrastructure/
-│   └── persistence/   # Storage adapters (LocalStorage, InMemory)
-├── components/ui/     # shadcn/ui component library
-├── fixtures/          # Seed data for development
-├── hooks/             # Shared app hooks (useTheme, use-toast, use-mobile)
-└── lib/               # Export utilities, AWS catalog, GitHub import
+│   └── persistence/       # IStoragePort, LocalStorageAdapter, InMemoryAdapter
+├── pages/                 # Dashboard, ModelExplorer, ServiceRegistry, Index
+└── lib/                   # aws-catalog, export-service, github-import, utils
 ```
 
 ### Diagram Store (`features/diagram`)
@@ -134,6 +145,23 @@ Key hooks:
 ## Contributing
 
 Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on opening issues, submitting pull requests, and the code style conventions used in this project.
+
+## Architecture & Roadmap
+
+Structura follows a phased quality and feature roadmap documented in:
+
+- [`docs/architecture/analysis.md`](docs/architecture/analysis.md) — full feature analysis with improvement opportunities
+- [`.ai/skills/feature-slice-standard.md`](.ai/skills/feature-slice-standard.md) — canonical folder structure for features
+
+### Active roadmap phases
+
+| Phase | Focus | Status |
+|-------|-------|--------|
+| **0** | Foundation — tests + standards + core bugfixes | 🔄 In progress |
+| **1** | Stabilization — feature structure + domain fixes | 📋 Planned |
+| **2** | High-impact product features | 📋 Planned |
+| **3** | Native 4+1 architectural views | 📋 Planned |
+| **4** | Enterprise & ecosystem integrations | 📋 Planned |
 
 ---
 

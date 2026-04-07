@@ -136,13 +136,20 @@ export function MentionInput({
         contentEditable={!disabled}
         suppressContentEditableWarning
         dir="ltr"
-        style={{ direction: "ltr", textAlign: "left", unicodeBidi: "plaintext" }}
+        style={{
+          direction: "ltr",
+          textAlign: "left",
+          unicodeBidi: "plaintext",
+          minHeight: "2.5rem",
+          maxHeight: "12rem",
+          overflowY: "auto",
+        }}
         onInput={(event) => {
           onSegmentsChange(parseDOMToSegments(event.currentTarget));
         }}
         onKeyDown={onKeyDown}
         className={cn(
-          "min-h-[88px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          "w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           disabled && "cursor-not-allowed opacity-50",
         )}
       />

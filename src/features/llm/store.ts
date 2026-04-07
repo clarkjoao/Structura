@@ -1,11 +1,13 @@
 import { create } from "zustand";
 import { useDiagramStore } from "@/features/diagram";
 import { pushHistory } from "@/features/diagram/store/slices/history.slice";
+import { STRUCTURAL_MUTATION_MARKER } from "@/features/diagram/store/store.constants";
 import { buildSystemPrompt } from "./prompt-builder";
 import { parseLLMResponse } from "./patch-parser";
 import { LLMProviderError, type LLMErrorKind } from "./errors";
 import type {
   ChatMessage,
+  ConversationThread,
   DiagramPatch,
   DiagramPatchAction,
   LLMConfig,
@@ -17,6 +19,40 @@ import { sendMessage as sendAnthropicMessage } from "./providers/anthropic";
 import { sendMessage as sendProxyMessage } from "./providers/proxy";
 
 const LLM_CONFIG_STORAGE_KEY = "structura:llm:config";
+const CHAT_HISTORY_KEY = "structura:llm:history";
+const MAX_THREADS = 20;
+const MAX_MESSAGES_PER_THREAD = 50;
+
+function loadThreadFromStorage(diagramId: string): ChatMessage[] {
+  try {
+    const raw = localStorage.getItem(CHAT_HISTORY_KEY);
+    if (!raw) {
+      return [];
+    }
+    const threads = JSON.parse(raw) as Record<string, ConversationThread>;
+    return threads[diagramId]?.messages ?? [];
+  } catch {
+    return [];
+  }
+}
+
+function saveThreadToStorage(diagramId: string, messages: ChatMessage[]): void {
+  try {
+    const raw = localStorage.getItem(CHAT_HISTORY_KEY);
+    const threads: Record<string, ConversationThread> = raw ? JSON.parse(raw) : {};
+    threads[diagramId] = {
+      diagramId,
+      messages: messages.slice(-MAX_MESSAGES_PER_THREAD),
+      updatedAt: Date.now(),
+    };
+    const trimmed = Object.entries(threads)
+      .sort(([, threadA], [, threadB]) => threadB.updatedAt - threadA.updatedAt)
+      .slice(0, MAX_THREADS);
+    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(Object.fromEntries(trimmed)));
+  } catch {
+    /* ignore */
+  }
+}
 
 const DEFAULT_LLM_CONFIG: LLMConfig = {
   mode: "proxy",
@@ -149,7 +185,7 @@ function applyDiagramPatchAction(action: DiagramPatchAction): AppliedPatchResult
 
 function ensureHistoryBoundary(): void {
   useDiagramStore.setState((state) => {
-    pushHistory(state);
+    pushHistory(state, STRUCTURAL_MUTATION_MARKER);
   });
 }
 
@@ -176,10 +212,12 @@ interface LLMStoreState {
   streamingContent: string | null;
   isLoading: boolean;
   error: LLMErrorKind | null;
+  activeDiagramId: string | null;
   setLLMConfig: (config: LLMConfig) => void;
   sendMessage: (userText: string, diagramContext: string) => Promise<void>;
   acceptSuggestion: (suggestionId: string) => void;
   rejectSuggestion: (suggestionId: string) => void;
+  loadHistoryForDiagram: (diagramId: string) => void;
   clearHistory: () => void;
 }
 
@@ -191,6 +229,18 @@ export const useLLMStore = create<LLMStoreState>((set, get) => ({
   streamingContent: null,
   isLoading: false,
   error: null,
+  activeDiagramId: null,
+
+  loadHistoryForDiagram: (diagramId) => {
+    set({
+      activeDiagramId: diagramId,
+      messages: loadThreadFromStorage(diagramId),
+      pendingSuggestions: [],
+      pendingPreviews: [],
+      streamingContent: null,
+      error: null,
+    });
+  },
 
   setLLMConfig: (config) => {
     saveConfigToLocalStorage(config);
@@ -348,6 +398,10 @@ export const useLLMStore = create<LLMStoreState>((set, get) => ({
         isLoading: false,
         error: null,
       });
+      const currentDiagramId = get().activeDiagramId;
+      if (currentDiagramId) {
+        saveThreadToStorage(currentDiagramId, get().messages);
+      }
     } catch (error) {
       const errorKind: LLMErrorKind =
         error instanceof LLMProviderError ? error.kind : "unknown";
@@ -357,6 +411,10 @@ export const useLLMStore = create<LLMStoreState>((set, get) => ({
         isLoading: false,
         error: errorKind,
       });
+      const currentDiagramId = get().activeDiagramId;
+      if (currentDiagramId) {
+        saveThreadToStorage(currentDiagramId, get().messages);
+      }
     }
   },
 
@@ -425,15 +483,18 @@ export const useLLMStore = create<LLMStoreState>((set, get) => ({
   },
 
   clearHistory: () => {
-    set((state) => ({
+    const diagramId = get().activeDiagramId;
+    if (diagramId) {
+      saveThreadToStorage(diagramId, []);
+    }
+    set({
       messages: [],
       pendingSuggestions: [],
       pendingPreviews: [],
       streamingContent: null,
       error: null,
       isLoading: false,
-      config: state.config,
-    }));
+    });
   },
 }));
 

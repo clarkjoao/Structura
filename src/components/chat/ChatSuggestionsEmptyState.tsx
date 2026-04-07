@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { MessageSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,12 @@ export function ChatSuggestionsEmptyState({
   const resolvedName = diagramName.trim() || t("common.none");
 
   return (
-    <div className="space-y-4">
+    <motion.div
+      className="space-y-4"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2 }}
+    >
       <div className="space-y-2">
         <MessageSquare className="h-8 w-8 text-primary" aria-hidden />
         <h4 className="text-sm font-semibold">{t("llmChat.title")}</h4>
@@ -29,20 +35,26 @@ export function ChatSuggestionsEmptyState({
           {t("llmChat.suggestions.title")}
         </p>
         <div className="space-y-2">
-          {DEFAULT_SUGGESTIONS.map((suggestion) => (
-            <Button
+          {DEFAULT_SUGGESTIONS.map((suggestion, index) => (
+            <motion.div
               key={suggestion.id}
-              type="button"
-              variant="outline"
-              size="sm"
-              className="w-full justify-start text-left text-sm text-foreground"
-              onClick={() => onSelectSuggestion(t(suggestion.labelKey))}
+              initial={{ opacity: 0, x: -4 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.05, duration: 0.15 }}
             >
-              <span className="block w-full truncate">{t(suggestion.labelKey)}</span>
-            </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full justify-start text-left text-sm text-foreground"
+                onClick={() => onSelectSuggestion(t(suggestion.labelKey))}
+              >
+                <span className="block w-full truncate">{t(suggestion.labelKey)}</span>
+              </Button>
+            </motion.div>
           ))}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

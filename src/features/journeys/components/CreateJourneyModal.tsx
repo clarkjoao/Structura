@@ -10,7 +10,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
-import { useJourneyActions, useJourneys } from "../selectors";
+import { useJourneyActions, useJourneys } from "../store/selectors/journeys.selectors";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

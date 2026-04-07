@@ -1,7 +1,7 @@
 import { createElement, useMemo, type ReactElement, type ReactNode } from "react";
 import type { Diagram } from "@/features/diagram";
 import { decodeShareParam, getShareParamFromUrl } from "@/lib/diagram-url";
-import { ShareContext } from "../context/ShareContext";
+import { ShareContext } from "../components/ShareContext";
 
 interface ShareProviderProps {
   children: ReactNode;

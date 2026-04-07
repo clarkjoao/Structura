@@ -8,6 +8,8 @@
     "search": "Search",
     "add": "Add",
     "close": "Close",
+    "copy": "Copy",
+    "copied": "Copied!",
     "back": "Back",
     "next": "Next",
     "previous": "Previous",
@@ -473,6 +475,20 @@
       "saveAsTemplate": "Save as template"
     }
   },
+  "compareMode": {
+    "added": "Added",
+    "removed": "Removed",
+    "modified": "Modified"
+  },
+  "impactAnalysis": {
+    "title": "Impact analysis",
+    "directDependents": "Direct dependents",
+    "transitive": "Transitive dependents",
+    "brokenConnections": "Affected connections",
+    "noDependents": "No dependents found",
+    "button": "Analyze impact",
+    "unavailable": "Could not analyze — no diagram snapshot."
+  },
   "canvasToolbar": {
     "renameTitle": "Double-click to rename",
     "drillUp": "Level up",
@@ -498,6 +514,11 @@
     "submitHint": "Use Cmd/Ctrl + Enter to send",
     "sending": "Sending...",
     "send": "Send",
+    "scrollToBottom": "New message",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "newThread": "New conversation",
+    "generating": "Generating response...",
     "settings": {
       "title": "LLM Settings",
       "mode": "Mode",

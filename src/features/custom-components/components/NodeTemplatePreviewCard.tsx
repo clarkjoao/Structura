@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Box, FileText, X } from "lucide-react";
-import type { CustomComponentTemplate } from "../customComponent.types";
-import { resolveTemplateAccentColor } from "../utils/resolveTemplateAccentColor";
+import type { CustomComponentTemplate } from "../types";
+import { resolveTemplateAccentColor } from "../utils/resolve-template-accent-color";
 import { cn } from "@/lib/utils";
 import { useIconById, isPanelKind, isC4Type, isPanelType, isNoteType } from "@/features/diagram";
 import { TypeConfig } from "@/features/canvas/nodes/CustomNode/TypeConfig";

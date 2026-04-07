@@ -110,6 +110,10 @@ export { migrateFlow } from "./utils/flow-migration";
 /** Repair a flow by removing broken steps and cleaning up references */
 export { repairFlow } from "./utils/flow-repair";
 
+/** Dependency impact of removing a node (reverse graph BFS) */
+export { computeImpact } from "./utils/impact-analysis";
+export type { ImpactResult } from "./utils/impact-analysis";
+
 /** Build a pure-data patch for duplicating a flow */
 export { buildFlowDuplicatePatch } from "./utils/flow-duplicate";
 
@@ -129,6 +133,9 @@ export {
 } from "./utils/scene.utils";
 export type { CompareSnapshotResult, CompareElementVisual, MergePreview } from "./utils/scene.utils";
 export { buildChildrenIndex, getDescendantIdsFromIndex } from "./utils/children-index";
+
+/** Active scene on the current diagram (for canvas / LLM context). */
+export { resolveActiveScene } from "./store/slices/scene-helpers";
 
 /** Cached resolveCanvasSnapshot — use instead of resolveCanvasSnapshot in render paths */
 export { getCachedCanvasSnapshot } from "./utils/snapshot-cache";

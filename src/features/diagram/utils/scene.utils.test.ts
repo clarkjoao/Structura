@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { Diagram } from "../model/diagram.types";
 import type { SceneDiff } from "../model/diagram.types";
-import { computeMergePreview, resolveSceneSnapshot, sceneHasDiff } from "./scene.utils";
+import {
+  canMoveNodeInSceneMode,
+  computeMergePreview,
+  resolveSceneSnapshot,
+  sceneHasDiff,
+} from "./scene.utils";
 
 function emptyDiagram(overrides: Partial<Diagram> = {}): Diagram {
   return {
@@ -71,6 +76,50 @@ describe("resolveSceneSnapshot", () => {
     expect(r.components.hide).toBeUndefined();
     expect(r.components.add1?.name).toBe("A1");
     expect(r.nodeLayouts.add1?.x).toBe(10);
+  });
+
+  it("applies simultaneous scene additions and removals in one resolve", () => {
+    const d = emptyDiagram({
+      snapshot: {
+        components: {
+          keep: { id: "keep", name: "K", type: "system", description: "", parentId: null },
+          drop: { id: "drop", name: "D", type: "system", description: "", parentId: null },
+        },
+        connections: {},
+        flows: {},
+        iconLibrary: {},
+      },
+      nodeLayouts: {
+        keep: { elementId: "keep", x: 0, y: 0 },
+        drop: { elementId: "drop", x: 0, y: 0 },
+      },
+      scenes: {
+        s1: {
+          id: "s1",
+          name: "S",
+          color: "#000",
+          createdAt: "",
+          addedComponents: {
+            onlyInScene: {
+              id: "onlyInScene",
+              name: "N",
+              type: "container",
+              description: "",
+              parentId: null,
+            },
+          },
+          addedConnections: {},
+          removedComponentIds: ["drop"],
+          removedConnectionIds: [],
+          nodeLayouts: { onlyInScene: { elementId: "onlyInScene", x: 5, y: 6 } },
+        },
+      },
+    });
+    const r = resolveSceneSnapshot(d, "s1");
+    expect(r.components.keep).toBeDefined();
+    expect(r.components.drop).toBeUndefined();
+    expect(r.components.onlyInScene?.name).toBe("N");
+    expect(r.nodeLayouts.onlyInScene?.x).toBe(5);
   });
 });
 
@@ -155,5 +204,99 @@ describe("computeMergePreview", () => {
     expect(p.conflicts).toHaveLength(1);
     expect(p.conflicts[0]!.conflictingSceneId).toBe("s2");
     expect(p.conflicts[0]!.elementId).toBe("dup");
+  });
+
+  it("flags conflict when a scene-added component id already exists on the base diagram", () => {
+    const shared = {
+      id: "overlap",
+      name: "Overlap",
+      type: "container" as const,
+      description: "",
+      parentId: null,
+    };
+    const d = emptyDiagram({
+      snapshot: {
+        components: { overlap: { ...shared } },
+        connections: {},
+        flows: {},
+        iconLibrary: {},
+      },
+      nodeLayouts: { overlap: { elementId: "overlap", x: 0, y: 0 } },
+      scenes: {
+        s1: {
+          id: "s1",
+          name: "A",
+          color: "#111",
+          createdAt: "",
+          addedComponents: { overlap: { ...shared, name: "Scene variant" } },
+          addedConnections: {},
+          removedComponentIds: [],
+          removedConnectionIds: [],
+          nodeLayouts: {},
+        },
+      },
+    });
+    const preview = computeMergePreview(d, "s1");
+    const baseConflict = preview.conflicts.find((c) => c.conflictingSceneId === "__diagramBase__");
+    expect(baseConflict).toBeDefined();
+    expect(baseConflict!.elementId).toBe("overlap");
+  });
+});
+
+describe("canMoveNodeInSceneMode", () => {
+  it("returns true for a node added by the active scene", () => {
+    const d = emptyDiagram({
+      activeSceneId: "s1",
+      scenes: {
+        s1: {
+          id: "s1",
+          name: "S",
+          color: "#000",
+          createdAt: "",
+          addedComponents: {
+            sceneNode: {
+              id: "sceneNode",
+              name: "N",
+              type: "system",
+              description: "",
+              parentId: null,
+            },
+          },
+          addedConnections: {},
+          removedComponentIds: [],
+          removedConnectionIds: [],
+          nodeLayouts: {},
+        },
+      },
+    });
+    expect(canMoveNodeInSceneMode(d, "sceneNode")).toBe(true);
+  });
+
+  it("returns false for a base snapshot node while a scene is active", () => {
+    const d = emptyDiagram({
+      activeSceneId: "s1",
+      snapshot: {
+        components: {
+          baseNode: { id: "baseNode", name: "B", type: "system", description: "", parentId: null },
+        },
+        connections: {},
+        flows: {},
+        iconLibrary: {},
+      },
+      scenes: {
+        s1: {
+          id: "s1",
+          name: "S",
+          color: "#000",
+          createdAt: "",
+          addedComponents: {},
+          addedConnections: {},
+          removedComponentIds: [],
+          removedConnectionIds: [],
+          nodeLayouts: {},
+        },
+      },
+    });
+    expect(canMoveNodeInSceneMode(d, "baseNode")).toBe(false);
   });
 });

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import debounce from "lodash.debounce";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useJourney, useJourneyActions } from "../../selectors";
+import { useJourney, useJourneyActions } from "../../store/selectors/journeys.selectors";
 import type { JourneyStep } from "../../types";
 
 const FIELD_DEBOUNCE_MS = 300;

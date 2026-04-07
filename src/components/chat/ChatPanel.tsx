@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Settings, X } from "lucide-react";
+import { ChevronDown, Plus, Settings, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useActiveDiagram } from "@/features/diagram";
 import { getLLMErrorI18nKey, type PendingSuggestion } from "@/features/llm";
@@ -29,6 +29,9 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
   const activeDiagram = useActiveDiagram();
   const [showSettings, setShowSettings] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
   const { search } = useMentionSearch();
   const {
     segments,
@@ -55,6 +58,7 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
     error,
     config,
     setConfig,
+    clearHistory,
   } = useLLMChat();
   const mentionItems = useMemo(
     () => (isPickerOpen ? search(mentionQuery) : []),
@@ -75,6 +79,28 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
     }
     return null;
   }, [messages]);
+
+  const handleScroll = useCallback(() => {
+    const element = scrollContainerRef.current;
+    if (!element) {
+      return;
+    }
+    const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
+    setShowScrollButton(distanceFromBottom > 80);
+  }, []);
+
+  useEffect(() => {
+    const element = scrollContainerRef.current;
+    if (!element) {
+      return;
+    }
+    const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
+    if (distanceFromBottom < 80) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    } else if (messages.length > 0) {
+      setShowScrollButton(true);
+    }
+  }, [messages.length, streamingContent]);
 
   const handleSend = async () => {
     if (!resolvedText.trim()) {
@@ -101,12 +127,23 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
   };
 
   return (
-    <div className="w-96 h-full border-l border-border bg-card flex flex-col relative">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-border">
-        <div className="flex items-center gap-2 min-w-0">
-          <h3 className="text-sm font-semibold truncate">{t("llmChat.title")}</h3>
+    <div className="relative flex h-full w-96 flex-col border-l border-border bg-card">
+      <div className="flex items-center justify-between border-b border-border px-3 py-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <h3 className="truncate text-sm font-semibold">{t("llmChat.title")}</h3>
         </div>
         <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={clearHistory}
+            aria-label={t("llmChat.newThread")}
+            title={t("llmChat.newThread")}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
           <Button
             type="button"
             variant="ghost"
@@ -130,7 +167,11 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2">
+      <div
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="relative min-h-0 flex-1 space-y-2 overflow-y-auto p-3"
+      >
         {messages.length === 0 ? (
           <ChatSuggestionsEmptyState
             diagramName={diagramName}
@@ -159,6 +200,21 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
             );
           })
         )}
+        <div ref={messagesEndRef} />
+
+        {showScrollButton ? (
+          <button
+            type="button"
+            onClick={() => {
+              messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+              setShowScrollButton(false);
+            }}
+            className="sticky bottom-2 left-1/2 flex w-fit -translate-x-1/2 items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-[11px] text-primary-foreground shadow-md"
+          >
+            <ChevronDown className="h-3 w-3" />
+            {t("llmChat.scrollToBottom")}
+          </button>
+        ) : null}
       </div>
       {error ? (
         <div className="mx-3 mb-2 space-y-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
@@ -175,7 +231,7 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
         </div>
       ) : null}
 
-      <div className="border-t border-border p-3 space-y-2 relative">
+      <div className="relative space-y-2 border-t border-border p-3">
         {activeMentions.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {activeMentions.map((mention) => (
@@ -255,4 +311,3 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
     </div>
   );
 }
-

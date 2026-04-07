@@ -16,7 +16,8 @@ function isPatchEnvelope(value: unknown): value is { message?: string; patch?: R
   const messageValue = value.message;
   const patchValue = value.patch;
   const hasValidMessage = messageValue === undefined || typeof messageValue === "string";
-  const hasValidPatch = patchValue === undefined || isObject(patchValue);
+  const hasValidPatch =
+    patchValue === undefined || patchValue === null || isObject(patchValue);
   return hasValidMessage && hasValidPatch;
 }
 
@@ -131,6 +132,9 @@ function tryParseEnvelope(candidate: string): ParsedLLMResponse | null {
       }
     }
     const patchValue = parsedValue.patch;
+    if (patchValue === null) {
+      return { message: parsedMessage, patch: null };
+    }
     if (isObject(patchValue)) {
       const idValue = patchValue.id;
       if (typeof idValue !== "string" || idValue.trim().length === 0) {

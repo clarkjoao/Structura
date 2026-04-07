@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import debounce from "lodash.debounce";
-import { X, Trash2, Lock, Unlock } from "lucide-react";
+import { X, Trash2, Lock, Unlock, Radar } from "lucide-react";
 import {
   useAllDiagrams,
   useActiveDiagram,
@@ -37,6 +37,7 @@ import {
   ExternalLinksSection,
 } from "./sections";
 import { isComponentType } from "@/features/diagram";
+import { ImpactAnalysisPanel } from "./components/ImpactAnalysisPanel";
 
 const DEFAULT_NOTE_COLOR = "hsl(45 25% 97%)";
 
@@ -67,6 +68,10 @@ function shouldPreserveContent(name: string, description: string) {
   return name.trim().length > 0 && description.trim().length > 0;
 }
 
+export type FocusCanvasElementTarget =
+  | { kind: "node"; id: string }
+  | { kind: "connection"; id: string };
+
 interface ComponentPanelProps {
   component: Component;
   onClose: () => void;
@@ -74,6 +79,7 @@ interface ComponentPanelProps {
   removeComponent: (id: string) => void;
   onUngroup?: () => void;
   focusTitleTrigger?: number;
+  onFocusCanvasElement?: (target: FocusCanvasElementTarget) => void;
 }
 
 const ComponentPanel = ({
@@ -83,6 +89,7 @@ const ComponentPanel = ({
   removeComponent,
   onUngroup,
   focusTitleTrigger = 0,
+  onFocusCanvasElement,
 }: ComponentPanelProps) => {
   const { t } = useTranslation();
   const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
@@ -118,6 +125,7 @@ const ComponentPanel = ({
     removeExternalLink,
   } = useDiagramActions();
   const [tab, setTab] = useState<Tab>("details");
+  const [impactAnalysisOpen, setImpactAnalysisOpen] = useState(false);
   const [name, setName] = useState(component.name);
   const [desc, setDesc] = useState(component.description);
   const [tech, setTech] = useState((component as { technology?: string }).technology ?? "");
@@ -236,6 +244,16 @@ const ComponentPanel = ({
                   : component.name}
         </h3>
         <div className="flex items-center gap-2">
+          {onFocusCanvasElement && (
+            <button
+              type="button"
+              onClick={() => setImpactAnalysisOpen(true)}
+              title={t("impactAnalysis.button")}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Radar className="h-4 w-4" />
+            </button>
+          )}
           <button
             type="button"
             onClick={() => updateComponent(component.id, { locked: !component.locked })}
@@ -248,11 +266,19 @@ const ComponentPanel = ({
               <Unlock className="h-4 w-4" />
             )}
           </button>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="h-4 w-4" />
           </button>
         </div>
       </div>
+      {onFocusCanvasElement && impactAnalysisOpen && (
+        <ImpactAnalysisPanel
+          nodeId={component.id}
+          onClose={() => setImpactAnalysisOpen(false)}
+          onSelectNode={(id) => onFocusCanvasElement({ kind: "node", id })}
+          onSelectConnection={(id) => onFocusCanvasElement({ kind: "connection", id })}
+        />
+      )}
       {isPanel && onUngroup && (
         <div className="px-3 py-2 border-b border-border">
           <button

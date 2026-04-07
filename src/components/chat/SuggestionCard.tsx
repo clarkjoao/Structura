@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import type { DiagramPatchAction, PendingSuggestion } from "@/features/llm";
@@ -9,7 +10,11 @@ interface SuggestionCardProps {
   onReject: (suggestionId: string) => void;
 }
 
-function formatAction(action: DiagramPatchAction, translate: (key: string, options?: object) => string): string {
+function assertUnreachable(value: never): string {
+  return String(value);
+}
+
+function formatAction(action: DiagramPatchAction, translate: TFunction): string {
   switch (action.type) {
     case "ADD_NODE":
       return translate("llmChat.suggestion.action.addNode", {
@@ -28,7 +33,7 @@ function formatAction(action: DiagramPatchAction, translate: (key: string, optio
     case "REMOVE_EDGE":
       return translate("llmChat.suggestion.action.removeEdge", { edgeId: action.payload.edgeId });
     default:
-      return action.type;
+      return assertUnreachable(action);
   }
 }
 

@@ -4,6 +4,7 @@ import type { Component, UserTemplate, UserTemplateComponent } from "../../model
 import { generateId } from "../../utils/generate-id";
 import { computeUserTemplateNodeLayouts } from "../../utils/user-template-insert-layout";
 import type { AppState } from "../store.types";
+import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
 import { getActiveDiagram } from "./get-active-diagram";
 
@@ -93,13 +94,16 @@ function buildCatalogPatternComponentAndLayout(
     technology: raw.technology,
     awsService: raw.awsService,
   } as Component;
+
+  // When the pattern defines explicit 2-D coordinates, honour them so that
+  // left-to-right semantic layout is preserved. Fall back to the linear grid
+  // for patterns that omit x/y (e.g. legacy user templates).
+  const x = raw.x !== undefined ? position.x + raw.x : position.x + index * gridX;
+  const y = raw.y !== undefined ? position.y + raw.y : position.y;
+
   return {
     component,
-    layout: {
-      elementId: newId,
-      x: position.x + index * gridX,
-      y: position.y,
-    },
+    layout: { elementId: newId, x, y },
   };
 }
 
@@ -120,7 +124,7 @@ export const patternsSlice = (
       if (!d) return;
       const sid = d.activeSceneId ?? null;
       const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
-      if (!scene) pushHistory(state);
+      if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
       template.components.forEach((raw, i) => {
         let component: Component;
         let layout: { elementId: string; x: number; y: number; width?: number; height?: number };
