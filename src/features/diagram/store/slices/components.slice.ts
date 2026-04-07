@@ -30,6 +30,7 @@ import {
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import { isAwsType } from "@/lib/catalogs/aws";
 import type { AppState } from "../store.types";
+import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
 import { getActiveDiagram } from "./get-active-diagram";
 import { resolveActiveScene } from "./scene-helpers";
@@ -299,7 +300,7 @@ export const componentsSlice = (
         if (!d) return;
         const scene = resolveActiveScene(d);
 
-        if (!scene) pushHistory(state);
+        if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
 
         const resolveComp = (pid: string | null | undefined) =>
           pid ? scene?.addedComponents[pid] ?? d.snapshot.components[pid] : undefined;
@@ -414,7 +415,7 @@ export const componentsSlice = (
           return;
         }
 
-        pushHistory(state);
+        pushHistory(state, STRUCTURAL_MUTATION_MARKER);
         const childrenIndex = buildChildrenIndex(d.snapshot.components);
         const toRemove = getDescendantIdsFromIndex(id, childrenIndex);
         toRemove.add(id);

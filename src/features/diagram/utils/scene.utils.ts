@@ -360,6 +360,10 @@ export interface MergePreview {
   }>;
 }
 
+/** Internal merge-preview id when a scene-added component collides with the base snapshot. */
+const MERGE_CONFLICT_BASE_SCENE_ID = "__diagramBase__";
+const MERGE_CONFLICT_BASE_SCENE_NAME = "Diagram base";
+
 export function computeMergePreview(diagram: Diagram, sceneId: string): MergePreview {
   const scene = diagram.scenes?.[sceneId];
   if (!scene) {
@@ -370,6 +374,17 @@ export function computeMergePreview(diagram: Diagram, sceneId: string): MergePre
   const conflicts: MergePreview["conflicts"] = [];
 
   for (const comp of Object.values(scene.addedComponents)) {
+    const existsInBase = Boolean(diagram.snapshot.components[comp.id]);
+    const removedByScene = scene.removedComponentIds.includes(comp.id);
+    if (existsInBase && !removedByScene) {
+      conflicts.push({
+        elementId: comp.id,
+        elementName: comp.name,
+        conflictingSceneId: MERGE_CONFLICT_BASE_SCENE_ID,
+        conflictingSceneName: MERGE_CONFLICT_BASE_SCENE_NAME,
+        resolution: "merge",
+      });
+    }
     for (const other of otherScenes) {
       if (other.addedComponents[comp.id]) {
         conflicts.push({

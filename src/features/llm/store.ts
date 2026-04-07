@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { useDiagramStore } from "@/features/diagram";
 import { pushHistory } from "@/features/diagram/store/slices/history.slice";
+import { STRUCTURAL_MUTATION_MARKER } from "@/features/diagram/store/store.constants";
 import { buildSystemPrompt } from "./prompt-builder";
 import { parseLLMResponse } from "./patch-parser";
 import { LLMProviderError, type LLMErrorKind } from "./errors";
@@ -149,7 +150,7 @@ function applyDiagramPatchAction(action: DiagramPatchAction): AppliedPatchResult
 
 function ensureHistoryBoundary(): void {
   useDiagramStore.setState((state) => {
-    pushHistory(state);
+    pushHistory(state, STRUCTURAL_MUTATION_MARKER);
   });
 }
 

@@ -2,6 +2,7 @@ import type { Component, Connection, NodeLayout } from "../../model/diagram.type
 import { current } from "immer";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
+import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
 import { resolveActiveScene } from "./scene-helpers";
 import { resolveSceneSnapshot } from "../../utils/scene.utils";
@@ -77,7 +78,7 @@ export const clipboardSlice = (
         if (!state.clipboard || !state.activeDiagramId) return;
         const d = state.diagrams[state.activeDiagramId];
         if (!d) return;
-        pushHistory(state);
+        pushHistory(state, STRUCTURAL_MUTATION_MARKER);
         const scene = resolveActiveScene(d);
         const idMap: Record<string, string> = {};
         const baseX = position?.x ?? 300;
@@ -176,7 +177,7 @@ export const clipboardSlice = (
         if (!state.activeDiagramId) return;
         const d = state.diagrams[state.activeDiagramId];
         if (!d) return;
-        pushHistory(state);
+        pushHistory(state, STRUCTURAL_MUTATION_MARKER);
         components.forEach((comp, index) => {
           d.snapshot.components[comp.id] = comp;
           const layout = layouts[index];

@@ -4,6 +4,7 @@ import type { Component, UserTemplate, UserTemplateComponent } from "../../model
 import { generateId } from "../../utils/generate-id";
 import { computeUserTemplateNodeLayouts } from "../../utils/user-template-insert-layout";
 import type { AppState } from "../store.types";
+import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
 import { getActiveDiagram } from "./get-active-diagram";
 
@@ -120,7 +121,7 @@ export const patternsSlice = (
       if (!d) return;
       const sid = d.activeSceneId ?? null;
       const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
-      if (!scene) pushHistory(state);
+      if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
       template.components.forEach((raw, i) => {
         let component: Component;
         let layout: { elementId: string; x: number; y: number; width?: number; height?: number };

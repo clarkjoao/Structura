@@ -191,15 +191,12 @@ npm run build
 ---
 
 ## Project skill files (read before coding)
-.ai/skills/new-feature.md        # creating a new feature (FSD)
-.ai/skills/new-node-type.md      # adding a new node type to the canvas
-.ai/skills/store-patterns.md     # Zustand slices, selectors, history
-.ai/skills/code-standards.md     # naming, TypeScript, anti-patterns
-.ai/skills/i18n.md               # adding strings and translations
 
----
+See **AGENTS.md** at the repo root for the canonical list. Highlights:
 
-## IMPORTANT: AGENTS.md instruction
-Before any response or implementation, always ask the user:
-"Do you want a prompt for Cursor to implement the feature,
-or do you prefer that I provide the files directly?"
+- `.ai/skills/feature-slice-standard.md` — canonical folder structure for every feature
+- `.ai/skills/new-feature.md` — creating a new feature (FSD)
+- `.ai/skills/new-node-type.md` — adding a new node type to the canvas
+- `.ai/skills/store-patterns.md` — Zustand slices, selectors, history
+- `.ai/skills/code-standards.md` — naming, TypeScript, anti-patterns
+- `.ai/skills/i18n.md` — adding strings and translations

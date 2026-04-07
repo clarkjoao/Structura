@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { getCachedCanvasSnapshot, useActiveDiagram } from "@/features/diagram";
+import { type Diagram, getCachedCanvasSnapshot, useActiveDiagram } from "@/features/diagram";
 import { serializeDiagramContext } from "@/features/llm";
 
 export function useDiagramContext(): string {
@@ -12,7 +12,7 @@ export function useDiagramContext(): string {
     const resolvedDiagram = {
       ...activeDiagram,
       snapshot: getCachedCanvasSnapshot(activeDiagram),
-    };
+    } as unknown as Diagram;
     return serializeDiagramContext(resolvedDiagram, {
       includeMetadata: true,
       includeLinks: true,

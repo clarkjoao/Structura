@@ -23,8 +23,12 @@ export function serializeDiagramContext(
   lines.push(`Diagram: ${diagram.name}`);
   lines.push(`Nodes (${components.length})`);
   for (const component of components) {
+    const label =
+      typeof component.name === "string" && component.name.trim().length > 0
+        ? component.name
+        : component.id;
     lines.push(
-      `- id=${component.id}; type=${component.type}; label=${component.name}; parent=${component.parentId ?? "none"}`,
+      `- id=${component.id}; type=${component.type}; label=${label}; parent=${component.parentId ?? "none"}`,
     );
   }
 

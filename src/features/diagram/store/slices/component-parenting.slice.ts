@@ -11,6 +11,7 @@ import {
 } from "../../model/layout.constants";
 import i18n from "@/infrastructure/i18n";
 import type { AppState } from "../store.types";
+import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { getActiveDiagram } from "./get-active-diagram";
 import { pushHistory } from "./history.slice";
 import { resolveActiveScene } from "./scene-helpers";
@@ -26,7 +27,7 @@ export const componentParentingSlice = (
       if (!d) return;
       const scene = resolveActiveScene(d);
       if (scene && !scene.addedComponents[childId]) return;
-      if (!scene) pushHistory(state);
+      if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
       const comp = scene?.addedComponents[childId] ?? d.snapshot.components[childId];
       if (comp) comp.parentId = parentId;
     });
@@ -52,7 +53,7 @@ export const componentParentingSlice = (
       if (scene && !scene.addedComponents[nodeId]) return;
 
       // Single pushHistory for the whole drag operation
-      if (!scene) pushHistory(state);
+      if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
 
       // 1. Update parentId
       const comp = scene?.addedComponents[nodeId] ?? d.snapshot.components[nodeId];
@@ -86,7 +87,7 @@ export const componentParentingSlice = (
       );
       if (ids.length < 2) return;
 
-      pushHistory(state);
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
 
       function getAbsPos(eid: string): { x: number; y: number } {
         const layout = d.nodeLayouts[eid];
@@ -177,7 +178,7 @@ export const componentParentingSlice = (
       const children = Object.values(comps).filter((c) => c.parentId === panelId);
       const panelLayout = d.nodeLayouts[panelId];
       if (!panelLayout) return;
-      pushHistory(state);
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
       children.forEach((c) => {
         c.parentId = null;
         const childLayout = d.nodeLayouts[c.id];

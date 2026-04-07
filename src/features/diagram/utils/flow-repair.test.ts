@@ -128,4 +128,73 @@ describe("repairFlow", () => {
     expect(result.steps).toEqual({});
     expect(result.entryStepId).toBeUndefined();
   });
+
+  it("clears next when it points to a non-existent step id", () => {
+    const flow = makeFlow({
+      entryStepId: "s1",
+      steps: {
+        s1: { id: "s1", type: "action", next: "missing" },
+      },
+    });
+
+    const result = repairFlow(flow, []);
+
+    expect(result.steps.s1.next).toBeUndefined();
+    expect(result.entryStepId).toBe("s1");
+  });
+
+  it("removes branches whose nextId does not exist", () => {
+    const flow = makeFlow({
+      entryStepId: "s1",
+      steps: {
+        s1: {
+          id: "s1",
+          type: "condition",
+          branches: [
+            { label: "ok", nextId: "s2" },
+            { label: "bad", nextId: "ghost" },
+          ],
+        },
+        s2: { id: "s2", type: "action" },
+      },
+    });
+
+    const result = repairFlow(flow, []);
+
+    expect(result.steps.s1.branches).toEqual([{ label: "ok", nextId: "s2" }]);
+  });
+
+  it("clears entryStepId when it does not match any step", () => {
+    const flow = makeFlow({
+      entryStepId: "ghost-entry",
+      steps: {
+        s1: { id: "s1", type: "action" },
+      },
+    });
+
+    const result = repairFlow(flow, []);
+
+    expect(result.entryStepId).toBeUndefined();
+    expect(result.steps.s1).toBeDefined();
+  });
+
+  it("is idempotent for an already valid flow", () => {
+    const flow = makeFlow({
+      entryStepId: "s1",
+      steps: {
+        s1: {
+          id: "s1",
+          type: "condition",
+          next: "s2",
+          branches: [{ label: "alt", nextId: "s2" }],
+        },
+        s2: { id: "s2", type: "action" },
+      },
+    });
+
+    const result = repairFlow(flow, []);
+
+    expect(result.entryStepId).toBe(flow.entryStepId);
+    expect(result.steps).toEqual(flow.steps);
+  });
 });

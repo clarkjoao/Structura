@@ -7,25 +7,44 @@ import type { Flow, FlowStep } from "../model/flow.types";
  */
 export function repairFlow(
   flow: Flow,
-  stepIdsToRemove: string[],
+  stepIdsToRemove: string[] = [],
 ): { steps: Record<string, FlowStep>; entryStepId: string | undefined } {
   const idSet = new Set(stepIdsToRemove);
 
-  // 1. Filter out removed steps
   const steps: Record<string, FlowStep> = {};
   for (const [id, step] of Object.entries(flow.steps)) {
     if (idSet.has(id)) continue;
-    steps[id] = {
-      ...step,
-      next: step.next && idSet.has(step.next) ? undefined : step.next,
-      branches: step.branches?.filter((b) => !idSet.has(b.nextId)),
-    };
+    steps[id] = { ...step };
   }
 
-  // 2. Recalculate entryStepId if removed
+  for (const id of Object.keys(steps)) {
+    const step = steps[id]!;
+    const nextStep: FlowStep = { ...step };
+    const resolvedNext = step.next && steps[step.next] ? step.next : undefined;
+    if (resolvedNext !== undefined) {
+      nextStep.next = resolvedNext;
+    } else {
+      delete nextStep.next;
+    }
+
+    const hadBranches = step.branches !== undefined;
+    if (hadBranches) {
+      const filteredBranches = step.branches!.filter((branch) => steps[branch.nextId]);
+      if (filteredBranches.length > 0) {
+        nextStep.branches = filteredBranches;
+      } else {
+        delete nextStep.branches;
+      }
+    }
+
+    steps[id] = nextStep;
+  }
+
   let entryStepId = flow.entryStepId;
   if (entryStepId && idSet.has(entryStepId)) {
     entryStepId = Object.keys(steps)[0];
+  } else if (entryStepId && !steps[entryStepId]) {
+    entryStepId = undefined;
   }
 
   return { steps, entryStepId };

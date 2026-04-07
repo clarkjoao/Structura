@@ -3,6 +3,7 @@ import type { EdgeStyle } from "../../model/connection.types";
 import { EdgeStyle as EdgeStyleEnum } from "../../enums";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
+import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
 import { getActiveDiagram } from "./get-active-diagram";
 import { resolveActiveScene } from "./scene-helpers";
@@ -31,7 +32,7 @@ export const connectionsSlice = (
         const d = getActiveDiagram(state);
         if (!d) return;
         const scene = resolveActiveScene(d);
-        if (!scene) pushHistory(state);
+        if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
         if (scene) {
           scene.addedConnections[connection.id] = connection;
         } else {
@@ -65,7 +66,7 @@ export const connectionsSlice = (
           d.updatedAt = new Date().toISOString();
           return;
         }
-        pushHistory(state);
+        pushHistory(state, STRUCTURAL_MUTATION_MARKER);
         delete d.snapshot.connections[id];
         d.updatedAt = new Date().toISOString();
       });
