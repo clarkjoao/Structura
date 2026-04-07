@@ -94,13 +94,16 @@ function buildCatalogPatternComponentAndLayout(
     technology: raw.technology,
     awsService: raw.awsService,
   } as Component;
+
+  // When the pattern defines explicit 2-D coordinates, honour them so that
+  // left-to-right semantic layout is preserved. Fall back to the linear grid
+  // for patterns that omit x/y (e.g. legacy user templates).
+  const x = raw.x !== undefined ? position.x + raw.x : position.x + index * gridX;
+  const y = raw.y !== undefined ? position.y + raw.y : position.y;
+
   return {
     component,
-    layout: {
-      elementId: newId,
-      x: position.x + index * gridX,
-      y: position.y,
-    },
+    layout: { elementId: newId, x, y },
   };
 }
 
