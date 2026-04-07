@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ReactFlow,
   useReactFlow,
@@ -34,12 +34,28 @@ import {
   CUSTOM_COMPONENT_DRAG_MIME,
   useCustomComponentLibrary,
 } from "@/features/custom-components";
+import { ChatPanel, FloatingChatButton, PendingNodeToolbar } from "@/components/chat";
+import { useLLMChat } from "./chat";
+import { getPendingNodeIds, getSuggestionIdForNode } from "@/features/llm";
+import { useLLMStore } from "@/features/llm/store";
 
 const canvasEdgeTypes = { c4: CustomEdge };
 
 const Canvas = (props: CanvasProps = {}) => {
   const [templateNodeId, setTemplateNodeId] = useState<string | null>(null);
   const [showJourneysPanel, setShowJourneysPanel] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [hasUnread, setHasUnread] = useState(false);
+  const previousAssistantMessageCountRef = useRef(0);
+  const messages = useLLMStore((state) => state.messages);
+  const { pendingPreviews, accept: acceptSuggestion, reject: rejectSuggestion } = useLLMChat();
+  const pendingNodeIds = useMemo(
+    () => Array.from(getPendingNodeIds(pendingPreviews)),
+    [pendingPreviews],
+  );
+  const assistantMessageCount = messages.filter(
+    (message) => message.role === "assistant",
+  ).length;
   const reactFlowInstance = useReactFlow();
   const addTemplate = useCustomComponentStore((state) => state.addTemplate);
   const { instantiateTemplate } = useCustomComponentLibrary();
@@ -80,6 +96,27 @@ const Canvas = (props: CanvasProps = {}) => {
   const templateSourceNode = templateNodeId
     ? nodes.find((node) => node.id === templateNodeId) ?? null
     : null;
+
+  useEffect(() => {
+    const hasNewAssistantMessage =
+      assistantMessageCount > previousAssistantMessageCountRef.current;
+    if (hasNewAssistantMessage && !isChatOpen) {
+      setHasUnread(true);
+    }
+    previousAssistantMessageCountRef.current = assistantMessageCount;
+  }, [assistantMessageCount, isChatOpen]);
+
+  const accept = useCallback(
+    (suggestionId: string) => {
+      acceptSuggestion(suggestionId);
+      setTimeout(() => {
+        reactFlowInstance.setNodes((previousNodes) =>
+          previousNodes.map((node) => ({ ...node })),
+        );
+      }, 50);
+    },
+    [acceptSuggestion, reactFlowInstance],
+  );
 
   if (!diagram) {
     return (
@@ -210,6 +247,21 @@ const Canvas = (props: CanvasProps = {}) => {
               className="bg-background"
             >
               <Background variant={BackgroundVariant.Dots} gap={18} size={1.5} />
+              {pendingNodeIds.map((nodeId) => {
+                const suggestionId = getSuggestionIdForNode(pendingPreviews, nodeId);
+                if (!suggestionId) {
+                  return null;
+                }
+                return (
+                  <PendingNodeToolbar
+                    key={nodeId}
+                    nodeId={nodeId}
+                    suggestionId={suggestionId}
+                    onKeep={accept}
+                    onDiscard={rejectSuggestion}
+                  />
+                );
+              })}
               <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
             </ReactFlow>
           </div>
@@ -276,8 +328,25 @@ const Canvas = (props: CanvasProps = {}) => {
           />
         ) : null}
 
-        {showElementPanel && (
-          <div className="absolute inset-y-0 right-0 z-20 flex">
+        <div className="absolute inset-y-0 right-0 z-20 flex items-stretch">
+          <div className="flex items-end pb-5 pr-4 pointer-events-none">
+            <div className="pointer-events-auto">
+              <FloatingChatButton
+                isOpen={isChatOpen}
+                hasUnread={hasUnread}
+                onClick={() => {
+                  setIsChatOpen((previous) => {
+                    const next = !previous;
+                    if (next) {
+                      setHasUnread(false);
+                    }
+                    return next;
+                  });
+                }}
+              />
+            </div>
+          </div>
+          {showElementPanel && (
             <ElementPanel
               key={visualState.selectedNodeId ?? visualState.selectedEdgeId ?? "multi"}
               selectedElementId={visualState.selectedNodeId}
@@ -287,8 +356,11 @@ const Canvas = (props: CanvasProps = {}) => {
               focusTitleTrigger={focusTitleTrigger}
               onClose={eventHandlers.closePanel}
             />
-          </div>
-        )}
+          )}
+          {isChatOpen ? (
+            <ChatPanel onClose={() => setIsChatOpen(false)} />
+          ) : null}
+        </div>
       </div>
     </HandleHighlightProvider>
   );

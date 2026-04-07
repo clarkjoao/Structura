@@ -489,6 +489,83 @@
     "levelComponent": "Level 3",
     "levelDeployment": "Level 4"
   },
+  "llmChat": {
+    "title": "Diagram Assistant",
+    "openSettings": "Open LLM settings",
+    "close": "Close chat",
+    "emptyState": "Ask about your architecture or request a diagram improvement.",
+    "inputPlaceholder": "Type your message...",
+    "submitHint": "Use Cmd/Ctrl + Enter to send",
+    "sending": "Sending...",
+    "send": "Send",
+    "settings": {
+      "title": "LLM Settings",
+      "mode": "Mode",
+      "modeDirect": "Direct",
+      "modeProxy": "Proxy",
+      "provider": "Provider",
+      "providerOpenAI": "OpenAI",
+      "providerAnthropic": "Anthropic",
+      "apiKey": "API key",
+      "apiKeyRequired": "Enter your {{provider}} API key",
+      "proxyUrl": "Proxy URL",
+      "model": "Model"
+    },
+    "suggestion": {
+      "accept": "Accept",
+      "reject": "Reject",
+      "action": {
+        "addNode": "Add node {{nodeType}} \"{{nodeName}}\"",
+        "removeNode": "Remove node {{nodeId}}",
+        "updateNode": "Update node {{nodeId}}",
+        "addEdge": "Add edge {{sourceId}} -> {{targetId}}",
+        "removeEdge": "Remove edge {{edgeId}}"
+      }
+    },
+    "mention": {
+      "noResults": "No matching nodes or edges",
+      "removeTag": "Remove mention {{label}}",
+      "pickerLabel": "Mention picker"
+    },
+    "selector": {
+      "proxy": "Proxy",
+      "label": "Select LLM model",
+      "providerOpenai": "OpenAI",
+      "providerAnthropic": "Anthropic"
+    },
+    "floatingButton": {
+      "open": "Open chat assistant",
+      "close": "Close chat assistant"
+    },
+    "preview": {
+      "keep": "Keep",
+      "discard": "Discard"
+    },
+    "error": {
+      "auth": "Chave de API inválida. Verifique suas configurações.",
+      "rate_limit": "Limite de requisições atingido. Aguarde alguns segundos.",
+      "cors": "Chamada bloqueada pelo navegador. Use o modo Proxy nas configurações.",
+      "network": "Sem conexão com o servidor. Verifique sua internet.",
+      "model": "Modelo não encontrado. Verifique o nome do modelo nas configurações.",
+      "server": "Erro no servidor do provedor. Tente novamente em instantes.",
+      "timeout": "A requisição demorou muito. Tente novamente.",
+      "unknown": "Erro inesperado. Tente novamente.",
+      "action": {
+        "settings": "Abrir configurações",
+        "retry": "Tentar novamente"
+      }
+    },
+    "suggestions": {
+      "title": "SUGESTÕES",
+      "context": "Contexto carregado: \"{{name}}\"",
+      "explain": "Explique a arquitetura deste diagrama",
+      "components": "Quais são os principais componentes e suas responsabilidades?",
+      "failures": "Identifique possíveis pontos de falha na arquitetura",
+      "security": "Sugira melhorias de segurança para este diagrama",
+      "communicate": "Como os sistemas se comunicam entre si?",
+      "improve": "Quais melhorias de escalabilidade você recomenda?"
+    }
+  },
   "scenes": {
     "base": "Base",
     "newScene": "New scene",

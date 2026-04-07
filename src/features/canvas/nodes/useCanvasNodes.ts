@@ -20,6 +20,7 @@ import { useFlowMode } from "../flow/FlowModeContext";
 import { buildCollapsedPanelIds, computeNodeVisibility } from "./nodeVisibility";
 import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
 import { OPACITY_FLOW_PLAYBACK_NODE_DIM, OPACITY_TAG_FILTER_DIM } from "../canvas.constants";
+import { getPendingNodeIds, useLLMStore } from "@/features/llm";
 
 interface UseCanvasNodesParams {
   diagram: Diagram | null | undefined;
@@ -105,6 +106,11 @@ export function useCanvasNodes({
   updateComponent,
 }: UseCanvasNodesParams): Node[] {
   const { isRecording, onRecordHandleClick } = useFlowMode();
+  const pendingPreviews = useLLMStore((state) => state.pendingPreviews);
+  const pendingNodeIds = useMemo(
+    () => getPendingNodeIds(pendingPreviews),
+    [pendingPreviews],
+  );
 
   const nodeCtxBase: NodeCtxBase | null = useMemo(() => {
     if (!diagram) return null;
@@ -257,6 +263,7 @@ export function useCanvasNodes({
         const nodeClassNames = [
           isCmp ? "cursor-default" : "",
           isLockedBySelfOrAncestor ? "cursor-not-allowed" : "",
+          pendingNodeIds.has(comp.id) ? "node-pending" : "",
         ]
           .filter(Boolean)
           .join(" ");
@@ -287,5 +294,12 @@ export function useCanvasNodes({
           data: d.buildData(comp, ctx),
         };
       });
-  }, [diagram, nodeCtxBase, nodeCtxPlayback, visibleComponents, isNodeHiddenByTagFilter]);
+  }, [
+    diagram,
+    nodeCtxBase,
+    nodeCtxPlayback,
+    visibleComponents,
+    isNodeHiddenByTagFilter,
+    pendingNodeIds,
+  ]);
 }

@@ -215,6 +215,19 @@
 }
 
 @layer utilities {
+  .node-pending {
+    opacity: 0.75;
+    outline: 2px dashed #22c55e;
+    outline-offset: 3px;
+    border-radius: inherit;
+  }
+
+  .edge-pending .react-flow__edge-path {
+    stroke: #22c55e;
+    stroke-dasharray: 6 4;
+    opacity: 0.75;
+  }
+
   .font-mono {
     font-family: 'JetBrains Mono', monospace;
   }

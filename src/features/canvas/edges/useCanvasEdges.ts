@@ -5,6 +5,7 @@ import { getCachedCanvasSnapshot } from "@/features/diagram";
 import { useFlowMode } from "../flow/FlowModeContext";
 import { buildEdge, filterVisibleConnections } from "./edgeBuilding";
 import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
+import { getPendingEdgeIds, useLLMStore } from "@/features/llm";
 
 interface UseCanvasEdgesParams {
   diagram: Diagram | null | undefined;
@@ -37,6 +38,11 @@ export function useCanvasEdges({
   visibleTags,
 }: UseCanvasEdgesParams): Edge[] {
   const { isRecording } = useFlowMode();
+  const pendingPreviews = useLLMStore((state) => state.pendingPreviews);
+  const pendingEdgeIds = useMemo(
+    () => getPendingEdgeIds(pendingPreviews),
+    [pendingPreviews],
+  );
   return useMemo(() => {
     if (!diagram) return [];
 
@@ -57,7 +63,7 @@ export function useCanvasEdges({
       const assignment = assignmentMap.get(conn.id);
       const sourceHidden = isEndpointHiddenByTag(conn.sourceId);
       const targetHidden = isEndpointHiddenByTag(conn.targetId);
-      return buildEdge(conn, assignment, {
+      const edge = buildEdge(conn, assignment, {
         diagram,
         selectedEdgeId,
         isPlaying,
@@ -70,6 +76,13 @@ export function useCanvasEdges({
         coverage,
         tagFilterEdgeDimmed: sourceHidden || targetHidden,
       });
+      if (pendingEdgeIds.has(conn.id)) {
+        return {
+          ...edge,
+          className: `${edge.className ?? ""} edge-pending`.trim(),
+        };
+      }
+      return edge;
     });
   }, [
     diagram,
@@ -85,5 +98,6 @@ export function useCanvasEdges({
     recordingInfo,
     coverage,
     visibleTags,
+    pendingEdgeIds,
   ]);
 }
