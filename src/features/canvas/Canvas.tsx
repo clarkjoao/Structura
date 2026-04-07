@@ -320,6 +320,8 @@ const Canvas = (props: CanvasProps = {}) => {
                 baseType: templateData.baseType,
                 data: templateData.data,
                 registryServiceId: templateData.registryServiceId,
+                templateVersion: 1,
+                category: "general",
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
               });

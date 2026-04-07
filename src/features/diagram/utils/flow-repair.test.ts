@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { repairFlow } from "./flow-repair";
+import {
+  getFlowStepIdsReferencingRemovedElements,
+  repairFlow,
+  repairFlowsAfterRemovingDiagramElements,
+} from "./flow-repair";
 import type { Flow } from "../model/flow.types";
 
 function makeFlow(overrides: Partial<Flow> = {}): Flow {
@@ -196,5 +200,38 @@ describe("repairFlow", () => {
 
     expect(result.entryStepId).toBe(flow.entryStepId);
     expect(result.steps).toEqual(flow.steps);
+  });
+});
+
+describe("getFlowStepIdsReferencingRemovedElements", () => {
+  it("lists steps that reference removed components or connections", () => {
+    const flow = makeFlow({
+      entryStepId: "s1",
+      steps: {
+        s1: { id: "s1", type: "action", componentId: "c1", next: "s2" },
+        s2: { id: "s2", type: "action", connectionId: "n1" },
+      },
+    });
+    const byComponent = getFlowStepIdsReferencingRemovedElements(flow, new Set(["c1"]), new Set());
+    expect(byComponent.sort()).toEqual(["s1"]);
+    const byConnection = getFlowStepIdsReferencingRemovedElements(flow, new Set(), new Set(["n1"]));
+    expect(byConnection.sort()).toEqual(["s2"]);
+  });
+});
+
+describe("repairFlowsAfterRemovingDiagramElements", () => {
+  it("removes flow steps tied to deleted components and fixes next pointers", () => {
+    const flow = makeFlow({
+      entryStepId: "s1",
+      steps: {
+        s1: { id: "s1", type: "action", next: "s2", componentId: "gone" },
+        s2: { id: "s2", type: "action" },
+      },
+    });
+    const flows = { f1: flow };
+    repairFlowsAfterRemovingDiagramElements(flows, new Set(["gone"]), new Set());
+    expect(flows.f1!.steps.s1).toBeUndefined();
+    expect(flows.f1!.steps.s2).toBeDefined();
+    expect(flows.f1!.entryStepId).toBe("s2");
   });
 });

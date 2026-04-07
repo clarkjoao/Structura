@@ -3,6 +3,7 @@ import type { EdgeStyle } from "../../model/connection.types";
 import { EdgeStyle as EdgeStyleEnum } from "../../enums";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
+import { repairFlowsAfterRemovingDiagramElements } from "../../utils/flow-repair";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
 import { getActiveDiagram } from "./get-active-diagram";
@@ -68,6 +69,11 @@ export const connectionsSlice = (
         }
         pushHistory(state, STRUCTURAL_MUTATION_MARKER);
         delete d.snapshot.connections[id];
+        repairFlowsAfterRemovingDiagramElements(
+          d.snapshot.flows,
+          new Set<string>(),
+          new Set([id]),
+        );
         d.updatedAt = new Date().toISOString();
       });
     },

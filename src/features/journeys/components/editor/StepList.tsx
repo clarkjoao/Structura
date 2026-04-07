@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ChevronDown, Plus, X } from "lucide-react";
 import { useAllDiagrams } from "@/features/diagram";
 import { cn } from "@/lib/utils";
-import { useJourneyActions, useJourneySteps } from "../../selectors";
+import { useJourneyActions, useJourneySteps } from "../../store/selectors/journeys.selectors";
 import type { JourneyStep } from "../../types";
 import { AddStepModal } from "./AddStepModal";
 

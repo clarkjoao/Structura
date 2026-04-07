@@ -49,3 +49,41 @@ export function repairFlow(
 
   return { steps, entryStepId };
 }
+
+/** Flow steps that reference removed components or connections (by id). */
+export function getFlowStepIdsReferencingRemovedElements(
+  flow: Flow,
+  removedComponentIds: ReadonlySet<string>,
+  removedConnectionIds: ReadonlySet<string>,
+): string[] {
+  const out: string[] = [];
+  for (const [stepId, step] of Object.entries(flow.steps)) {
+    const refsRemovedComponent =
+      step.componentId !== undefined && removedComponentIds.has(step.componentId);
+    const refsRemovedConnection =
+      step.connectionId !== undefined && removedConnectionIds.has(step.connectionId);
+    if (refsRemovedComponent || refsRemovedConnection) {
+      out.push(stepId);
+    }
+  }
+  return out;
+}
+
+/** Drops flow steps whose component/connection was removed; fixes links in-place on the flow object. */
+export function repairFlowsAfterRemovingDiagramElements(
+  flows: Record<string, Flow>,
+  removedComponentIds: ReadonlySet<string>,
+  removedConnectionIds: ReadonlySet<string>,
+): void {
+  for (const flow of Object.values(flows)) {
+    const stepIds = getFlowStepIdsReferencingRemovedElements(
+      flow,
+      removedComponentIds,
+      removedConnectionIds,
+    );
+    if (stepIds.length === 0) continue;
+    const { steps, entryStepId } = repairFlow(flow, stepIds);
+    flow.steps = steps;
+    flow.entryStepId = entryStepId;
+  }
+}

@@ -1,5 +1,5 @@
 import { useShallow } from "zustand/react/shallow";
-import { useIconStore } from "@/features/icons/store";
+import { useIconStore } from "@/features/icons";
 import type { IconDefinition } from "../../model/diagram.types";
 import { getCachedCanvasSnapshot } from "../../utils/snapshot-cache";
 import { useDiagramStore } from "../diagram.store";

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useSharedDiagram, SharedDiagramView, ViewerPage } from "@/features/viewer";
+import { useSharedDiagram, SharedDiagramView } from "@/features/viewer";
+import { ViewerPage } from "@/pages/ViewerPage";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";

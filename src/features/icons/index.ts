@@ -1,2 +1,2 @@
-export { useIconStore } from "./store";
-export { useGlobalIconLibrary, useGlobalIconById } from "./selectors";
+export { useIconStore } from "./store/icons.store";
+export { useGlobalIconLibrary, useGlobalIconById } from "./store/selectors/icons.selectors";

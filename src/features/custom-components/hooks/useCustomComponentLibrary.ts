@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useAllServices, useDiagramActions } from "@/features/diagram";
-import { useCustomComponentStore } from "../store";
-import { buildComponentPatchFromTemplate } from "../utils/customComponentTemplate.utils";
+import { useCustomComponentStore } from "../store/custom-components.store";
+import { buildComponentPatchFromTemplate } from "../utils/custom-component-template.utils";
 
 interface InstantiateTemplateParams {
   templateId: string;

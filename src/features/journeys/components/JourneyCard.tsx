@@ -16,7 +16,7 @@ interface JourneyCardProps {
 function countUniqueDiagramIds(journey: Journey): number {
   const ids = new Set<string>();
   for (const step of Object.values(journey.steps)) {
-    if (step.diagramId) ids.add(step.diagramId);
+    if (step.diagramId.length > 0) ids.add(step.diagramId);
   }
   return ids.size;
 }

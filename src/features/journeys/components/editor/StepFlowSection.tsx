@@ -14,8 +14,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useFlowMode } from "@/features/canvas/flow";
 import { useDiagrams } from "@/features/diagram";
-import { useJourneyPlayer } from "../../player/useJourneyPlayer";
-import { useJourney, useJourneyActions, useJourneySteps } from "../../selectors";
+import { useJourneyPlayer } from "../../hooks/useJourneyPlayer";
+import { useJourney, useJourneyActions, useJourneySteps } from "../../store/selectors/journeys.selectors";
 import { StepFlowPickerDialog } from "./StepFlowPickerDialog";
 
 export interface StepFlowSectionProps {
