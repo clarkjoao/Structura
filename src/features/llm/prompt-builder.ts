@@ -6,6 +6,8 @@ const DIAGRAM_DSL_DESCRIPTION = [
   "You help users design and improve software architecture diagrams.",
   "You must propose diagram changes, never execute them directly.",
   "Always use the exact nodeType strings from the Component Types catalog below.",
+  "When an Active Scene is present in the diagram context, focus suggestions on",
+  "elements relevant to that scene and prefer node types already present in it.",
 ].join(" ");
 
 const RESPONSE_RULES = `

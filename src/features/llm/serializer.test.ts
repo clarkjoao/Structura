@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Diagram } from "@/features/diagram";
+import type { Diagram, SceneDiff } from "@/features/diagram";
 import { ExternalLinkType } from "@/features/diagram";
 import { serializeDiagramContext } from "./serializer";
 
@@ -145,5 +145,108 @@ describe("serializeDiagramContext", () => {
     });
     const out = serializeDiagramContext(diagram);
     expect(out).toContain("label=x");
+  });
+});
+
+describe("serializeDiagramContext with activeScene", () => {
+  it("omits Active Scene section when activeScene is undefined", () => {
+    const out = serializeDiagramContext(minimalDiagram());
+    expect(out).not.toContain("Active Scene");
+  });
+
+  it("includes Active Scene name", () => {
+    const scene: SceneDiff = {
+      id: "s1",
+      name: "Physical View",
+      color: "#000",
+      createdAt: "",
+      addedComponents: {},
+      addedConnections: {},
+      removedComponentIds: [],
+      removedConnectionIds: [],
+      nodeLayouts: {},
+    };
+    const out = serializeDiagramContext(minimalDiagram(), { activeScene: scene });
+    expect(out).toContain('Active Scene: "Physical View"');
+  });
+
+  it("lists added components in the scene", () => {
+    const scene: SceneDiff = {
+      id: "s1",
+      name: "S",
+      color: "",
+      createdAt: "",
+      addedComponents: {
+        n1: {
+          id: "n1",
+          name: "Lambda",
+          type: "aws-compute",
+          description: "",
+          parentId: null,
+        },
+      },
+      addedConnections: {},
+      removedComponentIds: [],
+      removedConnectionIds: [],
+      nodeLayouts: {},
+    };
+    const out = serializeDiagramContext(minimalDiagram(), { activeScene: scene });
+    expect(out).toContain("Nodes added in this scene (1)");
+    expect(out).toContain("id=n1; type=aws-compute; label=Lambda");
+  });
+
+  it("lists removed component ids in the scene", () => {
+    const scene: SceneDiff = {
+      id: "s1",
+      name: "S",
+      color: "",
+      createdAt: "",
+      addedComponents: {},
+      addedConnections: {},
+      removedComponentIds: ["old-node"],
+      removedConnectionIds: [],
+      nodeLayouts: {},
+    };
+    const out = serializeDiagramContext(minimalDiagram(), { activeScene: scene });
+    expect(out).toContain("Nodes removed in this scene (1)");
+    expect(out).toContain("- id=old-node");
+  });
+
+  it("lists added connections in the scene", () => {
+    const scene: SceneDiff = {
+      id: "s1",
+      name: "S",
+      color: "",
+      createdAt: "",
+      addedComponents: {},
+      addedConnections: {
+        e1: { id: "e1", sourceId: "a", targetId: "b", label: "calls" },
+      },
+      removedComponentIds: [],
+      removedConnectionIds: [],
+      nodeLayouts: {},
+    };
+    const out = serializeDiagramContext(minimalDiagram(), { activeScene: scene });
+    expect(out).toContain("Edges added in this scene (1)");
+    expect(out).toContain("id=e1; source=a; target=b; label=calls");
+  });
+
+  it("output remains deterministic with activeScene", () => {
+    const scene: SceneDiff = {
+      id: "s1",
+      name: "S",
+      color: "",
+      createdAt: "",
+      addedComponents: {
+        n1: { id: "n1", name: "X", type: "system", description: "", parentId: null },
+      },
+      addedConnections: {},
+      removedComponentIds: [],
+      removedConnectionIds: [],
+      nodeLayouts: {},
+    };
+    const first = serializeDiagramContext(minimalDiagram(), { activeScene: scene });
+    const second = serializeDiagramContext(minimalDiagram(), { activeScene: scene });
+    expect(first).toBe(second);
   });
 });

@@ -3,6 +3,7 @@ export type {
   LLMMode,
   LLMConfig,
   ChatMessage,
+  ConversationThread,
   DiagramPatchAction,
   DiagramPatch,
   PendingSuggestion,

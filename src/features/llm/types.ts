@@ -17,6 +17,12 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+export interface ConversationThread {
+  diagramId: string;
+  messages: ChatMessage[];
+  updatedAt: number;
+}
+
 export type DiagramPatchAction =
   | {
       type: "ADD_NODE";

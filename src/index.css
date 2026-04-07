@@ -259,3 +259,8 @@
     background: radial-gradient(ellipse at 50% 0%, hsl(var(--glow-primary) / 0.08) 0%, transparent 60%);
   }
 }
+
+.dark .hljs {
+  background: #1e1e2e;
+  color: #cdd6f4;
+}
