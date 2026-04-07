@@ -68,6 +68,18 @@ type NodeCtxBase = Omit<NodeBuildContext, "isPlaying" | "isRecording" | "flowHig
 const EMPTY_JOURNEYS_BY_COMPONENT_ID: Record<string, { name: string }[]> =
   Object.freeze({});
 
+function compareDiffOutlineClass(
+  visual: CompareElementVisual | undefined,
+): string {
+  if (!visual) return "";
+  const hasA = visual.badgeA !== undefined;
+  const hasB = visual.badgeB !== undefined;
+  if (hasA && hasB) return "node-diff-modified";
+  if (hasA && !hasB) return "node-diff-removed";
+  if (!hasA && hasB) return "node-diff-added";
+  return "";
+}
+
 export function useCanvasNodes({
   diagram,
   resolvedComponents,
@@ -260,10 +272,13 @@ export function useCanvasNodes({
           sceneActive && !isComponentAddedInActiveScene(diagram, comp.id);
         const isLockedBySelfOrAncestor =
           comp.locked === true || isAncestorLocked(comp, nodeCtxBase.resolvedComponents);
+        const diffOutline =
+          isCmp && cmpVis !== undefined ? compareDiffOutlineClass(cmpVis) : "";
         const nodeClassNames = [
           isCmp ? "cursor-default" : "",
           isLockedBySelfOrAncestor ? "cursor-not-allowed" : "",
           pendingNodeIds.has(comp.id) ? "node-pending" : "",
+          diffOutline,
         ]
           .filter(Boolean)
           .join(" ");

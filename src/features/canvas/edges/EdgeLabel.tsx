@@ -61,9 +61,14 @@ export function EdgeLabel({
               : "bg-card border-border text-muted-foreground"
           }`}
           title={
-            coverageFlowNames?.length
-              ? t("customEdge.coveredBy", { names: coverageFlowNames.join(", ") })
-              : undefined
+            [
+              label.trim().length > 0 ? label : null,
+              coverageFlowNames?.length
+                ? t("customEdge.coveredBy", { names: coverageFlowNames.join(", ") })
+                : null,
+            ]
+              .filter((part): part is string => !!part && part.length > 0)
+              .join("\n\n") || undefined
           }
         >
           {recordingBadges && recordingBadges.length > 0 && (
@@ -73,7 +78,7 @@ export function EdgeLabel({
               {recordingBadges.join(",")}
             </div>
           )}
-          <span>{label}</span>
+          <span className="block max-w-[160px] truncate">{label}</span>
           {playbackDuration && (
             <span className="ml-1 font-mono text-primary">· {playbackDuration}</span>
           )}

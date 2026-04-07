@@ -1,4 +1,4 @@
-import { useCallback, type MutableRefObject } from "react";
+import { useCallback, useMemo, type MutableRefObject } from "react";
 import type { TFunction } from "i18next";
 import type { Node } from "@xyflow/react";
 import type { Component, Connection, Diagram, ServiceDefinition } from "@/features/diagram";
@@ -9,6 +9,8 @@ import { useCanvasEdges } from "../edges/useCanvasEdges";
 import { useCanvasHandleReorder } from "../edges/useCanvasHandleReorder";
 import { useLocalNodes } from "./useLocalNodes";
 import { useConnectionInternalsSync } from "./useConnectionInternalsSync";
+import { useJourneyCanvasHighlight } from "../chat/useJourneyCanvasHighlight";
+import { useJourneyPlayer } from "@/features/journeys";
 
 type FlowSlice = ReturnType<typeof import("./useCanvasFlowState").useCanvasFlowState>;
 type CompareSlice = ReturnType<typeof import("./useCanvasCompareState").useCanvasCompareState>;
@@ -77,6 +79,15 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
   const { compareState } = compareContext;
   const { flowState, isViewingCoverage, onPlayFlow } = flowContext;
 
+  const journeyPlayer = useJourneyPlayer();
+  const journeyHighlight = useJourneyCanvasHighlight();
+  const effectiveFlowHighlight = useMemo(() => {
+    if (journeyPlayer.mode.kind === "playing") {
+      return journeyHighlight;
+    }
+    return flowState.flowHighlight;
+  }, [flowState.flowHighlight, journeyHighlight, journeyPlayer.mode.kind]);
+
   const { panelIds, connectionCountPerNode, edgeHandleAssignments, effectiveHandleOrder } =
     useCanvasConnectionDerivations({ visibleComponents, visibleConnections, diagram });
 
@@ -114,7 +125,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     connectionCountPerNode,
     effectiveHandleOrder,
     onReorderHandle,
-    flowHighlight: flowState.flowHighlight,
+    flowHighlight: effectiveFlowHighlight,
     activeStep: flowState.activeStep,
     recordingInfo: flowState.recordingInfo,
     coverage: flowState.coverage,
@@ -158,7 +169,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     isCompareMode: compareState.isCompareMode,
     compareConnectionOpacity: compareState.compareConnectionOpacity,
     activeStep: flowState.activeStep,
-    flowHighlight: flowState.flowHighlight,
+    flowHighlight: effectiveFlowHighlight,
     recordingInfo: flowState.recordingInfo,
     coverage: flowState.coverage,
     visibleTags: visualState.visibleTags,

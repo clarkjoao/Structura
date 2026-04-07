@@ -9,6 +9,8 @@ import AwsIcon from "./AwsIcon";
 import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
 import { useCollabHighlight } from "@/features/collaboration";
+import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPresence";
+import { usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
 
 const DEFAULT_OPACITY = 10;
 
@@ -77,6 +79,7 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
   const bgAlpha = isDragTarget ? Math.min(opacity + 15, 40) / 100 : opacity / 100;
   const isTransparent = opacity === 0;
   const collabHighlight = useCollabHighlight(d.elementId);
+  const activePeer = usePeerOnNode(d.elementId);
   const backgroundColor = isTransparent
     ? "transparent"
     : colorWithAlpha(color, isDragTarget ? bgAlpha : collapsed ? Math.max(bgAlpha, 0.12) : bgAlpha);
@@ -104,6 +107,9 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
             className="absolute inset-0 pointer-events-none rounded-lg z-10"
             style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
           />
+        )}
+        {activePeer && (
+          <CollabPeerPresence activePeer={activePeer} roundedClassName="rounded-lg" />
         )}
         {d.compareBadges && (
           <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
@@ -168,6 +174,9 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
             className="absolute inset-0 pointer-events-none rounded-xl z-10"
             style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
           />
+        )}
+        {activePeer && (
+          <CollabPeerPresence activePeer={activePeer} roundedClassName="rounded-xl" />
         )}
         {d.compareBadges && (
           <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />

@@ -114,6 +114,15 @@ Current persist schema version: **4** (see `persist.config.ts`).
 
 Store → visible components/connections → `useCanvasNodes` / `useCanvasEdges` → React Flow. Prefer `getCachedCanvasSnapshot` over raw `resolveCanvasSnapshot` in hot paths.
 
+### Journey playback highlight
+
+When a Journey is playing (`JourneyPlayerMode.kind === "playing"`):
+
+- `useJourneyCanvasHighlight()` derives a `FlowHighlight` from the current step.
+- If the step has a `flowId`, it delegates to `buildFlowHighlight()` (aligned with Flow playback when the same flow is active).
+- The canvas viewport auto-pans to the active node via `useJourneyViewportSync()` when a highlighted node exists on the diagram.
+- Journey-derived highlight takes priority over Flow playback highlight while the journey player is active.
+
 ## NodeTypeDescriptor
 
 Registry: `src/features/canvas/nodes/node-types/registry.ts`. The C4 catch-all descriptor must stay last.

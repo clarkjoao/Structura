@@ -473,6 +473,20 @@
       "saveAsTemplate": "Save as template"
     }
   },
+  "compareMode": {
+    "added": "Added",
+    "removed": "Removed",
+    "modified": "Modified"
+  },
+  "impactAnalysis": {
+    "title": "Impact analysis",
+    "directDependents": "Direct dependents",
+    "transitive": "Transitive dependents",
+    "brokenConnections": "Affected connections",
+    "noDependents": "No dependents found",
+    "button": "Analyze impact",
+    "unavailable": "Could not analyze — no diagram snapshot."
+  },
   "canvasToolbar": {
     "renameTitle": "Double-click to rename",
     "drillUp": "Level up",
