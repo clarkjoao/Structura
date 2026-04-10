@@ -362,6 +362,10 @@
       "flows": "flows"
     }
   },
+  "import": {
+    "structurizrDsl": "Import Structurizr DSL",
+    "structurizrError": "Could not parse DSL file. Check the file format and try again."
+  },
   "folderTree": {
     "newFolderTitle": "New folder",
     "searchFoldersPlaceholder": "Search folders…",
@@ -1156,7 +1160,9 @@
       "urlTooLong": "URL is large — we recommend using Via code"
     },
     "copyAsJson": "Copy as JSON",
-    "copyAsJsonDone": "JSON copied!"
+    "copyAsJsonDone": "JSON copied!",
+    "copyAsStructurizr": "Copy as Structurizr DSL",
+    "copyStructurizrError": "Could not copy Structurizr DSL."
   },
   "toolbar": {
     "shareExport": "Export",

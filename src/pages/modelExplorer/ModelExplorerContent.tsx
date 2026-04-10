@@ -63,6 +63,7 @@ export function ModelExplorerContent({
   handleDrillUp,
   handleCopyDrawio,
   handleCopyJson,
+  handleCopyStructurizr,
   handleExport,
   onStartCollab,
   onCollabSessionEnded,
@@ -360,6 +361,17 @@ export function ModelExplorerContent({
                     <Clipboard size={14} className="shrink-0 text-muted-foreground" />
                   )}
                   <span>{t("export.copyAsJson")}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={handleCopyStructurizr}
+                  className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm"
+                >
+                  {copied ? (
+                    <Check size={14} className="shrink-0 text-green-500" />
+                  ) : (
+                    <Clipboard size={14} className="shrink-0 text-muted-foreground" />
+                  )}
+                  <span>{t("export.copyAsStructurizr")}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={handleExport}

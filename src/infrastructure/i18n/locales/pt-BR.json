@@ -362,6 +362,10 @@
       "flows": "fluxos"
     }
   },
+  "import": {
+    "structurizrDsl": "Importar Structurizr DSL",
+    "structurizrError": "Não foi possível ler o arquivo DSL. Verifique o formato e tente novamente."
+  },
   "folderTree": {
     "newFolderTitle": "Nova pasta",
     "searchFoldersPlaceholder": "Buscar pastas…",
@@ -1155,7 +1159,9 @@
       "urlTooLong": "URL grande — recomendamos usar Via código"
     },
     "copyAsJson": "Copiar como JSON",
-    "copyAsJsonDone": "JSON copiado!"
+    "copyAsJsonDone": "JSON copiado!",
+    "copyAsStructurizr": "Copiar como Structurizr DSL",
+    "copyStructurizrError": "Não foi possível copiar o DSL Structurizr."
   },
   "toolbar": {
     "shareExport": "Exportar",

@@ -13,6 +13,7 @@ export interface ModelExplorerContentProps {
   handleDrillUp: () => void;
   handleCopyDrawio: () => void;
   handleCopyJson: () => void;
+  handleCopyStructurizr: () => void;
   handleExport: () => void;
   onStartCollab: () => void;
   onCollabSessionEnded?: () => void;

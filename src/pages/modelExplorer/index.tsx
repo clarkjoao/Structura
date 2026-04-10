@@ -12,7 +12,14 @@ import {
   resolveSceneSnapshot,
   exportFilenameSlug,
 } from "@/features/diagram";
-import { exportJson, exportDrawio, exportMermaid, downloadZip } from "@/lib/export-service";
+import {
+  exportJson,
+  exportDrawio,
+  exportMermaid,
+  exportStructurizr,
+  downloadZip,
+} from "@/lib/export-service";
+import { toast } from "sonner";
 import { writeDrawioToClipboard } from "@/lib/clipboard-utils";
 import { FlowModeProvider } from "@/features/canvas";
 import { CollabProvider, CollabStartModal } from "@/features/collaboration";
@@ -86,6 +93,19 @@ export default function ModelExplorerPage() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }, [diagram]);
+
+  const handleCopyStructurizr = useCallback(async () => {
+    if (!diagram) return;
+    try {
+      await navigator.clipboard.writeText(exportStructurizr(diagram));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t("export.copyStructurizrError"),
+      );
+    }
+  }, [diagram, t]);
 
   const handleExport = useCallback(() => {
     if (!diagram) return;
@@ -161,6 +181,7 @@ export default function ModelExplorerPage() {
             handleDrillUp={handleDrillUp}
             handleCopyDrawio={handleCopyDrawio}
             handleCopyJson={handleCopyJson}
+            handleCopyStructurizr={handleCopyStructurizr}
             handleExport={handleExport}
             onStartCollab={() => {
               setShowStartModal(true);
