@@ -120,6 +120,7 @@ const ComponentPanel = ({
     addDiagram,
     setParent,
     updateNodeLayout,
+    fitGroupToChildren,
     addExternalLink,
     updateExternalLink,
     removeExternalLink,
@@ -280,7 +281,7 @@ const ComponentPanel = ({
         />
       )}
       {isPanel && onUngroup && (
-        <div className="px-3 py-2 border-b border-border">
+        <div className="px-3 py-2 border-b border-border flex flex-col gap-2">
           <button
             type="button"
             onClick={onUngroup}
@@ -288,6 +289,15 @@ const ComponentPanel = ({
           >
             {t("endpointPanel.ungroup")}
           </button>
+          {!component.collapsed && (
+            <button
+              type="button"
+              onClick={() => fitGroupToChildren(component.id)}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-xs font-medium hover:bg-muted/50 transition-colors"
+            >
+              {t("elementPanel.fitToChildren")}
+            </button>
+          )}
         </div>
       )}
       {isChildOfPanel && (

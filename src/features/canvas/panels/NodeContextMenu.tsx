@@ -9,6 +9,7 @@ interface Props {
   onBringToFront: (elementId: string) => void;
   onSendToBack: (elementId: string) => void;
   onSaveAsTemplate?: (elementId: string) => void;
+  onFitToChildren?: (elementId: string) => void;
   onClose: () => void;
 }
 
@@ -19,6 +20,7 @@ const NodeContextMenu = ({
   onBringToFront,
   onSendToBack,
   onSaveAsTemplate,
+  onFitToChildren,
   onClose,
 }: Props) => {
   const { t } = useTranslation();
@@ -44,6 +46,17 @@ const NodeContextMenu = ({
       className="fixed z-50 min-w-[180px] rounded-lg border border-border bg-card shadow-xl py-1 animate-in fade-in-0 zoom-in-95"
       style={{ top: y, left: x }}
     >
+      {onFitToChildren ? (
+        <>
+          <button
+            onClick={() => { onFitToChildren(elementId); onClose(); }}
+            className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-surface-hover transition-colors text-foreground"
+          >
+            {t("nodeContextMenu.fitToChildren")}
+          </button>
+          <div className="mx-2 my-1 border-t border-border" />
+        </>
+      ) : null}
       <div className="px-3 py-1.5">
         <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
           {t("nodeContextMenu.ordering")}

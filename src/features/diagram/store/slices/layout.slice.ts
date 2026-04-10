@@ -3,6 +3,7 @@ import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
 import { getActiveDiagram } from "./get-active-diagram";
 import { resolveActiveScene } from "./scene-helpers";
+import { computeFitBounds } from "../../utils/fit-group-to-children";
 
 export const layoutSlice = (
     set: (fn: (state: AppState) => void) => void,
@@ -121,6 +122,68 @@ export const layoutSlice = (
         const minZ = vals.length > 0 ? Math.min(...vals) : 0;
         const layout = d.nodeLayouts[elementId];
         if (layout) layout.zIndex = minZ - 1;
+      });
+    },
+
+    fitGroupToChildren: (panelId: string) => {
+      set((state) => {
+        const d = getActiveDiagram(state);
+        if (!d) return;
+
+        const scene = resolveActiveScene(d);
+        const layouts = scene ? { ...d.nodeLayouts, ...scene.nodeLayouts } : d.nodeLayouts;
+        const components = scene
+          ? { ...d.snapshot.components, ...scene.addedComponents }
+          : d.snapshot.components;
+
+        // Guard: panel must exist and not be collapsed
+        const panelComp = components[panelId];
+        if (!panelComp) return;
+        if ("collapsed" in panelComp && panelComp.collapsed) return;
+
+        // Collect direct children layouts
+        const childLayouts = Object.values(components)
+          .filter((c) => c.parentId === panelId)
+          .map((c) => layouts[c.id])
+          .filter(Boolean);
+
+        if (childLayouts.length === 0) return;
+
+        const bounds = computeFitBounds(childLayouts);
+        if (!bounds) return;
+
+        // pushHistory FIRST, before any mutation
+        pushHistory(state);
+
+        // Shift children so they stay visually in place (panel origin changes)
+        const dx = bounds.x;
+        const dy = bounds.y;
+
+        for (const comp of Object.values(components)) {
+          if (comp.parentId !== panelId) continue;
+          const layoutTarget = scene?.addedComponents[comp.id]
+            ? scene!.nodeLayouts
+            : d.nodeLayouts;
+          const childLayout = layoutTarget[comp.id];
+          if (childLayout) {
+            childLayout.x -= dx;
+            childLayout.y -= dy;
+          }
+        }
+
+        // Update panel position and size
+        const panelLayoutTarget = scene?.addedComponents[panelId]
+          ? scene!.nodeLayouts
+          : d.nodeLayouts;
+        const panelLayout = panelLayoutTarget[panelId];
+        if (!panelLayout) return;
+
+        panelLayout.x += dx;
+        panelLayout.y += dy;
+        panelLayout.width  = bounds.width;
+        panelLayout.height = bounds.height;
+
+        d.updatedAt = new Date().toISOString();
       });
     },
   });

@@ -73,6 +73,7 @@ export interface AppActions {
 
   bringToFront: (elementId: string) => void;
   sendToBack: (elementId: string) => void;
+  fitGroupToChildren: (panelId: string) => void;
 
   addService: (service: Omit<ServiceDefinition, "id">) => ServiceDefinition;
   updateService: (id: string, patch: Partial<Omit<ServiceDefinition, "id">>) => void;

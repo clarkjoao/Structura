@@ -820,6 +820,7 @@
     "noDomain": "No domain",
     "widthLabel": "Width",
     "heightLabel": "Height",
+    "fitToChildren": "Fit to children",
     "lock": "Lock element",
     "unlock": "Unlock element",
     "lockedDragBlocked": "This element is locked and cannot be moved",
@@ -1001,7 +1002,8 @@
   "nodeContextMenu": {
     "ordering": "Ordering",
     "bringToFront": "Bring to front",
-    "sendToBack": "Send to back"
+    "sendToBack": "Send to back",
+    "fitToChildren": "Fit to children"
   },
   "panelNode": {
     "expandAria": "Expand panel",

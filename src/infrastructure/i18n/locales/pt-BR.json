@@ -819,6 +819,7 @@
     "noDomain": "Sem domínio",
     "widthLabel": "Largura",
     "heightLabel": "Altura",
+    "fitToChildren": "Ajustar ao conteúdo",
     "lock": "Bloquear elemento",
     "unlock": "Desbloquear elemento",
     "lockedDragBlocked": "Este elemento está bloqueado e não pode ser movido",
@@ -1000,7 +1001,8 @@
   "nodeContextMenu": {
     "ordering": "Ordenação",
     "bringToFront": "Trazer para frente",
-    "sendToBack": "Enviar para trás"
+    "sendToBack": "Enviar para trás",
+    "fitToChildren": "Ajustar ao conteúdo"
   },
   "panelNode": {
     "expandAria": "Expandir painel",

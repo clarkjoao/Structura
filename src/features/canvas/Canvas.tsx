@@ -23,7 +23,7 @@ import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 import { Eye } from "lucide-react";
 import { useCanvasController } from "./hooks/useCanvasController";
 import { useJourneyViewportSync } from "./hooks/useJourneyViewportSync";
-import { getCachedCanvasSnapshot } from "@/features/diagram";
+import { getCachedCanvasSnapshot, isPanelComponent } from "@/features/diagram";
 import { useJourneysByDiagramId } from "@/features/journeys";
 import { CANVAS_STYLES } from "./constants";
 import CustomEdge from "./edges/CustomEdge";
@@ -309,6 +309,11 @@ const Canvas = (props: CanvasProps = {}) => {
             onBringToFront={actions.bringToFront}
             onSendToBack={actions.sendToBack}
             onSaveAsTemplate={setTemplateNodeId}
+            onFitToChildren={
+              isPanelComponent(resolvedSnapshot?.components[visualState.contextMenu.elementId])
+                ? actions.fitGroupToChildren
+                : undefined
+            }
             onClose={() => visualState.setContextMenu(null)}
           />
         )}

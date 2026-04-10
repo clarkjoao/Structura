@@ -155,6 +155,7 @@ export const useDiagramActions = () =>
       updateEdgeLabelOffset: s.updateEdgeLabelOffset,
       bringToFront: s.bringToFront,
       sendToBack: s.sendToBack,
+      fitGroupToChildren: s.fitGroupToChildren,
       addService: s.addService,
       updateService: s.updateService,
       removeService: s.removeService,

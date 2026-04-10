@@ -154,6 +154,9 @@ export type { RecentDiagramRef } from "./utils/recent-diagrams";
 /** Compute API group node dimensions from endpoint count */
 export { computeApiGroupSize } from "./utils/api-group-size";
 
+/** Compute tight bounding box for a panel wrapping its children */
+export { computeFitBounds } from "./utils/fit-group-to-children";
+
 /** Shared geometry/layout constants */
 export {
   PANEL_DEFAULT_W,
