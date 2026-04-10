@@ -1,6 +1,6 @@
 import { useState } from "react";
 import ElementPickerModal from "./ElementPickerModal";
-import { Plus, ChevronUp, Puzzle } from "lucide-react";
+import { Plus, ChevronUp, Puzzle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useActiveDiagram } from "@/features/diagram";
 import { useInteractionMode } from "../hooks/useInteractionMode";
 import PatternPicker from "./PatternPicker";
@@ -48,92 +48,141 @@ const CanvasToolbar = ({
   const [showPatterns, setShowPatterns] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
+  const STORAGE_KEY = "structura:toolbar-collapsed";
+
+  // Accordion state — init from localStorage, write on toggle, no useEffect needed
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try { return localStorage.getItem(STORAGE_KEY) === "true"; } catch { return false; }
+  });
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try { localStorage.setItem(STORAGE_KEY, String(next)); } catch { /* quota */ }
+      return next;
+    });
+  };
+
   if (!diagram) return null;
+
+  // The toggle button — changes icon/label based on state
+  const toggleButton = (
+    <button
+      type="button"
+      onClick={toggleCollapsed}
+      aria-label={collapsed ? t("canvasToolbar.expand") : t("canvasToolbar.collapse")}
+      className="flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+    >
+      {collapsed
+        ? <ChevronRight className="h-3.5 w-3.5" />
+        : <ChevronLeft className="h-3.5 w-3.5" />}
+      {collapsed ? t("canvasToolbar.expand") : t("canvasToolbar.collapse")}
+    </button>
+  );
+
+  // "Add element" button — always rendered, extracted to avoid duplication
+  const addButton = (
+    <button
+      type="button"
+      onClick={() => {
+        if (toolbarEditLocked) return;
+        onClearSelection?.();
+        setShowModal(true);
+      }}
+      disabled={toolbarEditLocked}
+      className={cn(
+        "flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-primary hover:bg-surface-hover transition-colors",
+        toolbarEditLocked && "opacity-50 pointer-events-none"
+      )}
+    >
+      <Plus className="h-3.5 w-3.5" /> {t("canvasToolbar.addElement")}
+    </button>
+  );
 
   return (
     <div className="absolute top-4 left-4 z-10 flex flex-col gap-2 w-[220px]">
+
+      {/* PINNED TOP — always visible */}
       <CanvasToolbarDiagramPanel
         diagram={diagram}
         toolbarEditLocked={toolbarEditLocked}
       />
 
-      <CanvasToolbarScenesButton
-        diagram={diagram}
-        scenesPickerLocked={scenesPickerLocked}
-        onOpenScenes={onOpenScenes}
-      />
+      {/* ACCORDION MIDDLE — hidden when collapsed */}
+      {!collapsed && (
+        <>
+          <CanvasToolbarScenesButton
+            diagram={diagram}
+            scenesPickerLocked={scenesPickerLocked}
+            onOpenScenes={onOpenScenes}
+          />
 
-      {onToggleJourneysPanel ? (
-        <button
-          type="button"
-          onClick={onToggleJourneysPanel}
-          className={cn(
-            "flex items-center gap-1.5 rounded-lg border border-border bg-card/90 px-3 py-2 text-xs font-medium backdrop-blur-sm transition-colors",
-            journeysPanelOpen
-              ? "border-primary bg-primary/10 text-primary"
-              : "text-muted-foreground hover:bg-surface-hover hover:text-foreground",
-          )}
-        >
-          <span aria-hidden>✦</span>
-          <span>{t("journeys.inDiagram.title")}</span>
-          {journeysInDiagramCount > 0 ? (
-            <span className="ml-0.5 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-secondary-foreground">
-              {journeysInDiagramCount}
-            </span>
+          {onToggleJourneysPanel ? (
+            <button
+              type="button"
+              onClick={onToggleJourneysPanel}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg border border-border bg-card/90 px-3 py-2 text-xs font-medium backdrop-blur-sm transition-colors",
+                journeysPanelOpen
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-surface-hover hover:text-foreground",
+              )}
+            >
+              <span aria-hidden>✦</span>
+              <span>{t("journeys.inDiagram.title")}</span>
+              {journeysInDiagramCount > 0 ? (
+                <span className="ml-0.5 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-secondary-foreground">
+                  {journeysInDiagramCount}
+                </span>
+              ) : null}
+            </button>
           ) : null}
-        </button>
-      ) : null}
 
-      <LayerFilterPopover
-        allTags={allTags}
-        visibleTags={visibleTags}
-        scenesPickerLocked={scenesPickerLocked}
-        onToggle={onToggleTag}
-        onShowAll={onShowAllTags}
-        onShowNoTags={onShowNoTags}
-      />
+          <LayerFilterPopover
+            allTags={allTags}
+            visibleTags={visibleTags}
+            scenesPickerLocked={scenesPickerLocked}
+            onToggle={onToggleTag}
+            onShowAll={onShowAllTags}
+            onShowNoTags={onShowNoTags}
+          />
 
-      {onDrillUp && (
-        <button
-          type="button"
-          onClick={onDrillUp}
-          className="flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
-        >
-          <ChevronUp className="h-3.5 w-3.5" /> {t("canvasToolbar.drillUp")}
-        </button>
+          {onDrillUp && (
+            <button
+              type="button"
+              onClick={onDrillUp}
+              className="flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+            >
+              <ChevronUp className="h-3.5 w-3.5" /> {t("canvasToolbar.drillUp")}
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => {
+              if (toolbarEditLocked) return;
+              onClearSelection?.();
+              setShowPatterns(true);
+            }}
+            disabled={toolbarEditLocked}
+            className={cn(
+              "flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors",
+              toolbarEditLocked && "opacity-50 pointer-events-none"
+            )}
+          >
+            <Puzzle className="h-3.5 w-3.5" /> {t("canvasToolbar.patterns")}
+          </button>
+        </>
       )}
 
-      <button
-        type="button"
-        onClick={() => {
-          if (toolbarEditLocked) return;
-          onClearSelection?.();
-          setShowPatterns(true);
-        }}
-        disabled={toolbarEditLocked}
-        className={`flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors ${toolbarEditLocked ? "opacity-50 pointer-events-none" : ""}`}
-      >
-        <Puzzle className="h-3.5 w-3.5" /> {t("canvasToolbar.patterns")}
-      </button>
+      {/* TOGGLE — sits between middle and Add button */}
+      {toggleButton}
 
-      <button
-        type="button"
-        onClick={() => {
-          if (toolbarEditLocked) return;
-          onClearSelection?.();
-          setShowModal(true);
-        }}
-        disabled={toolbarEditLocked}
-        className={`flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-primary hover:bg-surface-hover transition-colors ${toolbarEditLocked ? "opacity-50 pointer-events-none" : ""}`}
-      >
-        <Plus className="h-3.5 w-3.5" /> {t("canvasToolbar.addElement")}
-      </button>
+      {/* PINNED BOTTOM — always visible */}
+      {addButton}
 
       {showPatterns && (
-        <PatternPicker
-          onClose={() => setShowPatterns(false)}
-          onBeforeInsert={onClearSelection}
-        />
+        <PatternPicker onClose={() => setShowPatterns(false)} onBeforeInsert={onClearSelection} />
       )}
       {showModal && (
         <ElementPickerModal onClose={() => setShowModal(false)} onInsert={onInsert} />

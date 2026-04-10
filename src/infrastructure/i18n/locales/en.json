@@ -503,7 +503,9 @@
     "levelContext": "Level 1",
     "levelContainer": "Level 2",
     "levelComponent": "Level 3",
-    "levelDeployment": "Level 4"
+    "levelDeployment": "Level 4",
+    "collapse": "Minimize toolbar",
+    "expand": "Expand toolbar"
   },
   "llmChat": {
     "title": "Diagram Assistant",
@@ -1083,7 +1085,9 @@
         "src": "Via URL"
       },
       "urlTooLong": "URL is large — we recommend using Via code"
-    }
+    },
+    "copyAsJson": "Copy as JSON",
+    "copyAsJsonDone": "JSON copied!"
   },
   "toolbar": {
     "shareExport": "Export",

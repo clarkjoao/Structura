@@ -503,7 +503,9 @@
     "levelContext": "Nível 1",
     "levelContainer": "Nível 2",
     "levelComponent": "Nível 3",
-    "levelDeployment": "Nível 4"
+    "levelDeployment": "Nível 4",
+    "collapse": "Minimizar barra",
+    "expand": "Expandir barra"
   },
   "llmChat": {
     "title": "Assistente de Diagrama",
@@ -1082,7 +1084,9 @@
         "src": "Via URL"
       },
       "urlTooLong": "URL grande — recomendamos usar Via código"
-    }
+    },
+    "copyAsJson": "Copiar como JSON",
+    "copyAsJsonDone": "JSON copiado!"
   },
   "toolbar": {
     "shareExport": "Exportar",

@@ -12,9 +12,11 @@ export interface ModelExplorerContentProps {
   handleDrillDownToDiagram: (id: string) => void;
   handleDrillUp: () => void;
   handleCopyDrawio: () => void;
+  handleCopyJson: () => void;
   handleExport: () => void;
   onStartCollab: () => void;
   onCollabSessionEnded?: () => void;
   copied: boolean;
   flows: Flow[];
+  backHref: string;
 }

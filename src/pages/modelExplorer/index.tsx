@@ -77,6 +77,13 @@ export default function ModelExplorerPage() {
     });
   }, [diagram, serviceRegistry]);
 
+  const handleCopyJson = useCallback(async () => {
+    if (!diagram) return;
+    await navigator.clipboard.writeText(exportJson(diagram));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [diagram]);
+
   const handleExport = useCallback(() => {
     if (!diagram) return;
 
@@ -105,18 +112,23 @@ export default function ModelExplorerPage() {
   }, []);
 
   if (!diagram) {
+    const backHref = "/workspace";
     return (
       <div className="h-screen flex flex-col">
         <Navbar />
         <div className="flex-1 flex items-center justify-center mt-16">
           <div className="text-center">
             <p className="text-muted-foreground mb-4">{t("flows.noDiagram")}</p>
-            <Link to="/workspace" className="text-primary hover:underline text-sm">{t("flows.backToDashboard")}</Link>
+            <Link to={backHref} className="text-primary hover:underline text-sm">{t("flows.backToDashboard")}</Link>
           </div>
         </div>
       </div>
     );
   }
+
+  const backHref = diagram.folderId
+    ? `/workspace?f=${diagram.folderId}`
+    : "/workspace";
 
   return (
     <div className="h-screen flex flex-col">
@@ -139,6 +151,7 @@ export default function ModelExplorerPage() {
             handleDrillDownToDiagram={handleDrillDownToDiagram}
             handleDrillUp={handleDrillUp}
             handleCopyDrawio={handleCopyDrawio}
+            handleCopyJson={handleCopyJson}
             handleExport={handleExport}
             onStartCollab={() => {
               setShowStartModal(true);
@@ -147,6 +160,7 @@ export default function ModelExplorerPage() {
             onCollabSessionEnded={() => setCollabActive(false)}
             copied={copied}
             flows={flows}
+            backHref={backHref}
           />
         <CollabStartModal
           open={showStartModal}

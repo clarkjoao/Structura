@@ -59,11 +59,13 @@ export function ModelExplorerContent({
   handleDrillDownToDiagram,
   handleDrillUp,
   handleCopyDrawio,
+  handleCopyJson,
   handleExport,
   onStartCollab,
   onCollabSessionEnded,
   copied,
   flows,
+  backHref,
 }: ModelExplorerContentProps) {
   const { t } = useTranslation();
   const {
@@ -262,7 +264,7 @@ export function ModelExplorerContent({
             >
               <FolderTree className="h-4 w-4" />
             </button>
-            <Link to="/workspace" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link to={backHref} className="text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="h-4 w-4" />
             </Link>
             {diagram?.domain && <span className="text-muted-foreground">{diagram.domain}</span>}
@@ -338,6 +340,17 @@ export function ModelExplorerContent({
                     <Clipboard size={14} className="shrink-0 text-muted-foreground" />
                   )}
                   <span>{t("flows.copyDrawio")}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={handleCopyJson}
+                  className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm"
+                >
+                  {copied ? (
+                    <Check size={14} className="shrink-0 text-green-500" />
+                  ) : (
+                    <Clipboard size={14} className="shrink-0 text-muted-foreground" />
+                  )}
+                  <span>{t("export.copyAsJson")}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={handleExport}

@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useCallback, useRef } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Plus,
@@ -64,7 +64,26 @@ export default function DashboardPage() {
     useDiagramActions();
   const navigate = useNavigate();
 
-  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedFolderId = searchParams.get("f");
+
+  const setSelectedFolderId = useCallback(
+    (folderId: string | null) => {
+      setSearchParams(
+        folderId ? { f: folderId } : {},
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
+
+  // Validate folder exists on mount; clear param if it doesn't
+  useEffect(() => {
+    const f = searchParams.get("f");
+    if (f && !folders[f]) {
+      setSearchParams({}, { replace: true });
+    }
+  }, []); // intentionally empty — runs once on mount only
   const [dropTargetFolderId, setDropTargetFolderId] = useState<
     string | null | undefined
   >(undefined);
