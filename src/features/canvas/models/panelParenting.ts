@@ -23,19 +23,45 @@ export function isInsidePanel(node: Node, x: number, y: number): boolean {
   );
 }
 
+/**
+ * Bug 7: Optionally accepts child dimensions and uses area-based overlap check.
+ * When childDimensions is provided, the child is considered "outside" if less than
+ * 50% of its area overlaps with the parent bounds.
+ * Without childDimensions, falls back to position-only check (backward compatible).
+ */
 export function isOutsideParentBounds(
   childPos: { x: number; y: number },
   parent: Node,
+  childDimensions?: { width: number; height: number },
 ): boolean {
-  const { width, height } = getPanelDimensions(parent);
-  return (
-    childPos.x < 0 ||
-    childPos.y < 0 ||
-    childPos.x > width ||
-    childPos.y > height
-  );
+  const { width: parentW, height: parentH } = getPanelDimensions(parent);
+
+  if (!childDimensions) {
+    return (
+      childPos.x < 0 ||
+      childPos.y < 0 ||
+      childPos.x > parentW ||
+      childPos.y > parentH
+    );
+  }
+
+  const overlapLeft = Math.max(0, childPos.x);
+  const overlapTop = Math.max(0, childPos.y);
+  const overlapRight = Math.min(childPos.x + childDimensions.width, parentW);
+  const overlapBottom = Math.min(childPos.y + childDimensions.height, parentH);
+
+  const overlapW = Math.max(0, overlapRight - overlapLeft);
+  const overlapH = Math.max(0, overlapBottom - overlapTop);
+  const overlapArea = overlapW * overlapH;
+  const childArea = childDimensions.width * childDimensions.height;
+
+  return childArea > 0 && overlapArea / childArea < 0.5;
 }
 
+/**
+ * Bug 1: Returns the innermost (smallest-area) panel that contains the given
+ * absolute point, instead of the first panel found (which may be the outermost).
+ */
 export function findPanelContainingPoint(
   nodes: Node[],
   absX: number,
@@ -47,7 +73,11 @@ export function findPanelContainingPoint(
   const panels = nodes.filter(
     (n) => isReactFlowParentPanelType(String(n.type)) && n.id !== excludeParentId,
   );
-  return panels.find((panel) => {
+
+  let bestPanel: Node | undefined;
+  let bestArea = Infinity;
+
+  for (const panel of panels) {
     let absolutePosition = panel.position;
     if (panel.parentId && nodeLayouts && components) {
       absolutePosition = resolveAbsolutePosition(
@@ -59,13 +89,22 @@ export function findPanelContainingPoint(
     }
 
     const { width, height } = getPanelDimensions(panel);
-    return (
+    const inside =
       absX > absolutePosition.x &&
       absY > absolutePosition.y &&
       absX < absolutePosition.x + width &&
-      absY < absolutePosition.y + height
-    );
-  });
+      absY < absolutePosition.y + height;
+
+    if (inside) {
+      const area = width * height;
+      if (area < bestArea) {
+        bestArea = area;
+        bestPanel = panel;
+      }
+    }
+  }
+
+  return bestPanel;
 }
 
 export function toAbsolutePosition(
@@ -90,7 +129,7 @@ export function toRelativePosition(
 
 /**
  * Converts a node relative position to absolute by walking parent chain.
- * Pure function without side effects.
+ * Uses store nodeLayouts — accurate at rest, may lag during drag.
  */
 export function resolveAbsolutePosition(
   nodeId: string,
@@ -109,4 +148,29 @@ export function resolveAbsolutePosition(
     components,
     nodeLayouts,
   );
+}
+
+/**
+ * Bug 2: Resolves absolute position by walking the parentId chain using the
+ * React Flow node array (local positions, accurate during drag).
+ * Falls back when a parent is not found in the array.
+ */
+export function resolveAbsolutePositionFromNodes(
+  nodeId: string,
+  nodes: Node[],
+): { x: number; y: number } {
+  const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+  let absX = 0;
+  let absY = 0;
+  let currentId: string | undefined = nodeId;
+
+  while (currentId) {
+    const node = nodeMap.get(currentId);
+    if (!node) break;
+    absX += node.position.x;
+    absY += node.position.y;
+    currentId = node.parentId ?? undefined;
+  }
+
+  return { x: absX, y: absY };
 }

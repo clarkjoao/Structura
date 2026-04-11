@@ -1,4 +1,4 @@
-import { useMemo, type CSSProperties } from "react";
+import { useMemo, useRef, type CSSProperties } from "react";
 import type { Node } from "@xyflow/react";
 import type {
   CompareElementVisual,
@@ -80,6 +80,40 @@ function compareDiffOutlineClass(
   return "";
 }
 
+/**
+ * Fix C helpers — shallow equality that ignores function values.
+ * buildData returns closures that are always new objects; treating all
+ * function-valued keys as equal prevents needless data-reference churn.
+ */
+function shallowEqualIgnoringFunctions(
+  a: Record<string, unknown> | undefined,
+  b: Record<string, unknown> | undefined,
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  const keysA = Object.keys(a);
+  if (keysA.length !== Object.keys(b).length) return false;
+  for (const key of keysA) {
+    if (typeof a[key] === "function" && typeof b[key] === "function") continue;
+    if (a[key] !== b[key]) return false;
+  }
+  return true;
+}
+
+function shallowEqualStyle(
+  a: CSSProperties | undefined,
+  b: CSSProperties | undefined,
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  const keysA = Object.keys(a) as (keyof CSSProperties)[];
+  if (keysA.length !== Object.keys(b).length) return false;
+  for (const key of keysA) {
+    if (a[key] !== b[key]) return false;
+  }
+  return true;
+}
+
 export function useCanvasNodes({
   diagram,
   resolvedComponents,
@@ -123,6 +157,15 @@ export function useCanvasNodes({
     () => getPendingNodeIds(pendingPreviews),
     [pendingPreviews],
   );
+
+  /**
+   * Fix C: Cache of stable data/style references per node id.
+   * When buildData/buildStyle produce a semantically-equal result, we reuse
+   * the previous reference so useLocalNodes can detect "no change" via ===.
+   */
+  const prevNodeDataRef = useRef<
+    Map<string, { data: Record<string, unknown>; style: CSSProperties | undefined }>
+  >(new Map());
 
   const nodeCtxBase: NodeCtxBase | null = useMemo(() => {
     if (!diagram) return null;
@@ -220,16 +263,44 @@ export function useCanvasNodes({
     const compareVisual = nodeCtxBase.compareVisualByComponentId;
     const isCmp = nodeCtxBase.isCompareMode ?? false;
 
+    // Fix C: purge stale cache entries for nodes no longer visible
+    const visibleIds = new Set(visibleComponents.map((c) => c.id));
+    for (const cachedId of prevNodeDataRef.current.keys()) {
+      if (!visibleIds.has(cachedId)) prevNodeDataRef.current.delete(cachedId);
+    }
+
+    function getParentDepth(
+      comp: Component,
+      comps: Record<string, Component>,
+    ): number {
+      let depth = 0;
+      let currentId = comp.parentId;
+      const visited = new Set<string>();
+      while (currentId && comps[currentId] && !visited.has(currentId)) {
+        visited.add(currentId);
+        depth++;
+        currentId = comps[currentId].parentId;
+      }
+      return depth;
+    }
+
+    const depthCache = new Map<string, number>();
+    function getDepth(comp: Component): number {
+      if (depthCache.has(comp.id)) return depthCache.get(comp.id)!;
+      const d = getParentDepth(comp, nodeCtxBase.resolvedComponents);
+      depthCache.set(comp.id, d);
+      return d;
+    }
+
     return [...visibleComponents]
       .sort((a, b) => {
         const aIsGroup = isPanelComponent(a) || isApiGroupComponent(a);
         const bIsGroup = isPanelComponent(b) || isApiGroupComponent(b);
         if (aIsGroup && !bIsGroup) return -1;
         if (!aIsGroup && bIsGroup) return 1;
-        if (aIsGroup && bIsGroup) {
-          if (b.parentId === a.id) return -1;
-          if (a.parentId === b.id) return 1;
-        }
+        const depthA = getDepth(a);
+        const depthB = getDepth(b);
+        if (depthA !== depthB) return depthA - depthB;
         return 0;
       })
       .map((comp): Node => {
@@ -282,6 +353,21 @@ export function useCanvasNodes({
         ]
           .filter(Boolean)
           .join(" ");
+        // Fix C: stabilize data/style references using shallow equality so that
+        // useLocalNodes can skip re-renders when nothing semantically changed.
+        const newData = d.buildData(comp, ctx) as Record<string, unknown>;
+        const newStyle = style as CSSProperties;
+        const cached = prevNodeDataRef.current.get(comp.id);
+        const stableData =
+          cached && shallowEqualIgnoringFunctions(cached.data, newData)
+            ? cached.data
+            : newData;
+        const stableStyle =
+          cached && shallowEqualStyle(cached.style, newStyle)
+            ? cached.style
+            : newStyle;
+        prevNodeDataRef.current.set(comp.id, { data: stableData, style: stableStyle });
+
         return {
           id: comp.id,
           type: d.rfType,
@@ -305,8 +391,8 @@ export function useCanvasNodes({
           ...(d.dragHandle ? { dragHandle: d.dragHandle } : {}),
           ...(vis.isChild ? { parentId: comp.parentId!, extent: "parent" as const } : {}),
           hidden: vis.isHidden,
-          style: style as CSSProperties,
-          data: d.buildData(comp, ctx),
+          style: stableStyle,
+          data: stableData,
         };
       });
   }, [

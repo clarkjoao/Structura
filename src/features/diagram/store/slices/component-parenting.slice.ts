@@ -28,8 +28,13 @@ export const componentParentingSlice = (
       const scene = resolveActiveScene(d);
       if (scene && !scene.addedComponents[childId]) return;
       if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-      const comp = scene?.addedComponents[childId] ?? d.snapshot.components[childId];
-      if (comp) comp.parentId = parentId;
+      if (scene) {
+        const comp = scene.addedComponents[childId];
+        if (comp) comp.parentId = parentId;
+      } else {
+        const comp = d.snapshot.components[childId];
+        if (comp) comp.parentId = parentId;
+      }
     });
   },
 
@@ -55,19 +60,75 @@ export const componentParentingSlice = (
       // Single pushHistory for the whole drag operation
       if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
 
-      // 1. Update parentId
-      const comp = scene?.addedComponents[nodeId] ?? d.snapshot.components[nodeId];
-      if (comp) comp.parentId = newParentId;
+      // Bug 5: Split scene / non-scene branches explicitly so the snapshot
+      // can never be mutated when scene mode is active.
+      if (scene) {
+        // 1. Update parentId in scene
+        const comp = scene.addedComponents[nodeId];
+        if (comp) comp.parentId = newParentId;
+        // 2. Update position in scene
+        const layout = scene.nodeLayouts[nodeId];
+        if (layout) {
+          layout.x = newPosition.x;
+          layout.y = newPosition.y;
+        }
+      } else {
+        // 1. Update parentId in base snapshot
+        const comp = d.snapshot.components[nodeId];
+        if (comp) comp.parentId = newParentId;
+        // 2. Update position in base layouts
+        const layout = d.nodeLayouts[nodeId];
+        if (layout) {
+          layout.x = newPosition.x;
+          layout.y = newPosition.y;
+        }
+      }
 
-      // 2. Update position
-      const layoutTarget = scene?.addedComponents[nodeId]
-        ? scene!.nodeLayouts
-        : d.nodeLayouts;
+      d.updatedAt = new Date().toISOString();
+    });
+  },
 
-      const layout = layoutTarget[nodeId];
-      if (layout) {
-        layout.x = newPosition.x;
-        layout.y = newPosition.y;
+  /**
+   * Bug 3: Batch variant of commitNodeDrag — applies multiple node drag commits
+   * in a single Immer transaction with ONE pushHistory entry.
+   * Used for multi-select drag so undo reverts all nodes at once.
+   */
+  batchCommitNodeDrag: (
+    entries: Array<{
+      nodeId: string;
+      newParentId: string | null;
+      newPosition: { x: number; y: number };
+    }>,
+  ) => {
+    void get;
+    if (entries.length === 0) return;
+    set((state) => {
+      const d = getActiveDiagram(state);
+      if (!d) return;
+      const scene = resolveActiveScene(d);
+
+      if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+
+      for (const { nodeId, newParentId, newPosition } of entries) {
+        if (scene && !scene.addedComponents[nodeId]) continue;
+
+        if (scene) {
+          const comp = scene.addedComponents[nodeId];
+          if (comp) comp.parentId = newParentId;
+          const layout = scene.nodeLayouts[nodeId];
+          if (layout) {
+            layout.x = newPosition.x;
+            layout.y = newPosition.y;
+          }
+        } else {
+          const comp = d.snapshot.components[nodeId];
+          if (comp) comp.parentId = newParentId;
+          const layout = d.nodeLayouts[nodeId];
+          if (layout) {
+            layout.x = newPosition.x;
+            layout.y = newPosition.y;
+          }
+        }
       }
 
       d.updatedAt = new Date().toISOString();

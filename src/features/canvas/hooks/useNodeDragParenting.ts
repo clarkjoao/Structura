@@ -14,6 +14,8 @@ import {
   isOutsideParentBounds,
   findPanelContainingPoint,
   resolveAbsolutePosition,
+  resolveAbsolutePositionFromNodes,
+  getPanelDimensions,
 } from "../models/panelParenting";
 import { getCachedCanvasSnapshot, canMoveNodeInSceneMode } from "@/features/diagram";
 import { getNodeType } from "../utils/node-type-utils";
@@ -37,6 +39,17 @@ interface UseNodeDragParentingParams {
     newParentId: string | null,
     newPosition: { x: number; y: number },
   ) => void;
+  /**
+   * Batch variant: one pushHistory for multiple nodes at once.
+   * Used for multi-select drag to avoid one history entry per node.
+   */
+  batchCommitNodeDrag: (
+    entries: Array<{
+      nodeId: string;
+      newParentId: string | null;
+      newPosition: { x: number; y: number };
+    }>,
+  ) => void;
 }
 
 interface UseNodeDragParentingResult {
@@ -51,6 +64,7 @@ export function useNodeDragParenting({
   nodes,
   updateNodeLayout,
   commitNodeDrag,
+  batchCommitNodeDrag,
 }: UseNodeDragParentingParams): UseNodeDragParentingResult {
   const [dragTargetPanelId, setDragTargetPanelId] = useState<string | null>(null);
   const [unparentCandidatePanelId, setUnparentCandidatePanelId] = useState<string | null>(null);
@@ -74,6 +88,13 @@ export function useNodeDragParenting({
       const r = getCachedCanvasSnapshot(diagram);
       const comp = r.components[change.id];
       if (comp && isEndpointComponent(comp)) return;
+
+      // Bug 4: Skip children whose parent is also being dragged.
+      // The parent's drag-stop will commit the correct positions; children
+      // just travel along and don't need independent parenting checks.
+      if (change.dragging && comp?.parentId && draggingNodeIdsRef.current.has(comp.parentId)) {
+        return;
+      }
 
       if (!change.dragging) {
         // ReactFlow fires dragging=false immediately before onNodeDragStop.
@@ -131,18 +152,20 @@ export function useNodeDragParenting({
       let absY = change.position.y;
 
       if (comp.parentId) {
-        const absolutePosition = resolveAbsolutePosition(
-          change.id,
-          change.position,
-          r.components,
-          r.nodeLayouts,
-        );
-        absX = absolutePosition.x;
-        absY = absolutePosition.y;
+        // Bug 2: During drag, use local node positions (which reflect real-time
+        // visual state) instead of store nodeLayouts (which may lag behind).
+        // Walk the parent chain via the nodes array to get the parent's absolute
+        // position, then add the current change.position for accuracy.
+        const parentAbsPos = resolveAbsolutePositionFromNodes(comp.parentId, nodes);
+        absX = parentAbsPos.x + change.position.x;
+        absY = parentAbsPos.y + change.position.y;
 
         const parentNode = nodes.find((n) => n.id === comp.parentId);
+        // Bug 7: Pass child dimensions for area-based outside check
+        const childNode = nodes.find((n) => n.id === change.id);
+        const childDims = childNode ? getPanelDimensions(childNode) : undefined;
         const outside = parentNode
-          ? isOutsideParentBounds(change.position, parentNode)
+          ? isOutsideParentBounds(change.position, parentNode, childDims)
           : false;
         setUnparentCandidatePanelId(outside ? comp.parentId : null);
       } else {
@@ -232,53 +255,93 @@ export function useNodeDragParenting({
         return;
       }
       const components = r.components;
+      // Issue 1: use local node positions (accurate visual state at drag-stop)
+      // rather than store nodeLayouts which may lag if the parent was also moved.
       const draggedAbsPos = draggedNode.parentId
-        ? resolveAbsolutePosition(
-            draggedNode.id,
-            draggedNode.position,
-            components,
-            r.nodeLayouts,
-          )
+        ? resolveAbsolutePositionFromNodes(draggedNode.id, nodes)
         : draggedNode.position;
       const absX = draggedAbsPos.x;
       const absY = draggedAbsPos.y;
 
-      const persistOtherSelectedNodes = () => {
-        const otherSelectedNodes = nodes.filter(
+      /**
+       * Bug 3: For multi-select drag, perform full reparenting checks on each
+       * selected secondary node (same logic as the primary dragged node).
+       * All commits go through batchCommitNodeDrag to produce a single history entry.
+       */
+      const commitSelectedNodesDrag = () => {
+        const entries: Array<{
+          nodeId: string;
+          newParentId: string | null;
+          newPosition: { x: number; y: number };
+        }> = [];
+
+        const otherSelected = nodes.filter(
           (node) =>
             node.selected &&
             node.id !== draggedNode.id &&
-            !node.parentId,
+            !isEndpointType(getNodeType(node)),
         );
 
-        for (const node of otherSelectedNodes) {
-          const otherType = getNodeType(node);
-          if (isEndpointType(otherType)) continue;
+        for (const node of otherSelected) {
           if (!canMoveNodeInSceneMode(diagram, node.id)) continue;
-          const otherComponent = components[node.id];
-          if (otherComponent && (otherComponent.locked === true || isAncestorLocked(otherComponent, components))) {
+          const nodeComp = components[node.id];
+          if (
+            nodeComp &&
+            (nodeComp.locked === true || isAncestorLocked(nodeComp, components))
+          )
             continue;
-          }
-          updateNodeLayout(node.id, node.position);
-        }
-      };
-      const persistSelectedChildren = () => {
-        const selectedChildren = nodes.filter(
-          (node) =>
-            node.selected &&
-            node.id !== draggedNode.id &&
-            !!node.parentId,
-        );
 
-        for (const childNode of selectedChildren) {
-          const childType = getNodeType(childNode);
-          if (isEndpointType(childType)) continue;
-          if (!canMoveNodeInSceneMode(diagram, childNode.id)) continue;
-          const childComponent = components[childNode.id];
-          if (childComponent && (childComponent.locked === true || isAncestorLocked(childComponent, components))) {
-            continue;
+          // Issue 2: same as Issue 1 — use local node positions for secondary nodes
+          const nodeAbsPos = node.parentId
+            ? resolveAbsolutePositionFromNodes(node.id, nodes)
+            : node.position;
+
+          if (node.parentId) {
+            const parentNode = nodes.find((n) => n.id === node.parentId);
+            // Bug 7: area-based check for secondary nodes too
+            const childDims = getPanelDimensions(node);
+            const outside = parentNode
+              ? isOutsideParentBounds(node.position, parentNode, childDims)
+              : false;
+            if (outside) {
+              entries.push({
+                nodeId: node.id,
+                newParentId: null,
+                newPosition: { x: nodeAbsPos.x, y: nodeAbsPos.y },
+              });
+              continue;
+            }
           }
-          updateNodeLayout(childNode.id, childNode.position);
+
+          const match = findPanelContainingPoint(
+            nodes,
+            nodeAbsPos.x,
+            nodeAbsPos.y,
+            node.parentId,
+            r.nodeLayouts,
+            components,
+          );
+
+          if (match && match.id !== node.parentId) {
+            const matchAbsPos = resolveAbsolutePosition(
+              match.id,
+              match.position,
+              components,
+              r.nodeLayouts,
+            );
+            entries.push({
+              nodeId: node.id,
+              newParentId: match.id,
+              newPosition: { x: nodeAbsPos.x - matchAbsPos.x, y: nodeAbsPos.y - matchAbsPos.y },
+            });
+          } else {
+            // Same parent or no panel — just update position (no parent change)
+            updateNodeLayout(node.id, node.position);
+          }
+        }
+
+        if (entries.length > 0) {
+          batchCommitNodeDrag(entries);
         }
       };
 
@@ -304,8 +367,7 @@ export function useNodeDragParenting({
           } else {
             commitNodeDrag(draggedNode.id, null, { x: absX, y: absY });
           }
-          persistOtherSelectedNodes();
-          persistSelectedChildren();
+          commitSelectedNodesDrag();
           return;
         }
       }
@@ -316,7 +378,12 @@ export function useNodeDragParenting({
 
       if (parent) {
         // Node already has a parent — check if it dragged outside
-        const outside = isOutsideParentBounds(draggedNode.position, parent);
+        // Bug 7: use area-based check with child dimensions
+        const draggedDims = {
+          width: draggedNode.measured?.width ?? 0,
+          height: draggedNode.measured?.height ?? 0,
+        };
+        const outside = isOutsideParentBounds(draggedNode.position, parent, draggedDims);
         if (outside) {
           // Unparent: convert relative → absolute and commit atomically
           commitNodeDrag(draggedNode.id, null, { x: absX, y: absY });
@@ -324,8 +391,7 @@ export function useNodeDragParenting({
           // Node remains parented — commit relative position atomically
           commitNodeDrag(draggedNode.id, draggedNode.parentId, draggedNode.position);
         }
-        persistOtherSelectedNodes();
-        persistSelectedChildren();
+        commitSelectedNodesDrag();
         return;
       }
 
@@ -356,10 +422,9 @@ export function useNodeDragParenting({
         commitNodeDrag(draggedNode.id, null, { x: absX, y: absY });
       }
 
-      persistOtherSelectedNodes();
-      persistSelectedChildren();
+      commitSelectedNodesDrag();
     },
-    [diagram, nodes, commitNodeDrag, updateNodeLayout],
+    [diagram, nodes, commitNodeDrag, batchCommitNodeDrag, updateNodeLayout],
   );
 
   return { dragTargetPanelId, unparentCandidatePanelId, onNodesChange, onNodeDragStop };

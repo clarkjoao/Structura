@@ -82,6 +82,7 @@ export interface AppActions {
   linkComponentToDiagram: (componentId: string, diagramId: string | undefined) => void;
   setParent: (childId: string, parentId: string | null) => void;
   commitNodeDrag: (nodeId: string, newParentId: string | null, newPosition: { x: number; y: number }) => void;
+  batchCommitNodeDrag: (entries: Array<{ nodeId: string; newParentId: string | null; newPosition: { x: number; y: number } }>) => void;
   groupNodes: (componentIds: string[]) => string | null;
   ungroupNodes: (panelId: string) => void;
 

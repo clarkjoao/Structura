@@ -138,6 +138,7 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
       nodes: localNodesRef.current,
       updateNodeLayout: actions.updateNodeLayout,
       commitNodeDrag: actions.commitNodeDrag,
+      batchCommitNodeDrag: actions.batchCommitNodeDrag,
     });
 
   const handleRequestFocusTitle = useCallback(() => {

@@ -141,15 +141,25 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     updateComponent: actions.updateComponent,
   });
 
+  // Destructure the setters so the useCallback dependency list stays stable.
+  // visualState is a plain object literal recreated each render; its setter
+  // functions come from useState and never change reference.
+  const {
+    setSelectedEdgeId,
+    setContextMenu,
+    setSelectedNodeIds,
+    setSelectedNodeId,
+  } = visualState;
+
   const onSelectionFromChanges = useCallback(
     (selectedIds: string[]) => {
       if (selectedIds.length === 0) return;
-      visualState.setSelectedEdgeId(null);
-      visualState.setContextMenu(null);
-      visualState.setSelectedNodeIds(new Set(selectedIds));
-      visualState.setSelectedNodeId(selectedIds[0] ?? null);
+      setSelectedEdgeId(null);
+      setContextMenu(null);
+      setSelectedNodeIds(new Set(selectedIds));
+      setSelectedNodeId(selectedIds[0] ?? null);
     },
-    [visualState],
+    [setSelectedEdgeId, setContextMenu, setSelectedNodeIds, setSelectedNodeId],
   );
 
   const { nodes, onNodesChange } = useLocalNodes(
