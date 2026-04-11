@@ -55,7 +55,7 @@ function resolveBaseType(node: Node, nodeData: Record<string, unknown>): Compone
   return "component";
 }
 
-/** React Flow node.data fields that are UI-only and must not be persisted on templates. */
+
 const NODE_DATA_UI_ONLY_KEYS = new Set<string>([
   "isSelected",
   "controlsDisabled",

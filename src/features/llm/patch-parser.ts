@@ -2,7 +2,7 @@ import { isWriteTool } from "./tools";
 import { isValidNodeType } from "./component-catalog";
 import type { DiagramPatchAction, LLMToolCall, ParsedLLMResponse } from "./types";
 
-/** Shown when the model returns JSON we cannot map to a user-facing message (no i18n in this module). */
+
 const PARSE_FALLBACK_MESSAGE = "[Resposta não processada. Tente novamente.]";
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -128,7 +128,7 @@ function tryParseEnvelope(candidate: string): ParsedLLMResponse | null {
           parsedMessage = nestedValue.message;
         }
       } catch {
-        // keep original parsedMessage
+        
       }
     }
     const patchValue = parsedValue.patch;

@@ -7,10 +7,7 @@ import type {
 } from "@/features/diagram";
 import { generateId, isPanelComponent } from "@/features/diagram";
 
-/**
- * Adds every descendant of each selected panel (recursive). Returns component ids in an order
- * where every parent appears before its children so template indices are stable.
- */
+
 export function expandSelectionWithChildren(
   selectedIds: string[],
   allComponents: Record<string, Component>,

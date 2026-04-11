@@ -125,7 +125,7 @@ function resolveDiagramPathSegments(
   return segments;
 }
 
-// ── Directory helper ──
+
 
 async function getOrCreateDirectory(
   root: FileSystemDirectoryHandle,
@@ -160,7 +160,7 @@ export type WorkspacePayload = {
   iconLibrary?: Record<string, IconDefinition>;
 };
 
-// ── Scan result type ──
+
 
 export interface WorkspaceScanResult {
   valid: Diagram[];
@@ -170,7 +170,7 @@ export interface WorkspaceScanResult {
   totalFilesScanned: number;
 }
 
-// ── Main class ──
+
 
 export class FileSystemAdapter {
   private handle: FileSystemDirectoryHandle | null = null;
@@ -276,8 +276,8 @@ export class FileSystemAdapter {
       const dir = await getOrCreateDirectory(this.handle, segments);
       await dir.removeEntry(`${diagramId}.json`);
     } catch {
-      // Fallback: logical delete by overwriting the file with a tombstone payload.
-      // This prevents the diagram from being re-imported on the next sync if physical deletion fails.
+      
+      
       try {
         const segments = diagram
           ? resolveDiagramPathSegments(diagram, this.folders)

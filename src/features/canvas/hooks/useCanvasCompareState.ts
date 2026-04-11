@@ -10,7 +10,6 @@ export interface UseCanvasCompareStateParams {
   t: TFunction;
 }
 
-/** Compare-mode visuals, scene badges, and compare-related side effects. */
 export function useCanvasCompareState(params: UseCanvasCompareStateParams) {
   const { diagram, isFlowPanelOpen, clearCanvasSelection, t } = params;
   const compare = useCanvasCompareMode(diagram);

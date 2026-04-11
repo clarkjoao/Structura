@@ -3,10 +3,7 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 import type { Connection, ConnectionStyle, Point } from "@/features/diagram";
 import { getClosestLabelPositionOnPath } from "./edgeGeometry";
 
-/**
- * `updateConnection` is part of the public contract for portability; Structura persists
- * label offset via `updateEdgeLabelOffset` on `diagram.edgeLayouts` during drag.
- */
+
 export interface UseLabelDragParams {
   edgePath: string;
   initialPosition: number;

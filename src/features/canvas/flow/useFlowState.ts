@@ -16,7 +16,6 @@ const TRUNK_CONTEXT: RecordingContext = { mode: "trunk" };
 
 interface UseFlowStateParams {
   flows: Flow[];
-  /** When true (version comparison on canvas), coverage overlay matches play/record (hidden). */
   isCompareMode?: boolean;
 }
 

@@ -54,13 +54,7 @@ import { buildChildrenIndex, getDescendantIdsFromIndex } from "../../utils/child
 import { mutateRemoveComponentInScene } from "../../utils/scene-mutations";
 import { repairFlowsAfterRemovingDiagramElements } from "../../utils/flow-repair";
 
-/**
- * Este slice usa Immer via Zustand middleware.
- * Mutacoes diretas dentro de `set((state) => { ... })` sao seguras
- * e produzem novo estado imutavel automaticamente.
- * Nao usar spread/Object.assign para substituir objetos inteiros -
- * prefira mutacoes diretas: `state.field = value`.
- */
+
 function handleEndpointInsertion(
   state: AppState,
   d: Diagram,
@@ -355,7 +349,7 @@ export const componentsSlice = (
       const height = patchAny.height as number | undefined;
       const hasDimensions = width !== undefined || height !== undefined;
       const isDimensionOnly = hasDimensions && Object.keys(patch).every((k) => k === "width" || k === "height");
-      // Build component patch without width/height
+      
       const compPatch: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(patchAny)) {
         if (k !== "width" && k !== "height") compPatch[k] = v;

@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import type { Node, Edge, OnEdgesChange, OnConnect, OnConnectEnd, Connection } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import type { CanvasVisualState } from "./useCanvasVisualState";
@@ -27,7 +27,6 @@ interface UseCanvasEventHandlersParams {
   ) => void;
   screenToFlowPosition: (pos: { x: number; y: number }) => { x: number; y: number };
   onRequestFocusTitle?: () => void;
-  onNoteStartEdit?: (noteId: string) => void;
 }
 
 export function useCanvasEventHandlers({
@@ -192,7 +191,7 @@ export function useCanvasEventHandlers({
   const onSelectionChange = useCallback(
     ({ nodes: updatedNodes }: { nodes: Node[]; edges: Edge[] }) => {
       const selectedIds = updatedNodes.filter((n) => n.selected).map((n) => n.id);
-      // Skip empty selections (handled by onPaneClick) and duplicate firings
+      
       if (selectedIds.length === 0) return;
       if (isCompareMode) return;
       const key = [...selectedIds].sort().join(",");
@@ -328,20 +327,38 @@ export function useCanvasEventHandlers({
     setSelectedEdgeId(null);
   }, [clearHighlight, setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId]);
 
-  return {
-    onEdgesChange,
-    onMoveEnd,
-    onConnect,
-    onConnectEnd,
-    onNodeClick,
-    onEdgeClick,
-    onNodeDoubleClick,
-    onEdgeDoubleClick,
-    onSelectionChange,
-    onPaneClick,
-    onPaneContextMenu,
-    onNodeContextMenu,
-    handleQuickInsert,
-    closePanel,
-  };
+  return useMemo(
+    () => ({
+      onEdgesChange,
+      onMoveEnd,
+      onConnect,
+      onConnectEnd,
+      onNodeClick,
+      onEdgeClick,
+      onNodeDoubleClick,
+      onEdgeDoubleClick,
+      onSelectionChange,
+      onPaneClick,
+      onPaneContextMenu,
+      onNodeContextMenu,
+      handleQuickInsert,
+      closePanel,
+    }),
+    [
+      onEdgesChange,
+      onMoveEnd,
+      onConnect,
+      onConnectEnd,
+      onNodeClick,
+      onEdgeClick,
+      onNodeDoubleClick,
+      onEdgeDoubleClick,
+      onSelectionChange,
+      onPaneClick,
+      onPaneContextMenu,
+      onNodeContextMenu,
+      handleQuickInsert,
+      closePanel,
+    ],
+  );
 }

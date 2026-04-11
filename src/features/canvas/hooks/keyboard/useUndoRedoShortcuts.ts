@@ -6,10 +6,6 @@ interface UseUndoRedoShortcutsParams {
   redo: () => void;
 }
 
-/**
- * Cmd+Z — undo
- * Cmd+Shift+Z — redo
- */
 export function useUndoRedoShortcuts({
   undo,
   redo,
@@ -19,14 +15,12 @@ export function useUndoRedoShortcuts({
       const mod = isModKeyPressed(e);
       if (!mod) return false;
 
-      // Cmd/Ctrl+Shift+Z — redo
       if (e.shiftKey && (e.key === "z" || e.key === "Z")) {
         e.preventDefault();
         redo();
         return true;
       }
 
-      // Cmd/Ctrl+Z — undo
       if (e.key === "z") {
         e.preventDefault();
         undo();

@@ -6,17 +6,13 @@ export interface PatternComponent {
   description?: string;
   technology?: string;
   awsService?: string;
-  /**
-   * Explicit 2-D position relative to the drop point (pixels).
-   * When present, the slice uses these instead of the linear grid fallback.
-   * Left-to-right reading order is expected: x grows rightward, y grows downward.
-   */
+  
   x?: number;
   y?: number;
 }
 
 export interface PatternConnection {
-  fromIndex: number; // index into components array
+  fromIndex: number; 
   toIndex: number;
   label: string;
 }
@@ -38,7 +34,7 @@ export type PatternCategory =
   | "event-driven"
   | "security";
 
-/** Category ids for sidebar — display labels from i18n `patterns.category.*` */
+
 export const PATTERN_CATEGORIES: PatternCategory[] = [
   "messaging",
   "api",
@@ -48,19 +44,19 @@ export const PATTERN_CATEGORIES: PatternCategory[] = [
   "security",
 ];
 
-// ─── Layout constants ────────────────────────────────────────────────────────
-// All positions are relative to the drop point (0, 0).
-// Reading direction: left → right.  Secondary axis: top → bottom.
-// Column spacing: 240px. Row spacing: 160px.
-// Note is always anchored top-left at (-20, -220) so it floats above the diagram.
 
-const COL = 240;  // horizontal step between columns
-const ROW = 160;  // vertical step between rows
+
+
+
+
+
+const COL = 240;  
+const ROW = 160;  
 const NOTE_X = 0;
 const NOTE_Y = -220;
 
 export const PATTERNS: PatternTemplate[] = [
-  // ── Messaging ────────────────────────────────────────────────────────────
+  
   {
     id: "fifo-queue-aws",
     name: "FIFO Queue (AWS SQS)",
@@ -190,7 +186,7 @@ export const PATTERNS: PatternTemplate[] = [
     ],
   },
 
-  // ── API ───────────────────────────────────────────────────────────────────
+  
   {
     id: "api-gateway-bff",
     name: "API Gateway + BFF",
@@ -276,7 +272,7 @@ export const PATTERNS: PatternTemplate[] = [
     ],
   },
 
-  // ── Resilience ────────────────────────────────────────────────────────────
+  
   {
     id: "circuit-breaker",
     name: "Circuit Breaker",
@@ -494,7 +490,7 @@ export const PATTERNS: PatternTemplate[] = [
     ],
   },
 
-  // ── Data ─────────────────────────────────────────────────────────────────
+  
   {
     id: "sharding-router",
     name: "Sharding Router",
@@ -717,7 +713,7 @@ export const PATTERNS: PatternTemplate[] = [
     ],
   },
 
-  // ── Event-Driven ─────────────────────────────────────────────────────────
+  
   {
     id: "saga-choreography",
     name: "Saga (Choreography)",
@@ -838,7 +834,7 @@ export const PATTERNS: PatternTemplate[] = [
     ],
   },
 
-  // ── Security ─────────────────────────────────────────────────────────────
+  
   {
     id: "policy-enforcement-point-opa",
     name: "Policy Enforcement Point (OPA)",

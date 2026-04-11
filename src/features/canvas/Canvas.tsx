@@ -26,6 +26,9 @@ import { useJourneyViewportSync } from "./hooks/useJourneyViewportSync";
 import { getCachedCanvasSnapshot, isPanelComponent } from "@/features/diagram";
 import { useJourneysByDiagramId } from "@/features/journeys";
 import { CANVAS_STYLES } from "./constants";
+
+
+const MULTI_SELECTION_KEY_CODES = ["Meta", "Control"];
 import CustomEdge from "./edges/CustomEdge";
 import type { CanvasProps } from "./canvas.types";
 import {
@@ -96,19 +99,25 @@ const Canvas = (props: CanvasProps = {}) => {
 
   const journeysInThisDiagram = useJourneysByDiagramId(diagram?.id ?? "");
 
+  const {
+    setSelectedNodeId: focusSetSelectedNodeId,
+    setSelectedNodeIds: focusSetSelectedNodeIds,
+    setSelectedEdgeId: focusSetSelectedEdgeId,
+  } = visualState;
+
   const handleFocusCanvasElement = useCallback(
     (target: FocusCanvasElementTarget) => {
       if (target.kind === "node") {
-        visualState.setSelectedNodeId(target.id);
-        visualState.setSelectedNodeIds(new Set([target.id]));
-        visualState.setSelectedEdgeId(null);
+        focusSetSelectedNodeId(target.id);
+        focusSetSelectedNodeIds(new Set([target.id]));
+        focusSetSelectedEdgeId(null);
       } else {
-        visualState.setSelectedEdgeId(target.id);
-        visualState.setSelectedNodeId(null);
-        visualState.setSelectedNodeIds(new Set());
+        focusSetSelectedEdgeId(target.id);
+        focusSetSelectedNodeId(null);
+        focusSetSelectedNodeIds(new Set());
       }
     },
-    [visualState],
+    [focusSetSelectedNodeId, focusSetSelectedNodeIds, focusSetSelectedEdgeId],
   );
 
   const templateSourceNode = templateNodeId
@@ -269,7 +278,7 @@ const Canvas = (props: CanvasProps = {}) => {
               zoomOnDoubleClick={false}
               minZoom={0.3}
               maxZoom={1.5}
-              multiSelectionKeyCode="Meta"
+              multiSelectionKeyCode={MULTI_SELECTION_KEY_CODES}
               defaultViewport={diagram.viewport}
               fitView
               fitViewOptions={{ padding: 0.3 }}

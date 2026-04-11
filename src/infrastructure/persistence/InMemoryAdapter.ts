@@ -1,9 +1,6 @@
 import type { IStoragePort } from "./IStoragePort";
 
-/**
- * In-memory storage adapter — useful for tests and SSR environments
- * where localStorage is unavailable.
- */
+
 export class InMemoryAdapter implements IStoragePort {
   private readonly store = new Map<string, string>();
 

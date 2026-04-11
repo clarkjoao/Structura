@@ -1,4 +1,4 @@
-/** Generate a unique ID with optional prefix (e.g. "el", "conn", "d", "flow", "folder", "svc"). */
+
 export function generateId(prefix: string = "el"): string {
   const randomPart =
     typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"

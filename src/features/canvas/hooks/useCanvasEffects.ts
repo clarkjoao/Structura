@@ -51,13 +51,13 @@ export function useCanvasEffects({
     };
   }, [diagram?.id, reactFlowInstance]);
 
-  // Clear selection when playback starts
+  
   useEffect(() => {
     if (!isPlaying) return;
     onClearSelection();
   }, [isPlaying, onClearSelection]);
 
-  // Wheel: zoom (Ctrl/Cmd), horizontal pan (Shift), vertical pan
+  
   useEffect(() => {
     const el = document.querySelector(".react-flow__renderer");
     if (!el || !diagram) return;
@@ -89,7 +89,7 @@ export function useCanvasEffects({
     return () => el.removeEventListener("wheel", handleWheel);
   }, [reactFlowInstance, diagram]);
 
-  // Fit viewport on the element highlighted during flow playback
+  
   useEffect(() => {
     if (!isPlaying || !activeFlow || !currentStepId) return;
     const step = getStepById(activeFlow, currentStepId);

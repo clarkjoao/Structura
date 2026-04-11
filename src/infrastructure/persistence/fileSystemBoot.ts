@@ -1,11 +1,4 @@
-/**
- * Singleton module that manages the file-system connection lifecycle.
- *
- * The reconnection attempt and the store subscription for syncing run
- * **once** for the entire app lifetime — they are NOT tied to any React
- * component mount/unmount cycle.  React hooks (`useFileSystemStorage`,
- * `useFileSystemSync`) simply read/drive this global state.
- */
+
 
 import { useDiagramStore, VIEWPORT_DEBOUNCE_MS, PERSIST_KEY, type Diagram, type IconDefinition } from "@/features/diagram";
 import { useJourneyStore } from "@/features/journeys";
@@ -40,11 +33,7 @@ export interface WorkspaceIconSource {
   iconLibrary?: Record<string, IconDefinition>;
 }
 
-/**
- * Merges manifest `iconLibrary` into the global icon store (existing store entries win),
- * then moves any per-diagram `snapshot.iconLibrary` entries into the global store and clears them.
- * Safe to call multiple times; failures are swallowed so FS / UI flows are not blocked.
- */
+
 export function hydrateIconStoreFromWorkspace(workspace: WorkspaceIconSource): void {
   try {
     if (workspace.iconLibrary) {
@@ -53,7 +42,7 @@ export function hydrateIconStoreFromWorkspace(workspace: WorkspaceIconSource): v
       }));
     }
   } catch {
-    // Icon store not ready — do not block caller.
+    
   }
 
   try {
@@ -71,15 +60,11 @@ export function hydrateIconStoreFromWorkspace(workspace: WorkspaceIconSource): v
       diagram.snapshot.iconLibrary = {};
     }
   } catch {
-    // Do not block caller.
+    
   }
 }
 
-/**
- * Writes every diagram, folders, and manifest to the connected folder.
- * Used after merge/overwrite so local-only or unchanged-reference diagrams are not skipped
- * (the debounced subscriber only writes when `diagram !== prevDiagrams[id]`).
- */
+
 export async function flushWorkspaceToConnectedFolder(
   state: DiagramStoreState,
 ): Promise<void> {
@@ -113,22 +98,22 @@ export async function flushWorkspaceToConnectedFolder(
   recordFolderSyncSuccess();
 }
 
-// ── Global state ──
+
 
 let _reconnected = false;
 let _reconnecting: Promise<boolean> | null = null;
 
-/** Has the one-time silent reconnect already completed? */
+
 export function hasReconnected(): boolean {
   return _reconnected;
 }
 
-/** Returns the in-flight reconnect promise (if any). */
+
 export function getReconnectPromise(): Promise<boolean> | null {
   return _reconnecting;
 }
 
-// ── One-time silent reconnect ──
+
 
 async function clearLocalCache(): Promise<void> {
   await defaultStorage.delete(PERSIST_KEY);
@@ -196,10 +181,7 @@ async function doReconnect(): Promise<boolean> {
   }
 }
 
-/**
- * Trigger the one-time silent reconnect.  Safe to call multiple times —
- * subsequent calls return the same promise.
- */
+
 export function bootFileSystem(): Promise<boolean> {
   if (!_reconnecting) {
     _reconnecting = doReconnect();
@@ -207,17 +189,14 @@ export function bootFileSystem(): Promise<boolean> {
   return _reconnecting;
 }
 
-// ── Singleton store → disk sync subscription ──
+
 
 let _syncUnsub: (() => void) | null = null;
 let _syncTimer: ReturnType<typeof setTimeout> | null = null;
 
-/**
- * Start listening for store changes and writing them to the connected folder.
- * Idempotent — calling it multiple times does NOT create duplicate subscriptions.
- */
+
 export function startFileSystemSync(): void {
-  if (_syncUnsub) return; // already running
+  if (_syncUnsub) return; 
 
   const scheduleWorkspaceWrite = (
     diagramState: DiagramStoreState,
@@ -297,7 +276,7 @@ export function startFileSystemSync(): void {
   };
 }
 
-/** Stop the sync subscription (called on disconnect). */
+
 export function stopFileSystemSync(): void {
   if (_syncUnsub) {
     _syncUnsub();
@@ -309,10 +288,7 @@ export function stopFileSystemSync(): void {
   }
 }
 
-/**
- * Reset internal state (used after a manual disconnect so that
- * `bootFileSystem` can re-run when the user connects a new folder).
- */
+
 export function resetBootState(): void {
   _reconnected = false;
   _reconnecting = null;
@@ -322,10 +298,7 @@ export function resetBootState(): void {
 
 export type ForceSaveToFolderResult = "ok" | "no_folder" | "error";
 
-/**
- * Writes the full workspace (all diagrams, manifest, templates, icons) to the connected folder.
- * Updates last-sync metadata on success (same as the debounced auto-sync).
- */
+
 export async function forceSaveToConnectedFolder(): Promise<ForceSaveToFolderResult> {
   if (!fileSystemAdapter.isConnected) return "no_folder";
   try {

@@ -50,7 +50,7 @@ function saveThreadToStorage(diagramId: string, messages: ChatMessage[]): void {
       .slice(0, MAX_THREADS);
     localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(Object.fromEntries(trimmed)));
   } catch {
-    /* ignore */
+    
   }
 }
 
@@ -109,7 +109,7 @@ function sanitizeMessagesForLLM(messages: ChatMessage[]): ChatMessage[] {
         return { ...message, content: (parsed as { message: string }).message };
       }
     } catch {
-      // fall through to placeholder for LLM history
+      
     }
     return { ...message, content: "[previous diagram suggestion]" };
   });

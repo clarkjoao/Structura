@@ -9,7 +9,7 @@ import { THEME } from "./constants";
 import { buildEdgeStyle } from "./styles";
 import { escXml } from "./xml-utils";
 
-/** Plain-text edge label for draw.io (no HTML inside the XML attribute). */
+
 export function buildEdgeLabelPlain(conn: Connection): string {
   const rawLabel = (conn.label ?? "").trim();
   const rawTech = (conn.technology ?? "").trim();

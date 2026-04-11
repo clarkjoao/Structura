@@ -75,7 +75,7 @@ export async function sendMessage(
           }
         }
       } catch {
-        // skip malformed chunks
+        
       }
     }
   }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Component } from "@/features/diagram";
 
 export interface CanvasVisualState {
@@ -21,15 +21,15 @@ export interface CanvasVisualState {
   } | null;
   setQuickInsert: (value: CanvasVisualState["quickInsert"]) => void;
   clearCanvasSelection: () => void;
-  visibleTags: Set<string>;
+  visibleTags: Set<string> | null;
   toggleTag: (tag: string) => void;
   showAllTags: () => void;
   showNoTags: () => void;
   isNodeHiddenByTagFilter: (component: Component) => boolean;
-  /** When set, a note is in inline markdown edit — ElementPanel stays closed. */
+  
   noteInlineEditingId: string | null;
   setNoteInlineEditingId: (id: string | null) => void;
-  /** When set, a JSON viewer is in inline Monaco edit — ElementPanel stays closed. */
+  
   jsonViewerInlineEditingId: string | null;
   setJsonViewerInlineEditingId: (id: string | null) => void;
 }
@@ -71,11 +71,11 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
 
   const showNoTags = useCallback(() => setVisibleTags(new Set()), []);
 
-  const isNodeHiddenByTagFilter = useCallback(
+  const isNodeHiddenByTagFilterImpl = useCallback(
     (component: Component): boolean => {
-      if (visibleTags === null) return false; // "Todos" — nada oculto
-      if (visibleTags.size === 0) return !!component.tags?.length; // "Sem Tags"
-      return !component.tags?.some((tag) => visibleTags.has(tag)); // whitelist
+      if (visibleTags === null) return false;
+      if (visibleTags.size === 0) return !!component.tags?.length;
+      return !component.tags?.some((tag) => visibleTags.has(tag));
     },
     [visibleTags],
   );
@@ -87,45 +87,94 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
     setHighlightedNodeIds(new Set(nodeIds));
   }, []);
 
-  const clearHighlight = useCallback(() => {
-    setHighlightedConnectionId((prev) => prev === null ? prev : null);
-    setHighlightedNodeIds((prev) => prev.size === 0 ? prev : emptySet);
+  const clearHighlightImpl = useCallback(() => {
+    setHighlightedConnectionId((prev) => (prev === null ? prev : null));
+    setHighlightedNodeIds((prev) => (prev.size === 0 ? prev : emptySet));
   }, [emptySet]);
 
-  const clearCanvasSelection = useCallback(() => {
-    clearHighlight();
-    setSelectedNodeId((prev) => prev === null ? prev : null);
-    setSelectedNodeIds((prev) => prev.size === 0 ? prev : emptySet);
-    setSelectedEdgeId((prev) => prev === null ? prev : null);
-    setContextMenu((prev) => prev === null ? prev : null);
+  const clearCanvasSelectionImpl = useCallback(() => {
+    clearHighlightImpl();
+    setSelectedNodeId((prev) => (prev === null ? prev : null));
+    setSelectedNodeIds((prev) => (prev.size === 0 ? prev : emptySet));
+    setSelectedEdgeId((prev) => (prev === null ? prev : null));
+    setContextMenu((prev) => (prev === null ? prev : null));
     setNoteInlineEditingId(null);
     setJsonViewerInlineEditingId(null);
-  }, [clearHighlight, emptySet]);
+  }, [clearHighlightImpl, emptySet]);
 
-  return {
-    selectedNodeId,
-    setSelectedNodeId,
-    selectedNodeIds,
-    setSelectedNodeIds,
-    selectedEdgeId,
-    setSelectedEdgeId,
-    highlightedConnectionId,
-    highlightedNodeIds,
-    setHighlight,
-    clearHighlight,
-    contextMenu,
-    setContextMenu,
-    quickInsert,
-    setQuickInsert,
-    clearCanvasSelection,
-    visibleTags,
-    showNoTags,
-    toggleTag,
-    showAllTags,
-    isNodeHiddenByTagFilter,
-    noteInlineEditingId,
-    setNoteInlineEditingId,
-    jsonViewerInlineEditingId,
-    setJsonViewerInlineEditingId,
-  };
+  const derivedRef = useRef({
+    clearHighlight: clearHighlightImpl,
+    clearCanvasSelection: clearCanvasSelectionImpl,
+    isNodeHiddenByTagFilter: isNodeHiddenByTagFilterImpl,
+  });
+  derivedRef.current.clearHighlight = clearHighlightImpl;
+  derivedRef.current.clearCanvasSelection = clearCanvasSelectionImpl;
+  derivedRef.current.isNodeHiddenByTagFilter = isNodeHiddenByTagFilterImpl;
+
+  const clearHighlight = useRef(() => {
+    derivedRef.current.clearHighlight();
+  }).current;
+
+  const clearCanvasSelection = useRef(() => {
+    derivedRef.current.clearCanvasSelection();
+  }).current;
+
+  const isNodeHiddenByTagFilter = useRef((component: Component) => {
+    return derivedRef.current.isNodeHiddenByTagFilter(component);
+  }).current;
+
+  return useMemo(
+    () => ({
+      selectedNodeId,
+      selectedNodeIds,
+      selectedEdgeId,
+      highlightedConnectionId,
+      highlightedNodeIds,
+      contextMenu,
+      quickInsert,
+      visibleTags,
+      noteInlineEditingId,
+      jsonViewerInlineEditingId,
+      setSelectedNodeId,
+      setSelectedNodeIds,
+      setSelectedEdgeId,
+      setHighlight,
+      setContextMenu,
+      setQuickInsert,
+      toggleTag,
+      showAllTags,
+      showNoTags,
+      setNoteInlineEditingId,
+      setJsonViewerInlineEditingId,
+      clearHighlight,
+      clearCanvasSelection,
+      isNodeHiddenByTagFilter,
+    }),
+    [
+      selectedNodeId,
+      selectedNodeIds,
+      selectedEdgeId,
+      highlightedConnectionId,
+      highlightedNodeIds,
+      contextMenu,
+      quickInsert,
+      visibleTags,
+      noteInlineEditingId,
+      jsonViewerInlineEditingId,
+      setSelectedNodeId,
+      setSelectedNodeIds,
+      setSelectedEdgeId,
+      setHighlight,
+      setContextMenu,
+      setQuickInsert,
+      toggleTag,
+      showAllTags,
+      showNoTags,
+      setNoteInlineEditingId,
+      setJsonViewerInlineEditingId,
+      clearHighlight,
+      clearCanvasSelection,
+      isNodeHiddenByTagFilter,
+    ],
+  );
 }

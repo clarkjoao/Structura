@@ -42,7 +42,6 @@ interface UseCopyPasteShortcutsParams {
     layouts: NodeLayout[],
   ) => string[];
   pasteSvgAsCanvasNode: (svgContent: string, position: { x: number; y: number }) => string | null;
-  /** Validates size, then sanitizes SVG; returns markup safe for storage or null (toasts on failure). */
   importSvgForIconLibrary: (svgContent: string) => string | null;
   serviceRegistry: Record<string, { id: string; name: string }>;
   exportDrawioXml: (componentIds: string[]) => string;
@@ -50,11 +49,6 @@ interface UseCopyPasteShortcutsParams {
   pastedSvgDefaultName: string;
 }
 
-/**
- * Cmd+C — copy selected
- * Cmd+V — paste offset from copied component positions (or viewport center if no clipboard / anchor)
- * Cmd+D — duplicate (copy + paste with offset)
- */
 export function useCopyPasteShortcuts({
   diagram,
   selectedNodeId,
@@ -76,26 +70,21 @@ export function useCopyPasteShortcuts({
       const mod = isModKeyPressed(event);
       if (!mod) return false;
 
-      // Cmd/Ctrl+C — copy
       if (event.key === "c") {
         event.preventDefault();
         const nodes = getSelectedNodes(reactFlowInstance, selectedNodeId);
         const ids = getCopyableIds(diagram, nodes);
         if (ids.length > 0) {
-          // 1. Write to Zustand clipboard (for canvas paste via Cmd+V)
           copyToClipboard(ids);
-          // 2. Write drawio XML of selected nodes to system clipboard
           const xml = exportDrawioXml(ids);
           void writeDrawioToClipboard(xml);
         }
         return true;
       }
 
-      // Cmd/Ctrl+V — SVG clipboard, then draw.io, then plain-text SVG → icon library, then internal clipboard
       if (event.key === "v") {
         event.preventDefault();
 
-        // 1. Try SVG clipboard first (image/svg+xml or text/plain SVG via Clipboard API)
         const svgContent = await readSvgFromClipboard();
         if (svgContent) {
           const pastePos = getPasteCenter(reactFlowInstance, reactFlowWrapperRef);
@@ -109,7 +98,6 @@ export function useCopyPasteShortcuts({
           return true;
         }
 
-        // 2. Try draw.io clipboard
         const drawioXml = await readDrawioFromClipboard();
         if (drawioXml) {
           const pasteCenter = getPasteCenter(reactFlowInstance, reactFlowWrapperRef);
@@ -130,7 +118,6 @@ export function useCopyPasteShortcuts({
           }
         }
 
-        // 3. Inline SVG from system clipboard text → diagram icon library (fallback when readSvgFromClipboard is empty)
         let clipboardPlain: string | null = null;
         try {
           clipboardPlain = await navigator.clipboard.readText();
@@ -160,7 +147,6 @@ export function useCopyPasteShortcuts({
           return true;
         }
 
-        // 4. Fall back to internal Zustand clipboard
         const clipboardIds =
           useDiagramStore.getState().clipboard?.components.map((component) => component.id) ??
           [];
@@ -182,7 +168,6 @@ export function useCopyPasteShortcuts({
         return true;
       }
 
-      // Cmd/Ctrl+D — duplicate
       if (event.key === "d") {
         event.preventDefault();
         const selectedNodes = getSelectedNodes(reactFlowInstance, selectedNodeId);

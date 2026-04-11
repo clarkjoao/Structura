@@ -39,7 +39,6 @@ const FlowStepNavigator = ({
 
   return (
     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 w-[460px] rounded-xl border border-border bg-card/95 backdrop-blur-sm shadow-2xl">
-      {/* Timeline dots */}
       <div className="px-4 py-2 flex items-center gap-1 overflow-x-auto border-b border-border">
         {orderedIds.map((id, i) => {
           const s = flow.steps[id];
@@ -70,7 +69,6 @@ const FlowStepNavigator = ({
         })}
       </div>
 
-      {/* Header with nav */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
         <div className="flex items-center gap-2 min-w-0">
           <button onClick={onGoBack} disabled={!canGoBack}
@@ -100,7 +98,6 @@ const FlowStepNavigator = ({
         </button>
       </div>
 
-      {/* Condition branch chooser */}
       {isCondition && step?.branches && (
         <div className="px-4 py-3">
           <p className="text-xs font-semibold text-amber-400 mb-3">
@@ -120,7 +117,6 @@ const FlowStepNavigator = ({
         </div>
       )}
 
-      {/* Step content (non-condition) */}
       {!isCondition && (step?.note || step?.description || step?.duration) && (
         <div className="px-4 py-3 flex items-start gap-2">
           <MessageSquare className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
@@ -136,7 +132,7 @@ const FlowStepNavigator = ({
         </div>
       )}
 
-      {/* Payload */}
+      {}
       {!isCondition && step?.payload && (
         <div className="px-4 pb-2">
           <button
@@ -154,7 +150,7 @@ const FlowStepNavigator = ({
         </div>
       )}
 
-      {/* Bottom nav buttons */}
+      {}
       {!isCondition && (
         <div className="px-4 py-2 flex justify-center gap-2">
           <button onClick={onGoBack} disabled={!canGoBack}

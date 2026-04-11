@@ -20,7 +20,7 @@ export interface DiagramSnapshot {
 export interface ClipboardEntry {
   components: Component[];
   connections: Connection[];
-  /** Flow-space offsets relative to the top-left of the copied group. Index matches components[]. */
+  
   _pasteOffsets?: Array<{ dx: number; dy: number }>;
 }
 
@@ -36,5 +36,5 @@ export interface AppState {
   clipboard: ClipboardEntry | null;
 }
 
-/** Full Zustand slice: app state plus diagram actions. */
+
 export type DiagramStore = AppState & AppActions;

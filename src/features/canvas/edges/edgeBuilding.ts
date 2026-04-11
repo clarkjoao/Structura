@@ -15,13 +15,13 @@ export interface EdgeBuildParams {
   isPlaying: boolean;
   isRecording: boolean;
   isCompareMode?: boolean;
-  /** Per-connection opacity multiplier when comparing two scenes */
+  
   compareConnectionOpacity?: Record<string, number>;
   activeStep: FlowStep | null;
   flowHighlight: Pick<FlowHighlight, "activeConnId" | "participantConnIds">;
   recordingInfo: Pick<RecordingInfo, "edgeSteps" | "recordedEdgeIds" | "lastEdgeId"> | null;
   coverage: Pick<CoverageInfo, "edgeFlows"> | null;
-  /** True when either endpoint is dimmed by the canvas tag filter */
+  
   tagFilterEdgeDimmed?: boolean;
 }
 
@@ -125,7 +125,7 @@ export function buildEdge(
   };
 }
 
-/** Orthogonal routing (H then V per leg): source → waypoints → target. */
+
 export function buildOrthogonalPath(
   sourceX: number,
   sourceY: number,
@@ -157,7 +157,7 @@ export interface Segment {
   orientation: "horizontal" | "vertical";
 }
 
-/** Geometric segments between consecutive knots (source → waypoints → target). */
+
 export function buildSegments(
   sourceX: number,
   sourceY: number,
@@ -186,7 +186,7 @@ export function buildSegments(
   });
 }
 
-/** Point at normalized distance (0–1) along the polyline source → waypoints → target (Euclidean arc length per leg). */
+
 export function getPointAtOffset(
   sourceX: number,
   sourceY: number,
@@ -228,7 +228,7 @@ export function getPointAtOffset(
   return { x: last.x, y: last.y };
 }
 
-/** Normalized offset (0–1) of the closest point on the knot polyline to `pos`. */
+
 export function getClosestOffsetOnPath(
   sourceX: number,
   sourceY: number,
@@ -274,10 +274,7 @@ export function getClosestOffsetOnPath(
   return bestOffset;
 }
 
-/**
- * Pure: new waypoint list after dragging a segment by `delta` (flow space),
- * from a snapshot `initialWaypoints` at pointer-down.
- */
+
 export function computeSegmentDrag(
   sourceX: number,
   sourceY: number,

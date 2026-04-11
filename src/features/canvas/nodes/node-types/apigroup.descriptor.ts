@@ -36,9 +36,14 @@ export const apiGroupDescriptor: NodeTypeDescriptor = {
 
   buildStyle: (comp, ctx) => {
     if (!isApiGroupComponent(comp)) return undefined;
-    const endpointCount = Object.values(ctx.resolvedComponents).filter(
-      (c) => c.parentId === comp.id && isEndpointType(c.type),
-    ).length;
+    let endpointCount = 0;
+    const childIds = ctx.childrenIndex.get(comp.id);
+    if (childIds) {
+      for (const childId of childIds) {
+        const child = ctx.resolvedComponents[childId];
+        if (child && isEndpointType(child.type)) endpointCount++;
+      }
+    }
     const { width, height } = computeApiGroupSize(endpointCount);
     return { width, height };
   },

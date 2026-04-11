@@ -12,7 +12,7 @@ export type GithubClient = {
 };
 
 function normalizeBaseUrl(baseUrl: string): string {
-  // Avoid double slashes when concatenating with endpoint paths.
+  
   return baseUrl.replace(/\/+$/, "");
 }
 
@@ -61,7 +61,7 @@ export function createGithubClient(
     },
 
     async getRepository(fullName: string) {
-      // fullName is "owner/repo" — encode each segment individually to preserve the slash
+      
       const [owner, repo] = fullName.split("/");
       return getJson<GithubRepo>(
         `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`,

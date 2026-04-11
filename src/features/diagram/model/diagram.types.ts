@@ -1,7 +1,4 @@
-/**
- * Barrel: re-exports all domain types and defines aggregate types (Diagram, ModelDraft, Folder).
- * Types are split by responsibility: component, connection, layout, flow.
- */
+
 export type {
   ComponentType,
   Component,
@@ -40,7 +37,7 @@ export type { NodeLayout, ViewNodeLayout, Point, EdgeLayout } from "./layout.typ
 
 export type { FlowStep, FlowStepType, FlowBranch, Flow } from "./flow.types";
 
-// ── Aggregate types ────────────────────────────────────────────────────────
+
 
 import type { Component } from "./component.types";
 import type { Connection } from "./connection.types";
@@ -58,9 +55,9 @@ export interface IconDefinition {
   id: string;
   name: string;
   source: IconSource;
-  /** Unix timestamp (ms). */
+  
   createdAt: number;
-  /** Incremented when assigned to a component; decremented when cleared or component removed. */
+  
   usageCount: number;
 }
 
@@ -93,32 +90,27 @@ export interface Folder {
   domain?: string;
 }
 
-/**
- * Template snapshot entry: no live `id`/`parentId`/`x`/`y`; geometry is centroid-relative.
- */
+
 export type UserTemplateComponent = Omit<Component, "id" | "parentId" | "x" | "y"> & {
-  /** Index of the parent in `UserTemplate.components` when the parent is part of the template. */
+  
   parentIndex?: number;
-  /** Flow X / Y relative to selection centroid (internal template fields). */
+  
   _relX?: number;
   _relY?: number;
-  /** Copied from `nodeLayout` when captured (optional). */
+  
   width?: number;
   height?: number;
 };
 
-/**
- * User-defined diagram fragment; connections reference entries by index into `components`
- * (same indexing idea as pattern catalog templates).
- */
+
 export interface UserTemplate {
-  /** From `generateId("tpl")`. */
+  
   id: string;
   name: string;
   description?: string;
-  /** Free-form; defined by the user. */
+  
   category?: string;
-  /** Unix timestamp (ms). */
+  
   createdAt: number;
   components: UserTemplateComponent[];
   connections: Array<
@@ -129,7 +121,7 @@ export interface UserTemplate {
   >;
 }
 
-/** Declarative diff over the immutable base snapshot (cel / scene). */
+
 export interface SceneDiff {
   id: string;
   name: string;
@@ -158,6 +150,6 @@ export interface Diagram {
   folderId?: string | null;
   scenes?: Record<string, SceneDiff>;
   activeSceneId?: string | null;
-  /** Second scene for overlay compare mode (requires activeSceneId). */
+  
   compareSceneId?: string | null;
 }

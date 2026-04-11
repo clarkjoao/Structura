@@ -71,7 +71,7 @@ export default function EndpointPanel({
       </div>
 
       <div className="flex-1 overflow-auto p-4 space-y-4">
-        {/* Method */}
+        {}
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
             {t("endpointPanel.method")}
@@ -91,7 +91,7 @@ export default function EndpointPanel({
           </div>
         </div>
 
-        {/* Path */}
+        {}
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
             {t("endpointPanel.pathLabel")}
@@ -104,7 +104,7 @@ export default function EndpointPanel({
           />
         </div>
 
-        {/* Description */}
+        {}
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
             {t("endpointPanel.description")}
@@ -118,7 +118,7 @@ export default function EndpointPanel({
           />
         </div>
 
-        {/* Handlers */}
+        {}
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
@@ -240,7 +240,7 @@ export default function EndpointPanel({
           </div>
         </div>
 
-        {/* Remove endpoint */}
+        {}
         <div className="pt-2 border-t border-border">
           <button
             type="button"

@@ -30,9 +30,6 @@ export const jsonViewerDescriptor: NodeTypeDescriptor = {
       isSelected: ctx.selectedNodeId === comp.id,
       layoutWidth: layout?.width ?? JSON_VIEWER_DEFAULT_W,
       layoutHeight: layout?.height ?? JSON_VIEWER_DEFAULT_H,
-      onStartEdit: ctx.onJsonViewerStartEdit
-        ? () => ctx.onJsonViewerStartEdit!(comp.id)
-        : undefined,
       onInlineEditingChange: ctx.setJsonViewerInlineEditingId
         ? (editing: boolean) => ctx.setJsonViewerInlineEditingId!(editing ? comp.id : null)
         : undefined,

@@ -1,22 +1,22 @@
-// Internal — do not import outside lib/export-service/.
+
 import type { Component } from "@/features/diagram";
 import type { NodeLayout } from "@/features/diagram";
 import { isApiGroupComponent, isPanelComponent } from "@/features/diagram";
 import { CONFIG } from "./constants";
 import type { GeometryInfo } from "./types";
 
-/** Target canvas size in draw.io (px) for adaptive scale. */
+
 export const DRAWIO_TARGET_WIDTH = 2400;
 export const DRAWIO_TARGET_HEIGHT = 1600;
-/** Minimum margin from origin after normalizing root positions. */
+
 export const DRAWIO_MIN_MARGIN = 80;
-/** Minimum gap between root node rectangles after scaling (anti-overlap). */
+
 export const DRAWIO_ROOT_MIN_GAP = 40;
 
 const DEFAULT_ROOT_W = CONFIG.minDimensions.c4.width;
 const DEFAULT_ROOT_H = CONFIG.minDimensions.c4.height;
 
-/** Ids of components that act as draw.io group parents (panels + API groups). */
+
 export function getContainerIds(components: Record<string, Component>): Set<string> {
   const ids = new Set<string>();
   for (const c of Object.values(components)) {
@@ -42,10 +42,7 @@ export function isRootExportNode(
   return !c.parentId || !containerIds.has(c.parentId);
 }
 
-/**
- * Bounding box of root nodes only (absolute coordinates). Relative layouts inside
- * containers are excluded so min/max reflect the real canvas footprint.
- */
+
 export function computeBoundingBox(
   ids: string[],
   layoutMap: Map<string, NodeLayout>,
@@ -100,9 +97,7 @@ export function computeScaleFactor(bbox: BoundingBox, rootNodeCount: number): nu
 
 export type RootPosition = { x: number; y: number; width: number; height: number };
 
-/**
- * Push lower-sorted nodes down when AABB overlap (simple separation for draw.io paste).
- */
+
 export function resolveOverlaps(
   positions: Map<string, RootPosition>,
   minGap: number,
@@ -140,11 +135,7 @@ export function resolveOverlaps(
   return resolved;
 }
 
-/**
- * Node layouts match the canvas model: root nodes use absolute x/y; children of a
- * panel or api-group use coordinates relative to that parent. Pass values through
- * unchanged — do not subtract parent positions.
- */
+
 export function getExportGeometry(layout: NodeLayout | undefined): GeometryInfo {
   if (!layout) {
     return { x: 0, y: 0, width: 0, height: 0 };

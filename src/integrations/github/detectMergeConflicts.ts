@@ -15,7 +15,7 @@ export function detectConflicts(
   const conflicts: MergeConflict[] = [];
 
   for (const repo of repos) {
-    // Find ALL matching services (a repo may match both a GitHub and DefectDojo entry)
+    
     const matchingServices = existingServices.filter((svc) =>
       repoUrlsMatch(svc.repositoryUrl, repo.html_url),
     );
@@ -25,7 +25,7 @@ export function detectConflicts(
     }
   }
 
-  // Priority: defectdojo first so the dialog suggests merging against it.
+  
   conflicts.sort((a, b) => {
     const aPri = normalizeSources(a.existingService).some(
       (source) => source.type === ServiceSource.Defectdojo,

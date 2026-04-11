@@ -1,4 +1,4 @@
-// Internal — do not import outside lib/export-service/.
+
 import type {
   ApiGroupComponent,
   Component,
@@ -226,7 +226,7 @@ class JsonViewerCellBuilder implements CellBuilder {
     try {
       preview = JSON.stringify(JSON.parse(c.jsonContent), null, 2);
     } catch {
-      /* keep raw */
+      
     }
     const truncated = preview.length > 400 ? `${preview.slice(0, 400)}…` : preview;
     const schemaLine = c.schemaRef ? `${c.schemaRef}\n` : "";

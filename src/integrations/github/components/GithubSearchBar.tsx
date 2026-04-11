@@ -53,7 +53,7 @@ export function GithubSearchBar({ loading, client, onSearch }: Props) {
         setAuthenticatedUser(user.login);
       })
       .catch(() => {
-        // Silently fail — orgs dropdown just stays empty
+        
       })
       .finally(() => {
         if (!cancelled) setOrgsLoading(false);
@@ -137,7 +137,7 @@ export function GithubSearchBar({ loading, client, onSearch }: Props) {
         </Button>
       </div>
 
-      {/* Filtros combinados */}
+      {}
       <div className="flex flex-wrap items-center gap-3">
         <Select value={org} onValueChange={setOrg}>
           <SelectTrigger className="w-[220px]">

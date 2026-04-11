@@ -11,6 +11,11 @@ node_modules
 */node_modules
 dist
 dist-ssr
+
+cypress/screenshots
+cypress/downloads
+cypress/videos
+cypress/reports
 *.local
 
 # Editor directories and files

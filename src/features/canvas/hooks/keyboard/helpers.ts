@@ -82,12 +82,6 @@ export function getCopyableIds(diagram: Diagram, nodes: Node[]): string[] {
   return [...expandedIds];
 }
 
-/**
- * Returns the top-left bounding position of the given diagram component ids,
- * offset by PASTE_OFFSET in both axes. Pass ids from the internal clipboard at copy time,
- * not React Flow selection.
- * Returns null when ids is empty or no valid layouts are found (caller should use viewport center).
- */
 export function getOffsetPositionOfNodes(
   diagram: Diagram,
   ids: string[],

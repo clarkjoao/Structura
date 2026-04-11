@@ -57,7 +57,7 @@ export function resolveSceneSnapshot(
   return { components, connections, nodeLayouts, sceneId };
 }
 
-/** Flattened diagram for export when a scene is active (WYSIWYG). */
+
 export function diagramWithResolvedScene(diagram: Diagram): Diagram {
   const active = diagram.activeSceneId ?? null;
   if (!active || !diagram.scenes?.[active]) return diagram;
@@ -96,7 +96,7 @@ export function isConnectionAddedInActiveScene(diagram: Diagram, connectionId: s
   return connectionId in diagram.scenes[sid].addedConnections;
 }
 
-/** True if the node exists in the base snapshot (may still be hidden by the active scene). */
+
 export function isBaseSnapshotComponent(diagram: Diagram, componentId: string): boolean {
   return componentId in diagram.snapshot.components;
 }
@@ -107,7 +107,7 @@ export function canMoveNodeInSceneMode(diagram: Diagram, componentId: string): b
   return isComponentAddedInActiveScene(diagram, componentId);
 }
 
-/** Collect component id + descendants following parentId within the base snapshot only. */
+
 export function collectBaseDescendantIds(
   baseComponents: Record<string, Component>,
   rootId: string,
@@ -204,7 +204,7 @@ export function resolveCompareSnapshot(
   };
 }
 
-/** Single-scene or merged compare snapshot for canvas visibility. */
+
 export function resolveCanvasSnapshot(diagram: Diagram): {
   components: Record<string, Component>;
   connections: Record<string, Connection>;
@@ -236,7 +236,7 @@ export function resolveCanvasSnapshot(diagram: Diagram): {
 
 export interface CompareElementVisual {
   opacity: number;
-  /** Show badge(s) for scene A / B in compare mode */
+  
   badgeA?: { name: string; color: string };
   badgeB?: { name: string; color: string };
 }
@@ -360,7 +360,7 @@ export interface MergePreview {
   }>;
 }
 
-/** Internal merge-preview id when a scene-added component collides with the base snapshot. */
+
 const MERGE_CONFLICT_BASE_SCENE_ID = "__diagramBase__";
 const MERGE_CONFLICT_BASE_SCENE_NAME = "Diagram base";
 

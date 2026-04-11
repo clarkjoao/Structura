@@ -50,7 +50,7 @@ const CanvasToolbar = ({
 
   const STORAGE_KEY = "structura:toolbar-collapsed";
 
-  // Accordion state — init from localStorage, write on toggle, no useEffect needed
+  
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try { return localStorage.getItem(STORAGE_KEY) === "true"; } catch { return false; }
   });
@@ -58,14 +58,14 @@ const CanvasToolbar = ({
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
       const next = !prev;
-      try { localStorage.setItem(STORAGE_KEY, String(next)); } catch { /* quota */ }
+      try { localStorage.setItem(STORAGE_KEY, String(next)); } catch {  }
       return next;
     });
   };
 
   if (!diagram) return null;
 
-  // The toggle button — changes icon/label based on state
+  
   const toggleButton = (
     <button
       type="button"
@@ -80,7 +80,7 @@ const CanvasToolbar = ({
     </button>
   );
 
-  // "Add element" button — always rendered, extracted to avoid duplication
+  
   const addButton = (
     <button
       type="button"
@@ -102,13 +102,13 @@ const CanvasToolbar = ({
   return (
     <div className="absolute top-4 left-4 z-10 flex flex-col gap-2 w-[220px]">
 
-      {/* PINNED TOP — always visible */}
+      {}
       <CanvasToolbarDiagramPanel
         diagram={diagram}
         toolbarEditLocked={toolbarEditLocked}
       />
 
-      {/* ACCORDION MIDDLE — hidden when collapsed */}
+      {}
       {!collapsed && (
         <>
           <CanvasToolbarScenesButton
@@ -175,10 +175,10 @@ const CanvasToolbar = ({
         </>
       )}
 
-      {/* TOGGLE — sits between middle and Add button */}
+      {}
       {toggleButton}
 
-      {/* PINNED BOTTOM — always visible */}
+      {}
       {addButton}
 
       {showPatterns && (

@@ -9,10 +9,7 @@ export interface ResolvedSnapshot {
 
 const cache = new WeakMap<Diagram, ResolvedSnapshot>();
 
-/**
- * Cached resolveCanvasSnapshot for the same Diagram reference (e.g. multiple Zustand selectors in one render).
- * Invalidates when Immer replaces the diagram object.
- */
+
 export function getCachedCanvasSnapshot(diagram: Diagram): ResolvedSnapshot {
   const hit = cache.get(diagram);
   if (hit) return hit;

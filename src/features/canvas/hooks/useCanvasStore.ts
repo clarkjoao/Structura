@@ -7,14 +7,17 @@ import {
   useDiagramActions,
   useFlows,
 } from "@/features/diagram";
+import { useStableListByRefEquality } from "./useStableListByRefEquality";
 
 const EMPTY_REGISTRY: Record<string, never> = {};
 
 export function useCanvasStore() {
   const diagram = useActiveDiagram();
   const allDiagrams = useDiagrams();
-  const visibleComponents = useVisibleComponents();
-  const visibleConnections = useVisibleConnections();
+  const visibleComponentsRaw = useVisibleComponents();
+  const visibleConnectionsRaw = useVisibleConnections();
+  const visibleComponents = useStableListByRefEquality(visibleComponentsRaw);
+  const visibleConnections = useStableListByRefEquality(visibleConnectionsRaw);
   const serviceRegistry = useServiceRegistry();
   const flows = useFlows();
   const actions = useDiagramActions();

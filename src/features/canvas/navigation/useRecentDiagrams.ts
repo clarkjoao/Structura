@@ -6,7 +6,7 @@ import {
   type RecentDiagramRef,
 } from "@/features/diagram";
 
-// ── React hook ──
+
 
 export function useRecentDiagrams() {
   const [recent, setRecent] = useState<RecentDiagramRef[]>(() => readRecentRefs());

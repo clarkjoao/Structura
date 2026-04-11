@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { memo, useCallback } from "react";
 import { Eye } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -8,11 +8,11 @@ interface EmbedButtonProps {
   disabled?: boolean;
 }
 
-export const EmbedButton = ({
+export const EmbedButton = memo(function EmbedButton({
   elementId,
   onEmbed,
   disabled,
-}: EmbedButtonProps) => {
+}: EmbedButtonProps) {
   const { t } = useTranslation();
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
@@ -35,4 +35,4 @@ export const EmbedButton = ({
       <Eye className="h-3 w-3" /> {t("customNode.embedDiagram")}
     </button>
   );
-};
+});

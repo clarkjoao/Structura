@@ -22,9 +22,7 @@ export function buildCollapsedPanelIds(
   );
 }
 
-/**
- * Returns true when any ancestor in the parent chain is collapsed or hidden.
- */
+
 function hasCollapsedOrHiddenAncestor(
   comp: Component,
   components: Record<string, Component>,

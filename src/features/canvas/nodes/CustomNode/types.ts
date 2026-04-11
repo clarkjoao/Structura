@@ -23,15 +23,10 @@ export interface NodeData {
   lastRecordedHandleId?: string;
   activeHandleId?: string;
   coverageFlowNames?: string[];
-  /** Number of target (incoming) handles; 1–4, default 1. */
   incomingCount?: number;
-  /** Number of source (outgoing) handles; 1–4, default 1. */
   outgoingCount?: number;
-  /** Ordered connection ids per side — drives ↑↓ reorder controls. */
   handleOrder?: { incoming: string[]; outgoing: string[] };
-  /** Custom C4 accent (border and icon); overrides the default type color. */
   customColor?: string;
-  /** Move a connection one position up or down on a given side. */
   onReorderHandle?: (
     side: "incoming" | "outgoing",
     connId: string,

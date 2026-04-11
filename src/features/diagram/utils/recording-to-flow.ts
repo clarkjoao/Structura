@@ -1,12 +1,9 @@
 import type { Flow, FlowStep } from "../model/flow.types";
 
-/** Maps step id → which condition branch owns it during recording. */
+
 export type BranchOwnershipMap = Map<string, { conditionStepId: string; branchIndex: number }>;
 
-/**
- * Builds the same graph-shaped `steps` record as finalize recording (ModelExplorer).
- * Used for Mermaid preview, branch step counts, etc.
- */
+
 export function buildFlowFromRecordingSnapshot(
   steps: FlowStep[],
   branchOwnership: BranchOwnershipMap,

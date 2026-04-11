@@ -30,9 +30,7 @@ export const panelDescriptor: NodeTypeDescriptor = {
       isDragTarget: ctx.dragTargetPanelId === comp.id,
       isUnparentCandidate: ctx.unparentCandidatePanelId === comp.id,
       collapsed: comp.collapsed ?? false,
-      childCount: Object.values(ctx.resolvedComponents).filter(
-        (c) => c.parentId === comp.id,
-      ).length,
+      childCount: ctx.childrenIndex.get(comp.id)?.size ?? 0,
       onToggleCollapse: () => ctx.onPanelCollapseToggle?.(comp.id),
       ...sceneBadgePropsForNode(ctx, comp.id),
     };

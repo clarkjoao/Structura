@@ -1,12 +1,8 @@
-/**
- * Pure layout math for inserting a user template: roots use flow-absolute coordinates
- * (insertionPoint + centroid-relative offset); children use stored offsets directly
- * (already parent-relative in React Flow).
- */
+
 export interface UserTemplateLayoutInput {
   _relX?: number;
   _relY?: number;
-  /** Legacy templates saved before _relX/_relY */
+  
   x?: number;
   y?: number;
   parentIndex?: number;

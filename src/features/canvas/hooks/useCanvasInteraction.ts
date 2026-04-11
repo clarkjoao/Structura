@@ -37,7 +37,6 @@ export interface UseCanvasInteractionParams {
   showScenes: boolean;
   setShowScenes: Dispatch<SetStateAction<boolean>>;
   setFocusTitleTrigger: Dispatch<SetStateAction<number>>;
-  onNoteStartEdit?: (noteId: string) => void;
 }
 
 export interface UseCanvasInteractionResult {
@@ -60,7 +59,7 @@ export interface UseCanvasInteractionResult {
   handleSearchSelect: (componentId: string) => void;
 }
 
-/** Wires diagram navigation, drill actions, pointer/connection handlers, keyboard shortcuts, and playback side effects. */
+
 export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCanvasInteractionResult {
   const {
     canvasProps,
@@ -77,7 +76,6 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
     showScenes,
     setShowScenes,
     setFocusTitleTrigger,
-    onNoteStartEdit,
   } = params;
 
   const { t } = useTranslation();
@@ -138,6 +136,7 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
       nodes: localNodesRef.current,
       updateNodeLayout: actions.updateNodeLayout,
       commitNodeDrag: actions.commitNodeDrag,
+      batchCommitNodeDrag: actions.batchCommitNodeDrag,
     });
 
   const handleRequestFocusTitle = useCallback(() => {
@@ -157,7 +156,6 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
     addConnection: actions.addConnection,
     screenToFlowPosition: (pos) => reactFlowInstance.screenToFlowPosition(pos),
     onRequestFocusTitle: handleRequestFocusTitle,
-    onNoteStartEdit,
   });
 
   const isPanelOpen =

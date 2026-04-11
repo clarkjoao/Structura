@@ -1,11 +1,7 @@
 import type { NodeLayout } from "../model/layout.types";
 import { DEFAULT_NODE_W, DEFAULT_NODE_H, NODE_DRAG_PADDING } from "../model/layout.constants";
 
-/** Returns the new { x, y, width, height } for a panel that wraps all its children.
- *  All coordinates are in the panel's local coordinate space (children layouts are
- *  already relative to the panel origin in the Structura model).
- *  Returns null when there are no children with valid layouts.
- */
+
 export function computeFitBounds(
   childLayouts: NodeLayout[],
 ): { x: number; y: number; width: number; height: number } | null {
@@ -26,6 +22,6 @@ export function computeFitBounds(
     x: minX - NODE_DRAG_PADDING,
     y: minY - NODE_DRAG_PADDING,
     width:  (maxX - minX) + NODE_DRAG_PADDING * 2,
-    height: (maxY - minY) + NODE_DRAG_PADDING * 3, // extra bottom for panel header
+    height: (maxY - minY) + NODE_DRAG_PADDING * 3, 
   };
 }

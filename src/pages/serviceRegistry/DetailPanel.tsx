@@ -57,7 +57,7 @@ export function DetailPanel({
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState("");
 
-  // Sync edit state when svc changes
+  
   useEffect(() => {
     if (!editing) {
       setEditName(svc.name);
@@ -105,7 +105,7 @@ export function DetailPanel({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card">
-      {/* Panel header */}
+      {}
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
         <div className="flex items-center gap-2 min-w-0">
           <span
@@ -292,7 +292,7 @@ export function DetailPanel({
                   </p>
                 </div>
 
-                {/* Owner */}
+                {}
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] text-muted-foreground w-20 shrink-0">
                     {t("common.owner")}

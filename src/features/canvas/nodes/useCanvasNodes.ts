@@ -1,10 +1,11 @@
-import { useMemo, type CSSProperties } from "react";
+import { useMemo, useRef, type CSSProperties } from "react";
 import type { Node } from "@xyflow/react";
 import type {
   CompareElementVisual,
   Component,
   ComponentPatch,
   Diagram,
+  Flow,
   NodeLayout,
   ServiceDefinition,
 } from "@/features/diagram";
@@ -14,6 +15,7 @@ import {
   isEndpointType,
   isComponentAddedInActiveScene,
   isAncestorLocked,
+  buildChildrenIndex,
 } from "@/features/diagram";
 import { resolveNodeDescriptor, type NodeBuildContext } from "./node-types";
 import { useFlowMode } from "../flow/FlowModeContext";
@@ -22,8 +24,17 @@ import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowSta
 import { OPACITY_FLOW_PLAYBACK_NODE_DIM, OPACITY_TAG_FILTER_DIM } from "../canvas.constants";
 import { getPendingNodeIds, useLLMStore } from "@/features/llm";
 
+
+export type DiagramSceneState = {
+  id: string;
+  activeSceneId: string | null;
+  hasActiveScene: boolean;
+};
+
 interface UseCanvasNodesParams {
   diagram: Diagram | null | undefined;
+  diagramSceneState: DiagramSceneState | null;
+  flows: Flow[];
   resolvedComponents: Record<string, Component>;
   resolvedNodeLayouts: Record<string, NodeLayout>;
   sceneBadgeByComponentId: Record<string, { name: string; color: string }>;
@@ -53,20 +64,62 @@ interface UseCanvasNodesParams {
   isCompareMode?: boolean;
   compareVisualByComponentId?: Record<string, CompareElementVisual>;
   isNodeHiddenByTagFilter: (component: Component) => boolean;
-  onNoteStartEdit?: (noteId: string) => void;
   setNoteInlineEditingId?: (id: string | null) => void;
-  onJsonViewerStartEdit?: (nodeId: string) => void;
   setJsonViewerInlineEditingId?: (id: string | null) => void;
   updateComponent: (id: string, patch: ComponentPatch) => void;
 }
 
-type NodeCtxBase = Omit<NodeBuildContext, "isPlaying" | "isRecording" | "flowHighlight" | "activeStep" | "recordingInfo" | "coverage"> & {
+
+type DataCtx = Omit<
+  NodeBuildContext,
+  | "diagram"
+  | "isPlaying"
+  | "isRecording"
+  | "flowHighlight"
+  | "activeStep"
+  | "recordingInfo"
+  | "coverage"
+  | "handleDrillDown"
+  | "onRecordHandleClick"
+  | "onPanelCollapseToggle"
+  | "onReorderHandle"
+  | "onPlayFlow"
+  | "onAddEndpointToGroup"
+  | "setNoteInlineEditingId"
+  | "setJsonViewerInlineEditingId"
+  | "updateComponent"
+> & {
   highlightedNodeIds: Set<string>;
   isViewingCoverage: boolean;
 };
 
 const EMPTY_JOURNEYS_BY_COMPONENT_ID: Record<string, { name: string }[]> =
   Object.freeze({});
+
+
+const EMPTY_CANVAS_NODE_LIST: Node[] = [];
+
+
+function isSameBuiltFlowNode(a: Node, b: Node): boolean {
+  return (
+    a.id === b.id &&
+    a.type === b.type &&
+    a.position === b.position &&
+    a.zIndex === b.zIndex &&
+    a.connectable === b.connectable &&
+    a.selected === b.selected &&
+    a.draggable === b.draggable &&
+    a.selectable === b.selectable &&
+    a.focusable === b.focusable &&
+    a.className === b.className &&
+    a.dragHandle === b.dragHandle &&
+    a.parentId === b.parentId &&
+    a.extent === b.extent &&
+    a.hidden === b.hidden &&
+    a.style === b.style &&
+    a.data === b.data
+  );
+}
 
 function compareDiffOutlineClass(
   visual: CompareElementVisual | undefined,
@@ -80,8 +133,40 @@ function compareDiffOutlineClass(
   return "";
 }
 
+
+function shallowEqualIgnoringFunctions(
+  a: Record<string, unknown> | undefined,
+  b: Record<string, unknown> | undefined,
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  const keysA = Object.keys(a);
+  if (keysA.length !== Object.keys(b).length) return false;
+  for (const key of keysA) {
+    if (typeof a[key] === "function" && typeof b[key] === "function") continue;
+    if (a[key] !== b[key]) return false;
+  }
+  return true;
+}
+
+function shallowEqualStyle(
+  a: CSSProperties | undefined,
+  b: CSSProperties | undefined,
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  const keysA = Object.keys(a) as (keyof CSSProperties)[];
+  if (keysA.length !== Object.keys(b).length) return false;
+  for (const key of keysA) {
+    if (a[key] !== b[key]) return false;
+  }
+  return true;
+}
+
 export function useCanvasNodes({
   diagram,
+  diagramSceneState,
+  flows,
   resolvedComponents,
   resolvedNodeLayouts,
   sceneBadgeByComponentId,
@@ -111,12 +196,14 @@ export function useCanvasNodes({
   isCompareMode = false,
   compareVisualByComponentId,
   isNodeHiddenByTagFilter,
-  onNoteStartEdit,
   setNoteInlineEditingId,
-  onJsonViewerStartEdit,
   setJsonViewerInlineEditingId,
   updateComponent,
 }: UseCanvasNodesParams): Node[] {
+  const diagramRef = useRef(diagram);
+  diagramRef.current = diagram;
+  const activeDiagramKey = diagram?.id ?? null;
+
   const { isRecording, onRecordHandleClick } = useFlowMode();
   const pendingPreviews = useLLMStore((state) => state.pendingPreviews);
   const pendingNodeIds = useMemo(
@@ -124,10 +211,46 @@ export function useCanvasNodes({
     [pendingPreviews],
   );
 
-  const nodeCtxBase: NodeCtxBase | null = useMemo(() => {
+  const callbacksRef = useRef({
+    handleDrillDown,
+    onRecordHandleClick,
+    onPanelCollapseToggle: handlePanelCollapseToggle,
+    onReorderHandle,
+    onPlayFlow,
+    onAddEndpointToGroup,
+    setNoteInlineEditingId,
+    setJsonViewerInlineEditingId,
+    updateComponent,
+  });
+  callbacksRef.current = {
+    handleDrillDown,
+    onRecordHandleClick,
+    onPanelCollapseToggle: handlePanelCollapseToggle,
+    onReorderHandle,
+    onPlayFlow,
+    onAddEndpointToGroup,
+    setNoteInlineEditingId,
+    setJsonViewerInlineEditingId,
+    updateComponent,
+  };
+
+  
+  const prevNodeDataRef = useRef<
+    Map<string, {
+      data: Record<string, unknown>;
+      style: CSSProperties | undefined;
+      position: { x: number; y: number };
+    }>
+  >(new Map());
+
+  
+  const prevRfNodesByIdRef = useRef<Map<string, Node>>(new Map());
+  const prevNodesArrayRef = useRef<Node[]>(EMPTY_CANVAS_NODE_LIST);
+
+  const dataCtx: DataCtx | null = useMemo(() => {
     if (!diagram) return null;
     return {
-      diagram,
+      flows,
       resolvedComponents,
       resolvedNodeLayouts,
       sceneBadgeByComponentId,
@@ -142,24 +265,14 @@ export function useCanvasNodes({
       panelIds,
       connectionCounts: connectionCountPerNode,
       effectiveHandleOrder,
-      onReorderHandle,
-      handleDrillDown,
-      onRecordHandleClick,
-      onPanelCollapseToggle: handlePanelCollapseToggle,
       activeFlowId,
-      onPlayFlow,
-      onAddEndpointToGroup,
-      onNoteStartEdit,
-      setNoteInlineEditingId,
-      onJsonViewerStartEdit,
-      setJsonViewerInlineEditingId,
-      updateComponent,
       highlightedNodeIds,
       isViewingCoverage,
       journeysByComponentId: EMPTY_JOURNEYS_BY_COMPONENT_ID,
+      childrenIndex: buildChildrenIndex(resolvedComponents),
     };
   }, [
-    diagram,
+    activeDiagramKey,
     resolvedComponents,
     resolvedNodeLayouts,
     sceneBadgeByComponentId,
@@ -174,20 +287,10 @@ export function useCanvasNodes({
     panelIds,
     connectionCountPerNode,
     effectiveHandleOrder,
-    onReorderHandle,
-    handleDrillDown,
-    onRecordHandleClick,
-    handlePanelCollapseToggle,
     activeFlowId,
-    onPlayFlow,
-    onAddEndpointToGroup,
-    onNoteStartEdit,
-    setNoteInlineEditingId,
-    onJsonViewerStartEdit,
-    setJsonViewerInlineEditingId,
-    updateComponent,
     highlightedNodeIds,
     isViewingCoverage,
+    flows,
   ]);
 
   const nodeCtxPlayback = useMemo(
@@ -203,49 +306,97 @@ export function useCanvasNodes({
   );
 
   return useMemo(() => {
-    if (!diagram || !nodeCtxBase) return [];
+    const diagram = diagramRef.current;
+    if (!dataCtx || !diagram) {
+      prevRfNodesByIdRef.current.clear();
+      prevNodesArrayRef.current = EMPTY_CANVAS_NODE_LIST;
+      return EMPTY_CANVAS_NODE_LIST;
+    }
+
+    const sceneActive = diagramSceneState?.hasActiveScene ?? false;
 
     const {
       highlightedNodeIds: hIds,
       isViewingCoverage: viewingCov,
-      ...ctxBaseForBuild
-    } = nodeCtxBase;
+      ...restForCtx
+    } = dataCtx;
 
     const ctx: NodeBuildContext = {
-      ...ctxBaseForBuild,
+      diagram,
+      ...restForCtx,
+      ...callbacksRef.current,
       ...nodeCtxPlayback,
     };
 
-    const collapsedPanelIds = buildCollapsedPanelIds(nodeCtxBase.resolvedComponents);
-    const compareVisual = nodeCtxBase.compareVisualByComponentId;
-    const isCmp = nodeCtxBase.isCompareMode ?? false;
+    const collapsedPanelIds = buildCollapsedPanelIds(dataCtx.resolvedComponents);
 
-    return [...visibleComponents]
+    const lockedNodeIds = new Set<string>();
+    for (const comp of Object.values(dataCtx.resolvedComponents)) {
+      if (comp.locked === true || isAncestorLocked(comp, dataCtx.resolvedComponents)) {
+        lockedNodeIds.add(comp.id);
+      }
+    }
+
+    const compareVisual = dataCtx.compareVisualByComponentId;
+    const isCmp = dataCtx.isCompareMode ?? false;
+
+    
+    const visibleIds = new Set(visibleComponents.map((c) => c.id));
+    for (const cachedId of prevNodeDataRef.current.keys()) {
+      if (!visibleIds.has(cachedId)) prevNodeDataRef.current.delete(cachedId);
+    }
+    for (const cachedId of prevRfNodesByIdRef.current.keys()) {
+      if (!visibleIds.has(cachedId)) prevRfNodesByIdRef.current.delete(cachedId);
+    }
+
+    function getParentDepth(
+      comp: Component,
+      comps: Record<string, Component>,
+    ): number {
+      let depth = 0;
+      let currentId = comp.parentId;
+      const visited = new Set<string>();
+      while (currentId && comps[currentId] && !visited.has(currentId)) {
+        visited.add(currentId);
+        depth++;
+        currentId = comps[currentId].parentId;
+      }
+      return depth;
+    }
+
+    const depthCache = new Map<string, number>();
+    function getDepth(comp: Component): number {
+      if (depthCache.has(comp.id)) return depthCache.get(comp.id)!;
+      const d = getParentDepth(comp, dataCtx.resolvedComponents);
+      depthCache.set(comp.id, d);
+      return d;
+    }
+
+    const nextNodes = [...visibleComponents]
       .sort((a, b) => {
         const aIsGroup = isPanelComponent(a) || isApiGroupComponent(a);
         const bIsGroup = isPanelComponent(b) || isApiGroupComponent(b);
         if (aIsGroup && !bIsGroup) return -1;
         if (!aIsGroup && bIsGroup) return 1;
-        if (aIsGroup && bIsGroup) {
-          if (b.parentId === a.id) return -1;
-          if (a.parentId === b.id) return 1;
-        }
+        const depthA = getDepth(a);
+        const depthB = getDepth(b);
+        if (depthA !== depthB) return depthA - depthB;
         return 0;
       })
       .map((comp): Node => {
         const d = resolveNodeDescriptor(comp);
-        const layout = nodeCtxBase.resolvedNodeLayouts[comp.id];
+        const layout = dataCtx.resolvedNodeLayouts[comp.id];
         const vis = computeNodeVisibility(
           comp,
           d,
           layout,
-          nodeCtxBase.panelIds,
-          nodeCtxBase.selectedNodeIds,
+          dataCtx.panelIds,
+          dataCtx.selectedNodeIds,
           hIds,
           collapsedPanelIds,
           viewingCov,
           nodeCtxPlayback.coverage,
-          nodeCtxBase.resolvedComponents,
+          dataCtx.resolvedComponents,
         );
         const style: Record<string, unknown> = {
           ...d.buildStyle?.(comp, ctx),
@@ -265,13 +416,10 @@ export function useCanvasNodes({
         const lockedInGroup =
           isEndpointType(comp.type) &&
           comp.parentId != null &&
-          isApiGroupComponent(nodeCtxBase.resolvedComponents[comp.parentId]);
-        const sceneActive =
-          !!diagram.activeSceneId && !!diagram.scenes?.[diagram.activeSceneId];
+          isApiGroupComponent(dataCtx.resolvedComponents[comp.parentId]);
         const sceneLocksBase =
           sceneActive && !isComponentAddedInActiveScene(diagram, comp.id);
-        const isLockedBySelfOrAncestor =
-          comp.locked === true || isAncestorLocked(comp, nodeCtxBase.resolvedComponents);
+        const isLockedBySelfOrAncestor = lockedNodeIds.has(comp.id);
         const diffOutline =
           isCmp && cmpVis !== undefined ? compareDiffOutlineClass(cmpVis) : "";
         const nodeClassNames = [
@@ -282,10 +430,37 @@ export function useCanvasNodes({
         ]
           .filter(Boolean)
           .join(" ");
-        return {
+        
+        
+        const newData = d.buildData(comp, ctx) as Record<string, unknown>;
+        const newStyle = style as CSSProperties;
+        const newPosX = layout?.x ?? 0;
+        const newPosY = layout?.y ?? 0;
+        const cached = prevNodeDataRef.current.get(comp.id);
+        const stableData =
+          cached && shallowEqualIgnoringFunctions(cached.data, newData)
+            ? cached.data
+            : newData;
+        const stableStyle =
+          cached && shallowEqualStyle(cached.style, newStyle)
+            ? cached.style
+            : newStyle;
+        const stablePosition =
+          cached &&
+          cached.position.x === newPosX &&
+          cached.position.y === newPosY
+            ? cached.position
+            : { x: newPosX, y: newPosY };
+        prevNodeDataRef.current.set(comp.id, {
+          data: stableData,
+          style: stableStyle,
+          position: stablePosition,
+        });
+
+        const built: Node = {
           id: comp.id,
           type: d.rfType,
-          position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
+          position: stablePosition,
           zIndex: vis.zIndex,
           connectable: d.connectable && !isCmp && !tagFilteredHidden,
           selected: vis.isSelected,
@@ -305,13 +480,36 @@ export function useCanvasNodes({
           ...(d.dragHandle ? { dragHandle: d.dragHandle } : {}),
           ...(vis.isChild ? { parentId: comp.parentId!, extent: "parent" as const } : {}),
           hidden: vis.isHidden,
-          style: style as CSSProperties,
-          data: d.buildData(comp, ctx),
+          style: stableStyle,
+          data: stableData,
         };
+
+        const prevRf = prevRfNodesByIdRef.current.get(comp.id);
+        const nodeToUse =
+          prevRf && isSameBuiltFlowNode(prevRf, built) ? prevRf : built;
+        if (nodeToUse === built) {
+          prevRfNodesByIdRef.current.set(comp.id, built);
+        }
+        return nodeToUse;
       });
+
+    const prevArr = prevNodesArrayRef.current;
+    if (
+      nextNodes.length === prevArr.length &&
+      nextNodes.length > 0 &&
+      nextNodes.every((node, index) => node === prevArr[index])
+    ) {
+      return prevArr;
+    }
+    if (nextNodes.length === 0) {
+      prevNodesArrayRef.current = EMPTY_CANVAS_NODE_LIST;
+      return EMPTY_CANVAS_NODE_LIST;
+    }
+    prevNodesArrayRef.current = nextNodes;
+    return nextNodes;
   }, [
-    diagram,
-    nodeCtxBase,
+    diagramSceneState,
+    dataCtx,
     nodeCtxPlayback,
     visibleComponents,
     isNodeHiddenByTagFilter,

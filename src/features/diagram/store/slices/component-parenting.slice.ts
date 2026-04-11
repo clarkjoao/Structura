@@ -18,56 +18,115 @@ import { resolveActiveScene } from "./scene-helpers";
 
 export const componentParentingSlice = (
   set: (fn: (state: AppState) => void) => void,
-  get: () => AppState,
+  _get: () => AppState,
 ) => ({
   setParent: (childId: string, parentId: string | null) => {
-    void get;
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
       const scene = resolveActiveScene(d);
       if (scene && !scene.addedComponents[childId]) return;
       if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-      const comp = scene?.addedComponents[childId] ?? d.snapshot.components[childId];
-      if (comp) comp.parentId = parentId;
+      if (scene) {
+        const comp = scene.addedComponents[childId];
+        if (comp) comp.parentId = parentId;
+      } else {
+        const comp = d.snapshot.components[childId];
+        if (comp) comp.parentId = parentId;
+      }
     });
   },
 
-  /**
-   * Atomic drag-commit: pushes ONE history entry then applies parentId + position
-   * in the same Immer transaction. Use this from onNodeDragStop instead of calling
-   * setParent + updateNodeLayout separately to avoid the double-history / stale-position bug.
-   */
+  
   commitNodeDrag: (
     nodeId: string,
     newParentId: string | null,
     newPosition: { x: number; y: number },
   ) => {
-    void get;
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
       const scene = resolveActiveScene(d);
 
-      // Scene-mode guard: only allow moving scene-owned components
+      
       if (scene && !scene.addedComponents[nodeId]) return;
 
-      // Single pushHistory for the whole drag operation
+      
       if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
 
-      // 1. Update parentId
-      const comp = scene?.addedComponents[nodeId] ?? d.snapshot.components[nodeId];
-      if (comp) comp.parentId = newParentId;
+      
+      
+      if (scene) {
+        
+        const comp = scene.addedComponents[nodeId];
+        if (comp) comp.parentId = newParentId;
+        
+        const layout = scene.nodeLayouts[nodeId];
+        if (layout) {
+          layout.x = newPosition.x;
+          layout.y = newPosition.y;
+        }
+      } else {
+        
+        const comp = d.snapshot.components[nodeId];
+        if (comp) comp.parentId = newParentId;
+        
+        const layout = d.nodeLayouts[nodeId];
+        if (layout) {
+          layout.x = newPosition.x;
+          layout.y = newPosition.y;
+        }
+      }
 
-      // 2. Update position
-      const layoutTarget = scene?.addedComponents[nodeId]
-        ? scene!.nodeLayouts
-        : d.nodeLayouts;
+      d.updatedAt = new Date().toISOString();
+    });
+  },
 
-      const layout = layoutTarget[nodeId];
-      if (layout) {
-        layout.x = newPosition.x;
-        layout.y = newPosition.y;
+  
+  batchCommitNodeDrag: (
+    entries: Array<{
+      nodeId: string;
+      newParentId: string | null;
+      newPosition: { x: number; y: number };
+    }>,
+  ) => {
+    if (entries.length === 0) return;
+    set((state) => {
+      const d = getActiveDiagram(state);
+      if (!d) return;
+      const scene = resolveActiveScene(d);
+
+      const willApply = entries.some(({ nodeId }) => {
+        if (scene && !scene.addedComponents[nodeId]) return false;
+        if (scene) {
+          return !!(scene.addedComponents[nodeId] || scene.nodeLayouts[nodeId]);
+        }
+        return !!(d.snapshot.components[nodeId] || d.nodeLayouts[nodeId]);
+      });
+      if (!willApply) return;
+
+      if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+
+      for (const { nodeId, newParentId, newPosition } of entries) {
+        if (scene && !scene.addedComponents[nodeId]) continue;
+
+        if (scene) {
+          const comp = scene.addedComponents[nodeId];
+          if (comp) comp.parentId = newParentId;
+          const layout = scene.nodeLayouts[nodeId];
+          if (layout) {
+            layout.x = newPosition.x;
+            layout.y = newPosition.y;
+          }
+        } else {
+          const comp = d.snapshot.components[nodeId];
+          if (comp) comp.parentId = newParentId;
+          const layout = d.nodeLayouts[nodeId];
+          if (layout) {
+            layout.x = newPosition.x;
+            layout.y = newPosition.y;
+          }
+        }
       }
 
       d.updatedAt = new Date().toISOString();
@@ -75,7 +134,6 @@ export const componentParentingSlice = (
   },
 
   groupNodes: (componentIds: string[]): string | null => {
-    void get;
     let panelId: string | null = null;
     set((state) => {
       const d = getActiveDiagram(state);
@@ -145,7 +203,6 @@ export const componentParentingSlice = (
   },
 
   ungroupNodes: (panelId: string) => {
-    void get;
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;

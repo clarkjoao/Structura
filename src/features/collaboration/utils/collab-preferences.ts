@@ -24,7 +24,7 @@ export function writePrefs(prefs: Partial<CollabPrefs>): void {
   try {
     localStorage.setItem(KEY, JSON.stringify({ ...readPrefs(), ...prefs }));
   } catch {
-    // Ignore localStorage errors.
+    
   }
 }
 

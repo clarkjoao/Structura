@@ -4,7 +4,7 @@ import { sanitizeSvg } from "@/features/canvas/utils/svg.sanitizer";
 describe("sanitizeSvg", () => {
   it("accepts SVG with XML declaration and DOCTYPE (typical exported files)", () => {
     const input = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!DOCTYPE svg PUBLIC "-
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>`;
     const result = sanitizeSvg(input);
     expect(result).not.toBeNull();

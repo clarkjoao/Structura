@@ -55,7 +55,7 @@ const emptyStateDotBackground: CSSProperties = {
 
 interface JourneyEditorCanvasProps {
   diagramId: string | null;
-  /** When false, the diagram canvas is hidden in favor of an empty state. */
+  
   hasSelectedStep: boolean;
 }
 

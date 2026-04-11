@@ -1,9 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useCollab } from "@/features/collaboration";
 import { useReactFlow, useUpdateNodeInternals } from "@xyflow/react";
 import { useNavigate } from "react-router-dom";
-import { getCachedCanvasSnapshot } from "@/features/diagram";
+import {
+  useActiveDiagramId,
+  useActiveDiagramSceneState,
+  useConnections,
+  useResolvedComponents,
+  useResolvedNodeLayouts,
+} from "@/features/diagram";
 import type { CanvasProps } from "../canvas.types";
 import { useCanvasCompareState } from "./useCanvasCompareState";
 import { useCanvasFlowState } from "./useCanvasFlowState";
@@ -22,24 +28,31 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
   const [showScenes, setShowScenes] = useState(false);
   const [focusTitleTrigger, setFocusTitleTrigger] = useState(0);
   const { diagram, allDiagrams, visibleComponents, visibleConnections, serviceRegistry, flows, actions } = useCanvasStore();
+  const activeDiagramId = useActiveDiagramId();
+  const resolvedComponents = useResolvedComponents();
+  const resolvedNodeLayouts = useResolvedNodeLayouts();
+  const resolvedConnections = useConnections();
+  const diagramSceneState = useActiveDiagramSceneState();
   const visualState = useCanvasVisualState(diagram?.id ?? null);
   const { updateSelectedNode } = useCollab();
   const compareState = useCanvasCompareState({ diagram, isFlowPanelOpen: !!canvasProps.isFlowPanelOpen, clearCanvasSelection: visualState.clearCanvasSelection, t });
-  const resolved = useMemo(() => (diagram ? getCachedCanvasSnapshot(diagram) : null), [diagram]);
+  const resolved = useMemo(
+    () =>
+      activeDiagramId
+        ? {
+            components: resolvedComponents,
+            nodeLayouts: resolvedNodeLayouts,
+            connections: resolvedConnections,
+          }
+        : null,
+    [activeDiagramId, resolvedComponents, resolvedNodeLayouts, resolvedConnections],
+  );
   const allDiagramTags = useMemo(() => {
-    if (!resolved?.components) return [];
     const tags = new Set<string>();
-    Object.values(resolved.components).forEach((component) => component.tags?.forEach((tag) => tags.add(tag)));
+    Object.values(resolvedComponents).forEach((component) => component.tags?.forEach((tag) => tags.add(tag)));
     return Array.from(tags).sort();
-  }, [resolved?.components]);
+  }, [resolvedComponents]);
   const flowState = useCanvasFlowState({ flows, isCompareMode: compareState.isCompareMode });
-  const onNoteStartEdit = useCallback((_noteId: string) => {
-    // Ensures note `data.onStartEdit` exists so NoteNode can replace it with inline edit.
-    // Double-click invokes the patched handler on `node.data`.
-  }, []);
-  const onJsonViewerStartEdit = useCallback((_nodeId: string) => {
-    // Ensures json-viewer `data.onStartEdit` exists so JsonViewerNode can replace it with inline edit.
-  }, []);
   const activeCollabElementId = visualState.selectedEdgeId ?? visualState.selectedNodeId;
   useEffect(() => {
     updateSelectedNode(activeCollabElementId);
@@ -59,7 +72,6 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     showScenes,
     setShowScenes,
     setFocusTitleTrigger,
-    onNoteStartEdit,
   });
   const flowContext = useMemo(
     () => ({
@@ -80,20 +92,14 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
       visualState,
       dragTargetPanelId: interaction.dragTargetPanelId,
       unparentCandidatePanelId: interaction.unparentCandidatePanelId,
-      onNoteStartEdit,
-      onJsonViewerStartEdit,
     }),
-    [
-      interaction.dragTargetPanelId,
-      interaction.unparentCandidatePanelId,
-      onJsonViewerStartEdit,
-      onNoteStartEdit,
-      visualState,
-    ],
+    [interaction.dragTargetPanelId, interaction.unparentCandidatePanelId, visualState],
   );
   const graphState = useCanvasGraphState({
     diagram,
     resolved,
+    diagramSceneState,
+    flows,
     visualContext,
     localNodesRef: interaction.localNodesRef,
     innerOnNodesChange: interaction.innerOnNodesChange,

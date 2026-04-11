@@ -67,7 +67,7 @@ function readGeometry(element: Element): { x: number; y: number; width: number; 
   };
 }
 
-/** Style source for draw.io conversion: object → child mxCell, else the element itself. */
+
 function extractStyle(el: Element): string {
   const cell =
     el.tagName.toLowerCase() === "object" ? el.querySelector("mxCell") : el;
@@ -252,7 +252,7 @@ interface PendingVertex {
   kind: "c4" | "panel" | "aws" | "panel-mxcell" | "unknown";
   parentDrawioId: string;
   rawGeometry: { x: number; y: number; width: number; height: number };
-  /** Object element for c4/panel-from-object; mxCell for aws / standalone panel / unknown */
+  
   sourceElement: Element;
 }
 

@@ -27,10 +27,7 @@ import { useGroupShortcuts } from "./keyboard/useGroupShortcuts";
 import { validateSvgSize } from "../utils/svg.utils";
 import { sanitizeSvg } from "../utils/svg.sanitizer";
 
-/**
- * Validates SVG size, then sanitizes. Shows toasts on failure.
- * `translate` should be `t` from react-i18next for icon message keys.
- */
+
 function prepareImportedSvgMarkup(
   svgContent: string,
   translate: (key: string) => string,
@@ -379,35 +376,35 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
 
       const mod = isModKeyPressed(event);
 
-      // Cmd/Ctrl+F — open search
+      
       if (mod && (event.key === KEY.F || event.key === "F")) {
         event.preventDefault();
         onOpenSearch?.();
         return;
       }
 
-      // Cmd/Ctrl+K — open diagram command palette
+      
       if (mod && (event.key === KEY.K || event.key === "K")) {
         event.preventDefault();
         onOpenCommandPalette?.();
         return;
       }
 
-      // Cmd/Ctrl+B — toggle diagram sidebar
+      
       if (mod && (event.key === KEY.B || event.key === "B")) {
         event.preventDefault();
         onToggleDiagramSidebar?.();
         return;
       }
 
-      // Cmd/Ctrl+/ — open search
+      
       if (mod && event.key === KEY.SLASH) {
         event.preventDefault();
         onOpenSearch?.();
         return;
       }
 
-      // Cmd/Ctrl+1–4 — add C4 component
+      
       if (mod && c4ShortcutMap[event.key]) {
         event.preventDefault();
         const { type, name } = c4ShortcutMap[event.key];

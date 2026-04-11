@@ -81,17 +81,17 @@ function JourneyPlayerFlowBridge({
     play(flow);
   }, [activeDiagramId, diagrams, mode.kind, openDiagram, play, pendingFlowPlaybackRef]);
 
-  // Stop flow playback when the active diagram changes without a pending flow
-  // (e.g. user navigates to another diagram while a flow is playing).
+  
+  
   useEffect(() => {
     if (!flowIsIdle && pendingFlowPlaybackRef.current === null) {
       exitPlay();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [activeDiagramId]);
 
-  // Stop flow playback when the journey step changes — each step has its own
-  // flow context, so the previous flow must not bleed into the next step.
+  
+  
   const prevSelectedStepIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (mode.kind !== "playing") {

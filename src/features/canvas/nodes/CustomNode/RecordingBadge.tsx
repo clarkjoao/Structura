@@ -1,9 +1,14 @@
+import { memo } from "react";
+
 interface RecordingBadgeProps {
   badges: number[];
   isLastRecorded?: boolean;
 }
 
-export const RecordingBadge = ({ badges, isLastRecorded }: RecordingBadgeProps) => {
+export const RecordingBadge = memo(function RecordingBadge({
+  badges,
+  isLastRecorded,
+}: RecordingBadgeProps) {
   if (!badges.length) return null;
   return (
     <div
@@ -12,4 +17,4 @@ export const RecordingBadge = ({ badges, isLastRecorded }: RecordingBadgeProps) 
       {badges.join(",")}
     </div>
   );
-};
+});

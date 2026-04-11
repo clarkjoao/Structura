@@ -30,7 +30,7 @@ interface JourneyStoreState {
   ) => void;
 }
 
-/** Normalizes persisted journeys where legacy steps omitted `diagramId`. */
+
 export function migrateJourneyStepsDiagramId(
   journeys: Record<string, Journey>,
 ): Record<string, Journey> {

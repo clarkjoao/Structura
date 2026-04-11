@@ -1,4 +1,4 @@
-/** Campos visíveis como colunas na planilha */
+
 export type DbTableColumnKey =
   | "name"
   | "dataType"
@@ -24,7 +24,7 @@ export interface DbTableNodeData {
   isSelected: boolean;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
-  /** Callback para persistir alterações no store */
+  
   onCommit: (columns: DbColumnRow[]) => void;
   sceneBadge?: { name: string; color: string };
   compareBadges?: {

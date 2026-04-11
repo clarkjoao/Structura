@@ -5,7 +5,7 @@ import { defaultStorage } from "@/infrastructure/persistence";
 const STORAGE_KEY = "defectdojo:config";
 const ADAPTER_KEY = `structura_${STORAGE_KEY}`;
 
-/** Legacy key used before migration to defaultStorage */
+
 const LEGACY_KEY = "structura:defectdojo:config";
 
 export function useDefectDojoConfig() {
@@ -21,14 +21,14 @@ export function useDefectDojoConfig() {
   });
 
   const saveConfig = useCallback(async (cfg: DefectDojoConfig) => {
-    // forceSave bypasses the pause — credentials are NOT diagram data
+    
     await defaultStorage.forceSave(STORAGE_KEY, cfg);
     setConfig(cfg);
   }, []);
 
   const clearConfig = useCallback(async () => {
     await defaultStorage.removeItem(STORAGE_KEY);
-    // Also clean legacy key
+    
     try {
       localStorage.removeItem(LEGACY_KEY);
     } catch (error) {

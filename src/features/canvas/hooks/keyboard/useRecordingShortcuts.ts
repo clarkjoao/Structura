@@ -2,10 +2,6 @@ import { useCallback } from "react";
 import { useFlowMode } from "../../flow/FlowModeContext";
 import type { KeyHandler } from "./helpers";
 
-/**
- * In recording mode, only Backspace/Delete triggers undo.
- * Returns a handler that consumes ALL events when recording (blocking other shortcuts).
- */
 export function useRecordingShortcuts(): KeyHandler {
   const { isRecording, onRecordUndo } = useFlowMode();
 
@@ -16,7 +12,7 @@ export function useRecordingShortcuts(): KeyHandler {
         e.preventDefault();
         onRecordUndo?.();
       }
-      return true; // Block all other shortcuts during recording
+      return true; 
     },
     [isRecording, onRecordUndo],
   );

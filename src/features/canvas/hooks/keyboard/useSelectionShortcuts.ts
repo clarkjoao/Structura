@@ -17,11 +17,6 @@ interface UseSelectionShortcutsParams {
   removeConnection: (id: string) => void;
 }
 
-/**
- * Escape — clear selection
- * Cmd+A — select all nodes
- * Delete/Backspace — remove selected nodes and selected edge
- */
 export function useSelectionShortcuts({
   diagram,
   selectedNodeId,
@@ -40,7 +35,6 @@ export function useSelectionShortcuts({
       if (!diagram) return false;
       const mod = isModKeyPressed(e);
 
-      // Escape — clear selection and context
       if (e.key === "Escape") {
         e.preventDefault();
         clearClipboard();
@@ -54,7 +48,6 @@ export function useSelectionShortcuts({
         return true;
       }
 
-      // Cmd/Ctrl+A — select all
       if (mod && e.key === "a") {
         e.preventDefault();
         reactFlowInstance.setNodes((nds: Node[]) => {
@@ -66,7 +59,6 @@ export function useSelectionShortcuts({
         return true;
       }
 
-      // Delete / Backspace — remove selected nodes or edge
       if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
         const selected = getSelectedNodes(reactFlowInstance, selectedNodeId);

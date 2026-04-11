@@ -104,21 +104,21 @@ export function validateFlowGraph(flow: Flow, diagram: Diagram): BrokenStep[] {
   return broken;
 }
 
-/** Collect all step ids in walk order (DFS from entry). */
+
 export function getOrderedStepIds(flow: Flow): string[] {
   const ids: string[] = [];
   walkFlow(flow, (step) => ids.push(step.id));
   return ids;
 }
 
-/** Count total steps reachable from entry. */
+
 export function getStepCount(flow: Flow): number {
   let count = 0;
   walkFlow(flow, () => count++);
   return count;
 }
 
-/** Count steps in the subgraph reachable from `fromStepId` (inclusive), following `next` and all branch targets. */
+
 export function getBranchStepCount(flow: Flow, fromStepId: string): number {
   let count = 0;
   const visited = new Set<string>();

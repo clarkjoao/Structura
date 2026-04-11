@@ -19,7 +19,6 @@ interface UseCanvasEdgesParams {
   flowHighlight: Pick<FlowHighlight, "activeConnId" | "participantConnIds">;
   recordingInfo: Pick<RecordingInfo, "edgeSteps" | "recordedEdgeIds" | "lastEdgeId"> | null;
   coverage: Pick<CoverageInfo, "edgeFlows"> | null;
-  /** Tags toggled off in the canvas tag filter (local state, not persisted) */
   visibleTags: Set<string>;
 }
 

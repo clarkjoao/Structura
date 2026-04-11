@@ -28,26 +28,26 @@ interface BaseComponent {
   name: string;
   description: string;
   parentId: string | null;
-  /** When true, element cannot be dragged on canvas. */
+  
   locked?: boolean;
-  /** Id of an entry in the diagram snapshot `iconLibrary`. */
+  
   customIconId?: string;
   tags?: string[];
   serviceId?: string;
   linkedDiagramId?: string;
-  /** When true, node is hidden on canvas (e.g. child of collapsed panel). Never clear parentId. */
+  
   hidden?: boolean;
-  /** Explicit ordering of connections by handle position. Incoming = left side, outgoing = right side. */
+  
   handleOrder?: {
     incoming: string[];
     outgoing: string[];
   };
-  /** Relative position in a user template capture (centroid-normalized); not used on live canvas. */
+  
   x?: number;
   y?: number;
-  /** Custom component template origin. Cleared when node data diverges from template. */
+  
   templateId?: string;
-  /** Optional custom-template registry reference used during instantiation. */
+  
   registryServiceId?: string;
   externalLinks?: ExternalLink[];
 }
@@ -60,9 +60,9 @@ export interface C4Component extends BaseComponent {
 
 export type { PanelKind };
 
-/** Visual / semantic options for {@link PanelKind} `"swimlane"` (actor / domain lanes). */
+
 export interface SwimlaneStyle {
-  /** Default: horizontal */
+  
   orientation?: "horizontal" | "vertical";
   laneColor?: string;
   laneLabel?: string;
@@ -117,20 +117,20 @@ export interface EndpointComponent extends BaseComponent {
   type: "endpoint";
   method: HttpMethod;
   path: string;
-  /** Optional short description for the endpoint (base description is also used for general notes). */
+  
   endpointDescription?: string;
   handlers: EndpointHandler[];
 }
 
 export interface UnknownComponent extends BaseComponent {
   type: "unknown";
-  /** Raw content from the original source (ex: draw.io XML value attribute). */
+  
   rawContent?: string;
 }
 
 export interface SvgComponent extends BaseComponent {
   type: "svg";
-  /** Sanitized SVG markup rendered as the node body. */
+  
   svgContent: string;
 }
 
@@ -140,7 +140,7 @@ export interface DbColumn {
   dataType: string;
   isPrimaryKey?: boolean;
   isForeignKey?: boolean;
-  /** id de outro DbTableComponent referenciado por esta FK */
+  
   foreignTableId?: string;
   nullable?: boolean;
   unique?: boolean;
@@ -157,9 +157,9 @@ export interface DbTableComponent extends BaseComponent {
 
 export interface JsonViewerComponent extends BaseComponent {
   type: "json-viewer";
-  /** JSON raw string — stored as string, validated in the UI node */
+  
   jsonContent: string;
-  /** Optional external schema reference (URL or name) */
+  
   schemaRef?: string;
 }
 
@@ -175,11 +175,7 @@ export type Component =
   | JsonViewerComponent
   | SvgComponent;
 
-/**
- * Permissive component patch — accepts any combination of fields from all
- * component subtypes. Kept for backward compatibility; prefer
- * {@link TypedComponentPatch} for new code that can narrow by type.
- */
+
 export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<PanelComponent, "id">> &
   Partial<Omit<NoteComponent, "id">> &
@@ -191,13 +187,7 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<JsonViewerComponent, "id">> &
   Partial<Omit<SvgComponent, "id">> & { width?: number; height?: number };
 
-/**
- * Type-safe component patch discriminated by `type`. Each variant only
- * allows fields from its own component subtype, plus optional dimensions.
- *
- * Usage: `{ type: "endpoint", path: "/new" }` — `tableName` would be a
- * type error here, unlike the permissive {@link ComponentPatch}.
- */
+
 export type TypedComponentPatch =
   | (Partial<Omit<C4Component, "id">> & { width?: number; height?: number })
   | (Partial<Omit<PanelComponent, "id">> & { width?: number; height?: number })

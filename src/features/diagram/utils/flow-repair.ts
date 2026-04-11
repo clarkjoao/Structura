@@ -1,10 +1,6 @@
 import type { Flow, FlowStep } from "../model/flow.types";
 
-/**
- * Remove steps inválidos de um flow e reconstrói as ligações
- * (next/branches) para eliminar referências órfãs.
- * Retorna o novo Record<string, FlowStep> e o entryStepId corrigido.
- */
+
 export function repairFlow(
   flow: Flow,
   stepIdsToRemove: string[] = [],
@@ -50,7 +46,7 @@ export function repairFlow(
   return { steps, entryStepId };
 }
 
-/** Flow steps that reference removed components or connections (by id). */
+
 export function getFlowStepIdsReferencingRemovedElements(
   flow: Flow,
   removedComponentIds: ReadonlySet<string>,
@@ -69,7 +65,7 @@ export function getFlowStepIdsReferencingRemovedElements(
   return out;
 }
 
-/** Drops flow steps whose component/connection was removed; fixes links in-place on the flow object. */
+
 export function repairFlowsAfterRemovingDiagramElements(
   flows: Record<string, Flow>,
   removedComponentIds: ReadonlySet<string>,

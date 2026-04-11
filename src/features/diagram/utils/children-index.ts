@@ -1,6 +1,4 @@
-/**
- * Build parentId -> child ids index for fast descendant traversal.
- */
+
 export function buildChildrenIndex(
   components: Record<string, { parentId?: string | null }>,
 ): Map<string, Set<string>> {
@@ -14,9 +12,7 @@ export function buildChildrenIndex(
   return index;
 }
 
-/**
- * Collect descendants using a pre-computed children index.
- */
+
 export function getDescendantIdsFromIndex(
   nodeId: string,
   childrenIndex: Map<string, Set<string>>,

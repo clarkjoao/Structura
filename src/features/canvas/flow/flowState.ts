@@ -32,7 +32,6 @@ export const EMPTY_FLOW_HIGHLIGHT: FlowHighlight = {
   participantConnIds: new Set(),
 };
 
-/** Legacy / partial persisted data may omit `steps` or store an array instead of a graph record. */
 export function safeFlowSteps(flow: Flow): FlowStep[] {
   const s = flow.steps;
   if (Array.isArray(s)) return s;

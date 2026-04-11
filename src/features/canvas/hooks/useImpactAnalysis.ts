@@ -6,9 +6,7 @@ import {
   type ImpactResult,
 } from "@/features/diagram";
 
-/**
- * Memoized impact of removing the given node from the active diagram snapshot.
- */
+
 export function useImpactAnalysis(nodeId: string | null): ImpactResult | null {
   const diagram = useActiveDiagram();
   const resolved = useMemo(

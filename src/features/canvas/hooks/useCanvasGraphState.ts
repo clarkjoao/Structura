@@ -4,7 +4,8 @@ import type { Node } from "@xyflow/react";
 import type { Component, Connection, Diagram, ServiceDefinition } from "@/features/diagram";
 import type { CanvasVisualState } from "./useCanvasVisualState";
 import { useCanvasConnectionDerivations } from "../edges/useCanvasConnectionDerivations";
-import { useCanvasNodes } from "../nodes/useCanvasNodes";
+import { useCanvasNodes, type DiagramSceneState } from "../nodes/useCanvasNodes";
+import type { Flow } from "@/features/diagram";
 import { useCanvasEdges } from "../edges/useCanvasEdges";
 import { useCanvasHandleReorder } from "../edges/useCanvasHandleReorder";
 import { useLocalNodes } from "./useLocalNodes";
@@ -21,12 +22,12 @@ type NodeDragParenting = ReturnType<typeof import("./useNodeDragParenting").useN
 export interface UseCanvasGraphStateParams {
   diagram: Diagram | null | undefined;
   resolved: ResolvedSnapshot | null;
+  diagramSceneState: DiagramSceneState | null;
+  flows: Flow[];
   visualContext: {
     visualState: CanvasVisualState;
     dragTargetPanelId: string | null;
     unparentCandidatePanelId: string | null;
-    onNoteStartEdit?: (noteId: string) => void;
-    onJsonViewerStartEdit?: (nodeId: string) => void;
   };
   localNodesRef: MutableRefObject<Node[]>;
   innerOnNodesChange: NodeDragParenting["onNodesChange"];
@@ -49,11 +50,13 @@ export interface UseCanvasGraphStateParams {
   t: TFunction;
 }
 
-/** Derives React Flow nodes and edges from the diagram store and canvas-specific layout state. */
+
 export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
   const {
     diagram,
     resolved,
+    diagramSceneState,
+    flows,
     visualContext,
     localNodesRef,
     innerOnNodesChange,
@@ -69,13 +72,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     updateNodeInternals,
     t,
   } = params;
-  const {
-    visualState,
-    dragTargetPanelId,
-    unparentCandidatePanelId,
-    onNoteStartEdit,
-    onJsonViewerStartEdit,
-  } = visualContext;
+  const { visualState, dragTargetPanelId, unparentCandidatePanelId } = visualContext;
   const { compareState } = compareContext;
   const { flowState, isViewingCoverage, onPlayFlow } = flowContext;
 
@@ -89,7 +86,11 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
   }, [flowState.flowHighlight, journeyHighlight, journeyPlayer.mode.kind]);
 
   const { panelIds, connectionCountPerNode, edgeHandleAssignments, effectiveHandleOrder } =
-    useCanvasConnectionDerivations({ visibleComponents, visibleConnections, diagram });
+    useCanvasConnectionDerivations({
+      visibleComponents,
+      visibleConnections,
+      resolvedComponents: resolved?.components ?? {},
+    });
 
   const handleAddEndpointToGroup = useCallback(
     (groupId: string) => {
@@ -105,6 +106,8 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
 
   const storeNodes = useCanvasNodes({
     diagram,
+    diagramSceneState,
+    flows,
     resolvedComponents: resolved?.components ?? {},
     resolvedNodeLayouts: resolved?.nodeLayouts ?? {},
     sceneBadgeByComponentId: compareState.sceneBadgeByComponentId,
@@ -134,22 +137,30 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     onPlayFlow,
     onAddEndpointToGroup: handleAddEndpointToGroup,
     isNodeHiddenByTagFilter: visualState.isNodeHiddenByTagFilter,
-    onNoteStartEdit,
     setNoteInlineEditingId: visualState.setNoteInlineEditingId,
-    onJsonViewerStartEdit,
     setJsonViewerInlineEditingId: visualState.setJsonViewerInlineEditingId,
     updateComponent: actions.updateComponent,
   });
 
+  
+  
+  
+  const {
+    setSelectedEdgeId,
+    setContextMenu,
+    setSelectedNodeIds,
+    setSelectedNodeId,
+  } = visualState;
+
   const onSelectionFromChanges = useCallback(
     (selectedIds: string[]) => {
       if (selectedIds.length === 0) return;
-      visualState.setSelectedEdgeId(null);
-      visualState.setContextMenu(null);
-      visualState.setSelectedNodeIds(new Set(selectedIds));
-      visualState.setSelectedNodeId(selectedIds[0] ?? null);
+      setSelectedEdgeId(null);
+      setContextMenu(null);
+      setSelectedNodeIds(new Set(selectedIds));
+      setSelectedNodeId(selectedIds[0] ?? null);
     },
-    [visualState],
+    [setSelectedEdgeId, setContextMenu, setSelectedNodeIds, setSelectedNodeId],
   );
 
   const { nodes, onNodesChange } = useLocalNodes(

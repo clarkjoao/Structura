@@ -27,12 +27,6 @@ export const noteDescriptor: NodeTypeDescriptor = {
     isSelected: ctx.selectedNodeId === comp.id,
     collapsed: isNoteComponent(comp) ? (comp.collapsed ?? false) : false,
     onToggleCollapse: () => ctx.onPanelCollapseToggle?.(comp.id),
-    onStartEdit: ctx.onNoteStartEdit
-      ? () => ctx.onNoteStartEdit!(comp.id)
-      : undefined,
-    onClickBody: ctx.onNoteStartEdit
-      ? () => ctx.onNoteStartEdit!(comp.id)
-      : undefined,
     onInlineEditingChange: ctx.setNoteInlineEditingId
       ? (editing: boolean) => ctx.setNoteInlineEditingId!(editing ? comp.id : null)
       : undefined,

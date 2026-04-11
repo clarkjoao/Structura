@@ -27,7 +27,7 @@ type EdgeStyleOption = {
 
 const WIDTH_OPTIONS = [1, 2, 3] as const;
 
-/** Matches default label position along edge path after clearing custom layout. */
+
 const EDGE_LABEL_OFFSET_CENTER = 0.5;
 
 interface ConnectionPanelProps {

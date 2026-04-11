@@ -77,13 +77,13 @@ export default function DashboardPage() {
     [setSearchParams]
   );
 
-  // Validate folder exists on mount; clear param if it doesn't
+  
   useEffect(() => {
     const f = searchParams.get("f");
     if (f && !folders[f]) {
       setSearchParams({}, { replace: true });
     }
-  }, []); // intentionally empty — runs once on mount only
+  }, []); 
   const [dropTargetFolderId, setDropTargetFolderId] = useState<
     string | null | undefined
   >(undefined);

@@ -1,8 +1,6 @@
 import type { Diagram } from "../model/diagram.types";
 
-/**
- * Calendar date as DD/MM/YY (local), used for imported diagram display names.
- */
+
 export function formatDiagramImportCalendarDate(date: Date): string {
   const day = String(date.getDate()).padStart(2, "0");
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -10,9 +8,7 @@ export function formatDiagramImportCalendarDate(date: Date): string {
   return `${day}/${month}/${year}`;
 }
 
-/**
- * Uses `preferredId` when no diagram occupies it; otherwise `preferredId-2`, `preferredId-3`, …
- */
+
 export function resolveUniqueDiagramId(
   preferredId: string,
   diagrams: Record<string, Diagram>,
@@ -29,11 +25,7 @@ export function resolveUniqueDiagramId(
   throw new Error("Could not resolve unique diagram id");
 }
 
-/**
- * Clone for workspace import: optional new id, display name, and `updatedAt`.
- * When `newId` differs from the source diagram id, resets `createdAt` and rewrites
- * `flow.diagramId` for flows that belonged to the source diagram.
- */
+
 export function cloneDiagramForImportWithId(
   diagram: Diagram,
   newId: string,

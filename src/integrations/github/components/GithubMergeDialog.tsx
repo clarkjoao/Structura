@@ -168,7 +168,7 @@ export function GithubMergeDialog({
                     {t("github.mergeMergeColumn")}
                   </div>
 
-                  {/* name */}
+                  {}
                   <div className="text-xs text-muted-foreground mt-1">{t("common.name")}</div>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -212,7 +212,7 @@ export function GithubMergeDialog({
                   </label>
                   <div />
 
-                  {/* description */}
+                  {}
                   <div className="text-xs text-muted-foreground mt-1">{t("common.description")}</div>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -262,7 +262,7 @@ export function GithubMergeDialog({
                   </label>
                   <div />
 
-                  {/* technology */}
+                  {}
                   <div className="text-xs text-muted-foreground mt-1">{t("common.technology")}</div>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -338,7 +338,7 @@ export function GithubMergeDialog({
                     <span className="text-xs text-muted-foreground">{t("github.mergeMergeColumn")}</span>
                   </label>
 
-                  {/* tags */}
+                  {}
                   <div className="text-xs text-muted-foreground mt-1">{t("common.tags")}</div>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input

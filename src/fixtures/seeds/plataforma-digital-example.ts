@@ -1,8 +1,6 @@
 import { PanelKind, StrokeStyle, type Diagram, type Folder } from "@/features/diagram";
 
-/* ─────────────────────────────────────────────────────────────
-   Plataforma Digital — seed diagrams (microfrontends, BFFs, Kafka, AWS)
-───────────────────────────────────────────────────────────── */
+
 
 const FOLDER_ID = "folder-plataforma-digital";
 
@@ -19,7 +17,7 @@ function buildFolders(): Record<string, Folder> {
 
 function buildDiagrams(): Record<string, Diagram> {
   return {
-    /* ═══ Diagram 1 — Contexto ═══ */
+    
     "d-plat-context": {
       id: "d-plat-context",
       name: "Plataforma — Contexto do Sistema",
@@ -332,7 +330,7 @@ function buildDiagrams(): Record<string, Diagram> {
       },
     },
 
-    /* ═══ Diagram 2 — Frontend e BFFs ═══ */
+    
     "d-plat-frontend-bff": {
       id: "d-plat-frontend-bff",
       name: "Plataforma — Frontend e BFFs",
@@ -583,7 +581,7 @@ function buildDiagrams(): Record<string, Diagram> {
       },
     },
 
-    /* ═══ Diagram 3 — Backends e Mensageria ═══ */
+    
     "d-plat-backend-msg": {
       id: "d-plat-backend-msg",
       name: "Plataforma — Backends e Mensageria",
@@ -1055,7 +1053,7 @@ function buildDiagrams(): Record<string, Diagram> {
       },
     },
 
-    /* ═══ Diagram 4 — Deployment AWS sa-east-1 ═══ */
+    
     "d-plat-deployment-aws": {
       id: "d-plat-deployment-aws",
       name: "Plataforma — Deployment AWS (sa-east-1)",

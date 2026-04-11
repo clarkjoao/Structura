@@ -69,9 +69,7 @@ function buildParticipantAliasMap(
   return aliasMap;
 }
 
-/**
- * Walk the flow graph starting from entryStepId and produce Mermaid sequence diagram text.
- */
+
 export function stepsToMermaid(
   flow: Flow,
   components: Record<string, Component>,
@@ -171,10 +169,7 @@ export function stepsToMermaid(
   return lines.join("\n");
 }
 
-/**
- * @deprecated Use the graph-based flow model. This is kept for backward compatibility
- * during migration but should not be used for new code.
- */
+
 export function parseMermaidToSteps(
   mermaid: string,
   components: Record<string, Component>,
@@ -237,7 +232,7 @@ export function parseMermaidToSteps(
     }
   }
 
-  // Link sequentially
+  
   for (let i = 0; i < stepIds.length - 1; i++) {
     steps[stepIds[i]].next = stepIds[i + 1];
   }

@@ -5,9 +5,7 @@ interface CollabPeerPresenceProps {
   roundedClassName?: string;
 }
 
-/**
- * Colored outline and peer initial when a collaborator is editing this node.
- */
+
 export function CollabPeerPresence({
   activePeer,
   roundedClassName = "rounded-lg",

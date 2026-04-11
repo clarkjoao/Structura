@@ -28,10 +28,6 @@ interface UseGroupShortcutsParams {
   resolvedSnapshot: ResolvedSnapshot | null;
 }
 
-/**
- * Cmd+G — group selected nodes into a panel
- * Cmd+Shift+G — ungroup panel or remove child from panel (when parent is a panel)
- */
 export function useGroupShortcuts({
   diagram,
   reactFlowInstance,
@@ -52,7 +48,6 @@ export function useGroupShortcuts({
 
       e.preventDefault();
 
-      // Cmd/Ctrl+Shift+G — ungroup panel or detach child from panel
       if (e.shiftKey) {
         const selected = getSelectedNodes(reactFlowInstance, selectedNodeId);
         if (selected.length === 1 && resolvedSnapshot) {
@@ -78,7 +73,6 @@ export function useGroupShortcuts({
         return true;
       }
 
-      // Cmd/Ctrl+G — group selected
       if (
         diagram &&
         ((diagram.activeSceneId && diagram.scenes?.[diagram.activeSceneId]) ||

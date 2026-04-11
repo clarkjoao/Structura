@@ -16,7 +16,7 @@ export function getLastEdgeStyle(): EdgeStyle {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (isEdgeStyle(stored)) return stored;
   } catch {
-    // noop
+    
   }
   return EdgeStyle.Smoothstep;
 }
@@ -25,6 +25,6 @@ export function saveLastEdgeStyle(style: EdgeStyle): void {
   try {
     localStorage.setItem(STORAGE_KEY, style);
   } catch {
-    // noop
+    
   }
 }

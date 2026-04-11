@@ -81,7 +81,7 @@ export function useDefectDojoSearch(config: DefectDojoConfig | null) {
       const types = await getProductTypes(client);
       setProductTypes(types);
     } catch {
-      // non-critical — filter simply won't show options
+      
     }
   }, [config]);
 

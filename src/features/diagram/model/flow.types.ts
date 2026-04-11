@@ -9,11 +9,11 @@ export interface FlowStep {
   id: string;
   type: FlowStepType;
 
-  // linking
+  
   next?: string;
   branches?: FlowBranch[];
 
-  // content
+  
   componentId?: string;
   connectionId?: string;
   description?: string;
@@ -24,7 +24,7 @@ export interface FlowStep {
   payloadDirection?: 'request' | 'response';
   isAsync?: boolean;
 
-  // condition-specific
+  
   conditionLabel?: string;
 }
 

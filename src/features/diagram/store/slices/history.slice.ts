@@ -1,3 +1,4 @@
+import { current, isDraft } from "immer";
 import type { AppState, DiagramSnapshot } from "../store.types";
 import {
   HISTORY_COALESCE_MS,
@@ -10,8 +11,10 @@ import { getActiveDiagram } from "./get-active-diagram";
 
 export type { HistoryMutationKind } from "../store.constants";
 
+
 export function deepClone<T>(v: T): T {
-  return JSON.parse(JSON.stringify(v));
+  const plain = isDraft(v) ? current(v) : v;
+  return structuredClone(plain);
 }
 
 export function pushHistory(

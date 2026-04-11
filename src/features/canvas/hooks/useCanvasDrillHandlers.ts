@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import type { Diagram } from "@/features/diagram";
 import {
   isDbTableComponent,
@@ -46,12 +46,18 @@ export function useCanvasDrillHandlers({
   onOpenDiagram,
   onDrillDownToDiagram,
 }: UseCanvasDrillHandlersParams) {
+  const diagramRef = useRef(diagram);
+  diagramRef.current = diagram;
+  const allDiagramsRef = useRef(allDiagrams);
+  allDiagramsRef.current = allDiagrams;
+
   const handleDrillDown = useCallback(
     (elementId: string) => {
-      if (!diagram) return;
-      const r = getCachedCanvasSnapshot(diagram);
+      const d = diagramRef.current;
+      if (!d) return;
+      const r = getCachedCanvasSnapshot(d);
       const comp = r.components[elementId];
-      if (!comp?.linkedDiagramId || !allDiagrams[comp.linkedDiagramId]) return;
+      if (!comp?.linkedDiagramId || !allDiagramsRef.current[comp.linkedDiagramId]) return;
 
       if (onDrillDownToDiagram) {
         onDrillDownToDiagram(comp.linkedDiagramId);
@@ -62,13 +68,14 @@ export function useCanvasDrillHandlers({
         navigate(`/diagram/${comp.linkedDiagramId}`);
       }
     },
-    [diagram, allDiagrams, openDiagram, navigate, onDrillDownToDiagram, onOpenDiagram],
+    [openDiagram, navigate, onDrillDownToDiagram, onOpenDiagram],
   );
 
   const handlePanelCollapseToggle = useCallback(
     (nodeId: string) => {
-      if (!diagram) return;
-      const r = getCachedCanvasSnapshot(diagram);
+      const d = diagramRef.current;
+      if (!d) return;
+      const r = getCachedCanvasSnapshot(d);
       const comp = r.components[nodeId];
       const layout = r.nodeLayouts[nodeId];
 
@@ -134,7 +141,7 @@ export function useCanvasDrillHandlers({
         }
       }
     },
-    [diagram, updateComponent],
+    [updateComponent],
   );
 
   return { handleDrillDown, handlePanelCollapseToggle };

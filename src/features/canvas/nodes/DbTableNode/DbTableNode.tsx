@@ -8,7 +8,6 @@ import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
 import { singleIncomingTargetHandleId } from "../../edges/connectionDerivations";
 import type { DbColumnRow, DbTableColumnKey, DbTableNodeData } from "./DbTableNode.types";
 
-// ─── Configuração das colunas da planilha ────────────────────────────────────
 
 interface ColDef {
   key: DbTableColumnKey;
@@ -61,7 +60,6 @@ function totalWidth(visibleColDefs: ColDef[]): number {
   return 32 + visibleColDefs.reduce((acc, c) => acc + c.width, 0) + ADD_BTN_SIZE;
 }
 
-// ─── Sub-componentes ──────────────────────────────────────────────────────────
 
 interface TextCellProps {
   value: string;
@@ -119,7 +117,6 @@ function BoolCell({ value, colWidth, onChange }: BoolCellProps) {
   );
 }
 
-// ─── Componente principal ────────────────────────────────────────────────────
 
 const DbTableNode = memo(({ data, selected }: NodeProps) => {
   const { t } = useTranslation();

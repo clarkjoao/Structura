@@ -98,7 +98,7 @@ export function DefectDojoResultsList({
         updatedCount++;
         continue;
       } else {
-        // If the same repo is already imported from GitHub, merge into it.
+        
         const githubExisting = Object.values(store.serviceRegistry).find(
           (s) =>
             normalizeSources(s).some((source) => source.type === ServiceSource.Github) &&
@@ -127,7 +127,7 @@ export function DefectDojoResultsList({
             ]),
             sources: mergeSources(githubExisting.sources, svcData.sources),
             metadata: {
-              // Preserva metadata do GitHub (fullName, topics, etc.)
+              
               github: prevGithubMeta,
               defectdojo: {
                 ...(prevDefectDojoMeta ?? {}),

@@ -1,6 +1,6 @@
 import { extractMxGraphModelXml } from "@/lib/export-service";
 
-/** HTML-escape for embedding XML inside a clipboard HTML fragment (draw.io reads text/html). */
+
 function escapeForHtmlClipboard(xml: string): string {
   return xml
     .replace(/&/g, "&amp;")
@@ -9,12 +9,7 @@ function escapeForHtmlClipboard(xml: string): string {
     .replace(/"/g, "&quot;");
 }
 
-/**
- * Writes draw.io–compatible clipboard data so diagrams.net imports shapes instead of
- * pasting the XML as a text box. Uses the {@code mxGraphModel} fragment only (same idea
- * as draw.io's native copy) plus explicit {@code text/html} so the browser does not
- * synthesize a broken HTML wrapper that steals paste handling.
- */
+
 export async function writeDrawioToClipboard(fullDrawioXml: string): Promise<void> {
   const graphModelXml = extractMxGraphModelXml(fullDrawioXml);
   const html =
@@ -34,7 +29,7 @@ export async function writeDrawioToClipboard(fullDrawioXml: string): Promise<voi
       return;
     }
   } catch {
-    // fall through
+    
   }
 
   try {
@@ -44,16 +39,13 @@ export async function writeDrawioToClipboard(fullDrawioXml: string): Promise<voi
   }
 }
 
-/**
- * Reads mxGraphModel XML from the system clipboard.
- * Returns null if clipboard does not contain draw.io content or permission denied.
- */
+
 export async function readDrawioFromClipboard(): Promise<string | null> {
   try {
     if (navigator.clipboard?.read) {
       const items = await navigator.clipboard.read();
       for (const item of items) {
-        // Prefer text/plain — draw.io native copy writes raw XML there
+        
         if (item.types.includes("text/plain")) {
           const blob = await item.getType("text/plain");
           const text = await blob.text();
@@ -61,7 +53,7 @@ export async function readDrawioFromClipboard(): Promise<string | null> {
             return text;
           }
         }
-        // Fallback: text/html — writeDrawioToClipboard encodes XML inside HTML
+        
         if (item.types.includes("text/html")) {
           const blob = await item.getType("text/html");
           const html = await blob.text();
@@ -76,21 +68,18 @@ export async function readDrawioFromClipboard(): Promise<string | null> {
         }
       }
     }
-    // Fallback: readText only
+    
     const text = await navigator.clipboard.readText();
     if (text.includes("<mxGraphModel") || text.includes("<mxfile")) {
       return text;
     }
   } catch {
-    // Permission denied or API unavailable — fail silently
+    
   }
   return null;
 }
 
-/**
- * Reads SVG content from the system clipboard.
- * Returns null if clipboard does not contain SVG or permission denied.
- */
+
 export async function readSvgFromClipboard(): Promise<string | null> {
   try {
     if (navigator.clipboard?.read) {
@@ -100,12 +89,12 @@ export async function readSvgFromClipboard(): Promise<string | null> {
           const blob = await item.getType("image/svg+xml");
           return await blob.text();
         }
-        // Fallback: text/plain that looks like SVG
+        
         if (item.types.includes("text/plain")) {
           const blob = await item.getType("text/plain");
           const text = await blob.text();
           const trimmed = text.trim();
-          // Do not consume draw.io XML — handled by readDrawioFromClipboard
+          
           if (trimmed.includes("<mxGraphModel") || trimmed.includes("<mxfile")) {
             continue;
           }
@@ -116,7 +105,7 @@ export async function readSvgFromClipboard(): Promise<string | null> {
       }
     }
   } catch {
-    // Permission denied or API unavailable
+    
   }
   return null;
 }

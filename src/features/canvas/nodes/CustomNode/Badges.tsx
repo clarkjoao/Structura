@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { memo, useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Link2,
@@ -9,7 +9,6 @@ import {
   Link,
 } from "lucide-react";
 import type { ExternalLink } from "@/features/diagram";
-import { ExternalLinkType } from "@/features/diagram";
 
 const linkClass = (disabled?: boolean) =>
   `flex items-center gap-1 text-primary ${disabled
@@ -49,13 +48,13 @@ interface BadgesProps {
   externalLinks?: ExternalLink[];
 }
 
-export const Badges = ({
+export const Badges = memo(function Badges({
   controlsDisabled,
   serviceId,
   serviceName,
   linkedDiagramName,
   externalLinks = [],
-}: BadgesProps) => {
+}: BadgesProps) {
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
 
@@ -130,4 +129,4 @@ export const Badges = ({
       )}
     </div>
   );
-};
+});

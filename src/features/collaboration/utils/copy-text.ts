@@ -49,7 +49,7 @@ function copyWithExecCommand(text: string): boolean {
 export async function copyText(text: string): Promise<boolean> {
   if (!text) return false;
 
-  // Try sync copy first while we're still in the click gesture context.
+  
   if (copyWithExecCommand(text)) return true;
 
   if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {

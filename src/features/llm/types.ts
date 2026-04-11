@@ -62,8 +62,8 @@ export interface PendingSuggestion {
   status: "pending" | "accepted" | "rejected";
 }
 
-// Tracks which node IDs were created by a pending suggestion
-// so the canvas can apply pending visual state
+
+
 export interface PendingNodePreview {
   suggestionId: string;
   nodeIds: string[];

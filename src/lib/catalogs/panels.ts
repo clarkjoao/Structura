@@ -1,8 +1,4 @@
-/**
- * Panel kinds for infrastructure grouping.
- * Used to represent Availability Zones, EKS/ECS clusters, subnets, VPC, etc.
- * When awsIconName is set, AwsIcon is used; otherwise the Lucide icon is used.
- */
+
 import type { LucideIcon } from "lucide-react";
 import { Square, MapPin, LayoutList } from "lucide-react";
 import { PanelKind } from "@/features/diagram";
@@ -12,9 +8,9 @@ export interface PanelKindDef {
   label: string;
   defaultName: string;
   defaultColor: string;
-  /** Lucide icon — used when awsIconName is not set */
+  
   icon: LucideIcon;
-  /** AWS icon from aws-react-icons — when set, used instead of icon */
+  
   awsIconName?: string;
 }
 
@@ -93,7 +89,7 @@ export const PANEL_KINDS: PanelKindDef[] = [
 
 export const PANEL_KIND_MAP = new Map(PANEL_KINDS.map((p) => [p.id, p]));
 
-/** AWS service IDs that should be added as panels (PanelKind) instead of AWS components */
+
 export const AWS_SERVICE_TO_PANEL_KIND: Record<string, PanelKind> = {
   "eks": PanelKind.EksCluster,
   "eks-2": PanelKind.EksCluster,

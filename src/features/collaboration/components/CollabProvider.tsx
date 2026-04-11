@@ -62,10 +62,10 @@ interface CollabProviderProps {
   children: ReactNode;
   guestRoomId?: string;
   enabled?: boolean;
-  /** Host: allocate invite URL room id while the start modal is open (before `enabled`). */
+  
   reserveEphemeralRoomId?: boolean;
   userName?: string;
-  signalingUrl?: string; // maps to serverUrl
+  signalingUrl?: string; 
 }
 
 export function CollabProvider({
@@ -223,7 +223,7 @@ export function CollabProvider({
   }, [setActiveElement]);
 
   const updateViewport = useCallback((_vp: { x: number; y: number; zoom: number }) => {
-    // no-op for now
+    // TODO: Implement viewport update
   }, []);
 
   const updateEditingComponent = useCallback((_id: string | null) => {

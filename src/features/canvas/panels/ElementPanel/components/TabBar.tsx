@@ -6,7 +6,7 @@ export interface TabBarProps {
   active: Tab;
   onChange: (next: Tab) => void;
   showConnections: boolean;
-  /** When false, the icon tab is omitted (e.g. SVG nodes where the graphic is the visual). */
+  
   showIconTab?: boolean;
 }
 

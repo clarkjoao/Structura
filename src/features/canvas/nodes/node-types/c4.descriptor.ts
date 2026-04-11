@@ -7,11 +7,12 @@ import {
   isC4Component,
   type Component,
 } from "@/features/diagram";
-import {
-  OPACITY_DIM,
-  OPACITY_FLOW_PLAYBACK_PARTICIPANT,
-  OPACITY_RECORDING_DIM,
-} from "../../canvas.constants";
+import { OPACITY_FLOW_PLAYBACK_PARTICIPANT } from "../../canvas.constants";
+
+
+const C4_FLOW_PLAYBACK_DIM_OPACITY = 0.25;
+
+const C4_RECORDING_DIM_OPACITY = 0.35;
 
 export function buildC4Style(
   comp: Component,
@@ -25,11 +26,11 @@ export function buildC4Style(
     if (visitedNodeIds.has(comp.id)) return { opacity: 0.85, filter: "none" };
     if (participantNodeIds.has(comp.id))
       return { opacity: OPACITY_FLOW_PLAYBACK_PARTICIPANT, filter: "none" };
-    return { opacity: OPACITY_DIM, filter: "none" };
+    return { opacity: C4_FLOW_PLAYBACK_DIM_OPACITY, filter: "none" };
   }
   if (ctx.isRecording) {
     return {
-      opacity: ctx.recordingInfo?.recordedNodeIds.has(comp.id) ? 1 : OPACITY_RECORDING_DIM,
+      opacity: ctx.recordingInfo?.recordedNodeIds.has(comp.id) ? 1 : C4_RECORDING_DIM_OPACITY,
     };
   }
   return undefined;
@@ -38,7 +39,7 @@ export function buildC4Style(
 export const c4Descriptor: NodeTypeDescriptor = {
   rfType: "c4",
   component: CustomNode,
-  // Catch-all: handles person, system, container, component, and all AWS types
+  
   matches: () => true,
   zIndex: 1,
   connectable: true,

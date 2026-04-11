@@ -35,12 +35,12 @@ export function useGithubImport() {
   const [autoResolutions, setAutoResolutions] = useState<
     MergeResolution[]
   >([]);
-  /** Client-side post-filter when the search field is "starts with". */
+  
   const [nameStartsFilter, setNameStartsFilter] = useState<string | undefined>(
     undefined,
   );
 
-  /** Last built API query string and page size for pagination. */
+  
   const lastBuiltQuery = useRef("");
   const lastPerPage = useRef(DEFAULT_PER_PAGE);
 
@@ -74,7 +74,7 @@ export function useGithubImport() {
       const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
       lastPerPage.current = perPage;
 
-      // "Starts with" is applied client-side after the API returns
+      
       setNameStartsFilter(
         filters.searchField === "name_starts" ? query.trim() : undefined,
       );

@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { isDiagramCompareMode, useActiveDiagram } from "@/features/diagram";
 import { useFlowMode } from "../flow/FlowModeContext";
 
@@ -13,6 +13,12 @@ export function useCanvasHandleReorder({
 }: UseCanvasHandleReorderParams) {
   const diagram = useActiveDiagram();
   const { isRecording, isPlaying } = useFlowMode();
+
+  const diagramRef = useRef(diagram);
+  diagramRef.current = diagram;
+  const effectiveHandleOrderRef = useRef(effectiveHandleOrder);
+  effectiveHandleOrderRef.current = effectiveHandleOrder;
+
   const onReorderHandle = useCallback(
     (
       nodeId: string,
@@ -20,9 +26,15 @@ export function useCanvasHandleReorder({
       connId: string,
       direction: "up" | "down",
     ) => {
-      if (isRecording || isPlaying || (diagram ? isDiagramCompareMode(diagram) : false)) return;
+      if (
+        isRecording ||
+        isPlaying ||
+        (diagramRef.current ? isDiagramCompareMode(diagramRef.current) : false)
+      ) {
+        return;
+      }
 
-      const currentOrder = effectiveHandleOrder[nodeId]?.[side] ?? [];
+      const currentOrder = effectiveHandleOrderRef.current[nodeId]?.[side] ?? [];
       const idx = currentOrder.indexOf(connId);
       if (idx === -1) return;
 
@@ -33,7 +45,7 @@ export function useCanvasHandleReorder({
       [newOrder[idx], newOrder[swapIdx]] = [newOrder[swapIdx], newOrder[idx]];
       updateHandleOrder(nodeId, side, newOrder);
     },
-    [diagram, isRecording, isPlaying, effectiveHandleOrder, updateHandleOrder],
+    [isRecording, isPlaying, updateHandleOrder],
   );
 
   return { onReorderHandle };

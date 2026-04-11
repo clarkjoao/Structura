@@ -2,10 +2,7 @@ import { useCallback, useEffect, useRef, type RefObject } from "react";
 import { useDiagramStore } from "@/features/diagram";
 import type { CollabPatch, CollabSnapshot } from "./useCollab";
 
-/**
- * Node ids with remote layout updates from collaboration patches.
- * Consumed by useLocalNodes.
- */
+
 export const remoteLayoutUpdates = new Set<string>();
 
 interface TrackedDiagramState {
@@ -246,8 +243,8 @@ export function useCollabStoreSync({
 
     const unsubscribe = useDiagramStore.subscribe((diagramStoreState) => {
       if (isApplyingRemoteRef.current) {
-        // Remote patch was applied — sync previousState so we don't
-        // re-send it on the next local change, but don't flush.
+        
+        
         previousState = pickTrackedState(diagramId);
         return;
       }
