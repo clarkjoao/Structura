@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { memo, useCallback } from "react";
 import { MousePointerClick } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -10,13 +10,13 @@ interface DrillDownButtonProps {
   disabled?: boolean;
 }
 
-export const DrillDownButton = ({
+export const DrillDownButton = memo(function DrillDownButton({
   elementId,
   onDrillDown,
   colorClass,
   customColor,
   disabled,
-}: DrillDownButtonProps) => {
+}: DrillDownButtonProps) {
   const { t } = useTranslation();
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
@@ -39,4 +39,4 @@ export const DrillDownButton = ({
       <MousePointerClick className="h-3 w-3" /> {t("customNode.drillExplore")}
     </button>
   );
-};
+});

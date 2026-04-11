@@ -285,6 +285,12 @@ export {
   useConnections,
   /** Selector: components that have a nodeLayout (visible on canvas) */
   useVisibleComponents,
+  /** Selector: resolved canvas components (base + active scene) */
+  useResolvedComponents,
+  /** Selector: resolved node layouts (base + active scene) */
+  useResolvedNodeLayouts,
+  /** Selector: active scene identity for canvas invalidation */
+  useActiveDiagramSceneState,
   /** Selector: connections whose both endpoints are visible */
   useVisibleConnections,
   /** Selector: serviceRegistry of the active diagram */
@@ -303,5 +309,6 @@ export {
   useEdgeLabelOffset,
   useAllUserTemplates,
 } from "./store/selectors";
+export type { ActiveDiagramSceneState } from "./store/selectors/connection.selectors";
 export type { DiagramStore, ClipboardEntry } from "./store/store.types";
 export type { ServiceDefinition, ServiceSourceRef } from "./model/service.types";

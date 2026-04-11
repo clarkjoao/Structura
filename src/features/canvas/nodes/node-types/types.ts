@@ -5,6 +5,7 @@ import type {
   ComponentPatch,
   ComponentType,
   Diagram,
+  Flow,
   FlowStep,
   NodeLayout,
   ServiceDefinition,
@@ -15,6 +16,8 @@ export type { FlowHighlight, RecordingInfo, CoverageInfo };
 
 export interface NodeBuildContext {
   diagram: Diagram;
+  /** Diagram flows — avoids reading `diagram.snapshot.flows` in hot build paths. */
+  flows: Flow[];
   /** Merged base + active scene (same as canvas visibility). */
   resolvedComponents: Record<string, Component>;
   resolvedNodeLayouts: Record<string, NodeLayout>;

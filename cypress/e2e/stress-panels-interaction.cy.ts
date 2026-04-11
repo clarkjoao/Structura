@@ -60,14 +60,32 @@ describe("Stress Interaction: 500 elements — drag, select, undo", () => {
     cy.get("body").should("not.contain.text", "Maximum update depth exceeded");
   });
 
-  it("multi-select with Meta/Ctrl adds nodes to selection", () => {
+  it("multi-select with Ctrl adds nodes to selection", () => {
+    cy.getNode(seed.leafNodeIds[0]!).click({ force: true });
+    const max = Math.min(5, seed.leafNodeIds.length);
+    for (let i = 1; i < max; i++) {
+      cy.getNode(seed.leafNodeIds[i]!).click({
+        force: true,
+        ctrlKey: true,
+      });
+    }
+    cy.get(".react-flow__node").then(($nodes) => {
+      const selected = $nodes.filter(
+        (_, el) =>
+          el.classList.contains("selected") ||
+          el.getAttribute("aria-selected") === "true",
+      );
+      expect(selected.length).to.be.gte(2);
+    });
+  });
+
+  it("multi-select with Meta adds nodes to selection", () => {
     cy.getNode(seed.leafNodeIds[0]!).click({ force: true });
     const max = Math.min(5, seed.leafNodeIds.length);
     for (let i = 1; i < max; i++) {
       cy.getNode(seed.leafNodeIds[i]!).click({
         force: true,
         metaKey: true,
-        ctrlKey: true,
       });
     }
     cy.get(".react-flow__node").then(($nodes) => {

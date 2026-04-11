@@ -204,11 +204,8 @@ export function useLocalNodes(
       localNodesRef.current = updated;
 
       if (hasSelect && onSelectionFromChanges) {
-        const selectChangeCount = changes.filter((c) => c.type === "select").length;
-        if (selectChangeCount >= 2) {
-          const selectedIds = updated.filter((n) => n.selected).map((n) => n.id);
-          onSelectionFromChanges(selectedIds);
-        }
+        const selectedIds = updated.filter((n) => n.selected).map((n) => n.id);
+        onSelectionFromChanges(selectedIds);
       }
 
       setTick((tick) => tick + 1);

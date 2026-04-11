@@ -5,6 +5,7 @@ import type {
   Component,
   ComponentPatch,
   Diagram,
+  Flow,
   NodeLayout,
   ServiceDefinition,
 } from "@/features/diagram";
@@ -23,8 +24,17 @@ import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowSta
 import { OPACITY_FLOW_PLAYBACK_NODE_DIM, OPACITY_TAG_FILTER_DIM } from "../canvas.constants";
 import { getPendingNodeIds, useLLMStore } from "@/features/llm";
 
+/** Scene identity for canvas node rebuilds — aligned with `useActiveDiagramSceneState`. */
+export type DiagramSceneState = {
+  id: string;
+  activeSceneId: string | null;
+  hasActiveScene: boolean;
+};
+
 interface UseCanvasNodesParams {
   diagram: Diagram | null | undefined;
+  diagramSceneState: DiagramSceneState | null;
+  flows: Flow[];
   resolvedComponents: Record<string, Component>;
   resolvedNodeLayouts: Record<string, NodeLayout>;
   sceneBadgeByComponentId: Record<string, { name: string; color: string }>;
@@ -59,9 +69,10 @@ interface UseCanvasNodesParams {
   updateComponent: (id: string, patch: ComponentPatch) => void;
 }
 
-/** Data-only canvas context — excludes callbacks so the main node memo does not invalidate when callback identities change. */
+/** Data-only canvas context — excludes callbacks and live `diagram` ref so memos do not invalidate on every Immer replace. */
 type DataCtx = Omit<
   NodeBuildContext,
+  | "diagram"
   | "isPlaying"
   | "isRecording"
   | "flowHighlight"
@@ -161,6 +172,8 @@ function shallowEqualStyle(
 
 export function useCanvasNodes({
   diagram,
+  diagramSceneState,
+  flows,
   resolvedComponents,
   resolvedNodeLayouts,
   sceneBadgeByComponentId,
@@ -194,6 +207,10 @@ export function useCanvasNodes({
   setJsonViewerInlineEditingId,
   updateComponent,
 }: UseCanvasNodesParams): Node[] {
+  const diagramRef = useRef(diagram);
+  diagramRef.current = diagram;
+  const activeDiagramKey = diagram?.id ?? null;
+
   const { isRecording, onRecordHandleClick } = useFlowMode();
   const pendingPreviews = useLLMStore((state) => state.pendingPreviews);
   const pendingNodeIds = useMemo(
@@ -244,7 +261,7 @@ export function useCanvasNodes({
   const dataCtx: DataCtx | null = useMemo(() => {
     if (!diagram) return null;
     return {
-      diagram,
+      flows,
       resolvedComponents,
       resolvedNodeLayouts,
       sceneBadgeByComponentId,
@@ -266,7 +283,7 @@ export function useCanvasNodes({
       childrenIndex: buildChildrenIndex(resolvedComponents),
     };
   }, [
-    diagram,
+    activeDiagramKey,
     resolvedComponents,
     resolvedNodeLayouts,
     sceneBadgeByComponentId,
@@ -284,6 +301,7 @@ export function useCanvasNodes({
     activeFlowId,
     highlightedNodeIds,
     isViewingCoverage,
+    flows,
   ]);
 
   const nodeCtxPlayback = useMemo(
@@ -299,11 +317,14 @@ export function useCanvasNodes({
   );
 
   return useMemo(() => {
-    if (!diagram || !dataCtx) {
+    const diagram = diagramRef.current;
+    if (!dataCtx || !diagram) {
       prevRfNodesByIdRef.current.clear();
       prevNodesArrayRef.current = EMPTY_CANVAS_NODE_LIST;
       return EMPTY_CANVAS_NODE_LIST;
     }
+
+    const sceneActive = diagramSceneState?.hasActiveScene ?? false;
 
     const {
       highlightedNodeIds: hIds,
@@ -312,6 +333,7 @@ export function useCanvasNodes({
     } = dataCtx;
 
     const ctx: NodeBuildContext = {
+      diagram,
       ...restForCtx,
       ...callbacksRef.current,
       ...nodeCtxPlayback,
@@ -406,8 +428,6 @@ export function useCanvasNodes({
           isEndpointType(comp.type) &&
           comp.parentId != null &&
           isApiGroupComponent(dataCtx.resolvedComponents[comp.parentId]);
-        const sceneActive =
-          !!diagram.activeSceneId && !!diagram.scenes?.[diagram.activeSceneId];
         const sceneLocksBase =
           sceneActive && !isComponentAddedInActiveScene(diagram, comp.id);
         const isLockedBySelfOrAncestor = lockedNodeIds.has(comp.id);
@@ -499,7 +519,7 @@ export function useCanvasNodes({
     prevNodesArrayRef.current = nextNodes;
     return nextNodes;
   }, [
-    diagram,
+    diagramSceneState,
     dataCtx,
     nodeCtxPlayback,
     visibleComponents,

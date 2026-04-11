@@ -17,7 +17,7 @@ export const endpointDescriptor: NodeTypeDescriptor = {
   buildData: (comp, ctx) => {
     if (!isEndpointComponent(comp)) return {};
 
-    const allFlows = Object.values(ctx.diagram.snapshot.flows);
+    const allFlows = ctx.flows;
 
     return {
       elementId: comp.id,

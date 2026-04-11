@@ -26,6 +26,9 @@ import { useJourneyViewportSync } from "./hooks/useJourneyViewportSync";
 import { getCachedCanvasSnapshot, isPanelComponent } from "@/features/diagram";
 import { useJourneysByDiagramId } from "@/features/journeys";
 import { CANVAS_STYLES } from "./constants";
+
+/** Meta = ⌘ on macOS; Control = Ctrl on all platforms — both enable additive selection in React Flow. */
+const MULTI_SELECTION_KEY_CODES = ["Meta", "Control"];
 import CustomEdge from "./edges/CustomEdge";
 import type { CanvasProps } from "./canvas.types";
 import {
@@ -275,7 +278,7 @@ const Canvas = (props: CanvasProps = {}) => {
               zoomOnDoubleClick={false}
               minZoom={0.3}
               maxZoom={1.5}
-              multiSelectionKeyCode="Meta"
+              multiSelectionKeyCode={MULTI_SELECTION_KEY_CODES}
               defaultViewport={diagram.viewport}
               fitView
               fitViewOptions={{ padding: 0.3 }}

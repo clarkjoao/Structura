@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import type { Node, Edge, OnEdgesChange, OnConnect, OnConnectEnd, Connection } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import type { CanvasVisualState } from "./useCanvasVisualState";
@@ -327,20 +327,38 @@ export function useCanvasEventHandlers({
     setSelectedEdgeId(null);
   }, [clearHighlight, setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId]);
 
-  return {
-    onEdgesChange,
-    onMoveEnd,
-    onConnect,
-    onConnectEnd,
-    onNodeClick,
-    onEdgeClick,
-    onNodeDoubleClick,
-    onEdgeDoubleClick,
-    onSelectionChange,
-    onPaneClick,
-    onPaneContextMenu,
-    onNodeContextMenu,
-    handleQuickInsert,
-    closePanel,
-  };
+  return useMemo(
+    () => ({
+      onEdgesChange,
+      onMoveEnd,
+      onConnect,
+      onConnectEnd,
+      onNodeClick,
+      onEdgeClick,
+      onNodeDoubleClick,
+      onEdgeDoubleClick,
+      onSelectionChange,
+      onPaneClick,
+      onPaneContextMenu,
+      onNodeContextMenu,
+      handleQuickInsert,
+      closePanel,
+    }),
+    [
+      onEdgesChange,
+      onMoveEnd,
+      onConnect,
+      onConnectEnd,
+      onNodeClick,
+      onEdgeClick,
+      onNodeDoubleClick,
+      onEdgeDoubleClick,
+      onSelectionChange,
+      onPaneClick,
+      onPaneContextMenu,
+      onNodeContextMenu,
+      handleQuickInsert,
+      closePanel,
+    ],
+  );
 }

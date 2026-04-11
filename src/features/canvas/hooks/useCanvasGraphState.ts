@@ -4,7 +4,8 @@ import type { Node } from "@xyflow/react";
 import type { Component, Connection, Diagram, ServiceDefinition } from "@/features/diagram";
 import type { CanvasVisualState } from "./useCanvasVisualState";
 import { useCanvasConnectionDerivations } from "../edges/useCanvasConnectionDerivations";
-import { useCanvasNodes } from "../nodes/useCanvasNodes";
+import { useCanvasNodes, type DiagramSceneState } from "../nodes/useCanvasNodes";
+import type { Flow } from "@/features/diagram";
 import { useCanvasEdges } from "../edges/useCanvasEdges";
 import { useCanvasHandleReorder } from "../edges/useCanvasHandleReorder";
 import { useLocalNodes } from "./useLocalNodes";
@@ -21,6 +22,8 @@ type NodeDragParenting = ReturnType<typeof import("./useNodeDragParenting").useN
 export interface UseCanvasGraphStateParams {
   diagram: Diagram | null | undefined;
   resolved: ResolvedSnapshot | null;
+  diagramSceneState: DiagramSceneState | null;
+  flows: Flow[];
   visualContext: {
     visualState: CanvasVisualState;
     dragTargetPanelId: string | null;
@@ -52,6 +55,8 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
   const {
     diagram,
     resolved,
+    diagramSceneState,
+    flows,
     visualContext,
     localNodesRef,
     innerOnNodesChange,
@@ -101,6 +106,8 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
 
   const storeNodes = useCanvasNodes({
     diagram,
+    diagramSceneState,
+    flows,
     resolvedComponents: resolved?.components ?? {},
     resolvedNodeLayouts: resolved?.nodeLayouts ?? {},
     sceneBadgeByComponentId: compareState.sceneBadgeByComponentId,

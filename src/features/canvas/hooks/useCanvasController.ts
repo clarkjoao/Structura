@@ -3,7 +3,13 @@ import { useTranslation } from "react-i18next";
 import { useCollab } from "@/features/collaboration";
 import { useReactFlow, useUpdateNodeInternals } from "@xyflow/react";
 import { useNavigate } from "react-router-dom";
-import { getCachedCanvasSnapshot } from "@/features/diagram";
+import {
+  useActiveDiagramId,
+  useActiveDiagramSceneState,
+  useConnections,
+  useResolvedComponents,
+  useResolvedNodeLayouts,
+} from "@/features/diagram";
 import type { CanvasProps } from "../canvas.types";
 import { useCanvasCompareState } from "./useCanvasCompareState";
 import { useCanvasFlowState } from "./useCanvasFlowState";
@@ -22,16 +28,30 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
   const [showScenes, setShowScenes] = useState(false);
   const [focusTitleTrigger, setFocusTitleTrigger] = useState(0);
   const { diagram, allDiagrams, visibleComponents, visibleConnections, serviceRegistry, flows, actions } = useCanvasStore();
+  const activeDiagramId = useActiveDiagramId();
+  const resolvedComponents = useResolvedComponents();
+  const resolvedNodeLayouts = useResolvedNodeLayouts();
+  const resolvedConnections = useConnections();
+  const diagramSceneState = useActiveDiagramSceneState();
   const visualState = useCanvasVisualState(diagram?.id ?? null);
   const { updateSelectedNode } = useCollab();
   const compareState = useCanvasCompareState({ diagram, isFlowPanelOpen: !!canvasProps.isFlowPanelOpen, clearCanvasSelection: visualState.clearCanvasSelection, t });
-  const resolved = useMemo(() => (diagram ? getCachedCanvasSnapshot(diagram) : null), [diagram]);
+  const resolved = useMemo(
+    () =>
+      activeDiagramId
+        ? {
+            components: resolvedComponents,
+            nodeLayouts: resolvedNodeLayouts,
+            connections: resolvedConnections,
+          }
+        : null,
+    [activeDiagramId, resolvedComponents, resolvedNodeLayouts, resolvedConnections],
+  );
   const allDiagramTags = useMemo(() => {
-    if (!resolved?.components) return [];
     const tags = new Set<string>();
-    Object.values(resolved.components).forEach((component) => component.tags?.forEach((tag) => tags.add(tag)));
+    Object.values(resolvedComponents).forEach((component) => component.tags?.forEach((tag) => tags.add(tag)));
     return Array.from(tags).sort();
-  }, [resolved?.components]);
+  }, [resolvedComponents]);
   const flowState = useCanvasFlowState({ flows, isCompareMode: compareState.isCompareMode });
   const activeCollabElementId = visualState.selectedEdgeId ?? visualState.selectedNodeId;
   useEffect(() => {
@@ -78,6 +98,8 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
   const graphState = useCanvasGraphState({
     diagram,
     resolved,
+    diagramSceneState,
+    flows,
     visualContext,
     localNodesRef: interaction.localNodesRef,
     innerOnNodesChange: interaction.innerOnNodesChange,
