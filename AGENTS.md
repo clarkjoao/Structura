@@ -151,3 +151,11 @@ npm run build
 
 - Full codebase analysis and phased roadmap context: `docs/architecture/analysis.md`
 - Store composition: `src/features/diagram/store/README.md`
+
+## Cursor Cloud specific instructions
+
+- **Single service**: Only the Vite dev server needs to run (`npm run dev`, port 8080). No backend, database, or Docker required.
+- **Lint baseline**: `npm run lint` exits with code 1 due to pre-existing errors in `src/components/ui/` (shadcn/ui) and `tailwind.config.ts`. These are expected — do not attempt to fix them.
+- **Default language**: The UI renders in pt-BR by default. Button labels, toasts, and sidebar items are in Portuguese.
+- **Optional server**: `server/` provides a collaboration WebSocket server and API proxy. It is not needed for normal development and can be ignored unless working on collaboration features (`npm run proxy` to start it).
+- **No secrets required**: The app is fully client-side with localStorage persistence. No API keys or environment variables are needed for standard development.
