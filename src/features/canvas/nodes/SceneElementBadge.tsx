@@ -18,7 +18,7 @@ export const SceneElementBadge = memo(function SceneElementBadge({
   );
 });
 
-export function CompareSceneBadges({
+export const CompareSceneBadges = memo(function CompareSceneBadges({
   a,
   b,
 }: {
@@ -43,4 +43,4 @@ export function CompareSceneBadges({
       </span>
     </div>
   );
-}
+});

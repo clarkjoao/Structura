@@ -104,6 +104,15 @@ export const componentParentingSlice = (
       if (!d) return;
       const scene = resolveActiveScene(d);
 
+      const willApply = entries.some(({ nodeId }) => {
+        if (scene && !scene.addedComponents[nodeId]) return false;
+        if (scene) {
+          return !!(scene.addedComponents[nodeId] || scene.nodeLayouts[nodeId]);
+        }
+        return !!(d.snapshot.components[nodeId] || d.nodeLayouts[nodeId]);
+      });
+      if (!willApply) return;
+
       if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
 
       for (const { nodeId, newParentId, newPosition } of entries) {
