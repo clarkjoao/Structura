@@ -1,7 +1,4 @@
-/**
- * Formats an ISO timestamp string as "hh:mm dd/mm/yy".
- * Returns the raw string if parsing fails.
- */
+
 export function formatTimestamp(iso: string): string {
   try {
     const d = new Date(iso);

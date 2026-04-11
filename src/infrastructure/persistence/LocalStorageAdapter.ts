@@ -2,12 +2,9 @@ import type { IStoragePort } from "./IStoragePort";
 
 const KEY_PREFIX = "structura_";
 
-/**
- * localStorage-backed persistence adapter implementing IStoragePort.
- * Suitable for Zustand `persist` middleware and similar keyed storage.
- */
+
 export class LocalStorageAdapter implements IStoragePort {
-  /** When true, setItem/save become no-ops (used when FileSystem storage is active). */
+  
   paused = false;
 
   constructor(private readonly prefix: string = KEY_PREFIX) {}
@@ -50,7 +47,7 @@ export class LocalStorageAdapter implements IStoragePort {
     try {
       localStorage.setItem(this.key(key), value);
     } catch {
-      // Quota full, private mode, or other storage failures
+      
     }
   }
 
@@ -71,10 +68,7 @@ export class LocalStorageAdapter implements IStoragePort {
     await this.setItem(key, value);
   }
 
-  /**
-   * Write data to localStorage even when paused (e.g. backup from memory before disconnecting file system).
-   * @returns false if write failed (quota, private mode, etc.)
-   */
+  
   async forceSave(key: string, data: unknown): Promise<boolean> {
     const value =
       typeof data === "string" ? data : JSON.stringify(data);
@@ -101,5 +95,5 @@ export class LocalStorageAdapter implements IStoragePort {
   }
 }
 
-/** Application-wide default storage instance. */
+
 export const defaultStorage = new LocalStorageAdapter();

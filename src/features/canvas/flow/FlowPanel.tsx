@@ -14,7 +14,6 @@ interface Props {
   onEditFlow: (flow: Flow) => void;
   isViewingCoverage?: boolean;
   onToggleCoverage?: () => void;
-  /** True when canvas is in comparison mode — same actions blocked as during play/record on the panel. */
   panelActionsLocked?: boolean;
   panelActionsLockedTitle?: string;
 }

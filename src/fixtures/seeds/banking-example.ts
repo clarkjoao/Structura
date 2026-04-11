@@ -8,24 +8,20 @@ import {
     type ServiceDefinition,
   } from "@/features/diagram";
   
-  /* ─────────────────────────────────────────────────────────────
-     HELPERS
-  ───────────────────────────────────────────────────────────── */
+  
   
   function steps(list: FlowStep[]): Record<string, FlowStep> {
     const map: Record<string, FlowStep> = {};
     for (let i = 0; i < list.length; i++) {
       const step = list[i]!;
-      // auto-wire next only when not a condition (branches handle their own routing)
+      
       const autoNext = step.type !== "condition" ? list[i + 1]?.id : undefined;
       map[step.id] = { ...step, next: step.next ?? autoNext };
     }
     return map;
   }
   
-  /* ─────────────────────────────────────────────────────────────
-     FOLDERS
-  ───────────────────────────────────────────────────────────── */
+  
   
   const FOLDER_ROOT        = "folder-bancocentro";
   const FOLDER_CORE        = "folder-core-banking";
@@ -61,9 +57,7 @@ import {
     };
   }
   
-  /* ─────────────────────────────────────────────────────────────
-     SERVICE REGISTRY
-  ───────────────────────────────────────────────────────────── */
+  
   
   function buildServiceRegistry(): Record<string, ServiceDefinition> {
     return {
@@ -170,16 +164,12 @@ import {
     };
   }
   
-  /* ─────────────────────────────────────────────────────────────
-     DIAGRAMS
-  ───────────────────────────────────────────────────────────── */
+  
   
   function buildDiagrams(): Record<string, Diagram> {
     return {
   
-      /* ═══════════════════════════════════════════════════════
-         C1 — System Context
-         ═══════════════════════════════════════════════════════ */
+      
       "d-bc-context": {
         id: "d-bc-context",
         name: "BancoCentro — Contexto do Sistema",
@@ -363,9 +353,7 @@ import {
         },
       },
   
-      /* ═══════════════════════════════════════════════════════
-         C2 — Containers
-         ═══════════════════════════════════════════════════════ */
+      
       "d-bc-containers": {
         id: "d-bc-containers",
         name: "BancoCentro — Containers",
@@ -377,48 +365,48 @@ import {
         viewport: { x: 0, y: 0, zoom: 0.40 },
         edgeLayouts: [],
         nodeLayouts: {
-          // Actors
+          
           "bc-ct-correntista":     { elementId: "bc-ct-correntista",      x: 40,   y: 480  },
           "bc-ct-empresa":         { elementId: "bc-ct-empresa",          x: 40,   y: 860  },
-          // Channel panel
+          
           "bc-ct-panel-channels":  { elementId: "bc-ct-panel-channels",   x: 210,  y: 200,  width: 360, height: 960 },
           "bc-ct-app-mobile":      { elementId: "bc-ct-app-mobile",       x: 30,   y: 60   },
           "bc-ct-internet-banking":{ elementId: "bc-ct-internet-banking", x: 30,   y: 260  },
           "bc-ct-totem":           { elementId: "bc-ct-totem",            x: 30,   y: 460  },
           "bc-ct-open-api":        { elementId: "bc-ct-open-api",         x: 30,   y: 660  },
           "bc-ct-bff-app":         { elementId: "bc-ct-bff-app",          x: 30,   y: 820  },
-          // API layer
+          
           "bc-ct-panel-api":       { elementId: "bc-ct-panel-api",        x: 650,  y: 200,  width: 360, height: 960 },
           "bc-ct-api-gateway":     { elementId: "bc-ct-api-gateway",      x: 30,   y: 60   },
           "bc-ct-auth-svc":        { elementId: "bc-ct-auth-svc",         x: 30,   y: 260  },
           "bc-ct-rate-limiter":    { elementId: "bc-ct-rate-limiter",     x: 30,   y: 460  },
-          // Core domain panel
+          
           "bc-ct-panel-core":      { elementId: "bc-ct-panel-core",       x: 1090, y: 200,  width: 360, height: 960 },
           "bc-ct-account-svc":     { elementId: "bc-ct-account-svc",      x: 30,   y: 60   },
           "bc-ct-ledger-svc":      { elementId: "bc-ct-ledger-svc",       x: 30,   y: 260  },
           "bc-ct-pix-svc":         { elementId: "bc-ct-pix-svc",          x: 30,   y: 460  },
           "bc-ct-ted-doc-svc":     { elementId: "bc-ct-ted-doc-svc",      x: 30,   y: 660  },
           "bc-ct-customer-svc":    { elementId: "bc-ct-customer-svc",     x: 30,   y: 860  },
-          // Async panel
+          
           "bc-ct-panel-async":     { elementId: "bc-ct-panel-async",      x: 1530, y: 200,  width: 360, height: 960 },
           "bc-ct-kafka":           { elementId: "bc-ct-kafka",            x: 30,   y: 60   },
           "bc-ct-fraud-svc":       { elementId: "bc-ct-fraud-svc",        x: 30,   y: 260  },
           "bc-ct-reconciliation":  { elementId: "bc-ct-reconciliation",   x: 30,   y: 460  },
           "bc-ct-notification-svc":{ elementId: "bc-ct-notification-svc", x: 30,   y: 660  },
-          // Data
+          
           "bc-ct-postgres":        { elementId: "bc-ct-postgres",         x: 30,   y: 840  },
-          // External
+          
           "bc-ct-bacen-ext":       { elementId: "bc-ct-bacen-ext",        x: 1980, y: 300  },
           "bc-ct-dict-ext":        { elementId: "bc-ct-dict-ext",         x: 1980, y: 520  },
           "bc-ct-sisbacen-ext":    { elementId: "bc-ct-sisbacen-ext",     x: 1980, y: 740  },
           "bc-ct-legado":          { elementId: "bc-ct-legado",           x: 1980, y: 960  },
-          // Note
+          
           "bc-ct-note":            { elementId: "bc-ct-note",             x: 1980, y: 60,   width: 380, height: 200 },
         },
         snapshot: {
           iconLibrary: {},
           flows: {
-            /* ── Flow 1: PIX com desvio de fraude ── */
+            
             "flow-bc-pix-containers": {
               id: "flow-bc-pix-containers",
               name: "PIX — Orquestração Completa",
@@ -578,7 +566,7 @@ import {
               ]),
             },
   
-            /* ── Flow 2: Reconciliação diária ── */
+            
             "flow-bc-reconciliation": {
               id: "flow-bc-reconciliation",
               name: "Reconciliação Diária com SISBACEN",
@@ -670,7 +658,7 @@ import {
             },
           },
           components: {
-            /* ── Actors ── */
+            
             "bc-ct-correntista": {
               id: "bc-ct-correntista",
               name: "Correntista",
@@ -686,7 +674,7 @@ import {
               parentId: null,
             },
   
-            /* ── Channel panel ── */
+            
             "bc-ct-panel-channels": {
               id: "bc-ct-panel-channels",
               name: "Canais de Atendimento",
@@ -739,7 +727,7 @@ import {
               serviceId: "svc-bff-app",
             },
   
-            /* ── API Layer panel ── */
+            
             "bc-ct-panel-api": {
               id: "bc-ct-panel-api",
               name: "API & Security Layer",
@@ -776,7 +764,7 @@ import {
               parentId: "bc-ct-panel-api",
             },
   
-            /* ── Core Domain panel ── */
+            
             "bc-ct-panel-core": {
               id: "bc-ct-panel-core",
               name: "Core Banking Domain",
@@ -833,7 +821,7 @@ import {
               serviceId: "svc-customer",
             },
   
-            /* ── Async / Data panel ── */
+            
             "bc-ct-panel-async": {
               id: "bc-ct-panel-async",
               name: "Async & Intelligence",
@@ -888,7 +876,7 @@ import {
               parentId: "bc-ct-panel-async",
             },
   
-            /* ── External ── */
+            
             "bc-ct-bacen-ext": {
               id: "bc-ct-bacen-ext",
               name: "Banco Central (SPI/STR)",
@@ -954,9 +942,7 @@ import {
         },
       },
   
-      /* ═══════════════════════════════════════════════════════
-         SCENE — As-Is (TED legado) vs To-Be (TED cloud-native)
-         ═══════════════════════════════════════════════════════ */
+      
       "d-bc-ted-evolution": {
         id: "d-bc-ted-evolution",
         name: "Evolução TED — Legado para Cloud-Native",
@@ -1096,9 +1082,7 @@ import {
         },
       },
   
-      /* ═══════════════════════════════════════════════════════
-         DEPLOYMENT — AWS Infrastructure
-         ═══════════════════════════════════════════════════════ */
+      
       "d-bc-deployment": {
         id: "d-bc-deployment",
         name: "BancoCentro — Deployment AWS (sa-east-1)",
@@ -1117,13 +1101,13 @@ import {
           "dep-bc-sagemaker":    { elementId: "dep-bc-sagemaker",    x: 1820, y: 260  },
           "dep-bc-cloudwatch":   { elementId: "dep-bc-cloudwatch",   x: 1820, y: 460  },
           "dep-bc-macie":        { elementId: "dep-bc-macie",        x: 1820, y: 660  },
-          // VPC
+          
           "dep-bc-vpc":          { elementId: "dep-bc-vpc",          x: 230,  y: 40,  width: 1480, height: 1100 },
-          // Public
+          
           "dep-bc-panel-pub":    { elementId: "dep-bc-panel-pub",    x: 30,   y: 80,  width: 420,  height: 380  },
           "dep-bc-alb":          { elementId: "dep-bc-alb",          x: 30,   y: 60   },
           "dep-bc-nat":          { elementId: "dep-bc-nat",          x: 30,   y: 240  },
-          // Private / EKS
+          
           "dep-bc-panel-priv":   { elementId: "dep-bc-panel-priv",   x: 30,   y: 520, width: 980,  height: 540  },
           "dep-bc-eks":          { elementId: "dep-bc-eks",          x: 30,   y: 60,  width: 900,  height: 420  },
           "dep-bc-pod-gateway":  { elementId: "dep-bc-pod-gateway",  x: 30,   y: 60   },
@@ -1134,25 +1118,25 @@ import {
           "dep-bc-pod-bff":      { elementId: "dep-bc-pod-bff",      x: 470,  y: 220  },
           "dep-bc-pod-recon":    { elementId: "dep-bc-pod-recon",    x: 690,  y: 60   },
           "dep-bc-pod-notif":    { elementId: "dep-bc-pod-notif",    x: 690,  y: 220  },
-          // Data subnet
+          
           "dep-bc-panel-data":   { elementId: "dep-bc-panel-data",   x: 1080, y: 520, width: 360,  height: 540  },
           "dep-bc-aurora":       { elementId: "dep-bc-aurora",       x: 30,   y: 60   },
           "dep-bc-redis":        { elementId: "dep-bc-redis",        x: 30,   y: 260  },
           "dep-bc-msk":          { elementId: "dep-bc-msk",          x: 30,   y: 440  },
-          // Secure / HSM zone
+          
           "dep-bc-panel-hsm":    { elementId: "dep-bc-panel-hsm",    x: 30,   y: 700, width: 980,  height: 360  },
           "dep-bc-hsm-luna":     { elementId: "dep-bc-hsm-luna",     x: 30,   y: 60   },
           "dep-bc-cert-manager": { elementId: "dep-bc-cert-manager", x: 280,  y: 60   },
           "dep-bc-vault":        { elementId: "dep-bc-vault",        x: 530,  y: 60   },
           "dep-bc-directconn":   { elementId: "dep-bc-directconn",   x: 780,  y: 60   },
-          // Note
+          
           "dep-bc-note":         { elementId: "dep-bc-note",         x: 1820, y: 840, width: 380,  height: 400  },
         },
         snapshot: {
           iconLibrary: {},
           flows: {},
           components: {
-            /* ── Outside VPC ── */
+            
             "dep-bc-route53": {
               id: "dep-bc-route53",
               name: "Route 53 + Health Check",
@@ -1217,7 +1201,7 @@ import {
               parentId: null,
             },
   
-            /* ── VPC ── */
+            
             "dep-bc-vpc": {
               id: "dep-bc-vpc",
               name: "VPC Bancária (10.10.0.0/16)",
@@ -1229,7 +1213,7 @@ import {
               parentId: null,
             },
   
-            /* ── Public ── */
+            
             "dep-bc-panel-pub": {
               id: "dep-bc-panel-pub",
               name: "Subnets Públicas (10.10.0.0/20)",
@@ -1259,7 +1243,7 @@ import {
               parentId: "dep-bc-panel-pub",
             },
   
-            /* ── Private / EKS ── */
+            
             "dep-bc-panel-priv": {
               id: "dep-bc-panel-priv",
               name: "Subnets Privadas (10.10.16.0/20)",
@@ -1353,7 +1337,7 @@ import {
               parentId: "dep-bc-eks",
             },
   
-            /* ── Data subnet ── */
+            
             "dep-bc-panel-data": {
               id: "dep-bc-panel-data",
               name: "Subnets de Dados (10.10.32.0/20)",
@@ -1392,7 +1376,7 @@ import {
               parentId: "dep-bc-panel-data",
             },
   
-            /* ── Secure zone ── */
+            
             "dep-bc-panel-hsm": {
               id: "dep-bc-panel-hsm",
               name: "Zona Segura — Conectividade Regulatória",
@@ -1439,7 +1423,7 @@ import {
               parentId: "dep-bc-panel-hsm",
             },
   
-            /* ── Note ── */
+            
             "dep-bc-note": {
               id: "dep-bc-note",
               name: "Custos, Compliance e IaC",

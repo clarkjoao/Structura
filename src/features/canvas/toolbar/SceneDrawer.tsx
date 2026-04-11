@@ -38,9 +38,9 @@ export interface SceneDrawerProps {
   onDelete: (id: string) => void;
   onMerge: (scene: SceneDiff) => void;
   onSelectBase: () => void;
-  /** When true, switching scenes/compare/base and structural actions are disabled (flow playing/recording). */
+  
   scenesLocked?: boolean;
-  /** When true, create/rename/duplicate/delete/merge are disabled (collab guest); scene switching stays enabled. */
+  
   scenesGuestReadOnly?: boolean;
 }
 

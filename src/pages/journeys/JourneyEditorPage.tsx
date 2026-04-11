@@ -46,7 +46,7 @@ export default function JourneyEditorPage() {
   useEffect(() => {
     if (!journey) return;
     setSelectedStepId(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when switching journey
+    
   }, [journeyKey]);
 
   useEffect(() => {

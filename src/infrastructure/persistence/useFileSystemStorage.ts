@@ -95,11 +95,11 @@ export function useFileSystemStorage() {
     useCustomComponentStore.setState({ templates: {} });
   }, []);
 
-  // Silent reconnect on mount — delegates to the singleton so it runs only once
+  
   useEffect(() => {
     if (!isFileSystemSupported) return;
 
-    // If already connected (another mount already completed boot), just sync local state
+    
     if (fileSystemAdapter.isConnected) {
       defaultStorage.paused = true;
       setStatus("connected");
@@ -148,7 +148,7 @@ export function useFileSystemStorage() {
     const scan = await fileSystemAdapter.scanWorkspace();
 
     if (scan.valid.length === 0 && scan.totalFilesScanned === 0) {
-      // Empty folder — write current store to disk
+      
       const state = useDiagramStore.getState();
       fileSystemAdapter.setFolders(state.folders);
       for (const diagram of Object.values(state.diagrams)) {
@@ -165,7 +165,7 @@ export function useFileSystemStorage() {
     }
 
     if (scan.valid.length === 0) {
-      // Folder has files but none are valid diagrams — just connect
+      
       defaultStorage.paused = true;
       await clearLocalCache();
       await mergeJourneysFromConnectedFolder();
@@ -174,7 +174,7 @@ export function useFileSystemStorage() {
       return;
     }
 
-    // Folder has valid diagrams — show merge dialog
+    
     setScanResult(scan);
     setPendingMerge(true);
     defaultStorage.paused = true;
@@ -361,7 +361,7 @@ export function useFileSystemStorage() {
         recordLocalStorageDiagramSyncSuccess();
       }
 
-      // Also backup custom-components (they're stored via localStorage persist + repository).
+      
       await defaultStorage.forceSave("custom_components", customComponentTemplates);
     } catch {
       toast.error(t("filesystem.backupFailedGeneric"));
@@ -381,7 +381,7 @@ export function useFileSystemStorage() {
     if (!fileSystemAdapter.isConnected) return;
     setSyncing(true);
     try {
-      // Prefer manifest-based load (supports deletions).
+      
       const workspace = await fileSystemAdapter.loadWorkspace();
       if (workspace) {
         useDiagramStore.setState((s) => ({
@@ -406,7 +406,7 @@ export function useFileSystemStorage() {
 
         hydrateIconStoreFromWorkspace(workspace);
       } else {
-        // No manifest: fall back to scanning diagrams only.
+        
         const scan = await fileSystemAdapter.scanWorkspace();
         const validDiagrams = Object.fromEntries(scan.valid.map((d) => [d.id, d]));
         useDiagramStore.setState((s) => ({

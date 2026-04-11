@@ -59,7 +59,7 @@ export interface UseCanvasInteractionResult {
   handleSearchSelect: (componentId: string) => void;
 }
 
-/** Wires diagram navigation, drill actions, pointer/connection handlers, keyboard shortcuts, and playback side effects. */
+
 export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCanvasInteractionResult {
   const {
     canvasProps,

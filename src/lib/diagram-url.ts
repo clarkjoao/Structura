@@ -1,9 +1,9 @@
 import LZString from "lz-string";
 import type { Diagram } from "@/features/diagram";
 
-// ---------------------------------------------------------------------------
-// Encoding
-// ---------------------------------------------------------------------------
+
+
+
 
 export function encodeDiagramPayload(diagram: Diagram): string {
   return LZString.compressToEncodedURIComponent(JSON.stringify(diagram));
@@ -17,9 +17,9 @@ export function decodeDiagramPayload(encoded: string): Diagram {
   throw new Error("Failed to decompress diagram payload");
 }
 
-// ---------------------------------------------------------------------------
-// URL helpers
-// ---------------------------------------------------------------------------
+
+
+
 
 function getBasePath(): string {
   return import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -30,9 +30,9 @@ export function getAppUrl(): string {
   return `${window.location.origin}${pathnameWithoutTrailingSlash}`;
 }
 
-// ---------------------------------------------------------------------------
-// Share URLs  —  standalone view with import banner  (/#share=<encoded>)
-// ---------------------------------------------------------------------------
+
+
+
 
 export interface ShareUrlResult {
   url: string;
@@ -92,7 +92,7 @@ export function decodeShareParam(shareParam: string): Diagram | null {
       } as Diagram;
     }
   } catch {
-    // Fall through to legacy base64.
+    
   }
 
   try {
@@ -105,9 +105,9 @@ export function decodeShareParam(shareParam: string): Diagram | null {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Viewer URLs  —  iframe / documentation embed  (/viewer#data=<encoded>)
-// ---------------------------------------------------------------------------
+
+
+
 
 export function getViewerPostMessageUrl(): string {
   return `${window.location.origin}${getBasePath()}/viewer`;

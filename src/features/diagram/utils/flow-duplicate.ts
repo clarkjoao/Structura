@@ -1,9 +1,6 @@
 import type { Flow } from "../model/flow.types";
 
-/**
- * Gera o patch para duplicar um flow com novo nome.
- * Não acessa o store — retorna dados puros.
- */
+
 export function buildFlowDuplicatePatch(
   flow: Flow,
   newName: string,

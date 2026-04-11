@@ -57,6 +57,7 @@ export function createJourneyEditorNodeBuildContext(
   );
   return {
     diagram,
+    flows: Object.values(diagram.snapshot.flows),
     resolvedComponents: snapshot.components,
     resolvedNodeLayouts: snapshot.nodeLayouts,
     sceneBadgeByComponentId: {},

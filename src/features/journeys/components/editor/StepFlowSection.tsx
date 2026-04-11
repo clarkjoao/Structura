@@ -21,11 +21,11 @@ import { StepFlowPickerDialog } from "./StepFlowPickerDialog";
 export interface StepFlowSectionProps {
   journeyId: string;
   stepId: string;
-  /** Used when a flow ends and global journey play is off — selects the next step. */
+  
   onSelectStep: (stepId: string) => void;
-  /** When set (e.g. global journey play), advances with playback. */
+  
   onNextStep?: () => void;
-  /** When set (e.g. global journey play), goes to previous step with playback. */
+  
   onPrevStep?: () => void;
 }
 

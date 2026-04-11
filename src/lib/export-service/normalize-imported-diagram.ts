@@ -85,11 +85,7 @@ function sanitizeIconLibrary(raw: unknown): Record<string, IconDefinition> {
   return next;
 }
 
-/**
- * Ensures imported diagram JSON has optional `customIconId` on components.
- * Sanitized embedded `snapshot.iconLibrary` entries are merged into the global icon store when missing there,
- * then cleared from the snapshot (`{}`) for schema compatibility.
- */
+
 export function normalizeImportedDiagram(diagram: Diagram): Diagram {
   const snapshot = diagram.snapshot ?? { components: {}, connections: {}, flows: {}, iconLibrary: {} };
   const iconLibrary = sanitizeIconLibrary(snapshot.iconLibrary);
@@ -104,7 +100,7 @@ export function normalizeImportedDiagram(diagram: Diagram): Diagram {
       }
     }
   } catch {
-    // Icon store unavailable (e.g. unusual init order) — still return normalized diagram.
+    
   }
 
   const components = { ...snapshot.components };

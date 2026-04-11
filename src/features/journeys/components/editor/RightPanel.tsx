@@ -18,7 +18,7 @@ import type { JourneyStep } from "../../types";
 interface RightPanelProps {
   journeyId: string;
   step: JourneyStep | null;
-  /** Rendered flow controls — passed from parent to avoid prop drilling */
+  
   flowSection: ReactNode;
 }
 

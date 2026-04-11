@@ -114,7 +114,7 @@ export const flowsSlice = (
         const flow = d.snapshot.flows[flowId];
         if (!flow) return;
 
-        // Remove all references pointing to this step
+        
         for (const s of Object.values(flow.steps)) {
           if (s.next === stepId) s.next = undefined;
           if (s.branches) {
@@ -122,7 +122,7 @@ export const flowsSlice = (
           }
         }
 
-        // Clear entry if it was this step
+        
         if (flow.entryStepId === stepId) {
           flow.entryStepId = undefined;
         }
@@ -154,11 +154,11 @@ export const flowsSlice = (
         if (!step || !step.branches) return;
         const removed = step.branches[branchIndex];
         step.branches.splice(branchIndex, 1);
-        // Clean up orphaned branch target step
+        
         if (removed) {
           const targetStep = flow.steps[removed.nextId];
           if (targetStep) {
-            // Check if any other step still references this target
+            
             const stillReferenced = Object.values(flow.steps).some((s) => {
               if (s.next === removed.nextId) return true;
               return s.branches?.some((b) => b.nextId === removed.nextId);

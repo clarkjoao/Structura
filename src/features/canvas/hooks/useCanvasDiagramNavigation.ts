@@ -4,25 +4,24 @@ import { useDiagramActions } from "@/features/diagram";
 import type { NavigateFunction } from "react-router-dom";
 import { useRecentDiagrams } from "../navigation/useRecentDiagrams";
 
-/** Parameters for the canvas diagram navigation hook. */
+
 interface CanvasDiagramNavParams {
-  /** Diagrama atualmente ativo no canvas */
+  
   diagram: Diagram | null | undefined;
-  /** Todos os diagramas disponíveis para navegação */
+  
   allDiagrams: Record<string, Diagram>;
-  /** Quando true, navegação entre diagramas está bloqueada
-   *  (flow playing/recording ou compare mode ativo) */
+  
   diagramNavLocked: boolean;
   actions: Pick<ReturnType<typeof useDiagramActions>, "openDiagram">;
   onOpenDiagram?: (id: string) => void;
-  /** Quando fornecido, sidebar é controlada externamente */
+  
   diagramSidebarOpen?: boolean;
   onDiagramSidebarOpenChange?: (open: boolean) => void;
   navigate: NavigateFunction;
   setShowScenes: Dispatch<SetStateAction<boolean>>;
 }
 
-/** Return value of the canvas diagram navigation hook. */
+
 interface CanvasDiagramNavResult {
   showSearch: boolean;
   setShowSearch: (v: boolean) => void;
@@ -30,18 +29,15 @@ interface CanvasDiagramNavResult {
   setShowDiagramSidebar: Dispatch<SetStateAction<boolean>>;
   showCommandPalette: boolean;
   setShowCommandPalette: (v: boolean) => void;
-  /** Abre um diagrama respeitando o lock de navegação */
+  
   handleSelectDiagram: (id: string) => void;
 }
 
-// ---------------------------------------------------------------------------
-// Internal helper hook
-// ---------------------------------------------------------------------------
 
-/**
- * Closes all overlay panels (command palette, search, diagram sidebar, scenes)
- * whenever diagram navigation becomes locked.
- */
+
+
+
+
 function useCloseAllOnNavLock({
   diagramNavLocked,
   setShowCommandPalette,
@@ -64,9 +60,6 @@ function useCloseAllOnNavLock({
   }, [diagramNavLocked, setShowDiagramSidebar, setShowScenes]);
 }
 
-// ---------------------------------------------------------------------------
-// Main hook
-// ---------------------------------------------------------------------------
 
 export function useCanvasDiagramNavigation(
   params: CanvasDiagramNavParams,
@@ -118,9 +111,6 @@ export function useCanvasDiagramNavigation(
       const target = allDiagrams[id];
       if (!target) return;
 
-      // Early-return when the selected diagram is already active.
-      // This avoids an unnecessary re-render that would be triggered by
-      // re-opening the same diagram; instead we just close the overlays.
       if (id === diagram?.id) {
         setShowDiagramSidebar(false);
         setShowCommandPalette(false);

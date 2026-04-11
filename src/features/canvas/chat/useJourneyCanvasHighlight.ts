@@ -8,11 +8,7 @@ import {
 } from "../flow/flowState";
 import type { FlowHighlight } from "../flow/flowState";
 
-/**
- * When a Journey is playing, derives a FlowHighlight from the current step.
- * If the step has a flowId, delegates to buildFlowHighlight for that flow.
- * Takes priority over ad-hoc flow state when journey playback is active.
- */
+
 export function useJourneyCanvasHighlight(): FlowHighlight {
   const journeyPlayer = useJourneyPlayer();
   const flows = useFlows();

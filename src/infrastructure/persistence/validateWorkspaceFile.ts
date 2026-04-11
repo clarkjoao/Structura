@@ -2,7 +2,7 @@ import type { Diagram } from "@/features/diagram";
 import { normalizeImportedDiagram } from "@/lib/export-service/normalize-imported-diagram";
 import type { WorkspaceManifest } from "./FileSystemAdapter";
 
-// ── Result types ──
+
 
 export type ValidationResult =
   | { valid: true; diagram: Diagram }
@@ -12,7 +12,7 @@ export type ManifestValidationResult =
   | { valid: true; manifest: WorkspaceManifest }
   | { valid: false; reason: string };
 
-// ── Diagram validator ──
+
 
 export function validateDiagramFile(raw: unknown): ValidationResult {
   if (!raw || typeof raw !== "object") {
@@ -82,7 +82,7 @@ export function validateDiagramFile(raw: unknown): ValidationResult {
   return { valid: true, diagram: normalizeImportedDiagram(raw as Diagram) };
 }
 
-// ── Manifest validator ──
+
 
 export function validateManifest(raw: unknown): ManifestValidationResult {
   if (!raw || typeof raw !== "object") {

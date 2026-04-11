@@ -191,7 +191,7 @@ export function useCanvasEventHandlers({
   const onSelectionChange = useCallback(
     ({ nodes: updatedNodes }: { nodes: Node[]; edges: Edge[] }) => {
       const selectedIds = updatedNodes.filter((n) => n.selected).map((n) => n.id);
-      // Skip empty selections (handled by onPaneClick) and duplicate firings
+      
       if (selectedIds.length === 0) return;
       if (isCompareMode) return;
       const key = [...selectedIds].sort().join(",");

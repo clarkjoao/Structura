@@ -80,10 +80,7 @@ export function createDiagramStore(storage: IStoragePort = defaultStorage) {
 
 export const useDiagramStore = createDiagramStore();
 
-/**
- * Writes the current diagram store snapshot to the default localStorage adapter
- * (including when FS mode has paused normal persist). Updates last-sync metadata on success.
- */
+
 export async function flushDiagramStoreToLocalStorageNow(): Promise<boolean> {
   const payload = buildPersistStoragePayload(useDiagramStore.getState());
   if (defaultStorage.paused) {

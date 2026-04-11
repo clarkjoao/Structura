@@ -16,7 +16,7 @@ export function CustomIconRenderer({ icon, size = 32, className }: CustomIconRen
       <div
         style={{ width: size, height: size, pointerEvents: "none" }}
         className={cn(className)}
-        // Content is pre-sanitized by svg.sanitizer before reaching the canvas.
+        
         dangerouslySetInnerHTML={{ __html: icon.source.svgContent }}
       />
     );

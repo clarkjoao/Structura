@@ -23,12 +23,7 @@ export function isInsidePanel(node: Node, x: number, y: number): boolean {
   );
 }
 
-/**
- * Bug 7: Optionally accepts child dimensions and uses area-based overlap check.
- * When childDimensions is provided, the child is considered "outside" if less than
- * 50% of its area overlaps with the parent bounds.
- * Without childDimensions, falls back to position-only check (backward compatible).
- */
+
 export function isOutsideParentBounds(
   childPos: { x: number; y: number },
   parent: Node,
@@ -58,10 +53,7 @@ export function isOutsideParentBounds(
   return childArea > 0 && overlapArea / childArea < 0.5;
 }
 
-/**
- * Bug 1: Returns the innermost (smallest-area) panel that contains the given
- * absolute point, instead of the first panel found (which may be the outermost).
- */
+
 export function findPanelContainingPoint(
   nodes: Node[],
   absX: number,
@@ -127,10 +119,7 @@ export function toRelativePosition(
   };
 }
 
-/**
- * Converts a node relative position to absolute by walking parent chain.
- * Uses store nodeLayouts — accurate at rest, may lag during drag.
- */
+
 export function resolveAbsolutePosition(
   nodeId: string,
   relPos: { x: number; y: number },
@@ -150,11 +139,7 @@ export function resolveAbsolutePosition(
   );
 }
 
-/**
- * Bug 2: Resolves absolute position by walking the parentId chain using the
- * React Flow node array (local positions, accurate during drag).
- * Falls back when a parent is not found in the array.
- */
+
 export function resolveAbsolutePositionFromNodes(
   nodeId: string,
   nodes: Node[],

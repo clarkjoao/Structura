@@ -140,7 +140,6 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Hero */}
       <section className="relative pt-32 pb-20 overflow-hidden">
         <div className="absolute inset-0 gradient-radial" />
         <div className="container relative">
@@ -212,7 +211,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Features */}
       <section className="py-24 border-t border-border">
         <div className="container">
           <motion.div
@@ -253,7 +251,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* CTA */}
       <section className="py-24 border-t border-border">
         <div className="container">
           <div className="relative rounded-2xl border border-border bg-card p-12 text-center overflow-hidden">
@@ -277,7 +274,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="border-t border-border py-8">
         <div className="container flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-2">

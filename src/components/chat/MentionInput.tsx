@@ -113,7 +113,7 @@ export function MentionInput({
   useEffect(() => {
     syncSegmentsToDOM(editorRef.current, segments);
     hasMountedRef.current = true;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  
   }, []);
 
   useEffect(() => {
@@ -121,7 +121,7 @@ export function MentionInput({
       return;
     }
     syncSegmentsToDOM(editorRef.current, latestSegmentsRef.current);
-  // syncToken only changes for programmatic updates (mention insert/clear)
+  
   }, [syncToken]);
 
   return (

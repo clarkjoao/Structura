@@ -50,7 +50,7 @@ export interface UseCanvasGraphStateParams {
   t: TFunction;
 }
 
-/** Derives React Flow nodes and edges from the diagram store and canvas-specific layout state. */
+
 export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
   const {
     diagram,
@@ -142,9 +142,9 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     updateComponent: actions.updateComponent,
   });
 
-  // Destructure the setters so the useCallback dependency list stays stable.
-  // visualState is a plain object literal recreated each render; its setter
-  // functions come from useState and never change reference.
+  
+  
+  
   const {
     setSelectedEdgeId,
     setContextMenu,

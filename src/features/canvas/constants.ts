@@ -18,7 +18,7 @@ export {
   DB_TABLE_COLLAPSED_H,
 } from "@/features/diagram";
 
-/** Injected alongside React Flow to match app theme and selection affordances */
+
 export const CANVAS_STYLES = `
   .react-flow__pane { cursor: default; }
   .react-flow__pane:active { cursor: grabbing; }

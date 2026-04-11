@@ -8,9 +8,7 @@ import {
   type ServiceDefinition,
 } from "@/features/diagram";
 
-/* ─────────────────────────────────────────────────────────────
-   FOLDERS
-───────────────────────────────────────────────────────────── */
+
 
 const FOLDER_ID = "folder-fintech";
 
@@ -38,9 +36,7 @@ function buildFolders(): Record<string, Folder> {
   };
 }
 
-/* ─────────────────────────────────────────────────────────────
-   SERVICE REGISTRY
-───────────────────────────────────────────────────────────── */
+
 
 function buildServiceRegistry(): Record<string, ServiceDefinition> {
   return {
@@ -127,16 +123,12 @@ function buildServiceRegistry(): Record<string, ServiceDefinition> {
   };
 }
 
-/* ─────────────────────────────────────────────────────────────
-   DIAGRAMS
-───────────────────────────────────────────────────────────── */
+
 
 function buildDiagrams(): Record<string, Diagram> {
   return {
 
-    /* ═══════════════════════════════════════════════════════
-       C1 — System Context  (left → right)
-       ═══════════════════════════════════════════════════════ */
+    
     "d-context": {
       id: "d-context",
       name: "Fintech – Contexto do Sistema",
@@ -147,17 +139,17 @@ function buildDiagrams(): Record<string, Diagram> {
       updatedAt: "2026-03-20T10:00:00.000Z",
       viewport: { x: 0, y: 0, zoom: 0.55 },
       nodeLayouts: {
-        // Actors — left column
+        
         "ctx-customer":     { elementId: "ctx-customer",     x: 80,   y: 300 },
         "ctx-merchant":     { elementId: "ctx-merchant",     x: 80,   y: 600 },
-        // Core system — center
+        
         "ctx-platform":     { elementId: "ctx-platform",     x: 500,  y: 420 },
-        // External systems — right column
+        
         "ctx-card-network": { elementId: "ctx-card-network", x: 1000, y: 180 },
         "ctx-bank":         { elementId: "ctx-bank",         x: 1000, y: 380 },
         "ctx-kyc":          { elementId: "ctx-kyc",          x: 1000, y: 580 },
         "ctx-sms-gw":       { elementId: "ctx-sms-gw",       x: 1000, y: 740 },
-        // Note — far right
+        
         "ctx-note": {
           elementId: "ctx-note",
           x: 1320, y: 80,
@@ -348,9 +340,7 @@ function buildDiagrams(): Record<string, Diagram> {
       },
     },
 
-    /* ═══════════════════════════════════════════════════════
-       C2 — Container Diagram  (left → right)
-       ═══════════════════════════════════════════════════════ */
+    
     "d-containers": {
       id: "d-containers",
       name: "Fintech – Containers",
@@ -361,26 +351,26 @@ function buildDiagrams(): Record<string, Diagram> {
       updatedAt: "2026-03-20T11:00:00.000Z",
       viewport: { x: 0, y: 0, zoom: 0.4 },
       nodeLayouts: {
-        // Actors — col 0
+        
         "ct-mobile-user":      { elementId: "ct-mobile-user",      x: 60,   y: 600 },
 
-        // Frontend — col 1
+        
         "ct-panel-frontend":   { elementId: "ct-panel-frontend",   x: 280,  y: 80,  width: 480,  height: 900, zIndex: -1 },
         "ct-mobile-app":       { elementId: "ct-mobile-app",       x: 340,  y: 200 },
         "ct-bff":              { elementId: "ct-bff",              x: 340,  y: 480 },
         "ct-web-app":          { elementId: "ct-web-app",          x: 340,  y: 720 },
 
-        // Gateway — col 2
+        
         "ct-gateway":          { elementId: "ct-gateway",          x: 860,  y: 480 },
 
-        // Backend — col 3
+        
         "ct-panel-backend":    { elementId: "ct-panel-backend",    x: 1120, y: 80,  width: 560,  height: 900, zIndex: -1 },
         "ct-payment-svc":      { elementId: "ct-payment-svc",      x: 1180, y: 160 },
         "ct-account-svc":      { elementId: "ct-account-svc",      x: 1180, y: 380 },
         "ct-fraud-svc":        { elementId: "ct-fraud-svc",        x: 1180, y: 600 },
         "ct-notification-svc": { elementId: "ct-notification-svc", x: 1180, y: 780 },
 
-        // Data — col 4
+        
         "ct-panel-data":       { elementId: "ct-panel-data",       x: 1780, y: 80,  width: 480,  height: 900, zIndex: -1 },
         "ct-postgres":         { elementId: "ct-postgres",         x: 1840, y: 160 },
         "ct-redis":            { elementId: "ct-redis",            x: 1840, y: 380 },
@@ -399,7 +389,7 @@ function buildDiagrams(): Record<string, Diagram> {
             parentId: null,
           },
 
-          /* ── Frontend panel ── */
+          
           "ct-panel-frontend": {
             id: "ct-panel-frontend",
             name: "Frontend",
@@ -438,7 +428,7 @@ function buildDiagrams(): Record<string, Diagram> {
             parentId: "ct-panel-frontend",
           },
 
-          /* ── Gateway ── */
+          
           "ct-gateway": {
             id: "ct-gateway",
             name: "API Gateway",
@@ -450,7 +440,7 @@ function buildDiagrams(): Record<string, Diagram> {
             linkedDiagramId: "d-gateway-components",
           },
 
-          /* ── Backend panel ── */
+          
           "ct-panel-backend": {
             id: "ct-panel-backend",
             name: "Serviços Backend",
@@ -499,7 +489,7 @@ function buildDiagrams(): Record<string, Diagram> {
             serviceId: "svc-notification",
           },
 
-          /* ── Data panel ── */
+          
           "ct-panel-data": {
             id: "ct-panel-data",
             name: "Dados & Mensageria",
@@ -651,9 +641,7 @@ function buildDiagrams(): Record<string, Diagram> {
       },
     },
 
-    /* ═══════════════════════════════════════════════════════
-       C3 — Payment Service Components  (left → right)
-       ═══════════════════════════════════════════════════════ */
+    
     "d-payment-components": {
       id: "d-payment-components",
       name: "Serviço de Pagamento – Componentes",
@@ -664,19 +652,19 @@ function buildDiagrams(): Record<string, Diagram> {
       updatedAt: "2026-03-20T12:00:00.000Z",
       viewport: { x: 0, y: 0, zoom: 0.55 },
       nodeLayouts: {
-        // col 0 — inbound
+        
         "pm-pix-controller":      { elementId: "pm-pix-controller",      x: 80,   y: 200 },
         "pm-card-controller":     { elementId: "pm-card-controller",      x: 80,   y: 480 },
-        // col 1 — orchestration
+        
         "pm-payment-orchestrator":{ elementId: "pm-payment-orchestrator", x: 420,  y: 320 },
-        // col 2 — domain
+        
         "pm-idempotency":         { elementId: "pm-idempotency",         x: 760,  y: 120 },
         "pm-balance-checker":     { elementId: "pm-balance-checker",     x: 760,  y: 320 },
         "pm-limit-checker":       { elementId: "pm-limit-checker",       x: 760,  y: 520 },
-        // col 3 — outbound adapters
+        
         "pm-pix-adapter":         { elementId: "pm-pix-adapter",         x: 1100, y: 200 },
         "pm-card-adapter":        { elementId: "pm-card-adapter",        x: 1100, y: 480 },
-        // col 4 — infra
+        
         "pm-event-publisher":     { elementId: "pm-event-publisher",     x: 1440, y: 320 },
       },
       edgeLayouts: [],
@@ -853,9 +841,7 @@ function buildDiagrams(): Record<string, Diagram> {
       },
     },
 
-    /* ═══════════════════════════════════════════════════════
-       C3 — API Gateway Components  (left → right)
-       ═══════════════════════════════════════════════════════ */
+    
     "d-gateway-components": {
       id: "d-gateway-components",
       name: "API Gateway – Componentes",
@@ -996,9 +982,7 @@ function buildDiagrams(): Record<string, Diagram> {
       },
     },
 
-    /* ═══════════════════════════════════════════════════════
-       C3 — Mobile BFF Components  (left → right)
-       ═══════════════════════════════════════════════════════ */
+    
     "d-bff-components": {
       id: "d-bff-components",
       name: "BFF Mobile – Componentes",
@@ -1087,9 +1071,7 @@ function buildDiagrams(): Record<string, Diagram> {
       },
     },
 
-    /* ═══════════════════════════════════════════════════════
-       Deployment — AWS Infrastructure  (left → right)
-       ═══════════════════════════════════════════════════════ */
+    
     "d-deployment": {
       id: "d-deployment",
       name: "Deployment – Infraestrutura AWS",
@@ -1100,11 +1082,11 @@ function buildDiagrams(): Record<string, Diagram> {
       updatedAt: "2026-03-20T14:00:00.000Z",
       viewport: { x: 0, y: 0, zoom: 0.35 },
       nodeLayouts: {
-        // Edge / CDN — col 0
+        
         "dep-cloudfront":     { elementId: "dep-cloudfront",     x: 60,   y: 400 },
         "dep-waf":            { elementId: "dep-waf",            x: 60,   y: 600 },
 
-        // VPC wrapper
+        
         "dep-vpc": {
           elementId: "dep-vpc",
           x: 360, y: 60,
@@ -1112,7 +1094,7 @@ function buildDiagrams(): Record<string, Diagram> {
           zIndex: -1,
         },
 
-        // Public subnet — col 1 (inside vpc)
+        
         "dep-panel-public": {
           elementId: "dep-panel-public",
           x: 80, y: 120,
@@ -1123,7 +1105,7 @@ function buildDiagrams(): Record<string, Diagram> {
         "dep-nat":            { elementId: "dep-nat",            x: 140,  y: 560 },
         "dep-bastion":        { elementId: "dep-bastion",        x: 140,  y: 840 },
 
-        // Private subnet — col 2 (inside vpc)
+        
         "dep-panel-private": {
           elementId: "dep-panel-private",
           x: 600, y: 120,
@@ -1141,7 +1123,7 @@ function buildDiagrams(): Record<string, Diagram> {
         "dep-pod-account":    { elementId: "dep-pod-account",    x: 700,  y: 760 },
         "dep-pod-bff":        { elementId: "dep-pod-bff",        x: 700,  y: 980 },
 
-        // Data subnet — col 3 (inside vpc)
+        
         "dep-panel-data": {
           elementId: "dep-panel-data",
           x: 1340, y: 120,
@@ -1153,12 +1135,12 @@ function buildDiagrams(): Record<string, Diagram> {
         "dep-msk":            { elementId: "dep-msk",            x: 1400, y: 840 },
         "dep-dynamo":         { elementId: "dep-dynamo",         x: 1400, y: 1140 },
 
-        // Outside VPC — col 4
+        
         "dep-s3":             { elementId: "dep-s3",             x: 3100, y: 200 },
         "dep-cloudwatch":     { elementId: "dep-cloudwatch",     x: 3100, y: 500 },
         "dep-secrets":        { elementId: "dep-secrets",        x: 3100, y: 800 },
 
-        // Deployment note
+        
         "dep-note": {
           elementId: "dep-note",
           x: 3100, y: 1100,
@@ -1169,7 +1151,7 @@ function buildDiagrams(): Record<string, Diagram> {
       snapshot: {
         iconLibrary: {},
         components: {
-          /* ── CDN / Edge ── */
+          
           "dep-cloudfront": {
             id: "dep-cloudfront",
             name: "CloudFront",
@@ -1189,7 +1171,7 @@ function buildDiagrams(): Record<string, Diagram> {
             parentId: null,
           },
 
-          /* ── VPC ── */
+          
           "dep-vpc": {
             id: "dep-vpc",
             name: "VPC de Produção (us-east-1)",
@@ -1201,7 +1183,7 @@ function buildDiagrams(): Record<string, Diagram> {
             parentId: null,
           },
 
-          /* ── Public subnet ── */
+          
           "dep-panel-public": {
             id: "dep-panel-public",
             name: "Subnets Públicas",
@@ -1240,7 +1222,7 @@ function buildDiagrams(): Record<string, Diagram> {
             parentId: "dep-panel-public",
           },
 
-          /* ── Private subnet / EKS ── */
+          
           "dep-panel-private": {
             id: "dep-panel-private",
             name: "Subnets Privadas",
@@ -1298,7 +1280,7 @@ function buildDiagrams(): Record<string, Diagram> {
             parentId: "dep-eks",
           },
 
-          /* ── Data subnet ── */
+          
           "dep-panel-data": {
             id: "dep-panel-data",
             name: "Subnets de Dados",
@@ -1346,7 +1328,7 @@ function buildDiagrams(): Record<string, Diagram> {
             parentId: "dep-panel-data",
           },
 
-          /* ── Outside VPC ── */
+          
           "dep-s3": {
             id: "dep-s3",
             name: "S3",
@@ -1375,7 +1357,7 @@ function buildDiagrams(): Record<string, Diagram> {
             parentId: null,
           },
 
-          /* ── Note ── */
+          
           "dep-note": {
             id: "dep-note",
             name: "Notas de Deployment",
@@ -1395,7 +1377,7 @@ function buildDiagrams(): Record<string, Diagram> {
           "dep-r8":  { id: "dep-r8",  sourceId: "dep-pod-payment",  targetId: "dep-redis",        label: "Idempotência / cache",     intent: "data-flow" },
           "dep-r9":  { id: "dep-r9",  sourceId: "dep-pod-payment",  targetId: "dep-msk",          label: "Produz eventos",          intent: "event",     style: { animated: true } },
           "dep-r10": { id: "dep-r10", sourceId: "dep-pod-gateway",  targetId: "dep-redis",        label: "Contadores de rate limit",     intent: "data-flow" },
-          // Edge source on pods (nodes with handles); panels like dep-eks do not expose handles in React Flow.
+          
           "dep-r11": { id: "dep-r11", sourceId: "dep-pod-gateway",  targetId: "dep-cloudwatch",   label: "Logs e métricas",          intent: "async-message", style: { strokeStyle: StrokeStyle.Dashed, animated: true } },
           "dep-r12": { id: "dep-r12", sourceId: "dep-pod-payment",  targetId: "dep-nat",          label: "Saída via NAT",          intent: "dependency" },
           "dep-r13": { id: "dep-r13", sourceId: "dep-pod-payment",  targetId: "dep-secrets",      label: "Busca secrets (IRSA)",    intent: "call",      style: { strokeStyle: StrokeStyle.Dashed } },

@@ -2,13 +2,7 @@ import { useEffect, useRef } from "react";
 
 type ConnectionCounts = Record<string, { incoming: number; outgoing: number }>;
 
-/**
- * Calls `updateNodeInternals` for every node whose incoming/outgoing
- * connection count changed since the last render.
- *
- * This ensures ReactFlow recalculates handle positions when connections
- * are added or removed.
- */
+
 export function useConnectionInternalsSync(
   connectionCountPerNode: ConnectionCounts,
   updateNodeInternals: (nodeIds: string[]) => void,

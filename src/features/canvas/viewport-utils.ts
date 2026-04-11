@@ -1,10 +1,6 @@
 import type { ReactFlowInstance } from "@xyflow/react";
 
-/**
- * Returns the canvas coordinate that maps to the center of the visible
- * viewport area. Pass `isPanelOpen = true` to exclude the 320px side
- * panel from the width calculation.
- */
+
 export function getViewportCenter(
   rfInstance: ReactFlowInstance,
   isPanelOpen = false,

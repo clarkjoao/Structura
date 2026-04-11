@@ -24,7 +24,7 @@ import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowSta
 import { OPACITY_FLOW_PLAYBACK_NODE_DIM, OPACITY_TAG_FILTER_DIM } from "../canvas.constants";
 import { getPendingNodeIds, useLLMStore } from "@/features/llm";
 
-/** Scene identity for canvas node rebuilds — aligned with `useActiveDiagramSceneState`. */
+
 export type DiagramSceneState = {
   id: string;
   activeSceneId: string | null;
@@ -69,7 +69,7 @@ interface UseCanvasNodesParams {
   updateComponent: (id: string, patch: ComponentPatch) => void;
 }
 
-/** Data-only canvas context — excludes callbacks and live `diagram` ref so memos do not invalidate on every Immer replace. */
+
 type DataCtx = Omit<
   NodeBuildContext,
   | "diagram"
@@ -96,13 +96,10 @@ type DataCtx = Omit<
 const EMPTY_JOURNEYS_BY_COMPONENT_ID: Record<string, { name: string }[]> =
   Object.freeze({});
 
-/** Stable empty nodes list — avoids new `[]` on every “no diagram” render. */
+
 const EMPTY_CANVAS_NODE_LIST: Node[] = [];
 
-/**
- * Compare React Flow nodes produced by this hook (fields we set only).
- * Used to reuse previous node references when the memo re-runs without semantic changes.
- */
+
 function isSameBuiltFlowNode(a: Node, b: Node): boolean {
   return (
     a.id === b.id &&
@@ -136,11 +133,7 @@ function compareDiffOutlineClass(
   return "";
 }
 
-/**
- * Fix C helpers — shallow equality that ignores function values.
- * buildData returns closures that are always new objects; treating all
- * function-valued keys as equal prevents needless data-reference churn.
- */
+
 function shallowEqualIgnoringFunctions(
   a: Record<string, unknown> | undefined,
   b: Record<string, unknown> | undefined,
@@ -241,11 +234,7 @@ export function useCanvasNodes({
     updateComponent,
   };
 
-  /**
-   * Fix C: Cache of stable data/style references per node id.
-   * When buildData/buildStyle produce a semantically-equal result, we reuse
-   * the previous reference so useLocalNodes can detect "no change" via ===.
-   */
+  
   const prevNodeDataRef = useRef<
     Map<string, {
       data: Record<string, unknown>;
@@ -254,7 +243,7 @@ export function useCanvasNodes({
     }>
   >(new Map());
 
-  /** Reuse prior RF node objects when props match — avoids new array refs on redundant memo runs. */
+  
   const prevRfNodesByIdRef = useRef<Map<string, Node>>(new Map());
   const prevNodesArrayRef = useRef<Node[]>(EMPTY_CANVAS_NODE_LIST);
 
@@ -351,7 +340,7 @@ export function useCanvasNodes({
     const compareVisual = dataCtx.compareVisualByComponentId;
     const isCmp = dataCtx.isCompareMode ?? false;
 
-    // Fix C: purge stale cache entries for nodes no longer visible
+    
     const visibleIds = new Set(visibleComponents.map((c) => c.id));
     for (const cachedId of prevNodeDataRef.current.keys()) {
       if (!visibleIds.has(cachedId)) prevNodeDataRef.current.delete(cachedId);
@@ -441,8 +430,8 @@ export function useCanvasNodes({
         ]
           .filter(Boolean)
           .join(" ");
-        // Fix C: stabilize data/style/position references using shallow equality so
-        // that useLocalNodes can detect "no change" via reference equality (===).
+        
+        
         const newData = d.buildData(comp, ctx) as Record<string, unknown>;
         const newStyle = style as CSSProperties;
         const newPosX = layout?.x ?? 0;

@@ -2,15 +2,15 @@ import { memo, type ComponentType, Suspense, lazy } from "react";
 
 type IconComponent = ComponentType<{ size?: number | string }>;
 
-// Cache of lazy components — one entry per icon name
+
 const lazyCache = new Map<string, React.LazyExoticComponent<IconComponent>>();
 
 const getLazyIcon = (iconName: string) => {
   if (lazyCache.has(iconName)) return lazyCache.get(iconName)!;
 
   const LazyComp = lazy(async () => {
-    // Import the whole library once — Vite pre-bundles it as ESM via optimizeDeps.
-    // Individual icons are then pulled as named exports, avoiding the CJS require() issue.
+    
+    
     const mod = await import("aws-react-icons");
     const Icon = (mod as Record<string, unknown>)[iconName] as
       | IconComponent

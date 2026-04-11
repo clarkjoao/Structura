@@ -1,14 +1,9 @@
 import type { NodeBuildContext } from "./types";
 
-/** Shape of a single scene badge (name + color). */
+
 export type BadgeMeta = { name: string; color: string };
 
-/**
- * Discriminated union covering the three possible badge states a node can have:
- *  - no badge at all
- *  - a single scene badge
- *  - two compare-mode badges (A vs B)
- */
+
 export type NodeBadgeProps =
   | { sceneBadge?: undefined; compareBadges?: undefined }
   | { sceneBadge: BadgeMeta; compareBadges?: undefined }

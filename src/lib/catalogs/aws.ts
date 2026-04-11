@@ -1,10 +1,10 @@
-// Complete AWS service catalog organized by category.
-// Each service maps to its aws-react-icons component name.
+
+
 
 export interface AwsService {
-  id: string; // kebab-case unique key, e.g. "ec2"
-  name: string; // Display name, e.g. "Amazon EC2"
-  iconName: string; // Component name in aws-react-icons/icons/
+  id: string; 
+  name: string; 
+  iconName: string; 
 }
 
 export interface AwsCategory {
@@ -812,7 +812,7 @@ export const AWS_CATEGORIES: AwsCategory[] = [
   },
 ];
 
-// Quick lookup maps
+
 export const AWS_CATEGORY_MAP = new Map(AWS_CATEGORIES.map((c) => [c.id, c]));
 
 const _serviceMap = new Map<string, AwsService & { categoryId: string }>();
@@ -823,7 +823,7 @@ AWS_CATEGORIES.forEach((cat) => {
 });
 export const AWS_SERVICE_MAP = _serviceMap;
 
-/** All AWS category IDs as a type */
+
 export type AwsCategoryId =
   | "aws-compute"
   | "aws-storage"
@@ -841,9 +841,9 @@ export type AwsCategoryId =
   | "aws-iot"
   | "aws-general";
 
-/** Category id for imported / generic AWS shapes (e.g. draw.io AWS3 or product icons). */
+
 export const AWS_CATEGORY_ID_GENERAL = "aws-general" as const satisfies AwsCategoryId;
 
-/** Check if a ElementType is an AWS category */
+
 export const isAwsType = (type: string): type is AwsCategoryId =>
   type.startsWith("aws-");

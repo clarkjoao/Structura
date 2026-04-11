@@ -159,7 +159,7 @@ export function FolderTree({
     onDragLeave();
   };
 
-  // Filter folders by search
+  
   const filteredRootFolders = searchQuery.trim()
     ? rootFolders.filter((f) =>
         f.name.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -168,7 +168,7 @@ export function FolderTree({
 
   return (
     <div className="flex h-full flex-col bg-sidebar">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between px-3 pt-3 pb-1">
         <span className="text-[11px] font-semibold text-sidebar-foreground/60 uppercase tracking-widest">
           {t("common.workspace")}
@@ -184,7 +184,7 @@ export function FolderTree({
         </Button>
       </div>
 
-      {/* Search */}
+      {}
       <div className="px-2 py-1.5">
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-sidebar-foreground/30" />
@@ -197,9 +197,9 @@ export function FolderTree({
         </div>
       </div>
 
-      {/* Tree */}
+      {}
       <div className="flex-1 overflow-y-auto px-1.5 py-1 space-y-0.5">
-        {/* All diagrams (root) */}
+        {}
         <div
           className={cn(
             "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition-colors",
@@ -221,7 +221,7 @@ export function FolderTree({
           </span>
         </div>
 
-        {/* Divider */}
+        {}
         <div className="h-px bg-sidebar-border mx-1 my-1.5" />
 
         {addingUnderParent === ADD_AT_ROOT && (
@@ -275,7 +275,7 @@ export function FolderTree({
   );
 }
 
-/* ── Inline new folder input ── */
+
 function NewFolderInput({
   value,
   onChange,
@@ -315,7 +315,7 @@ function NewFolderInput({
   );
 }
 
-/* ── Tree item ── */
+
 interface FolderTreeItemProps {
   folder: FolderType;
   folders: FolderRecord;
@@ -416,7 +416,7 @@ function FolderTreeItem({
         onDragLeave={onDragLeave}
         onDrop={handleDrop}
       >
-        {/* Expand toggle */}
+        {}
         <button
           type="button"
           className="flex h-4 w-4 shrink-0 items-center justify-center rounded transition-colors hover:bg-sidebar-accent"
@@ -436,14 +436,14 @@ function FolderTreeItem({
           )}
         </button>
 
-        {/* Folder icon */}
+        {}
         {isExpanded ? (
           <FolderOpen className="h-4 w-4 shrink-0 text-amber-500/80" />
         ) : (
           <Folder className="h-4 w-4 shrink-0 text-amber-500/80" />
         )}
 
-        {/* Name or edit input */}
+        {}
         {isEditing ? (
           <Input
             value={editName}
@@ -462,7 +462,7 @@ function FolderTreeItem({
           <span className="min-w-0 flex-1 truncate">{folder.name}</span>
         )}
 
-        {/* Count & actions */}
+        {}
         {!isEditing && (
           <>
             {totalCount > 0 && (
@@ -506,10 +506,10 @@ function FolderTreeItem({
         )}
       </div>
 
-      {/* Children */}
+      {}
       {isExpanded && (
         <div className="relative">
-          {/* Indent guide line */}
+          {}
           <div
             className="absolute top-0 bottom-0 w-px bg-sidebar-border/50"
             style={{ left: `${14 + depth * 14}px` }}

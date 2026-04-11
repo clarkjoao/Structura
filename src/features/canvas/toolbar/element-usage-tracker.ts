@@ -51,12 +51,12 @@ export function trackUsage(key: string) {
   } else {
     entries.push({ key, count: 1, lastUsed: Date.now() });
   }
-  // Sort by count desc, then lastUsed desc
+  
   entries.sort((a, b) => b.count - a.count || b.lastUsed - a.lastUsed);
   save(entries);
 }
 
-/** Returns top N most-used element keys, scored by frequency + recency. */
+
 export function getTopUsed(n = 8): UsageEntry[] {
   return load().slice(0, n);
 }

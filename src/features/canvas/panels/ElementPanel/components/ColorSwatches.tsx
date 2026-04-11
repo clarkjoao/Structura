@@ -26,9 +26,9 @@ interface ColorSwatchesProps {
   currentColor: string;
   label: string;
   updateComponent: (id: string, patch: ComponentPatch) => void;
-  /** Preset group: `panel` = vibrant + neutral; `note` = paper + vibrant subset. */
+  
   presetGroup?: ColorPresetGroup;
-  /** When true, show a "Default" control to clear a custom color. */
+  
   allowClear?: boolean;
 }
 
@@ -112,7 +112,7 @@ function presetsForGroup(group: ColorPresetGroup): ColorPreset[] {
 
 const COLS = 5;
 const ROWS_COLLAPSED = 2;
-const VISIBLE_COUNT = COLS * ROWS_COLLAPSED; // 10 cores nas 2 primeiras fileiras
+const VISIBLE_COUNT = COLS * ROWS_COLLAPSED; 
 
 const ColorSwatches = ({
   componentId,

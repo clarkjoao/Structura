@@ -27,7 +27,7 @@ import { getCachedCanvasSnapshot, isPanelComponent } from "@/features/diagram";
 import { useJourneysByDiagramId } from "@/features/journeys";
 import { CANVAS_STYLES } from "./constants";
 
-/** Meta = ⌘ on macOS; Control = Ctrl on all platforms — both enable additive selection in React Flow. */
+
 const MULTI_SELECTION_KEY_CODES = ["Meta", "Control"];
 import CustomEdge from "./edges/CustomEdge";
 import type { CanvasProps } from "./canvas.types";

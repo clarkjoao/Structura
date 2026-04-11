@@ -20,32 +20,25 @@ export function pickMoreCompleteString(a: string, b: string): string {
   return la > lb ? a : b;
 }
 
-/**
- * Normalize `repositoryUrl` for matching across sources (GitHub, DefectDojo, manual):
- * trailing slashes, `.git` suffix, ssh/https/git protocols, `www.` prefix, lowercased.
- */
+
 export function normalizeRepoUrl(url: string | undefined): string {
   if (!url) return "";
   let normalized = url.trim().toLowerCase();
 
-  // Normalize SSH URLs: git@github.com:org/repo → github.com/org/repo
+  
   normalized = normalized.replace(/^git@([^:]+):/, "$1/");
 
-  // Remove protocol
   normalized = normalized.replace(/^(?:https?|ssh|git):\/\//, "");
-
-  // Remove www. prefix
+  
   normalized = normalized.replace(/^www\./, "");
 
-  // Remove trailing slashes and .git suffix
+  
   normalized = normalized.replace(/\/+$/, "").replace(/\.git$/, "");
 
   return normalized;
 }
 
-/**
- * Compara dois repositoryUrls normalizados.
- */
+
 export function repoUrlsMatch(
   a: string | undefined,
   b: string | undefined,

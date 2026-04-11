@@ -37,11 +37,7 @@ export const componentParentingSlice = (
     });
   },
 
-  /**
-   * Atomic drag-commit: pushes ONE history entry then applies parentId + position
-   * in the same Immer transaction. Use this from onNodeDragStop instead of calling
-   * setParent + updateNodeLayout separately to avoid the double-history / stale-position bug.
-   */
+  
   commitNodeDrag: (
     nodeId: string,
     newParentId: string | null,
@@ -52,29 +48,29 @@ export const componentParentingSlice = (
       if (!d) return;
       const scene = resolveActiveScene(d);
 
-      // Scene-mode guard: only allow moving scene-owned components
+      
       if (scene && !scene.addedComponents[nodeId]) return;
 
-      // Single pushHistory for the whole drag operation
+      
       if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
 
-      // Bug 5: Split scene / non-scene branches explicitly so the snapshot
-      // can never be mutated when scene mode is active.
+      
+      
       if (scene) {
-        // 1. Update parentId in scene
+        
         const comp = scene.addedComponents[nodeId];
         if (comp) comp.parentId = newParentId;
-        // 2. Update position in scene
+        
         const layout = scene.nodeLayouts[nodeId];
         if (layout) {
           layout.x = newPosition.x;
           layout.y = newPosition.y;
         }
       } else {
-        // 1. Update parentId in base snapshot
+        
         const comp = d.snapshot.components[nodeId];
         if (comp) comp.parentId = newParentId;
-        // 2. Update position in base layouts
+        
         const layout = d.nodeLayouts[nodeId];
         if (layout) {
           layout.x = newPosition.x;
@@ -86,11 +82,7 @@ export const componentParentingSlice = (
     });
   },
 
-  /**
-   * Bug 3: Batch variant of commitNodeDrag — applies multiple node drag commits
-   * in a single Immer transaction with ONE pushHistory entry.
-   * Used for multi-select drag so undo reverts all nodes at once.
-   */
+  
   batchCommitNodeDrag: (
     entries: Array<{
       nodeId: string;

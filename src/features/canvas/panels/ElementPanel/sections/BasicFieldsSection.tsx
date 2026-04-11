@@ -11,13 +11,13 @@ export interface BasicFieldsSectionProps {
   isNote: boolean;
   isPanel: boolean;
   isAws: boolean;
-  /** When false, the name field is omitted (e.g. when rendered in a second block after type selectors). */
+  
   showName?: boolean;
-  /** When false, the description field is omitted. */
+  
   showDescription?: boolean;
-  /** When true, shows technology (non-simple components). */
+  
   showTechnology?: boolean;
-  /** When true, shows tag chips + input. */
+  
   showTags?: boolean;
   titleInputRef?: RefObject<HTMLInputElement | HTMLTextAreaElement | null>;
   onChangeName: (value: string) => void;

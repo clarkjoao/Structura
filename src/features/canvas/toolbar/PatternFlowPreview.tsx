@@ -4,7 +4,7 @@ interface PatternFlowPreviewProps {
   components: { name: string }[];
 }
 
-/** Mini horizontal flow preview for pattern / user template cards */
+
 export function PatternFlowPreview({ components }: PatternFlowPreviewProps) {
   const nodes = components;
   if (nodes.length === 0) return null;

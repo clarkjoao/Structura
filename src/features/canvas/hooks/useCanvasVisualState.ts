@@ -26,10 +26,10 @@ export interface CanvasVisualState {
   showAllTags: () => void;
   showNoTags: () => void;
   isNodeHiddenByTagFilter: (component: Component) => boolean;
-  /** When set, a note is in inline markdown edit — ElementPanel stays closed. */
+  
   noteInlineEditingId: string | null;
   setNoteInlineEditingId: (id: string | null) => void;
-  /** When set, a JSON viewer is in inline Monaco edit — ElementPanel stays closed. */
+  
   jsonViewerInlineEditingId: string | null;
   setJsonViewerInlineEditingId: (id: string | null) => void;
 }

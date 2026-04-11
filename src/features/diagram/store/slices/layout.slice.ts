@@ -136,12 +136,12 @@ export const layoutSlice = (
           ? { ...d.snapshot.components, ...scene.addedComponents }
           : d.snapshot.components;
 
-        // Guard: panel must exist and not be collapsed
+        
         const panelComp = components[panelId];
         if (!panelComp) return;
         if ("collapsed" in panelComp && panelComp.collapsed) return;
 
-        // Collect direct children layouts
+        
         const childLayouts = Object.values(components)
           .filter((c) => c.parentId === panelId)
           .map((c) => layouts[c.id])
@@ -152,10 +152,10 @@ export const layoutSlice = (
         const bounds = computeFitBounds(childLayouts);
         if (!bounds) return;
 
-        // pushHistory FIRST, before any mutation
+        
         pushHistory(state);
 
-        // Shift children so they stay visually in place (panel origin changes)
+        
         const dx = bounds.x;
         const dy = bounds.y;
 
@@ -171,7 +171,7 @@ export const layoutSlice = (
           }
         }
 
-        // Update panel position and size
+        
         const panelLayoutTarget = scene?.addedComponents[panelId]
           ? scene!.nodeLayouts
           : d.nodeLayouts;

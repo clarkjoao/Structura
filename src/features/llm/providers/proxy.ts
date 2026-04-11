@@ -95,7 +95,7 @@ export async function sendMessage(
             onChunk(delta);
           }
         } catch {
-          // skip malformed chunks
+          
         }
       }
     }

@@ -19,7 +19,7 @@ export interface PanelNodeData {
   name: string;
   description?: string;
   panelKind?: string;
-  /** AWS icon name — when set, AwsIcon is used instead of Lucide icon */
+  
   awsIconName?: string;
   panelColor?: string;
   panelOpacity?: number;
@@ -27,7 +27,7 @@ export interface PanelNodeData {
   isSelected: boolean;
   isHighlighted?: boolean;
   isDragTarget?: boolean;
-  /** Child is being dragged outside this panel — will unparent on drop */
+  
   isUnparentCandidate?: boolean;
   collapsed?: boolean;
   childCount?: number;
@@ -54,7 +54,7 @@ function colorWithAlpha(color: string, alpha: number): string {
   return color;
 }
 
-const UNPARENT_BORDER = "hsl(25 95% 53%)"; // orange
+const UNPARENT_BORDER = "hsl(25 95% 53%)"; 
 
 const PanelNode = memo(({ data, selected }: NodeProps) => {
   const { t } = useTranslation();

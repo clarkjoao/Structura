@@ -51,7 +51,7 @@ export const useVisibleConnections = () =>
     }),
   );
 
-/** Resolved snapshot.components — reference-stable when only layouts/flows/etc. change. */
+
 export const useResolvedComponents = () =>
   useDiagramStore(
     useShallow((s) => {
@@ -61,7 +61,7 @@ export const useResolvedComponents = () =>
     }),
   );
 
-/** Resolved snapshot.nodeLayouts — updates when positions/dimensions change. */
+
 export const useResolvedNodeLayouts = () =>
   useDiagramStore(
     useShallow((s) => {
@@ -77,7 +77,7 @@ export type ActiveDiagramSceneState = {
   hasActiveScene: boolean;
 };
 
-/** Scene identity for canvas — only changes on scene/diagram switches, not on node moves. */
+
 export const useActiveDiagramSceneState = (): ActiveDiagramSceneState | null =>
   useDiagramStore(
     useShallow((s) => {

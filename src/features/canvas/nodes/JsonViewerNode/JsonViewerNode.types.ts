@@ -8,7 +8,6 @@ export interface JsonViewerNodeData {
   isSelected: boolean;
   layoutWidth: number;
   layoutHeight: number;
-  /** Injected by descriptor — stub replaced by the node so double-click starts inline edit */
   onStartEdit?: () => void;
   onInlineEditingChange?: (editing: boolean) => void;
   sceneBadge?: { name: string; color: string };

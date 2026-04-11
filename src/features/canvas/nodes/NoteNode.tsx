@@ -11,7 +11,7 @@ import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
 import { useCollabHighlight } from "@/features/collaboration";
 import { singleIncomingTargetHandleId } from "../edges/connectionDerivations";
 
-const DEFAULT_PAPER_COLOR = "hsl(45 25% 97%)"; // papel ofuscado
+const DEFAULT_PAPER_COLOR = "hsl(45 25% 97%)"; 
 
 const noteIncomingHandleClassName =
   "!border-background transition-all duration-150 !w-2.5 !h-2.5 !bg-muted-foreground";
@@ -35,7 +35,7 @@ export interface NoteNodeData {
   isSelected: boolean;
   isHighlighted?: boolean;
   onStartEdit?: () => void;
-  /** Called when the user clicks directly on the note body (render mode). */
+  
   onClickBody?: () => void;
   onInlineEditingChange?: (editing: boolean) => void;
   collapsed?: boolean;

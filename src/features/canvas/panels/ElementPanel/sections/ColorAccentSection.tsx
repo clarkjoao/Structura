@@ -6,7 +6,7 @@ export type ColorAccentPreset = Extract<ColorPresetGroup, "note" | "c4">;
 
 export interface ColorAccentSectionProps {
   componentId: string;
-  /** Preset palette: note (paper + vibrant) or C4 diagram colors. */
+  
   type: ColorAccentPreset;
   currentColor: string;
   updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => void;

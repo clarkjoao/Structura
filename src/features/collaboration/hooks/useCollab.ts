@@ -4,7 +4,7 @@ import { randomColor } from "../utils/collab-colors";
 import { readPrefs } from "../utils/collab-preferences";
 import { useCollabStore } from "../store/collab.store";
 
-// ── Snapshot types (opaque wrappers around Zustand diagram state) ─────────────
+
 
 export interface CollabSnapshot {
   diagramId: string;
@@ -25,21 +25,21 @@ export interface CollabSnapshot {
 
 export type CollabPatch = Partial<Omit<CollabSnapshot, "diagramId">>;
 
-// ── Hook params ───────────────────────────────────────────────────────────────
+
 
 export interface UseCollabParams {
-  /** WebSocket room id (ephemeral UUID for host, or UUID from guest invite URL). */
+  
   diagramId: string | null;
-  /** Host only: real diagram id for snapshots and server metadata (not the room id). */
+  
   activeDiagramId?: string | null;
   isHost: boolean;
   userName: string;
   serverUrl: string;
-  /** Host only: called once on connect to get the full snapshot to send */
+  
   getSnapshot: () => CollabSnapshot | null;
-  /** Guest only: called when session:init arrives with the full snapshot */
+  
   onSnapshot: (snapshot: CollabSnapshot) => void;
-  /** Guest only: called on every session:patch */
+  
   onPatch: (patch: CollabPatch) => void;
 }
 
@@ -242,7 +242,7 @@ export function useCollab({
           try {
             ws.close();
           } catch {
-            // Ignore close errors.
+            
           }
         }, CLIENT_PONG_TIMEOUT_MS);
       }, CLIENT_PING_INTERVAL_MS);
@@ -441,7 +441,7 @@ export function useCollab({
           try {
             ws.close(1000);
           } catch {
-            // Ignore close errors.
+            
           }
           return;
         }
@@ -456,7 +456,7 @@ export function useCollab({
           try {
             ws.close(1000);
           } catch {
-            // Ignore close errors.
+            
           }
           return;
         }
@@ -468,7 +468,7 @@ export function useCollab({
             try {
               ws.close(4004, "room_not_found");
             } catch {
-              // Ignore close errors.
+              
             }
             return;
           }
@@ -483,7 +483,7 @@ export function useCollab({
             try {
               ws.close(1008, "room_full");
             } catch {
-              // Ignore close errors.
+              
             }
           }
           return;
@@ -543,7 +543,7 @@ export function useCollab({
     };
 
     ws.onerror = () => {
-      // Close handler drives reconnect flow.
+      
     };
   }, [
     activeDiagramId,
@@ -590,7 +590,7 @@ export function useCollab({
           }
           ws.close(1000, "unmount");
         } catch {
-          // Ignore close errors.
+          
         }
       }
     };
@@ -661,7 +661,7 @@ export function useCollab({
       try {
         ws.close(1000);
       } catch {
-        // Ignore close errors.
+        
       }
     }
   }, [clearClientHeartbeat, isHost, roomId, sendRaw]);

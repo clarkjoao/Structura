@@ -4,9 +4,7 @@ import { getCachedCanvasSnapshot, useActiveDiagram } from "@/features/diagram";
 import { useJourneyPlayer } from "@/features/journeys";
 import { useJourneyCanvasHighlight } from "../chat/useJourneyCanvasHighlight";
 
-/**
- * While a Journey is playing, pans the viewport to the active flow node when available.
- */
+
 export function useJourneyViewportSync(): void {
   const { fitView } = useReactFlow();
   const diagram = useActiveDiagram();

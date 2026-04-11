@@ -78,7 +78,7 @@ export default function CanvasSearch({ onClose, onSelectResult, components }: Ca
   return (
     <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 w-[480px]" ref={containerRef}>
       <div className="rounded-xl border border-border bg-card/95 backdrop-blur-sm shadow-2xl overflow-hidden">
-        {/* Search input */}
+        {}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
           <Search className="h-4 w-4 text-muted-foreground shrink-0" />
           <input
@@ -111,7 +111,7 @@ export default function CanvasSearch({ onClose, onSelectResult, components }: Ca
           </kbd>
         </div>
 
-        {/* Results list */}
+        {}
         {results.length > 0 && (
           <div className="max-h-80 overflow-y-auto py-1">
             {results.map((comp, i) => (
@@ -146,14 +146,14 @@ export default function CanvasSearch({ onClose, onSelectResult, components }: Ca
           </div>
         )}
 
-        {/* Empty state */}
+        {}
         {query && results.length === 0 && (
           <div className="px-4 py-6 text-center text-sm text-muted-foreground">
             {t("canvasSearch.noResultsFor", { query })}
           </div>
         )}
 
-        {/* Footer hint */}
+        {}
         {results.length > 0 && (
           <div className="px-4 py-2 border-t border-border flex items-center gap-3 text-[10px] text-muted-foreground">
             <span>

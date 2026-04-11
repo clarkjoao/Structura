@@ -30,19 +30,13 @@ interface UseNodeDragParentingParams {
     position: { x: number; y: number },
     dimensions?: { width: number; height: number },
   ) => void;
-  /**
-   * Atomic action: one pushHistory + parentId change + position update in a single
-   * store transaction. Provided by the new commitNodeDrag action in components.slice.
-   */
+  
   commitNodeDrag: (
     nodeId: string,
     newParentId: string | null,
     newPosition: { x: number; y: number },
   ) => void;
-  /**
-   * Batch variant: one pushHistory for multiple nodes at once.
-   * Used for multi-select drag to avoid one history entry per node.
-   */
+  
   batchCommitNodeDrag: (
     entries: Array<{
       nodeId: string;
@@ -70,21 +64,17 @@ export function useNodeDragParenting({
   const [unparentCandidatePanelId, setUnparentCandidatePanelId] = useState<string | null>(null);
   const dragTargetRef = useRef<string | null>(null);
 
-  /**
-   * Track node ids that are currently dragging and ids with a pending drag-stop
-   * position event. This keeps keyboard nudges (dragging=false without prior
-   * dragging=true) persisted while still skipping the redundant drag-stop write.
-   */
+  
   const draggingNodeIdsRef = useRef(new Set<string>());
   const dragStopPendingNodeIdsRef = useRef(new Set<string>());
   const lockToastShownRef = useRef(false);
   const lockToastTimeoutRef = useRef<number | null>(null);
-  // Fix 6: rAF ref to debounce visual dragTargetPanelId state updates.
-  // The ref (dragTargetRef) is updated synchronously for internal logic;
-  // the setState fires at most once per frame to avoid per-pixel re-renders.
+  
+  
+  
   const dragTargetRafRef = useRef<number | null>(null);
 
-  /** Batches dimension→store updates to one rAF — avoids hundreds of Immer mutations per resize. */
+  
   const pendingLayoutUpdatesRef = useRef(
     new Map<string, { width: number; height: number }>(),
   );
@@ -125,17 +115,17 @@ export function useNodeDragParenting({
       const comp = r.components[change.id];
       if (comp && isEndpointComponent(comp)) return;
 
-      // Bug 4: Skip children whose parent is also being dragged.
-      // The parent's drag-stop will commit the correct positions; children
-      // just travel along and don't need independent parenting checks.
+      
+      
+      
       if (change.dragging && comp?.parentId && draggingNodeIdsRef.current.has(comp.parentId)) {
         return;
       }
 
       if (!change.dragging) {
-        // ReactFlow fires dragging=false immediately before onNodeDragStop.
-        // If a drag-stop is incoming, skip this write — onNodeDragStop will
-        // handle the final position atomically via commitNodeDrag.
+        
+        
+        
         if (dragStopPendingNodeIdsRef.current.has(change.id)) {
           dragStopPendingNodeIdsRef.current.delete(change.id);
           return;
@@ -188,16 +178,16 @@ export function useNodeDragParenting({
       let absY = change.position.y;
 
       if (comp.parentId) {
-        // Bug 2: During drag, use local node positions (which reflect real-time
-        // visual state) instead of store nodeLayouts (which may lag behind).
-        // Walk the parent chain via the nodes array to get the parent's absolute
-        // position, then add the current change.position for accuracy.
+        
+        
+        
+        
         const parentAbsPos = resolveAbsolutePositionFromNodes(comp.parentId, nodes);
         absX = parentAbsPos.x + change.position.x;
         absY = parentAbsPos.y + change.position.y;
 
         const parentNode = nodes.find((n) => n.id === comp.parentId);
-        // Bug 7: Pass child dimensions for area-based outside check
+        
         const childNode = nodes.find((n) => n.id === change.id);
         const childDims = childNode ? getPanelDimensions(childNode) : undefined;
         const outside = parentNode
@@ -220,8 +210,8 @@ export function useNodeDragParenting({
 
       if (newTarget !== dragTargetRef.current) {
         dragTargetRef.current = newTarget;
-        // Debounce the visual setState to at most once per animation frame,
-        // avoiding a full canvas re-render on every pointer-move pixel.
+        
+        
         if (dragTargetRafRef.current !== null) {
           cancelAnimationFrame(dragTargetRafRef.current);
         }
@@ -307,19 +297,15 @@ export function useNodeDragParenting({
         return;
       }
       const components = r.components;
-      // Issue 1: use local node positions (accurate visual state at drag-stop)
-      // rather than store nodeLayouts which may lag if the parent was also moved.
+      
+      
       const draggedAbsPos = draggedNode.parentId
         ? resolveAbsolutePositionFromNodes(draggedNode.id, nodes)
         : draggedNode.position;
       const absX = draggedAbsPos.x;
       const absY = draggedAbsPos.y;
 
-      /**
-       * Bug 3: For multi-select drag, perform full reparenting checks on each
-       * selected secondary node (same logic as the primary dragged node).
-       * All commits go through batchCommitNodeDrag to produce a single history entry.
-       */
+      
       const commitSelectedNodesDrag = () => {
         const entries: Array<{
           nodeId: string;
@@ -343,14 +329,14 @@ export function useNodeDragParenting({
           )
             continue;
 
-          // Issue 2: same as Issue 1 — use local node positions for secondary nodes
+          
           const nodeAbsPos = node.parentId
             ? resolveAbsolutePositionFromNodes(node.id, nodes)
             : node.position;
 
           if (node.parentId) {
             const parentNode = nodes.find((n) => n.id === node.parentId);
-            // Bug 7: area-based check for secondary nodes too
+            
             const childDims = getPanelDimensions(node);
             const outside = parentNode
               ? isOutsideParentBounds(node.position, parentNode, childDims)
@@ -387,7 +373,7 @@ export function useNodeDragParenting({
               newPosition: { x: nodeAbsPos.x - matchAbsPos.x, y: nodeAbsPos.y - matchAbsPos.y },
             });
           } else {
-            // Same parent or no panel — just update position (no parent change)
+            
             updateNodeLayout(node.id, node.position);
           }
         }
@@ -429,25 +415,25 @@ export function useNodeDragParenting({
         : null;
 
       if (parent) {
-        // Node already has a parent — check if it dragged outside
-        // Bug 7: use area-based check with child dimensions
+        
+        
         const draggedDims = {
           width: draggedNode.measured?.width ?? 0,
           height: draggedNode.measured?.height ?? 0,
         };
         const outside = isOutsideParentBounds(draggedNode.position, parent, draggedDims);
         if (outside) {
-          // Unparent: convert relative → absolute and commit atomically
+          
           commitNodeDrag(draggedNode.id, null, { x: absX, y: absY });
         } else {
-          // Node remains parented — commit relative position atomically
+          
           commitNodeDrag(draggedNode.id, draggedNode.parentId, draggedNode.position);
         }
         commitSelectedNodesDrag();
         return;
       }
 
-      // Node has no parent — check if dropped onto a panel
+      
       const match = findPanelContainingPoint(
         nodes,
         absX,
@@ -470,7 +456,7 @@ export function useNodeDragParenting({
         };
         commitNodeDrag(draggedNode.id, match.id, relPos);
       } else {
-        // Plain move — no parent change, just commit the position with history
+        
         commitNodeDrag(draggedNode.id, null, { x: absX, y: absY });
       }
 

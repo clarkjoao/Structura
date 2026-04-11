@@ -31,17 +31,13 @@ import {
 import { validateDiagram } from "./validate-diagram";
 import { escXml } from "./xml-utils";
 
-/**
- * Returns only the {@code mxGraphModel} fragment. diagrams.net paste treats full
- * {@code mxfile} documents as generic text in some cases; native draw.io copy uses
- * this shape for clipboard import.
- */
+
 export function extractMxGraphModelXml(fullDrawioFile: string): string {
   const m = fullDrawioFile.match(/<mxGraphModel\b[\s\S]*?<\/mxGraphModel>/);
   return m ? m[0] : fullDrawioFile;
 }
 
-/** Include ancestor panels / API groups so relative layouts stay valid. */
+
 function expandWithContainerAncestors(
   ids: string[],
   components: Record<string, Component>,
@@ -277,8 +273,8 @@ export function exportDrawio(
         parentMx,
       );
     } else if (isUnknownComponent(c) || isSvgComponent(c)) {
-      // These can exist in the diagram store (e.g. imported / clipboard SVG),
-      // but draw.io export doesn't currently support them.
+      
+      
       throw new Error(`Unsupported component for draw.io export: ${c.type}`);
     } else {
       const _: never = c;

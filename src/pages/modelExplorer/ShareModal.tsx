@@ -30,15 +30,15 @@ export function ShareModal({ diagram, open, onOpenChange }: ShareModalProps) {
   const [copied, setCopied] = useState<CopiedState>(null);
   const shareResult: ShareUrlResult = useMemo(
     () => generateShareUrl(diagram),
-    // We intentionally memoize by id to avoid unnecessary recomputation.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
+    
     [diagram.id],
   );
   const shareUrl = shareResult.url;
   const embedUrl = useMemo(
     () => generateViewerUrl(diagram),
-    // We intentionally memoize by id to avoid unnecessary recomputation.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
+    
     [diagram.id],
   );
   const formattedLinkSize = useMemo(

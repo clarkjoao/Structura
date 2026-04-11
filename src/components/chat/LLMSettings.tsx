@@ -48,7 +48,7 @@ function saveKeyForProvider(provider: LLMProvider, key: string): void {
     };
     localStorage.setItem(PROVIDER_KEY_STORAGE, JSON.stringify(nextKeys));
   } catch {
-    // ignore localStorage failures in settings UI
+    
   }
 }
 

@@ -1,4 +1,4 @@
-/** Enums for diagram domain (ServiceSource, ImportPanel, etc.) */
+
 export {
   ServiceSource,
   ImportPanel,
@@ -10,7 +10,7 @@ export {
   FileSystemEntryKind,
 } from "./enums";
 
-/** All core domain types (Component, Connection, Flow, Diagram, etc.) */
+
 export type {
   ComponentType,
   Level,
@@ -57,7 +57,7 @@ export type {
 
 export { isAwsIcon, isLucideIcon, isSvgIcon } from "./model/diagram.types";
 
-/** Default styles and helpers for connection intent/direction resolution */
+
 export {
   INTENT_DEFAULTS,
   DIRECTION_MARKERS,
@@ -66,26 +66,26 @@ export {
 } from "./model/connection-defaults";
 export type { EffectiveConnectionStyle } from "./model/connection-defaults";
 
-/** Last-used edge style (localStorage persistence) */
+
 export { getLastEdgeStyle, saveLastEdgeStyle } from "./hooks/useLastEdgeStyle";
 
-/** Unique ID generator for diagram entities */
+
 export { generateId } from "./utils/generate-id";
 
-/** Shared preview → workspace import (id collision, flow diagramId) */
+
 export {
   formatDiagramImportCalendarDate,
   resolveUniqueDiagramId,
   cloneDiagramForImportWithId,
 } from "./utils/shared-import";
 
-/** Sort connections array by an explicit handle-order array of connection ids */
+
 export { applyHandleOrder } from "./utils/handle-order";
 
-/** Convert Flow graph ↔ Mermaid sequence diagram text */
+
 export { stepsToMermaid, parseMermaidToSteps } from "./utils/flow-mermaid";
 
-/** Flow graph traversal utilities */
+
 export {
   getStepById,
   getNextSteps,
@@ -99,22 +99,22 @@ export {
   getBranchStepCount,
 } from "./utils/flow-traversal";
 
-/** Build a Flow graph from in-progress recording data (same linking as finalize). */
+
 export { buildFlowFromRecordingSnapshot } from "./utils/recording-to-flow";
 export type { BranchOwnershipMap } from "./utils/recording-to-flow";
 export type { BrokenStep } from "./utils/flow-traversal";
 
-/** Flow migration from legacy array format */
+
 export { migrateFlow } from "./utils/flow-migration";
 
-/** Repair a flow by removing broken steps and cleaning up references */
+
 export { repairFlow } from "./utils/flow-repair";
 
-/** Dependency impact of removing a node (reverse graph BFS) */
+
 export { computeImpact } from "./utils/impact-analysis";
 export type { ImpactResult } from "./utils/impact-analysis";
 
-/** Build a pure-data patch for duplicating a flow */
+
 export { buildFlowDuplicatePatch } from "./utils/flow-duplicate";
 
 export {
@@ -134,15 +134,15 @@ export {
 export type { CompareSnapshotResult, CompareElementVisual, MergePreview } from "./utils/scene.utils";
 export { buildChildrenIndex, getDescendantIdsFromIndex } from "./utils/children-index";
 
-/** Active scene on the current diagram (for canvas / LLM context). */
+
 export { resolveActiveScene } from "./store/slices/scene-helpers";
 
-/** Cached resolveCanvasSnapshot — use instead of resolveCanvasSnapshot in render paths */
+
 export { getCachedCanvasSnapshot } from "./utils/snapshot-cache";
 export type { ResolvedSnapshot } from "./utils/snapshot-cache";
 export { isAncestorLocked } from "./utils/component-lock";
 
-/** Recent diagrams tracking (localStorage) */
+
 export {
   readRecentRefs,
   writeRecentRefs,
@@ -151,13 +151,13 @@ export {
 } from "./utils/recent-diagrams";
 export type { RecentDiagramRef } from "./utils/recent-diagrams";
 
-/** Compute API group node dimensions from endpoint count */
+
 export { computeApiGroupSize } from "./utils/api-group-size";
 
-/** Compute tight bounding box for a panel wrapping its children */
+
 export { computeFitBounds } from "./utils/fit-group-to-children";
 
-/** Shared geometry/layout constants */
+
 export {
   PANEL_DEFAULT_W,
   PANEL_DEFAULT_H,
@@ -182,7 +182,7 @@ export {
   API_GROUP_FRAME_W,
 } from "./model/layout.constants";
 
-/** Store constants */
+
 export {
   VIEWPORT_DEBOUNCE_MS,
   MAX_HISTORY_STEPS,
@@ -190,7 +190,7 @@ export {
   UNDO_REDO_COOLDOWN_MS,
 } from "./store/store.constants";
 
-/** Persist config (for infrastructure adapters) */
+
 export {
   PERSIST_KEY,
   PERSIST_SCHEMA_VERSION,
@@ -200,7 +200,7 @@ export {
 } from "./store/persist.config";
 export type { PersistedDiagramStoreSlice } from "./store/persist.config";
 
-/** Type guards for the Component discriminated union */
+
 export {
   isPanelComponent,
   isNoteComponent,
@@ -214,7 +214,7 @@ export {
   isJsonViewerComponent,
 } from "./model/component.guards";
 
-/** ComponentType / PanelKind constants and type guards */
+
 export {
   C4_TYPES,
   COMPONENT_TYPE_PANEL,
@@ -246,16 +246,16 @@ export {
 } from "./model/component-type-constants";
 export type { C4Type } from "./model/component-type-constants";
 
-/** Zustand store — single source of truth for all diagram state */
+
 export {
   useDiagramStore,
-  /** Hook returning all mutation actions (add/update/remove/undo/redo/…) */
+  
   useRegistryActions,
-  /** Factory used in tests to create a store backed by a custom storage adapter */
+  
   createDiagramStore,
-  /** Hook returning all mutation actions (add/update/remove/undo/redo/…) */
+  
   useDiagramActions,
-  /** Custom icon library mutations (add/remove/rename/usage counters) */
+  
   useIconActions,
   flushDiagramStoreToLocalStorageNow,
   updateDiagramDescription,
@@ -265,43 +265,43 @@ export {
 } from "./store/diagram.store";
 
 export {
-  /** Selector: all diagrams keyed by id */
+  
   useDiagrams,
-  /** Selector: flat array of all diagrams */
+  
   useAllDiagrams,
-  /** Selector: all folders keyed by id */
+  
   useFolders,
-  /** Selector: flat array of all folders */
+  
   useAllFolders,
-  /** Selector: currently active diagram id */
+  
   useActiveDiagramId,
-  /** Selector: currently active Diagram object */
+  
   useActiveDiagram,
-  /** Selector: components record of the active diagram */
+  
   useComponents,
-  /** Selector: single component by id */
+  
   useComponent,
-  /** Selector: connections record of the active diagram */
+  
   useConnections,
-  /** Selector: components that have a nodeLayout (visible on canvas) */
+  
   useVisibleComponents,
-  /** Selector: resolved canvas components (base + active scene) */
+  
   useResolvedComponents,
-  /** Selector: resolved node layouts (base + active scene) */
+  
   useResolvedNodeLayouts,
-  /** Selector: active scene identity for canvas invalidation */
+  
   useActiveDiagramSceneState,
-  /** Selector: connections whose both endpoints are visible */
+  
   useVisibleConnections,
-  /** Selector: serviceRegistry of the active diagram */
+  
   useServiceRegistry,
-  /** Selector: flat array of all components in the active diagram */
+  
    useAllComponents,
-  /** Selector: flat array of all services in the active diagram */
+  
   useAllServices,
-  /** Selector: flat array of all connections in the active diagram */
+  
   useFlows,
-  /** Custom icons for the active diagram, sorted by usage then name */
+  
   useIconLibrary,
   useIconById,
   useComponentIcon,

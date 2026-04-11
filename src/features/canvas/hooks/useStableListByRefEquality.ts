@@ -1,11 +1,6 @@
 import { useRef } from "react";
 
-/**
- * Returns the previous array reference when `next` has the same length and
- * each element is `===` to the previous render — avoids downstream memos/hooks
- * invalidating when the upstream selector produced a fresh `[]` with identical
- * contents (common with `filter` / `Object.values`).
- */
+
 export function useStableListByRefEquality<T>(next: T[]): T[] {
   const ref = useRef<T[] | null>(null);
   if (ref.current === null) {

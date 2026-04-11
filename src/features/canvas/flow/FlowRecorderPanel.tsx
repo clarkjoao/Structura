@@ -26,10 +26,8 @@ interface Props {
   tags: string[];
   onAddTag: (tag: string) => void;
   onRemoveTag: (index: number) => void;
-  /** Steps shown in the list (full trunk or current branch only). */
   steps: FlowStep[];
-  /** Full recording sequence for Mermaid preview and branch metrics. */
-  recordingSteps: FlowStep[];
+    recordingSteps: FlowStep[];
   branchOwnership: Map<string, BranchOwnerInfo>;
   onCancel: () => void;
   onFinalize: () => void;

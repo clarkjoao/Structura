@@ -3,7 +3,7 @@ import { applyNodeChanges, type Node, type NodeChange, type OnNodesChange } from
 import type { Diagram } from "@/features/diagram";
 import { canMoveNodeInSceneMode } from "@/features/diagram";
 
-/** Drop position/dimension updates that the store rejects (e.g. base nodes in an active scene). */
+
 function filterNodeChangesForSceneMoveLock(
   diagram: Diagram | null | undefined,
   changes: NodeChange[],
@@ -17,11 +17,7 @@ function filterNodeChangesForSceneMoveLock(
   });
 }
 
-/**
- * Returns true when the diagram's nodeLayouts reference changed but the diagram id
- * did NOT change — this is the fingerprint of an undo/redo operation (Immer replaces
- * snapshot + nodeLayouts on the same Diagram object).
- */
+
 function isUndoRedoTransition(
   prevDiagram: Diagram | null | undefined,
   nextDiagram: Diagram | null | undefined,
@@ -38,13 +34,13 @@ export function useLocalNodes(
   onSelectionFromChanges?: (selectedIds: string[]) => void,
   diagram?: Diagram | null,
 ) {
-  // Bumped by onNodesChange to re-render after user interactions (drag, select, resize).
+  
   const [, setTick] = useState(0);
 
   const draggingNodeIdsRef = useRef(new Set<string>());
   const prevStoreNodesRef = useRef<Node[] | undefined>(undefined);
   const prevDiagramRef = useRef<Diagram | null | undefined>(undefined);
-  /** Merged local nodes — ref-only to avoid setState during render (infinite update chains). */
+  
   const localNodesStateRef = useRef<Node[]>([]);
 
   if (storeNodes !== prevStoreNodesRef.current) {

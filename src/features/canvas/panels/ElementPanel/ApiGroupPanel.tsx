@@ -48,7 +48,7 @@ export default function ApiGroupPanel({
       </div>
 
       <div className="flex-1 overflow-auto p-4 space-y-4">
-        {/* Service Name */}
+        {}
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
             {t("apiGroup.serviceName")}
@@ -61,7 +61,7 @@ export default function ApiGroupPanel({
           />
         </div>
 
-        {/* Protocol */}
+        {}
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
             {t("apiGroup.protocolLabel")}
@@ -85,7 +85,7 @@ export default function ApiGroupPanel({
           </div>
         </div>
 
-        {/* Base Path */}
+        {}
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
             {t("apiGroup.basePathLabel")}
@@ -98,7 +98,7 @@ export default function ApiGroupPanel({
           />
         </div>
 
-        {/* SLA / Rate Limit */}
+        {}
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
             {t("apiGroup.slaRateLimitLabel")}
@@ -114,7 +114,7 @@ export default function ApiGroupPanel({
           </p>
         </div>
 
-        {/* Endpoints list */}
+        {}
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
             {t("apiGroup.endpointsCount", { count: endpoints.length })}
@@ -190,7 +190,7 @@ export default function ApiGroupPanel({
           </button>
         </div>
 
-        {/* Remove API Group */}
+        {}
         <div className="pt-2 border-t border-border">
           <button
             type="button"

@@ -13,15 +13,12 @@ interface LegacyFlowStep {
   payloadDirection?: 'request' | 'response';
 }
 
-/**
- * Converts a flow from the old array-based format to the new graph-based format.
- * If the flow already uses Record<string, FlowStep>, returns it as-is.
- */
+
 export function migrateFlow(raw: unknown): Flow {
   const flow = raw as Flow & { steps: unknown };
 
   if (!Array.isArray(flow.steps)) {
-    // Already in the new format
+    
     return flow as Flow;
   }
 
@@ -29,7 +26,7 @@ export function migrateFlow(raw: unknown): Flow {
   const newSteps: Record<string, FlowStep> = {};
   const stepIds: string[] = [];
 
-  // Create steps with generated ids
+  
   for (const legacy of legacySteps) {
     const id = generateId("step");
     stepIds.push(id);
@@ -47,7 +44,7 @@ export function migrateFlow(raw: unknown): Flow {
     };
   }
 
-  // Link sequentially
+  
   for (let i = 0; i < stepIds.length - 1; i++) {
     newSteps[stepIds[i]].next = stepIds[i + 1];
   }

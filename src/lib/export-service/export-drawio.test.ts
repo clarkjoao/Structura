@@ -80,7 +80,7 @@ describe("exportDrawio", () => {
     });
 
     const xml = exportDrawio(diagram, {});
-    // BBox from root panel only (100,200)–(500,500); scale=1; panel → (80,80); child keeps relative (40,50)
+    
     expect(xml).toContain(`parent="${panelId}"`);
     expect(xml).toContain(`<mxGeometry x="40" y="50"`);
     expect(xml).toContain(`<mxGeometry x="80" y="80"`);
@@ -137,7 +137,7 @@ describe("exportDrawio", () => {
     });
 
     const xml = exportDrawio(diagram, {});
-    // Root bbox on api-group (10,20)–(310,180); scale=1; group → (80,80); endpoint relative (0,68)
+    
     expect(xml).toContain(`id="${groupId}"`);
     expect(xml).toContain(`parent="${groupId}"`);
     expect(xml).toContain(`id="${epId}"`);
@@ -212,7 +212,7 @@ describe("exportDrawio", () => {
     });
 
     const xml = exportDrawio(diagram, {});
-    // Two roots: bbox (−100,−50)–(440,220); scale 2.5; a → (80,80), b → (830,455)
+    
     expect(xml).toContain(`<mxGeometry x="80" y="80"`);
     expect(xml).toContain(`<mxGeometry x="830" y="455"`);
     expect(xml).toContain(`pageWidth="1510"`);

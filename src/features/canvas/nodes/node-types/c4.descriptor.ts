@@ -9,9 +9,9 @@ import {
 } from "@/features/diagram";
 import { OPACITY_FLOW_PLAYBACK_PARTICIPANT } from "../../canvas.constants";
 
-/** C4 nodes dimmed during flow playback (non-participant, non-visited). */
+
 const C4_FLOW_PLAYBACK_DIM_OPACITY = 0.25;
-/** C4 nodes dimmed during recording when not yet recorded. */
+
 const C4_RECORDING_DIM_OPACITY = 0.35;
 
 export function buildC4Style(
@@ -39,7 +39,7 @@ export function buildC4Style(
 export const c4Descriptor: NodeTypeDescriptor = {
   rfType: "c4",
   component: CustomNode,
-  // Catch-all: handles person, system, container, component, and all AWS types
+  
   matches: () => true,
   zIndex: 1,
   connectable: true,

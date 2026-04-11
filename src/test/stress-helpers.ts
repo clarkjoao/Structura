@@ -6,25 +6,17 @@ import { PanelKind } from "@/features/diagram";
 export interface StressSeedResult {
   store: ReturnType<typeof createDiagramStore>;
   diagramId: string;
-  /** All panel ids organized by depth level (0 = root panels, 5 = deepest) */
+  
   panelsByLevel: string[][];
-  /** All leaf node ids (non-panel components inside panels or root fills) */
+  
   leafNodeIds: string[];
-  /** All component ids (panels + leaves) */
+  
   allComponentIds: string[];
-  /** Total count of components created */
+  
   totalCount: number;
 }
 
-/**
- * Creates a diagram with deeply nested panels and leaf nodes.
- *
- * Structure:
- * - `panelsPerLevel` panels at each depth level (0..maxDepth-1)
- * - Each panel at level N is a child of a panel at level N-1 (round-robin)
- * - `leavesPerDeepestPanel` leaf C4 nodes inside each deepest-level panel
- * - Additional leaves in mid-level panels and root-level nodes to reach `targetCount`
- */
+
 export function seedStressDiagram(options?: {
   targetCount?: number;
   maxDepth?: number;

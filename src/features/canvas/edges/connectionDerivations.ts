@@ -8,10 +8,7 @@ import {
 } from "@/features/diagram";
 import { MAX_HANDLES } from "../constants";
 
-/**
- * Id do único handle de entrada em note / db-table — único por nó (`elementId`), estável no tempo.
- * Várias arestas podem apontar para o mesmo handle.
- */
+
 export function singleIncomingTargetHandleId(nodeId: string): string {
   return `in-${nodeId}`;
 }
@@ -75,7 +72,7 @@ export function buildEdgeHandleAssignments(
       Math.max(1, connectionCountPerNode[conn.sourceId]?.outgoing ?? 1),
     );
     const targetComp = components[conn.targetId];
-    /** Note, db-table, json-viewer: um handle de entrada por nó (`in-<nodeId>`). */
+    
     const usesSingleIncomingHandle =
       targetComp !== undefined &&
       (isNoteType(targetComp.type) ||

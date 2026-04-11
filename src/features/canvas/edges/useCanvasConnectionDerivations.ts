@@ -10,7 +10,7 @@ import {
 interface UseCanvasConnectionDerivationsParams {
   visibleComponents: Component[];
   visibleConnections: Connection[];
-  /** Snapshot components — stable when component data unchanged (unlike full diagram ref on every mutation). */
+  
   resolvedComponents: Record<string, Component>;
 }
 

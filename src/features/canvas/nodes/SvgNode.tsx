@@ -84,7 +84,7 @@ const SvgNode = memo(({ data, selected }: NodeProps) => {
         <div
           className="flex-1 flex items-center justify-center px-3 pb-2.5 min-h-0 overflow-hidden [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto"
           style={{ pointerEvents: "none" }}
-          // svgContent is sanitized before being stored in SvgComponent
+          
           dangerouslySetInnerHTML={{ __html: d.svgContent }}
         />
       </div>

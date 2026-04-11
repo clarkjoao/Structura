@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 interface CollabSessionClosedModalProps {
   open: boolean;
   hostName: string;
-  /** True when the host crashed/closed browser (vs explicit session end). */
+  
   hostCrashed?: boolean;
   onImportAndContinue: () => void;
   onBackToWorkspace: () => void;

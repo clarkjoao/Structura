@@ -18,7 +18,7 @@ function patchTouchesLinkedComponentFields(
   );
 }
 
-/** Core fields copied from registry when linking or when the service is updated. */
+
 function copyServiceCoreFieldsToComponent(
   comp: Component,
   service: ServiceDefinition,
@@ -33,7 +33,7 @@ function copyServiceCoreFieldsToComponent(
   }
 }
 
-/** Used when first linking: add any service URLs missing on the component. */
+
 function mergeServiceExternalLinksIntoComponent(
   comp: Component,
   service: ServiceDefinition,
@@ -46,7 +46,7 @@ function mergeServiceExternalLinksIntoComponent(
   }
 }
 
-/** Used when registry externalLinks change: drop removed service URLs, merge new. */
+
 function reconcileExternalLinksFromRegistry(
   comp: Component,
   previousServiceUrls: Set<string>,

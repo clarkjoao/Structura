@@ -16,7 +16,7 @@ export function useGithubConfig() {
   });
 
   const saveConfig = useCallback(async (cfg: GithubConfig) => {
-    // forceSave bypasses the pause — credentials are NOT diagram data
+    
     await defaultStorage.forceSave(STORAGE_KEY, cfg);
     setConfig(cfg);
   }, []);

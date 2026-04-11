@@ -4,7 +4,7 @@ import { isApiGroupComponent } from "../model/component.guards";
 import { computeApiGroupSize } from "./api-group-size";
 import { baseConnectionsTouchingAny, collectBaseDescendantIds } from "./scene.utils";
 
-/** Mutate diagram draft: remove/hide component within a scene (same rules as removeComponentFromScene). */
+
 export function mutateRemoveComponentInScene(d: Diagram, sceneId: string, componentId: string): void {
   const sc = d.scenes?.[sceneId];
   if (!sc) return;
@@ -76,7 +76,7 @@ export function mutateRemoveComponentInScene(d: Diagram, sceneId: string, compon
   }
 }
 
-/** Mutate diagram draft: remove connection within a scene. */
+
 export function mutateRemoveConnectionInScene(d: Diagram, sceneId: string, connectionId: string): void {
   const sc = d.scenes?.[sceneId];
   if (!sc) return;

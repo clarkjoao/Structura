@@ -1,18 +1,15 @@
 import type { Component, Connection } from "../model/diagram.types";
 
 export interface ImpactResult {
-  /** Nodes with an edge pointing into the removed node (reverse graph, hop 1). */
+  
   directDependents: Component[];
-  /** Further upstream nodes in the reverse BFS tree. */
+  
   transitiveDependents: Component[];
-  /** Connections incident on the removed node. */
+  
   brokenConnections: Connection[];
 }
 
-/**
- * Impact of removing a node: reverse BFS over incoming edges (target → sources).
- * Pure function — no React or store access.
- */
+
 export function computeImpact(
   nodeId: string,
   components: Record<string, Component>,

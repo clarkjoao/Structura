@@ -1,9 +1,6 @@
 import type { Connection } from "../model/connection.types";
 
-/**
- * Returns `conns` sorted by the given `order` (array of connection ids).
- * Connections not present in `order` are appended at the end in their original relative order.
- */
+
 export function applyHandleOrder(
   conns: Connection[],
   order: string[],

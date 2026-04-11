@@ -1,4 +1,4 @@
-/** Stored entry — only the diagram ID and when it was opened. */
+
 export interface RecentDiagramRef {
   id: string;
   openedAt: number;
@@ -25,7 +25,7 @@ export function writeRecentRefs(refs: RecentDiagramRef[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(refs));
 }
 
-/** Remove a diagram from the recent list (e.g. after deletion). */
+
 export function removeRecentRef(id: string): void {
   const refs = readRecentRefs().filter((r) => r.id !== id);
   writeRecentRefs(refs);

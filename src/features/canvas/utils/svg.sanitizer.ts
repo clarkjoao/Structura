@@ -52,10 +52,7 @@ function isSvgRootElement(document: Document): boolean {
   return root !== null && root.tagName.toLowerCase() === "svg";
 }
 
-/**
- * Strips BOM, XML declaration, DOCTYPE, and leading comments so real-world `.svg`
- * files (often starting with `<?xml ...?>`) are accepted.
- */
+
 function stripOuterSvgNoise(markup: string): string {
   let result = markup.replace(/^\uFEFF/, "").trim();
   let previous = "";
@@ -68,10 +65,7 @@ function stripOuterSvgNoise(markup: string): string {
   return result;
 }
 
-/**
- * Parses and sanitizes inline SVG markup for safe rendering.
- * Returns `null` if the input is not a root `<svg>` document fragment.
- */
+
 export function sanitizeSvg(rawSvg: string): string | null {
   const trimmed = stripOuterSvgNoise(rawSvg);
   if (!/^<svg(\s|>)/i.test(trimmed)) {

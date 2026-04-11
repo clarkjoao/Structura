@@ -6,7 +6,7 @@ import type {
   ConnectionStyle,
 } from "./connection.types";
 
-/** Resolved connection style: intent defaults + direction markers + explicit overrides. */
+
 export interface EffectiveConnectionStyle {
   strokeStyle: ConnectionStyle["strokeStyle"];
   strokeWidth: number;
@@ -17,7 +17,7 @@ export interface EffectiveConnectionStyle {
 
 const DEFAULT_STROKE_WIDTH = 1;
 
-/** Default visual style per intent. User-overridden style fields take precedence when rendering. */
+
 export const INTENT_DEFAULTS: Record<ConnectionIntent, ConnectionStyle> = {
   dependency: {
     strokeStyle: StrokeStyle.Dashed,
@@ -56,7 +56,7 @@ export const INTENT_DEFAULTS: Record<ConnectionIntent, ConnectionStyle> = {
   },
 };
 
-/** Marker mapping per direction. Applied when rendering; direction only affects markers. */
+
 export const DIRECTION_MARKERS: Record<
   ConnectionDirection,
   { markerStart: EdgeMarker; markerEnd: EdgeMarker }
@@ -66,11 +66,7 @@ export const DIRECTION_MARKERS: Record<
   reverse: { markerStart: EdgeMarker.ArrowClosed, markerEnd: EdgeMarker.None },
 };
 
-/**
- * Resolve effective style for a connection.
- * Merges intent defaults, direction markers, and explicit style overrides.
- * Explicit `conn.style` fields take precedence over derived values.
- */
+
 export function getEffectiveConnectionStyle(conn: Connection): EffectiveConnectionStyle {
   const intent = conn.intent ?? "call";
   const direction = conn.direction ?? "unidirectional";
@@ -87,7 +83,7 @@ export function getEffectiveConnectionStyle(conn: Connection): EffectiveConnecti
   };
 }
 
-/** Get default style for a given intent (e.g. when creating a new connection). */
+
 export function getIntentDefault(intent: ConnectionIntent): ConnectionStyle {
   return { ...INTENT_DEFAULTS[intent] };
 }

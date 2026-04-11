@@ -29,11 +29,8 @@ export interface GithubConfig {
   token: string;
 }
 
-/**
- * Structured GitHub Search API fields; each maps to native query qualifiers.
- * @see https://docs.github.com/en/search-github/searching-on-github/searching-for-repositories
- */
-/** Search field keys — labels come from `githubSearchField.*` in i18n */
+
+
 export const GH_SEARCH_FIELDS = [
   { param: "name_contains" as const },
   { param: "name_starts" as const },
@@ -55,12 +52,7 @@ export interface GHSearchFilters {
   perPage?: number;
 }
 
-/**
- * Build the GitHub Search API query string from field, value, and filters.
- *
- * `org`, `user`, and `language` are combined with the main search field. If `org` or
- * `user` is set and the main field is empty, the query lists all repos for that org/user.
- */
+
 export function buildGithubQuery(
   query: string,
   filters: GHSearchFilters,

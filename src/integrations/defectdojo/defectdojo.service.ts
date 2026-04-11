@@ -8,12 +8,8 @@ interface PaginatedResponse<T> {
   results: T[];
 }
 
-/**
- * Product search parameters supported by the DefectDojo API:
- * standard Product model fields plus custom `sigla` / `siglaApp`.
- * @see https://defectdojo.github.io/django-DefectDojo/integrations/api-v2-docs/
- */
-/** Field keys — labels from `defectdojo.productSearchField.*` in i18n */
+
+
 export const DD_PRODUCT_SEARCH_FIELDS = [
   { param: "sigla" as const },
   { param: "siglaApp" as const },
