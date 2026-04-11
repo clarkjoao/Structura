@@ -14,6 +14,9 @@ import { migrateFlow } from "../utils/flow-migration";
 
 export const PERSIST_KEY = "diagram-store";
 
+/** Coalesce rapid Zustand persist writes — avoids main-thread JSON.stringify stalls on large diagrams. */
+const PERSIST_DEBOUNCE_MS = 1000;
+
 /** Must match `version` passed to zustand `persist` (used when writing localStorage manually). */
 export const PERSIST_SCHEMA_VERSION = 4;
 
@@ -318,15 +321,62 @@ const SCHEMA_VERSION_USER_TEMPLATES = 4;
 export function wrapIStoragePortWithDiagramPersistTracking(
   storage: IStoragePort,
 ): IStoragePort {
+  let persistDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let pendingPersist: { name: string; value: string } | null = null;
+
+  const flushPersist = async (): Promise<void> => {
+    persistDebounceTimer = null;
+    if (!pendingPersist) return;
+    const { name, value } = pendingPersist;
+    pendingPersist = null;
+    await storage.setItem(name, value);
+    if (name !== PERSIST_KEY) return;
+    if (storage instanceof LocalStorageAdapter && storage.paused) return;
+    recordLocalStorageDiagramSyncSuccess();
+  };
+
+  const schedulePersist = (name: string, value: string): void => {
+    pendingPersist = { name, value };
+    if (persistDebounceTimer !== null) {
+      clearTimeout(persistDebounceTimer);
+    }
+    persistDebounceTimer = setTimeout(() => {
+      void flushPersist();
+    }, PERSIST_DEBOUNCE_MS);
+  };
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("beforeunload", () => {
+      if (persistDebounceTimer !== null) {
+        clearTimeout(persistDebounceTimer);
+        persistDebounceTimer = null;
+      }
+      if (!pendingPersist || pendingPersist.name !== PERSIST_KEY) return;
+      const { name, value } = pendingPersist;
+      pendingPersist = null;
+      void storage.setItem(name, value);
+      if (storage instanceof LocalStorageAdapter && storage.paused) return;
+      recordLocalStorageDiagramSyncSuccess();
+    });
+  }
+
   return {
     getItem: (key) => storage.getItem(key),
     setItem: async (name, value) => {
-      await storage.setItem(name, value);
-      if (name !== PERSIST_KEY) return;
-      if (storage instanceof LocalStorageAdapter && storage.paused) return;
-      recordLocalStorageDiagramSyncSuccess();
+      if (name !== PERSIST_KEY) {
+        await storage.setItem(name, value);
+        return;
+      }
+      schedulePersist(name, value);
     },
     removeItem: async (key) => {
+      if (key === PERSIST_KEY) {
+        if (persistDebounceTimer !== null) {
+          clearTimeout(persistDebounceTimer);
+          persistDebounceTimer = null;
+        }
+        pendingPersist = null;
+      }
       await storage.removeItem(key);
       if (key === PERSIST_KEY) {
         clearLocalStorageDiagramSyncTimestamp();
@@ -335,6 +385,13 @@ export function wrapIStoragePortWithDiagramPersistTracking(
     save: (key, data) => storage.save(key, data),
     load: (key) => storage.load(key),
     delete: async (key) => {
+      if (key === PERSIST_KEY) {
+        if (persistDebounceTimer !== null) {
+          clearTimeout(persistDebounceTimer);
+          persistDebounceTimer = null;
+        }
+        pendingPersist = null;
+      }
       await storage.delete(key);
       if (key === PERSIST_KEY) {
         clearLocalStorageDiagramSyncTimestamp();

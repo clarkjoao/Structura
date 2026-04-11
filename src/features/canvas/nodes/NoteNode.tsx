@@ -108,12 +108,7 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
   }, [collapsed, isEditing, onInlineEditingChange]);
 
   useEffect(() => {
-    // Descriptor supplies a stub; replace with the handler so double-click starts inline edit.
     d.onStartEdit = handleStartEdit;
-  }, [d, handleStartEdit]);
-
-  useEffect(() => {
-    if (!d.onClickBody) return;
     d.onClickBody = handleStartEdit;
   }, [d, handleStartEdit]);
 

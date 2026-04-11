@@ -51,18 +51,16 @@ export interface NodeBuildContext {
   onPlayFlow?: (flowId: string) => void;
   /** Add a new endpoint child to an api-group. */
   onAddEndpointToGroup?: (groupId: string) => void;
-  /** Trigger inline editing on a NoteNode (called on double-click). */
-  onNoteStartEdit?: (noteId: string) => void;
   /** Track which note is in inline edit (hides ElementPanel while non-null). */
   setNoteInlineEditingId?: (id: string | null) => void;
-  /** Trigger inline editing on a JsonViewerNode (called on double-click). */
-  onJsonViewerStartEdit?: (nodeId: string) => void;
   /** Track which JSON viewer is in inline edit (hides ElementPanel while non-null). */
   setJsonViewerInlineEditingId?: (id: string | null) => void;
   /** Persiste patch de um componente — injetado pelo useCanvasNodes para callbacks inline */
   updateComponent?: (id: string, patch: ComponentPatch) => void;
   /** Optional per-component journey badges on C4 nodes (journey steps are diagram-scoped). */
   journeysByComponentId?: Record<string, { name: string }[]>;
+  /** Pre-computed parentId → Set<childId> index (avoids O(n) scan per panel in buildData). */
+  childrenIndex: Map<string, Set<string>>;
 }
 
 export interface NodeTypeDescriptor {

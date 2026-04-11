@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { Component, Connection, Diagram } from "@/features/diagram";
+import type { Component, Connection } from "@/features/diagram";
 import {
   buildPanelIds,
   buildConnectionCountPerNode,
@@ -10,13 +10,14 @@ import {
 interface UseCanvasConnectionDerivationsParams {
   visibleComponents: Component[];
   visibleConnections: Connection[];
-  diagram: Diagram | null | undefined;
+  /** Snapshot components — stable when component data unchanged (unlike full diagram ref on every mutation). */
+  resolvedComponents: Record<string, Component>;
 }
 
 export function useCanvasConnectionDerivations({
   visibleComponents,
   visibleConnections,
-  diagram,
+  resolvedComponents,
 }: UseCanvasConnectionDerivationsParams) {
   const panelIds = useMemo(
     () => buildPanelIds(visibleComponents),
@@ -29,8 +30,9 @@ export function useCanvasConnectionDerivations({
   );
 
   const edgeHandleAssignments = useMemo(
-    () => buildEdgeHandleAssignments(visibleConnections, connectionCountPerNode, diagram),
-    [visibleConnections, connectionCountPerNode, diagram],
+    () =>
+      buildEdgeHandleAssignments(visibleConnections, connectionCountPerNode, resolvedComponents),
+    [visibleConnections, connectionCountPerNode, resolvedComponents],
   );
 
   const effectiveHandleOrder = useMemo(

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Node, OnNodesChange, NodeChange } from "@xyflow/react";
 import type { Diagram } from "@/features/diagram";
 import {
@@ -79,6 +79,42 @@ export function useNodeDragParenting({
   const dragStopPendingNodeIdsRef = useRef(new Set<string>());
   const lockToastShownRef = useRef(false);
   const lockToastTimeoutRef = useRef<number | null>(null);
+  // Fix 6: rAF ref to debounce visual dragTargetPanelId state updates.
+  // The ref (dragTargetRef) is updated synchronously for internal logic;
+  // the setState fires at most once per frame to avoid per-pixel re-renders.
+  const dragTargetRafRef = useRef<number | null>(null);
+
+  /** Batches dimension→store updates to one rAF — avoids hundreds of Immer mutations per resize. */
+  const pendingLayoutUpdatesRef = useRef(
+    new Map<string, { width: number; height: number }>(),
+  );
+  const layoutUpdateRafRef = useRef<number | null>(null);
+
+  const flushPendingLayoutUpdates = useCallback(() => {
+    layoutUpdateRafRef.current = null;
+    if (!diagram) return;
+    const pending = pendingLayoutUpdatesRef.current;
+    if (pending.size === 0) return;
+    const snapshot = getCachedCanvasSnapshot(diagram);
+    const copy = new Map(pending);
+    pending.clear();
+    for (const [elementId, dimensions] of copy) {
+      const layout = snapshot.nodeLayouts[elementId];
+      if (!layout) continue;
+      updateNodeLayout(elementId, { x: layout.x, y: layout.y }, dimensions);
+    }
+  }, [diagram, updateNodeLayout]);
+
+  useEffect(
+    () => () => {
+      if (layoutUpdateRafRef.current !== null) {
+        cancelAnimationFrame(layoutUpdateRafRef.current);
+        layoutUpdateRafRef.current = null;
+      }
+      flushPendingLayoutUpdates();
+    },
+    [flushPendingLayoutUpdates],
+  );
 
   const handlePositionChange = useCallback(
     (change: NodeChange) => {
@@ -184,7 +220,15 @@ export function useNodeDragParenting({
 
       if (newTarget !== dragTargetRef.current) {
         dragTargetRef.current = newTarget;
-        setDragTargetPanelId(newTarget);
+        // Debounce the visual setState to at most once per animation frame,
+        // avoiding a full canvas re-render on every pointer-move pixel.
+        if (dragTargetRafRef.current !== null) {
+          cancelAnimationFrame(dragTargetRafRef.current);
+        }
+        dragTargetRafRef.current = requestAnimationFrame(() => {
+          setDragTargetPanelId(newTarget);
+          dragTargetRafRef.current = null;
+        });
       }
     },
     [diagram, nodes, updateNodeLayout],
@@ -200,11 +244,15 @@ export function useNodeDragParenting({
       }
       const r = getCachedCanvasSnapshot(diagram);
       const layout = r.nodeLayouts[change.id];
-      if (layout) {
-        updateNodeLayout(change.id, { x: layout.x, y: layout.y }, change.dimensions);
+      if (!layout) return;
+      pendingLayoutUpdatesRef.current.set(change.id, change.dimensions);
+      if (layoutUpdateRafRef.current === null) {
+        layoutUpdateRafRef.current = requestAnimationFrame(() => {
+          flushPendingLayoutUpdates();
+        });
       }
     },
-    [diagram, updateNodeLayout],
+    [diagram, flushPendingLayoutUpdates],
   );
 
   const onNodesChange: OnNodesChange = useCallback(
@@ -235,6 +283,10 @@ export function useNodeDragParenting({
 
   const onNodeDragStop = useCallback(
     (_: unknown, draggedNode: Node) => {
+      if (dragTargetRafRef.current !== null) {
+        cancelAnimationFrame(dragTargetRafRef.current);
+        dragTargetRafRef.current = null;
+      }
       setDragTargetPanelId(null);
       dragTargetRef.current = null;
       setUnparentCandidatePanelId(null);

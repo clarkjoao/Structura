@@ -18,10 +18,9 @@ import { resolveActiveScene } from "./scene-helpers";
 
 export const componentParentingSlice = (
   set: (fn: (state: AppState) => void) => void,
-  get: () => AppState,
+  _get: () => AppState,
 ) => ({
   setParent: (childId: string, parentId: string | null) => {
-    void get;
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
@@ -48,7 +47,6 @@ export const componentParentingSlice = (
     newParentId: string | null,
     newPosition: { x: number; y: number },
   ) => {
-    void get;
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
@@ -100,7 +98,6 @@ export const componentParentingSlice = (
       newPosition: { x: number; y: number };
     }>,
   ) => {
-    void get;
     if (entries.length === 0) return;
     set((state) => {
       const d = getActiveDiagram(state);
@@ -136,7 +133,6 @@ export const componentParentingSlice = (
   },
 
   groupNodes: (componentIds: string[]): string | null => {
-    void get;
     let panelId: string | null = null;
     set((state) => {
       const d = getActiveDiagram(state);
@@ -206,7 +202,6 @@ export const componentParentingSlice = (
   },
 
   ungroupNodes: (panelId: string) => {
-    void get;
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;

@@ -25,8 +25,6 @@ export interface UseCanvasGraphStateParams {
     visualState: CanvasVisualState;
     dragTargetPanelId: string | null;
     unparentCandidatePanelId: string | null;
-    onNoteStartEdit?: (noteId: string) => void;
-    onJsonViewerStartEdit?: (nodeId: string) => void;
   };
   localNodesRef: MutableRefObject<Node[]>;
   innerOnNodesChange: NodeDragParenting["onNodesChange"];
@@ -69,13 +67,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     updateNodeInternals,
     t,
   } = params;
-  const {
-    visualState,
-    dragTargetPanelId,
-    unparentCandidatePanelId,
-    onNoteStartEdit,
-    onJsonViewerStartEdit,
-  } = visualContext;
+  const { visualState, dragTargetPanelId, unparentCandidatePanelId } = visualContext;
   const { compareState } = compareContext;
   const { flowState, isViewingCoverage, onPlayFlow } = flowContext;
 
@@ -89,7 +81,11 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
   }, [flowState.flowHighlight, journeyHighlight, journeyPlayer.mode.kind]);
 
   const { panelIds, connectionCountPerNode, edgeHandleAssignments, effectiveHandleOrder } =
-    useCanvasConnectionDerivations({ visibleComponents, visibleConnections, diagram });
+    useCanvasConnectionDerivations({
+      visibleComponents,
+      visibleConnections,
+      resolvedComponents: resolved?.components ?? {},
+    });
 
   const handleAddEndpointToGroup = useCallback(
     (groupId: string) => {
@@ -134,9 +130,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     onPlayFlow,
     onAddEndpointToGroup: handleAddEndpointToGroup,
     isNodeHiddenByTagFilter: visualState.isNodeHiddenByTagFilter,
-    onNoteStartEdit,
     setNoteInlineEditingId: visualState.setNoteInlineEditingId,
-    onJsonViewerStartEdit,
     setJsonViewerInlineEditingId: visualState.setJsonViewerInlineEditingId,
     updateComponent: actions.updateComponent,
   });

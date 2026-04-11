@@ -37,7 +37,6 @@ export interface UseCanvasInteractionParams {
   showScenes: boolean;
   setShowScenes: Dispatch<SetStateAction<boolean>>;
   setFocusTitleTrigger: Dispatch<SetStateAction<number>>;
-  onNoteStartEdit?: (noteId: string) => void;
 }
 
 export interface UseCanvasInteractionResult {
@@ -77,7 +76,6 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
     showScenes,
     setShowScenes,
     setFocusTitleTrigger,
-    onNoteStartEdit,
   } = params;
 
   const { t } = useTranslation();
@@ -158,7 +156,6 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
     addConnection: actions.addConnection,
     screenToFlowPosition: (pos) => reactFlowInstance.screenToFlowPosition(pos),
     onRequestFocusTitle: handleRequestFocusTitle,
-    onNoteStartEdit,
   });
 
   const isPanelOpen =

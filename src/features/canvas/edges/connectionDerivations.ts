@@ -1,4 +1,4 @@
-import type { Component, Connection, Diagram } from "@/features/diagram";
+import type { Component, Connection } from "@/features/diagram";
 import {
   isApiGroupComponent,
   isDbTableType,
@@ -64,11 +64,10 @@ export function resolveHandleIndex(
 export function buildEdgeHandleAssignments(
   connections: Connection[],
   connectionCountPerNode: Record<string, ConnectionCounts>,
-  diagram: Diagram | null | undefined,
+  components: Record<string, Component>,
 ): HandleAssignment[] {
   const sourceUsage: Record<string, number> = {};
   const targetUsage: Record<string, number> = {};
-  const components = diagram?.snapshot.components ?? {};
 
   return connections.map((conn) => {
     const outCount = Math.min(

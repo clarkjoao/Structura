@@ -7,6 +7,7 @@ import {
   isApiGroupComponent,
   isEndpointType,
   isPanelComponent,
+  buildChildrenIndex,
 } from "@/features/diagram";
 import { OPACITY_FLOW_PLAYBACK_NODE_DIM } from "@/features/canvas/canvas.constants";
 import {
@@ -76,6 +77,7 @@ export function createJourneyEditorNodeBuildContext(
     coverage: null,
     handleDrillDown: () => {},
     onRecordHandleClick: flowVisuals?.onRecordHandleClick,
+    childrenIndex: buildChildrenIndex(snapshot.components),
   };
 }
 
@@ -96,7 +98,7 @@ export function buildJourneyEditorNodes(
   const edgeHandleAssignments = buildEdgeHandleAssignments(
     visibleConnections,
     connectionCountPerNode,
-    diagram,
+    snapshot.components,
   );
   const effectiveHandleOrder = buildEffectiveHandleOrder(
     edgeHandleAssignments,
@@ -219,7 +221,7 @@ export function buildJourneyEditorEdges(
   const edgeHandleAssignments = buildEdgeHandleAssignments(
     visibleConnections,
     connectionCountPerNode,
-    diagram,
+    snapshot.components,
   );
   const assignmentMap = new Map(
     edgeHandleAssignments.map((item) => [item.connId, item]),

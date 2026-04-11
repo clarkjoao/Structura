@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Handle, NodeResizer, Position, useReactFlow, type NodeProps } from "@xyflow/react";
 import Editor from "@monaco-editor/react";
 import { Braces, Check, ChevronDown, ChevronUp, Pencil, X } from "lucide-react";
@@ -109,8 +109,7 @@ const JsonViewerNode = memo(({ data, selected }: NodeProps) => {
     onInlineEditingChange,
   ]);
 
-  useEffect(() => {
-    // Descriptor supplies a stub; replace so double-click invokes real inline edit.
+  useLayoutEffect(() => {
     diagramNodeData.onStartEdit = handleStartEdit;
   }, [diagramNodeData, handleStartEdit]);
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useCollab } from "@/features/collaboration";
 import { useReactFlow, useUpdateNodeInternals } from "@xyflow/react";
@@ -33,13 +33,6 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     return Array.from(tags).sort();
   }, [resolved?.components]);
   const flowState = useCanvasFlowState({ flows, isCompareMode: compareState.isCompareMode });
-  const onNoteStartEdit = useCallback((_noteId: string) => {
-    // Ensures note `data.onStartEdit` exists so NoteNode can replace it with inline edit.
-    // Double-click invokes the patched handler on `node.data`.
-  }, []);
-  const onJsonViewerStartEdit = useCallback((_nodeId: string) => {
-    // Ensures json-viewer `data.onStartEdit` exists so JsonViewerNode can replace it with inline edit.
-  }, []);
   const activeCollabElementId = visualState.selectedEdgeId ?? visualState.selectedNodeId;
   useEffect(() => {
     updateSelectedNode(activeCollabElementId);
@@ -59,7 +52,6 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     showScenes,
     setShowScenes,
     setFocusTitleTrigger,
-    onNoteStartEdit,
   });
   const flowContext = useMemo(
     () => ({
@@ -80,16 +72,8 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
       visualState,
       dragTargetPanelId: interaction.dragTargetPanelId,
       unparentCandidatePanelId: interaction.unparentCandidatePanelId,
-      onNoteStartEdit,
-      onJsonViewerStartEdit,
     }),
-    [
-      interaction.dragTargetPanelId,
-      interaction.unparentCandidatePanelId,
-      onJsonViewerStartEdit,
-      onNoteStartEdit,
-      visualState,
-    ],
+    [interaction.dragTargetPanelId, interaction.unparentCandidatePanelId, visualState],
   );
   const graphState = useCanvasGraphState({
     diagram,

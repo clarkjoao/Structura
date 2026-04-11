@@ -14,6 +14,7 @@ import {
   isEndpointType,
   isComponentAddedInActiveScene,
   isAncestorLocked,
+  buildChildrenIndex,
 } from "@/features/diagram";
 import { resolveNodeDescriptor, type NodeBuildContext } from "./node-types";
 import { useFlowMode } from "../flow/FlowModeContext";
@@ -53,20 +54,64 @@ interface UseCanvasNodesParams {
   isCompareMode?: boolean;
   compareVisualByComponentId?: Record<string, CompareElementVisual>;
   isNodeHiddenByTagFilter: (component: Component) => boolean;
-  onNoteStartEdit?: (noteId: string) => void;
   setNoteInlineEditingId?: (id: string | null) => void;
-  onJsonViewerStartEdit?: (nodeId: string) => void;
   setJsonViewerInlineEditingId?: (id: string | null) => void;
   updateComponent: (id: string, patch: ComponentPatch) => void;
 }
 
-type NodeCtxBase = Omit<NodeBuildContext, "isPlaying" | "isRecording" | "flowHighlight" | "activeStep" | "recordingInfo" | "coverage"> & {
+/** Data-only canvas context — excludes callbacks so the main node memo does not invalidate when callback identities change. */
+type DataCtx = Omit<
+  NodeBuildContext,
+  | "isPlaying"
+  | "isRecording"
+  | "flowHighlight"
+  | "activeStep"
+  | "recordingInfo"
+  | "coverage"
+  | "handleDrillDown"
+  | "onRecordHandleClick"
+  | "onPanelCollapseToggle"
+  | "onReorderHandle"
+  | "onPlayFlow"
+  | "onAddEndpointToGroup"
+  | "setNoteInlineEditingId"
+  | "setJsonViewerInlineEditingId"
+  | "updateComponent"
+> & {
   highlightedNodeIds: Set<string>;
   isViewingCoverage: boolean;
 };
 
 const EMPTY_JOURNEYS_BY_COMPONENT_ID: Record<string, { name: string }[]> =
   Object.freeze({});
+
+/** Stable empty nodes list — avoids new `[]` on every “no diagram” render. */
+const EMPTY_CANVAS_NODE_LIST: Node[] = [];
+
+/**
+ * Compare React Flow nodes produced by this hook (fields we set only).
+ * Used to reuse previous node references when the memo re-runs without semantic changes.
+ */
+function isSameBuiltFlowNode(a: Node, b: Node): boolean {
+  return (
+    a.id === b.id &&
+    a.type === b.type &&
+    a.position === b.position &&
+    a.zIndex === b.zIndex &&
+    a.connectable === b.connectable &&
+    a.selected === b.selected &&
+    a.draggable === b.draggable &&
+    a.selectable === b.selectable &&
+    a.focusable === b.focusable &&
+    a.className === b.className &&
+    a.dragHandle === b.dragHandle &&
+    a.parentId === b.parentId &&
+    a.extent === b.extent &&
+    a.hidden === b.hidden &&
+    a.style === b.style &&
+    a.data === b.data
+  );
+}
 
 function compareDiffOutlineClass(
   visual: CompareElementVisual | undefined,
@@ -145,9 +190,7 @@ export function useCanvasNodes({
   isCompareMode = false,
   compareVisualByComponentId,
   isNodeHiddenByTagFilter,
-  onNoteStartEdit,
   setNoteInlineEditingId,
-  onJsonViewerStartEdit,
   setJsonViewerInlineEditingId,
   updateComponent,
 }: UseCanvasNodesParams): Node[] {
@@ -158,16 +201,47 @@ export function useCanvasNodes({
     [pendingPreviews],
   );
 
+  const callbacksRef = useRef({
+    handleDrillDown,
+    onRecordHandleClick,
+    onPanelCollapseToggle: handlePanelCollapseToggle,
+    onReorderHandle,
+    onPlayFlow,
+    onAddEndpointToGroup,
+    setNoteInlineEditingId,
+    setJsonViewerInlineEditingId,
+    updateComponent,
+  });
+  callbacksRef.current = {
+    handleDrillDown,
+    onRecordHandleClick,
+    onPanelCollapseToggle: handlePanelCollapseToggle,
+    onReorderHandle,
+    onPlayFlow,
+    onAddEndpointToGroup,
+    setNoteInlineEditingId,
+    setJsonViewerInlineEditingId,
+    updateComponent,
+  };
+
   /**
    * Fix C: Cache of stable data/style references per node id.
    * When buildData/buildStyle produce a semantically-equal result, we reuse
    * the previous reference so useLocalNodes can detect "no change" via ===.
    */
   const prevNodeDataRef = useRef<
-    Map<string, { data: Record<string, unknown>; style: CSSProperties | undefined }>
+    Map<string, {
+      data: Record<string, unknown>;
+      style: CSSProperties | undefined;
+      position: { x: number; y: number };
+    }>
   >(new Map());
 
-  const nodeCtxBase: NodeCtxBase | null = useMemo(() => {
+  /** Reuse prior RF node objects when props match — avoids new array refs on redundant memo runs. */
+  const prevRfNodesByIdRef = useRef<Map<string, Node>>(new Map());
+  const prevNodesArrayRef = useRef<Node[]>(EMPTY_CANVAS_NODE_LIST);
+
+  const dataCtx: DataCtx | null = useMemo(() => {
     if (!diagram) return null;
     return {
       diagram,
@@ -185,21 +259,11 @@ export function useCanvasNodes({
       panelIds,
       connectionCounts: connectionCountPerNode,
       effectiveHandleOrder,
-      onReorderHandle,
-      handleDrillDown,
-      onRecordHandleClick,
-      onPanelCollapseToggle: handlePanelCollapseToggle,
       activeFlowId,
-      onPlayFlow,
-      onAddEndpointToGroup,
-      onNoteStartEdit,
-      setNoteInlineEditingId,
-      onJsonViewerStartEdit,
-      setJsonViewerInlineEditingId,
-      updateComponent,
       highlightedNodeIds,
       isViewingCoverage,
       journeysByComponentId: EMPTY_JOURNEYS_BY_COMPONENT_ID,
+      childrenIndex: buildChildrenIndex(resolvedComponents),
     };
   }, [
     diagram,
@@ -217,18 +281,7 @@ export function useCanvasNodes({
     panelIds,
     connectionCountPerNode,
     effectiveHandleOrder,
-    onReorderHandle,
-    handleDrillDown,
-    onRecordHandleClick,
-    handlePanelCollapseToggle,
     activeFlowId,
-    onPlayFlow,
-    onAddEndpointToGroup,
-    onNoteStartEdit,
-    setNoteInlineEditingId,
-    onJsonViewerStartEdit,
-    setJsonViewerInlineEditingId,
-    updateComponent,
     highlightedNodeIds,
     isViewingCoverage,
   ]);
@@ -246,27 +299,43 @@ export function useCanvasNodes({
   );
 
   return useMemo(() => {
-    if (!diagram || !nodeCtxBase) return [];
+    if (!diagram || !dataCtx) {
+      prevRfNodesByIdRef.current.clear();
+      prevNodesArrayRef.current = EMPTY_CANVAS_NODE_LIST;
+      return EMPTY_CANVAS_NODE_LIST;
+    }
 
     const {
       highlightedNodeIds: hIds,
       isViewingCoverage: viewingCov,
-      ...ctxBaseForBuild
-    } = nodeCtxBase;
+      ...restForCtx
+    } = dataCtx;
 
     const ctx: NodeBuildContext = {
-      ...ctxBaseForBuild,
+      ...restForCtx,
+      ...callbacksRef.current,
       ...nodeCtxPlayback,
     };
 
-    const collapsedPanelIds = buildCollapsedPanelIds(nodeCtxBase.resolvedComponents);
-    const compareVisual = nodeCtxBase.compareVisualByComponentId;
-    const isCmp = nodeCtxBase.isCompareMode ?? false;
+    const collapsedPanelIds = buildCollapsedPanelIds(dataCtx.resolvedComponents);
+
+    const lockedNodeIds = new Set<string>();
+    for (const comp of Object.values(dataCtx.resolvedComponents)) {
+      if (comp.locked === true || isAncestorLocked(comp, dataCtx.resolvedComponents)) {
+        lockedNodeIds.add(comp.id);
+      }
+    }
+
+    const compareVisual = dataCtx.compareVisualByComponentId;
+    const isCmp = dataCtx.isCompareMode ?? false;
 
     // Fix C: purge stale cache entries for nodes no longer visible
     const visibleIds = new Set(visibleComponents.map((c) => c.id));
     for (const cachedId of prevNodeDataRef.current.keys()) {
       if (!visibleIds.has(cachedId)) prevNodeDataRef.current.delete(cachedId);
+    }
+    for (const cachedId of prevRfNodesByIdRef.current.keys()) {
+      if (!visibleIds.has(cachedId)) prevRfNodesByIdRef.current.delete(cachedId);
     }
 
     function getParentDepth(
@@ -287,12 +356,12 @@ export function useCanvasNodes({
     const depthCache = new Map<string, number>();
     function getDepth(comp: Component): number {
       if (depthCache.has(comp.id)) return depthCache.get(comp.id)!;
-      const d = getParentDepth(comp, nodeCtxBase.resolvedComponents);
+      const d = getParentDepth(comp, dataCtx.resolvedComponents);
       depthCache.set(comp.id, d);
       return d;
     }
 
-    return [...visibleComponents]
+    const nextNodes = [...visibleComponents]
       .sort((a, b) => {
         const aIsGroup = isPanelComponent(a) || isApiGroupComponent(a);
         const bIsGroup = isPanelComponent(b) || isApiGroupComponent(b);
@@ -305,18 +374,18 @@ export function useCanvasNodes({
       })
       .map((comp): Node => {
         const d = resolveNodeDescriptor(comp);
-        const layout = nodeCtxBase.resolvedNodeLayouts[comp.id];
+        const layout = dataCtx.resolvedNodeLayouts[comp.id];
         const vis = computeNodeVisibility(
           comp,
           d,
           layout,
-          nodeCtxBase.panelIds,
-          nodeCtxBase.selectedNodeIds,
+          dataCtx.panelIds,
+          dataCtx.selectedNodeIds,
           hIds,
           collapsedPanelIds,
           viewingCov,
           nodeCtxPlayback.coverage,
-          nodeCtxBase.resolvedComponents,
+          dataCtx.resolvedComponents,
         );
         const style: Record<string, unknown> = {
           ...d.buildStyle?.(comp, ctx),
@@ -336,13 +405,12 @@ export function useCanvasNodes({
         const lockedInGroup =
           isEndpointType(comp.type) &&
           comp.parentId != null &&
-          isApiGroupComponent(nodeCtxBase.resolvedComponents[comp.parentId]);
+          isApiGroupComponent(dataCtx.resolvedComponents[comp.parentId]);
         const sceneActive =
           !!diagram.activeSceneId && !!diagram.scenes?.[diagram.activeSceneId];
         const sceneLocksBase =
           sceneActive && !isComponentAddedInActiveScene(diagram, comp.id);
-        const isLockedBySelfOrAncestor =
-          comp.locked === true || isAncestorLocked(comp, nodeCtxBase.resolvedComponents);
+        const isLockedBySelfOrAncestor = lockedNodeIds.has(comp.id);
         const diffOutline =
           isCmp && cmpVis !== undefined ? compareDiffOutlineClass(cmpVis) : "";
         const nodeClassNames = [
@@ -353,10 +421,12 @@ export function useCanvasNodes({
         ]
           .filter(Boolean)
           .join(" ");
-        // Fix C: stabilize data/style references using shallow equality so that
-        // useLocalNodes can skip re-renders when nothing semantically changed.
+        // Fix C: stabilize data/style/position references using shallow equality so
+        // that useLocalNodes can detect "no change" via reference equality (===).
         const newData = d.buildData(comp, ctx) as Record<string, unknown>;
         const newStyle = style as CSSProperties;
+        const newPosX = layout?.x ?? 0;
+        const newPosY = layout?.y ?? 0;
         const cached = prevNodeDataRef.current.get(comp.id);
         const stableData =
           cached && shallowEqualIgnoringFunctions(cached.data, newData)
@@ -366,12 +436,22 @@ export function useCanvasNodes({
           cached && shallowEqualStyle(cached.style, newStyle)
             ? cached.style
             : newStyle;
-        prevNodeDataRef.current.set(comp.id, { data: stableData, style: stableStyle });
+        const stablePosition =
+          cached &&
+          cached.position.x === newPosX &&
+          cached.position.y === newPosY
+            ? cached.position
+            : { x: newPosX, y: newPosY };
+        prevNodeDataRef.current.set(comp.id, {
+          data: stableData,
+          style: stableStyle,
+          position: stablePosition,
+        });
 
-        return {
+        const built: Node = {
           id: comp.id,
           type: d.rfType,
-          position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
+          position: stablePosition,
           zIndex: vis.zIndex,
           connectable: d.connectable && !isCmp && !tagFilteredHidden,
           selected: vis.isSelected,
@@ -394,10 +474,33 @@ export function useCanvasNodes({
           style: stableStyle,
           data: stableData,
         };
+
+        const prevRf = prevRfNodesByIdRef.current.get(comp.id);
+        const nodeToUse =
+          prevRf && isSameBuiltFlowNode(prevRf, built) ? prevRf : built;
+        if (nodeToUse === built) {
+          prevRfNodesByIdRef.current.set(comp.id, built);
+        }
+        return nodeToUse;
       });
+
+    const prevArr = prevNodesArrayRef.current;
+    if (
+      nextNodes.length === prevArr.length &&
+      nextNodes.length > 0 &&
+      nextNodes.every((node, index) => node === prevArr[index])
+    ) {
+      return prevArr;
+    }
+    if (nextNodes.length === 0) {
+      prevNodesArrayRef.current = EMPTY_CANVAS_NODE_LIST;
+      return EMPTY_CANVAS_NODE_LIST;
+    }
+    prevNodesArrayRef.current = nextNodes;
+    return nextNodes;
   }, [
     diagram,
-    nodeCtxBase,
+    dataCtx,
     nodeCtxPlayback,
     visibleComponents,
     isNodeHiddenByTagFilter,

@@ -7,14 +7,13 @@ import { resolveActiveScene } from "./scene-helpers";
 
 export const componentLinksSlice = (
   set: (fn: (state: AppState) => void) => void,
-  get: () => AppState,
+  _get: () => AppState,
 ) => ({
   updateHandleOrder: (
     componentId: string,
     side: "incoming" | "outgoing",
     orderedConnectionIds: string[],
   ) => {
-    void get;
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
@@ -29,7 +28,6 @@ export const componentLinksSlice = (
   },
 
   addExternalLink: (componentId: string, link: Omit<ExternalLink, "id">) => {
-    void get;
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
@@ -47,7 +45,6 @@ export const componentLinksSlice = (
   },
 
   updateExternalLink: (componentId: string, linkId: string, patch: Partial<Omit<ExternalLink, "id">>) => {
-    void get;
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
@@ -65,7 +62,6 @@ export const componentLinksSlice = (
   },
 
   removeExternalLink: (componentId: string, linkId: string) => {
-    void get;
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;

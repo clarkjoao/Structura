@@ -38,11 +38,14 @@ export function useLocalNodes(
   onSelectionFromChanges?: (selectedIds: string[]) => void,
   diagram?: Diagram | null,
 ) {
-  const [localNodes, setLocalNodes] = useState<Node[]>([]);
-  const draggingNodeIdsRef = useRef(new Set<string>());
+  // Bumped by onNodesChange to re-render after user interactions (drag, select, resize).
+  const [, setTick] = useState(0);
 
+  const draggingNodeIdsRef = useRef(new Set<string>());
   const prevStoreNodesRef = useRef<Node[] | undefined>(undefined);
   const prevDiagramRef = useRef<Diagram | null | undefined>(undefined);
+  /** Merged local nodes — ref-only to avoid setState during render (infinite update chains). */
+  const localNodesStateRef = useRef<Node[]>([]);
 
   if (storeNodes !== prevStoreNodesRef.current) {
     prevStoreNodesRef.current = storeNodes;
@@ -50,83 +53,18 @@ export function useLocalNodes(
     const undoRedo = isUndoRedoTransition(prevDiagramRef.current, diagram);
     prevDiagramRef.current = diagram;
 
-    setLocalNodes((prev) => {
-      // First load or undo/redo: take store nodes as-is, discarding all local positions
-      if (prev.length === 0 || undoRedo) {
-        localNodesRef.current = storeNodes;
-        return storeNodes;
-      }
+    const prev = localNodesStateRef.current;
 
+    if (prev.length === 0 || undoRedo) {
+      localNodesStateRef.current = storeNodes;
+      localNodesRef.current = storeNodes;
+    } else if (prev.length !== storeNodes.length) {
       const localMap = new Map(prev.map((n) => [n.id, n]));
-
-      // When node count changed we definitely have a new array
-      if (prev.length !== storeNodes.length) {
-        const merged = storeNodes.map((sn) => {
-          const ln = localMap.get(sn.id);
-          if (!ln) return sn;
-          const useRemotePosition = sn.parentId !== ln.parentId || !draggingNodeIdsRef.current.has(sn.id);
-          return {
-            ...ln,
-            data: sn.data,
-            style: sn.style,
-            hidden: sn.hidden,
-            draggable: sn.draggable,
-            selectable: sn.selectable,
-            focusable: sn.focusable,
-            className: sn.className,
-            dragHandle: sn.dragHandle,
-            zIndex: sn.zIndex,
-            connectable: sn.connectable,
-            selected: sn.selected,
-            type: sn.type,
-            position: useRemotePosition ? sn.position : ln.position,
-            parentId: sn.parentId,
-            extent: sn.extent,
-          };
-        });
-        localNodesRef.current = merged;
-        return merged;
-      }
-
-      let anyChanged = false;
       const merged = storeNodes.map((sn) => {
         const ln = localMap.get(sn.id);
-        if (!ln) {
-          anyChanged = true;
-          return sn;
-        }
-
+        if (!ln) return sn;
         const useRemotePosition =
-          sn.parentId !== ln.parentId ||
-          !draggingNodeIdsRef.current.has(sn.id);
-
-        // Compare position by value when using remote position (sn.position is always
-        // a new object literal from useCanvasNodes, so reference equality is unreliable)
-        const positionSame = useRemotePosition
-          ? ln.position.x === sn.position.x && ln.position.y === sn.position.y
-          : true; // keeping local position → no change
-
-        if (
-          ln.data === sn.data &&
-          ln.style === sn.style &&
-          ln.hidden === sn.hidden &&
-          ln.draggable === sn.draggable &&
-          ln.selectable === sn.selectable &&
-          ln.focusable === sn.focusable &&
-          ln.className === sn.className &&
-          ln.dragHandle === sn.dragHandle &&
-          ln.zIndex === sn.zIndex &&
-          ln.connectable === sn.connectable &&
-          ln.selected === sn.selected &&
-          ln.type === sn.type &&
-          positionSame &&
-          ln.parentId === sn.parentId &&
-          ln.extent === sn.extent
-        ) {
-          return ln; // Reuse exact same reference — no re-render needed for this node
-        }
-
-        anyChanged = true;
+          sn.parentId !== ln.parentId || !draggingNodeIdsRef.current.has(sn.id);
         return {
           ...ln,
           data: sn.data,
@@ -146,15 +84,70 @@ export function useLocalNodes(
           extent: sn.extent,
         };
       });
-
-      if (!anyChanged) {
-        // Nothing changed — return prev to skip re-render and avoid React Flow StoreUpdater loop
-        return prev;
-      }
-
+      localNodesStateRef.current = merged;
       localNodesRef.current = merged;
-      return merged;
-    });
+    } else {
+      const localMap = new Map(prev.map((n) => [n.id, n]));
+      let anyChanged = false;
+      const merged = storeNodes.map((sn) => {
+        const ln = localMap.get(sn.id);
+        if (!ln) {
+          anyChanged = true;
+          return sn;
+        }
+
+        const useRemotePosition =
+          sn.parentId !== ln.parentId ||
+          !draggingNodeIdsRef.current.has(sn.id);
+
+        const positionToUse = useRemotePosition ? sn.position : ln.position;
+
+        if (
+          ln.data === sn.data &&
+          ln.style === sn.style &&
+          ln.hidden === sn.hidden &&
+          ln.draggable === sn.draggable &&
+          ln.selectable === sn.selectable &&
+          ln.focusable === sn.focusable &&
+          ln.className === sn.className &&
+          ln.dragHandle === sn.dragHandle &&
+          ln.zIndex === sn.zIndex &&
+          ln.connectable === sn.connectable &&
+          ln.selected === sn.selected &&
+          ln.type === sn.type &&
+          ln.position === positionToUse &&
+          ln.parentId === sn.parentId &&
+          ln.extent === sn.extent
+        ) {
+          return ln;
+        }
+
+        anyChanged = true;
+        return {
+          ...ln,
+          data: sn.data,
+          style: sn.style,
+          hidden: sn.hidden,
+          draggable: sn.draggable,
+          selectable: sn.selectable,
+          focusable: sn.focusable,
+          className: sn.className,
+          dragHandle: sn.dragHandle,
+          zIndex: sn.zIndex,
+          connectable: sn.connectable,
+          selected: sn.selected,
+          type: sn.type,
+          position: positionToUse,
+          parentId: sn.parentId,
+          extent: sn.extent,
+        };
+      });
+
+      if (anyChanged) {
+        localNodesStateRef.current = merged;
+        localNodesRef.current = merged;
+      }
+    }
   }
 
   const onNodesChange: OnNodesChange = useCallback(
@@ -205,21 +198,23 @@ export function useLocalNodes(
       const hasSelect = changes.some((c) => c.type === "select");
       innerOnNodesChange(sanitizedChanges);
       const forApply = filterNodeChangesForSceneMoveLock(diagram, sanitizedChanges);
-      setLocalNodes((nds) => {
-        const updated = applyNodeChanges(forApply, nds);
-        localNodesRef.current = updated;
-        if (hasSelect && onSelectionFromChanges) {
-          const selectChangeCount = changes.filter((c) => c.type === "select").length;
-          if (selectChangeCount >= 2) {
-            const selectedIds = updated.filter((n) => n.selected).map((n) => n.id);
-            onSelectionFromChanges(selectedIds);
-          }
+
+      const updated = applyNodeChanges(forApply, localNodesStateRef.current);
+      localNodesStateRef.current = updated;
+      localNodesRef.current = updated;
+
+      if (hasSelect && onSelectionFromChanges) {
+        const selectChangeCount = changes.filter((c) => c.type === "select").length;
+        if (selectChangeCount >= 2) {
+          const selectedIds = updated.filter((n) => n.selected).map((n) => n.id);
+          onSelectionFromChanges(selectedIds);
         }
-        return updated;
-      });
+      }
+
+      setTick((tick) => tick + 1);
     },
     [diagram, innerOnNodesChange, localNodesRef, onSelectionFromChanges],
   );
 
-  return { nodes: localNodes, onNodesChange };
+  return { nodes: localNodesStateRef.current, onNodesChange };
 }

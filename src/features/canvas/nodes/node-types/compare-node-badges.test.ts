@@ -43,6 +43,7 @@ function createMinimalNodeBuildContext(
     recordingInfo: null,
     coverage: null,
     handleDrillDown: () => {},
+    childrenIndex: new Map(),
     ...overrides,
   };
 }

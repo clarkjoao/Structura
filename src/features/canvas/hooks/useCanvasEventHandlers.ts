@@ -27,7 +27,6 @@ interface UseCanvasEventHandlersParams {
   ) => void;
   screenToFlowPosition: (pos: { x: number; y: number }) => { x: number; y: number };
   onRequestFocusTitle?: () => void;
-  onNoteStartEdit?: (noteId: string) => void;
 }
 
 export function useCanvasEventHandlers({

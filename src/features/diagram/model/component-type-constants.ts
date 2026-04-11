@@ -27,12 +27,6 @@ export function isSvgComponentType(type: string): type is "svg" {
   return type === COMPONENT_TYPE_SVG;
 }
 
-/** Types that use the "canvas:…" usage key and support panelKind in key */
-export const CANVAS_PANEL_NOTE_TYPES = [COMPONENT_TYPE_PANEL, COMPONENT_TYPE_NOTE] as const;
-
-/** Types that use the "canvas:…" usage key without panelKind */
-export const CANVAS_API_TYPES = [COMPONENT_TYPE_API_GROUP, COMPONENT_TYPE_ENDPOINT] as const;
-
 /** All PanelKind values for runtime validation */
 export const PANEL_KIND_VALUES: readonly PanelKind[] = [
   PanelKind.Default,
@@ -99,14 +93,6 @@ export function isDbTableType(type: string): type is "db-table" {
 
 export function isJsonViewerType(type: string): type is "json-viewer" {
   return type === COMPONENT_TYPE_JSON_VIEWER;
-}
-
-export function isCanvasStructuralType(type: string): type is "panel" | "note" {
-  return isPanelType(type) || isNoteType(type);
-}
-
-export function isCanvasApiType(type: string): type is "api-group" | "endpoint" {
-  return isApiGroupType(type) || isEndpointType(type);
 }
 
 /** Runtime check that value is a valid PanelKind */

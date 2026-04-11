@@ -1,6 +1,4 @@
-/** Opacity of elements out of focus (flow playback, recording, tag filter). */
-export const OPACITY_DIM = 0.25;
-export const OPACITY_RECORDING_DIM = 0.35;
+/** Opacity of elements out of focus (tag filter). */
 export const OPACITY_TAG_FILTER_DIM = 0.15;
 
 /** Flow playback: edges not active (and recording: edges not yet recorded). */
