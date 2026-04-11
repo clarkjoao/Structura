@@ -52,10 +52,26 @@ export function StepFlowSection({
   const [flowPickerOpen, setFlowPickerOpen] = useState(false);
   const [flowJustEnded, setFlowJustEnded] = useState(false);
   const prevIsPlaying = useRef(false);
+  const pendingNextFlowPlaybackTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pendingNextFlowPlaybackTimeoutRef.current !== null) {
+        clearTimeout(pendingNextFlowPlaybackTimeoutRef.current);
+        pendingNextFlowPlaybackTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     setFlowJustEnded(false);
     prevIsPlaying.current = false;
+    if (pendingNextFlowPlaybackTimeoutRef.current !== null) {
+      clearTimeout(pendingNextFlowPlaybackTimeoutRef.current);
+      pendingNextFlowPlaybackTimeoutRef.current = null;
+    }
   }, [stepId]);
 
   useEffect(() => {
@@ -111,12 +127,12 @@ export function StepFlowSection({
   };
 
   const handlePlayFlow = () => {
-    if (!flowForStep) return;
+    if (!flowForStep || !step?.diagramId) return;
     if (!journeyAndFlowIdle) {
       toast.error(t("flows.alreadyActive"));
       return;
     }
-    flowMode.play(flowForStep);
+    journeyPlayer.startFlowPlayback(flowForStep.id, step.diagramId);
   };
 
   const handleStopPlay = () => {
@@ -302,11 +318,33 @@ export function StepFlowSection({
                 onNextStep ? !hasNextFromList : nextStepRecord === null
               }
               onClick={() => {
+                const nextStep =
+                  currentStepIndex >= 0 && currentStepIndex < sortedSteps.length - 1
+                    ? sortedSteps[currentStepIndex + 1]!
+                    : null;
+
+                setFlowJustEnded(false);
+
                 if (onNextStep) {
                   onNextStep();
                 } else if (nextStepRecord) {
                   onSelectStep(nextStepRecord.id);
                 }
+
+                if (!nextStep?.flowId || nextStep.diagramId.length === 0) {
+                  return;
+                }
+
+                const flowId = nextStep.flowId;
+                const diagramId = nextStep.diagramId;
+
+                if (pendingNextFlowPlaybackTimeoutRef.current !== null) {
+                  clearTimeout(pendingNextFlowPlaybackTimeoutRef.current);
+                }
+                pendingNextFlowPlaybackTimeoutRef.current = setTimeout(() => {
+                  pendingNextFlowPlaybackTimeoutRef.current = null;
+                  journeyPlayer.startFlowPlayback(flowId, diagramId);
+                }, 100);
               }}
             >
               {nextStepRecord || (onNextStep && hasNextFromList) ? (

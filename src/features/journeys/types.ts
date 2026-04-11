@@ -9,6 +9,10 @@ export interface JourneyStep {
   diagramId: string;
   flowId?: string;
   svgContent?: string;
+  mediaContent?: {
+    type: "svg" | "image";
+    data: string;
+  };
 }
 
 export interface Journey {

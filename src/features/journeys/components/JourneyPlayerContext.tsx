@@ -81,17 +81,36 @@ function JourneyPlayerFlowBridge({
     play(flow);
   }, [activeDiagramId, diagrams, mode.kind, openDiagram, play, pendingFlowPlaybackRef]);
 
-  
-  
+  const previousActiveDiagramIdRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (!flowIsIdle && pendingFlowPlaybackRef.current === null) {
+    if (mode.kind !== "playing") {
+      previousActiveDiagramIdRef.current = activeDiagramId;
+      return;
+    }
+    if (pendingFlowPlaybackRef.current !== null) {
+      previousActiveDiagramIdRef.current = activeDiagramId;
+      return;
+    }
+
+    const journey = useJourneyStore.getState().journeys[mode.journeyId];
+    const step = journey?.steps[mode.selectedStepId];
+    const stepDiagramId = step?.diagramId;
+
+    const previousActiveDiagramId = previousActiveDiagramIdRef.current;
+    previousActiveDiagramIdRef.current = activeDiagramId;
+
+    if (previousActiveDiagramId === activeDiagramId) {
+      return;
+    }
+    if (!stepDiagramId) {
+      return;
+    }
+    if (activeDiagramId !== stepDiagramId) {
       exitPlay();
     }
-    
-  }, [activeDiagramId]);
+  }, [activeDiagramId, exitPlay, mode, pendingFlowPlaybackRef]);
 
-  
-  
   const prevSelectedStepIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (mode.kind !== "playing") {

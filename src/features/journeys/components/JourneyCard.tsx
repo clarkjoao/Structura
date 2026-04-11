@@ -2,9 +2,11 @@ import { useMemo, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 import { enUS, ptBR } from "date-fns/locale";
-import { Play, Pencil, Trash2 } from "lucide-react";
+import { Copy, Play, Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useJourneyActions } from "../store/selectors/journeys.selectors";
 import type { Journey } from "../types";
 
 interface JourneyCardProps {
@@ -23,6 +25,7 @@ function countUniqueDiagramIds(journey: Journey): number {
 
 export function JourneyCard({ journey, onEdit, onDelete }: JourneyCardProps) {
   const { t, i18n } = useTranslation();
+  const { duplicateJourney } = useJourneyActions();
   const locale = i18n.language.startsWith("pt") ? ptBR : enUS;
 
   const stepCount = Object.keys(journey.steps).length;
@@ -48,6 +51,15 @@ export function JourneyCard({ journey, onEdit, onDelete }: JourneyCardProps) {
     onEdit();
   };
 
+  const handleDuplicateClick = (event: MouseEvent) => {
+    event.stopPropagation();
+    duplicateJourney(
+      journey.id,
+      t("journeys.duplicateJourneyName", { name: journey.name }),
+    );
+    toast.success(t("journeys.duplicated"));
+  };
+
   return (
     <div
       className={cn(
@@ -70,6 +82,16 @@ export function JourneyCard({ journey, onEdit, onDelete }: JourneyCardProps) {
           onClick={handleEditClick}
         >
           <Pencil className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+          aria-label={t("journeys.duplicate")}
+          onClick={handleDuplicateClick}
+        >
+          <Copy className="h-4 w-4" />
         </Button>
         <Button
           type="button"

@@ -1,5 +1,10 @@
-import type { ChangeEventHandler, ReactNode } from "react";
-import { useState } from "react";
+import type {
+  ChangeEventHandler,
+  ClipboardEvent,
+  KeyboardEvent,
+  ReactNode,
+} from "react";
+import { useCallback, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ChevronDown,
@@ -12,14 +17,55 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { sanitizeSvg } from "@/features/canvas";
+import { cn } from "@/lib/utils";
 import { useJourneyActions } from "../../store/selectors/journeys.selectors";
 import type { JourneyStep } from "../../types";
 
 interface RightPanelProps {
   journeyId: string;
   step: JourneyStep | null;
-  
+
   flowSection: ReactNode;
+}
+
+function readFileAsDataURL(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve(reader.result as string);
+    };
+    reader.onerror = () => {
+      reject(reader.error);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function isSvgFile(file: File): boolean {
+  const name = file.name.toLowerCase();
+  return name.endsWith(".svg") || file.type === "image/svg+xml";
+}
+
+function isRasterImageFile(file: File): boolean {
+  const name = file.name.toLowerCase();
+  return (
+    /\.(png|jpg|jpeg)$/i.test(name) ||
+    file.type === "image/png" ||
+    file.type === "image/jpeg"
+  );
+}
+
+function clipboardTextLooksLikeSvg(text: string): boolean {
+  const plain = text.trimStart().replace(/^\uFEFF/, "");
+  const lower = plain.toLowerCase();
+  if (lower.startsWith("<svg")) {
+    return true;
+  }
+  return /^<\?xml/i.test(plain) && /<svg/i.test(plain);
+}
+
+function stepHasVisualMedia(step: JourneyStep): boolean {
+  return Boolean(step.mediaContent || step.svgContent);
 }
 
 export function RightPanel({
@@ -29,28 +75,109 @@ export function RightPanel({
 }: RightPanelProps) {
   const { t } = useTranslation();
   const { updateJourneyStep } = useJourneyActions();
+  const fileInputId = useId();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [visualOpen, setVisualOpen] = useState(true);
   const [flowOpen, setFlowOpen] = useState(true);
   const panelCollapsed = !visualOpen && !flowOpen;
 
-  const handleUpload: ChangeEventHandler<HTMLInputElement> = (event) => {
+  const persistMedia = useCallback(
+    (mediaContent: NonNullable<JourneyStep["mediaContent"]>) => {
+      if (!step) return;
+      updateJourneyStep(journeyId, step.id, {
+        mediaContent,
+        svgContent: undefined,
+      });
+    },
+    [journeyId, step, updateJourneyStep],
+  );
+
+  const processFile = useCallback(
+    async (file: File) => {
+      if (!step) return;
+
+      if (isSvgFile(file)) {
+        const text = await file.text();
+        const cleaned = sanitizeSvg(text);
+        if (!cleaned) {
+          toast.error(t("icons.invalidSvg"));
+          return;
+        }
+        persistMedia({ type: "svg", data: cleaned });
+        return;
+      }
+
+      if (isRasterImageFile(file)) {
+        try {
+          const dataUrl = await readFileAsDataURL(file);
+          persistMedia({ type: "image", data: dataUrl });
+        } catch {
+          toast.error(t("journeys.editor.mediaReadError"));
+        }
+        return;
+      }
+
+      toast.error(t("journeys.editor.invalidMediaFormat"));
+    },
+    [persistMedia, step, t],
+  );
+
+  const handleFileChange: ChangeEventHandler<HTMLInputElement> = (event) => {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (!file || !step) return;
-    void file.text().then((text) => {
+    if (!file) return;
+    void processFile(file);
+  };
+
+  const handlePaste = useCallback(
+    (event: ClipboardEvent<HTMLDivElement>) => {
+      if (!step) return;
+
+      const files = event.clipboardData?.files;
+      if (files && files.length > 0) {
+        for (let index = 0; index < files.length; index += 1) {
+          const file = files.item(index);
+          if (!file) continue;
+          if (file.type.startsWith("image/")) {
+            event.preventDefault();
+            void processFile(file);
+            return;
+          }
+        }
+      }
+
+      const text = event.clipboardData?.getData("text/plain") ?? "";
+      if (!clipboardTextLooksLikeSvg(text)) {
+        return;
+      }
+      event.preventDefault();
       const cleaned = sanitizeSvg(text);
       if (!cleaned) {
         toast.error(t("icons.invalidSvg"));
         return;
       }
-      updateJourneyStep(journeyId, step.id, { svgContent: cleaned });
-    });
-  };
+      persistMedia({ type: "svg", data: cleaned });
+    },
+    [persistMedia, processFile, step, t],
+  );
 
-  const handleRemoveSvg = () => {
+  const handleDropzoneKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        fileInputRef.current?.click();
+      }
+    },
+    [],
+  );
+
+  const handleRemoveMedia = () => {
     if (!step) return;
-    updateJourneyStep(journeyId, step.id, { svgContent: undefined });
+    updateJourneyStep(journeyId, step.id, {
+      svgContent: undefined,
+      mediaContent: undefined,
+    });
   };
 
   if (panelCollapsed) {
@@ -80,106 +207,152 @@ export function RightPanel({
     );
   }
 
+  const visualSectionClassName = cn(
+    "flex min-h-0 flex-col",
+    !visualOpen && "shrink-0",
+    visualOpen && flowOpen && "flex-1",
+    visualOpen && !flowOpen && "flex-1 max-h-none",
+  );
+
+  const flowSectionClassName = cn(
+    "flex min-h-0 flex-col border-t border-border",
+    !flowOpen && "shrink-0",
+    flowOpen && "flex-1",
+  );
+
   return (
     <div className="flex h-full min-h-0 w-[280px] shrink-0 flex-col overflow-hidden border-l border-border bg-card">
-      <div className="flex min-h-0 flex-1 flex-col">
-        <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex h-11 shrink-0 items-center justify-between border-b border-border px-3">
-            <span className="text-sm font-semibold text-foreground">
-              {t("journeys.editor.visualStateTitle")}
-            </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              aria-label={
-                visualOpen
-                  ? t("journeys.editor.collapseVisualPanel")
-                  : t("journeys.editor.expandVisualPanel")
-              }
-              onClick={() => setVisualOpen((previous) => !previous)}
-            >
-              {visualOpen ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-          {visualOpen ? (
-            <div className="min-h-0 flex-1 overflow-y-auto p-3">
-              {!step ? (
-                <p className="text-center text-sm text-muted-foreground">
-                  {t("journeys.editor.selectStepForVisual")}
-                </p>
-              ) : step.svgContent ? (
-                <div className="grid gap-3">
+      <div className={visualSectionClassName}>
+        <div className="flex h-11 shrink-0 items-center justify-between border-b border-border px-3">
+          <span className="text-sm font-semibold text-foreground">
+            {t("journeys.editor.visualStateTitle")}
+          </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            aria-label={
+              visualOpen
+                ? t("journeys.editor.collapseVisualPanel")
+                : t("journeys.editor.expandVisualPanel")
+            }
+            onClick={() => setVisualOpen((previous) => !previous)}
+          >
+            {visualOpen ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+        {visualOpen ? (
+          <div className="min-h-0 flex-1 overflow-y-auto p-3">
+            {!step ? (
+              <p className="text-center text-sm text-muted-foreground">
+                {t("journeys.editor.selectStepForVisual")}
+              </p>
+            ) : stepHasVisualMedia(step) ? (
+              <div className="grid gap-3">
+                {step.mediaContent?.type === "svg" ? (
+                  <div
+                    className="w-full [&_svg]:h-auto [&_svg]:max-w-full"
+                    dangerouslySetInnerHTML={{
+                      __html: step.mediaContent.data,
+                    }}
+                  />
+                ) : step.mediaContent?.type === "image" ? (
+                  <img
+                    src={step.mediaContent.data}
+                    alt={t("journeys.editor.mediaPreviewAlt")}
+                    className="h-auto w-full"
+                  />
+                ) : step.svgContent ? (
                   <div
                     className="w-full [&_svg]:h-auto [&_svg]:max-w-full"
                     dangerouslySetInnerHTML={{ __html: step.svgContent }}
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="w-fit gap-1"
-                    onClick={handleRemoveSvg}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                    {t("journeys.editor.removeSvg")}
-                  </Button>
-                </div>
-              ) : (
-                <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-border p-8 transition-colors hover:border-primary/50">
+                ) : null}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-fit gap-1"
+                  onClick={handleRemoveMedia}
+                >
+                  <X className="h-3.5 w-3.5" />
+                  {t("journeys.editor.removeMedia")}
+                </Button>
+              </div>
+            ) : (
+              <div
+                tabIndex={0}
+                onPaste={handlePaste}
+                onKeyDown={handleDropzoneKeyDown}
+                className="flex cursor-default flex-col gap-2 rounded-lg border-2 border-dashed border-border p-6 outline-none transition-colors hover:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                role="group"
+                aria-label={t("journeys.editor.uploadMedia")}
+              >
+                <label
+                  htmlFor={fileInputId}
+                  className="flex cursor-pointer flex-col items-center gap-2"
+                >
                   <Upload className="h-8 w-8 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">
-                    {t("journeys.editor.uploadSvg")}
+                  <span className="text-center text-sm text-muted-foreground">
+                    {t("journeys.editor.uploadMedia")}
                   </span>
                   <input
+                    ref={fileInputRef}
+                    id={fileInputId}
                     type="file"
-                    accept=".svg"
+                    accept=".svg,.png,.jpg,.jpeg"
                     className="hidden"
-                    onChange={handleUpload}
+                    onChange={handleFileChange}
                   />
                 </label>
-              )}
-            </div>
-          ) : null}
-        </div>
-
-        <div className="flex min-h-0 flex-1 flex-col border-t border-border">
-          <div
-            className={`flex h-11 shrink-0 items-center justify-between px-3 ${flowOpen ? "border-b border-border" : ""}`}
-          >
-            <span className="text-sm font-semibold text-foreground">
-              {t("journeys.editor.flowSectionTitle")}
-            </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              aria-label={
-                flowOpen
-                  ? t("journeys.editor.collapseFlowPanel")
-                  : t("journeys.editor.expandFlowPanel")
-              }
-              onClick={() => setFlowOpen((previous) => !previous)}
-            >
-              {flowOpen ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
+                <p className="text-center text-xs text-muted-foreground">
+                  {t("journeys.editor.pasteMedia")}
+                </p>
+              </div>
+            )}
           </div>
-          {flowOpen ? (
-            <div className="min-h-0 flex-1 overflow-y-auto p-3">
-              {flowSection}
-            </div>
-          ) : null}
+        ) : null}
+      </div>
+
+      <div className={flowSectionClassName}>
+        <div
+          className={cn(
+            "flex h-11 shrink-0 items-center justify-between px-3",
+            flowOpen && "border-b border-border",
+          )}
+        >
+          <span className="text-sm font-semibold text-foreground">
+            {t("journeys.editor.flowSectionTitle")}
+          </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            aria-label={
+              flowOpen
+                ? t("journeys.editor.collapseFlowPanel")
+                : t("journeys.editor.expandFlowPanel")
+            }
+            onClick={() => setFlowOpen((previous) => !previous)}
+          >
+            {flowOpen ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
+          </Button>
         </div>
+        {flowOpen ? (
+          <div className="min-h-0 flex-1 overflow-y-auto p-3">
+            {flowSection}
+          </div>
+        ) : null}
       </div>
     </div>
   );
