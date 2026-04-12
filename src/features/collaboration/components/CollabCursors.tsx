@@ -13,7 +13,7 @@ export function CollabCursors({ peers }: CollabCursorsProps) {
   if (peers.length === 0) return null;
 
   return (
-    <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
+    <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden">
       {peers.map((peer) => {
         if (!peer.cursor) return null;
         const activeElementLabel = (() => {

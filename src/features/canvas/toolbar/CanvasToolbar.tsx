@@ -44,7 +44,6 @@ const CanvasToolbar = ({
   onToggleJourneysPanel,
   isFlowActive = false,
   focusMode = false,
-  onToggleFocusMode,
 }: CanvasToolbarProps) => {
   const { t } = useTranslation();
   const diagram = useActiveDiagram();
@@ -81,9 +80,13 @@ const CanvasToolbar = ({
     }
   }, [isFlowActive]);
 
+  useEffect(() => {
+    if (focusMode) {
+      setCollapsed(true);
+    }
+  }, [focusMode]);
+
   if (!diagram) return null;
-
-
 
   const addButton = (
     <button
@@ -105,18 +108,6 @@ const CanvasToolbar = ({
 
   return (
     <div className="absolute top-4 left-4 z-10 flex w-[220px] flex-col gap-2">
-      {onToggleFocusMode ? (
-        <button
-          type="button"
-          onClick={onToggleFocusMode}
-          className="flex items-center gap-1.5 self-start rounded-lg border border-border bg-card/90 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur-sm transition-colors hover:bg-surface-hover hover:text-foreground"
-          title={focusMode ? t("canvasToolbar.exitFocusMode") : t("canvasToolbar.enterFocusMode")}
-        >
-          {focusMode ? <Minimize2 className="h-3.5 w-3.5" /> : <Focus className="h-3.5 w-3.5" />}
-          {focusMode ? t("canvasToolbar.exitFocusMode") : t("canvasToolbar.enterFocusMode")}
-        </button>
-      ) : null}
-
         <CanvasToolbarDiagramPanel
           diagram={diagram}
           toolbarEditLocked={toolbarEditLocked}
@@ -125,7 +116,7 @@ const CanvasToolbar = ({
           focusMode={focusMode}
         />
 
-      {!collapsed && !focusMode && (
+      {!collapsed && (
         <>
           <CanvasToolbarScenesButton
             diagram={diagram}

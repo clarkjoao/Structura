@@ -49,7 +49,7 @@ const Edge = memo((props: EdgeProps) => {
           />
           <EdgeLabelRenderer>
             <div
-              className="absolute pointer-events-none z-50 text-[9px] font-semibold
+              className="absolute pointer-events-none z-[2] text-[9px] font-semibold
                          text-white px-1.5 py-0.5 rounded-full whitespace-nowrap"
               style={{
                 transform: `translate(-50%, -50%) translate(${core.labelPoint.x}px, ${core.labelPoint.y}px)`,

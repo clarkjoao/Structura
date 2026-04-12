@@ -20,7 +20,7 @@ import CanvasSearch from "./toolbar/CanvasSearch";
 import { DiagramSidebar } from "./navigation/DiagramSidebar";
 import { DiagramCommandPalette } from "./navigation/DiagramCommandPalette";
 import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
-import { Eye } from "lucide-react";
+import { Eye, Minimize2 } from "lucide-react";
 import { useCanvasController } from "./hooks/useCanvasController";
 import { useCanvasInputProfile } from "./hooks/useCanvasInputProfile";
 import { useJourneyViewportSync } from "./hooks/useJourneyViewportSync";
@@ -419,22 +419,37 @@ const Canvas = (props: CanvasProps = {}) => {
         ) : null}
 
         <div className="absolute inset-y-0 right-0 z-20 flex items-stretch">
-          <div className="flex items-end pb-5 pr-4 pointer-events-none">
-            <div className="pointer-events-auto">
-              <FloatingChatButton
-                isOpen={isChatOpen}
-                hasUnread={hasUnread}
-                onClick={() => {
-                  if (isFlowActive) return;
-                  setIsChatOpen((previous) => {
-                    const next = !previous;
-                    if (next) {
-                      setHasUnread(false);
-                    }
-                    return next;
-                  });
-                }}
-              />
+          <div className="pointer-events-none flex h-full min-h-0 flex-col items-end">
+            {props.focusMode && props.onToggleFocusMode ? (
+              <div className="shrink-0 pt-4 pr-4">
+                <button
+                  type="button"
+                  onClick={props.onToggleFocusMode}
+                  className="pointer-events-auto inline-flex items-center gap-1.5 rounded-lg border border-border bg-card/90 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur-sm transition-colors hover:bg-surface-hover hover:text-foreground"
+                  title={t("canvasToolbar.exitFocusMode")}
+                >
+                  <Minimize2 className="h-3.5 w-3.5" aria-hidden />
+                  {t("canvasToolbar.exitFocusMode")}
+                </button>
+              </div>
+            ) : null}
+            <div className="mt-auto flex pb-5 pr-4">
+              <div className="pointer-events-auto">
+                <FloatingChatButton
+                  isOpen={isChatOpen}
+                  hasUnread={hasUnread}
+                  onClick={() => {
+                    if (isFlowActive) return;
+                    setIsChatOpen((previous) => {
+                      const next = !previous;
+                      if (next) {
+                        setHasUnread(false);
+                      }
+                      return next;
+                    });
+                  }}
+                />
+              </div>
             </div>
           </div>
           {showElementPanel && (

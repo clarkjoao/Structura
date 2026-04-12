@@ -20,7 +20,6 @@ import {
   Focus,
   FolderTree,
   GitBranch,
-  Minimize2,
   Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -42,7 +41,7 @@ import {
   type BranchOwnerInfo,
   type RecordingContext,
 } from "@/features/canvas";
-import { isDiagramCompareMode, useActiveDiagram, type Flow } from "@/features/diagram";
+import { useActiveDiagram, type Flow } from "@/features/diagram";
 import { CollabCursors, CollabToolbar, useCollab } from "@/features/collaboration";
 import { useJourneyPlayer } from "@/features/journeys";
 import { ShareModal } from "./ShareModal";
@@ -398,19 +397,7 @@ export function ModelExplorerContent({
           </div>
         </div>
         </div>
-      ) : (
-        <div className="pointer-events-none absolute right-4 top-4 z-40">
-          <button
-            type="button"
-            onClick={onToggleFocusMode}
-            className="pointer-events-auto inline-flex items-center gap-1.5 rounded-lg border border-border bg-card/90 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur-sm transition-colors hover:bg-surface-hover hover:text-foreground"
-            title={t("canvasToolbar.exitFocusMode")}
-          >
-            <Minimize2 className="h-3.5 w-3.5" />
-            {t("canvasToolbar.exitFocusMode")}
-          </button>
-        </div>
-      )}
+      ) : null}
       <div className="flex-1 flex overflow-hidden">
         <ShortcutsModal open={showShortcuts} onOpenChange={setShowShortcuts} />
         {diagram ? (
