@@ -1186,7 +1186,9 @@
     "exitTitle": "Exit flow",
     "request": "→ Request",
     "response": "← Response",
-    "inlineDescription": "· \"{{text}}\""
+    "inlineDescription": "· \"{{text}}\"",
+    "componentRemoved": "component removed",
+    "connectionRemoved": "connection removed"
   },
   "shortcutsModal": {
     "title": "Canvas shortcuts",

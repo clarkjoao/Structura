@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Layers } from "lucide-react";
+import { Layers, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import type { Diagram } from "@/features/diagram";
 import { useDiagramActions } from "@/features/diagram";
 import { DiagramDescriptionField } from "../DiagramDescriptionField";
@@ -8,11 +8,15 @@ import { useTranslation } from "react-i18next";
 export interface CanvasToolbarDiagramPanelProps {
   diagram: Diagram;
   toolbarEditLocked: boolean;
+  collapsed: boolean;
+  toggleCollapsed: () => void;
 }
 
 export function CanvasToolbarDiagramPanel({
   diagram,
   toolbarEditLocked,
+  collapsed,
+  toggleCollapsed,
 }: CanvasToolbarDiagramPanelProps) {
   const { t } = useTranslation();
   const { updateDiagram } = useDiagramActions();
@@ -52,8 +56,24 @@ export function CanvasToolbarDiagramPanel({
     setIsEditingName(false);
   };
 
+  const toggleButton = (
+    <button
+      type="button"
+      onClick={toggleCollapsed}
+      aria-label={collapsed ? t("canvasToolbar.expand") : t("canvasToolbar.collapse")}
+      className="self-end rounded-md border border-border/60 bg-card/80 p-1.5 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-surface-hover hover:text-foreground"
+      title={collapsed ? t("canvasToolbar.expand") : t("canvasToolbar.collapse")}
+    >
+      {collapsed ? (
+        <PanelLeftOpen className="h-3.5 w-3.5" />
+      ) : (
+        <PanelLeftClose className="h-3.5 w-3.5" />
+      )}
+    </button>
+  );
+
   return (
-    <div className="w-[220px] flex flex-col gap-1 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2">
+    <div className="min-w-0 flex-1 rounded-lg border border-border bg-card/90 px-3 py-2 backdrop-blur-sm">
       <div className="flex items-center gap-1.5 min-w-0">
         <Layers className="h-3.5 w-3.5 text-primary shrink-0" />
         {isEditingName ? (
@@ -93,8 +113,9 @@ export function CanvasToolbarDiagramPanel({
         <span className="text-[10px] font-mono text-muted-foreground rounded bg-secondary px-1.5 py-0.5 shrink-0">
           {levelLabels[diagram.level]}
         </span>
+        {toggleButton}
       </div>
-      <div className="min-w-0">
+      <div className="mt-1 min-w-0">
         <DiagramDescriptionField editLocked={toolbarEditLocked} />
       </div>
     </div>

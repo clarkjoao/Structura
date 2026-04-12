@@ -1185,7 +1185,9 @@
     "exitTitle": "Sair do flow",
     "request": "→ Request",
     "response": "← Response",
-    "inlineDescription": "· \"{{text}}\""
+    "inlineDescription": "· \"{{text}}\"",
+    "componentRemoved": "componente removido",
+    "connectionRemoved": "conexão removida"
   },
   "shortcutsModal": {
     "title": "Atalhos do Canvas",

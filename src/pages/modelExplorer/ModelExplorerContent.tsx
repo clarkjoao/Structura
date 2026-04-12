@@ -41,6 +41,7 @@ import {
 } from "@/features/canvas";
 import { isDiagramCompareMode, useActiveDiagram, type Flow } from "@/features/diagram";
 import { CollabCursors, CollabToolbar, useCollab } from "@/features/collaboration";
+import { useJourneyPlayer } from "@/features/journeys";
 import { ShareModal } from "./ShareModal";
 import type { ModelExplorerContentProps } from "./types";
 
@@ -78,6 +79,7 @@ export function ModelExplorerContent({
     updateSelectedNode,
   } = useCollab();
   const diagram = useActiveDiagram();
+  const journeyPlayer = useJourneyPlayer();
   const flowMode = useFlowMode();
   const playbackState = flowMode.mode.kind === "playing" ? flowMode.mode : null;
   const activeFlow = playbackState?.flow ?? null;
@@ -165,6 +167,7 @@ export function ModelExplorerContent({
   const canvasInteractionLocked = !interaction.canEditCanvas;
   const compareModeBlocksRecorder = interaction.isCompareMode;
   const flowButtonLocked = canvasInteractionLocked || !interaction.canUseFlow;
+  const journeyPlaybackActive = journeyPlayer.mode.kind !== "idle";
 
   const startRecordingWhenAllowed = useCallback(() => {
     if (!interaction.canUseFlow) {
@@ -467,7 +470,11 @@ export function ModelExplorerContent({
             onEditFlow={editFlowWhenAllowed}
             isViewingCoverage={isViewingCoverage}
             onToggleCoverage={() => setIsViewingCoverage((viewing) => !viewing)}
-            panelActionsLocked={compareModeBlocksRecorder || !interaction.canUseFlow}
+            panelActionsLocked={
+              compareModeBlocksRecorder ||
+              !interaction.canUseFlow ||
+              journeyPlaybackActive
+            }
             panelActionsLockedTitle={t("diagramNav.unavailableWhileRecordingOrPlayback")}
           />
         )}

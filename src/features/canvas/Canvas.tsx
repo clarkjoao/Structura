@@ -94,6 +94,7 @@ const Canvas = (props: CanvasProps = {}) => {
     isCompareMode,
     allDiagramTags,
   } = useCanvasController(props);
+  const { isFlowActive } = interactionMode;
 
   useJourneyViewportSync();
 
@@ -132,6 +133,35 @@ const Canvas = (props: CanvasProps = {}) => {
     }
     previousAssistantMessageCountRef.current = assistantMessageCount;
   }, [assistantMessageCount, isChatOpen]);
+
+  useEffect(() => {
+    if (isFlowActive && isChatOpen) {
+      setIsChatOpen(false);
+    }
+  }, [isFlowActive, isChatOpen]);
+
+  useEffect(() => {
+    if (isFlowActive && showJourneysPanel) {
+      setShowJourneysPanel(false);
+    }
+  }, [isFlowActive, showJourneysPanel]);
+
+  useEffect(() => {
+    if (isFlowActive && showScenes) {
+      setShowScenes(false);
+    }
+  }, [isFlowActive, showScenes, setShowScenes]);
+
+  useEffect(() => {
+    if (isFlowActive && showDiagramSidebar) {
+      setShowDiagramSidebar(false);
+    }
+  }, [isFlowActive, showDiagramSidebar, setShowDiagramSidebar]);
+
+  useEffect(() => {
+    setShowJourneysPanel(false);
+    setShowScenes(false);
+  }, [diagram?.id, setShowScenes]);
 
   const accept = useCallback(
     (suggestionId: string) => {
@@ -173,6 +203,7 @@ const Canvas = (props: CanvasProps = {}) => {
             isPanelOpen={isPanelOpen}
             onClearSelection={visualState.clearCanvasSelection}
             onOpenScenes={() => setShowScenes(true)}
+            isFlowActive={isFlowActive}
             allTags={allDiagramTags}
             visibleTags={visualState.visibleTags}
             onToggleTag={visualState.toggleTag}
@@ -180,9 +211,10 @@ const Canvas = (props: CanvasProps = {}) => {
             onShowNoTags={visualState.showNoTags}
             journeysInDiagramCount={journeysInThisDiagram.length}
             journeysPanelOpen={showJourneysPanel}
-            onToggleJourneysPanel={() =>
-              setShowJourneysPanel((previous) => !previous)
-            }
+            onToggleJourneysPanel={() => {
+              if (isFlowActive) return;
+              setShowJourneysPanel((previous) => !previous);
+            }}
           />
           {showJourneysPanel ? (
             <JourneysInDiagramPanel
@@ -199,7 +231,7 @@ const Canvas = (props: CanvasProps = {}) => {
           )}
           <div className="absolute inset-y-0 left-0 z-30 flex">
             <DiagramSidebar
-              isOpen={showDiagramSidebar}
+              isOpen={showDiagramSidebar && !isFlowActive}
               onClose={() => setShowDiagramSidebar(false)}
               currentDiagramId={diagram.id}
               onSelectDiagram={handleSelectDiagram}
@@ -385,6 +417,7 @@ const Canvas = (props: CanvasProps = {}) => {
                 isOpen={isChatOpen}
                 hasUnread={hasUnread}
                 onClick={() => {
+                  if (isFlowActive) return;
                   setIsChatOpen((previous) => {
                     const next = !previous;
                     if (next) {
