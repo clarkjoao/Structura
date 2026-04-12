@@ -8,6 +8,7 @@
     "search": "Buscar",
     "add": "Adicionar",
     "close": "Fechar",
+    "dismiss": "Dispensar",
     "copy": "Copiar",
     "copied": "Copiado!",
     "back": "Voltar",
@@ -394,6 +395,25 @@
     "syncNow": "· sync agora",
     "syncAgo": "· sync {{time}}",
     "neverSynced": "· nunca sincronizado"
+  },
+  "storage": {
+    "warning": {
+      "title": "Espaço local quase esgotado",
+      "description": "A usar {{used}} de ~5 MB disponíveis. Diagramas futuros podem não ser guardados."
+    },
+    "danger": {
+      "title": "Espaço local crítico",
+      "description": "A usar {{used}} de ~5 MB. Novos elementos podem não ser guardados."
+    },
+    "critical": {
+      "title": "Não foi possível guardar",
+      "description": "O armazenamento local está cheio. Ligue uma pasta ou liberte espaço para continuar."
+    },
+    "freed": "{{amount}} libertados com sucesso.",
+    "action": {
+      "clear": "Libertar espaço",
+      "connectFolder": "Ligar pasta"
+    }
   },
   "filesystem": {
     "localFolder": "Pasta local",
