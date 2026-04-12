@@ -21,6 +21,7 @@ import {
 } from "@/features/diagram";
 import { deletePreview } from "@/lib/diagram-preview/previewCache";
 import type { Level, Diagram } from "@/features/diagram";
+import { ImportModal } from "@/pages/ImportModal";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -51,6 +52,7 @@ import { useModifierKey } from "@/hooks/useModifierKey";
 import { useMultiSelect } from "@/hooks/useMultiSelect";
 import { FolderTree } from "@/pages/FolderTree";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { AddDiagramDialog } from "@/pages/dashboard/AddDiagramDialog";
 import { DiagramGrid } from "@/pages/dashboard/DiagramGrid";
 import { DiagramList } from "@/pages/dashboard/DiagramList";
@@ -70,8 +72,13 @@ export default function DashboardPage() {
   );
   const diagrams = useAllDiagrams();
   const folders = useFolders();
-  const { addDiagram, openDiagram, deleteDiagram, moveDiagram, deleteFolder } =
-    useDiagramActions();
+  const {
+    addDiagram,
+    openDiagram,
+    deleteDiagram,
+    moveDiagram,
+    deleteFolder,
+  } = useDiagramActions();
   const navigate = useNavigate();
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -107,6 +114,7 @@ export default function DashboardPage() {
   );
   const [globalSearch, setGlobalSearch] = useState("");
   const folderTreeRef = useRef<HTMLDivElement>(null);
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
@@ -478,6 +486,14 @@ export default function DashboardPage() {
               </div>
               <div className="flex gap-2">
                 <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => setImportModalOpen(true)}
+                >
+                  {t("import.button")}
+                </Button>
+                <Button
                   onClick={() => setShowAdd(true)}
                   size="sm"
                   className="gap-1.5 h-8"
@@ -654,6 +670,12 @@ export default function DashboardPage() {
           onAdd={handleAddDiagram}
         />
       )}
+
+      <ImportModal
+        open={importModalOpen}
+        onOpenChange={setImportModalOpen}
+        targetFolderId={selectedFolderId}
+      />
 
       <AnimatePresence>
         {selectedIds.size > 0 && (

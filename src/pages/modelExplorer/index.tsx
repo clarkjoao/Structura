@@ -9,13 +9,22 @@ import {
   useDiagramStore,
   useFlows,
   useServiceRegistry,
-  resolveSceneSnapshot,
-  exportFilenameSlug,
 } from "@/features/diagram";
-import { exportJson, exportDrawio, exportMermaid, downloadZip } from "@/lib/export-service";
+import {
+  buildDiagramExportFiles,
+  downloadFile,
+  downloadZip,
+  exportDrawio,
+  exportJson,
+  exportStructurizr,
+  type DiagramExportFormat,
+} from "@/lib/export-service";
+import { toast } from "sonner";
 import { writeDrawioToClipboard } from "@/lib/clipboard-utils";
 import { FlowModeProvider } from "@/features/canvas";
 import { CollabProvider, CollabStartModal } from "@/features/collaboration";
+import { ImportModal } from "@/pages/ImportModal";
+import type { CopiedClipboardKind } from "./types";
 import { ModelExplorerContent } from "./ModelExplorerContent";
 import { useWorkspaceFlowRecordingFinalize } from "./useWorkspaceFlowRecordingFinalize";
 
@@ -33,12 +42,14 @@ export default function ModelExplorerPage() {
   const [isViewingCoverage, setIsViewingCoverage] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [navStack, setNavStack] = useState<string[]>([]);
-  const [copied, setCopied] = useState(false);
+  const [copiedClipboardKind, setCopiedClipboardKind] =
+    useState<CopiedClipboardKind | null>(null);
   const [focusMode, setFocusMode] = useState(false);
   const [showStartModal, setShowStartModal] = useState(false);
   const [collabActive, setCollabActive] = useState(false);
   const [collabUserName, setCollabUserName] = useState("");
   const [collabServerUrl, setCollabServerUrl] = useState("");
+  const [importModalOpen, setImportModalOpen] = useState(false);
 
   useEffect(() => {
     if (urlId && urlDiagramExists && activeDiagramId !== urlId) {
@@ -72,40 +83,63 @@ export default function ModelExplorerPage() {
     navigate(`/model/${prev}`);
   }, [navStack, openDiagram, navigate]);
 
+  const flashCopied = useCallback((kind: CopiedClipboardKind) => {
+    setCopiedClipboardKind(kind);
+    window.setTimeout(() => setCopiedClipboardKind(null), 2000);
+  }, []);
+
   const handleCopyDrawio = useCallback(() => {
     if (!diagram) return;
     void writeDrawioToClipboard(exportDrawio(diagram, serviceRegistry)).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      flashCopied("drawio");
     });
-  }, [diagram, serviceRegistry]);
+  }, [diagram, flashCopied, serviceRegistry]);
 
   const handleCopyJson = useCallback(async () => {
     if (!diagram) return;
     await navigator.clipboard.writeText(exportJson(diagram));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [diagram]);
+    flashCopied("json");
+  }, [diagram, flashCopied]);
 
-  const handleExport = useCallback(() => {
+  const handleCopyStructurizr = useCallback(async () => {
     if (!diagram) return;
-
-    const slug = exportFilenameSlug(diagram);
-    const sceneSnapshot = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
-    const files = [
-      { filename: `${slug}.json`, content: exportJson(diagram) },
-      { filename: `${slug}.drawio`, content: exportDrawio(diagram, serviceRegistry) },
-    ];
-
-    if (flows.length > 0) {
-      files.push({
-        filename: `${slug}-flows.md`,
-        content: exportMermaid(flows, sceneSnapshot.components, sceneSnapshot.connections),
-      });
+    try {
+      await navigator.clipboard.writeText(exportStructurizr(diagram));
+      flashCopied("structurizr");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t("export.copyStructurizrError"),
+      );
     }
+  }, [diagram, flashCopied, t]);
 
-    void downloadZip(files, `${slug}.zip`);
-  }, [diagram, flows, serviceRegistry]);
+  const handleExportFormats = useCallback((formats: DiagramExportFormat[]) => {
+    if (!diagram) return;
+    if (formats.length === 0) return;
+    try {
+      const { baseName, files } = buildDiagramExportFiles({
+        diagram,
+        flows,
+        serviceRegistry,
+        formats,
+      });
+
+      if (files.length === 1) {
+        const [file] = files;
+        downloadFile(file.content, file.filename, file.mime);
+        return;
+      }
+
+      void downloadZip(
+        files.map(({ filename, content }) => ({ filename, content })),
+        `${baseName}.zip`,
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t("export.modal.error"),
+      );
+    }
+  }, [diagram, flows, serviceRegistry, t]);
 
   const handleStartCollab = useCallback((name: string, serverUrl: string) => {
     setCollabUserName(name);
@@ -159,19 +193,26 @@ export default function ModelExplorerPage() {
             handleOpenDiagram={handleOpenDiagram}
             handleDrillDownToDiagram={handleDrillDownToDiagram}
             handleDrillUp={handleDrillUp}
+            onOpenImport={() => setImportModalOpen(true)}
             handleCopyDrawio={handleCopyDrawio}
             handleCopyJson={handleCopyJson}
-            handleExport={handleExport}
+            handleCopyStructurizr={handleCopyStructurizr}
+            handleExportFormats={handleExportFormats}
             onStartCollab={() => {
               setShowStartModal(true);
               setShowFlows(false);
             }}
             onCollabSessionEnded={() => setCollabActive(false)}
-            copied={copied}
+            copiedClipboardKind={copiedClipboardKind}
             flows={flows}
             backHref={backHref}
             focusMode={focusMode}
             onToggleFocusMode={() => setFocusMode((current) => !current)}
+          />
+          <ImportModal
+            open={importModalOpen}
+            onOpenChange={setImportModalOpen}
+            targetFolderId={diagram.folderId ?? null}
           />
           <CollabStartModal
             open={showStartModal}

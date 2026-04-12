@@ -2,7 +2,19 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { X, Plus, Play, Trash2, Pencil, Copy, Check, Layers, BarChart2 } from "lucide-react";
 import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
-import { useFlows, useDiagramActions, useActiveDiagramId, useActiveDiagram, getStepCount, getFlowParticipants, repairFlow, buildFlowDuplicatePatch } from "@/features/diagram";
+import {
+  useFlows,
+  useDiagramActions,
+  useActiveDiagramId,
+  useActiveDiagram,
+  useComponents,
+  useConnections,
+  getStepCount,
+  getFlowParticipants,
+  repairFlow,
+  buildFlowDuplicatePatch,
+  stepsToMermaid,
+} from "@/features/diagram";
 import type { Flow } from "@/features/diagram";
 import { validateFlow, type BrokenStep } from "./validateFlow";
 import BrokenFlowDialog from "./BrokenFlowDialog";
@@ -34,6 +46,8 @@ const FlowPanel = ({
   const flows = useFlows();
   const diagram = useActiveDiagram();
   const activeDiagramId = useActiveDiagramId();
+  const components = useComponents();
+  const connections = useConnections();
   const { removeFlow, addFlow, updateFlow } = useDiagramActions();
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -61,7 +75,7 @@ const FlowPanel = ({
   const filtered = tagFilter ? flows.filter((f) => f.tags?.includes(tagFilter)) : flows;
 
   const handleCopy = (flow: Flow) => {
-    navigator.clipboard.writeText(flow.mermaid);
+    navigator.clipboard.writeText(stepsToMermaid(flow, components, connections));
     setCopiedId(flow.id);
     setTimeout(() => setCopiedId(null), 2000);
   };

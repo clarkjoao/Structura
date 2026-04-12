@@ -362,6 +362,23 @@
       "flows": "flows"
     }
   },
+  "import": {
+    "structurizrDsl": "Import Structurizr DSL",
+    "structurizrError": "Could not parse DSL file. Check the file format and try again.",
+    "diagramJson": "Import diagram JSON",
+    "jsonError": "Could not import the diagram JSON. Check the file and try again.",
+    "button": "Import",
+    "modal": {
+      "title": "Import diagram",
+      "description": "Create a new diagram from a Structura JSON export or a Structurizr DSL file.",
+      "jsonTab": "Structura JSON",
+      "structurizrTab": "Structurizr DSL",
+      "jsonHint": "Use a .json file exported from Structura (full diagram backup).",
+      "structurizrHint": "Use a .dsl or .txt file in Structurizr DSL format.",
+      "dropzone": "Drag and drop a file here, or choose a file.",
+      "chooseFile": "Choose file"
+    }
+  },
   "folderTree": {
     "newFolderTitle": "New folder",
     "searchFoldersPlaceholder": "Search folders…",
@@ -1144,6 +1161,44 @@
     "unavailableDuringCollab": "Flows are unavailable during a collaboration session"
   },
   "export": {
+    "hub": {
+      "title": "Export diagram",
+      "description": "Copy to the clipboard, download files, or configure embedding.",
+      "toolbarButton": "Export",
+      "copySection": "Copy to clipboard",
+      "copyDrawioHint": "For diagrams.net / Draw.io",
+      "copyJsonHint": "Full diagram for backup or re-import",
+      "copyStructurizrHint": "Structurizr tooling and docs",
+      "downloadSection": "Download",
+      "embedHint": "HTML iframe and share URLs"
+    },
+    "modal": {
+      "title": "Export files",
+      "description": "Choose one or more formats to download for this diagram.",
+      "confirm": "Export",
+      "singleHint": "If you select one format, we download the file directly.",
+      "zipHint": "If you select more than one format, we bundle everything into a .zip file.",
+      "error": "Could not export the diagram.",
+      "options": {
+        "json": {
+          "title": "Structura JSON",
+          "description": "Exports the full diagram for re-importing or versioning."
+        },
+        "drawio": {
+          "title": "Draw.io",
+          "description": "Exports a file compatible with diagrams.net / Draw.io."
+        },
+        "structurizr": {
+          "title": "Structurizr DSL",
+          "description": "Exports the model as DSL for Structurizr interoperability."
+        },
+        "mermaid": {
+          "title": "Flows as Mermaid",
+          "description": "Exports all diagram flows as Markdown with Mermaid blocks.",
+          "disabledDescription": "This diagram has no flows available for Mermaid export."
+        }
+      }
+    },
     "embed": {
       "title": "Embed diagram",
       "menuItem": "Embed (iframe)",
@@ -1156,7 +1211,9 @@
       "urlTooLong": "URL is large — we recommend using Via code"
     },
     "copyAsJson": "Copy as JSON",
-    "copyAsJsonDone": "JSON copied!"
+    "copyAsJsonDone": "JSON copied!",
+    "copyAsStructurizr": "Copy as Structurizr DSL",
+    "copyStructurizrError": "Could not copy Structurizr DSL."
   },
   "toolbar": {
     "shareExport": "Export",
