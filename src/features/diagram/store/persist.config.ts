@@ -11,6 +11,7 @@ import type { DiagramSnapshot, DiagramStore } from "./store.types";
 import type { ServiceDefinition } from "../model/service.types";
 import { ServiceSource } from "../enums";
 import { migrateFlow } from "../utils/flow-migration";
+import { useSaveStatusStore } from "./saveStatus.store";
 
 export const PERSIST_KEY = "diagram-store";
 
@@ -32,9 +33,6 @@ export function partializeState(state: DiagramStore) {
     userTemplates: state.userTemplates,
     serviceRegistry: state.serviceRegistry,
     activeDiagramId: state.activeDiagramId,
-    past: state.past,
-    future: state.future,
-    _lastUndoRedoAt: state._lastUndoRedoAt,
   };
 }
 
@@ -76,14 +74,6 @@ function migrateNodeLayoutsFromArray(state: DiagramStore): DiagramStore {
     if (Array.isArray(diagram.nodeLayouts)) {
       const arr = diagram.nodeLayouts as NodeLayout[];
       (diagram as Diagram).nodeLayouts = Object.fromEntries(arr.map((nl) => [nl.elementId, nl]));
-    }
-  });
-  [...(state.past ?? []), ...(state.future ?? [])].forEach((entry) => {
-    if (Array.isArray(entry.nodeLayouts)) {
-      const arr = entry.nodeLayouts as NodeLayout[];
-      (entry as typeof entry & { nodeLayouts: unknown }).nodeLayouts = Object.fromEntries(
-        arr.map((nl) => [nl.elementId, nl]),
-      );
     }
   });
   return state;
@@ -180,9 +170,6 @@ function migrateAddIconLibrary(state: Partial<DiagramStore>): void {
   for (const diagram of Object.values(state.diagrams ?? {})) {
     touchSnapshot((diagram as Diagram).snapshot);
   }
-  for (const entry of [...(state.past ?? []), ...(state.future ?? [])]) {
-    touchSnapshot(entry.snapshot);
-  }
 }
 
 
@@ -237,9 +224,6 @@ function migrateIconDefinitionToSource(state: Partial<DiagramStore>): void {
   for (const diagram of Object.values(state.diagrams ?? {})) {
     migrateLibrary((diagram as Diagram)?.snapshot?.iconLibrary);
   }
-  for (const entry of [...(state.past ?? []), ...(state.future ?? [])]) {
-    migrateLibrary(entry.snapshot?.iconLibrary);
-  }
 }
 
 function migrateIconLibraryToGlobalStore(state: DiagramStore): void {
@@ -264,9 +248,6 @@ function migrateIconLibraryToGlobalStore(state: DiagramStore): void {
     for (const diagram of Object.values(state.diagrams ?? {})) {
       migrateSnapshot((diagram as Diagram).snapshot);
     }
-    for (const entry of [...(state.past ?? []), ...(state.future ?? [])]) {
-      migrateSnapshot((entry as DiagramSnapshot).snapshot);
-    }
   } catch {
     
   }
@@ -282,6 +263,9 @@ export function mergePersistedState(
   } as DiagramStore;
 
   state.clipboard = currentState.clipboard ?? null;
+  state.past = [];
+  state.future = [];
+  state._lastUndoRedoAt = 0;
 
   if (!state.serviceRegistry) state.serviceRegistry = {};
   if (!state.folders) state.folders = {};
@@ -321,13 +305,23 @@ export function wrapIStoragePortWithDiagramPersistTracking(
     if (!pendingPersist) return;
     const { name, value } = pendingPersist;
     pendingPersist = null;
-    await storage.setItem(name, value);
-    if (name !== PERSIST_KEY) return;
-    if (storage instanceof LocalStorageAdapter && storage.paused) return;
-    recordLocalStorageDiagramSyncSuccess();
+    try {
+      await storage.setItem(name, value);
+      if (name !== PERSIST_KEY) return;
+      if (storage instanceof LocalStorageAdapter && storage.paused) return;
+      recordLocalStorageDiagramSyncSuccess();
+      useSaveStatusStore.getState()._setSaved();
+    } catch {
+      if (name === PERSIST_KEY) {
+        useSaveStatusStore.getState()._setError();
+      }
+    }
   };
 
   const schedulePersist = (name: string, value: string): void => {
+    if (name === PERSIST_KEY) {
+      useSaveStatusStore.getState()._setSaving();
+    }
     pendingPersist = { name, value };
     if (persistDebounceTimer !== null) {
       clearTimeout(persistDebounceTimer);

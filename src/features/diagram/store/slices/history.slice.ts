@@ -44,10 +44,23 @@ export const historySlice =
 ) => ({
     undo: () => { 
       set((state) => {
-        const entry = state.past.pop();
+        const activeId = state.activeDiagramId;
+        if (!activeId) return;
+
+        let entryIndex = -1;
+        for (let i = state.past.length - 1; i >= 0; i--) {
+          if (state.past[i].diagramId === activeId) {
+            entryIndex = i;
+            break;
+          }
+        }
+        if (entryIndex === -1) return;
+
+        const entry = state.past[entryIndex];
         if (!entry) return;
-        const d = state.diagrams[entry.diagramId];
+        const d = state.diagrams[activeId];
         if (!d) return;
+        state.past.splice(entryIndex, 1);
         state.future.push({
           diagramId: d.id,
           snapshot: deepClone(d.snapshot),
@@ -62,10 +75,23 @@ export const historySlice =
 
     redo: () => {
       set((state) => {
-        const entry = state.future.pop();
+        const activeId = state.activeDiagramId;
+        if (!activeId) return;
+
+        let entryIndex = -1;
+        for (let i = state.future.length - 1; i >= 0; i--) {
+          if (state.future[i].diagramId === activeId) {
+            entryIndex = i;
+            break;
+          }
+        }
+        if (entryIndex === -1) return;
+
+        const entry = state.future[entryIndex];
         if (!entry) return;
-        const d = state.diagrams[entry.diagramId];
+        const d = state.diagrams[activeId];
         if (!d) return;
+        state.future.splice(entryIndex, 1);
         state.past.push({
           diagramId: d.id,
           snapshot: deepClone(d.snapshot),

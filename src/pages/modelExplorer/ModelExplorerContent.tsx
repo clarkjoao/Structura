@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import ShortcutsModal from "@/components/ShortcutsModal";
 import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
+import { SaveStatusIndicator } from "@/features/canvas/components/SaveStatusIndicator";
 import {
   EmbedModal,
   useFlowMode,
@@ -286,6 +287,7 @@ export function ModelExplorerContent({
             )}
           </div>
           <div className="flex items-center gap-2">
+            <SaveStatusIndicator />
             <CollabToolbar
               session={session}
               isReady={isReady}

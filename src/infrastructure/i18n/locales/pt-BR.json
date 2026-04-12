@@ -135,6 +135,8 @@
     "stepsCount": "{{count}} etapas",
     "diagramsCount": "{{count}} diagramas",
     "deleteConfirm": "Remover esta jornada?",
+    "deleteConfirmTitle": "Remover jornada?",
+    "deleteConfirmDescription": "\"{{name}}\" e todos os seus steps serão removidos permanentemente. Esta ação não pode ser desfeita.",
     "duplicate": "Duplicar",
     "duplicated": "Jornada duplicada.",
     "duplicateJourneyName": "{{name}} (cópia)",
@@ -485,6 +487,9 @@
     "apiGroupDefaultName": "API Endpoints",
     "defaultGroupName": "Grupo",
     "compareViewBanner": "Modo visualização — edição desativada",
+    "saving": "Salvando...",
+    "saved": "Salvo",
+    "saveError": "Erro ao salvar",
     "toolbar": {
       "allTags": "Todos",
       "noTagsFilter": "Nenhuma tag",
@@ -529,6 +534,11 @@
     "levelDeployment": "Nível 4",
     "collapse": "Minimizar barra",
     "expand": "Expandir barra"
+  },
+  "diagram": {
+    "deleteConfirmTitle": "Remover diagrama?",
+    "deleteConfirmDescription": "\"{{name}}\" com {{nodeCount}} elementos e {{flowCount}} flows será removido permanentemente. Esta ação não pode ser desfeita.",
+    "deleteConfirmFallback": "Este diagrama será removido permanentemente. Esta ação não pode ser desfeita."
   },
   "llmChat": {
     "title": "Assistente de Diagrama",

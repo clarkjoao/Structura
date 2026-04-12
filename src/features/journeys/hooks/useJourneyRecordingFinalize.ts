@@ -1,8 +1,6 @@
 import {
   useCallback,
   type Dispatch,
-  type MutableRefObject,
-  type SetStateAction,
 } from "react";
 import { useTranslation } from "react-i18next";
 import type { RecordingFinalizeData } from "@/features/canvas";
@@ -14,11 +12,12 @@ import {
   useDiagramStore,
 } from "@/features/diagram";
 import { useJourneyActions } from "../store/selectors/journeys.selectors";
-import type { JourneyPlayerMode, JourneyRecordingTarget } from "../types";
+import type { JourneyRecordingTarget } from "../types";
+import type { JourneyBridgeAction } from "../components/JourneyPlayerContext";
 
 export function useJourneyRecordingFinalize(
-  recordingTargetRef: MutableRefObject<JourneyRecordingTarget | null>,
-  setJourneyMode: Dispatch<SetStateAction<JourneyPlayerMode>>,
+  recordingTarget: JourneyRecordingTarget | null,
+  dispatch: Dispatch<JourneyBridgeAction>,
 ): (data: RecordingFinalizeData) => void {
   const { t } = useTranslation();
   const { addFlow, updateFlow } = useDiagramActions();
@@ -26,7 +25,7 @@ export function useJourneyRecordingFinalize(
 
   return useCallback(
     (data: RecordingFinalizeData) => {
-      const target = recordingTargetRef.current;
+      const target = recordingTarget;
       const store = useDiagramStore.getState();
       const diagramId = target?.diagramId ?? store.activeDiagramId ?? null;
       const diagram = diagramId ? store.diagrams[diagramId] : null;
@@ -80,10 +79,9 @@ export function useJourneyRecordingFinalize(
       }
 
       if (target) {
-        recordingTargetRef.current = null;
-        setJourneyMode({ kind: "idle" });
+        dispatch({ type: "EXIT" });
       }
     },
-    [addFlow, recordingTargetRef, setJourneyMode, t, updateFlow, updateJourneyStep],
+    [addFlow, dispatch, recordingTarget, t, updateFlow, updateJourneyStep],
   );
 }

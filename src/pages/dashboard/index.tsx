@@ -35,6 +35,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { BulkDeleteConfirmDialog } from "@/components/BulkDeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { useModifierKey } from "@/hooks/useModifierKey";
@@ -83,7 +93,7 @@ export default function DashboardPage() {
     if (f && !folders[f]) {
       setSearchParams({}, { replace: true });
     }
-  }, []); 
+  }, [folders, searchParams, setSearchParams]);
   const [dropTargetFolderId, setDropTargetFolderId] = useState<
     string | null | undefined
   >(undefined);
@@ -98,6 +108,7 @@ export default function DashboardPage() {
   const [globalSearch, setGlobalSearch] = useState("");
   const folderTreeRef = useRef<HTMLDivElement>(null);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const isModifierActive = useModifierKey();
   const {
@@ -238,7 +249,7 @@ export default function DashboardPage() {
       }
       setSelectedFolderId(folderId);
     },
-    [isModifierClick, toggleSelect],
+    [isModifierClick, setSelectedFolderId, toggleSelect],
   );
 
   const handleDashboardBulkDeleteConfirm = useCallback(() => {
@@ -265,10 +276,12 @@ export default function DashboardPage() {
 
   const handleDelete = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    deletePreview(id);
-    deleteDiagram(id);
-    removeRecentRef(id);
+    setPendingDeleteId(id);
   };
+
+  const pendingDeleteDiagram = pendingDeleteId
+    ? diagrams.find((diagram) => diagram.id === pendingDeleteId) ?? null
+    : null;
 
   const handleAddDiagram = useCallback(
     (name: string, level: Level, domain?: string, description?: string) => {
@@ -683,6 +696,43 @@ export default function DashboardPage() {
           onConfirm={handleDashboardBulkDeleteConfirm}
         />
       )}
+
+      <AlertDialog
+        open={pendingDeleteId !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteId(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("diagram.deleteConfirmTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDeleteDiagram
+                ? t("diagram.deleteConfirmDescription", {
+                    name: pendingDeleteDiagram.name,
+                    nodeCount: Object.keys(pendingDeleteDiagram.snapshot.components).length,
+                    flowCount: Object.keys(pendingDeleteDiagram.snapshot.flows).length,
+                  })
+                : t("diagram.deleteConfirmFallback")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (!pendingDeleteId) return;
+                deletePreview(pendingDeleteId);
+                deleteDiagram(pendingDeleteId);
+                removeRecentRef(pendingDeleteId);
+                setPendingDeleteId(null);
+              }}
+            >
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

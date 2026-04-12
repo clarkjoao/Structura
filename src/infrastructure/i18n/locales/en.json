@@ -135,6 +135,8 @@
     "stepsCount": "{{count}} steps",
     "diagramsCount": "{{count}} diagrams",
     "deleteConfirm": "Remove this journey?",
+    "deleteConfirmTitle": "Delete journey?",
+    "deleteConfirmDescription": "\"{{name}}\" and all its steps will be permanently removed. This cannot be undone.",
     "duplicate": "Duplicate",
     "duplicated": "Journey duplicated.",
     "duplicateJourneyName": "{{name}} (copy)",
@@ -485,6 +487,9 @@
     "apiGroupDefaultName": "API Endpoints",
     "defaultGroupName": "Group",
     "compareViewBanner": "View mode — editing disabled",
+    "saving": "Saving...",
+    "saved": "Saved",
+    "saveError": "Save error",
     "toolbar": {
       "allTags": "All tags",
       "noTagsFilter": "No tags",
@@ -529,6 +534,11 @@
     "levelDeployment": "Level 4",
     "collapse": "Minimize toolbar",
     "expand": "Expand toolbar"
+  },
+  "diagram": {
+    "deleteConfirmTitle": "Delete diagram?",
+    "deleteConfirmDescription": "\"{{name}}\" with {{nodeCount}} elements and {{flowCount}} flows will be permanently removed. This cannot be undone.",
+    "deleteConfirmFallback": "This diagram will be permanently removed. This cannot be undone."
   },
   "llmChat": {
     "title": "Diagram Assistant",
