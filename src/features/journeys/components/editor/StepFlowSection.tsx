@@ -13,7 +13,7 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useFlowMode } from "@/features/canvas/flow";
-import { useDiagrams } from "@/features/diagram";
+import { useDiagramActions, useDiagrams } from "@/features/diagram";
 import { useJourneyPlayer } from "../../hooks/useJourneyPlayer";
 import { useJourney, useJourneyActions, useJourneySteps } from "../../store/selectors/journeys.selectors";
 import { StepFlowPickerDialog } from "./StepFlowPickerDialog";
@@ -21,12 +21,16 @@ import { StepFlowPickerDialog } from "./StepFlowPickerDialog";
 export interface StepFlowSectionProps {
   journeyId: string;
   stepId: string;
-  
+
   onSelectStep: (stepId: string) => void;
-  
+
   onNextStep?: () => void;
-  
+
   onPrevStep?: () => void;
+
+  onLastStepFlowCompleted?: () => void;
+
+  onJourneyComplete?: () => void;
 }
 
 export function StepFlowSection({
@@ -35,9 +39,12 @@ export function StepFlowSection({
   onSelectStep,
   onNextStep,
   onPrevStep,
+  onLastStepFlowCompleted,
+  onJourneyComplete,
 }: StepFlowSectionProps) {
   const { t } = useTranslation();
   const flowMode = useFlowMode();
+  const { openDiagram } = useDiagramActions();
   const journeyPlayer = useJourneyPlayer();
   const journey = useJourney(journeyId);
   const step = journey?.steps[stepId];
@@ -48,30 +55,15 @@ export function StepFlowSection({
 
   const { updateJourneyStep } = useJourneyActions();
   const sortedSteps = useJourneySteps(journeyId);
+  const currentStepIndex = sortedSteps.findIndex((item) => item.id === stepId);
 
   const [flowPickerOpen, setFlowPickerOpen] = useState(false);
   const [flowJustEnded, setFlowJustEnded] = useState(false);
   const prevIsPlaying = useRef(false);
-  const pendingNextFlowPlaybackTimeoutRef = useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (pendingNextFlowPlaybackTimeoutRef.current !== null) {
-        clearTimeout(pendingNextFlowPlaybackTimeoutRef.current);
-        pendingNextFlowPlaybackTimeoutRef.current = null;
-      }
-    };
-  }, []);
 
   useEffect(() => {
     setFlowJustEnded(false);
     prevIsPlaying.current = false;
-    if (pendingNextFlowPlaybackTimeoutRef.current !== null) {
-      clearTimeout(pendingNextFlowPlaybackTimeoutRef.current);
-      pendingNextFlowPlaybackTimeoutRef.current = null;
-    }
   }, [stepId]);
 
   useEffect(() => {
@@ -81,9 +73,19 @@ export function StepFlowSection({
     }
     if (prevIsPlaying.current && !isPlaying) {
       setFlowJustEnded(true);
+      const isLastStep =
+        currentStepIndex >= 0 && currentStepIndex === sortedSteps.length - 1;
+      if (isLastStep) {
+        onLastStepFlowCompleted?.();
+      }
     }
     prevIsPlaying.current = isPlaying;
-  }, [flowMode.isPlaying]);
+  }, [
+    currentStepIndex,
+    flowMode.isPlaying,
+    onLastStepFlowCompleted,
+    sortedSteps.length,
+  ]);
 
   const flowName =
     step?.flowId && diagram
@@ -141,7 +143,6 @@ export function StepFlowSection({
     flowMode.exitPlay();
   };
 
-  const currentStepIndex = sortedSteps.findIndex((item) => item.id === stepId);
   const hasNextFromList =
     currentStepIndex >= 0 && currentStepIndex < sortedSteps.length - 1;
   const nextStepRecord =
@@ -316,37 +317,49 @@ export function StepFlowSection({
               variant="secondary"
               size="sm"
               className="w-full justify-start gap-2"
-              disabled={
-                onNextStep ? !hasNextFromList : nextStepRecord === null
-              }
               onClick={() => {
-                const nextStep =
-                  currentStepIndex >= 0 && currentStepIndex < sortedSteps.length - 1
-                    ? sortedSteps[currentStepIndex + 1]!
-                    : null;
+                const canAdvanceToNext =
+                  Boolean(nextStepRecord) ||
+                  Boolean(onNextStep && hasNextFromList);
 
                 setFlowJustEnded(false);
 
-                if (onNextStep) {
-                  onNextStep();
-                } else if (nextStepRecord) {
-                  onSelectStep(nextStepRecord.id);
-                }
-
-                if (!nextStep?.flowId || nextStep.diagramId.length === 0) {
+                if (!canAdvanceToNext) {
+                  onJourneyComplete?.();
                   return;
                 }
 
-                const flowId = nextStep.flowId;
-                const diagramId = nextStep.diagramId;
-
-                if (pendingNextFlowPlaybackTimeoutRef.current !== null) {
-                  clearTimeout(pendingNextFlowPlaybackTimeoutRef.current);
+                if (onNextStep) {
+                  onNextStep();
+                  return;
                 }
-                pendingNextFlowPlaybackTimeoutRef.current = setTimeout(() => {
-                  pendingNextFlowPlaybackTimeoutRef.current = null;
-                  journeyPlayer.startFlowPlayback(flowId, diagramId);
-                }, 100);
+
+                if (!nextStepRecord) {
+                  return;
+                }
+
+                if (!flowMode.isIdle) {
+                  if (flowMode.isRecording) {
+                    flowMode.cancelRecording();
+                  } else {
+                    flowMode.exitPlay();
+                  }
+                }
+
+                journeyPlayer.setPlaybackContext(journeyId, nextStepRecord.id);
+                onSelectStep(nextStepRecord.id);
+
+                if (
+                  nextStepRecord.flowId &&
+                  nextStepRecord.diagramId.length > 0
+                ) {
+                  journeyPlayer.startFlowPlayback(
+                    nextStepRecord.flowId,
+                    nextStepRecord.diagramId,
+                  );
+                } else if (nextStepRecord.diagramId.length > 0) {
+                  openDiagram(nextStepRecord.diagramId);
+                }
               }}
             >
               {nextStepRecord || (onNextStep && hasNextFromList) ? (

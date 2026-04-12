@@ -20,6 +20,7 @@ import { sanitizeSvg } from "@/features/canvas";
 import { cn } from "@/lib/utils";
 import { useJourneyActions } from "../../store/selectors/journeys.selectors";
 import type { JourneyStep } from "../../types";
+import { stepHasVisualMedia } from "../../utils/step-media.utils";
 
 interface RightPanelProps {
   journeyId: string;
@@ -27,6 +28,7 @@ interface RightPanelProps {
 
   flowSection: ReactNode;
   isGlobalPlaying: boolean;
+  onExpandVisual?: () => void;
 }
 
 function readFileAsDataURL(file: File): Promise<string> {
@@ -65,15 +67,12 @@ function clipboardTextLooksLikeSvg(text: string): boolean {
   return /^<\?xml/i.test(plain) && /<svg/i.test(plain);
 }
 
-function stepHasVisualMedia(step: JourneyStep): boolean {
-  return Boolean(step.mediaContent || step.svgContent);
-}
-
 export function RightPanel({
   journeyId,
   step,
   flowSection,
   isGlobalPlaying,
+  onExpandVisual,
 }: RightPanelProps) {
   const { t } = useTranslation();
   const { updateJourneyStep } = useJourneyActions();
@@ -132,6 +131,10 @@ export function RightPanel({
   );
 
   const handleFileChange: ChangeEventHandler<HTMLInputElement> = (event) => {
+    if (isGlobalPlaying) {
+      event.target.value = "";
+      return;
+    }
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
@@ -140,7 +143,7 @@ export function RightPanel({
 
   const handlePaste = useCallback(
     (event: ClipboardEvent<HTMLDivElement>) => {
-      if (!step) return;
+      if (!step || isGlobalPlaying) return;
 
       const files = event.clipboardData?.files;
       if (files && files.length > 0) {
@@ -167,17 +170,18 @@ export function RightPanel({
       }
       persistMedia({ type: "svg", data: cleaned });
     },
-    [persistMedia, processFile, step, t],
+    [isGlobalPlaying, persistMedia, processFile, step, t],
   );
 
   const handleDropzoneKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
+      if (isGlobalPlaying) return;
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
         fileInputRef.current?.click();
       }
     },
-    [],
+    [isGlobalPlaying],
   );
 
   const handleRemoveMedia = () => {
@@ -262,40 +266,69 @@ export function RightPanel({
               </p>
             ) : stepHasVisualMedia(step) ? (
               <div className="grid gap-3">
-                {step.mediaContent?.type === "svg" ? (
-                  <div
-                    className="w-full [&_svg]:h-auto [&_svg]:max-w-full"
-                    dangerouslySetInnerHTML={{
-                      __html: step.mediaContent.data,
-                    }}
-                  />
-                ) : step.mediaContent?.type === "image" ? (
-                  <img
-                    src={step.mediaContent.data}
-                    alt={t("journeys.editor.mediaPreviewAlt")}
-                    className="h-auto w-full"
-                  />
-                ) : step.svgContent ? (
-                  <div
-                    className="w-full [&_svg]:h-auto [&_svg]:max-w-full"
-                    dangerouslySetInnerHTML={{ __html: step.svgContent }}
-                  />
-                ) : null}
-                <Button
+                <button
                   type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-fit gap-1"
-                  onClick={handleRemoveMedia}
+                  className={cn(
+                    "group relative w-full overflow-hidden rounded-lg border border-border",
+                    isGlobalPlaying
+                      ? "transition-all hover:border-primary/50"
+                      : "cursor-default",
+                  )}
+                  onClick={isGlobalPlaying ? onExpandVisual : undefined}
+                  aria-label={
+                    isGlobalPlaying
+                      ? t("journeys.editor.expandVisual")
+                      : undefined
+                  }
                 >
-                  <X className="h-3.5 w-3.5" />
-                  {t("journeys.editor.removeMedia")}
-                </Button>
+                  {step.mediaContent?.type === "svg" ? (
+                    <div
+                      className="w-full [&_svg]:h-auto [&_svg]:max-w-full"
+                      dangerouslySetInnerHTML={{
+                        __html: step.mediaContent.data,
+                      }}
+                    />
+                  ) : step.mediaContent?.type === "image" ? (
+                    <img
+                      src={step.mediaContent.data}
+                      alt={t("journeys.editor.mediaPreviewAlt")}
+                      className="h-auto w-full"
+                    />
+                  ) : step.svgContent ? (
+                    <div
+                      className="w-full [&_svg]:h-auto [&_svg]:max-w-full"
+                      dangerouslySetInnerHTML={{ __html: step.svgContent }}
+                    />
+                  ) : null}
+                  {isGlobalPlaying ? (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/0 opacity-0 transition-all group-hover:bg-background/40 group-hover:opacity-100">
+                      <span className="rounded-full bg-card px-3 py-1 text-xs font-medium text-foreground shadow">
+                        {t("journeys.editor.expandVisual")}
+                      </span>
+                    </div>
+                  ) : null}
+                </button>
+                {!isGlobalPlaying ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-fit gap-1"
+                    onClick={handleRemoveMedia}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                    {t("journeys.editor.removeMedia")}
+                  </Button>
+                ) : null}
               </div>
+            ) : isGlobalPlaying ? (
+              <p className="text-center text-sm text-muted-foreground">
+                {t("journeys.editor.noVisualForStep")}
+              </p>
             ) : (
               <div
                 tabIndex={0}
-                onPaste={handlePaste}
+                onPaste={isGlobalPlaying ? undefined : handlePaste}
                 onKeyDown={handleDropzoneKeyDown}
                 className="flex cursor-default flex-col gap-2 rounded-lg border-2 border-dashed border-border p-6 outline-none transition-colors hover:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 role="group"

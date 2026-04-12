@@ -197,6 +197,7 @@
       "pasteMedia": "Ou cole uma imagem ou SVG aqui (Ctrl+V / ⌘V)",
       "mediaPreviewAlt": "Pré-visualização da mídia do passo",
       "removeMedia": "Remover mídia",
+      "noVisualForStep": "Nenhuma imagem para este step",
       "invalidMediaFormat": "Formato não suportado. Use SVG, PNG ou JPEG.",
       "mediaReadError": "Não foi possível ler o arquivo.",
       "uploadSvg": "Fazer upload de SVG",
@@ -236,7 +237,18 @@
       "prevStep": "Step anterior",
       "nextStep": "Próximo step",
       "journeyCompleted": "✓ Jornada concluída",
-      "playJourney": "Reproduzir jornada"
+      "playJourney": "Reproduzir jornada",
+      "expandVisual": "Ver em destaque",
+      "closeVisual": "Fechar",
+      "visualOverlayLabel": "Estado visual do step",
+      "expandDescription": "Expandir descrição",
+      "collapseDescription": "Recolher descrição"
+    },
+    "presentation": {
+      "keyboardHint": "← → passo do flow  ·  ↑ ↓ step  ·  Espaço play/pausa  ·  Esc sair",
+      "completed": "Apresentação concluída",
+      "restart": "Recomeçar",
+      "exitPresentation": "Sair"
     },
     "player": {
       "stepProgress": "Passo {{current}} de {{total}}",

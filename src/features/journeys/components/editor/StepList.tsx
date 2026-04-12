@@ -11,6 +11,7 @@ interface StepListProps {
   journeyId: string;
   selectedStepId: string | null;
   onSelectStep: (stepId: string) => void;
+  isGlobalPlaying: boolean;
 }
 
 function readDiagramName(
@@ -34,6 +35,7 @@ interface StepCardProps {
   step: JourneyStep;
   diagramSubtitle?: string;
   selected: boolean;
+  isGlobalPlaying: boolean;
   onClick: () => void;
   onDelete: () => void;
 }
@@ -42,6 +44,7 @@ function StepCard({
   step,
   diagramSubtitle,
   selected,
+  isGlobalPlaying,
   onClick,
   onDelete,
 }: StepCardProps) {
@@ -59,7 +62,10 @@ function StepCard({
       <button
         type="button"
         onClick={onClick}
-        className="w-full cursor-pointer px-3 py-2.5 pr-9 text-left"
+        className={cn(
+          "w-full px-3 py-2.5 text-left",
+          isGlobalPlaying ? "cursor-default" : "cursor-pointer pr-9",
+        )}
       >
         <div className="flex gap-2.5">
           <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium tabular-nums text-muted-foreground">
@@ -77,17 +83,19 @@ function StepCard({
           </div>
         </div>
       </button>
-      <button
-        type="button"
-        className="absolute right-1 top-1/2 z-10 -translate-y-1/2 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-        aria-label={t("common.delete")}
-        onClick={(event) => {
-          event.stopPropagation();
-          onDelete();
-        }}
-      >
-        <X className="h-3.5 w-3.5" aria-hidden />
-      </button>
+      {!isGlobalPlaying ? (
+        <button
+          type="button"
+          className="absolute right-1 top-1/2 z-10 -translate-y-1/2 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+          aria-label={t("common.delete")}
+          onClick={(event) => {
+            event.stopPropagation();
+            onDelete();
+          }}
+        >
+          <X className="h-3.5 w-3.5" aria-hidden />
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -96,6 +104,7 @@ export function StepList({
   journeyId,
   selectedStepId,
   onSelectStep,
+  isGlobalPlaying,
 }: StepListProps) {
   const { t } = useTranslation();
   const steps = useJourneySteps(journeyId);
@@ -133,6 +142,7 @@ export function StepList({
                 step={step}
                 diagramSubtitle={diagramSubtitle}
                 selected={selectedStepId === step.id}
+                isGlobalPlaying={isGlobalPlaying}
                 onClick={() => {
                   onSelectStep(step.id);
                 }}
@@ -148,14 +158,16 @@ export function StepList({
 
       <div className="sticky bottom-0 shrink-0 border-t border-border bg-card p-2">
         {steps.length > 0 ? <StepConnector /> : null}
-        <button
-          type="button"
-          className="flex w-full items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border/50 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
-          onClick={() => setAddModalOpen(true)}
-        >
-          <Plus className="h-3.5 w-3.5 shrink-0" aria-hidden />
-          {t("journeys.editor.addStep")}
-        </button>
+        {!isGlobalPlaying ? (
+          <button
+            type="button"
+            className="flex w-full items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border/50 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+            onClick={() => setAddModalOpen(true)}
+          >
+            <Plus className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            {t("journeys.editor.addStep")}
+          </button>
+        ) : null}
       </div>
 
       <AddStepModal

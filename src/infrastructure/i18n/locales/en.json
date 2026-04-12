@@ -197,6 +197,7 @@
       "pasteMedia": "Or paste an image or SVG here (Ctrl+V / ⌘V)",
       "mediaPreviewAlt": "Step media preview",
       "removeMedia": "Remove media",
+      "noVisualForStep": "No image for this step",
       "invalidMediaFormat": "Unsupported format. Use SVG, PNG, or JPEG.",
       "mediaReadError": "Could not read the file.",
       "uploadSvg": "Upload SVG",
@@ -236,7 +237,18 @@
       "prevStep": "Previous step",
       "nextStep": "Next step",
       "journeyCompleted": "✓ Journey completed",
-      "playJourney": "Play journey"
+      "playJourney": "Play journey",
+      "expandVisual": "View fullscreen",
+      "closeVisual": "Close",
+      "visualOverlayLabel": "Step visual state",
+      "expandDescription": "Expand description",
+      "collapseDescription": "Collapse description"
+    },
+    "presentation": {
+      "keyboardHint": "← → flow step  ·  ↑ ↓ journey step  ·  Space play/pause  ·  Esc exit",
+      "completed": "Presentation complete",
+      "restart": "Restart",
+      "exitPresentation": "Exit"
     },
     "player": {
       "stepProgress": "Step {{current}} of {{total}}",
