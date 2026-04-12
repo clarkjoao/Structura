@@ -533,7 +533,9 @@
     "levelComponent": "Level 3",
     "levelDeployment": "Level 4",
     "collapse": "Minimize toolbar",
-    "expand": "Expand toolbar"
+    "expand": "Expand toolbar",
+    "enterFocusMode": "Focus mode",
+    "exitFocusMode": "Exit focus"
   },
   "diagram": {
     "deleteConfirmTitle": "Delete diagram?",

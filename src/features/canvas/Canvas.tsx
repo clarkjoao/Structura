@@ -22,6 +22,7 @@ import { DiagramCommandPalette } from "./navigation/DiagramCommandPalette";
 import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 import { Eye } from "lucide-react";
 import { useCanvasController } from "./hooks/useCanvasController";
+import { useCanvasInputProfile } from "./hooks/useCanvasInputProfile";
 import { useJourneyViewportSync } from "./hooks/useJourneyViewportSync";
 import { getCachedCanvasSnapshot, isPanelComponent } from "@/features/diagram";
 import { useJourneysByDiagramId } from "@/features/journeys";
@@ -55,6 +56,7 @@ const Canvas = (props: CanvasProps = {}) => {
   const assistantMessageCount = messages.filter(
     (message) => message.role === "assistant",
   ).length;
+  const inputProfile = useCanvasInputProfile();
   const reactFlowInstance = useReactFlow();
   const addTemplate = useCustomComponentStore((state) => state.addTemplate);
   const { instantiateTemplate } = useCustomComponentLibrary();
@@ -215,6 +217,8 @@ const Canvas = (props: CanvasProps = {}) => {
             onShowNoTags={visualState.showNoTags}
             journeysInDiagramCount={journeysInThisDiagram.length}
             journeysPanelOpen={showJourneysPanel}
+            focusMode={props.focusMode}
+            onToggleFocusMode={props.onToggleFocusMode}
             onToggleJourneysPanel={() => {
               if (isFlowActive) return;
               setShowJourneysPanel((previous) => !previous);
@@ -303,10 +307,10 @@ const Canvas = (props: CanvasProps = {}) => {
               onNodeContextMenu={eventHandlers.onNodeContextMenu}
               onNodeDragStop={onNodeDragStop}
               onSelectionChange={eventHandlers.onSelectionChange}
-              panOnDrag={[2]}
+              panOnDrag={inputProfile.prefersTouchCanvasUi ? true : [2]}
               panOnScroll
               panOnScrollMode={PanOnScrollMode.Free}
-              selectionOnDrag
+              selectionOnDrag={!inputProfile.prefersTouchCanvasUi}
               selectionMode={SelectionMode.Partial}
               zoomOnScroll={false}
               zoomOnPinch

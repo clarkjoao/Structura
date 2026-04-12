@@ -533,7 +533,9 @@
     "levelComponent": "Nível 3",
     "levelDeployment": "Nível 4",
     "collapse": "Minimizar barra",
-    "expand": "Expandir barra"
+    "expand": "Expandir barra",
+    "enterFocusMode": "Modo foco",
+    "exitFocusMode": "Sair do foco"
   },
   "diagram": {
     "deleteConfirmTitle": "Remover diagrama?",

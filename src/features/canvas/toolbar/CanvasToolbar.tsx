@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import ElementPickerModal from "./ElementPickerModal";
-import { PanelLeftClose, PanelLeftOpen, Plus, ChevronUp, Puzzle } from "lucide-react";
+import { Focus, Minimize2, Plus, ChevronUp, Puzzle } from "lucide-react";
 import { useActiveDiagram } from "@/features/diagram";
 import { useInteractionMode } from "../hooks/useInteractionMode";
 import PatternPicker from "./PatternPicker";
@@ -25,6 +25,8 @@ interface CanvasToolbarProps {
   journeysPanelOpen?: boolean;
   onToggleJourneysPanel?: () => void;
   isFlowActive?: boolean;
+  focusMode?: boolean;
+  onToggleFocusMode?: () => void;
 }
 
 const CanvasToolbar = ({
@@ -41,6 +43,8 @@ const CanvasToolbar = ({
   journeysPanelOpen = false,
   onToggleJourneysPanel,
   isFlowActive = false,
+  focusMode = false,
+  onToggleFocusMode,
 }: CanvasToolbarProps) => {
   const { t } = useTranslation();
   const diagram = useActiveDiagram();
@@ -100,18 +104,28 @@ const CanvasToolbar = ({
   );
 
   return (
-    <div className="absolute top-4 left-4 z-10 flex flex-col gap-2 w-[220px]">
-      
+    <div className="absolute top-4 left-4 z-10 flex w-[220px] flex-col gap-2">
+      {onToggleFocusMode ? (
+        <button
+          type="button"
+          onClick={onToggleFocusMode}
+          className="flex items-center gap-1.5 self-start rounded-lg border border-border bg-card/90 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur-sm transition-colors hover:bg-surface-hover hover:text-foreground"
+          title={focusMode ? t("canvasToolbar.exitFocusMode") : t("canvasToolbar.enterFocusMode")}
+        >
+          {focusMode ? <Minimize2 className="h-3.5 w-3.5" /> : <Focus className="h-3.5 w-3.5" />}
+          {focusMode ? t("canvasToolbar.exitFocusMode") : t("canvasToolbar.enterFocusMode")}
+        </button>
+      ) : null}
+
         <CanvasToolbarDiagramPanel
           diagram={diagram}
           toolbarEditLocked={toolbarEditLocked}
           collapsed={collapsed}
           toggleCollapsed={toggleCollapsed}
+          focusMode={focusMode}
         />
-       
-      
 
-      {!collapsed && (
+      {!collapsed && !focusMode && (
         <>
           <CanvasToolbarScenesButton
             diagram={diagram}

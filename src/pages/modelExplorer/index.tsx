@@ -34,6 +34,7 @@ export default function ModelExplorerPage() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [navStack, setNavStack] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
   const [showStartModal, setShowStartModal] = useState(false);
   const [collabActive, setCollabActive] = useState(false);
   const [collabUserName, setCollabUserName] = useState("");
@@ -119,8 +120,8 @@ export default function ModelExplorerPage() {
     const backHref = "/workspace";
     return (
       <div className="h-screen flex flex-col">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center mt-16">
+        {!focusMode ? <Navbar /> : null}
+        <div className={`flex-1 flex items-center justify-center ${focusMode ? "" : "mt-16"}`}>
           <div className="text-center">
             <p className="text-muted-foreground mb-4">{t("flows.noDiagram")}</p>
             <Link to={backHref} className="text-primary hover:underline text-sm">{t("flows.backToDashboard")}</Link>
@@ -136,7 +137,7 @@ export default function ModelExplorerPage() {
 
   return (
     <div className="h-screen flex flex-col">
-      <Navbar />
+      {!focusMode ? <Navbar /> : null}
       <FlowModeProvider
         onFinalize={onWorkspaceFlowFinalize}
         onStartRecording={() => {}}
@@ -169,6 +170,8 @@ export default function ModelExplorerPage() {
             copied={copied}
             flows={flows}
             backHref={backHref}
+            focusMode={focusMode}
+            onToggleFocusMode={() => setFocusMode((current) => !current)}
           />
           <CollabStartModal
             open={showStartModal}

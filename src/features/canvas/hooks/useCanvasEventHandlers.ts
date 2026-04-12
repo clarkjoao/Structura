@@ -29,6 +29,16 @@ interface UseCanvasEventHandlersParams {
   onRequestFocusTitle?: () => void;
 }
 
+function getEventClientPoint(event: MouseEvent | TouchEvent): { x: number; y: number } | null {
+  if (event instanceof MouseEvent) {
+    return { x: event.clientX, y: event.clientY };
+  }
+
+  const touch = event.changedTouches[0] ?? event.touches[0];
+  if (!touch) return null;
+  return { x: touch.clientX, y: touch.clientY };
+}
+
 export function useCanvasEventHandlers({
   visualState,
   isPlaying,
@@ -73,13 +83,14 @@ export function useCanvasEventHandlers({
     (event: MouseEvent | TouchEvent, connectionState: { fromNode: Node | null; toNode: Node | null }) => {
       if (isRecording) return;
       if (connectionState.fromNode === null || connectionState.toNode !== null) return;
-      if (!(event instanceof MouseEvent)) return;
+      const clientPoint = getEventClientPoint(event);
+      if (!clientPoint) return;
       const flowPos = screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
+        x: clientPoint.x,
+        y: clientPoint.y,
       });
       setQuickInsert({
-        screenPos: { x: event.clientX, y: event.clientY },
+        screenPos: { x: clientPoint.x, y: clientPoint.y },
         flowPos,
         sourceNodeId: connectionState.fromNode.id,
       });

@@ -17,8 +17,10 @@ import {
   Clipboard,
   Code2,
   FileCode,
+  Focus,
   FolderTree,
   GitBranch,
+  Minimize2,
   Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -68,6 +70,8 @@ export function ModelExplorerContent({
   copied,
   flows,
   backHref,
+  focusMode,
+  onToggleFocusMode,
 }: ModelExplorerContentProps) {
   const { t } = useTranslation();
   const {
@@ -246,7 +250,8 @@ export function ModelExplorerContent({
 
   return (
     <>
-      <div className="border-b border-border bg-card shrink-0 mt-16">
+      {!focusMode ? (
+        <div className="border-b border-border bg-card shrink-0 mt-16">
         <div className="container flex items-center justify-between h-12">
           <div className="flex items-center gap-3 text-sm">
             <button
@@ -375,6 +380,13 @@ export function ModelExplorerContent({
               </DropdownMenuContent>
             </DropdownMenu>
             <button
+              onClick={onToggleFocusMode}
+              className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all"
+              title={t("canvasToolbar.enterFocusMode")}
+            >
+              <Focus className="h-3.5 w-3.5" /> {t("canvasToolbar.enterFocusMode")}
+            </button>
+            <button
               onClick={() => setShowShortcuts(true)}
               disabled={canvasInteractionLocked}
               className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all ${canvasInteractionLocked ? "opacity-50 pointer-events-none" : ""}`}
@@ -385,7 +397,20 @@ export function ModelExplorerContent({
             </button>
           </div>
         </div>
-      </div>
+        </div>
+      ) : (
+        <div className="pointer-events-none absolute right-4 top-4 z-40">
+          <button
+            type="button"
+            onClick={onToggleFocusMode}
+            className="pointer-events-auto inline-flex items-center gap-1.5 rounded-lg border border-border bg-card/90 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur-sm transition-colors hover:bg-surface-hover hover:text-foreground"
+            title={t("canvasToolbar.exitFocusMode")}
+          >
+            <Minimize2 className="h-3.5 w-3.5" />
+            {t("canvasToolbar.exitFocusMode")}
+          </button>
+        </div>
+      )}
       <div className="flex-1 flex overflow-hidden">
         <ShortcutsModal open={showShortcuts} onOpenChange={setShowShortcuts} />
         {diagram ? (
@@ -408,6 +433,8 @@ export function ModelExplorerContent({
               isFlowPanelOpen={showFlows}
               diagramSidebarOpen={diagramSidebarOpen}
               onDiagramSidebarOpenChange={setDiagramSidebarOpen}
+              focusMode={focusMode}
+              onToggleFocusMode={onToggleFocusMode}
               onPlayFlow={(flowId) => {
                 const targetFlow = flows.find((candidate) => candidate.id === flowId);
                 if (targetFlow) play(targetFlow);

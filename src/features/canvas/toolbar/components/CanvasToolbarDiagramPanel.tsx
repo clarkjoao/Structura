@@ -10,6 +10,7 @@ export interface CanvasToolbarDiagramPanelProps {
   toolbarEditLocked: boolean;
   collapsed: boolean;
   toggleCollapsed: () => void;
+  focusMode?: boolean;
 }
 
 export function CanvasToolbarDiagramPanel({
@@ -17,6 +18,7 @@ export function CanvasToolbarDiagramPanel({
   toolbarEditLocked,
   collapsed,
   toggleCollapsed,
+  focusMode = false,
 }: CanvasToolbarDiagramPanelProps) {
   const { t } = useTranslation();
   const { updateDiagram } = useDiagramActions();
@@ -115,9 +117,11 @@ export function CanvasToolbarDiagramPanel({
         </span>
         {toggleButton}
       </div>
-      <div className="mt-1 min-w-0">
-        <DiagramDescriptionField editLocked={toolbarEditLocked} />
-      </div>
+      {!focusMode ? (
+        <div className="mt-1 min-w-0">
+          <DiagramDescriptionField editLocked={toolbarEditLocked} />
+        </div>
+      ) : null}
     </div>
   );
 }

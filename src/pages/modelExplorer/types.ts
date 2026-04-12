@@ -19,4 +19,6 @@ export interface ModelExplorerContentProps {
   copied: boolean;
   flows: Flow[];
   backHref: string;
+  focusMode: boolean;
+  onToggleFocusMode: () => void;
 }
