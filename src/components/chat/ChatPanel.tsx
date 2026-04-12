@@ -3,8 +3,8 @@ import { useTranslation } from "react-i18next";
 import { ChevronDown, Plus, Settings, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useActiveDiagram } from "@/features/diagram";
-import { getLLMErrorI18nKey, type PendingSuggestion } from "@/features/llm";
-import { useLLMChat, useMentionInput, useMentionSearch } from "@/features/canvas/chat";
+import { buildContextualSuggestions, getLLMErrorI18nKey, type PendingSuggestion } from "@/features/llm";
+import { AnalysisPanel, useLLMChat, useMentionInput, useMentionSearch } from "@/features/canvas/chat";
 import { ChatMessage } from "./ChatMessage";
 import { SuggestionCard } from "./SuggestionCard";
 import { LLMSettings } from "./LLMSettings";
@@ -16,6 +16,8 @@ import { ChatSuggestionsEmptyState } from "./ChatSuggestionsEmptyState";
 
 interface ChatPanelProps {
   onClose: () => void;
+  selectedNodeIds: Set<string>;
+  selectedNodeId: string | null;
 }
 
 function buildSuggestionByMessageIdMap(pendingSuggestions: PendingSuggestion[]): Map<string, PendingSuggestion> {
@@ -24,7 +26,11 @@ function buildSuggestionByMessageIdMap(pendingSuggestions: PendingSuggestion[]):
   );
 }
 
-export function ChatPanel({ onClose }: ChatPanelProps) {
+export function ChatPanel({
+  onClose,
+  selectedNodeIds,
+  selectedNodeId,
+}: ChatPanelProps) {
   const { t } = useTranslation();
   const activeDiagram = useActiveDiagram();
   const [showSettings, setShowSettings] = useState(false);
@@ -54,12 +60,19 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
     pendingSuggestions,
     accept,
     reject,
+    pendingAnalysis,
+    dismissPendingAnalysis,
     streamingContent,
     error,
     config,
     setConfig,
     clearHistory,
-  } = useLLMChat();
+  } = useLLMChat({ selectedNodeIds, selectedNodeId });
+
+  const contextualSuggestions = useMemo(
+    () => buildContextualSuggestions(activeDiagram ?? null),
+    [activeDiagram],
+  );
   const mentionItems = useMemo(
     () => (isPickerOpen ? search(mentionQuery) : []),
     [isPickerOpen, mentionQuery, search],
@@ -172,9 +185,13 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
         onScroll={handleScroll}
         className="relative min-h-0 flex-1 space-y-2 overflow-y-auto p-3"
       >
+        {pendingAnalysis ? (
+          <AnalysisPanel analysis={pendingAnalysis} onDismiss={dismissPendingAnalysis} />
+        ) : null}
         {messages.length === 0 ? (
           <ChatSuggestionsEmptyState
             diagramName={diagramName}
+            suggestions={contextualSuggestions}
             onSelectSuggestion={(text) => {
               void send(text, []);
             }}

@@ -17,6 +17,7 @@ export async function sendMessage(
       },
       body: JSON.stringify({
         model: config.model,
+        max_tokens: 3000,
         stream: true,
         messages: [
           { role: "system", content: systemPrompt },

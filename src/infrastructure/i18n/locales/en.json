@@ -611,15 +611,43 @@
         "retry": "Tentar novamente"
       }
     },
+    "analysis": {
+      "summary": "Executive summary",
+      "findings": "Findings",
+      "strengths": "Strengths",
+      "nextSteps": "Next steps",
+      "dismiss": "Dismiss analysis",
+      "recommendation": "Recommendation",
+      "criticalCount": "{{count}} critical",
+      "highCount": "{{count}} high",
+      "severity": {
+        "critical": "Critical",
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low",
+        "info": "Info"
+      }
+    },
     "suggestions": {
-      "title": "SUGESTÕES",
-      "context": "Contexto carregado: \"{{name}}\"",
-      "explain": "Explique a arquitetura deste diagrama",
-      "components": "Quais são os principais componentes e suas responsabilidades?",
-      "failures": "Identifique possíveis pontos de falha na arquitetura",
-      "security": "Sugira melhorias de segurança para este diagrama",
-      "communicate": "Como os sistemas se comunicam entre si?",
-      "improve": "Quais melhorias de escalabilidade você recomenda?"
+      "title": "SUGGESTIONS",
+      "context": "Context loaded: \"{{name}}\"",
+      "explain": "Explain this diagram’s architecture",
+      "components": "What are the main components and their responsibilities?",
+      "failures": "Identify possible failure points in the architecture",
+      "security": "Suggest security improvements for this diagram",
+      "communicate": "How do the systems communicate?",
+      "improve": "What scalability improvements do you recommend?",
+      "contextual": {
+        "explainThis": "Explain this architecture",
+        "reviewThis": "Review this architecture",
+        "assessSecurity": "Assess security",
+        "wellArchitected": "Evaluate against the AWS Well-Architected Framework",
+        "spof": "Identify single points of failure (SPOFs)",
+        "lambdaPatterns": "Check for Lambda anti-patterns",
+        "dbCaching": "Suggest a caching strategy for the database",
+        "blastRadius": "What is the blast radius if the central component fails?",
+        "observability": "Identify observability gaps"
+      }
     }
   },
   "scenes": {
@@ -812,7 +840,11 @@
       "empty": "No saved templates",
       "emptyHint": "Select nodes on the canvas and click 'Save as template'",
       "delete": "Delete template",
-      "deleteConfirm": "Delete '{{name}}'? This cannot be undone."
+      "deleteConfirm": "Delete '{{name}}'? This cannot be undone.",
+      "download": "Download template",
+      "importTemplate": "Import template (.json)",
+      "importSuccess": "Template \"{{name}}\" imported successfully",
+      "importError": "Invalid or corrupted file"
     }
   },
   "connectionPanel": {

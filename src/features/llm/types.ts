@@ -62,18 +62,35 @@ export interface PendingSuggestion {
   status: "pending" | "accepted" | "rejected";
 }
 
-
-
 export interface PendingNodePreview {
   suggestionId: string;
   nodeIds: string[];
   edgeIds: string[];
 }
 
-export interface ParsedLLMResponse {
-  message: string;
-  patch: DiagramPatch | null;
+export type AnalysisSeverity = "critical" | "high" | "medium" | "low" | "info";
+
+export interface AnalysisFinding {
+  severity: AnalysisSeverity;
+  category: string;
+  title: string;
+  detail: string;
+  recommendation: string;
+  affectedNodes?: string[];
 }
+
+export interface AnalysisResponse {
+  mode: "analysis";
+  summary: string;
+  findings: AnalysisFinding[];
+  strengths: string[];
+  nextSteps: string[];
+}
+
+export type ParsedLLMResponse =
+  | { kind: "text"; message: string }
+  | { kind: "patch"; message: string; patch: DiagramPatch | null }
+  | { kind: "analysis"; analysis: AnalysisResponse };
 
 export interface MentionItem {
   id: string;
@@ -98,4 +115,3 @@ export interface LLMToolCall {
   tool: string;
   parameters: Record<string, unknown>;
 }
-

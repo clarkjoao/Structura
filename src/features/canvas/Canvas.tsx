@@ -52,11 +52,6 @@ const Canvas = (props: CanvasProps = {}) => {
   const [hasUnread, setHasUnread] = useState(false);
   const previousAssistantMessageCountRef = useRef(0);
   const messages = useLLMStore((state) => state.messages);
-  const { pendingPreviews, accept: acceptSuggestion, reject: rejectSuggestion } = useLLMChat();
-  const pendingNodeIds = useMemo(
-    () => Array.from(getPendingNodeIds(pendingPreviews)),
-    [pendingPreviews],
-  );
   const assistantMessageCount = messages.filter(
     (message) => message.role === "assistant",
   ).length;
@@ -94,6 +89,15 @@ const Canvas = (props: CanvasProps = {}) => {
     isCompareMode,
     allDiagramTags,
   } = useCanvasController(props);
+  const { pendingPreviews, accept: acceptSuggestion, reject: rejectSuggestion } =
+    useLLMChat({
+      selectedNodeIds: visualState.selectedNodeIds,
+      selectedNodeId: visualState.selectedNodeId,
+    });
+  const pendingNodeIds = useMemo(
+    () => Array.from(getPendingNodeIds(pendingPreviews)),
+    [pendingPreviews],
+  );
   const { isFlowActive } = interactionMode;
 
   useJourneyViewportSync();
@@ -442,7 +446,11 @@ const Canvas = (props: CanvasProps = {}) => {
             />
           )}
           {isChatOpen ? (
-            <ChatPanel onClose={() => setIsChatOpen(false)} />
+            <ChatPanel
+              onClose={() => setIsChatOpen(false)}
+              selectedNodeIds={visualState.selectedNodeIds}
+              selectedNodeId={visualState.selectedNodeId}
+            />
           ) : null}
         </div>
       </div>

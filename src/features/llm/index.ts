@@ -9,6 +9,9 @@ export type {
   PendingSuggestion,
   PendingNodePreview,
   ParsedLLMResponse,
+  AnalysisResponse,
+  AnalysisFinding,
+  AnalysisSeverity,
   MentionItem,
   ActiveMention,
   LLMTool,
@@ -17,13 +20,13 @@ export type {
 
 export { serializeDiagramContext } from "./serializer";
 export type { DiagramSerializerOptions } from "./serializer";
-export { buildSystemPrompt } from "./prompt-builder";
+export { buildSystemPrompt, buildResponseLanguageInstruction } from "./prompt-builder";
 export { parseLLMResponse } from "./patch-parser";
 export { serializeMentionItem, buildMentionContextBlock } from "./mention-serializer";
 export type { ModelPreset } from "./model-presets";
 export { MODEL_PRESETS } from "./model-presets";
 export type { ChatSuggestion } from "./suggestions";
-export { DEFAULT_SUGGESTIONS } from "./suggestions";
+export { buildContextualSuggestions } from "./suggestions";
 export type { LLMErrorKind } from "./errors";
 export { LLMProviderError, getLLMErrorI18nKey } from "./errors";
 export { ALL_TOOLS, WRITE_TOOL_NAMES, isWriteTool } from "./tools";

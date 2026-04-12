@@ -611,6 +611,23 @@
         "retry": "Tentar novamente"
       }
     },
+    "analysis": {
+      "summary": "Resumo executivo",
+      "findings": "Achados",
+      "strengths": "Pontos fortes",
+      "nextSteps": "Próximos passos",
+      "dismiss": "Dispensar análise",
+      "recommendation": "Recomendação",
+      "criticalCount": "{{count}} crítico(s)",
+      "highCount": "{{count}} alto(s)",
+      "severity": {
+        "critical": "Crítico",
+        "high": "Alto",
+        "medium": "Médio",
+        "low": "Baixo",
+        "info": "Info"
+      }
+    },
     "suggestions": {
       "title": "SUGESTÕES",
       "context": "Contexto carregado: \"{{name}}\"",
@@ -619,7 +636,18 @@
       "failures": "Identifique possíveis pontos de falha na arquitetura",
       "security": "Sugira melhorias de segurança para este diagrama",
       "communicate": "Como os sistemas se comunicam entre si?",
-      "improve": "Quais melhorias de escalabilidade você recomenda?"
+      "improve": "Quais melhorias de escalabilidade você recomenda?",
+      "contextual": {
+        "explainThis": "Explique esta arquitetura",
+        "reviewThis": "Revise esta arquitetura",
+        "assessSecurity": "Avalie a segurança",
+        "wellArchitected": "Avaliar pelo AWS Well-Architected Framework",
+        "spof": "Identificar pontos únicos de falha (SPOFs)",
+        "lambdaPatterns": "Verificar anti-padrões de Lambda",
+        "dbCaching": "Sugerir estratégia de cache para o banco de dados",
+        "blastRadius": "Qual o blast radius se o componente central falhar?",
+        "observability": "Identificar gaps de observabilidade"
+      }
     }
   },
   "scenes": {
@@ -812,7 +840,11 @@
       "empty": "Nenhum template salvo",
       "emptyHint": "Selecione nodes no canvas e clique em 'Salvar como template'",
       "delete": "Excluir template",
-      "deleteConfirm": "Excluir '{{name}}'? Esta ação não pode ser desfeita."
+      "deleteConfirm": "Excluir '{{name}}'? Esta ação não pode ser desfeita.",
+      "download": "Baixar template",
+      "importTemplate": "Importar template (.json)",
+      "importSuccess": "Template \"{{name}}\" importado com sucesso",
+      "importError": "Arquivo inválido ou corrompido"
     }
   },
   "connectionPanel": {

@@ -1,7 +1,8 @@
 import { useEffect, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Pencil, Trash2 } from "lucide-react";
+import { Download, Pencil, Trash2 } from "lucide-react";
 import type { UserTemplate } from "@/features/diagram";
+import { downloadTemplate } from "@/features/diagram/utils/template-sharing";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { PatternFlowPreview } from "./PatternFlowPreview";
@@ -122,6 +123,18 @@ export function UserTemplateCard({
         </div>
       </div>
       <div className="shrink-0 flex flex-col gap-1 border-l border-border p-2 bg-muted/30">
+        <button
+          type="button"
+          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          title={t("patterns.userTemplates.download")}
+          onClick={(e) => {
+            e.stopPropagation();
+            downloadTemplate(template);
+          }}
+          aria-label={t("patterns.userTemplates.download")}
+        >
+          <Download className="h-3.5 w-3.5" />
+        </button>
         <button
           type="button"
           onClick={() => {

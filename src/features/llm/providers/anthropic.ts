@@ -19,7 +19,7 @@ export async function sendMessage(
       body: JSON.stringify({
         model: config.model,
         system: systemPrompt,
-        max_tokens: 1200,
+        max_tokens: 3000,
         stream: true,
         messages: messages.map((message) => ({
           role: message.role,

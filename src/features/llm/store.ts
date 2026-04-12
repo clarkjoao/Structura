@@ -2,10 +2,12 @@ import { create } from "zustand";
 import { useDiagramStore } from "@/features/diagram";
 import { pushHistory } from "@/features/diagram/store/slices/history.slice";
 import { STRUCTURAL_MUTATION_MARKER } from "@/features/diagram/store/store.constants";
+import i18n from "@/infrastructure/i18n";
 import { buildSystemPrompt } from "./prompt-builder";
 import { parseLLMResponse } from "./patch-parser";
 import { LLMProviderError, type LLMErrorKind } from "./errors";
 import type {
+  AnalysisResponse,
   ChatMessage,
   ConversationThread,
   DiagramPatch,
@@ -89,6 +91,18 @@ function saveConfigToLocalStorage(config: LLMConfig): void {
   localStorage.setItem(LLM_CONFIG_STORAGE_KEY, JSON.stringify(config));
 }
 
+function getResolvedAppLanguage(): string {
+  const lng = i18n.resolvedLanguage ?? i18n.language ?? "pt-BR";
+  const lower = lng.toLowerCase();
+  if (lower.startsWith("pt")) {
+    return "pt-BR";
+  }
+  if (lower.startsWith("en")) {
+    return "en";
+  }
+  return "pt-BR";
+}
+
 function sanitizeMessagesForLLM(messages: ChatMessage[]): ChatMessage[] {
   return messages.map((message) => {
     if (message.role !== "assistant") {
@@ -99,14 +113,12 @@ function sanitizeMessagesForLLM(messages: ChatMessage[]): ChatMessage[] {
       return message;
     }
     try {
-      const parsed = JSON.parse(trimmed) as unknown;
-      if (
-        typeof parsed === "object" &&
-        parsed !== null &&
-        "message" in parsed &&
-        typeof (parsed as { message?: unknown }).message === "string"
-      ) {
-        return { ...message, content: (parsed as { message: string }).message };
+      const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+      if (parsed.mode === "analysis" && typeof parsed.summary === "string") {
+        return { ...message, content: parsed.summary };
+      }
+      if (typeof parsed.message === "string") {
+        return { ...message, content: parsed.message };
       }
     } catch {
       
@@ -209,6 +221,7 @@ interface LLMStoreState {
   messages: ChatMessage[];
   pendingSuggestions: PendingSuggestion[];
   pendingPreviews: PendingNodePreview[];
+  pendingAnalysis: AnalysisResponse | null;
   streamingContent: string | null;
   isLoading: boolean;
   error: LLMErrorKind | null;
@@ -217,6 +230,7 @@ interface LLMStoreState {
   sendMessage: (userText: string, diagramContext: string) => Promise<void>;
   acceptSuggestion: (suggestionId: string) => void;
   rejectSuggestion: (suggestionId: string) => void;
+  dismissPendingAnalysis: () => void;
   loadHistoryForDiagram: (diagramId: string) => void;
   clearHistory: () => void;
 }
@@ -226,6 +240,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => ({
   messages: [],
   pendingSuggestions: [],
   pendingPreviews: [],
+  pendingAnalysis: null,
   streamingContent: null,
   isLoading: false,
   error: null,
@@ -237,6 +252,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => ({
       messages: loadThreadFromStorage(diagramId),
       pendingSuggestions: [],
       pendingPreviews: [],
+      pendingAnalysis: null,
       streamingContent: null,
       error: null,
     });
@@ -275,7 +291,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => ({
     });
 
     try {
-      const systemPrompt = buildSystemPrompt(diagramContext);
+      const systemPrompt = buildSystemPrompt(diagramContext, getResolvedAppLanguage());
       const sanitizedMessages = sanitizeMessagesForLLM(outgoingMessages);
       let fullResponse = "";
       const rawAssistantResponse = await executeLLMMessage(
@@ -301,9 +317,28 @@ export const useLLMStore = create<LLMStoreState>((set, get) => ({
       );
       const parsedResponse = parseLLMResponse(rawAssistantResponse);
 
+      if (parsedResponse.kind === "analysis") {
+        set({
+          messages: get().messages.map((message) =>
+            message.id === assistantMessageId
+              ? { ...message, content: parsedResponse.analysis.summary }
+              : message,
+          ),
+          pendingAnalysis: parsedResponse.analysis,
+          streamingContent: null,
+          isLoading: false,
+          error: null,
+        });
+        const currentDiagramIdAfterAnalysis = get().activeDiagramId;
+        if (currentDiagramIdAfterAnalysis) {
+          saveThreadToStorage(currentDiagramIdAfterAnalysis, get().messages);
+        }
+        return;
+      }
+
       const nextSuggestions = [...get().pendingSuggestions];
       const nextPreviews = [...get().pendingPreviews];
-      if (parsedResponse.patch) {
+      if (parsedResponse.kind === "patch" && parsedResponse.patch) {
         const suggestion: PendingSuggestion = {
           id: crypto.randomUUID(),
           messageId: assistantMessageId,
@@ -389,11 +424,18 @@ export const useLLMStore = create<LLMStoreState>((set, get) => ({
       set({
         messages: get().messages.map((message) =>
           message.id === assistantMessageId
-            ? { ...message, content: parsedResponse.message }
+            ? {
+                ...message,
+                content:
+                  parsedResponse.kind === "patch" || parsedResponse.kind === "text"
+                    ? parsedResponse.message
+                    : "",
+              }
             : message,
         ),
         pendingSuggestions: nextSuggestions,
         pendingPreviews: nextPreviews,
+        pendingAnalysis: null,
         streamingContent: null,
         isLoading: false,
         error: null,
@@ -491,10 +533,15 @@ export const useLLMStore = create<LLMStoreState>((set, get) => ({
       messages: [],
       pendingSuggestions: [],
       pendingPreviews: [],
+      pendingAnalysis: null,
       streamingContent: null,
       error: null,
       isLoading: false,
     });
+  },
+
+  dismissPendingAnalysis: () => {
+    set({ pendingAnalysis: null });
   },
 }));
 
