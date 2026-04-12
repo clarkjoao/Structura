@@ -9,6 +9,7 @@ import {
   useFileSystemStorage,
   isFileSystemSupported,
 } from "@/infrastructure/persistence/useFileSystemStorage";
+import { registerConnectFolderRequestHandler } from "@/infrastructure/persistence/requestConnectFolder";
 import { WorkspaceMergeDialog } from "@/infrastructure/persistence/WorkspaceMergeDialog";
 import { DisconnectConfirmDialog } from "@/infrastructure/persistence/DisconnectConfirmDialog";
 import { useDiagramStore } from "@/features/diagram";
@@ -106,6 +107,13 @@ export function FileSystemStatus() {
     confirmOverwrite,
     cancelMerge,
   } = useFileSystemStorage();
+
+  useEffect(() => {
+    registerConnectFolderRequestHandler(() => {
+      void connect();
+    });
+    return () => registerConnectFolderRequestHandler(null);
+  }, [connect]);
 
   const localDiagramCount = useDiagramStore(
     useShallow((s) => Object.keys(s.diagrams).length)

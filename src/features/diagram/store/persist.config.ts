@@ -13,6 +13,15 @@ import { ServiceSource } from "../enums";
 import { migrateFlow } from "../utils/flow-migration";
 import { useSaveStatusStore } from "./saveStatus.store";
 
+function isQuotaExceededError(err: unknown): boolean {
+  return (
+    (typeof DOMException !== "undefined" &&
+      err instanceof DOMException &&
+      (err.name === "QuotaExceededError" || err.name === "NS_ERROR_DOM_QUOTA_REACHED")) ||
+    (err instanceof Error && err.name === "QuotaExceededError")
+  );
+}
+
 export const PERSIST_KEY = "diagram-store";
 
 
@@ -311,10 +320,12 @@ export function wrapIStoragePortWithDiagramPersistTracking(
       if (storage instanceof LocalStorageAdapter && storage.paused) return;
       recordLocalStorageDiagramSyncSuccess();
       useSaveStatusStore.getState()._setSaved();
-    } catch {
-      if (name === PERSIST_KEY) {
-        useSaveStatusStore.getState()._setError();
+    } catch (err: unknown) {
+      if (name !== PERSIST_KEY) return;
+      if (isQuotaExceededError(err)) {
+        useSaveStatusStore.getState()._setStorageCritical();
       }
+      useSaveStatusStore.getState()._setError();
     }
   };
 
@@ -340,9 +351,18 @@ export function wrapIStoragePortWithDiagramPersistTracking(
       if (!pendingPersist || pendingPersist.name !== PERSIST_KEY) return;
       const { name, value } = pendingPersist;
       pendingPersist = null;
-      void storage.setItem(name, value);
-      if (storage instanceof LocalStorageAdapter && storage.paused) return;
-      recordLocalStorageDiagramSyncSuccess();
+      void storage
+        .setItem(name, value)
+        .then(() => {
+          if (storage instanceof LocalStorageAdapter && storage.paused) return;
+          recordLocalStorageDiagramSyncSuccess();
+        })
+        .catch((err: unknown) => {
+          if (isQuotaExceededError(err)) {
+            useSaveStatusStore.getState()._setStorageCritical();
+          }
+          useSaveStatusStore.getState()._setError();
+        });
     });
   }
 

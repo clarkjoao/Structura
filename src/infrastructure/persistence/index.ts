@@ -12,6 +12,10 @@ export {
   useFileSystemStorage,
   isFileSystemSupported,
 } from "./useFileSystemStorage";
+export {
+  registerConnectFolderRequestHandler,
+  requestConnectFolder,
+} from "./requestConnectFolder";
 export type { FsStatus } from "./useFileSystemStorage";
 export {
   bootFileSystem,

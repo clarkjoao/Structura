@@ -30,7 +30,8 @@ import {
   type BranchOwnerInfo,
   type RecordingContext,
 } from "@/features/canvas";
-import { useActiveDiagram, type Flow } from "@/features/diagram";
+import { useActiveDiagram, useStorageMonitor, type Flow } from "@/features/diagram";
+import { StorageWarningBanner } from "@/features/canvas/components/StorageWarningBanner";
 import { CollabCursors, CollabToolbar, useCollab } from "@/features/collaboration";
 import { useJourneyPlayer } from "@/features/journeys";
 import { ExportModal } from "./ExportModal";
@@ -122,6 +123,8 @@ export function ModelExplorerContent({
     onEnterBranchRecording,
     onOpenBranchSelect,
   } = flowMode;
+
+  useStorageMonitor();
 
   useEffect(() => {
     if (isPlaying) setShowFlows(false);
@@ -361,7 +364,9 @@ export function ModelExplorerContent({
         </div>
         </div>
       ) : null}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+        <StorageWarningBanner />
+        <div className="flex flex-1 min-h-0 overflow-hidden">
         <ShortcutsModal open={showShortcuts} onOpenChange={setShowShortcuts} />
         {diagram ? (
           <>
@@ -418,6 +423,7 @@ export function ModelExplorerContent({
             {session && <CollabCursors peers={session.peers} />}
           </div>
         </ReactFlowProvider>
+        </div>
         {isRecording && (
           <FlowRecorderPanel
             recordingContext={recordingContext}

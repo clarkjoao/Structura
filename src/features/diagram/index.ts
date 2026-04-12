@@ -311,4 +311,12 @@ export {
 } from "./store/selectors";
 export type { ActiveDiagramSceneState } from "./store/selectors/connection.selectors";
 export type { DiagramStore, ClipboardEntry } from "./store/store.types";
+
+export { useStorageMonitor } from "./store/useStorageMonitor";
+export {
+  checkStorageHealth,
+  measureLocalStorageUsage,
+  clearNonEssentialStorage,
+} from "./store/storage-monitor";
+export type { StorageHealthLevel } from "./store/saveStatus.store";
 export type { ServiceDefinition, ServiceSourceRef } from "./model/service.types";

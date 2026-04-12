@@ -8,6 +8,7 @@
     "search": "Search",
     "add": "Add",
     "close": "Close",
+    "dismiss": "Dismiss",
     "copy": "Copy",
     "copied": "Copied!",
     "back": "Back",
@@ -394,6 +395,25 @@
     "syncNow": "· synced now",
     "syncAgo": "· synced {{time}}",
     "neverSynced": "· never synced"
+  },
+  "storage": {
+    "warning": {
+      "title": "Local storage almost full",
+      "description": "Using {{used}} of ~5 MB available. Future diagrams may not be saved."
+    },
+    "danger": {
+      "title": "Local storage critically low",
+      "description": "Using {{used}} of ~5 MB. New elements may not be saved."
+    },
+    "critical": {
+      "title": "Could not save",
+      "description": "Local storage is full. Connect a folder or free up space to continue."
+    },
+    "freed": "{{amount}} freed successfully.",
+    "action": {
+      "clear": "Free up space",
+      "connectFolder": "Connect folder"
+    }
   },
   "filesystem": {
     "localFolder": "Local folder",
