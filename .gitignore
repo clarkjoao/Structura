@@ -35,7 +35,6 @@ cypress/reports
 .env.production
 
 .ai/
-task-ai
-task-ai/*
+tasks-ai
 tsconfig.app.tsbuildinfo
 tsconfig.node.tsbuildinfo

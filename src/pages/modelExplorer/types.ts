@@ -1,4 +1,7 @@
+import type { DiagramExportFormat } from "@/lib/export-service";
 import type { Flow } from "@/features/diagram";
+
+export type CopiedClipboardKind = "drawio" | "json" | "structurizr";
 
 export interface ModelExplorerContentProps {
   showFlows: boolean;
@@ -11,13 +14,14 @@ export interface ModelExplorerContentProps {
   handleOpenDiagram: (id: string) => void;
   handleDrillDownToDiagram: (id: string) => void;
   handleDrillUp: () => void;
+  onOpenImport: () => void;
   handleCopyDrawio: () => void;
   handleCopyJson: () => void;
   handleCopyStructurizr: () => void;
-  handleExport: () => void;
+  handleExportFormats: (formats: DiagramExportFormat[]) => void;
   onStartCollab: () => void;
   onCollabSessionEnded?: () => void;
-  copied: boolean;
+  copiedClipboardKind: CopiedClipboardKind | null;
   flows: Flow[];
   backHref: string;
   focusMode: boolean;

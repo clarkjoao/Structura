@@ -1,11 +1,14 @@
-import type { Flow, Component, Connection } from "@/features/diagram";
+import { stepsToMermaid, type Flow, type Component, type Connection } from "@/features/diagram";
 
 export function exportMermaid(
   flows: Flow[],
-  _components: Record<string, Component>,
-  _connections: Record<string, Connection>,
+  components: Record<string, Component>,
+  connections: Record<string, Connection>,
 ): string {
   return flows
-    .map((flow) => `## ${flow.name}\n\n\`\`\`mermaid\n${flow.mermaid}\n\`\`\``)
+    .map((flow) => {
+      const mermaid = stepsToMermaid(flow, components, connections);
+      return `## ${flow.name}\n\n\`\`\`mermaid\n${mermaid}\n\`\`\``;
+    })
     .join("\n\n");
 }

@@ -11,26 +11,15 @@ import { ReactFlowProvider } from "@xyflow/react";
 import { toast } from "sonner";
 import {
   ArrowLeft,
-  Check,
-  ChevronDown,
   CircleHelp,
-  Clipboard,
-  Code2,
-  FileCode,
+  FileDown,
   Focus,
   FolderTree,
   GitBranch,
   Share2,
+  Upload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import ShortcutsModal from "@/components/ShortcutsModal";
 import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
 import { SaveStatusIndicator } from "@/features/canvas/components/SaveStatusIndicator";
@@ -44,6 +33,7 @@ import {
 import { useActiveDiagram, type Flow } from "@/features/diagram";
 import { CollabCursors, CollabToolbar, useCollab } from "@/features/collaboration";
 import { useJourneyPlayer } from "@/features/journeys";
+import { ExportModal } from "./ExportModal";
 import { ShareModal } from "./ShareModal";
 import type { ModelExplorerContentProps } from "./types";
 
@@ -61,13 +51,14 @@ export function ModelExplorerContent({
   handleOpenDiagram,
   handleDrillDownToDiagram,
   handleDrillUp,
+  onOpenImport,
   handleCopyDrawio,
   handleCopyJson,
   handleCopyStructurizr,
-  handleExport,
+  handleExportFormats,
   onStartCollab,
   onCollabSessionEnded,
-  copied,
+  copiedClipboardKind,
   flows,
   backHref,
   focusMode,
@@ -206,6 +197,7 @@ export function ModelExplorerContent({
   }, [closeSession, onCollabSessionEnded]);
   const [diagramSidebarOpen, setDiagramSidebarOpen] = useState(false);
   const [embedModalOpen, setEmbedModalOpen] = useState(false);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const lastCursorAtRef = useRef(0);
 
@@ -276,6 +268,15 @@ export function ModelExplorerContent({
             <Link to={backHref} className="text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="h-4 w-4" />
             </Link>
+            <button
+              type="button"
+              onClick={onOpenImport}
+              className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+              title={t("import.button")}
+            >
+              <Upload className="h-3.5 w-3.5" />
+              {t("import.button")}
+            </button>
             {diagram?.domain && <span className="text-muted-foreground">{diagram.domain}</span>}
             <span className="font-medium">{diagram?.name}</span>
             {activeFlow && (
@@ -310,86 +311,36 @@ export function ModelExplorerContent({
             >
               <GitBranch className="h-3.5 w-3.5" /> {t("flows.panelTitle")}
             </button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  disabled={canvasInteractionLocked}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium",
-                    "text-muted-foreground hover:text-foreground",
-                    "border border-transparent hover:border-border",
-                    "bg-transparent transition-colors",
-                    canvasInteractionLocked ? "opacity-50 pointer-events-none" : "",
-                  )}
-                >
-                  <Share2 size={15} />
-                  {t("toolbar.shareExport")}
-                  <ChevronDown size={12} className="opacity-50" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52 p-1" sideOffset={6}>
-                <DropdownMenuItem
-                  onClick={() => setShareModalOpen(true)}
-                  className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm"
-                >
-                  <Share2 size={14} className="shrink-0 text-muted-foreground" />
-                  <span>{t("share.button")}</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="my-1" />
-                <DropdownMenuLabel className="px-2 py-1 text-xs font-normal text-muted-foreground">
-                  {t("toolbar.exportGroup")}
-                </DropdownMenuLabel>
-                <DropdownMenuItem
-                  onClick={handleCopyDrawio}
-                  className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm"
-                >
-                  {copied ? (
-                    <Check size={14} className="shrink-0 text-green-500" />
-                  ) : (
-                    <Clipboard size={14} className="shrink-0 text-muted-foreground" />
-                  )}
-                  <span>{t("flows.copyDrawio")}</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={handleCopyJson}
-                  className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm"
-                >
-                  {copied ? (
-                    <Check size={14} className="shrink-0 text-green-500" />
-                  ) : (
-                    <Clipboard size={14} className="shrink-0 text-muted-foreground" />
-                  )}
-                  <span>{t("export.copyAsJson")}</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={handleCopyStructurizr}
-                  className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm"
-                >
-                  {copied ? (
-                    <Check size={14} className="shrink-0 text-green-500" />
-                  ) : (
-                    <Clipboard size={14} className="shrink-0 text-muted-foreground" />
-                  )}
-                  <span>{t("export.copyAsStructurizr")}</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={handleExport}
-                  className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm"
-                >
-                  <FileCode size={14} className="shrink-0 text-muted-foreground" />
-                  <span>{t("flows.export")}</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="my-1" />
-                <DropdownMenuItem
-                  onClick={() => setEmbedModalOpen(true)}
-                  className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm"
-                >
-                  <Code2 size={14} className="shrink-0 text-muted-foreground" />
-                  <span>{t("export.embed.menuItem")}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <button
+              type="button"
+              disabled={canvasInteractionLocked}
+              onClick={() => setShareModalOpen(true)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium",
+                "text-muted-foreground hover:text-foreground",
+                "border border-transparent hover:border-border",
+                "bg-transparent transition-colors",
+                canvasInteractionLocked ? "opacity-50 pointer-events-none" : "",
+              )}
+            >
+              <Share2 size={15} />
+              {t("share.button")}
+            </button>
+            <button
+              type="button"
+              disabled={canvasInteractionLocked}
+              onClick={() => setExportModalOpen(true)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium",
+                "text-muted-foreground hover:text-foreground",
+                "border border-transparent hover:border-border",
+                "bg-transparent transition-colors",
+                canvasInteractionLocked ? "opacity-50 pointer-events-none" : "",
+              )}
+            >
+              <FileDown size={15} />
+              {t("export.hub.toolbarButton")}
+            </button>
             <button
               onClick={onToggleFocusMode}
               className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all"
@@ -415,6 +366,17 @@ export function ModelExplorerContent({
         {diagram ? (
           <>
             <EmbedModal open={embedModalOpen} onOpenChange={setEmbedModalOpen} diagram={diagram} />
+            <ExportModal
+              open={exportModalOpen}
+              onOpenChange={setExportModalOpen}
+              hasFlows={flows.length > 0}
+              onExport={handleExportFormats}
+              onCopyDrawio={handleCopyDrawio}
+              onCopyJson={handleCopyJson}
+              onCopyStructurizr={handleCopyStructurizr}
+              onEmbedRequest={() => setEmbedModalOpen(true)}
+              copiedClipboardKind={copiedClipboardKind}
+            />
             <ShareModal open={shareModalOpen} onOpenChange={setShareModalOpen} diagram={diagram} />
           </>
         ) : null}

@@ -20,8 +20,8 @@ import {
   removeRecentRef,
 } from "@/features/diagram";
 import { deletePreview } from "@/lib/diagram-preview/previewCache";
-import { importStructurizr } from "@/lib/export-service";
 import type { Level, Diagram } from "@/features/diagram";
+import { ImportModal } from "@/pages/ImportModal";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -78,7 +78,6 @@ export default function DashboardPage() {
     deleteDiagram,
     moveDiagram,
     deleteFolder,
-    importDiagram,
   } = useDiagramActions();
   const navigate = useNavigate();
 
@@ -115,7 +114,7 @@ export default function DashboardPage() {
   );
   const [globalSearch, setGlobalSearch] = useState("");
   const folderTreeRef = useRef<HTMLDivElement>(null);
-  const dslImportInputRef = useRef<HTMLInputElement>(null);
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
@@ -302,34 +301,6 @@ export default function DashboardPage() {
     [addDiagram, openDiagram, navigate, selectedFolderId],
   );
 
-  const handleImportDsl = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        try {
-          const dsl = ev.target?.result;
-          if (typeof dsl !== "string") {
-            toast.error(t("import.structurizrError"));
-            return;
-          }
-          const diagram = importStructurizr(dsl);
-          const imported = importDiagram(diagram);
-          openDiagram(imported.id);
-          navigate(`/model/${imported.id}`);
-        } catch (error) {
-          toast.error(
-            error instanceof Error ? error.message : t("import.structurizrError"),
-          );
-        }
-      };
-      reader.readAsText(file);
-      event.target.value = "";
-    },
-    [importDiagram, navigate, openDiagram, t],
-  );
-
   const handleDragStart = useCallback(
     (e: React.DragEvent, diagramId: string) => {
       e.dataTransfer.setData("application/x-structura-diagram-id", diagramId);
@@ -514,22 +485,13 @@ export default function DashboardPage() {
                 </p>
               </div>
               <div className="flex gap-2">
-                <input
-                  ref={dslImportInputRef}
-                  type="file"
-                  accept=".dsl,.txt"
-                  className="hidden"
-                  tabIndex={-1}
-                  aria-label={t("import.structurizrDsl")}
-                  onChange={handleImportDsl}
-                />
                 <Button
                   variant="outline"
                   size="sm"
                   className="h-8"
-                  onClick={() => dslImportInputRef.current?.click()}
+                  onClick={() => setImportModalOpen(true)}
                 >
-                  {t("import.structurizrDsl")}
+                  {t("import.button")}
                 </Button>
                 <Button
                   onClick={() => setShowAdd(true)}
@@ -708,6 +670,12 @@ export default function DashboardPage() {
           onAdd={handleAddDiagram}
         />
       )}
+
+      <ImportModal
+        open={importModalOpen}
+        onOpenChange={setImportModalOpen}
+        targetFolderId={selectedFolderId}
+      />
 
       <AnimatePresence>
         {selectedIds.size > 0 && (
