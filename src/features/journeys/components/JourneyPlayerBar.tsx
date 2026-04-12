@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import { Play, Square, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useFlowMode } from "@/features/canvas";
 import { useJourney, useJourneySteps } from "../store/selectors/journeys.selectors";
 import { useJourneyPlayer } from "../hooks/useJourneyPlayer";
 
@@ -10,6 +11,15 @@ export function JourneyPlayerBar() {
   const { t } = useTranslation();
   const location = useLocation();
   const journeyPlayer = useJourneyPlayer();
+  const flowMode = useFlowMode();
+
+  const handleExitJourney = () => {
+    journeyPlayer.exit();
+    if (!flowMode.isIdle) {
+      flowMode.exitPlay();
+      flowMode.cancelRecording();
+    }
+  };
 
   const isJourneyEditorRoute = /^\/journeys\/[^/]+\/edit$/.test(
     location.pathname,
@@ -57,7 +67,7 @@ export function JourneyPlayerBar() {
           size="icon"
           className="h-8 w-8 shrink-0"
           aria-label={t("journeys.player.exit")}
-          onClick={() => journeyPlayer.exit()}
+          onClick={handleExitJourney}
         >
           <X className="h-4 w-4" />
         </Button>
@@ -96,7 +106,7 @@ export function JourneyPlayerBar() {
           variant="ghost"
           size="sm"
           className="h-8"
-          onClick={() => journeyPlayer.exit()}
+          onClick={handleExitJourney}
         >
           {t("journeys.player.cancelRecording")}
         </Button>

@@ -32,7 +32,9 @@ export function StepFlowPickerDialog({
   const flows = useMemo(() => {
     if (!diagram) return [];
     return Object.values(diagram.snapshot.flows).filter(
-      (flow) => flow.diagramId === diagram.id,
+      (flow) =>
+        flow.diagramId === diagram.id &&
+        Object.keys(flow.steps).length > 0,
     );
   }, [diagram]);
 
@@ -61,19 +63,25 @@ export function StepFlowPickerDialog({
           placeholder={t("journeys.editor.flowSearchPlaceholder")}
         />
         <div className="max-h-60 overflow-y-auto rounded-md border border-border">
-          {filtered.map((flow) => (
-            <button
-              key={flow.id}
-              type="button"
-              className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left text-sm hover:bg-muted/60"
-              onClick={() => {
-                onSelectFlow(flow.id);
-                onOpenChange(false);
-              }}
-            >
-              <span className="font-medium text-foreground">{flow.name}</span>
-            </button>
-          ))}
+          {filtered.length === 0 ? (
+            <p className="px-3 py-4 text-center text-sm text-muted-foreground">
+              {t("journeys.editor.noFlowsAvailable")}
+            </p>
+          ) : (
+            filtered.map((flow) => (
+              <button
+                key={flow.id}
+                type="button"
+                className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left text-sm hover:bg-muted/60"
+                onClick={() => {
+                  onSelectFlow(flow.id);
+                  onOpenChange(false);
+                }}
+              >
+                <span className="font-medium text-foreground">{flow.name}</span>
+              </button>
+            ))
+          )}
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

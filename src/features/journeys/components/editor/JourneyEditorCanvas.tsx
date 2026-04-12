@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
 } from "react";
@@ -121,6 +122,33 @@ function JourneyEditorPlaybackFitView({
     isPlaying,
     isRecording,
   ]);
+
+  return null;
+}
+
+interface JourneyEditorDiagramFitViewProps {
+  diagramId: string;
+}
+
+function JourneyEditorDiagramFitView({
+  diagramId,
+}: JourneyEditorDiagramFitViewProps) {
+  const { fitView } = useReactFlow();
+  const prevDiagramIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (prevDiagramIdRef.current === diagramId) {
+      return;
+    }
+    prevDiagramIdRef.current = diagramId;
+    const raf = requestAnimationFrame(() => {
+      void fitView({
+        duration: 400,
+        padding: 0.12,
+      });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [diagramId, fitView]);
 
   return null;
 }
@@ -292,6 +320,7 @@ function JourneyEditorCanvasInner({ diagramId }: JourneyEditorCanvasInnerProps) 
         proOptions={{ hideAttribution: true }}
         className="bg-background"
       >
+        <JourneyEditorDiagramFitView diagramId={diagramId} />
         <JourneyEditorPlaybackFitView
           diagramId={diagramId}
           isPlaying={isPlaying}

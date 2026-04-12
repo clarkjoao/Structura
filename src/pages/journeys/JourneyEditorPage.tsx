@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Play, Square } from "lucide-react";
@@ -113,6 +120,15 @@ export default function JourneyEditorPage() {
     selectedStepId,
     onSelectStep: handleSelectStep,
   });
+
+  const stopGlobalPlayRef = useRef(stopGlobalPlay);
+  stopGlobalPlayRef.current = stopGlobalPlay;
+
+  useEffect(() => {
+    return () => {
+      stopGlobalPlayRef.current();
+    };
+  }, []);
 
   const selectedStep =
     journey && selectedStepId ? journey.steps[selectedStepId] : null;
@@ -281,6 +297,7 @@ export default function JourneyEditorPage() {
           <RightPanel
             journeyId={journey.id}
             step={selectedStep}
+            isGlobalPlaying={isGlobalPlaying}
             flowSection={
               selectedStepId ? (
                 <StepFlowSection

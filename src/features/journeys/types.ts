@@ -55,4 +55,5 @@ export interface JourneyPlayerState {
 
 export interface JourneyPlayerProviderProps {
   children: ReactNode;
+  onExitCanvas?: () => void;
 }

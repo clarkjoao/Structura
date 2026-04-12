@@ -4,7 +4,7 @@ import type {
   KeyboardEvent,
   ReactNode,
 } from "react";
-import { useCallback, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ChevronDown,
@@ -26,6 +26,7 @@ interface RightPanelProps {
   step: JourneyStep | null;
 
   flowSection: ReactNode;
+  isGlobalPlaying: boolean;
 }
 
 function readFileAsDataURL(file: File): Promise<string> {
@@ -72,6 +73,7 @@ export function RightPanel({
   journeyId,
   step,
   flowSection,
+  isGlobalPlaying,
 }: RightPanelProps) {
   const { t } = useTranslation();
   const { updateJourneyStep } = useJourneyActions();
@@ -81,6 +83,12 @@ export function RightPanel({
   const [visualOpen, setVisualOpen] = useState(true);
   const [flowOpen, setFlowOpen] = useState(true);
   const panelCollapsed = !visualOpen && !flowOpen;
+
+  useEffect(() => {
+    if (isGlobalPlaying) {
+      setFlowOpen(false);
+    }
+  }, [isGlobalPlaying]);
 
   const persistMedia = useCallback(
     (mediaContent: NonNullable<JourneyStep["mediaContent"]>) => {
@@ -334,6 +342,7 @@ export function RightPanel({
             variant="ghost"
             size="icon"
             className="h-8 w-8"
+            disabled={isGlobalPlaying}
             aria-label={
               flowOpen
                 ? t("journeys.editor.collapseFlowPanel")
@@ -350,7 +359,13 @@ export function RightPanel({
         </div>
         {flowOpen ? (
           <div className="min-h-0 flex-1 overflow-y-auto p-3">
-            {flowSection}
+            {isGlobalPlaying ? (
+              <p className="text-center text-xs text-muted-foreground">
+                {t("journeys.editor.flowLockedDuringPlayback")}
+              </p>
+            ) : (
+              flowSection
+            )}
           </div>
         ) : null}
       </div>

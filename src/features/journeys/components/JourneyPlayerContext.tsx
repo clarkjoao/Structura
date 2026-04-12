@@ -40,6 +40,8 @@ interface JourneyPlayerFlowBridgeProps {
     diagramId: string;
   } | null>;
   pendingJourneyRecordingRef: MutableRefObject<boolean>;
+  justStartedPlaybackRef: MutableRefObject<boolean>;
+  onExitCanvas?: () => void;
 }
 
 function JourneyPlayerFlowBridge({
@@ -50,6 +52,8 @@ function JourneyPlayerFlowBridge({
   playbackContextRef,
   pendingFlowPlaybackRef,
   pendingJourneyRecordingRef,
+  justStartedPlaybackRef,
+  onExitCanvas,
 }: JourneyPlayerFlowBridgeProps) {
   const flowMode = useFlowMode();
   const {
@@ -78,38 +82,17 @@ function JourneyPlayerFlowBridge({
     const flow = diagram?.snapshot.flows[pending.flowId];
     if (!flow) return;
     pendingFlowPlaybackRef.current = null;
+    justStartedPlaybackRef.current = true;
     play(flow);
-  }, [activeDiagramId, diagrams, mode.kind, openDiagram, play, pendingFlowPlaybackRef]);
-
-  const previousActiveDiagramIdRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (mode.kind !== "playing") {
-      previousActiveDiagramIdRef.current = activeDiagramId;
-      return;
-    }
-    if (pendingFlowPlaybackRef.current !== null) {
-      previousActiveDiagramIdRef.current = activeDiagramId;
-      return;
-    }
-
-    const journey = useJourneyStore.getState().journeys[mode.journeyId];
-    const step = journey?.steps[mode.selectedStepId];
-    const stepDiagramId = step?.diagramId;
-
-    const previousActiveDiagramId = previousActiveDiagramIdRef.current;
-    previousActiveDiagramIdRef.current = activeDiagramId;
-
-    if (previousActiveDiagramId === activeDiagramId) {
-      return;
-    }
-    if (!stepDiagramId) {
-      return;
-    }
-    if (activeDiagramId !== stepDiagramId) {
-      exitPlay();
-    }
-  }, [activeDiagramId, exitPlay, mode, pendingFlowPlaybackRef]);
+  }, [
+    activeDiagramId,
+    diagrams,
+    justStartedPlaybackRef,
+    mode.kind,
+    openDiagram,
+    play,
+    pendingFlowPlaybackRef,
+  ]);
 
   const prevSelectedStepIdRef = useRef<string | null>(null);
   useEffect(() => {
@@ -120,10 +103,19 @@ function JourneyPlayerFlowBridge({
     const previousSelectedStepId = prevSelectedStepIdRef.current;
     const currentSelectedStepId = mode.selectedStepId;
     prevSelectedStepIdRef.current = currentSelectedStepId;
-    if (previousSelectedStepId !== null && previousSelectedStepId !== currentSelectedStepId) {
-      exitPlay();
+    if (
+      previousSelectedStepId !== null &&
+      previousSelectedStepId !== currentSelectedStepId
+    ) {
+      if (justStartedPlaybackRef.current) {
+        justStartedPlaybackRef.current = false;
+        return;
+      }
+      if (pendingFlowPlaybackRef.current === null) {
+        exitPlay();
+      }
     }
-  }, [exitPlay, mode]);
+  }, [exitPlay, justStartedPlaybackRef, mode, pendingFlowPlaybackRef]);
 
   useEffect(() => {
     if (!pendingJourneyRecordingRef.current) return;
@@ -196,13 +188,17 @@ function JourneyPlayerFlowBridge({
     exitPlay();
     cancelRecording();
     pendingFlowPlaybackRef.current = null;
+    justStartedPlaybackRef.current = false;
     pendingJourneyRecordingRef.current = false;
     recordingTargetRef.current = null;
     setMode({ kind: "idle" });
+    onExitCanvas?.();
   }, [
     cancelRecording,
     exitPlay,
+    onExitCanvas,
     pendingFlowPlaybackRef,
+    justStartedPlaybackRef,
     pendingJourneyRecordingRef,
     recordingTargetRef,
     setMode,
@@ -254,7 +250,10 @@ function JourneyPlayerFlowBridge({
   );
 }
 
-export function JourneyPlayerProvider({ children }: JourneyPlayerProviderProps) {
+export function JourneyPlayerProvider({
+  children,
+  onExitCanvas,
+}: JourneyPlayerProviderProps) {
   const [mode, setMode] = useState<JourneyPlayerMode>({ kind: "idle" });
   const recordingTargetRef = useRef<{
     journeyId: string;
@@ -267,6 +266,7 @@ export function JourneyPlayerProvider({ children }: JourneyPlayerProviderProps) 
     diagramId: string;
   } | null>(null);
   const pendingJourneyRecordingRef = useRef(false);
+  const justStartedPlaybackRef = useRef(false);
 
   const onFinalize = useJourneyRecordingFinalize(recordingTargetRef, setMode);
 
@@ -279,6 +279,8 @@ export function JourneyPlayerProvider({ children }: JourneyPlayerProviderProps) 
         playbackContextRef={playbackContextRef}
         pendingFlowPlaybackRef={pendingFlowPlaybackRef}
         pendingJourneyRecordingRef={pendingJourneyRecordingRef}
+        justStartedPlaybackRef={justStartedPlaybackRef}
+        onExitCanvas={onExitCanvas}
       >
         {children}
       </JourneyPlayerFlowBridge>

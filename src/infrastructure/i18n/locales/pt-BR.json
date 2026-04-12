@@ -218,6 +218,8 @@
         "deployment": "Deployment",
         "unknown": "{{level}}"
       },
+      "noFlowsAvailable": "Nenhum flow com steps disponível neste diagrama",
+      "flowLockedDuringPlayback": "Flow bloqueado durante a reprodução",
       "flowPickerTitle": "Escolher flow",
       "flowSearchPlaceholder": "Buscar flows…",
       "visualStateTitle": "Estado visual",

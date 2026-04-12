@@ -95,6 +95,8 @@ export function StepFlowSection({
       ? diagram.snapshot.flows[step.flowId]
       : undefined;
 
+  const canPlayFlow = flowMode.isIdle;
+
   const journeyAndFlowIdle =
     flowMode.isIdle && journeyPlayer.mode.kind === "idle";
 
@@ -128,7 +130,7 @@ export function StepFlowSection({
 
   const handlePlayFlow = () => {
     if (!flowForStep || !step?.diagramId) return;
-    if (!journeyAndFlowIdle) {
+    if (!canPlayFlow) {
       toast.error(t("flows.alreadyActive"));
       return;
     }
