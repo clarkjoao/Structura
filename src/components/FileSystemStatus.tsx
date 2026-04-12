@@ -105,6 +105,7 @@ export function FileSystemStatus() {
     pendingMerge,
     confirmMerge,
     confirmOverwrite,
+    confirmPushToEmptyFolder,
     cancelMerge,
   } = useFileSystemStorage();
 
@@ -194,8 +195,12 @@ export function FileSystemStatus() {
         <WorkspaceMergeDialog
           scanResult={scanResult}
           localDiagramCount={localDiagramCount}
+          isEmptyFolderPush={
+            scanResult.valid.length === 0 && scanResult.totalFilesScanned === 0 && localDiagramCount > 0
+          }
           onMerge={confirmMerge}
           onOverwriteLocal={confirmOverwrite}
+          onConfirmEmptyFolderPush={confirmPushToEmptyFolder}
           onCancel={cancelMerge}
         />
       )}

@@ -3,7 +3,7 @@ import {
   type Diagram,
   getCachedCanvasSnapshot,
   resolveActiveScene,
-  useActiveDiagram,
+  useActiveDiagramModel,
 } from "@/features/diagram";
 import { serializeDiagramContext } from "@/features/llm";
 
@@ -21,12 +21,16 @@ export function useDiagramContext(params: {
   selectedNodeId: string | null;
 }): DiagramContextResult {
   const { selectedNodeIds, selectedNodeId } = params;
-  const activeDiagram = useActiveDiagram();
+  const activeModel = useActiveDiagramModel();
 
   const diagramText = useMemo(() => {
-    if (!activeDiagram) {
+    if (!activeModel) {
       return "Diagram: none\nNodes (0)\nEdges (0)\nProject: none\nDescription: none\nExternal Links (0)";
     }
+    const activeDiagram: Diagram = {
+      ...activeModel,
+      viewport: { x: 0, y: 0, zoom: 1 },
+    };
     const resolvedDiagram = {
       ...activeDiagram,
       snapshot: getCachedCanvasSnapshot(activeDiagram),
@@ -39,7 +43,7 @@ export function useDiagramContext(params: {
       includeLinks: true,
       activeScene: activeScene ?? undefined,
     });
-  }, [activeDiagram]);
+  }, [activeModel]);
 
   return useMemo(
     () => ({

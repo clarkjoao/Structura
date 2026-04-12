@@ -450,6 +450,10 @@
     "overwrite": "Usar arquivos só pasta",
     "mergeTitle": "Manter os diagramas que já estão no app e adicionar os que estão na pasta",
     "merge": "Manter tudo (localStorage + pasta) e fazer merge",
+    "emptyFolderTitle": "Pasta vazia",
+    "emptyFolderDescription": "Esta pasta não tem arquivos de diagrama do Structura. Você tem {{count}} diagrama(s) só no app. Envie-os para a pasta para iniciar a sincronização, ou cancele para desconectar.",
+    "emptyFolderPush": "Enviar diagramas para a pasta",
+    "emptyFolderPushTitle": "Gravar o estado atual do app nesta pasta e iniciar a sincronização",
     "errors": {
       "invalidJson": "JSON malformado",
       "readFile": "Erro ao ler arquivo: {{message}}",

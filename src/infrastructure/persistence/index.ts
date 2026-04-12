@@ -1,4 +1,6 @@
 export type { IStoragePort } from "./IStoragePort";
+export { isQuotaExceededError } from "./storageQuota";
+export { mergeCustomComponentTemplates } from "./merge-custom-component-templates";
 export { LocalStorageAdapter, defaultStorage } from "./LocalStorageAdapter";
 export { InMemoryAdapter } from "./InMemoryAdapter";
 export { FileSystemAdapter, fileSystemAdapter } from "./FileSystemAdapter";

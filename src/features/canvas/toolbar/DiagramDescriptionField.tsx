@@ -1,13 +1,11 @@
-import {
-  useActiveDiagram,
-} from "@/features/diagram";
+import { useActiveDiagramModel } from "@/features/diagram";
 
 export interface DiagramDescriptionFieldProps {
   editLocked: boolean;
 }
 
 export function DiagramDescriptionField({ editLocked: _editLocked }: DiagramDescriptionFieldProps) {
-  const diagram = useActiveDiagram();
+  const diagram = useActiveDiagramModel();
 
   if (!diagram) return null;
   if (!diagram.description?.trim()) return null;

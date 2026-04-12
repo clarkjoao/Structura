@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { getCachedCanvasSnapshot, useActiveDiagram } from "@/features/diagram";
+import { type Diagram, getCachedCanvasSnapshot, useActiveDiagramModel } from "@/features/diagram";
 import type { MentionItem } from "@/features/llm";
 
 interface UseMentionSearchResult {
@@ -82,12 +82,17 @@ function searchMentionItems(allItems: MentionItem[], query: string): MentionItem
 }
 
 export function useMentionSearch(): UseMentionSearchResult {
-  const activeDiagram = useActiveDiagram();
+  const activeModel = useActiveDiagramModel();
 
   const allItems = useMemo(() => {
-    if (!activeDiagram) {
+    if (!activeModel) {
       return [];
     }
+
+    const activeDiagram: Diagram = {
+      ...activeModel,
+      viewport: { x: 0, y: 0, zoom: 1 },
+    };
 
     const snapshot = getCachedCanvasSnapshot(activeDiagram);
     const components = Object.values(snapshot.components).sort((componentA, componentB) =>
@@ -105,7 +110,7 @@ export function useMentionSearch(): UseMentionSearchResult {
       buildEdgeMentionItem(connection, componentNameById),
     );
     return [...nodeItems, ...edgeItems];
-  }, [activeDiagram]);
+  }, [activeModel]);
 
   const search = (query: string) => searchMentionItems(allItems, query);
 

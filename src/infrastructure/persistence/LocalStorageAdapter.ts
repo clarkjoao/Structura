@@ -1,4 +1,5 @@
 import type { IStoragePort } from "./IStoragePort";
+import { isQuotaExceededError } from "./storageQuota";
 
 const KEY_PREFIX = "structura_";
 
@@ -13,7 +14,16 @@ export class LocalStorageAdapter implements IStoragePort {
     return `${this.prefix}${k}`;
   }
 
-  private fallbackKeys(k: string): string[] {
+  private lastStorageLength = -1;
+
+  private readonly fallbackKeysMemo = new Map<string, string[]>();
+
+  private invalidateFallbackKeyMemo(): void {
+    this.lastStorageLength = -1;
+    this.fallbackKeysMemo.clear();
+  }
+
+  private computeFallbackKeys(k: string): string[] {
     const currentKey = this.key(k);
     const matches: string[] = [];
 
@@ -24,6 +34,23 @@ export class LocalStorageAdapter implements IStoragePort {
     }
 
     return matches;
+  }
+
+  private fallbackKeys(k: string): string[] {
+    const length = localStorage.length;
+    if (length !== this.lastStorageLength) {
+      this.fallbackKeysMemo.clear();
+      this.lastStorageLength = length;
+    }
+
+    const memo = this.fallbackKeysMemo.get(k);
+    if (memo !== undefined) {
+      return memo;
+    }
+
+    const computed = this.computeFallbackKeys(k);
+    this.fallbackKeysMemo.set(k, computed);
+    return computed;
   }
 
   async getItem(key: string): Promise<string | null> {
@@ -46,8 +73,49 @@ export class LocalStorageAdapter implements IStoragePort {
     if (this.paused) return;
     try {
       localStorage.setItem(this.key(key), value);
-    } catch {
-      
+      this.invalidateFallbackKeyMemo();
+    } catch (error) {
+      if (isQuotaExceededError(error)) {
+        throw error;
+      }
+      console.warn("[Structura] LocalStorageAdapter setItem", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Same as {@link setItem} but synchronous. Use from `beforeunload` where async
+   * persistence may not complete before the tab closes.
+   */
+  setItemSync(key: string, value: string): void {
+    if (this.paused) return;
+    localStorage.setItem(this.key(key), value);
+    this.invalidateFallbackKeyMemo();
+  }
+
+  /**
+   * Keys that already include the app namespace (e.g. sync timestamps). Not prefixed.
+   * Does not honor {@link paused} — only call after a successful write you are attributing.
+   */
+  setAuxiliaryValue(fullKey: string, value: string): void {
+    try {
+      localStorage.setItem(fullKey, value);
+      this.invalidateFallbackKeyMemo();
+    } catch (error) {
+      if (isQuotaExceededError(error)) {
+        throw error;
+      }
+      console.warn("[Structura] LocalStorageAdapter setAuxiliaryValue", error);
+      throw error;
+    }
+  }
+
+  removeAuxiliaryKey(fullKey: string): void {
+    try {
+      localStorage.removeItem(fullKey);
+      this.invalidateFallbackKeyMemo();
+    } catch (error) {
+      console.warn("[Structura] LocalStorageAdapter removeAuxiliaryKey", error);
     }
   }
 
@@ -57,6 +125,7 @@ export class LocalStorageAdapter implements IStoragePort {
       this.fallbackKeys(key).forEach((fallbackKey) => {
         localStorage.removeItem(fallbackKey);
       });
+      this.invalidateFallbackKeyMemo();
     } catch (error) {
       console.warn("[StructuraContext] LocalStorageAdapter removeItem", error);
     }
@@ -74,6 +143,7 @@ export class LocalStorageAdapter implements IStoragePort {
       typeof data === "string" ? data : JSON.stringify(data);
     try {
       localStorage.setItem(this.key(key), value);
+      this.invalidateFallbackKeyMemo();
       return true;
     } catch {
       return false;

@@ -2,7 +2,7 @@
 
 import { useDiagramStore, VIEWPORT_DEBOUNCE_MS, PERSIST_KEY, type Diagram, type IconDefinition } from "@/features/diagram";
 import { useJourneyStore } from "@/features/journeys";
-import { fileSystemAdapter } from "./FileSystemAdapter";
+import { fileSystemAdapter, type WorkspacePayload } from "./FileSystemAdapter";
 import { clearLocalStorageDiagramSyncTimestamp } from "./localStorageSyncTimestamp";
 import {
   clearFolderSyncTimestamp,
@@ -11,21 +11,31 @@ import {
 import { defaultStorage } from "./LocalStorageAdapter";
 import { useCustomComponentStore, type CustomComponentTemplate } from "@/features/custom-components";
 import { useIconStore } from "@/features/icons";
+import { mergeCustomComponentTemplates } from "./merge-custom-component-templates";
+import { diagramStoreWorkspaceEqualsForFolderSync } from "./workspace-folder-sync-equality";
 
 type DiagramStoreState = ReturnType<typeof useDiagramStore.getState>;
 
-function mergeTemplates(
-  local: Record<string, CustomComponentTemplate>,
-  remote: Record<string, CustomComponentTemplate>,
-): Record<string, CustomComponentTemplate> {
-  const result = { ...local };
-  for (const [id, remoteTemplate] of Object.entries(remote)) {
-    const localTemplate = result[id];
-    if (!localTemplate || remoteTemplate.updatedAt > localTemplate.updatedAt) {
-      result[id] = remoteTemplate;
-    }
+function parseIsoMs(iso: string | undefined): number {
+  if (!iso) return 0;
+  const t = Date.parse(iso);
+  return Number.isNaN(t) ? 0 : t;
+}
+
+function latestMsFromStore(state: DiagramStoreState): number {
+  let max = 0;
+  for (const diagram of Object.values(state.diagrams)) {
+    max = Math.max(max, parseIsoMs(diagram.updatedAt));
   }
-  return result;
+  return max;
+}
+
+function latestMsFromWorkspacePayload(workspace: WorkspacePayload): number {
+  let max = parseIsoMs(workspace.manifestUpdatedAt);
+  for (const diagram of Object.values(workspace.diagrams)) {
+    max = Math.max(max, parseIsoMs(diagram.updatedAt));
+  }
+  return max;
 }
 
 export interface WorkspaceIconSource {
@@ -33,8 +43,11 @@ export interface WorkspaceIconSource {
   iconLibrary?: Record<string, IconDefinition>;
 }
 
-
-export function hydrateIconStoreFromWorkspace(workspace: WorkspaceIconSource): void {
+/**
+ * Moves embedded diagram icons into the global icon store and returns a copy of
+ * `workspace` with per-diagram `iconLibrary` cleared (no in-place mutation).
+ */
+export function hydrateIconStoreFromWorkspace(workspace: WorkspaceIconSource): WorkspaceIconSource {
   try {
     if (workspace.iconLibrary) {
       useIconStore.setState((state) => ({
@@ -42,13 +55,15 @@ export function hydrateIconStoreFromWorkspace(workspace: WorkspaceIconSource): v
       }));
     }
   } catch {
-    
+    // ignore
   }
 
   try {
-    for (const diagram of Object.values(workspace.diagrams)) {
+    const nextDiagrams: Record<string, Diagram> = {};
+    for (const [id, diagram] of Object.entries(workspace.diagrams)) {
       const library = diagram.snapshot?.iconLibrary ?? {};
       if (Object.keys(library).length === 0) {
+        nextDiagrams[id] = diagram;
         continue;
       }
       const globalIcons = useIconStore.getState().icons;
@@ -57,10 +72,14 @@ export function hydrateIconStoreFromWorkspace(workspace: WorkspaceIconSource): v
           useIconStore.getState().addIcon(icon as IconDefinition);
         }
       }
-      diagram.snapshot.iconLibrary = {};
+      nextDiagrams[id] = {
+        ...diagram,
+        snapshot: { ...diagram.snapshot, iconLibrary: {} },
+      };
     }
+    return { ...workspace, diagrams: nextDiagrams };
   } catch {
-    
+    return workspace;
   }
 }
 
@@ -141,9 +160,20 @@ async function doReconnect(): Promise<boolean> {
 
     const workspace = await fileSystemAdapter.loadWorkspace();
     if (workspace) {
+      const current = useDiagramStore.getState();
+      const memLatest = latestMsFromStore(current);
+      const fsLatest = latestMsFromWorkspacePayload(workspace);
+      if (memLatest > fsLatest) {
+        await flushWorkspaceToConnectedFolder(current);
+        await clearLocalCache();
+        _reconnected = true;
+        return true;
+      }
+
+      const hydrated = hydrateIconStoreFromWorkspace(workspace);
       useDiagramStore.setState((s) => ({
         ...s,
-        diagrams: workspace.diagrams as typeof s.diagrams,
+        diagrams: hydrated.diagrams as typeof s.diagrams,
         serviceRegistry: workspace.serviceRegistry as typeof s.serviceRegistry,
         folders: workspace.folders as typeof s.folders,
         activeDiagramId: workspace.activeDiagramId,
@@ -158,11 +188,9 @@ async function doReconnect(): Promise<boolean> {
         workspace.customComponentTemplates;
       if (workspaceTemplates) {
         useCustomComponentStore.setState((state) => ({
-          templates: mergeTemplates(state.templates, workspaceTemplates),
+          templates: mergeCustomComponentTemplates(state.templates, workspaceTemplates),
         }));
       }
-
-      hydrateIconStoreFromWorkspace(workspace);
 
       const fsJourneys = await fileSystemAdapter.readJourneys();
       if (fsJourneys) {
@@ -193,79 +221,84 @@ export function bootFileSystem(): Promise<boolean> {
 
 let _syncUnsub: (() => void) | null = null;
 let _syncTimer: ReturnType<typeof setTimeout> | null = null;
+let _flushChain: Promise<void> = Promise.resolve();
+let lastFlushedDiagrams: Record<string, Diagram> = {};
 
 
 export function startFileSystemSync(): void {
-  if (_syncUnsub) return; 
+  stopFileSystemSync();
 
-  const scheduleWorkspaceWrite = (
-    diagramState: DiagramStoreState,
-    previousDiagramState: DiagramStoreState,
-  ): void => {
+  lastFlushedDiagrams = { ...useDiagramStore.getState().diagrams };
+
+  const runDebouncedFlush = (): void => {
     if (!fileSystemAdapter.isConnected) return;
 
     if (_syncTimer) clearTimeout(_syncTimer);
-    _syncTimer = setTimeout(async () => {
-      try {
-        fileSystemAdapter.setFolders(diagramState.folders);
+    _syncTimer = setTimeout(() => {
+      _flushChain = _flushChain
+        .then(async () => {
+          const diagramState = useDiagramStore.getState();
+          const prevDiagrams = lastFlushedDiagrams;
 
-        const prevDiagrams = previousDiagramState.diagrams;
-        for (const [id, previousDiagram] of Object.entries(prevDiagrams)) {
-          if (!diagramState.diagrams[id]) {
-            fileSystemAdapter.setFolders(previousDiagramState.folders);
-            await fileSystemAdapter.deleteDiagram(id, previousDiagram);
+          fileSystemAdapter.setFolders(diagramState.folders);
+
+          for (const [id, previousDiagram] of Object.entries(prevDiagrams)) {
+            if (!diagramState.diagrams[id]) {
+              fileSystemAdapter.setFolders(diagramState.folders);
+              await fileSystemAdapter.deleteDiagram(id, previousDiagram);
+            }
           }
-        }
 
-        fileSystemAdapter.setFolders(diagramState.folders);
-        for (const [id, diagram] of Object.entries(diagramState.diagrams)) {
-          if (diagram !== prevDiagrams[id]) {
-            await fileSystemAdapter.writeDiagram(diagram);
+          fileSystemAdapter.setFolders(diagramState.folders);
+          for (const [id, diagram] of Object.entries(diagramState.diagrams)) {
+            if (diagram !== prevDiagrams[id]) {
+              await fileSystemAdapter.writeDiagram(diagram);
+            }
           }
-        }
 
-        const customComponentTemplates = useCustomComponentStore.getState().templates;
-        const iconLibrary = useIconStore.getState().icons;
+          const customComponentTemplates = useCustomComponentStore.getState().templates;
+          const iconLibrary = useIconStore.getState().icons;
 
-        await fileSystemAdapter.writeManifest({
-          version: 1,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          diagramIds: Object.keys(diagramState.diagrams),
-          serviceRegistry: diagramState.serviceRegistry,
-          folders: diagramState.folders,
-          activeDiagramId: diagramState.activeDiagramId,
-          customComponentTemplates,
-          iconLibrary,
+          await fileSystemAdapter.writeManifest({
+            version: 1,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            diagramIds: Object.keys(diagramState.diagrams),
+            serviceRegistry: diagramState.serviceRegistry,
+            folders: diagramState.folders,
+            activeDiagramId: diagramState.activeDiagramId,
+            customComponentTemplates,
+            iconLibrary,
+          });
+
+          const journeys = useJourneyStore.getState().journeys;
+          await fileSystemAdapter.writeJourneys(journeys);
+
+          recordFolderSyncSuccess();
+
+          lastFlushedDiagrams = { ...diagramState.diagrams };
+        })
+        .catch((error: unknown) => {
+          console.error("[FileSystemSync] write failed:", error);
         });
-
-        const journeys = useJourneyStore.getState().journeys;
-        await fileSystemAdapter.writeJourneys(journeys);
-
-        recordFolderSyncSuccess();
-      } catch (error) {
-        console.error("[FileSystemSync] write failed:", error);
-      }
     }, VIEWPORT_DEBOUNCE_MS);
   };
 
   const diagramUnsubscribe = useDiagramStore.subscribe((state, prevState) => {
-    scheduleWorkspaceWrite(state, prevState);
+    if (diagramStoreWorkspaceEqualsForFolderSync(state, prevState)) return;
+    runDebouncedFlush();
   });
 
   const customComponentUnsubscribe = useCustomComponentStore.subscribe(() => {
-    const currentDiagramState = useDiagramStore.getState();
-    scheduleWorkspaceWrite(currentDiagramState, currentDiagramState);
+    runDebouncedFlush();
   });
 
   const iconLibraryUnsubscribe = useIconStore.subscribe(() => {
-    const currentDiagramState = useDiagramStore.getState();
-    scheduleWorkspaceWrite(currentDiagramState, currentDiagramState);
+    runDebouncedFlush();
   });
 
   const journeyUnsubscribe = useJourneyStore.subscribe(() => {
-    const currentDiagramState = useDiagramStore.getState();
-    scheduleWorkspaceWrite(currentDiagramState, currentDiagramState);
+    runDebouncedFlush();
   });
 
   _syncUnsub = () => {
@@ -293,6 +326,7 @@ export function resetBootState(): void {
   _reconnected = false;
   _reconnecting = null;
   stopFileSystemSync();
+  _flushChain = Promise.resolve();
   clearFolderSyncTimestamp();
 }
 

@@ -17,6 +17,7 @@ export function deepClone<T>(v: T): T {
   return structuredClone(plain);
 }
 
+/** Snapshot clone for undo — O(n) per checkpoint; coalescing limits frequency (see HISTORY_COALESCE_MS). */
 export function pushHistory(
   state: AppState,
   mutationType: HistoryMutationKind = "soft",
@@ -47,6 +48,7 @@ export const historySlice =
         const activeId = state.activeDiagramId;
         if (!activeId) return;
 
+        /** Linear scan for last entry for the active diagram (past is global, bounded by MAX_HISTORY_STEPS). */
         let entryIndex = -1;
         for (let i = state.past.length - 1; i >= 0; i--) {
           if (state.past[i].diagramId === activeId) {

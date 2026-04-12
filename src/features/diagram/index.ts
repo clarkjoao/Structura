@@ -277,6 +277,8 @@ export {
   useActiveDiagramId,
   
   useActiveDiagram,
+
+  useActiveDiagramModel,
   
   useComponents,
   

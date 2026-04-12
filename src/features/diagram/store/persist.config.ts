@@ -12,15 +12,7 @@ import type { ServiceDefinition } from "../model/service.types";
 import { ServiceSource } from "../enums";
 import { migrateFlow } from "../utils/flow-migration";
 import { useSaveStatusStore } from "./saveStatus.store";
-
-function isQuotaExceededError(err: unknown): boolean {
-  return (
-    (typeof DOMException !== "undefined" &&
-      err instanceof DOMException &&
-      (err.name === "QuotaExceededError" || err.name === "NS_ERROR_DOM_QUOTA_REACHED")) ||
-    (err instanceof Error && err.name === "QuotaExceededError")
-  );
-}
+import { isQuotaExceededError } from "@/infrastructure/persistence/storageQuota";
 
 export const PERSIST_KEY = "diagram-store";
 
@@ -235,6 +227,14 @@ function migrateIconDefinitionToSource(state: Partial<DiagramStore>): void {
   }
 }
 
+function hasEmbeddedIconLibraryInDiagrams(state: DiagramStore): boolean {
+  for (const diagram of Object.values(state.diagrams ?? {})) {
+    const library = (diagram as Diagram).snapshot?.iconLibrary;
+    if (library && Object.keys(library).length > 0) return true;
+  }
+  return false;
+}
+
 function migrateIconLibraryToGlobalStore(state: DiagramStore): void {
   try {
     const migrateSnapshot = (snapshot: Diagram["snapshot"] | undefined): void => {
@@ -291,7 +291,9 @@ export function mergePersistedState(
   migrateIconDefinitionToSource(next);
   migrateAddEdgeLayouts(next);
   migrateAddDiagramDescription(next);
-  migrateIconLibraryToGlobalStore(next);
+  if (hasEmbeddedIconLibraryInDiagrams(next)) {
+    migrateIconLibraryToGlobalStore(next);
+  }
 
   return next;
 }
@@ -351,18 +353,32 @@ export function wrapIStoragePortWithDiagramPersistTracking(
       if (!pendingPersist || pendingPersist.name !== PERSIST_KEY) return;
       const { name, value } = pendingPersist;
       pendingPersist = null;
-      void storage
-        .setItem(name, value)
-        .then(() => {
-          if (storage instanceof LocalStorageAdapter && storage.paused) return;
+      try {
+        if (storage instanceof LocalStorageAdapter) {
+          storage.setItemSync(name, value);
+          if (storage.paused) return;
           recordLocalStorageDiagramSyncSuccess();
-        })
-        .catch((err: unknown) => {
-          if (isQuotaExceededError(err)) {
-            useSaveStatusStore.getState()._setStorageCritical();
-          }
-          useSaveStatusStore.getState()._setError();
-        });
+          useSaveStatusStore.getState()._setSaved();
+        } else {
+          void storage
+            .setItem(name, value)
+            .then(() => {
+              recordLocalStorageDiagramSyncSuccess();
+              useSaveStatusStore.getState()._setSaved();
+            })
+            .catch((err: unknown) => {
+              if (isQuotaExceededError(err)) {
+                useSaveStatusStore.getState()._setStorageCritical();
+              }
+              useSaveStatusStore.getState()._setError();
+            });
+        }
+      } catch (err: unknown) {
+        if (isQuotaExceededError(err)) {
+          useSaveStatusStore.getState()._setStorageCritical();
+        }
+        useSaveStatusStore.getState()._setError();
+      }
     });
   }
 

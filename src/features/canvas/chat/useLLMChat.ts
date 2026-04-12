@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from "react";
-import { useActiveDiagram } from "@/features/diagram";
+import { useActiveDiagramModel } from "@/features/diagram";
 import { buildMentionContextBlock, type ActiveMention } from "@/features/llm";
 import { useLLMStore } from "@/features/llm/store";
 import { useDiagramContext } from "./useDiagramContext";
@@ -18,7 +18,7 @@ const defaultLLMChatParams: UseLLMChatParams = {
 export function useLLMChat(
   params: UseLLMChatParams = defaultLLMChatParams,
 ) {
-  const activeDiagram = useActiveDiagram();
+  const activeDiagram = useActiveDiagramModel();
   const { diagramText, selectedNodeIds: selIds, focusedNodeId } =
     useDiagramContext(params);
   const { allItems } = useMentionSearch();

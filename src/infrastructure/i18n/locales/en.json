@@ -450,6 +450,10 @@
     "overwrite": "Use folder files only",
     "mergeTitle": "Keep diagrams already in the app and add those from the folder",
     "merge": "Keep all (localStorage + folder) and merge",
+    "emptyFolderTitle": "Empty folder",
+    "emptyFolderDescription": "This folder has no Structura diagram files. You have {{count}} diagram(s) only in the app. Push them to the folder to start syncing, or cancel to disconnect.",
+    "emptyFolderPush": "Push diagrams to folder",
+    "emptyFolderPushTitle": "Write the current app state into this folder and start folder sync",
     "errors": {
       "invalidJson": "Malformed JSON",
       "readFile": "Error reading file: {{message}}",

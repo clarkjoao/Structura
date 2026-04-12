@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, Plus, Settings, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useActiveDiagram } from "@/features/diagram";
+import { useActiveDiagramModel } from "@/features/diagram";
 import { buildContextualSuggestions, getLLMErrorI18nKey, type PendingSuggestion } from "@/features/llm";
 import { AnalysisPanel, useLLMChat, useMentionInput, useMentionSearch } from "@/features/canvas/chat";
 import { ChatMessage } from "./ChatMessage";
@@ -32,7 +32,7 @@ export function ChatPanel({
   selectedNodeId,
 }: ChatPanelProps) {
   const { t } = useTranslation();
-  const activeDiagram = useActiveDiagram();
+  const activeDiagram = useActiveDiagramModel();
   const [showSettings, setShowSettings] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);

@@ -5,9 +5,12 @@ import { FileSystemEntryKind } from "@/features/diagram";
 import type { CustomComponentTemplate } from "@/features/custom-components";
 import i18n from "@/infrastructure/i18n";
 import {
+  isDiagramTombstoneJson,
   validateDiagramFile,
   validateManifest,
 } from "./validateWorkspaceFile";
+
+const MAX_DIRECTORY_SCAN_DEPTH = 64;
 
 const DB_NAME = "structura-fs";
 const DB_STORE = "handles";
@@ -156,6 +159,8 @@ export type WorkspacePayload = {
   serviceRegistry: Record<string, unknown>;
   folders: Record<string, unknown>;
   activeDiagramId: string | null;
+  /** ISO timestamp from manifest; used for merge/reconnect conflict resolution. */
+  manifestUpdatedAt?: string;
   customComponentTemplates?: Record<string, CustomComponentTemplate>;
   iconLibrary?: Record<string, IconDefinition>;
 };
@@ -249,8 +254,10 @@ export class FileSystemAdapter {
 
   private async _findDiagramFile(
     dir: FileSystemDirectoryHandle,
-    diagramId: string
+    diagramId: string,
+    depth = 0,
   ): Promise<Diagram | null> {
+    if (depth > MAX_DIRECTORY_SCAN_DEPTH) return null;
     for await (const [name, entry] of directoryEntries(dir)) {
       if (entry.kind === FileSystemEntryKind.File && name === `${diagramId}.json`) {
         const f = await (entry as FileSystemFileHandle).getFile();
@@ -259,7 +266,8 @@ export class FileSystemAdapter {
       if (entry.kind === FileSystemEntryKind.Directory) {
         const result = await this._findDiagramFile(
           entry as FileSystemDirectoryHandle,
-          diagramId
+          diagramId,
+          depth + 1,
         );
         if (result) return result;
       }
@@ -318,6 +326,7 @@ export class FileSystemAdapter {
     }
   }
 
+  /** Single-file workspace export; large journey sets may warrant sharding in a future schema. */
   async writeJourneys(journeys: Record<string, Journey>): Promise<void> {
     if (!this.handle) return;
     try {
@@ -360,11 +369,17 @@ export class FileSystemAdapter {
 
     const diagrams = await this._scanAllDiagrams(this.handle!);
 
+    let activeDiagramId = manifest.activeDiagramId;
+    if (activeDiagramId && !diagrams[activeDiagramId]) {
+      activeDiagramId = Object.keys(diagrams)[0] ?? null;
+    }
+
     return {
       diagrams,
       serviceRegistry: manifest.serviceRegistry,
       folders: manifest.folders,
-      activeDiagramId: manifest.activeDiagramId,
+      activeDiagramId,
+      manifestUpdatedAt: manifest.updatedAt,
       customComponentTemplates: manifest.customComponentTemplates,
       iconLibrary: manifest.iconLibrary,
     };
@@ -387,8 +402,11 @@ export class FileSystemAdapter {
 
   private async _scanDirectory(
     dir: FileSystemDirectoryHandle,
-    result: WorkspaceScanResult
+    result: WorkspaceScanResult,
+    depth = 0,
   ): Promise<void> {
+    if (depth > MAX_DIRECTORY_SCAN_DEPTH) return;
+
     for await (const [name, entry] of directoryEntries(dir)) {
       if (entry.kind === FileSystemEntryKind.File && name.endsWith(".json")) {
         result.totalFilesScanned++;
@@ -443,15 +461,20 @@ export class FileSystemAdapter {
       if (entry.kind === FileSystemEntryKind.Directory) {
         await this._scanDirectory(
           entry as FileSystemDirectoryHandle,
-          result
+          result,
+          depth + 1,
         );
       }
     }
   }
 
   private async _scanAllDiagrams(
-    dir: FileSystemDirectoryHandle
+    dir: FileSystemDirectoryHandle,
+    depth = 0,
   ): Promise<Record<string, Diagram>> {
+    if (depth > MAX_DIRECTORY_SCAN_DEPTH) {
+      return {};
+    }
     const result: Record<string, Diagram> = {};
     for await (const [name, entry] of directoryEntries(dir)) {
       if (
@@ -462,9 +485,9 @@ export class FileSystemAdapter {
       ) {
         try {
           const f = await (entry as FileSystemFileHandle).getFile();
-          const raw = JSON.parse(await f.text()) as Record<string, unknown>;
-          if (raw.deleted) continue;
-          const diagram = normalizeImportedDiagram(raw as unknown as Diagram);
+          const rawUnknown: unknown = JSON.parse(await f.text());
+          if (isDiagramTombstoneJson(rawUnknown)) continue;
+          const diagram = normalizeImportedDiagram(rawUnknown as Diagram);
           if (diagram && diagram.id) {
             result[diagram.id] = diagram;
           }
@@ -474,7 +497,8 @@ export class FileSystemAdapter {
       }
       if (entry.kind === FileSystemEntryKind.Directory) {
         const nested = await this._scanAllDiagrams(
-          entry as FileSystemDirectoryHandle
+          entry as FileSystemDirectoryHandle,
+          depth + 1,
         );
         Object.assign(result, nested);
       }

@@ -17,16 +17,21 @@ import { useShallow } from "zustand/react/shallow";
 interface WorkspaceMergeDialogProps {
   scanResult: WorkspaceScanResult;
   localDiagramCount: number;
+  /** Folder has no diagram JSON files; user may push in-memory diagrams into it. */
+  isEmptyFolderPush: boolean;
   onMerge: () => void;
   onOverwriteLocal: () => void;
+  onConfirmEmptyFolderPush: () => void;
   onCancel: () => void;
 }
 
 export function WorkspaceMergeDialog({
   scanResult,
   localDiagramCount,
+  isEmptyFolderPush,
   onMerge,
   onOverwriteLocal,
+  onConfirmEmptyFolderPush,
   onCancel,
 }: WorkspaceMergeDialogProps) {
   const { t } = useTranslation();
@@ -40,6 +45,50 @@ export function WorkspaceMergeDialog({
     () => scanResult.valid.filter((d) => localDiagramIds.has(d.id)).length,
     [scanResult.valid, localDiagramIds]
   );
+
+  if (isEmptyFolderPush) {
+    return (
+      <div
+        className="fixed inset-0 z-[60] flex items-center justify-center bg-background/60 backdrop-blur-sm h-screen"
+        onClick={onCancel}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          className="w-full max-w-lg rounded-xl border border-border bg-card p-6 shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <AlertTriangle className="h-4.5 w-4.5 text-amber-500" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold">{t("workspaceMerge.emptyFolderTitle")}</h2>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                {t("workspaceMerge.emptyFolderDescription", { count: localDiagramCount })}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+            <button
+              onClick={onCancel}
+              className="rounded-md border border-border px-3 py-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            >
+              {t("workspaceMerge.cancelKeepLocal")}
+            </button>
+            <button
+              onClick={onConfirmEmptyFolderPush}
+              className="rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              title={t("workspaceMerge.emptyFolderPushTitle")}
+            >
+              {t("workspaceMerge.emptyFolderPush")}
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div

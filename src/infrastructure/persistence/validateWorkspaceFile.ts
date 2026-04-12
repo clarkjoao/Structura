@@ -12,11 +12,23 @@ export type ManifestValidationResult =
   | { valid: true; manifest: WorkspaceManifest }
   | { valid: false; reason: string };
 
-
+/** Deletion marker written when physical file removal fails (see FileSystemAdapter.deleteDiagram). */
+export function isDiagramTombstoneJson(raw: unknown): boolean {
+  if (!raw || typeof raw !== "object") return false;
+  return (raw as Record<string, unknown>).deleted === true;
+}
 
 export function validateDiagramFile(raw: unknown): ValidationResult {
   if (!raw || typeof raw !== "object") {
     return { valid: false, reason: "File is not a valid JSON object", raw };
+  }
+
+  if (isDiagramTombstoneJson(raw)) {
+    return {
+      valid: false,
+      reason: "Diagram file is a deletion tombstone",
+      raw,
+    };
   }
 
   const obj = raw as Record<string, unknown>;

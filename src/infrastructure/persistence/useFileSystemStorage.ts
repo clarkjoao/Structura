@@ -20,6 +20,7 @@ import {
   resetBootState,
   startFileSystemSync,
 } from "./fileSystemBoot";
+import { mergeCustomComponentTemplates } from "./merge-custom-component-templates";
 import { recordFolderSyncSuccess } from "./folderSyncTimestamp";
 
 async function clearLocalCache(): Promise<void> {
@@ -34,20 +35,6 @@ async function mergeJourneysFromConnectedFolder(): Promise<void> {
       journeys: { ...state.journeys, ...fsJourneys },
     }));
   }
-}
-
-function mergeTemplates(
-  local: Record<string, CustomComponentTemplate>,
-  remote: Record<string, CustomComponentTemplate>,
-): Record<string, CustomComponentTemplate> {
-  const result = { ...local };
-  for (const [id, remoteTemplate] of Object.entries(remote)) {
-    const localTemplate = result[id];
-    if (!localTemplate || remoteTemplate.updatedAt > localTemplate.updatedAt) {
-      result[id] = remoteTemplate;
-    }
-  }
-  return result;
 }
 
 export type FsStatus = "disconnected" | "connecting" | "connected" | "error";
@@ -148,24 +135,29 @@ export function useFileSystemStorage() {
     const scan = await fileSystemAdapter.scanWorkspace();
 
     if (scan.valid.length === 0 && scan.totalFilesScanned === 0) {
-      
-      const state = useDiagramStore.getState();
-      fileSystemAdapter.setFolders(state.folders);
-      for (const diagram of Object.values(state.diagrams)) {
-        await fileSystemAdapter.writeDiagram(diagram);
+      const diagramCount = Object.keys(useDiagramStore.getState().diagrams).length;
+      if (diagramCount === 0) {
+        const state = useDiagramStore.getState();
+        fileSystemAdapter.setFolders(state.folders);
+        for (const diagram of Object.values(state.diagrams)) {
+          await fileSystemAdapter.writeDiagram(diagram);
+        }
+        await fileSystemAdapter.writeManifest(buildManifest(state));
+        recordFolderSyncSuccess();
+        defaultStorage.paused = true;
+        await clearLocalCache();
+        await mergeJourneysFromConnectedFolder();
+        startFileSystemSync();
+        setStatus("connected");
+        return;
       }
-      await fileSystemAdapter.writeManifest(buildManifest(state));
-      recordFolderSyncSuccess();
-      defaultStorage.paused = true;
-      await clearLocalCache();
-      await mergeJourneysFromConnectedFolder();
-      startFileSystemSync();
+      setScanResult(scan);
+      setPendingMerge(true);
       setStatus("connected");
       return;
     }
 
     if (scan.valid.length === 0) {
-      
       defaultStorage.paused = true;
       await clearLocalCache();
       await mergeJourneysFromConnectedFolder();
@@ -174,48 +166,65 @@ export function useFileSystemStorage() {
       return;
     }
 
-    
     setScanResult(scan);
     setPendingMerge(true);
-    defaultStorage.paused = true;
     setStatus("connected");
   }, []);
 
+  const confirmPushToEmptyFolder = useCallback(async () => {
+    if (!scanResult) return;
+    defaultStorage.paused = true;
+    const state = useDiagramStore.getState();
+    fileSystemAdapter.setFolders(state.folders);
+    for (const diagram of Object.values(state.diagrams)) {
+      await fileSystemAdapter.writeDiagram(diagram);
+    }
+    await fileSystemAdapter.writeManifest(buildManifest(state));
+    recordFolderSyncSuccess();
+    await clearLocalCache();
+    await mergeJourneysFromConnectedFolder();
+    startFileSystemSync();
+    setScanResult(null);
+    setPendingMerge(false);
+    setStatus("connected");
+  }, [scanResult]);
+
   const confirmMerge = useCallback(async () => {
     if (!scanResult) return;
+    defaultStorage.paused = true;
     const validDiagrams = Object.fromEntries(
       scanResult.valid.map((d) => [d.id, d])
     );
     const manifest = scanResult.manifest;
-    useDiagramStore.setState((s) => ({
-      ...s,
-      diagrams: { ...s.diagrams, ...validDiagrams },
-      ...(manifest
-        ? {
-            folders: {
-              ...s.folders,
-              ...(manifest.folders as typeof s.folders),
-            },
-            serviceRegistry: {
-              ...s.serviceRegistry,
-              ...(manifest.serviceRegistry as typeof s.serviceRegistry),
-            },
-          }
-        : {}),
-    }));
+    useDiagramStore.setState((draft) => {
+      draft.diagrams = { ...draft.diagrams, ...validDiagrams };
+      if (manifest) {
+        draft.folders = {
+          ...draft.folders,
+          ...(manifest.folders as typeof draft.folders),
+        };
+        draft.serviceRegistry = {
+          ...draft.serviceRegistry,
+          ...(manifest.serviceRegistry as typeof draft.serviceRegistry),
+        };
+      }
+    });
 
     const manifestTemplates = manifest?.customComponentTemplates as
       | Record<string, CustomComponentTemplate>
       | undefined;
     if (manifestTemplates) {
       useCustomComponentStore.setState((state) => ({
-        templates: mergeTemplates(state.templates, manifestTemplates),
+        templates: mergeCustomComponentTemplates(state.templates, manifestTemplates),
       }));
     }
 
-    hydrateIconStoreFromWorkspace({
+    const hydratedMerge = hydrateIconStoreFromWorkspace({
       diagrams: useDiagramStore.getState().diagrams,
       iconLibrary: manifest?.iconLibrary,
+    });
+    useDiagramStore.setState((draft) => {
+      draft.diagrams = hydratedMerge.diagrams as typeof draft.diagrams;
     });
 
     await mergeJourneysFromConnectedFolder();
@@ -231,21 +240,19 @@ export function useFileSystemStorage() {
 
   const confirmOverwrite = useCallback(async () => {
     if (!scanResult) return;
+    defaultStorage.paused = true;
     const validDiagrams = Object.fromEntries(
       scanResult.valid.map((d) => [d.id, d])
     );
     const manifest = scanResult.manifest;
-    useDiagramStore.setState((s) => ({
-      ...s,
-      diagrams: validDiagrams,
-      ...(manifest
-        ? {
-            serviceRegistry: manifest.serviceRegistry as typeof s.serviceRegistry,
-            folders: manifest.folders as typeof s.folders,
-            activeDiagramId: manifest.activeDiagramId,
-          }
-        : {}),
-    }));
+    useDiagramStore.setState((draft) => {
+      draft.diagrams = validDiagrams;
+      if (manifest) {
+        draft.serviceRegistry = manifest.serviceRegistry as typeof draft.serviceRegistry;
+        draft.folders = manifest.folders as typeof draft.folders;
+        draft.activeDiagramId = manifest.activeDiagramId;
+      }
+    });
 
     const manifestTemplates = manifest?.customComponentTemplates as
       | Record<string, CustomComponentTemplate>
@@ -254,9 +261,12 @@ export function useFileSystemStorage() {
       useCustomComponentStore.setState({ templates: manifestTemplates });
     }
 
-    hydrateIconStoreFromWorkspace({
+    const hydratedOverwrite = hydrateIconStoreFromWorkspace({
       diagrams: useDiagramStore.getState().diagrams,
       iconLibrary: manifest?.iconLibrary,
+    });
+    useDiagramStore.setState((draft) => {
+      draft.diagrams = hydratedOverwrite.diagrams as typeof draft.diagrams;
     });
 
     await mergeJourneysFromConnectedFolder();
@@ -295,6 +305,7 @@ export function useFileSystemStorage() {
 
   const confirmDisconnectWithBackup = useCallback(async () => {
     try {
+      // buildPersistStoragePayload / partialize omit clipboard; custom templates use a separate storage key.
       const state = useDiagramStore.getState();
       const customComponentTemplates = useCustomComponentStore.getState().templates;
       let payload: ReturnType<typeof buildPersistStoragePayload>;
@@ -384,9 +395,10 @@ export function useFileSystemStorage() {
       
       const workspace = await fileSystemAdapter.loadWorkspace();
       if (workspace) {
+        const hydratedWorkspace = hydrateIconStoreFromWorkspace(workspace);
         useDiagramStore.setState((s) => ({
           ...s,
-          diagrams: workspace.diagrams as typeof s.diagrams,
+          diagrams: hydratedWorkspace.diagrams as typeof s.diagrams,
           serviceRegistry: workspace.serviceRegistry as typeof s.serviceRegistry,
           folders: workspace.folders as typeof s.folders,
           activeDiagramId: workspace.activeDiagramId,
@@ -400,35 +412,32 @@ export function useFileSystemStorage() {
         const workspaceTemplates = workspace.customComponentTemplates;
         if (workspaceTemplates) {
           useCustomComponentStore.setState((state) => ({
-            templates: mergeTemplates(state.templates, workspaceTemplates),
+            templates: mergeCustomComponentTemplates(state.templates, workspaceTemplates),
           }));
         }
-
-        hydrateIconStoreFromWorkspace(workspace);
       } else {
-        
         const scan = await fileSystemAdapter.scanWorkspace();
         const validDiagrams = Object.fromEntries(scan.valid.map((d) => [d.id, d]));
-        useDiagramStore.setState((s) => ({
-          ...s,
-          diagrams: validDiagrams as typeof s.diagrams,
-          past: [],
-          future: [],
-        }));
 
         const scannedManifestTemplates = scan.manifest?.customComponentTemplates as
           | Record<string, CustomComponentTemplate>
           | undefined;
         if (scannedManifestTemplates) {
           useCustomComponentStore.setState((state) => ({
-            templates: mergeTemplates(state.templates, scannedManifestTemplates),
+            templates: mergeCustomComponentTemplates(state.templates, scannedManifestTemplates),
           }));
         }
 
-        hydrateIconStoreFromWorkspace({
+        const hydratedScan = hydrateIconStoreFromWorkspace({
           diagrams: validDiagrams,
           iconLibrary: scan.manifest?.iconLibrary,
         });
+        useDiagramStore.setState((s) => ({
+          ...s,
+          diagrams: hydratedScan.diagrams as typeof s.diagrams,
+          past: [],
+          future: [],
+        }));
       }
     } catch {
       setStatus("error");
@@ -456,6 +465,7 @@ export function useFileSystemStorage() {
     pendingMerge,
     confirmMerge,
     confirmOverwrite,
+    confirmPushToEmptyFolder,
     cancelMerge,
   };
 }

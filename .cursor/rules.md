@@ -72,10 +72,11 @@ set((state) => {
 ### What is/is not persisted
 Persisted to localStorage:
   diagrams, folders, userTemplates, serviceRegistry,
-  activeDiagramId, past, future, _lastUndoRedoAt
+  activeDiagramId
 
 NOT persisted (intentional):
   clipboard  ← cleared on every reload
+  past, future, _lastUndoRedoAt  ← undo stacks reset on reload (see `mergePersistedState`)
 
 ### Current schema version: 4
 Idempotent migrations covering:
