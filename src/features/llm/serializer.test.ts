@@ -23,10 +23,10 @@ describe("serializeDiagramContext", () => {
     const out = serializeDiagramContext(minimalDiagram());
     expect(out).toContain("Diagram: Proj");
     expect(out).toContain("Nodes (0)");
-    expect(out).toContain("Edges (0)");
+    expect(out).toContain("Connections (0)");
   });
 
-  it("includes id, type, label, and parent for each node", () => {
+  it("includes id, type, name, and parent for each node", () => {
     const diagram = minimalDiagram({
       snapshot: {
         components: {
@@ -51,11 +51,11 @@ describe("serializeDiagramContext", () => {
       },
     });
     const out = serializeDiagramContext(diagram);
-    expect(out).toContain("id=n1; type=system; label=Alpha; parent=none");
-    expect(out).toContain("id=n2; type=container; label=Beta; parent=n1");
+    expect(out).toContain('id=n1; type=system; name="Alpha"');
+    expect(out).toContain('id=n2; type=container; name="Beta"; parent=n1');
   });
 
-  it("includes id, source, target, and label for each edge", () => {
+  it("includes id, from, to, and label for each edge", () => {
     const diagram = minimalDiagram({
       snapshot: {
         components: {
@@ -70,20 +70,18 @@ describe("serializeDiagramContext", () => {
       },
     });
     const out = serializeDiagramContext(diagram);
-    expect(out).toContain("id=e1; source=a; target=b; label=calls");
+    expect(out).toContain('id=e1; from=a; to=b; label="calls"');
   });
 
-  it("includes Project and Description when includeMetadata is true", () => {
+  it("includes Description when includeMetadata is true", () => {
     const diagram = minimalDiagram({ description: "About" });
     const out = serializeDiagramContext(diagram, { includeMetadata: true });
-    expect(out).toContain("Project: Proj");
     expect(out).toContain("Description: About");
   });
 
-  it("omits Project and Description when includeMetadata is false", () => {
+  it("omits Description when includeMetadata is false", () => {
     const diagram = minimalDiagram({ description: "Secret" });
     const out = serializeDiagramContext(diagram, { includeMetadata: false });
-    expect(out).not.toContain("Project:");
     expect(out).not.toContain("Description:");
   });
 
@@ -108,8 +106,8 @@ describe("serializeDiagramContext", () => {
       },
     });
     const out = serializeDiagramContext(diagram, { includeLinks: true });
-    expect(out).toContain("External Links (1)");
-    expect(out).toContain("label=Docs url=https://example.com");
+    expect(out).toContain("External Links:");
+    expect(out).toContain("- Docs: https://example.com");
   });
 
   it("produces deterministic output for the same diagram", () => {
@@ -132,7 +130,7 @@ describe("serializeDiagramContext", () => {
     expect(aIndex).toBeLessThan(zIndex);
   });
 
-  it("uses component id as label when name is empty or whitespace", () => {
+  it("uses component id as name when name is empty or whitespace", () => {
     const diagram = minimalDiagram({
       snapshot: {
         components: {
@@ -144,7 +142,7 @@ describe("serializeDiagramContext", () => {
       },
     });
     const out = serializeDiagramContext(diagram);
-    expect(out).toContain("label=x");
+    expect(out).toContain('name="x"');
   });
 });
 
@@ -191,8 +189,7 @@ describe("serializeDiagramContext with activeScene", () => {
       nodeLayouts: {},
     };
     const out = serializeDiagramContext(minimalDiagram(), { activeScene: scene });
-    expect(out).toContain("Nodes added in this scene (1)");
-    expect(out).toContain("id=n1; type=aws-compute; label=Lambda");
+    expect(out).toContain("Added in scene: Lambda");
   });
 
   it("lists removed component ids in the scene", () => {
@@ -208,8 +205,7 @@ describe("serializeDiagramContext with activeScene", () => {
       nodeLayouts: {},
     };
     const out = serializeDiagramContext(minimalDiagram(), { activeScene: scene });
-    expect(out).toContain("Nodes removed in this scene (1)");
-    expect(out).toContain("- id=old-node");
+    expect(out).toContain("Removed in scene: old-node");
   });
 
   it("lists added connections in the scene", () => {

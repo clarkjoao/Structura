@@ -1,7 +1,11 @@
 # diagram/store — Store composition
 
-The Zustand store is assembled in `diagram.store.ts` by spreading 7 slice functions.
-Selectors and the `useDiagramActions` hook live **only** in `diagram.store.ts`.
+The Zustand store is assembled in `diagram.store.ts` by composing specialized
+slice functions.
+
+Action hooks such as `useDiagramActions`, `useIconActions`, and
+`useRegistryActions` live in `diagram.store.ts`.
+Selector hooks now live in `store/selectors/`.
 
 ## Slice composition
 
@@ -31,7 +35,11 @@ createDiagramStore()
 │
 ├── foldersSlice(set, get)     addFolder · updateFolder · removeFolder · moveFolder
 │
-└── patternsSlice(set, get)    insertPattern
+├── patternsSlice(set, get)    insertPattern
+├── scenesSlice(set, get)      addScene · duplicateScene · removeScene
+│                              setActiveScene · setCompareScene · mergeSceneIntoBase
+├── iconsSlice(set, get)       removeIconReferences
+└── userTemplatesSlice(set)    saveUserTemplate · updateUserTemplate · deleteUserTemplate
 ```
 
 ## Slice → Actions
@@ -48,11 +56,23 @@ createDiagramStore()
 | `history.slice.ts` | `undo`, `redo` |
 | `folders.slice.ts` | `addFolder`, `updateFolder`, `removeFolder`, `moveFolder` |
 | `patterns.slice.ts` | `insertPattern` |
+| `scenes.slice.ts` | `addScene`, `duplicateScene`, `removeScene`, `mergeSceneIntoBase`, `setActiveScene`, `setCompareScene`, `renameScene`, `addComponentToScene`, `removeComponentFromScene`, `addConnectionToScene`, `removeConnectionFromScene`, `updateSceneNodeLayout` |
+| `icons.slice.ts` | `removeIconReferences` |
+| `userTemplates.slice.ts` | `saveUserTemplate`, `updateUserTemplate`, `deleteUserTemplate` |
 
 ## Selectors
 
-All selector hooks (`useActiveDiagram`, `useVisibleComponents`, `useServiceRegistry`, etc.)
-live in `diagram.store.ts` **only**. Never put selectors inside slice files.
+Selector hooks are grouped under `store/selectors/` and re-exported through the
+feature entry point. Keep selectors out of slice files so mutation logic stays
+separate from state access logic.
+
+Important distinction:
+
+- Many selectors (`useComponent*`, `useConnection*`, `useVisible*`,
+  `useResolved*`) read from `getCachedCanvasSnapshot`, so they return the
+  scene-resolved canvas view.
+- Layout selectors (`useNodeLayout`, `useNodeLayouts`, `useEdgeWaypoints`,
+  `useEdgeLabelOffset`) read persisted layout state from the active diagram.
 
 Use `useShallow` whenever the selector returns a derived array or object (not a primitive).
 

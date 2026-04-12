@@ -15,7 +15,7 @@ describe("parseLLMResponse", () => {
     vi.restoreAllMocks();
   });
 
-  it("returns message and patch when JSON has both", () => {
+  it("returns patch kind when JSON has message and patch", () => {
     const raw = JSON.stringify({
       message: "Hello",
       patch: {
@@ -25,16 +25,22 @@ describe("parseLLMResponse", () => {
       },
     });
     const result = parseLLMResponse(raw);
-    expect(result.message).toBe("Hello");
-    expect(result.patch?.id).toBe("p1");
-    expect(result.patch?.actions).toHaveLength(1);
+    expect(result.kind).toBe("patch");
+    if (result.kind === "patch") {
+      expect(result.message).toBe("Hello");
+      expect(result.patch?.id).toBe("p1");
+      expect(result.patch?.actions).toHaveLength(1);
+    }
   });
 
-  it("returns message and null patch when patch is null", () => {
+  it("returns patch kind with null patch when patch is null", () => {
     const raw = JSON.stringify({ message: "No op", patch: null });
     const result = parseLLMResponse(raw);
-    expect(result.message).toBe("No op");
-    expect(result.patch).toBeNull();
+    expect(result.kind).toBe("patch");
+    if (result.kind === "patch") {
+      expect(result.message).toBe("No op");
+      expect(result.patch).toBeNull();
+    }
   });
 
   it("strips ```json fences and parses the envelope", () => {
@@ -44,8 +50,11 @@ describe("parseLLMResponse", () => {
     });
     const raw = "```json\n" + inner + "\n```";
     const result = parseLLMResponse(raw);
-    expect(result.message).toBe("Fenced");
-    expect(result.patch).toBeNull();
+    expect(result.kind).toBe("patch");
+    if (result.kind === "patch") {
+      expect(result.message).toBe("Fenced");
+      expect(result.patch).toBeNull();
+    }
   });
 
   it("generates an id when patch id is empty", () => {
@@ -58,7 +67,10 @@ describe("parseLLMResponse", () => {
       },
     });
     const result = parseLLMResponse(raw);
-    expect(result.patch?.id).toBe("00000000-0000-4000-8000-000000000001");
+    expect(result.kind).toBe("patch");
+    if (result.kind === "patch") {
+      expect(result.patch?.id).toBe("00000000-0000-4000-8000-000000000001");
+    }
   });
 
   it("converts write toolCalls into actions", () => {
@@ -77,7 +89,10 @@ describe("parseLLMResponse", () => {
       },
     });
     const result = parseLLMResponse(raw);
-    expect(result.patch?.actions.some((a) => a.type === "ADD_NODE")).toBe(true);
+    expect(result.kind).toBe("patch");
+    if (result.kind === "patch") {
+      expect(result.patch?.actions.some((a) => a.type === "ADD_NODE")).toBe(true);
+    }
   });
 
   it("logs read toolCalls and does not append them as actions", () => {
@@ -97,7 +112,10 @@ describe("parseLLMResponse", () => {
       },
     });
     const result = parseLLMResponse(raw);
-    expect(result.patch?.actions).toHaveLength(0);
+    expect(result.kind).toBe("patch");
+    if (result.kind === "patch") {
+      expect(result.patch?.actions).toHaveLength(0);
+    }
     expect(infoSpy).toHaveBeenCalled();
     infoSpy.mockRestore();
   });
@@ -106,8 +124,10 @@ describe("parseLLMResponse", () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const raw = '{"message": broken}';
     const result = parseLLMResponse(raw);
-    expect(result.patch).toBeNull();
-    expect(result.message).toBe("[Resposta não processada. Tente novamente.]");
+    expect(result.kind).toBe("text");
+    if (result.kind === "text") {
+      expect(result.message).toBe("[Resposta não processada. Tente novamente.]");
+    }
     warnSpy.mockRestore();
   });
 
@@ -118,26 +138,60 @@ describe("parseLLMResponse", () => {
       patch: null,
     });
     const result = parseLLMResponse(raw);
-    expect(result.message).toBe("Inner text");
+    expect(result.kind).toBe("patch");
+    if (result.kind === "patch") {
+      expect(result.message).toBe("Inner text");
+    }
   });
 
-  it("returns raw text as message when there is no JSON envelope", () => {
+  it("returns text kind when there is no JSON envelope", () => {
     const raw = "Plain assistant reply";
     const result = parseLLMResponse(raw);
-    expect(result.message).toBe("Plain assistant reply");
-    expect(result.patch).toBeNull();
+    expect(result.kind).toBe("text");
+    if (result.kind === "text") {
+      expect(result.message).toBe("Plain assistant reply");
+    }
   });
 
-  it("returns empty message and null patch for empty input", () => {
-    expect(parseLLMResponse("")).toEqual({ message: "", patch: null });
-    expect(parseLLMResponse("   ")).toEqual({ message: "", patch: null });
+  it("returns empty text for empty input", () => {
+    expect(parseLLMResponse("")).toEqual({ kind: "text", message: "" });
+    expect(parseLLMResponse("   ")).toEqual({ kind: "text", message: "" });
   });
 
   it("strips zero-width characters before parsing", () => {
     const inner = JSON.stringify({ message: "OK", patch: null });
     const raw = "\u200B" + inner + "\uFEFF";
     const result = parseLLMResponse(raw);
-    expect(result.message).toBe("OK");
-    expect(result.patch).toBeNull();
+    expect(result.kind).toBe("patch");
+    if (result.kind === "patch") {
+      expect(result.message).toBe("OK");
+      expect(result.patch).toBeNull();
+    }
+  });
+
+  it("parses analysis mode JSON", () => {
+    const raw = JSON.stringify({
+      mode: "analysis",
+      summary: "Exec summary",
+      findings: [
+        {
+          severity: "high",
+          category: "reliability",
+          title: "Risk",
+          detail: "Details",
+          recommendation: "Fix it",
+        },
+      ],
+      strengths: ["Good separation"],
+      nextSteps: ["Add monitoring"],
+    });
+    const result = parseLLMResponse(raw);
+    expect(result.kind).toBe("analysis");
+    if (result.kind === "analysis") {
+      expect(result.analysis.summary).toBe("Exec summary");
+      expect(result.analysis.findings).toHaveLength(1);
+      expect(result.analysis.strengths).toEqual(["Good separation"]);
+      expect(result.analysis.nextSteps).toEqual(["Add monitoring"]);
+    }
   });
 });

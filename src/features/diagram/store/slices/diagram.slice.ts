@@ -113,6 +113,8 @@ export const diagramsSlice = (
 
         if (s.activeDiagramId === id)
           s.activeDiagramId = null;
+        s.past = s.past.filter((entry) => entry.diagramId !== id);
+        s.future = s.future.filter((entry) => entry.diagramId !== id);
       });
     },
   });

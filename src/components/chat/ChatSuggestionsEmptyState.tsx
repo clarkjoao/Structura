@@ -2,15 +2,17 @@ import { motion } from "framer-motion";
 import { MessageSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { DEFAULT_SUGGESTIONS } from "@/features/llm";
+import type { ChatSuggestion } from "@/features/llm";
 
 interface ChatSuggestionsEmptyStateProps {
   diagramName: string;
+  suggestions: ChatSuggestion[];
   onSelectSuggestion: (text: string) => void;
 }
 
 export function ChatSuggestionsEmptyState({
   diagramName,
+  suggestions,
   onSelectSuggestion,
 }: ChatSuggestionsEmptyStateProps) {
   const { t } = useTranslation();
@@ -35,7 +37,7 @@ export function ChatSuggestionsEmptyState({
           {t("llmChat.suggestions.title")}
         </p>
         <div className="space-y-2">
-          {DEFAULT_SUGGESTIONS.map((suggestion, index) => (
+          {suggestions.map((suggestion, index) => (
             <motion.div
               key={suggestion.id}
               initial={{ opacity: 0, x: -4 }}

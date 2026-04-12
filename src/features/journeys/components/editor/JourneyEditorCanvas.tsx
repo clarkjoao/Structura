@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
 } from "react";
@@ -39,11 +40,15 @@ import CustomEdge from "@/features/canvas/edges/CustomEdge";
 import FlowStepNavigator from "@/features/canvas/flow/FlowStepNavigator";
 import { useFlowMode, useFlowState } from "@/features/canvas/flow";
 import { nodeTypes } from "@/features/canvas/nodes/node-types";
+import type { JourneyStep } from "../../types";
+import { stepHasVisualMedia } from "../../utils/step-media.utils";
 import {
   buildJourneyEditorEdges,
   buildJourneyEditorNodes,
   type JourneyEditorCanvasFlowVisuals,
 } from "./journeyEditorCanvas.utils";
+import { StepDescriptionBadge } from "./StepDescriptionBadge";
+import { VisualStateOverlay } from "./VisualStateOverlay";
 
 const journeyEdgeTypes = { c4: CustomEdge, smoothstep: SmoothStepEdge };
 
@@ -55,11 +60,27 @@ const emptyStateDotBackground: CSSProperties = {
 
 interface JourneyEditorCanvasProps {
   diagramId: string | null;
-  
+
   hasSelectedStep: boolean;
+  isGlobalPlaying?: boolean;
+  showVisualOverlay?: boolean;
+  selectedStep?: JourneyStep | null;
+  onCloseVisualOverlay?: () => void;
+  stepDescriptionProps?: {
+    step: JourneyStep;
+    stepIndex: number;
+    totalSteps: number;
+  } | null;
 }
 
-type JourneyEditorCanvasInnerProps = Omit<JourneyEditorCanvasProps, "hasSelectedStep">;
+type JourneyEditorCanvasInnerProps = Omit<
+  JourneyEditorCanvasProps,
+  | "hasSelectedStep"
+  | "showVisualOverlay"
+  | "selectedStep"
+  | "onCloseVisualOverlay"
+  | "stepDescriptionProps"
+>;
 
 interface JourneyEditorPlaybackFitViewProps {
   diagramId: string;
@@ -125,6 +146,33 @@ function JourneyEditorPlaybackFitView({
   return null;
 }
 
+interface JourneyEditorDiagramFitViewProps {
+  diagramId: string;
+}
+
+function JourneyEditorDiagramFitView({
+  diagramId,
+}: JourneyEditorDiagramFitViewProps) {
+  const { fitView } = useReactFlow();
+  const prevDiagramIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (prevDiagramIdRef.current === diagramId) {
+      return;
+    }
+    prevDiagramIdRef.current = diagramId;
+    const raf = requestAnimationFrame(() => {
+      void fitView({
+        duration: 400,
+        padding: 0.12,
+      });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [diagramId, fitView]);
+
+  return null;
+}
+
 function JourneyEditorNoStepEmptyState() {
   const { t } = useTranslation();
   return (
@@ -146,7 +194,10 @@ function JourneyEditorNoStepEmptyState() {
   );
 }
 
-function JourneyEditorCanvasInner({ diagramId }: JourneyEditorCanvasInnerProps) {
+function JourneyEditorCanvasInner({
+  diagramId,
+  isGlobalPlaying = false,
+}: JourneyEditorCanvasInnerProps) {
   const { t } = useTranslation();
   const diagramsRecord = useDiagrams();
   const activeDiagramIdStore = useActiveDiagramId();
@@ -292,6 +343,7 @@ function JourneyEditorCanvasInner({ diagramId }: JourneyEditorCanvasInnerProps) 
         proOptions={{ hideAttribution: true }}
         className="bg-background"
       >
+        <JourneyEditorDiagramFitView diagramId={diagramId} />
         <JourneyEditorPlaybackFitView
           diagramId={diagramId}
           isPlaying={isPlaying}
@@ -323,20 +375,44 @@ function JourneyEditorCanvasInner({ diagramId }: JourneyEditorCanvasInnerProps) 
           </div>
         </div>
       ) : null}
+      {isGlobalPlaying ? (
+        <div className="pointer-events-none absolute bottom-14 left-1/2 z-10 -translate-x-1/2">
+          <div className="rounded-full border border-border bg-card/80 px-3 py-1 text-[10px] text-muted-foreground backdrop-blur-sm">
+            {t("journeys.presentation.keyboardHint")}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
 
 export function JourneyEditorCanvas({
   hasSelectedStep,
+  showVisualOverlay = false,
+  selectedStep = null,
+  onCloseVisualOverlay,
+  stepDescriptionProps = null,
   ...innerProps
 }: JourneyEditorCanvasProps) {
   if (!hasSelectedStep) {
     return <JourneyEditorNoStepEmptyState />;
   }
   return (
-    <ReactFlowProvider>
-      <JourneyEditorCanvasInner {...innerProps} />
-    </ReactFlowProvider>
+    <div className="relative h-full w-full">
+      <ReactFlowProvider>
+        <JourneyEditorCanvasInner {...innerProps} />
+      </ReactFlowProvider>
+      {stepDescriptionProps ? (
+        <StepDescriptionBadge {...stepDescriptionProps} />
+      ) : null}
+      {showVisualOverlay &&
+      selectedStep &&
+      stepHasVisualMedia(selectedStep) ? (
+        <VisualStateOverlay
+          step={selectedStep}
+          onClose={onCloseVisualOverlay ?? (() => {})}
+        />
+      ) : null}
+    </div>
   );
 }

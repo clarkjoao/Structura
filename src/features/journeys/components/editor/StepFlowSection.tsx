@@ -13,7 +13,7 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useFlowMode } from "@/features/canvas/flow";
-import { useDiagrams } from "@/features/diagram";
+import { useDiagramActions, useDiagrams } from "@/features/diagram";
 import { useJourneyPlayer } from "../../hooks/useJourneyPlayer";
 import { useJourney, useJourneyActions, useJourneySteps } from "../../store/selectors/journeys.selectors";
 import { StepFlowPickerDialog } from "./StepFlowPickerDialog";
@@ -21,12 +21,16 @@ import { StepFlowPickerDialog } from "./StepFlowPickerDialog";
 export interface StepFlowSectionProps {
   journeyId: string;
   stepId: string;
-  
+
   onSelectStep: (stepId: string) => void;
-  
+
   onNextStep?: () => void;
-  
+
   onPrevStep?: () => void;
+
+  onLastStepFlowCompleted?: () => void;
+
+  onJourneyComplete?: () => void;
 }
 
 export function StepFlowSection({
@@ -35,9 +39,12 @@ export function StepFlowSection({
   onSelectStep,
   onNextStep,
   onPrevStep,
+  onLastStepFlowCompleted,
+  onJourneyComplete,
 }: StepFlowSectionProps) {
   const { t } = useTranslation();
   const flowMode = useFlowMode();
+  const { openDiagram } = useDiagramActions();
   const journeyPlayer = useJourneyPlayer();
   const journey = useJourney(journeyId);
   const step = journey?.steps[stepId];
@@ -48,6 +55,7 @@ export function StepFlowSection({
 
   const { updateJourneyStep } = useJourneyActions();
   const sortedSteps = useJourneySteps(journeyId);
+  const currentStepIndex = sortedSteps.findIndex((item) => item.id === stepId);
 
   const [flowPickerOpen, setFlowPickerOpen] = useState(false);
   const [flowJustEnded, setFlowJustEnded] = useState(false);
@@ -65,9 +73,19 @@ export function StepFlowSection({
     }
     if (prevIsPlaying.current && !isPlaying) {
       setFlowJustEnded(true);
+      const isLastStep =
+        currentStepIndex >= 0 && currentStepIndex === sortedSteps.length - 1;
+      if (isLastStep) {
+        onLastStepFlowCompleted?.();
+      }
     }
     prevIsPlaying.current = isPlaying;
-  }, [flowMode.isPlaying]);
+  }, [
+    currentStepIndex,
+    flowMode.isPlaying,
+    onLastStepFlowCompleted,
+    sortedSteps.length,
+  ]);
 
   const flowName =
     step?.flowId && diagram
@@ -78,6 +96,8 @@ export function StepFlowSection({
     step?.flowId && diagram
       ? diagram.snapshot.flows[step.flowId]
       : undefined;
+
+  const canPlayFlow = flowMode.isIdle;
 
   const journeyAndFlowIdle =
     flowMode.isIdle && journeyPlayer.mode.kind === "idle";
@@ -111,19 +131,18 @@ export function StepFlowSection({
   };
 
   const handlePlayFlow = () => {
-    if (!flowForStep) return;
-    if (!journeyAndFlowIdle) {
+    if (!flowForStep || !step?.diagramId) return;
+    if (!canPlayFlow) {
       toast.error(t("flows.alreadyActive"));
       return;
     }
-    flowMode.play(flowForStep);
+    journeyPlayer.startFlowPlayback(flowForStep.id, step.diagramId);
   };
 
   const handleStopPlay = () => {
     flowMode.exitPlay();
   };
 
-  const currentStepIndex = sortedSteps.findIndex((item) => item.id === stepId);
   const hasNextFromList =
     currentStepIndex >= 0 && currentStepIndex < sortedSteps.length - 1;
   const nextStepRecord =
@@ -298,14 +317,48 @@ export function StepFlowSection({
               variant="secondary"
               size="sm"
               className="w-full justify-start gap-2"
-              disabled={
-                onNextStep ? !hasNextFromList : nextStepRecord === null
-              }
               onClick={() => {
+                const canAdvanceToNext =
+                  Boolean(nextStepRecord) ||
+                  Boolean(onNextStep && hasNextFromList);
+
+                setFlowJustEnded(false);
+
+                if (!canAdvanceToNext) {
+                  onJourneyComplete?.();
+                  return;
+                }
+
                 if (onNextStep) {
                   onNextStep();
-                } else if (nextStepRecord) {
-                  onSelectStep(nextStepRecord.id);
+                  return;
+                }
+
+                if (!nextStepRecord) {
+                  return;
+                }
+
+                if (!flowMode.isIdle) {
+                  if (flowMode.isRecording) {
+                    flowMode.cancelRecording();
+                  } else {
+                    flowMode.exitPlay();
+                  }
+                }
+
+                journeyPlayer.setPlaybackContext(journeyId, nextStepRecord.id);
+                onSelectStep(nextStepRecord.id);
+
+                if (
+                  nextStepRecord.flowId &&
+                  nextStepRecord.diagramId.length > 0
+                ) {
+                  journeyPlayer.startFlowPlayback(
+                    nextStepRecord.flowId,
+                    nextStepRecord.diagramId,
+                  );
+                } else if (nextStepRecord.diagramId.length > 0) {
+                  openDiagram(nextStepRecord.diagramId);
                 }
               }}
             >

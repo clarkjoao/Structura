@@ -135,6 +135,11 @@
     "stepsCount": "{{count}} steps",
     "diagramsCount": "{{count}} diagrams",
     "deleteConfirm": "Remove this journey?",
+    "deleteConfirmTitle": "Delete journey?",
+    "deleteConfirmDescription": "\"{{name}}\" and all its steps will be permanently removed. This cannot be undone.",
+    "duplicate": "Duplicate",
+    "duplicated": "Journey duplicated.",
+    "duplicateJourneyName": "{{name}} (copy)",
     "create": {
       "title": "New journey",
       "name": "Name",
@@ -190,6 +195,13 @@
       "selectDiagram": "Choose a diagram from the selector above",
       "selectStepForVisual": "Select a step to add visual state",
       "selectStepDetail": "Select a step to edit its details",
+      "uploadMedia": "Upload image or SVG",
+      "pasteMedia": "Or paste an image or SVG here (Ctrl+V / ⌘V)",
+      "mediaPreviewAlt": "Step media preview",
+      "removeMedia": "Remove media",
+      "noVisualForStep": "No image for this step",
+      "invalidMediaFormat": "Unsupported format. Use SVG, PNG, or JPEG.",
+      "mediaReadError": "Could not read the file.",
       "uploadSvg": "Upload SVG",
       "activeDiagram": "Active diagram",
       "selectDiagramOption": "—",
@@ -209,6 +221,8 @@
         "deployment": "Deployment",
         "unknown": "{{level}}"
       },
+      "noFlowsAvailable": "No flows with steps available in this diagram",
+      "flowLockedDuringPlayback": "Flow locked during playback",
       "flowPickerTitle": "Choose a flow",
       "flowSearchPlaceholder": "Search flows…",
       "visualStateTitle": "Visual state",
@@ -225,7 +239,18 @@
       "prevStep": "Previous step",
       "nextStep": "Next step",
       "journeyCompleted": "✓ Journey completed",
-      "playJourney": "Play journey"
+      "playJourney": "Play journey",
+      "expandVisual": "View fullscreen",
+      "closeVisual": "Close",
+      "visualOverlayLabel": "Step visual state",
+      "expandDescription": "Expand description",
+      "collapseDescription": "Collapse description"
+    },
+    "presentation": {
+      "keyboardHint": "← → flow step  ·  ↑ ↓ journey step  ·  Space play/pause  ·  Esc exit",
+      "completed": "Presentation complete",
+      "restart": "Restart",
+      "exitPresentation": "Exit"
     },
     "player": {
       "stepProgress": "Step {{current}} of {{total}}",
@@ -462,6 +487,9 @@
     "apiGroupDefaultName": "API Endpoints",
     "defaultGroupName": "Group",
     "compareViewBanner": "View mode — editing disabled",
+    "saving": "Saving...",
+    "saved": "Saved",
+    "saveError": "Save error",
     "toolbar": {
       "allTags": "All tags",
       "noTagsFilter": "No tags",
@@ -506,6 +534,11 @@
     "levelDeployment": "Level 4",
     "collapse": "Minimize toolbar",
     "expand": "Expand toolbar"
+  },
+  "diagram": {
+    "deleteConfirmTitle": "Delete diagram?",
+    "deleteConfirmDescription": "\"{{name}}\" with {{nodeCount}} elements and {{flowCount}} flows will be permanently removed. This cannot be undone.",
+    "deleteConfirmFallback": "This diagram will be permanently removed. This cannot be undone."
   },
   "llmChat": {
     "title": "Diagram Assistant",
@@ -578,15 +611,43 @@
         "retry": "Tentar novamente"
       }
     },
+    "analysis": {
+      "summary": "Executive summary",
+      "findings": "Findings",
+      "strengths": "Strengths",
+      "nextSteps": "Next steps",
+      "dismiss": "Dismiss analysis",
+      "recommendation": "Recommendation",
+      "criticalCount": "{{count}} critical",
+      "highCount": "{{count}} high",
+      "severity": {
+        "critical": "Critical",
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low",
+        "info": "Info"
+      }
+    },
     "suggestions": {
-      "title": "SUGESTÕES",
-      "context": "Contexto carregado: \"{{name}}\"",
-      "explain": "Explique a arquitetura deste diagrama",
-      "components": "Quais são os principais componentes e suas responsabilidades?",
-      "failures": "Identifique possíveis pontos de falha na arquitetura",
-      "security": "Sugira melhorias de segurança para este diagrama",
-      "communicate": "Como os sistemas se comunicam entre si?",
-      "improve": "Quais melhorias de escalabilidade você recomenda?"
+      "title": "SUGGESTIONS",
+      "context": "Context loaded: \"{{name}}\"",
+      "explain": "Explain this diagram’s architecture",
+      "components": "What are the main components and their responsibilities?",
+      "failures": "Identify possible failure points in the architecture",
+      "security": "Suggest security improvements for this diagram",
+      "communicate": "How do the systems communicate?",
+      "improve": "What scalability improvements do you recommend?",
+      "contextual": {
+        "explainThis": "Explain this architecture",
+        "reviewThis": "Review this architecture",
+        "assessSecurity": "Assess security",
+        "wellArchitected": "Evaluate against the AWS Well-Architected Framework",
+        "spof": "Identify single points of failure (SPOFs)",
+        "lambdaPatterns": "Check for Lambda anti-patterns",
+        "dbCaching": "Suggest a caching strategy for the database",
+        "blastRadius": "What is the blast radius if the central component fails?",
+        "observability": "Identify observability gaps"
+      }
     }
   },
   "scenes": {
@@ -779,7 +840,11 @@
       "empty": "No saved templates",
       "emptyHint": "Select nodes on the canvas and click 'Save as template'",
       "delete": "Delete template",
-      "deleteConfirm": "Delete '{{name}}'? This cannot be undone."
+      "deleteConfirm": "Delete '{{name}}'? This cannot be undone.",
+      "download": "Download template",
+      "importTemplate": "Import template (.json)",
+      "importSuccess": "Template \"{{name}}\" imported successfully",
+      "importError": "Invalid or corrupted file"
     }
   },
   "connectionPanel": {
@@ -1163,7 +1228,9 @@
     "exitTitle": "Exit flow",
     "request": "→ Request",
     "response": "← Response",
-    "inlineDescription": "· \"{{text}}\""
+    "inlineDescription": "· \"{{text}}\"",
+    "componentRemoved": "component removed",
+    "connectionRemoved": "connection removed"
   },
   "shortcutsModal": {
     "title": "Canvas shortcuts",

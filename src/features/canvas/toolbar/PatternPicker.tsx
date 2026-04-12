@@ -1,5 +1,6 @@
-import { useState, useMemo, useRef, useEffect } from "react";
-import { Search, X, Layers, Bookmark } from "lucide-react";
+import { useState, useMemo, useRef, useEffect, type ChangeEvent } from "react";
+import { Search, X, Layers, Bookmark, Upload } from "lucide-react";
+import { toast } from "sonner";
 import { useReactFlow } from "@xyflow/react";
 import {
   PATTERNS,
@@ -9,7 +10,12 @@ import {
   type PatternTemplate,
 } from "@/lib/catalogs/patterns";
 import type { UserTemplate } from "@/features/diagram";
-import { useAllUserTemplates, useDiagramActions } from "@/features/diagram";
+import {
+  saveUserTemplate,
+  useAllUserTemplates,
+  useDiagramActions,
+} from "@/features/diagram";
+import { importTemplateFromFile } from "@/features/diagram/utils/template-sharing";
 import { getViewportCenter } from "../viewport-utils";
 import { useTranslation } from "react-i18next";
 import { PatternFlowPreview } from "./PatternFlowPreview";
@@ -38,6 +44,7 @@ const PatternPicker = ({ onClose, onBeforeInsert }: PatternPickerProps) => {
   const [activeCategory, setActiveCategory] = useState<ActiveCategory>("all");
   const [search, setSearch] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
   const { insertPattern, deleteUserTemplate, updateUserTemplate } = useDiagramActions();
   const userTemplates = useAllUserTemplates();
   const rfInstance = useReactFlow();
@@ -45,12 +52,6 @@ const PatternPicker = ({ onClose, onBeforeInsert }: PatternPickerProps) => {
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
-
-  useEffect(() => {
-    if (userTemplates.length === 0 && activeCategory === "user-templates") {
-      setActiveCategory("all");
-    }
-  }, [userTemplates.length, activeCategory]);
 
   const q = search.trim().toLowerCase();
 
@@ -121,6 +122,29 @@ const PatternPicker = ({ onClose, onBeforeInsert }: PatternPickerProps) => {
     onBeforeInsert?.();
     insertPattern(template, getViewportCenter(rfInstance));
     onClose();
+  };
+
+  const handleImportClick = (): void => {
+    importInputRef.current?.click();
+  };
+
+  const handleImportChange = async (
+    event: ChangeEvent<HTMLInputElement>,
+  ): Promise<void> => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    const result = await importTemplateFromFile(file);
+    if (!result.ok) {
+      toast.error(t("patterns.userTemplates.importError"));
+      return;
+    }
+
+    saveUserTemplate(result.template);
+    toast.success(
+      t("patterns.userTemplates.importSuccess", { name: result.template.name }),
+    );
   };
 
   const renderBuiltinCards = (patterns: PatternTemplate[]) => (
@@ -224,26 +248,22 @@ const PatternPicker = ({ onClose, onBeforeInsert }: PatternPickerProps) => {
               <span>{t("patterns.categoryAll")}</span>
               <span className="text-[10px] font-mono text-muted-foreground">{allRowCount}</span>
             </button>
-             {userTemplates.length > 0 ? (
-              <>
-                <div className="border-t border-border my-1" />
-                <button
-                  type="button"
-                  onClick={() => setActiveCategory("user-templates")}
-                  className={`w-full text-left px-4 py-2 text-xs font-medium transition-colors flex items-center gap-2 ${
-                    activeCategory === "user-templates"
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-surface-hover"
-                  }`}
-                >
-                  <Bookmark className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                  <span className="flex-1">{t("patterns.categories.userTemplates")}</span>
-                  <span className="text-[10px] font-mono text-muted-foreground">
-                    {q ? filteredUserTemplates.length : userTemplates.length}
-                  </span>
-                </button>
-              </>
-            ) : null}
+            <div className="border-t border-border my-1" />
+            <button
+              type="button"
+              onClick={() => setActiveCategory("user-templates")}
+              className={`w-full text-left px-4 py-2 text-xs font-medium transition-colors flex items-center gap-2 ${
+                activeCategory === "user-templates"
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-surface-hover"
+              }`}
+            >
+              <Bookmark className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              <span className="flex-1">{t("patterns.categories.userTemplates")}</span>
+              <span className="text-[10px] font-mono text-muted-foreground">
+                {q ? filteredUserTemplates.length : userTemplates.length}
+              </span>
+            </button>
             <div className="border-t border-border my-1" />
             {CATEGORIES.map((cat) => {
               const count = categoryCounts[cat];
@@ -305,28 +325,49 @@ const PatternPicker = ({ onClose, onBeforeInsert }: PatternPickerProps) => {
             ) : null}
 
             {activeCategory === "user-templates" ? (
-              filteredUserTemplates.length === 0 ? (
-                <div className="flex flex-col items-center justify-center text-center py-8 px-4 text-muted-foreground">
-                  <p className="text-[13px]">
-                    {q ? t("patterns.noneFoundForQuery", { query: search.trim() }) : t("patterns.userTemplates.empty")}
-                  </p>
-                  {!q ? (
-                    <p className="text-xs mt-1 max-w-sm">{t("patterns.userTemplates.emptyHint")}</p>
-                  ) : null}
-                </div>
-              ) : (
-                <div className="grid gap-2">
-                  {filteredUserTemplates.map((template) => (
-                    <UserTemplateCard
-                      key={template.id}
-                      template={template}
-                      onInsert={() => handleInsertUserTemplate(template)}
-                      onDelete={() => deleteUserTemplate(template.id)}
-                      onRename={(name) => updateUserTemplate(template.id, { name })}
-                    />
-                  ))}
-                </div>
-              )
+              <>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary mb-2"
+                  onClick={handleImportClick}
+                >
+                  <Upload className="h-3.5 w-3.5 shrink-0" />
+                  {t("patterns.userTemplates.importTemplate")}
+                </button>
+                <input
+                  ref={importInputRef}
+                  type="file"
+                  accept=".json,application/json"
+                  className="hidden"
+                  onChange={handleImportChange}
+                />
+                {filteredUserTemplates.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center text-center py-8 px-4 text-muted-foreground">
+                    <p className="text-[13px]">
+                      {q
+                        ? t("patterns.noneFoundForQuery", { query: search.trim() })
+                        : t("patterns.userTemplates.empty")}
+                    </p>
+                    {!q ? (
+                      <p className="text-xs mt-1 max-w-sm">
+                        {t("patterns.userTemplates.emptyHint")}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="grid gap-2">
+                    {filteredUserTemplates.map((template) => (
+                      <UserTemplateCard
+                        key={template.id}
+                        template={template}
+                        onInsert={() => handleInsertUserTemplate(template)}
+                        onDelete={() => deleteUserTemplate(template.id)}
+                        onRename={(name) => updateUserTemplate(template.id, { name })}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
             ) : null}
 
             {activeCategory !== "all" && activeCategory !== "user-templates" ? (

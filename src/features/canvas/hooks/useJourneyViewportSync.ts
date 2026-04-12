@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { getCachedCanvasSnapshot, useActiveDiagram } from "@/features/diagram";
 import { useJourneyPlayer } from "@/features/journeys";
@@ -20,6 +20,8 @@ export function useJourneyViewportSync(): void {
       ? journeyPlayer.mode.selectedStepId
       : null;
 
+  const previousSelectedStepIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (!isJourneyPlaying || !selectedStepId) {
       return;
@@ -34,6 +36,33 @@ export function useJourneyViewportSync(): void {
       duration: 400,
       padding: 0.3,
     });
+  }, [
+    fitView,
+    highlight.activeNodeId,
+    isJourneyPlaying,
+    resolved?.components,
+    selectedStepId,
+  ]);
+
+  useEffect(() => {
+    if (!isJourneyPlaying || !selectedStepId) {
+      return;
+    }
+    const previousSelectedStepId = previousSelectedStepIdRef.current;
+    if (previousSelectedStepId === selectedStepId) {
+      return;
+    }
+    previousSelectedStepIdRef.current = selectedStepId;
+
+    const activeNodeId = highlight.activeNodeId;
+    if (
+      activeNodeId &&
+      resolved?.components[activeNodeId]
+    ) {
+      return;
+    }
+
+    void fitView({ duration: 400, padding: 0.12 });
   }, [
     fitView,
     highlight.activeNodeId,

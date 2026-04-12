@@ -31,16 +31,19 @@ export function useJourneyGlobalPlayer({
 
   const playStep = useCallback(
     (step: JourneyStep) => {
-      if (flowMode.isPlaying) {
-        flowMode.exitPlay();
+      if (!flowMode.isIdle) {
+        if (flowMode.isRecording) {
+          flowMode.cancelRecording();
+        } else {
+          flowMode.exitPlay();
+        }
       }
-      onSelectStep(step.id, { preserveFlowPlayback: true });
       journeyPlayer.setPlaybackContext(journeyId, step.id);
-      if (step.diagramId.length > 0) {
-        openDiagram(step.diagramId);
-      }
+      onSelectStep(step.id, { preserveFlowPlayback: true });
       if (step.flowId && step.diagramId.length > 0) {
         journeyPlayer.startFlowPlayback(step.flowId, step.diagramId);
+      } else if (step.diagramId.length > 0) {
+        openDiagram(step.diagramId);
       }
     },
     [flowMode, journeyId, journeyPlayer, onSelectStep, openDiagram],

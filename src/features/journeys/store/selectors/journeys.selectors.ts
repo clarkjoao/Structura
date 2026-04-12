@@ -43,6 +43,7 @@ export const useJourneyActions = () =>
       updateJourneyStep: state.updateJourneyStep,
       removeJourneyStep: state.removeJourneyStep,
       reorderJourneySteps: state.reorderJourneySteps,
+      duplicateJourney: state.duplicateJourney,
     })),
   );
 

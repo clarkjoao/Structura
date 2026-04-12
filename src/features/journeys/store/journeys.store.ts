@@ -28,6 +28,7 @@ interface JourneyStoreState {
     journeyId: string,
     orderedStepIds: string[],
   ) => void;
+  duplicateJourney: (sourceId: string, nameForDuplicate?: string) => Journey;
 }
 
 
@@ -99,6 +100,57 @@ export const useJourneyStore = create<JourneyStoreState>()(
           const { [id]: _removed, ...rest } = state.journeys;
           return { journeys: rest };
         }),
+
+      duplicateJourney: (sourceId, nameForDuplicate) => {
+        const source = useJourneyStore.getState().journeys[sourceId];
+        if (!source) {
+          throw new Error(`Journey not found: ${sourceId}`);
+        }
+        const now = Date.now();
+        const newJourneyId = crypto.randomUUID();
+        const sortedSteps = Object.values(source.steps).sort(
+          (stepA, stepB) => stepA.order - stepB.order,
+        );
+        const nextSteps: Record<string, JourneyStep> = {};
+        for (const step of sortedSteps) {
+          const stepNewId = crypto.randomUUID();
+          nextSteps[stepNewId] = {
+            id: stepNewId,
+            label: step.label,
+            description: step.description,
+            duration: step.duration,
+            order: step.order,
+            diagramId: step.diagramId,
+            flowId: step.flowId,
+            svgContent: step.svgContent,
+            mediaContent: step.mediaContent
+              ? {
+                  type: step.mediaContent.type,
+                  data: step.mediaContent.data,
+                }
+              : undefined,
+          };
+        }
+        const duplicateName =
+          nameForDuplicate ?? `${source.name} (copy)`;
+        const journey: Journey = {
+          id: newJourneyId,
+          name: duplicateName,
+          description: source.description,
+          domain: source.domain,
+          tags: [...source.tags],
+          steps: nextSteps,
+          createdAt: now,
+          updatedAt: now,
+        };
+        set((state) => ({
+          journeys: {
+            ...state.journeys,
+            [newJourneyId]: journey,
+          },
+        }));
+        return journey;
+      },
 
       addJourneyStep: (journeyId, stepInput) => {
         let created: JourneyStep | undefined;

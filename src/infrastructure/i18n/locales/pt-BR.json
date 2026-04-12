@@ -135,6 +135,11 @@
     "stepsCount": "{{count}} etapas",
     "diagramsCount": "{{count}} diagramas",
     "deleteConfirm": "Remover esta jornada?",
+    "deleteConfirmTitle": "Remover jornada?",
+    "deleteConfirmDescription": "\"{{name}}\" e todos os seus steps serão removidos permanentemente. Esta ação não pode ser desfeita.",
+    "duplicate": "Duplicar",
+    "duplicated": "Jornada duplicada.",
+    "duplicateJourneyName": "{{name}} (cópia)",
     "create": {
       "title": "Nova jornada",
       "name": "Nome",
@@ -190,6 +195,13 @@
       "selectDiagram": "Selecione um diagrama no seletor acima",
       "selectStepForVisual": "Selecione um step para adicionar estado visual",
       "selectStepDetail": "Selecione um step para editar os detalhes",
+      "uploadMedia": "Enviar imagem ou SVG",
+      "pasteMedia": "Ou cole uma imagem ou SVG aqui (Ctrl+V / ⌘V)",
+      "mediaPreviewAlt": "Pré-visualização da mídia do passo",
+      "removeMedia": "Remover mídia",
+      "noVisualForStep": "Nenhuma imagem para este step",
+      "invalidMediaFormat": "Formato não suportado. Use SVG, PNG ou JPEG.",
+      "mediaReadError": "Não foi possível ler o arquivo.",
       "uploadSvg": "Fazer upload de SVG",
       "activeDiagram": "Diagrama ativo",
       "selectDiagramOption": "—",
@@ -209,6 +221,8 @@
         "deployment": "Deployment",
         "unknown": "{{level}}"
       },
+      "noFlowsAvailable": "Nenhum flow com steps disponível neste diagrama",
+      "flowLockedDuringPlayback": "Flow bloqueado durante a reprodução",
       "flowPickerTitle": "Escolher flow",
       "flowSearchPlaceholder": "Buscar flows…",
       "visualStateTitle": "Estado visual",
@@ -225,7 +239,18 @@
       "prevStep": "Step anterior",
       "nextStep": "Próximo step",
       "journeyCompleted": "✓ Jornada concluída",
-      "playJourney": "Reproduzir jornada"
+      "playJourney": "Reproduzir jornada",
+      "expandVisual": "Ver em destaque",
+      "closeVisual": "Fechar",
+      "visualOverlayLabel": "Estado visual do step",
+      "expandDescription": "Expandir descrição",
+      "collapseDescription": "Recolher descrição"
+    },
+    "presentation": {
+      "keyboardHint": "← → passo do flow  ·  ↑ ↓ step  ·  Espaço play/pausa  ·  Esc sair",
+      "completed": "Apresentação concluída",
+      "restart": "Recomeçar",
+      "exitPresentation": "Sair"
     },
     "player": {
       "stepProgress": "Passo {{current}} de {{total}}",
@@ -462,6 +487,9 @@
     "apiGroupDefaultName": "API Endpoints",
     "defaultGroupName": "Grupo",
     "compareViewBanner": "Modo visualização — edição desativada",
+    "saving": "Salvando...",
+    "saved": "Salvo",
+    "saveError": "Erro ao salvar",
     "toolbar": {
       "allTags": "Todos",
       "noTagsFilter": "Nenhuma tag",
@@ -506,6 +534,11 @@
     "levelDeployment": "Nível 4",
     "collapse": "Minimizar barra",
     "expand": "Expandir barra"
+  },
+  "diagram": {
+    "deleteConfirmTitle": "Remover diagrama?",
+    "deleteConfirmDescription": "\"{{name}}\" com {{nodeCount}} elementos e {{flowCount}} flows será removido permanentemente. Esta ação não pode ser desfeita.",
+    "deleteConfirmFallback": "Este diagrama será removido permanentemente. Esta ação não pode ser desfeita."
   },
   "llmChat": {
     "title": "Assistente de Diagrama",
@@ -578,6 +611,23 @@
         "retry": "Tentar novamente"
       }
     },
+    "analysis": {
+      "summary": "Resumo executivo",
+      "findings": "Achados",
+      "strengths": "Pontos fortes",
+      "nextSteps": "Próximos passos",
+      "dismiss": "Dispensar análise",
+      "recommendation": "Recomendação",
+      "criticalCount": "{{count}} crítico(s)",
+      "highCount": "{{count}} alto(s)",
+      "severity": {
+        "critical": "Crítico",
+        "high": "Alto",
+        "medium": "Médio",
+        "low": "Baixo",
+        "info": "Info"
+      }
+    },
     "suggestions": {
       "title": "SUGESTÕES",
       "context": "Contexto carregado: \"{{name}}\"",
@@ -586,7 +636,18 @@
       "failures": "Identifique possíveis pontos de falha na arquitetura",
       "security": "Sugira melhorias de segurança para este diagrama",
       "communicate": "Como os sistemas se comunicam entre si?",
-      "improve": "Quais melhorias de escalabilidade você recomenda?"
+      "improve": "Quais melhorias de escalabilidade você recomenda?",
+      "contextual": {
+        "explainThis": "Explique esta arquitetura",
+        "reviewThis": "Revise esta arquitetura",
+        "assessSecurity": "Avalie a segurança",
+        "wellArchitected": "Avaliar pelo AWS Well-Architected Framework",
+        "spof": "Identificar pontos únicos de falha (SPOFs)",
+        "lambdaPatterns": "Verificar anti-padrões de Lambda",
+        "dbCaching": "Sugerir estratégia de cache para o banco de dados",
+        "blastRadius": "Qual o blast radius se o componente central falhar?",
+        "observability": "Identificar gaps de observabilidade"
+      }
     }
   },
   "scenes": {
@@ -779,7 +840,11 @@
       "empty": "Nenhum template salvo",
       "emptyHint": "Selecione nodes no canvas e clique em 'Salvar como template'",
       "delete": "Excluir template",
-      "deleteConfirm": "Excluir '{{name}}'? Esta ação não pode ser desfeita."
+      "deleteConfirm": "Excluir '{{name}}'? Esta ação não pode ser desfeita.",
+      "download": "Baixar template",
+      "importTemplate": "Importar template (.json)",
+      "importSuccess": "Template \"{{name}}\" importado com sucesso",
+      "importError": "Arquivo inválido ou corrompido"
     }
   },
   "connectionPanel": {
@@ -1162,7 +1227,9 @@
     "exitTitle": "Sair do flow",
     "request": "→ Request",
     "response": "← Response",
-    "inlineDescription": "· \"{{text}}\""
+    "inlineDescription": "· \"{{text}}\"",
+    "componentRemoved": "componente removido",
+    "connectionRemoved": "conexão removida"
   },
   "shortcutsModal": {
     "title": "Atalhos do Canvas",

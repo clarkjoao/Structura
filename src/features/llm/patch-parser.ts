@@ -1,16 +1,108 @@
 import { isWriteTool } from "./tools";
 import { isValidNodeType } from "./component-catalog";
-import type { DiagramPatchAction, LLMToolCall, ParsedLLMResponse } from "./types";
-
+import type {
+  AnalysisFinding,
+  AnalysisResponse,
+  AnalysisSeverity,
+  DiagramPatch,
+  DiagramPatchAction,
+  LLMToolCall,
+  ParsedLLMResponse,
+} from "./types";
 
 const PARSE_FALLBACK_MESSAGE = "[Resposta não processada. Tente novamente.]";
+
+const ANALYSIS_SEVERITIES: readonly AnalysisSeverity[] = [
+  "critical",
+  "high",
+  "medium",
+  "low",
+  "info",
+];
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+function normalizeSeverity(value: unknown): AnalysisSeverity {
+  if (
+    typeof value === "string" &&
+    (ANALYSIS_SEVERITIES as readonly string[]).includes(value)
+  ) {
+    return value as AnalysisSeverity;
+  }
+  return "info";
+}
+
+function normalizeFinding(raw: unknown): AnalysisFinding | null {
+  if (!isObject(raw)) {
+    return null;
+  }
+  const title = typeof raw.title === "string" ? raw.title : "";
+  const detail = typeof raw.detail === "string" ? raw.detail : "";
+  const recommendation =
+    typeof raw.recommendation === "string" ? raw.recommendation : "";
+  const category = typeof raw.category === "string" ? raw.category : "other";
+  const affectedNodes = Array.isArray(raw.affectedNodes)
+    ? raw.affectedNodes.filter((id): id is string => typeof id === "string")
+    : undefined;
+  return {
+    severity: normalizeSeverity(raw.severity),
+    category,
+    title,
+    detail,
+    recommendation,
+    ...(affectedNodes && affectedNodes.length > 0 ? { affectedNodes } : {}),
+  };
+}
+
+function tryParseAnalysis(candidate: string): ParsedLLMResponse | null {
+  try {
+    const parsedValue = JSON.parse(candidate) as Record<string, unknown>;
+    if (!isObject(parsedValue)) {
+      return null;
+    }
+    if (parsedValue.mode !== "analysis") {
+      return null;
+    }
+    if (!Array.isArray(parsedValue.findings)) {
+      return null;
+    }
+    const summary =
+      typeof parsedValue.summary === "string" ? parsedValue.summary : "";
+    const findingsRaw = parsedValue.findings as unknown[];
+    const findings: AnalysisFinding[] = [];
+    for (const item of findingsRaw) {
+      const finding = normalizeFinding(item);
+      if (finding) {
+        findings.push(finding);
+      }
+    }
+    const strengths = Array.isArray(parsedValue.strengths)
+      ? parsedValue.strengths.filter((line): line is string => typeof line === "string")
+      : [];
+    const nextSteps = Array.isArray(parsedValue.nextSteps)
+      ? parsedValue.nextSteps.filter((line): line is string => typeof line === "string")
+      : [];
+
+    const analysis: AnalysisResponse = {
+      mode: "analysis",
+      summary,
+      findings,
+      strengths,
+      nextSteps,
+    };
+    return { kind: "analysis", analysis };
+  } catch {
+    return null;
+  }
+}
+
 function isPatchEnvelope(value: unknown): value is { message?: string; patch?: Record<string, unknown> } {
   if (!isObject(value)) {
+    return false;
+  }
+  if (value.mode === "analysis") {
     return false;
   }
   const messageValue = value.message;
@@ -21,7 +113,7 @@ function isPatchEnvelope(value: unknown): value is { message?: string; patch?: R
   return hasValidMessage && hasValidPatch;
 }
 
-function isDiagramPatch(value: unknown): value is NonNullable<ParsedLLMResponse["patch"]> {
+function isDiagramPatch(value: unknown): value is DiagramPatch {
   if (!isObject(value)) {
     return false;
   }
@@ -133,7 +225,7 @@ function tryParseEnvelope(candidate: string): ParsedLLMResponse | null {
     }
     const patchValue = parsedValue.patch;
     if (patchValue === null) {
-      return { message: parsedMessage, patch: null };
+      return { kind: "patch", message: parsedMessage, patch: null };
     }
     if (isObject(patchValue)) {
       const idValue = patchValue.id;
@@ -164,7 +256,7 @@ function tryParseEnvelope(candidate: string): ParsedLLMResponse | null {
         parsedPatch.actions = [...parsedPatch.actions, ...convertedActions];
       }
     }
-    return { message: parsedMessage, patch: parsedPatch };
+    return { kind: "patch", message: parsedMessage, patch: parsedPatch };
   } catch {
     return null;
   }
@@ -173,7 +265,7 @@ function tryParseEnvelope(candidate: string): ParsedLLMResponse | null {
 export function parseLLMResponse(rawResponse: string): ParsedLLMResponse {
   const trimmed = rawResponse.trim();
   if (!trimmed) {
-    return { message: "", patch: null };
+    return { kind: "text", message: "" };
   }
 
   const cleaned = trimmed
@@ -183,6 +275,11 @@ export function parseLLMResponse(rawResponse: string): ParsedLLMResponse {
     .replace(/[\u200B-\u200D\uFEFF]/g, "")
     .trim();
 
+  const directAnalysis = tryParseAnalysis(cleaned);
+  if (directAnalysis) {
+    return directAnalysis;
+  }
+
   const directParse = tryParseEnvelope(cleaned);
   if (directParse) {
     return directParse;
@@ -190,6 +287,10 @@ export function parseLLMResponse(rawResponse: string): ParsedLLMResponse {
 
   const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
+    const extractedAnalysis = tryParseAnalysis(jsonMatch[0]);
+    if (extractedAnalysis) {
+      return extractedAnalysis;
+    }
     const extractedParse = tryParseEnvelope(jsonMatch[0]);
     if (extractedParse) {
       return extractedParse;
@@ -198,7 +299,12 @@ export function parseLLMResponse(rawResponse: string): ParsedLLMResponse {
 
   const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
   if (fencedMatch?.[1]) {
-    const fencedParse = tryParseEnvelope(fencedMatch[1].trim());
+    const inner = fencedMatch[1].trim();
+    const fencedAnalysis = tryParseAnalysis(inner);
+    if (fencedAnalysis) {
+      return fencedAnalysis;
+    }
+    const fencedParse = tryParseEnvelope(inner);
     if (fencedParse) {
       return fencedParse;
     }
@@ -210,6 +316,5 @@ export function parseLLMResponse(rawResponse: string): ParsedLLMResponse {
       : trimmed;
 
   console.warn("[LLM] parseLLMResponse fallback:", rawResponse.slice(0, 200));
-  return { message: fallbackMessage, patch: null };
+  return { kind: "text", message: fallbackMessage };
 }
-

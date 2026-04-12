@@ -14,8 +14,10 @@ import {
 } from "@/features/diagram";
 import { exportJson, exportDrawio, exportMermaid, downloadZip } from "@/lib/export-service";
 import { writeDrawioToClipboard } from "@/lib/clipboard-utils";
+import { FlowModeProvider } from "@/features/canvas";
 import { CollabProvider, CollabStartModal } from "@/features/collaboration";
 import { ModelExplorerContent } from "./ModelExplorerContent";
+import { useWorkspaceFlowRecordingFinalize } from "./useWorkspaceFlowRecordingFinalize";
 
 export default function ModelExplorerPage() {
   const { t } = useTranslation();
@@ -111,6 +113,8 @@ export default function ModelExplorerPage() {
     setShowFlows(false);
   }, []);
 
+  const onWorkspaceFlowFinalize = useWorkspaceFlowRecordingFinalize();
+
   if (!diagram) {
     const backHref = "/workspace";
     return (
@@ -133,13 +137,17 @@ export default function ModelExplorerPage() {
   return (
     <div className="h-screen flex flex-col">
       <Navbar />
-      <CollabProvider
-        enabled={collabActive}
-        reserveEphemeralRoomId={showStartModal}
-        userName={collabUserName}
-        signalingUrl={collabServerUrl}
+      <FlowModeProvider
+        onFinalize={onWorkspaceFlowFinalize}
+        onStartRecording={() => {}}
       >
-        <ModelExplorerContent
+        <CollabProvider
+          enabled={collabActive}
+          reserveEphemeralRoomId={showStartModal}
+          userName={collabUserName}
+          signalingUrl={collabServerUrl}
+        >
+          <ModelExplorerContent
             showFlows={showFlows}
             setShowFlows={setShowFlows}
             isViewingCoverage={isViewingCoverage}
@@ -162,13 +170,14 @@ export default function ModelExplorerPage() {
             flows={flows}
             backHref={backHref}
           />
-        <CollabStartModal
-          open={showStartModal}
-          onOpenChange={setShowStartModal}
-          diagramName={diagram.name}
-          onStart={handleStartCollab}
-        />
-      </CollabProvider>
+          <CollabStartModal
+            open={showStartModal}
+            onOpenChange={setShowStartModal}
+            diagramName={diagram.name}
+            onStart={handleStartCollab}
+          />
+        </CollabProvider>
+      </FlowModeProvider>
     </div>
   );
 }

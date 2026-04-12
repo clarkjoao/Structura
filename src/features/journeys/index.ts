@@ -6,6 +6,7 @@ export { CreateJourneyModal } from "./components/CreateJourneyModal";
 export { JourneyCard } from "./components/JourneyCard";
 export { AddStepModal } from "./components/editor/AddStepModal.tsx";
 export { JourneyEditorCanvas } from "./components/editor/JourneyEditorCanvas.tsx";
+export { JourneyCompletedOverlay } from "./components/editor/JourneyCompletedOverlay.tsx";
 export { RightPanel } from "./components/editor/RightPanel.tsx";
 export { StepDetail } from "./components/editor/StepDetail.tsx";
 export { StepFlowSection } from "./components/editor/StepFlowSection.tsx";

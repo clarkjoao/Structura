@@ -2,6 +2,16 @@ import type { DragEvent, MouseEvent as ReactMouseEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { Diagram } from "@/features/diagram";
 import {
   removeRecentRef,
@@ -46,6 +56,7 @@ export function DiagramCard({
   const [isPreviewHovered, setIsPreviewHovered] = useState(false);
   const [moveFolderOpen, setMoveFolderOpen] = useState(false);
   const [renamingDiagram, setRenamingDiagram] = useState<Diagram | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const sortedFolders = useMemo(
     () => Object.values(folders).sort((folderA, folderB) => folderA.name.localeCompare(folderB.name)),
@@ -80,11 +91,7 @@ export function DiagramCard({
 
   const handleDelete = (event: ReactMouseEvent) => {
     event.stopPropagation();
-    if (window.confirm(t("dashboard.card.deleteConfirm", { name: diagram.name }))) {
-      deletePreview(diagram.id);
-      deleteDiagram(diagram.id);
-      removeRecentRef(diagram.id);
-    }
+    setDeleteDialogOpen(true);
   };
 
   const handleSelectMoveFolder = (event: ReactMouseEvent, folderId: string | null) => {
@@ -147,6 +154,35 @@ export function DiagramCard({
           setRenamingDiagram(null);
         }}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("diagram.deleteConfirmTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("diagram.deleteConfirmDescription", {
+                name: diagram.name,
+                nodeCount: componentCount,
+                flowCount,
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                deletePreview(diagram.id);
+                deleteDiagram(diagram.id);
+                removeRecentRef(diagram.id);
+                setDeleteDialogOpen(false);
+              }}
+            >
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
