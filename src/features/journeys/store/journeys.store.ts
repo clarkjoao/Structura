@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { Journey, JourneyStep } from "../types";
+import { SEED_JOURNEYS } from "@/fixtures/seeds/journey-seeds";
 
 interface JourneyStoreState {
   journeys: Record<string, Journey>;
@@ -59,7 +60,7 @@ export function migrateJourneyStepsDiagramId(
 export const useJourneyStore = create<JourneyStoreState>()(
   persist(
     (set) => ({
-      journeys: {},
+      journeys: import.meta.env.VITE_DISABLE_SEEDS === "true" ? {} : SEED_JOURNEYS,
 
       addJourney: (name, description, domain) => {
         const now = Date.now();
