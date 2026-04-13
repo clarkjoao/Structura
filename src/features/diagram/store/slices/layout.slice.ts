@@ -88,7 +88,6 @@ export const layoutSlice = (
       set((state) => {
         const d = getActiveDiagram(state);
         if (!d) return;
-        pushHistory(state);
         const scene = resolveActiveScene(d);
         if (scene && scene.addedComponents[elementId]) {
           const merged = { ...d.nodeLayouts, ...scene.nodeLayouts };
@@ -109,7 +108,6 @@ export const layoutSlice = (
       set((state) => {
         const d = getActiveDiagram(state);
         if (!d) return;
-        pushHistory(state);
         const scene = resolveActiveScene(d);
         if (scene && scene.addedComponents[elementId]) {
           const merged = { ...d.nodeLayouts, ...scene.nodeLayouts };

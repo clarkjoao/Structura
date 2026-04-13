@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { Edge } from "@xyflow/react";
-import type { Connection, Diagram, FlowStep } from "@/features/diagram";
+import type { Connection, Diagram, DiagramModel, FlowStep } from "@/features/diagram";
 import { getCachedCanvasSnapshot } from "@/features/diagram";
 import { useFlowMode } from "../flow/FlowModeContext";
 import { buildEdge, filterVisibleConnections } from "./edgeBuilding";
@@ -8,7 +8,7 @@ import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowSta
 import { getPendingEdgeIds, useLLMStore } from "@/features/llm";
 
 interface UseCanvasEdgesParams {
-  diagram: Diagram | null | undefined;
+  diagram: Diagram | DiagramModel | null | undefined;
   visibleConnections: Connection[];
   edgeHandleAssignments: { connId: string; sourceHandle: string; targetHandle: string }[];
   selectedEdgeId: string | null;

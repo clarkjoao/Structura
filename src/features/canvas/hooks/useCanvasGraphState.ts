@@ -1,7 +1,7 @@
 import { useCallback, useMemo, type MutableRefObject } from "react";
 import type { TFunction } from "i18next";
 import type { Node } from "@xyflow/react";
-import type { Component, Connection, Diagram, ServiceDefinition } from "@/features/diagram";
+import type { Component, Connection, Diagram, DiagramModel, ServiceDefinition } from "@/features/diagram";
 import type { CanvasVisualState } from "./useCanvasVisualState";
 import { useCanvasConnectionDerivations } from "../edges/useCanvasConnectionDerivations";
 import { useCanvasNodes, type DiagramSceneState } from "../nodes/useCanvasNodes";
@@ -20,7 +20,7 @@ type ResolvedSnapshot = import("@/features/diagram").ResolvedSnapshot;
 type NodeDragParenting = ReturnType<typeof import("./useNodeDragParenting").useNodeDragParenting>;
 
 export interface UseCanvasGraphStateParams {
-  diagram: Diagram | null | undefined;
+  diagram: Diagram | DiagramModel | null | undefined;
   resolved: ResolvedSnapshot | null;
   diagramSceneState: DiagramSceneState | null;
   flows: Flow[];

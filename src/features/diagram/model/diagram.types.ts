@@ -153,3 +153,5 @@ export interface Diagram {
   
   compareSceneId?: string | null;
 }
+
+export type DiagramModel = Omit<Diagram, "viewport">;

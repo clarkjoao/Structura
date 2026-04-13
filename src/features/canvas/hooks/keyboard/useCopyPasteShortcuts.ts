@@ -7,6 +7,7 @@ import {
   type Component,
   type Connection,
   type Diagram,
+  type DiagramModel,
   type NodeLayout,
 } from "@/features/diagram";
 import {
@@ -27,7 +28,7 @@ import { parseDrawioXml } from "@/lib/export-service/import-drawio";
 import { generateIconId, normalizeSvgForStorage } from "@/features/canvas/utils/svg.utils";
 
 interface UseCopyPasteShortcutsParams {
-  diagram: Diagram | null | undefined;
+  diagram: Diagram | DiagramModel | null | undefined;
   selectedNodeId: string | null;
   reactFlowInstance: ReactFlowInstance;
   reactFlowWrapperRef: React.RefObject<HTMLDivElement | null>;

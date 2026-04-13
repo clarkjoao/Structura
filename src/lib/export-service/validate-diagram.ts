@@ -1,6 +1,6 @@
-import type { Diagram } from "@/features/diagram";
+import type { Diagram, DiagramModel } from "@/features/diagram";
 
-export function validateDiagram(diagram: Diagram): void {
+export function validateDiagram(diagram: Diagram | DiagramModel): void {
   if (!diagram) {
     throw new Error("Diagram is required");
   }

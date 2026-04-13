@@ -1,4 +1,4 @@
-import type { Component, Diagram } from "@/features/diagram";
+import type { Component, Diagram, DiagramModel } from "@/features/diagram";
 import {
   diagramWithResolvedScene,
   isApiGroupComponent,
@@ -120,7 +120,7 @@ function transformCanvasPoint(
 }
 
 export function exportDrawio(
-  diagram: Diagram,
+  diagram: Diagram | DiagramModel,
   serviceRegistry: Record<string, ServiceDefinition>,
   options?: { componentIds?: string[] },
 ): string {
@@ -134,7 +134,7 @@ export function exportDrawio(
     ? expandWithContainerAncestors(options!.componentIds!, resolved.snapshot.components)
     : null;
 
-  const diagramForExport: Diagram = shouldFilter
+  const diagramForExport: Diagram | DiagramModel = shouldFilter
     ? (() => {
         const idSet = new Set(expandedIds!);
         const filteredComponents = Object.fromEntries(

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import type { ReactFlowInstance } from "@xyflow/react";
-import type { Diagram, Flow } from "@/features/diagram";
+import type { Diagram, DiagramModel, Flow } from "@/features/diagram";
 import { getStepById } from "@/features/diagram";
 import {
   FIT_VIEW_DURATION_MS,
@@ -11,7 +11,7 @@ import {
 } from "../canvas.constants";
 
 interface UseCanvasEffectsParams {
-  diagram: Diagram | null | undefined;
+  diagram: Diagram | DiagramModel | null | undefined;
   reactFlowInstance: ReactFlowInstance;
   isPlaying: boolean;
   activeFlow?: Flow | null;
@@ -30,9 +30,10 @@ export function useCanvasEffects({
   currentStepId,
   onClearSelection,
 }: UseCanvasEffectsParams) {
+  const diagramId = diagram?.id ?? null;
 
   useEffect(() => {
-    if (!diagram) return;
+    if (!diagramId) return;
     let cancelled = false;
     const id = requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -49,7 +50,7 @@ export function useCanvasEffects({
       cancelled = true;
       cancelAnimationFrame(id);
     };
-  }, [diagram?.id, reactFlowInstance]);
+  }, [diagramId, reactFlowInstance]);
 
   
   useEffect(() => {
@@ -60,7 +61,7 @@ export function useCanvasEffects({
   
   useEffect(() => {
     const el = document.querySelector(".react-flow__renderer");
-    if (!el || !diagram) return;
+    if (!el || !diagramId) return;
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
@@ -87,7 +88,7 @@ export function useCanvasEffects({
 
     el.addEventListener("wheel", handleWheel, { passive: false });
     return () => el.removeEventListener("wheel", handleWheel);
-  }, [reactFlowInstance, diagram]);
+  }, [reactFlowInstance, diagramId]);
 
   
   useEffect(() => {

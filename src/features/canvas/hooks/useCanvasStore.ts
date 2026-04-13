@@ -1,5 +1,5 @@
 import {
-  useActiveDiagram,
+  useActiveDiagramModel,
   useDiagrams,
   useVisibleComponents,
   useVisibleConnections,
@@ -12,7 +12,7 @@ import { useStableListByRefEquality } from "./useStableListByRefEquality";
 const EMPTY_REGISTRY: Record<string, never> = {};
 
 export function useCanvasStore() {
-  const diagram = useActiveDiagram();
+  const diagram = useActiveDiagramModel();
   const allDiagrams = useDiagrams();
   const visibleComponentsRaw = useVisibleComponents();
   const visibleConnectionsRaw = useVisibleConnections();

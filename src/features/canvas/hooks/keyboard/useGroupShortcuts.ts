@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import type { ReactFlowInstance } from "@xyflow/react";
 import { toast } from "sonner";
-import type { Diagram } from "@/features/diagram";
+import type { Diagram, DiagramModel } from "@/features/diagram";
 import {
   isDiagramCompareMode,
   isPanelComponent,
@@ -14,7 +14,7 @@ import { getSelectedNodes, isModKeyPressed, type KeyHandler } from "./helpers";
 import { getNodeType } from "../../utils/node-type-utils";
 
 interface UseGroupShortcutsParams {
-  diagram: Diagram | null | undefined;
+  diagram: Diagram | DiagramModel | null | undefined;
   reactFlowInstance: ReactFlowInstance;
   selectedNodeId: string | null;
   groupNodes: (ids: string[]) => string | null;

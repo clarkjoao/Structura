@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Node, OnNodesChange, NodeChange } from "@xyflow/react";
-import type { Diagram } from "@/features/diagram";
+import type { Diagram, DiagramModel } from "@/features/diagram";
 import {
   isNoteComponent,
   isEndpointComponent,
@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import i18n from "@/infrastructure/i18n";
 
 interface UseNodeDragParentingParams {
-  diagram: Diagram | null | undefined;
+  diagram: Diagram | DiagramModel | null | undefined;
   nodes: Node[];
   updateNodeLayout: (
     elementId: string,

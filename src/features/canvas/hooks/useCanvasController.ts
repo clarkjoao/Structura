@@ -117,7 +117,10 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
   });
   const interactionMode = useInteractionMode(diagram);
 
-  const selectedNodes = graphState.nodes.filter((node) => visualState.selectedNodeIds.has(node.id));
+  const selectedNodes = useMemo(
+    () => graphState.nodes.filter((node) => visualState.selectedNodeIds.has(node.id)),
+    [graphState.nodes, visualState.selectedNodeIds],
+  );
   const selectedCount = visualState.selectedNodeIds.size;
   const showElementPanel =
     (visualState.selectedNodeId || visualState.selectedEdgeId || selectedCount > 0) &&

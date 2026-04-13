@@ -49,6 +49,7 @@ export type {
   IconSource,
   Folder,
   Diagram,
+  DiagramModel,
   SceneDiff,
   UserTemplate,
   UserTemplateComponent,
