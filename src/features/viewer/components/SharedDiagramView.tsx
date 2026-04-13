@@ -28,7 +28,7 @@ export function SharedDiagramView({ diagram }: SharedDiagramViewProps) {
   };
 
   const handleImport = () => {
-    const now = new Date().toISOString();
+    const now = Date.now();
     const importDateLabel = formatDiagramImportCalendarDate(new Date());
     const targetId = resolveUniqueDiagramId(diagram.id, diagrams);
     const displayName = t("share.importedDiagramName", {

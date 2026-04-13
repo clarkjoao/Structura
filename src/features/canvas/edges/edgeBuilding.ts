@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { MarkerType, type Edge } from "@xyflow/react";
-import type { Connection, Diagram, FlowStep, Point } from "@/features/diagram";
+import type { Connection, Diagram, DiagramModel, FlowStep, Point } from "@/features/diagram";
 import { getEffectiveConnectionStyle, EdgeMarker, EdgeStyle } from "@/features/diagram";
 import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
 import {
@@ -10,7 +10,7 @@ import {
 } from "../canvas.constants";
 
 export interface EdgeBuildParams {
-  diagram: Diagram;
+  diagram: Diagram | DiagramModel;
   selectedEdgeId: string | null;
   isPlaying: boolean;
   isRecording: boolean;

@@ -1,7 +1,7 @@
 import type { ExternalLink } from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
-import { getActiveDiagram } from "./get-active-diagram";
+import { getActiveDiagram, touchDiagram } from "./get-active-diagram";
 import { pushHistory } from "./history.slice";
 import { resolveActiveScene } from "./scene-helpers";
 
@@ -23,7 +23,7 @@ export const componentLinksSlice = (
       if (!comp) return;
       if (!comp.handleOrder) comp.handleOrder = { incoming: [], outgoing: [] };
       comp.handleOrder[side] = orderedConnectionIds;
-      d.updatedAt = new Date().toISOString();
+      touchDiagram(d);
     });
   },
 
@@ -40,7 +40,7 @@ export const componentLinksSlice = (
       if (!comp) return;
       if (!comp.externalLinks) comp.externalLinks = [];
       comp.externalLinks.push({ ...link, id: generateId("lnk") });
-      d.updatedAt = new Date().toISOString();
+      touchDiagram(d);
     });
   },
 
@@ -57,7 +57,7 @@ export const componentLinksSlice = (
       if (!comp) return;
       const link = comp.externalLinks?.find((l) => l.id === linkId);
       if (link) Object.assign(link, patch);
-      d.updatedAt = new Date().toISOString();
+      touchDiagram(d);
     });
   },
 
@@ -73,7 +73,7 @@ export const componentLinksSlice = (
         : d.snapshot.components[componentId];
       if (!comp) return;
       comp.externalLinks = (comp.externalLinks ?? []).filter((l) => l.id !== linkId);
-      d.updatedAt = new Date().toISOString();
+      touchDiagram(d);
     });
   },
 });

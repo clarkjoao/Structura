@@ -24,7 +24,7 @@ import { Eye, Minimize2 } from "lucide-react";
 import { useCanvasController } from "./hooks/useCanvasController";
 import { useCanvasInputProfile } from "./hooks/useCanvasInputProfile";
 import { useJourneyViewportSync } from "./hooks/useJourneyViewportSync";
-import { getCachedCanvasSnapshot, isPanelComponent } from "@/features/diagram";
+import { getCachedCanvasSnapshot, isPanelComponent, useDiagramStore } from "@/features/diagram";
 import { useJourneysByDiagramId } from "@/features/journeys";
 import { CANVAS_STYLES } from "./constants";
 
@@ -101,6 +101,12 @@ const Canvas = (props: CanvasProps = {}) => {
     [pendingPreviews],
   );
   const { isFlowActive } = interactionMode;
+  const initialViewport = useDiagramStore(
+    useCallback((state) => {
+      const activeDiagramId = state.activeDiagramId;
+      return activeDiagramId ? state.diagrams[activeDiagramId]?.viewport : undefined;
+    }, []),
+  );
 
   useJourneyViewportSync();
 
@@ -319,7 +325,7 @@ const Canvas = (props: CanvasProps = {}) => {
               minZoom={0.3}
               maxZoom={1.5}
               multiSelectionKeyCode={MULTI_SELECTION_KEY_CODES}
-              defaultViewport={diagram.viewport}
+              defaultViewport={initialViewport}
               fitView
               fitViewOptions={{ padding: 0.3 }}
               onMoveEnd={eventHandlers.onMoveEnd}

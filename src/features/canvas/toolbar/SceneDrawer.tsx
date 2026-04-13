@@ -427,9 +427,7 @@ export function ConnectedSceneDrawer({ onClose }: { onClose: () => void }) {
   if (!diagram) return null;
 
   const sceneRecord = diagram.scenes ?? {};
-  const scenes = Object.values(sceneRecord).sort((a, b) =>
-    a.createdAt.localeCompare(b.createdAt),
-  );
+  const scenes = Object.values(sceneRecord).sort((a, b) => a.createdAt - b.createdAt);
   const activeId =
     diagram.activeSceneId && sceneRecord[diagram.activeSceneId]
       ? diagram.activeSceneId

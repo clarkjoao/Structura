@@ -1,10 +1,10 @@
 import type { TFunction } from "i18next";
-import type { Diagram } from "@/features/diagram";
+import type { Diagram, DiagramModel } from "@/features/diagram";
 import { useCanvasCompareMode } from "./useCanvasCompareMode";
 import { useCanvasCompareModeEffects } from "./useCanvasCompareModeEffects";
 
 export interface UseCanvasCompareStateParams {
-  diagram: Diagram | null | undefined;
+  diagram: Diagram | DiagramModel | null | undefined;
   isFlowPanelOpen: boolean;
   clearCanvasSelection: () => void;
   t: TFunction;

@@ -131,7 +131,7 @@ export function CollabProvider({
   const onSnapshot = useCallback((snapshot: CollabSnapshot) => {
     useDiagramStore.setState((prev) => {
       const existing = prev.diagrams[snapshot.diagramId];
-      const now = new Date().toISOString();
+      const now = Date.now();
       return {
         ...prev,
         activeDiagramId: snapshot.diagramId,

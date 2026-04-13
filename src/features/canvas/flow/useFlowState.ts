@@ -39,6 +39,7 @@ export function useFlowState({ flows, isCompareMode = false }: UseFlowStateParam
 
   const coverage = useMemo(() => {
     if (isPlaying || isRecording || isCompareMode) return null;
+    // Intentionally depends on full `flows`: coverage must refresh when steps mutate.
     return buildCoverage(flows);
   }, [flows, isPlaying, isRecording, isCompareMode]);
 

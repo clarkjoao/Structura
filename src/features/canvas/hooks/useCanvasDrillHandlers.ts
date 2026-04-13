@@ -1,5 +1,5 @@
 import { useCallback, useRef } from "react";
-import type { Diagram } from "@/features/diagram";
+import type { Diagram, DiagramModel } from "@/features/diagram";
 import {
   isDbTableComponent,
   isNoteComponent,
@@ -28,7 +28,7 @@ function defaultExpandedDbTableHeight(columnCount: number): number {
 }
 
 interface UseCanvasDrillHandlersParams {
-  diagram: Diagram | null | undefined;
+  diagram: Diagram | DiagramModel | null | undefined;
   allDiagrams: Record<string, Diagram>;
   updateComponent: (id: string, patch: Record<string, unknown>) => void;
   openDiagram: (id: string) => void;

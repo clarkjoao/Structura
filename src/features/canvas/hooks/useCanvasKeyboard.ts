@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import type { ReactFlowInstance } from "@xyflow/react";
 import type {
   Diagram,
+  DiagramModel,
   ComponentType,
   Component,
   Connection,
@@ -50,7 +51,7 @@ function prepareImportedSvgMarkup(
 }
 
 interface UseCanvasKeyboardParams {
-  diagram: Diagram | null | undefined;
+  diagram: Diagram | DiagramModel | null | undefined;
   setCompareScene: (sceneId: string | null) => void;
   isCompareMode?: boolean;
   serviceRegistry: Record<string, ServiceDefinition>;

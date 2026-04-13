@@ -4,7 +4,13 @@ import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
-import { resolveActiveScene } from "./scene-helpers";
+import {
+  getActiveComponents,
+  getActiveNodeLayouts,
+  resolveActiveScene,
+  writeComponentAndLayout,
+} from "./scene-helpers";
+import { touchDiagram } from "./get-active-diagram";
 import { resolveSceneSnapshot } from "../../utils/scene.utils";
 
 function resolveAbsoluteLayoutPosition(
@@ -53,7 +59,7 @@ export const clipboardSlice = (
           .filter((c) => idSet.has(c.sourceId) && idSet.has(c.targetId))
           .map((connection) => current(connection));
 
-        const _pasteOffsets =
+        const relativeOffsets =
           absPositions.length > 0
             ? (() => {
                 const minX = Math.min(...absPositions.map((point) => point.x));
@@ -65,7 +71,7 @@ export const clipboardSlice = (
               })()
             : [];
 
-        state.clipboard = { components, connections, _pasteOffsets };
+        state.clipboard = { components, connections, relativeOffsets };
       });
     },
 
@@ -83,14 +89,20 @@ export const clipboardSlice = (
         const idMap: Record<string, string> = {};
         const baseX = position?.x ?? 300;
         const baseY = position?.y ?? 300;
-        const pasteOffsets = state.clipboard._pasteOffsets;
+        const pasteOffsets = state.clipboard.relativeOffsets;
         const pastedSourceIds = new Set(state.clipboard.components.map((component) => component.id));
-        const activeComponents = scene ? resolveSceneSnapshot(d, d.activeSceneId ?? null).components : d.snapshot.components;
+        const availableComponents = scene
+          ? resolveSceneSnapshot(d, d.activeSceneId ?? null).components
+          : getActiveComponents(d, scene);
+        const activeComponents = getActiveComponents(d, scene);
+        const activeNodeLayouts = getActiveNodeLayouts(d, scene);
         state.clipboard.components.forEach((c: Component, index: number) => {
           const newId = generateId("el");
           idMap[c.id] = newId;
           const parentIsAlsoPasted = c.parentId ? pastedSourceIds.has(c.parentId) : false;
-          const parentExistsInActiveDiagram = c.parentId ? Boolean(activeComponents[c.parentId]) : false;
+          const parentExistsInActiveDiagram = c.parentId
+            ? Boolean(availableComponents[c.parentId])
+            : false;
           const parentId = parentIsAlsoPasted
             ? c.parentId
             : options?.preserveParentWhenMissing && parentExistsInActiveDiagram
@@ -103,13 +115,7 @@ export const clipboardSlice = (
             x: baseX + (offset?.dx ?? index * 20),
             y: baseY + (offset?.dy ?? index * 20),
           };
-          if (scene) {
-            scene.addedComponents[newId] = comp;
-            scene.nodeLayouts[newId] = layout;
-          } else {
-            d.snapshot.components[newId] = comp;
-            d.nodeLayouts[newId] = layout;
-          }
+          writeComponentAndLayout(d, scene, comp, layout);
         });
         for (const originalComponent of state.clipboard.components) {
           const newComponentId = idMap[originalComponent.id];
@@ -119,13 +125,8 @@ export const clipboardSlice = (
               ? idMap[originalComponent.parentId]
               : null;
           if (!newParentId) continue;
-          if (scene) {
-            const existing = scene.addedComponents[newComponentId];
-            if (existing) existing.parentId = newParentId;
-          } else {
-            const existing = d.snapshot.components[newComponentId];
-            if (existing) existing.parentId = newParentId;
-          }
+          const existing = activeComponents[newComponentId];
+          if (existing) existing.parentId = newParentId;
         }
         state.clipboard.components.forEach((originalComponent) => {
           const newComponentId = idMap[originalComponent.id];
@@ -137,10 +138,10 @@ export const clipboardSlice = (
               : null;
           if (!newParentId) return;
 
-          const parentLayout = scene ? scene.nodeLayouts[newParentId] : d.nodeLayouts[newParentId];
+          const parentLayout = activeNodeLayouts[newParentId];
           if (!parentLayout) return;
 
-          const childLayout = scene ? scene.nodeLayouts[newComponentId] : d.nodeLayouts[newComponentId];
+          const childLayout = activeNodeLayouts[newComponentId];
           if (!childLayout) return;
 
           childLayout.x -= parentLayout.x;
@@ -159,7 +160,7 @@ export const clipboardSlice = (
             }
           }
         });
-        d.updatedAt = new Date().toISOString();
+        touchDiagram(d);
         pastedIds = state.clipboard.components
           .map((component) => idMap[component.id])
           .filter((id): id is string => Boolean(id));
@@ -187,7 +188,7 @@ export const clipboardSlice = (
           d.snapshot.connections[conn.id] = conn;
         });
         ids = components.map((component) => component.id);
-        d.updatedAt = new Date().toISOString();
+        touchDiagram(d);
       });
       return ids;
     },

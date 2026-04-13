@@ -1,4 +1,4 @@
-import type { Diagram } from "@/features/diagram";
+import type { Diagram, DiagramModel } from "@/features/diagram";
 
 export interface ChatSuggestion {
   id: string;
@@ -6,7 +6,9 @@ export interface ChatSuggestion {
   labelKey: string;
 }
 
-export function buildContextualSuggestions(diagram: Diagram | null): ChatSuggestion[] {
+export function buildContextualSuggestions(
+  diagram: Diagram | DiagramModel | null,
+): ChatSuggestion[] {
   const base: ChatSuggestion[] = [
     { id: "explain", labelKey: "llmChat.suggestions.contextual.explainThis" },
     { id: "review", labelKey: "llmChat.suggestions.contextual.reviewThis" },

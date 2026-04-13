@@ -6,6 +6,7 @@ import type { NavigateFunction } from "react-router-dom";
 import {
   flushDiagramStoreToLocalStorageNow,
   type Diagram,
+  type DiagramModel,
   type ServiceDefinition,
 } from "@/features/diagram";
 import type { CanvasProps } from "../canvas.types";
@@ -28,7 +29,7 @@ export interface UseCanvasInteractionParams {
   reactFlowInstance: ReactFlowInstance;
   reactFlowWrapperRef: React.RefObject<HTMLDivElement | null>;
   visualState: CanvasVisualState;
-  diagram: Diagram | null | undefined;
+  diagram: Diagram | DiagramModel | null | undefined;
   allDiagrams: Record<string, Diagram>;
   actions: DiagramActions;
   serviceRegistry: Record<string, ServiceDefinition>;

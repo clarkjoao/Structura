@@ -6,7 +6,7 @@ import type { AppState } from "../store.types";
 import { repairFlowsAfterRemovingDiagramElements } from "../../utils/flow-repair";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
-import { getActiveDiagram } from "./get-active-diagram";
+import { getActiveDiagram, touchDiagram } from "./get-active-diagram";
 import { resolveActiveScene } from "./scene-helpers";
 import { mutateRemoveConnectionInScene } from "../../utils/scene-mutations";
 
@@ -39,7 +39,7 @@ export const connectionsSlice = (
         } else {
           d.snapshot.connections[connection.id] = connection;
         }
-        d.updatedAt = new Date().toISOString();
+        touchDiagram(d);
       });
       return connection;
     },
@@ -53,7 +53,7 @@ export const connectionsSlice = (
         if (!inScene) pushHistory(state);
         const conn = inScene ? scene!.addedConnections[id] : d.snapshot.connections[id];
         if (conn) Object.assign(conn, patch);
-        d.updatedAt = new Date().toISOString();
+        touchDiagram(d);
       });
     },
 
@@ -64,7 +64,7 @@ export const connectionsSlice = (
         const scene = resolveActiveScene(d);
         if (scene) {
           mutateRemoveConnectionInScene(d, scene.id, id);
-          d.updatedAt = new Date().toISOString();
+          touchDiagram(d);
           return;
         }
         pushHistory(state, STRUCTURAL_MUTATION_MARKER);
@@ -74,7 +74,7 @@ export const connectionsSlice = (
           new Set<string>(),
           new Set([id]),
         );
-        d.updatedAt = new Date().toISOString();
+        touchDiagram(d);
       });
     },
   });

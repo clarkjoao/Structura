@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { Edge } from "@xyflow/react";
-import type { Connection, Diagram, FlowStep } from "@/features/diagram";
+import type { Connection, Diagram, DiagramModel, FlowStep } from "@/features/diagram";
 import { getCachedCanvasSnapshot } from "@/features/diagram";
 import { useFlowMode } from "../flow/FlowModeContext";
 import { buildEdge, filterVisibleConnections } from "./edgeBuilding";
@@ -8,7 +8,7 @@ import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowSta
 import { getPendingEdgeIds, useLLMStore } from "@/features/llm";
 
 interface UseCanvasEdgesParams {
-  diagram: Diagram | null | undefined;
+  diagram: Diagram | DiagramModel | null | undefined;
   visibleConnections: Connection[];
   edgeHandleAssignments: { connId: string; sourceHandle: string; targetHandle: string }[];
   selectedEdgeId: string | null;
@@ -19,7 +19,8 @@ interface UseCanvasEdgesParams {
   flowHighlight: Pick<FlowHighlight, "activeConnId" | "participantConnIds">;
   recordingInfo: Pick<RecordingInfo, "edgeSteps" | "recordedEdgeIds" | "lastEdgeId"> | null;
   coverage: Pick<CoverageInfo, "edgeFlows"> | null;
-  visibleTags: Set<string>;
+  visibleTags: Set<string> | null;
+  visibleTagsKey: string | null;
 }
 
 export function useCanvasEdges({
@@ -34,9 +35,15 @@ export function useCanvasEdges({
   flowHighlight,
   recordingInfo,
   coverage,
-  visibleTags,
+  visibleTags: _visibleTags,
+  visibleTagsKey,
 }: UseCanvasEdgesParams): Edge[] {
+  void _visibleTags;
   const { isRecording } = useFlowMode();
+  const visibleTagsSet = useMemo(
+    () => (visibleTagsKey ? new Set(visibleTagsKey.split("\x00").filter(Boolean)) : null),
+    [visibleTagsKey],
+  );
   const pendingPreviews = useLLMStore((state) => state.pendingPreviews);
   const pendingEdgeIds = useMemo(
     () => getPendingEdgeIds(pendingPreviews),
@@ -48,14 +55,13 @@ export function useCanvasEdges({
     const r = getCachedCanvasSnapshot(diagram);
     const visible = filterVisibleConnections(visibleConnections, r.components);
     const assignmentMap = new Map(edgeHandleAssignments.map((a) => [a.connId, a]));
-
     const isEndpointHiddenByTag = (componentId: string): boolean => {
-      if (!visibleTags) return false;
+      if (!visibleTagsSet) return false;
       const component = r.components[componentId];
       if (!component?.tags?.length) {
         return false;
       }
-      return component.tags.some((tag) => visibleTags.has(tag));
+      return component.tags.some((tag) => visibleTagsSet.has(tag));
     };
 
     return visible.map((conn) => {
@@ -96,7 +102,7 @@ export function useCanvasEdges({
     flowHighlight,
     recordingInfo,
     coverage,
-    visibleTags,
+    visibleTagsSet,
     pendingEdgeIds,
   ]);
 }

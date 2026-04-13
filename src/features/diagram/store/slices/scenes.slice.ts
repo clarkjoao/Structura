@@ -5,7 +5,7 @@ import { computeMergePreview, nextSceneColor } from "../../utils/scene.utils";
 import { mutateRemoveComponentInScene, mutateRemoveConnectionInScene } from "../../utils/scene-mutations";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
-import { getActiveDiagram } from "./get-active-diagram";
+import { getActiveDiagram, touchDiagram } from "./get-active-diagram";
 import { resolveActiveScene } from "./scene-helpers";
 import i18n from "@/infrastructure/i18n";
 
@@ -32,11 +32,11 @@ export const scenesSlice = (
       copy.id = id;
       const baseName = name?.trim() || i18n.t("scenes.duplicatedSceneName", { name: src.name });
       copy.name = baseName;
-      copy.createdAt = new Date().toISOString();
+      copy.createdAt = Date.now();
       copy.color = nextSceneColor(index);
       scenes[id] = copy;
       created = copy;
-      d.updatedAt = new Date().toISOString();
+      touchDiagram(d);
     });
     return created;
   },
@@ -53,7 +53,7 @@ export const scenesSlice = (
         id,
         name: name.trim() || i18n.t("scenes.numberedDefaultName", { number: index + 1 }),
         color: nextSceneColor(index),
-        createdAt: new Date().toISOString(),
+        createdAt: Date.now(),
         addedComponents: {},
         addedConnections: {},
         removedComponentIds: [],
@@ -61,7 +61,7 @@ export const scenesSlice = (
         nodeLayouts: {},
       };
       scenes[id] = created;
-      d.updatedAt = new Date().toISOString();
+      touchDiagram(d);
     });
     return created;
   },
@@ -80,7 +80,7 @@ export const scenesSlice = (
       if (d.compareSceneId === sceneId) {
         d.compareSceneId = null;
       }
-      d.updatedAt = new Date().toISOString();
+      touchDiagram(d);
     });
   },
 
@@ -104,7 +104,7 @@ export const scenesSlice = (
         const next = d.scenes[sceneId].viewport!;
         d.viewport = { x: next.x, y: next.y, zoom: next.zoom };
       }
-      d.updatedAt = new Date().toISOString();
+      touchDiagram(d);
     });
   },
 
@@ -114,7 +114,7 @@ export const scenesSlice = (
       if (!d) return;
       if (sceneId === null) {
         d.compareSceneId = null;
-        d.updatedAt = new Date().toISOString();
+        touchDiagram(d);
         return;
       }
       const activeScene = resolveActiveScene(d);
@@ -122,7 +122,7 @@ export const scenesSlice = (
       if (sceneId === activeScene.id) return;
       if (!d.scenes?.[sceneId]) return;
       d.compareSceneId = sceneId;
-      d.updatedAt = new Date().toISOString();
+      touchDiagram(d);
     });
   },
 
@@ -133,7 +133,7 @@ export const scenesSlice = (
       if (!sc) return;
       const t = name.trim();
       if (t) sc.name = t;
-      d.updatedAt = new Date().toISOString();
+      touchDiagram(d);
     });
   },
 
@@ -197,7 +197,7 @@ export const scenesSlice = (
       if (d.compareSceneId === sceneId) {
         d.compareSceneId = null;
       }
-      d.updatedAt = new Date().toISOString();
+      touchDiagram(d);
     });
   },
 
@@ -208,7 +208,7 @@ export const scenesSlice = (
       if (!sc) return;
       sc.addedComponents[component.id] = component;
       sc.nodeLayouts[component.id] = { ...layout, elementId: component.id };
-      d.updatedAt = new Date().toISOString();
+      touchDiagram(d);
     });
   },
 
@@ -217,7 +217,7 @@ export const scenesSlice = (
       const d = getActiveDiagram(state);
       if (!d?.scenes?.[sceneId]) return;
       mutateRemoveComponentInScene(d, sceneId, componentId);
-      d.updatedAt = new Date().toISOString();
+      touchDiagram(d);
     });
   },
 
@@ -227,7 +227,7 @@ export const scenesSlice = (
       const sc = d?.scenes?.[sceneId];
       if (!sc) return;
       sc.addedConnections[connection.id] = connection;
-      d.updatedAt = new Date().toISOString();
+      touchDiagram(d);
     });
   },
 
@@ -236,7 +236,7 @@ export const scenesSlice = (
       const d = getActiveDiagram(state);
       if (!d?.scenes?.[sceneId]) return;
       mutateRemoveConnectionInScene(d, sceneId, connectionId);
-      d.updatedAt = new Date().toISOString();
+      touchDiagram(d);
     });
   },
 
@@ -258,7 +258,7 @@ export const scenesSlice = (
         layout.width = dimensions.width;
         layout.height = dimensions.height;
       }
-      d.updatedAt = new Date().toISOString();
+      touchDiagram(d);
     });
   },
 });

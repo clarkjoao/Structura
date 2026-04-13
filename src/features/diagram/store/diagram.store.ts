@@ -1,10 +1,11 @@
 import { create } from "zustand";
+import type { StoreApi } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 import { immer } from "zustand/middleware/immer";
 import { persist } from "zustand/middleware";
 import { defaultStorage, type IStoragePort } from "@/infrastructure/persistence";
 import { recordLocalStorageDiagramSyncSuccess } from "@/infrastructure/persistence/localStorageSyncTimestamp";
-import { useIconStore } from "@/features/icons";
+import { useIconStore, type IconStore } from "@/features/icons";
 import type { UserTemplate } from "../model/diagram.types";
 import type { AppState } from "./store.types";
 import {
@@ -33,7 +34,11 @@ import {
 export type { AppState, DiagramSnapshot } from "./store.types";
 export type { ClipboardEntry, DiagramStore } from "./store.types";
 
-export function createDiagramStore(storage: IStoragePort = defaultStorage) {
+export function createDiagramStore(
+  storage: IStoragePort = defaultStorage,
+  iconStoreOverride?: Pick<StoreApi<IconStore>, "getState">,
+) {
+  const iconStore = iconStoreOverride ?? useIconStore;
   return create<import("./store.types").DiagramStore>()(
     persist(
       immer((set, get) => ({
@@ -56,21 +61,21 @@ export function createDiagramStore(storage: IStoragePort = defaultStorage) {
         ...iconsSlice(set, get as () => AppState),
         ...userTemplatesSlice(set, get as () => AppState),
         addIcon: (_diagramId, icon) => {
-          useIconStore.getState().addIcon(icon);
+          iconStore.getState().addIcon(icon);
         },
         removeIcon: (diagramId, iconId) => {
-          useIconStore.getState().removeIcon(iconId);
+          iconStore.getState().removeIcon(iconId);
           (get() as AppState & { removeIconReferences?: (diagramId: string, iconId: string) => void })
             .removeIconReferences?.(diagramId, iconId);
         },
         updateIconName: (_diagramId, iconId, name) => {
-          useIconStore.getState().updateIconName(iconId, name);
+          iconStore.getState().updateIconName(iconId, name);
         },
         incrementIconUsage: (_diagramId, iconId) => {
-          useIconStore.getState().incrementIconUsage(iconId);
+          iconStore.getState().incrementIconUsage(iconId);
         },
         decrementIconUsage: (_diagramId, iconId) => {
-          useIconStore.getState().decrementIconUsage(iconId);
+          iconStore.getState().decrementIconUsage(iconId);
         },
       })),
       createPersistConfig(storage),
@@ -192,6 +197,99 @@ export const useDiagramActions = () =>
       saveUserTemplate: s.saveUserTemplate,
       updateUserTemplate: s.updateUserTemplate,
       deleteUserTemplate: s.deleteUserTemplate,
+    })),
+  );
+
+// --- Hooks focados por domínio ---
+
+export const useComponentActions = () =>
+  useDiagramStore(
+    useShallow((s) => ({
+      addComponent: s.addComponent,
+      updateComponent: s.updateComponent,
+      removeComponent: s.removeComponent,
+      groupNodes: s.groupNodes,
+      ungroupNodes: s.ungroupNodes,
+      updateHandleOrder: s.updateHandleOrder,
+      addExternalLink: s.addExternalLink,
+      updateExternalLink: s.updateExternalLink,
+      removeExternalLink: s.removeExternalLink,
+    })),
+  );
+
+export const useConnectionActions = () =>
+  useDiagramStore(
+    useShallow((s) => ({
+      addConnection: s.addConnection,
+      updateConnection: s.updateConnection,
+      removeConnection: s.removeConnection,
+    })),
+  );
+
+export const useLayoutActions = () =>
+  useDiagramStore(
+    useShallow((s) => ({
+      updateNodeLayout: s.updateNodeLayout,
+      updateViewport: s.updateViewport,
+      updateEdgeWaypoints: s.updateEdgeWaypoints,
+      clearEdgeWaypoints: s.clearEdgeWaypoints,
+      updateEdgeLabelOffset: s.updateEdgeLabelOffset,
+      bringToFront: s.bringToFront,
+      sendToBack: s.sendToBack,
+      fitGroupToChildren: s.fitGroupToChildren,
+      commitNodeDrag: s.commitNodeDrag,
+      batchCommitNodeDrag: s.batchCommitNodeDrag,
+      setParent: s.setParent,
+    })),
+  );
+
+export const useSceneActions = () =>
+  useDiagramStore(
+    useShallow((s) => ({
+      addScene: s.addScene,
+      duplicateScene: s.duplicateScene,
+      removeScene: s.removeScene,
+      mergeSceneIntoBase: s.mergeSceneIntoBase,
+      setActiveScene: s.setActiveScene,
+      setCompareScene: s.setCompareScene,
+      renameScene: s.renameScene,
+      addComponentToScene: s.addComponentToScene,
+      removeComponentFromScene: s.removeComponentFromScene,
+      addConnectionToScene: s.addConnectionToScene,
+      removeConnectionFromScene: s.removeConnectionFromScene,
+      updateSceneNodeLayout: s.updateSceneNodeLayout,
+    })),
+  );
+
+export const useFlowActions = () =>
+  useDiagramStore(
+    useShallow((s) => ({
+      addFlow: s.addFlow,
+      updateFlow: s.updateFlow,
+      removeFlow: s.removeFlow,
+      addFlowStep: s.addFlowStep,
+      updateFlowStep: s.updateFlowStep,
+      removeFlowStep: s.removeFlowStep,
+      addFlowBranch: s.addFlowBranch,
+      removeFlowBranch: s.removeFlowBranch,
+      convertStepToCondition: s.convertStepToCondition,
+    })),
+  );
+
+export const useHistoryActions = () =>
+  useDiagramStore(
+    useShallow((s) => ({
+      undo: s.undo,
+      redo: s.redo,
+    })),
+  );
+
+export const useClipboardActions = () =>
+  useDiagramStore(
+    useShallow((s) => ({
+      copyToClipboard: s.copyToClipboard,
+      pasteFromClipboard: s.pasteFromClipboard,
+      clearClipboard: s.clearClipboard,
     })),
   );
 

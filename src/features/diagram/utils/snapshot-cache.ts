@@ -1,4 +1,4 @@
-import type { Diagram, Component, Connection, NodeLayout } from "../model/diagram.types";
+import type { Diagram, DiagramModel, Component, Connection, NodeLayout } from "../model/diagram.types";
 import { resolveCanvasSnapshot } from "./scene.utils";
 
 export interface ResolvedSnapshot {
@@ -22,7 +22,7 @@ type SnapshotCacheEntry = {
 
 const cacheByDiagramId = new Map<string, SnapshotCacheEntry>();
 
-export function getCachedCanvasSnapshot(diagram: Diagram): ResolvedSnapshot {
+export function getCachedCanvasSnapshot(diagram: Diagram | DiagramModel): ResolvedSnapshot {
   const hit = cacheByDiagramId.get(diagram.id);
   if (
     hit &&

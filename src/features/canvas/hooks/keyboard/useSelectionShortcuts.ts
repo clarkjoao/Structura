@@ -1,10 +1,10 @@
 import { useCallback } from "react";
 import type { ReactFlowInstance, Node } from "@xyflow/react";
-import type { Diagram } from "@/features/diagram";
+import type { Diagram, DiagramModel } from "@/features/diagram";
 import { isModKeyPressed, getSelectedNodes, type KeyHandler } from "./helpers";
 
 interface UseSelectionShortcutsParams {
-  diagram: Diagram | null | undefined;
+  diagram: Diagram | DiagramModel | null | undefined;
   selectedNodeId: string | null;
   selectedEdgeId: string | null;
   reactFlowInstance: ReactFlowInstance;

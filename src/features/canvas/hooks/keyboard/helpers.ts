@@ -1,5 +1,5 @@
 import type { ReactFlowInstance, Node } from "@xyflow/react";
-import type { Diagram } from "@/features/diagram";
+import type { Diagram, DiagramModel } from "@/features/diagram";
 import {
   isApiGroupComponent,
   isEndpointComponent,
@@ -50,7 +50,7 @@ export function getSelectedNodes(rf: ReactFlowInstance, fallbackId: string | nul
   return [];
 }
 
-export function getCopyableIds(diagram: Diagram, nodes: Node[]): string[] {
+export function getCopyableIds(diagram: Diagram | DiagramModel, nodes: Node[]): string[] {
   const r = getCachedCanvasSnapshot(diagram);
   const selectedIds = nodes
     .map((n) => n.id)
@@ -83,7 +83,7 @@ export function getCopyableIds(diagram: Diagram, nodes: Node[]): string[] {
 }
 
 export function getOffsetPositionOfNodes(
-  diagram: Diagram,
+  diagram: Diagram | DiagramModel,
   ids: string[],
 ): { x: number; y: number } | null {
   const r = getCachedCanvasSnapshot(diagram);
@@ -126,7 +126,7 @@ export function getPasteCenter(
 }
 
 export function getCenterOfNodes(
-  diagram: Diagram,
+  diagram: Diagram | DiagramModel,
   ids: string[],
   offset = 20,
 ): { x: number; y: number } {

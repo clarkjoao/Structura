@@ -7,8 +7,8 @@ function minimalDiagram(overrides: Partial<Diagram> = {}): Diagram {
     id: "d1",
     name: "Payments Platform",
     level: "context",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
     snapshot: {
       components: {},
       connections: {},
@@ -16,7 +16,7 @@ function minimalDiagram(overrides: Partial<Diagram> = {}): Diagram {
       iconLibrary: {},
     },
     nodeLayouts: {},
-    edgeLayouts: [],
+    edgeLayouts: {},
     viewport: { x: 0, y: 0, zoom: 1 },
   };
   return { ...base, ...overrides, snapshot: { ...base.snapshot, ...overrides.snapshot } };

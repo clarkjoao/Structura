@@ -1,12 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { InMemoryAdapter } from "@/infrastructure/persistence";
-import { createDiagramStore } from "../diagram.store";
 import {
   HISTORY_COALESCE_MS,
   MAX_HISTORY_STEPS,
   STRUCTURAL_MUTATION_MARKER,
   UNDO_REDO_COOLDOWN_MS,
 } from "../store.constants";
+import { createTestDiagramStore } from "../test-utils";
 import { deepClone, pushHistory } from "./history.slice";
 
 describe("historySlice", () => {
@@ -20,7 +19,7 @@ describe("historySlice", () => {
   });
 
   it("pushHistory records a checkpoint of the current diagram snapshot", () => {
-    const store = createDiagramStore(new InMemoryAdapter());
+    const store = createTestDiagramStore();
     const diagram = store.getState().addDiagram("Hist", "context");
     store.getState().openDiagram(diagram.id);
     store.setState((state) => {
@@ -32,7 +31,7 @@ describe("historySlice", () => {
   });
 
   it("undo restores the previous snapshot", () => {
-    const store = createDiagramStore(new InMemoryAdapter());
+    const store = createTestDiagramStore();
     const diagram = store.getState().addDiagram("U", "context");
     store.getState().openDiagram(diagram.id);
     store.getState().addComponent("system", "N1", null, { x: 10, y: 20 });
@@ -42,7 +41,7 @@ describe("historySlice", () => {
   });
 
   it("redo restores a snapshot that was undone", () => {
-    const store = createDiagramStore(new InMemoryAdapter());
+    const store = createTestDiagramStore();
     const diagram = store.getState().addDiagram("R", "context");
     store.getState().openDiagram(diagram.id);
     store.getState().addComponent("system", "N1", null, { x: 1, y: 2 });
@@ -53,7 +52,7 @@ describe("historySlice", () => {
   });
 
   it("clears future after a new mutation following undo", () => {
-    const store = createDiagramStore(new InMemoryAdapter());
+    const store = createTestDiagramStore();
     const diagram = store.getState().addDiagram("F", "context");
     store.getState().openDiagram(diagram.id);
     store.getState().addComponent("system", "A", null, { x: 1, y: 1 });
@@ -66,7 +65,7 @@ describe("historySlice", () => {
   });
 
   it("coalesces two soft mutations within HISTORY_COALESCE_MS into one checkpoint", () => {
-    const store = createDiagramStore(new InMemoryAdapter());
+    const store = createTestDiagramStore();
     const diagram = store.getState().addDiagram("C", "context");
     store.getState().openDiagram(diagram.id);
     const node = store.getState().addComponent("system", "N0", null, { x: 1, y: 1 });
@@ -79,7 +78,7 @@ describe("historySlice", () => {
   });
 
   it("creates separate checkpoints when soft mutations are farther apart than HISTORY_COALESCE_MS", () => {
-    const store = createDiagramStore(new InMemoryAdapter());
+    const store = createTestDiagramStore();
     const diagram = store.getState().addDiagram("S", "context");
     store.getState().openDiagram(diagram.id);
     const node = store.getState().addComponent("system", "N0", null, { x: 1, y: 1 });
@@ -92,7 +91,7 @@ describe("historySlice", () => {
   });
 
   it("drops the oldest checkpoint when past exceeds MAX_HISTORY_STEPS", () => {
-    const store = createDiagramStore(new InMemoryAdapter());
+    const store = createTestDiagramStore();
     const diagram = store.getState().addDiagram("M", "context");
     store.getState().openDiagram(diagram.id);
     for (let index = 0; index < MAX_HISTORY_STEPS + 1; index += 1) {
@@ -105,7 +104,7 @@ describe("historySlice", () => {
   });
 
   it("does not push a new checkpoint within UNDO_REDO_COOLDOWN_MS after redo", () => {
-    const store = createDiagramStore(new InMemoryAdapter());
+    const store = createTestDiagramStore();
     const diagram = store.getState().addDiagram("CD", "context");
     store.getState().openDiagram(diagram.id);
     store.getState().addComponent("system", "One", null, { x: 1, y: 1 });

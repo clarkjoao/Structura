@@ -32,8 +32,13 @@ import { isAwsType } from "@/lib/catalogs/aws";
 import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
-import { getActiveDiagram } from "./get-active-diagram";
-import { resolveActiveScene } from "./scene-helpers";
+import { getActiveDiagram, touchDiagram } from "./get-active-diagram";
+import {
+  resolveActiveScene,
+  resolveComponent,
+  resolveNodeLayout,
+  writeComponentAndLayout,
+} from "./scene-helpers";
 import {
   PANEL_DEFAULT_W,
   PANEL_DEFAULT_H,
@@ -63,11 +68,11 @@ function handleEndpointInsertion(
   parentId: string,
 ): boolean {
   void state;
-  const parent = scene?.addedComponents[parentId] ?? d.snapshot.components[parentId];
+  const parent = resolveComponent(d, scene, parentId);
   if (!isApiGroupComponent(parent)) return false;
 
   const siblingCount = countEndpointsUnderParent(d, scene, parentId);
-  write(scene, d, component, {
+  writeComponentAndLayout(d, scene, component, {
     elementId: component.id,
     x: 0,
     y: API_GROUP_HEADER_H + siblingCount * API_GROUP_ENDPOINT_H,
@@ -76,12 +81,12 @@ function handleEndpointInsertion(
   });
   const childCount = siblingCount + 1;
   const { width, height } = computeApiGroupSize(childCount);
-  const groupLayout = scene?.nodeLayouts[parentId] ?? d.nodeLayouts[parentId];
+  const groupLayout = resolveNodeLayout(d, scene, parentId);
   if (groupLayout) {
     groupLayout.width = width;
     groupLayout.height = height;
   }
-  d.updatedAt = new Date().toISOString();
+  touchDiagram(d);
   return true;
 }
 
@@ -99,21 +104,6 @@ function countEndpointsUnderParent(
     ).length;
   }
   return n;
-}
-
-function write(
-  scene: SceneDiff | null,
-  d: Diagram,
-  comp: Component,
-  layout: NodeLayout,
-): void {
-  if (scene) {
-    scene.addedComponents[comp.id] = comp;
-    scene.nodeLayouts[comp.id] = layout;
-  } else {
-    d.snapshot.components[comp.id] = comp;
-    d.nodeLayouts[comp.id] = layout;
-  }
 }
 
 function buildComponentForType(
@@ -194,6 +184,10 @@ function buildComponentForType(
       svgContent: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"></svg>',
     } as SvgComponent;
   } else {
+    // Se um novo ComponentType for adicionado e não tratado aqui, este erro de runtime
+    // sinaliza a necessidade de adicionar o branch correspondente.
+    const _exhaustive: never = type;
+    void _exhaustive;
     component = { ...base, type: "unknown", rawContent: "" } as UnknownComponent;
   }
   return { component, resolvedPanelKind };
@@ -298,7 +292,7 @@ export const componentsSlice = (
         if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
 
         const resolveComp = (pid: string | null | undefined) =>
-          pid ? scene?.addedComponents[pid] ?? d.snapshot.components[pid] : undefined;
+          pid ? resolveComponent(d, scene, pid) : undefined;
 
         const parentComp = parentId ? resolveComp(parentId) : undefined;
         const parentLayout = parentId
@@ -325,15 +319,15 @@ export const componentsSlice = (
           resolvedPanelKind,
           resolvedPosition,
         );
-        write(scene, d, component, layout);
+        writeComponentAndLayout(d, scene, component, layout);
 
-        d.updatedAt = new Date().toISOString();
+        touchDiagram(d);
 
         const p = parentId ? resolveComp(parentId) : undefined;
         if (parentId && p && isApiGroupComponent(p)) {
           const childCount = countEndpointsUnderParent(d, scene, parentId);
           const { width, height } = computeApiGroupSize(childCount);
-          const groupLayout = scene?.nodeLayouts[parentId] ?? d.nodeLayouts[parentId];
+          const groupLayout = resolveNodeLayout(d, scene, parentId);
           if (groupLayout) {
             groupLayout.width = width;
             groupLayout.height = height;
@@ -395,7 +389,7 @@ export const componentsSlice = (
             }
           }
         }
-        d.updatedAt = new Date().toISOString();
+        touchDiagram(d);
       });
     },
 
@@ -406,7 +400,7 @@ export const componentsSlice = (
         const scene = resolveActiveScene(d);
         if (scene) {
           mutateRemoveComponentInScene(d, scene.id, id);
-          d.updatedAt = new Date().toISOString();
+          touchDiagram(d);
           return;
         }
 
@@ -472,7 +466,7 @@ export const componentsSlice = (
 
         apiGroupParentsToSync.forEach(reindexEndpoints);
 
-        d.updatedAt = new Date().toISOString();
+        touchDiagram(d);
       });
     },
 

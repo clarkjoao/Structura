@@ -1,4 +1,4 @@
-import type { Component, Diagram } from "@/features/diagram";
+import type { Component, Diagram, DiagramModel } from "@/features/diagram";
 import {
   diagramWithResolvedScene,
   isApiGroupComponent,
@@ -120,7 +120,7 @@ function transformCanvasPoint(
 }
 
 export function exportDrawio(
-  diagram: Diagram,
+  diagram: Diagram | DiagramModel,
   serviceRegistry: Record<string, ServiceDefinition>,
   options?: { componentIds?: string[] },
 ): string {
@@ -134,7 +134,7 @@ export function exportDrawio(
     ? expandWithContainerAncestors(options!.componentIds!, resolved.snapshot.components)
     : null;
 
-  const diagramForExport: Diagram = shouldFilter
+  const diagramForExport: Diagram | DiagramModel = shouldFilter
     ? (() => {
         const idSet = new Set(expandedIds!);
         const filteredComponents = Object.fromEntries(
@@ -156,8 +156,10 @@ export function exportDrawio(
           nodeLayouts: Object.fromEntries(
             Object.entries(resolved.nodeLayouts).filter(([id]) => idSet.has(id)),
           ),
-          edgeLayouts: resolved.edgeLayouts.filter(
-            (layout) => filteredConnections[layout.connectionId] !== undefined,
+          edgeLayouts: Object.fromEntries(
+            Object.entries(resolved.edgeLayouts).filter(
+              ([connectionId]) => filteredConnections[connectionId] !== undefined,
+            ),
           ),
         };
       })()
@@ -284,13 +286,11 @@ export function exportDrawio(
     vertexCells.push(cell);
   }
 
-  const edgeLayoutByConnectionId = new Map(
-    diagramForExport.edgeLayouts.map((layout) => [layout.connectionId, layout]),
-  );
+  const edgeLayoutByConnectionId = diagramForExport.edgeLayouts;
 
   const edgeCells: string[] = [];
   for (const conn of Object.values(connections)) {
-    const edgeLayout = edgeLayoutByConnectionId.get(conn.id);
+    const edgeLayout = edgeLayoutByConnectionId[conn.id];
     const waypoints =
       edgeLayout && edgeLayout.waypoints.length > 0
         ? edgeLayout.waypoints

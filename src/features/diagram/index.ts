@@ -49,6 +49,7 @@ export type {
   IconSource,
   Folder,
   Diagram,
+  DiagramModel,
   SceneDiff,
   UserTemplate,
   UserTemplateComponent,
@@ -255,6 +256,13 @@ export {
   createDiagramStore,
   
   useDiagramActions,
+  useComponentActions,
+  useConnectionActions,
+  useLayoutActions,
+  useSceneActions,
+  useFlowActions,
+  useHistoryActions,
+  useClipboardActions,
   
   useIconActions,
   flushDiagramStoreToLocalStorageNow,
@@ -298,7 +306,9 @@ export {
   
   useServiceRegistry,
   
-   useAllComponents,
+  useAllComponents,
+  
+  useDiagramTags,
   
   useAllServices,
   

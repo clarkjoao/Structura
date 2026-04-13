@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { Diagram } from "@/features/diagram";
+import type { Diagram, DiagramModel } from "@/features/diagram";
 import type { CompareElementVisual } from "@/features/diagram";
 import {
   isDiagramCompareMode,
@@ -14,7 +14,9 @@ interface CanvasCompareModeResult {
   sceneBadgeByComponentId: Record<string, { name: string; color: string }>;
 }
 
-export function useCanvasCompareMode(diagram: Diagram | null | undefined): CanvasCompareModeResult {
+export function useCanvasCompareMode(
+  diagram: Diagram | DiagramModel | null | undefined,
+): CanvasCompareModeResult {
   const isCompareMode = useMemo(() => isDiagramCompareMode(diagram), [diagram]);
 
   const compareVisualByComponentId = useMemo(() => {

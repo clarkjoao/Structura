@@ -24,8 +24,8 @@ function buildDiagrams(): Record<string, Diagram> {
       level: "context",
       domain: "Plataforma Digital",
       folderId: FOLDER_ID,
-      createdAt: "2026-04-01T10:00:00.000Z",
-      updatedAt: "2026-04-02T10:00:00.000Z",
+      createdAt: Date.parse("2026-04-01T10:00:00.000Z"),
+      updatedAt: Date.parse("2026-04-02T10:00:00.000Z"),
       viewport: { x: 0, y: 0, zoom: 0.48 },
       nodeLayouts: {
         "plat1-user": { elementId: "plat1-user", x: 60, y: 220 },
@@ -44,7 +44,7 @@ function buildDiagrams(): Record<string, Diagram> {
         "plat1-kafka": { elementId: "plat1-kafka", x: 1660, y: 260 },
         "plat1-apigw": { elementId: "plat1-apigw", x: 1660, y: 500 },
       },
-      edgeLayouts: [],
+      edgeLayouts: {},
       snapshot: {
         iconLibrary: {},
         components: {
@@ -337,8 +337,8 @@ function buildDiagrams(): Record<string, Diagram> {
       level: "container",
       domain: "Plataforma Digital",
       folderId: FOLDER_ID,
-      createdAt: "2026-04-01T11:00:00.000Z",
-      updatedAt: "2026-04-02T10:00:00.000Z",
+      createdAt: Date.parse("2026-04-01T11:00:00.000Z"),
+      updatedAt: Date.parse("2026-04-02T10:00:00.000Z"),
       viewport: { x: 0, y: 0, zoom: 0.42 },
       nodeLayouts: {
         "plat2-p-host": { elementId: "plat2-p-host", x: 40, y: 40, width: 480, height: 380, zIndex: -1 },
@@ -361,7 +361,7 @@ function buildDiagrams(): Record<string, Diagram> {
         "plat2-bff-mobile-svc": { elementId: "plat2-bff-mobile-svc", x: 720, y: 560 },
         "plat2-response-transformer": { elementId: "plat2-response-transformer", x: 720, y: 700 },
       },
-      edgeLayouts: [],
+      edgeLayouts: {},
       snapshot: {
         iconLibrary: {},
         components: {
@@ -588,8 +588,8 @@ function buildDiagrams(): Record<string, Diagram> {
       level: "container",
       domain: "Plataforma Digital",
       folderId: FOLDER_ID,
-      createdAt: "2026-04-01T12:00:00.000Z",
-      updatedAt: "2026-04-02T10:00:00.000Z",
+      createdAt: Date.parse("2026-04-01T12:00:00.000Z"),
+      updatedAt: Date.parse("2026-04-02T10:00:00.000Z"),
       viewport: { x: 0, y: 0, zoom: 0.38 },
       nodeLayouts: {
         "plat3-p-order": { elementId: "plat3-p-order", x: 40, y: 40, width: 580, height: 740, zIndex: -1 },
@@ -623,7 +623,7 @@ function buildDiagrams(): Record<string, Diagram> {
         "plat3-redis": { elementId: "plat3-redis", x: 1360, y: 920 },
         "plat3-bullmq": { elementId: "plat3-bullmq", x: 1360, y: 1040 },
       },
-      edgeLayouts: [],
+      edgeLayouts: {},
       snapshot: {
         iconLibrary: {},
         components: {
@@ -1060,8 +1060,8 @@ function buildDiagrams(): Record<string, Diagram> {
       level: "deployment",
       domain: "Plataforma Digital",
       folderId: FOLDER_ID,
-      createdAt: "2026-04-01T14:00:00.000Z",
-      updatedAt: "2026-04-02T10:00:00.000Z",
+      createdAt: Date.parse("2026-04-01T14:00:00.000Z"),
+      updatedAt: Date.parse("2026-04-02T10:00:00.000Z"),
       description: "Região sa-east-1. VPC privada para workloads EKS.",
       viewport: { x: 0, y: 0, zoom: 0.28 },
       nodeLayouts: {
@@ -1114,7 +1114,7 @@ function buildDiagrams(): Record<string, Diagram> {
         "plat4-cloudwatch": { elementId: "plat4-cloudwatch", x: 2720, y: 1140 },
         "plat4-xray": { elementId: "plat4-xray", x: 2980, y: 1140 },
       },
-      edgeLayouts: [],
+      edgeLayouts: {},
       snapshot: {
         iconLibrary: {},
         components: {

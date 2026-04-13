@@ -29,7 +29,7 @@ export function resolveUniqueDiagramId(
 export function cloneDiagramForImportWithId(
   diagram: Diagram,
   newId: string,
-  options: { name: string; updatedAt: string },
+  options: { name: string; updatedAt: number },
 ): Diagram {
   const sourceId = diagram.id;
   const cloned = structuredClone(diagram);

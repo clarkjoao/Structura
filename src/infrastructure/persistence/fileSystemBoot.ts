@@ -17,24 +17,23 @@ import { manifestSemanticFingerprint } from "./workspace-manifest-fingerprint";
 
 type DiagramStoreState = ReturnType<typeof useDiagramStore.getState>;
 
-function parseIsoMs(iso: string | undefined): number {
-  if (!iso) return 0;
-  const t = Date.parse(iso);
-  return Number.isNaN(t) ? 0 : t;
+function parseTimestampMs(timestamp: number | undefined): number {
+  if (typeof timestamp !== "number" || Number.isNaN(timestamp)) return 0;
+  return timestamp;
 }
 
 function latestMsFromStore(state: DiagramStoreState): number {
   let max = 0;
   for (const diagram of Object.values(state.diagrams)) {
-    max = Math.max(max, parseIsoMs(diagram.updatedAt));
+    max = Math.max(max, parseTimestampMs(diagram.updatedAt));
   }
   return max;
 }
 
 function latestMsFromWorkspacePayload(workspace: WorkspacePayload): number {
-  let max = parseIsoMs(workspace.manifestUpdatedAt);
+  let max = Date.parse(workspace.manifestUpdatedAt);
   for (const diagram of Object.values(workspace.diagrams)) {
-    max = Math.max(max, parseIsoMs(diagram.updatedAt));
+    max = Math.max(max, parseTimestampMs(diagram.updatedAt));
   }
   return max;
 }

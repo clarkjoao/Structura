@@ -16,7 +16,7 @@ export interface CollabSnapshot {
   connections: Record<string, unknown>;
   flows: Record<string, unknown>;
   nodeLayouts: Record<string, unknown>;
-  edgeLayouts: unknown[];
+  edgeLayouts: Record<string, unknown>;
   iconLibrary: Record<string, unknown>;
   scenes: Record<string, unknown>;
   activeSceneId: string | null;
@@ -130,7 +130,7 @@ function parseSnapshot(value: unknown): CollabSnapshot | null {
     connections: isRecord(value.connections) ? value.connections : {},
     flows: isRecord(value.flows) ? value.flows : {},
     nodeLayouts: isRecord(value.nodeLayouts) ? value.nodeLayouts : {},
-    edgeLayouts: Array.isArray(value.edgeLayouts) ? value.edgeLayouts : [],
+    edgeLayouts: isRecord(value.edgeLayouts) ? value.edgeLayouts : {},
     iconLibrary: isRecord(value.iconLibrary) ? value.iconLibrary : {},
     scenes: isRecord(value.scenes) ? value.scenes : {},
     activeSceneId,
@@ -268,7 +268,7 @@ export function useCollab({
             connections: {},
             flows: {},
             nodeLayouts: {},
-            edgeLayouts: [],
+            edgeLayouts: {},
             iconLibrary: {},
             scenes: {},
             activeSceneId: null,

@@ -1,11 +1,11 @@
 import { useRef, useState, useCallback, type MutableRefObject } from "react";
 import { applyNodeChanges, type Node, type NodeChange, type OnNodesChange } from "@xyflow/react";
-import type { Diagram } from "@/features/diagram";
+import type { Diagram, DiagramModel } from "@/features/diagram";
 import { canMoveNodeInSceneMode } from "@/features/diagram";
 
 
 function filterNodeChangesForSceneMoveLock(
-  diagram: Diagram | null | undefined,
+  diagram: Diagram | DiagramModel | null | undefined,
   changes: NodeChange[],
 ): NodeChange[] {
   if (!diagram) return changes;
@@ -19,8 +19,8 @@ function filterNodeChangesForSceneMoveLock(
 
 
 function isUndoRedoTransition(
-  prevDiagram: Diagram | null | undefined,
-  nextDiagram: Diagram | null | undefined,
+  prevDiagram: Diagram | DiagramModel | null | undefined,
+  nextDiagram: Diagram | DiagramModel | null | undefined,
 ): boolean {
   if (!prevDiagram || !nextDiagram) return false;
   if (prevDiagram.id !== nextDiagram.id) return false;
@@ -32,14 +32,14 @@ export function useLocalNodes(
   innerOnNodesChange: OnNodesChange,
   localNodesRef: MutableRefObject<Node[]>,
   onSelectionFromChanges?: (selectedIds: string[]) => void,
-  diagram?: Diagram | null,
+  diagram?: Diagram | DiagramModel | null,
 ) {
   
   const [, setTick] = useState(0);
 
   const draggingNodeIdsRef = useRef(new Set<string>());
   const prevStoreNodesRef = useRef<Node[] | undefined>(undefined);
-  const prevDiagramRef = useRef<Diagram | null | undefined>(undefined);
+  const prevDiagramRef = useRef<Diagram | DiagramModel | null | undefined>(undefined);
   
   const localNodesStateRef = useRef<Node[]>([]);
 

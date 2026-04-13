@@ -1,5 +1,5 @@
-import { InMemoryAdapter } from "@/infrastructure/persistence";
-import { createDiagramStore } from "@/features/diagram/store/diagram.store";
+import type { createDiagramStore } from "@/features/diagram/store/diagram.store";
+import { createTestDiagramStore } from "@/features/diagram/store/test-utils";
 import type { Diagram } from "@/features/diagram";
 import { PanelKind } from "@/features/diagram";
 
@@ -30,7 +30,7 @@ export function seedStressDiagram(options?: {
     leavesPerDeepestPanel = 5,
   } = options ?? {};
 
-  const store = createDiagramStore(new InMemoryAdapter());
+  const store = createTestDiagramStore();
   const diagram = store.getState().addDiagram("StressTest", "context");
   store.getState().openDiagram(diagram.id);
 

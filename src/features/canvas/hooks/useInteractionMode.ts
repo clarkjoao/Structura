@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useFlowMode } from "../flow/FlowModeContext";
 import { useCollab } from "@/features/collaboration";
-import { isDiagramCompareMode, type Diagram } from "@/features/diagram";
+import { isDiagramCompareMode, type Diagram, type DiagramModel } from "@/features/diagram";
 
 
 export interface InteractionMode {
@@ -32,7 +32,9 @@ export interface InteractionMode {
   canNavigateDiagrams: boolean;
 }
 
-export function useInteractionMode(diagram: Diagram | null | undefined): InteractionMode {
+export function useInteractionMode(
+  diagram: Diagram | DiagramModel | null | undefined,
+): InteractionMode {
   const { isRecording, isPlaying } = useFlowMode();
   const { session, isGuest } = useCollab();
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Node, OnNodesChange, NodeChange } from "@xyflow/react";
-import type { Diagram } from "@/features/diagram";
+import type { Diagram, DiagramModel } from "@/features/diagram";
 import {
   isNoteComponent,
   isEndpointComponent,
@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import i18n from "@/infrastructure/i18n";
 
 interface UseNodeDragParentingParams {
-  diagram: Diagram | null | undefined;
+  diagram: Diagram | DiagramModel | null | undefined;
   nodes: Node[];
   updateNodeLayout: (
     elementId: string,
@@ -60,6 +60,8 @@ export function useNodeDragParenting({
   commitNodeDrag,
   batchCommitNodeDrag,
 }: UseNodeDragParentingParams): UseNodeDragParentingResult {
+  const diagramRef = useRef(diagram);
+  diagramRef.current = diagram;
   const [dragTargetPanelId, setDragTargetPanelId] = useState<string | null>(null);
   const [unparentCandidatePanelId, setUnparentCandidatePanelId] = useState<string | null>(null);
   const dragTargetRef = useRef<string | null>(null);
@@ -82,10 +84,10 @@ export function useNodeDragParenting({
 
   const flushPendingLayoutUpdates = useCallback(() => {
     layoutUpdateRafRef.current = null;
-    if (!diagram) return;
+    if (!diagramRef.current) return;
     const pending = pendingLayoutUpdatesRef.current;
     if (pending.size === 0) return;
-    const snapshot = getCachedCanvasSnapshot(diagram);
+    const snapshot = getCachedCanvasSnapshot(diagramRef.current);
     const copy = new Map(pending);
     pending.clear();
     for (const [elementId, dimensions] of copy) {
@@ -93,7 +95,7 @@ export function useNodeDragParenting({
       if (!layout) continue;
       updateNodeLayout(elementId, { x: layout.x, y: layout.y }, dimensions);
     }
-  }, [diagram, updateNodeLayout]);
+  }, [updateNodeLayout]);
 
   useEffect(
     () => () => {
@@ -109,9 +111,10 @@ export function useNodeDragParenting({
   const handlePositionChange = useCallback(
     (change: NodeChange) => {
       if (change.type !== "position" || !change.position) return;
-      if (!diagram) return;
+      const activeDiagram = diagramRef.current;
+      if (!activeDiagram) return;
 
-      const r = getCachedCanvasSnapshot(diagram);
+      const r = getCachedCanvasSnapshot(activeDiagram);
       const comp = r.components[change.id];
       if (comp && isEndpointComponent(comp)) return;
 
@@ -131,7 +134,7 @@ export function useNodeDragParenting({
           return;
         }
 
-        if (!canMoveNodeInSceneMode(diagram, change.id)) {
+        if (!canMoveNodeInSceneMode(activeDiagram, change.id)) {
           toast.error(i18n.t("scenes.baseMoveBlocked"));
           return;
         }
@@ -153,7 +156,7 @@ export function useNodeDragParenting({
         return;
       }
 
-      if (!canMoveNodeInSceneMode(diagram, change.id)) {
+      if (!canMoveNodeInSceneMode(activeDiagram, change.id)) {
         return;
       }
 
@@ -221,18 +224,19 @@ export function useNodeDragParenting({
         });
       }
     },
-    [diagram, nodes, updateNodeLayout],
+    [nodes, updateNodeLayout],
   );
 
   const handleDimensionsChange = useCallback(
     (change: NodeChange) => {
       if (change.type !== "dimensions" || !change.dimensions) return;
-      if (!diagram) return;
-      if (!canMoveNodeInSceneMode(diagram, change.id)) {
+      const activeDiagram = diagramRef.current;
+      if (!activeDiagram) return;
+      if (!canMoveNodeInSceneMode(activeDiagram, change.id)) {
         toast.error(i18n.t("scenes.baseMoveBlocked"));
         return;
       }
-      const r = getCachedCanvasSnapshot(diagram);
+      const r = getCachedCanvasSnapshot(activeDiagram);
       const layout = r.nodeLayouts[change.id];
       if (!layout) return;
       pendingLayoutUpdatesRef.current.set(change.id, change.dimensions);
@@ -242,7 +246,7 @@ export function useNodeDragParenting({
         });
       }
     },
-    [diagram, flushPendingLayoutUpdates],
+    [flushPendingLayoutUpdates],
   );
 
   const onNodesChange: OnNodesChange = useCallback(
@@ -285,10 +289,11 @@ export function useNodeDragParenting({
       draggingNodeIdsRef.current.delete(draggedNode.id);
       dragStopPendingNodeIdsRef.current.delete(draggedNode.id);
       if (isEndpointType(nodeType)) return;
-      if (!diagram) return;
+      const activeDiagram = diagramRef.current;
+      if (!activeDiagram) return;
 
-      const r = getCachedCanvasSnapshot(diagram);
-      if (!canMoveNodeInSceneMode(diagram, draggedNode.id)) return;
+      const r = getCachedCanvasSnapshot(activeDiagram);
+      if (!canMoveNodeInSceneMode(activeDiagram, draggedNode.id)) return;
       const draggedComponent = r.components[draggedNode.id];
       if (
         draggedComponent &&
@@ -321,7 +326,7 @@ export function useNodeDragParenting({
         );
 
         for (const node of otherSelected) {
-          if (!canMoveNodeInSceneMode(diagram, node.id)) continue;
+          if (!canMoveNodeInSceneMode(activeDiagram, node.id)) continue;
           const nodeComp = components[node.id];
           if (
             nodeComp &&
@@ -462,7 +467,7 @@ export function useNodeDragParenting({
 
       commitSelectedNodesDrag();
     },
-    [diagram, nodes, commitNodeDrag, batchCommitNodeDrag, updateNodeLayout],
+    [nodes, commitNodeDrag, batchCommitNodeDrag, updateNodeLayout],
   );
 
   return { dragTargetPanelId, unparentCandidatePanelId, onNodesChange, onNodeDragStop };

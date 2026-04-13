@@ -4,7 +4,6 @@ export interface Point {
 }
 
 export interface EdgeLayout {
-  connectionId: string;
   waypoints: Point[];
   
   labelOffset?: number;

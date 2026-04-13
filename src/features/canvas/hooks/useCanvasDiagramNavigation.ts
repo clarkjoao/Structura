@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, type Dispatch, type SetStateAction } from "react";
-import type { Diagram } from "@/features/diagram";
+import type { Diagram, DiagramModel } from "@/features/diagram";
 import { useDiagramActions } from "@/features/diagram";
 import type { NavigateFunction } from "react-router-dom";
 import { useRecentDiagrams } from "../navigation/useRecentDiagrams";
@@ -7,7 +7,7 @@ import { useRecentDiagrams } from "../navigation/useRecentDiagrams";
 
 interface CanvasDiagramNavParams {
   
-  diagram: Diagram | null | undefined;
+  diagram: Diagram | DiagramModel | null | undefined;
   
   allDiagrams: Record<string, Diagram>;
   

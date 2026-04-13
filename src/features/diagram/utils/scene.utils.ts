@@ -1,4 +1,13 @@
-import type { Component, Connection, Diagram, NodeLayout, SceneDiff } from "../model/diagram.types";
+import type {
+  Component,
+  Connection,
+  Diagram,
+  DiagramModel,
+  NodeLayout,
+  SceneDiff,
+} from "../model/diagram.types";
+
+type SceneDiagram = Diagram | DiagramModel;
 
 export const SCENE_COLOR_PALETTE = [
   "#10b981",
@@ -14,7 +23,7 @@ export function nextSceneColor(sceneIndex: number): string {
 }
 
 export function resolveSceneSnapshot(
-  diagram: Diagram,
+  diagram: SceneDiagram,
   sceneId: string | null,
 ): {
   components: Record<string, Component>;
@@ -58,7 +67,7 @@ export function resolveSceneSnapshot(
 }
 
 
-export function diagramWithResolvedScene(diagram: Diagram): Diagram {
+export function diagramWithResolvedScene<T extends SceneDiagram>(diagram: T): T {
   const active = diagram.activeSceneId ?? null;
   if (!active || !diagram.scenes?.[active]) return diagram;
   const r = resolveSceneSnapshot(diagram, active);
@@ -73,7 +82,7 @@ export function diagramWithResolvedScene(diagram: Diagram): Diagram {
     activeSceneId: undefined,
     compareSceneId: undefined,
     scenes: undefined,
-  };
+  } as T;
 }
 
 export function exportFilenameSlug(diagram: Diagram): string {
@@ -84,24 +93,30 @@ export function exportFilenameSlug(diagram: Diagram): string {
   return `${base}-${sceneSlug}`;
 }
 
-export function isComponentAddedInActiveScene(diagram: Diagram, componentId: string): boolean {
+export function isComponentAddedInActiveScene(
+  diagram: SceneDiagram,
+  componentId: string,
+): boolean {
   const sid = diagram.activeSceneId;
   if (!sid || !diagram.scenes?.[sid]) return false;
   return componentId in diagram.scenes[sid].addedComponents;
 }
 
-export function isConnectionAddedInActiveScene(diagram: Diagram, connectionId: string): boolean {
+export function isConnectionAddedInActiveScene(
+  diagram: SceneDiagram,
+  connectionId: string,
+): boolean {
   const sid = diagram.activeSceneId;
   if (!sid || !diagram.scenes?.[sid]) return false;
   return connectionId in diagram.scenes[sid].addedConnections;
 }
 
 
-export function isBaseSnapshotComponent(diagram: Diagram, componentId: string): boolean {
+export function isBaseSnapshotComponent(diagram: SceneDiagram, componentId: string): boolean {
   return componentId in diagram.snapshot.components;
 }
 
-export function canMoveNodeInSceneMode(diagram: Diagram, componentId: string): boolean {
+export function canMoveNodeInSceneMode(diagram: SceneDiagram, componentId: string): boolean {
   if (isDiagramCompareMode(diagram)) return false;
   if (!diagram.activeSceneId || !diagram.scenes?.[diagram.activeSceneId]) return true;
   return isComponentAddedInActiveScene(diagram, componentId);
@@ -144,7 +159,7 @@ export interface CompareSnapshotResult {
 }
 
 export function resolveCompareSnapshot(
-  diagram: Diagram,
+  diagram: SceneDiagram,
   sceneAId: string,
   sceneBId: string,
 ): CompareSnapshotResult {
@@ -205,7 +220,7 @@ export function resolveCompareSnapshot(
 }
 
 
-export function resolveCanvasSnapshot(diagram: Diagram): {
+export function resolveCanvasSnapshot(diagram: SceneDiagram): {
   components: Record<string, Component>;
   connections: Record<string, Connection>;
   nodeLayouts: Record<string, NodeLayout>;
@@ -242,7 +257,7 @@ export interface CompareElementVisual {
 }
 
 export function buildCompareComponentVisuals(
-  diagram: Diagram,
+  diagram: SceneDiagram,
   sceneAId: string,
   sceneBId: string,
 ): Record<string, CompareElementVisual> {
@@ -283,7 +298,7 @@ export function buildCompareComponentVisuals(
 }
 
 export function buildCompareConnectionVisuals(
-  diagram: Diagram,
+  diagram: SceneDiagram,
   sceneAId: string,
   sceneBId: string,
 ): Record<string, CompareElementVisual> {
@@ -323,7 +338,7 @@ export function buildCompareConnectionVisuals(
   return out;
 }
 
-export function isDiagramCompareMode(diagram: Diagram | null | undefined): boolean {
+export function isDiagramCompareMode(diagram: SceneDiagram | null | undefined): boolean {
   if (!diagram) return false;
   const a = diagram.activeSceneId ?? null;
   const b = diagram.compareSceneId ?? null;

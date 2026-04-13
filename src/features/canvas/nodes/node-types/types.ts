@@ -5,6 +5,7 @@ import type {
   ComponentPatch,
   ComponentType,
   Diagram,
+  DiagramModel,
   Flow,
   FlowStep,
   NodeLayout,
@@ -15,7 +16,7 @@ import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../../flow/flow
 export type { FlowHighlight, RecordingInfo, CoverageInfo };
 
 export interface NodeBuildContext {
-  diagram: Diagram;
+  diagram: Diagram | DiagramModel;
   
   flows: Flow[];
   

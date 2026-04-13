@@ -4,7 +4,7 @@ import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 import { SEED_SERVICE_REGISTRY } from "@/fixtures/seeds";
 import { normalizeSources } from "@/integrations/merge-utils";
-import { getActiveDiagram } from "./get-active-diagram";
+import { getActiveDiagram, touchDiagram } from "./get-active-diagram";
 
 function patchTouchesLinkedComponentFields(
   patch: Partial<Omit<ServiceDefinition, "id">>,
@@ -97,7 +97,7 @@ function syncLinkedComponentsFromRegistry(
       }
     }
     if (touched) {
-      diagram.updatedAt = new Date().toISOString();
+      touchDiagram(diagram);
     }
   }
 }

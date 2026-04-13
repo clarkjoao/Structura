@@ -14,7 +14,7 @@ interface TrackedDiagramState {
   flows: Record<string, unknown>;
   iconLibrary: Record<string, unknown>;
   nodeLayouts: Record<string, unknown>;
-  edgeLayouts: unknown[];
+  edgeLayouts: Record<string, unknown>;
   scenes: Record<string, unknown>;
   activeSceneId: string | null;
   compareSceneId: string | null;
@@ -49,7 +49,7 @@ function pickTrackedState(diagramId: string | null): TrackedDiagramState | null 
     flows: diagram.snapshot.flows as Record<string, unknown>,
     iconLibrary: diagram.snapshot.iconLibrary as Record<string, unknown>,
     nodeLayouts: diagram.nodeLayouts as Record<string, unknown>,
-    edgeLayouts: diagram.edgeLayouts as unknown[],
+    edgeLayouts: diagram.edgeLayouts as Record<string, unknown>,
     scenes: (diagram.scenes ?? {}) as Record<string, unknown>,
     activeSceneId: diagram.activeSceneId ?? null,
     compareSceneId: diagram.compareSceneId ?? null,
@@ -125,7 +125,7 @@ export function useCollabStoreSync({
       connections: diagram.snapshot.connections as Record<string, unknown>,
       flows: diagram.snapshot.flows as Record<string, unknown>,
       nodeLayouts: diagram.nodeLayouts as Record<string, unknown>,
-      edgeLayouts: diagram.edgeLayouts as unknown[],
+      edgeLayouts: diagram.edgeLayouts as Record<string, unknown>,
       iconLibrary: diagram.snapshot.iconLibrary as Record<string, unknown>,
       scenes: (diagram.scenes ?? {}) as Record<string, unknown>,
       activeSceneId: diagram.activeSceneId ?? null,
@@ -152,7 +152,7 @@ export function useCollabStoreSync({
             }
           }
 
-          const now = new Date().toISOString();
+          const now = Date.now();
 
           const nextDiagram = {
             ...diagram,

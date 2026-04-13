@@ -203,7 +203,7 @@ export default function DashboardPage() {
       else if (sortKey === "domain")
         cmp = (a.domain ?? "").localeCompare(b.domain ?? "");
       else if (sortKey === "level") cmp = a.level.localeCompare(b.level);
-      else cmp = a.updatedAt.localeCompare(b.updatedAt);
+      else cmp = a.updatedAt - b.updatedAt;
       return sortAsc ? cmp : -cmp;
     });
     return arr;

@@ -5,6 +5,7 @@ import type {
   Component,
   ComponentPatch,
   Diagram,
+  DiagramModel,
   Flow,
   NodeLayout,
   ServiceDefinition,
@@ -32,7 +33,7 @@ export type DiagramSceneState = {
 };
 
 interface UseCanvasNodesParams {
-  diagram: Diagram | null | undefined;
+  diagram: Diagram | DiagramModel | null | undefined;
   diagramSceneState: DiagramSceneState | null;
   flows: Flow[];
   resolvedComponents: Record<string, Component>;

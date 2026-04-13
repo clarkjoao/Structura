@@ -2,6 +2,7 @@ import { SEED_DIAGRAMS } from "@/fixtures/seeds";
 import { AppState } from "../store.types";
 import {Diagram, Level} from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
+import { touchDiagram } from "./get-active-diagram";
 
 export const diagramsSlice = (
     set: (fn: (state: AppState) => void) => void,
@@ -17,17 +18,18 @@ export const diagramsSlice = (
       folderId?: string | null,
       description?: string,
     ) => {
+        const now = Date.now();
         const diagram: Diagram = {
           id: generateId("d"),
           name,
           level,
           domain: domain || undefined,
           description: description || undefined,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          createdAt: now,
+          updatedAt: now,
           snapshot: { components: {}, connections: {}, flows: {}, iconLibrary: {} },
           nodeLayouts: {},
-          edgeLayouts: [],
+          edgeLayouts: {},
           viewport: { x: 0, y: 0, zoom: 1 },
           folderId: folderId ?? undefined,
         };
@@ -49,7 +51,7 @@ export const diagramsSlice = (
     },
 
     importDiagram: (diagramInput: Diagram) => {
-      const now = new Date().toISOString();
+      const now = Date.now();
       const importedDiagram: Diagram = {
         ...structuredClone(diagramInput),
         id: generateId("d"),
@@ -68,7 +70,7 @@ export const diagramsSlice = (
       const source = get().diagrams[sourceId];
       if (!source) return null;
       const newId = generateId("d");
-      const now = new Date().toISOString();
+      const now = Date.now();
       const diagram: Diagram = {
         ...structuredClone(source),
         id: newId,
@@ -85,6 +87,10 @@ export const diagramsSlice = (
     openDiagram: (id: string) => {
       set((state) => {
         state.activeDiagramId = id;
+        // Undo/redo history is scoped to the current editing session and should not
+        // survive diagram switches to avoid cross-diagram contamination.
+        state.past = [];
+        state.future = [];
       });
     },
   
@@ -94,7 +100,7 @@ export const diagramsSlice = (
         if (!d) return;
         if (patch.name !== undefined) d.name = patch.name.trim() || d.name;
         if (patch.domain !== undefined) d.domain = patch.domain;
-        d.updatedAt = new Date().toISOString();
+        touchDiagram(d);
       });
     },
 
@@ -103,7 +109,7 @@ export const diagramsSlice = (
         const diagram = state.diagrams[diagramId];
         if (!diagram) return;
         diagram.description = description;
-        diagram.updatedAt = new Date().toISOString();
+        touchDiagram(diagram);
       });
     },
 

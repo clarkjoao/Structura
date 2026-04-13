@@ -1,8 +1,13 @@
 import type { Point } from "../../model/diagram.types";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
-import { getActiveDiagram } from "./get-active-diagram";
-import { resolveActiveScene } from "./scene-helpers";
+import { getActiveDiagram, touchDiagram } from "./get-active-diagram";
+import {
+  getActiveComponents,
+  getActiveNodeLayouts,
+  resolveActiveScene,
+  resolveNodeLayout,
+} from "./scene-helpers";
 import { computeFitBounds } from "../../utils/fit-group-to-children";
 
 export const layoutSlice = (
@@ -46,16 +51,15 @@ export const layoutSlice = (
       });
     },
 
-    /** edgeLayouts is linear; find/findIndex are O(n). A connectionId→layout map would scale better for huge graphs. */
     updateEdgeWaypoints: (diagramId: string, connectionId: string, waypoints: Point[]) => {
       set((state) => {
         const diagram = state.diagrams[diagramId];
         if (!diagram) return;
-        const existing = diagram.edgeLayouts.find((layout) => layout.connectionId === connectionId);
+        const existing = diagram.edgeLayouts[connectionId];
         if (existing) {
           existing.waypoints = waypoints;
         } else {
-          diagram.edgeLayouts.push({ connectionId, waypoints });
+          diagram.edgeLayouts[connectionId] = { waypoints };
         }
       });
     },
@@ -63,10 +67,8 @@ export const layoutSlice = (
     clearEdgeWaypoints: (diagramId: string, connectionId: string) => {
       set((state) => {
         const diagram = state.diagrams[diagramId];
-        if (!diagram?.edgeLayouts?.length) return;
-        const index = diagram.edgeLayouts.findIndex((layout) => layout.connectionId === connectionId);
-        if (index === -1) return;
-        diagram.edgeLayouts.splice(index, 1);
+        if (!diagram?.edgeLayouts) return;
+        delete diagram.edgeLayouts[connectionId];
       });
     },
 
@@ -75,11 +77,11 @@ export const layoutSlice = (
         const diagram = state.diagrams[diagramId];
         if (!diagram) return;
         const safe = Math.max(0, Math.min(1, offset));
-        const existing = diagram.edgeLayouts.find((layout) => layout.connectionId === connectionId);
+        const existing = diagram.edgeLayouts[connectionId];
         if (existing) {
           existing.labelOffset = safe;
         } else {
-          diagram.edgeLayouts.push({ connectionId, waypoints: [], labelOffset: safe });
+          diagram.edgeLayouts[connectionId] = { waypoints: [], labelOffset: safe };
         }
       });
     },
@@ -88,13 +90,12 @@ export const layoutSlice = (
       set((state) => {
         const d = getActiveDiagram(state);
         if (!d) return;
-        pushHistory(state);
         const scene = resolveActiveScene(d);
         if (scene && scene.addedComponents[elementId]) {
           const merged = { ...d.nodeLayouts, ...scene.nodeLayouts };
           const vals = Object.values(merged).map((nl) => nl.zIndex ?? 0);
           const maxZ = vals.length > 0 ? Math.max(...vals) : 0;
-          const layout = scene.nodeLayouts[elementId];
+          const layout = resolveNodeLayout(d, scene, elementId);
           if (layout) layout.zIndex = maxZ + 1;
           return;
         }
@@ -109,13 +110,12 @@ export const layoutSlice = (
       set((state) => {
         const d = getActiveDiagram(state);
         if (!d) return;
-        pushHistory(state);
         const scene = resolveActiveScene(d);
         if (scene && scene.addedComponents[elementId]) {
           const merged = { ...d.nodeLayouts, ...scene.nodeLayouts };
           const vals = Object.values(merged).map((nl) => nl.zIndex ?? 0);
           const minZ = vals.length > 0 ? Math.min(...vals) : 0;
-          const layout = scene.nodeLayouts[elementId];
+          const layout = resolveNodeLayout(d, scene, elementId);
           if (layout) layout.zIndex = minZ - 1;
           return;
         }
@@ -132,10 +132,10 @@ export const layoutSlice = (
         if (!d) return;
 
         const scene = resolveActiveScene(d);
-        const layouts = scene ? { ...d.nodeLayouts, ...scene.nodeLayouts } : d.nodeLayouts;
-        const components = scene
-          ? { ...d.snapshot.components, ...scene.addedComponents }
-          : d.snapshot.components;
+        const activeComponents = getActiveComponents(d, scene);
+        const activeNodeLayouts = getActiveNodeLayouts(d, scene);
+        const layouts = scene ? { ...d.nodeLayouts, ...activeNodeLayouts } : activeNodeLayouts;
+        const components = scene ? { ...d.snapshot.components, ...activeComponents } : activeComponents;
 
         
         const panelComp = components[panelId];
@@ -162,9 +162,7 @@ export const layoutSlice = (
 
         for (const comp of Object.values(components)) {
           if (comp.parentId !== panelId) continue;
-          const layoutTarget = scene?.addedComponents[comp.id]
-            ? scene!.nodeLayouts
-            : d.nodeLayouts;
+          const layoutTarget = scene?.addedComponents[comp.id] ? activeNodeLayouts : d.nodeLayouts;
           const childLayout = layoutTarget[comp.id];
           if (childLayout) {
             childLayout.x -= dx;
@@ -173,9 +171,7 @@ export const layoutSlice = (
         }
 
         
-        const panelLayoutTarget = scene?.addedComponents[panelId]
-          ? scene!.nodeLayouts
-          : d.nodeLayouts;
+        const panelLayoutTarget = scene?.addedComponents[panelId] ? activeNodeLayouts : d.nodeLayouts;
         const panelLayout = panelLayoutTarget[panelId];
         if (!panelLayout) return;
 
@@ -184,7 +180,7 @@ export const layoutSlice = (
         panelLayout.width  = bounds.width;
         panelLayout.height = bounds.height;
 
-        d.updatedAt = new Date().toISOString();
+        touchDiagram(d);
       });
     },
   });

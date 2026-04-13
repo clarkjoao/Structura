@@ -34,6 +34,16 @@ export interface CanvasVisualState {
   setJsonViewerInlineEditingId: (id: string | null) => void;
 }
 
+/** Campos que afetam a renderização dos nodes no React Flow */
+export interface NodeSelectionState {
+  selectedNodeId: string | null;
+  selectedNodeIds: Set<string>;
+  highlightedNodeIds: Set<string>;
+  dragTargetPanelId: string | null;
+  unparentCandidatePanelId: string | null;
+  isNodeHiddenByTagFilter: (component: Component) => boolean;
+}
+
 export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisualState {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
