@@ -46,6 +46,7 @@ export const layoutSlice = (
       });
     },
 
+    /** edgeLayouts is linear; find/findIndex are O(n). A connectionId→layout map would scale better for huge graphs. */
     updateEdgeWaypoints: (diagramId: string, connectionId: string, waypoints: Point[]) => {
       set((state) => {
         const diagram = state.diagrams[diagramId];

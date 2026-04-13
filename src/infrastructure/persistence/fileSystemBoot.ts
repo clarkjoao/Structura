@@ -13,6 +13,7 @@ import { useCustomComponentStore, type CustomComponentTemplate } from "@/feature
 import { useIconStore } from "@/features/icons";
 import { mergeCustomComponentTemplates } from "./merge-custom-component-templates";
 import { diagramStoreWorkspaceEqualsForFolderSync } from "./workspace-folder-sync-equality";
+import { manifestSemanticFingerprint } from "./workspace-manifest-fingerprint";
 
 type DiagramStoreState = ReturnType<typeof useDiagramStore.getState>;
 
@@ -91,9 +92,7 @@ export async function flushWorkspaceToConnectedFolder(
 
   fileSystemAdapter.setFolders(state.folders);
 
-  for (const diagram of Object.values(state.diagrams)) {
-    await fileSystemAdapter.writeDiagram(diagram);
-  }
+  await Promise.all(Object.values(state.diagrams).map((diagram) => fileSystemAdapter.writeDiagram(diagram)));
 
   const customComponentTemplates = useCustomComponentStore.getState().templates;
 
@@ -113,6 +112,16 @@ export async function flushWorkspaceToConnectedFolder(
 
   const journeys = useJourneyStore.getState().journeys;
   await fileSystemAdapter.writeJourneys(journeys);
+
+  lastSyncedManifestFingerprint = manifestSemanticFingerprint({
+    diagramIds: Object.keys(state.diagrams),
+    serviceRegistry: state.serviceRegistry,
+    folders: state.folders,
+    activeDiagramId: state.activeDiagramId,
+    customComponentTemplates,
+    iconLibrary,
+  });
+  lastSyncedJourneysJson = JSON.stringify(journeys);
 
   recordFolderSyncSuccess();
 }
@@ -223,6 +232,9 @@ let _syncUnsub: (() => void) | null = null;
 let _syncTimer: ReturnType<typeof setTimeout> | null = null;
 let _flushChain: Promise<void> = Promise.resolve();
 let lastFlushedDiagrams: Record<string, Diagram> = {};
+/** Skips redundant structura-manifest.json writes during incremental sync (reset in stopFileSystemSync). */
+let lastSyncedManifestFingerprint = "";
+let lastSyncedJourneysJson = "";
 
 
 export function startFileSystemSync(): void {
@@ -230,6 +242,10 @@ export function startFileSystemSync(): void {
 
   lastFlushedDiagrams = { ...useDiagramStore.getState().diagrams };
 
+  /**
+   * Debounced folder sync runs in parallel with Zustand persist (PERSIST_DEBOUNCE_MS in
+   * persist.config.ts). Both are best-effort; ordering is not guaranteed by design.
+   */
   const runDebouncedFlush = (): void => {
     if (!fileSystemAdapter.isConnected) return;
 
@@ -242,27 +258,31 @@ export function startFileSystemSync(): void {
 
           fileSystemAdapter.setFolders(diagramState.folders);
 
-          for (const [id, previousDiagram] of Object.entries(prevDiagrams)) {
-            if (!diagramState.diagrams[id]) {
-              fileSystemAdapter.setFolders(diagramState.folders);
-              await fileSystemAdapter.deleteDiagram(id, previousDiagram);
-            }
-          }
+          let wroteSomething = false;
+
+          const deletePromises = Object.entries(prevDiagrams)
+            .filter(([id]) => !diagramState.diagrams[id])
+            .map(([id, previousDiagram]) =>
+              fileSystemAdapter.deleteDiagram(id, previousDiagram).then(() => {
+                wroteSomething = true;
+              }),
+            );
+          await Promise.all(deletePromises);
 
           fileSystemAdapter.setFolders(diagramState.folders);
-          for (const [id, diagram] of Object.entries(diagramState.diagrams)) {
-            if (diagram !== prevDiagrams[id]) {
-              await fileSystemAdapter.writeDiagram(diagram);
-            }
+
+          const diagramsToWrite = Object.entries(diagramState.diagrams).filter(
+            ([id, diagram]) => diagram !== prevDiagrams[id],
+          );
+          if (diagramsToWrite.length > 0) {
+            await Promise.all(diagramsToWrite.map(([, diagram]) => fileSystemAdapter.writeDiagram(diagram)));
+            wroteSomething = true;
           }
 
           const customComponentTemplates = useCustomComponentStore.getState().templates;
           const iconLibrary = useIconStore.getState().icons;
 
-          await fileSystemAdapter.writeManifest({
-            version: 1,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+          const manifestFp = manifestSemanticFingerprint({
             diagramIds: Object.keys(diagramState.diagrams),
             serviceRegistry: diagramState.serviceRegistry,
             folders: diagramState.folders,
@@ -271,10 +291,33 @@ export function startFileSystemSync(): void {
             iconLibrary,
           });
 
-          const journeys = useJourneyStore.getState().journeys;
-          await fileSystemAdapter.writeJourneys(journeys);
+          if (manifestFp !== lastSyncedManifestFingerprint) {
+            await fileSystemAdapter.writeManifest({
+              version: 1,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              diagramIds: Object.keys(diagramState.diagrams),
+              serviceRegistry: diagramState.serviceRegistry,
+              folders: diagramState.folders,
+              activeDiagramId: diagramState.activeDiagramId,
+              customComponentTemplates,
+              iconLibrary,
+            });
+            lastSyncedManifestFingerprint = manifestFp;
+            wroteSomething = true;
+          }
 
-          recordFolderSyncSuccess();
+          const journeys = useJourneyStore.getState().journeys;
+          const journeysJson = JSON.stringify(journeys);
+          if (journeysJson !== lastSyncedJourneysJson) {
+            await fileSystemAdapter.writeJourneys(journeys);
+            lastSyncedJourneysJson = journeysJson;
+            wroteSomething = true;
+          }
+
+          if (wroteSomething) {
+            recordFolderSyncSuccess();
+          }
 
           lastFlushedDiagrams = { ...diagramState.diagrams };
         })
@@ -319,6 +362,8 @@ export function stopFileSystemSync(): void {
     clearTimeout(_syncTimer);
     _syncTimer = null;
   }
+  lastSyncedManifestFingerprint = "";
+  lastSyncedJourneysJson = "";
 }
 
 

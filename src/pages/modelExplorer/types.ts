@@ -14,7 +14,6 @@ export interface ModelExplorerContentProps {
   handleOpenDiagram: (id: string) => void;
   handleDrillDownToDiagram: (id: string) => void;
   handleDrillUp: () => void;
-  onOpenImport: () => void;
   handleCopyDrawio: () => void;
   handleCopyJson: () => void;
   handleCopyStructurizr: () => void;

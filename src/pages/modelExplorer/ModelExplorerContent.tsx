@@ -52,7 +52,6 @@ export function ModelExplorerContent({
   handleOpenDiagram,
   handleDrillDownToDiagram,
   handleDrillUp,
-  onOpenImport,
   handleCopyDrawio,
   handleCopyJson,
   handleCopyStructurizr,
@@ -271,15 +270,6 @@ export function ModelExplorerContent({
             <Link to={backHref} className="text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="h-4 w-4" />
             </Link>
-            <button
-              type="button"
-              onClick={onOpenImport}
-              className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-              title={t("import.button")}
-            >
-              <Upload className="h-3.5 w-3.5" />
-              {t("import.button")}
-            </button>
             {diagram?.domain && <span className="text-muted-foreground">{diagram.domain}</span>}
             <span className="font-medium">{diagram?.name}</span>
             {activeFlow && (

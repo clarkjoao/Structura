@@ -193,7 +193,6 @@ export default function ModelExplorerPage() {
             handleOpenDiagram={handleOpenDiagram}
             handleDrillDownToDiagram={handleDrillDownToDiagram}
             handleDrillUp={handleDrillUp}
-            onOpenImport={() => setImportModalOpen(true)}
             handleCopyDrawio={handleCopyDrawio}
             handleCopyJson={handleCopyJson}
             handleCopyStructurizr={handleCopyStructurizr}

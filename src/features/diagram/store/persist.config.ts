@@ -17,6 +17,7 @@ import { isQuotaExceededError } from "@/infrastructure/persistence/storageQuota"
 export const PERSIST_KEY = "diagram-store";
 
 
+/** localStorage persist debounce; folder sync uses VIEWPORT_DEBOUNCE_MS — they are independent by design. */
 const PERSIST_DEBOUNCE_MS = 1000;
 
 
