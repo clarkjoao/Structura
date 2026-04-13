@@ -576,7 +576,8 @@
     "collapse": "Minimizar barra",
     "expand": "Expandir barra",
     "enterFocusMode": "Modo foco",
-    "exitFocusMode": "Sair do foco"
+    "exitFocusMode": "Sair do foco",
+    "moreMenuAria": "Mais opções"
   },
   "diagram": {
     "deleteConfirmTitle": "Remover diagrama?",

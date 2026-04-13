@@ -72,9 +72,9 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
   const edgeStyleOptions: EdgeStyleOption[] = useMemo(
     () => [
       { value: EdgeStyle.Straight, label: t("common.edgeStraight"), icon: "M 4 20 L 20 4" },
-      { value: EdgeStyle.Bezier, label: t("common.edgeBezier"), icon: "M 4 20 H 12 V 4 H 20" },
+      { value: EdgeStyle.Bezier, label: t("common.edgeBezier"), icon: "M 4 20 C 4 4 20 4 20 4" },
       { value: EdgeStyle.Step, label: t("common.edgeStep"), icon: "M 4 20 H 12 V 4 H 20" },
-      { value: EdgeStyle.Smoothstep, label: t("common.edgeSmoothstep"), icon: "M 4 20 C 4 12 20 12 20 4" },
+      { value: EdgeStyle.Smoothstep, label: t("common.edgeSmoothstep"), icon: "M 4 20 C 12 20 12 4 20 4" },
     ],
     [t],
   );
@@ -151,6 +151,39 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
         <Field label={t("common.label")} value={label} onChange={(v) => { setLabel(v); debouncedUpdate({ label: v }); }} inputRef={titleInputRef} />
+        <div>
+          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+            {t("common.edgeStyleSection")}
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {edgeStyleOptions.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => onUpdateEdgeStyle(opt.value)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                  currentStyle === opt.value
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                >
+                  <path d={opt.icon} />
+                </svg>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">{t("common.intent")}</label>
           <div className="flex flex-wrap gap-1">
@@ -240,36 +273,7 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
         </div>
         {conn.communicationType === "custom" && (
           <div className="space-y-2">
-            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold block">{t("common.edgeStyleSection")}</label>
-            <div className="flex flex-wrap gap-2">
-              {edgeStyleOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => onUpdateEdgeStyle(opt.value)}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-                    currentStyle === opt.value
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  >
-                    <path d={opt.icon} />
-                  </svg>
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-            <label className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium block mt-2 mb-1">
+            <label className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium block mb-1">
               {t("connectionPanel.strokeLabel")}
             </label>
             <div className="flex flex-wrap gap-2">

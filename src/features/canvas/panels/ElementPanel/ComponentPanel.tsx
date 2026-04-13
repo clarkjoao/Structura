@@ -10,6 +10,7 @@ import {
 } from "@/features/diagram";
 import type { Component, ComponentPatch, ComponentType, ServiceDefinition } from "@/features/diagram";
 import {
+  isApiGroupComponent,
   isPanelComponent,
   isNoteComponent,
   isC4Component,
@@ -149,7 +150,10 @@ const ComponentPanel = ({
     [allServices, component.serviceId],
   );
   const parentComp = component.parentId ? resolved?.components[component.parentId] : undefined;
-  const isChildOfPanel = !!component.parentId && parentComp && isPanelComponent(parentComp);
+  const isChildOfPanel =
+    !!component.parentId &&
+    parentComp &&
+    (isPanelComponent(parentComp) || isApiGroupComponent(parentComp));
   const handleRemoveFromGroup = () => {
     if (!component.parentId || !setParent || !updateNodeLayout || !activeDiagram || !resolved) return;
     const childLayout = resolved.nodeLayouts[component.id];

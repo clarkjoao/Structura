@@ -576,7 +576,8 @@
     "collapse": "Minimize toolbar",
     "expand": "Expand toolbar",
     "enterFocusMode": "Focus mode",
-    "exitFocusMode": "Exit focus"
+    "exitFocusMode": "Exit focus",
+    "moreMenuAria": "More options"
   },
   "diagram": {
     "deleteConfirmTitle": "Delete diagram?",

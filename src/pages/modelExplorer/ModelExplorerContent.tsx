@@ -16,11 +16,16 @@ import {
   Focus,
   FolderTree,
   GitBranch,
+  MoreHorizontal,
   Share2,
-  Upload,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import ShortcutsModal from "@/components/ShortcutsModal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
 import { SaveStatusIndicator } from "@/features/canvas/components/SaveStatusIndicator";
 import {
@@ -304,52 +309,50 @@ export function ModelExplorerContent({
             >
               <GitBranch className="h-3.5 w-3.5" /> {t("flows.panelTitle")}
             </button>
-            <button
-              type="button"
-              disabled={canvasInteractionLocked}
-              onClick={() => setShareModalOpen(true)}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium",
-                "text-muted-foreground hover:text-foreground",
-                "border border-transparent hover:border-border",
-                "bg-transparent transition-colors",
-                canvasInteractionLocked ? "opacity-50 pointer-events-none" : "",
-              )}
-            >
-              <Share2 size={15} />
-              {t("share.button")}
-            </button>
-            <button
-              type="button"
-              disabled={canvasInteractionLocked}
-              onClick={() => setExportModalOpen(true)}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium",
-                "text-muted-foreground hover:text-foreground",
-                "border border-transparent hover:border-border",
-                "bg-transparent transition-colors",
-                canvasInteractionLocked ? "opacity-50 pointer-events-none" : "",
-              )}
-            >
-              <FileDown size={15} />
-              {t("export.hub.toolbarButton")}
-            </button>
-            <button
-              onClick={onToggleFocusMode}
-              className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all"
-              title={t("canvasToolbar.enterFocusMode")}
-            >
-              <Focus className="h-3.5 w-3.5" /> {t("canvasToolbar.enterFocusMode")}
-            </button>
-            <button
-              onClick={() => setShowShortcuts(true)}
-              disabled={canvasInteractionLocked}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all ${canvasInteractionLocked ? "opacity-50 pointer-events-none" : ""}`}
-              aria-label={t("flows.shortcutsAria")}
-              title={t("flows.shortcuts")}
-            >
-              <CircleHelp className="h-3.5 w-3.5" /> {t("flows.shortcuts")}
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all"
+                  aria-label={t("canvasToolbar.moreMenuAria")}
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[10rem]">
+                <DropdownMenuItem
+                  disabled={canvasInteractionLocked}
+                  className="gap-2 text-xs font-medium cursor-pointer"
+                  onClick={() => setShareModalOpen(true)}
+                >
+                  <Share2 className="h-3.5 w-3.5 shrink-0" />
+                  {t("share.button")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={canvasInteractionLocked}
+                  className="gap-2 text-xs font-medium cursor-pointer"
+                  onClick={() => setExportModalOpen(true)}
+                >
+                  <FileDown className="h-3.5 w-3.5 shrink-0" size={14} />
+                  {t("export.hub.toolbarButton")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="gap-2 text-xs font-medium cursor-pointer"
+                  onClick={onToggleFocusMode}
+                >
+                  <Focus className="h-3.5 w-3.5 shrink-0" />
+                  {t("canvasToolbar.enterFocusMode")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={canvasInteractionLocked}
+                  className="gap-2 text-xs font-medium cursor-pointer"
+                  onClick={() => setShowShortcuts(true)}
+                >
+                  <CircleHelp className="h-3.5 w-3.5 shrink-0" />
+                  {t("flows.shortcuts")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
         </div>
