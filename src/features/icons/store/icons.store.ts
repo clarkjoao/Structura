@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { IconDefinition } from "@/features/diagram";
 
-interface IconStoreState {
+export interface IconStore {
   icons: Record<string, IconDefinition>;
   addIcon: (icon: IconDefinition) => void;
   removeIcon: (iconId: string) => void;
@@ -12,7 +12,7 @@ interface IconStoreState {
   getIconById: (iconId: string) => IconDefinition | undefined;
 }
 
-export const useIconStore = create<IconStoreState>()(
+export const useIconStore = create<IconStore>()(
   persist(
     (set, get) => ({
       icons: {},

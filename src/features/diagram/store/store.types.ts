@@ -21,7 +21,7 @@ export interface ClipboardEntry {
   components: Component[];
   connections: Connection[];
   
-  _pasteOffsets?: Array<{ dx: number; dy: number }>;
+  relativeOffsets?: Array<{ dx: number; dy: number }>;
 }
 
 export interface AppState {

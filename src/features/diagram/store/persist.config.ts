@@ -7,6 +7,7 @@ import {
 } from "@/infrastructure/persistence/localStorageSyncTimestamp";
 import { useIconStore } from "@/features/icons";
 import type { Diagram, Component, Connection, IconDefinition, NodeLayout } from "../model/diagram.types";
+import type { Point } from "../model/layout.types";
 import type { DiagramSnapshot, DiagramStore } from "./store.types";
 import type { ServiceDefinition } from "../model/service.types";
 import { ServiceSource } from "../enums";
@@ -21,7 +22,7 @@ export const PERSIST_KEY = "diagram-store";
 const PERSIST_DEBOUNCE_MS = 1000;
 
 
-export const PERSIST_SCHEMA_VERSION = 4;
+export const PERSIST_SCHEMA_VERSION = 5;
 
 
 export const CURRENT_SCHEMA_VERSION = PERSIST_SCHEMA_VERSION;
@@ -178,7 +179,28 @@ function migrateAddIconLibrary(state: Partial<DiagramStore>): void {
 function migrateAddEdgeLayouts(state: Partial<DiagramStore>): void {
   for (const diagram of Object.values(state.diagrams ?? {})) {
     const diagramRecord = diagram as Diagram;
-    diagramRecord.edgeLayouts ??= [];
+    diagramRecord.edgeLayouts ??= {};
+  }
+}
+
+function migrateEdgeLayoutsFromArray(state: Partial<DiagramStore>): void {
+  for (const diagram of Object.values(state.diagrams ?? {})) {
+    const d = diagram as Diagram & { edgeLayouts: unknown };
+    if (Array.isArray(d.edgeLayouts)) {
+      const arr = d.edgeLayouts as Array<{
+        connectionId: string;
+        waypoints: Point[];
+        labelOffset?: number;
+      }>;
+      (d as Diagram).edgeLayouts = Object.fromEntries(
+        arr.map(({ connectionId, waypoints, labelOffset }) => [
+          connectionId,
+          { waypoints, ...(labelOffset !== undefined ? { labelOffset } : {}) },
+        ]),
+      );
+    } else if (!d.edgeLayouts || typeof d.edgeLayouts !== "object") {
+      (d as Diagram).edgeLayouts = {};
+    }
   }
 }
 
@@ -288,6 +310,7 @@ export function mergePersistedState(
   next = migrateConnectionStyles(next);
   next = migrateComponentDimensions(next);
   next = migrateFlowsToGraph(next);
+  migrateEdgeLayoutsFromArray(next);
   migrateAddIconLibrary(next);
   migrateIconDefinitionToSource(next);
   migrateAddEdgeLayouts(next);
@@ -298,13 +321,6 @@ export function mergePersistedState(
 
   return next;
 }
-
-const SCHEMA_VERSION_WITH_ICON_LIBRARY = 1;
-const SCHEMA_VERSION_ICON_SOURCE = 2;
-const SCHEMA_VERSION_EDGE_LAYOUTS = 3;
-const SCHEMA_VERSION_DIAGRAM_DESCRIPTION = 3;
-const SCHEMA_VERSION_USER_TEMPLATES = 4;
-
 
 export function wrapIStoragePortWithDiagramPersistTracking(
   storage: IStoragePort,
@@ -425,6 +441,7 @@ export function wrapIStoragePortWithDiagramPersistTracking(
 
 export function createPersistConfig(storage: IStoragePort) {
   const trackedStorage = wrapIStoragePortWithDiagramPersistTracking(storage);
+  const SCHEMA_VERSION_EDGE_LAYOUTS_RECORD = 5;
   return {
     name: PERSIST_KEY,
     storage: createJSONStorage(() => trackedStorage),
@@ -436,20 +453,8 @@ export function createPersistConfig(storage: IStoragePort) {
         return persistedState as PersistedDiagramStoreSlice;
       }
       const partial = persistedState as Partial<DiagramStore>;
-      if (fromVersion < SCHEMA_VERSION_WITH_ICON_LIBRARY) {
-        migrateAddIconLibrary(partial);
-      }
-      if (fromVersion < SCHEMA_VERSION_ICON_SOURCE) {
-        migrateIconDefinitionToSource(partial);
-      }
-      if (fromVersion < SCHEMA_VERSION_EDGE_LAYOUTS) {
-        migrateAddEdgeLayouts(partial);
-      }
-      if (fromVersion < SCHEMA_VERSION_DIAGRAM_DESCRIPTION) {
-        migrateAddDiagramDescription(partial);
-      }
-      if (fromVersion < SCHEMA_VERSION_USER_TEMPLATES) {
-        migrateAddUserTemplates(partial);
+      if (fromVersion < SCHEMA_VERSION_EDGE_LAYOUTS_RECORD) {
+        migrateEdgeLayoutsFromArray(partial);
       }
       return persistedState as PersistedDiagramStoreSlice;
     },

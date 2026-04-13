@@ -179,7 +179,7 @@ import {
         createdAt: Date.parse("2026-01-08T09:00:00.000Z"),
         updatedAt: Date.parse("2026-03-26T10:00:00.000Z"),
         viewport: { x: 0, y: 0, zoom: 0.52 },
-        edgeLayouts: [],
+        edgeLayouts: {},
         nodeLayouts: {
           "bc-ctx-correntista":   { elementId: "bc-ctx-correntista",   x: 60,   y: 240 },
           "bc-ctx-empresa":       { elementId: "bc-ctx-empresa",       x: 60,   y: 560 },
@@ -363,7 +363,7 @@ import {
         createdAt: Date.parse("2026-01-15T09:00:00.000Z"),
         updatedAt: Date.parse("2026-03-26T11:00:00.000Z"),
         viewport: { x: 0, y: 0, zoom: 0.40 },
-        edgeLayouts: [],
+        edgeLayouts: {},
         nodeLayouts: {
           
           "bc-ct-correntista":     { elementId: "bc-ct-correntista",      x: 40,   y: 480  },
@@ -952,7 +952,7 @@ import {
         createdAt: Date.parse("2026-02-10T09:00:00.000Z"),
         updatedAt: Date.parse("2026-03-26T14:00:00.000Z"),
         viewport: { x: 0, y: 0, zoom: 0.56 },
-        edgeLayouts: [],
+        edgeLayouts: {},
         activeSceneId: "scene-ted-tobe",
         scenes: {
           "scene-ted-tobe": {
@@ -1092,7 +1092,7 @@ import {
         createdAt: Date.parse("2026-02-20T09:00:00.000Z"),
         updatedAt: Date.parse("2026-03-26T15:00:00.000Z"),
         viewport: { x: 0, y: 0, zoom: 0.42 },
-        edgeLayouts: [],
+        edgeLayouts: {},
         nodeLayouts: {
           "dep-bc-route53":      { elementId: "dep-bc-route53",      x: 40,   y: 60   },
           "dep-bc-waf":          { elementId: "dep-bc-waf",          x: 40,   y: 240  },

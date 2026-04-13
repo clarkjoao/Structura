@@ -256,6 +256,13 @@ export {
   createDiagramStore,
   
   useDiagramActions,
+  useComponentActions,
+  useConnectionActions,
+  useLayoutActions,
+  useSceneActions,
+  useFlowActions,
+  useHistoryActions,
+  useClipboardActions,
   
   useIconActions,
   flushDiagramStoreToLocalStorageNow,

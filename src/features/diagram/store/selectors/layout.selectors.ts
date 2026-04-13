@@ -9,16 +9,14 @@ export const useEdgeWaypoints = (connectionId: string): Point[] =>
   useDiagramStore(
     useShallow((state) => {
       const diagram = state.diagrams[state.activeDiagramId ?? ""];
-      const waypoints = diagram?.edgeLayouts.find((layout) => layout.connectionId === connectionId)
-        ?.waypoints;
-      return waypoints ?? EMPTY_WAYPOINTS;
+      return diagram?.edgeLayouts[connectionId]?.waypoints ?? EMPTY_WAYPOINTS;
     }),
   );
 
 export const useEdgeLabelOffset = (connectionId: string): number | undefined =>
   useDiagramStore((state) => {
     const diagram = state.diagrams[state.activeDiagramId ?? ""];
-    return diagram?.edgeLayouts.find((layout) => layout.connectionId === connectionId)?.labelOffset;
+    return diagram?.edgeLayouts[connectionId]?.labelOffset;
   });
 
 const EMPTY_NODE_LAYOUTS: Record<string, import("../../model/diagram.types").NodeLayout> = {};

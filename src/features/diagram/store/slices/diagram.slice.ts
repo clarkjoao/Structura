@@ -29,7 +29,7 @@ export const diagramsSlice = (
           updatedAt: now,
           snapshot: { components: {}, connections: {}, flows: {}, iconLibrary: {} },
           nodeLayouts: {},
-          edgeLayouts: [],
+          edgeLayouts: {},
           viewport: { x: 0, y: 0, zoom: 1 },
           folderId: folderId ?? undefined,
         };
@@ -87,6 +87,10 @@ export const diagramsSlice = (
     openDiagram: (id: string) => {
       set((state) => {
         state.activeDiagramId = id;
+        // Undo/redo history is scoped to the current editing session and should not
+        // survive diagram switches to avoid cross-diagram contamination.
+        state.past = [];
+        state.future = [];
       });
     },
   

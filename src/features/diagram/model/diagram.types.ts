@@ -145,7 +145,7 @@ export interface Diagram {
   updatedAt: number;
   snapshot: ModelDraft;
   nodeLayouts: Record<string, NodeLayout>;
-  edgeLayouts: EdgeLayout[];
+  edgeLayouts: Record<string, EdgeLayout>;
   viewport: { x: number; y: number; zoom: number };
   folderId?: string | null;
   scenes?: Record<string, SceneDiff>;

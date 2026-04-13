@@ -51,16 +51,15 @@ export const layoutSlice = (
       });
     },
 
-    /** edgeLayouts is linear; find/findIndex are O(n). A connectionId→layout map would scale better for huge graphs. */
     updateEdgeWaypoints: (diagramId: string, connectionId: string, waypoints: Point[]) => {
       set((state) => {
         const diagram = state.diagrams[diagramId];
         if (!diagram) return;
-        const existing = diagram.edgeLayouts.find((layout) => layout.connectionId === connectionId);
+        const existing = diagram.edgeLayouts[connectionId];
         if (existing) {
           existing.waypoints = waypoints;
         } else {
-          diagram.edgeLayouts.push({ connectionId, waypoints });
+          diagram.edgeLayouts[connectionId] = { waypoints };
         }
       });
     },
@@ -68,10 +67,8 @@ export const layoutSlice = (
     clearEdgeWaypoints: (diagramId: string, connectionId: string) => {
       set((state) => {
         const diagram = state.diagrams[diagramId];
-        if (!diagram?.edgeLayouts?.length) return;
-        const index = diagram.edgeLayouts.findIndex((layout) => layout.connectionId === connectionId);
-        if (index === -1) return;
-        diagram.edgeLayouts.splice(index, 1);
+        if (!diagram?.edgeLayouts) return;
+        delete diagram.edgeLayouts[connectionId];
       });
     },
 
@@ -80,11 +77,11 @@ export const layoutSlice = (
         const diagram = state.diagrams[diagramId];
         if (!diagram) return;
         const safe = Math.max(0, Math.min(1, offset));
-        const existing = diagram.edgeLayouts.find((layout) => layout.connectionId === connectionId);
+        const existing = diagram.edgeLayouts[connectionId];
         if (existing) {
           existing.labelOffset = safe;
         } else {
-          diagram.edgeLayouts.push({ connectionId, waypoints: [], labelOffset: safe });
+          diagram.edgeLayouts[connectionId] = { waypoints: [], labelOffset: safe };
         }
       });
     },

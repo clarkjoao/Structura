@@ -112,7 +112,10 @@ export function normalizeImportedDiagram(diagram: Diagram): Diagram {
   }
   return {
     ...diagram,
-    edgeLayouts: Array.isArray(diagram.edgeLayouts) ? diagram.edgeLayouts : [],
+    edgeLayouts:
+      diagram.edgeLayouts && typeof diagram.edgeLayouts === "object" && !Array.isArray(diagram.edgeLayouts)
+        ? diagram.edgeLayouts
+        : {},
     snapshot: {
       ...snapshot,
       iconLibrary: {},

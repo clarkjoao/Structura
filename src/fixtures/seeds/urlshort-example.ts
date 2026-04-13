@@ -101,7 +101,7 @@ function buildDiagrams(): Record<string, Diagram> {
       createdAt: Date.parse("2026-01-10T09:00:00.000Z"),
       updatedAt: Date.parse("2026-04-13T01:09:29.290Z"),
       viewport: { x: 281, y: -47.75, zoom: 1.5 },
-      edgeLayouts: [],
+      edgeLayouts: {},
       scenes: {},
       activeSceneId: null,
       nodeLayouts: {
@@ -263,7 +263,7 @@ function buildDiagrams(): Record<string, Diagram> {
       createdAt: Date.parse("2026-01-10T09:10:00.000Z"),
       updatedAt: Date.parse("2026-04-13T02:09:52.538Z"),
       viewport: { x: 210.21052631578948, y: 20.63157894736844, zoom: 0.6421052631578947 },
-      edgeLayouts: [],
+      edgeLayouts: {},
       scenes: {},
       activeSceneId: null,
       nodeLayouts: {
@@ -487,7 +487,7 @@ function buildDiagrams(): Record<string, Diagram> {
       createdAt: Date.parse("2026-01-10T09:20:00.000Z"),
       updatedAt: Date.parse("2026-04-13T02:11:54.454Z"),
       viewport: { x: 388.97622542546725, y: 144.52874015022635, zoom: 0.43608625423010544 },
-      edgeLayouts: [],
+      edgeLayouts: {},
       scenes: {},
       activeSceneId: null,
       nodeLayouts: {
@@ -805,7 +805,7 @@ function buildDiagrams(): Record<string, Diagram> {
       createdAt: Date.parse("2026-01-10T09:30:00.000Z"),
       updatedAt: Date.parse("2026-04-13T01:04:15.691Z"),
       viewport: { x: -892.5519056098267, y: -167.7171840061435, zoom: 0.5872534617699606 },
-      edgeLayouts: [],
+      edgeLayouts: {},
       // Scene TO-BE ativo por padrão para demonstrar a feature
       activeSceneId: "scene-tobe-geodeploy",
       scenes: {

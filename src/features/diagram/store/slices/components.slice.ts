@@ -72,7 +72,7 @@ function handleEndpointInsertion(
   if (!isApiGroupComponent(parent)) return false;
 
   const siblingCount = countEndpointsUnderParent(d, scene, parentId);
-  write(scene, d, component, {
+  writeComponentAndLayout(d, scene, component, {
     elementId: component.id,
     x: 0,
     y: API_GROUP_HEADER_H + siblingCount * API_GROUP_ENDPOINT_H,
@@ -184,6 +184,10 @@ function buildComponentForType(
       svgContent: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"></svg>',
     } as SvgComponent;
   } else {
+    // Se um novo ComponentType for adicionado e não tratado aqui, este erro de runtime
+    // sinaliza a necessidade de adicionar o branch correspondente.
+    const _exhaustive: never = type;
+    void _exhaustive;
     component = { ...base, type: "unknown", rawContent: "" } as UnknownComponent;
   }
   return { component, resolvedPanelKind };

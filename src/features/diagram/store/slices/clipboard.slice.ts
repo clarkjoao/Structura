@@ -59,7 +59,7 @@ export const clipboardSlice = (
           .filter((c) => idSet.has(c.sourceId) && idSet.has(c.targetId))
           .map((connection) => current(connection));
 
-        const _pasteOffsets =
+        const relativeOffsets =
           absPositions.length > 0
             ? (() => {
                 const minX = Math.min(...absPositions.map((point) => point.x));
@@ -71,7 +71,7 @@ export const clipboardSlice = (
               })()
             : [];
 
-        state.clipboard = { components, connections, _pasteOffsets };
+        state.clipboard = { components, connections, relativeOffsets };
       });
     },
 
@@ -89,7 +89,7 @@ export const clipboardSlice = (
         const idMap: Record<string, string> = {};
         const baseX = position?.x ?? 300;
         const baseY = position?.y ?? 300;
-        const pasteOffsets = state.clipboard._pasteOffsets;
+        const pasteOffsets = state.clipboard.relativeOffsets;
         const pastedSourceIds = new Set(state.clipboard.components.map((component) => component.id));
         const availableComponents = scene
           ? resolveSceneSnapshot(d, d.activeSceneId ?? null).components

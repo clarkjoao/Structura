@@ -44,7 +44,7 @@ function buildDiagrams(): Record<string, Diagram> {
         "plat1-kafka": { elementId: "plat1-kafka", x: 1660, y: 260 },
         "plat1-apigw": { elementId: "plat1-apigw", x: 1660, y: 500 },
       },
-      edgeLayouts: [],
+      edgeLayouts: {},
       snapshot: {
         iconLibrary: {},
         components: {
@@ -361,7 +361,7 @@ function buildDiagrams(): Record<string, Diagram> {
         "plat2-bff-mobile-svc": { elementId: "plat2-bff-mobile-svc", x: 720, y: 560 },
         "plat2-response-transformer": { elementId: "plat2-response-transformer", x: 720, y: 700 },
       },
-      edgeLayouts: [],
+      edgeLayouts: {},
       snapshot: {
         iconLibrary: {},
         components: {
@@ -623,7 +623,7 @@ function buildDiagrams(): Record<string, Diagram> {
         "plat3-redis": { elementId: "plat3-redis", x: 1360, y: 920 },
         "plat3-bullmq": { elementId: "plat3-bullmq", x: 1360, y: 1040 },
       },
-      edgeLayouts: [],
+      edgeLayouts: {},
       snapshot: {
         iconLibrary: {},
         components: {
@@ -1114,7 +1114,7 @@ function buildDiagrams(): Record<string, Diagram> {
         "plat4-cloudwatch": { elementId: "plat4-cloudwatch", x: 2720, y: 1140 },
         "plat4-xray": { elementId: "plat4-xray", x: 2980, y: 1140 },
       },
-      edgeLayouts: [],
+      edgeLayouts: {},
       snapshot: {
         iconLibrary: {},
         components: {
