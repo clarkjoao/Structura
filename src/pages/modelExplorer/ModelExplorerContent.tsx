@@ -354,9 +354,8 @@ export function ModelExplorerContent({
         </div>
         </div>
       ) : null}
-      <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+      <div className="flex flex-1 flex-col overflow-hidden min-h-0">
         <StorageWarningBanner />
-        <div className="flex flex-1 min-h-0 overflow-hidden">
         <ShortcutsModal open={showShortcuts} onOpenChange={setShowShortcuts} />
         {diagram ? (
           <>
@@ -375,95 +374,96 @@ export function ModelExplorerContent({
             <ShareModal open={shareModalOpen} onOpenChange={setShareModalOpen} diagram={diagram} />
           </>
         ) : null}
-        <ReactFlowProvider>
-          <div
-            className="flex-1 flex flex-col relative"
-            onPointerMove={handleCanvasPointerMove}
-            onPointerLeave={handleCanvasPointerLeave}
-          >
-            <Canvas
-              onOpenDiagram={handleOpenDiagram}
-              onDrillDownToDiagram={handleDrillDownToDiagram}
-              onDrillUp={navStack.length > 0 ? handleDrillUp : undefined}
-              isViewingCoverage={isViewingCoverage}
-              isFlowPanelOpen={showFlows}
-              diagramSidebarOpen={diagramSidebarOpen}
-              onDiagramSidebarOpenChange={setDiagramSidebarOpen}
-              focusMode={focusMode}
-              onToggleFocusMode={onToggleFocusMode}
-              onPlayFlow={(flowId) => {
-                const targetFlow = flows.find((candidate) => candidate.id === flowId);
-                if (targetFlow) play(targetFlow);
-              }}
-            />
-            {activeFlow && (
-              <FlowStepNavigator
-                flow={activeFlow}
-                currentStepId={currentStepId}
-                currentStep={currentStep}
-                isCondition={isCondition}
-                canGoBack={canGoBack}
-                canGoForward={canGoForward}
-                onGoNext={goNext}
-                onGoBack={goBack}
-                onChooseBranch={chooseBranch}
-                onExit={exitPlay}
+        <div className="flex flex-1 min-h-0 overflow-hidden">
+          <ReactFlowProvider>
+            <div
+              className="flex min-h-0 min-w-0 flex-1 flex-col relative"
+              onPointerMove={handleCanvasPointerMove}
+              onPointerLeave={handleCanvasPointerLeave}
+            >
+              <Canvas
+                onOpenDiagram={handleOpenDiagram}
+                onDrillDownToDiagram={handleDrillDownToDiagram}
+                onDrillUp={navStack.length > 0 ? handleDrillUp : undefined}
+                isViewingCoverage={isViewingCoverage}
+                isFlowPanelOpen={showFlows}
+                diagramSidebarOpen={diagramSidebarOpen}
+                onDiagramSidebarOpenChange={setDiagramSidebarOpen}
+                focusMode={focusMode}
+                onToggleFocusMode={onToggleFocusMode}
+                onPlayFlow={(flowId) => {
+                  const targetFlow = flows.find((candidate) => candidate.id === flowId);
+                  if (targetFlow) play(targetFlow);
+                }}
               />
-            )}
-            {session && <CollabCursors peers={session.peers} />}
-          </div>
-        </ReactFlowProvider>
+              {activeFlow && (
+                <FlowStepNavigator
+                  flow={activeFlow}
+                  currentStepId={currentStepId}
+                  currentStep={currentStep}
+                  isCondition={isCondition}
+                  canGoBack={canGoBack}
+                  canGoForward={canGoForward}
+                  onGoNext={goNext}
+                  onGoBack={goBack}
+                  onChooseBranch={chooseBranch}
+                  onExit={exitPlay}
+                />
+              )}
+              {session && <CollabCursors peers={session.peers} />}
+            </div>
+          </ReactFlowProvider>
+          {showFlows && !activeFlow && !isRecording && (
+            <FlowPanel
+              onClose={() => setShowFlows(false)}
+              onPlay={play}
+              onStartRecording={startRecordingWhenAllowed}
+              onEditFlow={editFlowWhenAllowed}
+              isViewingCoverage={isViewingCoverage}
+              onToggleCoverage={() => setIsViewingCoverage((viewing) => !viewing)}
+              panelActionsLocked={
+                compareModeBlocksRecorder ||
+                !interaction.canUseFlow ||
+                journeyPlaybackActive
+              }
+              panelActionsLockedTitle={t("diagramNav.unavailableWhileRecordingOrPlayback")}
+            />
+          )}
+          {isRecording && (
+            <FlowRecorderPanel
+              recordingContext={recordingContext}
+              setRecordingContext={setRecordingContext}
+              name={recordingName}
+              onNameChange={setRecordingName}
+              description={recordingDescription}
+              onDescriptionChange={setRecordingDescription}
+              tags={recordingTags}
+              onAddTag={onAddTag}
+              onRemoveTag={onRemoveTag}
+              steps={recordingStepsForPanel}
+              recordingSteps={recordingSteps}
+              branchOwnership={branchOwnership}
+              onCancel={cancelRecording}
+              onFinalize={finalizeRecording}
+              onUpdateStepDescription={onUpdateStepDescription}
+              onUpdateStepDuration={onUpdateStepDuration}
+              onUpdateStepPayload={onUpdateStepPayload}
+              onUpdateStepPayloadDirection={onUpdateStepPayloadDirection}
+              onUpdateStepIsAsync={onUpdateStepIsAsync}
+              onDeleteStep={onDeleteStep}
+              onReorderSteps={onReorderSteps}
+              onConvertStepToCondition={onConvertStepToCondition}
+              onUpdateConditionLabel={onUpdateConditionLabel}
+              onAddBranchLabel={onAddBranchLabel}
+              onRemoveBranchLabel={onRemoveBranchLabel}
+              onUpdateBranchLabel={onUpdateBranchLabel}
+              onAddConditionStep={onAddConditionStep}
+              onEnterBranchRecording={onEnterBranchRecording}
+              onOpenBranchSelect={onOpenBranchSelect}
+              isEditing={!!editingFlowId}
+            />
+          )}
         </div>
-        {isRecording && (
-          <FlowRecorderPanel
-            recordingContext={recordingContext}
-            setRecordingContext={setRecordingContext}
-            name={recordingName}
-            onNameChange={setRecordingName}
-            description={recordingDescription}
-            onDescriptionChange={setRecordingDescription}
-            tags={recordingTags}
-            onAddTag={onAddTag}
-            onRemoveTag={onRemoveTag}
-            steps={recordingStepsForPanel}
-            recordingSteps={recordingSteps}
-            branchOwnership={branchOwnership}
-            onCancel={cancelRecording}
-            onFinalize={finalizeRecording}
-            onUpdateStepDescription={onUpdateStepDescription}
-            onUpdateStepDuration={onUpdateStepDuration}
-            onUpdateStepPayload={onUpdateStepPayload}
-            onUpdateStepPayloadDirection={onUpdateStepPayloadDirection}
-            onUpdateStepIsAsync={onUpdateStepIsAsync}
-            onDeleteStep={onDeleteStep}
-            onReorderSteps={onReorderSteps}
-            onConvertStepToCondition={onConvertStepToCondition}
-            onUpdateConditionLabel={onUpdateConditionLabel}
-            onAddBranchLabel={onAddBranchLabel}
-            onRemoveBranchLabel={onRemoveBranchLabel}
-            onUpdateBranchLabel={onUpdateBranchLabel}
-            onAddConditionStep={onAddConditionStep}
-            onEnterBranchRecording={onEnterBranchRecording}
-            onOpenBranchSelect={onOpenBranchSelect}
-            isEditing={!!editingFlowId}
-          />
-        )}
-        {showFlows && !activeFlow && !isRecording && (
-          <FlowPanel
-            onClose={() => setShowFlows(false)}
-            onPlay={play}
-            onStartRecording={startRecordingWhenAllowed}
-            onEditFlow={editFlowWhenAllowed}
-            isViewingCoverage={isViewingCoverage}
-            onToggleCoverage={() => setIsViewingCoverage((viewing) => !viewing)}
-            panelActionsLocked={
-              compareModeBlocksRecorder ||
-              !interaction.canUseFlow ||
-              journeyPlaybackActive
-            }
-            panelActionsLockedTitle={t("diagramNav.unavailableWhileRecordingOrPlayback")}
-          />
-        )}
       </div>
     </>
   );
