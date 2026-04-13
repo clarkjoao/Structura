@@ -24,8 +24,8 @@ function buildDiagrams(): Record<string, Diagram> {
       level: "context",
       domain: "Plataforma Digital",
       folderId: FOLDER_ID,
-      createdAt: "2026-04-01T10:00:00.000Z",
-      updatedAt: "2026-04-02T10:00:00.000Z",
+      createdAt: Date.parse("2026-04-01T10:00:00.000Z"),
+      updatedAt: Date.parse("2026-04-02T10:00:00.000Z"),
       viewport: { x: 0, y: 0, zoom: 0.48 },
       nodeLayouts: {
         "plat1-user": { elementId: "plat1-user", x: 60, y: 220 },
@@ -337,8 +337,8 @@ function buildDiagrams(): Record<string, Diagram> {
       level: "container",
       domain: "Plataforma Digital",
       folderId: FOLDER_ID,
-      createdAt: "2026-04-01T11:00:00.000Z",
-      updatedAt: "2026-04-02T10:00:00.000Z",
+      createdAt: Date.parse("2026-04-01T11:00:00.000Z"),
+      updatedAt: Date.parse("2026-04-02T10:00:00.000Z"),
       viewport: { x: 0, y: 0, zoom: 0.42 },
       nodeLayouts: {
         "plat2-p-host": { elementId: "plat2-p-host", x: 40, y: 40, width: 480, height: 380, zIndex: -1 },
@@ -588,8 +588,8 @@ function buildDiagrams(): Record<string, Diagram> {
       level: "container",
       domain: "Plataforma Digital",
       folderId: FOLDER_ID,
-      createdAt: "2026-04-01T12:00:00.000Z",
-      updatedAt: "2026-04-02T10:00:00.000Z",
+      createdAt: Date.parse("2026-04-01T12:00:00.000Z"),
+      updatedAt: Date.parse("2026-04-02T10:00:00.000Z"),
       viewport: { x: 0, y: 0, zoom: 0.38 },
       nodeLayouts: {
         "plat3-p-order": { elementId: "plat3-p-order", x: 40, y: 40, width: 580, height: 740, zIndex: -1 },
@@ -1060,8 +1060,8 @@ function buildDiagrams(): Record<string, Diagram> {
       level: "deployment",
       domain: "Plataforma Digital",
       folderId: FOLDER_ID,
-      createdAt: "2026-04-01T14:00:00.000Z",
-      updatedAt: "2026-04-02T10:00:00.000Z",
+      createdAt: Date.parse("2026-04-01T14:00:00.000Z"),
+      updatedAt: Date.parse("2026-04-02T10:00:00.000Z"),
       description: "Região sa-east-1. VPC privada para workloads EKS.",
       viewport: { x: 0, y: 0, zoom: 0.28 },
       nodeLayouts: {

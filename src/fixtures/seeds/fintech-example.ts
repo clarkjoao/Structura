@@ -135,8 +135,8 @@ function buildDiagrams(): Record<string, Diagram> {
       level: "context",
       domain: "seed",
       folderId: FOLDER_ID,
-      createdAt: "2026-01-10T09:00:00.000Z",
-      updatedAt: "2026-03-20T10:00:00.000Z",
+      createdAt: Date.parse("2026-01-10T09:00:00.000Z"),
+      updatedAt: Date.parse("2026-03-20T10:00:00.000Z"),
       viewport: { x: 0, y: 0, zoom: 0.55 },
       nodeLayouts: {
         
@@ -347,8 +347,8 @@ function buildDiagrams(): Record<string, Diagram> {
       level: "container",
       domain: "seed",
       folderId: FOLDER_ID,
-      createdAt: "2026-01-15T10:00:00.000Z",
-      updatedAt: "2026-03-20T11:00:00.000Z",
+      createdAt: Date.parse("2026-01-15T10:00:00.000Z"),
+      updatedAt: Date.parse("2026-03-20T11:00:00.000Z"),
       viewport: { x: 0, y: 0, zoom: 0.4 },
       nodeLayouts: {
         
@@ -648,8 +648,8 @@ function buildDiagrams(): Record<string, Diagram> {
       level: "component",
       domain: "seed",
       folderId: FOLDER_ID,
-      createdAt: "2026-02-01T09:00:00.000Z",
-      updatedAt: "2026-03-20T12:00:00.000Z",
+      createdAt: Date.parse("2026-02-01T09:00:00.000Z"),
+      updatedAt: Date.parse("2026-03-20T12:00:00.000Z"),
       viewport: { x: 0, y: 0, zoom: 0.55 },
       nodeLayouts: {
         
@@ -848,8 +848,8 @@ function buildDiagrams(): Record<string, Diagram> {
       level: "component",
       domain: "seed",
       folderId: FOLDER_ID,
-      createdAt: "2026-02-10T09:00:00.000Z",
-      updatedAt: "2026-03-20T10:00:00.000Z",
+      createdAt: Date.parse("2026-02-10T09:00:00.000Z"),
+      updatedAt: Date.parse("2026-03-20T10:00:00.000Z"),
       viewport: { x: 0, y: 0, zoom: 0.6 },
       nodeLayouts: {
         "gw-cors":         { elementId: "gw-cors",         x: 80,   y: 300 },
@@ -989,8 +989,8 @@ function buildDiagrams(): Record<string, Diagram> {
       level: "component",
       domain: "seed",
       folderId: FOLDER_ID,
-      createdAt: "2026-02-15T09:00:00.000Z",
-      updatedAt: "2026-03-20T10:00:00.000Z",
+      createdAt: Date.parse("2026-02-15T09:00:00.000Z"),
+      updatedAt: Date.parse("2026-03-20T10:00:00.000Z"),
       viewport: { x: 0, y: 0, zoom: 0.6 },
       nodeLayouts: {
         "bff-gql-server":        { elementId: "bff-gql-server",        x: 80,   y: 360 },
@@ -1078,8 +1078,8 @@ function buildDiagrams(): Record<string, Diagram> {
       level: "container",
       domain: "seed",
       folderId: FOLDER_ID,
-      createdAt: "2026-03-01T09:00:00.000Z",
-      updatedAt: "2026-03-20T14:00:00.000Z",
+      createdAt: Date.parse("2026-03-01T09:00:00.000Z"),
+      updatedAt: Date.parse("2026-03-20T14:00:00.000Z"),
       viewport: { x: 0, y: 0, zoom: 0.35 },
       nodeLayouts: {
         

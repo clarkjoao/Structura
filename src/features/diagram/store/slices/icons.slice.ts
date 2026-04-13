@@ -1,6 +1,7 @@
 import type { IconDefinition } from "../../model/diagram.types";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
+import { touchDiagram } from "./get-active-diagram";
 
 function clearCustomIconIdFromComponents(
   record: Record<string, { customIconId?: string }>,
@@ -34,7 +35,7 @@ export const iconsSlice = (
           clearCustomIconIdFromComponents(scene.addedComponents, iconId);
         }
       }
-      diagram.updatedAt = new Date().toISOString();
+      touchDiagram(diagram);
     });
   },
 

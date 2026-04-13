@@ -299,7 +299,9 @@ export {
   
   useServiceRegistry,
   
-   useAllComponents,
+  useAllComponents,
+  
+  useDiagramTags,
   
   useAllServices,
   

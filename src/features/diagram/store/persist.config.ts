@@ -64,7 +64,7 @@ function migrateServiceSources(state: DiagramStore): DiagramStore {
 
 function migrateDiagramCreatedAt(state: DiagramStore): DiagramStore {
   Object.values(state.diagrams ?? {}).forEach((d) => {
-    const diagram = d as Diagram & { createdAt?: string };
+    const diagram = d as Diagram & { createdAt?: number };
     if (!diagram.createdAt) diagram.createdAt = diagram.updatedAt;
   });
   return state;

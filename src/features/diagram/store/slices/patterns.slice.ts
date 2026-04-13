@@ -6,7 +6,7 @@ import { computeUserTemplateNodeLayouts } from "../../utils/user-template-insert
 import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
-import { getActiveDiagram } from "./get-active-diagram";
+import { getActiveDiagram, touchDiagram } from "./get-active-diagram";
 
 type InsertablePattern = PatternTemplate | UserTemplate;
 
@@ -169,7 +169,7 @@ export const patternsSlice = (
           d.snapshot.connections[connId] = next;
         }
       });
-      d.updatedAt = new Date().toISOString();
+      touchDiagram(d);
     });
   },
 });

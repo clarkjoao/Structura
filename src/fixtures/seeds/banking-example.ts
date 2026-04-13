@@ -176,8 +176,8 @@ import {
         level: "context",
         domain: "seed",
         folderId: FOLDER_ROOT,
-        createdAt: "2026-01-08T09:00:00.000Z",
-        updatedAt: "2026-03-26T10:00:00.000Z",
+        createdAt: Date.parse("2026-01-08T09:00:00.000Z"),
+        updatedAt: Date.parse("2026-03-26T10:00:00.000Z"),
         viewport: { x: 0, y: 0, zoom: 0.52 },
         edgeLayouts: [],
         nodeLayouts: {
@@ -360,8 +360,8 @@ import {
         level: "container",
         domain: "seed",
         folderId: FOLDER_CORE,
-        createdAt: "2026-01-15T09:00:00.000Z",
-        updatedAt: "2026-03-26T11:00:00.000Z",
+        createdAt: Date.parse("2026-01-15T09:00:00.000Z"),
+        updatedAt: Date.parse("2026-03-26T11:00:00.000Z"),
         viewport: { x: 0, y: 0, zoom: 0.40 },
         edgeLayouts: [],
         nodeLayouts: {
@@ -949,8 +949,8 @@ import {
         level: "container",
         domain: "seed",
         folderId: FOLDER_CORE,
-        createdAt: "2026-02-10T09:00:00.000Z",
-        updatedAt: "2026-03-26T14:00:00.000Z",
+        createdAt: Date.parse("2026-02-10T09:00:00.000Z"),
+        updatedAt: Date.parse("2026-03-26T14:00:00.000Z"),
         viewport: { x: 0, y: 0, zoom: 0.56 },
         edgeLayouts: [],
         activeSceneId: "scene-ted-tobe",
@@ -959,7 +959,7 @@ import {
             id: "scene-ted-tobe",
             name: "To-Be — TED cloud-native + fallback",
             color: "#22c55e",
-            createdAt: "2026-03-01T00:00:00.000Z",
+            createdAt: Date.parse("2026-03-01T00:00:00.000Z"),
             addedComponents: {
               "ted-new-svc": {
                 id: "ted-new-svc",
@@ -1089,8 +1089,8 @@ import {
         level: "container",
         domain: "seed",
         folderId: FOLDER_COMPLIANCE,
-        createdAt: "2026-02-20T09:00:00.000Z",
-        updatedAt: "2026-03-26T15:00:00.000Z",
+        createdAt: Date.parse("2026-02-20T09:00:00.000Z"),
+        updatedAt: Date.parse("2026-03-26T15:00:00.000Z"),
         viewport: { x: 0, y: 0, zoom: 0.42 },
         edgeLayouts: [],
         nodeLayouts: {

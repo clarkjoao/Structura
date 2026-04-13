@@ -12,9 +12,33 @@ import {
 import i18n from "@/infrastructure/i18n";
 import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
-import { getActiveDiagram } from "./get-active-diagram";
+import { getActiveDiagram, touchDiagram } from "./get-active-diagram";
 import { pushHistory } from "./history.slice";
-import { resolveActiveScene } from "./scene-helpers";
+import {
+  getActiveComponents,
+  getActiveNodeLayouts,
+  resolveActiveScene,
+  resolveComponent,
+  resolveNodeLayout,
+} from "./scene-helpers";
+
+function applySingleNodeDrag(
+  d: Diagram,
+  scene: SceneDiff | null,
+  nodeId: string,
+  newParentId: string | null,
+  newPosition: { x: number; y: number },
+): boolean {
+  if (scene && !scene.addedComponents[nodeId]) return false;
+  const comp = resolveComponent(d, scene, nodeId);
+  if (comp) comp.parentId = newParentId;
+  const layout = resolveNodeLayout(d, scene, nodeId);
+  if (layout) {
+    layout.x = newPosition.x;
+    layout.y = newPosition.y;
+  }
+  return true;
+}
 
 export const componentParentingSlice = (
   set: (fn: (state: AppState) => void) => void,
@@ -27,13 +51,8 @@ export const componentParentingSlice = (
       const scene = resolveActiveScene(d);
       if (scene && !scene.addedComponents[childId]) return;
       if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-      if (scene) {
-        const comp = scene.addedComponents[childId];
-        if (comp) comp.parentId = parentId;
-      } else {
-        const comp = d.snapshot.components[childId];
-        if (comp) comp.parentId = parentId;
-      }
+      const comp = resolveComponent(d, scene, childId);
+      if (comp) comp.parentId = parentId;
     });
   },
 
@@ -56,29 +75,9 @@ export const componentParentingSlice = (
 
       
       
-      if (scene) {
-        
-        const comp = scene.addedComponents[nodeId];
-        if (comp) comp.parentId = newParentId;
-        
-        const layout = scene.nodeLayouts[nodeId];
-        if (layout) {
-          layout.x = newPosition.x;
-          layout.y = newPosition.y;
-        }
-      } else {
-        
-        const comp = d.snapshot.components[nodeId];
-        if (comp) comp.parentId = newParentId;
-        
-        const layout = d.nodeLayouts[nodeId];
-        if (layout) {
-          layout.x = newPosition.x;
-          layout.y = newPosition.y;
-        }
-      }
+      applySingleNodeDrag(d, scene, nodeId, newParentId, newPosition);
 
-      d.updatedAt = new Date().toISOString();
+      touchDiagram(d);
     });
   },
 
@@ -98,38 +97,17 @@ export const componentParentingSlice = (
 
       const willApply = entries.some(({ nodeId }) => {
         if (scene && !scene.addedComponents[nodeId]) return false;
-        if (scene) {
-          return !!(scene.addedComponents[nodeId] || scene.nodeLayouts[nodeId]);
-        }
-        return !!(d.snapshot.components[nodeId] || d.nodeLayouts[nodeId]);
+        return !!(resolveComponent(d, scene, nodeId) || resolveNodeLayout(d, scene, nodeId));
       });
       if (!willApply) return;
 
       if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
 
       for (const { nodeId, newParentId, newPosition } of entries) {
-        if (scene && !scene.addedComponents[nodeId]) continue;
-
-        if (scene) {
-          const comp = scene.addedComponents[nodeId];
-          if (comp) comp.parentId = newParentId;
-          const layout = scene.nodeLayouts[nodeId];
-          if (layout) {
-            layout.x = newPosition.x;
-            layout.y = newPosition.y;
-          }
-        } else {
-          const comp = d.snapshot.components[nodeId];
-          if (comp) comp.parentId = newParentId;
-          const layout = d.nodeLayouts[nodeId];
-          if (layout) {
-            layout.x = newPosition.x;
-            layout.y = newPosition.y;
-          }
-        }
+        applySingleNodeDrag(d, scene, nodeId, newParentId, newPosition);
       }
 
-      d.updatedAt = new Date().toISOString();
+      touchDiagram(d);
     });
   },
 
@@ -197,7 +175,7 @@ export const componentParentingSlice = (
           layout.y = positions[i].y - minY;
         }
       });
-      d.updatedAt = new Date().toISOString();
+      touchDiagram(d);
     });
     return panelId;
   },
@@ -207,17 +185,19 @@ export const componentParentingSlice = (
       const d = getActiveDiagram(state);
       if (!d) return;
       const scene = resolveActiveScene(d);
+      const activeComponents = getActiveComponents(d, scene);
+      const activeNodeLayouts = getActiveNodeLayouts(d, scene);
 
       if (scene) {
         if (!scene.addedComponents[panelId]) return;
-        const panel = scene.addedComponents[panelId];
+        const panel = activeComponents[panelId];
         if (!panel || !isPanelComponent(panel)) return;
-        const panelLayout = scene.nodeLayouts[panelId];
+        const panelLayout = activeNodeLayouts[panelId];
         if (!panelLayout) return;
-        const children = Object.values(scene.addedComponents).filter((c) => c.parentId === panelId);
+        const children = Object.values(activeComponents).filter((c) => c.parentId === panelId);
         children.forEach((c) => {
           c.parentId = null;
-          const childLayout = scene.nodeLayouts[c.id];
+          const childLayout = activeNodeLayouts[c.id];
           if (childLayout) {
             childLayout.x = panelLayout.x + childLayout.x;
             childLayout.y = panelLayout.y + childLayout.y;
@@ -225,7 +205,7 @@ export const componentParentingSlice = (
         });
         delete scene.addedComponents[panelId];
         delete scene.nodeLayouts[panelId];
-        d.updatedAt = new Date().toISOString();
+        touchDiagram(d);
         return;
       }
 
@@ -246,7 +226,7 @@ export const componentParentingSlice = (
       });
       delete d.snapshot.components[panelId];
       delete d.nodeLayouts[panelId];
-      d.updatedAt = new Date().toISOString();
+      touchDiagram(d);
     });
   },
 });

@@ -140,7 +140,7 @@ export function DiagramCommandPalette({ onClose, onSelectDiagram }: DiagramComma
       const recentIds = new Set(recentResolved.map((r) => r.id));
       const mostUsed = [...allDiagrams]
         .filter((d) => !recentIds.has(d.id))
-        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+        .sort((a, b) => b.updatedAt - a.updatedAt)
         .slice(0, 12);
 
       if (recentResolved.length > 0) {

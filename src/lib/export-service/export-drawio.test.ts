@@ -7,8 +7,8 @@ function minimalDiagram(overrides: Partial<Diagram> = {}): Diagram {
     id: "d1",
     name: "Test",
     level: "context",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
     snapshot: {
       components: {},
       connections: {},

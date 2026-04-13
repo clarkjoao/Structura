@@ -1,8 +1,13 @@
 import type { Point } from "../../model/diagram.types";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
-import { getActiveDiagram } from "./get-active-diagram";
-import { resolveActiveScene } from "./scene-helpers";
+import { getActiveDiagram, touchDiagram } from "./get-active-diagram";
+import {
+  getActiveComponents,
+  getActiveNodeLayouts,
+  resolveActiveScene,
+  resolveNodeLayout,
+} from "./scene-helpers";
 import { computeFitBounds } from "../../utils/fit-group-to-children";
 
 export const layoutSlice = (
@@ -93,7 +98,7 @@ export const layoutSlice = (
           const merged = { ...d.nodeLayouts, ...scene.nodeLayouts };
           const vals = Object.values(merged).map((nl) => nl.zIndex ?? 0);
           const maxZ = vals.length > 0 ? Math.max(...vals) : 0;
-          const layout = scene.nodeLayouts[elementId];
+          const layout = resolveNodeLayout(d, scene, elementId);
           if (layout) layout.zIndex = maxZ + 1;
           return;
         }
@@ -113,7 +118,7 @@ export const layoutSlice = (
           const merged = { ...d.nodeLayouts, ...scene.nodeLayouts };
           const vals = Object.values(merged).map((nl) => nl.zIndex ?? 0);
           const minZ = vals.length > 0 ? Math.min(...vals) : 0;
-          const layout = scene.nodeLayouts[elementId];
+          const layout = resolveNodeLayout(d, scene, elementId);
           if (layout) layout.zIndex = minZ - 1;
           return;
         }
@@ -130,10 +135,10 @@ export const layoutSlice = (
         if (!d) return;
 
         const scene = resolveActiveScene(d);
-        const layouts = scene ? { ...d.nodeLayouts, ...scene.nodeLayouts } : d.nodeLayouts;
-        const components = scene
-          ? { ...d.snapshot.components, ...scene.addedComponents }
-          : d.snapshot.components;
+        const activeComponents = getActiveComponents(d, scene);
+        const activeNodeLayouts = getActiveNodeLayouts(d, scene);
+        const layouts = scene ? { ...d.nodeLayouts, ...activeNodeLayouts } : activeNodeLayouts;
+        const components = scene ? { ...d.snapshot.components, ...activeComponents } : activeComponents;
 
         
         const panelComp = components[panelId];
@@ -160,9 +165,7 @@ export const layoutSlice = (
 
         for (const comp of Object.values(components)) {
           if (comp.parentId !== panelId) continue;
-          const layoutTarget = scene?.addedComponents[comp.id]
-            ? scene!.nodeLayouts
-            : d.nodeLayouts;
+          const layoutTarget = scene?.addedComponents[comp.id] ? activeNodeLayouts : d.nodeLayouts;
           const childLayout = layoutTarget[comp.id];
           if (childLayout) {
             childLayout.x -= dx;
@@ -171,9 +174,7 @@ export const layoutSlice = (
         }
 
         
-        const panelLayoutTarget = scene?.addedComponents[panelId]
-          ? scene!.nodeLayouts
-          : d.nodeLayouts;
+        const panelLayoutTarget = scene?.addedComponents[panelId] ? activeNodeLayouts : d.nodeLayouts;
         const panelLayout = panelLayoutTarget[panelId];
         if (!panelLayout) return;
 
@@ -182,7 +183,7 @@ export const layoutSlice = (
         panelLayout.width  = bounds.width;
         panelLayout.height = bounds.height;
 
-        d.updatedAt = new Date().toISOString();
+        touchDiagram(d);
       });
     },
   });

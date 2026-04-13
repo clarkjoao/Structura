@@ -2,7 +2,7 @@ import { useCallback, useMemo, type MutableRefObject } from "react";
 import type { TFunction } from "i18next";
 import type { Node } from "@xyflow/react";
 import type { Component, Connection, Diagram, DiagramModel, ServiceDefinition } from "@/features/diagram";
-import type { CanvasVisualState } from "./useCanvasVisualState";
+import type { NodeSelectionState } from "@/features/canvas/hooks/useCanvasVisualState";
 import { useCanvasConnectionDerivations } from "../edges/useCanvasConnectionDerivations";
 import { useCanvasNodes, type DiagramSceneState } from "../nodes/useCanvasNodes";
 import type { Flow } from "@/features/diagram";
@@ -24,11 +24,17 @@ export interface UseCanvasGraphStateParams {
   resolved: ResolvedSnapshot | null;
   diagramSceneState: DiagramSceneState | null;
   flows: Flow[];
-  visualContext: {
-    visualState: CanvasVisualState;
-    dragTargetPanelId: string | null;
-    unparentCandidatePanelId: string | null;
+  nodeSelectionState: NodeSelectionState;
+  selectionCallbacks: {
+    setSelectedEdgeId: (id: string | null) => void;
+    setContextMenu: (v: null) => void;
+    setSelectedNodeIds: (ids: Set<string>) => void;
+    setSelectedNodeId: (id: string | null) => void;
   };
+  selectedEdgeId: string | null;
+  visibleTags: Set<string> | null;
+  setNoteInlineEditingId: (id: string | null) => void;
+  setJsonViewerInlineEditingId: (id: string | null) => void;
   localNodesRef: MutableRefObject<Node[]>;
   innerOnNodesChange: NodeDragParenting["onNodesChange"];
   visibleComponents: Component[];
@@ -57,7 +63,12 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     resolved,
     diagramSceneState,
     flows,
-    visualContext,
+    nodeSelectionState,
+    selectionCallbacks,
+    selectedEdgeId,
+    visibleTags,
+    setNoteInlineEditingId,
+    setJsonViewerInlineEditingId,
     localNodesRef,
     innerOnNodesChange,
     visibleComponents,
@@ -72,9 +83,19 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     updateNodeInternals,
     t,
   } = params;
-  const { visualState, dragTargetPanelId, unparentCandidatePanelId } = visualContext;
+  const {
+    selectedNodeId,
+    selectedNodeIds,
+    highlightedNodeIds,
+    dragTargetPanelId,
+    unparentCandidatePanelId,
+    isNodeHiddenByTagFilter,
+  } = nodeSelectionState;
   const { compareState } = compareContext;
   const { flowState, isViewingCoverage, onPlayFlow } = flowContext;
+  // NOTE: `flows` is still forwarded to `useCanvasNodes` because node descriptors consume
+  // full flow objects today. Migrating `dataCtx` dependencies to `flowIds` is deferred to
+  // a safer follow-up to avoid behavioral regressions in node rendering.
 
   const journeyPlayer = useJourneyPlayer();
   const journeyHighlight = useJourneyCanvasHighlight();
@@ -115,9 +136,9 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     isCompareMode: compareState.isCompareMode,
     visibleComponents,
     panelIds,
-    selectedNodeId: visualState.selectedNodeId,
-    selectedNodeIds: visualState.selectedNodeIds,
-    highlightedNodeIds: visualState.highlightedNodeIds,
+    selectedNodeId,
+    selectedNodeIds,
+    highlightedNodeIds,
     serviceRegistry,
     allDiagrams,
     handleDrillDown,
@@ -136,31 +157,28 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     activeFlowId: flowState.activeFlow?.id ?? null,
     onPlayFlow,
     onAddEndpointToGroup: handleAddEndpointToGroup,
-    isNodeHiddenByTagFilter: visualState.isNodeHiddenByTagFilter,
-    setNoteInlineEditingId: visualState.setNoteInlineEditingId,
-    setJsonViewerInlineEditingId: visualState.setJsonViewerInlineEditingId,
+    isNodeHiddenByTagFilter,
+    setNoteInlineEditingId,
+    setJsonViewerInlineEditingId,
     updateComponent: actions.updateComponent,
   });
 
   
   
   
-  const {
-    setSelectedEdgeId,
-    setContextMenu,
-    setSelectedNodeIds,
-    setSelectedNodeId,
-  } = visualState;
-
   const onSelectionFromChanges = useCallback(
     (selectedIds: string[]) => {
       if (selectedIds.length === 0) return;
-      setSelectedEdgeId(null);
-      setContextMenu(null);
-      setSelectedNodeIds(new Set(selectedIds));
-      setSelectedNodeId(selectedIds[0] ?? null);
+      selectionCallbacks.setSelectedEdgeId(null);
+      selectionCallbacks.setContextMenu(null);
+      selectionCallbacks.setSelectedNodeIds(new Set(selectedIds));
+      selectionCallbacks.setSelectedNodeId(selectedIds[0] ?? null);
     },
-    [setSelectedEdgeId, setContextMenu, setSelectedNodeIds, setSelectedNodeId],
+    [selectionCallbacks],
+  );
+  const visibleTagsKey = useMemo(
+    () => (visibleTags ? [...visibleTags].sort().join("\x00") : null),
+    [visibleTags],
   );
 
   const { nodes, onNodesChange } = useLocalNodes(
@@ -175,7 +193,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     diagram,
     visibleConnections,
     edgeHandleAssignments,
-    selectedEdgeId: visualState.selectedEdgeId,
+    selectedEdgeId,
     isPlaying: flowState.isPlayingEffective,
     isCompareMode: compareState.isCompareMode,
     compareConnectionOpacity: compareState.compareConnectionOpacity,
@@ -183,7 +201,8 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     flowHighlight: effectiveFlowHighlight,
     recordingInfo: flowState.recordingInfo,
     coverage: flowState.coverage,
-    visibleTags: visualState.visibleTags,
+    visibleTags,
+    visibleTagsKey,
   });
 
   useConnectionInternalsSync(connectionCountPerNode, updateNodeInternals);

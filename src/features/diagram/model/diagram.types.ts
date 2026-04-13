@@ -126,7 +126,7 @@ export interface SceneDiff {
   id: string;
   name: string;
   color: string;
-  createdAt: string;
+  createdAt: number;
   addedComponents: Record<string, Component>;
   addedConnections: Record<string, Connection>;
   removedComponentIds: string[];
@@ -141,8 +141,8 @@ export interface Diagram {
   description?: string;
   level: Level;
   domain?: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: number;
+  updatedAt: number;
   snapshot: ModelDraft;
   nodeLayouts: Record<string, NodeLayout>;
   edgeLayouts: EdgeLayout[];

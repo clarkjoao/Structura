@@ -300,7 +300,7 @@ export function importStructurizr(dsl: string): Diagram {
     );
   }
 
-  const now = new Date().toISOString();
+  const now = Date.now();
   const diagramId = generateId("d");
 
   const idMap = new Map<string, string>();
