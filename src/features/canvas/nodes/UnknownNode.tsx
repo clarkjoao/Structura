@@ -61,8 +61,6 @@ const UnknownNode = memo(({ data, selected }: NodeProps) => {
         {!d.compareBadges && d.sceneBadge && (
           <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
         )}
-
-        {}
         <div className="flex items-center gap-2 px-3 py-2 border-b border-dashed border-orange-300/50">
           <CircleHelp className="h-4 w-4 shrink-0 text-orange-400" />
           <span className="text-xs font-medium truncate flex-1 text-muted-foreground">
@@ -72,8 +70,6 @@ const UnknownNode = memo(({ data, selected }: NodeProps) => {
             {t("unknownNode.badge")}
           </span>
         </div>
-
-        {}
         {d.rawContent ? (
           <div className="flex-1 overflow-auto px-3 py-2 min-h-0">
             <pre className="text-[11px] text-muted-foreground whitespace-pre-wrap break-words font-mono leading-relaxed">

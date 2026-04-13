@@ -90,8 +90,6 @@ export default function EndpointPanel({
             ))}
           </div>
         </div>
-
-        {}
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
             {t("endpointPanel.pathLabel")}
@@ -103,8 +101,6 @@ export default function EndpointPanel({
             className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           />
         </div>
-
-        {}
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
             {t("endpointPanel.description")}
@@ -117,8 +113,6 @@ export default function EndpointPanel({
             className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
           />
         </div>
-
-        {}
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
@@ -239,8 +233,6 @@ export default function EndpointPanel({
             ))}
           </div>
         </div>
-
-        {}
         <div className="pt-2 border-t border-border">
           <button
             type="button"

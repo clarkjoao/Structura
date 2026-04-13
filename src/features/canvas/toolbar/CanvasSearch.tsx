@@ -110,8 +110,6 @@ export default function CanvasSearch({ onClose, onSelectResult, components }: Ca
             {t("canvasSearch.escKey")}
           </kbd>
         </div>
-
-        {}
         {results.length > 0 && (
           <div className="max-h-80 overflow-y-auto py-1">
             {results.map((comp, i) => (
@@ -145,15 +143,11 @@ export default function CanvasSearch({ onClose, onSelectResult, components }: Ca
             ))}
           </div>
         )}
-
-        {}
         {query && results.length === 0 && (
           <div className="px-4 py-6 text-center text-sm text-muted-foreground">
             {t("canvasSearch.noResultsFor", { query })}
           </div>
         )}
-
-        {}
         {results.length > 0 && (
           <div className="px-4 py-2 border-t border-border flex items-center gap-3 text-[10px] text-muted-foreground">
             <span>

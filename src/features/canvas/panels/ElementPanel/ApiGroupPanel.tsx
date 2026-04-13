@@ -60,8 +60,6 @@ export default function ApiGroupPanel({
             className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           />
         </div>
-
-        {}
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
             {t("apiGroup.protocolLabel")}
@@ -84,8 +82,6 @@ export default function ApiGroupPanel({
             ))}
           </div>
         </div>
-
-        {}
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
             {t("apiGroup.basePathLabel")}
@@ -97,8 +93,6 @@ export default function ApiGroupPanel({
             className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           />
         </div>
-
-        {}
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
             {t("apiGroup.slaRateLimitLabel")}
@@ -113,8 +107,6 @@ export default function ApiGroupPanel({
             {t("apiGroup.slaHint")}
           </p>
         </div>
-
-        {}
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
             {t("apiGroup.endpointsCount", { count: endpoints.length })}
@@ -189,8 +181,6 @@ export default function ApiGroupPanel({
             {t("apiGroup.addEndpoint")}
           </button>
         </div>
-
-        {}
         <div className="pt-2 border-t border-border">
           <button
             type="button"

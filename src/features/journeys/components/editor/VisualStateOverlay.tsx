@@ -1,6 +1,8 @@
+import { useMemo } from "react";
 import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { JourneyStep } from "../../types";
+import { getSafeJourneyVisual } from "../../utils/step-media.utils";
 
 interface VisualStateOverlayProps {
   step: JourneyStep;
@@ -9,8 +11,8 @@ interface VisualStateOverlayProps {
 
 export function VisualStateOverlay({ step, onClose }: VisualStateOverlayProps) {
   const { t } = useTranslation();
-  const hasMedia = step.mediaContent || step.svgContent;
-  if (!hasMedia) return null;
+  const visual = useMemo(() => getSafeJourneyVisual(step), [step]);
+  if (!visual) return null;
 
   return (
     <div
@@ -33,23 +35,18 @@ export function VisualStateOverlay({ step, onClose }: VisualStateOverlayProps) {
           <X className="h-4 w-4" />
         </button>
 
-        {step.mediaContent?.type === "svg" ? (
+        {visual.kind === "svg" ? (
           <div
             className="p-6 [&_svg]:h-auto [&_svg]:max-h-[75vh] [&_svg]:w-auto [&_svg]:max-w-full"
-            dangerouslySetInnerHTML={{ __html: step.mediaContent.data }}
+            dangerouslySetInnerHTML={{ __html: visual.html }}
           />
-        ) : step.mediaContent?.type === "image" ? (
+        ) : (
           <img
-            src={step.mediaContent.data}
+            src={visual.src}
             alt=""
             className="block max-h-[75vh] w-auto max-w-full object-contain"
           />
-        ) : step.svgContent ? (
-          <div
-            className="p-6 [&_svg]:h-auto [&_svg]:max-h-[75vh] [&_svg]:w-auto [&_svg]:max-w-full"
-            dangerouslySetInnerHTML={{ __html: step.svgContent }}
-          />
-        ) : null}
+        )}
       </div>
     </div>
   );

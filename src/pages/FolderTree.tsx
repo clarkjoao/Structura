@@ -220,8 +220,6 @@ export function FolderTree({
             {totalDiagrams}
           </span>
         </div>
-
-        {}
         <div className="h-px bg-sidebar-border mx-1 my-1.5" />
 
         {addingUnderParent === ADD_AT_ROOT && (
@@ -435,15 +433,11 @@ function FolderTreeItem({
             <span className="w-3" />
           )}
         </button>
-
-        {}
         {isExpanded ? (
           <FolderOpen className="h-4 w-4 shrink-0 text-amber-500/80" />
         ) : (
           <Folder className="h-4 w-4 shrink-0 text-amber-500/80" />
         )}
-
-        {}
         {isEditing ? (
           <Input
             value={editName}
@@ -461,8 +455,6 @@ function FolderTreeItem({
         ) : (
           <span className="min-w-0 flex-1 truncate">{folder.name}</span>
         )}
-
-        {}
         {!isEditing && (
           <>
             {totalCount > 0 && (

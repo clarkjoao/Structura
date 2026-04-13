@@ -116,8 +116,6 @@ export function WorkspaceMergeDialog({
             </p>
           </div>
         </div>
-
-        {}
         <div className="flex items-center gap-2 mb-4">
           <div className="flex items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 text-[11px] font-medium text-emerald-400">
             <CheckCircle2 className="h-3.5 w-3.5" />
@@ -134,8 +132,6 @@ export function WorkspaceMergeDialog({
             {t("workspaceMerge.local", { count: localDiagramCount })}
           </div>
         </div>
-
-        {}
         {scanResult.invalid.length > 0 && (
           <div className="mb-4">
             <button
@@ -165,16 +161,12 @@ export function WorkspaceMergeDialog({
             )}
           </div>
         )}
-
-        {}
         {scanResult.manifestError && (
           <div className="mb-4 text-[11px] text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-md px-3 py-2">
             <span className="font-medium">{t("workspaceMerge.manifestWarning")}</span>{" "}
             {scanResult.manifestError}
           </div>
         )}
-
-        {}
         {conflictCount > 0 && (
           <div className="mb-4 flex items-start gap-2 text-[11px] text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-md px-3 py-2">
             <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
@@ -183,8 +175,6 @@ export function WorkspaceMergeDialog({
             </span>
           </div>
         )}
-
-        {}
         <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
           <button
             onClick={onCancel}

@@ -20,7 +20,7 @@ import { sanitizeSvg } from "@/features/canvas";
 import { cn } from "@/lib/utils";
 import { useJourneyActions } from "../../store/selectors/journeys.selectors";
 import type { JourneyStep } from "../../types";
-import { stepHasVisualMedia } from "../../utils/step-media.utils";
+import { getSafeJourneyVisual } from "../../utils/step-media.utils";
 
 interface RightPanelProps {
   journeyId: string;
@@ -173,6 +173,8 @@ export function RightPanel({
     [isGlobalPlaying, persistMedia, processFile, step, t],
   );
 
+  const safeVisual = step ? getSafeJourneyVisual(step) : null;
+
   const handleDropzoneKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
       if (isGlobalPlaying) return;
@@ -264,7 +266,7 @@ export function RightPanel({
               <p className="text-center text-sm text-muted-foreground">
                 {t("journeys.editor.selectStepForVisual")}
               </p>
-            ) : stepHasVisualMedia(step) ? (
+            ) : safeVisual ? (
               <div className="grid gap-3">
                 <button
                   type="button"
@@ -281,23 +283,16 @@ export function RightPanel({
                       : undefined
                   }
                 >
-                  {step.mediaContent?.type === "svg" ? (
+                  {safeVisual?.kind === "svg" ? (
                     <div
                       className="w-full [&_svg]:h-auto [&_svg]:max-w-full"
-                      dangerouslySetInnerHTML={{
-                        __html: step.mediaContent.data,
-                      }}
+                      dangerouslySetInnerHTML={{ __html: safeVisual.html }}
                     />
-                  ) : step.mediaContent?.type === "image" ? (
+                  ) : safeVisual?.kind === "image" ? (
                     <img
-                      src={step.mediaContent.data}
+                      src={safeVisual.src}
                       alt={t("journeys.editor.mediaPreviewAlt")}
                       className="h-auto w-full"
-                    />
-                  ) : step.svgContent ? (
-                    <div
-                      className="w-full [&_svg]:h-auto [&_svg]:max-w-full"
-                      dangerouslySetInnerHTML={{ __html: step.svgContent }}
                     />
                   ) : null}
                   {isGlobalPlaying ? (
