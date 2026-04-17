@@ -230,9 +230,11 @@ export function useFileSystemStorage() {
     await mergeJourneysFromConnectedFolder();
 
     const merged = useDiagramStore.getState();
-    await flushWorkspaceToConnectedFolder(merged);
+    const flushed = await flushWorkspaceToConnectedFolder(merged);
 
-    await clearLocalCache();
+    if (flushed) {
+      await clearLocalCache();
+    }
     startFileSystemSync();
     setScanResult(null);
     setPendingMerge(false);
@@ -272,9 +274,11 @@ export function useFileSystemStorage() {
     await mergeJourneysFromConnectedFolder();
 
     const overwritten = useDiagramStore.getState();
-    await flushWorkspaceToConnectedFolder(overwritten);
+    const flushed = await flushWorkspaceToConnectedFolder(overwritten);
 
-    await clearLocalCache();
+    if (flushed) {
+      await clearLocalCache();
+    }
     startFileSystemSync();
     setScanResult(null);
     setPendingMerge(false);

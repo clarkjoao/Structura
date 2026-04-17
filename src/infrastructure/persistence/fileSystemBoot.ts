@@ -86,18 +86,21 @@ export function hydrateIconStoreFromWorkspace(workspace: WorkspaceIconSource): W
 
 export async function flushWorkspaceToConnectedFolder(
   state: DiagramStoreState,
-): Promise<void> {
-  if (!fileSystemAdapter.isConnected) return;
+): Promise<boolean> {
+  if (!fileSystemAdapter.isConnected) return false;
 
   fileSystemAdapter.setFolders(state.folders);
 
-  await Promise.all(Object.values(state.diagrams).map((diagram) => fileSystemAdapter.writeDiagram(diagram)));
+  const diagramWrites = await Promise.all(
+    Object.values(state.diagrams).map((diagram) => fileSystemAdapter.writeDiagram(diagram)),
+  );
+  if (diagramWrites.some((ok) => !ok)) return false;
 
   const customComponentTemplates = useCustomComponentStore.getState().templates;
 
   const iconLibrary = useIconStore.getState().icons;
 
-  await fileSystemAdapter.writeManifest({
+  const manifestOk = await fileSystemAdapter.writeManifest({
     version: 1,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -108,9 +111,11 @@ export async function flushWorkspaceToConnectedFolder(
     customComponentTemplates,
     iconLibrary,
   });
+  if (!manifestOk) return false;
 
   const journeys = useJourneyStore.getState().journeys;
-  await fileSystemAdapter.writeJourneys(journeys);
+  const journeysOk = await fileSystemAdapter.writeJourneys(journeys);
+  if (!journeysOk) return false;
 
   lastSyncedManifestFingerprint = manifestSemanticFingerprint({
     diagramIds: Object.keys(state.diagrams),
@@ -123,6 +128,8 @@ export async function flushWorkspaceToConnectedFolder(
   lastSyncedJourneysJson = JSON.stringify(journeys);
 
   recordFolderSyncSuccess();
+
+  return true;
 }
 
 
@@ -172,8 +179,10 @@ async function doReconnect(): Promise<boolean> {
       const memLatest = latestMsFromStore(current);
       const fsLatest = latestMsFromWorkspacePayload(workspace);
       if (memLatest > fsLatest) {
-        await flushWorkspaceToConnectedFolder(current);
-        await clearLocalCache();
+        const flushed = await flushWorkspaceToConnectedFolder(current);
+        if (flushed) {
+          await clearLocalCache();
+        }
         _reconnected = true;
         return true;
       }
@@ -380,8 +389,8 @@ export type ForceSaveToFolderResult = "ok" | "no_folder" | "error";
 export async function forceSaveToConnectedFolder(): Promise<ForceSaveToFolderResult> {
   if (!fileSystemAdapter.isConnected) return "no_folder";
   try {
-    await flushWorkspaceToConnectedFolder(useDiagramStore.getState());
-    return "ok";
+    const flushed = await flushWorkspaceToConnectedFolder(useDiagramStore.getState());
+    return flushed ? "ok" : "error";
   } catch {
     return "error";
   }
