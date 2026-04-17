@@ -163,6 +163,7 @@ export default function ShortcutsModal({
               />
               <ShortcutRow
                 label={t("shortcutsModal.paste")}
+                description={t("shortcutsModal.pasteDesc")}
                 keys={
                   <span className="inline-flex items-center gap-1">
                     <Kbd>Cmd/Ctrl</Kbd>

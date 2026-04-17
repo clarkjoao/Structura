@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { ReactFlowInstance } from "@xyflow/react";
@@ -132,6 +132,7 @@ const KEY = {
 
 export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   const { t } = useTranslation();
+  const lastPointerScreenRef = useRef<{ x: number; y: number } | null>(null);
   const c4ShortcutMap = useMemo(
     () =>
       ({
@@ -271,6 +272,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     exportDrawioXml,
     setSelectedNodeIds,
     pastedSvgDefaultName,
+    lastPointerScreenRef,
   });
 
   const recordingHandler = useRecordingShortcuts();
@@ -301,6 +303,14 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     updateNodeLayout,
     resolvedSnapshot,
   });
+
+  useEffect(() => {
+    const onPointerMove = (event: PointerEvent) => {
+      lastPointerScreenRef.current = { x: event.clientX, y: event.clientY };
+    };
+    document.addEventListener("pointermove", onPointerMove);
+    return () => document.removeEventListener("pointermove", onPointerMove);
+  }, []);
 
   useEffect(() => {
     const handler = async (event: KeyboardEvent) => {
@@ -415,10 +425,18 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       }
       if (mod && event.key === KEY.E) {
         event.preventDefault();
-        onOpenQuickInsert?.({
-          screenPos: { x: window.innerWidth / 2, y: window.innerHeight / 2 },
-          flowPos: getViewportCenter(reactFlowInstance, isPanelOpen),
-        });
+        const lastScreen = lastPointerScreenRef.current;
+        if (lastScreen) {
+          onOpenQuickInsert?.({
+            screenPos: lastScreen,
+            flowPos: reactFlowInstance.screenToFlowPosition(lastScreen),
+          });
+        } else {
+          onOpenQuickInsert?.({
+            screenPos: { x: window.innerWidth / 2, y: window.innerHeight / 2 },
+            flowPos: getViewportCenter(reactFlowInstance, isPanelOpen),
+          });
+        }
         return;
       }
     };

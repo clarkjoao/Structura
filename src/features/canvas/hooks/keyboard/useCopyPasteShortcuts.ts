@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, type MutableRefObject } from "react";
 import type { ReactFlowInstance } from "@xyflow/react";
 import {
   isPanelComponent,
@@ -14,7 +14,7 @@ import {
   isModKeyPressed,
   getSelectedNodes,
   getCopyableIds,
-  getPasteCenter,
+  getPasteFlowPosition,
   getCenterOfNodes,
   getOffsetPositionOfNodes,
   type KeyHandler,
@@ -48,6 +48,7 @@ interface UseCopyPasteShortcutsParams {
   exportDrawioXml: (componentIds: string[]) => string;
   setSelectedNodeIds: (ids: Set<string>) => void;
   pastedSvgDefaultName: string;
+  lastPointerScreenRef: MutableRefObject<{ x: number; y: number } | null>;
 }
 
 export function useCopyPasteShortcuts({
@@ -64,6 +65,7 @@ export function useCopyPasteShortcuts({
   exportDrawioXml,
   setSelectedNodeIds,
   pastedSvgDefaultName,
+  lastPointerScreenRef,
 }: UseCopyPasteShortcutsParams): KeyHandler {
   return useCallback(
     async (event: KeyboardEvent): Promise<boolean> => {
@@ -88,7 +90,11 @@ export function useCopyPasteShortcuts({
 
         const svgContent = await readSvgFromClipboard();
         if (svgContent) {
-          const pastePos = getPasteCenter(reactFlowInstance, reactFlowWrapperRef);
+          const pastePos = getPasteFlowPosition(
+            reactFlowInstance,
+            reactFlowWrapperRef,
+            lastPointerScreenRef.current,
+          );
           const newId = pasteSvgAsCanvasNode(svgContent, pastePos);
           if (newId) {
             reactFlowInstance.setNodes((nodes) =>
@@ -101,7 +107,11 @@ export function useCopyPasteShortcuts({
 
         const drawioXml = await readDrawioFromClipboard();
         if (drawioXml) {
-          const pasteCenter = getPasteCenter(reactFlowInstance, reactFlowWrapperRef);
+          const pasteCenter = getPasteFlowPosition(
+            reactFlowInstance,
+            reactFlowWrapperRef,
+            lastPointerScreenRef.current,
+          );
           const result = parseDrawioXml(drawioXml, pasteCenter, serviceRegistry);
           if (result.components.length > 0 || result.connections.length > 0) {
             const newIds = importDrawioResult(
@@ -158,7 +168,12 @@ export function useCopyPasteShortcuts({
             : null;
 
         const pastePos =
-          offsetPos ?? getPasteCenter(reactFlowInstance, reactFlowWrapperRef);
+          offsetPos ??
+          getPasteFlowPosition(
+            reactFlowInstance,
+            reactFlowWrapperRef,
+            lastPointerScreenRef.current,
+          );
         const newIds = pasteFromClipboard(pastePos);
         if (newIds.length > 0) {
           reactFlowInstance.setNodes((nodes) =>
@@ -225,6 +240,7 @@ export function useCopyPasteShortcuts({
       exportDrawioXml,
       setSelectedNodeIds,
       pastedSvgDefaultName,
+      lastPointerScreenRef,
     ],
   );
 }

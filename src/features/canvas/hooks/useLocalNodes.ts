@@ -73,7 +73,7 @@ export function useLocalNodes(
           dragHandle: sn.dragHandle,
           zIndex: sn.zIndex,
           connectable: sn.connectable,
-          selected: sn.selected,
+          selected: ln.selected,
           type: sn.type,
           position: useRemotePosition ? sn.position : ln.position,
           parentId: sn.parentId,
@@ -109,7 +109,6 @@ export function useLocalNodes(
           ln.dragHandle === sn.dragHandle &&
           ln.zIndex === sn.zIndex &&
           ln.connectable === sn.connectable &&
-          ln.selected === sn.selected &&
           ln.type === sn.type &&
           ln.position === positionToUse &&
           ln.parentId === sn.parentId &&
@@ -131,7 +130,7 @@ export function useLocalNodes(
           dragHandle: sn.dragHandle,
           zIndex: sn.zIndex,
           connectable: sn.connectable,
-          selected: sn.selected,
+          selected: ln.selected,
           type: sn.type,
           position: positionToUse,
           parentId: sn.parentId,

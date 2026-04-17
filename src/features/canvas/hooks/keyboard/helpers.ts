@@ -120,9 +120,21 @@ export function getPasteCenter(
   if (!wrapper) return { x: 300, y: 300 };
   const rect = wrapper.getBoundingClientRect();
   return rf.screenToFlowPosition({
-    x: rect.width / 2,
-    y: rect.height / 2,
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2,
   });
+}
+
+/** Flow position for paste: pointer if known, otherwise center of the canvas wrapper. */
+export function getPasteFlowPosition(
+  rf: ReactFlowInstance,
+  wrapperRef: React.RefObject<HTMLDivElement | null>,
+  lastPointerScreen: { x: number; y: number } | null,
+): { x: number; y: number } {
+  if (lastPointerScreen) {
+    return rf.screenToFlowPosition(lastPointerScreen);
+  }
+  return getPasteCenter(rf, wrapperRef);
 }
 
 export function getCenterOfNodes(
