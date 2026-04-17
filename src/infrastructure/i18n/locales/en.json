@@ -1109,6 +1109,17 @@
     "saveAsTemplate": "Save as Template"
   },
   "nodeContextMenu": {
+    "sectionEdit": "Edit",
+    "sectionGroup": "Grouping",
+    "copy": "Copy",
+    "copyCount": "Copy {{count}} elements",
+    "paste": "Paste",
+    "duplicate": "Duplicate",
+    "duplicateCount": "Duplicate {{count}} elements",
+    "delete": "Delete",
+    "deleteCount": "Delete {{count}} elements",
+    "group": "Group",
+    "ungroup": "Ungroup",
     "ordering": "Ordering",
     "bringToFront": "Bring to front",
     "sendToBack": "Send to back",
