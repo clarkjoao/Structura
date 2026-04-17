@@ -31,12 +31,30 @@ export function isModKeyPressed(e: KeyboardEvent): boolean {
 export function isInputFocused(target: EventTarget | null): boolean {
   const el = target as HTMLElement;
   if (!el) return false;
-  return (
-    el.tagName === "INPUT" ||
-    el.tagName === "TEXTAREA" ||
-    el.tagName === "SELECT" ||
-    !!el.isContentEditable
-  );
+  // return (
+  //   el.tagName === "INPUT" ||
+  //   el.tagName === "TEXTAREA" ||
+  //   el.tagName === "SELECT" ||
+  //   !!el.isContentEditable
+  // );
+
+  const tag = el.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+  if (el.isContentEditable) return true;
+  // Monaco renderiza div[role="textbox"] como editor principal
+  if (el.getAttribute?.("role") === "textbox") return true;
+  // Subir até 5 níveis para capturar editores que delegam foco a filhos
+  let parent = el.parentElement;
+  let depth = 0;
+  while (parent && depth < 5) {
+    if (parent.isContentEditable) return true;
+    const parentTag = parent.tagName;
+    if (parentTag === "INPUT" || parentTag === "TEXTAREA") return true;
+    if (parent.getAttribute?.("role") === "textbox") return true;
+    parent = parent.parentElement;
+    depth++;
+  }
+  return false;
 }
 
 export function getSelectedNodes(rf: ReactFlowInstance, fallbackId: string | null): Node[] {

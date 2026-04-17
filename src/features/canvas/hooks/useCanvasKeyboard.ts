@@ -304,6 +304,19 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     resolvedSnapshot,
   });
 
+  // Refs estáveis para handlers que mudam frequentemente — evita re-registrar o listener
+  const handleCopyPasteRef = useRef(handleCopyPaste);
+  handleCopyPasteRef.current = handleCopyPaste;
+
+  const selectionHandlerRef = useRef(selectionHandler);
+  selectionHandlerRef.current = selectionHandler;
+
+  const undoRedoHandlerRef = useRef(undoRedoHandler);
+  undoRedoHandlerRef.current = undoRedoHandler;
+
+  const groupHandlerRef = useRef(groupHandler);
+  groupHandlerRef.current = groupHandler;
+
   useEffect(() => {
     const onPointerMove = (event: PointerEvent) => {
       lastPointerScreenRef.current = { x: event.clientX, y: event.clientY };
@@ -377,13 +390,13 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
 
       if (isSearchOpen || isCommandPaletteOpen) return;
 
-      if (await handleCopyPaste(event)) return;
+      if (await handleCopyPasteRef.current(event)) return;
 
-      if (selectionHandler(event)) return;
+      if (selectionHandlerRef.current(event)) return;
 
-      if (undoRedoHandler(event)) return;
+      if (undoRedoHandlerRef.current(event)) return;
 
-      if (groupHandler(event)) return;
+      if (groupHandlerRef.current(event)) return;
 
       const mod = isModKeyPressed(event);
 
@@ -456,12 +469,6 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     isCommandPaletteOpen,
     forceSaveToFolder,
     recordingHandler,
-    handleCopyPaste,
-    importDrawioResult,
-    serviceRegistry,
-    selectionHandler,
-    undoRedoHandler,
-    groupHandler,
     onOpenSearch,
     onToggleDiagramSidebar,
     onOpenCommandPalette,
