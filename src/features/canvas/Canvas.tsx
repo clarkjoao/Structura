@@ -14,6 +14,7 @@ import { JourneysInDiagramPanel } from "./panels/JourneysInDiagramPanel";
 import { ConnectedSceneDrawer } from "./toolbar/SceneDrawer";
 import ElementPanel, { type FocusCanvasElementTarget } from "./panels/ElementPanel/index";
 import NodeContextMenu from "./panels/NodeContextMenu";
+import PaneContextMenu from "./panels/PaneContextMenu";
 import { nodeTypes } from "./nodes/node-types";
 import QuickInsertPopover from "./toolbar/QuickInsertPopover";
 import CanvasSearch from "./toolbar/CanvasSearch";
@@ -96,6 +97,8 @@ const Canvas = (props: CanvasProps = {}) => {
     onDrillUp,
     isCompareMode,
     allDiagramTags,
+    handleAutoLayout,
+    isAutoLayoutRunning,
   } = useCanvasController(props);
   const { pendingPreviews, accept: acceptSuggestion, reject: rejectSuggestion } =
     useLLMChat({
@@ -483,6 +486,17 @@ const Canvas = (props: CanvasProps = {}) => {
               />
             );
           })()}
+
+        {visualState.paneContextMenu && interactionMode.canEditCanvas && (
+          <PaneContextMenu
+            x={visualState.paneContextMenu.x}
+            y={visualState.paneContextMenu.y}
+            onAutoLayout={handleAutoLayout}
+            onClose={() => visualState.setPaneContextMenu(null)}
+            platform={getPlatform()}
+            isAutoLayoutRunning={isAutoLayoutRunning}
+          />
+        )}
 
         {visualState.quickInsert && (
           <QuickInsertPopover

@@ -1589,5 +1589,11 @@
       "searchPlaceholder": "Search AWS services…",
       "allCategories": "All categories"
     }
+  },
+  "autoLayout": {
+    "contextMenuLabel": "Auto Layout (LR)",
+    "applied": "Layout applied successfully",
+    "noConnectedNodes": "No connected nodes found",
+    "error": "Error computing layout"
   }
 }

@@ -20,6 +20,8 @@ export interface CanvasVisualState {
     sourceNodeId?: string | null;
   } | null;
   setQuickInsert: (value: CanvasVisualState["quickInsert"]) => void;
+  paneContextMenu: { x: number; y: number } | null;
+  setPaneContextMenu: (value: CanvasVisualState["paneContextMenu"]) => void;
   clearCanvasSelection: () => void;
   visibleTags: Set<string> | null;
   toggleTag: (tag: string) => void;
@@ -60,6 +62,7 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
     flowPos: { x: number; y: number };
     sourceNodeId?: string | null;
   } | null>(null);
+  const [paneContextMenu, setPaneContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [visibleTags, setVisibleTags] = useState<Set<string> | null>(null);
   const [noteInlineEditingId, setNoteInlineEditingId] = useState<string | null>(null);
   const [jsonViewerInlineEditingId, setJsonViewerInlineEditingId] = useState<string | null>(null);
@@ -108,6 +111,7 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
     setSelectedNodeIds((prev) => (prev.size === 0 ? prev : emptySet));
     setSelectedEdgeId((prev) => (prev === null ? prev : null));
     setContextMenu((prev) => (prev === null ? prev : null));
+    setPaneContextMenu((prev) => (prev === null ? prev : null));
     setNoteInlineEditingId(null);
     setJsonViewerInlineEditingId(null);
   }, [clearHighlightImpl, emptySet]);
@@ -142,6 +146,7 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
       highlightedNodeIds,
       contextMenu,
       quickInsert,
+      paneContextMenu,
       visibleTags,
       noteInlineEditingId,
       jsonViewerInlineEditingId,
@@ -151,6 +156,7 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
       setHighlight,
       setContextMenu,
       setQuickInsert,
+      setPaneContextMenu,
       toggleTag,
       showAllTags,
       showNoTags,
@@ -168,6 +174,7 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
       highlightedNodeIds,
       contextMenu,
       quickInsert,
+      paneContextMenu,
       visibleTags,
       noteInlineEditingId,
       jsonViewerInlineEditingId,
