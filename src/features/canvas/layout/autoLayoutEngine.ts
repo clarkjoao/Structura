@@ -19,15 +19,21 @@ const ELK_ROOT_ID = "__structura_elk_root__";
 const ELK_OPTIONS: Record<string, string> = {
   "elk.algorithm": "layered",
   "elk.direction": "RIGHT",
+  "elk.edgeRouting": "ORTHOGONAL",
+  "elk.layered.layering.strategy": "LONGEST_PATH",
   "elk.layered.spacing.nodeNodeBetweenLayers": "80",
   "elk.spacing.nodeNode": "40",
+  "elk.layered.spacing.edgeNodeBetweenLayers": "40",
+  "elk.layered.spacing.edgeEdgeBetweenLayers": "20",
   "elk.layered.crossingMinimization.strategy": "LAYER_SWEEP",
   "elk.layered.nodePlacement.strategy": "BRANDES_KOEPF",
   "elk.hierarchyHandling": "INCLUDE_CHILDREN",
   "elk.padding": "[top=40,left=40,bottom=40,right=40]",
   "elk.layered.crossingMinimization.forceNodeModelOrder": "false",
-  "elk.layered.spacing.edgeNodeBetweenLayers": "40",
-  "elk.layered.spacing.edgeEdgeBetweenLayers": "20",
+  "elk.layered.wrapping.strategy": "MULTI_EDGE",
+  "elk.layered.wrapping.cutting.strategy": "ARD",
+  "elk.layered.wrapping.additionalEdgeSpacing": "20",
+  "elk.aspectRatio": "2.5",
 };
 
 function dimensionsFor(
@@ -313,6 +319,22 @@ function buildSubtree(
   return node;
 }
 
+function extractEdgeWaypoints(laidOut: ElkNode): Map<string, Array<{ x: number; y: number }>> {
+  const result = new Map<string, Array<{ x: number; y: number }>>();
+  const edges = laidOut.edges ?? [];
+  for (const edge of edges) {
+    const section = edge.sections?.[0];
+    if (!section) continue;
+
+    const bendPoints = section.bendPoints;
+    if (!bendPoints?.length) continue;
+
+    result.set(edge.id, bendPoints.map((point) => ({ x: point.x, y: point.y })));
+  }
+
+  return result;
+}
+
 function flattenElkPositions(
   node: ElkNode,
   components: Record<string, Component>,
@@ -334,40 +356,54 @@ function flattenElkPositions(
   }
 }
 
+export interface AutoLayoutResult {
+  positions: Array<{ elementId: string; x: number; y: number }>;
+  edgeWaypoints: Map<string, Array<{ x: number; y: number }>>;
+  laidOutConnectionIds: string[];
+}
+
 export async function computeAutoLayout(
   components: Record<string, Component>,
   connections: Connection[],
   nodeLayouts: Record<string, NodeLayout>,
-): Promise<Array<{ elementId: string; x: number; y: number }>> {
+): Promise<AutoLayoutResult> {
   const connectionList = connections;
 
   const includedIds = collectIncludedIds(components, connectionList);
   if (!includedIds?.size) {
-    return [];
+    return {
+      positions: [],
+      edgeWaypoints: new Map(),
+      laidOutConnectionIds: [],
+    };
   }
 
   const rootChildIds = sortedChildIds(components, null, includedIds);
   if (rootChildIds.length === 0) {
-    return [];
+    return {
+      positions: [],
+      edgeWaypoints: new Map(),
+      laidOutConnectionIds: [],
+    };
   }
 
   const edgeEndpoints = buildEdgeEndpoints(connectionList, components, includedIds);
 
-  const elkEdges: ElkExtendedEdge[] = connectionList
-    .filter((connection) => {
-      return (
-        includedIds.has(connection.sourceId) &&
-        includedIds.has(connection.targetId)
-      );
-    })
-    .map((connection): ElkExtendedEdge => {
-      const ends = edgeEndpoints.get(connection.id);
-      return {
-        id: connection.id,
-        sources: ends ? [ends.sourceEnd] : [connection.sourceId],
-        targets: ends ? [ends.targetEnd] : [connection.targetId],
-      };
-    });
+  const filteredForLayout = connectionList.filter(
+    (connection) =>
+      includedIds.has(connection.sourceId) && includedIds.has(connection.targetId),
+  );
+
+  const elkEdges: ElkExtendedEdge[] = filteredForLayout.map((connection): ElkExtendedEdge => {
+    const ends = edgeEndpoints.get(connection.id);
+    return {
+      id: connection.id,
+      sources: ends ? [ends.sourceEnd] : [connection.sourceId],
+      targets: ends ? [ends.targetEnd] : [connection.targetId],
+    };
+  });
+
+  const laidOutConnectionIds = filteredForLayout.map((connection) => connection.id);
 
   const graph: ElkNode = {
     id: ELK_ROOT_ID,
@@ -381,8 +417,10 @@ export async function computeAutoLayout(
   const elk = new ELK();
   const laidOut = await elk.layout(graph);
 
+  const edgeWaypoints = extractEdgeWaypoints(laidOut);
+
   const positions: Array<{ elementId: string; x: number; y: number }> = [];
   flattenElkPositions(laidOut, components, positions);
 
-  return positions;
+  return { positions, edgeWaypoints, laidOutConnectionIds };
 }

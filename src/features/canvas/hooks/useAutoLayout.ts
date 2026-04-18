@@ -3,13 +3,13 @@ import { useReactFlow } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { computeAutoLayout } from "../layout/autoLayoutEngine";
-import { useDiagramActions } from "@/features/diagram";
+import { useDiagramActions, useDiagramStore } from "@/features/diagram";
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
 
 export function useAutoLayout() {
   const { t } = useTranslation();
   const { fitView } = useReactFlow();
-  const { applyAutoLayout } = useDiagramActions();
+  const { applyAutoLayout, updateEdgeWaypoints, clearEdgeWaypoints } = useDiagramActions();
   const [isRunning, setIsRunning] = useState(false);
 
   const runAutoLayout = useCallback(
@@ -22,11 +22,27 @@ export function useAutoLayout() {
       setIsRunning(true);
       try {
         const result = await computeAutoLayout(components, connections, nodeLayouts);
-        if (result.length === 0) {
+
+        if (result.positions.length === 0) {
           toast.info(t("autoLayout.noConnectedNodes"));
           return;
         }
-        applyAutoLayout(result);
+
+        applyAutoLayout(result.positions);
+
+        const diagramId = useDiagramStore.getState().activeDiagramId;
+        if (diagramId !== null) {
+          for (const connectionId of result.laidOutConnectionIds) {
+            clearEdgeWaypoints(diagramId, connectionId);
+          }
+
+          for (const [connectionId, waypoints] of result.edgeWaypoints) {
+            if (waypoints.length > 0) {
+              updateEdgeWaypoints(diagramId, connectionId, waypoints);
+            }
+          }
+        }
+
         requestAnimationFrame(() => {
           fitView({ duration: 400, padding: 0.2 });
         });
@@ -38,7 +54,14 @@ export function useAutoLayout() {
         setIsRunning(false);
       }
     },
-    [isRunning, applyAutoLayout, fitView, t],
+    [
+      isRunning,
+      applyAutoLayout,
+      updateEdgeWaypoints,
+      clearEdgeWaypoints,
+      fitView,
+      t,
+    ],
   );
 
   return { runAutoLayout, isRunning };
