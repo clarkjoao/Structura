@@ -418,8 +418,8 @@
   "filesystem": {
     "localFolder": "Local folder",
     "noFolderConnected": "No folder connected. Use 'Connect folder' to sync.",
-    "savedSuccess": "Saved to local folder",
-    "saveError": "Error saving to folder. Check permissions.",
+    "savedSuccess": "Saved to connected folder",
+    "saveError": "Failed to save to folder",
     "syncNow": "· synced now",
     "syncAgo": "· synced {{time}}",
     "neverSynced": "· never synced",

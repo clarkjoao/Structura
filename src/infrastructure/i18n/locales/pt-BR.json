@@ -418,8 +418,8 @@
   "filesystem": {
     "localFolder": "Pasta local",
     "noFolderConnected": "Nenhuma pasta conectada. Use 'Conectar pasta' para sincronizar.",
-    "savedSuccess": "Salvo na pasta local",
-    "saveError": "Erro ao salvar na pasta. Verifique as permissões.",
+    "savedSuccess": "Salvo na pasta conectada",
+    "saveError": "Erro ao salvar na pasta",
     "syncNow": "· sync agora",
     "syncAgo": "· sync {{time}}",
     "neverSynced": "· nunca sincronizado",

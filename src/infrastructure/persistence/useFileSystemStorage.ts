@@ -7,7 +7,11 @@ import { useDiagramStore } from "@/features/diagram";
 import { useJourneyStore } from "@/features/journeys";
 import { useCustomComponentStore, type CustomComponentTemplate } from "@/features/custom-components";
 import { useIconStore } from "@/features/icons";
-import { buildPersistStoragePayload, PERSIST_KEY } from "@/features/diagram";
+import {
+  buildPersistStoragePayload,
+  flushDiagramStoreToLocalStorageNow,
+  PERSIST_KEY,
+} from "@/features/diagram";
 import { defaultStorage } from "./LocalStorageAdapter";
 import {
   clearLocalStorageDiagramSyncTimestamp,
@@ -323,7 +327,7 @@ export function useFileSystemStorage() {
         return;
       }
 
-      const wrote = await defaultStorage.forceSave(PERSIST_KEY, payload);
+      const wrote = await flushDiagramStoreToLocalStorageNow({ force: true });
       if (!wrote) {
         toast.error(t("filesystem.backupFailedQuota"));
         setStatus("error");
@@ -363,17 +367,11 @@ export function useFileSystemStorage() {
         return;
       }
 
-      recordLocalStorageDiagramSyncSuccess();
-
       await performDisconnect();
 
-      const after = useDiagramStore.getState();
-      const flushPayload = buildPersistStoragePayload(after);
-      const flushed = await defaultStorage.forceSave(PERSIST_KEY, flushPayload);
+      const flushed = await flushDiagramStoreToLocalStorageNow({ force: true });
       if (!flushed) {
         toast.error(t("filesystem.backupFailedQuota"));
-      } else {
-        recordLocalStorageDiagramSyncSuccess();
       }
 
       

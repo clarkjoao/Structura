@@ -83,16 +83,22 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
 
   const forceSaveToFolder = useCallback(async () => {
     const fsResult = await forceSaveToConnectedFolder();
-    const localOk = await flushDiagramStoreToLocalStorageNow();
 
     if (fsResult === "ok") {
       toast.success(t("filesystem.savedSuccess"));
-    } else if (fsResult === "no_folder") {
-      toast.info(t("filesystem.noFolderConnected"));
-    } else {
-      toast.error(t("filesystem.saveError"));
+      return;
     }
 
+    if (fsResult === "error") {
+      toast.error(t("filesystem.saveError"));
+      const localOk = await flushDiagramStoreToLocalStorageNow({ force: true });
+      if (localOk) {
+        toast.success(t("localStorage.savedSuccess"));
+      }
+      return;
+    }
+
+    const localOk = await flushDiagramStoreToLocalStorageNow();
     if (localOk) {
       toast.success(t("localStorage.savedSuccess"));
     }
