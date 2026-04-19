@@ -1,3 +1,4 @@
+export { PositionSection, type PositionSectionProps } from "./PositionSection";
 export { BasicFieldsSection, type BasicFieldsSectionProps } from "./BasicFieldsSection";
 export { ServiceLinkSection, type ServiceLinkSectionProps } from "./ServiceLinkSection";
 export {

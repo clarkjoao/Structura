@@ -66,6 +66,34 @@ function sortedChildIds(
     .sort((a, b) => a.localeCompare(b));
 }
 
+/** Direct layout roots plus every descendant reachable under those roots within `panelId`. */
+function collectDescendantsUnderPanelRoots(
+  components: Record<string, Component>,
+  panelId: string,
+  layoutRootIds: readonly string[],
+): Set<string> {
+  const includedIds = new Set<string>();
+
+  const visitSubtree = (componentId: string): void => {
+    if (includedIds.has(componentId)) return;
+    includedIds.add(componentId);
+    for (const component of Object.values(components)) {
+      if (component.parentId === componentId) {
+        visitSubtree(component.id);
+      }
+    }
+  };
+
+  for (const rootId of layoutRootIds) {
+    const root = components[rootId];
+    if (root?.parentId === panelId) {
+      visitSubtree(rootId);
+    }
+  }
+
+  return includedIds;
+}
+
 function collectIncludedIds(
   components: Record<string, Component>,
   connections: Connection[],
@@ -423,4 +451,70 @@ export async function computeAutoLayout(
   flattenElkPositions(laidOut, components, positions);
 
   return { positions, edgeWaypoints, laidOutConnectionIds };
+}
+
+export async function computePanelChildLayout(
+  panelId: string,
+  components: Record<string, Component>,
+  connections: Connection[],
+  nodeLayouts: Record<string, NodeLayout>,
+): Promise<Array<{ elementId: string; x: number; y: number }>> {
+  const directChildren = Object.values(components)
+    .filter((component) => component.parentId === panelId && !isNoteComponent(component))
+    .sort((a, b) => a.id.localeCompare(b.id));
+
+  if (directChildren.length === 0) {
+    return [];
+  }
+
+  const childrenSet = new Set(directChildren.map((c) => c.id));
+
+  const internalConnections = connections.filter(
+    (connection) =>
+      childrenSet.has(connection.sourceId) && childrenSet.has(connection.targetId),
+  );
+
+  const connectedDirectIds = new Set<string>();
+  for (const connection of internalConnections) {
+    connectedDirectIds.add(connection.sourceId);
+    connectedDirectIds.add(connection.targetId);
+  }
+
+  const layoutRootIds = directChildren
+    .map((c) => c.id)
+    .filter((id) => connectedDirectIds.has(id));
+
+  if (layoutRootIds.length === 0) {
+    return [];
+  }
+
+  const includedIds = collectDescendantsUnderPanelRoots(components, panelId, layoutRootIds);
+
+  const edgeEndpoints = buildEdgeEndpoints(internalConnections, components, includedIds);
+
+  const elkEdges: ElkExtendedEdge[] = internalConnections.map((connection): ElkExtendedEdge => {
+    const ends = edgeEndpoints.get(connection.id);
+    return {
+      id: connection.id,
+      sources: ends ? [ends.sourceEnd] : [connection.sourceId],
+      targets: ends ? [ends.targetEnd] : [connection.targetId],
+    };
+  });
+
+  const graph: ElkNode = {
+    id: ELK_ROOT_ID,
+    layoutOptions: { ...ELK_OPTIONS },
+    children: layoutRootIds.map((childId) =>
+      buildSubtree(childId, components, nodeLayouts, includedIds, edgeEndpoints),
+    ),
+    edges: elkEdges,
+  };
+
+  const elk = new ELK();
+  const laidOut = await elk.layout(graph);
+
+  const positions: Array<{ elementId: string; x: number; y: number }> = [];
+  flattenElkPositions(laidOut, components, positions);
+
+  return positions;
 }

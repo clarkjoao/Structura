@@ -928,6 +928,11 @@
     "noDomain": "Sem domínio",
     "widthLabel": "Largura",
     "heightLabel": "Altura",
+    "positionSection": "Posição",
+    "positionX": "X",
+    "positionY": "Y",
+    "positionW": "W",
+    "positionH": "H",
     "fitToChildren": "Ajustar ao conteúdo",
     "lock": "Bloquear elemento",
     "unlock": "Desbloquear elemento",
@@ -1594,6 +1599,9 @@
     "contextMenuLabel": "Auto Layout (LR)",
     "applied": "Layout aplicado com sucesso",
     "noConnectedNodes": "Nenhum node com conexões encontrado",
+    "panelApplied": "Layout do painel aplicado",
+    "organizeChildren": "Organizar filhos (LR)",
+    "running": "Calculando...",
     "error": "Erro ao calcular layout"
   }
 }

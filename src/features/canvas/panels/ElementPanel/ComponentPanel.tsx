@@ -36,7 +36,9 @@ import {
   PanelStyleSection,
   ColorAccentSection,
   ExternalLinksSection,
+  PositionSection,
 } from "./sections";
+import { usePanelChildLayout } from "../../hooks/usePanelChildLayout";
 import { isComponentType } from "@/features/diagram";
 import { ImpactAnalysisPanel } from "./components/ImpactAnalysisPanel";
 
@@ -126,6 +128,7 @@ const ComponentPanel = ({
     updateExternalLink,
     removeExternalLink,
   } = useDiagramActions();
+  const { runPanelChildLayout, isRunning: isPanelLayoutRunning } = usePanelChildLayout();
   const [tab, setTab] = useState<Tab>("details");
   const [impactAnalysisOpen, setImpactAnalysisOpen] = useState(false);
   const [name, setName] = useState(component.name);
@@ -294,13 +297,23 @@ const ComponentPanel = ({
             {t("endpointPanel.ungroup")}
           </button>
           {!component.collapsed && (
-            <button
-              type="button"
-              onClick={() => fitGroupToChildren(component.id)}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-xs font-medium hover:bg-muted/50 transition-colors"
-            >
-              {t("elementPanel.fitToChildren")}
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => fitGroupToChildren(component.id)}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-xs font-medium hover:bg-muted/50 transition-colors"
+              >
+                {t("elementPanel.fitToChildren")}
+              </button>
+              <button
+                type="button"
+                onClick={() => runPanelChildLayout(component.id)}
+                disabled={isPanelLayoutRunning}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-xs font-medium hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isPanelLayoutRunning ? t("autoLayout.running") : t("autoLayout.organizeChildren")}
+              </button>
+            </>
           )}
         </div>
       )}
@@ -332,6 +345,12 @@ const ComponentPanel = ({
         />
       ) : (
         <div className="p-4 space-y-4 overflow-auto flex-1">
+          <PositionSection
+            componentId={component.id}
+            nodeLayout={resolved?.nodeLayouts[component.id]}
+            updateNodeLayout={updateNodeLayout}
+            isPanel={isPanel}
+          />
           {!isSimple && isAws && serviceInfo && (
             <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
               <AwsIcon iconName={serviceInfo.iconName} size={32} />

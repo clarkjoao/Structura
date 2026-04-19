@@ -929,6 +929,11 @@
     "noDomain": "No domain",
     "widthLabel": "Width",
     "heightLabel": "Height",
+    "positionSection": "Position",
+    "positionX": "X",
+    "positionY": "Y",
+    "positionW": "W",
+    "positionH": "H",
     "fitToChildren": "Fit to children",
     "lock": "Lock element",
     "unlock": "Unlock element",
@@ -1594,6 +1599,9 @@
     "contextMenuLabel": "Auto Layout (LR)",
     "applied": "Layout applied successfully",
     "noConnectedNodes": "No connected nodes found",
+    "panelApplied": "Panel layout applied",
+    "organizeChildren": "Organize children (LR)",
+    "running": "Running...",
     "error": "Error computing layout"
   }
 }

@@ -334,6 +334,8 @@ const Canvas = (props: CanvasProps = {}) => {
               minZoom={0.3}
               maxZoom={1.5}
               multiSelectionKeyCode={MULTI_SELECTION_KEY_CODES}
+              snapToGrid
+              snapGrid={[15, 15]}
               defaultViewport={initialViewport}
               fitView
               fitViewOptions={{ padding: 0.3 }}
