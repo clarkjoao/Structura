@@ -418,8 +418,8 @@
   "filesystem": {
     "localFolder": "Local folder",
     "noFolderConnected": "No folder connected. Use 'Connect folder' to sync.",
-    "savedSuccess": "Saved to local folder",
-    "saveError": "Error saving to folder. Check permissions.",
+    "savedSuccess": "Saved to connected folder",
+    "saveError": "Failed to save to folder",
     "syncNow": "· synced now",
     "syncAgo": "· synced {{time}}",
     "neverSynced": "· never synced",
@@ -929,6 +929,11 @@
     "noDomain": "No domain",
     "widthLabel": "Width",
     "heightLabel": "Height",
+    "positionSection": "Position",
+    "positionX": "X",
+    "positionY": "Y",
+    "positionW": "W",
+    "positionH": "H",
     "fitToChildren": "Fit to children",
     "lock": "Lock element",
     "unlock": "Unlock element",
@@ -1589,5 +1594,14 @@
       "searchPlaceholder": "Search AWS services…",
       "allCategories": "All categories"
     }
+  },
+  "autoLayout": {
+    "contextMenuLabel": "Auto Layout (LR)",
+    "applied": "Layout applied successfully",
+    "noConnectedNodes": "No connected nodes found",
+    "panelApplied": "Panel layout applied",
+    "organizeChildren": "Organize children (LR)",
+    "running": "Running...",
+    "error": "Error computing layout"
   }
 }

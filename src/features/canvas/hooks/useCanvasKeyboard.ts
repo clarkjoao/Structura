@@ -105,6 +105,7 @@ interface UseCanvasKeyboardParams {
     screenPos: { x: number; y: number };
     flowPos: { x: number; y: number };
   }) => void;
+  onAutoLayout?: () => void;
   forceSaveToFolder: () => void | Promise<void>;
 }
 
@@ -121,6 +122,7 @@ const KEY = {
   F: "f",
   G: "g",
   K: "k",
+  L: "l",
   N: "n",
   B: "b",
   V: "v",
@@ -182,6 +184,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     onToggleDiagramSidebar,
     onOpenCommandPalette,
     onOpenQuickInsert,
+    onAutoLayout,
     forceSaveToFolder,
   } = params;
 
@@ -355,6 +358,15 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
 
       if (!diagram) return;
 
+      const modAutoLayout = isModKeyPressed(event);
+      if (modAutoLayout && event.shiftKey && (event.key === KEY.L || event.key === "L")) {
+        event.preventDefault();
+        if (!isRecording && !isCompareMode && !isPlaying && !isFlowPanelOpen) {
+          onAutoLayout?.();
+        }
+        return;
+      }
+
       if (recordingHandler(event)) return;
 
       if (event.key === KEY.ESCAPE && isCompareMode) {
@@ -473,6 +485,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     onToggleDiagramSidebar,
     onOpenCommandPalette,
     onOpenQuickInsert,
+    onAutoLayout,
     c4ShortcutMap,
     reactFlowInstance,
     isPanelOpen,

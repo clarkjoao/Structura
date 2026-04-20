@@ -57,6 +57,7 @@ export function useCanvasEventHandlers({
     setSelectedEdgeId,
     setContextMenu,
     setQuickInsert,
+    setPaneContextMenu,
     clearHighlight,
     clearCanvasSelection,
   } = visualState;
@@ -108,6 +109,7 @@ export function useCanvasEventHandlers({
   const onNodeClick = useCallback(
     (e: React.MouseEvent, node: Node) => {
       setQuickInsert(null);
+      setPaneContextMenu(null);
       const nodeType = getNodeType(node);
       if (isEndpointType(nodeType) && node.parentId) {
         if (isCompareMode) return;
@@ -166,12 +168,14 @@ export function useCanvasEventHandlers({
       setSelectedEdgeId,
       setContextMenu,
       setQuickInsert,
+      setPaneContextMenu,
     ],
   );
 
   const onEdgeClick = useCallback(
     (_: React.MouseEvent, edge: Edge) => {
       setQuickInsert(null);
+      setPaneContextMenu(null);
       if (isRecording) {
         onRecordEdgeClick?.(edge.id, edge.sourceHandle ?? undefined);
         return;
@@ -195,6 +199,7 @@ export function useCanvasEventHandlers({
       setSelectedNodeIds,
       setContextMenu,
       setQuickInsert,
+      setPaneContextMenu,
     ],
   );
 
@@ -211,10 +216,11 @@ export function useCanvasEventHandlers({
 
       setSelectedEdgeId(null);
       setContextMenu(null);
+      setPaneContextMenu(null);
       setSelectedNodeIds(new Set(selectedIds));
       setSelectedNodeId(selectedIds[0] ?? null);
     },
-    [isCompareMode, setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId, setContextMenu],
+    [isCompareMode, setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId, setContextMenu, setPaneContextMenu],
   );
 
   const onNodeDoubleClick = useCallback(
@@ -223,6 +229,7 @@ export function useCanvasEventHandlers({
       clearHighlight();
       setSelectedEdgeId(null);
       setContextMenu(null);
+      setPaneContextMenu(null);
       prevSelectionRef.current = node.id;
       setSelectedNodeIds(new Set([node.id]));
       setSelectedNodeId(node.id);
@@ -245,6 +252,7 @@ export function useCanvasEventHandlers({
       setContextMenu,
       setSelectedNodeIds,
       setSelectedNodeId,
+      setPaneContextMenu,
       onRequestFocusTitle,
     ],
   );
@@ -256,6 +264,7 @@ export function useCanvasEventHandlers({
       setSelectedNodeId(null);
       setSelectedNodeIds(new Set());
       setContextMenu(null);
+      setPaneContextMenu(null);
       setSelectedEdgeId(edge.id);
       onRequestFocusTitle?.();
     },
@@ -269,6 +278,7 @@ export function useCanvasEventHandlers({
       setSelectedNodeIds,
       setSelectedEdgeId,
       setContextMenu,
+      setPaneContextMenu,
       onRequestFocusTitle,
     ],
   );
@@ -288,14 +298,10 @@ export function useCanvasEventHandlers({
       }
       clearHighlight();
       setContextMenu(null);
-      const flowPos = screenToFlowPosition({
+      setQuickInsert(null);
+      setPaneContextMenu({
         x: event.clientX,
         y: event.clientY,
-      });
-      setQuickInsert({
-        screenPos: { x: event.clientX, y: event.clientY },
-        flowPos,
-        sourceNodeId: null,
       });
     },
     [
@@ -308,8 +314,8 @@ export function useCanvasEventHandlers({
       visualState.selectedNodeIds,
       clearHighlight,
       setContextMenu,
-      screenToFlowPosition,
       setQuickInsert,
+      setPaneContextMenu,
     ],
   );
 
@@ -324,10 +330,11 @@ export function useCanvasEventHandlers({
         y: event.clientY,
         elementId: node.id,
       });
+      setPaneContextMenu(null);
       setSelectedNodeId(node.id);
       setSelectedEdgeId(null);
     },
-    [clearHighlight, isCompareMode, isRecording, setContextMenu, setSelectedNodeId, setSelectedEdgeId],
+    [clearHighlight, isCompareMode, isRecording, setContextMenu, setPaneContextMenu, setSelectedNodeId, setSelectedEdgeId],
   );
 
   const closePanel = useCallback(() => {

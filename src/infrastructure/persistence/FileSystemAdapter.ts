@@ -231,8 +231,8 @@ export class FileSystemAdapter {
     await clearHandleFromIDB();
   }
 
-  async writeDiagram(diagram: Diagram): Promise<void> {
-    if (!this.handle) return;
+  async writeDiagram(diagram: Diagram): Promise<boolean> {
+    if (!this.handle) return false;
     try {
       const segments = resolveDiagramPathSegments(diagram, this.folders);
       const dir = await getOrCreateDirectory(this.handle, segments);
@@ -242,8 +242,10 @@ export class FileSystemAdapter {
       const writable = await file.createWritable();
       await writable.write(JSON.stringify(diagram, null, 2));
       await writable.close();
+      return true;
     } catch (e) {
       console.error("[FileSystemAdapter] writeDiagram failed:", e);
+      return false;
     }
   }
 
@@ -312,8 +314,8 @@ export class FileSystemAdapter {
     }
   }
 
-  async writeManifest(manifest: WorkspaceManifest): Promise<void> {
-    if (!this.handle) return;
+  async writeManifest(manifest: WorkspaceManifest): Promise<boolean> {
+    if (!this.handle) return false;
     try {
       const file = await this.handle.getFileHandle(MANIFEST_FILE, {
         create: true,
@@ -321,14 +323,16 @@ export class FileSystemAdapter {
       const writable = await file.createWritable();
       await writable.write(JSON.stringify(manifest, null, 2));
       await writable.close();
+      return true;
     } catch (e) {
       console.error("[FileSystemAdapter] writeManifest failed:", e);
+      return false;
     }
   }
 
   /** Single-file workspace export; large journey sets may warrant sharding in a future schema. */
-  async writeJourneys(journeys: Record<string, Journey>): Promise<void> {
-    if (!this.handle) return;
+  async writeJourneys(journeys: Record<string, Journey>): Promise<boolean> {
+    if (!this.handle) return false;
     try {
       const file = await this.handle.getFileHandle(JOURNEYS_FILE, {
         create: true,
@@ -336,8 +340,10 @@ export class FileSystemAdapter {
       const writable = await file.createWritable();
       await writable.write(JSON.stringify(journeys, null, 2));
       await writable.close();
+      return true;
     } catch (e) {
       console.error("[FileSystemAdapter] writeJourneys failed:", e);
+      return false;
     }
   }
 

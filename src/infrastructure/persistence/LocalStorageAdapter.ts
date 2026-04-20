@@ -150,6 +150,22 @@ export class LocalStorageAdapter implements IStoragePort {
     }
   }
 
+  /**
+   * Same as {@link forceSave} but synchronous; for `beforeunload` where async cannot complete.
+   * Ignores {@link paused} (matches force-save semantics).
+   */
+  forceSaveSync(key: string, data: unknown): boolean {
+    const value =
+      typeof data === "string" ? data : JSON.stringify(data);
+    try {
+      localStorage.setItem(this.key(key), value);
+      this.invalidateFallbackKeyMemo();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async load<T>(key: string): Promise<T | null> {
     const s = await this.getItem(key);
     if (s === null) return null;

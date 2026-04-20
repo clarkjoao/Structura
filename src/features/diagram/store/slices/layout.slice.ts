@@ -183,4 +183,33 @@ export const layoutSlice = (
         touchDiagram(d);
       });
     },
+
+    applyAutoLayout: (layouts) => {
+      set((state) => {
+        const d = getActiveDiagram(state);
+        if (!d || layouts.length === 0) return;
+
+        pushHistory(state);
+
+        const scene = resolveActiveScene(d);
+
+        for (const { elementId, x, y } of layouts) {
+          if (scene && scene.nodeLayouts[elementId]) {
+            const layout = scene.nodeLayouts[elementId];
+            if (layout) {
+              layout.x = x;
+              layout.y = y;
+            }
+            continue;
+          }
+          const layout = d.nodeLayouts[elementId];
+          if (layout) {
+            layout.x = x;
+            layout.y = y;
+          }
+        }
+
+        touchDiagram(d);
+      });
+    },
   });

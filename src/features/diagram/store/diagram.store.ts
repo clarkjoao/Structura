@@ -86,15 +86,23 @@ export function createDiagramStore(
 export const useDiagramStore = createDiagramStore();
 
 
-export async function flushDiagramStoreToLocalStorageNow(): Promise<boolean> {
+export async function flushDiagramStoreToLocalStorageNow(
+  options: { force?: boolean } = {},
+): Promise<boolean> {
   const payload = buildPersistStoragePayload(useDiagramStore.getState());
-  if (defaultStorage.paused) {
+
+  if (defaultStorage.paused && !options.force) {
+    return false;
+  }
+
+  if (defaultStorage.paused && options.force) {
     const ok = await defaultStorage.forceSave(PERSIST_KEY, payload);
     if (ok) {
       recordLocalStorageDiagramSyncSuccess();
     }
     return ok;
   }
+
   const json = JSON.stringify({
     state: payload.state,
     version: payload.version,
@@ -102,6 +110,35 @@ export async function flushDiagramStoreToLocalStorageNow(): Promise<boolean> {
   await defaultStorage.setItem(PERSIST_KEY, json);
   recordLocalStorageDiagramSyncSuccess();
   return true;
+}
+
+/**
+ * Best-effort synchronous persist on tab close. Uses the same semantics as
+ * {@link flushDiagramStoreToLocalStorageNow} with `{ force: true }` when folder sync pauses local writes.
+ */
+export function flushDiagramStoreToLocalStorageBeforeUnloadSync(): void {
+  const payload = buildPersistStoragePayload(useDiagramStore.getState());
+
+  if (defaultStorage.paused) {
+    const ok = defaultStorage.forceSaveSync(PERSIST_KEY, payload);
+    if (ok) {
+      recordLocalStorageDiagramSyncSuccess();
+    }
+    return;
+  }
+
+  const json = JSON.stringify({
+    state: payload.state,
+    version: payload.version,
+  });
+  defaultStorage.setItemSync(PERSIST_KEY, json);
+  recordLocalStorageDiagramSyncSuccess();
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeunload", () => {
+    flushDiagramStoreToLocalStorageBeforeUnloadSync();
+  });
 }
 
 export function updateDiagramDescription(diagramId: string, description: string): void {
@@ -158,6 +195,7 @@ export const useDiagramActions = () =>
       bringToFront: s.bringToFront,
       sendToBack: s.sendToBack,
       fitGroupToChildren: s.fitGroupToChildren,
+      applyAutoLayout: s.applyAutoLayout,
       addService: s.addService,
       updateService: s.updateService,
       removeService: s.removeService,
@@ -237,6 +275,7 @@ export const useLayoutActions = () =>
       bringToFront: s.bringToFront,
       sendToBack: s.sendToBack,
       fitGroupToChildren: s.fitGroupToChildren,
+      applyAutoLayout: s.applyAutoLayout,
       commitNodeDrag: s.commitNodeDrag,
       batchCommitNodeDrag: s.batchCommitNodeDrag,
       setParent: s.setParent,

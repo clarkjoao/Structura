@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useCollab } from "@/features/collaboration";
 import { useReactFlow, useUpdateNodeInternals } from "@xyflow/react";
@@ -20,6 +20,7 @@ import { useCanvasStore } from "./useCanvasStore";
 import { useCanvasVisualState } from "./useCanvasVisualState";
 import type { NodeSelectionState } from "@/features/canvas/hooks/useCanvasVisualState";
 import { useInteractionMode } from "./useInteractionMode";
+import { useAutoLayout } from "./useAutoLayout";
 
 export function useCanvasController(canvasProps: CanvasProps = {}) {
   const { t } = useTranslation();
@@ -50,6 +51,11 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
         : null,
     [activeDiagramId, resolvedComponents, resolvedNodeLayouts, resolvedConnections],
   );
+  const { runAutoLayout, isRunning: isAutoLayoutRunning } = useAutoLayout();
+  const handleAutoLayout = useCallback(() => {
+    if (!diagram) return;
+    runAutoLayout(resolvedComponents, Object.values(resolvedConnections), resolvedNodeLayouts);
+  }, [diagram, runAutoLayout, resolvedComponents, resolvedConnections, resolvedNodeLayouts]);
   const flowState = useCanvasFlowState({ flows, isCompareMode: compareState.isCompareMode });
   const activeCollabElementId = visualState.selectedEdgeId ?? visualState.selectedNodeId;
   useEffect(() => {
@@ -70,6 +76,7 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     showScenes,
     setShowScenes,
     setFocusTitleTrigger,
+    onAutoLayout: handleAutoLayout,
   });
   const flowContext = useMemo(
     () => ({
@@ -190,5 +197,7 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     onDrillUp: canvasProps.onDrillUp,
     isCompareMode: compareState.isCompareMode,
     allDiagramTags,
+    handleAutoLayout,
+    isAutoLayoutRunning,
   };
 }
