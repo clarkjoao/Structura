@@ -7,6 +7,7 @@ import {
   BookmarkPlus,
   Copy,
   Group,
+  LayoutGrid,
   Layers2,
   Maximize2,
   Trash2,
@@ -28,6 +29,8 @@ interface Props {
   onDelete?: () => void;
   onGroup?: () => void;
   onUngroup?: () => void;
+  onAutoLayout?: () => void;
+  isAutoLayoutRunning?: boolean;
   selectionCount: number;
   platform: Platform;
   onClose: () => void;
@@ -49,6 +52,7 @@ interface MenuItemProps {
   platform: Platform;
   onClick: () => void;
   danger?: boolean;
+  disabled?: boolean;
 }
 
 function MenuItem({
@@ -59,13 +63,20 @@ function MenuItem({
   platform,
   onClick,
   danger = false,
+  disabled = false,
 }: MenuItemProps) {
   return (
     <button
+      type="button"
+      disabled={disabled}
       onClick={onClick}
       className={[
         "flex w-full items-center gap-2 px-3 py-2 text-xs transition-colors",
-        danger ? "text-destructive hover:bg-destructive/10" : "text-foreground hover:bg-surface-hover",
+        disabled
+          ? "cursor-not-allowed opacity-50"
+          : danger
+            ? "text-destructive hover:bg-destructive/10"
+            : "text-foreground hover:bg-surface-hover",
       ].join(" ")}
     >
       <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
@@ -103,6 +114,8 @@ const NodeContextMenu = ({
   onDelete,
   onGroup,
   onUngroup,
+  onAutoLayout,
+  isAutoLayoutRunning,
   selectionCount,
   platform,
   onClose,
@@ -279,6 +292,24 @@ const NodeContextMenu = ({
             platform={platform}
             onClick={() => {
               onSaveAsTemplate(elementId);
+              onClose();
+            }}
+          />
+        </>
+      ) : null}
+
+      {onAutoLayout ? (
+        <>
+          <Divider />
+          <MenuItem
+            icon={LayoutGrid}
+            label={t("autoLayout.contextMenuLabel")}
+            shortcutMac="⌘⇧L"
+            shortcutOther="Ctrl+Shift+L"
+            platform={platform}
+            disabled={isAutoLayoutRunning}
+            onClick={() => {
+              onAutoLayout();
               onClose();
             }}
           />
