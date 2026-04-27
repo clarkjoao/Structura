@@ -41,7 +41,7 @@ async function mergeJourneysFromConnectedFolder(): Promise<void> {
   }
 }
 
-export type FsStatus = "disconnected" | "connecting" | "connected" | "error";
+export type FsStatus = "disconnected" | "connecting" | "connected" | "error" | "needs_permission";
 
 export const isFileSystemSupported = "showDirectoryPicker" in globalThis;
 
@@ -90,7 +90,6 @@ export function useFileSystemStorage() {
   useEffect(() => {
     if (!isFileSystemSupported) return;
 
-    
     if (fileSystemAdapter.isConnected) {
       defaultStorage.paused = true;
       setStatus("connected");
@@ -103,6 +102,13 @@ export function useFileSystemStorage() {
         setStatus("connected");
         setFolderName(fileSystemAdapter.folderName);
         startFileSystemSync();
+        return;
+      }
+
+      // Handle retrieved from IDB but awaiting a user-gesture to grant permission.
+      if (fileSystemAdapter.needsPermission) {
+        setStatus("needs_permission");
+        setFolderName(fileSystemAdapter.pendingFolderName);
         return;
       }
 
@@ -124,6 +130,49 @@ export function useFileSystemStorage() {
         }
       });
     });
+  }, []);
+
+  const reconnectWithPermission = useCallback(async () => {
+    setStatus("connecting");
+    const granted = await fileSystemAdapter.requestReconnectPermission();
+    if (!granted) {
+      setStatus("needs_permission");
+      return;
+    }
+
+    defaultStorage.paused = true;
+    fileSystemAdapter.setFolders(useDiagramStore.getState().folders);
+
+    const workspace = await fileSystemAdapter.loadWorkspace();
+    if (workspace) {
+      const hydrated = hydrateIconStoreFromWorkspace(workspace);
+      useDiagramStore.setState((s) => ({
+        ...s,
+        diagrams: hydrated.diagrams as typeof s.diagrams,
+        serviceRegistry: workspace.serviceRegistry as typeof s.serviceRegistry,
+        folders: workspace.folders as typeof s.folders,
+        activeDiagramId: workspace.activeDiagramId,
+        past: [],
+        future: [],
+      }));
+      fileSystemAdapter.setFolders(
+        workspace.folders as unknown as ReturnType<typeof useDiagramStore.getState>["folders"],
+      );
+      const workspaceTemplates = workspace.customComponentTemplates;
+      if (workspaceTemplates) {
+        useCustomComponentStore.setState((state) => ({
+          templates: mergeCustomComponentTemplates(state.templates, workspaceTemplates),
+        }));
+      }
+      await mergeJourneysFromConnectedFolder();
+    }
+
+    await defaultStorage.delete(PERSIST_KEY);
+    clearLocalStorageDiagramSyncTimestamp();
+
+    setStatus("connected");
+    setFolderName(fileSystemAdapter.folderName);
+    startFileSystemSync();
   }, []);
 
   const connect = useCallback(async () => {
@@ -456,6 +505,7 @@ export function useFileSystemStorage() {
     status,
     folderName,
     connect,
+    reconnectWithPermission,
     syncFromFolder,
     syncing,
     requestDisconnect,

@@ -240,6 +240,8 @@ let _syncUnsub: (() => void) | null = null;
 let _syncTimer: ReturnType<typeof setTimeout> | null = null;
 let _flushChain: Promise<void> = Promise.resolve();
 let lastFlushedDiagrams: Record<string, Diagram> = {};
+/** Path segments captured at the last flush, keyed by diagramId. Used to detect moves. */
+let lastFlushedPathSegments: Record<string, string[]> = {};
 /** Skips redundant structura-manifest.json writes during incremental sync (reset in stopFileSystemSync). */
 let lastSyncedManifestFingerprint = "";
 let lastSyncedJourneysJson = "";
@@ -248,7 +250,12 @@ let lastSyncedJourneysJson = "";
 export function startFileSystemSync(): void {
   stopFileSystemSync();
 
-  lastFlushedDiagrams = { ...useDiagramStore.getState().diagrams };
+  const initialDiagrams = useDiagramStore.getState().diagrams;
+  lastFlushedDiagrams = { ...initialDiagrams };
+  lastFlushedPathSegments = {};
+  for (const [id, diagram] of Object.entries(initialDiagrams)) {
+    lastFlushedPathSegments[id] = fileSystemAdapter.computePathSegments(diagram);
+  }
 
   /**
    * Debounced folder sync runs in parallel with Zustand persist (PERSIST_DEBOUNCE_MS in
@@ -263,24 +270,44 @@ export function startFileSystemSync(): void {
         .then(async () => {
           const diagramState = useDiagramStore.getState();
           const prevDiagrams = lastFlushedDiagrams;
+          const prevPathSegments = lastFlushedPathSegments;
+
+          // Snapshot old path segments BEFORE updating adapter's folder state,
+          // so we can resolve the old file location for moves and deletes.
+          const oldSegments: Record<string, string[]> = { ...prevPathSegments };
 
           fileSystemAdapter.setFolders(diagramState.folders);
 
           let wroteSomething = false;
 
+          // Delete files for diagrams removed from the store entirely.
           const deletePromises = Object.entries(prevDiagrams)
             .filter(([id]) => !diagramState.diagrams[id])
-            .map(([id, previousDiagram]) =>
-              fileSystemAdapter.deleteDiagram(id, previousDiagram).then(() => {
+            .map(([id]) =>
+              fileSystemAdapter.deleteAtSegments(id, oldSegments[id] ?? []).then(() => {
                 wroteSomething = true;
               }),
             );
           await Promise.all(deletePromises);
 
-          fileSystemAdapter.setFolders(diagramState.folders);
+          // Detect moves: same diagram ID, but path segments changed.
+          // Delete the old file first; the write loop below will create the new one.
+          const movedIds = new Set<string>();
+          for (const [id, diagram] of Object.entries(diagramState.diagrams)) {
+            const prev = oldSegments[id];
+            if (!prev) continue; // new diagram, not a move
+            const curr = fileSystemAdapter.computePathSegments(diagram);
+            const pathChanged =
+              prev.length !== curr.length || prev.some((seg, i) => seg !== curr[i]);
+            if (pathChanged) {
+              movedIds.add(id);
+              await fileSystemAdapter.deleteAtSegments(id, prev);
+              wroteSomething = true;
+            }
+          }
 
           const diagramsToWrite = Object.entries(diagramState.diagrams).filter(
-            ([id, diagram]) => diagram !== prevDiagrams[id],
+            ([id, diagram]) => movedIds.has(id) || diagram !== prevDiagrams[id],
           );
           if (diagramsToWrite.length > 0) {
             await Promise.all(diagramsToWrite.map(([, diagram]) => fileSystemAdapter.writeDiagram(diagram)));
@@ -328,6 +355,10 @@ export function startFileSystemSync(): void {
           }
 
           lastFlushedDiagrams = { ...diagramState.diagrams };
+          lastFlushedPathSegments = {};
+          for (const [id, diagram] of Object.entries(diagramState.diagrams)) {
+            lastFlushedPathSegments[id] = fileSystemAdapter.computePathSegments(diagram);
+          }
         })
         .catch((error: unknown) => {
           console.error("[FileSystemSync] write failed:", error);
@@ -372,6 +403,7 @@ export function stopFileSystemSync(): void {
   }
   lastSyncedManifestFingerprint = "";
   lastSyncedJourneysJson = "";
+  lastFlushedPathSegments = {};
 }
 
 

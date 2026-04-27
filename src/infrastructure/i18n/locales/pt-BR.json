@@ -434,7 +434,10 @@
     "backupFailedSerialize": "Não foi possível serializar os diagramas para o localStorage. Veja o console.",
     "backupFailedQuota": "Armazenamento do navegador cheio ou bloqueado. Libere espaço ou permita armazenamento e tente de novo.",
     "backupFailedVerify": "O backup não apareceu no localStorage após salvar. Verifique permissões do site.",
-    "backupFailedGeneric": "Não foi possível salvar cópia no navegador. Tente de novo ou exporte JSON manualmente."
+    "backupFailedGeneric": "Não foi possível salvar cópia no navegador. Tente de novo ou exporte JSON manualmente.",
+    "needsPermissionLabel": "Reconectar workspace",
+    "needsPermissionTitle": "Clique para restaurar o acesso à pasta anteriormente conectada",
+    "needsPermissionFolder": "Reconectar \"{{name}}\""
   },
   "workspaceMerge": {
     "title": "Pasta com arquivos existentes",
