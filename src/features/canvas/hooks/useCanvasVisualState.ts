@@ -116,6 +116,11 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
     setJsonViewerInlineEditingId(null);
   }, [clearHighlightImpl, emptySet]);
 
+  useEffect(() => {
+    clearCanvasSelectionImpl();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDiagramId]);
+
   const derivedRef = useRef({
     clearHighlight: clearHighlightImpl,
     clearCanvasSelection: clearCanvasSelectionImpl,

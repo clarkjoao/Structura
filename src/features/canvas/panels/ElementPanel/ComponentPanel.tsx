@@ -349,7 +349,7 @@ const ComponentPanel = ({
             componentId={component.id}
             nodeLayout={resolved?.nodeLayouts[component.id]}
             updateNodeLayout={updateNodeLayout}
-            isPanel={isPanel}
+            isPanel={isPanel || isNote}
           />
           {!isSimple && isAws && serviceInfo && (
             <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
