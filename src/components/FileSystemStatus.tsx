@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 import { enUS, ptBR } from "date-fns/locale";
-import { FolderOpen, FolderX, Loader2, HardDrive, Database, RefreshCw } from "lucide-react";
+import { FolderOpen, FolderX, Loader2, HardDrive, Database, RefreshCw, KeyRound } from "lucide-react";
 import { useLastFolderSync } from "@/hooks/useLastFolderSync";
 import { useLastLocalStorageSync } from "@/hooks/useLastLocalStorageSync";
 import {
@@ -94,6 +94,7 @@ export function FileSystemStatus() {
     status,
     folderName,
     connect,
+    reconnectWithPermission,
     syncFromFolder,
     syncing,
     requestDisconnect,
@@ -161,6 +162,21 @@ export function FileSystemStatus() {
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
           {t("filesystem.connecting")}
         </div>
+      )}
+
+      {isFileSystemSupported && status === "needs_permission" && (
+        <button
+          onClick={reconnectWithPermission}
+          className="flex items-center gap-1.5 rounded-md border border-amber-500/40
+            bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-medium text-amber-400
+            hover:bg-amber-500/20 hover:border-amber-500/60 transition-all"
+          title={t("filesystem.needsPermissionTitle")}
+        >
+          <KeyRound className="h-3.5 w-3.5 shrink-0" />
+          {folderName
+            ? t("filesystem.needsPermissionFolder", { name: folderName })
+            : t("filesystem.needsPermissionLabel")}
+        </button>
       )}
 
       {status === "disconnected" && (

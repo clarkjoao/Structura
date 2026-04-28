@@ -434,7 +434,10 @@
     "backupFailedSerialize": "Could not serialize diagrams for localStorage. Check the console for details.",
     "backupFailedQuota": "Browser storage is full or blocked. Free space or allow storage, then try again.",
     "backupFailedVerify": "Backup was not found in localStorage after saving. Check site permissions.",
-    "backupFailedGeneric": "Could not save a copy to the browser. Try again or export JSON manually."
+    "backupFailedGeneric": "Could not save a copy to the browser. Try again or export JSON manually.",
+    "needsPermissionLabel": "Reconnect workspace",
+    "needsPermissionTitle": "Click to restore access to the previously connected folder",
+    "needsPermissionFolder": "Reconnect \"{{name}}\""
   },
   "workspaceMerge": {
     "title": "Folder with existing files",

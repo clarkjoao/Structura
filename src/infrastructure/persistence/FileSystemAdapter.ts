@@ -180,6 +180,8 @@ export interface WorkspaceScanResult {
 export class FileSystemAdapter {
   private handle: FileSystemDirectoryHandle | null = null;
   private folders: Record<string, Folder> = {};
+  /** Handle loaded from IDB that still requires a user-gesture permission request. */
+  private _pendingHandle: FileSystemDirectoryHandle | null = null;
 
   get isConnected(): boolean {
     return this.handle !== null;
@@ -189,18 +191,64 @@ export class FileSystemAdapter {
     return this.handle?.name ?? null;
   }
 
+  /** True when a handle was found in IDB but requires a user gesture to grant readwrite access. */
+  get needsPermission(): boolean {
+    return this._pendingHandle !== null && this.handle === null;
+  }
+
+  get pendingFolderName(): string | null {
+    return this._pendingHandle?.name ?? null;
+  }
+
   setFolders(folders: Record<string, Folder>): void {
     this.folders = folders;
   }
 
+  /**
+   * Attempts silent reconnection using only queryPermission (no user gesture required).
+   * If permission is "prompt", saves the handle as _pendingHandle so the user can
+   * later trigger requestReconnectPermission() from a click handler.
+   */
   async tryReconnect(): Promise<boolean> {
     try {
       const handle = await loadHandleFromIDB();
       if (!handle) return false;
-      const ok = await verifyPermission(handle);
-      if (!ok) return false;
-      this.handle = handle;
-      return true;
+
+      const directoryHandle = handle as FileSystemDirectoryHandleWithPermissions;
+      const state = await directoryHandle.queryPermission?.({ mode: "readwrite" });
+
+      if (state === "granted") {
+        this.handle = handle;
+        this._pendingHandle = null;
+        return true;
+      }
+
+      if (state === "prompt") {
+        // Store for user-gesture-triggered permission request; don't attempt requestPermission here.
+        this._pendingHandle = handle;
+      }
+
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Must be called from a user gesture (click handler).
+   * Requests readwrite permission for the pending handle and, if granted, activates the connection.
+   */
+  async requestReconnectPermission(): Promise<boolean> {
+    if (!this._pendingHandle) return false;
+    try {
+      const directoryHandle = this._pendingHandle as FileSystemDirectoryHandleWithPermissions;
+      const state = await directoryHandle.requestPermission?.({ mode: "readwrite" });
+      if (state === "granted") {
+        this.handle = this._pendingHandle;
+        this._pendingHandle = null;
+        return true;
+      }
+      return false;
     } catch {
       return false;
     }
@@ -228,7 +276,22 @@ export class FileSystemAdapter {
 
   async disconnect(): Promise<void> {
     this.handle = null;
+    this._pendingHandle = null;
     await clearHandleFromIDB();
+  }
+
+  computePathSegments(diagram: Diagram): string[] {
+    return resolveDiagramPathSegments(diagram, this.folders);
+  }
+
+  async deleteAtSegments(diagramId: string, segments: string[]): Promise<void> {
+    if (!this.handle) return;
+    try {
+      const dir = await getOrCreateDirectory(this.handle, segments);
+      await dir.removeEntry(`${diagramId}.json`);
+    } catch {
+      // File may not exist at this path (already moved/deleted), not an error
+    }
   }
 
   async writeDiagram(diagram: Diagram): Promise<boolean> {

@@ -58,8 +58,10 @@ import { DiagramGrid } from "@/pages/dashboard/DiagramGrid";
 import { DiagramList } from "@/pages/dashboard/DiagramList";
 import type { GlobalSearchHit, SortKey, ViewMode } from "@/pages/dashboard/dashboard.types";
 import { buildBreadcrumbPath } from "@/pages/dashboard/dashboard.utils";
+import { useWorkspaceFocusSync } from "@/hooks/useWorkspaceFocusSync";
 
 export default function DashboardPage() {
+  useWorkspaceFocusSync();
   const { t } = useTranslation();
   const levelLabels = useMemo(
     () => ({
