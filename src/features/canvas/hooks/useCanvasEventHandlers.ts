@@ -298,10 +298,12 @@ export function useCanvasEventHandlers({
       }
       clearHighlight();
       setContextMenu(null);
-      setQuickInsert(null);
-      setPaneContextMenu({
-        x: event.clientX,
-        y: event.clientY,
+      setPaneContextMenu(null);
+      const flowPos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      setQuickInsert({
+        screenPos: { x: event.clientX, y: event.clientY },
+        flowPos,
+        sourceNodeId: null,
       });
     },
     [
@@ -316,6 +318,7 @@ export function useCanvasEventHandlers({
       setContextMenu,
       setQuickInsert,
       setPaneContextMenu,
+      screenToFlowPosition,
     ],
   );
 
