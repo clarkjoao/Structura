@@ -1182,6 +1182,17 @@
   },
   "flows": {
     "panelTitle": "Flows",
+    "importFlow": "Import flow",
+    "importDialog": {
+      "title": "Import Mermaid sequence",
+      "flowName": "Flow name",
+      "validate": "Validate",
+      "import": "Import",
+      "newComponents": "{{count}} new component(s) will be created",
+      "newConnections": "{{count}} new connection(s) will be created",
+      "errors": "Errors",
+      "invalidDiagram": "Text must contain a valid sequenceDiagram"
+    },
     "copyDrawio": "Copy to Drawio",
     "copied": "Copied!",
     "export": "Export",

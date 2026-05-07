@@ -1,4 +1,4 @@
-import type { Component, Connection, NodeLayout } from "../../model/diagram.types";
+import type { Component, Connection, FlowStep, NodeLayout } from "../../model/diagram.types";
 import { current } from "immer";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
@@ -191,6 +191,46 @@ export const clipboardSlice = (
         touchDiagram(d);
       });
       return ids;
+    },
+
+    importMermaidSequenceResult: (
+      components: Component[],
+      connections: Connection[],
+      steps: Record<string, FlowStep>,
+      entryStepId: string,
+      flowName: string,
+      layouts: NodeLayout[],
+    ): string => {
+      let flowId = "";
+      set((state) => {
+        if (!state.activeDiagramId) return;
+        const d = state.diagrams[state.activeDiagramId];
+        if (!d) return;
+        pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+
+        components.forEach((comp, index) => {
+          d.snapshot.components[comp.id] = comp;
+          const layout = layouts[index];
+          if (layout) d.nodeLayouts[comp.id] = { ...layout, elementId: comp.id };
+        });
+
+        connections.forEach((conn) => {
+          d.snapshot.connections[conn.id] = conn;
+        });
+
+        flowId = generateId("flow");
+        d.snapshot.flows[flowId] = {
+          id: flowId,
+          name: flowName,
+          mermaid: "",
+          diagramId: state.activeDiagramId,
+          steps,
+          entryStepId,
+        };
+
+        touchDiagram(d);
+      });
+      return flowId;
     },
 
     clearClipboard: () => {

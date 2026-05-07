@@ -1,3 +1,5 @@
+import type { ConnectionIntent } from "./connection.types";
+
 export type FlowStepType = 'action' | 'condition' | 'note';
 
 export interface FlowBranch {
@@ -23,6 +25,7 @@ export interface FlowStep {
   payload?: string;
   payloadDirection?: 'request' | 'response';
   isAsync?: boolean;
+  connectionIntent?: ConnectionIntent;
 
   
   conditionLabel?: string;

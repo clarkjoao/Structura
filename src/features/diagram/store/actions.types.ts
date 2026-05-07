@@ -118,6 +118,14 @@ export interface AppActions {
     connections: Connection[],
     layouts: NodeLayout[],
   ) => string[];
+  importMermaidSequenceResult: (
+    components: Component[],
+    connections: Connection[],
+    steps: Record<string, FlowStep>,
+    entryStepId: string,
+    flowName: string,
+    layouts: NodeLayout[],
+  ) => string;
   clearClipboard: () => void;
 
   addScene: (name: string) => SceneDiff;
