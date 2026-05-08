@@ -5,10 +5,32 @@ import type { Flow, FlowStep } from "../model/flow.types";
 const INTENT_ARROW: Record<ConnectionIntent, string> = {
   dependency: "-->",
   call: "->>",
-  event: "-->>",
+  event: "-x",
   "data-flow": "=>>",
   "async-message": "-->>",
 };
+
+function getConditionKeyword(label?: string): "alt" | "loop" | "opt" | "par" | "critical" | "break" {
+  const normalized = label?.toLowerCase();
+  if (
+    normalized === "alt" ||
+    normalized === "loop" ||
+    normalized === "opt" ||
+    normalized === "par" ||
+    normalized === "critical" ||
+    normalized === "break"
+  ) {
+    return normalized;
+  }
+  return "alt";
+}
+
+function getBranchSeparator(keyword: string): "else" | "and" | "option" | null {
+  if (keyword === "alt") return "else";
+  if (keyword === "par") return "and";
+  if (keyword === "critical") return "option";
+  return null;
+}
 
 function toAlias(name: string): string {
   return (
@@ -107,10 +129,15 @@ export function stepsToMermaid(
     if (step.connectionId) {
       const connection = connections[step.connectionId];
       if (connection) {
-        const sourceName = components[connection.sourceId]?.name ?? "?";
-        const targetName = components[connection.targetId]?.name ?? "?";
-        const arrow = step.isAsync ? "-)" : INTENT_ARROW[connection.intent ?? "call"];
-        lines.push(`${indent}${alias(sourceName)}${arrow}${alias(targetName)}: ${connection.label}`);
+        const isResponse = step.payloadDirection === "response";
+        const sourceId = isResponse ? connection.targetId : connection.sourceId;
+        const targetId = isResponse ? connection.sourceId : connection.targetId;
+        const sourceName = components[sourceId]?.name ?? "?";
+        const targetName = components[targetId]?.name ?? "?";
+        const intent = step.connectionIntent ?? connection.intent ?? "call";
+        const arrow = step.isAsync ? "-)" : INTENT_ARROW[intent];
+        const messageLabel = step.note?.trim() || connection.label;
+        lines.push(`${indent}${alias(sourceName)}${arrow}${alias(targetName)}: ${messageLabel}`);
         if (step.description) {
           lines.push(`${indent}Note over ${alias(sourceName)}: ${step.description}`);
         }
@@ -152,9 +179,14 @@ export function stepsToMermaid(
     if (!step) return;
 
     if (step.type === "condition" && step.branches && step.branches.length > 0) {
-      lines.push(`${indent}alt ${step.conditionLabel ?? "condition"}`);
+      const keyword = getConditionKeyword(step.conditionLabel);
+      const firstLabel = step.branches[0]?.label?.trim();
+      lines.push(`${indent}${keyword}${firstLabel ? ` ${firstLabel}` : ""}`);
+      const separator = getBranchSeparator(keyword);
       step.branches.forEach((branch, branchIndex) => {
-        if (branchIndex > 0) lines.push(`${indent}else ${branch.label}`);
+        if (branchIndex > 0 && separator) {
+          lines.push(`${indent}${separator} ${branch.label}`);
+        }
         walk(branch.nextId, `${indent}  `);
       });
       lines.push(`${indent}end`);

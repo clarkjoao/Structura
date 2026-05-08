@@ -37,9 +37,18 @@ const CATEGORY_ICONS: Record<PatternCategory, string> = {
 interface PatternPickerProps {
   onClose: () => void;
   onBeforeInsert?: () => void;
+  setSelectedNodeId: (id: string | null) => void;
+  setSelectedNodeIds: (ids: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
+  setSelectedEdgeId: (id: string | null) => void;
 }
 
-const PatternPicker = ({ onClose, onBeforeInsert }: PatternPickerProps) => {
+const PatternPicker = ({
+  onClose,
+  onBeforeInsert,
+  setSelectedNodeId,
+  setSelectedNodeIds,
+  setSelectedEdgeId,
+}: PatternPickerProps) => {
   const { t } = useTranslation();
   const [activeCategory, setActiveCategory] = useState<ActiveCategory>("all");
   const [search, setSearch] = useState("");
@@ -114,13 +123,23 @@ const PatternPicker = ({ onClose, onBeforeInsert }: PatternPickerProps) => {
 
   const handleInsert = (template: PatternTemplate) => {
     onBeforeInsert?.();
-    insertPattern(template, getViewportCenter(rfInstance));
+    const createdIds = insertPattern(template, getViewportCenter(rfInstance));
+    if (createdIds.length > 0) {
+      setSelectedNodeId(createdIds[0]);
+      setSelectedNodeIds(new Set(createdIds));
+      setSelectedEdgeId(null);
+    }
     onClose();
   };
 
   const handleInsertUserTemplate = (template: UserTemplate) => {
     onBeforeInsert?.();
-    insertPattern(template, getViewportCenter(rfInstance));
+    const createdIds = insertPattern(template, getViewportCenter(rfInstance));
+    if (createdIds.length > 0) {
+      setSelectedNodeId(createdIds[0]);
+      setSelectedNodeIds(new Set(createdIds));
+      setSelectedEdgeId(null);
+    }
     onClose();
   };
 

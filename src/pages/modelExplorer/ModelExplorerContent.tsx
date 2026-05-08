@@ -7,7 +7,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { ReactFlowProvider } from "@xyflow/react";
+import { ReactFlowProvider, useReactFlow, type ReactFlowInstance } from "@xyflow/react";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -42,9 +42,23 @@ import { useJourneyPlayer } from "@/features/journeys";
 import { ExportModal } from "./ExportModal";
 import { ShareModal } from "./ShareModal";
 import type { ModelExplorerContentProps } from "./types";
+import { getViewportCenter } from "@/features/canvas/viewport-utils";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 
 const TRUNK_CONTEXT: RecordingContext = { mode: "trunk" };
 const EMPTY_BRANCH_MAP = new Map<string, BranchOwnerInfo>();
+
+function ReactFlowInstanceBridge({
+  onReady,
+}: {
+  onReady: (instance: ReactFlowInstance) => void;
+}) {
+  const reactFlowInstance = useReactFlow();
+  useEffect(() => {
+    onReady(reactFlowInstance);
+  }, [onReady, reactFlowInstance]);
+  return null;
+}
 
 export function ModelExplorerContent({
   showFlows,
@@ -147,17 +161,17 @@ export function ModelExplorerContent({
   useEffect(() => {
     if (flowMode.mode.kind !== "playing") return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (keyIs(e, KEY.ESCAPE)) {
         e.preventDefault();
         exitPlay();
         return;
       }
-      if (e.key === "ArrowLeft") {
+      if (keyIs(e, KEY.ARROW_LEFT)) {
         e.preventDefault();
         goBack();
         return;
       }
-      if (e.key === "ArrowRight") {
+      if (keyIs(e, KEY.ARROW_RIGHT)) {
         e.preventDefault();
         if (!isCondition) goNext();
       }
@@ -207,6 +221,7 @@ export function ModelExplorerContent({
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const lastCursorAtRef = useRef(0);
+  const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
 
   const handleCanvasPointerMove = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -384,6 +399,11 @@ export function ModelExplorerContent({
               onPointerMove={handleCanvasPointerMove}
               onPointerLeave={handleCanvasPointerLeave}
             >
+              <ReactFlowInstanceBridge
+                onReady={(instance) => {
+                  reactFlowInstanceRef.current = instance;
+                }}
+              />
               <Canvas
                 onOpenDiagram={handleOpenDiagram}
                 onDrillDownToDiagram={handleDrillDownToDiagram}
@@ -422,6 +442,11 @@ export function ModelExplorerContent({
               onPlay={play}
               onStartRecording={startRecordingWhenAllowed}
               onEditFlow={editFlowWhenAllowed}
+              onGetInsertPosition={() => {
+                const instance = reactFlowInstanceRef.current;
+                if (!instance) return { x: 0, y: 0 };
+                return getViewportCenter(instance, !!showFlows);
+              }}
               isViewingCoverage={isViewingCoverage}
               onToggleCoverage={() => setIsViewingCoverage((viewing) => !viewing)}
               panelActionsLocked={

@@ -4,6 +4,7 @@ import type { Diagram } from "@/features/diagram";
 import { useDiagramActions } from "@/features/diagram";
 import { DiagramDescriptionField } from "../DiagramDescriptionField";
 import { useTranslation } from "react-i18next";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 
 export interface CanvasToolbarDiagramPanelProps {
   diagram: Diagram;
@@ -86,8 +87,8 @@ export function CanvasToolbarDiagramPanel({
             onChange={(e) => setEditNameValue(e.target.value)}
             onBlur={commitRename}
             onKeyDown={(e) => {
-              if (e.key === "Enter") commitRename();
-              if (e.key === "Escape") {
+              if (keyIs(e, KEY.ENTER)) commitRename();
+              if (keyIs(e, KEY.ESCAPE)) {
                 setEditNameValue(diagram.name);
                 setIsEditingName(false);
               }

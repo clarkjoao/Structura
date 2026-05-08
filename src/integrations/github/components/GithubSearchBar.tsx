@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useTranslation } from "react-i18next";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 
 interface Props {
   loading: boolean;
@@ -90,7 +91,7 @@ export function GithubSearchBar({ loading, client, onSearch }: Props) {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") handleSearch();
+    if (keyIs(e, KEY.ENTER)) handleSearch();
   };
 
   return (

@@ -28,6 +28,14 @@ export function isModKeyPressed(e: KeyboardEvent): boolean {
   return platform === "mac" ? e.metaKey : e.ctrlKey;
 }
 
+export {
+  KEY,
+  keyIs,
+  keyIsEnterOrSpace,
+  keyIsOneOf,
+  keyMatchesLetter,
+} from "@/lib/keyboard-utils";
+
 export function isInputFocused(target: EventTarget | null): boolean {
   const el = target as HTMLElement;
   if (!el) return false;

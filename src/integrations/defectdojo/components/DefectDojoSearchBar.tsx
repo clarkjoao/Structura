@@ -6,6 +6,7 @@ import {
   type DDProductSearchField,
 } from "../defectdojo.service";
 import { useTranslation } from "react-i18next";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 
 interface Props {
   productTypes: DDProductType[];
@@ -48,7 +49,7 @@ export function DefectDojoSearchBar({
     : t("defectdojo.searchProduct");
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") handleSearch();
+    if (keyIs(e, KEY.ENTER)) handleSearch();
   };
 
   return (

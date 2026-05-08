@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { readPrefs, writePrefs } from "../utils/collab-preferences";
@@ -70,7 +71,7 @@ export function CollabJoinModal({ open, roomId, onJoin }: CollabJoinModalProps) 
               onChange={(event) => setUserName(event.target.value)}
               placeholder={t("collaboration.namePlaceholder")}
               autoFocus
-              onKeyDown={(event) => event.key === "Enter" && handleJoin()}
+              onKeyDown={(event) => keyIs(event, KEY.ENTER) && handleJoin()}
             />
           </div>
 

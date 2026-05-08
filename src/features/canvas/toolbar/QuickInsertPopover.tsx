@@ -26,6 +26,7 @@ import type { ComponentType } from "@/features/diagram";
 import { getDefaultNameForNewComponent, getLastEdgeStyle } from "@/features/diagram";
 import { PANEL_KINDS, getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/catalogs/aws";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 import AwsIcon from "../nodes/AwsIcon";
 import { useTranslation } from "react-i18next";
 import { useCustomComponentLibrary } from "@/features/custom-components";
@@ -198,7 +199,7 @@ const QuickInsertPopover = ({
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (keyIs(e, KEY.ESCAPE)) onClose();
     };
     const onMouseDown = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -407,21 +408,21 @@ const QuickInsertPopover = ({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Escape") {
+            if (keyIs(e, KEY.ESCAPE)) {
               onClose();
               return;
             }
-            if (e.key === "ArrowDown") {
+            if (keyIs(e, KEY.ARROW_DOWN)) {
               e.preventDefault();
               setSelectedIndex((index) => Math.min(index + 1, flatOptions.length - 1));
               return;
             }
-            if (e.key === "ArrowUp") {
+            if (keyIs(e, KEY.ARROW_UP)) {
               e.preventDefault();
               setSelectedIndex((index) => Math.max(index - 1, 0));
               return;
             }
-            if (e.key === "Enter") {
+            if (keyIs(e, KEY.ENTER)) {
               e.preventDefault();
               const option = flatOptions[selectedIndex];
               if (option) selectOption(option);

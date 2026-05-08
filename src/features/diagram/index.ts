@@ -85,6 +85,8 @@ export { applyHandleOrder } from "./utils/handle-order";
 
 
 export { stepsToMermaid, parseMermaidToSteps } from "./utils/flow-mermaid";
+export { parseMermaidSequence } from "./utils/import-mermaid-sequence";
+export type { MermaidImportPlan } from "./utils/import-mermaid-sequence";
 
 
 export {

@@ -36,6 +36,7 @@ import { getCenterOfNodes, getCopyableIds, getPlatform } from "./hooks/keyboard/
 
 
 const MULTI_SELECTION_KEY_CODES = ["Meta", "Control"];
+const PAN_ACTIVATION_KEY = getPlatform() === "mac" ? "Meta" : "Control";
 import CustomEdge from "./edges/CustomEdge";
 import type { CanvasProps } from "./canvas.types";
 import {
@@ -222,6 +223,9 @@ const Canvas = (props: CanvasProps = {}) => {
             onDrillUp={onDrillUp}
             isPanelOpen={isPanelOpen}
             onClearSelection={visualState.clearCanvasSelection}
+            setSelectedNodeId={visualState.setSelectedNodeId}
+            setSelectedNodeIds={visualState.setSelectedNodeIds}
+            setSelectedEdgeId={visualState.setSelectedEdgeId}
             onOpenScenes={() => setShowScenes(true)}
             isFlowActive={isFlowActive}
             allTags={allDiagramTags}
@@ -325,6 +329,7 @@ const Canvas = (props: CanvasProps = {}) => {
               panOnScroll
               panOnScrollMode={PanOnScrollMode.Free}
               selectionOnDrag={!inputProfile.prefersTouchCanvasUi}
+              panActivationKeyCode={inputProfile.prefersTouchCanvasUi ? null : PAN_ACTIVATION_KEY}
               selectionMode={SelectionMode.Partial}
               zoomOnScroll={false}
               zoomOnPinch

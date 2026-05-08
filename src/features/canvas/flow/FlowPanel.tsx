@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { X, Plus, Play, Trash2, Pencil, Copy, Check, Layers, BarChart2 } from "lucide-react";
+import { X, Plus, Play, Trash2, Pencil, Copy, Check, Layers, BarChart2, FileInput } from "lucide-react";
 import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
 import {
   useFlows,
@@ -9,13 +9,17 @@ import {
   useActiveDiagram,
   useComponents,
   useConnections,
+  useDiagramStore,
   getStepCount,
   getFlowParticipants,
   repairFlow,
   buildFlowDuplicatePatch,
   stepsToMermaid,
+  parseMermaidSequence,
 } from "@/features/diagram";
 import type { Flow } from "@/features/diagram";
+import { Button } from "@/components/ui/button";
+import MermaidImportDialog from "./MermaidImportDialog";
 import { validateFlow, type BrokenStep } from "./validateFlow";
 import BrokenFlowDialog from "./BrokenFlowDialog";
 
@@ -28,6 +32,7 @@ interface Props {
   onToggleCoverage?: () => void;
   panelActionsLocked?: boolean;
   panelActionsLockedTitle?: string;
+  onGetInsertPosition: () => { x: number; y: number };
 }
 
 const FlowPanel = ({
@@ -39,6 +44,7 @@ const FlowPanel = ({
   onToggleCoverage,
   panelActionsLocked = false,
   panelActionsLockedTitle,
+  onGetInsertPosition,
 }: Props) => {
   const { t } = useTranslation();
   const { isIdle } = useFlowMode();
@@ -49,9 +55,13 @@ const FlowPanel = ({
   const components = useComponents();
   const connections = useConnections();
   const { removeFlow, addFlow, updateFlow } = useDiagramActions();
+  const importMermaidSequenceResult = useDiagramStore(
+    (state) => state.importMermaidSequenceResult,
+  );
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [pendingPlay, setPendingPlay] = useState<{ flow: Flow; broken: BrokenStep[] } | null>(null);
+  const [showMermaidImport, setShowMermaidImport] = useState(false);
 
   const handlePlayWithValidation = (flow: Flow) => {
     if (!diagram) { onPlay(flow); return; }
@@ -89,6 +99,32 @@ const FlowPanel = ({
     }
   };
 
+  const handleMermaidImport = useCallback(
+    (text: string, flowName: string) => {
+      if (!activeDiagramId) return;
+      const anchor = onGetInsertPosition();
+      const plan = parseMermaidSequence(text, components, connections, anchor);
+      if (!plan.entryStepId) return;
+
+      importMermaidSequenceResult(
+        plan.newComponents,
+        plan.newConnections,
+        plan.steps,
+        plan.entryStepId,
+        flowName,
+        plan.layouts,
+      );
+      setShowMermaidImport(false);
+    },
+    [
+      activeDiagramId,
+      components,
+      connections,
+      importMermaidSequenceResult,
+      onGetInsertPosition,
+    ],
+  );
+
   return (
     <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
       <div className="flex items-center justify-between p-3 border-b border-border">
@@ -107,6 +143,15 @@ const FlowPanel = ({
               <BarChart2 className="h-3.5 w-3.5" /> {t("flowPanel.coverage")}
             </button>
           )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowMermaidImport(true)}
+            disabled={flowOrCompareLocked}
+            title={flowOrCompareLocked ? panelActionsLockedTitle : t("flows.importFlow")}
+          >
+            <FileInput className="h-4 w-4" />
+          </Button>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="h-4 w-4" />
           </button>
@@ -248,6 +293,11 @@ const FlowPanel = ({
           onRemoveSteps={(stepIds) => handleRemoveBrokenAndPlay(stepIds)}
         />
       )}
+      <MermaidImportDialog
+        open={showMermaidImport}
+        onOpenChange={setShowMermaidImport}
+        onImport={handleMermaidImport}
+      />
     </div>
   );
 };

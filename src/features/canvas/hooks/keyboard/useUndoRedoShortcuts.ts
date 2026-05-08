@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { isModKeyPressed, type KeyHandler } from "./helpers";
+import { isModKeyPressed, keyMatchesLetter, KEY, type KeyHandler } from "./helpers";
 
 interface UseUndoRedoShortcutsParams {
   undo: () => void;
@@ -15,13 +15,13 @@ export function useUndoRedoShortcuts({
       const mod = isModKeyPressed(e);
       if (!mod) return false;
 
-      if (e.shiftKey && (e.key === "z" || e.key === "Z")) {
+      if (e.shiftKey && keyMatchesLetter(e, KEY.Z)) {
         e.preventDefault();
         redo();
         return true;
       }
 
-      if (e.key === "z") {
+      if (keyMatchesLetter(e, KEY.Z)) {
         e.preventDefault();
         undo();
         return true;

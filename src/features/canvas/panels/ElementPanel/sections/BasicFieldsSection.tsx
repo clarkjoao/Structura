@@ -1,5 +1,6 @@
 import type { RefObject } from "react";
 import { useTranslation } from "react-i18next";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 import Field from "../components/Field";
 
 export interface BasicFieldsSectionProps {
@@ -96,7 +97,7 @@ export function BasicFieldsSection({
             value={tagInput}
             onChange={(event) => onChangeTagInput(event.target.value)}
             onKeyDown={(event) => {
-              if (event.key === "Enter" && tagInput.trim()) {
+              if (keyIs(event, KEY.ENTER) && tagInput.trim()) {
                 event.preventDefault();
                 onCommitTagInput();
               }

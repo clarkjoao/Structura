@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react";
+import { KEY, keyIsOneOf } from "@/lib/keyboard-utils";
 
 export function useModifierKey(): boolean {
   const [isModifierActive, setIsModifierActive] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Control" || event.key === "Meta") {
+      if (keyIsOneOf(event, [KEY.CONTROL, KEY.META])) {
         setIsModifierActive(true);
       }
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
-      if (event.key === "Control" || event.key === "Meta") {
+      if (keyIsOneOf(event, [KEY.CONTROL, KEY.META])) {
         setIsModifierActive(false);
       }
     };

@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import type { ServiceDefinition } from "@/features/diagram";
 import { ServiceSource } from "@/features/diagram";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 import { ChipInput } from "./ChipInput";
 
 export const ManualCreateForm = ({
@@ -50,7 +51,7 @@ export const ManualCreateForm = ({
           autoFocus
           value={name}
           onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && submit()}
+          onKeyDown={(e) => keyIs(e, KEY.ENTER) && submit()}
           className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         />
       </div>

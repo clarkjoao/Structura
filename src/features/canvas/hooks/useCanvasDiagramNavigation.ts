@@ -6,15 +6,12 @@ import { useRecentDiagrams } from "../navigation/useRecentDiagrams";
 
 
 interface CanvasDiagramNavParams {
-  
   diagram: Diagram | DiagramModel | null | undefined;
-  
   allDiagrams: Record<string, Diagram>;
-  
   diagramNavLocked: boolean;
+  clearCanvasSelection: () => void;
   actions: Pick<ReturnType<typeof useDiagramActions>, "openDiagram">;
   onOpenDiagram?: (id: string) => void;
-  
   diagramSidebarOpen?: boolean;
   onDiagramSidebarOpenChange?: (open: boolean) => void;
   navigate: NavigateFunction;
@@ -68,6 +65,7 @@ export function useCanvasDiagramNavigation(
     diagram,
     allDiagrams,
     diagramNavLocked,
+    clearCanvasSelection,
     actions,
     onOpenDiagram,
     diagramSidebarOpen: controlledDiagramSidebarOpen,
@@ -117,6 +115,7 @@ export function useCanvasDiagramNavigation(
         return;
       }
 
+      clearCanvasSelection();
       if (onOpenDiagram) {
         onOpenDiagram(id);
       } else {
@@ -124,7 +123,7 @@ export function useCanvasDiagramNavigation(
         navigate(`/model/${id}`);
       }
     },
-    [actions, allDiagrams, diagram?.id, diagramNavLocked, navigate, onOpenDiagram, setShowCommandPalette, setShowDiagramSidebar],
+    [actions, allDiagrams, clearCanvasSelection, diagram?.id, diagramNavLocked, navigate, onOpenDiagram, setShowCommandPalette, setShowDiagramSidebar],
   );
 
   useCloseAllOnNavLock({

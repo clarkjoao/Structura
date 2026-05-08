@@ -1,7 +1,15 @@
 import { useCallback } from "react";
 import type { ReactFlowInstance, Node } from "@xyflow/react";
 import type { Diagram, DiagramModel } from "@/features/diagram";
-import { isModKeyPressed, getSelectedNodes, type KeyHandler } from "./helpers";
+import {
+  isModKeyPressed,
+  keyMatchesLetter,
+  keyIs,
+  keyIsOneOf,
+  getSelectedNodes,
+  KEY,
+  type KeyHandler,
+} from "./helpers";
 
 interface UseSelectionShortcutsParams {
   diagram: Diagram | DiagramModel | null | undefined;
@@ -35,7 +43,7 @@ export function useSelectionShortcuts({
       if (!diagram) return false;
       const mod = isModKeyPressed(e);
 
-      if (e.key === "Escape") {
+      if (keyIs(e, KEY.ESCAPE)) {
         e.preventDefault();
         clearClipboard();
         reactFlowInstance.setNodes((nds: Node[]) =>
@@ -48,7 +56,7 @@ export function useSelectionShortcuts({
         return true;
       }
 
-      if (mod && e.key === "a") {
+      if (mod && keyMatchesLetter(e, KEY.A)) {
         e.preventDefault();
         reactFlowInstance.setNodes((nds: Node[]) => {
           const updated = nds.map((n) => ({ ...n, selected: true }));
@@ -59,7 +67,7 @@ export function useSelectionShortcuts({
         return true;
       }
 
-      if (e.key === "Delete" || e.key === "Backspace") {
+      if (keyIsOneOf(e, [KEY.DELETE, KEY.BACKSPACE])) {
         e.preventDefault();
         const selected = getSelectedNodes(reactFlowInstance, selectedNodeId);
         if (selected.length > 0) {

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, Plus, Settings, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 import { useActiveDiagramModel } from "@/features/diagram";
 import { buildContextualSuggestions, getLLMErrorI18nKey, type PendingSuggestion } from "@/features/llm";
 import { AnalysisPanel, useLLMChat, useMentionInput, useMentionSearch } from "@/features/canvas/chat";
@@ -276,28 +277,28 @@ export function ChatPanel({
             placeholder={t("llmChat.inputPlaceholder")}
             disabled={isLoading}
             onKeyDown={(event) => {
-              if (isPickerOpen && event.key === "ArrowDown") {
+              if (isPickerOpen && keyIs(event, KEY.ARROW_DOWN)) {
                 event.preventDefault();
                 setSelectedIndex((previousIndex) =>
                   Math.min(previousIndex + 1, Math.max(mentionItems.length - 1, 0)),
                 );
                 return;
               }
-              if (isPickerOpen && event.key === "ArrowUp") {
+              if (isPickerOpen && keyIs(event, KEY.ARROW_UP)) {
                 event.preventDefault();
                 setSelectedIndex((previousIndex) => Math.max(previousIndex - 1, 0));
                 return;
               }
-              if (isPickerOpen && event.key === "Enter") {
+              if (isPickerOpen && keyIs(event, KEY.ENTER)) {
                 event.preventDefault();
                 handleSelectCurrentMention();
                 return;
               }
-              if (event.key === "Escape") {
+              if (keyIs(event, KEY.ESCAPE)) {
                 dismissPicker();
                 return;
               }
-              const isSubmit = (event.metaKey || event.ctrlKey) && event.key === "Enter";
+              const isSubmit = (event.metaKey || event.ctrlKey) && keyIs(event, KEY.ENTER);
               if (isSubmit && !isPickerOpen) {
                 event.preventDefault();
                 void handleSend();

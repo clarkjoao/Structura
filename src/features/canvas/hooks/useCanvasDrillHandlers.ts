@@ -30,6 +30,8 @@ function defaultExpandedDbTableHeight(columnCount: number): number {
 interface UseCanvasDrillHandlersParams {
   diagram: Diagram | DiagramModel | null | undefined;
   allDiagrams: Record<string, Diagram>;
+  diagramNavLocked: boolean;
+  clearCanvasSelection: () => void;
   updateComponent: (id: string, patch: Record<string, unknown>) => void;
   openDiagram: (id: string) => void;
   navigate: (path: string) => void;
@@ -40,6 +42,8 @@ interface UseCanvasDrillHandlersParams {
 export function useCanvasDrillHandlers({
   diagram,
   allDiagrams,
+  diagramNavLocked,
+  clearCanvasSelection,
   updateComponent,
   openDiagram,
   navigate,
@@ -53,6 +57,9 @@ export function useCanvasDrillHandlers({
 
   const handleDrillDown = useCallback(
     (elementId: string) => {
+      if (diagramNavLocked) return;
+      clearCanvasSelection();
+
       const d = diagramRef.current;
       if (!d) return;
       const r = getCachedCanvasSnapshot(d);
@@ -68,7 +75,7 @@ export function useCanvasDrillHandlers({
         navigate(`/diagram/${comp.linkedDiagramId}`);
       }
     },
-    [openDiagram, navigate, onDrillDownToDiagram, onOpenDiagram],
+    [clearCanvasSelection, diagramNavLocked, openDiagram, navigate, onDrillDownToDiagram, onOpenDiagram],
   );
 
   const handlePanelCollapseToggle = useCallback(

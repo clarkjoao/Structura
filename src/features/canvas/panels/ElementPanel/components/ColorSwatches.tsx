@@ -11,6 +11,7 @@ import {
   NOTE_PRESETS,
   type ColorPreset,
 } from "./colorPresets";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 
 export type ColorPresetGroup =
   | "vibrant"
@@ -156,7 +157,7 @@ const ColorSwatches = ({
   };
 
   const handleCustomKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") handleCustomSubmit();
+    if (keyIs(e, KEY.ENTER)) handleCustomSubmit();
   };
 
   return (

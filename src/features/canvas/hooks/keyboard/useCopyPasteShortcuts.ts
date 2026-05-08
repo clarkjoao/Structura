@@ -12,11 +12,13 @@ import {
 } from "@/features/diagram";
 import {
   isModKeyPressed,
+  keyMatchesLetter,
   getSelectedNodes,
   getCopyableIds,
   getPasteFlowPosition,
   getCenterOfNodes,
   getOffsetPositionOfNodes,
+  KEY,
   type KeyHandler,
 } from "./helpers";
 import {
@@ -73,7 +75,7 @@ export function useCopyPasteShortcuts({
       const mod = isModKeyPressed(event);
       if (!mod) return false;
 
-      if (event.key === "c") {
+      if (keyMatchesLetter(event, KEY.C)) {
         event.preventDefault();
         const nodes = getSelectedNodes(reactFlowInstance, selectedNodeId);
         const ids = getCopyableIds(diagram, nodes);
@@ -85,7 +87,7 @@ export function useCopyPasteShortcuts({
         return true;
       }
 
-      if (event.key === "v") {
+      if (keyMatchesLetter(event, KEY.V)) {
         event.preventDefault();
 
         const svgContent = await readSvgFromClipboard();
@@ -184,7 +186,7 @@ export function useCopyPasteShortcuts({
         return true;
       }
 
-      if (event.key === "d") {
+      if (keyMatchesLetter(event, KEY.D)) {
         event.preventDefault();
         const selectedNodes = getSelectedNodes(reactFlowInstance, selectedNodeId);
         const ids = getCopyableIds(diagram, selectedNodes);

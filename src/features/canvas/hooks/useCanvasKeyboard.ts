@@ -20,7 +20,14 @@ import {
 import { getViewportCenter } from "../viewport-utils";
 import { exportDrawio } from "@/lib/export-service";
 import { useCopyPasteShortcuts } from "./keyboard/useCopyPasteShortcuts";
-import { isInputFocused, isModKeyPressed } from "./keyboard/helpers";
+import {
+  isInputFocused,
+  isModKeyPressed,
+  keyIs,
+  keyIsOneOf,
+  keyMatchesLetter,
+  KEY,
+} from "./keyboard/helpers";
 import { useRecordingShortcuts } from "./keyboard/useRecordingShortcuts";
 import { useSelectionShortcuts } from "./keyboard/useSelectionShortcuts";
 import { useUndoRedoShortcuts } from "./keyboard/useUndoRedoShortcuts";
@@ -109,39 +116,16 @@ interface UseCanvasKeyboardParams {
   forceSaveToFolder: () => void | Promise<void>;
 }
 
-const KEY = {
-  ESCAPE: "Escape",
-  DELETE: "Delete",
-  BACKSPACE: "Backspace",
-  A: "a",
-  C: "c",
-  D: "d",
-  Q: "q",
-  S: "s",
-  E: "e",
-  F: "f",
-  G: "g",
-  K: "k",
-  L: "l",
-  N: "n",
-  B: "b",
-  V: "v",
-  Z: "z",
-  SLASH: "/",
-  BACKTICK: "`",
-  PLUS_SIGN: "+",
-} as const;
-
 export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   const { t } = useTranslation();
   const lastPointerScreenRef = useRef<{ x: number; y: number } | null>(null);
   const c4ShortcutMap = useMemo(
     () =>
       ({
-        "1": { type: "person" as const, name: t("keyboard.newPerson") },
-        "2": { type: "system" as const, name: t("keyboard.newSystem") },
-        "3": { type: "container" as const, name: t("keyboard.newContainer") },
-        "4": { type: "component" as const, name: t("keyboard.newComponent") },
+        [KEY.DIGIT_1]: { type: "person" as const, name: t("keyboard.newPerson") },
+        [KEY.DIGIT_2]: { type: "system" as const, name: t("keyboard.newSystem") },
+        [KEY.DIGIT_3]: { type: "container" as const, name: t("keyboard.newContainer") },
+        [KEY.DIGIT_4]: { type: "component" as const, name: t("keyboard.newComponent") },
       }) satisfies Record<string, { type: ComponentType; name: string }>,
     [t],
   );
@@ -333,7 +317,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       if (isInputFocused(event.target)) return;
 
       if (isScenesDrawerOpen) {
-        if (event.key === KEY.ESCAPE) {
+        if (keyIs(event, KEY.ESCAPE)) {
           event.preventDefault();
           onCloseScenesDrawer?.();
         }
@@ -343,7 +327,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       const modForFolderSave = isModKeyPressed(event);
       if (
         modForFolderSave &&
-        (event.key === KEY.S || event.key === "S") &&
+        keyMatchesLetter(event, KEY.S) &&
         !isFlowPanelOpen &&
         !isPlaying &&
         !isCompareMode &&
@@ -359,7 +343,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       if (!diagram) return;
 
       const modAutoLayout = isModKeyPressed(event);
-      if (modAutoLayout && event.shiftKey && (event.key === KEY.L || event.key === "L")) {
+      if (modAutoLayout && event.shiftKey && keyMatchesLetter(event, KEY.L)) {
         event.preventDefault();
         if (!isRecording && !isCompareMode && !isPlaying && !isFlowPanelOpen) {
           onAutoLayout?.();
@@ -369,7 +353,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
 
       if (recordingHandler(event)) return;
 
-      if (event.key === KEY.ESCAPE && isCompareMode) {
+      if (keyIs(event, KEY.ESCAPE) && isCompareMode) {
         if (isPlaying) {
           event.preventDefault();
           return;
@@ -380,18 +364,15 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       }
 
       if (isCompareMode) {
-        if (event.key === KEY.DELETE || event.key === KEY.BACKSPACE) {
+        if (keyIsOneOf(event, [KEY.DELETE, KEY.BACKSPACE])) {
           event.preventDefault();
           return;
         }
         if (
           isModKeyPressed(event) &&
-          (event.key === "v" ||
-            event.key === "V" ||
-            event.key === "d" ||
-            event.key === "D" ||
-            event.key === "c" ||
-            event.key === "C")
+          (keyMatchesLetter(event, KEY.V) ||
+            keyMatchesLetter(event, KEY.D) ||
+            keyMatchesLetter(event, KEY.C))
         ) {
           event.preventDefault();
           return;
@@ -413,28 +394,28 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       const mod = isModKeyPressed(event);
 
       
-      if (mod && (event.key === KEY.F || event.key === "F")) {
+      if (mod && keyMatchesLetter(event, KEY.F)) {
         event.preventDefault();
         onOpenSearch?.();
         return;
       }
 
       
-      if (mod && (event.key === KEY.K || event.key === "K")) {
+      if (mod && keyMatchesLetter(event, KEY.K)) {
         event.preventDefault();
         onOpenCommandPalette?.();
         return;
       }
 
       
-      if (mod && (event.key === KEY.B || event.key === "B")) {
+      if (mod && keyMatchesLetter(event, KEY.B)) {
         event.preventDefault();
         onToggleDiagramSidebar?.();
         return;
       }
 
       
-      if (mod && event.key === KEY.SLASH) {
+      if (mod && keyIs(event, KEY.SLASH)) {
         event.preventDefault();
         onOpenSearch?.();
         return;
@@ -445,10 +426,15 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
         event.preventDefault();
         const { type, name } = c4ShortcutMap[event.key];
         const pos = getViewportCenter(reactFlowInstance, isPanelOpen);
-        addComponent(type, name, null, pos);
+        const created = addComponent(type, name, null, pos);
+        if (created?.id) {
+          setSelectedNodeId(created.id);
+          setSelectedNodeIds(new Set([created.id]));
+          setSelectedEdgeId(null);
+        }
         return;
       }
-      if (mod && event.key === KEY.E) {
+      if (mod && keyMatchesLetter(event, KEY.E)) {
         event.preventDefault();
         const lastScreen = lastPointerScreenRef.current;
         if (lastScreen) {
@@ -490,5 +476,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     reactFlowInstance,
     isPanelOpen,
     addComponent,
+    setSelectedNodeId,
+    setSelectedNodeIds,
+    setSelectedEdgeId,
   ]);
 }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 
 export const ChipInput = ({
   label,
@@ -48,7 +49,7 @@ export const ChipInput = ({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") {
+            if (keyIs(e, KEY.ENTER)) {
               e.preventDefault();
               add();
             }

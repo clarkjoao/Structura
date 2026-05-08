@@ -219,6 +219,7 @@ export const useDiagramActions = () =>
       copyToClipboard: s.copyToClipboard,
       pasteFromClipboard: s.pasteFromClipboard,
       importDrawioResult: s.importDrawioResult,
+      importMermaidSequenceResult: s.importMermaidSequenceResult,
       clearClipboard: s.clearClipboard,
       addScene: s.addScene,
       duplicateScene: s.duplicateScene,

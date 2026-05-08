@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import type { Diagram, Folder as FolderType } from "@/features/diagram";
 import { useAllDiagrams, useFolders } from "@/features/diagram";
 import { buildBreadcrumbPath } from "@/pages/dashboard/dashboard.utils";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 import { useRecentDiagrams } from "./useRecentDiagrams";
 
 type FolderRecord = Record<string, FolderType>;
@@ -206,14 +207,14 @@ export function DiagramCommandPalette({ onClose, onSelectDiagram }: DiagramComma
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement | HTMLInputElement>) => {
-      if (e.key === "Escape") {
+      if (keyIs(e, KEY.ESCAPE)) {
         e.preventDefault();
         onClose();
         return;
       }
       if (selectableCount === 0) return;
 
-      if (e.key === "ArrowDown") {
+      if (keyIs(e, KEY.ARROW_DOWN)) {
         e.preventDefault();
         setSelectedIndex((i) => {
           const next = Math.min(i + 1, selectableCount - 1);
@@ -222,7 +223,7 @@ export function DiagramCommandPalette({ onClose, onSelectDiagram }: DiagramComma
         });
         return;
       }
-      if (e.key === "ArrowUp") {
+      if (keyIs(e, KEY.ARROW_UP)) {
         e.preventDefault();
         setSelectedIndex((i) => {
           const next = Math.max(i - 1, 0);
@@ -231,7 +232,7 @@ export function DiagramCommandPalette({ onClose, onSelectDiagram }: DiagramComma
         });
         return;
       }
-      if (e.key === "Enter") {
+      if (keyIs(e, KEY.ENTER)) {
         e.preventDefault();
         const rowIdx = selectableIndices[selectedIndex];
         const row = rowIdx !== undefined ? rows[rowIdx] : undefined;

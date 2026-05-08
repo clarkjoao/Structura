@@ -120,6 +120,7 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
     diagram,
     allDiagrams,
     diagramNavLocked,
+    clearCanvasSelection: visualState.clearCanvasSelection,
     actions,
     onOpenDiagram: canvasProps.onOpenDiagram,
     diagramSidebarOpen: canvasProps.diagramSidebarOpen,
@@ -131,6 +132,8 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
   const { handleDrillDown, handlePanelCollapseToggle } = useCanvasDrillHandlers({
     diagram,
     allDiagrams,
+    diagramNavLocked,
+    clearCanvasSelection: visualState.clearCanvasSelection,
     updateComponent: actions.updateComponent,
     openDiagram: actions.openDiagram,
     navigate,

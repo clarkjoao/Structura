@@ -2,6 +2,7 @@ import { LayoutDashboard, Lock, Plus, Sparkles, ChevronDown, X } from "lucide-re
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCollab } from "@/features/collaboration";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 
 export interface LinkedDiagramOption {
   id: string;
@@ -157,7 +158,7 @@ export function LinkedDiagramSection({
                   e.stopPropagation();
                   select(undefined);
                 }}
-                onKeyDown={(e) => e.key === "Enter" && (e.stopPropagation(), select(undefined))}
+                onKeyDown={(e) => keyIs(e, KEY.ENTER) && (e.stopPropagation(), select(undefined))}
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X className="h-3.5 w-3.5" />

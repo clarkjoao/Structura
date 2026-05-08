@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, FileText } from "lucide-react";
 import { useComponentIcon, useDiagramActions } from "@/features/diagram";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 
 import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
@@ -141,7 +142,7 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === "Escape") {
+      if (keyIs(e, KEY.ESCAPE)) {
         skipCommitOnBlurRef.current = true;
         onInlineEditingChange?.(false);
         setIsEditing(false);

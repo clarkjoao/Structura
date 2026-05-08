@@ -6,6 +6,7 @@ import { downloadTemplate } from "@/features/diagram/utils/template-sharing";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { PatternFlowPreview } from "./PatternFlowPreview";
+import { KEY, keyIs, keyIsEnterOrSpace } from "@/lib/keyboard-utils";
 
 export interface UserTemplateCardProps {
   template: UserTemplate;
@@ -52,7 +53,7 @@ export function UserTemplateCard({
 
   const handleInsertZoneKeyDown = (event: KeyboardEvent): void => {
     if (isRenaming) return;
-    if (event.key === "Enter" || event.key === " ") {
+    if (keyIsEnterOrSpace(event)) {
       event.preventDefault();
       onInsert();
     }
@@ -68,11 +69,11 @@ export function UserTemplateCard({
               onChange={(e) => setDraftName(e.target.value)}
               onBlur={commitRename}
               onKeyDown={(e) => {
-                if (e.key === "Enter") {
+                if (keyIs(e, KEY.ENTER)) {
                   e.preventDefault();
                   commitRename();
                 }
-                if (e.key === "Escape") {
+                if (keyIs(e, KEY.ESCAPE)) {
                   e.preventDefault();
                   setDraftName(template.name);
                   setIsRenaming(false);
