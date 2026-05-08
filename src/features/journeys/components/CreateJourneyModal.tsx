@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 
 interface CreateJourneyModalProps {
   open: boolean;
@@ -73,7 +74,7 @@ export function CreateJourneyModal({
   }, [tagInput]);
 
   const handleTagInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key !== "Enter") return;
+    if (!keyIs(event, KEY.ENTER)) return;
     event.preventDefault();
     addTagFromInput();
   };

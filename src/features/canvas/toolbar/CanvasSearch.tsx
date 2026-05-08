@@ -4,6 +4,7 @@ import type { Component } from "@/features/diagram";
 import { isPanelType, isNoteType, isApiGroupType } from "@/features/diagram";
 import { isAwsType } from "@/lib/catalogs/aws";
 import { TypeConfig } from "@/features/canvas/nodes/CustomNode/TypeConfig";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 import { useTranslation } from "react-i18next";
 
 interface CanvasSearchProps {
@@ -55,21 +56,21 @@ export default function CanvasSearch({ onClose, onSelectResult, components }: Ca
   }, [onClose]);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Escape") {
+    if (keyIs(e, KEY.ESCAPE)) {
       onClose();
       return;
     }
-    if (e.key === "ArrowDown") {
+    if (keyIs(e, KEY.ARROW_DOWN)) {
       e.preventDefault();
       setSelectedIndex((i) => Math.min(i + 1, results.length - 1));
       return;
     }
-    if (e.key === "ArrowUp") {
+    if (keyIs(e, KEY.ARROW_UP)) {
       e.preventDefault();
       setSelectedIndex((i) => Math.max(i - 1, 0));
       return;
     }
-    if (e.key === "Enter" && results[selectedIndex]) {
+    if (keyIs(e, KEY.ENTER) && results[selectedIndex]) {
       e.preventDefault();
       onSelectResult(results[selectedIndex].id);
     }

@@ -16,6 +16,7 @@ import {
 import { useAllServices, useDiagramActions, ServiceSource } from "@/features/diagram";
 import type { ServiceDefinition } from "@/features/diagram";
 import { useTranslation } from "react-i18next";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 
 interface ServiceRegistryComboboxProps {
   value: string | null;
@@ -140,7 +141,7 @@ const ServiceRegistryCombobox = ({
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Escape") setShowCreate(false);
+                if (keyIs(e, KEY.ESCAPE)) setShowCreate(false);
               }}
               className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
@@ -150,7 +151,7 @@ const ServiceRegistryCombobox = ({
               value={newTags}
               onChange={(e) => setNewTags(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Escape") setShowCreate(false);
+                if (keyIs(e, KEY.ESCAPE)) setShowCreate(false);
               }}
               className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />

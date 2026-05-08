@@ -43,6 +43,7 @@ import { ExportModal } from "./ExportModal";
 import { ShareModal } from "./ShareModal";
 import type { ModelExplorerContentProps } from "./types";
 import { getViewportCenter } from "@/features/canvas/viewport-utils";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 
 const TRUNK_CONTEXT: RecordingContext = { mode: "trunk" };
 const EMPTY_BRANCH_MAP = new Map<string, BranchOwnerInfo>();
@@ -160,17 +161,17 @@ export function ModelExplorerContent({
   useEffect(() => {
     if (flowMode.mode.kind !== "playing") return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (keyIs(e, KEY.ESCAPE)) {
         e.preventDefault();
         exitPlay();
         return;
       }
-      if (e.key === "ArrowLeft") {
+      if (keyIs(e, KEY.ARROW_LEFT)) {
         e.preventDefault();
         goBack();
         return;
       }
-      if (e.key === "ArrowRight") {
+      if (keyIs(e, KEY.ARROW_RIGHT)) {
         e.preventDefault();
         if (!isCondition) goNext();
       }

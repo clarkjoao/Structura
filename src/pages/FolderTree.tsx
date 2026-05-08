@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 import type { Folder as FolderType, Diagram } from "@/features/diagram";
 import { useDiagramActions } from "@/features/diagram";
 import { useTranslation } from "react-i18next";
@@ -299,8 +300,8 @@ function NewFolderInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Enter") onSubmit();
-          if (e.key === "Escape") onCancel();
+          if (keyIs(e, KEY.ENTER)) onSubmit();
+          if (keyIs(e, KEY.ESCAPE)) onCancel();
         }}
         onBlur={() => {
           if (value.trim()) onSubmit();
@@ -444,8 +445,8 @@ function FolderTreeItem({
             onChange={(e) => setEditName(e.target.value)}
             onKeyDown={(e) => {
               e.stopPropagation();
-              if (e.key === "Enter") submitRename();
-              if (e.key === "Escape") setEditingId(null);
+              if (keyIs(e, KEY.ENTER)) submitRename();
+              if (keyIs(e, KEY.ESCAPE)) setEditingId(null);
             }}
             onBlur={submitRename}
             onClick={(e) => e.stopPropagation()}

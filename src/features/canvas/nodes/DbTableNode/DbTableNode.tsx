@@ -3,6 +3,7 @@ import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { ChevronDown, ChevronUp, Database, Plus, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 import { useCollabHighlight } from "@/features/collaboration";
 import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
 import { singleIncomingTargetHandleId } from "../../edges/connectionDerivations";
@@ -88,7 +89,7 @@ function TextCell({ value, colWidth, onBlur }: TextCellProps) {
       onBlur={() => onBlur(draft)}
       onKeyDown={(e) => {
         e.stopPropagation();
-        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        if (keyIs(e, KEY.ENTER)) (e.target as HTMLInputElement).blur();
       }}
     />
   );

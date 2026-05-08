@@ -10,7 +10,13 @@ import {
   getCachedCanvasSnapshot,
 } from "@/features/diagram";
 import type { ResolvedSnapshot } from "@/features/diagram";
-import { getSelectedNodes, isModKeyPressed, type KeyHandler } from "./helpers";
+import {
+  getSelectedNodes,
+  isModKeyPressed,
+  KEY,
+  keyMatchesLetter,
+  type KeyHandler,
+} from "./helpers";
 import { getNodeType } from "../../utils/node-type-utils";
 
 interface UseGroupShortcutsParams {
@@ -44,7 +50,7 @@ export function useGroupShortcuts({
     (e: KeyboardEvent): boolean => {
       const mod = isModKeyPressed(e);
       if (!mod) return false;
-      if (e.key !== "g" && e.key !== "G") return false;
+      if (!keyMatchesLetter(e, KEY.G)) return false;
 
       e.preventDefault();
 

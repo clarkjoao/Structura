@@ -22,6 +22,7 @@ import {
 import { useCollab } from "@/features/collaboration";
 import { useInteractionMode } from "../hooks/useInteractionMode";
 import { cn } from "@/lib/utils";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 import { MergeSceneDialog } from "./MergeSceneDialog";
 
 export type SceneDrawerScene = SceneDiff;
@@ -303,8 +304,8 @@ export function SceneDrawer({
                   value={renameDraft}
                   onChange={(e) => setRenameDraft(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") commitRename(scene.id);
-                    if (e.key === "Escape") {
+                    if (keyIs(e, KEY.ENTER)) commitRename(scene.id);
+                    if (keyIs(e, KEY.ESCAPE)) {
                       setRenamingId(null);
                       setRenameDraft("");
                     }
@@ -344,12 +345,12 @@ export function SceneDrawer({
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") {
+                if (keyIs(e, KEY.ENTER)) {
                   onAddScene(newName.trim());
                   setNewName("");
                   setNewOpen(false);
                 }
-                if (e.key === "Escape") {
+                if (keyIs(e, KEY.ESCAPE)) {
                   setNewName("");
                   setNewOpen(false);
                 }

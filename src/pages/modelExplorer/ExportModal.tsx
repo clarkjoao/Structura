@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import type { DiagramExportFormat } from "@/lib/export-service";
 import { cn } from "@/lib/utils";
+import { keyIsEnterOrSpace } from "@/lib/keyboard-utils";
 import type { CopiedClipboardKind } from "./types";
 
 interface ExportModalProps {
@@ -209,7 +210,7 @@ export function ExportModal({
                   }}
                   onKeyDown={(event) => {
                     if (option.disabled) return;
-                    if (event.key !== "Enter" && event.key !== " ") return;
+                    if (!keyIsEnterOrSpace(event)) return;
                     event.preventDefault();
                     toggleFormat(option.format, !checked);
                   }}

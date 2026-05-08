@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { readPrefs, writePrefs } from "../utils/collab-preferences";
@@ -94,7 +95,7 @@ export function CollabStartModal({
               onChange={(event) => setUserName(event.target.value)}
               placeholder={t("collaboration.namePlaceholder")}
               autoFocus
-              onKeyDown={(event) => event.key === "Enter" && handleStart()}
+              onKeyDown={(event) => keyIs(event, KEY.ENTER) && handleStart()}
             />
           </div>
 

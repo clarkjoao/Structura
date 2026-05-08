@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { sanitizeSvg } from "@/features/canvas";
 import { cn } from "@/lib/utils";
+import { keyIsEnterOrSpace } from "@/lib/keyboard-utils";
 import { useJourneyActions } from "../../store/selectors/journeys.selectors";
 import type { JourneyStep } from "../../types";
 import { getSafeJourneyVisual } from "../../utils/step-media.utils";
@@ -178,7 +179,7 @@ export function RightPanel({
   const handleDropzoneKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
       if (isGlobalPlaying) return;
-      if (event.key === "Enter" || event.key === " ") {
+      if (keyIsEnterOrSpace(event)) {
         event.preventDefault();
         fileInputRef.current?.click();
       }

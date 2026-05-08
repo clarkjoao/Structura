@@ -8,6 +8,7 @@ import {
   Plus,
   ExternalLink as ExternalLinkIcon,
 } from "lucide-react";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 import { useTranslation } from "react-i18next";
 import { ExternalLinkType } from "@/features/diagram";
 import type { ExternalLink } from "@/features/diagram";
@@ -154,7 +155,7 @@ export function ExternalLinksSection({
             value={form.url}
             onChange={(event) => setForm((previous) => ({ ...previous, url: event.target.value }))}
             onKeyDown={(event) => {
-              if (event.key === "Enter") handleConfirmAdd();
+              if (keyIs(event, KEY.ENTER)) handleConfirmAdd();
             }}
             placeholder={t("externalLinks.urlPlaceholder")}
             className="w-full rounded border border-border bg-secondary px-2 py-1 text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-ring"

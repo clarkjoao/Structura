@@ -16,6 +16,7 @@ import {
 } from "@/features/diagram";
 import { AWS_CATEGORIES, type AwsCategory } from "@/lib/catalogs/aws";
 import { getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 import type { AwsCategoryId } from "@/lib/catalogs/aws";
 import { trackUsage } from "./element-usage-tracker";
 import { useTranslation } from "react-i18next";
@@ -113,7 +114,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (keyIs(e, KEY.ESCAPE)) {
         e.preventDefault();
         e.stopPropagation();
         onClose();

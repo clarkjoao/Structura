@@ -1,4 +1,5 @@
 import type { KeyboardEvent } from "react";
+import { KEY, keyIs } from "@/lib/keyboard-utils";
 import { useTranslation } from "react-i18next";
 import type { RecordingContext } from "../flowMode.types";
 
@@ -30,7 +31,7 @@ export function RecorderMetadataForm({
   const { t } = useTranslation();
 
   const handleTagKey = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && e.currentTarget.value.trim()) {
+    if (keyIs(e, KEY.ENTER) && e.currentTarget.value.trim()) {
       onAddTag(e.currentTarget.value.trim());
       e.currentTarget.value = "";
     }
