@@ -1,0 +1,92 @@
+name: Bug Report
+description: Report a bug in Structura
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill in as much detail as possible.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of Structura is affected?
+      options:
+        - Canvas / diagramming
+        - Persistence (save/load/filesystem)
+        - Undo / Redo
+        - Flows (recording/playback)
+        - Layout (Grid Tidy Up / Auto Layout)
+        - Export (JSON / draw.io / Mermaid)
+        - AWS catalog
+        - LLM / AI features
+        - Dashboard / folders
+        - Performance
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug description
+      description: A clear and concise description of what the bug is.
+      placeholder: What happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Exact steps to reliably reproduce the bug.
+      placeholder: |
+        1. Open a diagram with...
+        2. Drag a C4 component to...
+        3. Press Ctrl+Z...
+        4. Observe that...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: What should have happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      placeholder: What actually happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Environment
+      description: Browser, OS, and Structura version.
+      placeholder: |
+        - Browser: Chrome 124
+        - OS: macOS 14
+        - Structura version / commit: v0.1.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console errors or logs
+      description: Open DevTools → Console and paste any relevant errors.
+      render: shell
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Screenshots, recordings, or diagram JSON that helps reproduce the issue.

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussion / Question
+    url: https://github.com/clarkjoao/Structura/discussions
+    about: Use Discussions for questions, ideas, and general conversation
+  - name: 📖 Documentation
+    url: https://github.com/clarkjoao/Structura/blob/main/README.md
+    about: Check the README and CONTRIBUTING guide first

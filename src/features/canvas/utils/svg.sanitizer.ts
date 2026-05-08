@@ -59,7 +59,7 @@ function stripOuterSvgNoise(markup: string): string {
   while (result !== previous) {
     previous = result;
     result = result.replace(/^<\?xml[\s\S]*?\?>\s*/i, "").trim();
-    result = result.replace(/^<!DOCTYPE[^>]*>\s*/i, "").trim();
+    result = result.replace(/^<!DOCTYPE[\s\S]*?(?:>\s*|\n+|$)/i, "").trim();
     result = result.replace(/^<!--[\s\S]*?-->\s*/, "").trim();
   }
   return result;
@@ -67,6 +67,9 @@ function stripOuterSvgNoise(markup: string): string {
 
 
 export function sanitizeSvg(rawSvg: string): string | null {
+  if (!rawSvg.trim()) {
+    return null;
+  }
   const trimmed = stripOuterSvgNoise(rawSvg);
   if (!/^<svg(\s|>)/i.test(trimmed)) {
     return null;

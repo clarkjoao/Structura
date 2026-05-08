@@ -1,0 +1,70 @@
+name: Feature Request
+description: Propose a new feature or improvement for Structura
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before submitting, check the [ROADMAP](../ROADMAP.md) and existing issues to avoid duplicates.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of Structura does this relate to?
+      options:
+        - Canvas / diagramming
+        - C4 Model support
+        - Flows
+        - Layout algorithms
+        - Export / import
+        - AWS catalog
+        - LLM / AI features
+        - Persistence / storage
+        - Dashboard / organization
+        - Collaboration
+        - Developer experience
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem does this solve? What is currently frustrating or missing?
+      placeholder: "As a solutions architect, I find it difficult to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the feature you'd like to see.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any workarounds or alternative approaches you've thought about?
+
+  - type: dropdown
+    id: willing_to_implement
+    attributes:
+      label: Would you like to implement this?
+      options:
+        - "Yes — I'll open a PR"
+        - "Maybe — I'd need guidance"
+        - "No — just requesting"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Mockups, references to similar tools, or links to relevant standards (C4, Structurizr, etc.).
