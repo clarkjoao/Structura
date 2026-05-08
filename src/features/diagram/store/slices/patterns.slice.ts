@@ -109,9 +109,13 @@ function buildCatalogPatternComponentAndLayout(
 
 export const patternsSlice = (
   set: (fn: (state: AppState) => void) => void,
-  _get: () => AppState,
+  get: () => AppState,
 ) => ({
-  insertPattern: (template: InsertablePattern, position: { x: number; y: number }) => {
+  insertPattern: (
+    template: InsertablePattern,
+    position: { x: number; y: number },
+  ): string[] => {
+    if (!getActiveDiagram(get())) return [];
     const GRID_X = 220;
     const fromUserLibrary = isUserTemplatePayload(template);
     const ids: string[] = template.components.map(() => generateId("el"));
@@ -171,5 +175,6 @@ export const patternsSlice = (
       });
       touchDiagram(d);
     });
+    return ids;
   },
 });

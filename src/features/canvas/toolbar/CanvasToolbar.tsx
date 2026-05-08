@@ -15,6 +15,9 @@ interface CanvasToolbarProps {
   isPanelOpen?: boolean;
   onInsert?: (nodeId: string) => void;
   onClearSelection?: () => void;
+  setSelectedNodeId: (id: string | null) => void;
+  setSelectedNodeIds: (ids: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
+  setSelectedEdgeId: (id: string | null) => void;
   onOpenScenes?: () => void;
   allTags: string[];
   visibleTags: Set<string>;
@@ -33,6 +36,9 @@ const CanvasToolbar = ({
   onDrillUp,
   onInsert,
   onClearSelection,
+  setSelectedNodeId,
+  setSelectedNodeIds,
+  setSelectedEdgeId,
   onOpenScenes,
   allTags,
   visibleTags,
@@ -187,7 +193,13 @@ const CanvasToolbar = ({
       {addButton}
 
       {showPatterns && (
-        <PatternPicker onClose={() => setShowPatterns(false)} onBeforeInsert={onClearSelection} />
+        <PatternPicker
+          onClose={() => setShowPatterns(false)}
+          onBeforeInsert={onClearSelection}
+          setSelectedNodeId={setSelectedNodeId}
+          setSelectedNodeIds={setSelectedNodeIds}
+          setSelectedEdgeId={setSelectedEdgeId}
+        />
       )}
       {showModal && (
         <ElementPickerModal onClose={() => setShowModal(false)} onInsert={onInsert} />

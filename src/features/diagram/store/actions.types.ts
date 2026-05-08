@@ -103,7 +103,7 @@ export interface AppActions {
       | import("@/lib/catalogs/patterns").PatternTemplate
       | import("../model/diagram.types").UserTemplate,
     position: { x: number; y: number },
-  ) => void;
+  ) => string[];
 
   undo: () => void;
   redo: () => void;

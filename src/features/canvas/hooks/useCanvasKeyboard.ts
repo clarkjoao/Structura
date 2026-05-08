@@ -426,7 +426,12 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
         event.preventDefault();
         const { type, name } = c4ShortcutMap[event.key];
         const pos = getViewportCenter(reactFlowInstance, isPanelOpen);
-        addComponent(type, name, null, pos);
+        const created = addComponent(type, name, null, pos);
+        if (created?.id) {
+          setSelectedNodeId(created.id);
+          setSelectedNodeIds(new Set([created.id]));
+          setSelectedEdgeId(null);
+        }
         return;
       }
       if (mod && keyMatchesLetter(event, KEY.E)) {
@@ -471,5 +476,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     reactFlowInstance,
     isPanelOpen,
     addComponent,
+    setSelectedNodeId,
+    setSelectedNodeIds,
+    setSelectedEdgeId,
   ]);
 }

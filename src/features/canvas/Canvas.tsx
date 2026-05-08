@@ -222,6 +222,9 @@ const Canvas = (props: CanvasProps = {}) => {
             onDrillUp={onDrillUp}
             isPanelOpen={isPanelOpen}
             onClearSelection={visualState.clearCanvasSelection}
+            setSelectedNodeId={visualState.setSelectedNodeId}
+            setSelectedNodeIds={visualState.setSelectedNodeIds}
+            setSelectedEdgeId={visualState.setSelectedEdgeId}
             onOpenScenes={() => setShowScenes(true)}
             isFlowActive={isFlowActive}
             allTags={allDiagramTags}
