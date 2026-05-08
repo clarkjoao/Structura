@@ -1,35 +1,43 @@
 import dotenv from "dotenv";
 import path from "path";
+import fs from "fs";
 import { HttpsProxyAgent } from "https-proxy-agent";
 import https from "node:https";
-import fs from "fs";
 
-dotenv.config({ path: path.resolve(process.cwd(), "../.env") });
-
-const paths = [
+const envPaths = [
   path.resolve(process.cwd(), "../.env"),
   path.resolve(process.cwd(), "../../.env"),
 ];
 
-const foundPath = paths.find(p => fs.existsSync(p));
-
-if (foundPath) {
-  dotenv.config({ path: foundPath });
+const foundEnvPath = envPaths.find((p) => fs.existsSync(p));
+if (foundEnvPath) {
+  dotenv.config({ path: foundEnvPath });
 } else {
-  console.warn("⚠️ Nenhum .env encontrado nos paths esperados");
+  console.warn("[config] No .env file found in expected paths");
 }
 
-export const PORT = Number(process.env.PORT ?? process.env.PROXY_REVERSE_PORT ?? 3000);
+// ─── Server ──────────────────────────────────────────────────────────────────
+
+export const NODE_ENV = process.env.NODE_ENV ?? "development";
+export const IS_PRODUCTION = NODE_ENV === "production";
+export const PORT = Number(process.env.PORT ?? 3000);
 export const WS_PATH = (() => {
-  const value = process.env.WS_PATH?.trim() || "/ws";
-  return value.startsWith("/") ? value : `/${value}`;
+  const raw = process.env.WS_PATH?.trim() || "/ws";
+  return raw.startsWith("/") ? raw : `/${raw}`;
 })();
 
-export const DEFECTDOJO_URL        = process.env.PROXY_REVERSE_DEFECTDOJO_URL ?? "";
-export const DEFECTDOJO_API_TOKEN  = process.env.PROXY_REVERSE_DEFECTDOJO_API_TOKEN;
-export const GITHUB_URL            = process.env.PROXY_REVERSE_GITHUB_URL ?? "";
-export const GITHUB_API_TOKEN      = process.env.PROXY_REVERSE_GITHUB_API_TOKEN;
-export const INSECURE_TLS          = process.env.PROXY_REVERSE_INSECURE_TLS === "true";
+// ─── HTTPS (optional) ────────────────────────────────────────────────────────
+
+export const SSL_KEY_PATH = process.env.SSL_KEY_PATH;
+export const SSL_CERT_PATH = process.env.SSL_CERT_PATH;
+
+// ─── Proxy (local dev only) ──────────────────────────────────────────────────
+
+export const INSECURE_TLS = process.env.PROXY_REVERSE_INSECURE_TLS === "true";
+export const DEFECTDOJO_URL = process.env.PROXY_REVERSE_DEFECTDOJO_URL ?? "";
+export const DEFECTDOJO_API_TOKEN = process.env.PROXY_REVERSE_DEFECTDOJO_API_TOKEN;
+export const GITHUB_URL = process.env.PROXY_REVERSE_GITHUB_URL ?? "";
+export const GITHUB_API_TOKEN = process.env.PROXY_REVERSE_GITHUB_API_TOKEN;
 
 if (INSECURE_TLS) process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 

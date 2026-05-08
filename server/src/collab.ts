@@ -475,7 +475,11 @@ function startHeartbeat(): ReturnType<typeof setInterval> {
   }, HEARTBEAT_INTERVAL_MS);
 }
 
-export function attachCollabServer(httpServer: HttpServer): void {
+export interface CollabHandle {
+  shutdown: () => Promise<void>;
+}
+
+export function attachCollabServer(httpServer: HttpServer): CollabHandle {
   const wss = new WebSocketServer({ server: httpServer, path: WS_PATH });
   const heartbeatInterval = startHeartbeat();
 
@@ -539,4 +543,15 @@ export function attachCollabServer(httpServer: HttpServer): void {
   wss.on("close", () => {
     clearInterval(heartbeatInterval);
   });
+
+  return {
+    shutdown: () =>
+      new Promise((resolve) => {
+        clearInterval(heartbeatInterval);
+        for (const ws of wss.clients) {
+          ws.close(1001, "server_shutdown");
+        }
+        wss.close(() => resolve());
+      }),
+  };
 }
