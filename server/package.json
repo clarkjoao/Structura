@@ -13,6 +13,9 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "https-proxy-agent": "^8.0.0",
     "ws": "^8.20.0"
   },
   "devDependencies": {
@@ -22,10 +25,7 @@
     "@types/ws": "^8.18.1",
     "axios": "^1.13.6",
     "cors": "^2.8.6",
-    "dotenv": "^17.3.1",
-    "express": "^5.2.1",
     "http-proxy-middleware": "^3.0.5",
-    "https-proxy-agent": "^8.0.0",
     "node-fetch": "^3.3.2",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2"
