@@ -71,7 +71,7 @@ export interface NodeTypeDescriptor {
   
   rfType: string;
   
-  component: ReactComponentType<any>;
+  component: ReactComponentType<Record<string, unknown>>;
   
   matches: (type: ComponentType) => boolean;
   zIndex: number | ((comp: Component) => number);
