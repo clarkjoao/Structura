@@ -169,7 +169,6 @@ export function FolderTree({
 
   return (
     <div className="flex h-full flex-col bg-sidebar">
-      {}
       <div className="flex items-center justify-between px-3 pt-3 pb-1">
         <span className="text-[11px] font-semibold text-sidebar-foreground/60 uppercase tracking-widest">
           {t("common.workspace")}
@@ -185,7 +184,6 @@ export function FolderTree({
         </Button>
       </div>
 
-      {}
       <div className="px-2 py-1.5">
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-sidebar-foreground/30" />
@@ -198,9 +196,7 @@ export function FolderTree({
         </div>
       </div>
 
-      {}
       <div className="flex-1 overflow-y-auto px-1.5 py-1 space-y-0.5">
-        {}
         <div
           className={cn(
             "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition-colors",
@@ -499,10 +495,8 @@ function FolderTreeItem({
         )}
       </div>
 
-      {}
       {isExpanded && (
         <div className="relative">
-          {}
           <div
             className="absolute top-0 bottom-0 w-px bg-sidebar-border/50"
             style={{ left: `${14 + depth * 14}px` }}

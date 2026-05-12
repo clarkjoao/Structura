@@ -138,7 +138,6 @@ export function GithubSearchBar({ loading, client, onSearch }: Props) {
         </Button>
       </div>
 
-      {}
       <div className="flex flex-wrap items-center gap-3">
         <Select value={org} onValueChange={setOrg}>
           <SelectTrigger className="w-[220px]">

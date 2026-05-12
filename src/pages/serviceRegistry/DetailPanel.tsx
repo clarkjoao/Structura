@@ -105,7 +105,6 @@ export function DetailPanel({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card">
-      {}
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
         <div className="flex items-center gap-2 min-w-0">
           <span
