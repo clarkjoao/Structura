@@ -149,6 +149,16 @@ export default function ShortcutsModal({
                   </span>
                 }
               />
+              <ShortcutRow
+                label={t("shortcutsModal.redoCtrlY")}
+                description={t("shortcutsModal.redoCtrlYDesc")}
+                keys={
+                  <span className="inline-flex items-center gap-1">
+                    <Kbd>Ctrl</Kbd>
+                    <Kbd>Y</Kbd>
+                  </span>
+                }
+              />
             </ShortcutCard>
 
             <ShortcutCard title={t("shortcutsModal.clipboard")}>
