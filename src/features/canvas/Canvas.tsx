@@ -33,10 +33,6 @@ import {
 import { useJourneysByDiagramId } from "@/features/journeys";
 import { CANVAS_STYLES } from "./constants";
 import { getCenterOfNodes, getCopyableIds, getPlatform } from "./hooks/keyboard/helpers";
-
-
-const MULTI_SELECTION_KEY_CODES = ["Meta", "Control"];
-const PAN_ACTIVATION_KEY = getPlatform() === "mac" ? "Meta" : "Control";
 import CustomEdge from "./edges/CustomEdge";
 import type { CanvasProps } from "./canvas.types";
 import {
@@ -51,6 +47,8 @@ import { useLLMChat } from "./chat";
 import { getPendingNodeIds, getSuggestionIdForNode } from "@/features/llm";
 import { useLLMStore } from "@/features/llm/store";
 
+const MULTI_SELECTION_KEY_CODES = ["Meta", "Control"];
+const PAN_ACTIVATION_KEY = getPlatform() === "mac" ? "Meta" : "Control";
 const canvasEdgeTypes = { c4: CustomEdge };
 
 const Canvas = (props: CanvasProps = {}) => {
