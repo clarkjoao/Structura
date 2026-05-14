@@ -307,7 +307,6 @@ const FlowStepNavigator = ({
         </div>
       )}
 
-      {}
       {!isCondition && step?.payload && (
         <div className="px-4 pb-2">
           <button
@@ -325,7 +324,6 @@ const FlowStepNavigator = ({
         </div>
       )}
 
-      {}
       {!isCondition && (
         <div className="px-4 py-2 flex justify-center gap-2">
           <button onClick={onGoBack} disabled={!canGoBack}

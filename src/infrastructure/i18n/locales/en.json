@@ -1370,6 +1370,8 @@
     "deleteSelected": "Delete selected",
     "undo": "Undo",
     "redo": "Redo",
+    "redoCtrlY": "Redo (Ctrl+Y)",
+    "redoCtrlYDesc": "Windows and Linux; Cmd/Ctrl+Shift+Z also works",
     "clipboard": "Grouping & clipboard",
     "copy": "Copy",
     "paste": "Paste",
