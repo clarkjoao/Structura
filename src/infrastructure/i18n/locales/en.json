@@ -1038,7 +1038,9 @@
     "typeContainer": "container",
     "typeComponent": "component",
     "typePanel": "panel",
-    "typeNote": "note"
+    "typeNote": "note",
+    "resetWaypoints": "Reset edge paths",
+    "resetWaypointsShortcut": "Cmd/Ctrl+Shift+W — resets selected edge paths, or all when none are selected"
   },
   "saveTemplate": {
     "title": "Save selection as template",
@@ -1368,6 +1370,8 @@
     "clearSelectionDesc": "Also exits flow playback or scene comparison when active",
     "selectAll": "Select all",
     "deleteSelected": "Delete selected",
+    "resetEdgeWaypoints": "Reset edge paths",
+    "resetEdgeWaypointsDesc": "Selected connection(s), or all custom paths when none are selected",
     "undo": "Undo",
     "redo": "Redo",
     "redoCtrlY": "Redo (Ctrl+Y)",

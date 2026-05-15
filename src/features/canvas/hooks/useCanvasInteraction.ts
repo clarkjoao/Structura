@@ -246,6 +246,7 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
     },
     onAutoLayout,
     forceSaveToFolder,
+    clearEdgeWaypoints: actions.clearEdgeWaypoints,
   });
 
   useCanvasEffects({

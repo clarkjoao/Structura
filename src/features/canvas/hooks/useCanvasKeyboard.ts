@@ -32,6 +32,7 @@ import { useRecordingShortcuts } from "./keyboard/useRecordingShortcuts";
 import { useSelectionShortcuts } from "./keyboard/useSelectionShortcuts";
 import { useUndoRedoShortcuts } from "./keyboard/useUndoRedoShortcuts";
 import { useGroupShortcuts } from "./keyboard/useGroupShortcuts";
+import { useEdgeWaypointShortcuts } from "./keyboard/useEdgeWaypointShortcuts";
 import { validateSvgSize } from "../utils/svg.utils";
 import { sanitizeSvg } from "../utils/svg.sanitizer";
 
@@ -114,6 +115,7 @@ interface UseCanvasKeyboardParams {
   }) => void;
   onAutoLayout?: () => void;
   forceSaveToFolder: () => void | Promise<void>;
+  clearEdgeWaypoints: (diagramId: string, connectionId: string) => void;
 }
 
 export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
@@ -170,6 +172,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     onOpenQuickInsert,
     onAutoLayout,
     forceSaveToFolder,
+    clearEdgeWaypoints,
   } = params;
 
   const resolvedSnapshot = useMemo(
@@ -291,6 +294,13 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     resolvedSnapshot,
   });
 
+  const edgeWaypointHandler = useEdgeWaypointShortcuts({
+    diagram,
+    selectedEdgeId,
+    reactFlowInstance,
+    clearEdgeWaypoints,
+  });
+
   // Refs estáveis para handlers que mudam frequentemente — evita re-registrar o listener
   const handleCopyPasteRef = useRef(handleCopyPaste);
   handleCopyPasteRef.current = handleCopyPaste;
@@ -303,6 +313,9 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
 
   const groupHandlerRef = useRef(groupHandler);
   groupHandlerRef.current = groupHandler;
+
+  const edgeWaypointHandlerRef = useRef(edgeWaypointHandler);
+  edgeWaypointHandlerRef.current = edgeWaypointHandler;
 
   useEffect(() => {
     const onPointerMove = (event: PointerEvent) => {
@@ -390,6 +403,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       if (undoRedoHandlerRef.current(event)) return;
 
       if (groupHandlerRef.current(event)) return;
+
+      if (edgeWaypointHandlerRef.current(event)) return;
 
       const mod = isModKeyPressed(event);
 

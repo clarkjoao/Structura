@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { ElementType } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -122,6 +122,37 @@ const NodeContextMenu = ({
 }: Props) => {
   const { t } = useTranslation();
   const menuRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ top: y, left: x });
+  const [visible, setVisible] = useState(false);
+
+  useLayoutEffect(() => {
+    const el = menuRef.current;
+    if (!el) return;
+
+    const MARGIN = 8;
+
+    const menuW = el.offsetWidth;
+    const menuH = el.offsetHeight;
+    const viewW = window.innerWidth;
+    const viewH = window.innerHeight;
+
+    let top = y;
+    let left = x;
+
+    if (left + menuW + MARGIN > viewW) {
+      left = viewW - menuW - MARGIN;
+    }
+
+    if (top + menuH + MARGIN > viewH) {
+      top = viewH - menuH - MARGIN;
+    }
+
+    left = Math.max(MARGIN, left);
+    top = Math.max(MARGIN, top);
+
+    setPosition({ top, left });
+    setVisible(true);
+  }, []);
 
   const handleClickOutside = useCallback(
     (e: MouseEvent) => {
@@ -145,7 +176,11 @@ const NodeContextMenu = ({
     <div
       ref={menuRef}
       className="fixed z-50 min-w-[220px] rounded-lg border border-border bg-card py-1 shadow-xl animate-in fade-in-0 zoom-in-95"
-      style={{ top: y, left: x }}
+      style={{
+        top: position.top,
+        left: position.left,
+        visibility: visible ? "visible" : "hidden",
+      }}
     >
       {hasEditActions ? (
         <>
