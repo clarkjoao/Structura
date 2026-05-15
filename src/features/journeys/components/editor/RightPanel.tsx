@@ -53,9 +53,10 @@ function isSvgFile(file: File): boolean {
 function isRasterImageFile(file: File): boolean {
   const name = file.name.toLowerCase();
   return (
-    /\.(png|jpg|jpeg)$/i.test(name) ||
+    /\.(png|jpg|jpeg|webp)$/i.test(name) ||
     file.type === "image/png" ||
-    file.type === "image/jpeg"
+    file.type === "image/jpeg" ||
+    file.type === "image/webp"
   );
 }
 
@@ -342,7 +343,7 @@ export function RightPanel({
                     ref={fileInputRef}
                     id={fileInputId}
                     type="file"
-                    accept=".svg,.png,.jpg,.jpeg"
+                    accept=".svg,.png,.jpg,.jpeg,.webp"
                     className="hidden"
                     onChange={handleFileChange}
                   />

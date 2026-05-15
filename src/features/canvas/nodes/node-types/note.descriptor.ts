@@ -24,6 +24,7 @@ export const noteDescriptor: NodeTypeDescriptor = {
     name: comp.name,
     description: comp.description,
     panelColor: isNoteComponent(comp) ? comp.panelColor : undefined,
+    panelColorDark: isNoteComponent(comp) ? comp.panelColorDark : undefined,
     isSelected: ctx.selectedNodeId === comp.id,
     collapsed: isNoteComponent(comp) ? (comp.collapsed ?? false) : false,
     onToggleCollapse: () => ctx.onPanelCollapseToggle?.(comp.id),

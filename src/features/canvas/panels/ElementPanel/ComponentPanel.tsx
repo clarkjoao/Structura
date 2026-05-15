@@ -23,10 +23,11 @@ import {
 import { isAwsType, AWS_CATEGORIES, AWS_CATEGORY_MAP, AWS_SERVICE_MAP } from "@/lib/catalogs/aws";
 import AwsIcon from "../../nodes/AwsIcon";
 import TabBar, { type Tab } from "./components/TabBar";
-import { C4_DEFAULT_COLORS } from "./components/colorPresets";
+import { C4_DEFAULT_COLORS, NOTE_DEFAULT_DARK, NOTE_DEFAULT_LIGHT } from "./components/colorPresets";
 import ConnectionsTab from "./components/ConnectionsTab";
 import { ComponentIconTab } from "./components/ComponentIconTab";
 import { useTranslation } from "react-i18next";
+import { useTheme } from "@/hooks/useTheme";
 import i18n from "@/infrastructure/i18n";
 import { FIELD_DEBOUNCE_MS } from "@/features/canvas/canvas.constants";
 import {
@@ -41,8 +42,6 @@ import {
 import { usePanelChildLayout } from "../../hooks/usePanelChildLayout";
 import { isComponentType } from "@/features/diagram";
 import { ImpactAnalysisPanel } from "./components/ImpactAnalysisPanel";
-
-const DEFAULT_NOTE_COLOR = "hsl(45 25% 97%)";
 
 function buildComponentSyncPatch(
   service: ServiceDefinition,
@@ -95,6 +94,8 @@ const ComponentPanel = ({
   onFocusCanvasElement,
 }: ComponentPanelProps) => {
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   useEffect(() => {
     if (focusTitleTrigger > 0) {
@@ -534,8 +535,12 @@ const ComponentPanel = ({
           {isNoteComponent(component) && (
             <ColorAccentSection
               componentId={component.id}
-              type="note"
-              currentColor={component.panelColor ?? DEFAULT_NOTE_COLOR}
+              type={isDark ? "note-dark" : "note"}
+              currentColor={
+                isDark
+                  ? (component.panelColorDark ?? NOTE_DEFAULT_DARK)
+                  : (component.panelColor ?? NOTE_DEFAULT_LIGHT)
+              }
               updateComponent={updateComponent}
             />
           )}
