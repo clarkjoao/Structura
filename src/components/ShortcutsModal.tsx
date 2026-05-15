@@ -131,6 +131,17 @@ export default function ShortcutsModal({
                 }
               />
               <ShortcutRow
+                label={t("shortcutsModal.resetEdgeWaypoints")}
+                description={t("shortcutsModal.resetEdgeWaypointsDesc")}
+                keys={
+                  <span className="inline-flex items-center gap-1">
+                    <Kbd>Cmd/Ctrl</Kbd>
+                    <Kbd>Shift</Kbd>
+                    <Kbd>W</Kbd>
+                  </span>
+                }
+              />
+              <ShortcutRow
                 label={t("shortcutsModal.undo")}
                 keys={
                   <span className="inline-flex items-center gap-1">

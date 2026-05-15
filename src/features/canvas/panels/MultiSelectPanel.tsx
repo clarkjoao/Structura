@@ -1,13 +1,18 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { X, LayoutDashboard, Copy, Trash2, BookmarkPlus } from "lucide-react";
+import { X, LayoutDashboard, Copy, Trash2, BookmarkPlus, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import type { Node } from "@xyflow/react";
 import {
   useActiveDiagram,
+  useActiveDiagramId,
   useDiagramActions,
   resolveSceneSnapshot,
 } from "@/features/diagram";
+import {
+  collectConnectionIdsToResetWaypoints,
+  resetWaypointsForConnections,
+} from "@/features/canvas/edges/reset-edge-waypoints";
 import type { Component, ComponentType } from "@/features/diagram";
 import { isPanelType } from "@/features/diagram";
 import { captureSelectionAsTemplate } from "@/features/canvas/utils/capture-template";
@@ -35,6 +40,7 @@ interface MultiSelectPanelProps {
 
 export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelProps) {
   const { t } = useTranslation();
+  const activeDiagramId = useActiveDiagramId();
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const typeLabelKeys: Record<string, string> = useMemo(
     () => ({
@@ -54,6 +60,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
     addComponent,
     updateComponent,
     saveUserTemplate,
+    clearEdgeWaypoints,
   } = useDiagramActions();
 
   const ids = useMemo(() => selectedNodes.map((n) => n.id), [selectedNodes]);
@@ -164,6 +171,16 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
     ids.forEach((id) => updateComponent(id, { tags }));
   };
 
+  const handleResetWaypoints = () => {
+    if (!activeDiagramId || !diagram) return;
+    const connectionIds = collectConnectionIdsToResetWaypoints({
+      edgeLayouts: diagram.edgeLayouts,
+      selectedEdgeId: null,
+      reactFlowEdges: [],
+    });
+    resetWaypointsForConnections(activeDiagramId, connectionIds, clearEdgeWaypoints);
+  };
+
   const handleSaveTemplate = (name: string, description: string, category: string) => {
     if (!resolved) return;
     const template = captureSelectionAsTemplate(
@@ -228,6 +245,15 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
               {t("canvas.multiSelect.saveAsTemplate")}
             </button>
           )}
+          <button
+            type="button"
+            onClick={handleResetWaypoints}
+            title={t("multiSelect.resetWaypointsShortcut")}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-xs font-medium hover:bg-muted/50"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            {t("multiSelect.resetWaypoints")}
+          </button>
           <button
             type="button"
             onClick={handleDuplicate}

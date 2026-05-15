@@ -1037,7 +1037,9 @@
     "typeContainer": "container",
     "typeComponent": "component",
     "typePanel": "panel",
-    "typeNote": "nota"
+    "typeNote": "nota",
+    "resetWaypoints": "Resetar caminhos das conexões",
+    "resetWaypointsShortcut": "Cmd/Ctrl+Shift+W — reseta caminhos das conexões selecionadas, ou de todas se nenhuma estiver selecionada"
   },
   "saveTemplate": {
     "title": "Salvar seleção como template",
@@ -1367,6 +1369,8 @@
     "clearSelectionDesc": "Também encerra a reprodução de flow ou o modo de comparação de cenas, quando ativos",
     "selectAll": "Selecionar tudo",
     "deleteSelected": "Excluir selecionados",
+    "resetEdgeWaypoints": "Resetar caminhos das conexões",
+    "resetEdgeWaypointsDesc": "Conexão(ões) selecionada(s), ou todos os caminhos customizados se nenhuma estiver selecionada",
     "undo": "Desfazer",
     "redo": "Refazer",
     "redoCtrlY": "Refazer (Ctrl+Y)",
