@@ -4,15 +4,18 @@ import ReactMarkdown from "react-markdown";
 import { ChevronDown, ChevronUp, FileText } from "lucide-react";
 import { useComponentIcon, useDiagramActions } from "@/features/diagram";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
+import {
+  NOTE_DEFAULT_DARK,
+  NOTE_DEFAULT_LIGHT,
+} from "@/features/canvas/panels/ElementPanel/components/colorPresets";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { KEY, keyIs } from "@/lib/keyboard-utils";
 
 import { useTranslation } from "react-i18next";
+import { useTheme } from "@/hooks/useTheme";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
 import { useCollabHighlight } from "@/features/collaboration";
 import { singleIncomingTargetHandleId } from "../edges/connectionDerivations";
-
-const DEFAULT_PAPER_COLOR = "hsl(45 25% 97%)"; 
 
 const noteIncomingHandleClassName =
   "!border-background transition-all duration-150 !w-2.5 !h-2.5 !bg-muted-foreground";
@@ -33,6 +36,7 @@ export interface NoteNodeData {
   name: string;
   description: string;
   panelColor?: string;
+  panelColorDark?: string;
   isSelected: boolean;
   isHighlighted?: boolean;
   onStartEdit?: () => void;
@@ -65,6 +69,7 @@ function isDarkBg(color: string): boolean {
 
 const NoteNode = memo(({ data, selected }: NodeProps) => {
   const { t } = useTranslation();
+  const { theme } = useTheme();
   const d = data as unknown as NoteNodeData;
   const elementId = d.elementId;
   const description = d.description;
@@ -75,15 +80,18 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
   const { highlightedNodeIds } = useHandleHighlight();
   const { updateComponent } = useDiagramActions();
 
-  const paperColor = d.panelColor || DEFAULT_PAPER_COLOR;
+  const paperColor =
+    theme === "dark"
+      ? (d.panelColorDark ?? NOTE_DEFAULT_DARK)
+      : (d.panelColor ?? NOTE_DEFAULT_LIGHT);
   const isSelected = selected || d.isSelected;
   const isHighlighted =
     (d.isHighlighted ?? false) || highlightedNodeIds.has(elementId);
   const isActive = isSelected || isHighlighted;
   const dark = isDarkBg(paperColor);
   const collabHighlight = useCollabHighlight(elementId);
-  const textClass = dark ? "text-white" : "text-foreground";
-  const mutedClass = dark ? "text-white/60" : "text-muted-foreground";
+  const textClass = dark ? "text-white" : "text-[#111827]";
+  const mutedClass = dark ? "text-white/60" : "text-[#111827]/50";
 
   const [isEditing, setIsEditing] = useState(false);
   const [draftValue, setDraftValue] = useState("");
@@ -326,7 +334,9 @@ const NoteNode = memo(({ data, selected }: NodeProps) => {
               style={{ fontFamily: "ui-serif, Georgia, serif" }}
             >
               {hasContent ? (
-                <div className="prose prose-sm prose-neutral dark:prose-invert max-w-none">
+                <div
+                  className={`prose prose-sm prose-neutral max-w-none ${dark ? "prose-invert" : ""}`}
+                >
                   <ReactMarkdown
                     components={{
                       p: ({ children }) => (

@@ -9,6 +9,7 @@ import {
   NEUTRAL_PRESETS,
   PANEL_PRESETS,
   NOTE_PRESETS,
+  NOTE_PRESETS_DARK,
   type ColorPreset,
 } from "./colorPresets";
 import { KEY, keyIs } from "@/lib/keyboard-utils";
@@ -20,6 +21,7 @@ export type ColorPresetGroup =
   | "neutral"
   | "panel"
   | "note"
+  | "note-dark"
   | "all";
 
 interface ColorSwatchesProps {
@@ -99,6 +101,8 @@ function presetsForGroup(group: ColorPresetGroup): ColorPreset[] {
       return PANEL_PRESETS;
     case "note":
       return NOTE_PRESETS;
+    case "note-dark":
+      return NOTE_PRESETS_DARK;
     case "all":
       return [
         ...VIBRANT_PRESETS,

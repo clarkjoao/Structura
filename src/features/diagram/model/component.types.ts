@@ -82,7 +82,8 @@ export interface PanelComponent extends BaseComponent {
 
 export interface NoteComponent extends BaseComponent {
   type: "note";
-  panelColor?: string;
+  panelColor?: string; // light-mode color (raw HSL or undefined)
+  panelColorDark?: string; // dark-mode color (raw HSL or undefined)
   collapsed?: boolean;
   collapsedWidth?: number;
   collapsedHeight?: number;
