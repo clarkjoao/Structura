@@ -15,6 +15,7 @@ import {
   repairFlow,
   buildFlowDuplicatePatch,
   stepsToMermaid,
+  parseMermaidFlowchart,
   parseMermaidSequence,
 } from "@/features/diagram";
 import type { Flow } from "@/features/diagram";
@@ -58,6 +59,7 @@ const FlowPanel = ({
   const importMermaidSequenceResult = useDiagramStore(
     (state) => state.importMermaidSequenceResult,
   );
+  const importDrawioResult = useDiagramStore((state) => state.importDrawioResult);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [pendingPlay, setPendingPlay] = useState<{ flow: Flow; broken: BrokenStep[] } | null>(null);
@@ -123,6 +125,19 @@ const FlowPanel = ({
       importMermaidSequenceResult,
       onGetInsertPosition,
     ],
+  );
+
+  const handleMermaidFlowchartImport = useCallback(
+    (text: string, _flowName: string) => {
+      if (!activeDiagramId) return;
+      const anchor = onGetInsertPosition();
+      const plan = parseMermaidFlowchart(text, components, connections, anchor);
+      if (plan.newComponents.length === 0 && plan.errors.length > 0) return;
+
+      importDrawioResult(plan.newComponents, plan.newConnections, plan.layouts);
+      setShowMermaidImport(false);
+    },
+    [activeDiagramId, components, connections, importDrawioResult, onGetInsertPosition],
   );
 
   return (
@@ -297,6 +312,7 @@ const FlowPanel = ({
         open={showMermaidImport}
         onOpenChange={setShowMermaidImport}
         onImport={handleMermaidImport}
+        onImportFlowchart={handleMermaidFlowchartImport}
       />
     </div>
   );

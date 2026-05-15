@@ -16,6 +16,7 @@ export function ElementPickerSearchResults({
   showSearchEmpty,
   filteredC4,
   filteredCanvas,
+  filteredFlowchart,
   filteredAwsFlat,
   filteredServices,
   filteredTemplates,
@@ -30,6 +31,7 @@ export function ElementPickerSearchResults({
   showSearchEmpty: boolean;
   filteredC4: C4PickerOption[];
   filteredCanvas: CanvasPickerOption[];
+  filteredFlowchart: CanvasPickerOption[];
   filteredAwsFlat: {
     categoryId: string;
     id: string;
@@ -41,6 +43,7 @@ export function ElementPickerSearchResults({
   onCanvasServiceIds: Set<string>;
   onAddC4: (type: ComponentType, label: string) => void;
   onAddCanvas: (opt: CanvasPickerOption) => void;
+  onAddFlowNode: (opt: CanvasPickerOption) => void;
   onAddAws: (categoryId: AwsCategoryId, serviceId: string, serviceName: string) => void;
   onAddRegistry: (serviceId: string, name: string) => void;
   onAddTemplate: (templateId: string) => void;
@@ -104,6 +107,26 @@ export function ElementPickerSearchResults({
             {t("elementPicker.canvasGroups")} · {filteredCanvas.length}
           </h3>
           <div className="grid grid-cols-4 gap-3">{filteredCanvas.map(canvasGridCard)}</div>
+        </section>
+      )}
+      {filteredFlowchart.length > 0 && (
+        <section>
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {t("elementPicker.flowchart")} · {filteredFlowchart.length}
+          </h3>
+          <div className="grid grid-cols-3 gap-2">
+            {filteredFlowchart.map((opt) => (
+              <button
+                key={opt.flowShape}
+                type="button"
+                onClick={() => onAddFlowNode(opt)}
+                className={PICKER_CARD_CLASS}
+              >
+                <opt.icon className="h-10 w-10 shrink-0 text-muted-foreground" />
+                <span className="mt-2 text-xs text-foreground">{opt.label}</span>
+              </button>
+            ))}
+          </div>
         </section>
       )}
       {filteredAwsFlat.length > 0 && (

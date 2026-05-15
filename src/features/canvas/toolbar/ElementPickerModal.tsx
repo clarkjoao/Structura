@@ -29,14 +29,17 @@ import { resolveAwsSpotlight } from "./element-picker/utils";
 import {
   buildC4PickerOptions,
   buildCanvasPickerOptions,
+  buildFlowchartPickerOptions,
 } from "./element-picker/buildPickerOptions";
 import {
   filterC4ByQuery,
   filterCanvasByQuery,
+  filterFlowchartByQuery,
   filterAwsCategoriesForQuery,
   flattenAwsServices,
   filterServicesByQuery,
 } from "./element-picker/pickerFilters";
+import { FlowchartCategoryView } from "./element-picker/FlowchartCategoryView";
 import { buildCategoryNavItems } from "./element-picker/buildCategoryNav";
 import { CategorySidebar } from "./element-picker/CategorySidebar";
 import { ElementPickerAllView } from "./element-picker/ElementPickerAllView";
@@ -68,6 +71,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
 
   const C4_OPTIONS = useMemo(() => buildC4PickerOptions(t), [t]);
   const CANVAS_OPTIONS = useMemo(() => buildCanvasPickerOptions(t), [t]);
+  const FLOWCHART_OPTIONS = useMemo(() => buildFlowchartPickerOptions(t), [t]);
 
   const onCanvasServiceIds = useMemo(
     () => new Set(allComponents.map((c) => c.serviceId).filter((id): id is string => !!id)),
@@ -85,10 +89,18 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     () =>
       C4_OPTIONS.length +
       CANVAS_OPTIONS.length +
+      FLOWCHART_OPTIONS.length +
       awsServiceCount +
       services.length +
       templates.length,
-    [C4_OPTIONS.length, CANVAS_OPTIONS.length, awsServiceCount, services.length, templates.length],
+    [
+      C4_OPTIONS.length,
+      CANVAS_OPTIONS.length,
+      FLOWCHART_OPTIONS.length,
+      awsServiceCount,
+      services.length,
+      templates.length,
+    ],
   );
 
   const awsPrimaryCategories = useMemo(
@@ -134,6 +146,11 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const filteredCanvas = useMemo(
     () => filterCanvasByQuery(q, CANVAS_OPTIONS),
     [q, CANVAS_OPTIONS],
+  );
+
+  const filteredFlowchart = useMemo(
+    () => filterFlowchartByQuery(q, FLOWCHART_OPTIONS),
+    [q, FLOWCHART_OPTIONS],
   );
 
   const filteredAwsCategories = useMemo(
@@ -215,6 +232,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
         all: allCategoryTotalCount,
         c4: C4_OPTIONS.length,
         canvas: CANVAS_OPTIONS.length,
+        flowchart: FLOWCHART_OPTIONS.length,
         aws: awsServiceCount,
         registry: services.length,
         nodeTemplates: templates.length,
@@ -224,6 +242,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
       allCategoryTotalCount,
       C4_OPTIONS.length,
       CANVAS_OPTIONS.length,
+      FLOWCHART_OPTIONS.length,
       awsServiceCount,
       services.length,
       templates.length,
@@ -239,6 +258,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     !!q &&
     filteredC4.length === 0 &&
     filteredCanvas.length === 0 &&
+    filteredFlowchart.length === 0 &&
     filteredAwsFlat.length === 0 &&
     filteredServices.length === 0 &&
     filteredTemplates.length === 0;
@@ -247,6 +267,26 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     handleAddElement(opt.type, opt.label, opt.panelKind);
   };
 
+  const handleAddFlowNode = useCallback(
+    (opt: CanvasPickerOption) => {
+      if (!opt.flowShape) return;
+      trackUsage(getUsageKeyForType("processos"));
+      const name = getDefaultNameForNewComponent("processos", opt.label);
+      const comp = addComponent(
+        "processos",
+        name,
+        null,
+        getInsertPos(),
+        undefined,
+        undefined,
+        opt.flowShape,
+      );
+      onInsert?.(comp.id);
+      onClose();
+    },
+    [addComponent, getInsertPos, onClose, onInsert],
+  );
+
   const renderCategoryBody = () => {
     switch (activeCategory) {
       case ElementCategory.All:
@@ -254,11 +294,13 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
           <ElementPickerAllView
             C4_OPTIONS={C4_OPTIONS}
             CANVAS_OPTIONS={CANVAS_OPTIONS}
+            FLOWCHART_OPTIONS={FLOWCHART_OPTIONS}
             awsSpotlight={awsSpotlight}
             services={services}
             onCanvasServiceIds={onCanvasServiceIds}
             onAddC4={(type, label) => handleAddElement(type, label)}
             onAddCanvas={onAddCanvas}
+            onAddFlowNode={handleAddFlowNode}
             onAddAws={handleAddAws}
             onAddRegistry={handleAddService}
             onClose={onClose}
@@ -325,6 +367,10 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
             onAddRegistry={handleAddService}
             onClose={onClose}
           />
+        );
+      case ElementCategory.Flowchart:
+        return (
+          <FlowchartCategoryView options={FLOWCHART_OPTIONS} onAdd={handleAddFlowNode} />
         );
       case ElementCategory.NodeTemplate:
         return filteredTemplates.length === 0 ? (
@@ -406,12 +452,14 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
                   showSearchEmpty={showSearchEmpty}
                   filteredC4={filteredC4}
                   filteredCanvas={filteredCanvas}
+                  filteredFlowchart={filteredFlowchart}
                   filteredAwsFlat={filteredAwsFlat}
                   filteredServices={filteredServices}
                   filteredTemplates={filteredTemplates}
                   onCanvasServiceIds={onCanvasServiceIds}
                   onAddC4={(type, label) => handleAddElement(type, label)}
                   onAddCanvas={onAddCanvas}
+                  onAddFlowNode={handleAddFlowNode}
                   onAddAws={handleAddAws}
                   onAddRegistry={handleAddService}
                   onAddTemplate={(templateId) => {

@@ -6,6 +6,7 @@ export enum ElementCategory {
   Aws = "aws",
   Registry = "registry",
   NodeTemplate = "node-template",
+  Flowchart = "flowchart",
 }
 
 

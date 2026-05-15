@@ -8,7 +8,13 @@ import {
   useDiagramActions,
   resolveSceneSnapshot,
 } from "@/features/diagram";
-import type { Component, ComponentPatch, ComponentType, ServiceDefinition } from "@/features/diagram";
+import type {
+  Component,
+  ComponentPatch,
+  ComponentType,
+  FlowNodeShape,
+  ServiceDefinition,
+} from "@/features/diagram";
 import {
   isApiGroupComponent,
   isPanelComponent,
@@ -16,6 +22,7 @@ import {
   isC4Component,
   isDbTableComponent,
   isJsonViewerComponent,
+  isFlowNodeComponent,
   isSystemType,
   isContainerType,
   isSvgComponentType,
@@ -36,6 +43,7 @@ import {
   PanelStyleSection,
   ColorAccentSection,
   ExternalLinksSection,
+  FlowchartFieldsSection,
   PositionSection,
 } from "./sections";
 import { usePanelChildLayout } from "../../hooks/usePanelChildLayout";
@@ -143,7 +151,11 @@ const ComponentPanel = ({
   const isPanel = isPanelComponent(component);
   const isNote = isNoteComponent(component);
   const isDbTable = isDbTableComponent(component);
+  const isFlowchart = isFlowNodeComponent(component);
   const isSimple = isPanel || isNote;
+  const [flowShape, setFlowShape] = useState<FlowNodeShape>(
+    isFlowchart ? component.flowShape : "rectangle",
+  );
   const showIconTab = !isSvgComponentType(component.type);
   const isAws = isAwsType(type);
   const serviceInfo = awsService ? AWS_SERVICE_MAP.get(awsService) : null;
@@ -185,6 +197,12 @@ const ComponentPanel = ({
   useEffect(() => {
     setTab("details");
   }, [component.id]);
+
+  useEffect(() => {
+    if (isFlowNodeComponent(component)) {
+      setFlowShape(component.flowShape);
+    }
+  }, [component.id, component]);
 
   useEffect(() => {
     if (!showIconTab && tab === "icon") {
@@ -424,7 +442,16 @@ const ComponentPanel = ({
                 onRemoveTag={handleRemoveTag}
                 onCommitTagInput={handleCommitTagInput}
               />
-              {!isDbTable && (
+              {isFlowchart && (
+                <FlowchartFieldsSection
+                  flowShape={flowShape}
+                  onFlowShapeChange={(shape) => {
+                    setFlowShape(shape);
+                    updateComponent(component.id, { flowShape: shape } as ComponentPatch);
+                  }}
+                />
+              )}
+              {!isDbTable && !isFlowchart && (
                 <div>
                   <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
                     {t("endpointPanel.type")}
@@ -552,7 +579,7 @@ const ComponentPanel = ({
               updateComponent={updateComponent}
             />
           )}
-          {!isSimple && (
+          {!isSimple && !isFlowchart && (
             <ServiceLinkSection
               componentId={component.id}
               serviceId={component.serviceId}
@@ -565,7 +592,7 @@ const ComponentPanel = ({
               }}
             />
           )}
-          {!isSimple && (
+          {!isSimple && !isFlowchart && (
             <LinkedDiagramSection
             componentId={component.id}
             linkedDiagramId={component.linkedDiagramId}

@@ -47,6 +47,7 @@ export interface AppActions {
     position?: { x: number; y: number },
     awsService?: string,
     panelKind?: PanelKind,
+    flowShape?: import("../model/diagram.types").FlowNodeShape,
   ) => Component;
   updateComponent: (id: string, patch: ComponentPatch) => void;
   removeComponent: (id: string) => void;

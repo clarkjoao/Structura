@@ -19,11 +19,13 @@ import { RegistryServiceRow } from "./RegistryServiceRow";
 export function ElementPickerAllView({
   C4_OPTIONS,
   CANVAS_OPTIONS,
+  FLOWCHART_OPTIONS,
   awsSpotlight,
   services,
   onCanvasServiceIds,
   onAddC4,
   onAddCanvas,
+  onAddFlowNode,
   onAddAws,
   onAddRegistry,
   onClose,
@@ -31,11 +33,13 @@ export function ElementPickerAllView({
 }: {
   C4_OPTIONS: C4PickerOption[];
   CANVAS_OPTIONS: CanvasPickerOption[];
+  FLOWCHART_OPTIONS: CanvasPickerOption[];
   awsSpotlight: { svc: { id: string; name: string; iconName: string }; categoryId: string }[];
   services: import("@/features/diagram").ServiceDefinition[];
   onCanvasServiceIds: Set<string>;
   onAddC4: (type: ComponentType, label: string) => void;
   onAddCanvas: (opt: CanvasPickerOption) => void;
+  onAddFlowNode: (opt: CanvasPickerOption) => void;
   onAddAws: (categoryId: AwsCategoryId, serviceId: string, serviceName: string) => void;
   onAddRegistry: (serviceId: string, name: string) => void;
   onClose: () => void;
@@ -84,6 +88,27 @@ export function ElementPickerAllView({
       <section>
         <PickerSectionHeader sectionLabel={t("elementPicker.canvasGroups")} />
         <div className="grid grid-cols-4 gap-3">{CANVAS_OPTIONS.map(canvasGridCard)}</div>
+      </section>
+      <section>
+        <PickerSectionHeader
+          sectionLabel={t("elementPicker.flowchart")}
+          showViewAll
+          viewAllLabel={t("elementPicker.viewAll")}
+          onViewAll={() => setCategory(ElementCategory.Flowchart)}
+        />
+        <div className="grid grid-cols-3 gap-2">
+          {FLOWCHART_OPTIONS.slice(0, 6).map((opt) => (
+            <button
+              key={opt.flowShape}
+              type="button"
+              onClick={() => onAddFlowNode(opt)}
+              className={PICKER_CARD_CLASS}
+            >
+              <opt.icon className="h-10 w-10 shrink-0 text-muted-foreground" />
+              <span className="mt-2 text-xs text-foreground">{opt.label}</span>
+            </button>
+          ))}
+        </div>
       </section>
       <section>
         <PickerSectionHeader

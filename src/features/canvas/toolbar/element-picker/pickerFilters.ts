@@ -33,6 +33,13 @@ export function filterCanvasByQuery(
     : options;
 }
 
+export function filterFlowchartByQuery(
+  q: string,
+  options: CanvasPickerOption[],
+): CanvasPickerOption[] {
+  return q ? options.filter((o) => canvasOptionMatchesQuery(o, q)) : options;
+}
+
 export function filterAwsCategoriesForQuery(
   q: string,
 ): AwsCategory[] {

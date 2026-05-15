@@ -9,3 +9,4 @@ export {
 export { PanelStyleSection, type PanelStyleSectionProps } from "./PanelStyleSection";
 export { ColorAccentSection, type ColorAccentSectionProps, type ColorAccentPreset } from "./ColorAccentSection";
 export { ExternalLinksSection, type ExternalLinksSectionProps } from "./ExternalLinksSection";
+export { FlowchartFieldsSection, type FlowchartFieldsSectionProps } from "./FlowchartFieldsSection";

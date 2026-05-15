@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Cloud,
+  GitFork,
   LayoutGrid,
   LayoutTemplate,
   Layers,
@@ -25,6 +26,7 @@ export function buildCategoryNavItems(
     aws: number;
     registry: number;
     nodeTemplates: number;
+    flowchart: number;
   },
 ): CategoryNavItem[] {
   return [
@@ -63,6 +65,12 @@ export function buildCategoryNavItems(
       label: t("customComponents.customComponents"),
       icon: Bookmark,
       count: counts.nodeTemplates,
+    },
+    {
+      id: ElementCategory.Flowchart,
+      label: t("elementPicker.flowchart"),
+      icon: GitFork,
+      count: counts.flowchart,
     },
   ];
 }

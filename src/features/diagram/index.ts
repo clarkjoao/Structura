@@ -30,6 +30,8 @@ export type {
   DbTableComponent,
   DbColumn,
   JsonViewerComponent,
+  FlowNodeComponent,
+  FlowNodeShape,
   EndpointHandler,
   HttpMethod,
   Connection,
@@ -87,6 +89,8 @@ export { applyHandleOrder } from "./utils/handle-order";
 export { stepsToMermaid, parseMermaidToSteps } from "./utils/flow-mermaid";
 export { parseMermaidSequence } from "./utils/import-mermaid-sequence";
 export type { MermaidImportPlan } from "./utils/import-mermaid-sequence";
+export { parseMermaidFlowchart } from "./utils/import-mermaid-flowchart";
+export type { FlowchartImportPlan } from "./utils/import-mermaid-flowchart";
 
 
 export {
@@ -215,6 +219,7 @@ export {
   isSvgComponent,
   isDbTableComponent,
   isJsonViewerComponent,
+  isFlowNodeComponent,
 } from "./model/component.guards";
 
 
@@ -228,6 +233,8 @@ export {
   COMPONENT_TYPE_SVG,
   COMPONENT_TYPE_DB_TABLE,
   COMPONENT_TYPE_JSON_VIEWER,
+  COMPONENT_TYPE_FLOW_NODE,
+  COMPONENT_TYPE_PROCESSOS,
   PANEL_KIND_VALUES,
   isPanelType,
   isNoteType,
@@ -238,6 +245,7 @@ export {
   isApiGroupType,
   isDbTableType,
   isJsonViewerType,
+  isFlowNodeType,
   isPersonType,
   isSystemType,
   isContainerType,

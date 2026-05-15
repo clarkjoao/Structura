@@ -20,6 +20,17 @@ export const COMPONENT_TYPE_UNKNOWN = "unknown";
 
 export const COMPONENT_TYPE_SVG = "svg";
 
+/** @deprecated Use COMPONENT_TYPE_PROCESSOS */
+export const COMPONENT_TYPE_FLOW_NODE = "processos";
+
+export const COMPONENT_TYPE_PROCESSOS = "processos";
+
+const LEGACY_FLOW_NODE_TYPE = "flow-node";
+
+export function isFlowNodeType(type: string): type is "processos" {
+  return type === COMPONENT_TYPE_PROCESSOS || type === LEGACY_FLOW_NODE_TYPE;
+}
+
 export function isSvgComponentType(type: string): type is "svg" {
   return type === COMPONENT_TYPE_SVG;
 }
@@ -110,7 +121,8 @@ export function getUsageKeyForType(
     isEndpointType(type) ||
     isApiGroupType(type) ||
     isDbTableType(type) ||
-    isJsonViewerType(type)
+    isJsonViewerType(type) ||
+    isFlowNodeType(type)
   ) {
     return `canvas:${type}`;
   }
@@ -142,6 +154,7 @@ export function getDefaultNameForNewComponent(
     return i18n.t("quickInsert.newNamed", {
       name: i18n.t("nodeTypes.json-viewer"),
     });
+  if (isFlowNodeType(type)) return label;
   if (isPanelType(type) && panelDefaultName) return panelDefaultName;
   return i18n.t("quickInsert.newNamed", { name: label });
 }

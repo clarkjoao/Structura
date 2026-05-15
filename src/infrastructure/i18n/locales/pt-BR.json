@@ -839,7 +839,21 @@
   },
   "nodeTypes": {
     "db-table": "Tabela de banco de dados",
-    "json-viewer": "JSON Viewer"
+    "json-viewer": "JSON Viewer",
+    "processos": "Processos"
+  },
+  "flowchart": {
+    "shapes": {
+      "rectangle": "Processo",
+      "rounded": "Processo Arredondado",
+      "stadium": "Terminal",
+      "diamond": "Decisão",
+      "hexagon": "Preparação",
+      "parallelogram": "Entrada / Saída",
+      "cylinder": "Banco de Dados",
+      "circle": "Início / Fim",
+      "subroutine": "Sub-Processo"
+    }
   },
   "elementPicker": {
     "categoryAll": "Todos",
@@ -855,6 +869,7 @@
     "addButton": "+ Adicionar",
     "addAnotherInstance": "Adicionar outra instância ao canvas",
     "c4Model": "C4 Model",
+    "flowchart": "Fluxograma",
     "canvasGroups": "Canvas e Agrupamentos",
     "awsOther": "Outros",
     "registryEmpty": "Nenhum serviço no registry ainda.",
@@ -909,6 +924,7 @@
     "panelHeaderPanel": "Painel",
     "panelHeaderNote": "Nota",
     "c4ModelGroup": "C4 Model",
+    "flowShape": "Forma",
     "awsServiceLabel": "Serviço AWS",
     "noneOption": "Nenhum",
     "remove": "Remover",
@@ -1190,7 +1206,10 @@
       "newComponents": "{{count}} novo(s) componente(s) será(ão) criado(s)",
       "newConnections": "{{count}} nova(s) conexão(ões) será(ão) criada(s)",
       "errors": "Erros",
-      "invalidDiagram": "O texto deve conter um sequenceDiagram válido"
+      "invalidDiagram": "O texto deve conter um sequenceDiagram válido",
+      "unknownDiagramType": "Tipo de diagrama não reconhecido. Comece com sequenceDiagram ou flowchart.",
+      "detectedSequence": "Diagrama de sequência detectado",
+      "detectedFlowchart": "Fluxograma detectado"
     },
     "copyDrawio": "Copiar para Drawio",
     "copied": "Copiado!",
