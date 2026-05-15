@@ -90,8 +90,18 @@ export function GithubResultsList({
           </Badge>
         </div>
 
-        <div className="text-sm text-muted-foreground">
-          {t("github.selectedTotal", { count: selectedCount })}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">
+            {t("github.selectedTotal", { count: selectedCount })}
+          </span>
+          <Button
+            type="button"
+            size="sm"
+            onClick={onImport}
+            disabled={selectedCount === 0 || loading}
+          >
+            {t("github.importSelectedCount", { count: selectedCount })}
+          </Button>
         </div>
       </div>
 
@@ -123,8 +133,8 @@ export function GithubResultsList({
         )}
       </div>
 
-      <div className="flex items-center justify-end gap-2">
-        {results.length < totalCount && (
+      {results.length < totalCount && (
+        <div className="flex justify-end">
           <Button
             type="button"
             variant="outline"
@@ -133,16 +143,8 @@ export function GithubResultsList({
           >
             {t("github.loadMore")}
           </Button>
-        )}
-
-        <Button
-          type="button"
-          onClick={onImport}
-          disabled={selectedCount === 0 || loading}
-        >
-          {t("github.importSelectedCount", { count: selectedCount })}
-        </Button>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
