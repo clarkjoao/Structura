@@ -14,6 +14,7 @@ export type ComponentType =
   | "svg"
   | "db-table"
   | "json-viewer"
+  | "processos"
   | AwsCategoryId;
 
 export interface ExternalLink {
@@ -164,6 +165,23 @@ export interface JsonViewerComponent extends BaseComponent {
   schemaRef?: string;
 }
 
+export type FlowNodeShape =
+  | "rectangle"     // Mermaid: [text]
+  | "rounded"       // Mermaid: (text)
+  | "stadium"       // Mermaid: ([text])
+  | "diamond"       // Mermaid: {text}
+  | "hexagon"       // Mermaid: {{text}}
+  | "parallelogram" // Mermaid: [/text/]
+  | "cylinder"      // Mermaid: [(text)]
+  | "circle"        // Mermaid: ((text))
+  | "subroutine";   // Mermaid: [[text]]
+
+export interface FlowNodeComponent extends BaseComponent {
+  type: "processos";
+  flowShape: FlowNodeShape;
+  nodeColor?: string;
+}
+
 export type Component =
   | C4Component
   | PanelComponent
@@ -174,7 +192,8 @@ export type Component =
   | UnknownComponent
   | DbTableComponent
   | JsonViewerComponent
-  | SvgComponent;
+  | SvgComponent
+  | FlowNodeComponent;
 
 
 export type ComponentPatch = Partial<Omit<C4Component, "id">> &
@@ -186,7 +205,8 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<UnknownComponent, "id">> &
   Partial<Omit<DbTableComponent, "id">> &
   Partial<Omit<JsonViewerComponent, "id">> &
-  Partial<Omit<SvgComponent, "id">> & { width?: number; height?: number };
+  Partial<Omit<SvgComponent, "id">> &
+  Partial<Omit<FlowNodeComponent, "id">> & { width?: number; height?: number };
 
 
 export type TypedComponentPatch =
@@ -200,4 +220,5 @@ export type TypedComponentPatch =
   | (Partial<Omit<DbTableComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<JsonViewerComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<SvgComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<FlowNodeComponent, "id">> & { width?: number; height?: number })
   | { width?: number; height?: number };

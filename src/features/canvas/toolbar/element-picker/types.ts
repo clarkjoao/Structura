@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import type { ComponentType, PanelKind } from "@/features/diagram";
+import type { ComponentType, FlowNodeShape, PanelKind } from "@/features/diagram";
 
 export type CanvasPickerOption = {
   type: ComponentType;
@@ -7,6 +7,7 @@ export type CanvasPickerOption = {
   icon: LucideIcon;
   panelKind?: PanelKind;
   awsIconName?: string;
+  flowShape?: FlowNodeShape;
 };
 
 export interface ElementPickerModalProps {

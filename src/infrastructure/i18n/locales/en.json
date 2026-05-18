@@ -839,7 +839,21 @@
   },
   "nodeTypes": {
     "db-table": "Database table",
-    "json-viewer": "JSON Viewer"
+    "json-viewer": "JSON Viewer",
+    "processos": "Processes"
+  },
+  "flowchart": {
+    "shapes": {
+      "rectangle": "Process",
+      "rounded": "Rounded Process",
+      "stadium": "Terminal",
+      "diamond": "Decision",
+      "hexagon": "Preparation",
+      "parallelogram": "Input / Output",
+      "cylinder": "Database",
+      "circle": "Start / End",
+      "subroutine": "Sub-Process"
+    }
   },
   "elementPicker": {
     "categoryAll": "All",
@@ -855,6 +869,7 @@
     "addButton": "+ Add",
     "addAnotherInstance": "Add another instance to the canvas",
     "c4Model": "C4 Model",
+    "flowchart": "Flowchart",
     "canvasGroups": "Canvas & Groups",
     "awsOther": "Other",
     "registryEmpty": "No services in the registry yet.",
@@ -910,6 +925,7 @@
     "panelHeaderPanel": "Panel",
     "panelHeaderNote": "Note",
     "c4ModelGroup": "C4 Model",
+    "flowShape": "Shape",
     "awsServiceLabel": "AWS service",
     "noneOption": "None",
     "remove": "Remove",
@@ -1193,7 +1209,10 @@
       "newComponents": "{{count}} new component(s) will be created",
       "newConnections": "{{count}} new connection(s) will be created",
       "errors": "Errors",
-      "invalidDiagram": "Text must contain a valid sequenceDiagram"
+      "invalidDiagram": "Text must contain a valid sequenceDiagram",
+      "unknownDiagramType": "Unrecognized diagram type. Start with sequenceDiagram or flowchart.",
+      "detectedSequence": "Sequence diagram detected",
+      "detectedFlowchart": "Flowchart detected"
     },
     "copyDrawio": "Copy to Drawio",
     "copied": "Copied!",

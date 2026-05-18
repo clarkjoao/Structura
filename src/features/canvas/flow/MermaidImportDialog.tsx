@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
 import { useTranslation } from "react-i18next";
-import { parseMermaidSequence } from "@/features/diagram";
+import { parseMermaidFlowchart, parseMermaidSequence } from "@/features/diagram";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,21 +14,37 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+type MermaidDiagramType = "sequence" | "flowchart" | "unknown";
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onImport: (text: string, flowName: string) => void;
+  onImportFlowchart?: (text: string, flowName: string) => void;
 }
 
 interface ValidationState {
   errors: string[];
   newComponents: number;
   newConnections: number;
+  diagramType: MermaidDiagramType;
 }
 
 const DEFAULT_FLOW_NAME = "Imported Flow";
 
-export function MermaidImportDialog({ open, onOpenChange, onImport }: Props) {
+function detectMermaidType(text: string): MermaidDiagramType {
+  const firstLine = text.trim().split("\n")[0]?.trim().toLowerCase() ?? "";
+  if (firstLine.startsWith("sequencediagram")) return "sequence";
+  if (firstLine.startsWith("flowchart")) return "flowchart";
+  return "unknown";
+}
+
+export function MermaidImportDialog({
+  open,
+  onOpenChange,
+  onImport,
+  onImportFlowchart,
+}: Props) {
   const { t } = useTranslation();
   const [flowName, setFlowName] = useState(DEFAULT_FLOW_NAME);
   const [text, setText] = useState("");
@@ -41,15 +58,35 @@ export function MermaidImportDialog({ open, onOpenChange, onImport }: Props) {
       return;
     }
     debounceRef.current = setTimeout(() => {
-      const result = parseMermaidSequence(text, {}, {}, { x: 0, y: 0 });
-      const nextErrors = [...result.errors];
-      if (!text.includes("sequenceDiagram")) {
-        nextErrors.unshift(t("flows.importDialog.invalidDiagram"));
+      const diagramType = detectMermaidType(text);
+
+      if (diagramType === "unknown") {
+        setValidation({
+          errors: [t("flows.importDialog.unknownDiagramType")],
+          newComponents: 0,
+          newConnections: 0,
+          diagramType,
+        });
+        return;
       }
+
+      if (diagramType === "sequence") {
+        const result = parseMermaidSequence(text, {}, {}, { x: 0, y: 0 });
+        setValidation({
+          errors: result.errors,
+          newComponents: result.newComponents.length,
+          newConnections: result.newConnections.length,
+          diagramType,
+        });
+        return;
+      }
+
+      const result = parseMermaidFlowchart(text, {}, {}, { x: 0, y: 0 });
       setValidation({
-        errors: nextErrors,
+        errors: result.errors,
         newComponents: result.newComponents.length,
         newConnections: result.newConnections.length,
+        diagramType,
       });
     }, 400);
     return () => {
@@ -67,8 +104,16 @@ export function MermaidImportDialog({ open, onOpenChange, onImport }: Props) {
 
   const handleImport = () => {
     if (!text.trim()) return;
-    onImport(text, flowName.trim() || DEFAULT_FLOW_NAME);
+    const name = flowName.trim() || DEFAULT_FLOW_NAME;
+    if (validation?.diagramType === "flowchart" && onImportFlowchart) {
+      onImportFlowchart(text, name);
+      return;
+    }
+    onImport(text, name);
   };
+
+  const canImportFlowchart =
+    validation?.diagramType === "flowchart" && Boolean(onImportFlowchart);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -101,6 +146,17 @@ export function MermaidImportDialog({ open, onOpenChange, onImport }: Props) {
           }}
         />
 
+        {validation?.diagramType === "sequence" && (
+          <Badge variant="secondary" className="w-fit text-xs">
+            {t("flows.importDialog.detectedSequence")}
+          </Badge>
+        )}
+        {validation?.diagramType === "flowchart" && (
+          <Badge variant="secondary" className="w-fit text-xs">
+            {t("flows.importDialog.detectedFlowchart")}
+          </Badge>
+        )}
+
         {validation && (
           <div className="space-y-2 text-sm">
             <p className="text-muted-foreground">
@@ -128,7 +184,12 @@ export function MermaidImportDialog({ open, onOpenChange, onImport }: Props) {
           </Button>
           <Button
             onClick={handleImport}
-            disabled={!text.trim() || (validation !== null && validation.errors.length > 0)}
+            disabled={
+              !text.trim() ||
+              validation === null ||
+              validation.errors.length > 0 ||
+              (validation.diagramType === "flowchart" && !canImportFlowchart)
+            }
           >
             {t("flows.importDialog.import")}
           </Button>

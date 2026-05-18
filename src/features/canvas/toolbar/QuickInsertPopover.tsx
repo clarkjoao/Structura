@@ -22,8 +22,9 @@ import {
   isDbTableType,
   isJsonViewerType,
 } from "@/features/diagram";
-import type { ComponentType } from "@/features/diagram";
+import type { ComponentType, FlowNodeShape } from "@/features/diagram";
 import { getDefaultNameForNewComponent, getLastEdgeStyle } from "@/features/diagram";
+import { buildFlowchartPickerOptions } from "./element-picker/buildPickerOptions";
 import { PANEL_KINDS, getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/catalogs/aws";
 import { KEY, keyIs } from "@/lib/keyboard-utils";
@@ -37,6 +38,7 @@ type CanvasInsertOption = {
   icon: React.ComponentType<{ className?: string }>;
   panelKind?: PanelKind;
   awsIconName?: string;
+  flowShape?: FlowNodeShape;
 };
 
 type FlatOption =
@@ -166,6 +168,13 @@ const QuickInsertPopover = ({
     [t],
   );
 
+  const FLOWCHART_QUICK_OPTIONS = useMemo(() => {
+    const shapes = new Set<FlowNodeShape>(["rectangle", "rounded", "diamond"]);
+    return buildFlowchartPickerOptions(t).filter(
+      (opt) => opt.flowShape && shapes.has(opt.flowShape),
+    );
+  }, [t]);
+
   const CANVAS_OPTIONS = useMemo(
     (): CanvasInsertOption[] => [
       { type: COMPONENT_TYPE_PANEL, label: t("canvasToolbar.panel"), icon: Square, panelKind: PanelKind.Default },
@@ -239,6 +248,11 @@ const QuickInsertPopover = ({
     return CANVAS_OPTIONS.filter((o) => canvasOptionMatchesQuery(o, q, searchSynonyms));
   }, [q, CANVAS_OPTIONS, searchSynonyms]);
 
+  const filteredFlowchart = useMemo(() => {
+    if (!q) return [];
+    return FLOWCHART_QUICK_OPTIONS.filter((o) => o.label.toLowerCase().includes(q));
+  }, [q, FLOWCHART_QUICK_OPTIONS]);
+
   const filteredAws = useMemo(() => {
     if (!q) return [];
     const rows: AwsSearchRow[] = [];
@@ -286,8 +300,27 @@ const QuickInsertPopover = ({
   }, [q, templates]);
 
   const flatOptions = useMemo((): FlatOption[] => {
-    return toFlatOptions(filteredC4, filteredCanvas, filteredAws, filteredServices, filteredTemplates);
-  }, [filteredC4, filteredCanvas, filteredAws, filteredServices, filteredTemplates]);
+    const flowchartAsCanvas: CanvasInsertOption[] = filteredFlowchart.map((opt) => ({
+      type: opt.type,
+      label: opt.label,
+      icon: opt.icon,
+      flowShape: opt.flowShape,
+    }));
+    return toFlatOptions(
+      filteredC4,
+      [...filteredCanvas, ...flowchartAsCanvas],
+      filteredAws,
+      filteredServices,
+      filteredTemplates,
+    );
+  }, [
+    filteredC4,
+    filteredCanvas,
+    filteredFlowchart,
+    filteredAws,
+    filteredServices,
+    filteredTemplates,
+  ]);
 
   useEffect(() => {
     setSelectedIndex(0);
@@ -319,12 +352,15 @@ const QuickInsertPopover = ({
     finalizeInsertion(comp.id);
   }, [addComponent, t, insertPos, finalizeInsertion]);
 
-  const handleSelectCanvas = useCallback((type: ComponentType, label: string, panelKind?: PanelKind) => {
-    const panelDefaultName = panelKind ? getPanelKindDef(panelKind).defaultName : undefined;
-    const name = getDefaultNameForNewComponent(type, label, panelDefaultName);
-    const comp = addComponent(type, name, null, insertPos, undefined, panelKind);
-    finalizeInsertion(comp.id);
-  }, [addComponent, insertPos, finalizeInsertion]);
+  const handleSelectCanvas = useCallback(
+    (type: ComponentType, label: string, panelKind?: PanelKind, flowShape?: FlowNodeShape) => {
+      const panelDefaultName = panelKind ? getPanelKindDef(panelKind).defaultName : undefined;
+      const name = getDefaultNameForNewComponent(type, label, panelDefaultName);
+      const comp = addComponent(type, name, null, insertPos, undefined, panelKind, flowShape);
+      finalizeInsertion(comp.id);
+    },
+    [addComponent, insertPos, finalizeInsertion],
+  );
 
   const handleSelectAws = useCallback((categoryId: AwsCategoryId, serviceId: string, serviceName: string) => {
     const panelKind = getPanelKindForAwsService(serviceId);
@@ -356,7 +392,12 @@ const QuickInsertPopover = ({
           handleSelectC4(option.type, option.label);
           break;
         case "canvas":
-          handleSelectCanvas(option.opt.type, option.opt.label, option.opt.panelKind);
+          handleSelectCanvas(
+            option.opt.type,
+            option.opt.label,
+            option.opt.panelKind,
+            option.opt.flowShape,
+          );
           break;
         case "aws":
           handleSelectAws(option.categoryId, option.serviceId, option.serviceName);
@@ -386,6 +427,7 @@ const QuickInsertPopover = ({
     !!search.trim() &&
     filteredC4.length === 0 &&
     filteredCanvas.length === 0 &&
+    filteredFlowchart.length === 0 &&
     filteredAws.length === 0 &&
     filteredServices.length === 0 &&
     filteredTemplates.length === 0;

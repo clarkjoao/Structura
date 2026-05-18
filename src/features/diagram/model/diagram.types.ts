@@ -21,6 +21,8 @@ export type {
   DbTableComponent,
   DbColumn,
   JsonViewerComponent,
+  FlowNodeComponent,
+  FlowNodeShape,
 } from "./component.types";
 
 export type {

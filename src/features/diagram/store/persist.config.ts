@@ -204,6 +204,26 @@ function migrateEdgeLayoutsFromArray(state: Partial<DiagramStore>): void {
   }
 }
 
+function migrateFlowNodeTypeToProcessos(state: Partial<DiagramStore>): void {
+  const migrateComponents = (components: Record<string, Component> | undefined): void => {
+    if (!components) return;
+    for (const comp of Object.values(components)) {
+      const record = comp as { type: string };
+      if (record.type === "flow-node") {
+        record.type = "processos";
+      }
+    }
+  };
+
+  for (const diagram of Object.values(state.diagrams ?? {})) {
+    const d = diagram as Diagram;
+    migrateComponents(d.snapshot?.components);
+    for (const scene of Object.values(d.scenes ?? {})) {
+      migrateComponents(scene.addedComponents);
+    }
+  }
+}
+
 function migrateAddDiagramDescription(state: Partial<DiagramStore>): void {
   for (const diagram of Object.values(state.diagrams ?? {})) {
     const diagramRecord = diagram as Diagram;
@@ -315,6 +335,7 @@ export function mergePersistedState(
   migrateIconDefinitionToSource(next);
   migrateAddEdgeLayouts(next);
   migrateAddDiagramDescription(next);
+  migrateFlowNodeTypeToProcessos(next);
   if (hasEmbeddedIconLibraryInDiagrams(next)) {
     migrateIconLibraryToGlobalStore(next);
   }

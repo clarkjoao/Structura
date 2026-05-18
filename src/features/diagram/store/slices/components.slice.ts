@@ -26,7 +26,10 @@ import {
   isJsonViewerType,
   isUnknownType,
   isSvgComponentType,
+  isFlowNodeType,
+  COMPONENT_TYPE_PROCESSOS,
 } from "../../model/component-type-constants";
+import type { FlowNodeComponent, FlowNodeShape } from "../../model/component.types";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import { isAwsType } from "@/lib/catalogs/aws";
 import type { AppState } from "../store.types";
@@ -113,6 +116,7 @@ function buildComponentForType(
   parentId: string | null,
   panelKind: PanelKind | undefined,
   awsService: string | undefined,
+  flowShape?: FlowNodeShape,
 ): { component: Component; resolvedPanelKind: PanelKind | undefined } {
   const base = { id, name, description: "", parentId };
   let component: Component;
@@ -183,6 +187,12 @@ function buildComponentForType(
       type: "svg",
       svgContent: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"></svg>',
     } as SvgComponent;
+  } else if (isFlowNodeType(type)) {
+    component = {
+      ...base,
+      type: COMPONENT_TYPE_PROCESSOS,
+      flowShape: flowShape ?? "rectangle",
+    } as FlowNodeComponent;
   } else {
     // Se um novo ComponentType for adicionado e não tratado aqui, este erro de runtime
     // sinaliza a necessidade de adicionar o branch correspondente.
@@ -224,6 +234,7 @@ function buildLayoutForComponent(
   type: ComponentType,
   resolvedPanelKind: PanelKind | undefined,
   resolvedPosition: { x: number; y: number },
+  flowShape?: FlowNodeShape,
 ): NodeLayout {
   const { x, y } = resolvedPosition;
   if (isApiGroupType(type)) {
@@ -259,6 +270,16 @@ function buildLayoutForComponent(
   if (isJsonViewerType(type)) {
     return { elementId: componentId, x, y, width: 240, height: 88 };
   }
+  if (isFlowNodeType(type)) {
+    const circleSize = 80;
+    return {
+      elementId: componentId,
+      x,
+      y,
+      width: flowShape === "circle" ? circleSize : 160,
+      height: flowShape === "circle" ? circleSize : 60,
+    };
+  }
   return { elementId: componentId, x, y };
 }
 
@@ -273,6 +294,7 @@ export const componentsSlice = (
       position?: { x: number; y: number },
       awsService?: string,
       panelKind?: PanelKind,
+      flowShape?: FlowNodeShape,
     ): Component => {
       const id = generateId("el");
       const { component, resolvedPanelKind } = buildComponentForType(
@@ -282,6 +304,7 @@ export const componentsSlice = (
         parentId,
         panelKind,
         awsService,
+        flowShape,
       );
 
       set((state) => {
@@ -318,6 +341,7 @@ export const componentsSlice = (
           type,
           resolvedPanelKind,
           resolvedPosition,
+          flowShape,
         );
         writeComponentAndLayout(d, scene, component, layout);
 

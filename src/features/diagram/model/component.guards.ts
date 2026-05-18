@@ -11,6 +11,7 @@ import type {
   SvgComponent,
   DbTableComponent,
   JsonViewerComponent,
+  FlowNodeComponent,
 } from "./component.types";
 import {
   isPanelType,
@@ -22,6 +23,7 @@ import {
   isSvgComponentType,
   isDbTableType,
   isJsonViewerType,
+  isFlowNodeType,
 } from "./component-type-constants";
 
 export const isPanelComponent = (c: Component): c is PanelComponent => isPanelType(c.type);
@@ -43,3 +45,6 @@ export const isDbTableComponent = (c: Component): c is DbTableComponent => isDbT
 
 export const isJsonViewerComponent = (c: Component): c is JsonViewerComponent =>
   isJsonViewerType(c.type);
+
+export const isFlowNodeComponent = (c: Component): c is FlowNodeComponent =>
+  isFlowNodeType(c.type);
