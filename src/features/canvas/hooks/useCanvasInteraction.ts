@@ -251,6 +251,7 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
     onAutoLayout,
     forceSaveToFolder,
     clearEdgeWaypoints: actions.clearEdgeWaypoints,
+    updateComponent: actions.updateComponent,
   });
 
   useCanvasEffects({

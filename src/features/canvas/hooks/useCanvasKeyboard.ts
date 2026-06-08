@@ -33,6 +33,7 @@ import { useSelectionShortcuts } from "./keyboard/useSelectionShortcuts";
 import { useUndoRedoShortcuts } from "./keyboard/useUndoRedoShortcuts";
 import { useGroupShortcuts } from "./keyboard/useGroupShortcuts";
 import { useEdgeWaypointShortcuts } from "./keyboard/useEdgeWaypointShortcuts";
+import { useLockShortcuts } from "./keyboard/useLockShortcuts";
 import { validateSvgSize } from "../utils/svg.utils";
 import { sanitizeSvg } from "../utils/svg.sanitizer";
 
@@ -116,6 +117,7 @@ interface UseCanvasKeyboardParams {
   onAutoLayout?: () => void;
   forceSaveToFolder: () => void | Promise<void>;
   clearEdgeWaypoints: (diagramId: string, connectionId: string) => void;
+  updateComponent: (id: string, patch: { locked?: boolean }) => void;
 }
 
 export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
@@ -173,6 +175,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     onAutoLayout,
     forceSaveToFolder,
     clearEdgeWaypoints,
+    updateComponent,
   } = params;
 
   const resolvedSnapshot = useMemo(
@@ -301,6 +304,13 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     clearEdgeWaypoints,
   });
 
+  const lockHandler = useLockShortcuts({
+    diagram,
+    reactFlowInstance,
+    selectedNodeId,
+    updateComponent,
+  });
+
   // Refs estáveis para handlers que mudam frequentemente — evita re-registrar o listener
   const handleCopyPasteRef = useRef(handleCopyPaste);
   handleCopyPasteRef.current = handleCopyPaste;
@@ -316,6 +326,9 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
 
   const edgeWaypointHandlerRef = useRef(edgeWaypointHandler);
   edgeWaypointHandlerRef.current = edgeWaypointHandler;
+
+  const lockHandlerRef = useRef(lockHandler);
+  lockHandlerRef.current = lockHandler;
 
   useEffect(() => {
     const onPointerMove = (event: PointerEvent) => {
@@ -406,6 +419,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
 
       if (edgeWaypointHandlerRef.current(event)) return;
 
+      if (lockHandlerRef.current(event)) return;
+
       const mod = isModKeyPressed(event);
 
       
@@ -416,7 +431,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       }
 
       
-      if (mod && keyMatchesLetter(event, KEY.K)) {
+      if (mod && !event.shiftKey && keyMatchesLetter(event, KEY.K)) {
         event.preventDefault();
         onOpenCommandPalette?.();
         return;

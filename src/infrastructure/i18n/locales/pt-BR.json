@@ -535,6 +535,8 @@
     "saving": "Salvando...",
     "saved": "Salvo",
     "saveError": "Erro ao salvar",
+    "elementsLocked": "Elemento(s) bloqueado(s)",
+    "elementsUnlocked": "Elemento(s) desbloqueado(s)",
     "toolbar": {
       "allTags": "Todos",
       "noTagsFilter": "Nenhuma tag",
@@ -1429,7 +1431,9 @@
     "addPerson": "Adicionar Person",
     "addSystem": "Adicionar System",
     "addContainer": "Adicionar Container",
-    "addComponent": "Adicionar Component"
+    "addComponent": "Adicionar Component",
+    "lockToggle": "Bloquear / Desbloquear selecionados",
+    "lockToggleDesc": "Alterna o bloqueio de todos os elementos selecionados; elementos bloqueados não podem ser movidos ou selecionados"
   },
   "github": {
     "configNote": "Os serviços importados do GitHub serão mantidos no Registry.",
