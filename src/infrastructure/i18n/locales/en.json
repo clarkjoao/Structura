@@ -770,6 +770,7 @@
     "sectionCanvas": "Canvas",
     "sectionCanvasGroups": "Canvas & groups",
     "sectionAws": "AWS",
+    "sectionCloud": "Cloud (GCP / Azure)",
     "sectionRegistry": "Registry",
     "noResults": "No results",
     "typePerson": "Person",
