@@ -32,6 +32,20 @@ export function toMarkerType(
   return marker === EdgeMarker.ArrowClosed ? MarkerType.ArrowClosed : MarkerType.Arrow;
 }
 
+/**
+ * React Flow markers use markerUnits="strokeWidth" with viewBox="-10 -10 20 20".
+ * The arrow polyline occupies 5/20 (25%) of the viewBox width, so:
+ *   visible_px = (5/20) × markerWidth × strokeWidth
+ * Default width=12.5 gives only ~3px for strokeWidth=1 — too small.
+ * We target ~8px visible width at any strokeWidth by computing the inverse.
+ */
+function buildMarkerDef(type: MarkerType, strokeWidth: number) {
+  const targetPx = 8;
+  const w = Math.round(targetPx / (0.25 * strokeWidth));
+  const h = Math.round(w * 1.5);
+  return { type, width: w, height: h, strokeWidth: 1.5 };
+}
+
 export function getEdgeOpacity(
   connId: string,
   isPlaying: boolean,
@@ -119,8 +133,8 @@ export function buildEdge(
     },
     selected: params.selectedEdgeId === conn.id,
     animated: isActiveConn || (effective.animated && !params.isPlaying),
-    markerEnd: markerEnd !== undefined ? { type: markerEnd } : undefined,
-    markerStart: markerStart !== undefined ? { type: markerStart } : undefined,
+    markerEnd: markerEnd !== undefined ? buildMarkerDef(markerEnd, effective.strokeWidth) : undefined,
+    markerStart: markerStart !== undefined ? buildMarkerDef(markerStart, effective.strokeWidth) : undefined,
     style: edgeStyle,
   };
 }

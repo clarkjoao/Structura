@@ -76,9 +76,9 @@
     "bidirectional": "↔ Bidirecional",
     "reverse": "← Reverso",
     "edgeStraight": "Reta",
-    "edgeBezier": "Ortogonal",
-    "edgeStep": "Degrau",
-    "edgeSmoothstep": "Suave",
+    "edgeBezier": "Curva",
+    "edgeStep": "Reto",
+    "edgeSmoothstep": "Arredondado",
     "strokeSolid": "Sólida",
     "strokeDashed": "Tracejada",
     "strokeDotted": "Pontilhada",
@@ -917,6 +917,7 @@
     "idLabel": "ID"
   },
   "elementPanel": {
+    "suggestedNudge": "Você pode vincular este {{name}} a um diagrama.",
     "panelHeaderPanel": "Painel",
     "panelHeaderNote": "Nota",
     "c4ModelGroup": "C4 Model",
@@ -1593,7 +1594,6 @@
     "gray": "Cinza"
   },
   "elementPanelTab": {
-    "suggestedNudge": "Você pode vincular este {{name}} a um diagrama.",
     "details": "Detalhes",
     "connections": "Conexões"
   },

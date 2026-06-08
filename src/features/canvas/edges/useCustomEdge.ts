@@ -211,7 +211,22 @@ export function useCustomEdge(props: EdgeProps) {
     [activeDiagramId, clearEdgeWaypoints, edgeData?.connectionId, waypoints.length],
   );
 
-  const showSegmentHitTargets = Boolean(activeDiagramId && edgeData?.connectionId);
+  const handleWaypointDoubleClick = useCallback(
+    (index: number) => {
+      if (!activeDiagramId || !edgeData?.connectionId) return;
+      const next = waypointsRef.current.filter((_, i) => i !== index);
+      if (next.length === 0) {
+        clearEdgeWaypoints(activeDiagramId, edgeData.connectionId);
+      } else {
+        updateEdgeWaypoints(activeDiagramId, edgeData.connectionId, next);
+      }
+    },
+    [activeDiagramId, clearEdgeWaypoints, edgeData?.connectionId, updateEdgeWaypoints],
+  );
+
+  const showSegmentHitTargets = Boolean(
+    activeDiagramId && edgeData?.connectionId && styleKey === EdgeStyle.Step,
+  );
 
   return {
     t,
@@ -229,6 +244,7 @@ export function useCustomEdge(props: EdgeProps) {
     setHoveredSegmentIndex,
     handleSegmentPointerDown,
     handleEdgeWaypointsDoubleClick,
+    handleWaypointDoubleClick,
     showSegmentHitTargets,
     isHighlighted,
     strokeWidth,
