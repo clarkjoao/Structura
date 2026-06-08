@@ -512,6 +512,7 @@
     "errorSyncGeneric": "Erro ao sincronizar",
     "nodeCount_one": "{{count}} nó",
     "nodeCount_other": "{{count}} nós",
+    "focusServiceNotFound": "Serviço não encontrado neste diagrama",
     "sourceGithub": "GitHub",
     "sourceDefectdojo": "DefectDojo",
     "filterGithub": "GitHub",
@@ -551,15 +552,6 @@
     "added": "Adicionado",
     "removed": "Removido",
     "modified": "Modificado"
-  },
-  "impactAnalysis": {
-    "title": "Análise de Impacto",
-    "directDependents": "Dependentes diretos",
-    "transitive": "Dependências transitivas",
-    "brokenConnections": "Conexões afetadas",
-    "noDependents": "Nenhum dependente encontrado",
-    "button": "Analisar impacto",
-    "unavailable": "Não foi possível analisar — sem snapshot do diagrama."
   },
   "canvasToolbar": {
     "renameTitle": "Clique duas vezes para renomear",

@@ -16,7 +16,6 @@ import {
 import type { Node } from "@xyflow/react";
 import { MultiSelectPanel } from "../MultiSelectPanel";
 import ComponentPanel from "./ComponentPanel";
-import type { FocusCanvasElementTarget } from "./ComponentPanel";
 import ConnectionPanel from "./ConnectionPanel";
 import EndpointPanel from "./EndpointPanel";
 import ApiGroupPanel from "./ApiGroupPanel";
@@ -30,7 +29,6 @@ interface Props {
   selectedNodes?: Node[];
   focusTitleTrigger?: number;
   onClose: () => void;
-  onFocusCanvasElement?: (target: FocusCanvasElementTarget) => void;
 }
 
 const ElementPanel = ({
@@ -40,7 +38,6 @@ const ElementPanel = ({
   selectedNodes = [],
   focusTitleTrigger = 0,
   onClose,
-  onFocusCanvasElement,
 }: Props) => {
   const component = useComponent(selectedElementId ?? "");
   const resolvedComponents = useComponents();
@@ -156,7 +153,6 @@ const ElementPanel = ({
           removeComponent={removeComponent}
           onUngroup={isPanelWithChildren ? () => { ungroupNodes(component.id); onClose(); } : undefined}
           focusTitleTrigger={focusTitleTrigger}
-          onFocusCanvasElement={onFocusCanvasElement}
         />
       </div>
     );
@@ -166,4 +162,3 @@ const ElementPanel = ({
 };
 
 export default ElementPanel;
-export type { FocusCanvasElementTarget } from "./ComponentPanel";

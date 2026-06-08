@@ -1,4 +1,5 @@
 import type { Diagram } from "@/features/diagram";
+import { findComponentIdsByServiceId } from "./findComponentsByServiceId";
 
 export function getServiceUsage(
   serviceId: string,
@@ -6,14 +7,12 @@ export function getServiceUsage(
 ): { diagramId: string; diagramName: string; nodeCount: number }[] {
   return Object.values(diagrams)
     .map((diagram) => {
-      const nodes = Object.values(diagram.snapshot.components).filter(
-        (c) => c.serviceId === serviceId,
-      );
-      return nodes.length > 0
+      const componentIds = findComponentIdsByServiceId(diagram, serviceId);
+      return componentIds.length > 0
         ? {
             diagramId: diagram.id,
             diagramName: diagram.name,
-            nodeCount: nodes.length,
+            nodeCount: componentIds.length,
           }
         : null;
     })

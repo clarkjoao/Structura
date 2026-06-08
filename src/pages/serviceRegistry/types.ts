@@ -12,7 +12,7 @@ export interface ServiceCardProps {
 export interface DetailPanelProps {
   svc: ServiceDefinition;
   diagrams: Record<string, Diagram>;
-  onNavigateToDiagram: (id: string) => void;
+  onNavigateToDiagram: (diagramId: string, serviceId: string) => void;
   updateService: (
     id: string,
     patch: Partial<Omit<ServiceDefinition, "id">>,

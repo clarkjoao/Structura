@@ -118,10 +118,6 @@ export { migrateFlow } from "./utils/flow-migration";
 export { repairFlow } from "./utils/flow-repair";
 
 
-export { computeImpact } from "./utils/impact-analysis";
-export type { ImpactResult } from "./utils/impact-analysis";
-
-
 export { buildFlowDuplicatePatch } from "./utils/flow-duplicate";
 
 export {

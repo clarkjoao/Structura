@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, type Dispatch, type MutableRefObject, t
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { Node, ReactFlowInstance } from "@xyflow/react";
-import type { NavigateFunction } from "react-router-dom";
+import { useSearchParams, type NavigateFunction } from "react-router-dom";
+import { focusComponentsOnCanvas } from "../focus/focusComponents";
 import {
   flushDiagramStoreToLocalStorageNow,
   type Diagram,
@@ -82,6 +83,8 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
   } = params;
 
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const skipInitialFit = !!searchParams.get("serviceId");
 
   const forceSaveToFolder = useCallback(async () => {
     const fsResult = await forceSaveToConnectedFolder();
@@ -180,15 +183,7 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
   const handleSearchSelect = useCallback(
     (componentId: string) => {
       setShowSearch(false);
-      visualState.setSelectedNodeId(componentId);
-      visualState.setSelectedNodeIds(new Set([componentId]));
-      visualState.setSelectedEdgeId(null);
-      void reactFlowInstance.fitView({
-        nodes: [{ id: componentId }],
-        duration: 400,
-        padding: 0.4,
-        maxZoom: 1,
-      });
+      focusComponentsOnCanvas(reactFlowInstance, visualState, [componentId]);
     },
     [reactFlowInstance, setShowSearch, visualState],
   );
@@ -256,6 +251,7 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
     activeFlow: flowState.activeFlow,
     currentStepId: flowState.currentStepId,
     onClearSelection: visualState.clearCanvasSelection,
+    skipInitialFit,
   });
 
   return {

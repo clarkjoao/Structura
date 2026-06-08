@@ -12,7 +12,7 @@ import "@xyflow/react/dist/style.css";
 import CanvasToolbar from "./toolbar/CanvasToolbar";
 import { JourneysInDiagramPanel } from "./panels/JourneysInDiagramPanel";
 import { ConnectedSceneDrawer } from "./toolbar/SceneDrawer";
-import ElementPanel, { type FocusCanvasElementTarget } from "./panels/ElementPanel/index";
+import ElementPanel from "./panels/ElementPanel/index";
 import NodeContextMenu from "./panels/NodeContextMenu";
 import { nodeTypes } from "./nodes/node-types";
 import QuickInsertPopover from "./toolbar/QuickInsertPopover";
@@ -24,6 +24,7 @@ import { Eye, Minimize2 } from "lucide-react";
 import { useCanvasController } from "./hooks/useCanvasController";
 import { useCanvasInputProfile } from "./hooks/useCanvasInputProfile";
 import { useJourneyViewportSync } from "./hooks/useJourneyViewportSync";
+import { useServiceFocusFromUrl } from "./hooks/useServiceFocusFromUrl";
 import {
   getCachedCanvasSnapshot,
   isApiGroupComponent,
@@ -116,29 +117,9 @@ const Canvas = (props: CanvasProps = {}) => {
   );
 
   useJourneyViewportSync();
+  useServiceFocusFromUrl(visualState);
 
   const journeysInThisDiagram = useJourneysByDiagramId(diagram?.id ?? "");
-
-  const {
-    setSelectedNodeId: focusSetSelectedNodeId,
-    setSelectedNodeIds: focusSetSelectedNodeIds,
-    setSelectedEdgeId: focusSetSelectedEdgeId,
-  } = visualState;
-
-  const handleFocusCanvasElement = useCallback(
-    (target: FocusCanvasElementTarget) => {
-      if (target.kind === "node") {
-        focusSetSelectedNodeId(target.id);
-        focusSetSelectedNodeIds(new Set([target.id]));
-        focusSetSelectedEdgeId(null);
-      } else {
-        focusSetSelectedEdgeId(target.id);
-        focusSetSelectedNodeId(null);
-        focusSetSelectedNodeIds(new Set());
-      }
-    },
-    [focusSetSelectedNodeId, focusSetSelectedNodeIds, focusSetSelectedEdgeId],
-  );
 
   const templateSourceNode = templateNodeId
     ? nodes.find((node) => node.id === templateNodeId) ?? null
@@ -587,7 +568,6 @@ const Canvas = (props: CanvasProps = {}) => {
               selectedNodes={selectedNodes}
               focusTitleTrigger={focusTitleTrigger}
               onClose={eventHandlers.closePanel}
-              onFocusCanvasElement={handleFocusCanvasElement}
             />
           )}
           {isChatOpen ? (

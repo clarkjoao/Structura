@@ -512,6 +512,7 @@
     "errorSyncGeneric": "Error while syncing",
     "nodeCount_one": "{{count}} node",
     "nodeCount_other": "{{count}} nodes",
+    "focusServiceNotFound": "Service not found in this diagram",
     "sourceGithub": "GitHub",
     "sourceDefectdojo": "DefectDojo",
     "filterGithub": "GitHub",
@@ -551,15 +552,6 @@
     "added": "Added",
     "removed": "Removed",
     "modified": "Modified"
-  },
-  "impactAnalysis": {
-    "title": "Impact analysis",
-    "directDependents": "Direct dependents",
-    "transitive": "Transitive dependents",
-    "brokenConnections": "Affected connections",
-    "noDependents": "No dependents found",
-    "button": "Analyze impact",
-    "unavailable": "Could not analyze — no diagram snapshot."
   },
   "canvasToolbar": {
     "renameTitle": "Double-click to rename",
