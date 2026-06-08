@@ -4,19 +4,13 @@ import { Position, type NodeProps } from "@xyflow/react";
 import { useCollabHighlight } from "@/features/collaboration";
 import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPresence";
 import { usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
-import { Network } from "lucide-react";
 import { useComponentIcon } from "@/features/diagram";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
-import {
-  isAwsType,
-  AWS_SERVICE_MAP,
-  AWS_CATEGORY_MAP,
-} from "@/lib/catalogs/aws";
-import AwsIcon from "../AwsIcon";
+import { cloudRegistry, CloudIcon } from "@/features/cloud";
 import { MIN_HANDLES, MAX_HANDLES } from "../../constants";
 import { useHandleHighlight } from "../../contexts/HandleHighlightContext";
 import type { NodeData } from "./types";
-import { TypeConfig, awsCategoryBorders } from "./TypeConfig";
+import { TypeConfig } from "./TypeConfig";
 import { buildHandles } from "./Handles";
 import { buildReorderControls } from "./ReorderControls";
 import { Badges } from "./Badges";
@@ -127,7 +121,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
   const collabHighlight = useCollabHighlight(d.elementId);
   const activePeer = usePeerOnNode(d.elementId);
 
-  const isAws = isAwsType(d.type);
+  const cloudProvider = cloudRegistry.forType(d.type);
 
   let borderClass: string;
   let borderStyle: CSSProperties | undefined;
@@ -139,12 +133,12 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
     icon = (
       <CustomIconRenderer icon={customDiagramIcon} size={24} className="shrink-0" />
     );
-    if (isAws) {
-      const svcInfo = d.awsService ? AWS_SERVICE_MAP.get(d.awsService) : null;
-      const catInfo = AWS_CATEGORY_MAP.get(d.type);
-      borderClass = awsCategoryBorders[d.type] ?? "border-l-aws-general";
+    if (cloudProvider) {
+      const svc = d.awsService ? cloudProvider.getService(d.awsService) : undefined;
+      const cat = cloudProvider.getCategoryForType(d.type);
+      borderClass = cloudProvider.getCategoryStyle(d.type).borderClass;
       borderStyle = undefined;
-      technologyLabel = d.technology ?? catInfo?.name ?? svcInfo?.name;
+      technologyLabel = d.technology ?? cat?.name ?? svc?.name;
       actionColorClass = "text-primary";
     } else {
       const cfg = TypeConfig[d.type] ?? TypeConfig.system;
@@ -154,15 +148,19 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
       technologyLabel = d.technology;
       actionColorClass = hasCustomColor ? "" : cfg.textColor;
     }
-  } else if (isAws) {
-    const svcInfo = d.awsService ? AWS_SERVICE_MAP.get(d.awsService) : null;
-    const catInfo = AWS_CATEGORY_MAP.get(d.type);
-    borderClass = awsCategoryBorders[d.type] ?? "border-l-aws-general";
+  } else if (cloudProvider) {
+    const svc = d.awsService ? cloudProvider.getService(d.awsService) : undefined;
+    const cat = cloudProvider.getCategoryForType(d.type);
+    borderClass = cloudProvider.getCategoryStyle(d.type).borderClass;
     borderStyle = undefined;
-    icon = svcInfo?.iconName
-      ? <AwsIcon iconName={svcInfo.iconName} size={20} />
-      : <Network className="h-4 w-4 text-muted-foreground" />;
-    technologyLabel = d.technology ?? catInfo?.name ?? svcInfo?.name;
+    icon = (
+      <CloudIcon
+        componentType={d.type}
+        serviceIconName={svc?.iconName}
+        size={20}
+      />
+    );
+    technologyLabel = d.technology ?? cat?.name ?? svc?.name;
     actionColorClass = "text-primary";
   } else {
     const cfg = TypeConfig[d.type] ?? TypeConfig.system;
@@ -247,7 +245,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
           d={d}
           controlsDisabled={controlsDisabled || isGuest}
           colorClass={actionColorClass}
-          customColor={isAws ? undefined : d.customColor}
+          customColor={cloudProvider ? undefined : d.customColor}
         />
       </div>
     </div>

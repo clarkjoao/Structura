@@ -3,7 +3,9 @@ import type { ComponentType } from "@/features/diagram";
 import { PanelKind } from "@/features/diagram";
 import { isPanelType } from "@/features/diagram";
 import type { AwsCategoryId } from "@/lib/catalogs/aws";
+import type { CloudService } from "@/features/cloud";
 import AwsIcon from "../../nodes/AwsIcon";
+import { CloudIcon } from "@/features/cloud";
 import { PICKER_CARD_CLASS } from "./constants";
 import { shortAwsName } from "./utils";
 import type { CanvasPickerOption } from "./types";
@@ -18,12 +20,15 @@ export function ElementPickerSearchResults({
   filteredCanvas,
   filteredFlowchart,
   filteredAwsFlat,
+  filteredGcpFlat,
+  filteredAzureFlat,
   filteredServices,
   filteredTemplates,
   onCanvasServiceIds,
   onAddC4,
   onAddCanvas,
   onAddAws,
+  onAddCloud,
   onAddRegistry,
   onAddTemplate,
 }: {
@@ -38,6 +43,8 @@ export function ElementPickerSearchResults({
     name: string;
     iconName: string;
   }[];
+  filteredGcpFlat: (CloudService & { categoryId: string })[];
+  filteredAzureFlat: (CloudService & { categoryId: string })[];
   filteredServices: import("@/features/diagram").ServiceDefinition[];
   filteredTemplates: CustomComponentTemplate[];
   onCanvasServiceIds: Set<string>;
@@ -45,6 +52,7 @@ export function ElementPickerSearchResults({
   onAddCanvas: (opt: CanvasPickerOption) => void;
   onAddFlowNode: (opt: CanvasPickerOption) => void;
   onAddAws: (categoryId: AwsCategoryId, serviceId: string, serviceName: string) => void;
+  onAddCloud: (categoryId: string, serviceId: string, serviceName: string) => void;
   onAddRegistry: (serviceId: string, name: string) => void;
   onAddTemplate: (templateId: string) => void;
 }) {
@@ -147,6 +155,50 @@ export function ElementPickerSearchResults({
                 <AwsIcon iconName={svc.iconName} size={40} />
                 <span className="line-clamp-2 text-center text-[10px] leading-tight text-foreground">
                   {shortAwsName(svc.name)}
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+      {filteredGcpFlat.length > 0 && (
+        <section>
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {t("canvasToolbar.gcpServices")} · {filteredGcpFlat.length}
+          </h3>
+          <div className="grid grid-cols-5 gap-2">
+            {filteredGcpFlat.map((svc) => (
+              <button
+                key={`${svc.categoryId}-${svc.id}`}
+                type="button"
+                onClick={() => onAddCloud(svc.categoryId, svc.id, svc.name)}
+                className="flex flex-col items-center gap-1 rounded-lg border border-border/40 bg-muted/40 p-2 transition-colors hover:bg-muted"
+              >
+                <CloudIcon componentType={svc.categoryId} serviceIconName={svc.iconName} size={40} />
+                <span className="line-clamp-2 text-center text-[10px] leading-tight text-foreground">
+                  {svc.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+      {filteredAzureFlat.length > 0 && (
+        <section>
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {t("canvasToolbar.azureServices")} · {filteredAzureFlat.length}
+          </h3>
+          <div className="grid grid-cols-5 gap-2">
+            {filteredAzureFlat.map((svc) => (
+              <button
+                key={`${svc.categoryId}-${svc.id}`}
+                type="button"
+                onClick={() => onAddCloud(svc.categoryId, svc.id, svc.name)}
+                className="flex flex-col items-center gap-1 rounded-lg border border-border/40 bg-muted/40 p-2 transition-colors hover:bg-muted"
+              >
+                <CloudIcon componentType={svc.categoryId} serviceIconName={svc.iconName} size={40} />
+                <span className="line-clamp-2 text-center text-[10px] leading-tight text-foreground">
+                  {svc.name}
                 </span>
               </button>
             ))}

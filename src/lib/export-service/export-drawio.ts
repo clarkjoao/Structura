@@ -11,6 +11,8 @@ import {
   isUnknownComponent,
   isNoteComponent,
   isPanelComponent,
+  isGcpComponent,
+  isAzureComponent,
   ServiceDefinition,
 } from "@/features/diagram";
 import { CONFIG } from "./constants";
@@ -274,9 +276,11 @@ export function exportDrawio(
         { ...geometry, width: finalWidth, height: finalHeight },
         parentMx,
       );
+    } else if (isGcpComponent(c) || isAzureComponent(c)) {
+      cell = cellBuilders.c4.build(c, geometry, parentMx, serviceName);
     } else if (isUnknownComponent(c) || isSvgComponent(c)) {
-      
-      
+
+
       throw new Error(`Unsupported component for draw.io export: ${c.type}`);
     } else {
       const _: never = c;

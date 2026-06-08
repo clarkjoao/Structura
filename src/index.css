@@ -85,6 +85,33 @@
     --aws-end-user: 215 80% 50%;
     --aws-general: 30 100% 50%;
 
+    --gcp-compute: 214 89% 55%;
+    --gcp-storage: 142 60% 38%;
+    --gcp-database: 214 75% 45%;
+    --gcp-networking: 198 85% 42%;
+    --gcp-security: 4 75% 48%;
+    --gcp-analytics: 270 55% 48%;
+    --gcp-ai: 238 70% 52%;
+    --gcp-devtools: 24 100% 48%;
+    --gcp-integration: 174 58% 38%;
+    --gcp-management: 220 18% 48%;
+    --gcp-media: 330 65% 48%;
+    --gcp-general: 214 89% 55%;
+
+    --azure-compute: 214 90% 50%;
+    --azure-storage: 199 78% 46%;
+    --azure-database: 214 68% 43%;
+    --azure-networking: 196 78% 42%;
+    --azure-security: 262 55% 48%;
+    --azure-analytics: 24 100% 48%;
+    --azure-ai: 238 70% 52%;
+    --azure-integration: 174 58% 38%;
+    --azure-devtools: 214 78% 52%;
+    --azure-iot: 142 52% 38%;
+    --azure-management: 220 18% 48%;
+    --azure-media: 330 65% 48%;
+    --azure-general: 214 90% 50%;
+
     --chart-1: 27 95% 55%;
     --chart-2: 43 96% 50%;
     --chart-3: 47 95% 48%;
@@ -184,6 +211,33 @@
     --aws-iot: 142 52% 45%;
     --aws-end-user: 215 80% 55%;
     --aws-general: 30 100% 50%;
+
+    --gcp-compute: 214 89% 62%;
+    --gcp-storage: 142 60% 44%;
+    --gcp-database: 214 75% 52%;
+    --gcp-networking: 198 85% 49%;
+    --gcp-security: 4 75% 55%;
+    --gcp-analytics: 270 55% 55%;
+    --gcp-ai: 238 70% 60%;
+    --gcp-devtools: 24 100% 55%;
+    --gcp-integration: 174 58% 44%;
+    --gcp-management: 220 18% 55%;
+    --gcp-media: 330 65% 55%;
+    --gcp-general: 214 89% 62%;
+
+    --azure-compute: 214 90% 58%;
+    --azure-storage: 199 78% 52%;
+    --azure-database: 214 68% 50%;
+    --azure-networking: 196 78% 49%;
+    --azure-security: 262 55% 55%;
+    --azure-analytics: 24 100% 55%;
+    --azure-ai: 238 70% 60%;
+    --azure-integration: 174 58% 44%;
+    --azure-devtools: 214 78% 60%;
+    --azure-iot: 142 52% 44%;
+    --azure-management: 220 18% 55%;
+    --azure-media: 330 65% 55%;
+    --azure-general: 214 90% 58%;
 
     --chart-1: 27 95% 60%;
     --chart-2: 43 96% 56%;

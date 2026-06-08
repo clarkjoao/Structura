@@ -32,6 +32,8 @@ import {
 import type { FlowNodeComponent, FlowNodeShape } from "../../model/component.types";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import { isAwsType } from "@/lib/catalogs/aws";
+import { isGcpType } from "@/features/cloud/providers/gcp/gcp.catalog";
+import { isAzureType } from "@/features/cloud/providers/azure/azure.catalog";
 import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
@@ -179,6 +181,10 @@ function buildComponentForType(
     component = { ...base, type };
   } else if (isAwsType(type)) {
     component = { ...base, type, awsService: awsService ?? undefined };
+  } else if (isGcpType(type)) {
+    component = { ...base, type, gcpService: awsService ?? undefined };
+  } else if (isAzureType(type)) {
+    component = { ...base, type, azureService: awsService ?? undefined };
   } else if (isUnknownType(type)) {
     component = { ...base, type: "unknown", rawContent: "" } as UnknownComponent;
   } else if (isSvgComponentType(type)) {

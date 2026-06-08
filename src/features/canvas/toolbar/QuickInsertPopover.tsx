@@ -29,6 +29,8 @@ import { PANEL_KINDS, getPanelKindForAwsService, getPanelKindDef } from "@/lib/c
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/catalogs/aws";
 import { KEY, keyIs } from "@/lib/keyboard-utils";
 import AwsIcon from "../nodes/AwsIcon";
+import { cloudRegistry, CloudIcon } from "@/features/cloud";
+import { filterCloudServicesForQuery } from "./element-picker/pickerFilters";
 import { useTranslation } from "react-i18next";
 import { useCustomComponentLibrary } from "@/features/custom-components";
 
@@ -45,6 +47,7 @@ type FlatOption =
   | { kind: "c4"; type: ComponentType; label: string }
   | { kind: "canvas"; opt: CanvasInsertOption }
   | { kind: "aws"; categoryId: AwsCategoryId; serviceId: string; serviceName: string }
+  | { kind: "cloud"; categoryId: string; serviceId: string; serviceName: string; iconName: string }
   | { kind: "service"; id: string; name: string }
   | { kind: "template"; id: string };
 
@@ -97,10 +100,13 @@ function canvasOptionMatchesQuery(
   return fields.some((f) => f.includes(q));
 }
 
+type CloudSearchRow = { categoryId: string; serviceId: string; serviceName: string; iconName: string };
+
 function toFlatOptions(
   filteredC4: { type: ComponentType; label: string }[],
   filteredCanvas: CanvasInsertOption[],
   filteredAws: AwsSearchRow[],
+  filteredCloud: CloudSearchRow[],
   filteredServices: { id: string; name: string }[],
   filteredTemplates: { id: string }[],
 ): FlatOption[] {
@@ -117,6 +123,15 @@ function toFlatOptions(
       categoryId: option.categoryId,
       serviceId: option.serviceId,
       serviceName: option.serviceName,
+    });
+  }
+  for (const option of filteredCloud) {
+    result.push({
+      kind: "cloud",
+      categoryId: option.categoryId,
+      serviceId: option.serviceId,
+      serviceName: option.serviceName,
+      iconName: option.iconName,
     });
   }
   for (const option of filteredServices) {
@@ -277,6 +292,30 @@ const QuickInsertPopover = ({
     return rows;
   }, [q]);
 
+  const gcpProvider = useMemo(() => cloudRegistry.forId("gcp"), []);
+  const azureProvider = useMemo(() => cloudRegistry.forId("azure"), []);
+
+  const filteredCloud = useMemo((): CloudSearchRow[] => {
+    if (!q) return [];
+    const gcpRows = gcpProvider
+      ? filterCloudServicesForQuery(q, gcpProvider).map((s) => ({
+          categoryId: s.categoryId,
+          serviceId: s.id,
+          serviceName: s.name,
+          iconName: s.iconName,
+        }))
+      : [];
+    const azureRows = azureProvider
+      ? filterCloudServicesForQuery(q, azureProvider).map((s) => ({
+          categoryId: s.categoryId,
+          serviceId: s.id,
+          serviceName: s.name,
+          iconName: s.iconName,
+        }))
+      : [];
+    return [...gcpRows, ...azureRows];
+  }, [q, gcpProvider, azureProvider]);
+
   const filteredServices = useMemo(() => {
     if (!q) return [];
     return services.filter(
@@ -310,6 +349,7 @@ const QuickInsertPopover = ({
       filteredC4,
       [...filteredCanvas, ...flowchartAsCanvas],
       filteredAws,
+      filteredCloud,
       filteredServices,
       filteredTemplates,
     );
@@ -318,6 +358,7 @@ const QuickInsertPopover = ({
     filteredCanvas,
     filteredFlowchart,
     filteredAws,
+    filteredCloud,
     filteredServices,
     filteredTemplates,
   ]);
@@ -370,6 +411,11 @@ const QuickInsertPopover = ({
     finalizeInsertion(comp.id);
   }, [addComponent, insertPos, finalizeInsertion]);
 
+  const handleSelectCloud = useCallback((categoryId: string, serviceId: string, serviceName: string) => {
+    const comp = addComponent(categoryId as ComponentType, serviceName, null, insertPos, serviceId);
+    finalizeInsertion(comp.id);
+  }, [addComponent, insertPos, finalizeInsertion]);
+
   const handleSelectService = useCallback((serviceId: string, name: string) => {
     const comp = addComponent("system", name, null, insertPos);
     linkComponentToService(comp.id, serviceId);
@@ -402,6 +448,9 @@ const QuickInsertPopover = ({
         case "aws":
           handleSelectAws(option.categoryId, option.serviceId, option.serviceName);
           break;
+        case "cloud":
+          handleSelectCloud(option.categoryId, option.serviceId, option.serviceName);
+          break;
         case "service":
           handleSelectService(option.id, option.name);
           break;
@@ -410,7 +459,7 @@ const QuickInsertPopover = ({
           break;
       }
     },
-    [handleSelectC4, handleSelectCanvas, handleSelectAws, handleSelectService, handleSelectTemplate],
+    [handleSelectC4, handleSelectCanvas, handleSelectAws, handleSelectCloud, handleSelectService, handleSelectTemplate],
   );
 
   useEffect(() => {
@@ -429,13 +478,15 @@ const QuickInsertPopover = ({
     filteredCanvas.length === 0 &&
     filteredFlowchart.length === 0 &&
     filteredAws.length === 0 &&
+    filteredCloud.length === 0 &&
     filteredServices.length === 0 &&
     filteredTemplates.length === 0;
 
   const c4Offset = 0;
   const canvasOffset = filteredC4.length;
   const awsOffset = canvasOffset + filteredCanvas.length;
-  const servicesOffset = awsOffset + filteredAws.length;
+  const cloudOffset = awsOffset + filteredAws.length;
+  const servicesOffset = cloudOffset + filteredCloud.length;
   const templatesOffset = servicesOffset + filteredServices.length;
 
   return (
@@ -559,9 +610,36 @@ const QuickInsertPopover = ({
             ))}
           </>
         )}
-        {filteredServices.length > 0 && (
+        {filteredCloud.length > 0 && (
           <>
             {(filteredC4.length > 0 || filteredCanvas.length > 0 || filteredAws.length > 0) && (
+              <div className="border-t border-border my-1" />
+            )}
+            <div className="px-3 py-1">
+              <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
+                {t("quickInsert.sectionCloud")}
+              </span>
+            </div>
+            {filteredCloud.map((row, index) => (
+              <button
+                key={`${row.categoryId}-${row.serviceId}`}
+                data-selected={selectedIndex === cloudOffset + index}
+                onClick={() => handleSelectCloud(row.categoryId, row.serviceId, row.serviceName)}
+                className={`flex items-center gap-2 w-full px-3 py-2 text-xs transition-colors text-left ${
+                  selectedIndex === cloudOffset + index
+                    ? "bg-primary/10 text-primary"
+                    : "hover:bg-surface-hover"
+                }`}
+              >
+                <CloudIcon componentType={row.categoryId} serviceIconName={row.iconName} size={14} />
+                <span className="truncate text-foreground">{row.serviceName}</span>
+              </button>
+            ))}
+          </>
+        )}
+        {filteredServices.length > 0 && (
+          <>
+            {(filteredC4.length > 0 || filteredCanvas.length > 0 || filteredAws.length > 0 || filteredCloud.length > 0) && (
               <div className="border-t border-border my-1" />
             )}
             <div className="px-3 py-1">

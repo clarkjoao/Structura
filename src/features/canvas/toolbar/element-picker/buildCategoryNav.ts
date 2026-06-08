@@ -24,6 +24,8 @@ export function buildCategoryNavItems(
     c4: number;
     canvas: number;
     aws: number;
+    gcp: number;
+    azure: number;
     registry: number;
     nodeTemplates: number;
     flowchart: number;
@@ -53,6 +55,18 @@ export function buildCategoryNavItems(
       label: t("canvasToolbar.awsServices"),
       icon: Cloud,
       count: counts.aws,
+    },
+    {
+      id: ElementCategory.Gcp,
+      label: t("canvasToolbar.gcpServices"),
+      icon: Cloud,
+      count: counts.gcp,
+    },
+    {
+      id: ElementCategory.Azure,
+      label: t("canvasToolbar.azureServices"),
+      icon: Cloud,
+      count: counts.azure,
     },
     {
       id: ElementCategory.Registry,

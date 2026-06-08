@@ -81,8 +81,12 @@ export function useCopyPasteShortcuts({
         const ids = getCopyableIds(diagram, nodes);
         if (ids.length > 0) {
           copyToClipboard(ids);
-          const xml = exportDrawioXml(ids);
-          void writeDrawioToClipboard(xml);
+          try {
+            const xml = exportDrawioXml(ids);
+            void writeDrawioToClipboard(xml);
+          } catch {
+            // drawio export is best-effort; internal clipboard copy already succeeded
+          }
         }
         return true;
       }

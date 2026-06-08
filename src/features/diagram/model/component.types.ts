@@ -1,4 +1,6 @@
 import type { AwsCategoryId } from "@/lib/catalogs/aws";
+import type { GcpCategoryId } from "@/features/cloud/providers/gcp/gcp.catalog";
+import type { AzureCategoryId } from "@/features/cloud/providers/azure/azure.catalog";
 import type { ExternalLinkType, PanelKind } from "../enums";
 
 export type ComponentType =
@@ -15,7 +17,9 @@ export type ComponentType =
   | "db-table"
   | "json-viewer"
   | "processos"
-  | AwsCategoryId;
+  | AwsCategoryId
+  | GcpCategoryId
+  | AzureCategoryId;
 
 export interface ExternalLink {
   id: string;
@@ -93,6 +97,18 @@ export interface NoteComponent extends BaseComponent {
 export interface AwsComponent extends BaseComponent {
   type: AwsCategoryId;
   awsService?: string;
+  technology?: string;
+}
+
+export interface GcpComponent extends BaseComponent {
+  type: GcpCategoryId;
+  gcpService?: string;
+  technology?: string;
+}
+
+export interface AzureComponent extends BaseComponent {
+  type: AzureCategoryId;
+  azureService?: string;
   technology?: string;
 }
 
@@ -187,6 +203,8 @@ export type Component =
   | PanelComponent
   | NoteComponent
   | AwsComponent
+  | GcpComponent
+  | AzureComponent
   | ApiGroupComponent
   | EndpointComponent
   | UnknownComponent

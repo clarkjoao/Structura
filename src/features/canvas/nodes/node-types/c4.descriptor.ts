@@ -4,6 +4,8 @@ import type { NodeTypeDescriptor, NodeBuildContext } from "./types";
 import { sceneBadgePropsForNode } from "./compare-node-badges";
 import {
   isAwsComponent,
+  isGcpComponent,
+  isAzureComponent,
   isC4Component,
   type Component,
 } from "@/features/diagram";
@@ -72,7 +74,10 @@ export const c4Descriptor: NodeTypeDescriptor = {
       description: comp.description,
       technology: isC4Component(comp) ? comp.technology : undefined,
       customColor: isC4Component(comp) && comp.panelColor ? comp.panelColor : undefined,
-      awsService: isAwsComponent(comp) ? comp.awsService : undefined,
+      awsService: isAwsComponent(comp) ? comp.awsService
+                : isGcpComponent(comp) ? comp.gcpService
+                : isAzureComponent(comp) ? comp.azureService
+                : undefined,
       isSelected: isPlaying
         ? flowHighlight.activeNodeId === comp.id
         : ctx.selectedNodeId === comp.id,
