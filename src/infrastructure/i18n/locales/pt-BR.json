@@ -546,7 +546,8 @@
     },
     "multiSelect": {
       "saveAsTemplate": "Salvar como template"
-    }
+    },
+    "focusNodeNotFound": "Elemento não encontrado neste diagrama"
   },
   "compareMode": {
     "added": "Adicionado",
@@ -780,7 +781,28 @@
     "searchHelpJsonViewer": "json|payload|contrato|schema|evento|api",
     "searchHelpApiGroup": "api|grupo|group|openapi",
     "searchHelpEndpoint": "endpoint|http|rest",
-    "searchHelpSwimlane": "swimlane|faixa|atores|domínio|time|pool|raia"
+    "searchHelpSwimlane": "swimlane|faixa|atores|domínio|time|pool|raia",
+    "typeExternalElement": "Elemento Externo"
+  },
+  "externalElement": {
+    "panelTitle": "Elemento Externo",
+    "labelName": "Rótulo",
+    "placeholderName": "Rótulo do elemento...",
+    "labelDiagram": "Diagrama de destino",
+    "labelElement": "Elemento de destino",
+    "selectDiagram": "Selecionar diagrama...",
+    "selectElement": "Selecionar elemento...",
+    "noneOption": "Nenhum",
+    "noElements": "Nenhum elemento neste diagrama",
+    "unnamed": "(sem nome)",
+    "openButton": "Abrir no diagrama",
+    "delete": "Excluir",
+    "nodeFallbackName": "Elemento Externo",
+    "nodeBadge": "externo",
+    "nodeFromDiagram": "de {{name}}",
+    "nodeNotLinked": "Nenhum diagrama vinculado",
+    "nodeOpenInCanvas": "Abrir diagrama",
+    "nodeOpenNewTab": "Abrir em nova aba"
   },
   "swimlane": {
     "title": "Faixa (swim lane)",

@@ -17,6 +17,7 @@ import type {
   DbTableComponent,
   JsonViewerComponent,
   FlowNodeComponent,
+  ExternalElementComponent,
 } from "./component.types";
 import {
   isPanelType,
@@ -29,6 +30,7 @@ import {
   isDbTableType,
   isJsonViewerType,
   isFlowNodeType,
+  isExternalElementType,
 } from "./component-type-constants";
 
 export const isPanelComponent = (c: Component): c is PanelComponent => isPanelType(c.type);
@@ -61,3 +63,6 @@ export const isJsonViewerComponent = (c: Component): c is JsonViewerComponent =>
 
 export const isFlowNodeComponent = (c: Component): c is FlowNodeComponent =>
   isFlowNodeType(c.type);
+
+export const isExternalElementComponent = (c: Component): c is ExternalElementComponent =>
+  isExternalElementType(c.type);

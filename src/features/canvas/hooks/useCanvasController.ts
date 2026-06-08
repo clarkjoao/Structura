@@ -148,6 +148,7 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     flowContext,
     handleDrillDown: interaction.handleDrillDown,
     handlePanelCollapseToggle: interaction.handlePanelCollapseToggle,
+    navigateToDiagram: interaction.navigateToDiagram,
     actions,
     updateNodeInternals,
     t,

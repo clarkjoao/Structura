@@ -72,7 +72,7 @@ export function useCanvasDrillHandlers({
         onOpenDiagram(comp.linkedDiagramId);
       } else {
         openDiagram(comp.linkedDiagramId);
-        navigate(`/diagram/${comp.linkedDiagramId}`);
+        navigate(`/model/${comp.linkedDiagramId}`);
       }
     },
     [clearCanvasSelection, diagramNavLocked, openDiagram, navigate, onDrillDownToDiagram, onOpenDiagram],

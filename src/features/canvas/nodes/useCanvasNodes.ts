@@ -48,6 +48,7 @@ interface UseCanvasNodesParams {
   allDiagrams: Record<string, Diagram>;
   handleDrillDown: (id: string) => void;
   handlePanelCollapseToggle: (id: string) => void;
+  navigateToDiagram?: (diagramId: string, nodeId?: string) => void;
   isPlaying: boolean;
   dragTargetPanelId: string | null;
   unparentCandidatePanelId: string | null;
@@ -81,6 +82,7 @@ type DataCtx = Omit<
   | "recordingInfo"
   | "coverage"
   | "handleDrillDown"
+  | "navigateToDiagram"
   | "onRecordHandleClick"
   | "onPanelCollapseToggle"
   | "onReorderHandle"
@@ -180,6 +182,7 @@ export function useCanvasNodes({
   allDiagrams,
   handleDrillDown,
   handlePanelCollapseToggle,
+  navigateToDiagram,
   isPlaying,
   dragTargetPanelId,
   unparentCandidatePanelId,
@@ -214,6 +217,7 @@ export function useCanvasNodes({
 
   const callbacksRef = useRef({
     handleDrillDown,
+    navigateToDiagram,
     onRecordHandleClick,
     onPanelCollapseToggle: handlePanelCollapseToggle,
     onReorderHandle,
@@ -225,6 +229,7 @@ export function useCanvasNodes({
   });
   callbacksRef.current = {
     handleDrillDown,
+    navigateToDiagram,
     onRecordHandleClick,
     onPanelCollapseToggle: handlePanelCollapseToggle,
     onReorderHandle,

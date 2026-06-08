@@ -20,6 +20,8 @@ export const COMPONENT_TYPE_UNKNOWN = "unknown";
 
 export const COMPONENT_TYPE_SVG = "svg";
 
+export const COMPONENT_TYPE_EXTERNAL_ELEMENT = "external-element";
+
 /** @deprecated Use COMPONENT_TYPE_PROCESSOS */
 export const COMPONENT_TYPE_FLOW_NODE = "processos";
 
@@ -101,6 +103,10 @@ export function isDbTableType(type: string): type is "db-table" {
 
 export function isJsonViewerType(type: string): type is "json-viewer" {
   return type === COMPONENT_TYPE_JSON_VIEWER;
+}
+
+export function isExternalElementType(type: string): type is "external-element" {
+  return type === COMPONENT_TYPE_EXTERNAL_ELEMENT;
 }
 
 

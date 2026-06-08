@@ -31,6 +31,7 @@ export type {
   DbColumn,
   JsonViewerComponent,
   FlowNodeComponent,
+  ExternalElementComponent,
   FlowNodeShape,
   EndpointHandler,
   HttpMethod,
@@ -219,6 +220,7 @@ export {
   isDbTableComponent,
   isJsonViewerComponent,
   isFlowNodeComponent,
+  isExternalElementComponent,
 } from "./model/component.guards";
 
 
@@ -234,6 +236,8 @@ export {
   COMPONENT_TYPE_JSON_VIEWER,
   COMPONENT_TYPE_FLOW_NODE,
   COMPONENT_TYPE_PROCESSOS,
+  COMPONENT_TYPE_EXTERNAL_ELEMENT,
+  isExternalElementType,
   PANEL_KIND_VALUES,
   isPanelType,
   isNoteType,

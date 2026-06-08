@@ -11,7 +11,9 @@ import {
   isApiGroupComponent,
   isJsonViewerComponent,
   isPanelComponent,
+  isExternalElementComponent,
   type DbTableComponent,
+  type ExternalElementComponent,
 } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
 import { MultiSelectPanel } from "../MultiSelectPanel";
@@ -21,6 +23,7 @@ import EndpointPanel from "./EndpointPanel";
 import ApiGroupPanel from "./ApiGroupPanel";
 import JsonViewerPanel from "./JsonViewerPanel";
 import DbTablePanel from "./DbTablePanel";
+import ExternalElementPanel from "./ExternalElementPanel";
 
 interface Props {
   selectedElementId: string | null;
@@ -123,6 +126,20 @@ const ElementPanel = ({
           <CollabEditingWarning elementId={selectedElementId} />
           <ApiGroupPanel
             component={component}
+            onClose={onClose}
+            updateComponent={updateComponent}
+            removeComponent={removeComponent}
+          />
+        </div>
+      );
+    }
+
+    if (isExternalElementComponent(component)) {
+      return (
+        <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
+          <CollabEditingWarning elementId={selectedElementId} />
+          <ExternalElementPanel
+            component={component as ExternalElementComponent}
             onClose={onClose}
             updateComponent={updateComponent}
             removeComponent={removeComponent}

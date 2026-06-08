@@ -25,6 +25,7 @@ import { useCanvasController } from "./hooks/useCanvasController";
 import { useCanvasInputProfile } from "./hooks/useCanvasInputProfile";
 import { useJourneyViewportSync } from "./hooks/useJourneyViewportSync";
 import { useServiceFocusFromUrl } from "./hooks/useServiceFocusFromUrl";
+import { useElementFocusFromUrl } from "./hooks/useElementFocusFromUrl";
 import {
   getCachedCanvasSnapshot,
   isApiGroupComponent,
@@ -118,6 +119,7 @@ const Canvas = (props: CanvasProps = {}) => {
 
   useJourneyViewportSync();
   useServiceFocusFromUrl(visualState);
+  useElementFocusFromUrl(visualState);
 
   const journeysInThisDiagram = useJourneysByDiagramId(diagram?.id ?? "");
 

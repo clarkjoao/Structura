@@ -45,6 +45,7 @@ export interface UseCanvasInteractionParams {
 export interface UseCanvasInteractionResult {
   handleDrillDown: (elementId: string) => void;
   handlePanelCollapseToggle: (panelId: string) => void;
+  navigateToDiagram: (diagramId: string, nodeId?: string) => void;
   localNodesRef: MutableRefObject<Node[]>;
   innerOnNodesChange: ReturnType<typeof useNodeDragParenting>["onNodesChange"];
   dragTargetPanelId: string | null;
@@ -131,6 +132,14 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
     navigate,
     setShowScenes,
   });
+
+  const navigateToDiagram = useCallback(
+    (diagramId: string, nodeId?: string) => {
+      actions.openDiagram(diagramId);
+      navigate(`/model/${diagramId}${nodeId ? `?nodeId=${nodeId}` : ""}`);
+    },
+    [actions, navigate],
+  );
 
   const { handleDrillDown, handlePanelCollapseToggle } = useCanvasDrillHandlers({
     diagram,
@@ -257,6 +266,7 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
   return {
     handleDrillDown,
     handlePanelCollapseToggle,
+    navigateToDiagram,
     localNodesRef,
     innerOnNodesChange,
     dragTargetPanelId,

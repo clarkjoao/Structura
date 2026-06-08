@@ -9,6 +9,7 @@ import { unknownDescriptor } from "./unknown.descriptor";
 import { dbTableDescriptor } from "./dbtable.descriptor";
 import { jsonViewerDescriptor } from "./jsonviewer.descriptor";
 import { flowNodeDescriptor } from "./flownode.descriptor";
+import { externalElementDescriptor } from "./external-element.descriptor";
 import { c4Descriptor } from "./c4.descriptor";
 import type { NodeTypeDescriptor } from "./types";
 import type { Component, ComponentType } from "@/features/diagram";
@@ -26,6 +27,7 @@ export const NODE_TYPE_REGISTRY: NodeTypeDescriptor[] = [
   svgDescriptor,
   unknownDescriptor,
   flowNodeDescriptor,
+  externalElementDescriptor,
   c4Descriptor,
 ];
 

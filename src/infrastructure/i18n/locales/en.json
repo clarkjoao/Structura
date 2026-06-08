@@ -546,7 +546,8 @@
     },
     "multiSelect": {
       "saveAsTemplate": "Save as template"
-    }
+    },
+    "focusNodeNotFound": "Element not found in this diagram"
   },
   "compareMode": {
     "added": "Added",
@@ -780,7 +781,28 @@
     "searchHelpJsonViewer": "json|payload|contract|schema|event|api",
     "searchHelpApiGroup": "api|group|grupo|openapi",
     "searchHelpEndpoint": "endpoint|http|rest",
-    "searchHelpSwimlane": "swimlane|lane|strip|actor|pool|domain|team|faixa"
+    "searchHelpSwimlane": "swimlane|lane|strip|actor|pool|domain|team|faixa",
+    "typeExternalElement": "External Element"
+  },
+  "externalElement": {
+    "panelTitle": "External Element",
+    "labelName": "Label",
+    "placeholderName": "Element label...",
+    "labelDiagram": "Target diagram",
+    "labelElement": "Target element",
+    "selectDiagram": "Select diagram...",
+    "selectElement": "Select element...",
+    "noneOption": "None",
+    "noElements": "No elements in this diagram",
+    "unnamed": "(unnamed)",
+    "openButton": "Open in diagram",
+    "delete": "Delete",
+    "nodeFallbackName": "External Element",
+    "nodeBadge": "external",
+    "nodeFromDiagram": "from {{name}}",
+    "nodeNotLinked": "No diagram linked",
+    "nodeOpenInCanvas": "Open diagram",
+    "nodeOpenNewTab": "Open in new tab"
   },
   "swimlane": {
     "title": "Swim lane",

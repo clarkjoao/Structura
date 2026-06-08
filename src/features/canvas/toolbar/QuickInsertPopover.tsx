@@ -9,6 +9,7 @@ import {
   Globe,
   Table,
   Braces,
+  ExternalLink,
 } from "lucide-react";
 import { useDiagramActions, useAllServices } from "@/features/diagram";
 import {
@@ -19,6 +20,7 @@ import {
   COMPONENT_TYPE_ENDPOINT,
   COMPONENT_TYPE_DB_TABLE,
   COMPONENT_TYPE_JSON_VIEWER,
+  COMPONENT_TYPE_EXTERNAL_ELEMENT,
   isDbTableType,
   isJsonViewerType,
 } from "@/features/diagram";
@@ -213,6 +215,7 @@ const QuickInsertPopover = ({
       },
       { type: COMPONENT_TYPE_API_GROUP as ComponentType, label: t("quickInsert.typeApiGroup"), icon: Globe },
       { type: COMPONENT_TYPE_ENDPOINT as ComponentType, label: t("quickInsert.typeEndpoint"), icon: Globe },
+      { type: COMPONENT_TYPE_EXTERNAL_ELEMENT as ComponentType, label: t("quickInsert.typeExternalElement"), icon: ExternalLink },
     ],
     [t],
   );

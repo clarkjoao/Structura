@@ -47,6 +47,7 @@ export interface NodeBuildContext {
   recordingInfo: RecordingInfo | null;
   coverage: CoverageInfo | null;
   handleDrillDown: (id: string) => void;
+  navigateToDiagram?: (diagramId: string, nodeId?: string) => void;
   onRecordHandleClick?: (nodeId: string, handleId: string) => void;
   onPanelCollapseToggle?: (panelId: string) => void;
   

@@ -17,6 +17,7 @@ export type ComponentType =
   | "db-table"
   | "json-viewer"
   | "processos"
+  | "external-element"
   | AwsCategoryId
   | GcpCategoryId
   | AzureCategoryId;
@@ -198,6 +199,14 @@ export interface FlowNodeComponent extends BaseComponent {
   nodeColor?: string;
 }
 
+export interface ExternalElementComponent extends BaseComponent {
+  type: "external-element";
+  linkedDiagramId: string;
+  linkedElementId?: string;
+  linkedElementName?: string;
+  linkedDiagramName?: string;
+}
+
 export type Component =
   | C4Component
   | PanelComponent
@@ -211,7 +220,8 @@ export type Component =
   | DbTableComponent
   | JsonViewerComponent
   | SvgComponent
-  | FlowNodeComponent;
+  | FlowNodeComponent
+  | ExternalElementComponent;
 
 
 export type ComponentPatch = Partial<Omit<C4Component, "id">> &
@@ -224,7 +234,8 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<DbTableComponent, "id">> &
   Partial<Omit<JsonViewerComponent, "id">> &
   Partial<Omit<SvgComponent, "id">> &
-  Partial<Omit<FlowNodeComponent, "id">> & { width?: number; height?: number };
+  Partial<Omit<FlowNodeComponent, "id">> &
+  Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number };
 
 
 export type TypedComponentPatch =
@@ -239,4 +250,5 @@ export type TypedComponentPatch =
   | (Partial<Omit<JsonViewerComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<SvgComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<FlowNodeComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number })
   | { width?: number; height?: number };
