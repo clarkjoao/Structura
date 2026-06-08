@@ -18,6 +18,7 @@ import { AWS_CATEGORIES, type AwsCategory } from "@/lib/catalogs/aws";
 import { getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
 import { KEY, keyIs } from "@/lib/keyboard-utils";
 import type { AwsCategoryId } from "@/lib/catalogs/aws";
+import { cloudRegistry } from "@/features/cloud";
 import { trackUsage } from "./element-usage-tracker";
 import { useTranslation } from "react-i18next";
 import {
@@ -38,6 +39,7 @@ import {
   filterAwsCategoriesForQuery,
   flattenAwsServices,
   filterServicesByQuery,
+  filterCloudServicesForQuery,
 } from "./element-picker/pickerFilters";
 import { FlowchartCategoryView } from "./element-picker/FlowchartCategoryView";
 import { buildCategoryNavItems } from "./element-picker/buildCategoryNav";
@@ -45,6 +47,7 @@ import { CategorySidebar } from "./element-picker/CategorySidebar";
 import { ElementPickerAllView } from "./element-picker/ElementPickerAllView";
 import { ElementPickerSearchResults } from "./element-picker/ElementPickerSearchResults";
 import { AwsBrowseView } from "./element-picker/AwsBrowseView";
+import { CloudBrowseView } from "./element-picker/CloudBrowseView";
 import { RegistryCategoryPanel } from "./element-picker/RegistryCategoryPanel";
 import AwsIcon from "../nodes/AwsIcon";
 import { isPanelType } from "@/features/diagram";
@@ -60,6 +63,12 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const [activeCategory, setActiveCategory] = useState<ElementCategory>(() => readStoredCategory());
   const [expandedAwsSubcats, setExpandedAwsSubcats] = useState<Set<string>>(
     () => new Set(["aws-compute"]),
+  );
+  const [expandedGcpSubcats, setExpandedGcpSubcats] = useState<Set<string>>(
+    () => new Set(["gcp-compute"]),
+  );
+  const [expandedAzureSubcats, setExpandedAzureSubcats] = useState<Set<string>>(
+    () => new Set(["azure-compute"]),
   );
   const inputRef = useRef<HTMLInputElement>(null);
   const rfInstance = useReactFlow();
@@ -83,6 +92,11 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     [],
   );
 
+  const gcpProvider = useMemo(() => cloudRegistry.forId("gcp"), []);
+  const azureProvider = useMemo(() => cloudRegistry.forId("azure"), []);
+  const gcpServiceCount = useMemo(() => gcpProvider?.services.length ?? 0, [gcpProvider]);
+  const azureServiceCount = useMemo(() => azureProvider?.services.length ?? 0, [azureProvider]);
+
   const awsSpotlight = useMemo(() => resolveAwsSpotlight(), []);
 
   const allCategoryTotalCount = useMemo(
@@ -91,6 +105,8 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
       CANVAS_OPTIONS.length +
       FLOWCHART_OPTIONS.length +
       awsServiceCount +
+      gcpServiceCount +
+      azureServiceCount +
       services.length +
       templates.length,
     [
@@ -98,6 +114,8 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
       CANVAS_OPTIONS.length,
       FLOWCHART_OPTIONS.length,
       awsServiceCount,
+      gcpServiceCount,
+      azureServiceCount,
       services.length,
       templates.length,
     ],
@@ -163,6 +181,16 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     [filteredAwsCategories],
   );
 
+  const filteredGcpFlat = useMemo(
+    () => (gcpProvider ? filterCloudServicesForQuery(q, gcpProvider) : []),
+    [q, gcpProvider],
+  );
+
+  const filteredAzureFlat = useMemo(
+    () => (azureProvider ? filterCloudServicesForQuery(q, azureProvider) : []),
+    [q, azureProvider],
+  );
+
   const filteredServices = useMemo(
     () => filterServicesByQuery(q, services),
     [q, services],
@@ -226,6 +254,32 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     });
   };
 
+  const handleAddCloudService = (categoryId: string, serviceId: string, serviceName: string) => {
+    const providerId = categoryId.split("-")[0];
+    trackUsage(`${providerId}:${serviceId}`);
+    const comp = addComponent(categoryId as ComponentType, serviceName, null, getInsertPos(), serviceId);
+    onInsert?.(comp.id);
+    onClose();
+  };
+
+  const toggleGcpSubcat = (catId: string) => {
+    setExpandedGcpSubcats((prev) => {
+      const next = new Set(prev);
+      if (next.has(catId)) next.delete(catId);
+      else next.add(catId);
+      return next;
+    });
+  };
+
+  const toggleAzureSubcat = (catId: string) => {
+    setExpandedAzureSubcats((prev) => {
+      const next = new Set(prev);
+      if (next.has(catId)) next.delete(catId);
+      else next.add(catId);
+      return next;
+    });
+  };
+
   const categoryItems = useMemo(
     () =>
       buildCategoryNavItems(t, {
@@ -234,6 +288,8 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
         canvas: CANVAS_OPTIONS.length,
         flowchart: FLOWCHART_OPTIONS.length,
         aws: awsServiceCount,
+        gcp: gcpServiceCount,
+        azure: azureServiceCount,
         registry: services.length,
         nodeTemplates: templates.length,
       }),
@@ -244,6 +300,8 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
       CANVAS_OPTIONS.length,
       FLOWCHART_OPTIONS.length,
       awsServiceCount,
+      gcpServiceCount,
+      azureServiceCount,
       services.length,
       templates.length,
     ],
@@ -260,6 +318,8 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     filteredCanvas.length === 0 &&
     filteredFlowchart.length === 0 &&
     filteredAwsFlat.length === 0 &&
+    filteredGcpFlat.length === 0 &&
+    filteredAzureFlat.length === 0 &&
     filteredServices.length === 0 &&
     filteredTemplates.length === 0;
 
@@ -358,6 +418,28 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
             onPickAws={handleAddAws}
           />
         );
+      case ElementCategory.Gcp:
+        return gcpProvider ? (
+          <CloudBrowseView
+            provider={gcpProvider}
+            primaryCategoryIds={["gcp-compute", "gcp-database", "gcp-storage", "gcp-networking", "gcp-ai"]}
+            expandedSubcats={expandedGcpSubcats}
+            q={q}
+            toggleSubcat={toggleGcpSubcat}
+            onPick={handleAddCloudService}
+          />
+        ) : null;
+      case ElementCategory.Azure:
+        return azureProvider ? (
+          <CloudBrowseView
+            provider={azureProvider}
+            primaryCategoryIds={["azure-compute", "azure-database", "azure-storage", "azure-networking", "azure-security"]}
+            expandedSubcats={expandedAzureSubcats}
+            q={q}
+            toggleSubcat={toggleAzureSubcat}
+            onPick={handleAddCloudService}
+          />
+        ) : null;
       case ElementCategory.Registry:
         return (
           <RegistryCategoryPanel
@@ -454,6 +536,8 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
                   filteredCanvas={filteredCanvas}
                   filteredFlowchart={filteredFlowchart}
                   filteredAwsFlat={filteredAwsFlat}
+                  filteredGcpFlat={filteredGcpFlat}
+                  filteredAzureFlat={filteredAzureFlat}
                   filteredServices={filteredServices}
                   filteredTemplates={filteredTemplates}
                   onCanvasServiceIds={onCanvasServiceIds}
@@ -461,6 +545,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
                   onAddCanvas={onAddCanvas}
                   onAddFlowNode={handleAddFlowNode}
                   onAddAws={handleAddAws}
+                  onAddCloud={handleAddCloudService}
                   onAddRegistry={handleAddService}
                   onAddTemplate={(templateId) => {
                     const insertedNodeId = instantiateTemplate({

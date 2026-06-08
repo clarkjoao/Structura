@@ -17,6 +17,6 @@ export default defineConfig(() => ({
     },
   },
   optimizeDeps: {
-    include: ["aws-react-icons"],
+    include: ["aws-react-icons", "azure-react-icons"],
   },
 }));

@@ -1,6 +1,7 @@
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import { AWS_CATEGORIES } from "@/lib/catalogs/aws";
 import type { AwsCategory } from "@/lib/catalogs/aws";
+import type { CloudProviderAdapter, CloudService } from "@/features/cloud";
 import type { ServiceDefinition } from "@/features/diagram";
 import type { CanvasPickerOption } from "./types";
 import type { C4PickerOption } from "./buildPickerOptions";
@@ -57,6 +58,17 @@ export function flattenAwsServices(
 ): { categoryId: string; id: string; name: string; iconName: string }[] {
   return categories.flatMap((cat) =>
     cat.services.map((s) => ({ ...s, categoryId: cat.id })),
+  );
+}
+
+export function filterCloudServicesForQuery(
+  q: string,
+  provider: CloudProviderAdapter,
+): (CloudService & { categoryId: string })[] {
+  const services = provider.services;
+  if (!q) return services;
+  return services.filter(
+    (s) => s.name.toLowerCase().includes(q) || s.id.includes(q),
   );
 }
 

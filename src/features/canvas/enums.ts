@@ -4,6 +4,8 @@ export enum ElementCategory {
   C4 = "c4",
   Canvas = "canvas",
   Aws = "aws",
+  Gcp = "gcp",
+  Azure = "azure",
   Registry = "registry",
   NodeTemplate = "node-template",
   Flowchart = "flowchart",
