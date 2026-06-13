@@ -9,27 +9,21 @@ import {
   isPanelComponent,
   buildChildrenIndex,
 } from "@/features/diagram";
-import { OPACITY_FLOW_PLAYBACK_NODE_DIM } from "@/features/canvas/canvas.constants";
 import {
+  OPACITY_FLOW_PLAYBACK_NODE_DIM,
   buildConnectionCountPerNode,
   buildEdgeHandleAssignments,
   buildEffectiveHandleOrder,
   buildPanelIds,
-} from "@/features/canvas/edges/connectionDerivations";
-import {
   buildEdge,
   filterVisibleConnections,
-  type EdgeBuildParams,
-} from "@/features/canvas/edges/edgeBuilding";
-import { EMPTY_FLOW_HIGHLIGHT } from "@/features/canvas/flow/flowState";
-import {
+  EMPTY_FLOW_HIGHLIGHT,
   buildCollapsedPanelIds,
   computeNodeVisibility,
-} from "@/features/canvas/nodes/nodeVisibility";
-import {
   resolveNodeDescriptor,
+  type EdgeBuildParams,
   type NodeBuildContext,
-} from "@/features/canvas/nodes/node-types";
+} from "@/features/canvas";
 
 /** When set, journey canvas uses the same flow recording/playback visuals as the main canvas. */
 export type JourneyEditorCanvasFlowVisuals = Pick<
