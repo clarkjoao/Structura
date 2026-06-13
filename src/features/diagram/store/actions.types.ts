@@ -108,6 +108,7 @@ export interface AppActions {
 
   undo: () => void;
   redo: () => void;
+  pushHistoryBoundary: () => void;
 
   copyToClipboard: (componentIds: string[]) => void;
   pasteFromClipboard: (

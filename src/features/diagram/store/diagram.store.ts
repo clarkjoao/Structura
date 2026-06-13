@@ -321,6 +321,7 @@ export const useHistoryActions = () =>
     useShallow((s) => ({
       undo: s.undo,
       redo: s.redo,
+      pushHistoryBoundary: s.pushHistoryBoundary,
     })),
   );
 
