@@ -7,87 +7,25 @@ import { LLMProviderError, type LLMErrorKind } from "./errors";
 import type {
   AnalysisResponse,
   ChatMessage,
-  ConversationThread,
   DiagramPatch,
-  DiagramPatchAction,
   LLMConfig,
   PendingNodePreview,
   PendingSuggestion,
 } from "./types";
+import {
+  loadConfigFromLocalStorage,
+  saveConfigToLocalStorage,
+  loadThreadFromStorage,
+  saveThreadToStorage,
+} from "./llm-storage";
+import {
+  applyDiagramPatchAction,
+  computeGridPositions,
+  resolveRef,
+} from "./apply-diagram-patch";
 import { sendMessage as sendOpenAIMessage } from "./providers/openai";
 import { sendMessage as sendAnthropicMessage } from "./providers/anthropic";
 import { sendMessage as sendProxyMessage } from "./providers/proxy";
-
-const LLM_CONFIG_STORAGE_KEY = "structura:llm:config";
-const CHAT_HISTORY_KEY = "structura:llm:history";
-const MAX_THREADS = 20;
-const MAX_MESSAGES_PER_THREAD = 50;
-
-function loadThreadFromStorage(diagramId: string): ChatMessage[] {
-  try {
-    const raw = localStorage.getItem(CHAT_HISTORY_KEY);
-    if (!raw) {
-      return [];
-    }
-    const threads = JSON.parse(raw) as Record<string, ConversationThread>;
-    return threads[diagramId]?.messages ?? [];
-  } catch {
-    return [];
-  }
-}
-
-function saveThreadToStorage(diagramId: string, messages: ChatMessage[]): void {
-  try {
-    const raw = localStorage.getItem(CHAT_HISTORY_KEY);
-    const threads: Record<string, ConversationThread> = raw ? JSON.parse(raw) : {};
-    threads[diagramId] = {
-      diagramId,
-      messages: messages.slice(-MAX_MESSAGES_PER_THREAD),
-      updatedAt: Date.now(),
-    };
-    const trimmed = Object.entries(threads)
-      .sort(([, threadA], [, threadB]) => threadB.updatedAt - threadA.updatedAt)
-      .slice(0, MAX_THREADS);
-    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(Object.fromEntries(trimmed)));
-  } catch {
-    
-  }
-}
-
-const DEFAULT_LLM_CONFIG: LLMConfig = {
-  mode: "proxy",
-  provider: "openai",
-  apiKey: "",
-  model: "gpt-4o-mini",
-};
-
-function loadConfigFromLocalStorage(): LLMConfig {
-  try {
-    const rawConfig = localStorage.getItem(LLM_CONFIG_STORAGE_KEY);
-    if (!rawConfig) {
-      return DEFAULT_LLM_CONFIG;
-    }
-    const parsedConfig = JSON.parse(rawConfig);
-    if (typeof parsedConfig !== "object" || parsedConfig === null) {
-      return DEFAULT_LLM_CONFIG;
-    }
-    return {
-      mode: parsedConfig.mode === "direct" ? "direct" : "proxy",
-      provider: parsedConfig.provider === "anthropic" ? "anthropic" : "openai",
-      apiKey: typeof parsedConfig.apiKey === "string" ? parsedConfig.apiKey : "",
-      model:
-        typeof parsedConfig.model === "string" && parsedConfig.model.length > 0
-          ? parsedConfig.model
-          : DEFAULT_LLM_CONFIG.model,
-    };
-  } catch {
-    return DEFAULT_LLM_CONFIG;
-  }
-}
-
-function saveConfigToLocalStorage(config: LLMConfig): void {
-  localStorage.setItem(LLM_CONFIG_STORAGE_KEY, JSON.stringify(config));
-}
 
 function getResolvedAppLanguage(): string {
   const lng = i18n.resolvedLanguage ?? i18n.language ?? "pt-BR";
@@ -123,74 +61,6 @@ function sanitizeMessagesForLLM(messages: ChatMessage[]): ChatMessage[] {
     }
     return { ...message, content: "[previous diagram suggestion]" };
   });
-}
-
-function resolveRef(value: string, nameToIdMap: Map<string, string>): string {
-  const match = value.match(/^@ref:(.+)$/i);
-  if (!match) {
-    return value;
-  }
-  return nameToIdMap.get(match[1].toLowerCase()) ?? value;
-}
-
-function computeGridPositions(
-  count: number,
-  startX = 200,
-  startY = 200,
-): Array<{ x: number; y: number }> {
-  const COL_GAP = 320;
-  const ROW_GAP = 160;
-  const COLS = 3;
-  return Array.from({ length: count }, (_, index) => ({
-    x: startX + (index % COLS) * COL_GAP,
-    y: startY + Math.floor(index / COLS) * ROW_GAP,
-  }));
-}
-
-interface AppliedPatchResult {
-  addedNodeId: string | null;
-  addedEdgeId: string | null;
-}
-
-function applyDiagramPatchAction(action: DiagramPatchAction): AppliedPatchResult {
-  const diagramState = useDiagramStore.getState();
-
-  switch (action.type) {
-    case "ADD_NODE":
-      return {
-        addedNodeId: diagramState.addComponent(
-          action.payload.nodeType,
-          action.payload.name,
-          action.payload.parentId,
-          action.payload.position,
-          action.payload.awsService,
-        ).id,
-        addedEdgeId: null,
-      };
-    case "REMOVE_NODE":
-      diagramState.removeComponent(action.payload.nodeId);
-      return { addedNodeId: null, addedEdgeId: null };
-    case "UPDATE_NODE":
-      diagramState.updateComponent(action.payload.nodeId, action.payload.patch);
-      return { addedNodeId: null, addedEdgeId: null };
-    case "ADD_EDGE": {
-      const connection = diagramState.addConnection(
-        action.payload.sourceId,
-        action.payload.targetId,
-        action.payload.label,
-        action.payload.edgeStyle,
-      );
-      if (action.payload.patch) {
-        diagramState.updateConnection(connection.id, action.payload.patch);
-      }
-      return { addedNodeId: null, addedEdgeId: connection.id };
-    }
-    case "REMOVE_EDGE":
-      diagramState.removeConnection(action.payload.edgeId);
-      return { addedNodeId: null, addedEdgeId: null };
-    default:
-      return { addedNodeId: null, addedEdgeId: null };
-  }
 }
 
 function ensureHistoryBoundary(): void {
