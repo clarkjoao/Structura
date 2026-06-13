@@ -343,5 +343,13 @@ export {
   measureLocalStorageUsage,
   clearNonEssentialStorage,
 } from "./store/storage-monitor";
-export type { StorageHealthLevel } from "./store/saveStatus.store";
+export { useSaveStatusStore } from "./store/saveStatus.store";
+export type { StorageHealthLevel, SaveStatus } from "./store/saveStatus.store";
+
+export {
+  exportTemplateToJson,
+  downloadTemplate,
+  importTemplateFromFile,
+} from "./utils/template-sharing";
+export type { TemplateExportEnvelope, ImportTemplateResult } from "./utils/template-sharing";
 export type { ServiceDefinition, ServiceSourceRef } from "./model/service.types";
