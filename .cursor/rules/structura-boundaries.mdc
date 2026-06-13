@@ -1,0 +1,57 @@
+---
+description: Structura module boundaries — storage port and cross-feature imports
+globs: "src/**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Boundaries (Structura)
+
+## Storage / persistence
+
+- Persisted data goes through **`IStoragePort`** (`infrastructure/persistence/`),
+  never raw `localStorage` / `sessionStorage`.
+- Direct `localStorage` is allowed **only** inside the port's adapters
+  (`LocalStorageAdapter`, etc.) and in `storage-monitor` (it measures/clears
+  the store itself).
+- `IStoragePort` is currently async-only. Synchronous UI-preference helpers
+  that still touch `localStorage` directly are a known, tracked exception
+  pending a sync-port decision (see `docs/audit/AUDIT.md`, findings 2/3/10):
+  `collab-preferences`, `recent-diagrams`, `useLastEdgeStyle`,
+  `element-usage-tracker`, `sidebarFolderStorage`, `element-picker/storage`,
+  `CanvasToolbar`. Do not add new direct-`localStorage` call sites — route
+  through the port.
+
+```ts
+// ❌ outside an adapter
+localStorage.setItem("structura:foo", JSON.stringify(value));
+
+// ✅
+await storage.setItem("structura:foo", JSON.stringify(value));
+```
+
+## Cross-feature imports
+
+- Import another feature only through its **public barrel**:
+  `@/features/<feature>` (or a documented sub-module barrel such as
+  `@/features/canvas/nodes/node-types`). Never reach into another feature's
+  non-index internals.
+- If a symbol you need is not on the barrel, **add it to the barrel** — do not
+  deep-import. (See `docs/audit/AUDIT.md`, findings 1, 4–7.)
+- For non-React callers that need store behaviour (e.g. an imperative undo
+  checkpoint), use a public store action via `useDiagramStore.getState()`
+  (e.g. `pushHistoryBoundary()`), never the private slice/`pushHistory`.
+
+```ts
+// ❌ feature internals
+import { useLLMStore } from "@/features/llm/store";
+import { pushHistory } from "@/features/diagram/store/slices/history.slice";
+
+// ✅ public barrel / public action
+import { useLLMStore } from "@/features/llm";
+useDiagramStore.getState().pushHistoryBoundary();
+```
+
+> Enforcement note: a CI rule (`@typescript-eslint/no-restricted-imports`
+> forbidding `@/features/*/**` outside the owning feature, with allowances for
+> documented sub-barrels and test infra) is recommended but not yet enabled —
+> it requires completing barrel coverage first.
