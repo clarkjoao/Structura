@@ -17,6 +17,7 @@ interface UseCanvasEffectsParams {
   activeFlow?: Flow | null;
   currentStepId?: string | null;
   onClearSelection: () => void;
+  skipInitialFit?: boolean;
 }
 
 const MAX_ZOOM = 1;
@@ -29,11 +30,12 @@ export function useCanvasEffects({
   activeFlow,
   currentStepId,
   onClearSelection,
+  skipInitialFit = false,
 }: UseCanvasEffectsParams) {
   const diagramId = diagram?.id ?? null;
 
   useEffect(() => {
-    if (!diagramId) return;
+    if (!diagramId || skipInitialFit) return;
     let cancelled = false;
     const id = requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -50,7 +52,7 @@ export function useCanvasEffects({
       cancelled = true;
       cancelAnimationFrame(id);
     };
-  }, [diagramId, reactFlowInstance]);
+  }, [diagramId, reactFlowInstance, skipInitialFit]);
 
   
   useEffect(() => {

@@ -6,7 +6,7 @@ import { EDGE_SEGMENT_HIGHLIGHT_STROKE_OPACITY } from "../canvas.constants";
 import { EdgeParticle } from "./EdgeParticle";
 import type { Segment } from "./edgeBuilding";
 
-const SEGMENT_HIT_STROKE_WIDTH = 12;
+const SEGMENT_HIT_STROKE_WIDTH = 16;
 
 const strokeDasharrayByStyle: Record<StrokeStyle, string | undefined> = {
   [StrokeStyle.Solid]: undefined,
@@ -26,6 +26,7 @@ export interface EdgeSvgLayerProps {
   onSegmentPointerDown: (segment: Segment) => (event: ReactPointerEvent<SVGLineElement>) => void;
   onSegmentHover: (index: number | null) => void;
   onEdgeWaypointsDoubleClick: (event: ReactMouseEvent<SVGPathElement | SVGLineElement>) => void;
+  onWaypointDoubleClick: (index: number) => void;
   showSegmentHitTargets: boolean;
   isHighlighted: boolean;
   strokeWidth: number;
@@ -50,6 +51,7 @@ export function EdgeSvgLayer({
   onSegmentPointerDown,
   onSegmentHover,
   onEdgeWaypointsDoubleClick,
+  onWaypointDoubleClick,
   showSegmentHitTargets,
   isHighlighted,
   strokeWidth,
@@ -117,13 +119,31 @@ export function EdgeSvgLayer({
                 x2={segment.x2}
                 y2={segment.y2}
                 stroke="var(--color-text-info)"
-                strokeWidth={3}
-                strokeOpacity={EDGE_SEGMENT_HIGHLIGHT_STROKE_OPACITY}
+                strokeWidth={selected ? 3 : 2}
+                strokeOpacity={selected ? EDGE_SEGMENT_HIGHLIGHT_STROKE_OPACITY : 0.18}
                 strokeLinecap="round"
                 style={{ pointerEvents: "none" }}
               />
             )}
           </g>
+        ))}
+      {showSegmentHitTargets && selected && waypointsLength > 0 &&
+        segments.slice(0, waypointsLength).map((segment, k) => (
+          <circle
+            key={`wp-${k}`}
+            cx={segment.x2}
+            cy={segment.y2}
+            r={4}
+            fill="var(--color-background)"
+            stroke="var(--color-text-info)"
+            strokeWidth={1.5}
+            style={{ pointerEvents: "all", cursor: "pointer" }}
+            onDoubleClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onWaypointDoubleClick(k);
+            }}
+          />
         ))}
       {isActivePlayback && (
         <EdgeParticle edgePath={edgePath} direction={activePayloadDirection} />

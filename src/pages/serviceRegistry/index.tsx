@@ -139,9 +139,9 @@ export default function ServiceRegistryPage() {
   }, [services, diagrams]);
 
   const handleNavigateToDiagram = useCallback(
-    (id: string) => {
-      openDiagram(id);
-      navigate(`/model/${id}`);
+    (diagramId: string, serviceId: string) => {
+      openDiagram(diagramId);
+      navigate(`/model/${diagramId}?serviceId=${encodeURIComponent(serviceId)}`);
     },
     [openDiagram, navigate],
   );

@@ -11,17 +11,19 @@ import {
   isApiGroupComponent,
   isJsonViewerComponent,
   isPanelComponent,
+  isExternalElementComponent,
   type DbTableComponent,
+  type ExternalElementComponent,
 } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
 import { MultiSelectPanel } from "../MultiSelectPanel";
 import ComponentPanel from "./ComponentPanel";
-import type { FocusCanvasElementTarget } from "./ComponentPanel";
 import ConnectionPanel from "./ConnectionPanel";
 import EndpointPanel from "./EndpointPanel";
 import ApiGroupPanel from "./ApiGroupPanel";
 import JsonViewerPanel from "./JsonViewerPanel";
 import DbTablePanel from "./DbTablePanel";
+import ExternalElementPanel from "./ExternalElementPanel";
 
 interface Props {
   selectedElementId: string | null;
@@ -30,7 +32,6 @@ interface Props {
   selectedNodes?: Node[];
   focusTitleTrigger?: number;
   onClose: () => void;
-  onFocusCanvasElement?: (target: FocusCanvasElementTarget) => void;
 }
 
 const ElementPanel = ({
@@ -40,7 +41,6 @@ const ElementPanel = ({
   selectedNodes = [],
   focusTitleTrigger = 0,
   onClose,
-  onFocusCanvasElement,
 }: Props) => {
   const component = useComponent(selectedElementId ?? "");
   const resolvedComponents = useComponents();
@@ -134,6 +134,20 @@ const ElementPanel = ({
       );
     }
 
+    if (isExternalElementComponent(component)) {
+      return (
+        <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
+          <CollabEditingWarning elementId={selectedElementId} />
+          <ExternalElementPanel
+            component={component as ExternalElementComponent}
+            onClose={onClose}
+            updateComponent={updateComponent}
+            removeComponent={removeComponent}
+          />
+        </div>
+      );
+    }
+
     return (
       <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
         <CollabEditingWarning elementId={selectedElementId} />
@@ -156,7 +170,6 @@ const ElementPanel = ({
           removeComponent={removeComponent}
           onUngroup={isPanelWithChildren ? () => { ungroupNodes(component.id); onClose(); } : undefined}
           focusTitleTrigger={focusTitleTrigger}
-          onFocusCanvasElement={onFocusCanvasElement}
         />
       </div>
     );
@@ -166,4 +179,3 @@ const ElementPanel = ({
 };
 
 export default ElementPanel;
-export type { FocusCanvasElementTarget } from "./ComponentPanel";

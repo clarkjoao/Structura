@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import debounce from "lodash.debounce";
 import { X, Trash2, RotateCcw } from "lucide-react";
 import type { Connection, ConnectionIntent, ConnectionDirection, ConnectionStyle } from "@/features/diagram";
-import { EdgeStyle, StrokeStyle, EdgeMarker, useActiveDiagramId, useDiagramActions } from "@/features/diagram";
+import { EdgeStyle, StrokeStyle, EdgeMarker, useActiveDiagramId, useDiagramActions, useEdgeWaypoints } from "@/features/diagram";
 import { INTENT_DEFAULTS, saveLastEdgeStyle } from "@/features/diagram";
 import { cn } from "@/lib/utils";
 import { FIELD_DEBOUNCE_MS } from "@/features/canvas/canvas.constants";
@@ -42,6 +42,7 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
   const { t } = useTranslation();
   const activeDiagramId = useActiveDiagramId();
   const { clearEdgeWaypoints, updateEdgeLabelOffset } = useDiagramActions();
+  const waypointCount = useEdgeWaypoints(conn.id).length;
   const [label, setLabel] = useState(conn.label);
   const [desc, setDesc] = useState(conn.description ?? "");
   const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
@@ -306,10 +307,16 @@ const ConnectionPanel = ({ conn, onClose, updateConnection, removeConnection, fo
           <button
             type="button"
             onClick={resetEdgeLayout}
-            className="flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-muted-foreground transition-colors w-full"
+            disabled={waypointCount === 0}
+            className="flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium transition-colors w-full disabled:opacity-40 disabled:cursor-not-allowed text-muted-foreground hover:text-foreground hover:border-muted-foreground"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             {t("connectionPanel.resetPath")}
+            {waypointCount > 0 && (
+              <span className="ml-auto text-[10px] font-mono bg-muted rounded px-1 py-0.5 leading-none">
+                {waypointCount}
+              </span>
+            )}
           </button>
           <button onClick={() => { debouncedUpdate.cancel(); removeConnection(conn.id); onClose(); }} className="flex items-center justify-center gap-1.5 rounded-md border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors w-full">
             <Trash2 className="h-3.5 w-3.5" /> {t("connectionPanel.removeConnection")}

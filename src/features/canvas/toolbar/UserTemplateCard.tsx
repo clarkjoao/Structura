@@ -2,7 +2,7 @@ import { useEffect, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Download, Pencil, Trash2 } from "lucide-react";
 import type { UserTemplate } from "@/features/diagram";
-import { downloadTemplate } from "@/features/diagram/utils/template-sharing";
+import { downloadTemplate } from "@/features/diagram";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { PatternFlowPreview } from "./PatternFlowPreview";

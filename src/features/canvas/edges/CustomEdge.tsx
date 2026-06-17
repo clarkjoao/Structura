@@ -26,6 +26,7 @@ const Edge = memo((props: EdgeProps) => {
         onSegmentPointerDown={core.handleSegmentPointerDown}
         onSegmentHover={core.setHoveredSegmentIndex}
         onEdgeWaypointsDoubleClick={core.handleEdgeWaypointsDoubleClick}
+        onWaypointDoubleClick={core.handleWaypointDoubleClick}
         showSegmentHitTargets={core.showSegmentHitTargets}
         isHighlighted={core.isHighlighted}
         strokeWidth={core.strokeWidth}

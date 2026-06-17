@@ -31,6 +31,7 @@ export type {
   DbColumn,
   JsonViewerComponent,
   FlowNodeComponent,
+  ExternalElementComponent,
   FlowNodeShape,
   EndpointHandler,
   HttpMethod,
@@ -116,10 +117,6 @@ export { migrateFlow } from "./utils/flow-migration";
 
 
 export { repairFlow } from "./utils/flow-repair";
-
-
-export { computeImpact } from "./utils/impact-analysis";
-export type { ImpactResult } from "./utils/impact-analysis";
 
 
 export { buildFlowDuplicatePatch } from "./utils/flow-duplicate";
@@ -223,6 +220,7 @@ export {
   isDbTableComponent,
   isJsonViewerComponent,
   isFlowNodeComponent,
+  isExternalElementComponent,
 } from "./model/component.guards";
 
 
@@ -238,6 +236,8 @@ export {
   COMPONENT_TYPE_JSON_VIEWER,
   COMPONENT_TYPE_FLOW_NODE,
   COMPONENT_TYPE_PROCESSOS,
+  COMPONENT_TYPE_EXTERNAL_ELEMENT,
+  isExternalElementType,
   PANEL_KIND_VALUES,
   isPanelType,
   isNoteType,
@@ -343,5 +343,13 @@ export {
   measureLocalStorageUsage,
   clearNonEssentialStorage,
 } from "./store/storage-monitor";
-export type { StorageHealthLevel } from "./store/saveStatus.store";
+export { useSaveStatusStore } from "./store/saveStatus.store";
+export type { StorageHealthLevel, SaveStatus } from "./store/saveStatus.store";
+
+export {
+  exportTemplateToJson,
+  downloadTemplate,
+  importTemplateFromFile,
+} from "./utils/template-sharing";
+export type { TemplateExportEnvelope, ImportTemplateResult } from "./utils/template-sharing";
 export type { ServiceDefinition, ServiceSourceRef } from "./model/service.types";

@@ -27,9 +27,10 @@ import {
   isUnknownType,
   isSvgComponentType,
   isFlowNodeType,
+  isExternalElementType,
   COMPONENT_TYPE_PROCESSOS,
 } from "../../model/component-type-constants";
-import type { FlowNodeComponent, FlowNodeShape } from "../../model/component.types";
+import type { FlowNodeComponent, FlowNodeShape, ExternalElementComponent } from "../../model/component.types";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import { isAwsType } from "@/lib/catalogs/aws";
 import { isGcpType } from "@/features/cloud/providers/gcp/gcp.catalog";
@@ -199,6 +200,13 @@ function buildComponentForType(
       type: COMPONENT_TYPE_PROCESSOS,
       flowShape: flowShape ?? "rectangle",
     } as FlowNodeComponent;
+  } else if (isExternalElementType(type)) {
+    component = {
+      ...base,
+      type: "external-element",
+      linkedDiagramId: "",
+      tags: ["external"],
+    } as ExternalElementComponent;
   } else {
     // Se um novo ComponentType for adicionado e não tratado aqui, este erro de runtime
     // sinaliza a necessidade de adicionar o branch correspondente.

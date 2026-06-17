@@ -76,9 +76,9 @@
     "bidirectional": "↔ Bidirectional",
     "reverse": "← Reverse",
     "edgeStraight": "Straight",
-    "edgeBezier": "Orthogonal",
-    "edgeStep": "Step",
-    "edgeSmoothstep": "Smooth",
+    "edgeBezier": "Curved",
+    "edgeStep": "Sharp",
+    "edgeSmoothstep": "Rounded",
     "strokeSolid": "Solid",
     "strokeDashed": "Dashed",
     "strokeDotted": "Dotted",
@@ -512,6 +512,7 @@
     "errorSyncGeneric": "Error while syncing",
     "nodeCount_one": "{{count}} node",
     "nodeCount_other": "{{count}} nodes",
+    "focusServiceNotFound": "Service not found in this diagram",
     "sourceGithub": "GitHub",
     "sourceDefectdojo": "DefectDojo",
     "filterGithub": "GitHub",
@@ -534,6 +535,8 @@
     "saving": "Saving...",
     "saved": "Saved",
     "saveError": "Save error",
+    "elementsLocked": "Element(s) locked",
+    "elementsUnlocked": "Element(s) unlocked",
     "toolbar": {
       "allTags": "All tags",
       "noTagsFilter": "No tags",
@@ -545,21 +548,13 @@
     },
     "multiSelect": {
       "saveAsTemplate": "Save as template"
-    }
+    },
+    "focusNodeNotFound": "Element not found in this diagram"
   },
   "compareMode": {
     "added": "Added",
     "removed": "Removed",
     "modified": "Modified"
-  },
-  "impactAnalysis": {
-    "title": "Impact analysis",
-    "directDependents": "Direct dependents",
-    "transitive": "Transitive dependents",
-    "brokenConnections": "Affected connections",
-    "noDependents": "No dependents found",
-    "button": "Analyze impact",
-    "unavailable": "Could not analyze — no diagram snapshot."
   },
   "canvasToolbar": {
     "renameTitle": "Double-click to rename",
@@ -788,7 +783,28 @@
     "searchHelpJsonViewer": "json|payload|contract|schema|event|api",
     "searchHelpApiGroup": "api|group|grupo|openapi",
     "searchHelpEndpoint": "endpoint|http|rest",
-    "searchHelpSwimlane": "swimlane|lane|strip|actor|pool|domain|team|faixa"
+    "searchHelpSwimlane": "swimlane|lane|strip|actor|pool|domain|team|faixa",
+    "typeExternalElement": "External Element"
+  },
+  "externalElement": {
+    "panelTitle": "External Element",
+    "labelName": "Label",
+    "placeholderName": "Element label...",
+    "labelDiagram": "Target diagram",
+    "labelElement": "Target element",
+    "selectDiagram": "Select diagram...",
+    "selectElement": "Select element...",
+    "noneOption": "None",
+    "noElements": "No elements in this diagram",
+    "unnamed": "(unnamed)",
+    "openButton": "Open in diagram",
+    "delete": "Delete",
+    "nodeFallbackName": "External Element",
+    "nodeBadge": "external",
+    "nodeFromDiagram": "from {{name}}",
+    "nodeNotLinked": "No diagram linked",
+    "nodeOpenInCanvas": "Open diagram",
+    "nodeOpenNewTab": "Open in new tab"
   },
   "swimlane": {
     "title": "Swim lane",
@@ -1415,7 +1431,9 @@
     "addPerson": "Add Person",
     "addSystem": "Add System",
     "addContainer": "Add Container",
-    "addComponent": "Add Component"
+    "addComponent": "Add Component",
+    "lockToggle": "Lock / Unlock selected",
+    "lockToggleDesc": "Toggles lock on all selected elements; locked elements cannot be moved or selected"
   },
   "github": {
     "configNote": "Services imported from GitHub are kept in the Registry.",

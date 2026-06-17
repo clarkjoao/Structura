@@ -51,6 +51,7 @@ export interface UseCanvasGraphStateParams {
   };
   handleDrillDown: (elementId: string) => void;
   handlePanelCollapseToggle: (panelId: string) => void;
+  navigateToDiagram?: (diagramId: string, nodeId?: string) => void;
   actions: DiagramActions;
   updateNodeInternals: (nodeIds: string[]) => void;
   t: TFunction;
@@ -79,6 +80,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     flowContext,
     handleDrillDown,
     handlePanelCollapseToggle,
+    navigateToDiagram,
     actions,
     updateNodeInternals,
     t,
@@ -143,6 +145,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     allDiagrams,
     handleDrillDown,
     handlePanelCollapseToggle,
+    navigateToDiagram,
     isPlaying: flowState.isPlayingEffective,
     dragTargetPanelId,
     unparentCandidatePanelId,

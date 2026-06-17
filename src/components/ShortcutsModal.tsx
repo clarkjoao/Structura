@@ -142,6 +142,17 @@ export default function ShortcutsModal({
                 }
               />
               <ShortcutRow
+                label={t("shortcutsModal.lockToggle")}
+                description={t("shortcutsModal.lockToggleDesc")}
+                keys={
+                  <span className="inline-flex items-center gap-1">
+                    <Kbd>Cmd/Ctrl</Kbd>
+                    <Kbd>Shift</Kbd>
+                    <Kbd>K</Kbd>
+                  </span>
+                }
+              />
+              <ShortcutRow
                 label={t("shortcutsModal.undo")}
                 keys={
                   <span className="inline-flex items-center gap-1">

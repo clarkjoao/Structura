@@ -442,7 +442,7 @@ export function DetailPanel({
                   <button
                     key={u.diagramId}
                     type="button"
-                    onClick={() => onNavigateToDiagram(u.diagramId)}
+                    onClick={() => onNavigateToDiagram(u.diagramId, svc.id)}
                     className="w-full flex items-center justify-between px-3 py-2.5 text-xs hover:bg-muted/50 transition-colors group"
                   >
                     <span className="flex items-center gap-2 text-foreground truncate">

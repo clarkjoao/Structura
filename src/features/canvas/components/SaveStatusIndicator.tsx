@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AlertCircle, Check, Loader2 } from "lucide-react";
-import { useSaveStatusStore } from "@/features/diagram/store/saveStatus.store";
+import { useSaveStatusStore } from "@/features/diagram";
 
 const HIDE_DELAY_MS = 2500;
 

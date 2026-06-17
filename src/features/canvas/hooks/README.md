@@ -40,7 +40,6 @@ private and are composed by [`Canvas.tsx`](../Canvas.tsx) through
 | `useCanvasDiagramNavigation` | Manages diagram navigation UI state such as the sidebar, search, and command palette. It also records recently opened diagrams and closes navigation surfaces when flow or compare mode locks navigation. |
 | `useConnectionInternalsSync` | Watches per-node connection counts and calls `updateNodeInternals` only for nodes whose handles need to be recomputed. This keeps React Flow handle positions current without refreshing every node. |
 | `useJourneyViewportSync` | When a journey is actively playing, recenters the viewport on the currently highlighted node so the canvas follows the journey step-by-step. |
-| `useImpactAnalysis` | Computes downstream impact for a selected component from the active diagram snapshot. It is a thin memoized bridge to the diagram feature's graph-analysis utility. |
 | `usePeerOnNode` | Looks up whether a collaboration peer is currently focused on a given node, allowing the canvas to render presence information on that element. |
 | `useStableListByRefEquality` | Returns the previous array reference when each item is referentially unchanged. It is a small render-avoidance helper used to stabilize selector outputs. |
 

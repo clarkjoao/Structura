@@ -1,7 +1,6 @@
 import { useCallback, useEffect } from "react";
 import { useActiveDiagramModel } from "@/features/diagram";
-import { buildMentionContextBlock, type ActiveMention } from "@/features/llm";
-import { useLLMStore } from "@/features/llm/store";
+import { buildMentionContextBlock, useLLMStore, type ActiveMention } from "@/features/llm";
 import { useDiagramContext } from "./useDiagramContext";
 import { useMentionSearch } from "./useMentionSearch";
 

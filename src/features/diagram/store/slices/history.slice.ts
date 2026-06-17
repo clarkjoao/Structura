@@ -105,4 +105,15 @@ export const historySlice =
         state._lastUndoRedoAt = Date.now();
       });
     },
+
+    /**
+     * Open a structural undo checkpoint imperatively, outside of any mutating
+     * action. Lets non-React callers (e.g. the LLM store) integrate with undo
+     * without reaching into `pushHistory`/`STRUCTURAL_MUTATION_MARKER` directly.
+     */
+    pushHistoryBoundary: () => {
+      set((state) => {
+        pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+      });
+    },
   });
