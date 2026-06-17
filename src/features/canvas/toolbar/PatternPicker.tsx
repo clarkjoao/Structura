@@ -14,8 +14,8 @@ import {
   saveUserTemplate,
   useAllUserTemplates,
   useDiagramActions,
+  importTemplateFromFile,
 } from "@/features/diagram";
-import { importTemplateFromFile } from "@/features/diagram/utils/template-sharing";
 import { getViewportCenter } from "../viewport-utils";
 import { useTranslation } from "react-i18next";
 import { PatternFlowPreview } from "./PatternFlowPreview";

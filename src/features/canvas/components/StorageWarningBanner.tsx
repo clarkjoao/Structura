@@ -2,11 +2,11 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, AlertCircle, X, FolderOpen, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useSaveStatusStore } from "@/features/diagram/store/saveStatus.store";
 import {
+  useSaveStatusStore,
   checkStorageHealth,
   clearNonEssentialStorage,
-} from "@/features/diagram/store/storage-monitor";
+} from "@/features/diagram";
 import {
   isFileSystemSupported,
   requestConnectFolder,

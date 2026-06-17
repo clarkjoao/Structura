@@ -46,8 +46,7 @@ import {
 } from "@/features/custom-components";
 import { ChatPanel, FloatingChatButton, PendingNodeToolbar } from "@/components/chat";
 import { useLLMChat } from "./chat";
-import { getPendingNodeIds, getSuggestionIdForNode } from "@/features/llm";
-import { useLLMStore } from "@/features/llm/store";
+import { getPendingNodeIds, getSuggestionIdForNode, useLLMStore } from "@/features/llm";
 
 const MULTI_SELECTION_KEY_CODES = ["Meta", "Control"];
 const PAN_ACTIVATION_KEY = getPlatform() === "mac" ? "Meta" : "Control";

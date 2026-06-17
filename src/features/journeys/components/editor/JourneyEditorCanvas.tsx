@@ -32,14 +32,15 @@ import {
 } from "@/features/diagram";
 import type { Flow } from "@/features/diagram";
 import {
+  CustomEdge,
+  FlowStepNavigator,
   FIT_VIEW_DURATION_MS,
   FIT_VIEW_MAX_ZOOM,
   FIT_VIEW_PADDING,
-} from "@/features/canvas/canvas.constants";
-import CustomEdge from "@/features/canvas/edges/CustomEdge";
-import FlowStepNavigator from "@/features/canvas/flow/FlowStepNavigator";
-import { useFlowMode, useFlowState } from "@/features/canvas/flow";
-import { nodeTypes } from "@/features/canvas/nodes/node-types";
+  nodeTypes,
+  useFlowMode,
+  useFlowState,
+} from "@/features/canvas";
 import type { JourneyStep } from "../../types";
 import { stepHasVisualMedia } from "../../utils/step-media.utils";
 import {

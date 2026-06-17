@@ -1,4 +1,9 @@
-export { OPACITY_FLOW_PLAYBACK_NODE_DIM } from "./canvas.constants";
+export {
+  OPACITY_FLOW_PLAYBACK_NODE_DIM,
+  FIT_VIEW_DURATION_MS,
+  FIT_VIEW_PADDING,
+  FIT_VIEW_MAX_ZOOM,
+} from "./canvas.constants";
 export { default as Canvas } from "./Canvas";
 export { default as FlowPanel } from "./flow/FlowPanel";
 export { default as FlowStepNavigator } from "./flow/FlowStepNavigator";
