@@ -1,4 +1,5 @@
 import { LayoutDashboard } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { CollabEditingWarning } from "@/features/collaboration";
 import {
   useComponent,
@@ -42,11 +43,19 @@ const ElementPanel = ({
   focusTitleTrigger = 0,
   onClose,
 }: Props) => {
+  const { t } = useTranslation();
   const component = useComponent(selectedElementId ?? "");
   const resolvedComponents = useComponents();
   const connections = useConnections();
   const flows = useFlows();
-  const { updateComponent, removeComponent, updateConnection, removeConnection, groupNodes, ungroupNodes } = useDiagramActions();
+  const {
+    updateComponent,
+    removeComponent,
+    updateConnection,
+    removeConnection,
+    groupNodes,
+    ungroupNodes,
+  } = useDiagramActions();
   const availableFlows = flows.map((f) => ({ id: f.id, name: f.name }));
 
   if (selectedNodes.length > 1) {
@@ -59,7 +68,13 @@ const ElementPanel = ({
     return (
       <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
         <CollabEditingWarning elementId={selectedEdgeId} />
-        <ConnectionPanel conn={conn} onClose={onClose} updateConnection={updateConnection} removeConnection={removeConnection} focusTitleTrigger={focusTitleTrigger} />
+        <ConnectionPanel
+          conn={conn}
+          onClose={onClose}
+          updateConnection={updateConnection}
+          removeConnection={removeConnection}
+          focusTitleTrigger={focusTitleTrigger}
+        />
       </div>
     );
   }
@@ -93,10 +108,7 @@ const ElementPanel = ({
             component={component}
             onClose={onClose}
             updateComponent={
-              updateComponent as (
-                id: string,
-                patch: Partial<Omit<DbTableComponent, "id">>,
-              ) => void
+              updateComponent as (id: string, patch: Partial<Omit<DbTableComponent, "id">>) => void
             }
             removeComponent={removeComponent}
             focusTitleTrigger={focusTitleTrigger}
@@ -155,11 +167,14 @@ const ElementPanel = ({
           <div className="flex items-center gap-2 p-2 border-b border-border bg-secondary/30">
             <button
               type="button"
-              onClick={() => { const id = groupNodes(selectedNodeIds); if (id) onClose(); }}
+              onClick={() => {
+                const id = groupNodes(selectedNodeIds);
+                if (id) onClose();
+              }}
               className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
             >
               <LayoutDashboard className="h-3.5 w-3.5" />
-              Agrupar
+              {t("multiSelect.group")}
             </button>
           </div>
         )}
@@ -168,7 +183,14 @@ const ElementPanel = ({
           onClose={onClose}
           updateComponent={updateComponent}
           removeComponent={removeComponent}
-          onUngroup={isPanelWithChildren ? () => { ungroupNodes(component.id); onClose(); } : undefined}
+          onUngroup={
+            isPanelWithChildren
+              ? () => {
+                  ungroupNodes(component.id);
+                  onClose();
+                }
+              : undefined
+          }
           focusTitleTrigger={focusTitleTrigger}
         />
       </div>

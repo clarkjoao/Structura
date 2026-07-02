@@ -28,9 +28,9 @@ const CLEARABLE_KEYS = [
 ];
 
 /**
- * Remove chaves não-essenciais do localStorage.
+ * Removes non-essential keys from localStorage.
  * Nunca remove diagram-store, structura:journeys ou structura:icon-library.
- * Retorna quantos bytes foram liberados.
+ * Returns how many bytes were freed.
  */
 export function clearNonEssentialStorage(): number {
   const before = measureLocalStorageUsage();
@@ -45,7 +45,7 @@ export function clearNonEssentialStorage(): number {
   return Math.max(0, before - after);
 }
 
-/** Executa uma medição e atualiza o store. */
+/** Runs a measurement and updates the store. */
 export function checkStorageHealth(): void {
   const used = measureLocalStorageUsage();
   useSaveStatusStore.getState()._setStorageUsage(used);

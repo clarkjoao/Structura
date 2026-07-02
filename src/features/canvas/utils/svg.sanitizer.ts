@@ -52,7 +52,6 @@ function isSvgRootElement(document: Document): boolean {
   return root !== null && root.tagName.toLowerCase() === "svg";
 }
 
-
 function stripOuterSvgNoise(markup: string): string {
   let result = markup.replace(/^\uFEFF/, "").trim();
   let previous = "";
@@ -64,7 +63,6 @@ function stripOuterSvgNoise(markup: string): string {
   }
   return result;
 }
-
 
 export function sanitizeSvg(rawSvg: string): string | null {
   if (!rawSvg.trim()) {

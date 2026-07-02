@@ -4,8 +4,8 @@ import { checkStorageHealth } from "./storage-monitor";
 const CHECK_INTERVAL_MS = 30_000;
 
 /**
- * Montar no nível do layout do canvas / model explorer.
- * Verifica o uso do localStorage periodicamente e após hidratação.
+ * Mount at the canvas / model explorer layout level.
+ * Checks localStorage usage periodically and after hydration.
  */
 export function useStorageMonitor(): void {
   useEffect(() => {

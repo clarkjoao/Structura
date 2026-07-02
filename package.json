@@ -5,20 +5,20 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/clark-joao/structura"
+    "url": "https://github.com/clarkjoao/Structura"
   },
-  "homepage": "https://github.com/clark-joao/structura",
+  "homepage": "https://github.com/clarkjoao/Structura",
   "bugs": {
-    "url": "https://github.com/clark-joao/structura/issues"
+    "url": "https://github.com/clarkjoao/Structura/issues"
   },
   "keywords": [
     "architecture",
     "diagram",
-    "modeling",
+    "diagramming",
+    "c4-model",
     "modeling-tool",
-    "modeling-tool-for-architecture",
-    "modeling-tool-for-architecture-diagram",
-    "modeling-tool-for-architecture-diagram-tool"
+    "react-flow",
+    "software-architecture"
   ],
   "version": "0.1.0",
   "type": "module",
@@ -30,6 +30,9 @@
     "proxy:dev": "npm --prefix server run dev",
     "proxy": "npm run proxy:install && npm run proxy:dev",
     "lint": "eslint .",
+    "typecheck": "tsc -b",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -137,6 +140,7 @@
     "mochawesome-merge": "^5.1.1",
     "mochawesome-report-generator": "^6.3.2",
     "postcss": "^8.5.6",
+    "prettier": "3.9.4",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",

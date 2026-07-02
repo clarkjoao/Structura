@@ -34,29 +34,29 @@ function saveKeyForProvider(provider: LLMProvider, key: string): void {
   try {
     const rawValue = localStorage.getItem(PROVIDER_KEY_STORAGE);
     const parsedValue: unknown = rawValue ? JSON.parse(rawValue) : null;
-    const parsedObject = typeof parsedValue === "object" && parsedValue !== null
-      ? parsedValue
-      : {};
+    const parsedObject = typeof parsedValue === "object" && parsedValue !== null ? parsedValue : {};
     const nextKeys = {
-      openai: typeof Reflect.get(parsedObject, "openai") === "string"
-        ? String(Reflect.get(parsedObject, "openai"))
-        : "",
-      anthropic: typeof Reflect.get(parsedObject, "anthropic") === "string"
-        ? String(Reflect.get(parsedObject, "anthropic"))
-        : "",
+      openai:
+        typeof Reflect.get(parsedObject, "openai") === "string"
+          ? String(Reflect.get(parsedObject, "openai"))
+          : "",
+      anthropic:
+        typeof Reflect.get(parsedObject, "anthropic") === "string"
+          ? String(Reflect.get(parsedObject, "anthropic"))
+          : "",
       [provider]: key,
     };
     localStorage.setItem(PROVIDER_KEY_STORAGE, JSON.stringify(nextKeys));
-  } catch {
-    
-  }
+  } catch {}
 }
 
 export function LLMSettings({ config, onSave, onClose }: LLMSettingsProps) {
   const { t } = useTranslation();
   const [mode, setMode] = useState<LLMMode>(config.mode);
   const [provider, setProvider] = useState<LLMProvider>(config.provider);
-  const [apiKey, setApiKey] = useState(() => config.apiKey || loadSavedKeyForProvider(config.provider));
+  const [apiKey, setApiKey] = useState(
+    () => config.apiKey || loadSavedKeyForProvider(config.provider),
+  );
   const [apiKeyDirty, setApiKeyDirty] = useState(false);
   const [model, setModel] = useState(config.model);
   const proxyEndpoint = useMemo(() => getProxyEndpoint(), []);
@@ -163,11 +163,7 @@ export function LLMSettings({ config, onSave, onClose }: LLMSettingsProps) {
           <label htmlFor="llm-model" className="text-xs text-muted-foreground">
             {t("llmChat.settings.model")}
           </label>
-          <Input
-            id="llm-model"
-            value={model}
-            onChange={(event) => setModel(event.target.value)}
-          />
+          <Input id="llm-model" value={model} onChange={(event) => setModel(event.target.value)} />
         </div>
 
         <div className="flex items-center justify-end gap-2">
@@ -187,4 +183,3 @@ export function LLMSettings({ config, onSave, onClose }: LLMSettingsProps) {
     </div>
   );
 }
-

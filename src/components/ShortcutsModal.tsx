@@ -1,4 +1,10 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useTranslation } from "react-i18next";
 
 function Kbd({ children }: { children: React.ReactNode }) {
@@ -13,7 +19,9 @@ function ShortcutCard({ title, children }: { title: string; children: React.Reac
   return (
     <section className="rounded-xl border border-border bg-card overflow-hidden">
       <div className="px-4 py-3 border-b border-border bg-secondary/30">
-        <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">{title}</p>
+        <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+          {title}
+        </p>
       </div>
       <div className="divide-y divide-border px-4">{children}</div>
     </section>
@@ -55,8 +63,8 @@ export default function ShortcutsModal({
           <DialogHeader>
             <DialogTitle>{t("shortcutsModal.title")}</DialogTitle>
             <DialogDescription>
-              {t("shortcutsModal.descriptionBeforeKbd")}{" "}
-              <Kbd>Ctrl</Kbd> {t("shortcutsModal.descriptionAfterCtrl")} <Kbd>Cmd</Kbd>.
+              {t("shortcutsModal.descriptionBeforeKbd")} <Kbd>Ctrl</Kbd>{" "}
+              {t("shortcutsModal.descriptionAfterCtrl")} <Kbd>Cmd</Kbd>.
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -285,10 +293,7 @@ export default function ShortcutsModal({
             </ShortcutCard>
 
             <ShortcutCard title={t("shortcutsModal.flowPlayback")}>
-              <ShortcutRow
-                label={t("shortcutsModal.flowStepBack")}
-                keys={<Kbd>←</Kbd>}
-              />
+              <ShortcutRow label={t("shortcutsModal.flowStepBack")} keys={<Kbd>←</Kbd>} />
               <ShortcutRow
                 label={t("shortcutsModal.flowStepNext")}
                 description={t("shortcutsModal.flowStepNextDesc")}
@@ -301,4 +306,3 @@ export default function ShortcutsModal({
     </Dialog>
   );
 }
-

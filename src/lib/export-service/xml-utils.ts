@@ -1,4 +1,3 @@
-
 import type { StyleOption } from "./types";
 
 export function escXml(s: string): string {
@@ -10,9 +9,7 @@ export function escXml(s: string): string {
 }
 
 export function buildStyle(baseStyle: string, options: StyleOption): string {
-  const normalizedBaseStyle = baseStyle.endsWith(";")
-    ? baseStyle
-    : `${baseStyle};`;
+  const normalizedBaseStyle = baseStyle.endsWith(";") ? baseStyle : `${baseStyle};`;
 
   const stylePairs = Object.entries(options)
     .filter(([_, value]) => value !== undefined)
@@ -22,9 +19,6 @@ export function buildStyle(baseStyle: string, options: StyleOption): string {
   return `${normalizedBaseStyle}${stylePairs}`;
 }
 
-export function applyTemplate(
-  template: string,
-  placeholders: Record<string, string>,
-): string {
+export function applyTemplate(template: string, placeholders: Record<string, string>): string {
   return template.replace(/%(\w+)%/g, (_, key) => placeholders[key] || "");
 }

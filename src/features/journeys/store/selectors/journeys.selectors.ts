@@ -8,17 +8,13 @@ function sortJourneysByUpdatedAtDesc(journeys: Journey[]): Journey[] {
 
 export const useAllJourneys = (): Journey[] =>
   useJourneyStore(
-    useShallow((state) =>
-      sortJourneysByUpdatedAtDesc(Object.values(state.journeys)),
-    ),
+    useShallow((state) => sortJourneysByUpdatedAtDesc(Object.values(state.journeys))),
   );
 
 export const useJourneys = useAllJourneys;
 
 export const useJourneyById = (id: string): Journey | null =>
-  useJourneyStore(
-    useShallow((state) => (id ? (state.journeys[id] ?? null) : null)),
-  );
+  useJourneyStore(useShallow((state) => (id ? (state.journeys[id] ?? null) : null)));
 
 export const useJourney = useJourneyById;
 
@@ -27,9 +23,7 @@ export const useJourneySteps = (journeyId: string): JourneyStep[] =>
     useShallow((state) => {
       const journey = state.journeys[journeyId];
       if (!journey) return [];
-      return [...Object.values(journey.steps)].sort(
-        (a, b) => a.order - b.order,
-      );
+      return [...Object.values(journey.steps)].sort((a, b) => a.order - b.order);
     }),
   );
 
@@ -51,9 +45,7 @@ export const useJourneysByDiagramId = (diagramId: string): Journey[] =>
   useJourneyStore(
     useShallow((state) => {
       const matches = Object.values(state.journeys).filter((journey) =>
-        Object.values(journey.steps).some(
-          (step) => step.diagramId === diagramId,
-        ),
+        Object.values(journey.steps).some((step) => step.diagramId === diagramId),
       );
       return sortJourneysByUpdatedAtDesc(matches);
     }),

@@ -23,15 +23,9 @@ export function buildContextualSuggestions(
   const hasAws = components.some(
     (c) => c.type.startsWith("aws-") || (c as { awsService?: string }).awsService,
   );
-  const hasSyncChain = connections.some(
-    (c) => c.transportPreset === "sync" || c.intent === "call",
-  );
-  const hasLambda = components.some(
-    (c) => (c as { awsService?: string }).awsService === "lambda",
-  );
-  const hasRds = components.some(
-    (c) => (c as { awsService?: string }).awsService === "rds",
-  );
+  const hasSyncChain = connections.some((c) => c.transportPreset === "sync" || c.intent === "call");
+  const hasLambda = components.some((c) => (c as { awsService?: string }).awsService === "lambda");
+  const hasRds = components.some((c) => (c as { awsService?: string }).awsService === "rds");
   const hasNoCache = !components.some(
     (c) => (c as { awsService?: string }).awsService === "elasticache",
   );

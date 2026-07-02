@@ -6,7 +6,6 @@ import type {
   ConnectionStyle,
 } from "./connection.types";
 
-
 export interface EffectiveConnectionStyle {
   strokeStyle: ConnectionStyle["strokeStyle"];
   strokeWidth: number;
@@ -16,7 +15,6 @@ export interface EffectiveConnectionStyle {
 }
 
 const DEFAULT_STROKE_WIDTH = 1;
-
 
 export const INTENT_DEFAULTS: Record<ConnectionIntent, ConnectionStyle> = {
   dependency: {
@@ -56,7 +54,6 @@ export const INTENT_DEFAULTS: Record<ConnectionIntent, ConnectionStyle> = {
   },
 };
 
-
 export const DIRECTION_MARKERS: Record<
   ConnectionDirection,
   { markerStart: EdgeMarker; markerEnd: EdgeMarker }
@@ -65,7 +62,6 @@ export const DIRECTION_MARKERS: Record<
   bidirectional: { markerStart: EdgeMarker.ArrowClosed, markerEnd: EdgeMarker.ArrowClosed },
   reverse: { markerStart: EdgeMarker.ArrowClosed, markerEnd: EdgeMarker.None },
 };
-
 
 export function getEffectiveConnectionStyle(conn: Connection): EffectiveConnectionStyle {
   const intent = conn.intent ?? "call";
@@ -82,7 +78,6 @@ export function getEffectiveConnectionStyle(conn: Connection): EffectiveConnecti
     animated: s?.animated ?? fromIntent.animated ?? false,
   };
 }
-
 
 export function getIntentDefault(intent: ConnectionIntent): ConnectionStyle {
   return { ...INTENT_DEFAULTS[intent] };

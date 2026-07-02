@@ -80,7 +80,7 @@ describe("exportDrawio", () => {
     });
 
     const xml = exportDrawio(diagram, {});
-    
+
     expect(xml).toContain(`parent="${panelId}"`);
     expect(xml).toContain(`<mxGeometry x="40" y="50"`);
     expect(xml).toContain(`<mxGeometry x="80" y="80"`);
@@ -137,7 +137,7 @@ describe("exportDrawio", () => {
     });
 
     const xml = exportDrawio(diagram, {});
-    
+
     expect(xml).toContain(`id="${groupId}"`);
     expect(xml).toContain(`parent="${groupId}"`);
     expect(xml).toContain(`id="${epId}"`);
@@ -212,7 +212,7 @@ describe("exportDrawio", () => {
     });
 
     const xml = exportDrawio(diagram, {});
-    
+
     expect(xml).toContain(`<mxGeometry x="80" y="80"`);
     expect(xml).toContain(`<mxGeometry x="830" y="455"`);
     expect(xml).toContain(`pageWidth="1510"`);

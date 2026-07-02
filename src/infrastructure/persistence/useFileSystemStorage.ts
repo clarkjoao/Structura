@@ -5,7 +5,10 @@ import { fileSystemAdapter } from "./FileSystemAdapter";
 import type { WorkspaceScanResult } from "./FileSystemAdapter";
 import { useDiagramStore } from "@/features/diagram";
 import { useJourneyStore } from "@/features/journeys";
-import { useCustomComponentStore, type CustomComponentTemplate } from "@/features/custom-components";
+import {
+  useCustomComponentStore,
+  type CustomComponentTemplate,
+} from "@/features/custom-components";
 import { useIconStore } from "@/features/icons";
 import {
   buildPersistStoragePayload,
@@ -65,9 +68,7 @@ export function useFileSystemStorage() {
   const { t } = useTranslation();
   const [status, setStatus] = useState<FsStatus>("disconnected");
   const [folderName, setFolderName] = useState<string | null>(null);
-  const [scanResult, setScanResult] = useState<WorkspaceScanResult | null>(
-    null
-  );
+  const [scanResult, setScanResult] = useState<WorkspaceScanResult | null>(null);
   const [pendingMerge, setPendingMerge] = useState(false);
   const [pendingDisconnect, setPendingDisconnect] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -81,12 +82,11 @@ export function useFileSystemStorage() {
       past: [],
       future: [],
       _lastUndoRedoAt: 0,
-      clipboard: null,  
+      clipboard: null,
     });
     useCustomComponentStore.setState({ templates: {} });
   }, []);
 
-  
   useEffect(() => {
     if (!isFileSystemSupported) return;
 
@@ -124,7 +124,9 @@ export function useFileSystemStorage() {
         const payload = buildPersistStoragePayload(useDiagramStore.getState());
         const written = await defaultStorage.forceSave(PERSIST_KEY, payload);
         if (!written) {
-          console.warn("[Structura] Could not seed localStorage from in-memory diagrams (quota or blocked).");
+          console.warn(
+            "[Structura] Could not seed localStorage from in-memory diagrams (quota or blocked).",
+          );
         } else {
           recordLocalStorageDiagramSyncSuccess();
         }
@@ -245,9 +247,7 @@ export function useFileSystemStorage() {
   const confirmMerge = useCallback(async () => {
     if (!scanResult) return;
     defaultStorage.paused = true;
-    const validDiagrams = Object.fromEntries(
-      scanResult.valid.map((d) => [d.id, d])
-    );
+    const validDiagrams = Object.fromEntries(scanResult.valid.map((d) => [d.id, d]));
     const manifest = scanResult.manifest;
     useDiagramStore.setState((draft) => {
       draft.diagrams = { ...draft.diagrams, ...validDiagrams };
@@ -264,8 +264,7 @@ export function useFileSystemStorage() {
     });
 
     const manifestTemplates = manifest?.customComponentTemplates as
-      | Record<string, CustomComponentTemplate>
-      | undefined;
+      Record<string, CustomComponentTemplate> | undefined;
     if (manifestTemplates) {
       useCustomComponentStore.setState((state) => ({
         templates: mergeCustomComponentTemplates(state.templates, manifestTemplates),
@@ -296,9 +295,7 @@ export function useFileSystemStorage() {
   const confirmOverwrite = useCallback(async () => {
     if (!scanResult) return;
     defaultStorage.paused = true;
-    const validDiagrams = Object.fromEntries(
-      scanResult.valid.map((d) => [d.id, d])
-    );
+    const validDiagrams = Object.fromEntries(scanResult.valid.map((d) => [d.id, d]));
     const manifest = scanResult.manifest;
     useDiagramStore.setState((draft) => {
       draft.diagrams = validDiagrams;
@@ -310,8 +307,7 @@ export function useFileSystemStorage() {
     });
 
     const manifestTemplates = manifest?.customComponentTemplates as
-      | Record<string, CustomComponentTemplate>
-      | undefined;
+      Record<string, CustomComponentTemplate> | undefined;
     if (manifestTemplates) {
       useCustomComponentStore.setState({ templates: manifestTemplates });
     }
@@ -423,7 +419,6 @@ export function useFileSystemStorage() {
         toast.error(t("filesystem.backupFailedQuota"));
       }
 
-      
       await defaultStorage.forceSave("custom_components", customComponentTemplates);
     } catch {
       toast.error(t("filesystem.backupFailedGeneric"));
@@ -443,7 +438,6 @@ export function useFileSystemStorage() {
     if (!fileSystemAdapter.isConnected) return;
     setSyncing(true);
     try {
-      
       const workspace = await fileSystemAdapter.loadWorkspace();
       if (workspace) {
         const hydratedWorkspace = hydrateIconStoreFromWorkspace(workspace);
@@ -471,8 +465,7 @@ export function useFileSystemStorage() {
         const validDiagrams = Object.fromEntries(scan.valid.map((d) => [d.id, d]));
 
         const scannedManifestTemplates = scan.manifest?.customComponentTemplates as
-          | Record<string, CustomComponentTemplate>
-          | undefined;
+          Record<string, CustomComponentTemplate> | undefined;
         if (scannedManifestTemplates) {
           useCustomComponentStore.setState((state) => ({
             templates: mergeCustomComponentTemplates(state.templates, scannedManifestTemplates),

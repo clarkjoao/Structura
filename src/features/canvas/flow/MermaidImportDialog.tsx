@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import Editor from "@monaco-editor/react";
+import { LazyMonacoEditor as Editor } from "@/lib/monaco/LazyMonacoEditor";
 import { useTranslation } from "react-i18next";
 import { parseMermaidFlowchart, parseMermaidSequence } from "@/features/diagram";
 import { Badge } from "@/components/ui/badge";
@@ -39,12 +39,7 @@ function detectMermaidType(text: string): MermaidDiagramType {
   return "unknown";
 }
 
-export function MermaidImportDialog({
-  open,
-  onOpenChange,
-  onImport,
-  onImportFlowchart,
-}: Props) {
+export function MermaidImportDialog({ open, onOpenChange, onImport, onImportFlowchart }: Props) {
   const { t } = useTranslation();
   const [flowName, setFlowName] = useState(DEFAULT_FLOW_NAME);
   const [text, setText] = useState("");
@@ -112,8 +107,7 @@ export function MermaidImportDialog({
     onImport(text, name);
   };
 
-  const canImportFlowchart =
-    validation?.diagramType === "flowchart" && Boolean(onImportFlowchart);
+  const canImportFlowchart = validation?.diagramType === "flowchart" && Boolean(onImportFlowchart);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

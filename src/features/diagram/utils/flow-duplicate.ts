@@ -1,6 +1,5 @@
 import type { Flow } from "../model/flow.types";
 
-
 export function buildFlowDuplicatePatch(
   flow: Flow,
   newName: string,

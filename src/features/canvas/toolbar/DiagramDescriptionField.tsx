@@ -11,10 +11,7 @@ export function DiagramDescriptionField({ editLocked: _editLocked }: DiagramDesc
   if (!diagram.description?.trim()) return null;
 
   return (
-    <p
-      className="text-[11px] text-muted-foreground truncate pl-[22px]"
-      title={diagram.description}
-    >
+    <p className="text-[11px] text-muted-foreground truncate pl-[22px]" title={diagram.description}>
       {diagram.description}
     </p>
   );

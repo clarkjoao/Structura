@@ -51,7 +51,6 @@ export const useVisibleConnections = () =>
     }),
   );
 
-
 export const useResolvedComponents = () =>
   useDiagramStore(
     useShallow((s) => {
@@ -60,7 +59,6 @@ export const useResolvedComponents = () =>
       return getCachedCanvasSnapshot(d).components;
     }),
   );
-
 
 export const useResolvedNodeLayouts = () =>
   useDiagramStore(
@@ -76,7 +74,6 @@ export type ActiveDiagramSceneState = {
   activeSceneId: string | null;
   hasActiveScene: boolean;
 };
-
 
 export const useActiveDiagramSceneState = (): ActiveDiagramSceneState | null =>
   useDiagramStore(

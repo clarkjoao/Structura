@@ -58,11 +58,7 @@ export function SharedDiagramView({ diagram }: SharedDiagramViewProps) {
           onClose={handleClose}
         />
       ) : null}
-      <ViewerCanvas
-        diagram={diagram}
-        offsetTop={44}
-        showOpenInStructuraButton={false}
-      />
+      <ViewerCanvas diagram={diagram} offsetTop={44} showOpenInStructuraButton={false} />
     </div>
   );
 }

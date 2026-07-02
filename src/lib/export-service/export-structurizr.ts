@@ -65,7 +65,7 @@ function emitElementStrings(component: C4Component): string {
 
 function emitModelBlock(
   roots: C4Component[],
-  childrenByParent: Map<string, C4Component[]>,
+  childrenByParent: Map<string | null, C4Component[]>,
   localIdByStructuraId: Map<string, string>,
 ): string {
   const lines: string[] = [];
@@ -81,15 +81,11 @@ function emitModelBlock(
         : "";
 
     if (sortedKids.length === 0 && !tagLine) {
-      lines.push(
-        `${indent}${localId} = ${keyword} ${emitElementStrings(node)}\n`,
-      );
+      lines.push(`${indent}${localId} = ${keyword} ${emitElementStrings(node)}\n`);
       return;
     }
 
-    lines.push(
-      `${indent}${localId} = ${keyword} ${emitElementStrings(node)} {\n`,
-    );
+    lines.push(`${indent}${localId} = ${keyword} ${emitElementStrings(node)} {\n`);
     if (tagLine) lines.push(tagLine);
     for (const child of sortedKids) {
       emitNode(child, `${indent}  `);
@@ -144,9 +140,7 @@ function buildViewsSection(
     .filter((c) => c.type === "container")
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  const firstSystemDsl = systems.length
-    ? fullDslByStructuraId.get(systems[0].id)
-    : undefined;
+  const firstSystemDsl = systems.length ? fullDslByStructuraId.get(systems[0].id) : undefined;
   const firstContainerDsl = containers.length
     ? fullDslByStructuraId.get(containers[0].id)
     : undefined;
@@ -181,7 +175,7 @@ function buildViewsSection(
 
 function assignDslIds(
   roots: C4Component[],
-  childrenByParent: Map<string, C4Component[]>,
+  childrenByParent: Map<string | null, C4Component[]>,
   localIdByStructuraId: Map<string, string>,
   fullDslByStructuraId: Map<string, string>,
 ): void {
@@ -209,9 +203,7 @@ export function exportStructurizr(diagram: Diagram): string {
   const resolved = diagramWithResolvedScene(diagram);
   const byId = resolved.snapshot.components;
 
-  const c4List = Object.values(byId).filter(
-    (c): c is C4Component => isC4Component(c) && !c.hidden,
-  );
+  const c4List = Object.values(byId).filter((c): c is C4Component => isC4Component(c) && !c.hidden);
 
   if (c4List.length === 0) {
     throw new Error(
@@ -219,7 +211,7 @@ export function exportStructurizr(diagram: Diagram): string {
     );
   }
 
-  const childrenByParent = new Map<string, C4Component[]>();
+  const childrenByParent = new Map<string | null, C4Component[]>();
   for (const component of c4List) {
     const parentKey = getEffectiveC4ParentId(component, byId);
     if (!childrenByParent.has(parentKey)) childrenByParent.set(parentKey, []);
@@ -232,8 +224,9 @@ export function exportStructurizr(diagram: Diagram): string {
   assignDslIds(roots, childrenByParent, localIdByStructuraId, fullDslByStructuraId);
 
   const workspaceTitle = dslQuote(diagram.name);
-  const workspaceDesc =
-    diagram.description?.trim() ? ` ${dslQuote(diagram.description.trim())}` : "";
+  const workspaceDesc = diagram.description?.trim()
+    ? ` ${dslQuote(diagram.description.trim())}`
+    : "";
 
   const modelBody =
     emitModelBlock(roots, childrenByParent, localIdByStructuraId) +
@@ -250,5 +243,4 @@ ${modelBody}  }
 
 ${viewsBlock}}
 `;
-
 }

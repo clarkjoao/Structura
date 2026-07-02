@@ -1,6 +1,6 @@
 import type { ComponentType, ExternalLink } from "@/features/diagram";
 
-export interface NodeData {
+export type NodeData = {
   elementId: string;
   name: string;
   type: ComponentType;
@@ -39,4 +39,4 @@ export interface NodeData {
   };
   journeyCount?: number;
   journeyNames?: string[];
-}
+};

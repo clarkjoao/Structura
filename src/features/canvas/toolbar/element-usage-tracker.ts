@@ -51,11 +51,10 @@ export function trackUsage(key: string) {
   } else {
     entries.push({ key, count: 1, lastUsed: Date.now() });
   }
-  
+
   entries.sort((a, b) => b.count - a.count || b.lastUsed - a.lastUsed);
   save(entries);
 }
-
 
 export function getTopUsed(n = 8): UsageEntry[] {
   return load().slice(0, n);

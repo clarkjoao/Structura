@@ -7,7 +7,13 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { getStraightPath, getBezierPath, getSmoothStepPath, useReactFlow, type EdgeProps } from "@xyflow/react";
+import {
+  getStraightPath,
+  getBezierPath,
+  getSmoothStepPath,
+  useReactFlow,
+  type EdgeProps,
+} from "@xyflow/react";
 import {
   useActiveDiagramId,
   useDiagramActions,
@@ -20,7 +26,12 @@ import {
 } from "@/features/diagram";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { useTranslation } from "react-i18next";
-import { buildOrthogonalPath, buildSegments, computeSegmentDrag, type Segment } from "./edgeBuilding";
+import {
+  buildOrthogonalPath,
+  buildSegments,
+  computeSegmentDrag,
+  type Segment,
+} from "./edgeBuilding";
 import { clampLabelPosition, getLabelPointOnPath } from "./edgeGeometry";
 import { useLabelDrag } from "./useLabelDrag";
 import type { EdgeData } from "./edgeData.types";
@@ -77,16 +88,7 @@ export function useCustomEdge(props: EdgeProps) {
     if (styleKey === EdgeStyle.Smoothstep) return getSmoothStepPath(pathParams)[0];
     if (styleKey === EdgeStyle.Bezier) return getBezierPath(pathParams)[0];
     return getStraightPath(pathParams)[0];
-  }, [
-    sourcePosition,
-    sourceX,
-    sourceY,
-    styleKey,
-    targetPosition,
-    targetX,
-    targetY,
-    waypoints,
-  ]);
+  }, [sourcePosition, sourceX, sourceY, styleKey, targetPosition, targetX, targetY, waypoints]);
 
   const effectiveLabelOffset = useMemo(() => {
     if (typeof layoutLabelOffset === "number" && !Number.isNaN(layoutLabelOffset)) {
@@ -96,8 +98,7 @@ export function useCustomEdge(props: EdgeProps) {
   }, [edgeData?.labelPosition, layoutLabelOffset]);
 
   const labelPoint = useMemo(
-    () =>
-      getLabelPointOnPath(sourceX, sourceY, targetX, targetY, waypoints, effectiveLabelOffset),
+    () => getLabelPointOnPath(sourceX, sourceY, targetX, targetY, waypoints, effectiveLabelOffset),
     [effectiveLabelOffset, sourceX, sourceY, targetX, targetY, waypoints],
   );
 
@@ -154,7 +155,15 @@ export function useCustomEdge(props: EdgeProps) {
             y: currentPos.y - startPos.y,
           };
           commitWaypoints(
-            computeSegmentDrag(sourceX, sourceY, targetX, targetY, initialWaypoints, segment, delta),
+            computeSegmentDrag(
+              sourceX,
+              sourceY,
+              targetX,
+              targetY,
+              initialWaypoints,
+              segment,
+              delta,
+            ),
           );
         };
         startWindowPointerDrag(onMove, dragCursor);
@@ -181,7 +190,9 @@ export function useCustomEdge(props: EdgeProps) {
   const isHighlighted = selected || highlightedConnectionId === edgeData.connectionId;
   const strokeStyle = edgeData?.strokeStyle ?? StrokeStyle.Solid;
   const strokeWidth = edgeData?.strokeWidth ?? 1;
-  const canDragLabelAlongPath = Boolean(edgeData?.label && activeDiagramId && edgeData?.connectionId);
+  const canDragLabelAlongPath = Boolean(
+    edgeData?.label && activeDiagramId && edgeData?.connectionId,
+  );
 
   const labelDrag = useLabelDrag({
     edgePath,

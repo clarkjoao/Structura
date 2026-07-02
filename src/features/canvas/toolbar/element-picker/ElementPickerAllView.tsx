@@ -6,10 +6,7 @@ import { isPanelType } from "@/features/diagram";
 import type { AwsCategoryId } from "@/lib/catalogs/aws";
 import AwsIcon from "../../nodes/AwsIcon";
 import { PickerSectionHeader } from "./PickerSectionHeader";
-import {
-  PICKER_CARD_CLASS,
-  REGISTRY_PREVIEW_LIMIT,
-} from "./constants";
+import { PICKER_CARD_CLASS, REGISTRY_PREVIEW_LIMIT } from "./constants";
 import { shortAwsName } from "./utils";
 import type { CanvasPickerOption } from "./types";
 import { ElementCategory } from "../../enums";
@@ -61,11 +58,7 @@ export function ElementPickerAllView({
 
   const canvasGridCard = (opt: CanvasPickerOption) => (
     <button
-      key={
-        isPanelType(opt.type)
-          ? `panel-${opt.panelKind ?? PanelKind.Default}`
-          : opt.type
-      }
+      key={isPanelType(opt.type) ? `panel-${opt.panelKind ?? PanelKind.Default}` : opt.type}
       type="button"
       onClick={() => onAddCanvas(opt)}
       className={PICKER_CARD_CLASS}

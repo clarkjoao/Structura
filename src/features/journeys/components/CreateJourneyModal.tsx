@@ -27,10 +27,7 @@ interface CreateJourneyModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function CreateJourneyModal({
-  open,
-  onOpenChange,
-}: CreateJourneyModalProps) {
+export function CreateJourneyModal({ open, onOpenChange }: CreateJourneyModalProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { addJourney, updateJourney } = useJourneyActions();
@@ -67,9 +64,7 @@ export function CreateJourneyModal({
   const addTagFromInput = useCallback(() => {
     const next = tagInput.trim();
     if (!next) return;
-    setTags((previous) =>
-      previous.includes(next) ? previous : [...previous, next],
-    );
+    setTags((previous) => (previous.includes(next) ? previous : [...previous, next]));
     setTagInput("");
   }, [tagInput]);
 
@@ -106,10 +101,7 @@ export function CreateJourneyModal({
 
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <label
-                className="text-sm font-medium text-foreground"
-                htmlFor="journey-create-name"
-              >
+              <label className="text-sm font-medium text-foreground" htmlFor="journey-create-name">
                 {t("journeys.create.name")}
               </label>
               <Input
@@ -159,10 +151,7 @@ export function CreateJourneyModal({
             </div>
 
             <div className="grid gap-2">
-              <label
-                className="text-sm font-medium text-foreground"
-                htmlFor="journey-create-tags"
-              >
+              <label className="text-sm font-medium text-foreground" htmlFor="journey-create-tags">
                 {t("journeys.create.tags")}
               </label>
               {tags.length > 0 ? (
@@ -195,11 +184,7 @@ export function CreateJourneyModal({
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={!canSubmit}>

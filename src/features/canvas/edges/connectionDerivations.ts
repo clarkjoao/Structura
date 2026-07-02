@@ -8,7 +8,6 @@ import {
 } from "@/features/diagram";
 import { MAX_HANDLES } from "../constants";
 
-
 export function singleIncomingTargetHandleId(nodeId: string): string {
   return `in-${nodeId}`;
 }
@@ -72,7 +71,7 @@ export function buildEdgeHandleAssignments(
       Math.max(1, connectionCountPerNode[conn.sourceId]?.outgoing ?? 1),
     );
     const targetComp = components[conn.targetId];
-    
+
     const usesSingleIncomingHandle =
       targetComp !== undefined &&
       (isNoteType(targetComp.type) ||
@@ -80,26 +79,13 @@ export function buildEdgeHandleAssignments(
         isJsonViewerType(targetComp.type));
     const inCount = usesSingleIncomingHandle
       ? 1
-      : Math.min(
-          MAX_HANDLES,
-          Math.max(1, connectionCountPerNode[conn.targetId]?.incoming ?? 1),
-        );
+      : Math.min(MAX_HANDLES, Math.max(1, connectionCountPerNode[conn.targetId]?.incoming ?? 1));
 
     const srcOrder = components[conn.sourceId]?.handleOrder?.outgoing;
     const tgtOrder = components[conn.targetId]?.handleOrder?.incoming;
 
-    const sIdx = resolveHandleIndex(
-      conn.id,
-      srcOrder,
-      sourceUsage[conn.sourceId] ?? 0,
-      outCount,
-    );
-    const tIdx = resolveHandleIndex(
-      conn.id,
-      tgtOrder,
-      targetUsage[conn.targetId] ?? 0,
-      inCount,
-    );
+    const sIdx = resolveHandleIndex(conn.id, srcOrder, sourceUsage[conn.sourceId] ?? 0, outCount);
+    const tIdx = resolveHandleIndex(conn.id, tgtOrder, targetUsage[conn.targetId] ?? 0, inCount);
 
     sourceUsage[conn.sourceId] = (sourceUsage[conn.sourceId] ?? 0) + 1;
     targetUsage[conn.targetId] = (targetUsage[conn.targetId] ?? 0) + 1;

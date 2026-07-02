@@ -4,11 +4,7 @@ import {
   AZURE_SERVICE_MAP,
   isAzureType,
 } from "./azure.catalog";
-import type {
-  CloudCategory,
-  CloudProviderAdapter,
-  CloudService,
-} from "../../model/cloud.types";
+import type { CloudCategory, CloudProviderAdapter, CloudService } from "../../model/cloud.types";
 import { azureIconResolver } from "./azure.icon-resolver";
 
 const AZURE_CATEGORY_BORDERS: Record<string, string> = {

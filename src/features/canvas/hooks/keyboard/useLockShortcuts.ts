@@ -38,9 +38,7 @@ export function useLockShortcuts({
         if (selected.length === 0) return true;
 
         const snapshot = getCachedCanvasSnapshot(diagram);
-        const components = selected
-          .map((n) => snapshot.components[n.id])
-          .filter(Boolean);
+        const components = selected.map((n) => snapshot.components[n.id]).filter(Boolean);
 
         if (components.length === 0) return true;
 
@@ -51,9 +49,7 @@ export function useLockShortcuts({
           updateComponent(c.id, { locked: nextLocked });
         }
 
-        toast.success(
-          nextLocked ? t("canvas.elementsLocked") : t("canvas.elementsUnlocked"),
-        );
+        toast.success(nextLocked ? t("canvas.elementsLocked") : t("canvas.elementsUnlocked"));
         return true;
       }
 

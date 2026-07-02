@@ -1,8 +1,5 @@
 import { EdgeStyle } from "@/features/diagram";
-import {
-  METHOD_COLORS,
-  PROTOCOL_COLORS,
-} from "@/features/canvas/nodes/ApiGroupNode/constants";
+import { METHOD_COLORS, PROTOCOL_COLORS } from "@/features/canvas/nodes/ApiGroupNode/constants";
 import { BOX_POINTS, C4_SHAPE_POINTS } from "./constants";
 import type { AwsServiceInfo, C4MetaInfo } from "./types";
 import { buildStyle, escXml } from "./xml-utils";
@@ -85,10 +82,7 @@ export function buildEndpointStyle(method: string): string {
   });
 }
 
-function resolveDrawioEdgeStyle(
-  edgeStyle: EdgeStyle | undefined,
-  isDashed = false,
-): string {
+function resolveDrawioEdgeStyle(edgeStyle: EdgeStyle | undefined, isDashed = false): string {
   const curvedSuffix = isDashed ? "" : "curved=1;";
 
   switch (edgeStyle) {

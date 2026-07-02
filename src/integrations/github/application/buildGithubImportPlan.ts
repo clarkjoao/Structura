@@ -15,10 +15,7 @@ interface BuildGithubImportPlanParams {
   allServices: ServiceDefinition[];
 }
 
-function hasSource(
-  service: ServiceDefinition,
-  sourceType: ServiceSource,
-): boolean {
+function hasSource(service: ServiceDefinition, sourceType: ServiceSource): boolean {
   return normalizeSources(service).some((source) => source.type === sourceType);
 }
 
@@ -50,17 +47,15 @@ export function buildGithubImportPlan({
     (conflict) => !hasSource(conflict.existingService, ServiceSource.Github),
   );
 
-  const autoResolutions: MergeResolution[] = githubExistingConflicts.map(
-    (conflict) => ({
-      existingServiceId: conflict.existingService.id,
-      fields: {
-        name: "github",
-        description: "github",
-        technology: "merge",
-        tags: "merge",
-      },
-    }),
-  );
+  const autoResolutions: MergeResolution[] = githubExistingConflicts.map((conflict) => ({
+    existingServiceId: conflict.existingService.id,
+    fields: {
+      name: "github",
+      description: "github",
+      technology: "merge",
+      tags: "merge",
+    },
+  }));
 
   return {
     conflictsForImport,

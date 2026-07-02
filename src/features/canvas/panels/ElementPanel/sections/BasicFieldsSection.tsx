@@ -12,15 +12,15 @@ export interface BasicFieldsSectionProps {
   isNote: boolean;
   isPanel: boolean;
   isAws: boolean;
-  
+
   showName?: boolean;
-  
+
   showDescription?: boolean;
-  
+
   showTechnology?: boolean;
-  
+
   showTags?: boolean;
-  titleInputRef?: RefObject<HTMLInputElement | HTMLTextAreaElement | null>;
+  titleInputRef?: RefObject<HTMLInputElement | HTMLTextAreaElement>;
   onChangeName: (value: string) => void;
   onChangeDesc: (value: string) => void;
   onChangeTech: (value: string) => void;
@@ -53,7 +53,12 @@ export function BasicFieldsSection({
   return (
     <>
       {showName && (
-        <Field label={t("common.name")} value={name} onChange={onChangeName} inputRef={titleInputRef} />
+        <Field
+          label={t("common.name")}
+          value={name}
+          onChange={onChangeName}
+          inputRef={titleInputRef}
+        />
       )}
       {showDescription && (
         <Field

@@ -12,7 +12,7 @@ export function useRecordingShortcuts(): KeyHandler {
         e.preventDefault();
         onRecordUndo?.();
       }
-      return true; 
+      return true;
     },
     [isRecording, onRecordUndo],
   );

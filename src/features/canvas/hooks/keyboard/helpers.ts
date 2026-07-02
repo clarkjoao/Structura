@@ -28,13 +28,7 @@ export function isModKeyPressed(e: KeyboardEvent): boolean {
   return platform === "mac" ? e.metaKey : e.ctrlKey;
 }
 
-export {
-  KEY,
-  keyIs,
-  keyIsEnterOrSpace,
-  keyIsOneOf,
-  keyMatchesLetter,
-} from "@/lib/keyboard-utils";
+export { KEY, keyIs, keyIsEnterOrSpace, keyIsOneOf, keyMatchesLetter } from "@/lib/keyboard-utils";
 
 export function isInputFocused(target: EventTarget | null): boolean {
   const el = target as HTMLElement;
@@ -49,9 +43,9 @@ export function isInputFocused(target: EventTarget | null): boolean {
   const tag = el.tagName;
   if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
   if (el.isContentEditable) return true;
-  // Monaco renderiza div[role="textbox"] como editor principal
+  // Monaco renders div[role="textbox"] as its main editor
   if (el.getAttribute?.("role") === "textbox") return true;
-  // Subir até 5 níveis para capturar editores que delegam foco a filhos
+  // Walk up to 5 levels to catch editors that delegate focus to children
   let parent = el.parentElement;
   let depth = 0;
   while (parent && depth < 5) {

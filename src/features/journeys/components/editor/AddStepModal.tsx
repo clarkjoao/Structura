@@ -54,34 +54,21 @@ interface DiagramPickerRowProps {
   onSelect: () => void;
 }
 
-function DiagramPickerRow({
-  diagram,
-  selected,
-  subtitle,
-  onSelect,
-}: DiagramPickerRowProps) {
+function DiagramPickerRow({ diagram, selected, subtitle, onSelect }: DiagramPickerRowProps) {
   return (
     <button
       type="button"
       onClick={onSelect}
       className={cn(
         "flex w-full flex-col gap-1 rounded-md border px-3 py-2 text-left transition-colors hover:bg-muted/60",
-        selected
-          ? "border-primary/30 bg-primary/10"
-          : "border-border",
+        selected ? "border-primary/30 bg-primary/10" : "border-border",
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="text-sm font-medium text-foreground">
-          {diagram.name}
-        </span>
-        {selected ? (
-          <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden />
-        ) : null}
+        <span className="text-sm font-medium text-foreground">{diagram.name}</span>
+        {selected ? <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden /> : null}
       </div>
-      <span className="truncate text-[11px] text-muted-foreground">
-        {subtitle}
-      </span>
+      <span className="truncate text-[11px] text-muted-foreground">{subtitle}</span>
     </button>
   );
 }
@@ -99,12 +86,8 @@ export function AddStepModal({
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
   const [diagramSearch, setDiagramSearch] = useState("");
-  const [selectedDiagramId, setSelectedDiagramId] = useState<string | null>(
-    null,
-  );
-  const [collapsedDomainKeys, setCollapsedDomainKeys] = useState<Set<string>>(
-    () => new Set(),
-  );
+  const [selectedDiagramId, setSelectedDiagramId] = useState<string | null>(null);
+  const [collapsedDomainKeys, setCollapsedDomainKeys] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
     if (!open) return;
@@ -119,13 +102,9 @@ export function AddStepModal({
 
   const filteredDiagrams = useMemo(() => {
     const query = diagramSearch.trim().toLowerCase();
-    const sorted = [...allDiagrams].sort((left, right) =>
-      left.name.localeCompare(right.name),
-    );
+    const sorted = [...allDiagrams].sort((left, right) => left.name.localeCompare(right.name));
     if (!query) return sorted;
-    return sorted.filter((diagram) =>
-      diagramSearchableText(diagram).includes(query),
-    );
+    return sorted.filter((diagram) => diagramSearchableText(diagram).includes(query));
   }, [allDiagrams, diagramSearch]);
 
   const groupedByDomain = useMemo(() => {
@@ -152,9 +131,7 @@ export function AddStepModal({
   }, [groupedByDomain]);
 
   const handleDiagramRowClick = (diagramId: string) => {
-    setSelectedDiagramId((previous) =>
-      previous === diagramId ? null : diagramId,
-    );
+    setSelectedDiagramId((previous) => (previous === diagramId ? null : diagramId));
   };
 
   const handleToggleDomain = (domainKey: string) => {
@@ -177,7 +154,7 @@ export function AddStepModal({
     onConfirm({
       label: trimmedLabel,
       description: description.trim() || undefined,
-      diagramId: selectedDiagramId ?? undefined,
+      diagramId: selectedDiagramId ?? "",
     });
     onOpenChange(false);
   };
@@ -271,8 +248,7 @@ export function AddStepModal({
                 ) : (
                   <div className="flex flex-col gap-3 p-2">
                     {sortedDomainKeys.map((domainKey) => {
-                      const diagramsInDomain =
-                        groupedByDomain?.get(domainKey) ?? [];
+                      const diagramsInDomain = groupedByDomain?.get(domainKey) ?? [];
                       const expanded = !collapsedDomainKeys.has(domainKey);
                       return (
                         <div key={domainKey} className="flex flex-col gap-2">
@@ -284,8 +260,7 @@ export function AddStepModal({
                           >
                             <span className="h-px min-w-[8px] flex-1 bg-border" />
                             <span className="min-w-0 truncate text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                              {domainSectionLabel(domainKey)} (
-                              {diagramsInDomain.length})
+                              {domainSectionLabel(domainKey)} ({diagramsInDomain.length})
                             </span>
                             <span className="h-px min-w-[8px] flex-1 bg-border" />
                             {expanded ? (
@@ -308,9 +283,7 @@ export function AddStepModal({
                                   diagram={diagram}
                                   selected={selectedDiagramId === diagram.id}
                                   subtitle={groupedDiagramSubtitle(diagram)}
-                                  onSelect={() =>
-                                    handleDiagramRowClick(diagram.id)
-                                  }
+                                  onSelect={() => handleDiagramRowClick(diagram.id)}
                                 />
                               ))}
                             </div>
@@ -325,11 +298,7 @@ export function AddStepModal({
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={submitDisabled}>

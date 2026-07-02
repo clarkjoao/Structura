@@ -38,9 +38,7 @@ export function saveThreadToStorage(diagramId: string, messages: ChatMessage[]):
       .sort(([, threadA], [, threadB]) => threadB.updatedAt - threadA.updatedAt)
       .slice(0, MAX_THREADS);
     localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(Object.fromEntries(trimmed)));
-  } catch {
-
-  }
+  } catch {}
 }
 
 export function loadConfigFromLocalStorage(): LLMConfig {

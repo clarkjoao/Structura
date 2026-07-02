@@ -25,10 +25,7 @@ const Navbar = () => {
         </Link>
 
         <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
-          <Link
-            to="/"
-            className="hover:text-foreground transition-colors"
-          >
+          <Link to="/" className="hover:text-foreground transition-colors">
             {t("nav.workspaces")}
           </Link>
           <NavLink
@@ -42,10 +39,7 @@ const Navbar = () => {
           >
             {t("nav.journeys")}
           </NavLink>
-          <Link
-            to="/catalog"
-            className="hover:text-foreground transition-colors"
-          >
+          <Link to="/catalog" className="hover:text-foreground transition-colors">
             {t("nav.registry")}
           </Link>
         </div>

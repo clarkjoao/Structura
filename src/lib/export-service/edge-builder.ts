@@ -9,7 +9,6 @@ import { THEME } from "./constants";
 import { buildEdgeStyle } from "./styles";
 import { escXml } from "./xml-utils";
 
-
 export function buildEdgeLabelPlain(conn: Connection): string {
   const rawLabel = (conn.label ?? "").trim();
   const rawTech = (conn.technology ?? "").trim();
@@ -25,8 +24,7 @@ export interface BuildEdgeCellOptions {
 
 export function buildEdgeCell(conn: Connection, options?: BuildEdgeCellOptions): string {
   const eff = getEffectiveConnectionStyle(conn);
-  const isDashed =
-    eff.strokeStyle === StrokeStyle.Dashed || eff.strokeStyle === StrokeStyle.Dotted;
+  const isDashed = eff.strokeStyle === StrokeStyle.Dashed || eff.strokeStyle === StrokeStyle.Dotted;
   const dashPattern = eff.strokeStyle === StrokeStyle.Dotted ? "2 4" : "8 4";
 
   function toDrawioArrow(m: string): string {
@@ -83,5 +81,5 @@ function getStrokeColor(intent: Connection["intent"]): string {
     dependency: THEME.strokes.dependency,
   };
 
-  return colorMap[intent] ?? THEME.strokes.default;
+  return (intent ? colorMap[intent] : undefined) ?? THEME.strokes.default;
 }

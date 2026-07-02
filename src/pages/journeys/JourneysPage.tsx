@@ -31,9 +31,7 @@ export default function JourneysPage() {
       if (!byDomain[domainKey]) byDomain[domainKey] = [];
       byDomain[domainKey].push(journey);
     }
-    const sortedKeys = Object.keys(byDomain).sort((a, b) =>
-      a.localeCompare(b),
-    );
+    const sortedKeys = Object.keys(byDomain).sort((a, b) => a.localeCompare(b));
     return {
       domainSections: sortedKeys.map((key) => ({
         domain: key,
@@ -56,9 +54,7 @@ export default function JourneysPage() {
       <Navbar />
       <div className="container mx-auto px-5 py-8">
         <div className="mb-8 flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold text-foreground">
-            {t("journeys.title")}
-          </h1>
+          <h1 className="text-2xl font-bold text-foreground">{t("journeys.title")}</h1>
           <Button onClick={() => setCreateOpen(true)} className="gap-1.5">
             <Plus className="h-4 w-4" />
             {t("journeys.new")}
@@ -70,17 +66,9 @@ export default function JourneysPage() {
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/50">
               <Route className="h-7 w-7 text-muted-foreground/60" />
             </div>
-            <p className="mb-1 text-sm text-muted-foreground">
-              {t("journeys.empty")}
-            </p>
-            <p className="mb-4 text-xs text-muted-foreground/80">
-              {t("journeys.emptyHint")}
-            </p>
-            <Button
-              size="sm"
-              className="gap-1.5"
-              onClick={() => setCreateOpen(true)}
-            >
+            <p className="mb-1 text-sm text-muted-foreground">{t("journeys.empty")}</p>
+            <p className="mb-4 text-xs text-muted-foreground/80">{t("journeys.emptyHint")}</p>
+            <Button size="sm" className="gap-1.5" onClick={() => setCreateOpen(true)}>
               <Plus className="h-3.5 w-3.5" />
               {t("journeys.new")}
             </Button>
@@ -89,9 +77,7 @@ export default function JourneysPage() {
           <div className="space-y-10">
             {domainSections.map(({ domain, items }) => (
               <section key={domain} className="space-y-4">
-                <h2 className="text-lg font-semibold text-foreground">
-                  {domain}
-                </h2>
+                <h2 className="text-lg font-semibold text-foreground">{domain}</h2>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {items.map((journey) => (
                     <JourneyCard
@@ -107,9 +93,7 @@ export default function JourneysPage() {
 
             {noDomainJourneys.length > 0 ? (
               <section className="space-y-4">
-                <h2 className="text-lg font-semibold text-foreground">
-                  {t("journeys.noDomain")}
-                </h2>
+                <h2 className="text-lg font-semibold text-foreground">{t("journeys.noDomain")}</h2>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {noDomainJourneys.map((journey) => (
                     <JourneyCard

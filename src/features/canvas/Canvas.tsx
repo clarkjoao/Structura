@@ -13,7 +13,7 @@ import CanvasToolbar from "./toolbar/CanvasToolbar";
 import { JourneysInDiagramPanel } from "./panels/JourneysInDiagramPanel";
 import { ConnectedSceneDrawer } from "./toolbar/SceneDrawer";
 import ElementPanel from "./panels/ElementPanel/index";
-import NodeContextMenu from "./panels/NodeContextMenu";
+import { CanvasContextMenu } from "./panels/CanvasContextMenu";
 import { nodeTypes } from "./nodes/node-types";
 import QuickInsertPopover from "./toolbar/QuickInsertPopover";
 import CanvasSearch from "./toolbar/CanvasSearch";
@@ -22,19 +22,15 @@ import { DiagramCommandPalette } from "./navigation/DiagramCommandPalette";
 import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 import { Eye, Minimize2 } from "lucide-react";
 import { useCanvasController } from "./hooks/useCanvasController";
+import { hasSavedViewport } from "./hooks/useCanvasEffects";
 import { useCanvasInputProfile } from "./hooks/useCanvasInputProfile";
 import { useJourneyViewportSync } from "./hooks/useJourneyViewportSync";
 import { useServiceFocusFromUrl } from "./hooks/useServiceFocusFromUrl";
 import { useElementFocusFromUrl } from "./hooks/useElementFocusFromUrl";
-import {
-  getCachedCanvasSnapshot,
-  isApiGroupComponent,
-  isPanelComponent,
-  useDiagramStore,
-} from "@/features/diagram";
+import { getCachedCanvasSnapshot, useDiagramStore } from "@/features/diagram";
 import { useJourneysByDiagramId } from "@/features/journeys";
 import { CANVAS_STYLES } from "./constants";
-import { getCenterOfNodes, getCopyableIds, getPlatform } from "./hooks/keyboard/helpers";
+import { getPlatform } from "./hooks/keyboard/helpers";
 import CustomEdge from "./edges/CustomEdge";
 import type { CanvasProps } from "./canvas.types";
 import {
@@ -59,9 +55,7 @@ const Canvas = (props: CanvasProps = {}) => {
   const [hasUnread, setHasUnread] = useState(false);
   const previousAssistantMessageCountRef = useRef(0);
   const messages = useLLMStore((state) => state.messages);
-  const assistantMessageCount = messages.filter(
-    (message) => message.role === "assistant",
-  ).length;
+  const assistantMessageCount = messages.filter((message) => message.role === "assistant").length;
   const inputProfile = useCanvasInputProfile();
   const reactFlowInstance = useReactFlow();
   const addTemplate = useCustomComponentStore((state) => state.addTemplate);
@@ -77,8 +71,6 @@ const Canvas = (props: CanvasProps = {}) => {
     onNodeDragStop,
     eventHandlers,
     interactionMode,
-    isRecording,
-    actions,
     showSearch,
     setShowSearch,
     showDiagramSidebar,
@@ -99,11 +91,14 @@ const Canvas = (props: CanvasProps = {}) => {
     handleAutoLayout,
     isAutoLayoutRunning,
   } = useCanvasController(props);
-  const { pendingPreviews, accept: acceptSuggestion, reject: rejectSuggestion } =
-    useLLMChat({
-      selectedNodeIds: visualState.selectedNodeIds,
-      selectedNodeId: visualState.selectedNodeId,
-    });
+  const {
+    pendingPreviews,
+    accept: acceptSuggestion,
+    reject: rejectSuggestion,
+  } = useLLMChat({
+    selectedNodeIds: visualState.selectedNodeIds,
+    selectedNodeId: visualState.selectedNodeId,
+  });
   const pendingNodeIds = useMemo(
     () => Array.from(getPendingNodeIds(pendingPreviews)),
     [pendingPreviews],
@@ -123,12 +118,11 @@ const Canvas = (props: CanvasProps = {}) => {
   const journeysInThisDiagram = useJourneysByDiagramId(diagram?.id ?? "");
 
   const templateSourceNode = templateNodeId
-    ? nodes.find((node) => node.id === templateNodeId) ?? null
+    ? (nodes.find((node) => node.id === templateNodeId) ?? null)
     : null;
 
   useEffect(() => {
-    const hasNewAssistantMessage =
-      assistantMessageCount > previousAssistantMessageCountRef.current;
+    const hasNewAssistantMessage = assistantMessageCount > previousAssistantMessageCountRef.current;
     if (hasNewAssistantMessage && !isChatOpen) {
       setHasUnread(true);
     }
@@ -168,9 +162,7 @@ const Canvas = (props: CanvasProps = {}) => {
     (suggestionId: string) => {
       acceptSuggestion(suggestionId);
       setTimeout(() => {
-        reactFlowInstance.setNodes((previousNodes) =>
-          previousNodes.map((node) => ({ ...node })),
-        );
+        reactFlowInstance.setNodes((previousNodes) => previousNodes.map((node) => ({ ...node })));
       }, 50);
     },
     [acceptSuggestion, reactFlowInstance],
@@ -244,27 +236,27 @@ const Canvas = (props: CanvasProps = {}) => {
             />
           </div>
           <div
-              onContextMenu={(e) => e.preventDefault()}
-              onDragOver={(event) => {
-                if (!interactionMode.canEditCanvas) return;
-                if (event.dataTransfer.types.includes(CUSTOM_COMPONENT_DRAG_MIME)) {
-                  event.preventDefault();
-                  event.dataTransfer.dropEffect = "copy";
-                }
-              }}
-              onDrop={(event) => {
-                if (!interactionMode.canEditCanvas) return;
-                const templateId = event.dataTransfer.getData(CUSTOM_COMPONENT_DRAG_MIME);
-                if (!templateId) return;
+            onContextMenu={(e) => e.preventDefault()}
+            onDragOver={(event) => {
+              if (!interactionMode.canEditCanvas) return;
+              if (event.dataTransfer.types.includes(CUSTOM_COMPONENT_DRAG_MIME)) {
                 event.preventDefault();
-                const position = reactFlowInstance.screenToFlowPosition({
-                  x: event.clientX,
-                  y: event.clientY,
-                });
-                instantiateTemplate({ templateId, position });
-              }}
-              className="w-full h-full"
-            >
+                event.dataTransfer.dropEffect = "copy";
+              }
+            }}
+            onDrop={(event) => {
+              if (!interactionMode.canEditCanvas) return;
+              const templateId = event.dataTransfer.getData(CUSTOM_COMPONENT_DRAG_MIME);
+              if (!templateId) return;
+              event.preventDefault();
+              const position = reactFlowInstance.screenToFlowPosition({
+                x: event.clientX,
+                y: event.clientY,
+              });
+              instantiateTemplate({ templateId, position });
+            }}
+            className="w-full h-full"
+          >
             {isCompareMode && (
               <div className="absolute top-12 left-1/2 z-20 flex max-w-[min(100vw-2rem,42rem)] -translate-x-1/2 flex-col items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-xs text-muted-foreground shadow-sm sm:flex-row sm:flex-wrap sm:justify-center">
                 <div className="flex items-center gap-2">
@@ -321,7 +313,7 @@ const Canvas = (props: CanvasProps = {}) => {
               snapToGrid
               snapGrid={[15, 15]}
               defaultViewport={initialViewport}
-              fitView
+              fitView={!hasSavedViewport(initialViewport)}
               fitViewOptions={{ padding: 0.3 }}
               onMoveEnd={eventHandlers.onMoveEnd}
               nodesDraggable={interactionMode.canEditCanvas}
@@ -351,129 +343,19 @@ const Canvas = (props: CanvasProps = {}) => {
           </div>
         </div>
 
-        {visualState.contextMenu &&
-          (() => {
-            const contextMenuId = visualState.contextMenu.elementId;
-            const contextMenuComponent = resolvedSnapshot?.components[contextMenuId];
-            const isContextMenuIdSelected = visualState.selectedNodeIds.has(contextMenuId);
-            const effectiveIds =
-              isContextMenuIdSelected && visualState.selectedNodeIds.size > 1
-                ? [...visualState.selectedNodeIds]
-                : [contextMenuId];
-            const selectionCount = effectiveIds.length;
-            const effectiveNodes = reactFlowInstance
-              .getNodes()
-              .filter((node) => effectiveIds.includes(node.id));
-            const canEditContextActions = interactionMode.canEditCanvas;
-
-            const handleCopy =
-              canEditContextActions && diagram
-                ? () => {
-                    const copyableIds = getCopyableIds(diagram, effectiveNodes);
-                    if (copyableIds.length > 0) {
-                      actions.copyToClipboard(copyableIds);
-                    }
-                  }
-                : undefined;
-
-            const selectPastedNodes = (newIds: string[]) => {
-              if (newIds.length === 0) return;
-              reactFlowInstance.setNodes((previousNodes) =>
-                previousNodes.map((node) => ({ ...node, selected: newIds.includes(node.id) })),
-              );
-            };
-
-            const handlePaste =
-              canEditContextActions && diagram
-                ? () => {
-                    const pasteCenter = getCenterOfNodes(diagram, effectiveIds);
-                    const newIds = actions.pasteFromClipboard(pasteCenter);
-                    selectPastedNodes(newIds);
-                  }
-                : undefined;
-
-            const handleDuplicate =
-              canEditContextActions && diagram
-                ? () => {
-                    const copyableIds = getCopyableIds(diagram, effectiveNodes);
-                    if (copyableIds.length === 0) return;
-                    actions.copyToClipboard(copyableIds);
-                    const pasteCenter = getCenterOfNodes(diagram, copyableIds);
-                    const newIds = actions.pasteFromClipboard(pasteCenter);
-                    selectPastedNodes(newIds);
-                  }
-                : undefined;
-
-            const handleDelete = canEditContextActions
-              ? () => {
-                  for (const selectedId of effectiveIds) {
-                    actions.removeComponent(selectedId);
-                  }
-                }
-              : undefined;
-
-            const canGroup =
-              canEditContextActions &&
-              effectiveIds.length >= 2 &&
-              effectiveIds.every((selectedId) => {
-                const selectedComponent = resolvedSnapshot?.components[selectedId];
-                return !!selectedComponent && !isApiGroupComponent(selectedComponent);
-              });
-            const handleGroup = canGroup ? () => actions.groupNodes(effectiveIds) : undefined;
-
-            const canUngroup =
-              canEditContextActions &&
-              effectiveIds.length === 1 &&
-              !!contextMenuComponent &&
-              (isPanelComponent(contextMenuComponent) || !!contextMenuComponent.parentId);
-            const handleUngroup = canUngroup
-              ? () => {
-                  if (contextMenuComponent && isPanelComponent(contextMenuComponent)) {
-                    actions.ungroupNodes(contextMenuId);
-                    return;
-                  }
-
-                  if (contextMenuComponent?.parentId) {
-                    const parentLayout = resolvedSnapshot?.nodeLayouts[contextMenuComponent.parentId];
-                    const childLayout = resolvedSnapshot?.nodeLayouts[contextMenuId];
-                    if (!parentLayout || !childLayout) return;
-
-                    actions.setParent(contextMenuId, null);
-                    actions.updateNodeLayout(contextMenuId, {
-                      x: childLayout.x + parentLayout.x,
-                      y: childLayout.y + parentLayout.y,
-                    });
-                  }
-                }
-              : undefined;
-
-            return (
-              <NodeContextMenu
-                x={visualState.contextMenu.x}
-                y={visualState.contextMenu.y}
-                elementId={contextMenuId}
-                onBringToFront={actions.bringToFront}
-                onSendToBack={actions.sendToBack}
-                onSaveAsTemplate={setTemplateNodeId}
-                onFitToChildren={
-                  contextMenuComponent && isPanelComponent(contextMenuComponent)
-                    ? actions.fitGroupToChildren
-                    : undefined
-                }
-                onClose={() => visualState.setContextMenu(null)}
-                onCopy={handleCopy}
-                onPaste={handlePaste}
-                onDuplicate={handleDuplicate}
-                onDelete={handleDelete}
-                onGroup={handleGroup}
-                onUngroup={handleUngroup}
-                onAutoLayout={interactionMode.canEditCanvas ? handleAutoLayout : undefined}
-                isAutoLayoutRunning={isAutoLayoutRunning}
-                selectionCount={selectionCount}
-                platform={getPlatform()}
-              />
-            );
-          })()}
+        {visualState.contextMenu && (
+          <CanvasContextMenu
+            contextMenu={visualState.contextMenu}
+            diagram={diagram}
+            resolvedSnapshot={resolvedSnapshot}
+            selectedNodeIds={visualState.selectedNodeIds}
+            canEditCanvas={interactionMode.canEditCanvas}
+            onSaveAsTemplate={setTemplateNodeId}
+            onAutoLayout={handleAutoLayout}
+            isAutoLayoutRunning={isAutoLayoutRunning}
+            onClose={() => visualState.setContextMenu(null)}
+          />
+        )}
 
         {visualState.quickInsert && (
           <QuickInsertPopover

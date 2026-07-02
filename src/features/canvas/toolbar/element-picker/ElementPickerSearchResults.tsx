@@ -11,7 +11,11 @@ import { shortAwsName } from "./utils";
 import type { CanvasPickerOption } from "./types";
 import type { C4PickerOption } from "./buildPickerOptions";
 import { RegistryServiceRow } from "./RegistryServiceRow";
-import { useCustomComponentStore, NodeTemplatePreviewCard, type CustomComponentTemplate } from "@/features/custom-components";
+import {
+  useCustomComponentStore,
+  NodeTemplatePreviewCard,
+  type CustomComponentTemplate,
+} from "@/features/custom-components";
 
 export function ElementPickerSearchResults({
   searchTrimmed,
@@ -27,6 +31,7 @@ export function ElementPickerSearchResults({
   onCanvasServiceIds,
   onAddC4,
   onAddCanvas,
+  onAddFlowNode,
   onAddAws,
   onAddCloud,
   onAddRegistry,
@@ -81,11 +86,7 @@ export function ElementPickerSearchResults({
 
   const canvasGridCard = (opt: CanvasPickerOption) => (
     <button
-      key={
-        isPanelType(opt.type)
-          ? `panel-${opt.panelKind ?? PanelKind.Default}`
-          : opt.type
-      }
+      key={isPanelType(opt.type) ? `panel-${opt.panelKind ?? PanelKind.Default}` : opt.type}
       type="button"
       onClick={() => onAddCanvas(opt)}
       className={PICKER_CARD_CLASS}
@@ -147,9 +148,7 @@ export function ElementPickerSearchResults({
               <button
                 key={`${svc.categoryId}-${svc.id}`}
                 type="button"
-                onClick={() =>
-                  onAddAws(svc.categoryId as AwsCategoryId, svc.id, svc.name)
-                }
+                onClick={() => onAddAws(svc.categoryId as AwsCategoryId, svc.id, svc.name)}
                 className="flex flex-col items-center gap-1 rounded-lg border border-border/40 bg-muted/40 p-2 transition-colors hover:bg-muted"
               >
                 <AwsIcon iconName={svc.iconName} size={40} />
@@ -174,7 +173,11 @@ export function ElementPickerSearchResults({
                 onClick={() => onAddCloud(svc.categoryId, svc.id, svc.name)}
                 className="flex flex-col items-center gap-1 rounded-lg border border-border/40 bg-muted/40 p-2 transition-colors hover:bg-muted"
               >
-                <CloudIcon componentType={svc.categoryId} serviceIconName={svc.iconName} size={40} />
+                <CloudIcon
+                  componentType={svc.categoryId}
+                  serviceIconName={svc.iconName}
+                  size={40}
+                />
                 <span className="line-clamp-2 text-center text-[10px] leading-tight text-foreground">
                   {svc.name}
                 </span>
@@ -196,7 +199,11 @@ export function ElementPickerSearchResults({
                 onClick={() => onAddCloud(svc.categoryId, svc.id, svc.name)}
                 className="flex flex-col items-center gap-1 rounded-lg border border-border/40 bg-muted/40 p-2 transition-colors hover:bg-muted"
               >
-                <CloudIcon componentType={svc.categoryId} serviceIconName={svc.iconName} size={40} />
+                <CloudIcon
+                  componentType={svc.categoryId}
+                  serviceIconName={svc.iconName}
+                  size={40}
+                />
                 <span className="line-clamp-2 text-center text-[10px] leading-tight text-foreground">
                   {svc.name}
                 </span>

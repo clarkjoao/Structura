@@ -1,4 +1,3 @@
-
 export enum ElementCategory {
   All = "all",
   C4 = "c4",
@@ -11,12 +10,10 @@ export enum ElementCategory {
   Flowchart = "flowchart",
 }
 
-
 export enum HandleSide {
   Incoming = "incoming",
   Outgoing = "outgoing",
 }
-
 
 export enum SwimlaneOrientation {
   Horizontal = "horizontal",

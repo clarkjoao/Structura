@@ -21,7 +21,7 @@ const Edge = memo((props: EdgeProps) => {
         markerStart={core.markerStart}
         waypointsLength={core.waypoints.length}
         segments={core.segments}
-        selected={core.selected}
+        selected={core.selected ?? false}
         hoveredSegmentIndex={core.hoveredSegmentIndex}
         onSegmentPointerDown={core.handleSegmentPointerDown}
         onSegmentHover={core.setHoveredSegmentIndex}

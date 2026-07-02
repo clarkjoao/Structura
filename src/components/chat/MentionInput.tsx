@@ -113,7 +113,6 @@ export function MentionInput({
   useEffect(() => {
     syncSegmentsToDOM(editorRef.current, segments);
     hasMountedRef.current = true;
-  
   }, []);
 
   useEffect(() => {
@@ -121,7 +120,6 @@ export function MentionInput({
       return;
     }
     syncSegmentsToDOM(editorRef.current, latestSegmentsRef.current);
-  
   }, [syncToken]);
 
   return (
@@ -156,4 +154,3 @@ export function MentionInput({
     </div>
   );
 }
-

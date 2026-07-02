@@ -1,18 +1,22 @@
 import type { ComponentType } from "@/features/diagram";
 
+// TODO(i18n): pattern names/descriptions below are Portuguese product content
+// hardcoded in the catalog. When the catalog is revisited (plugin/extensibility
+// phase), move these strings into the i18n locale files so en/pt-BR coexist.
+
 export interface PatternComponent {
   type: ComponentType;
   name: string;
   description?: string;
   technology?: string;
   awsService?: string;
-  
+
   x?: number;
   y?: number;
 }
 
 export interface PatternConnection {
-  fromIndex: number; 
+  fromIndex: number;
   toIndex: number;
   label: string;
 }
@@ -27,13 +31,7 @@ export interface PatternTemplate {
 }
 
 export type PatternCategory =
-  | "messaging"
-  | "api"
-  | "resilience"
-  | "data"
-  | "event-driven"
-  | "security";
-
+  "messaging" | "api" | "resilience" | "data" | "event-driven" | "security";
 
 export const PATTERN_CATEGORIES: PatternCategory[] = [
   "messaging",
@@ -44,24 +42,16 @@ export const PATTERN_CATEGORIES: PatternCategory[] = [
   "security",
 ];
 
-
-
-
-
-
-
-const COL = 240;  
-const ROW = 160;  
+const COL = 240;
+const ROW = 160;
 const NOTE_X = 0;
 const NOTE_Y = -220;
 
 export const PATTERNS: PatternTemplate[] = [
-  
   {
     id: "fifo-queue-aws",
     name: "FIFO Queue (AWS SQS)",
-    description:
-      "Producer → SQS FIFO queue → Consumer. Guarantees ordered, exactly-once delivery.",
+    description: "Producer → SQS FIFO queue → Consumer. Guarantees ordered, exactly-once delivery.",
     category: "messaging",
     components: [
       {
@@ -69,10 +59,18 @@ export const PATTERNS: PatternTemplate[] = [
         name: "FIFO Queue (AWS SQS)",
         description:
           "🔴 Problema\nMensagens processadas fora de ordem causam inconsistências (ex: cancelar antes de criar).\n\n⚙️ Como funciona\nO Producer envia mensagens para uma SQS FIFO Queue com um MessageGroupId. A fila garante entrega ordenada e exactly-once dentro de cada grupo. O Consumer consome na mesma ordem em que foram enfileiradas.\n\n✅ Quando usar\nPedidos financeiros, sequências de eventos críticos, pipelines onde a ordem importa.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
       { type: "container", name: "Producer", description: "Sends messages", x: 0, y: 0 },
-      { type: "aws-integration", name: "SQS FIFO Queue", description: "Ordered message queue", awsService: "sqs", x: COL, y: 0 },
+      {
+        type: "aws-integration",
+        name: "SQS FIFO Queue",
+        description: "Ordered message queue",
+        awsService: "sqs",
+        x: COL,
+        y: 0,
+      },
       { type: "container", name: "Consumer", description: "Processes messages", x: COL * 2, y: 0 },
     ],
     connections: [
@@ -84,8 +82,7 @@ export const PATTERNS: PatternTemplate[] = [
   {
     id: "fifo-queue-kafka",
     name: "FIFO Queue (Kafka / MSK)",
-    description:
-      "Producer → Kafka topic → Consumer Group. High-throughput ordered log streaming.",
+    description: "Producer → Kafka topic → Consumer Group. High-throughput ordered log streaming.",
     category: "messaging",
     components: [
       {
@@ -93,11 +90,25 @@ export const PATTERNS: PatternTemplate[] = [
         name: "FIFO Queue (Kafka / MSK)",
         description:
           "🔴 Problema\nSistemas de alta vazão precisam de ordenação por partição sem sacrificar throughput.\n\n⚙️ Como funciona\nO Producer publica eventos em um Kafka Topic (MSK). Cada partição mantém ordem estrita. O Consumer Group distribui partições entre instâncias — cada instância lê sua partição em ordem.\n\n✅ Quando usar\nEvent streaming de alta vazão, logs de auditoria, pipelines de dados em tempo real.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
       { type: "container", name: "Producer", description: "Publishes events", x: 0, y: 0 },
-      { type: "aws-analytics", name: "MSK Kafka Topic", description: "Distributed log", awsService: "msk", x: COL, y: 0 },
-      { type: "container", name: "Consumer Group", description: "Reads partitions", x: COL * 2, y: 0 },
+      {
+        type: "aws-analytics",
+        name: "MSK Kafka Topic",
+        description: "Distributed log",
+        awsService: "msk",
+        x: COL,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Consumer Group",
+        description: "Reads partitions",
+        x: COL * 2,
+        y: 0,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Publish" },
@@ -117,12 +128,41 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Dead Letter Queue (AWS)",
         description:
           "🔴 Problema\nMensagens que falham repetidamente bloqueiam a fila e são silenciosamente perdidas.\n\n⚙️ Como funciona\nApós N tentativas, a SQS move a mensagem para uma Dead Letter Queue separada. Um alarme CloudWatch dispara quando a profundidade da DLQ cresce, permitindo investigação sem perda de dados.\n\n✅ Quando usar\nTodo sistema com processamento assíncrono que precisa de observabilidade sobre falhas.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
-      { type: "aws-integration", name: "SQS Queue", description: "Main message queue", awsService: "sqs", x: 0, y: 0 },
-      { type: "aws-compute", name: "Lambda Processor", description: "Processes messages", awsService: "lambda", x: COL, y: 0 },
-      { type: "aws-integration", name: "Dead Letter Queue", description: "Failed messages", awsService: "sqs", x: COL * 2, y: 0 },
-      { type: "aws-management", name: "CloudWatch Alert", description: "Alarm on DLQ depth", awsService: "cloudwatch", x: COL * 2, y: ROW },
+      {
+        type: "aws-integration",
+        name: "SQS Queue",
+        description: "Main message queue",
+        awsService: "sqs",
+        x: 0,
+        y: 0,
+      },
+      {
+        type: "aws-compute",
+        name: "Lambda Processor",
+        description: "Processes messages",
+        awsService: "lambda",
+        x: COL,
+        y: 0,
+      },
+      {
+        type: "aws-integration",
+        name: "Dead Letter Queue",
+        description: "Failed messages",
+        awsService: "sqs",
+        x: COL * 2,
+        y: 0,
+      },
+      {
+        type: "aws-management",
+        name: "CloudWatch Alert",
+        description: "Alarm on DLQ depth",
+        awsService: "cloudwatch",
+        x: COL * 2,
+        y: ROW,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Triggers" },
@@ -142,12 +182,41 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Fan-out",
         description:
           "🔴 Problema\nUm evento precisa ser processado por múltiplos consumidores independentes sem acoplamento direto.\n\n⚙️ Como funciona\nUm SNS Topic recebe a publicação e faz fan-out para N SQS Queues simultaneamente. Cada fila é consumida de forma independente e no seu próprio ritmo.\n\n✅ Quando usar\nNotificações multi-canal, pipelines paralelos, integração entre bounded contexts.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
-      { type: "aws-integration", name: "SNS Topic", description: "Pub/sub topic", awsService: "sns", x: 0, y: ROW },
-      { type: "aws-integration", name: "SQS Queue A", description: "Subscriber queue", awsService: "sqs", x: COL, y: 0 },
-      { type: "aws-integration", name: "SQS Queue B", description: "Subscriber queue", awsService: "sqs", x: COL, y: ROW },
-      { type: "aws-integration", name: "SQS Queue C", description: "Subscriber queue", awsService: "sqs", x: COL, y: ROW * 2 },
+      {
+        type: "aws-integration",
+        name: "SNS Topic",
+        description: "Pub/sub topic",
+        awsService: "sns",
+        x: 0,
+        y: ROW,
+      },
+      {
+        type: "aws-integration",
+        name: "SQS Queue A",
+        description: "Subscriber queue",
+        awsService: "sqs",
+        x: COL,
+        y: 0,
+      },
+      {
+        type: "aws-integration",
+        name: "SQS Queue B",
+        description: "Subscriber queue",
+        awsService: "sqs",
+        x: COL,
+        y: ROW,
+      },
+      {
+        type: "aws-integration",
+        name: "SQS Queue C",
+        description: "Subscriber queue",
+        awsService: "sqs",
+        x: COL,
+        y: ROW * 2,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Fan-out" },
@@ -168,13 +237,34 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Competing Consumers",
         description:
           "🔴 Problema\nUm único consumer não consegue acompanhar o volume de mensagens, gerando backlog crescente.\n\n⚙️ Como funciona\nVários consumers competem por mensagens no mesmo broker. Cada mensagem é entregue a exatamente um consumer (at-least-once). O processamento é paralelizado e os resultados escritos em um banco compartilhado.\n\n✅ Quando usar\nProcessamento batch de alta vazão, workers de background, filas de tarefas escaláveis.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
-      { type: "container", name: "Message Broker", description: "Distributes messages", technology: "Kafka / RabbitMQ", x: 0, y: ROW },
+      {
+        type: "container",
+        name: "Message Broker",
+        description: "Distributes messages",
+        technology: "Kafka / RabbitMQ",
+        x: 0,
+        y: ROW,
+      },
       { type: "container", name: "Consumer A", description: "Competing consumer", x: COL, y: 0 },
       { type: "container", name: "Consumer B", description: "Competing consumer", x: COL, y: ROW },
-      { type: "container", name: "Consumer C", description: "Competing consumer", x: COL, y: ROW * 2 },
-      { type: "container", name: "Database", description: "Shared persistence", technology: "PostgreSQL", x: COL * 2, y: ROW },
+      {
+        type: "container",
+        name: "Consumer C",
+        description: "Competing consumer",
+        x: COL,
+        y: ROW * 2,
+      },
+      {
+        type: "container",
+        name: "Database",
+        description: "Shared persistence",
+        technology: "PostgreSQL",
+        x: COL * 2,
+        y: ROW,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Distribute" },
@@ -186,12 +276,10 @@ export const PATTERNS: PatternTemplate[] = [
     ],
   },
 
-  
   {
     id: "api-gateway-bff",
     name: "API Gateway + BFF",
-    description:
-      "Client → API Gateway → Backend For Frontend → downstream services.",
+    description: "Client → API Gateway → Backend For Frontend → downstream services.",
     category: "api",
     components: [
       {
@@ -199,13 +287,39 @@ export const PATTERNS: PatternTemplate[] = [
         name: "API Gateway + BFF",
         description:
           "🔴 Problema\nClientes diferentes (web, mobile) consomem os mesmos endpoints genéricos, gerando over-fetching e acoplamento.\n\n⚙️ Como funciona\nO API Gateway centraliza autenticação e rate-limiting. O BFF agrega chamadas a múltiplos serviços e molda a resposta para o cliente específico.\n\n✅ Quando usar\nAPIs com múltiplos tipos de cliente, times que precisam de autonomia por canal.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
       { type: "person", name: "Client", description: "Web or mobile app", x: 0, y: 0 },
-      { type: "aws-networking", name: "API Gateway", description: "Entry point, auth, rate-limiting", awsService: "api-gateway", x: COL, y: 0 },
-      { type: "container", name: "BFF", description: "Backend for Frontend — aggregates APIs", x: COL * 2, y: 0 },
-      { type: "container", name: "Service A", description: "Downstream microservice", x: COL * 3, y: 0 },
-      { type: "container", name: "Service B", description: "Downstream microservice", x: COL * 3, y: ROW },
+      {
+        type: "aws-networking",
+        name: "API Gateway",
+        description: "Entry point, auth, rate-limiting",
+        awsService: "api-gateway",
+        x: COL,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "BFF",
+        description: "Backend for Frontend — aggregates APIs",
+        x: COL * 2,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Service A",
+        description: "Downstream microservice",
+        x: COL * 3,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Service B",
+        description: "Downstream microservice",
+        x: COL * 3,
+        y: ROW,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "HTTPS" },
@@ -227,12 +341,25 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Backend for Frontend",
         description:
           "🔴 Problema\nUm único backend genérico serve mal clientes com necessidades muito distintas (web vs mobile).\n\n⚙️ Como funciona\nCada tipo de cliente tem seu próprio BFF. O Web BFF retorna dados completos para layouts ricos; o Mobile BFF entrega payloads compactos otimizados para banda limitada. Ambos chamam os mesmos serviços de domínio.\n\n✅ Quando usar\nProdutos com clientes heterogêneos, times de frontend com autonomia de deploy.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
       { type: "person", name: "Web Client", description: "Browser application", x: 0, y: 0 },
       { type: "person", name: "Mobile Client", description: "Mobile application", x: 0, y: ROW },
-      { type: "container", name: "Web BFF", description: "Aggregates and shapes data for web journeys", x: COL, y: 0 },
-      { type: "container", name: "Mobile BFF", description: "Optimises payloads and flows for mobile", x: COL, y: ROW },
+      {
+        type: "container",
+        name: "Web BFF",
+        description: "Aggregates and shapes data for web journeys",
+        x: COL,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Mobile BFF",
+        description: "Optimises payloads and flows for mobile",
+        x: COL,
+        y: ROW,
+      },
       { type: "container", name: "Service A", description: "Domain service", x: COL * 2, y: 0 },
       { type: "container", name: "Service B", description: "Domain service", x: COL * 2, y: ROW },
     ],
@@ -249,8 +376,7 @@ export const PATTERNS: PatternTemplate[] = [
   {
     id: "feature-flag-rollout",
     name: "Feature Flag Rollout",
-    description:
-      "A feature is deployed dark and progressively enabled through runtime flags.",
+    description: "A feature is deployed dark and progressively enabled through runtime flags.",
     category: "api",
     components: [
       {
@@ -258,12 +384,32 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Feature Flag Rollout",
         description:
           "🔴 Problema\nDeploy e release acoplados aumentam o risco — qualquer deploy pode expor código incompleto a todos os usuários.\n\n⚙️ Como funciona\nO código novo é deployado dark. O Flag Evaluator consulta o Flag Store em runtime e decide qual caminho executar por usuário ou segmento. O rollout é progressivo e reversível sem redeploy.\n\n✅ Quando usar\nLançamentos progressivos, A/B testing, kill switches de emergência.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
       { type: "person", name: "Users", description: "Application users", x: 0, y: 0 },
-      { type: "container", name: "Application", description: "Contains old and new code paths", x: COL, y: 0 },
-      { type: "component", name: "Flag Evaluator", description: "Checks rollout rules at runtime", x: COL * 2, y: 0 },
-      { type: "container", name: "Flag Store", description: "Stores targeting and rollout configuration", technology: "LaunchDarkly / Unleash / DB", x: COL * 3, y: 0 },
+      {
+        type: "container",
+        name: "Application",
+        description: "Contains old and new code paths",
+        x: COL,
+        y: 0,
+      },
+      {
+        type: "component",
+        name: "Flag Evaluator",
+        description: "Checks rollout rules at runtime",
+        x: COL * 2,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Flag Store",
+        description: "Stores targeting and rollout configuration",
+        technology: "LaunchDarkly / Unleash / DB",
+        x: COL * 3,
+        y: 0,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Request" },
@@ -272,7 +418,6 @@ export const PATTERNS: PatternTemplate[] = [
     ],
   },
 
-  
   {
     id: "circuit-breaker",
     name: "Circuit Breaker",
@@ -285,12 +430,31 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Circuit Breaker",
         description:
           "🔴 Problema\nFalhas em um serviço downstream causam cascade failure — o caller acumula threads bloqueadas até travar.\n\n⚙️ Como funciona\nO Circuit Breaker monitora a taxa de falhas. Quando ultrapassa o threshold, abre o circuito e retorna imediatamente via Fallback Handler sem chamar o Provider. Após um intervalo, tenta fechar o circuito novamente (half-open).\n\n✅ Quando usar\nChamadas síncronas a serviços externos ou instáveis, APIs de terceiros.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
       { type: "container", name: "Caller", description: "Service that calls", x: 0, y: 0 },
-      { type: "component", name: "Circuit Breaker", description: "Monitors failure rate, opens on threshold", x: COL, y: 0 },
-      { type: "container", name: "Provider", description: "Target service (potentially unavailable)", x: COL * 2, y: 0 },
-      { type: "component", name: "Fallback Handler", description: "Returns cached / default response when open", x: COL * 2, y: ROW },
+      {
+        type: "component",
+        name: "Circuit Breaker",
+        description: "Monitors failure rate, opens on threshold",
+        x: COL,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Provider",
+        description: "Target service (potentially unavailable)",
+        x: COL * 2,
+        y: 0,
+      },
+      {
+        type: "component",
+        name: "Fallback Handler",
+        description: "Returns cached / default response when open",
+        x: COL * 2,
+        y: ROW,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Request" },
@@ -311,14 +475,45 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Bulkhead Isolation",
         description:
           "🔴 Problema\nUm tenant ou feature que consome todos os recursos do pool derruba todos os outros usuários do sistema.\n\n⚙️ Como funciona\nO tráfego é classificado e distribuído em pools de recursos dedicados (threads, conexões, instâncias). A saturação de um pool não afeta os demais.\n\n✅ Quando usar\nSistemas multi-tenant, workloads com prioridades diferentes, serviços com SLAs distintos.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
       { type: "person", name: "Clients", description: "Mixed request traffic", x: 0, y: ROW * 0.5 },
-      { type: "component", name: "Routing / Classification", description: "Separates traffic by tenant, capability or priority", x: COL, y: ROW * 0.5 },
-      { type: "container", name: "Pool A", description: "Dedicated workers / connections for segment A", x: COL * 2, y: 0 },
-      { type: "container", name: "Pool B", description: "Dedicated workers / connections for segment B", x: COL * 2, y: ROW },
-      { type: "container", name: "Service A", description: "Handles workload from pool A", x: COL * 3, y: 0 },
-      { type: "container", name: "Service B", description: "Handles workload from pool B", x: COL * 3, y: ROW },
+      {
+        type: "component",
+        name: "Routing / Classification",
+        description: "Separates traffic by tenant, capability or priority",
+        x: COL,
+        y: ROW * 0.5,
+      },
+      {
+        type: "container",
+        name: "Pool A",
+        description: "Dedicated workers / connections for segment A",
+        x: COL * 2,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Pool B",
+        description: "Dedicated workers / connections for segment B",
+        x: COL * 2,
+        y: ROW,
+      },
+      {
+        type: "container",
+        name: "Service A",
+        description: "Handles workload from pool A",
+        x: COL * 3,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Service B",
+        description: "Handles workload from pool B",
+        x: COL * 3,
+        y: ROW,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Request" },
@@ -341,12 +536,31 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Retry with Fallback",
         description:
           "🔴 Problema\nFalhas transientes (timeout, throttle) causam erros desnecessários quando uma simples tentativa resolveria.\n\n⚙️ Como funciona\nA Retry Policy tenta a chamada com backoff exponencial. Se todas as tentativas falharem, o Fallback entrega uma resposta degradada (cache, default, resposta parcial) em vez de propagar o erro.\n\n✅ Quando usar\nIntegrações com APIs externas, chamadas a serviços com SLA variável.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
       { type: "container", name: "Caller", description: "Initiates remote operation", x: 0, y: 0 },
-      { type: "component", name: "Retry Policy", description: "Backoff and retry on transient errors", x: COL, y: 0 },
-      { type: "container", name: "Dependency", description: "Remote service or external API", x: COL * 2, y: 0 },
-      { type: "component", name: "Fallback", description: "Cached, default or degraded response", x: COL * 2, y: ROW },
+      {
+        type: "component",
+        name: "Retry Policy",
+        description: "Backoff and retry on transient errors",
+        x: COL,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Dependency",
+        description: "Remote service or external API",
+        x: COL * 2,
+        y: 0,
+      },
+      {
+        type: "component",
+        name: "Fallback",
+        description: "Cached, default or degraded response",
+        x: COL * 2,
+        y: ROW,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Call" },
@@ -367,12 +581,32 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Backpressure Buffer",
         description:
           "🔴 Problema\nPicos de ingestão derrabam consumers que não conseguem acompanhar o ritmo de produção.\n\n⚙️ Como funciona\nO Ingress Control aplica rate limiting ou sinais de backpressure ao Producer. Mensagens são enfileiradas no Buffer Queue, que absorve bursts. O Worker Pool drena na velocidade sustentável.\n\n✅ Quando usar\nIngestion de eventos, upload batch, integrações com sistemas lentos.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
       { type: "container", name: "Producer", description: "Generates workload", x: 0, y: 0 },
-      { type: "component", name: "Ingress Control", description: "Applies rate limits or backpressure signals", x: COL, y: 0 },
-      { type: "container", name: "Buffer Queue", description: "Absorbs bursts and smooths throughput", technology: "Kafka / SQS", x: COL * 2, y: 0 },
-      { type: "container", name: "Worker Pool", description: "Processes at sustainable rate", x: COL * 3, y: 0 },
+      {
+        type: "component",
+        name: "Ingress Control",
+        description: "Applies rate limits or backpressure signals",
+        x: COL,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Buffer Queue",
+        description: "Absorbs bursts and smooths throughput",
+        technology: "Kafka / SQS",
+        x: COL * 2,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Worker Pool",
+        description: "Processes at sustainable rate",
+        x: COL * 3,
+        y: 0,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Send" },
@@ -393,12 +627,31 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Blue-Green Deployment",
         description:
           "🔴 Problema\nDeploys in-place causam downtime ou exigem rollback lento quando algo dá errado.\n\n⚙️ Como funciona\nDois ambientes idênticos são mantidos (Blue = produção atual, Green = nova versão). O Traffic Switch redireciona instantaneamente para o Green após validação. Rollback é trocar o switch de volta.\n\n✅ Quando usar\nReleases de alto risco, sistemas que não toleram downtime, ambientes com SLA rígido.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
       { type: "person", name: "Users", description: "Application traffic", x: 0, y: ROW * 0.5 },
-      { type: "component", name: "Traffic Switch", description: "Load balancer or router controlling active environment", x: COL, y: ROW * 0.5 },
-      { type: "container", name: "Blue Environment", description: "Current production version", x: COL * 2, y: 0 },
-      { type: "container", name: "Green Environment", description: "New production candidate", x: COL * 2, y: ROW },
+      {
+        type: "component",
+        name: "Traffic Switch",
+        description: "Load balancer or router controlling active environment",
+        x: COL,
+        y: ROW * 0.5,
+      },
+      {
+        type: "container",
+        name: "Blue Environment",
+        description: "Current production version",
+        x: COL * 2,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Green Environment",
+        description: "New production candidate",
+        x: COL * 2,
+        y: ROW,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Request" },
@@ -410,8 +663,7 @@ export const PATTERNS: PatternTemplate[] = [
   {
     id: "canary-release",
     name: "Canary Release",
-    description:
-      "A small slice of traffic is routed to the new version before full rollout.",
+    description: "A small slice of traffic is routed to the new version before full rollout.",
     category: "resilience",
     components: [
       {
@@ -419,13 +671,38 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Canary Release",
         description:
           "🔴 Problema\nRollouts completos expõem 100% dos usuários a bugs antes de detectá-los.\n\n⚙️ Como funciona\nO Traffic Splitter envia uma fatia pequena (ex: 5%) para a Canary Version. O Metrics Gate avalia saúde (error rate, latência) antes de expandir o rollout. O rollback é instantâneo redirecionando o tráfego.\n\n✅ Quando usar\nFuncionalidades de alto impacto, mudanças de infraestrutura, validação em produção real.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
       { type: "person", name: "Users", description: "Application traffic", x: 0, y: ROW * 0.5 },
-      { type: "component", name: "Traffic Splitter", description: "Routes a small percentage to canary", x: COL, y: ROW * 0.5 },
-      { type: "container", name: "Stable Version", description: "Current version serving most traffic", x: COL * 2, y: 0 },
-      { type: "container", name: "Canary Version", description: "New version serving limited traffic", x: COL * 2, y: ROW },
-      { type: "component", name: "Metrics Gate", description: "Evaluates health before expansion", x: COL * 3, y: ROW },
+      {
+        type: "component",
+        name: "Traffic Splitter",
+        description: "Routes a small percentage to canary",
+        x: COL,
+        y: ROW * 0.5,
+      },
+      {
+        type: "container",
+        name: "Stable Version",
+        description: "Current version serving most traffic",
+        x: COL * 2,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Canary Version",
+        description: "New version serving limited traffic",
+        x: COL * 2,
+        y: ROW,
+      },
+      {
+        type: "component",
+        name: "Metrics Gate",
+        description: "Evaluates health before expansion",
+        x: COL * 3,
+        y: ROW,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Request" },
@@ -447,13 +724,38 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Shadow Deployment",
         description:
           "🔴 Problema\nNão é possível testar comportamento real de uma nova versão sem expor usuários a risco.\n\n⚙️ Como funciona\nO Traffic Mirror duplica cada requisição: a Primary Version serve a resposta real ao usuário; a Shadow Version processa a cópia de forma isolada. Telemetria compara comportamento sem impacto no usuário.\n\n✅ Quando usar\nValidação de migração, teste de performance em produção, comparação de algoritmos.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
       { type: "person", name: "Users", description: "Live traffic", x: 0, y: ROW * 0.5 },
-      { type: "component", name: "Traffic Mirror", description: "Forwards real traffic to primary and shadow paths", x: COL, y: ROW * 0.5 },
-      { type: "container", name: "Primary Version", description: "Serves real responses", x: COL * 2, y: 0 },
-      { type: "container", name: "Shadow Version", description: "Processes mirrored traffic only", x: COL * 2, y: ROW },
-      { type: "component", name: "Observability", description: "Compares behaviour and performance", x: COL * 3, y: ROW },
+      {
+        type: "component",
+        name: "Traffic Mirror",
+        description: "Forwards real traffic to primary and shadow paths",
+        x: COL,
+        y: ROW * 0.5,
+      },
+      {
+        type: "container",
+        name: "Primary Version",
+        description: "Serves real responses",
+        x: COL * 2,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Shadow Version",
+        description: "Processes mirrored traffic only",
+        x: COL * 2,
+        y: ROW,
+      },
+      {
+        type: "component",
+        name: "Observability",
+        description: "Compares behaviour and performance",
+        x: COL * 3,
+        y: ROW,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Request" },
@@ -466,8 +768,7 @@ export const PATTERNS: PatternTemplate[] = [
   {
     id: "active-passive-failover",
     name: "Active-Passive Failover",
-    description:
-      "Primary instance serves traffic while a standby replica is promoted on failure.",
+    description: "Primary instance serves traffic while a standby replica is promoted on failure.",
     category: "resilience",
     components: [
       {
@@ -475,12 +776,31 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Active-Passive Failover",
         description:
           "🔴 Problema\nUma única instância é um single point of failure — quando cai, o serviço fica indisponível.\n\n⚙️ Como funciona\nO Failover Controller monitora a saúde do Primary Node. Em caso de falha, ele promove o Standby Node (que mantém estado replicado) e redireciona o tráfego. O processo é automático e sem intervenção manual.\n\n✅ Quando usar\nBancos de dados críticos, serviços stateful com RTO baixo.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
       { type: "person", name: "Clients", description: "Send requests", x: 0, y: ROW * 0.5 },
-      { type: "component", name: "Failover Controller", description: "Monitors health and promotes standby", x: COL, y: ROW * 0.5 },
-      { type: "container", name: "Primary Node", description: "Active serving node", x: COL * 2, y: 0 },
-      { type: "container", name: "Standby Node", description: "Passive replica ready for promotion", x: COL * 2, y: ROW },
+      {
+        type: "component",
+        name: "Failover Controller",
+        description: "Monitors health and promotes standby",
+        x: COL,
+        y: ROW * 0.5,
+      },
+      {
+        type: "container",
+        name: "Primary Node",
+        description: "Active serving node",
+        x: COL * 2,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Standby Node",
+        description: "Passive replica ready for promotion",
+        x: COL * 2,
+        y: ROW,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Request" },
@@ -490,7 +810,6 @@ export const PATTERNS: PatternTemplate[] = [
     ],
   },
 
-  
   {
     id: "sharding-router",
     name: "Sharding Router",
@@ -503,13 +822,47 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Sharding Router",
         description:
           "🔴 Problema\nUm único banco de dados não aguenta o volume de dados ou de requisições de sistemas de grande escala.\n\n⚙️ Como funciona\nO Shard Router inspeciona a chave de partição (tenant, região, faixa de ID) e redireciona a operação para o shard correto. Cada shard é um banco independente com seu próprio ciclo de vida.\n\n✅ Quando usar\nSistemas multi-tenant de grande escala, bases com bilhões de registros, necessidade de isolamento de dados por tenant.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
-      { type: "container", name: "Application", description: "Issues read and write operations", x: 0, y: ROW },
-      { type: "component", name: "Shard Router", description: "Resolves shard from tenant, region or entity key", x: COL, y: ROW },
-      { type: "container", name: "Shard A", description: "Partition for one key range / tenant set", technology: "PostgreSQL / MySQL", x: COL * 2, y: 0 },
-      { type: "container", name: "Shard B", description: "Partition for another key range / tenant set", technology: "PostgreSQL / MySQL", x: COL * 2, y: ROW },
-      { type: "container", name: "Shard C", description: "Partition for another key range / tenant set", technology: "PostgreSQL / MySQL", x: COL * 2, y: ROW * 2 },
+      {
+        type: "container",
+        name: "Application",
+        description: "Issues read and write operations",
+        x: 0,
+        y: ROW,
+      },
+      {
+        type: "component",
+        name: "Shard Router",
+        description: "Resolves shard from tenant, region or entity key",
+        x: COL,
+        y: ROW,
+      },
+      {
+        type: "container",
+        name: "Shard A",
+        description: "Partition for one key range / tenant set",
+        technology: "PostgreSQL / MySQL",
+        x: COL * 2,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Shard B",
+        description: "Partition for another key range / tenant set",
+        technology: "PostgreSQL / MySQL",
+        x: COL * 2,
+        y: ROW,
+      },
+      {
+        type: "container",
+        name: "Shard C",
+        description: "Partition for another key range / tenant set",
+        technology: "PostgreSQL / MySQL",
+        x: COL * 2,
+        y: ROW * 2,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Read / Write" },
@@ -522,8 +875,7 @@ export const PATTERNS: PatternTemplate[] = [
   {
     id: "transactional-outbox",
     name: "Transactional Outbox",
-    description:
-      "Write to DB + outbox table atomically; relay polls and publishes events.",
+    description: "Write to DB + outbox table atomically; relay polls and publishes events.",
     category: "data",
     components: [
       {
@@ -531,13 +883,40 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Transactional Outbox",
         description:
           "🔴 Problema\nPublicar um evento e persistir dados em operações separadas é não-atômico — uma pode falhar e a outra não, causando inconsistência.\n\n⚙️ Como funciona\nO Service grava no banco principal e na tabela outbox dentro da mesma transação. O Outbox Relay (processo separado) lê a tabela de outbox e publica os eventos no broker de forma idempotente.\n\n✅ Quando usar\nTodo sistema event-driven que precisa de garantia de entrega sem dual-write.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
       { type: "container", name: "Service", description: "Business logic", x: 0, y: 0 },
-      { type: "aws-database", name: "Database", description: "Main DB + outbox table", awsService: "rds", x: COL, y: 0 },
-      { type: "component", name: "Outbox Relay", description: "Polls outbox, publishes events", x: COL, y: ROW },
-      { type: "aws-integration", name: "Message Broker", description: "EventBridge / SQS / Kafka", awsService: "eventbridge", x: COL * 2, y: ROW },
-      { type: "container", name: "Consumer", description: "Receives published events", x: COL * 3, y: ROW },
+      {
+        type: "aws-database",
+        name: "Database",
+        description: "Main DB + outbox table",
+        awsService: "rds",
+        x: COL,
+        y: 0,
+      },
+      {
+        type: "component",
+        name: "Outbox Relay",
+        description: "Polls outbox, publishes events",
+        x: COL,
+        y: ROW,
+      },
+      {
+        type: "aws-integration",
+        name: "Message Broker",
+        description: "EventBridge / SQS / Kafka",
+        awsService: "eventbridge",
+        x: COL * 2,
+        y: ROW,
+      },
+      {
+        type: "container",
+        name: "Consumer",
+        description: "Receives published events",
+        x: COL * 3,
+        y: ROW,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Write + outbox (tx)" },
@@ -550,8 +929,7 @@ export const PATTERNS: PatternTemplate[] = [
   {
     id: "cqrs",
     name: "CQRS",
-    description:
-      "Commands write to the write model; queries read from a dedicated read model.",
+    description: "Commands write to the write model; queries read from a dedicated read model.",
     category: "data",
     components: [
       {
@@ -559,14 +937,53 @@ export const PATTERNS: PatternTemplate[] = [
         name: "CQRS",
         description:
           "🔴 Problema\nO mesmo modelo de dados otimizado para escrita raramente é eficiente para leitura, gerando queries complexas e lentidão.\n\n⚙️ Como funciona\nCommandos são processados pelo Command Handler e persistidos no Write DB. Eventos do Write DB alimentam o Projector que constrói um Read DB otimizado para as queries. Queries são respondidas pelo Query Handler diretamente do Read DB.\n\n✅ Quando usar\nSistemas com padrões de leitura e escrita muito distintos, alta carga de leitura.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
-      { type: "person", name: "Client", description: "Sends commands & queries", x: 0, y: ROW * 0.5 },
-      { type: "container", name: "Command Handler", description: "Validates and applies commands", x: COL, y: 0 },
-      { type: "aws-database", name: "Write DB", description: "Source of truth", awsService: "rds", x: COL * 2, y: 0 },
-      { type: "component", name: "Projector", description: "Builds read model from events", x: COL * 3, y: 0 },
-      { type: "aws-database", name: "Read DB", description: "Optimised query store", awsService: "dynamodb", x: COL * 3, y: ROW },
-      { type: "container", name: "Query Handler", description: "Serves read-only queries", x: COL, y: ROW },
+      {
+        type: "person",
+        name: "Client",
+        description: "Sends commands & queries",
+        x: 0,
+        y: ROW * 0.5,
+      },
+      {
+        type: "container",
+        name: "Command Handler",
+        description: "Validates and applies commands",
+        x: COL,
+        y: 0,
+      },
+      {
+        type: "aws-database",
+        name: "Write DB",
+        description: "Source of truth",
+        awsService: "rds",
+        x: COL * 2,
+        y: 0,
+      },
+      {
+        type: "component",
+        name: "Projector",
+        description: "Builds read model from events",
+        x: COL * 3,
+        y: 0,
+      },
+      {
+        type: "aws-database",
+        name: "Read DB",
+        description: "Optimised query store",
+        awsService: "dynamodb",
+        x: COL * 3,
+        y: ROW,
+      },
+      {
+        type: "container",
+        name: "Query Handler",
+        description: "Serves read-only queries",
+        x: COL,
+        y: ROW,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Command" },
@@ -581,8 +998,7 @@ export const PATTERNS: PatternTemplate[] = [
   {
     id: "cache-aside",
     name: "Cache-Aside",
-    description:
-      "Application checks cache first; on miss reads DB and populates cache.",
+    description: "Application checks cache first; on miss reads DB and populates cache.",
     category: "data",
     components: [
       {
@@ -590,11 +1006,26 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Cache-Aside",
         description:
           "🔴 Problema\nLeituras repetidas ao banco sobrecarregam o storage e aumentam latência desnecessariamente.\n\n⚙️ Como funciona\nA Application verifica o Cache primeiro. Em caso de hit, retorna imediatamente. Em caso de miss, lê do Database, popula o Cache e retorna ao caller. A aplicação é responsável por invalidar o cache na escrita.\n\n✅ Quando usar\nDados lidos com frequência e escritos raramente, resultados de queries pesadas.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
       { type: "container", name: "Application", description: "Business service", x: 0, y: 0 },
-      { type: "aws-database", name: "Cache", description: "ElastiCache / Redis", awsService: "elasticache", x: COL, y: 0 },
-      { type: "aws-database", name: "Database", description: "Source of truth", awsService: "rds", x: COL, y: ROW },
+      {
+        type: "aws-database",
+        name: "Cache",
+        description: "ElastiCache / Redis",
+        awsService: "elasticache",
+        x: COL,
+        y: 0,
+      },
+      {
+        type: "aws-database",
+        name: "Database",
+        description: "Source of truth",
+        awsService: "rds",
+        x: COL,
+        y: ROW,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Read (hit)" },
@@ -615,14 +1046,54 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Event Sourcing + CQRS",
         description:
           "🔴 Problema\nSistemas complexos perdem rastreabilidade — é impossível saber como o estado chegou onde está.\n\n⚙️ Como funciona\nO Command Handler appenda eventos imutáveis no Event Store. O Event Bus distribui os eventos para o Projection Builder que constrói o Read Model. O Query Handler serve leituras do Read Model sem tocar no Event Store.\n\n✅ Quando usar\nDomínios financeiros, sistemas de auditoria, necessidade de time-travel e replay.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
-      { type: "container", name: "Command Handler", description: "Validates and appends events", x: 0, y: 0 },
-      { type: "container", name: "Event Store", description: "Append-only event log", technology: "EventStoreDB", x: COL, y: 0 },
-      { type: "container", name: "Event Bus", description: "Publishes domain events", technology: "Kafka / EventBridge", x: COL * 2, y: 0 },
-      { type: "container", name: "Projection Builder", description: "Consumes events, builds read model", x: COL * 3, y: 0 },
-      { type: "container", name: "Read Model", description: "Query-optimised store", technology: "PostgreSQL / Redis", x: COL * 3, y: ROW },
-      { type: "container", name: "Query Handler", description: "Serves read-only queries", x: COL * 4, y: ROW },
+      {
+        type: "container",
+        name: "Command Handler",
+        description: "Validates and appends events",
+        x: 0,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Event Store",
+        description: "Append-only event log",
+        technology: "EventStoreDB",
+        x: COL,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Event Bus",
+        description: "Publishes domain events",
+        technology: "Kafka / EventBridge",
+        x: COL * 2,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Projection Builder",
+        description: "Consumes events, builds read model",
+        x: COL * 3,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Read Model",
+        description: "Query-optimised store",
+        technology: "PostgreSQL / Redis",
+        x: COL * 3,
+        y: ROW,
+      },
+      {
+        type: "container",
+        name: "Query Handler",
+        description: "Serves read-only queries",
+        x: COL * 4,
+        y: ROW,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Append event" },
@@ -636,7 +1107,8 @@ export const PATTERNS: PatternTemplate[] = [
   {
     id: "read-replica",
     name: "Read Replica",
-    description: "Application writes to primary DB; reads from replica; primary replicates to replica.",
+    description:
+      "Application writes to primary DB; reads from replica; primary replicates to replica.",
     category: "data",
     components: [
       {
@@ -644,11 +1116,26 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Read Replica",
         description:
           "🔴 Problema\nLeituras e escritas no mesmo banco competem por recursos, degradando performance em ambos.\n\n⚙️ Como funciona\nO Application escreve exclusivamente no Primary DB. O Primary replica continuamente para o Read Replica. Leituras são direcionadas para a réplica, aliviando carga do primário.\n\n✅ Quando usar\nAplicações read-heavy, relatórios analíticos, separação de workloads OLTP e OLAP.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
       { type: "container", name: "Application", description: "App service", x: 0, y: ROW * 0.5 },
-      { type: "container", name: "Primary DB", description: "Source of truth", technology: "PostgreSQL", x: COL, y: 0 },
-      { type: "container", name: "Read Replica", description: "Read-only copy", technology: "PostgreSQL", x: COL, y: ROW },
+      {
+        type: "container",
+        name: "Primary DB",
+        description: "Source of truth",
+        technology: "PostgreSQL",
+        x: COL,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Read Replica",
+        description: "Read-only copy",
+        technology: "PostgreSQL",
+        x: COL,
+        y: ROW,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Write" },
@@ -660,8 +1147,7 @@ export const PATTERNS: PatternTemplate[] = [
   {
     id: "database-per-service",
     name: "Database per Service",
-    description:
-      "Each service owns its database; services communicate via event bus.",
+    description: "Each service owns its database; services communicate via event bus.",
     category: "data",
     components: [
       {
@@ -669,13 +1155,35 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Database per Service",
         description:
           "🔴 Problema\nBancos compartilhados criam acoplamento entre serviços — uma mudança de schema em um serviço quebra os outros.\n\n⚙️ Como funciona\nCada serviço possui seu banco privado com o modelo de dados adequado ao seu domínio. Comunicação entre serviços ocorre exclusivamente via Event Bus assíncrono, nunca por acesso direto ao banco alheio.\n\n✅ Quando usar\nArquiteturas de microserviços, times com deploys independentes.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
       { type: "container", name: "Service A", description: "Bounded context A", x: 0, y: 0 },
-      { type: "container", name: "Database A", description: "Service A data", technology: "PostgreSQL", x: COL, y: 0 },
+      {
+        type: "container",
+        name: "Database A",
+        description: "Service A data",
+        technology: "PostgreSQL",
+        x: COL,
+        y: 0,
+      },
       { type: "container", name: "Service B", description: "Bounded context B", x: 0, y: ROW },
-      { type: "container", name: "Database B", description: "Service B data", technology: "MongoDB", x: COL, y: ROW },
-      { type: "container", name: "Event Bus", description: "Async communication", technology: "Kafka", x: COL * 2, y: ROW * 0.5 },
+      {
+        type: "container",
+        name: "Database B",
+        description: "Service B data",
+        technology: "MongoDB",
+        x: COL,
+        y: ROW,
+      },
+      {
+        type: "container",
+        name: "Event Bus",
+        description: "Async communication",
+        technology: "Kafka",
+        x: COL * 2,
+        y: ROW * 0.5,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Read/Write" },
@@ -697,12 +1205,34 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Multi-tier Cache",
         description:
           "🔴 Problema\nUm único nível de cache não cobre todos os trade-offs: memória local é rápida mas limitada; cache distribuído é maior mas tem latência de rede.\n\n⚙️ Como funciona\nA Application verifica o L1 Cache (in-process). Em miss, consulta o L2 Cache (Redis). Em miss, acessa o Database. O caminho de retorno popula os caches de volta na cadeia.\n\n✅ Quando usar\nSistemas com requisitos extremos de latência, dados quentes com alta frequência de acesso.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
       { type: "container", name: "Application", description: "App service", x: 0, y: 0 },
-      { type: "container", name: "L1 Cache", description: "In-process cache", technology: "In-memory", x: COL, y: 0 },
-      { type: "container", name: "L2 Cache", description: "Distributed cache", technology: "Redis", x: COL * 2, y: 0 },
-      { type: "container", name: "Database", description: "Source of truth", technology: "PostgreSQL", x: COL * 3, y: 0 },
+      {
+        type: "container",
+        name: "L1 Cache",
+        description: "In-process cache",
+        technology: "In-memory",
+        x: COL,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "L2 Cache",
+        description: "Distributed cache",
+        technology: "Redis",
+        x: COL * 2,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Database",
+        description: "Source of truth",
+        technology: "PostgreSQL",
+        x: COL * 3,
+        y: 0,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Check cache" },
@@ -713,12 +1243,10 @@ export const PATTERNS: PatternTemplate[] = [
     ],
   },
 
-  
   {
     id: "saga-choreography",
     name: "Saga (Choreography)",
-    description:
-      "Each service publishes domain events; compensating events handle rollbacks.",
+    description: "Each service publishes domain events; compensating events handle rollbacks.",
     category: "event-driven",
     components: [
       {
@@ -726,13 +1254,45 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Saga (Choreography)",
         description:
           "🔴 Problema\nTransações distribuídas entre microserviços não têm 2PC confiável — é preciso coordenar sem um orquestrador central.\n\n⚙️ Como funciona\nCada serviço reage a eventos do bus e publica seu próprio evento de resposta. O fluxo avança por reação em cadeia. Falhas disparam eventos de compensação que desfazem os passos anteriores.\n\n✅ Quando usar\nFluxos de negócio distribuídos onde autonomia dos serviços é prioritária.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
-      { type: "container", name: "Order Service", description: "Creates order, emits OrderCreated", x: 0, y: ROW },
-      { type: "aws-integration", name: "Event Bus", description: "EventBridge / Kafka", awsService: "eventbridge", x: COL, y: ROW },
-      { type: "container", name: "Payment Service", description: "Charges payment, emits PaymentProcessed", x: COL * 2, y: 0 },
-      { type: "container", name: "Inventory Service", description: "Reserves stock, emits StockReserved", x: COL * 2, y: ROW },
-      { type: "container", name: "Shipping Service", description: "Schedules shipment", x: COL * 2, y: ROW * 2 },
+      {
+        type: "container",
+        name: "Order Service",
+        description: "Creates order, emits OrderCreated",
+        x: 0,
+        y: ROW,
+      },
+      {
+        type: "aws-integration",
+        name: "Event Bus",
+        description: "EventBridge / Kafka",
+        awsService: "eventbridge",
+        x: COL,
+        y: ROW,
+      },
+      {
+        type: "container",
+        name: "Payment Service",
+        description: "Charges payment, emits PaymentProcessed",
+        x: COL * 2,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Inventory Service",
+        description: "Reserves stock, emits StockReserved",
+        x: COL * 2,
+        y: ROW,
+      },
+      {
+        type: "container",
+        name: "Shipping Service",
+        description: "Schedules shipment",
+        x: COL * 2,
+        y: ROW * 2,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "OrderCreated" },
@@ -756,14 +1316,39 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Saga (Orchestration)",
         description:
           "🔴 Problema\nFluxos distribuídos com lógica de compensação complexa ficam difíceis de entender quando espalhados por vários serviços.\n\n⚙️ Como funciona\nUm Saga Orchestrator central emite comandos diretos para cada serviço na sequência correta. Ele rastreia o estado do fluxo e emite compensações se um passo falhar.\n\n✅ Quando usar\nFluxos com lógica de compensação complexa, necessidade de visibilidade central do estado do processo.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
       { type: "container", name: "Client", description: "Starts business process", x: 0, y: ROW },
-      { type: "container", name: "Saga Orchestrator", description: "Coordinates steps and compensations", x: COL, y: ROW },
+      {
+        type: "container",
+        name: "Saga Orchestrator",
+        description: "Coordinates steps and compensations",
+        x: COL,
+        y: ROW,
+      },
       { type: "container", name: "Order Service", description: "Creates order", x: COL * 2, y: 0 },
-      { type: "container", name: "Payment Service", description: "Charges payment", x: COL * 2, y: ROW },
-      { type: "container", name: "Inventory Service", description: "Reserves stock", x: COL * 2, y: ROW * 2 },
-      { type: "container", name: "Shipping Service", description: "Schedules delivery", x: COL * 2, y: ROW * 3 },
+      {
+        type: "container",
+        name: "Payment Service",
+        description: "Charges payment",
+        x: COL * 2,
+        y: ROW,
+      },
+      {
+        type: "container",
+        name: "Inventory Service",
+        description: "Reserves stock",
+        x: COL * 2,
+        y: ROW * 2,
+      },
+      {
+        type: "container",
+        name: "Shipping Service",
+        description: "Schedules delivery",
+        x: COL * 2,
+        y: ROW * 3,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Start saga" },
@@ -777,8 +1362,7 @@ export const PATTERNS: PatternTemplate[] = [
   {
     id: "event-sourcing",
     name: "Event Sourcing",
-    description:
-      "State derived from an append-only event log; projections build read views.",
+    description: "State derived from an append-only event log; projections build read views.",
     category: "event-driven",
     components: [
       {
@@ -786,13 +1370,46 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Event Sourcing",
         description:
           "🔴 Problema\nSistemas que sobrescrevem estado perdem o histórico — é impossível auditar o que aconteceu ou reconstruir um estado passado.\n\n⚙️ Como funciona\nTodo comando gera um evento imutável que é appendado ao Event Store. O estado atual é o resultado do replay de todos os eventos. O Projection Engine constrói Read Views materializadas para queries eficientes.\n\n✅ Quando usar\nDomínios com requisito de auditoria, sistemas financeiros, necessidade de replay e time-travel.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
-      { type: "person", name: "Client", description: "Sends commands and queries", x: 0, y: ROW * 0.5 },
-      { type: "container", name: "Command API", description: "Validates and emits events", x: COL, y: 0 },
-      { type: "aws-database", name: "Event Store", description: "Append-only log (DynamoDB / Aurora)", awsService: "dynamodb", x: COL * 2, y: 0 },
-      { type: "component", name: "Projection Engine", description: "Replays events into read views", x: COL * 3, y: 0 },
-      { type: "aws-database", name: "Read Model", description: "Denormalised query store", awsService: "dynamodb", x: COL * 3, y: ROW },
+      {
+        type: "person",
+        name: "Client",
+        description: "Sends commands and queries",
+        x: 0,
+        y: ROW * 0.5,
+      },
+      {
+        type: "container",
+        name: "Command API",
+        description: "Validates and emits events",
+        x: COL,
+        y: 0,
+      },
+      {
+        type: "aws-database",
+        name: "Event Store",
+        description: "Append-only log (DynamoDB / Aurora)",
+        awsService: "dynamodb",
+        x: COL * 2,
+        y: 0,
+      },
+      {
+        type: "component",
+        name: "Projection Engine",
+        description: "Replays events into read views",
+        x: COL * 3,
+        y: 0,
+      },
+      {
+        type: "aws-database",
+        name: "Read Model",
+        description: "Denormalised query store",
+        awsService: "dynamodb",
+        x: COL * 3,
+        y: ROW,
+      },
       { type: "container", name: "Query API", description: "Serves read requests", x: COL, y: ROW },
     ],
     connections: [
@@ -817,13 +1434,46 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Event-Carried State Transfer",
         description:
           "🔴 Problema\nConsumidores de eventos precisam fazer chamadas síncronas de volta ao produtor para buscar dados adicionais, criando acoplamento e latência.\n\n⚙️ Como funciona\nO Producer publica eventos com todo o estado necessário embutido no payload. Os Consumers atualizam suas Local Views sem precisar de lookups adicionais.\n\n✅ Quando usar\nConsumidores que precisam de dados do produtor para processar, redução de chattiness entre serviços.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
-      { type: "container", name: "Producer Service", description: "Owns source entity", x: 0, y: ROW * 0.5 },
-      { type: "container", name: "Event Bus", description: "Distributes state-carrying events", technology: "Kafka / EventBridge", x: COL, y: ROW * 0.5 },
-      { type: "container", name: "Consumer A", description: "Maintains local read model from events", x: COL * 2, y: 0 },
-      { type: "container", name: "Consumer B", description: "Maintains local cache or projection from events", x: COL * 2, y: ROW },
-      { type: "container", name: "Local View", description: "Denormalised local data for consumer needs", technology: "PostgreSQL / Redis", x: COL * 3, y: ROW * 0.5 },
+      {
+        type: "container",
+        name: "Producer Service",
+        description: "Owns source entity",
+        x: 0,
+        y: ROW * 0.5,
+      },
+      {
+        type: "container",
+        name: "Event Bus",
+        description: "Distributes state-carrying events",
+        technology: "Kafka / EventBridge",
+        x: COL,
+        y: ROW * 0.5,
+      },
+      {
+        type: "container",
+        name: "Consumer A",
+        description: "Maintains local read model from events",
+        x: COL * 2,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Consumer B",
+        description: "Maintains local cache or projection from events",
+        x: COL * 2,
+        y: ROW,
+      },
+      {
+        type: "container",
+        name: "Local View",
+        description: "Denormalised local data for consumer needs",
+        technology: "PostgreSQL / Redis",
+        x: COL * 3,
+        y: ROW * 0.5,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Publish full event" },
@@ -834,7 +1484,6 @@ export const PATTERNS: PatternTemplate[] = [
     ],
   },
 
-  
   {
     id: "policy-enforcement-point-opa",
     name: "Policy Enforcement Point (OPA)",
@@ -847,12 +1496,34 @@ export const PATTERNS: PatternTemplate[] = [
         name: "Policy Enforcement Point (OPA)",
         description:
           "🔴 Problema\nLógica de autorização espalhada em vários serviços é difícil de auditar, manter e atualizar consistentemente.\n\n⚙️ Como funciona\nO API Gateway delega toda decisão de autorização ao OPA Sidecar. O OPA avalia a policy contra os atributos da requisição e retorna Allow/Deny. Policies são versionadas no Policy Store separado da aplicação.\n\n✅ Quando usar\nAutorização centralizada, compliance, ambientes com políticas complexas e mutáveis.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
       { type: "person", name: "Client", description: "Request origin", x: 0, y: ROW * 0.5 },
-      { type: "container", name: "API Gateway", description: "Entry point", technology: "Kong / Nginx", x: COL, y: ROW * 0.5 },
-      { type: "container", name: "OPA Sidecar", description: "Policy evaluation", technology: "Open Policy Agent", x: COL * 2, y: 0 },
-      { type: "container", name: "Policy Store", description: "Policies (Git / bundle)", technology: "Git / Bundle", x: COL * 3, y: 0 },
+      {
+        type: "container",
+        name: "API Gateway",
+        description: "Entry point",
+        technology: "Kong / Nginx",
+        x: COL,
+        y: ROW * 0.5,
+      },
+      {
+        type: "container",
+        name: "OPA Sidecar",
+        description: "Policy evaluation",
+        technology: "Open Policy Agent",
+        x: COL * 2,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Policy Store",
+        description: "Policies (Git / bundle)",
+        technology: "Git / Bundle",
+        x: COL * 3,
+        y: 0,
+      },
       { type: "container", name: "Service", description: "Backend service", x: COL * 2, y: ROW },
       { type: "container", name: "Data Store", description: "Persistence", x: COL * 3, y: ROW },
     ],
@@ -878,13 +1549,41 @@ export const PATTERNS: PatternTemplate[] = [
         name: "RBAC with OPA",
         description:
           "🔴 Problema\nControle de acesso baseado em roles hardcoded no serviço é difícil de escalar e auditar.\n\n⚙️ Como funciona\nO Auth Service autentica o usuário e consulta o OPA Engine com os atributos do usuário. O OPA avalia os roles contra o Role Store e retorna a decisão. O Auth emite um token com as permissões resolvidas para o Resource Server.\n\n✅ Quando usar\nSistemas corporativos com roles complexos, necessidade de auditoria de acesso, SSO com múltiplos recursos.",
-        x: NOTE_X, y: NOTE_Y,
+        x: NOTE_X,
+        y: NOTE_Y,
       },
       { type: "person", name: "User", description: "End user", x: 0, y: ROW * 0.5 },
-      { type: "container", name: "Auth Service", description: "Issues tokens", technology: "OAuth2 / OIDC", x: COL, y: ROW * 0.5 },
-      { type: "container", name: "OPA Engine", description: "Role-based policy", technology: "Open Policy Agent", x: COL * 2, y: 0 },
-      { type: "container", name: "Role Store", description: "Roles and permissions", technology: "LDAP / DB", x: COL * 3, y: 0 },
-      { type: "container", name: "Resource Server", description: "Protected API", x: COL * 2, y: ROW },
+      {
+        type: "container",
+        name: "Auth Service",
+        description: "Issues tokens",
+        technology: "OAuth2 / OIDC",
+        x: COL,
+        y: ROW * 0.5,
+      },
+      {
+        type: "container",
+        name: "OPA Engine",
+        description: "Role-based policy",
+        technology: "Open Policy Agent",
+        x: COL * 2,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Role Store",
+        description: "Roles and permissions",
+        technology: "LDAP / DB",
+        x: COL * 3,
+        y: 0,
+      },
+      {
+        type: "container",
+        name: "Resource Server",
+        description: "Protected API",
+        x: COL * 2,
+        y: ROW,
+      },
     ],
     connections: [
       { fromIndex: 1, toIndex: 2, label: "Authenticate" },
@@ -897,9 +1596,7 @@ export const PATTERNS: PatternTemplate[] = [
   },
 ];
 
-export const PATTERNS_BY_CATEGORY = PATTERNS.reduce<
-  Record<PatternCategory, PatternTemplate[]>
->(
+export const PATTERNS_BY_CATEGORY = PATTERNS.reduce<Record<PatternCategory, PatternTemplate[]>>(
   (acc, p) => {
     acc[p.category].push(p);
     return acc;

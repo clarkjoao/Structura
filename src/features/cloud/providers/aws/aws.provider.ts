@@ -1,14 +1,5 @@
-import {
-  AWS_CATEGORIES,
-  AWS_CATEGORY_MAP,
-  AWS_SERVICE_MAP,
-  isAwsType,
-} from "@/lib/catalogs/aws";
-import type {
-  CloudCategory,
-  CloudProviderAdapter,
-  CloudService,
-} from "../../model/cloud.types";
+import { AWS_CATEGORIES, AWS_CATEGORY_MAP, AWS_SERVICE_MAP, isAwsType } from "@/lib/catalogs/aws";
+import type { CloudCategory, CloudProviderAdapter, CloudService } from "../../model/cloud.types";
 import { awsIconResolver } from "./aws.icon-resolver";
 
 const AWS_CATEGORY_BORDERS: Record<string, string> = {

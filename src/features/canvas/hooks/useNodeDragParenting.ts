@@ -30,13 +30,13 @@ interface UseNodeDragParentingParams {
     position: { x: number; y: number },
     dimensions?: { width: number; height: number },
   ) => void;
-  
+
   commitNodeDrag: (
     nodeId: string,
     newParentId: string | null,
     newPosition: { x: number; y: number },
   ) => void;
-  
+
   batchCommitNodeDrag: (
     entries: Array<{
       nodeId: string;
@@ -66,20 +66,14 @@ export function useNodeDragParenting({
   const [unparentCandidatePanelId, setUnparentCandidatePanelId] = useState<string | null>(null);
   const dragTargetRef = useRef<string | null>(null);
 
-  
   const draggingNodeIdsRef = useRef(new Set<string>());
   const dragStopPendingNodeIdsRef = useRef(new Set<string>());
   const lockToastShownRef = useRef(false);
   const lockToastTimeoutRef = useRef<number | null>(null);
-  
-  
-  
+
   const dragTargetRafRef = useRef<number | null>(null);
 
-  
-  const pendingLayoutUpdatesRef = useRef(
-    new Map<string, { width: number; height: number }>(),
-  );
+  const pendingLayoutUpdatesRef = useRef(new Map<string, { width: number; height: number }>());
   const layoutUpdateRafRef = useRef<number | null>(null);
 
   const flushPendingLayoutUpdates = useCallback(() => {
@@ -118,17 +112,11 @@ export function useNodeDragParenting({
       const comp = r.components[change.id];
       if (comp && isEndpointComponent(comp)) return;
 
-      
-      
-      
       if (change.dragging && comp?.parentId && draggingNodeIdsRef.current.has(comp.parentId)) {
         return;
       }
 
       if (!change.dragging) {
-        
-        
-        
         if (dragStopPendingNodeIdsRef.current.has(change.id)) {
           dragStopPendingNodeIdsRef.current.delete(change.id);
           return;
@@ -181,16 +169,12 @@ export function useNodeDragParenting({
       let absY = change.position.y;
 
       if (comp.parentId) {
-        
-        
-        
-        
         const parentAbsPos = resolveAbsolutePositionFromNodes(comp.parentId, nodes);
         absX = parentAbsPos.x + change.position.x;
         absY = parentAbsPos.y + change.position.y;
 
         const parentNode = nodes.find((n) => n.id === comp.parentId);
-        
+
         const childNode = nodes.find((n) => n.id === change.id);
         const childDims = childNode ? getPanelDimensions(childNode) : undefined;
         const outside = parentNode
@@ -213,8 +197,7 @@ export function useNodeDragParenting({
 
       if (newTarget !== dragTargetRef.current) {
         dragTargetRef.current = newTarget;
-        
-        
+
         if (dragTargetRafRef.current !== null) {
           cancelAnimationFrame(dragTargetRafRef.current);
         }
@@ -302,15 +285,13 @@ export function useNodeDragParenting({
         return;
       }
       const components = r.components;
-      
-      
+
       const draggedAbsPos = draggedNode.parentId
         ? resolveAbsolutePositionFromNodes(draggedNode.id, nodes)
         : draggedNode.position;
       const absX = draggedAbsPos.x;
       const absY = draggedAbsPos.y;
 
-      
       const commitSelectedNodesDrag = () => {
         const entries: Array<{
           nodeId: string;
@@ -320,28 +301,22 @@ export function useNodeDragParenting({
 
         const otherSelected = nodes.filter(
           (node) =>
-            node.selected &&
-            node.id !== draggedNode.id &&
-            !isEndpointType(getNodeType(node)),
+            node.selected && node.id !== draggedNode.id && !isEndpointType(getNodeType(node)),
         );
 
         for (const node of otherSelected) {
           if (!canMoveNodeInSceneMode(activeDiagram, node.id)) continue;
           const nodeComp = components[node.id];
-          if (
-            nodeComp &&
-            (nodeComp.locked === true || isAncestorLocked(nodeComp, components))
-          )
+          if (nodeComp && (nodeComp.locked === true || isAncestorLocked(nodeComp, components)))
             continue;
 
-          
           const nodeAbsPos = node.parentId
             ? resolveAbsolutePositionFromNodes(node.id, nodes)
             : node.position;
 
           if (node.parentId) {
             const parentNode = nodes.find((n) => n.id === node.parentId);
-            
+
             const childDims = getPanelDimensions(node);
             const outside = parentNode
               ? isOutsideParentBounds(node.position, parentNode, childDims)
@@ -378,7 +353,6 @@ export function useNodeDragParenting({
               newPosition: { x: nodeAbsPos.x - matchAbsPos.x, y: nodeAbsPos.y - matchAbsPos.y },
             });
           } else {
-            
             updateNodeLayout(node.id, node.position);
           }
         }
@@ -392,10 +366,7 @@ export function useNodeDragParenting({
 
       if (isDraggedPanel) {
         const childrenIndex = buildChildrenIndex(components);
-        const descendantIds = getDescendantIdsFromIndex(
-          draggedNode.id,
-          childrenIndex,
-        );
+        const descendantIds = getDescendantIdsFromIndex(draggedNode.id, childrenIndex);
         const match = findPanelContainingPoint(
           nodes,
           absX,
@@ -406,7 +377,7 @@ export function useNodeDragParenting({
         );
         if (match && descendantIds.has(match.id)) {
           if (draggedNode.parentId) {
-            commitNodeDrag(draggedNode.id, draggedNode.parentId, draggedNode.position);
+            commitNodeDrag(draggedNode.id, draggedNode.parentId ?? null, draggedNode.position);
           } else {
             commitNodeDrag(draggedNode.id, null, { x: absX, y: absY });
           }
@@ -415,30 +386,23 @@ export function useNodeDragParenting({
         }
       }
 
-      const parent = draggedNode.parentId
-        ? nodes.find((n) => n.id === draggedNode.parentId)
-        : null;
+      const parent = draggedNode.parentId ? nodes.find((n) => n.id === draggedNode.parentId) : null;
 
       if (parent) {
-        
-        
         const draggedDims = {
           width: draggedNode.measured?.width ?? 0,
           height: draggedNode.measured?.height ?? 0,
         };
         const outside = isOutsideParentBounds(draggedNode.position, parent, draggedDims);
         if (outside) {
-          
           commitNodeDrag(draggedNode.id, null, { x: absX, y: absY });
         } else {
-          
-          commitNodeDrag(draggedNode.id, draggedNode.parentId, draggedNode.position);
+          commitNodeDrag(draggedNode.id, draggedNode.parentId ?? null, draggedNode.position);
         }
         commitSelectedNodesDrag();
         return;
       }
 
-      
       const match = findPanelContainingPoint(
         nodes,
         absX,
@@ -461,7 +425,6 @@ export function useNodeDragParenting({
         };
         commitNodeDrag(draggedNode.id, match.id, relPos);
       } else {
-        
         commitNodeDrag(draggedNode.id, null, { x: absX, y: absY });
       }
 

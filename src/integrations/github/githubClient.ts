@@ -1,25 +1,17 @@
 import type { GithubRepo, GithubSearchResult, GithubOrg } from "./github.types";
 
 export type GithubClient = {
-  searchRepositories: (
-    query: string,
-    page: number,
-    perPage: number,
-  ) => Promise<GithubSearchResult>;
+  searchRepositories: (query: string, page: number, perPage: number) => Promise<GithubSearchResult>;
   getRepository: (fullName: string) => Promise<GithubRepo>;
   listUserOrgs: () => Promise<GithubOrg[]>;
   getAuthenticatedUser: () => Promise<{ login: string }>;
 };
 
 function normalizeBaseUrl(baseUrl: string): string {
-  
   return baseUrl.replace(/\/+$/, "");
 }
 
-export function createGithubClient(
-  baseUrl: string,
-  token: string,
-): GithubClient {
+export function createGithubClient(baseUrl: string, token: string): GithubClient {
   const apiBase = normalizeBaseUrl(baseUrl);
   const baseHeaders: Record<string, string> = {
     Accept: "application/vnd.github+json",
@@ -61,11 +53,8 @@ export function createGithubClient(
     },
 
     async getRepository(fullName: string) {
-      
       const [owner, repo] = fullName.split("/");
-      return getJson<GithubRepo>(
-        `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`,
-      );
+      return getJson<GithubRepo>(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`);
     },
 
     async listUserOrgs() {
@@ -77,4 +66,3 @@ export function createGithubClient(
     },
   };
 }
-

@@ -7,10 +7,7 @@ import {
   checkStorageHealth,
   clearNonEssentialStorage,
 } from "@/features/diagram";
-import {
-  isFileSystemSupported,
-  requestConnectFolder,
-} from "@/infrastructure/persistence";
+import { isFileSystemSupported, requestConnectFolder } from "@/infrastructure/persistence";
 import { cn } from "@/lib/utils";
 
 function formatBytes(bytes: number): string {
@@ -54,7 +51,9 @@ export function StorageWarningBanner() {
         "flex items-start gap-3 px-4 py-3 text-sm border-b shrink-0",
         isCritical && "bg-destructive/10 border-destructive/30 text-destructive",
         isDanger && "bg-orange-500/10 border-orange-500/30 text-orange-700 dark:text-orange-400",
-        !isCritical && !isDanger && "bg-yellow-500/10 border-yellow-500/30 text-yellow-700 dark:text-yellow-400",
+        !isCritical &&
+          !isDanger &&
+          "bg-yellow-500/10 border-yellow-500/30 text-yellow-700 dark:text-yellow-400",
       )}
     >
       {isCritical ? (

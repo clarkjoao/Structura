@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { NodeResizer, type NodeProps } from "@xyflow/react";
+import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useComponentIcon } from "@/features/diagram";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
@@ -14,12 +14,12 @@ import { usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
 
 const DEFAULT_OPACITY = 10;
 
-export interface PanelNodeData {
+export type PanelNodeData = {
   elementId: string;
   name: string;
   description?: string;
   panelKind?: string;
-  
+
   awsIconName?: string;
   panelColor?: string;
   panelOpacity?: number;
@@ -27,7 +27,7 @@ export interface PanelNodeData {
   isSelected: boolean;
   isHighlighted?: boolean;
   isDragTarget?: boolean;
-  
+
   isUnparentCandidate?: boolean;
   collapsed?: boolean;
   childCount?: number;
@@ -37,7 +37,7 @@ export interface PanelNodeData {
     a: { name: string; color: string };
     b: { name: string; color: string };
   };
-}
+};
 
 function colorWithAlpha(color: string, alpha: number): string {
   if (color.startsWith("#")) {
@@ -54,21 +54,21 @@ function colorWithAlpha(color: string, alpha: number): string {
   return color;
 }
 
-const UNPARENT_BORDER = "hsl(25 95% 53%)"; 
+const UNPARENT_BORDER = "hsl(25 95% 53%)";
 
-const PanelNode = memo(({ data, selected }: NodeProps) => {
+const PanelNode = memo(({ data: d, selected }: NodeProps<Node<PanelNodeData>>) => {
   const { t } = useTranslation();
-  const d = data as unknown as PanelNodeData;
   const customDiagramIcon = useComponentIcon(d.elementId);
   const { highlightedNodeIds } = useHandleHighlight();
-  const kindDef = getPanelKindDef(d.panelKind as import("@/features/diagram").PanelKind | undefined);
+  const kindDef = getPanelKindDef(
+    d.panelKind as import("@/features/diagram").PanelKind | undefined,
+  );
   const color = d.panelColor || kindDef.defaultColor;
   const useAwsIcon = d.awsIconName ?? kindDef.awsIconName;
   const Icon = kindDef.icon;
   const opacity = d.panelOpacity ?? DEFAULT_OPACITY;
   const isSelected = selected || d.isSelected;
-  const isHighlighted =
-    (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
+  const isHighlighted = (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
   const isActive = isSelected || isHighlighted;
   const isDragTarget = d.isDragTarget;
   const isUnparentCandidate = d.isUnparentCandidate ?? false;
@@ -108,12 +108,8 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
             style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
           />
         )}
-        {activePeer && (
-          <CollabPeerPresence activePeer={activePeer} roundedClassName="rounded-lg" />
-        )}
-        {d.compareBadges && (
-          <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
-        )}
+        {activePeer && <CollabPeerPresence activePeer={activePeer} roundedClassName="rounded-lg" />}
+        {d.compareBadges && <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
         {!d.compareBadges && d.sceneBadge && (
           <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
         )}
@@ -132,14 +128,19 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
           <span className="text-sm font-semibold text-foreground truncate block">
             {d.name || t("panelNode.defaultName")}
           </span>
-        <span className="text-[8px] text-muted-foreground text-nowrap truncate">
-          {d?.panelKind !== "default" ? `${kindDef.label}` :  ""}{d?.panelKind !== "default" ? " - " : ""}{t("panelNode.childElements", { count: childCount })}
+          <span className="text-[8px] text-muted-foreground text-nowrap truncate">
+            {d?.panelKind !== "default" ? `${kindDef.label}` : ""}
+            {d?.panelKind !== "default" ? " - " : ""}
+            {t("panelNode.childElements", { count: childCount })}
           </span>
         </div>
         {onToggle && (
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onToggle(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggle();
+            }}
             aria-label={t("panelNode.expandAria")}
             aria-expanded={false}
             className="shrink-0 p-1 rounded hover:bg-black/10 text-muted-foreground hover:text-foreground"
@@ -175,12 +176,8 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
             style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
           />
         )}
-        {activePeer && (
-          <CollabPeerPresence activePeer={activePeer} roundedClassName="rounded-xl" />
-        )}
-        {d.compareBadges && (
-          <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
-        )}
+        {activePeer && <CollabPeerPresence activePeer={activePeer} roundedClassName="rounded-xl" />}
+        {d.compareBadges && <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
         {!d.compareBadges && d.sceneBadge && (
           <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
         )}
@@ -204,7 +201,7 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
           )}
           <div className="min-w-0 flex-1">
             <span className="text-sm font-semibold text-foreground truncate block">
-              {d?.panelKind !== "default" ? `${kindDef.label} - ${d.name}` :  d.name}
+              {d?.panelKind !== "default" ? `${kindDef.label} - ${d.name}` : d.name}
             </span>
             {d.description && (
               <span className="text-xs text-muted-foreground line-clamp-1 block">
@@ -215,7 +212,10 @@ const PanelNode = memo(({ data, selected }: NodeProps) => {
           {onToggle && (
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); onToggle(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggle();
+              }}
               aria-label={t("panelNode.collapseAria")}
               aria-expanded={true}
               className="shrink-0 p-1 rounded hover:bg-black/10 text-muted-foreground hover:text-foreground"

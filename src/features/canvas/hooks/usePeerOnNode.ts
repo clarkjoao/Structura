@@ -1,7 +1,6 @@
 import { useCollabStore } from "@/features/collaboration";
 import type { PeerState } from "@/features/collaboration";
 
-
 export function usePeerOnNode(nodeId: string): PeerState | null {
   return useCollabStore((state) => {
     const peers = state.session?.peers;

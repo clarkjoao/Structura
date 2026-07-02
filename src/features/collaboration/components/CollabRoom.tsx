@@ -1,9 +1,4 @@
-import {
-  useCallback,
-  useRef,
-  useState,
-  type PointerEvent as ReactPointerEvent,
-} from "react";
+import { useCallback, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { Loader2, WifiOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
@@ -20,14 +15,8 @@ import { CollabRoomToolbar } from "./CollabRoomToolbar";
 function CollabRoomInner() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const {
-    session,
-    isReady,
-    status,
-    sessionClosedByHost,
-    hostDisconnected,
-    updateCursor,
-  } = useCollab();
+  const { session, isReady, status, sessionClosedByHost, hostDisconnected, updateCursor } =
+    useCollab();
   const { importDiagram } = useDiagramActions();
   const diagram = useActiveDiagram();
   const diagramExists = Boolean(diagram);

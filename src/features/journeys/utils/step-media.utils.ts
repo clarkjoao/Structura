@@ -14,9 +14,7 @@ export function sanitizeJourneyImageSrc(src: string): string | null {
   return trimmed;
 }
 
-export type SafeJourneyVisual =
-  | { kind: "svg"; html: string }
-  | { kind: "image"; src: string };
+export type SafeJourneyVisual = { kind: "svg"; html: string } | { kind: "image"; src: string };
 
 /** Conteúdo visual seguro para render (SVG sanitizado ou imagem permitida). */
 export function getSafeJourneyVisual(step: JourneyStep): SafeJourneyVisual | null {

@@ -1,12 +1,5 @@
 export type LLMErrorKind =
-  | "auth"
-  | "rate_limit"
-  | "cors"
-  | "network"
-  | "model"
-  | "server"
-  | "timeout"
-  | "unknown";
+  "auth" | "rate_limit" | "cors" | "network" | "model" | "server" | "timeout" | "unknown";
 
 export class LLMProviderError extends Error {
   constructor(

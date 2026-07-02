@@ -54,8 +54,7 @@ import { VisualStateOverlay } from "./VisualStateOverlay";
 const journeyEdgeTypes = { c4: CustomEdge, smoothstep: SmoothStepEdge };
 
 const emptyStateDotBackground: CSSProperties = {
-  backgroundImage:
-    "radial-gradient(hsl(var(--border)) 1px, transparent 1px)",
+  backgroundImage: "radial-gradient(hsl(var(--border)) 1px, transparent 1px)",
   backgroundSize: "18px 18px",
 };
 
@@ -97,7 +96,7 @@ function JourneyEditorPlaybackFitView({
   isRecording,
   activeFlow,
   currentStepId,
-}: JourneyEditorPlaybackFitViewProps) {
+}: JourneyEditorPlaybackFitViewProps): null {
   const { fitView, getNode, getEdge } = useReactFlow();
 
   useEffect(() => {
@@ -133,16 +132,7 @@ function JourneyEditorPlaybackFitView({
         }
       }
     }
-  }, [
-    activeFlow,
-    currentStepId,
-    diagramId,
-    fitView,
-    getEdge,
-    getNode,
-    isPlaying,
-    isRecording,
-  ]);
+  }, [activeFlow, currentStepId, diagramId, fitView, getEdge, getNode, isPlaying, isRecording]);
 
   return null;
 }
@@ -151,9 +141,7 @@ interface JourneyEditorDiagramFitViewProps {
   diagramId: string;
 }
 
-function JourneyEditorDiagramFitView({
-  diagramId,
-}: JourneyEditorDiagramFitViewProps) {
+function JourneyEditorDiagramFitView({ diagramId }: JourneyEditorDiagramFitViewProps): null {
   const { fitView } = useReactFlow();
   const prevDiagramIdRef = useRef<string | null>(null);
 
@@ -181,10 +169,7 @@ function JourneyEditorNoStepEmptyState() {
       className="flex h-full w-full flex-col items-center justify-center gap-3 bg-muted/20 px-6 text-center"
       style={emptyStateDotBackground}
     >
-      <GitBranch
-        className="h-12 w-12 shrink-0 text-muted-foreground/40"
-        aria-hidden
-      />
+      <GitBranch className="h-12 w-12 shrink-0 text-muted-foreground/40" aria-hidden />
       <p className="max-w-sm text-base font-medium text-muted-foreground">
         {t("journeys.editor.emptyStateTitle")}
       </p>
@@ -211,23 +196,15 @@ function JourneyEditorCanvasInner({
     [diagram],
   );
 
-  const {
-    isPlaying,
-    activeFlow,
-    currentStepId,
-    flowHighlight,
-    recordingInfo,
-    activeStep,
-  } = useFlowState({ flows: diagramFlows });
+  const { isPlaying, activeFlow, currentStepId, flowHighlight, recordingInfo, activeStep } =
+    useFlowState({ flows: diagramFlows });
 
   const isRecording = flowMode.isRecording;
 
   const flowVisuals = useMemo((): JourneyEditorCanvasFlowVisuals | null => {
     if (!diagram) return null;
-    const recordingThisDiagram =
-      isRecording && diagram.id === activeDiagramIdStore;
-    const playingThisDiagram =
-      isPlaying && activeFlow?.diagramId === diagram.id;
+    const recordingThisDiagram = isRecording && diagram.id === activeDiagramIdStore;
+    const playingThisDiagram = isPlaying && activeFlow?.diagramId === diagram.id;
     if (!recordingThisDiagram && !playingThisDiagram) return null;
     return {
       isPlaying: playingThisDiagram,
@@ -251,12 +228,7 @@ function JourneyEditorCanvasInner({
 
   const nodes = useMemo(() => {
     if (!diagram) return [];
-    return buildJourneyEditorNodes(
-      diagram,
-      null,
-      diagramsRecord,
-      flowVisuals,
-    );
+    return buildJourneyEditorNodes(diagram, null, diagramsRecord, flowVisuals);
   }, [diagramsRecord, diagram, flowVisuals]);
 
   const edges = useMemo(() => {
@@ -287,8 +259,7 @@ function JourneyEditorCanvasInner({
 
   const handleEdgeClick = useCallback(
     (_: ReactMouseEvent, edge: Edge) => {
-      const recordingThisDiagram =
-        isRecording && diagram?.id === activeDiagramIdStore;
+      const recordingThisDiagram = isRecording && diagram?.id === activeDiagramIdStore;
       if (recordingThisDiagram) {
         flowMode.onRecordEdgeClick(edge.id, edge.sourceHandle ?? undefined);
       }
@@ -299,9 +270,7 @@ function JourneyEditorCanvasInner({
   if (!diagramId || !diagram) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-muted/20">
-        <p className="text-sm text-muted-foreground">
-          {t("journeys.editor.selectDiagram")}
-        </p>
+        <p className="text-sm text-muted-foreground">{t("journeys.editor.selectDiagram")}</p>
       </div>
     );
   }
@@ -312,8 +281,7 @@ function JourneyEditorCanvasInner({
     activeFlow.diagramId === diagramId &&
     currentStepId !== null;
 
-  const showRecordingOverlay =
-    isRecording && diagram.id === activeDiagramIdStore;
+  const showRecordingOverlay = isRecording && diagram.id === activeDiagramIdStore;
 
   const topCanvasHint = showFlowNavigator
     ? null
@@ -403,16 +371,9 @@ export function JourneyEditorCanvas({
       <ReactFlowProvider>
         <JourneyEditorCanvasInner {...innerProps} />
       </ReactFlowProvider>
-      {stepDescriptionProps ? (
-        <StepDescriptionBadge {...stepDescriptionProps} />
-      ) : null}
-      {showVisualOverlay &&
-      selectedStep &&
-      stepHasVisualMedia(selectedStep) ? (
-        <VisualStateOverlay
-          step={selectedStep}
-          onClose={onCloseVisualOverlay ?? (() => {})}
-        />
+      {stepDescriptionProps ? <StepDescriptionBadge {...stepDescriptionProps} /> : null}
+      {showVisualOverlay && selectedStep && stepHasVisualMedia(selectedStep) ? (
+        <VisualStateOverlay step={selectedStep} onClose={onCloseVisualOverlay ?? (() => {})} />
       ) : null}
     </div>
   );

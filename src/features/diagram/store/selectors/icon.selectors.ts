@@ -14,14 +14,10 @@ function sortIconDefinitions(icons: IconDefinition[]): IconDefinition[] {
 }
 
 export const useIconLibrary = () =>
-  useIconStore(
-    useShallow((state) => sortIconDefinitions(Object.values(state.icons))),
-  );
+  useIconStore(useShallow((state) => sortIconDefinitions(Object.values(state.icons))));
 
 export const useIconById = (iconId: string) =>
-  useIconStore(
-    useShallow((state) => (iconId ? (state.icons[iconId] ?? null) : null)),
-  );
+  useIconStore(useShallow((state) => (iconId ? (state.icons[iconId] ?? null) : null)));
 
 export const useComponentIcon = (componentId: string): IconDefinition | null => {
   const customIconId = useDiagramStore((state) => {

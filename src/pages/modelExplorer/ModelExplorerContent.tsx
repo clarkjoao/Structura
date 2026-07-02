@@ -52,7 +52,7 @@ function ReactFlowInstanceBridge({
   onReady,
 }: {
   onReady: (instance: ReactFlowInstance) => void;
-}) {
+}): null {
   const reactFlowInstance = useReactFlow();
   useEffect(() => {
     onReady(reactFlowInstance);
@@ -104,7 +104,6 @@ export function ModelExplorerContent({
 
   const {
     isRecording,
-    isIdle,
     isPlaying,
     currentStep,
     isCondition,
@@ -241,9 +240,7 @@ export function ModelExplorerContent({
       const nodeElement = target?.closest?.(".react-flow__node");
       const edgeElement = target?.closest?.(".react-flow__edge");
       const activeId =
-        nodeElement?.getAttribute("data-id") ??
-        edgeElement?.getAttribute("data-id") ??
-        null;
+        nodeElement?.getAttribute("data-id") ?? edgeElement?.getAttribute("data-id") ?? null;
       updateSelectedNode(activeId);
     },
     [session, updateCursor, updateSelectedNode],
@@ -266,110 +263,119 @@ export function ModelExplorerContent({
     <>
       {!focusMode ? (
         <div className="border-b border-border bg-card shrink-0 mt-16">
-        <div className="container flex items-center justify-between h-12">
-          <div className="flex items-center gap-3 text-sm">
-            <button
-              type="button"
-              disabled={canvasInteractionLocked}
-              onClick={() => setDiagramSidebarOpen((open) => !open)}
-              className={`rounded-md p-1 text-muted-foreground transition-colors ${
-                canvasInteractionLocked
-                  ? "opacity-50"
-                  : "hover:bg-muted hover:text-foreground"
-              }`}
-              title={
-                canvasInteractionLocked
-                  ? t("diagramNav.unavailableWhileRecordingOrPlayback")
-                  : t("diagramNav.openSidebar")
-              }
-              aria-expanded={diagramSidebarOpen}
-              aria-label={t("diagramNav.openSidebar")}
-            >
-              <FolderTree className="h-4 w-4" />
-            </button>
-            <Link to={backHref} className="text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-            {diagram?.domain && <span className="text-muted-foreground">{diagram.domain}</span>}
-            <span className="font-medium">{diagram?.name}</span>
-            {activeFlow && (
-              <span className="text-[10px] font-mono text-primary bg-primary/10 rounded px-1.5 py-0.5">
-                ▶ {activeFlow.name}{activeFlow.description ? ` · "${activeFlow.description}"` : ""}
-              </span>
-            )}
-            {isRecording && (
-              <span className={`text-[10px] font-mono rounded px-1.5 py-0.5 animate-pulse ${
-                editingFlowId ? "text-amber-400 bg-amber-400/10" : "text-red-400 bg-red-400/10"
-              }`}>
-                {editingFlowId ? t("flows.recordingEdit") : t("flows.recordingRec")}
-              </span>
-            )}
+          <div className="container flex items-center justify-between h-12">
+            <div className="flex items-center gap-3 text-sm">
+              <button
+                type="button"
+                disabled={canvasInteractionLocked}
+                onClick={() => setDiagramSidebarOpen((open) => !open)}
+                className={`rounded-md p-1 text-muted-foreground transition-colors ${
+                  canvasInteractionLocked ? "opacity-50" : "hover:bg-muted hover:text-foreground"
+                }`}
+                title={
+                  canvasInteractionLocked
+                    ? t("diagramNav.unavailableWhileRecordingOrPlayback")
+                    : t("diagramNav.openSidebar")
+                }
+                aria-expanded={diagramSidebarOpen}
+                aria-label={t("diagramNav.openSidebar")}
+              >
+                <FolderTree className="h-4 w-4" />
+              </button>
+              <Link
+                to={backHref}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Link>
+              {diagram?.domain && <span className="text-muted-foreground">{diagram.domain}</span>}
+              <span className="font-medium">{diagram?.name}</span>
+              {activeFlow && (
+                <span className="text-[10px] font-mono text-primary bg-primary/10 rounded px-1.5 py-0.5">
+                  ▶ {activeFlow.name}
+                  {activeFlow.description ? ` · "${activeFlow.description}"` : ""}
+                </span>
+              )}
+              {isRecording && (
+                <span
+                  className={`text-[10px] font-mono rounded px-1.5 py-0.5 animate-pulse ${
+                    editingFlowId ? "text-amber-400 bg-amber-400/10" : "text-red-400 bg-red-400/10"
+                  }`}
+                >
+                  {editingFlowId ? t("flows.recordingEdit") : t("flows.recordingRec")}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <SaveStatusIndicator />
+              <CollabToolbar
+                session={session}
+                isReady={isReady}
+                collabUrl={collabUrl}
+                peerLimitReached={peerLimitReached}
+                onStartCollab={interaction.canStartCollab ? onStartCollab : undefined}
+                onEndCollab={handleEndCollab}
+              />
+              <button
+                onClick={() => {
+                  if (flowButtonLocked) return;
+                  setShowFlows(!showFlows);
+                }}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                  showFlows
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground border border-transparent hover:border-border"
+                } ${flowButtonLocked ? "opacity-50 pointer-events-none" : ""}`}
+                title={!interaction.canUseFlow ? t("flows.unavailableDuringCollab") : undefined}
+              >
+                <GitBranch className="h-3.5 w-3.5" /> {t("flows.panelTitle")}
+              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all"
+                    aria-label={t("canvasToolbar.moreMenuAria")}
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[10rem]">
+                  <DropdownMenuItem
+                    disabled={canvasInteractionLocked}
+                    className="gap-2 text-xs font-medium cursor-pointer"
+                    onClick={() => setShareModalOpen(true)}
+                  >
+                    <Share2 className="h-3.5 w-3.5 shrink-0" />
+                    {t("share.button")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={canvasInteractionLocked}
+                    className="gap-2 text-xs font-medium cursor-pointer"
+                    onClick={() => setExportModalOpen(true)}
+                  >
+                    <FileDown className="h-3.5 w-3.5 shrink-0" size={14} />
+                    {t("export.hub.toolbarButton")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="gap-2 text-xs font-medium cursor-pointer"
+                    onClick={onToggleFocusMode}
+                  >
+                    <Focus className="h-3.5 w-3.5 shrink-0" />
+                    {t("canvasToolbar.enterFocusMode")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={canvasInteractionLocked}
+                    className="gap-2 text-xs font-medium cursor-pointer"
+                    onClick={() => setShowShortcuts(true)}
+                  >
+                    <CircleHelp className="h-3.5 w-3.5 shrink-0" />
+                    {t("flows.shortcuts")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <SaveStatusIndicator />
-            <CollabToolbar
-              session={session}
-              isReady={isReady}
-              collabUrl={collabUrl}
-              peerLimitReached={peerLimitReached}
-              onStartCollab={interaction.canStartCollab ? onStartCollab : undefined}
-              onEndCollab={handleEndCollab}
-            />
-            <button
-              onClick={() => { if (flowButtonLocked) return; setShowFlows(!showFlows); }}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
-                showFlows ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground border border-transparent hover:border-border"
-              } ${flowButtonLocked ? "opacity-50 pointer-events-none" : ""}`}
-              title={!interaction.canUseFlow ? t("flows.unavailableDuringCollab") : undefined}
-            >
-              <GitBranch className="h-3.5 w-3.5" /> {t("flows.panelTitle")}
-            </button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground border border-transparent hover:border-border transition-all"
-                  aria-label={t("canvasToolbar.moreMenuAria")}
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-[10rem]">
-                <DropdownMenuItem
-                  disabled={canvasInteractionLocked}
-                  className="gap-2 text-xs font-medium cursor-pointer"
-                  onClick={() => setShareModalOpen(true)}
-                >
-                  <Share2 className="h-3.5 w-3.5 shrink-0" />
-                  {t("share.button")}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={canvasInteractionLocked}
-                  className="gap-2 text-xs font-medium cursor-pointer"
-                  onClick={() => setExportModalOpen(true)}
-                >
-                  <FileDown className="h-3.5 w-3.5 shrink-0" size={14} />
-                  {t("export.hub.toolbarButton")}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="gap-2 text-xs font-medium cursor-pointer"
-                  onClick={onToggleFocusMode}
-                >
-                  <Focus className="h-3.5 w-3.5 shrink-0" />
-                  {t("canvasToolbar.enterFocusMode")}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={canvasInteractionLocked}
-                  className="gap-2 text-xs font-medium cursor-pointer"
-                  onClick={() => setShowShortcuts(true)}
-                >
-                  <CircleHelp className="h-3.5 w-3.5 shrink-0" />
-                  {t("flows.shortcuts")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
         </div>
       ) : null}
       <div className="flex flex-1 flex-col overflow-hidden min-h-0">
@@ -450,9 +456,7 @@ export function ModelExplorerContent({
               isViewingCoverage={isViewingCoverage}
               onToggleCoverage={() => setIsViewingCoverage((viewing) => !viewing)}
               panelActionsLocked={
-                compareModeBlocksRecorder ||
-                !interaction.canUseFlow ||
-                journeyPlaybackActive
+                compareModeBlocksRecorder || !interaction.canUseFlow || journeyPlaybackActive
               }
               panelActionsLockedTitle={t("diagramNav.unavailableWhileRecordingOrPlayback")}
             />

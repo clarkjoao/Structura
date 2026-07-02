@@ -138,21 +138,20 @@ export const AZURE_CATEGORIES = [
   {
     id: "azure-media" as const,
     name: "Media",
-    services: [
-      { id: "mediaservices", name: "Media Services", iconName: "AzMediaServices" },
-    ],
+    services: [{ id: "mediaservices", name: "Media Services", iconName: "AzMediaServices" }],
   },
   {
     id: "azure-general" as const,
     name: "General",
-    services: [
-      { id: "azure", name: "Azure", iconName: "Azure" },
-    ],
+    services: [{ id: "azure", name: "Azure", iconName: "Azure" }],
   },
 ] as const;
 
 const _categoryMap = new Map<string, (typeof AZURE_CATEGORIES)[number]>();
-const _serviceMap = new Map<string, { id: string; name: string; iconName: string; categoryId: string }>();
+const _serviceMap = new Map<
+  string,
+  { id: string; name: string; iconName: string; categoryId: string }
+>();
 
 for (const cat of AZURE_CATEGORIES) {
   _categoryMap.set(cat.id, cat);
@@ -166,5 +165,4 @@ export const AZURE_SERVICE_MAP = _serviceMap;
 
 export const AZURE_CATEGORY_ID_GENERAL = "azure-general" as const satisfies AzureCategoryId;
 
-export const isAzureType = (type: string): type is AzureCategoryId =>
-  type.startsWith("azure-");
+export const isAzureType = (type: string): type is AzureCategoryId => type.startsWith("azure-");

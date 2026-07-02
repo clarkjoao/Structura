@@ -29,7 +29,9 @@ export const apiGroupDescriptor: NodeTypeDescriptor = {
           !ctx.isRecording &&
           ctx.selectedNodeIds.size > 0 &&
           !ctx.selectedNodeIds.has(comp.id)),
-      onAddEndpoint: ctx.onAddEndpointToGroup ? () => ctx.onAddEndpointToGroup!(comp.id) : undefined,
+      onAddEndpoint: ctx.onAddEndpointToGroup
+        ? () => ctx.onAddEndpointToGroup!(comp.id)
+        : undefined,
       ...sceneBadgePropsForNode(ctx, comp.id),
     };
   },

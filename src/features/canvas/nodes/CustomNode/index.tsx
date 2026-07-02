@@ -1,6 +1,6 @@
 import { memo } from "react";
 import type { CSSProperties, ReactNode } from "react";
-import { Position, type NodeProps } from "@xyflow/react";
+import { Position, type Node, type NodeProps } from "@xyflow/react";
 import { useCollabHighlight } from "@/features/collaboration";
 import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPresence";
 import { usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
@@ -21,28 +21,20 @@ import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
 import { useCollab } from "@/features/collaboration";
 
-function useNodeState(data: NodeProps["data"], selected: boolean | undefined) {
-  const d = data as unknown as NodeData;
+function useNodeState(d: NodeData, selected: boolean | undefined) {
   const { highlightedNodeIds } = useHandleHighlight();
   const isHighlighted = highlightedNodeIds.has(d.elementId);
   const isActive = selected || d.isSelected || d.isHighlighted || isHighlighted;
   const controlsDisabled = !!d.controlsDisabled;
 
-  const handlePointer =
-    controlsDisabled
-      ? { pointerEvents: "none" as const }
-      : d.isRecording || !!d.activeHandleId
-        ? { pointerEvents: "all" as const }
-        : undefined;
+  const handlePointer = controlsDisabled
+    ? { pointerEvents: "none" as const }
+    : d.isRecording || !!d.activeHandleId
+      ? { pointerEvents: "all" as const }
+      : undefined;
 
-  const incomingCount = Math.min(
-    MAX_HANDLES,
-    Math.max(MIN_HANDLES, d.incomingCount ?? 1),
-  );
-  const outgoingCount = Math.min(
-    MAX_HANDLES,
-    Math.max(MIN_HANDLES, d.outgoingCount ?? 1),
-  );
+  const incomingCount = Math.min(MAX_HANDLES, Math.max(MIN_HANDLES, d.incomingCount ?? 1));
+  const outgoingCount = Math.min(MAX_HANDLES, Math.max(MIN_HANDLES, d.outgoingCount ?? 1));
 
   return { d, isActive, controlsDisabled, handlePointer, incomingCount, outgoingCount };
 }
@@ -55,7 +47,13 @@ interface NodeHandlesProps {
   controlsDisabled: boolean;
 }
 
-const NodeHandles = ({ d, incomingCount, outgoingCount, handlePointer, controlsDisabled }: NodeHandlesProps) => {
+const NodeHandles = ({
+  d,
+  incomingCount,
+  outgoingCount,
+  handlePointer,
+  controlsDisabled,
+}: NodeHandlesProps) => {
   const incomingIds = d.handleOrder?.incoming ?? [];
   const outgoingIds = d.handleOrder?.outgoing ?? [];
 
@@ -101,22 +99,18 @@ const NodeActions = ({ d, controlsDisabled, colorClass, customColor }: NodeActio
         />
       )}
       {hasEmbed && (
-        <EmbedButton
-          elementId={d.elementId}
-          onEmbed={d.onEmbed}
-          disabled={controlsDisabled}
-        />
+        <EmbedButton elementId={d.elementId} onEmbed={d.onEmbed} disabled={controlsDisabled} />
       )}
     </>
   );
 };
 
-const CardNode = memo(({ data, selected }: NodeProps) => {
+const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
   const { t } = useTranslation();
   const { d, isActive, controlsDisabled, handlePointer, incomingCount, outgoingCount } =
     useNodeState(data, selected);
-  const {isGuest} = useCollab();
-  
+  const { isGuest } = useCollab();
+
   const customDiagramIcon = useComponentIcon(d.elementId);
   const collabHighlight = useCollabHighlight(d.elementId);
   const activePeer = usePeerOnNode(d.elementId);
@@ -130,9 +124,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
   let actionColorClass: string;
 
   if (customDiagramIcon) {
-    icon = (
-      <CustomIconRenderer icon={customDiagramIcon} size={24} className="shrink-0" />
-    );
+    icon = <CustomIconRenderer icon={customDiagramIcon} size={24} className="shrink-0" />;
     if (cloudProvider) {
       const svc = d.awsService ? cloudProvider.getService(d.awsService) : undefined;
       const cat = cloudProvider.getCategoryForType(d.type);
@@ -153,13 +145,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
     const cat = cloudProvider.getCategoryForType(d.type);
     borderClass = cloudProvider.getCategoryStyle(d.type).borderClass;
     borderStyle = undefined;
-    icon = (
-      <CloudIcon
-        componentType={d.type}
-        serviceIconName={svc?.iconName}
-        size={20}
-      />
-    );
+    icon = <CloudIcon componentType={d.type} serviceIconName={svc?.iconName} size={20} />;
     technologyLabel = d.technology ?? cat?.name ?? svc?.name;
     actionColorClass = "text-primary";
   } else {
@@ -197,9 +183,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
         />
       )}
       {activePeer && <CollabPeerPresence activePeer={activePeer} roundedClassName="rounded-lg" />}
-      {d.compareBadges && (
-        <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
-      )}
+      {d.compareBadges && <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
       {!d.compareBadges && d.sceneBadge && (
         <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
       )}
@@ -227,9 +211,7 @@ const CardNode = memo(({ data, selected }: NodeProps) => {
       <div className="px-3 py-2.5">
         <div className="flex items-center gap-2 mb-1.5">
           {icon}
-          <span className="text-sm font-bold text-foreground leading-tight truncate">
-            {d.name}
-          </span>
+          <span className="text-sm font-bold text-foreground leading-tight truncate">{d.name}</span>
         </div>
         {d.description && (
           <p className="text-xs text-muted-foreground leading-snug line-clamp-2 mb-1.5">

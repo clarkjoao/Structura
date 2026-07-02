@@ -27,11 +27,13 @@ This document reflects the current direction of Structura. Items are subject to 
 ## 🚧 In Progress
 
 ### Performance
+
 - [ ] Complete `useCanvasNodes.ts` fine-grained selector refactor
 - [ ] Remove `structuredClone` from the hot undo/redo path in `history.slice.ts`
 - [ ] Trailing throttle on resize layout commits
 
 ### Persistence Hardening
+
 - [ ] Phase 2: Broken architectural contracts (store bypasses, missing `defaultStorage` calls)
 - [ ] Phase 3: Incomplete undo/redo across scenes, flows, services, folders, and edge layouts
 - [ ] Phase 4: Sensitive data exposure audit, low-risk edge cases
@@ -41,20 +43,24 @@ This document reflects the current direction of Structura. Items are subject to 
 ## 📋 Planned
 
 ### Workspace & Organization
+
 - [ ] Workspace-level organization for products with many diagrams
 - [ ] Diagram search and filtering
 
 ### Diagramming
+
 - [ ] Alignment tools (snap to grid, distribute, align edges) — coordinate space fix implemented, pending validation
 - [ ] Structurizr DSL import/export
 - [ ] Code-level (C4 Level 4) diagram support
 
 ### Developer Experience
+
 - [ ] Increase unit test coverage to 80%+
 - [ ] E2E test coverage for critical flows (undo/redo, persistence, drag-to-parent)
 - [ ] Storybook for component library
 
 ### Collaboration _(experimental)_
+
 - [ ] Real-time collaboration via Yjs/WebRTC
 
 ---
@@ -65,4 +71,4 @@ Structura follows [Semantic Versioning](https://semver.org/). Breaking changes t
 
 ---
 
-*Last updated: May 2026*
+_Last updated: May 2026_

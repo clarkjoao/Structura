@@ -1,15 +1,19 @@
-
-
-import { useDiagramStore, VIEWPORT_DEBOUNCE_MS, PERSIST_KEY, type Diagram, type IconDefinition } from "@/features/diagram";
+import {
+  useDiagramStore,
+  VIEWPORT_DEBOUNCE_MS,
+  PERSIST_KEY,
+  type Diagram,
+  type IconDefinition,
+} from "@/features/diagram";
 import { useJourneyStore } from "@/features/journeys";
 import { fileSystemAdapter, type WorkspacePayload } from "./FileSystemAdapter";
 import { clearLocalStorageDiagramSyncTimestamp } from "./localStorageSyncTimestamp";
-import {
-  clearFolderSyncTimestamp,
-  recordFolderSyncSuccess,
-} from "./folderSyncTimestamp";
+import { clearFolderSyncTimestamp, recordFolderSyncSuccess } from "./folderSyncTimestamp";
 import { defaultStorage } from "./LocalStorageAdapter";
-import { useCustomComponentStore, type CustomComponentTemplate } from "@/features/custom-components";
+import {
+  useCustomComponentStore,
+  type CustomComponentTemplate,
+} from "@/features/custom-components";
 import { useIconStore } from "@/features/icons";
 import { mergeCustomComponentTemplates } from "./merge-custom-component-templates";
 import { diagramStoreWorkspaceEqualsForFolderSync } from "./workspace-folder-sync-equality";
@@ -31,7 +35,7 @@ function latestMsFromStore(state: DiagramStoreState): number {
 }
 
 function latestMsFromWorkspacePayload(workspace: WorkspacePayload): number {
-  let max = Date.parse(workspace.manifestUpdatedAt);
+  let max = workspace.manifestUpdatedAt ? Date.parse(workspace.manifestUpdatedAt) : 0;
   for (const diagram of Object.values(workspace.diagrams)) {
     max = Math.max(max, parseTimestampMs(diagram.updatedAt));
   }
@@ -83,10 +87,7 @@ export function hydrateIconStoreFromWorkspace(workspace: WorkspaceIconSource): W
   }
 }
 
-
-export async function flushWorkspaceToConnectedFolder(
-  state: DiagramStoreState,
-): Promise<boolean> {
+export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState): Promise<boolean> {
   if (!fileSystemAdapter.isConnected) return false;
 
   fileSystemAdapter.setFolders(state.folders);
@@ -132,22 +133,16 @@ export async function flushWorkspaceToConnectedFolder(
   return true;
 }
 
-
-
 let _reconnected = false;
 let _reconnecting: Promise<boolean> | null = null;
-
 
 export function hasReconnected(): boolean {
   return _reconnected;
 }
 
-
 export function getReconnectPromise(): Promise<boolean> | null {
   return _reconnecting;
 }
-
-
 
 async function clearLocalCache(): Promise<void> {
   await defaultStorage.delete(PERSIST_KEY);
@@ -197,9 +192,7 @@ async function doReconnect(): Promise<boolean> {
         past: [],
         future: [],
       }));
-      fileSystemAdapter.setFolders(
-        workspace.folders as unknown as DiagramStoreState["folders"],
-      );
+      fileSystemAdapter.setFolders(workspace.folders as unknown as DiagramStoreState["folders"]);
 
       const workspaceTemplates: Record<string, CustomComponentTemplate> | undefined =
         workspace.customComponentTemplates;
@@ -226,15 +219,12 @@ async function doReconnect(): Promise<boolean> {
   }
 }
 
-
 export function bootFileSystem(): Promise<boolean> {
   if (!_reconnecting) {
     _reconnecting = doReconnect();
   }
   return _reconnecting;
 }
-
-
 
 let _syncUnsub: (() => void) | null = null;
 let _syncTimer: ReturnType<typeof setTimeout> | null = null;
@@ -245,7 +235,6 @@ let lastFlushedPathSegments: Record<string, string[]> = {};
 /** Skips redundant structura-manifest.json writes during incremental sync (reset in stopFileSystemSync). */
 let lastSyncedManifestFingerprint = "";
 let lastSyncedJourneysJson = "";
-
 
 export function startFileSystemSync(): void {
   stopFileSystemSync();
@@ -310,7 +299,9 @@ export function startFileSystemSync(): void {
             ([id, diagram]) => movedIds.has(id) || diagram !== prevDiagrams[id],
           );
           if (diagramsToWrite.length > 0) {
-            await Promise.all(diagramsToWrite.map(([, diagram]) => fileSystemAdapter.writeDiagram(diagram)));
+            await Promise.all(
+              diagramsToWrite.map(([, diagram]) => fileSystemAdapter.writeDiagram(diagram)),
+            );
             wroteSomething = true;
           }
 
@@ -391,7 +382,6 @@ export function startFileSystemSync(): void {
   };
 }
 
-
 export function stopFileSystemSync(): void {
   if (_syncUnsub) {
     _syncUnsub();
@@ -406,7 +396,6 @@ export function stopFileSystemSync(): void {
   lastFlushedPathSegments = {};
 }
 
-
 export function resetBootState(): void {
   _reconnected = false;
   _reconnecting = null;
@@ -416,7 +405,6 @@ export function resetBootState(): void {
 }
 
 export type ForceSaveToFolderResult = "ok" | "no_folder" | "error";
-
 
 export async function forceSaveToConnectedFolder(): Promise<ForceSaveToFolderResult> {
   if (!fileSystemAdapter.isConnected) return "no_folder";

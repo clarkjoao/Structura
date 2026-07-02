@@ -57,12 +57,10 @@ const ViewerCanvasContent = ({
         className="bg-background"
       >
         <Background variant={BackgroundVariant.Dots} gap={18} size={1.5} />
-       <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
+        <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
       </ReactFlow>
 
-      {showOpenInStructuraButton && (
-        <OpenInStructuraButton diagram={diagram} />
-      )}
+      {showOpenInStructuraButton && <OpenInStructuraButton diagram={diagram} />}
     </div>
   );
 };

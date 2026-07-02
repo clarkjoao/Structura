@@ -22,11 +22,7 @@ interface ImportModalProps {
   targetFolderId?: string | null;
 }
 
-export function ImportModal({
-  open,
-  onOpenChange,
-  targetFolderId,
-}: ImportModalProps) {
+export function ImportModal({ open, onOpenChange, targetFolderId }: ImportModalProps) {
   const { t } = useTranslation();
   const { importJsonText, importDslText } = useWorkspaceImport({
     targetFolderId,
@@ -44,8 +40,7 @@ export function ImportModal({
   const runImportForTab = useCallback(
     async (file: File) => {
       const text = await file.text();
-      const ok =
-        tab === "json" ? importJsonText(text) : importDslText(text);
+      const ok = tab === "json" ? importJsonText(text) : importDslText(text);
       if (ok) {
         onOpenChange(false);
       }
@@ -84,8 +79,7 @@ export function ImportModal({
     setIsDragging(false);
   }, []);
 
-  const acceptForTab =
-    tab === "json" ? ".json,application/json" : ".dsl,.txt";
+  const acceptForTab = tab === "json" ? ".json,application/json" : ".dsl,.txt";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -102,16 +96,12 @@ export function ImportModal({
         >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="json">{t("import.modal.jsonTab")}</TabsTrigger>
-            <TabsTrigger value="structurizr">
-              {t("import.modal.structurizrTab")}
-            </TabsTrigger>
+            <TabsTrigger value="structurizr">{t("import.modal.structurizrTab")}</TabsTrigger>
           </TabsList>
         </Tabs>
 
         <p className="mt-4 text-xs text-muted-foreground">
-          {tab === "json"
-            ? t("import.modal.jsonHint")
-            : t("import.modal.structurizrHint")}
+          {tab === "json" ? t("import.modal.jsonHint") : t("import.modal.structurizrHint")}
         </p>
 
         <button
@@ -122,15 +112,11 @@ export function ImportModal({
           onDragLeave={handleDragLeave}
           className={cn(
             "flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-colors",
-            isDragging
-              ? "border-primary bg-primary/5"
-              : "border-border hover:bg-muted/40",
+            isDragging ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40",
           )}
         >
           <Upload className="h-8 w-8 text-muted-foreground" aria-hidden />
-          <p className="text-sm text-muted-foreground">
-            {t("import.modal.dropzone")}
-          </p>
+          <p className="text-sm text-muted-foreground">{t("import.modal.dropzone")}</p>
           <span className="mt-1 rounded-md bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground">
             {t("import.modal.chooseFile")}
           </span>

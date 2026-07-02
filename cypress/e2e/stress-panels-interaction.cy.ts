@@ -19,8 +19,7 @@ describe("Stress Interaction: 500 elements — drag, select, undo", () => {
     const leaf = seed.leafNodeIds[0]!;
     cy.getNode(leaf).click({ force: true });
     cy.getNode(leaf).should(($el) => {
-      const selected =
-        $el.hasClass("selected") || $el.attr("aria-selected") === "true";
+      const selected = $el.hasClass("selected") || $el.attr("aria-selected") === "true";
       expect(selected, "node should show selection state").to.be.true;
     });
   });
@@ -29,9 +28,7 @@ describe("Stress Interaction: 500 elements — drag, select, undo", () => {
     cy.getPane().click({ force: true });
     cy.get(".react-flow__node", { timeout: 5000 }).then(($nodes) => {
       const stillSelected = $nodes.filter(
-        (_, el) =>
-          el.classList.contains("selected") ||
-          el.getAttribute("aria-selected") === "true",
+        (_, el) => el.classList.contains("selected") || el.getAttribute("aria-selected") === "true",
       );
       expect(stillSelected.length).to.eq(0);
     });
@@ -74,9 +71,7 @@ describe("Stress Interaction: 500 elements — drag, select, undo", () => {
     }
     cy.get(".react-flow__node").then(($nodes) => {
       const selected = $nodes.filter(
-        (_, el) =>
-          el.classList.contains("selected") ||
-          el.getAttribute("aria-selected") === "true",
+        (_, el) => el.classList.contains("selected") || el.getAttribute("aria-selected") === "true",
       );
       expect(selected.length).to.be.gte(2);
     });
@@ -94,9 +89,7 @@ describe("Stress Interaction: 500 elements — drag, select, undo", () => {
     }
     cy.get(".react-flow__node").then(($nodes) => {
       const selected = $nodes.filter(
-        (_, el) =>
-          el.classList.contains("selected") ||
-          el.getAttribute("aria-selected") === "true",
+        (_, el) => el.classList.contains("selected") || el.getAttribute("aria-selected") === "true",
       );
       expect(selected.length).to.be.gte(2);
     });

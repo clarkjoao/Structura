@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import { sceneBadgePropsForNode } from "./compare-node-badges";
 import type { NodeBuildContext } from "./types";
 
-
 function createMinimalNodeBuildContext(
   overrides: Partial<NodeBuildContext> = {},
 ): NodeBuildContext {

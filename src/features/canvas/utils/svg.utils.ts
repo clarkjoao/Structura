@@ -1,6 +1,4 @@
-
 export const SVG_MAX_BYTES = 500_000;
-
 
 export const SVG_MAX_DIMENSION = 2_000;
 
@@ -8,7 +6,6 @@ export interface SvgSizeValidationResult {
   valid: boolean;
   reason?: "too_large" | "dimension_exceeded";
 }
-
 
 export function validateSvgSize(
   svgString: string,
@@ -27,7 +24,10 @@ export function validateSvgSize(
       return { valid: true };
     }
 
-    const viewBoxParts = svgEl.getAttribute("viewBox")?.trim().split(/[\s,]+/);
+    const viewBoxParts = svgEl
+      .getAttribute("viewBox")
+      ?.trim()
+      .split(/[\s,]+/);
     if (viewBoxParts && viewBoxParts.length === 4) {
       const viewBoxWidth = parseFloat(viewBoxParts[2]!);
       const viewBoxHeight = parseFloat(viewBoxParts[3]!);
@@ -40,20 +40,14 @@ export function validateSvgSize(
     } else {
       const width = parseFloat(svgEl.getAttribute("width") ?? "0");
       const height = parseFloat(svgEl.getAttribute("height") ?? "0");
-      if (
-        (width > 0 && width > maxDimension) ||
-        (height > 0 && height > maxDimension)
-      ) {
+      if ((width > 0 && width > maxDimension) || (height > 0 && height > maxDimension)) {
         return { valid: false, reason: "dimension_exceeded" };
       }
     }
-  } catch {
-    
-  }
+  } catch {}
 
   return { valid: true };
 }
-
 
 export function normalizeSvgForStorage(svgContent: string): string {
   let result = svgContent;
@@ -64,7 +58,6 @@ export function normalizeSvgForStorage(svgContent: string): string {
 }
 
 const ICON_ID_ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789";
-
 
 export function generateIconId(): string {
   let suffix = "";

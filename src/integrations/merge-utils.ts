@@ -20,29 +20,22 @@ export function pickMoreCompleteString(a: string, b: string): string {
   return la > lb ? a : b;
 }
 
-
 export function normalizeRepoUrl(url: string | undefined): string {
   if (!url) return "";
   let normalized = url.trim().toLowerCase();
 
-  
   normalized = normalized.replace(/^git@([^:]+):/, "$1/");
 
   normalized = normalized.replace(/^(?:https?|ssh|git):\/\//, "");
-  
+
   normalized = normalized.replace(/^www\./, "");
 
-  
   normalized = normalized.replace(/\/+$/, "").replace(/\.git$/, "");
 
   return normalized;
 }
 
-
-export function repoUrlsMatch(
-  a: string | undefined,
-  b: string | undefined,
-): boolean {
+export function repoUrlsMatch(a: string | undefined, b: string | undefined): boolean {
   const na = normalizeRepoUrl(a);
   const nb = normalizeRepoUrl(b);
   return na !== "" && na === nb;

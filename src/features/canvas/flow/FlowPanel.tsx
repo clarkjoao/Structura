@@ -1,6 +1,17 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { X, Plus, Play, Trash2, Pencil, Copy, Check, Layers, BarChart2, FileInput } from "lucide-react";
+import {
+  X,
+  Plus,
+  Play,
+  Trash2,
+  Pencil,
+  Copy,
+  Check,
+  Layers,
+  BarChart2,
+  FileInput,
+} from "lucide-react";
 import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
 import {
   useFlows,
@@ -56,9 +67,7 @@ const FlowPanel = ({
   const components = useComponents();
   const connections = useConnections();
   const { removeFlow, addFlow, updateFlow } = useDiagramActions();
-  const importMermaidSequenceResult = useDiagramStore(
-    (state) => state.importMermaidSequenceResult,
-  );
+  const importMermaidSequenceResult = useDiagramStore((state) => state.importMermaidSequenceResult);
   const importDrawioResult = useDiagramStore((state) => state.importDrawioResult);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -66,7 +75,10 @@ const FlowPanel = ({
   const [showMermaidImport, setShowMermaidImport] = useState(false);
 
   const handlePlayWithValidation = (flow: Flow) => {
-    if (!diagram) { onPlay(flow); return; }
+    if (!diagram) {
+      onPlay(flow);
+      return;
+    }
     const broken = validateFlow(flow, diagram);
     if (broken.length > 0) {
       setPendingPlay({ flow, broken });
@@ -96,8 +108,13 @@ const FlowPanel = ({
     if (!activeDiagramId) return;
     const patch = buildFlowDuplicatePatch(flow, t("flowPanel.copyPrefix", { name: flow.name }));
     const newFlow = addFlow(activeDiagramId, patch.name, patch.mermaid, patch.steps);
+    if (!newFlow) return;
     if (patch.description || patch.tags?.length) {
-      updateFlow(newFlow.id, { description: patch.description, tags: patch.tags, entryStepId: patch.entryStepId });
+      updateFlow(newFlow.id, {
+        description: patch.description,
+        tags: patch.tags,
+        entryStepId: patch.entryStepId,
+      });
     }
   };
 
@@ -118,13 +135,7 @@ const FlowPanel = ({
       );
       setShowMermaidImport(false);
     },
-    [
-      activeDiagramId,
-      components,
-      connections,
-      importMermaidSequenceResult,
-      onGetInsertPosition,
-    ],
+    [activeDiagramId, components, connections, importMermaidSequenceResult, onGetInsertPosition],
   );
 
   const handleMermaidFlowchartImport = useCallback(
@@ -210,20 +221,32 @@ const FlowPanel = ({
           const stepCount = getStepCount(flow);
           const { componentIds } = getFlowParticipants(flow);
           return (
-            <div key={flow.id} className="rounded-lg border border-border p-2.5 hover:bg-surface-hover transition-colors">
+            <div
+              key={flow.id}
+              className="rounded-lg border border-border p-2.5 hover:bg-surface-hover transition-colors"
+            >
               <div className="flex items-center gap-2">
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-foreground truncate">{flow.name}</p>
                   {flow.description && (
-                    <p className="text-[10px] text-muted-foreground italic truncate mt-0.5">"{flow.description}"</p>
+                    <p className="text-[10px] text-muted-foreground italic truncate mt-0.5">
+                      "{flow.description}"
+                    </p>
                   )}
                   <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                    <span className="text-[10px] text-muted-foreground">{t("flowPanel.stepsCount", { count: stepCount })}</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {t("flowPanel.stepsCount", { count: stepCount })}
+                    </span>
                     {componentIds.size > 0 && (
-                      <span className="text-[10px] text-muted-foreground">{t("flowPanel.participantsCount", { count: componentIds.size })}</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {t("flowPanel.participantsCount", { count: componentIds.size })}
+                      </span>
                     )}
                     {flow.tags?.map((tag) => (
-                      <span key={tag} className="text-[9px] rounded-full bg-secondary px-1.5 py-0.5 text-secondary-foreground">
+                      <span
+                        key={tag}
+                        className="text-[9px] rounded-full bg-secondary px-1.5 py-0.5 text-secondary-foreground"
+                      >
                         {tag}
                       </span>
                     ))}
@@ -235,7 +258,9 @@ const FlowPanel = ({
                     disabled={flowOrCompareLocked}
                     onClick={() => handleDuplicate(flow)}
                     className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 disabled:pointer-events-none"
-                    title={flowOrCompareLocked ? panelActionsLockedTitle : t("flows.duplicateTitle")}
+                    title={
+                      flowOrCompareLocked ? panelActionsLockedTitle : t("flows.duplicateTitle")
+                    }
                   >
                     <Layers className="h-3.5 w-3.5" />
                   </button>
@@ -244,11 +269,15 @@ const FlowPanel = ({
                     disabled={flowOrCompareLocked}
                     onClick={() => handleCopy(flow)}
                     className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 disabled:pointer-events-none"
-                    title={flowOrCompareLocked ? panelActionsLockedTitle : t("flows.copyMermaidTitle")}
+                    title={
+                      flowOrCompareLocked ? panelActionsLockedTitle : t("flows.copyMermaidTitle")
+                    }
                   >
-                    {copiedId === flow.id
-                      ? <Check className="h-3.5 w-3.5 text-emerald-500" />
-                      : <Copy className="h-3.5 w-3.5" />}
+                    {copiedId === flow.id ? (
+                      <Check className="h-3.5 w-3.5 text-emerald-500" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
                   </button>
                   <button
                     type="button"

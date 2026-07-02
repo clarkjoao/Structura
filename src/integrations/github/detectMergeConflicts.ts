@@ -15,7 +15,6 @@ export function detectConflicts(
   const conflicts: MergeConflict[] = [];
 
   for (const repo of repos) {
-    
     const matchingServices = existingServices.filter((svc) =>
       repoUrlsMatch(svc.repositoryUrl, repo.html_url),
     );
@@ -25,7 +24,6 @@ export function detectConflicts(
     }
   }
 
-  
   conflicts.sort((a, b) => {
     const aPri = normalizeSources(a.existingService).some(
       (source) => source.type === ServiceSource.Defectdojo,
@@ -42,4 +40,3 @@ export function detectConflicts(
 
   return conflicts;
 }
-

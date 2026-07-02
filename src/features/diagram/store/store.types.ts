@@ -20,7 +20,7 @@ export interface DiagramSnapshot {
 export interface ClipboardEntry {
   components: Component[];
   connections: Connection[];
-  
+
   relativeOffsets?: Array<{ dx: number; dy: number }>;
 }
 
@@ -35,6 +35,5 @@ export interface AppState {
   _lastUndoRedoAt: number;
   clipboard: ClipboardEntry | null;
 }
-
 
 export type DiagramStore = AppState & AppActions;

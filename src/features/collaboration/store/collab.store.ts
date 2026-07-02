@@ -32,7 +32,7 @@ export const useCollabStore = create<CollabStoreState>((set) => ({
   hostDisconnected: false,
 
   setSession: (session) =>
-    set((state) => ({
+    set(() => ({
       session,
       ...(session ? { status: session.status } : {}),
     })),
@@ -88,11 +88,7 @@ export const useCollabStore = create<CollabStoreState>((set) => ({
       const index = state.session.peers.findIndex((peer) => peer.clientId === clientId);
       const existingCursor = index >= 0 ? state.session.peers[index]!.cursor : null;
       const resolvedCursor =
-        cursor !== null
-          ? cursor
-          : preserveCursorIfMessageNull
-            ? existingCursor
-            : null;
+        cursor !== null ? cursor : preserveCursorIfMessageNull ? existingCursor : null;
       const updatedPeer: PeerState = {
         clientId,
         user,

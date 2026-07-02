@@ -1,6 +1,5 @@
 import type { ReactFlowInstance } from "@xyflow/react";
 
-
 export function getViewportCenter(
   rfInstance: ReactFlowInstance,
   isPanelOpen = false,

@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type FormEvent,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Play, Square } from "lucide-react";
@@ -100,12 +93,7 @@ export default function JourneyEditorPage() {
         flowMode.cancelRecording();
       }
     },
-    [
-      cancelJourneyRecording,
-      flowMode,
-      journeyPlayerMode.kind,
-      journeySelectStep,
-    ],
+    [cancelJourneyRecording, flowMode, journeyPlayerMode.kind, journeySelectStep],
   );
 
   const {
@@ -123,8 +111,7 @@ export default function JourneyEditorPage() {
     onSelectStep: handleSelectStep,
   });
 
-  const selectedStep =
-    journey && selectedStepId ? journey.steps[selectedStepId] : null;
+  const selectedStep = journey && selectedStepId ? journey.steps[selectedStepId] : null;
 
   useEffect(() => {
     setVisualOverlayOpen(false);
@@ -206,15 +193,8 @@ export default function JourneyEditorPage() {
           event.preventDefault();
           if (flowIsPlaying) {
             flowExitPlay();
-          } else if (
-            flowIsIdle &&
-            selectedStep?.flowId &&
-            selectedStep.diagramId.length > 0
-          ) {
-            journeyPlayer.startFlowPlayback(
-              selectedStep.flowId,
-              selectedStep.diagramId,
-            );
+          } else if (flowIsIdle && selectedStep?.flowId && selectedStep.diagramId.length > 0) {
+            journeyPlayer.startFlowPlayback(selectedStep.flowId, selectedStep.diagramId);
           }
           break;
         }
@@ -251,9 +231,7 @@ export default function JourneyEditorPage() {
   const activeDiagramId = useMemo(() => {
     if (selectedStep?.diagramId) return selectedStep.diagramId;
     if (!journey) return null;
-    const ordered = Object.values(journey.steps).sort(
-      (left, right) => left.order - right.order,
-    );
+    const ordered = Object.values(journey.steps).sort((left, right) => left.order - right.order);
     const fromSteps = ordered.find((step) => step.diagramId)?.diagramId;
     return fromSteps ?? allDiagrams[0]?.id ?? null;
   }, [allDiagrams, journey, selectedStep?.diagramId]);
@@ -291,13 +269,7 @@ export default function JourneyEditorPage() {
       <Navbar />
       <div className="flex min-h-0 h-[calc(100vh-4rem)] flex-1 flex-col">
         <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-card px-3">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 shrink-0"
-            asChild
-          >
+          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0" asChild>
             <Link to="/journeys" aria-label={t("journeys.editor.backToList")}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
@@ -397,10 +369,7 @@ export default function JourneyEditorPage() {
               isGlobalPlaying={isGlobalPlaying}
             />
             {selectedStepId && !isGlobalPlaying ? (
-              <StepDetail
-                journeyId={journey.id}
-                stepId={selectedStepId}
-              />
+              <StepDetail journeyId={journey.id} stepId={selectedStepId} />
             ) : !isGlobalPlaying ? (
               <div className="border-t border-border p-3 text-xs text-muted-foreground">
                 {t("journeys.editor.selectStepDetail")}
@@ -445,9 +414,7 @@ export default function JourneyEditorPage() {
             journeyId={journey.id}
             step={selectedStep}
             isGlobalPlaying={isGlobalPlaying}
-            onExpandVisual={
-              isGlobalPlaying ? () => setVisualOverlayOpen(true) : undefined
-            }
+            onExpandVisual={isGlobalPlaying ? () => setVisualOverlayOpen(true) : undefined}
             flowSection={
               selectedStepId ? (
                 <StepFlowSection
@@ -457,14 +424,10 @@ export default function JourneyEditorPage() {
                   onNextStep={isGlobalPlaying ? goToNextStep : undefined}
                   onPrevStep={isGlobalPlaying ? goToPrevStep : undefined}
                   onLastStepFlowCompleted={
-                    isGlobalPlaying
-                      ? handlePresentationJourneyComplete
-                      : undefined
+                    isGlobalPlaying ? handlePresentationJourneyComplete : undefined
                   }
                   onJourneyComplete={
-                    isGlobalPlaying
-                      ? handlePresentationJourneyComplete
-                      : undefined
+                    isGlobalPlaying ? handlePresentationJourneyComplete : undefined
                   }
                 />
               ) : (

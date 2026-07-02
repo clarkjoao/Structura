@@ -1,11 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import AwsIcon from "@/features/canvas/nodes/AwsIcon";
-import {
-  AWS_CATEGORIES,
-  AWS_SERVICE_MAP,
-  type AwsService,
-} from "@/lib/catalogs/aws";
+import { AWS_CATEGORIES, AWS_SERVICE_MAP, type AwsService } from "@/lib/catalogs/aws";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -45,7 +41,10 @@ function AwsIconPickerCard({ service, onSelect }: AwsIconPickerCardProps) {
       >
         <AwsIcon iconName={service.iconName} size={ICON_PREVIEW_SIZE} className="shrink-0" />
       </div>
-      <span className="line-clamp-2 w-full break-words text-muted-foreground" style={{ fontSize: 10 }}>
+      <span
+        className="line-clamp-2 w-full break-words text-muted-foreground"
+        style={{ fontSize: 10 }}
+      >
         {service.name}
       </span>
     </button>

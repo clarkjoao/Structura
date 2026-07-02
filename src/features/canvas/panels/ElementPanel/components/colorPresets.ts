@@ -1,5 +1,4 @@
 export interface ColorPreset {
-  
   nameKey: string;
   color: string;
 }
@@ -39,9 +38,7 @@ export const NOTE_PRESET_PAIRS: NotePresetPair[] = [
 ];
 
 // Reverse-lookup maps built once at module load.
-const _LIGHT_TO_PAIR = new Map<string, NotePresetPair>(
-  NOTE_PRESET_PAIRS.map((p) => [p.light, p]),
-);
+const _LIGHT_TO_PAIR = new Map<string, NotePresetPair>(NOTE_PRESET_PAIRS.map((p) => [p.light, p]));
 const _DARK_TO_PAIR = new Map<string, NotePresetPair>();
 for (const p of NOTE_PRESET_PAIRS) {
   if (!_DARK_TO_PAIR.has(p.dark)) {
@@ -76,7 +73,6 @@ export const VIBRANT_PRESETS: ColorPreset[] = [
   { nameKey: "colors.sky", color: "hsl(200 75% 50%)" },
 ];
 
-
 export const PAPER_PRESETS: ColorPreset[] = [
   { nameKey: "colors.white", color: "hsl(0 0% 98%)" },
   { nameKey: "colors.ivory", color: "hsl(45 25% 97%)" },
@@ -92,7 +88,6 @@ export const PAPER_PRESETS: ColorPreset[] = [
   { nameKey: "colors.lightGray", color: "hsl(220 15% 92%)" },
 ];
 
-
 export const C4_PRESETS: ColorPreset[] = [
   { nameKey: "colors.c4Person", color: "hsl(38 92% 50%)" },
   { nameKey: "colors.c4System", color: "hsl(187 72% 51%)" },
@@ -104,7 +99,6 @@ export const C4_PRESETS: ColorPreset[] = [
   { nameKey: "colors.darkAmber", color: "hsl(35 80% 42%)" },
 ];
 
-
 export const NEUTRAL_PRESETS: ColorPreset[] = [
   { nameKey: "colors.grayDark", color: "hsl(220 20% 20%)" },
   { nameKey: "colors.slate", color: "hsl(215 25% 25%)" },
@@ -114,12 +108,7 @@ export const NEUTRAL_PRESETS: ColorPreset[] = [
   { nameKey: "colors.gray", color: "hsl(220 10% 45%)" },
 ];
 
-
-export const PANEL_PRESETS: ColorPreset[] = [
-  ...VIBRANT_PRESETS,
-  ...NEUTRAL_PRESETS,
-];
-
+export const PANEL_PRESETS: ColorPreset[] = [...VIBRANT_PRESETS, ...NEUTRAL_PRESETS];
 
 export const NOTE_PRESETS: ColorPreset[] = [
   { nameKey: "colors.ivory", color: "hsl(45 25% 97%)" },
@@ -164,7 +153,6 @@ export const NOTE_PRESETS_DARK: ColorPreset[] = [
   { nameKey: "colors.orange", color: "hsl(25 90% 52%)" },
   { nameKey: "colors.amber", color: "hsl(38 92% 50%)" },
 ];
-
 
 export const C4_DEFAULT_COLORS: Record<string, string> = {
   person: "hsl(38 92% 50%)",

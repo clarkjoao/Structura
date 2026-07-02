@@ -1,6 +1,5 @@
 import type { IStoragePort } from "./IStoragePort";
 
-
 export class InMemoryAdapter implements IStoragePort {
   private readonly store = new Map<string, string>();
 

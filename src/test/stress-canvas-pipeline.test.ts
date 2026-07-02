@@ -8,8 +8,14 @@ import {
   isApiGroupComponent,
   isAncestorLocked,
 } from "@/features/diagram";
-import { buildCollapsedPanelIds, computeNodeVisibility } from "@/features/canvas/nodes/nodeVisibility";
-import { buildPanelIds, buildConnectionCountPerNode } from "@/features/canvas/edges/connectionDerivations";
+import {
+  buildCollapsedPanelIds,
+  computeNodeVisibility,
+} from "@/features/canvas/nodes/nodeVisibility";
+import {
+  buildPanelIds,
+  buildConnectionCountPerNode,
+} from "@/features/canvas/edges/connectionDerivations";
 import {
   findPanelContainingPoint,
   resolveAbsolutePosition,
@@ -29,9 +35,7 @@ function buildNodeStubs(
       data: {},
       type: isPanelComponent(comp) ? "panel" : "c4",
       parentId: comp.parentId ?? undefined,
-      style: layout?.width
-        ? { width: layout.width, height: layout.height ?? 400 }
-        : undefined,
+      style: layout?.width ? { width: layout.width, height: layout.height ?? 400 } : undefined,
     } as Node;
   });
 }

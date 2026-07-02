@@ -23,10 +23,7 @@ export function StructuraEmbed({
     if (!iframe) return;
 
     const sendDiagram = () => {
-      iframe.contentWindow?.postMessage(
-        { type: "STRUCTURA_LOAD", diagram },
-        appOrigin,
-      );
+      iframe.contentWindow?.postMessage({ type: "STRUCTURA_LOAD", diagram }, appOrigin);
     };
 
     iframe.addEventListener("load", sendDiagram);

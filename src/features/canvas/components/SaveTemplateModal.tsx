@@ -70,11 +70,7 @@ export function SaveTemplateModal({
       expandedIds.map((id) => {
         const component = components[id];
         const typeKey = TYPE_LABEL_KEY_BY_TYPE[component?.type ?? ""];
-        const typeLabel = component
-          ? typeKey
-            ? t(typeKey)
-            : component.type
-          : "";
+        const typeLabel = component ? (typeKey ? t(typeKey) : component.type) : "";
         return {
           id,
           name: component?.name ?? id,
@@ -128,7 +124,9 @@ export function SaveTemplateModal({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="save-template-category">{t("saveTemplate.categoryPlaceholder")}</Label>
+              <Label htmlFor="save-template-category">
+                {t("saveTemplate.categoryPlaceholder")}
+              </Label>
               <Input
                 id="save-template-category"
                 value={category}

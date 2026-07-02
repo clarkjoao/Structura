@@ -27,10 +27,7 @@ const ADD_AT_ROOT = "__add_at_root__";
 
 type FolderRecord = Record<string, FolderType>;
 
-function getChildFolders(
-  folders: FolderRecord,
-  parentId: string | null,
-): FolderType[] {
+function getChildFolders(folders: FolderRecord, parentId: string | null): FolderType[] {
   return Object.values(folders).filter((f) => f.parentId === parentId);
 }
 
@@ -75,9 +72,7 @@ export function FolderTree({
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
-  const [addingUnderParent, setAddingUnderParent] = useState<string | null>(
-    null,
-  );
+  const [addingUnderParent, setAddingUnderParent] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -122,8 +117,7 @@ export function FolderTree({
 
   const submitAddFolder = useCallback(() => {
     if (newFolderName.trim()) {
-      const parentId =
-        addingUnderParent === ADD_AT_ROOT ? null : addingUnderParent;
+      const parentId = addingUnderParent === ADD_AT_ROOT ? null : addingUnderParent;
       const created = addFolder(newFolderName.trim(), parentId ?? null);
       if (addingUnderParent && addingUnderParent !== ADD_AT_ROOT) {
         setExpandedIds((p) => new Set(p).add(addingUnderParent));
@@ -153,18 +147,13 @@ export function FolderTree({
 
   const handleDrop = (e: React.DragEvent, folderId: string | null) => {
     e.preventDefault();
-    const diagramId = e.dataTransfer.getData(
-      "application/x-structura-diagram-id",
-    );
+    const diagramId = e.dataTransfer.getData("application/x-structura-diagram-id");
     if (diagramId) onDropOnFolder(folderId, diagramId);
     onDragLeave();
   };
 
-  
   const filteredRootFolders = searchQuery.trim()
-    ? rootFolders.filter((f) =>
-        f.name.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
+    ? rootFolders.filter((f) => f.name.toLowerCase().includes(searchQuery.toLowerCase()))
     : rootFolders;
 
   return (
@@ -203,8 +192,7 @@ export function FolderTree({
             selectedFolderId === null
               ? "bg-sidebar-accent text-sidebar-foreground font-medium"
               : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
-            dropTargetFolderId === null &&
-              "ring-1 ring-sidebar-ring/50 bg-sidebar-accent/60",
+            dropTargetFolderId === null && "ring-1 ring-sidebar-ring/50 bg-sidebar-accent/60",
           )}
           onClick={() => onSelectFolder(null)}
           onDragOver={(e) => handleDragOver(e, null)}
@@ -270,7 +258,6 @@ export function FolderTree({
   );
 }
 
-
 function NewFolderInput({
   value,
   onChange,
@@ -309,7 +296,6 @@ function NewFolderInput({
     </div>
   );
 }
-
 
 interface FolderTreeItemProps {
   folder: FolderType;
@@ -383,9 +369,7 @@ function FolderTreeItem({
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    const diagramId = e.dataTransfer.getData(
-      "application/x-structura-diagram-id",
-    );
+    const diagramId = e.dataTransfer.getData("application/x-structura-diagram-id");
     if (diagramId) onDropOnFolder(folder.id, diagramId);
     onDragLeave();
   };
@@ -398,8 +382,7 @@ function FolderTreeItem({
           isSelected
             ? "bg-sidebar-accent text-sidebar-foreground font-medium"
             : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
-          isDropTarget &&
-            "ring-1 ring-sidebar-ring/50 bg-sidebar-accent/60",
+          isDropTarget && "ring-1 ring-sidebar-ring/50 bg-sidebar-accent/60",
         )}
         style={{ paddingLeft: `${8 + depth * 14}px` }}
         onClick={() => !isEditing && onSelectFolder(folder.id)}
@@ -478,9 +461,7 @@ function FolderTreeItem({
                 <DropdownMenuItem onClick={() => startRename(folder)}>
                   {t("folderTree.rename")}
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => startAddSubfolder(folder.id)}
-                >
+                <DropdownMenuItem onClick={() => startAddSubfolder(folder.id)}>
                   {t("folderTree.newSubfolder")}
                 </DropdownMenuItem>
                 <DropdownMenuItem

@@ -126,33 +126,28 @@ function buildNodeData(component: Component): Record<string, unknown> {
   };
 }
 
-function buildNode(
-  component: Component,
-  nodeLayouts: Record<string, NodeLayout>,
-): Node {
+function buildNode(component: Component, nodeLayouts: Record<string, NodeLayout>): Node {
   const layout = nodeLayouts[component.id];
   const dbTableFixedH = 32 + 22 + 20 + 2;
   const dbTableRowH = 24;
   const width = isDbTableComponent(component)
-    ? layout?.width ?? 406
+    ? (layout?.width ?? 406)
     : isJsonViewerComponent(component)
-      ? layout?.width ?? 240
-      : layout?.width ?? 260;
+      ? (layout?.width ?? 240)
+      : (layout?.width ?? 260);
   const height = isDbTableComponent(component)
     ? component.collapsed
       ? DB_TABLE_COLLAPSED_H
       : dbTableFixedH + component.columns.length * dbTableRowH
     : isJsonViewerComponent(component)
-      ? layout?.height ?? 88
-      : layout?.height ?? 120;
+      ? (layout?.height ?? 88)
+      : (layout?.height ?? 120);
 
   return {
     id: component.id,
     type: resolveNodeType(component),
     position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
-    ...(component.parentId
-      ? { parentId: component.parentId, extent: "parent" as const }
-      : {}),
+    ...(component.parentId ? { parentId: component.parentId, extent: "parent" as const } : {}),
     draggable: false,
     selectable: false,
     connectable: false,
@@ -182,9 +177,7 @@ function buildEdge(connection: Connection): Edge {
 }
 
 function sortComponentsTopologically(components: Component[]): Component[] {
-  const idToComponent = new Map<string, Component>(
-    components.map((c) => [c.id, c]),
-  );
+  const idToComponent = new Map<string, Component>(components.map((c) => [c.id, c]));
 
   const visited = new Set<string>();
   const sorted: Component[] = [];
@@ -213,10 +206,7 @@ export function useDiagramToFlow(diagram: Diagram): {
   edges: Edge[];
 } {
   return useMemo(() => {
-    const resolvedSnapshot = resolveSceneSnapshot(
-      diagram,
-      diagram.activeSceneId ?? null,
-    );
+    const resolvedSnapshot = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
 
     const visibleComponents = Object.values(resolvedSnapshot.components).filter(
       (component) => !component.hidden,

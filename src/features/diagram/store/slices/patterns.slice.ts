@@ -95,9 +95,6 @@ function buildCatalogPatternComponentAndLayout(
     awsService: raw.awsService,
   } as Component;
 
-  
-  
-  
   const x = raw.x !== undefined ? position.x + raw.x : position.x + index * gridX;
   const y = raw.y !== undefined ? position.y + raw.y : position.y;
 
@@ -111,15 +108,12 @@ export const patternsSlice = (
   set: (fn: (state: AppState) => void) => void,
   _get: () => AppState,
 ) => ({
-  insertPattern: (
-    template: InsertablePattern,
-    position: { x: number; y: number },
-  ): string[] => {
+  insertPattern: (template: InsertablePattern, position: { x: number; y: number }): string[] => {
     const GRID_X = 220;
-    const fromUserLibrary = isUserTemplatePayload(template);
+    const userComponents = isUserTemplatePayload(template) ? template.components : null;
     const ids: string[] = template.components.map(() => generateId("el"));
-    const userLayouts = fromUserLibrary
-      ? computeUserTemplateNodeLayouts(template.components, position)
+    const userLayouts = userComponents
+      ? computeUserTemplateNodeLayouts(userComponents, position)
       : null;
 
     let committed = false;
@@ -134,8 +128,8 @@ export const patternsSlice = (
         let component: Component;
         let layout: { elementId: string; x: number; y: number; width?: number; height?: number };
 
-        if (fromUserLibrary && userLayouts) {
-          component = buildUserTemplateComponentPayload(raw, ids[i], ids);
+        if (userComponents && userLayouts) {
+          component = buildUserTemplateComponentPayload(userComponents[i], ids[i], ids);
           const dims = userLayouts[i];
           layout = {
             elementId: ids[i],

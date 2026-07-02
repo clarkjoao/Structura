@@ -3,7 +3,6 @@ import { applyNodeChanges, type Node, type NodeChange, type OnNodesChange } from
 import type { Diagram, DiagramModel } from "@/features/diagram";
 import { canMoveNodeInSceneMode } from "@/features/diagram";
 
-
 function filterNodeChangesForSceneMoveLock(
   diagram: Diagram | DiagramModel | null | undefined,
   changes: NodeChange[],
@@ -16,7 +15,6 @@ function filterNodeChangesForSceneMoveLock(
     return true;
   });
 }
-
 
 function isUndoRedoTransition(
   prevDiagram: Diagram | DiagramModel | null | undefined,
@@ -34,13 +32,12 @@ export function useLocalNodes(
   onSelectionFromChanges?: (selectedIds: string[]) => void,
   diagram?: Diagram | DiagramModel | null,
 ) {
-  
   const [, setTick] = useState(0);
 
   const draggingNodeIdsRef = useRef(new Set<string>());
   const prevStoreNodesRef = useRef<Node[] | undefined>(undefined);
   const prevDiagramRef = useRef<Diagram | DiagramModel | null | undefined>(undefined);
-  
+
   const localNodesStateRef = useRef<Node[]>([]);
 
   if (storeNodes !== prevStoreNodesRef.current) {
@@ -93,8 +90,7 @@ export function useLocalNodes(
         }
 
         const useRemotePosition =
-          sn.parentId !== ln.parentId ||
-          !draggingNodeIdsRef.current.has(sn.id);
+          sn.parentId !== ln.parentId || !draggingNodeIdsRef.current.has(sn.id);
 
         const positionToUse = useRemotePosition ? sn.position : ln.position;
 
@@ -160,21 +156,14 @@ export function useLocalNodes(
 
       const sanitizedChanges = changes.map((change) => {
         if (change.type !== "replace") return change;
-        const previousNode = localNodesRef.current.find(
-          (node) => node.id === change.item.id,
-        );
+        const previousNode = localNodesRef.current.find((node) => node.id === change.item.id);
         const previousData = previousNode?.data as Record<string, unknown> | undefined;
         const nextData = change.item.data as Record<string, unknown> | undefined;
         if (!previousData || !nextData) return change;
         const templateId =
-          typeof previousData.templateId === "string"
-            ? previousData.templateId
-            : undefined;
+          typeof previousData.templateId === "string" ? previousData.templateId : undefined;
         if (!templateId) return change;
-        const keys = new Set([
-          ...Object.keys(previousData),
-          ...Object.keys(nextData),
-        ]);
+        const keys = new Set([...Object.keys(previousData), ...Object.keys(nextData)]);
         const changedAnyField = [...keys].some((key) => {
           if (key === "templateId") return false;
           return previousData[key] !== nextData[key];

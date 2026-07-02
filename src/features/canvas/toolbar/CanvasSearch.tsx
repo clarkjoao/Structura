@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, X, Square, FileText, MessageSquare, Table2, Globe, Cloud, Box } from "lucide-react";
+import {
+  Search,
+  X,
+  Square,
+  FileText,
+  MessageSquare,
+  Table2,
+  Globe,
+  Cloud,
+  Box,
+} from "lucide-react";
 import type { Component } from "@/features/diagram";
 import { isPanelType, isNoteType, isApiGroupType } from "@/features/diagram";
 import { isAwsType } from "@/lib/catalogs/aws";
@@ -27,7 +37,10 @@ export default function CanvasSearch({ onClose, onSelectResult, components }: Ca
       .filter((c) => {
         const name = c.name?.toLowerCase() ?? "";
         const desc = c.description?.toLowerCase() ?? "";
-        const tech = "technology" in c ? ((c as unknown as { technology?: string }).technology?.toLowerCase() ?? "") : "";
+        const tech =
+          "technology" in c
+            ? ((c as unknown as { technology?: string }).technology?.toLowerCase() ?? "")
+            : "";
         const tags = (c.tags ?? []).map((t) => t.toLowerCase());
         return (
           name.includes(q) ||
@@ -152,10 +165,12 @@ export default function CanvasSearch({ onClose, onSelectResult, components }: Ca
         {results.length > 0 && (
           <div className="px-4 py-2 border-t border-border flex items-center gap-3 text-[10px] text-muted-foreground">
             <span>
-              <kbd className="border border-border rounded px-1">↑↓</kbd> {t("canvasSearch.navigate")}
+              <kbd className="border border-border rounded px-1">↑↓</kbd>{" "}
+              {t("canvasSearch.navigate")}
             </span>
             <span>
-              <kbd className="border border-border rounded px-1">Enter</kbd> {t("canvasSearch.goTo")}
+              <kbd className="border border-border rounded px-1">Enter</kbd>{" "}
+              {t("canvasSearch.goTo")}
             </span>
             <span>
               <kbd className="border border-border rounded px-1">Esc</kbd> {t("canvasSearch.close")}
@@ -197,4 +212,3 @@ function ComponentTypeIcon({ type, className }: { type: string; className?: stri
   if (isAwsType(type)) return <Cloud className={className} />;
   return <Box className={className} />;
 }
-

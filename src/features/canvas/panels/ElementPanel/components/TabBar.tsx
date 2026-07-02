@@ -6,21 +6,14 @@ export interface TabBarProps {
   active: Tab;
   onChange: (next: Tab) => void;
   showConnections: boolean;
-  
+
   showIconTab?: boolean;
 }
 
-const TabBar = ({
-  active,
-  onChange,
-  showConnections,
-  showIconTab = true,
-}: TabBarProps) => {
+const TabBar = ({ active, onChange, showConnections, showIconTab = true }: TabBarProps) => {
   const { t } = useTranslation();
   const tabs = (
-    showConnections
-      ? (["details", "connections", "icon"] as const)
-      : (["details", "icon"] as const)
+    showConnections ? (["details", "connections", "icon"] as const) : (["details", "icon"] as const)
   ).filter((tab) => showIconTab || tab !== "icon");
 
   const labelFor = (tab: (typeof tabs)[number]) => {

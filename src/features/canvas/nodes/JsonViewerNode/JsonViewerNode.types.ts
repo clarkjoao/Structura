@@ -1,6 +1,6 @@
 export type JsonViewerMode = "collapsed" | "expanded" | "editing";
 
-export interface JsonViewerNodeData {
+export type JsonViewerNodeData = {
   elementId: string;
   name: string;
   jsonContent: string;
@@ -15,4 +15,4 @@ export interface JsonViewerNodeData {
     a: { name: string; color: string };
     b: { name: string; color: string };
   };
-}
+};

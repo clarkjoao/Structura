@@ -5,7 +5,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 export interface LayerFilterPopoverProps {
   allTags: string[];
-  visibleTags: Set<string>;
+  /** null means "no tag filter active" (all tags visible). */
+  visibleTags: Set<string> | null;
   scenesPickerLocked?: boolean;
   onToggle: (tag: string) => void;
   onShowAll: () => void;
@@ -57,10 +58,7 @@ export function LayerFilterPopover({
         <ul className="flex max-h-[min(50vh,280px)] flex-col gap-2 overflow-y-auto pr-1">
           <li>
             <label className="flex cursor-pointer items-center gap-2 text-xs">
-              <Checkbox
-                checked={visibleTags === null}
-                onCheckedChange={onShowAll}
-              />
+              <Checkbox checked={visibleTags === null} onCheckedChange={onShowAll} />
               <span>{t("canvas.toolbar.allTags")}</span>
             </label>
           </li>
@@ -74,7 +72,7 @@ export function LayerFilterPopover({
               <span>{t("canvas.toolbar.noTagsFilter")}</span>
             </label>
           </li>
-         {allTags.map((tag) => (
+          {allTags.map((tag) => (
             <li key={tag}>
               <label className="flex cursor-pointer items-center gap-2 text-xs">
                 <Checkbox

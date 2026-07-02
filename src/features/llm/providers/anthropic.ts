@@ -64,22 +64,16 @@ export async function sendMessage(
           type?: string;
           delta?: { type?: string; text?: string };
         };
-        if (
-          parsedData.type === "content_block_delta" &&
-          parsedData.delta?.type === "text_delta"
-        ) {
+        if (parsedData.type === "content_block_delta" && parsedData.delta?.type === "text_delta") {
           const delta = parsedData.delta.text ?? "";
           if (delta) {
             fullText += delta;
             onChunk(delta);
           }
         }
-      } catch {
-        
-      }
+      } catch {}
     }
   }
 
   return fullText;
 }
-

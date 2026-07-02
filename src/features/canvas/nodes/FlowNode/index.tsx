@@ -1,17 +1,15 @@
 import { memo, type CSSProperties } from "react";
-import { Handle, NodeResizer, Position, type NodeProps } from "@xyflow/react";
+import { Handle, NodeResizer, Position, type Node, type NodeProps } from "@xyflow/react";
 import type { FlowNodeShape } from "@/features/diagram";
 import { useHandleHighlight } from "../../contexts/HandleHighlightContext";
 import type { FlowNodeData } from "./FlowNode.types";
 
-const HANDLE_CLASS =
-  "!w-2.5 !h-2.5 !border-2 !border-background !bg-muted-foreground";
+const HANDLE_CLASS = "!w-2.5 !h-2.5 !border-2 !border-background !bg-muted-foreground";
 
 const CARD_BG = "hsl(var(--card))";
 const BORDER = "hsl(var(--border))";
 const PRIMARY = "hsl(var(--primary))";
-const CLIP_SHADOW =
-  "inset 0 0 0 1.5px hsl(var(--border)), 0 1px 3px 0 hsl(var(--foreground)/0.06)";
+const CLIP_SHADOW = "inset 0 0 0 1.5px hsl(var(--border)), 0 1px 3px 0 hsl(var(--foreground)/0.06)";
 const CLIP_SHADOW_ACTIVE = `inset 0 0 0 2px ${PRIMARY}`;
 
 const DIAMOND_CLIP = "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)";
@@ -34,9 +32,7 @@ function labelPadding(shape: FlowNodeShape): string {
 }
 
 function cssShapeOutline(isActive: boolean): CSSProperties | undefined {
-  return isActive
-    ? { outline: `2px solid ${PRIMARY}`, outlineOffset: "2px" }
-    : undefined;
+  return isActive ? { outline: `2px solid ${PRIMARY}`, outlineOffset: "2px" } : undefined;
 }
 
 interface ClipShapeLayerProps {
@@ -123,9 +119,7 @@ function FlowShapeLayer({ shape, isActive, nodeColor }: FlowShapeLayerProps) {
     case "hexagon":
       return <ClipShapeLayer clipPath={HEXAGON_CLIP} isActive={isActive} background={fill} />;
     case "parallelogram":
-      return (
-        <ClipShapeLayer clipPath={PARALLELOGRAM_CLIP} isActive={isActive} background={fill} />
-      );
+      return <ClipShapeLayer clipPath={PARALLELOGRAM_CLIP} isActive={isActive} background={fill} />;
     case "cylinder":
       return (
         <svg
@@ -135,22 +129,8 @@ function FlowShapeLayer({ shape, isActive, nodeColor }: FlowShapeLayerProps) {
           aria-hidden
         >
           <rect x="1" y="12" width="98" height="76" fill={fill} stroke="none" />
-          <line
-            x1="1"
-            y1="12"
-            x2="1"
-            y2="88"
-            stroke={stroke}
-            strokeWidth={strokeWidth}
-          />
-          <line
-            x1="99"
-            y1="12"
-            x2="99"
-            y2="88"
-            stroke={stroke}
-            strokeWidth={strokeWidth}
-          />
+          <line x1="1" y1="12" x2="1" y2="88" stroke={stroke} strokeWidth={strokeWidth} />
+          <line x1="99" y1="12" x2="99" y2="88" stroke={stroke} strokeWidth={strokeWidth} />
           <ellipse
             cx="50"
             cy="88"
@@ -241,8 +221,7 @@ function FourSideHandles() {
   );
 }
 
-const FlowNode = memo(({ data, selected }: NodeProps) => {
-  const d = data as unknown as FlowNodeData;
+const FlowNode = memo(({ data: d, selected }: NodeProps<Node<FlowNodeData>>) => {
   const { highlightedNodeIds } = useHandleHighlight();
   const isSelected = selected || d.isSelected;
   const isHighlighted = highlightedNodeIds.has(d.elementId);

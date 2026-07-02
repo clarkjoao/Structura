@@ -12,9 +12,7 @@ export function getProxyEndpoint(): string {
   const baseUrl = DEFAULT_PROXY_URL.endsWith("/")
     ? DEFAULT_PROXY_URL.slice(0, -1)
     : DEFAULT_PROXY_URL;
-  const path = DEFAULT_PROXY_PATH.startsWith("/")
-    ? DEFAULT_PROXY_PATH
-    : `/${DEFAULT_PROXY_PATH}`;
+  const path = DEFAULT_PROXY_PATH.startsWith("/") ? DEFAULT_PROXY_PATH : `/${DEFAULT_PROXY_PATH}`;
   return `${baseUrl}${path}`;
 }
 
@@ -94,9 +92,7 @@ export async function sendMessage(
             fullText += delta;
             onChunk(delta);
           }
-        } catch {
-          
-        }
+        } catch {}
       }
     }
 
@@ -110,4 +106,3 @@ export async function sendMessage(
   }
   return fullText;
 }
-

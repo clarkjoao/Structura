@@ -8,7 +8,7 @@ import { SWIMLANE_DEFAULT_H, SWIMLANE_DEFAULT_W } from "../../constants";
 export const swimlaneDescriptor: NodeTypeDescriptor = {
   rfType: "swimlane",
   component: SwimlaneNode,
-  
+
   matches: (_type: ComponentType) => false,
   zIndex: -1,
   connectable: false,

@@ -1,4 +1,8 @@
-import { buildStressSeed, DIAGRAM_STORE_LOCAL_STORAGE_KEY, type SeedResult } from "./seed-stress-diagram";
+import {
+  buildStressSeed,
+  DIAGRAM_STORE_LOCAL_STORAGE_KEY,
+  type SeedResult,
+} from "./seed-stress-diagram";
 
 declare global {
   namespace Cypress {

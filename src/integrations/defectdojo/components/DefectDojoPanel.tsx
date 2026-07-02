@@ -10,8 +10,7 @@ import { DefectDojoResultsList } from "./DefectDojoResultsList";
 
 export function DefectDojoPanel() {
   const { t } = useTranslation();
-  const { config, saveConfig, clearConfig, isConfigured } =
-    useDefectDojoConfig();
+  const { config, saveConfig, clearConfig, isConfigured } = useDefectDojoConfig();
   const {
     results,
     productTypes,

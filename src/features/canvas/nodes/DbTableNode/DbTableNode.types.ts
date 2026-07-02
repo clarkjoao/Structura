@@ -1,11 +1,5 @@
-
 export type DbTableColumnKey =
-  | "name"
-  | "dataType"
-  | "isPrimaryKey"
-  | "isForeignKey"
-  | "nullable"
-  | "unique";
+  "name" | "dataType" | "isPrimaryKey" | "isForeignKey" | "nullable" | "unique";
 
 export interface DbColumnRow {
   id: string;
@@ -17,18 +11,18 @@ export interface DbColumnRow {
   unique: boolean;
 }
 
-export interface DbTableNodeData {
+export type DbTableNodeData = {
   elementId: string;
   tableName: string;
   columns: DbColumnRow[];
   isSelected: boolean;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
-  
+
   onCommit: (columns: DbColumnRow[]) => void;
   sceneBadge?: { name: string; color: string };
   compareBadges?: {
     a: { name: string; color: string };
     b: { name: string; color: string };
   };
-}
+};

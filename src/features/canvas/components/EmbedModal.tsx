@@ -83,8 +83,7 @@ function StructuraDiagramEmbed() {
     [origin],
   );
 
-  const activeSnippet =
-    activeMethod === "iframe-hash" ? hashIframeCode : reactSnippet;
+  const activeSnippet = activeMethod === "iframe-hash" ? hashIframeCode : reactSnippet;
 
   const handleCopyEmbed = () => {
     void navigator.clipboard.writeText(activeSnippet).then(() => {
@@ -108,7 +107,9 @@ function StructuraDiagramEmbed() {
         >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="iframe-hash">{t("export.embed.tabs.direct")}</TabsTrigger>
-            <TabsTrigger value="iframe-postmessage">{t("export.embed.tabs.postMessage")}</TabsTrigger>
+            <TabsTrigger value="iframe-postmessage">
+              {t("export.embed.tabs.postMessage")}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="iframe-hash" className="space-y-3">

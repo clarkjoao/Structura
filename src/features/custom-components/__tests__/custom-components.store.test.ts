@@ -44,16 +44,12 @@ describe("custom-components store", () => {
   });
 
   it("normalizes empty category to general on add", () => {
-    useCustomComponentStore.getState().addTemplate(
-      baseTemplate({ id: "c", category: "   " }),
-    );
+    useCustomComponentStore.getState().addTemplate(baseTemplate({ id: "c", category: "   " }));
     expect(useCustomComponentStore.getState().templates.c?.category).toBe("general");
   });
 
   it("normalizes invalid templateVersion to 1 on add", () => {
-    useCustomComponentStore.getState().addTemplate(
-      baseTemplate({ id: "v", templateVersion: 0 }),
-    );
+    useCustomComponentStore.getState().addTemplate(baseTemplate({ id: "v", templateVersion: 0 }));
     expect(useCustomComponentStore.getState().templates.v?.templateVersion).toBe(1);
   });
 });

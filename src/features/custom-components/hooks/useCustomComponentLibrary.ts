@@ -22,17 +22,15 @@ export function useCustomComponentLibrary() {
   );
   const serviceIds = useMemo(() => new Set(services.map((service) => service.id)), [services]);
 
-  const instantiateTemplate = ({ templateId, position }: InstantiateTemplateParams): string | null => {
+  const instantiateTemplate = ({
+    templateId,
+    position,
+  }: InstantiateTemplateParams): string | null => {
     const template = templatesMap[templateId];
     if (!template) return null;
     const nameFromData =
       typeof template.data.name === "string" ? template.data.name : template.name;
-    const component = addComponent(
-      template.baseType,
-      nameFromData,
-      null,
-      position,
-    );
+    const component = addComponent(template.baseType, nameFromData, null, position);
     const hasRegistryService = template.registryServiceId
       ? serviceIds.has(template.registryServiceId)
       : false;

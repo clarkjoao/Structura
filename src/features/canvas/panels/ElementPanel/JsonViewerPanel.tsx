@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import debounce from "lodash.debounce";
 import { X, Trash2, Braces } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import Editor from "@monaco-editor/react";
+import { LazyMonacoEditor as Editor } from "@/lib/monaco/LazyMonacoEditor";
 import type { JsonViewerComponent, ComponentPatch } from "@/features/diagram";
 import { useActiveDiagram } from "@/features/diagram";
 import TabBar, { type Tab } from "./components/TabBar";

@@ -65,15 +65,9 @@ export function StepDetail({ journeyId, stepId }: StepDetailProps) {
           {t("journeys.step.detailsTitle")}
         </span>
         {collapsed ? (
-          <ChevronDown
-            className="h-3.5 w-3.5 text-muted-foreground"
-            aria-hidden
-          />
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
         ) : (
-          <ChevronUp
-            className="h-3.5 w-3.5 text-muted-foreground"
-            aria-hidden
-          />
+          <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
         )}
       </button>
 

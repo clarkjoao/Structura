@@ -5,7 +5,7 @@ export interface Point {
 
 export interface EdgeLayout {
   waypoints: Point[];
-  
+
   labelOffset?: number;
 }
 
@@ -17,6 +17,5 @@ export interface NodeLayout {
   width?: number;
   height?: number;
 }
-
 
 export type ViewNodeLayout = NodeLayout;

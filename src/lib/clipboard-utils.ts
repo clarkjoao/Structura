@@ -1,6 +1,5 @@
 import { extractMxGraphModelXml } from "@/lib/export-service";
 
-
 function escapeForHtmlClipboard(xml: string): string {
   return xml
     .replace(/&/g, "&amp;")
@@ -8,7 +7,6 @@ function escapeForHtmlClipboard(xml: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
-
 
 export async function writeDrawioToClipboard(fullDrawioXml: string): Promise<void> {
   const graphModelXml = extractMxGraphModelXml(fullDrawioXml);
@@ -28,9 +26,7 @@ export async function writeDrawioToClipboard(fullDrawioXml: string): Promise<voi
       ]);
       return;
     }
-  } catch {
-    
-  }
+  } catch {}
 
   try {
     await navigator.clipboard.writeText(graphModelXml);
@@ -39,13 +35,11 @@ export async function writeDrawioToClipboard(fullDrawioXml: string): Promise<voi
   }
 }
 
-
 export async function readDrawioFromClipboard(): Promise<string | null> {
   try {
     if (navigator.clipboard?.read) {
       const items = await navigator.clipboard.read();
       for (const item of items) {
-        
         if (item.types.includes("text/plain")) {
           const blob = await item.getType("text/plain");
           const text = await blob.text();
@@ -53,7 +47,7 @@ export async function readDrawioFromClipboard(): Promise<string | null> {
             return text;
           }
         }
-        
+
         if (item.types.includes("text/html")) {
           const blob = await item.getType("text/html");
           const html = await blob.text();
@@ -68,17 +62,14 @@ export async function readDrawioFromClipboard(): Promise<string | null> {
         }
       }
     }
-    
+
     const text = await navigator.clipboard.readText();
     if (text.includes("<mxGraphModel") || text.includes("<mxfile")) {
       return text;
     }
-  } catch {
-    
-  }
+  } catch {}
   return null;
 }
-
 
 export async function readSvgFromClipboard(): Promise<string | null> {
   try {
@@ -89,12 +80,12 @@ export async function readSvgFromClipboard(): Promise<string | null> {
           const blob = await item.getType("image/svg+xml");
           return await blob.text();
         }
-        
+
         if (item.types.includes("text/plain")) {
           const blob = await item.getType("text/plain");
           const text = await blob.text();
           const trimmed = text.trim();
-          
+
           if (trimmed.includes("<mxGraphModel") || trimmed.includes("<mxfile")) {
             continue;
           }
@@ -104,8 +95,6 @@ export async function readSvgFromClipboard(): Promise<string | null> {
         }
       }
     }
-  } catch {
-    
-  }
+  } catch {}
   return null;
 }

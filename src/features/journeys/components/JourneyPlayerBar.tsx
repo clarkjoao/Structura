@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Play, Square, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useFlowMode } from "@/features/canvas";
+import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
 import { useDiagramActions } from "@/features/diagram";
 import { useJourney, useJourneySteps } from "../store/selectors/journeys.selectors";
 import { useJourneyPlayer } from "../hooks/useJourneyPlayer";
@@ -23,12 +23,9 @@ export function JourneyPlayerBar() {
     }
   };
 
-  const isJourneyEditorRoute = /^\/journeys\/[^/]+\/edit$/.test(
-    location.pathname,
-  );
+  const isJourneyEditorRoute = /^\/journeys\/[^/]+\/edit$/.test(location.pathname);
 
-  const journeyIdForHooks =
-    journeyPlayer.mode.kind === "idle" ? "" : journeyPlayer.mode.journeyId;
+  const journeyIdForHooks = journeyPlayer.mode.kind === "idle" ? "" : journeyPlayer.mode.journeyId;
   const journey = useJourney(journeyIdForHooks);
   const steps = useJourneySteps(journeyIdForHooks);
 
@@ -56,10 +53,7 @@ export function JourneyPlayerBar() {
     if (!hasNext) return;
     const next = steps[currentStepIndex + 1];
     if (!next) return;
-    const journeyId =
-      journeyPlayer.mode.kind === "playing"
-        ? journeyPlayer.mode.journeyId
-        : "";
+    const journeyId = journeyPlayer.mode.kind === "playing" ? journeyPlayer.mode.journeyId : "";
     if (!flowMode.isIdle) {
       if (flowMode.isRecording) {
         flowMode.cancelRecording();
@@ -74,23 +68,13 @@ export function JourneyPlayerBar() {
     } else if (next.diagramId.length > 0) {
       openDiagram(next.diagramId);
     }
-  }, [
-    currentStepIndex,
-    flowMode,
-    hasNext,
-    journeyPlayer,
-    openDiagram,
-    steps,
-  ]);
+  }, [currentStepIndex, flowMode, hasNext, journeyPlayer, openDiagram, steps]);
 
   const goPrev = useCallback(() => {
     if (!hasPrev) return;
     const prev = steps[currentStepIndex - 1];
     if (!prev) return;
-    const journeyId =
-      journeyPlayer.mode.kind === "playing"
-        ? journeyPlayer.mode.journeyId
-        : "";
+    const journeyId = journeyPlayer.mode.kind === "playing" ? journeyPlayer.mode.journeyId : "";
     if (!flowMode.isIdle) {
       if (flowMode.isRecording) {
         flowMode.cancelRecording();
@@ -105,14 +89,7 @@ export function JourneyPlayerBar() {
     } else if (prev.diagramId.length > 0) {
       openDiagram(prev.diagramId);
     }
-  }, [
-    currentStepIndex,
-    flowMode,
-    hasPrev,
-    journeyPlayer,
-    openDiagram,
-    steps,
-  ]);
+  }, [currentStepIndex, flowMode, hasPrev, journeyPlayer, openDiagram, steps]);
 
   if (journeyPlayer.mode.kind === "idle") {
     return null;
@@ -173,9 +150,7 @@ export function JourneyPlayerBar() {
   }
 
   const recordingMode = journeyPlayer.mode;
-  const stepLabel =
-    journey?.steps[recordingMode.targetStepId]?.label ??
-    recordingMode.targetStepId;
+  const stepLabel = journey?.steps[recordingMode.targetStepId]?.label ?? recordingMode.targetStepId;
 
   return (
     <div className="fixed left-0 right-0 top-16 z-50 flex h-10 items-center justify-between border-b border-border bg-card/95 px-3 text-sm shadow-sm backdrop-blur-sm">
@@ -198,13 +173,7 @@ export function JourneyPlayerBar() {
           <Square className="h-3.5 w-3.5 fill-current" />
           {t("journeys.player.finalizeRecording")}
         </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-8"
-          onClick={handleExitJourney}
-        >
+        <Button type="button" variant="ghost" size="sm" className="h-8" onClick={handleExitJourney}>
           {t("journeys.player.cancelRecording")}
         </Button>
       </div>

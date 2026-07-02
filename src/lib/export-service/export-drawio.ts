@@ -9,6 +9,8 @@ import {
   isJsonViewerComponent,
   isSvgComponent,
   isUnknownComponent,
+  isFlowNodeComponent,
+  isExternalElementComponent,
   isNoteComponent,
   isPanelComponent,
   isGcpComponent,
@@ -33,12 +35,10 @@ import {
 import { validateDiagram } from "./validate-diagram";
 import { escXml } from "./xml-utils";
 
-
 export function extractMxGraphModelXml(fullDrawioFile: string): string {
   const m = fullDrawioFile.match(/<mxGraphModel\b[\s\S]*?<\/mxGraphModel>/);
   return m ? m[0] : fullDrawioFile;
 }
-
 
 function expandWithContainerAncestors(
   ids: string[],
@@ -59,10 +59,7 @@ function expandWithContainerAncestors(
   return [...out];
 }
 
-function drawParentId(
-  comp: Component,
-  containerIds: Set<string>,
-): string {
+function drawParentId(comp: Component, containerIds: Set<string>): string {
   if (comp.parentId && containerIds.has(comp.parentId)) {
     return comp.parentId;
   }
@@ -129,8 +126,7 @@ export function exportDrawio(
   const resolved = diagramWithResolvedScene(diagram);
   validateDiagram(resolved);
 
-  const shouldFilter =
-    options?.componentIds !== undefined && options!.componentIds.length > 0;
+  const shouldFilter = options?.componentIds !== undefined && options!.componentIds.length > 0;
 
   const expandedIds = shouldFilter
     ? expandWithContainerAncestors(options!.componentIds!, resolved.snapshot.components)
@@ -174,12 +170,7 @@ export function exportDrawio(
 
   const componentIdsWithLayout = Object.keys(components).filter((id) => layoutMap.has(id));
 
-  const bbox = computeBoundingBox(
-    componentIdsWithLayout,
-    layoutMap,
-    components,
-    containerIds,
-  );
+  const bbox = computeBoundingBox(componentIdsWithLayout, layoutMap, components, containerIds);
 
   const rootIds = componentIdsWithLayout.filter((id) =>
     isRootExportNode(components[id], containerIds),
@@ -242,20 +233,14 @@ export function exportDrawio(
           };
         })();
 
-    const serviceName = c.serviceId
-      ? serviceRegistry[c.serviceId]?.name
-      : undefined;
+    const serviceName = c.serviceId ? serviceRegistry[c.serviceId]?.name : undefined;
 
     let cell: string;
 
     if (isPanelComponent(c)) {
       const pw = geometry.width || CONFIG.defaults.panelWidth;
       const ph = geometry.height || CONFIG.defaults.panelHeight;
-      cell = cellBuilders.panel.build(
-        c,
-        { ...geometry, width: pw, height: ph },
-        parentMx,
-      );
+      cell = cellBuilders.panel.build(c, { ...geometry, width: pw, height: ph }, parentMx);
     } else if (isApiGroupComponent(c)) {
       cell = cellBuilders.apiGroup.build(c, geometry, parentMx);
     } else if (isAwsComponent(c)) {
@@ -278,9 +263,12 @@ export function exportDrawio(
       );
     } else if (isGcpComponent(c) || isAzureComponent(c)) {
       cell = cellBuilders.c4.build(c, geometry, parentMx, serviceName);
-    } else if (isUnknownComponent(c) || isSvgComponent(c)) {
-
-
+    } else if (
+      isUnknownComponent(c) ||
+      isSvgComponent(c) ||
+      isFlowNodeComponent(c) ||
+      isExternalElementComponent(c)
+    ) {
       throw new Error(`Unsupported component for draw.io export: ${c.type}`);
     } else {
       const _: never = c;
@@ -297,8 +285,7 @@ export function exportDrawio(
     const edgeLayout = edgeLayoutByConnectionId[conn.id];
     const waypoints =
       edgeLayout && edgeLayout.waypoints.length > 0
-        ? edgeLayout.waypoints
-            .map((point) => transformCanvasPoint(point.x, point.y, bbox, scale))
+        ? edgeLayout.waypoints.map((point) => transformCanvasPoint(point.x, point.y, bbox, scale))
         : [];
     edgeCells.push(buildEdgeCell(conn, { waypoints }));
   }

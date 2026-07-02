@@ -31,15 +31,10 @@ export const ServiceCard = ({
       <div className="flex items-center gap-2 mb-1.5">
         <div className="flex items-center gap-1 shrink-0">
           {sources.map((source) => (
-            <span
-              key={source.type}
-              className={`h-2 w-2 rounded-full ${SOURCE_DOT[source.type]}`}
-            />
+            <span key={source.type} className={`h-2 w-2 rounded-full ${SOURCE_DOT[source.type]}`} />
           ))}
         </div>
-        <span className="font-semibold text-foreground text-sm truncate flex-1">
-          {svc.name}
-        </span>
+        <span className="font-semibold text-foreground text-sm truncate flex-1">{svc.name}</span>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
           {sources.map((source) => (
             <span
@@ -53,9 +48,7 @@ export const ServiceCard = ({
       </div>
 
       {svc.description && (
-        <p className="text-xs text-muted-foreground truncate mb-2">
-          {svc.description}
-        </p>
+        <p className="text-xs text-muted-foreground truncate mb-2">{svc.description}</p>
       )}
 
       {svc.technology.length > 0 && (

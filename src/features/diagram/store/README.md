@@ -44,21 +44,21 @@ createDiagramStore()
 
 ## Slice → Actions
 
-| Slice file | Actions |
-|-----------|---------|
-| `diagram.slice.ts` | `addDiagram`, `openDiagram`, `updateDiagram`, `removeDiagram`, `setActiveDiagramId`, `commitVersion`, `restoreVersion` |
-| `components.slice.ts` | `addComponent`, `updateComponent`, `removeComponent`, `setParent`, `groupNodes`, `ungroupNodes` |
-| `connections.slice.ts` | `addConnection`, `updateConnection`, `removeConnection` |
-| `flows.slice.ts` | `addFlow`, `updateFlow`, `removeFlow` |
-| `layout.slice.ts` | `updateNodeLayout`, `updateViewport`, `bringToFront`, `sendToBack` |
-| `services.slice.ts` | `addService`, `updateService`, `removeService`, `linkComponentToService`, `linkComponentToDiagram` |
-| `clipboard.slice.ts` | `copyToClipboard`, `pasteFromClipboard`, `clearClipboard` |
-| `history.slice.ts` | `undo`, `redo` |
-| `folders.slice.ts` | `addFolder`, `updateFolder`, `removeFolder`, `moveFolder` |
-| `patterns.slice.ts` | `insertPattern` |
-| `scenes.slice.ts` | `addScene`, `duplicateScene`, `removeScene`, `mergeSceneIntoBase`, `setActiveScene`, `setCompareScene`, `renameScene`, `addComponentToScene`, `removeComponentFromScene`, `addConnectionToScene`, `removeConnectionFromScene`, `updateSceneNodeLayout` |
-| `icons.slice.ts` | `removeIconReferences` |
-| `userTemplates.slice.ts` | `saveUserTemplate`, `updateUserTemplate`, `deleteUserTemplate` |
+| Slice file               | Actions                                                                                                                                                                                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `diagram.slice.ts`       | `addDiagram`, `openDiagram`, `updateDiagram`, `removeDiagram`, `setActiveDiagramId`, `commitVersion`, `restoreVersion`                                                                                                                                 |
+| `components.slice.ts`    | `addComponent`, `updateComponent`, `removeComponent`, `setParent`, `groupNodes`, `ungroupNodes`                                                                                                                                                        |
+| `connections.slice.ts`   | `addConnection`, `updateConnection`, `removeConnection`                                                                                                                                                                                                |
+| `flows.slice.ts`         | `addFlow`, `updateFlow`, `removeFlow`                                                                                                                                                                                                                  |
+| `layout.slice.ts`        | `updateNodeLayout`, `updateViewport`, `bringToFront`, `sendToBack`                                                                                                                                                                                     |
+| `services.slice.ts`      | `addService`, `updateService`, `removeService`, `linkComponentToService`, `linkComponentToDiagram`                                                                                                                                                     |
+| `clipboard.slice.ts`     | `copyToClipboard`, `pasteFromClipboard`, `clearClipboard`                                                                                                                                                                                              |
+| `history.slice.ts`       | `undo`, `redo`                                                                                                                                                                                                                                         |
+| `folders.slice.ts`       | `addFolder`, `updateFolder`, `removeFolder`, `moveFolder`                                                                                                                                                                                              |
+| `patterns.slice.ts`      | `insertPattern`                                                                                                                                                                                                                                        |
+| `scenes.slice.ts`        | `addScene`, `duplicateScene`, `removeScene`, `mergeSceneIntoBase`, `setActiveScene`, `setCompareScene`, `renameScene`, `addComponentToScene`, `removeComponentFromScene`, `addConnectionToScene`, `removeConnectionFromScene`, `updateSceneNodeLayout` |
+| `icons.slice.ts`         | `removeIconReferences`                                                                                                                                                                                                                                 |
+| `userTemplates.slice.ts` | `saveUserTemplate`, `updateUserTemplate`, `deleteUserTemplate`                                                                                                                                                                                         |
 
 ## Selectors
 
@@ -96,8 +96,8 @@ Service actions are intentionally **not** undoable (they affect all diagrams glo
 ## Factory
 
 ```ts
-import { createDiagramStore } from '@/features/diagram';
-import { InMemoryAdapter } from '@/infrastructure/persistence';
+import { createDiagramStore } from "@/features/diagram";
+import { InMemoryAdapter } from "@/infrastructure/persistence";
 
 const store = createDiagramStore(new InMemoryAdapter());
 ```

@@ -1,6 +1,5 @@
 import type { Flow, FlowStep } from "../model/flow.types";
 
-
 export function repairFlow(
   flow: Flow,
   stepIdsToRemove: string[] = [],
@@ -46,7 +45,6 @@ export function repairFlow(
   return { steps, entryStepId };
 }
 
-
 export function getFlowStepIdsReferencingRemovedElements(
   flow: Flow,
   removedComponentIds: ReadonlySet<string>,
@@ -64,7 +62,6 @@ export function getFlowStepIdsReferencingRemovedElements(
   }
   return out;
 }
-
 
 export function repairFlowsAfterRemovingDiagramElements(
   flows: Record<string, Flow>,

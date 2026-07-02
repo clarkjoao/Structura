@@ -4,12 +4,12 @@ export interface CustomComponentTemplate {
   id: string;
   name: string;
   description?: string;
-  
+
   category?: string;
   baseType: ComponentType;
   data: Record<string, unknown>;
   registryServiceId?: string;
-  
+
   templateVersion: number;
   createdAt: number;
   updatedAt: number;

@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ImagePlus } from "lucide-react";
-import type { Component } from "@/features/diagram";
+import type { Component, ComponentPatch } from "@/features/diagram";
 import { useIconActions, useIconById } from "@/features/diagram";
 import { Button } from "@/components/ui/button";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
@@ -10,14 +10,10 @@ import { IconPickerModal } from "@/features/canvas/components/icons/IconPickerMo
 export interface ComponentIconTabProps {
   component: Component;
   diagramId: string;
-  updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => void;
+  updateComponent: (id: string, patch: ComponentPatch) => void;
 }
 
-export function ComponentIconTab({
-  component,
-  diagramId,
-  updateComponent,
-}: ComponentIconTabProps) {
+export function ComponentIconTab({ component, diagramId, updateComponent }: ComponentIconTabProps) {
   const { t } = useTranslation();
   const { incrementIconUsage, decrementIconUsage } = useIconActions();
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -54,13 +50,7 @@ export function ComponentIconTab({
     if (!diagramId || !component.customIconId) return;
     decrementIconUsage(diagramId, component.customIconId);
     updateComponent(component.id, { customIconId: undefined });
-  }, [
-    component.customIconId,
-    component.id,
-    decrementIconUsage,
-    diagramId,
-    updateComponent,
-  ]);
+  }, [component.customIconId, component.id, decrementIconUsage, diagramId, updateComponent]);
 
   const canMutate = diagramId.length > 0;
 

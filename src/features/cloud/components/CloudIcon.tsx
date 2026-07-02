@@ -21,12 +21,7 @@ const CloudIcon = memo(
     const provider = cloudRegistry.forType(componentType);
 
     if (!provider) {
-      return (
-        <Network
-          size={size}
-          className={`text-muted-foreground ${className ?? ""}`}
-        />
-      );
+      return <Network size={size} className={`text-muted-foreground ${className ?? ""}`} />;
     }
 
     if (!serviceIconName) {

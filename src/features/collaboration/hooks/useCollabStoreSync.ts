@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, type RefObject } from "react";
 import { useDiagramStore } from "@/features/diagram";
 import type { CollabPatch, CollabSnapshot } from "./useCollab";
 
-
 export const remoteLayoutUpdates = new Set<string>();
 
 interface TrackedDiagramState {
@@ -156,15 +155,12 @@ export function useCollabStoreSync({
 
           const nextDiagram = {
             ...diagram,
-            name: hasOwn(patch, "diagramName") && typeof patch.diagramName === "string"
-              ? patch.diagramName
-              : diagram.name,
-            domain: hasOwn(patch, "domain")
-              ? patch.domain
-              : diagram.domain,
-            description: hasOwn(patch, "description")
-              ? patch.description
-              : diagram.description,
+            name:
+              hasOwn(patch, "diagramName") && typeof patch.diagramName === "string"
+                ? patch.diagramName
+                : diagram.name,
+            domain: hasOwn(patch, "domain") ? patch.domain : diagram.domain,
+            description: hasOwn(patch, "description") ? patch.description : diagram.description,
             snapshot: {
               ...diagram.snapshot,
               components: patch.components
@@ -186,9 +182,7 @@ export function useCollabStoreSync({
             edgeLayouts: patch.edgeLayouts
               ? (patch.edgeLayouts as typeof diagram.edgeLayouts)
               : diagram.edgeLayouts,
-            scenes: patch.scenes
-              ? (patch.scenes as typeof diagram.scenes)
-              : diagram.scenes,
+            scenes: patch.scenes ? (patch.scenes as typeof diagram.scenes) : diagram.scenes,
             activeSceneId: hasOwn(patch, "activeSceneId")
               ? patch.activeSceneId
               : diagram.activeSceneId,
@@ -230,7 +224,7 @@ export function useCollabStoreSync({
       previousState = currentState;
 
       if (patch) {
-        sendPatchRef.current(patch);
+        sendPatchRef.current?.(patch);
       }
     };
 
@@ -243,8 +237,6 @@ export function useCollabStoreSync({
 
     const unsubscribe = useDiagramStore.subscribe((diagramStoreState) => {
       if (isApplyingRemoteRef.current) {
-        
-        
         previousState = pickTrackedState(diagramId);
         return;
       }

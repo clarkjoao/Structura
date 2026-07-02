@@ -1,10 +1,6 @@
 import LZString from "lz-string";
 import type { Diagram } from "@/features/diagram";
 
-
-
-
-
 export function encodeDiagramPayload(diagram: Diagram): string {
   return LZString.compressToEncodedURIComponent(JSON.stringify(diagram));
 }
@@ -17,10 +13,6 @@ export function decodeDiagramPayload(encoded: string): Diagram {
   throw new Error("Failed to decompress diagram payload");
 }
 
-
-
-
-
 function getBasePath(): string {
   return import.meta.env.BASE_URL.replace(/\/$/, "");
 }
@@ -29,10 +21,6 @@ export function getAppUrl(): string {
   const pathnameWithoutTrailingSlash = window.location.pathname.replace(/\/$/, "");
   return `${window.location.origin}${pathnameWithoutTrailingSlash}`;
 }
-
-
-
-
 
 export interface ShareUrlResult {
   url: string;
@@ -91,9 +79,7 @@ export function decodeShareParam(shareParam: string): Diagram | null {
         },
       } as Diagram;
     }
-  } catch {
-    
-  }
+  } catch {}
 
   try {
     const json = decodeURIComponent(escape(atob(shareParam)));
@@ -104,10 +90,6 @@ export function decodeShareParam(shareParam: string): Diagram | null {
     return null;
   }
 }
-
-
-
-
 
 export function getViewerPostMessageUrl(): string {
   return `${window.location.origin}${getBasePath()}/viewer`;

@@ -30,7 +30,11 @@ import {
 import { isAwsType, AWS_CATEGORIES, AWS_CATEGORY_MAP, AWS_SERVICE_MAP } from "@/lib/catalogs/aws";
 import AwsIcon from "../../nodes/AwsIcon";
 import TabBar, { type Tab } from "./components/TabBar";
-import { C4_DEFAULT_COLORS, NOTE_DEFAULT_DARK, NOTE_DEFAULT_LIGHT } from "./components/colorPresets";
+import {
+  C4_DEFAULT_COLORS,
+  NOTE_DEFAULT_DARK,
+  NOTE_DEFAULT_LIGHT,
+} from "./components/colorPresets";
 import ConnectionsTab from "./components/ConnectionsTab";
 import { ComponentIconTab } from "./components/ComponentIconTab";
 import { useTranslation } from "react-i18next";
@@ -49,24 +53,15 @@ import {
 } from "./sections";
 import { usePanelChildLayout } from "../../hooks/usePanelChildLayout";
 import { isComponentType } from "@/features/diagram";
-function buildComponentSyncPatch(
-  service: ServiceDefinition,
-  component: Component,
-): Partial<Omit<Component, "id">> {
-  const patch: Partial<Omit<Component, "id">> = {
+function buildComponentSyncPatch(service: ServiceDefinition, component: Component): ComponentPatch {
+  const patch: ComponentPatch = {
     name: service.name,
     description: service.description,
     tags: service.tags?.length ? service.tags : undefined,
   };
 
   if ("technology" in component) {
-    (
-      patch as Partial<
-        Omit<Component, "id"> & { technology?: string | undefined }
-      >
-    ).technology = service.technology.length
-      ? service.technology.join(", ")
-      : undefined;
+    patch.technology = service.technology.length ? service.technology.join(", ") : undefined;
   }
 
   return patch;
@@ -79,7 +74,7 @@ function shouldPreserveContent(name: string, description: string) {
 interface ComponentPanelProps {
   component: Component;
   onClose: () => void;
-  updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => void;
+  updateComponent: (id: string, patch: ComponentPatch) => void;
   removeComponent: (id: string) => void;
   onUngroup?: () => void;
   focusTitleTrigger?: number;
@@ -96,7 +91,7 @@ const ComponentPanel = ({
   const { t } = useTranslation();
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   useEffect(() => {
     if (focusTitleTrigger > 0) {
       requestAnimationFrame(() => {
@@ -137,7 +132,9 @@ const ComponentPanel = ({
   const [tags, setTags] = useState<string[]>(component.tags ?? []);
   const [tagInput, setTagInput] = useState("");
   const [type, setType] = useState<ComponentType>(component.type);
-  const [awsService, setAwsService] = useState((component as { awsService?: string }).awsService ?? "");
+  const [awsService, setAwsService] = useState(
+    (component as { awsService?: string }).awsService ?? "",
+  );
   const [createdDiagramName, setCreatedDiagramName] = useState<string | null>(null);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isPanel = isPanelComponent(component);
@@ -151,7 +148,11 @@ const ComponentPanel = ({
   const showIconTab = !isSvgComponentType(component.type);
   const isAws = isAwsType(type);
   const serviceInfo = awsService ? AWS_SERVICE_MAP.get(awsService) : null;
-  const canCreateLinked = isSystemType(component.type) || isContainerType(component.type)|| isComponentType(component.type) || isAwsType(component.type);
+  const canCreateLinked =
+    isSystemType(component.type) ||
+    isContainerType(component.type) ||
+    isComponentType(component.type) ||
+    isAwsType(component.type);
   const linkedService = useMemo(
     () => allServices.find((service) => service.id === component.serviceId) ?? null,
     [allServices, component.serviceId],
@@ -162,7 +163,8 @@ const ComponentPanel = ({
     parentComp &&
     (isPanelComponent(parentComp) || isApiGroupComponent(parentComp));
   const handleRemoveFromGroup = () => {
-    if (!component.parentId || !setParent || !updateNodeLayout || !activeDiagram || !resolved) return;
+    if (!component.parentId || !setParent || !updateNodeLayout || !activeDiagram || !resolved)
+      return;
     const childLayout = resolved.nodeLayouts[component.id];
     const parentLayout = resolved.nodeLayouts[component.parentId];
     setParent(component.id, null);
@@ -242,11 +244,6 @@ const ComponentPanel = ({
     setTagInput("");
   };
 
-  const diagramOptions = useMemo(
-    () => allDiagrams.map((diagram) => ({ id: diagram.id, name: diagram.name })),
-    [allDiagrams],
-  );
-
   return (
     <div className="flex-1 flex flex-col min-h-0">
       <div className="flex items-center justify-between p-3 border-b border-border shrink-0">
@@ -274,7 +271,11 @@ const ComponentPanel = ({
               <Unlock className="h-4 w-4" />
             )}
           </button>
-          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -348,7 +349,9 @@ const ComponentPanel = ({
               <AwsIcon iconName={serviceInfo.iconName} size={32} />
               <div>
                 <p className="text-xs font-semibold text-foreground">{serviceInfo.name}</p>
-                <p className="text-[10px] text-muted-foreground">{AWS_CATEGORY_MAP.get(type)?.name}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {AWS_CATEGORY_MAP.get(type)?.name}
+                </p>
               </div>
             </div>
           )}
@@ -367,9 +370,7 @@ const ComponentPanel = ({
               titleInputRef={titleInputRef}
               onChangeName={(value) => {
                 setName(value);
-                debouncedUpdate(
-                  isDbTable ? { name: value, tableName: value } : { name: value },
-                );
+                debouncedUpdate(isDbTable ? { name: value, tableName: value } : { name: value });
               }}
               onChangeDesc={(value) => {
                 setDesc(value);
@@ -400,9 +401,7 @@ const ComponentPanel = ({
                 titleInputRef={titleInputRef}
                 onChangeName={(value) => {
                   setName(value);
-                  debouncedUpdate(
-                    isDbTable ? { name: value, tableName: value } : { name: value },
-                  );
+                  debouncedUpdate(isDbTable ? { name: value, tableName: value } : { name: value });
                 }}
                 onChangeDesc={(value) => {
                   setDesc(value);
@@ -438,8 +437,9 @@ const ComponentPanel = ({
                       if (!nextType.startsWith("aws-")) setAwsService("");
                       updateComponent(component.id, {
                         type: nextType,
-                        awsService: nextType.startsWith("aws-") && awsService ? awsService : undefined,
-                      } as Partial<Omit<Component, "id">>);
+                        awsService:
+                          nextType.startsWith("aws-") && awsService ? awsService : undefined,
+                      } as ComponentPatch);
                     }}
                     className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                   >
@@ -450,7 +450,10 @@ const ComponentPanel = ({
                       <option value="component">{t("colors.c4Component")}</option>
                     </optgroup>
                     {AWS_CATEGORIES.map((category) => (
-                      <optgroup key={category.id} label={t("endpointPanel.awsCategory", { name: category.name })}>
+                      <optgroup
+                        key={category.id}
+                        label={t("endpointPanel.awsCategory", { name: category.name })}
+                      >
                         <option value={category.id}>{category.name}</option>
                       </optgroup>
                     ))}
@@ -478,7 +481,7 @@ const ComponentPanel = ({
                       updateComponent(component.id, {
                         awsService: nextService || undefined,
                         ...(shouldRename ? { name: serviceEntry.name } : {}),
-                      } as Partial<Omit<Component, "id">>);
+                      } as ComponentPatch);
                       if (shouldRename) setName(serviceEntry.name);
                     }}
                     className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
@@ -506,9 +509,7 @@ const ComponentPanel = ({
                 showTags
                 onChangeName={(value) => {
                   setName(value);
-                  debouncedUpdate(
-                    isDbTable ? { name: value, tableName: value } : { name: value },
-                  );
+                  debouncedUpdate(isDbTable ? { name: value, tableName: value } : { name: value });
                 }}
                 onChangeDesc={(value) => {
                   setDesc(value);
@@ -572,14 +573,20 @@ const ComponentPanel = ({
           )}
           {!isSimple && !isFlowchart && (
             <LinkedDiagramSection
-            componentId={component.id}
-            linkedDiagramId={component.linkedDiagramId}
-            canCreateLinked={canCreateLinked}
-            createdDiagramName={createdDiagramName}
-            diagrams={allDiagrams}
-            suggestedDiagram={allDiagrams.find(d => d.id === component.id || d.name.toLowerCase().includes(component.name.toLowerCase())) ?? null}
-            onCreateLinked={handleCreateLinked}
-            onChangeLinked={(diagramId) => linkComponentToDiagram(component.id, diagramId)}
+              componentId={component.id}
+              linkedDiagramId={component.linkedDiagramId}
+              canCreateLinked={canCreateLinked}
+              createdDiagramName={createdDiagramName}
+              diagrams={allDiagrams}
+              suggestedDiagram={
+                allDiagrams.find(
+                  (d) =>
+                    d.id === component.id ||
+                    d.name.toLowerCase().includes(component.name.toLowerCase()),
+                ) ?? null
+              }
+              onCreateLinked={handleCreateLinked}
+              onChangeLinked={(diagramId) => linkComponentToDiagram(component.id, diagramId)}
             />
           )}
           {!isSimple && (
@@ -596,7 +603,9 @@ const ComponentPanel = ({
             <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
               {t("elementPanel.idLabel")}
             </label>
-            <p className="text-xs font-mono text-muted-foreground bg-secondary rounded px-2 py-1.5">{component.id}</p>
+            <p className="text-xs font-mono text-muted-foreground bg-secondary rounded px-2 py-1.5">
+              {component.id}
+            </p>
           </div>
           <div className="pt-2">
             <button

@@ -1,11 +1,10 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { seedStressDiagram, getSnapshot, measureMs, type StressSeedResult } from "./stress-helpers";
 import {
-  seedStressDiagram,
-  getSnapshot,
-  measureMs,
-  type StressSeedResult,
-} from "./stress-helpers";
-import { buildChildrenIndex, getDescendantIdsFromIndex, isPanelComponent } from "@/features/diagram";
+  buildChildrenIndex,
+  getDescendantIdsFromIndex,
+  isPanelComponent,
+} from "@/features/diagram";
 import { HISTORY_COALESCE_MS } from "@/features/diagram/store/store.constants";
 
 describe("Stress: 500 elements with 6-level nested panels", () => {
@@ -227,8 +226,7 @@ describe("Stress: 500 elements with 6-level nested panels", () => {
       const { store, allComponentIds } = seedStressDiagram();
       const { components } = getSnapshot(store);
       const rootLeaves = allComponentIds.filter(
-        (id) =>
-          components[id]!.parentId === null && !isPanelComponent(components[id]!),
+        (id) => components[id]!.parentId === null && !isPanelComponent(components[id]!),
       );
 
       expect(rootLeaves.length).toBeGreaterThanOrEqual(2);

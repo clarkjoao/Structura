@@ -69,12 +69,9 @@ export async function sendMessage(
           fullText += delta;
           onChunk(delta);
         }
-      } catch {
-        
-      }
+      } catch {}
     }
   }
 
   return fullText;
 }
-

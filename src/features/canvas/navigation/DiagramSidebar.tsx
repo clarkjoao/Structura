@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type RefObject,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 import { enUS, ptBR } from "date-fns/locale";
@@ -56,11 +49,7 @@ function ancestorFolderIds(folders: FolderRecord, folderId: string | null): stri
   return chain;
 }
 
-function diagramMatchesSearch(
-  diagram: Diagram,
-  folders: FolderRecord,
-  q: string,
-): boolean {
+function diagramMatchesSearch(diagram: Diagram, folders: FolderRecord, q: string): boolean {
   const lc = q.trim().toLowerCase();
   if (!lc) return true;
   if (diagram.name.toLowerCase().includes(lc)) return true;
@@ -92,7 +81,7 @@ export function DiagramSidebar({
   const { recent } = useRecentDiagrams();
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(readSidebarExpandedFolderIds);
-  const activeDiagramRef = useRef<HTMLButtonElement | null>(null);
+  const activeDiagramRef = useRef<HTMLButtonElement>(null);
 
   const locale = i18n.language.startsWith("pt") ? ptBR : enUS;
 
@@ -109,9 +98,7 @@ export function DiagramSidebar({
     return recent
       .map((entry) => {
         const diagram = diagramsById[entry.id];
-        return diagram
-          ? { id: entry.id, openedAt: entry.openedAt, name: diagram.name }
-          : null;
+        return diagram ? { id: entry.id, openedAt: entry.openedAt, name: diagram.name } : null;
       })
       .filter((row): row is { id: string; openedAt: number; name: string } => row !== null);
   }, [recent, diagramsById]);
@@ -255,7 +242,9 @@ export function DiagramSidebar({
                 </p>
                 <div className="space-y-0.5">
                   {recentResolved.length === 0 ? (
-                    <p className="px-2 py-1 text-xs text-muted-foreground">{t("diagramNav.emptyRecent")}</p>
+                    <p className="px-2 py-1 text-xs text-muted-foreground">
+                      {t("diagramNav.emptyRecent")}
+                    </p>
                   ) : (
                     recentResolved.map((recentEntry) => {
                       const isActive = recentEntry.id === currentDiagramId;
@@ -325,7 +314,7 @@ interface SidebarFolderTreeProps {
   flows: Flow[];
   activeFlow: Flow | null;
   onSelectFlow: (flow: Flow) => void;
-  activeDiagramRef: RefObject<HTMLButtonElement | null>;
+  activeDiagramRef: RefObject<HTMLButtonElement>;
 }
 
 function SidebarFolderTree({
@@ -370,7 +359,9 @@ function SidebarFolderTree({
                     onClick={() => onSelectFlow(flow)}
                     className={cn(
                       "flex w-full items-center gap-1 rounded px-2 py-1 text-left text-[12px] transition-colors",
-                      isFlowActive ? "font-medium text-primary" : "text-muted-foreground hover:text-foreground",
+                      isFlowActive
+                        ? "font-medium text-primary"
+                        : "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     <span className="text-[10px] text-muted-foreground/80">├</span>
@@ -416,7 +407,7 @@ function DiagramTreeRow({
   depth: number;
   isActive: boolean;
   onSelect: () => void;
-  activeDiagramRef: RefObject<HTMLButtonElement | null>;
+  activeDiagramRef: RefObject<HTMLButtonElement>;
 }) {
   return (
     <button
@@ -461,7 +452,7 @@ function SidebarFolderNode({
   flows: Flow[];
   activeFlow: Flow | null;
   onSelectFlow: (flow: Flow) => void;
-  activeDiagramRef: RefObject<HTMLButtonElement | null>;
+  activeDiagramRef: RefObject<HTMLButtonElement>;
 }) {
   const children = getChildFolders(folders, folder.id);
   const diagramsHere = getDiagramsInFolder(allDiagrams, folder.id);

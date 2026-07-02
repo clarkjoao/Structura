@@ -16,8 +16,5 @@ export function getServiceUsage(
           }
         : null;
     })
-    .filter(
-      (x): x is { diagramId: string; diagramName: string; nodeCount: number } =>
-        x !== null,
-    );
+    .filter((x): x is { diagramId: string; diagramName: string; nodeCount: number } => x !== null);
 }

@@ -5,17 +5,8 @@ import { toast } from "sonner";
 import type { Diagram } from "@/features/diagram";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  type ShareUrlResult,
-  generateShareUrl,
-  generateViewerUrl,
-} from "@/lib/diagram-url";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { type ShareUrlResult, generateShareUrl, generateViewerUrl } from "@/lib/diagram-url";
 
 interface ShareModalProps {
   diagram: Diagram;
@@ -30,15 +21,13 @@ export function ShareModal({ diagram, open, onOpenChange }: ShareModalProps) {
   const [copied, setCopied] = useState<CopiedState>(null);
   const shareResult: ShareUrlResult = useMemo(
     () => generateShareUrl(diagram),
-    
-    
+
     [diagram.id],
   );
   const shareUrl = shareResult.url;
   const embedUrl = useMemo(
     () => generateViewerUrl(diagram),
-    
-    
+
     [diagram.id],
   );
   const formattedLinkSize = useMemo(
@@ -75,11 +64,7 @@ export function ShareModal({ diagram, open, onOpenChange }: ShareModalProps) {
               {compressionPercent}% {t("share.smaller")}
             </p>
             <div className="flex gap-2">
-              <Input
-                readOnly
-                value={shareUrl}
-                className="text-xs font-mono"
-              />
+              <Input readOnly value={shareUrl} className="text-xs font-mono" />
               <Button
                 size="sm"
                 variant="outline"
@@ -134,11 +119,7 @@ export function ShareModal({ diagram, open, onOpenChange }: ShareModalProps) {
             <label className="text-sm font-medium">{t("share.embedLabel")}</label>
             <p className="text-xs text-muted-foreground">{t("share.embedDescription")}</p>
             <div className="flex gap-2">
-              <Input
-                readOnly
-                value={embedUrl}
-                className="text-xs font-mono"
-              />
+              <Input readOnly value={embedUrl} className="text-xs font-mono" />
               <Button
                 size="sm"
                 variant="outline"

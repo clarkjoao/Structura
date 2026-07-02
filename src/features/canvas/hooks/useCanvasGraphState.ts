@@ -1,7 +1,13 @@
 import { useCallback, useMemo, type MutableRefObject } from "react";
 import type { TFunction } from "i18next";
 import type { Node } from "@xyflow/react";
-import type { Component, Connection, Diagram, DiagramModel, ServiceDefinition } from "@/features/diagram";
+import type {
+  Component,
+  Connection,
+  Diagram,
+  DiagramModel,
+  ServiceDefinition,
+} from "@/features/diagram";
 import type { NodeSelectionState } from "@/features/canvas/hooks/useCanvasVisualState";
 import { useCanvasConnectionDerivations } from "../edges/useCanvasConnectionDerivations";
 import { useCanvasNodes, type DiagramSceneState } from "../nodes/useCanvasNodes";
@@ -56,7 +62,6 @@ export interface UseCanvasGraphStateParams {
   updateNodeInternals: (nodeIds: string[]) => void;
   t: TFunction;
 }
-
 
 export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
   const {
@@ -166,9 +171,6 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     updateComponent: actions.updateComponent,
   });
 
-  
-  
-  
   const onSelectionFromChanges = useCallback(
     (selectedIds: string[]) => {
       if (selectedIds.length === 0) return;

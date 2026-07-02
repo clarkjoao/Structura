@@ -1,10 +1,11 @@
-import type { C4Type, Component, Connection, NodeLayout, UnknownComponent } from "@/features/diagram";
-import {
-  COMPONENT_TYPE_UNKNOWN,
-  EdgeStyle,
-  PanelKind,
-  generateId,
+import type {
+  C4Type,
+  Component,
+  Connection,
+  NodeLayout,
+  UnknownComponent,
 } from "@/features/diagram";
+import { COMPONENT_TYPE_UNKNOWN, EdgeStyle, PanelKind, generateId } from "@/features/diagram";
 import { AWS_CATEGORY_ID_GENERAL } from "@/lib/catalogs/aws";
 
 export interface DrawioImportResult {
@@ -67,16 +68,13 @@ function readGeometry(element: Element): { x: number; y: number; width: number; 
   };
 }
 
-
 function extractStyle(el: Element): string {
-  const cell =
-    el.tagName.toLowerCase() === "object" ? el.querySelector("mxCell") : el;
+  const cell = el.tagName.toLowerCase() === "object" ? el.querySelector("mxCell") : el;
   return cell?.getAttribute("style") ?? "";
 }
 
 function extractGeometry(el: Element): { x: number; y: number; width: number; height: number } {
-  const geom =
-    el.querySelector("mxGeometry") ?? el.querySelector("mxCell > mxGeometry");
+  const geom = el.querySelector("mxGeometry") ?? el.querySelector("mxCell > mxGeometry");
   return {
     x: parseFloat(geom?.getAttribute("x") ?? "0"),
     y: parseFloat(geom?.getAttribute("y") ?? "0"),
@@ -252,7 +250,7 @@ interface PendingVertex {
   kind: "c4" | "panel" | "aws" | "panel-mxcell" | "unknown";
   parentDrawioId: string;
   rawGeometry: { x: number; y: number; width: number; height: number };
-  
+
   sourceElement: Element;
 }
 
@@ -455,10 +453,11 @@ export function parseDrawioXml(
     const positioned = layoutPositionFor(pending.parentDrawioId, pending.rawGeometry);
 
     if (pending.kind === "panel" || pending.kind === "panel-mxcell") {
-      const objectEl =
-        pending.kind === "panel" ? pending.sourceElement : null;
+      const objectEl = pending.kind === "panel" ? pending.sourceElement : null;
       const mxCellEl =
-        pending.kind === "panel-mxcell" ? pending.sourceElement : getVertexMxCellFromObject(pending.sourceElement);
+        pending.kind === "panel-mxcell"
+          ? pending.sourceElement
+          : getVertexMxCellFromObject(pending.sourceElement);
 
       const name =
         objectEl && getAttr(objectEl, "c4Name").length > 0
@@ -512,7 +511,8 @@ export function parseDrawioXml(
     if (pending.kind === "c4") {
       const objectEl = pending.sourceElement;
       const c4TypeLabel = getAttr(objectEl, "c4Type");
-      const mappedType = C4_TYPE_MAP[c4TypeLabel] as "person" | "system" | "container" | "component";
+      const mappedType = C4_TYPE_MAP[c4TypeLabel] as
+        "person" | "system" | "container" | "component";
       const registryServiceName = getAttr(objectEl, "registryService");
       const serviceId = resolveRegistryServiceId(registryServiceName, serviceRegistry);
 
@@ -539,10 +539,8 @@ export function parseDrawioXml(
       const sourceEl = pending.sourceElement;
       const conversion = tryConvertUnknownCell(sourceEl);
       const fallbackGeom = extractGeometry(sourceEl);
-      const layoutWidth =
-        positioned.width > 0 ? positioned.width : fallbackGeom.width;
-      const layoutHeight =
-        positioned.height > 0 ? positioned.height : fallbackGeom.height;
+      const layoutWidth = positioned.width > 0 ? positioned.width : fallbackGeom.width;
+      const layoutHeight = positioned.height > 0 ? positioned.height : fallbackGeom.height;
 
       if (conversion.kind === "c4") {
         const base = {

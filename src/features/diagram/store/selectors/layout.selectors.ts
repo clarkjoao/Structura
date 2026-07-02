@@ -2,7 +2,6 @@ import { useShallow } from "zustand/react/shallow";
 import type { Point } from "../../model/diagram.types";
 import { useDiagramStore } from "../diagram.store";
 
-
 const EMPTY_WAYPOINTS: Point[] = [];
 
 export const useEdgeWaypoints = (connectionId: string): Point[] =>

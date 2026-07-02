@@ -1,10 +1,8 @@
-
 import type { Component } from "@/features/diagram";
 import type { NodeLayout } from "@/features/diagram";
 import { isApiGroupComponent, isPanelComponent } from "@/features/diagram";
 import { CONFIG } from "./constants";
 import type { GeometryInfo } from "./types";
-
 
 export const DRAWIO_TARGET_WIDTH = 2400;
 export const DRAWIO_TARGET_HEIGHT = 1600;
@@ -15,7 +13,6 @@ export const DRAWIO_ROOT_MIN_GAP = 40;
 
 const DEFAULT_ROOT_W = CONFIG.minDimensions.c4.width;
 const DEFAULT_ROOT_H = CONFIG.minDimensions.c4.height;
-
 
 export function getContainerIds(components: Record<string, Component>): Set<string> {
   const ids = new Set<string>();
@@ -34,14 +31,10 @@ export interface BoundingBox {
   height: number;
 }
 
-export function isRootExportNode(
-  c: Component | undefined,
-  containerIds: Set<string>,
-): boolean {
+export function isRootExportNode(c: Component | undefined, containerIds: Set<string>): boolean {
   if (!c) return true;
   return !c.parentId || !containerIds.has(c.parentId);
 }
-
 
 export function computeBoundingBox(
   ids: string[],
@@ -97,7 +90,6 @@ export function computeScaleFactor(bbox: BoundingBox, rootNodeCount: number): nu
 
 export type RootPosition = { x: number; y: number; width: number; height: number };
 
-
 export function resolveOverlaps(
   positions: Map<string, RootPosition>,
   minGap: number,
@@ -117,10 +109,8 @@ export function resolveOverlaps(
         const rA = resolved.get(idA)!;
         const rB = resolved.get(idB)!;
 
-        const overlapX =
-          rA.x < rB.x + rB.width + minGap && rB.x < rA.x + rA.width + minGap;
-        const overlapY =
-          rA.y < rB.y + rB.height + minGap && rB.y < rA.y + rA.height + minGap;
+        const overlapX = rA.x < rB.x + rB.width + minGap && rB.x < rA.x + rA.width + minGap;
+        const overlapY = rA.y < rB.y + rB.height + minGap && rB.y < rA.y + rA.height + minGap;
 
         if (overlapX && overlapY) {
           const newY = rA.y + rA.height + minGap;
@@ -134,7 +124,6 @@ export function resolveOverlaps(
   }
   return resolved;
 }
-
 
 export function getExportGeometry(layout: NodeLayout | undefined): GeometryInfo {
   if (!layout) {

@@ -63,11 +63,7 @@ export function DiagramCardFooter({
           label={t("dashboard.card.connections")}
         />
         {flowCount > 0 ? (
-          <StatChip
-            icon={<Play size={11} />}
-            value={flowCount}
-            label={t("dashboard.card.flows")}
-          />
+          <StatChip icon={<Play size={11} />} value={flowCount} label={t("dashboard.card.flows")} />
         ) : null}
       </div>
       <div className="flex items-center gap-2">

@@ -96,7 +96,12 @@ describe("serializeDiagramContext", () => {
             description: "",
             parentId: null,
             externalLinks: [
-              { id: "l1", label: "Docs", url: "https://example.com", type: ExternalLinkType.Generic },
+              {
+                id: "l1",
+                label: "Docs",
+                url: "https://example.com",
+                type: ExternalLinkType.Generic,
+              },
             ],
           },
         },

@@ -55,7 +55,6 @@ function resolveBaseType(node: Node, nodeData: Record<string, unknown>): Compone
   return "component";
 }
 
-
 const NODE_DATA_UI_ONLY_KEYS = new Set<string>([
   "isSelected",
   "controlsDisabled",

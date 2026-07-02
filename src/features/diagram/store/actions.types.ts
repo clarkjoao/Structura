@@ -51,10 +51,18 @@ export interface AppActions {
   ) => Component;
   updateComponent: (id: string, patch: ComponentPatch) => void;
   removeComponent: (id: string) => void;
-  updateHandleOrder: (componentId: string, side: "incoming" | "outgoing", orderedConnectionIds: string[]) => void;
+  updateHandleOrder: (
+    componentId: string,
+    side: "incoming" | "outgoing",
+    orderedConnectionIds: string[],
+  ) => void;
 
   addExternalLink: (componentId: string, link: Omit<ExternalLink, "id">) => void;
-  updateExternalLink: (componentId: string, linkId: string, patch: Partial<Omit<ExternalLink, "id">>) => void;
+  updateExternalLink: (
+    componentId: string,
+    linkId: string,
+    patch: Partial<Omit<ExternalLink, "id">>,
+  ) => void;
   removeExternalLink: (componentId: string, linkId: string) => void;
 
   addConnection: (
@@ -66,7 +74,11 @@ export interface AppActions {
   updateConnection: (id: string, patch: Partial<Omit<Connection, "id">>) => void;
   removeConnection: (id: string) => void;
 
-  updateNodeLayout: (elementId: string, position: { x: number; y: number }, dimensions?: { width: number; height: number }) => void;
+  updateNodeLayout: (
+    elementId: string,
+    position: { x: number; y: number },
+    dimensions?: { width: number; height: number },
+  ) => void;
   updateViewport: (viewport: { x: number; y: number; zoom: number }) => void;
   updateEdgeWaypoints: (diagramId: string, connectionId: string, waypoints: Point[]) => void;
   clearEdgeWaypoints: (diagramId: string, connectionId: string) => void;
@@ -83,21 +95,42 @@ export interface AppActions {
   linkComponentToService: (componentId: string, serviceId: string | undefined) => void;
   linkComponentToDiagram: (componentId: string, diagramId: string | undefined) => void;
   setParent: (childId: string, parentId: string | null) => void;
-  commitNodeDrag: (nodeId: string, newParentId: string | null, newPosition: { x: number; y: number }) => void;
-  batchCommitNodeDrag: (entries: Array<{ nodeId: string; newParentId: string | null; newPosition: { x: number; y: number } }>) => void;
+  commitNodeDrag: (
+    nodeId: string,
+    newParentId: string | null,
+    newPosition: { x: number; y: number },
+  ) => void;
+  batchCommitNodeDrag: (
+    entries: Array<{
+      nodeId: string;
+      newParentId: string | null;
+      newPosition: { x: number; y: number };
+    }>,
+  ) => void;
   groupNodes: (componentIds: string[]) => string | null;
   ungroupNodes: (panelId: string) => void;
 
-  addFlow: (diagramId: string, name: string, mermaid: string, steps?: Record<string, FlowStep>) => Flow;
+  /** Returns null when the target diagram does not exist. */
+  addFlow: (
+    diagramId: string,
+    name: string,
+    mermaid: string,
+    steps?: Record<string, FlowStep>,
+  ) => Flow | null;
   updateFlow: (id: string, patch: Partial<Omit<Flow, "id">>) => void;
   removeFlow: (id: string) => void;
 
-  addFlowStep: (flowId: string, step: Omit<FlowStep, 'id'>) => string;
+  addFlowStep: (flowId: string, step: Omit<FlowStep, "id">) => string;
   updateFlowStep: (flowId: string, stepId: string, patch: Partial<FlowStep>) => void;
   removeFlowStep: (flowId: string, stepId: string) => void;
   addFlowBranch: (flowId: string, conditionStepId: string, branch: FlowBranch) => void;
   removeFlowBranch: (flowId: string, conditionStepId: string, branchIndex: number) => void;
-  convertStepToCondition: (flowId: string, stepId: string, conditionLabel: string, branchLabels: string[]) => void;
+  convertStepToCondition: (
+    flowId: string,
+    stepId: string,
+    conditionLabel: string,
+    branchLabels: string[],
+  ) => void;
 
   insertPattern: (
     template:

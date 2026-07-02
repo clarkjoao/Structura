@@ -85,9 +85,13 @@ function sanitizeIconLibrary(raw: unknown): Record<string, IconDefinition> {
   return next;
 }
 
-
 export function normalizeImportedDiagram(diagram: Diagram): Diagram {
-  const snapshot = diagram.snapshot ?? { components: {}, connections: {}, flows: {}, iconLibrary: {} };
+  const snapshot = diagram.snapshot ?? {
+    components: {},
+    connections: {},
+    flows: {},
+    iconLibrary: {},
+  };
   const iconLibrary = sanitizeIconLibrary(snapshot.iconLibrary);
 
   try {
@@ -99,9 +103,7 @@ export function normalizeImportedDiagram(diagram: Diagram): Diagram {
         }
       }
     }
-  } catch {
-    
-  }
+  } catch {}
 
   const components = { ...snapshot.components };
   for (const key of Object.keys(components)) {
@@ -113,7 +115,9 @@ export function normalizeImportedDiagram(diagram: Diagram): Diagram {
   return {
     ...diagram,
     edgeLayouts:
-      diagram.edgeLayouts && typeof diagram.edgeLayouts === "object" && !Array.isArray(diagram.edgeLayouts)
+      diagram.edgeLayouts &&
+      typeof diagram.edgeLayouts === "object" &&
+      !Array.isArray(diagram.edgeLayouts)
         ? diagram.edgeLayouts
         : {},
     snapshot: {

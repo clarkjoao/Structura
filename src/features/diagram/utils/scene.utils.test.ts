@@ -145,7 +145,9 @@ describe("sceneHasDiff", () => {
       name: "S",
       color: "#000",
       createdAt: 0,
-      addedComponents: { x: { id: "x", name: "X", type: "system", description: "", parentId: null } },
+      addedComponents: {
+        x: { id: "x", name: "X", type: "system", description: "", parentId: null },
+      },
       addedConnections: {},
       removedComponentIds: [],
       removedConnectionIds: [],
@@ -162,7 +164,13 @@ describe("computeMergePreview", () => {
   });
 
   it("lists adds, removes, and component conflicts across scenes", () => {
-    const shared = { id: "dup", name: "Dup", type: "container" as const, description: "", parentId: null };
+    const shared = {
+      id: "dup",
+      name: "Dup",
+      type: "container" as const,
+      description: "",
+      parentId: null as string | null,
+    };
     const d = emptyDiagram({
       snapshot: {
         components: {
@@ -212,7 +220,7 @@ describe("computeMergePreview", () => {
       name: "Overlap",
       type: "container" as const,
       description: "",
-      parentId: null,
+      parentId: null as string | null,
     };
     const d = emptyDiagram({
       snapshot: {

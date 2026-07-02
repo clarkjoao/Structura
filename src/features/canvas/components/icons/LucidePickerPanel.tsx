@@ -41,7 +41,10 @@ function LucidePickerIconCard({ iconKey, onSelect }: LucidePickerIconCardProps) 
           />
         </Suspense>
       </div>
-      <span className="line-clamp-2 w-full break-all text-muted-foreground" style={{ fontSize: 10 }}>
+      <span
+        className="line-clamp-2 w-full break-all text-muted-foreground"
+        style={{ fontSize: 10 }}
+      >
         {iconNameString}
       </span>
     </button>

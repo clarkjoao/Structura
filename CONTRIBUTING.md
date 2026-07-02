@@ -26,14 +26,14 @@ This project follows our [Code of Conduct](CODE_OF_CONDUCT.md). By participating
 
 ## Ways to Contribute
 
-| Type | How |
-|------|-----|
-| 🐛 Bug reports | Open a [bug report](.github/ISSUE_TEMPLATE/bug_report.yml) |
+| Type                | How                                                                  |
+| ------------------- | -------------------------------------------------------------------- |
+| 🐛 Bug reports      | Open a [bug report](.github/ISSUE_TEMPLATE/bug_report.yml)           |
 | 💡 Feature requests | Open a [feature request](.github/ISSUE_TEMPLATE/feature_request.yml) |
-| 🔧 Bug fixes | Fork → fix → PR |
-| ✨ New features | **Discuss in an issue first** before opening a PR |
-| 📖 Documentation | Same workflow as code changes |
-| 🧪 Tests | Always welcome |
+| 🔧 Bug fixes        | Fork → fix → PR                                                      |
+| ✨ New features     | **Discuss in an issue first** before opening a PR                    |
+| 📖 Documentation    | Same workflow as code changes                                        |
+| 🧪 Tests            | Always welcome                                                       |
 
 > **New here?** Look for issues labeled [`good first issue`](https://github.com/clarkjoao/Structura/issues?q=label%3A%22good+first+issue%22) or [`help wanted`](https://github.com/clarkjoao/Structura/issues?q=label%3A%22help+wanted%22).
 
@@ -87,6 +87,7 @@ src/
 ### Critical Constraints
 
 #### Imports
+
 ```ts
 // ✅ CORRECT
 import { ... } from '@/features/diagram'
@@ -97,33 +98,37 @@ import { ... } from 'src/lib/model-store'
 ```
 
 #### State mutations — Undo/Redo is non-negotiable
+
 ```ts
 // ✅ CORRECT — pushHistory MUST be called first, before any mutation
 set((state) => {
-  pushHistory(state)
-  state.components[id].label = newLabel
-})
+  pushHistory(state);
+  state.components[id].label = newLabel;
+});
 
 // ❌ WRONG — missing pushHistory
 // ❌ WRONG — pushHistory called after mutation
 ```
 
 #### Node drag — never call setParent or updateNodeLayout directly
+
 ```ts
 // ✅ CORRECT
-commitNodeDrag(nodeId, position)
+commitNodeDrag(nodeId, position);
 
 // ❌ FORBIDDEN
-setParent(nodeId, parentId)
-updateNodeLayout(nodeId, position)
+setParent(nodeId, parentId);
+updateNodeLayout(nodeId, position);
 ```
 
 #### Node rendering order (strict, never reorder)
+
 ```
 panel → swimlane → note → apiGroup → endpoint → c4
 ```
 
 #### Type guards — never use string checks
+
 ```ts
 // ✅ CORRECT
 if (isC4Component(node)) { ... }
@@ -133,6 +138,7 @@ if (node.type === 'c4') { ... }
 ```
 
 #### UI Text — no hardcoded strings
+
 ```ts
 // ✅ CORRECT
 const { t } = useTranslation()
@@ -174,6 +180,7 @@ Scope: diagram | canvas | persistence | flows | layout | ci | deps
 ```
 
 Examples:
+
 ```
 feat(canvas): add alignment toolbar
 fix(diagram): call pushHistory before label mutation
@@ -206,14 +213,14 @@ test(layout): add unit tests for computeGridLayout
 
 ## Issue Labels
 
-| Label | Meaning |
-|-------|---------|
-| `bug` | Something is broken |
-| `enhancement` | New feature or improvement |
-| `good first issue` | Suitable for newcomers |
-| `help wanted` | Extra attention needed |
-| `persistence` | Storage layer (high risk) |
-| `canvas` | ReactFlow / canvas layer |
-| `diagram` | Domain model / store |
-| `performance` | Performance-related |
-| `documentation` | Docs only |
+| Label              | Meaning                    |
+| ------------------ | -------------------------- |
+| `bug`              | Something is broken        |
+| `enhancement`      | New feature or improvement |
+| `good first issue` | Suitable for newcomers     |
+| `help wanted`      | Extra attention needed     |
+| `persistence`      | Storage layer (high risk)  |
+| `canvas`           | ReactFlow / canvas layer   |
+| `diagram`          | Domain model / store       |
+| `performance`      | Performance-related        |
+| `documentation`    | Docs only                  |

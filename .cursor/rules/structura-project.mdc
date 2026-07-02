@@ -13,4 +13,4 @@ Open source **architecture diagramming** tool built with:
 - react-i18next
 - Tailwind CSS
 
-Detailed conventions live in scoped `.cursor/rules/structura-*.mdc` files. The long-form reference is `.cursor/rules.md`.
+Detailed conventions live in scoped `.cursor/rules/structura-*.mdc` files. The long-form reference is `AGENTS.md` at the repo root.

@@ -1,4 +1,3 @@
-
 export type {
   ComponentType,
   Component,
@@ -23,6 +22,7 @@ export type {
   JsonViewerComponent,
   FlowNodeComponent,
   FlowNodeShape,
+  ExternalElementComponent,
 } from "./component.types";
 
 export type {
@@ -38,8 +38,6 @@ export type {
 export type { NodeLayout, ViewNodeLayout, Point, EdgeLayout } from "./layout.types";
 
 export type { FlowStep, FlowStepType, FlowBranch, Flow } from "./flow.types";
-
-
 
 import type { Component } from "./component.types";
 import type { Connection } from "./connection.types";
@@ -57,9 +55,9 @@ export interface IconDefinition {
   id: string;
   name: string;
   source: IconSource;
-  
+
   createdAt: number;
-  
+
   usageCount: number;
 }
 
@@ -92,27 +90,23 @@ export interface Folder {
   domain?: string;
 }
 
-
 export type UserTemplateComponent = Omit<Component, "id" | "parentId" | "x" | "y"> & {
-  
   parentIndex?: number;
-  
+
   _relX?: number;
   _relY?: number;
-  
+
   width?: number;
   height?: number;
 };
 
-
 export interface UserTemplate {
-  
   id: string;
   name: string;
   description?: string;
-  
+
   category?: string;
-  
+
   createdAt: number;
   components: UserTemplateComponent[];
   connections: Array<
@@ -122,7 +116,6 @@ export interface UserTemplate {
     }
   >;
 }
-
 
 export interface SceneDiff {
   id: string;
@@ -152,7 +145,7 @@ export interface Diagram {
   folderId?: string | null;
   scenes?: Record<string, SceneDiff>;
   activeSceneId?: string | null;
-  
+
   compareSceneId?: string | null;
 }
 

@@ -27,10 +27,10 @@ describe("computeUserTemplateNodeLayouts", () => {
   });
 
   it("resolves legacy x/y when _relX/_relY are absent", () => {
-    const layouts = computeUserTemplateNodeLayouts(
-      [{ x: 10, y: 20 } as { x: number; y: number }],
-      { x: 0, y: 0 },
-    );
+    const layouts = computeUserTemplateNodeLayouts([{ x: 10, y: 20 } as { x: number; y: number }], {
+      x: 0,
+      y: 0,
+    });
     expect(layouts[0]).toMatchObject({ x: 10, y: 20 });
   });
 

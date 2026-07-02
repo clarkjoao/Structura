@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import ElementPickerModal from "./ElementPickerModal";
-import { Focus, Minimize2, Plus, ChevronUp, Puzzle } from "lucide-react";
+import { Plus, ChevronUp, Puzzle } from "lucide-react";
 import { useActiveDiagram } from "@/features/diagram";
 import { useInteractionMode } from "../hooks/useInteractionMode";
 import PatternPicker from "./PatternPicker";
@@ -20,7 +20,8 @@ interface CanvasToolbarProps {
   setSelectedEdgeId: (id: string | null) => void;
   onOpenScenes?: () => void;
   allTags: string[];
-  visibleTags: Set<string>;
+  /** null means "no tag filter active" (all tags visible). */
+  visibleTags: Set<string> | null;
   onToggleTag: (tag: string) => void;
   onShowAllTags: () => void;
   onShowNoTags: () => void;
@@ -114,13 +115,13 @@ const CanvasToolbar = ({
 
   return (
     <div className="absolute top-4 left-4 z-10 flex w-[220px] flex-col gap-2">
-        <CanvasToolbarDiagramPanel
-          diagram={diagram}
-          toolbarEditLocked={toolbarEditLocked}
-          collapsed={collapsed}
-          toggleCollapsed={toggleCollapsed}
-          focusMode={focusMode}
-        />
+      <CanvasToolbarDiagramPanel
+        diagram={diagram}
+        toolbarEditLocked={toolbarEditLocked}
+        collapsed={collapsed}
+        toggleCollapsed={toggleCollapsed}
+        focusMode={focusMode}
+      />
 
       {!collapsed && (
         <>
@@ -201,9 +202,7 @@ const CanvasToolbar = ({
           setSelectedEdgeId={setSelectedEdgeId}
         />
       )}
-      {showModal && (
-        <ElementPickerModal onClose={() => setShowModal(false)} onInsert={onInsert} />
-      )}
+      {showModal && <ElementPickerModal onClose={() => setShowModal(false)} onInsert={onInsert} />}
     </div>
   );
 };

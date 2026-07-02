@@ -13,10 +13,7 @@ export interface DetailPanelProps {
   svc: ServiceDefinition;
   diagrams: Record<string, Diagram>;
   onNavigateToDiagram: (diagramId: string, serviceId: string) => void;
-  updateService: (
-    id: string,
-    patch: Partial<Omit<ServiceDefinition, "id">>,
-  ) => void;
+  updateService: (id: string, patch: Partial<Omit<ServiceDefinition, "id">>) => void;
   removeService: (id: string) => void;
   onClose: () => void;
 }

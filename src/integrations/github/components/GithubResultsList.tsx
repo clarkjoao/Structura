@@ -135,12 +135,7 @@ export function GithubResultsList({
 
       {results.length < totalCount && (
         <div className="flex justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onLoadMore}
-            disabled={loading}
-          >
+          <Button type="button" variant="outline" onClick={onLoadMore} disabled={loading}>
             {t("github.loadMore")}
           </Button>
         </div>

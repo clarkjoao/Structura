@@ -56,9 +56,7 @@ export function useWorkspaceImport(options: UseWorkspaceImportOptions = {}) {
         finishImport(diagram);
         return true;
       } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : t("import.structurizrError"),
-        );
+        toast.error(error instanceof Error ? error.message : t("import.structurizrError"));
         return false;
       }
     },

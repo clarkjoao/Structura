@@ -45,8 +45,7 @@ export function ExportModal({
   copiedClipboardKind,
 }: ExportModalProps) {
   const { t } = useTranslation();
-  const [selectedFormats, setSelectedFormats] =
-    useState<DiagramExportFormat[]>(DEFAULT_FORMATS);
+  const [selectedFormats, setSelectedFormats] = useState<DiagramExportFormat[]>(DEFAULT_FORMATS);
 
   useEffect(() => {
     if (!open) return;
@@ -233,9 +232,7 @@ export function ExportModal({
                     <Label htmlFor={checkboxId} className="cursor-pointer text-sm">
                       {option.title}
                     </Label>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {option.description}
-                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">{option.description}</p>
                   </div>
                 </div>
               );
@@ -262,19 +259,13 @@ export function ExportModal({
 
         <DialogFooter className="items-center sm:justify-between">
           <p className="mr-auto text-xs text-muted-foreground">
-            {selectedCount > 1
-              ? t("export.modal.zipHint")
-              : t("export.modal.singleHint")}
+            {selectedCount > 1 ? t("export.modal.zipHint") : t("export.modal.singleHint")}
           </p>
           <div className="flex shrink-0 gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               {t("common.cancel")}
             </Button>
-            <Button
-              onClick={handleExport}
-              disabled={selectedCount === 0}
-              className="gap-1.5"
-            >
+            <Button onClick={handleExport} disabled={selectedCount === 0} className="gap-1.5">
               <Download className="h-4 w-4" />
               {t("export.modal.confirm")}
             </Button>

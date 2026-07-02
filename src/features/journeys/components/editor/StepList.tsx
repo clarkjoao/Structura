@@ -72,13 +72,9 @@ function StepCard({
             {step.order + 1}
           </span>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-medium text-foreground">
-              {step.label}
-            </div>
+            <div className="truncate text-sm font-medium text-foreground">{step.label}</div>
             {step.diagramId && diagramSubtitle ? (
-              <div className="truncate text-[11px] text-muted-foreground">
-                {diagramSubtitle}
-              </div>
+              <div className="truncate text-[11px] text-muted-foreground">{diagramSubtitle}</div>
             ) : null}
           </div>
         </div>
@@ -133,7 +129,7 @@ export function StepList({
         {steps.map((step, index) => {
           const diagramSubtitle =
             step.diagramId !== undefined
-              ? readDiagramName(step.diagramId, diagramsById) ?? step.diagramId
+              ? (readDiagramName(step.diagramId, diagramsById) ?? step.diagramId)
               : undefined;
 
           return (

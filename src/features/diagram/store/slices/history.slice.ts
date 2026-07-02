@@ -11,17 +11,13 @@ import { getActiveDiagram } from "./get-active-diagram";
 
 export type { HistoryMutationKind } from "../store.constants";
 
-
 export function deepClone<T>(v: T): T {
   const plain = isDraft(v) ? current(v) : v;
   return structuredClone(plain);
 }
 
 /** Snapshot clone for undo — O(n) per checkpoint; coalescing limits frequency (see HISTORY_COALESCE_MS). */
-export function pushHistory(
-  state: AppState,
-  mutationType: HistoryMutationKind = "soft",
-): void {
+export function pushHistory(state: AppState, mutationType: HistoryMutationKind = "soft"): void {
   const d = getActiveDiagram(state);
   if (!d) return;
   if (Date.now() - state._lastUndoRedoAt < UNDO_REDO_COOLDOWN_MS) return;
@@ -39,81 +35,81 @@ export function pushHistory(
   state.future = [];
 }
 
-export const historySlice = 
-(set: (fn: (state: AppState) => void) => void,
-    get: () => AppState,
+export const historySlice = (
+  set: (fn: (state: AppState) => void) => void,
+  _get: () => AppState,
 ) => ({
-    undo: () => { 
-      set((state) => {
-        const activeId = state.activeDiagramId;
-        if (!activeId) return;
+  undo: () => {
+    set((state) => {
+      const activeId = state.activeDiagramId;
+      if (!activeId) return;
 
-        /** Linear scan for last entry for the active diagram (past is global, bounded by MAX_HISTORY_STEPS). */
-        let entryIndex = -1;
-        for (let i = state.past.length - 1; i >= 0; i--) {
-          if (state.past[i].diagramId === activeId) {
-            entryIndex = i;
-            break;
-          }
+      /** Linear scan for last entry for the active diagram (past is global, bounded by MAX_HISTORY_STEPS). */
+      let entryIndex = -1;
+      for (let i = state.past.length - 1; i >= 0; i--) {
+        if (state.past[i].diagramId === activeId) {
+          entryIndex = i;
+          break;
         }
-        if (entryIndex === -1) return;
+      }
+      if (entryIndex === -1) return;
 
-        const entry = state.past[entryIndex];
-        if (!entry) return;
-        const d = state.diagrams[activeId];
-        if (!d) return;
-        state.past.splice(entryIndex, 1);
-        state.future.push({
-          diagramId: d.id,
-          snapshot: deepClone(d.snapshot),
-          nodeLayouts: deepClone(d.nodeLayouts),
-          timestamp: Date.now(),
-        } as DiagramSnapshot);
-        d.snapshot = entry.snapshot;
-        d.nodeLayouts = entry.nodeLayouts;
-        state._lastUndoRedoAt = Date.now();
-      });
-    },
+      const entry = state.past[entryIndex];
+      if (!entry) return;
+      const d = state.diagrams[activeId];
+      if (!d) return;
+      state.past.splice(entryIndex, 1);
+      state.future.push({
+        diagramId: d.id,
+        snapshot: deepClone(d.snapshot),
+        nodeLayouts: deepClone(d.nodeLayouts),
+        timestamp: Date.now(),
+      } as DiagramSnapshot);
+      d.snapshot = entry.snapshot;
+      d.nodeLayouts = entry.nodeLayouts;
+      state._lastUndoRedoAt = Date.now();
+    });
+  },
 
-    redo: () => {
-      set((state) => {
-        const activeId = state.activeDiagramId;
-        if (!activeId) return;
+  redo: () => {
+    set((state) => {
+      const activeId = state.activeDiagramId;
+      if (!activeId) return;
 
-        let entryIndex = -1;
-        for (let i = state.future.length - 1; i >= 0; i--) {
-          if (state.future[i].diagramId === activeId) {
-            entryIndex = i;
-            break;
-          }
+      let entryIndex = -1;
+      for (let i = state.future.length - 1; i >= 0; i--) {
+        if (state.future[i].diagramId === activeId) {
+          entryIndex = i;
+          break;
         }
-        if (entryIndex === -1) return;
+      }
+      if (entryIndex === -1) return;
 
-        const entry = state.future[entryIndex];
-        if (!entry) return;
-        const d = state.diagrams[activeId];
-        if (!d) return;
-        state.future.splice(entryIndex, 1);
-        state.past.push({
-          diagramId: d.id,
-          snapshot: deepClone(d.snapshot),
-          nodeLayouts: deepClone(d.nodeLayouts),
-          timestamp: Date.now(),
-        } as DiagramSnapshot);
-        d.snapshot = entry.snapshot;
-        d.nodeLayouts = entry.nodeLayouts;
-        state._lastUndoRedoAt = Date.now();
-      });
-    },
+      const entry = state.future[entryIndex];
+      if (!entry) return;
+      const d = state.diagrams[activeId];
+      if (!d) return;
+      state.future.splice(entryIndex, 1);
+      state.past.push({
+        diagramId: d.id,
+        snapshot: deepClone(d.snapshot),
+        nodeLayouts: deepClone(d.nodeLayouts),
+        timestamp: Date.now(),
+      } as DiagramSnapshot);
+      d.snapshot = entry.snapshot;
+      d.nodeLayouts = entry.nodeLayouts;
+      state._lastUndoRedoAt = Date.now();
+    });
+  },
 
-    /**
-     * Open a structural undo checkpoint imperatively, outside of any mutating
-     * action. Lets non-React callers (e.g. the LLM store) integrate with undo
-     * without reaching into `pushHistory`/`STRUCTURAL_MUTATION_MARKER` directly.
-     */
-    pushHistoryBoundary: () => {
-      set((state) => {
-        pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-      });
-    },
-  });
+  /**
+   * Open a structural undo checkpoint imperatively, outside of any mutating
+   * action. Lets non-React callers (e.g. the LLM store) integrate with undo
+   * without reaching into `pushHistory`/`STRUCTURAL_MUTATION_MARKER` directly.
+   */
+  pushHistoryBoundary: () => {
+    set((state) => {
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+    });
+  },
+});

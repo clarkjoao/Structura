@@ -1,11 +1,11 @@
 import { memo } from "react";
-import { NodeResizer, type NodeProps } from "@xyflow/react";
+import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
 import { useCollabHighlight } from "@/features/collaboration";
 
-export interface SwimlaneNodeData {
+export type SwimlaneNodeData = {
   elementId: string;
   name: string;
   orientation: "horizontal" | "vertical";
@@ -20,7 +20,7 @@ export interface SwimlaneNodeData {
     a: { name: string; color: string };
     b: { name: string; color: string };
   };
-}
+};
 
 const UNPARENT_BORDER = "hsl(25 95% 53%)";
 
@@ -32,19 +32,16 @@ function swimlaneFill(color: string): string {
   return color;
 }
 
-const SwimlaneNode = memo(({ data, selected }: NodeProps) => {
+const SwimlaneNode = memo(({ data: d, selected }: NodeProps<Node<SwimlaneNodeData>>) => {
   const { t } = useTranslation();
-  const d = data as unknown as SwimlaneNodeData;
   const { highlightedNodeIds } = useHandleHighlight();
   const isHorizontal = d.orientation !== "vertical";
   const laneColor = d.laneColor || "#6366f1";
   const fill = swimlaneFill(laneColor);
-  const labelText =
-    d.laneLabel?.trim() || d.name?.trim() || t("swimlane.defaultLaneLabel");
+  const labelText = d.laneLabel?.trim() || d.name?.trim() || t("swimlane.defaultLaneLabel");
 
   const isSelected = selected || d.isSelected;
-  const isHighlighted =
-    (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
+  const isHighlighted = (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
   const isActive = isSelected || isHighlighted;
   const isDragTarget = d.isDragTarget;
   const isUnparentCandidate = d.isUnparentCandidate ?? false;
@@ -75,9 +72,7 @@ const SwimlaneNode = memo(({ data, selected }: NodeProps) => {
             style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
           />
         )}
-        {d.compareBadges && (
-          <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
-        )}
+        {d.compareBadges && <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
         {!d.compareBadges && d.sceneBadge && (
           <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
         )}
@@ -104,7 +99,9 @@ const SwimlaneNode = memo(({ data, selected }: NodeProps) => {
         >
           {labelText}
         </div>
-        <div className={isHorizontal ? "pl-8 p-3 h-full min-h-[48px]" : "pt-7 p-3 h-full min-h-[48px]"} />
+        <div
+          className={isHorizontal ? "pl-8 p-3 h-full min-h-[48px]" : "pt-7 p-3 h-full min-h-[48px]"}
+        />
       </div>
     </>
   );

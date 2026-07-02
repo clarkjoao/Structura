@@ -53,20 +53,18 @@ export function GithubSearchBar({ loading, client, onSearch }: Props) {
         setOrgs(orgList);
         setAuthenticatedUser(user.login);
       })
-      .catch(() => {
-        
-      })
+      .catch(() => {})
       .finally(() => {
         if (!cancelled) setOrgsLoading(false);
       });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [client]);
 
   const currentField = GH_SEARCH_FIELDS.find((f) => f.param === searchField);
-  const fieldLabel = currentField
-    ? t(`githubSearchField.${currentField.param}`)
-    : "";
+  const fieldLabel = currentField ? t(`githubSearchField.${currentField.param}`) : "";
   const placeholder = currentField
     ? t("githubSearch.searchByField", { field: fieldLabel.toLowerCase() })
     : t("githubSearch.searchRepo");
@@ -108,10 +106,7 @@ export function GithubSearchBar({ loading, client, onSearch }: Props) {
           />
         </div>
 
-        <Select
-          value={searchField}
-          onValueChange={(v) => setSearchField(v as GHSearchField)}
-        >
+        <Select value={searchField} onValueChange={(v) => setSearchField(v as GHSearchField)}>
           <SelectTrigger className="w-[220px]">
             <SelectValue placeholder={t("github.searchFieldPlaceholder")} />
           </SelectTrigger>
@@ -124,16 +119,8 @@ export function GithubSearchBar({ loading, client, onSearch }: Props) {
           </SelectContent>
         </Select>
 
-        <Button
-          type="button"
-          onClick={handleSearch}
-          disabled={loading || !canSearch}
-        >
-          {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Search className="h-4 w-4" />
-          )}
+        <Button type="button" onClick={handleSearch} disabled={loading || !canSearch}>
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
           {t("github.searchButton")}
         </Button>
       </div>

@@ -31,18 +31,13 @@ export function GithubRepoCard({
       }`}
     >
       <div className="pt-1">
-        <Checkbox
-          checked={selected}
-          onCheckedChange={() => onToggle(repo.id)}
-        />
+        <Checkbox checked={selected} onCheckedChange={() => onToggle(repo.id)} />
       </div>
 
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="font-mono text-sm text-foreground truncate">
-              {repo.name}
-            </p>
+            <p className="font-mono text-sm text-foreground truncate">{repo.name}</p>
             {repo.archived && (
               <div className="mt-1 inline-flex items-center gap-2">
                 <Badge className="bg-secondary/70 text-muted-foreground border border-border">
@@ -68,17 +63,12 @@ export function GithubRepoCard({
         </div>
 
         {repo.description && (
-          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-            {repo.description}
-          </p>
+          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{repo.description}</p>
         )}
 
         <div className="mt-2 flex flex-wrap gap-1.5 items-center">
           {repo.language && (
-            <Badge
-              variant="secondary"
-              className="bg-secondary/70 text-secondary-foreground"
-            >
+            <Badge variant="secondary" className="bg-secondary/70 text-secondary-foreground">
               {repo.language}
             </Badge>
           )}

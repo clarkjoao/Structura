@@ -62,10 +62,10 @@ interface CollabProviderProps {
   children: ReactNode;
   guestRoomId?: string;
   enabled?: boolean;
-  
+
   reserveEphemeralRoomId?: boolean;
   userName?: string;
-  signalingUrl?: string; 
+  signalingUrl?: string;
 }
 
 export function CollabProvider({
@@ -109,11 +109,7 @@ export function CollabProvider({
     setEphemeralRoomId((previous) => (previous === null ? newCollabRoomId() : previous));
   }, [activeDiagramId, enabled, isHost, reserveEphemeralRoomId]);
 
-  const roomIdForWs = enabled
-    ? isHost
-      ? ephemeralRoomId
-      : (guestRoomId ?? null)
-    : null;
+  const roomIdForWs = enabled ? (isHost ? ephemeralRoomId : (guestRoomId ?? null)) : null;
 
   const storeDiagramId = enabled && activeDiagramId ? activeDiagramId : null;
 
@@ -218,17 +214,23 @@ export function CollabProvider({
     [sendCursor],
   );
 
-  const updateSelectedNode = useCallback((_id: string | null) => {
-    setActiveElement(_id);
-  }, [setActiveElement]);
+  const updateSelectedNode = useCallback(
+    (_id: string | null) => {
+      setActiveElement(_id);
+    },
+    [setActiveElement],
+  );
 
   const updateViewport = useCallback((_vp: { x: number; y: number; zoom: number }) => {
     // TODO: Implement viewport update
   }, []);
 
-  const updateEditingComponent = useCallback((_id: string | null) => {
-    setActiveElement(_id);
-  }, [setActiveElement]);
+  const updateEditingComponent = useCallback(
+    (_id: string | null) => {
+      setActiveElement(_id);
+    },
+    [setActiveElement],
+  );
 
   const editingComponents = useMemo(() => {
     const map = new Map<string, CollabUser>();

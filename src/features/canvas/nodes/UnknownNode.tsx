@@ -1,12 +1,12 @@
 import { memo } from "react";
-import { NodeResizer, type NodeProps } from "@xyflow/react";
+import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { CircleHelp } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
 import { useCollabHighlight } from "@/features/collaboration";
 
-export interface UnknownNodeData {
+export type UnknownNodeData = {
   elementId: string;
   name: string;
   rawContent?: string;
@@ -17,11 +17,10 @@ export interface UnknownNodeData {
     a: { name: string; color: string };
     b: { name: string; color: string };
   };
-}
+};
 
-const UnknownNode = memo(({ data, selected }: NodeProps) => {
+const UnknownNode = memo(({ data: d, selected }: NodeProps<Node<UnknownNodeData>>) => {
   const { t } = useTranslation();
-  const d = data as unknown as UnknownNodeData;
   const { highlightedNodeIds } = useHandleHighlight();
   const isSelected = selected || d.isSelected;
   const isHighlighted = (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
@@ -40,9 +39,7 @@ const UnknownNode = memo(({ data, selected }: NodeProps) => {
       <div
         aria-label={t("unknownNode.aria", { name: d.name })}
         className={`relative flex flex-col w-full h-full overflow-hidden rounded-lg border-2 border-dashed transition-shadow duration-200 ${
-          isActive
-            ? "ring-2 ring-primary shadow-[0_0_0_2px_hsl(var(--primary)/0.3)]"
-            : "opacity-90"
+          isActive ? "ring-2 ring-primary shadow-[0_0_0_2px_hsl(var(--primary)/0.3)]" : "opacity-90"
         }`}
         style={{
           borderColor: "#f97316",
@@ -55,9 +52,7 @@ const UnknownNode = memo(({ data, selected }: NodeProps) => {
             style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
           />
         )}
-        {d.compareBadges && (
-          <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
-        )}
+        {d.compareBadges && <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
         {!d.compareBadges && d.sceneBadge && (
           <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
         )}

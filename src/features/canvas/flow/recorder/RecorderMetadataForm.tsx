@@ -65,7 +65,11 @@ export function RecorderMetadataForm({
               className="inline-flex items-center gap-0.5 text-[9px] rounded-full bg-secondary px-2 py-0.5 text-secondary-foreground"
             >
               {tag}
-              <button type="button" onClick={() => onRemoveTag(i)} className="hover:text-destructive ml-0.5">
+              <button
+                type="button"
+                onClick={() => onRemoveTag(i)}
+                className="hover:text-destructive ml-0.5"
+              >
                 ×
               </button>
             </span>

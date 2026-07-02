@@ -5,33 +5,19 @@ import { SEED_JOURNEYS } from "@/fixtures/seeds/journey-seeds";
 
 interface JourneyStoreState {
   journeys: Record<string, Journey>;
-  addJourney: (
-    name: string,
-    description?: string,
-    domain?: string,
-  ) => Journey;
-  updateJourney: (
-    id: string,
-    patch: Partial<Omit<Journey, "id" | "createdAt">>,
-  ) => void;
+  addJourney: (name: string, description?: string, domain?: string) => Journey;
+  updateJourney: (id: string, patch: Partial<Omit<Journey, "id" | "createdAt">>) => void;
   removeJourney: (id: string) => void;
-  addJourneyStep: (
-    journeyId: string,
-    step: Omit<JourneyStep, "id" | "order">,
-  ) => JourneyStep;
+  addJourneyStep: (journeyId: string, step: Omit<JourneyStep, "id" | "order">) => JourneyStep;
   updateJourneyStep: (
     journeyId: string,
     stepId: string,
     patch: Partial<Omit<JourneyStep, "id">>,
   ) => void;
   removeJourneyStep: (journeyId: string, stepId: string) => void;
-  reorderJourneySteps: (
-    journeyId: string,
-    orderedStepIds: string[],
-  ) => void;
+  reorderJourneySteps: (journeyId: string, orderedStepIds: string[]) => void;
   duplicateJourney: (sourceId: string, nameForDuplicate?: string) => Journey;
 }
-
 
 export function migrateJourneyStepsDiagramId(
   journeys: Record<string, Journey>,
@@ -132,8 +118,7 @@ export const useJourneyStore = create<JourneyStoreState>()(
               : undefined,
           };
         }
-        const duplicateName =
-          nameForDuplicate ?? `${source.name} (copy)`;
+        const duplicateName = nameForDuplicate ?? `${source.name} (copy)`;
         const journey: Journey = {
           id: newJourneyId,
           name: duplicateName,
@@ -158,9 +143,7 @@ export const useJourneyStore = create<JourneyStoreState>()(
         set((state) => {
           const existingJourney = state.journeys[journeyId];
           if (!existingJourney) return state;
-          const existingOrders = Object.values(existingJourney.steps).map(
-            (step) => step.order,
-          );
+          const existingOrders = Object.values(existingJourney.steps).map((step) => step.order);
           const nextOrder = Math.max(...existingOrders, -1) + 1;
           const step: JourneyStep = {
             ...stepInput,

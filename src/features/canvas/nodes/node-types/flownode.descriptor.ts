@@ -1,9 +1,6 @@
 import FlowNode from "../FlowNode";
 import type { NodeTypeDescriptor } from "./types";
-import {
-  isFlowNodeComponent,
-  isFlowNodeType,
-} from "@/features/diagram";
+import { isFlowNodeComponent, isFlowNodeType } from "@/features/diagram";
 
 export const flowNodeDescriptor: NodeTypeDescriptor = {
   rfType: "flow-node",

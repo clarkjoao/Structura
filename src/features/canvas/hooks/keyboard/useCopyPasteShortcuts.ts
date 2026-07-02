@@ -165,8 +165,7 @@ export function useCopyPasteShortcuts({
         }
 
         const clipboardIds =
-          useDiagramStore.getState().clipboard?.components.map((component) => component.id) ??
-          [];
+          useDiagramStore.getState().clipboard?.components.map((component) => component.id) ?? [];
 
         const offsetPos =
           diagram && clipboardIds.length > 0

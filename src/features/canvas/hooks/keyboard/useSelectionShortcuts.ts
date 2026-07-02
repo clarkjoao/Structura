@@ -46,9 +46,7 @@ export function useSelectionShortcuts({
       if (keyIs(e, KEY.ESCAPE)) {
         e.preventDefault();
         clearClipboard();
-        reactFlowInstance.setNodes((nds: Node[]) =>
-          nds.map((n) => ({ ...n, selected: false })),
-        );
+        reactFlowInstance.setNodes((nds: Node[]) => nds.map((n) => ({ ...n, selected: false })));
         setSelectedNodeId(null);
         setSelectedNodeIds(new Set());
         setSelectedEdgeId(null);

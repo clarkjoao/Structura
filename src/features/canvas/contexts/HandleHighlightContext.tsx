@@ -1,8 +1,4 @@
-import {
-  createContext,
-  useContext,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, type ReactNode } from "react";
 
 interface HandleHighlightState {
   highlightedConnectionId: string | null;
@@ -26,9 +22,7 @@ export function HandleHighlightProvider({
   value: HandleHighlightState;
 }) {
   return (
-    <HandleHighlightContext.Provider value={value}>
-      {children}
-    </HandleHighlightContext.Provider>
+    <HandleHighlightContext.Provider value={value}>{children}</HandleHighlightContext.Provider>
   );
 }
 

@@ -10,15 +10,13 @@ interface LegacyFlowStep {
   handleId?: string;
   duration?: string;
   payload?: string;
-  payloadDirection?: 'request' | 'response';
+  payloadDirection?: "request" | "response";
 }
-
 
 export function migrateFlow(raw: unknown): Flow {
   const flow = raw as Flow & { steps: unknown };
 
   if (!Array.isArray(flow.steps)) {
-    
     return flow as Flow;
   }
 
@@ -26,13 +24,12 @@ export function migrateFlow(raw: unknown): Flow {
   const newSteps: Record<string, FlowStep> = {};
   const stepIds: string[] = [];
 
-  
   for (const legacy of legacySteps) {
     const id = generateId("step");
     stepIds.push(id);
     newSteps[id] = {
       id,
-      type: 'action',
+      type: "action",
       componentId: legacy.componentId,
       connectionId: legacy.connectionId,
       note: legacy.note,
@@ -44,7 +41,6 @@ export function migrateFlow(raw: unknown): Flow {
     };
   }
 
-  
   for (let i = 0; i < stepIds.length - 1; i++) {
     newSteps[stepIds[i]].next = stepIds[i + 1];
   }

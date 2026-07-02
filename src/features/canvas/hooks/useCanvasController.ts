@@ -30,7 +30,15 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
   const reactFlowWrapperRef = useRef<HTMLDivElement>(null);
   const [showScenes, setShowScenes] = useState(false);
   const [focusTitleTrigger, setFocusTitleTrigger] = useState(0);
-  const { diagram, allDiagrams, visibleComponents, visibleConnections, serviceRegistry, flows, actions } = useCanvasStore();
+  const {
+    diagram,
+    allDiagrams,
+    visibleComponents,
+    visibleConnections,
+    serviceRegistry,
+    flows,
+    actions,
+  } = useCanvasStore();
   const activeDiagramId = useActiveDiagramId();
   const resolvedComponents = useResolvedComponents();
   const resolvedNodeLayouts = useResolvedNodeLayouts();
@@ -39,7 +47,12 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
   const allDiagramTags = useDiagramTags();
   const visualState = useCanvasVisualState(diagram?.id ?? null);
   const { updateSelectedNode } = useCollab();
-  const compareState = useCanvasCompareState({ diagram, isFlowPanelOpen: !!canvasProps.isFlowPanelOpen, clearCanvasSelection: visualState.clearCanvasSelection, t });
+  const compareState = useCanvasCompareState({
+    diagram,
+    isFlowPanelOpen: !!canvasProps.isFlowPanelOpen,
+    clearCanvasSelection: visualState.clearCanvasSelection,
+    t,
+  });
   const resolved = useMemo(
     () =>
       activeDiagramId

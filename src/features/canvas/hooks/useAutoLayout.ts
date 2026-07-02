@@ -54,14 +54,7 @@ export function useAutoLayout() {
         setIsRunning(false);
       }
     },
-    [
-      isRunning,
-      applyAutoLayout,
-      updateEdgeWaypoints,
-      clearEdgeWaypoints,
-      fitView,
-      t,
-    ],
+    [isRunning, applyAutoLayout, updateEdgeWaypoints, clearEdgeWaypoints, fitView, t],
   );
 
   return { runAutoLayout, isRunning };

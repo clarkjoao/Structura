@@ -115,4 +115,3 @@ export const WRITE_TOOL_NAMES: string[] = [
 export function isWriteTool(toolName: string): boolean {
   return WRITE_TOOL_NAMES.includes(toolName);
 }
-

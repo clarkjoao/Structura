@@ -43,8 +43,7 @@ async function fetchGithubRepository(params: {
     (sourceEntry) => sourceEntry.type === ServiceSource.Github,
   )?.sourceId;
   const githubIdentifier =
-    githubSourceId ??
-    (service.metadata?.github as { fullName?: string } | undefined)?.fullName;
+    githubSourceId ?? (service.metadata?.github as { fullName?: string } | undefined)?.fullName;
 
   if (!githubIdentifier) return null;
   const apiBase = githubConfig?.baseUrl ?? "https://api.github.com";
@@ -53,9 +52,7 @@ async function fetchGithubRepository(params: {
   return client.getRepository(githubIdentifier);
 }
 
-async function fetchDefectDojoService(
-  service: ServiceDefinition,
-): Promise<{
+async function fetchDefectDojoService(service: ServiceDefinition): Promise<{
   mapped: Omit<ServiceDefinition, "id"> | null;
   sourceId?: string;
 }> {
@@ -65,31 +62,24 @@ async function fetchDefectDojoService(
     normalizedSources.some((s) => s.type === ServiceSource.Defectdojo);
   if (!hasDefectDojoData) return { mapped: null };
 
-  const { DefectDojoClient } = await import(
-    "@/integrations/defectdojo/defectdojo.client"
-  );
-  const { mapToServiceDefinition } = await import(
-    "@/integrations/defectdojo/defectdojo.service"
-  );
+  const { DefectDojoClient } = await import("@/integrations/defectdojo/defectdojo.client");
+  const { mapToServiceDefinition } = await import("@/integrations/defectdojo/defectdojo.service");
 
   const ddMeta = service.metadata?.defectdojo as
-    | { productId?: string | number; productLink?: string }
-    | undefined;
+    { productId?: string | number; productLink?: string } | undefined;
   const productIdFromLink = ddMeta?.productLink?.match(/\/product\/(\d+)(?:\/|$)/)?.[1];
   const defectDojoSourceId = normalizedSources.find(
     (sourceEntry) => sourceEntry.type === ServiceSource.Defectdojo,
   )?.sourceId;
   const defectDojoProductId =
-    defectDojoSourceId ??
-    (ddMeta?.productId ? String(ddMeta.productId) : productIdFromLink);
+    defectDojoSourceId ?? (ddMeta?.productId ? String(ddMeta.productId) : productIdFromLink);
   const cfg = readDefectDojoConfig();
   const client = new DefectDojoClient(cfg);
   if (!defectDojoProductId) return { mapped: null };
 
-  const resp = await client.get<{ results: Record<string, unknown>[] }>(
-    "/api/v2/products/",
-    { id: String(defectDojoProductId) },
-  );
+  const resp = await client.get<{ results: Record<string, unknown>[] }>("/api/v2/products/", {
+    id: String(defectDojoProductId),
+  });
   const product = resp.results[0];
   if (!product) return { mapped: null };
   return {
@@ -127,28 +117,20 @@ export async function syncServiceFromSources({
     ...ddTags,
   ]);
   const mergedSourceEntries = mergeSources(normalizeSources(service), [
-    ...(githubRepo
-      ? [{ type: ServiceSource.Github, sourceId: githubRepo.full_name }]
-      : []),
+    ...(githubRepo ? [{ type: ServiceSource.Github, sourceId: githubRepo.full_name }] : []),
     ...(defectDojoMapped
       ? [{ type: ServiceSource.Defectdojo, sourceId: defectDojo.sourceId }]
       : []),
   ]);
 
   return {
-    name: pickMoreCompleteString(
-      defectDojoMapped?.name ?? "",
-      githubRepo?.name ?? service.name,
-    ),
+    name: pickMoreCompleteString(defectDojoMapped?.name ?? "", githubRepo?.name ?? service.name),
     description: pickMoreCompleteString(
       defectDojoMapped?.description ?? "",
       githubRepo?.description ?? service.description,
     ),
     repositoryUrl:
-      githubRepo?.html_url ||
-      service.repositoryUrl ||
-      defectDojoMapped?.repositoryUrl ||
-      "",
+      githubRepo?.html_url || service.repositoryUrl || defectDojoMapped?.repositoryUrl || "",
     technology: mergedTech,
     tags: mergedTags,
     sources: mergedSourceEntries,

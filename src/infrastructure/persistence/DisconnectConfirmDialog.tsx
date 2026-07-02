@@ -35,14 +35,14 @@ export function DisconnectConfirmDialog({
           <div>
             <h2 className="text-sm font-semibold">{t("disconnect.title")}</h2>
             <p className="text-[11px] text-muted-foreground">
-              {folderName ? t("disconnect.messageNamed", { name: folderName }) : t("disconnect.messageGeneric")}
+              {folderName
+                ? t("disconnect.messageNamed", { name: folderName })
+                : t("disconnect.messageGeneric")}
             </p>
           </div>
         </div>
 
-        <p className="text-[12px] text-muted-foreground mb-4">
-          {t("disconnect.explanation")}
-        </p>
+        <p className="text-[12px] text-muted-foreground mb-4">{t("disconnect.explanation")}</p>
 
         <div className="flex flex-col sm:flex-row gap-2 sm:justify-end pt-2 border-t border-border">
           <button

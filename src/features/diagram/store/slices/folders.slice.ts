@@ -3,60 +3,53 @@ import type { Folder } from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 
-export function foldersSlice(
-  set: (fn: (state: AppState) => void) => void,
-  get: () => AppState,
-) {
+export function foldersSlice(set: (fn: (state: AppState) => void) => void, _get: () => AppState) {
   return {
-  folders: import.meta.env.VITE_DISABLE_SEEDS === "true" ? {} : SEED_FOLDERS,
+    folders: import.meta.env.VITE_DISABLE_SEEDS === "true" ? {} : SEED_FOLDERS,
 
-  addFolder: (name, parentId, domain) => {
-    const folder: Folder = {
-      id: generateId("folder"),
-      name,
-      parentId,
-      domain: domain || undefined,
-    };
+    addFolder: (name: string, parentId: string | null, domain?: string) => {
+      const folder: Folder = {
+        id: generateId("folder"),
+        name,
+        parentId,
+        domain: domain || undefined,
+      };
 
-    set((state) => {
-      state.folders[folder.id] = folder;
-    });
+      set((state) => {
+        state.folders[folder.id] = folder;
+      });
 
-    return folder;
-  },
+      return folder;
+    },
 
-  renameFolder: (id, name) => {
-    set((state) => {
-      const folder = state.folders[id];
-      if (!folder) return;
+    renameFolder: (id: string, name: string) => {
+      set((state) => {
+        const folder = state.folders[id];
+        if (!folder) return;
 
-      folder.name = name;
-    });
-  },
+        folder.name = name;
+      });
+    },
 
-  deleteFolder: (id) => {
-    set((state) => {
-      const hasChildren = Object.values(state.folders).some(
-        (f) => f.parentId === id,
-      );
+    deleteFolder: (id: string) => {
+      set((state) => {
+        const hasChildren = Object.values(state.folders).some((f) => f.parentId === id);
 
-      const hasDiagrams = Object.values(state.diagrams).some(
-        (d) => d.folderId === id,
-      );
+        const hasDiagrams = Object.values(state.diagrams).some((d) => d.folderId === id);
 
-      if (hasChildren || hasDiagrams) return;
+        if (hasChildren || hasDiagrams) return;
 
-      delete state.folders[id];
-    });
-  },
+        delete state.folders[id];
+      });
+    },
 
-  moveDiagram: (diagramId, folderId) => {
-    set((state) => {
-      const diagram = state.diagrams[diagramId];
-      if (!diagram) return;
+    moveDiagram: (diagramId: string, folderId: string | null) => {
+      set((state) => {
+        const diagram = state.diagrams[diagramId];
+        if (!diagram) return;
 
-      diagram.folderId = folderId ?? undefined;
-    });
-  },
+        diagram.folderId = folderId ?? undefined;
+      });
+    },
   };
 }

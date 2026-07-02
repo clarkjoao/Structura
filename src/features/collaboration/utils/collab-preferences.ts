@@ -23,9 +23,7 @@ export function readPrefs(): CollabPrefs {
 export function writePrefs(prefs: Partial<CollabPrefs>): void {
   try {
     localStorage.setItem(KEY, JSON.stringify({ ...readPrefs(), ...prefs }));
-  } catch {
-    
-  }
+  } catch {}
 }
 
 export type { CollabPrefs };

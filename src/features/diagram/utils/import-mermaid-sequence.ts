@@ -16,11 +16,6 @@ interface ParseContext {
   steps: Record<string, FlowStep>;
 }
 
-interface BranchParseResult {
-  entryId: string;
-  exitIds: string[];
-}
-
 type ConditionalKind = "alt" | "opt" | "loop" | "par" | "critical" | "break";
 
 type ArrowMatch = {
@@ -76,8 +71,7 @@ function findConnectionByEndpoints(
   targetId: string,
 ): Connection | undefined {
   return Object.values(connections).find(
-    (connection) =>
-      connection.sourceId === sourceId && connection.targetId === targetId,
+    (connection) => connection.sourceId === sourceId && connection.targetId === targetId,
   );
 }
 
@@ -132,10 +126,7 @@ function matchArrowLine(line: string): ArrowMatch {
       ? "async-message"
       : arrowType === "-->"
         ? "dependency"
-        : arrowType === "-x" ||
-            arrowType === "--x" ||
-            arrowType === "-)" ||
-            arrowType === "--)"
+        : arrowType === "-x" || arrowType === "--x" || arrowType === "-)" || arrowType === "--)"
           ? "event"
           : "call";
 
@@ -261,13 +252,7 @@ function parseSequenceFrom(
         arrow.label,
         arrow.intent,
       );
-      const step = createActionStep(
-        ctx,
-        connection.id,
-        arrow.label,
-        sourceId,
-        arrow.intent,
-      );
+      const step = createActionStep(ctx, connection.id, arrow.label, sourceId, arrow.intent);
       if (isResponse) {
         step.payloadDirection = "response";
       }

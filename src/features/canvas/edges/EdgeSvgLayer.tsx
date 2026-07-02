@@ -36,7 +36,7 @@ export interface EdgeSvgLayerProps {
   segmentHitAriaLabel: (index: number) => string;
   isActivePlayback: boolean;
   activePayloadDirection: "request" | "response" | null;
-  dragPathRef: RefObject<SVGPathElement | null>;
+  dragPathRef: RefObject<SVGPathElement>;
 }
 
 export function EdgeSvgLayer({
@@ -57,7 +57,6 @@ export function EdgeSvgLayer({
   strokeWidth,
   strokeStyle,
   color,
-  coverageFlowNamesLength,
   segmentHitAriaLabel,
   isActivePlayback,
   activePayloadDirection,
@@ -127,7 +126,9 @@ export function EdgeSvgLayer({
             )}
           </g>
         ))}
-      {showSegmentHitTargets && selected && waypointsLength > 0 &&
+      {showSegmentHitTargets &&
+        selected &&
+        waypointsLength > 0 &&
         segments.slice(0, waypointsLength).map((segment, k) => (
           <circle
             key={`wp-${k}`}
@@ -145,9 +146,7 @@ export function EdgeSvgLayer({
             }}
           />
         ))}
-      {isActivePlayback && (
-        <EdgeParticle edgePath={edgePath} direction={activePayloadDirection} />
-      )}
+      {isActivePlayback && <EdgeParticle edgePath={edgePath} direction={activePayloadDirection} />}
     </g>
   );
 }

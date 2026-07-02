@@ -15,7 +15,12 @@ export interface ConditionStepFormProps {
   onCancel: () => void;
 }
 
-export function ConditionStepForm({ conditionForm, onChange, onSubmit, onCancel }: ConditionStepFormProps) {
+export function ConditionStepForm({
+  conditionForm,
+  onChange,
+  onSubmit,
+  onCancel,
+}: ConditionStepFormProps) {
   const { t } = useTranslation();
   return (
     <div className="rounded-lg border border-amber-500/30 bg-amber-500/05 p-4 space-y-3">
@@ -27,7 +32,10 @@ export function ConditionStepForm({ conditionForm, onChange, onSubmit, onCancel 
       </div>
 
       <input
-        placeholder={t("flowRecorder.conditionPlaceholderExample", "se o usuário for menor de idade...")}
+        placeholder={t(
+          "flowRecorder.conditionPlaceholderExample",
+          "se o usuário for menor de idade...",
+        )}
         value={conditionForm.label}
         onChange={(e) => onChange({ ...conditionForm, label: e.target.value })}
         className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm"
@@ -40,7 +48,10 @@ export function ConditionStepForm({ conditionForm, onChange, onSubmit, onCancel 
         </p>
         {conditionForm.branches.map((b, bi) => (
           <div key={bi} className="flex items-center gap-2">
-            <div className="w-1 h-6 rounded-full shrink-0" style={{ backgroundColor: getBranchColor(bi) }} />
+            <div
+              className="w-1 h-6 rounded-full shrink-0"
+              style={{ backgroundColor: getBranchColor(bi) }}
+            />
             <input
               value={b}
               onChange={(e) => {

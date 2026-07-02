@@ -38,13 +38,10 @@ export function downloadTemplate(template: UserTemplate): void {
 }
 
 export type ImportTemplateResult =
-  | { ok: true; template: UserTemplate }
-  | { ok: false; error: "invalid_format" | "parse_error" };
+  { ok: true; template: UserTemplate } | { ok: false; error: "invalid_format" | "parse_error" };
 
 /** Parses and validates a template file; assigns a new id on success. */
-export async function importTemplateFromFile(
-  file: File,
-): Promise<ImportTemplateResult> {
+export async function importTemplateFromFile(file: File): Promise<ImportTemplateResult> {
   try {
     const text = await file.text();
     const parsed = JSON.parse(text) as Partial<TemplateExportEnvelope>;

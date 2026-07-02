@@ -27,10 +27,7 @@ export function CardAction({ icon, title, onClick, variant = "default" }: CardAc
         alignItems: "center",
         justifyContent: "center",
         cursor: "pointer",
-        color:
-          variant === "danger"
-            ? "hsl(var(--destructive))"
-            : "hsl(var(--muted-foreground))",
+        color: variant === "danger" ? "hsl(var(--destructive))" : "hsl(var(--muted-foreground))",
       }}
     >
       {icon}

@@ -11,15 +11,10 @@ export interface JourneysInDiagramPanelProps {
 }
 
 function countStepsInDiagram(journey: Journey, diagramId: string): number {
-  return Object.values(journey.steps).filter(
-    (step) => step.diagramId === diagramId,
-  ).length;
+  return Object.values(journey.steps).filter((step) => step.diagramId === diagramId).length;
 }
 
-export function JourneysInDiagramPanel({
-  diagramId,
-  onClose,
-}: JourneysInDiagramPanelProps) {
+export function JourneysInDiagramPanel({ diagramId, onClose }: JourneysInDiagramPanelProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const journeys = useJourneysByDiagramId(diagramId);

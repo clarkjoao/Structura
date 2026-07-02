@@ -8,8 +8,6 @@ interface PaginatedResponse<T> {
   results: T[];
 }
 
-
-
 export const DD_PRODUCT_SEARCH_FIELDS = [
   { param: "sigla" as const },
   { param: "siglaApp" as const },
@@ -18,8 +16,7 @@ export const DD_PRODUCT_SEARCH_FIELDS = [
   { param: "id" as const },
 ] as const;
 
-export type DDProductSearchField =
-  (typeof DD_PRODUCT_SEARCH_FIELDS)[number]["param"];
+export type DDProductSearchField = (typeof DD_PRODUCT_SEARCH_FIELDS)[number]["param"];
 
 export async function searchProducts(
   client: DefectDojoClient,
@@ -43,26 +40,18 @@ export async function searchProducts(
     params.prod_type = String(filters.prodType);
   }
 
-  const data = await client.get<PaginatedResponse<DDProduct>>(
-    "/products/",
-    params,
-  );
+  const data = await client.get<PaginatedResponse<DDProduct>>("/products/", params);
   return data.results;
 }
 
-export async function getProductTypes(
-  client: DefectDojoClient,
-): Promise<DDProductType[]> {
-  const data = await client.get<PaginatedResponse<DDProductType>>(
-    "/product_types/",
-    { limit: "100" },
-  );
+export async function getProductTypes(client: DefectDojoClient): Promise<DDProductType[]> {
+  const data = await client.get<PaginatedResponse<DDProductType>>("/product_types/", {
+    limit: "100",
+  });
   return data.results;
 }
 
-export async function getCurrentUser(
-  client: DefectDojoClient,
-): Promise<DDUser> {
+export async function getCurrentUser(client: DefectDojoClient): Promise<DDUser> {
   return client.get<DDUser>("/users/me/");
 }
 
@@ -82,26 +71,18 @@ function getStoredDefectDojoBaseUrl(): string {
   }
 }
 
-export function buildDefectDojoProductLink(
-  productId: number | string,
-  baseUrl?: string,
-): string {
-  const normalizedBase = (baseUrl ?? getStoredDefectDojoBaseUrl()).replace(
-    /\/+$/,
-    "",
-  );
+export function buildDefectDojoProductLink(productId: number | string, baseUrl?: string): string {
+  const normalizedBase = (baseUrl ?? getStoredDefectDojoBaseUrl()).replace(/\/+$/, "");
   if (!normalizedBase) return "";
   return `${normalizedBase}/product/${productId}`;
 }
 
-export function mapToServiceDefinition(
-  product: DDProduct,
-): Omit<ServiceDefinition, "id"> {
+export function mapToServiceDefinition(product: DDProduct): Omit<ServiceDefinition, "id"> {
   const productLink = buildDefectDojoProductLink(product.id);
   return {
     name: product.name,
     description: product.description || "",
-    repositoryUrl: product?.metadata?.repositoryUrl as string ?? "",
+    repositoryUrl: (product?.metadata?.repositoryUrl as string) ?? "",
     technology: [],
     tags: product.tags || [],
     sources: [{ type: ServiceSource.Defectdojo, sourceId: String(product.id) }],

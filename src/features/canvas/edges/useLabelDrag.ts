@@ -3,7 +3,6 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 import type { Connection, ConnectionStyle, Point } from "@/features/diagram";
 import { getClosestLabelPositionOnPath } from "./edgeGeometry";
 
-
 export interface UseLabelDragParams {
   edgePath: string;
   initialPosition: number;
@@ -22,7 +21,7 @@ export interface UseLabelDragParams {
 }
 
 export interface UseLabelDragResult {
-  dragPathRef: RefObject<SVGPathElement | null>;
+  dragPathRef: RefObject<SVGPathElement>;
   lastSentPositionRef: RefObject<number>;
   handlePointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void;
   handlePointerMove: (event: ReactPointerEvent<HTMLDivElement>) => void;
@@ -51,7 +50,7 @@ export function useLabelDrag(params: UseLabelDragParams): UseLabelDragResult {
   void updateConnection;
   void connectionStyle;
 
-  const dragPathRef = useRef<SVGPathElement | null>(null);
+  const dragPathRef = useRef<SVGPathElement>(null);
   const lastSentPositionRef = useRef<number>(initialPosition);
   const draggingRef = useRef(false);
 

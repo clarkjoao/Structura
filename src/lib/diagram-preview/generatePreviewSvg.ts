@@ -147,7 +147,10 @@ function renderConnectionLines(
   return lines;
 }
 
-function renderPanelShape(component: Component, bounds: { x: number; y: number; width: number; height: number }): string {
+function renderPanelShape(
+  component: Component,
+  bounds: { x: number; y: number; width: number; height: number },
+): string {
   if (!isPanelComponent(component)) return "";
   const fillBase = component.panelColor?.trim() || DEFAULT_PANEL_FILL;
   const fill = escapeXmlAttr(fillBase);
@@ -161,14 +164,22 @@ function renderPanelShape(component: Component, bounds: { x: number; y: number; 
   return `<rect x="${bounds.x.toFixed(1)}" y="${bounds.y.toFixed(1)}" width="${bounds.width.toFixed(1)}" height="${bounds.height.toFixed(1)}" rx="8" fill="${fill}" fill-opacity="0.15" stroke="${stroke}" stroke-opacity="0.4" stroke-width="1"${strokeDash}/>`;
 }
 
-function renderNoteShape(component: Component, bounds: { x: number; y: number; width: number; height: number }): string {
+function renderNoteShape(
+  component: Component,
+  bounds: { x: number; y: number; width: number; height: number },
+): string {
   if (!isNoteComponent(component)) return "";
   const fillBase = component.panelColor?.trim() || NOTE_FALLBACK_FILL;
   const fill = escapeXmlAttr(fillBase);
   return `<rect x="${bounds.x.toFixed(1)}" y="${bounds.y.toFixed(1)}" width="${bounds.width.toFixed(1)}" height="${bounds.height.toFixed(1)}" rx="4" fill="${fill}" fill-opacity="0.6"/>`;
 }
 
-function renderApiGroupShape(bounds: { x: number; y: number; width: number; height: number }): string {
+function renderApiGroupShape(bounds: {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}): string {
   return `<rect x="${bounds.x.toFixed(1)}" y="${bounds.y.toFixed(1)}" width="${bounds.width.toFixed(1)}" height="${bounds.height.toFixed(1)}" rx="6" fill="${API_GROUP_PREVIEW_FILL}" fill-opacity="0.15"/>`;
 }
 
@@ -176,7 +187,12 @@ function renderAwsShape(bounds: { x: number; y: number; width: number; height: n
   return `<rect x="${bounds.x.toFixed(1)}" y="${bounds.y.toFixed(1)}" width="${bounds.width.toFixed(1)}" height="${bounds.height.toFixed(1)}" rx="4" fill="${AWS_PREVIEW_FILL}" fill-opacity="0.2"/>`;
 }
 
-function renderPersonShape(bounds: { x: number; y: number; width: number; height: number }): string {
+function renderPersonShape(bounds: {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}): string {
   const { cx, cy } = centerOf(bounds);
   const rx = bounds.width / 2;
   const ry = bounds.height / 2;

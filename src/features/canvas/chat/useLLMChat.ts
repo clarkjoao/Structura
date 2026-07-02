@@ -14,12 +14,9 @@ const defaultLLMChatParams: UseLLMChatParams = {
   selectedNodeId: null,
 };
 
-export function useLLMChat(
-  params: UseLLMChatParams = defaultLLMChatParams,
-) {
+export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
   const activeDiagram = useActiveDiagramModel();
-  const { diagramText, selectedNodeIds: selIds, focusedNodeId } =
-    useDiagramContext(params);
+  const { diagramText, selectedNodeIds: selIds, focusedNodeId } = useDiagramContext(params);
   const { allItems } = useMentionSearch();
   const messages = useLLMStore((state) => state.messages);
   const isLoading = useLLMStore((state) => state.isLoading);
@@ -55,18 +52,12 @@ export function useLLMChat(
           const comp = components[id];
           return comp ? `${comp.name} (id=${id})` : id;
         });
-        visualContextLines.push(
-          `Selected nodes (${selIds.length}): ${selectedLabels.join(", ")}`,
-        );
+        visualContextLines.push(`Selected nodes (${selIds.length}): ${selectedLabels.join(", ")}`);
       }
       if (focusedNodeId && !selIds.includes(focusedNodeId)) {
         const comp = activeDiagram?.snapshot?.components?.[focusedNodeId];
-        const label = comp
-          ? `${comp.name} (id=${focusedNodeId})`
-          : focusedNodeId;
-        visualContextLines.push(
-          `Focused node (ElementPanel open): ${label}`,
-        );
+        const label = comp ? `${comp.name} (id=${focusedNodeId})` : focusedNodeId;
+        visualContextLines.push(`Focused node (ElementPanel open): ${label}`);
       }
 
       const visualContext =
@@ -84,14 +75,7 @@ export function useLLMChat(
 
       await sendMessage(userText, enrichedContext);
     },
-    [
-      allItems,
-      diagramText,
-      selIds,
-      focusedNodeId,
-      activeDiagram,
-      sendMessage,
-    ],
+    [allItems, diagramText, selIds, focusedNodeId, activeDiagram, sendMessage],
   );
 
   return {

@@ -61,9 +61,7 @@ function dedupeInsensitive(values: string[]): string[] {
   return out;
 }
 
-export function githubRepoToService(
-  repo: GithubRepo,
-): Omit<ServiceDefinition, "id"> {
+export function githubRepoToService(repo: GithubRepo): Omit<ServiceDefinition, "id"> {
   const langTech = repo.language ? [repo.language] : [];
   const topicTech = repo.topics.filter((t) => TECHNOLOGY_TOPICS.has(t.toLowerCase()));
 
@@ -87,4 +85,3 @@ export function githubRepoToService(
     },
   };
 }
-

@@ -37,11 +37,7 @@ export function serializeDiagramContext(
         ? component.name
         : component.id;
 
-    const parts: string[] = [
-      `id=${component.id}`,
-      `type=${component.type}`,
-      `name="${label}"`,
-    ];
+    const parts: string[] = [`id=${component.id}`, `type=${component.type}`, `name="${label}"`];
 
     if (component.parentId) parts.push(`parent=${component.parentId}`);
 
@@ -101,8 +97,7 @@ export function serializeDiagramContext(
 
   if (includeLinks && components.length > 0) {
     const externalLinks = components.flatMap(
-      (c) =>
-        (c as { externalLinks?: Array<{ label: string; url: string }> }).externalLinks ?? [],
+      (c) => (c as { externalLinks?: Array<{ label: string; url: string }> }).externalLinks ?? [],
     );
     if (externalLinks.length > 0) {
       lines.push(`\nExternal Links:`);

@@ -1,14 +1,5 @@
 import { motion } from "framer-motion";
-import {
-  GitBranch,
-  Layers,
-  Box,
-  ArrowRight,
-  Network,
-  History,
-  Users,
-  Shield,
-} from "lucide-react";
+import { GitBranch, Layers, Box, ArrowRight, Network, History, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -114,15 +105,38 @@ const LandingPage = () => {
   const { t } = useTranslation();
 
   const features = useMemo(
-    () =>
-      [
-        { icon: Layers, titleKey: "landing.feature1Title" as const, descKey: "landing.feature1Desc" as const },
-        { icon: GitBranch, titleKey: "landing.feature2Title" as const, descKey: "landing.feature2Desc" as const },
-        { icon: Network, titleKey: "landing.feature3Title" as const, descKey: "landing.feature3Desc" as const },
-        { icon: Shield, titleKey: "landing.feature4Title" as const, descKey: "landing.feature4Desc" as const },
-        { icon: History, titleKey: "landing.feature5Title" as const, descKey: "landing.feature5Desc" as const },
-        { icon: Box, titleKey: "landing.feature6Title" as const, descKey: "landing.feature6Desc" as const },
-      ],
+    () => [
+      {
+        icon: Layers,
+        titleKey: "landing.feature1Title" as const,
+        descKey: "landing.feature1Desc" as const,
+      },
+      {
+        icon: GitBranch,
+        titleKey: "landing.feature2Title" as const,
+        descKey: "landing.feature2Desc" as const,
+      },
+      {
+        icon: Network,
+        titleKey: "landing.feature3Title" as const,
+        descKey: "landing.feature3Desc" as const,
+      },
+      {
+        icon: Shield,
+        titleKey: "landing.feature4Title" as const,
+        descKey: "landing.feature4Desc" as const,
+      },
+      {
+        icon: History,
+        titleKey: "landing.feature5Title" as const,
+        descKey: "landing.feature5Desc" as const,
+      },
+      {
+        icon: Box,
+        titleKey: "landing.feature6Title" as const,
+        descKey: "landing.feature6Desc" as const,
+      },
+    ],
     [],
   );
 
@@ -162,9 +176,7 @@ const LandingPage = () => {
                 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6"
               >
                 {t("landing.heroHeadlineBefore")}
-                <span className="text-primary glow-text">
-                  {t("landing.heroHeadlineAccent")}
-                </span>
+                <span className="text-primary glow-text">{t("landing.heroHeadlineAccent")}</span>
                 {t("landing.heroHeadlineAfter")}
               </motion.h1>
 
@@ -242,9 +254,7 @@ const LandingPage = () => {
                   <f.icon className="h-5 w-5 text-primary" />
                 </div>
                 <h3 className="text-base font-semibold mb-2">{t(f.titleKey)}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {t(f.descKey)}
-                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t(f.descKey)}</p>
               </motion.div>
             ))}
           </div>
@@ -256,12 +266,8 @@ const LandingPage = () => {
           <div className="relative rounded-2xl border border-border bg-card p-12 text-center overflow-hidden">
             <div className="absolute inset-0 grid-pattern opacity-30" />
             <div className="relative">
-              <h2 className="text-3xl font-bold mb-4">
-                {t("landing.cta2Title")}
-              </h2>
-              <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
-                {t("landing.cta2Lead")}
-              </p>
+              <h2 className="text-3xl font-bold mb-4">{t("landing.cta2Title")}</h2>
+              <p className="text-muted-foreground mb-8 max-w-lg mx-auto">{t("landing.cta2Lead")}</p>
               <Link
                 to="/workspace"
                 className="inline-flex items-center gap-2 rounded-md bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors glow-primary"
@@ -280,9 +286,7 @@ const LandingPage = () => {
             <Network className="h-4 w-4 text-primary" />
             <span className="font-semibold text-foreground">{t("landing.footerBrand")}</span>
           </div>
-          <p className="font-mono text-xs">
-            {t("landing.footerCopyright")}
-          </p>
+          <p className="font-mono text-xs">{t("landing.footerCopyright")}</p>
         </div>
       </footer>
     </div>

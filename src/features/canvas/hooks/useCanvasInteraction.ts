@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  type Dispatch,
+  type MutableRefObject,
+  type SetStateAction,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { Node, ReactFlowInstance } from "@xyflow/react";
@@ -63,8 +70,9 @@ export interface UseCanvasInteractionResult {
   handleSearchSelect: (componentId: string) => void;
 }
 
-
-export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCanvasInteractionResult {
+export function useCanvasInteraction(
+  params: UseCanvasInteractionParams,
+): UseCanvasInteractionResult {
   const {
     canvasProps,
     navigate,
@@ -110,7 +118,8 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
     }
   }, [t]);
 
-  const diagramNavLocked = flowState.isRecording || flowState.isPlaying || compareState.isCompareMode;
+  const diagramNavLocked =
+    flowState.isRecording || flowState.isPlaying || compareState.isCompareMode;
 
   const {
     showSearch,
@@ -154,14 +163,18 @@ export function useCanvasInteraction(params: UseCanvasInteractionParams): UseCan
   });
 
   const localNodesRef = useRef<Node[]>([]);
-  const { dragTargetPanelId, unparentCandidatePanelId, onNodesChange: innerOnNodesChange, onNodeDragStop } =
-    useNodeDragParenting({
-      diagram,
-      nodes: localNodesRef.current,
-      updateNodeLayout: actions.updateNodeLayout,
-      commitNodeDrag: actions.commitNodeDrag,
-      batchCommitNodeDrag: actions.batchCommitNodeDrag,
-    });
+  const {
+    dragTargetPanelId,
+    unparentCandidatePanelId,
+    onNodesChange: innerOnNodesChange,
+    onNodeDragStop,
+  } = useNodeDragParenting({
+    diagram,
+    nodes: localNodesRef.current,
+    updateNodeLayout: actions.updateNodeLayout,
+    commitNodeDrag: actions.commitNodeDrag,
+    batchCommitNodeDrag: actions.batchCommitNodeDrag,
+  });
 
   const handleRequestFocusTitle = useCallback(() => {
     setFocusTitleTrigger((value) => value + 1);

@@ -1,10 +1,6 @@
 import { useState, useMemo } from "react";
-import { ChevronsUpDown, X, Plus } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { ChevronsUpDown, X } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -23,10 +19,7 @@ interface ServiceRegistryComboboxProps {
   onChange: (serviceId: string | null) => void;
 }
 
-const ServiceRegistryCombobox = ({
-  value,
-  onChange,
-}: ServiceRegistryComboboxProps) => {
+const ServiceRegistryCombobox = ({ value, onChange }: ServiceRegistryComboboxProps) => {
   const { t } = useTranslation();
   const allServices = useAllServices();
   const { addService } = useDiagramActions();
@@ -125,10 +118,7 @@ const ServiceRegistryCombobox = ({
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
         </button>
       </PopoverTrigger>
-      <PopoverContent
-        className="w-[var(--radix-popover-trigger-width)] p-0"
-        align="start"
-      >
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
         {showCreate ? (
           <div className="p-3 space-y-2">
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
@@ -185,18 +175,12 @@ const ServiceRegistryCombobox = ({
                 <CommandEmpty>{t("serviceCombobox.emptyRegistered")}</CommandEmpty>
               )}
               {filtered.length === 0 && search && (
-                <CommandEmpty>
-                  {t("serviceCombobox.noResultsFor", { query: search })}
-                </CommandEmpty>
+                <CommandEmpty>{t("serviceCombobox.noResultsFor", { query: search })}</CommandEmpty>
               )}
               {filtered.length > 0 && (
                 <CommandGroup>
                   {filtered.map((svc) => (
-                    <CommandItem
-                      key={svc.id}
-                      value={svc.id}
-                      onSelect={() => handleSelect(svc)}
-                    >
+                    <CommandItem key={svc.id} value={svc.id} onSelect={() => handleSelect(svc)}>
                       <div className="flex flex-col gap-0.5 min-w-0">
                         <span className="text-sm truncate">{svc.name}</span>
                         {svc.technology.length > 0 && (

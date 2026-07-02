@@ -8,9 +8,7 @@ export interface UseMultiSelectResult {
 }
 
 export function useMultiSelect(): UseMultiSelectResult {
-  const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(
-    () => new Set(),
-  );
+  const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(() => new Set());
 
   const toggleSelect = useCallback((id: string, isMulti: boolean) => {
     setSelectedIds((previous) => {
@@ -31,10 +29,7 @@ export function useMultiSelect(): UseMultiSelectResult {
     setSelectedIds(new Set());
   }, []);
 
-  const isSelected = useCallback(
-    (id: string) => selectedIds.has(id),
-    [selectedIds],
-  );
+  const isSelected = useCallback((id: string) => selectedIds.has(id), [selectedIds]);
 
   return {
     selectedIds,

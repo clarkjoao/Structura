@@ -26,8 +26,12 @@ interface FileSystemPermissionRequest {
 }
 
 interface FileSystemDirectoryHandleWithPermissions extends FileSystemDirectoryHandle {
-  queryPermission?: (descriptor?: FileSystemPermissionRequest) => Promise<FileSystemPermissionState>;
-  requestPermission?: (descriptor?: FileSystemPermissionRequest) => Promise<FileSystemPermissionState>;
+  queryPermission?: (
+    descriptor?: FileSystemPermissionRequest,
+  ) => Promise<FileSystemPermissionState>;
+  requestPermission?: (
+    descriptor?: FileSystemPermissionRequest,
+  ) => Promise<FileSystemPermissionState>;
 }
 
 interface WindowWithDirectoryPicker extends Window {
@@ -36,9 +40,7 @@ interface WindowWithDirectoryPicker extends Window {
 
 type DirectoryEntryTuple = [string, FileSystemHandle];
 
-function directoryEntries(
-  dir: FileSystemDirectoryHandle,
-): AsyncIterable<DirectoryEntryTuple> {
+function directoryEntries(dir: FileSystemDirectoryHandle): AsyncIterable<DirectoryEntryTuple> {
   return (dir as unknown as { entries: () => AsyncIterable<DirectoryEntryTuple> }).entries();
 }
 
@@ -53,9 +55,7 @@ function openIDB(): Promise<IDBDatabase> {
   });
 }
 
-async function saveHandleToIDB(
-  handle: FileSystemDirectoryHandle
-): Promise<void> {
+async function saveHandleToIDB(handle: FileSystemDirectoryHandle): Promise<void> {
   const db = await openIDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(DB_STORE, "readwrite");
@@ -87,7 +87,7 @@ async function clearHandleFromIDB(): Promise<void> {
 
 async function verifyPermission(
   handle: FileSystemDirectoryHandle,
-  mode: FileSystemPermissionMode = "readwrite"
+  mode: FileSystemPermissionMode = "readwrite",
 ): Promise<boolean> {
   const directoryHandle = handle as FileSystemDirectoryHandleWithPermissions;
   const opts = { mode };
@@ -105,10 +105,7 @@ function slugify(name: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-function resolveDiagramPathSegments(
-  diagram: Diagram,
-  folders: Record<string, Folder>
-): string[] {
+function resolveDiagramPathSegments(diagram: Diagram, folders: Record<string, Folder>): string[] {
   const segments: string[] = [];
 
   if (diagram.folderId) {
@@ -128,11 +125,9 @@ function resolveDiagramPathSegments(
   return segments;
 }
 
-
-
 async function getOrCreateDirectory(
   root: FileSystemDirectoryHandle,
-  segments: string[]
+  segments: string[],
 ): Promise<FileSystemDirectoryHandle> {
   let current = root;
   for (const segment of segments) {
@@ -140,7 +135,6 @@ async function getOrCreateDirectory(
   }
   return current;
 }
-
 
 export interface WorkspaceManifest {
   version: 1;
@@ -165,8 +159,6 @@ export type WorkspacePayload = {
   iconLibrary?: Record<string, IconDefinition>;
 };
 
-
-
 export interface WorkspaceScanResult {
   valid: Diagram[];
   invalid: { fileName: string; reason: string }[];
@@ -174,8 +166,6 @@ export interface WorkspaceScanResult {
   manifestError: string | null;
   totalFilesScanned: number;
 }
-
-
 
 export class FileSystemAdapter {
   private handle: FileSystemDirectoryHandle | null = null;
@@ -343,18 +333,12 @@ export class FileSystemAdapter {
   async deleteDiagram(diagramId: string, diagram?: Diagram): Promise<void> {
     if (!this.handle) return;
     try {
-      const segments = diagram
-        ? resolveDiagramPathSegments(diagram, this.folders)
-        : [];
+      const segments = diagram ? resolveDiagramPathSegments(diagram, this.folders) : [];
       const dir = await getOrCreateDirectory(this.handle, segments);
       await dir.removeEntry(`${diagramId}.json`);
     } catch {
-      
-      
       try {
-        const segments = diagram
-          ? resolveDiagramPathSegments(diagram, this.folders)
-          : [];
+        const segments = diagram ? resolveDiagramPathSegments(diagram, this.folders) : [];
         const dir = await getOrCreateDirectory(this.handle, segments);
         const file = await dir.getFileHandle(`${diagramId}.json`, {
           create: true,
@@ -364,8 +348,8 @@ export class FileSystemAdapter {
           JSON.stringify(
             { deleted: true, id: diagramId, deletedAt: new Date().toISOString() },
             null,
-            2
-          )
+            2,
+          ),
         );
         await writable.close();
       } catch (error) {
@@ -518,21 +502,14 @@ export class FileSystemAdapter {
           result.invalid.push({
             fileName: name,
             reason: i18n.t("workspaceMerge.errors.readFile", {
-              message:
-                e instanceof Error
-                  ? e.message
-                  : i18n.t("workspaceMerge.errors.unknown"),
+              message: e instanceof Error ? e.message : i18n.t("workspaceMerge.errors.unknown"),
             }),
           });
         }
       }
 
       if (entry.kind === FileSystemEntryKind.Directory) {
-        await this._scanDirectory(
-          entry as FileSystemDirectoryHandle,
-          result,
-          depth + 1,
-        );
+        await this._scanDirectory(entry as FileSystemDirectoryHandle, result, depth + 1);
       }
     }
   }
@@ -561,14 +538,15 @@ export class FileSystemAdapter {
             result[diagram.id] = diagram;
           }
         } catch (error) {
-          console.warn("[StructuraContext] FileSystemAdapter scan diagram file skipped", name, error);
+          console.warn(
+            "[StructuraContext] FileSystemAdapter scan diagram file skipped",
+            name,
+            error,
+          );
         }
       }
       if (entry.kind === FileSystemEntryKind.Directory) {
-        const nested = await this._scanAllDiagrams(
-          entry as FileSystemDirectoryHandle,
-          depth + 1,
-        );
+        const nested = await this._scanAllDiagrams(entry as FileSystemDirectoryHandle, depth + 1);
         Object.assign(result, nested);
       }
     }

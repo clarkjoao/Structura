@@ -93,7 +93,10 @@ export function LinkedDiagramSection({
     );
 
     return [
-      ...sortedDomainEntries.map(([domain, domainDiagrams]) => ({ domain, diagrams: domainDiagrams })),
+      ...sortedDomainEntries.map(([domain, domainDiagrams]) => ({
+        domain,
+        diagrams: domainDiagrams,
+      })),
       ...(noDomainDiagrams.length > 0
         ? [{ domain: t("elementPanel.noDomain"), diagrams: noDomainDiagrams }]
         : []),
@@ -231,8 +234,9 @@ export function LinkedDiagramSection({
         )}
       </div>
 
-      {canCreateLinked && !hasLinked && (
-        createdDiagramName ? (
+      {canCreateLinked &&
+        !hasLinked &&
+        (createdDiagramName ? (
           <p className="text-xs text-primary bg-primary/10 rounded-md px-3 py-2">
             {t("elementPanel.linkedDiagramCreated", { name: createdDiagramName })}
           </p>
@@ -245,8 +249,7 @@ export function LinkedDiagramSection({
             <Plus className="h-3.5 w-3.5" />
             {t("elementPanel.createLinkedDiagram")}
           </button>
-        )
-      )}
+        ))}
     </div>
   );
 }

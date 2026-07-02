@@ -6,7 +6,9 @@ export function collectConnectionIdsToResetWaypoints(params: {
   selectedEdgeId: string | null;
   reactFlowEdges: Edge[];
 }): string[] {
-  const selectedFromFlow = params.reactFlowEdges.filter((edge) => edge.selected).map((edge) => edge.id);
+  const selectedFromFlow = params.reactFlowEdges
+    .filter((edge) => edge.selected)
+    .map((edge) => edge.id);
   if (selectedFromFlow.length > 0) return selectedFromFlow;
   if (params.selectedEdgeId) return [params.selectedEdgeId];
 

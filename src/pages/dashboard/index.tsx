@@ -2,23 +2,9 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  Plus,
-  Layers,
-  Network,
-  FolderOpen,
-  LayoutGrid,
-  List,
-  ArrowUpDown,
-  Search,
-} from "lucide-react";
+import { Plus, Network, FolderOpen, LayoutGrid, List, ArrowUpDown, Search } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import {
-  useAllDiagrams,
-  useFolders,
-  useDiagramActions,
-  removeRecentRef,
-} from "@/features/diagram";
+import { useAllDiagrams, useFolders, useDiagramActions, removeRecentRef } from "@/features/diagram";
 import { deletePreview } from "@/lib/diagram-preview/previewCache";
 import type { Level, Diagram } from "@/features/diagram";
 import { ImportModal } from "@/pages/ImportModal";
@@ -52,7 +38,6 @@ import { useModifierKey } from "@/hooks/useModifierKey";
 import { useMultiSelect } from "@/hooks/useMultiSelect";
 import { FolderTree } from "@/pages/FolderTree";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 import { AddDiagramDialog } from "@/pages/dashboard/AddDiagramDialog";
 import { DiagramGrid } from "@/pages/dashboard/DiagramGrid";
 import { DiagramList } from "@/pages/dashboard/DiagramList";
@@ -74,13 +59,7 @@ export default function DashboardPage() {
   );
   const diagrams = useAllDiagrams();
   const folders = useFolders();
-  const {
-    addDiagram,
-    openDiagram,
-    deleteDiagram,
-    moveDiagram,
-    deleteFolder,
-  } = useDiagramActions();
+  const { addDiagram, openDiagram, deleteDiagram, moveDiagram, deleteFolder } = useDiagramActions();
   const navigate = useNavigate();
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -88,32 +67,26 @@ export default function DashboardPage() {
 
   const setSelectedFolderId = useCallback(
     (folderId: string | null) => {
-      setSearchParams(
-        folderId ? { f: folderId } : {},
-        { replace: true }
-      );
+      setSearchParams(folderId ? { f: folderId } : {}, { replace: true });
     },
-    [setSearchParams]
+    [setSearchParams],
   );
 
-  
   useEffect(() => {
     const f = searchParams.get("f");
     if (f && !folders[f]) {
       setSearchParams({}, { replace: true });
     }
   }, [folders, searchParams, setSearchParams]);
-  const [dropTargetFolderId, setDropTargetFolderId] = useState<
-    string | null | undefined
-  >(undefined);
+  const [dropTargetFolderId, setDropTargetFolderId] = useState<string | null | undefined>(
+    undefined,
+  );
   const [showAdd, setShowAdd] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("updatedAt");
   const [sortAsc, setSortAsc] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [triggerAddFolder, setTriggerAddFolder] = useState(0);
-  const [activeDomainFilter, setActiveDomainFilter] = useState<string | null>(
-    null,
-  );
+  const [activeDomainFilter, setActiveDomainFilter] = useState<string | null>(null);
   const [globalSearch, setGlobalSearch] = useState("");
   const folderTreeRef = useRef<HTMLDivElement>(null);
   const [importModalOpen, setImportModalOpen] = useState(false);
@@ -128,10 +101,7 @@ export default function DashboardPage() {
     isSelected: isBulkIdSelected,
   } = useMultiSelect();
 
-  const diagramIdSet = useMemo(
-    () => new Set(diagrams.map((diagram) => diagram.id)),
-    [diagrams],
-  );
+  const diagramIdSet = useMemo(() => new Set(diagrams.map((diagram) => diagram.id)), [diagrams]);
 
   const dashboardBulkCounts = useMemo(() => {
     let diagramsCount = 0;
@@ -157,12 +127,8 @@ export default function DashboardPage() {
 
   const { childFolders, folderDiagrams } = useMemo(() => {
     const allFolders = Object.values(folders);
-    const childFolders = allFolders.filter(
-      (f) => (f.parentId ?? null) === selectedFolderId,
-    );
-    const folderDiagrams = diagrams.filter(
-      (d) => (d.folderId ?? null) === selectedFolderId,
-    );
+    const childFolders = allFolders.filter((f) => (f.parentId ?? null) === selectedFolderId);
+    const folderDiagrams = diagrams.filter((d) => (d.folderId ?? null) === selectedFolderId);
     return { childFolders, folderDiagrams };
   }, [folders, diagrams, selectedFolderId]);
 
@@ -178,22 +144,17 @@ export default function DashboardPage() {
         })),
       )
       .filter(
-        (c) =>
-          c.name.toLowerCase().includes(q) ||
-          (c.description ?? "").toLowerCase().includes(q),
+        (c) => c.name.toLowerCase().includes(q) || (c.description ?? "").toLowerCase().includes(q),
       )
       .slice(0, 50);
   }, [globalSearch, diagrams]);
 
   const allDomains = useMemo(
-    () =>
-      [
-        ...new Set(
-          diagrams
-            .map((d) => d.domain?.trim())
-            .filter((domain): domain is string => Boolean(domain)),
-        ),
-      ],
+    () => [
+      ...new Set(
+        diagrams.map((d) => d.domain?.trim()).filter((domain): domain is string => Boolean(domain)),
+      ),
+    ],
     [diagrams],
   );
 
@@ -202,8 +163,7 @@ export default function DashboardPage() {
     arr.sort((a, b) => {
       let cmp = 0;
       if (sortKey === "name") cmp = a.name.localeCompare(b.name);
-      else if (sortKey === "domain")
-        cmp = (a.domain ?? "").localeCompare(b.domain ?? "");
+      else if (sortKey === "domain") cmp = (a.domain ?? "").localeCompare(b.domain ?? "");
       else if (sortKey === "level") cmp = a.level.localeCompare(b.level);
       else cmp = a.updatedAt - b.updatedAt;
       return sortAsc ? cmp : -cmp;
@@ -233,8 +193,7 @@ export default function DashboardPage() {
   );
 
   const isModifierClick = useCallback(
-    (event: React.MouseEvent<HTMLElement>) =>
-      event.ctrlKey || event.metaKey || isModifierActive,
+    (event: React.MouseEvent<HTMLElement>) => event.ctrlKey || event.metaKey || isModifierActive,
     [isModifierActive],
   );
 
@@ -275,14 +234,7 @@ export default function DashboardPage() {
     }
     clearSelection();
     setBulkDeleteOpen(false);
-  }, [
-    clearSelection,
-    deleteDiagram,
-    deleteFolder,
-    diagramIdSet,
-    folders,
-    selectedIds,
-  ]);
+  }, [clearSelection, deleteDiagram, deleteFolder, diagramIdSet, folders, selectedIds]);
 
   const handleDelete = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -290,7 +242,7 @@ export default function DashboardPage() {
   };
 
   const pendingDeleteDiagram = pendingDeleteId
-    ? diagrams.find((diagram) => diagram.id === pendingDeleteId) ?? null
+    ? (diagrams.find((diagram) => diagram.id === pendingDeleteId) ?? null)
     : null;
 
   const handleAddDiagram = useCallback(
@@ -303,13 +255,10 @@ export default function DashboardPage() {
     [addDiagram, openDiagram, navigate, selectedFolderId],
   );
 
-  const handleDragStart = useCallback(
-    (e: React.DragEvent, diagramId: string) => {
-      e.dataTransfer.setData("application/x-structura-diagram-id", diagramId);
-      e.dataTransfer.effectAllowed = "move";
-    },
-    [],
-  );
+  const handleDragStart = useCallback((e: React.DragEvent, diagramId: string) => {
+    e.dataTransfer.setData("application/x-structura-diagram-id", diagramId);
+    e.dataTransfer.effectAllowed = "move";
+  }, []);
 
   const handleDragOverFolder = useCallback((folderId: string | null) => {
     setDropTargetFolderId(folderId);
@@ -320,17 +269,14 @@ export default function DashboardPage() {
   }, []);
 
   const currentFolderName = selectedFolderId
-    ? folders[selectedFolderId]?.name ?? t("common.emDash")
+    ? (folders[selectedFolderId]?.name ?? t("common.emDash"))
     : t("dashboard.allDiagrams");
 
   return (
     <div className="min-h-screen pt-16">
       <Navbar />
       <div className="flex h-[calc(100vh-4rem)]">
-        <div
-          ref={folderTreeRef}
-          className="w-56 shrink-0 overflow-hidden border-r border-border"
-        >
+        <div ref={folderTreeRef} className="w-56 shrink-0 overflow-hidden border-r border-border">
           <FolderTree
             folders={folders}
             diagrams={diagrams}
@@ -363,33 +309,29 @@ export default function DashboardPage() {
                       </button>
                     </BreadcrumbLink>
                   ) : (
-                    <BreadcrumbPage className="text-[13px]">
-                      {t("common.workspace")}
-                    </BreadcrumbPage>
+                    <BreadcrumbPage className="text-[13px]">{t("common.workspace")}</BreadcrumbPage>
                   )}
                 </BreadcrumbItem>
                 {breadcrumbPath.map((folder, i) => {
                   const isLast = i === breadcrumbPath.length - 1;
                   return (
                     <React.Fragment key={folder.id}>
-                    <BreadcrumbSeparator />
-                    <BreadcrumbItem>
-                      {isLast ? (
-                        <BreadcrumbPage className="text-[13px]">
-                          {folder.name}
-                        </BreadcrumbPage>
-                      ) : (
-                        <BreadcrumbLink
-                          asChild
-                          onClick={() => setSelectedFolderId(folder.id)}
-                          className="cursor-pointer"
-                        >
-                          <button type="button" className="text-[13px]">
-                            {folder.name}
-                          </button>
-                        </BreadcrumbLink>
-                      )}
-                    </BreadcrumbItem>
+                      <BreadcrumbSeparator />
+                      <BreadcrumbItem>
+                        {isLast ? (
+                          <BreadcrumbPage className="text-[13px]">{folder.name}</BreadcrumbPage>
+                        ) : (
+                          <BreadcrumbLink
+                            asChild
+                            onClick={() => setSelectedFolderId(folder.id)}
+                            className="cursor-pointer"
+                          >
+                            <button type="button" className="text-[13px]">
+                              {folder.name}
+                            </button>
+                          </BreadcrumbLink>
+                        )}
+                      </BreadcrumbItem>
                     </React.Fragment>
                   );
                 })}
@@ -465,9 +407,7 @@ export default function DashboardPage() {
           <div className="flex-1 overflow-y-auto p-5">
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-foreground">
-                  {currentFolderName}
-                </h2>
+                <h2 className="text-xl font-bold text-foreground">{currentFolderName}</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {t("dashboard.diagramCount", {
                     count: folderDiagrams.length,
@@ -479,7 +419,9 @@ export default function DashboardPage() {
                         ? t("dashboard.foldersSuffix", {
                             count: childFolders.length,
                             folders: t(
-                              childFolders.length === 1 ? "common.folder_one" : "common.folder_other",
+                              childFolders.length === 1
+                                ? "common.folder_one"
+                                : "common.folder_other",
                             ),
                           })
                         : "",
@@ -495,11 +437,7 @@ export default function DashboardPage() {
                 >
                   {t("import.button")}
                 </Button>
-                <Button
-                  onClick={() => setShowAdd(true)}
-                  size="sm"
-                  className="gap-1.5 h-8"
-                >
+                <Button onClick={() => setShowAdd(true)} size="sm" className="gap-1.5 h-8">
                   <Plus className="h-3.5 w-3.5" /> {t("dashboard.newDiagram")}
                 </Button>
                 <Button
@@ -519,27 +457,40 @@ export default function DashboardPage() {
                   {t("dashboard.resultsFor", {
                     count: globalSearchResults.length,
                     results: t(
-                      globalSearchResults.length === 1 ? "common.result_one" : "common.result_other",
+                      globalSearchResults.length === 1
+                        ? "common.result_one"
+                        : "common.result_other",
                     ),
                     query: globalSearch,
                   })}
                 </p>
                 {globalSearchResults.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">{t("dashboard.noComponentsFound")}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("dashboard.noComponentsFound")}
+                  </p>
                 ) : (
                   <div className="rounded-lg border border-border bg-card overflow-hidden divide-y divide-border">
                     {globalSearchResults.map((c) => (
                       <button
                         key={`${c.diagramId}-${c.id}`}
                         type="button"
-                        onClick={() => { openDiagram(c.diagramId); navigate(`/model/${c.diagramId}`); }}
+                        onClick={() => {
+                          openDiagram(c.diagramId);
+                          navigate(`/model/${c.diagramId}`);
+                        }}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-muted/40 transition-colors"
                       >
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
-                          {c.description && <p className="text-[11px] text-muted-foreground truncate">{c.description}</p>}
+                          {c.description && (
+                            <p className="text-[11px] text-muted-foreground truncate">
+                              {c.description}
+                            </p>
+                          )}
                         </div>
-                        <span className="shrink-0 text-[10px] text-muted-foreground bg-secondary rounded px-2 py-0.5">{c.diagramName}</span>
+                        <span className="shrink-0 text-[10px] text-muted-foreground bg-secondary rounded px-2 py-0.5">
+                          {c.diagramName}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -564,9 +515,7 @@ export default function DashboardPage() {
                   <button
                     key={domain}
                     onClick={() =>
-                      setActiveDomainFilter(
-                        activeDomainFilter === domain ? null : domain,
-                      )
+                      setActiveDomainFilter(activeDomainFilter === domain ? null : domain)
                     }
                     className={cn(
                       "text-[10px] rounded-full px-2.5 py-0.5 font-medium transition-colors border",
@@ -588,9 +537,7 @@ export default function DashboardPage() {
                     const subCount = Object.values(folders).filter(
                       (f) => f.parentId === folder.id,
                     ).length;
-                    const diagCount = diagrams.filter(
-                      (d) => d.folderId === folder.id,
-                    ).length;
+                    const diagCount = diagrams.filter((d) => d.folderId === folder.id).length;
                     const total = subCount + diagCount;
                     return (
                       <motion.div
@@ -611,8 +558,7 @@ export default function DashboardPage() {
                             {folder.name}
                           </p>
                           <p className="text-[11px] text-muted-foreground">
-                            {total}{" "}
-                            {t(total === 1 ? "common.item_one" : "common.item_other")}
+                            {total} {t(total === 1 ? "common.item_one" : "common.item_other")}
                           </p>
                         </div>
                       </motion.div>
@@ -622,56 +568,48 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {globalSearchResults === null && (viewMode === "grid" ? (
-              <DiagramGrid
-                diagrams={domainFiltered}
-                onSelect={handleDiagramCardSelect}
-                isDiagramSelected={isBulkIdSelected}
-                onDragStart={handleDragStart}
-                levelLabels={levelLabels}
-              />
-            ) : (
-              <DiagramList
-                diagrams={domainFiltered}
-                onOpen={handleOpen}
-                onDelete={handleDelete}
-                onDragStart={handleDragStart}
-                levelLabels={levelLabels}
-              />
-            ))}
+            {globalSearchResults === null &&
+              (viewMode === "grid" ? (
+                <DiagramGrid
+                  diagrams={domainFiltered}
+                  onSelect={handleDiagramCardSelect}
+                  isDiagramSelected={isBulkIdSelected}
+                  onDragStart={handleDragStart}
+                  levelLabels={levelLabels}
+                />
+              ) : (
+                <DiagramList
+                  diagrams={domainFiltered}
+                  onOpen={handleOpen}
+                  onDelete={handleDelete}
+                  onDragStart={handleDragStart}
+                  levelLabels={levelLabels}
+                />
+              ))}
 
             {globalSearchResults === null &&
               domainFiltered.length === 0 &&
               childFolders.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/50 mb-4">
-                  <Network className="h-7 w-7 text-muted-foreground/60" />
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/50 mb-4">
+                    <Network className="h-7 w-7 text-muted-foreground/60" />
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-1">
+                    {t("dashboard.noDiagramsYet")}
+                  </p>
+                  <p className="text-xs text-muted-foreground/60 mb-4">
+                    {t("dashboard.createFirst")}
+                  </p>
+                  <Button size="sm" onClick={() => setShowAdd(true)} className="gap-1.5">
+                    <Plus className="h-3.5 w-3.5" /> {t("dashboard.createDiagram")}
+                  </Button>
                 </div>
-                <p className="text-sm text-muted-foreground mb-1">
-                  {t("dashboard.noDiagramsYet")}
-                </p>
-                <p className="text-xs text-muted-foreground/60 mb-4">
-                  {t("dashboard.createFirst")}
-                </p>
-                <Button
-                  size="sm"
-                  onClick={() => setShowAdd(true)}
-                  className="gap-1.5"
-                >
-                  <Plus className="h-3.5 w-3.5" /> {t("dashboard.createDiagram")}
-                </Button>
-              </div>
-            )}
+              )}
           </div>
         </div>
       </div>
 
-      {showAdd && (
-        <AddDiagramDialog
-          onClose={() => setShowAdd(false)}
-          onAdd={handleAddDiagram}
-        />
-      )}
+      {showAdd && <AddDiagramDialog onClose={() => setShowAdd(false)} onAdd={handleAddDiagram} />}
 
       <ImportModal
         open={importModalOpen}

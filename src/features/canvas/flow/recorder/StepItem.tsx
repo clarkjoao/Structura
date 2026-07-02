@@ -74,17 +74,25 @@ export function StepItem({
           isLast ? "bg-primary/10 text-primary" : "text-foreground"
         } ${step.type === "condition" ? "border-l-2 border-amber-400" : ""} ${
           isBranchStep ? "ml-3 border-l border-amber-400/30" : ""
-        } ${isDragging ? "opacity-40" : ""} ${
-          isDragOver ? "ring-1 ring-primary/50" : ""
-        }`}
+        } ${isDragging ? "opacity-40" : ""} ${isDragOver ? "ring-1 ring-primary/50" : ""}`}
       >
         <GripVertical className="h-3 w-3 text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 cursor-grab transition-opacity" />
         <span className="text-[10px] text-muted-foreground shrink-0">{isExpanded ? "▾" : "▸"}</span>
-        <span className="font-mono text-[10px] text-muted-foreground w-4 text-right shrink-0">{index + 1}.</span>
+        <span className="font-mono text-[10px] text-muted-foreground w-4 text-right shrink-0">
+          {index + 1}.
+        </span>
         <span className="truncate flex-1">{getStepLabel(step)}</span>
-        {step.duration && <span className="text-[9px] font-mono text-primary/70 shrink-0">{step.duration}</span>}
-        {step.isAsync && <span className="text-[9px] font-mono text-amber-400 shrink-0">async</span>}
-        {step.handleId && <span className="text-[9px] font-mono text-muted-foreground shrink-0">[{step.handleId}]</span>}
+        {step.duration && (
+          <span className="text-[9px] font-mono text-primary/70 shrink-0">{step.duration}</span>
+        )}
+        {step.isAsync && (
+          <span className="text-[9px] font-mono text-amber-400 shrink-0">async</span>
+        )}
+        {step.handleId && (
+          <span className="text-[9px] font-mono text-muted-foreground shrink-0">
+            [{step.handleId}]
+          </span>
+        )}
         <button
           type="button"
           onClick={onDelete}
@@ -126,7 +134,10 @@ export function StepItem({
                   const color = getBranchColor(bi);
                   return (
                     <div key={bi} className="flex items-center gap-1">
-                      <div className="w-1 h-6 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                      <div
+                        className="w-1 h-6 rounded-full shrink-0"
+                        style={{ backgroundColor: color }}
+                      />
                       <input
                         value={branch.label}
                         onChange={(e) => onUpdateBranchLabel(step.id, bi, e.target.value)}
@@ -246,7 +257,8 @@ export function StepItem({
                   }}
                   className="flex items-center gap-1 text-[9px] text-amber-400 hover:text-amber-300 mt-1"
                 >
-                  <GitBranch className="h-3 w-3" /> {t("flowRecorder.convertToCondition", "Convert to condition")}
+                  <GitBranch className="h-3 w-3" />{" "}
+                  {t("flowRecorder.convertToCondition", "Convert to condition")}
                 </button>
               )}
             </>

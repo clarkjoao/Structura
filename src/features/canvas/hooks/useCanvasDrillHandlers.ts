@@ -75,7 +75,14 @@ export function useCanvasDrillHandlers({
         navigate(`/model/${comp.linkedDiagramId}`);
       }
     },
-    [clearCanvasSelection, diagramNavLocked, openDiagram, navigate, onDrillDownToDiagram, onOpenDiagram],
+    [
+      clearCanvasSelection,
+      diagramNavLocked,
+      openDiagram,
+      navigate,
+      onDrillDownToDiagram,
+      onOpenDiagram,
+    ],
   );
 
   const handlePanelCollapseToggle = useCallback(
@@ -133,9 +140,7 @@ export function useCanvasDrillHandlers({
           updateComponent(nodeId, {
             collapsed: false,
             width: comp.collapsedWidth ?? DB_TABLE_EXPAND_DEFAULT_W,
-            height:
-              comp.collapsedHeight ??
-              defaultExpandedDbTableHeight(comp.columns.length),
+            height: comp.collapsedHeight ?? defaultExpandedDbTableHeight(comp.columns.length),
           });
         } else {
           updateComponent(nodeId, {

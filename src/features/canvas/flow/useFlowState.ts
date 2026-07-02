@@ -50,9 +50,7 @@ export function useFlowState({ flows, isCompareMode = false }: UseFlowStateParam
     return recordingSteps.filter((step) => {
       const owner = branchOwnership.get(step.id);
       return (
-        owner &&
-        owner.conditionStepId === conditionStepId &&
-        owner.branchIndex === branchIndex
+        owner && owner.conditionStepId === conditionStepId && owner.branchIndex === branchIndex
       );
     });
   }, [isRecording, recordingSteps, recordingContext, branchOwnership]);
@@ -62,5 +60,13 @@ export function useFlowState({ flows, isCompareMode = false }: UseFlowStateParam
     return buildRecordingInfo(stepsForRecordingOverlay);
   }, [isRecording, stepsForRecordingOverlay]);
 
-  return { isPlaying, activeStep, flowHighlight, coverage, recordingInfo, activeFlow, currentStepId };
+  return {
+    isPlaying,
+    activeStep,
+    flowHighlight,
+    coverage,
+    recordingInfo,
+    activeFlow,
+    currentStepId,
+  };
 }

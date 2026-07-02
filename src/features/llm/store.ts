@@ -18,11 +18,7 @@ import {
   loadThreadFromStorage,
   saveThreadToStorage,
 } from "./llm-storage";
-import {
-  applyDiagramPatchAction,
-  computeGridPositions,
-  resolveRef,
-} from "./apply-diagram-patch";
+import { applyDiagramPatchAction, computeGridPositions, resolveRef } from "./apply-diagram-patch";
 import { sendMessage as sendOpenAIMessage } from "./providers/openai";
 import { sendMessage as sendAnthropicMessage } from "./providers/anthropic";
 import { sendMessage as sendProxyMessage } from "./providers/proxy";
@@ -56,9 +52,7 @@ function sanitizeMessagesForLLM(messages: ChatMessage[]): ChatMessage[] {
       if (typeof parsed.message === "string") {
         return { ...message, content: parsed.message };
       }
-    } catch {
-      
-    }
+    } catch {}
     return { ...message, content: "[previous diagram suggestion]" };
   });
 }
@@ -267,11 +261,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => ({
           const viewport = activeDiagram?.viewport ?? { x: 0, y: 0, zoom: 1 };
           const startX = 200 - viewport.x;
           const startY = 200 - viewport.y;
-          const gridPositions = computeGridPositions(
-            nodesMissingPosition.length,
-            startX,
-            startY,
-          );
+          const gridPositions = computeGridPositions(nodesMissingPosition.length, startX, startY);
           for (let index = 0; index < nodesMissingPosition.length; index += 1) {
             const nodeId = nodesMissingPosition[index];
             const pos = gridPositions[index];
@@ -311,8 +301,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => ({
         saveThreadToStorage(currentDiagramId, get().messages);
       }
     } catch (error) {
-      const errorKind: LLMErrorKind =
-        error instanceof LLMProviderError ? error.kind : "unknown";
+      const errorKind: LLMErrorKind = error instanceof LLMProviderError ? error.kind : "unknown";
       set({
         messages: outgoingMessages,
         streamingContent: null,
@@ -453,7 +442,8 @@ export function getSuggestionIdForNode(
   pendingPreviews: PendingNodePreview[],
   nodeId: string,
 ): string | null {
-  return pendingPreviews.find((pendingPreview) => pendingPreview.nodeIds.includes(nodeId))
-    ?.suggestionId ?? null;
+  return (
+    pendingPreviews.find((pendingPreview) => pendingPreview.nodeIds.includes(nodeId))
+      ?.suggestionId ?? null
+  );
 }
-

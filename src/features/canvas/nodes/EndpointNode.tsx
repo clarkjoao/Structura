@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { Play } from "lucide-react";
 import type { EndpointHandler, HttpMethod } from "@/features/diagram";
 import { ENDPOINT_H, METHOD_COLORS } from "./ApiGroupNode/constants";
@@ -8,7 +8,7 @@ import { useCollabHighlight } from "@/features/collaboration";
 
 export { METHOD_COLORS } from "./ApiGroupNode/constants";
 
-export interface EndpointNodeData {
+export type EndpointNodeData = {
   elementId: string;
   method: HttpMethod;
   path: string;
@@ -26,10 +26,9 @@ export interface EndpointNodeData {
     a: { name: string; color: string };
     b: { name: string; color: string };
   };
-}
+};
 
-const EndpointNode = memo(({ data }: NodeProps) => {
-  const d = data as unknown as EndpointNodeData;
+const EndpointNode = memo(({ data: d }: NodeProps<Node<EndpointNodeData>>) => {
   const { method, path } = d;
   const collabHighlight = useCollabHighlight(d.elementId);
 
@@ -44,9 +43,7 @@ const EndpointNode = memo(({ data }: NodeProps) => {
           style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
         />
       )}
-      {d.compareBadges && (
-        <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
-      )}
+      {d.compareBadges && <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
       {!d.compareBadges && d.sceneBadge && (
         <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
       )}
