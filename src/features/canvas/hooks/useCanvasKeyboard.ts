@@ -123,14 +123,15 @@ interface UseCanvasKeyboardParams {
 export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   const { t } = useTranslation();
   const lastPointerScreenRef = useRef<{ x: number; y: number } | null>(null);
-  const c4ShortcutMap = useMemo(
-    () =>
-      ({
-        [KEY.DIGIT_1]: { type: "person" as const, name: t("keyboard.newPerson") },
-        [KEY.DIGIT_2]: { type: "system" as const, name: t("keyboard.newSystem") },
-        [KEY.DIGIT_3]: { type: "container" as const, name: t("keyboard.newContainer") },
-        [KEY.DIGIT_4]: { type: "component" as const, name: t("keyboard.newComponent") },
-      }) satisfies Record<string, { type: ComponentType; name: string }>,
+  const c4ShortcutMap = useMemo<
+    Record<string, { type: ComponentType; name: string } | undefined>
+  >(
+    () => ({
+      [KEY.DIGIT_1]: { type: "person", name: t("keyboard.newPerson") },
+      [KEY.DIGIT_2]: { type: "system", name: t("keyboard.newSystem") },
+      [KEY.DIGIT_3]: { type: "container", name: t("keyboard.newContainer") },
+      [KEY.DIGIT_4]: { type: "component", name: t("keyboard.newComponent") },
+    }),
     [t],
   );
 
@@ -452,9 +453,10 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       }
 
       
-      if (mod && c4ShortcutMap[event.key]) {
+      const c4Shortcut = mod ? c4ShortcutMap[event.key] : undefined;
+      if (c4Shortcut) {
         event.preventDefault();
-        const { type, name } = c4ShortcutMap[event.key];
+        const { type, name } = c4Shortcut;
         const pos = getViewportCenter(reactFlowInstance, isPanelOpen);
         const created = addComponent(type, name, null, pos);
         if (created?.id) {

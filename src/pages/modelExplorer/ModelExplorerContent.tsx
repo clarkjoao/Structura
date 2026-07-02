@@ -52,7 +52,7 @@ function ReactFlowInstanceBridge({
   onReady,
 }: {
   onReady: (instance: ReactFlowInstance) => void;
-}) {
+}): null {
   const reactFlowInstance = useReactFlow();
   useEffect(() => {
     onReady(reactFlowInstance);

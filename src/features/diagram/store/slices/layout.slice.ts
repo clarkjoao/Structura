@@ -184,7 +184,7 @@ export const layoutSlice = (
       });
     },
 
-    applyAutoLayout: (layouts) => {
+    applyAutoLayout: (layouts: Array<{ elementId: string; x: number; y: number }>) => {
       set((state) => {
         const d = getActiveDiagram(state);
         if (!d || layouts.length === 0) return;

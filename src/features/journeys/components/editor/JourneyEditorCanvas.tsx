@@ -97,7 +97,7 @@ function JourneyEditorPlaybackFitView({
   isRecording,
   activeFlow,
   currentStepId,
-}: JourneyEditorPlaybackFitViewProps) {
+}: JourneyEditorPlaybackFitViewProps): null {
   const { fitView, getNode, getEdge } = useReactFlow();
 
   useEffect(() => {
@@ -153,7 +153,7 @@ interface JourneyEditorDiagramFitViewProps {
 
 function JourneyEditorDiagramFitView({
   diagramId,
-}: JourneyEditorDiagramFitViewProps) {
+}: JourneyEditorDiagramFitViewProps): null {
   const { fitView } = useReactFlow();
   const prevDiagramIdRef = useRef<string | null>(null);
 

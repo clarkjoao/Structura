@@ -1,7 +1,7 @@
 import type { Component, Connection, FlowStep, NodeLayout } from "../../model/diagram.types";
 import { current } from "immer";
 import { generateId } from "../../utils/generate-id";
-import type { AppState } from "../store.types";
+import type { AppState, ClipboardEntry } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
 import {
@@ -35,7 +35,7 @@ export const clipboardSlice = (
   set: (fn: (state: AppState) => void) => void,
   _get: () => AppState,
 ) => ({
-    clipboard: null,
+    clipboard: null as ClipboardEntry | null,
     copyToClipboard: (componentIds: string[]) => {
       set((state) => {
         if (!state.activeDiagramId) return;

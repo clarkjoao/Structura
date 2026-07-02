@@ -469,7 +469,7 @@ export function createPersistConfig(storage: IStoragePort) {
     partialize: partializeState,
     merge: mergePersistedState,
     version: PERSIST_SCHEMA_VERSION,
-    migrate: (persistedState, fromVersion) => {
+    migrate: (persistedState: unknown, fromVersion: number) => {
       if (typeof fromVersion !== "number") {
         return persistedState as PersistedDiagramStoreSlice;
       }

@@ -116,10 +116,10 @@ export const patternsSlice = (
     position: { x: number; y: number },
   ): string[] => {
     const GRID_X = 220;
-    const fromUserLibrary = isUserTemplatePayload(template);
+    const userComponents = isUserTemplatePayload(template) ? template.components : null;
     const ids: string[] = template.components.map(() => generateId("el"));
-    const userLayouts = fromUserLibrary
-      ? computeUserTemplateNodeLayouts(template.components, position)
+    const userLayouts = userComponents
+      ? computeUserTemplateNodeLayouts(userComponents, position)
       : null;
 
     let committed = false;
@@ -134,8 +134,8 @@ export const patternsSlice = (
         let component: Component;
         let layout: { elementId: string; x: number; y: number; width?: number; height?: number };
 
-        if (fromUserLibrary && userLayouts) {
-          component = buildUserTemplateComponentPayload(raw, ids[i], ids);
+        if (userComponents && userLayouts) {
+          component = buildUserTemplateComponentPayload(userComponents[i], ids[i], ids);
           const dims = userLayouts[i];
           layout = {
             elementId: ids[i],

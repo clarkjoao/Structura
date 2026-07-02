@@ -7,7 +7,7 @@ import { defaultStorage, type IStoragePort } from "@/infrastructure/persistence"
 import { recordLocalStorageDiagramSyncSuccess } from "@/infrastructure/persistence/localStorageSyncTimestamp";
 import { useIconStore, type IconStore } from "@/features/icons";
 import type { UserTemplate } from "../model/diagram.types";
-import type { AppState } from "./store.types";
+import type { AppState, DiagramSnapshot } from "./store.types";
 import {
   historySlice,
   componentsSlice,
@@ -42,8 +42,8 @@ export function createDiagramStore(
   return create<import("./store.types").DiagramStore>()(
     persist(
       immer((set, get) => ({
-        past: [],
-        future: [],
+        past: [] as DiagramSnapshot[],
+        future: [] as DiagramSnapshot[],
         _lastUndoRedoAt: 0,
         ...diagramsSlice(set, get as () => AppState),
         ...componentsSlice(set, get as () => AppState),

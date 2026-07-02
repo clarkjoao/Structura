@@ -17,7 +17,7 @@ import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
 
-function DiagramPreviewSync() {
+function DiagramPreviewSync(): null {
   useDiagramPreviewSync();
   return null;
 }

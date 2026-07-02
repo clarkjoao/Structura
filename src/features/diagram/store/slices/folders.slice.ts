@@ -10,7 +10,7 @@ export function foldersSlice(
   return {
   folders: import.meta.env.VITE_DISABLE_SEEDS === "true" ? {} : SEED_FOLDERS,
 
-  addFolder: (name, parentId, domain) => {
+  addFolder: (name: string, parentId: string | null, domain?: string) => {
     const folder: Folder = {
       id: generateId("folder"),
       name,
@@ -25,7 +25,7 @@ export function foldersSlice(
     return folder;
   },
 
-  renameFolder: (id, name) => {
+  renameFolder: (id: string, name: string) => {
     set((state) => {
       const folder = state.folders[id];
       if (!folder) return;
@@ -34,7 +34,7 @@ export function foldersSlice(
     });
   },
 
-  deleteFolder: (id) => {
+  deleteFolder: (id: string) => {
     set((state) => {
       const hasChildren = Object.values(state.folders).some(
         (f) => f.parentId === id,
@@ -50,7 +50,7 @@ export function foldersSlice(
     });
   },
 
-  moveDiagram: (diagramId, folderId) => {
+  moveDiagram: (diagramId: string, folderId: string | null) => {
     set((state) => {
       const diagram = state.diagrams[diagramId];
       if (!diagram) return;
