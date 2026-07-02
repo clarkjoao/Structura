@@ -12,7 +12,7 @@ import { computeFitBounds } from "../../utils/fit-group-to-children";
 
 export const layoutSlice = (
     set: (fn: (state: AppState) => void) => void,
-    get: () => AppState,
+    _get: () => AppState,
 ) => ({
     updateNodeLayout: (elementId: string, position: { x: number; y: number }, dimensions?: { width: number; height: number }) => {
       set((state) => {

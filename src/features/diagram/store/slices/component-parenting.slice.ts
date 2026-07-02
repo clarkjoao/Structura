@@ -1,4 +1,4 @@
-import type { Component, Diagram, PanelComponent, SceneDiff } from "../../model/diagram.types";
+import type { Diagram, PanelComponent, SceneDiff } from "../../model/diagram.types";
 import { PanelKind } from "../../enums";
 import { generateId } from "../../utils/generate-id";
 import { isApiGroupComponent, isPanelComponent } from "../../model/component.guards";

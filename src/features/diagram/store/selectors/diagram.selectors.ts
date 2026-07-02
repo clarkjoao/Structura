@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
-import type { Diagram, DiagramModel } from "../../model/diagram.types";
+import type { DiagramModel } from "../../model/diagram.types";
 import { useDiagramStore } from "../diagram.store";
 
 export const useActiveDiagramId = () =>

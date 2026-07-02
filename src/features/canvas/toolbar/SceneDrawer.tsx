@@ -19,7 +19,6 @@ import {
   type MergePreview,
   type SceneDiff,
 } from "@/features/diagram";
-import { useCollab } from "@/features/collaboration";
 import { useInteractionMode } from "../hooks/useInteractionMode";
 import { cn } from "@/lib/utils";
 import { KEY, keyIs } from "@/lib/keyboard-utils";
@@ -411,7 +410,6 @@ export function SceneDrawer({
 export function ConnectedSceneDrawer({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const diagram = useActiveDiagram();
-  const { session } = useCollab();
   const { canEditScenes, isCollabGuest } = useInteractionMode(diagram);
   const scenesGuestReadOnly = isCollabGuest;
   const scenesLocked = !canEditScenes;

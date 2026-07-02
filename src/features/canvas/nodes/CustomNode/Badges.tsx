@@ -3,9 +3,6 @@ import { useNavigate } from "react-router-dom";
 import {
   Link2,
   LayoutDashboard,
-  BookMarked,
-  Github,
-  Ticket,
   Link,
 } from "lucide-react";
 import type { ExternalLink } from "@/features/diagram";

@@ -7,7 +7,6 @@ import {
   isDiagramCompareMode,
   isPanelComponent,
   isReactFlowParentPanelType,
-  getCachedCanvasSnapshot,
 } from "@/features/diagram";
 import type { ResolvedSnapshot } from "@/features/diagram";
 import {

@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { ChevronsUpDown, X, Plus } from "lucide-react";
+import { ChevronsUpDown, X } from "lucide-react";
 import {
   Popover,
   PopoverContent,

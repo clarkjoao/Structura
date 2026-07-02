@@ -32,7 +32,7 @@ export const useCollabStore = create<CollabStoreState>((set) => ({
   hostDisconnected: false,
 
   setSession: (session) =>
-    set((state) => ({
+    set(() => ({
       session,
       ...(session ? { status: session.status } : {}),
     })),

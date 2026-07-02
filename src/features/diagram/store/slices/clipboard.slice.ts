@@ -33,7 +33,7 @@ function resolveAbsoluteLayoutPosition(
 
 export const clipboardSlice = (
   set: (fn: (state: AppState) => void) => void,
-  get: () => AppState,
+  _get: () => AppState,
 ) => ({
     clipboard: null,
     copyToClipboard: (componentIds: string[]) => {

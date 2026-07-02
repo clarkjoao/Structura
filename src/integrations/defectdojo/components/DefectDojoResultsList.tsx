@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Loader2, AlertTriangle, Download } from "lucide-react";
+import { AlertTriangle, Download } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDiagramStore, ServiceSource } from "@/features/diagram";
 import { mapToServiceDefinition } from "../defectdojo.service";

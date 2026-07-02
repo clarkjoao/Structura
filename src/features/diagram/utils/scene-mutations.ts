@@ -1,4 +1,4 @@
-import type { Component, Diagram } from "../model/diagram.types";
+import type { Diagram } from "../model/diagram.types";
 import { isEndpointType } from "../model/component-type-constants";
 import { isApiGroupComponent } from "../model/component.guards";
 import { computeApiGroupSize } from "./api-group-size";

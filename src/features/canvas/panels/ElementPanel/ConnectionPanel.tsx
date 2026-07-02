@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import debounce from "lodash.debounce";
 import { X, Trash2, RotateCcw } from "lucide-react";
-import type { Connection, ConnectionIntent, ConnectionDirection, ConnectionStyle } from "@/features/diagram";
+import type { Connection, ConnectionIntent, ConnectionStyle } from "@/features/diagram";
 import { EdgeStyle, StrokeStyle, EdgeMarker, useActiveDiagramId, useDiagramActions, useEdgeWaypoints } from "@/features/diagram";
 import { INTENT_DEFAULTS, saveLastEdgeStyle } from "@/features/diagram";
 import { cn } from "@/lib/utils";

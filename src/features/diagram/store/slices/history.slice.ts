@@ -41,7 +41,7 @@ export function pushHistory(
 
 export const historySlice = 
 (set: (fn: (state: AppState) => void) => void,
-    get: () => AppState,
+    _get: () => AppState,
 ) => ({
     undo: () => { 
       set((state) => {

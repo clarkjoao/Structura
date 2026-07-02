@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef } from "react";
-import type { Node, Edge, OnEdgesChange, OnConnect, OnConnectEnd, Connection } from "@xyflow/react";
+import type { Node, Edge, OnEdgesChange, OnConnect, Connection } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import type { CanvasVisualState } from "./useCanvasVisualState";
 import { useFlowMode } from "../flow/FlowModeContext";

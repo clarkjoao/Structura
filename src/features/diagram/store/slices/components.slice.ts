@@ -52,7 +52,6 @@ import {
   SWIMLANE_DEFAULT_H,
   NOTE_DEFAULT_W,
   NOTE_DEFAULT_H,
-  NODE_DRAG_PADDING,
   DEFAULT_NODE_W,
   DEFAULT_NODE_H,
   API_GROUP_HEADER_H,
@@ -299,7 +298,7 @@ function buildLayoutForComponent(
 
 export const componentsSlice = (
   set: (fn: (state: AppState) => void) => void,
-  get: () => AppState,
+  _get: () => AppState,
 ) => ({
     addComponent: (
       type: ComponentType,

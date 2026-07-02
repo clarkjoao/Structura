@@ -12,7 +12,7 @@ import { mutateRemoveConnectionInScene } from "../../utils/scene-mutations";
 
 export const connectionsSlice = (
   set: (fn: (state: AppState) => void) => void,
-  get: () => AppState,
+  _get: () => AppState,
 ) => ({
     addConnection: (
       sourceId: string,

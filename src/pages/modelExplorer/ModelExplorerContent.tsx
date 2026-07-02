@@ -104,7 +104,6 @@ export function ModelExplorerContent({
 
   const {
     isRecording,
-    isIdle,
     isPlaying,
     currentStep,
     isCondition,

@@ -16,11 +16,6 @@ interface ParseContext {
   steps: Record<string, FlowStep>;
 }
 
-interface BranchParseResult {
-  entryId: string;
-  exitIds: string[];
-}
-
 type ConditionalKind = "alt" | "opt" | "loop" | "par" | "critical" | "break";
 
 type ArrowMatch = {

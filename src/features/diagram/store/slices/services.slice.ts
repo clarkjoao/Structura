@@ -104,7 +104,7 @@ function syncLinkedComponentsFromRegistry(
 
 export const servicesSlice = (
   set: (fn: (state: AppState) => void) => void,
-  get: () => AppState,
+  _get: () => AppState,
 ) => ({
     serviceRegistry: import.meta.env.VITE_DISABLE_SEEDS === "true" ? {} : SEED_SERVICE_REGISTRY,
   

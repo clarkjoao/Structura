@@ -57,7 +57,6 @@ export function EdgeSvgLayer({
   strokeWidth,
   strokeStyle,
   color,
-  coverageFlowNamesLength,
   segmentHitAriaLabel,
   isActivePlayback,
   activePayloadDirection,

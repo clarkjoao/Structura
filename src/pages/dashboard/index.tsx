@@ -4,7 +4,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Plus,
-  Layers,
   Network,
   FolderOpen,
   LayoutGrid,
@@ -52,7 +51,6 @@ import { useModifierKey } from "@/hooks/useModifierKey";
 import { useMultiSelect } from "@/hooks/useMultiSelect";
 import { FolderTree } from "@/pages/FolderTree";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 import { AddDiagramDialog } from "@/pages/dashboard/AddDiagramDialog";
 import { DiagramGrid } from "@/pages/dashboard/DiagramGrid";
 import { DiagramList } from "@/pages/dashboard/DiagramList";

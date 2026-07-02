@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { Component, Connection } from "../model/diagram.types";
+import type { Component } from "../model/diagram.types";
 import { parseMermaidFlowchart } from "./import-mermaid-flowchart";
 
 const { generateIdMock } = vi.hoisted(() => ({

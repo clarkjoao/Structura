@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import ElementPickerModal from "./ElementPickerModal";
-import { Focus, Minimize2, Plus, ChevronUp, Puzzle } from "lucide-react";
+import { Plus, ChevronUp, Puzzle } from "lucide-react";
 import { useActiveDiagram } from "@/features/diagram";
 import { useInteractionMode } from "../hooks/useInteractionMode";
 import PatternPicker from "./PatternPicker";

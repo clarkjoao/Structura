@@ -8,7 +8,7 @@ import {
 import { useIconStore } from "@/features/icons";
 import type { Diagram, Component, Connection, IconDefinition, NodeLayout } from "../model/diagram.types";
 import type { Point } from "../model/layout.types";
-import type { DiagramSnapshot, DiagramStore } from "./store.types";
+import type { DiagramStore } from "./store.types";
 import type { ServiceDefinition } from "../model/service.types";
 import { ServiceSource } from "../enums";
 import { migrateFlow } from "../utils/flow-migration";

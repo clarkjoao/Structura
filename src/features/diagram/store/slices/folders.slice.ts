@@ -5,7 +5,7 @@ import type { AppState } from "../store.types";
 
 export function foldersSlice(
   set: (fn: (state: AppState) => void) => void,
-  get: () => AppState,
+  _get: () => AppState,
 ) {
   return {
   folders: import.meta.env.VITE_DISABLE_SEEDS === "true" ? {} : SEED_FOLDERS,

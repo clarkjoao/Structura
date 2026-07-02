@@ -242,11 +242,6 @@ const ComponentPanel = ({
     setTagInput("");
   };
 
-  const diagramOptions = useMemo(
-    () => allDiagrams.map((diagram) => ({ id: diagram.id, name: diagram.name })),
-    [allDiagrams],
-  );
-
   return (
     <div className="flex-1 flex flex-col min-h-0">
       <div className="flex items-center justify-between p-3 border-b border-border shrink-0">

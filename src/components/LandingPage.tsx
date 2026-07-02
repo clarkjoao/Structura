@@ -6,7 +6,6 @@ import {
   ArrowRight,
   Network,
   History,
-  Users,
   Shield,
 } from "lucide-react";
 import { Link } from "react-router-dom";

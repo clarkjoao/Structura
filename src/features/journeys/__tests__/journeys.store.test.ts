@@ -68,7 +68,7 @@ describe("journeys store", () => {
 
   it("removeJourneyStep removes step and reindexes order", () => {
     const { id: journeyId } = useJourneyStore.getState().addJourney("J");
-    const a = useJourneyStore.getState().addJourneyStep(journeyId, {
+    useJourneyStore.getState().addJourneyStep(journeyId, {
       label: "A",
       diagramId: "d",
     });
@@ -76,7 +76,7 @@ describe("journeys store", () => {
       label: "B",
       diagramId: "d",
     });
-    const c = useJourneyStore.getState().addJourneyStep(journeyId, {
+    useJourneyStore.getState().addJourneyStep(journeyId, {
       label: "C",
       diagramId: "d",
     });

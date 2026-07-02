@@ -78,7 +78,6 @@ const Canvas = (props: CanvasProps = {}) => {
     onNodeDragStop,
     eventHandlers,
     interactionMode,
-    isRecording,
     actions,
     showSearch,
     setShowSearch,
