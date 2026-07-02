@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Handle, NodeResizer, Position, useReactFlow, type NodeProps } from "@xyflow/react";
+import { Handle, NodeResizer, Position, useReactFlow, type Node, type NodeProps } from "@xyflow/react";
 import Editor from "@monaco-editor/react";
 import { Braces, Check, ChevronDown, ChevronUp, Pencil, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -49,10 +49,9 @@ function isValidJson(raw: string): boolean {
   }
 }
 
-const JsonViewerNode = memo(({ data, selected }: NodeProps) => {
+const JsonViewerNode = memo(({ data: diagramNodeData, selected }: NodeProps<Node<JsonViewerNodeData>>) => {
   const { t } = useTranslation();
   const { theme } = useTheme();
-  const diagramNodeData = data as unknown as JsonViewerNodeData;
   const onInlineEditingChange = diagramNodeData.onInlineEditingChange;
   const { updateComponent, updateNodeLayout } = useDiagramActions();
   const { getNode } = useReactFlow();

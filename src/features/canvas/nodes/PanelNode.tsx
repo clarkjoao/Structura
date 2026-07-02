@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { NodeResizer, type NodeProps } from "@xyflow/react";
+import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useComponentIcon } from "@/features/diagram";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
@@ -14,7 +14,7 @@ import { usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
 
 const DEFAULT_OPACITY = 10;
 
-export interface PanelNodeData {
+export type PanelNodeData = {
   elementId: string;
   name: string;
   description?: string;
@@ -37,7 +37,7 @@ export interface PanelNodeData {
     a: { name: string; color: string };
     b: { name: string; color: string };
   };
-}
+};
 
 function colorWithAlpha(color: string, alpha: number): string {
   if (color.startsWith("#")) {
@@ -56,9 +56,8 @@ function colorWithAlpha(color: string, alpha: number): string {
 
 const UNPARENT_BORDER = "hsl(25 95% 53%)"; 
 
-const PanelNode = memo(({ data, selected }: NodeProps) => {
+const PanelNode = memo(({ data: d, selected }: NodeProps<Node<PanelNodeData>>) => {
   const { t } = useTranslation();
-  const d = data as unknown as PanelNodeData;
   const customDiagramIcon = useComponentIcon(d.elementId);
   const { highlightedNodeIds } = useHandleHighlight();
   const kindDef = getPanelKindDef(d.panelKind as import("@/features/diagram").PanelKind | undefined);

@@ -1,6 +1,6 @@
 import { memo } from "react";
 import type { CSSProperties, ReactNode } from "react";
-import { Position, type NodeProps } from "@xyflow/react";
+import { Position, type Node, type NodeProps } from "@xyflow/react";
 import { useCollabHighlight } from "@/features/collaboration";
 import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPresence";
 import { usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
@@ -21,8 +21,7 @@ import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
 import { useCollab } from "@/features/collaboration";
 
-function useNodeState(data: NodeProps["data"], selected: boolean | undefined) {
-  const d = data as unknown as NodeData;
+function useNodeState(d: NodeData, selected: boolean | undefined) {
   const { highlightedNodeIds } = useHandleHighlight();
   const isHighlighted = highlightedNodeIds.has(d.elementId);
   const isActive = selected || d.isSelected || d.isHighlighted || isHighlighted;
@@ -111,7 +110,7 @@ const NodeActions = ({ d, controlsDisabled, colorClass, customColor }: NodeActio
   );
 };
 
-const CardNode = memo(({ data, selected }: NodeProps) => {
+const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
   const { t } = useTranslation();
   const { d, isActive, controlsDisabled, handlePointer, incomingCount, outgoingCount } =
     useNodeState(data, selected);

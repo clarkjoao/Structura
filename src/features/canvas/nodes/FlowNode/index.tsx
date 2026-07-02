@@ -1,5 +1,5 @@
 import { memo, type CSSProperties } from "react";
-import { Handle, NodeResizer, Position, type NodeProps } from "@xyflow/react";
+import { Handle, NodeResizer, Position, type Node, type NodeProps } from "@xyflow/react";
 import type { FlowNodeShape } from "@/features/diagram";
 import { useHandleHighlight } from "../../contexts/HandleHighlightContext";
 import type { FlowNodeData } from "./FlowNode.types";
@@ -241,8 +241,7 @@ function FourSideHandles() {
   );
 }
 
-const FlowNode = memo(({ data, selected }: NodeProps) => {
-  const d = data as unknown as FlowNodeData;
+const FlowNode = memo(({ data: d, selected }: NodeProps<Node<FlowNodeData>>) => {
   const { highlightedNodeIds } = useHandleHighlight();
   const isSelected = selected || d.isSelected;
   const isHighlighted = highlightedNodeIds.has(d.elementId);

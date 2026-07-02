@@ -17,7 +17,7 @@ export interface DbColumnRow {
   unique: boolean;
 }
 
-export interface DbTableNodeData {
+export type DbTableNodeData = {
   elementId: string;
   tableName: string;
   columns: DbColumnRow[];
@@ -31,4 +31,4 @@ export interface DbTableNodeData {
     a: { name: string; color: string };
     b: { name: string; color: string };
   };
-}
+};

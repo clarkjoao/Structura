@@ -1,5 +1,5 @@
 import { memo, useState, useCallback, useRef, useId, useEffect, useMemo } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { ChevronDown, ChevronUp, Database, Plus, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
@@ -119,9 +119,8 @@ function BoolCell({ value, colWidth, onChange }: BoolCellProps) {
 }
 
 
-const DbTableNode = memo(({ data, selected }: NodeProps) => {
+const DbTableNode = memo(({ data: d, selected }: NodeProps<Node<DbTableNodeData>>) => {
   const { t } = useTranslation();
-  const d = data as unknown as DbTableNodeData;
   const isActive = selected || d.isSelected;
   const collapsed = d.collapsed ?? false;
   const onToggleCollapse = d.onToggleCollapse;

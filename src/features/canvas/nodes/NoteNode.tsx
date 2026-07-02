@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { Handle, NodeResizer, Position, type NodeProps } from "@xyflow/react";
+import { Handle, NodeResizer, Position, type Node, type NodeProps } from "@xyflow/react";
 import ReactMarkdown from "react-markdown";
 import { ChevronDown, ChevronUp, FileText } from "lucide-react";
 import { useComponentIcon, useDiagramActions } from "@/features/diagram";
@@ -31,7 +31,7 @@ function NoteIncomingHandle({ elementId }: { elementId: string }) {
   );
 }
 
-export interface NoteNodeData {
+export type NoteNodeData = {
   elementId: string;
   name: string;
   description: string;
@@ -50,7 +50,7 @@ export interface NoteNodeData {
     a: { name: string; color: string };
     b: { name: string; color: string };
   };
-}
+};
 
 function isDarkBg(color: string): boolean {
   if (color.startsWith("#")) {
@@ -67,10 +67,9 @@ function isDarkBg(color: string): boolean {
   return false;
 }
 
-const NoteNode = memo(({ data, selected }: NodeProps) => {
+const NoteNode = memo(({ data: d, selected }: NodeProps<Node<NoteNodeData>>) => {
   const { t } = useTranslation();
   const { theme } = useTheme();
-  const d = data as unknown as NoteNodeData;
   const elementId = d.elementId;
   const description = d.description;
   const onInlineEditingChange = d.onInlineEditingChange;

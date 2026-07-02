@@ -1,10 +1,10 @@
 import { memo } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { ArrowUpRight, ExternalLink } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useCollabHighlight } from "@/features/collaboration";
 
-export interface ExternalElementNodeData {
+export type ExternalElementNodeData = {
   elementId: string;
   name: string;
   linkedDiagramId?: string;
@@ -13,13 +13,12 @@ export interface ExternalElementNodeData {
   linkedDiagramName?: string;
   isSelected: boolean;
   onOpenInCanvas?: () => void;
-}
+};
 
 const handleClass =
   "!border-background transition-all duration-150 !w-2.5 !h-2.5 !bg-muted-foreground";
 
-const ExternalElementNode = memo(({ data, selected }: NodeProps) => {
-  const d = data as unknown as ExternalElementNodeData;
+const ExternalElementNode = memo(({ data: d, selected }: NodeProps<Node<ExternalElementNodeData>>) => {
   const isSelected = selected || d.isSelected;
   const collabHighlight = useCollabHighlight(d.elementId);
   const { t } = useTranslation();

@@ -1,5 +1,5 @@
 import { memo } from "react";
-import type { NodeProps } from "@xyflow/react";
+import type { Node, NodeProps } from "@xyflow/react";
 import { Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ApiProtocol } from "@/features/diagram";
@@ -9,7 +9,7 @@ import { useCollabHighlight } from "@/features/collaboration";
 
 export { PROTOCOL_COLORS } from "./constants";
 
-export interface ApiGroupNodeData {
+export type ApiGroupNodeData = {
   elementId: string;
   serviceName: string;
   basePath: string;
@@ -23,11 +23,10 @@ export interface ApiGroupNodeData {
     a: { name: string; color: string };
     b: { name: string; color: string };
   };
-}
+};
 
-const ApiGroupNode = memo(({ data, selected }: NodeProps) => {
+const ApiGroupNode = memo(({ data: d, selected }: NodeProps<Node<ApiGroupNodeData>>) => {
   const { t } = useTranslation();
-  const d = data as unknown as ApiGroupNodeData;
   const isSelected = selected || d.isSelected;
   const collabHighlight = useCollabHighlight(d.elementId);
 

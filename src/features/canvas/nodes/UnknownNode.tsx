@@ -1,12 +1,12 @@
 import { memo } from "react";
-import { NodeResizer, type NodeProps } from "@xyflow/react";
+import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { CircleHelp } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
 import { useCollabHighlight } from "@/features/collaboration";
 
-export interface UnknownNodeData {
+export type UnknownNodeData = {
   elementId: string;
   name: string;
   rawContent?: string;
@@ -17,11 +17,10 @@ export interface UnknownNodeData {
     a: { name: string; color: string };
     b: { name: string; color: string };
   };
-}
+};
 
-const UnknownNode = memo(({ data, selected }: NodeProps) => {
+const UnknownNode = memo(({ data: d, selected }: NodeProps<Node<UnknownNodeData>>) => {
   const { t } = useTranslation();
-  const d = data as unknown as UnknownNodeData;
   const { highlightedNodeIds } = useHandleHighlight();
   const isSelected = selected || d.isSelected;
   const isHighlighted = (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
