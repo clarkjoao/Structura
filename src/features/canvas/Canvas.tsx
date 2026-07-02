@@ -13,7 +13,7 @@ import CanvasToolbar from "./toolbar/CanvasToolbar";
 import { JourneysInDiagramPanel } from "./panels/JourneysInDiagramPanel";
 import { ConnectedSceneDrawer } from "./toolbar/SceneDrawer";
 import ElementPanel from "./panels/ElementPanel/index";
-import NodeContextMenu from "./panels/NodeContextMenu";
+import { CanvasContextMenu } from "./panels/CanvasContextMenu";
 import { nodeTypes } from "./nodes/node-types";
 import QuickInsertPopover from "./toolbar/QuickInsertPopover";
 import CanvasSearch from "./toolbar/CanvasSearch";
@@ -27,15 +27,10 @@ import { useCanvasInputProfile } from "./hooks/useCanvasInputProfile";
 import { useJourneyViewportSync } from "./hooks/useJourneyViewportSync";
 import { useServiceFocusFromUrl } from "./hooks/useServiceFocusFromUrl";
 import { useElementFocusFromUrl } from "./hooks/useElementFocusFromUrl";
-import {
-  getCachedCanvasSnapshot,
-  isApiGroupComponent,
-  isPanelComponent,
-  useDiagramStore,
-} from "@/features/diagram";
+import { getCachedCanvasSnapshot, useDiagramStore } from "@/features/diagram";
 import { useJourneysByDiagramId } from "@/features/journeys";
 import { CANVAS_STYLES } from "./constants";
-import { getCenterOfNodes, getCopyableIds, getPlatform } from "./hooks/keyboard/helpers";
+import { getPlatform } from "./hooks/keyboard/helpers";
 import CustomEdge from "./edges/CustomEdge";
 import type { CanvasProps } from "./canvas.types";
 import {
@@ -78,7 +73,6 @@ const Canvas = (props: CanvasProps = {}) => {
     onNodeDragStop,
     eventHandlers,
     interactionMode,
-    actions,
     showSearch,
     setShowSearch,
     showDiagramSidebar,
@@ -351,129 +345,19 @@ const Canvas = (props: CanvasProps = {}) => {
           </div>
         </div>
 
-        {visualState.contextMenu &&
-          (() => {
-            const contextMenuId = visualState.contextMenu.elementId;
-            const contextMenuComponent = resolvedSnapshot?.components[contextMenuId];
-            const isContextMenuIdSelected = visualState.selectedNodeIds.has(contextMenuId);
-            const effectiveIds =
-              isContextMenuIdSelected && visualState.selectedNodeIds.size > 1
-                ? [...visualState.selectedNodeIds]
-                : [contextMenuId];
-            const selectionCount = effectiveIds.length;
-            const effectiveNodes = reactFlowInstance
-              .getNodes()
-              .filter((node) => effectiveIds.includes(node.id));
-            const canEditContextActions = interactionMode.canEditCanvas;
-
-            const handleCopy =
-              canEditContextActions && diagram
-                ? () => {
-                    const copyableIds = getCopyableIds(diagram, effectiveNodes);
-                    if (copyableIds.length > 0) {
-                      actions.copyToClipboard(copyableIds);
-                    }
-                  }
-                : undefined;
-
-            const selectPastedNodes = (newIds: string[]) => {
-              if (newIds.length === 0) return;
-              reactFlowInstance.setNodes((previousNodes) =>
-                previousNodes.map((node) => ({ ...node, selected: newIds.includes(node.id) })),
-              );
-            };
-
-            const handlePaste =
-              canEditContextActions && diagram
-                ? () => {
-                    const pasteCenter = getCenterOfNodes(diagram, effectiveIds);
-                    const newIds = actions.pasteFromClipboard(pasteCenter);
-                    selectPastedNodes(newIds);
-                  }
-                : undefined;
-
-            const handleDuplicate =
-              canEditContextActions && diagram
-                ? () => {
-                    const copyableIds = getCopyableIds(diagram, effectiveNodes);
-                    if (copyableIds.length === 0) return;
-                    actions.copyToClipboard(copyableIds);
-                    const pasteCenter = getCenterOfNodes(diagram, copyableIds);
-                    const newIds = actions.pasteFromClipboard(pasteCenter);
-                    selectPastedNodes(newIds);
-                  }
-                : undefined;
-
-            const handleDelete = canEditContextActions
-              ? () => {
-                  for (const selectedId of effectiveIds) {
-                    actions.removeComponent(selectedId);
-                  }
-                }
-              : undefined;
-
-            const canGroup =
-              canEditContextActions &&
-              effectiveIds.length >= 2 &&
-              effectiveIds.every((selectedId) => {
-                const selectedComponent = resolvedSnapshot?.components[selectedId];
-                return !!selectedComponent && !isApiGroupComponent(selectedComponent);
-              });
-            const handleGroup = canGroup ? () => actions.groupNodes(effectiveIds) : undefined;
-
-            const canUngroup =
-              canEditContextActions &&
-              effectiveIds.length === 1 &&
-              !!contextMenuComponent &&
-              (isPanelComponent(contextMenuComponent) || !!contextMenuComponent.parentId);
-            const handleUngroup = canUngroup
-              ? () => {
-                  if (contextMenuComponent && isPanelComponent(contextMenuComponent)) {
-                    actions.ungroupNodes(contextMenuId);
-                    return;
-                  }
-
-                  if (contextMenuComponent?.parentId) {
-                    const parentLayout = resolvedSnapshot?.nodeLayouts[contextMenuComponent.parentId];
-                    const childLayout = resolvedSnapshot?.nodeLayouts[contextMenuId];
-                    if (!parentLayout || !childLayout) return;
-
-                    actions.setParent(contextMenuId, null);
-                    actions.updateNodeLayout(contextMenuId, {
-                      x: childLayout.x + parentLayout.x,
-                      y: childLayout.y + parentLayout.y,
-                    });
-                  }
-                }
-              : undefined;
-
-            return (
-              <NodeContextMenu
-                x={visualState.contextMenu.x}
-                y={visualState.contextMenu.y}
-                elementId={contextMenuId}
-                onBringToFront={actions.bringToFront}
-                onSendToBack={actions.sendToBack}
-                onSaveAsTemplate={setTemplateNodeId}
-                onFitToChildren={
-                  contextMenuComponent && isPanelComponent(contextMenuComponent)
-                    ? actions.fitGroupToChildren
-                    : undefined
-                }
-                onClose={() => visualState.setContextMenu(null)}
-                onCopy={handleCopy}
-                onPaste={handlePaste}
-                onDuplicate={handleDuplicate}
-                onDelete={handleDelete}
-                onGroup={handleGroup}
-                onUngroup={handleUngroup}
-                onAutoLayout={interactionMode.canEditCanvas ? handleAutoLayout : undefined}
-                isAutoLayoutRunning={isAutoLayoutRunning}
-                selectionCount={selectionCount}
-                platform={getPlatform()}
-              />
-            );
-          })()}
+        {visualState.contextMenu && (
+          <CanvasContextMenu
+            contextMenu={visualState.contextMenu}
+            diagram={diagram}
+            resolvedSnapshot={resolvedSnapshot}
+            selectedNodeIds={visualState.selectedNodeIds}
+            canEditCanvas={interactionMode.canEditCanvas}
+            onSaveAsTemplate={setTemplateNodeId}
+            onAutoLayout={handleAutoLayout}
+            isAutoLayoutRunning={isAutoLayoutRunning}
+            onClose={() => visualState.setContextMenu(null)}
+          />
+        )}
 
         {visualState.quickInsert && (
           <QuickInsertPopover
