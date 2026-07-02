@@ -30,6 +30,7 @@
     "proxy:dev": "npm --prefix server run dev",
     "proxy": "npm run proxy:install && npm run proxy:dev",
     "lint": "eslint .",
+    "typecheck": "tsc -b",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

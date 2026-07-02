@@ -9,6 +9,8 @@ import {
   isJsonViewerComponent,
   isSvgComponent,
   isUnknownComponent,
+  isFlowNodeComponent,
+  isExternalElementComponent,
   isNoteComponent,
   isPanelComponent,
   isGcpComponent,
@@ -278,9 +280,12 @@ export function exportDrawio(
       );
     } else if (isGcpComponent(c) || isAzureComponent(c)) {
       cell = cellBuilders.c4.build(c, geometry, parentMx, serviceName);
-    } else if (isUnknownComponent(c) || isSvgComponent(c)) {
-
-
+    } else if (
+      isUnknownComponent(c) ||
+      isSvgComponent(c) ||
+      isFlowNodeComponent(c) ||
+      isExternalElementComponent(c)
+    ) {
       throw new Error(`Unsupported component for draw.io export: ${c.type}`);
     } else {
       const _: never = c;

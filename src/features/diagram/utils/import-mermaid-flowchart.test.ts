@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { Component } from "../model/diagram.types";
+import type { Component, FlowNodeShape } from "../model/diagram.types";
 import { parseMermaidFlowchart } from "./import-mermaid-flowchart";
 
 const { generateIdMock } = vi.hoisted(() => ({
@@ -10,7 +10,7 @@ vi.mock("./generate-id", () => ({
   generateId: (prefix: string) => generateIdMock(prefix),
 }));
 
-function flowNode(id: string, name: string, shape: string): Component {
+function flowNode(id: string, name: string, shape: FlowNodeShape): Component {
   return {
     id,
     name,

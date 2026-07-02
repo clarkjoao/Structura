@@ -27,6 +27,7 @@ export function ElementPickerSearchResults({
   onCanvasServiceIds,
   onAddC4,
   onAddCanvas,
+  onAddFlowNode,
   onAddAws,
   onAddCloud,
   onAddRegistry,

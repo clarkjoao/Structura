@@ -23,6 +23,7 @@ export type {
   JsonViewerComponent,
   FlowNodeComponent,
   FlowNodeShape,
+  ExternalElementComponent,
 } from "./component.types";
 
 export type {
