@@ -1,4 +1,3 @@
-
 export const VIEWPORT_DEBOUNCE_MS = 800;
 
 export const MAX_HISTORY_STEPS = 30;

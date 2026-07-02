@@ -5,10 +5,7 @@ import { getPreview, setPreview } from "./previewCache";
 
 function schedulePreviewSvgWork(run: () => void): () => void {
   const globalWithIdle = globalThis as typeof globalThis & {
-    requestIdleCallback?: (
-      callback: IdleRequestCallback,
-      options?: IdleRequestOptions,
-    ) => number;
+    requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
     cancelIdleCallback?: (handle: number) => void;
   };
   if (typeof globalWithIdle.requestIdleCallback === "function") {

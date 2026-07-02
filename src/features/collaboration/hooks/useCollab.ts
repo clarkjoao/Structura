@@ -4,8 +4,6 @@ import { randomColor } from "../utils/collab-colors";
 import { readPrefs } from "../utils/collab-preferences";
 import { useCollabStore } from "../store/collab.store";
 
-
-
 export interface CollabSnapshot {
   diagramId: string;
   diagramName: string;
@@ -25,21 +23,18 @@ export interface CollabSnapshot {
 
 export type CollabPatch = Partial<Omit<CollabSnapshot, "diagramId">>;
 
-
-
 export interface UseCollabParams {
-  
   diagramId: string | null;
-  
+
   activeDiagramId?: string | null;
   isHost: boolean;
   userName: string;
   serverUrl: string;
-  
+
   getSnapshot: () => CollabSnapshot | null;
-  
+
   onSnapshot: (snapshot: CollabSnapshot) => void;
-  
+
   onPatch: (patch: CollabPatch) => void;
 }
 
@@ -79,16 +74,17 @@ function parsePeers(value: unknown): PeerState[] {
     if (!isRecord(item)) continue;
     const clientId = typeof item.clientId === "string" ? item.clientId : null;
     const userValue = isRecord(item.user) ? item.user : null;
-    const user: CollabUser | null = userValue &&
+    const user: CollabUser | null =
+      userValue &&
       typeof userValue.id === "string" &&
       typeof userValue.name === "string" &&
       typeof userValue.color === "string"
-      ? {
-          id: userValue.id,
-          name: userValue.name,
-          color: userValue.color,
-        }
-      : null;
+        ? {
+            id: userValue.id,
+            name: userValue.name,
+            color: userValue.color,
+          }
+        : null;
 
     if (!clientId || !user) continue;
 
@@ -241,9 +237,7 @@ export function useCollab({
         pongTimeoutRef.current = setTimeout(() => {
           try {
             ws.close();
-          } catch {
-            
-          }
+          } catch {}
         }, CLIENT_PONG_TIMEOUT_MS);
       }, CLIENT_PING_INTERVAL_MS);
     };
@@ -257,30 +251,32 @@ export function useCollab({
         const existingSnapshot = getSnapshotRef.current();
         const resolvedDiagramId =
           existingSnapshot?.diagramId ??
-          (typeof activeDiagramId === "string" && activeDiagramId.length > 0 ? activeDiagramId : "");
-        const snapshot =
-          existingSnapshot ??
-          {
-            diagramId: resolvedDiagramId,
-            diagramName: "",
-            level: "context",
-            components: {},
-            connections: {},
-            flows: {},
-            nodeLayouts: {},
-            edgeLayouts: {},
-            iconLibrary: {},
-            scenes: {},
-            activeSceneId: null,
-            compareSceneId: null,
-          };
+          (typeof activeDiagramId === "string" && activeDiagramId.length > 0
+            ? activeDiagramId
+            : "");
+        const snapshot = existingSnapshot ?? {
+          diagramId: resolvedDiagramId,
+          diagramName: "",
+          level: "context",
+          components: {},
+          connections: {},
+          flows: {},
+          nodeLayouts: {},
+          edgeLayouts: {},
+          iconLibrary: {},
+          scenes: {},
+          activeSceneId: null,
+          compareSceneId: null,
+        };
 
         ws.send(
           JSON.stringify({
             type: "host:join",
             roomId,
             diagramId:
-              typeof activeDiagramId === "string" && activeDiagramId.length > 0 ? activeDiagramId : null,
+              typeof activeDiagramId === "string" && activeDiagramId.length > 0
+                ? activeDiagramId
+                : null,
             user: localUserRef.current,
             snapshot,
           }),
@@ -407,13 +403,14 @@ export function useCollab({
               }
             : null;
           const cursorValue = message.cursor;
-          const cursor = cursorValue === null
-            ? null
-            : isRecord(cursorValue) &&
-                typeof cursorValue.x === "number" &&
-                typeof cursorValue.y === "number"
-              ? { x: cursorValue.x, y: cursorValue.y }
-              : null;
+          const cursor =
+            cursorValue === null
+              ? null
+              : isRecord(cursorValue) &&
+                  typeof cursorValue.x === "number" &&
+                  typeof cursorValue.y === "number"
+                ? { x: cursorValue.x, y: cursorValue.y }
+                : null;
           const activeElementId: string | null =
             typeof message.activeElementId === "string" || message.activeElementId === null
               ? (message.activeElementId as string | null)
@@ -440,9 +437,7 @@ export function useCollab({
           clearClientHeartbeat();
           try {
             ws.close(1000);
-          } catch {
-            
-          }
+          } catch {}
           return;
         }
         case "host:disconnected": {
@@ -455,9 +450,7 @@ export function useCollab({
           clearClientHeartbeat();
           try {
             ws.close(1000);
-          } catch {
-            
-          }
+          } catch {}
           return;
         }
         case "error": {
@@ -467,9 +460,7 @@ export function useCollab({
             roomNotFoundRetryRef.current = true;
             try {
               ws.close(4004, "room_not_found");
-            } catch {
-              
-            }
+            } catch {}
             return;
           }
 
@@ -482,9 +473,7 @@ export function useCollab({
             clearClientHeartbeat();
             try {
               ws.close(1008, "room_full");
-            } catch {
-              
-            }
+            } catch {}
           }
           return;
         }
@@ -542,17 +531,8 @@ export function useCollab({
       }, delay);
     };
 
-    ws.onerror = () => {
-      
-    };
-  }, [
-    activeDiagramId,
-    clearClientHeartbeat,
-    clearReconnectTimer,
-    isHost,
-    roomId,
-    serverUrl,
-  ]);
+    ws.onerror = () => {};
+  }, [activeDiagramId, clearClientHeartbeat, clearReconnectTimer, isHost, roomId, serverUrl]);
 
   useEffect(() => {
     if (!roomId) {
@@ -589,9 +569,7 @@ export function useCollab({
             ws.send(JSON.stringify({ type: "host:close", roomId }));
           }
           ws.close(1000, "unmount");
-        } catch {
-          
-        }
+        } catch {}
       }
     };
   }, [clearClientHeartbeat, clearReconnectTimer, connect, isHost, roomId]);
@@ -660,9 +638,7 @@ export function useCollab({
     if (ws) {
       try {
         ws.close(1000);
-      } catch {
-        
-      }
+      } catch {}
     }
   }, [clearClientHeartbeat, isHost, roomId, sendRaw]);
 

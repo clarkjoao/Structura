@@ -21,13 +21,16 @@ export function BranchSelectView({
 }: BranchSelectViewProps) {
   const { t } = useTranslation();
   const allBranchesDone =
-    branchSelectCondition.branches?.every((b) => getBranchStepCount(previewFlow, b.nextId) > 0) ?? false;
+    branchSelectCondition.branches?.every((b) => getBranchStepCount(previewFlow, b.nextId) > 0) ??
+    false;
 
   return (
     <div className="flex-1 flex flex-col p-4 space-y-4">
       <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2">
         <span className="text-amber-400 text-lg">◇</span>
-        <span className="text-sm font-medium text-foreground">{branchSelectCondition.conditionLabel}</span>
+        <span className="text-sm font-medium text-foreground">
+          {branchSelectCondition.conditionLabel}
+        </span>
       </div>
 
       <p className="text-xs text-muted-foreground">
@@ -75,7 +78,8 @@ export function BranchSelectView({
           onClick={onContinueMainFlow}
           className="flex items-center gap-2 text-sm font-medium text-primary hover:underline"
         >
-          <ArrowLeft className="h-4 w-4" /> {t("flowRecorder.continueMainFlow", "Continuar fluxo principal")}
+          <ArrowLeft className="h-4 w-4" />{" "}
+          {t("flowRecorder.continueMainFlow", "Continuar fluxo principal")}
         </button>
       )}
     </div>

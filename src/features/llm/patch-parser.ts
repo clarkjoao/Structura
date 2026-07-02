@@ -25,10 +25,7 @@ function isObject(value: unknown): value is Record<string, unknown> {
 }
 
 function normalizeSeverity(value: unknown): AnalysisSeverity {
-  if (
-    typeof value === "string" &&
-    (ANALYSIS_SEVERITIES as readonly string[]).includes(value)
-  ) {
+  if (typeof value === "string" && (ANALYSIS_SEVERITIES as readonly string[]).includes(value)) {
     return value as AnalysisSeverity;
   }
   return "info";
@@ -40,8 +37,7 @@ function normalizeFinding(raw: unknown): AnalysisFinding | null {
   }
   const title = typeof raw.title === "string" ? raw.title : "";
   const detail = typeof raw.detail === "string" ? raw.detail : "";
-  const recommendation =
-    typeof raw.recommendation === "string" ? raw.recommendation : "";
+  const recommendation = typeof raw.recommendation === "string" ? raw.recommendation : "";
   const category = typeof raw.category === "string" ? raw.category : "other";
   const affectedNodes = Array.isArray(raw.affectedNodes)
     ? raw.affectedNodes.filter((id): id is string => typeof id === "string")
@@ -68,8 +64,7 @@ function tryParseAnalysis(candidate: string): ParsedLLMResponse | null {
     if (!Array.isArray(parsedValue.findings)) {
       return null;
     }
-    const summary =
-      typeof parsedValue.summary === "string" ? parsedValue.summary : "";
+    const summary = typeof parsedValue.summary === "string" ? parsedValue.summary : "";
     const findingsRaw = parsedValue.findings as unknown[];
     const findings: AnalysisFinding[] = [];
     for (const item of findingsRaw) {
@@ -98,7 +93,9 @@ function tryParseAnalysis(candidate: string): ParsedLLMResponse | null {
   }
 }
 
-function isPatchEnvelope(value: unknown): value is { message?: string; patch?: Record<string, unknown> } {
+function isPatchEnvelope(
+  value: unknown,
+): value is { message?: string; patch?: Record<string, unknown> } {
   if (!isObject(value)) {
     return false;
   }
@@ -108,8 +105,7 @@ function isPatchEnvelope(value: unknown): value is { message?: string; patch?: R
   const messageValue = value.message;
   const patchValue = value.patch;
   const hasValidMessage = messageValue === undefined || typeof messageValue === "string";
-  const hasValidPatch =
-    patchValue === undefined || patchValue === null || isObject(patchValue);
+  const hasValidPatch = patchValue === undefined || patchValue === null || isObject(patchValue);
   return hasValidMessage && hasValidPatch;
 }
 
@@ -181,7 +177,11 @@ function sanitizePatchActions(actions: unknown[]): DiagramPatchAction[] {
   const validActions: DiagramPatchAction[] = [];
 
   for (const rawAction of actions) {
-    if (!isObject(rawAction) || typeof rawAction.type !== "string" || !isObject(rawAction.payload)) {
+    if (
+      !isObject(rawAction) ||
+      typeof rawAction.type !== "string" ||
+      !isObject(rawAction.payload)
+    ) {
       continue;
     }
 
@@ -207,21 +207,15 @@ function tryParseEnvelope(candidate: string): ParsedLLMResponse | null {
       return null;
     }
 
-    let parsedMessage =
-      typeof parsedValue.message === "string" ? parsedValue.message : "";
+    let parsedMessage = typeof parsedValue.message === "string" ? parsedValue.message : "";
     const trimmedParsedMessage = parsedMessage.trim();
-    if (
-      trimmedParsedMessage.startsWith("{") &&
-      trimmedParsedMessage.endsWith("}")
-    ) {
+    if (trimmedParsedMessage.startsWith("{") && trimmedParsedMessage.endsWith("}")) {
       try {
         const nestedValue = JSON.parse(trimmedParsedMessage);
         if (isObject(nestedValue) && typeof nestedValue.message === "string") {
           parsedMessage = nestedValue.message;
         }
-      } catch {
-        
-      }
+      } catch {}
     }
     const patchValue = parsedValue.patch;
     if (patchValue === null) {
@@ -311,9 +305,7 @@ export function parseLLMResponse(rawResponse: string): ParsedLLMResponse {
   }
 
   const fallbackMessage =
-    trimmed.startsWith("{") && trimmed.endsWith("}")
-      ? PARSE_FALLBACK_MESSAGE
-      : trimmed;
+    trimmed.startsWith("{") && trimmed.endsWith("}") ? PARSE_FALLBACK_MESSAGE : trimmed;
 
   console.warn("[LLM] parseLLMResponse fallback:", rawResponse.slice(0, 200));
   return { kind: "text", message: fallbackMessage };

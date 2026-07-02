@@ -144,13 +144,7 @@ describe("captureSelectionAsTemplate", () => {
       { elementId: "c2", x: 20, y: 0 },
     ];
 
-    const template = captureSelectionAsTemplate(
-      ["p"],
-      allComponents,
-      {},
-      nodeLayouts,
-      "T",
-    );
+    const template = captureSelectionAsTemplate(["p"], allComponents, {}, nodeLayouts, "T");
 
     expect(template.components).toHaveLength(3);
     const names = template.components.map((c) => c.name).sort();
@@ -167,13 +161,7 @@ describe("captureSelectionAsTemplate", () => {
       { elementId: "c1", x: 10, y: 0 },
     ];
 
-    const template = captureSelectionAsTemplate(
-      ["p"],
-      allComponents,
-      {},
-      nodeLayouts,
-      "T",
-    );
+    const template = captureSelectionAsTemplate(["p"], allComponents, {}, nodeLayouts, "T");
 
     const panelEntry = template.components.find((c) => c.name === "p");
     const childEntry = template.components.find((c) => c.name === "c1");
@@ -196,13 +184,7 @@ describe("captureSelectionAsTemplate", () => {
       { elementId: "c", x: 20, y: 0 },
     ];
 
-    const template = captureSelectionAsTemplate(
-      ["a"],
-      allComponents,
-      {},
-      nodeLayouts,
-      "T",
-    );
+    const template = captureSelectionAsTemplate(["a"], allComponents, {}, nodeLayouts, "T");
 
     expect(template.components).toHaveLength(3);
     const byName = Object.fromEntries(template.components.map((co) => [co.name, co]));
@@ -221,13 +203,7 @@ describe("captureSelectionAsTemplate", () => {
       { elementId: "c1", x: 10, y: 0 },
     ];
 
-    const template = captureSelectionAsTemplate(
-      ["c1"],
-      allComponents,
-      {},
-      nodeLayouts,
-      "T",
-    );
+    const template = captureSelectionAsTemplate(["c1"], allComponents, {}, nodeLayouts, "T");
 
     expect(template.components).toHaveLength(1);
     expect(template.components[0].parentIndex).toBeUndefined();

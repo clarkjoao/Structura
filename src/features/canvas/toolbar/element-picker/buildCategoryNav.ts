@@ -1,13 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import {
-  Cloud,
-  GitFork,
-  LayoutGrid,
-  LayoutTemplate,
-  Layers,
-  Server,
-  Bookmark,
-} from "lucide-react";
+import { Cloud, GitFork, LayoutGrid, LayoutTemplate, Layers, Server, Bookmark } from "lucide-react";
 import { ElementCategory } from "../../enums";
 
 export interface CategoryNavItem {

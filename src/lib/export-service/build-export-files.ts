@@ -42,12 +42,7 @@ export function buildDiagramExportFiles({
 }: BuildDiagramExportFilesArgs): { baseName: string; files: ExportArtifact[] } {
   const baseName = exportFilenameSlug(diagram);
   const files = formats.map((format) => {
-    const content = buildExportContent(
-      format,
-      diagram,
-      flows,
-      serviceRegistry,
-    );
+    const content = buildExportContent(format, diagram, flows, serviceRegistry);
     const suffix = format === "mermaid" ? "-flows" : "";
 
     return {
@@ -76,10 +71,6 @@ function buildExportContent(
     case "mermaid":
       // Flows are defined against the trunk snapshot; scene-filtered graphs can omit
       // connections still referenced by flow steps, which would yield an empty diagram.
-      return exportMermaid(
-        flows,
-        diagram.snapshot.components,
-        diagram.snapshot.connections,
-      );
+      return exportMermaid(flows, diagram.snapshot.components, diagram.snapshot.connections);
   }
 }

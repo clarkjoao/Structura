@@ -1,10 +1,7 @@
 import { useState } from "react";
 import { Search, Loader2 } from "lucide-react";
 import type { DDProductType } from "../types";
-import {
-  DD_PRODUCT_SEARCH_FIELDS,
-  type DDProductSearchField,
-} from "../defectdojo.service";
+import { DD_PRODUCT_SEARCH_FIELDS, type DDProductSearchField } from "../defectdojo.service";
 import { useTranslation } from "react-i18next";
 import { KEY, keyIs } from "@/lib/keyboard-utils";
 
@@ -17,11 +14,7 @@ interface Props {
   ) => void;
 }
 
-export function DefectDojoSearchBar({
-  productTypes,
-  loading,
-  onSearch,
-}: Props) {
+export function DefectDojoSearchBar({ productTypes, loading, onSearch }: Props) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [prodType, setProdType] = useState<string>("");
@@ -38,12 +31,8 @@ export function DefectDojoSearchBar({
     });
   };
 
-  const currentField = DD_PRODUCT_SEARCH_FIELDS.find(
-    (f) => f.param === searchField,
-  );
-  const fieldLabel = currentField
-    ? t(`defectdojo.productSearchField.${currentField.param}`)
-    : "";
+  const currentField = DD_PRODUCT_SEARCH_FIELDS.find((f) => f.param === searchField);
+  const fieldLabel = currentField ? t(`defectdojo.productSearchField.${currentField.param}`) : "";
   const placeholder = currentField
     ? t("defectdojo.searchByField", { field: fieldLabel.toLowerCase() })
     : t("defectdojo.searchProduct");
@@ -109,11 +98,7 @@ export function DefectDojoSearchBar({
         disabled={loading}
         className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
       >
-        {loading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <Search className="h-4 w-4" />
-        )}
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
         {t("defectdojo.searchButton")}
       </button>
     </div>

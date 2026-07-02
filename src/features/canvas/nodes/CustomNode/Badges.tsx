@@ -1,16 +1,11 @@
 import { memo, useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Link2,
-  LayoutDashboard,
-  Link,
-} from "lucide-react";
+import { Link2, LayoutDashboard, Link } from "lucide-react";
 import type { ExternalLink } from "@/features/diagram";
 
 const linkClass = (disabled?: boolean) =>
-  `flex items-center gap-1 text-primary ${disabled
-    ? "pointer-events-none text-gray-500 opacity-50"
-    : "hover:underline cursor-pointer"
+  `flex items-center gap-1 text-primary ${
+    disabled ? "pointer-events-none text-gray-500 opacity-50" : "hover:underline cursor-pointer"
   }`;
 
 interface ExternalLinkRowProps {
@@ -69,10 +64,9 @@ export const Badges = memo(function Badges({
 
   return (
     <div className="flex flex-col gap-0.5 mt-1.5">
-
       <div className="flex items-center gap-1 min-w-0 overflow-hidden">
-        {serviceName && (
-          serviceId ? (
+        {serviceName &&
+          (serviceId ? (
             <button
               type="button"
               onClick={handleServiceClick}
@@ -96,8 +90,7 @@ export const Badges = memo(function Badges({
                 </span>
               </span>
             </div>
-          )
-        )}
+          ))}
 
         {externalLinks.length > 0 && (
           <>
@@ -114,9 +107,10 @@ export const Badges = memo(function Badges({
           </>
         )}
       </div>
-      {expanded && externalLinks.map((link) => (
-        <ExternalLinkRow key={link.id} link={link} disabled={controlsDisabled} />
-      ))}
+      {expanded &&
+        externalLinks.map((link) => (
+          <ExternalLinkRow key={link.id} link={link} disabled={controlsDisabled} />
+        ))}
 
       {linkedDiagramName && (
         <div className="flex items-center gap-1 text-node-container">

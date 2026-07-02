@@ -1,20 +1,8 @@
 import { useReactFlow } from "@xyflow/react";
-import type {
-  Diagram,
-  DiagramModel,
-  ResolvedSnapshot,
-} from "@/features/diagram";
-import {
-  isApiGroupComponent,
-  isPanelComponent,
-  useDiagramActions,
-} from "@/features/diagram";
+import type { Diagram, DiagramModel, ResolvedSnapshot } from "@/features/diagram";
+import { isApiGroupComponent, isPanelComponent, useDiagramActions } from "@/features/diagram";
 import NodeContextMenu from "./NodeContextMenu";
-import {
-  getCenterOfNodes,
-  getCopyableIds,
-  getPlatform,
-} from "../hooks/keyboard/helpers";
+import { getCenterOfNodes, getCopyableIds, getPlatform } from "../hooks/keyboard/helpers";
 
 interface CanvasContextMenuProps {
   contextMenu: { x: number; y: number; elementId: string };
@@ -50,9 +38,7 @@ export function CanvasContextMenu({
   const contextMenuComponent = resolvedSnapshot.components[contextMenuId];
   const isContextMenuIdSelected = selectedNodeIds.has(contextMenuId);
   const effectiveIds =
-    isContextMenuIdSelected && selectedNodeIds.size > 1
-      ? [...selectedNodeIds]
-      : [contextMenuId];
+    isContextMenuIdSelected && selectedNodeIds.size > 1 ? [...selectedNodeIds] : [contextMenuId];
   const selectionCount = effectiveIds.length;
   const effectiveNodes = reactFlowInstance
     .getNodes()

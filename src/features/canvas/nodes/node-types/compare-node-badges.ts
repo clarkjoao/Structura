@@ -1,18 +1,13 @@
 import type { NodeBuildContext } from "./types";
 
-
 export type BadgeMeta = { name: string; color: string };
-
 
 export type NodeBadgeProps =
   | { sceneBadge?: undefined; compareBadges?: undefined }
   | { sceneBadge: BadgeMeta; compareBadges?: undefined }
   | { sceneBadge?: undefined; compareBadges: { a: BadgeMeta; b: BadgeMeta } };
 
-export function sceneBadgePropsForNode(
-  ctx: NodeBuildContext,
-  compId: string,
-): NodeBadgeProps {
+export function sceneBadgePropsForNode(ctx: NodeBuildContext, compId: string): NodeBadgeProps {
   const cv = ctx.compareVisualByComponentId?.[compId];
   if (cv) {
     if (cv.badgeA && cv.badgeB) {

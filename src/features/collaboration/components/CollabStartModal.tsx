@@ -131,14 +131,10 @@ export function CollabStartModal({
               </Button>
             </div>
             {testStatus === "ok" && (
-              <p className="text-[11px] text-emerald-600">
-                {t("collaboration.serverOnline")}
-              </p>
+              <p className="text-[11px] text-emerald-600">{t("collaboration.serverOnline")}</p>
             )}
             {testStatus === "fail" && (
-              <p className="text-[11px] text-destructive">
-                {t("collaboration.serverOffline")}
-              </p>
+              <p className="text-[11px] text-destructive">{t("collaboration.serverOffline")}</p>
             )}
             {testStatus === "idle" && (
               <p className="text-[11px] text-muted-foreground">

@@ -138,7 +138,10 @@ function closeRoom(roomId: string, reason: "session:closed" | "host:disconnected
   console.log(`[collab] room closed: room=${roomId}, reason=${reason}`);
 }
 
-function buildGuestPeers(room: Room, joiningClientId: string): Array<{ clientId: string; user: User }> {
+function buildGuestPeers(
+  room: Room,
+  joiningClientId: string,
+): Array<{ clientId: string; user: User }> {
   return Array.from(room.guests.entries())
     .filter(([clientId]) => clientId !== joiningClientId)
     .map(([clientId, guest]) => ({ clientId, user: guest.user }));
@@ -155,7 +158,11 @@ function broadcastToRoom(
 ): void {
   const { exceptClientId } = options;
 
-  if (exceptClientId !== room.hostUser.id && room.hostWs && room.hostWs.readyState === room.hostWs.OPEN) {
+  if (
+    exceptClientId !== room.hostUser.id &&
+    room.hostWs &&
+    room.hostWs.readyState === room.hostWs.OPEN
+  ) {
     safeSend(room.hostWs, payload);
   }
 
@@ -307,7 +314,9 @@ function handleGuestJoin(ws: WebSocket, message: JsonMessage): void {
   };
   broadcastToRoom(room, peerJoinedPayload, { exceptClientId: clientId });
 
-  console.log(`[collab] guest joined: room=${roomId}, guest=${clientId}, peers=${roomPeerCount(room)}`);
+  console.log(
+    `[collab] guest joined: room=${roomId}, guest=${clientId}, peers=${roomPeerCount(room)}`,
+  );
 }
 
 function handleHostPatch(ws: WebSocket, message: JsonMessage): void {
@@ -356,11 +365,7 @@ function handleGuestPatch(ws: WebSocket, message: JsonMessage): void {
 
   applyPatch(room.snapshot, patch);
 
-  broadcastToRoom(
-    room,
-    { type: "session:patch", patch },
-    { exceptClientId: state.clientId },
-  );
+  broadcastToRoom(room, { type: "session:patch", patch }, { exceptClientId: state.clientId });
 }
 
 function handleHostClose(ws: WebSocket, message: JsonMessage): void {
@@ -496,7 +501,7 @@ export function attachCollabServer(httpServer: HttpServer): CollabHandle {
       }
 
       const messageType = typeof message.type === "string" ? message.type : null;
-      
+
       if (!messageType) {
         sendError(ws, "missing_type", "Message type is required");
         return;

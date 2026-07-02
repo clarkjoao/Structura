@@ -45,10 +45,7 @@ export function useCanvasEdges({
     [visibleTagsKey],
   );
   const pendingPreviews = useLLMStore((state) => state.pendingPreviews);
-  const pendingEdgeIds = useMemo(
-    () => getPendingEdgeIds(pendingPreviews),
-    [pendingPreviews],
-  );
+  const pendingEdgeIds = useMemo(() => getPendingEdgeIds(pendingPreviews), [pendingPreviews]);
   return useMemo(() => {
     if (!diagram) return [];
 

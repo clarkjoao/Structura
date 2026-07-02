@@ -37,13 +37,11 @@ export function WorkspaceMergeDialog({
   const { t } = useTranslation();
   const [showInvalid, setShowInvalid] = useState(false);
 
-  const localDiagramIds = useDiagramStore(
-    useShallow((s) => new Set(Object.keys(s.diagrams)))
-  );
+  const localDiagramIds = useDiagramStore(useShallow((s) => new Set(Object.keys(s.diagrams))));
 
   const conflictCount = useMemo(
     () => scanResult.valid.filter((d) => localDiagramIds.has(d.id)).length,
-    [scanResult.valid, localDiagramIds]
+    [scanResult.valid, localDiagramIds],
   );
 
   if (isEmptyFolderPush) {
@@ -108,9 +106,7 @@ export function WorkspaceMergeDialog({
             <FolderOpen className="h-4.5 w-4.5 text-primary" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold">
-              {t("workspaceMerge.title")}
-            </h2>
+            <h2 className="text-sm font-semibold">{t("workspaceMerge.title")}</h2>
             <p className="text-[11px] text-muted-foreground">
               {t("workspaceMerge.found", { count: scanResult.valid.length })}
             </p>
@@ -170,9 +166,7 @@ export function WorkspaceMergeDialog({
         {conflictCount > 0 && (
           <div className="mb-4 flex items-start gap-2 text-[11px] text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-md px-3 py-2">
             <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-            <span>
-              {t("workspaceMerge.conflict", { count: conflictCount })}
-            </span>
+            <span>{t("workspaceMerge.conflict", { count: conflictCount })}</span>
           </div>
         )}
         <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">

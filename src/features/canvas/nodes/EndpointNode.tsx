@@ -43,9 +43,7 @@ const EndpointNode = memo(({ data: d }: NodeProps<Node<EndpointNodeData>>) => {
           style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
         />
       )}
-      {d.compareBadges && (
-        <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
-      )}
+      {d.compareBadges && <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
       {!d.compareBadges && d.sceneBadge && (
         <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
       )}

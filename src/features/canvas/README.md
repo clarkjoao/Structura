@@ -33,19 +33,19 @@ Canvas.tsx
 
 ## Directory guide
 
-| Path | Responsibility |
-| --- | --- |
-| `Canvas.tsx` | Mounts React Flow, toolbars, side panels, chat, sidebar, and feature overlays. |
-| `hooks/` | Canvas orchestration hooks: graph derivation, interaction wiring, visual state, compare state, flow state, and keyboard behavior. |
-| `nodes/` | Node rendering, node descriptors, and node-to-React-Flow transformation. |
-| `edges/` | Edge rendering, handle assignment, waypoint editing, and label drag behavior. |
-| `flow/` | Flow playback and recording context plus helpers for highlights, coverage, and recording overlays. |
-| `toolbar/` | Top-level canvas actions such as quick insert, search, pattern insertion, and scene controls. |
-| `panels/` | Contextual side panels and editing UIs for nodes, connections, and multiselect. |
-| `navigation/` | Sidebar and recent-diagram navigation helpers. |
-| `chat/` | Diagram-aware chat context, mention search, mention input parsing, and journey-to-canvas highlighting. |
-| `contexts/` | Small React contexts shared by node and edge renderers. |
-| `models/` | Canvas-local geometry and parenting helpers used during drag interactions. |
+| Path          | Responsibility                                                                                                                    |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `Canvas.tsx`  | Mounts React Flow, toolbars, side panels, chat, sidebar, and feature overlays.                                                    |
+| `hooks/`      | Canvas orchestration hooks: graph derivation, interaction wiring, visual state, compare state, flow state, and keyboard behavior. |
+| `nodes/`      | Node rendering, node descriptors, and node-to-React-Flow transformation.                                                          |
+| `edges/`      | Edge rendering, handle assignment, waypoint editing, and label drag behavior.                                                     |
+| `flow/`       | Flow playback and recording context plus helpers for highlights, coverage, and recording overlays.                                |
+| `toolbar/`    | Top-level canvas actions such as quick insert, search, pattern insertion, and scene controls.                                     |
+| `panels/`     | Contextual side panels and editing UIs for nodes, connections, and multiselect.                                                   |
+| `navigation/` | Sidebar and recent-diagram navigation helpers.                                                                                    |
+| `chat/`       | Diagram-aware chat context, mention search, mention input parsing, and journey-to-canvas highlighting.                            |
+| `contexts/`   | Small React contexts shared by node and edge renderers.                                                                           |
+| `models/`     | Canvas-local geometry and parenting helpers used during drag interactions.                                                        |
 
 ## Hook guide
 

@@ -4,8 +4,11 @@ import { isApiGroupComponent } from "../model/component.guards";
 import { computeApiGroupSize } from "./api-group-size";
 import { baseConnectionsTouchingAny, collectBaseDescendantIds } from "./scene.utils";
 
-
-export function mutateRemoveComponentInScene(d: Diagram, sceneId: string, componentId: string): void {
+export function mutateRemoveComponentInScene(
+  d: Diagram,
+  sceneId: string,
+  componentId: string,
+): void {
   const sc = d.scenes?.[sceneId];
   if (!sc) return;
 
@@ -76,8 +79,11 @@ export function mutateRemoveComponentInScene(d: Diagram, sceneId: string, compon
   }
 }
 
-
-export function mutateRemoveConnectionInScene(d: Diagram, sceneId: string, connectionId: string): void {
+export function mutateRemoveConnectionInScene(
+  d: Diagram,
+  sceneId: string,
+  connectionId: string,
+): void {
   const sc = d.scenes?.[sceneId];
   if (!sc) return;
 

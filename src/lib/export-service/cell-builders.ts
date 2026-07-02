@@ -1,4 +1,3 @@
-
 import type {
   ApiGroupComponent,
   Component,
@@ -6,12 +5,7 @@ import type {
   EndpointComponent,
   JsonViewerComponent,
 } from "@/features/diagram";
-import {
-  C4_LABEL_TEMPLATE,
-  C4_META,
-  CONFIG,
-  THEME,
-} from "./constants";
+import { C4_LABEL_TEMPLATE, C4_META, CONFIG, THEME } from "./constants";
 import { awsServiceCache } from "./aws-cache";
 import type { CellBuilder, GeometryInfo } from "./types";
 import {
@@ -131,11 +125,7 @@ class PanelCellBuilder implements CellBuilder {
 }
 
 class ApiGroupCellBuilder implements CellBuilder {
-  build(
-    c: ApiGroupComponent,
-    geometry: GeometryInfo,
-    parentId: string,
-  ): string {
+  build(c: ApiGroupComponent, geometry: GeometryInfo, parentId: string): string {
     const { x, y, width, height } = geometry;
     const w = Math.max(width, 300);
     const h = Math.max(height, 120);
@@ -151,11 +141,7 @@ class ApiGroupCellBuilder implements CellBuilder {
 }
 
 class EndpointCellBuilder implements CellBuilder {
-  build(
-    c: EndpointComponent,
-    geometry: GeometryInfo,
-    parentId: string,
-  ): string {
+  build(c: EndpointComponent, geometry: GeometryInfo, parentId: string): string {
     const { x, y, width, height } = geometry;
     const style = buildEndpointStyle(c.method);
     const pathLine = c.endpointDescription?.trim()
@@ -173,15 +159,9 @@ class EndpointCellBuilder implements CellBuilder {
 }
 
 class DbTableCellBuilder implements CellBuilder {
-  build(
-    c: DbTableComponent,
-    geometry: GeometryInfo,
-    parentId: string,
-  ): string {
+  build(c: DbTableComponent, geometry: GeometryInfo, parentId: string): string {
     const { x, y, width, height } = geometry;
-    const cols = c.columns
-      .map((col) => `${col.name}: ${col.dataType}`)
-      .join("\n");
+    const cols = c.columns.map((col) => `${col.name}: ${col.dataType}`).join("\n");
     const value = cols.length > 0 ? `${c.tableName}\n${cols}` : c.tableName;
     const finalW = Math.max(width, 260);
     const finalH = Math.max(height, 120);
@@ -197,11 +177,7 @@ class DbTableCellBuilder implements CellBuilder {
 }
 
 class NoteCellBuilder implements CellBuilder {
-  build(
-    c: Component & { type: "note" },
-    geometry: GeometryInfo,
-    parentId: string,
-  ): string {
+  build(c: Component & { type: "note" }, geometry: GeometryInfo, parentId: string): string {
     const { x, y, width, height } = geometry;
 
     const style = buildNoteStyle();
@@ -216,18 +192,12 @@ class NoteCellBuilder implements CellBuilder {
 }
 
 class JsonViewerCellBuilder implements CellBuilder {
-  build(
-    c: JsonViewerComponent,
-    geometry: GeometryInfo,
-    parentId: string,
-  ): string {
+  build(c: JsonViewerComponent, geometry: GeometryInfo, parentId: string): string {
     const { x, y, width, height } = geometry;
     let preview = c.jsonContent;
     try {
       preview = JSON.stringify(JSON.parse(c.jsonContent), null, 2);
-    } catch {
-      
-    }
+    } catch {}
     const truncated = preview.length > 400 ? `${preview.slice(0, 400)}…` : preview;
     const schemaLine = c.schemaRef ? `${c.schemaRef}\n` : "";
     const value = `${c.name}\n${schemaLine}${truncated}`;

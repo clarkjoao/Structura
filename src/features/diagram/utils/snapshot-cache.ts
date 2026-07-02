@@ -1,4 +1,10 @@
-import type { Diagram, DiagramModel, Component, Connection, NodeLayout } from "../model/diagram.types";
+import type {
+  Diagram,
+  DiagramModel,
+  Component,
+  Connection,
+  NodeLayout,
+} from "../model/diagram.types";
 import { resolveCanvasSnapshot } from "./scene.utils";
 
 export interface ResolvedSnapshot {

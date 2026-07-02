@@ -14,9 +14,7 @@ export const awsIconResolver: IconResolver = {
 
     const LazyComp = lazy(async () => {
       const mod = await import("aws-react-icons");
-      const Icon = (mod as Record<string, unknown>)[iconName] as
-        | IconComponent
-        | undefined;
+      const Icon = (mod as Record<string, unknown>)[iconName] as IconComponent | undefined;
       const FallbackIcon: IconComponent = () => null as unknown as React.ReactElement;
       return { default: Icon ?? FallbackIcon };
     });

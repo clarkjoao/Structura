@@ -4,8 +4,17 @@ import { ChevronDown, Plus, Settings, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KEY, keyIs } from "@/lib/keyboard-utils";
 import { useActiveDiagramModel } from "@/features/diagram";
-import { buildContextualSuggestions, getLLMErrorI18nKey, type PendingSuggestion } from "@/features/llm";
-import { AnalysisPanel, useLLMChat, useMentionInput, useMentionSearch } from "@/features/canvas/chat";
+import {
+  buildContextualSuggestions,
+  getLLMErrorI18nKey,
+  type PendingSuggestion,
+} from "@/features/llm";
+import {
+  AnalysisPanel,
+  useLLMChat,
+  useMentionInput,
+  useMentionSearch,
+} from "@/features/canvas/chat";
 import { ChatMessage } from "./ChatMessage";
 import { SuggestionCard } from "./SuggestionCard";
 import { LLMSettings } from "./LLMSettings";
@@ -21,17 +30,15 @@ interface ChatPanelProps {
   selectedNodeId: string | null;
 }
 
-function buildSuggestionByMessageIdMap(pendingSuggestions: PendingSuggestion[]): Map<string, PendingSuggestion> {
+function buildSuggestionByMessageIdMap(
+  pendingSuggestions: PendingSuggestion[],
+): Map<string, PendingSuggestion> {
   return new Map(
     pendingSuggestions.map((suggestion) => [suggestion.messageId, suggestion] as const),
   );
 }
 
-export function ChatPanel({
-  onClose,
-  selectedNodeIds,
-  selectedNodeId,
-}: ChatPanelProps) {
+export function ChatPanel({ onClose, selectedNodeIds, selectedNodeId }: ChatPanelProps) {
   const { t } = useTranslation();
   const activeDiagram = useActiveDiagramModel();
   const [showSettings, setShowSettings] = useState(false);
@@ -208,11 +215,7 @@ export function ChatPanel({
               <div key={message.id} className="space-y-2">
                 <ChatMessage message={message} isStreaming={isStreamingMessage} />
                 {suggestion ? (
-                  <SuggestionCard
-                    suggestion={suggestion}
-                    onAccept={accept}
-                    onReject={reject}
-                  />
+                  <SuggestionCard suggestion={suggestion} onAccept={accept} onReject={reject} />
                 ) : null}
               </div>
             );
@@ -253,11 +256,7 @@ export function ChatPanel({
         {activeMentions.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {activeMentions.map((mention) => (
-              <MentionTag
-                key={mention.mentionId}
-                mention={mention}
-                onRemove={removeMention}
-              />
+              <MentionTag key={mention.mentionId} mention={mention} onRemove={removeMention} />
             ))}
           </div>
         ) : null}
@@ -309,9 +308,7 @@ export function ChatPanel({
         <div className="flex items-center justify-between">
           <LLMSelector config={config} onChange={setConfig} />
           <div className="flex items-center gap-3">
-            <p className="text-[11px] text-muted-foreground">
-              {t("llmChat.submitHint")}
-            </p>
+            <p className="text-[11px] text-muted-foreground">{t("llmChat.submitHint")}</p>
             <Button type="button" onClick={() => void handleSend()} disabled={isLoading}>
               {isLoading ? t("llmChat.sending") : t("llmChat.send")}
             </Button>
@@ -320,11 +317,7 @@ export function ChatPanel({
       </div>
 
       {showSettings ? (
-        <LLMSettings
-          config={config}
-          onClose={() => setShowSettings(false)}
-          onSave={setConfig}
-        />
+        <LLMSettings config={config} onClose={() => setShowSettings(false)} onSave={setConfig} />
       ) : null}
     </div>
   );

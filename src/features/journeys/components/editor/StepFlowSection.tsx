@@ -1,21 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Link2,
-  Mic,
-  Play,
-  Square,
-  X,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Link2, Mic, Play, Square, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useFlowMode } from "@/features/canvas/flow";
 import { useDiagramActions, useDiagrams } from "@/features/diagram";
 import { useJourneyPlayer } from "../../hooks/useJourneyPlayer";
-import { useJourney, useJourneyActions, useJourneySteps } from "../../store/selectors/journeys.selectors";
+import {
+  useJourney,
+  useJourneyActions,
+  useJourneySteps,
+} from "../../store/selectors/journeys.selectors";
 import { StepFlowPickerDialog } from "./StepFlowPickerDialog";
 
 export interface StepFlowSectionProps {
@@ -49,9 +44,7 @@ export function StepFlowSection({
   const journey = useJourney(journeyId);
   const step = journey?.steps[stepId];
   const diagramsRecord = useDiagrams();
-  const diagram = step?.diagramId
-    ? diagramsRecord[step.diagramId]
-    : undefined;
+  const diagram = step?.diagramId ? diagramsRecord[step.diagramId] : undefined;
 
   const { updateJourneyStep } = useJourneyActions();
   const sortedSteps = useJourneySteps(journeyId);
@@ -73,46 +66,30 @@ export function StepFlowSection({
     }
     if (prevIsPlaying.current && !isPlaying) {
       setFlowJustEnded(true);
-      const isLastStep =
-        currentStepIndex >= 0 && currentStepIndex === sortedSteps.length - 1;
+      const isLastStep = currentStepIndex >= 0 && currentStepIndex === sortedSteps.length - 1;
       if (isLastStep) {
         onLastStepFlowCompleted?.();
       }
     }
     prevIsPlaying.current = isPlaying;
-  }, [
-    currentStepIndex,
-    flowMode.isPlaying,
-    onLastStepFlowCompleted,
-    sortedSteps.length,
-  ]);
+  }, [currentStepIndex, flowMode.isPlaying, onLastStepFlowCompleted, sortedSteps.length]);
 
-  const flowName =
-    step?.flowId && diagram
-      ? diagram.snapshot.flows[step.flowId]?.name
-      : undefined;
+  const flowName = step?.flowId && diagram ? diagram.snapshot.flows[step.flowId]?.name : undefined;
 
-  const flowForStep =
-    step?.flowId && diagram
-      ? diagram.snapshot.flows[step.flowId]
-      : undefined;
+  const flowForStep = step?.flowId && diagram ? diagram.snapshot.flows[step.flowId] : undefined;
 
   const canPlayFlow = flowMode.isIdle;
 
-  const journeyAndFlowIdle =
-    flowMode.isIdle && journeyPlayer.mode.kind === "idle";
+  const journeyAndFlowIdle = flowMode.isIdle && journeyPlayer.mode.kind === "idle";
 
   const isRecordingThisStep =
     journeyPlayer.mode.kind === "recording" &&
     journeyPlayer.mode.journeyId === journeyId &&
     journeyPlayer.mode.targetStepId === stepId;
 
-  const activePlayingFlow =
-    flowMode.mode.kind === "playing" ? flowMode.mode.flow : null;
+  const activePlayingFlow = flowMode.mode.kind === "playing" ? flowMode.mode.flow : null;
   const isPlayingThisStep =
-    flowMode.isPlaying &&
-    !!step?.flowId &&
-    activePlayingFlow?.id === step?.flowId;
+    flowMode.isPlaying && !!step?.flowId && activePlayingFlow?.id === step?.flowId;
 
   const handleRecordNewFlow = () => {
     if (!step?.diagramId) return;
@@ -143,16 +120,12 @@ export function StepFlowSection({
     flowMode.exitPlay();
   };
 
-  const hasNextFromList =
-    currentStepIndex >= 0 && currentStepIndex < sortedSteps.length - 1;
-  const nextStepRecord =
-    hasNextFromList ? sortedSteps[currentStepIndex + 1]! : null;
+  const hasNextFromList = currentStepIndex >= 0 && currentStepIndex < sortedSteps.length - 1;
+  const nextStepRecord = hasNextFromList ? sortedSteps[currentStepIndex + 1]! : null;
 
   if (!journey || !step) {
     return (
-      <p className="text-sm text-muted-foreground">
-        {t("journeys.editor.selectStepForFlow")}
-      </p>
+      <p className="text-sm text-muted-foreground">{t("journeys.editor.selectStepForFlow")}</p>
     );
   }
 
@@ -164,31 +137,20 @@ export function StepFlowSection({
             {t("journeys.step.flowSection")}
           </span>
           {isRecordingThisStep ? (
-            <span
-              className="text-destructive"
-              aria-hidden
-              title={t("journeys.editor.recording")}
-            >
+            <span className="text-destructive" aria-hidden title={t("journeys.editor.recording")}>
               ●
             </span>
           ) : null}
           {isPlayingThisStep ? (
-            <Play
-              className="h-3.5 w-3.5 shrink-0 text-primary"
-              aria-hidden
-            />
+            <Play className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
           ) : null}
         </div>
 
-        {diagram?.name ? (
-          <p className="text-xs text-muted-foreground">{diagram.name}</p>
-        ) : null}
+        {diagram?.name ? <p className="text-xs text-muted-foreground">{diagram.name}</p> : null}
 
         {isRecordingThisStep ? (
           <>
-            <p className="text-sm text-muted-foreground">
-              {t("journeys.editor.recording")}
-            </p>
+            <p className="text-sm text-muted-foreground">{t("journeys.editor.recording")}</p>
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
@@ -216,9 +178,7 @@ export function StepFlowSection({
 
         {!isRecordingThisStep && isPlayingThisStep ? (
           <>
-            <p className="text-sm text-foreground">
-              {flowName ?? step.flowId}
-            </p>
+            <p className="text-sm text-foreground">{flowName ?? step.flowId}</p>
             <Button
               type="button"
               variant="secondary"
@@ -234,9 +194,7 @@ export function StepFlowSection({
 
         {!isRecordingThisStep && !isPlayingThisStep && step.flowId ? (
           <>
-            <p className="text-sm text-foreground">
-              {flowName ?? step.flowId}
-            </p>
+            <p className="text-sm text-foreground">{flowName ?? step.flowId}</p>
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
@@ -253,9 +211,7 @@ export function StepFlowSection({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() =>
-                  updateJourneyStep(journeyId, stepId, { flowId: undefined })
-                }
+                onClick={() => updateJourneyStep(journeyId, stepId, { flowId: undefined })}
               >
                 {t("journeys.step.unlinkFlow")}
               </Button>
@@ -319,8 +275,7 @@ export function StepFlowSection({
               className="w-full justify-start gap-2"
               onClick={() => {
                 const canAdvanceToNext =
-                  Boolean(nextStepRecord) ||
-                  Boolean(onNextStep && hasNextFromList);
+                  Boolean(nextStepRecord) || Boolean(onNextStep && hasNextFromList);
 
                 setFlowJustEnded(false);
 
@@ -349,14 +304,8 @@ export function StepFlowSection({
                 journeyPlayer.setPlaybackContext(journeyId, nextStepRecord.id);
                 onSelectStep(nextStepRecord.id);
 
-                if (
-                  nextStepRecord.flowId &&
-                  nextStepRecord.diagramId.length > 0
-                ) {
-                  journeyPlayer.startFlowPlayback(
-                    nextStepRecord.flowId,
-                    nextStepRecord.diagramId,
-                  );
+                if (nextStepRecord.flowId && nextStepRecord.diagramId.length > 0) {
+                  journeyPlayer.startFlowPlayback(nextStepRecord.flowId, nextStepRecord.diagramId);
                 } else if (nextStepRecord.diagramId.length > 0) {
                   openDiagram(nextStepRecord.diagramId);
                 }

@@ -4,20 +4,10 @@ export { mergeCustomComponentTemplates } from "./merge-custom-component-template
 export { LocalStorageAdapter, defaultStorage } from "./LocalStorageAdapter";
 export { InMemoryAdapter } from "./InMemoryAdapter";
 export { FileSystemAdapter, fileSystemAdapter } from "./FileSystemAdapter";
-export type {
-  WorkspaceManifest,
-  WorkspacePayload,
-  WorkspaceScanResult,
-} from "./FileSystemAdapter";
+export type { WorkspaceManifest, WorkspacePayload, WorkspaceScanResult } from "./FileSystemAdapter";
 export { useFileSystemSync } from "./useFileSystemSync";
-export {
-  useFileSystemStorage,
-  isFileSystemSupported,
-} from "./useFileSystemStorage";
-export {
-  registerConnectFolderRequestHandler,
-  requestConnectFolder,
-} from "./requestConnectFolder";
+export { useFileSystemStorage, isFileSystemSupported } from "./useFileSystemStorage";
+export { registerConnectFolderRequestHandler, requestConnectFolder } from "./requestConnectFolder";
 export type { FsStatus } from "./useFileSystemStorage";
 export {
   bootFileSystem,
@@ -29,15 +19,6 @@ export {
   resetBootState,
 } from "./fileSystemBoot";
 export type { ForceSaveToFolderResult } from "./fileSystemBoot";
-export {
-  validateDiagramFile,
-  validateManifest,
-} from "./validateWorkspaceFile";
-export type {
-  ValidationResult,
-  ManifestValidationResult,
-} from "./validateWorkspaceFile";
-export {
-  CustomComponentRepository,
-  customComponentRepository,
-} from "./CustomComponentRepository";
+export { validateDiagramFile, validateManifest } from "./validateWorkspaceFile";
+export type { ValidationResult, ManifestValidationResult } from "./validateWorkspaceFile";
+export { CustomComponentRepository, customComponentRepository } from "./CustomComponentRepository";

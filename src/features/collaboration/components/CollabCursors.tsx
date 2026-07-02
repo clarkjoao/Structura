@@ -19,8 +19,7 @@ export function CollabCursors({ peers }: CollabCursorsProps) {
         const activeElementLabel = (() => {
           if (!peer.activeElementId) return null;
           const component = activeDiagram?.snapshot.components?.[peer.activeElementId] as
-            | { name?: string }
-            | undefined;
+            { name?: string } | undefined;
           return component?.name ?? peer.activeElementId;
         })();
 
@@ -44,7 +43,7 @@ export function CollabCursors({ peers }: CollabCursorsProps) {
             >
               {activeElementLabel
                 ? `${peer.user?.name ?? t("collaboration.peerFallback")} • ${activeElementLabel}`
-                : peer.user?.name ?? t("collaboration.peerFallback")}
+                : (peer.user?.name ?? t("collaboration.peerFallback"))}
             </span>
           </div>
         );

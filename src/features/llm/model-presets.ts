@@ -33,4 +33,3 @@ export const MODEL_PRESETS: ModelPreset[] = [
     mode: "direct",
   },
 ];
-

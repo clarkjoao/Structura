@@ -14,10 +14,7 @@ function clearCustomIconIdFromComponents(
   }
 }
 
-export const iconsSlice = (
-  set: (fn: (state: AppState) => void) => void,
-  _get: () => AppState,
-) => ({
+export const iconsSlice = (set: (fn: (state: AppState) => void) => void, _get: () => AppState) => ({
   addIcon: (_diagramId: string, _icon: IconDefinition): void => {},
 
   removeIconReferences: (diagramId: string, iconId: string): void => {

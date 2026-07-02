@@ -36,7 +36,15 @@ interface Props {
   onClose: () => void;
 }
 
-function ShortcutHint({ mac, other, platform }: { mac: string; other: string; platform: Platform }) {
+function ShortcutHint({
+  mac,
+  other,
+  platform,
+}: {
+  mac: string;
+  other: string;
+  platform: Platform;
+}) {
   return (
     <span className="ml-auto text-[10px] font-mono text-muted-foreground">
       {platform === "mac" ? mac : other}
@@ -95,7 +103,9 @@ function Divider() {
 function SectionLabel({ label }: { label: string }) {
   return (
     <div className="px-3 py-1.5">
-      <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
     </div>
   );
 }

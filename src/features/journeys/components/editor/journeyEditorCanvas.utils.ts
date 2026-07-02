@@ -40,15 +40,10 @@ export function createJourneyEditorNodeBuildContext(
   selectedComponentId: string | null,
   panelIds: Set<string>,
   connectionCounts: Record<string, { incoming: number; outgoing: number }>,
-  effectiveHandleOrder: Record<
-    string,
-    { incoming: string[]; outgoing: string[] }
-  >,
+  effectiveHandleOrder: Record<string, { incoming: string[]; outgoing: string[] }>,
   flowVisuals: JourneyEditorCanvasFlowVisuals | null,
 ): NodeBuildContext {
-  const selectedNodeIds = new Set(
-    selectedComponentId ? [selectedComponentId] : [],
-  );
+  const selectedNodeIds = new Set(selectedComponentId ? [selectedComponentId] : []);
   return {
     diagram,
     flows: Object.values(diagram.snapshot.flows),
@@ -88,23 +83,17 @@ export function buildJourneyEditorNodes(
     Object.values(snapshot.connections),
     snapshot.components,
   );
-  const connectionCountPerNode =
-    buildConnectionCountPerNode(visibleConnections);
+  const connectionCountPerNode = buildConnectionCountPerNode(visibleConnections);
   const edgeHandleAssignments = buildEdgeHandleAssignments(
     visibleConnections,
     connectionCountPerNode,
     snapshot.components,
   );
-  const effectiveHandleOrder = buildEffectiveHandleOrder(
-    edgeHandleAssignments,
-    visibleConnections,
-  );
+  const effectiveHandleOrder = buildEffectiveHandleOrder(edgeHandleAssignments, visibleConnections);
   const panelIds = buildPanelIds(components);
   const collapsedPanelIds = buildCollapsedPanelIds(snapshot.components);
   const highlightedNodeIds = new Set<string>();
-  const selectedNodeIds = new Set(
-    selectedComponentId ? [selectedComponentId] : [],
-  );
+  const selectedNodeIds = new Set(selectedComponentId ? [selectedComponentId] : []);
 
   const ctx = createJourneyEditorNodeBuildContext(
     diagram,
@@ -118,10 +107,8 @@ export function buildJourneyEditorNodes(
   );
 
   const sorted = [...components].sort((left, right) => {
-    const leftIsGroup =
-      isPanelComponent(left) || isApiGroupComponent(left);
-    const rightIsGroup =
-      isPanelComponent(right) || isApiGroupComponent(right);
+    const leftIsGroup = isPanelComponent(left) || isApiGroupComponent(left);
+    const rightIsGroup = isPanelComponent(right) || isApiGroupComponent(right);
     if (leftIsGroup && !rightIsGroup) return -1;
     if (!leftIsGroup && rightIsGroup) return 1;
     if (leftIsGroup && rightIsGroup) {
@@ -166,12 +153,8 @@ export function buildJourneyEditorNodes(
       draggable: false,
       selectable: !(descriptor.selectable === false) && !lockedInGroup,
       focusable: descriptor.focusable ?? !lockedInGroup,
-      ...(descriptor.dragHandle
-        ? { dragHandle: descriptor.dragHandle }
-        : {}),
-      ...(vis.isChild
-        ? { parentId: component.parentId!, extent: "parent" as const }
-        : {}),
+      ...(descriptor.dragHandle ? { dragHandle: descriptor.dragHandle } : {}),
+      ...(vis.isChild ? { parentId: component.parentId!, extent: "parent" as const } : {}),
       hidden: vis.isHidden,
       style: style as Node["style"],
       data: descriptor.buildData(component, ctx),
@@ -211,20 +194,15 @@ export function buildJourneyEditorEdges(
     Object.values(snapshot.connections),
     snapshot.components,
   );
-  const connectionCountPerNode =
-    buildConnectionCountPerNode(visibleConnections);
+  const connectionCountPerNode = buildConnectionCountPerNode(visibleConnections);
   const edgeHandleAssignments = buildEdgeHandleAssignments(
     visibleConnections,
     connectionCountPerNode,
     snapshot.components,
   );
-  const assignmentMap = new Map(
-    edgeHandleAssignments.map((item) => [item.connId, item]),
-  );
+  const assignmentMap = new Map(edgeHandleAssignments.map((item) => [item.connId, item]));
 
-  const useCustomEdges =
-    flowVisuals !== null &&
-    (flowVisuals.isPlaying || flowVisuals.isRecording);
+  const useCustomEdges = flowVisuals !== null && (flowVisuals.isPlaying || flowVisuals.isRecording);
 
   const edgeParams: EdgeBuildParams = {
     ...idleEdgeParams(diagram),

@@ -14,18 +14,11 @@ function triggerDownload(blob: Blob, filename: string): void {
   URL.revokeObjectURL(url);
 }
 
-export function downloadFile(
-  content: string,
-  filename: string,
-  mime: string,
-): void {
+export function downloadFile(content: string, filename: string, mime: string): void {
   triggerDownload(new Blob([content], { type: mime }), filename);
 }
 
-export async function downloadZip(
-  files: ZipEntryFile[],
-  zipFilename: string,
-): Promise<void> {
+export async function downloadZip(files: ZipEntryFile[], zipFilename: string): Promise<void> {
   const zip = new JSZip();
 
   for (const file of files) {

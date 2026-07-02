@@ -21,7 +21,11 @@ export const GCP_CATEGORIES = [
       { id: "cloudrun", name: "Cloud Run", iconName: "cloudrun-512-color-rgb" },
       { id: "gke", name: "Google Kubernetes Engine", iconName: "gke-512-color" },
       { id: "containers", name: "Containers", iconName: "containers-512-color" },
-      { id: "serverlesscomputing", name: "Serverless Computing", iconName: "serverlesscomputing-512-color" },
+      {
+        id: "serverlesscomputing",
+        name: "Serverless Computing",
+        iconName: "serverlesscomputing-512-color",
+      },
     ],
   },
   {
@@ -48,7 +52,11 @@ export const GCP_CATEGORIES = [
     name: "Networking",
     services: [
       { id: "networking", name: "Networking", iconName: "networking-512-color-rgb" },
-      { id: "hybridmulticloud", name: "Hybrid & Multi-Cloud", iconName: "hybridmulticloud-512-color" },
+      {
+        id: "hybridmulticloud",
+        name: "Hybrid & Multi-Cloud",
+        iconName: "hybridmulticloud-512-color",
+      },
       { id: "distributedcloud", name: "Distributed Cloud", iconName: "distributedcloud-512-color" },
     ],
   },
@@ -56,11 +64,23 @@ export const GCP_CATEGORIES = [
     id: "gcp-security" as const,
     name: "Security",
     services: [
-      { id: "securityidentity", name: "Security & Identity", iconName: "securityidentity-512-color" },
-      { id: "securitycommandcenter", name: "Security Command Center", iconName: "securitycommandcenter-512-color" },
+      {
+        id: "securityidentity",
+        name: "Security & Identity",
+        iconName: "securityidentity-512-color",
+      },
+      {
+        id: "securitycommandcenter",
+        name: "Security Command Center",
+        iconName: "securitycommandcenter-512-color",
+      },
       { id: "secops", name: "SecOps", iconName: "secops-512-color-rgb" },
       { id: "mandiant", name: "Mandiant", iconName: "mandiant-512-color" },
-      { id: "threatintelligence", name: "Threat Intelligence", iconName: "threatintelligence-512-color" },
+      {
+        id: "threatintelligence",
+        name: "Threat Intelligence",
+        iconName: "threatintelligence-512-color",
+      },
     ],
   },
   {
@@ -68,7 +88,11 @@ export const GCP_CATEGORIES = [
     name: "Analytics",
     services: [
       { id: "dataanalytics", name: "Data Analytics", iconName: "dataanalytics-512-color" },
-      { id: "businessintelligence", name: "Business Intelligence", iconName: "businessintelligence-512-color" },
+      {
+        id: "businessintelligence",
+        name: "Business Intelligence",
+        iconName: "businessintelligence-512-color",
+      },
       { id: "looker", name: "Looker", iconName: "looker-512-color" },
       { id: "observability", name: "Observability", iconName: "observability-512-color" },
       { id: "operations", name: "Operations", iconName: "operations-512-color" },
@@ -78,7 +102,11 @@ export const GCP_CATEGORIES = [
     id: "gcp-ai" as const,
     name: "AI & Machine Learning",
     services: [
-      { id: "aimachinelearning", name: "AI & Machine Learning", iconName: "aimachinelearning-512-color" },
+      {
+        id: "aimachinelearning",
+        name: "AI & Machine Learning",
+        iconName: "aimachinelearning-512-color",
+      },
       { id: "vertexai", name: "Vertex AI", iconName: "vertexai-512-color" },
       { id: "agents", name: "AI Agents", iconName: "agents-512-color" },
       { id: "aihypercomputer", name: "AI Hypercomputer", iconName: "aihypercomputer-512-color" },
@@ -97,7 +125,11 @@ export const GCP_CATEGORIES = [
     id: "gcp-integration" as const,
     name: "Integration",
     services: [
-      { id: "integrationservices", name: "Integration Services", iconName: "integrationservices-512-color" },
+      {
+        id: "integrationservices",
+        name: "Integration Services",
+        iconName: "integrationservices-512-color",
+      },
     ],
   },
   {
@@ -128,7 +160,10 @@ export const GCP_CATEGORIES = [
 ] as const;
 
 const _categoryMap = new Map<string, (typeof GCP_CATEGORIES)[number]>();
-const _serviceMap = new Map<string, { id: string; name: string; iconName: string; categoryId: string }>();
+const _serviceMap = new Map<
+  string,
+  { id: string; name: string; iconName: string; categoryId: string }
+>();
 
 for (const cat of GCP_CATEGORIES) {
   _categoryMap.set(cat.id, cat);
@@ -142,5 +177,4 @@ export const GCP_SERVICE_MAP = _serviceMap;
 
 export const GCP_CATEGORY_ID_GENERAL = "gcp-general" as const satisfies GcpCategoryId;
 
-export const isGcpType = (type: string): type is GcpCategoryId =>
-  type.startsWith("gcp-");
+export const isGcpType = (type: string): type is GcpCategoryId => type.startsWith("gcp-");

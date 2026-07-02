@@ -6,8 +6,6 @@ import {
   type RecentDiagramRef,
 } from "@/features/diagram";
 
-
-
 export function useRecentDiagrams() {
   const [recent, setRecent] = useState<RecentDiagramRef[]>(() => readRecentRefs());
 

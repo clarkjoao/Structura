@@ -91,4 +91,3 @@ export function LLMSelector({ config, onChange }: LLMSelectorProps) {
     </Popover>
   );
 }
-

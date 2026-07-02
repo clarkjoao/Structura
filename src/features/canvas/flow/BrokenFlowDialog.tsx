@@ -18,9 +18,7 @@ const BrokenFlowDialog = ({ flow, brokenSteps, onRemoveSteps, onCancel }: Props)
         <div className="flex items-center gap-2.5 px-5 py-4 border-b border-border">
           <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0" />
           <div>
-            <h2 className="text-sm font-semibold text-foreground">
-              {t("brokenFlow.title")}
-            </h2>
+            <h2 className="text-sm font-semibold text-foreground">{t("brokenFlow.title")}</h2>
             <p className="text-[11px] text-muted-foreground mt-0.5">
               {t("brokenFlow.descriptionWithName", { name: flow.name })}
             </p>
@@ -41,11 +39,11 @@ const BrokenFlowDialog = ({ flow, brokenSteps, onRemoveSteps, onCancel }: Props)
               ) : (
                 <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               )}
-              <span className="text-xs text-foreground flex-1 min-w-0 truncate">
-                {b.label}
-              </span>
+              <span className="text-xs text-foreground flex-1 min-w-0 truncate">{b.label}</span>
               <span className="text-[10px] rounded bg-destructive/10 text-destructive px-1.5 py-0.5 shrink-0">
-                {b.reason === "component_deleted" ? t("brokenFlow.componentDeleted") : t("brokenFlow.connectionRemoved")}
+                {b.reason === "component_deleted"
+                  ? t("brokenFlow.componentDeleted")
+                  : t("brokenFlow.connectionRemoved")}
               </span>
             </div>
           ))}

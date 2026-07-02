@@ -91,7 +91,10 @@ export function useWorkspaceFocusSync(): { isSyncing: boolean } {
 
         if (workspace.customComponentTemplates) {
           useCustomComponentStore.setState((s) => ({
-            templates: mergeCustomComponentTemplates(s.templates, workspace.customComponentTemplates!),
+            templates: mergeCustomComponentTemplates(
+              s.templates,
+              workspace.customComponentTemplates!,
+            ),
           }));
         }
 

@@ -49,8 +49,7 @@ export function GithubConfigForm({ config, onSave, onClear }: Props) {
         <div className="flex items-center gap-2 text-sm text-green-700">
           <CheckCircle className="h-4 w-4" />
           <span>
-            {t("github.connectedTo")}{" "}
-            <span className="font-semibold">{config.baseUrl}</span>
+            {t("github.connectedTo")} <span className="font-semibold">{config.baseUrl}</span>
           </span>
         </div>
         <button
@@ -67,15 +66,14 @@ export function GithubConfigForm({ config, onSave, onClear }: Props) {
   if (confirmClear) {
     return (
       <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-        <p className="text-sm text-foreground font-medium">
-          {t("github.disconnectTitle")}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {t("github.configNote")}
-        </p>
+        <p className="text-sm text-foreground font-medium">{t("github.disconnectTitle")}</p>
+        <p className="text-xs text-muted-foreground">{t("github.configNote")}</p>
         <div className="flex gap-2">
           <button
-            onClick={() => { void onClear(); setConfirmClear(false); }}
+            onClick={() => {
+              void onClear();
+              setConfirmClear(false);
+            }}
             className="flex-1 rounded-md bg-destructive px-3 py-2 text-xs font-semibold text-destructive-foreground hover:bg-destructive/90 transition-colors"
           >
             {t("github.confirm")}

@@ -16,7 +16,6 @@ export function useGithubConfig() {
   });
 
   const saveConfig = useCallback(async (cfg: GithubConfig) => {
-    
     await defaultStorage.forceSave(STORAGE_KEY, cfg);
     setConfig(cfg);
   }, []);
@@ -30,4 +29,3 @@ export function useGithubConfig() {
 
   return { config, saveConfig, clearConfig, isConfigured };
 }
-

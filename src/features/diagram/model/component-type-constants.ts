@@ -1,13 +1,10 @@
-
 import { PanelKind } from "../enums";
 import type { ComponentType } from "./component.types";
 import { isAwsType } from "@/lib/catalogs/aws";
 import i18n from "@/infrastructure/i18n";
 
-
 export const C4_TYPES = ["person", "system", "container", "component"] as const;
 export type C4Type = (typeof C4_TYPES)[number];
-
 
 export const COMPONENT_TYPE_PANEL = "panel";
 export const COMPONENT_TYPE_NOTE = "note";
@@ -37,7 +34,6 @@ export function isSvgComponentType(type: string): type is "svg" {
   return type === COMPONENT_TYPE_SVG;
 }
 
-
 export const PANEL_KIND_VALUES: readonly PanelKind[] = [
   PanelKind.Default,
   PanelKind.AvailabilityZone,
@@ -50,12 +46,9 @@ export const PANEL_KIND_VALUES: readonly PanelKind[] = [
   PanelKind.Swimlane,
 ];
 
-
 export function isReactFlowParentPanelType(nodeType: string): boolean {
   return nodeType === COMPONENT_TYPE_PANEL || nodeType === PanelKind.Swimlane;
 }
-
-
 
 export function isPanelType(type: string): type is "panel" {
   return type === COMPONENT_TYPE_PANEL;
@@ -109,17 +102,11 @@ export function isExternalElementType(type: string): type is "external-element" 
   return type === COMPONENT_TYPE_EXTERNAL_ELEMENT;
 }
 
-
 export function isPanelKind(value: string): value is PanelKind {
   return Object.values(PanelKind).includes(value as PanelKind);
 }
 
-
-
-export function getUsageKeyForType(
-  type: ComponentType,
-  panelKind?: PanelKind,
-): string {
+export function getUsageKeyForType(type: ComponentType, panelKind?: PanelKind): string {
   if (isPanelType(type) || isNoteType(type)) {
     return `canvas:${type}${panelKind ? `:${panelKind}` : ""}`;
   }
@@ -140,9 +127,6 @@ export function getUsageKeyForType(
   }
   return `canvas:${type}`;
 }
-
-
-
 
 export function getDefaultNameForNewComponent(
   type: ComponentType,

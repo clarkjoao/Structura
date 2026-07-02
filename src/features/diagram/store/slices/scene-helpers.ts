@@ -1,16 +1,8 @@
-import type {
-  Component,
-  Diagram,
-  NodeLayout,
-  SceneDiff,
-} from "../../model/diagram.types";
-
+import type { Component, Diagram, NodeLayout, SceneDiff } from "../../model/diagram.types";
 
 export function resolveActiveScene(diagram: Diagram): SceneDiff | null {
   const activeSceneId = diagram.activeSceneId ?? null;
-  return activeSceneId && diagram.scenes?.[activeSceneId]
-    ? diagram.scenes[activeSceneId]
-    : null;
+  return activeSceneId && diagram.scenes?.[activeSceneId] ? diagram.scenes[activeSceneId] : null;
 }
 
 /** Escreve um componente e seu layout no contexto correto (scene ou base). */

@@ -66,8 +66,7 @@ function searchMentionItems(allItems: MentionItem[], query: string): MentionItem
       const normalizedLabel = item.label.toLowerCase();
       const normalizedSubLabel = item.subLabel.toLowerCase();
       return (
-        normalizedLabel.includes(normalizedQuery) ||
-        normalizedSubLabel.includes(normalizedQuery)
+        normalizedLabel.includes(normalizedQuery) || normalizedSubLabel.includes(normalizedQuery)
       );
     })
     .sort((itemA, itemB) => {
@@ -116,4 +115,3 @@ export function useMentionSearch(): UseMentionSearchResult {
 
   return { search, allItems };
 }
-

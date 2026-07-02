@@ -72,7 +72,9 @@ export function CollabToolbar({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t("collaboration.endSessionForEveryone")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("collaboration.endSessionForEveryoneDesc")}</AlertDialogDescription>
+            <AlertDialogDescription>
+              {t("collaboration.endSessionForEveryoneDesc")}
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
@@ -123,7 +125,11 @@ export function CollabToolbar({
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
           title={t("collaboration.copyLink")}
         >
-          {isCopied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Link className="h-3.5 w-3.5" />}
+          {isCopied ? (
+            <Check className="h-3.5 w-3.5 text-emerald-500" />
+          ) : (
+            <Link className="h-3.5 w-3.5" />
+          )}
         </button>
         {session.isHost && (
           <button

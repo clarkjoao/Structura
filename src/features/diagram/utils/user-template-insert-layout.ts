@@ -1,8 +1,7 @@
-
 export interface UserTemplateLayoutInput {
   _relX?: number;
   _relY?: number;
-  
+
   x?: number;
   y?: number;
   parentIndex?: number;
@@ -10,21 +9,14 @@ export interface UserTemplateLayoutInput {
   height?: number;
 }
 
-export function readTemplateRelativeOffsets(
-  entry: UserTemplateLayoutInput,
-): { relX: number; relY: number } {
+export function readTemplateRelativeOffsets(entry: UserTemplateLayoutInput): {
+  relX: number;
+  relY: number;
+} {
   const relX =
-    typeof entry._relX === "number"
-      ? entry._relX
-      : typeof entry.x === "number"
-        ? entry.x
-        : 0;
+    typeof entry._relX === "number" ? entry._relX : typeof entry.x === "number" ? entry.x : 0;
   const relY =
-    typeof entry._relY === "number"
-      ? entry._relY
-      : typeof entry.y === "number"
-        ? entry.y
-        : 0;
+    typeof entry._relY === "number" ? entry._relY : typeof entry.y === "number" ? entry.y : 0;
   return { relX, relY };
 }
 

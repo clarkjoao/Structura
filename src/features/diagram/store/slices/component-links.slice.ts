@@ -18,8 +18,7 @@ export const componentLinksSlice = (
       const d = getActiveDiagram(state);
       if (!d) return;
       const scene = resolveActiveScene(d);
-      const comp =
-        scene?.addedComponents[componentId] ?? d.snapshot.components[componentId];
+      const comp = scene?.addedComponents[componentId] ?? d.snapshot.components[componentId];
       if (!comp) return;
       if (!comp.handleOrder) comp.handleOrder = { incoming: [], outgoing: [] };
       comp.handleOrder[side] = orderedConnectionIds;
@@ -44,7 +43,11 @@ export const componentLinksSlice = (
     });
   },
 
-  updateExternalLink: (componentId: string, linkId: string, patch: Partial<Omit<ExternalLink, "id">>) => {
+  updateExternalLink: (
+    componentId: string,
+    linkId: string,
+    patch: Partial<Omit<ExternalLink, "id">>,
+  ) => {
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;

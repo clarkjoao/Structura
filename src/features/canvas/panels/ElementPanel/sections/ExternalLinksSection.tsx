@@ -66,9 +66,7 @@ export function ExternalLinksSection({
                 onClick={() => setExpandedId(isExpanded ? null : link.id)}
               >
                 <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                <span className="truncate flex-1 text-foreground">
-                  {link.label || link.url}
-                </span>
+                <span className="truncate flex-1 text-foreground">{link.label || link.url}</span>
                 <a
                   href={link.url}
                   target="_blank"
@@ -129,10 +127,16 @@ export function ExternalLinksSection({
                       }
                       className="w-full rounded border border-border bg-secondary px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                     >
-                      <option value={ExternalLinkType.Confluence}>{t("externalLinks.typeConfluence")}</option>
-                      <option value={ExternalLinkType.Github}>{t("externalLinks.typeGithub")}</option>
+                      <option value={ExternalLinkType.Confluence}>
+                        {t("externalLinks.typeConfluence")}
+                      </option>
+                      <option value={ExternalLinkType.Github}>
+                        {t("externalLinks.typeGithub")}
+                      </option>
                       <option value={ExternalLinkType.Jira}>{t("externalLinks.typeJira")}</option>
-                      <option value={ExternalLinkType.Generic}>{t("externalLinks.typeGeneric")}</option>
+                      <option value={ExternalLinkType.Generic}>
+                        {t("externalLinks.typeGeneric")}
+                      </option>
                     </select>
                   </div>
                 </div>
@@ -147,7 +151,9 @@ export function ExternalLinksSection({
           <input
             autoFocus
             value={form.label}
-            onChange={(event) => setForm((previous) => ({ ...previous, label: event.target.value }))}
+            onChange={(event) =>
+              setForm((previous) => ({ ...previous, label: event.target.value }))
+            }
             placeholder={t("externalLinks.labelPlaceholder")}
             className="w-full rounded border border-border bg-secondary px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           />

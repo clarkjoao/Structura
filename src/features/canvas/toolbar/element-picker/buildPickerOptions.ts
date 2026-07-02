@@ -25,9 +25,7 @@ export type C4PickerOption = {
   icon: LucideIcon;
 };
 
-export function buildC4PickerOptions(
-  t: (key: string) => string,
-): C4PickerOption[] {
+export function buildC4PickerOptions(t: (key: string) => string): C4PickerOption[] {
   return [
     { type: "person", label: t("quickInsert.typePerson"), icon: User },
     { type: "system", label: t("quickInsert.typeSystem"), icon: Network },
@@ -36,9 +34,7 @@ export function buildC4PickerOptions(
   ];
 }
 
-export function buildCanvasPickerOptions(
-  t: (key: string) => string,
-): CanvasPickerOption[] {
+export function buildCanvasPickerOptions(t: (key: string) => string): CanvasPickerOption[] {
   const swim = PANEL_KINDS.find((p) => p.id === PanelKind.Swimlane);
   const restPanels = PANEL_KINDS.filter(
     (p) => p.id !== PanelKind.Default && p.id !== PanelKind.Swimlane,
@@ -79,9 +75,7 @@ export function buildCanvasPickerOptions(
   return core;
 }
 
-export function buildFlowchartPickerOptions(
-  t: (key: string) => string,
-): CanvasPickerOption[] {
+export function buildFlowchartPickerOptions(t: (key: string) => string): CanvasPickerOption[] {
   const shapes: Array<{ shape: FlowNodeShape; labelKey: string; icon: LucideIcon }> = [
     { shape: "rectangle", labelKey: "flowchart.shapes.rectangle", icon: Square },
     { shape: "rounded", labelKey: "flowchart.shapes.rounded", icon: Square },

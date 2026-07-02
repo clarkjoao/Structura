@@ -7,17 +7,9 @@ export interface WaypointPosition {
   y: number;
 }
 
-export type ConnectionIntent =
-  | "dependency"
-  | "call"
-  | "event"
-  | "data-flow"
-  | "async-message";
+export type ConnectionIntent = "dependency" | "call" | "event" | "data-flow" | "async-message";
 
-export type ConnectionDirection =
-  | "unidirectional"
-  | "bidirectional"
-  | "reverse";
+export type ConnectionDirection = "unidirectional" | "bidirectional" | "reverse";
 
 export interface ConnectionStyle {
   edgeStyle?: EdgeStyle;

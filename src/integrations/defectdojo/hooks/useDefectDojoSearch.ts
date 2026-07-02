@@ -3,18 +3,9 @@ import { useDiagramStore, ServiceSource } from "@/features/diagram";
 import { DefectDojoImportStatus } from "../enums";
 import { normalizeSources } from "@/integrations/merge-utils";
 import { DefectDojoClient } from "../defectdojo.client";
-import {
-  searchProducts,
-  getProductTypes,
-  type DDProductSearchField,
-} from "../defectdojo.service";
+import { searchProducts, getProductTypes, type DDProductSearchField } from "../defectdojo.service";
 import { i18n } from "@/infrastructure/i18n";
-import type {
-  DefectDojoConfig,
-  DDSearchResult,
-  DDProductType,
-  ImportStatus,
-} from "../types";
+import type { DefectDojoConfig, DDSearchResult, DDProductType, ImportStatus } from "../types";
 
 function resolveImportStatus(
   productId: number,
@@ -23,12 +14,10 @@ function resolveImportStatus(
 ): { status: ImportStatus; existingServiceId?: string } {
   const state = useDiagramStore.getState();
   const allServices = Object.values(state.serviceRegistry);
-  const existing = allServices.find(
-    (service) =>
-      normalizeSources(service).some(
-        (source) =>
-          source.type === ServiceSource.Defectdojo && source.sourceId === String(productId),
-      ),
+  const existing = allServices.find((service) =>
+    normalizeSources(service).some(
+      (source) => source.type === ServiceSource.Defectdojo && source.sourceId === String(productId),
+    ),
   );
   if (!existing) return { status: DefectDojoImportStatus.NotImported };
   if (existing.name === productName && existing.description === productDesc) {
@@ -55,18 +44,12 @@ export function useDefectDojoSearch(config: DefectDojoConfig | null) {
         const client = new DefectDojoClient(config);
         const products = await searchProducts(client, query, filters);
         const withStatus: DDSearchResult[] = products.map((p) => {
-          const { status, existingServiceId } = resolveImportStatus(
-            p.id,
-            p.name,
-            p.description,
-          );
+          const { status, existingServiceId } = resolveImportStatus(p.id, p.name, p.description);
           return { ...p, status, existingServiceId };
         });
         setResults(withStatus);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : i18n.t("defectdojo.searchError"),
-        );
+        setError(err instanceof Error ? err.message : i18n.t("defectdojo.searchError"));
       } finally {
         setLoading(false);
       }
@@ -80,9 +63,7 @@ export function useDefectDojoSearch(config: DefectDojoConfig | null) {
       const client = new DefectDojoClient(config);
       const types = await getProductTypes(client);
       setProductTypes(types);
-    } catch {
-      
-    }
+    } catch {}
   }, [config]);
 
   const clearResults = useCallback(() => {
@@ -93,11 +74,7 @@ export function useDefectDojoSearch(config: DefectDojoConfig | null) {
   const refreshStatuses = useCallback(() => {
     setResults((prev) =>
       prev.map((p) => {
-        const { status, existingServiceId } = resolveImportStatus(
-          p.id,
-          p.name,
-          p.description,
-        );
+        const { status, existingServiceId } = resolveImportStatus(p.id, p.name, p.description);
         return { ...p, status, existingServiceId };
       }),
     );

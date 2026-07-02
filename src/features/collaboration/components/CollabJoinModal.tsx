@@ -48,18 +48,13 @@ export function CollabJoinModal({ open, roomId, onJoin }: CollabJoinModalProps) 
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent
-        className="max-w-md"
-        onPointerDownOutside={(event) => event.preventDefault()}
-      >
+      <DialogContent className="max-w-md" onPointerDownOutside={(event) => event.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             {t("collaboration.joinSession")}
           </DialogTitle>
-          <DialogDescription>
-            {t("collaboration.joinSessionDesc", { roomId })}
-          </DialogDescription>
+          <DialogDescription>{t("collaboration.joinSessionDesc", { roomId })}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
@@ -119,7 +114,9 @@ export function CollabJoinModal({ open, roomId, onJoin }: CollabJoinModalProps) 
               <p className="text-[11px] text-destructive">{t("collaboration.serverOffline")}</p>
             )}
             {testStatus === "idle" && (
-              <p className="text-[11px] text-muted-foreground">{t("collaboration.signalingHint")}</p>
+              <p className="text-[11px] text-muted-foreground">
+                {t("collaboration.signalingHint")}
+              </p>
             )}
             {isLocalhost && (
               <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2">

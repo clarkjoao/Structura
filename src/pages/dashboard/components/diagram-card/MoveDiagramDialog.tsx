@@ -2,12 +2,7 @@ import type { MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import type { Folder } from "@/features/diagram";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export interface MoveDiagramDialogProps {
   open: boolean;

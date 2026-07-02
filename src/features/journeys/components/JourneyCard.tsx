@@ -40,10 +40,7 @@ export function JourneyCard({ journey, onEdit, onDelete }: JourneyCardProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const stepCount = Object.keys(journey.steps).length;
-  const diagramCount = useMemo(
-    () => countUniqueDiagramIds(journey),
-    [journey],
-  );
+  const diagramCount = useMemo(() => countUniqueDiagramIds(journey), [journey]);
 
   const relativeTime = formatDistanceToNow(journey.updatedAt, {
     addSuffix: true,
@@ -62,10 +59,7 @@ export function JourneyCard({ journey, onEdit, onDelete }: JourneyCardProps) {
 
   const handleDuplicateClick = (event: MouseEvent) => {
     event.stopPropagation();
-    duplicateJourney(
-      journey.id,
-      t("journeys.duplicateJourneyName", { name: journey.name }),
-    );
+    duplicateJourney(journey.id, t("journeys.duplicateJourneyName", { name: journey.name }));
     toast.success(t("journeys.duplicated"));
   };
 
@@ -118,9 +112,7 @@ export function JourneyCard({ journey, onEdit, onDelete }: JourneyCardProps) {
         <h3 className="pr-20 font-semibold text-foreground">{journey.name}</h3>
 
         {journey.description ? (
-          <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-            {journey.description}
-          </p>
+          <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{journey.description}</p>
         ) : null}
 
         {journey.tags.length > 0 ? (

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 interface CollabSessionClosedModalProps {
   open: boolean;
   hostName: string;
-  
+
   hostCrashed?: boolean;
   onImportAndContinue: () => void;
   onBackToWorkspace: () => void;
@@ -29,18 +29,13 @@ export function CollabSessionClosedModal({
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent
-        className="max-w-sm"
-        onPointerDownOutside={(event) => event.preventDefault()}
-      >
+      <DialogContent className="max-w-sm" onPointerDownOutside={(event) => event.preventDefault()}>
         <DialogHeader>
           <div className="flex items-center justify-center w-12 h-12 rounded-full bg-amber-500/10 mx-auto mb-2">
             <WifiOff className="h-6 w-6 text-amber-500" />
           </div>
           <DialogTitle className="text-center">
-            {hostCrashed
-              ? t("collaboration.hostDisconnected")
-              : t("collaboration.sessionEnded")}
+            {hostCrashed ? t("collaboration.hostDisconnected") : t("collaboration.sessionEnded")}
           </DialogTitle>
           <DialogDescription className="text-center">
             {hostCrashed
@@ -54,11 +49,7 @@ export function CollabSessionClosedModal({
             <Download className="h-4 w-4 mr-2" />
             {t("collaboration.importAndContinue")}
           </Button>
-          <Button
-            variant="outline"
-            onClick={onBackToWorkspace}
-            className="w-full"
-          >
+          <Button variant="outline" onClick={onBackToWorkspace} className="w-full">
             <ArrowLeft className="h-4 w-4 mr-2" />
             {t("collaboration.backToWorkspace")}
           </Button>

@@ -6,7 +6,13 @@ import {
   recordLocalStorageDiagramSyncSuccess,
 } from "@/infrastructure/persistence/localStorageSyncTimestamp";
 import { useIconStore } from "@/features/icons";
-import type { Diagram, Component, Connection, IconDefinition, NodeLayout } from "../model/diagram.types";
+import type {
+  Diagram,
+  Component,
+  Connection,
+  IconDefinition,
+  NodeLayout,
+} from "../model/diagram.types";
 import type { Point } from "../model/layout.types";
 import type { DiagramStore } from "./store.types";
 import type { ServiceDefinition } from "../model/service.types";
@@ -17,13 +23,10 @@ import { isQuotaExceededError } from "@/infrastructure/persistence/storageQuota"
 
 export const PERSIST_KEY = "diagram-store";
 
-
 /** localStorage persist debounce; folder sync uses VIEWPORT_DEBOUNCE_MS — they are independent by design. */
 const PERSIST_DEBOUNCE_MS = 1000;
 
-
 export const PERSIST_SCHEMA_VERSION = 5;
-
 
 export const CURRENT_SCHEMA_VERSION = PERSIST_SCHEMA_VERSION;
 
@@ -38,7 +41,6 @@ export function partializeState(state: DiagramStore) {
     activeDiagramId: state.activeDiagramId,
   };
 }
-
 
 export function buildPersistStoragePayload(state: DiagramStore): {
   state: PersistedDiagramStoreSlice;
@@ -156,7 +158,6 @@ function migrateFlowsToGraph(state: DiagramStore): DiagramStore {
   return state;
 }
 
-
 function migrateAddIconLibrary(state: Partial<DiagramStore>): void {
   const touchSnapshot = (snapshot: Diagram["snapshot"] | undefined): void => {
     if (!snapshot) return;
@@ -174,7 +175,6 @@ function migrateAddIconLibrary(state: Partial<DiagramStore>): void {
     touchSnapshot((diagram as Diagram).snapshot);
   }
 }
-
 
 function migrateAddEdgeLayouts(state: Partial<DiagramStore>): void {
   for (const diagram of Object.values(state.diagrams ?? {})) {
@@ -300,9 +300,7 @@ function migrateIconLibraryToGlobalStore(state: DiagramStore): void {
     for (const diagram of Object.values(state.diagrams ?? {})) {
       migrateSnapshot((diagram as Diagram).snapshot);
     }
-  } catch {
-    
-  }
+  } catch {}
 }
 
 export function mergePersistedState(
@@ -343,9 +341,7 @@ export function mergePersistedState(
   return next;
 }
 
-export function wrapIStoragePortWithDiagramPersistTracking(
-  storage: IStoragePort,
-): IStoragePort {
+export function wrapIStoragePortWithDiagramPersistTracking(storage: IStoragePort): IStoragePort {
   let persistDebounceTimer: ReturnType<typeof setTimeout> | null = null;
   let pendingPersist: { name: string; value: string } | null = null;
 

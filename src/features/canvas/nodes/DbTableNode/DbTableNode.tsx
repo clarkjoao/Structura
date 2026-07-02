@@ -9,7 +9,6 @@ import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
 import { singleIncomingTargetHandleId } from "../../edges/connectionDerivations";
 import type { DbColumnRow, DbTableColumnKey, DbTableNodeData } from "./DbTableNode.types";
 
-
 interface ColDef {
   key: DbTableColumnKey;
   labelKey: string;
@@ -60,7 +59,6 @@ function makeRow(id: string): DbColumnRow {
 function totalWidth(visibleColDefs: ColDef[]): number {
   return 32 + visibleColDefs.reduce((acc, c) => acc + c.width, 0) + ADD_BTN_SIZE;
 }
-
 
 interface TextCellProps {
   value: string;
@@ -118,7 +116,6 @@ function BoolCell({ value, colWidth, onChange }: BoolCellProps) {
   );
 }
 
-
 const DbTableNode = memo(({ data: d, selected }: NodeProps<Node<DbTableNodeData>>) => {
   const { t } = useTranslation();
   const isActive = selected || d.isSelected;
@@ -164,9 +161,7 @@ const DbTableNode = memo(({ data: d, selected }: NodeProps<Node<DbTableNodeData>
   const applyRowPatch = useCallback(
     (rowId: string, key: DbTableColumnKey, value: string | boolean) => {
       setRows((prev) => {
-        const nextRows = prev.map((row) =>
-          row.id === rowId ? { ...row, [key]: value } : row,
-        );
+        const nextRows = prev.map((row) => (row.id === rowId ? { ...row, [key]: value } : row));
         commit(nextRows);
         return nextRows;
       });
@@ -212,8 +207,7 @@ const DbTableNode = memo(({ data: d, selected }: NodeProps<Node<DbTableNodeData>
   }, []);
 
   const tableW = totalWidth(visibleCols);
-  const nodeH =
-    HEADER_H + SHEET_HEADER_H + rows.length * COL_H + ADD_BTN_SIZE + 2;
+  const nodeH = HEADER_H + SHEET_HEADER_H + rows.length * COL_H + ADD_BTN_SIZE + 2;
 
   const selectedRing = "border-primary ring-2 ring-primary/30 shadow-lg";
   const unselectedShadow = "border-border shadow-md hover:shadow-lg";
@@ -284,9 +278,7 @@ const DbTableNode = memo(({ data: d, selected }: NodeProps<Node<DbTableNodeData>
           style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
         />
       ) : null}
-      {d.compareBadges ? (
-        <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
-      ) : null}
+      {d.compareBadges ? <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} /> : null}
       {!d.compareBadges && d.sceneBadge ? (
         <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
       ) : null}

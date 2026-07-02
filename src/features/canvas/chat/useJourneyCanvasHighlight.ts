@@ -2,12 +2,8 @@ import { useMemo } from "react";
 import { useFlows } from "@/features/diagram";
 import { useJourneyPlayer, useJourneySteps } from "@/features/journeys";
 import { useFlowMode } from "../flow/FlowModeContext";
-import {
-  EMPTY_FLOW_HIGHLIGHT,
-  buildFlowHighlight,
-} from "../flow/flowState";
+import { EMPTY_FLOW_HIGHLIGHT, buildFlowHighlight } from "../flow/flowState";
 import type { FlowHighlight } from "../flow/flowState";
-
 
 export function useJourneyCanvasHighlight(): FlowHighlight {
   const journeyPlayer = useJourneyPlayer();
@@ -37,7 +33,7 @@ export function useJourneyCanvasHighlight(): FlowHighlight {
     const entryId =
       flow.entryStepId && flow.steps[flow.entryStepId]
         ? flow.entryStepId
-        : Object.keys(flow.steps)[0] ?? "";
+        : (Object.keys(flow.steps)[0] ?? "");
     const currentStepId =
       sameFlow && playing?.currentStepId && flow.steps[playing.currentStepId]
         ? playing.currentStepId

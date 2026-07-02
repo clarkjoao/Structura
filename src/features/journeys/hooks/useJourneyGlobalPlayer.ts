@@ -26,8 +26,7 @@ export function useJourneyGlobalPlayer({
   const steps = useJourneySteps(journeyId);
 
   const isGlobalPlaying =
-    journeyPlayer.mode.kind === "playing" &&
-    journeyPlayer.mode.journeyId === journeyId;
+    journeyPlayer.mode.kind === "playing" && journeyPlayer.mode.journeyId === journeyId;
 
   const playStep = useCallback(
     (step: JourneyStep) => {
@@ -53,9 +52,7 @@ export function useJourneyGlobalPlayer({
     if (steps.length === 0) return;
     if (!flowMode.isIdle || journeyPlayer.mode.kind !== "idle") return;
     const target =
-      (selectedStepId
-        ? steps.find((item) => item.id === selectedStepId)
-        : null) ?? steps[0];
+      (selectedStepId ? steps.find((item) => item.id === selectedStepId) : null) ?? steps[0];
     if (!target) return;
     playStep(target);
   }, [flowMode, journeyPlayer, playStep, selectedStepId, steps]);
@@ -82,8 +79,7 @@ export function useJourneyGlobalPlayer({
   }, [playStep, selectedStepId, steps]);
 
   const currentStepIndex = steps.findIndex((item) => item.id === selectedStepId);
-  const hasNextStep =
-    currentStepIndex >= 0 && currentStepIndex < steps.length - 1;
+  const hasNextStep = currentStepIndex >= 0 && currentStepIndex < steps.length - 1;
   const hasPrevStep = currentStepIndex > 0;
   const isLastStep = currentStepIndex === steps.length - 1;
 

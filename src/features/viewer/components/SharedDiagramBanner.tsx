@@ -7,11 +7,7 @@ interface SharedDiagramBannerProps {
   onClose: () => void;
 }
 
-const SharedDiagramBanner = ({
-  diagramName,
-  onImport,
-  onClose,
-}: SharedDiagramBannerProps) => {
+const SharedDiagramBanner = ({ diagramName, onImport, onClose }: SharedDiagramBannerProps) => {
   const { t } = useTranslation();
 
   return (
@@ -30,10 +26,7 @@ const SharedDiagramBanner = ({
         borderBottom: "1px solid var(--color-border-info)",
       }}
     >
-      <Share2
-        size={16}
-        style={{ color: "var(--color-text-info)", flexShrink: 0 }}
-      />
+      <Share2 size={16} style={{ color: "var(--color-text-info)", flexShrink: 0 }} />
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <span

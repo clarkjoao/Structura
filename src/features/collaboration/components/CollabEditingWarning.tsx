@@ -30,9 +30,7 @@ function buildWarningMessage(
     <span key={peer.id} className="inline-flex items-center gap-1">
       {index > 0 && (
         <span className="text-amber-600 dark:text-amber-400">
-          {index === peers.length - 1
-            ? ` ${t("collaboration.and")} `
-            : ", "}
+          {index === peers.length - 1 ? ` ${t("collaboration.and")} ` : ", "}
         </span>
       )}
       <PeerBadge user={peer} />
@@ -65,12 +63,12 @@ export function CollabEditingWarning({ elementId }: CollabEditingWarningProps) {
   if (editingPeers.length === 0) return null;
 
   return (
-    <div className="flex items-start gap-2 px-3 py-2 bg-amber-500/10
-                    border-b border-amber-500/20 shrink-0">
+    <div
+      className="flex items-start gap-2 px-3 py-2 bg-amber-500/10
+                    border-b border-amber-500/20 shrink-0"
+    >
       <Users className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
-      <div className="text-[11px] leading-relaxed">
-        {buildWarningMessage(editingPeers, t)}
-      </div>
+      <div className="text-[11px] leading-relaxed">{buildWarningMessage(editingPeers, t)}</div>
     </div>
   );
 }

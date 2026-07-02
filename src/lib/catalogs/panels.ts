@@ -1,4 +1,3 @@
-
 import type { LucideIcon } from "lucide-react";
 import { Square, MapPin, LayoutList } from "lucide-react";
 import { PanelKind } from "@/features/diagram";
@@ -8,9 +7,9 @@ export interface PanelKindDef {
   label: string;
   defaultName: string;
   defaultColor: string;
-  
+
   icon: LucideIcon;
-  
+
   awsIconName?: string;
 }
 
@@ -89,14 +88,13 @@ export const PANEL_KINDS: PanelKindDef[] = [
 
 export const PANEL_KIND_MAP = new Map(PANEL_KINDS.map((p) => [p.id, p]));
 
-
 export const AWS_SERVICE_TO_PANEL_KIND: Record<string, PanelKind> = {
-  "eks": PanelKind.EksCluster,
+  eks: PanelKind.EksCluster,
   "eks-2": PanelKind.EksCluster,
-  "ecs": PanelKind.EcsCluster,
+  ecs: PanelKind.EcsCluster,
   "ecs-2": PanelKind.EcsCluster,
   "auto-scaling": PanelKind.AutoScalingGroup,
-  "vpc": PanelKind.Vpc,
+  vpc: PanelKind.Vpc,
   "aws-vpc-group": PanelKind.Vpc,
   "public-subnet": PanelKind.PublicSubnet,
   "private-subnet": PanelKind.PrivateSubnet,

@@ -29,18 +29,11 @@ export function useGithubImport() {
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [conflicts, setConflicts] = useState<MergeConflict[] | null>(null);
-  const [allConflictsForImport, setAllConflictsForImport] = useState<
-    MergeConflict[]
-  >([]);
-  const [autoResolutions, setAutoResolutions] = useState<
-    MergeResolution[]
-  >([]);
-  
-  const [nameStartsFilter, setNameStartsFilter] = useState<string | undefined>(
-    undefined,
-  );
+  const [allConflictsForImport, setAllConflictsForImport] = useState<MergeConflict[]>([]);
+  const [autoResolutions, setAutoResolutions] = useState<MergeResolution[]>([]);
 
-  
+  const [nameStartsFilter, setNameStartsFilter] = useState<string | undefined>(undefined);
+
   const lastBuiltQuery = useRef("");
   const lastPerPage = useRef(DEFAULT_PER_PAGE);
 
@@ -74,10 +67,7 @@ export function useGithubImport() {
       const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
       lastPerPage.current = perPage;
 
-      
-      setNameStartsFilter(
-        filters.searchField === "name_starts" ? query.trim() : undefined,
-      );
+      setNameStartsFilter(filters.searchField === "name_starts" ? query.trim() : undefined);
 
       setLoading(true);
       setError("");
@@ -109,7 +99,11 @@ export function useGithubImport() {
     setLoading(true);
     setError("");
     try {
-      const res = await client.searchRepositories(lastBuiltQuery.current, nextPage, lastPerPage.current);
+      const res = await client.searchRepositories(
+        lastBuiltQuery.current,
+        nextPage,
+        lastPerPage.current,
+      );
       setResults((prev) => [...prev, ...res.items]);
       setPage(nextPage);
       setTotalCount(res.total_count);

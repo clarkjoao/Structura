@@ -1,2 +1,1 @@
-
 export const FLOW_PARTICLE_DURATION_MS = 1200;

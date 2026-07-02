@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  lazy,
-  Suspense,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, lazy, Suspense, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Plus, Search, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -128,10 +121,7 @@ export default function ServiceRegistryPage() {
   }, [selectedFromQuery, services]);
 
   const usageMap = useMemo(() => {
-    const map: Record<
-      string,
-      { diagramId: string; diagramName: string; nodeCount: number }[]
-    > = {};
+    const map: Record<string, { diagramId: string; diagramName: string; nodeCount: number }[]> = {};
     for (const svc of services) {
       map[svc.id] = getServiceUsage(svc.id, diagrams);
     }
@@ -147,8 +137,7 @@ export default function ServiceRegistryPage() {
   );
 
   const isModifierClick = useCallback(
-    (event: React.MouseEvent<HTMLElement>) =>
-      event.ctrlKey || event.metaKey || isModifierActive,
+    (event: React.MouseEvent<HTMLElement>) => event.ctrlKey || event.metaKey || isModifierActive,
     [isModifierActive],
   );
 
@@ -193,14 +182,10 @@ export default function ServiceRegistryPage() {
           <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <h1 className="text-2xl font-bold">{t("registry.title")}</h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {t("registry.subtitle")}
-              </p>
+              <p className="mt-1 text-sm text-muted-foreground">{t("registry.subtitle")}</p>
             </div>
             <button
-              onClick={() =>
-                setImportPanel((current) => (current ? null : ImportPanel.Manual))
-              }
+              onClick={() => setImportPanel((current) => (current ? null : ImportPanel.Manual))}
               className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
             >
               <Plus className="h-4 w-4" />
@@ -260,16 +245,16 @@ export default function ServiceRegistryPage() {
                     {t("registry.importManual")}
                   </button>
                   {showEnableGithub && (
-                  <button
-                    onClick={() => setImportPanel(ImportPanel.Github)}
-                    className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                      importPanel === ImportPanel.Github
-                        ? "bg-card text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {t("registry.importGithub")}
-                  </button>
+                    <button
+                      onClick={() => setImportPanel(ImportPanel.Github)}
+                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        importPanel === ImportPanel.Github
+                          ? "bg-card text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {t("registry.importGithub")}
+                    </button>
                   )}
                   {showEnableDefectDojo && (
                     <button
@@ -291,16 +276,9 @@ export default function ServiceRegistryPage() {
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <Suspense
-                fallback={
-                  <div className="h-32 animate-pulse rounded-xl bg-secondary" />
-                }
-              >
+              <Suspense fallback={<div className="h-32 animate-pulse rounded-xl bg-secondary" />}>
                 {importPanel === ImportPanel.Manual && (
-                  <ManualCreateForm
-                    onCancel={() => setImportPanel(null)}
-                    onCreate={handleCreate}
-                  />
+                  <ManualCreateForm onCancel={() => setImportPanel(null)} onCreate={handleCreate} />
                 )}
                 {importPanel === ImportPanel.Defectdojo && <DefectDojoPanel />}
                 {importPanel === ImportPanel.Github && <GithubImportPanel />}

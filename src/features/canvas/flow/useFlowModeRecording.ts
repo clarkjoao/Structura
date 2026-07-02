@@ -214,7 +214,12 @@ export function useFlowModeRecording(
     (edgeId: string, handleId?: string) => {
       setMode((prev) => {
         if (prev.kind !== "recording" || prev.context.mode === "branch-select") return prev;
-        const step: FlowStep = { id: generateId("step"), type: "action", connectionId: edgeId, handleId };
+        const step: FlowStep = {
+          id: generateId("step"),
+          type: "action",
+          connectionId: edgeId,
+          handleId,
+        };
         return appendRecordedStep(prev, step, branchOwnershipRef);
       });
     },
@@ -225,7 +230,12 @@ export function useFlowModeRecording(
     (nodeId: string, handleId: string) => {
       setMode((prev) => {
         if (prev.kind !== "recording" || prev.context.mode === "branch-select") return prev;
-        const step: FlowStep = { id: generateId("step"), type: "action", componentId: nodeId, handleId };
+        const step: FlowStep = {
+          id: generateId("step"),
+          type: "action",
+          componentId: nodeId,
+          handleId,
+        };
         return appendRecordedStep(prev, step, branchOwnershipRef);
       });
     },
@@ -503,8 +513,8 @@ export function useFlowModeRecording(
         const condStep = prev.steps.find((flowStep) => flowStep.id === conditionStepId);
         if (!condStep?.branches || condStep.branches.length <= 2) return prev;
         const ownership = prev.branchOwnership;
-        const nextSteps = prev
-          .steps.filter((flowStep) => {
+        const nextSteps = prev.steps
+          .filter((flowStep) => {
             const branchOwner = ownership.get(flowStep.id);
             if (
               branchOwner &&
@@ -608,7 +618,8 @@ export function useFlowModeRecording(
       setMode((prev) => {
         if (prev.kind !== "recording") return prev;
         const condStep = prev.steps.find((flowStep) => flowStep.id === conditionStepId);
-        if (!condStep || condStep.type !== "condition" || !condStep.branches?.[branchIndex]) return prev;
+        if (!condStep || condStep.type !== "condition" || !condStep.branches?.[branchIndex])
+          return prev;
         return {
           ...prev,
           context: {

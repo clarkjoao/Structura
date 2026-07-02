@@ -1,9 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type { Journey, JourneyStep } from "../types";
-import {
-  migrateJourneyStepsDiagramId,
-  useJourneyStore,
-} from "../store/journeys.store";
+import { migrateJourneyStepsDiagramId, useJourneyStore } from "../store/journeys.store";
 
 describe("journeys store", () => {
   afterEach(() => {
@@ -38,10 +35,9 @@ describe("journeys store", () => {
 
   it("addJourneyStep normalizes missing diagramId to empty string", () => {
     const { id: journeyId } = useJourneyStore.getState().addJourney("J");
-    const step = useJourneyStore.getState().addJourneyStep(
-      journeyId,
-      { label: "A" } as unknown as Omit<JourneyStep, "id" | "order">,
-    );
+    const step = useJourneyStore
+      .getState()
+      .addJourneyStep(journeyId, { label: "A" } as unknown as Omit<JourneyStep, "id" | "order">);
     expect(step.diagramId).toBe("");
   });
 

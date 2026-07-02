@@ -1,10 +1,7 @@
-
-
-
 export interface AwsService {
-  id: string; 
-  name: string; 
-  iconName: string; 
+  id: string;
+  name: string;
+  iconName: string;
 }
 
 export interface AwsCategory {
@@ -812,7 +809,6 @@ export const AWS_CATEGORIES: AwsCategory[] = [
   },
 ];
 
-
 export const AWS_CATEGORY_MAP = new Map(AWS_CATEGORIES.map((c) => [c.id, c]));
 
 const _serviceMap = new Map<string, AwsService & { categoryId: string }>();
@@ -822,7 +818,6 @@ AWS_CATEGORIES.forEach((cat) => {
   });
 });
 export const AWS_SERVICE_MAP = _serviceMap;
-
 
 export type AwsCategoryId =
   | "aws-compute"
@@ -841,9 +836,6 @@ export type AwsCategoryId =
   | "aws-iot"
   | "aws-general";
 
-
 export const AWS_CATEGORY_ID_GENERAL = "aws-general" as const satisfies AwsCategoryId;
 
-
-export const isAwsType = (type: string): type is AwsCategoryId =>
-  type.startsWith("aws-");
+export const isAwsType = (type: string): type is AwsCategoryId => type.startsWith("aws-");

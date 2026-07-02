@@ -71,7 +71,10 @@ type AwsSearchRow = {
 };
 
 function splitSearchHelp(raw: string): string[] {
-  return raw.split("|").map((s) => s.trim().toLowerCase()).filter(Boolean);
+  return raw
+    .split("|")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
 }
 
 function canvasOptionMatchesQuery(
@@ -102,7 +105,12 @@ function canvasOptionMatchesQuery(
   return fields.some((f) => f.includes(q));
 }
 
-type CloudSearchRow = { categoryId: string; serviceId: string; serviceName: string; iconName: string };
+type CloudSearchRow = {
+  categoryId: string;
+  serviceId: string;
+  serviceName: string;
+  iconName: string;
+};
 
 function toFlatOptions(
   filteredC4: { type: ComponentType; label: string }[],
@@ -169,19 +177,17 @@ const QuickInsertPopover = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const { addComponent, addConnection, linkComponentToService } =
-    useDiagramActions();
+  const { addComponent, addConnection, linkComponentToService } = useDiagramActions();
   const services = useAllServices();
   const { templates, instantiateTemplate } = useCustomComponentLibrary();
 
   const C4_OPTIONS = useMemo(
-    () =>
-      [
-        { type: "person" as const, label: t("quickInsert.typePerson"), icon: User },
-        { type: "system" as const, label: t("quickInsert.typeSystem"), icon: Network },
-        { type: "container" as const, label: t("quickInsert.typeContainer"), icon: Server },
-        { type: "component" as const, label: t("quickInsert.typeComponent"), icon: Database },
-      ],
+    () => [
+      { type: "person" as const, label: t("quickInsert.typePerson"), icon: User },
+      { type: "system" as const, label: t("quickInsert.typeSystem"), icon: Network },
+      { type: "container" as const, label: t("quickInsert.typeContainer"), icon: Server },
+      { type: "component" as const, label: t("quickInsert.typeComponent"), icon: Database },
+    ],
     [t],
   );
 
@@ -194,7 +200,12 @@ const QuickInsertPopover = ({
 
   const CANVAS_OPTIONS = useMemo(
     (): CanvasInsertOption[] => [
-      { type: COMPONENT_TYPE_PANEL, label: t("canvasToolbar.panel"), icon: Square, panelKind: PanelKind.Default },
+      {
+        type: COMPONENT_TYPE_PANEL,
+        label: t("canvasToolbar.panel"),
+        icon: Square,
+        panelKind: PanelKind.Default,
+      },
       ...PANEL_KINDS.filter((p) => p.id !== PanelKind.Default).map((p) => ({
         type: COMPONENT_TYPE_PANEL as ComponentType,
         label: p.id === PanelKind.Swimlane ? t("swimlane.title") : p.label,
@@ -202,7 +213,11 @@ const QuickInsertPopover = ({
         panelKind: p.id,
         awsIconName: p.awsIconName,
       })),
-      { type: COMPONENT_TYPE_NOTE as ComponentType, label: t("canvasToolbar.note"), icon: StickyNote },
+      {
+        type: COMPONENT_TYPE_NOTE as ComponentType,
+        label: t("canvasToolbar.note"),
+        icon: StickyNote,
+      },
       {
         type: COMPONENT_TYPE_DB_TABLE as ComponentType,
         label: t("nodeTypes.db-table"),
@@ -213,9 +228,21 @@ const QuickInsertPopover = ({
         label: t("nodeTypes.json-viewer"),
         icon: Braces,
       },
-      { type: COMPONENT_TYPE_API_GROUP as ComponentType, label: t("quickInsert.typeApiGroup"), icon: Globe },
-      { type: COMPONENT_TYPE_ENDPOINT as ComponentType, label: t("quickInsert.typeEndpoint"), icon: Globe },
-      { type: COMPONENT_TYPE_EXTERNAL_ELEMENT as ComponentType, label: t("quickInsert.typeExternalElement"), icon: ExternalLink },
+      {
+        type: COMPONENT_TYPE_API_GROUP as ComponentType,
+        label: t("quickInsert.typeApiGroup"),
+        icon: Globe,
+      },
+      {
+        type: COMPONENT_TYPE_ENDPOINT as ComponentType,
+        label: t("quickInsert.typeEndpoint"),
+        icon: Globe,
+      },
+      {
+        type: COMPONENT_TYPE_EXTERNAL_ELEMENT as ComponentType,
+        label: t("quickInsert.typeExternalElement"),
+        icon: ExternalLink,
+      },
     ],
     [t],
   );
@@ -277,11 +304,7 @@ const QuickInsertPopover = ({
     for (const cat of AWS_CATEGORIES) {
       const catMatch = cat.name.toLowerCase().includes(q);
       for (const s of cat.services) {
-        if (
-          s.name.toLowerCase().includes(q) ||
-          s.id.includes(q) ||
-          catMatch
-        ) {
+        if (s.name.toLowerCase().includes(q) || s.id.includes(q) || catMatch) {
           rows.push({
             categoryId: cat.id as AwsCategoryId,
             serviceId: s.id,
@@ -328,7 +351,7 @@ const QuickInsertPopover = ({
         (s.tags ?? []).some((t) => t.toLowerCase().includes(q)),
     );
   }, [q, services]);
-  
+
   const filteredTemplates = useMemo(() => {
     if (!q) return [];
     return templates.filter((template) => {
@@ -391,10 +414,13 @@ const QuickInsertPopover = ({
     [connectFromSource, onInsert],
   );
 
-  const handleSelectC4 = useCallback((type: ComponentType, label: string) => {
-    const comp = addComponent(type, t("quickInsert.newNamed", { name: label }), null, insertPos);
-    finalizeInsertion(comp.id);
-  }, [addComponent, t, insertPos, finalizeInsertion]);
+  const handleSelectC4 = useCallback(
+    (type: ComponentType, label: string) => {
+      const comp = addComponent(type, t("quickInsert.newNamed", { name: label }), null, insertPos);
+      finalizeInsertion(comp.id);
+    },
+    [addComponent, t, insertPos, finalizeInsertion],
+  );
 
   const handleSelectCanvas = useCallback(
     (type: ComponentType, label: string, panelKind?: PanelKind, flowShape?: FlowNodeShape) => {
@@ -406,33 +432,58 @@ const QuickInsertPopover = ({
     [addComponent, insertPos, finalizeInsertion],
   );
 
-  const handleSelectAws = useCallback((categoryId: AwsCategoryId, serviceId: string, serviceName: string) => {
-    const panelKind = getPanelKindForAwsService(serviceId);
-    const comp = panelKind
-      ? addComponent(COMPONENT_TYPE_PANEL, getPanelKindDef(panelKind).defaultName, null, insertPos, undefined, panelKind)
-      : addComponent(categoryId, serviceName, null, insertPos, serviceId);
-    finalizeInsertion(comp.id);
-  }, [addComponent, insertPos, finalizeInsertion]);
+  const handleSelectAws = useCallback(
+    (categoryId: AwsCategoryId, serviceId: string, serviceName: string) => {
+      const panelKind = getPanelKindForAwsService(serviceId);
+      const comp = panelKind
+        ? addComponent(
+            COMPONENT_TYPE_PANEL,
+            getPanelKindDef(panelKind).defaultName,
+            null,
+            insertPos,
+            undefined,
+            panelKind,
+          )
+        : addComponent(categoryId, serviceName, null, insertPos, serviceId);
+      finalizeInsertion(comp.id);
+    },
+    [addComponent, insertPos, finalizeInsertion],
+  );
 
-  const handleSelectCloud = useCallback((categoryId: string, serviceId: string, serviceName: string) => {
-    const comp = addComponent(categoryId as ComponentType, serviceName, null, insertPos, serviceId);
-    finalizeInsertion(comp.id);
-  }, [addComponent, insertPos, finalizeInsertion]);
+  const handleSelectCloud = useCallback(
+    (categoryId: string, serviceId: string, serviceName: string) => {
+      const comp = addComponent(
+        categoryId as ComponentType,
+        serviceName,
+        null,
+        insertPos,
+        serviceId,
+      );
+      finalizeInsertion(comp.id);
+    },
+    [addComponent, insertPos, finalizeInsertion],
+  );
 
-  const handleSelectService = useCallback((serviceId: string, name: string) => {
-    const comp = addComponent("system", name, null, insertPos);
-    linkComponentToService(comp.id, serviceId);
-    finalizeInsertion(comp.id);
-  }, [addComponent, insertPos, linkComponentToService, finalizeInsertion]);
+  const handleSelectService = useCallback(
+    (serviceId: string, name: string) => {
+      const comp = addComponent("system", name, null, insertPos);
+      linkComponentToService(comp.id, serviceId);
+      finalizeInsertion(comp.id);
+    },
+    [addComponent, insertPos, linkComponentToService, finalizeInsertion],
+  );
 
-  const handleSelectTemplate = useCallback((templateId: string) => {
-    const insertedNodeId = instantiateTemplate({
-      templateId,
-      position: insertPos,
-    });
-    if (!insertedNodeId) return;
-    finalizeInsertion(insertedNodeId);
-  }, [instantiateTemplate, insertPos, finalizeInsertion]);
+  const handleSelectTemplate = useCallback(
+    (templateId: string) => {
+      const insertedNodeId = instantiateTemplate({
+        templateId,
+        position: insertPos,
+      });
+      if (!insertedNodeId) return;
+      finalizeInsertion(insertedNodeId);
+    },
+    [instantiateTemplate, insertPos, finalizeInsertion],
+  );
 
   const selectOption = useCallback(
     (option: FlatOption) => {
@@ -462,7 +513,14 @@ const QuickInsertPopover = ({
           break;
       }
     },
-    [handleSelectC4, handleSelectCanvas, handleSelectAws, handleSelectCloud, handleSelectService, handleSelectTemplate],
+    [
+      handleSelectC4,
+      handleSelectCanvas,
+      handleSelectAws,
+      handleSelectCloud,
+      handleSelectService,
+      handleSelectTemplate,
+    ],
   );
 
   useEffect(() => {
@@ -577,7 +635,11 @@ const QuickInsertPopover = ({
                 }`}
               >
                 {opt.awsIconName ? (
-                  <AwsIcon iconName={opt.awsIconName} size={14} className="shrink-0 text-muted-foreground" />
+                  <AwsIcon
+                    iconName={opt.awsIconName}
+                    size={14}
+                    className="shrink-0 text-muted-foreground"
+                  />
                 ) : (
                   <opt.icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 )}
@@ -634,7 +696,11 @@ const QuickInsertPopover = ({
                     : "hover:bg-surface-hover"
                 }`}
               >
-                <CloudIcon componentType={row.categoryId} serviceIconName={row.iconName} size={14} />
+                <CloudIcon
+                  componentType={row.categoryId}
+                  serviceIconName={row.iconName}
+                  size={14}
+                />
                 <span className="truncate text-foreground">{row.serviceName}</span>
               </button>
             ))}
@@ -642,9 +708,10 @@ const QuickInsertPopover = ({
         )}
         {filteredServices.length > 0 && (
           <>
-            {(filteredC4.length > 0 || filteredCanvas.length > 0 || filteredAws.length > 0 || filteredCloud.length > 0) && (
-              <div className="border-t border-border my-1" />
-            )}
+            {(filteredC4.length > 0 ||
+              filteredCanvas.length > 0 ||
+              filteredAws.length > 0 ||
+              filteredCloud.length > 0) && <div className="border-t border-border my-1" />}
             <div className="px-3 py-1">
               <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
                 {t("elementPicker.registry")}
@@ -676,9 +743,7 @@ const QuickInsertPopover = ({
             {(filteredC4.length > 0 ||
               filteredCanvas.length > 0 ||
               filteredAws.length > 0 ||
-              filteredServices.length > 0) && (
-              <div className="border-t border-border my-1" />
-            )}
+              filteredServices.length > 0) && <div className="border-t border-border my-1" />}
             <div className="px-3 py-1">
               <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
                 {t("customComponents.customComponents")}
@@ -697,9 +762,7 @@ const QuickInsertPopover = ({
               >
                 <span className="font-medium text-foreground">{template.name}</span>
                 {template.description ? (
-                  <span className="text-muted-foreground line-clamp-1">
-                    {template.description}
-                  </span>
+                  <span className="text-muted-foreground line-clamp-1">{template.description}</span>
                 ) : (
                   <span className="text-muted-foreground">{template.baseType}</span>
                 )}

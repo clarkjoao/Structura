@@ -77,8 +77,7 @@ function findConnectionByEndpoints(
   targetId: string,
 ): Connection | undefined {
   return Object.values(connections).find(
-    (connection) =>
-      connection.sourceId === sourceId && connection.targetId === targetId,
+    (connection) => connection.sourceId === sourceId && connection.targetId === targetId,
   );
 }
 
@@ -119,9 +118,7 @@ function finalizeEdgeWithOptionalTargetShape(
 
   const nodeDef = parseNodePrefix(trimmed.slice(targetIndex));
   const hasShapeSuffix =
-    nodeDef !== null &&
-    nodeDef.alias === targetAlias &&
-    nodeDef.consumed > targetAlias.length;
+    nodeDef !== null && nodeDef.alias === targetAlias && nodeDef.consumed > targetAlias.length;
 
   const consumed = hasShapeSuffix
     ? targetIndex + nodeDef.consumed
@@ -138,16 +135,11 @@ function finalizeEdgeWithOptionalTargetShape(
   };
 }
 
-function parseEdgeSegment(
-  line: string,
-  implicitSource?: string,
-): ParsedEdge | null {
+function parseEdgeSegment(line: string, implicitSource?: string): ParsedEdge | null {
   const trimmed = line.trim();
 
   if (implicitSource) {
-    const chainPipeLabeled = trimmed.match(
-      /^(-->|==>|-\.->)\s*\|([^|]+)\|\s*([A-Za-z0-9_]+)/,
-    );
+    const chainPipeLabeled = trimmed.match(/^(-->|==>|-\.->)\s*\|([^|]+)\|\s*([A-Za-z0-9_]+)/);
     if (chainPipeLabeled) {
       return finalizeEdgeWithOptionalTargetShape(
         trimmed,
@@ -169,20 +161,13 @@ function parseEdgeSegment(
 
     const chain = trimmed.match(/^(-->|==>|-\.->)\s*([A-Za-z0-9_]+)/);
     if (chain) {
-      return finalizeEdgeWithOptionalTargetShape(
-        trimmed,
-        implicitSource,
-        chain[2],
-        "",
-      );
+      return finalizeEdgeWithOptionalTargetShape(trimmed, implicitSource, chain[2], "");
     }
 
     return null;
   }
 
-  const labeledArrow = trimmed.match(
-    /^([A-Za-z0-9_]+)\s*-->\s*([A-Za-z0-9_]+)\s*:\s*(.+)$/,
-  );
+  const labeledArrow = trimmed.match(/^([A-Za-z0-9_]+)\s*-->\s*([A-Za-z0-9_]+)\s*:\s*(.+)$/);
   if (labeledArrow) {
     return {
       sourceAlias: labeledArrow[1],
@@ -206,17 +191,10 @@ function parseEdgeSegment(
 
   const plainArrow = trimmed.match(/^([A-Za-z0-9_]+)\s*(-->|==>|-\.->)\s*([A-Za-z0-9_]+)/);
   if (plainArrow) {
-    return finalizeEdgeWithOptionalTargetShape(
-      trimmed,
-      plainArrow[1],
-      plainArrow[3],
-      "",
-    );
+    return finalizeEdgeWithOptionalTargetShape(trimmed, plainArrow[1], plainArrow[3], "");
   }
 
-  const textArrow = trimmed.match(
-    /^([A-Za-z0-9_]+)\s*--\s*(.+?)\s*-->\s*([A-Za-z0-9_]+)/,
-  );
+  const textArrow = trimmed.match(/^([A-Za-z0-9_]+)\s*--\s*(.+?)\s*-->\s*([A-Za-z0-9_]+)/);
   if (textArrow) {
     return finalizeEdgeWithOptionalTargetShape(
       trimmed,
@@ -228,22 +206,12 @@ function parseEdgeSegment(
 
   const thickArrow = trimmed.match(/^([A-Za-z0-9_]+)\s*==>\s*([A-Za-z0-9_]+)/);
   if (thickArrow) {
-    return finalizeEdgeWithOptionalTargetShape(
-      trimmed,
-      thickArrow[1],
-      thickArrow[2],
-      "",
-    );
+    return finalizeEdgeWithOptionalTargetShape(trimmed, thickArrow[1], thickArrow[2], "");
   }
 
   const dottedArrow = trimmed.match(/^([A-Za-z0-9_]+)\s*-\.->\s*([A-Za-z0-9_]+)/);
   if (dottedArrow) {
-    return finalizeEdgeWithOptionalTargetShape(
-      trimmed,
-      dottedArrow[1],
-      dottedArrow[2],
-      "",
-    );
+    return finalizeEdgeWithOptionalTargetShape(trimmed, dottedArrow[1], dottedArrow[2], "");
   }
 
   return null;
@@ -429,18 +397,10 @@ export function parseMermaidFlowchart(
     const sourceId = aliasToComponentId.get(edge.sourceAlias);
     const targetId = aliasToComponentId.get(edge.targetAlias);
     if (!sourceId || !targetId) {
-      errors.push(
-        `Unresolved nodes in edge ${edge.sourceAlias} -> ${edge.targetAlias}`,
-      );
+      errors.push(`Unresolved nodes in edge ${edge.sourceAlias} -> ${edge.targetAlias}`);
       continue;
     }
-    resolveConnection(
-      sourceId,
-      targetId,
-      edge.label,
-      existingConnections,
-      newConnections,
-    );
+    resolveConnection(sourceId, targetId, edge.label, existingConnections, newConnections);
   }
 
   return {

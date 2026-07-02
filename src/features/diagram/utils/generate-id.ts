@@ -1,4 +1,3 @@
-
 export function generateId(prefix: string = "el"): string {
   const randomPart =
     typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"

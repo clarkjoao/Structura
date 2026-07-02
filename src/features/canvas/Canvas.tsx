@@ -55,9 +55,7 @@ const Canvas = (props: CanvasProps = {}) => {
   const [hasUnread, setHasUnread] = useState(false);
   const previousAssistantMessageCountRef = useRef(0);
   const messages = useLLMStore((state) => state.messages);
-  const assistantMessageCount = messages.filter(
-    (message) => message.role === "assistant",
-  ).length;
+  const assistantMessageCount = messages.filter((message) => message.role === "assistant").length;
   const inputProfile = useCanvasInputProfile();
   const reactFlowInstance = useReactFlow();
   const addTemplate = useCustomComponentStore((state) => state.addTemplate);
@@ -93,11 +91,14 @@ const Canvas = (props: CanvasProps = {}) => {
     handleAutoLayout,
     isAutoLayoutRunning,
   } = useCanvasController(props);
-  const { pendingPreviews, accept: acceptSuggestion, reject: rejectSuggestion } =
-    useLLMChat({
-      selectedNodeIds: visualState.selectedNodeIds,
-      selectedNodeId: visualState.selectedNodeId,
-    });
+  const {
+    pendingPreviews,
+    accept: acceptSuggestion,
+    reject: rejectSuggestion,
+  } = useLLMChat({
+    selectedNodeIds: visualState.selectedNodeIds,
+    selectedNodeId: visualState.selectedNodeId,
+  });
   const pendingNodeIds = useMemo(
     () => Array.from(getPendingNodeIds(pendingPreviews)),
     [pendingPreviews],
@@ -117,12 +118,11 @@ const Canvas = (props: CanvasProps = {}) => {
   const journeysInThisDiagram = useJourneysByDiagramId(diagram?.id ?? "");
 
   const templateSourceNode = templateNodeId
-    ? nodes.find((node) => node.id === templateNodeId) ?? null
+    ? (nodes.find((node) => node.id === templateNodeId) ?? null)
     : null;
 
   useEffect(() => {
-    const hasNewAssistantMessage =
-      assistantMessageCount > previousAssistantMessageCountRef.current;
+    const hasNewAssistantMessage = assistantMessageCount > previousAssistantMessageCountRef.current;
     if (hasNewAssistantMessage && !isChatOpen) {
       setHasUnread(true);
     }
@@ -162,9 +162,7 @@ const Canvas = (props: CanvasProps = {}) => {
     (suggestionId: string) => {
       acceptSuggestion(suggestionId);
       setTimeout(() => {
-        reactFlowInstance.setNodes((previousNodes) =>
-          previousNodes.map((node) => ({ ...node })),
-        );
+        reactFlowInstance.setNodes((previousNodes) => previousNodes.map((node) => ({ ...node })));
       }, 50);
     },
     [acceptSuggestion, reactFlowInstance],
@@ -238,27 +236,27 @@ const Canvas = (props: CanvasProps = {}) => {
             />
           </div>
           <div
-              onContextMenu={(e) => e.preventDefault()}
-              onDragOver={(event) => {
-                if (!interactionMode.canEditCanvas) return;
-                if (event.dataTransfer.types.includes(CUSTOM_COMPONENT_DRAG_MIME)) {
-                  event.preventDefault();
-                  event.dataTransfer.dropEffect = "copy";
-                }
-              }}
-              onDrop={(event) => {
-                if (!interactionMode.canEditCanvas) return;
-                const templateId = event.dataTransfer.getData(CUSTOM_COMPONENT_DRAG_MIME);
-                if (!templateId) return;
+            onContextMenu={(e) => e.preventDefault()}
+            onDragOver={(event) => {
+              if (!interactionMode.canEditCanvas) return;
+              if (event.dataTransfer.types.includes(CUSTOM_COMPONENT_DRAG_MIME)) {
                 event.preventDefault();
-                const position = reactFlowInstance.screenToFlowPosition({
-                  x: event.clientX,
-                  y: event.clientY,
-                });
-                instantiateTemplate({ templateId, position });
-              }}
-              className="w-full h-full"
-            >
+                event.dataTransfer.dropEffect = "copy";
+              }
+            }}
+            onDrop={(event) => {
+              if (!interactionMode.canEditCanvas) return;
+              const templateId = event.dataTransfer.getData(CUSTOM_COMPONENT_DRAG_MIME);
+              if (!templateId) return;
+              event.preventDefault();
+              const position = reactFlowInstance.screenToFlowPosition({
+                x: event.clientX,
+                y: event.clientY,
+              });
+              instantiateTemplate({ templateId, position });
+            }}
+            className="w-full h-full"
+          >
             {isCompareMode && (
               <div className="absolute top-12 left-1/2 z-20 flex max-w-[min(100vw-2rem,42rem)] -translate-x-1/2 flex-col items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-xs text-muted-foreground shadow-sm sm:flex-row sm:flex-wrap sm:justify-center">
                 <div className="flex items-center gap-2">

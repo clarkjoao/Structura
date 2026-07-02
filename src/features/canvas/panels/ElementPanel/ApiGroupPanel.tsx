@@ -1,6 +1,17 @@
 import { X } from "lucide-react";
-import { useAllComponents, useActiveDiagram, useFlows, useDiagramActions, generateId } from "@/features/diagram";
-import type { ApiGroupComponent, ApiProtocol, ComponentPatch, EndpointComponent } from "@/features/diagram";
+import {
+  useAllComponents,
+  useActiveDiagram,
+  useFlows,
+  useDiagramActions,
+  generateId,
+} from "@/features/diagram";
+import type {
+  ApiGroupComponent,
+  ApiProtocol,
+  ComponentPatch,
+  EndpointComponent,
+} from "@/features/diagram";
 import { isEndpointComponent } from "@/features/diagram";
 import { PROTOCOL_COLORS, METHOD_COLORS } from "../../nodes/ApiGroupNode/constants";
 import { useTranslation } from "react-i18next";
@@ -103,9 +114,7 @@ export default function ApiGroupPanel({
             placeholder={t("apiGroup.slaPlaceholder")}
             className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
           />
-          <p className="text-[10px] text-muted-foreground mt-0.5">
-            {t("apiGroup.slaHint")}
-          </p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">{t("apiGroup.slaHint")}</p>
         </div>
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
@@ -120,7 +129,9 @@ export default function ApiGroupPanel({
                 <select
                   value={ep.method}
                   onChange={(e) =>
-                    updateComponent(ep.id, { method: e.target.value as EndpointComponent["method"] })
+                    updateComponent(ep.id, {
+                      method: e.target.value as EndpointComponent["method"],
+                    })
                   }
                   className="text-[10px] font-bold rounded px-1 py-0.5 text-white border-0 cursor-pointer shrink-0"
                   style={{ backgroundColor: METHOD_COLORS[ep.method] ?? "#888" }}

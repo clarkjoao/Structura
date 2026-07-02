@@ -13,11 +13,7 @@ export interface ComponentIconTabProps {
   updateComponent: (id: string, patch: ComponentPatch) => void;
 }
 
-export function ComponentIconTab({
-  component,
-  diagramId,
-  updateComponent,
-}: ComponentIconTabProps) {
+export function ComponentIconTab({ component, diagramId, updateComponent }: ComponentIconTabProps) {
   const { t } = useTranslation();
   const { incrementIconUsage, decrementIconUsage } = useIconActions();
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -54,13 +50,7 @@ export function ComponentIconTab({
     if (!diagramId || !component.customIconId) return;
     decrementIconUsage(diagramId, component.customIconId);
     updateComponent(component.id, { customIconId: undefined });
-  }, [
-    component.customIconId,
-    component.id,
-    decrementIconUsage,
-    diagramId,
-    updateComponent,
-  ]);
+  }, [component.customIconId, component.id, decrementIconUsage, diagramId, updateComponent]);
 
   const canMutate = diagramId.length > 0;
 

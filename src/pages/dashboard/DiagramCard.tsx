@@ -13,11 +13,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { Diagram } from "@/features/diagram";
-import {
-  removeRecentRef,
-  useDiagramActions,
-  useFolders,
-} from "@/features/diagram";
+import { removeRecentRef, useDiagramActions, useFolders } from "@/features/diagram";
 import { deletePreview } from "@/lib/diagram-preview/previewCache";
 import { getPreview } from "@/lib/diagram-preview";
 import { cn } from "@/lib/utils";
@@ -45,13 +41,8 @@ export function DiagramCard({
 }: DiagramCardProps) {
   const { t } = useTranslation();
   const folders = useFolders();
-  const {
-    updateDiagram,
-    updateDiagramDescription,
-    duplicateDiagram,
-    moveDiagram,
-    deleteDiagram,
-  } = useDiagramActions();
+  const { updateDiagram, updateDiagramDescription, duplicateDiagram, moveDiagram, deleteDiagram } =
+    useDiagramActions();
   const [preview, setPreview] = useState<string | null>(() => getPreview(diagram.id));
   const [isPreviewHovered, setIsPreviewHovered] = useState(false);
   const [moveFolderOpen, setMoveFolderOpen] = useState(false);
@@ -59,7 +50,8 @@ export function DiagramCard({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const sortedFolders = useMemo(
-    () => Object.values(folders).sort((folderA, folderB) => folderA.name.localeCompare(folderB.name)),
+    () =>
+      Object.values(folders).sort((folderA, folderB) => folderA.name.localeCompare(folderB.name)),
     [folders],
   );
 
@@ -78,10 +70,7 @@ export function DiagramCard({
 
   const handleDuplicate = (event: ReactMouseEvent) => {
     event.stopPropagation();
-    duplicateDiagram(
-      diagram.id,
-      t("dashboard.card.duplicatedDiagramName", { name: diagram.name }),
-    );
+    duplicateDiagram(diagram.id, t("dashboard.card.duplicatedDiagramName", { name: diagram.name }));
   };
 
   const handleMove = (event: ReactMouseEvent) => {

@@ -15,23 +15,16 @@ import {
 import { KEY, keyIs } from "@/lib/keyboard-utils";
 
 export type ColorPresetGroup =
-  | "vibrant"
-  | "paper"
-  | "c4"
-  | "neutral"
-  | "panel"
-  | "note"
-  | "note-dark"
-  | "all";
+  "vibrant" | "paper" | "c4" | "neutral" | "panel" | "note" | "note-dark" | "all";
 
 interface ColorSwatchesProps {
   componentId: string;
   currentColor: string;
   label: string;
   updateComponent: (id: string, patch: ComponentPatch) => void;
-  
+
   presetGroup?: ColorPresetGroup;
-  
+
   allowClear?: boolean;
 }
 
@@ -104,12 +97,7 @@ function presetsForGroup(group: ColorPresetGroup): ColorPreset[] {
     case "note-dark":
       return NOTE_PRESETS_DARK;
     case "all":
-      return [
-        ...VIBRANT_PRESETS,
-        ...PAPER_PRESETS,
-        ...C4_PRESETS,
-        ...NEUTRAL_PRESETS,
-      ];
+      return [...VIBRANT_PRESETS, ...PAPER_PRESETS, ...C4_PRESETS, ...NEUTRAL_PRESETS];
     default:
       return VIBRANT_PRESETS;
   }
@@ -117,7 +105,7 @@ function presetsForGroup(group: ColorPresetGroup): ColorPreset[] {
 
 const COLS = 5;
 const ROWS_COLLAPSED = 2;
-const VISIBLE_COUNT = COLS * ROWS_COLLAPSED; 
+const VISIBLE_COUNT = COLS * ROWS_COLLAPSED;
 
 const ColorSwatches = ({
   componentId,
@@ -128,9 +116,7 @@ const ColorSwatches = ({
   allowClear = false,
 }: ColorSwatchesProps) => {
   const { t } = useTranslation();
-  const [customHex, setCustomHex] = useState(() =>
-    normalizeColor(currentColor).replace("#", ""),
-  );
+  const [customHex, setCustomHex] = useState(() => normalizeColor(currentColor).replace("#", ""));
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
@@ -186,8 +172,7 @@ const ColorSwatches = ({
 
       <div className="grid grid-cols-5 gap-1.5">
         {visiblePresets.map((preset) => {
-          const isSelected =
-            currentHex === normalizeColor(preset.color).toLowerCase();
+          const isSelected = currentHex === normalizeColor(preset.color).toLowerCase();
           return (
             <button
               key={`${preset.nameKey}-${preset.color}`}
@@ -239,11 +224,7 @@ const ColorSwatches = ({
           <div className="flex gap-2 items-center">
             <input
               type="color"
-              value={
-                /^[0-9a-fA-F]{6}$/.test(customHex)
-                  ? `#${customHex}`
-                  : "#808080"
-              }
+              value={/^[0-9a-fA-F]{6}$/.test(customHex) ? `#${customHex}` : "#808080"}
               onChange={(e) => handleCustomChange(e.target.value)}
               className="h-8 w-10 rounded-md border border-border cursor-pointer bg-transparent p-0"
             />

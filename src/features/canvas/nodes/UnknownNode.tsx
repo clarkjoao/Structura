@@ -39,9 +39,7 @@ const UnknownNode = memo(({ data: d, selected }: NodeProps<Node<UnknownNodeData>
       <div
         aria-label={t("unknownNode.aria", { name: d.name })}
         className={`relative flex flex-col w-full h-full overflow-hidden rounded-lg border-2 border-dashed transition-shadow duration-200 ${
-          isActive
-            ? "ring-2 ring-primary shadow-[0_0_0_2px_hsl(var(--primary)/0.3)]"
-            : "opacity-90"
+          isActive ? "ring-2 ring-primary shadow-[0_0_0_2px_hsl(var(--primary)/0.3)]" : "opacity-90"
         }`}
         style={{
           borderColor: "#f97316",
@@ -54,9 +52,7 @@ const UnknownNode = memo(({ data: d, selected }: NodeProps<Node<UnknownNodeData>
             style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
           />
         )}
-        {d.compareBadges && (
-          <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
-        )}
+        {d.compareBadges && <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
         {!d.compareBadges && d.sceneBadge && (
           <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
         )}

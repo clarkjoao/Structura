@@ -147,9 +147,7 @@ const PatternPicker = ({
     importInputRef.current?.click();
   };
 
-  const handleImportChange = async (
-    event: ChangeEvent<HTMLInputElement>,
-  ): Promise<void> => {
+  const handleImportChange = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
@@ -161,9 +159,7 @@ const PatternPicker = ({
     }
 
     saveUserTemplate(result.template);
-    toast.success(
-      t("patterns.userTemplates.importSuccess", { name: result.template.name }),
-    );
+    toast.success(t("patterns.userTemplates.importSuccess", { name: result.template.name }));
   };
 
   const renderBuiltinCards = (patterns: PatternTemplate[]) => (
@@ -205,7 +201,9 @@ const PatternPicker = ({
   const renderMainEmpty = (forQuery: boolean) => (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <p className="text-xs text-muted-foreground">
-        {forQuery ? t("patterns.noneFoundForQuery", { query: search.trim() }) : t("patterns.noneFound")}
+        {forQuery
+          ? t("patterns.noneFoundForQuery", { query: search.trim() })
+          : t("patterns.noneFound")}
       </p>
     </div>
   );
@@ -226,9 +224,7 @@ const PatternPicker = ({
             <Layers className="h-4 w-4 text-primary" />
             <div>
               <h3 className="text-sm font-bold">{t("patterns.modalTitle")}</h3>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                {t("patterns.subtitle")}
-              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{t("patterns.subtitle")}</p>
             </div>
           </div>
           <button
@@ -315,7 +311,9 @@ const PatternPicker = ({
                   renderMainEmpty(q.length > 0)
                 ) : (
                   <>
-                    {filteredBuiltinsAll.length > 0 ? renderBuiltinCards(filteredBuiltinsAll) : null}
+                    {filteredBuiltinsAll.length > 0
+                      ? renderBuiltinCards(filteredBuiltinsAll)
+                      : null}
                     {filteredUserTemplates.length > 0 ? (
                       <>
                         {filteredBuiltinsAll.length > 0 ? (
@@ -389,13 +387,11 @@ const PatternPicker = ({
               </>
             ) : null}
 
-            {activeCategory !== "all" && activeCategory !== "user-templates" ? (
-              filteredPatternsForCategory.length === 0 ? (
-                renderMainEmpty(q.length > 0)
-              ) : (
-                renderBuiltinCards(filteredPatternsForCategory)
-              )
-            ) : null}
+            {activeCategory !== "all" && activeCategory !== "user-templates"
+              ? filteredPatternsForCategory.length === 0
+                ? renderMainEmpty(q.length > 0)
+                : renderBuiltinCards(filteredPatternsForCategory)
+              : null}
           </div>
         </div>
       </div>

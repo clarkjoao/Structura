@@ -25,7 +25,6 @@ import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowSta
 import { OPACITY_FLOW_PLAYBACK_NODE_DIM, OPACITY_TAG_FILTER_DIM } from "../canvas.constants";
 import { getPendingNodeIds, useLLMStore } from "@/features/llm";
 
-
 export type DiagramSceneState = {
   id: string;
   activeSceneId: string | null;
@@ -54,7 +53,12 @@ interface UseCanvasNodesParams {
   unparentCandidatePanelId: string | null;
   connectionCountPerNode: Record<string, { incoming: number; outgoing: number }>;
   effectiveHandleOrder: Record<string, { incoming: string[]; outgoing: string[] }>;
-  onReorderHandle?: (nodeId: string, side: "incoming" | "outgoing", connId: string, direction: "up" | "down") => void;
+  onReorderHandle?: (
+    nodeId: string,
+    side: "incoming" | "outgoing",
+    connId: string,
+    direction: "up" | "down",
+  ) => void;
   flowHighlight: FlowHighlight;
   activeStep: import("@/features/diagram").FlowStep | null;
   recordingInfo: RecordingInfo | null;
@@ -70,7 +74,6 @@ interface UseCanvasNodesParams {
   setJsonViewerInlineEditingId?: (id: string | null) => void;
   updateComponent: (id: string, patch: ComponentPatch) => void;
 }
-
 
 type DataCtx = Omit<
   NodeBuildContext,
@@ -96,12 +99,9 @@ type DataCtx = Omit<
   isViewingCoverage: boolean;
 };
 
-const EMPTY_JOURNEYS_BY_COMPONENT_ID: Record<string, { name: string }[]> =
-  Object.freeze({});
-
+const EMPTY_JOURNEYS_BY_COMPONENT_ID: Record<string, { name: string }[]> = Object.freeze({});
 
 const EMPTY_CANVAS_NODE_LIST: Node[] = [];
-
 
 function isSameBuiltFlowNode(a: Node, b: Node): boolean {
   return (
@@ -124,9 +124,7 @@ function isSameBuiltFlowNode(a: Node, b: Node): boolean {
   );
 }
 
-function compareDiffOutlineClass(
-  visual: CompareElementVisual | undefined,
-): string {
+function compareDiffOutlineClass(visual: CompareElementVisual | undefined): string {
   if (!visual) return "";
   const hasA = visual.badgeA !== undefined;
   const hasB = visual.badgeB !== undefined;
@@ -135,7 +133,6 @@ function compareDiffOutlineClass(
   if (!hasA && hasB) return "node-diff-added";
   return "";
 }
-
 
 function shallowEqualIgnoringFunctions(
   a: Record<string, unknown> | undefined,
@@ -152,10 +149,7 @@ function shallowEqualIgnoringFunctions(
   return true;
 }
 
-function shallowEqualStyle(
-  a: CSSProperties | undefined,
-  b: CSSProperties | undefined,
-): boolean {
+function shallowEqualStyle(a: CSSProperties | undefined, b: CSSProperties | undefined): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
   const keysA = Object.keys(a) as (keyof CSSProperties)[];
@@ -210,10 +204,7 @@ export function useCanvasNodes({
 
   const { isRecording, onRecordHandleClick } = useFlowMode();
   const pendingPreviews = useLLMStore((state) => state.pendingPreviews);
-  const pendingNodeIds = useMemo(
-    () => getPendingNodeIds(pendingPreviews),
-    [pendingPreviews],
-  );
+  const pendingNodeIds = useMemo(() => getPendingNodeIds(pendingPreviews), [pendingPreviews]);
 
   const callbacksRef = useRef({
     handleDrillDown,
@@ -240,16 +231,17 @@ export function useCanvasNodes({
     updateComponent,
   };
 
-  
   const prevNodeDataRef = useRef<
-    Map<string, {
-      data: Record<string, unknown>;
-      style: CSSProperties | undefined;
-      position: { x: number; y: number };
-    }>
+    Map<
+      string,
+      {
+        data: Record<string, unknown>;
+        style: CSSProperties | undefined;
+        position: { x: number; y: number };
+      }
+    >
   >(new Map());
 
-  
   const prevRfNodesByIdRef = useRef<Map<string, Node>>(new Map());
   const prevNodesArrayRef = useRef<Node[]>(EMPTY_CANVAS_NODE_LIST);
 
@@ -321,11 +313,7 @@ export function useCanvasNodes({
 
     const sceneActive = diagramSceneState?.hasActiveScene ?? false;
 
-    const {
-      highlightedNodeIds: hIds,
-      isViewingCoverage: viewingCov,
-      ...restForCtx
-    } = dataCtx;
+    const { highlightedNodeIds: hIds, isViewingCoverage: viewingCov, ...restForCtx } = dataCtx;
 
     const ctx: NodeBuildContext = {
       diagram,
@@ -346,7 +334,6 @@ export function useCanvasNodes({
     const compareVisual = dataCtx.compareVisualByComponentId;
     const isCmp = dataCtx.isCompareMode ?? false;
 
-    
     const visibleIds = new Set(visibleComponents.map((c) => c.id));
     for (const cachedId of prevNodeDataRef.current.keys()) {
       if (!visibleIds.has(cachedId)) prevNodeDataRef.current.delete(cachedId);
@@ -355,10 +342,7 @@ export function useCanvasNodes({
       if (!visibleIds.has(cachedId)) prevRfNodesByIdRef.current.delete(cachedId);
     }
 
-    function getParentDepth(
-      comp: Component,
-      comps: Record<string, Component>,
-    ): number {
+    function getParentDepth(comp: Component, comps: Record<string, Component>): number {
       let depth = 0;
       let currentId = comp.parentId;
       const visited = new Set<string>();
@@ -424,11 +408,9 @@ export function useCanvasNodes({
           isEndpointType(comp.type) &&
           comp.parentId != null &&
           isApiGroupComponent(dataCtx.resolvedComponents[comp.parentId]);
-        const sceneLocksBase =
-          sceneActive && !isComponentAddedInActiveScene(diagram, comp.id);
+        const sceneLocksBase = sceneActive && !isComponentAddedInActiveScene(diagram, comp.id);
         const isLockedBySelfOrAncestor = lockedNodeIds.has(comp.id);
-        const diffOutline =
-          isCmp && cmpVis !== undefined ? compareDiffOutlineClass(cmpVis) : "";
+        const diffOutline = isCmp && cmpVis !== undefined ? compareDiffOutlineClass(cmpVis) : "";
         const nodeClassNames = [
           isCmp ? "cursor-default" : "",
           isLockedBySelfOrAncestor ? "cursor-not-allowed" : "",
@@ -437,25 +419,18 @@ export function useCanvasNodes({
         ]
           .filter(Boolean)
           .join(" ");
-        
-        
+
         const newData = d.buildData(comp, ctx) as Record<string, unknown>;
         const newStyle = style as CSSProperties;
         const newPosX = layout?.x ?? 0;
         const newPosY = layout?.y ?? 0;
         const cached = prevNodeDataRef.current.get(comp.id);
         const stableData =
-          cached && shallowEqualIgnoringFunctions(cached.data, newData)
-            ? cached.data
-            : newData;
+          cached && shallowEqualIgnoringFunctions(cached.data, newData) ? cached.data : newData;
         const stableStyle =
-          cached && shallowEqualStyle(cached.style, newStyle)
-            ? cached.style
-            : newStyle;
+          cached && shallowEqualStyle(cached.style, newStyle) ? cached.style : newStyle;
         const stablePosition =
-          cached &&
-          cached.position.x === newPosX &&
-          cached.position.y === newPosY
+          cached && cached.position.x === newPosX && cached.position.y === newPosY
             ? cached.position
             : { x: newPosX, y: newPosY };
         prevNodeDataRef.current.set(comp.id, {
@@ -492,8 +467,7 @@ export function useCanvasNodes({
         };
 
         const prevRf = prevRfNodesByIdRef.current.get(comp.id);
-        const nodeToUse =
-          prevRf && isSameBuiltFlowNode(prevRf, built) ? prevRf : built;
+        const nodeToUse = prevRf && isSameBuiltFlowNode(prevRf, built) ? prevRf : built;
         if (nodeToUse === built) {
           prevRfNodesByIdRef.current.set(comp.id, built);
         }

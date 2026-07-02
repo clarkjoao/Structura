@@ -8,4 +8,3 @@ export function resolveTemplateAccentColor(baseType: NodeTemplate["baseType"]): 
   if (baseType.startsWith("aws-")) return "border-l-[3px] border-orange-400";
   return "border-l-[3px] border-blue-500";
 }
-

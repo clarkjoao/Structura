@@ -27,7 +27,7 @@ interface Props {
   onAddTag: (tag: string) => void;
   onRemoveTag: (index: number) => void;
   steps: FlowStep[];
-    recordingSteps: FlowStep[];
+  recordingSteps: FlowStep[];
   branchOwnership: Map<string, BranchOwnerInfo>;
   onCancel: () => void;
   onFinalize: () => void;
@@ -128,7 +128,10 @@ const FlowRecorderPanel = ({
     for (const s of recordingSteps) stepsRecord[s.id] = s;
     for (let i = 0; i < recordingSteps.length - 1; i++) {
       if (recordingSteps[i].type !== "condition" && !recordingSteps[i].next) {
-        stepsRecord[recordingSteps[i].id] = { ...stepsRecord[recordingSteps[i].id], next: recordingSteps[i + 1].id };
+        stepsRecord[recordingSteps[i].id] = {
+          ...stepsRecord[recordingSteps[i].id],
+          next: recordingSteps[i + 1].id,
+        };
       }
     }
     const tempFlow: Flow = {

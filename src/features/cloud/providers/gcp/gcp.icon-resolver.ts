@@ -5,10 +5,11 @@ import type { IconResolver } from "../../model/cloud.types";
 type IconComponent = ComponentType<{ size?: number | string }>;
 
 // Vite resolves all GCP SVGs as URLs at build time (tree-shakeable per icon)
-const gcpSvgModules = import.meta.glob<string>(
-  "/node_modules/gcp-icons/dist/icons/*.svg",
-  { query: "?url", import: "default", eager: false },
-);
+const gcpSvgModules = import.meta.glob<string>("/node_modules/gcp-icons/dist/icons/*.svg", {
+  query: "?url",
+  import: "default",
+  eager: false,
+});
 
 const lazyCache = new Map<string, LazyExoticComponent<IconComponent>>();
 

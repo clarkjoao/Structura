@@ -1,6 +1,6 @@
 import type { ConnectionIntent } from "./connection.types";
 
-export type FlowStepType = 'action' | 'condition' | 'note';
+export type FlowStepType = "action" | "condition" | "note";
 
 export interface FlowBranch {
   label: string;
@@ -11,11 +11,9 @@ export interface FlowStep {
   id: string;
   type: FlowStepType;
 
-  
   next?: string;
   branches?: FlowBranch[];
 
-  
   componentId?: string;
   connectionId?: string;
   description?: string;
@@ -23,11 +21,10 @@ export interface FlowStep {
   handleId?: string;
   duration?: string;
   payload?: string;
-  payloadDirection?: 'request' | 'response';
+  payloadDirection?: "request" | "response";
   isAsync?: boolean;
   connectionIntent?: ConnectionIntent;
 
-  
   conditionLabel?: string;
 }
 

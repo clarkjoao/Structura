@@ -2,7 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 import { enUS, ptBR } from "date-fns/locale";
-import { FolderOpen, FolderX, Loader2, HardDrive, Database, RefreshCw, KeyRound } from "lucide-react";
+import {
+  FolderOpen,
+  FolderX,
+  Loader2,
+  HardDrive,
+  Database,
+  RefreshCw,
+  KeyRound,
+} from "lucide-react";
 import { useLastFolderSync } from "@/hooks/useLastFolderSync";
 import { useLastLocalStorageSync } from "@/hooks/useLastLocalStorageSync";
 import {
@@ -117,9 +125,7 @@ export function FileSystemStatus() {
     return () => registerConnectFolderRequestHandler(null);
   }, [connect]);
 
-  const localDiagramCount = useDiagramStore(
-    useShallow((s) => Object.keys(s.diagrams).length)
-  );
+  const localDiagramCount = useDiagramStore(useShallow((s) => Object.keys(s.diagrams).length));
 
   return (
     <>
@@ -212,7 +218,9 @@ export function FileSystemStatus() {
           scanResult={scanResult}
           localDiagramCount={localDiagramCount}
           isEmptyFolderPush={
-            scanResult.valid.length === 0 && scanResult.totalFilesScanned === 0 && localDiagramCount > 0
+            scanResult.valid.length === 0 &&
+            scanResult.totalFilesScanned === 0 &&
+            localDiagramCount > 0
           }
           onMerge={confirmMerge}
           onOverwriteLocal={confirmOverwrite}

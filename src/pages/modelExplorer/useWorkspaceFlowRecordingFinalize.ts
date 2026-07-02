@@ -9,9 +9,7 @@ import {
   useDiagramStore,
 } from "@/features/diagram";
 
-export function useWorkspaceFlowRecordingFinalize(): (
-  data: RecordingFinalizeData,
-) => void {
+export function useWorkspaceFlowRecordingFinalize(): (data: RecordingFinalizeData) => void {
   const { t } = useTranslation();
   const { addFlow, updateFlow } = useDiagramActions();
 
@@ -48,12 +46,7 @@ export function useWorkspaceFlowRecordingFinalize(): (
           entryStepId,
         });
       } else {
-        const flow = addFlow(
-          diagram.id,
-          data.name || t("flows.unnamed"),
-          mermaid,
-          stepsRecord,
-        );
+        const flow = addFlow(diagram.id, data.name || t("flows.unnamed"), mermaid, stepsRecord);
         if (flow && (description || flowTags || entryStepId)) {
           updateFlow(flow.id, { description, tags: flowTags, entryStepId });
         }

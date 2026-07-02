@@ -87,7 +87,10 @@ describe("parseMermaidSequence", () => {
       "A->>B: New label",
     ].join("\n");
 
-    const result = parseMermaidSequence(input, existingComponents, existingConnections, { x: 0, y: 0 });
+    const result = parseMermaidSequence(input, existingComponents, existingConnections, {
+      x: 0,
+      y: 0,
+    });
 
     expect(result.newConnections).toHaveLength(0);
     const step = Object.values(result.steps)[0];
@@ -185,12 +188,7 @@ describe("parseMermaidSequence", () => {
     generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
     const aliceId = "alice-id";
     const johnId = "john-id";
-    const input = [
-      "sequenceDiagram",
-      "loop",
-      "Alice->>John: msg",
-      "end",
-    ].join("\n");
+    const input = ["sequenceDiagram", "loop", "Alice->>John: msg", "end"].join("\n");
     const existingComponents = {
       [aliceId]: component(aliceId, "Alice"),
       [johnId]: component(johnId, "John"),
@@ -241,11 +239,7 @@ describe("parseMermaidSequence", () => {
   it("does not drop -->> steps when mixed with ->>", () => {
     let sequence = 0;
     generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
-    const input = [
-      "sequenceDiagram",
-      "Alice->>John: First",
-      "John-->>Alice: Great!",
-    ].join("\n");
+    const input = ["sequenceDiagram", "Alice->>John: First", "John-->>Alice: Great!"].join("\n");
 
     const result = parseMermaidSequence(input, {}, {}, { x: 0, y: 0 });
 
@@ -257,11 +251,7 @@ describe("parseMermaidSequence", () => {
     generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
     const aliceId = "alice-id";
     const johnId = "john-id";
-    const input = [
-      "sequenceDiagram",
-      "Alice->>John: Hello",
-      "John->>Alice: Hi",
-    ].join("\n");
+    const input = ["sequenceDiagram", "Alice->>John: Hello", "John->>Alice: Hi"].join("\n");
     const existingComponents = {
       [aliceId]: component(aliceId, "Alice"),
       [johnId]: component(johnId, "John"),
@@ -280,12 +270,7 @@ describe("parseMermaidSequence", () => {
     generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
     const aliceId = "alice-id";
     const johnId = "john-id";
-    const input = [
-      "sequenceDiagram",
-      "loop",
-      "Alice-->>John: ok",
-      "end",
-    ].join("\n");
+    const input = ["sequenceDiagram", "loop", "Alice-->>John: ok", "end"].join("\n");
     const existingComponents = {
       [aliceId]: component(aliceId, "Alice"),
       [johnId]: component(johnId, "John"),
@@ -314,7 +299,10 @@ describe("parseMermaidSequence", () => {
     };
     const input = ["sequenceDiagram", "Alice-->>John: Great!"].join("\n");
 
-    const result = parseMermaidSequence(input, existingComponents, existingConnections, { x: 0, y: 0 });
+    const result = parseMermaidSequence(input, existingComponents, existingConnections, {
+      x: 0,
+      y: 0,
+    });
 
     expect(result.newConnections).toHaveLength(0);
     const step = result.steps[result.entryStepId];
@@ -381,21 +369,36 @@ describe("parseMermaidSequence", () => {
   it("supports actor keyword like participant", () => {
     let sequence = 0;
     generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
-    const result = parseMermaidSequence("sequenceDiagram\nactor Alice\nAlice->>Alice: ping", {}, {}, { x: 0, y: 0 });
+    const result = parseMermaidSequence(
+      "sequenceDiagram\nactor Alice\nAlice->>Alice: ping",
+      {},
+      {},
+      { x: 0, y: 0 },
+    );
     expect(result.newComponents[0].name).toBe("Alice");
   });
 
   it("supports actor alias with display name", () => {
     let sequence = 0;
     generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
-    const result = parseMermaidSequence("sequenceDiagram\nactor A as Alice\nA->>A: ping", {}, {}, { x: 0, y: 0 });
+    const result = parseMermaidSequence(
+      "sequenceDiagram\nactor A as Alice\nA->>A: ping",
+      {},
+      {},
+      { x: 0, y: 0 },
+    );
     expect(result.newComponents[0].name).toBe("Alice");
   });
 
   it("skips activate line silently", () => {
     let sequence = 0;
     generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
-    const input = ["sequenceDiagram", "participant John", "activate John", "John->>John: ping"].join("\n");
+    const input = [
+      "sequenceDiagram",
+      "participant John",
+      "activate John",
+      "John->>John: ping",
+    ].join("\n");
     const result = parseMermaidSequence(input, {}, {}, { x: 0, y: 0 });
     expect(result.errors).toEqual([]);
     expect(Object.keys(result.steps)).toHaveLength(1);
@@ -404,7 +407,12 @@ describe("parseMermaidSequence", () => {
   it("skips deactivate line silently", () => {
     let sequence = 0;
     generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
-    const input = ["sequenceDiagram", "participant John", "deactivate John", "John->>John: ping"].join("\n");
+    const input = [
+      "sequenceDiagram",
+      "participant John",
+      "deactivate John",
+      "John->>John: ping",
+    ].join("\n");
     const result = parseMermaidSequence(input, {}, {}, { x: 0, y: 0 });
     expect(result.errors).toEqual([]);
     expect(Object.keys(result.steps)).toHaveLength(1);
@@ -487,11 +495,7 @@ describe("parseMermaidSequence", () => {
       [aliceId]: component(aliceId, "Alice"),
       [johnId]: component(johnId, "John"),
     };
-    const input = [
-      "sequenceDiagram",
-      "Alice->>John: one",
-      "John->>Alice: two",
-    ].join("\n");
+    const input = ["sequenceDiagram", "Alice->>John: one", "John->>Alice: two"].join("\n");
     const result = parseMermaidSequence(input, existingComponents, {}, { x: 0, y: 0 });
     const actionSteps = Object.values(result.steps).filter((step) => step.type === "action");
     expect(actionSteps[0].componentId).toBe(aliceId);
@@ -541,11 +545,7 @@ describe("parseMermaidSequence", () => {
   it("reuses a single connection for request and response pair", () => {
     let sequence = 0;
     generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
-    const input = [
-      "sequenceDiagram",
-      "A->>B: Authenticate",
-      "B-->>A: Token",
-    ].join("\n");
+    const input = ["sequenceDiagram", "A->>B: Authenticate", "B-->>A: Token"].join("\n");
 
     const result = parseMermaidSequence(input, {}, {}, { x: 0, y: 0 });
     const steps = Object.values(result.steps).filter((step) => step.type === "action");
@@ -568,7 +568,10 @@ describe("parseMermaidSequence", () => {
     };
     const input = ["sequenceDiagram", "B-->>A: Token"].join("\n");
 
-    const result = parseMermaidSequence(input, existingComponents, existingConnections, { x: 0, y: 0 });
+    const result = parseMermaidSequence(input, existingComponents, existingConnections, {
+      x: 0,
+      y: 0,
+    });
     const step = result.steps[result.entryStepId];
 
     expect(result.newConnections).toHaveLength(0);

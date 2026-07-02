@@ -6,10 +6,7 @@ describe("collectConnectionIdsToResetWaypoints", () => {
     const ids = collectConnectionIdsToResetWaypoints({
       edgeLayouts: {},
       selectedEdgeId: "fallback",
-      reactFlowEdges: [
-        { id: "a", selected: true } as never,
-        { id: "b", selected: false } as never,
-      ],
+      reactFlowEdges: [{ id: "a", selected: true } as never, { id: "b", selected: false } as never],
     });
     expect(ids).toEqual(["a"]);
   });

@@ -43,10 +43,7 @@ export function BulkDeleteConfirmDialog({
             <AlertTriangle className="h-4.5 w-4.5 text-destructive" />
           </div>
           <div className="min-w-0">
-            <h2
-              id="bulk-delete-title"
-              className="text-sm font-semibold text-foreground"
-            >
+            <h2 id="bulk-delete-title" className="text-sm font-semibold text-foreground">
               {t("bulkDelete.title")}
             </h2>
             <p className="text-[11px] text-muted-foreground">
@@ -67,12 +64,7 @@ export function BulkDeleteConfirmDialog({
           <Button type="button" variant="outline" size="sm" onClick={onCancel}>
             {t("common.cancel")}
           </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            onClick={onConfirm}
-          >
+          <Button type="button" variant="destructive" size="sm" onClick={onConfirm}>
             {t("bulkDelete.confirm")}
           </Button>
         </div>

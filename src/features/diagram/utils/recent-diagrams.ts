@@ -1,4 +1,3 @@
-
 export interface RecentDiagramRef {
   id: string;
   openedAt: number;
@@ -24,7 +23,6 @@ export function readRecentRefs(): RecentDiagramRef[] {
 export function writeRecentRefs(refs: RecentDiagramRef[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(refs));
 }
-
 
 export function removeRecentRef(id: string): void {
   const refs = readRecentRefs().filter((r) => r.id !== id);

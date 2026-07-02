@@ -15,7 +15,6 @@ import type { NodeTypeDescriptor } from "./types";
 import type { Component, ComponentType } from "@/features/diagram";
 import { isPanelComponent, PanelKind } from "@/features/diagram";
 
-
 export const NODE_TYPE_REGISTRY: NodeTypeDescriptor[] = [
   panelDescriptor,
   swimlaneDescriptor,
@@ -31,11 +30,9 @@ export const NODE_TYPE_REGISTRY: NodeTypeDescriptor[] = [
   c4Descriptor,
 ];
 
-
 export function getDescriptor(type: ComponentType): NodeTypeDescriptor {
   return NODE_TYPE_REGISTRY.find((d) => d.matches(type)) ?? c4Descriptor;
 }
-
 
 export function resolveNodeDescriptor(comp: Component): NodeTypeDescriptor {
   if (isPanelComponent(comp) && comp.panelKind === PanelKind.Swimlane) {
@@ -44,20 +41,18 @@ export function resolveNodeDescriptor(comp: Component): NodeTypeDescriptor {
   return getDescriptor(comp.type);
 }
 
-
 export function registerDescriptor(descriptor: NodeTypeDescriptor): void {
   if (NODE_TYPE_REGISTRY.some((d) => d.rfType === descriptor.rfType)) {
     throw new Error(
       `[node-types] A descriptor with rfType "${descriptor.rfType}" is already registered.`,
     );
   }
-  
+
   NODE_TYPE_REGISTRY.splice(NODE_TYPE_REGISTRY.length - 1, 0, descriptor);
 }
 
-
 export const nodeTypes: NodeTypes = Object.fromEntries(
-  NODE_TYPE_REGISTRY
-    .filter((d, i, arr) => arr.findIndex((x) => x.rfType === d.rfType) === i)
-    .map((d) => [d.rfType, d.component]),
+  NODE_TYPE_REGISTRY.filter((d, i, arr) => arr.findIndex((x) => x.rfType === d.rfType) === i).map(
+    (d) => [d.rfType, d.component],
+  ),
 ) as NodeTypes;

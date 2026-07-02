@@ -29,8 +29,6 @@ export interface GithubConfig {
   token: string;
 }
 
-
-
 export const GH_SEARCH_FIELDS = [
   { param: "name_contains" as const },
   { param: "name_starts" as const },
@@ -52,11 +50,7 @@ export interface GHSearchFilters {
   perPage?: number;
 }
 
-
-export function buildGithubQuery(
-  query: string,
-  filters: GHSearchFilters,
-): string {
+export function buildGithubQuery(query: string, filters: GHSearchFilters): string {
   const parts: string[] = [];
   const q = query.trim();
 
@@ -104,4 +98,3 @@ export function buildGithubQuery(
 
   return parts.join(" ");
 }
-

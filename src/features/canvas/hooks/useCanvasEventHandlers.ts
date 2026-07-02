@@ -19,12 +19,7 @@ interface UseCanvasEventHandlersParams {
   isCompareMode?: boolean;
   isFlowPanelOpen: boolean;
   updateViewport: (vp: { x: number; y: number; zoom: number }) => void;
-  addConnection: (
-    source: string,
-    target: string,
-    label: string,
-    edgeStyle?: EdgeStyle,
-  ) => void;
+  addConnection: (source: string, target: string, label: string, edgeStyle?: EdgeStyle) => void;
   screenToFlowPosition: (pos: { x: number; y: number }) => { x: number; y: number };
   onRequestFocusTitle?: () => void;
 }
@@ -81,7 +76,10 @@ export function useCanvasEventHandlers({
   );
 
   const onConnectEnd = useCallback(
-    (event: MouseEvent | TouchEvent, connectionState: { fromNode: Node | null; toNode: Node | null }) => {
+    (
+      event: MouseEvent | TouchEvent,
+      connectionState: { fromNode: Node | null; toNode: Node | null },
+    ) => {
       if (isRecording) return;
       if (connectionState.fromNode === null || connectionState.toNode !== null) return;
       const clientPoint = getEventClientPoint(event);
@@ -146,7 +144,11 @@ export function useCanvasEventHandlers({
           else next.add(node.id);
           prevSelectionRef.current = [...next].sort().join(",");
           setSelectedNodeId(
-            next.size === 0 ? null : next.has(node.id) ? node.id : (next.values().next().value ?? null),
+            next.size === 0
+              ? null
+              : next.has(node.id)
+                ? node.id
+                : (next.values().next().value ?? null),
           );
           return next;
         });
@@ -207,7 +209,7 @@ export function useCanvasEventHandlers({
   const onSelectionChange = useCallback(
     ({ nodes: updatedNodes }: { nodes: Node[]; edges: Edge[] }) => {
       const selectedIds = updatedNodes.filter((n) => n.selected).map((n) => n.id);
-      
+
       if (selectedIds.length === 0) return;
       if (isCompareMode) return;
       const key = [...selectedIds].sort().join(",");
@@ -220,7 +222,14 @@ export function useCanvasEventHandlers({
       setSelectedNodeIds(new Set(selectedIds));
       setSelectedNodeId(selectedIds[0] ?? null);
     },
-    [isCompareMode, setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId, setContextMenu, setPaneContextMenu],
+    [
+      isCompareMode,
+      setSelectedNodeId,
+      setSelectedNodeIds,
+      setSelectedEdgeId,
+      setContextMenu,
+      setPaneContextMenu,
+    ],
   );
 
   const onNodeDoubleClick = useCallback(
@@ -293,7 +302,11 @@ export function useCanvasEventHandlers({
     (event: MouseEvent | React.MouseEvent) => {
       event.preventDefault();
       if (isRecording || isCompareMode || isPlaying || isFlowPanelOpen) return;
-      if (visualState.selectedNodeId || visualState.selectedEdgeId || visualState.selectedNodeIds.size > 0) {
+      if (
+        visualState.selectedNodeId ||
+        visualState.selectedEdgeId ||
+        visualState.selectedNodeIds.size > 0
+      ) {
         return;
       }
       clearHighlight();
@@ -337,7 +350,15 @@ export function useCanvasEventHandlers({
       setSelectedNodeId(node.id);
       setSelectedEdgeId(null);
     },
-    [clearHighlight, isCompareMode, isRecording, setContextMenu, setPaneContextMenu, setSelectedNodeId, setSelectedEdgeId],
+    [
+      clearHighlight,
+      isCompareMode,
+      isRecording,
+      setContextMenu,
+      setPaneContextMenu,
+      setSelectedNodeId,
+      setSelectedEdgeId,
+    ],
   );
 
   const closePanel = useCallback(() => {

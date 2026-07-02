@@ -1,17 +1,14 @@
-
 export enum ServiceSource {
   Github = "github",
   Defectdojo = "defectdojo",
   Manual = "manual",
 }
 
-
 export enum ImportPanel {
   Manual = "manual",
   Github = "github",
   Defectdojo = "defectdojo",
 }
-
 
 export enum EdgeStyle {
   Bezier = "bezier",
@@ -20,20 +17,17 @@ export enum EdgeStyle {
   Straight = "straight",
 }
 
-
 export enum StrokeStyle {
   Solid = "solid",
   Dashed = "dashed",
   Dotted = "dotted",
 }
 
-
 export enum EdgeMarker {
   None = "none",
   Arrow = "arrow",
   ArrowClosed = "arrowclosed",
 }
-
 
 export enum PanelKind {
   Default = "default",
@@ -47,14 +41,12 @@ export enum PanelKind {
   Swimlane = "swimlane",
 }
 
-
 export enum ExternalLinkType {
   Confluence = "confluence",
   Github = "github",
   Jira = "jira",
   Generic = "generic",
 }
-
 
 export enum FileSystemEntryKind {
   File = "file",

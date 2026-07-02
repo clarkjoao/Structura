@@ -1,16 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import {
-  Copy,
-  GitBranch,
-  GitMerge,
-  Lock,
-  Pencil,
-  Plus,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Copy, GitBranch, GitMerge, Lock, Pencil, Plus, Trash2, X } from "lucide-react";
 import {
   computeMergePreview,
   sceneHasDiff,
@@ -38,9 +29,9 @@ export interface SceneDrawerProps {
   onDelete: (id: string) => void;
   onMerge: (scene: SceneDiff) => void;
   onSelectBase: () => void;
-  
+
   scenesLocked?: boolean;
-  
+
   scenesGuestReadOnly?: boolean;
 }
 
@@ -116,10 +107,7 @@ function SceneRow({
       )}
 
       {showActions && (
-        <div
-          className="flex items-center gap-0.5 shrink-0"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
           <button
             type="button"
             disabled={structuralDisabled}
@@ -144,7 +132,9 @@ function SceneRow({
               disabled={structuralDisabled}
               onClick={onMerge}
               className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:pointer-events-none disabled:opacity-40"
-              title={structuralDisabled && readOnlyTitle ? readOnlyTitle : t("scenes.mergeIntoBase")}
+              title={
+                structuralDisabled && readOnlyTitle ? readOnlyTitle : t("scenes.mergeIntoBase")
+              }
             >
               <GitMerge className="h-3 w-3" />
             </button>
@@ -237,10 +227,7 @@ export function SceneDrawer({
             </span>
             {scenesGuestReadOnly && (
               <span className="shrink-0" title={t("collaboration.scenesReadOnly")}>
-                <Lock
-                  className="h-3.5 w-3.5 text-muted-foreground shrink-0"
-                  aria-hidden
-                />
+                <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden />
               </span>
             )}
             <span className="text-[10px] text-muted-foreground shrink-0">
@@ -428,13 +415,9 @@ export function ConnectedSceneDrawer({ onClose }: { onClose: () => void }) {
   const sceneRecord = diagram.scenes ?? {};
   const scenes = Object.values(sceneRecord).sort((a, b) => a.createdAt - b.createdAt);
   const activeId =
-    diagram.activeSceneId && sceneRecord[diagram.activeSceneId]
-      ? diagram.activeSceneId
-      : null;
+    diagram.activeSceneId && sceneRecord[diagram.activeSceneId] ? diagram.activeSceneId : null;
   const compareId =
-    diagram.compareSceneId && sceneRecord[diagram.compareSceneId]
-      ? diagram.compareSceneId
-      : null;
+    diagram.compareSceneId && sceneRecord[diagram.compareSceneId] ? diagram.compareSceneId : null;
 
   const handleScenePillClick = (sceneId: string) => {
     if (scenesLocked) {

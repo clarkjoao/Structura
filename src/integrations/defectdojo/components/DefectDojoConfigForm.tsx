@@ -30,9 +30,7 @@ export function DefectDojoConfigForm({ config, onSave, onClear }: Props) {
     try {
       const client = new DefectDojoClient({ baseUrl, apiToken });
       const user = await getCurrentUser(client);
-      const username =
-        [user.first_name, user.last_name].filter(Boolean).join(" ") ||
-        user.username;
+      const username = [user.first_name, user.last_name].filter(Boolean).join(" ") || user.username;
       setTestResult({ ok: true, username });
     } catch (err) {
       setTestResult({
@@ -56,9 +54,7 @@ export function DefectDojoConfigForm({ config, onSave, onClear }: Props) {
   const handleClearRemoveSourceId = () => {
     const store = useDiagramStore.getState();
     Object.values(store.serviceRegistry).forEach((svc) => {
-      const nextSources = normalizeSources(svc).filter(
-        (source) => source.type !== "defectdojo",
-      );
+      const nextSources = normalizeSources(svc).filter((source) => source.type !== "defectdojo");
       if (nextSources.length !== normalizeSources(svc).length) {
         store.updateService(svc.id, {
           sources: nextSources.length > 0 ? nextSources : [{ type: ServiceSource.Manual }],
@@ -75,8 +71,7 @@ export function DefectDojoConfigForm({ config, onSave, onClear }: Props) {
         <div className="flex items-center gap-2 text-sm text-green-700">
           <CheckCircle className="h-4 w-4" />
           <span>
-            {t("defectdojo.connectedTo")}{" "}
-            <span className="font-semibold">{config.baseUrl}</span>
+            {t("defectdojo.connectedTo")} <span className="font-semibold">{config.baseUrl}</span>
           </span>
         </div>
         <button
@@ -93,12 +88,8 @@ export function DefectDojoConfigForm({ config, onSave, onClear }: Props) {
   if (confirmClear) {
     return (
       <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-        <p className="text-sm text-foreground font-medium">
-          {t("defectdojo.keepRecordsQuestion")}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {t("defectdojo.keepRecordsDetail")}
-        </p>
+        <p className="text-sm text-foreground font-medium">{t("defectdojo.keepRecordsQuestion")}</p>
+        <p className="text-xs text-muted-foreground">{t("defectdojo.keepRecordsDetail")}</p>
         <div className="flex gap-2">
           <button
             onClick={handleClearKeepServices}
@@ -158,19 +149,13 @@ export function DefectDojoConfigForm({ config, onSave, onClear }: Props) {
             onClick={() => setShowToken((v) => !v)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
-            {showToken ? (
-              <EyeOff className="h-4 w-4" />
-            ) : (
-              <Eye className="h-4 w-4" />
-            )}
+            {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
       </div>
 
       {testResult && (
-        <p
-          className={`text-xs ${testResult.ok ? "text-green-600" : "text-destructive"}`}
-        >
+        <p className={`text-xs ${testResult.ok ? "text-green-600" : "text-destructive"}`}>
           {testResult.ok
             ? t("defectdojo.connectedAsOk", { username: testResult.username })
             : t("defectdojo.testFailed", {

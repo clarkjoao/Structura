@@ -12,11 +12,7 @@ import type {
   ServiceDefinition,
   SvgComponent,
 } from "@/features/diagram";
-import {
-  COMPONENT_TYPE_SVG,
-  generateId,
-  getCachedCanvasSnapshot,
-} from "@/features/diagram";
+import { COMPONENT_TYPE_SVG, generateId, getCachedCanvasSnapshot } from "@/features/diagram";
 import { getViewportCenter } from "../viewport-utils";
 import { exportDrawio } from "@/lib/export-service";
 import { useCopyPasteShortcuts } from "./keyboard/useCopyPasteShortcuts";
@@ -36,7 +32,6 @@ import { useEdgeWaypointShortcuts } from "./keyboard/useEdgeWaypointShortcuts";
 import { useLockShortcuts } from "./keyboard/useLockShortcuts";
 import { validateSvgSize } from "../utils/svg.utils";
 import { sanitizeSvg } from "../utils/svg.sanitizer";
-
 
 function prepareImportedSvgMarkup(
   svgContent: string,
@@ -123,9 +118,7 @@ interface UseCanvasKeyboardParams {
 export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   const { t } = useTranslation();
   const lastPointerScreenRef = useRef<{ x: number; y: number } | null>(null);
-  const c4ShortcutMap = useMemo<
-    Record<string, { type: ComponentType; name: string } | undefined>
-  >(
+  const c4ShortcutMap = useMemo<Record<string, { type: ComponentType; name: string } | undefined>>(
     () => ({
       [KEY.DIGIT_1]: { type: "person", name: t("keyboard.newPerson") },
       [KEY.DIGIT_2]: { type: "system", name: t("keyboard.newSystem") },
@@ -205,7 +198,10 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       let width = 200;
       let height = 200;
       if (svgEl) {
-        const vb = svgEl.getAttribute("viewBox")?.trim().split(/[\s,]+/);
+        const vb = svgEl
+          .getAttribute("viewBox")
+          ?.trim()
+          .split(/[\s,]+/);
         if (vb && vb.length === 4) {
           const vw = parseFloat(vb[2] ?? "");
           const vh = parseFloat(vb[3] ?? "");
@@ -424,35 +420,30 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
 
       const mod = isModKeyPressed(event);
 
-      
       if (mod && keyMatchesLetter(event, KEY.F)) {
         event.preventDefault();
         onOpenSearch?.();
         return;
       }
 
-      
       if (mod && !event.shiftKey && keyMatchesLetter(event, KEY.K)) {
         event.preventDefault();
         onOpenCommandPalette?.();
         return;
       }
 
-      
       if (mod && keyMatchesLetter(event, KEY.B)) {
         event.preventDefault();
         onToggleDiagramSidebar?.();
         return;
       }
 
-      
       if (mod && keyIs(event, KEY.SLASH)) {
         event.preventDefault();
         onOpenSearch?.();
         return;
       }
 
-      
       const c4Shortcut = mod ? c4ShortcutMap[event.key] : undefined;
       if (c4Shortcut) {
         event.preventDefault();

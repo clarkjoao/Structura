@@ -83,9 +83,7 @@ export function buildStressSeed(options?: {
     const levelPanels: string[] = [];
     for (let i = 0; i < panelsPerLevel && created < targetCount; i++) {
       const parentId =
-        level === 0
-          ? null
-          : panelsByLevel[level - 1]![i % panelsByLevel[level - 1]!.length]!;
+        level === 0 ? null : panelsByLevel[level - 1]![i % panelsByLevel[level - 1]!.length]!;
 
       const id = genId("panel");
       const x = (i % 5) * 700 + level * 50;

@@ -4,7 +4,6 @@ interface PatternFlowPreviewProps {
   components: { name: string }[];
 }
 
-
 export function PatternFlowPreview({ components }: PatternFlowPreviewProps) {
   const nodes = components;
   if (nodes.length === 0) return null;

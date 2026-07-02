@@ -5,7 +5,6 @@ interface CollabPeerPresenceProps {
   roundedClassName?: string;
 }
 
-
 export function CollabPeerPresence({
   activePeer,
   roundedClassName = "rounded-lg",

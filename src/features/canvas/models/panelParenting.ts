@@ -4,10 +4,8 @@ import { isReactFlowParentPanelType } from "@/features/diagram";
 import { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../constants";
 
 export function getPanelDimensions(node: Node): { width: number; height: number } {
-  const widthFromStyle =
-    typeof node.style?.width === "number" ? node.style.width : undefined;
-  const heightFromStyle =
-    typeof node.style?.height === "number" ? node.style.height : undefined;
+  const widthFromStyle = typeof node.style?.width === "number" ? node.style.width : undefined;
+  const heightFromStyle = typeof node.style?.height === "number" ? node.style.height : undefined;
   const w = widthFromStyle ?? node.measured?.width ?? PANEL_DEFAULT_W;
   const h = heightFromStyle ?? node.measured?.height ?? PANEL_DEFAULT_H;
   return { width: w, height: h };
@@ -23,7 +21,6 @@ export function isInsidePanel(node: Node, x: number, y: number): boolean {
   );
 }
 
-
 export function isOutsideParentBounds(
   childPos: { x: number; y: number },
   parent: Node,
@@ -32,12 +29,7 @@ export function isOutsideParentBounds(
   const { width: parentW, height: parentH } = getPanelDimensions(parent);
 
   if (!childDimensions) {
-    return (
-      childPos.x < 0 ||
-      childPos.y < 0 ||
-      childPos.x > parentW ||
-      childPos.y > parentH
-    );
+    return childPos.x < 0 || childPos.y < 0 || childPos.x > parentW || childPos.y > parentH;
   }
 
   const overlapLeft = Math.max(0, childPos.x);
@@ -52,7 +44,6 @@ export function isOutsideParentBounds(
 
   return childArea > 0 && overlapArea / childArea < 0.5;
 }
-
 
 export function findPanelContainingPoint(
   nodes: Node[],
@@ -72,12 +63,7 @@ export function findPanelContainingPoint(
   for (const panel of panels) {
     let absolutePosition = panel.position;
     if (panel.parentId && nodeLayouts && components) {
-      absolutePosition = resolveAbsolutePosition(
-        panel.id,
-        panel.position,
-        components,
-        nodeLayouts,
-      );
+      absolutePosition = resolveAbsolutePosition(panel.id, panel.position, components, nodeLayouts);
     }
 
     const { width, height } = getPanelDimensions(panel);
@@ -119,7 +105,6 @@ export function toRelativePosition(
   };
 }
 
-
 export function resolveAbsolutePosition(
   nodeId: string,
   relPos: { x: number; y: number },
@@ -138,7 +123,6 @@ export function resolveAbsolutePosition(
     nodeLayouts,
   );
 }
-
 
 export function resolveAbsolutePositionFromNodes(
   nodeId: string,

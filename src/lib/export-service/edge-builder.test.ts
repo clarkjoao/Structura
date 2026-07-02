@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import type { Connection } from "@/features/diagram";
 import { buildEdgeCell, buildEdgeLabelPlain } from "./edge-builder";
 
-function conn(partial: Partial<Connection> & Pick<Connection, "id" | "sourceId" | "targetId">): Connection {
+function conn(
+  partial: Partial<Connection> & Pick<Connection, "id" | "sourceId" | "targetId">,
+): Connection {
   return {
     label: "",
     ...partial,

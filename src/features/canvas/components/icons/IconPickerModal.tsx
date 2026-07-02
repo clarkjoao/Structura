@@ -241,7 +241,9 @@ export function IconPickerModal({
                   aria-label={t("icons.searchPlaceholder")}
                 />
                 {isLibraryEmpty ? (
-                  <p className="py-8 text-center text-sm text-muted-foreground">{t("icons.emptyLibrary")}</p>
+                  <p className="py-8 text-center text-sm text-muted-foreground">
+                    {t("icons.emptyLibrary")}
+                  </p>
                 ) : (
                   <IconPickerLibraryGrid
                     icons={filteredIcons}

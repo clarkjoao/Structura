@@ -26,9 +26,7 @@ export const EmbedButton = memo(function EmbedButton({
     <button
       onClick={handleClick}
       className={`mt-1 flex items-center gap-1 text-[10px] font-medium text-muted-foreground ${
-        disabled
-          ? "pointer-events-none"
-          : "hover:text-foreground hover:underline"
+        disabled ? "pointer-events-none" : "hover:text-foreground hover:underline"
       }`}
       tabIndex={disabled ? -1 : 0}
     >

@@ -2,15 +2,11 @@ import type { Diagram } from "@/features/diagram";
 import { normalizeImportedDiagram } from "@/lib/export-service/normalize-imported-diagram";
 import type { WorkspaceManifest } from "./FileSystemAdapter";
 
-
-
 export type ValidationResult =
-  | { valid: true; diagram: Diagram }
-  | { valid: false; reason: string; raw: unknown };
+  { valid: true; diagram: Diagram } | { valid: false; reason: string; raw: unknown };
 
 export type ManifestValidationResult =
-  | { valid: true; manifest: WorkspaceManifest }
-  | { valid: false; reason: string };
+  { valid: true; manifest: WorkspaceManifest } | { valid: false; reason: string };
 
 /** Deletion marker written when physical file removal fails (see FileSystemAdapter.deleteDiagram). */
 export function isDiagramTombstoneJson(raw: unknown): boolean {
@@ -74,12 +70,7 @@ export function validateDiagramFile(raw: unknown): ValidationResult {
   }
 
   const vp = obj.viewport as Record<string, unknown> | undefined;
-  if (
-    !vp ||
-    typeof vp.x !== "number" ||
-    typeof vp.y !== "number" ||
-    typeof vp.zoom !== "number"
-  ) {
+  if (!vp || typeof vp.x !== "number" || typeof vp.y !== "number" || typeof vp.zoom !== "number") {
     return {
       valid: false,
       reason: 'Missing or invalid "viewport" (x, y, zoom)',
@@ -93,8 +84,6 @@ export function validateDiagramFile(raw: unknown): ValidationResult {
 
   return { valid: true, diagram: normalizeImportedDiagram(raw as Diagram) };
 }
-
-
 
 export function validateManifest(raw: unknown): ManifestValidationResult {
   if (!raw || typeof raw !== "object") {

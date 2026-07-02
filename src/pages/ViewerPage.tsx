@@ -6,12 +6,7 @@ import { ViewerCanvas } from "@/features/viewer";
 import { getViewerDataFromHash } from "@/lib/diagram-url";
 
 function assertDiagram(value: unknown): asserts value is Diagram {
-  if (
-    !value ||
-    typeof value !== "object" ||
-    !("id" in value) ||
-    !("snapshot" in value)
-  ) {
+  if (!value || typeof value !== "object" || !("id" in value) || !("snapshot" in value)) {
     throw new Error("Missing required fields: id, snapshot");
   }
 }
@@ -103,8 +98,7 @@ export function ViewerPage() {
       if (event.data?.type !== "STRUCTURA_LOAD") return;
 
       const json = event.data.diagram;
-      const replyOrigin =
-        event.origin && event.origin !== "null" ? event.origin : "*";
+      const replyOrigin = event.origin && event.origin !== "null" ? event.origin : "*";
 
       try {
         assertDiagram(json);

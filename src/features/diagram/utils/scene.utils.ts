@@ -66,7 +66,6 @@ export function resolveSceneSnapshot(
   return { components, connections, nodeLayouts, sceneId };
 }
 
-
 export function diagramWithResolvedScene<T extends SceneDiagram>(diagram: T): T {
   const active = diagram.activeSceneId ?? null;
   if (!active || !diagram.scenes?.[active]) return diagram;
@@ -93,10 +92,7 @@ export function exportFilenameSlug(diagram: Diagram): string {
   return `${base}-${sceneSlug}`;
 }
 
-export function isComponentAddedInActiveScene(
-  diagram: SceneDiagram,
-  componentId: string,
-): boolean {
+export function isComponentAddedInActiveScene(diagram: SceneDiagram, componentId: string): boolean {
   const sid = diagram.activeSceneId;
   if (!sid || !diagram.scenes?.[sid]) return false;
   return componentId in diagram.scenes[sid].addedComponents;
@@ -111,7 +107,6 @@ export function isConnectionAddedInActiveScene(
   return connectionId in diagram.scenes[sid].addedConnections;
 }
 
-
 export function isBaseSnapshotComponent(diagram: SceneDiagram, componentId: string): boolean {
   return componentId in diagram.snapshot.components;
 }
@@ -121,7 +116,6 @@ export function canMoveNodeInSceneMode(diagram: SceneDiagram, componentId: strin
   if (!diagram.activeSceneId || !diagram.scenes?.[diagram.activeSceneId]) return true;
   return isComponentAddedInActiveScene(diagram, componentId);
 }
-
 
 export function collectBaseDescendantIds(
   baseComponents: Record<string, Component>,
@@ -196,16 +190,10 @@ export function resolveCompareSnapshot(
   const baseC = diagram.snapshot.components;
   const baseConn = diagram.snapshot.connections;
   const onlyInBaseComp = Object.keys(mergedComponents).filter(
-    (id) =>
-      id in baseC &&
-      !sceneA.addedComponents[id] &&
-      !sceneB.addedComponents[id],
+    (id) => id in baseC && !sceneA.addedComponents[id] && !sceneB.addedComponents[id],
   );
   const onlyInBaseConn = Object.keys(mergedConnections).filter(
-    (id) =>
-      id in baseConn &&
-      !sceneA.addedConnections[id] &&
-      !sceneB.addedConnections[id],
+    (id) => id in baseConn && !sceneA.addedConnections[id] && !sceneB.addedConnections[id],
   );
 
   return {
@@ -219,7 +207,6 @@ export function resolveCompareSnapshot(
   };
 }
 
-
 export function resolveCanvasSnapshot(diagram: SceneDiagram): {
   components: Record<string, Component>;
   connections: Record<string, Connection>;
@@ -227,13 +214,7 @@ export function resolveCanvasSnapshot(diagram: SceneDiagram): {
 } {
   const a = diagram.activeSceneId ?? null;
   const b = diagram.compareSceneId ?? null;
-  if (
-    a &&
-    b &&
-    a !== b &&
-    diagram.scenes?.[a] &&
-    diagram.scenes?.[b]
-  ) {
+  if (a && b && a !== b && diagram.scenes?.[a] && diagram.scenes?.[b]) {
     const c = resolveCompareSnapshot(diagram, a, b);
     return {
       components: c.mergedComponents,
@@ -251,7 +232,7 @@ export function resolveCanvasSnapshot(diagram: SceneDiagram): {
 
 export interface CompareElementVisual {
   opacity: number;
-  
+
   badgeA?: { name: string; color: string };
   badgeB?: { name: string; color: string };
 }
@@ -342,13 +323,7 @@ export function isDiagramCompareMode(diagram: SceneDiagram | null | undefined): 
   if (!diagram) return false;
   const a = diagram.activeSceneId ?? null;
   const b = diagram.compareSceneId ?? null;
-  return !!(
-    a &&
-    b &&
-    a !== b &&
-    diagram.scenes?.[a] &&
-    diagram.scenes?.[b]
-  );
+  return !!(a && b && a !== b && diagram.scenes?.[a] && diagram.scenes?.[b]);
 }
 
 export function sceneHasDiff(scene: SceneDiff): boolean {
@@ -374,7 +349,6 @@ export interface MergePreview {
     resolution: "merge";
   }>;
 }
-
 
 const MERGE_CONFLICT_BASE_SCENE_ID = "__diagramBase__";
 const MERGE_CONFLICT_BASE_SCENE_NAME = "Diagram base";

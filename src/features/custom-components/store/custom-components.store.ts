@@ -1,9 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type {
-  CustomComponentStoreState,
-  CustomComponentTemplate,
-} from "../types";
+import type { CustomComponentStoreState, CustomComponentTemplate } from "../types";
 import { customComponentRepository } from "@/infrastructure/persistence/CustomComponentRepository";
 
 function syncRepository(templates: Record<string, CustomComponentTemplate>): void {
@@ -11,12 +8,7 @@ function syncRepository(templates: Record<string, CustomComponentTemplate>): voi
 }
 
 function isC4Subtype(value: unknown): value is "person" | "system" | "container" | "component" {
-  return (
-    value === "person" ||
-    value === "system" ||
-    value === "container" ||
-    value === "component"
-  );
+  return value === "person" || value === "system" || value === "container" || value === "component";
 }
 
 function normalizeTemplate(template: CustomComponentTemplate): CustomComponentTemplate {

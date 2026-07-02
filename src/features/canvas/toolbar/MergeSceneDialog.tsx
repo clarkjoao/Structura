@@ -155,7 +155,10 @@ export function MergeSceneDialog({
               checked={acknowledged}
               onCheckedChange={(v) => setAcknowledged(v === true)}
             />
-            <Label htmlFor="merge-ack" className="cursor-pointer text-left text-sm font-normal leading-snug">
+            <Label
+              htmlFor="merge-ack"
+              className="cursor-pointer text-left text-sm font-normal leading-snug"
+            >
               {t("scenes.mergeAcknowledge")}
             </Label>
           </div>

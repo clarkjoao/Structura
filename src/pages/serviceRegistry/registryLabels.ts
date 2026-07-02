@@ -1,9 +1,6 @@
 import { ServiceSource } from "@/features/diagram";
 
-export function sourceTypeLabel(
-  t: (key: string) => string,
-  type: ServiceSource,
-): string {
+export function sourceTypeLabel(t: (key: string) => string, type: ServiceSource): string {
   switch (type) {
     case ServiceSource.Manual:
       return t("registry.sourceManual");

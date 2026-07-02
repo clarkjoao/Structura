@@ -26,4 +26,3 @@ export function buildMentionContextBlock(
   }
   return lines.join("\n");
 }
-

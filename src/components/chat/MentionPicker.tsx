@@ -10,12 +10,7 @@ interface MentionPickerProps {
   onDismiss: () => void;
 }
 
-export function MentionPicker({
-  items,
-  selectedIndex,
-  onSelect,
-  onDismiss,
-}: MentionPickerProps) {
+export function MentionPicker({ items, selectedIndex, onSelect, onDismiss }: MentionPickerProps) {
   const { t } = useTranslation();
 
   return (
@@ -59,4 +54,3 @@ export function MentionPicker({
     </div>
   );
 }
-

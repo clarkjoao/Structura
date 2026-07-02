@@ -25,11 +25,7 @@ import {
   iconsSlice,
   userTemplatesSlice,
 } from "./slices";
-import {
-  buildPersistStoragePayload,
-  createPersistConfig,
-  PERSIST_KEY,
-} from "./persist.config";
+import { buildPersistStoragePayload, createPersistConfig, PERSIST_KEY } from "./persist.config";
 
 export type { AppState, DiagramSnapshot } from "./store.types";
 export type { ClipboardEntry, DiagramStore } from "./store.types";
@@ -65,8 +61,11 @@ export function createDiagramStore(
         },
         removeIcon: (diagramId, iconId) => {
           iconStore.getState().removeIcon(iconId);
-          (get() as AppState & { removeIconReferences?: (diagramId: string, iconId: string) => void })
-            .removeIconReferences?.(diagramId, iconId);
+          (
+            get() as AppState & {
+              removeIconReferences?: (diagramId: string, iconId: string) => void;
+            }
+          ).removeIconReferences?.(diagramId, iconId);
         },
         updateIconName: (_diagramId, iconId, name) => {
           iconStore.getState().updateIconName(iconId, name);
@@ -84,7 +83,6 @@ export function createDiagramStore(
 }
 
 export const useDiagramStore = createDiagramStore();
-
 
 export async function flushDiagramStoreToLocalStorageNow(
   options: { force?: boolean } = {},

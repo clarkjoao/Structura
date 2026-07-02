@@ -1,4 +1,3 @@
-
 export function buildChildrenIndex(
   components: Record<string, { parentId?: string | null }>,
 ): Map<string, Set<string>> {
@@ -11,7 +10,6 @@ export function buildChildrenIndex(
   }
   return index;
 }
-
 
 export function getDescendantIdsFromIndex(
   nodeId: string,

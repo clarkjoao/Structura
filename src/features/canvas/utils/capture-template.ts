@@ -7,7 +7,6 @@ import type {
 } from "@/features/diagram";
 import { generateId, isPanelComponent } from "@/features/diagram";
 
-
 export function expandSelectionWithChildren(
   selectedIds: string[],
   allComponents: Record<string, Component>,
@@ -84,10 +83,7 @@ function orderExpandedComponentsTopologically(
   return result;
 }
 
-function isTemplateRootInSelection(
-  component: Component,
-  expandedSet: Set<string>,
-): boolean {
+function isTemplateRootInSelection(component: Component, expandedSet: Set<string>): boolean {
   const parentId = component.parentId;
   if (parentId === null) return true;
   return !expandedSet.has(parentId);
@@ -132,10 +128,8 @@ export function captureSelectionAsTemplate(
     return { id: c.id, x: layout?.x ?? 0, y: layout?.y ?? 0 };
   });
 
-  const centerX =
-    rootLayouts.reduce((sum, entry) => sum + entry.x, 0) / (rootLayouts.length || 1);
-  const centerY =
-    rootLayouts.reduce((sum, entry) => sum + entry.y, 0) / (rootLayouts.length || 1);
+  const centerX = rootLayouts.reduce((sum, entry) => sum + entry.x, 0) / (rootLayouts.length || 1);
+  const centerY = rootLayouts.reduce((sum, entry) => sum + entry.y, 0) / (rootLayouts.length || 1);
 
   const templateComponents: UserTemplateComponent[] = selectedComponents.map((component) => {
     const layout = nodeLayouts.find((entry) => entry.elementId === component.id);
@@ -167,8 +161,7 @@ export function captureSelectionAsTemplate(
   });
 
   const relevantConnections = Object.values(allConnections).filter(
-    (connection) =>
-      expandedSet.has(connection.sourceId) && expandedSet.has(connection.targetId),
+    (connection) => expandedSet.has(connection.sourceId) && expandedSet.has(connection.targetId),
   );
 
   const templateConnections = relevantConnections.map((connection) => {

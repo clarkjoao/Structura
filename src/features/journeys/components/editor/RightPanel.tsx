@@ -1,19 +1,7 @@
-import type {
-  ChangeEventHandler,
-  ClipboardEvent,
-  KeyboardEvent,
-  ReactNode,
-} from "react";
+import type { ChangeEventHandler, ClipboardEvent, KeyboardEvent, ReactNode } from "react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ChevronDown,
-  ChevronUp,
-  Image as ImageIcon,
-  Play,
-  Upload,
-  X,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, Image as ImageIcon, Play, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { sanitizeSvg } from "@/features/canvas";
@@ -255,11 +243,7 @@ export function RightPanel({
             }
             onClick={() => setVisualOpen((previous) => !previous)}
           >
-            {visualOpen ? (
-              <ChevronUp className="h-4 w-4" />
-            ) : (
-              <ChevronDown className="h-4 w-4" />
-            )}
+            {visualOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </div>
         {visualOpen ? (
@@ -274,16 +258,10 @@ export function RightPanel({
                   type="button"
                   className={cn(
                     "group relative w-full overflow-hidden rounded-lg border border-border",
-                    isGlobalPlaying
-                      ? "transition-all hover:border-primary/50"
-                      : "cursor-default",
+                    isGlobalPlaying ? "transition-all hover:border-primary/50" : "cursor-default",
                   )}
                   onClick={isGlobalPlaying ? onExpandVisual : undefined}
-                  aria-label={
-                    isGlobalPlaying
-                      ? t("journeys.editor.expandVisual")
-                      : undefined
-                  }
+                  aria-label={isGlobalPlaying ? t("journeys.editor.expandVisual") : undefined}
                 >
                   {safeVisual?.kind === "svg" ? (
                     <div
@@ -380,11 +358,7 @@ export function RightPanel({
             }
             onClick={() => setFlowOpen((previous) => !previous)}
           >
-            {flowOpen ? (
-              <ChevronUp className="h-4 w-4" />
-            ) : (
-              <ChevronDown className="h-4 w-4" />
-            )}
+            {flowOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </div>
         {flowOpen ? (

@@ -63,9 +63,7 @@ function ColumnRowPanel({
       <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50 group-hover:text-muted-foreground" />
 
       <span className="w-4 shrink-0 flex items-center justify-center">
-        {column.isPrimaryKey ? (
-          <Key className="h-3 w-3 text-amber-500" strokeWidth={2} />
-        ) : null}
+        {column.isPrimaryKey ? <Key className="h-3 w-3 text-amber-500" strokeWidth={2} /> : null}
         {!column.isPrimaryKey && column.isForeignKey ? (
           <Link className="h-3 w-3 text-blue-400" strokeWidth={2} />
         ) : null}
@@ -176,20 +174,17 @@ export default function DbTablePanel({
     setDraggingIndex(index);
   }, []);
 
-  const handleDragEnter = useCallback(
-    (index: number) => {
-      const fromIndex = dragIndexRef.current;
-      if (fromIndex === null || fromIndex === index) return;
-      const current = columnsRef.current;
-      const nextColumns = [...current];
-      const [moved] = nextColumns.splice(fromIndex, 1);
-      nextColumns.splice(index, 0, moved);
-      dragIndexRef.current = index;
-      setDraggingIndex(index);
-      setColumns(nextColumns);
-    },
-    [],
-  );
+  const handleDragEnter = useCallback((index: number) => {
+    const fromIndex = dragIndexRef.current;
+    if (fromIndex === null || fromIndex === index) return;
+    const current = columnsRef.current;
+    const nextColumns = [...current];
+    const [moved] = nextColumns.splice(fromIndex, 1);
+    nextColumns.splice(index, 0, moved);
+    dragIndexRef.current = index;
+    setDraggingIndex(index);
+    setColumns(nextColumns);
+  }, []);
 
   const handleDragEnd = useCallback(() => {
     dragIndexRef.current = null;
@@ -287,7 +282,9 @@ export default function DbTablePanel({
               )}
             </div>
 
-            <p className="text-[10px] text-muted-foreground/60 mt-1.5 text-center">{t("dbTable.reorderHint")}</p>
+            <p className="text-[10px] text-muted-foreground/60 mt-1.5 text-center">
+              {t("dbTable.reorderHint")}
+            </p>
           </div>
 
           <div>

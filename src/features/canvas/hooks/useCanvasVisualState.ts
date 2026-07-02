@@ -28,10 +28,10 @@ export interface CanvasVisualState {
   showAllTags: () => void;
   showNoTags: () => void;
   isNodeHiddenByTagFilter: (component: Component) => boolean;
-  
+
   noteInlineEditingId: string | null;
   setNoteInlineEditingId: (id: string | null) => void;
-  
+
   jsonViewerInlineEditingId: string | null;
   setJsonViewerInlineEditingId: (id: string | null) => void;
 }

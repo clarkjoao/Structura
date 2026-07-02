@@ -77,4 +77,3 @@ export function SuggestionCard({ suggestion, onAccept, onReject }: SuggestionCar
     </div>
   );
 }
-

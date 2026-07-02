@@ -4,8 +4,7 @@ import type { ActiveMention, MentionItem } from "@/features/llm";
 const MENTION_TRIGGER_PATTERN = /(^|\s)@([^\s@]*)$/;
 
 export type InputSegment =
-  | { kind: "text"; value: string }
-  | { kind: "mention"; mentionId: string; label: string };
+  { kind: "text"; value: string } | { kind: "mention"; mentionId: string; label: string };
 
 export interface UseMentionInputResult {
   segments: InputSegment[];
@@ -52,7 +51,9 @@ function normalizeSegments(inputSegments: InputSegment[]): InputSegment[] {
   return normalizedSegments;
 }
 
-export function getMentionTriggerFromText(value: string): Omit<MentionTrigger, "segmentIndex"> | null {
+export function getMentionTriggerFromText(
+  value: string,
+): Omit<MentionTrigger, "segmentIndex"> | null {
   const match = value.match(MENTION_TRIGGER_PATTERN);
   if (!match) {
     return null;
@@ -80,9 +81,7 @@ function getMentionTrigger(segments: InputSegment[]): MentionTrigger | null {
 
 function segmentsToInputText(segments: InputSegment[]): string {
   return segments
-    .map((segment) =>
-      segment.kind === "text" ? segment.value : `@${segment.label}`,
-    )
+    .map((segment) => (segment.kind === "text" ? segment.value : `@${segment.label}`))
     .join("");
 }
 
@@ -147,9 +146,10 @@ export function useMentionInput(): UseMentionInputResult {
       { kind: "mention", mentionId: item.id, label: item.label },
       {
         kind: "text",
-        value: textAfterMention.startsWith(" ") || textAfterMention === ""
-          ? textAfterMention
-          : ` ${textAfterMention}`,
+        value:
+          textAfterMention.startsWith(" ") || textAfterMention === ""
+            ? textAfterMention
+            : ` ${textAfterMention}`,
       },
       ...segments.slice(trigger.segmentIndex + 1),
     ];
@@ -162,8 +162,7 @@ export function useMentionInput(): UseMentionInputResult {
 
   const removeMention = (mentionId: string) => {
     const nextSegments = segments.filter(
-      (segment) =>
-        segment.kind !== "mention" || segment.mentionId !== mentionId,
+      (segment) => segment.kind !== "mention" || segment.mentionId !== mentionId,
     );
     setSegments(nextSegments);
   };
@@ -181,10 +180,7 @@ export function useMentionInput(): UseMentionInputResult {
   };
 
   const inputText = useMemo(() => segmentsToInputText(segments), [segments]);
-  const resolvedText = useMemo(
-    () => segmentsToInputText(segments),
-    [segments],
-  );
+  const resolvedText = useMemo(() => segmentsToInputText(segments), [segments]);
 
   return {
     segments,
@@ -202,4 +198,3 @@ export function useMentionInput(): UseMentionInputResult {
     clearMentions,
   };
 }
-

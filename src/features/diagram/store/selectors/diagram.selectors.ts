@@ -3,14 +3,11 @@ import { useShallow } from "zustand/react/shallow";
 import type { DiagramModel } from "../../model/diagram.types";
 import { useDiagramStore } from "../diagram.store";
 
-export const useActiveDiagramId = () =>
-  useDiagramStore((s) => s.activeDiagramId);
+export const useActiveDiagramId = () => useDiagramStore((s) => s.activeDiagramId);
 
 /** Full diagram including viewport — use on the canvas where pan/zoom must subscribe. */
 export const useActiveDiagram = () =>
-  useDiagramStore((s) =>
-    s.activeDiagramId ? s.diagrams[s.activeDiagramId] : null,
-  );
+  useDiagramStore((s) => (s.activeDiagramId ? s.diagrams[s.activeDiagramId] : null));
 
 /**
  * Active diagram **without** viewport in the selector result. Shallow-compares the rest,
@@ -28,11 +25,9 @@ export const useActiveDiagramModel = () =>
     }),
   );
 
-export const useDiagramIds = () =>
-  useDiagramStore(useShallow((s) => Object.keys(s.diagrams)));
+export const useDiagramIds = () => useDiagramStore(useShallow((s) => Object.keys(s.diagrams)));
 
-export const useDiagram = (id: string) =>
-  useDiagramStore((s) => s.diagrams[id]);
+export const useDiagram = (id: string) => useDiagramStore((s) => s.diagrams[id]);
 
 export const useDiagrams = () => useDiagramStore(useShallow((s) => s.diagrams));
 

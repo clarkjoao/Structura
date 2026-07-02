@@ -1,8 +1,6 @@
 import type { Flow, FlowStep } from "../model/flow.types";
 
-
 export type BranchOwnershipMap = Map<string, { conditionStepId: string; branchIndex: number }>;
-
 
 export function buildFlowFromRecordingSnapshot(
   steps: FlowStep[],

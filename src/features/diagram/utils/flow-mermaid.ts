@@ -10,7 +10,9 @@ const INTENT_ARROW: Record<ConnectionIntent, string> = {
   "async-message": "-->>",
 };
 
-function getConditionKeyword(label?: string): "alt" | "loop" | "opt" | "par" | "critical" | "break" {
+function getConditionKeyword(
+  label?: string,
+): "alt" | "loop" | "opt" | "par" | "critical" | "break" {
   const normalized = label?.toLowerCase();
   if (
     normalized === "alt" ||
@@ -90,7 +92,6 @@ function buildParticipantAliasMap(
 
   return aliasMap;
 }
-
 
 export function stepsToMermaid(
   flow: Flow,
@@ -201,7 +202,6 @@ export function stepsToMermaid(
   return lines.join("\n");
 }
 
-
 export function parseMermaidToSteps(
   mermaid: string,
   components: Record<string, Component>,
@@ -264,7 +264,6 @@ export function parseMermaidToSteps(
     }
   }
 
-  
   for (let i = 0; i < stepIds.length - 1; i++) {
     steps[stepIds[i]].next = stepIds[i + 1];
   }

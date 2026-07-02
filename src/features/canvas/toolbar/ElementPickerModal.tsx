@@ -1,19 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Search, X } from "lucide-react";
 import { useReactFlow } from "@xyflow/react";
-import {
-  useDiagramActions,
-  useAllServices,
-  useAllComponents,
-  PanelKind,
-} from "@/features/diagram";
+import { useDiagramActions, useAllServices, useAllComponents, PanelKind } from "@/features/diagram";
 import { ElementCategory } from "../enums";
 import type { ComponentType } from "@/features/diagram";
 import type { CanvasPickerOption, ElementPickerModalProps } from "./element-picker/types";
-import {
-  getUsageKeyForType,
-  getDefaultNameForNewComponent,
-} from "@/features/diagram";
+import { getUsageKeyForType, getDefaultNameForNewComponent } from "@/features/diagram";
 import { AWS_CATEGORIES, type AwsCategory } from "@/lib/catalogs/aws";
 import { getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
 import { KEY, keyIs } from "@/lib/keyboard-utils";
@@ -21,10 +13,7 @@ import type { AwsCategoryId } from "@/lib/catalogs/aws";
 import { cloudRegistry } from "@/features/cloud";
 import { trackUsage } from "./element-usage-tracker";
 import { useTranslation } from "react-i18next";
-import {
-  AWS_PRIMARY_CATEGORY_IDS,
-  PICKER_CARD_CLASS,
-} from "./element-picker/constants";
+import { AWS_PRIMARY_CATEGORY_IDS, PICKER_CARD_CLASS } from "./element-picker/constants";
 import { persistCategory, readStoredCategory } from "./element-picker/storage";
 import { resolveAwsSpotlight } from "./element-picker/utils";
 import {
@@ -156,25 +145,16 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
 
   const q = search.trim().toLowerCase();
 
-  const filteredC4 = useMemo(
-    () => filterC4ByQuery(q, C4_OPTIONS),
-    [q, C4_OPTIONS],
-  );
+  const filteredC4 = useMemo(() => filterC4ByQuery(q, C4_OPTIONS), [q, C4_OPTIONS]);
 
-  const filteredCanvas = useMemo(
-    () => filterCanvasByQuery(q, CANVAS_OPTIONS),
-    [q, CANVAS_OPTIONS],
-  );
+  const filteredCanvas = useMemo(() => filterCanvasByQuery(q, CANVAS_OPTIONS), [q, CANVAS_OPTIONS]);
 
   const filteredFlowchart = useMemo(
     () => filterFlowchartByQuery(q, FLOWCHART_OPTIONS),
     [q, FLOWCHART_OPTIONS],
   );
 
-  const filteredAwsCategories = useMemo(
-    () => filterAwsCategoriesForQuery(q),
-    [q],
-  );
+  const filteredAwsCategories = useMemo(() => filterAwsCategoriesForQuery(q), [q]);
 
   const filteredAwsFlat = useMemo(
     () => flattenAwsServices(filteredAwsCategories),
@@ -191,10 +171,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     [q, azureProvider],
   );
 
-  const filteredServices = useMemo(
-    () => filterServicesByQuery(q, services),
-    [q, services],
-  );
+  const filteredServices = useMemo(() => filterServicesByQuery(q, services), [q, services]);
   const filteredTemplates = useMemo(() => {
     if (!q) return templates;
     return templates.filter((template) => {
@@ -257,7 +234,13 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const handleAddCloudService = (categoryId: string, serviceId: string, serviceName: string) => {
     const providerId = categoryId.split("-")[0];
     trackUsage(`${providerId}:${serviceId}`);
-    const comp = addComponent(categoryId as ComponentType, serviceName, null, getInsertPos(), serviceId);
+    const comp = addComponent(
+      categoryId as ComponentType,
+      serviceName,
+      null,
+      getInsertPos(),
+      serviceId,
+    );
     onInsert?.(comp.id);
     onClose();
   };
@@ -389,9 +372,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
             {CANVAS_OPTIONS.map((opt) => (
               <button
                 key={
-                  isPanelType(opt.type)
-                    ? `panel-${opt.panelKind ?? PanelKind.Default}`
-                    : opt.type
+                  isPanelType(opt.type) ? `panel-${opt.panelKind ?? PanelKind.Default}` : opt.type
                 }
                 type="button"
                 onClick={() => onAddCanvas(opt)}
@@ -422,7 +403,13 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
         return gcpProvider ? (
           <CloudBrowseView
             provider={gcpProvider}
-            primaryCategoryIds={["gcp-compute", "gcp-database", "gcp-storage", "gcp-networking", "gcp-ai"]}
+            primaryCategoryIds={[
+              "gcp-compute",
+              "gcp-database",
+              "gcp-storage",
+              "gcp-networking",
+              "gcp-ai",
+            ]}
             expandedSubcats={expandedGcpSubcats}
             q={q}
             toggleSubcat={toggleGcpSubcat}
@@ -433,7 +420,13 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
         return azureProvider ? (
           <CloudBrowseView
             provider={azureProvider}
-            primaryCategoryIds={["azure-compute", "azure-database", "azure-storage", "azure-networking", "azure-security"]}
+            primaryCategoryIds={[
+              "azure-compute",
+              "azure-database",
+              "azure-storage",
+              "azure-networking",
+              "azure-security",
+            ]}
             expandedSubcats={expandedAzureSubcats}
             q={q}
             toggleSubcat={toggleAzureSubcat}
@@ -451,9 +444,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
           />
         );
       case ElementCategory.Flowchart:
-        return (
-          <FlowchartCategoryView options={FLOWCHART_OPTIONS} onAdd={handleAddFlowNode} />
-        );
+        return <FlowchartCategoryView options={FLOWCHART_OPTIONS} onAdd={handleAddFlowNode} />;
       case ElementCategory.NodeTemplate:
         return filteredTemplates.length === 0 ? (
           <div className="text-xs text-muted-foreground">{t("patterns.userTemplates.empty")}</div>

@@ -70,7 +70,11 @@ export function PanelStyleSection({
       const clampedWidth = Math.max(MIN_PANEL_WIDTH, Math.round(parsedWidth));
       const clampedHeight = Math.max(MIN_PANEL_HEIGHT, Math.round(parsedHeight));
 
-      if (clampedWidth === componentNodeLayout.width && clampedHeight === componentNodeLayout.height) return;
+      if (
+        clampedWidth === componentNodeLayout.width &&
+        clampedHeight === componentNodeLayout.height
+      )
+        return;
 
       updateNodeLayout(
         component.id,
@@ -204,7 +208,9 @@ export function PanelStyleSection({
                       } as ComponentPatch);
                     }}
                     className={`h-7 w-7 rounded-full border-2 transition-transform hover:scale-105 ${
-                      active ? "ring-2 ring-offset-2 ring-offset-background ring-primary" : "border-border"
+                      active
+                        ? "ring-2 ring-offset-2 ring-offset-background ring-primary"
+                        : "border-border"
                     }`}
                     style={{ backgroundColor: laneColor.value }}
                   />

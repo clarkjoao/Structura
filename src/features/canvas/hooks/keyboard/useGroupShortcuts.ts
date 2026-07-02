@@ -61,7 +61,9 @@ export function useGroupShortcuts({
             ungroupNodes(node.id);
           } else {
             const comp = resolvedSnapshot.components[node.id];
-            const parentComp = comp?.parentId ? resolvedSnapshot.components[comp.parentId] : undefined;
+            const parentComp = comp?.parentId
+              ? resolvedSnapshot.components[comp.parentId]
+              : undefined;
             if (comp?.parentId && parentComp && isPanelComponent(parentComp)) {
               const parentLayout = resolvedSnapshot.nodeLayouts[comp.parentId];
               const childLayout = resolvedSnapshot.nodeLayouts[node.id];

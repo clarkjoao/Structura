@@ -8,8 +8,6 @@ import {
   type ServiceDefinition,
 } from "@/features/diagram";
 
-
-
 const FOLDER_ID = "folder-fintech";
 
 function toFlowSteps(stepList: FlowStep[]): Record<string, FlowStep> {
@@ -36,14 +34,13 @@ function buildFolders(): Record<string, Folder> {
   };
 }
 
-
-
 function buildServiceRegistry(): Record<string, ServiceDefinition> {
   return {
     "svc-api-gateway": {
       id: "svc-api-gateway",
       name: "api-gateway",
-      description: "Ponto de entrada para todo tráfego de clientes. Gerencia autenticação, rate limiting e roteamento.",
+      description:
+        "Ponto de entrada para todo tráfego de clientes. Gerencia autenticação, rate limiting e roteamento.",
       repositoryUrl: "https://github.com/fintech/api-gateway",
       technology: ["Kong", "Nginx", "Lua"],
       owner: "time-plataforma",
@@ -53,7 +50,8 @@ function buildServiceRegistry(): Record<string, ServiceDefinition> {
     "svc-payment": {
       id: "svc-payment",
       name: "payment-service",
-      description: "Orquestração central de pagamentos. Processa transações e gerencia idempotência.",
+      description:
+        "Orquestração central de pagamentos. Processa transações e gerencia idempotência.",
       repositoryUrl: "https://github.com/fintech/payment-service",
       technology: ["Kotlin", "Spring Boot", "PostgreSQL"],
       owner: "time-pagamentos",
@@ -123,12 +121,8 @@ function buildServiceRegistry(): Record<string, ServiceDefinition> {
   };
 }
 
-
-
 function buildDiagrams(): Record<string, Diagram> {
   return {
-
-    
     "d-context": {
       id: "d-context",
       name: "Fintech – Contexto do Sistema",
@@ -139,21 +133,22 @@ function buildDiagrams(): Record<string, Diagram> {
       updatedAt: Date.parse("2026-03-20T10:00:00.000Z"),
       viewport: { x: 0, y: 0, zoom: 0.55 },
       nodeLayouts: {
-        
-        "ctx-customer":     { elementId: "ctx-customer",     x: 80,   y: 300 },
-        "ctx-merchant":     { elementId: "ctx-merchant",     x: 80,   y: 600 },
-        
-        "ctx-platform":     { elementId: "ctx-platform",     x: 500,  y: 420 },
-        
+        "ctx-customer": { elementId: "ctx-customer", x: 80, y: 300 },
+        "ctx-merchant": { elementId: "ctx-merchant", x: 80, y: 600 },
+
+        "ctx-platform": { elementId: "ctx-platform", x: 500, y: 420 },
+
         "ctx-card-network": { elementId: "ctx-card-network", x: 1000, y: 180 },
-        "ctx-bank":         { elementId: "ctx-bank",         x: 1000, y: 380 },
-        "ctx-kyc":          { elementId: "ctx-kyc",          x: 1000, y: 580 },
-        "ctx-sms-gw":       { elementId: "ctx-sms-gw",       x: 1000, y: 740 },
-        
+        "ctx-bank": { elementId: "ctx-bank", x: 1000, y: 380 },
+        "ctx-kyc": { elementId: "ctx-kyc", x: 1000, y: 580 },
+        "ctx-sms-gw": { elementId: "ctx-sms-gw", x: 1000, y: 740 },
+
         "ctx-note": {
           elementId: "ctx-note",
-          x: 1320, y: 80,
-          width: 340, height: 420,
+          x: 1320,
+          y: 80,
+          width: 340,
+          height: 420,
         },
       },
       edgeLayouts: {},
@@ -164,21 +159,24 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "ctx-customer",
             name: "Cliente",
             type: "person",
-            description: "Usuário final que realiza pagamentos, transferências e gerencia sua conta pelo app mobile.",
+            description:
+              "Usuário final que realiza pagamentos, transferências e gerencia sua conta pelo app mobile.",
             parentId: null,
           },
           "ctx-merchant": {
             id: "ctx-merchant",
             name: "Lojista",
             type: "person",
-            description: "Empresa que aceita pagamentos. Integra via REST API ou link de pagamento.",
+            description:
+              "Empresa que aceita pagamentos. Integra via REST API ou link de pagamento.",
             parentId: null,
           },
           "ctx-platform": {
             id: "ctx-platform",
             name: "Plataforma Fintech Pagamentos",
             type: "system",
-            description: "Plataforma central que processa pagamentos, gerencia contas, detecta fraudes e registra entradas no ledger.",
+            description:
+              "Plataforma central que processa pagamentos, gerencia contas, detecta fraudes e registra entradas no ledger.",
             parentId: null,
             linkedDiagramId: "d-containers",
           },
@@ -186,7 +184,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "ctx-card-network",
             name: "Rede de Cartões",
             type: "system",
-            description: "Rede Visa / Mastercard para autorização e liquidação de transações com cartão.",
+            description:
+              "Rede Visa / Mastercard para autorização e liquidação de transações com cartão.",
             parentId: null,
             tags: ["externo"],
           },
@@ -218,7 +217,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "ctx-note",
             name: "Notas de Arquitetura",
             type: "note",
-            description: "## Principles\n- PCI-DSS Level 1 compliance\n- Card data never stored on our servers (tokenised via Card Network)\n- All financial operations are idempotent\n\n## Key decisions\n- PIX as primary payment rail (real-time, 24/7)\n- Double-entry ledger for auditability\n- Fraud scoring is async — does not block the payment path\n\n## Roadmap\n- Q3 2026: Multi-currency support\n- Q4 2026: Open Finance integration",
+            description:
+              "## Principles\n- PCI-DSS Level 1 compliance\n- Card data never stored on our servers (tokenised via Card Network)\n- All financial operations are idempotent\n\n## Key decisions\n- PIX as primary payment rail (real-time, 24/7)\n- Double-entry ledger for auditability\n- Fraud scoring is async — does not block the payment path\n\n## Roadmap\n- Q3 2026: Multi-currency support\n- Q4 2026: Open Finance integration",
             parentId: null,
           },
         },
@@ -315,7 +315,8 @@ function buildDiagrams(): Record<string, Diagram> {
                 connectionId: "ctx-r4",
                 description: "Plataforma envia instrução PIX ao Banco Parceiro",
                 duration: "~800ms",
-                payload: '{ "amount": 250.00, "pixKey": "recipient@email.com", "description": "Pagamento serviço" }',
+                payload:
+                  '{ "amount": 250.00, "pixKey": "recipient@email.com", "description": "Pagamento serviço" }',
                 payloadDirection: "request",
               },
               {
@@ -340,7 +341,6 @@ function buildDiagrams(): Record<string, Diagram> {
       },
     },
 
-    
     "d-containers": {
       id: "d-containers",
       name: "Fintech – Containers",
@@ -351,31 +351,47 @@ function buildDiagrams(): Record<string, Diagram> {
       updatedAt: Date.parse("2026-03-20T11:00:00.000Z"),
       viewport: { x: 0, y: 0, zoom: 0.4 },
       nodeLayouts: {
-        
-        "ct-mobile-user":      { elementId: "ct-mobile-user",      x: 60,   y: 600 },
+        "ct-mobile-user": { elementId: "ct-mobile-user", x: 60, y: 600 },
 
-        
-        "ct-panel-frontend":   { elementId: "ct-panel-frontend",   x: 280,  y: 80,  width: 480,  height: 900, zIndex: -1 },
-        "ct-mobile-app":       { elementId: "ct-mobile-app",       x: 340,  y: 200 },
-        "ct-bff":              { elementId: "ct-bff",              x: 340,  y: 480 },
-        "ct-web-app":          { elementId: "ct-web-app",          x: 340,  y: 720 },
+        "ct-panel-frontend": {
+          elementId: "ct-panel-frontend",
+          x: 280,
+          y: 80,
+          width: 480,
+          height: 900,
+          zIndex: -1,
+        },
+        "ct-mobile-app": { elementId: "ct-mobile-app", x: 340, y: 200 },
+        "ct-bff": { elementId: "ct-bff", x: 340, y: 480 },
+        "ct-web-app": { elementId: "ct-web-app", x: 340, y: 720 },
 
-        
-        "ct-gateway":          { elementId: "ct-gateway",          x: 860,  y: 480 },
+        "ct-gateway": { elementId: "ct-gateway", x: 860, y: 480 },
 
-        
-        "ct-panel-backend":    { elementId: "ct-panel-backend",    x: 1120, y: 80,  width: 560,  height: 900, zIndex: -1 },
-        "ct-payment-svc":      { elementId: "ct-payment-svc",      x: 1180, y: 160 },
-        "ct-account-svc":      { elementId: "ct-account-svc",      x: 1180, y: 380 },
-        "ct-fraud-svc":        { elementId: "ct-fraud-svc",        x: 1180, y: 600 },
+        "ct-panel-backend": {
+          elementId: "ct-panel-backend",
+          x: 1120,
+          y: 80,
+          width: 560,
+          height: 900,
+          zIndex: -1,
+        },
+        "ct-payment-svc": { elementId: "ct-payment-svc", x: 1180, y: 160 },
+        "ct-account-svc": { elementId: "ct-account-svc", x: 1180, y: 380 },
+        "ct-fraud-svc": { elementId: "ct-fraud-svc", x: 1180, y: 600 },
         "ct-notification-svc": { elementId: "ct-notification-svc", x: 1180, y: 780 },
 
-        
-        "ct-panel-data":       { elementId: "ct-panel-data",       x: 1780, y: 80,  width: 480,  height: 900, zIndex: -1 },
-        "ct-postgres":         { elementId: "ct-postgres",         x: 1840, y: 160 },
-        "ct-redis":            { elementId: "ct-redis",            x: 1840, y: 380 },
-        "ct-kafka":            { elementId: "ct-kafka",            x: 1840, y: 580 },
-        "ct-ledger-svc":       { elementId: "ct-ledger-svc",       x: 1840, y: 770 },
+        "ct-panel-data": {
+          elementId: "ct-panel-data",
+          x: 1780,
+          y: 80,
+          width: 480,
+          height: 900,
+          zIndex: -1,
+        },
+        "ct-postgres": { elementId: "ct-postgres", x: 1840, y: 160 },
+        "ct-redis": { elementId: "ct-redis", x: 1840, y: 380 },
+        "ct-kafka": { elementId: "ct-kafka", x: 1840, y: 580 },
+        "ct-ledger-svc": { elementId: "ct-ledger-svc", x: 1840, y: 770 },
       },
       edgeLayouts: {},
       snapshot: {
@@ -389,7 +405,6 @@ function buildDiagrams(): Record<string, Diagram> {
             parentId: null,
           },
 
-          
           "ct-panel-frontend": {
             id: "ct-panel-frontend",
             name: "Frontend",
@@ -404,7 +419,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "ct-mobile-app",
             name: "App Mobile",
             type: "container",
-            description: "App React Native para iOS/Android. Cobre todas as jornadas do cliente: onboarding, pagamentos e gestão de conta.",
+            description:
+              "App React Native para iOS/Android. Cobre todas as jornadas do cliente: onboarding, pagamentos e gestão de conta.",
             technology: "React Native / TypeScript",
             parentId: "ct-panel-frontend",
             serviceId: "svc-mobile",
@@ -413,7 +429,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "ct-bff",
             name: "BFF Mobile",
             type: "container",
-            description: "Backend-for-Frontend que agrega chamadas para o cliente mobile. Reduz round-trips e adapta payloads.",
+            description:
+              "Backend-for-Frontend que agrega chamadas para o cliente mobile. Reduz round-trips e adapta payloads.",
             technology: "Node.js / NestJS / GraphQL",
             parentId: "ct-panel-frontend",
             serviceId: "svc-bff",
@@ -428,19 +445,18 @@ function buildDiagrams(): Record<string, Diagram> {
             parentId: "ct-panel-frontend",
           },
 
-          
           "ct-gateway": {
             id: "ct-gateway",
             name: "API Gateway",
             type: "container",
-            description: "Ponto de entrada único. Validação JWT, rate limiting, terminação TLS e roteamento.",
+            description:
+              "Ponto de entrada único. Validação JWT, rate limiting, terminação TLS e roteamento.",
             technology: "Kong / Nginx",
             parentId: null,
             serviceId: "svc-api-gateway",
             linkedDiagramId: "d-gateway-components",
           },
 
-          
           "ct-panel-backend": {
             id: "ct-panel-backend",
             name: "Serviços Backend",
@@ -455,7 +471,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "ct-payment-svc",
             name: "Serviço de Pagamento",
             type: "container",
-            description: "Orquestra transações de pagamento: PIX, cartão, TED. Garante idempotência e gerencia retentativas.",
+            description:
+              "Orquestra transações de pagamento: PIX, cartão, TED. Garante idempotência e gerencia retentativas.",
             technology: "Kotlin / Spring Boot",
             parentId: "ct-panel-backend",
             serviceId: "svc-payment",
@@ -465,7 +482,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "ct-account-svc",
             name: "Serviço de Conta",
             type: "container",
-            description: "Gerencia contas, saldos, limites e histórico de transações. Aplica regras de negócio.",
+            description:
+              "Gerencia contas, saldos, limites e histórico de transações. Aplica regras de negócio.",
             technology: "Kotlin / Spring Boot",
             parentId: "ct-panel-backend",
             serviceId: "svc-account",
@@ -474,7 +492,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "ct-fraud-svc",
             name: "Detecção de Fraude",
             type: "container",
-            description: "Score de fraude em tempo real baseado em ML. Consome eventos de transação e enriquece com score de risco assincronamente.",
+            description:
+              "Score de fraude em tempo real baseado em ML. Consome eventos de transação e enriquece com score de risco assincronamente.",
             technology: "Python / FastAPI / TensorFlow",
             parentId: "ct-panel-backend",
             serviceId: "svc-fraud",
@@ -489,7 +508,6 @@ function buildDiagrams(): Record<string, Diagram> {
             serviceId: "svc-notification",
           },
 
-          
           "ct-panel-data": {
             id: "ct-panel-data",
             name: "Dados & Mensageria",
@@ -504,7 +522,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "ct-postgres",
             name: "PostgreSQL",
             type: "container",
-            description: "Banco relacional principal. Tabelas de contas, pagamentos e auditoria. Multi-AZ com réplicas de leitura.",
+            description:
+              "Banco relacional principal. Tabelas de contas, pagamentos e auditoria. Multi-AZ com réplicas de leitura.",
             technology: "PostgreSQL 16 / RDS",
             parentId: "ct-panel-data",
           },
@@ -512,7 +531,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "ct-redis",
             name: "Redis",
             type: "container",
-            description: "Chaves de idempotência, cache de sessão, contadores de rate limit e armazenamento de OTP.",
+            description:
+              "Chaves de idempotência, cache de sessão, contadores de rate limit e armazenamento de OTP.",
             technology: "Redis 7 / ElastiCache",
             parentId: "ct-panel-data",
           },
@@ -520,7 +540,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "ct-kafka",
             name: "Kafka",
             type: "container",
-            description: "Espinha dorsal de streaming de eventos. Tópicos: payment.processed, payment.failed, fraud.scored, account.updated.",
+            description:
+              "Espinha dorsal de streaming de eventos. Tópicos: payment.processed, payment.failed, fraud.scored, account.updated.",
             technology: "Apache Kafka / MSK",
             parentId: "ct-panel-data",
           },
@@ -528,36 +549,155 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "ct-ledger-svc",
             name: "Serviço de Ledger",
             type: "container",
-            description: "Ledger de partidas dobradas imutável para todos os movimentos financeiros. Schema append-only no PostgreSQL.",
+            description:
+              "Ledger de partidas dobradas imutável para todos os movimentos financeiros. Schema append-only no PostgreSQL.",
             technology: "Kotlin / Spring Boot",
             parentId: "ct-panel-data",
             serviceId: "svc-ledger",
           },
         },
         connections: {
-          "ct-r1":  { id: "ct-r1",  sourceId: "ct-mobile-user",      targetId: "ct-mobile-app",       label: "Usa",                    technology: "iOS / Android",      intent: "call" },
-          "ct-r2":  { id: "ct-r2",  sourceId: "ct-mobile-app",       targetId: "ct-bff",              label: "Queries GraphQL",         technology: "GraphQL / HTTPS",    intent: "call" },
-          "ct-r3":  { id: "ct-r3",  sourceId: "ct-web-app",          targetId: "ct-gateway",          label: "Chamadas REST",          technology: "HTTPS / REST",       intent: "call" },
-          "ct-r4":  { id: "ct-r4",  sourceId: "ct-bff",              targetId: "ct-gateway",          label: "Proxia requisições",        technology: "HTTPS / REST",       intent: "call" },
-          "ct-r5":  { id: "ct-r5",  sourceId: "ct-gateway",          targetId: "ct-payment-svc",      label: "Roteia requisições de pagamento", technology: "HTTPS / REST",       intent: "call" },
-          "ct-r6":  { id: "ct-r6",  sourceId: "ct-gateway",          targetId: "ct-account-svc",      label: "Roteia requisições de conta", technology: "HTTPS / REST",       intent: "call" },
-          "ct-r7":  { id: "ct-r7",  sourceId: "ct-payment-svc",      targetId: "ct-account-svc",      label: "Verifica saldo e limites",  technology: "gRPC",               intent: "call" },
-          "ct-r8":  { id: "ct-r8",  sourceId: "ct-payment-svc",      targetId: "ct-redis",            label: "Chaves de idempotência",        technology: "Redis Protocol",     intent: "data-flow" },
-          "ct-r9":  { id: "ct-r9",  sourceId: "ct-payment-svc",      targetId: "ct-postgres",         label: "Persiste transações",    technology: "JDBC",               intent: "data-flow" },
-          "ct-r10": { id: "ct-r10", sourceId: "ct-payment-svc",      targetId: "ct-kafka",            label: "Publica payment.processed", technology: "Kafka Producer",   intent: "event",        style: { animated: true } },
-          "ct-r11": { id: "ct-r11", sourceId: "ct-account-svc",      targetId: "ct-postgres",         label: "Lê / escreve contas",   technology: "JDBC",               intent: "data-flow" },
-          "ct-r12": { id: "ct-r12", sourceId: "ct-kafka",            targetId: "ct-fraud-svc",        label: "Consome eventos de pagamento",  technology: "Kafka Consumer",     intent: "event",        style: { animated: true } },
-          "ct-r13": { id: "ct-r13", sourceId: "ct-kafka",            targetId: "ct-notification-svc", label: "Consome eventos de pagamento",  technology: "Kafka Consumer",     intent: "event",        style: { animated: true } },
-          "ct-r14": { id: "ct-r14", sourceId: "ct-kafka",            targetId: "ct-ledger-svc",       label: "Consome todos os eventos financeiros",  technology: "Kafka Consumer",     intent: "event",        style: { animated: true } },
-          "ct-r15": { id: "ct-r15", sourceId: "ct-ledger-svc",       targetId: "ct-postgres",         label: "Registra entradas no ledger",   technology: "JDBC",               intent: "data-flow" },
-          "ct-r16": { id: "ct-r16", sourceId: "ct-fraud-svc",        targetId: "ct-kafka",            label: "Publica fraud.scored",    technology: "Kafka Producer",     intent: "event",        style: { animated: true } },
+          "ct-r1": {
+            id: "ct-r1",
+            sourceId: "ct-mobile-user",
+            targetId: "ct-mobile-app",
+            label: "Usa",
+            technology: "iOS / Android",
+            intent: "call",
+          },
+          "ct-r2": {
+            id: "ct-r2",
+            sourceId: "ct-mobile-app",
+            targetId: "ct-bff",
+            label: "Queries GraphQL",
+            technology: "GraphQL / HTTPS",
+            intent: "call",
+          },
+          "ct-r3": {
+            id: "ct-r3",
+            sourceId: "ct-web-app",
+            targetId: "ct-gateway",
+            label: "Chamadas REST",
+            technology: "HTTPS / REST",
+            intent: "call",
+          },
+          "ct-r4": {
+            id: "ct-r4",
+            sourceId: "ct-bff",
+            targetId: "ct-gateway",
+            label: "Proxia requisições",
+            technology: "HTTPS / REST",
+            intent: "call",
+          },
+          "ct-r5": {
+            id: "ct-r5",
+            sourceId: "ct-gateway",
+            targetId: "ct-payment-svc",
+            label: "Roteia requisições de pagamento",
+            technology: "HTTPS / REST",
+            intent: "call",
+          },
+          "ct-r6": {
+            id: "ct-r6",
+            sourceId: "ct-gateway",
+            targetId: "ct-account-svc",
+            label: "Roteia requisições de conta",
+            technology: "HTTPS / REST",
+            intent: "call",
+          },
+          "ct-r7": {
+            id: "ct-r7",
+            sourceId: "ct-payment-svc",
+            targetId: "ct-account-svc",
+            label: "Verifica saldo e limites",
+            technology: "gRPC",
+            intent: "call",
+          },
+          "ct-r8": {
+            id: "ct-r8",
+            sourceId: "ct-payment-svc",
+            targetId: "ct-redis",
+            label: "Chaves de idempotência",
+            technology: "Redis Protocol",
+            intent: "data-flow",
+          },
+          "ct-r9": {
+            id: "ct-r9",
+            sourceId: "ct-payment-svc",
+            targetId: "ct-postgres",
+            label: "Persiste transações",
+            technology: "JDBC",
+            intent: "data-flow",
+          },
+          "ct-r10": {
+            id: "ct-r10",
+            sourceId: "ct-payment-svc",
+            targetId: "ct-kafka",
+            label: "Publica payment.processed",
+            technology: "Kafka Producer",
+            intent: "event",
+            style: { animated: true },
+          },
+          "ct-r11": {
+            id: "ct-r11",
+            sourceId: "ct-account-svc",
+            targetId: "ct-postgres",
+            label: "Lê / escreve contas",
+            technology: "JDBC",
+            intent: "data-flow",
+          },
+          "ct-r12": {
+            id: "ct-r12",
+            sourceId: "ct-kafka",
+            targetId: "ct-fraud-svc",
+            label: "Consome eventos de pagamento",
+            technology: "Kafka Consumer",
+            intent: "event",
+            style: { animated: true },
+          },
+          "ct-r13": {
+            id: "ct-r13",
+            sourceId: "ct-kafka",
+            targetId: "ct-notification-svc",
+            label: "Consome eventos de pagamento",
+            technology: "Kafka Consumer",
+            intent: "event",
+            style: { animated: true },
+          },
+          "ct-r14": {
+            id: "ct-r14",
+            sourceId: "ct-kafka",
+            targetId: "ct-ledger-svc",
+            label: "Consome todos os eventos financeiros",
+            technology: "Kafka Consumer",
+            intent: "event",
+            style: { animated: true },
+          },
+          "ct-r15": {
+            id: "ct-r15",
+            sourceId: "ct-ledger-svc",
+            targetId: "ct-postgres",
+            label: "Registra entradas no ledger",
+            technology: "JDBC",
+            intent: "data-flow",
+          },
+          "ct-r16": {
+            id: "ct-r16",
+            sourceId: "ct-fraud-svc",
+            targetId: "ct-kafka",
+            label: "Publica fraud.scored",
+            technology: "Kafka Producer",
+            intent: "event",
+            style: { animated: true },
+          },
         },
         flows: {
           "flow-pix-payment": {
             id: "flow-pix-payment",
             name: "Pagamento PIX – Visão de Containers",
             diagramId: "d-containers",
-            description: "Fluxo completo de pagamento PIX do toque no mobile até o registro no ledger.",
+            description:
+              "Fluxo completo de pagamento PIX do toque no mobile até o registro no ledger.",
             tags: ["core", "pix", "caminho-feliz"],
             mermaid: "sequenceDiagram",
             steps: toFlowSteps([
@@ -567,7 +707,8 @@ function buildDiagrams(): Record<string, Diagram> {
                 componentId: "ct-mobile-app",
                 connectionId: "ct-r2",
                 description: "Cliente toca em 'Pagar via PIX' — app envia mutation GraphQL ao BFF",
-                payload: '{ "mutation": "createPixPayment", "amount": 250.00, "pixKey": "recipient@email.com" }',
+                payload:
+                  '{ "mutation": "createPixPayment", "amount": 250.00, "pixKey": "recipient@email.com" }',
                 payloadDirection: "request",
               },
               {
@@ -600,7 +741,8 @@ function buildDiagrams(): Record<string, Diagram> {
                 connectionId: "ct-r7",
                 description: "Verifica saldo e limite diário PIX via Serviço de Conta",
                 duration: "~30ms",
-                payload: '{ "accountId": "acc-123", "checkBalance": 250.00, "checkLimit": "PIX_DAILY" }',
+                payload:
+                  '{ "accountId": "acc-123", "checkBalance": 250.00, "checkLimit": "PIX_DAILY" }',
                 payloadDirection: "request",
               },
               {
@@ -617,7 +759,8 @@ function buildDiagrams(): Record<string, Diagram> {
                 componentId: "ct-payment-svc",
                 connectionId: "ct-r10",
                 description: "Publica evento payment.processed no Kafka",
-                payload: '{ "paymentId": "pay-789", "status": "PROCESSED", "amount": 250.00, "rail": "PIX" }',
+                payload:
+                  '{ "paymentId": "pay-789", "status": "PROCESSED", "amount": 250.00, "rail": "PIX" }',
                 payloadDirection: "request",
               },
               {
@@ -641,7 +784,6 @@ function buildDiagrams(): Record<string, Diagram> {
       },
     },
 
-    
     "d-payment-components": {
       id: "d-payment-components",
       name: "Serviço de Pagamento – Componentes",
@@ -652,20 +794,19 @@ function buildDiagrams(): Record<string, Diagram> {
       updatedAt: Date.parse("2026-03-20T12:00:00.000Z"),
       viewport: { x: 0, y: 0, zoom: 0.55 },
       nodeLayouts: {
-        
-        "pm-pix-controller":      { elementId: "pm-pix-controller",      x: 80,   y: 200 },
-        "pm-card-controller":     { elementId: "pm-card-controller",      x: 80,   y: 480 },
-        
-        "pm-payment-orchestrator":{ elementId: "pm-payment-orchestrator", x: 420,  y: 320 },
-        
-        "pm-idempotency":         { elementId: "pm-idempotency",         x: 760,  y: 120 },
-        "pm-balance-checker":     { elementId: "pm-balance-checker",     x: 760,  y: 320 },
-        "pm-limit-checker":       { elementId: "pm-limit-checker",       x: 760,  y: 520 },
-        
-        "pm-pix-adapter":         { elementId: "pm-pix-adapter",         x: 1100, y: 200 },
-        "pm-card-adapter":        { elementId: "pm-card-adapter",        x: 1100, y: 480 },
-        
-        "pm-event-publisher":     { elementId: "pm-event-publisher",     x: 1440, y: 320 },
+        "pm-pix-controller": { elementId: "pm-pix-controller", x: 80, y: 200 },
+        "pm-card-controller": { elementId: "pm-card-controller", x: 80, y: 480 },
+
+        "pm-payment-orchestrator": { elementId: "pm-payment-orchestrator", x: 420, y: 320 },
+
+        "pm-idempotency": { elementId: "pm-idempotency", x: 760, y: 120 },
+        "pm-balance-checker": { elementId: "pm-balance-checker", x: 760, y: 320 },
+        "pm-limit-checker": { elementId: "pm-limit-checker", x: 760, y: 520 },
+
+        "pm-pix-adapter": { elementId: "pm-pix-adapter", x: 1100, y: 200 },
+        "pm-card-adapter": { elementId: "pm-card-adapter", x: 1100, y: 480 },
+
+        "pm-event-publisher": { elementId: "pm-event-publisher", x: 1440, y: 320 },
       },
       edgeLayouts: {},
       snapshot: {
@@ -675,7 +816,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "pm-pix-controller",
             name: "PIX Controller",
             type: "component",
-            description: "Controller REST para iniciação, cancelamento e consulta de status PIX. Valida DTO e delega ao orquestrador.",
+            description:
+              "Controller REST para iniciação, cancelamento e consulta de status PIX. Valida DTO e delega ao orquestrador.",
             technology: "Kotlin / Spring MVC",
             parentId: null,
             serviceId: "svc-payment",
@@ -684,7 +826,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "pm-card-controller",
             name: "Card Controller",
             type: "component",
-            description: "Controller REST para pagamentos com cartão: captura, autorização, void e reembolso.",
+            description:
+              "Controller REST para pagamentos com cartão: captura, autorização, void e reembolso.",
             technology: "Kotlin / Spring MVC",
             parentId: null,
             serviceId: "svc-payment",
@@ -693,7 +836,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "pm-payment-orchestrator",
             name: "Payment Orchestrator",
             type: "component",
-            description: "Serviço de domínio central. Coordena verificação de idempotência, saldo, limites e invocação de adaptadores em fluxo transacional.",
+            description:
+              "Serviço de domínio central. Coordena verificação de idempotência, saldo, limites e invocação de adaptadores em fluxo transacional.",
             technology: "Kotlin / Spring Service",
             parentId: null,
             serviceId: "svc-payment",
@@ -702,7 +846,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "pm-idempotency",
             name: "Idempotency Guard",
             type: "component",
-            description: "Verifica e armazena chaves de idempotência no Redis com TTL. Retorna resposta em cache para requisições duplicadas.",
+            description:
+              "Verifica e armazena chaves de idempotência no Redis com TTL. Retorna resposta em cache para requisições duplicadas.",
             technology: "Kotlin / Redis",
             parentId: null,
             serviceId: "svc-payment",
@@ -711,7 +856,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "pm-balance-checker",
             name: "Balance Checker",
             type: "component",
-            description: "Chama o Serviço de Conta via gRPC para verificar saldo disponível antes do processamento.",
+            description:
+              "Chama o Serviço de Conta via gRPC para verificar saldo disponível antes do processamento.",
             technology: "Kotlin / gRPC Client",
             parentId: null,
             serviceId: "svc-payment",
@@ -720,7 +866,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "pm-limit-checker",
             name: "Limit Checker",
             type: "component",
-            description: "Aplica limites diários/mensais de transação por modalidade de pagamento e nível do cliente.",
+            description:
+              "Aplica limites diários/mensais de transação por modalidade de pagamento e nível do cliente.",
             technology: "Kotlin / Redis",
             parentId: null,
             serviceId: "svc-payment",
@@ -729,7 +876,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "pm-pix-adapter",
             name: "PIX Adapter",
             type: "component",
-            description: "Integra com a API PIX do Banco Parceiro (SPI). Gerencia autenticação, assinatura de mensagens e callbacks webhook assíncronos.",
+            description:
+              "Integra com a API PIX do Banco Parceiro (SPI). Gerencia autenticação, assinatura de mensagens e callbacks webhook assíncronos.",
             technology: "Kotlin / WebClient",
             parentId: null,
             serviceId: "svc-payment",
@@ -738,7 +886,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "pm-card-adapter",
             name: "Card Network Adapter",
             type: "component",
-            description: "Cliente ISO 8583 para rede de cartões. Gerencia mensagens de autorização, captura e estorno.",
+            description:
+              "Cliente ISO 8583 para rede de cartões. Gerencia mensagens de autorização, captura e estorno.",
             technology: "Kotlin / ISO 8583",
             parentId: null,
             serviceId: "svc-payment",
@@ -747,28 +896,79 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "pm-event-publisher",
             name: "Event Publisher",
             type: "component",
-            description: "Publica eventos de domínio no Kafka após persistência bem-sucedida. Padrão outbox garante entrega at-least-once.",
+            description:
+              "Publica eventos de domínio no Kafka após persistência bem-sucedida. Padrão outbox garante entrega at-least-once.",
             technology: "Kotlin / Kafka Producer",
             parentId: null,
             serviceId: "svc-payment",
           },
         },
         connections: {
-          "pm-r1": { id: "pm-r1", sourceId: "pm-pix-controller",       targetId: "pm-payment-orchestrator", label: "iniciarPagamento()",    intent: "call" },
-          "pm-r2": { id: "pm-r2", sourceId: "pm-card-controller",      targetId: "pm-payment-orchestrator", label: "autorizarCartao()",      intent: "call" },
-          "pm-r3": { id: "pm-r3", sourceId: "pm-payment-orchestrator", targetId: "pm-idempotency",          label: "verificarChave()",           intent: "call" },
-          "pm-r4": { id: "pm-r4", sourceId: "pm-payment-orchestrator", targetId: "pm-balance-checker",      label: "verificarSaldo()",       intent: "call" },
-          "pm-r5": { id: "pm-r5", sourceId: "pm-payment-orchestrator", targetId: "pm-limit-checker",        label: "verificarLimites()",        intent: "call" },
-          "pm-r6": { id: "pm-r6", sourceId: "pm-payment-orchestrator", targetId: "pm-pix-adapter",          label: "enviarInstrucaoPix()", intent: "call" },
-          "pm-r7": { id: "pm-r7", sourceId: "pm-payment-orchestrator", targetId: "pm-card-adapter",         label: "autorizar()",          intent: "call" },
-          "pm-r8": { id: "pm-r8", sourceId: "pm-payment-orchestrator", targetId: "pm-event-publisher",      label: "publicar(evento)",       intent: "event",  style: { animated: true } },
+          "pm-r1": {
+            id: "pm-r1",
+            sourceId: "pm-pix-controller",
+            targetId: "pm-payment-orchestrator",
+            label: "iniciarPagamento()",
+            intent: "call",
+          },
+          "pm-r2": {
+            id: "pm-r2",
+            sourceId: "pm-card-controller",
+            targetId: "pm-payment-orchestrator",
+            label: "autorizarCartao()",
+            intent: "call",
+          },
+          "pm-r3": {
+            id: "pm-r3",
+            sourceId: "pm-payment-orchestrator",
+            targetId: "pm-idempotency",
+            label: "verificarChave()",
+            intent: "call",
+          },
+          "pm-r4": {
+            id: "pm-r4",
+            sourceId: "pm-payment-orchestrator",
+            targetId: "pm-balance-checker",
+            label: "verificarSaldo()",
+            intent: "call",
+          },
+          "pm-r5": {
+            id: "pm-r5",
+            sourceId: "pm-payment-orchestrator",
+            targetId: "pm-limit-checker",
+            label: "verificarLimites()",
+            intent: "call",
+          },
+          "pm-r6": {
+            id: "pm-r6",
+            sourceId: "pm-payment-orchestrator",
+            targetId: "pm-pix-adapter",
+            label: "enviarInstrucaoPix()",
+            intent: "call",
+          },
+          "pm-r7": {
+            id: "pm-r7",
+            sourceId: "pm-payment-orchestrator",
+            targetId: "pm-card-adapter",
+            label: "autorizar()",
+            intent: "call",
+          },
+          "pm-r8": {
+            id: "pm-r8",
+            sourceId: "pm-payment-orchestrator",
+            targetId: "pm-event-publisher",
+            label: "publicar(evento)",
+            intent: "event",
+            style: { animated: true },
+          },
         },
         flows: {
           "flow-pix-component": {
             id: "flow-pix-component",
             name: "Pagamento PIX – Fluxo de Componentes",
             diagramId: "d-payment-components",
-            description: "Fluxo interno detalhado de um pagamento PIX pelos componentes do Serviço de Pagamento.",
+            description:
+              "Fluxo interno detalhado de um pagamento PIX pelos componentes do Serviço de Pagamento.",
             tags: ["core", "pix"],
             mermaid: "sequenceDiagram",
             steps: toFlowSteps([
@@ -778,7 +978,8 @@ function buildDiagrams(): Record<string, Diagram> {
                 componentId: "pm-pix-controller",
                 connectionId: "pm-r1",
                 description: "PIX Controller recebe POST /pix/payments e delega ao orquestrador",
-                payload: '{ "amount": 250.00, "pixKey": "recipient@email.com", "idempotencyKey": "idem-abc-123" }',
+                payload:
+                  '{ "amount": 250.00, "pixKey": "recipient@email.com", "idempotencyKey": "idem-abc-123" }',
                 payloadDirection: "request",
               },
               {
@@ -794,7 +995,8 @@ function buildDiagrams(): Record<string, Diagram> {
                 type: "action",
                 componentId: "pm-payment-orchestrator",
                 connectionId: "pm-r4",
-                description: "Balance Checker chama Serviço de Conta para verificar R$ 250,00 disponível",
+                description:
+                  "Balance Checker chama Serviço de Conta para verificar R$ 250,00 disponível",
                 duration: "~25ms",
                 payload: '{ "accountId": "acc-123", "requiredAmount": 250.00 }',
                 payloadDirection: "request",
@@ -814,7 +1016,8 @@ function buildDiagrams(): Record<string, Diagram> {
                 connectionId: "pm-r6",
                 description: "PIX Adapter assina e envia instrução ao SPI do Banco Parceiro",
                 duration: "~600ms",
-                payload: '{ "endToEndId": "E1234567890", "amount": 250.00, "creditParty": { "pixKey": "recipient@email.com" } }',
+                payload:
+                  '{ "endToEndId": "E1234567890", "amount": 250.00, "creditParty": { "pixKey": "recipient@email.com" } }',
                 payloadDirection: "request",
               },
               {
@@ -823,7 +1026,8 @@ function buildDiagrams(): Record<string, Diagram> {
                 componentId: "pm-pix-adapter",
                 description: "Banco confirma liquidação via webhook callback",
                 duration: "~1.2s",
-                payload: '{ "endToEndId": "E1234567890", "status": "ACCC", "settledAt": "2026-03-20T14:30:00Z" }',
+                payload:
+                  '{ "endToEndId": "E1234567890", "status": "ACCC", "settledAt": "2026-03-20T14:30:00Z" }',
                 payloadDirection: "response",
               },
               {
@@ -832,7 +1036,8 @@ function buildDiagrams(): Record<string, Diagram> {
                 componentId: "pm-event-publisher",
                 connectionId: "pm-r8",
                 description: "Publica evento payment.processed via padrão outbox",
-                payload: '{ "paymentId": "pay-789", "type": "PIX", "status": "SETTLED", "amount": 250.00 }',
+                payload:
+                  '{ "paymentId": "pay-789", "type": "PIX", "status": "SETTLED", "amount": 250.00 }',
                 payloadDirection: "request",
               },
             ]),
@@ -841,7 +1046,6 @@ function buildDiagrams(): Record<string, Diagram> {
       },
     },
 
-    
     "d-gateway-components": {
       id: "d-gateway-components",
       name: "API Gateway – Componentes",
@@ -852,12 +1056,12 @@ function buildDiagrams(): Record<string, Diagram> {
       updatedAt: Date.parse("2026-03-20T10:00:00.000Z"),
       viewport: { x: 0, y: 0, zoom: 0.6 },
       nodeLayouts: {
-        "gw-cors":         { elementId: "gw-cors",         x: 80,   y: 300 },
-        "gw-auth":         { elementId: "gw-auth",         x: 380,  y: 300 },
-        "gw-rate-limiter": { elementId: "gw-rate-limiter", x: 680,  y: 300 },
-        "gw-router":       { elementId: "gw-router",       x: 980,  y: 300 },
-        "gw-transformer":  { elementId: "gw-transformer",  x: 1280, y: 300 },
-        "gw-logger":       { elementId: "gw-logger",       x: 680,  y: 580 },
+        "gw-cors": { elementId: "gw-cors", x: 80, y: 300 },
+        "gw-auth": { elementId: "gw-auth", x: 380, y: 300 },
+        "gw-rate-limiter": { elementId: "gw-rate-limiter", x: 680, y: 300 },
+        "gw-router": { elementId: "gw-router", x: 980, y: 300 },
+        "gw-transformer": { elementId: "gw-transformer", x: 1280, y: 300 },
+        "gw-logger": { elementId: "gw-logger", x: 680, y: 580 },
       },
       edgeLayouts: {},
       snapshot: {
@@ -867,7 +1071,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "gw-cors",
             name: "CORS Handler",
             type: "component",
-            description: "Valida header Origin contra lista de permissão. Trata preflight OPTIONS com respostas em cache.",
+            description:
+              "Valida header Origin contra lista de permissão. Trata preflight OPTIONS com respostas em cache.",
             technology: "Kong Plugin / Lua",
             parentId: null,
             serviceId: "svc-api-gateway",
@@ -876,7 +1081,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "gw-auth",
             name: "JWT Validator",
             type: "component",
-            description: "Valida assinatura, expiração e claims do Bearer token. Injeta userId e roles nos headers upstream.",
+            description:
+              "Valida assinatura, expiração e claims do Bearer token. Injeta userId e roles nos headers upstream.",
             technology: "Kong Plugin / Lua",
             parentId: null,
             serviceId: "svc-api-gateway",
@@ -885,7 +1091,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "gw-rate-limiter",
             name: "Rate Limiter",
             type: "component",
-            description: "Rate limiting de janela deslizante por API key e IP. Limites armazenados no Redis. Retorna 429 quando excedido.",
+            description:
+              "Rate limiting de janela deslizante por API key e IP. Limites armazenados no Redis. Retorna 429 quando excedido.",
             technology: "Kong Plugin / Redis",
             parentId: null,
             serviceId: "svc-api-gateway",
@@ -894,7 +1101,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "gw-router",
             name: "Router",
             type: "component",
-            description: "Roteamento baseado em path para serviços upstream. Suporta canary releases via roteamento ponderado.",
+            description:
+              "Roteamento baseado em path para serviços upstream. Suporta canary releases via roteamento ponderado.",
             technology: "Kong / Nginx",
             parentId: null,
             serviceId: "svc-api-gateway",
@@ -903,7 +1111,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "gw-transformer",
             name: "Response Transformer",
             type: "component",
-            description: "Remove headers internos, adiciona headers de segurança (HSTS, CSP, X-Frame-Options) e aplica compressão gzip.",
+            description:
+              "Remove headers internos, adiciona headers de segurança (HSTS, CSP, X-Frame-Options) e aplica compressão gzip.",
             technology: "Kong Plugin / Lua",
             parentId: null,
             serviceId: "svc-api-gateway",
@@ -912,25 +1121,59 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "gw-logger",
             name: "Audit Logger",
             type: "component",
-            description: "Log JSON estruturado de todas as requisições e respostas para o CloudWatch. Mascara campos sensíveis (números de cartão, CPF).",
+            description:
+              "Log JSON estruturado de todas as requisições e respostas para o CloudWatch. Mascara campos sensíveis (números de cartão, CPF).",
             technology: "Kong Plugin / CloudWatch",
             parentId: null,
             serviceId: "svc-api-gateway",
           },
         },
         connections: {
-          "gw-r1": { id: "gw-r1", sourceId: "gw-cors",        targetId: "gw-auth",        label: "CORS aprovado",       intent: "call" },
-          "gw-r2": { id: "gw-r2", sourceId: "gw-auth",        targetId: "gw-rate-limiter", label: "Token válido",       intent: "call" },
-          "gw-r3": { id: "gw-r3", sourceId: "gw-rate-limiter", targetId: "gw-router",      label: "Dentro do limite",      intent: "call" },
-          "gw-r4": { id: "gw-r4", sourceId: "gw-router",      targetId: "gw-transformer",  label: "Resposta do upstream", intent: "call",         direction: "reverse" },
-          "gw-r5": { id: "gw-r5", sourceId: "gw-router",      targetId: "gw-logger",       label: "Log de auditoria assíncrono",   intent: "async-message", style: { strokeStyle: StrokeStyle.Dashed, animated: true } },
+          "gw-r1": {
+            id: "gw-r1",
+            sourceId: "gw-cors",
+            targetId: "gw-auth",
+            label: "CORS aprovado",
+            intent: "call",
+          },
+          "gw-r2": {
+            id: "gw-r2",
+            sourceId: "gw-auth",
+            targetId: "gw-rate-limiter",
+            label: "Token válido",
+            intent: "call",
+          },
+          "gw-r3": {
+            id: "gw-r3",
+            sourceId: "gw-rate-limiter",
+            targetId: "gw-router",
+            label: "Dentro do limite",
+            intent: "call",
+          },
+          "gw-r4": {
+            id: "gw-r4",
+            sourceId: "gw-router",
+            targetId: "gw-transformer",
+            label: "Resposta do upstream",
+            intent: "call",
+            direction: "reverse",
+          },
+          "gw-r5": {
+            id: "gw-r5",
+            sourceId: "gw-router",
+            targetId: "gw-logger",
+            label: "Log de auditoria assíncrono",
+            intent: "async-message",
+            style: { strokeStyle: StrokeStyle.Dashed, animated: true },
+          },
         },
         flows: {
           "flow-gw-request": {
             id: "flow-gw-request",
             name: "Pipeline de Requisição de Entrada",
             diagramId: "d-gateway-components",
-            description: "Como uma requisição percorre todos os plugins do gateway antes de chegar ao serviço upstream.",
+            description:
+              "Como uma requisição percorre todos os plugins do gateway antes de chegar ao serviço upstream.",
             tags: ["infra", "pipeline"],
             mermaid: "sequenceDiagram",
             steps: toFlowSteps([
@@ -957,7 +1200,8 @@ function buildDiagrams(): Record<string, Diagram> {
                 type: "action",
                 componentId: "gw-rate-limiter",
                 connectionId: "gw-r3",
-                description: "Rate Limiter verifica contador de janela deslizante no Redis — dentro do limite",
+                description:
+                  "Rate Limiter verifica contador de janela deslizante no Redis — dentro do limite",
                 duration: "~3ms",
               },
               {
@@ -965,7 +1209,8 @@ function buildDiagrams(): Record<string, Diagram> {
                 type: "action",
                 componentId: "gw-router",
                 connectionId: "gw-r5",
-                description: "Router proxia para o Serviço de Pagamento e loga assincronamente no CloudWatch",
+                description:
+                  "Router proxia para o Serviço de Pagamento e loga assincronamente no CloudWatch",
                 duration: "~2ms",
               },
               {
@@ -973,7 +1218,8 @@ function buildDiagrams(): Record<string, Diagram> {
                 type: "action",
                 componentId: "gw-transformer",
                 connectionId: "gw-r4",
-                description: "Transformer adiciona headers de segurança e comprime resposta antes de retornar",
+                description:
+                  "Transformer adiciona headers de segurança e comprime resposta antes de retornar",
                 duration: "~2ms",
               },
             ]),
@@ -982,7 +1228,6 @@ function buildDiagrams(): Record<string, Diagram> {
       },
     },
 
-    
     "d-bff-components": {
       id: "d-bff-components",
       name: "BFF Mobile – Componentes",
@@ -993,12 +1238,12 @@ function buildDiagrams(): Record<string, Diagram> {
       updatedAt: Date.parse("2026-03-20T10:00:00.000Z"),
       viewport: { x: 0, y: 0, zoom: 0.6 },
       nodeLayouts: {
-        "bff-gql-server":        { elementId: "bff-gql-server",        x: 80,   y: 360 },
-        "bff-auth-guard":        { elementId: "bff-auth-guard",        x: 420,  y: 120 },
-        "bff-payment-resolver":  { elementId: "bff-payment-resolver",  x: 420,  y: 360 },
-        "bff-account-resolver":  { elementId: "bff-account-resolver",  x: 420,  y: 580 },
-        "bff-dataloader":        { elementId: "bff-dataloader",        x: 760,  y: 460 },
-        "bff-cache":             { elementId: "bff-cache",             x: 1100, y: 460 },
+        "bff-gql-server": { elementId: "bff-gql-server", x: 80, y: 360 },
+        "bff-auth-guard": { elementId: "bff-auth-guard", x: 420, y: 120 },
+        "bff-payment-resolver": { elementId: "bff-payment-resolver", x: 420, y: 360 },
+        "bff-account-resolver": { elementId: "bff-account-resolver", x: 420, y: 580 },
+        "bff-dataloader": { elementId: "bff-dataloader", x: 760, y: 460 },
+        "bff-cache": { elementId: "bff-cache", x: 1100, y: 460 },
       },
       edgeLayouts: {},
       snapshot: {
@@ -1008,7 +1253,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "bff-gql-server",
             name: "GraphQL Server",
             type: "component",
-            description: "Apollo Server com design schema-first. Endpoint único para todas as queries e mutations mobile.",
+            description:
+              "Apollo Server com design schema-first. Endpoint único para todas as queries e mutations mobile.",
             technology: "NestJS / Apollo Server",
             parentId: null,
             serviceId: "svc-bff",
@@ -1017,7 +1263,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "bff-auth-guard",
             name: "Auth Guard",
             type: "component",
-            description: "Guard NestJS que valida o Bearer token antes de resolver operações protegidas.",
+            description:
+              "Guard NestJS que valida o Bearer token antes de resolver operações protegidas.",
             technology: "NestJS / Passport",
             parentId: null,
             serviceId: "svc-bff",
@@ -1026,7 +1273,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "bff-payment-resolver",
             name: "Payment Resolver",
             type: "component",
-            description: "Resolve queries e mutations de pagamento. Mapeia tipos GraphQL para DTOs REST do Serviço de Pagamento.",
+            description:
+              "Resolve queries e mutations de pagamento. Mapeia tipos GraphQL para DTOs REST do Serviço de Pagamento.",
             technology: "NestJS / GraphQL",
             parentId: null,
             serviceId: "svc-bff",
@@ -1035,7 +1283,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "bff-account-resolver",
             name: "Account Resolver",
             type: "component",
-            description: "Resolve saldo, limites e histórico de transações da conta. Agrega dados do Serviço de Conta.",
+            description:
+              "Resolve saldo, limites e histórico de transações da conta. Agrega dados do Serviço de Conta.",
             technology: "NestJS / GraphQL",
             parentId: null,
             serviceId: "svc-bff",
@@ -1044,7 +1293,8 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "bff-dataloader",
             name: "DataLoader",
             type: "component",
-            description: "Agrupa e desduplicata chamadas REST downstream dentro de uma única requisição GraphQL para evitar N+1.",
+            description:
+              "Agrupa e desduplicata chamadas REST downstream dentro de uma única requisição GraphQL para evitar N+1.",
             technology: "DataLoader / Node.js",
             parentId: null,
             serviceId: "svc-bff",
@@ -1053,25 +1303,62 @@ function buildDiagrams(): Record<string, Diagram> {
             id: "bff-cache",
             name: "Response Cache",
             type: "component",
-            description: "Cache LRU em memória para saldo e limites da conta. TTL 30s. Invalidado em eventos de pagamento.",
+            description:
+              "Cache LRU em memória para saldo e limites da conta. TTL 30s. Invalidado em eventos de pagamento.",
             technology: "NestJS CacheManager / Redis",
             parentId: null,
             serviceId: "svc-bff",
           },
         },
         connections: {
-          "bff-r1": { id: "bff-r1", sourceId: "bff-gql-server",       targetId: "bff-auth-guard",       label: "Protege operações",    intent: "call" },
-          "bff-r2": { id: "bff-r2", sourceId: "bff-gql-server",       targetId: "bff-payment-resolver", label: "Resolve operações de pagamento",    intent: "call" },
-          "bff-r3": { id: "bff-r3", sourceId: "bff-gql-server",       targetId: "bff-account-resolver", label: "Resolve operações de conta",    intent: "call" },
-          "bff-r4": { id: "bff-r4", sourceId: "bff-payment-resolver", targetId: "bff-dataloader",       label: "Agrupa chamadas de API",       intent: "call" },
-          "bff-r5": { id: "bff-r5", sourceId: "bff-account-resolver", targetId: "bff-dataloader",       label: "Agrupa chamadas de API",       intent: "call" },
-          "bff-r6": { id: "bff-r6", sourceId: "bff-dataloader",       targetId: "bff-cache",            label: "Cache hit / miss",        intent: "data-flow", style: { animated: true } },
+          "bff-r1": {
+            id: "bff-r1",
+            sourceId: "bff-gql-server",
+            targetId: "bff-auth-guard",
+            label: "Protege operações",
+            intent: "call",
+          },
+          "bff-r2": {
+            id: "bff-r2",
+            sourceId: "bff-gql-server",
+            targetId: "bff-payment-resolver",
+            label: "Resolve operações de pagamento",
+            intent: "call",
+          },
+          "bff-r3": {
+            id: "bff-r3",
+            sourceId: "bff-gql-server",
+            targetId: "bff-account-resolver",
+            label: "Resolve operações de conta",
+            intent: "call",
+          },
+          "bff-r4": {
+            id: "bff-r4",
+            sourceId: "bff-payment-resolver",
+            targetId: "bff-dataloader",
+            label: "Agrupa chamadas de API",
+            intent: "call",
+          },
+          "bff-r5": {
+            id: "bff-r5",
+            sourceId: "bff-account-resolver",
+            targetId: "bff-dataloader",
+            label: "Agrupa chamadas de API",
+            intent: "call",
+          },
+          "bff-r6": {
+            id: "bff-r6",
+            sourceId: "bff-dataloader",
+            targetId: "bff-cache",
+            label: "Cache hit / miss",
+            intent: "data-flow",
+            style: { animated: true },
+          },
         },
         flows: {},
       },
     },
 
-    
     "d-deployment": {
       id: "d-deployment",
       name: "Deployment – Infraestrutura AWS",
@@ -1082,82 +1369,87 @@ function buildDiagrams(): Record<string, Diagram> {
       updatedAt: Date.parse("2026-03-20T14:00:00.000Z"),
       viewport: { x: 0, y: 0, zoom: 0.35 },
       nodeLayouts: {
-        
-        "dep-cloudfront":     { elementId: "dep-cloudfront",     x: 60,   y: 400 },
-        "dep-waf":            { elementId: "dep-waf",            x: 60,   y: 600 },
+        "dep-cloudfront": { elementId: "dep-cloudfront", x: 60, y: 400 },
+        "dep-waf": { elementId: "dep-waf", x: 60, y: 600 },
 
-        
         "dep-vpc": {
           elementId: "dep-vpc",
-          x: 360, y: 60,
-          width: 2600, height: 1800,
+          x: 360,
+          y: 60,
+          width: 2600,
+          height: 1800,
           zIndex: -1,
         },
 
-        
         "dep-panel-public": {
           elementId: "dep-panel-public",
-          x: 80, y: 120,
-          width: 440, height: 1560,
+          x: 80,
+          y: 120,
+          width: 440,
+          height: 1560,
           zIndex: -1,
         },
-        "dep-alb":            { elementId: "dep-alb",            x: 140,  y: 280 },
-        "dep-nat":            { elementId: "dep-nat",            x: 140,  y: 560 },
-        "dep-bastion":        { elementId: "dep-bastion",        x: 140,  y: 840 },
+        "dep-alb": { elementId: "dep-alb", x: 140, y: 280 },
+        "dep-nat": { elementId: "dep-nat", x: 140, y: 560 },
+        "dep-bastion": { elementId: "dep-bastion", x: 140, y: 840 },
 
-        
         "dep-panel-private": {
           elementId: "dep-panel-private",
-          x: 600, y: 120,
-          width: 660, height: 1560,
+          x: 600,
+          y: 120,
+          width: 660,
+          height: 1560,
           zIndex: -1,
         },
         "dep-eks": {
           elementId: "dep-eks",
-          x: 660, y: 200,
-          width: 540, height: 820,
+          x: 660,
+          y: 200,
+          width: 540,
+          height: 820,
           zIndex: 0,
         },
-        "dep-pod-gateway":    { elementId: "dep-pod-gateway",    x: 700,  y: 320 },
-        "dep-pod-payment":    { elementId: "dep-pod-payment",    x: 700,  y: 540 },
-        "dep-pod-account":    { elementId: "dep-pod-account",    x: 700,  y: 760 },
-        "dep-pod-bff":        { elementId: "dep-pod-bff",        x: 700,  y: 980 },
+        "dep-pod-gateway": { elementId: "dep-pod-gateway", x: 700, y: 320 },
+        "dep-pod-payment": { elementId: "dep-pod-payment", x: 700, y: 540 },
+        "dep-pod-account": { elementId: "dep-pod-account", x: 700, y: 760 },
+        "dep-pod-bff": { elementId: "dep-pod-bff", x: 700, y: 980 },
 
-        
         "dep-panel-data": {
           elementId: "dep-panel-data",
-          x: 1340, y: 120,
-          width: 560, height: 1560,
+          x: 1340,
+          y: 120,
+          width: 560,
+          height: 1560,
           zIndex: -1,
         },
-        "dep-rds":            { elementId: "dep-rds",            x: 1400, y: 240 },
-        "dep-redis":          { elementId: "dep-redis",          x: 1400, y: 540 },
-        "dep-msk":            { elementId: "dep-msk",            x: 1400, y: 840 },
-        "dep-dynamo":         { elementId: "dep-dynamo",         x: 1400, y: 1140 },
+        "dep-rds": { elementId: "dep-rds", x: 1400, y: 240 },
+        "dep-redis": { elementId: "dep-redis", x: 1400, y: 540 },
+        "dep-msk": { elementId: "dep-msk", x: 1400, y: 840 },
+        "dep-dynamo": { elementId: "dep-dynamo", x: 1400, y: 1140 },
 
-        
-        "dep-s3":             { elementId: "dep-s3",             x: 3100, y: 200 },
-        "dep-cloudwatch":     { elementId: "dep-cloudwatch",     x: 3100, y: 500 },
-        "dep-secrets":        { elementId: "dep-secrets",        x: 3100, y: 800 },
+        "dep-s3": { elementId: "dep-s3", x: 3100, y: 200 },
+        "dep-cloudwatch": { elementId: "dep-cloudwatch", x: 3100, y: 500 },
+        "dep-secrets": { elementId: "dep-secrets", x: 3100, y: 800 },
 
-        
         "dep-note": {
           elementId: "dep-note",
-          x: 3100, y: 1100,
-          width: 340, height: 480,
+          x: 3100,
+          y: 1100,
+          width: 340,
+          height: 480,
         },
       },
       edgeLayouts: {},
       snapshot: {
         iconLibrary: {},
         components: {
-          
           "dep-cloudfront": {
             id: "dep-cloudfront",
             name: "CloudFront",
             type: "aws-networking",
             awsService: "Amazon CloudFront",
-            description: "CDN para assets estáticos (SPA do Dashboard Lojista). Terminação TLS e restrição geográfica.",
+            description:
+              "CDN para assets estáticos (SPA do Dashboard Lojista). Terminação TLS e restrição geográfica.",
             technology: "CloudFront",
             parentId: null,
           },
@@ -1166,12 +1458,12 @@ function buildDiagrams(): Record<string, Diagram> {
             name: "AWS WAF",
             type: "aws-security",
             awsService: "AWS WAF",
-            description: "Web Application Firewall. Regras OWASP, reputação de IP e mitigação de bots.",
+            description:
+              "Web Application Firewall. Regras OWASP, reputação de IP e mitigação de bots.",
             technology: "WAF v2",
             parentId: null,
           },
 
-          
           "dep-vpc": {
             id: "dep-vpc",
             name: "VPC de Produção (us-east-1)",
@@ -1183,7 +1475,6 @@ function buildDiagrams(): Record<string, Diagram> {
             parentId: null,
           },
 
-          
           "dep-panel-public": {
             id: "dep-panel-public",
             name: "Subnets Públicas",
@@ -1199,7 +1490,8 @@ function buildDiagrams(): Record<string, Diagram> {
             name: "Application Load Balancer",
             type: "aws-networking",
             awsService: "Elastic Load Balancing",
-            description: "ALB com terminação TLS 1.3, roteamento baseado em path e integração com WAF.",
+            description:
+              "ALB com terminação TLS 1.3, roteamento baseado em path e integração com WAF.",
             technology: "ALB",
             parentId: "dep-panel-public",
           },
@@ -1217,12 +1509,12 @@ function buildDiagrams(): Record<string, Diagram> {
             name: "Bastion Host",
             type: "aws-compute",
             awsService: "Amazon EC2",
-            description: "Servidor de salto para acesso emergencial ao BD. Session Manager é preferido.",
+            description:
+              "Servidor de salto para acesso emergencial ao BD. Session Manager é preferido.",
             technology: "EC2 t3.micro",
             parentId: "dep-panel-public",
           },
 
-          
           "dep-panel-private": {
             id: "dep-panel-private",
             name: "Subnets Privadas",
@@ -1240,7 +1532,8 @@ function buildDiagrams(): Record<string, Diagram> {
             panelKind: PanelKind.EksCluster,
             panelColor: "hsl(220 60% 50%)",
             panelOpacity: 12,
-            description: "Kubernetes gerenciado. Karpenter para autoscaling de nós. IRSA para IAM de pods.",
+            description:
+              "Kubernetes gerenciado. Karpenter para autoscaling de nós. IRSA para IAM de pods.",
             parentId: "dep-panel-private",
           },
           "dep-pod-gateway": {
@@ -1248,7 +1541,8 @@ function buildDiagrams(): Record<string, Diagram> {
             name: "pods api-gateway",
             type: "aws-containers",
             awsService: "Amazon EKS",
-            description: "3–10 pods (HPA por CPU/RPS). Kong rodando como Kubernetes Ingress Controller.",
+            description:
+              "3–10 pods (HPA por CPU/RPS). Kong rodando como Kubernetes Ingress Controller.",
             technology: "Kong / Docker",
             parentId: "dep-eks",
           },
@@ -1257,7 +1551,8 @@ function buildDiagrams(): Record<string, Diagram> {
             name: "pods payment-service",
             type: "aws-containers",
             awsService: "Amazon EKS",
-            description: "2–8 pods (HPA por CPU). JVM ajustada para baixa latência. Memória 512Mi–2Gi.",
+            description:
+              "2–8 pods (HPA por CPU). JVM ajustada para baixa latência. Memória 512Mi–2Gi.",
             technology: "Kotlin / JVM / Docker",
             parentId: "dep-eks",
           },
@@ -1266,7 +1561,8 @@ function buildDiagrams(): Record<string, Diagram> {
             name: "pods account-service",
             type: "aws-containers",
             awsService: "Amazon EKS",
-            description: "2–6 pods. Réplicas de leitura usadas para consultas de saldo, reduzindo carga no BD de escrita.",
+            description:
+              "2–6 pods. Réplicas de leitura usadas para consultas de saldo, reduzindo carga no BD de escrita.",
             technology: "Kotlin / JVM / Docker",
             parentId: "dep-eks",
           },
@@ -1275,12 +1571,12 @@ function buildDiagrams(): Record<string, Diagram> {
             name: "pods mobile-bff",
             type: "aws-containers",
             awsService: "Amazon EKS",
-            description: "3–12 pods (HPA por RPS). Node.js com cluster mode desabilitado (single-threaded por pod).",
+            description:
+              "3–12 pods (HPA por RPS). Node.js com cluster mode desabilitado (single-threaded por pod).",
             technology: "Node.js / Docker",
             parentId: "dep-eks",
           },
 
-          
           "dep-panel-data": {
             id: "dep-panel-data",
             name: "Subnets de Dados",
@@ -1296,7 +1592,8 @@ function buildDiagrams(): Record<string, Diagram> {
             name: "RDS PostgreSQL 16",
             type: "aws-database",
             awsService: "Amazon RDS",
-            description: "Multi-AZ db.r7g.large. Backups automatizados (30 dias). Performance Insights habilitado.",
+            description:
+              "Multi-AZ db.r7g.large. Backups automatizados (30 dias). Performance Insights habilitado.",
             technology: "PostgreSQL 16 / RDS",
             parentId: "dep-panel-data",
           },
@@ -1305,7 +1602,8 @@ function buildDiagrams(): Record<string, Diagram> {
             name: "ElastiCache Redis 7",
             type: "aws-database",
             awsService: "Amazon ElastiCache",
-            description: "Cluster mode habilitado. 3 shards × 2 nós. Usado para idempotência, rate limiting e sessões.",
+            description:
+              "Cluster mode habilitado. 3 shards × 2 nós. Usado para idempotência, rate limiting e sessões.",
             technology: "Redis 7 / ElastiCache",
             parentId: "dep-panel-data",
           },
@@ -1314,7 +1612,8 @@ function buildDiagrams(): Record<string, Diagram> {
             name: "MSK Kafka 3.6",
             type: "aws-integration",
             awsService: "Amazon MSK",
-            description: "3 brokers kafka.m5.large. Retenção de 7 dias. TLS em trânsito, criptografia em repouso.",
+            description:
+              "3 brokers kafka.m5.large. Retenção de 7 dias. TLS em trânsito, criptografia em repouso.",
             technology: "MSK / Kafka 3.6",
             parentId: "dep-panel-data",
           },
@@ -1323,18 +1622,19 @@ function buildDiagrams(): Record<string, Diagram> {
             name: "DynamoDB",
             type: "aws-database",
             awsService: "Amazon DynamoDB",
-            description: "Capacidade on-demand. Usado pela Detecção de Fraude para feature store e cache de regras.",
+            description:
+              "Capacidade on-demand. Usado pela Detecção de Fraude para feature store e cache de regras.",
             technology: "DynamoDB",
             parentId: "dep-panel-data",
           },
 
-          
           "dep-s3": {
             id: "dep-s3",
             name: "S3",
             type: "aws-storage",
             awsService: "Amazon S3",
-            description: "Bucket de assets estáticos (versionado, replicado). Bucket de estado do Terraform. Arquivo de logs de auditoria.",
+            description:
+              "Bucket de assets estáticos (versionado, replicado). Bucket de estado do Terraform. Arquivo de logs de auditoria.",
             technology: "S3",
             parentId: null,
           },
@@ -1343,7 +1643,8 @@ function buildDiagrams(): Record<string, Diagram> {
             name: "CloudWatch",
             type: "aws-management",
             awsService: "Amazon CloudWatch",
-            description: "Logs, métricas e alarmes centralizados. Dashboards de latência, taxa de erro e throughput.",
+            description:
+              "Logs, métricas e alarmes centralizados. Dashboards de latência, taxa de erro e throughput.",
             technology: "CloudWatch / X-Ray",
             parentId: null,
           },
@@ -1352,35 +1653,119 @@ function buildDiagrams(): Record<string, Diagram> {
             name: "Secrets Manager",
             type: "aws-security",
             awsService: "AWS Secrets Manager",
-            description: "Credenciais de BD, chaves de API e certificados PKI. Rotação habilitada para senhas do RDS.",
+            description:
+              "Credenciais de BD, chaves de API e certificados PKI. Rotação habilitada para senhas do RDS.",
             technology: "Secrets Manager",
             parentId: null,
           },
 
-          
           "dep-note": {
             id: "dep-note",
             name: "Notas de Deployment",
             type: "note",
-            description: "## Cost estimates (monthly)\n- EKS nodes: ~$480 (6× m5.xlarge, Karpenter)\n- RDS: ~$380 (Multi-AZ r7g.large)\n- MSK: ~$240 (m5.large × 3)\n- ElastiCache: ~$180\n\n## IaC\n- Terraform modules in `infra/` repo\n- ArgoCD for GitOps deployment\n- Helm charts per service\n\n## On-call\n- PagerDuty integration on P1/P2 alarms\n- RTO: 15min, RPO: 1min",
+            description:
+              "## Cost estimates (monthly)\n- EKS nodes: ~$480 (6× m5.xlarge, Karpenter)\n- RDS: ~$380 (Multi-AZ r7g.large)\n- MSK: ~$240 (m5.large × 3)\n- ElastiCache: ~$180\n\n## IaC\n- Terraform modules in `infra/` repo\n- ArgoCD for GitOps deployment\n- Helm charts per service\n\n## On-call\n- PagerDuty integration on P1/P2 alarms\n- RTO: 15min, RPO: 1min",
             parentId: null,
           },
         },
         connections: {
-          "dep-r1":  { id: "dep-r1",  sourceId: "dep-waf",          targetId: "dep-alb",          label: "Inspeciona tráfego",        intent: "call" },
-          "dep-r2":  { id: "dep-r2",  sourceId: "dep-alb",          targetId: "dep-pod-gateway",  label: "Roteia HTTPS",            intent: "call" },
-          "dep-r3":  { id: "dep-r3",  sourceId: "dep-pod-gateway",  targetId: "dep-pod-payment",  label: "Roteia /pagamentos",        intent: "call" },
-          "dep-r4":  { id: "dep-r4",  sourceId: "dep-pod-gateway",  targetId: "dep-pod-account",  label: "Roteia /contas",        intent: "call" },
-          "dep-r5":  { id: "dep-r5",  sourceId: "dep-pod-gateway",  targetId: "dep-pod-bff",      label: "Roteia /graphql",         intent: "call" },
-          "dep-r6":  { id: "dep-r6",  sourceId: "dep-pod-payment",  targetId: "dep-rds",          label: "JDBC (escrita)",            intent: "data-flow", style: { strokeWidth: 2 } },
-          "dep-r7":  { id: "dep-r7",  sourceId: "dep-pod-account",  targetId: "dep-rds",          label: "JDBC (leitura/escrita)",       intent: "data-flow", style: { strokeWidth: 2 } },
-          "dep-r8":  { id: "dep-r8",  sourceId: "dep-pod-payment",  targetId: "dep-redis",        label: "Idempotência / cache",     intent: "data-flow" },
-          "dep-r9":  { id: "dep-r9",  sourceId: "dep-pod-payment",  targetId: "dep-msk",          label: "Produz eventos",          intent: "event",     style: { animated: true } },
-          "dep-r10": { id: "dep-r10", sourceId: "dep-pod-gateway",  targetId: "dep-redis",        label: "Contadores de rate limit",     intent: "data-flow" },
-          
-          "dep-r11": { id: "dep-r11", sourceId: "dep-pod-gateway",  targetId: "dep-cloudwatch",   label: "Logs e métricas",          intent: "async-message", style: { strokeStyle: StrokeStyle.Dashed, animated: true } },
-          "dep-r12": { id: "dep-r12", sourceId: "dep-pod-payment",  targetId: "dep-nat",          label: "Saída via NAT",          intent: "dependency" },
-          "dep-r13": { id: "dep-r13", sourceId: "dep-pod-payment",  targetId: "dep-secrets",      label: "Busca secrets (IRSA)",    intent: "call",      style: { strokeStyle: StrokeStyle.Dashed } },
+          "dep-r1": {
+            id: "dep-r1",
+            sourceId: "dep-waf",
+            targetId: "dep-alb",
+            label: "Inspeciona tráfego",
+            intent: "call",
+          },
+          "dep-r2": {
+            id: "dep-r2",
+            sourceId: "dep-alb",
+            targetId: "dep-pod-gateway",
+            label: "Roteia HTTPS",
+            intent: "call",
+          },
+          "dep-r3": {
+            id: "dep-r3",
+            sourceId: "dep-pod-gateway",
+            targetId: "dep-pod-payment",
+            label: "Roteia /pagamentos",
+            intent: "call",
+          },
+          "dep-r4": {
+            id: "dep-r4",
+            sourceId: "dep-pod-gateway",
+            targetId: "dep-pod-account",
+            label: "Roteia /contas",
+            intent: "call",
+          },
+          "dep-r5": {
+            id: "dep-r5",
+            sourceId: "dep-pod-gateway",
+            targetId: "dep-pod-bff",
+            label: "Roteia /graphql",
+            intent: "call",
+          },
+          "dep-r6": {
+            id: "dep-r6",
+            sourceId: "dep-pod-payment",
+            targetId: "dep-rds",
+            label: "JDBC (escrita)",
+            intent: "data-flow",
+            style: { strokeWidth: 2 },
+          },
+          "dep-r7": {
+            id: "dep-r7",
+            sourceId: "dep-pod-account",
+            targetId: "dep-rds",
+            label: "JDBC (leitura/escrita)",
+            intent: "data-flow",
+            style: { strokeWidth: 2 },
+          },
+          "dep-r8": {
+            id: "dep-r8",
+            sourceId: "dep-pod-payment",
+            targetId: "dep-redis",
+            label: "Idempotência / cache",
+            intent: "data-flow",
+          },
+          "dep-r9": {
+            id: "dep-r9",
+            sourceId: "dep-pod-payment",
+            targetId: "dep-msk",
+            label: "Produz eventos",
+            intent: "event",
+            style: { animated: true },
+          },
+          "dep-r10": {
+            id: "dep-r10",
+            sourceId: "dep-pod-gateway",
+            targetId: "dep-redis",
+            label: "Contadores de rate limit",
+            intent: "data-flow",
+          },
+
+          "dep-r11": {
+            id: "dep-r11",
+            sourceId: "dep-pod-gateway",
+            targetId: "dep-cloudwatch",
+            label: "Logs e métricas",
+            intent: "async-message",
+            style: { strokeStyle: StrokeStyle.Dashed, animated: true },
+          },
+          "dep-r12": {
+            id: "dep-r12",
+            sourceId: "dep-pod-payment",
+            targetId: "dep-nat",
+            label: "Saída via NAT",
+            intent: "dependency",
+          },
+          "dep-r13": {
+            id: "dep-r13",
+            sourceId: "dep-pod-payment",
+            targetId: "dep-secrets",
+            label: "Busca secrets (IRSA)",
+            intent: "call",
+            style: { strokeStyle: StrokeStyle.Dashed },
+          },
         },
         flows: {},
       },
@@ -1388,6 +1773,7 @@ function buildDiagrams(): Record<string, Diagram> {
   };
 }
 
-export const SEED_FTECH_SERVICE_REGISTRY: Record<string, ServiceDefinition> = buildServiceRegistry();
-export const SEED_FTECH_DIAGRAMS: Record<string, Diagram>                   = buildDiagrams();
-export const SEED_FTECH_FOLDERS: Record<string, Folder>                     = buildFolders();
+export const SEED_FTECH_SERVICE_REGISTRY: Record<string, ServiceDefinition> =
+  buildServiceRegistry();
+export const SEED_FTECH_DIAGRAMS: Record<string, Diagram> = buildDiagrams();
+export const SEED_FTECH_FOLDERS: Record<string, Folder> = buildFolders();

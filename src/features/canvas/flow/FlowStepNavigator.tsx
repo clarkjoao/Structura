@@ -1,5 +1,13 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, X, MessageSquare, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  X,
+  MessageSquare,
+  Clock,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import {
   getOrderedStepIds,
   resolveSceneSnapshot,
@@ -38,10 +46,7 @@ function buildDotInfos(flow: Flow, stepTitles: Map<string, string>): DotInfo[] {
       incomingCounts.set(step.next, (incomingCounts.get(step.next) ?? 0) + 1);
     }
     step.branches?.forEach((branch) => {
-      incomingCounts.set(
-        branch.nextId,
-        (incomingCounts.get(branch.nextId) ?? 0) + 1,
-      );
+      incomingCounts.set(branch.nextId, (incomingCounts.get(branch.nextId) ?? 0) + 1);
     });
   });
 
@@ -172,14 +177,9 @@ const FlowStepNavigator = ({
     return titles;
   }, [diagram, flow.steps, t]);
 
-  const dotInfos = useMemo(
-    () => buildDotInfos(flow, stepTitles),
-    [flow, stepTitles],
-  );
+  const dotInfos = useMemo(() => buildDotInfos(flow, stepTitles), [flow, stepTitles]);
   const total = dotInfos.length;
-  const currentIndex = currentStepId
-    ? dotInfos.findIndex((dot) => dot.id === currentStepId)
-    : -1;
+  const currentIndex = currentStepId ? dotInfos.findIndex((dot) => dot.id === currentStepId) : -1;
 
   return (
     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 w-[460px] rounded-xl border border-border bg-card/95 backdrop-blur-sm shadow-2xl">
@@ -189,7 +189,10 @@ const FlowStepNavigator = ({
           const isPast = currentIndex >= 0 && i < currentIndex;
           const isCond = dot.type === "condition";
           return (
-            <div key={dot.id} className="relative flex shrink-0 flex-col items-center gap-0.5 group">
+            <div
+              key={dot.id}
+              className="relative flex shrink-0 flex-col items-center gap-0.5 group"
+            >
               {i > 0 && (
                 <div
                   className="absolute right-full top-[7px] h-px w-full"
@@ -212,17 +215,19 @@ const FlowStepNavigator = ({
                   ${total > 20 ? "h-2 w-2" : "h-3.5 w-3.5"}
                   ${isCond ? "rotate-45 rounded-sm" : "rounded-full"}
                   border-2 transition-all duration-200
-                  ${isCurrent
-                    ? "scale-110 border-primary bg-primary ring-2 ring-primary/30"
-                    : isPast
-                      ? dot.branchColor
-                        ? "border-opacity-80"
+                  ${
+                    isCurrent
+                      ? "scale-110 border-primary bg-primary ring-2 ring-primary/30"
+                      : isPast
+                        ? dot.branchColor
+                          ? "border-opacity-80"
+                          : isCond
+                            ? "border-amber-400/70 bg-amber-400/70"
+                            : "border-primary/60 bg-primary/60"
                         : isCond
-                          ? "border-amber-400/70 bg-amber-400/70"
-                          : "border-primary/60 bg-primary/60"
-                      : isCond
-                        ? "border-amber-400/70 bg-amber-400/10"
-                        : "border-border bg-background"}
+                          ? "border-amber-400/70 bg-amber-400/10"
+                          : "border-border bg-background"
+                  }
                 `}
                 style={
                   isPast && dot.branchColor
@@ -246,8 +251,11 @@ const FlowStepNavigator = ({
 
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
         <div className="flex items-center gap-2 min-w-0">
-          <button onClick={onGoBack} disabled={!canGoBack}
-            className="rounded-md p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors">
+          <button
+            onClick={onGoBack}
+            disabled={!canGoBack}
+            className="rounded-md p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
+          >
             <ChevronLeft className="h-4 w-4" />
           </button>
           <div className="min-w-0 flex items-center gap-1.5">
@@ -262,22 +270,27 @@ const FlowStepNavigator = ({
             {currentIndex >= 0 ? currentIndex + 1 : "—"} / {total}
           </span>
           {!isCondition && (
-            <button onClick={onGoNext} disabled={!canGoForward}
-              className="rounded-md p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors">
+            <button
+              onClick={onGoNext}
+              disabled={!canGoForward}
+              className="rounded-md p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
+            >
               <ChevronRight className="h-4 w-4" />
             </button>
           )}
         </div>
-        <button onClick={onExit} className="text-muted-foreground hover:text-foreground transition-colors" title={t("flowStepNav.exitTitle")}>
+        <button
+          onClick={onExit}
+          className="text-muted-foreground hover:text-foreground transition-colors"
+          title={t("flowStepNav.exitTitle")}
+        >
           <X className="h-4 w-4" />
         </button>
       </div>
 
       {isCondition && step?.branches && (
         <div className="px-4 py-3">
-          <p className="text-xs font-semibold text-amber-400 mb-3">
-            ◇ {step.conditionLabel}
-          </p>
+          <p className="text-xs font-semibold text-amber-400 mb-3">◇ {step.conditionLabel}</p>
           <div className="grid gap-2">
             {step.branches.map((branch, i) => (
               <button
@@ -297,7 +310,11 @@ const FlowStepNavigator = ({
           <MessageSquare className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             {step.note && <p className="text-xs text-foreground leading-relaxed">{step.note}</p>}
-            {step.description && <p className="text-xs text-muted-foreground italic leading-relaxed">{step.description}</p>}
+            {step.description && (
+              <p className="text-xs text-muted-foreground italic leading-relaxed">
+                {step.description}
+              </p>
+            )}
           </div>
           {step.duration && (
             <span className="inline-flex items-center gap-1 text-[10px] font-mono text-primary shrink-0">
@@ -314,7 +331,11 @@ const FlowStepNavigator = ({
             className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             {showPayload ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-            <span>{step.payloadDirection === 'response' ? t("flowStepNav.response") : t("flowStepNav.request")}</span>
+            <span>
+              {step.payloadDirection === "response"
+                ? t("flowStepNav.response")
+                : t("flowStepNav.request")}
+            </span>
           </button>
           {showPayload && (
             <pre className="mt-1 rounded-md border border-border bg-secondary p-2 text-[10px] font-mono text-foreground whitespace-pre-wrap overflow-auto max-h-28">
@@ -326,12 +347,18 @@ const FlowStepNavigator = ({
 
       {!isCondition && (
         <div className="px-4 py-2 flex justify-center gap-2">
-          <button onClick={onGoBack} disabled={!canGoBack}
-            className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors">
+          <button
+            onClick={onGoBack}
+            disabled={!canGoBack}
+            className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
+          >
             <ChevronLeft className="h-3.5 w-3.5" /> {t("common.previous")}
           </button>
-          <button onClick={onGoNext} disabled={!canGoForward}
-            className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
+          <button
+            onClick={onGoNext}
+            disabled={!canGoForward}
+            className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+          >
             {t("common.next")} <ChevronRight className="h-3.5 w-3.5" />
           </button>
         </div>

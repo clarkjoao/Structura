@@ -6,17 +6,14 @@ interface UseUndoRedoShortcutsParams {
   redo: () => void;
 }
 
-export function useUndoRedoShortcuts({
-  undo,
-  redo,
-}: UseUndoRedoShortcutsParams): KeyHandler {
+export function useUndoRedoShortcuts({ undo, redo }: UseUndoRedoShortcutsParams): KeyHandler {
   return useCallback(
     (e: KeyboardEvent): boolean => {
       const mod = isModKeyPressed(e);
       if (!mod) return false;
 
       // Windows and Linux use Y for redo
-      if(getPlatform() !== "mac" && keyMatchesLetter(e, KEY.Y)) {
+      if (getPlatform() !== "mac" && keyMatchesLetter(e, KEY.Y)) {
         e.preventDefault();
         redo();
         return true;

@@ -17,10 +17,8 @@ describe("sanitizeJourneyImageSrc", () => {
 
   it("rejects non-raster data URLs and schemes", () => {
     expect(sanitizeJourneyImageSrc("javascript:alert(1)")).toBeNull();
-    expect(sanitizeJourneyImageSrc('data:text/html,<script>alert(1)</script>')).toBeNull();
-    expect(
-      sanitizeJourneyImageSrc("data:image/svg+xml;base64,PHN2Zy8+"),
-    ).toBeNull();
+    expect(sanitizeJourneyImageSrc("data:text/html,<script>alert(1)</script>")).toBeNull();
+    expect(sanitizeJourneyImageSrc("data:image/svg+xml;base64,PHN2Zy8+")).toBeNull();
     expect(sanitizeJourneyImageSrc("https://example.com/x.png")).toBeNull();
   });
 });

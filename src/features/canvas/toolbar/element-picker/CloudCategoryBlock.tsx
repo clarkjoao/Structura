@@ -20,9 +20,7 @@ export function CloudCategoryBlock({
   onPick: (categoryId: string, serviceId: string, serviceName: string) => void;
 }) {
   const filtered = q
-    ? cat.services.filter(
-        (s) => s.name.toLowerCase().includes(q) || s.id.includes(q),
-      )
+    ? cat.services.filter((s) => s.name.toLowerCase().includes(q) || s.id.includes(q))
     : cat.services;
 
   if (filtered.length === 0) return null;
@@ -55,11 +53,7 @@ export function CloudCategoryBlock({
               onClick={() => onPick(cat.id, svc.id, svc.name)}
               className="flex flex-col items-center gap-1 rounded-lg border border-border/40 bg-muted/40 p-2 transition-colors hover:bg-muted"
             >
-              <CloudIcon
-                componentType={cat.id}
-                serviceIconName={svc.iconName}
-                size={40}
-              />
+              <CloudIcon componentType={cat.id} serviceIconName={svc.iconName} size={40} />
               <span className="line-clamp-2 text-center text-[10px] leading-tight text-foreground">
                 {svc.name}
               </span>

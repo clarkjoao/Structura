@@ -42,8 +42,7 @@ export default function ModelExplorerPage() {
   const [isViewingCoverage, setIsViewingCoverage] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [navStack, setNavStack] = useState<string[]>([]);
-  const [copiedClipboardKind, setCopiedClipboardKind] =
-    useState<CopiedClipboardKind | null>(null);
+  const [copiedClipboardKind, setCopiedClipboardKind] = useState<CopiedClipboardKind | null>(null);
   const [focusMode, setFocusMode] = useState(false);
   const [showStartModal, setShowStartModal] = useState(false);
   const [collabActive, setCollabActive] = useState(false);
@@ -107,39 +106,38 @@ export default function ModelExplorerPage() {
       await navigator.clipboard.writeText(exportStructurizr(diagram));
       flashCopied("structurizr");
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : t("export.copyStructurizrError"),
-      );
+      toast.error(error instanceof Error ? error.message : t("export.copyStructurizrError"));
     }
   }, [diagram, flashCopied, t]);
 
-  const handleExportFormats = useCallback((formats: DiagramExportFormat[]) => {
-    if (!diagram) return;
-    if (formats.length === 0) return;
-    try {
-      const { baseName, files } = buildDiagramExportFiles({
-        diagram,
-        flows,
-        serviceRegistry,
-        formats,
-      });
+  const handleExportFormats = useCallback(
+    (formats: DiagramExportFormat[]) => {
+      if (!diagram) return;
+      if (formats.length === 0) return;
+      try {
+        const { baseName, files } = buildDiagramExportFiles({
+          diagram,
+          flows,
+          serviceRegistry,
+          formats,
+        });
 
-      if (files.length === 1) {
-        const [file] = files;
-        downloadFile(file.content, file.filename, file.mime);
-        return;
+        if (files.length === 1) {
+          const [file] = files;
+          downloadFile(file.content, file.filename, file.mime);
+          return;
+        }
+
+        void downloadZip(
+          files.map(({ filename, content }) => ({ filename, content })),
+          `${baseName}.zip`,
+        );
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : t("export.modal.error"));
       }
-
-      void downloadZip(
-        files.map(({ filename, content }) => ({ filename, content })),
-        `${baseName}.zip`,
-      );
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : t("export.modal.error"),
-      );
-    }
-  }, [diagram, flows, serviceRegistry, t]);
+    },
+    [diagram, flows, serviceRegistry, t],
+  );
 
   const handleStartCollab = useCallback((name: string, serverUrl: string) => {
     setCollabUserName(name);
@@ -158,24 +156,21 @@ export default function ModelExplorerPage() {
         <div className={`flex-1 flex items-center justify-center ${focusMode ? "" : "mt-16"}`}>
           <div className="text-center">
             <p className="text-muted-foreground mb-4">{t("flows.noDiagram")}</p>
-            <Link to={backHref} className="text-primary hover:underline text-sm">{t("flows.backToDashboard")}</Link>
+            <Link to={backHref} className="text-primary hover:underline text-sm">
+              {t("flows.backToDashboard")}
+            </Link>
           </div>
         </div>
       </div>
     );
   }
 
-  const backHref = diagram.folderId
-    ? `/workspace?f=${diagram.folderId}`
-    : "/workspace";
+  const backHref = diagram.folderId ? `/workspace?f=${diagram.folderId}` : "/workspace";
 
   return (
     <div className="h-screen flex flex-col">
       {!focusMode ? <Navbar /> : null}
-      <FlowModeProvider
-        onFinalize={onWorkspaceFlowFinalize}
-        onStartRecording={() => {}}
-      >
+      <FlowModeProvider onFinalize={onWorkspaceFlowFinalize} onStartRecording={() => {}}>
         <CollabProvider
           enabled={collabActive}
           reserveEphemeralRoomId={showStartModal}

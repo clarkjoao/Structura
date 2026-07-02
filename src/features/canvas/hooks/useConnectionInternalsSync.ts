@@ -2,7 +2,6 @@ import { useEffect, useRef } from "react";
 
 type ConnectionCounts = Record<string, { incoming: number; outgoing: number }>;
 
-
 export function useConnectionInternalsSync(
   connectionCountPerNode: ConnectionCounts,
   updateNodeInternals: (nodeIds: string[]) => void,

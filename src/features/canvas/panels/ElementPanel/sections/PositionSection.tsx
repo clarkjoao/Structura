@@ -85,16 +85,7 @@ export function PositionSection({
     if (nextX === nodeLayout.x && nextY === nodeLayout.y) return;
 
     updateNodeLayout(componentId, { x: nextX, y: nextY });
-  }, [
-    componentId,
-    heightInput,
-    isPanel,
-    nodeLayout,
-    updateNodeLayout,
-    widthInput,
-    xInput,
-    yInput,
-  ]);
+  }, [componentId, heightInput, isPanel, nodeLayout, updateNodeLayout, widthInput, xInput, yInput]);
 
   useEffect(() => {
     if (!nodeLayout) return;

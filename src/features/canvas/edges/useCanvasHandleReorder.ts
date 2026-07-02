@@ -20,12 +20,7 @@ export function useCanvasHandleReorder({
   effectiveHandleOrderRef.current = effectiveHandleOrder;
 
   const onReorderHandle = useCallback(
-    (
-      nodeId: string,
-      side: "incoming" | "outgoing",
-      connId: string,
-      direction: "up" | "down",
-    ) => {
+    (nodeId: string, side: "incoming" | "outgoing", connId: string, direction: "up" | "down") => {
       if (
         isRecording ||
         isPlaying ||

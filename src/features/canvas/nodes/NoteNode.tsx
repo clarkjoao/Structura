@@ -40,7 +40,7 @@ export type NoteNodeData = {
   isSelected: boolean;
   isHighlighted?: boolean;
   onStartEdit?: () => void;
-  
+
   onClickBody?: () => void;
   onInlineEditingChange?: (editing: boolean) => void;
   collapsed?: boolean;
@@ -84,8 +84,7 @@ const NoteNode = memo(({ data: d, selected }: NodeProps<Node<NoteNodeData>>) => 
       ? (d.panelColorDark ?? NOTE_DEFAULT_DARK)
       : (d.panelColor ?? NOTE_DEFAULT_LIGHT);
   const isSelected = selected || d.isSelected;
-  const isHighlighted =
-    (d.isHighlighted ?? false) || highlightedNodeIds.has(elementId);
+  const isHighlighted = (d.isHighlighted ?? false) || highlightedNodeIds.has(elementId);
   const isActive = isSelected || isHighlighted;
   const dark = isDarkBg(paperColor);
   const collabHighlight = useCollabHighlight(elementId);
@@ -138,14 +137,7 @@ const NoteNode = memo(({ data: d, selected }: NodeProps<Node<NoteNodeData>>) => 
     if (draftValue !== description) {
       updateComponent(elementId, { description: draftValue });
     }
-  }, [
-    isEditing,
-    draftValue,
-    description,
-    elementId,
-    onInlineEditingChange,
-    updateComponent,
-  ]);
+  }, [isEditing, draftValue, description, elementId, onInlineEditingChange, updateComponent]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -165,8 +157,7 @@ const NoteNode = memo(({ data: d, selected }: NodeProps<Node<NoteNodeData>>) => 
   const hasContent = content.length > 0;
   const descriptionPreview = content.replace(/\s+/g, " ").slice(0, 120);
 
-  const selectedRing =
-    "ring-2 ring-primary shadow-[0_0_0_2px_hsl(var(--primary)/0.3)]";
+  const selectedRing = "ring-2 ring-primary shadow-[0_0_0_2px_hsl(var(--primary)/0.3)]";
   const unselectedNoteShadow = "shadow-md hover:shadow-lg";
 
   if (collapsed) {
@@ -190,9 +181,7 @@ const NoteNode = memo(({ data: d, selected }: NodeProps<Node<NoteNodeData>>) => 
             style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
           />
         )}
-        {d.compareBadges && (
-          <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
-        )}
+        {d.compareBadges && <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
         {!d.compareBadges && d.sceneBadge && (
           <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
         )}
@@ -203,19 +192,14 @@ const NoteNode = memo(({ data: d, selected }: NodeProps<Node<NoteNodeData>>) => 
             className={`shrink-0 ${mutedClass}`}
           />
         ) : (
-          <FileText
-            className={`h-4 w-4 shrink-0 ${mutedClass}`}
-            strokeWidth={1.5}
-          />
+          <FileText className={`h-4 w-4 shrink-0 ${mutedClass}`} strokeWidth={1.5} />
         )}
         <div className="min-w-0 flex-1">
           <span className={`text-sm font-semibold truncate block ${textClass}`}>
             {title || t("noteNode.titleFallback")}
           </span>
           {hasContent && (
-            <span className={`text-[11px] truncate block ${mutedClass}`}>
-              {descriptionPreview}
-            </span>
+            <span className={`text-[11px] truncate block ${mutedClass}`}>{descriptionPreview}</span>
           )}
         </div>
         {onToggleCollapse && (
@@ -265,9 +249,7 @@ const NoteNode = memo(({ data: d, selected }: NodeProps<Node<NoteNodeData>>) => 
             style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
           />
         )}
-        {d.compareBadges && (
-          <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
-        )}
+        {d.compareBadges && <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
         {!d.compareBadges && d.sceneBadge && (
           <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
         )}
@@ -283,10 +265,7 @@ const NoteNode = memo(({ data: d, selected }: NodeProps<Node<NoteNodeData>>) => 
               className={`shrink-0 ${mutedClass}`}
             />
           ) : (
-            <FileText
-              className={`h-4 w-4 shrink-0 ${mutedClass}`}
-              strokeWidth={1.5}
-            />
+            <FileText className={`h-4 w-4 shrink-0 ${mutedClass}`} strokeWidth={1.5} />
           )}
           <span className={`text-xs font-medium truncate flex-1 ${mutedClass}`}>
             {title || t("noteNode.titleFallback")}
@@ -339,38 +318,26 @@ const NoteNode = memo(({ data: d, selected }: NodeProps<Node<NoteNodeData>>) => 
                   <ReactMarkdown
                     components={{
                       p: ({ children }) => (
-                        <p className="mb-2 last:mb-0 text-[13px] leading-relaxed">
-                          {children}
-                        </p>
+                        <p className="mb-2 last:mb-0 text-[13px] leading-relaxed">{children}</p>
                       ),
                       h1: ({ children }) => (
-                        <h1 className="text-base font-semibold mt-3 mb-1 first:mt-0">
-                          {children}
-                        </h1>
+                        <h1 className="text-base font-semibold mt-3 mb-1 first:mt-0">{children}</h1>
                       ),
                       h2: ({ children }) => (
-                        <h2 className="text-sm font-semibold mt-2 mb-1 first:mt-0">
-                          {children}
-                        </h2>
+                        <h2 className="text-sm font-semibold mt-2 mb-1 first:mt-0">{children}</h2>
                       ),
                       h3: ({ children }) => (
-                        <h3 className="text-sm font-medium mt-2 mb-0.5 first:mt-0">
-                          {children}
-                        </h3>
+                        <h3 className="text-sm font-medium mt-2 mb-0.5 first:mt-0">{children}</h3>
                       ),
                       ul: ({ children }) => (
-                        <ul className="list-disc pl-4 mb-2 space-y-0.5 text-[13px]">
-                          {children}
-                        </ul>
+                        <ul className="list-disc pl-4 mb-2 space-y-0.5 text-[13px]">{children}</ul>
                       ),
                       ol: ({ children }) => (
                         <ol className="list-decimal pl-4 mb-2 space-y-0.5 text-[13px]">
                           {children}
                         </ol>
                       ),
-                      li: ({ children }) => (
-                        <li className="leading-relaxed">{children}</li>
-                      ),
+                      li: ({ children }) => <li className="leading-relaxed">{children}</li>,
                       code: ({ children }) => (
                         <code className="px-1 py-0.5 rounded bg-foreground/10 text-[12px] font-mono">
                           {children}
@@ -413,9 +380,7 @@ const NoteNode = memo(({ data: d, selected }: NodeProps<Node<NoteNodeData>>) => 
           )}
         </div>
 
-        <div
-          className={`h-2 shrink-0 ${dark ? "bg-white/5" : "bg-foreground/[0.02]"}`}
-        />
+        <div className={`h-2 shrink-0 ${dark ? "bg-white/5" : "bg-foreground/[0.02]"}`} />
       </div>
     </>
   );

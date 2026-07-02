@@ -1,10 +1,6 @@
 import type { Connection } from "../model/connection.types";
 
-
-export function applyHandleOrder(
-  conns: Connection[],
-  order: string[],
-): Connection[] {
+export function applyHandleOrder(conns: Connection[], order: string[]): Connection[] {
   if (!order.length) return conns;
   return [
     ...order

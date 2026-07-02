@@ -36,14 +36,9 @@ export function DetailPanel({
   const { config: githubConfig } = useGithubConfig();
   const normalizedSources = normalizeSources(svc);
   const hasGithubSource = normalizedSources.some((s) => s.type === ServiceSource.Github);
-  const hasDefectDojoSource = normalizedSources.some(
-    (s) => s.type === ServiceSource.Defectdojo,
-  );
+  const hasDefectDojoSource = normalizedSources.some((s) => s.type === ServiceSource.Defectdojo);
   const hasSyncSource = hasGithubSource || hasDefectDojoSource;
-  const usage = useMemo(
-    () => getServiceUsage(svc.id, diagrams),
-    [svc.id, diagrams],
-  );
+  const usage = useMemo(() => getServiceUsage(svc.id, diagrams), [svc.id, diagrams]);
 
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(svc.name);
@@ -57,7 +52,6 @@ export function DetailPanel({
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState("");
 
-  
   useEffect(() => {
     if (!editing) {
       setEditName(svc.name);
@@ -97,11 +91,7 @@ export function DetailPanel({
     } finally {
       setSyncing(false);
     }
-  }, [
-    svc,
-    updateService,
-    githubConfig,
-  ]);
+  }, [svc, updateService, githubConfig]);
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card">
@@ -110,9 +100,7 @@ export function DetailPanel({
           <span
             className={`h-2.5 w-2.5 rounded-full shrink-0 ${SOURCE_DOT[normalizedSources[0]?.type ?? ServiceSource.Manual]}`}
           />
-          <h2 className="text-base font-bold text-foreground truncate">
-            {svc.name}
-          </h2>
+          <h2 className="text-base font-bold text-foreground truncate">{svc.name}</h2>
         </div>
         <div className="flex items-center gap-1 shrink-0">
           {hasSyncSource && (
@@ -228,16 +216,8 @@ export function DetailPanel({
                     className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                   />
                 </div>
-                <ChipInput
-                  label={t("common.technology")}
-                  items={editTech}
-                  onChange={setEditTech}
-                />
-                <ChipInput
-                  label={t("common.tags")}
-                  items={editTags}
-                  onChange={setEditTags}
-                />
+                <ChipInput label={t("common.technology")} items={editTech} onChange={setEditTech} />
+                <ChipInput label={t("common.tags")} items={editTags} onChange={setEditTags} />
                 <ExternalLinksSection
                   componentId={svc.id}
                   links={editLinks}
@@ -325,21 +305,16 @@ export function DetailPanel({
                   </div>
                 )}
 
-                {(
-                  (svc.metadata?.defectdojo as { productLink?: string } | undefined)
-                    ?.productLink
-                ) && (
+                {(svc.metadata?.defectdojo as { productLink?: string } | undefined)
+                  ?.productLink && (
                   <div className="flex items-start gap-2">
                     <span className="text-[11px] text-muted-foreground w-20 shrink-0 pt-0.5">
                       {t("registry.productLabel")}
                     </span>
                     <a
                       href={
-                        (
-                          svc.metadata?.defectdojo as
-                            | { productLink?: string }
-                            | undefined
-                        )?.productLink
+                        (svc.metadata?.defectdojo as { productLink?: string } | undefined)
+                          ?.productLink
                       }
                       target="_blank"
                       rel="noopener noreferrer"
@@ -348,11 +323,8 @@ export function DetailPanel({
                       <ExternalLink className="h-3 w-3 shrink-0" />
                       <span className="truncate">
                         {
-                          (
-                            svc.metadata?.defectdojo as
-                              | { productLink?: string }
-                              | undefined
-                          )?.productLink
+                          (svc.metadata?.defectdojo as { productLink?: string } | undefined)
+                            ?.productLink
                         }
                       </span>
                     </a>

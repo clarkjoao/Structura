@@ -15,13 +15,13 @@ export interface EdgeBuildParams {
   isPlaying: boolean;
   isRecording: boolean;
   isCompareMode?: boolean;
-  
+
   compareConnectionOpacity?: Record<string, number>;
   activeStep: FlowStep | null;
   flowHighlight: Pick<FlowHighlight, "activeConnId" | "participantConnIds">;
   recordingInfo: Pick<RecordingInfo, "edgeSteps" | "recordedEdgeIds" | "lastEdgeId"> | null;
   coverage: Pick<CoverageInfo, "edgeFlows"> | null;
-  
+
   tagFilterEdgeDimmed?: boolean;
 }
 
@@ -56,7 +56,11 @@ export function getEdgeOpacity(
   if (isPlaying) {
     const isActive = flowHighlight.activeConnId === connId;
     const isParticipant = flowHighlight.participantConnIds.has(connId);
-    return isActive ? 1 : isParticipant ? OPACITY_FLOW_PLAYBACK_PARTICIPANT : OPACITY_FLOW_PLAYBACK_EDGE_DIM;
+    return isActive
+      ? 1
+      : isParticipant
+        ? OPACITY_FLOW_PLAYBACK_PARTICIPANT
+        : OPACITY_FLOW_PLAYBACK_EDGE_DIM;
   }
   if (isRecording && recordingInfo) {
     return recordingInfo.recordedEdgeIds.has(connId) ? 1 : OPACITY_FLOW_PLAYBACK_EDGE_DIM;
@@ -73,9 +77,8 @@ export function buildEdge(
   const isActiveConn = params.isPlaying && params.flowHighlight.activeConnId === conn.id;
 
   const markerEnd = toMarkerType(effective.markerEnd);
-  const markerStart = effective.markerStart !== EdgeMarker.None
-    ? toMarkerType(effective.markerStart)
-    : undefined;
+  const markerStart =
+    effective.markerStart !== EdgeMarker.None ? toMarkerType(effective.markerStart) : undefined;
 
   const flowOpacity = getEdgeOpacity(
     conn.id,
@@ -133,12 +136,13 @@ export function buildEdge(
     },
     selected: params.selectedEdgeId === conn.id,
     animated: isActiveConn || (effective.animated && !params.isPlaying),
-    markerEnd: markerEnd !== undefined ? buildMarkerDef(markerEnd, effective.strokeWidth) : undefined,
-    markerStart: markerStart !== undefined ? buildMarkerDef(markerStart, effective.strokeWidth) : undefined,
+    markerEnd:
+      markerEnd !== undefined ? buildMarkerDef(markerEnd, effective.strokeWidth) : undefined,
+    markerStart:
+      markerStart !== undefined ? buildMarkerDef(markerStart, effective.strokeWidth) : undefined,
     style: edgeStyle,
   };
 }
-
 
 export function buildOrthogonalPath(
   sourceX: number,
@@ -150,11 +154,7 @@ export function buildOrthogonalPath(
   if (waypoints.length === 0) {
     return `M ${sourceX} ${sourceY} L ${targetX} ${targetY}`;
   }
-  const knots: Point[] = [
-    { x: sourceX, y: sourceY },
-    ...waypoints,
-    { x: targetX, y: targetY },
-  ];
+  const knots: Point[] = [{ x: sourceX, y: sourceY }, ...waypoints, { x: targetX, y: targetY }];
   let path = `M ${knots[0].x} ${knots[0].y}`;
   for (let index = 1; index < knots.length; index += 1) {
     path += ` H ${knots[index].x} V ${knots[index].y}`;
@@ -171,7 +171,6 @@ export interface Segment {
   orientation: "horizontal" | "vertical";
 }
 
-
 export function buildSegments(
   sourceX: number,
   sourceY: number,
@@ -179,16 +178,11 @@ export function buildSegments(
   targetY: number,
   waypoints: Point[],
 ): Segment[] {
-  const pts: Point[] = [
-    { x: sourceX, y: sourceY },
-    ...waypoints,
-    { x: targetX, y: targetY },
-  ];
+  const pts: Point[] = [{ x: sourceX, y: sourceY }, ...waypoints, { x: targetX, y: targetY }];
 
   return pts.slice(0, -1).map((point, index) => {
     const next = pts[index + 1];
-    const isHorizontal =
-      Math.abs(point.y - next.y) <= Math.abs(point.x - next.x);
+    const isHorizontal = Math.abs(point.y - next.y) <= Math.abs(point.x - next.x);
     return {
       index,
       x1: point.x,
@@ -200,7 +194,6 @@ export function buildSegments(
   });
 }
 
-
 export function getPointAtOffset(
   sourceX: number,
   sourceY: number,
@@ -209,14 +202,10 @@ export function getPointAtOffset(
   waypoints: Point[],
   offset: number,
 ): Point {
-  const pts: Point[] = [
-    { x: sourceX, y: sourceY },
-    ...waypoints,
-    { x: targetX, y: targetY },
-  ];
-  const lengths = pts.slice(0, -1).map((point, index) =>
-    Math.hypot(pts[index + 1].x - point.x, pts[index + 1].y - point.y),
-  );
+  const pts: Point[] = [{ x: sourceX, y: sourceY }, ...waypoints, { x: targetX, y: targetY }];
+  const lengths = pts
+    .slice(0, -1)
+    .map((point, index) => Math.hypot(pts[index + 1].x - point.x, pts[index + 1].y - point.y));
   const totalLength = lengths.reduce((sum, length) => sum + length, 0);
   if (totalLength === 0) {
     return { x: pts[0].x, y: pts[0].y };
@@ -242,7 +231,6 @@ export function getPointAtOffset(
   return { x: last.x, y: last.y };
 }
 
-
 export function getClosestOffsetOnPath(
   sourceX: number,
   sourceY: number,
@@ -251,14 +239,10 @@ export function getClosestOffsetOnPath(
   waypoints: Point[],
   pos: Point,
 ): number {
-  const pts: Point[] = [
-    { x: sourceX, y: sourceY },
-    ...waypoints,
-    { x: targetX, y: targetY },
-  ];
-  const lengths = pts.slice(0, -1).map((point, index) =>
-    Math.hypot(pts[index + 1].x - point.x, pts[index + 1].y - point.y),
-  );
+  const pts: Point[] = [{ x: sourceX, y: sourceY }, ...waypoints, { x: targetX, y: targetY }];
+  const lengths = pts
+    .slice(0, -1)
+    .map((point, index) => Math.hypot(pts[index + 1].x - point.x, pts[index + 1].y - point.y));
   const totalLength = lengths.reduce((sum, length) => sum + length, 0);
   if (totalLength === 0) {
     return 0.5;
@@ -273,8 +257,7 @@ export function getClosestOffsetOnPath(
     if (segmentLength === 0) {
       continue;
     }
-    const dot =
-      (pos.x - pts[index].x) * dx + (pos.y - pts[index].y) * dy;
+    const dot = (pos.x - pts[index].x) * dx + (pos.y - pts[index].y) * dy;
     const t = Math.max(0, Math.min(1, dot / (segmentLength * segmentLength)));
     const projectedX = pts[index].x + t * dx;
     const projectedY = pts[index].y + t * dy;
@@ -287,7 +270,6 @@ export function getClosestOffsetOnPath(
   }
   return bestOffset;
 }
-
 
 export function computeSegmentDrag(
   sourceX: number,

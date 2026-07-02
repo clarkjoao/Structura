@@ -15,8 +15,7 @@ const LANGS = [
 
 export function LanguageSwitcher() {
   const { i18n, t } = useTranslation();
-  const resolved =
-    i18n.resolvedLanguage?.toLowerCase().startsWith("pt") ? "pt-BR" : "en";
+  const resolved = i18n.resolvedLanguage?.toLowerCase().startsWith("pt") ? "pt-BR" : "en";
 
   return (
     <Select

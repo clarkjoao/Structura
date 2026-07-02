@@ -3,8 +3,7 @@ function copyWithExecCommand(text: string): boolean {
 
   const active = document.activeElement as HTMLElement | null;
   const selection = document.getSelection();
-  const range =
-    selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+  const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
 
   try {
     const textarea = document.createElement("textarea");
@@ -30,9 +29,7 @@ function copyWithExecCommand(text: string): boolean {
     textarea.setSelectionRange(0, textarea.value.length);
 
     const copied =
-      typeof document.execCommand === "function"
-        ? document.execCommand("copy")
-        : false;
+      typeof document.execCommand === "function" ? document.execCommand("copy") : false;
     document.body.removeChild(textarea);
 
     if (selection) {
@@ -49,7 +46,6 @@ function copyWithExecCommand(text: string): boolean {
 export async function copyText(text: string): Promise<boolean> {
   if (!text) return false;
 
-  
   if (copyWithExecCommand(text)) return true;
 
   if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {

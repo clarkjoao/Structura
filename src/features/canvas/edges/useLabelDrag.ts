@@ -3,7 +3,6 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 import type { Connection, ConnectionStyle, Point } from "@/features/diagram";
 import { getClosestLabelPositionOnPath } from "./edgeGeometry";
 
-
 export interface UseLabelDragParams {
   edgePath: string;
   initialPosition: number;

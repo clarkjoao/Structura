@@ -21,13 +21,16 @@ export function useFlowModePlayback(
   mode: FlowMode,
   setMode: Dispatch<SetStateAction<FlowMode>>,
 ): FlowModePlaybackSlice {
-  const play = useCallback((flow: Flow) => {
-    setMode((prevMode) => {
-      if (prevMode.kind !== "idle") return prevMode;
-      const entry = getEntryStep(flow);
-      return { kind: "playing", flow, currentStepId: entry?.id ?? null, history: [] };
-    });
-  }, [setMode]);
+  const play = useCallback(
+    (flow: Flow) => {
+      setMode((prevMode) => {
+        if (prevMode.kind !== "idle") return prevMode;
+        const entry = getEntryStep(flow);
+        return { kind: "playing", flow, currentStepId: entry?.id ?? null, history: [] };
+      });
+    },
+    [setMode],
+  );
 
   const exitPlay = useCallback(() => {
     setMode((prevMode) => (prevMode.kind === "playing" ? { kind: "idle" } : prevMode));

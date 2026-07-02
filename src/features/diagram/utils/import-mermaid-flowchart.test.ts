@@ -26,12 +26,7 @@ describe("parseMermaidFlowchart", () => {
     let sequence = 0;
     generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
 
-    const result = parseMermaidFlowchart(
-      "flowchart LR\nA --> B",
-      {},
-      {},
-      { x: 0, y: 0 },
-    );
+    const result = parseMermaidFlowchart("flowchart LR\nA --> B", {}, {}, { x: 0, y: 0 });
 
     expect(result.errors).toEqual([]);
     expect(result.newComponents).toHaveLength(2);
@@ -68,12 +63,7 @@ describe("parseMermaidFlowchart", () => {
   });
 
   it("returns a descriptive error for invalid flowchart input", () => {
-    const result = parseMermaidFlowchart(
-      "sequenceDiagram\nA->>B",
-      {},
-      {},
-      { x: 0, y: 0 },
-    );
+    const result = parseMermaidFlowchart("sequenceDiagram\nA->>B", {}, {}, { x: 0, y: 0 });
 
     expect(result.errors).toEqual(["Not a flowchart diagram"]);
     expect(result.newComponents).toEqual([]);
@@ -170,13 +160,7 @@ describe("parseMermaidFlowchart", () => {
     generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
 
     const result = parseMermaidFlowchart(
-      [
-        "flowchart LR",
-        "A --> B: done",
-        "B -- maybe --> C",
-        "C ==> D",
-        "D -.-> E",
-      ].join("\n"),
+      ["flowchart LR", "A --> B: done", "B -- maybe --> C", "C ==> D", "D -.-> E"].join("\n"),
       {},
       {},
       { x: 0, y: 0 },

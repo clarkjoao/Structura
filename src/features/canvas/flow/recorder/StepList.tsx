@@ -117,7 +117,9 @@ export function StepList({
           {t("flowRecorder.stepsHeading", { count: steps.length })}
         </p>
         {steps.length === 0 ? (
-          <p className="text-xs text-muted-foreground italic py-2">{t("flowRecorder.recordHint")}</p>
+          <p className="text-xs text-muted-foreground italic py-2">
+            {t("flowRecorder.recordHint")}
+          </p>
         ) : (
           <div className="space-y-0.5 max-h-48 overflow-auto">
             {steps.map((step, i) => {
@@ -150,7 +152,9 @@ export function StepList({
                   onRemoveBranchLabel={onRemoveBranchLabel}
                   onUpdateBranchLabel={onUpdateBranchLabel}
                   onOpenBranchSelect={onOpenBranchSelect}
-                  onConvertToCondition={(idx) => setConditionForm({ index: idx, label: "", branches: ["", ""] })}
+                  onConvertToCondition={(idx) =>
+                    setConditionForm({ index: idx, label: "", branches: ["", ""] })
+                  }
                   getStepLabel={getStepLabel}
                 />
               );

@@ -145,7 +145,9 @@ describe("sceneHasDiff", () => {
       name: "S",
       color: "#000",
       createdAt: 0,
-      addedComponents: { x: { id: "x", name: "X", type: "system", description: "", parentId: null } },
+      addedComponents: {
+        x: { id: "x", name: "X", type: "system", description: "", parentId: null },
+      },
       addedConnections: {},
       removedComponentIds: [],
       removedConnectionIds: [],

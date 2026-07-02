@@ -33,8 +33,7 @@ export function NodeTemplatePreviewCard({
   const customIconIdFromData = readNonEmptyString(template.data.customIconId) ?? "";
   const customIconDefinition = useIconById(customIconIdFromData);
 
-  const resolvedTemplateType =
-    readNonEmptyString(template.data.type) ?? template.baseType;
+  const resolvedTemplateType = readNonEmptyString(template.data.type) ?? template.baseType;
 
   const resolvedPanelKind =
     typeof template.data.panelKind === "string" && isPanelKind(template.data.panelKind)
@@ -107,11 +106,15 @@ export function NodeTemplatePreviewCard({
 
       <div className="flex items-center gap-2 pr-4">
         {iconNode}
-        <span className="truncate text-sm font-bold leading-tight text-foreground">{template.name}</span>
+        <span className="truncate text-sm font-bold leading-tight text-foreground">
+          {template.name}
+        </span>
       </div>
 
       {template.description ? (
-        <p className="line-clamp-1 text-xs leading-snug text-muted-foreground">{template.description}</p>
+        <p className="line-clamp-1 text-xs leading-snug text-muted-foreground">
+          {template.description}
+        </p>
       ) : null}
 
       <div className="mt-auto pt-1">
@@ -122,4 +125,3 @@ export function NodeTemplatePreviewCard({
     </button>
   );
 }
-

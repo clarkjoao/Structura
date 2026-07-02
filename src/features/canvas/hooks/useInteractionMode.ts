@@ -3,32 +3,29 @@ import { useFlowMode } from "../flow/FlowModeContext";
 import { useCollab } from "@/features/collaboration";
 import { isDiagramCompareMode, type Diagram, type DiagramModel } from "@/features/diagram";
 
-
 export interface InteractionMode {
-  
   isRecording: boolean;
-  
+
   isPlaying: boolean;
-  
+
   isFlowActive: boolean;
-  
+
   isCompareMode: boolean;
-  
+
   isCollabActive: boolean;
-  
+
   isCollabGuest: boolean;
 
-  
   canEditCanvas: boolean;
-  
+
   canUseFlow: boolean;
-  
+
   canStartCollab: boolean;
-  
+
   canEditScenes: boolean;
-  
+
   canExport: boolean;
-  
+
   canNavigateDiagrams: boolean;
 }
 

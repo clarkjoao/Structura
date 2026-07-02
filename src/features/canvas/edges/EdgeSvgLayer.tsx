@@ -126,7 +126,9 @@ export function EdgeSvgLayer({
             )}
           </g>
         ))}
-      {showSegmentHitTargets && selected && waypointsLength > 0 &&
+      {showSegmentHitTargets &&
+        selected &&
+        waypointsLength > 0 &&
         segments.slice(0, waypointsLength).map((segment, k) => (
           <circle
             key={`wp-${k}`}
@@ -144,9 +146,7 @@ export function EdgeSvgLayer({
             }}
           />
         ))}
-      {isActivePlayback && (
-        <EdgeParticle edgePath={edgePath} direction={activePayloadDirection} />
-      )}
+      {isActivePlayback && <EdgeParticle edgePath={edgePath} direction={activePayloadDirection} />}
     </g>
   );
 }

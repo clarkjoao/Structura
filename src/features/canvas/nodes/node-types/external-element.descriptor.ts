@@ -32,9 +32,10 @@ export const externalElementDescriptor: NodeTypeDescriptor = {
       linkedElementName: ext.linkedElementName,
       linkedDiagramName,
       isSelected: ctx.selectedNodeId === comp.id,
-      onOpenInCanvas: canNavigate && ctx.navigateToDiagram
-        ? () => ctx.navigateToDiagram!(ext.linkedDiagramId, ext.linkedElementId)
-        : undefined,
+      onOpenInCanvas:
+        canNavigate && ctx.navigateToDiagram
+          ? () => ctx.navigateToDiagram!(ext.linkedDiagramId, ext.linkedElementId)
+          : undefined,
     };
   },
 

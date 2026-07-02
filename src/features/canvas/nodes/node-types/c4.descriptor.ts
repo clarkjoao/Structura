@@ -11,19 +11,14 @@ import {
 } from "@/features/diagram";
 import { OPACITY_FLOW_PLAYBACK_PARTICIPANT } from "../../canvas.constants";
 
-
 const C4_FLOW_PLAYBACK_DIM_OPACITY = 0.25;
 
 const C4_RECORDING_DIM_OPACITY = 0.35;
 
-export function buildC4Style(
-  comp: Component,
-  ctx: NodeBuildContext,
-): CSSProperties | undefined {
+export function buildC4Style(comp: Component, ctx: NodeBuildContext): CSSProperties | undefined {
   if (ctx.isCompareMode) return undefined;
   if (ctx.isPlaying) {
-    const { activeNodeId, visitedNodeIds, participantNodeIds } =
-      ctx.flowHighlight;
+    const { activeNodeId, visitedNodeIds, participantNodeIds } = ctx.flowHighlight;
     if (activeNodeId === comp.id) return { opacity: 1, filter: "none" };
     if (visitedNodeIds.has(comp.id)) return { opacity: 0.85, filter: "none" };
     if (participantNodeIds.has(comp.id))
@@ -41,7 +36,7 @@ export function buildC4Style(
 export const c4Descriptor: NodeTypeDescriptor = {
   rfType: "c4",
   component: CustomNode,
-  
+
   matches: () => true,
   zIndex: 1,
   connectable: true,
@@ -74,10 +69,13 @@ export const c4Descriptor: NodeTypeDescriptor = {
       description: comp.description,
       technology: isC4Component(comp) ? comp.technology : undefined,
       customColor: isC4Component(comp) && comp.panelColor ? comp.panelColor : undefined,
-      awsService: isAwsComponent(comp) ? comp.awsService
-                : isGcpComponent(comp) ? comp.gcpService
-                : isAzureComponent(comp) ? comp.azureService
-                : undefined,
+      awsService: isAwsComponent(comp)
+        ? comp.awsService
+        : isGcpComponent(comp)
+          ? comp.gcpService
+          : isAzureComponent(comp)
+            ? comp.azureService
+            : undefined,
       isSelected: isPlaying
         ? flowHighlight.activeNodeId === comp.id
         : ctx.selectedNodeId === comp.id,
@@ -87,18 +85,11 @@ export const c4Descriptor: NodeTypeDescriptor = {
         ctx.selectedNodeIds.size > 0 &&
         !ctx.selectedNodeIds.has(comp.id),
       serviceId: comp.serviceId,
-      serviceName: comp.serviceId
-        ? ctx.serviceRegistry[comp.serviceId]?.name
-        : undefined,
+      serviceName: comp.serviceId ? ctx.serviceRegistry[comp.serviceId]?.name : undefined,
       externalLinks: comp.externalLinks,
-      linkedDiagramName:
-        isPlaying || isRecording ? undefined : linkedDiagramName,
+      linkedDiagramName: isPlaying || isRecording ? undefined : linkedDiagramName,
       onDrillDown:
-        isPlaying || isRecording
-          ? undefined
-          : linkedDiagramName
-            ? ctx.handleDrillDown
-            : undefined,
+        isPlaying || isRecording ? undefined : linkedDiagramName ? ctx.handleDrillDown : undefined,
       recordingBadges: recordingInfo?.nodeSteps.get(comp.id),
       isLastRecorded: recordingInfo?.lastNodeId === comp.id,
       coverageFlowNames: coverage?.nodeFlows.get(comp.id),
@@ -119,11 +110,8 @@ export const c4Descriptor: NodeTypeDescriptor = {
         isRecording || isPlaying
           ? undefined
           : ctx.onReorderHandle
-            ? (
-                side: "incoming" | "outgoing",
-                connId: string,
-                direction: "up" | "down",
-              ) => ctx.onReorderHandle!(comp.id, side, connId, direction)
+            ? (side: "incoming" | "outgoing", connId: string, direction: "up" | "down") =>
+                ctx.onReorderHandle!(comp.id, side, connId, direction)
             : undefined,
       journeyCount: journeyData?.length ?? 0,
       journeyNames: journeyData?.map((journeyEntry) => journeyEntry.name) ?? [],

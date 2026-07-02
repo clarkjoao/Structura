@@ -1,7 +1,4 @@
-import {
-  useCallback,
-  type Dispatch,
-} from "react";
+import { useCallback, type Dispatch } from "react";
 import { useTranslation } from "react-i18next";
 import type { RecordingFinalizeData } from "@/features/canvas";
 import {
@@ -60,12 +57,7 @@ export function useJourneyRecordingFinalize(
         });
         persistedFlowId = data.editingFlowId;
       } else {
-        const flow = addFlow(
-          diagram.id,
-          data.name || t("flows.unnamed"),
-          mermaid,
-          stepsRecord,
-        );
+        const flow = addFlow(diagram.id, data.name || t("flows.unnamed"), mermaid, stepsRecord);
         persistedFlowId = flow ? flow.id : null;
         if (flow && (description || flowTags || entryStepId)) {
           updateFlow(flow.id, { description, tags: flowTags, entryStepId });

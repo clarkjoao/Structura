@@ -43,15 +43,13 @@ export const STRUCTURAL_TYPES: ComponentTypeDefinition[] = [
   {
     nodeType: "db-table",
     displayName: "Database Table",
-    description:
-      "Represents a relational database table with columns. Use for data modeling.",
+    description: "Represents a relational database table with columns. Use for data modeling.",
     example: '{ "nodeType": "db-table", "name": "users", "parentId": null }',
   },
   {
     nodeType: "json-viewer",
     displayName: "JSON Viewer",
-    description:
-      "Displays a JSON payload or schema. Use for documenting request/response shapes.",
+    description: "Displays a JSON payload or schema. Use for documenting request/response shapes.",
     example: '{ "nodeType": "json-viewer", "name": "User Response", "parentId": null }',
   },
 ];
@@ -81,8 +79,7 @@ export const C4_TYPES: ComponentTypeDefinition[] = [
   {
     nodeType: "component",
     displayName: "Component",
-    description:
-      "A module or component inside a container. Use at C4 component level.",
+    description: "A module or component inside a container. Use at C4 component level.",
     example: '{ "nodeType": "component", "name": "AuthController", "parentId": "container-id" }',
   },
 ];

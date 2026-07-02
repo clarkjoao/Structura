@@ -10,11 +10,7 @@ function sortIconDefinitions(icons: IconDefinition[]): IconDefinition[] {
 }
 
 export const useGlobalIconLibrary = () =>
-  useIconStore(
-    useShallow((state) => sortIconDefinitions(Object.values(state.icons))),
-  );
+  useIconStore(useShallow((state) => sortIconDefinitions(Object.values(state.icons))));
 
 export const useGlobalIconById = (iconId: string) =>
-  useIconStore(
-    useShallow((state) => (iconId ? (state.icons[iconId] ?? null) : null)),
-  );
+  useIconStore(useShallow((state) => (iconId ? (state.icons[iconId] ?? null) : null)));

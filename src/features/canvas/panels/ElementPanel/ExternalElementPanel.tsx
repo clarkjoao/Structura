@@ -96,7 +96,10 @@ export default function ExternalElementPanel({
           </label>
           <button
             type="button"
-            onClick={() => { setDiagramOpen((v) => !v); setElementOpen(false); }}
+            onClick={() => {
+              setDiagramOpen((v) => !v);
+              setElementOpen(false);
+            }}
             className={[
               "w-full flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring",
               selectedDiagram
@@ -112,14 +115,21 @@ export default function ExternalElementPanel({
                 <span
                   role="button"
                   tabIndex={0}
-                  onClick={(e) => { e.stopPropagation(); handleSelectDiagram(undefined); }}
-                  onKeyDown={(e) => e.key === "Enter" && (e.stopPropagation(), handleSelectDiagram(undefined))}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSelectDiagram(undefined);
+                  }}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && (e.stopPropagation(), handleSelectDiagram(undefined))
+                  }
                   className="text-muted-foreground hover:text-foreground"
                 >
                   <X className="h-3.5 w-3.5" />
                 </span>
               )}
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${diagramOpen ? "rotate-180" : ""}`} />
+              <ChevronDown
+                className={`h-3.5 w-3.5 transition-transform ${diagramOpen ? "rotate-180" : ""}`}
+              />
             </span>
           </button>
 
@@ -160,7 +170,10 @@ export default function ExternalElementPanel({
             </label>
             <button
               type="button"
-              onClick={() => { setElementOpen((v) => !v); setDiagramOpen(false); }}
+              onClick={() => {
+                setElementOpen((v) => !v);
+                setDiagramOpen(false);
+              }}
               className={[
                 "w-full flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring",
                 selectedElement
@@ -176,14 +189,21 @@ export default function ExternalElementPanel({
                   <span
                     role="button"
                     tabIndex={0}
-                    onClick={(e) => { e.stopPropagation(); handleSelectElement(undefined); }}
-                    onKeyDown={(e) => e.key === "Enter" && (e.stopPropagation(), handleSelectElement(undefined))}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectElement(undefined);
+                    }}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && (e.stopPropagation(), handleSelectElement(undefined))
+                    }
                     className="text-muted-foreground hover:text-foreground"
                   >
                     <X className="h-3.5 w-3.5" />
                   </span>
                 )}
-                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${elementOpen ? "rotate-180" : ""}`} />
+                <ChevronDown
+                  className={`h-3.5 w-3.5 transition-transform ${elementOpen ? "rotate-180" : ""}`}
+                />
               </span>
             </button>
 

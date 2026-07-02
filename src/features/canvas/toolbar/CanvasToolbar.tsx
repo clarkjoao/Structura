@@ -115,13 +115,13 @@ const CanvasToolbar = ({
 
   return (
     <div className="absolute top-4 left-4 z-10 flex w-[220px] flex-col gap-2">
-        <CanvasToolbarDiagramPanel
-          diagram={diagram}
-          toolbarEditLocked={toolbarEditLocked}
-          collapsed={collapsed}
-          toggleCollapsed={toggleCollapsed}
-          focusMode={focusMode}
-        />
+      <CanvasToolbarDiagramPanel
+        diagram={diagram}
+        toolbarEditLocked={toolbarEditLocked}
+        collapsed={collapsed}
+        toggleCollapsed={toggleCollapsed}
+        focusMode={focusMode}
+      />
 
       {!collapsed && (
         <>
@@ -202,9 +202,7 @@ const CanvasToolbar = ({
           setSelectedEdgeId={setSelectedEdgeId}
         />
       )}
-      {showModal && (
-        <ElementPickerModal onClose={() => setShowModal(false)} onInsert={onInsert} />
-      )}
+      {showModal && <ElementPickerModal onClose={() => setShowModal(false)} onInsert={onInsert} />}
     </div>
   );
 };

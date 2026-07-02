@@ -147,8 +147,8 @@ export function buildResponseLanguageInstruction(responseLocale: string): string
       "The Structura UI is set to Brazilian Portuguese (pt-BR).",
       "Write ALL user-facing text in Brazilian Portuguese:",
       "- Mode 1: the full reply in Portuguese.",
-      "- Mode 2: \"message\", patch \"description\", proposed node \"name\" and edge \"label\" strings, and any explanations in Portuguese.",
-      "- Mode 3: \"summary\", \"title\", \"detail\", \"recommendation\", every \"strengths\" and \"nextSteps\" line, and human-readable \"category\" values in Portuguese.",
+      '- Mode 2: "message", patch "description", proposed node "name" and edge "label" strings, and any explanations in Portuguese.',
+      '- Mode 3: "summary", "title", "detail", "recommendation", every "strengths" and "nextSteps" line, and human-readable "category" values in Portuguese.',
       "Keep JSON property names and technical tokens (UUIDs, exact nodeType values from the catalog, severity enum values) as specified by the schema.",
     ].join("\n");
   }
@@ -159,7 +159,7 @@ export function buildResponseLanguageInstruction(responseLocale: string): string
     "The Structura UI is set to English.",
     "Write ALL user-facing text in English:",
     "- Mode 1: the full reply in English.",
-    "- Mode 2: \"message\", patch \"description\", proposed node \"name\" and edge \"label\" strings in English unless existing diagram names should be preserved.",
+    '- Mode 2: "message", patch "description", proposed node "name" and edge "label" strings in English unless existing diagram names should be preserved.',
     "- Mode 3: all natural-language fields in English.",
     "Keep JSON property names and technical tokens (UUIDs, exact nodeType values, severity enum values) as specified by the schema.",
   ].join("\n");
@@ -187,10 +187,7 @@ function buildToolsSection(): string {
   ].join("\n");
 }
 
-export function buildSystemPrompt(
-  diagramContext: string,
-  responseLocale: string,
-): string {
+export function buildSystemPrompt(diagramContext: string, responseLocale: string): string {
   return [
     DIAGRAM_DSL_DESCRIPTION,
     "",

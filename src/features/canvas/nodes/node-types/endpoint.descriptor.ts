@@ -35,9 +35,7 @@ export const endpointDescriptor: NodeTypeDescriptor = {
       isPlaying: ctx.isCompareMode ? false : ctx.isPlaying,
       activeFlowId: ctx.activeFlowId ?? comp.handlers?.[0]?.flowId ?? null,
       availableFlows: allFlows.map((f) => ({ id: f.id, name: f.name })),
-      onPlayHandler: ctx.onPlayFlow
-        ? (flowId: string) => ctx.onPlayFlow!(flowId)
-        : undefined,
+      onPlayHandler: ctx.onPlayFlow ? (flowId: string) => ctx.onPlayFlow!(flowId) : undefined,
       ...sceneBadgePropsForNode(ctx, comp.id),
     };
   },

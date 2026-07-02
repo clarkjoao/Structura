@@ -3,9 +3,7 @@ import { isQuotaExceededError } from "./storageQuota";
 
 const KEY_PREFIX = "structura_";
 
-
 export class LocalStorageAdapter implements IStoragePort {
-  
   paused = false;
 
   constructor(private readonly prefix: string = KEY_PREFIX) {}
@@ -132,15 +130,12 @@ export class LocalStorageAdapter implements IStoragePort {
   }
 
   async save(key: string, data: unknown): Promise<void> {
-    const value =
-      typeof data === "string" ? data : JSON.stringify(data);
+    const value = typeof data === "string" ? data : JSON.stringify(data);
     await this.setItem(key, value);
   }
 
-  
   async forceSave(key: string, data: unknown): Promise<boolean> {
-    const value =
-      typeof data === "string" ? data : JSON.stringify(data);
+    const value = typeof data === "string" ? data : JSON.stringify(data);
     try {
       localStorage.setItem(this.key(key), value);
       this.invalidateFallbackKeyMemo();
@@ -155,8 +150,7 @@ export class LocalStorageAdapter implements IStoragePort {
    * Ignores {@link paused} (matches force-save semantics).
    */
   forceSaveSync(key: string, data: unknown): boolean {
-    const value =
-      typeof data === "string" ? data : JSON.stringify(data);
+    const value = typeof data === "string" ? data : JSON.stringify(data);
     try {
       localStorage.setItem(this.key(key), value);
       this.invalidateFallbackKeyMemo();
@@ -180,6 +174,5 @@ export class LocalStorageAdapter implements IStoragePort {
     await this.removeItem(key);
   }
 }
-
 
 export const defaultStorage = new LocalStorageAdapter();

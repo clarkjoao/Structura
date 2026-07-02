@@ -9,11 +9,7 @@ interface StepDescriptionBadgeProps {
   totalSteps: number;
 }
 
-export function StepDescriptionBadge({
-  step,
-  stepIndex,
-  totalSteps,
-}: StepDescriptionBadgeProps) {
+export function StepDescriptionBadge({ step, stepIndex, totalSteps }: StepDescriptionBadgeProps) {
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -67,9 +63,7 @@ export function StepDescriptionBadge({
 
       {step.description && !collapsed ? (
         <div className="border-t border-border px-3 py-2.5">
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            {step.description}
-          </p>
+          <p className="text-xs leading-relaxed text-muted-foreground">{step.description}</p>
         </div>
       ) : null}
     </div>

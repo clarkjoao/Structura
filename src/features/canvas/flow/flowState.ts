@@ -37,7 +37,8 @@ export function safeFlowSteps(flow: Flow): FlowStep[] {
   if (Array.isArray(s)) return s;
   if (!s || typeof s !== "object") return [];
   const ordered = getOrderedStepIds(flow);
-  if (ordered.length > 0) return ordered.map((id) => flow.steps[id]).filter((x): x is FlowStep => !!x);
+  if (ordered.length > 0)
+    return ordered.map((id) => flow.steps[id]).filter((x): x is FlowStep => !!x);
   return Object.values(s);
 }
 

@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { X, GripVertical, Plus } from "lucide-react";
 import { generateId } from "@/features/diagram";
-import type { EndpointComponent, EndpointHandler, HttpMethod, ComponentPatch } from "@/features/diagram";
+import type {
+  EndpointComponent,
+  EndpointHandler,
+  HttpMethod,
+  ComponentPatch,
+} from "@/features/diagram";
 import { METHOD_COLORS } from "../../nodes/EndpointNode";
 import { useTranslation } from "react-i18next";
 
@@ -107,7 +112,9 @@ export default function EndpointPanel({
           </label>
           <textarea
             value={component.endpointDescription ?? ""}
-            onChange={(e) => updateComponent(component.id, { endpointDescription: e.target.value || undefined })}
+            onChange={(e) =>
+              updateComponent(component.id, { endpointDescription: e.target.value || undefined })
+            }
             placeholder={t("endpointPanel.optionalPlaceholder")}
             rows={2}
             className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
@@ -209,7 +216,9 @@ export default function EndpointPanel({
                       />
                     </div>
                     <div onClick={(e) => e.stopPropagation()}>
-                      <label className="text-[10px] text-muted-foreground block mb-0.5">{t("endpointPanel.flowLabel")}</label>
+                      <label className="text-[10px] text-muted-foreground block mb-0.5">
+                        {t("endpointPanel.flowLabel")}
+                      </label>
                       <select
                         value={handler.flowId ?? ""}
                         onChange={(e) =>

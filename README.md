@@ -41,15 +41,15 @@ Structura also includes a built-in **AWS service catalog** so cloud-native teams
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| UI Framework | [React 18](https://react.dev/) |
-| Language | [TypeScript 5](https://www.typescriptlang.org/) |
-| State Management | [Zustand](https://zustand-demo.pmnd.rs/) + Immer |
-| Canvas | [@xyflow/react](https://reactflow.dev/) (React Flow) |
-| Styling | [Tailwind CSS](https://tailwindcss.com/) + shadcn/ui |
-| Build | [Vite](https://vitejs.dev/) |
-| Tests | [Vitest](https://vitest.dev/) |
+| Layer            | Technology                                           |
+| ---------------- | ---------------------------------------------------- |
+| UI Framework     | [React 18](https://react.dev/)                       |
+| Language         | [TypeScript 5](https://www.typescriptlang.org/)      |
+| State Management | [Zustand](https://zustand-demo.pmnd.rs/) + Immer     |
+| Canvas           | [@xyflow/react](https://reactflow.dev/) (React Flow) |
+| Styling          | [Tailwind CSS](https://tailwindcss.com/) + shadcn/ui |
+| Build            | [Vite](https://vitejs.dev/)                          |
+| Tests            | [Vitest](https://vitest.dev/)                        |
 
 ---
 
@@ -108,18 +108,18 @@ src/
 
 The single source of truth is `useDiagramStore`, a Zustand store with Immer mutations and localStorage persistence. It is split into focused slices:
 
-| Slice | Responsibility |
-|-------|---------------|
-| `diagram` | Diagram CRUD, active diagram, drill-down navigation |
-| `components` | Add, update, remove, parent, group components |
-| `connections` | Manage edges between components |
-| `flows` | CRUD for named interaction flows |
-| `layout` | Node positions, dimensions, viewport, z-order |
-| `services` | Service registry and component-service linking |
-| `clipboard` | Copy/paste within and across diagrams |
-| `history` | Undo/redo via past/future snapshot stacks |
-| `folders` | Nested folder hierarchy for the dashboard |
-| `patterns` | Insert pattern templates onto the canvas |
+| Slice         | Responsibility                                      |
+| ------------- | --------------------------------------------------- |
+| `diagram`     | Diagram CRUD, active diagram, drill-down navigation |
+| `components`  | Add, update, remove, parent, group components       |
+| `connections` | Manage edges between components                     |
+| `flows`       | CRUD for named interaction flows                    |
+| `layout`      | Node positions, dimensions, viewport, z-order       |
+| `services`    | Service registry and component-service linking      |
+| `clipboard`   | Copy/paste within and across diagrams               |
+| `history`     | Undo/redo via past/future snapshot stacks           |
+| `folders`     | Nested folder hierarchy for the dashboard           |
+| `patterns`    | Insert pattern templates onto the canvas            |
 
 Each `Diagram` snapshot stores components as a **discriminated union** (`C4Component | PanelComponent | NoteComponent | AwsComponent`). Use the provided type guards (`isC4Component`, `isPanelComponent`, etc.) instead of checking `type` directly.
 
@@ -129,16 +129,16 @@ Each `Diagram` snapshot stores components as a **discriminated union** (`C4Compo
 
 Key hooks:
 
-| Hook | Purpose |
-|------|---------|
-| `useCanvasStore` | Centralised access to store data and actions |
-| `useCanvasNodes` | Derives ReactFlow `Node[]` from visible components |
-| `useCanvasEdges` | Derives ReactFlow `Edge[]` from visible connections |
-| `useNodeDragParenting` | Handles drag-to-panel parenting and unparenting |
-| `useCanvasKeyboard` | Orchestrates all canvas keyboard shortcuts |
-| `useCanvasVisualState` | Selection, highlights, context menu state |
-| `useCanvasEffects` | Side-effects: viewport sync, layout persistence |
-| `useFlowState` | Computes playback highlights and coverage overlays |
+| Hook                   | Purpose                                             |
+| ---------------------- | --------------------------------------------------- |
+| `useCanvasStore`       | Centralised access to store data and actions        |
+| `useCanvasNodes`       | Derives ReactFlow `Node[]` from visible components  |
+| `useCanvasEdges`       | Derives ReactFlow `Edge[]` from visible connections |
+| `useNodeDragParenting` | Handles drag-to-panel parenting and unparenting     |
+| `useCanvasKeyboard`    | Orchestrates all canvas keyboard shortcuts          |
+| `useCanvasVisualState` | Selection, highlights, context menu state           |
+| `useCanvasEffects`     | Side-effects: viewport sync, layout persistence     |
+| `useFlowState`         | Computes playback highlights and coverage overlays  |
 
 ---
 
@@ -155,13 +155,13 @@ Structura follows a phased quality and feature roadmap documented in:
 
 ### Active roadmap phases
 
-| Phase | Focus | Status |
-|-------|-------|--------|
-| **0** | Foundation — tests + standards + core bugfixes | 🔄 In progress |
-| **1** | Stabilization — feature structure + domain fixes | 📋 Planned |
-| **2** | High-impact product features | 📋 Planned |
-| **3** | Native 4+1 architectural views | 📋 Planned |
-| **4** | Enterprise & ecosystem integrations | 📋 Planned |
+| Phase | Focus                                            | Status         |
+| ----- | ------------------------------------------------ | -------------- |
+| **0** | Foundation — tests + standards + core bugfixes   | 🔄 In progress |
+| **1** | Stabilization — feature structure + domain fixes | 📋 Planned     |
+| **2** | High-impact product features                     | 📋 Planned     |
+| **3** | Native 4+1 architectural views                   | 📋 Planned     |
+| **4** | Enterprise & ecosystem integrations              | 📋 Planned     |
 
 ---
 
@@ -201,10 +201,11 @@ export function ArchitectureDiagram() {
   useEffect(() => {
     const iframe = ref.current;
     if (!iframe) return;
-    const send = () => iframe.contentWindow.postMessage(
-      { type: "STRUCTURA_LOAD", diagram },
-      "https://app.structura.dev"
-    );
+    const send = () =>
+      iframe.contentWindow.postMessage(
+        { type: "STRUCTURA_LOAD", diagram },
+        "https://app.structura.dev",
+      );
     iframe.addEventListener("load", send);
     return () => iframe.removeEventListener("load", send);
   }, []);
@@ -222,12 +223,6 @@ import { StructuraEmbed } from "@/components/StructuraEmbed";
 import diagram from "./my-diagram.json";
 
 export function ArchitectureDiagram() {
-  return (
-    <StructuraEmbed
-      diagram={diagram}
-      appOrigin="https://app.structura.dev"
-      height={500}
-    />
-  );
+  return <StructuraEmbed diagram={diagram} appOrigin="https://app.structura.dev" height={500} />;
 }
 ```

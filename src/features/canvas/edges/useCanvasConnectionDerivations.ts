@@ -10,7 +10,7 @@ import {
 interface UseCanvasConnectionDerivationsParams {
   visibleComponents: Component[];
   visibleConnections: Connection[];
-  
+
   resolvedComponents: Record<string, Component>;
 }
 
@@ -19,10 +19,7 @@ export function useCanvasConnectionDerivations({
   visibleConnections,
   resolvedComponents,
 }: UseCanvasConnectionDerivationsParams) {
-  const panelIds = useMemo(
-    () => buildPanelIds(visibleComponents),
-    [visibleComponents],
-  );
+  const panelIds = useMemo(() => buildPanelIds(visibleComponents), [visibleComponents]);
 
   const connectionCountPerNode = useMemo(
     () => buildConnectionCountPerNode(visibleConnections),

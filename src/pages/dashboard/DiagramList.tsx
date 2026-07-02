@@ -49,9 +49,7 @@ export function DiagramList({
                   <Network className="h-3.5 w-3.5 text-primary" />
                 </div>
               </td>
-              <td className="px-3 py-2.5 font-medium text-foreground">
-                {d.name}
-              </td>
+              <td className="px-3 py-2.5 font-medium text-foreground">{d.name}</td>
               <td className="px-3 py-2.5 text-muted-foreground">
                 {d.domain ?? t("common.emDash")}
               </td>

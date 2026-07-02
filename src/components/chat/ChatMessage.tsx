@@ -20,9 +20,7 @@ export function ChatMessage({ message, isStreaming = false }: ChatMessageProps) 
   const locale = i18n.language === "pt-BR" ? ptBR : enUS;
   const timeAgo = formatDistanceToNow(message.timestamp, { addSuffix: true, locale });
   const isLong =
-    !isStreaming &&
-    message.role === "assistant" &&
-    message.content.length > COLLAPSE_THRESHOLD;
+    !isStreaming && message.role === "assistant" && message.content.length > COLLAPSE_THRESHOLD;
 
   return (
     <div className={cn("flex w-full", isUserMessage ? "justify-end" : "justify-start")}>
@@ -39,12 +37,7 @@ export function ChatMessage({ message, isStreaming = false }: ChatMessageProps) 
             <span>{message.content}</span>
           ) : (
             <>
-              <div
-                className={cn(
-                  "relative",
-                  !isExpanded && isLong && "max-h-52 overflow-hidden",
-                )}
-              >
+              <div className={cn("relative", !isExpanded && isLong && "max-h-52 overflow-hidden")}>
                 <MarkdownContent content={message.content} isStreaming={isStreaming} />
                 {!isExpanded && isLong ? (
                   <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-secondary to-transparent" />

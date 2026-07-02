@@ -4,7 +4,6 @@ import { useDiagramActions } from "@/features/diagram";
 import type { NavigateFunction } from "react-router-dom";
 import { useRecentDiagrams } from "../navigation/useRecentDiagrams";
 
-
 interface CanvasDiagramNavParams {
   diagram: Diagram | DiagramModel | null | undefined;
   allDiagrams: Record<string, Diagram>;
@@ -18,7 +17,6 @@ interface CanvasDiagramNavParams {
   setShowScenes: Dispatch<SetStateAction<boolean>>;
 }
 
-
 interface CanvasDiagramNavResult {
   showSearch: boolean;
   setShowSearch: (v: boolean) => void;
@@ -26,14 +24,9 @@ interface CanvasDiagramNavResult {
   setShowDiagramSidebar: Dispatch<SetStateAction<boolean>>;
   showCommandPalette: boolean;
   setShowCommandPalette: (v: boolean) => void;
-  
+
   handleSelectDiagram: (id: string) => void;
 }
-
-
-
-
-
 
 function useCloseAllOnNavLock({
   diagramNavLocked,
@@ -57,10 +50,7 @@ function useCloseAllOnNavLock({
   }, [diagramNavLocked, setShowDiagramSidebar, setShowScenes]);
 }
 
-
-export function useCanvasDiagramNavigation(
-  params: CanvasDiagramNavParams,
-): CanvasDiagramNavResult {
+export function useCanvasDiagramNavigation(params: CanvasDiagramNavParams): CanvasDiagramNavResult {
   const {
     diagram,
     allDiagrams,
@@ -123,7 +113,17 @@ export function useCanvasDiagramNavigation(
         navigate(`/model/${id}`);
       }
     },
-    [actions, allDiagrams, clearCanvasSelection, diagram?.id, diagramNavLocked, navigate, onOpenDiagram, setShowCommandPalette, setShowDiagramSidebar],
+    [
+      actions,
+      allDiagrams,
+      clearCanvasSelection,
+      diagram?.id,
+      diagramNavLocked,
+      navigate,
+      onOpenDiagram,
+      setShowCommandPalette,
+      setShowDiagramSidebar,
+    ],
   );
 
   useCloseAllOnNavLock({

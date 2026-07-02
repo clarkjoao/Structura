@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 import { enUS, ptBR } from "date-fns/locale";
@@ -20,11 +13,7 @@ import { useRecentDiagrams } from "./useRecentDiagrams";
 
 type FolderRecord = Record<string, FolderType>;
 
-function diagramMatchesQuery(
-  d: Diagram,
-  folders: FolderRecord,
-  q: string,
-): boolean {
+function diagramMatchesQuery(d: Diagram, folders: FolderRecord, q: string): boolean {
   const lc = q.trim().toLowerCase();
   if (!lc) return true;
   if (d.name.toLowerCase().includes(lc)) return true;
@@ -198,12 +187,15 @@ export function DiagramCommandPalette({ onClose, onSelectDiagram }: DiagramComma
     [onSelectDiagram, onClose],
   );
 
-  const moveSelectedIntoView = useCallback((indexInSelectable: number) => {
-    const rowIndex = selectableIndices[indexInSelectable];
-    if (rowIndex === undefined) return;
-    const el = listRef.current?.querySelector(`[data-palette-row="${rowIndex}"]`);
-    el?.scrollIntoView({ block: "nearest" });
-  }, [selectableIndices]);
+  const moveSelectedIntoView = useCallback(
+    (indexInSelectable: number) => {
+      const rowIndex = selectableIndices[indexInSelectable];
+      if (rowIndex === undefined) return;
+      const el = listRef.current?.querySelector(`[data-palette-row="${rowIndex}"]`);
+      el?.scrollIntoView({ block: "nearest" });
+    },
+    [selectableIndices],
+  );
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement | HTMLInputElement>) => {
@@ -240,7 +232,15 @@ export function DiagramCommandPalette({ onClose, onSelectDiagram }: DiagramComma
         return;
       }
     },
-    [handlePick, moveSelectedIntoView, onClose, rows, selectableCount, selectableIndices, selectedIndex],
+    [
+      handlePick,
+      moveSelectedIntoView,
+      onClose,
+      rows,
+      selectableCount,
+      selectableIndices,
+      selectedIndex,
+    ],
   );
 
   return (
@@ -317,7 +317,9 @@ export function DiagramCommandPalette({ onClose, onSelectDiagram }: DiagramComma
                     <FileText className="h-3.5 w-3.5 shrink-0 opacity-70" />
                     <span className="min-w-0 flex-1 truncate">{row.name}</span>
                     {row.sub && (
-                      <span className="shrink-0 text-[10px] text-muted-foreground">· {row.sub}</span>
+                      <span className="shrink-0 text-[10px] text-muted-foreground">
+                        · {row.sub}
+                      </span>
                     )}
                     {row.openedAt !== undefined && (
                       <span className="shrink-0 text-[11px] text-muted-foreground">

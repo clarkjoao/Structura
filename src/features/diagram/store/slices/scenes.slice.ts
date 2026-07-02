@@ -1,8 +1,17 @@
-import type { Component, Connection, Diagram, NodeLayout, SceneDiff } from "../../model/diagram.types";
+import type {
+  Component,
+  Connection,
+  Diagram,
+  NodeLayout,
+  SceneDiff,
+} from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 import { computeMergePreview, nextSceneColor } from "../../utils/scene.utils";
-import { mutateRemoveComponentInScene, mutateRemoveConnectionInScene } from "../../utils/scene-mutations";
+import {
+  mutateRemoveComponentInScene,
+  mutateRemoveConnectionInScene,
+} from "../../utils/scene-mutations";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
 import { getActiveDiagram, touchDiagram } from "./get-active-diagram";
@@ -172,8 +181,12 @@ export const scenesSlice = (
 
       for (const other of Object.values(scenesMap)) {
         if (other.id === sceneId) continue;
-        other.removedComponentIds = other.removedComponentIds.filter((id) => !removeCompSet.has(id));
-        other.removedConnectionIds = other.removedConnectionIds.filter((id) => !removeConnSet.has(id));
+        other.removedComponentIds = other.removedComponentIds.filter(
+          (id) => !removeCompSet.has(id),
+        );
+        other.removedConnectionIds = other.removedConnectionIds.filter(
+          (id) => !removeConnSet.has(id),
+        );
         for (const comp of preview.componentsToAdd) {
           if (other.addedComponents[comp.id]) {
             delete other.addedComponents[comp.id];

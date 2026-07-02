@@ -1,11 +1,9 @@
-
 export function newCollabRoomId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
   }
   return `room-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
 }
-
 
 export function testServer(wsUrl: string, timeoutMs = 4000): Promise<boolean> {
   return new Promise((resolve) => {
@@ -17,9 +15,7 @@ export function testServer(wsUrl: string, timeoutMs = 4000): Promise<boolean> {
       done = true;
       try {
         ws?.close();
-      } catch {
-        
-      }
+      } catch {}
       resolve(result);
     };
 

@@ -72,13 +72,11 @@ export function useCanvasEffects({
     };
   }, [diagramId, reactFlowInstance, skipInitialFit]);
 
-  
   useEffect(() => {
     if (!isPlaying) return;
     onClearSelection();
   }, [isPlaying, onClearSelection]);
 
-  
   useEffect(() => {
     const el = document.querySelector<HTMLElement>(".react-flow__renderer");
     if (!el || !diagramId) return;
@@ -94,15 +92,9 @@ export function useCanvasEffects({
           { duration: 0 },
         );
       } else if (e.shiftKey) {
-        reactFlowInstance.setViewport(
-          { x: x - e.deltaY, y, zoom },
-          { duration: 0 },
-        );
+        reactFlowInstance.setViewport({ x: x - e.deltaY, y, zoom }, { duration: 0 });
       } else {
-        reactFlowInstance.setViewport(
-          { x, y: y - e.deltaY, zoom },
-          { duration: 0 },
-        );
+        reactFlowInstance.setViewport({ x, y: y - e.deltaY, zoom }, { duration: 0 });
       }
     };
 
@@ -110,7 +102,6 @@ export function useCanvasEffects({
     return () => el.removeEventListener("wheel", handleWheel);
   }, [reactFlowInstance, diagramId]);
 
-  
   useEffect(() => {
     if (!isPlaying || !activeFlow || !currentStepId) return;
     const step = getStepById(activeFlow, currentStepId);

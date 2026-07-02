@@ -37,9 +37,7 @@ export function DefectDojoResultsList({
     .filter((r) => r.status !== DefectDojoImportStatus.Imported)
     .map((r) => r.id);
 
-  const allSelected =
-    selectableIds.length > 0 &&
-    selectableIds.every((id) => selected.has(id));
+  const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
 
   const toggleSelectAll = () => {
     if (allSelected) {
@@ -82,8 +80,7 @@ export function DefectDojoResultsList({
         ]);
         store.updateService(product.existingServiceId, {
           ...svcData,
-          repositoryUrl:
-            existingService?.repositoryUrl || svcData.repositoryUrl || "",
+          repositoryUrl: existingService?.repositoryUrl || svcData.repositoryUrl || "",
           technology: mergedTech,
           tags: mergedTags,
           sources: mergeSources(existingService?.sources, svcData.sources),
@@ -98,7 +95,6 @@ export function DefectDojoResultsList({
         updatedCount++;
         continue;
       } else {
-        
         const githubExisting = Object.values(store.serviceRegistry).find(
           (s) =>
             normalizeSources(s).some((source) => source.type === ServiceSource.Github) &&
@@ -113,10 +109,7 @@ export function DefectDojoResultsList({
           store.updateService(githubExisting.id, {
             repositoryUrl: githubExisting.repositoryUrl || svcData.repositoryUrl,
             name: pickMoreCompleteString(svcData.name, githubExisting.name),
-            description: pickMoreCompleteString(
-              svcData.description,
-              githubExisting.description,
-            ),
+            description: pickMoreCompleteString(svcData.description, githubExisting.description),
             technology: dedupeStringsPreserveOrder([
               ...(githubExisting.technology ?? []),
               ...(svcData.technology ?? []),
@@ -127,7 +120,6 @@ export function DefectDojoResultsList({
             ]),
             sources: mergeSources(githubExisting.sources, svcData.sources),
             metadata: {
-              
               github: prevGithubMeta,
               defectdojo: {
                 ...(prevDefectDojoMeta ?? {}),
@@ -149,8 +141,7 @@ export function DefectDojoResultsList({
     const parts: string[] = [];
     if (importedCount > 0)
       parts.push(t("defectdojo.importToastImported", { count: importedCount }));
-    if (updatedCount > 0)
-      parts.push(t("defectdojo.importToastUpdated", { count: updatedCount }));
+    if (updatedCount > 0) parts.push(t("defectdojo.importToastUpdated", { count: updatedCount }));
     setImportMessage(
       parts.join(t("defectdojo.importToastJoin")) + t("defectdojo.importToastSuccessSuffix"),
     );
@@ -210,9 +201,7 @@ export function DefectDojoResultsList({
           </label>
           <span className="text-xs text-muted-foreground">
             {t("defectdojo.resultCount", { count: results.length })}
-            {importedCount > 0
-              ? t("defectdojo.footerImportedAddon", { count: importedCount })
-              : ""}
+            {importedCount > 0 ? t("defectdojo.footerImportedAddon", { count: importedCount }) : ""}
           </span>
         </div>
 

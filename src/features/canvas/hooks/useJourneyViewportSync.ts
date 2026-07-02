@@ -4,21 +4,15 @@ import { getCachedCanvasSnapshot, useActiveDiagram } from "@/features/diagram";
 import { useJourneyPlayer } from "@/features/journeys";
 import { useJourneyCanvasHighlight } from "../chat/useJourneyCanvasHighlight";
 
-
 export function useJourneyViewportSync(): void {
   const { fitView } = useReactFlow();
   const diagram = useActiveDiagram();
-  const resolved = useMemo(
-    () => (diagram ? getCachedCanvasSnapshot(diagram) : null),
-    [diagram],
-  );
+  const resolved = useMemo(() => (diagram ? getCachedCanvasSnapshot(diagram) : null), [diagram]);
   const journeyPlayer = useJourneyPlayer();
   const highlight = useJourneyCanvasHighlight();
   const isJourneyPlaying = journeyPlayer.mode.kind === "playing";
   const selectedStepId =
-    journeyPlayer.mode.kind === "playing"
-      ? journeyPlayer.mode.selectedStepId
-      : null;
+    journeyPlayer.mode.kind === "playing" ? journeyPlayer.mode.selectedStepId : null;
 
   const previousSelectedStepIdRef = useRef<string | null>(null);
 
@@ -36,13 +30,7 @@ export function useJourneyViewportSync(): void {
       duration: 400,
       padding: 0.3,
     });
-  }, [
-    fitView,
-    highlight.activeNodeId,
-    isJourneyPlaying,
-    resolved?.components,
-    selectedStepId,
-  ]);
+  }, [fitView, highlight.activeNodeId, isJourneyPlaying, resolved?.components, selectedStepId]);
 
   useEffect(() => {
     if (!isJourneyPlaying || !selectedStepId) {
@@ -55,19 +43,10 @@ export function useJourneyViewportSync(): void {
     previousSelectedStepIdRef.current = selectedStepId;
 
     const activeNodeId = highlight.activeNodeId;
-    if (
-      activeNodeId &&
-      resolved?.components[activeNodeId]
-    ) {
+    if (activeNodeId && resolved?.components[activeNodeId]) {
       return;
     }
 
     void fitView({ duration: 400, padding: 0.12 });
-  }, [
-    fitView,
-    highlight.activeNodeId,
-    isJourneyPlaying,
-    resolved?.components,
-    selectedStepId,
-  ]);
+  }, [fitView, highlight.activeNodeId, isJourneyPlaying, resolved?.components, selectedStepId]);
 }

@@ -43,9 +43,7 @@ export function DefectDojoProductCard({ product, selected, onToggle }: Props) {
 
       <div className="min-w-0 flex-1 space-y-1.5">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-sm font-semibold text-foreground">
-            {product.name}
-          </span>
+          <span className="text-sm font-semibold text-foreground">{product.name}</span>
 
           {isImported && (
             <span className="inline-flex items-center rounded-full border border-green-500/30 bg-green-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-green-600">
@@ -74,9 +72,7 @@ export function DefectDojoProductCard({ product, selected, onToggle }: Props) {
         </div>
 
         {product.description && (
-          <p className="line-clamp-2 text-xs text-muted-foreground">
-            {product.description}
-          </p>
+          <p className="line-clamp-2 text-xs text-muted-foreground">{product.description}</p>
         )}
 
         {product.tags.length > 0 && (

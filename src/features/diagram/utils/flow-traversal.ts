@@ -11,9 +11,7 @@ export function getNextSteps(flow: Flow, stepId: string): FlowStep[] {
   if (!step) return [];
 
   if (step.branches && step.branches.length > 0) {
-    return step.branches
-      .map((b) => flow.steps[b.nextId])
-      .filter((s): s is FlowStep => !!s);
+    return step.branches.map((b) => flow.steps[b.nextId]).filter((s): s is FlowStep => !!s);
   }
 
   if (step.next) {
@@ -25,7 +23,7 @@ export function getNextSteps(flow: Flow, stepId: string): FlowStep[] {
 }
 
 export function isConditionStep(step: FlowStep): boolean {
-  return step.type === 'condition' && !!step.branches && step.branches.length > 0;
+  return step.type === "condition" && !!step.branches && step.branches.length > 0;
 }
 
 export function getEntryStep(flow: Flow): FlowStep | undefined {
@@ -77,10 +75,7 @@ export interface BrokenStep {
 
 export function validateFlowGraph(flow: Flow, diagram: Diagram): BrokenStep[] {
   const broken: BrokenStep[] = [];
-  const { components, connections } = resolveSceneSnapshot(
-    diagram,
-    diagram.activeSceneId ?? null,
-  );
+  const { components, connections } = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
 
   walkFlow(flow, (step) => {
     if (step.componentId && !components[step.componentId]) {
@@ -104,20 +99,17 @@ export function validateFlowGraph(flow: Flow, diagram: Diagram): BrokenStep[] {
   return broken;
 }
 
-
 export function getOrderedStepIds(flow: Flow): string[] {
   const ids: string[] = [];
   walkFlow(flow, (step) => ids.push(step.id));
   return ids;
 }
 
-
 export function getStepCount(flow: Flow): number {
   let count = 0;
   walkFlow(flow, () => count++);
   return count;
 }
-
 
 export function getBranchStepCount(flow: Flow, fromStepId: string): number {
   let count = 0;

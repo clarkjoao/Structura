@@ -6,7 +6,6 @@ export { exportMermaid } from "./export-mermaid";
 export { exportStructurizr } from "./export-structurizr";
 export { parseDrawioXml as importDrawio } from "./import-drawio";
 
-
 export { downloadFile, downloadZip } from "./download-file";
 export type { ZipEntryFile } from "./download-file";
 export type { DiagramExportFormat, ExportArtifact } from "./build-export-files";

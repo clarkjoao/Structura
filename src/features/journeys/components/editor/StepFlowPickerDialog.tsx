@@ -32,17 +32,13 @@ export function StepFlowPickerDialog({
   const flows = useMemo(() => {
     if (!diagram) return [];
     return Object.values(diagram.snapshot.flows).filter(
-      (flow) =>
-        flow.diagramId === diagram.id &&
-        Object.keys(flow.steps).length > 0,
+      (flow) => flow.diagramId === diagram.id && Object.keys(flow.steps).length > 0,
     );
   }, [diagram]);
 
   const filtered = useMemo(() => {
     const trimmed = query.trim().toLowerCase();
-    const sorted = [...flows].sort((left, right) =>
-      left.name.localeCompare(right.name),
-    );
+    const sorted = [...flows].sort((left, right) => left.name.localeCompare(right.name));
     if (!trimmed) return sorted;
     return sorted.filter((flow) => flow.name.toLowerCase().includes(trimmed));
   }, [flows, query]);

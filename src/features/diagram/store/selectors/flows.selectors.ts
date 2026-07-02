@@ -13,8 +13,7 @@ export const useFlow = (id: string) =>
   useDiagramStore((s) => {
     if (!s.activeDiagramId) return undefined;
 
-    return s.diagrams[s.activeDiagramId]
-      .snapshot.flows[id];
+    return s.diagrams[s.activeDiagramId].snapshot.flows[id];
   });
 
 export const useFlows = () =>

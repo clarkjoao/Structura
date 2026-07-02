@@ -27,31 +27,31 @@ descriptor to build the final React Flow node object.
 
 ## Main files
 
-| File | Responsibility |
-| --- | --- |
-| `types.ts` | Defines `NodeTypeDescriptor` and the `NodeBuildContext` contract passed into every descriptor. |
-| `registry.ts` | Registers descriptors, resolves the right descriptor for each component, supports runtime registration, and exports the React Flow `nodeTypes` map. |
-| `index.ts` | Re-exports the descriptor API for canvas consumers. |
-| `*.descriptor.ts` | Per-node-type descriptor implementations. |
+| File              | Responsibility                                                                                                                                      |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `types.ts`        | Defines `NodeTypeDescriptor` and the `NodeBuildContext` contract passed into every descriptor.                                                      |
+| `registry.ts`     | Registers descriptors, resolves the right descriptor for each component, supports runtime registration, and exports the React Flow `nodeTypes` map. |
+| `index.ts`        | Re-exports the descriptor API for canvas consumers.                                                                                                 |
+| `*.descriptor.ts` | Per-node-type descriptor implementations.                                                                                                           |
 
 ## Descriptor contract
 
 A `NodeTypeDescriptor` describes both rendering and behavior for one node type.
 
-| Field | Goal |
-| --- | --- |
-| `rfType` | The React Flow node type key used in the `nodeTypes` map. |
-| `component` | The React component that renders this node type. |
-| `matches(type)` | Decides whether this descriptor handles a diagram component type. |
-| `zIndex` | Default stacking order for the rendered node. Can be static or derived from the component. |
-| `connectable` | Whether this node can participate in edge connections. |
-| `canHaveParent` | Whether this node can live inside a parent panel. |
-| `canBeParent` | Whether this node can contain child nodes. |
-| `buildData(comp, ctx)` | Builds the `data` payload consumed by the node React component. |
-| `buildStyle(comp, ctx)` | Optional style builder for width, height, opacity, and other per-node visual state. |
-| `defaultSize` | Optional default size used by higher-level creation logic. |
-| `defaultData` | Optional default data for future descriptor-aware creation flows. |
-| `draggable`, `selectable`, `focusable`, `dragHandle` | Optional React Flow behavior overrides. |
+| Field                                                | Goal                                                                                       |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `rfType`                                             | The React Flow node type key used in the `nodeTypes` map.                                  |
+| `component`                                          | The React component that renders this node type.                                           |
+| `matches(type)`                                      | Decides whether this descriptor handles a diagram component type.                          |
+| `zIndex`                                             | Default stacking order for the rendered node. Can be static or derived from the component. |
+| `connectable`                                        | Whether this node can participate in edge connections.                                     |
+| `canHaveParent`                                      | Whether this node can live inside a parent panel.                                          |
+| `canBeParent`                                        | Whether this node can contain child nodes.                                                 |
+| `buildData(comp, ctx)`                               | Builds the `data` payload consumed by the node React component.                            |
+| `buildStyle(comp, ctx)`                              | Optional style builder for width, height, opacity, and other per-node visual state.        |
+| `defaultSize`                                        | Optional default size used by higher-level creation logic.                                 |
+| `defaultData`                                        | Optional default data for future descriptor-aware creation flows.                          |
+| `draggable`, `selectable`, `focusable`, `dragHandle` | Optional React Flow behavior overrides.                                                    |
 
 `NodeBuildContext` is intentionally broad because descriptors are allowed to
 depend on current canvas state, not just component fields. For example:
@@ -83,18 +83,18 @@ Important rules:
 
 ## Built-in descriptors
 
-| Descriptor | Goal |
-| --- | --- |
-| `panelDescriptor` | Renders regular panel containers, including drag-target and collapse metadata. |
-| `swimlaneDescriptor` | Handles swimlane panels as a special panel variant with lane-specific data and layout. |
-| `noteDescriptor` | Builds sticky-note style nodes, including collapse state and inline editing hooks. |
-| `apiGroupDescriptor` | Builds API group containers and computes size from child endpoint count. |
-| `endpointDescriptor` | Builds API endpoint nodes and wires handler-to-flow playback actions. |
-| `dbTableDescriptor` | Builds database table nodes with editable column data and collapsed sizing rules. |
-| `jsonViewerDescriptor` | Builds JSON viewer nodes with inline editing and size persistence. |
-| `svgDescriptor` | Builds SVG-backed nodes that render imported custom artwork. |
-| `unknownDescriptor` | Renders unknown component payloads safely when the model type is intentionally opaque. |
-| `c4Descriptor` | Catch-all descriptor for C4-style nodes and AWS nodes, including flow overlays, service metadata, journey badges, and drill-down behavior. |
+| Descriptor             | Goal                                                                                                                                       |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `panelDescriptor`      | Renders regular panel containers, including drag-target and collapse metadata.                                                             |
+| `swimlaneDescriptor`   | Handles swimlane panels as a special panel variant with lane-specific data and layout.                                                     |
+| `noteDescriptor`       | Builds sticky-note style nodes, including collapse state and inline editing hooks.                                                         |
+| `apiGroupDescriptor`   | Builds API group containers and computes size from child endpoint count.                                                                   |
+| `endpointDescriptor`   | Builds API endpoint nodes and wires handler-to-flow playback actions.                                                                      |
+| `dbTableDescriptor`    | Builds database table nodes with editable column data and collapsed sizing rules.                                                          |
+| `jsonViewerDescriptor` | Builds JSON viewer nodes with inline editing and size persistence.                                                                         |
+| `svgDescriptor`        | Builds SVG-backed nodes that render imported custom artwork.                                                                               |
+| `unknownDescriptor`    | Renders unknown component payloads safely when the model type is intentionally opaque.                                                     |
+| `c4Descriptor`         | Catch-all descriptor for C4-style nodes and AWS nodes, including flow overlays, service metadata, journey badges, and drill-down behavior. |
 
 ## Adding a new node type
 

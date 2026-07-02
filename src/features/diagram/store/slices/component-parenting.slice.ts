@@ -56,7 +56,6 @@ export const componentParentingSlice = (
     });
   },
 
-  
   commitNodeDrag: (
     nodeId: string,
     newParentId: string | null,
@@ -67,21 +66,16 @@ export const componentParentingSlice = (
       if (!d) return;
       const scene = resolveActiveScene(d);
 
-      
       if (scene && !scene.addedComponents[nodeId]) return;
 
-      
       if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
 
-      
-      
       applySingleNodeDrag(d, scene, nodeId, newParentId, newPosition);
 
       touchDiagram(d);
     });
   },
 
-  
   batchCommitNodeDrag: (
     entries: Array<{
       nodeId: string;
@@ -118,9 +112,7 @@ export const componentParentingSlice = (
       if (!d) return;
       if (d.activeSceneId && d.scenes?.[d.activeSceneId]) return;
       const comps = d.snapshot.components;
-      const ids = componentIds.filter(
-        (id) => comps[id] && !isApiGroupComponent(comps[id]),
-      );
+      const ids = componentIds.filter((id) => comps[id] && !isApiGroupComponent(comps[id]));
       if (ids.length < 2) return;
 
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
@@ -163,7 +155,14 @@ export const componentParentingSlice = (
         parentId: null,
       };
       d.snapshot.components[panel.id] = panel;
-      d.nodeLayouts[panel.id] = { elementId: panel.id, x: minX, y: minY, zIndex: -1, width: maxX - minX, height: maxY - minY };
+      d.nodeLayouts[panel.id] = {
+        elementId: panel.id,
+        x: minX,
+        y: minY,
+        zIndex: -1,
+        width: maxX - minX,
+        height: maxY - minY,
+      };
       panelId = panel.id;
 
       ids.forEach((eid, i) => {

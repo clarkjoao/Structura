@@ -16,7 +16,7 @@ export function CustomIconRenderer({ icon, size = 32, className }: CustomIconRen
       <div
         style={{ width: size, height: size, pointerEvents: "none" }}
         className={cn(className)}
-        
+
         dangerouslySetInnerHTML={{ __html: icon.source.svgContent }}
       />
     );
@@ -31,21 +31,14 @@ export function CustomIconRenderer({ icon, size = 32, className }: CustomIconRen
     const fallbackStyle: CSSProperties = { width: size, height: size };
     return (
       <Suspense fallback={<div style={fallbackStyle} />}>
-        <LazyLucideIcon
-          size={size}
-          className={cn(className)}
-          style={{ pointerEvents: "none" }}
-        />
+        <LazyLucideIcon size={size} className={cn(className)} style={{ pointerEvents: "none" }} />
       </Suspense>
     );
   }
 
   if (isAwsIcon(icon)) {
     return (
-      <div
-        className={cn(className)}
-        style={{ width: size, height: size, pointerEvents: "none" }}
-      >
+      <div className={cn(className)} style={{ width: size, height: size, pointerEvents: "none" }}>
         <AwsIcon iconName={icon.source.serviceName} size={size} />
       </div>
     );

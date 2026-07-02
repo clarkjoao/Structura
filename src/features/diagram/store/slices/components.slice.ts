@@ -30,7 +30,11 @@ import {
   isExternalElementType,
   COMPONENT_TYPE_PROCESSOS,
 } from "../../model/component-type-constants";
-import type { FlowNodeComponent, FlowNodeShape, ExternalElementComponent } from "../../model/component.types";
+import type {
+  FlowNodeComponent,
+  FlowNodeShape,
+  ExternalElementComponent,
+} from "../../model/component.types";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import { isAwsType } from "@/lib/catalogs/aws";
 import { isGcpType } from "@/features/cloud/providers/gcp/gcp.catalog";
@@ -63,7 +67,6 @@ import { computeApiGroupSize } from "../../utils/api-group-size";
 import { buildChildrenIndex, getDescendantIdsFromIndex } from "../../utils/children-index";
 import { mutateRemoveComponentInScene } from "../../utils/scene-mutations";
 import { repairFlowsAfterRemovingDiagramElements } from "../../utils/flow-repair";
-
 
 function handleEndpointInsertion(
   state: AppState,
@@ -147,13 +150,13 @@ function buildComponentForType(
   } else if (isNoteType(type)) {
     component = { ...base, type: "note", panelColor: "hsl(45 25% 97%)" };
   } else if (isEndpointType(type)) {
-      component = {
-        ...base,
-        type: "endpoint",
-        method: "GET",
-        path: i18n.t("canvas.defaultEndpointPath"),
-        handlers: [],
-      } as EndpointComponent;
+    component = {
+      ...base,
+      type: "endpoint",
+      method: "GET",
+      path: i18n.t("canvas.defaultEndpointPath"),
+      handlers: [],
+    } as EndpointComponent;
   } else if (isApiGroupType(type)) {
     component = {
       ...base,
@@ -300,211 +303,205 @@ export const componentsSlice = (
   set: (fn: (state: AppState) => void) => void,
   _get: () => AppState,
 ) => ({
-    addComponent: (
-      type: ComponentType,
-      name: string,
-      parentId: string | null,
-      position?: { x: number; y: number },
-      awsService?: string,
-      panelKind?: PanelKind,
-      flowShape?: FlowNodeShape,
-    ): Component => {
-      const id = generateId("el");
-      const { component, resolvedPanelKind } = buildComponentForType(
-        id,
-        type,
-        name,
+  addComponent: (
+    type: ComponentType,
+    name: string,
+    parentId: string | null,
+    position?: { x: number; y: number },
+    awsService?: string,
+    panelKind?: PanelKind,
+    flowShape?: FlowNodeShape,
+  ): Component => {
+    const id = generateId("el");
+    const { component, resolvedPanelKind } = buildComponentForType(
+      id,
+      type,
+      name,
+      parentId,
+      panelKind,
+      awsService,
+      flowShape,
+    );
+
+    set((state) => {
+      const d = getActiveDiagram(state);
+      if (!d) return;
+      const scene = resolveActiveScene(d);
+
+      if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+
+      const resolveComp = (pid: string | null | undefined) =>
+        pid ? resolveComponent(d, scene, pid) : undefined;
+
+      const parentComp = parentId ? resolveComp(parentId) : undefined;
+      const parentLayout = parentId
+        ? (scene?.nodeLayouts[parentId] ?? d.nodeLayouts[parentId])
+        : undefined;
+
+      if (
+        isEndpointType(type) &&
+        parentId &&
+        handleEndpointInsertion(state, d, scene, component, parentId)
+      ) {
+        return;
+      }
+
+      const resolvedPosition = resolveInsertPosition({
         parentId,
-        panelKind,
-        awsService,
+        position,
+        parentLayout,
+        parentComp,
+      });
+      const layout = buildLayoutForComponent(
+        component.id,
+        type,
+        resolvedPanelKind,
+        resolvedPosition,
         flowShape,
       );
+      writeComponentAndLayout(d, scene, component, layout);
 
-      set((state) => {
-        const d = getActiveDiagram(state);
-        if (!d) return;
-        const scene = resolveActiveScene(d);
+      touchDiagram(d);
 
-        if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-
-        const resolveComp = (pid: string | null | undefined) =>
-          pid ? resolveComponent(d, scene, pid) : undefined;
-
-        const parentComp = parentId ? resolveComp(parentId) : undefined;
-        const parentLayout = parentId
-          ? scene?.nodeLayouts[parentId] ?? d.nodeLayouts[parentId]
-          : undefined;
-
-        if (
-          isEndpointType(type) &&
-          parentId &&
-          handleEndpointInsertion(state, d, scene, component, parentId)
-        ) {
-          return;
+      const p = parentId ? resolveComp(parentId) : undefined;
+      if (parentId && p && isApiGroupComponent(p)) {
+        const childCount = countEndpointsUnderParent(d, scene, parentId);
+        const { width, height } = computeApiGroupSize(childCount);
+        const groupLayout = resolveNodeLayout(d, scene, parentId);
+        if (groupLayout) {
+          groupLayout.width = width;
+          groupLayout.height = height;
         }
-
-        const resolvedPosition = resolveInsertPosition({
-          parentId,
-          position,
-          parentLayout,
-          parentComp,
-        });
-        const layout = buildLayoutForComponent(
-          component.id,
-          type,
-          resolvedPanelKind,
-          resolvedPosition,
-          flowShape,
-        );
-        writeComponentAndLayout(d, scene, component, layout);
-
-        touchDiagram(d);
-
-        const p = parentId ? resolveComp(parentId) : undefined;
-        if (parentId && p && isApiGroupComponent(p)) {
-          const childCount = countEndpointsUnderParent(d, scene, parentId);
-          const { width, height } = computeApiGroupSize(childCount);
-          const groupLayout = resolveNodeLayout(d, scene, parentId);
-          if (groupLayout) {
-            groupLayout.width = width;
-            groupLayout.height = height;
-          }
-        }
-      });
-      return component;
-    },
-
-    updateComponent: (id: string, patch: ComponentPatch) => {
-      const patchAny = patch as Record<string, unknown>;
-      const width = patchAny.width as number | undefined;
-      const height = patchAny.height as number | undefined;
-      const hasDimensions = width !== undefined || height !== undefined;
-      const isDimensionOnly = hasDimensions && Object.keys(patch).every((k) => k === "width" || k === "height");
-      
-      const compPatch: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(patchAny)) {
-        if (k !== "width" && k !== "height") compPatch[k] = v;
       }
-      const shouldDetachTemplate = Object.keys(compPatch).some(
-        (key) => key !== "templateId",
-      );
-      set((state) => {
-        const d = getActiveDiagram(state);
-        if (!d) return;
-        const scene = resolveActiveScene(d);
-        const inSceneAdds = !!(scene && scene.addedComponents[id]);
-        if (!isDimensionOnly) {
-          if (!scene || !inSceneAdds) pushHistory(state);
-        }
+    });
+    return component;
+  },
 
-        if (inSceneAdds) {
-          if (Object.keys(compPatch).length > 0) {
-            Object.assign(scene!.addedComponents[id], compPatch);
-            if (shouldDetachTemplate && scene!.addedComponents[id].templateId) {
-              delete scene!.addedComponents[id].templateId;
-            }
-          }
-          if (hasDimensions) {
-            const layout = scene!.nodeLayouts[id];
-            if (layout) {
-              if (width !== undefined) layout.width = width;
-              if (height !== undefined) layout.height = height;
-            }
-          }
-        } else {
-          if (Object.keys(compPatch).length > 0) {
-            Object.assign(d.snapshot.components[id], compPatch);
-            if (shouldDetachTemplate && d.snapshot.components[id].templateId) {
-              delete d.snapshot.components[id].templateId;
-            }
-          }
-          if (hasDimensions) {
-            const layout = d.nodeLayouts[id];
-            if (layout) {
-              if (width !== undefined) layout.width = width;
-              if (height !== undefined) layout.height = height;
-            }
+  updateComponent: (id: string, patch: ComponentPatch) => {
+    const patchAny = patch as Record<string, unknown>;
+    const width = patchAny.width as number | undefined;
+    const height = patchAny.height as number | undefined;
+    const hasDimensions = width !== undefined || height !== undefined;
+    const isDimensionOnly =
+      hasDimensions && Object.keys(patch).every((k) => k === "width" || k === "height");
+
+    const compPatch: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(patchAny)) {
+      if (k !== "width" && k !== "height") compPatch[k] = v;
+    }
+    const shouldDetachTemplate = Object.keys(compPatch).some((key) => key !== "templateId");
+    set((state) => {
+      const d = getActiveDiagram(state);
+      if (!d) return;
+      const scene = resolveActiveScene(d);
+      const inSceneAdds = !!(scene && scene.addedComponents[id]);
+      if (!isDimensionOnly) {
+        if (!scene || !inSceneAdds) pushHistory(state);
+      }
+
+      if (inSceneAdds) {
+        if (Object.keys(compPatch).length > 0) {
+          Object.assign(scene!.addedComponents[id], compPatch);
+          if (shouldDetachTemplate && scene!.addedComponents[id].templateId) {
+            delete scene!.addedComponents[id].templateId;
           }
         }
-        touchDiagram(d);
-      });
-    },
-
-    removeComponent: (id: string) => {
-      set((state) => {
-        const d = getActiveDiagram(state);
-        if (!d) return;
-        const scene = resolveActiveScene(d);
-        if (scene) {
-          mutateRemoveComponentInScene(d, scene.id, id);
-          touchDiagram(d);
-          return;
-        }
-
-        pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-        const childrenIndex = buildChildrenIndex(d.snapshot.components);
-        const toRemove = getDescendantIdsFromIndex(id, childrenIndex);
-        toRemove.add(id);
-
-        const apiGroupParentsToSync = new Set<string>();
-        toRemove.forEach((eid) => {
-          const comp = d.snapshot.components[eid];
-          if (comp?.parentId && isApiGroupComponent(d.snapshot.components[comp.parentId])) {
-            apiGroupParentsToSync.add(comp.parentId);
-          }
-        });
-
-        const removedConnectionIds = new Set<string>();
-        for (const connection of Object.values(d.snapshot.connections)) {
-          if (toRemove.has(connection.sourceId) || toRemove.has(connection.targetId)) {
-            removedConnectionIds.add(connection.id);
-          }
-        }
-
-        toRemove.forEach((eid) => delete d.snapshot.components[eid]);
-        removedConnectionIds.forEach((connectionId) => {
-          delete d.snapshot.connections[connectionId];
-        });
-        toRemove.forEach((eid) => delete d.nodeLayouts[eid]);
-
-        repairFlowsAfterRemovingDiagramElements(
-          d.snapshot.flows,
-          toRemove,
-          removedConnectionIds,
-        );
-
-        const syncApiGroupSize = (groupId: string) => {
-          const childCount = Object.values(d.snapshot.components).filter(
-            (c) => c.parentId === groupId && isEndpointType(c.type),
-          ).length;
-          const { width, height } = computeApiGroupSize(childCount);
-          const layout = d.nodeLayouts[groupId];
+        if (hasDimensions) {
+          const layout = scene!.nodeLayouts[id];
           if (layout) {
-            layout.width = width;
-            layout.height = height;
+            if (width !== undefined) layout.width = width;
+            if (height !== undefined) layout.height = height;
           }
-        };
+        }
+      } else {
+        if (Object.keys(compPatch).length > 0) {
+          Object.assign(d.snapshot.components[id], compPatch);
+          if (shouldDetachTemplate && d.snapshot.components[id].templateId) {
+            delete d.snapshot.components[id].templateId;
+          }
+        }
+        if (hasDimensions) {
+          const layout = d.nodeLayouts[id];
+          if (layout) {
+            if (width !== undefined) layout.width = width;
+            if (height !== undefined) layout.height = height;
+          }
+        }
+      }
+      touchDiagram(d);
+    });
+  },
 
-        const reindexEndpoints = (groupId: string) => {
-          if (toRemove.has(groupId)) return;
-          const siblings = Object.values(d.snapshot.components)
-            .filter((c) => c.parentId === groupId && isEndpointType(c.type))
-            .sort((a, b) => {
-              const ay = d.nodeLayouts[a.id]?.y ?? 0;
-              const by = d.nodeLayouts[b.id]?.y ?? 0;
-              return ay - by;
-            });
-          siblings.forEach((sibling, i) => {
-            const layout = d.nodeLayouts[sibling.id];
-            if (layout) layout.y = API_GROUP_HEADER_H + i * API_GROUP_ENDPOINT_H;
-          });
-          syncApiGroupSize(groupId);
-        };
-
-        apiGroupParentsToSync.forEach(reindexEndpoints);
-
+  removeComponent: (id: string) => {
+    set((state) => {
+      const d = getActiveDiagram(state);
+      if (!d) return;
+      const scene = resolveActiveScene(d);
+      if (scene) {
+        mutateRemoveComponentInScene(d, scene.id, id);
         touchDiagram(d);
-      });
-    },
+        return;
+      }
 
-  });
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+      const childrenIndex = buildChildrenIndex(d.snapshot.components);
+      const toRemove = getDescendantIdsFromIndex(id, childrenIndex);
+      toRemove.add(id);
+
+      const apiGroupParentsToSync = new Set<string>();
+      toRemove.forEach((eid) => {
+        const comp = d.snapshot.components[eid];
+        if (comp?.parentId && isApiGroupComponent(d.snapshot.components[comp.parentId])) {
+          apiGroupParentsToSync.add(comp.parentId);
+        }
+      });
+
+      const removedConnectionIds = new Set<string>();
+      for (const connection of Object.values(d.snapshot.connections)) {
+        if (toRemove.has(connection.sourceId) || toRemove.has(connection.targetId)) {
+          removedConnectionIds.add(connection.id);
+        }
+      }
+
+      toRemove.forEach((eid) => delete d.snapshot.components[eid]);
+      removedConnectionIds.forEach((connectionId) => {
+        delete d.snapshot.connections[connectionId];
+      });
+      toRemove.forEach((eid) => delete d.nodeLayouts[eid]);
+
+      repairFlowsAfterRemovingDiagramElements(d.snapshot.flows, toRemove, removedConnectionIds);
+
+      const syncApiGroupSize = (groupId: string) => {
+        const childCount = Object.values(d.snapshot.components).filter(
+          (c) => c.parentId === groupId && isEndpointType(c.type),
+        ).length;
+        const { width, height } = computeApiGroupSize(childCount);
+        const layout = d.nodeLayouts[groupId];
+        if (layout) {
+          layout.width = width;
+          layout.height = height;
+        }
+      };
+
+      const reindexEndpoints = (groupId: string) => {
+        if (toRemove.has(groupId)) return;
+        const siblings = Object.values(d.snapshot.components)
+          .filter((c) => c.parentId === groupId && isEndpointType(c.type))
+          .sort((a, b) => {
+            const ay = d.nodeLayouts[a.id]?.y ?? 0;
+            const by = d.nodeLayouts[b.id]?.y ?? 0;
+            return ay - by;
+          });
+        siblings.forEach((sibling, i) => {
+          const layout = d.nodeLayouts[sibling.id];
+          if (layout) layout.y = API_GROUP_HEADER_H + i * API_GROUP_ENDPOINT_H;
+        });
+        syncApiGroupSize(groupId);
+      };
+
+      apiGroupParentsToSync.forEach(reindexEndpoints);
+
+      touchDiagram(d);
+    });
+  },
+});

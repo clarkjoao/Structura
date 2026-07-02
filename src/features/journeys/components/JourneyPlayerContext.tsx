@@ -9,11 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { FlowModeProvider, useFlowMode } from "@/features/canvas/flow/FlowModeContext";
-import {
-  useActiveDiagramId,
-  useDiagramActions,
-  useDiagrams,
-} from "@/features/diagram";
+import { useActiveDiagramId, useDiagramActions, useDiagrams } from "@/features/diagram";
 import { useJourneyStore } from "../store/journeys.store";
 import type {
   JourneyPlaybackContext,
@@ -183,15 +179,7 @@ function JourneyPlayerFlowBridge({
     if (!flow) return;
     dispatch({ type: "FLOW_PLAY_COMMITTED" });
     play(flow);
-  }, [
-    activeDiagramId,
-    diagrams,
-    dispatch,
-    openDiagram,
-    play,
-    state.mode.kind,
-    state.pendingFlow,
-  ]);
+  }, [activeDiagramId, diagrams, dispatch, openDiagram, play, state.mode.kind, state.pendingFlow]);
 
   const prevSelectedStepIdRef = useRef<string | null>(null);
   useEffect(() => {
@@ -212,13 +200,7 @@ function JourneyPlayerFlowBridge({
         exitPlay();
       }
     }
-  }, [
-    dispatch,
-    exitPlay,
-    state.justStartedPlayback,
-    state.mode,
-    state.pendingFlow,
-  ]);
+  }, [dispatch, exitPlay, state.justStartedPlayback, state.mode, state.pendingFlow]);
 
   useEffect(() => {
     if (!state.pendingRecording) return;
@@ -327,20 +309,13 @@ function JourneyPlayerFlowBridge({
   );
 }
 
-export function JourneyPlayerProvider({
-  children,
-  onExitCanvas,
-}: JourneyPlayerProviderProps) {
+export function JourneyPlayerProvider({ children, onExitCanvas }: JourneyPlayerProviderProps) {
   const [state, dispatch] = useReducer(journeyBridgeReducer, INITIAL_STATE);
   const onFinalize = useJourneyRecordingFinalize(state.recordingTarget, dispatch);
 
   return (
     <FlowModeProvider onFinalize={onFinalize} onStartRecording={() => {}}>
-      <JourneyPlayerFlowBridge
-        state={state}
-        dispatch={dispatch}
-        onExitCanvas={onExitCanvas}
-      >
+      <JourneyPlayerFlowBridge state={state} dispatch={dispatch} onExitCanvas={onExitCanvas}>
         {children}
       </JourneyPlayerFlowBridge>
     </FlowModeProvider>

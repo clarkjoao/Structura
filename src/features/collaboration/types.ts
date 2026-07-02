@@ -5,12 +5,7 @@ export interface CollabUser {
 }
 
 export type CollabStatus =
-  | "idle"
-  | "connecting"
-  | "connected"
-  | "reconnecting"
-  | "disconnected"
-  | "closed";
+  "idle" | "connecting" | "connected" | "reconnecting" | "disconnected" | "closed";
 
 export interface PeerState {
   clientId: string;

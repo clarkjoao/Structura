@@ -65,8 +65,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
 
   const ids = useMemo(() => selectedNodes.map((n) => n.id), [selectedNodes]);
   const resolved = useMemo(
-    () =>
-      diagram ? resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null) : null,
+    () => (diagram ? resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null) : null),
     [diagram],
   );
   const components = useMemo(
@@ -98,9 +97,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
   const allSameType = useMemo(() => {
     if (selectedNodes.length <= 1) return true;
     const first = (selectedNodes[0].data?.type as ComponentType) ?? "component";
-    return selectedNodes.every(
-      (n) => ((n.data?.type as ComponentType) ?? "component") === first,
-    );
+    return selectedNodes.every((n) => ((n.data?.type as ComponentType) ?? "component") === first);
   }, [selectedNodes]);
 
   const sharedTechnology = useMemo(() => {
@@ -120,9 +117,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
   const sharedTags = useMemo(() => {
     if (components.length === 0) return undefined;
     const first = components[0].tags?.join(", ") ?? "";
-    const allSame = components.every(
-      (c) => (c.tags?.join(", ") ?? "") === first,
-    );
+    const allSame = components.every((c) => (c.tags?.join(", ") ?? "") === first);
     return allSame ? first : null;
   }, [components]);
 
@@ -166,7 +161,10 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
 
   const handleTagsChange = (value: string) => {
     const tags = value
-      ? value.split(",").map((s) => s.trim()).filter(Boolean)
+      ? value
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
       : [];
     ids.forEach((id) => updateComponent(id, { tags }));
   };
@@ -277,9 +275,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
           {t("multiSelect.commonProps")}
         </p>
-        <p className="text-[10px] text-muted-foreground italic">
-          {t("multiSelect.editAllHint")}
-        </p>
+        <p className="text-[10px] text-muted-foreground italic">{t("multiSelect.editAllHint")}</p>
 
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
@@ -288,7 +284,9 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
           <input
             value={sharedTags !== null ? sharedTags : ""}
             onChange={(e) => handleTagsChange(e.target.value)}
-            placeholder={sharedTags === null ? t("common.multipleValues") : t("common.commaSeparatedTags")}
+            placeholder={
+              sharedTags === null ? t("common.multipleValues") : t("common.commaSeparatedTags")
+            }
             className={cn(
               "w-full rounded-md border bg-background px-3 py-2 text-sm",
               sharedTags === null && "italic text-muted-foreground",
@@ -305,7 +303,9 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
               <input
                 value={sharedTechnology ?? ""}
                 onChange={(e) => handleTechnologyChange(e.target.value)}
-                placeholder={sharedTechnology === null ? t("common.multipleValues") : t("common.techExample")}
+                placeholder={
+                  sharedTechnology === null ? t("common.multipleValues") : t("common.techExample")
+                }
                 className={cn(
                   "w-full rounded-md border bg-background px-3 py-2 text-sm",
                   sharedTechnology === null && "italic text-muted-foreground",
@@ -319,7 +319,9 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
               <textarea
                 value={sharedDescription ?? ""}
                 onChange={(e) => handleDescriptionChange(e.target.value)}
-                placeholder={sharedDescription === null ? t("common.multipleValues") : t("common.description")}
+                placeholder={
+                  sharedDescription === null ? t("common.multipleValues") : t("common.description")
+                }
                 rows={2}
                 className={cn(
                   "w-full rounded-md border bg-background px-3 py-2 text-sm resize-none",

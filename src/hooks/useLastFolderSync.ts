@@ -13,9 +13,7 @@ function readLastFolderSyncFromStorage(): number | null {
 }
 
 export function useLastFolderSync(): number | null {
-  const [lastSync, setLastSync] = useState<number | null>(() =>
-    readLastFolderSyncFromStorage(),
-  );
+  const [lastSync, setLastSync] = useState<number | null>(() => readLastFolderSyncFromStorage());
 
   useEffect(() => {
     const handler = (): void => {

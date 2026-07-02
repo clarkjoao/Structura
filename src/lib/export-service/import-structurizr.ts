@@ -40,9 +40,7 @@ interface ParsedWorkspace {
 // ── Tokenizer / Parser ────────────────────────────────────────────────────
 
 function stripComments(dsl: string): string {
-  return dsl
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/\/\/[^\n]*/g, "");
+  return dsl.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
 }
 
 function extractStrings(line: string): string[] {
@@ -157,8 +155,7 @@ function parseDsl(dsl: string): ParsedWorkspace {
 
           let dslId: string;
           if (localId) {
-            dslId =
-              hierarchicalIds && parentDslId ? `${parentDslId}.${localId}` : localId;
+            dslId = hierarchicalIds && parentDslId ? `${parentDslId}.${localId}` : localId;
           } else {
             dslId = `_anon_${elements.length}`;
           }
@@ -179,11 +176,7 @@ function parseDsl(dsl: string): ParsedWorkspace {
           break;
         }
 
-        if (
-          !elementMatched &&
-          /^tags\s+/i.test(line) &&
-          elementStack.length > 0
-        ) {
+        if (!elementMatched && /^tags\s+/i.test(line) && elementStack.length > 0) {
           const strs = extractStrings(line);
           const currentDslId = elementStack.at(-1)!.dslId;
           const currentEl = [...elements].reverse().find((e) => e.dslId === currentDslId);

@@ -14,9 +14,9 @@ export interface ServiceDefinition {
   owner?: string;
   tags?: string[];
   sources?: ServiceSourceRef[];
-  
+
   source?: ServiceSource;
-  
+
   sourceId?: string;
   externalLinks?: import("./component.types").ExternalLink[];
   metadata?: {
@@ -27,7 +27,7 @@ export interface ServiceDefinition {
       language: string | null;
       updatedAt: string;
     };
-    
+
     defectdojo?: Record<string, unknown>;
   };
 }

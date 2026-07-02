@@ -45,9 +45,8 @@ export const isGcpComponent = (c: Component): c is GcpComponent => isGcpType(c.t
 
 export const isAzureComponent = (c: Component): c is AzureComponent => isAzureType(c.type);
 
-export const isCloudComponent = (
-  c: Component,
-): c is AwsComponent | GcpComponent | AzureComponent => cloudRegistry.isCloudType(c.type);
+export const isCloudComponent = (c: Component): c is AwsComponent | GcpComponent | AzureComponent =>
+  cloudRegistry.isCloudType(c.type);
 
 export const isApiGroupComponent = (c: Component): c is ApiGroupComponent => isApiGroupType(c.type);
 
@@ -61,8 +60,7 @@ export const isDbTableComponent = (c: Component): c is DbTableComponent => isDbT
 export const isJsonViewerComponent = (c: Component): c is JsonViewerComponent =>
   isJsonViewerType(c.type);
 
-export const isFlowNodeComponent = (c: Component): c is FlowNodeComponent =>
-  isFlowNodeType(c.type);
+export const isFlowNodeComponent = (c: Component): c is FlowNodeComponent => isFlowNodeType(c.type);
 
 export const isExternalElementComponent = (c: Component): c is ExternalElementComponent =>
   isExternalElementType(c.type);

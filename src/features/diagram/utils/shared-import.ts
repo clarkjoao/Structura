@@ -1,13 +1,11 @@
 import type { Diagram } from "../model/diagram.types";
 
-
 export function formatDiagramImportCalendarDate(date: Date): string {
   const day = String(date.getDate()).padStart(2, "0");
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const year = String(date.getFullYear()).slice(-2);
   return `${day}/${month}/${year}`;
 }
-
 
 export function resolveUniqueDiagramId(
   preferredId: string,
@@ -24,7 +22,6 @@ export function resolveUniqueDiagramId(
   }
   throw new Error("Could not resolve unique diagram id");
 }
-
 
 export function cloneDiagramForImportWithId(
   diagram: Diagram,

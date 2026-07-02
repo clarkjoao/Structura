@@ -34,26 +34,26 @@ interface BaseComponent {
   name: string;
   description: string;
   parentId: string | null;
-  
+
   locked?: boolean;
-  
+
   customIconId?: string;
   tags?: string[];
   serviceId?: string;
   linkedDiagramId?: string;
-  
+
   hidden?: boolean;
-  
+
   handleOrder?: {
     incoming: string[];
     outgoing: string[];
   };
-  
+
   x?: number;
   y?: number;
-  
+
   templateId?: string;
-  
+
   registryServiceId?: string;
   externalLinks?: ExternalLink[];
 }
@@ -66,9 +66,7 @@ export interface C4Component extends BaseComponent {
 
 export type { PanelKind };
 
-
 export interface SwimlaneStyle {
-  
   orientation?: "horizontal" | "vertical";
   laneColor?: string;
   laneLabel?: string;
@@ -136,20 +134,20 @@ export interface EndpointComponent extends BaseComponent {
   type: "endpoint";
   method: HttpMethod;
   path: string;
-  
+
   endpointDescription?: string;
   handlers: EndpointHandler[];
 }
 
 export interface UnknownComponent extends BaseComponent {
   type: "unknown";
-  
+
   rawContent?: string;
 }
 
 export interface SvgComponent extends BaseComponent {
   type: "svg";
-  
+
   svgContent: string;
 }
 
@@ -159,7 +157,7 @@ export interface DbColumn {
   dataType: string;
   isPrimaryKey?: boolean;
   isForeignKey?: boolean;
-  
+
   foreignTableId?: string;
   nullable?: boolean;
   unique?: boolean;
@@ -176,22 +174,22 @@ export interface DbTableComponent extends BaseComponent {
 
 export interface JsonViewerComponent extends BaseComponent {
   type: "json-viewer";
-  
+
   jsonContent: string;
-  
+
   schemaRef?: string;
 }
 
 export type FlowNodeShape =
-  | "rectangle"     // Mermaid: [text]
-  | "rounded"       // Mermaid: (text)
-  | "stadium"       // Mermaid: ([text])
-  | "diamond"       // Mermaid: {text}
-  | "hexagon"       // Mermaid: {{text}}
+  | "rectangle" // Mermaid: [text]
+  | "rounded" // Mermaid: (text)
+  | "stadium" // Mermaid: ([text])
+  | "diamond" // Mermaid: {text}
+  | "hexagon" // Mermaid: {{text}}
   | "parallelogram" // Mermaid: [/text/]
-  | "cylinder"      // Mermaid: [(text)]
-  | "circle"        // Mermaid: ((text))
-  | "subroutine";   // Mermaid: [[text]]
+  | "cylinder" // Mermaid: [(text)]
+  | "circle" // Mermaid: ((text))
+  | "subroutine"; // Mermaid: [[text]]
 
 export interface FlowNodeComponent extends BaseComponent {
   type: "processos";
@@ -223,7 +221,6 @@ export type Component =
   | FlowNodeComponent
   | ExternalElementComponent;
 
-
 export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<PanelComponent, "id">> &
   Partial<Omit<NoteComponent, "id">> &
@@ -236,7 +233,6 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<SvgComponent, "id">> &
   Partial<Omit<FlowNodeComponent, "id">> &
   Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number };
-
 
 export type TypedComponentPatch =
   | (Partial<Omit<C4Component, "id">> & { width?: number; height?: number })

@@ -5,10 +5,7 @@ import type { NodeTypeDescriptor } from "./types";
 import { sceneBadgePropsForNode } from "./compare-node-badges";
 import { DB_TABLE_COLLAPSED_H, DB_TABLE_COLLAPSED_W } from "../../constants";
 
-
-const DB_TABLE_MAX_W =
-  32 + 120 + 90 + 36 + 36 + 36 + 36 + 20;
-
+const DB_TABLE_MAX_W = 32 + 120 + 90 + 36 + 36 + 36 + 36 + 20;
 
 const DB_TABLE_FIXED_H = 32 + 22 + 20 + 2;
 const DB_TABLE_ROW_H = 24;

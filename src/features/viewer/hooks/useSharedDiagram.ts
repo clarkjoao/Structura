@@ -15,9 +15,7 @@ export interface UseSharedDiagramResult {
 export function useSharedDiagram(): UseSharedDiagramResult {
   return useMemo(() => {
     const shareParam = getShareParamFromUrl();
-    const sharedDiagram: Diagram | null = shareParam
-      ? decodeShareParam(shareParam)
-      : null;
+    const sharedDiagram: Diagram | null = shareParam ? decodeShareParam(shareParam) : null;
     if (shareParam) {
       const cleanUrl = `${window.location.pathname}${window.location.search}`;
       window.history.replaceState(null, "", cleanUrl);
@@ -32,7 +30,7 @@ export function useSharedDiagram(): UseSharedDiagramResult {
             clearShared: () => {},
           },
         },
-        children
+        children,
       );
     }
 

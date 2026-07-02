@@ -29,9 +29,7 @@ export function RegistryServiceRow({
       <div className={cn("h-2 w-2 shrink-0 rounded-full", registrySourceDotClass(svc))} />
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium text-foreground text-sm">{svc.name}</p>
-        {tech && (
-          <p className="truncate text-xs text-muted-foreground">{tech}</p>
-        )}
+        {tech && <p className="truncate text-xs text-muted-foreground">{tech}</p>}
       </div>
       <button
         type="button"

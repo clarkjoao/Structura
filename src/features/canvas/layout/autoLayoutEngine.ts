@@ -148,7 +148,9 @@ function resolveSlot(
 
 function usesSingleIncomingHandle(component: Component | undefined): boolean {
   if (component === undefined) return false;
-  return isNoteType(component.type) || isDbTableType(component.type) || isJsonViewerType(component.type);
+  return (
+    isNoteType(component.type) || isDbTableType(component.type) || isJsonViewerType(component.type)
+  );
 }
 
 function isCompoundPanelInLayout(
@@ -172,8 +174,7 @@ function buildEdgeEndpoints(
   includedIds: ReadonlySet<string>,
 ): Map<string, { sourceEnd: string; targetEnd: string }> {
   const filtered = connections.filter(
-    (connection) =>
-      includedIds.has(connection.sourceId) && includedIds.has(connection.targetId),
+    (connection) => includedIds.has(connection.sourceId) && includedIds.has(connection.targetId),
   );
   const sorted = [...filtered].sort((a, b) => a.id.localeCompare(b.id));
 
@@ -357,7 +358,10 @@ function extractEdgeWaypoints(laidOut: ElkNode): Map<string, Array<{ x: number; 
     const bendPoints = section.bendPoints;
     if (!bendPoints?.length) continue;
 
-    result.set(edge.id, bendPoints.map((point) => ({ x: point.x, y: point.y })));
+    result.set(
+      edge.id,
+      bendPoints.map((point) => ({ x: point.x, y: point.y })),
+    );
   }
 
   return result;
@@ -418,8 +422,7 @@ export async function computeAutoLayout(
   const edgeEndpoints = buildEdgeEndpoints(connectionList, components, includedIds);
 
   const filteredForLayout = connectionList.filter(
-    (connection) =>
-      includedIds.has(connection.sourceId) && includedIds.has(connection.targetId),
+    (connection) => includedIds.has(connection.sourceId) && includedIds.has(connection.targetId),
   );
 
   const elkEdges: ElkExtendedEdge[] = filteredForLayout.map((connection): ElkExtendedEdge => {
@@ -470,8 +473,7 @@ export async function computePanelChildLayout(
   const childrenSet = new Set(directChildren.map((c) => c.id));
 
   const internalConnections = connections.filter(
-    (connection) =>
-      childrenSet.has(connection.sourceId) && childrenSet.has(connection.targetId),
+    (connection) => childrenSet.has(connection.sourceId) && childrenSet.has(connection.targetId),
   );
 
   const connectedDirectIds = new Set<string>();
@@ -480,9 +482,7 @@ export async function computePanelChildLayout(
     connectedDirectIds.add(connection.targetId);
   }
 
-  const layoutRootIds = directChildren
-    .map((c) => c.id)
-    .filter((id) => connectedDirectIds.has(id));
+  const layoutRootIds = directChildren.map((c) => c.id).filter((id) => connectedDirectIds.has(id));
 
   if (layoutRootIds.length === 0) {
     return [];

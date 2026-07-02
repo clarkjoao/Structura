@@ -16,9 +16,7 @@ function buildUpstreamUrl(upstreamBase: string, prefix: string, originalUrl: str
   return `${base}${normalized}`;
 }
 
-function sanitizeForwardHeaders(
-  req: express.Request,
-): Record<string, string | string[]> {
+function sanitizeForwardHeaders(req: express.Request): Record<string, string | string[]> {
   const hopByHop = new Set(["host", "connection", "content-length", "transfer-encoding"]);
   const headers: Record<string, string | string[]> = {};
   for (const [k, v] of Object.entries(req.headers)) {

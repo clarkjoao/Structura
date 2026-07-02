@@ -12,10 +12,7 @@ import { useTranslation } from "react-i18next";
 import type { AnalysisFinding, AnalysisResponse, AnalysisSeverity } from "@/features/llm";
 import { cn } from "@/lib/utils";
 
-const SEVERITY_ICONS: Record<
-  AnalysisSeverity,
-  typeof XCircle
-> = {
+const SEVERITY_ICONS: Record<AnalysisSeverity, typeof XCircle> = {
   critical: XCircle,
   high: AlertCircle,
   medium: AlertTriangle,
@@ -23,10 +20,7 @@ const SEVERITY_ICONS: Record<
   info: Info,
 };
 
-const SEVERITY_STYLES: Record<
-  AnalysisSeverity,
-  { color: string; bg: string }
-> = {
+const SEVERITY_STYLES: Record<AnalysisSeverity, { color: string; bg: string }> = {
   critical: { color: "text-destructive", bg: "bg-destructive/10" },
   high: { color: "text-orange-500", bg: "bg-orange-500/10" },
   medium: { color: "text-yellow-500", bg: "bg-yellow-500/10" },
@@ -36,9 +30,7 @@ const SEVERITY_STYLES: Record<
 
 function FindingCard({ finding }: { finding: AnalysisFinding }) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(
-    finding.severity === "critical" || finding.severity === "high",
-  );
+  const [open, setOpen] = useState(finding.severity === "critical" || finding.severity === "high");
   const styles = SEVERITY_STYLES[finding.severity] ?? SEVERITY_STYLES.info;
   const Icon = SEVERITY_ICONS[finding.severity] ?? Info;
   const severityLabel = t(`llmChat.analysis.severity.${finding.severity}`);
@@ -53,7 +45,9 @@ function FindingCard({ finding }: { finding: AnalysisFinding }) {
         <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", styles.color)} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className={cn("text-[10px] font-semibold uppercase tracking-wider", styles.color)}>
+            <span
+              className={cn("text-[10px] font-semibold uppercase tracking-wider", styles.color)}
+            >
               {severityLabel}
             </span>
             <span className="text-[10px] text-muted-foreground">{finding.category}</span>

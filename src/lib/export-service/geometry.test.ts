@@ -9,7 +9,13 @@ import {
 } from "./geometry";
 
 function layout(x: number, y: number, w?: number, h?: number): NodeLayout {
-  return { elementId: "x", x, y, ...(w !== undefined ? { width: w } : {}), ...(h !== undefined ? { height: h } : {}) };
+  return {
+    elementId: "x",
+    x,
+    y,
+    ...(w !== undefined ? { width: w } : {}),
+    ...(h !== undefined ? { height: h } : {}),
+  };
 }
 
 describe("computeBoundingBox", () => {
@@ -43,7 +49,9 @@ describe("computeScaleFactor", () => {
     expect(
       computeScaleFactor({ minX: 0, minY: 0, maxX: 100, maxY: 100, width: 100, height: 100 }, 1),
     ).toBe(1);
-    expect(computeScaleFactor({ minX: 0, minY: 0, maxX: 0, maxY: 0, width: 0, height: 0 }, 2)).toBe(1);
+    expect(computeScaleFactor({ minX: 0, minY: 0, maxX: 0, maxY: 0, width: 0, height: 0 }, 2)).toBe(
+      1,
+    );
   });
 });
 

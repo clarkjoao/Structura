@@ -1,14 +1,5 @@
-import {
-  GCP_CATEGORIES,
-  GCP_CATEGORY_MAP,
-  GCP_SERVICE_MAP,
-  isGcpType,
-} from "./gcp.catalog";
-import type {
-  CloudCategory,
-  CloudProviderAdapter,
-  CloudService,
-} from "../../model/cloud.types";
+import { GCP_CATEGORIES, GCP_CATEGORY_MAP, GCP_SERVICE_MAP, isGcpType } from "./gcp.catalog";
+import type { CloudCategory, CloudProviderAdapter, CloudService } from "../../model/cloud.types";
 import { gcpIconResolver } from "./gcp.icon-resolver";
 
 const GCP_CATEGORY_BORDERS: Record<string, string> = {

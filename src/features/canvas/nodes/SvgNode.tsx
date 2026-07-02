@@ -24,8 +24,7 @@ const SvgNode = memo(({ data: d, selected }: NodeProps<Node<SvgNodeData>>) => {
   const { t } = useTranslation();
   const { highlightedNodeIds } = useHandleHighlight();
   const isSelected = selected || d.isSelected;
-  const isHighlighted =
-    (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
+  const isHighlighted = (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
   const isActive = isSelected || isHighlighted;
   const collabHighlight = useCollabHighlight(d.elementId);
 
@@ -67,9 +66,7 @@ const SvgNode = memo(({ data: d, selected }: NodeProps<Node<SvgNodeData>>) => {
             style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
           />
         )}
-        {d.compareBadges && (
-          <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
-        )}
+        {d.compareBadges && <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
         {!d.compareBadges && d.sceneBadge && (
           <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
         )}
@@ -83,7 +80,7 @@ const SvgNode = memo(({ data: d, selected }: NodeProps<Node<SvgNodeData>>) => {
         <div
           className="flex-1 flex items-center justify-center px-3 pb-2.5 min-h-0 overflow-hidden [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto"
           style={{ pointerEvents: "none" }}
-          
+
           dangerouslySetInnerHTML={{ __html: d.svgContent }}
         />
       </div>
