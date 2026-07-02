@@ -77,6 +77,16 @@ src/
   outside `infrastructure/persistence/`.
 - **`@` alias** resolves to `./src`.
 - Prefer incremental changes; leave the codebase simpler than you found it.
+- **Significant features start with a spec** in `specs/` (see `specs/README.md`);
+  long-term decisions are recorded in `docs/adr/`.
+
+## Architecture documentation
+
+The rationale behind these rules lives in `docs/` — start with
+`docs/architecture/vision.md` (platform direction) and
+`docs/architecture/overview.md` (current structure). Subsystem docs are in
+`docs/concepts/`, extension-point inventory in `docs/extension-points/`.
+When code and docs disagree, the code wins — fix the doc in the same PR.
 
 ## Known sharp edges
 
