@@ -1,9 +1,15 @@
 import type { SeedResult } from "../support/seed-stress-diagram";
 
-function clickNodeWithHeldKey(componentId: string, key: "{ctrl}" | "{meta}" | "{command}") {
-  cy.get("body").type(key, { release: false });
+function clickNodeWithModifier(componentId: string, modifier: "ctrl" | "meta") {
+  if (modifier === "meta") {
+    // Synthetic keyboard state does not reliably attach metaKey to click events.
+    cy.getNode(componentId).click({ metaKey: true, force: true });
+    return;
+  }
+  // Ctrl modifier is more reliable via held-key typing in headed Chrome.
+  cy.get("body").type("{ctrl}", { release: false });
   cy.getNode(componentId).click({ force: true });
-  cy.get("body").type(key);
+  cy.get("body").type("{ctrl}");
 }
 
 describe("Stress Interaction: 500 elements — drag, select, undo", () => {
@@ -67,7 +73,7 @@ describe("Stress Interaction: 500 elements — drag, select, undo", () => {
     cy.getNode(seed.leafNodeIds[0]!).click({ force: true });
     const max = Math.min(5, seed.leafNodeIds.length);
     for (let i = 1; i < max; i++) {
-      clickNodeWithHeldKey(seed.leafNodeIds[i]!, "{ctrl}");
+      clickNodeWithModifier(seed.leafNodeIds[i]!, "ctrl");
     }
     cy.get(".react-flow__node").then(($nodes) => {
       const selected = $nodes.filter(
@@ -78,14 +84,10 @@ describe("Stress Interaction: 500 elements — drag, select, undo", () => {
   });
 
   it("multi-select with Meta adds nodes to selection", () => {
-    if (Cypress.browser.name === "electron") {
-      cy.log("Skipping Meta assertion in Electron due modifier-key event limitations");
-      return;
-    }
     cy.getNode(seed.leafNodeIds[0]!).click({ force: true });
     const max = Math.min(5, seed.leafNodeIds.length);
     for (let i = 1; i < max; i++) {
-      clickNodeWithHeldKey(seed.leafNodeIds[i]!, "{command}");
+      clickNodeWithModifier(seed.leafNodeIds[i]!, "meta");
     }
     cy.get(".react-flow__node").then(($nodes) => {
       const selected = $nodes.filter(
