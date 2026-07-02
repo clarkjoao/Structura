@@ -22,6 +22,28 @@ function DiagramPreviewSync() {
   return null;
 }
 
+function MainPages() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <DiagramPreviewSync />
+        <Routes>
+          <Route path="/" element={<Navigate to="/workspace" />} />
+          <Route path="/workspace" element={<Dashboard />} />
+          <Route path="/journeys" element={<JourneysPage />} />
+          <Route path="/journeys/:id/edit" element={<JourneyEditorPage />} />
+          <Route path="/model/:id" element={<ModelExplorer />} />
+          <Route path="/collab/:roomId" element={<CollabRoom />} />
+          <Route path="/catalog" element={<ServiceRegistry />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
 const App = () => {
   const { sharedDiagram, ShareProvider } = useSharedDiagram();
 
@@ -32,28 +54,6 @@ const App = () => {
           <SharedDiagramView diagram={sharedDiagram} />
         </BrowserRouter>
       </ShareProvider>
-    );
-  }
-
-  function MainPages() {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <DiagramPreviewSync />
-          <Routes>
-            <Route path="/" element={<Navigate to="/workspace" />} />
-            <Route path="/workspace" element={<Dashboard />} />
-            <Route path="/journeys" element={<JourneysPage />} />
-            <Route path="/journeys/:id/edit" element={<JourneyEditorPage />} />
-            <Route path="/model/:id" element={<ModelExplorer />} />
-            <Route path="/collab/:roomId" element={<CollabRoom />} />
-            <Route path="/catalog" element={<ServiceRegistry />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </TooltipProvider>
-      </QueryClientProvider>
     );
   }
 
