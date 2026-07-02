@@ -1,5 +1,9 @@
 import type { ComponentType } from "@/features/diagram";
 
+// TODO(i18n): pattern names/descriptions below are Portuguese product content
+// hardcoded in the catalog. When the catalog is revisited (plugin/extensibility
+// phase), move these strings into the i18n locale files so en/pt-BR coexist.
+
 export interface PatternComponent {
   type: ComponentType;
   name: string;

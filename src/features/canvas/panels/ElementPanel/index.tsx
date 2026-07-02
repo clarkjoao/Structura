@@ -1,4 +1,5 @@
 import { LayoutDashboard } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { CollabEditingWarning } from "@/features/collaboration";
 import {
   useComponent,
@@ -42,6 +43,7 @@ const ElementPanel = ({
   focusTitleTrigger = 0,
   onClose,
 }: Props) => {
+  const { t } = useTranslation();
   const component = useComponent(selectedElementId ?? "");
   const resolvedComponents = useComponents();
   const connections = useConnections();
@@ -172,7 +174,7 @@ const ElementPanel = ({
               className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
             >
               <LayoutDashboard className="h-3.5 w-3.5" />
-              Agrupar
+              {t("multiSelect.group")}
             </button>
           </div>
         )}

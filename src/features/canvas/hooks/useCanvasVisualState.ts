@@ -36,7 +36,7 @@ export interface CanvasVisualState {
   setJsonViewerInlineEditingId: (id: string | null) => void;
 }
 
-/** Campos que afetam a renderização dos nodes no React Flow */
+/** Fields that affect how nodes render in React Flow */
 export interface NodeSelectionState {
   selectedNodeId: string | null;
   selectedNodeIds: Set<string>;

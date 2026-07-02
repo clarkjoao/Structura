@@ -210,8 +210,8 @@ function buildComponentForType(
       tags: ["external"],
     } as ExternalElementComponent;
   } else {
-    // Se um novo ComponentType for adicionado e não tratado aqui, este erro de runtime
-    // sinaliza a necessidade de adicionar o branch correspondente.
+    // If a new ComponentType is added and not handled here, this runtime error
+    // signals that the corresponding branch needs to be added.
     const _exhaustive: never = type;
     void _exhaustive;
     component = { ...base, type: "unknown", rawContent: "" } as UnknownComponent;

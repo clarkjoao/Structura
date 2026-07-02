@@ -10,7 +10,7 @@ const getLazyIcon = (iconName: string) => {
   const LazyComp = lazy(async () => {
     const mod = await import("aws-react-icons");
     const Icon = (mod as Record<string, unknown>)[iconName] as IconComponent | undefined;
-    const FallbackIcon: IconComponent = () => null as unknown as React.ReactElement;
+    const FallbackIcon: IconComponent = () => null;
     return { default: Icon || FallbackIcon };
   });
 

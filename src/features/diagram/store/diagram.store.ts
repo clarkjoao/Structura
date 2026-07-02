@@ -237,7 +237,7 @@ export const useDiagramActions = () =>
     })),
   );
 
-// --- Hooks focados por domínio ---
+// --- Domain-scoped action hooks ---
 
 export const useComponentActions = () =>
   useDiagramStore(

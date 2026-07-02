@@ -21,7 +21,7 @@ export function writeComponentAndLayout(
   }
 }
 
-/** Retorna o mapa de componentes do contexto ativo (scene ou base). */
+/** Returns the component map for the active context (scene or base). */
 export function getActiveComponents(
   d: Diagram,
   scene: SceneDiff | null,
@@ -29,7 +29,7 @@ export function getActiveComponents(
   return scene ? scene.addedComponents : d.snapshot.components;
 }
 
-/** Retorna o mapa de layouts do contexto ativo (scene ou base). */
+/** Returns the layout map for the active context (scene or base). */
 export function getActiveNodeLayouts(
   d: Diagram,
   scene: SceneDiff | null,
@@ -37,7 +37,7 @@ export function getActiveNodeLayouts(
   return scene ? scene.nodeLayouts : d.nodeLayouts;
 }
 
-/** Resolve um componente pelo id no contexto ativo, com fallback para base. */
+/** Resolves a component by id in the active context, falling back to base. */
 export function resolveComponent(
   d: Diagram,
   scene: SceneDiff | null,
@@ -46,7 +46,7 @@ export function resolveComponent(
   return scene?.addedComponents[id] ?? d.snapshot.components[id];
 }
 
-/** Resolve um layout pelo id no contexto ativo, com fallback para base. */
+/** Resolves a layout by id in the active context, falling back to base. */
 export function resolveNodeLayout(
   d: Diagram,
   scene: SceneDiff | null,
