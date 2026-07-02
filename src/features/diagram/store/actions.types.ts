@@ -88,7 +88,8 @@ export interface AppActions {
   groupNodes: (componentIds: string[]) => string | null;
   ungroupNodes: (panelId: string) => void;
 
-  addFlow: (diagramId: string, name: string, mermaid: string, steps?: Record<string, FlowStep>) => Flow;
+  /** Returns null when the target diagram does not exist. */
+  addFlow: (diagramId: string, name: string, mermaid: string, steps?: Record<string, FlowStep>) => Flow | null;
   updateFlow: (id: string, patch: Partial<Omit<Flow, "id">>) => void;
   removeFlow: (id: string) => void;
 

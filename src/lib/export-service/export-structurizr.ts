@@ -65,7 +65,7 @@ function emitElementStrings(component: C4Component): string {
 
 function emitModelBlock(
   roots: C4Component[],
-  childrenByParent: Map<string, C4Component[]>,
+  childrenByParent: Map<string | null, C4Component[]>,
   localIdByStructuraId: Map<string, string>,
 ): string {
   const lines: string[] = [];
@@ -181,7 +181,7 @@ function buildViewsSection(
 
 function assignDslIds(
   roots: C4Component[],
-  childrenByParent: Map<string, C4Component[]>,
+  childrenByParent: Map<string | null, C4Component[]>,
   localIdByStructuraId: Map<string, string>,
   fullDslByStructuraId: Map<string, string>,
 ): void {
@@ -219,7 +219,7 @@ export function exportStructurizr(diagram: Diagram): string {
     );
   }
 
-  const childrenByParent = new Map<string, C4Component[]>();
+  const childrenByParent = new Map<string | null, C4Component[]>();
   for (const component of c4List) {
     const parentKey = getEffectiveC4ParentId(component, byId);
     if (!childrenByParent.has(parentKey)) childrenByParent.set(parentKey, []);

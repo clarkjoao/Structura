@@ -14,7 +14,7 @@ export const flowsSlice = (
       const d = diagrams[diagramId];
       if (!d) {
         console.warn("[addFlow] Diagram not found:", diagramId);
-        return null as unknown as Flow;
+        return null;
       }
       const activeId = get().activeDiagramId;
       const r = resolveSceneSnapshot(

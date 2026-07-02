@@ -138,7 +138,7 @@ export function useFlowModeRecording(
   const finalizeRecording = useCallback(() => {
     setMode((prevMode) => {
       if (prevMode.kind !== "recording") return prevMode;
-      onFinalizeRef.current({
+      onFinalizeRef.current?.({
         name: prevMode.name,
         description: prevMode.description,
         tags: prevMode.tags,

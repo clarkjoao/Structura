@@ -1,4 +1,5 @@
-import type { CSSProperties, ComponentType as ReactComponentType } from "react";
+import type { CSSProperties } from "react";
+import type { NodeTypes } from "@xyflow/react";
 import type {
   CompareElementVisual,
   Component,
@@ -72,7 +73,8 @@ export interface NodeTypeDescriptor {
   
   rfType: string;
   
-  component: ReactComponentType<Record<string, unknown>>;
+  /** React component rendered for this node; uses React Flow's own NodeTypes value contract. */
+  component: NodeTypes[string];
   
   matches: (type: ComponentType) => boolean;
   zIndex: number | ((comp: Component) => number);

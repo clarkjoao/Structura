@@ -19,7 +19,7 @@ interface CollabToolbarProps {
   isReady: boolean;
   collabUrl: string;
   peerLimitReached?: boolean;
-  onStartCollab: () => void;
+  onStartCollab?: () => void;
   onEndCollab?: () => void;
 }
 

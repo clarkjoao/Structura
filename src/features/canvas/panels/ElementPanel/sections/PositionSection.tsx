@@ -39,8 +39,8 @@ export function PositionSection({
     }
     setXInput(String(Math.round(nodeLayout.x)));
     setYInput(String(Math.round(nodeLayout.y)));
-    setWidthInput(String(Math.round(nodeLayout.width)));
-    setHeightInput(String(Math.round(nodeLayout.height)));
+    setWidthInput(String(Math.round(nodeLayout.width ?? 0)));
+    setHeightInput(String(Math.round(nodeLayout.height ?? 0)));
   }, [nodeLayout]);
 
   const commit = useCallback(() => {

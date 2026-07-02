@@ -66,8 +66,8 @@ export function useJourneyRecordingFinalize(
           mermaid,
           stepsRecord,
         );
-        persistedFlowId = flow.id;
-        if (description || flowTags || entryStepId) {
+        persistedFlowId = flow ? flow.id : null;
+        if (flow && (description || flowTags || entryStepId)) {
           updateFlow(flow.id, { description, tags: flowTags, entryStepId });
         }
       }

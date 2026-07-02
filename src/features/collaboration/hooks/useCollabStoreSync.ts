@@ -230,7 +230,7 @@ export function useCollabStoreSync({
       previousState = currentState;
 
       if (patch) {
-        sendPatchRef.current(patch);
+        sendPatchRef.current?.(patch);
       }
     };
 

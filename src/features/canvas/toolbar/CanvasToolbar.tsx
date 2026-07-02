@@ -20,7 +20,8 @@ interface CanvasToolbarProps {
   setSelectedEdgeId: (id: string | null) => void;
   onOpenScenes?: () => void;
   allTags: string[];
-  visibleTags: Set<string>;
+  /** null means "no tag filter active" (all tags visible). */
+  visibleTags: Set<string> | null;
   onToggleTag: (tag: string) => void;
   onShowAllTags: () => void;
   onShowNoTags: () => void;

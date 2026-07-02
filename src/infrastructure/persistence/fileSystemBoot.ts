@@ -31,7 +31,7 @@ function latestMsFromStore(state: DiagramStoreState): number {
 }
 
 function latestMsFromWorkspacePayload(workspace: WorkspacePayload): number {
-  let max = Date.parse(workspace.manifestUpdatedAt);
+  let max = workspace.manifestUpdatedAt ? Date.parse(workspace.manifestUpdatedAt) : 0;
   for (const diagram of Object.values(workspace.diagrams)) {
     max = Math.max(max, parseTimestampMs(diagram.updatedAt));
   }

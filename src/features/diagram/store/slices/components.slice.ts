@@ -74,7 +74,7 @@ function handleEndpointInsertion(
 ): boolean {
   void state;
   const parent = resolveComponent(d, scene, parentId);
-  if (!isApiGroupComponent(parent)) return false;
+  if (!parent || !isApiGroupComponent(parent)) return false;
 
   const siblingCount = countEndpointsUnderParent(d, scene, parentId);
   writeComponentAndLayout(d, scene, component, {
@@ -473,7 +473,7 @@ export const componentsSlice = (
           removedConnectionIds,
         );
 
-        function syncApiGroupSize(groupId: string) {
+        const syncApiGroupSize = (groupId: string) => {
           const childCount = Object.values(d.snapshot.components).filter(
             (c) => c.parentId === groupId && isEndpointType(c.type),
           ).length;
@@ -483,9 +483,9 @@ export const componentsSlice = (
             layout.width = width;
             layout.height = height;
           }
-        }
+        };
 
-        function reindexEndpoints(groupId: string) {
+        const reindexEndpoints = (groupId: string) => {
           if (toRemove.has(groupId)) return;
           const siblings = Object.values(d.snapshot.components)
             .filter((c) => c.parentId === groupId && isEndpointType(c.type))
@@ -499,7 +499,7 @@ export const componentsSlice = (
             if (layout) layout.y = API_GROUP_HEADER_H + i * API_GROUP_ENDPOINT_H;
           });
           syncApiGroupSize(groupId);
-        }
+        };
 
         apiGroupParentsToSync.forEach(reindexEndpoints);
 

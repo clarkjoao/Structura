@@ -80,7 +80,7 @@ export function useCanvasEffects({
 
   
   useEffect(() => {
-    const el = document.querySelector(".react-flow__renderer");
+    const el = document.querySelector<HTMLElement>(".react-flow__renderer");
     if (!el || !diagramId) return;
 
     const handleWheel = (e: WheelEvent) => {

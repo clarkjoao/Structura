@@ -177,7 +177,7 @@ export function AddStepModal({
     onConfirm({
       label: trimmedLabel,
       description: description.trim() || undefined,
-      diagramId: selectedDiagramId ?? undefined,
+      diagramId: selectedDiagramId ?? "",
     });
     onOpenChange(false);
   };

@@ -311,7 +311,7 @@ export function mergePersistedState(
 ): DiagramStore {
   const state = {
     ...currentState,
-    ...(persistedState && (persistedState as Partial<DiagramStore>)),
+    ...(persistedState ? (persistedState as Partial<DiagramStore>) : {}),
   } as DiagramStore;
 
   state.clipboard = currentState.clipboard ?? null;

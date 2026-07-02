@@ -36,7 +36,7 @@ export interface EdgeSvgLayerProps {
   segmentHitAriaLabel: (index: number) => string;
   isActivePlayback: boolean;
   activePayloadDirection: "request" | "response" | null;
-  dragPathRef: RefObject<SVGPathElement | null>;
+  dragPathRef: RefObject<SVGPathElement>;
 }
 
 export function EdgeSvgLayer({

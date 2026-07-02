@@ -54,7 +54,7 @@ export function useWorkspaceFlowRecordingFinalize(): (
           mermaid,
           stepsRecord,
         );
-        if (description || flowTags || entryStepId) {
+        if (flow && (description || flowTags || entryStepId)) {
           updateFlow(flow.id, { description, tags: flowTags, entryStepId });
         }
       }

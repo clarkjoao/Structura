@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ImagePlus } from "lucide-react";
-import type { Component } from "@/features/diagram";
+import type { Component, ComponentPatch } from "@/features/diagram";
 import { useIconActions, useIconById } from "@/features/diagram";
 import { Button } from "@/components/ui/button";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
@@ -10,7 +10,7 @@ import { IconPickerModal } from "@/features/canvas/components/icons/IconPickerMo
 export interface ComponentIconTabProps {
   component: Component;
   diagramId: string;
-  updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => void;
+  updateComponent: (id: string, patch: ComponentPatch) => void;
 }
 
 export function ComponentIconTab({

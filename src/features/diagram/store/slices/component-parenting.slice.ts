@@ -125,16 +125,16 @@ export const componentParentingSlice = (
 
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
 
-      function getAbsPos(eid: string): { x: number; y: number } {
+      const getAbsPos = (eid: string): { x: number; y: number } => {
         const layout = d.nodeLayouts[eid];
         const c = comps[eid];
         if (!c || !layout) return { x: 0, y: 0 };
         if (!c.parentId) return { x: layout.x, y: layout.y };
         const parentPos = getAbsPos(c.parentId);
         return { x: parentPos.x + layout.x, y: parentPos.y + layout.y };
-      }
+      };
 
-      function getSize(eid: string): { w: number; h: number } {
+      const getSize = (eid: string): { w: number; h: number } => {
         const layout = d.nodeLayouts[eid];
         if (layout?.width && layout?.height) {
           return { w: layout.width, h: layout.height };
@@ -145,7 +145,7 @@ export const componentParentingSlice = (
           return { w: layout?.width ?? PANEL_DEFAULT_W, h: layout?.height ?? PANEL_DEFAULT_H };
         }
         return { w: DEFAULT_NODE_W, h: 120 };
-      }
+      };
 
       const positions = ids.map((id) => getAbsPos(id));
       const sizes = ids.map((id) => getSize(id));

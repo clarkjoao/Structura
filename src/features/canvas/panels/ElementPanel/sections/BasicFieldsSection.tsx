@@ -20,7 +20,7 @@ export interface BasicFieldsSectionProps {
   showTechnology?: boolean;
   
   showTags?: boolean;
-  titleInputRef?: RefObject<HTMLInputElement | HTMLTextAreaElement | null>;
+  titleInputRef?: RefObject<HTMLInputElement | HTMLTextAreaElement>;
   onChangeName: (value: string) => void;
   onChangeDesc: (value: string) => void;
   onChangeTech: (value: string) => void;

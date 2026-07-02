@@ -92,7 +92,7 @@ export function DiagramSidebar({
   const { recent } = useRecentDiagrams();
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(readSidebarExpandedFolderIds);
-  const activeDiagramRef = useRef<HTMLButtonElement | null>(null);
+  const activeDiagramRef = useRef<HTMLButtonElement>(null);
 
   const locale = i18n.language.startsWith("pt") ? ptBR : enUS;
 
@@ -325,7 +325,7 @@ interface SidebarFolderTreeProps {
   flows: Flow[];
   activeFlow: Flow | null;
   onSelectFlow: (flow: Flow) => void;
-  activeDiagramRef: RefObject<HTMLButtonElement | null>;
+  activeDiagramRef: RefObject<HTMLButtonElement>;
 }
 
 function SidebarFolderTree({
@@ -416,7 +416,7 @@ function DiagramTreeRow({
   depth: number;
   isActive: boolean;
   onSelect: () => void;
-  activeDiagramRef: RefObject<HTMLButtonElement | null>;
+  activeDiagramRef: RefObject<HTMLButtonElement>;
 }) {
   return (
     <button
@@ -461,7 +461,7 @@ function SidebarFolderNode({
   flows: Flow[];
   activeFlow: Flow | null;
   onSelectFlow: (flow: Flow) => void;
-  activeDiagramRef: RefObject<HTMLButtonElement | null>;
+  activeDiagramRef: RefObject<HTMLButtonElement>;
 }) {
   const children = getChildFolders(folders, folder.id);
   const diagramsHere = getDiagramsInFolder(allDiagrams, folder.id);

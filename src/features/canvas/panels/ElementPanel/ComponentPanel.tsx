@@ -52,19 +52,15 @@ import { isComponentType } from "@/features/diagram";
 function buildComponentSyncPatch(
   service: ServiceDefinition,
   component: Component,
-): Partial<Omit<Component, "id">> {
-  const patch: Partial<Omit<Component, "id">> = {
+): ComponentPatch {
+  const patch: ComponentPatch = {
     name: service.name,
     description: service.description,
     tags: service.tags?.length ? service.tags : undefined,
   };
 
   if ("technology" in component) {
-    (
-      patch as Partial<
-        Omit<Component, "id"> & { technology?: string | undefined }
-      >
-    ).technology = service.technology.length
+    patch.technology = service.technology.length
       ? service.technology.join(", ")
       : undefined;
   }
@@ -79,7 +75,7 @@ function shouldPreserveContent(name: string, description: string) {
 interface ComponentPanelProps {
   component: Component;
   onClose: () => void;
-  updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => void;
+  updateComponent: (id: string, patch: ComponentPatch) => void;
   removeComponent: (id: string) => void;
   onUngroup?: () => void;
   focusTitleTrigger?: number;
@@ -96,7 +92,7 @@ const ComponentPanel = ({
   const { t } = useTranslation();
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   useEffect(() => {
     if (focusTitleTrigger > 0) {
       requestAnimationFrame(() => {
@@ -434,7 +430,7 @@ const ComponentPanel = ({
                       updateComponent(component.id, {
                         type: nextType,
                         awsService: nextType.startsWith("aws-") && awsService ? awsService : undefined,
-                      } as Partial<Omit<Component, "id">>);
+                      } as ComponentPatch);
                     }}
                     className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                   >
@@ -473,7 +469,7 @@ const ComponentPanel = ({
                       updateComponent(component.id, {
                         awsService: nextService || undefined,
                         ...(shouldRename ? { name: serviceEntry.name } : {}),
-                      } as Partial<Omit<Component, "id">>);
+                      } as ComponentPatch);
                       if (shouldRename) setName(serviceEntry.name);
                     }}
                     className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"

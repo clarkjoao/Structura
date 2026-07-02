@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Component, PanelComponent, SwimlaneStyle } from "@/features/diagram";
+import type { ComponentPatch, PanelComponent, SwimlaneStyle } from "@/features/diagram";
 import { PanelKind } from "@/features/diagram";
 import { SwimlaneOrientation } from "@/features/canvas/enums";
 import { PANEL_KINDS, getPanelKindDef } from "@/lib/catalogs/panels";
@@ -31,7 +31,7 @@ function mergeSwimlane(
 
 export interface PanelStyleSectionProps {
   component: PanelComponent;
-  updateComponent: (id: string, patch: Partial<Omit<Component, "id">>) => void;
+  updateComponent: (id: string, patch: ComponentPatch) => void;
   updateNodeLayout: (
     elementId: string,
     position: { x: number; y: number },
@@ -56,8 +56,8 @@ export function PanelStyleSection({
       setHeightInput("");
       return;
     }
-    setWidthInput(String(Math.round(componentNodeLayout.width)));
-    setHeightInput(String(Math.round(componentNodeLayout.height)));
+    setWidthInput(String(Math.round(componentNodeLayout.width ?? 0)));
+    setHeightInput(String(Math.round(componentNodeLayout.height ?? 0)));
   }, [componentNodeLayout]);
 
   useEffect(() => {
@@ -103,7 +103,7 @@ export function PanelStyleSection({
                   laneColor: "#6366f1",
                   laneLabel: t("swimlane.defaultLaneLabel"),
                 },
-              } as Partial<Omit<Component, "id">>);
+              } as ComponentPatch);
               if (layout) {
                 updateNodeLayout(
                   component.id,
@@ -116,7 +116,7 @@ export function PanelStyleSection({
                 panelKind: kind,
                 panelColor: def.defaultColor,
                 swimlane: undefined,
-              } as Partial<Omit<Component, "id">>);
+              } as ComponentPatch);
             }
           }}
           className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
@@ -136,7 +136,7 @@ export function PanelStyleSection({
             onChange={(value) => {
               updateComponent(component.id, {
                 swimlane: mergeSwimlane(component.swimlane, { laneLabel: value }),
-              } as Partial<Omit<Component, "id">>);
+              } as ComponentPatch);
             }}
           />
           <div>
@@ -151,7 +151,7 @@ export function PanelStyleSection({
                     swimlane: mergeSwimlane(component.swimlane, {
                       orientation: SwimlaneOrientation.Horizontal,
                     }),
-                  } as Partial<Omit<Component, "id">>);
+                  } as ComponentPatch);
                 }}
                 className={`flex-1 rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
                   (component.swimlane?.orientation ?? SwimlaneOrientation.Horizontal) ===
@@ -169,7 +169,7 @@ export function PanelStyleSection({
                     swimlane: mergeSwimlane(component.swimlane, {
                       orientation: SwimlaneOrientation.Vertical,
                     }),
-                  } as Partial<Omit<Component, "id">>);
+                  } as ComponentPatch);
                 }}
                 className={`flex-1 rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
                   component.swimlane?.orientation === SwimlaneOrientation.Vertical
@@ -201,7 +201,7 @@ export function PanelStyleSection({
                           laneColor: laneColor.value,
                         }),
                         panelColor: laneColor.value,
-                      } as Partial<Omit<Component, "id">>);
+                      } as ComponentPatch);
                     }}
                     className={`h-7 w-7 rounded-full border-2 transition-transform hover:scale-105 ${
                       active ? "ring-2 ring-offset-2 ring-offset-background ring-primary" : "border-border"
@@ -286,7 +286,7 @@ export function PanelStyleSection({
               onChange={(event) =>
                 updateComponent(component.id, {
                   borderStyle: event.target.value as "solid" | "dashed" | "dotted",
-                } as Partial<Omit<Component, "id">>)
+                } as ComponentPatch)
               }
               className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             >

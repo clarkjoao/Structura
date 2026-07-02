@@ -5,7 +5,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 export interface LayerFilterPopoverProps {
   allTags: string[];
-  visibleTags: Set<string>;
+  /** null means "no tag filter active" (all tags visible). */
+  visibleTags: Set<string> | null;
   scenesPickerLocked?: boolean;
   onToggle: (tag: string) => void;
   onShowAll: () => void;

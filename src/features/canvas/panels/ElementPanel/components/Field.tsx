@@ -5,7 +5,7 @@ interface FieldProps {
   multiline?: boolean;
   placeholder?: string;
   hint?: string;
-  inputRef?: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>;
+  inputRef?: React.RefObject<HTMLInputElement | HTMLTextAreaElement>;
 }
 
 const Field = ({ label, value, onChange, multiline, placeholder, hint, inputRef }: FieldProps) => {
@@ -17,7 +17,7 @@ const Field = ({ label, value, onChange, multiline, placeholder, hint, inputRef 
       </label>
       {multiline ? (
         <textarea
-          ref={inputRef as React.RefObject<HTMLTextAreaElement | null>}
+          ref={inputRef as React.RefObject<HTMLTextAreaElement>}
           id={id}
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -27,7 +27,7 @@ const Field = ({ label, value, onChange, multiline, placeholder, hint, inputRef 
         />
       ) : (
         <input
-          ref={inputRef as React.RefObject<HTMLInputElement | null>}
+          ref={inputRef as React.RefObject<HTMLInputElement>}
           id={id}
           value={value}
           onChange={(e) => onChange(e.target.value)}

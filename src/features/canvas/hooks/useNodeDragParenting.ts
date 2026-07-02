@@ -406,7 +406,7 @@ export function useNodeDragParenting({
         );
         if (match && descendantIds.has(match.id)) {
           if (draggedNode.parentId) {
-            commitNodeDrag(draggedNode.id, draggedNode.parentId, draggedNode.position);
+            commitNodeDrag(draggedNode.id, draggedNode.parentId ?? null, draggedNode.position);
           } else {
             commitNodeDrag(draggedNode.id, null, { x: absX, y: absY });
           }
@@ -432,7 +432,7 @@ export function useNodeDragParenting({
           commitNodeDrag(draggedNode.id, null, { x: absX, y: absY });
         } else {
           
-          commitNodeDrag(draggedNode.id, draggedNode.parentId, draggedNode.position);
+          commitNodeDrag(draggedNode.id, draggedNode.parentId ?? null, draggedNode.position);
         }
         commitSelectedNodesDrag();
         return;

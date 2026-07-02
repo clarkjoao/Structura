@@ -290,7 +290,7 @@ export function useCanvasEventHandlers({
   }, [clearCanvasSelection, setQuickInsert]);
 
   const onPaneContextMenu = useCallback(
-    (event: React.MouseEvent) => {
+    (event: MouseEvent | React.MouseEvent) => {
       event.preventDefault();
       if (isRecording || isCompareMode || isPlaying || isFlowPanelOpen) return;
       if (visualState.selectedNodeId || visualState.selectedEdgeId || visualState.selectedNodeIds.size > 0) {

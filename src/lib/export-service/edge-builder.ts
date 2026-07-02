@@ -83,5 +83,5 @@ function getStrokeColor(intent: Connection["intent"]): string {
     dependency: THEME.strokes.dependency,
   };
 
-  return colorMap[intent] ?? THEME.strokes.default;
+  return (intent ? colorMap[intent] : undefined) ?? THEME.strokes.default;
 }

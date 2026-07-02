@@ -370,10 +370,11 @@ export function useCanvasNodes({
       return depth;
     }
 
+    const componentsById = dataCtx.resolvedComponents;
     const depthCache = new Map<string, number>();
     function getDepth(comp: Component): number {
       if (depthCache.has(comp.id)) return depthCache.get(comp.id)!;
-      const d = getParentDepth(comp, dataCtx.resolvedComponents);
+      const d = getParentDepth(comp, componentsById);
       depthCache.set(comp.id, d);
       return d;
     }

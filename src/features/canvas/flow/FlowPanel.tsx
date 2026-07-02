@@ -96,6 +96,7 @@ const FlowPanel = ({
     if (!activeDiagramId) return;
     const patch = buildFlowDuplicatePatch(flow, t("flowPanel.copyPrefix", { name: flow.name }));
     const newFlow = addFlow(activeDiagramId, patch.name, patch.mermaid, patch.steps);
+    if (!newFlow) return;
     if (patch.description || patch.tags?.length) {
       updateFlow(newFlow.id, { description: patch.description, tags: patch.tags, entryStepId: patch.entryStepId });
     }
