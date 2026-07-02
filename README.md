@@ -150,8 +150,8 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for gu
 
 Structura follows a phased quality and feature roadmap documented in:
 
-- [`docs/architecture/analysis.md`](docs/architecture/analysis.md) — full feature analysis with improvement opportunities
-- [`.ai/skills/feature-slice-standard.md`](.ai/skills/feature-slice-standard.md) — canonical folder structure for features
+- [`ROADMAP.md`](ROADMAP.md) — phased roadmap
+- [`AGENTS.md`](AGENTS.md) — project structure, conventions, and hard rules (also the guide for AI coding agents)
 
 ### Active roadmap phases
 
