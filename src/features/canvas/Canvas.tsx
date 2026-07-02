@@ -22,6 +22,7 @@ import { DiagramCommandPalette } from "./navigation/DiagramCommandPalette";
 import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 import { Eye, Minimize2 } from "lucide-react";
 import { useCanvasController } from "./hooks/useCanvasController";
+import { hasSavedViewport } from "./hooks/useCanvasEffects";
 import { useCanvasInputProfile } from "./hooks/useCanvasInputProfile";
 import { useJourneyViewportSync } from "./hooks/useJourneyViewportSync";
 import { useServiceFocusFromUrl } from "./hooks/useServiceFocusFromUrl";
@@ -321,7 +322,7 @@ const Canvas = (props: CanvasProps = {}) => {
               snapToGrid
               snapGrid={[15, 15]}
               defaultViewport={initialViewport}
-              fitView
+              fitView={!hasSavedViewport(initialViewport)}
               fitViewOptions={{ padding: 0.3 }}
               onMoveEnd={eventHandlers.onMoveEnd}
               nodesDraggable={interactionMode.canEditCanvas}

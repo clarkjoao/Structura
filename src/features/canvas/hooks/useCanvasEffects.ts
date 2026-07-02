@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import type { ReactFlowInstance } from "@xyflow/react";
 import type { Diagram, DiagramModel, Flow } from "@/features/diagram";
-import { getStepById } from "@/features/diagram";
+import { getStepById, useDiagramStore } from "@/features/diagram";
 import {
   FIT_VIEW_DURATION_MS,
   FIT_VIEW_INITIAL_PADDING,
@@ -23,6 +23,17 @@ interface UseCanvasEffectsParams {
 const MAX_ZOOM = 1;
 const ZOOM_FACTOR = 1.1;
 
+/**
+ * New diagrams are created with viewport {0, 0, 1} (see diagram.slice.ts), so
+ * a default viewport means "never panned/zoomed" and we fit the view instead.
+ */
+export function hasSavedViewport(
+  viewport: { x: number; y: number; zoom: number } | undefined,
+): viewport is { x: number; y: number; zoom: number } {
+  if (!viewport) return false;
+  return viewport.x !== 0 || viewport.y !== 0 || viewport.zoom !== 1;
+}
+
 export function useCanvasEffects({
   diagram,
   reactFlowInstance,
@@ -40,6 +51,13 @@ export function useCanvasEffects({
     const id = requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (cancelled) return;
+        // Non-reactive read: subscribing to the viewport would re-run this
+        // effect on every pan/zoom (onMoveEnd persists it to the store).
+        const savedViewport = useDiagramStore.getState().diagrams[diagramId]?.viewport;
+        if (hasSavedViewport(savedViewport)) {
+          void reactFlowInstance.setViewport(savedViewport, { duration: 0 });
+          return;
+        }
         void reactFlowInstance.fitView({
           padding: FIT_VIEW_INITIAL_PADDING,
           minZoom: VIEWPORT_MIN_ZOOM,
