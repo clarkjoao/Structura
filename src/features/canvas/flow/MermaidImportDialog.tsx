@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import Editor from "@monaco-editor/react";
+import { LazyMonacoEditor as Editor } from "@/lib/monaco/LazyMonacoEditor";
 import { useTranslation } from "react-i18next";
 import { parseMermaidFlowchart, parseMermaidSequence } from "@/features/diagram";
 import { Badge } from "@/components/ui/badge";

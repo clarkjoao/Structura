@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useFlowMode } from "@/features/canvas";
+import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
 import { useDiagramActions } from "@/features/diagram";
 import { useJourneyPlayer } from "./useJourneyPlayer";
 import { useJourneySteps } from "../store/selectors/journeys.selectors";

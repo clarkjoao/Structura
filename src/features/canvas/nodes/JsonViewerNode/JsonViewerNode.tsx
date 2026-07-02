@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Handle, NodeResizer, Position, useReactFlow, type Node, type NodeProps } from "@xyflow/react";
-import Editor from "@monaco-editor/react";
+import { LazyMonacoEditor as Editor } from "@/lib/monaco/LazyMonacoEditor";
 import { Braces, Check, ChevronDown, ChevronUp, Pencil, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";

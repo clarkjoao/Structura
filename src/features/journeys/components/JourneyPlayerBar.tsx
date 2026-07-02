@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Play, Square, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useFlowMode } from "@/features/canvas";
+import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
 import { useDiagramActions } from "@/features/diagram";
 import { useJourney, useJourneySteps } from "../store/selectors/journeys.selectors";
 import { useJourneyPlayer } from "../hooks/useJourneyPlayer";

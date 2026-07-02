@@ -8,7 +8,7 @@ import {
   type Dispatch,
   type ReactNode,
 } from "react";
-import { FlowModeProvider, useFlowMode } from "@/features/canvas";
+import { FlowModeProvider, useFlowMode } from "@/features/canvas/flow/FlowModeContext";
 import {
   useActiveDiagramId,
   useDiagramActions,

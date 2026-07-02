@@ -1,25 +1,46 @@
+import { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useSharedDiagram, SharedDiagramView } from "@/features/viewer";
-import { ViewerPage } from "@/pages/ViewerPage";
+import { useSharedDiagram } from "@/features/viewer/hooks/useSharedDiagram";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useDiagramPreviewSync } from "@/lib/diagram-preview";
-import { CollabRoom } from "@/features/collaboration";
-import Dashboard from "@/pages/dashboard";
-import JourneyEditorPage from "@/pages/journeys/JourneyEditorPage";
-import JourneysPage from "@/pages/journeys/JourneysPage";
 import { JourneyPlayerBar, JourneyPlayerProvider } from "@/features/journeys";
-import ModelExplorer from "@/pages/modelExplorer";
-import ServiceRegistry from "@/pages/serviceRegistry";
-import NotFound from "@/pages/NotFound";
+
+const ViewerPage = lazy(() =>
+  import("@/pages/ViewerPage").then((m) => ({ default: m.ViewerPage })),
+);
+const SharedDiagramView = lazy(() =>
+  import("@/features/viewer/components/SharedDiagramView").then((m) => ({
+    default: m.SharedDiagramView,
+  })),
+);
+const CollabRoom = lazy(() =>
+  import("@/features/collaboration/components/CollabRoom").then((m) => ({
+    default: m.CollabRoom,
+  })),
+);
+const Dashboard = lazy(() => import("@/pages/dashboard"));
+const JourneyEditorPage = lazy(() => import("@/pages/journeys/JourneyEditorPage"));
+const JourneysPage = lazy(() => import("@/pages/journeys/JourneysPage"));
+const ModelExplorer = lazy(() => import("@/pages/modelExplorer"));
+const ServiceRegistry = lazy(() => import("@/pages/serviceRegistry"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
 
 function DiagramPreviewSync(): null {
   useDiagramPreviewSync();
   return null;
+}
+
+function RouteFallback() {
+  return (
+    <div className="flex h-screen w-full items-center justify-center text-sm text-muted-foreground">
+      Loading…
+    </div>
+  );
 }
 
 function MainPages() {
@@ -51,7 +72,9 @@ const App = () => {
     return (
       <ShareProvider>
         <BrowserRouter future={{ v7_relativeSplatPath: true }}>
-          <SharedDiagramView diagram={sharedDiagram} />
+          <Suspense fallback={<RouteFallback />}>
+            <SharedDiagramView diagram={sharedDiagram} />
+          </Suspense>
         </BrowserRouter>
       </ShareProvider>
     );
@@ -61,10 +84,12 @@ const App = () => {
     <BrowserRouter future={{ v7_relativeSplatPath: true }}>
       <JourneyPlayerProvider>
         <JourneyPlayerBar />
-        <Routes>
-          <Route path="/viewer" element={<ViewerPage />} />
-          <Route path="*" element={<MainPages />} />
-        </Routes>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route path="/viewer" element={<ViewerPage />} />
+            <Route path="*" element={<MainPages />} />
+          </Routes>
+        </Suspense>
       </JourneyPlayerProvider>
     </BrowserRouter>
   );
