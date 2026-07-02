@@ -78,7 +78,7 @@ describe("useCanvasDrillHandlers", () => {
     });
 
     expect(calls).toEqual(["clearCanvasSelection", "openDiagram"]);
-    expect(navigate).toHaveBeenCalledWith("/diagram/d2");
+    expect(navigate).toHaveBeenCalledWith("/model/d2");
   });
 
   it("no-ops when component has no linkedDiagramId", () => {
