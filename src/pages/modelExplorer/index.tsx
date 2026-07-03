@@ -10,6 +10,8 @@ import {
   useFlows,
   useServiceRegistry,
 } from "@/features/diagram";
+import { getExporterContribution } from "@/features/plugins/io-registry";
+import { toDiagramSnapshot } from "@/features/plugins/snapshots";
 import {
   buildDiagramExportFiles,
   downloadFile,
@@ -111,9 +113,9 @@ export default function ModelExplorerPage() {
   }, [diagram, flashCopied, t]);
 
   const handleExportFormats = useCallback(
-    (formats: DiagramExportFormat[]) => {
+    async (formats: DiagramExportFormat[], pluginExporterIds: string[]) => {
       if (!diagram) return;
-      if (formats.length === 0) return;
+      if (formats.length === 0 && pluginExporterIds.length === 0) return;
       try {
         const { baseName, files } = buildDiagramExportFiles({
           diagram,
@@ -121,6 +123,20 @@ export default function ModelExplorerPage() {
           serviceRegistry,
           formats,
         });
+
+        // Plugin exporters see a read-only snapshot; their output joins the same
+        // download/zip flow as the built-in formats.
+        const snapshot = pluginExporterIds.length > 0 ? toDiagramSnapshot(diagram) : null;
+        for (const exporterId of pluginExporterIds) {
+          const exporter = getExporterContribution(exporterId);
+          if (!exporter || !snapshot) continue;
+          const content = await exporter.export(snapshot);
+          files.push({
+            filename: `${baseName}.${exporter.extension}`,
+            content,
+            mime: exporter.mime,
+          });
+        }
 
         if (files.length === 1) {
           const [file] = files;
@@ -207,6 +223,7 @@ export default function ModelExplorerPage() {
             open={importModalOpen}
             onOpenChange={setImportModalOpen}
             targetFolderId={diagram.folderId ?? null}
+            allowPluginImporters
           />
           <CollabStartModal
             open={showStartModal}

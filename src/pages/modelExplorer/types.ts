@@ -17,7 +17,7 @@ export interface ModelExplorerContentProps {
   handleCopyDrawio: () => void;
   handleCopyJson: () => void;
   handleCopyStructurizr: () => void;
-  handleExportFormats: (formats: DiagramExportFormat[]) => void;
+  handleExportFormats: (formats: DiagramExportFormat[], pluginExporterIds: string[]) => void;
   onStartCollab: () => void;
   onCollabSessionEnded?: () => void;
   copiedClipboardKind: CopiedClipboardKind | null;

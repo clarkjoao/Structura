@@ -3,6 +3,13 @@ import type { GcpCategoryId } from "@/features/cloud/providers/gcp/gcp.catalog";
 import type { AzureCategoryId } from "@/features/cloud/providers/azure/azure.catalog";
 import type { ExternalLinkType, PanelKind } from "../enums";
 
+/**
+ * Namespaced plugin component type: "<pluginId>/<name>". No built-in type contains "/",
+ * which keeps the union discriminable; components with a plugin type degrade to the
+ * `unknown` descriptor when the plugin is absent (plugin-system spec).
+ */
+export type PluginComponentType = `${string}/${string}`;
+
 export type ComponentType =
   | "person"
   | "system"
@@ -20,7 +27,8 @@ export type ComponentType =
   | "external-element"
   | AwsCategoryId
   | GcpCategoryId
-  | AzureCategoryId;
+  | AzureCategoryId
+  | PluginComponentType;
 
 export interface ExternalLink {
   id: string;
@@ -205,6 +213,13 @@ export interface ExternalElementComponent extends BaseComponent {
   linkedDiagramName?: string;
 }
 
+export interface PluginTypedComponent extends BaseComponent {
+  type: PluginComponentType;
+
+  /** Opaque plugin-owned data; preserved verbatim while the owning plugin is absent. */
+  pluginData?: Record<string, unknown>;
+}
+
 export type Component =
   | C4Component
   | PanelComponent
@@ -219,7 +234,8 @@ export type Component =
   | JsonViewerComponent
   | SvgComponent
   | FlowNodeComponent
-  | ExternalElementComponent;
+  | ExternalElementComponent
+  | PluginTypedComponent;
 
 export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<PanelComponent, "id">> &
@@ -247,4 +263,5 @@ export type TypedComponentPatch =
   | (Partial<Omit<SvgComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<FlowNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<PluginTypedComponent, "id">> & { width?: number; height?: number })
   | { width?: number; height?: number };

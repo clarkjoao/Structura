@@ -1,0 +1,23 @@
+schema: spec-driven
+
+# Project context shown to AI when creating artifacts.
+context: |
+  Structura: open-source, client-side C4-model diagramming SPA — no backend,
+  no database. React 18 + TypeScript (strict), Vite, Zustand + Immer,
+  React Flow (@xyflow/react v12), Tailwind/shadcn, i18next (en / pt-BR).
+  AGENTS.md at the repo root is the binding source of truth (architecture
+  boundaries and hard rules); CONTRIBUTING.md defines the workflow and
+  Conventional Commits. Hard rules apply inside specs that describe future
+  code too: type guards not string checks, no `any`, `pushHistory` before
+  mutations, persistence only via `IStoragePort`, all UI strings through
+  i18n (en + pt-BR). Long-term decisions are recorded in docs/adr/;
+  extension-point inventory in docs/extension-points/. The pre-OpenSpec
+  spec process in specs/ is superseded (see specs/README.md).
+
+# Per-artifact rules.
+rules:
+  proposal:
+    - Always include an explicit Non-Goals section
+  specs:
+    - Requirements must be testable; scenarios in GIVEN/WHEN/THEN form
+    - Restate applicable repo hard rules (i18n, IStoragePort, pushHistory) as requirements when a change touches them, so they survive implementation

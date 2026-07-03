@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Upload } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,20 +14,36 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useWorkspaceImport } from "@/pages/useWorkspaceImport";
+import type { ImporterContribution } from "@/features/plugins/plugin.types";
+import { usePluginIoContributions } from "@/features/plugins/use-plugin-contributions";
+import { resolveLocalizedText } from "@/features/plugins/localized-text";
+import { runPluginImport } from "@/features/plugins/run-plugin-import";
 
-type ImportModalTab = "json" | "structurizr";
+type ImportModalTab = "json" | "structurizr" | `plugin:${string}`;
 
 interface ImportModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   targetFolderId?: string | null;
+  /**
+   * Plugin importers merge into the ACTIVE diagram (single undo step), so they are only
+   * offered where a diagram is open (model explorer), not on the workspace dashboard.
+   */
+  allowPluginImporters?: boolean;
 }
 
-export function ImportModal({ open, onOpenChange, targetFolderId }: ImportModalProps) {
-  const { t } = useTranslation();
+export function ImportModal({
+  open,
+  onOpenChange,
+  targetFolderId,
+  allowPluginImporters = false,
+}: ImportModalProps) {
+  const { t, i18n } = useTranslation();
   const { importJsonText, importDslText } = useWorkspaceImport({
     targetFolderId,
   });
+  const { importers } = usePluginIoContributions();
+  const pluginImporters = allowPluginImporters ? importers : [];
   const [tab, setTab] = useState<ImportModalTab>("json");
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -37,15 +54,52 @@ export function ImportModal({ open, onOpenChange, targetFolderId }: ImportModalP
     setIsDragging(false);
   }, [open]);
 
+  const activeImporter: ImporterContribution | undefined = tab.startsWith("plugin:")
+    ? pluginImporters.find((importer) => `plugin:${importer.id}` === tab)
+    : undefined;
+
+  const runImporterForFile = useCallback(
+    async (importer: ImporterContribution, file: File): Promise<boolean> => {
+      const text = await file.text();
+      if (importer.canImport && !importer.canImport(file.name, text)) {
+        toast.error(t("plugins.importFailed"));
+        return false;
+      }
+      const outcome = await runPluginImport(importer, text);
+      if (!outcome.ok) {
+        toast.error(
+          outcome.reason === "no-active-diagram"
+            ? t("plugins.importNoActiveDiagram")
+            : t("plugins.importFailed"),
+        );
+        return false;
+      }
+      if (outcome.skippedConnections > 0) {
+        toast.warning(t("plugins.importSkippedConnections", { count: outcome.skippedConnections }));
+      }
+      if (outcome.warnings.length > 0) {
+        toast.warning(t("plugins.importWarnings", { warnings: outcome.warnings.join("; ") }));
+      }
+      toast.success(t("plugins.importSuccess", { count: outcome.importedComponentIds.length }));
+      return true;
+    },
+    [t],
+  );
+
   const runImportForTab = useCallback(
     async (file: File) => {
-      const text = await file.text();
-      const ok = tab === "json" ? importJsonText(text) : importDslText(text);
+      let ok: boolean;
+      if (activeImporter) {
+        ok = await runImporterForFile(activeImporter, file);
+      } else {
+        const text = await file.text();
+        ok = tab === "json" ? importJsonText(text) : importDslText(text);
+      }
       if (ok) {
         onOpenChange(false);
       }
     },
-    [importDslText, importJsonText, onOpenChange, tab],
+    [activeImporter, importDslText, importJsonText, onOpenChange, runImporterForFile, tab],
   );
 
   const handleFileChange = useCallback(
@@ -79,7 +133,19 @@ export function ImportModal({ open, onOpenChange, targetFolderId }: ImportModalP
     setIsDragging(false);
   }, []);
 
-  const acceptForTab = tab === "json" ? ".json,application/json" : ".dsl,.txt";
+  const acceptForTab = activeImporter
+    ? activeImporter.extensions.map((extension) => `.${extension}`).join(",")
+    : tab === "json"
+      ? ".json,application/json"
+      : ".dsl,.txt";
+
+  const hintForTab = activeImporter
+    ? t("plugins.importHint", { extensions: acceptForTab })
+    : tab === "json"
+      ? t("import.modal.jsonHint")
+      : t("import.modal.structurizrHint");
+
+  const tabColumns = 2 + pluginImporters.length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -94,15 +160,21 @@ export function ImportModal({ open, onOpenChange, targetFolderId }: ImportModalP
           onValueChange={(value) => setTab(value as ImportModalTab)}
           className="w-full"
         >
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList
+            className="grid w-full"
+            style={{ gridTemplateColumns: `repeat(${tabColumns}, minmax(0, 1fr))` }}
+          >
             <TabsTrigger value="json">{t("import.modal.jsonTab")}</TabsTrigger>
             <TabsTrigger value="structurizr">{t("import.modal.structurizrTab")}</TabsTrigger>
+            {pluginImporters.map((importer) => (
+              <TabsTrigger key={importer.id} value={`plugin:${importer.id}`}>
+                {resolveLocalizedText(importer.label, i18n.language)}
+              </TabsTrigger>
+            ))}
           </TabsList>
         </Tabs>
 
-        <p className="mt-4 text-xs text-muted-foreground">
-          {tab === "json" ? t("import.modal.jsonHint") : t("import.modal.structurizrHint")}
-        </p>
+        <p className="mt-4 text-xs text-muted-foreground">{hintForTab}</p>
 
         <button
           type="button"

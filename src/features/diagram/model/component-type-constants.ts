@@ -90,6 +90,11 @@ export function isUnknownType(type: string): type is "unknown" {
   return type === COMPONENT_TYPE_UNKNOWN;
 }
 
+/** Plugin component types are namespaced "<pluginId>/<name>"; no built-in type contains "/". */
+export function isPluginComponentType(type: string): type is `${string}/${string}` {
+  return type.includes("/");
+}
+
 export function isDbTableType(type: string): type is "db-table" {
   return type === COMPONENT_TYPE_DB_TABLE;
 }

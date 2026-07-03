@@ -11,6 +11,8 @@ export {
 
 export type {
   ComponentType,
+  PluginComponentType,
+  PluginTypedComponent,
   Level,
   Component,
   ComponentPatch,
@@ -203,6 +205,7 @@ export {
   isJsonViewerComponent,
   isFlowNodeComponent,
   isExternalElementComponent,
+  isPluginTypedComponent,
 } from "./model/component.guards";
 
 export {
@@ -224,6 +227,7 @@ export {
   isNoteType,
   isC4Type,
   isUnknownType,
+  isPluginComponentType,
   isSvgComponentType,
   isEndpointType,
   isApiGroupType,

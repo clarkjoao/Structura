@@ -1,5 +1,7 @@
 export type {
   ComponentType,
+  PluginComponentType,
+  PluginTypedComponent,
   Component,
   ComponentPatch,
   TypedComponentPatch,

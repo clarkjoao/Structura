@@ -125,7 +125,8 @@
     "workspaces": "Workspaces",
     "journeys": "Journeys",
     "registry": "Registry",
-    "brandSuffix": "Architecture"
+    "brandSuffix": "Architecture",
+    "plugins": "Plugins"
   },
   "journeys": {
     "title": "Journeys",
@@ -1669,5 +1670,71 @@
     "organizeChildren": "Organize children (LR)",
     "running": "Running...",
     "error": "Error computing layout"
+  },
+  "plugins": {
+    "title": "Plugins",
+    "subtitle": "Extend the canvas with plugins installed from local JavaScript files.",
+    "install": "Install plugin",
+    "empty": "No plugins installed yet.",
+    "emptyHint": "Install a plugin from a local JavaScript file to add node types, importers, exporters and panels.",
+    "by": "by {{author}}",
+    "enable": "Enabled",
+    "uninstall": "Uninstall",
+    "errored": "Error",
+    "erroredHint": "This plugin failed to activate. Its contributions are not loaded.",
+    "capabilities": "Capabilities",
+    "consent": {
+      "title": "Install “{{name}}”?",
+      "description": "Plugins run with full access to the application, with no sandbox. Only install files you trust.",
+      "capabilitiesIntro": "This plugin declares the following capabilities:",
+      "noCapabilities": "This plugin declares no capabilities.",
+      "confirm": "Install"
+    },
+    "uninstallConfirm": {
+      "title": "Uninstall “{{name}}”?",
+      "description": "Its node types, importers, exporters and panels will be removed and its stored settings deleted. Diagram data is preserved; components from this plugin will render as unknown elements."
+    },
+    "toast": {
+      "installed": "Plugin “{{name}}” installed.",
+      "uninstalled": "Plugin “{{name}}” uninstalled.",
+      "activationFailed": "Plugin “{{name}}” failed to activate and was not installed."
+    },
+    "errors": {
+      "no-define": "This file is not a Structura plugin: it never called StructuraPlugin.define().",
+      "multiple-define": "Invalid plugin: StructuraPlugin.define() was called more than once.",
+      "execution-error": "The plugin file threw an error while loading.",
+      "invalidManifest": "Invalid plugin manifest: {{details}}",
+      "manifest": {
+        "not-an-object": "the manifest is missing or not an object",
+        "missing-field": "missing required field “{{field}}”",
+        "invalid-semver": "“{{detail}}” is not a valid version",
+        "invalid-api-range": "“{{detail}}” is not a valid API version range",
+        "incompatible-api-version": "requires API {{detail}}, but this app provides {{current}}",
+        "unknown-capability": "unknown capability “{{detail}}”",
+        "duplicate-id": "a plugin with id “{{detail}}” is already installed"
+      }
+    },
+    "capability": {
+      "canvas-node-types": "Canvas node types",
+      "io-importers": "File importers",
+      "io-exporters": "File exporters",
+      "ui-panels": "UI panels",
+      "events-diagram": "Diagram change events",
+      "storage": "Local storage",
+      "network": "Network access",
+      "diagram-read": "Diagram read access",
+      "diagram-write": "Diagram modification"
+    },
+    "panel": {
+      "crashed": "This plugin panel crashed. The rest of the page is unaffected.",
+      "heading": "Plugins"
+    },
+    "importWarnings": "Import finished with warnings: {{warnings}}",
+    "exportGroup": "Plugin formats",
+    "importSuccess": "Imported {{count}} elements.",
+    "importFailed": "This file could not be imported by the plugin.",
+    "importNoActiveDiagram": "Open a diagram before importing with a plugin.",
+    "importSkippedConnections": "{{count}} connections were skipped (unknown endpoints).",
+    "importHint": "Import a file ({{extensions}}) into the current diagram via this plugin."
   }
 }
