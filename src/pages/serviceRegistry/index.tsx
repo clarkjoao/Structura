@@ -18,6 +18,7 @@ import {
 import type { ServiceDefinition } from "@/features/diagram";
 import { ServiceSource, ImportPanel } from "@/features/diagram";
 import { useTranslation } from "react-i18next";
+import { PluginPanelSlot } from "@/features/plugins/components/PluginPanelSlot";
 import { DetailPanel } from "./DetailPanel";
 import { ManualCreateForm } from "./ManualCreateForm";
 import { ServiceCard } from "./ServiceCard";
@@ -285,6 +286,10 @@ export default function ServiceRegistryPage() {
               </Suspense>
             </div>
           )}
+
+          <div className="mb-6 empty:hidden">
+            <PluginPanelSlot slot="service-registry-import" serviceId={selectedId} />
+          </div>
 
           <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
             <div>

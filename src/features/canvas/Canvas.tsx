@@ -14,7 +14,7 @@ import { JourneysInDiagramPanel } from "./panels/JourneysInDiagramPanel";
 import { ConnectedSceneDrawer } from "./toolbar/SceneDrawer";
 import ElementPanel from "./panels/ElementPanel/index";
 import { CanvasContextMenu } from "./panels/CanvasContextMenu";
-import { nodeTypes } from "./nodes/node-types";
+import { useNodeTypes } from "./nodes/node-types";
 import QuickInsertPopover from "./toolbar/QuickInsertPopover";
 import CanvasSearch from "./toolbar/CanvasSearch";
 import { DiagramSidebar } from "./navigation/DiagramSidebar";
@@ -49,6 +49,7 @@ const PAN_ACTIVATION_KEY = getPlatform() === "mac" ? "Meta" : "Control";
 const canvasEdgeTypes = { c4: CustomEdge };
 
 const Canvas = (props: CanvasProps = {}) => {
+  const nodeTypes = useNodeTypes();
   const [templateNodeId, setTemplateNodeId] = useState<string | null>(null);
   const [showJourneysPanel, setShowJourneysPanel] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);

@@ -18,10 +18,12 @@ import type {
   JsonViewerComponent,
   FlowNodeComponent,
   ExternalElementComponent,
+  PluginTypedComponent,
 } from "./component.types";
 import {
   isPanelType,
   isNoteType,
+  isPluginComponentType,
   isC4Type,
   isApiGroupType,
   isEndpointType,
@@ -64,3 +66,6 @@ export const isFlowNodeComponent = (c: Component): c is FlowNodeComponent => isF
 
 export const isExternalElementComponent = (c: Component): c is ExternalElementComponent =>
   isExternalElementType(c.type);
+
+export const isPluginTypedComponent = (c: Component): c is PluginTypedComponent =>
+  isPluginComponentType(c.type);

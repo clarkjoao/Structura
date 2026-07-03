@@ -4,7 +4,11 @@ export {
   resolveNodeDescriptor,
   nodeTypes,
   registerDescriptor,
+  unregisterDescriptor,
+  subscribeNodeTypes,
+  getNodeTypesSnapshot,
 } from "./registry";
+export { useNodeTypes } from "./useNodeTypes";
 export type {
   NodeBuildContext,
   NodeTypeDescriptor,

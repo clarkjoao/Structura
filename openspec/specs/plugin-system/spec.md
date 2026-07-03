@@ -5,6 +5,7 @@
 The contract for third-party plugins (TODO.md F-02, draw.io-inspired): loading, validating, activating, and cleanly removing local-file plugins, and the registration guarantees of each versioned `StructuraPlugin.*` API method. The full RFC (manifest schema, lifecycle, API argument shapes, trust model, distribution, folder layout, DefectDojo/Mermaid validation walkthroughs) lives in `openspec/changes/archive/2026-07-03-add-plugin-system-foundation/design.md`. Requirements here bind the future Canvas Plugin MVP implementation change (Phase 2).
 
 ## Requirements
+
 ### Requirement: Manifest validation gates plugin loading
 
 The system SHALL validate a plugin's manifest before the plugin is installed, and SHALL NOT install or execute a plugin whose manifest is missing or invalid. A valid manifest MUST contain: a unique `id`, a `name`, a semver `version`, an `author`, a `description`, a semver-range `apiVersion` compatible with the current StructuraPlugin API version, and a `capabilities` array containing only known capability identifiers.
@@ -200,4 +201,3 @@ All user-visible text in host-owned plugin-management UI (plugin manager page, i
 - **GIVEN** a plugin contribution whose label is `{ en: "Findings", "pt-BR": "Achados" }`
 - **WHEN** the UI renders with locale `pt-BR`
 - **THEN** the label renders as "Achados", and a plain-string label would render as-is under any locale
-

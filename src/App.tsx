@@ -26,6 +26,7 @@ const JourneyEditorPage = lazy(() => import("@/pages/journeys/JourneyEditorPage"
 const JourneysPage = lazy(() => import("@/pages/journeys/JourneysPage"));
 const ModelExplorer = lazy(() => import("@/pages/modelExplorer"));
 const ServiceRegistry = lazy(() => import("@/pages/serviceRegistry"));
+const PluginsPage = lazy(() => import("@/pages/settings/PluginsPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -58,6 +59,7 @@ function MainPages() {
           <Route path="/model/:id" element={<ModelExplorer />} />
           <Route path="/collab/:roomId" element={<CollabRoom />} />
           <Route path="/catalog" element={<ServiceRegistry />} />
+          <Route path="/plugins" element={<PluginsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </TooltipProvider>

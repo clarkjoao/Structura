@@ -125,7 +125,8 @@
     "workspaces": "Workspaces",
     "journeys": "Jornadas",
     "registry": "Registry",
-    "brandSuffix": "Architecture"
+    "brandSuffix": "Architecture",
+    "plugins": "Plugins"
   },
   "journeys": {
     "title": "Jornadas",
@@ -1669,5 +1670,69 @@
     "organizeChildren": "Organizar filhos (LR)",
     "running": "Calculando...",
     "error": "Erro ao calcular layout"
+  },
+  "plugins": {
+    "title": "Plugins",
+    "subtitle": "Estenda o canvas com plugins instalados a partir de arquivos JavaScript locais.",
+    "install": "Instalar plugin",
+    "empty": "Nenhum plugin instalado ainda.",
+    "emptyHint": "Instale um plugin a partir de um arquivo JavaScript local para adicionar tipos de nó, importadores, exportadores e painéis.",
+    "by": "por {{author}}",
+    "enable": "Ativado",
+    "uninstall": "Desinstalar",
+    "errored": "Erro",
+    "erroredHint": "Este plugin falhou ao ativar. Suas contribuições não foram carregadas.",
+    "capabilities": "Capacidades",
+    "consent": {
+      "title": "Instalar “{{name}}”?",
+      "description": "Plugins executam com acesso total à aplicação, sem sandbox. Instale apenas arquivos em que você confia.",
+      "capabilitiesIntro": "Este plugin declara as seguintes capacidades:",
+      "noCapabilities": "Este plugin não declara capacidades.",
+      "confirm": "Instalar"
+    },
+    "uninstallConfirm": {
+      "title": "Desinstalar “{{name}}”?",
+      "description": "Seus tipos de nó, importadores, exportadores e painéis serão removidos e suas configurações salvas excluídas. Os dados dos diagramas são preservados; componentes deste plugin serão exibidos como elementos desconhecidos."
+    },
+    "toast": {
+      "installed": "Plugin “{{name}}” instalado.",
+      "uninstalled": "Plugin “{{name}}” desinstalado.",
+      "activationFailed": "O plugin “{{name}}” falhou ao ativar e não foi instalado."
+    },
+    "errors": {
+      "no-define": "Este arquivo não é um plugin do Structura: ele nunca chamou StructuraPlugin.define().",
+      "multiple-define": "Plugin inválido: StructuraPlugin.define() foi chamado mais de uma vez.",
+      "execution-error": "O arquivo do plugin lançou um erro ao carregar.",
+      "invalidManifest": "Manifesto de plugin inválido: {{details}}",
+      "manifest": {
+        "not-an-object": "o manifesto está ausente ou não é um objeto",
+        "missing-field": "campo obrigatório “{{field}}” ausente",
+        "invalid-semver": "“{{detail}}” não é uma versão válida",
+        "invalid-api-range": "“{{detail}}” não é um intervalo de versão de API válido",
+        "incompatible-api-version": "requer API {{detail}}, mas este app fornece {{current}}",
+        "unknown-capability": "capacidade desconhecida “{{detail}}”",
+        "duplicate-id": "um plugin com id “{{detail}}” já está instalado"
+      }
+    },
+    "capability": {
+      "canvas-node-types": "Tipos de nó do canvas",
+      "io-importers": "Importadores de arquivo",
+      "io-exporters": "Exportadores de arquivo",
+      "ui-panels": "Painéis de interface",
+      "events-diagram": "Eventos de alteração de diagrama",
+      "storage": "Armazenamento local",
+      "network": "Acesso à rede"
+    },
+    "panel": {
+      "crashed": "Este painel de plugin travou. O restante da página não foi afetado.",
+      "heading": "Plugins"
+    },
+    "importWarnings": "Importação concluída com avisos: {{warnings}}",
+    "exportGroup": "Formatos de plugins",
+    "importSuccess": "{{count}} elementos importados.",
+    "importFailed": "Este arquivo não pôde ser importado pelo plugin.",
+    "importNoActiveDiagram": "Abra um diagrama antes de importar com um plugin.",
+    "importSkippedConnections": "{{count}} conexões foram ignoradas (extremidades desconhecidas).",
+    "importHint": "Importe um arquivo ({{extensions}}) para o diagrama atual através deste plugin."
   }
 }

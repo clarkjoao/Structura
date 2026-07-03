@@ -17,6 +17,7 @@ import {
   type ExternalElementComponent,
 } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
+import { PluginPanelSlot } from "@/features/plugins/components/PluginPanelSlot";
 import { MultiSelectPanel } from "../MultiSelectPanel";
 import ComponentPanel from "./ComponentPanel";
 import ConnectionPanel from "./ConnectionPanel";
@@ -193,6 +194,9 @@ const ElementPanel = ({
           }
           focusTitleTrigger={focusTitleTrigger}
         />
+        <div className="shrink-0 overflow-y-auto p-2 empty:hidden">
+          <PluginPanelSlot slot="element-inspector" selectionIds={[selectedElementId]} />
+        </div>
       </div>
     );
   }

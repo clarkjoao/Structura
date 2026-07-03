@@ -16,13 +16,15 @@ import {
 import type { DiagramExportFormat } from "@/lib/export-service";
 import { cn } from "@/lib/utils";
 import { keyIsEnterOrSpace } from "@/lib/keyboard-utils";
+import { usePluginIoContributions } from "@/features/plugins/use-plugin-contributions";
+import { resolveLocalizedText } from "@/features/plugins/localized-text";
 import type { CopiedClipboardKind } from "./types";
 
 interface ExportModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   hasFlows: boolean;
-  onExport: (formats: DiagramExportFormat[]) => void;
+  onExport: (formats: DiagramExportFormat[], pluginExporterIds: string[]) => void;
   onCopyDrawio: () => void;
   onCopyJson: () => void;
   onCopyStructurizr: () => void;
@@ -44,12 +46,15 @@ export function ExportModal({
   onEmbedRequest,
   copiedClipboardKind,
 }: ExportModalProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [selectedFormats, setSelectedFormats] = useState<DiagramExportFormat[]>(DEFAULT_FORMATS);
+  const [selectedPluginExporters, setSelectedPluginExporters] = useState<string[]>([]);
+  const { exporters: pluginExporters } = usePluginIoContributions();
 
   useEffect(() => {
     if (!open) return;
     setSelectedFormats(DEFAULT_FORMATS);
+    setSelectedPluginExporters([]);
   }, [open]);
 
   const options = useMemo(
@@ -118,7 +123,16 @@ export function ExportModal({
     [onCopyDrawio, onCopyJson, onCopyStructurizr, t],
   );
 
-  const selectedCount = selectedFormats.length;
+  const selectedCount = selectedFormats.length + selectedPluginExporters.length;
+
+  const togglePluginExporter = (exporterId: string, checked: boolean) => {
+    setSelectedPluginExporters((current) => {
+      if (checked) {
+        return current.includes(exporterId) ? current : [...current, exporterId];
+      }
+      return current.filter((value) => value !== exporterId);
+    });
+  };
 
   const toggleFormat = (format: DiagramExportFormat, checked: boolean) => {
     setSelectedFormats((current) => {
@@ -135,10 +149,10 @@ export function ExportModal({
   };
 
   const handleExport = () => {
-    if (selectedFormats.length === 0) {
+    if (selectedCount === 0) {
       return;
     }
-    onExport(selectedFormats);
+    onExport(selectedFormats, selectedPluginExporters);
     onOpenChange(false);
   };
 
@@ -233,6 +247,42 @@ export function ExportModal({
                       {option.title}
                     </Label>
                     <p className="mt-1 text-xs text-muted-foreground">{option.description}</p>
+                  </div>
+                </div>
+              );
+            })}
+            {pluginExporters.map((exporter) => {
+              const checked = selectedPluginExporters.includes(exporter.id);
+              const checkboxId = `export-plugin-${exporter.id}`;
+              const label = resolveLocalizedText(exporter.label, i18n.language);
+
+              return (
+                <div
+                  key={checkboxId}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => togglePluginExporter(exporter.id, !checked)}
+                  onKeyDown={(event) => {
+                    if (!keyIsEnterOrSpace(event)) return;
+                    event.preventDefault();
+                    togglePluginExporter(exporter.id, !checked);
+                  }}
+                  className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-muted/40"
+                >
+                  <Checkbox
+                    id={checkboxId}
+                    checked={checked}
+                    onCheckedChange={(value) => togglePluginExporter(exporter.id, value === true)}
+                    onClick={(event) => event.stopPropagation()}
+                    className="mt-0.5"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <Label htmlFor={checkboxId} className="cursor-pointer text-sm">
+                      {label}
+                    </Label>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {t("plugins.exportGroup")} · .{exporter.extension}
+                    </p>
                   </div>
                 </div>
               );

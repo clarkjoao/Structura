@@ -50,7 +50,7 @@ window.StructuraPlugin.define({
 - `deactivate` is optional cleanup for resources the host cannot track (timers, `fetch` aborts, external connections). Host-tracked registrations are rolled back by the host regardless (see D3).
 - A file that never calls `define`, calls it twice, or throws at top level is rejected with a visible error; the app keeps running.
 
-*Alternative considered:* draw.io's `Draw.loadPlugin(fn)` callback-only style (no manifest). Rejected: the maintainer decision requires declared capabilities and versioning up front, and a manifest is the anchor for the future marketplace/sandbox model.
+_Alternative considered:_ draw.io's `Draw.loadPlugin(fn)` callback-only style (no manifest). Rejected: the maintainer decision requires declared capabilities and versioning up front, and a manifest is the anchor for the future marketplace/sandbox model.
 
 ### D2 — Manifest schema
 
@@ -85,12 +85,12 @@ interface PluginManifest {
 
 type PluginCapability =
   | "canvas:node-types" // registerNodeType
-  | "io:importers"      // registerImporter
-  | "io:exporters"      // registerExporter
-  | "ui:panels"         // registerPanel
-  | "events:diagram"    // onDiagramChange
-  | "storage"           // plugin-scoped storage
-  | "network";          // plugin intends to call external services via fetch
+  | "io:importers" // registerImporter
+  | "io:exporters" // registerExporter
+  | "ui:panels" // registerPanel
+  | "events:diagram" // onDiagramChange
+  | "storage" // plugin-scoped storage
+  | "network"; // plugin intends to call external services via fetch
 ```
 
 Validation at registration (fail loudly, never execute an invalid plugin): `id` unique among installed plugins; `version` and `apiVersion` parse as semver / semver range; `capabilities` contains only known values; required fields present and non-empty. A plugin that calls an API method not covered by its declared capabilities logs a console warning in the MVP (observability now, enforcement later).
@@ -103,12 +103,12 @@ user picks file ──► manifest valid ──► code runs, activate(api) ─�
                     record persisted     contributions tracked         subscriptions dropped
 ```
 
-| Transition | Trigger | Effect |
-| --- | --- | --- |
-| **register (install)** | User explicitly picks a JS file in the plugin manager (File System Access API `showOpenFilePicker`, falling back to `<input type="file">`). | File contents read; `define()` evaluated **only far enough to obtain the manifest** is not possible without executing JS — so install IS consent to execute (see D6). Manifest validated per D2. On success, an install record (manifest + file snapshot + `enabled: true`) is persisted **through `IStoragePort`**. On failure, nothing is persisted and a visible error explains why. |
-| **activate** | Immediately after successful install; and on app startup for every installed record with `enabled: true`. | Plugin code is executed, `activate(api)` is called with the plugin-scoped API. Every registration made through the api is tracked against the plugin id. If `activate` throws/rejects: all tracked registrations are rolled back, the plugin is marked *errored* in the manager UI, the app keeps running. |
-| **deactivate (disable)** | User toggles the plugin off in the manager UI; also the first half of uninstall. | Host calls the plugin's `deactivate?()` (best-effort, errors logged not fatal), then force-unregisters **all** tracked contributions: node types leave the registry and the React Flow `nodeTypes` map, importers/exporters leave the format registry, panels unmount, `onDiagramChange` subscriptions drop. Components in saved diagrams that used a removed node type degrade to the existing `unknown` descriptor (the model's escape hatch) — data is never corrupted. |
-| **uninstall** | User removes the plugin in the manager UI. | Deactivate (if active), then delete the install record and the plugin's scoped storage namespace. |
+| Transition               | Trigger                                                                                                                                     | Effect                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **register (install)**   | User explicitly picks a JS file in the plugin manager (File System Access API `showOpenFilePicker`, falling back to `<input type="file">`). | File contents read; `define()` evaluated **only far enough to obtain the manifest** is not possible without executing JS — so install IS consent to execute (see D6). Manifest validated per D2. On success, an install record (manifest + file snapshot + `enabled: true`) is persisted **through `IStoragePort`**. On failure, nothing is persisted and a visible error explains why.                                                                                    |
+| **activate**             | Immediately after successful install; and on app startup for every installed record with `enabled: true`.                                   | Plugin code is executed, `activate(api)` is called with the plugin-scoped API. Every registration made through the api is tracked against the plugin id. If `activate` throws/rejects: all tracked registrations are rolled back, the plugin is marked _errored_ in the manager UI, the app keeps running.                                                                                                                                                                 |
+| **deactivate (disable)** | User toggles the plugin off in the manager UI; also the first half of uninstall.                                                            | Host calls the plugin's `deactivate?()` (best-effort, errors logged not fatal), then force-unregisters **all** tracked contributions: node types leave the registry and the React Flow `nodeTypes` map, importers/exporters leave the format registry, panels unmount, `onDiagramChange` subscriptions drop. Components in saved diagrams that used a removed node type degrade to the existing `unknown` descriptor (the model's escape hatch) — data is never corrupted. |
+| **uninstall**            | User removes the plugin in the manager UI.                                                                                                  | Deactivate (if active), then delete the install record and the plugin's scoped storage namespace.                                                                                                                                                                                                                                                                                                                                                                          |
 
 **What `registerDescriptor()` is missing today** (to be fixed by the implementation change, listed so it can be scoped):
 
@@ -223,7 +223,7 @@ interface ImportContext {
 }
 
 interface ImportResult {
-  components: PluginComponentInput[];   // plain data, host assigns/validates ids
+  components: PluginComponentInput[]; // plain data, host assigns/validates ids
   connections: PluginConnectionInput[];
   warnings: string[];
 }
@@ -288,19 +288,19 @@ Namespaced per plugin (`plugin:<pluginId>:<key>`) and backed by `IStoragePort` �
 
 ### D6 — Trust & security model (MVP)
 
-**Model:** no sandbox. Loading a local JS file after an explicit file-picker action is the user's informed consent, exactly as in draw.io. The plugin manager UI shows the manifest's declared capabilities before finishing install, so consent is informed by *something* — but nothing technically enforces the declarations in the MVP.
+**Model:** no sandbox. Loading a local JS file after an explicit file-picker action is the user's informed consent, exactly as in draw.io. The plugin manager UI shows the manifest's declared capabilities before finishing install, so consent is informed by _something_ — but nothing technically enforces the declarations in the MVP.
 
-**The "no direct access" rule is a contract, not a boundary.** Plugin code runs in the same JS context and *could* reach the Zustand store, `localStorage`, or React Flow internals. The rule that it must not is enforced socially and by review (for `structura-plugin-*` official packages), and stated in the spec so violations are unambiguous bugs. Honest documentation of this gap is part of the model.
+**The "no direct access" rule is a contract, not a boundary.** Plugin code runs in the same JS context and _could_ reach the Zustand store, `localStorage`, or React Flow internals. The rule that it must not is enforced socially and by review (for `structura-plugin-*` official packages), and stated in the spec so violations are unambiguous bugs. Honest documentation of this gap is part of the model.
 
 **Documented risks (mitigations to evaluate in Phase 4, not now):**
 
-| Risk | Later mitigation to evaluate |
-| --- | --- |
-| Arbitrary JS execution — a plugin can do anything the app can, including reading every workspace and exfiltrating it | iframe/worker sandbox with a postMessage bridge implementing `StructuraPluginApi`; capability enforcement at the bridge |
-| XSS surface — plugin-rendered panels/nodes inject into the app DOM | Sandboxed rendering slots; CSP (`script-src` without `unsafe-eval`/`unsafe-inline` breaks naive plugin eval — CSP design must co-evolve with the loader) |
-| Supply-chain — a user loads a file a third party gave them; a popular plugin file is trojaned | Signature verification + curated marketplace review for `structura-plugin-*`; checksums shown at install |
-| Silent capability creep — plugin uses APIs beyond declared capabilities | MVP: console warning on undeclared use (D2). Later: hard enforcement at the API facade or sandbox bridge |
-| Persistence poisoning — plugin writes garbage through its storage or patch surface | Patches validated before commit (`PluginComponentPatch` whitelists fields); storage namespaced and quota-limited |
+| Risk                                                                                                                 | Later mitigation to evaluate                                                                                                                             |
+| -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Arbitrary JS execution — a plugin can do anything the app can, including reading every workspace and exfiltrating it | iframe/worker sandbox with a postMessage bridge implementing `StructuraPluginApi`; capability enforcement at the bridge                                  |
+| XSS surface — plugin-rendered panels/nodes inject into the app DOM                                                   | Sandboxed rendering slots; CSP (`script-src` without `unsafe-eval`/`unsafe-inline` breaks naive plugin eval — CSP design must co-evolve with the loader) |
+| Supply-chain — a user loads a file a third party gave them; a popular plugin file is trojaned                        | Signature verification + curated marketplace review for `structura-plugin-*`; checksums shown at install                                                 |
+| Silent capability creep — plugin uses APIs beyond declared capabilities                                              | MVP: console warning on undeclared use (D2). Later: hard enforcement at the API facade or sandbox bridge                                                 |
+| Persistence poisoning — plugin writes garbage through its storage or patch surface                                   | Patches validated before commit (`PluginComponentPatch` whitelists fields); storage namespaced and quota-limited                                         |
 
 ### D7 — Distribution model
 

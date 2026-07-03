@@ -9,6 +9,7 @@ import {
   isJsonViewerComponent,
   isSvgComponent,
   isUnknownComponent,
+  isPluginTypedComponent,
   isFlowNodeComponent,
   isExternalElementComponent,
   isNoteComponent,
@@ -267,7 +268,8 @@ export function exportDrawio(
       isUnknownComponent(c) ||
       isSvgComponent(c) ||
       isFlowNodeComponent(c) ||
-      isExternalElementComponent(c)
+      isExternalElementComponent(c) ||
+      isPluginTypedComponent(c)
     ) {
       throw new Error(`Unsupported component for draw.io export: ${c.type}`);
     } else {

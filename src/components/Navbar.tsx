@@ -42,6 +42,17 @@ const Navbar = () => {
           <Link to="/catalog" className="hover:text-foreground transition-colors">
             {t("nav.registry")}
           </Link>
+          <NavLink
+            to="/plugins"
+            className={({ isActive }) =>
+              cn(
+                "hover:text-foreground transition-colors",
+                isActive ? "text-foreground" : "text-muted-foreground",
+              )
+            }
+          >
+            {t("nav.plugins")}
+          </NavLink>
         </div>
 
         <div className="flex items-center gap-3">

@@ -25,6 +25,7 @@ import {
   isDbTableType,
   isJsonViewerType,
   isUnknownType,
+  isPluginComponentType,
   isSvgComponentType,
   isFlowNodeType,
   isExternalElementType,
@@ -209,6 +210,8 @@ function buildComponentForType(
       linkedDiagramId: "",
       tags: ["external"],
     } as ExternalElementComponent;
+  } else if (isPluginComponentType(type)) {
+    component = { ...base, type };
   } else {
     // If a new ComponentType is added and not handled here, this runtime error
     // signals that the corresponding branch needs to be added.
