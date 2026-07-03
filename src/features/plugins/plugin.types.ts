@@ -8,7 +8,7 @@ import type { NodeTypes } from "@xyflow/react";
  * breaking changes here require a major version bump.
  */
 
-export const STRUCTURA_PLUGIN_API_VERSION = "1.0.0";
+export const STRUCTURA_PLUGIN_API_VERSION = "1.1.0";
 
 export const KNOWN_PLUGIN_CAPABILITIES = [
   "canvas:node-types",
@@ -16,6 +16,8 @@ export const KNOWN_PLUGIN_CAPABILITIES = [
   "io:exporters",
   "ui:panels",
   "events:diagram",
+  "diagram:read",
+  "diagram:write",
   "storage",
   "network",
 ] as const;
@@ -56,6 +58,8 @@ export interface PluginComponentSnapshot {
   type: string;
   label: string;
   description: string;
+  /** Containing panel/group id, or null at the diagram root (v1.1). */
+  parentId: string | null;
   position: { x: number; y: number } | null;
   size: { width: number; height: number } | null;
   tags: readonly string[];
@@ -230,6 +234,28 @@ export interface StructuraPluginApi {
 
   /** Fires after any committed change to a diagram. Returns unsubscribe. */
   onDiagramChange(callback: (diagramId: string) => void): () => void;
+
+  /** v1.1 — capability "diagram:read". Id of the active diagram, or null. */
+  getActiveDiagramId(): string | null;
+
+  /**
+   * v1.1 — capability "diagram:read". Read-only snapshot of the requested diagram
+   * (defaults to the active one); null when it does not exist.
+   */
+  getDiagram(diagramId?: string): DiagramSnapshot | null;
+
+  /**
+   * v1.1 — capability "diagram:write". Patch whitelisted fields of a component on the
+   * ACTIVE diagram through the sanctioned store action; a single undo reverts it.
+   */
+  updateComponent(componentId: string, patch: PluginComponentPatch): void;
+
+  /**
+   * v1.1 — capability "diagram:write". Batch position changes on the ACTIVE diagram,
+   * applied as one history step (a single undo reverts the whole batch). Unknown ids
+   * are ignored.
+   */
+  moveComponents(moves: Array<{ id: string; x: number; y: number }>): void;
 
   /** Plugin-scoped persistent key-value storage. */
   readonly storage: PluginStorage;

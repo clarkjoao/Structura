@@ -1721,7 +1721,9 @@
       "ui-panels": "Painéis de interface",
       "events-diagram": "Eventos de alteração de diagrama",
       "storage": "Armazenamento local",
-      "network": "Acesso à rede"
+      "network": "Acesso à rede",
+      "diagram-read": "Leitura de diagramas",
+      "diagram-write": "Modificação de diagramas"
     },
     "panel": {
       "crashed": "Este painel de plugin travou. O restante da página não foi afetado.",

@@ -32,6 +32,7 @@ export function toComponentSnapshot(
     type: component.type,
     label: component.name,
     description: component.description,
+    parentId: component.parentId,
     position: x !== undefined && y !== undefined ? { x, y } : null,
     size:
       layout?.width !== undefined && layout?.height !== undefined

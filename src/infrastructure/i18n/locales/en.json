@@ -1721,7 +1721,9 @@
       "ui-panels": "UI panels",
       "events-diagram": "Diagram change events",
       "storage": "Local storage",
-      "network": "Network access"
+      "network": "Network access",
+      "diagram-read": "Diagram read access",
+      "diagram-write": "Diagram modification"
     },
     "panel": {
       "crashed": "This plugin panel crashed. The rest of the page is unaffected.",

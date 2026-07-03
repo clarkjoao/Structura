@@ -126,7 +126,6 @@ export function previewPluginManifest(code: string): PreviewPluginResult {
 export async function installPluginFromCode(code: string): Promise<InstallPluginResult> {
   let definition: PluginDefinition;
   try {
-    debugger;
     definition = executePluginCode(code);
   } catch (error) {
     if (error instanceof PluginLoadError) {

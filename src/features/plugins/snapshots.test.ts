@@ -50,6 +50,7 @@ describe("toComponentSnapshot", () => {
       type: "system",
       label: "Billing",
       description: "Billing system",
+      parentId: null,
       position: { x: 10, y: 20 },
       size: { width: 200, height: 100 },
       tags: ["core"],
