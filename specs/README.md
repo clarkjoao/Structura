@@ -1,5 +1,18 @@
 # Specs — Spec Driven Development
 
+> **Superseded by OpenSpec (2026-07).** Spec-Driven Development now runs on
+> [OpenSpec](https://github.com/Fission-AI/OpenSpec) in [`openspec/`](../openspec/):
+> active work lives in `openspec/changes/<name>/` (proposal, design, spec
+> deltas, tasks) and archived requirements become the source of truth in
+> `openspec/specs/<capability>/spec.md`. Use the `/opsx:*` commands
+> (propose → apply → archive). New specs MUST NOT be started in this
+> directory; it remains as history and for the reserved-number index below.
+> The first OpenSpec change is `add-plugin-system-foundation`
+> (capability `plugin-system`), which absorbs reserved spec 0005.
+> ADRs are unaffected and stay in `docs/adr/`.
+
+The original process below is kept for historical reference.
+
 From this point on, **every significant feature starts with a specification**
 in this directory, written and reviewed before implementation. This is the
 official engineering process for Structura.
