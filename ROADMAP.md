@@ -21,10 +21,17 @@ This document reflects the current direction of Structura. Items are subject to 
 - LLM integration (AI-assisted diagramming)
 - Atomic filesystem writes via File System Access API
 - Fine-grained Zustand selectors for performance with 300+ nodes
+- Mermaid import (flowchart and sequence diagrams)
+- Plugin system foundation (`StructuraPlugin` API, manifest validation, local-file plugins)
 
 ---
 
 ## 🚧 In Progress
+
+### Plugin System
+
+- [ ] Canvas plugin MVP (see `openspec/changes/add-canvas-plugin-mvp/`)
+- [ ] Plugin diagram API (see `openspec/changes/add-plugin-diagram-api/`)
 
 ### Performance
 
@@ -52,6 +59,17 @@ This document reflects the current direction of Structura. Items are subject to 
 - [ ] Alignment tools (snap to grid, distribute, align edges) — coordinate space fix implemented, pending validation
 - [ ] Structurizr DSL import/export
 - [ ] Code-level (C4 Level 4) diagram support
+- [ ] Cross-diagram reference node (link a node to a component in another diagram, with broken-reference detection)
+- [ ] Semantic panel elements: AWS Account, Control Plane, Service Mesh; Step Functions and request/response contract nodes
+- [ ] Fix draw.io export edge-style mapping (smoothstep/bezier styles, `animated` flag, custom edge colors are currently lost)
+
+### Documentation & Decisions
+
+- [ ] In-app ADR records linked to diagrams and components (MADR-style, exportable)
+
+### Export
+
+- [ ] Animated flow export (GIF/WebP of step-by-step flow playback)
 
 ### Developer Experience
 
@@ -71,4 +89,4 @@ Structura follows [Semantic Versioning](https://semver.org/). Breaking changes t
 
 ---
 
-_Last updated: May 2026_
+_Last updated: July 2026. Detailed engineering notes for several planned items (data models, file lists, open questions) live in git history — see `TODO.md` before its removal in July 2026._

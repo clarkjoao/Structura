@@ -1,6 +1,6 @@
 import { Handle, Position } from "@xyflow/react";
 import type { NodeData } from "./types";
-import { MIN_HANDLES, MAX_HANDLES } from "../../constants";
+import { MIN_HANDLES, MAX_HANDLES } from "../../canvas.constants";
 
 function getHandleClass(d: NodeData, handleId: string): string {
   const base = "!border-background transition-all duration-150";

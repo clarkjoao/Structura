@@ -53,7 +53,7 @@ threads are per-diagram (`ConversationThread`) and persist locally.
 
 This provider seam is already a de-facto extension point; the plugin
 preparation formalizes it (AI providers as contributions — see
-[extension-points/README.md](../extension-points/README.md)).
+[extension-points.md](../architecture/extension-points.md)).
 
 ## Constraints for future work
 
@@ -62,6 +62,6 @@ preparation formalizes it (AI providers as contributions — see
 - Workspace-wide AI (architecture Q&A across diagrams) is blocked on the
   Model Index — serializing 80 diagrams into a prompt does not scale; a
   queryable model does. Sequence accordingly
-  ([roadmap.md](../architecture/roadmap.md)).
+  ([roadmap.md](../architecture/roadmap-analysis.md)).
 - Keep prompts/parsers versioned together; a prompt change that alters the
   action grammar is a breaking change to the parser tests.

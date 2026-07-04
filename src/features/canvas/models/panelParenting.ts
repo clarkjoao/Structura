@@ -1,7 +1,7 @@
 import type { Node } from "@xyflow/react";
 import type { Component, NodeLayout } from "@/features/diagram";
 import { isReactFlowParentPanelType } from "@/features/diagram";
-import { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../constants";
+import { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../canvas.constants";
 
 export function getPanelDimensions(node: Node): { width: number; height: number } {
   const widthFromStyle = typeof node.style?.width === "number" ? node.style.width : undefined;

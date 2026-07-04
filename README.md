@@ -1,9 +1,9 @@
 # Structura
 
+[![CI](https://github.com/clarkjoao/Structura/actions/workflows/ci.yml/badge.svg)](https://github.com/clarkjoao/Structura/actions/workflows/ci.yml)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![React](https://img.shields.io/badge/React-18-61dafb.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6.svg)
-![Status](https://img.shields.io/badge/status-active-brightgreen.svg)
 
 **Architecture diagramming for teams who think in systems.**
 

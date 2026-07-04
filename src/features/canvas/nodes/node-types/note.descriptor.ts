@@ -7,7 +7,7 @@ import {
   NOTE_COLLAPSED_W,
   NOTE_DEFAULT_W,
   NOTE_DEFAULT_H,
-} from "../../constants";
+} from "../../canvas.constants";
 
 export const noteDescriptor: NodeTypeDescriptor = {
   rfType: "note",

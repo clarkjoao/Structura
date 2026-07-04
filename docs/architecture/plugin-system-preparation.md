@@ -57,7 +57,7 @@ Concretely:
 ## What must become an extension point
 
 The full inventory with status lives in
-[extension-points/README.md](../extension-points/README.md). The dependency
+[extension-points.md](extension-points.md). The dependency
 spine, in order:
 
 1. **Domain component descriptors** — open the `ComponentType` bottleneck

@@ -7,7 +7,7 @@ import { usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
 import { useComponentIcon } from "@/features/diagram";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
 import { cloudRegistry, CloudIcon } from "@/features/cloud";
-import { MIN_HANDLES, MAX_HANDLES } from "../../constants";
+import { MIN_HANDLES, MAX_HANDLES } from "../../canvas.constants";
 import { useHandleHighlight } from "../../contexts/HandleHighlightContext";
 import type { NodeData } from "./types";
 import { TypeConfig } from "./TypeConfig";

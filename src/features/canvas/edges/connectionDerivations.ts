@@ -6,7 +6,7 @@ import {
   isNoteType,
   isPanelComponent,
 } from "@/features/diagram";
-import { MAX_HANDLES } from "../constants";
+import { MAX_HANDLES } from "../canvas.constants";
 
 export function singleIncomingTargetHandleId(nodeId: string): string {
   return `in-${nodeId}`;

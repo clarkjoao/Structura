@@ -1,10 +1,8 @@
 import { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useSharedDiagram } from "@/features/viewer/hooks/useSharedDiagram";
-import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useDiagramPreviewSync } from "@/lib/diagram-preview";
 import { JourneyPlayerBar, JourneyPlayerProvider } from "@/features/journeys";
 
@@ -29,8 +27,6 @@ const ServiceRegistry = lazy(() => import("@/pages/serviceRegistry"));
 const PluginsPage = lazy(() => import("@/pages/settings/PluginsPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
-const queryClient = new QueryClient();
-
 function DiagramPreviewSync(): null {
   useDiagramPreviewSync();
   return null;
@@ -46,24 +42,21 @@ function RouteFallback() {
 
 function MainPages() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <DiagramPreviewSync />
-        <Routes>
-          <Route path="/" element={<Navigate to="/workspace" />} />
-          <Route path="/workspace" element={<Dashboard />} />
-          <Route path="/journeys" element={<JourneysPage />} />
-          <Route path="/journeys/:id/edit" element={<JourneyEditorPage />} />
-          <Route path="/model/:id" element={<ModelExplorer />} />
-          <Route path="/collab/:roomId" element={<CollabRoom />} />
-          <Route path="/catalog" element={<ServiceRegistry />} />
-          <Route path="/plugins" element={<PluginsPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <TooltipProvider>
+      <Sonner />
+      <DiagramPreviewSync />
+      <Routes>
+        <Route path="/" element={<Navigate to="/workspace" />} />
+        <Route path="/workspace" element={<Dashboard />} />
+        <Route path="/journeys" element={<JourneysPage />} />
+        <Route path="/journeys/:id/edit" element={<JourneyEditorPage />} />
+        <Route path="/model/:id" element={<ModelExplorer />} />
+        <Route path="/collab/:roomId" element={<CollabRoom />} />
+        <Route path="/catalog" element={<ServiceRegistry />} />
+        <Route path="/plugins" element={<PluginsPage />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </TooltipProvider>
   );
 }
 

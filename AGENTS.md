@@ -46,8 +46,10 @@ src/
 │   ├── collaboration/      # WebSocket/Yjs collab, presence, patches
 │   ├── custom-components/  # user-defined reusable node templates
 │   ├── icons/              # custom icon store
+│   ├── integrations/       # external tool integrations (GitHub, DefectDojo)
 │   ├── journeys/           # cross-diagram step sequences + player
-│   ├── llm/                # diagram assistant (chat, patch parser, suggestions)
+│   ├── llm/                # diagram assistant (chat UI, patch parser, suggestions)
+│   ├── plugins/            # plugin system (manifest, loader, registries, StructuraPlugin API)
 │   └── viewer/             # read-only shared-diagram viewer
 ├── infrastructure/
 │   ├── persistence/        # IStoragePort, LocalStorage/FileSystem/InMemory adapters, sync
@@ -78,16 +80,15 @@ src/
 - **`@` alias** resolves to `./src`.
 - Prefer incremental changes; leave the codebase simpler than you found it.
 - **Significant features start with a spec** via OpenSpec in `openspec/`
-  (`/opsx:propose` → apply → archive; see `openspec/config.yaml` and
-  `specs/README.md` for the migration note — the old `specs/` process is
-  superseded); long-term decisions are recorded in `docs/adr/`.
+  (`/opsx:propose` → apply → archive; see `openspec/config.yaml`); long-term
+  decisions are recorded in `docs/adr/`.
 
 ## Architecture documentation
 
 The rationale behind these rules lives in `docs/` — start with
 `docs/architecture/vision.md` (platform direction) and
 `docs/architecture/overview.md` (current structure). Subsystem docs are in
-`docs/concepts/`, extension-point inventory in `docs/extension-points/`.
+`docs/concepts/`, extension-point inventory in `docs/architecture/extension-points.md`.
 When code and docs disagree, the code wins — fix the doc in the same PR.
 
 ## Known sharp edges

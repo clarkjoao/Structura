@@ -32,7 +32,7 @@ lossless format and the canonical backup/sharing form.
   surprised — export UI copy is part of the contract.
 - (−) The format list and per-type cell builders are hardcoded today;
   the planned importer/exporter registry and per-node-type export
-  contributions ([extension-points](../extension-points/README.md)) must fix
+  contributions ([extension-points](../architecture/extension-points.md)) must fix
   this without weakening the purity rule.
 - Review rule: imported data that hasn't passed normalization/validation may
   not enter the store.

@@ -11,7 +11,7 @@ Thank you for your interest in contributing! This document explains how to get i
 - [Getting Started](#getting-started)
 - [Architecture Overview](#architecture-overview)
 - [Development Workflow](#development-workflow)
-- [Hard Rules](#hard-rules)
+- [Naming and File Conventions](#naming-and-file-conventions)
 - [Commit Convention](#commit-convention)
 - [Pull Request Process](#pull-request-process)
 - [Issue Labels](#issue-labels)
@@ -165,6 +165,25 @@ const { t } = useTranslation()
    npm run lint && npm run test && npm run build
    ```
 6. **Open a PR** against `main`
+
+---
+
+## Naming and File Conventions
+
+These apply to **new files**. Existing files use older mixed styles; do not
+mass-rename them (it destroys `git blame` and conflicts with open PRs) —
+renaming is fine when you are already substantially rewriting a file.
+
+| What                                         | Convention                                                                                                                 | Example               |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| React components                             | `PascalCase.tsx`, one component per file                                                                                   | `FlowPanel.tsx`       |
+| Everything else (utils, hooks files, stores) | `kebab-case.ts`                                                                                                            | `flow-repair.ts`      |
+| Hooks                                        | `useXxx` export, file may be `useXxx.ts`                                                                                   | `useAutoLayout.ts`    |
+| Tests                                        | colocated next to the code as `<name>.test.ts(x)` — no `__tests__/` folders                                                | `flow-repair.test.ts` |
+| Constants                                    | one `<feature>.constants.ts` per feature root; node-local constants stay next to the node                                  | `canvas.constants.ts` |
+| Types                                        | `types.ts` (or `<area>.types.ts`) inside the feature; shared domain types live in `@/features/diagram`                     | `edgeData.types.ts`   |
+| Imports                                      | always via the `@/` alias for cross-directory imports; relative only within the same folder subtree                        | `@/features/diagram`  |
+| Feature placement                            | user-facing capability → `src/features/<name>/`; route shell → `src/pages/`; storage/i18n plumbing → `src/infrastructure/` | —                     |
 
 ---
 

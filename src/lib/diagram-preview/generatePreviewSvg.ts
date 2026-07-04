@@ -21,7 +21,7 @@ import {
   PANEL_COLLAPSED_W,
   PANEL_DEFAULT_H,
   PANEL_DEFAULT_W,
-} from "@/features/canvas/constants";
+} from "@/features/canvas/canvas.constants";
 
 const MAX_ELEMENTS = 120;
 

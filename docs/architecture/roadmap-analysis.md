@@ -87,6 +87,24 @@ must be plugins — if they can't be, spec 0005 failed its acceptance test.
 
 ## What to draft first, concretely
 
-`specs/0002-component-type-extensibility` and `specs/0004-edge-system-redesign`
+Spec 0002 (component-type extensibility) and spec 0004 (edge-system redesign)
 — they unblock the most, touch the persisted schema (so earlier is safer),
 and neither depends on the other.
+
+## Reserved spec numbers
+
+The numbers used throughout this document were reserved under the retired
+pre-OpenSpec process (the old root `specs/` directory, removed 2026-07; its
+README survives in git history). New design work starts as an OpenSpec change
+in [`openspec/`](../../openspec/) instead, but the numbers remain the shorthand
+this analysis uses:
+
+| #    | Topic                                                                     | Status                                                            |
+| ---- | ------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| 0001 | architecture-model (workspace Model Index; ADR-0004 step a–b)             | Reserved                                                          |
+| 0002 | component-type-extensibility (domain component descriptors)               | Reserved                                                          |
+| 0003 | command-system                                                            | Reserved                                                          |
+| 0004 | edge-system-redesign (incl. edge panels, layout migration)                | Reserved                                                          |
+| 0005 | plugin-contribution-points (Extension API v1)                             | Absorbed by OpenSpec change `add-plugin-system-foundation` (2026-07) |
+| 0006 | interchange-registry (importer/exporter contributions, draw.io fidelity)  | Reserved                                                          |
+| 0007 | ai-workspace-integration (AI chat over Model Index, MCP)                  | Reserved                                                          |
