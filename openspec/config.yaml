@@ -11,8 +11,9 @@ context: |
   code too: type guards not string checks, no `any`, `pushHistory` before
   mutations, persistence only via `IStoragePort`, all UI strings through
   i18n (en + pt-BR). Long-term decisions are recorded in docs/adr/;
-  extension-point inventory in docs/extension-points/. The pre-OpenSpec
-  spec process in specs/ is superseded (see specs/README.md).
+  extension-point inventory in docs/architecture/extension-points.md. The
+  pre-OpenSpec spec process (old root specs/ directory) is retired; reserved
+  spec numbers live in docs/architecture/roadmap.md.
 
 # Per-artifact rules.
 rules:

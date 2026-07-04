@@ -46,4 +46,4 @@ sequencing live in
    Built-ins register through the same mechanism as future plugins
    (dogfooding is the test that the contract is sufficient).
 5. **New extension points require a spec** — they are five-year commitments;
-   see [specs/README.md](../../specs/README.md).
+   propose one via [OpenSpec](../../openspec/) (`/opsx:propose`).

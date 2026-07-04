@@ -78,9 +78,8 @@ src/
 - **`@` alias** resolves to `./src`.
 - Prefer incremental changes; leave the codebase simpler than you found it.
 - **Significant features start with a spec** via OpenSpec in `openspec/`
-  (`/opsx:propose` → apply → archive; see `openspec/config.yaml` and
-  `specs/README.md` for the migration note — the old `specs/` process is
-  superseded); long-term decisions are recorded in `docs/adr/`.
+  (`/opsx:propose` → apply → archive; see `openspec/config.yaml`); long-term
+  decisions are recorded in `docs/adr/`.
 
 ## Architecture documentation
 

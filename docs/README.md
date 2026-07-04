@@ -13,7 +13,7 @@ the *why* behind them.
 | [concepts/](concepts/) | How each subsystem works and why it is shaped that way (canvas engine, diagram engine, node system, persistence, …). |
 | [extension-points/](extension-points/) | Inventory of current and planned extension points. |
 | [guides/](guides/) | Task-oriented guides for contributors (adding a node type, writing a spec, …). |
-| [../specs/](../specs/) | Spec Driven Development: one directory per significant feature, written **before** implementation. |
+| [../openspec/](../openspec/) | Spec Driven Development via [OpenSpec](https://github.com/Fission-AI/OpenSpec): active changes in `changes/`, accepted requirements in `specs/`. |
 
 ## Reading order for new contributors
 
@@ -21,13 +21,13 @@ the *why* behind them.
 2. [architecture/overview.md](architecture/overview.md) — the layers and bounded contexts as they exist in the code today.
 3. [concepts/core-concepts.md](concepts/core-concepts.md) — the domain vocabulary (workspace, diagram, component, connection, flow, scene, journey, service).
 4. The concept doc for whatever subsystem you are touching.
-5. [../specs/README.md](../specs/README.md) — the engineering process, if you are proposing a feature.
+5. [../openspec/](../openspec/) — the engineering process (`/opsx:propose` → apply → archive), if you are proposing a feature.
 
 ## Document conventions
 
 - Every document explains **how** it works *and* **why** it is that way.
   A doc that only restates the code is a maintenance liability; delete it.
-- Documents describe the current state. Future plans belong in `specs/` or
+- Documents describe the current state. Future plans belong in `openspec/` or
   `architecture/roadmap.md`; decisions belong in `adr/`.
 - English is the canonical language for all documentation.
 - When a doc contradicts the code, the code wins — and fixing the doc is part
