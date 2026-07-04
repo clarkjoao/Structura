@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The contract for third-party plugins (TODO.md F-02, draw.io-inspired): loading, validating, activating, and cleanly removing local-file plugins, and the registration guarantees of each versioned `StructuraPlugin.*` API method. The full RFC (manifest schema, lifecycle, API argument shapes, trust model, distribution, folder layout, DefectDojo/Mermaid validation walkthroughs) lives in `openspec/changes/archive/2026-07-03-add-plugin-system-foundation/design.md`. Requirements here bind the future Canvas Plugin MVP implementation change (Phase 2).
+The contract for third-party plugins (backlog item F-02 — originally in `TODO.md`, now in git history; draw.io-inspired): loading, validating, activating, and cleanly removing local-file plugins, and the registration guarantees of each versioned `StructuraPlugin.*` API method. The full RFC (manifest schema, lifecycle, API argument shapes, trust model, distribution, folder layout, DefectDojo/Mermaid validation walkthroughs) lives in `openspec/changes/archive/2026-07-03-add-plugin-system-foundation/design.md`. Requirements here bind the future Canvas Plugin MVP implementation change (Phase 2).
 
 ## Requirements
 
