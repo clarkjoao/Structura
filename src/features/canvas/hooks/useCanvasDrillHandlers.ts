@@ -17,7 +17,7 @@ import {
   PANEL_COLLAPSED_H,
   DB_TABLE_COLLAPSED_W,
   DB_TABLE_COLLAPSED_H,
-} from "../constants";
+} from "../canvas.constants";
 
 const DB_TABLE_EXPAND_FIXED_H = 32 + 22 + 20 + 2;
 const DB_TABLE_EXPAND_ROW_H = 24;

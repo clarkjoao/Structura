@@ -17,4 +17,4 @@ export type {
   CoverageInfo,
 } from "./types";
 export type { NodeBadgeProps } from "./compare-node-badges";
-export { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../../constants";
+export { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../../canvas.constants";

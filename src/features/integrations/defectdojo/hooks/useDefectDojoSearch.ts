@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useDiagramStore, ServiceSource } from "@/features/diagram";
 import { DefectDojoImportStatus } from "../enums";
-import { normalizeSources } from "@/integrations/merge-utils";
+import { normalizeSources } from "@/features/integrations/merge-utils";
 import { DefectDojoClient } from "../defectdojo.client";
 import { searchProducts, getProductTypes, type DDProductSearchField } from "../defectdojo.service";
 import { i18n } from "@/infrastructure/i18n";

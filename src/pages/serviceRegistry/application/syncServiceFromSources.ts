@@ -1,6 +1,6 @@
 import { i18n } from "@/infrastructure/i18n";
-import { createGithubClient } from "@/integrations/github/githubClient";
-import type { GithubConfig, GithubRepo } from "@/integrations/github/github.types";
+import { createGithubClient } from "@/features/integrations/github/githubClient";
+import type { GithubConfig, GithubRepo } from "@/features/integrations/github/github.types";
 import type { ServiceDefinition } from "@/features/diagram";
 import { ServiceSource } from "@/features/diagram";
 import {
@@ -8,7 +8,7 @@ import {
   mergeSources,
   normalizeSources,
   pickMoreCompleteString,
-} from "@/integrations/merge-utils";
+} from "@/features/integrations/merge-utils";
 
 export interface SyncServiceFromSourcesParams {
   service: ServiceDefinition;
@@ -62,8 +62,9 @@ async function fetchDefectDojoService(service: ServiceDefinition): Promise<{
     normalizedSources.some((s) => s.type === ServiceSource.Defectdojo);
   if (!hasDefectDojoData) return { mapped: null };
 
-  const { DefectDojoClient } = await import("@/integrations/defectdojo/defectdojo.client");
-  const { mapToServiceDefinition } = await import("@/integrations/defectdojo/defectdojo.service");
+  const { DefectDojoClient } = await import("@/features/integrations/defectdojo/defectdojo.client");
+  const { mapToServiceDefinition } =
+    await import("@/features/integrations/defectdojo/defectdojo.service");
 
   const ddMeta = service.metadata?.defectdojo as
     { productId?: string | number; productLink?: string } | undefined;

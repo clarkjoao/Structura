@@ -13,7 +13,7 @@ import {
   type Diagram,
   type NodeLayout,
 } from "@/features/diagram";
-import { DB_TABLE_COLLAPSED_H } from "@/features/canvas/constants";
+import { DB_TABLE_COLLAPSED_H } from "@/features/canvas/canvas.constants";
 
 function resolveNodeType(component: Component): string {
   if (isPanelComponent(component)) {

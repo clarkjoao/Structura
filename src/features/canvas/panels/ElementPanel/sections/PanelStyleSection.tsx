@@ -5,7 +5,7 @@ import { PanelKind } from "@/features/diagram";
 import { SwimlaneOrientation } from "@/features/canvas/enums";
 import { PANEL_KINDS, getPanelKindDef } from "@/lib/catalogs/panels";
 import type { NodeLayout } from "@/features/diagram";
-import { SWIMLANE_DEFAULT_H, SWIMLANE_DEFAULT_W } from "@/features/canvas/constants";
+import { SWIMLANE_DEFAULT_H, SWIMLANE_DEFAULT_W } from "@/features/canvas/canvas.constants";
 import Field from "../components/Field";
 import PanelColorPicker from "../components/PanelColorPicker";
 import { LANE_COLORS } from "../swimlaneLaneColors";

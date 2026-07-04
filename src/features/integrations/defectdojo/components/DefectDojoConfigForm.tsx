@@ -4,7 +4,7 @@ import { DefectDojoClient } from "../defectdojo.client";
 import { getCurrentUser } from "../defectdojo.service";
 import type { DefectDojoConfig } from "../types";
 import { useDiagramStore, ServiceSource } from "@/features/diagram";
-import { normalizeSources } from "@/integrations/merge-utils";
+import { normalizeSources } from "@/features/integrations/merge-utils";
 import { useTranslation } from "react-i18next";
 
 interface Props {

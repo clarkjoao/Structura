@@ -46,8 +46,10 @@ src/
 │   ├── collaboration/      # WebSocket/Yjs collab, presence, patches
 │   ├── custom-components/  # user-defined reusable node templates
 │   ├── icons/              # custom icon store
+│   ├── integrations/       # external tool integrations (GitHub, DefectDojo)
 │   ├── journeys/           # cross-diagram step sequences + player
-│   ├── llm/                # diagram assistant (chat, patch parser, suggestions)
+│   ├── llm/                # diagram assistant (chat UI, patch parser, suggestions)
+│   ├── plugins/            # plugin system (manifest, loader, registries, StructuraPlugin API)
 │   └── viewer/             # read-only shared-diagram viewer
 ├── infrastructure/
 │   ├── persistence/        # IStoragePort, LocalStorage/FileSystem/InMemory adapters, sync

@@ -12,8 +12,8 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { i18n } from "@/infrastructure/i18n";
-import { useGithubConfig } from "@/integrations/github/hooks/useGithubConfig";
-import { normalizeSources } from "@/integrations/merge-utils";
+import { useGithubConfig } from "@/features/integrations/github/hooks/useGithubConfig";
+import { normalizeSources } from "@/features/integrations/merge-utils";
 import type { ExternalLink as DiagramExternalLink } from "@/features/diagram";
 import { ServiceSource } from "@/features/diagram";
 import { ExternalLinksSection } from "@/features/canvas/panels/ElementPanel/sections";

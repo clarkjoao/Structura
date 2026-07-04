@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import { useModifierKey } from "@/hooks/useModifierKey";
 import { useMultiSelect } from "@/hooks/useMultiSelect";
-import { GithubImportPanel } from "@/integrations/github/components/GithubImportPanel";
-import { normalizeSources } from "@/integrations/merge-utils";
+import { GithubImportPanel } from "@/features/integrations/github/components/GithubImportPanel";
+import { normalizeSources } from "@/features/integrations/merge-utils";
 import {
   useAllServices,
   useDiagrams,
@@ -26,7 +26,7 @@ import { getServiceUsage } from "./serviceUsage";
 import type { SourceFilter } from "./types";
 
 const DefectDojoPanel = lazy(() =>
-  import("@/integrations/defectdojo").then((m) => ({
+  import("@/features/integrations/defectdojo").then((m) => ({
     default: m.DefectDojoPanel,
   })),
 );

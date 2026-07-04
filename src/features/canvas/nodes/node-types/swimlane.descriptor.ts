@@ -3,7 +3,7 @@ import type { NodeTypeDescriptor } from "./types";
 import { sceneBadgePropsForNode } from "./compare-node-badges";
 import type { ComponentType } from "@/features/diagram";
 import { isPanelComponent } from "@/features/diagram";
-import { SWIMLANE_DEFAULT_H, SWIMLANE_DEFAULT_W } from "../../constants";
+import { SWIMLANE_DEFAULT_H, SWIMLANE_DEFAULT_W } from "../../canvas.constants";
 
 export const swimlaneDescriptor: NodeTypeDescriptor = {
   rfType: "swimlane",

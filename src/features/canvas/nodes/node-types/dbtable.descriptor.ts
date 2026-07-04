@@ -3,7 +3,7 @@ import type { DbColumn } from "@/features/diagram";
 import { isDbTableComponent, isDbTableType } from "@/features/diagram";
 import type { NodeTypeDescriptor } from "./types";
 import { sceneBadgePropsForNode } from "./compare-node-badges";
-import { DB_TABLE_COLLAPSED_H, DB_TABLE_COLLAPSED_W } from "../../constants";
+import { DB_TABLE_COLLAPSED_H, DB_TABLE_COLLAPSED_W } from "../../canvas.constants";
 
 const DB_TABLE_MAX_W = 32 + 120 + 90 + 36 + 36 + 36 + 36 + 20;
 

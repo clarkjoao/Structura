@@ -1,6 +1,6 @@
 import { Layers, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { normalizeSources } from "@/integrations/merge-utils";
+import { normalizeSources } from "@/features/integrations/merge-utils";
 import { cn } from "@/lib/utils";
 import { SOURCE_BADGE, SOURCE_DOT } from "./registry.constants";
 import { sourceTypeLabel } from "./registryLabels";

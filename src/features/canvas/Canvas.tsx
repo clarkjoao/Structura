@@ -29,7 +29,7 @@ import { useServiceFocusFromUrl } from "./hooks/useServiceFocusFromUrl";
 import { useElementFocusFromUrl } from "./hooks/useElementFocusFromUrl";
 import { getCachedCanvasSnapshot, useDiagramStore } from "@/features/diagram";
 import { useJourneysByDiagramId } from "@/features/journeys";
-import { CANVAS_STYLES } from "./constants";
+import { CANVAS_STYLES } from "./canvas.constants";
 import { getPlatform } from "./hooks/keyboard/helpers";
 import CustomEdge from "./edges/CustomEdge";
 import type { CanvasProps } from "./canvas.types";
@@ -40,7 +40,7 @@ import {
   CUSTOM_COMPONENT_DRAG_MIME,
   useCustomComponentLibrary,
 } from "@/features/custom-components";
-import { ChatPanel, FloatingChatButton, PendingNodeToolbar } from "@/components/chat";
+import { ChatPanel, FloatingChatButton, PendingNodeToolbar } from "@/features/llm/components";
 import { useLLMChat } from "./chat";
 import { getPendingNodeIds, getSuggestionIdForNode, useLLMStore } from "@/features/llm";
 

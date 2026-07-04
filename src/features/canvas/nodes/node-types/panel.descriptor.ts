@@ -3,7 +3,7 @@ import type { NodeTypeDescriptor } from "./types";
 import { sceneBadgePropsForNode } from "./compare-node-badges";
 import { isPanelComponent, isPanelType } from "@/features/diagram";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
-import { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../../constants";
+import { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../../canvas.constants";
 
 export const panelDescriptor: NodeTypeDescriptor = {
   rfType: "panel",
