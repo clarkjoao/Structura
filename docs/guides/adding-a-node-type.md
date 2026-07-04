@@ -3,7 +3,7 @@
 The honest, complete checklist for adding a component/node type today.
 (Yes, it touches core files — reducing this list to "one descriptor pair" is
 the goal of the component-type-extensibility work; see
-[extension-points](../extension-points/README.md).)
+[extension-points](../architecture/extension-points.md).)
 
 ## 1. Domain half (`src/features/diagram/`)
 

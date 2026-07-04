@@ -49,7 +49,7 @@ into the domain (`ComponentType = … | AwsCategoryId | GcpCategoryId |
 AzureCategoryId`), and `ComponentPatch` grows with every variant.
 
 The planned remedy (see
-[extension-points/README.md](../extension-points/README.md) and the future
+[extension-points.md](../architecture/extension-points.md) and the future
 component-type-extensibility spec): a **domain component descriptor** —
 type id, schema/validator for its data payload, semantic-vs-annotation
 classification, default fields, migration hooks — registered alongside the

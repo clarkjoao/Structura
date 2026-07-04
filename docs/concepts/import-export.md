@@ -60,4 +60,4 @@ The target shape is an **importer/exporter registry**: each format registers
 importFn?, exportFn? }`. Cell builders similarly want to become per-node-type
 contributions so a plugin adding a node type can also teach draw.io export
 about it — that pairing is a requirement for the plugin contribution-points
-spec. See [extension-points/README.md](../extension-points/README.md).
+spec. See [extension-points.md](../architecture/extension-points.md).

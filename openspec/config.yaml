@@ -13,7 +13,7 @@ context: |
   i18n (en + pt-BR). Long-term decisions are recorded in docs/adr/;
   extension-point inventory in docs/architecture/extension-points.md. The
   pre-OpenSpec spec process (old root specs/ directory) is retired; reserved
-  spec numbers live in docs/architecture/roadmap.md.
+  spec numbers live in docs/architecture/roadmap-analysis.md.
 
 # Per-artifact rules.
 rules:

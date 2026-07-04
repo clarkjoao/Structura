@@ -213,7 +213,7 @@ The recommended path:
 
 This is recorded as [ADR-0004](../adr/0004-diagram-model.md), and step 2–3 is
 the subject of the first major spec
-([spec 0001, architecture-model](roadmap.md#reserved-spec-numbers)).
+([spec 0001, architecture-model](roadmap-analysis.md#reserved-spec-numbers)).
 
 ---
 
@@ -221,7 +221,7 @@ the subject of the first major spec
 
 Where the platform is open, where it is closed, and where it is currently
 closed but must open (the full inventory lives in
-[extension-points/README.md](../extension-points/README.md)):
+[extension-points.md](extension-points.md)):
 
 **Open today (registry exists):**
 - Canvas node rendering — `NodeTypeDescriptor` registry with

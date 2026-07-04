@@ -74,5 +74,5 @@ Three reasons, in priority order:
 The engine's closed `ComponentType` union is the platform's main
 extensibility bottleneck. The planned remedy is a **domain component
 descriptor registry** mirroring the canvas descriptor system — see
-[extension-points/README.md](../extension-points/README.md) and
+[extension-points.md](../architecture/extension-points.md) and
 [vision §7](../architecture/vision.md).

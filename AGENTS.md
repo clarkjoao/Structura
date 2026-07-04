@@ -86,7 +86,7 @@ src/
 The rationale behind these rules lives in `docs/` — start with
 `docs/architecture/vision.md` (platform direction) and
 `docs/architecture/overview.md` (current structure). Subsystem docs are in
-`docs/concepts/`, extension-point inventory in `docs/extension-points/`.
+`docs/concepts/`, extension-point inventory in `docs/architecture/extension-points.md`.
 When code and docs disagree, the code wins — fix the doc in the same PR.
 
 ## Known sharp edges
