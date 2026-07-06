@@ -42,7 +42,7 @@
 ## 7. Overlays re-attachment
 
 - [x] 7.1 Move `EdgeParticle`, `EdgePayloadOverlay`, and collab highlight into `edges/overlays/`, rendered independently from `EdgeOverlayData` so overlay changes don't recompute editing geometry
-- [ ] 7.2 Confirm flow-mode playback/recording/coverage overlays render correctly; keep flow-mode stress/e2e tests green
+- [x] 7.2 Confirm flow-mode playback/recording/coverage overlays render correctly; keep flow-mode stress/e2e tests green
 
 ## 8. Remove old implementation
 
@@ -59,5 +59,5 @@
 ## 10. Verification
 
 - [x] 10.1 Run `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run format:check` — all green
-- [ ] 10.2 Manually verify against the reference UX: select/hover/hitbox, add/drag/remove points, reconnect both endpoints, toolbar reset/delete, label drag, behavior under zoom/pan, and undo/redo of each edit
-- [ ] 10.3 Load a pre-migration workspace and confirm existing edges migrate and render with equivalent geometry
+- [x] 10.2 Manually verify against the reference UX: select/hover/hitbox, add/drag/remove points, reconnect both endpoints, toolbar reset/delete, label drag, behavior under zoom/pan, and undo/redo of each edit
+- [x] 10.3 Load a pre-migration workspace and confirm existing edges migrate and render with equivalent geometry
