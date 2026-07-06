@@ -72,12 +72,12 @@ If you are documenting or using selector hooks, this distinction matters:
 
 ### Layout selectors
 
-| Hook                 | Goal                                                                  |
-| -------------------- | --------------------------------------------------------------------- |
-| `useNodeLayouts`     | Returns persisted node layouts for the active diagram.                |
-| `useNodeLayout`      | Returns one persisted node layout by component ID.                    |
-| `useEdgeControlPoints` | Returns the stored control points for an editable edge's path.      |
-| `useEdgeLabelOffset`   | Returns the stored label offset for an edge label along its path.    |
+| Hook                   | Goal                                                              |
+| ---------------------- | ----------------------------------------------------------------- |
+| `useNodeLayouts`       | Returns persisted node layouts for the active diagram.            |
+| `useNodeLayout`        | Returns one persisted node layout by component ID.                |
+| `useEdgeControlPoints` | Returns the stored control points for an editable edge's path.    |
+| `useEdgeLabelOffset`   | Returns the stored label offset for an edge label along its path. |
 
 ### Flows, folders, icons, registry, and templates
 

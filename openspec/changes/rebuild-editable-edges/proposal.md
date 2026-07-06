@@ -17,9 +17,11 @@ Structura's edge system was grown incrementally and is now a liability: editing 
 ## Capabilities
 
 ### New Capabilities
+
 - `editable-edges`: Interactive editing of diagram connections on the canvas — control-point add/drag/remove, path shaping, endpoint reconnection, label positioning, edge toolbar, selection/hover/hitbox behavior, and the persisted per-edge layout (control points + path type + label offset) with undo/redo.
 
 ### Modified Capabilities
+
 <!-- None. Edge behavior is not yet covered by an existing spec; the plugin-system spec is unaffected. -->
 
 ## Impact

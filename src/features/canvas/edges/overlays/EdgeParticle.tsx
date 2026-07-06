@@ -1,4 +1,4 @@
-import { FLOW_PARTICLE_DURATION_MS } from "../canvas.constants";
+import { FLOW_PARTICLE_DURATION_MS } from "../../canvas.constants";
 
 export const PARTICLE_DURATION_MS = FLOW_PARTICLE_DURATION_MS;
 

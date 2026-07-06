@@ -114,6 +114,11 @@ const ConnectionPanel = ({
         label: t("common.edgeSmoothstep"),
         icon: "M 4 20 C 12 20 12 4 20 4",
       },
+      {
+        value: EdgeStyle.Editable,
+        label: t("common.edgeEditable"),
+        icon: "M 4 20 Q 8 4 12 12 T 20 4",
+      },
     ],
     [t],
   );

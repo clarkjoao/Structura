@@ -79,6 +79,7 @@
     "edgeBezier": "Curved",
     "edgeStep": "Sharp",
     "edgeSmoothstep": "Rounded",
+    "edgeEditable": "Editable",
     "strokeSolid": "Solid",
     "strokeDashed": "Dashed",
     "strokeDotted": "Dotted",
@@ -1215,9 +1216,10 @@
     "coveredBy": "Covered by: {{names}}",
     "request": "→ Request",
     "response": "← Response",
-    "waypointHandleAria": "Connection waypoint {{index}}, drag to move, double-click to remove",
-    "midpointHandleAria": "Add waypoint along segment {{segment}}, drag to position",
-    "segmentHitAria": "Edge segment {{index}}, drag to move orthogonally"
+    "controlPointAria": "Control point {{index}}, drag to move, double-click to remove",
+    "addPointAria": "Add a control point here",
+    "resetPoints": "Reset edge shape",
+    "deleteEdge": "Delete connection"
   },
   "flows": {
     "panelTitle": "Flows",

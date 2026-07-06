@@ -32,7 +32,7 @@ import {
 } from "@/features/diagram";
 import type { Flow } from "@/features/diagram";
 import {
-  CustomEdge,
+  EditableEdge,
   FlowStepNavigator,
   FIT_VIEW_DURATION_MS,
   FIT_VIEW_MAX_ZOOM,
@@ -51,7 +51,7 @@ import {
 import { StepDescriptionBadge } from "./StepDescriptionBadge";
 import { VisualStateOverlay } from "./VisualStateOverlay";
 
-const journeyEdgeTypes = { c4: CustomEdge, smoothstep: SmoothStepEdge };
+const journeyEdgeTypes = { editable: EditableEdge, smoothstep: SmoothStepEdge };
 
 const emptyStateDotBackground: CSSProperties = {
   backgroundImage: "radial-gradient(hsl(var(--border)) 1px, transparent 1px)",

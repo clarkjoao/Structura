@@ -22,42 +22,42 @@
 
 ## 4. Editable edge core (control points)
 
-- [ ] 4.1 Create `edges/components/EdgeHitArea.tsx`: wide invisible hit path (pointer-events on stroke) with hover state and cursor feedback
-- [ ] 4.2 Create `edges/components/ControlPoint.tsx`: draggable point + ghost midpoints; add-on-click, drag (free, flow coords via `screenToFlowPosition`), remove-on-double-click; a11y (role/aria/tabIndex)
-- [ ] 4.3 Create `edges/interaction/useControlPoints.ts`: bridges pointer gestures to the store actions with per-gesture history coalescing (history at drag start / discrete add/remove/reset)
-- [ ] 4.4 Create `edges/EditableEdge.tsx` (thin): compose `EdgeHitArea` + rendered path (from `geometry/paths.ts`) + control points (only when selected/hovered) + label; replace the `c4 → CustomEdge` registration in `Canvas.tsx` with the new component
+- [x] 4.1 Create `edges/components/EdgeHitArea.tsx`: wide invisible hit path (pointer-events on stroke) with hover state and cursor feedback
+- [x] 4.2 Create `edges/components/ControlPoint.tsx`: draggable point + ghost midpoints; add-on-click, drag (free, flow coords via `screenToFlowPosition`), remove-on-double-click; a11y (role/aria/tabIndex)
+- [x] 4.3 Create `edges/interaction/useControlPoints.ts`: bridges pointer gestures to the store actions with per-gesture history coalescing (history at drag start / discrete add/remove/reset)
+- [x] 4.4 Create `edges/EditableEdge.tsx` (thin): compose `EdgeHitArea` + rendered path (from `geometry/paths.ts`) + control points (only when selected/hovered) + label; replace the `c4 → CustomEdge` registration in `Canvas.tsx` with the new component
 
 ## 5. Reconnect and Canvas wiring
 
-- [ ] 5.1 Create `edges/interaction/useEdgeReconnect.ts` mapping RF reconnect callbacks to `updateConnection` (source/target/handles) with `pushHistory`; discard invalid drops
-- [ ] 5.2 Mark editable edges `reconnectable` and wire `onReconnect`/`onReconnectStart`/`onReconnectEnd` in `Canvas.tsx`
-- [ ] 5.3 Verify handle re-derivation (`connectionDerivations`) after reconnect onto multi-handle nodes; add a smoke test
+- [x] 5.1 Create `edges/interaction/useEdgeReconnect.ts` mapping RF reconnect callbacks to `updateConnection` (source/target/handles) with `pushHistory`; discard invalid drops
+- [x] 5.2 Mark editable edges `reconnectable` and wire `onReconnect`/`onReconnectStart`/`onReconnectEnd` in `Canvas.tsx`
+- [x] 5.3 Verify handle re-derivation (`connectionDerivations`) after reconnect onto multi-handle nodes; add a smoke test
 
 ## 6. Edge toolbar and label drag
 
-- [ ] 6.1 Create `edges/components/EdgeToolbar.tsx` anchored via `EdgeLabelRenderer`, shown on selection, with reset-points and delete actions; add `en` + `pt-BR` i18n keys
-- [ ] 6.2 Rewrite label drag as `edges/interaction/useEdgeLabelDrag.ts` (drop dead `updateConnection`/`connectionStyle`/`edgePath` params); persist `labelOffset` via `setEdgeLabelOffset` with history; reposition label on path changes
-- [ ] 6.3 Update `ConnectionPanel.tsx` reset action to use the new reset/label actions
+- [x] 6.1 Create `edges/components/EdgeToolbar.tsx` anchored via `EdgeLabelRenderer`, shown on selection, with reset-points and delete actions; add `en` + `pt-BR` i18n keys
+- [x] 6.2 Rewrite label drag as `edges/interaction/useEdgeLabelDrag.ts` (drop dead `updateConnection`/`connectionStyle`/`edgePath` params); persist `labelOffset` via `setEdgeLabelOffset` with history; reposition label on path changes
+- [x] 6.3 Update `ConnectionPanel.tsx` reset action to use the new reset/label actions
 
 ## 7. Overlays re-attachment
 
-- [ ] 7.1 Move `EdgeParticle`, `EdgePayloadOverlay`, and collab highlight into `edges/overlays/`, rendered independently from `EdgeOverlayData` so overlay changes don't recompute editing geometry
+- [x] 7.1 Move `EdgeParticle`, `EdgePayloadOverlay`, and collab highlight into `edges/overlays/`, rendered independently from `EdgeOverlayData` so overlay changes don't recompute editing geometry
 - [ ] 7.2 Confirm flow-mode playback/recording/coverage overlays render correctly; keep flow-mode stress/e2e tests green
 
 ## 8. Remove old implementation
 
-- [ ] 8.1 Delete `CustomEdge.tsx`, `useCustomEdge.ts`, `edgeGeometry.ts`, and the orthogonal segment-drag machinery (`buildSegments`/`computeSegmentDrag`/`buildOrthogonalPath`) and their tests (`edgeBuilding.segment-drag.test.ts`)
-- [ ] 8.2 Delete the old `useLabelDrag.ts` and `EdgeSvgLayer.tsx` once replaced; remove now-unused exports from the edges barrel/`index.ts`
-- [ ] 8.3 Grep for dangling references (`waypoints`, `useEdgeWaypoints`, `EdgeStyle.Step` segment gating) and clean them up
+- [x] 8.1 Delete `CustomEdge.tsx`, `useCustomEdge.ts`, `edgeGeometry.ts`, and the orthogonal segment-drag machinery (`buildSegments`/`computeSegmentDrag`/`buildOrthogonalPath`) and their tests (`edgeBuilding.segment-drag.test.ts`)
+- [x] 8.2 Delete the old `useLabelDrag.ts` and `EdgeSvgLayer.tsx` once replaced; remove now-unused exports from the edges barrel/`index.ts`
+- [x] 8.3 Grep for dangling references (`waypoints`, `useEdgeWaypoints`, `EdgeStyle.Step` segment gating) and clean them up
 
 ## 9. Export and shortcuts adaptation
 
-- [ ] 9.1 Update `lib/export-service/export-drawio.ts` and `edge-builder.ts` to read `points` instead of `waypoints`; adjust their tests
-- [ ] 9.2 Adapt `reset-edge-waypoints.ts` and `useEdgeWaypointShortcuts.ts` (and `useAutoLayout.ts` waypoint writes) to the control-point model
-- [ ] 9.3 Update `edges/README.md` / diagram `store/README.md` to describe the new edge architecture and control-point model
+- [x] 9.1 Update `lib/export-service/export-drawio.ts` and `edge-builder.ts` to read `points` instead of `waypoints`; adjust their tests
+- [x] 9.2 Adapt `reset-edge-waypoints.ts` and `useEdgeWaypointShortcuts.ts` (and `useAutoLayout.ts` waypoint writes) to the control-point model
+- [x] 9.3 Update `edges/README.md` / diagram `store/README.md` to describe the new edge architecture and control-point model
 
 ## 10. Verification
 
-- [ ] 10.1 Run `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run format:check` — all green
+- [x] 10.1 Run `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run format:check` — all green
 - [ ] 10.2 Manually verify against the reference UX: select/hover/hitbox, add/drag/remove points, reconnect both endpoints, toolbar reset/delete, label drag, behavior under zoom/pan, and undo/redo of each edit
 - [ ] 10.3 Load a pre-migration workspace and confirm existing edges migrate and render with equivalent geometry

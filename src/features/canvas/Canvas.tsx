@@ -31,7 +31,8 @@ import { getCachedCanvasSnapshot, useDiagramStore } from "@/features/diagram";
 import { useJourneysByDiagramId } from "@/features/journeys";
 import { CANVAS_STYLES } from "./canvas.constants";
 import { getPlatform } from "./hooks/keyboard/helpers";
-import CustomEdge from "./edges/CustomEdge";
+import EditableEdge from "./edges/EditableEdge";
+import { useEdgeReconnect } from "./edges/interaction/useEdgeReconnect";
 import type { CanvasProps } from "./canvas.types";
 import {
   SaveCustomComponentModal,
@@ -46,7 +47,7 @@ import { getPendingNodeIds, getSuggestionIdForNode, useLLMStore } from "@/featur
 
 const MULTI_SELECTION_KEY_CODES = ["Meta", "Control"];
 const PAN_ACTIVATION_KEY = getPlatform() === "mac" ? "Meta" : "Control";
-const canvasEdgeTypes = { c4: CustomEdge };
+const canvasEdgeTypes = { editable: EditableEdge };
 
 const Canvas = (props: CanvasProps = {}) => {
   const nodeTypes = useNodeTypes();
@@ -59,6 +60,7 @@ const Canvas = (props: CanvasProps = {}) => {
   const assistantMessageCount = messages.filter((message) => message.role === "assistant").length;
   const inputProfile = useCanvasInputProfile();
   const reactFlowInstance = useReactFlow();
+  const edgeReconnect = useEdgeReconnect();
   const addTemplate = useCustomComponentStore((state) => state.addTemplate);
   const { instantiateTemplate } = useCustomComponentLibrary();
   const {
@@ -289,6 +291,9 @@ const Canvas = (props: CanvasProps = {}) => {
               onEdgesChange={eventHandlers.onEdgesChange}
               onConnect={eventHandlers.onConnect}
               onConnectEnd={eventHandlers.onConnectEnd}
+              onReconnect={edgeReconnect.onReconnect}
+              onReconnectStart={edgeReconnect.onReconnectStart}
+              onReconnectEnd={edgeReconnect.onReconnectEnd}
               onNodeClick={eventHandlers.onNodeClick}
               onEdgeClick={eventHandlers.onEdgeClick}
               onNodeDoubleClick={eventHandlers.onNodeDoubleClick}

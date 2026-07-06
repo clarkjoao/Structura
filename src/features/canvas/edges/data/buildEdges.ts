@@ -117,7 +117,7 @@ export function buildEdge(
     target: conn.targetId,
     sourceHandle: assignment?.sourceHandle,
     targetHandle: assignment?.targetHandle,
-    type: "c4",
+    type: "editable",
     data: {
       label: conn.label,
       technology: conn.technology,
