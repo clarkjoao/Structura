@@ -1,4 +1,4 @@
-import type { Point } from "../../model/diagram.types";
+import type { EdgeControlPoint } from "../../model/diagram.types";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
 import { getActiveDiagram, touchDiagram } from "./get-active-diagram";
@@ -55,37 +55,91 @@ export const layoutSlice = (
     });
   },
 
-  updateEdgeWaypoints: (diagramId: string, connectionId: string, waypoints: Point[]) => {
+  /**
+   * Replace the full control-point list of an editable edge. Pass
+   * `{ history: false }` while streaming a drag; the caller pushes a single
+   * history checkpoint at gesture start so one drag collapses to one undo step.
+   */
+  setEdgeControlPoints: (
+    diagramId: string,
+    connectionId: string,
+    points: EdgeControlPoint[],
+    options?: { history?: boolean },
+  ) => {
     set((state) => {
       const diagram = state.diagrams[diagramId];
       if (!diagram) return;
+      if (options?.history !== false) pushHistory(state);
       const existing = diagram.edgeLayouts[connectionId];
       if (existing) {
-        existing.waypoints = waypoints;
+        existing.points = points;
       } else {
-        diagram.edgeLayouts[connectionId] = { waypoints };
+        diagram.edgeLayouts[connectionId] = { points };
       }
     });
   },
 
-  clearEdgeWaypoints: (diagramId: string, connectionId: string) => {
-    set((state) => {
-      const diagram = state.diagrams[diagramId];
-      if (!diagram?.edgeLayouts) return;
-      delete diagram.edgeLayouts[connectionId];
-    });
-  },
-
-  updateEdgeLabelOffset: (diagramId: string, connectionId: string, offset: number) => {
+  addEdgeControlPoint: (
+    diagramId: string,
+    connectionId: string,
+    point: EdgeControlPoint,
+    index: number,
+  ) => {
     set((state) => {
       const diagram = state.diagrams[diagramId];
       if (!diagram) return;
+      pushHistory(state);
+      const existing = diagram.edgeLayouts[connectionId];
+      const points = existing?.points ? [...existing.points] : [];
+      const safeIndex = Math.max(0, Math.min(points.length, index));
+      points.splice(safeIndex, 0, point);
+      if (existing) {
+        existing.points = points;
+      } else {
+        diagram.edgeLayouts[connectionId] = { points };
+      }
+    });
+  },
+
+  removeEdgeControlPoint: (diagramId: string, connectionId: string, pointId: string) => {
+    set((state) => {
+      const diagram = state.diagrams[diagramId];
+      const existing = diagram?.edgeLayouts[connectionId];
+      if (!diagram || !existing?.points) return;
+      pushHistory(state);
+      existing.points = existing.points.filter((p) => p.id !== pointId);
+    });
+  },
+
+  resetEdgeControlPoints: (diagramId: string, connectionId: string) => {
+    set((state) => {
+      const diagram = state.diagrams[diagramId];
+      const existing = diagram?.edgeLayouts[connectionId];
+      if (!diagram || !existing?.points?.length) return;
+      pushHistory(state);
+      delete existing.points;
+      if (existing.labelOffset === undefined && existing.pathType === undefined) {
+        delete diagram.edgeLayouts[connectionId];
+      }
+    });
+  },
+
+  setEdgeLabelOffset: (
+    diagramId: string,
+    connectionId: string,
+    offset: number,
+    options?: { history?: boolean },
+  ) => {
+    set((state) => {
+      const diagram = state.diagrams[diagramId];
+      if (!diagram) return;
+      if (options?.history !== false) pushHistory(state);
       const safe = Math.max(0, Math.min(1, offset));
       const existing = diagram.edgeLayouts[connectionId];
       if (existing) {
         existing.labelOffset = safe;
       } else {
-        diagram.edgeLayouts[connectionId] = { waypoints: [], labelOffset: safe };
+        diagram.edgeLayouts[connectionId] = { labelOffset: safe };
       }
     });
   },

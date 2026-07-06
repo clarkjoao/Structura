@@ -15,6 +15,8 @@ export enum EdgeStyle {
   Smoothstep = "smoothstep",
   Step = "step",
   Straight = "straight",
+  /** Freely editable path drawn through user-positioned control points. */
+  Editable = "editable",
 }
 
 export enum StrokeStyle {

@@ -18,7 +18,8 @@ import {
   useActiveDiagramId,
   useDiagramActions,
   useEdgeLabelOffset,
-  useEdgeWaypoints,
+  useEdgeControlPoints,
+  generateId,
   EdgeStyle,
   StrokeStyle,
   type Connection,
@@ -56,18 +57,24 @@ export function useCustomEdge(props: EdgeProps) {
   const { t } = useTranslation();
   const { screenToFlowPosition } = useReactFlow();
   const activeDiagramId = useActiveDiagramId();
-  const { updateEdgeWaypoints, clearEdgeWaypoints, updateEdgeLabelOffset } = useDiagramActions();
+  const { setEdgeControlPoints, resetEdgeControlPoints, setEdgeLabelOffset } = useDiagramActions();
   const edgeData = data as unknown as EdgeData;
   const { highlightedConnectionId } = useHandleHighlight();
-  const waypoints = useEdgeWaypoints(edgeData?.connectionId ?? "");
+  const controlPoints = useEdgeControlPoints(edgeData?.connectionId ?? "");
+  const waypoints = useMemo<Point[]>(
+    () => controlPoints.map((point) => ({ x: point.x, y: point.y })),
+    [controlPoints],
+  );
   const layoutLabelOffset = useEdgeLabelOffset(edgeData?.connectionId ?? "");
   const [hoveredSegmentIndex, setHoveredSegmentIndex] = useState<number | null>(null);
   const waypointsRef = useRef(waypoints);
+  const controlPointsRef = useRef(controlPoints);
   const windowPointerCleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     waypointsRef.current = waypoints;
-  }, [waypoints]);
+    controlPointsRef.current = controlPoints;
+  }, [waypoints, controlPoints]);
   useEffect(
     () => () => {
       windowPointerCleanupRef.current?.();
@@ -106,9 +113,15 @@ export function useCustomEdge(props: EdgeProps) {
     (next: Point[]) => {
       if (!activeDiagramId || !edgeData?.connectionId) return;
       waypointsRef.current = next;
-      updateEdgeWaypoints(activeDiagramId, edgeData.connectionId, next);
+      const previous = controlPointsRef.current;
+      const points = next.map((point, index) => ({
+        id: previous[index]?.id ?? generateId("cp"),
+        x: point.x,
+        y: point.y,
+      }));
+      setEdgeControlPoints(activeDiagramId, edgeData.connectionId, points, { history: false });
     },
-    [activeDiagramId, edgeData?.connectionId, updateEdgeWaypoints],
+    [activeDiagramId, edgeData?.connectionId, setEdgeControlPoints],
   );
 
   const endWindowPointerDrag = useCallback(() => {
@@ -207,7 +220,7 @@ export function useCustomEdge(props: EdgeProps) {
     targetX,
     targetY,
     waypointsRef,
-    updateEdgeLabelOffset,
+    updateEdgeLabelOffset: setEdgeLabelOffset,
     enabled: canDragLabelAlongPath,
   });
 
@@ -217,9 +230,9 @@ export function useCustomEdge(props: EdgeProps) {
       if (!activeDiagramId || !edgeData?.connectionId) return;
       event.preventDefault();
       event.stopPropagation();
-      clearEdgeWaypoints(activeDiagramId, edgeData.connectionId);
+      resetEdgeControlPoints(activeDiagramId, edgeData.connectionId);
     },
-    [activeDiagramId, clearEdgeWaypoints, edgeData?.connectionId, waypoints.length],
+    [activeDiagramId, resetEdgeControlPoints, edgeData?.connectionId, waypoints.length],
   );
 
   const handleWaypointDoubleClick = useCallback(
@@ -227,12 +240,12 @@ export function useCustomEdge(props: EdgeProps) {
       if (!activeDiagramId || !edgeData?.connectionId) return;
       const next = waypointsRef.current.filter((_, i) => i !== index);
       if (next.length === 0) {
-        clearEdgeWaypoints(activeDiagramId, edgeData.connectionId);
+        resetEdgeControlPoints(activeDiagramId, edgeData.connectionId);
       } else {
-        updateEdgeWaypoints(activeDiagramId, edgeData.connectionId, next);
+        commitWaypoints(next);
       }
     },
-    [activeDiagramId, clearEdgeWaypoints, edgeData?.connectionId, updateEdgeWaypoints],
+    [activeDiagramId, resetEdgeControlPoints, edgeData?.connectionId, commitWaypoints],
   );
 
   const showSegmentHitTargets = Boolean(

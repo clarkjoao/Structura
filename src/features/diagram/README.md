@@ -19,8 +19,8 @@ If you are documenting or using selector hooks, this distinction matters:
 - `useComponent*`, `useConnection*`, `useVisible*`, and resolved-layout selectors
   generally read from the cached resolved canvas snapshot.
 - Layout selectors such as `useNodeLayout`, `useNodeLayouts`,
-  `useEdgeWaypoints`, and `useEdgeLabelOffset` read persisted layout data from
-  the active diagram.
+  `useEdgeControlPoints`, and `useEdgeLabelOffset` read persisted layout data
+  from the active diagram.
 
 ## Main entry points
 
@@ -76,8 +76,8 @@ If you are documenting or using selector hooks, this distinction matters:
 | -------------------- | --------------------------------------------------------------------- |
 | `useNodeLayouts`     | Returns persisted node layouts for the active diagram.                |
 | `useNodeLayout`      | Returns one persisted node layout by component ID.                    |
-| `useEdgeWaypoints`   | Returns the stored waypoint list for a connection's custom edge path. |
-| `useEdgeLabelOffset` | Returns the stored label offset for an edge label along its path.     |
+| `useEdgeControlPoints` | Returns the stored control points for an editable edge's path.      |
+| `useEdgeLabelOffset`   | Returns the stored label offset for an edge label along its path.    |
 
 ### Flows, folders, icons, registry, and templates
 

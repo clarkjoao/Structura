@@ -2,11 +2,6 @@ import type { EdgeStyle, StrokeStyle, EdgeMarker } from "../enums";
 
 export type { EdgeStyle, StrokeStyle, EdgeMarker };
 
-export interface WaypointPosition {
-  x: number;
-  y: number;
-}
-
 export type ConnectionIntent = "dependency" | "call" | "event" | "data-flow" | "async-message";
 
 export type ConnectionDirection = "unidirectional" | "bidirectional" | "reverse";
@@ -20,7 +15,6 @@ export interface ConnectionStyle {
   markerStart?: EdgeMarker;
   animated?: boolean;
   labelPosition?: number;
-  waypoints?: WaypointPosition[];
 }
 
 export interface Connection {

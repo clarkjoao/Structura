@@ -23,9 +23,9 @@ describe("collectConnectionIdsToResetWaypoints", () => {
   it("returns all connections with waypoints when nothing is selected", () => {
     const ids = collectConnectionIdsToResetWaypoints({
       edgeLayouts: {
-        "edge-a": { waypoints: [{ x: 1, y: 2 }] },
-        "edge-b": { waypoints: [] },
-        "edge-c": { waypoints: [{ x: 3, y: 4 }], labelOffset: 0.5 },
+        "edge-a": { points: [{ id: "p1", x: 1, y: 2 }] },
+        "edge-b": { points: [] },
+        "edge-c": { points: [{ id: "p2", x: 3, y: 4 }], labelOffset: 0.5 },
       },
       selectedEdgeId: null,
       reactFlowEdges: [],

@@ -43,6 +43,8 @@ export type {
   ViewNodeLayout,
   Point,
   EdgeLayout,
+  EdgeControlPoint,
+  EdgePathType,
   FlowStep,
   FlowStepType,
   FlowBranch,
@@ -289,7 +291,7 @@ export {
   useIconLibrary,
   useIconById,
   useComponentIcon,
-  useEdgeWaypoints,
+  useEdgeControlPoints,
   useEdgeLabelOffset,
   useAllUserTemplates,
 } from "./store/selectors";

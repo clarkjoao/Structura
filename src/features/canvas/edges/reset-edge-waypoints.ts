@@ -14,16 +14,16 @@ export function collectConnectionIdsToResetWaypoints(params: {
 
   if (!params.edgeLayouts) return [];
   return Object.entries(params.edgeLayouts)
-    .filter(([, layout]) => layout.waypoints.length > 0)
+    .filter(([, layout]) => (layout.points?.length ?? 0) > 0)
     .map(([connectionId]) => connectionId);
 }
 
 export function resetWaypointsForConnections(
   diagramId: string,
   connectionIds: string[],
-  clearEdgeWaypoints: (diagramId: string, connectionId: string) => void,
+  resetEdgeControlPoints: (diagramId: string, connectionId: string) => void,
 ): void {
   for (const connectionId of connectionIds) {
-    clearEdgeWaypoints(diagramId, connectionId);
+    resetEdgeControlPoints(diagramId, connectionId);
   }
 }

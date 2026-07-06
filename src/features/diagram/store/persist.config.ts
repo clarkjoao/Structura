@@ -13,10 +13,11 @@ import type {
   IconDefinition,
   NodeLayout,
 } from "../model/diagram.types";
-import type { Point } from "../model/layout.types";
+import type { Point, EdgeControlPoint } from "../model/layout.types";
 import type { DiagramStore } from "./store.types";
 import type { ServiceDefinition } from "../model/service.types";
 import { ServiceSource } from "../enums";
+import { generateId } from "../utils/generate-id";
 import { migrateFlow } from "../utils/flow-migration";
 import { useSaveStatusStore } from "./saveStatus.store";
 import { isQuotaExceededError } from "@/infrastructure/persistence/storageQuota";
@@ -26,7 +27,7 @@ export const PERSIST_KEY = "diagram-store";
 /** localStorage persist debounce; folder sync uses VIEWPORT_DEBOUNCE_MS — they are independent by design. */
 const PERSIST_DEBOUNCE_MS = 1000;
 
-export const PERSIST_SCHEMA_VERSION = 5;
+export const PERSIST_SCHEMA_VERSION = 6;
 
 export const CURRENT_SCHEMA_VERSION = PERSIST_SCHEMA_VERSION;
 
@@ -204,6 +205,33 @@ function migrateEdgeLayoutsFromArray(state: Partial<DiagramStore>): void {
   }
 }
 
+/**
+ * Convert the legacy `edgeLayouts[*].waypoints: Point[]` shape into the
+ * control-point model `points: EdgeControlPoint[]` (stable ids). Idempotent:
+ * entries already using `points`, or with no waypoints, are left untouched.
+ */
+export function migrateEdgeWaypointsToPoints(state: Partial<DiagramStore>): void {
+  for (const diagram of Object.values(state.diagrams ?? {})) {
+    const edgeLayouts = (diagram as Diagram).edgeLayouts;
+    if (!edgeLayouts || typeof edgeLayouts !== "object") continue;
+    for (const layout of Object.values(edgeLayouts)) {
+      const legacy = layout as { waypoints?: Point[]; points?: EdgeControlPoint[] };
+      if (legacy.points) {
+        delete legacy.waypoints;
+        continue;
+      }
+      if (Array.isArray(legacy.waypoints)) {
+        legacy.points = legacy.waypoints.map((wp) => ({
+          id: generateId("cp"),
+          x: wp.x,
+          y: wp.y,
+        }));
+        delete legacy.waypoints;
+      }
+    }
+  }
+}
+
 function migrateFlowNodeTypeToProcessos(state: Partial<DiagramStore>): void {
   const migrateComponents = (components: Record<string, Component> | undefined): void => {
     if (!components) return;
@@ -332,6 +360,7 @@ export function mergePersistedState(
   migrateAddIconLibrary(next);
   migrateIconDefinitionToSource(next);
   migrateAddEdgeLayouts(next);
+  migrateEdgeWaypointsToPoints(next);
   migrateAddDiagramDescription(next);
   migrateFlowNodeTypeToProcessos(next);
   if (hasEmbeddedIconLibraryInDiagrams(next)) {
@@ -459,6 +488,7 @@ export function wrapIStoragePortWithDiagramPersistTracking(storage: IStoragePort
 export function createPersistConfig(storage: IStoragePort) {
   const trackedStorage = wrapIStoragePortWithDiagramPersistTracking(storage);
   const SCHEMA_VERSION_EDGE_LAYOUTS_RECORD = 5;
+  const SCHEMA_VERSION_EDGE_CONTROL_POINTS = 6;
   return {
     name: PERSIST_KEY,
     storage: createJSONStorage(() => trackedStorage),
@@ -472,6 +502,9 @@ export function createPersistConfig(storage: IStoragePort) {
       const partial = persistedState as Partial<DiagramStore>;
       if (fromVersion < SCHEMA_VERSION_EDGE_LAYOUTS_RECORD) {
         migrateEdgeLayoutsFromArray(partial);
+      }
+      if (fromVersion < SCHEMA_VERSION_EDGE_CONTROL_POINTS) {
+        migrateEdgeWaypointsToPoints(partial);
       }
       return persistedState as PersistedDiagramStoreSlice;
     },

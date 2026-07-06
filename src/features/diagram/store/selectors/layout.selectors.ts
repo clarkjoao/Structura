@@ -1,14 +1,14 @@
 import { useShallow } from "zustand/react/shallow";
-import type { Point } from "../../model/diagram.types";
+import type { EdgeControlPoint } from "../../model/diagram.types";
 import { useDiagramStore } from "../diagram.store";
 
-const EMPTY_WAYPOINTS: Point[] = [];
+const EMPTY_CONTROL_POINTS: EdgeControlPoint[] = [];
 
-export const useEdgeWaypoints = (connectionId: string): Point[] =>
+export const useEdgeControlPoints = (connectionId: string): EdgeControlPoint[] =>
   useDiagramStore(
     useShallow((state) => {
       const diagram = state.diagrams[state.activeDiagramId ?? ""];
-      return diagram?.edgeLayouts[connectionId]?.waypoints ?? EMPTY_WAYPOINTS;
+      return diagram?.edgeLayouts[connectionId]?.points ?? EMPTY_CONTROL_POINTS;
     }),
   );
 

@@ -37,7 +37,14 @@ export type {
   EdgeMarker,
 } from "./connection.types";
 
-export type { NodeLayout, ViewNodeLayout, Point, EdgeLayout } from "./layout.types";
+export type {
+  NodeLayout,
+  ViewNodeLayout,
+  Point,
+  EdgeLayout,
+  EdgeControlPoint,
+  EdgePathType,
+} from "./layout.types";
 
 export type { FlowStep, FlowStepType, FlowBranch, Flow } from "./flow.types";
 

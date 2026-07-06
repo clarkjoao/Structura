@@ -9,7 +9,7 @@ import {
   EdgeMarker,
   useActiveDiagramId,
   useDiagramActions,
-  useEdgeWaypoints,
+  useEdgeControlPoints,
 } from "@/features/diagram";
 import { INTENT_DEFAULTS, saveLastEdgeStyle } from "@/features/diagram";
 import { cn } from "@/lib/utils";
@@ -76,8 +76,8 @@ const ConnectionPanel = ({
 }: ConnectionPanelProps) => {
   const { t } = useTranslation();
   const activeDiagramId = useActiveDiagramId();
-  const { clearEdgeWaypoints, updateEdgeLabelOffset } = useDiagramActions();
-  const waypointCount = useEdgeWaypoints(conn.id).length;
+  const { resetEdgeControlPoints, setEdgeLabelOffset } = useDiagramActions();
+  const waypointCount = useEdgeControlPoints(conn.id).length;
   const [label, setLabel] = useState(conn.label);
   const [desc, setDesc] = useState(conn.description ?? "");
   const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
@@ -162,8 +162,8 @@ const ConnectionPanel = ({
 
   const resetEdgeLayout = () => {
     if (!activeDiagramId) return;
-    clearEdgeWaypoints(activeDiagramId, conn.id);
-    updateEdgeLabelOffset(activeDiagramId, conn.id, EDGE_LABEL_OFFSET_CENTER);
+    resetEdgeControlPoints(activeDiagramId, conn.id);
+    setEdgeLabelOffset(activeDiagramId, conn.id, EDGE_LABEL_OFFSET_CENTER);
   };
 
   const onUpdateEdgeStyle = (newStyle: EdgeStyleOption["value"]) => {

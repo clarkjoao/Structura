@@ -19,7 +19,7 @@ export { default as NodeContextMenu } from "./panels/NodeContextMenu";
 export { nodeTypes, NODE_TYPE_REGISTRY, resolveNodeDescriptor } from "./nodes/node-types";
 export type { NodeBuildContext } from "./nodes/node-types";
 export { buildCollapsedPanelIds, computeNodeVisibility } from "./nodes/nodeVisibility";
-export { buildEdge, filterVisibleConnections, type EdgeBuildParams } from "./edges/edgeBuilding";
+export { buildEdge, filterVisibleConnections, type EdgeBuildParams } from "./edges/data/buildEdges";
 export {
   buildConnectionCountPerNode,
   buildEdgeHandleAssignments,
