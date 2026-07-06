@@ -1,4 +1,4 @@
-import type { EdgeControlPoint, EdgePathType, Point } from "@/features/diagram";
+import type { EdgePathType, Point } from "@/features/diagram";
 
 /**
  * Pure SVG-path geometry for editable edges. These helpers take flow-space
@@ -7,11 +7,7 @@ import type { EdgeControlPoint, EdgePathType, Point } from "@/features/diagram";
  */
 
 /** The full ordered knot list an editable path passes through: source → points → target. */
-export function getPathKnots(
-  source: Point,
-  target: Point,
-  points: readonly EdgeControlPoint[],
-): Point[] {
+export function getPathKnots(source: Point, target: Point, points: readonly Point[]): Point[] {
   return [source, ...points.map((p) => ({ x: p.x, y: p.y })), target];
 }
 
@@ -54,7 +50,7 @@ function toCatmullRomPath(knots: readonly Point[]): string {
 export function buildEditableEdgePath(
   source: Point,
   target: Point,
-  points: readonly EdgeControlPoint[],
+  points: readonly Point[],
   pathType: EdgePathType = "catmull-rom",
 ): string {
   const knots = getPathKnots(source, target, points);

@@ -19,6 +19,25 @@ The system SHALL provide an `editable` edge style (`EdgeStyle.Editable`) whose p
 - **WHEN** a connection uses `smoothstep`, `bezier`, `step`, or `straight`
 - **THEN** no control points, ghost midpoints, or point-editing affordances are shown for that edge
 
+### Requirement: Orthogonal step editing
+
+The system SHALL provide an `editable-step` edge style (`EdgeStyle.EditableStep`) that routes the connection with horizontal/vertical segments and sharp right-angle corners (draw.io style). The user SHALL reposition a segment by dragging it perpendicular to its orientation, which keeps the route orthogonal and materializes the affected corners as control points. Segment handles SHALL be visible only when the edge is selected or hovered.
+
+#### Scenario: Step edge routes orthogonally
+
+- **WHEN** a connection with `edgeStyle = editable-step` is displayed
+- **THEN** its path consists solely of horizontal and vertical segments with sharp corners and no rounding
+
+#### Scenario: Drag a segment to reposition it
+
+- **WHEN** the user drags a horizontal segment vertically (or a vertical segment horizontally) on a selected step edge
+- **THEN** that segment moves perpendicular to its orientation, the corners stay square, and the new corners are stored as control points
+
+#### Scenario: Segment handles hidden when idle
+
+- **WHEN** a step edge is neither selected nor hovered
+- **THEN** no segment handles are rendered for it
+
 ### Requirement: Control point manipulation
 
 For an editable edge, the system SHALL let the user add, move, and remove control points directly on the canvas. Control-point affordances SHALL be visible only when the edge is selected or hovered.

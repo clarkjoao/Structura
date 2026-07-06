@@ -1,4 +1,4 @@
-import type { EdgeControlPoint, Point } from "@/features/diagram";
+import type { Point } from "@/features/diagram";
 import { getPathKnots } from "./paths";
 
 /**
@@ -28,7 +28,7 @@ export function clampOffset(value: number | undefined): number {
 export function getPointAtOffset(
   source: Point,
   target: Point,
-  points: readonly EdgeControlPoint[],
+  points: readonly Point[],
   offset: number,
 ): Point {
   const knots = getPathKnots(source, target, points);
@@ -56,7 +56,7 @@ export function getPointAtOffset(
 export function getClosestOffsetOnPath(
   source: Point,
   target: Point,
-  points: readonly EdgeControlPoint[],
+  points: readonly Point[],
   pos: Point,
 ): number {
   const knots = getPathKnots(source, target, points);
@@ -102,7 +102,7 @@ export interface GhostMidpoint {
 export function getGhostMidpoints(
   source: Point,
   target: Point,
-  points: readonly EdgeControlPoint[],
+  points: readonly Point[],
 ): GhostMidpoint[] {
   const knots = getPathKnots(source, target, points);
   const ghosts: GhostMidpoint[] = [];

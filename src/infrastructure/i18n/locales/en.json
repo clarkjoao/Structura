@@ -80,6 +80,7 @@
     "edgeStep": "Sharp",
     "edgeSmoothstep": "Rounded",
     "edgeEditable": "Editable",
+    "edgeEditableStep": "Editable step",
     "strokeSolid": "Solid",
     "strokeDashed": "Dashed",
     "strokeDotted": "Dotted",
@@ -1218,6 +1219,7 @@
     "response": "← Response",
     "controlPointAria": "Control point {{index}}, drag to move, double-click to remove",
     "addPointAria": "Add a control point here",
+    "segmentHandleAria": "Edge segment {{index}}, drag to reposition",
     "resetPoints": "Reset edge shape",
     "deleteEdge": "Delete connection"
   },

@@ -1,12 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { useReactFlow } from "@xyflow/react";
-import {
-  useActiveDiagramId,
-  useDiagramActions,
-  type EdgeControlPoint,
-  type Point,
-} from "@/features/diagram";
+import { useActiveDiagramId, useDiagramActions, type Point } from "@/features/diagram";
 import { getClosestOffsetOnPath } from "../geometry/projection";
 
 interface UseEdgeLabelDragParams {
@@ -14,7 +9,7 @@ interface UseEdgeLabelDragParams {
   enabled: boolean;
   source: Point;
   target: Point;
-  pointsRef: React.RefObject<readonly EdgeControlPoint[]>;
+  pointsRef: React.RefObject<readonly Point[]>;
 }
 
 export interface UseEdgeLabelDragResult {

@@ -21,10 +21,13 @@ import {
 import { useTranslation } from "react-i18next";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { buildEditableEdgePath } from "./geometry/paths";
+import { buildStepPath } from "./geometry/orthogonal";
 import { clampOffset, getGhostMidpoints, getPointAtOffset } from "./geometry/projection";
 import { useControlPoints } from "./interaction/useControlPoints";
+import { useSegmentDrag } from "./interaction/useSegmentDrag";
 import { useEdgeLabelDrag } from "./interaction/useEdgeLabelDrag";
 import { ControlPoint, GhostControlPoint } from "./components/ControlPoint";
+import { EdgeSegmentHandles } from "./components/EdgeSegmentHandles";
 import { EdgeHitArea } from "./components/EdgeHitArea";
 import { EdgeToolbar } from "./components/EdgeToolbar";
 import { EdgeLabel } from "./components/EdgeLabel";
@@ -75,14 +78,21 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
   // Read-only surfaces (viewer, playback) turn off selection; never edit there.
   const elementsSelectable = useStore((state) => state.elementsSelectable);
   const edgeStyle = edgeData.edgeStyle ?? EdgeStyle.Smoothstep;
-  const isEditable = edgeStyle === EdgeStyle.Editable && elementsSelectable;
+  const isStep = edgeStyle === EdgeStyle.EditableStep;
+  const isCurve = edgeStyle === EdgeStyle.Editable;
+  const isEditable = (isCurve || isStep) && elementsSelectable;
 
   const { points, activePointId, addPoint, removePoint, startPointDrag } =
     useControlPoints(connectionId);
-  const pointsRef = useRef(points);
+  const segmentDrag = useSegmentDrag(connectionId, source, target, sourcePosition);
+
+  // Points used for label placement/projection: control points (curve) or the
+  // effective orthogonal corners (step).
+  const projectionPoints = isStep ? segmentDrag.corners : points;
+  const projectionRef = useRef<readonly Point[]>(projectionPoints);
   useEffect(() => {
-    pointsRef.current = points;
-  }, [points]);
+    projectionRef.current = projectionPoints;
+  }, [projectionPoints]);
 
   const storedLabelOffset = useEdgeLabelOffset(connectionId);
   const labelOffset = clampOffset(storedLabelOffset ?? edgeData.labelPosition);
@@ -90,19 +100,20 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
   const [hovered, setHovered] = useState(false);
 
   const edgePath = useMemo(() => {
-    if (isEditable) {
-      return buildEditableEdgePath(source, target, points, "catmull-rom");
-    }
+    if (isStep) return buildStepPath(source, target, segmentDrag.corners);
+    if (isCurve) return buildEditableEdgePath(source, target, points, "catmull-rom");
     const params = { sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition };
     if (edgeStyle === EdgeStyle.Step) return getSmoothStepPath({ ...params, borderRadius: 0 })[0];
     if (edgeStyle === EdgeStyle.Smoothstep) return getSmoothStepPath(params)[0];
     if (edgeStyle === EdgeStyle.Bezier) return getBezierPath(params)[0];
     return getStraightPath(params)[0];
   }, [
-    isEditable,
+    isStep,
+    isCurve,
     source,
     target,
     points,
+    segmentDrag.corners,
     edgeStyle,
     sourceX,
     sourceY,
@@ -113,8 +124,8 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
   ]);
 
   const labelPoint = useMemo(
-    () => getPointAtOffset(source, target, points, labelOffset),
-    [source, target, points, labelOffset],
+    () => getPointAtOffset(source, target, projectionPoints, labelOffset),
+    [source, target, projectionPoints, labelOffset],
   );
 
   const isHighlighted = Boolean(selected) || highlightedConnectionId === connectionId;
@@ -122,10 +133,10 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
   const strokeWidth = edgeData.strokeWidth ?? 1;
   const baseStroke = edgeData.color ?? DEFAULT_STROKE;
 
-  const showControlAffordances = isEditable && (Boolean(selected) || hovered) && !!activeDiagramId;
+  const showAffordances = isEditable && (Boolean(selected) || hovered) && !!activeDiagramId;
   const ghosts = useMemo(
-    () => (showControlAffordances ? getGhostMidpoints(source, target, points) : []),
-    [showControlAffordances, source, target, points],
+    () => (showAffordances && isCurve ? getGhostMidpoints(source, target, points) : []),
+    [showAffordances, isCurve, source, target, points],
   );
 
   const canDragLabel = Boolean(edgeData.label && activeDiagramId);
@@ -134,7 +145,7 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
     enabled: canDragLabel,
     source,
     target,
-    pointsRef,
+    pointsRef: projectionRef,
   });
 
   const handleResetDoubleClick = (event: ReactMouseEvent<SVGPathElement>) => {
@@ -167,7 +178,15 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
           onHoverChange={setHovered}
           onDoubleClick={handleResetDoubleClick}
         />
-        {showControlAffordances && (
+        {showAffordances && isStep && (
+          <EdgeSegmentHandles
+            segments={segmentDrag.segments}
+            activeSegmentIndex={segmentDrag.activeSegmentIndex}
+            ariaLabel={(index) => t("customEdge.segmentHandleAria", { index: index + 1 })}
+            onSegmentPointerDown={segmentDrag.startSegmentDrag}
+          />
+        )}
+        {showAffordances && isCurve && (
           <>
             {ghosts.map((ghost) => (
               <GhostControlPoint

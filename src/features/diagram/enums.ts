@@ -17,6 +17,8 @@ export enum EdgeStyle {
   Straight = "straight",
   /** Freely editable path drawn through user-positioned control points. */
   Editable = "editable",
+  /** Editable orthogonal path (draw.io-style) with draggable right-angle segments. */
+  EditableStep = "editable-step",
 }
 
 export enum StrokeStyle {

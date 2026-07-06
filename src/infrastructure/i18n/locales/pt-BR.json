@@ -80,6 +80,7 @@
     "edgeStep": "Reto",
     "edgeSmoothstep": "Arredondado",
     "edgeEditable": "Editável",
+    "edgeEditableStep": "Editável ortogonal",
     "strokeSolid": "Sólida",
     "strokeDashed": "Tracejada",
     "strokeDotted": "Pontilhada",
@@ -1218,6 +1219,7 @@
     "response": "← Response",
     "controlPointAria": "Ponto de controle {{index}}, arraste para mover, duplo clique para remover",
     "addPointAria": "Adicionar um ponto de controle aqui",
+    "segmentHandleAria": "Segmento {{index}} da conexão, arraste para reposicionar",
     "resetPoints": "Redefinir formato da conexão",
     "deleteEdge": "Excluir conexão"
   },
