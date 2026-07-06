@@ -1,5 +1,11 @@
 import { Suspense, lazy } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  type FutureConfig,
+} from "react-router-dom";
 import { useSharedDiagram } from "@/features/viewer/hooks/useSharedDiagram";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -26,6 +32,11 @@ const ModelExplorer = lazy(() => import("@/pages/modelExplorer"));
 const ServiceRegistry = lazy(() => import("@/pages/serviceRegistry"));
 const PluginsPage = lazy(() => import("@/pages/settings/PluginsPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
+
+const ROUTER_FUTURE: Partial<FutureConfig> = {
+  v7_relativeSplatPath: true,
+  v7_startTransition: true,
+};
 
 function DiagramPreviewSync(): null {
   useDiagramPreviewSync();
@@ -63,29 +74,25 @@ function MainPages() {
 const App = () => {
   const { sharedDiagram, ShareProvider } = useSharedDiagram();
 
-  if (sharedDiagram) {
-    return (
-      <ShareProvider>
-        <BrowserRouter future={{ v7_relativeSplatPath: true }}>
+  return (
+    <BrowserRouter future={ROUTER_FUTURE}>
+      {sharedDiagram ? (
+        <ShareProvider>
           <Suspense fallback={<RouteFallback />}>
             <SharedDiagramView diagram={sharedDiagram} />
           </Suspense>
-        </BrowserRouter>
-      </ShareProvider>
-    );
-  }
-
-  return (
-    <BrowserRouter future={{ v7_relativeSplatPath: true }}>
-      <JourneyPlayerProvider>
-        <JourneyPlayerBar />
-        <Suspense fallback={<RouteFallback />}>
-          <Routes>
-            <Route path="/viewer" element={<ViewerPage />} />
-            <Route path="*" element={<MainPages />} />
-          </Routes>
-        </Suspense>
-      </JourneyPlayerProvider>
+        </ShareProvider>
+      ) : (
+        <JourneyPlayerProvider>
+          <JourneyPlayerBar />
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
+              <Route path="/viewer" element={<ViewerPage />} />
+              <Route path="*" element={<MainPages />} />
+            </Routes>
+          </Suspense>
+        </JourneyPlayerProvider>
+      )}
     </BrowserRouter>
   );
 };
