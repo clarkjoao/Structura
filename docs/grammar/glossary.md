@@ -334,22 +334,22 @@ should not be merged.
 
 ### Walkthrough
 
-**Status:** `proposed` (currently named `Journey` in code, i18n, and
-  routes; to be renamed)
+**Status:** `current` (renamed from `Journey` in
+  `openspec/changes/rename-journey-to-walkthrough/`, shipped under
+  `PERSIST_SCHEMA_VERSION` 9; the legacy `Journey*` aliases remain for
+  one release)
 
 **Definition:** A curated or recorded sequence of steps across one or more
 Diagrams. Each step points at a Diagram and optionally at a Flow within
 that Diagram. Used for onboarding, demos, incident retrospectives, and
 executive walkthroughs. Has a VCR-style player (prev/next, play, record).
 
-**Reference:** `Journey` in `src/features/journeys/types.ts`; player at
-`src/features/journeys/components/JourneyPlayerBar.tsx`. To be renamed
-to `Walkthrough` in `src/features/walkthroughs/`.
+**Reference:** `Walkthrough` in `src/features/walkthroughs/types.ts`;
+player at `src/features/walkthroughs/components/WalkthroughPlayerBar.tsx`.
 
-**Aliases:** `Journey` (deprecated). The word *Journey* is overloaded in
-software (UX Customer Journey, BPMN journey, marketing journey) and the
-Structura feature is none of those — it is a recorded/curated
-walkthrough of diagrams.
+**Aliases:** `Journey` (deprecated; types and hooks re-exported from
+`features/walkthroughs`), `nav.journeys` (deprecated; resolves to
+"Walkthroughs" via `nav.walkthroughs`).
 
 **Counterpoint:**
 
@@ -601,7 +601,7 @@ blocking defect.
 | 2 | `registryServiceId` (field) | *(remove or unify with `serviceId`)* | 1 | **rejected as dead field** — it is live in plugin snapshots and template instancing. Unification with `serviceId` is a separate spec. |
 | 3 | `serviceRegistry` (state, i18n, page) | `serviceCatalog` | 2 | shipped (PERSIST_SCHEMA_VERSION 8) |
 | 4 | `ModelExplorer` (page) | `Workspace` | 2 | proposed |
-| 5 | `Journey` (entity, route, i18n) | `Walkthrough` | 3 | proposed |
+| 5 | `Journey` (entity, route, i18n) | `Walkthrough` | 3 | shipped (PERSIST_SCHEMA_VERSION 9) |
 | 6 | `ExternalElementComponent.linkedDiagramId` | `referenceDiagramId` | 3 | proposed |
 | 7 | `CustomComponentRepository.ts` | `customComponentTemplateStore.ts` | 4 | cosmetic, optional |
 
