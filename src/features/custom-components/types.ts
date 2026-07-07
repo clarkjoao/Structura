@@ -8,7 +8,7 @@ export interface CustomComponentTemplate {
   category?: string;
   baseType: ComponentType;
   data: Record<string, unknown>;
-  registryServiceId?: string;
+  serviceId?: string;
 
   templateVersion: number;
   createdAt: number;

@@ -62,7 +62,6 @@ interface BaseComponent {
 
   templateId?: string;
 
-  registryServiceId?: string;
   externalLinks?: ExternalLink[];
 }
 

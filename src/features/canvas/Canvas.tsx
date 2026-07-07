@@ -403,7 +403,7 @@ const Canvas = (props: CanvasProps = {}) => {
                 description,
                 baseType: templateData.baseType,
                 data: templateData.data,
-                registryServiceId: templateData.registryServiceId,
+                serviceId: templateData.serviceId,
                 templateVersion: 1,
                 category: "general",
                 createdAt: Date.now(),

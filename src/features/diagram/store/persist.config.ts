@@ -27,7 +27,7 @@ export const PERSIST_KEY = "diagram-store";
 /** localStorage persist debounce; folder sync uses VIEWPORT_DEBOUNCE_MS — they are independent by design. */
 const PERSIST_DEBOUNCE_MS = 1000;
 
-export const PERSIST_SCHEMA_VERSION = 10;
+export const PERSIST_SCHEMA_VERSION = 11;
 
 export const CURRENT_SCHEMA_VERSION = PERSIST_SCHEMA_VERSION;
 
@@ -316,6 +316,36 @@ function migrateExternalElementLinkedDiagramId(state: Partial<DiagramStore>): vo
   }
 }
 
+/** Schema v11: unify `Component.registryServiceId` into `serviceId`.
+ * The two fields carried the same intent; the legacy field was used
+ * by the custom-component template instancing path and by plugin
+ * snapshots, but it caused `linkComponentToService` to silently miss
+ * the link. The migration copies any `registryServiceId` value to
+ * `serviceId` (if `serviceId` is empty) and deletes the old field.
+ * Idempotent: an already-v11 state has no `registryServiceId`. */
+function migrateUnifyRegistryServiceId(state: Partial<DiagramStore>): void {
+  const migrate = (components: Record<string, Component> | undefined): void => {
+    if (!components) return;
+    for (const comp of Object.values(components)) {
+      const ext = comp as unknown as Record<string, unknown>;
+      const legacy = ext.registryServiceId;
+      if (typeof legacy === "string" && legacy.length > 0) {
+        if (ext.serviceId === undefined || ext.serviceId === "") {
+          ext.serviceId = legacy;
+        }
+      }
+      delete ext.registryServiceId;
+    }
+  };
+  for (const diagram of Object.values(state.diagrams ?? {})) {
+    const d = diagram as Diagram;
+    migrate(d.snapshot?.components);
+    for (const scene of Object.values(d.scenes ?? {})) {
+      migrate(scene.addedComponents);
+    }
+  }
+}
+
 function migrateAddDiagramDescription(state: Partial<DiagramStore>): void {
   for (const diagram of Object.values(state.diagrams ?? {})) {
     const diagramRecord = diagram as Diagram;
@@ -430,6 +460,7 @@ export function mergePersistedState(
   migrateProcessNodeTypeToProcessNode(next);
   migrateServiceRegistryToServiceCatalog(next);
   migrateExternalElementLinkedDiagramId(next);
+  migrateUnifyRegistryServiceId(next);
   if (hasEmbeddedIconLibraryInDiagrams(next)) {
     migrateIconLibraryToGlobalStore(next);
   }
