@@ -602,7 +602,7 @@ blocking defect.
 | 3 | `serviceRegistry` (state, i18n, page) | `serviceCatalog` | 2 | shipped (PERSIST_SCHEMA_VERSION 8) |
 | 4 | `ModelExplorer` (page) | `Workspace` | 2 | shipped |
 | 5 | `Journey` (entity, route, i18n) | `Walkthrough` | 3 | shipped (PERSIST_SCHEMA_VERSION 9) |
-| 6 | `ExternalElementComponent.linkedDiagramId` | `referenceDiagramId` | 3 | proposed |
+| 6 | `ExternalElementComponent.linkedDiagramId` | `referenceDiagramId` | 3 | shipped (PERSIST_SCHEMA_VERSION 10) |
 | 7 | `CustomComponentRepository.ts` | `customComponentTemplateStore.ts` | 4 | cosmetic, optional |
 
 Each rename ships as its own OpenSpec change with a forward-only
