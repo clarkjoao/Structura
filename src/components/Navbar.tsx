@@ -29,7 +29,7 @@ const Navbar = () => {
             {t("nav.workspaces")}
           </Link>
           <NavLink
-            to="/journeys"
+            to="/walkthroughs"
             className={({ isActive }) =>
               cn(
                 "hover:text-foreground transition-colors",

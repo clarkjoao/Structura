@@ -30,7 +30,7 @@ export interface AppState {
   diagrams: Record<string, Diagram>;
   folders: Record<string, Folder>;
   userTemplates: Record<string, UserTemplate>;
-  serviceRegistry: Record<string, ServiceDefinition>;
+  serviceCatalog: Record<string, ServiceDefinition>;
   activeDiagramId: string | null;
   past: DiagramSnapshot[];
   future: DiagramSnapshot[];

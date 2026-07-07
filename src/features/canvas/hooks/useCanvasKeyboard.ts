@@ -58,7 +58,7 @@ interface UseCanvasKeyboardParams {
   diagram: Diagram | DiagramModel | null | undefined;
   setCompareScene: (sceneId: string | null) => void;
   isCompareMode?: boolean;
-  serviceRegistry: Record<string, ServiceDefinition>;
+  serviceCatalog: Record<string, ServiceDefinition>;
   selectedNodeId: string | null;
   selectedEdgeId: string | null;
   reactFlowInstance: ReactFlowInstance;
@@ -132,7 +132,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     diagram,
     setCompareScene,
     isCompareMode = false,
-    serviceRegistry,
+    serviceCatalog,
     selectedNodeId,
     selectedEdgeId,
     reactFlowInstance,
@@ -180,9 +180,9 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   const exportDrawioXml = useCallback(
     (ids: string[]): string => {
       if (!diagram) return "";
-      return exportDrawio(diagram, serviceRegistry, { componentIds: ids });
+      return exportDrawio(diagram, serviceCatalog, { componentIds: ids });
     },
-    [diagram, serviceRegistry],
+    [diagram, serviceCatalog],
   );
 
   const pasteSvgAsCanvasNode = useCallback(
@@ -258,7 +258,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     importDrawioResult,
     pasteSvgAsCanvasNode,
     importSvgForIconLibrary,
-    serviceRegistry,
+    serviceCatalog,
     exportDrawioXml,
     setSelectedNodeIds,
     pastedSvgDefaultName,

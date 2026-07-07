@@ -89,7 +89,7 @@ export function buildFlowchartPickerOptions(t: (key: string) => string): CanvasP
   ];
 
   return shapes.map(({ shape, labelKey, icon }) => ({
-    type: "processos" as ComponentType,
+    type: "process-node" as ComponentType,
     label: t(labelKey),
     icon,
     flowShape: shape,

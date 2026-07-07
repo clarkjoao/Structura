@@ -313,10 +313,10 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const handleAddFlowNode = useCallback(
     (opt: CanvasPickerOption) => {
       if (!opt.flowShape) return;
-      trackUsage(getUsageKeyForType("processos"));
-      const name = getDefaultNameForNewComponent("processos", opt.label);
+      trackUsage(getUsageKeyForType("process-node"));
+      const name = getDefaultNameForNewComponent("process-node", opt.label);
       const comp = addComponent(
-        "processos",
+        "process-node",
         name,
         null,
         getInsertPos(),

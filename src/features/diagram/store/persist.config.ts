@@ -27,7 +27,7 @@ export const PERSIST_KEY = "diagram-store";
 /** localStorage persist debounce; folder sync uses VIEWPORT_DEBOUNCE_MS — they are independent by design. */
 const PERSIST_DEBOUNCE_MS = 1000;
 
-export const PERSIST_SCHEMA_VERSION = 6;
+export const PERSIST_SCHEMA_VERSION = 11;
 
 export const CURRENT_SCHEMA_VERSION = PERSIST_SCHEMA_VERSION;
 
@@ -38,7 +38,7 @@ export function partializeState(state: DiagramStore) {
     diagrams: state.diagrams,
     folders: state.folders,
     userTemplates: state.userTemplates,
-    serviceRegistry: state.serviceRegistry,
+    serviceCatalog: state.serviceCatalog,
     activeDiagramId: state.activeDiagramId,
   };
 }
@@ -54,7 +54,7 @@ export function buildPersistStoragePayload(state: DiagramStore): {
 }
 
 function migrateServiceSources(state: DiagramStore): DiagramStore {
-  Object.values(state.serviceRegistry).forEach((service) => {
+  Object.values(state.serviceCatalog).forEach((service) => {
     const svc = service as ServiceDefinition;
     if (svc.sources && svc.sources.length > 0) return;
     if (svc.source) {
@@ -252,6 +252,106 @@ function migrateFlowNodeTypeToProcessos(state: Partial<DiagramStore>): void {
   }
 }
 
+/** Schema v7: rename the component type `"processos"` → `"process-node"`.
+ * The legacy `"flow-node"` was already migrated to `"processos"` in v6; this
+ * migration supersedes that name with the canonical English one and also
+ * catches any workspace that still has `"flow-node"` directly. */
+function migrateProcessNodeTypeToProcessNode(state: Partial<DiagramStore>): void {
+  const migrateComponents = (components: Record<string, Component> | undefined): void => {
+    if (!components) return;
+    for (const comp of Object.values(components)) {
+      const record = comp as { type: string };
+      if (record.type === "processos" || record.type === "flow-node") {
+        record.type = "process-node";
+      }
+    }
+  };
+
+  for (const diagram of Object.values(state.diagrams ?? {})) {
+    const d = diagram as Diagram;
+    migrateComponents(d.snapshot?.components);
+    for (const scene of Object.values(d.scenes ?? {})) {
+      migrateComponents(scene.addedComponents);
+    }
+  }
+}
+
+/** Schema v8: rename the persisted state field `serviceRegistry` →
+ * `serviceCatalog`. The values inside are unchanged. The migration is
+ * idempotent: if `serviceCatalog` already exists with content (e.g. a
+ * workspace saved at v8 is re-read at v8), the right-hand side is
+ * short-circuited. Note: the currentState spread always sets
+ * `serviceCatalog = {}` (the in-memory default), so the "not present"
+ * check must look at whether the dictionary is empty, not at
+ * `undefined`. The legacy key is always dropped. */
+function migrateServiceRegistryToServiceCatalog(state: Record<string, unknown>): void {
+  const legacy = state.serviceRegistry;
+  if (legacy && typeof legacy === "object" && !Array.isArray(legacy)) {
+    const existing = state.serviceCatalog as Record<string, unknown> | undefined;
+    const existingIsEmpty = !existing || Object.keys(existing).length === 0;
+    if (existingIsEmpty) {
+      state.serviceCatalog = legacy as Record<string, unknown>;
+    }
+  }
+  delete state.serviceRegistry;
+}
+
+/** Schema v10: rename `ExternalElementComponent.linkedDiagramId` to
+ * `referenceDiagramId`. The two fields had the same name but different
+ * semantics: drill-down (BaseComponent.linkedDiagramId, the C4 contract)
+ * and cross-diagram reference (ExternalElementComponent). Only the
+ * second is renamed. The migration is idempotent. */
+function migrateExternalElementLinkedDiagramId(state: Partial<DiagramStore>): void {
+  const migrate = (components: Record<string, Component> | undefined): void => {
+    if (!components) return;
+    for (const comp of Object.values(components)) {
+      if (comp.type !== "external-element") continue;
+      const ext = comp as unknown as Record<string, unknown>;
+      if (typeof ext.linkedDiagramId === "string" && ext.referenceDiagramId === undefined) {
+        ext.referenceDiagramId = ext.linkedDiagramId;
+      }
+      delete ext.linkedDiagramId;
+    }
+  };
+  for (const diagram of Object.values(state.diagrams ?? {})) {
+    const d = diagram as Diagram;
+    migrate(d.snapshot?.components);
+    for (const scene of Object.values(d.scenes ?? {})) {
+      migrate(scene.addedComponents);
+    }
+  }
+}
+
+/** Schema v11: unify `Component.registryServiceId` into `serviceId`.
+ * The two fields carried the same intent; the legacy field was used
+ * by the custom-component template instancing path and by plugin
+ * snapshots, but it caused `linkComponentToService` to silently miss
+ * the link. The migration copies any `registryServiceId` value to
+ * `serviceId` (if `serviceId` is empty) and deletes the old field.
+ * Idempotent: an already-v11 state has no `registryServiceId`. */
+function migrateUnifyRegistryServiceId(state: Partial<DiagramStore>): void {
+  const migrate = (components: Record<string, Component> | undefined): void => {
+    if (!components) return;
+    for (const comp of Object.values(components)) {
+      const ext = comp as unknown as Record<string, unknown>;
+      const legacy = ext.registryServiceId;
+      if (typeof legacy === "string" && legacy.length > 0) {
+        if (ext.serviceId === undefined || ext.serviceId === "") {
+          ext.serviceId = legacy;
+        }
+      }
+      delete ext.registryServiceId;
+    }
+  };
+  for (const diagram of Object.values(state.diagrams ?? {})) {
+    const d = diagram as Diagram;
+    migrate(d.snapshot?.components);
+    for (const scene of Object.values(d.scenes ?? {})) {
+      migrate(scene.addedComponents);
+    }
+  }
+}
+
 function migrateAddDiagramDescription(state: Partial<DiagramStore>): void {
   for (const diagram of Object.values(state.diagrams ?? {})) {
     const diagramRecord = diagram as Diagram;
@@ -345,7 +445,7 @@ export function mergePersistedState(
   state.future = [];
   state._lastUndoRedoAt = 0;
 
-  if (!state.serviceRegistry) state.serviceRegistry = {};
+  if (!state.serviceCatalog) state.serviceCatalog = {};
   if (!state.folders) state.folders = {};
   migrateAddUserTemplates(state);
 
@@ -363,6 +463,10 @@ export function mergePersistedState(
   migrateEdgeWaypointsToPoints(next);
   migrateAddDiagramDescription(next);
   migrateFlowNodeTypeToProcessos(next);
+  migrateProcessNodeTypeToProcessNode(next);
+  migrateServiceRegistryToServiceCatalog(next as unknown as Record<string, unknown>);
+  migrateExternalElementLinkedDiagramId(next);
+  migrateUnifyRegistryServiceId(next);
   if (hasEmbeddedIconLibraryInDiagrams(next)) {
     migrateIconLibraryToGlobalStore(next);
   }

@@ -91,12 +91,23 @@ steps, each pointing at a diagram and optionally a flow. Journeys are the
 storytelling layer (onboarding walkthroughs, incident retrospectives). They
 live in their own store, outside any diagram.
 
-## Service (registry)
+> **Naming note.** The term `Journey` is overloaded in software (UX Customer
+> Journey, BPMN journey, marketing journey) and the Structura feature is
+> none of those — it is a recorded/curated walkthrough of diagrams. The
+> glossary marks `Journey` as `deprecated` in favor of `Walkthrough`; see
+> [../grammar/glossary.md](../grammar/glossary.md) § Walkthrough.
+
+## Service (catalog)
 
 `ServiceDefinition` (`model/service.types.ts`) is a **workspace-level**
-catalog of real services. Components link to it via `registryServiceId`. This
+catalog of real services. Components link to it via `serviceId`. This
 is the strongest existing form of cross-diagram identity and the natural seed
 of the future Model Index.
+
+> **Naming note.** The state field is currently `state.serviceRegistry` and
+> the page is at `/serviceRegistry`. The glossary marks both as
+> `deprecated` in favor of `serviceCatalog` and `/services`; see
+> [../grammar/glossary.md](../grammar/glossary.md) § Service Catalog.
 
 ## User template / Custom component
 

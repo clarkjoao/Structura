@@ -509,7 +509,7 @@ function buildDiagrams(): Record<string, Diagram> {
             technology: "Node.js + Fastify",
             linkedDiagramId: "d-us-components",
             tags: ["backend", "crud"],
-            registryServiceId: "svc-management-api",
+            serviceId: "svc-management-api",
           },
           "us-ct-redir-api": {
             id: "us-ct-redir-api",
@@ -520,7 +520,7 @@ function buildDiagrams(): Record<string, Diagram> {
             parentId: "us-ct-boundary",
             technology: "Go 1.22",
             tags: ["backend", "performance", "critical"],
-            registryServiceId: "svc-redirect-api",
+            serviceId: "svc-redirect-api",
           },
           "us-ct-worker": {
             id: "us-ct-worker",
@@ -531,7 +531,7 @@ function buildDiagrams(): Record<string, Diagram> {
             parentId: "us-ct-boundary",
             technology: "Python 3.12 + Celery",
             tags: ["worker", "async", "analytics"],
-            registryServiceId: "svc-analytics-worker",
+            serviceId: "svc-analytics-worker",
           },
           "us-ct-db": {
             id: "us-ct-db",

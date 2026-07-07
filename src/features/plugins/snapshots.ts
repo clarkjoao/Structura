@@ -39,7 +39,7 @@ export function toComponentSnapshot(
         ? { width: layout.width, height: layout.height }
         : null,
     tags: [...(component.tags ?? [])],
-    serviceId: component.registryServiceId ?? component.serviceId ?? null,
+    serviceId: component.serviceId ?? null,
   };
 }
 

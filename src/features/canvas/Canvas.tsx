@@ -10,7 +10,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import CanvasToolbar from "./toolbar/CanvasToolbar";
-import { JourneysInDiagramPanel } from "./panels/JourneysInDiagramPanel";
+import { WalkthroughsInDiagramPanel } from "./panels/WalkthroughsInDiagramPanel";
 import { ConnectedSceneDrawer } from "./toolbar/SceneDrawer";
 import ElementPanel from "./panels/ElementPanel/index";
 import { CanvasContextMenu } from "./panels/CanvasContextMenu";
@@ -24,11 +24,11 @@ import { Eye, Minimize2 } from "lucide-react";
 import { useCanvasController } from "./hooks/useCanvasController";
 import { hasSavedViewport } from "./hooks/useCanvasEffects";
 import { useCanvasInputProfile } from "./hooks/useCanvasInputProfile";
-import { useJourneyViewportSync } from "./hooks/useJourneyViewportSync";
+import { useWalkthroughViewportSync } from "./hooks/useWalkthroughViewportSync";
 import { useServiceFocusFromUrl } from "./hooks/useServiceFocusFromUrl";
 import { useElementFocusFromUrl } from "./hooks/useElementFocusFromUrl";
 import { getCachedCanvasSnapshot, useDiagramStore } from "@/features/diagram";
-import { useJourneysByDiagramId } from "@/features/journeys";
+import { useWalkthroughsByDiagramId } from "@/features/walkthroughs";
 import { CANVAS_STYLES, GRID_SIZE } from "./canvas.constants";
 import { getPlatform } from "./hooks/keyboard/helpers";
 import EditableEdge from "./edges/EditableEdge";
@@ -114,11 +114,11 @@ const Canvas = (props: CanvasProps = {}) => {
     }, []),
   );
 
-  useJourneyViewportSync();
+  useWalkthroughViewportSync();
   useServiceFocusFromUrl(visualState);
   useElementFocusFromUrl(visualState);
 
-  const journeysInThisDiagram = useJourneysByDiagramId(diagram?.id ?? "");
+  const journeysInThisDiagram = useWalkthroughsByDiagramId(diagram?.id ?? "");
 
   const templateSourceNode = templateNodeId
     ? (nodes.find((node) => node.id === templateNodeId) ?? null)
@@ -218,7 +218,7 @@ const Canvas = (props: CanvasProps = {}) => {
             }}
           />
           {showJourneysPanel ? (
-            <JourneysInDiagramPanel
+            <WalkthroughsInDiagramPanel
               diagramId={diagram.id}
               onClose={() => setShowJourneysPanel(false)}
             />
@@ -403,7 +403,7 @@ const Canvas = (props: CanvasProps = {}) => {
                 description,
                 baseType: templateData.baseType,
                 data: templateData.data,
-                registryServiceId: templateData.registryServiceId,
+                serviceId: templateData.serviceId,
                 templateVersion: 1,
                 category: "general",
                 createdAt: Date.now(),

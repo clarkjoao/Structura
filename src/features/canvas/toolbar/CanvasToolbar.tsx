@@ -145,7 +145,7 @@ const CanvasToolbar = ({
               )}
             >
               <span aria-hidden>✦</span>
-              <span>{t("journeys.inDiagram.title")}</span>
+              <span>{t("walkthroughs.inDiagram.title")}</span>
               {journeysInDiagramCount > 0 ? (
                 <span className="ml-0.5 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-secondary-foreground">
                   {journeysInDiagramCount}

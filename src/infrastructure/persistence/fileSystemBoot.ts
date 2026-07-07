@@ -5,7 +5,7 @@ import {
   type Diagram,
   type IconDefinition,
 } from "@/features/diagram";
-import { useJourneyStore } from "@/features/journeys";
+import { useWalkthroughsStore } from "@/features/walkthroughs";
 import { fileSystemAdapter, type WorkspacePayload } from "./FileSystemAdapter";
 import { clearLocalStorageDiagramSyncTimestamp } from "./localStorageSyncTimestamp";
 import { clearFolderSyncTimestamp, recordFolderSyncSuccess } from "./folderSyncTimestamp";
@@ -106,7 +106,7 @@ export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState):
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     diagramIds: Object.keys(state.diagrams),
-    serviceRegistry: state.serviceRegistry,
+    serviceCatalog: state.serviceCatalog,
     folders: state.folders,
     activeDiagramId: state.activeDiagramId,
     customComponentTemplates,
@@ -114,19 +114,19 @@ export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState):
   });
   if (!manifestOk) return false;
 
-  const journeys = useJourneyStore.getState().journeys;
-  const journeysOk = await fileSystemAdapter.writeJourneys(journeys);
+  const walkthroughs = useWalkthroughsStore.getState().walkthroughs;
+  const journeysOk = await fileSystemAdapter.writeWalkthroughs(walkthroughs);
   if (!journeysOk) return false;
 
   lastSyncedManifestFingerprint = manifestSemanticFingerprint({
     diagramIds: Object.keys(state.diagrams),
-    serviceRegistry: state.serviceRegistry,
+    serviceCatalog: state.serviceCatalog,
     folders: state.folders,
     activeDiagramId: state.activeDiagramId,
     customComponentTemplates,
     iconLibrary,
   });
-  lastSyncedJourneysJson = JSON.stringify(journeys);
+  lastSyncedJourneysJson = JSON.stringify(walkthroughs);
 
   recordFolderSyncSuccess();
 
@@ -186,7 +186,7 @@ async function doReconnect(): Promise<boolean> {
       useDiagramStore.setState((s) => ({
         ...s,
         diagrams: hydrated.diagrams as typeof s.diagrams,
-        serviceRegistry: workspace.serviceRegistry as typeof s.serviceRegistry,
+        serviceCatalog: workspace.serviceCatalog as typeof s.serviceCatalog,
         folders: workspace.folders as typeof s.folders,
         activeDiagramId: workspace.activeDiagramId,
         past: [],
@@ -202,10 +202,10 @@ async function doReconnect(): Promise<boolean> {
         }));
       }
 
-      const fsJourneys = await fileSystemAdapter.readJourneys();
+      const fsJourneys = await fileSystemAdapter.readWalkthroughs();
       if (fsJourneys) {
-        useJourneyStore.setState((state) => ({
-          journeys: { ...state.journeys, ...fsJourneys },
+        useWalkthroughsStore.setState((state) => ({
+          walkthroughs: { ...state.walkthroughs, ...fsJourneys },
         }));
       }
     }
@@ -310,7 +310,7 @@ export function startFileSystemSync(): void {
 
           const manifestFp = manifestSemanticFingerprint({
             diagramIds: Object.keys(diagramState.diagrams),
-            serviceRegistry: diagramState.serviceRegistry,
+            serviceCatalog: diagramState.serviceCatalog,
             folders: diagramState.folders,
             activeDiagramId: diagramState.activeDiagramId,
             customComponentTemplates,
@@ -323,7 +323,7 @@ export function startFileSystemSync(): void {
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
               diagramIds: Object.keys(diagramState.diagrams),
-              serviceRegistry: diagramState.serviceRegistry,
+              serviceCatalog: diagramState.serviceCatalog,
               folders: diagramState.folders,
               activeDiagramId: diagramState.activeDiagramId,
               customComponentTemplates,
@@ -333,10 +333,10 @@ export function startFileSystemSync(): void {
             wroteSomething = true;
           }
 
-          const journeys = useJourneyStore.getState().journeys;
-          const journeysJson = JSON.stringify(journeys);
+          const walkthroughs = useWalkthroughsStore.getState().walkthroughs;
+          const journeysJson = JSON.stringify(walkthroughs);
           if (journeysJson !== lastSyncedJourneysJson) {
-            await fileSystemAdapter.writeJourneys(journeys);
+            await fileSystemAdapter.writeWalkthroughs(walkthroughs);
             lastSyncedJourneysJson = journeysJson;
             wroteSomething = true;
           }
@@ -370,7 +370,7 @@ export function startFileSystemSync(): void {
     runDebouncedFlush();
   });
 
-  const journeyUnsubscribe = useJourneyStore.subscribe(() => {
+  const journeyUnsubscribe = useWalkthroughsStore.subscribe(() => {
     runDebouncedFlush();
   });
 

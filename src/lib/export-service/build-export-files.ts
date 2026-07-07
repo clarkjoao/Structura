@@ -16,7 +16,7 @@ export interface ExportArtifact {
 interface BuildDiagramExportFilesArgs {
   diagram: Diagram;
   flows: Flow[];
-  serviceRegistry: Record<string, ServiceDefinition>;
+  serviceCatalog: Record<string, ServiceDefinition>;
   formats: DiagramExportFormat[];
 }
 
@@ -37,12 +37,12 @@ const FORMAT_MIME: Record<DiagramExportFormat, string> = {
 export function buildDiagramExportFiles({
   diagram,
   flows,
-  serviceRegistry,
+  serviceCatalog,
   formats,
 }: BuildDiagramExportFilesArgs): { baseName: string; files: ExportArtifact[] } {
   const baseName = exportFilenameSlug(diagram);
   const files = formats.map((format) => {
-    const content = buildExportContent(format, diagram, flows, serviceRegistry);
+    const content = buildExportContent(format, diagram, flows, serviceCatalog);
     const suffix = format === "mermaid" ? "-flows" : "";
 
     return {
@@ -59,13 +59,13 @@ function buildExportContent(
   format: DiagramExportFormat,
   diagram: Diagram,
   flows: Flow[],
-  serviceRegistry: Record<string, ServiceDefinition>,
+  serviceCatalog: Record<string, ServiceDefinition>,
 ): string {
   switch (format) {
     case "json":
       return exportJSON(diagram);
     case "drawio":
-      return exportDrawio(diagram, serviceRegistry);
+      return exportDrawio(diagram, serviceCatalog);
     case "structurizr":
       return exportStructurizr(diagram);
     case "mermaid":

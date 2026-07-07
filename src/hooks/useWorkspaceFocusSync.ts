@@ -78,7 +78,7 @@ export function useWorkspaceFocusSync(): { isSyncing: boolean } {
         useDiagramStore.setState((s) => ({
           ...s,
           diagrams: hydrated.diagrams as typeof s.diagrams,
-          serviceRegistry: workspace.serviceRegistry as typeof s.serviceRegistry,
+          serviceCatalog: workspace.serviceCatalog as typeof s.serviceCatalog,
           folders: workspace.folders as typeof s.folders,
           activeDiagramId: workspace.activeDiagramId,
           past: [],

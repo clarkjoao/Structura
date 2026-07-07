@@ -23,7 +23,7 @@ export type ComponentType =
   | "svg"
   | "db-table"
   | "json-viewer"
-  | "processos"
+  | "process-node"
   | "external-element"
   | AwsCategoryId
   | GcpCategoryId
@@ -62,7 +62,6 @@ interface BaseComponent {
 
   templateId?: string;
 
-  registryServiceId?: string;
   externalLinks?: ExternalLink[];
 }
 
@@ -199,15 +198,28 @@ export type FlowNodeShape =
   | "circle" // Mermaid: ((text))
   | "subroutine"; // Mermaid: [[text]]
 
+/** @deprecated Use `ProcessNodeComponent`. The legacy `flow-node` and
+ * `processos` type strings are recognized by `isFlowNodeType` (and
+ * `isProcessNodeType`) for one migration cycle, and migrated to
+ * `process-node` by `store/persist.config.ts`. */
 export interface FlowNodeComponent extends BaseComponent {
-  type: "processos";
+  type: "process-node";
+  flowShape: FlowNodeShape;
+  nodeColor?: string;
+}
+
+export interface ProcessNodeComponent extends BaseComponent {
+  type: "process-node";
   flowShape: FlowNodeShape;
   nodeColor?: string;
 }
 
 export interface ExternalElementComponent extends BaseComponent {
   type: "external-element";
-  linkedDiagramId: string;
+  /** Diagram this external element represents. Distinct from
+   * `BaseComponent.linkedDiagramId`, which carries C4 drill-down
+   * semantics (this component has a child diagram). */
+  referenceDiagramId: string;
   linkedElementId?: string;
   linkedElementName?: string;
   linkedDiagramName?: string;
@@ -234,6 +246,7 @@ export type Component =
   | JsonViewerComponent
   | SvgComponent
   | FlowNodeComponent
+  | ProcessNodeComponent
   | ExternalElementComponent
   | PluginTypedComponent;
 
@@ -262,6 +275,7 @@ export type TypedComponentPatch =
   | (Partial<Omit<JsonViewerComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<SvgComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<FlowNodeComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<PluginTypedComponent, "id">> & { width?: number; height?: number })
   | { width?: number; height?: number };

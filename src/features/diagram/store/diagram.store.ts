@@ -347,7 +347,7 @@ export const useIconActions = () =>
     })),
   );
 
-export const useRegistryActions = () =>
+export const useCatalogActions = () =>
   useDiagramStore(
     useShallow((s) => ({
       addService: s.addService,
@@ -356,3 +356,6 @@ export const useRegistryActions = () =>
       linkComponentToService: s.linkComponentToService,
     })),
   );
+
+/** @deprecated Use `useCatalogActions`. Alias kept for one release. */
+export const useRegistryActions = useCatalogActions;

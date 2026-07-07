@@ -10,6 +10,7 @@ const ALLOWED_COMPONENT_PATCH_KEYS = new Set<string>([
   "tags",
   "serviceId",
   "linkedDiagramId",
+  "referenceDiagramId",
   "hidden",
   "handleOrder",
   "technology",
@@ -35,7 +36,7 @@ const ALLOWED_COMPONENT_PATCH_KEYS = new Set<string>([
   "jsonContent",
   "schemaRef",
   "templateId",
-  "registryServiceId",
+  "serviceId",
 ]);
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -128,7 +129,7 @@ export function createTemplateDataFromNode(
 ): {
   baseType: ComponentType;
   data: Record<string, unknown>;
-  registryServiceId?: string;
+  serviceId?: string;
 } {
   const nodeData = asRecord(node.data);
   const baseType = domainComponent?.type ?? resolveBaseType(node, nodeData);
@@ -143,7 +144,7 @@ export function createTemplateDataFromNode(
   return {
     baseType,
     data,
-    registryServiceId: serviceId,
+    serviceId,
   };
 }
 
@@ -153,14 +154,13 @@ export function buildComponentPatchFromTemplate(
 ): ComponentPatch {
   const patch: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(template.data)) {
-    if (!ALLOWED_COMPONENT_PATCH_KEYS.has(key) || key === "registryServiceId") continue;
+    if (!ALLOWED_COMPONENT_PATCH_KEYS.has(key)) continue;
     patch[key] = value;
   }
   patch.templateId = template.id;
-  if (template.registryServiceId && hasRegistryService) {
-    patch.serviceId = template.registryServiceId;
+  if (template.serviceId && hasRegistryService) {
+    patch.serviceId = template.serviceId;
   } else {
-    delete patch.registryServiceId;
     patch.serviceId = undefined;
   }
   return patch as ComponentPatch;

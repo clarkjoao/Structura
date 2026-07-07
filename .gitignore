@@ -43,3 +43,6 @@ ds-bundle/
 .design-sync/.cache/
 .design-sync/learnings/
 .design-sync/node_modules
+^\.pr-body\.md
+
+.pr-body.md

@@ -207,7 +207,7 @@ function buildComponentForType(
     component = {
       ...base,
       type: "external-element",
-      linkedDiagramId: "",
+      referenceDiagramId: "",
       tags: ["external"],
     } as ExternalElementComponent;
   } else if (isPluginComponentType(type)) {

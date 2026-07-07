@@ -16,8 +16,8 @@ import { useCanvasEdges } from "../edges/useCanvasEdges";
 import { useCanvasHandleReorder } from "../edges/useCanvasHandleReorder";
 import { useLocalNodes } from "./useLocalNodes";
 import { useConnectionInternalsSync } from "./useConnectionInternalsSync";
-import { useJourneyCanvasHighlight } from "../chat/useJourneyCanvasHighlight";
-import { useJourneyPlayer } from "@/features/journeys";
+import { useWalkthroughCanvasHighlight } from "../chat/useWalkthroughCanvasHighlight";
+import { useWalkthroughPlayer } from "@/features/walkthroughs";
 
 type FlowSlice = ReturnType<typeof import("./useCanvasFlowState").useCanvasFlowState>;
 type CompareSlice = ReturnType<typeof import("./useCanvasCompareState").useCanvasCompareState>;
@@ -45,7 +45,7 @@ export interface UseCanvasGraphStateParams {
   innerOnNodesChange: NodeDragParenting["onNodesChange"];
   visibleComponents: Component[];
   visibleConnections: Connection[];
-  serviceRegistry: Record<string, ServiceDefinition>;
+  serviceCatalog: Record<string, ServiceDefinition>;
   allDiagrams: Record<string, Diagram>;
   compareContext: {
     compareState: CompareSlice;
@@ -79,7 +79,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     innerOnNodesChange,
     visibleComponents,
     visibleConnections,
-    serviceRegistry,
+    serviceCatalog,
     allDiagrams,
     compareContext,
     flowContext,
@@ -104,8 +104,8 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
   // full flow objects today. Migrating `dataCtx` dependencies to `flowIds` is deferred to
   // a safer follow-up to avoid behavioral regressions in node rendering.
 
-  const journeyPlayer = useJourneyPlayer();
-  const journeyHighlight = useJourneyCanvasHighlight();
+  const journeyPlayer = useWalkthroughPlayer();
+  const journeyHighlight = useWalkthroughCanvasHighlight();
   const effectiveFlowHighlight = useMemo(() => {
     if (journeyPlayer.mode.kind === "playing") {
       return journeyHighlight;
@@ -146,7 +146,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     selectedNodeId,
     selectedNodeIds,
     highlightedNodeIds,
-    serviceRegistry,
+    serviceCatalog,
     allDiagrams,
     handleDrillDown,
     handlePanelCollapseToggle,

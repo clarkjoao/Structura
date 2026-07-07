@@ -31,9 +31,7 @@ export function useCustomComponentLibrary() {
     const nameFromData =
       typeof template.data.name === "string" ? template.data.name : template.name;
     const component = addComponent(template.baseType, nameFromData, null, position);
-    const hasRegistryService = template.registryServiceId
-      ? serviceIds.has(template.registryServiceId)
-      : false;
+    const hasRegistryService = template.serviceId ? serviceIds.has(template.serviceId) : false;
     const patch = buildComponentPatchFromTemplate(template, hasRegistryService);
     updateComponent(component.id, patch);
     return component.id;

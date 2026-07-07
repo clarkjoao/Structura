@@ -28,7 +28,7 @@ export interface NodeBuildContext {
 
   compareVisualByComponentId?: Record<string, CompareElementVisual>;
   isCompareMode?: boolean;
-  serviceRegistry: Record<string, ServiceDefinition>;
+  serviceCatalog: Record<string, ServiceDefinition>;
   allDiagrams: Record<string, Diagram>;
   selectedNodeId: string | null;
   selectedNodeIds: Set<string>;

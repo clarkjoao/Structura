@@ -1,5 +1,5 @@
 import type { Diagram, Folder, IconDefinition } from "@/features/diagram";
-import type { Journey } from "@/features/journeys";
+import type { Journey } from "@/features/walkthroughs";
 import { normalizeImportedDiagram } from "@/lib/export-service/normalize-imported-diagram";
 import { FileSystemEntryKind } from "@/features/diagram";
 import type { CustomComponentTemplate } from "@/features/custom-components";
@@ -16,7 +16,7 @@ const DB_NAME = "structura-fs";
 const DB_STORE = "handles";
 const HANDLE_KEY = "workspace-handle";
 const MANIFEST_FILE = "structura-manifest.json";
-const JOURNEYS_FILE = "structura-journeys.json";
+const JOURNEYS_FILE = "structura-walkthroughs.json";
 
 type FileSystemPermissionMode = "read" | "readwrite";
 type FileSystemPermissionState = "granted" | "denied" | "prompt";
@@ -141,7 +141,7 @@ export interface WorkspaceManifest {
   createdAt: string;
   updatedAt: string;
   diagramIds: string[];
-  serviceRegistry: Record<string, unknown>;
+  serviceCatalog: Record<string, unknown>;
   folders: Record<string, unknown>;
   activeDiagramId: string | null;
   customComponentTemplates?: Record<string, CustomComponentTemplate>;
@@ -150,7 +150,7 @@ export interface WorkspaceManifest {
 
 export type WorkspacePayload = {
   diagrams: Record<string, Diagram>;
-  serviceRegistry: Record<string, unknown>;
+  serviceCatalog: Record<string, unknown>;
   folders: Record<string, unknown>;
   activeDiagramId: string | null;
   /** ISO timestamp from manifest; used for merge/reconnect conflict resolution. */
@@ -378,23 +378,23 @@ export class FileSystemAdapter {
   }
 
   /** Single-file workspace export; large journey sets may warrant sharding in a future schema. */
-  async writeJourneys(journeys: Record<string, Journey>): Promise<boolean> {
+  async writeWalkthroughs(walkthroughs: Record<string, Journey>): Promise<boolean> {
     if (!this.handle) return false;
     try {
       const file = await this.handle.getFileHandle(JOURNEYS_FILE, {
         create: true,
       });
       const writable = await file.createWritable();
-      await writable.write(JSON.stringify(journeys, null, 2));
+      await writable.write(JSON.stringify(walkthroughs, null, 2));
       await writable.close();
       return true;
     } catch (e) {
-      console.error("[FileSystemAdapter] writeJourneys failed:", e);
+      console.error("[FileSystemAdapter] writeWalkthroughs failed:", e);
       return false;
     }
   }
 
-  async readJourneys(): Promise<Record<string, Journey> | null> {
+  async readWalkthroughs(): Promise<Record<string, Journey> | null> {
     if (!this.handle) return null;
     try {
       const file = await this.handle.getFileHandle(JOURNEYS_FILE);
@@ -429,7 +429,7 @@ export class FileSystemAdapter {
 
     return {
       diagrams,
-      serviceRegistry: manifest.serviceRegistry,
+      serviceCatalog: manifest.serviceCatalog,
       folders: manifest.folders,
       activeDiagramId,
       manifestUpdatedAt: manifest.updatedAt,

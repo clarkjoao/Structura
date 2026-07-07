@@ -17,6 +17,7 @@ import type {
   DbTableComponent,
   JsonViewerComponent,
   FlowNodeComponent,
+  ProcessNodeComponent,
   ExternalElementComponent,
   PluginTypedComponent,
 } from "./component.types";
@@ -32,6 +33,7 @@ import {
   isDbTableType,
   isJsonViewerType,
   isFlowNodeType,
+  isProcessNodeType,
   isExternalElementType,
 } from "./component-type-constants";
 
@@ -63,6 +65,9 @@ export const isJsonViewerComponent = (c: Component): c is JsonViewerComponent =>
   isJsonViewerType(c.type);
 
 export const isFlowNodeComponent = (c: Component): c is FlowNodeComponent => isFlowNodeType(c.type);
+
+export const isProcessNodeComponent = (c: Component): c is ProcessNodeComponent =>
+  isProcessNodeType(c.type);
 
 export const isExternalElementComponent = (c: Component): c is ExternalElementComponent =>
   isExternalElementType(c.type);

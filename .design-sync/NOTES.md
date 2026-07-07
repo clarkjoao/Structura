@@ -26,11 +26,11 @@ shadcn-style kit at `src/components/ui/*.tsx` + Tailwind tokens in `src/index.cs
 - **Overlay components** (Dialog, and expect the same for AlertDialog/Popover/DropdownMenu/
   Select/Tooltip): render the open state inline with
   `modal={false}` + `<Content style={{position:"static", transform:"none"}}
-  onOpenAutoFocus={e=>e.preventDefault()} onInteractOutside={e=>e.preventDefault()}>`,
+onOpenAutoFocus={e=>e.preventDefault()} onInteractOutside={e=>e.preventDefault()}>`,
   and set `cfg.overrides.<Name> = {"cardMode":"single","viewport":"WxH"}`.
 - The review-capture cell is **narrow (< Tailwind `sm` 640px)**: any footer/action row that
   relies on `sm:flex-row` will stack. Force it with inline `style={{flexDirection:"row",
-  justifyContent:"flex-end", gap:8}}` on the footer.
+justifyContent:"flex-end", gap:8}}` on the footer.
 - **Changing `cfg.overrides` requires a full `package-build`** — `preview-rebuild.mjs` aborts
   with `[CONFIG_STALE]`. Author `.tsx`-only changes can use `preview-rebuild`.
 
