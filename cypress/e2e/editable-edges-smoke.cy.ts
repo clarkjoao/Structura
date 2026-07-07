@@ -141,6 +141,17 @@ describe("Editable edge — orthogonal step (draw.io style)", () => {
     cy.get('button[aria-label="Switch to curved routing"]').should("exist");
   });
 
+  it("nudges a focused corner with the keyboard", () => {
+    cy.get(".react-flow__edge-interaction").first().click({ force: true });
+    cy.get('rect[aria-label^="Edge corner"]')
+      .first()
+      .focus()
+      .trigger("keydown", { key: "ArrowUp", force: true })
+      .trigger("keydown", { key: "ArrowRight", force: true });
+    // Nudging materializes the route as stored control points.
+    cy.get('rect[aria-label^="Edge corner"]').its("length").should("be.gte", 2);
+  });
+
   it("repositions a corner by dragging its handle (keeps the route orthogonal)", () => {
     cy.get(".react-flow__edge-interaction").first().click({ force: true });
     cy.get('rect[aria-label^="Edge corner"]')

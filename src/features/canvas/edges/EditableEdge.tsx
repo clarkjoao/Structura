@@ -43,6 +43,7 @@ export type { EdgeData };
 
 const DEFAULT_STROKE = "hsl(220 20% 30%)";
 const HIGHLIGHT_STROKE = "hsl(187 72% 51%)";
+const ALIGN_STROKE = "hsl(316 80% 63%)";
 
 const strokeDasharrayByStyle: Record<StrokeStyle, string | undefined> = {
   [StrokeStyle.Solid]: undefined,
@@ -86,7 +87,7 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
   const isCurve = edgeStyle === EdgeStyle.Editable;
   const isEditable = (isCurve || isStep) && elementsSelectable;
 
-  const { points, activePointId, addPoint, removePoint, startPointDrag } =
+  const { points, activePointId, snapGuides, addPoint, removePoint, startPointDrag, nudgePoint } =
     useControlPoints(connectionId);
   const segmentDrag = useSegmentDrag(connectionId, source, target, sourcePosition);
 
@@ -158,6 +159,9 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
       }));
   }, [showAffordances, isStep, isDraggingStep, segmentDrag.segments]);
 
+  // Snap guides come from whichever editing surface is active for this style.
+  const activeGuides = isStep ? segmentDrag.snapGuides : snapGuides;
+
   const canDragLabel = Boolean(edgeData.label && activeDiagramId);
   const labelDrag = useEdgeLabelDrag({
     connectionId,
@@ -209,35 +213,24 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
           onHoverChange={setHovered}
           onDoubleClick={handleResetDoubleClick}
         />
-        {segmentDrag.snapGuide && (
-          <line
-            x1={
-              segmentDrag.snapGuide.orientation === "horizontal"
-                ? segmentDrag.snapGuide.from
-                : segmentDrag.snapGuide.position
-            }
-            y1={
-              segmentDrag.snapGuide.orientation === "horizontal"
-                ? segmentDrag.snapGuide.position
-                : segmentDrag.snapGuide.from
-            }
-            x2={
-              segmentDrag.snapGuide.orientation === "horizontal"
-                ? segmentDrag.snapGuide.to
-                : segmentDrag.snapGuide.position
-            }
-            y2={
-              segmentDrag.snapGuide.orientation === "horizontal"
-                ? segmentDrag.snapGuide.position
-                : segmentDrag.snapGuide.to
-            }
-            stroke="var(--color-text-info, hsl(187 72% 51%))"
-            strokeWidth={1}
-            strokeOpacity={0.4}
-            strokeDasharray="4 4"
-            style={{ pointerEvents: "none" }}
-          />
-        )}
+        {activeGuides.map((guide, index) => {
+          const horizontal = guide.orientation === "horizontal";
+          const isAlign = guide.kind === "align";
+          return (
+            <line
+              key={`guide-${index}`}
+              x1={horizontal ? guide.from : guide.position}
+              y1={horizontal ? guide.position : guide.from}
+              x2={horizontal ? guide.to : guide.position}
+              y2={horizontal ? guide.position : guide.to}
+              stroke={isAlign ? ALIGN_STROKE : "var(--color-text-info, hsl(187 72% 51%))"}
+              strokeWidth={1}
+              strokeOpacity={isAlign ? 0.9 : 0.4}
+              strokeDasharray="4 4"
+              style={{ pointerEvents: "none" }}
+            />
+          );
+        })}
         {segmentDrag.previewPath && (
           <path
             d={segmentDrag.previewPath}
@@ -262,6 +255,7 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
               ariaLabel={(index) => t("customEdge.cornerHandleAria", { index: index + 1 })}
               onCornerPointerDown={segmentDrag.startCornerDrag}
               onCornerRemove={segmentDrag.removeCorner}
+              onCornerNudge={segmentDrag.nudgeCorner}
             />
             {stepGhosts.map((ghost) => (
               <GhostCorner
@@ -293,6 +287,7 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
                 ariaLabel={t("customEdge.controlPointAria", { index: index + 1 })}
                 onPointerDown={startPointDrag}
                 onRemove={removePoint}
+                onNudge={nudgePoint}
               />
             ))}
           </>

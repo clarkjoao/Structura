@@ -1,6 +1,11 @@
 import { useState } from "react";
-import type { PointerEvent as ReactPointerEvent, MouseEvent as ReactMouseEvent } from "react";
+import type {
+  KeyboardEvent as ReactKeyboardEvent,
+  PointerEvent as ReactPointerEvent,
+  MouseEvent as ReactMouseEvent,
+} from "react";
 import type { Point } from "@/features/diagram";
+import { nudgeFromKey } from "./nudge";
 
 const HANDLE_SIZE = 9;
 const HANDLE_HIT_SIZE = 16;
@@ -15,6 +20,7 @@ interface CornerHandlesProps {
   ariaLabel: (index: number) => string;
   onCornerPointerDown: (cornerIndex: number, event: ReactPointerEvent<SVGRectElement>) => void;
   onCornerRemove: (cornerIndex: number) => void;
+  onCornerNudge: (cornerIndex: number, dx: number, dy: number) => void;
 }
 
 /**
@@ -29,8 +35,17 @@ export function CornerHandles({
   ariaLabel,
   onCornerPointerDown,
   onCornerRemove,
+  onCornerNudge,
 }: CornerHandlesProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  const handleKeyDown = (index: number, event: ReactKeyboardEvent<SVGRectElement>) => {
+    const delta = nudgeFromKey(event.key, event.shiftKey);
+    if (!delta) return;
+    event.preventDefault();
+    event.stopPropagation();
+    onCornerNudge(index, delta.x, delta.y);
+  };
 
   return (
     <>
@@ -62,7 +77,11 @@ export function CornerHandles({
               aria-label={ariaLabel(index)}
               className="nodrag nopan"
               style={{ pointerEvents: "all", cursor: "move", touchAction: "none" }}
-              onPointerDown={(event) => onCornerPointerDown(index, event)}
+              onPointerDown={(event) => {
+                event.currentTarget.focus();
+                onCornerPointerDown(index, event);
+              }}
+              onKeyDown={(event) => handleKeyDown(index, event)}
               onDoubleClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();

@@ -8,7 +8,6 @@ import {
   generateId,
   type Point,
 } from "@/features/diagram";
-import { GRID_SIZE } from "../../canvas.constants";
 import {
   buildStepPath,
   buildStepSegments,
@@ -16,22 +15,11 @@ import {
   computeSegmentDrag,
   defaultOrthogonalCorners,
   pruneRedundantCorners,
-  snapToGrid,
   type StepSegment,
 } from "../geometry/orthogonal";
+import { resolveAxis, useEdgeSnapping, type SnapGuide } from "./snapping";
 
-/** Snap when the nearest grid line is within half a cell (i.e. always, magnetically). */
-const SNAP_THRESHOLD = GRID_SIZE / 2;
-
-/** A grid line to draw while a drag is snapped, in flow coordinates. */
-export interface SnapGuide {
-  orientation: "horizontal" | "vertical";
-  /** Constant axis value (y for horizontal, x for vertical). */
-  position: number;
-  /** Extent of the guide along the varying axis. */
-  from: number;
-  to: number;
-}
+export type { SnapGuide };
 
 export interface UseSegmentDragResult {
   /** Interior corners actually used for rendering (stored, or the default route). */
@@ -41,22 +29,25 @@ export interface UseSegmentDragResult {
   activeCornerIndex: number | null;
   /** Semi-transparent route shown while a segment/corner is being dragged. */
   previewPath: string | null;
-  /** Grid line shown while the current drag is snapped, or `null`. */
-  snapGuide: SnapGuide | null;
+  /** Grid/alignment guides shown while the current drag is snapped. */
+  snapGuides: SnapGuide[];
   startSegmentDrag: (segment: StepSegment, event: ReactPointerEvent<SVGLineElement>) => void;
   startCornerDrag: (cornerIndex: number, event: ReactPointerEvent<SVGRectElement>) => void;
   /** Insert a new draggable corner splitting the segment at `segmentIndex`. */
   addCornerAt: (segmentIndex: number, position: Point) => void;
   /** Remove the interior corner at `cornerIndex`. */
   removeCorner: (cornerIndex: number) => void;
+  /** Nudge a corner by a keyboard step (grid cell, or 1px when `fine`). */
+  nudgeCorner: (cornerIndex: number, dx: number, dy: number) => void;
 }
 
 /**
  * draw.io-style orthogonal editing: drag a horizontal/vertical segment
  * perpendicular to reposition it, or drag a corner directly, materializing the
- * affected corners as control points. Drags snap to the canvas grid unless Alt
- * is held, show a live preview of the route, and stream updates without history
- * after a single checkpoint on the first move, so one drag is one undo step.
+ * affected corners as control points. Drags snap magnetically to node
+ * alignment lines and the grid (Alt bypasses), show a live preview, and stream
+ * updates without history after a single checkpoint, so one drag is one undo
+ * step. Corners can also be nudged with the keyboard.
  */
 export function useSegmentDrag(
   connectionId: string,
@@ -67,6 +58,7 @@ export function useSegmentDrag(
   const activeDiagramId = useActiveDiagramId();
   const { screenToFlowPosition } = useReactFlow();
   const { setEdgeControlPoints } = useDiagramActions();
+  const { capture } = useEdgeSnapping();
   const points = useEdgeControlPoints(connectionId);
 
   const corners = useMemo<Point[]>(
@@ -87,7 +79,7 @@ export function useSegmentDrag(
   const [activeSegmentIndex, setActiveSegmentIndex] = useState<number | null>(null);
   const [activeCornerIndex, setActiveCornerIndex] = useState<number | null>(null);
   const [previewPath, setPreviewPath] = useState<string | null>(null);
-  const [snapGuide, setSnapGuide] = useState<SnapGuide | null>(null);
+  const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([]);
 
   useEffect(() => {
     cornersRef.current = corners;
@@ -126,7 +118,7 @@ export function useSegmentDrag(
     setActiveSegmentIndex(null);
     setActiveCornerIndex(null);
     setPreviewPath(null);
-    setSnapGuide(null);
+    setSnapGuides([]);
   }, []);
 
   const startSegmentDrag = useCallback(
@@ -140,6 +132,8 @@ export function useSegmentDrag(
       const startPos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
       const horizontal = segment.orientation === "horizontal";
       const originAxis = horizontal ? segment.y1 : segment.x1;
+      const perp = horizontal ? (segment.x1 + segment.x2) / 2 : (segment.y1 + segment.y2) / 2;
+      const session = capture();
       let checkpointed = false;
       let lastNext: Point[] | null = null;
       setActiveSegmentIndex(segment.index);
@@ -148,23 +142,14 @@ export function useSegmentDrag(
       const onMove = (pointerEvent: PointerEvent) => {
         const current = screenToFlowPosition({ x: pointerEvent.clientX, y: pointerEvent.clientY });
         const delta = { x: current.x - startPos.x, y: current.y - startPos.y };
-        const snapping = !pointerEvent.altKey;
-        // Snap the moved axis by adjusting the delta so the segment lands on a grid line.
-        if (snapping) {
+        if (!pointerEvent.altKey) {
           const rawAxis = originAxis + (horizontal ? delta.y : delta.x);
-          const point = horizontal ? { x: 0, y: rawAxis } : { x: rawAxis, y: 0 };
-          const snapped = horizontal
-            ? snapToGrid(point, GRID_SIZE, SNAP_THRESHOLD).y
-            : snapToGrid(point, GRID_SIZE, SNAP_THRESHOLD).x;
-          if (horizontal) delta.y = snapped - originAxis;
-          else delta.x = snapped - originAxis;
-          setSnapGuide(
-            snapped !== rawAxis
-              ? buildGuide(source, target, initialCorners, horizontal, snapped)
-              : null,
-          );
+          const snap = resolveAxis(horizontal ? "y" : "x", rawAxis, perp, session, true);
+          if (horizontal) delta.y = snap.value - originAxis;
+          else delta.x = snap.value - originAxis;
+          setSnapGuides(snap.guide ? [snap.guide] : []);
         } else {
-          setSnapGuide(null);
+          setSnapGuides([]);
         }
         const next = computeSegmentDrag(source, target, initialCorners, segment, delta);
         lastNext = next;
@@ -185,7 +170,7 @@ export function useSegmentDrag(
       window.addEventListener("pointercancel", onUp);
       cleanupRef.current = onUp;
     },
-    [activeDiagramId, screenToFlowPosition, source, target, commit, detach],
+    [activeDiagramId, screenToFlowPosition, source, target, commit, detach, capture],
   );
 
   const startCornerDrag = useCallback(
@@ -199,6 +184,7 @@ export function useSegmentDrag(
       const origin = initialCorners[cornerIndex];
       if (!origin) return;
       const startPos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      const session = capture();
       let checkpointed = false;
       let lastNext: Point[] | null = null;
       setActiveCornerIndex(cornerIndex);
@@ -208,10 +194,15 @@ export function useSegmentDrag(
         const current = screenToFlowPosition({ x: pointerEvent.clientX, y: pointerEvent.clientY });
         const delta = { x: current.x - startPos.x, y: current.y - startPos.y };
         if (!pointerEvent.altKey) {
-          const raw = { x: origin.x + delta.x, y: origin.y + delta.y };
-          const snapped = snapToGrid(raw, GRID_SIZE, SNAP_THRESHOLD);
-          delta.x = snapped.x - origin.x;
-          delta.y = snapped.y - origin.y;
+          const rawX = origin.x + delta.x;
+          const rawY = origin.y + delta.y;
+          const snapX = resolveAxis("x", rawX, rawY, session, true);
+          const snapY = resolveAxis("y", rawY, rawX, session, true);
+          delta.x = snapX.value - origin.x;
+          delta.y = snapY.value - origin.y;
+          setSnapGuides([snapX.guide, snapY.guide].filter((g): g is SnapGuide => g !== null));
+        } else {
+          setSnapGuides([]);
         }
         const next = computeCornerDrag(source, target, initialCorners, cornerIndex, delta);
         lastNext = next;
@@ -232,7 +223,7 @@ export function useSegmentDrag(
       window.addEventListener("pointercancel", onUp);
       cleanupRef.current = onUp;
     },
-    [activeDiagramId, screenToFlowPosition, source, target, commit, detach],
+    [activeDiagramId, screenToFlowPosition, source, target, commit, detach, capture],
   );
 
   // Insert a new corner splitting a segment, materializing the effective route
@@ -258,33 +249,29 @@ export function useSegmentDrag(
     [activeDiagramId, commit],
   );
 
+  const nudgeCorner = useCallback(
+    (cornerIndex: number, dx: number, dy: number) => {
+      if (!activeDiagramId) return;
+      const next = computeCornerDrag(source, target, cornersRef.current, cornerIndex, {
+        x: dx,
+        y: dy,
+      });
+      commit(activeDiagramId, next, true);
+    },
+    [activeDiagramId, commit, source, target],
+  );
+
   return {
     corners,
     segments,
     activeSegmentIndex,
     activeCornerIndex,
     previewPath,
-    snapGuide,
+    snapGuides,
     startSegmentDrag,
     startCornerDrag,
     addCornerAt,
     removeCorner,
+    nudgeCorner,
   };
-}
-
-/** Guide line spanning the route's extent along the axis the segment moves on. */
-function buildGuide(
-  source: Point,
-  target: Point,
-  corners: readonly Point[],
-  horizontal: boolean,
-  position: number,
-): SnapGuide {
-  const knots = [source, ...corners, target];
-  if (horizontal) {
-    const xs = knots.map((k) => k.x);
-    return { orientation: "horizontal", position, from: Math.min(...xs), to: Math.max(...xs) };
-  }
-  const ys = knots.map((k) => k.y);
-  return { orientation: "vertical", position, from: Math.min(...ys), to: Math.max(...ys) };
 }

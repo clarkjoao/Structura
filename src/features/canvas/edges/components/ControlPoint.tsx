@@ -1,6 +1,11 @@
-import type { PointerEvent as ReactPointerEvent, MouseEvent as ReactMouseEvent } from "react";
+import type {
+  KeyboardEvent as ReactKeyboardEvent,
+  PointerEvent as ReactPointerEvent,
+  MouseEvent as ReactMouseEvent,
+} from "react";
 import type { EdgeControlPoint } from "@/features/diagram";
 import type { GhostMidpoint } from "../geometry/projection";
+import { nudgeFromKey } from "./nudge";
 
 interface ControlPointProps {
   point: EdgeControlPoint;
@@ -8,16 +13,25 @@ interface ControlPointProps {
   ariaLabel: string;
   onPointerDown: (pointId: string, event: ReactPointerEvent<SVGCircleElement>) => void;
   onRemove: (pointId: string) => void;
+  onNudge: (pointId: string, dx: number, dy: number) => void;
 }
 
-/** A solid, draggable control point. Double-click removes it. */
+/** A solid, draggable control point. Double-click removes it; arrows nudge it. */
 export function ControlPoint({
   point,
   active,
   ariaLabel,
   onPointerDown,
   onRemove,
+  onNudge,
 }: ControlPointProps) {
+  const handleKeyDown = (event: ReactKeyboardEvent<SVGCircleElement>) => {
+    const delta = nudgeFromKey(event.key, event.shiftKey);
+    if (!delta) return;
+    event.preventDefault();
+    event.stopPropagation();
+    onNudge(point.id, delta.x, delta.y);
+  };
   return (
     <circle
       cx={point.x}
@@ -31,7 +45,11 @@ export function ControlPoint({
       aria-label={ariaLabel}
       className="nodrag nopan"
       style={{ pointerEvents: "all", cursor: "grab", touchAction: "none" }}
-      onPointerDown={(event) => onPointerDown(point.id, event)}
+      onPointerDown={(event) => {
+        event.currentTarget.focus();
+        onPointerDown(point.id, event);
+      }}
+      onKeyDown={handleKeyDown}
       onDoubleClick={(event) => {
         event.preventDefault();
         event.stopPropagation();

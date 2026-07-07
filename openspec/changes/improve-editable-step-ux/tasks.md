@@ -81,3 +81,13 @@
 - [x] 11.4 Add-a-bend affordance: `GhostCorner` at segment midpoints inserts a corner (`addCornerAt`)
 - [x] 11.5 Curve↔step routing toggle in `EdgeToolbar`, preserving other style props + i18n (en/pt-BR)
 - [x] 11.6 Extend Cypress smoke: add-a-bend affordance + routing toggle present (8/8 passing)
+
+## 12. Keyboard nudge & magnetic guides
+
+- [x] 12.1 `alignment.ts` pure module (`buildAlignmentTargets`, `findAlignment`, `alignmentExtent`) + unit tests
+- [x] 12.2 Shared `snapping.ts`: `useEdgeSnapping` captures node boxes at drag start; `resolveAxis` does alignment→grid with guide output
+- [x] 12.3 Magnetic alignment (node left/center/right, top/middle/bottom) in corner/segment drags, precedence over grid, Alt bypass
+- [x] 12.4 Alignment magnet + guides on curve control-point drags (no grid; curves stay free-form)
+- [x] 12.5 Render `snapGuides[]` in `EditableEdge` with distinct grid vs alignment styling
+- [x] 12.6 Keyboard nudge: arrow = grid cell, Shift+arrow = 1px, for control points (`nudgePoint`) and corners (`nudgeCorner`); focus handles on pointerdown
+- [x] 12.7 Extend Cypress smoke: keyboard nudge + magnetic guide assertion; verified guide renders mid-drag (9/9 passing)
