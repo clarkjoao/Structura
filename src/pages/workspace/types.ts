@@ -3,7 +3,7 @@ import type { Flow } from "@/features/diagram";
 
 export type CopiedClipboardKind = "drawio" | "json" | "structurizr";
 
-export interface ModelExplorerContentProps {
+export interface WorkspaceContentProps {
   showFlows: boolean;
   setShowFlows: (v: boolean) => void;
   isViewingCoverage: boolean;

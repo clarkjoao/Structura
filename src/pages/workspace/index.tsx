@@ -27,10 +27,10 @@ import { FlowModeProvider } from "@/features/canvas";
 import { CollabProvider, CollabStartModal } from "@/features/collaboration";
 import { ImportModal } from "@/pages/ImportModal";
 import type { CopiedClipboardKind } from "./types";
-import { ModelExplorerContent } from "./ModelExplorerContent";
+import { WorkspaceContent } from "./WorkspaceContent";
 import { useWorkspaceFlowRecordingFinalize } from "./useWorkspaceFlowRecordingFinalize";
 
-export default function ModelExplorerPage() {
+export default function WorkspacePage() {
   const { t } = useTranslation();
   const { id: urlId } = useParams<{ id: string }>();
   const diagram = useActiveDiagram();
@@ -193,7 +193,7 @@ export default function ModelExplorerPage() {
           userName={collabUserName}
           signalingUrl={collabServerUrl}
         >
-          <ModelExplorerContent
+          <WorkspaceContent
             showFlows={showFlows}
             setShowFlows={setShowFlows}
             isViewingCoverage={isViewingCoverage}

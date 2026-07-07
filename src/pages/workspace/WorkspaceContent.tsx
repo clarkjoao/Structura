@@ -41,7 +41,7 @@ import { CollabCursors, CollabToolbar, useCollab } from "@/features/collaboratio
 import { useWalkthroughPlayer } from "@/features/walkthroughs";
 import { ExportModal } from "./ExportModal";
 import { ShareModal } from "./ShareModal";
-import type { ModelExplorerContentProps } from "./types";
+import type { WorkspaceContentProps } from "./types";
 import { getViewportCenter } from "@/features/canvas/viewport-utils";
 import { KEY, keyIs } from "@/lib/keyboard-utils";
 
@@ -60,7 +60,7 @@ function ReactFlowInstanceBridge({
   return null;
 }
 
-export function ModelExplorerContent({
+export function WorkspaceContent({
   showFlows,
   setShowFlows,
   isViewingCoverage,
@@ -82,7 +82,7 @@ export function ModelExplorerContent({
   backHref,
   focusMode,
   onToggleFocusMode,
-}: ModelExplorerContentProps) {
+}: WorkspaceContentProps) {
   const { t } = useTranslation();
   const {
     session,

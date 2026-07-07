@@ -600,7 +600,7 @@ blocking defect.
 | 1 | `processos` (ComponentType) | `process-node` | 1 | shipped (PERSIST_SCHEMA_VERSION 7) |
 | 2 | `registryServiceId` (field) | *(remove or unify with `serviceId`)* | 1 | **rejected as dead field** — it is live in plugin snapshots and template instancing. Unification with `serviceId` is a separate spec. |
 | 3 | `serviceRegistry` (state, i18n, page) | `serviceCatalog` | 2 | shipped (PERSIST_SCHEMA_VERSION 8) |
-| 4 | `ModelExplorer` (page) | `Workspace` | 2 | proposed |
+| 4 | `ModelExplorer` (page) | `Workspace` | 2 | shipped |
 | 5 | `Journey` (entity, route, i18n) | `Walkthrough` | 3 | shipped (PERSIST_SCHEMA_VERSION 9) |
 | 6 | `ExternalElementComponent.linkedDiagramId` | `referenceDiagramId` | 3 | proposed |
 | 7 | `CustomComponentRepository.ts` | `customComponentTemplateStore.ts` | 4 | cosmetic, optional |

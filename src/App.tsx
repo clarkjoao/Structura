@@ -25,7 +25,7 @@ const CollabRoom = lazy(() =>
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const WalkthroughEditorPage = lazy(() => import("@/pages/walkthroughs/WalkthroughEditorPage"));
 const WalkthroughsPage = lazy(() => import("@/pages/walkthroughs/WalkthroughsPage"));
-const ModelExplorer = lazy(() => import("@/pages/modelExplorer"));
+const Workspace = lazy(() => import("@/pages/workspace"));
 const ServiceCatalog = lazy(() => import("@/pages/serviceCatalog"));
 const PluginsPage = lazy(() => import("@/pages/settings/PluginsPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
@@ -65,7 +65,7 @@ function MainPages() {
           path="/journeys/:id/edit"
           element={<Navigate to="/walkthroughs/:id/edit" replace />}
         />
-        <Route path="/model/:id" element={<ModelExplorer />} />
+        <Route path="/model/:id" element={<Workspace />} />
         <Route path="/collab/:roomId" element={<CollabRoom />} />
         <Route path="/catalog" element={<ServiceCatalog />} />
         <Route path="/plugins" element={<PluginsPage />} />
