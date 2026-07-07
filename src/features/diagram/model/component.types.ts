@@ -217,7 +217,10 @@ export interface ProcessNodeComponent extends BaseComponent {
 
 export interface ExternalElementComponent extends BaseComponent {
   type: "external-element";
-  linkedDiagramId: string;
+  /** Diagram this external element represents. Distinct from
+   * `BaseComponent.linkedDiagramId`, which carries C4 drill-down
+   * semantics (this component has a child diagram). */
+  referenceDiagramId: string;
   linkedElementId?: string;
   linkedElementName?: string;
   linkedDiagramName?: string;

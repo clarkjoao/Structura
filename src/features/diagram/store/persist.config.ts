@@ -27,7 +27,7 @@ export const PERSIST_KEY = "diagram-store";
 /** localStorage persist debounce; folder sync uses VIEWPORT_DEBOUNCE_MS — they are independent by design. */
 const PERSIST_DEBOUNCE_MS = 1000;
 
-export const PERSIST_SCHEMA_VERSION = 9;
+export const PERSIST_SCHEMA_VERSION = 10;
 
 export const CURRENT_SCHEMA_VERSION = PERSIST_SCHEMA_VERSION;
 
@@ -283,11 +283,37 @@ function migrateProcessNodeTypeToProcessNode(state: Partial<DiagramStore>): void
  * deleting `serviceCatalog` is a no-op. */
 function migrateServiceRegistryToServiceCatalog(state: Partial<DiagramStore>): void {
   const record = state as Record<string, unknown>;
-  const legacy = record.serviceCatalog;
+  const legacy = record.serviceRegistry;
   if (legacy && typeof legacy === "object" && !record.serviceCatalog) {
     record.serviceCatalog = legacy as Record<string, ServiceDefinition>;
   }
-  delete record.serviceCatalog;
+  delete record.serviceRegistry;
+}
+
+/** Schema v10: rename `ExternalElementComponent.linkedDiagramId` to
+ * `referenceDiagramId`. The two fields had the same name but different
+ * semantics: drill-down (BaseComponent.linkedDiagramId, the C4 contract)
+ * and cross-diagram reference (ExternalElementComponent). Only the
+ * second is renamed. The migration is idempotent. */
+function migrateExternalElementLinkedDiagramId(state: Partial<DiagramStore>): void {
+  const migrate = (components: Record<string, Component> | undefined): void => {
+    if (!components) return;
+    for (const comp of Object.values(components)) {
+      if (comp.type !== "external-element") continue;
+      const ext = comp as unknown as Record<string, unknown>;
+      if (typeof ext.linkedDiagramId === "string" && ext.referenceDiagramId === undefined) {
+        ext.referenceDiagramId = ext.linkedDiagramId;
+      }
+      delete ext.linkedDiagramId;
+    }
+  };
+  for (const diagram of Object.values(state.diagrams ?? {})) {
+    const d = diagram as Diagram;
+    migrate(d.snapshot?.components);
+    for (const scene of Object.values(d.scenes ?? {})) {
+      migrate(scene.addedComponents);
+    }
+  }
 }
 
 function migrateAddDiagramDescription(state: Partial<DiagramStore>): void {
@@ -403,6 +429,7 @@ export function mergePersistedState(
   migrateFlowNodeTypeToProcessos(next);
   migrateProcessNodeTypeToProcessNode(next);
   migrateServiceRegistryToServiceCatalog(next);
+  migrateExternalElementLinkedDiagramId(next);
   if (hasEmbeddedIconLibraryInDiagrams(next)) {
     migrateIconLibraryToGlobalStore(next);
   }

@@ -167,7 +167,12 @@ export const servicesSlice = (
       const sid = d.activeSceneId ?? null;
       const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
       const comp = scene?.addedComponents[componentId] ?? d.snapshot.components[componentId];
-      if (comp) comp.linkedDiagramId = diagramId;
+      if (!comp) return;
+      if (comp.type === "external-element") {
+        comp.referenceDiagramId = diagramId ?? "";
+      } else {
+        comp.linkedDiagramId = diagramId;
+      }
     });
   },
 });

@@ -10,6 +10,7 @@ const ALLOWED_COMPONENT_PATCH_KEYS = new Set<string>([
   "tags",
   "serviceId",
   "linkedDiagramId",
+  "referenceDiagramId",
   "hidden",
   "handleOrder",
   "technology",

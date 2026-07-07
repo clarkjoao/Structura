@@ -20,21 +20,21 @@ export const externalElementDescriptor: NodeTypeDescriptor = {
     const ext = comp as ExternalElementComponent;
     const linkedDiagramName =
       ext.linkedDiagramName ??
-      (ext.linkedDiagramId ? ctx.allDiagrams[ext.linkedDiagramId]?.name : undefined);
+      (ext.referenceDiagramId ? ctx.allDiagrams[ext.referenceDiagramId]?.name : undefined);
 
-    const canNavigate = !ctx.isPlaying && !ctx.isRecording && !!ext.linkedDiagramId;
+    const canNavigate = !ctx.isPlaying && !ctx.isRecording && !!ext.referenceDiagramId;
 
     return {
       elementId: comp.id,
       name: comp.name,
-      linkedDiagramId: ext.linkedDiagramId,
+      referenceDiagramId: ext.referenceDiagramId,
       linkedElementId: ext.linkedElementId,
       linkedElementName: ext.linkedElementName,
       linkedDiagramName,
       isSelected: ctx.selectedNodeId === comp.id,
       onOpenInCanvas:
         canNavigate && ctx.navigateToDiagram
-          ? () => ctx.navigateToDiagram!(ext.linkedDiagramId, ext.linkedElementId)
+          ? () => ctx.navigateToDiagram!(ext.referenceDiagramId, ext.linkedElementId)
           : undefined,
     };
   },

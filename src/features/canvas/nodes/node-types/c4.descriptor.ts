@@ -54,9 +54,12 @@ export const c4Descriptor: NodeTypeDescriptor = {
       connectionCounts,
     } = ctx;
 
-    const linkedDiagramName = comp.linkedDiagramId
-      ? ctx.allDiagrams[comp.linkedDiagramId]?.name
-      : undefined;
+    // c4 descriptor is the catch-all — both drill-down (BaseComponent)
+    // and cross-diagram reference (ExternalElementComponent) feed the
+    // same "linkedDiagramName" data slot.
+    const refDiagramId =
+      comp.type === "external-element" ? comp.referenceDiagramId : comp.linkedDiagramId;
+    const linkedDiagramName = refDiagramId ? ctx.allDiagrams[refDiagramId]?.name : undefined;
 
     const counts = connectionCounts[comp.id] ?? { incoming: 0, outgoing: 0 };
 

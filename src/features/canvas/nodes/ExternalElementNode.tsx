@@ -7,7 +7,7 @@ import { useCollabHighlight } from "@/features/collaboration";
 export type ExternalElementNodeData = {
   elementId: string;
   name: string;
-  linkedDiagramId?: string;
+  referenceDiagramId?: string;
   linkedElementId?: string;
   linkedElementName?: string;
   linkedDiagramName?: string;
@@ -29,9 +29,9 @@ const ExternalElementNode = memo(
 
     const handleOpenNewTab = (e: React.MouseEvent) => {
       e.stopPropagation();
-      if (!d.linkedDiagramId) return;
+      if (!d.referenceDiagramId) return;
       const nodeParam = d.linkedElementId ? `?nodeId=${d.linkedElementId}` : "";
-      window.open(`/model/${d.linkedDiagramId}${nodeParam}`, "_blank");
+      window.open(`/model/${d.referenceDiagramId}${nodeParam}`, "_blank");
     };
 
     const handleOpenInCanvas = (e: React.MouseEvent) => {
@@ -39,7 +39,7 @@ const ExternalElementNode = memo(
       d.onOpenInCanvas?.();
     };
 
-    const hasLink = !!d.linkedDiagramId;
+    const hasLink = !!d.referenceDiagramId;
 
     return (
       <div
@@ -75,7 +75,7 @@ const ExternalElementNode = memo(
                 {t("externalElement.nodeFromDiagram", { name: diagramName })}
               </span>
             )}
-            {!diagramName && !d.linkedDiagramId && (
+            {!diagramName && !d.referenceDiagramId && (
               <span className="text-[11px] text-muted-foreground/60 italic block mt-0.5">
                 {t("externalElement.nodeNotLinked")}
               </span>
