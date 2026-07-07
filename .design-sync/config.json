@@ -1,0 +1,43 @@
+{
+  "projectId": "efc1448b-c48b-4f44-a2b9-ba81e39d6f67",
+  "pkg": "structura",
+  "globalName": "StructuraUI",
+  "shape": "package",
+  "buildCmd": "npx tailwindcss -c .design-sync/tailwind.sync.ts -i src/index.css -o .design-sync/.cache/compiled.css --minify",
+  "srcDir": "src",
+  "tsconfig": ".design-sync/tsconfig.build.json",
+  "cssEntry": ".design-sync/.cache/compiled.css",
+  "guidelinesGlob": [],
+  "readmeHeader": ".design-sync/conventions.md",
+  "overrides": {
+    "Dialog": { "cardMode": "single", "viewport": "680x340" },
+    "AlertDialog": { "cardMode": "single", "viewport": "680x340" },
+    "Popover": { "cardMode": "single", "viewport": "340x360" },
+    "DropdownMenu": { "cardMode": "single", "viewport": "340x360" },
+    "Select": { "cardMode": "single", "viewport": "340x360" },
+    "Tooltip": { "cardMode": "single", "viewport": "340x200" },
+    "Command": { "cardMode": "single", "viewport": "440x380" }
+  },
+  "componentSrcMap": {
+    "Button": "src/components/ui/button.tsx",
+    "Badge": "src/components/ui/badge.tsx",
+    "Card": "src/components/ui/card.tsx",
+    "Alert": "src/components/ui/alert.tsx",
+    "AlertDialog": "src/components/ui/alert-dialog.tsx",
+    "Dialog": "src/components/ui/dialog.tsx",
+    "Popover": "src/components/ui/popover.tsx",
+    "DropdownMenu": "src/components/ui/dropdown-menu.tsx",
+    "Select": "src/components/ui/select.tsx",
+    "Command": "src/components/ui/command.tsx",
+    "Tabs": "src/components/ui/tabs.tsx",
+    "Tooltip": "src/components/ui/tooltip.tsx",
+    "Breadcrumb": "src/components/ui/breadcrumb.tsx",
+    "Input": "src/components/ui/input.tsx",
+    "Textarea": "src/components/ui/textarea.tsx",
+    "Checkbox": "src/components/ui/checkbox.tsx",
+    "Switch": "src/components/ui/switch.tsx",
+    "Label": "src/components/ui/label.tsx",
+    "Separator": "src/components/ui/separator.tsx",
+    "Toaster": "src/components/ui/sonner.tsx"
+  }
+}
