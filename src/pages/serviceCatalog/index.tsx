@@ -12,7 +12,7 @@ import { normalizeSources } from "@/features/integrations/merge-utils";
 import {
   useAllServices,
   useDiagrams,
-  useRegistryActions,
+  useCatalogActions,
   useDiagramActions,
 } from "@/features/diagram";
 import type { ServiceDefinition } from "@/features/diagram";
@@ -31,11 +31,11 @@ const DefectDojoPanel = lazy(() =>
   })),
 );
 
-export default function ServiceRegistryPage() {
+export default function ServiceCatalogPage() {
   const { t } = useTranslation();
   const services = useAllServices();
   const diagrams = useDiagrams();
-  const { addService, updateService, removeService } = useRegistryActions();
+  const { addService, updateService, removeService } = useCatalogActions();
   const { openDiagram } = useDiagramActions();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();

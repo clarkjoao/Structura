@@ -46,7 +46,7 @@ interface UseCopyPasteShortcutsParams {
   ) => string[];
   pasteSvgAsCanvasNode: (svgContent: string, position: { x: number; y: number }) => string | null;
   importSvgForIconLibrary: (svgContent: string) => string | null;
-  serviceRegistry: Record<string, { id: string; name: string }>;
+  serviceCatalog: Record<string, { id: string; name: string }>;
   exportDrawioXml: (componentIds: string[]) => string;
   setSelectedNodeIds: (ids: Set<string>) => void;
   pastedSvgDefaultName: string;
@@ -63,7 +63,7 @@ export function useCopyPasteShortcuts({
   importDrawioResult,
   pasteSvgAsCanvasNode,
   importSvgForIconLibrary,
-  serviceRegistry,
+  serviceCatalog,
   exportDrawioXml,
   setSelectedNodeIds,
   pastedSvgDefaultName,
@@ -118,7 +118,7 @@ export function useCopyPasteShortcuts({
             reactFlowWrapperRef,
             lastPointerScreenRef.current,
           );
-          const result = parseDrawioXml(drawioXml, pasteCenter, serviceRegistry);
+          const result = parseDrawioXml(drawioXml, pasteCenter, serviceCatalog);
           if (result.components.length > 0 || result.connections.length > 0) {
             const newIds = importDrawioResult(
               result.components,
@@ -241,7 +241,7 @@ export function useCopyPasteShortcuts({
       importDrawioResult,
       pasteSvgAsCanvasNode,
       importSvgForIconLibrary,
-      serviceRegistry,
+      serviceCatalog,
       exportDrawioXml,
       setSelectedNodeIds,
       pastedSvgDefaultName,

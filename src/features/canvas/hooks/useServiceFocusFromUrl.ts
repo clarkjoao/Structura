@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useReactFlow } from "@xyflow/react";
 import { useActiveDiagram } from "@/features/diagram";
-import { findComponentIdsByServiceId } from "@/pages/serviceRegistry/findComponentsByServiceId";
+import { findComponentIdsByServiceId } from "@/pages/serviceCatalog/findComponentsByServiceId";
 import { focusComponentsOnCanvas } from "../focus/focusComponents";
 import type { CanvasVisualState } from "./useCanvasVisualState";
 

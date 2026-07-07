@@ -38,7 +38,7 @@ export default function ModelExplorerPage() {
   const urlDiagramExists = useDiagramStore((s) => !!(urlId && s.diagrams[urlId]));
   const { openDiagram } = useDiagramActions();
   const flows = useFlows();
-  const serviceRegistry = useServiceRegistry();
+  const serviceCatalog = useServiceRegistry();
   const navigate = useNavigate();
   const [showFlows, setShowFlows] = useState(false);
   const [isViewingCoverage, setIsViewingCoverage] = useState(false);
@@ -91,10 +91,10 @@ export default function ModelExplorerPage() {
 
   const handleCopyDrawio = useCallback(() => {
     if (!diagram) return;
-    void writeDrawioToClipboard(exportDrawio(diagram, serviceRegistry)).then(() => {
+    void writeDrawioToClipboard(exportDrawio(diagram, serviceCatalog)).then(() => {
       flashCopied("drawio");
     });
-  }, [diagram, flashCopied, serviceRegistry]);
+  }, [diagram, flashCopied, serviceCatalog]);
 
   const handleCopyJson = useCallback(async () => {
     if (!diagram) return;
@@ -120,7 +120,7 @@ export default function ModelExplorerPage() {
         const { baseName, files } = buildDiagramExportFiles({
           diagram,
           flows,
-          serviceRegistry,
+          serviceCatalog,
           formats,
         });
 
@@ -152,7 +152,7 @@ export default function ModelExplorerPage() {
         toast.error(error instanceof Error ? error.message : t("export.modal.error"));
       }
     },
-    [diagram, flows, serviceRegistry, t],
+    [diagram, flows, serviceCatalog, t],
   );
 
   const handleStartCollab = useCallback((name: string, serverUrl: string) => {

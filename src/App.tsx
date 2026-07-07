@@ -1,11 +1,5 @@
 import { Suspense, lazy } from "react";
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Navigate,
-  type FutureConfig,
-} from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, type FutureConfig } from "react-router-dom";
 import { useSharedDiagram } from "@/features/viewer/hooks/useSharedDiagram";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -29,7 +23,7 @@ const Dashboard = lazy(() => import("@/pages/dashboard"));
 const JourneyEditorPage = lazy(() => import("@/pages/journeys/JourneyEditorPage"));
 const JourneysPage = lazy(() => import("@/pages/journeys/JourneysPage"));
 const ModelExplorer = lazy(() => import("@/pages/modelExplorer"));
-const ServiceRegistry = lazy(() => import("@/pages/serviceRegistry"));
+const ServiceCatalog = lazy(() => import("@/pages/serviceCatalog"));
 const PluginsPage = lazy(() => import("@/pages/settings/PluginsPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -63,7 +57,7 @@ function MainPages() {
         <Route path="/journeys/:id/edit" element={<JourneyEditorPage />} />
         <Route path="/model/:id" element={<ModelExplorer />} />
         <Route path="/collab/:roomId" element={<CollabRoom />} />
-        <Route path="/catalog" element={<ServiceRegistry />} />
+        <Route path="/catalog" element={<ServiceCatalog />} />
         <Route path="/plugins" element={<PluginsPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

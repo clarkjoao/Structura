@@ -50,7 +50,7 @@ export function createJourneyEditorNodeBuildContext(
     resolvedComponents: snapshot.components,
     resolvedNodeLayouts: snapshot.nodeLayouts,
     sceneBadgeByComponentId: {},
-    serviceRegistry: {},
+    serviceCatalog: {},
     allDiagrams,
     selectedNodeId: selectedComponentId,
     selectedNodeIds,

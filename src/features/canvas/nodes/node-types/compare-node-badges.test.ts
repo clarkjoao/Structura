@@ -21,7 +21,7 @@ function createMinimalNodeBuildContext(
     resolvedComponents: {},
     resolvedNodeLayouts: {},
     sceneBadgeByComponentId: {},
-    serviceRegistry: {},
+    serviceCatalog: {},
     allDiagrams: {},
     selectedNodeId: null,
     selectedNodeIds: new Set(),

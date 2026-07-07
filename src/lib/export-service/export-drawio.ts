@@ -121,7 +121,7 @@ function transformCanvasPoint(
 
 export function exportDrawio(
   diagram: Diagram | DiagramModel,
-  serviceRegistry: Record<string, ServiceDefinition>,
+  serviceCatalog: Record<string, ServiceDefinition>,
   options?: { componentIds?: string[] },
 ): string {
   const resolved = diagramWithResolvedScene(diagram);
@@ -234,7 +234,7 @@ export function exportDrawio(
           };
         })();
 
-    const serviceName = c.serviceId ? serviceRegistry[c.serviceId]?.name : undefined;
+    const serviceName = c.serviceId ? serviceCatalog[c.serviceId]?.name : undefined;
 
     let cell: string;
 

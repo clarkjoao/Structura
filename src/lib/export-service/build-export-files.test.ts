@@ -36,7 +36,7 @@ describe("buildDiagramExportFiles", () => {
     const { baseName, files } = buildDiagramExportFiles({
       diagram,
       flows: [],
-      serviceRegistry: {},
+      serviceCatalog: {},
       formats: ["json", "drawio", "structurizr"],
     });
 
@@ -62,7 +62,7 @@ describe("buildDiagramExportFiles", () => {
           steps: {},
         },
       ],
-      serviceRegistry: {},
+      serviceCatalog: {},
       formats: ["mermaid"],
     });
 
@@ -123,7 +123,7 @@ describe("buildDiagramExportFiles", () => {
     const { files } = buildDiagramExportFiles({
       diagram,
       flows: Object.values(diagram.snapshot.flows),
-      serviceRegistry: {},
+      serviceCatalog: {},
       formats: ["mermaid"],
     });
 

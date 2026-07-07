@@ -91,7 +91,7 @@ export const servicesSlice = (
   set: (fn: (state: AppState) => void) => void,
   _get: () => AppState,
 ) => ({
-  serviceRegistry: import.meta.env.VITE_DISABLE_SEEDS === "true" ? {} : SEED_SERVICE_REGISTRY,
+  serviceCatalog: import.meta.env.VITE_DISABLE_SEEDS === "true" ? {} : SEED_SERVICE_REGISTRY,
 
   addService: (service: Omit<ServiceDefinition, "id">): ServiceDefinition => {
     const svc: ServiceDefinition = {
@@ -100,14 +100,14 @@ export const servicesSlice = (
       id: generateId("svc"),
     };
     set((state) => {
-      state.serviceRegistry[svc.id] = svc;
+      state.serviceCatalog[svc.id] = svc;
     });
     return svc;
   },
 
   updateService: (id: string, patch: Partial<Omit<ServiceDefinition, "id">>) => {
     set((state) => {
-      const svc = state.serviceRegistry[id];
+      const svc = state.serviceCatalog[id];
       if (!svc) return;
 
       const shouldSyncDiagrams = patchTouchesLinkedComponentFields(patch);
@@ -127,7 +127,7 @@ export const servicesSlice = (
 
   removeService: (id: string) => {
     set((state) => {
-      delete state.serviceRegistry[id];
+      delete state.serviceCatalog[id];
       Object.values(state.diagrams).forEach((entry) => {
         Object.values(entry.snapshot.components).forEach((c) => {
           if (c.serviceId === id) c.serviceId = undefined;
@@ -152,7 +152,7 @@ export const servicesSlice = (
       comp.serviceId = serviceId;
       if (!serviceId) return;
 
-      const service = state.serviceRegistry[serviceId];
+      const service = state.serviceCatalog[serviceId];
       if (!service) return;
 
       copyServiceCoreFieldsToComponent(comp, service);

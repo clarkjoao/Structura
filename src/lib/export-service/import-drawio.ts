@@ -235,11 +235,11 @@ function getVertexMxCellFromObject(objectEl: Element): Element | null {
 
 function resolveRegistryServiceId(
   registryServiceName: string,
-  serviceRegistry: Record<string, { id: string; name: string }>,
+  serviceCatalog: Record<string, { id: string; name: string }>,
 ): string | undefined {
   const trimmed = registryServiceName.trim();
   if (!trimmed) return undefined;
-  const matched = Object.values(serviceRegistry).find(
+  const matched = Object.values(serviceCatalog).find(
     (service) => service.name.toLowerCase() === trimmed.toLowerCase(),
   );
   return matched?.id;
@@ -261,7 +261,7 @@ function isRootParentDrawioId(parentDrawioId: string): boolean {
 export function parseDrawioXml(
   xml: string,
   pasteCenter: { x: number; y: number },
-  serviceRegistry: Record<string, { id: string; name: string }>,
+  serviceCatalog: Record<string, { id: string; name: string }>,
 ): DrawioImportResult {
   let document: Document;
   try {
@@ -514,7 +514,7 @@ export function parseDrawioXml(
       const mappedType = C4_TYPE_MAP[c4TypeLabel] as
         "person" | "system" | "container" | "component";
       const registryServiceName = getAttr(objectEl, "registryService");
-      const serviceId = resolveRegistryServiceId(registryServiceName, serviceRegistry);
+      const serviceId = resolveRegistryServiceId(registryServiceName, serviceCatalog);
 
       components.push({
         id: newId,

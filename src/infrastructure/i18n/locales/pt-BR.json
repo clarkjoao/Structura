@@ -50,7 +50,8 @@
     "commaSeparatedTags": "Tags separadas por vírgula",
     "techExample": "ex.: REST, gRPC",
     "workspace": "Workspace",
-    "registry": "Registry",
+    "registry": "Serviços",
+    "services": "Serviços",
     "sort": "Ordenar",
     "lastEdited": "Última edição",
     "c4Level": "Nível C4",
@@ -126,7 +127,8 @@
   "nav": {
     "workspaces": "Workspaces",
     "journeys": "Jornadas",
-    "registry": "Registry",
+    "registry": "Serviços",
+    "services": "Serviços",
     "brandSuffix": "Architecture",
     "plugins": "Plugins"
   },
@@ -769,7 +771,7 @@
     "sectionCanvasGroups": "Canvas e Agrupamentos",
     "sectionAws": "AWS",
     "sectionCloud": "Cloud (GCP / Azure)",
-    "sectionRegistry": "Registry",
+    "sectionServices": "Services",
     "noResults": "Nenhum resultado",
     "typePerson": "Person",
     "typeSystem": "System",
@@ -881,11 +883,12 @@
   "elementPicker": {
     "categoryAll": "Todos",
     "viewAll": "Ver todos",
-    "viewAllRegistry": "Ver todos no Registry",
-    "registry": "Registry",
+    "viewAllServices": "Ver todos em serviços",
+    "registry": "Serviços",
+    "services": "Serviços",
     "modalTitle": "Adicionar elemento",
-    "searchPlaceholder": "Buscar elementos e registry...",
-    "searchPlaceholderUnified": "Buscar elementos, AWS, GCP, Azure, registry…",
+    "searchPlaceholder": "Buscar elementos e serviços...",
+    "searchPlaceholderUnified": "Buscar elementos, AWS, GCP, Azure, serviços…",
     "cloudOther": "Outros",
     "frequentlyUsed": "Mais usados",
     "noResultsFor": "Nenhum elemento encontrado para “{{query}}”",
@@ -896,8 +899,8 @@
     "flowchart": "Fluxograma",
     "canvasGroups": "Canvas e Agrupamentos",
     "awsOther": "Outros",
-    "registryEmpty": "Nenhum serviço no registry ainda.",
-    "openRegistry": "Abrir registry",
+    "servicesEmpty": "Nenhum serviço ainda.",
+    "openServices": "Abrir serviços",
     "categories": {
       "data": "Dados"
     }

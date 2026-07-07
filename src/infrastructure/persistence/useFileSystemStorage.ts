@@ -56,7 +56,7 @@ function buildManifest(state: ReturnType<typeof useDiagramStore.getState>) {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     diagramIds: Object.keys(state.diagrams),
-    serviceRegistry: state.serviceRegistry,
+    serviceCatalog: state.serviceCatalog,
     folders: state.folders,
     activeDiagramId: state.activeDiagramId,
     customComponentTemplates,
@@ -77,7 +77,7 @@ export function useFileSystemStorage() {
     useDiagramStore.setState({
       diagrams: {},
       folders: {},
-      serviceRegistry: {},
+      serviceCatalog: {},
       activeDiagramId: null,
       past: [],
       future: [],
@@ -151,7 +151,7 @@ export function useFileSystemStorage() {
       useDiagramStore.setState((s) => ({
         ...s,
         diagrams: hydrated.diagrams as typeof s.diagrams,
-        serviceRegistry: workspace.serviceRegistry as typeof s.serviceRegistry,
+        serviceCatalog: workspace.serviceCatalog as typeof s.serviceCatalog,
         folders: workspace.folders as typeof s.folders,
         activeDiagramId: workspace.activeDiagramId,
         past: [],
@@ -256,9 +256,9 @@ export function useFileSystemStorage() {
           ...draft.folders,
           ...(manifest.folders as typeof draft.folders),
         };
-        draft.serviceRegistry = {
-          ...draft.serviceRegistry,
-          ...(manifest.serviceRegistry as typeof draft.serviceRegistry),
+        draft.serviceCatalog = {
+          ...draft.serviceCatalog,
+          ...(manifest.serviceCatalog as typeof draft.serviceCatalog),
         };
       }
     });
@@ -300,7 +300,7 @@ export function useFileSystemStorage() {
     useDiagramStore.setState((draft) => {
       draft.diagrams = validDiagrams;
       if (manifest) {
-        draft.serviceRegistry = manifest.serviceRegistry as typeof draft.serviceRegistry;
+        draft.serviceCatalog = manifest.serviceCatalog as typeof draft.serviceCatalog;
         draft.folders = manifest.folders as typeof draft.folders;
         draft.activeDiagramId = manifest.activeDiagramId;
       }
@@ -444,7 +444,7 @@ export function useFileSystemStorage() {
         useDiagramStore.setState((s) => ({
           ...s,
           diagrams: hydratedWorkspace.diagrams as typeof s.diagrams,
-          serviceRegistry: workspace.serviceRegistry as typeof s.serviceRegistry,
+          serviceCatalog: workspace.serviceCatalog as typeof s.serviceCatalog,
           folders: workspace.folders as typeof s.folders,
           activeDiagramId: workspace.activeDiagramId,
           past: [],

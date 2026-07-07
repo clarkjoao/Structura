@@ -106,7 +106,7 @@ export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState):
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     diagramIds: Object.keys(state.diagrams),
-    serviceRegistry: state.serviceRegistry,
+    serviceCatalog: state.serviceCatalog,
     folders: state.folders,
     activeDiagramId: state.activeDiagramId,
     customComponentTemplates,
@@ -120,7 +120,7 @@ export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState):
 
   lastSyncedManifestFingerprint = manifestSemanticFingerprint({
     diagramIds: Object.keys(state.diagrams),
-    serviceRegistry: state.serviceRegistry,
+    serviceCatalog: state.serviceCatalog,
     folders: state.folders,
     activeDiagramId: state.activeDiagramId,
     customComponentTemplates,
@@ -186,7 +186,7 @@ async function doReconnect(): Promise<boolean> {
       useDiagramStore.setState((s) => ({
         ...s,
         diagrams: hydrated.diagrams as typeof s.diagrams,
-        serviceRegistry: workspace.serviceRegistry as typeof s.serviceRegistry,
+        serviceCatalog: workspace.serviceCatalog as typeof s.serviceCatalog,
         folders: workspace.folders as typeof s.folders,
         activeDiagramId: workspace.activeDiagramId,
         past: [],
@@ -310,7 +310,7 @@ export function startFileSystemSync(): void {
 
           const manifestFp = manifestSemanticFingerprint({
             diagramIds: Object.keys(diagramState.diagrams),
-            serviceRegistry: diagramState.serviceRegistry,
+            serviceCatalog: diagramState.serviceCatalog,
             folders: diagramState.folders,
             activeDiagramId: diagramState.activeDiagramId,
             customComponentTemplates,
@@ -323,7 +323,7 @@ export function startFileSystemSync(): void {
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
               diagramIds: Object.keys(diagramState.diagrams),
-              serviceRegistry: diagramState.serviceRegistry,
+              serviceCatalog: diagramState.serviceCatalog,
               folders: diagramState.folders,
               activeDiagramId: diagramState.activeDiagramId,
               customComponentTemplates,

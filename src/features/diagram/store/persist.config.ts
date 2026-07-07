@@ -27,7 +27,7 @@ export const PERSIST_KEY = "diagram-store";
 /** localStorage persist debounce; folder sync uses VIEWPORT_DEBOUNCE_MS — they are independent by design. */
 const PERSIST_DEBOUNCE_MS = 1000;
 
-export const PERSIST_SCHEMA_VERSION = 7;
+export const PERSIST_SCHEMA_VERSION = 8;
 
 export const CURRENT_SCHEMA_VERSION = PERSIST_SCHEMA_VERSION;
 
@@ -38,7 +38,7 @@ export function partializeState(state: DiagramStore) {
     diagrams: state.diagrams,
     folders: state.folders,
     userTemplates: state.userTemplates,
-    serviceRegistry: state.serviceRegistry,
+    serviceCatalog: state.serviceCatalog,
     activeDiagramId: state.activeDiagramId,
   };
 }
@@ -54,7 +54,7 @@ export function buildPersistStoragePayload(state: DiagramStore): {
 }
 
 function migrateServiceSources(state: DiagramStore): DiagramStore {
-  Object.values(state.serviceRegistry).forEach((service) => {
+  Object.values(state.serviceCatalog).forEach((service) => {
     const svc = service as ServiceDefinition;
     if (svc.sources && svc.sources.length > 0) return;
     if (svc.source) {
@@ -276,6 +276,20 @@ function migrateProcessNodeTypeToProcessNode(state: Partial<DiagramStore>): void
   }
 }
 
+/** Schema v8: rename the persisted state field `serviceCatalog` →
+ * `serviceCatalog`. The values inside are unchanged. The migration is
+ * idempotent: if `serviceCatalog` already exists (e.g. a workspace saved
+ * at v8 is re-read at v8), the right-hand side is short-circuited and
+ * deleting `serviceCatalog` is a no-op. */
+function migrateServiceRegistryToServiceCatalog(state: Partial<DiagramStore>): void {
+  const record = state as Record<string, unknown>;
+  const legacy = record.serviceCatalog;
+  if (legacy && typeof legacy === "object" && !record.serviceCatalog) {
+    record.serviceCatalog = legacy as Record<string, ServiceDefinition>;
+  }
+  delete record.serviceCatalog;
+}
+
 function migrateAddDiagramDescription(state: Partial<DiagramStore>): void {
   for (const diagram of Object.values(state.diagrams ?? {})) {
     const diagramRecord = diagram as Diagram;
@@ -369,7 +383,7 @@ export function mergePersistedState(
   state.future = [];
   state._lastUndoRedoAt = 0;
 
-  if (!state.serviceRegistry) state.serviceRegistry = {};
+  if (!state.serviceCatalog) state.serviceCatalog = {};
   if (!state.folders) state.folders = {};
   migrateAddUserTemplates(state);
 
@@ -388,6 +402,7 @@ export function mergePersistedState(
   migrateAddDiagramDescription(next);
   migrateFlowNodeTypeToProcessos(next);
   migrateProcessNodeTypeToProcessNode(next);
+  migrateServiceRegistryToServiceCatalog(next);
   if (hasEmbeddedIconLibraryInDiagrams(next)) {
     migrateIconLibraryToGlobalStore(next);
   }

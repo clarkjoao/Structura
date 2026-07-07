@@ -141,7 +141,7 @@ export interface WorkspaceManifest {
   createdAt: string;
   updatedAt: string;
   diagramIds: string[];
-  serviceRegistry: Record<string, unknown>;
+  serviceCatalog: Record<string, unknown>;
   folders: Record<string, unknown>;
   activeDiagramId: string | null;
   customComponentTemplates?: Record<string, CustomComponentTemplate>;
@@ -150,7 +150,7 @@ export interface WorkspaceManifest {
 
 export type WorkspacePayload = {
   diagrams: Record<string, Diagram>;
-  serviceRegistry: Record<string, unknown>;
+  serviceCatalog: Record<string, unknown>;
   folders: Record<string, unknown>;
   activeDiagramId: string | null;
   /** ISO timestamp from manifest; used for merge/reconnect conflict resolution. */
@@ -429,7 +429,7 @@ export class FileSystemAdapter {
 
     return {
       diagrams,
-      serviceRegistry: manifest.serviceRegistry,
+      serviceCatalog: manifest.serviceCatalog,
       folders: manifest.folders,
       activeDiagramId,
       manifestUpdatedAt: manifest.updatedAt,

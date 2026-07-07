@@ -85,7 +85,7 @@ export const c4Descriptor: NodeTypeDescriptor = {
         ctx.selectedNodeIds.size > 0 &&
         !ctx.selectedNodeIds.has(comp.id),
       serviceId: comp.serviceId,
-      serviceName: comp.serviceId ? ctx.serviceRegistry[comp.serviceId]?.name : undefined,
+      serviceName: comp.serviceId ? ctx.serviceCatalog[comp.serviceId]?.name : undefined,
       externalLinks: comp.externalLinks,
       linkedDiagramName: isPlaying || isRecording ? undefined : linkedDiagramName,
       onDrillDown:

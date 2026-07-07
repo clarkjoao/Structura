@@ -32,7 +32,7 @@ export function diagramStoreWorkspaceEqualsForFolderSync(
   if (next === prev) return true;
   if (next.activeDiagramId !== prev.activeDiagramId) return false;
   if (next.folders !== prev.folders) return false;
-  if (next.serviceRegistry !== prev.serviceRegistry) return false;
+  if (next.serviceCatalog !== prev.serviceCatalog) return false;
 
   const nextIds = Object.keys(next.diagrams);
   const prevIds = Object.keys(prev.diagrams);

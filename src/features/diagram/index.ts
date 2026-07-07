@@ -253,6 +253,7 @@ export type { C4Type } from "./model/component-type-constants";
 
 export {
   useDiagramStore,
+  useCatalogActions,
   useRegistryActions,
   createDiagramStore,
   useDiagramActions,
@@ -289,6 +290,7 @@ export {
   useActiveDiagramSceneState,
   useVisibleConnections,
   useServiceRegistry,
+  useServiceCatalog,
   useAllComponents,
   useDiagramTags,
   useAllServices,

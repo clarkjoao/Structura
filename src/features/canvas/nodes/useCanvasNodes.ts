@@ -43,7 +43,7 @@ interface UseCanvasNodesParams {
   selectedNodeId: string | null;
   selectedNodeIds: Set<string>;
   highlightedNodeIds: Set<string>;
-  serviceRegistry: Record<string, ServiceDefinition>;
+  serviceCatalog: Record<string, ServiceDefinition>;
   allDiagrams: Record<string, Diagram>;
   handleDrillDown: (id: string) => void;
   handlePanelCollapseToggle: (id: string) => void;
@@ -172,7 +172,7 @@ export function useCanvasNodes({
   selectedNodeId,
   selectedNodeIds,
   highlightedNodeIds,
-  serviceRegistry,
+  serviceCatalog,
   allDiagrams,
   handleDrillDown,
   handlePanelCollapseToggle,
@@ -254,7 +254,7 @@ export function useCanvasNodes({
       sceneBadgeByComponentId,
       compareVisualByComponentId,
       isCompareMode,
-      serviceRegistry: serviceRegistry ?? {},
+      serviceCatalog: serviceCatalog ?? {},
       allDiagrams,
       selectedNodeId,
       selectedNodeIds,
@@ -276,7 +276,7 @@ export function useCanvasNodes({
     sceneBadgeByComponentId,
     compareVisualByComponentId,
     isCompareMode,
-    serviceRegistry,
+    serviceCatalog,
     allDiagrams,
     selectedNodeId,
     selectedNodeIds,

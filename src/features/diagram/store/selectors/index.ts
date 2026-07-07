@@ -5,5 +5,5 @@ export * from "./flows.selectors";
 export * from "./folder.selectors";
 export * from "./icon.selectors";
 export * from "./layout.selectors";
-export * from "./registry.selectors";
+export * from "./catalog.selectors";
 export * from "./userTemplates.selectors";

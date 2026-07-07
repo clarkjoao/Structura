@@ -18,18 +18,18 @@ export function useCanvasStore() {
   const visibleConnectionsRaw = useVisibleConnections();
   const visibleComponents = useStableListByRefEquality(visibleComponentsRaw);
   const visibleConnections = useStableListByRefEquality(visibleConnectionsRaw);
-  const serviceRegistry = useServiceRegistry();
+  const serviceCatalog = useServiceRegistry();
   const flows = useFlows();
   const actions = useDiagramActions();
 
-  const stableRegistry = serviceRegistry ?? EMPTY_REGISTRY;
+  const stableRegistry = serviceCatalog ?? EMPTY_REGISTRY;
 
   return {
     diagram,
     allDiagrams,
     visibleComponents,
     visibleConnections,
-    serviceRegistry: stableRegistry,
+    serviceCatalog: stableRegistry,
     flows,
     actions,
   };

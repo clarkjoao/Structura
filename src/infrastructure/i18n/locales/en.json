@@ -51,6 +51,7 @@
     "techExample": "e.g. REST, gRPC",
     "workspace": "Workspace",
     "registry": "Registry",
+    "services": "Services",
     "sort": "Sort",
     "lastEdited": "Last edited",
     "c4Level": "C4 level",
@@ -126,7 +127,8 @@
   "nav": {
     "workspaces": "Workspaces",
     "journeys": "Journeys",
-    "registry": "Registry",
+    "registry": "Services",
+    "services": "Services",
     "brandSuffix": "Architecture",
     "plugins": "Plugins"
   },
@@ -485,7 +487,7 @@
     "deleteSelected": "Delete selected"
   },
   "registry": {
-    "title": "Registry",
+    "title": "Services",
     "subtitle": "Central catalog of services and infrastructure",
     "addService": "Add Service",
     "searchPlaceholder": "Search by name, tag, owner...",
@@ -769,7 +771,7 @@
     "sectionCanvasGroups": "Canvas & groups",
     "sectionAws": "AWS",
     "sectionCloud": "Cloud (GCP / Azure)",
-    "sectionRegistry": "Registry",
+    "sectionServices": "Services",
     "noResults": "No results",
     "typePerson": "Person",
     "typeSystem": "System",
@@ -881,11 +883,12 @@
   "elementPicker": {
     "categoryAll": "All",
     "viewAll": "View all",
-    "viewAllRegistry": "View all in Registry",
-    "registry": "Registry",
+    "viewAllServices": "View all in services",
+    "registry": "Services",
+    "services": "Services",
     "modalTitle": "Add element",
-    "searchPlaceholder": "Search elements and registry...",
-    "searchPlaceholderUnified": "Search elements, AWS, GCP, Azure, registry…",
+    "searchPlaceholder": "Search elements and services...",
+    "searchPlaceholderUnified": "Search elements, AWS, GCP, Azure, services…",
     "cloudOther": "Other",
     "frequentlyUsed": "Frequently used",
     "noResultsFor": "No element found for “{{query}}”",
@@ -896,8 +899,8 @@
     "flowchart": "Flowchart",
     "canvasGroups": "Canvas & Groups",
     "awsOther": "Other",
-    "registryEmpty": "No services in the registry yet.",
-    "openRegistry": "Open registry",
+    "servicesEmpty": "No services yet.",
+    "openServices": "Open services",
     "categories": {
       "data": "Data"
     }
