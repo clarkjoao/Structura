@@ -1,10 +1,14 @@
-import FlowNode from "../FlowNode";
+import ProcessNode from "../ProcessNode";
 import type { NodeTypeDescriptor } from "./types";
-import { isFlowNodeComponent, isFlowNodeType } from "@/features/diagram";
+import {
+  isFlowNodeComponent,
+  isProcessNodeComponent,
+  isFlowNodeType,
+} from "@/features/diagram";
 
 export const flowNodeDescriptor: NodeTypeDescriptor = {
   rfType: "flow-node",
-  component: FlowNode,
+  component: ProcessNode,
   matches: isFlowNodeType,
   zIndex: 1,
   connectable: true,
@@ -13,7 +17,7 @@ export const flowNodeDescriptor: NodeTypeDescriptor = {
   defaultSize: { width: 160, height: 60 },
 
   buildData: (comp, ctx) => {
-    if (!isFlowNodeComponent(comp)) return {};
+    if (!isFlowNodeComponent(comp) && !isProcessNodeComponent(comp)) return {};
     return {
       elementId: comp.id,
       name: comp.name,
@@ -25,7 +29,7 @@ export const flowNodeDescriptor: NodeTypeDescriptor = {
   },
 
   buildStyle: (comp, ctx) => {
-    if (!isFlowNodeComponent(comp)) return undefined;
+    if (!isFlowNodeComponent(comp) && !isProcessNodeComponent(comp)) return undefined;
     const layout = ctx.resolvedNodeLayouts[comp.id];
     return {
       width: layout?.width ?? 160,

@@ -862,6 +862,7 @@
   "nodeTypes": {
     "db-table": "Database table",
     "json-viewer": "JSON Viewer",
+    "process-node": "Process Node",
     "processos": "Processes"
   },
   "flowchart": {

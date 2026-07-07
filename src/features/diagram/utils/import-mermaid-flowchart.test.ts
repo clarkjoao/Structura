@@ -16,7 +16,7 @@ function flowNode(id: string, name: string, shape: FlowNodeShape): Component {
     name,
     description: "",
     parentId: null,
-    type: "processos",
+    type: "process-node",
     flowShape: shape,
   };
 }
@@ -33,7 +33,7 @@ describe("parseMermaidFlowchart", () => {
     expect(result.newConnections).toHaveLength(1);
     expect(result.layouts).toHaveLength(2);
     expect(result.newComponents[0]).toMatchObject({
-      type: "processos",
+      type: "process-node",
       name: "A",
       flowShape: "rectangle",
     });

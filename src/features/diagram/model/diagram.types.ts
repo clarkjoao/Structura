@@ -23,6 +23,7 @@ export type {
   DbColumn,
   JsonViewerComponent,
   FlowNodeComponent,
+  ProcessNodeComponent,
   FlowNodeShape,
   ExternalElementComponent,
 } from "./component.types";

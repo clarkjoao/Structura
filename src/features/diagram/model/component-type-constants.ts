@@ -19,15 +19,31 @@ export const COMPONENT_TYPE_SVG = "svg";
 
 export const COMPONENT_TYPE_EXTERNAL_ELEMENT = "external-element";
 
-/** @deprecated Use COMPONENT_TYPE_PROCESSOS */
-export const COMPONENT_TYPE_FLOW_NODE = "processos";
+/** @deprecated Use COMPONENT_TYPE_PROCESS_NODE */
+export const COMPONENT_TYPE_FLOW_NODE = "process-node";
 
-export const COMPONENT_TYPE_PROCESSOS = "processos";
+/** @deprecated Use COMPONENT_TYPE_PROCESS_NODE */
+export const COMPONENT_TYPE_PROCESSOS = "process-node";
 
+export const COMPONENT_TYPE_PROCESS_NODE = "process-node";
+
+/** Legacy type strings; both are migrated to "process-node" by
+ * `migrateProcessNodeTypeToProcessNode` in `store/persist.config.ts`. */
 const LEGACY_FLOW_NODE_TYPE = "flow-node";
+const LEGACY_PROCESSOS_TYPE = "processos";
 
-export function isFlowNodeType(type: string): type is "processos" {
-  return type === COMPONENT_TYPE_PROCESSOS || type === LEGACY_FLOW_NODE_TYPE;
+/** Matches the canonical `process-node` and both legacy strings during the
+ * migration window. Prefer `isProcessNodeType` in new code. */
+export function isFlowNodeType(type: string): type is "process-node" {
+  return (
+    type === COMPONENT_TYPE_PROCESS_NODE ||
+    type === LEGACY_FLOW_NODE_TYPE ||
+    type === LEGACY_PROCESSOS_TYPE
+  );
+}
+
+export function isProcessNodeType(type: string): type is "process-node" {
+  return isFlowNodeType(type);
 }
 
 export function isSvgComponentType(type: string): type is "svg" {

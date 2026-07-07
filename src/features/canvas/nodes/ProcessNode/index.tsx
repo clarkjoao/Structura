@@ -2,7 +2,7 @@ import { memo, type CSSProperties } from "react";
 import { Handle, NodeResizer, Position, type Node, type NodeProps } from "@xyflow/react";
 import type { FlowNodeShape } from "@/features/diagram";
 import { useHandleHighlight } from "../../contexts/HandleHighlightContext";
-import type { FlowNodeData } from "./FlowNode.types";
+import type { ProcessNodeData } from "./ProcessNode.types";
 
 const HANDLE_CLASS = "!w-2.5 !h-2.5 !border-2 !border-background !bg-muted-foreground";
 
@@ -221,7 +221,7 @@ function FourSideHandles() {
   );
 }
 
-const FlowNode = memo(({ data: d, selected }: NodeProps<Node<FlowNodeData>>) => {
+const ProcessNode = memo(({ data: d, selected }: NodeProps<Node<ProcessNodeData>>) => {
   const { highlightedNodeIds } = useHandleHighlight();
   const isSelected = selected || d.isSelected;
   const isHighlighted = highlightedNodeIds.has(d.elementId);
@@ -252,6 +252,6 @@ const FlowNode = memo(({ data: d, selected }: NodeProps<Node<FlowNodeData>>) => 
   );
 });
 
-FlowNode.displayName = "FlowNode";
+ProcessNode.displayName = "ProcessNode";
 
-export default FlowNode;
+export default ProcessNode;

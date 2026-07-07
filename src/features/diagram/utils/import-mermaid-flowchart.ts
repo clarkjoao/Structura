@@ -375,7 +375,7 @@ export function parseMermaidFlowchart(
       name: info.label,
       description: "",
       parentId: null,
-      type: "processos",
+      type: "process-node",
       flowShape: info.shape,
     };
     newComponents.push(component);

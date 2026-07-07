@@ -27,7 +27,7 @@ export const PERSIST_KEY = "diagram-store";
 /** localStorage persist debounce; folder sync uses VIEWPORT_DEBOUNCE_MS — they are independent by design. */
 const PERSIST_DEBOUNCE_MS = 1000;
 
-export const PERSIST_SCHEMA_VERSION = 6;
+export const PERSIST_SCHEMA_VERSION = 7;
 
 export const CURRENT_SCHEMA_VERSION = PERSIST_SCHEMA_VERSION;
 
@@ -252,6 +252,30 @@ function migrateFlowNodeTypeToProcessos(state: Partial<DiagramStore>): void {
   }
 }
 
+/** Schema v7: rename the component type `"processos"` → `"process-node"`.
+ * The legacy `"flow-node"` was already migrated to `"processos"` in v6; this
+ * migration supersedes that name with the canonical English one and also
+ * catches any workspace that still has `"flow-node"` directly. */
+function migrateProcessNodeTypeToProcessNode(state: Partial<DiagramStore>): void {
+  const migrateComponents = (components: Record<string, Component> | undefined): void => {
+    if (!components) return;
+    for (const comp of Object.values(components)) {
+      const record = comp as { type: string };
+      if (record.type === "processos" || record.type === "flow-node") {
+        record.type = "process-node";
+      }
+    }
+  };
+
+  for (const diagram of Object.values(state.diagrams ?? {})) {
+    const d = diagram as Diagram;
+    migrateComponents(d.snapshot?.components);
+    for (const scene of Object.values(d.scenes ?? {})) {
+      migrateComponents(scene.addedComponents);
+    }
+  }
+}
+
 function migrateAddDiagramDescription(state: Partial<DiagramStore>): void {
   for (const diagram of Object.values(state.diagrams ?? {})) {
     const diagramRecord = diagram as Diagram;
@@ -363,6 +387,7 @@ export function mergePersistedState(
   migrateEdgeWaypointsToPoints(next);
   migrateAddDiagramDescription(next);
   migrateFlowNodeTypeToProcessos(next);
+  migrateProcessNodeTypeToProcessNode(next);
   if (hasEmbeddedIconLibraryInDiagrams(next)) {
     migrateIconLibraryToGlobalStore(next);
   }

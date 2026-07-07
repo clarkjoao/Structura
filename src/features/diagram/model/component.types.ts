@@ -23,7 +23,7 @@ export type ComponentType =
   | "svg"
   | "db-table"
   | "json-viewer"
-  | "processos"
+  | "process-node"
   | "external-element"
   | AwsCategoryId
   | GcpCategoryId
@@ -199,8 +199,18 @@ export type FlowNodeShape =
   | "circle" // Mermaid: ((text))
   | "subroutine"; // Mermaid: [[text]]
 
+/** @deprecated Use `ProcessNodeComponent`. The legacy `flow-node` and
+ * `processos` type strings are recognized by `isFlowNodeType` (and
+ * `isProcessNodeType`) for one migration cycle, and migrated to
+ * `process-node` by `store/persist.config.ts`. */
 export interface FlowNodeComponent extends BaseComponent {
-  type: "processos";
+  type: "process-node";
+  flowShape: FlowNodeShape;
+  nodeColor?: string;
+}
+
+export interface ProcessNodeComponent extends BaseComponent {
+  type: "process-node";
   flowShape: FlowNodeShape;
   nodeColor?: string;
 }
@@ -234,6 +244,7 @@ export type Component =
   | JsonViewerComponent
   | SvgComponent
   | FlowNodeComponent
+  | ProcessNodeComponent
   | ExternalElementComponent
   | PluginTypedComponent;
 
@@ -262,6 +273,7 @@ export type TypedComponentPatch =
   | (Partial<Omit<JsonViewerComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<SvgComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<FlowNodeComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<PluginTypedComponent, "id">> & { width?: number; height?: number })
   | { width?: number; height?: number };
