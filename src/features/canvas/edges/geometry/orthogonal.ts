@@ -145,3 +145,88 @@ export function computeSegmentDrag(
   if (j < pts.length - 1) next[j - 1] = { ...next[j - 1], x: pts[j].x + dx };
   return next;
 }
+
+/** Shortest orthogonal segment allowed during a drag (flow units). */
+export const MIN_SEGMENT_LENGTH = 10;
+
+/**
+ * Push `value` so it stays at least `min` away from `boundary`, keeping it on
+ * the same side. Used to stop an orthogonal segment collapsing to (or inverting
+ * through) zero length against a fixed endpoint during a drag.
+ */
+export function clampSegmentLength(value: number, boundary: number, min: number): number {
+  if (Math.abs(value - boundary) >= min) return value;
+  return value >= boundary ? boundary + min : boundary - min;
+}
+
+/**
+ * Reposition a single interior corner by `delta`, keeping the route orthogonal,
+ * and return the new interior corners. The corner joins one horizontal and one
+ * vertical segment; moving it drags the shared coordinate of each adjacent
+ * interior corner so both segments stay axis-aligned. When a neighbour is a
+ * fixed endpoint (source/target) the corner is constrained on that axis so the
+ * endpoint segment cannot become diagonal, and it is clamped to keep the
+ * endpoint segment at least `min` long.
+ */
+export function computeCornerDrag(
+  source: Point,
+  target: Point,
+  corners: readonly Point[],
+  cornerIndex: number,
+  delta: Point,
+  min: number = MIN_SEGMENT_LENGTH,
+): Point[] {
+  const next = corners.map((c) => ({ x: c.x, y: c.y }));
+  if (cornerIndex < 0 || cornerIndex >= next.length) return next;
+
+  const knots: Point[] = [source, ...corners, target];
+  const m = cornerIndex + 1;
+  const a = knots[m - 1];
+  const c = knots[m];
+  const aIsFixed = m - 1 === 0;
+  const bIsFixed = m + 1 === knots.length - 1;
+  // In a valid orthogonal route the corner shares exactly one axis with each
+  // neighbour; classify the incoming (a→c) segment the same way as segments do.
+  const acHorizontal = Math.abs(a.y - c.y) <= Math.abs(a.x - c.x);
+
+  if (acHorizontal) {
+    // a→c horizontal (shares y), c→b vertical (shares x).
+    const dy = aIsFixed ? 0 : delta.y;
+    const dx = bIsFixed ? 0 : delta.x;
+    let newX = c.x + dx;
+    let newY = c.y + dy;
+    // c→b vertical touches the target when b is fixed: keep it long enough.
+    if (bIsFixed) newY = clampSegmentLength(newY, target.y, min);
+    // a→c horizontal touches the source when a is fixed: keep it long enough.
+    if (aIsFixed) newX = clampSegmentLength(newX, source.x, min);
+    next[cornerIndex] = { x: newX, y: newY };
+    if (!aIsFixed) next[cornerIndex - 1] = { ...next[cornerIndex - 1], y: newY };
+    if (!bIsFixed) next[cornerIndex + 1] = { ...next[cornerIndex + 1], x: newX };
+    return next;
+  }
+
+  // a→c vertical (shares x), c→b horizontal (shares y).
+  const dx = aIsFixed ? 0 : delta.x;
+  const dy = bIsFixed ? 0 : delta.y;
+  let newX = c.x + dx;
+  let newY = c.y + dy;
+  if (bIsFixed) newX = clampSegmentLength(newX, target.x, min);
+  if (aIsFixed) newY = clampSegmentLength(newY, source.y, min);
+  next[cornerIndex] = { x: newX, y: newY };
+  if (!aIsFixed) next[cornerIndex - 1] = { ...next[cornerIndex - 1], x: newX };
+  if (!bIsFixed) next[cornerIndex + 1] = { ...next[cornerIndex + 1], y: newY };
+  return next;
+}
+
+/**
+ * Snap a point to the nearest grid intersection, but only on an axis where the
+ * nearest grid line is within `threshold`. Leaves the coordinate untouched
+ * otherwise, so the snap feels magnetic rather than sticky.
+ */
+export function snapToGrid(point: Point, gridSize: number, threshold: number): Point {
+  const snapAxis = (value: number): number => {
+    const nearest = Math.round(value / gridSize) * gridSize;
+    return Math.abs(nearest - value) <= threshold ? nearest : value;
+  };
+  return { x: snapAxis(point.x), y: snapAxis(point.y) };
+}

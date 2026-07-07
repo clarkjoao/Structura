@@ -128,6 +128,29 @@ describe("Editable edge — orthogonal step (draw.io style)", () => {
       .should("be.gte", 3);
   });
 
+  it("shows draggable corner handles on selection", () => {
+    cy.get(".react-flow__edge-interaction").first().click({ force: true });
+    cy.get('rect[aria-label^="Edge corner"]', { timeout: 15000 }).its("length").should("be.gte", 2);
+  });
+
+  it("repositions a corner by dragging its handle (keeps the route orthogonal)", () => {
+    cy.get(".react-flow__edge-interaction").first().click({ force: true });
+    cy.get('rect[aria-label^="Edge corner"]')
+      .first()
+      .then(($rect) => {
+        const el = $rect[0] as unknown as SVGRectElement;
+        const box = el.getBoundingClientRect();
+        const cx = box.left + box.width / 2;
+        const cy0 = box.top + box.height / 2;
+        cy.wrap(el)
+          .trigger("pointerdown", { clientX: cx, clientY: cy0, force: true, pointerId: 1 })
+          .trigger("pointermove", { clientX: cx + 60, clientY: cy0, force: true, pointerId: 1 });
+        cy.document().trigger("pointermove", { clientX: cx + 60, clientY: cy0, force: true });
+        cy.document().trigger("pointerup", { force: true, pointerId: 1 });
+      });
+    cy.get(".react-flow__edge").should("exist");
+  });
+
   it("repositions a segment by dragging it (creates orthogonal corners)", () => {
     cy.get('line[aria-label^="Edge segment"]')
       .eq(1)

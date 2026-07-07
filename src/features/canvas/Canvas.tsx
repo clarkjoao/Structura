@@ -29,7 +29,7 @@ import { useServiceFocusFromUrl } from "./hooks/useServiceFocusFromUrl";
 import { useElementFocusFromUrl } from "./hooks/useElementFocusFromUrl";
 import { getCachedCanvasSnapshot, useDiagramStore } from "@/features/diagram";
 import { useJourneysByDiagramId } from "@/features/journeys";
-import { CANVAS_STYLES } from "./canvas.constants";
+import { CANVAS_STYLES, GRID_SIZE } from "./canvas.constants";
 import { getPlatform } from "./hooks/keyboard/helpers";
 import EditableEdge from "./edges/EditableEdge";
 import { useEdgeReconnect } from "./edges/interaction/useEdgeReconnect";
@@ -317,7 +317,7 @@ const Canvas = (props: CanvasProps = {}) => {
               maxZoom={1.5}
               multiSelectionKeyCode={MULTI_SELECTION_KEY_CODES}
               snapToGrid
-              snapGrid={[15, 15]}
+              snapGrid={[GRID_SIZE, GRID_SIZE]}
               defaultViewport={initialViewport}
               fitView={!hasSavedViewport(initialViewport)}
               fitViewOptions={{ padding: 0.3 }}

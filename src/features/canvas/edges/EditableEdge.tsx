@@ -28,6 +28,7 @@ import { useSegmentDrag } from "./interaction/useSegmentDrag";
 import { useEdgeLabelDrag } from "./interaction/useEdgeLabelDrag";
 import { ControlPoint, GhostControlPoint } from "./components/ControlPoint";
 import { EdgeSegmentHandles } from "./components/EdgeSegmentHandles";
+import { CornerHandles } from "./components/CornerHandles";
 import { EdgeHitArea } from "./components/EdgeHitArea";
 import { EdgeToolbar } from "./components/EdgeToolbar";
 import { EdgeLabel } from "./components/EdgeLabel";
@@ -178,13 +179,60 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
           onHoverChange={setHovered}
           onDoubleClick={handleResetDoubleClick}
         />
-        {showAffordances && isStep && (
-          <EdgeSegmentHandles
-            segments={segmentDrag.segments}
-            activeSegmentIndex={segmentDrag.activeSegmentIndex}
-            ariaLabel={(index) => t("customEdge.segmentHandleAria", { index: index + 1 })}
-            onSegmentPointerDown={segmentDrag.startSegmentDrag}
+        {segmentDrag.snapGuide && (
+          <line
+            x1={
+              segmentDrag.snapGuide.orientation === "horizontal"
+                ? segmentDrag.snapGuide.from
+                : segmentDrag.snapGuide.position
+            }
+            y1={
+              segmentDrag.snapGuide.orientation === "horizontal"
+                ? segmentDrag.snapGuide.position
+                : segmentDrag.snapGuide.from
+            }
+            x2={
+              segmentDrag.snapGuide.orientation === "horizontal"
+                ? segmentDrag.snapGuide.to
+                : segmentDrag.snapGuide.position
+            }
+            y2={
+              segmentDrag.snapGuide.orientation === "horizontal"
+                ? segmentDrag.snapGuide.position
+                : segmentDrag.snapGuide.to
+            }
+            stroke="var(--color-text-info, hsl(187 72% 51%))"
+            strokeWidth={1}
+            strokeOpacity={0.4}
+            strokeDasharray="4 4"
+            style={{ pointerEvents: "none" }}
           />
+        )}
+        {segmentDrag.previewPath && (
+          <path
+            d={segmentDrag.previewPath}
+            fill="none"
+            stroke="var(--color-text-info, hsl(187 72% 51%))"
+            strokeWidth={2}
+            strokeOpacity={0.5}
+            style={{ pointerEvents: "none" }}
+          />
+        )}
+        {showAffordances && isStep && (
+          <>
+            <EdgeSegmentHandles
+              segments={segmentDrag.segments}
+              activeSegmentIndex={segmentDrag.activeSegmentIndex}
+              ariaLabel={(index) => t("customEdge.segmentHandleAria", { index: index + 1 })}
+              onSegmentPointerDown={segmentDrag.startSegmentDrag}
+            />
+            <CornerHandles
+              corners={segmentDrag.corners}
+              activeCornerIndex={segmentDrag.activeCornerIndex}
+              ariaLabel={(index) => t("customEdge.cornerHandleAria", { index: index + 1 })}
+              onCornerPointerDown={segmentDrag.startCornerDrag}
+            />
+          </>
         )}
         {showAffordances && isCurve && (
           <>
