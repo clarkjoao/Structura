@@ -101,7 +101,7 @@ explicitly, with their responsibilities and allowed dependencies:
 | **Catalogs** | `features/cloud`, `lib/catalogs` | AWS/GCP/Azure service catalogs and icons; pattern and panel catalogs. Data, not behavior. | Model |
 | **Collaboration** | `features/collaboration`, `server/` | Yjs/WebSocket sync, presence, patches. The optional Node server is a relay, never a source of truth. | Model |
 | **Intelligence** | `features/llm` | Diagram assistant: providers (Anthropic/OpenAI/proxy), prompt building, patch parsing, applying `DiagramPatch` actions to the store. | Model |
-| **Storytelling** | `features/journeys`, flows in Model | Cross-diagram narrative: journeys, flow recording/playback. | Model, Canvas (player UI) |
+| **Storytelling** | `features/walkthroughs`, flows in Model | Cross-diagram narrative: walkthroughs, flow recording/playback. | Model, Canvas (player UI) |
 | **Sharing** | `features/viewer`, share/embed utils | Read-only viewer for shared diagrams. | Model, Canvas |
 
 Dependency rule: **everything may depend on Model; Model depends on nothing.**
@@ -130,9 +130,9 @@ Workspace (implicit — the persisted store)
 │   │   └── IconDefinition*      diagram-local icon library
 │   ├── nodeLayouts / edgeLayouts / viewport   ← view state
 │   └── Scene*                   named diffs over the snapshot (what-if / compare)
-├── ServiceDefinition*           workspace-level service registry
+├── ServiceDefinition*           workspace-level service catalog
 ├── UserTemplate*                reusable multi-component templates
-└── Journey*                     cross-diagram step sequences (own store)
+└── Walkthrough*                 cross-diagram step sequences (own store)
 ```
 
 Two properties of this model matter for everything below:
@@ -143,8 +143,9 @@ Two properties of this model matter for everything below:
 2. **Identity is diagram-scoped.** A component exists *in* a diagram. Concepts
    that need cross-diagram identity have grown ad-hoc bridges:
    `Component.linkedDiagramId` (drill-down), `ExternalElementComponent`
-   (references), `registryServiceId` (service registry), journeys
-   (cross-diagram narrative). These are four different partial answers to the
+   (references), `serviceId` (service catalog — unified with the
+   legacy `registryServiceId` in v0.2.0), walkthroughs (cross-diagram
+   narrative). These are four different partial answers to the
    same missing abstraction.
 
 ---

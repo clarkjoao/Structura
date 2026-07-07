@@ -7,7 +7,7 @@ a bug worth fixing.
 ## Workspace
 
 The implicit top-level unit: everything the persisted store holds — diagrams,
-folders, service registry, user templates (plus journeys, custom components,
+folders, service catalog, user templates (plus walkthroughs, custom components,
 and icons in their satellite stores). A workspace is what gets synced to a
 local folder or merged on import. There is no `Workspace` type today; it is
 the store state itself (`AppState` in `store/store.types.ts`).
@@ -84,18 +84,20 @@ components and connections plus layout overrides. Scenes power what-if
 variants and compare mode without forking the diagram. Because a scene is a
 *diff*, the base diagram stays the single source and scenes stay cheap.
 
-## Journey
+## Walkthrough
 
-A `Journey` (`features/journeys`) is a **cross-diagram** narrative: ordered
-steps, each pointing at a diagram and optionally a flow. Journeys are the
-storytelling layer (onboarding walkthroughs, incident retrospectives). They
-live in their own store, outside any diagram.
+A `Walkthrough` (`features/walkthroughs`) is a **cross-diagram** narrative:
+ordered steps, each pointing at a diagram and optionally at a `Flow`.
+Walkthroughs are the storytelling layer (onboarding, incident
+retrospectives, executive walkthroughs). They live in their own store,
+outside any diagram.
 
-> **Naming note.** The term `Journey` is overloaded in software (UX Customer
-> Journey, BPMN journey, marketing journey) and the Structura feature is
-> none of those — it is a recorded/curated walkthrough of diagrams. The
-> glossary marks `Journey` as `deprecated` in favor of `Walkthrough`; see
-> [../grammar/glossary.md](../grammar/glossary.md) § Walkthrough.
+This concept was previously called `Journey` (v0.1.0 and earlier);
+the term was renamed in v0.2.0 because `Journey` overloaded with
+UX Customer Journey, BPMN journey, and marketing journey. The
+Structura feature is none of those — it is a recorded or curated
+walkthrough of diagrams. See [../grammar/glossary.md](../grammar/glossary.md)
+§ Walkthrough for the canonical entry.
 
 ## Service (catalog)
 
@@ -104,10 +106,11 @@ catalog of real services. Components link to it via `serviceId`. This
 is the strongest existing form of cross-diagram identity and the natural seed
 of the future Model Index.
 
-> **Naming note.** The state field is currently `state.serviceRegistry` and
-> the page is at `/serviceRegistry`. The glossary marks both as
-> `deprecated` in favor of `serviceCatalog` and `/services`; see
-> [../grammar/glossary.md](../grammar/glossary.md) § Service Catalog.
+> **Naming note.** As of v0.2.0, the state field is
+> `state.serviceCatalog` and the page is at `/catalog`. The legacy
+> `serviceRegistry` field and `/serviceRegistry` route were removed
+> in v0.3.0. See [../grammar/glossary.md](../grammar/glossary.md)
+> § Service Catalog.
 
 ## User template / Custom component
 

@@ -15,10 +15,10 @@ relay and an LLM proxy — it never stores data.
 ┌─────────────────────────────────────────────────────────────┐
 │ Pages (route-level, lazy-loaded)                            │
 │   dashboard · canvas (Index) · modelExplorer ·              │
-│   serviceRegistry · journeys · viewer                       │
+│   serviceCatalog · walkthroughs · viewer                    │
 ├──────────────┬──────────────────────────────────────────────┤
 │ Feature contexts                                            │
-│   canvas   collaboration   llm   journeys   viewer          │
+│   canvas   collaboration   llm   walkthroughs   viewer      │
 │   cloud    custom-components    icons                       │
 ├──────────────┴──────────────────────────────────────────────┤
 │ Model  (features/diagram — types, guards, store; no React)  │
@@ -64,7 +64,7 @@ Details per stage: [rendering-pipeline](../concepts/rendering-pipeline.md),
 
 All pages are lazy-loaded from `App.tsx`. The `@/features/diagram` and
 `@/features/canvas` barrels couple the bundle graph: route chunks stay small
-only if always-mounted code (app shell, journey player) imports leaf modules
+only if always-mounted code (app shell, walkthrough player) imports leaf modules
 directly instead of the barrels. Keep this in mind when adding imports to
 anything that mounts at startup.
 

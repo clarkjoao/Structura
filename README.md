@@ -33,7 +33,7 @@ Structura also includes a built-in **AWS service catalog** so cloud-native teams
 - **Folder organization** — Organize diagrams into nested folders on the dashboard
 - **LLM Diagram Assistant** — Conversational AI assistant grounded in the current diagram; suggests and applies changes with canvas preview and explicit user confirmation
 - **Collaboration** — Real-time collaborative sessions via WebRTC + Yjs with presence cursors
-- **Journeys** — Cross-diagram step sequences that document user flows or business processes across diagrams
+- **Walkthroughs** — Cross-diagram step sequences that document user flows or business processes across diagrams
 - **Scenes** — Declarative diagram variants (diffs) for environments, scenarios, or alternate architectural views
 - **Custom component templates** — Capture groups of nodes as reusable templates
 
@@ -90,7 +90,7 @@ src/
 │   │                      # NO React, NO JSX allowed here
 │   ├── canvas/            # ReactFlow canvas, node descriptors, toolbar, hooks
 │   ├── collaboration/     # Real-time collab via WebRTC + Yjs
-│   ├── journeys/          # Journey sequences (cross-diagram user flows)
+│   ├── walkthroughs/      # Walkthrough sequences (cross-diagram user flows)
 │   ├── custom-components/ # User-defined component templates
 │   ├── viewer/            # Read-only shared diagram viewer
 │   ├── icons/             # Icon library store

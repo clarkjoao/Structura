@@ -1,7 +1,7 @@
 # State Management
 
 Global state is a single Zustand store with Immer, composed from slices
-(`src/features/diagram/store/`). Satellite features (journeys, collaboration,
+(`src/features/diagram/store/`). Satellite features (walkthroughs, collaboration,
 custom components, icons, LLM) keep their own small stores following the same
 pattern.
 
@@ -17,7 +17,7 @@ alternatives are recorded in [ADR-0002](../adr/0002-zustand-store.md).
 
 ```
 DiagramStore = AppState + AppActions
-AppState: diagrams, folders, userTemplates, serviceRegistry,
+AppState: diagrams, folders, userTemplates, serviceCatalog,
           activeDiagramId, past/future (history), clipboard
 AppActions: contributed by slices in store/slices/
 ```

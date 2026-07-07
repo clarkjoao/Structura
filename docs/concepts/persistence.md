@@ -51,7 +51,7 @@ collaboration's job (Yjs), not file sync's.
 ## What persists where
 
 - Workspace (diagrams, folders, services, templates) → main persist config.
-- Journeys, custom components, icons, LLM config/threads → their satellite
+- Walkthroughs, custom components, icons, LLM config/threads → their satellite
   stores' persistence (LLM API keys stay client-side in `llm-storage.ts`).
 - Undo history, save status, collaboration presence → **never persisted**;
   reconstructable or session-scoped by design.

@@ -47,7 +47,7 @@ src/
 │   ├── custom-components/  # user-defined reusable node templates
 │   ├── icons/              # custom icon store
 │   ├── integrations/       # external tool integrations (GitHub, DefectDojo)
-│   ├── journeys/           # cross-diagram step sequences + player
+│   ├── walkthroughs/      # cross-diagram step sequences + player
 │   ├── llm/                # diagram assistant (chat UI, patch parser, suggestions)
 │   ├── plugins/            # plugin system (manifest, loader, registries, StructuraPlugin API)
 │   └── viewer/             # read-only shared-diagram viewer
@@ -99,5 +99,5 @@ When code and docs disagree, the code wins — fix the doc in the same PR.
 - Undo/redo stores full diagram snapshots with coalescing; bounded by
   `MAX_HISTORY_STEPS`.
 - The `@/features/diagram` and `@/features/canvas` barrels couple the bundle
-  graph; route chunks stay small only if always-mounted code (App shell, journey
+  graph; route chunks stay small only if always-mounted code (App shell, walkthrough
   player) imports leaf modules directly instead of the barrels.
