@@ -276,18 +276,24 @@ function migrateProcessNodeTypeToProcessNode(state: Partial<DiagramStore>): void
   }
 }
 
-/** Schema v8: rename the persisted state field `serviceCatalog` →
+/** Schema v8: rename the persisted state field `serviceRegistry` →
  * `serviceCatalog`. The values inside are unchanged. The migration is
- * idempotent: if `serviceCatalog` already exists (e.g. a workspace saved
- * at v8 is re-read at v8), the right-hand side is short-circuited and
- * deleting `serviceCatalog` is a no-op. */
-function migrateServiceRegistryToServiceCatalog(state: Partial<DiagramStore>): void {
-  const record = state as Record<string, unknown>;
-  const legacy = record.serviceRegistry;
-  if (legacy && typeof legacy === "object" && !record.serviceCatalog) {
-    record.serviceCatalog = legacy as Record<string, ServiceDefinition>;
+ * idempotent: if `serviceCatalog` already exists with content (e.g. a
+ * workspace saved at v8 is re-read at v8), the right-hand side is
+ * short-circuited. Note: the currentState spread always sets
+ * `serviceCatalog = {}` (the in-memory default), so the "not present"
+ * check must look at whether the dictionary is empty, not at
+ * `undefined`. The legacy key is always dropped. */
+function migrateServiceRegistryToServiceCatalog(state: Record<string, unknown>): void {
+  const legacy = state.serviceRegistry;
+  if (legacy && typeof legacy === "object" && !Array.isArray(legacy)) {
+    const existing = state.serviceCatalog as Record<string, unknown> | undefined;
+    const existingIsEmpty = !existing || Object.keys(existing).length === 0;
+    if (existingIsEmpty) {
+      state.serviceCatalog = legacy as Record<string, unknown>;
+    }
   }
-  delete record.serviceRegistry;
+  delete state.serviceRegistry;
 }
 
 /** Schema v10: rename `ExternalElementComponent.linkedDiagramId` to
@@ -458,7 +464,7 @@ export function mergePersistedState(
   migrateAddDiagramDescription(next);
   migrateFlowNodeTypeToProcessos(next);
   migrateProcessNodeTypeToProcessNode(next);
-  migrateServiceRegistryToServiceCatalog(next);
+  migrateServiceRegistryToServiceCatalog(next as unknown as Record<string, unknown>);
   migrateExternalElementLinkedDiagramId(next);
   migrateUnifyRegistryServiceId(next);
   if (hasEmbeddedIconLibraryInDiagrams(next)) {
