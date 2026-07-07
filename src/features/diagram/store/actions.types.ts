@@ -13,7 +13,7 @@ import type {
   SceneDiff,
   NodeLayout,
   IconDefinition,
-  Point,
+  EdgeControlPoint,
   UserTemplate,
   ExternalLink,
 } from "../model/diagram.types";
@@ -80,9 +80,26 @@ export interface AppActions {
     dimensions?: { width: number; height: number },
   ) => void;
   updateViewport: (viewport: { x: number; y: number; zoom: number }) => void;
-  updateEdgeWaypoints: (diagramId: string, connectionId: string, waypoints: Point[]) => void;
-  clearEdgeWaypoints: (diagramId: string, connectionId: string) => void;
-  updateEdgeLabelOffset: (diagramId: string, connectionId: string, offset: number) => void;
+  setEdgeControlPoints: (
+    diagramId: string,
+    connectionId: string,
+    points: EdgeControlPoint[],
+    options?: { history?: boolean },
+  ) => void;
+  addEdgeControlPoint: (
+    diagramId: string,
+    connectionId: string,
+    point: EdgeControlPoint,
+    index: number,
+  ) => void;
+  removeEdgeControlPoint: (diagramId: string, connectionId: string, pointId: string) => void;
+  resetEdgeControlPoints: (diagramId: string, connectionId: string) => void;
+  setEdgeLabelOffset: (
+    diagramId: string,
+    connectionId: string,
+    offset: number,
+    options?: { history?: boolean },
+  ) => void;
 
   bringToFront: (elementId: string) => void;
   sendToBack: (elementId: string) => void;

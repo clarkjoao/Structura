@@ -29,6 +29,9 @@ export { UNDO_REDO_COOLDOWN_MS } from "@/features/diagram";
 
 export const FLOW_PARTICLE_DURATION_MS = 1200;
 
+/** Canvas grid spacing (flow units) shared by node snapping and edge editing. */
+export const GRID_SIZE = 15;
+
 export {
   PANEL_DEFAULT_W,
   PANEL_DEFAULT_H,

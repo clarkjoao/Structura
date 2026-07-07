@@ -286,8 +286,8 @@ export function exportDrawio(
   for (const conn of Object.values(connections)) {
     const edgeLayout = edgeLayoutByConnectionId[conn.id];
     const waypoints =
-      edgeLayout && edgeLayout.waypoints.length > 0
-        ? edgeLayout.waypoints.map((point) => transformCanvasPoint(point.x, point.y, bbox, scale))
+      edgeLayout?.points && edgeLayout.points.length > 0
+        ? edgeLayout.points.map((point) => transformCanvasPoint(point.x, point.y, bbox, scale))
         : [];
     edgeCells.push(buildEdgeCell(conn, { waypoints }));
   }

@@ -60,7 +60,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
     addComponent,
     updateComponent,
     saveUserTemplate,
-    clearEdgeWaypoints,
+    resetEdgeControlPoints,
   } = useDiagramActions();
 
   const ids = useMemo(() => selectedNodes.map((n) => n.id), [selectedNodes]);
@@ -176,7 +176,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
       selectedEdgeId: null,
       reactFlowEdges: [],
     });
-    resetWaypointsForConnections(activeDiagramId, connectionIds, clearEdgeWaypoints);
+    resetWaypointsForConnections(activeDiagramId, connectionIds, resetEdgeControlPoints);
   };
 
   const handleSaveTemplate = (name: string, description: string, category: string) => {

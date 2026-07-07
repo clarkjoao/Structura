@@ -263,7 +263,7 @@ export function useCanvasInteraction(
     },
     onAutoLayout,
     forceSaveToFolder,
-    clearEdgeWaypoints: actions.clearEdgeWaypoints,
+    resetEdgeControlPoints: actions.resetEdgeControlPoints,
     updateComponent: actions.updateComponent,
   });
 

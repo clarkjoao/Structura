@@ -79,6 +79,8 @@
     "edgeBezier": "Curva",
     "edgeStep": "Reto",
     "edgeSmoothstep": "Arredondado",
+    "edgeEditable": "Editável",
+    "edgeEditableStep": "Editável ortogonal",
     "strokeSolid": "Sólida",
     "strokeDashed": "Tracejada",
     "strokeDotted": "Pontilhada",
@@ -1215,9 +1217,14 @@
     "coveredBy": "Coberto por: {{names}}",
     "request": "→ Request",
     "response": "← Response",
-    "waypointHandleAria": "Ponto de rota da conexão {{index}}, arraste para mover, duplo clique para remover",
-    "midpointHandleAria": "Adicionar ponto no segmento {{segment}}, arraste para posicionar",
-    "segmentHitAria": "Segmento da conexão {{index}}, arraste para mover ortogonalmente"
+    "controlPointAria": "Ponto de controle {{index}}, arraste para mover, duplo clique para remover",
+    "addPointAria": "Adicionar um ponto de controle aqui",
+    "segmentHandleAria": "Segmento {{index}} da conexão, arraste para reposicionar",
+    "cornerHandleAria": "Canto {{index}} da conexão, arraste para reposicionar",
+    "routeAsStep": "Alternar para roteamento ortogonal",
+    "routeAsCurve": "Alternar para roteamento curvo",
+    "resetPoints": "Redefinir formato da conexão",
+    "deleteEdge": "Excluir conexão"
   },
   "flows": {
     "panelTitle": "Flows",

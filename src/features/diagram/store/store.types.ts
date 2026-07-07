@@ -2,6 +2,7 @@ import type {
   Component,
   Connection,
   Diagram,
+  EdgeLayout,
   Folder,
   ModelDraft,
   UserTemplate,
@@ -14,6 +15,7 @@ export interface DiagramSnapshot {
   diagramId: string;
   snapshot: ModelDraft;
   nodeLayouts: Record<string, ViewNodeLayout>;
+  edgeLayouts: Record<string, EdgeLayout>;
   timestamp: number;
 }
 

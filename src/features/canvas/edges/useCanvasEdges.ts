@@ -3,7 +3,7 @@ import type { Edge } from "@xyflow/react";
 import type { Connection, Diagram, DiagramModel, FlowStep } from "@/features/diagram";
 import { getCachedCanvasSnapshot } from "@/features/diagram";
 import { useFlowMode } from "../flow/FlowModeContext";
-import { buildEdge, filterVisibleConnections } from "./edgeBuilding";
+import { buildEdge, filterVisibleConnections } from "./data/buildEdges";
 import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
 import { getPendingEdgeIds, useLLMStore } from "@/features/llm";
 

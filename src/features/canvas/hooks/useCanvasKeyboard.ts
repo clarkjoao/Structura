@@ -111,7 +111,7 @@ interface UseCanvasKeyboardParams {
   }) => void;
   onAutoLayout?: () => void;
   forceSaveToFolder: () => void | Promise<void>;
-  clearEdgeWaypoints: (diagramId: string, connectionId: string) => void;
+  resetEdgeControlPoints: (diagramId: string, connectionId: string) => void;
   updateComponent: (id: string, patch: { locked?: boolean }) => void;
 }
 
@@ -168,7 +168,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     onOpenQuickInsert,
     onAutoLayout,
     forceSaveToFolder,
-    clearEdgeWaypoints,
+    resetEdgeControlPoints,
     updateComponent,
   } = params;
 
@@ -298,7 +298,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     diagram,
     selectedEdgeId,
     reactFlowInstance,
-    clearEdgeWaypoints,
+    resetEdgeControlPoints,
   });
 
   const lockHandler = useLockShortcuts({

@@ -55,13 +55,12 @@ private and are composed by [`Canvas.tsx`](../Canvas.tsx) through
 
 ## Edge hooks
 
-| Hook                             | Goal                                                                                                                                                                  |
-| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `useCanvasConnectionDerivations` | Computes canvas-only edge metadata from visible components and connections: panel IDs, per-node connection counts, handle assignments, and effective handle order.    |
-| `useCanvasEdges`                 | Turns visible diagram connections into React Flow edges with the right compare, playback, recording, coverage, tag-filter, and pending-LLM visuals.                   |
-| `useCanvasHandleReorder`         | Exposes a safe `onReorderHandle` callback that reorders a node's incoming or outgoing handles, while blocking changes during recording, playback, or compare mode.    |
-| `useCustomEdge`                  | Powers the custom edge component itself. It computes the SVG path, segment dragging behavior, label positioning, waypoint editing, and handle-highlight interactions. |
-| `useLabelDrag`                   | Implements drag interactions for edge labels by converting pointer movement into a clamped label offset along the edge path.                                          |
+| Hook                                                                                                                                    | Goal                                                                                                                                                               |
+| --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `useCanvasConnectionDerivations`                                                                                                        | Computes canvas-only edge metadata from visible components and connections: panel IDs, per-node connection counts, handle assignments, and effective handle order. |
+| `useCanvasEdges`                                                                                                                        | Turns visible diagram connections into React Flow edges with the right compare, playback, recording, coverage, tag-filter, and pending-LLM visuals.                |
+| `useCanvasHandleReorder`                                                                                                                | Exposes a safe `onReorderHandle` callback that reorders a node's incoming or outgoing handles, while blocking changes during recording, playback, or compare mode. |
+| Edge editing hooks live under `edges/interaction/` (`useControlPoints`, `useEdgeReconnect`, `useEdgeLabelDrag`); see `edges/README.md`. |
 
 ## Node hooks
 

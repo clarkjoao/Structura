@@ -12,14 +12,14 @@ export { JourneysInDiagramPanel } from "./panels/JourneysInDiagramPanel";
 export { default as ElementPanel } from "./panels/ElementPanel/index";
 export { default as CanvasToolbar } from "./toolbar/CanvasToolbar";
 export { default as CustomNode } from "./nodes/CustomNode";
-export { default as CustomEdge } from "./edges/CustomEdge";
+export { default as EditableEdge } from "./edges/EditableEdge";
 export { default as PanelNode } from "./nodes/PanelNode";
 export { default as NoteNode } from "./nodes/NoteNode";
 export { default as NodeContextMenu } from "./panels/NodeContextMenu";
 export { nodeTypes, NODE_TYPE_REGISTRY, resolveNodeDescriptor } from "./nodes/node-types";
 export type { NodeBuildContext } from "./nodes/node-types";
 export { buildCollapsedPanelIds, computeNodeVisibility } from "./nodes/nodeVisibility";
-export { buildEdge, filterVisibleConnections, type EdgeBuildParams } from "./edges/edgeBuilding";
+export { buildEdge, filterVisibleConnections, type EdgeBuildParams } from "./edges/data/buildEdges";
 export {
   buildConnectionCountPerNode,
   buildEdgeHandleAssignments,

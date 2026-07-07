@@ -11,14 +11,14 @@ interface UseEdgeWaypointShortcutsParams {
   diagram: Diagram | DiagramModel | null | undefined;
   selectedEdgeId: string | null;
   reactFlowInstance: ReactFlowInstance;
-  clearEdgeWaypoints: (diagramId: string, connectionId: string) => void;
+  resetEdgeControlPoints: (diagramId: string, connectionId: string) => void;
 }
 
 export function useEdgeWaypointShortcuts({
   diagram,
   selectedEdgeId,
   reactFlowInstance,
-  clearEdgeWaypoints,
+  resetEdgeControlPoints,
 }: UseEdgeWaypointShortcutsParams): KeyHandler {
   return useCallback(
     (e: KeyboardEvent): boolean => {
@@ -32,9 +32,9 @@ export function useEdgeWaypointShortcuts({
         selectedEdgeId,
         reactFlowEdges: reactFlowInstance.getEdges(),
       });
-      resetWaypointsForConnections(diagram.id, connectionIds, clearEdgeWaypoints);
+      resetWaypointsForConnections(diagram.id, connectionIds, resetEdgeControlPoints);
       return true;
     },
-    [diagram, selectedEdgeId, reactFlowInstance, clearEdgeWaypoints],
+    [diagram, selectedEdgeId, reactFlowInstance, resetEdgeControlPoints],
   );
 }

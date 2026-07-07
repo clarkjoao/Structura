@@ -1,4 +1,4 @@
-import { current, isDraft } from "immer";
+import { current, isDraft, type Draft } from "immer";
 import type { AppState, DiagramSnapshot } from "../store.types";
 import {
   HISTORY_COALESCE_MS,
@@ -12,7 +12,7 @@ import { getActiveDiagram } from "./get-active-diagram";
 export type { HistoryMutationKind } from "../store.constants";
 
 export function deepClone<T>(v: T): T {
-  const plain = isDraft(v) ? current(v) : v;
+  const plain = isDraft(v) ? current(v as Draft<T>) : v;
   return structuredClone(plain);
 }
 
@@ -30,6 +30,7 @@ export function pushHistory(state: AppState, mutationType: HistoryMutationKind =
     timestamp: Date.now(),
     snapshot: deepClone(d.snapshot),
     nodeLayouts: deepClone(d.nodeLayouts),
+    edgeLayouts: deepClone(d.edgeLayouts),
   });
   if (state.past.length > MAX_HISTORY_STEPS) state.past.shift();
   state.future = [];
@@ -63,10 +64,12 @@ export const historySlice = (
         diagramId: d.id,
         snapshot: deepClone(d.snapshot),
         nodeLayouts: deepClone(d.nodeLayouts),
+        edgeLayouts: deepClone(d.edgeLayouts),
         timestamp: Date.now(),
       } as DiagramSnapshot);
       d.snapshot = entry.snapshot;
       d.nodeLayouts = entry.nodeLayouts;
+      d.edgeLayouts = entry.edgeLayouts;
       state._lastUndoRedoAt = Date.now();
     });
   },
@@ -94,10 +97,12 @@ export const historySlice = (
         diagramId: d.id,
         snapshot: deepClone(d.snapshot),
         nodeLayouts: deepClone(d.nodeLayouts),
+        edgeLayouts: deepClone(d.edgeLayouts),
         timestamp: Date.now(),
       } as DiagramSnapshot);
       d.snapshot = entry.snapshot;
       d.nodeLayouts = entry.nodeLayouts;
+      d.edgeLayouts = entry.edgeLayouts;
       state._lastUndoRedoAt = Date.now();
     });
   },
