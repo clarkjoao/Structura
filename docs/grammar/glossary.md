@@ -217,18 +217,26 @@ all linked Components.
 
 ### Service Catalog
 
-**Status:** `proposed` (currently `serviceRegistry` in code and i18n;
-  to be renamed)
+**Status:** `current` (renamed from `serviceRegistry` in
+  `openspec/changes/rename-service-registry-to-service-catalog/`,
+  shipped under `PERSIST_SCHEMA_VERSION` 8; the legacy
+  `useRegistryActions` and `useServiceRegistry` aliases remain for one
+  release)
 
 **Definition:** The workspace-level collection of Services. Implemented
 as `state.serviceCatalog: Record<id, ServiceDefinition>`. UI lives at
-`/services` (formerly `/serviceRegistry`).
+`/catalog` (the URL was already `/catalog`; only the internal page
+component, hook, and i18n keys were renamed).
 
 **Reference:** `src/features/diagram/store/slices/services.slice.ts`;
-page `src/pages/serviceCatalog/` (formerly `serviceRegistry`).
+page `src/pages/serviceCatalog/`; hook `useCatalogActions` in
+`src/features/diagram/store/diagram.store.ts`.
 
-**Aliases:** `serviceRegistry` (deprecated; migration in a future
-`PERSIST_SCHEMA_VERSION`).
+**Aliases:** `serviceRegistry` (deprecated; runtime data migrated on
+load), `useRegistryActions` (deprecated; alias of `useCatalogActions`),
+`useServiceRegistry` (deprecated; alias of `useServiceCatalog`),
+i18n `nav.registry` and `elementPicker.registry` (deprecated; resolve
+to "Services"/"Serviços" via the new `services` keys).
 
 **Why rename:** the word *registry* in Structura currently means at least
 six different things — plugin registry, node type registry, panel
@@ -589,9 +597,9 @@ blocking defect.
 
 | # | From | To | Tier | Status |
 | --- | --- | --- | --- | --- |
-| 1 | `processos` (ComponentType) | `process-node` | 1 | proposed |
-| 2 | `registryServiceId` (field) | *(remove)* | 1 | proposed (field is dead) |
-| 3 | `serviceRegistry` (state, i18n, page) | `serviceCatalog` | 2 | proposed |
+| 1 | `processos` (ComponentType) | `process-node` | 1 | shipped (PERSIST_SCHEMA_VERSION 7) |
+| 2 | `registryServiceId` (field) | *(remove or unify with `serviceId`)* | 1 | **rejected as dead field** — it is live in plugin snapshots and template instancing. Unification with `serviceId` is a separate spec. |
+| 3 | `serviceRegistry` (state, i18n, page) | `serviceCatalog` | 2 | shipped (PERSIST_SCHEMA_VERSION 8) |
 | 4 | `ModelExplorer` (page) | `Workspace` | 2 | proposed |
 | 5 | `Journey` (entity, route, i18n) | `Walkthrough` | 3 | proposed |
 | 6 | `ExternalElementComponent.linkedDiagramId` | `referenceDiagramId` | 3 | proposed |
