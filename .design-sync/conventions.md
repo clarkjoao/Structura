@@ -25,13 +25,13 @@ Style with Tailwind classes that reference the theme tokens, NOT raw hex.
 The tokens are HSL and exposed as these utility families (all verified in the
 shipped CSS):
 
-| Purpose | Classes |
-|---|---|
-| Surfaces | `bg-background`, `bg-card`, `bg-popover`, `bg-muted`, `bg-accent` |
-| Text | `text-foreground`, `text-muted-foreground`, `text-card-foreground` |
+| Purpose         | Classes                                                                                                |
+| --------------- | ------------------------------------------------------------------------------------------------------ |
+| Surfaces        | `bg-background`, `bg-card`, `bg-popover`, `bg-muted`, `bg-accent`                                      |
+| Text            | `text-foreground`, `text-muted-foreground`, `text-card-foreground`                                     |
 | Brand / actions | `bg-primary` `text-primary-foreground`, `bg-secondary`, `bg-destructive` `text-destructive-foreground` |
-| Lines / fields | `border` `border-border`, `border-input`, `ring-ring` |
-| Radius | `rounded-md` / `rounded-lg` (driven by the `--radius` token) |
+| Lines / fields  | `border` `border-border`, `border-input`, `ring-ring`                                                  |
+| Radius          | `rounded-md` / `rounded-lg` (driven by the `--radius` token)                                           |
 
 Fonts: **Inter** (`font-sans`) and **JetBrains Mono** (`font-mono`), loaded via
 a remote `@import` in `styles.css`.
@@ -50,7 +50,15 @@ when coloring provider-specific nodes.
 ## One idiomatic example
 
 ```tsx
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Button } from "structura";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+  Button,
+} from "structura";
 
 <Card className="max-w-sm">
   <CardHeader>
@@ -64,5 +72,5 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, 
     <Button variant="ghost">Cancel</Button>
     <Button>Deploy</Button>
   </CardFooter>
-</Card>
+</Card>;
 ```

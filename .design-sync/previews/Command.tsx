@@ -11,9 +11,7 @@ import {
 
 export function Default() {
   return (
-    <Command
-      style={{ maxWidth: 380, border: "1px solid hsl(var(--border))", borderRadius: 8 }}
-    >
+    <Command style={{ maxWidth: 380, border: "1px solid hsl(var(--border))", borderRadius: 8 }}>
       <CommandInput placeholder="Type a command or search…" />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>

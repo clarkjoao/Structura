@@ -44,6 +44,7 @@ interface CornerHandleProps {
 ```
 
 **Render logic** in `EditableEdge.tsx`:
+
 - Iterate `stepSegments` vertices (where direction changes: horizontal ↔ vertical)
 - Render `CornerHandle` at each vertex
 - Hide when edge is read-only or label is being dragged
@@ -67,6 +68,7 @@ function snapToGrid(x: number, y: number, gridSize: number): { x: number; y: num
 ```
 
 Apply snapping to:
+
 - Control point drags (`useControlPoints.ts`: `handleDrag`)
 - Segment drags (`useSegmentDrag.ts`: `computeSegmentDrag`)
 - **New**: midpoint drags (ghost midpoints during orthogonal drag)
@@ -108,17 +110,17 @@ by 1px (Shift+Arrow by 10px). Escape cancels drag and restores previous state.
 
 ## Files to Change
 
-| File | Change |
-|---|---|
-| `src/features/canvas/edges/components/CornerHandle.tsx` | **New** — corner drag handle component |
-| `src/features/canvas/edges/EditableEdge.tsx` | Add CornerHandle rendering for `EditableStep` |
-| `src/features/canvas/edges/interaction/useControlPoints.ts` | Apply `snapToGrid` |
-| `src/features/canvas/edges/interaction/useSegmentDrag.ts` | Apply `snapToGrid`, clamp min length, segment highlight |
-| `src/features/canvas/edges/geometry/orthogonal.ts` | Add `snapToGrid` utility |
-| `src/features/canvas/edges/components/ControlPoint.tsx` | Add hover fill |
-| `src/features/canvas/edges/components/EdgeSegmentHandles.tsx` | Add hover fill |
-| `src/features/canvas/edges/styles/editable-edges.module.css` | Add hover/active states, highlight styles |
-| `src/features/canvas/edges/index.ts` | Export CornerHandle |
+| File                                                          | Change                                                  |
+| ------------------------------------------------------------- | ------------------------------------------------------- |
+| `src/features/canvas/edges/components/CornerHandle.tsx`       | **New** — corner drag handle component                  |
+| `src/features/canvas/edges/EditableEdge.tsx`                  | Add CornerHandle rendering for `EditableStep`           |
+| `src/features/canvas/edges/interaction/useControlPoints.ts`   | Apply `snapToGrid`                                      |
+| `src/features/canvas/edges/interaction/useSegmentDrag.ts`     | Apply `snapToGrid`, clamp min length, segment highlight |
+| `src/features/canvas/edges/geometry/orthogonal.ts`            | Add `snapToGrid` utility                                |
+| `src/features/canvas/edges/components/ControlPoint.tsx`       | Add hover fill                                          |
+| `src/features/canvas/edges/components/EdgeSegmentHandles.tsx` | Add hover fill                                          |
+| `src/features/canvas/edges/styles/editable-edges.module.css`  | Add hover/active states, highlight styles               |
+| `src/features/canvas/edges/index.ts`                          | Export CornerHandle                                     |
 
 ## Acceptance Criteria
 
