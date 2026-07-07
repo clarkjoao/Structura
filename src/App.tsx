@@ -4,7 +4,10 @@ import { useSharedDiagram } from "@/features/viewer/hooks/useSharedDiagram";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useDiagramPreviewSync } from "@/lib/diagram-preview";
-import { JourneyPlayerBar, JourneyPlayerProvider } from "@/features/journeys";
+import { WalkthroughPlayerBar, WalkthroughPlayerProvider } from "@/features/walkthroughs";
+import { migrateWalkthroughsLocalStorageKey } from "@/features/walkthroughs/utils/walkthroughsMigration";
+
+migrateWalkthroughsLocalStorageKey();
 
 const ViewerPage = lazy(() =>
   import("@/pages/ViewerPage").then((m) => ({ default: m.ViewerPage })),
@@ -20,8 +23,8 @@ const CollabRoom = lazy(() =>
   })),
 );
 const Dashboard = lazy(() => import("@/pages/dashboard"));
-const JourneyEditorPage = lazy(() => import("@/pages/journeys/JourneyEditorPage"));
-const JourneysPage = lazy(() => import("@/pages/journeys/JourneysPage"));
+const WalkthroughEditorPage = lazy(() => import("@/pages/walkthroughs/WalkthroughEditorPage"));
+const WalkthroughsPage = lazy(() => import("@/pages/walkthroughs/WalkthroughsPage"));
 const ModelExplorer = lazy(() => import("@/pages/modelExplorer"));
 const ServiceCatalog = lazy(() => import("@/pages/serviceCatalog"));
 const PluginsPage = lazy(() => import("@/pages/settings/PluginsPage"));
@@ -53,8 +56,15 @@ function MainPages() {
       <Routes>
         <Route path="/" element={<Navigate to="/workspace" />} />
         <Route path="/workspace" element={<Dashboard />} />
-        <Route path="/journeys" element={<JourneysPage />} />
-        <Route path="/journeys/:id/edit" element={<JourneyEditorPage />} />
+        <Route path="/walkthroughs" element={<WalkthroughsPage />} />
+        <Route path="/walkthroughs/:id/edit" element={<WalkthroughEditorPage />} />
+        {/* Legacy aliases — kept for one release so existing bookmarks
+            to /journeys and /journeys/:id/edit continue to resolve. */}
+        <Route path="/journeys" element={<Navigate to="/walkthroughs" replace />} />
+        <Route
+          path="/journeys/:id/edit"
+          element={<Navigate to="/walkthroughs/:id/edit" replace />}
+        />
         <Route path="/model/:id" element={<ModelExplorer />} />
         <Route path="/collab/:roomId" element={<CollabRoom />} />
         <Route path="/catalog" element={<ServiceCatalog />} />
@@ -77,15 +87,15 @@ const App = () => {
           </Suspense>
         </ShareProvider>
       ) : (
-        <JourneyPlayerProvider>
-          <JourneyPlayerBar />
+        <WalkthroughPlayerProvider>
+          <WalkthroughPlayerBar />
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/viewer" element={<ViewerPage />} />
               <Route path="*" element={<MainPages />} />
             </Routes>
           </Suspense>
-        </JourneyPlayerProvider>
+        </WalkthroughPlayerProvider>
       )}
     </BrowserRouter>
   );

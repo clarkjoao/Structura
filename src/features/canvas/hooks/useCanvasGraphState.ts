@@ -16,8 +16,8 @@ import { useCanvasEdges } from "../edges/useCanvasEdges";
 import { useCanvasHandleReorder } from "../edges/useCanvasHandleReorder";
 import { useLocalNodes } from "./useLocalNodes";
 import { useConnectionInternalsSync } from "./useConnectionInternalsSync";
-import { useJourneyCanvasHighlight } from "../chat/useJourneyCanvasHighlight";
-import { useJourneyPlayer } from "@/features/journeys";
+import { useWalkthroughCanvasHighlight } from "../chat/useWalkthroughCanvasHighlight";
+import { useWalkthroughPlayer } from "@/features/walkthroughs";
 
 type FlowSlice = ReturnType<typeof import("./useCanvasFlowState").useCanvasFlowState>;
 type CompareSlice = ReturnType<typeof import("./useCanvasCompareState").useCanvasCompareState>;
@@ -104,8 +104,8 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
   // full flow objects today. Migrating `dataCtx` dependencies to `flowIds` is deferred to
   // a safer follow-up to avoid behavioral regressions in node rendering.
 
-  const journeyPlayer = useJourneyPlayer();
-  const journeyHighlight = useJourneyCanvasHighlight();
+  const journeyPlayer = useWalkthroughPlayer();
+  const journeyHighlight = useWalkthroughCanvasHighlight();
   const effectiveFlowHighlight = useMemo(() => {
     if (journeyPlayer.mode.kind === "playing") {
       return journeyHighlight;

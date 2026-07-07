@@ -39,7 +39,7 @@ private and are composed by [`Canvas.tsx`](../Canvas.tsx) through
 | `useLocalNodes`              | Keeps a local React Flow node array responsive while the store catches up. It merges store-driven node updates with drag-in-progress state, filters locked scene moves, and preserves selection changes coming from React Flow.             |
 | `useCanvasDiagramNavigation` | Manages diagram navigation UI state such as the sidebar, search, and command palette. It also records recently opened diagrams and closes navigation surfaces when flow or compare mode locks navigation.                                   |
 | `useConnectionInternalsSync` | Watches per-node connection counts and calls `updateNodeInternals` only for nodes whose handles need to be recomputed. This keeps React Flow handle positions current without refreshing every node.                                        |
-| `useJourneyViewportSync`     | When a journey is actively playing, recenters the viewport on the currently highlighted node so the canvas follows the journey step-by-step.                                                                                                |
+| `useWalkthroughViewportSync` | When a walkthrough is actively playing, recenters the viewport on the currently highlighted node so the canvas follows the walkthrough step-by-step.                                                                                        |
 | `usePeerOnNode`              | Looks up whether a collaboration peer is currently focused on a given node, allowing the canvas to render presence information on that element.                                                                                             |
 | `useStableListByRefEquality` | Returns the previous array reference when each item is referentially unchanged. It is a small render-avoidance helper used to stabilize selector outputs.                                                                                   |
 
@@ -80,13 +80,13 @@ private and are composed by [`Canvas.tsx`](../Canvas.tsx) through
 
 ## Chat hooks
 
-| Hook                        | Goal                                                                                                                                                                                 |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `useLLMChat`                | Presents the canvas chat UI with diagram-aware context. It syncs chat history to the active diagram and enriches outgoing prompts with both diagram context and structured mentions. |
-| `useDiagramContext`         | Serializes the active diagram, resolved snapshot, active scene, metadata, and external links into a text block suitable for LLM prompts.                                             |
-| `useMentionSearch`          | Builds and searches the list of mentionable nodes and edges from the active diagram snapshot.                                                                                        |
-| `useMentionInput`           | Manages the mention-aware text input model, including picker visibility, parsed mention segments, active mention extraction, and insert/remove behavior.                             |
-| `useJourneyCanvasHighlight` | Converts journey-player state into the same flow highlight shape used by the canvas flow renderer, so journey playback can reuse canvas highlighting.                                |
+| Hook                            | Goal                                                                                                                                                                                 |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `useLLMChat`                    | Presents the canvas chat UI with diagram-aware context. It syncs chat history to the active diagram and enriches outgoing prompts with both diagram context and structured mentions. |
+| `useDiagramContext`             | Serializes the active diagram, resolved snapshot, active scene, metadata, and external links into a text block suitable for LLM prompts.                                             |
+| `useMentionSearch`              | Builds and searches the list of mentionable nodes and edges from the active diagram snapshot.                                                                                        |
+| `useMentionInput`               | Manages the mention-aware text input model, including picker visibility, parsed mention segments, active mention extraction, and insert/remove behavior.                             |
+| `useWalkthroughCanvasHighlight` | Converts walkthrough-player state into the same flow highlight shape used by the canvas flow renderer, so walkthrough playback can reuse canvas highlighting.                        |
 
 ## Navigation hooks
 

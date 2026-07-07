@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { fileSystemAdapter } from "./FileSystemAdapter";
 import type { WorkspaceScanResult } from "./FileSystemAdapter";
 import { useDiagramStore } from "@/features/diagram";
-import { useJourneyStore } from "@/features/journeys";
+import { useWalkthroughsStore } from "@/features/walkthroughs";
 import {
   useCustomComponentStore,
   type CustomComponentTemplate,
@@ -36,10 +36,10 @@ async function clearLocalCache(): Promise<void> {
 }
 
 async function mergeJourneysFromConnectedFolder(): Promise<void> {
-  const fsJourneys = await fileSystemAdapter.readJourneys();
+  const fsJourneys = await fileSystemAdapter.readWalkthroughs();
   if (fsJourneys) {
-    useJourneyStore.setState((state) => ({
-      journeys: { ...state.journeys, ...fsJourneys },
+    useWalkthroughsStore.setState((state) => ({
+      walkthroughs: { ...state.walkthroughs, ...fsJourneys },
     }));
   }
 }

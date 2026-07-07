@@ -29,7 +29,7 @@ const CLEARABLE_KEYS = [
 
 /**
  * Removes non-essential keys from localStorage.
- * Nunca remove diagram-store, structura:journeys ou structura:icon-library.
+ * Nunca remove diagram-store, structura:walkthroughs ou structura:icon-library.
  * Returns how many bytes were freed.
  */
 export function clearNonEssentialStorage(): number {

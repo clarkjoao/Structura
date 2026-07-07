@@ -38,7 +38,7 @@ import {
 import { useActiveDiagram, useStorageMonitor, type Flow } from "@/features/diagram";
 import { StorageWarningBanner } from "@/features/canvas/components/StorageWarningBanner";
 import { CollabCursors, CollabToolbar, useCollab } from "@/features/collaboration";
-import { useJourneyPlayer } from "@/features/journeys";
+import { useWalkthroughPlayer } from "@/features/walkthroughs";
 import { ExportModal } from "./ExportModal";
 import { ShareModal } from "./ShareModal";
 import type { ModelExplorerContentProps } from "./types";
@@ -94,7 +94,7 @@ export function ModelExplorerContent({
     updateSelectedNode,
   } = useCollab();
   const diagram = useActiveDiagram();
-  const journeyPlayer = useJourneyPlayer();
+  const journeyPlayer = useWalkthroughPlayer();
   const flowMode = useFlowMode();
   const playbackState = flowMode.mode.kind === "playing" ? flowMode.mode : null;
   const activeFlow = playbackState?.flow ?? null;
