@@ -1,18 +1,31 @@
 import { EdgeLabelRenderer } from "@xyflow/react";
-import { RotateCcw, Trash2 } from "lucide-react";
+import { RotateCcw, Spline, Trash2, Waypoints } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Point } from "@/features/diagram";
 
 interface EdgeToolbarProps {
   anchor: Point;
   canReset: boolean;
+  /** Current routing of an editable edge, or `null` for non-editable styles. */
+  routing: "curve" | "step" | null;
+  onToggleRouting: () => void;
   onReset: () => void;
   onDelete: () => void;
 }
 
 /** Floating actions anchored above a selected edge. */
-export function EdgeToolbar({ anchor, canReset, onReset, onDelete }: EdgeToolbarProps) {
+export function EdgeToolbar({
+  anchor,
+  canReset,
+  routing,
+  onToggleRouting,
+  onReset,
+  onDelete,
+}: EdgeToolbarProps) {
   const { t } = useTranslation();
+  // The icon/label describe the routing you switch *to*.
+  const toggleLabel =
+    routing === "curve" ? t("customEdge.routeAsStep") : t("customEdge.routeAsCurve");
 
   return (
     <EdgeLabelRenderer>
@@ -23,6 +36,25 @@ export function EdgeToolbar({ anchor, canReset, onReset, onDelete }: EdgeToolbar
           transform: `translate(-50%, -50%) translate(${anchor.x}px, ${anchor.y - 28}px)`,
         }}
       >
+        {routing && (
+          <button
+            type="button"
+            title={toggleLabel}
+            aria-label={toggleLabel}
+            className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground
+                       transition-colors hover:bg-surface-hover hover:text-foreground"
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggleRouting();
+            }}
+          >
+            {routing === "curve" ? (
+              <Waypoints className="h-3.5 w-3.5" aria-hidden />
+            ) : (
+              <Spline className="h-3.5 w-3.5" aria-hidden />
+            )}
+          </button>
+        )}
         {canReset && (
           <button
             type="button"

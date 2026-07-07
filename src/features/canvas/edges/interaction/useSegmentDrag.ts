@@ -15,6 +15,7 @@ import {
   computeCornerDrag,
   computeSegmentDrag,
   defaultOrthogonalCorners,
+  pruneRedundantCorners,
   snapToGrid,
   type StepSegment,
 } from "../geometry/orthogonal";
@@ -44,6 +45,10 @@ export interface UseSegmentDragResult {
   snapGuide: SnapGuide | null;
   startSegmentDrag: (segment: StepSegment, event: ReactPointerEvent<SVGLineElement>) => void;
   startCornerDrag: (cornerIndex: number, event: ReactPointerEvent<SVGRectElement>) => void;
+  /** Insert a new draggable corner splitting the segment at `segmentIndex`. */
+  addCornerAt: (segmentIndex: number, position: Point) => void;
+  /** Remove the interior corner at `cornerIndex`. */
+  removeCorner: (cornerIndex: number) => void;
 }
 
 /**
@@ -97,8 +102,8 @@ export function useSegmentDrag(
     [],
   );
 
-  // Commit the in-progress corners to the store, coalescing the whole gesture
-  // into one history step, and refresh the live preview.
+  // Write the in-progress corners to the store, coalescing a gesture into one
+  // history step (checkpoint only on the first move).
   const commit = useCallback(
     (diagramId: string, next: Point[], checkpoint: boolean) => {
       const previous = pointsRef.current;
@@ -108,12 +113,11 @@ export function useSegmentDrag(
         y: p.y,
       }));
       setEdgeControlPoints(diagramId, connectionId, cps, { history: checkpoint });
-      setPreviewPath(buildStepPath(source, target, next));
     },
-    [connectionId, setEdgeControlPoints, source, target],
+    [connectionId, setEdgeControlPoints],
   );
 
-  const endDrag = useCallback((onMove: (event: PointerEvent) => void, onUp: () => void) => {
+  const detach = useCallback((onMove: (event: PointerEvent) => void, onUp: () => void) => {
     window.removeEventListener("pointermove", onMove);
     window.removeEventListener("pointerup", onUp);
     window.removeEventListener("pointercancel", onUp);
@@ -137,6 +141,7 @@ export function useSegmentDrag(
       const horizontal = segment.orientation === "horizontal";
       const originAxis = horizontal ? segment.y1 : segment.x1;
       let checkpointed = false;
+      let lastNext: Point[] | null = null;
       setActiveSegmentIndex(segment.index);
       document.body.style.cursor = horizontal ? "ns-resize" : "ew-resize";
 
@@ -162,17 +167,25 @@ export function useSegmentDrag(
           setSnapGuide(null);
         }
         const next = computeSegmentDrag(source, target, initialCorners, segment, delta);
+        lastNext = next;
+        setPreviewPath(buildStepPath(source, target, next));
         commit(activeDiagramId, next, !checkpointed);
         checkpointed = true;
       };
 
-      const onUp = () => endDrag(onMove, onUp);
+      const onUp = () => {
+        if (lastNext) {
+          const pruned = pruneRedundantCorners(source, target, lastNext);
+          if (pruned.length !== lastNext.length) commit(activeDiagramId, pruned, false);
+        }
+        detach(onMove, onUp);
+      };
       window.addEventListener("pointermove", onMove);
       window.addEventListener("pointerup", onUp);
       window.addEventListener("pointercancel", onUp);
       cleanupRef.current = onUp;
     },
-    [activeDiagramId, screenToFlowPosition, source, target, commit, endDrag],
+    [activeDiagramId, screenToFlowPosition, source, target, commit, detach],
   );
 
   const startCornerDrag = useCallback(
@@ -187,6 +200,7 @@ export function useSegmentDrag(
       if (!origin) return;
       const startPos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
       let checkpointed = false;
+      let lastNext: Point[] | null = null;
       setActiveCornerIndex(cornerIndex);
       document.body.style.cursor = "move";
 
@@ -200,17 +214,48 @@ export function useSegmentDrag(
           delta.y = snapped.y - origin.y;
         }
         const next = computeCornerDrag(source, target, initialCorners, cornerIndex, delta);
+        lastNext = next;
+        setPreviewPath(buildStepPath(source, target, next));
         commit(activeDiagramId, next, !checkpointed);
         checkpointed = true;
       };
 
-      const onUp = () => endDrag(onMove, onUp);
+      const onUp = () => {
+        if (lastNext) {
+          const pruned = pruneRedundantCorners(source, target, lastNext);
+          if (pruned.length !== lastNext.length) commit(activeDiagramId, pruned, false);
+        }
+        detach(onMove, onUp);
+      };
       window.addEventListener("pointermove", onMove);
       window.addEventListener("pointerup", onUp);
       window.addEventListener("pointercancel", onUp);
       cleanupRef.current = onUp;
     },
-    [activeDiagramId, screenToFlowPosition, source, target, commit, endDrag],
+    [activeDiagramId, screenToFlowPosition, source, target, commit, detach],
+  );
+
+  // Insert a new corner splitting a segment, materializing the effective route
+  // (default or stored) so the added bend persists. One history entry.
+  const addCornerAt = useCallback(
+    (segmentIndex: number, position: Point) => {
+      if (!activeDiagramId) return;
+      const next = cornersRef.current.map((c) => ({ x: c.x, y: c.y }));
+      next.splice(segmentIndex, 0, { x: position.x, y: position.y });
+      commit(activeDiagramId, next, true);
+    },
+    [activeDiagramId, commit],
+  );
+
+  const removeCorner = useCallback(
+    (cornerIndex: number) => {
+      if (!activeDiagramId) return;
+      const next = cornersRef.current
+        .map((c) => ({ x: c.x, y: c.y }))
+        .filter((_, index) => index !== cornerIndex);
+      commit(activeDiagramId, next, true);
+    },
+    [activeDiagramId, commit],
   );
 
   return {
@@ -222,6 +267,8 @@ export function useSegmentDrag(
     snapGuide,
     startSegmentDrag,
     startCornerDrag,
+    addCornerAt,
+    removeCorner,
   };
 }
 

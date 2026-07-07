@@ -5,6 +5,7 @@ The current `EditableStep` edge implementation provides basic orthogonal segment
 The reference UX is draw.io-style orthogonal editing: corners are directly draggable squares at each bend, dragging shows a ghost preview of the new route, and alignment snaps to the canvas grid when enabled.
 
 Constraints:
+
 - Corners are already stored as control points in `EdgeLayout.points` — no schema change needed.
 - The existing `computeSegmentDrag()` pure function must be extended or mirrored for corner-specific logic.
 - Grid snapping depends on the diagram's `gridSize` and `snapToGrid` state (already exists in the store).
@@ -15,6 +16,7 @@ Constraints:
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Add corner handles (visible squares at corner positions) that can be dragged directly.
 - Implement grid snapping during segment and corner drags.
 - Render a live semi-transparent preview of the edge path during drag.
@@ -22,6 +24,7 @@ Constraints:
 - Mirror the existing `computeSegmentDrag()` pattern with `computeCornerDrag()` for clarity.
 
 **Non-Goals:**
+
 - Adding multi-segment insertion (splitting a segment in the middle).
 - Keyboard nudging for corners (separate change).
 - Changing the `editable` Catmull-Rom curve style.

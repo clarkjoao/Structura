@@ -72,3 +72,12 @@
 - [x] 10.2 Verify handle visibility follows selected/hovered state correctly
 - [x] 10.3 Test under zoom and pan to verify hit areas remain accurate (screenToFlowPosition; verified at zoom 1)
 - [x] 10.4 Verify i18n strings display correctly in both en and pt-BR
+
+## 11. Follow-up UX polish (direct-manipulation parity)
+
+- [x] 11.1 `pruneRedundantCorners()` pure function (drops collinear/coincident corners) + unit tests
+- [x] 11.2 Auto-cleanup redundant corners at drag end, folded into the same history step
+- [x] 11.3 Double-click a corner handle to remove it (`removeCorner`), route stays orthogonal
+- [x] 11.4 Add-a-bend affordance: `GhostCorner` at segment midpoints inserts a corner (`addCornerAt`)
+- [x] 11.5 Curve↔step routing toggle in `EdgeToolbar`, preserving other style props + i18n (en/pt-BR)
+- [x] 11.6 Extend Cypress smoke: add-a-bend affordance + routing toggle present (8/8 passing)

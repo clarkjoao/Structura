@@ -133,6 +133,14 @@ describe("Editable edge — orthogonal step (draw.io style)", () => {
     cy.get('rect[aria-label^="Edge corner"]', { timeout: 15000 }).its("length").should("be.gte", 2);
   });
 
+  it("offers add-a-bend affordances and a routing toggle", () => {
+    cy.get(".react-flow__edge-interaction").first().click({ force: true });
+    cy.get('rect[aria-label="Add a control point here"]', { timeout: 15000 })
+      .its("length")
+      .should("be.gte", 1);
+    cy.get('button[aria-label="Switch to curved routing"]').should("exist");
+  });
+
   it("repositions a corner by dragging its handle (keeps the route orthogonal)", () => {
     cy.get(".react-flow__edge-interaction").first().click({ force: true });
     cy.get('rect[aria-label^="Edge corner"]')

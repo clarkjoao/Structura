@@ -1221,6 +1221,8 @@
     "addPointAria": "Adicionar um ponto de controle aqui",
     "segmentHandleAria": "Segmento {{index}} da conexão, arraste para reposicionar",
     "cornerHandleAria": "Canto {{index}} da conexão, arraste para reposicionar",
+    "routeAsStep": "Alternar para roteamento ortogonal",
+    "routeAsCurve": "Alternar para roteamento curvo",
     "resetPoints": "Redefinir formato da conexão",
     "deleteEdge": "Excluir conexão"
   },

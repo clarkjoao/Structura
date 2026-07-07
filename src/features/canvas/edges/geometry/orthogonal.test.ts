@@ -8,6 +8,7 @@ import {
   computeCornerDrag,
   computeSegmentDrag,
   defaultOrthogonalCorners,
+  pruneRedundantCorners,
   snapToGrid,
 } from "./orthogonal";
 
@@ -142,6 +143,44 @@ describe("clampSegmentLength", () => {
 
   it("handles a zero-length case at the boundary", () => {
     expect(clampSegmentLength(0, 0, 10)).toBe(10);
+  });
+});
+
+describe("pruneRedundantCorners", () => {
+  const src: Point = { x: 0, y: 0 };
+  const tgt: Point = { x: 100, y: 100 };
+
+  it("keeps corners that actually bend the route", () => {
+    const corners: Point[] = [
+      { x: 50, y: 0 },
+      { x: 50, y: 100 },
+    ];
+    expect(pruneRedundantCorners(src, tgt, corners)).toEqual(corners);
+  });
+
+  it("drops a corner collinear with its neighbours", () => {
+    // The middle corner sits on the straight vertical run 50,0 -> 50,100.
+    const corners: Point[] = [
+      { x: 50, y: 0 },
+      { x: 50, y: 50 },
+      { x: 50, y: 100 },
+    ];
+    expect(pruneRedundantCorners(src, tgt, corners)).toEqual([
+      { x: 50, y: 0 },
+      { x: 50, y: 100 },
+    ]);
+  });
+
+  it("drops a corner coincident with a neighbour (zero-length segment)", () => {
+    const corners: Point[] = [
+      { x: 50, y: 0 },
+      { x: 50, y: 0 },
+      { x: 50, y: 100 },
+    ];
+    expect(pruneRedundantCorners(src, tgt, corners)).toEqual([
+      { x: 50, y: 0 },
+      { x: 50, y: 100 },
+    ]);
   });
 });
 

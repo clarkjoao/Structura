@@ -1221,6 +1221,8 @@
     "addPointAria": "Add a control point here",
     "segmentHandleAria": "Edge segment {{index}}, drag to reposition",
     "cornerHandleAria": "Edge corner {{index}}, drag to reposition",
+    "routeAsStep": "Switch to orthogonal routing",
+    "routeAsCurve": "Switch to curved routing",
     "resetPoints": "Reset edge shape",
     "deleteEdge": "Delete connection"
   },

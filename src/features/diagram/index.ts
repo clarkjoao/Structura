@@ -277,6 +277,7 @@ export {
   useActiveDiagramModel,
   useComponents,
   useComponent,
+  useConnection,
   useConnections,
   useVisibleComponents,
   useResolvedComponents,

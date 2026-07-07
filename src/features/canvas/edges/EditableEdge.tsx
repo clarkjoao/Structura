@@ -14,8 +14,10 @@ import {
   EdgeStyle,
   StrokeStyle,
   useActiveDiagramId,
+  useConnection,
   useDiagramActions,
   useEdgeLabelOffset,
+  type ConnectionStyle,
   type Point,
 } from "@/features/diagram";
 import { useTranslation } from "react-i18next";
@@ -28,7 +30,7 @@ import { useSegmentDrag } from "./interaction/useSegmentDrag";
 import { useEdgeLabelDrag } from "./interaction/useEdgeLabelDrag";
 import { ControlPoint, GhostControlPoint } from "./components/ControlPoint";
 import { EdgeSegmentHandles } from "./components/EdgeSegmentHandles";
-import { CornerHandles } from "./components/CornerHandles";
+import { CornerHandles, GhostCorner } from "./components/CornerHandles";
 import { EdgeHitArea } from "./components/EdgeHitArea";
 import { EdgeToolbar } from "./components/EdgeToolbar";
 import { EdgeLabel } from "./components/EdgeLabel";
@@ -70,7 +72,8 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
 
   const { t } = useTranslation();
   const activeDiagramId = useActiveDiagramId();
-  const { resetEdgeControlPoints, removeConnection } = useDiagramActions();
+  const { resetEdgeControlPoints, removeConnection, updateConnection } = useDiagramActions();
+  const connection = useConnection(connectionId);
   const { highlightedConnectionId } = useHandleHighlight();
 
   const source = useMemo<Point>(() => ({ x: sourceX, y: sourceY }), [sourceX, sourceY]);
@@ -140,6 +143,21 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
     [showAffordances, isCurve, source, target, points],
   );
 
+  // Add-a-bend affordances for step edges: a hollow square at the midpoint of
+  // each segment long enough to hold one, hidden while a drag is in progress.
+  const isDraggingStep =
+    segmentDrag.activeSegmentIndex !== null || segmentDrag.activeCornerIndex !== null;
+  const stepGhosts = useMemo(() => {
+    if (!showAffordances || !isStep || isDraggingStep) return [];
+    return segmentDrag.segments
+      .filter((s) => Math.abs(s.x2 - s.x1) + Math.abs(s.y2 - s.y1) > 28)
+      .map((s) => ({
+        segmentIndex: s.index,
+        x: (s.x1 + s.x2) / 2,
+        y: (s.y1 + s.y2) / 2,
+      }));
+  }, [showAffordances, isStep, isDraggingStep, segmentDrag.segments]);
+
   const canDragLabel = Boolean(edgeData.label && activeDiagramId);
   const labelDrag = useEdgeLabelDrag({
     connectionId,
@@ -148,6 +166,18 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
     target,
     pointsRef: projectionRef,
   });
+
+  // Swap curve ↔ step routing from the toolbar, keeping other style props and
+  // resetting the control points so the new routing starts from a clean default.
+  const routing = isCurve ? "curve" : isStep ? "step" : null;
+  const toggleRouting = () => {
+    if (!activeDiagramId || !routing) return;
+    const nextStyle = routing === "curve" ? EdgeStyle.EditableStep : EdgeStyle.Editable;
+    updateConnection(connectionId, {
+      style: { ...(connection?.style ?? {}), edgeStyle: nextStyle } as ConnectionStyle,
+    });
+    resetEdgeControlPoints(activeDiagramId, connectionId);
+  };
 
   const handleResetDoubleClick = (event: ReactMouseEvent<SVGPathElement>) => {
     if (!isEditable || points.length === 0 || !activeDiagramId) return;
@@ -231,7 +261,18 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
               activeCornerIndex={segmentDrag.activeCornerIndex}
               ariaLabel={(index) => t("customEdge.cornerHandleAria", { index: index + 1 })}
               onCornerPointerDown={segmentDrag.startCornerDrag}
+              onCornerRemove={segmentDrag.removeCorner}
             />
+            {stepGhosts.map((ghost) => (
+              <GhostCorner
+                key={`bend-${ghost.segmentIndex}`}
+                position={{ x: ghost.x, y: ghost.y }}
+                ariaLabel={t("customEdge.addPointAria")}
+                onAdd={() =>
+                  segmentDrag.addCornerAt(ghost.segmentIndex, { x: ghost.x, y: ghost.y })
+                }
+              />
+            ))}
           </>
         )}
         {showAffordances && isCurve && (
@@ -265,6 +306,8 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
         <EdgeToolbar
           anchor={labelPoint}
           canReset={isEditable && points.length > 0}
+          routing={isEditable ? routing : null}
+          onToggleRouting={toggleRouting}
           onReset={() => activeDiagramId && resetEdgeControlPoints(activeDiagramId, connectionId)}
           onDelete={() => removeConnection(connectionId)}
         />

@@ -218,6 +218,42 @@ export function computeCornerDrag(
   return next;
 }
 
+const EPSILON = 0.01;
+
+/**
+ * Drop interior corners that no longer bend the route: a corner collinear with
+ * both neighbours (same x or same y across all three knots) or coincident with a
+ * neighbour. Runs at the end of a drag so reshaping cannot leave phantom bends
+ * in the persisted layout. Pure and order-preserving.
+ */
+export function pruneRedundantCorners(
+  source: Point,
+  target: Point,
+  corners: readonly Point[],
+): Point[] {
+  const knots: Point[] = [source, ...corners.map((c) => ({ x: c.x, y: c.y })), target];
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let i = 1; i < knots.length - 1; i += 1) {
+      const a = knots[i - 1];
+      const b = knots[i];
+      const c = knots[i + 1];
+      const collinearH = Math.abs(a.y - b.y) < EPSILON && Math.abs(b.y - c.y) < EPSILON;
+      const collinearV = Math.abs(a.x - b.x) < EPSILON && Math.abs(b.x - c.x) < EPSILON;
+      const coincident =
+        (Math.abs(a.x - b.x) < EPSILON && Math.abs(a.y - b.y) < EPSILON) ||
+        (Math.abs(b.x - c.x) < EPSILON && Math.abs(b.y - c.y) < EPSILON);
+      if (collinearH || collinearV || coincident) {
+        knots.splice(i, 1);
+        changed = true;
+        break;
+      }
+    }
+  }
+  return knots.slice(1, -1);
+}
+
 /**
  * Snap a point to the nearest grid intersection, but only on an axis where the
  * nearest grid line is within `threshold`. Leaves the coordinate untouched

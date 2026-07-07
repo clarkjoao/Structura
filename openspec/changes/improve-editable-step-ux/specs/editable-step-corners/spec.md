@@ -75,3 +75,45 @@ The system SHALL provide visual feedback during corner drag including the cursor
 
 - **WHEN** a corner handle is being dragged
 - **THEN** the corner handle shows an active visual state distinct from hover
+
+### Requirement: Add and remove corners directly
+
+The system SHALL let the user add a corner by activating an add-a-bend affordance on a step segment, and remove an existing corner by double-clicking its handle. Both operations SHALL be single history steps and keep the route orthogonal.
+
+#### Scenario: Add a bend to a segment
+
+- **WHEN** the user activates the add-a-bend affordance at a segment midpoint
+- **THEN** a new draggable corner is inserted splitting that segment and the route remains orthogonal
+
+#### Scenario: Remove a corner by double-click
+
+- **WHEN** the user double-clicks a corner handle
+- **THEN** that corner is removed and the path re-routes orthogonally through the remaining corners
+
+### Requirement: Auto-cleanup of redundant corners
+
+At the end of a segment or corner drag, the system SHALL remove interior corners that no longer bend the route (collinear with both neighbours, or coincident with a neighbour) so the persisted layout keeps no phantom bends. The cleanup SHALL be part of the same history step as the drag.
+
+#### Scenario: Collinear corner removed after a drag
+
+- **WHEN** a drag leaves an interior corner collinear with its two neighbours
+- **THEN** that corner is dropped from the stored control points when the drag ends
+
+#### Scenario: Cleanup does not add an extra undo step
+
+- **WHEN** a drag that triggers cleanup is undone once
+- **THEN** the edge returns to its state before that drag began
+
+### Requirement: Toggle routing from the toolbar
+
+The system SHALL offer a control in the edge toolbar to switch an editable edge between curved (`editable`) and orthogonal (`editable-step`) routing, preserving the edge's other style properties. All labels SHALL be provided through i18n in both `en` and `pt-BR`.
+
+#### Scenario: Switch a step edge to curved
+
+- **WHEN** the user activates the routing toggle on a selected `editable-step` edge
+- **THEN** the edge's style becomes `editable`, its control points reset to a clean default, and other style properties (stroke, color, markers) are retained
+
+#### Scenario: Switch a curved edge to orthogonal
+
+- **WHEN** the user activates the routing toggle on a selected `editable` edge
+- **THEN** the edge's style becomes `editable-step` and it renders an orthogonal route
