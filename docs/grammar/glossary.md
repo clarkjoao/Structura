@@ -598,7 +598,7 @@ blocking defect.
 | # | From | To | Tier | Status |
 | --- | --- | --- | --- | --- |
 | 1 | `processos` (ComponentType) | `process-node` | 1 | shipped (PERSIST_SCHEMA_VERSION 7) |
-| 2 | `registryServiceId` (field) | *(remove or unify with `serviceId`)* | 1 | **rejected as dead field** — it is live in plugin snapshots and template instancing. Unification with `serviceId` is a separate spec. |
+| 2 | `registryServiceId` (field) | unify with `serviceId` | 1 | shipped (PERSIST_SCHEMA_VERSION 11) — the field was live (used by plugin snapshots and custom-component template instancing); unification with `serviceId` removes a duplicate write path that caused `linkComponentToService` to silently miss the link. |
 | 3 | `serviceRegistry` (state, i18n, page) | `serviceCatalog` | 2 | shipped (PERSIST_SCHEMA_VERSION 8) |
 | 4 | `ModelExplorer` (page) | `Workspace` | 2 | shipped |
 | 5 | `Journey` (entity, route, i18n) | `Walkthrough` | 3 | shipped (PERSIST_SCHEMA_VERSION 9) |
