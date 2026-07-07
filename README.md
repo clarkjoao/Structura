@@ -4,8 +4,19 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![React](https://img.shields.io/badge/React-18-61dafb.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6.svg)
+![Version](https://img.shields.io/badge/version-v0.2.0-blue.svg)
 
 **Architecture diagramming for teams who think in systems.**
+
+> **v0.2.0 shipped.** Five naming renames (`processos` → `process-node`,
+> `serviceRegistry` → `serviceCatalog`, `Journey` → `Walkthrough`,
+> `linkedDiagramId` → `referenceDiagramId`, `ModelExplorer` → `Workspace`),
+> one unification (`registryServiceId` → `serviceId`), and a canonical
+> glossary at [`docs/grammar/glossary.md`](docs/grammar/glossary.md).
+> Persisted workspace data is forward-migrated automatically; no user
+> action required. URL bookmarks for `/journeys` redirect to
+> `/walkthroughs` for one release. See
+> [CHANGELOG.md](CHANGELOG.md) for the full migration notes.
 
 <!-- screenshot -->
 
