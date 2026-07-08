@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, type MutableRefObject } from "react";
+import { useRef, useState, useCallback, useEffect, type MutableRefObject } from "react";
 import { applyNodeChanges, type Node, type NodeChange, type OnNodesChange } from "@xyflow/react";
 import type { Diagram, DiagramModel } from "@/features/diagram";
 import { canMoveNodeInSceneMode } from "@/features/diagram";
@@ -35,12 +35,25 @@ export function useLocalNodes(
   const [, setTick] = useState(0);
 
   const draggingNodeIdsRef = useRef(new Set<string>());
+  /** While true, NodeResizer updates dimensions in local state before the store catches up — keep local style/size. */
+  const resizingNodeIdsRef = useRef(new Set<string>());
   const prevStoreNodesRef = useRef<Node[] | undefined>(undefined);
   const prevDiagramRef = useRef<Diagram | DiagramModel | null | undefined>(undefined);
-
+  /** Detects active diagram switch — must reset locals even when `storeNodes` keeps the same ref (e.g. EMPTY_CANVAS_NODE_LIST). */
+  const prevActiveDiagramIdRef = useRef<string | null>(null);
+  /** Merged local nodes — ref-only to avoid setState during render (infinite update chains). */
   const localNodesStateRef = useRef<Node[]>([]);
 
-  if (storeNodes !== prevStoreNodesRef.current) {
+  const activeDiagramId = diagram?.id ?? null;
+  if (activeDiagramId !== prevActiveDiagramIdRef.current) {
+    prevActiveDiagramIdRef.current = activeDiagramId;
+    draggingNodeIdsRef.current.clear();
+    resizingNodeIdsRef.current.clear();
+    localNodesStateRef.current = storeNodes;
+    localNodesRef.current = storeNodes;
+    prevStoreNodesRef.current = storeNodes;
+    prevDiagramRef.current = diagram;
+  } else if (storeNodes !== prevStoreNodesRef.current) {
     prevStoreNodesRef.current = storeNodes;
 
     const undoRedo = isUndoRedoTransition(prevDiagramRef.current, diagram);
@@ -58,10 +71,13 @@ export function useLocalNodes(
         if (!ln) return sn;
         const useRemotePosition =
           sn.parentId !== ln.parentId || !draggingNodeIdsRef.current.has(sn.id);
+        const keepLocalDimensions = resizingNodeIdsRef.current.has(sn.id);
         return {
           ...ln,
           data: sn.data,
-          style: sn.style,
+          style: keepLocalDimensions ? ln.style : sn.style,
+          width: keepLocalDimensions ? ln.width : sn.width,
+          height: keepLocalDimensions ? ln.height : sn.height,
           hidden: sn.hidden,
           draggable: sn.draggable,
           selectable: sn.selectable,
@@ -93,10 +109,16 @@ export function useLocalNodes(
           sn.parentId !== ln.parentId || !draggingNodeIdsRef.current.has(sn.id);
 
         const positionToUse = useRemotePosition ? sn.position : ln.position;
+        const keepLocalDimensions = resizingNodeIdsRef.current.has(sn.id);
+        const styleToUse = keepLocalDimensions ? ln.style : sn.style;
+        const widthToUse = keepLocalDimensions ? ln.width : sn.width;
+        const heightToUse = keepLocalDimensions ? ln.height : sn.height;
 
         if (
           ln.data === sn.data &&
-          ln.style === sn.style &&
+          ln.style === styleToUse &&
+          ln.width === widthToUse &&
+          ln.height === heightToUse &&
           ln.hidden === sn.hidden &&
           ln.draggable === sn.draggable &&
           ln.selectable === sn.selectable &&
@@ -117,7 +139,9 @@ export function useLocalNodes(
         return {
           ...ln,
           data: sn.data,
-          style: sn.style,
+          style: styleToUse,
+          width: widthToUse,
+          height: heightToUse,
           hidden: sn.hidden,
           draggable: sn.draggable,
           selectable: sn.selectable,
@@ -141,16 +165,50 @@ export function useLocalNodes(
     }
   }
 
+  /**
+   * If React Flow omits `resizing: false` on the last dimensions event, clear the
+   * override set after the gesture so merges use the store again (double rAF: after
+   * RF internal updates + parenting layout flush on pointerup).
+   */
+  useEffect(() => {
+    const endResizeGestureFallback = () => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (resizingNodeIdsRef.current.size === 0) return;
+          resizingNodeIdsRef.current.clear();
+          setTick((tick) => tick + 1);
+        });
+      });
+    };
+    window.addEventListener("pointerup", endResizeGestureFallback);
+    window.addEventListener("pointercancel", endResizeGestureFallback);
+    return () => {
+      window.removeEventListener("pointerup", endResizeGestureFallback);
+      window.removeEventListener("pointercancel", endResizeGestureFallback);
+    };
+  }, []);
+
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
       if (!changes.length) return;
 
       for (const change of changes) {
-        if (change.type !== "position") continue;
-        if (change.dragging) {
-          draggingNodeIdsRef.current.add(change.id);
-        } else {
-          draggingNodeIdsRef.current.delete(change.id);
+        if (change.type === "position") {
+          if (change.dragging) {
+            draggingNodeIdsRef.current.add(change.id);
+          } else {
+            draggingNodeIdsRef.current.delete(change.id);
+          }
+        }
+        // Match position/dragging: intermediate dimension events often omit `resizing`
+        // (undefined). Only treat `resizing === false` as "resize ended" — otherwise we
+        // would delete the id mid-gesture and merge stale store sizes over RF's live node.
+        if (change.type === "dimensions") {
+          if (change.resizing === false) {
+            resizingNodeIdsRef.current.delete(change.id);
+          } else {
+            resizingNodeIdsRef.current.add(change.id);
+          }
         }
       }
 
