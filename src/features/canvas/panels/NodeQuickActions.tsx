@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ReactFlowInstance } from "@xyflow/react";
-import { X } from "lucide-react";
+import { ChevronDown, ChevronUp, X } from "lucide-react";
 import {
   isC4Component,
   isFlowNodeComponent,
@@ -12,17 +12,11 @@ import {
   type ComponentPatch,
 } from "@/features/diagram";
 import { useTheme } from "@/hooks/useTheme";
-
-const QUICK_ACTION_PALETTE: ReadonlyArray<{ color: string; nameKey: string }> = [
-  { color: "hsl(220 70% 50%)", nameKey: "colors.blue" },
-  { color: "hsl(250 70% 55%)", nameKey: "colors.indigo" },
-  { color: "hsl(280 65% 50%)", nameKey: "colors.purple" },
-  { color: "hsl(330 75% 55%)", nameKey: "colors.pink" },
-  { color: "hsl(0 70% 50%)", nameKey: "colors.red" },
-  { color: "hsl(38 92% 50%)", nameKey: "colors.amber" },
-  { color: "hsl(160 60% 40%)", nameKey: "colors.emerald" },
-  { color: "hsl(215 25% 25%)", nameKey: "colors.slate" },
-];
+import {
+  NEUTRAL_PRESETS,
+  VIBRANT_PRESETS,
+  type ColorPreset,
+} from "./ElementPanel/components/colorPresets";
 
 const OFFSET_RIGHT = 12;
 const OFFSET_TOP = 8;
@@ -65,6 +59,45 @@ interface NodeQuickActionsProps {
   onDismiss: () => void;
 }
 
+function ColorRow({
+  presets,
+  currentColor,
+  applyColor,
+  labelKey,
+}: {
+  presets: ReadonlyArray<ColorPreset>;
+  currentColor: string | undefined;
+  applyColor: (color: string) => void;
+  labelKey: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col gap-0.5">
+      <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        {t(labelKey)}
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {presets.map(({ color, nameKey }) => {
+          const isActive = currentColor === color;
+          return (
+            <button
+              key={color}
+              type="button"
+              title={t(nameKey)}
+              aria-label={t(nameKey)}
+              onClick={() => applyColor(color)}
+              className={`h-5 w-5 rounded-sm border transition-transform hover:scale-110 ${
+                isActive ? "border-foreground ring-2 ring-foreground/30" : "border-border"
+              }`}
+              style={{ backgroundColor: color }}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function NodeQuickActions({
   selectedNodeId,
   reactFlowInstance,
@@ -76,8 +109,8 @@ export function NodeQuickActions({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
+  const [showNeutrals, setShowNeutrals] = useState(false);
 
-  // Pull the live node from React Flow every frame so the popover follows drag.
   useEffect(() => {
     if (!selectedNodeId) {
       setPosition(null);
@@ -178,37 +211,47 @@ export function NodeQuickActions({
     <div
       ref={containerRef}
       style={position ? { top: position.top, left: position.left } : { top: -9999, left: -9999 }}
-      className="fixed z-50 flex items-center gap-1.5 rounded-md border border-border bg-popover p-1.5 shadow-md"
+      className="fixed z-50 flex flex-col gap-1.5 rounded-md border border-border bg-popover p-1.5 shadow-md"
       role="toolbar"
       aria-label={t("nodeQuickActions.resetColor")}
     >
-      {QUICK_ACTION_PALETTE.map(({ color, nameKey }) => {
-        const isActive = currentColor === color;
-        return (
-          <button
-            key={color}
-            type="button"
-            title={t(nameKey)}
-            aria-label={t(nameKey)}
-            onClick={() => applyColor(color)}
-            className={`h-5 w-5 rounded-sm border transition-transform hover:scale-110 ${
-              isActive ? "border-foreground ring-2 ring-foreground/30" : "border-border"
-            }`}
-            style={{ backgroundColor: color }}
-          />
-        );
-      })}
-      <div className="mx-0.5 h-5 w-px bg-border" />
-      <button
-        type="button"
-        title={t("nodeQuickActions.resetColor")}
-        aria-label={t("nodeQuickActions.resetColor")}
-        onClick={resetColor}
-        disabled={!currentColor}
-        className="flex h-5 w-5 items-center justify-center rounded-sm border border-border text-muted-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        <X className="h-3 w-3" />
-      </button>
+      <div className="flex items-center justify-between gap-1.5">
+        <div className="flex-1" />
+        <button
+          type="button"
+          title={t("nodeQuickActions.moreToggle")}
+          aria-label={t("nodeQuickActions.moreToggle")}
+          onClick={() => setShowNeutrals((v) => !v)}
+          className="flex h-5 items-center gap-0.5 rounded-sm border border-border px-1 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-accent"
+        >
+          {showNeutrals ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          {t("nodeQuickActions.moreToggle")}
+        </button>
+        <button
+          type="button"
+          title={t("nodeQuickActions.resetColor")}
+          aria-label={t("nodeQuickActions.resetColor")}
+          onClick={resetColor}
+          disabled={!currentColor}
+          className="flex h-5 w-5 items-center justify-center rounded-sm border border-border text-muted-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      </div>
+      <ColorRow
+        presets={VIBRANT_PRESETS}
+        currentColor={currentColor}
+        applyColor={applyColor}
+        labelKey="nodeQuickActions.sectionVibrant"
+      />
+      {showNeutrals && (
+        <ColorRow
+          presets={NEUTRAL_PRESETS}
+          currentColor={currentColor}
+          applyColor={applyColor}
+          labelKey="nodeQuickActions.sectionNeutral"
+        />
+      )}
     </div>
   );
 }

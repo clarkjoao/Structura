@@ -30,11 +30,8 @@ import {
 import { isAwsType, AWS_CATEGORIES, AWS_CATEGORY_MAP, AWS_SERVICE_MAP } from "@/lib/catalogs/aws";
 import AwsIcon from "../../nodes/AwsIcon";
 import TabBar, { type Tab } from "./components/TabBar";
-import {
-  C4_DEFAULT_COLORS,
-  NOTE_DEFAULT_DARK,
-  NOTE_DEFAULT_LIGHT,
-} from "./components/colorPresets";
+// Color editing lives in the NodeQuickActions popover. The ElementPanel
+// renders only structural fields — see QUICK_VS_STRUCTURAL.md.
 import ConnectionsTab from "./components/ConnectionsTab";
 import { ComponentIconTab } from "./components/ComponentIconTab";
 import { useTranslation } from "react-i18next";
@@ -46,11 +43,11 @@ import {
   ServiceLinkSection,
   LinkedDiagramSection,
   PanelStyleSection,
-  ColorAccentSection,
   ExternalLinksSection,
   FlowchartFieldsSection,
   PositionSection,
 } from "./sections";
+import { ColorHint } from "./components/ColorHint";
 import { usePanelChildLayout } from "../../hooks/usePanelChildLayout";
 import { isComponentType } from "@/features/diagram";
 function buildComponentSyncPatch(service: ServiceDefinition, component: Component): ComponentPatch {
@@ -259,6 +256,13 @@ const ComponentPanel = ({
                   : component.name}
         </h3>
         <div className="flex items-center gap-2">
+          <ColorHint
+            component={component}
+            onOpenQuickActions={() => {
+              /* Quick Actions popover is always mounted when a single node is
+                 selected; the button is a discoverability hint. */
+            }}
+          />
           <button
             type="button"
             onClick={() => updateComponent(component.id, { locked: !component.locked })}
@@ -531,31 +535,6 @@ const ComponentPanel = ({
               updateComponent={updateComponent}
               updateNodeLayout={updateNodeLayout}
               componentNodeLayout={resolved?.nodeLayouts[component.id]}
-            />
-          )}
-          {isNoteComponent(component) && (
-            <ColorAccentSection
-              componentId={component.id}
-              type={isDark ? "note-dark" : "note"}
-              currentColor={
-                isDark
-                  ? (component.panelColorDark ?? NOTE_DEFAULT_DARK)
-                  : (component.panelColor ?? NOTE_DEFAULT_LIGHT)
-              }
-              updateComponent={updateComponent}
-            />
-          )}
-          {!isSimple && isC4Component(component) && (
-            <ColorAccentSection
-              componentId={component.id}
-              type="c4"
-              currentColor={
-                (component as { panelColor?: string }).panelColor ??
-                C4_DEFAULT_COLORS[component.type] ??
-                C4_DEFAULT_COLORS.system
-              }
-              allowClear
-              updateComponent={updateComponent}
             />
           )}
           {!isSimple && !isFlowchart && (

@@ -852,6 +852,9 @@
     "unlock": "Unlock element",
     "lockedDragBlocked": "This element is locked and cannot be moved",
     "opacityLabel": "Opacity — {{value}}%",
+    "colorHintLabel": "Color: {{name}}",
+    "colorHintDefault": "Color: default",
+    "openQuickActions": "Open Quick Actions",
     "tabs": {
       "icon": "Icon"
     }
@@ -1047,7 +1050,10 @@
   },
   "nodeQuickActions": {
     "resetColor": "Reset color",
-    "notApplicableForNode": "Quick Actions are not available for this node type"
+    "notApplicableForNode": "Quick Actions are not available for this node type",
+    "sectionVibrant": "Vibrant",
+    "sectionNeutral": "Neutral",
+    "moreToggle": "More"
   },
   "panelNode": {
     "expandAria": "Expand panel",

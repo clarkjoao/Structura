@@ -852,6 +852,9 @@
     "unlock": "Desbloquear elemento",
     "lockedDragBlocked": "Este elemento está bloqueado e não pode ser movido",
     "opacityLabel": "Opacidade — {{value}}%",
+    "colorHintLabel": "Cor: {{name}}",
+    "colorHintDefault": "Cor: padrão",
+    "openQuickActions": "Abrir Ações Rápidas",
     "tabs": {
       "icon": "Ícone"
     }
@@ -1047,7 +1050,10 @@
   },
   "nodeQuickActions": {
     "resetColor": "Remover cor",
-    "notApplicableForNode": "Ações rápidas não estão disponíveis para este tipo de nó"
+    "notApplicableForNode": "Ações rápidas não estão disponíveis para este tipo de nó",
+    "sectionVibrant": "Vibrantes",
+    "sectionNeutral": "Neutras",
+    "moreToggle": "Mais"
   },
   "panelNode": {
     "expandAria": "Expandir painel",
