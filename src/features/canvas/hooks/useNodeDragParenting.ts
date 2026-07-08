@@ -102,6 +102,27 @@ export function useNodeDragParenting({
     [flushPendingLayoutUpdates],
   );
 
+  /**
+   * Flush dimension batches on pointer release so the store catches up before
+   * `useLocalNodes` merges — avoids one frame where local resize was released
+   * but Zustand still had the previous width/height.
+   */
+  useEffect(() => {
+    const onPointerUp = () => {
+      if (layoutUpdateRafRef.current !== null) {
+        cancelAnimationFrame(layoutUpdateRafRef.current);
+        layoutUpdateRafRef.current = null;
+      }
+      flushPendingLayoutUpdates();
+    };
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
+    return () => {
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
+    };
+  }, [flushPendingLayoutUpdates]);
+
   const handlePositionChange = useCallback(
     (change: NodeChange) => {
       if (change.type !== "position" || !change.position) return;

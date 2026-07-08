@@ -56,7 +56,11 @@ function colorWithAlpha(color: string, alpha: number): string {
 
 const UNPARENT_BORDER = "hsl(25 95% 53%)";
 
-const PanelNode = memo(({ data: d, selected }: NodeProps<Node<PanelNodeData>>) => {
+const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
+  const { data, selected, dragging } = props;
+  const d = data as PanelNodeData;
+  const isResizing =
+    "resizing" in props ? Boolean((props as NodeProps & { resizing?: boolean }).resizing) : false;
   const { t } = useTranslation();
   const customDiagramIcon = useComponentIcon(d.elementId);
   const { highlightedNodeIds } = useHandleHighlight();
@@ -90,13 +94,16 @@ const PanelNode = memo(({ data: d, selected }: NodeProps<Node<PanelNodeData>>) =
       : colorWithAlpha(color, 0.4);
   const borderStyle = (d.borderStyle ?? "solid") as "solid" | "dashed" | "dotted";
 
+  /** CSS transitions fight RF drag/resize — disable while moving or resizing. */
+  const motionClass = dragging || isResizing ? "" : "transition-all duration-200";
+
   const selectedRing = "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110";
   const unselectedClass = "opacity-90";
 
   if (collapsed) {
     return (
       <div
-        className={`relative w-full h-full rounded-lg flex items-center gap-2 px-3 transition-all duration-200 ${isActive ? selectedRing : unselectedClass}`}
+        className={`relative w-full h-full rounded-lg flex items-center gap-2 px-3 ${motionClass} ${isActive ? selectedRing : unselectedClass}`}
         style={{
           backgroundColor,
           border: `2px ${borderStyle} ${borderColor}`,
@@ -164,7 +171,7 @@ const PanelNode = memo(({ data: d, selected }: NodeProps<Node<PanelNodeData>>) =
         handleStyle={{ backgroundColor: color }}
       />
       <div
-        className={`w-full h-full rounded-xl transition-all duration-200 relative ${!isTransparent ? "backdrop-blur-sm" : ""} ${isActive ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
+        className={`w-full h-full rounded-xl ${motionClass} relative ${!isTransparent ? "backdrop-blur-sm" : ""} ${isActive ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
         style={{
           backgroundColor,
           border: `2px ${borderStyle} ${borderColor}`,

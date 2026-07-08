@@ -32,7 +32,11 @@ function swimlaneFill(color: string): string {
   return color;
 }
 
-const SwimlaneNode = memo(({ data: d, selected }: NodeProps<Node<SwimlaneNodeData>>) => {
+const SwimlaneNode = memo((props: NodeProps<Node<SwimlaneNodeData>>) => {
+  const { data, selected, dragging } = props;
+  const d = data as SwimlaneNodeData;
+  const isResizing =
+    "resizing" in props ? Boolean((props as NodeProps & { resizing?: boolean }).resizing) : false;
   const { t } = useTranslation();
   const { highlightedNodeIds } = useHandleHighlight();
   const isHorizontal = d.orientation !== "vertical";
@@ -46,6 +50,7 @@ const SwimlaneNode = memo(({ data: d, selected }: NodeProps<Node<SwimlaneNodeDat
   const isDragTarget = d.isDragTarget;
   const isUnparentCandidate = d.isUnparentCandidate ?? false;
   const collabHighlight = useCollabHighlight(d.elementId);
+  const motionClass = dragging || isResizing ? "" : "transition-all duration-200";
 
   return (
     <>
@@ -58,7 +63,7 @@ const SwimlaneNode = memo(({ data: d, selected }: NodeProps<Node<SwimlaneNodeDat
         handleStyle={{ backgroundColor: laneColor }}
       />
       <div
-        className={`relative w-full h-full rounded-lg border transition-all duration-200 ${
+        className={`relative w-full h-full rounded-lg border ${motionClass} ${
           isUnparentCandidate ? "" : "border-border/40"
         } ${isActive ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-95"}`}
         style={{
