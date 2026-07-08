@@ -22,7 +22,7 @@ import {
 } from "@/features/diagram";
 import { useTranslation } from "react-i18next";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
-import { buildEditableEdgePath } from "./geometry/paths";
+import { buildEditableEdgePath, getRenderedPathKnots } from "./geometry/paths";
 import { buildStepPath } from "./geometry/orthogonal";
 import { clampOffset, getGhostMidpoints, getPointAtOffset } from "./geometry/projection";
 import { useControlPoints } from "./interaction/useControlPoints";
@@ -91,9 +91,36 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
     useControlPoints(connectionId);
   const segmentDrag = useSegmentDrag(connectionId, source, target, sourcePosition);
 
-  // Points used for label placement/projection: control points (curve) or the
-  // effective orthogonal corners (step).
-  const projectionPoints = isStep ? segmentDrag.corners : points;
+  // Label placement polyline:
+//  - Editable (Curve/Step): control points (Curve) or orthogonal corners
+//    (Step) — these are what the rendered path actually traces.
+//  - Non-editable (Smoothstep / Step / Bezier / Straight): we build the
+//    same polyline (or, for Bezier, a 32-sample approximation of the same
+//    cubic) that xyflow's getSmoothStepPath / getBezierPath / getStraightPath
+//    renders. Sampling this with getPointAtOffset places the label on the
+//    visible path, including the Smoothstep/Step bend, and `labelOffset`
+//    slides it end-to-end along that polyline. The polyline is built from
+//    source/target/handles — never from the store's `points` — so stale
+//    entries left over from a previous Editable style, a copy, or the
+//    waypoints->points migration cannot detach the label.
+  const projectionPoints = isEditable
+    ? isStep
+      ? segmentDrag.corners
+      : points
+    : getRenderedPathKnots({
+        source,
+        target,
+        sourcePosition: sourcePosition as "left" | "top" | "right" | "bottom",
+        targetPosition: targetPosition as "left" | "top" | "right" | "bottom",
+        style:
+          edgeStyle === EdgeStyle.Bezier
+            ? "bezier"
+            : edgeStyle === EdgeStyle.Step
+              ? "step"
+              : edgeStyle === EdgeStyle.Straight
+                ? "straight"
+                : "smoothstep",
+      });
   const projectionRef = useRef<readonly Point[]>(projectionPoints);
   useEffect(() => {
     projectionRef.current = projectionPoints;
@@ -104,14 +131,24 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
 
   const [hovered, setHovered] = useState(false);
 
-  const edgePath = useMemo(() => {
-    if (isStep) return buildStepPath(source, target, segmentDrag.corners);
-    if (isCurve) return buildEditableEdgePath(source, target, points, "catmull-rom");
+  const { edgePath } = useMemo(() => {
+    if (isStep) {
+      return { edgePath: buildStepPath(source, target, segmentDrag.corners) };
+    }
+    if (isCurve) {
+      return { edgePath: buildEditableEdgePath(source, target, points, "catmull-rom") };
+    }
     const params = { sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition };
-    if (edgeStyle === EdgeStyle.Step) return getSmoothStepPath({ ...params, borderRadius: 0 })[0];
-    if (edgeStyle === EdgeStyle.Smoothstep) return getSmoothStepPath(params)[0];
-    if (edgeStyle === EdgeStyle.Bezier) return getBezierPath(params)[0];
-    return getStraightPath(params)[0];
+    if (edgeStyle === EdgeStyle.Step) {
+      return { edgePath: getSmoothStepPath({ ...params, borderRadius: 0 })[0] };
+    }
+    if (edgeStyle === EdgeStyle.Smoothstep) {
+      return { edgePath: getSmoothStepPath(params)[0] };
+    }
+    if (edgeStyle === EdgeStyle.Bezier) {
+      return { edgePath: getBezierPath(params)[0] };
+    }
+    return { edgePath: getStraightPath(params)[0] };
   }, [
     isStep,
     isCurve,
