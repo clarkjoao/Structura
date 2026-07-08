@@ -17,6 +17,11 @@ export const FIT_VIEW_MAX_ZOOM = 1.5;
 export const VIEWPORT_MIN_ZOOM = 0.3;
 export const FIT_VIEW_INITIAL_PADDING = 0.3;
 
+/** Max zoom reachable via the custom wheel handler. Must match `<ReactFlow maxZoom>`. */
+export const WHEEL_MAX_ZOOM = 1.5;
+/** Per-step zoom factor for the custom wheel handler. */
+export const WHEEL_ZOOM_FACTOR = 1.1;
+
 export { VIEWPORT_DEBOUNCE_MS } from "@/features/diagram";
 
 export const FIELD_DEBOUNCE_MS = 300;
