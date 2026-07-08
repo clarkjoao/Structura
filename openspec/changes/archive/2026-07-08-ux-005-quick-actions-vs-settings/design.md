@@ -5,6 +5,7 @@ UX-004 (`openspec/changes/ux-004-quick-actions`) shipped the Quick Actions popov
 The ElementPanel (`src/features/canvas/panels/ElementPanel/index.tsx`) currently renders every node field, including color. The color section is `ColorAccentSection` (imported from `./sections`), and a small subsection of `PanelStyleSection` may also render a color swatch. The panel is mounted with the same `showElementPanel` gate as the popover, so when the popover is open, the panel is open too — and the panel still has a full color picker. That duplication is the symptom UX-005 fixes: today the user can change the same color in two places, and the panel's picker is the heavier of the two.
 
 The existing palette constants live in `src/features/canvas/panels/ElementPanel/components/colorPresets.ts`:
+
 - `VIBRANT_PRESETS` — 15 colors (blue → sky).
 - `NEUTRAL_PRESETS` — 6 grays (grayDark → gray).
 - `PANEL_PRESETS` — concatenates the two (21 total).

@@ -39,7 +39,7 @@ _None._ The Quick Actions surface already exists (spec `node-quick-actions`); th
 - **Store surface** — unchanged. Both the popover and the (no-longer-present) color section in the panel went through `updateComponent`, and the panel hint only reads.
 - **i18n** — 5 new keys per locale.
 - **Persistence** — none.
-- **Risk** — medium. The panel-side hint is new and the user might be confused if the hint says "Color: blue" but they expected to edit it. *Mitigation*: the hint label is "Edit in Quick Actions" (a verb), and the popover is the only edit path; the hint is read-only.
+- **Risk** — medium. The panel-side hint is new and the user might be confused if the hint says "Color: blue" but they expected to edit it. _Mitigation_: the hint label is "Edit in Quick Actions" (a verb), and the popover is the only edit path; the hint is read-only.
 - **Out of scope (Non-Goals)**
   - Quick actions for **edge direction / edge style**. Still a follow-up; the popover only fires on single-node selection today and adding edge support means reworking the gating and the data plumbing.
   - Adding the popover to multi-selection. Still a follow-up.
