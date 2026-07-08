@@ -1,8 +1,11 @@
 # editable-edges Specification
 
 ## Purpose
+
 TBD - created by archiving change rebuild-editable-edges. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Editable edge style
 
 The system SHALL provide an `editable` edge style (`EdgeStyle.Editable`) whose path is rendered as a smooth Catmull-Rom curve passing through the edge's source endpoint, its ordered control points, and its target endpoint. The existing `bezier`, `smoothstep`, `step`, and `straight` styles SHALL remain available as non-editable presets and MUST NOT render control points.
@@ -216,4 +219,3 @@ The system SHALL export edge geometry using the stored control `points` so that 
 
 - **WHEN** a diagram containing an editable edge with control points is exported to draw.io
 - **THEN** the exported edge includes those points as its routing geometry
-

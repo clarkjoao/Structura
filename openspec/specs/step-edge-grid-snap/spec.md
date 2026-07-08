@@ -1,8 +1,11 @@
 # step-edge-grid-snap Specification
 
 ## Purpose
+
 TBD - created by archiving change improve-editable-step-ux. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Grid snapping during segment drag
 
 The system SHALL snap orthogonal segment drags to the canvas grid when grid snapping is enabled, providing alignment assistance.
@@ -77,4 +80,3 @@ The system SHALL let the user nudge a focused control point or corner handle wit
 
 - **WHEN** a handle is focused and the user presses Shift+arrow
 - **THEN** the handle moves by 1px in that direction
-
