@@ -5,7 +5,6 @@ import {
   Background,
   BackgroundVariant,
   Controls,
-  PanOnScrollMode,
   SelectionMode,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -93,7 +92,7 @@ const Canvas = (props: CanvasProps = {}) => {
     allDiagramTags,
     handleAutoLayout,
     isAutoLayoutRunning,
-  } = useCanvasController(props);
+  } = useCanvasController({ ...props, inputProfile });
   const {
     pendingPreviews,
     accept: acceptSuggestion,
@@ -303,9 +302,8 @@ const Canvas = (props: CanvasProps = {}) => {
               onNodeContextMenu={eventHandlers.onNodeContextMenu}
               onNodeDragStop={onNodeDragStop}
               onSelectionChange={eventHandlers.onSelectionChange}
-              panOnDrag={inputProfile.prefersTouchCanvasUi ? true : [2]}
-              panOnScroll
-              panOnScrollMode={PanOnScrollMode.Free}
+              panOnDrag={inputProfile.prefersTouchCanvasUi ? true : [1, 2]}
+              panOnScroll={false}
               selectionOnDrag={!inputProfile.prefersTouchCanvasUi}
               panActivationKeyCode={inputProfile.prefersTouchCanvasUi ? null : PAN_ACTIVATION_KEY}
               selectionMode={SelectionMode.Partial}

@@ -18,6 +18,7 @@ import {
   type ServiceDefinition,
 } from "@/features/diagram";
 import type { CanvasProps } from "../canvas.types";
+import type { CanvasInputProfile } from "./useCanvasInputProfile";
 import type { CanvasVisualState } from "./useCanvasVisualState";
 import { useCanvasDiagramNavigation } from "./useCanvasDiagramNavigation";
 import { useCanvasDrillHandlers } from "./useCanvasDrillHandlers";
@@ -47,6 +48,7 @@ export interface UseCanvasInteractionParams {
   setShowScenes: Dispatch<SetStateAction<boolean>>;
   setFocusTitleTrigger: Dispatch<SetStateAction<number>>;
   onAutoLayout: () => void;
+  inputProfile: CanvasInputProfile;
 }
 
 export interface UseCanvasInteractionResult {
@@ -89,6 +91,7 @@ export function useCanvasInteraction(
     setShowScenes,
     setFocusTitleTrigger,
     onAutoLayout,
+    inputProfile,
   } = params;
 
   const { t } = useTranslation();
@@ -275,6 +278,7 @@ export function useCanvasInteraction(
     currentStepId: flowState.currentStepId,
     onClearSelection: visualState.clearCanvasSelection,
     skipInitialFit,
+    inputProfile,
   });
 
   return {

@@ -1,8 +1,11 @@
 # step-edge-drag-preview Specification
 
 ## Purpose
+
 TBD - created by archiving change improve-editable-step-ux. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Live drag preview for segments
 
 The system SHALL render a semi-transparent preview of the edge path during a segment drag, updating in real time as the user moves the pointer.
@@ -49,4 +52,3 @@ The system SHALL render the drag preview with a distinct visual style that diffe
 
 - **WHEN** the user releases the drag
 - **THEN** the preview path is removed and the edge path updates to the committed geometry
-

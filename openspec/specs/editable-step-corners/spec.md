@@ -1,8 +1,11 @@
 # editable-step-corners Specification
 
 ## Purpose
+
 TBD - created by archiving change improve-editable-step-ux. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Corner handles on step edges
 
 The system SHALL render visible corner handles at each interior corner of an `editable-step` edge when the edge is selected or hovered. Corner handles SHALL be small square markers positioned at the corner coordinates.
@@ -120,4 +123,3 @@ The system SHALL offer a control in the edge toolbar to switch an editable edge 
 
 - **WHEN** the user activates the routing toggle on a selected `editable` edge
 - **THEN** the edge's style becomes `editable-step` and it renders an orthogonal route
-

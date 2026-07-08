@@ -12,17 +12,21 @@ import {
   useResolvedNodeLayouts,
 } from "@/features/diagram";
 import type { CanvasProps } from "../canvas.types";
+import type { CanvasInputProfile } from "./useCanvasInputProfile";
 import { useCanvasCompareState } from "./useCanvasCompareState";
 import { useCanvasFlowState } from "./useCanvasFlowState";
 import { useCanvasGraphState } from "./useCanvasGraphState";
 import { useCanvasInteraction } from "./useCanvasInteraction";
 import { useCanvasStore } from "./useCanvasStore";
 import { useCanvasVisualState } from "./useCanvasVisualState";
+import { useCanvasInputProfile } from "./useCanvasInputProfile";
 import type { NodeSelectionState } from "@/features/canvas/hooks/useCanvasVisualState";
 import { useInteractionMode } from "./useInteractionMode";
 import { useAutoLayout } from "./useAutoLayout";
 
-export function useCanvasController(canvasProps: CanvasProps = {}) {
+export function useCanvasController(
+  canvasProps: CanvasProps & { inputProfile?: CanvasInputProfile } = {},
+) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const reactFlowInstance = useReactFlow();
@@ -46,6 +50,8 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
   const diagramSceneState = useActiveDiagramSceneState();
   const allDiagramTags = useDiagramTags();
   const visualState = useCanvasVisualState(diagram?.id ?? null);
+  const internalInputProfile = useCanvasInputProfile();
+  const inputProfile = canvasProps.inputProfile ?? internalInputProfile;
   const { updateSelectedNode } = useCollab();
   const compareState = useCanvasCompareState({
     diagram,
@@ -90,6 +96,7 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     setShowScenes,
     setFocusTitleTrigger,
     onAutoLayout: handleAutoLayout,
+    inputProfile,
   });
   const flowContext = useMemo(
     () => ({
