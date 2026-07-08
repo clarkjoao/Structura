@@ -1045,6 +1045,10 @@
     "sendToBack": "Enviar para trás",
     "fitToChildren": "Ajustar ao conteúdo"
   },
+  "nodeQuickActions": {
+    "resetColor": "Remover cor",
+    "notApplicableForNode": "Ações rápidas não estão disponíveis para este tipo de nó"
+  },
   "panelNode": {
     "expandAria": "Expandir painel",
     "expandTitle": "Expandir",

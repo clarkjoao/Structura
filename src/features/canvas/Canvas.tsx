@@ -13,6 +13,7 @@ import CanvasToolbar from "./toolbar/CanvasToolbar";
 import { WalkthroughsInDiagramPanel } from "./panels/WalkthroughsInDiagramPanel";
 import { ConnectedSceneDrawer } from "./toolbar/SceneDrawer";
 import ElementPanel from "./panels/ElementPanel/index";
+import { NodeQuickActionsContainer } from "./panels/NodeQuickActions";
 import { CanvasContextMenu } from "./panels/CanvasContextMenu";
 import { useNodeTypes } from "./nodes/node-types";
 import QuickInsertPopover from "./toolbar/QuickInsertPopover";
@@ -27,7 +28,7 @@ import { useCanvasInputProfile } from "./hooks/useCanvasInputProfile";
 import { useWalkthroughViewportSync } from "./hooks/useWalkthroughViewportSync";
 import { useServiceFocusFromUrl } from "./hooks/useServiceFocusFromUrl";
 import { useElementFocusFromUrl } from "./hooks/useElementFocusFromUrl";
-import { getCachedCanvasSnapshot, useDiagramStore } from "@/features/diagram";
+import { getCachedCanvasSnapshot, useDiagramActions, useDiagramStore } from "@/features/diagram";
 import { useWalkthroughsByDiagramId } from "@/features/walkthroughs";
 import { CANVAS_STYLES, GRID_SIZE } from "./canvas.constants";
 import { getPlatform } from "./hooks/keyboard/helpers";
@@ -59,6 +60,7 @@ const Canvas = (props: CanvasProps = {}) => {
   const messages = useLLMStore((state) => state.messages);
   const assistantMessageCount = messages.filter((message) => message.role === "assistant").length;
   const inputProfile = useCanvasInputProfile();
+  const actions = useDiagramActions();
   const reactFlowInstance = useReactFlow();
   const edgeReconnect = useEdgeReconnect();
   const addTemplate = useCustomComponentStore((state) => state.addTemplate);
@@ -459,6 +461,17 @@ const Canvas = (props: CanvasProps = {}) => {
               onClose={eventHandlers.closePanel}
             />
           )}
+          {showElementPanel &&
+            visualState.selectedNodeId &&
+            visualState.selectedNodeIds.size === 1 &&
+            !visualState.selectedEdgeId && (
+              <NodeQuickActionsContainer
+                selectedNodeId={visualState.selectedNodeId}
+                reactFlowInstance={reactFlowInstance}
+                updateComponent={actions.updateComponent}
+                onDismiss={() => visualState.setSelectedNodeId(null)}
+              />
+            )}
           {isChatOpen ? (
             <ChatPanel
               onClose={() => setIsChatOpen(false)}

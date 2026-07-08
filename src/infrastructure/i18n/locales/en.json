@@ -1045,6 +1045,10 @@
     "sendToBack": "Send to back",
     "fitToChildren": "Fit to children"
   },
+  "nodeQuickActions": {
+    "resetColor": "Reset color",
+    "notApplicableForNode": "Quick Actions are not available for this node type"
+  },
   "panelNode": {
     "expandAria": "Expand panel",
     "expandTitle": "Expand",
