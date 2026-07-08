@@ -23,15 +23,14 @@ This document reflects the current direction of Structura. Items are subject to 
 - Fine-grained Zustand selectors for performance with 300+ nodes
 - Mermaid import (flowchart and sequence diagrams)
 - Plugin system foundation (`StructuraPlugin` API, manifest validation, local-file plugins)
+- Canvas plugin MVP: scoped `StructuraPluginApi` facade (`apiVersion: "1.1.0"`), contribution registries (node-types, importers, exporters, panels), `/plugins` settings page, Mermaid example plugin
+- Plugin diagram API: read/write surface for diagrams (`getDiagram`, `getActiveDiagramId`, `updateComponent`, `moveComponents`, `onDiagramChange`, namespaced `storage`)
+- Editable step edges: orthogonal routing, corner handles, segment drag preview, grid snapping
+- Rebuilt editable edges with persistent `EdgeLayout` schema (control points, edge toolbar)
 
 ---
 
 ## 🚧 In Progress
-
-### Plugin System
-
-- [ ] Canvas plugin MVP (see `openspec/changes/add-canvas-plugin-mvp/`)
-- [ ] Plugin diagram API (see `openspec/changes/add-plugin-diagram-api/`)
 
 ### Performance
 

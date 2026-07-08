@@ -3,9 +3,7 @@
 ## Purpose
 
 The contract for third-party plugins (backlog item F-02 — originally in `TODO.md`, now in git history; draw.io-inspired): loading, validating, activating, and cleanly removing local-file plugins, and the registration guarantees of each versioned `StructuraPlugin.*` API method. The full RFC (manifest schema, lifecycle, API argument shapes, trust model, distribution, folder layout, DefectDojo/Mermaid validation walkthroughs) lives in `openspec/changes/archive/2026-07-03-add-plugin-system-foundation/design.md`. Requirements here bind the future Canvas Plugin MVP implementation change (Phase 2).
-
 ## Requirements
-
 ### Requirement: Manifest validation gates plugin loading
 
 The system SHALL validate a plugin's manifest before the plugin is installed, and SHALL NOT install or execute a plugin whose manifest is missing or invalid. A valid manifest MUST contain: a unique `id`, a `name`, a semver `version`, an `author`, a `description`, a semver-range `apiVersion` compatible with the current StructuraPlugin API version, and a `capabilities` array containing only known capability identifiers.
@@ -201,3 +199,86 @@ All user-visible text in host-owned plugin-management UI (plugin manager page, i
 - **GIVEN** a plugin contribution whose label is `{ en: "Findings", "pt-BR": "Achados" }`
 - **WHEN** the UI renders with locale `pt-BR`
 - **THEN** the label renders as "Achados", and a plain-string label would render as-is under any locale
+
+### Requirement: Versioned API surface exposed to plugins
+
+The `StructuraPluginApi` object passed to `activate` SHALL expose the API surface's own semver as
+a readonly `apiVersion` property, starting at `1.0.0` for the Canvas Plugin MVP. The API version
+SHALL be versioned independently from the application version, and manifest `apiVersion` ranges
+SHALL be checked against this value at registration.
+
+#### Scenario: apiVersion is readable and matches the checked version
+
+- **GIVEN** an active plugin whose manifest declares `apiVersion: "^1.0"`
+- **WHEN** its `activate(api)` runs
+- **THEN** `api.apiVersion` is `"1.0.0"` (or a later `1.x`), the same value used for the
+  registration compatibility check
+
+### Requirement: Plugin load and activation failures are contained
+
+The system SHALL reject, with a user-visible error, a plugin file that never calls `StructuraPlugin.define`, calls it more than once, or throws at top level, and SHALL NOT leave an install record or any registered contribution behind. If `activate` throws or rejects, the system SHALL roll back every contribution tracked for that plugin, mark the plugin as errored in the manager UI, and keep the application running.
+
+#### Scenario: File without define is rejected cleanly
+
+- **GIVEN** the user picks a JS file that executes without calling `StructuraPlugin.define`
+- **WHEN** installation is attempted
+- **THEN** the user sees an error, no install record is persisted, and no contribution is
+  registered
+
+#### Scenario: Throwing activate rolls back tracked contributions
+
+- **GIVEN** a plugin whose `activate` registers a node type and then throws
+- **WHEN** activation runs
+- **THEN** the node type is removed from the registry, the plugin is shown as errored, and the
+  application continues to function
+
+### Requirement: Diagram read access returns read-only snapshots
+
+The API SHALL expose `getActiveDiagramId()` returning the active diagram's id (or null) and
+`getDiagram(diagramId?)` returning a read-only `DiagramSnapshot` of the requested diagram
+(defaulting to the active one), or null when the diagram does not exist. Snapshots SHALL be
+projections (including each component's `parentId`) and SHALL NOT expose store objects; use of
+these methods is declared by the `diagram:read` capability.
+
+#### Scenario: Reading the diagram after a change notification
+
+- **GIVEN** an active plugin subscribed via `onDiagramChange`
+- **WHEN** its callback receives a diagram id and calls `api.getDiagram(diagramId)`
+- **THEN** it receives a read-only snapshot reflecting the committed state, with components,
+  connections and `parentId` fields, and mutating the snapshot has no effect on the diagram
+
+#### Scenario: Unknown diagram id
+
+- **GIVEN** an active plugin
+- **WHEN** it calls `api.getDiagram("no-such-id")`
+- **THEN** the call returns null and nothing throws
+
+### Requirement: Top-level diagram mutation is whitelisted and undoable
+
+The API SHALL expose `updateComponent(componentId, patch)` applying only whitelisted component
+fields to the active diagram through the sanctioned store action (history pushed before the
+mutation), and `moveComponents(moves)` applying a batch of `{ id, x, y }` position changes as a
+single history step. Both are declared by the `diagram:write` capability. Non-whitelisted patch
+fields SHALL be dropped; moves referencing unknown component ids SHALL be ignored without
+corrupting state.
+
+#### Scenario: Plugin field patch is undoable
+
+- **GIVEN** an active plugin calling `api.updateComponent(id, { name: "Renamed" })`
+- **WHEN** the patch is applied
+- **THEN** the component is renamed on the active diagram and a single undo restores the
+  previous name
+
+#### Scenario: Batch move is one history step
+
+- **GIVEN** an active plugin calling `api.moveComponents([{ id: a, x: 0, y: 0 }, { id: b, x: 260, y: 0 }])`
+- **WHEN** the moves are applied
+- **THEN** both components occupy their new positions and a single undo restores both previous
+  positions
+
+#### Scenario: Non-whitelisted fields are dropped
+
+- **GIVEN** an active plugin calling `api.updateComponent(id, { name: "Ok", parentId: "hijack" })`
+- **WHEN** the patch is applied
+- **THEN** the name changes and `parentId` is unchanged
+
