@@ -11,11 +11,11 @@ interface EdgeStyleOption {
 }
 
 const EDGE_STYLE_OPTIONS: EdgeStyleOption[] = [
-  { value: EdgeStyle.Straight, label: "edgeStraight", icon: "M 2 18 L 18 2" },
-  { value: EdgeStyle.Bezier, label: "edgeBezier", icon: "M 2 18 C 2 2 18 2 18 2" },
-  { value: EdgeStyle.Step, label: "edgeStep", icon: "M 2 18 H 10 V 2 H 18" },
+  { value: "straight" as EdgeStyle, label: "edgeStraight", icon: "M 2 18 L 18 2" },
+  { value: "bezier" as EdgeStyle, label: "edgeBezier", icon: "M 2 18 C 2 2 18 2 18 2" },
+  { value: "step" as EdgeStyle, label: "edgeStep", icon: "M 2 18 H 10 V 2 H 18" },
   {
-    value: EdgeStyle.Smoothstep,
+    value: "smoothstep" as EdgeStyle,
     label: "edgeSmoothstep",
     icon: "M 2 18 C 8 18 8 2 18 2",
   },

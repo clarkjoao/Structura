@@ -1,25 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-
-// Mocks must be declared before imports
-vi.mock("@/features/diagram", () => ({
-  EdgeStyle: {
-    Straight: "straight",
-    Bezier: "bezier",
-    Step: "step",
-    Smoothstep: "smoothstep",
-    Editable: "editable",
-    EditableStep: "editableStep",
-  },
-}));
+import { EdgeStyleDropdown } from "./EdgeStyleDropdown";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (key: string) => key,
   }),
 }));
-
-import { EdgeStyleDropdown } from "./EdgeStyleDropdown";
 
 describe("EdgeStyleDropdown", () => {
   it("renders a button", () => {

@@ -5,9 +5,9 @@ import type { EdgeMarker } from "@/features/diagram";
 import { cn } from "@/lib/utils";
 
 const MARKER_OPTIONS: { value: EdgeMarker; labelKey: string }[] = [
-  { value: EdgeMarker.None, labelKey: "markerNone" },
-  { value: EdgeMarker.Arrow, labelKey: "markerArrow" },
-  { value: EdgeMarker.ArrowClosed, labelKey: "markerArrowClosed" },
+  { value: "none" as EdgeMarker, labelKey: "markerNone" },
+  { value: "arrow" as EdgeMarker, labelKey: "markerArrow" },
+  { value: "arrow-closed" as EdgeMarker, labelKey: "markerArrowClosed" },
 ];
 
 interface MarkerCapsDropdownProps {
@@ -26,7 +26,7 @@ export function MarkerCapsDropdown({
   const ref = useRef<HTMLDivElement>(null);
 
   const selected =
-    MARKER_OPTIONS.find((o) => o.value === (currentCap ?? EdgeMarker.None)) ??
+    MARKER_OPTIONS.find((o) => o.value === currentCap) ??
     MARKER_OPTIONS[0];
 
   useEffect(() => {
