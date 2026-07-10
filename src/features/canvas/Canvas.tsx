@@ -19,6 +19,7 @@ import CanvasSearch from "./toolbar/CanvasSearch";
 import { DiagramSidebar } from "./navigation/DiagramSidebar";
 import { DiagramCommandPalette } from "./navigation/DiagramCommandPalette";
 import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
+import { NodeQuickActionsBar } from "./selection-actions/NodeQuickActionsBar";
 import { Eye, Minimize2 } from "lucide-react";
 import { useCanvasController } from "./hooks/useCanvasController";
 import { hasSavedViewport } from "./hooks/useCanvasEffects";
@@ -92,6 +93,7 @@ const Canvas = (props: CanvasProps = {}) => {
     allDiagramTags,
     handleAutoLayout,
     isAutoLayoutRunning,
+    actions,
   } = useCanvasController({ ...props, inputProfile });
   const {
     pendingPreviews,
@@ -342,6 +344,14 @@ const Canvas = (props: CanvasProps = {}) => {
                   />
                 );
               })}
+              {/* QuickActions toolbar for single node selection */}
+              {visualState.selectedNodeId && selectedNodes.length === 1 && (
+                <NodeQuickActionsBar
+                  nodeId={visualState.selectedNodeId}
+                  diagramId={diagram?.id ?? ""}
+                  updateComponent={actions.updateComponent}
+                />
+              )}
               <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
             </ReactFlow>
           </div>

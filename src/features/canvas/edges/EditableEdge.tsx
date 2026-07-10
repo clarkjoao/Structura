@@ -342,6 +342,30 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
           onToggleRouting={toggleRouting}
           onReset={() => activeDiagramId && resetEdgeControlPoints(activeDiagramId, connectionId)}
           onDelete={() => removeConnection(connectionId)}
+          edgeStyle={edgeStyle}
+          edgeColor={connection?.style?.color}
+          markerStart={connection?.style?.markerStart}
+          markerEnd={connection?.style?.markerEnd}
+          onStyleChange={(style) =>
+            updateConnection(connectionId, {
+              style: { ...(connection?.style ?? {}), edgeStyle: style } as ConnectionStyle,
+            })
+          }
+          onColorChange={(color) =>
+            updateConnection(connectionId, {
+              style: { ...(connection?.style ?? {}), color } as ConnectionStyle,
+            })
+          }
+          onMarkerStartChange={(cap) =>
+            updateConnection(connectionId, {
+              style: { ...(connection?.style ?? {}), markerStart: cap } as ConnectionStyle,
+            })
+          }
+          onMarkerEndChange={(cap) =>
+            updateConnection(connectionId, {
+              style: { ...(connection?.style ?? {}), markerEnd: cap } as ConnectionStyle,
+            })
+          }
         />
       )}
 
