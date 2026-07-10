@@ -421,7 +421,19 @@
     "multiSelect": {
       "saveAsTemplate": "Save as template"
     },
-    "focusNodeNotFound": "Element not found in this diagram"
+    "focusNodeNotFound": "Element not found in this diagram",
+    "quickActions": {
+      "lock": "Lock element",
+      "unlock": "Unlock element",
+      "opacity": "Opacity",
+      "pickIcon": "Change icon",
+      "resetIcon": "Reset icon",
+      "edgeStyle": "Edge style",
+      "color": "Color",
+      "markerStart": "Start cap",
+      "markerEnd": "End cap",
+      "delete": "Delete"
+    }
   },
   "compareMode": {
     "added": "Added",
