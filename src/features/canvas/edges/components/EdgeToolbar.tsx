@@ -1,7 +1,8 @@
 import { EdgeLabelRenderer } from "@xyflow/react";
 import { RotateCcw, Spline, Trash2, Waypoints } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { Point } from "@/features/diagram";
+import type { EdgeStyle, EdgeMarker, Point } from "@/features/diagram";
+import { ColorPicker, EdgeStyleDropdown, MarkerCapsDropdown } from "@/features/canvas/selection-actions";
 
 interface EdgeToolbarProps {
   anchor: Point;
@@ -11,6 +12,15 @@ interface EdgeToolbarProps {
   onToggleRouting: () => void;
   onReset: () => void;
   onDelete: () => void;
+  // Extended style controls
+  edgeStyle?: EdgeStyle;
+  edgeColor?: string;
+  markerStart?: EdgeMarker;
+  markerEnd?: EdgeMarker;
+  onStyleChange?: (style: EdgeStyle) => void;
+  onColorChange?: (color: string) => void;
+  onMarkerStartChange?: (cap: EdgeMarker) => void;
+  onMarkerEndChange?: (cap: EdgeMarker) => void;
 }
 
 /** Floating actions anchored above a selected edge. */
@@ -21,11 +31,20 @@ export function EdgeToolbar({
   onToggleRouting,
   onReset,
   onDelete,
+  edgeStyle,
+  edgeColor,
+  markerStart,
+  markerEnd,
+  onStyleChange,
+  onColorChange,
+  onMarkerStartChange,
+  onMarkerEndChange,
 }: EdgeToolbarProps) {
   const { t } = useTranslation();
-  // The icon/label describe the routing you switch *to*.
   const toggleLabel =
     routing === "curve" ? t("customEdge.routeAsStep") : t("customEdge.routeAsCurve");
+
+  const hasStyleControls = !!onStyleChange;
 
   return (
     <EdgeLabelRenderer>
@@ -35,7 +54,34 @@ export function EdgeToolbar({
         style={{
           transform: `translate(-50%, -50%) translate(${anchor.x}px, ${anchor.y - 28}px)`,
         }}
+        onPointerDown={(e) => e.stopPropagation()}
       >
+        {/* Style controls — only when callback provided */}
+        {hasStyleControls && (
+          <>
+            <EdgeStyleDropdown
+              currentStyle={edgeStyle}
+              onChangeStyle={onStyleChange!}
+            />
+            <ColorPicker
+              selectedColor={edgeColor}
+              onSelectColor={onColorChange!}
+              compact
+            />
+            <MarkerCapsDropdown
+              currentCap={markerStart}
+              onChangeCap={onMarkerStartChange!}
+              capType="start"
+            />
+            <MarkerCapsDropdown
+              currentCap={markerEnd}
+              onChangeCap={onMarkerEndChange!}
+              capType="end"
+            />
+          </>
+        )}
+
+        {/* Routing toggle — only for editable edges */}
         {routing && (
           <button
             type="button"
@@ -55,6 +101,8 @@ export function EdgeToolbar({
             )}
           </button>
         )}
+
+        {/* Reset path — only when there are control points */}
         {canReset && (
           <button
             type="button"
@@ -70,6 +118,8 @@ export function EdgeToolbar({
             <RotateCcw className="h-3.5 w-3.5" aria-hidden />
           </button>
         )}
+
+        {/* Delete */}
         <button
           type="button"
           title={t("customEdge.deleteEdge")}
