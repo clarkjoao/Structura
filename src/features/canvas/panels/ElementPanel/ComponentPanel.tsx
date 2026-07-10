@@ -53,6 +53,7 @@ import {
 } from "./sections";
 import { usePanelChildLayout } from "../../hooks/usePanelChildLayout";
 import { isComponentType } from "@/features/diagram";
+import { ENABLE_LEGACY_PANEL_ACTIONS } from "@/features/canvas/selection-actions";
 function buildComponentSyncPatch(service: ServiceDefinition, component: Component): ComponentPatch {
   const patch: ComponentPatch = {
     name: service.name,
@@ -259,18 +260,20 @@ const ComponentPanel = ({
                   : component.name}
         </h3>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => updateComponent(component.id, { locked: !component.locked })}
-            title={component.locked ? t("elementPanel.unlock") : t("elementPanel.lock")}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {component.locked ? (
-              <Lock className="h-4 w-4 text-amber-500" />
-            ) : (
-              <Unlock className="h-4 w-4" />
-            )}
-          </button>
+          {ENABLE_LEGACY_PANEL_ACTIONS && (
+            <button
+              type="button"
+              onClick={() => updateComponent(component.id, { locked: !component.locked })}
+              title={component.locked ? t("elementPanel.unlock") : t("elementPanel.lock")}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {component.locked ? (
+                <Lock className="h-4 w-4 text-amber-500" />
+              ) : (
+                <Unlock className="h-4 w-4" />
+              )}
+            </button>
+          )}
           <button
             type="button"
             onClick={onClose}
@@ -525,7 +528,7 @@ const ComponentPanel = ({
               />
             </>
           )}
-          {isPanelComponent(component) && (
+          {ENABLE_LEGACY_PANEL_ACTIONS && isPanelComponent(component) && (
             <PanelStyleSection
               component={component}
               updateComponent={updateComponent}
