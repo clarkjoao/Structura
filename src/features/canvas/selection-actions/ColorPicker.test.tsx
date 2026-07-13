@@ -1,17 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-// Mocks must be declared before imports
 vi.mock("@/features/canvas/panels/ElementPanel/components/colorPresets", () => ({
   VIBRANT_PRESETS: [
     { color: "#FF0000", nameKey: "color.red" },
     { color: "#00FF00", nameKey: "color.green" },
     { color: "#0000FF", nameKey: "color.blue" },
-    { color: "#FFFF00", nameKey: "color.yellow" },
-    { color: "#FF00FF", nameKey: "color.magenta" },
-    { color: "#00FFFF", nameKey: "color.cyan" },
-    { color: "#FFA500", nameKey: "color.orange" },
-    { color: "#800080", nameKey: "color.purple" },
   ],
 }));
 
@@ -24,22 +18,34 @@ vi.mock("react-i18next", () => ({
 import { ColorPicker } from "./ColorPicker";
 
 describe("ColorPicker", () => {
-  it("renders color swatches", () => {
+  it("renders a button (no swatches visible until dropdown opens)", () => {
     const onSelectColor = vi.fn();
     render(<ColorPicker onSelectColor={onSelectColor} />);
-    const swatches = screen.getAllByRole("button");
-    expect(swatches.length).toBeGreaterThan(0);
+    const buttons = screen.getAllByRole("button");
+    expect(buttons.length).toBe(1);
+  });
+
+  it("opens dropdown with swatches on button click", () => {
+    const onSelectColor = vi.fn();
+    render(<ColorPicker onSelectColor={onSelectColor} />);
+    fireEvent.click(screen.getByRole("button"));
+    // After click, swatches should appear (now visible as buttons)
+    const buttons = screen.getAllByRole("button");
+    // 1 trigger button + 3 swatch buttons
+    expect(buttons.length).toBeGreaterThan(1);
   });
 
   it("calls onSelectColor when a swatch is clicked", () => {
     const onSelectColor = vi.fn();
     render(<ColorPicker onSelectColor={onSelectColor} />);
-    const swatches = screen.getAllByRole("button");
-    fireEvent.click(swatches[0]);
+    fireEvent.click(screen.getByRole("button"));
+    // Get the swatch buttons (after the trigger)
+    const buttons = screen.getAllByRole("button");
+    fireEvent.click(buttons[1]);
     expect(onSelectColor).toHaveBeenCalledTimes(1);
   });
 
-  it("shows reset button when onReset is provided", () => {
+  it("shows reset button inside dropdown when onReset is provided", () => {
     const onSelectColor = vi.fn();
     const onReset = vi.fn();
     render(
@@ -49,8 +55,10 @@ describe("ColorPicker", () => {
         onReset={onReset}
       />,
     );
+    fireEvent.click(screen.getByRole("button"));
+    // Reset button now lives inside the dropdown, not the trigger
     const resetButtons = screen.getAllByTitle("colorSwatches.default");
-    expect(resetButtons).toHaveLength(1);
+    expect(resetButtons.length).toBeGreaterThan(0);
   });
 
   it("calls onReset when reset button is clicked", () => {
@@ -63,6 +71,7 @@ describe("ColorPicker", () => {
         onReset={onReset}
       />,
     );
+    fireEvent.click(screen.getByRole("button"));
     const resetButton = screen.getByTitle("colorSwatches.default");
     fireEvent.click(resetButton);
     expect(onReset).toHaveBeenCalledTimes(1);

@@ -1,5 +1,6 @@
-import { RotateCcw } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { Palette, RotateCcw } from "lucide-react";
 import { VIBRANT_PRESETS } from "@/features/canvas/panels/ElementPanel/components/colorPresets";
 import { cn } from "@/lib/utils";
 
@@ -7,80 +8,99 @@ interface ColorPickerProps {
   selectedColor?: string;
   onSelectColor: (color: string) => void;
   onReset?: () => void;
-  compact?: boolean;
 }
 
 export function ColorPicker({
   selectedColor,
   onSelectColor,
   onReset,
-  compact = false,
 }: ColorPickerProps) {
   const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
-  // Wrap onto two rows when toolbar space is tight
-  const swatchSize = compact ? "h-3 w-3" : "h-3.5 w-3.5";
-  const swatchGap = "gap-[3px]";
-  const container = compact ? "flex flex-col" : "flex items-center";
+  const selectedPreset = VIBRANT_PRESETS.find((p) => p.color === selectedColor);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const swatchSize = "h-3.5 w-3.5";
 
   return (
-    <div className={cn(container, "gap-[3px]")}>
-      <div className={cn("flex", swatchGap)}>
-        {VIBRANT_PRESETS.slice(0, 10).map((preset) => {
-          const isSelected = selectedColor === preset.color;
-          return (
-            <button
-              key={preset.color}
-              type="button"
-              title={t(preset.nameKey)}
-              aria-label={t(preset.nameKey)}
-              onClick={() => onSelectColor(preset.color)}
-              className={cn(
-                "rounded-full border transition-all hover:scale-110",
-                swatchSize,
-                isSelected
-                  ? "scale-110 border-foreground"
-                  : "border-transparent",
-              )}
-              style={{ backgroundColor: preset.color }}
-            />
-          );
-        })}
-      </div>
-      {compact && (
-        <div className={cn("flex", swatchGap)}>
-          {VIBRANT_PRESETS.slice(10).map((preset) => {
-            const isSelected = selectedColor === preset.color;
-            return (
-              <button
-                key={preset.color}
-                type="button"
-                title={t(preset.nameKey)}
-                aria-label={t(preset.nameKey)}
-                onClick={() => onSelectColor(preset.color)}
-                className={cn(
-                  "rounded-full border transition-all hover:scale-110",
-                  swatchSize,
-                  isSelected
-                    ? "scale-110 border-foreground"
-                    : "border-transparent",
-                )}
-                style={{ backgroundColor: preset.color }}
-              />
-            );
-          })}
-        </div>
-      )}
-      {onReset && (
-        <button
-          type="button"
-          title={t("colorSwatches.default")}
-          aria-label={t("colorSwatches.default")}
-          onClick={onReset}
-          className="text-muted-foreground hover:text-foreground transition-colors"
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
+        className="flex items-center gap-1 h-6 px-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+        title={t("canvas.quickActions.color")}
+        aria-label={t("canvas.quickActions.color")}
+      >
+        {selectedPreset ? (
+          <span
+            className="h-3.5 w-3.5 rounded-full border border-border"
+            style={{ backgroundColor: selectedPreset.color }}
+          />
+        ) : (
+          <Palette className="h-3.5 w-3.5" />
+        )}
+      </button>
+
+      {open && (
+        <div
+          className="absolute top-full left-0 mt-1 z-50 bg-card border border-border rounded-md shadow-lg p-1.5"
+          onPointerDown={(e) => e.stopPropagation()}
         >
-          <RotateCcw className="h-3 w-3" />
-        </button>
+          <div className="grid grid-cols-8 gap-[3px]">
+            {VIBRANT_PRESETS.map((preset) => {
+              const isSelected = selectedColor === preset.color;
+              return (
+                <button
+                  key={preset.color}
+                  type="button"
+                  title={t(preset.nameKey)}
+                  aria-label={t(preset.nameKey)}
+                  onClick={() => {
+                    onSelectColor(preset.color);
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    "rounded-full border transition-all hover:scale-110",
+                    swatchSize,
+                    isSelected
+                      ? "scale-110 border-foreground"
+                      : "border-transparent",
+                  )}
+                  style={{ backgroundColor: preset.color }}
+                />
+              );
+            })}
+          </div>
+          {onReset && (
+            <button
+              type="button"
+              title={t("colorSwatches.default")}
+              aria-label={t("colorSwatches.default")}
+              onClick={() => {
+                onReset();
+                setOpen(false);
+              }}
+              className="mt-1.5 w-full flex items-center justify-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded transition-colors border-t border-border pt-1.5"
+            >
+              <RotateCcw className="h-3 w-3" />
+              {t("colorSwatches.default")}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
