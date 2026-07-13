@@ -1,15 +1,16 @@
 import { EdgeLabelRenderer } from "@xyflow/react";
-import { RotateCcw, Spline, Trash2, Waypoints } from "lucide-react";
+import { RotateCcw, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { EdgeStyle, EdgeMarker, Point } from "@/features/diagram";
 import { ColorPicker, EdgeStyleDropdown, MarkerCapsDropdown } from "@/features/canvas/selection-actions";
+import {
+  dropdownToEdgeStyle,
+  edgeStyleToDropdown,
+} from "@/features/canvas/selection-actions/edgeStyleMapping";
 
 interface EdgeToolbarProps {
   anchor: Point;
   canReset: boolean;
-  /** Current routing of an editable edge, or `null` for non-editable styles. */
-  routing: "curve" | "step" | null;
-  onToggleRouting: () => void;
   onReset: () => void;
   onDelete: () => void;
   // Extended style controls
@@ -27,8 +28,6 @@ interface EdgeToolbarProps {
 export function EdgeToolbar({
   anchor,
   canReset,
-  routing,
-  onToggleRouting,
   onReset,
   onDelete,
   edgeStyle,
@@ -41,8 +40,6 @@ export function EdgeToolbar({
   onMarkerEndChange,
 }: EdgeToolbarProps) {
   const { t } = useTranslation();
-  const toggleLabel =
-    routing === "curve" ? t("customEdge.routeAsStep") : t("customEdge.routeAsCurve");
 
   const hasStyleControls = !!onStyleChange;
 
@@ -60,13 +57,14 @@ export function EdgeToolbar({
         {hasStyleControls && (
           <>
             <EdgeStyleDropdown
-              currentStyle={edgeStyle}
-              onChangeStyle={onStyleChange!}
+              currentStyle={edgeStyleToDropdown(edgeStyle)}
+              onChangeStyle={(displayValue) => {
+                onStyleChange!(dropdownToEdgeStyle(displayValue));
+              }}
             />
             <ColorPicker
               selectedColor={edgeColor}
               onSelectColor={onColorChange!}
-              compact
             />
             <MarkerCapsDropdown
               currentCap={markerStart}
@@ -79,27 +77,6 @@ export function EdgeToolbar({
               capType="end"
             />
           </>
-        )}
-
-        {/* Routing toggle — only for editable edges */}
-        {routing && (
-          <button
-            type="button"
-            title={toggleLabel}
-            aria-label={toggleLabel}
-            className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground
-                       transition-colors hover:bg-surface-hover hover:text-foreground"
-            onClick={(event) => {
-              event.stopPropagation();
-              onToggleRouting();
-            }}
-          >
-            {routing === "curve" ? (
-              <Waypoints className="h-3.5 w-3.5" aria-hidden />
-            ) : (
-              <Spline className="h-3.5 w-3.5" aria-hidden />
-            )}
-          </button>
         )}
 
         {/* Reset path — only when there are control points */}

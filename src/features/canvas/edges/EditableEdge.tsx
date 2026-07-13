@@ -208,18 +208,6 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
     pointsRef: projectionRef,
   });
 
-  // Swap curve ↔ step routing from the toolbar, keeping other style props and
-  // resetting the control points so the new routing starts from a clean default.
-  const routing = isCurve ? "curve" : isStep ? "step" : null;
-  const toggleRouting = () => {
-    if (!activeDiagramId || !routing) return;
-    const nextStyle = routing === "curve" ? EdgeStyle.EditableStep : EdgeStyle.Editable;
-    updateConnection(connectionId, {
-      style: { ...(connection?.style ?? {}), edgeStyle: nextStyle } as ConnectionStyle,
-    });
-    resetEdgeControlPoints(activeDiagramId, connectionId);
-  };
-
   const handleResetDoubleClick = (event: ReactMouseEvent<SVGPathElement>) => {
     if (!isEditable || points.length === 0 || !activeDiagramId) return;
     event.preventDefault();
@@ -338,19 +326,24 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
         <EdgeToolbar
           anchor={labelPoint}
           canReset={isEditable && points.length > 0}
-          routing={isEditable ? routing : null}
-          onToggleRouting={toggleRouting}
           onReset={() => activeDiagramId && resetEdgeControlPoints(activeDiagramId, connectionId)}
           onDelete={() => removeConnection(connectionId)}
           edgeStyle={edgeStyle}
           edgeColor={connection?.style?.color}
           markerStart={connection?.style?.markerStart}
           markerEnd={connection?.style?.markerEnd}
-          onStyleChange={(style) =>
+          onStyleChange={(style) => {
             updateConnection(connectionId, {
               style: { ...(connection?.style ?? {}), edgeStyle: style } as ConnectionStyle,
-            })
-          }
+            });
+            // Reset any existing control points so the new style starts clean.
+            if (
+              activeDiagramId &&
+              (style === EdgeStyle.Editable || style === EdgeStyle.EditableStep)
+            ) {
+              resetEdgeControlPoints(activeDiagramId, connectionId);
+            }
+          }}
           onColorChange={(color) =>
             updateConnection(connectionId, {
               style: { ...(connection?.style ?? {}), color } as ConnectionStyle,

@@ -1,29 +1,29 @@
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
-import type { EdgeStyle } from "@/features/diagram";
 import { cn } from "@/lib/utils";
+import type { EdgeStyleDropdownValue } from "./edgeStyleMapping";
 
 interface EdgeStyleOption {
-  value: EdgeStyle;
+  value: EdgeStyleDropdownValue;
   label: string;
   icon: string;
 }
 
 const EDGE_STYLE_OPTIONS: EdgeStyleOption[] = [
-  { value: "straight" as EdgeStyle, label: "edgeStraight", icon: "M 2 18 L 18 2" },
-  { value: "bezier" as EdgeStyle, label: "edgeBezier", icon: "M 2 18 C 2 2 18 2 18 2" },
-  { value: "step" as EdgeStyle, label: "edgeStep", icon: "M 2 18 H 10 V 2 H 18" },
+  { value: "straight", label: "edgeStraight", icon: "M 2 18 L 18 2" },
+  { value: "bezier", label: "edgeBezier", icon: "M 2 18 C 2 2 18 2 18 2" },
+  { value: "step", label: "edgeStep", icon: "M 2 18 H 10 V 2 H 18" },
   {
-    value: "smoothstep" as EdgeStyle,
+    value: "smoothstep",
     label: "edgeSmoothstep",
     icon: "M 2 18 C 8 18 8 2 18 2",
   },
 ];
 
 interface EdgeStyleDropdownProps {
-  currentStyle?: EdgeStyle;
-  onChangeStyle: (style: EdgeStyle) => void;
+  currentStyle?: EdgeStyleDropdownValue;
+  onChangeStyle: (style: EdgeStyleDropdownValue) => void;
 }
 
 export function EdgeStyleDropdown({ currentStyle, onChangeStyle }: EdgeStyleDropdownProps) {
@@ -31,7 +31,9 @@ export function EdgeStyleDropdown({ currentStyle, onChangeStyle }: EdgeStyleDrop
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const selected = EDGE_STYLE_OPTIONS.find((o) => o.value === currentStyle) ?? EDGE_STYLE_OPTIONS[1];
+  const selected =
+    EDGE_STYLE_OPTIONS.find((o) => o.value === currentStyle) ??
+    EDGE_STYLE_OPTIONS[3];
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
