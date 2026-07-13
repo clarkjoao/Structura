@@ -10,8 +10,8 @@ import {
   isNoteComponent,
   isC4Component,
   isPanelComponent,
-  getNotePresetPair,
 } from "@/features/diagram";
+import { getNotePresetPair } from "@/features/canvas/panels/ElementPanel/components/colorPresets";
 import { IconPickerModal } from "@/features/canvas/components/icons/IconPickerModal";
 import { OpacitySlider } from "./OpacitySlider";
 import { ColorPicker, type ColorPickerGroup } from "./ColorPicker";
