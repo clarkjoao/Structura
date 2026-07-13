@@ -57,10 +57,10 @@ export function ColorPicker({
 
       {open && (
         <div
-          className="absolute top-full left-0 mt-1 z-50 bg-card border border-border rounded-md shadow-lg p-1.5"
+          className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-card border border-border rounded-md shadow-lg p-2 min-w-[148px]"
           onPointerDown={(e) => e.stopPropagation()}
         >
-          <div className="grid grid-cols-8 gap-[3px]">
+          <div className="flex flex-wrap gap-1.5 justify-center max-w-[160px]">
             {VIBRANT_PRESETS.map((preset) => {
               const isSelected = selectedColor === preset.color;
               return (
@@ -74,7 +74,7 @@ export function ColorPicker({
                     setOpen(false);
                   }}
                   className={cn(
-                    "rounded-full border transition-all hover:scale-110",
+                    "rounded-full border transition-all hover:scale-110 shrink-0",
                     swatchSize,
                     isSelected
                       ? "scale-110 border-foreground"
@@ -94,7 +94,7 @@ export function ColorPicker({
                 onReset();
                 setOpen(false);
               }}
-              className="mt-1.5 w-full flex items-center justify-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded transition-colors border-t border-border pt-1.5"
+              className="mt-2 w-full flex items-center justify-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded transition-colors border-t border-border pt-1.5"
             >
               <RotateCcw className="h-3 w-3" />
               {t("colorSwatches.default")}
