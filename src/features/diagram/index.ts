@@ -227,7 +227,6 @@ export {
   COMPONENT_TYPE_PROCESS_NODE,
   COMPONENT_TYPE_EXTERNAL_ELEMENT,
   isExternalElementType,
-  PANEL_KIND_VALUES,
   isPanelType,
   isNoteType,
   isC4Type,

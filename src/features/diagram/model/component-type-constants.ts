@@ -50,18 +50,6 @@ export function isSvgComponentType(type: string): type is "svg" {
   return type === COMPONENT_TYPE_SVG;
 }
 
-export const PANEL_KIND_VALUES: readonly PanelKind[] = [
-  PanelKind.Default,
-  PanelKind.AvailabilityZone,
-  PanelKind.EksCluster,
-  PanelKind.EcsCluster,
-  PanelKind.AutoScalingGroup,
-  PanelKind.Vpc,
-  PanelKind.PublicSubnet,
-  PanelKind.PrivateSubnet,
-  PanelKind.Swimlane,
-];
-
 export function isReactFlowParentPanelType(nodeType: string): boolean {
   return nodeType === COMPONENT_TYPE_PANEL || nodeType === PanelKind.Swimlane;
 }
