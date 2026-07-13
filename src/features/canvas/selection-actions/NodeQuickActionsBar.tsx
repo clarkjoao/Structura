@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { NodeToolbar, Position } from "@xyflow/react";
-import { Lock, Unlock, ImagePlus } from "lucide-react";
+import { Lock, Unlock, ImagePlus, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/hooks/useTheme";
 import type { ComponentPatch, Component } from "@/features/diagram";
@@ -220,7 +220,7 @@ export function NodeQuickActionsBar({
                   onClick={handleResetIcon}
                   className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
                 >
-                  <Unlock className="h-3.5 w-3.5" />
+                  <RotateCcw className="h-3.5 w-3.5" />
                 </button>
               )}
             </>

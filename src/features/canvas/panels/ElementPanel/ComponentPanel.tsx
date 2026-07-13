@@ -146,7 +146,7 @@ const ComponentPanel = ({
   const [flowShape, setFlowShape] = useState<FlowNodeShape>(
     isFlowchart ? component.flowShape : "rectangle",
   );
-  const showIconTab = !isSvgComponentType(component.type);
+  const showIconTab = !isSvgComponentType(component.type) && ENABLE_LEGACY_PANEL_ACTIONS;
   const isAws = isAwsType(type);
   const serviceInfo = awsService ? AWS_SERVICE_MAP.get(awsService) : null;
   const canCreateLinked =
