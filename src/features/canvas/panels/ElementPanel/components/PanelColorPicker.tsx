@@ -25,7 +25,7 @@ const PanelColorPicker = ({
         presetGroup="panel"
         updateComponent={updateComponent}
       />
-      <div>
+      <div onPointerDown={(e) => e.stopPropagation()}>
         <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
           {t("elementPanel.opacityLabel", { value: currentOpacity })}
         </label>
@@ -37,6 +37,7 @@ const PanelColorPicker = ({
           value={currentOpacity}
           onChange={(e) => updateComponent(componentId, { panelOpacity: Number(e.target.value) })}
           className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+          style={{ touchAction: "none" }}
         />
         <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5">
           <span>0%</span>

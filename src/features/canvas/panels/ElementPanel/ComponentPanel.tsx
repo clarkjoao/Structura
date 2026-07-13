@@ -53,6 +53,7 @@ import {
 } from "./sections";
 import { usePanelChildLayout } from "../../hooks/usePanelChildLayout";
 import { isComponentType } from "@/features/diagram";
+import { ENABLE_LEGACY_PANEL_ACTIONS } from "@/features/canvas/selection-actions";
 function buildComponentSyncPatch(service: ServiceDefinition, component: Component): ComponentPatch {
   const patch: ComponentPatch = {
     name: service.name,
@@ -145,7 +146,7 @@ const ComponentPanel = ({
   const [flowShape, setFlowShape] = useState<FlowNodeShape>(
     isFlowchart ? component.flowShape : "rectangle",
   );
-  const showIconTab = !isSvgComponentType(component.type);
+  const showIconTab = !isSvgComponentType(component.type) && ENABLE_LEGACY_PANEL_ACTIONS;
   const isAws = isAwsType(type);
   const serviceInfo = awsService ? AWS_SERVICE_MAP.get(awsService) : null;
   const canCreateLinked =
@@ -259,18 +260,20 @@ const ComponentPanel = ({
                   : component.name}
         </h3>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => updateComponent(component.id, { locked: !component.locked })}
-            title={component.locked ? t("elementPanel.unlock") : t("elementPanel.lock")}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {component.locked ? (
-              <Lock className="h-4 w-4 text-amber-500" />
-            ) : (
-              <Unlock className="h-4 w-4" />
-            )}
-          </button>
+          {ENABLE_LEGACY_PANEL_ACTIONS && (
+            <button
+              type="button"
+              onClick={() => updateComponent(component.id, { locked: !component.locked })}
+              title={component.locked ? t("elementPanel.unlock") : t("elementPanel.lock")}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {component.locked ? (
+                <Lock className="h-4 w-4 text-amber-500" />
+              ) : (
+                <Unlock className="h-4 w-4" />
+              )}
+            </button>
+          )}
           <button
             type="button"
             onClick={onClose}
@@ -280,7 +283,7 @@ const ComponentPanel = ({
           </button>
         </div>
       </div>
-      {isPanel && onUngroup && (
+      {ENABLE_LEGACY_PANEL_ACTIONS && isPanel && onUngroup && (
         <div className="px-3 py-2 border-b border-border flex flex-col gap-2">
           <button
             type="button"
@@ -310,7 +313,7 @@ const ComponentPanel = ({
           )}
         </div>
       )}
-      {isChildOfPanel && (
+      {ENABLE_LEGACY_PANEL_ACTIONS && isChildOfPanel && (
         <div className="px-3 py-2 border-b border-border">
           <button
             type="button"
@@ -525,7 +528,7 @@ const ComponentPanel = ({
               />
             </>
           )}
-          {isPanelComponent(component) && (
+          {ENABLE_LEGACY_PANEL_ACTIONS && isPanelComponent(component) && (
             <PanelStyleSection
               component={component}
               updateComponent={updateComponent}
@@ -533,7 +536,7 @@ const ComponentPanel = ({
               componentNodeLayout={resolved?.nodeLayouts[component.id]}
             />
           )}
-          {isNoteComponent(component) && (
+          {ENABLE_LEGACY_PANEL_ACTIONS && isNoteComponent(component) && (
             <ColorAccentSection
               componentId={component.id}
               type={isDark ? "note-dark" : "note"}
@@ -545,7 +548,7 @@ const ComponentPanel = ({
               updateComponent={updateComponent}
             />
           )}
-          {!isSimple && isC4Component(component) && (
+          {ENABLE_LEGACY_PANEL_ACTIONS && !isSimple && isC4Component(component) && (
             <ColorAccentSection
               componentId={component.id}
               type="c4"

@@ -19,6 +19,7 @@ import CanvasSearch from "./toolbar/CanvasSearch";
 import { DiagramSidebar } from "./navigation/DiagramSidebar";
 import { DiagramCommandPalette } from "./navigation/DiagramCommandPalette";
 import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
+import { NodeQuickActionsBar } from "./selection-actions/NodeQuickActionsBar";
 import { Eye, Minimize2 } from "lucide-react";
 import { useCanvasController } from "./hooks/useCanvasController";
 import { hasSavedViewport } from "./hooks/useCanvasEffects";
@@ -43,6 +44,12 @@ import {
 import { ChatPanel, FloatingChatButton, PendingNodeToolbar } from "@/features/llm/components";
 import { useLLMChat } from "./chat";
 import { getPendingNodeIds, getSuggestionIdForNode, useLLMStore } from "@/features/llm";
+import { usePanelChildLayout } from "./hooks/usePanelChildLayout";
+import { useResolvedComponents } from "@/features/diagram";
+import {
+  isPanelComponent,
+  isApiGroupComponent,
+} from "@/features/diagram";
 
 const MULTI_SELECTION_KEY_CODES = ["Meta", "Control"];
 const PAN_ACTIVATION_KEY = getPlatform() === "mac" ? "Meta" : "Control";
@@ -92,6 +99,7 @@ const Canvas = (props: CanvasProps = {}) => {
     allDiagramTags,
     handleAutoLayout,
     isAutoLayoutRunning,
+    actions,
   } = useCanvasController({ ...props, inputProfile });
   const {
     pendingPreviews,
@@ -169,6 +177,43 @@ const Canvas = (props: CanvasProps = {}) => {
     },
     [acceptSuggestion, reactFlowInstance],
   );
+
+  // QuickActionsBar context: detect panel-with-children vs child-of-panel
+  const resolvedComponents = useResolvedComponents();
+  const selectedSingleId = visualState.selectedNodeId;
+  const selectedComponent =
+    selectedSingleId && selectedNodes.length === 1 ? resolvedComponents[selectedSingleId] : null;
+  const isSelectedPanel =
+    !!selectedComponent && isPanelComponent(selectedComponent);
+  const isSelectedApiGroup =
+    !!selectedComponent && isApiGroupComponent(selectedComponent);
+  const parentComp = selectedComponent?.parentId
+    ? resolvedComponents[selectedComponent.parentId]
+    : undefined;
+  const isSelectedChildOfGroup =
+    !!selectedComponent?.parentId &&
+    !!parentComp &&
+    (isPanelComponent(parentComp) || isApiGroupComponent(parentComp));
+  const hasPanelChildren = (isSelectedPanel || isSelectedApiGroup) &&
+    Object.values(resolvedComponents).some((c) => c.parentId === selectedSingleId);
+
+  const { runPanelChildLayout, isRunning: isPanelLayoutRunning } = usePanelChildLayout();
+  const handleUngroup = useCallback(() => {
+    if (!selectedSingleId) return;
+    actions.ungroupNodes(selectedSingleId);
+  }, [actions, selectedSingleId]);
+  const handleFitToChildren = useCallback(() => {
+    if (!selectedSingleId) return;
+    actions.fitGroupToChildren(selectedSingleId);
+  }, [actions, selectedSingleId]);
+  const handleOrganizeChildren = useCallback(() => {
+    if (!selectedSingleId) return;
+    runPanelChildLayout(selectedSingleId);
+  }, [runPanelChildLayout, selectedSingleId]);
+  const handleRemoveFromGroup = useCallback(() => {
+    if (!selectedComponent?.parentId) return;
+    actions.setParent(selectedSingleId!, null);
+  }, [actions, selectedComponent?.parentId, selectedSingleId]);
 
   if (!diagram) {
     return (
@@ -342,6 +387,32 @@ const Canvas = (props: CanvasProps = {}) => {
                   />
                 );
               })}
+              {/* QuickActions toolbar for single node selection */}
+              {visualState.selectedNodeId && selectedNodes.length === 1 && (
+                <NodeQuickActionsBar
+                  nodeId={visualState.selectedNodeId}
+                  diagramId={diagram?.id ?? ""}
+                  updateComponent={actions.updateComponent}
+                  onUngroup={
+                    (isSelectedPanel || isSelectedApiGroup) && hasPanelChildren
+                      ? handleUngroup
+                      : undefined
+                  }
+                  onFitToChildren={
+                    (isSelectedPanel || isSelectedApiGroup) && hasPanelChildren && !selectedComponent?.collapsed
+                      ? handleFitToChildren
+                      : undefined
+                  }
+                  onOrganizeChildren={
+                    (isSelectedPanel || isSelectedApiGroup) && hasPanelChildren && !selectedComponent?.collapsed && !isPanelLayoutRunning
+                      ? handleOrganizeChildren
+                      : undefined
+                  }
+                  onRemoveFromGroup={
+                    isSelectedChildOfGroup ? handleRemoveFromGroup : undefined
+                  }
+                />
+              )}
               <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
             </ReactFlow>
           </div>
