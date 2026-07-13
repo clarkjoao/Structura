@@ -18,10 +18,15 @@ export function ColorPicker({
 }: ColorPickerProps) {
   const { t } = useTranslation();
 
+  // Wrap onto two rows when toolbar space is tight
+  const swatchSize = compact ? "h-3 w-3" : "h-3.5 w-3.5";
+  const swatchGap = "gap-[3px]";
+  const container = compact ? "flex flex-col" : "flex items-center";
+
   return (
-    <div className="flex items-center gap-1">
-      <div className="flex items-center gap-0.5">
-        {VIBRANT_PRESETS.slice(0, compact ? 8 : 15).map((preset) => {
+    <div className={cn(container, "gap-[3px]")}>
+      <div className={cn("flex", swatchGap)}>
+        {VIBRANT_PRESETS.slice(0, 10).map((preset) => {
           const isSelected = selectedColor === preset.color;
           return (
             <button
@@ -31,8 +36,8 @@ export function ColorPicker({
               aria-label={t(preset.nameKey)}
               onClick={() => onSelectColor(preset.color)}
               className={cn(
-                "rounded-full border-2 transition-all hover:scale-110",
-                compact ? "h-4 w-4" : "h-5 w-5",
+                "rounded-full border transition-all hover:scale-110",
+                swatchSize,
                 isSelected
                   ? "scale-110 border-foreground"
                   : "border-transparent",
@@ -42,6 +47,30 @@ export function ColorPicker({
           );
         })}
       </div>
+      {compact && (
+        <div className={cn("flex", swatchGap)}>
+          {VIBRANT_PRESETS.slice(10).map((preset) => {
+            const isSelected = selectedColor === preset.color;
+            return (
+              <button
+                key={preset.color}
+                type="button"
+                title={t(preset.nameKey)}
+                aria-label={t(preset.nameKey)}
+                onClick={() => onSelectColor(preset.color)}
+                className={cn(
+                  "rounded-full border transition-all hover:scale-110",
+                  swatchSize,
+                  isSelected
+                    ? "scale-110 border-foreground"
+                    : "border-transparent",
+                )}
+                style={{ backgroundColor: preset.color }}
+              />
+            );
+          })}
+        </div>
+      )}
       {onReset && (
         <button
           type="button"
