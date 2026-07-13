@@ -233,6 +233,7 @@ export function NodeQuickActionsBar({
           diagramId={diagramId}
           currentIconId={component.customIconId}
           onSelect={handlePickIcon}
+          onRemove={handleResetIcon}
           onClose={() => setPickerOpen(false)}
         />
       ) : null}

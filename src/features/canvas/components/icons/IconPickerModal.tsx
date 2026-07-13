@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import { Loader2 } from "lucide-react";
+import { Loader2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { useIconActions, useIconLibrary } from "@/features/diagram";
 import { AWS_SERVICE_MAP } from "@/lib/catalogs/aws";
@@ -32,6 +32,8 @@ export interface IconPickerModalProps {
   onSelect: (iconId: string) => void;
   onClose: () => void;
   currentIconId?: string;
+  /** When provided and a custom icon is currently set, shows a "Remove icon" footer button. */
+  onRemove?: () => void;
 }
 
 function displayNameFromLucideIconName(iconName: string): string {
@@ -55,6 +57,7 @@ export function IconPickerModal({
   onSelect,
   onClose,
   currentIconId,
+  onRemove,
 }: IconPickerModalProps) {
   const { t } = useTranslation();
   const iconLibrary = useIconLibrary();
@@ -345,6 +348,22 @@ export function IconPickerModal({
             ) : null}
           </div>
         </Tabs>
+        {onRemove && currentIconId && (
+          <div className="flex justify-end border-t border-border pt-3">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                onRemove();
+                onClose();
+              }}
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              {t("icons.removeIcon")}
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
