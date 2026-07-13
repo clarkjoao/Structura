@@ -283,7 +283,7 @@ const ComponentPanel = ({
           </button>
         </div>
       </div>
-      {isPanel && onUngroup && (
+      {ENABLE_LEGACY_PANEL_ACTIONS && isPanel && onUngroup && (
         <div className="px-3 py-2 border-b border-border flex flex-col gap-2">
           <button
             type="button"
@@ -313,7 +313,7 @@ const ComponentPanel = ({
           )}
         </div>
       )}
-      {isChildOfPanel && (
+      {ENABLE_LEGACY_PANEL_ACTIONS && isChildOfPanel && (
         <div className="px-3 py-2 border-b border-border">
           <button
             type="button"

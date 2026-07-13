@@ -1,6 +1,15 @@
 import { useState, useCallback, useMemo } from "react";
 import { NodeToolbar, Position } from "@xyflow/react";
-import { Lock, Unlock, ImagePlus, RotateCcw } from "lucide-react";
+import {
+  Lock,
+  Unlock,
+  ImagePlus,
+  RotateCcw,
+  Group,
+  Maximize2,
+  LayoutGrid,
+  Link2Off,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/hooks/useTheme";
 import type { ComponentPatch, Component } from "@/features/diagram";
@@ -20,6 +29,14 @@ interface NodeQuickActionsBarProps {
   nodeId: string;
   diagramId: string;
   updateComponent: (id: string, patch: ComponentPatch) => void;
+  /** Ungroup this panel — fired when toolbar button clicked. */
+  onUngroup?: () => void;
+  /** Resize panel to fit its children — toolbar button. */
+  onFitToChildren?: () => void;
+  /** Run auto-layout on panel children — toolbar button. */
+  onOrganizeChildren?: () => void;
+  /** Detach this child from its parent panel — toolbar button. */
+  onRemoveFromGroup?: () => void;
 }
 
 function pickColorGroup(component: Component | null): ColorPickerGroup | null {
@@ -47,6 +64,10 @@ export function NodeQuickActionsBar({
   nodeId,
   diagramId,
   updateComponent,
+  onUngroup,
+  onFitToChildren,
+  onOrganizeChildren,
+  onRemoveFromGroup,
 }: NodeQuickActionsBarProps) {
   const { t } = useTranslation();
   const { theme } = useTheme();
@@ -224,6 +245,60 @@ export function NodeQuickActionsBar({
                 </button>
               )}
             </>
+          )}
+
+          {/* Panel/group actions — only when applicable callbacks provided */}
+          {(onUngroup || onFitToChildren || onOrganizeChildren) && (
+            <div className="mx-1 border-l border-border pl-1 flex items-center gap-0.5">
+              {onFitToChildren && (
+                <button
+                  type="button"
+                  title={t("elementPanel.fitToChildren")}
+                  aria-label={t("elementPanel.fitToChildren")}
+                  onClick={onFitToChildren}
+                  className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
+                >
+                  <Maximize2 className="h-3.5 w-3.5" />
+                </button>
+              )}
+              {onOrganizeChildren && (
+                <button
+                  type="button"
+                  title={t("autoLayout.organizeChildren")}
+                  aria-label={t("autoLayout.organizeChildren")}
+                  onClick={onOrganizeChildren}
+                  className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                </button>
+              )}
+              {onUngroup && (
+                <button
+                  type="button"
+                  title={t("endpointPanel.ungroup")}
+                  aria-label={t("endpointPanel.ungroup")}
+                  onClick={onUngroup}
+                  className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
+                >
+                  <Group className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Remove from group — for children of panels */}
+          {onRemoveFromGroup && (
+            <div className="mx-1 border-l border-border pl-1">
+              <button
+                type="button"
+                title={t("endpointPanel.removeFromGroup")}
+                aria-label={t("endpointPanel.removeFromGroup")}
+                onClick={onRemoveFromGroup}
+                className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
+              >
+                <Link2Off className="h-3.5 w-3.5" />
+              </button>
+            </div>
           )}
         </div>
       </NodeToolbar>
