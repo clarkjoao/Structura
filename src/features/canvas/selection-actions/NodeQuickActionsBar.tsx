@@ -1,16 +1,46 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { NodeToolbar, Position } from "@xyflow/react";
 import { Lock, Unlock, ImagePlus } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { ComponentPatch } from "@/features/diagram";
-import { useComponent, useIconActions } from "@/features/diagram";
+import { useTheme } from "@/hooks/useTheme";
+import type { ComponentPatch, Component } from "@/features/diagram";
+import {
+  useComponent,
+  useIconActions,
+  isNoteComponent,
+  isC4Component,
+  isPanelComponent,
+  getNotePresetPair,
+} from "@/features/diagram";
 import { IconPickerModal } from "@/features/canvas/components/icons/IconPickerModal";
 import { OpacitySlider } from "./OpacitySlider";
+import { ColorPicker, type ColorPickerGroup } from "./ColorPicker";
 
 interface NodeQuickActionsBarProps {
   nodeId: string;
   diagramId: string;
   updateComponent: (id: string, patch: ComponentPatch) => void;
+}
+
+function pickColorGroup(component: Component | null): ColorPickerGroup | null {
+  if (!component) return null;
+  if (isNoteComponent(component)) return "note";
+  if (isC4Component(component)) return "c4";
+  if (isPanelComponent(component)) return "panel";
+  return "vibrant";
+}
+
+function getCurrentColor(component: Component, isDark: boolean): string | undefined {
+  if (isNoteComponent(component)) {
+    return isDark ? component.panelColorDark : component.panelColor;
+  }
+  if (isC4Component(component)) {
+    return (component as { panelColor?: string }).panelColor;
+  }
+  if (isPanelComponent(component)) {
+    return component.panelColor;
+  }
+  return undefined;
 }
 
 export function NodeQuickActionsBar({
@@ -19,9 +49,17 @@ export function NodeQuickActionsBar({
   updateComponent,
 }: NodeQuickActionsBarProps) {
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const component = useComponent(nodeId);
   const { incrementIconUsage, decrementIconUsage } = useIconActions();
   const [pickerOpen, setPickerOpen] = useState(false);
+
+  const colorGroup = pickColorGroup(component);
+  const currentColor = useMemo(
+    () => (component ? getCurrentColor(component, isDark) : undefined),
+    [component, isDark],
+  );
 
   const handleLockToggle = useCallback(() => {
     if (!component) return;
@@ -71,10 +109,52 @@ export function NodeQuickActionsBar({
     updateComponent,
   ]);
 
+  const handleColorChange = useCallback(
+    (color: string) => {
+      if (!component) return;
+      // Notes write BOTH light + dark when picking a preset pair
+      if (isNoteComponent(component)) {
+        const pair = getNotePresetPair(color);
+        if (pair) {
+          updateComponent(nodeId, {
+            panelColor: pair.light,
+            panelColorDark: pair.dark,
+          });
+          return;
+        }
+        // Custom color: write only current theme field
+        updateComponent(nodeId, {
+          [isDark ? "panelColorDark" : "panelColor"]: color,
+        });
+        return;
+      }
+      // Panels + C4: write panelColor
+      updateComponent(nodeId, { panelColor: color });
+    },
+    [component, isDark, nodeId, updateComponent],
+  );
+
+  const handleColorReset = useCallback(() => {
+    if (!component) return;
+    if (isNoteComponent(component)) {
+      updateComponent(nodeId, {
+        panelColor: undefined,
+        panelColorDark: undefined,
+      });
+      return;
+    }
+    updateComponent(nodeId, { panelColor: undefined });
+  }, [component, nodeId, updateComponent]);
+
   if (!component) return null;
 
   const hasOpacity = "panelOpacity" in component;
   const hasIcon = "customIconId" in component;
+  const hasColor = colorGroup !== null && (
+    isNoteComponent(component) ||
+    isC4Component(component) ||
+    isPanelComponent(component)
+  );
 
   return (
     <>
@@ -97,6 +177,18 @@ export function NodeQuickActionsBar({
               <Unlock className="h-3.5 w-3.5" />
             )}
           </button>
+
+          {/* Color picker — only for note/c4/panel components */}
+          {hasColor && (
+            <div className="mx-1 border-l border-border pl-1">
+              <ColorPicker
+                group={colorGroup!}
+                selectedColor={currentColor}
+                onSelectColor={handleColorChange}
+                onReset={handleColorReset}
+              />
+            </div>
+          )}
 
           {/* Opacity slider — only for panel components */}
           {hasOpacity && (

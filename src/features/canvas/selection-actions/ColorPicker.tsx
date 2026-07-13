@@ -1,25 +1,68 @@
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Palette, RotateCcw } from "lucide-react";
-import { VIBRANT_PRESETS } from "@/features/canvas/panels/ElementPanel/components/colorPresets";
+import {
+  VIBRANT_PRESETS,
+  PANEL_PRESETS,
+  C4_PRESETS,
+  NOTE_PRESETS,
+  NOTE_PRESETS_DARK,
+  getNotePresetPair,
+  type ColorPreset,
+} from "@/features/canvas/panels/ElementPanel/components/colorPresets";
 import { cn } from "@/lib/utils";
+
+export type ColorPickerGroup =
+  | "vibrant"
+  | "panel"
+  | "c4"
+  | "note"
+  | "note-dark";
 
 interface ColorPickerProps {
   selectedColor?: string;
   onSelectColor: (color: string) => void;
   onReset?: () => void;
+  /** Which preset group to show in the dropdown. Default: "vibrant". */
+  group?: ColorPickerGroup;
 }
+
+const presetsForGroup = (group: ColorPickerGroup): ColorPreset[] => {
+  switch (group) {
+    case "panel":
+      return PANEL_PRESETS;
+    case "c4":
+      return C4_PRESETS;
+    case "note":
+      return NOTE_PRESETS;
+    case "note-dark":
+      return NOTE_PRESETS_DARK;
+    default:
+      return VIBRANT_PRESETS;
+  }
+};
 
 export function ColorPicker({
   selectedColor,
   onSelectColor,
   onReset,
+  group = "vibrant",
 }: ColorPickerProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const selectedPreset = VIBRANT_PRESETS.find((p) => p.color === selectedColor);
+  const presets = presetsForGroup(group);
+  // For note presets, look up the pair so the swatch shows light-side color
+  // regardless of theme.
+  const selectedPreset =
+    presets.find((p) => p.color === selectedColor) ??
+    (group === "note" || group === "note-dark"
+      ? presets.find((p) => {
+          const pair = getNotePresetPair(selectedColor ?? "");
+          return pair && (group === "note" ? pair.light === p.color : pair.dark === p.color);
+        })
+      : undefined);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -61,7 +104,7 @@ export function ColorPicker({
           onPointerDown={(e) => e.stopPropagation()}
         >
           <div className="flex flex-wrap gap-1.5 justify-center max-w-[160px]">
-            {VIBRANT_PRESETS.map((preset) => {
+            {presets.map((preset) => {
               const isSelected = selectedColor === preset.color;
               return (
                 <button

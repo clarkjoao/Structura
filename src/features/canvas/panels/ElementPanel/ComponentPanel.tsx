@@ -536,7 +536,7 @@ const ComponentPanel = ({
               componentNodeLayout={resolved?.nodeLayouts[component.id]}
             />
           )}
-          {isNoteComponent(component) && (
+          {ENABLE_LEGACY_PANEL_ACTIONS && isNoteComponent(component) && (
             <ColorAccentSection
               componentId={component.id}
               type={isDark ? "note-dark" : "note"}
@@ -548,7 +548,7 @@ const ComponentPanel = ({
               updateComponent={updateComponent}
             />
           )}
-          {!isSimple && isC4Component(component) && (
+          {ENABLE_LEGACY_PANEL_ACTIONS && !isSimple && isC4Component(component) && (
             <ColorAccentSection
               componentId={component.id}
               type="c4"
