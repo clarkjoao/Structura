@@ -29,6 +29,7 @@ import {
 } from "./fileSystemBoot";
 import { mergeCustomComponentTemplates } from "./merge-custom-component-templates";
 import { recordFolderSyncSuccess } from "./folderSyncTimestamp";
+import { WORKSPACE_SCHEMA_VERSION as WORKSPACE_VERSION } from "./versions";
 
 async function clearLocalCache(): Promise<void> {
   await defaultStorage.delete(PERSIST_KEY);
@@ -52,7 +53,7 @@ function buildManifest(state: ReturnType<typeof useDiagramStore.getState>) {
   const customComponentTemplates = useCustomComponentStore.getState().templates;
   const iconLibrary = useIconStore.getState().icons;
   return {
-    version: 1 as const,
+    version: WORKSPACE_VERSION as 1 | 2,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     diagramIds: Object.keys(state.diagrams),

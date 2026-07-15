@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, Network, FolderOpen, LayoutGrid, List, ArrowUpDown, Search } from "lucide-react";
+import { Plus, Network, FolderOpen, LayoutGrid, List, ArrowUpDown, Search, Upload } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useAllDiagrams, useFolders, useDiagramActions, removeRecentRef } from "@/features/diagram";
 import { deletePreview } from "@/lib/diagram-preview/previewCache";
@@ -85,7 +85,6 @@ export default function DashboardPage() {
   const [sortKey, setSortKey] = useState<SortKey>("updatedAt");
   const [sortAsc, setSortAsc] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [triggerAddFolder, setTriggerAddFolder] = useState(0);
   const [activeDomainFilter, setActiveDomainFilter] = useState<string | null>(null);
   const [globalSearch, setGlobalSearch] = useState("");
   const folderTreeRef = useRef<HTMLDivElement>(null);
@@ -289,7 +288,6 @@ export default function DashboardPage() {
               moveDiagram(diagramId, folderId);
               setDropTargetFolderId(undefined);
             }}
-            triggerAddFolderAtRoot={triggerAddFolder}
           />
         </div>
 
@@ -435,18 +433,10 @@ export default function DashboardPage() {
                   className="h-8"
                   onClick={() => setImportModalOpen(true)}
                 >
-                  {t("import.button")}
+                  <Upload className="h-3.5 w-3.5" />
                 </Button>
                 <Button onClick={() => setShowAdd(true)} size="sm" className="gap-1.5 h-8">
                   <Plus className="h-3.5 w-3.5" /> {t("dashboard.newDiagram")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setTriggerAddFolder((t) => t + 1)}
-                  className="gap-1.5 h-8"
-                >
-                  <Plus className="h-3.5 w-3.5" /> {t("dashboard.newFolder")}
                 </Button>
               </div>
             </div>

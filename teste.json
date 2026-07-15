@@ -1,0 +1,155 @@
+{
+  "id": "d-83f5aefb957944e0",
+  "name": "teste",
+  "level": "context",
+  "createdAt": 1783964207029,
+  "updatedAt": 1783969008140,
+  "snapshot": {
+    "components": {
+      "el-efa9a619d6274ac9": {
+        "id": "el-efa9a619d6274ac9",
+        "name": "Novo Person",
+        "description": "",
+        "parentId": null,
+        "type": "person"
+      },
+      "el-3cc8e7452b62458b": {
+        "id": "el-3cc8e7452b62458b",
+        "name": "Novo Person",
+        "description": "",
+        "parentId": null,
+        "type": "person"
+      },
+      "el-249484d4211748b6": {
+        "id": "el-249484d4211748b6",
+        "name": "Amazon EC2",
+        "description": "",
+        "parentId": null,
+        "type": "aws-compute",
+        "awsService": "ec2"
+      }
+    },
+    "connections": {
+      "conn-24dc63de2d9b453a": {
+        "id": "conn-24dc63de2d9b453a",
+        "sourceId": "el-efa9a619d6274ac9",
+        "targetId": "el-3cc8e7452b62458b",
+        "label": "Usa",
+        "style": {
+          "edgeStyle": "editable-step"
+        }
+      },
+      "conn-5ec6147bdbaf44cb": {
+        "id": "conn-5ec6147bdbaf44cb",
+        "sourceId": "el-3cc8e7452b62458b",
+        "targetId": "el-249484d4211748b6",
+        "label": "Usa",
+        "style": {
+          "edgeStyle": "editable"
+        }
+      }
+    },
+    "flows": {
+      "flow-cc7edd16914f4c53": {
+        "id": "flow-cc7edd16914f4c53",
+        "name": "teste",
+        "mermaid": "sequenceDiagram\n  participant NP as Novo Person\n  participant AE as Amazon EC2\n  NP->>NP: Usa\n  NP->>AE: Usa\n  NP->>AE: Usa\n  NP->>AE: Usa",
+        "steps": {
+          "step-093dcab9c1774d6a": {
+            "id": "step-093dcab9c1774d6a",
+            "type": "action",
+            "componentId": "el-efa9a619d6274ac9",
+            "next": "step-f71e7c3a086a4f93"
+          },
+          "step-f71e7c3a086a4f93": {
+            "id": "step-f71e7c3a086a4f93",
+            "type": "action",
+            "connectionId": "conn-24dc63de2d9b453a",
+            "handleId": "source-0",
+            "next": "step-77b1e7388f604e36"
+          },
+          "step-77b1e7388f604e36": {
+            "id": "step-77b1e7388f604e36",
+            "type": "action",
+            "componentId": "el-3cc8e7452b62458b",
+            "next": "step-405d8997ab9849a2"
+          },
+          "step-405d8997ab9849a2": {
+            "id": "step-405d8997ab9849a2",
+            "type": "action",
+            "connectionId": "conn-5ec6147bdbaf44cb",
+            "handleId": "source-0",
+            "next": "step-96b6242ad1d04e5c"
+          },
+          "step-96b6242ad1d04e5c": {
+            "id": "step-96b6242ad1d04e5c",
+            "type": "action",
+            "componentId": "el-249484d4211748b6",
+            "next": "step-8da6ddca91af45af"
+          },
+          "step-8da6ddca91af45af": {
+            "id": "step-8da6ddca91af45af",
+            "type": "action",
+            "connectionId": "conn-5ec6147bdbaf44cb",
+            "handleId": "source-0",
+            "next": "step-8035d67d14ed47fa"
+          },
+          "step-8035d67d14ed47fa": {
+            "id": "step-8035d67d14ed47fa",
+            "type": "action",
+            "componentId": "el-3cc8e7452b62458b",
+            "next": "step-fce6f7032a044b49"
+          },
+          "step-fce6f7032a044b49": {
+            "id": "step-fce6f7032a044b49",
+            "type": "action",
+            "connectionId": "conn-5ec6147bdbaf44cb",
+            "handleId": "source-0",
+            "next": "step-31144d2893d4466b"
+          },
+          "step-31144d2893d4466b": {
+            "id": "step-31144d2893d4466b",
+            "type": "action",
+            "componentId": "el-249484d4211748b6"
+          }
+        },
+        "diagramId": "d-83f5aefb957944e0",
+        "entryStepId": "step-093dcab9c1774d6a"
+      }
+    },
+    "iconLibrary": {}
+  },
+  "nodeLayouts": {
+    "el-efa9a619d6274ac9": {
+      "elementId": "el-efa9a619d6274ac9",
+      "x": 755,
+      "y": 395,
+      "width": 200,
+      "height": 46
+    },
+    "el-3cc8e7452b62458b": {
+      "elementId": "el-3cc8e7452b62458b",
+      "x": 1100,
+      "y": 335,
+      "width": 200,
+      "height": 46
+    },
+    "el-249484d4211748b6": {
+      "elementId": "el-249484d4211748b6",
+      "x": 1575,
+      "y": 225,
+      "width": 200,
+      "height": 72
+    }
+  },
+  "edgeLayouts": {
+    "conn-5ec6147bdbaf44cb": {
+      "labelOffset": 0.9287948024733371
+    }
+  },
+  "viewport": {
+    "x": -1377,
+    "y": -203,
+    "zoom": 1.5
+  }
+}

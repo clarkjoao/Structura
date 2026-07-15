@@ -18,7 +18,6 @@ import {
   downloadZip,
   exportDrawio,
   exportJson,
-  exportStructurizr,
   type DiagramExportFormat,
 } from "@/lib/export-service";
 import { toast } from "sonner";
@@ -101,16 +100,6 @@ export default function WorkspacePage() {
     await navigator.clipboard.writeText(exportJson(diagram));
     flashCopied("json");
   }, [diagram, flashCopied]);
-
-  const handleCopyStructurizr = useCallback(async () => {
-    if (!diagram) return;
-    try {
-      await navigator.clipboard.writeText(exportStructurizr(diagram));
-      flashCopied("structurizr");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("export.copyStructurizrError"));
-    }
-  }, [diagram, flashCopied, t]);
 
   const handleExportFormats = useCallback(
     async (formats: DiagramExportFormat[], pluginExporterIds: string[]) => {
@@ -206,7 +195,6 @@ export default function WorkspacePage() {
             handleDrillUp={handleDrillUp}
             handleCopyDrawio={handleCopyDrawio}
             handleCopyJson={handleCopyJson}
-            handleCopyStructurizr={handleCopyStructurizr}
             handleExportFormats={handleExportFormats}
             onStartCollab={() => {
               setShowStartModal(true);
