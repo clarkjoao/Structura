@@ -137,7 +137,7 @@ async function getOrCreateDirectory(
 }
 
 export interface WorkspaceManifest {
-  version: 1;
+  version: 1 | 2;
   createdAt: string;
   updatedAt: string;
   diagramIds: string[];
@@ -316,7 +316,9 @@ export class FileSystemAdapter {
     for await (const [name, entry] of directoryEntries(dir)) {
       if (entry.kind === FileSystemEntryKind.File && name === `${diagramId}.json`) {
         const f = await (entry as FileSystemFileHandle).getFile();
-        return normalizeImportedDiagram(JSON.parse(await f.text()) as Diagram);
+        const raw = JSON.parse(await f.text());
+        const validation = validateDiagramFile(raw);
+        return validation.valid ? validation.diagram : null;
       }
       if (entry.kind === FileSystemEntryKind.Directory) {
         const result = await this._findDiagramFile(
@@ -533,9 +535,9 @@ export class FileSystemAdapter {
           const f = await (entry as FileSystemFileHandle).getFile();
           const rawUnknown: unknown = JSON.parse(await f.text());
           if (isDiagramTombstoneJson(rawUnknown)) continue;
-          const diagram = normalizeImportedDiagram(rawUnknown as Diagram);
-          if (diagram && diagram.id) {
-            result[diagram.id] = diagram;
+          const validation = validateDiagramFile(rawUnknown);
+          if (validation.valid && validation.diagram.id) {
+            result[validation.diagram.id] = validation.diagram;
           }
         } catch (error) {
           console.warn(

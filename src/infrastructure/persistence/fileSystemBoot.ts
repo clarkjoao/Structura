@@ -18,6 +18,7 @@ import { useIconStore } from "@/features/icons";
 import { mergeCustomComponentTemplates } from "./merge-custom-component-templates";
 import { diagramStoreWorkspaceEqualsForFolderSync } from "./workspace-folder-sync-equality";
 import { manifestSemanticFingerprint } from "./workspace-manifest-fingerprint";
+import { WORKSPACE_SCHEMA_VERSION } from "./versions";
 
 type DiagramStoreState = ReturnType<typeof useDiagramStore.getState>;
 
@@ -102,7 +103,7 @@ export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState):
   const iconLibrary = useIconStore.getState().icons;
 
   const manifestOk = await fileSystemAdapter.writeManifest({
-    version: 1,
+    version: WORKSPACE_SCHEMA_VERSION as 1 | 2,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     diagramIds: Object.keys(state.diagrams),
@@ -319,7 +320,7 @@ export function startFileSystemSync(): void {
 
           if (manifestFp !== lastSyncedManifestFingerprint) {
             await fileSystemAdapter.writeManifest({
-              version: 1,
+              version: WORKSPACE_SCHEMA_VERSION as 1 | 2,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
               diagramIds: Object.keys(diagramState.diagrams),
