@@ -24,9 +24,9 @@ export const dropdownToEdgeStyle = (
     case "smoothstep":
       return "editable" as EdgeStyle;
     case "bezier":
-      return "bezier";
+      return "bezier" as EdgeStyle;
     case "straight":
-      return "straight";
+      return "straight" as EdgeStyle;
   }
 };
 

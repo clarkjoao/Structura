@@ -399,12 +399,12 @@ const Canvas = (props: CanvasProps = {}) => {
                       : undefined
                   }
                   onFitToChildren={
-                    (isSelectedPanel || isSelectedApiGroup) && hasPanelChildren && !selectedComponent?.collapsed
+                    (isSelectedPanel || isSelectedApiGroup) && hasPanelChildren && !(selectedComponent as { collapsed?: boolean })?.collapsed
                       ? handleFitToChildren
                       : undefined
                   }
                   onOrganizeChildren={
-                    (isSelectedPanel || isSelectedApiGroup) && hasPanelChildren && !selectedComponent?.collapsed && !isPanelLayoutRunning
+                    (isSelectedPanel || isSelectedApiGroup) && hasPanelChildren && !(selectedComponent as { collapsed?: boolean })?.collapsed && !isPanelLayoutRunning
                       ? handleOrganizeChildren
                       : undefined
                   }
