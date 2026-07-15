@@ -1,3 +1,6 @@
+import type { DiagramExportFormat } from "@/lib/export-service";
+import type { Flow } from "@/features/diagram";
+
 export type CopiedClipboardKind = "drawio" | "json";
 
 export interface WorkspaceContentProps {

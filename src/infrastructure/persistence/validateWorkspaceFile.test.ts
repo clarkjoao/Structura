@@ -44,7 +44,9 @@ describe("validateDiagramFile", () => {
     it("rejects diagram with invalid createdAt type", () => {
       const result = validateDiagramFile(minimalDiagram({ createdAt: null }));
       expect(result.valid).toBe(false);
-      expect(result.reason).toContain("createdAt");
+      if (!result.valid) {
+        expect(result.reason).toContain("createdAt");
+      }
     });
 
     it("rejects diagram with missing required fields", () => {
@@ -55,7 +57,9 @@ describe("validateDiagramFile", () => {
     it("rejects tombstone files", () => {
       const result = validateDiagramFile({ deleted: true, id: "test" });
       expect(result.valid).toBe(false);
-      expect(result.reason).toContain("tombstone");
+      if (!result.valid) {
+        expect(result.reason).toContain("tombstone");
+      }
     });
   });
 
@@ -91,7 +95,9 @@ describe("validateDiagramFile", () => {
       };
       const result = validateDiagramFile(versioned);
       expect(result.valid).toBe(false);
-      expect(result.reason).toContain("Unsupported");
+      if (!result.valid) {
+        expect(result.reason).toContain("Unsupported");
+      }
     });
 
     it("rejects versioned diagram with invalid data", () => {
@@ -160,7 +166,9 @@ describe("validateManifest", () => {
     };
     const result = validateManifest(manifest);
     expect(result.valid).toBe(false);
-    expect(result.reason).toContain("Invalid manifest version");
+    if (!result.valid) {
+      expect(result.reason).toContain("Invalid manifest version");
+    }
   });
 
   it("rejects manifest with missing diagramIds", () => {
@@ -171,6 +179,8 @@ describe("validateManifest", () => {
     };
     const result = validateManifest(manifest);
     expect(result.valid).toBe(false);
-    expect(result.reason).toContain("diagramIds");
+    if (!result.valid) {
+      expect(result.reason).toContain("diagramIds");
+    }
   });
 });

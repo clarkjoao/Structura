@@ -390,7 +390,6 @@ export function WorkspaceContent({
               onExport={handleExportFormats}
               onCopyDrawio={handleCopyDrawio}
               onCopyJson={handleCopyJson}
-              onEmbedRequest={() => setEmbedModalOpen(true)}
               copiedClipboardKind={copiedClipboardKind}
             />
             <ShareModal open={shareModalOpen} onOpenChange={setShareModalOpen} diagram={diagram} />

@@ -5,12 +5,14 @@ import {
   getShareParamFromUrl,
   decodeShareParam,
 } from "./diagram-url";
+import type { Diagram } from "@/features/diagram";
+import { EdgeStyle } from "@/features/diagram";
 
 describe("Sharing functionality", () => {
-  const testDiagram = {
+  const testDiagram: Diagram = {
     id: "test-id",
     name: "Test Diagram",
-    level: "context" as const,
+    level: "context",
     createdAt: Date.now(),
     updatedAt: Date.now(),
     snapshot: {
@@ -73,7 +75,7 @@ describe("Sharing functionality", () => {
             sourceId: "comp-1",
             targetId: "comp-2",
             label: "uses",
-            style: { edgeStyle: "straight" as const },
+            style: { edgeStyle: EdgeStyle.Bezier },
           },
         },
         flows: {},

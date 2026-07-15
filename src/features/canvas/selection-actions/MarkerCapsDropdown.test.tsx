@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MarkerCapsDropdown } from "./MarkerCapsDropdown";
+import { EdgeMarker } from "@/features/diagram";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -13,7 +14,7 @@ describe("MarkerCapsDropdown", () => {
     const onChangeCap = vi.fn();
     render(
       <MarkerCapsDropdown
-        currentCap="arrow"
+        currentCap={EdgeMarker.Arrow}
         onChangeCap={onChangeCap}
         capType="end"
       />,
@@ -25,7 +26,7 @@ describe("MarkerCapsDropdown", () => {
     const onChangeCap = vi.fn();
     const { container } = render(
       <MarkerCapsDropdown
-        currentCap="arrow"
+        currentCap={EdgeMarker.Arrow}
         onChangeCap={onChangeCap}
         capType="end"
       />,

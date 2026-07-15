@@ -76,7 +76,7 @@ export function NodeQuickActionsBar({
   const { incrementIconUsage, decrementIconUsage } = useIconActions();
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  const colorGroup = pickColorGroup(component);
+  const colorGroup = pickColorGroup(component ?? null);
   const currentColor = useMemo(
     () => (component ? getCurrentColor(component, isDark) : undefined),
     [component, isDark],
