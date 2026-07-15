@@ -1,10 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Clipboard, Code2, Download, FileCode } from "lucide-react";
+import { Download, FileJson, FileImage, Link, QrCode, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
@@ -13,11 +10,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { DiagramExportFormat } from "@/lib/export-service";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { keyIsEnterOrSpace } from "@/lib/keyboard-utils";
 import { usePluginIoContributions } from "@/features/plugins/use-plugin-contributions";
 import { resolveLocalizedText } from "@/features/plugins/localized-text";
+import type { DiagramExportFormat } from "@/lib/export-service";
 import type { CopiedClipboardKind } from "./types";
 
 interface ExportModalProps {
@@ -27,13 +24,8 @@ interface ExportModalProps {
   onExport: (formats: DiagramExportFormat[], pluginExporterIds: string[]) => void;
   onCopyDrawio: () => void;
   onCopyJson: () => void;
-  onCopyStructurizr: () => void;
-  onEmbedRequest: () => void;
   copiedClipboardKind: CopiedClipboardKind | null;
 }
-
-const DEFAULT_FORMATS: DiagramExportFormat[] = ["json", "drawio"];
-const FORMAT_ORDER: DiagramExportFormat[] = ["json", "drawio", "structurizr", "mermaid"];
 
 export function ExportModal({
   open,
@@ -42,284 +34,260 @@ export function ExportModal({
   onExport,
   onCopyDrawio,
   onCopyJson,
-  onCopyStructurizr,
-  onEmbedRequest,
   copiedClipboardKind,
 }: ExportModalProps) {
   const { t, i18n } = useTranslation();
-  const [selectedFormats, setSelectedFormats] = useState<DiagramExportFormat[]>(DEFAULT_FORMATS);
-  const [selectedPluginExporters, setSelectedPluginExporters] = useState<string[]>([]);
   const { exporters: pluginExporters } = usePluginIoContributions();
+  const [activeTab, setActiveTab] = useState<"download" | "copy">("download");
+  const [selectedFormats, setSelectedFormats] = useState<Set<DiagramExportFormat>>(
+    new Set(["json", "drawio"]),
+  );
+  const [selectedPluginExporters, setSelectedPluginExporters] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!open) return;
-    setSelectedFormats(DEFAULT_FORMATS);
-    setSelectedPluginExporters([]);
+    setSelectedFormats(new Set(["json", "drawio"]));
+    setSelectedPluginExporters(new Set());
+    setActiveTab("download");
   }, [open]);
 
-  const options = useMemo(
-    () =>
-      [
-        {
-          format: "json" as const,
-          title: t("export.modal.options.json.title"),
-          description: t("export.modal.options.json.description"),
-          disabled: false,
-        },
-        {
-          format: "drawio" as const,
-          title: t("export.modal.options.drawio.title"),
-          description: t("export.modal.options.drawio.description"),
-          disabled: false,
-        },
-        {
-          format: "structurizr" as const,
-          title: t("export.modal.options.structurizr.title"),
-          description: t("export.modal.options.structurizr.description"),
-          disabled: false,
-        },
-        {
-          format: "mermaid" as const,
-          title: t("export.modal.options.mermaid.title"),
-          description: hasFlows
-            ? t("export.modal.options.mermaid.description")
-            : t("export.modal.options.mermaid.disabledDescription"),
-          disabled: !hasFlows,
-        },
-      ] satisfies Array<{
-        format: DiagramExportFormat;
-        title: string;
-        description: string;
-        disabled: boolean;
-      }>,
-    [hasFlows, t],
-  );
-
-  const clipboardRows = useMemo(
-    () =>
-      [
-        {
-          kind: "drawio" as const,
-          label: t("flows.copyDrawio"),
-          hint: t("export.hub.copyDrawioHint"),
-          onClick: onCopyDrawio,
-          icon: FileCode,
-        },
-        {
-          kind: "json" as const,
-          label: t("export.copyAsJson"),
-          hint: t("export.hub.copyJsonHint"),
-          onClick: onCopyJson,
-          icon: Clipboard,
-        },
-        {
-          kind: "structurizr" as const,
-          label: t("export.copyAsStructurizr"),
-          hint: t("export.hub.copyStructurizrHint"),
-          onClick: onCopyStructurizr,
-          icon: Clipboard,
-        },
-      ] as const,
-    [onCopyDrawio, onCopyJson, onCopyStructurizr, t],
-  );
-
-  const selectedCount = selectedFormats.length + selectedPluginExporters.length;
-
-  const togglePluginExporter = (exporterId: string, checked: boolean) => {
-    setSelectedPluginExporters((current) => {
-      if (checked) {
-        return current.includes(exporterId) ? current : [...current, exporterId];
+  const toggleFormat = (format: DiagramExportFormat) => {
+    setSelectedFormats((prev) => {
+      const next = new Set(prev);
+      if (next.has(format)) {
+        next.delete(format);
+      } else {
+        next.add(format);
       }
-      return current.filter((value) => value !== exporterId);
+      return next;
     });
   };
 
-  const toggleFormat = (format: DiagramExportFormat, checked: boolean) => {
-    setSelectedFormats((current) => {
-      if (checked) {
-        if (current.includes(format)) {
-          return current;
-        }
-        return [...current, format].sort(
-          (left, right) => FORMAT_ORDER.indexOf(left) - FORMAT_ORDER.indexOf(right),
-        );
+  const togglePluginExporter = (exporterId: string) => {
+    setSelectedPluginExporters((prev) => {
+      const next = new Set(prev);
+      if (next.has(exporterId)) {
+        next.delete(exporterId);
+      } else {
+        next.add(exporterId);
       }
-      return current.filter((value) => value !== format);
+      return next;
     });
   };
 
   const handleExport = () => {
-    if (selectedCount === 0) {
-      return;
-    }
-    onExport(selectedFormats, selectedPluginExporters);
+    const formats = Array.from(selectedFormats) as DiagramExportFormat[];
+    const pluginIds = Array.from(selectedPluginExporters);
+    if (formats.length === 0 && pluginIds.length === 0) return;
+    onExport(formats, pluginIds);
     onOpenChange(false);
   };
 
-  const handleEmbedClick = () => {
-    onOpenChange(false);
-    onEmbedRequest();
-  };
+  const formatOptions: Array<{
+    format: DiagramExportFormat;
+    icon: typeof FileJson;
+    title: string;
+    description: string;
+    disabled?: boolean;
+    badge?: string;
+  }> = [
+    {
+      format: "json",
+      icon: FileJson,
+      title: t("export.options.json.title"),
+      description: t("export.options.json.description"),
+      badge: t("export.options.recommended"),
+    },
+    {
+      format: "drawio",
+      icon: FileImage,
+      title: t("export.options.drawio.title"),
+      description: t("export.options.drawio.description"),
+    },
+    ...(hasFlows
+      ? [
+          {
+            format: "mermaid" as const,
+            icon: FileImage,
+            title: t("export.options.mermaid.title"),
+            description: t("export.options.mermaid.description"),
+          },
+        ]
+      : []),
+  ];
+
+  const totalSelected = selectedFormats.size + selectedPluginExporters.size;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[min(90vh,720px)] overflow-y-auto">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{t("export.hub.title")}</DialogTitle>
-          <DialogDescription>{t("export.hub.description")}</DialogDescription>
+          <DialogTitle className="flex items-center gap-2">
+            <Share2 className="h-5 w-5" />
+            {t("export.title")}
+          </DialogTitle>
+          <DialogDescription>{t("export.description")}</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-2">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {t("export.hub.copySection")}
-          </p>
-          <div className="flex flex-col gap-2">
-            {clipboardRows.map((row) => {
-              const Icon = row.icon;
-              const showCheck = copiedClipboardKind === row.kind;
-              return (
-                <button
-                  key={row.kind}
-                  type="button"
-                  onClick={row.onClick}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-lg border border-border px-3 py-2.5 text-left transition-colors",
-                    "hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  )}
-                >
-                  <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium">{row.label}</p>
-                    <p className="text-xs text-muted-foreground">{row.hint}</p>
-                  </div>
-                  {showCheck ? (
-                    <Check className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <Separator className="my-1" />
-
-        <div className="space-y-2">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {t("export.hub.downloadSection")}
-          </p>
-          <div className="flex flex-col gap-3">
-            {options.map((option) => {
-              const checked = selectedFormats.includes(option.format);
-              const checkboxId = `export-format-${option.format}`;
-
-              return (
-                <div
-                  key={option.format}
-                  role="button"
-                  tabIndex={option.disabled ? -1 : 0}
-                  onClick={() => {
-                    if (option.disabled) return;
-                    toggleFormat(option.format, !checked);
-                  }}
-                  onKeyDown={(event) => {
-                    if (option.disabled) return;
-                    if (!keyIsEnterOrSpace(event)) return;
-                    event.preventDefault();
-                    toggleFormat(option.format, !checked);
-                  }}
-                  className={cn(
-                    "flex items-start gap-3 rounded-lg border p-3 transition-colors",
-                    option.disabled
-                      ? "border-border/60 bg-muted/30 opacity-70"
-                      : "cursor-pointer border-border hover:bg-muted/40",
-                  )}
-                >
-                  <Checkbox
-                    id={checkboxId}
-                    checked={checked}
-                    disabled={option.disabled}
-                    onCheckedChange={(value) => toggleFormat(option.format, value === true)}
-                    onClick={(event) => event.stopPropagation()}
-                    className="mt-0.5"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <Label htmlFor={checkboxId} className="cursor-pointer text-sm">
-                      {option.title}
-                    </Label>
-                    <p className="mt-1 text-xs text-muted-foreground">{option.description}</p>
-                  </div>
-                </div>
-              );
-            })}
-            {pluginExporters.map((exporter) => {
-              const checked = selectedPluginExporters.includes(exporter.id);
-              const checkboxId = `export-plugin-${exporter.id}`;
-              const label = resolveLocalizedText(exporter.label, i18n.language);
-
-              return (
-                <div
-                  key={checkboxId}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => togglePluginExporter(exporter.id, !checked)}
-                  onKeyDown={(event) => {
-                    if (!keyIsEnterOrSpace(event)) return;
-                    event.preventDefault();
-                    togglePluginExporter(exporter.id, !checked);
-                  }}
-                  className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-muted/40"
-                >
-                  <Checkbox
-                    id={checkboxId}
-                    checked={checked}
-                    onCheckedChange={(value) => togglePluginExporter(exporter.id, value === true)}
-                    onClick={(event) => event.stopPropagation()}
-                    className="mt-0.5"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <Label htmlFor={checkboxId} className="cursor-pointer text-sm">
-                      {label}
-                    </Label>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {t("plugins.exportGroup")} · .{exporter.extension}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <Separator className="my-1" />
-
-        <button
-          type="button"
-          onClick={handleEmbedClick}
-          className={cn(
-            "flex w-full items-center gap-3 rounded-lg border border-dashed border-border px-3 py-2.5 text-left transition-colors",
-            "hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          )}
-        >
-          <Code2 className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium">{t("export.embed.menuItem")}</p>
-            <p className="text-xs text-muted-foreground">{t("export.hub.embedHint")}</p>
-          </div>
-        </button>
-
-        <DialogFooter className="items-center sm:justify-between">
-          <p className="mr-auto text-xs text-muted-foreground">
-            {selectedCount > 1 ? t("export.modal.zipHint") : t("export.modal.singleHint")}
-          </p>
-          <div className="flex shrink-0 gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              {t("common.cancel")}
-            </Button>
-            <Button onClick={handleExport} disabled={selectedCount === 0} className="gap-1.5">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="download" className="gap-2">
               <Download className="h-4 w-4" />
-              {t("export.modal.confirm")}
+              {t("export.tabs.download")}
+            </TabsTrigger>
+            <TabsTrigger value="copy" className="gap-2">
+              <Link className="h-4 w-4" />
+              {t("export.tabs.copy")}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="download" className="mt-4 space-y-3">
+            <p className="text-sm text-muted-foreground">{t("export.downloadHint")}</p>
+
+            {formatOptions.map(({ format, icon: Icon, title, description, disabled, badge }) => (
+              <button
+                key={format}
+                type="button"
+                onClick={() => !disabled && toggleFormat(format)}
+                disabled={disabled}
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-all",
+                  selectedFormats.has(format)
+                    ? "border-primary bg-primary/5 ring-1 ring-primary"
+                    : "border-border hover:border-primary/50 hover:bg-muted/50",
+                  disabled && "cursor-not-allowed opacity-50",
+                )}
+              >
+                <div
+                  className={cn(
+                    "flex h-10 w-10 items-center justify-center rounded-lg",
+                    selectedFormats.has(format) ? "bg-primary text-primary-foreground" : "bg-muted",
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium">{title}</p>
+                    {badge && (
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                        {badge}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{description}</p>
+                </div>
+              </button>
+            ))}
+
+            {pluginExporters.length > 0 && (
+              <>
+                <div className="relative py-2">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      {t("export.plugins")}
+                    </span>
+                  </div>
+                </div>
+
+                {pluginExporters.map((exporter) => (
+                  <button
+                    key={exporter.id}
+                    type="button"
+                    onClick={() => togglePluginExporter(exporter.id)}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-all",
+                      selectedPluginExporters.has(exporter.id)
+                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                        : "border-border hover:border-primary/50 hover:bg-muted/50",
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "flex h-10 w-10 items-center justify-center rounded-lg",
+                        selectedPluginExporters.has(exporter.id)
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted",
+                      )}
+                    >
+                      <FileJson className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium">
+                        {resolveLocalizedText(exporter.label, i18n.language)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">.{exporter.extension}</p>
+                    </div>
+                  </button>
+                ))}
+              </>
+            )}
+          </TabsContent>
+
+          <TabsContent value="copy" className="mt-4 space-y-3">
+            <p className="text-sm text-muted-foreground">{t("export.copyHint")}</p>
+
+            <button
+              type="button"
+              onClick={onCopyJson}
+              className={cn(
+                "flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-all hover:border-primary/50 hover:bg-muted/50",
+                copiedClipboardKind === "json" && "border-green-500 bg-green-500/5",
+              )}
+            >
+              <div
+                className={cn(
+                  "flex h-10 w-10 items-center justify-center rounded-lg",
+                  copiedClipboardKind === "json" ? "bg-green-500 text-white" : "bg-muted",
+                )}
+              >
+                {copiedClipboardKind === "json" ? "✓" : <FileJson className="h-5 w-5" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">{t("export.copyJson")}</p>
+                <p className="text-xs text-muted-foreground">{t("export.copyJsonHint")}</p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={onCopyDrawio}
+              className={cn(
+                "flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-all hover:border-primary/50 hover:bg-muted/50",
+                copiedClipboardKind === "drawio" && "border-green-500 bg-green-500/5",
+              )}
+            >
+              <div
+                className={cn(
+                  "flex h-10 w-10 items-center justify-center rounded-lg",
+                  copiedClipboardKind === "drawio" ? "bg-green-500 text-white" : "bg-muted",
+                )}
+              >
+                {copiedClipboardKind === "drawio" ? "✓" : <FileImage className="h-5 w-5" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">{t("export.copyDrawio")}</p>
+                <p className="text-xs text-muted-foreground">{t("export.copyDrawioHint")}</p>
+              </div>
+            </button>
+          </TabsContent>
+        </Tabs>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            {t("common.cancel")}
+          </Button>
+          {activeTab === "download" && (
+            <Button onClick={handleExport} disabled={totalSelected === 0} className="gap-2">
+              <Download className="h-4 w-4" />
+              {totalSelected > 1
+                ? t("export.downloadMultiple", { count: totalSelected })
+                : t("export.download")}
             </Button>
-          </div>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

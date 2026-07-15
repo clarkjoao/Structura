@@ -73,7 +73,6 @@ export function WorkspaceContent({
   handleDrillUp,
   handleCopyDrawio,
   handleCopyJson,
-  handleCopyStructurizr,
   handleExportFormats,
   onStartCollab,
   onCollabSessionEnded,
@@ -391,7 +390,6 @@ export function WorkspaceContent({
               onExport={handleExportFormats}
               onCopyDrawio={handleCopyDrawio}
               onCopyJson={handleCopyJson}
-              onCopyStructurizr={handleCopyStructurizr}
               onEmbedRequest={() => setEmbedModalOpen(true)}
               copiedClipboardKind={copiedClipboardKind}
             />

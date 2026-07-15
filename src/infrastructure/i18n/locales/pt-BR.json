@@ -236,21 +236,15 @@
     }
   },
   "import": {
-    "structurizrDsl": "Importar Structurizr DSL",
-    "structurizrError": "Não foi possível ler o arquivo DSL. Verifique o formato e tente novamente.",
-    "diagramJson": "Importar JSON do diagrama",
-    "jsonError": "Não foi possível importar o JSON do diagrama. Verifique o arquivo e tente novamente.",
+    "title": "Importar",
+    "description": "Importe um diagrama a partir de um arquivo JSON exportado do Structura.",
+    "format": "Formato",
+    "json": "JSON",
     "button": "Importar",
-    "modal": {
-      "title": "Importar diagrama",
-      "description": "Crie um diagrama novo a partir de um JSON do Structura ou de um arquivo Structurizr DSL.",
-      "jsonTab": "JSON Structura",
-      "structurizrTab": "Structurizr DSL",
-      "jsonHint": "Use um ficheiro .json exportado do Structura (cópia completa do diagrama).",
-      "structurizrHint": "Use um ficheiro .dsl ou .txt em formato Structurizr DSL.",
-      "dropzone": "Arraste um ficheiro para aqui ou escolha um ficheiro.",
-      "chooseFile": "Escolher ficheiro"
-    }
+    "hint": "Selecione um arquivo .json exportado do Structura.",
+    "dropzone": "Arraste um ficheiro para aqui ou escolha um ficheiro.",
+    "chooseFile": "Escolher ficheiro",
+    "jsonError": "Não foi possível importar o JSON do diagrama. Verifique o arquivo e tente novamente."
   },
   "folderTree": {
     "newFolderTitle": "Nova pasta",
@@ -1152,44 +1146,37 @@
     "unavailableDuringCollab": "Flows não estão disponíveis durante uma sessão de colaboração"
   },
   "export": {
-    "hub": {
-      "title": "Exportar diagrama",
-      "description": "Copie para a área de transferência, descarregue ficheiros ou configure incorporação.",
-      "toolbarButton": "Exportar",
-      "copySection": "Copiar para a área de transferência",
-      "copyDrawioHint": "Para diagrams.net / Draw.io",
-      "copyJsonHint": "Diagrama completo para cópia de segurança ou reimportação",
-      "copyStructurizrHint": "Ferramentas e documentação Structurizr",
-      "downloadSection": "Descarregar",
-      "embedHint": "iframe HTML e URLs de partilha"
+    "title": "Exportar",
+    "description": "Baixe seu diagrama em diferentes formatos ou copie para a área de transferência.",
+    "toolbarButton": "Exportar",
+    "tabs": {
+      "download": "Baixar",
+      "copy": "Copiar"
     },
-    "modal": {
-      "title": "Exportar arquivos",
-      "description": "Escolha um ou mais formatos para baixar deste diagrama.",
-      "confirm": "Exportar",
-      "singleHint": "Se você selecionar um formato, baixamos o arquivo diretamente.",
-      "zipHint": "Se você selecionar mais de um formato, baixamos tudo em um arquivo .zip.",
-      "error": "Não foi possível exportar o diagrama.",
-      "options": {
-        "json": {
-          "title": "JSON do Structura",
-          "description": "Exporta o diagrama completo para reimportar ou versionar."
-        },
-        "drawio": {
-          "title": "Draw.io",
-          "description": "Exporta um arquivo compatível com diagrams.net / Draw.io."
-        },
-        "structurizr": {
-          "title": "Structurizr DSL",
-          "description": "Exporta o modelo como DSL para interoperar com Structurizr."
-        },
-        "mermaid": {
-          "title": "Flows em Mermaid",
-          "description": "Exporta todos os flows do diagrama em Markdown com blocos Mermaid.",
-          "disabledDescription": "Nenhum flow disponível neste diagrama para exportar em Mermaid."
-        }
-      }
+    "downloadHint": "Selecione um ou mais formatos para baixar.",
+    "copyHint": "Copie diretamente para sua área de transferência.",
+    "options": {
+      "json": {
+        "title": "JSON",
+        "description": "Backup completo do diagrama — pode ser importado novamente"
+      },
+      "drawio": {
+        "title": "Draw.io",
+        "description": "Para diagrams.net, Lucidchart ou ferramentas similares"
+      },
+      "mermaid": {
+        "title": "Mermaid",
+        "description": "Exportar flows como Markdown com diagramas Mermaid"
+      },
+      "recommended": "Recomendado"
     },
+    "plugins": "Outros formatos",
+    "copyJson": "Copiar JSON",
+    "copyJsonHint": "Diagrama completo — cole em qualquer lugar para backup",
+    "copyDrawio": "Copiar Draw.io",
+    "copyDrawioHint": "Cole em diagrams.net ou Lucidchart",
+    "download": "Baixar",
+    "downloadMultiple": "Baixar {{count}} arquivos",
     "embed": {
       "title": "Incorporar diagrama",
       "menuItem": "Embed (iframe)",
@@ -1201,10 +1188,7 @@
       },
       "urlTooLong": "URL grande — recomendamos usar Via código"
     },
-    "copyAsJson": "Copiar como JSON",
-    "copyAsJsonDone": "JSON copiado!",
-    "copyAsStructurizr": "Copiar como Structurizr DSL",
-    "copyStructurizrError": "Não foi possível copiar o DSL Structurizr."
+    "error": "Não foi possível exportar o diagrama."
   },
   "toolbar": {
     "shareExport": "Exportar",

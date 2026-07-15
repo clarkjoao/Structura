@@ -29,22 +29,31 @@ export function validateDiagramFile(raw: unknown): ValidationResult {
 
   const obj = raw as Record<string, unknown>;
 
-  const requiredFields: Array<[string, string]> = [
-    ["id", "string"],
-    ["name", "string"],
-    ["level", "string"],
-    ["createdAt", "string"],
-    ["updatedAt", "string"],
-  ];
-
-  for (const [field, type] of requiredFields) {
-    if (typeof obj[field] !== type) {
+  const stringFields: Array<[string]> = ["id", "name", "level"];
+  for (const field of stringFields) {
+    if (typeof obj[field] !== "string") {
       return {
         valid: false,
-        reason: `Missing or invalid required field: "${field}" (expected ${type})`,
+        reason: `Missing or invalid required field: "${field}" (expected string)`,
         raw,
       };
     }
+  }
+
+  // createdAt and updatedAt can be either string or number (timestamps)
+  if (typeof obj.createdAt !== "string" && typeof obj.createdAt !== "number") {
+    return {
+      valid: false,
+      reason: 'Missing or invalid required field: "createdAt" (expected string or number)',
+      raw,
+    };
+  }
+  if (typeof obj.updatedAt !== "string" && typeof obj.updatedAt !== "number") {
+    return {
+      valid: false,
+      reason: 'Missing or invalid required field: "updatedAt" (expected string or number)',
+      raw,
+    };
   }
 
   const snapshot = obj.snapshot as Record<string, unknown> | undefined;

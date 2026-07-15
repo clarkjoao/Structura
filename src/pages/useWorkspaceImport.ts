@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import type { Diagram } from "@/features/diagram";
 import { useDiagramActions } from "@/features/diagram";
-import { importStructurizr } from "@/lib/export-service";
 import { validateDiagramFile } from "@/infrastructure/persistence/validateWorkspaceFile";
 
 interface UseWorkspaceImportOptions {
@@ -49,19 +48,5 @@ export function useWorkspaceImport(options: UseWorkspaceImportOptions = {}) {
     [finishImport, t],
   );
 
-  const importDslText = useCallback(
-    (text: string): boolean => {
-      try {
-        const diagram = importStructurizr(text);
-        finishImport(diagram);
-        return true;
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : t("import.structurizrError"));
-        return false;
-      }
-    },
-    [finishImport, t],
-  );
-
-  return { importJsonText, importDslText };
+  return { importJsonText };
 }

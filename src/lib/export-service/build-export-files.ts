@@ -3,9 +3,8 @@ import { exportFilenameSlug } from "@/features/diagram";
 import { exportDrawio } from "./export-drawio";
 import { exportJSON } from "./export-json";
 import { exportMermaid } from "./export-mermaid";
-import { exportStructurizr } from "./export-structurizr";
 
-export type DiagramExportFormat = "json" | "drawio" | "structurizr" | "mermaid";
+export type DiagramExportFormat = "json" | "drawio" | "mermaid";
 
 export interface ExportArtifact {
   filename: string;
@@ -23,14 +22,12 @@ interface BuildDiagramExportFilesArgs {
 const FORMAT_EXTENSION: Record<DiagramExportFormat, string> = {
   json: "json",
   drawio: "drawio",
-  structurizr: "dsl",
   mermaid: "md",
 };
 
 const FORMAT_MIME: Record<DiagramExportFormat, string> = {
   json: "application/json",
   drawio: "application/xml",
-  structurizr: "text/plain",
   mermaid: "text/markdown",
 };
 
@@ -66,8 +63,6 @@ function buildExportContent(
       return exportJSON(diagram);
     case "drawio":
       return exportDrawio(diagram, serviceCatalog);
-    case "structurizr":
-      return exportStructurizr(diagram);
     case "mermaid":
       // Flows are defined against the trunk snapshot; scene-filtered graphs can omit
       // connections still referenced by flow steps, which would yield an empty diagram.

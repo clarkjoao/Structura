@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Upload } from "lucide-react";
+import { Upload, FileJson } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,15 +11,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useWorkspaceImport } from "@/pages/useWorkspaceImport";
 import type { ImporterContribution } from "@/features/plugins/plugin.types";
 import { usePluginIoContributions } from "@/features/plugins/use-plugin-contributions";
 import { resolveLocalizedText } from "@/features/plugins/localized-text";
 import { runPluginImport } from "@/features/plugins/run-plugin-import";
-
-type ImportModalTab = "json" | "structurizr" | `plugin:${string}`;
 
 interface ImportModalProps {
   open: boolean;
@@ -39,24 +36,20 @@ export function ImportModal({
   allowPluginImporters = false,
 }: ImportModalProps) {
   const { t, i18n } = useTranslation();
-  const { importJsonText, importDslText } = useWorkspaceImport({
+  const { importJsonText } = useWorkspaceImport({
     targetFolderId,
   });
   const { importers } = usePluginIoContributions();
   const pluginImporters = allowPluginImporters ? importers : [];
-  const [tab, setTab] = useState<ImportModalTab>("json");
+  const [activeImporter, setActiveImporter] = useState<ImporterContribution | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) return;
-    setTab("json");
+    setActiveImporter(null);
     setIsDragging(false);
   }, [open]);
-
-  const activeImporter: ImporterContribution | undefined = tab.startsWith("plugin:")
-    ? pluginImporters.find((importer) => `plugin:${importer.id}` === tab)
-    : undefined;
 
   const runImporterForFile = useCallback(
     async (importer: ImporterContribution, file: File): Promise<boolean> => {
@@ -86,20 +79,20 @@ export function ImportModal({
     [t],
   );
 
-  const runImportForTab = useCallback(
+  const handleFile = useCallback(
     async (file: File) => {
       let ok: boolean;
       if (activeImporter) {
         ok = await runImporterForFile(activeImporter, file);
       } else {
         const text = await file.text();
-        ok = tab === "json" ? importJsonText(text) : importDslText(text);
+        ok = importJsonText(text);
       }
       if (ok) {
         onOpenChange(false);
       }
     },
-    [activeImporter, importDslText, importJsonText, onOpenChange, runImporterForFile, tab],
+    [activeImporter, importJsonText, onOpenChange, runImporterForFile],
   );
 
   const handleFileChange = useCallback(
@@ -107,9 +100,9 @@ export function ImportModal({
       const file = event.target.files?.[0];
       event.target.value = "";
       if (!file) return;
-      void runImportForTab(file);
+      void handleFile(file);
     },
-    [runImportForTab],
+    [handleFile],
   );
 
   const handleDrop = useCallback(
@@ -118,9 +111,9 @@ export function ImportModal({
       setIsDragging(false);
       const file = event.dataTransfer.files?.[0];
       if (!file) return;
-      void runImportForTab(file);
+      void handleFile(file);
     },
-    [runImportForTab],
+    [handleFile],
   );
 
   const handleDragOver = useCallback((event: React.DragEvent) => {
@@ -133,48 +126,92 @@ export function ImportModal({
     setIsDragging(false);
   }, []);
 
-  const acceptForTab = activeImporter
+  const acceptTypes = activeImporter
     ? activeImporter.extensions.map((extension) => `.${extension}`).join(",")
-    : tab === "json"
-      ? ".json,application/json"
-      : ".dsl,.txt";
+    : ".json,application/json";
 
-  const hintForTab = activeImporter
-    ? t("plugins.importHint", { extensions: acceptForTab })
-    : tab === "json"
-      ? t("import.modal.jsonHint")
-      : t("import.modal.structurizrHint");
+  const hintText = activeImporter
+    ? t("plugins.importHint", { extensions: acceptTypes })
+    : t("import.hint");
 
-  const tabColumns = 2 + pluginImporters.length;
+  const hasPlugins = pluginImporters.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{t("import.modal.title")}</DialogTitle>
-          <DialogDescription>{t("import.modal.description")}</DialogDescription>
+          <DialogTitle className="flex items-center gap-2">
+            <Upload className="h-5 w-5" />
+            {t("import.title")}
+          </DialogTitle>
+          <DialogDescription>{t("import.description")}</DialogDescription>
         </DialogHeader>
 
-        <Tabs
-          value={tab}
-          onValueChange={(value) => setTab(value as ImportModalTab)}
-          className="w-full"
-        >
-          <TabsList
-            className="grid w-full"
-            style={{ gridTemplateColumns: `repeat(${tabColumns}, minmax(0, 1fr))` }}
-          >
-            <TabsTrigger value="json">{t("import.modal.jsonTab")}</TabsTrigger>
-            <TabsTrigger value="structurizr">{t("import.modal.structurizrTab")}</TabsTrigger>
-            {pluginImporters.map((importer) => (
-              <TabsTrigger key={importer.id} value={`plugin:${importer.id}`}>
-                {resolveLocalizedText(importer.label, i18n.language)}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        {hasPlugins && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {t("import.format")}
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveImporter(null)}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg border p-3 text-left transition-all",
+                  !activeImporter
+                    ? "border-primary bg-primary/5 ring-1 ring-primary"
+                    : "border-border hover:border-primary/50 hover:bg-muted/50",
+                )}
+              >
+                <div
+                  className={cn(
+                    "flex h-9 w-9 items-center justify-center rounded-lg",
+                    !activeImporter ? "bg-primary text-primary-foreground" : "bg-muted",
+                  )}
+                >
+                  <FileJson className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{t("import.json")}</p>
+                  <p className="text-xs text-muted-foreground">.json</p>
+                </div>
+              </button>
 
-        <p className="mt-4 text-xs text-muted-foreground">{hintForTab}</p>
+              {pluginImporters.map((importer) => (
+                <button
+                  key={importer.id}
+                  type="button"
+                  onClick={() => setActiveImporter(importer)}
+                  className={cn(
+                    "flex items-center gap-2 rounded-lg border p-3 text-left transition-all",
+                    activeImporter?.id === importer.id
+                      ? "border-primary bg-primary/5 ring-1 ring-primary"
+                      : "border-border hover:border-primary/50 hover:bg-muted/50",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "flex h-9 w-9 items-center justify-center rounded-lg",
+                      activeImporter?.id === importer.id ? "bg-primary text-primary-foreground" : "bg-muted",
+                    )}
+                  >
+                    <FileJson className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">
+                      {resolveLocalizedText(importer.label, i18n.language)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {importer.extensions.map((e) => `.${e}`).join(", ")}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <p className="text-xs text-muted-foreground">{hintText}</p>
 
         <button
           type="button"
@@ -188,19 +225,19 @@ export function ImportModal({
           )}
         >
           <Upload className="h-8 w-8 text-muted-foreground" aria-hidden />
-          <p className="text-sm text-muted-foreground">{t("import.modal.dropzone")}</p>
+          <p className="text-sm text-muted-foreground">{t("import.dropzone")}</p>
           <span className="mt-1 rounded-md bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground">
-            {t("import.modal.chooseFile")}
+            {t("import.chooseFile")}
           </span>
         </button>
 
         <input
           ref={fileInputRef}
           type="file"
-          accept={acceptForTab}
+          accept={acceptTypes}
           className="hidden"
           tabIndex={-1}
-          aria-label={t("import.modal.chooseFile")}
+          aria-label={t("import.chooseFile")}
           onChange={handleFileChange}
         />
 

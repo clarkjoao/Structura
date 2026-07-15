@@ -37,14 +37,13 @@ describe("buildDiagramExportFiles", () => {
       diagram,
       flows: [],
       serviceCatalog: {},
-      formats: ["json", "drawio", "structurizr"],
+      formats: ["json", "drawio"],
     });
 
     expect(baseName).toBe("payments-platform");
     expect(files.map((file) => file.filename)).toEqual([
       "payments-platform.json",
       "payments-platform.drawio",
-      "payments-platform.dsl",
     ]);
   });
 

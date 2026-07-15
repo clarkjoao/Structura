@@ -1,7 +1,4 @@
-import type { DiagramExportFormat } from "@/lib/export-service";
-import type { Flow } from "@/features/diagram";
-
-export type CopiedClipboardKind = "drawio" | "json" | "structurizr";
+export type CopiedClipboardKind = "drawio" | "json";
 
 export interface WorkspaceContentProps {
   showFlows: boolean;
@@ -16,7 +13,6 @@ export interface WorkspaceContentProps {
   handleDrillUp: () => void;
   handleCopyDrawio: () => void;
   handleCopyJson: () => void;
-  handleCopyStructurizr: () => void;
   handleExportFormats: (formats: DiagramExportFormat[], pluginExporterIds: string[]) => void;
   onStartCollab: () => void;
   onCollabSessionEnded?: () => void;
