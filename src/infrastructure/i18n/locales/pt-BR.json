@@ -130,7 +130,7 @@
     "services": "Serviços",
     "brandSuffix": "Architecture",
     "plugins": "Plugins",
-    "walkthroughs": "Walkthroughs",
+    "walkthroughs": "Jornadas",
     "journeys": "Jornadas"
   },
   "theme": {
@@ -1617,21 +1617,21 @@
     "importHint": "Importe um arquivo ({{extensions}}) para o diagrama atual através deste plugin."
   },
   "walkthroughs": {
-    "title": "Walkthroughs",
-    "new": "Novo walkthrough",
-    "empty": "Nenhum walkthrough ainda",
-    "emptyHint": "Crie seu primeiro walkthrough...",
+    "title": "Jornadas",
+    "new": "Nova jornada",
+    "empty": "Nenhuma jornada ainda",
+    "emptyHint": "Crie sua primeira jornada...",
     "noDomain": "Sem domínio",
     "stepsCount": "{count} etapas",
     "diagramsCount": "{count} diagramas",
-    "deleteConfirm": "Remover este walkthrough?",
-    "deleteConfirmTitle": "Remover walkthrough?",
-    "deleteConfirmDescription": "\"{name}\" e todos os seus steps serão removidos permanentemente. Esta ação não pode ser desfeita.",
+    "deleteConfirm": "Remover esta jornada?",
+    "deleteConfirmTitle": "Remover jornada?",
+    "deleteConfirmDescription": "\"{name}\" e todos os seus passos serão removidos permanentemente. Esta ação não pode ser desfeita.",
     "duplicate": "Duplicar",
-    "duplicated": "Walkthrough duplicado.",
+    "duplicated": "Jornada duplicada.",
     "duplicateName": "{name} (cópia)",
     "create": {
-      "title": "Novo walkthrough",
+      "title": "Nova jornada",
       "name": "Nome",
       "namePlaceholder": "Ex: Checkout PIX",
       "description": "Descrição",
@@ -1639,7 +1639,7 @@
       "domain": "Domínio",
       "domainPlaceholder": "Ex: Pagamentos",
       "tags": "Tags",
-      "submit": "Criar walkthrough"
+      "submit": "Criar jornada"
     },
     "step": {
       "label": "Label",
@@ -1656,13 +1656,13 @@
       "detailsTitle": "Detalhes"
     },
     "badge": {
-      "tooltip": "Presente em walkthroughs: {names}"
+      "tooltip": "Presente em jornadas: {names}"
     },
     "inDiagram": {
-      "title": "Walkthroughs",
-      "empty": "Nenhum walkthrough passa por este diagrama",
-      "stepsHere": "{count} steps aqui",
-      "openEditor": "Abrir editor do walkthrough"
+      "title": "Jornadas",
+      "empty": "Nenhuma jornada passa por este diagrama",
+      "stepsHere": "{count} passos aqui",
+      "openEditor": "Abrir editor da jornada"
     },
     "editor": {
       "canvasHint": "Durante a gravação do fluxo, clique nos elementos do diagrama para registrar passos",
@@ -1705,7 +1705,7 @@
       "diagramSearchPlaceholder": "Buscar diagramas…",
       "diagramFlowCount_one": "{count} fluxo",
       "diagramFlowCount_other": "{count} fluxos",
-      "backToList": "Voltar para walkthroughs",
+      "backToList": "Voltar para jornadas",
       "closeVisual": "Fechar visualização",
       "collapseDescription": "Recolher descrição",
       "expandDescription": "Expandir descrição",
@@ -1724,9 +1724,9 @@
       "flowLockedDuringPlayback": "Não é possível alterar flow durante reprodução",
       "nextStep": "Próximo step",
       "prevStep": "Step anterior",
-      "journeyCompleted": "Walkthrough concluído",
-      "walkthroughCompleted": "Walkthrough concluído",
-      "playJourney": "Reproduzir walkthrough"
+      "journeyCompleted": "Jornada concluída",
+      "walkthroughCompleted": "Jornada concluída",
+      "playJourney": "Reproduzir jornada"
     },
     "presentation": {
       "completed": "Concluído",
@@ -1736,14 +1736,14 @@
     },
     "player": {
       "stepProgress": "{current} / {total}",
-      "exit": "Sair do walkthrough",
-      "recordingLabel": "Gravando step: {label}",
+      "exit": "Sair da jornada",
+      "recordingLabel": "Gravando passo: {label}",
       "finalizeRecording": "Finalizar",
       "cancelRecording": "Cancelar",
-      "walkthroughNotFound": "Walkthrough não encontrado.",
-      "backToList": "Voltar para walkthroughs",
-      "walkthroughCompleted": "✓ Walkthrough concluído",
-      "playWalkthrough": "Reproduzir walkthrough"
+      "walkthroughNotFound": "Jornada não encontrada.",
+      "backToList": "Voltar para jornadas",
+      "walkthroughCompleted": "✓ Jornada concluída",
+      "playWalkthrough": "Reproduzir jornada"
     }
   }
 }
