@@ -126,11 +126,16 @@ export function FileSystemStatus({ compact = false }: FileSystemStatusProps = {}
     pendingDisconnect,
     scanResult,
     pendingMerge,
+    mergeInProgress,
+    overwriteInProgress,
+    pushInProgress,
     confirmMerge,
     confirmOverwrite,
     confirmPushToEmptyFolder,
     cancelMerge,
   } = useFileSystemStorage();
+
+  const isMergeDialogProcessing = mergeInProgress || overwriteInProgress || pushInProgress;
 
   useEffect(() => {
     registerConnectFolderRequestHandler(() => {
@@ -190,25 +195,41 @@ export function FileSystemStatus({ compact = false }: FileSystemStatusProps = {}
               <span className={folderSyncCaption.className}>{folderSyncCaption.text}</span>
             </div>
           )}
-          {!compact && (
-            <>
+          <Tooltip>
+            <TooltipTrigger asChild>
               <button
+                type="button"
                 onClick={syncFromFolder}
                 disabled={syncing}
-                className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-                title={t("filesystem.syncPullTitle")}
+                className="flex h-8 w-8 items-center justify-center rounded-md
+                  text-muted-foreground hover:text-foreground hover:bg-muted/50
+                  transition-colors disabled:opacity-50"
+                aria-label={t("filesystem.syncPullTitle")}
               >
                 <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
               </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" align="end">
+              {t("filesystem.syncPullTitle")}
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
               <button
+                type="button"
                 onClick={requestDisconnect}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-                title={t("filesystem.disconnectTitle")}
+                className="flex h-8 w-8 items-center justify-center rounded-md
+                  text-muted-foreground hover:text-foreground hover:bg-muted/50
+                  transition-colors"
+                aria-label={t("filesystem.disconnectTitle")}
               >
                 <FolderX className="h-4 w-4" />
               </button>
-            </>
-          )}
+            </TooltipTrigger>
+            <TooltipContent side="bottom" align="end">
+              {t("filesystem.disconnectTitle")}
+            </TooltipContent>
+          </Tooltip>
         </div>
       )}
 
@@ -337,6 +358,7 @@ export function FileSystemStatus({ compact = false }: FileSystemStatusProps = {}
             scanResult.totalFilesScanned === 0 &&
             localDiagramCount > 0
           }
+          isProcessing={isMergeDialogProcessing}
           onMerge={confirmMerge}
           onOverwriteLocal={confirmOverwrite}
           onConfirmEmptyFolderPush={confirmPushToEmptyFolder}

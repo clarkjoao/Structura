@@ -6,7 +6,7 @@ import {
   type IconDefinition,
 } from "@/features/diagram";
 import { useWalkthroughsStore } from "@/features/walkthroughs";
-import { fileSystemAdapter, type WorkspacePayload } from "./FileSystemAdapter";
+import { fileSystemAdapter, type WorkspacePayload, type WorkspaceScanResult } from "./FileSystemAdapter";
 import { clearLocalStorageDiagramSyncTimestamp } from "./localStorageSyncTimestamp";
 import { clearFolderSyncTimestamp, recordFolderSyncSuccess } from "./folderSyncTimestamp";
 import { defaultStorage } from "./LocalStorageAdapter";
@@ -175,9 +175,19 @@ async function doReconnect(): Promise<boolean> {
       const memLatest = latestMsFromStore(current);
       const fsLatest = latestMsFromWorkspacePayload(workspace);
       if (memLatest > fsLatest) {
-        const flushed = await flushWorkspaceToConnectedFolder(current);
-        if (flushed) {
-          await clearLocalCache();
+        // Conflict: in-memory store has newer edits than what's on disk.
+        // Previously this path silently flushed the in-memory state to the
+        // folder, which could destroy work the user did offline. Instead,
+        // hand the scan off to the UI so the same merge/overwrite dialog
+        // used during a fresh connect can surface the conflict.
+        try {
+          const scan = await fileSystemAdapter.scanWorkspace();
+          resolveBootScan(scan);
+        } catch (error) {
+          console.warn(
+            "[Structura] boot conflict scan failed; falling back to fresh load",
+            error,
+          );
         }
         _reconnected = true;
         return true;
@@ -225,6 +235,32 @@ export function bootFileSystem(): Promise<boolean> {
     _reconnecting = doReconnect();
   }
   return _reconnecting;
+}
+
+/**
+ * Bridge between the boot-time conflict path in {@link doReconnect} and the UI.
+ *
+ * When boot detects that the in-memory store has newer diagrams than the
+ * folder, we cannot silently flush (it would overwrite offline edits without
+ * confirmation). Instead, {@link doReconnect} calls {@link resolveBootScan}
+ * with the scanned folder contents; {@link awaitBootScan} exposes that scan
+ * to {@link useFileSystemStorage}, which surfaces it via the same
+ * WorkspaceMergeDialog used during a fresh connect.
+ *
+ * Only one boot-conflict can be in flight at a time. A second caller before
+ * the first resolves will see its promise resolved with `null` immediately.
+ */
+let _bootScanResolver: ((scan: WorkspaceScanResult | null) => void) | null = null;
+
+export function awaitBootScan(): Promise<WorkspaceScanResult | null> {
+  return new Promise((resolve) => {
+    _bootScanResolver = resolve;
+  });
+}
+
+export function resolveBootScan(scan: WorkspaceScanResult | null): void {
+  _bootScanResolver?.(scan);
+  _bootScanResolver = null;
 }
 
 let _syncUnsub: (() => void) | null = null;
