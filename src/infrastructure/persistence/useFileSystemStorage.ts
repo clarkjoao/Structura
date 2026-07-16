@@ -77,6 +77,7 @@ export function useFileSystemStorage() {
   const [mergeInProgress, setMergeInProgress] = useState(false);
   const [overwriteInProgress, setOverwriteInProgress] = useState(false);
   const [pushInProgress, setPushInProgress] = useState(false);
+  const [disconnectInProgress, setDisconnectInProgress] = useState(false);
 
   const clearStore = useCallback(() => {
     useDiagramStore.setState({
@@ -440,6 +441,8 @@ export function useFileSystemStorage() {
   }, []);
 
   const confirmDisconnectWithBackup = useCallback(async () => {
+    if (disconnectInProgress) return;
+    setDisconnectInProgress(true);
     try {
       // buildPersistStoragePayload / partialize omit clipboard; custom templates use a separate storage key.
       const state = useDiagramStore.getState();
@@ -507,8 +510,10 @@ export function useFileSystemStorage() {
       toast.error(t("filesystem.backupFailedGeneric"));
       setStatus("error");
       setPendingDisconnect(false);
+    } finally {
+      setDisconnectInProgress(false);
     }
-  }, [performDisconnect, t]);
+  }, [performDisconnect, t, disconnectInProgress]);
 
   const confirmDisconnectWithoutBackup = useCallback(async () => {
     clearStore();
@@ -594,6 +599,7 @@ export function useFileSystemStorage() {
     mergeInProgress,
     overwriteInProgress,
     pushInProgress,
+    disconnectInProgress,
     confirmMerge,
     confirmOverwrite,
     confirmPushToEmptyFolder,

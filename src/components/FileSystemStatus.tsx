@@ -124,6 +124,7 @@ export function FileSystemStatus({ compact = false }: FileSystemStatusProps = {}
     confirmDisconnectWithoutBackup,
     cancelDisconnect,
     pendingDisconnect,
+    disconnectInProgress,
     scanResult,
     pendingMerge,
     mergeInProgress,
@@ -369,6 +370,8 @@ export function FileSystemStatus({ compact = false }: FileSystemStatusProps = {}
       {pendingDisconnect && (
         <DisconnectConfirmDialog
           folderName={folderName}
+          localDiagramCount={localDiagramCount}
+          isProcessing={disconnectInProgress}
           onKeepCopy={confirmDisconnectWithBackup}
           onDisconnectOnly={confirmDisconnectWithoutBackup}
           onCancel={cancelDisconnect}

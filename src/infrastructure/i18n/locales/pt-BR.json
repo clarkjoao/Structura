@@ -357,9 +357,18 @@
   },
   "disconnect": {
     "title": "Desconectar pasta",
+    "subtitle": "Você está prestes a desconectar a sincronização com esta pasta.",
     "messageNamed": "Deseja desconectar \"{{name}}\"?",
     "messageGeneric": "Deseja desconectar a pasta local?",
     "explanation": "Os dados atuais estão apenas no seu filesystem (não foram salvos no navegador). Quer manter uma cópia no navegador (localStorage) antes de desconectar?",
+    "localCopyBadgeTitle": "Backup no navegador",
+    "localCopyBadgePresent": "Há {{count}} diagrama(s) já salvos no navegador.",
+    "localCopyBadgeMissing": "Nada está salvo no navegador ainda. Se desconectar sem salvar, seus dados existirão apenas na pasta.",
+    "cancelHint": "Fecha esta janela. A pasta continua conectada.",
+    "disconnectOnlyHint": "Desconecta a pasta. Diagramas na pasta ficam intactos no disco; o app volta a trabalhar só com o navegador.",
+    "disconnectOnlyHintNoCopy": "⚠ Desconecta a pasta. Como não há cópia no navegador, você só conseguirá acessar esses dados reconectando a mesma pasta depois.",
+    "keepCopyHint": "Salva uma cópia de todos os diagramas no navegador (localStorage) e só então desconecta a pasta. Você poderá continuar editando offline.",
+    "keepCopyHintNoCopy": "Salva uma cópia de todos os diagramas no navegador e desconecta a pasta. Recomendado.",
     "keepCopyTitle": "Salvar estado atual no navegador e depois desconectar a pasta",
     "keepCopy": "Salvar no navegador e desconectar",
     "disconnectOnly": "Desconectar sem salvar"

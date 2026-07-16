@@ -357,9 +357,18 @@
   },
   "disconnect": {
     "title": "Disconnect folder",
+    "subtitle": "You are about to disconnect sync with this folder.",
     "messageNamed": "Disconnect \"{{name}}\"?",
     "messageGeneric": "Disconnect the local folder?",
     "explanation": "Current data is only on your filesystem (not saved in the browser). Keep a copy in the browser (localStorage) before disconnecting?",
+    "localCopyBadgeTitle": "Browser backup",
+    "localCopyBadgePresent": "{{count}} diagram(s) are already saved in the browser.",
+    "localCopyBadgeMissing": "Nothing is saved in the browser yet. If you disconnect without saving, your data will only exist in the folder.",
+    "cancelHint": "Closes this window. The folder stays connected.",
+    "disconnectOnlyHint": "Disconnects the folder. Diagrams in the folder stay intact on disk; the app falls back to browser-only editing.",
+    "disconnectOnlyHintNoCopy": "⚠ Disconnects the folder. Since there's no browser copy, you'll only be able to access this data by reconnecting the same folder later.",
+    "keepCopyHint": "Saves a copy of all diagrams in the browser (localStorage) and only then disconnects the folder. You can keep editing offline.",
+    "keepCopyHintNoCopy": "Saves a copy of all diagrams in the browser and disconnects the folder. Recommended.",
     "keepCopyTitle": "Save current state in the browser, then disconnect the folder",
     "keepCopy": "Save in browser and disconnect",
     "disconnectOnly": "Disconnect without saving"
