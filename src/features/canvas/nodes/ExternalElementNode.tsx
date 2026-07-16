@@ -3,6 +3,7 @@ import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { ArrowUpRight, ExternalLink } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useCollabHighlight } from "@/features/collaboration";
+import { colorWithOpacity } from "@/lib/utils";
 
 export type ExternalElementNodeData = {
   elementId: string;
@@ -55,9 +56,9 @@ const ExternalElementNode = memo(
         style={
           hasCustomColor
             ? {
-                backgroundColor: d.customColor + "33", // 20% opacity
+                backgroundColor: colorWithOpacity(d.customColor!, 0.2),
                 borderColor: d.customColor,
-                boxShadow: isSelected ? `0 0 0 2px ${d.customColor}40` : undefined,
+                boxShadow: isSelected ? `0 0 0 2px ${colorWithOpacity(d.customColor!, 0.25)}` : undefined,
               }
             : undefined
         }

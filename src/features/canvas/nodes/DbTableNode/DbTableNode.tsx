@@ -219,20 +219,8 @@ const DbTableNode = memo(({ data: d, selected }: NodeProps<Node<DbTableNodeData>
         className={cn(
           "relative w-full h-full rounded-md flex items-center gap-2 px-3 transition-all duration-200 overflow-hidden select-none",
           "bg-card text-card-foreground",
-          !d.customColor && isActive && selectedRing,
-          !d.customColor && !isActive && unselectedShadow,
+          isActive ? selectedRing : unselectedShadow,
         )}
-        style={
-          d.customColor
-            ? {
-                backgroundColor: d.customColor + "33",
-                borderWidth: 2,
-                borderStyle: "solid",
-                borderColor: d.customColor,
-                boxShadow: isActive ? `0 0 0 2px ${d.customColor}40` : undefined,
-              }
-            : undefined
-        }
       >
         <DbTableIncomingHandle elementId={d.elementId} />
         {collabHighlight ? (
@@ -279,21 +267,9 @@ const DbTableNode = memo(({ data: d, selected }: NodeProps<Node<DbTableNodeData>
       className={cn(
         "relative flex flex-col overflow-visible rounded-md border select-none",
         "bg-card text-card-foreground transition-shadow duration-200",
-        !d.customColor && isActive && selectedRing,
-        !d.customColor && !isActive && unselectedShadow,
+        isActive ? selectedRing : unselectedShadow,
       )}
-      style={
-        d.customColor
-          ? {
-              width: tableW,
-              height: nodeH,
-              minWidth: tableW,
-              backgroundColor: d.customColor + "33",
-              borderColor: d.customColor,
-              boxShadow: isActive ? `0 0 0 2px ${d.customColor}40` : undefined,
-            }
-          : { width: tableW, height: nodeH, minWidth: tableW }
-      }
+      style={{ width: tableW, height: nodeH, minWidth: tableW }}
     >
       <DbTableIncomingHandle elementId={d.elementId} />
       {collabHighlight ? (
@@ -311,6 +287,12 @@ const DbTableNode = memo(({ data: d, selected }: NodeProps<Node<DbTableNodeData>
         className="relative flex items-center gap-2 px-3 bg-muted/70 border-b border-border shrink-0 rounded-t-md"
         style={{ height: HEADER_H }}
       >
+        {d.customColor && (
+          <span
+            className="w-2.5 h-2.5 rounded-full shrink-0"
+            style={{ backgroundColor: d.customColor }}
+          />
+        )}
         <Database className="h-3.5 w-3.5 shrink-0 text-muted-foreground" strokeWidth={1.5} />
         <span className="text-xs font-semibold truncate flex-1 font-mono">
           {d.tableName || t("dbTable.unnamedTable")}

@@ -30,26 +30,15 @@ const ApiGroupNode = memo(({ data: d, selected }: NodeProps<Node<ApiGroupNodeDat
   const { t } = useTranslation();
   const isSelected = selected || d.isSelected;
   const collabHighlight = useCollabHighlight(d.elementId);
-  const hasCustomColor = !!d.customColor;
 
   return (
     <div
       className={`w-full h-full rounded-xl border-2 relative overflow-hidden transition-all duration-200 ${
-        !hasCustomColor && isSelected
+        isSelected
           ? "border-primary ring-2 ring-primary/20"
-          : !hasCustomColor
-            ? "border-border bg-card/40 backdrop-blur-sm"
-            : ""
+          : "border-border bg-card/40 backdrop-blur-sm"
       }`}
-      style={
-        hasCustomColor
-          ? {
-              backgroundColor: d.customColor + "33",
-              borderColor: d.customColor,
-              boxShadow: isSelected ? `0 0 0 2px ${d.customColor}40` : undefined,
-            }
-          : { borderColor: `${PROTOCOL_COLORS[d.protocol]}66` }
-      }
+      style={{ borderColor: isSelected ? undefined : `${PROTOCOL_COLORS[d.protocol]}66` }}
     >
       {collabHighlight && (
         <div
@@ -66,6 +55,12 @@ const ApiGroupNode = memo(({ data: d, selected }: NodeProps<Node<ApiGroupNodeDat
         className="px-3 py-2.5 border-b border-border bg-card/80 rounded-t-xl flex flex-col justify-center"
       >
         <div className="flex items-center gap-2">
+          {d.customColor && (
+            <span
+              className="w-2.5 h-2.5 rounded-full shrink-0"
+              style={{ backgroundColor: d.customColor }}
+            />
+          )}
           <span
             className="text-[10px] font-bold rounded px-1.5 py-0.5 text-white shrink-0"
             style={{ backgroundColor: PROTOCOL_COLORS[d.protocol] }}

@@ -26,7 +26,7 @@ import {
 } from "@/features/diagram";
 import { getNotePresetPair } from "@/features/canvas/panels/ElementPanel/components/colorPresets";
 import { IconPickerModal } from "@/features/canvas/components/icons/IconPickerModal";
-import { OpacitySlider } from "./OpacitySlider";
+import { OpacityControl } from "./OpacityControl";
 import { ColorPicker, type ColorPickerGroup } from "./ColorPicker";
 
 interface NodeQuickActionsBarProps {
@@ -126,6 +126,10 @@ export function NodeQuickActionsBar({
     [nodeId, updateComponent],
   );
 
+  const handleOpacityReset = useCallback(() => {
+    updateComponent(nodeId, { panelOpacity: undefined });
+  }, [nodeId, updateComponent]);
+
   const handlePickIcon = useCallback(
     (selectedIconId: string) => {
       const previousId = component?.customIconId;
@@ -211,7 +215,7 @@ export function NodeQuickActionsBar({
 
   if (!component) return null;
 
-  const hasOpacity = "panelOpacity" in component;
+  const hasOpacity = isPanelComponent(component);
   const hasIcon = "customIconId" in component;
   // Show color picker only for components that support color
   const hasColor = supportsColor(component);
@@ -250,12 +254,13 @@ export function NodeQuickActionsBar({
             </div>
           )}
 
-          {/* Opacity slider — only for panel components */}
+          {/* Opacity control — only for panel components */}
           {hasOpacity && (
             <div className="mx-1 border-l border-border pl-1">
-              <OpacitySlider
+              <OpacityControl
                 value={component.panelOpacity ?? 100}
                 onChange={handleOpacityChange}
+                onReset={handleOpacityReset}
               />
             </div>
           )}

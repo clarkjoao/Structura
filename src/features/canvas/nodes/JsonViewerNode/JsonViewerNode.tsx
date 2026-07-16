@@ -207,21 +207,14 @@ const JsonViewerNode = memo(
           className={cn(
             "flex flex-col overflow-hidden rounded-md border",
             "bg-card text-card-foreground transition-shadow duration-200",
-            !diagramNodeData.customColor && isActive && "border-primary ring-2 ring-primary/30 shadow-lg",
-            !diagramNodeData.customColor && !isActive && "border-border shadow-md hover:shadow-lg",
+            isActive
+              ? "border-primary ring-2 ring-primary/30 shadow-lg"
+              : "border-border shadow-md hover:shadow-lg",
           )}
           style={
-            diagramNodeData.customColor
-              ? {
-                  width: isExpanded ? "100%" : COLLAPSED_W,
-                  height: isExpanded ? "100%" : COLLAPSED_H,
-                  backgroundColor: diagramNodeData.customColor + "33",
-                  borderColor: diagramNodeData.customColor,
-                  boxShadow: isActive ? `0 0 0 2px ${diagramNodeData.customColor}40` : undefined,
-                }
-              : isExpanded
-                ? { width: "100%", height: "100%" }
-                : { width: COLLAPSED_W, height: COLLAPSED_H }
+            isExpanded
+              ? { width: "100%", height: "100%" }
+              : { width: COLLAPSED_W, height: COLLAPSED_H }
           }
         >
           {diagramNodeData.compareBadges && (
@@ -243,6 +236,12 @@ const JsonViewerNode = memo(
               isExpanded ? "cursor-grab active:cursor-grabbing h-9" : "h-8",
             )}
           >
+            {diagramNodeData.customColor && (
+              <span
+                className="w-2.5 h-2.5 rounded-full shrink-0"
+                style={{ backgroundColor: diagramNodeData.customColor }}
+              />
+            )}
             <Braces className="h-3.5 w-3.5 shrink-0 text-muted-foreground" strokeWidth={1.5} />
             <span className="text-xs font-semibold truncate flex-1">
               {diagramNodeData.name || t("jsonViewer.unnamed")}
