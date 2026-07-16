@@ -15,13 +15,16 @@ vi.mock("@/features/diagram", () => ({
 }));
 
 import { useLLMStore } from "./store";
+import { resetLLMStorageForTests } from "./llm-storage";
 
 beforeEach(() => {
   localStorage.clear();
+  resetLLMStorageForTests();
 });
 
 afterEach(() => {
   localStorage.clear();
+  resetLLMStorageForTests();
 });
 
 function resetStore(): void {

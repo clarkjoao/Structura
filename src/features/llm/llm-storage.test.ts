@@ -1,12 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   deriveThreadTitle,
+  getChatThreadsCache,
+  isChatThreadsHydrated,
   loadConnections,
   loadThreadsForDiagram,
   migrateLegacyConfig,
   migrateLegacyThreads,
+  resetLLMStorageForTests,
   saveConnections,
   saveThreadsForDiagram,
+  setChatThreadsCacheEntry,
+  setChatThreadsHydrated,
 } from "./llm-storage";
 
 const LLM_CONNECTIONS_KEY = "structura:llm:connections";
@@ -20,10 +25,12 @@ function clearLocalStorage() {
 
 beforeEach(() => {
   clearLocalStorage();
+  resetLLMStorageForTests();
 });
 
 afterEach(() => {
   clearLocalStorage();
+  resetLLMStorageForTests();
 });
 
 describe("llm-storage", () => {
@@ -211,6 +218,42 @@ describe("llm-storage", () => {
     });
   });
 
+  describe("cache (in-memory)", () => {
+    it("loadThreadsForDiagram returns from the cache when hydrated", () => {
+      setChatThreadsCacheEntry("diagram-cached", {
+        threads: [
+          {
+            id: "cached-1",
+            diagramId: "diagram-cached",
+            title: "Cached",
+            messages: [{ id: "m", role: "user", content: "cached", timestamp: 1 }],
+            createdAt: 1,
+            updatedAt: 1,
+          },
+        ],
+        activeThreadId: "cached-1",
+      });
+      setChatThreadsHydrated(true);
+      const state = loadThreadsForDiagram("diagram-cached");
+      expect(state.threads[0]?.title).toBe("Cached");
+      expect(isChatThreadsHydrated()).toBe(true);
+    });
+
+    it("loadThreadsForDiagram returns empty state on cache miss when hydrated", () => {
+      setChatThreadsHydrated(true);
+      const state = loadThreadsForDiagram("never-written");
+      expect(state).toEqual({ threads: [], activeThreadId: "" });
+    });
+
+    it("getChatThreadsCache reflects the current state after reset", () => {
+      setChatThreadsCacheEntry("d", { threads: [], activeThreadId: "" });
+      expect(getChatThreadsCache()["d"]).toEqual({ threads: [], activeThreadId: "" });
+      resetLLMStorageForTests();
+      expect(getChatThreadsCache()).toEqual({});
+      expect(isChatThreadsHydrated()).toBe(false);
+    });
+  });
+
   describe("loadThreadsForDiagram / saveThreadsForDiagram", () => {
     it("returns empty state when there is no history at all", () => {
       const state = loadThreadsForDiagram("missing");
@@ -235,27 +278,25 @@ describe("llm-storage", () => {
       expect(state.threads[0].messages.map((m) => m.id)).toEqual(["x", "y"]);
     });
 
-    it("saveThreadsForDiagram persists the new shape and preserves other diagrams", () => {
+    it("saveThreadsForDiagram persists the new shape and preserves other diagrams (cache-hydrated)", () => {
       const diagramId = "diagram-save";
       const threadId = "thread-save";
-      localStorage.setItem(
-        HISTORY_KEY,
-        JSON.stringify({
-          "other-diagram": {
-            threads: [
-              {
-                id: "t-other",
-                diagramId: "other-diagram",
-                title: "Other",
-                messages: [{ id: "m1", role: "user", content: "hi", timestamp: 1 }],
-                createdAt: 1,
-                updatedAt: 1,
-              },
-            ],
-            activeThreadId: "t-other",
+      // Hydrate the cache first so saveThreadsForDiagram can include the
+      // existing entry in the snapshot.
+      setChatThreadsCacheEntry("other-diagram", {
+        threads: [
+          {
+            id: "t-other",
+            diagramId: "other-diagram",
+            title: "Other",
+            messages: [{ id: "m1", role: "user", content: "hi", timestamp: 1 }],
+            createdAt: 1,
+            updatedAt: 1,
           },
-        }),
-      );
+        ],
+        activeThreadId: "t-other",
+      });
+      setChatThreadsHydrated(true);
       saveThreadsForDiagram(diagramId, {
         threads: [
           {
@@ -272,6 +313,48 @@ describe("llm-storage", () => {
       const raw = JSON.parse(localStorage.getItem(HISTORY_KEY) ?? "{}");
       expect(raw["other-diagram"].threads[0].id).toBe("t-other");
       expect(raw[diagramId].threads[0].id).toBe(threadId);
+    });
+
+    it("saveThreadsForDiagram without hydration seeds the cache and snapshot for that diagram only", () => {
+      // Without hydration, saveThreadsForDiagram updates the in-memory cache
+      // (which is empty at this point) and writes a snapshot built purely
+      // from the cache. Any legacy localStorage blob that happens to be
+      // present is intentionally ignored — the cache is the source of truth.
+      localStorage.setItem(
+        HISTORY_KEY,
+        JSON.stringify({
+          "stale-legacy": {
+            threads: [
+              {
+                id: "t-stale",
+                diagramId: "stale-legacy",
+                title: "Stale",
+                messages: [{ id: "m1", role: "user", content: "stale", timestamp: 1 }],
+                createdAt: 1,
+                updatedAt: 1,
+              },
+            ],
+            activeThreadId: "t-stale",
+          },
+        }),
+      );
+      saveThreadsForDiagram("diagram-fresh", {
+        threads: [
+          {
+            id: "thread-fresh",
+            diagramId: "diagram-fresh",
+            title: "Fresh",
+            messages: [{ id: "a", role: "user", content: "ask", timestamp: 5 }],
+            createdAt: 5,
+            updatedAt: 5,
+          },
+        ],
+        activeThreadId: "thread-fresh",
+      });
+      const raw = JSON.parse(localStorage.getItem(HISTORY_KEY) ?? "{}");
+      // Only the freshly-written diagram appears in the snapshot.
+      expect(Object.keys(raw).sort()).toEqual(["diagram-fresh"]);
+      expect(raw["diagram-fresh"].threads[0].id).toBe("thread-fresh");
     });
   });
 

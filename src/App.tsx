@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, type FutureConfig } from "react-router-dom";
 import { useSharedDiagram } from "@/features/viewer/hooks/useSharedDiagram";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useDiagramPreviewSync } from "@/lib/diagram-preview";
 import { WalkthroughPlayerBar, WalkthroughPlayerProvider } from "@/features/walkthroughs";
 import { migrateWalkthroughsLocalStorageKey } from "@/features/walkthroughs/utils/walkthroughsMigration";
+import { useLLMStore } from "@/features/llm";
 
 migrateWalkthroughsLocalStorageKey();
 
@@ -37,6 +38,19 @@ const ROUTER_FUTURE: Partial<FutureConfig> = {
 
 function DiagramPreviewSync(): null {
   useDiagramPreviewSync();
+  return null;
+}
+
+/**
+ * Hydrates the LLM chat thread cache from IndexedDB on app boot. Mounted
+ * once at the top of `App` so it runs regardless of which route resolves.
+ * Idempotent: `initChatThreads` short-circuits when the cache is already
+ * hydrated.
+ */
+function ChatThreadsHydrator(): null {
+  useEffect(() => {
+    void useLLMStore.getState().initChatThreads();
+  }, []);
   return null;
 }
 
@@ -80,6 +94,7 @@ const App = () => {
 
   return (
     <BrowserRouter future={ROUTER_FUTURE}>
+      <ChatThreadsHydrator />
       {sharedDiagram ? (
         <ShareProvider>
           <Suspense fallback={<RouteFallback />}>

@@ -6,6 +6,11 @@ import type {
   LLMConnection,
   LLMProvider,
 } from "./types";
+import {
+  loadAllThreadsFromIdb,
+  migrateThreadsFromLocalStorageToIdb,
+  saveThreadsToIdb,
+} from "./llm-threads-idb";
 
 const LLM_CONFIG_STORAGE_KEY = "structura:llm:config";
 const PROVIDER_KEY_STORAGE = "structura:llm:keys";
@@ -325,7 +330,64 @@ export function saveConnections(payload: ConnectionsPayload): void {
   localStorage.setItem(LLM_CONNECTIONS_STORAGE_KEY, JSON.stringify(normalized));
 }
 
+// ---------------------------------------------------------------------------
+// Chat threads: in-memory cache + IndexedDB
+// ---------------------------------------------------------------------------
+//
+// The chat thread state used to live in `localStorage` under
+// `structura:llm:history`. That single-key blob grew unbounded and forced the
+// panel to JSON.parse the entire history every time it opened. This module
+// keeps a synchronous in-memory cache (`chatThreadsCache`) populated at app
+// boot by `useLLMStore.initChatThreads()`. The cache is the source of truth
+// during the session; `IndexedDB` (via `llm-threads-idb`) is the durable
+// surface; `localStorage` is a best-effort fallback for runtimes without IDB.
+
+let chatThreadsCache: Record<string, DiagramThreadState> = {};
+let chatThreadsHydrated = false;
+
+export function getChatThreadsCache(): Record<string, DiagramThreadState> {
+  return chatThreadsCache;
+}
+
+export function setChatThreadsCacheEntry(diagramId: string, state: DiagramThreadState): void {
+  chatThreadsCache = { ...chatThreadsCache, [diagramId]: state };
+}
+
+export function replaceChatThreadsCache(next: Record<string, DiagramThreadState>): void {
+  chatThreadsCache = { ...next };
+}
+
+export function isChatThreadsHydrated(): boolean {
+  return chatThreadsHydrated;
+}
+
+export function setChatThreadsHydrated(value: boolean): void {
+  chatThreadsHydrated = value;
+}
+
+/**
+ * Test-only helper. Clears the in-memory cache, the hydration flag, and the
+ * IDB-backed store. Used by `llm-storage.test.ts` and `store.test.ts`.
+ */
+export function resetLLMStorageForTests(): void {
+  chatThreadsCache = {};
+  chatThreadsHydrated = false;
+}
+
+function emptyThreadState(_diagramId: string): DiagramThreadState {
+  return { threads: [], activeThreadId: "" };
+}
+
+/**
+ * Read the persisted thread state for `diagramId`. Returns the in-memory
+ * cache when the boot hydration has completed; falls back to the legacy
+ * `localStorage` payload otherwise (or to an empty state when neither has
+ * data for this diagram).
+ */
 export function loadThreadsForDiagram(diagramId: string): DiagramThreadState {
+  if (chatThreadsHydrated && diagramId in chatThreadsCache) {
+    return chatThreadsCache[diagramId];
+  }
   try {
     const rawValue = localStorage.getItem(CHAT_HISTORY_KEY);
     const migrated = migrateLegacyThreads(rawValue);
@@ -336,41 +398,68 @@ export function loadThreadsForDiagram(diagramId: string): DiagramThreadState {
   return emptyThreadState(diagramId);
 }
 
-function emptyThreadState(_diagramId: string): DiagramThreadState {
-  return { threads: [], activeThreadId: "" };
-}
-
+/**
+ * Write a `DiagramThreadState` for `diagramId`. Updates the in-memory cache
+ * synchronously, then enqueues an async IDB write (best-effort) and rewrites
+ * the localStorage snapshot so a runtime without IDB still has data.
+ */
 export function saveThreadsForDiagram(diagramId: string, state: DiagramThreadState): void {
+  // 1. Cache (sync, source of truth during the session).
+  setChatThreadsCacheEntry(diagramId, state);
+
+  // 2. IDB write (best-effort; the in-memory cache still works on failure).
+  void saveThreadsToIdb(diagramId, state);
+
+  // 3. localStorage snapshot — rebuilt from the cache so the fallback path
+  //    always reflects the full diagram set.
   try {
-    const rawValue = localStorage.getItem(CHAT_HISTORY_KEY);
-    const migrated = migrateLegacyThreads(rawValue);
-    const limitedThreads = state.threads.slice(-MAX_THREADS);
-    const next: Record<string, DiagramThreadState> = { ...migrated };
-    for (const [key, value] of Object.entries(next)) {
-      const filtered = value.threads.slice(-MAX_THREADS).map((thread) => ({
+    const snapshot: Record<string, DiagramThreadState> = {};
+    for (const [key, value] of Object.entries(chatThreadsCache)) {
+      const limitedThreads = value.threads.slice(-MAX_THREADS).map((thread) => ({
         ...thread,
         messages: thread.messages.slice(-MAX_MESSAGES_PER_THREAD),
       }));
-      next[key] = {
-        threads: filtered,
+      snapshot[key] = {
+        threads: limitedThreads,
         activeThreadId:
-          filtered.find((thread) => thread.id === value.activeThreadId)?.id ??
-          filtered[0]?.id ??
+          limitedThreads.find((thread) => thread.id === value.activeThreadId)?.id ??
+          limitedThreads[0]?.id ??
           "",
       };
     }
-    next[diagramId] = {
-      threads: limitedThreads.map((thread) => ({
-        ...thread,
-        messages: thread.messages.slice(-MAX_MESSAGES_PER_THREAD),
-      })),
-      activeThreadId:
-        limitedThreads.find((thread) => thread.id === state.activeThreadId)?.id ??
-        limitedThreads[0]?.id ??
-        "",
-    };
-    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(next));
+    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(snapshot));
   } catch {}
+}
+
+/**
+ * Boot-time hydration: reads every diagram's state from IDB once, populates
+ * the cache, and sets the hydration flag. Called by `useLLMStore.initChatThreads`.
+ */
+export async function hydrateChatThreadsCacheFromIdb(): Promise<void> {
+  if (chatThreadsHydrated) {
+    return;
+  }
+  const idbPayload = await loadAllThreadsFromIdb();
+  // Merge with any legacy localStorage payload that wasn't migrated yet
+  // (covers the case where IDB is empty but the legacy blob is present).
+  const merged: Record<string, DiagramThreadState> = { ...idbPayload };
+  try {
+    const rawLegacy = localStorage.getItem(CHAT_HISTORY_KEY);
+    if (rawLegacy) {
+      const legacy = migrateLegacyThreads(rawLegacy);
+      for (const [diagramId, state] of Object.entries(legacy)) {
+        if (!(diagramId in merged)) {
+          merged[diagramId] = state;
+        }
+      }
+    }
+  } catch {}
+  replaceChatThreadsCache(merged);
+  setChatThreadsHydrated(true);
+
+  // Run the one-shot migration in the background. The flag inside the IDB
+  // helper makes this a no-op after the first run.
+  void migrateThreadsFromLocalStorageToIdb(localStorage.getItem(CHAT_HISTORY_KEY));
 }
 
 // Compatibility shims for callers still relying on the old shape. These are

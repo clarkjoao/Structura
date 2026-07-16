@@ -17,6 +17,8 @@ import type {
   PendingSuggestion,
 } from "./types";
 import {
+  hydrateChatThreadsCacheFromIdb,
+  isChatThreadsHydrated,
   loadConnections,
   loadThreadsForDiagram,
   saveConnections,
@@ -128,6 +130,13 @@ export interface LLMStoreState {
   createThread: (diagramId: string, firstUserMessage?: string) => ConversationThread;
   renameThread: (threadId: string, title: string) => void;
   deleteThread: (threadId: string) => void;
+  /**
+   * Boot-time hydration: load every diagram's threads from IndexedDB into
+   * the in-memory cache once. Idempotent — calling it twice in the same
+   * session is a no-op. Safe to call before `loadHistoryForDiagram` so the
+   * panel renders synchronously on first paint.
+   */
+  initChatThreads: () => Promise<void>;
 
   sendMessage: (userText: string, diagramContext: string) => Promise<void>;
   acceptSuggestion: (suggestionId: string) => void;
@@ -470,11 +479,20 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       });
     },
 
+    initChatThreads: () => hydrateChatThreadsCacheFromIdb(),
+
     sendMessage: async (userText, diagramContext) => {
       if (!userText.trim()) {
         return;
       }
       const state = get();
+
+      // If hydration hasn't run yet (panel mounted before App shell's
+      // useEffect), kick it off so the next call to `loadThreadsForDiagram`
+      // hits the cache.
+      if (!isChatThreadsHydrated()) {
+        void hydrateChatThreadsCacheFromIdb();
+      }
 
       const userMessage: ChatMessage = {
         id: crypto.randomUUID(),
