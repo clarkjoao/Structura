@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { Droplets, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const DEFAULT_PANEL_OPACITY = 10;
+
 interface OpacityControlProps {
   value: number;
   onChange: (value: number) => void;
@@ -13,6 +15,7 @@ export function OpacityControl({ value, onChange, onReset }: OpacityControlProps
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const isModified = value !== DEFAULT_PANEL_OPACITY;
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -24,6 +27,11 @@ export function OpacityControl({ value, onChange, onReset }: OpacityControlProps
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const handleReset = () => {
+    onReset?.();
+    setOpen(false);
+  };
+
   return (
     <div ref={ref} className="relative">
       <button
@@ -34,7 +42,7 @@ export function OpacityControl({ value, onChange, onReset }: OpacityControlProps
         }}
         className={cn(
           "flex items-center gap-1 h-6 px-1.5 rounded transition-colors",
-          value < 100
+          isModified
             ? "text-foreground bg-primary/10 hover:bg-primary/20"
             : "text-muted-foreground hover:text-foreground hover:bg-surface-hover",
         )}
@@ -69,15 +77,12 @@ export function OpacityControl({ value, onChange, onReset }: OpacityControlProps
             <span className="text-[9px] text-muted-foreground">0%</span>
             <span className="text-[9px] text-muted-foreground">100%</span>
           </div>
-          {onReset && value < 100 && (
+          {onReset && isModified && (
             <button
               type="button"
               title={t("colorSwatches.default")}
               aria-label={t("colorSwatches.default")}
-              onClick={() => {
-                onReset();
-                setOpen(false);
-              }}
+              onClick={handleReset}
               className="mt-2 w-full flex items-center justify-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-surface-hover rounded transition-colors border-t border-border pt-1.5"
             >
               <RotateCcw className="h-3 w-3" />

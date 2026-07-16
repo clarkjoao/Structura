@@ -258,7 +258,7 @@ export function NodeQuickActionsBar({
           {hasOpacity && (
             <div className="mx-1 border-l border-border pl-1">
               <OpacityControl
-                value={component.panelOpacity ?? 100}
+                value={component.panelOpacity ?? 10}
                 onChange={handleOpacityChange}
                 onReset={handleOpacityReset}
               />

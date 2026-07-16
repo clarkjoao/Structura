@@ -4,6 +4,7 @@ import {
   Circle,
   Database,
   Diamond,
+  ExternalLink,
   GitBranch,
   Globe,
   Hexagon,
@@ -62,6 +63,7 @@ export function buildCanvasPickerOptions(t: (key: string) => string): CanvasPick
     { type: "endpoint", label: t("quickInsert.typeEndpoint"), icon: Globe },
     { type: "db-table", label: t("nodeTypes.db-table"), icon: Table },
     { type: "json-viewer", label: t("nodeTypes.json-viewer"), icon: Braces },
+    { type: "external-element", label: t("externalElement.nodeBadge"), icon: ExternalLink },
   );
   for (const p of restPanels) {
     core.push({
