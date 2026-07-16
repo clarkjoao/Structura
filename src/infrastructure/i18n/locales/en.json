@@ -497,7 +497,10 @@
         "removeNode": "Remove node {{nodeId}}",
         "updateNode": "Update node {{nodeId}}",
         "addEdge": "Add edge {{sourceId}} -> {{targetId}}",
-        "removeEdge": "Remove edge {{edgeId}}"
+        "removeEdge": "Remove edge {{edgeId}}",
+        "insertPattern": "Insert pattern {{patternId}}",
+        "autoLayout": "Auto layout diagram",
+        "getTags": "List diagram tags"
       }
     },
     "mention": {

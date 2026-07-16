@@ -497,7 +497,10 @@
         "removeNode": "Remover nó {{nodeId}}",
         "updateNode": "Atualizar nó {{nodeId}}",
         "addEdge": "Adicionar conexão {{sourceId}} -> {{targetId}}",
-        "removeEdge": "Remover conexão {{edgeId}}"
+        "removeEdge": "Remover conexão {{edgeId}}",
+        "insertPattern": "Inserir pattern {{patternId}}",
+        "autoLayout": "Organizar diagrama automaticamente",
+        "getTags": "Listar tags do diagrama"
       }
     },
     "mention": {
