@@ -202,7 +202,17 @@ const CanvasToolbar = ({
           setSelectedEdgeId={setSelectedEdgeId}
         />
       )}
-      {showModal && <ElementPickerModal onClose={() => setShowModal(false)} onInsert={onInsert} />}
+      {showModal && (
+        <ElementPickerModal
+          onClose={() => setShowModal(false)}
+          onInsert={(nodeId) => {
+            onInsert?.(nodeId);
+            setSelectedNodeId(nodeId);
+            setSelectedNodeIds(new Set([nodeId]));
+            setSelectedEdgeId(null);
+          }}
+        />
+      )}
     </div>
   );
 };
