@@ -23,13 +23,13 @@ export function ChatMessage({ message, isStreaming = false }: ChatMessageProps) 
     !isStreaming && message.role === "assistant" && message.content.length > COLLAPSE_THRESHOLD;
 
   return (
-    <div className={cn("flex w-full", isUserMessage ? "justify-end" : "justify-start")}>
-      <div className="group relative max-w-[85%] pb-5">
+    <div className={cn("flex w-full min-w-0", isUserMessage ? "justify-end" : "justify-start")}>
+      <div className="group relative max-w-[85%] min-w-0 pb-5">
         <div
           className={cn(
-            "rounded-lg px-3 py-2.5",
+            "min-w-0 rounded-lg px-3 py-2.5",
             isUserMessage
-              ? "bg-primary text-sm text-primary-foreground whitespace-pre-wrap"
+              ? "bg-primary text-sm text-primary-foreground whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
               : "bg-secondary text-secondary-foreground",
           )}
         >

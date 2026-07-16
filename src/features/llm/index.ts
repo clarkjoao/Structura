@@ -2,8 +2,10 @@ export type {
   LLMProvider,
   LLMMode,
   LLMConfig,
+  LLMConnection,
   ChatMessage,
   ConversationThread,
+  DiagramThreadState,
   DiagramPatchAction,
   DiagramPatch,
   PendingSuggestion,
@@ -24,7 +26,7 @@ export { buildSystemPrompt, buildResponseLanguageInstruction } from "./prompt-bu
 export { parseLLMResponse } from "./patch-parser";
 export { serializeMentionItem, buildMentionContextBlock } from "./mention-serializer";
 export type { ModelPreset } from "./model-presets";
-export { MODEL_PRESETS } from "./model-presets";
+export { MODEL_PRESETS, getPresetsForProvider } from "./model-presets";
 export type { ChatSuggestion } from "./suggestions";
 export { buildContextualSuggestions } from "./suggestions";
 export type { LLMErrorKind } from "./errors";

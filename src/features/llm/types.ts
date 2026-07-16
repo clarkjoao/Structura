@@ -1,6 +1,6 @@
 import type { ComponentPatch, ComponentType, Connection, EdgeStyle } from "@/features/diagram";
 
-export type LLMProvider = "openai" | "anthropic";
+export type LLMProvider = "openai" | "anthropic" | "custom";
 export type LLMMode = "direct" | "proxy";
 
 export interface LLMConfig {
@@ -8,6 +8,23 @@ export interface LLMConfig {
   provider: LLMProvider;
   apiKey: string;
   model: string;
+  baseUrl?: string;
+  authHeader?: string;
+  extraHeaders?: Record<string, string>;
+  extraParams?: Record<string, unknown>;
+}
+
+export interface LLMConnection {
+  id: string;
+  name: string;
+  mode: LLMMode;
+  provider: LLMProvider;
+  baseUrl?: string;
+  authHeader?: string;
+  apiKey: string;
+  model: string;
+  extraHeaders?: Record<string, string>;
+  extraParams?: Record<string, unknown>;
 }
 
 export interface ChatMessage {
@@ -18,9 +35,17 @@ export interface ChatMessage {
 }
 
 export interface ConversationThread {
+  id: string;
   diagramId: string;
+  title: string;
   messages: ChatMessage[];
+  createdAt: number;
   updatedAt: number;
+}
+
+export interface DiagramThreadState {
+  threads: ConversationThread[];
+  activeThreadId: string;
 }
 
 export type DiagramPatchAction =
