@@ -22,6 +22,7 @@ export const apiGroupDescriptor: NodeTypeDescriptor = {
       basePath: comp.basePath,
       protocol: comp.protocol,
       sla: comp.sla,
+      customColor: (comp as { customColor?: string }).customColor,
       isSelected: ctx.selectedNodeId === comp.id,
       controlsDisabled:
         !!ctx.isCompareMode ||

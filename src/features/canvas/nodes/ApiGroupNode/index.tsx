@@ -15,6 +15,7 @@ export type ApiGroupNodeData = {
   basePath: string;
   protocol: ApiProtocol;
   sla?: string;
+  customColor?: string;
   isSelected: boolean;
   controlsDisabled?: boolean;
   onAddEndpoint?: () => void;
@@ -54,6 +55,12 @@ const ApiGroupNode = memo(({ data: d, selected }: NodeProps<Node<ApiGroupNodeDat
         className="px-3 py-2.5 border-b border-border bg-card/80 rounded-t-xl flex flex-col justify-center"
       >
         <div className="flex items-center gap-2">
+          {d.customColor && (
+            <span
+              className="w-2.5 h-2.5 rounded-full shrink-0"
+              style={{ backgroundColor: d.customColor }}
+            />
+          )}
           <span
             className="text-[10px] font-bold rounded px-1.5 py-0.5 text-white shrink-0"
             style={{ backgroundColor: PROTOCOL_COLORS[d.protocol] }}

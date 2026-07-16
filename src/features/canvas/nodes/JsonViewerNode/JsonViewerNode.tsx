@@ -236,6 +236,12 @@ const JsonViewerNode = memo(
               isExpanded ? "cursor-grab active:cursor-grabbing h-9" : "h-8",
             )}
           >
+            {diagramNodeData.customColor && (
+              <span
+                className="w-2.5 h-2.5 rounded-full shrink-0"
+                style={{ backgroundColor: diagramNodeData.customColor }}
+              />
+            )}
             <Braces className="h-3.5 w-3.5 shrink-0 text-muted-foreground" strokeWidth={1.5} />
             <span className="text-xs font-semibold truncate flex-1">
               {diagramNodeData.name || t("jsonViewer.unnamed")}

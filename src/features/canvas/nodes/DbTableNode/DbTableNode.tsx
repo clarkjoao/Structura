@@ -287,6 +287,12 @@ const DbTableNode = memo(({ data: d, selected }: NodeProps<Node<DbTableNodeData>
         className="relative flex items-center gap-2 px-3 bg-muted/70 border-b border-border shrink-0 rounded-t-md"
         style={{ height: HEADER_H }}
       >
+        {d.customColor && (
+          <span
+            className="w-2.5 h-2.5 rounded-full shrink-0"
+            style={{ backgroundColor: d.customColor }}
+          />
+        )}
         <Database className="h-3.5 w-3.5 shrink-0 text-muted-foreground" strokeWidth={1.5} />
         <span className="text-xs font-semibold truncate flex-1 font-mono">
           {d.tableName || t("dbTable.unnamedTable")}

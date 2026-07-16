@@ -104,18 +104,21 @@ export interface AwsComponent extends BaseComponent {
   type: AwsCategoryId;
   awsService?: string;
   technology?: string;
+  customColor?: string;
 }
 
 export interface GcpComponent extends BaseComponent {
   type: GcpCategoryId;
   gcpService?: string;
   technology?: string;
+  customColor?: string;
 }
 
 export interface AzureComponent extends BaseComponent {
   type: AzureCategoryId;
   azureService?: string;
   technology?: string;
+  customColor?: string;
 }
 
 export interface EndpointHandler {
@@ -223,6 +226,7 @@ export interface ExternalElementComponent extends BaseComponent {
   linkedElementId?: string;
   linkedElementName?: string;
   linkedDiagramName?: string;
+  customColor?: string;
 }
 
 export interface PluginTypedComponent extends BaseComponent {
@@ -268,6 +272,8 @@ export type TypedComponentPatch =
   | (Partial<Omit<PanelComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<NoteComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<AwsComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<GcpComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<AzureComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ApiGroupComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<EndpointComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<UnknownComponent, "id">> & { width?: number; height?: number })

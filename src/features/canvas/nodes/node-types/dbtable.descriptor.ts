@@ -26,6 +26,7 @@ export const dbTableDescriptor: NodeTypeDescriptor = {
     return {
       elementId: comp.id,
       tableName: comp.tableName || comp.name,
+      customColor: (comp as { customColor?: string }).customColor,
       columns: comp.columns.map((col) => ({
         id: col.id,
         name: col.name,

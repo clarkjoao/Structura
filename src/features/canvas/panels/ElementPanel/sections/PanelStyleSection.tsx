@@ -9,10 +9,7 @@ import { SWIMLANE_DEFAULT_H, SWIMLANE_DEFAULT_W } from "@/features/canvas/canvas
 import Field from "../components/Field";
 import PanelColorPicker from "../components/PanelColorPicker";
 import { LANE_COLORS } from "../swimlaneLaneColors";
-
-const DEFAULT_PANEL_OPACITY = 10;
-const MIN_PANEL_WIDTH = 200;
-const MIN_PANEL_HEIGHT = 150;
+import { DEFAULT_PANEL_OPACITY, MIN_PANEL_WIDTH, MIN_PANEL_HEIGHT } from "../../../constants/panel.constants";
 
 function mergeSwimlane(
   current: SwimlaneStyle | undefined,

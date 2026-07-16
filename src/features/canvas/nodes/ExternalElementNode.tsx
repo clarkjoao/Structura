@@ -3,6 +3,7 @@ import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { ArrowUpRight, ExternalLink } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useCollabHighlight } from "@/features/collaboration";
+import { colorWithOpacity } from "@/lib/utils";
 
 export type ExternalElementNodeData = {
   elementId: string;
@@ -11,6 +12,7 @@ export type ExternalElementNodeData = {
   linkedElementId?: string;
   linkedElementName?: string;
   linkedDiagramName?: string;
+  customColor?: string;
   isSelected: boolean;
   onOpenInCanvas?: () => void;
 };
@@ -40,15 +42,26 @@ const ExternalElementNode = memo(
     };
 
     const hasLink = !!d.referenceDiagramId;
+    const hasCustomColor = !!d.customColor;
 
     return (
       <div
         className={[
-          "relative rounded-lg border-2 border-dashed bg-muted/20 min-w-[200px] max-w-[260px] px-3 py-2.5 transition-shadow",
-          isSelected
-            ? "border-primary/70 shadow-[0_0_0_2px_hsl(var(--primary)/0.25)]"
-            : "border-muted-foreground/40 hover:border-muted-foreground/60",
+          "relative rounded-lg border-2 min-w-[200px] max-w-[260px] px-3 py-2.5 transition-shadow",
+          !hasCustomColor && !isSelected && "border-dashed border-muted-foreground/40 bg-muted/20 hover:border-muted-foreground/60",
+          !hasCustomColor && isSelected && "border-dashed border-primary/70 shadow-[0_0_0_2px_hsl(var(--primary)/0.25)] bg-muted/20",
+          hasCustomColor && "border-solid shadow-sm",
+          isSelected && !hasCustomColor && "shadow-[0_0_0_2px_hsl(var(--primary)/0.25)]",
         ].join(" ")}
+        style={
+          hasCustomColor
+            ? {
+                backgroundColor: colorWithOpacity(d.customColor!, 0.2),
+                borderColor: d.customColor,
+                boxShadow: isSelected ? `0 0 0 2px ${colorWithOpacity(d.customColor!, 0.25)}` : undefined,
+              }
+            : undefined
+        }
       >
         <Handle id="target-0" type="target" position={Position.Left} className={handleClass} />
         <Handle id="source-0" type="source" position={Position.Right} className={handleClass} />

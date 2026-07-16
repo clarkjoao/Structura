@@ -31,6 +31,7 @@ export const externalElementDescriptor: NodeTypeDescriptor = {
       linkedElementId: ext.linkedElementId,
       linkedElementName: ext.linkedElementName,
       linkedDiagramName,
+      customColor: ext.customColor,
       isSelected: ctx.selectedNodeId === comp.id,
       onOpenInCanvas:
         canNavigate && ctx.navigateToDiagram
