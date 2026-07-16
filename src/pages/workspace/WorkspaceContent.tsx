@@ -261,7 +261,7 @@ export function WorkspaceContent({
   return (
     <>
       {!focusMode ? (
-        <div className="border-b border-border bg-card shrink-0 mt-16">
+        <div className="border-b border-border bg-card shrink-0">
           <div className="container flex items-center justify-between h-12">
             <div className="flex items-center gap-3 text-sm">
               <button

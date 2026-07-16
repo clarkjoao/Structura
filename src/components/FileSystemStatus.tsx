@@ -20,10 +20,24 @@ import {
 import { registerConnectFolderRequestHandler } from "@/infrastructure/persistence/requestConnectFolder";
 import { WorkspaceMergeDialog } from "@/infrastructure/persistence/WorkspaceMergeDialog";
 import { DisconnectConfirmDialog } from "@/infrastructure/persistence/DisconnectConfirmDialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useDiagramStore } from "@/features/diagram";
 import { useShallow } from "zustand/react/shallow";
 
-export function FileSystemStatus() {
+export interface FileSystemStatusProps {
+  /**
+   * Compact mode: badges and primary buttons render as icon-only triggers
+   * with tooltips. Use inside space-constrained headers (the global navbar).
+   * The full element is preserved when this prop is omitted.
+   */
+  compact?: boolean;
+}
+
+export function FileSystemStatus({ compact = false }: FileSystemStatusProps = {}) {
   const { t, i18n } = useTranslation();
   const lastFolderSync = useLastFolderSync();
   const lastLocalStorageSync = useLastLocalStorageSync();
@@ -131,35 +145,70 @@ export function FileSystemStatus() {
     <>
       {isFileSystemSupported && status === "connected" && !pendingMerge && (
         <div className="flex items-center gap-2">
-          <div
-            className="flex items-center gap-1.5 rounded-md border border-emerald-500/30
+          {compact ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  disabled
+                  className="flex h-8 w-8 items-center justify-center rounded-md
+                    border border-emerald-500/30 bg-emerald-500/10 text-emerald-400
+                    cursor-default"
+                  aria-label={t("filesystem.localFolder")}
+                >
+                  <HardDrive className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" align="end">
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-medium">
+                    {t("filesystem.localFolder")}
+                    {folderName ? ` · ${folderName}` : ""}
+                  </span>
+                  <span className="text-muted-foreground text-[11px]">
+                    {folderSyncCaption.text.trim()}
+                  </span>
+                  <span className="text-muted-foreground text-[11px]">
+                    {t("filesystem.saveShortcutHint")}
+                  </span>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <div
+              className="flex items-center gap-1.5 rounded-md border border-emerald-500/30
             bg-emerald-500/10 px-2.5 py-1.5 text-[11px] font-medium text-emerald-400"
-            title={t("filesystem.saveShortcutHint")}
-          >
-            <HardDrive className="h-3.5 w-3.5 shrink-0" />
-            <span className="shrink-0">{t("filesystem.localFolder")}</span>
-            {folderName && (
-              <span className="text-emerald-400/70 font-mono truncate max-w-[120px]">
-                {folderName}
-              </span>
-            )}
-            <span className={folderSyncCaption.className}>{folderSyncCaption.text}</span>
-          </div>
-          <button
-            onClick={syncFromFolder}
-            disabled={syncing}
-            className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-            title={t("filesystem.syncPullTitle")}
-          >
-            <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
-          </button>
-          <button
-            onClick={requestDisconnect}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            title={t("filesystem.disconnectTitle")}
-          >
-            <FolderX className="h-4 w-4" />
-          </button>
+              title={t("filesystem.saveShortcutHint")}
+            >
+              <HardDrive className="h-3.5 w-3.5 shrink-0" />
+              <span className="shrink-0">{t("filesystem.localFolder")}</span>
+              {folderName && (
+                <span className="text-emerald-400/70 font-mono truncate max-w-[120px]">
+                  {folderName}
+                </span>
+              )}
+              <span className={folderSyncCaption.className}>{folderSyncCaption.text}</span>
+            </div>
+          )}
+          {!compact && (
+            <>
+              <button
+                onClick={syncFromFolder}
+                disabled={syncing}
+                className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                title={t("filesystem.syncPullTitle")}
+              >
+                <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
+              </button>
+              <button
+                onClick={requestDisconnect}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                title={t("filesystem.disconnectTitle")}
+              >
+                <FolderX className="h-4 w-4" />
+              </button>
+            </>
+          )}
         </div>
       )}
 
@@ -171,45 +220,111 @@ export function FileSystemStatus() {
       )}
 
       {isFileSystemSupported && status === "needs_permission" && (
-        <button
-          onClick={reconnectWithPermission}
-          className="flex items-center gap-1.5 rounded-md border border-amber-500/40
+        compact ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={reconnectWithPermission}
+                className="flex h-8 w-8 items-center justify-center rounded-md
+                  border border-amber-500/40 bg-amber-500/10 text-amber-400
+                  hover:bg-amber-500/20 hover:border-amber-500/60 transition-all"
+                aria-label={t("filesystem.needsPermissionTitle")}
+              >
+                <KeyRound className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" align="end">
+              {folderName
+                ? t("filesystem.needsPermissionFolder", { name: folderName })
+                : t("filesystem.needsPermissionLabel")}
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <button
+            onClick={reconnectWithPermission}
+            className="flex items-center gap-1.5 rounded-md border border-amber-500/40
             bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-medium text-amber-400
             hover:bg-amber-500/20 hover:border-amber-500/60 transition-all"
-          title={t("filesystem.needsPermissionTitle")}
-        >
-          <KeyRound className="h-3.5 w-3.5 shrink-0" />
-          {folderName
-            ? t("filesystem.needsPermissionFolder", { name: folderName })
-            : t("filesystem.needsPermissionLabel")}
-        </button>
+            title={t("filesystem.needsPermissionTitle")}
+          >
+            <KeyRound className="h-3.5 w-3.5 shrink-0" />
+            {folderName
+              ? t("filesystem.needsPermissionFolder", { name: folderName })
+              : t("filesystem.needsPermissionLabel")}
+          </button>
+        )
       )}
 
       {status === "disconnected" && (
         <div className="flex items-center gap-2">
-          <div
-            className="flex items-center gap-1.5 rounded-md border border-amber-500/30
+          {compact ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  disabled
+                  className="flex h-8 w-8 items-center justify-center rounded-md
+                    border border-amber-500/30 bg-amber-500/10 text-amber-400
+                    cursor-default"
+                  aria-label={t("filesystem.localStorageTitle")}
+                >
+                  <Database className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" align="end">
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-medium">{t("filesystem.localStorageLabel")}</span>
+                  <span className="text-muted-foreground text-[11px]">
+                    {localStorageSyncCaption.text.trim()}
+                  </span>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <div
+              className="flex items-center gap-1.5 rounded-md border border-amber-500/30
               bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-medium text-amber-400"
-            title={t("filesystem.localStorageTitle")}
-          >
-            <Database className="h-3.5 w-3.5 shrink-0" />
-            <span className="shrink-0">{t("filesystem.localStorageLabel")}</span>
-            <span className={localStorageSyncCaption.className}>
-              {localStorageSyncCaption.text}
-            </span>
-          </div>
-          {isFileSystemSupported && (
-            <button
-              onClick={connect}
-              className="flex items-center gap-1.5 rounded-md border border-border
+              title={t("filesystem.localStorageTitle")}
+            >
+              <Database className="h-3.5 w-3.5 shrink-0" />
+              <span className="shrink-0">{t("filesystem.localStorageLabel")}</span>
+              <span className={localStorageSyncCaption.className}>
+                {localStorageSyncCaption.text}
+              </span>
+            </div>
+          )}
+          {isFileSystemSupported &&
+            (compact ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={connect}
+                    className="flex h-8 w-8 items-center justify-center rounded-md border border-border
+                      text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all"
+                    aria-label={t("filesystem.connectFolderTitle")}
+                    title={t("filesystem.connectFolderTitle")}
+                  >
+                    <FolderOpen className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" align="end">
+                  {t("filesystem.connectFolder")}
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <button
+                onClick={connect}
+                className="flex items-center gap-1.5 rounded-md border border-border
               px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground
               hover:text-foreground hover:border-primary/40 transition-all"
-              title={t("filesystem.connectFolderTitle")}
-            >
-              <FolderOpen className="h-3.5 w-3.5" />
-              {t("filesystem.connectFolder")}
-            </button>
-          )}
+                title={t("filesystem.connectFolderTitle")}
+              >
+                <FolderOpen className="h-3.5 w-3.5" />
+                {t("filesystem.connectFolder")}
+              </button>
+            ))}
         </div>
       )}
 

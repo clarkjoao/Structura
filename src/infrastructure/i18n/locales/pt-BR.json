@@ -142,6 +142,11 @@
     "ptBR": "Português (BR)",
     "en": "English"
   },
+  "settings": {
+    "menuLabel": "Preferências",
+    "appearance": "Aparência",
+    "followSystem": "Seguir sistema"
+  },
   "notFound": {
     "title": "Oops! Página não encontrada",
     "home": "Voltar ao início"

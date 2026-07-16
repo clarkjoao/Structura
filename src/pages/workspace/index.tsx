@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import Navbar from "@/components/Navbar";
 import {
   useActiveDiagram,
   useActiveDiagramId,
@@ -157,7 +156,6 @@ export default function WorkspacePage() {
     const backHref = "/workspace";
     return (
       <div className="h-screen flex flex-col">
-        {!focusMode ? <Navbar /> : null}
         <div className={`flex-1 flex items-center justify-center ${focusMode ? "" : "mt-16"}`}>
           <div className="text-center">
             <p className="text-muted-foreground mb-4">{t("flows.noDiagram")}</p>
@@ -174,7 +172,6 @@ export default function WorkspacePage() {
 
   return (
     <div className="h-screen flex flex-col">
-      {!focusMode ? <Navbar /> : null}
       <FlowModeProvider onFinalize={onWorkspaceFlowFinalize} onStartRecording={() => {}}>
         <CollabProvider
           enabled={collabActive}

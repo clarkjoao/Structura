@@ -1,14 +1,12 @@
 import { Link, NavLink } from "react-router-dom";
-import { Network, Sun, Moon } from "lucide-react";
+import { Network } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-import { useTheme } from "@/hooks/useTheme";
 import { FileSystemStatus } from "./FileSystemStatus";
 import { useFileSystemSync } from "@/infrastructure/persistence";
-import { LanguageSwitcher } from "./LanguageSwitcher";
+import { SettingsMenu } from "./SettingsMenu";
 
 const Navbar = () => {
-  const { theme, toggleTheme } = useTheme();
   const { t } = useTranslation();
   useFileSystemSync();
 
@@ -55,16 +53,9 @@ const Navbar = () => {
           </NavLink>
         </div>
 
-        <div className="flex items-center gap-3">
-          <FileSystemStatus />
-          <LanguageSwitcher />
-          <button
-            onClick={toggleTheme}
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
-            title={theme === "dark" ? t("theme.lightMode") : t("theme.darkMode")}
-          >
-            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </button>
+        <div className="flex items-center gap-2">
+          <FileSystemStatus compact />
+          <SettingsMenu />
         </div>
       </div>
     </nav>
