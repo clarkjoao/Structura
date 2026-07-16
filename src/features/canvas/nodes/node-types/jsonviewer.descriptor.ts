@@ -27,6 +27,7 @@ export const jsonViewerDescriptor: NodeTypeDescriptor = {
       name: comp.name,
       jsonContent: comp.jsonContent,
       schemaRef: comp.schemaRef,
+      customColor: (comp as { customColor?: string }).customColor,
       isSelected: ctx.selectedNodeId === comp.id,
       layoutWidth: layout?.width ?? JSON_VIEWER_DEFAULT_W,
       layoutHeight: layout?.height ?? JSON_VIEWER_DEFAULT_H,

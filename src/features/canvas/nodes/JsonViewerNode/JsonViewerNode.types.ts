@@ -5,6 +5,7 @@ export type JsonViewerNodeData = {
   name: string;
   jsonContent: string;
   schemaRef?: string;
+  customColor?: string;
   isSelected: boolean;
   layoutWidth: number;
   layoutHeight: number;

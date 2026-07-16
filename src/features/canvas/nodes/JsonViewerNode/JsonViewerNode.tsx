@@ -207,14 +207,21 @@ const JsonViewerNode = memo(
           className={cn(
             "flex flex-col overflow-hidden rounded-md border",
             "bg-card text-card-foreground transition-shadow duration-200",
-            isActive
-              ? "border-primary ring-2 ring-primary/30 shadow-lg"
-              : "border-border shadow-md hover:shadow-lg",
+            !diagramNodeData.customColor && isActive && "border-primary ring-2 ring-primary/30 shadow-lg",
+            !diagramNodeData.customColor && !isActive && "border-border shadow-md hover:shadow-lg",
           )}
           style={
-            isExpanded
-              ? { width: "100%", height: "100%" }
-              : { width: COLLAPSED_W, height: COLLAPSED_H }
+            diagramNodeData.customColor
+              ? {
+                  width: isExpanded ? "100%" : COLLAPSED_W,
+                  height: isExpanded ? "100%" : COLLAPSED_H,
+                  backgroundColor: diagramNodeData.customColor + "33",
+                  borderColor: diagramNodeData.customColor,
+                  boxShadow: isActive ? `0 0 0 2px ${diagramNodeData.customColor}40` : undefined,
+                }
+              : isExpanded
+                ? { width: "100%", height: "100%" }
+                : { width: COLLAPSED_W, height: COLLAPSED_H }
           }
         >
           {diagramNodeData.compareBadges && (

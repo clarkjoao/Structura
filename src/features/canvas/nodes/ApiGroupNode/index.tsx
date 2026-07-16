@@ -15,6 +15,7 @@ export type ApiGroupNodeData = {
   basePath: string;
   protocol: ApiProtocol;
   sla?: string;
+  customColor?: string;
   isSelected: boolean;
   controlsDisabled?: boolean;
   onAddEndpoint?: () => void;
@@ -29,15 +30,26 @@ const ApiGroupNode = memo(({ data: d, selected }: NodeProps<Node<ApiGroupNodeDat
   const { t } = useTranslation();
   const isSelected = selected || d.isSelected;
   const collabHighlight = useCollabHighlight(d.elementId);
+  const hasCustomColor = !!d.customColor;
 
   return (
     <div
       className={`w-full h-full rounded-xl border-2 relative overflow-hidden transition-all duration-200 ${
-        isSelected
+        !hasCustomColor && isSelected
           ? "border-primary ring-2 ring-primary/20"
-          : "border-border bg-card/40 backdrop-blur-sm"
+          : !hasCustomColor
+            ? "border-border bg-card/40 backdrop-blur-sm"
+            : ""
       }`}
-      style={{ borderColor: isSelected ? undefined : `${PROTOCOL_COLORS[d.protocol]}66` }}
+      style={
+        hasCustomColor
+          ? {
+              backgroundColor: d.customColor + "33",
+              borderColor: d.customColor,
+              boxShadow: isSelected ? `0 0 0 2px ${d.customColor}40` : undefined,
+            }
+          : { borderColor: `${PROTOCOL_COLORS[d.protocol]}66` }
+      }
     >
       {collabHighlight && (
         <div

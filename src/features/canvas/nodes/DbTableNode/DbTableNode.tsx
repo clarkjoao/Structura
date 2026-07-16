@@ -219,8 +219,20 @@ const DbTableNode = memo(({ data: d, selected }: NodeProps<Node<DbTableNodeData>
         className={cn(
           "relative w-full h-full rounded-md flex items-center gap-2 px-3 transition-all duration-200 overflow-hidden select-none",
           "bg-card text-card-foreground",
-          isActive ? selectedRing : unselectedShadow,
+          !d.customColor && isActive && selectedRing,
+          !d.customColor && !isActive && unselectedShadow,
         )}
+        style={
+          d.customColor
+            ? {
+                backgroundColor: d.customColor + "33",
+                borderWidth: 2,
+                borderStyle: "solid",
+                borderColor: d.customColor,
+                boxShadow: isActive ? `0 0 0 2px ${d.customColor}40` : undefined,
+              }
+            : undefined
+        }
       >
         <DbTableIncomingHandle elementId={d.elementId} />
         {collabHighlight ? (
@@ -267,9 +279,21 @@ const DbTableNode = memo(({ data: d, selected }: NodeProps<Node<DbTableNodeData>
       className={cn(
         "relative flex flex-col overflow-visible rounded-md border select-none",
         "bg-card text-card-foreground transition-shadow duration-200",
-        isActive ? selectedRing : unselectedShadow,
+        !d.customColor && isActive && selectedRing,
+        !d.customColor && !isActive && unselectedShadow,
       )}
-      style={{ width: tableW, height: nodeH, minWidth: tableW }}
+      style={
+        d.customColor
+          ? {
+              width: tableW,
+              height: nodeH,
+              minWidth: tableW,
+              backgroundColor: d.customColor + "33",
+              borderColor: d.customColor,
+              boxShadow: isActive ? `0 0 0 2px ${d.customColor}40` : undefined,
+            }
+          : { width: tableW, height: nodeH, minWidth: tableW }
+      }
     >
       <DbTableIncomingHandle elementId={d.elementId} />
       {collabHighlight ? (

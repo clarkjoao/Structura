@@ -19,6 +19,10 @@ import {
   isNoteComponent,
   isC4Component,
   isPanelComponent,
+  isEndpointComponent,
+  isApiGroupComponent,
+  isDbTableComponent,
+  isJsonViewerComponent,
 } from "@/features/diagram";
 import { getNotePresetPair } from "@/features/canvas/panels/ElementPanel/components/colorPresets";
 import { IconPickerModal } from "@/features/canvas/components/icons/IconPickerModal";
@@ -39,15 +43,43 @@ interface NodeQuickActionsBarProps {
   onRemoveFromGroup?: () => void;
 }
 
-function pickColorGroup(component: Component | null): ColorPickerGroup | null {
-  if (!component) return null;
+function pickColorGroup(component: Component | null): ColorPickerGroup {
+  if (!component) return "vibrant";
   if (isNoteComponent(component)) return "note";
   if (isC4Component(component)) return "c4";
   if (isPanelComponent(component)) return "panel";
   return "vibrant";
 }
 
+/**
+ * Returns true if the component uses customColor instead of panelColor.
+ * Components that don't have a dedicated color property use customColor.
+ * Endpoints don't support color customization.
+ */
+function usesCustomColor(component: Component): boolean {
+  // Endpoints don't support color
+  if (isEndpointComponent(component)) return false;
+  return !(
+    isNoteComponent(component) ||
+    isC4Component(component) ||
+    isPanelComponent(component)
+  );
+}
+
+/**
+ * Returns true if the component supports color customization.
+ * Used to show/hide the color picker in the quick actions bar.
+ */
+function supportsColor(component: Component): boolean {
+  // Endpoints don't support color
+  if (isEndpointComponent(component)) return false;
+  return true;
+}
+
 function getCurrentColor(component: Component, isDark: boolean): string | undefined {
+  if (usesCustomColor(component)) {
+    return (component as { customColor?: string }).customColor;
+  }
   if (isNoteComponent(component)) {
     return isDark ? component.panelColorDark : component.panelColor;
   }
@@ -149,6 +181,11 @@ export function NodeQuickActionsBar({
         });
         return;
       }
+      // Components that use customColor (cloud, unknown, etc.)
+      if (usesCustomColor(component)) {
+        updateComponent(nodeId, { customColor: color });
+        return;
+      }
       // Panels + C4: write panelColor
       updateComponent(nodeId, { panelColor: color });
     },
@@ -164,6 +201,11 @@ export function NodeQuickActionsBar({
       });
       return;
     }
+    // Components that use customColor
+    if (usesCustomColor(component)) {
+      updateComponent(nodeId, { customColor: undefined });
+      return;
+    }
     updateComponent(nodeId, { panelColor: undefined });
   }, [component, nodeId, updateComponent]);
 
@@ -171,11 +213,8 @@ export function NodeQuickActionsBar({
 
   const hasOpacity = "panelOpacity" in component;
   const hasIcon = "customIconId" in component;
-  const hasColor = colorGroup !== null && (
-    isNoteComponent(component) ||
-    isC4Component(component) ||
-    isPanelComponent(component)
-  );
+  // Show color picker only for components that support color
+  const hasColor = supportsColor(component);
 
   return (
     <>
@@ -199,11 +238,11 @@ export function NodeQuickActionsBar({
             )}
           </button>
 
-          {/* Color picker — only for note/c4/panel components */}
+          {/* Color picker — for all component types */}
           {hasColor && (
             <div className="mx-1 border-l border-border pl-1">
               <ColorPicker
-                group={colorGroup!}
+                group={colorGroup}
                 selectedColor={currentColor}
                 onSelectColor={handleColorChange}
                 onReset={handleColorReset}

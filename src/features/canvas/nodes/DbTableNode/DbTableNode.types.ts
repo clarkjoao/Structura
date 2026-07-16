@@ -14,6 +14,7 @@ export interface DbColumnRow {
 export type DbTableNodeData = {
   elementId: string;
   tableName: string;
+  customColor?: string;
   columns: DbColumnRow[];
   isSelected: boolean;
   collapsed?: boolean;

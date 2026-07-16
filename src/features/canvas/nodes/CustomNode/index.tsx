@@ -128,10 +128,11 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
     if (cloudProvider) {
       const svc = d.awsService ? cloudProvider.getService(d.awsService) : undefined;
       const cat = cloudProvider.getCategoryForType(d.type);
-      borderClass = cloudProvider.getCategoryStyle(d.type).borderClass;
-      borderStyle = undefined;
+      const hasCustomColor = !!d.customColor;
+      borderClass = !hasCustomColor ? cloudProvider.getCategoryStyle(d.type).borderClass : "";
+      borderStyle = hasCustomColor ? { borderLeftColor: d.customColor } : undefined;
       technologyLabel = d.technology ?? cat?.name ?? svc?.name;
-      actionColorClass = "text-primary";
+      actionColorClass = hasCustomColor ? "" : "text-primary";
     } else {
       const cfg = TypeConfig[d.type] ?? TypeConfig.system;
       const hasCustomColor = !!d.customColor;
@@ -143,11 +144,12 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
   } else if (cloudProvider) {
     const svc = d.awsService ? cloudProvider.getService(d.awsService) : undefined;
     const cat = cloudProvider.getCategoryForType(d.type);
-    borderClass = cloudProvider.getCategoryStyle(d.type).borderClass;
-    borderStyle = undefined;
+    const hasCustomColor = !!d.customColor;
+    borderClass = !hasCustomColor ? cloudProvider.getCategoryStyle(d.type).borderClass : "";
+    borderStyle = hasCustomColor ? { borderLeftColor: d.customColor } : undefined;
     icon = <CloudIcon componentType={d.type} serviceIconName={svc?.iconName} size={20} />;
     technologyLabel = d.technology ?? cat?.name ?? svc?.name;
-    actionColorClass = "text-primary";
+    actionColorClass = hasCustomColor ? "" : "text-primary";
   } else {
     const cfg = TypeConfig[d.type] ?? TypeConfig.system;
     const hasCustomColor = !!d.customColor;
@@ -227,7 +229,7 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
           d={d}
           controlsDisabled={controlsDisabled || isGuest}
           colorClass={actionColorClass}
-          customColor={cloudProvider ? undefined : d.customColor}
+          customColor={d.customColor}
         />
       </div>
     </div>
