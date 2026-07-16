@@ -11,8 +11,7 @@ import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
 import { useCollabHighlight } from "@/features/collaboration";
 import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPresence";
 import { usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
-
-const DEFAULT_OPACITY = 10;
+import { DEFAULT_PANEL_OPACITY } from "../constants/panel.constants";
 
 export type PanelNodeData = {
   elementId: string;
@@ -70,7 +69,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
   const color = d.panelColor || kindDef.defaultColor;
   const useAwsIcon = d.awsIconName ?? kindDef.awsIconName;
   const Icon = kindDef.icon;
-  const opacity = d.panelOpacity ?? DEFAULT_OPACITY;
+  const opacity = d.panelOpacity ?? DEFAULT_PANEL_OPACITY;
   const isSelected = selected || d.isSelected;
   const isHighlighted = (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
   const isActive = isSelected || isHighlighted;

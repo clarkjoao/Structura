@@ -2,8 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Droplets, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const DEFAULT_PANEL_OPACITY = 10;
+import { DEFAULT_PANEL_OPACITY } from "../constants/panel.constants";
 
 interface OpacityControlProps {
   value: number;
