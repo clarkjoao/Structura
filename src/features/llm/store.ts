@@ -42,6 +42,19 @@ function getResolvedAppLanguage(): string {
   return "pt-BR";
 }
 
+function buildPatchMessage(locale: string, actionCount: number): string {
+  const isPT = locale.toLowerCase().startsWith("pt");
+  if (actionCount === 0) {
+    return isPT ? "Nenhuma ação proposta." : "No actions proposed.";
+  }
+  if (actionCount === 1) {
+    return isPT ? "Proponho 1 alteração no diagrama." : "I propose 1 diagram change.";
+  }
+  return isPT
+    ? `Proponho ${actionCount} alterações no diagrama.`
+    : `I propose ${actionCount} diagram changes.`;
+}
+
 function sanitizeMessagesForLLM(messages: ChatMessage[]): ChatMessage[] {
   return messages.map((message) => {
     if (message.role !== "assistant") {
@@ -582,8 +595,30 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           const nameToIdMap = new Map<string, string>();
           const nodesMissingPosition: string[] = [];
 
+          // Pass 1: Create root nodes (no parentId or null parentId)
           for (const action of addNodeActions) {
-            const applied = applyDiagramPatchAction(action);
+            const hasParentRef = action.payload.parentId?.startsWith("@ref:");
+            if (hasParentRef) continue;
+
+            const applied = applyDiagramPatchAction(action, nameToIdMap);
+            if (applied.addedNodeId) {
+              previewNodeIds.push(applied.addedNodeId);
+              const name = action.payload.name?.trim();
+              if (name) {
+                nameToIdMap.set(name.toLowerCase(), applied.addedNodeId);
+              }
+              if (!action.payload.position) {
+                nodesMissingPosition.push(applied.addedNodeId);
+              }
+            }
+          }
+
+          // Pass 2: Create child nodes (with parentId @ref)
+          for (const action of addNodeActions) {
+            const hasParentRef = action.payload.parentId?.startsWith("@ref:");
+            if (!hasParentRef) continue;
+
+            const applied = applyDiagramPatchAction(action, nameToIdMap);
             if (applied.addedNodeId) {
               previewNodeIds.push(applied.addedNodeId);
               const name = action.payload.name?.trim();
@@ -614,7 +649,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
                 sourceId: resolvedSourceId,
                 targetId: resolvedTargetId,
               },
-            });
+            }, nameToIdMap);
             if (applied.addedEdgeId) {
               previewEdgeIds.push(applied.addedEdgeId);
             }
@@ -643,15 +678,21 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           });
         }
 
+        const locale = getResolvedAppLanguage();
         set({
           messages: get().messages.map((message) =>
             message.id === assistantMessageId
               ? {
                   ...message,
                   content:
-                    parsedResponse.kind === "patch" || parsedResponse.kind === "text"
-                      ? parsedResponse.message
-                      : "",
+                    parsedResponse.kind === "patch"
+                      ? buildPatchMessage(
+                          locale,
+                          parsedResponse.patch?.actions.length ?? 0,
+                        )
+                      : parsedResponse.kind === "text"
+                        ? parsedResponse.message
+                        : "",
                 }
               : message,
           ),

@@ -28,21 +28,35 @@ export function computeGridPositions(
   }));
 }
 
-export function applyDiagramPatchAction(action: DiagramPatchAction): AppliedPatchResult {
+export function resolveParentRef(value: string | null, nameToIdMap: Map<string, string>): string | null {
+  if (!value) return null;
+  if (value.startsWith("@ref:")) {
+    const resolved = nameToIdMap.get(value.slice(5).toLowerCase());
+    return resolved ?? null;
+  }
+  return value;
+}
+
+export function applyDiagramPatchAction(
+  action: DiagramPatchAction,
+  nameToIdMap?: Map<string, string>,
+): AppliedPatchResult {
   const diagramState = useDiagramStore.getState();
 
   switch (action.type) {
-    case "ADD_NODE":
+    case "ADD_NODE": {
+      const resolvedParentId = resolveParentRef(action.payload.parentId, nameToIdMap ?? new Map());
       return {
         addedNodeId: diagramState.addComponent(
           action.payload.nodeType,
           action.payload.name,
-          action.payload.parentId,
+          resolvedParentId,
           action.payload.position,
           action.payload.awsService,
         ).id,
         addedEdgeId: null,
       };
+    }
     case "REMOVE_NODE":
       diagramState.removeComponent(action.payload.nodeId);
       return { addedNodeId: null, addedEdgeId: null };
