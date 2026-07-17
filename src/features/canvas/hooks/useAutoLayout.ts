@@ -5,10 +5,11 @@ import { toast } from "sonner";
 import { computeAutoLayout } from "../layout/autoLayoutEngine";
 import { useDiagramActions, useDiagramStore, generateId } from "@/features/diagram";
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
+import type { Node } from "@xyflow/react";
 
 export function useAutoLayout() {
   const { t } = useTranslation();
-  const { fitView } = useReactFlow();
+  const { fitView, getNodes } = useReactFlow();
   const { applyAutoLayout, setEdgeControlPoints, resetEdgeControlPoints } = useDiagramActions();
   const [isRunning, setIsRunning] = useState(false);
 
@@ -17,11 +18,29 @@ export function useAutoLayout() {
       components: Record<string, Component>,
       connections: Connection[],
       nodeLayouts: Record<string, NodeLayout>,
+      measuredNodes?: Node[],
     ) => {
       if (isRunning) return;
+
+      // Use provided measured nodes or get fresh nodes from React Flow
+      const nodesToUse = measuredNodes ?? getNodes();
+
+      // Check if nodes have measured dimensions; if not, wait for them
+      const hasMeasuredDimensions = nodesToUse.some(
+        (n) => n.measured?.width !== undefined && n.measured?.height !== undefined,
+      );
+
+      if (!hasMeasuredDimensions) {
+        // Retry after a short delay to allow nodes to measure
+        requestAnimationFrame(() => {
+          runAutoLayout(components, connections, nodeLayouts, getNodes());
+        });
+        return;
+      }
+
       setIsRunning(true);
       try {
-        const result = await computeAutoLayout(components, connections, nodeLayouts);
+        const result = await computeAutoLayout(components, connections, nodeLayouts, measuredNodes);
 
         if (result.positions.length === 0) {
           toast.info(t("autoLayout.noConnectedNodes"));
@@ -59,7 +78,7 @@ export function useAutoLayout() {
         setIsRunning(false);
       }
     },
-    [isRunning, applyAutoLayout, setEdgeControlPoints, resetEdgeControlPoints, fitView, t],
+    [isRunning, applyAutoLayout, setEdgeControlPoints, resetEdgeControlPoints, fitView, getNodes, t],
   );
 
   return { runAutoLayout, isRunning };

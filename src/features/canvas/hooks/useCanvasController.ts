@@ -73,8 +73,9 @@ export function useCanvasController(
   const { runAutoLayout, isRunning: isAutoLayoutRunning } = useAutoLayout();
   const handleAutoLayout = useCallback(() => {
     if (!diagram) return;
-    runAutoLayout(resolvedComponents, Object.values(resolvedConnections), resolvedNodeLayouts);
-  }, [diagram, runAutoLayout, resolvedComponents, resolvedConnections, resolvedNodeLayouts]);
+    const measuredNodes = reactFlowInstance.getNodes();
+    runAutoLayout(resolvedComponents, Object.values(resolvedConnections), resolvedNodeLayouts, measuredNodes);
+  }, [diagram, runAutoLayout, resolvedComponents, resolvedConnections, resolvedNodeLayouts, reactFlowInstance]);
   const flowState = useCanvasFlowState({ flows, isCompareMode: compareState.isCompareMode });
   const activeCollabElementId = visualState.selectedEdgeId ?? visualState.selectedNodeId;
   useEffect(() => {

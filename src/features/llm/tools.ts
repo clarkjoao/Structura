@@ -24,6 +24,17 @@ export const ALL_TOOLS: LLMTool[] = [
     parametersSchema: { type: "object", properties: {}, required: [] },
   },
   {
+    name: "get_tags",
+    description: "Returns all tags used in the current diagram for categorizing nodes.",
+    parametersSchema: { type: "object", properties: {}, required: [] },
+  },
+  {
+    name: "list_patterns",
+    description:
+      "Returns all available architectural patterns that can be inserted into the diagram. Use this to help users choose which pattern to add.",
+    parametersSchema: { type: "object", properties: {}, required: [] },
+  },
+  {
     name: "add_node",
     description: "Add a new node to the diagram.",
     parametersSchema: {
@@ -102,6 +113,28 @@ export const ALL_TOOLS: LLMTool[] = [
       required: ["edgeId"],
     },
   },
+  {
+    name: "insert_pattern",
+    description:
+      "Insert an architectural pattern into the diagram by its ID. Use list_patterns first to see available options. Returns the IDs of all created nodes.",
+    parametersSchema: {
+      type: "object",
+      properties: {
+        patternId: {
+          type: "string",
+          description:
+            'The pattern ID from the patterns catalog (e.g. "circuit-breaker", "cqrs", "fifo-queue-aws", "retry-with-fallback", "saga-orchestration")',
+        },
+      },
+      required: ["patternId"],
+    },
+  },
+  {
+    name: "auto_layout",
+    description:
+      "Automatically arranges all nodes in the diagram using a clean layout algorithm. Useful when the diagram becomes cluttered.",
+    parametersSchema: { type: "object", properties: {}, required: [] },
+  },
 ];
 
 export const WRITE_TOOL_NAMES: string[] = [
@@ -110,6 +143,8 @@ export const WRITE_TOOL_NAMES: string[] = [
   "update_node",
   "add_edge",
   "remove_edge",
+  "insert_pattern",
+  "auto_layout",
 ];
 
 export function isWriteTool(toolName: string): boolean {

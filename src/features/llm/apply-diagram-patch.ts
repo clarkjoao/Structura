@@ -1,9 +1,14 @@
 import { useDiagramStore } from "@/features/diagram";
+import { PATTERNS } from "@/lib/catalogs/patterns";
 import type { DiagramPatchAction } from "./types";
 
-interface AppliedPatchResult {
+export interface AppliedPatchResult {
   addedNodeId: string | null;
   addedEdgeId: string | null;
+  toolResult?: {
+    type: "INSERT_PATTERN" | "AUTO_LAYOUT" | "GET_TAGS";
+    data?: unknown;
+  };
 }
 
 export function resolveRef(value: string, nameToIdMap: Map<string, string>): string {
@@ -64,6 +69,27 @@ export function applyDiagramPatchAction(action: DiagramPatchAction): AppliedPatc
     case "REMOVE_EDGE":
       diagramState.removeConnection(action.payload.edgeId);
       return { addedNodeId: null, addedEdgeId: null };
+    case "INSERT_PATTERN": {
+      const pattern = PATTERNS.find((p) => p.id === action.payload.patternId);
+      if (!pattern) {
+        console.warn(`[LLM] Pattern not found: ${action.payload.patternId}`);
+        return { addedNodeId: null, addedEdgeId: null };
+      }
+      const insertedIds = diagramState.insertPattern(pattern, { x: 300, y: 300 });
+      return {
+        addedNodeId: insertedIds[0] ?? null,
+        addedEdgeId: null,
+        toolResult: { type: "INSERT_PATTERN", data: { patternId: pattern.id, createdNodes: insertedIds } },
+      };
+    }
+    case "AUTO_LAYOUT":
+      // TODO: Implement auto layout - for now just log
+      console.info("[LLM] AUTO_LAYOUT requested - feature not yet implemented");
+      return { addedNodeId: null, addedEdgeId: null, toolResult: { type: "AUTO_LAYOUT" } };
+    case "GET_TAGS": {
+      // GET_TAGS is a read-only operation handled separately
+      return { addedNodeId: null, addedEdgeId: null, toolResult: { type: "GET_TAGS" } };
+    }
     default:
       return { addedNodeId: null, addedEdgeId: null };
   }

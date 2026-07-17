@@ -309,7 +309,9 @@ export {
   checkStorageHealth,
   measureLocalStorageUsage,
   clearNonEssentialStorage,
+  shouldSuggestFolderSync,
 } from "./store/storage-monitor";
+export type { FolderSyncStatus } from "./store/storage-monitor";
 export { useSaveStatusStore } from "./store/saveStatus.store";
 export type { StorageHealthLevel, SaveStatus } from "./store/saveStatus.store";
 

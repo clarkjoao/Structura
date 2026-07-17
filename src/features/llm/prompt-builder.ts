@@ -1,5 +1,5 @@
 import { ALL_TOOLS } from "./tools";
-import { buildComponentTypeCatalog } from "./component-catalog";
+import { buildComponentTypeCatalog, buildPatternCatalogCompact } from "./component-catalog";
 
 const DIAGRAM_DSL_DESCRIPTION = `
 You are a Senior Solutions Architect and Cloud Expert embedded in Structura, a C4 architecture diagramming tool.
@@ -29,6 +29,24 @@ When 'Selected nodes' or 'Focused node' appear in the diagram context, prioritiz
 If the user says 'this', 'these', 'what I selected', or 'what I'm looking at', refer to the selected/focused nodes listed in the context.
 `.trim();
 
+const FEWSHOT_EXAMPLES = `
+## Example
+User: "Add a Lambda function between API Gateway and RDS"
+Assistant:
+{
+  "mode": "patch",
+  "message": "Adding Lambda function",
+  "patch": {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "description": "Add Lambda",
+    "actions": [
+      { "type": "ADD_NODE", "payload": { "nodeType": "container", "name": "Handler Lambda", "parentId": null, "awsService": "lambda", "position": { "x": 300, "y": 200 } } }
+    ],
+    "toolCalls": [{ "tool": "add_node", "parameters": { "nodeType": "container", "name": "Handler Lambda", "parentId": null, "awsService": "lambda", "position": { "x": 300, "y": 200 } } }]
+  }
+}
+`.trim();
+
 const RESPONSE_RULES = `
 ## Response formats
 
@@ -53,7 +71,10 @@ Format: a single JSON object, nothing else outside it:
 
 ### Mode 3 — Architecture analysis (JSON analysis)
 Use for: reviews, audits, "what's wrong with this?", "how can I improve?",
-"evaluate my security", "identify SPOFs", "review for Well-Architected".
+"evaluate my security", "identify SPOFs", "review for Well-Architected", "analyze",
+"revise", "avalie", "what do you think", "como melhorar", "melhore", "analise".
+
+Trigger words for Mode 3 (always use JSON analysis): analyze, review, critique, evaluate, assess, what do you think, how can I improve, what's wrong, o que acha, analise, avalie, como melhorar, o que precisa melhorar, revise.
 Format: a single JSON object:
 {
   "mode": "analysis",
@@ -195,10 +216,14 @@ export function buildSystemPrompt(diagramContext: string, responseLocale: string
     "",
     buildComponentTypeCatalog(),
     "",
+    buildPatternCatalogCompact(),
+    "",
     "Current diagram context:",
     diagramContext,
     "",
     RESPONSE_RULES,
+    "",
+    FEWSHOT_EXAMPLES,
     "",
     buildToolsSection(),
   ].join("\n");

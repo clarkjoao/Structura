@@ -486,9 +486,9 @@ export function wrapIStoragePortWithDiagramPersistTracking(storage: IStoragePort
     try {
       await storage.setItem(name, value);
       if (name !== PERSIST_KEY) return;
+      useSaveStatusStore.getState()._setSaved();
       if (storage instanceof LocalStorageAdapter && storage.paused) return;
       recordLocalStorageDiagramSyncSuccess();
-      useSaveStatusStore.getState()._setSaved();
     } catch (err: unknown) {
       if (name !== PERSIST_KEY) return;
       if (isQuotaExceededError(err)) {

@@ -2,11 +2,12 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, Network, FolderOpen, LayoutGrid, List, ArrowUpDown, Search, Upload } from "lucide-react";
+import { Plus, Network, FolderOpen, LayoutGrid, List, ArrowUpDown, Search, Upload, Clock } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useAllDiagrams, useFolders, useDiagramActions, removeRecentRef } from "@/features/diagram";
 import { deletePreview } from "@/lib/diagram-preview/previewCache";
 import type { Level, Diagram } from "@/features/diagram";
+import { useRecentDiagrams } from "@/features/canvas/navigation/useRecentDiagrams";
 import { ImportModal } from "@/pages/ImportModal";
 import {
   Breadcrumb,
@@ -47,7 +48,7 @@ import { useWorkspaceFocusSync } from "@/hooks/useWorkspaceFocusSync";
 
 export default function DashboardPage() {
   useWorkspaceFocusSync();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const levelLabels = useMemo(
     () => ({
       context: t("dashboard.levelContextShort"),
@@ -60,14 +61,25 @@ export default function DashboardPage() {
   const diagrams = useAllDiagrams();
   const folders = useFolders();
   const { addDiagram, openDiagram, deleteDiagram, moveDiagram, deleteFolder } = useDiagramActions();
+  const { recent } = useRecentDiagrams();
   const navigate = useNavigate();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedFolderId = searchParams.get("f");
+  const view = searchParams.get("view") === "recent" && !selectedFolderId ? "recent" : "all";
 
   const setSelectedFolderId = useCallback(
     (folderId: string | null) => {
-      setSearchParams(folderId ? { f: folderId } : {}, { replace: true });
+      if (folderId) setSearchParams({ f: folderId }, { replace: true });
+      else setSearchParams({}, { replace: true });
+    },
+    [setSearchParams],
+  );
+
+  const setView = useCallback(
+    (nextView: "recent" | "all") => {
+      if (nextView === "recent") setSearchParams({ view: "recent" }, { replace: true });
+      else setSearchParams({}, { replace: true });
     },
     [setSearchParams],
   );
@@ -175,6 +187,50 @@ export default function DashboardPage() {
     return sorted.filter((d) => d.domain === activeDomainFilter);
   }, [sorted, activeDomainFilter]);
 
+  const diagramsById = useMemo(
+    () =>
+      Object.fromEntries(diagrams.map((diagram) => [diagram.id, diagram])) as Record<
+        string,
+        Diagram
+      >,
+    [diagrams],
+  );
+
+  const recentResolved = useMemo(() => {
+    return recent
+      .map((entry) => {
+        const diagram = diagramsById[entry.id];
+        if (!diagram) return null;
+        return {
+          id: entry.id,
+          openedAt: entry.openedAt,
+          name: diagram.name,
+          folderId: diagram.folderId ?? null,
+        };
+      })
+      .filter(
+        (row): row is {
+          id: string;
+          openedAt: number;
+          name: string;
+          folderId: string | null;
+        } => row !== null,
+      );
+  }, [recent, diagramsById]);
+
+  const recentDiagramObjects = useMemo(
+    () =>
+      recent
+        .map((entry) => diagramsById[entry.id])
+        .filter((d): d is Diagram => Boolean(d)),
+    [recent, diagramsById],
+  );
+
+  const effectiveList: Diagram[] = view === "recent" ? recentDiagramObjects : domainFiltered;
+  const showFolderCards = view === "all" && childFolders.length > 0;
+  const showDomainChips = view === "all" && globalSearchResults === null && allDomains.length > 0;
+  const showMutationActions = view === "all";
+
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortAsc(!sortAsc);
     else {
@@ -190,6 +246,18 @@ export default function DashboardPage() {
     },
     [navigate, openDiagram],
   );
+
+  const handleOpenRecent = useCallback(
+    (diagramId: string) => {
+      openDiagram(diagramId);
+      navigate(`/model/${diagramId}`);
+    },
+    [navigate, openDiagram],
+  );
+
+  const handleSelectRecentView = useCallback(() => {
+    setView("recent");
+  }, [setView]);
 
   const isModifierClick = useCallback(
     (event: React.MouseEvent<HTMLElement>) => event.ctrlKey || event.metaKey || isModifierActive,
@@ -269,7 +337,9 @@ export default function DashboardPage() {
 
   const currentFolderName = selectedFolderId
     ? (folders[selectedFolderId]?.name ?? t("common.emDash"))
-    : t("dashboard.allDiagrams");
+    : view === "recent"
+      ? t("dashboard.recentViewHeading")
+      : t("dashboard.allDiagrams");
 
   return (
     <div className="min-h-screen pt-16">
@@ -288,6 +358,12 @@ export default function DashboardPage() {
               moveDiagram(diagramId, folderId);
               setDropTargetFolderId(undefined);
             }}
+            recentDiagrams={recentResolved}
+            recentCount={recentResolved.length}
+            recentViewActive={view === "recent"}
+            locale={i18n.language}
+            onSelectRecentView={handleSelectRecentView}
+            onOpenRecent={handleOpenRecent}
           />
         </div>
 
@@ -406,39 +482,53 @@ export default function DashboardPage() {
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-foreground">{currentFolderName}</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {t("dashboard.diagramCount", {
-                    count: folderDiagrams.length,
-                    diagrams: t(
-                      folderDiagrams.length === 1 ? "common.diagram_one" : "common.diagram_other",
-                    ),
-                    folders:
-                      childFolders.length > 0
-                        ? t("dashboard.foldersSuffix", {
-                            count: childFolders.length,
-                            folders: t(
-                              childFolders.length === 1
-                                ? "common.folder_one"
-                                : "common.folder_other",
-                            ),
-                          })
-                        : "",
-                  })}
-                </p>
+                {view === "recent" ? (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {t("dashboard.diagramCount", {
+                      count: effectiveList.length,
+                      diagrams: t(
+                        effectiveList.length === 1 ? "common.diagram_one" : "common.diagram_other",
+                      ),
+                      folders: "",
+                    })}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {t("dashboard.diagramCount", {
+                      count: folderDiagrams.length,
+                      diagrams: t(
+                        folderDiagrams.length === 1 ? "common.diagram_one" : "common.diagram_other",
+                      ),
+                      folders:
+                        childFolders.length > 0
+                          ? t("dashboard.foldersSuffix", {
+                              count: childFolders.length,
+                              folders: t(
+                                childFolders.length === 1
+                                  ? "common.folder_one"
+                                  : "common.folder_other",
+                              ),
+                            })
+                          : "",
+                    })}
+                  </p>
+                )}
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8"
-                  onClick={() => setImportModalOpen(true)}
-                >
-                  <Upload className="h-3.5 w-3.5" />
-                </Button>
-                <Button onClick={() => setShowAdd(true)} size="sm" className="gap-1.5 h-8">
-                  <Plus className="h-3.5 w-3.5" /> {t("dashboard.newDiagram")}
-                </Button>
-              </div>
+              {showMutationActions && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => setImportModalOpen(true)}
+                  >
+                    <Upload className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button onClick={() => setShowAdd(true)} size="sm" className="gap-1.5 h-8">
+                    <Plus className="h-3.5 w-3.5" /> {t("dashboard.newDiagram")}
+                  </Button>
+                </div>
+              )}
             </div>
 
             {globalSearchResults !== null && (
@@ -488,7 +578,7 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {globalSearchResults === null && allDomains.length > 0 && (
+            {showDomainChips && (
               <div className="mb-4 flex flex-wrap gap-1.5">
                 <button
                   onClick={() => setActiveDomainFilter(null)}
@@ -520,7 +610,7 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {globalSearchResults === null && childFolders.length > 0 && (
+            {globalSearchResults === null && showFolderCards && (
               <div className="mb-5">
                 <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {childFolders.map((folder) => {
@@ -558,10 +648,32 @@ export default function DashboardPage() {
               </div>
             )}
 
+            {view === "recent" && globalSearchResults === null && recentDiagramObjects.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/50 mb-4">
+                  <Clock className="h-7 w-7 text-muted-foreground/60" />
+                </div>
+                <p className="text-sm text-muted-foreground mb-1">
+                  {t("dashboard.recentEmptyTitle")}
+                </p>
+                <p className="text-xs text-muted-foreground/60 mb-4 max-w-xs">
+                  {t("dashboard.recentEmptyHint")}
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setView("all")}
+                  className="gap-1.5"
+                >
+                  {t("folderTree.allDiagrams")}
+                </Button>
+              </div>
+            )}
+
             {globalSearchResults === null &&
               (viewMode === "grid" ? (
                 <DiagramGrid
-                  diagrams={domainFiltered}
+                  diagrams={effectiveList}
                   onSelect={handleDiagramCardSelect}
                   isDiagramSelected={isBulkIdSelected}
                   onDragStart={handleDragStart}
@@ -569,7 +681,7 @@ export default function DashboardPage() {
                 />
               ) : (
                 <DiagramList
-                  diagrams={domainFiltered}
+                  diagrams={effectiveList}
                   onOpen={handleOpen}
                   onDelete={handleDelete}
                   onDragStart={handleDragStart}
@@ -578,6 +690,7 @@ export default function DashboardPage() {
               ))}
 
             {globalSearchResults === null &&
+              view === "all" &&
               domainFiltered.length === 0 &&
               childFolders.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-20 text-center">

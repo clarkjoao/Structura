@@ -142,6 +142,11 @@
     "ptBR": "Português (BR)",
     "en": "English"
   },
+  "settings": {
+    "menuLabel": "Preferências",
+    "appearance": "Aparência",
+    "followSystem": "Seguir sistema"
+  },
   "notFound": {
     "title": "Oops! Página não encontrada",
     "home": "Voltar ao início"
@@ -195,6 +200,11 @@
     "createDiagram": "Criar diagrama",
     "newDiagram": "Novo diagrama",
     "newFolder": "Nova pasta",
+    "recentViewHeading": "Recentes",
+    "recentEmptyTitle": "Nenhum diagrama aberto recentemente",
+    "recentEmptyHint": "Abra um diagrama para vê-lo aqui",
+    "recentCount": "{{count}} {{diagrams}}",
+    "foldersHiddenInRecent": "Diagramas recentes são listados por último acesso, atravessando pastas.",
     "diagramCount": "{{count}} {{diagrams}}{{folders}}",
     "foldersSuffix": " · {{count}} {{folders}}",
     "addDiagramTitle": "Novo diagrama",
@@ -248,6 +258,8 @@
   },
   "folderTree": {
     "newFolderTitle": "Nova pasta",
+    "newFolder": "Nova pasta",
+    "recentLabel": "Recentes",
     "searchFoldersPlaceholder": "Buscar pastas…",
     "allDiagrams": "Todos os diagramas",
     "noFoldersFound": "Nenhuma pasta encontrada",
@@ -275,6 +287,14 @@
       "title": "Não foi possível guardar",
       "description": "O armazenamento local está cheio. Ligue uma pasta ou liberte espaço para continuar."
     },
+    "suggest": {
+      "title": "Sincronizar com uma pasta",
+      "description": "O seu workspace está grande. Ligue uma pasta local para manter o seu trabalho seguro mesmo que o armazenamento do navegador encha."
+    },
+    "urgentSuggest": {
+      "title": "Sincronize com uma pasta agora",
+      "description": "O armazenamento do navegador está quase cheio. Ligue uma pasta para não perder nada se o armazenamento for limpo."
+    },
     "freed": "{{amount}} libertados com sucesso.",
     "action": {
       "clear": "Libertar espaço",
@@ -301,12 +321,21 @@
     "backupFailedQuota": "Armazenamento do navegador cheio ou bloqueado. Libere espaço ou permita armazenamento e tente de novo.",
     "backupFailedVerify": "O backup não apareceu no localStorage após salvar. Verifique permissões do site.",
     "backupFailedGeneric": "Não foi possível salvar cópia no navegador. Tente de novo ou exporte JSON manualmente.",
+    "backupFailedBeforeOverwrite": "Não foi possível salvar cópia de segurança no navegador antes de sobrescrever. Operação cancelada para proteger seus dados.",
+    "backupFailedBeforeMerge": "Não foi possível salvar cópia de segurança no navegador antes de fazer merge. Operação cancelada para proteger seus dados.",
+    "backupFailedBeforePush": "Não foi possível salvar cópia de segurança no navegador antes de enviar. Operação cancelada para proteger seus dados.",
+    "overwriteFailedFlush": "Falha ao gravar os arquivos na pasta. Seus dados locais foram preservados.",
+    "overwriteFailedGeneric": "Erro inesperado ao sobrescrever. Seus dados locais foram preservados.",
+    "mergeFailedFlush": "Falha ao gravar o merge na pasta. Seus dados originais foram preservados.",
+    "mergeFailedGeneric": "Erro inesperado durante o merge. Seus dados originais foram preservados.",
+    "pushFailedGeneric": "Erro inesperado ao enviar diagramas para a pasta. Tente novamente.",
     "needsPermissionLabel": "Reconectar workspace",
     "needsPermissionTitle": "Clique para restaurar o acesso à pasta anteriormente conectada",
     "needsPermissionFolder": "Reconectar \"{{name}}\""
   },
   "workspaceMerge": {
     "title": "Pasta com arquivos existentes",
+    "subtitle": "Esta pasta já tem diagramas. Escolha como combinar com os seus dados atuais do navegador.",
     "found": "Encontramos {{count}} diagrama(s) nesta pasta.",
     "valid": "{{count}} válidos",
     "invalid": "{{count}} inválidos",
@@ -314,14 +343,26 @@
     "toggleInvalid": "Ver arquivos inválidos ({{count}})",
     "manifestWarning": "Aviso do manifest:",
     "conflict": "{{count}} diagrama(s) já existem localmente (localStorage). Em caso de conflito, a versão da pasta será priorizada sobre a versão local (localStorage) no merge.",
-    "cancelKeepLocal": "Cancelar e manter local storage",
+    "conflictDetailsTitle": "Diagramas que existem nos dois lugares",
+    "conflictDetailsHint": "No merge, a versão da pasta substitui a do navegador.",
+    "conflictBadgeLocal": "só no app",
+    "conflictBadgeFolder": "só na pasta",
+    "conflictBadgeBoth": "nos dois",
+    "cancelKeepLocal": "Cancelar",
+    "cancelKeepLocalHint": "Fecha esta janela. Sua pasta continua conectada e seus dados do navegador ficam intactos.",
     "overwriteTitle": "Descartar diagramas que estão só no app e carregar apenas os que estão na pasta",
     "overwrite": "Usar arquivos só pasta",
+    "overwriteHint": "Vai descartar {{lostLocal}} diagrama(s) que existem só no navegador e manter {{keptFromFolder}} da pasta. Esta ação não pode ser desfeita.",
+    "overwriteHintNoLoss": "Vai descartar {{lostLocal}} diagrama(s) que existem só no navegador e manter {{keptFromFolder}} da pasta.",
+    "overwriteHintNoFolder": "Vai descartar todos os {{lostLocal}} diagrama(s) do navegador e usar apenas {{keptFromFolder}} da pasta. Esta ação não pode ser desfeita.",
     "mergeTitle": "Manter os diagramas que já estão no app e adicionar os que estão na pasta",
-    "merge": "Manter tudo (localStorage + pasta) e fazer merge",
+    "merge": "Manter tudo e fazer merge",
+    "mergeHint": "Vai manter todos os {{keptLocal}} do navegador e adicionar {{addedFromFolder}} novos da pasta. Diagramas com mesmo nome: a versão da pasta prevalece.",
+    "mergeHintSimple": "Vai manter todos os {{keptLocal}} do navegador e adicionar {{addedFromFolder}} novos da pasta.",
     "emptyFolderTitle": "Pasta vazia",
     "emptyFolderDescription": "Esta pasta não tem arquivos de diagrama do Structura. Você tem {{count}} diagrama(s) só no app. Envie-os para a pasta para iniciar a sincronização, ou cancele para desconectar.",
     "emptyFolderPush": "Enviar diagramas para a pasta",
+    "emptyFolderPushHint": "Vai copiar todos os seus {{count}} diagrama(s) do navegador para a pasta e iniciar a sincronização.",
     "emptyFolderPushTitle": "Gravar o estado atual do app nesta pasta e iniciar a sincronização",
     "errors": {
       "invalidJson": "JSON malformado",
@@ -331,9 +372,18 @@
   },
   "disconnect": {
     "title": "Desconectar pasta",
+    "subtitle": "Você está prestes a desconectar a sincronização com esta pasta.",
     "messageNamed": "Deseja desconectar \"{{name}}\"?",
     "messageGeneric": "Deseja desconectar a pasta local?",
     "explanation": "Os dados atuais estão apenas no seu filesystem (não foram salvos no navegador). Quer manter uma cópia no navegador (localStorage) antes de desconectar?",
+    "localCopyBadgeTitle": "Backup no navegador",
+    "localCopyBadgePresent": "Há {{count}} diagrama(s) já salvos no navegador.",
+    "localCopyBadgeMissing": "Nada está salvo no navegador ainda. Se desconectar sem salvar, seus dados existirão apenas na pasta.",
+    "cancelHint": "Fecha esta janela. A pasta continua conectada.",
+    "disconnectOnlyHint": "Desconecta a pasta. Diagramas na pasta ficam intactos no disco; o app volta a trabalhar só com o navegador.",
+    "disconnectOnlyHintNoCopy": "⚠ Desconecta a pasta. Como não há cópia no navegador, você só conseguirá acessar esses dados reconectando a mesma pasta depois.",
+    "keepCopyHint": "Salva uma cópia de todos os diagramas no navegador (localStorage) e só então desconecta a pasta. Você poderá continuar editando offline.",
+    "keepCopyHintNoCopy": "Salva uma cópia de todos os diagramas no navegador e desconecta a pasta. Recomendado.",
     "keepCopyTitle": "Salvar estado atual no navegador e depois desconectar a pasta",
     "keepCopy": "Salvar no navegador e desconectar",
     "disconnectOnly": "Desconectar sem salvar"
@@ -497,7 +547,10 @@
         "removeNode": "Remover nó {{nodeId}}",
         "updateNode": "Atualizar nó {{nodeId}}",
         "addEdge": "Adicionar conexão {{sourceId}} -> {{targetId}}",
-        "removeEdge": "Remover conexão {{edgeId}}"
+        "removeEdge": "Remover conexão {{edgeId}}",
+        "insertPattern": "Inserir pattern {{patternId}}",
+        "autoLayout": "Organizar diagrama automaticamente",
+        "getTags": "Listar tags do diagrama"
       }
     },
     "mention": {
@@ -1112,7 +1165,12 @@
     "importFlow": "Importar flow",
     "importDialog": {
       "title": "Importar sequência Mermaid",
+      "description": "Cole um diagrama sequenceDiagram ou flowchart para criar componentes, conexões e um novo flow.",
       "flowName": "Nome do flow",
+      "flowNamePlaceholder": "Ex.: Fluxo de checkout",
+      "code": "Código Mermaid",
+      "exampleSequence": "Exemplo sequence",
+      "exampleFlowchart": "Exemplo flowchart",
       "validate": "Validar",
       "import": "Importar",
       "newComponents": "{{count}} novo(s) componente(s) será(ão) criado(s)",
@@ -1121,7 +1179,8 @@
       "invalidDiagram": "O texto deve conter um sequenceDiagram válido",
       "unknownDiagramType": "Tipo de diagrama não reconhecido. Comece com sequenceDiagram ou flowchart.",
       "detectedSequence": "Diagrama de sequência detectado",
-      "detectedFlowchart": "Fluxograma detectado"
+      "detectedFlowchart": "Fluxograma detectado",
+      "layoutError": "Não foi possível organizar os elementos. Ajuste manualmente."
     },
     "copyDrawio": "Copiar para Drawio",
     "copied": "Copiado!",

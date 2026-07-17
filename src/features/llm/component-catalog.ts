@@ -1,4 +1,5 @@
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/catalogs/aws";
+import { PATTERNS, PATTERN_CATEGORIES } from "@/lib/catalogs/patterns";
 
 export interface ComponentTypeDefinition {
   nodeType: string;
@@ -198,15 +199,76 @@ export function buildComponentTypeCatalog(): string {
   }
 
   sections.push("");
-  sections.push("### AWS Service Types");
-  sections.push("Use these for AWS infrastructure components.");
-  for (const definition of AWS_TYPES) {
-    sections.push(formatTypeDef(definition));
-  }
+  sections.push(buildAwsCatalogCompact());
 
   return sections.join("\n");
 }
 
+export function buildAwsCatalogCompact(): string {
+  const lines: string[] = [
+    "### AWS Service Types",
+    "",
+    "Use awsService in add_node parameters. nodeType must match the category prefix.",
+    "",
+  ];
+
+  for (const category of AWS_CATEGORIES) {
+    const serviceIds = category.services.map((s) => s.id).join(", ");
+    lines.push(`${category.id.replace("aws-", "").toUpperCase()}: ${serviceIds}`);
+  }
+
+  return lines.join("\n");
+}
+
+export function buildPatternCatalogCompact(): string {
+  const lines: string[] = [
+    "",
+    "### Architectural Patterns",
+    "",
+    "Use insert_pattern tool with the pattern ID.",
+    "",
+  ];
+
+  for (const category of PATTERN_CATEGORIES) {
+    const patternIds = PATTERNS.filter((p) => p.category === category)
+      .map((p) => p.id)
+      .join(", ");
+    lines.push(`${category.toUpperCase()}: ${patternIds}`);
+  }
+
+  return lines.join("\n");
+}
+
 export function isValidNodeType(nodeType: string): boolean {
   return ALL_COMPONENT_TYPES.some((definition) => definition.nodeType === nodeType);
+}
+
+export function buildPatternCatalog(): string {
+  const lines: string[] = [
+    "",
+    "### Architectural Patterns",
+    "",
+    "These are reusable architectural templates you can insert into the diagram. Use the insert_pattern tool.",
+    "",
+  ];
+
+  for (const category of PATTERN_CATEGORIES) {
+    const patterns = PATTERNS.filter((p) => p.category === category);
+    lines.push(`${category.toUpperCase()}:`);
+    for (const p of patterns) {
+      const shortDesc = p.description.length > 120 ? p.description.slice(0, 117) + "..." : p.description;
+      lines.push(`  - ${p.id}: ${shortDesc}`);
+    }
+    lines.push("");
+  }
+
+  return lines.join("\n");
+}
+
+export function isValidPatternId(patternId: string): boolean {
+  return PATTERNS.some((p) => p.id === patternId);
+}
+
+export function getPatternById(patternId: string) {
+  return PATTERNS.find((p) => p.id === patternId);
 }

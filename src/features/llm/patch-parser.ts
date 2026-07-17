@@ -1,5 +1,5 @@
 import { isWriteTool } from "./tools";
-import { isValidNodeType } from "./component-catalog";
+import { isValidNodeType, isValidPatternId } from "./component-catalog";
 import type {
   AnalysisFinding,
   AnalysisResponse,
@@ -161,6 +161,27 @@ function mapToolCallToAction(toolCall: LLMToolCall): DiagramPatchAction | null {
       return {
         type: "REMOVE_EDGE",
         payload: toolCall.parameters as DiagramPatchAction["payload"],
+      } as DiagramPatchAction;
+    case "insert_pattern": {
+      const patternId = toolCall.parameters.patternId;
+      if (typeof patternId !== "string" || !isValidPatternId(patternId)) {
+        console.warn(`[LLM] Invalid patternId "${patternId}" - action skipped`);
+        return null;
+      }
+      return {
+        type: "INSERT_PATTERN",
+        payload: { patternId },
+      } as DiagramPatchAction;
+    }
+    case "auto_layout":
+      return {
+        type: "AUTO_LAYOUT",
+        payload: {},
+      } as DiagramPatchAction;
+    case "get_tags":
+      return {
+        type: "GET_TAGS",
+        payload: {},
       } as DiagramPatchAction;
     default:
       return null;
