@@ -29,15 +29,11 @@ import { useDiagramStore } from "@/features/diagram";
 import { useShallow } from "zustand/react/shallow";
 
 export interface FileSystemStatusProps {
-  /**
-   * Compact mode: badges and primary buttons render as icon-only triggers
-   * with tooltips. Use inside space-constrained headers (the global navbar).
-   * The full element is preserved when this prop is omitted.
-   */
   compact?: boolean;
+  hideActions?: boolean;
 }
 
-export function FileSystemStatus({ compact = false }: FileSystemStatusProps = {}) {
+export function FileSystemStatus({ compact = false, hideActions = false }: FileSystemStatusProps = {}) {
   const { t, i18n } = useTranslation();
   const lastFolderSync = useLastFolderSync();
   const lastLocalStorageSync = useLastLocalStorageSync();
@@ -196,41 +192,45 @@ export function FileSystemStatus({ compact = false }: FileSystemStatusProps = {}
               <span className={folderSyncCaption.className}>{folderSyncCaption.text}</span>
             </div>
           )}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                onClick={syncFromFolder}
-                disabled={syncing}
-                className="flex h-8 w-8 items-center justify-center rounded-md
-                  text-muted-foreground hover:text-foreground hover:bg-muted/50
-                  transition-colors disabled:opacity-50"
-                aria-label={t("filesystem.syncPullTitle")}
-              >
-                <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" align="end">
-              {t("filesystem.syncPullTitle")}
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                onClick={requestDisconnect}
-                className="flex h-8 w-8 items-center justify-center rounded-md
-                  text-muted-foreground hover:text-foreground hover:bg-muted/50
-                  transition-colors"
-                aria-label={t("filesystem.disconnectTitle")}
-              >
-                <FolderX className="h-4 w-4" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" align="end">
-              {t("filesystem.disconnectTitle")}
-            </TooltipContent>
-          </Tooltip>
+          {!hideActions && (
+            <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={syncFromFolder}
+                    disabled={syncing}
+                    className="flex h-8 w-8 items-center justify-center rounded-md
+                      text-muted-foreground hover:text-foreground hover:bg-muted/50
+                      transition-colors disabled:opacity-50"
+                    aria-label={t("filesystem.syncPullTitle")}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" align="end">
+                  {t("filesystem.syncPullTitle")}
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={requestDisconnect}
+                    className="flex h-8 w-8 items-center justify-center rounded-md
+                      text-muted-foreground hover:text-foreground hover:bg-muted/50
+                      transition-colors"
+                    aria-label={t("filesystem.disconnectTitle")}
+                  >
+                    <FolderX className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" align="end">
+                  {t("filesystem.disconnectTitle")}
+                </TooltipContent>
+              </Tooltip>
+            </>
+          )}
         </div>
       )}
 
@@ -241,7 +241,7 @@ export function FileSystemStatus({ compact = false }: FileSystemStatusProps = {}
         </div>
       )}
 
-      {isFileSystemSupported && status === "needs_permission" && (
+      {isFileSystemSupported && status === "needs_permission" && !hideActions && (
         compact ? (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -316,7 +316,8 @@ export function FileSystemStatus({ compact = false }: FileSystemStatusProps = {}
               </span>
             </div>
           )}
-          {isFileSystemSupported &&
+          {!hideActions &&
+            isFileSystemSupported &&
             (compact ? (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -350,7 +351,7 @@ export function FileSystemStatus({ compact = false }: FileSystemStatusProps = {}
         </div>
       )}
 
-      {pendingMerge && scanResult && (
+      {!hideActions && pendingMerge && scanResult && (
         <WorkspaceMergeDialog
           scanResult={scanResult}
           localDiagramCount={localDiagramCount}
@@ -367,7 +368,7 @@ export function FileSystemStatus({ compact = false }: FileSystemStatusProps = {}
         />
       )}
 
-      {pendingDisconnect && (
+      {!hideActions && pendingDisconnect && (
         <DisconnectConfirmDialog
           folderName={folderName}
           localDiagramCount={localDiagramCount}

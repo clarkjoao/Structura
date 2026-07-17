@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
 import { SaveStatusIndicator } from "@/features/canvas/components/SaveStatusIndicator";
+import { FileSystemStatus } from "@/components/FileSystemStatus";
 import {
   EmbedModal,
   useFlowMode,
@@ -307,6 +308,7 @@ export function WorkspaceContent({
             </div>
             <div className="flex items-center gap-2">
               <SaveStatusIndicator />
+              <FileSystemStatus compact hideActions />
               <CollabToolbar
                 session={session}
                 isReady={isReady}
@@ -329,6 +331,19 @@ export function WorkspaceContent({
               >
                 <GitBranch className="h-3.5 w-3.5" /> {t("flows.panelTitle")}
               </button>
+              <button
+                type="button"
+                disabled={canvasInteractionLocked}
+                onClick={() => setShareModalOpen(true)}
+                className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-all ${
+                  canvasInteractionLocked
+                    ? "opacity-50 pointer-events-none text-muted-foreground border-transparent"
+                    : "text-muted-foreground hover:text-foreground border-transparent hover:border-border"
+                }`}
+                aria-label={t("share.button")}
+              >
+                <Share2 className="h-3.5 w-3.5" /> {t("share.button")}
+              </button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -343,18 +358,10 @@ export function WorkspaceContent({
                   <DropdownMenuItem
                     disabled={canvasInteractionLocked}
                     className="gap-2 text-xs font-medium cursor-pointer"
-                    onClick={() => setShareModalOpen(true)}
-                  >
-                    <Share2 className="h-3.5 w-3.5 shrink-0" />
-                    {t("share.button")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    disabled={canvasInteractionLocked}
-                    className="gap-2 text-xs font-medium cursor-pointer"
                     onClick={() => setExportModalOpen(true)}
                   >
                     <FileDown className="h-3.5 w-3.5 shrink-0" size={14} />
-                    {t("export.hub.toolbarButton")}
+                    {t("export.toolbarButton")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="gap-2 text-xs font-medium cursor-pointer"
