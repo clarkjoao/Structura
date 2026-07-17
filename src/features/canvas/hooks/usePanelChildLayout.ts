@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { useReactFlow } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { computePanelChildLayout } from "../layout/autoLayoutEngine";
@@ -15,6 +16,7 @@ export function usePanelChildLayout() {
   const components = useComponents();
   const connectionsRecord = useConnections();
   const nodeLayouts = useResolvedNodeLayouts();
+  const { getNodes } = useReactFlow();
   const [isRunning, setIsRunning] = useState(false);
 
   const runPanelChildLayout = useCallback(
@@ -23,7 +25,8 @@ export function usePanelChildLayout() {
       setIsRunning(true);
       try {
         const connections = Object.values(connectionsRecord);
-        const result = await computePanelChildLayout(panelId, components, connections, nodeLayouts);
+        const measuredNodes = getNodes();
+        const result = await computePanelChildLayout(panelId, components, connections, nodeLayouts, measuredNodes);
         if (result.length === 0) {
           toast.info(t("autoLayout.noConnectedNodes"));
           return;
@@ -37,7 +40,7 @@ export function usePanelChildLayout() {
         setIsRunning(false);
       }
     },
-    [applyAutoLayout, components, connectionsRecord, isRunning, nodeLayouts, t],
+    [applyAutoLayout, components, connectionsRecord, getNodes, isRunning, nodeLayouts, t],
   );
 
   return { runPanelChildLayout, isRunning };
