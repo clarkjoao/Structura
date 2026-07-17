@@ -280,6 +280,14 @@
       "title": "Não foi possível guardar",
       "description": "O armazenamento local está cheio. Ligue uma pasta ou liberte espaço para continuar."
     },
+    "suggest": {
+      "title": "Sincronizar com uma pasta",
+      "description": "O seu workspace está grande. Ligue uma pasta local para manter o seu trabalho seguro mesmo que o armazenamento do navegador encha."
+    },
+    "urgentSuggest": {
+      "title": "Sincronize com uma pasta agora",
+      "description": "O armazenamento do navegador está quase cheio. Ligue uma pasta para não perder nada se o armazenamento for limpo."
+    },
     "freed": "{{amount}} libertados com sucesso.",
     "action": {
       "clear": "Libertar espaço",

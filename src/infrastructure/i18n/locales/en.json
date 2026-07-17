@@ -280,6 +280,14 @@
       "title": "Could not save",
       "description": "Local storage is full. Connect a folder or free up space to continue."
     },
+    "suggest": {
+      "title": "Sync to a folder",
+      "description": "Your workspace is large. Connect a local folder to keep your work safe even if browser storage fills up."
+    },
+    "urgentSuggest": {
+      "title": "Sync to a folder now",
+      "description": "Browser storage is almost full. Connect a folder so nothing is lost if storage is cleared."
+    },
     "freed": "{{amount}} freed successfully.",
     "action": {
       "clear": "Free up space",
