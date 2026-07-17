@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Component } from "@/features/diagram";
+import { useCanvasSelectionStore } from "./useCanvasSelectionStore";
 
 export interface CanvasVisualState {
   selectedNodeId: string | null;
@@ -47,9 +48,13 @@ export interface NodeSelectionState {
 }
 
 export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisualState {
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
-  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+  const selectedNodeId = useCanvasSelectionStore((s) => s.selectedNodeId);
+  const selectedNodeIds = useCanvasSelectionStore((s) => s.selectedNodeIds);
+  const selectedEdgeId = useCanvasSelectionStore((s) => s.selectedEdgeId);
+  const setSelectedNodeId = useCanvasSelectionStore((s) => s.setSelectedNodeId);
+  const setSelectedNodeIds = useCanvasSelectionStore((s) => s.setSelectedNodeIds);
+  const setSelectedEdgeId = useCanvasSelectionStore((s) => s.setSelectedEdgeId);
+  const clearSelectionInStore = useCanvasSelectionStore((s) => s.clearSelection);
   const [highlightedConnectionId, setHighlightedConnectionId] = useState<string | null>(null);
   const [highlightedNodeIds, setHighlightedNodeIds] = useState<Set<string>>(new Set());
   const [contextMenu, setContextMenu] = useState<{
@@ -107,14 +112,12 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
 
   const clearCanvasSelectionImpl = useCallback(() => {
     clearHighlightImpl();
-    setSelectedNodeId((prev) => (prev === null ? prev : null));
-    setSelectedNodeIds((prev) => (prev.size === 0 ? prev : emptySet));
-    setSelectedEdgeId((prev) => (prev === null ? prev : null));
+    clearSelectionInStore();
     setContextMenu((prev) => (prev === null ? prev : null));
     setPaneContextMenu((prev) => (prev === null ? prev : null));
     setNoteInlineEditingId(null);
     setJsonViewerInlineEditingId(null);
-  }, [clearHighlightImpl, emptySet]);
+  }, [clearHighlightImpl, clearSelectionInStore]);
 
   useEffect(() => {
     clearCanvasSelectionImpl();

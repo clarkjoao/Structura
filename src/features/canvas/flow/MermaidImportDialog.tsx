@@ -1,12 +1,20 @@
 import { useEffect, useRef, useState } from "react";
-import { LazyMonacoEditor as Editor } from "@/lib/monaco/LazyMonacoEditor";
+import { LazyMonacoEditor as Editor, type EditorProps } from "@/lib/monaco/LazyMonacoEditor";
 import { useTranslation } from "react-i18next";
+import {
+  AlertCircle,
+  CheckCircle2,
+  FileInput,
+  GitBranch,
+  Sparkles,
+  Workflow,
+} from "lucide-react";
 import { parseMermaidFlowchart, parseMermaidSequence } from "@/features/diagram";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -32,6 +40,25 @@ interface ValidationState {
 
 const DEFAULT_FLOW_NAME = "Imported Flow";
 
+const SEQUENCE_EXAMPLE = `sequenceDiagram
+    participant User
+    participant API
+    participant Database
+
+    User->>API: login(username, password)
+    API->>Database: findUser(username)
+    Database-->>API: user record
+    API-->>User: session token
+`;
+
+const FLOWCHART_EXAMPLE = `flowchart LR
+    Start([Start]) --> Decision{User logged in?}
+    Decision -- Yes --> Home[Home page]
+    Decision -- No --> Login[Login page]
+    Login --> End([End])
+    Home --> End
+`;
+
 function detectMermaidType(text: string): MermaidDiagramType {
   const firstLine = text.trim().split("\n")[0]?.trim().toLowerCase() ?? "";
   if (firstLine.startsWith("sequencediagram")) return "sequence";
@@ -45,6 +72,7 @@ export function MermaidImportDialog({ open, onOpenChange, onImport, onImportFlow
   const [text, setText] = useState("");
   const [validation, setValidation] = useState<ValidationState | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const editorRef = useRef<Parameters<NonNullable<EditorProps["onMount"]>>[0] | null>(null);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -94,6 +122,7 @@ export function MermaidImportDialog({ open, onOpenChange, onImport, onImportFlow
       setText("");
       setValidation(null);
       setFlowName(DEFAULT_FLOW_NAME);
+      editorRef.current = null;
     }
   }, [open]);
 
@@ -107,13 +136,33 @@ export function MermaidImportDialog({ open, onOpenChange, onImport, onImportFlow
     onImport(text, name);
   };
 
+  const handleEditorMount: EditorProps["onMount"] = (editor) => {
+    editorRef.current = editor;
+    editor.focus();
+  };
+
+  const handlePasteExample = (kind: "sequence" | "flowchart") => {
+    setText(kind === "sequence" ? SEQUENCE_EXAMPLE : FLOWCHART_EXAMPLE);
+    setFlowName(kind === "sequence" ? "Login flow" : "User journey");
+  };
+
   const canImportFlowchart = validation?.diagramType === "flowchart" && Boolean(onImportFlowchart);
+  const isValid =
+    !!text.trim() &&
+    validation !== null &&
+    validation.errors.length === 0 &&
+    validation.diagramType !== "unknown" &&
+    (validation.diagramType !== "flowchart" || canImportFlowchart);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{t("flows.importDialog.title")}</DialogTitle>
+          <div className="flex items-center gap-2">
+            <FileInput className="h-5 w-5 text-primary" />
+            <DialogTitle>{t("flows.importDialog.title")}</DialogTitle>
+          </div>
+          <DialogDescription>{t("flows.importDialog.description")}</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-2">
@@ -122,69 +171,110 @@ export function MermaidImportDialog({ open, onOpenChange, onImport, onImportFlow
             id="flow-import-name"
             value={flowName}
             onChange={(event) => setFlowName(event.target.value)}
+            placeholder={t("flows.importDialog.flowNamePlaceholder")}
             required
           />
         </div>
 
-        <Editor
-          language="mermaid"
-          theme="vs-dark"
-          height="300px"
-          value={text}
-          onChange={(value) => setText(value ?? "")}
-          options={{
-            minimap: { enabled: false },
-            fontSize: 12,
-            wordWrap: "on",
-            scrollBeyondLastLine: false,
-          }}
-        />
-
-        {validation?.diagramType === "sequence" && (
-          <Badge variant="secondary" className="w-fit text-xs">
-            {t("flows.importDialog.detectedSequence")}
-          </Badge>
-        )}
-        {validation?.diagramType === "flowchart" && (
-          <Badge variant="secondary" className="w-fit text-xs">
-            {t("flows.importDialog.detectedFlowchart")}
-          </Badge>
-        )}
+        <div className="grid gap-2">
+          <div className="flex items-center justify-between">
+            <Label>{t("flows.importDialog.code")}</Label>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 gap-1 px-2 text-[10px] text-muted-foreground"
+                onClick={() => handlePasteExample("sequence")}
+              >
+                <Sparkles className="h-3 w-3" />
+                {t("flows.importDialog.exampleSequence")}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 gap-1 px-2 text-[10px] text-muted-foreground"
+                onClick={() => handlePasteExample("flowchart")}
+              >
+                <Sparkles className="h-3 w-3" />
+                {t("flows.importDialog.exampleFlowchart")}
+              </Button>
+            </div>
+          </div>
+          <div className="overflow-hidden rounded-md border border-border">
+            <Editor
+              language="mermaid"
+              theme="vs-dark"
+              height="320px"
+              value={text}
+              onChange={(value) => setText(value ?? "")}
+              onMount={handleEditorMount}
+              options={{
+                minimap: { enabled: false },
+                fontSize: 12,
+                wordWrap: "on",
+                scrollBeyondLastLine: false,
+                lineNumbers: "on",
+                renderLineHighlight: "all",
+                padding: { top: 12, bottom: 12 },
+              }}
+            />
+          </div>
+        </div>
 
         {validation && (
-          <div className="space-y-2 text-sm">
-            <p className="text-muted-foreground">
-              {t("flows.importDialog.newComponents", { count: validation.newComponents })}
-            </p>
-            <p className="text-muted-foreground">
-              {t("flows.importDialog.newConnections", { count: validation.newConnections })}
-            </p>
+          <div className="space-y-2">
+            {validation.diagramType !== "unknown" && validation.errors.length === 0 && (
+              <div className="flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-emerald-700 dark:text-emerald-300">
+                  {validation.diagramType === "sequence" ? (
+                    <span className="inline-flex items-center gap-1 font-medium">
+                      <Workflow className="h-3.5 w-3.5" />
+                      {t("flows.importDialog.detectedSequence")}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 font-medium">
+                      <GitBranch className="h-3.5 w-3.5" />
+                      {t("flows.importDialog.detectedFlowchart")}
+                    </span>
+                  )}
+                  <span className="text-muted-foreground">
+                    {t("flows.importDialog.newComponents", { count: validation.newComponents })}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {t("flows.importDialog.newConnections", { count: validation.newConnections })}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {validation.errors.length > 0 && (
-              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2">
-                <p className="font-medium text-destructive">{t("flows.importDialog.errors")}</p>
-                <ul className="mt-1 list-disc pl-5 text-destructive">
-                  {validation.errors.map((error, index) => (
-                    <li key={`${error}-${index}`}>{error}</li>
-                  ))}
-                </ul>
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-destructive mt-0.5" />
+                  <div className="flex-1 space-y-1">
+                    <p className="font-medium text-destructive text-sm">
+                      {t("flows.importDialog.errors")}
+                    </p>
+                    <ul className="list-disc pl-4 text-xs text-destructive/90 space-y-0.5">
+                      {validation.errors.map((error, index) => (
+                        <li key={`${error}-${index}`}>{error}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
               </div>
             )}
           </div>
         )}
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-2 sm:gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("common.cancel")}
           </Button>
-          <Button
-            onClick={handleImport}
-            disabled={
-              !text.trim() ||
-              validation === null ||
-              validation.errors.length > 0 ||
-              (validation.diagramType === "flowchart" && !canImportFlowchart)
-            }
-          >
+          <Button onClick={handleImport} disabled={!isValid}>
             {t("flows.importDialog.import")}
           </Button>
         </DialogFooter>

@@ -1165,7 +1165,12 @@
     "importFlow": "Importar flow",
     "importDialog": {
       "title": "Importar sequência Mermaid",
+      "description": "Cole um diagrama sequenceDiagram ou flowchart para criar componentes, conexões e um novo flow.",
       "flowName": "Nome do flow",
+      "flowNamePlaceholder": "Ex.: Fluxo de checkout",
+      "code": "Código Mermaid",
+      "exampleSequence": "Exemplo sequence",
+      "exampleFlowchart": "Exemplo flowchart",
       "validate": "Validar",
       "import": "Importar",
       "newComponents": "{{count}} novo(s) componente(s) será(ão) criado(s)",
@@ -1174,7 +1179,8 @@
       "invalidDiagram": "O texto deve conter um sequenceDiagram válido",
       "unknownDiagramType": "Tipo de diagrama não reconhecido. Comece com sequenceDiagram ou flowchart.",
       "detectedSequence": "Diagrama de sequência detectado",
-      "detectedFlowchart": "Fluxograma detectado"
+      "detectedFlowchart": "Fluxograma detectado",
+      "layoutError": "Não foi possível organizar os elementos. Ajuste manualmente."
     },
     "copyDrawio": "Copiar para Drawio",
     "copied": "Copiado!",

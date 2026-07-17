@@ -444,27 +444,25 @@ export function WorkspaceContent({
                 />
               )}
               {session && <CollabCursors peers={session.peers} />}
+              {showFlows && !activeFlow && !isRecording && (
+                <FlowPanel
+                  onClose={() => setShowFlows(false)}
+                  onPlay={play}
+                  onStartRecording={startRecordingWhenAllowed}
+                  onEditFlow={editFlowWhenAllowed}
+                  onGetInsertPosition={() => {
+                    const instance = reactFlowInstanceRef.current;
+                    if (!instance) return { x: 0, y: 0 };
+                    return getViewportCenter(instance, !!showFlows);
+                  }}
+                  panelActionsLocked={
+                    compareModeBlocksRecorder || !interaction.canUseFlow || journeyPlaybackActive
+                  }
+                  panelActionsLockedTitle={t("diagramNav.unavailableWhileRecordingOrPlayback")}
+                />
+              )}
             </div>
           </ReactFlowProvider>
-          {showFlows && !activeFlow && !isRecording && (
-            <FlowPanel
-              onClose={() => setShowFlows(false)}
-              onPlay={play}
-              onStartRecording={startRecordingWhenAllowed}
-              onEditFlow={editFlowWhenAllowed}
-              onGetInsertPosition={() => {
-                const instance = reactFlowInstanceRef.current;
-                if (!instance) return { x: 0, y: 0 };
-                return getViewportCenter(instance, !!showFlows);
-              }}
-              isViewingCoverage={isViewingCoverage}
-              onToggleCoverage={() => setIsViewingCoverage((viewing) => !viewing)}
-              panelActionsLocked={
-                compareModeBlocksRecorder || !interaction.canUseFlow || journeyPlaybackActive
-              }
-              panelActionsLockedTitle={t("diagramNav.unavailableWhileRecordingOrPlayback")}
-            />
-          )}
           {isRecording && (
             <FlowRecorderPanel
               recordingContext={recordingContext}

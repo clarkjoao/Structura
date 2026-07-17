@@ -456,6 +456,60 @@ export async function computeAutoLayout(
   return { positions, edgeWaypoints, laidOutConnectionIds };
 }
 
+export interface ScopedAutoLayoutResult {
+  positions: Array<{ elementId: string; x: number; y: number }>;
+  edgeWaypoints: Map<string, Array<{ x: number; y: number }>>;
+  laidOutConnectionIds: string[];
+  bounds: { width: number; height: number };
+}
+
+export async function computeScopedAutoLayout(
+  scopedComponents: Record<string, Component>,
+  scopedConnections: Connection[],
+  nodeLayouts: Record<string, NodeLayout>,
+): Promise<ScopedAutoLayoutResult> {
+  const empty: ScopedAutoLayoutResult = {
+    positions: [],
+    edgeWaypoints: new Map(),
+    laidOutConnectionIds: [],
+    bounds: { width: 0, height: 0 },
+  };
+
+  const ids = Object.keys(scopedComponents);
+  if (ids.length === 0) return empty;
+
+  const includedIds = new Set(ids);
+  const elkEdges: ElkExtendedEdge[] = scopedConnections.map((connection) => ({
+    id: connection.id,
+    sources: [connection.sourceId],
+    targets: [connection.targetId],
+  }));
+
+  const sortedIds = [...ids].sort((a, b) => a.localeCompare(b));
+  const graph: ElkNode = {
+    id: ELK_ROOT_ID,
+    layoutOptions: { ...ELK_OPTIONS },
+    children: sortedIds.map((childId) => buildSubtree(childId, scopedComponents, nodeLayouts, includedIds, new Map())),
+    edges: elkEdges,
+  };
+
+  const elk = new ELK();
+  const laidOut = await elk.layout(graph);
+
+  const positions: Array<{ elementId: string; x: number; y: number }> = [];
+  flattenElkPositions(laidOut, scopedComponents, positions);
+
+  const bounds = {
+    width: laidOut.width ?? 0,
+    height: laidOut.height ?? 0,
+  };
+
+  const edgeWaypoints = extractEdgeWaypoints(laidOut);
+  const laidOutConnectionIds = scopedConnections.map((c) => c.id);
+
+  return { positions, edgeWaypoints, laidOutConnectionIds, bounds };
+}
+
 export async function computePanelChildLayout(
   panelId: string,
   components: Record<string, Component>,

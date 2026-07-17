@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useReactFlow } from "@xyflow/react";
 import {
   X,
   Plus,
@@ -9,10 +10,11 @@ import {
   Copy,
   Check,
   Layers,
-  BarChart2,
   FileInput,
 } from "lucide-react";
 import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
+import { computeScopedAutoLayout } from "@/features/canvas/layout/autoLayoutEngine";
+import { useCanvasSelectionStore } from "@/features/canvas/hooks/useCanvasSelectionStore";
 import {
   useFlows,
   useDiagramActions,
@@ -21,6 +23,7 @@ import {
   useComponents,
   useConnections,
   useDiagramStore,
+  useResolvedNodeLayouts,
   getStepCount,
   getFlowParticipants,
   repairFlow,
@@ -28,8 +31,10 @@ import {
   stepsToMermaid,
   parseMermaidFlowchart,
   parseMermaidSequence,
+  generateId,
 } from "@/features/diagram";
 import type { Flow } from "@/features/diagram";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import MermaidImportDialog from "./MermaidImportDialog";
 import { validateFlow, type BrokenStep } from "./validateFlow";
@@ -40,8 +45,6 @@ interface Props {
   onPlay: (flow: Flow) => void;
   onStartRecording: () => void;
   onEditFlow: (flow: Flow) => void;
-  isViewingCoverage?: boolean;
-  onToggleCoverage?: () => void;
   panelActionsLocked?: boolean;
   panelActionsLockedTitle?: string;
   onGetInsertPosition: () => { x: number; y: number };
@@ -52,8 +55,6 @@ const FlowPanel = ({
   onPlay,
   onStartRecording,
   onEditFlow,
-  isViewingCoverage,
-  onToggleCoverage,
   panelActionsLocked = false,
   panelActionsLockedTitle,
   onGetInsertPosition,
@@ -66,13 +67,89 @@ const FlowPanel = ({
   const activeDiagramId = useActiveDiagramId();
   const components = useComponents();
   const connections = useConnections();
-  const { removeFlow, addFlow, updateFlow } = useDiagramActions();
+  const resolvedNodeLayouts = useResolvedNodeLayouts();
+  const { removeFlow, addFlow, updateFlow, applyAutoLayout, setEdgeControlPoints, resetEdgeControlPoints } = useDiagramActions();
   const importMermaidSequenceResult = useDiagramStore((state) => state.importMermaidSequenceResult);
   const importDrawioResult = useDiagramStore((state) => state.importDrawioResult);
+  const reactFlowInstance = useReactFlow();
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [pendingPlay, setPendingPlay] = useState<{ flow: Flow; broken: BrokenStep[] } | null>(null);
   const [showMermaidImport, setShowMermaidImport] = useState(false);
+
+  const layoutNewNodes = useCallback(
+    async (nodeIds: string[], connectionIds: string[]) => {
+      if (nodeIds.length === 0) return;
+
+      const scopedComponents = Object.fromEntries(
+        nodeIds.map((id) => components[id]).filter(Boolean).map((c) => [c.id, c]),
+      );
+      const scopedConnections = connectionIds
+        .map((id) => connections[id])
+        .filter(Boolean);
+
+      const result = await computeScopedAutoLayout(
+        scopedComponents,
+        scopedConnections,
+        resolvedNodeLayouts,
+      );
+      if (result.positions.length === 0) return;
+
+      const anchor = onGetInsertPosition();
+      const offsetX = anchor.x - result.bounds.width / 2;
+      const offsetY = anchor.y - result.bounds.height / 2;
+
+      applyAutoLayout(
+        result.positions.map((p) => ({ elementId: p.elementId, x: p.x + offsetX, y: p.y + offsetY })),
+      );
+
+      if (activeDiagramId !== null) {
+        for (const connectionId of result.laidOutConnectionIds) {
+          resetEdgeControlPoints(activeDiagramId, connectionId);
+        }
+        for (const [connectionId, waypoints] of result.edgeWaypoints) {
+          if (waypoints.length > 0) {
+            setEdgeControlPoints(
+              activeDiagramId,
+              connectionId,
+              waypoints.map((wp) => ({ id: generateId("cp"), x: wp.x + offsetX, y: wp.y + offsetY })),
+              { history: false },
+            );
+          }
+        }
+      }
+
+      requestAnimationFrame(() => {
+        reactFlowInstance.fitView({ duration: 400, padding: 0.2 });
+      });
+    },
+    [
+      components,
+      connections,
+      resolvedNodeLayouts,
+      applyAutoLayout,
+      resetEdgeControlPoints,
+      setEdgeControlPoints,
+      activeDiagramId,
+      onGetInsertPosition,
+      reactFlowInstance,
+    ],
+  );
+
+  const preselectAfterImport = useCallback(
+    (nodeIds: string[], _connectionIds: string[]) => {
+      if (nodeIds.length === 0) return;
+      const store = useCanvasSelectionStore.getState();
+      store.setSelectedNodeId(nodeIds[0] ?? null);
+      store.setSelectedNodeIds(new Set(nodeIds));
+      store.setSelectedEdgeId(null);
+      void layoutNewNodes(nodeIds, _connectionIds).catch((err) => {
+        console.error("[mermaidImport] scoped auto-layout failed", err);
+        toast.error(t("flows.importDialog.layoutError"));
+      });
+    },
+    [layoutNewNodes, t],
+  );
 
   const handlePlayWithValidation = (flow: Flow) => {
     if (!diagram) {
@@ -125,7 +202,7 @@ const FlowPanel = ({
       const plan = parseMermaidSequence(text, components, connections, anchor);
       if (!plan.entryStepId) return;
 
-      importMermaidSequenceResult(
+      const flowId = importMermaidSequenceResult(
         plan.newComponents,
         plan.newConnections,
         plan.steps,
@@ -133,9 +210,21 @@ const FlowPanel = ({
         flowName,
         plan.layouts,
       );
+      if (flowId) {
+        const nodeIds = plan.newComponents.map((c) => c.id);
+        const connectionIds = plan.newConnections.map((c) => c.id);
+        preselectAfterImport(nodeIds, connectionIds);
+      }
       setShowMermaidImport(false);
     },
-    [activeDiagramId, components, connections, importMermaidSequenceResult, onGetInsertPosition],
+    [
+      activeDiagramId,
+      components,
+      connections,
+      importMermaidSequenceResult,
+      onGetInsertPosition,
+      preselectAfterImport,
+    ],
   );
 
   const handleMermaidFlowchartImport = useCallback(
@@ -145,38 +234,33 @@ const FlowPanel = ({
       const plan = parseMermaidFlowchart(text, components, connections, anchor);
       if (plan.newComponents.length === 0 && plan.errors.length > 0) return;
 
-      importDrawioResult(plan.newComponents, plan.newConnections, plan.layouts);
+      const createdIds = importDrawioResult(plan.newComponents, plan.newConnections, plan.layouts);
+      if (createdIds.length > 0) {
+        const connectionIds = plan.newConnections.map((c) => c.id);
+        preselectAfterImport(createdIds, connectionIds);
+      }
       setShowMermaidImport(false);
     },
-    [activeDiagramId, components, connections, importDrawioResult, onGetInsertPosition],
+    [activeDiagramId, components, connections, importDrawioResult, onGetInsertPosition, preselectAfterImport],
   );
 
   return (
-    <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
-      <div className="flex items-center justify-between p-3 border-b border-border">
+    <div className="absolute right-0 top-0 bottom-0 z-20 w-80 border-l border-border bg-card overflow-hidden flex flex-col">
+      <div className="flex items-center justify-between p-3 border-b border-border gap-2">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           {t("flows.panelTitle")}
         </h3>
         <div className="flex items-center gap-1.5">
-          {onToggleCoverage && (
-            <button
-              type="button"
-              disabled={flowOrCompareLocked}
-              onClick={onToggleCoverage}
-              title={flowOrCompareLocked ? panelActionsLockedTitle : t("flows.coverageTitle")}
-              className={`text-xs rounded-md px-2 py-0.5 font-medium transition-colors flex items-center gap-1 disabled:opacity-40 disabled:pointer-events-none ${isViewingCoverage ? "bg-emerald-500/20 text-emerald-400" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              <BarChart2 className="h-3.5 w-3.5" /> {t("flowPanel.coverage")}
-            </button>
-          )}
           <Button
-            variant="ghost"
-            size="icon"
+            variant="default"
+            size="sm"
             onClick={() => setShowMermaidImport(true)}
             disabled={flowOrCompareLocked}
             title={flowOrCompareLocked ? panelActionsLockedTitle : t("flows.importFlow")}
+            className="h-7 gap-1.5 px-2.5 text-xs font-medium"
           >
-            <FileInput className="h-4 w-4" />
+            <FileInput className="h-3.5 w-3.5" />
+            {t("flows.importFlow")}
           </Button>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="h-4 w-4" />
