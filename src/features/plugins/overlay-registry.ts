@@ -14,9 +14,14 @@ let state: OverlayState = {
   activeModal: null,
 };
 
+// Stable snapshot for useSyncExternalStore - only update when state changes
+let stateSnapshot: OverlayState = { activeModal: null };
+
 const listeners = new Set<() => void>();
 
 function notifyChanged(): void {
+  // Update the snapshot only when state actually changes
+  stateSnapshot = { activeModal: state.activeModal };
   for (const listener of listeners) {
     listener();
   }
@@ -35,12 +40,11 @@ export const overlayRegistry = {
   },
 
   /**
-   * Get current overlay state (snapshot).
+   * Get current overlay state (stable snapshot).
+   * Returns the same object reference unless state has changed.
    */
   getState(): OverlayState {
-    return {
-      activeModal: state.activeModal,
-    };
+    return stateSnapshot;
   },
 
   /**
