@@ -16,12 +16,14 @@ sequencing live in
 | Cloud providers / catalogs | 🟢 | `features/cloud/registry` | AWS/GCP/Azure today; catalog shape is reusable for other icon/service packs. |
 | Storage backends | 🟢 | `IStoragePort` adapters | Add adapters, never bypass the port. |
 | AI providers | 🟡 | `features/llm/providers/*` | Common call shape exists; needs a formal provider registry + capability flags. |
-| Importers / Exporters | 🔴 | `lib/export-service` hardcoded format list | Registry of `{id, extensions, capabilities, import?, export?}`. |
+| Importers / Exporters | 🟢 | Plugin capability `io:importers`, `io:exporters` | Registry via `registerImporter`/`registerExporter`. |
 | Export cell builders | 🔴 | `cell-builders.ts` switches on type | Should become per-node-type contributions paired with node descriptors. |
 | Commands | 🔴 | ad-hoc store action calls from UI | Prerequisite for toolbar/menu/shortcut/palette/MCP extensibility. Needs its own spec. |
-| Toolbar actions | 🔴 | `canvas/toolbar` composition | Becomes command contributions + placement metadata. |
+| Toolbar actions | 🟢 | Plugin `canvas-toolbar` slot | Plugins register buttons via `ui:panels` capability with `slot: "canvas-toolbar"`. |
 | Context menus | 🔴 | hardcoded menus | Same: command contributions with context predicates. |
-| Inspector panels / property editors | 🔴 | `canvas/panels/ElementPanel` sections | Per-type sections should resolve from a registry keyed by component type. |
+| Inspector panels / property editors | 🟢 | Plugin `element-inspector` slot | Plugins add sections to element inspector via `ui:panels` capability. |
+| Toast notifications | 🟢 | Plugin `ui:overlays` capability | Plugins call `api.overlay.showToast()` to display toasts. |
+| Modal dialogs | 🟢 | Plugin `ui:overlays` capability | Plugins call `api.overlay.openModal()` to open modals. |
 | Element picker / palette entries | 🔴 | `canvas/toolbar/element-picker` + `lib/catalogs` | Catalog data is close to contribution-shaped already. |
 | Validators | 🔴 | `validate-diagram.ts` (interchange only) | Model-level validation rules (per diagram profile) don't exist yet. |
 | Templates / patterns | 🟡 | `UserTemplate` store, `lib/catalogs/patterns.ts` | User templates are runtime data; built-in patterns should become contributions. |

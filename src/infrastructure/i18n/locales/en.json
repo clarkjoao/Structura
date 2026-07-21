@@ -1657,6 +1657,7 @@
       "io-importers": "File importers",
       "io-exporters": "File exporters",
       "ui-panels": "UI panels",
+      "ui-overlays": "Toast notifications and modals",
       "events-diagram": "Diagram change events",
       "storage": "Local storage",
       "network": "Network access",

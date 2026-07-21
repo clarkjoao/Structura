@@ -112,6 +112,7 @@ export function validatePluginManifest(
       apiVersion: apiVersion as string,
       capabilities: (capabilities as unknown[]).filter(isKnownCapability),
       ...(typeof entry === "string" ? { entry } : {}),
+      ...(Array.isArray(raw.uses) ? { uses: raw.uses as string[] } : {}),
     },
   };
 }

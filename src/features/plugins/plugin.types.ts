@@ -15,6 +15,7 @@ export const KNOWN_PLUGIN_CAPABILITIES = [
   "io:importers",
   "io:exporters",
   "ui:panels",
+  "ui:overlays",
   "events:diagram",
   "diagram:read",
   "diagram:write",
@@ -46,6 +47,11 @@ export interface PluginManifest {
   capabilities: PluginCapability[];
   /** Entry point for future npm distribution; ignored for single-file MVP plugins. */
   entry?: string;
+  /**
+   * Declared dependencies that the host provides to the plugin.
+   * Currently supported: "react" - provides React from the host app.
+   */
+  uses?: string[];
 }
 
 /** Plain string, or per-locale map resolved against the active locale. */
@@ -169,7 +175,7 @@ export interface ExporterContribution {
   export(diagram: DiagramSnapshot): string | Promise<string>;
 }
 
-export type PluginPanelSlot = "element-inspector" | "service-registry-import";
+export type PluginPanelSlot = "element-inspector" | "service-registry-import" | "canvas-toolbar";
 
 export interface PluginPanelContext {
   /** Read-only snapshot of the current selection (element-inspector slot). */
@@ -193,6 +199,53 @@ export interface PanelContribution {
   title: LocalizedText;
   /** React component; rendered inside the host slot, error-boundaried. */
   component: ReactComponentType<PluginPanelProps>;
+}
+
+// =============================================================================
+// Overlay Types (Toast & Modal)
+// =============================================================================
+
+/** Options for displaying a toast notification. */
+export interface ToastOptions {
+  /** Toast type determines color/icon: "success" | "error" | "info" | "warning" */
+  type: "success" | "error" | "info" | "warning";
+  /** Required title text */
+  title: string;
+  /** Optional description/body text */
+  description?: string;
+  /** Optional action button */
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+  /** Duration in ms before auto-dismiss (default: 5000, 0 = persistent) */
+  duration?: number;
+}
+
+/** Internal toast entry with generated ID */
+export interface ToastEntry extends ToastOptions {
+  id: string;
+  createdAt: number;
+}
+
+/** Options for opening a modal dialog. */
+export interface ModalOptions {
+  /** Modal title displayed in header */
+  title: string;
+  /** React component for modal content */
+  content: React.ComponentType<{ onClose: () => void }>;
+  /** Optional callback when modal is closed */
+  onClose?: () => void;
+  /** Modal size: "sm" (400px) | "md" (500px, default) | "lg" (700px) */
+  size?: "sm" | "md" | "lg";
+}
+
+/** Context provided to canvas-toolbar slot panels. */
+export interface PluginToolbarContext {
+  /** Current locale ("en" | "pt-BR") */
+  locale: string;
+  /** Whether the user is in edit mode */
+  isEditMode: boolean;
 }
 
 export interface PluginNodeTypeDescriptor {
@@ -259,6 +312,21 @@ export interface StructuraPluginApi {
 
   /** Plugin-scoped persistent key-value storage. */
   readonly storage: PluginStorage;
+
+  /**
+   * Host-provided dependencies that the plugin requested in manifest.uses.
+   * Currently supported:
+   * - "react": React library from the host app
+   */
+  readonly dependencies: {
+    react?: unknown;
+  };
+
+  /** Overlay capabilities: toast notifications and modal dialogs (requires ui:overlays capability). */
+  readonly overlay: {
+    showToast(options: ToastOptions): void;
+    openModal(options: ModalOptions): void;
+  };
 }
 
 export interface PluginDefinition {
