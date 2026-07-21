@@ -3,7 +3,7 @@ import type { PluginPanelProps } from "../types/plugin";
 import { LABELS, t, type Locale } from "../i18n/labels";
 import { showToast, openModal, getApi } from "../hooks/usePluginApi";
 import { LeanixConfigModal } from "./LeanixConfigModal";
-import { exportDiagram, getDiagramUrl, exportToDrawioWithLayout } from "../services";
+import { exportDiagram, getDiagramUrl, exportDrawio } from "../services";
 import { useLeanixConfig } from "../hooks/useLeanixConfig";
 
 /**
@@ -51,7 +51,7 @@ export const LeanixToolbarButton: FC<PluginPanelProps> = ({ context }) => {
     });
 
     try {
-      // Use the built-in draw.io exporter to get the mxGraph XML
+      // Use the draw.io exporter to generate mxGraphModel XML
       if (!diagram) {
         showToast({
           type: "error",
@@ -61,7 +61,7 @@ export const LeanixToolbarButton: FC<PluginPanelProps> = ({ context }) => {
         return;
       }
 
-      const graphXml = exportToDrawioWithLayout(diagram);
+      const graphXml = exportDrawio(diagram);
 
       const result = await exportDiagram(
         currentConfig,

@@ -1,2 +1,2 @@
 export { exportDiagram, updateDiagram, getDiagramUrl, extractUserIdFromToken, ensureBearerPrefix } from "./leanix.service";
-export { exportToDrawio, exportToDrawioWithLayout } from "./drawio-exporter";
+export { exportDrawio, extractMxGraphModelXml } from "../lib/export-drawio";
