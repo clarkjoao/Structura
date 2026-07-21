@@ -1,0 +1,19 @@
+{
+  "name": "structura-plugin-example-ui",
+  "version": "1.0.0",
+  "description": "Example plugin demonstrating toolbar, toasts, and modals",
+  "main": "dist/plugin.js",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "vite": "^5.0.0"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}

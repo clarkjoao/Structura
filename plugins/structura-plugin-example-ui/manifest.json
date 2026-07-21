@@ -1,0 +1,13 @@
+{
+  "id": "structura-plugin-example-ui",
+  "name": "Example UI Plugin",
+  "version": "1.0.0",
+  "author": "Structura Team",
+  "description": "Demonstrates toolbar button, toasts, and modal dialogs",
+  "apiVersion": "^1.1",
+  "capabilities": [
+    "ui:panels",
+    "ui:overlays",
+    "diagram:read"
+  ]
+}
