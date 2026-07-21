@@ -32,6 +32,12 @@ function formatAction(action: DiagramPatchAction, translate: TFunction): string 
       });
     case "REMOVE_EDGE":
       return translate("llmChat.suggestion.action.removeEdge", { edgeId: action.payload.edgeId });
+    case "INSERT_PATTERN":
+      return translate("llmChat.suggestion.action.insertPattern", { patternId: action.payload.patternId });
+    case "AUTO_LAYOUT":
+      return translate("llmChat.suggestion.action.autoLayout");
+    case "GET_TAGS":
+      return translate("llmChat.suggestion.action.getTags");
     default:
       return assertUnreachable(action);
   }

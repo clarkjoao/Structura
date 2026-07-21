@@ -1,6 +1,7 @@
 import type { ElkExtendedEdge, ElkNode, ElkPort } from "elkjs";
 import ELK from "elkjs/lib/elk.bundled.js";
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
+import type { Node } from "@xyflow/react";
 import {
   DEFAULT_NODE_W,
   DEFAULT_NODE_H,
@@ -21,30 +22,45 @@ const ELK_OPTIONS: Record<string, string> = {
   "elk.direction": "RIGHT",
   "elk.edgeRouting": "ORTHOGONAL",
   "elk.layered.layering.strategy": "LONGEST_PATH",
-  "elk.layered.spacing.nodeNodeBetweenLayers": "80",
-  "elk.spacing.nodeNode": "40",
-  "elk.layered.spacing.edgeNodeBetweenLayers": "40",
-  "elk.layered.spacing.edgeEdgeBetweenLayers": "20",
+  "elk.layered.spacing.nodeNodeBetweenLayers": "150",
+  "elk.spacing.nodeNode": "100",
+  "elk.layered.spacing.edgeNodeBetweenLayers": "100",
+  "elk.layered.spacing.edgeEdgeBetweenLayers": "50",
+  "elk.layered.spacing.nodeNode": "80",
+  "elk.spacing.edgeNode": "50",
   "elk.layered.crossingMinimization.strategy": "LAYER_SWEEP",
   "elk.layered.nodePlacement.strategy": "BRANDES_KOEPF",
   "elk.hierarchyHandling": "INCLUDE_CHILDREN",
-  "elk.padding": "[top=40,left=40,bottom=40,right=40]",
+  "elk.padding": "[top=60,left=60,bottom=60,right=60]",
   "elk.layered.crossingMinimization.forceNodeModelOrder": "false",
   "elk.layered.wrapping.strategy": "MULTI_EDGE",
   "elk.layered.wrapping.cutting.strategy": "ARD",
-  "elk.layered.wrapping.additionalEdgeSpacing": "20",
+  "elk.layered.wrapping.additionalEdgeSpacing": "60",
   "elk.aspectRatio": "2.5",
+  "elk.separateConnectedComponents": "true",
+  "elk.spacing.componentComponent": "150",
 };
 
 function dimensionsFor(
   component: Component,
   nodeLayouts: Record<string, NodeLayout>,
+  measuredNodes?: Node[],
 ): { width: number; height: number } {
   const layout = nodeLayouts[component.id];
   const width = layout?.width;
   const height = layout?.height;
   if (width !== undefined && height !== undefined && width > 0 && height > 0) {
     return { width, height };
+  }
+  // Try to get measured dimensions from React Flow nodes
+  if (measuredNodes) {
+    const measuredNode = measuredNodes.find((n) => n.id === component.id);
+    if (measuredNode?.measured?.width && measuredNode?.measured?.height) {
+      return {
+        width: measuredNode.measured.width,
+        height: measuredNode.measured.height,
+      };
+    }
   }
   if (isPanelComponent(component)) {
     return { width: PANEL_DEFAULT_W, height: PANEL_DEFAULT_H };
@@ -314,9 +330,10 @@ function buildSubtree(
   nodeLayouts: Record<string, NodeLayout>,
   includedIds: ReadonlySet<string>,
   edgeEndpoints: Map<string, { sourceEnd: string; targetEnd: string }>,
+  measuredNodes?: Node[],
 ): ElkNode {
   const component = components[componentId];
-  const dims = dimensionsFor(component, nodeLayouts);
+  const dims = dimensionsFor(component, nodeLayouts, measuredNodes);
 
   const childIds = isPanelComponent(component)
     ? sortedChildIds(components, componentId, includedIds)
@@ -341,7 +358,7 @@ function buildSubtree(
 
   if (isCompoundPanel) {
     node.children = childIds.map((childId) =>
-      buildSubtree(childId, components, nodeLayouts, includedIds, edgeEndpoints),
+      buildSubtree(childId, components, nodeLayouts, includedIds, edgeEndpoints, measuredNodes),
     );
   }
 
@@ -398,6 +415,7 @@ export async function computeAutoLayout(
   components: Record<string, Component>,
   connections: Connection[],
   nodeLayouts: Record<string, NodeLayout>,
+  measuredNodes?: Node[],
 ): Promise<AutoLayoutResult> {
   const connectionList = connections;
 
@@ -440,7 +458,7 @@ export async function computeAutoLayout(
     id: ELK_ROOT_ID,
     layoutOptions: { ...ELK_OPTIONS },
     children: rootChildIds.map((childId) =>
-      buildSubtree(childId, components, nodeLayouts, includedIds, edgeEndpoints),
+      buildSubtree(childId, components, nodeLayouts, includedIds, edgeEndpoints, measuredNodes),
     ),
     edges: elkEdges,
   };
@@ -456,11 +474,67 @@ export async function computeAutoLayout(
   return { positions, edgeWaypoints, laidOutConnectionIds };
 }
 
+export interface ScopedAutoLayoutResult {
+  positions: Array<{ elementId: string; x: number; y: number }>;
+  edgeWaypoints: Map<string, Array<{ x: number; y: number }>>;
+  laidOutConnectionIds: string[];
+  bounds: { width: number; height: number };
+}
+
+export async function computeScopedAutoLayout(
+  scopedComponents: Record<string, Component>,
+  scopedConnections: Connection[],
+  nodeLayouts: Record<string, NodeLayout>,
+  measuredNodes?: Node[],
+): Promise<ScopedAutoLayoutResult> {
+  const empty: ScopedAutoLayoutResult = {
+    positions: [],
+    edgeWaypoints: new Map(),
+    laidOutConnectionIds: [],
+    bounds: { width: 0, height: 0 },
+  };
+
+  const ids = Object.keys(scopedComponents);
+  if (ids.length === 0) return empty;
+
+  const includedIds = new Set(ids);
+  const elkEdges: ElkExtendedEdge[] = scopedConnections.map((connection) => ({
+    id: connection.id,
+    sources: [connection.sourceId],
+    targets: [connection.targetId],
+  }));
+
+  const sortedIds = [...ids].sort((a, b) => a.localeCompare(b));
+  const graph: ElkNode = {
+    id: ELK_ROOT_ID,
+    layoutOptions: { ...ELK_OPTIONS },
+    children: sortedIds.map((childId) => buildSubtree(childId, scopedComponents, nodeLayouts, includedIds, new Map(), measuredNodes)),
+    edges: elkEdges,
+  };
+
+  const elk = new ELK();
+  const laidOut = await elk.layout(graph);
+
+  const positions: Array<{ elementId: string; x: number; y: number }> = [];
+  flattenElkPositions(laidOut, scopedComponents, positions);
+
+  const bounds = {
+    width: laidOut.width ?? 0,
+    height: laidOut.height ?? 0,
+  };
+
+  const edgeWaypoints = extractEdgeWaypoints(laidOut);
+  const laidOutConnectionIds = scopedConnections.map((c) => c.id);
+
+  return { positions, edgeWaypoints, laidOutConnectionIds, bounds };
+}
+
 export async function computePanelChildLayout(
   panelId: string,
   components: Record<string, Component>,
   connections: Connection[],
   nodeLayouts: Record<string, NodeLayout>,
+  measuredNodes?: Node[],
 ): Promise<Array<{ elementId: string; x: number; y: number }>> {
   const directChildren = Object.values(components)
     .filter((component) => component.parentId === panelId && !isNoteComponent(component))
@@ -505,7 +579,7 @@ export async function computePanelChildLayout(
     id: ELK_ROOT_ID,
     layoutOptions: { ...ELK_OPTIONS },
     children: layoutRootIds.map((childId) =>
-      buildSubtree(childId, components, nodeLayouts, includedIds, edgeEndpoints),
+      buildSubtree(childId, components, nodeLayouts, includedIds, edgeEndpoints, measuredNodes),
     ),
     edges: elkEdges,
   };

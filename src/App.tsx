@@ -7,6 +7,7 @@ import { useDiagramPreviewSync } from "@/lib/diagram-preview";
 import { WalkthroughPlayerBar, WalkthroughPlayerProvider } from "@/features/walkthroughs";
 import { migrateWalkthroughsLocalStorageKey } from "@/features/walkthroughs/utils/walkthroughsMigration";
 import { useLLMStore } from "@/features/llm";
+import { ModalOverlay } from "@/features/plugins/components/ModalOverlay";
 
 migrateWalkthroughsLocalStorageKey();
 
@@ -66,6 +67,7 @@ function MainPages() {
   return (
     <TooltipProvider>
       <Sonner />
+      <ModalOverlay />
       <DiagramPreviewSync />
       <Routes>
         <Route path="/" element={<Navigate to="/workspace" />} />

@@ -142,6 +142,11 @@
     "ptBR": "Portuguese (BR)",
     "en": "English"
   },
+  "settings": {
+    "menuLabel": "Preferences",
+    "appearance": "Appearance",
+    "followSystem": "Follow system"
+  },
   "notFound": {
     "title": "Oops! Page not found",
     "home": "Back to home"
@@ -195,6 +200,11 @@
     "createDiagram": "Create diagram",
     "newDiagram": "New diagram",
     "newFolder": "New folder",
+    "recentViewHeading": "Recent",
+    "recentEmptyTitle": "No diagrams opened recently",
+    "recentEmptyHint": "Open a diagram to see it here",
+    "recentCount": "{{count}} {{diagrams}}",
+    "foldersHiddenInRecent": "Recent diagrams are listed by last access, across folders.",
     "diagramCount": "{{count}} {{diagrams}}{{folders}}",
     "foldersSuffix": " · {{count}} {{folders}}",
     "addDiagramTitle": "New diagram",
@@ -248,6 +258,8 @@
   },
   "folderTree": {
     "newFolderTitle": "New folder",
+    "newFolder": "New folder",
+    "recentLabel": "Recent",
     "searchFoldersPlaceholder": "Search folders…",
     "allDiagrams": "All diagrams",
     "noFoldersFound": "No folders found",
@@ -275,6 +287,14 @@
       "title": "Could not save",
       "description": "Local storage is full. Connect a folder or free up space to continue."
     },
+    "suggest": {
+      "title": "Sync to a folder",
+      "description": "Your workspace is large. Connect a local folder to keep your work safe even if browser storage fills up."
+    },
+    "urgentSuggest": {
+      "title": "Sync to a folder now",
+      "description": "Browser storage is almost full. Connect a folder so nothing is lost if storage is cleared."
+    },
     "freed": "{{amount}} freed successfully.",
     "action": {
       "clear": "Free up space",
@@ -301,12 +321,21 @@
     "backupFailedQuota": "Browser storage is full or blocked. Free space or allow storage, then try again.",
     "backupFailedVerify": "Backup was not found in localStorage after saving. Check site permissions.",
     "backupFailedGeneric": "Could not save a copy to the browser. Try again or export JSON manually.",
+    "backupFailedBeforeOverwrite": "Could not save a safety copy in the browser before overwriting. Operation cancelled to protect your data.",
+    "backupFailedBeforeMerge": "Could not save a safety copy in the browser before merging. Operation cancelled to protect your data.",
+    "backupFailedBeforePush": "Could not save a safety copy in the browser before pushing. Operation cancelled to protect your data.",
+    "overwriteFailedFlush": "Failed to write files to the folder. Your local data has been preserved.",
+    "overwriteFailedGeneric": "Unexpected error while overwriting. Your local data has been preserved.",
+    "mergeFailedFlush": "Failed to write the merge to the folder. Your original data has been preserved.",
+    "mergeFailedGeneric": "Unexpected error during merge. Your original data has been preserved.",
+    "pushFailedGeneric": "Unexpected error while pushing diagrams to the folder. Try again.",
     "needsPermissionLabel": "Reconnect workspace",
     "needsPermissionTitle": "Click to restore access to the previously connected folder",
     "needsPermissionFolder": "Reconnect \"{{name}}\""
   },
   "workspaceMerge": {
     "title": "Folder with existing files",
+    "subtitle": "This folder already contains diagrams. Choose how to combine them with your current browser data.",
     "found": "We found {{count}} diagram(s) in this folder.",
     "valid": "{{count}} valid",
     "invalid": "{{count}} invalid",
@@ -314,14 +343,26 @@
     "toggleInvalid": "View invalid files ({{count}})",
     "manifestWarning": "Manifest warning:",
     "conflict": "{{count}} diagram(s) already exist locally (localStorage). On conflict, the folder version takes priority over the local (localStorage) version in the merge.",
-    "cancelKeepLocal": "Cancel and keep local storage",
+    "conflictDetailsTitle": "Diagrams present in both places",
+    "conflictDetailsHint": "On merge, the folder version replaces the browser one.",
+    "conflictBadgeLocal": "app only",
+    "conflictBadgeFolder": "folder only",
+    "conflictBadgeBoth": "both",
+    "cancelKeepLocal": "Cancel",
+    "cancelKeepLocalHint": "Closes this window. Your folder stays connected and your browser data is kept intact.",
     "overwriteTitle": "Discard diagrams that exist only in the app and load only those from the folder",
     "overwrite": "Use folder files only",
+    "overwriteHint": "Will discard {{lostLocal}} diagram(s) that exist only in the browser and keep {{keptFromFolder}} from the folder. This action cannot be undone.",
+    "overwriteHintNoLoss": "Will discard {{lostLocal}} diagram(s) that exist only in the browser and keep {{keptFromFolder}} from the folder.",
+    "overwriteHintNoFolder": "Will discard all {{lostLocal}} diagram(s) from the browser and use only {{keptFromFolder}} from the folder. This action cannot be undone.",
     "mergeTitle": "Keep diagrams already in the app and add those from the folder",
-    "merge": "Keep all (localStorage + folder) and merge",
+    "merge": "Keep all and merge",
+    "mergeHint": "Will keep all {{keptLocal}} from the browser and add {{addedFromFolder}} new ones from the folder. Same-name diagrams: the folder version wins.",
+    "mergeHintSimple": "Will keep all {{keptLocal}} from the browser and add {{addedFromFolder}} new ones from the folder.",
     "emptyFolderTitle": "Empty folder",
     "emptyFolderDescription": "This folder has no Structura diagram files. You have {{count}} diagram(s) only in the app. Push them to the folder to start syncing, or cancel to disconnect.",
     "emptyFolderPush": "Push diagrams to folder",
+    "emptyFolderPushHint": "Will copy all your {{count}} diagram(s) from the browser to the folder and start syncing.",
     "emptyFolderPushTitle": "Write the current app state into this folder and start folder sync",
     "errors": {
       "invalidJson": "Malformed JSON",
@@ -331,9 +372,18 @@
   },
   "disconnect": {
     "title": "Disconnect folder",
+    "subtitle": "You are about to disconnect sync with this folder.",
     "messageNamed": "Disconnect \"{{name}}\"?",
     "messageGeneric": "Disconnect the local folder?",
     "explanation": "Current data is only on your filesystem (not saved in the browser). Keep a copy in the browser (localStorage) before disconnecting?",
+    "localCopyBadgeTitle": "Browser backup",
+    "localCopyBadgePresent": "{{count}} diagram(s) are already saved in the browser.",
+    "localCopyBadgeMissing": "Nothing is saved in the browser yet. If you disconnect without saving, your data will only exist in the folder.",
+    "cancelHint": "Closes this window. The folder stays connected.",
+    "disconnectOnlyHint": "Disconnects the folder. Diagrams in the folder stay intact on disk; the app falls back to browser-only editing.",
+    "disconnectOnlyHintNoCopy": "⚠ Disconnects the folder. Since there's no browser copy, you'll only be able to access this data by reconnecting the same folder later.",
+    "keepCopyHint": "Saves a copy of all diagrams in the browser (localStorage) and only then disconnects the folder. You can keep editing offline.",
+    "keepCopyHintNoCopy": "Saves a copy of all diagrams in the browser and disconnects the folder. Recommended.",
     "keepCopyTitle": "Save current state in the browser, then disconnect the folder",
     "keepCopy": "Save in browser and disconnect",
     "disconnectOnly": "Disconnect without saving"
@@ -528,7 +578,10 @@
         "removeNode": "Remove node {{nodeId}}",
         "updateNode": "Update node {{nodeId}}",
         "addEdge": "Add edge {{sourceId}} -> {{targetId}}",
-        "removeEdge": "Remove edge {{edgeId}}"
+        "removeEdge": "Remove edge {{edgeId}}",
+        "insertPattern": "Insert pattern {{patternId}}",
+        "autoLayout": "Auto layout diagram",
+        "getTags": "List diagram tags"
       }
     },
     "mention": {
@@ -1157,7 +1210,12 @@
     "importFlow": "Import flow",
     "importDialog": {
       "title": "Import Mermaid sequence",
+      "description": "Paste a sequenceDiagram or flowchart to create components, connections, and a new flow.",
       "flowName": "Flow name",
+      "flowNamePlaceholder": "e.g. Checkout flow",
+      "code": "Mermaid code",
+      "exampleSequence": "Sequence example",
+      "exampleFlowchart": "Flowchart example",
       "validate": "Validate",
       "import": "Import",
       "newComponents": "{{count}} new component(s) will be created",
@@ -1166,7 +1224,8 @@
       "invalidDiagram": "Text must contain a valid sequenceDiagram",
       "unknownDiagramType": "Unrecognized diagram type. Start with sequenceDiagram or flowchart.",
       "detectedSequence": "Sequence diagram detected",
-      "detectedFlowchart": "Flowchart detected"
+      "detectedFlowchart": "Flowchart detected",
+      "layoutError": "Could not arrange the elements. Adjust them manually."
     },
     "copyDrawio": "Copy to Drawio",
     "copied": "Copied!",
@@ -1643,6 +1702,7 @@
       "io-importers": "File importers",
       "io-exporters": "File exporters",
       "ui-panels": "UI panels",
+      "ui-overlays": "Toast notifications and modals",
       "events-diagram": "Diagram change events",
       "storage": "Local storage",
       "network": "Network access",

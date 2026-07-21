@@ -1,4 +1,19 @@
+import type { StorageHealthLevel } from "./saveStatus.store";
 import { useSaveStatusStore } from "./saveStatus.store";
+
+/**
+ * Subset of `FsStatus` from `infrastructure/persistence` that matters to the
+ * "should we push folder sync as the primary CTA?" question. Re-declared
+ * here to avoid an infrastructure → features import cycle (useFileSystemStorage
+ * already imports from this module). When the persistence layer adds new
+ * statuses, update this union to match.
+ */
+export type FolderSyncStatus =
+  | "disconnected"
+  | "connecting"
+  | "connected"
+  | "needs_permission"
+  | "error";
 
 /** Soma o tamanho de todas as chaves/valores do localStorage em bytes (UTF-16: char × 2). */
 export function measureLocalStorageUsage(): number {
@@ -49,4 +64,21 @@ export function clearNonEssentialStorage(): number {
 export function checkStorageHealth(): void {
   const used = measureLocalStorageUsage();
   useSaveStatusStore.getState()._setStorageUsage(used);
+}
+
+/**
+ * When the localStorage budget is heading into trouble (warning or danger)
+ * and the user has not yet connected a local folder, the UI should promote
+ * folder sync as the primary remediation. Once connected, the user already
+ * has a real backup so the existing copy/buttons are enough.
+ *
+ * Kept as a pure function so the banner can be tested without spinning up
+ * the full storage + folder modules.
+ */
+export function shouldSuggestFolderSync(
+  health: StorageHealthLevel,
+  folderSyncStatus: FolderSyncStatus,
+): boolean {
+  const isStressed = health === "warning" || health === "danger";
+  return isStressed && folderSyncStatus === "disconnected";
 }

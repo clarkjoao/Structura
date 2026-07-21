@@ -71,7 +71,10 @@ export type DiagramPatchAction =
         patch?: Partial<Omit<Connection, "id" | "sourceId" | "targetId" | "label">>;
       };
     }
-  | { type: "REMOVE_EDGE"; payload: { edgeId: string } };
+  | { type: "REMOVE_EDGE"; payload: { edgeId: string } }
+  | { type: "INSERT_PATTERN"; payload: { patternId: string } }
+  | { type: "AUTO_LAYOUT"; payload: Record<string, never> }
+  | { type: "GET_TAGS"; payload: Record<string, never> };
 
 export interface DiagramPatch {
   id: string;
