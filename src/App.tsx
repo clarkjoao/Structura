@@ -1,3 +1,5 @@
+import React from "react";
+import ReactDOM from "react-dom/client";
 import { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route, Navigate, type FutureConfig } from "react-router-dom";
 import { useSharedDiagram } from "@/features/viewer/hooks/useSharedDiagram";
@@ -7,6 +9,12 @@ import { useDiagramPreviewSync } from "@/lib/diagram-preview";
 import { WalkthroughPlayerBar, WalkthroughPlayerProvider } from "@/features/walkthroughs";
 import { migrateWalkthroughsLocalStorageKey } from "@/features/walkthroughs/utils/walkthroughsMigration";
 import { ModalOverlay } from "@/features/plugins/components/ModalOverlay";
+
+// Expose React for plugins
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(window as any).React = React;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(window as any).ReactDOM = ReactDOM;
 
 migrateWalkthroughsLocalStorageKey();
 
