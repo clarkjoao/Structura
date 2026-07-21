@@ -1,3 +1,4 @@
+import React from "react";
 import type { IStoragePort } from "@/infrastructure/persistence";
 import type { NodeTypeDescriptor } from "@/features/canvas/nodes/node-types/types";
 import {
@@ -182,6 +183,17 @@ export function createScopedPluginApi(
     },
 
     storage: createPluginStorage(manifest.id, storagePort),
+
+    // Host-provided dependencies based on manifest.uses
+    dependencies: {
+      get react(): typeof React | undefined {
+        // Only provide React if the plugin declared "react" in uses
+        if (manifest.uses?.includes("react")) {
+          return React;
+        }
+        return undefined;
+      },
+    },
 
     overlay: {
       showToast(options: ToastOptions): void {

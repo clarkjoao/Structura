@@ -1,6 +1,5 @@
 import type { ComponentType as ReactComponentType } from "react";
 import type { NodeTypes } from "@xyflow/react";
-import type { LocalizedText } from "./localized-text";
 
 /**
  * Public surface of the Structura plugin system (RFC:
@@ -48,6 +47,11 @@ export interface PluginManifest {
   capabilities: PluginCapability[];
   /** Entry point for future npm distribution; ignored for single-file MVP plugins. */
   entry?: string;
+  /**
+   * Declared dependencies that the host provides to the plugin.
+   * Currently supported: "react" - provides React from the host app.
+   */
+  uses?: string[];
 }
 
 /** Plain string, or per-locale map resolved against the active locale. */
@@ -308,6 +312,15 @@ export interface StructuraPluginApi {
 
   /** Plugin-scoped persistent key-value storage. */
   readonly storage: PluginStorage;
+
+  /**
+   * Host-provided dependencies that the plugin requested in manifest.uses.
+   * Currently supported:
+   * - "react": React library from the host app
+   */
+  readonly dependencies: {
+    react?: unknown;
+  };
 
   /** Overlay capabilities: toast notifications and modal dialogs (requires ui:overlays capability). */
   readonly overlay: {
