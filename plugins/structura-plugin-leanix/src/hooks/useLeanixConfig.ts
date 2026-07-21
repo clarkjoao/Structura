@@ -33,6 +33,7 @@ export function useLeanixConfig() {
     if (!newConfig.baseUrl?.trim()) return false;
     if (!newConfig.authToken?.trim()) return false;
     if (!newConfig.userId?.trim()) return false;
+    if (newConfig.useProxy && !newConfig.proxyUrl?.trim()) return false;
 
     try {
       localStorage.setItem(CONFIG_KEY, JSON.stringify(newConfig));

@@ -1,1 +1,1 @@
-export { exportDiagram, getDiagramUrl } from "./leanix.service";
+export { exportDiagram, updateDiagram, getDiagramUrl, extractUserIdFromToken, ensureBearerPrefix } from "./leanix.service";

@@ -4,6 +4,9 @@ import type { LeanixConfig } from "../types/config";
 import { LABELS, t, type Locale } from "../i18n/labels";
 import { getReact } from "../hooks/usePluginApi";
 import { useLeanixConfig } from "../hooks/useLeanixConfig";
+import { extractUserIdFromToken } from "../services";
+
+const DEFAULT_PROXY_URL = "http://localhost:3000/proxy";
 
 interface Props {
   onClose: () => void;
@@ -14,7 +17,7 @@ export function LeanixConfigModal({ onClose }: Props): ReactElement {
   const { config, saveConfig, clearConfig } = useLeanixConfig();
   const locale: Locale = "en";
 
-  const [formData, setFormData] = useState<LeanixConfig>({ baseUrl: "", authToken: "", userId: "", useProxy: true });
+  const [formData, setFormData] = useState<LeanixConfig>({ baseUrl: "", authToken: "", userId: "", useProxy: true, proxyUrl: DEFAULT_PROXY_URL });
   const [showToken, setShowToken] = useState(false);
   const [errors, setErrors] = useState<Partial<LeanixConfig>>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -23,11 +26,22 @@ export function LeanixConfigModal({ onClose }: Props): ReactElement {
     if (config) setFormData(config);
   }, [config]);
 
+  // Auto-fill userId when token changes
+  useEffect(() => {
+    if (formData.authToken && !formData.userId) {
+      const extractedUserId = extractUserIdFromToken(formData.authToken);
+      if (extractedUserId) {
+        setFormData(prev => ({ ...prev, userId: extractedUserId }));
+      }
+    }
+  }, [formData.authToken, formData.userId]);
+
   const validate = (): boolean => {
     const newErrors: Partial<LeanixConfig> = {};
     if (!formData.baseUrl.trim()) newErrors.baseUrl = t(LABELS.validation.urlRequired, locale);
     if (!formData.authToken.trim()) newErrors.authToken = t(LABELS.validation.tokenRequired, locale);
     if (!formData.userId.trim()) newErrors.userId = t(LABELS.validation.userIdRequired, locale);
+    if (formData.useProxy && !formData.proxyUrl.trim()) newErrors.proxyUrl = t(LABELS.validation.proxyRequired, locale);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -42,7 +56,7 @@ export function LeanixConfigModal({ onClose }: Props): ReactElement {
 
   const handleClear = async () => {
     await clearConfig();
-    setFormData({ baseUrl: "", authToken: "", userId: "", useProxy: true });
+    setFormData({ baseUrl: "", authToken: "", userId: "", useProxy: true, proxyUrl: DEFAULT_PROXY_URL });
     onClose();
   };
 
@@ -58,7 +72,7 @@ export function LeanixConfigModal({ onClose }: Props): ReactElement {
 
   const labelStyle: React.CSSProperties = { display: "block", marginBottom: "4px", fontSize: "13px", fontWeight: 500 };
   const errorStyle: React.CSSProperties = { color: "var(--destructive)", fontSize: "12px", marginTop: "2px" };
-  const checkboxContainerStyle: React.CSSProperties = { display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" };
+  const checkboxContainerStyle: React.CSSProperties = { display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" };
   const checkboxStyle: React.CSSProperties = { width: "18px", height: "18px" };
 
   return React.createElement("div", { style: { padding: "16px" } },
@@ -74,6 +88,18 @@ export function LeanixConfigModal({ onClose }: Props): ReactElement {
       React.createElement("label", { htmlFor: "useProxy", style: { fontSize: "14px", cursor: "pointer" } },
         t(LABELS.config.useProxy, locale)
       )
+    ),
+    // Proxy URL (only visible when useProxy is checked)
+    formData.useProxy && React.createElement("div", { style: { marginBottom: "12px" } },
+      React.createElement("label", { style: labelStyle }, t(LABELS.config.proxyUrl, locale)),
+      React.createElement("input", {
+        type: "url",
+        value: formData.proxyUrl,
+        onChange: (e) => setFormData({ ...formData, proxyUrl: e.target.value }),
+        placeholder: DEFAULT_PROXY_URL,
+        style: { ...inputStyle, borderColor: errors.proxyUrl ? "var(--destructive)" : undefined },
+      }),
+      errors.proxyUrl && React.createElement("div", { style: errorStyle }, errors.proxyUrl)
     ),
     // Base URL
     React.createElement("div", { style: { marginBottom: "12px" } },

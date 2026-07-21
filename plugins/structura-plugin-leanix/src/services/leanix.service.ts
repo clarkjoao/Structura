@@ -3,40 +3,60 @@
  */
 import type { LeanixConfig } from "../types/config";
 
-const PROXY_BASE = "/proxy";
-
 interface LeanixBookmark {
   id: string;
   name?: string;
   [key: string]: unknown;
 }
 
-interface LeanixSearchResponse {
-  data?: LeanixBookmark[];
+/**
+ * Decode JWT token and extract principal.id
+ */
+export function extractUserIdFromToken(token: string): string | null {
+  try {
+    // Remove "Bearer " prefix if present
+    const cleanToken = token.replace(/^Bearer\s+/i, "").trim();
+    const parts = cleanToken.split(".");
+    if (parts.length !== 3) return null;
+
+    const payload = JSON.parse(atob(parts[1]));
+    return payload.principal?.id || payload.sub || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Ensure token has "Bearer " prefix
+ */
+export function ensureBearerPrefix(token: string): string {
+  const cleanToken = token.trim();
+  if (cleanToken.toLowerCase().startsWith("bearer ")) {
+    return cleanToken;
+  }
+  return `Bearer ${cleanToken}`;
 }
 
 async function apiRequest(config: LeanixConfig, path: string, options: RequestInit = {}): Promise<Response> {
   const targetPath = path.startsWith("/") ? path : `/${path}`;
+  const targetUrl = `${config.baseUrl.replace(/\/$/, "")}${targetPath}`;
+
   const url = config.useProxy
-    ? `${PROXY_BASE}?url=${encodeURIComponent(`${config.baseUrl.replace(/\/$/, "")}${targetPath}`)}`
-    : `${config.baseUrl.replace(/\/$/, "")}${targetPath}`;
+    ? `${config.proxyUrl.replace(/\/$/, "")}?url=${encodeURIComponent(targetUrl)}`
+    : targetUrl;
+
+  // Ensure Bearer prefix is present
+  const authHeader = ensureBearerPrefix(config.authToken);
 
   const response = await fetch(url, {
     ...options,
     headers: {
-      Authorization: config.authToken,
+      Authorization: authHeader,
       accept: "application/json",
       ...options.headers,
     },
   });
   return response;
-}
-
-async function searchDiagrams(config: LeanixConfig, name: string): Promise<LeanixBookmark[]> {
-  const searchTerm = encodeURIComponent(name.slice(0, 255));
-  const response = await apiRequest(config, `/services/navigation/v1/presentations/search?searchTerm=${searchTerm}`);
-  const data: LeanixSearchResponse = await response.json();
-  return data?.data || [];
 }
 
 async function createDiagram(config: LeanixConfig, name: string, graphXml: string, userId: string): Promise<LeanixBookmark> {
@@ -85,16 +105,19 @@ export async function exportDiagram(
   graphXml: string,
   userId: string
 ): Promise<{ action: "created" | "updated"; bookmark: LeanixBookmark }> {
-  const existing = await searchDiagrams(config, name);
-  if (existing.length > 0) {
-    const bookmark = existing[0];
-    await updateWorkingCopy(config, bookmark.id, graphXml);
-    const updated = await saveDiagram(config, bookmark.id, graphXml);
-    return { action: "updated", bookmark: updated };
-  } else {
-    const bookmark = await createDiagram(config, name, graphXml, userId);
-    return { action: "created", bookmark };
-  }
+  // Always create a new diagram - no duplicate checking
+  // Future: implement diagram matching for updates
+  const bookmark = await createDiagram(config, name, graphXml, userId);
+  return { action: "created", bookmark };
+}
+
+export async function updateDiagram(
+  config: LeanixConfig,
+  diagramId: string,
+  graphXml: string
+): Promise<LeanixBookmark> {
+  await updateWorkingCopy(config, diagramId, graphXml);
+  return saveDiagram(config, diagramId, graphXml);
 }
 
 export function getDiagramUrl(config: LeanixConfig, bookmarkId: string): string {

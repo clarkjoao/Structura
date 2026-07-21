@@ -6,4 +6,5 @@ export interface LeanixConfig {
   authToken: string;
   userId: string;
   useProxy: boolean;
+  proxyUrl: string;
 }
