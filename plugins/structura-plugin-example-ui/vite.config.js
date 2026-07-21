@@ -12,7 +12,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         inlineDynamicImports: true
-      }
+      },
+      // Externalize React - use the host's React
+      external: ['react', 'react-dom']
     }
   }
 });
