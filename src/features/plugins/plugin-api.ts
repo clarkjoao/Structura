@@ -11,12 +11,14 @@ import {
   type DiagramSnapshot,
   type ExporterContribution,
   type ImporterContribution,
+  type ModalOptions,
   type PanelContribution,
   type PluginCapability,
   type PluginComponentPatch,
   type PluginManifest,
   type PluginNodeTypeDescriptor,
   type StructuraPluginApi,
+  type ToastOptions,
 } from "./plugin.types";
 import {
   registerExporterContribution,
@@ -28,6 +30,7 @@ import { registerPanelContribution, unregisterPanelContribution } from "./panel-
 import { createPluginStorage } from "./plugin-storage";
 import { subscribeDiagramChange } from "./diagram-change-notifier";
 import { sanitizeComponentPatch, toComponentSnapshot, toDiagramSnapshot } from "./snapshots";
+import { overlayRegistry } from "./overlay-registry";
 
 /**
  * Everything a plugin registered, tracked by the host so deactivation can bulk-unregister
@@ -179,5 +182,17 @@ export function createScopedPluginApi(
     },
 
     storage: createPluginStorage(manifest.id, storagePort),
+
+    overlay: {
+      showToast(options: ToastOptions): void {
+        warnUndeclaredCapability(manifest, "ui:overlays");
+        overlayRegistry.showToast(options);
+      },
+
+      openModal(options: ModalOptions): void {
+        warnUndeclaredCapability(manifest, "ui:overlays");
+        overlayRegistry.openModal(options);
+      },
+    },
   };
 }

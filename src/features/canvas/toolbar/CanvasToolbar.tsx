@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { CanvasToolbarDiagramPanel } from "./components/CanvasToolbarDiagramPanel";
 import { CanvasToolbarScenesButton } from "./components/CanvasToolbarScenesButton";
+import { PluginToolbarSlot } from "@/features/plugins/components/PluginToolbarSlot";
 
 interface CanvasToolbarProps {
   onDrillUp?: () => void;
@@ -189,6 +190,9 @@ const CanvasToolbar = ({
           >
             <Puzzle className="h-3.5 w-3.5" /> {t("canvasToolbar.patterns")}
           </button>
+
+          {/* Plugin toolbar slot */}
+          <PluginToolbarSlot slot="canvas-toolbar" isEditMode={!toolbarEditLocked && !isFlowActive} />
         </>
       )}
       {addButton}

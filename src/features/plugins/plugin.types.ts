@@ -1,5 +1,6 @@
 import type { ComponentType as ReactComponentType } from "react";
 import type { NodeTypes } from "@xyflow/react";
+import type { LocalizedText } from "./localized-text";
 
 /**
  * Public surface of the Structura plugin system (RFC:
@@ -15,6 +16,7 @@ export const KNOWN_PLUGIN_CAPABILITIES = [
   "io:importers",
   "io:exporters",
   "ui:panels",
+  "ui:overlays",
   "events:diagram",
   "diagram:read",
   "diagram:write",
@@ -169,7 +171,7 @@ export interface ExporterContribution {
   export(diagram: DiagramSnapshot): string | Promise<string>;
 }
 
-export type PluginPanelSlot = "element-inspector" | "service-registry-import";
+export type PluginPanelSlot = "element-inspector" | "service-registry-import" | "canvas-toolbar";
 
 export interface PluginPanelContext {
   /** Read-only snapshot of the current selection (element-inspector slot). */
@@ -193,6 +195,53 @@ export interface PanelContribution {
   title: LocalizedText;
   /** React component; rendered inside the host slot, error-boundaried. */
   component: ReactComponentType<PluginPanelProps>;
+}
+
+// =============================================================================
+// Overlay Types (Toast & Modal)
+// =============================================================================
+
+/** Options for displaying a toast notification. */
+export interface ToastOptions {
+  /** Toast type determines color/icon: "success" | "error" | "info" | "warning" */
+  type: "success" | "error" | "info" | "warning";
+  /** Required title text */
+  title: string;
+  /** Optional description/body text */
+  description?: string;
+  /** Optional action button */
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+  /** Duration in ms before auto-dismiss (default: 5000, 0 = persistent) */
+  duration?: number;
+}
+
+/** Internal toast entry with generated ID */
+export interface ToastEntry extends ToastOptions {
+  id: string;
+  createdAt: number;
+}
+
+/** Options for opening a modal dialog. */
+export interface ModalOptions {
+  /** Modal title displayed in header */
+  title: string;
+  /** React component for modal content */
+  content: React.ComponentType<{ onClose: () => void }>;
+  /** Optional callback when modal is closed */
+  onClose?: () => void;
+  /** Modal size: "sm" (400px) | "md" (500px, default) | "lg" (700px) */
+  size?: "sm" | "md" | "lg";
+}
+
+/** Context provided to canvas-toolbar slot panels. */
+export interface PluginToolbarContext {
+  /** Current locale ("en" | "pt-BR") */
+  locale: string;
+  /** Whether the user is in edit mode */
+  isEditMode: boolean;
 }
 
 export interface PluginNodeTypeDescriptor {
@@ -259,6 +308,12 @@ export interface StructuraPluginApi {
 
   /** Plugin-scoped persistent key-value storage. */
   readonly storage: PluginStorage;
+
+  /** Overlay capabilities: toast notifications and modal dialogs (requires ui:overlays capability). */
+  readonly overlay: {
+    showToast(options: ToastOptions): void;
+    openModal(options: ModalOptions): void;
+  };
 }
 
 export interface PluginDefinition {

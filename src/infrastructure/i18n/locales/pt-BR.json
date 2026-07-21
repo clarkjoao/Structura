@@ -1657,6 +1657,7 @@
       "io-importers": "Importadores de arquivo",
       "io-exporters": "Exportadores de arquivo",
       "ui-panels": "Painéis de interface",
+      "ui-overlays": "Notificações e modais",
       "events-diagram": "Eventos de alteração de diagrama",
       "storage": "Armazenamento local",
       "network": "Acesso à rede",
