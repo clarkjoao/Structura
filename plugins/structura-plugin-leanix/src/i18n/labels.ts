@@ -35,6 +35,7 @@ export const LABELS = {
   },
   config: {
     title: { en: "Leanix Configuration", "pt-BR": "Configuração do Leanix" },
+    useProxy: { en: "Use server proxy (bypass CORS)", "pt-BR": "Usar proxy do servidor (bypass CORS)" },
     baseUrl: { en: "Base URL", "pt-BR": "URL Base" },
     baseUrlPlaceholder: { en: "https://company.leanix.net", "pt-BR": "https://empresa.leanix.net" },
     authToken: { en: "Auth Token", "pt-BR": "Token de Autenticação" },

@@ -3,7 +3,7 @@
  */
 import type { LeanixConfig } from "../types/config";
 
-const PROXY_BASE = "/leanix";
+const PROXY_BASE = "/proxy";
 
 interface LeanixBookmark {
   id: string;
@@ -15,12 +15,26 @@ interface LeanixSearchResponse {
   data?: LeanixBookmark[];
 }
 
+async function apiRequest(config: LeanixConfig, path: string, options: RequestInit = {}): Promise<Response> {
+  const targetPath = path.startsWith("/") ? path : `/${path}`;
+  const url = config.useProxy
+    ? `${PROXY_BASE}?url=${encodeURIComponent(`${config.baseUrl.replace(/\/$/, "")}${targetPath}`)}`
+    : `${config.baseUrl.replace(/\/$/, "")}${targetPath}`;
+
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      Authorization: config.authToken,
+      accept: "application/json",
+      ...options.headers,
+    },
+  });
+  return response;
+}
+
 async function searchDiagrams(config: LeanixConfig, name: string): Promise<LeanixBookmark[]> {
   const searchTerm = encodeURIComponent(name.slice(0, 255));
-  const response = await fetch(
-    `${PROXY_BASE}/services/navigation/v1/presentations/search?searchTerm=${searchTerm}`,
-    { headers: { Authorization: config.authToken, accept: "application/json" } }
-  );
+  const response = await apiRequest(config, `/services/navigation/v1/presentations/search?searchTerm=${searchTerm}`);
   const data: LeanixSearchResponse = await response.json();
   return data?.data || [];
 }
@@ -38,9 +52,9 @@ async function createDiagram(config: LeanixConfig, name: string, graphXml: strin
     defaultSharingPriority: null,
     workingCopy: { state: { graphXml, version: 2 } },
   };
-  const response = await fetch(`${PROXY_BASE}/services/pathfinder/v1/bookmarks`, {
+  const response = await apiRequest(config, "/services/pathfinder/v1/bookmarks", {
     method: "POST",
-    headers: { Authorization: config.authToken, "Content-Type": "application/json", accept: "application/json" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
   return response.json();
@@ -48,18 +62,18 @@ async function createDiagram(config: LeanixConfig, name: string, graphXml: strin
 
 async function updateWorkingCopy(config: LeanixConfig, diagramId: string, graphXml: string): Promise<void> {
   const payload = { state: { graphXml, version: 2, viewport: {}, autoUpdate: true } };
-  await fetch(`${PROXY_BASE}/services/pathfinder/v1/bookmarks/${diagramId}/workingCopy`, {
+  await apiRequest(config, `/services/pathfinder/v1/bookmarks/${diagramId}/workingCopy`, {
     method: "PUT",
-    headers: { Authorization: config.authToken, "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
 }
 
 async function saveDiagram(config: LeanixConfig, diagramId: string, graphXml: string): Promise<LeanixBookmark> {
   const payload = { state: { graphXml, version: 2, viewport: {}, autoUpdate: true }, lastModified: new Date().toISOString() };
-  const response = await fetch(`${PROXY_BASE}/services/pathfinder/v1/bookmarks/${diagramId}`, {
+  const response = await apiRequest(config, `/services/pathfinder/v1/bookmarks/${diagramId}`, {
     method: "PUT",
-    headers: { Authorization: config.authToken, "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
   return response.json();

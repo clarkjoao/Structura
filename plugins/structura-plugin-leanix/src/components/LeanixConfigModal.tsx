@@ -14,7 +14,7 @@ export function LeanixConfigModal({ onClose }: Props): ReactElement {
   const { config, saveConfig, clearConfig } = useLeanixConfig();
   const locale: Locale = "en";
 
-  const [formData, setFormData] = useState<LeanixConfig>({ baseUrl: "", authToken: "", userId: "" });
+  const [formData, setFormData] = useState<LeanixConfig>({ baseUrl: "", authToken: "", userId: "", useProxy: true });
   const [showToken, setShowToken] = useState(false);
   const [errors, setErrors] = useState<Partial<LeanixConfig>>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -42,7 +42,7 @@ export function LeanixConfigModal({ onClose }: Props): ReactElement {
 
   const handleClear = async () => {
     await clearConfig();
-    setFormData({ baseUrl: "", authToken: "", userId: "" });
+    setFormData({ baseUrl: "", authToken: "", userId: "", useProxy: true });
     onClose();
   };
 
@@ -58,8 +58,23 @@ export function LeanixConfigModal({ onClose }: Props): ReactElement {
 
   const labelStyle: React.CSSProperties = { display: "block", marginBottom: "4px", fontSize: "13px", fontWeight: 500 };
   const errorStyle: React.CSSProperties = { color: "var(--destructive)", fontSize: "12px", marginTop: "2px" };
+  const checkboxContainerStyle: React.CSSProperties = { display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" };
+  const checkboxStyle: React.CSSProperties = { width: "18px", height: "18px" };
 
   return React.createElement("div", { style: { padding: "16px" } },
+    // Use Proxy toggle
+    React.createElement("div", { style: checkboxContainerStyle },
+      React.createElement("input", {
+        type: "checkbox",
+        id: "useProxy",
+        checked: formData.useProxy,
+        onChange: (e) => setFormData({ ...formData, useProxy: e.target.checked }),
+        style: checkboxStyle,
+      }),
+      React.createElement("label", { htmlFor: "useProxy", style: { fontSize: "14px", cursor: "pointer" } },
+        t(LABELS.config.useProxy, locale)
+      )
+    ),
     // Base URL
     React.createElement("div", { style: { marginBottom: "12px" } },
       React.createElement("label", { style: labelStyle }, t(LABELS.config.baseUrl, locale)),
