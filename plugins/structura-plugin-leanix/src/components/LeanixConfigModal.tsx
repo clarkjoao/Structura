@@ -41,18 +41,16 @@ export const LeanixConfigModal: FC<LeanixConfigModalProps> = ({ onClose }) => {
     }
   }, [formData.authToken, formData.userId]);
 
-  const validate = (): boolean => {
+  const validate = (data: LeanixConfig): boolean => {
     const newErrors: Partial<LeanixConfig> = {};
-    if (!formData.baseUrl.trim()) {
+    if (!data.baseUrl.trim()) {
       newErrors.baseUrl = t(LABELS.validation.urlRequired, locale);
     }
-    if (!formData.authToken.trim()) {
+    if (!data.authToken.trim()) {
       newErrors.authToken = t(LABELS.validation.tokenRequired, locale);
     }
-    if (!formData.userId.trim()) {
-      newErrors.userId = t(LABELS.validation.userIdRequired, locale);
-    }
-    if (formData.useProxy && !formData.proxyUrl.trim()) {
+    // userId is validated AFTER auto-fill, so we skip it here if empty
+    if (formData.useProxy && !data.proxyUrl.trim()) {
       newErrors.proxyUrl = t(LABELS.validation.proxyRequired, locale);
     }
     setErrors(newErrors);
@@ -60,10 +58,28 @@ export const LeanixConfigModal: FC<LeanixConfigModalProps> = ({ onClose }) => {
   };
 
   const handleSave = async () => {
-    if (!validate()) return;
+    // Auto-fill userId from token if not set
+    let dataToSave = { ...formData };
+    if (!dataToSave.userId && dataToSave.authToken) {
+      const extractedUserId = extractUserIdFromToken(dataToSave.authToken);
+      if (extractedUserId) {
+        dataToSave.userId = extractedUserId;
+        setFormData(dataToSave);
+      }
+    }
+
+    if (!validate(dataToSave)) return;
+
+    // Final check: userId is required
+    if (!dataToSave.userId?.trim()) {
+      setErrors({ userId: t(LABELS.validation.userIdRequired, locale) });
+      return;
+    }
+
     setIsSaving(true);
-    const success = await saveConfig(formData);
+    const success = await saveConfig(dataToSave);
     setIsSaving(false);
+
     if (success) {
       onClose();
     }

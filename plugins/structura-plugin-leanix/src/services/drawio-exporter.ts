@@ -254,6 +254,7 @@ function buildConnectionCell(connection: PluginConnectionSnapshot): string {
 
 /**
  * Export a diagram snapshot to draw.io XML format
+ * LeanIX expects ONLY mxGraphModel, NOT mxfile wrapper
  */
 export function exportToDrawio(
   diagram: DiagramSnapshot,
@@ -283,29 +284,33 @@ export function exportToDrawio(
   }
 
   const allCells = [...vertexCells, ...edgeCells].join("");
-  const slug = escXml(diagram.name || "diagram");
-
-  const xml = (
-    `<?xml version="1.0" encoding="UTF-8"?>` +
-    `<mxfile><diagram name="${slug}">` +
-    `<mxGraphModel dx="${CONFIG.grid.dx}" dy="${CONFIG.grid.dy}" grid="1" gridSize="${CONFIG.grid.gridSize}" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" fit="1" pageScale="1" pageWidth="${CONFIG.pageWidth}" pageHeight="${CONFIG.pageHeight}" math="0" shadow="0" background="#ffffff">` +
-    `<root>${allCells}</root>` +
-    `</mxGraphModel></diagram></mxfile>`
-  );
 
   // Return default XML if the generated XML is just the empty structure
   if (allCells === `<mxCell id="0"/><mxCell id="1" parent="0"/>`) {
-    return DEFAULT_GRAPH_XML;
+    return getDefaultGraphXml();
   }
 
-  return xml;
+  // LeanIX expects ONLY mxGraphModel, NOT mxfile wrapper
+  // Format matches calls-leanix.js DEFAULT_GRAPH_XML
+  return (
+    `<mxGraphModel dx="12" dy="12" grid="1" gridSize="10" guides="1" tooltips="1" ` +
+    `connect="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" ` +
+    `math="0" shadow="0"><root>${allCells}</root></mxGraphModel>`
+  );
 }
 
-// Default minimal graph XML for empty diagrams
-const DEFAULT_GRAPH_XML =
-  `<mxGraphModel dx="12" dy="12" grid="1" gridSize="10" guides="1" tooltips="1" ` +
-  `connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" ` +
-  `math="0" shadow="0"><root><mxCell id="0"/><mxCell id="1" parent="0"/></root></mxGraphModel>`;
+/**
+ * Default minimal graph XML for empty diagrams
+ * LeanIX expects ONLY mxGraphModel, NOT mxfile wrapper
+ * Matches the DEFAULT_GRAPH_XML from calls-leanix.js
+ */
+function getDefaultGraphXml(): string {
+  return (
+    `<mxGraphModel dx="12" dy="12" grid="1" gridSize="10" guides="1" tooltips="1" ` +
+    `connect="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" ` +
+    `math="0" shadow="0"><root><mxCell id="0"/><mxCell id="1" parent="0"/></root></mxGraphModel>`
+  );
+}
 
 /**
  * Export diagram to draw.io with auto-layout
