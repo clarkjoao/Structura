@@ -1,7 +1,11 @@
 /**
  * Structura Leanix Integration Plugin
  *
- * Plugin for exporting diagrams to Leanix ITSM.
+ * Export diagrams to Leanix ITSM:
+ * - canvas-toolbar slot (button in toolbar)
+ * - ui:overlays capability (toasts and modals)
+ * - diagram:read capability (read diagram name)
+ * - network capability (API calls)
  *
  * Build: npm run build
  */
@@ -52,10 +56,13 @@ declare global {
  * Plugin activation function
  */
 function activate(api: StructuraPluginApi): void {
+  console.log("[Leanix Plugin] Activating...");
+  console.log("[Leanix Plugin] API:", Object.keys(api));
+
   // Initialize plugin API and React
   initializePlugin(api);
 
-  console.log("[Leanix Plugin] Activated!");
+  console.log("[Leanix Plugin] Plugin initialized");
 
   // Register toolbar button
   api.registerPanel({
@@ -64,6 +71,8 @@ function activate(api: StructuraPluginApi): void {
     title: { en: "Leanix", "pt-BR": "Leanix" },
     component: LeanixToolbarButton,
   });
+
+  console.log("[Leanix Plugin] Panel registered!");
 }
 
 /**

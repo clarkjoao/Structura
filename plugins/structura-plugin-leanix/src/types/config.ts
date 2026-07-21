@@ -1,8 +1,8 @@
 /**
- * Leanix configuration stored via api.storage
+ * Leanix configuration interface
  */
 export interface LeanixConfig {
-  baseUrl: string;    // e.g., "https://company.leanix.net"
-  authToken: string; // Bearer token (user provides with "Bearer " prefix)
-  userId: string;    // Leanix User ID for permissions
+  baseUrl: string;
+  authToken: string;
+  userId: string;
 }

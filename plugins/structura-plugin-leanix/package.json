@@ -1,7 +1,7 @@
 {
   "name": "structura-plugin-leanix",
   "version": "1.0.0",
-  "description": "Leanix integration plugin for Structura",
+  "description": "Export diagrams to Leanix ITSM",
   "main": "dist/plugin.js",
   "type": "module",
   "scripts": {

@@ -1,12 +1,11 @@
 {
-  "id": "structura-plugin-leanix",
-  "name": "Leanix Integration",
+  "id": "structura-plugin-example-ui",
+  "name": "Example UI Plugin",
   "version": "1.0.0",
-  "author": "Structura",
-  "description": "Export diagrams to Leanix ITSM",
+  "author": "Structura Team",
+  "description": "Demonstrates toolbar button, toasts, and modal dialogs",
   "apiVersion": "^1.1",
   "capabilities": [
-    "network",
     "ui:panels",
     "ui:overlays",
     "diagram:read"

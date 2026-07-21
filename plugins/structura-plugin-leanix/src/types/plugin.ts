@@ -87,15 +87,6 @@ export interface LocalizedText {
 }
 
 /**
- * Plugin storage interface
- */
-export interface PluginStorage {
-  get<T>(key: string): Promise<T | null>;
-  set<T>(key: string, value: T): Promise<void>;
-  remove(key: string): Promise<void>;
-}
-
-/**
  * Main plugin API provided by the host
  */
 export interface StructuraPluginApi {
@@ -121,7 +112,4 @@ export interface StructuraPluginApi {
 
   /** Get a diagram by ID */
   getDiagram(diagramId?: string): DiagramSnapshot | null;
-
-  /** Plugin-scoped persistent key-value storage */
-  storage: PluginStorage;
 }

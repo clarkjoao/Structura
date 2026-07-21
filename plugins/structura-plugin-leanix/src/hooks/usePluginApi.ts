@@ -1,5 +1,5 @@
 import type ReactType from "react";
-import type { StructuraPluginApi, ToastOptions } from "./types/plugin";
+import type { StructuraPluginApi, ToastOptions } from "../types/plugin";
 
 /**
  * Global reference to the plugin API set during activation
@@ -7,7 +7,7 @@ import type { StructuraPluginApi, ToastOptions } from "./types/plugin";
 let pluginApi: StructuraPluginApi | null = null;
 
 /**
- * Global reference to React from the host
+ * Global reference to React from the host (set via window after activation)
  */
 let react: typeof ReactType | null = null;
 
@@ -19,10 +19,11 @@ export function initializePlugin(api: StructuraPluginApi): void {
   pluginApi = api;
 
   // Get React from host via dependencies
+  // Note: For IIFE plugins, we need to store it for later component use
   react = (api.dependencies?.react as typeof ReactType | undefined) ?? null;
 
   if (!react) {
-    console.error("[Leanix Plugin] React not available. Please ensure the host provides React.");
+    console.error("[Example Plugin] React not available. Please ensure the host provides React.");
   }
 }
 
@@ -35,22 +36,32 @@ export function hasReact(): boolean {
 
 /**
  * Get the React library from the host
+ * @throws if React not available
  */
 export function getReact(): typeof ReactType {
   if (!react) {
-    throw new Error("[Leanix Plugin] React not available.");
+    throw new Error("[Example Plugin] React not available.");
   }
   return react;
 }
 
 /**
  * Get the plugin API
+ * @throws if API not initialized
  */
 export function getApi(): StructuraPluginApi {
   if (!pluginApi) {
-    throw new Error("[Leanix Plugin] Plugin API not initialized.");
+    throw new Error("[Example Plugin] Plugin API not initialized.");
   }
   return pluginApi;
+}
+
+/**
+ * Hook to access plugin API with React
+ * Returns [React, API] tuple
+ */
+export function usePluginApi(): [typeof ReactType, StructuraPluginApi] {
+  return [getReact(), getApi()];
 }
 
 /**
