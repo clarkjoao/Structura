@@ -1,0 +1,19 @@
+{
+  "name": "structura-plugin-leanix",
+  "version": "1.0.0",
+  "description": "Leanix integration plugin for Structura",
+  "main": "dist/plugin.js",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "vite": "^5.0.0"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}

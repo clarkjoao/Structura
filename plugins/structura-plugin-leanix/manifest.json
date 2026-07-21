@@ -1,0 +1,14 @@
+{
+  "id": "structura-plugin-leanix",
+  "name": "Leanix Integration",
+  "version": "1.0.0",
+  "author": "Structura",
+  "description": "Export diagrams to Leanix ITSM",
+  "apiVersion": "^1.1",
+  "capabilities": [
+    "network",
+    "ui:panels",
+    "ui:overlays",
+    "diagram:read"
+  ]
+}

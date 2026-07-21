@@ -10,6 +10,7 @@ plugins/
 │   ├── console-log/    # Diagram change logger + keyboard shortcuts
 │   └── mermaid-import/ # Mermaid flowchart importer
 ├── structura-plugin-example-ui/  # React/TypeScript plugin example
+├── structura-plugin-leanix/     # Leanix ITSM integration
 └── README.md           # This file
 ```
 
@@ -34,9 +35,17 @@ React). See [structura-plugin-example-ui/README.md](structura-plugin-example-ui/
 | Plugin | Capabilities | Description |
 |--------|-------------|-------------|
 | [structura-plugin-example-ui](structura-plugin-example-ui/) | `ui:panels`, `ui:overlays`, `diagram:read`, `events:diagram`, `storage` | Toolbar button, toasts, modals demo |
+| [structura-plugin-leanix](structura-plugin-leanix/) | `network`, `ui:panels`, `ui:overlays`, `diagram:read` | Export diagrams to Leanix ITSM |
 
 ```bash
+# Example UI plugin
 cd plugins/structura-plugin-example-ui
+npm install
+npm run build
+# Upload dist/plugin.js from Plugins page
+
+# Leanix plugin
+cd plugins/structura-plugin-leanix
 npm install
 npm run build
 # Upload dist/plugin.js from Plugins page
