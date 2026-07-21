@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 /**
  * Plugin manifest declaration
@@ -30,7 +30,7 @@ export interface ToastOptions {
  */
 export interface ModalOptions {
   title: string;
-  content: (props: { onClose: () => void }) => ReactElement;
+  content: ReactNode;
   size?: "sm" | "md" | "lg";
 }
 
@@ -41,41 +41,67 @@ export interface PanelContribution {
   id: string;
   slot: PluginPanelSlot;
   title: LocalizedText;
-  component: (props: { context: PanelContext }) => ReactElement;
+  component: React.ComponentType<PluginPanelProps>;
 }
 
 /**
  * Supported panel slots
  */
-export type PluginPanelSlot = "canvas-toolbar" | "element-inspector";
-
-/**
- * Context passed to panel components
- */
-export interface PanelContext {
-  locale: string;
-  isEditMode: boolean;
-  selection?: PanelComponentSnapshot[];
-}
+export type PluginPanelSlot = "canvas-toolbar" | "element-inspector" | "service-registry-import";
 
 /**
  * Read-only snapshot of a diagram component
  */
-export interface PanelComponentSnapshot {
+export interface PluginComponentSnapshot {
   id: string;
   type: string;
   label: string;
   description: string;
   tags: readonly string[];
+  parentId: string | null;
+  position: { x: number; y: number } | null;
+  size: { width: number; height: number } | null;
+  serviceId: string | null;
 }
 
 /**
  * Read-only snapshot of a diagram
  */
 export interface DiagramSnapshot {
+  id: string;
   name: string;
-  components: unknown[];
-  connections: unknown[];
+  description: string | null;
+  components: readonly PluginComponentSnapshot[];
+  connections: readonly PluginConnectionSnapshot[];
+}
+
+/**
+ * Read-only connection snapshot
+ */
+export interface PluginConnectionSnapshot {
+  id: string;
+  sourceId: string;
+  targetId: string;
+  label: string;
+  description: string | null;
+  technology: string | null;
+}
+
+/**
+ * Context passed to panel components (canvas-toolbar slot)
+ */
+export interface PluginPanelProps {
+  context: PluginToolbarContext;
+}
+
+/**
+ * Context provided to canvas-toolbar slot panels
+ */
+export interface PluginToolbarContext {
+  /** Current locale ("en" | "pt-BR") */
+  locale: string;
+  /** Whether the user is in edit mode */
+  isEditMode: boolean;
 }
 
 /**

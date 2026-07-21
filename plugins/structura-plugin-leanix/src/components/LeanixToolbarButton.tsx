@@ -1,35 +1,23 @@
-import type { ReactElement } from "react";
-import type { PanelContext } from "../types/plugin";
-import { showToast, openModal, getReact, getApi } from "../hooks/usePluginApi";
+import type { FC } from "react";
+import type { PluginPanelProps } from "../types/plugin";
 import { LABELS, t, type Locale } from "../i18n/labels";
+import { showToast, openModal, getApi } from "../hooks/usePluginApi";
 import { LeanixConfigModal } from "./LeanixConfigModal";
-import { exportDiagram, getDiagramUrl } from "../services";
+import { exportDiagram, getDiagramUrl, exportToDrawioWithLayout } from "../services";
+import { useLeanixConfig } from "../hooks/useLeanixConfig";
 
 /**
  * Leanix Toolbar Button Component
  */
-export function LeanixToolbarButton({ context }: { context: PanelContext }): ReactElement {
+export const LeanixToolbarButton: FC<PluginPanelProps> = ({ context }) => {
   const locale = (context?.locale || "en") as Locale;
   const isEditMode = context?.isEditMode !== false;
-  const React = getReact();
-
-  // Get config from localStorage
-  const getConfig = () => {
-    try {
-      const stored = localStorage.getItem("leanix_config");
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  };
-
-  const config = getConfig();
-  const isConfigured = config !== null;
+  const { config: currentConfig, isConfigured } = useLeanixConfig();
 
   const openConfigModal = () => {
     openModal({
       title: t(LABELS.config.title, locale),
-      content: ({ onClose }) => React.createElement(LeanixConfigModal, { onClose }),
+      content: LeanixConfigModal,
       size: "md",
     });
   };
@@ -47,7 +35,6 @@ export function LeanixToolbarButton({ context }: { context: PanelContext }): Rea
       return;
     }
 
-    const currentConfig = getConfig();
     if (!currentConfig) {
       showToast({
         type: "warning",
@@ -64,7 +51,25 @@ export function LeanixToolbarButton({ context }: { context: PanelContext }): Rea
     });
 
     try {
-      const result = await exportDiagram(currentConfig, diagram.name, "", currentConfig.userId);
+      // Use the built-in draw.io exporter to get the mxGraph XML
+      if (!diagram) {
+        showToast({
+          type: "error",
+          title: "No diagram available",
+          duration: 5000,
+        });
+        return;
+      }
+
+      const graphXml = exportToDrawioWithLayout(diagram);
+
+      const result = await exportDiagram(
+        currentConfig,
+        diagram.name,
+        graphXml,
+        currentConfig.userId
+      );
+
       const successTitle = result.action === "created"
         ? t(LABELS.toasts.successCreated, locale)
         : t(LABELS.toasts.successUpdated, locale);
@@ -78,7 +83,8 @@ export function LeanixToolbarButton({ context }: { context: PanelContext }): Rea
         },
         duration: 8000,
       });
-    } catch {
+    } catch (error) {
+      console.error("[Leanix Plugin] Export failed:", error);
       showToast({
         type: "error",
         title: t(LABELS.toasts.errorConnection, locale),
@@ -110,32 +116,29 @@ export function LeanixToolbarButton({ context }: { context: PanelContext }): Rea
     }
   }
 
-  return React.createElement(
-    "div",
-    { style: { display: "flex", flexDirection: "column", gap: "4px" } },
-    // Main button
-    React.createElement(
-      "button",
-      {
-        type: "button",
-        onClick: isDisabled ? undefined : handleSend,
-        disabled: isDisabled,
-        title: tooltip,
-        className: "flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors",
-      },
-      React.createElement("span", null, "📤"),
-      React.createElement("span", null, t(LABELS.toolbar.button, locale))
-    ),
-    // Config button
-    React.createElement(
-      "button",
-      {
-        type: "button",
-        onClick: openConfigModal,
-        title: t(LABELS.config.title, locale),
-        className: "text-xs px-2 py-1 rounded bg-secondary/50 hover:bg-secondary transition-colors",
-      },
-      isConfigured ? "✓" : "⚙"
-    )
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+      {/* Main Send button */}
+      <button
+        type="button"
+        onClick={isDisabled ? undefined : handleSend}
+        disabled={isDisabled}
+        title={tooltip}
+        className="flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+      >
+        <span>📤</span>
+        <span>{t(LABELS.toolbar.button, locale)}</span>
+      </button>
+
+      {/* Config button */}
+      <button
+        type="button"
+        onClick={openConfigModal}
+        title={t(LABELS.config.title, locale)}
+        className="text-xs px-2 py-1 rounded bg-secondary/50 hover:bg-secondary transition-colors"
+      >
+        {isConfigured ? "✓" : "⚙"}
+      </button>
+    </div>
   );
-}
+};

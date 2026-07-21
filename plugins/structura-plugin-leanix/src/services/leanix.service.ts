@@ -37,7 +37,7 @@ export function ensureBearerPrefix(token: string): string {
   return `Bearer ${cleanToken}`;
 }
 
-async function apiRequest(config: LeanixConfig, path: string, options: RequestInit = {}): Promise<Response> {
+async function apiRequest<T>(config: LeanixConfig, path: string, options: RequestInit = {}): Promise<T> {
   const targetPath = path.startsWith("/") ? path : `/${path}`;
   const targetUrl = `${config.baseUrl.replace(/\/$/, "")}${targetPath}`;
 
@@ -56,7 +56,20 @@ async function apiRequest(config: LeanixConfig, path: string, options: RequestIn
       ...options.headers,
     },
   });
-  return response;
+
+  if (!response.ok) {
+    let errorMessage = `HTTP ${response.status}`;
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.message || errorData.error || errorMessage;
+    } catch {
+      // Use status text if JSON parsing fails
+      errorMessage = response.statusText || errorMessage;
+    }
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
 }
 
 async function createDiagram(config: LeanixConfig, name: string, graphXml: string, userId: string): Promise<LeanixBookmark> {
@@ -72,12 +85,11 @@ async function createDiagram(config: LeanixConfig, name: string, graphXml: strin
     defaultSharingPriority: null,
     workingCopy: { state: { graphXml, version: 2 } },
   };
-  const response = await apiRequest(config, "/services/pathfinder/v1/bookmarks", {
+  return apiRequest<LeanixBookmark>(config, "/services/pathfinder/v1/bookmarks", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  return response.json();
 }
 
 async function updateWorkingCopy(config: LeanixConfig, diagramId: string, graphXml: string): Promise<void> {
@@ -90,13 +102,15 @@ async function updateWorkingCopy(config: LeanixConfig, diagramId: string, graphX
 }
 
 async function saveDiagram(config: LeanixConfig, diagramId: string, graphXml: string): Promise<LeanixBookmark> {
-  const payload = { state: { graphXml, version: 2, viewport: {}, autoUpdate: true }, lastModified: new Date().toISOString() };
-  const response = await apiRequest(config, `/services/pathfinder/v1/bookmarks/${diagramId}`, {
+  const payload = {
+    state: { graphXml, version: 2, viewport: {}, autoUpdate: true },
+    lastModified: new Date().toISOString()
+  };
+  return apiRequest<LeanixBookmark>(config, `/services/pathfinder/v1/bookmarks/${diagramId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  return response.json();
 }
 
 export async function exportDiagram(

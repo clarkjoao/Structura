@@ -5,6 +5,7 @@
  * - canvas-toolbar slot (button in toolbar)
  * - ui:overlays capability (toasts and modals)
  * - diagram:read capability (read diagram name)
+ * - diagram:export capability (export to draw.io XML)
  * - network capability (API calls)
  *
  * Build: npm run build
