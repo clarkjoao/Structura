@@ -4,29 +4,56 @@ import type { LeanixConfig } from "../types/config";
 const CONFIG_KEY = "leanix_config";
 
 /**
+ * Global state that persists across all hook instances
+ * This ensures all components share the same config state
+ */
+let globalConfig: LeanixConfig | null = null;
+let globalIsConfigured = false;
+const listeners = new Set<(config: LeanixConfig | null, isConfigured: boolean) => void>();
+
+function notifyListeners() {
+  listeners.forEach(listener => listener(globalConfig, globalIsConfigured));
+}
+
+/**
  * Hook to manage Leanix configuration via localStorage
+ * Uses global state to ensure all components share the same config
  */
 export function useLeanixConfig() {
-  const [config, setConfig] = useState<LeanixConfig | null>(null);
+  const [config, setConfig] = useState<LeanixConfig | null>(() => globalConfig);
   const [isLoading, setIsLoading] = useState(true);
-  const [isConfigured, setIsConfigured] = useState(false);
+  const [isConfigured, setIsConfigured] = useState(globalIsConfigured);
 
   useEffect(() => {
-    const loadConfig = () => {
-      try {
-        const stored = localStorage.getItem(CONFIG_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored) as LeanixConfig;
-          setConfig(parsed);
-          setIsConfigured(true);
-        }
-      } catch (e) {
-        console.error("[Leanix Plugin] Failed to load config:", e);
-      } finally {
-        setIsLoading(false);
-      }
+    // Register as a listener for global state changes
+    const handleChange = (newConfig: LeanixConfig | null, configured: boolean) => {
+      setConfig(newConfig);
+      setIsConfigured(configured);
     };
-    loadConfig();
+    listeners.add(handleChange);
+
+    // Load config from localStorage if not already loaded
+    if (globalConfig === null) {
+      const loadConfig = () => {
+        try {
+          const stored = localStorage.getItem(CONFIG_KEY);
+          if (stored) {
+            globalConfig = JSON.parse(stored) as LeanixConfig;
+            globalIsConfigured = true;
+            notifyListeners();
+          }
+        } catch (e) {
+          console.error("[Leanix Plugin] Failed to load config:", e);
+        }
+      };
+      loadConfig();
+    }
+
+    setIsLoading(false);
+
+    return () => {
+      listeners.delete(handleChange);
+    };
   }, []);
 
   const saveConfig = useCallback(async (newConfig: LeanixConfig): Promise<boolean> => {
@@ -37,8 +64,9 @@ export function useLeanixConfig() {
 
     try {
       localStorage.setItem(CONFIG_KEY, JSON.stringify(newConfig));
-      setConfig(newConfig);
-      setIsConfigured(true);
+      globalConfig = newConfig;
+      globalIsConfigured = true;
+      notifyListeners();
       return true;
     } catch (e) {
       console.error("[Leanix Plugin] Failed to save config:", e);
@@ -48,8 +76,9 @@ export function useLeanixConfig() {
 
   const clearConfig = useCallback(async (): Promise<void> => {
     localStorage.removeItem(CONFIG_KEY);
-    setConfig(null);
-    setIsConfigured(false);
+    globalConfig = null;
+    globalIsConfigured = false;
+    notifyListeners();
   }, []);
 
   return { config, isLoading, isConfigured, saveConfig, clearConfig };

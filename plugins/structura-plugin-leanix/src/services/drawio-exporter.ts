@@ -57,6 +57,10 @@ function escXml(str: string): string {
     .replace(/'/g, "&apos;");
 }
 
+function escAttr(str: string): string {
+  return escXml(str)
+}
+
 /**
  * Get the type category from component type
  */
@@ -210,22 +214,16 @@ function buildComponentCell(
     "html=1",
   ].join(";");
 
+  const componentId = escAttr(component.id);
+  const parent = escAttr(parentId);
   const escapedLabel = escXml(component.label || component.type);
   const escapedDescription = component.description ? escXml(component.description) : "";
+  const value = escapedDescription ? `${escapedLabel}&#xa${escapedDescription}` : escapedLabel;
 
-  const labelText = escapedDescription
-    ? `<mxCell style="${style}" vertex="1" parent="${parentId}">` +
-      `<mxGeometry ${buildGeometry(geom)} as="geometry"}>` +
-      `</mxGeometry>` +
-      `</mxCell>` +
-      `<mxCell id="${component.id}-label" value="${escapedLabel}" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;fontSize=10;fontColor=${fontColor}" vertex="1" connectable="0" parent="${component.id}">` +
-      `</mxCell>`
-    : `<mxCell id="${component.id}" value="${escapedLabel}" style="${style}" vertex="1" parent="${parentId}">` +
-      `<mxGeometry ${buildGeometry(geom)} as="geometry">` +
-      `</mxGeometry>` +
-      `</mxCell>`;
 
-  return labelText;
+  return `<mxCell id="${componentId}" value="${value}" style="${style}" vertex="1" parent="${parent}">` +
+    `<mxGeometry ${buildGeometry(geom)} as="geometry"/>` +
+    `</mxCell>`;
 }
 
 /**
@@ -247,7 +245,11 @@ function buildConnectionCell(connection: PluginConnectionSnapshot): string {
 
   const escapedLabel = connection.label ? escXml(connection.label) : "";
 
-  return `<mxCell id="${connection.id}" value="${escapedLabel}" style="${style}" edge="1" parent="1" source="${connection.sourceId}" target="${connection.targetId}">` +
+  const connectionId = escAttr(connection.id);
+  const sourceId = escAttr(connection.sourceId);
+  const targetId = escAttr(connection.targetId);
+
+  return `<mxCell id="${connectionId}" value="${escapedLabel}" style="${style}" edge="1" parent="1" source="${sourceId}" target="${targetId}">` +
     `<mxGeometry relative="1" as="geometry"/>` +
     `</mxCell>`;
 }
