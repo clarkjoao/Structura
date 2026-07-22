@@ -588,6 +588,8 @@ export function wrapIStoragePortWithDiagramPersistTracking(storage: IStoragePort
         clearLocalStorageDiagramSyncTimestamp();
       }
     },
+    keys: () => storage.keys(),
+    length: () => storage.length(),
   };
 }
 
