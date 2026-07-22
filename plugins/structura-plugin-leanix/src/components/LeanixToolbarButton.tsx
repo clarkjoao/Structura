@@ -6,11 +6,41 @@ import { createLeanixConfigModal } from "./LeanixConfigModal";
 import { exportDiagram, getDiagramUrl, exportDrawio, classifyError } from "../services";
 import { useLeanixConfig } from "../hooks/useLeanixConfig";
 
+const POSITION_STORAGE_KEY = "leanix-floating-panel-position";
+
 type SendStatus =
   | { kind: "idle" }
   | { kind: "sending" }
   | { kind: "success"; action: "created" | "updated"; bookmarkId: string; diagramName: string }
   | { kind: "error"; reason: string };
+
+interface PanelPosition {
+  x: number;
+  y: number;
+}
+
+function loadSavedPosition(): PanelPosition {
+  try {
+    const saved = localStorage.getItem(POSITION_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (typeof parsed.x === "number" && typeof parsed.y === "number") {
+        return parsed;
+      }
+    }
+  } catch {
+    // Ignore errors
+  }
+  return { x: 100, y: 100 };
+}
+
+function savePosition(position: PanelPosition): void {
+  try {
+    localStorage.setItem(POSITION_STORAGE_KEY, JSON.stringify(position));
+  } catch {
+    // Ignore errors
+  }
+}
 
 /**
  * Format a past timestamp as a short relative string.
@@ -50,7 +80,7 @@ function AbstractPreview({ showLabels }: { showLabels: boolean }) {
         alignItems: "center",
         justifyContent: "center",
         padding: "10px 8px",
-        background: "var(--muted)",
+        background: "#f5f5f5",
         borderRadius: "6px",
         minHeight: "76px",
       },
@@ -68,39 +98,39 @@ function AbstractPreview({ showLabels }: { showLabels: boolean }) {
       React.createElement("rect", {
         key: "b1",
         x: 6, y: 16, width: 44, height: 24, rx: 4,
-        fill: "var(--card)",
-        stroke: "var(--border)",
+        fill: "#ffffff",
+        stroke: "#d1d5db",
         strokeWidth: 1.5,
       }),
       // Box 2
       React.createElement("rect", {
         key: "b2",
         x: 72, y: 8, width: 44, height: 24, rx: 4,
-        fill: "var(--card)",
-        stroke: "var(--border)",
+        fill: "#ffffff",
+        stroke: "#d1d5db",
         strokeWidth: 1.5,
       }),
       // Box 3
       React.createElement("rect", {
         key: "b3",
         x: 72, y: 36, width: 44, height: 24, rx: 4,
-        fill: "var(--card)",
-        stroke: "var(--border)",
+        fill: "#ffffff",
+        stroke: "#d1d5db",
         strokeWidth: 1.5,
       }),
       // Box 4
       React.createElement("rect", {
         key: "b4",
         x: 138, y: 16, width: 36, height: 24, rx: 4,
-        fill: "var(--card)",
-        stroke: "var(--border)",
+        fill: "#ffffff",
+        stroke: "#d1d5db",
         strokeWidth: 1.5,
       }),
       // Edge 1->2
       React.createElement("path", {
         key: "e12",
         d: "M50 24 L70 16",
-        stroke: "var(--muted-foreground)",
+        stroke: "#6b7280",
         strokeWidth: 1.2,
         fill: "none",
         markerEnd: "url(#arrowhead)",
@@ -109,7 +139,7 @@ function AbstractPreview({ showLabels }: { showLabels: boolean }) {
       React.createElement("path", {
         key: "e13",
         d: "M50 32 L70 44",
-        stroke: "var(--muted-foreground)",
+        stroke: "#6b7280",
         strokeWidth: 1.2,
         fill: "none",
         markerEnd: "url(#arrowhead)",
@@ -118,7 +148,7 @@ function AbstractPreview({ showLabels }: { showLabels: boolean }) {
       React.createElement("path", {
         key: "e24",
         d: "M116 20 L136 24",
-        stroke: "var(--muted-foreground)",
+        stroke: "#6b7280",
         strokeWidth: 1.2,
         fill: "none",
         markerEnd: "url(#arrowhead)",
@@ -127,7 +157,7 @@ function AbstractPreview({ showLabels }: { showLabels: boolean }) {
       React.createElement("path", {
         key: "e34",
         d: "M116 44 L136 32",
-        stroke: "var(--muted-foreground)",
+        stroke: "#6b7280",
         strokeWidth: 1.2,
         fill: "none",
         markerEnd: "url(#arrowhead)",
@@ -143,7 +173,7 @@ function AbstractPreview({ showLabels }: { showLabels: boolean }) {
         },
           React.createElement("path", {
             d: "M0 0 L8 4 L0 8 z",
-            fill: "var(--muted-foreground)",
+            fill: "#6b7280",
           })
         )
       ),
@@ -151,30 +181,39 @@ function AbstractPreview({ showLabels }: { showLabels: boolean }) {
       showLabels && React.createElement(
         "g",
         { key: "labels" },
-        React.createElement("text", { x: 28, y: 50, textAnchor: "middle", fontSize: "6", fill: "var(--muted-foreground)" }, "label"),
-        React.createElement("text", { x: 94, y: 50, textAnchor: "middle", fontSize: "6", fill: "var(--muted-foreground)" }, "label"),
-        React.createElement("text", { x: 156, y: 50, textAnchor: "middle", fontSize: "6", fill: "var(--muted-foreground)" }, "label")
+        React.createElement("text", { x: 28, y: 50, textAnchor: "middle", fontSize: "6", fill: "#6b7280" }, "label"),
+        React.createElement("text", { x: 94, y: 50, textAnchor: "middle", fontSize: "6", fill: "#6b7280" }, "label"),
+        React.createElement("text", { x: 156, y: 50, textAnchor: "middle", fontSize: "6", fill: "#6b7280" }, "label")
       )
     )
   );
 }
 
-interface PanelContentProps extends PluginPanelProps {
+interface FloatingPanelProps extends PluginPanelProps {
+  position: PanelPosition;
+  onPositionChange: (pos: PanelPosition) => void;
+  onMinimize: () => void;
   onClose: () => void;
 }
 
-function PanelContent({ context, onClose }: PanelContentProps) {
+function FloatingPanel({ context, position, onPositionChange, onMinimize, onClose }: FloatingPanelProps) {
   const React = getReact();
   const locale = (context?.locale || "en") as Locale;
-  const isEditMode = context?.isEditMode !== false;
   const api = getApi();
   const diagram: DiagramSnapshot | null = api.getDiagram();
   const { config: currentConfig, isConfigured } = useLeanixConfig();
 
+  // Drag state
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [dragOffset, setDragOffset] = React.useState({ x: 0, y: 0 });
+  const panelRef = React.useRef<HTMLDivElement>(null);
+
+  // Panel local state
   const [includeLabels, setIncludeLabels] = React.useState(true);
   const [autoArrange, setAutoArrange] = React.useState(true);
   const [status, setStatus] = React.useState<SendStatus>({ kind: "idle" });
   const [lastSentAt, setLastSentAt] = React.useState<number | null>(null);
+
   // Tick to refresh "X ago" every 30s while the panel is open.
   const [, setTick] = React.useState(0);
   React.useEffect(() => {
@@ -182,8 +221,7 @@ function PanelContent({ context, onClose }: PanelContentProps) {
     return () => clearInterval(id);
   }, []);
 
-  // Progress bar driven by requestAnimationFrame while sending, so we don't
-  // need a separate stylesheet (the host only loads plugin.js).
+  // Progress bar driven by requestAnimationFrame while sending
   const progressRef = React.useRef<HTMLDivElement | null>(null);
   React.useEffect(() => {
     if (status.kind !== "sending") return;
@@ -192,12 +230,11 @@ function PanelContent({ context, onClose }: PanelContentProps) {
     const tick = (now: number) => {
       const el = progressRef.current;
       if (el) {
-        // 1200ms loop: ease-in-out from -100% to +100%.
         const phase = ((now - start) % 1200) / 1200;
         const eased = phase < 0.5
           ? 2 * phase * phase
           : 1 - Math.pow(-2 * phase + 2, 2) / 2;
-        const pct = Math.round((eased * 200 - 100) * 100) / 100; // -100..+100
+        const pct = Math.round((eased * 200 - 100) * 100) / 100;
         el.style.transform = `translateX(${pct}%)`;
       }
       raf = requestAnimationFrame(tick);
@@ -205,6 +242,46 @@ function PanelContent({ context, onClose }: PanelContentProps) {
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [status.kind]);
+
+  // Drag handlers
+  const handleMouseDown = React.useCallback((e: React.MouseEvent) => {
+    // Only start dragging if clicking on the header area
+    if ((e.target as HTMLElement).closest('[data-drag-handle]')) {
+      setIsDragging(true);
+      const rect = panelRef.current?.getBoundingClientRect();
+      if (rect) {
+        setDragOffset({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        });
+      }
+    }
+  }, []);
+
+  const handleMouseMove = React.useCallback((e: MouseEvent) => {
+    if (isDragging) {
+      onPositionChange({
+        x: e.clientX - dragOffset.x,
+        y: e.clientY - dragOffset.y,
+      });
+    }
+  }, [isDragging, dragOffset, onPositionChange]);
+
+  const handleMouseUp = React.useCallback(() => {
+    setIsDragging(false);
+    savePosition(position);
+  }, [position]);
+
+  React.useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, handleMouseMove, handleMouseUp]);
 
   const openConfigModal = () => {
     openModal({
@@ -258,16 +335,10 @@ function PanelContent({ context, onClose }: PanelContentProps) {
     }
   }, [diagram, currentConfig, locale]);
 
-  // We intentionally do not auto-clear the success/error banner —
-  // it stays until the user dismisses it or triggers another send.
   const handleSend = () => {
     void runSend();
   };
 
-  // Compute stats from the diagram (cheap, in-memory). Memoize the size
-  // estimate since it depends only on the diagram, not the local UI state
-  // (checkboxes are currently advisory — the export pipeline doesn't yet
-  // filter labels/auto-arrange, so the XML is stable across toggle changes).
   const componentCount = diagram?.components.length ?? 0;
   const connectionCount = diagram?.connections.length ?? 0;
   const sizeKb = React.useMemo(() => {
@@ -279,13 +350,10 @@ function PanelContent({ context, onClose }: PanelContentProps) {
     }
   }, [diagram]);
 
-  // Disabled state.
+  // Disabled state
   let sendDisabled = false;
   let sendTitle = "";
-  if (!isEditMode) {
-    sendDisabled = true;
-    sendTitle = t(LABELS.toolbar.tooltipReadOnly, locale);
-  } else if (!isConfigured || !currentConfig) {
+  if (!isConfigured || !currentConfig) {
     sendDisabled = true;
     sendTitle = t(LABELS.toolbar.tooltipNoConfig, locale);
   } else if (!diagram?.name) {
@@ -299,34 +367,70 @@ function PanelContent({ context, onClose }: PanelContentProps) {
   return React.createElement(
     "div",
     {
-      className: "rounded-lg border border-border bg-card/95 backdrop-blur-sm shadow-sm",
-      style: { width: "260px", padding: "0" },
+      ref: panelRef,
+      onMouseDown: handleMouseDown,
+      style: {
+        position: "fixed",
+        left: position.x,
+        top: position.y,
+        width: "280px",
+        background: "#ffffff",
+        borderRadius: "8px",
+        border: "1px solid #e5e7eb",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.1)",
+        zIndex: 9999,
+        overflow: "hidden",
+        userSelect: isDragging ? "none" : "auto",
+        cursor: isDragging ? "grabbing" : "default",
+      },
     },
-    // Header
+    // Header (draggable)
     React.createElement(
       "div",
       {
+        "data-drag-handle": true,
         style: {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "8px 10px",
-          borderBottom: "1px solid var(--border)",
+          padding: "10px 12px",
+          borderBottom: "1px solid #e5e7eb",
+          background: "#f9fafb",
+          cursor: "grab",
         },
       },
       React.createElement(
         "div",
-        { style: { display: "flex", alignItems: "center", gap: "6px", minWidth: 0 } },
+        { style: { display: "flex", alignItems: "center", gap: "6px" } },
         React.createElement("span", { style: { fontSize: "14px" } }, "📤"),
         React.createElement(
           "span",
-          { style: { fontSize: "13px", fontWeight: 600, color: "var(--foreground)" } },
+          { style: { fontSize: "13px", fontWeight: 600, color: "#111827" } },
           t(LABELS.panel.title, locale)
         )
       ),
       React.createElement(
         "div",
         { style: { display: "flex", gap: "2px" } },
+        React.createElement(
+          "button",
+          {
+            type: "button",
+            onClick: onMinimize,
+            title: "Minimizar",
+            "aria-label": "Minimizar",
+            style: {
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              padding: "4px 6px",
+              borderRadius: "4px",
+              color: "#6b7280",
+              fontSize: "13px",
+            },
+          },
+          "—"
+        ),
         React.createElement(
           "button",
           {
@@ -340,7 +444,7 @@ function PanelContent({ context, onClose }: PanelContentProps) {
               cursor: "pointer",
               padding: "4px 6px",
               borderRadius: "4px",
-              color: "var(--muted-foreground)",
+              color: "#6b7280",
               fontSize: "13px",
             },
           },
@@ -359,7 +463,7 @@ function PanelContent({ context, onClose }: PanelContentProps) {
               cursor: "pointer",
               padding: "4px 6px",
               borderRadius: "4px",
-              color: "var(--muted-foreground)",
+              color: "#6b7280",
               fontSize: "13px",
             },
           },
@@ -371,7 +475,7 @@ function PanelContent({ context, onClose }: PanelContentProps) {
     // Body
     React.createElement(
       "div",
-      { style: { padding: "10px", display: "flex", flexDirection: "column", gap: "10px" } },
+      { style: { padding: "12px", display: "flex", flexDirection: "column", gap: "10px" } },
 
       // Diagram info
       React.createElement(
@@ -383,7 +487,7 @@ function PanelContent({ context, onClose }: PanelContentProps) {
             style: {
               fontSize: "13px",
               fontWeight: 500,
-              color: "var(--foreground)",
+              color: "#111827",
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
@@ -394,7 +498,7 @@ function PanelContent({ context, onClose }: PanelContentProps) {
         ),
         React.createElement(
           "div",
-          { style: { display: "flex", gap: "8px", fontSize: "11px", color: "var(--muted-foreground)" } },
+          { style: { display: "flex", gap: "8px", fontSize: "11px", color: "#6b7280" } },
           React.createElement("span", null, `${componentCount} ${t(LABELS.panel.components, locale)}`),
           React.createElement("span", null, "·"),
           React.createElement("span", null, `${connectionCount} ${t(LABELS.panel.connections, locale)}`),
@@ -412,23 +516,23 @@ function PanelContent({ context, onClose }: PanelContentProps) {
         { style: { display: "flex", flexDirection: "column", gap: "6px" } },
         React.createElement(
           "label",
-          { style: { display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer", color: "var(--foreground)" } },
+          { style: { display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer", color: "#111827" } },
           React.createElement("input", {
             type: "checkbox",
             checked: includeLabels,
             onChange: (e: React.ChangeEvent<HTMLInputElement>) => setIncludeLabels(e.target.checked),
-            style: { width: "14px", height: "14px", accentColor: "var(--primary)" },
+            style: { width: "14px", height: "14px", accentColor: "#3b82f6" },
           }),
           t(LABELS.panel.includeLabels, locale)
         ),
         React.createElement(
           "label",
-          { style: { display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer", color: "var(--foreground)" } },
+          { style: { display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer", color: "#111827" } },
           React.createElement("input", {
             type: "checkbox",
             checked: autoArrange,
             onChange: (e: React.ChangeEvent<HTMLInputElement>) => setAutoArrange(e.target.checked),
-            style: { width: "14px", height: "14px", accentColor: "var(--primary)" },
+            style: { width: "14px", height: "14px", accentColor: "#3b82f6" },
           }),
           t(LABELS.panel.autoArrange, locale)
         )
@@ -440,8 +544,8 @@ function PanelContent({ context, onClose }: PanelContentProps) {
         {
           style: {
             padding: "8px 10px",
-            background: "var(--muted)",
-            border: "1px solid var(--border)",
+            background: "#f3f4f6",
+            border: "1px solid #e5e7eb",
             borderRadius: "6px",
             display: "flex",
             flexDirection: "column",
@@ -450,20 +554,20 @@ function PanelContent({ context, onClose }: PanelContentProps) {
         },
         React.createElement(
           "div",
-          { style: { display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--foreground)" } },
+          { style: { display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#111827" } },
           React.createElement("span", { style: { fontSize: "12px" } }, "⏳"),
           t(LABELS.status.sending, locale)
         ),
         React.createElement("div", {
           style: {
-            width: "100%", height: "4px", background: "var(--border)", borderRadius: "999px", overflow: "hidden",
+            width: "100%", height: "4px", background: "#e5e7eb", borderRadius: "999px", overflow: "hidden",
           },
         },
           React.createElement("div", {
             ref: progressRef,
             style: {
               width: "40%", height: "100%",
-              background: "var(--primary)",
+              background: "#3b82f6",
               borderRadius: "999px",
               transform: "translateX(-100%)",
               willChange: "transform",
@@ -477,8 +581,8 @@ function PanelContent({ context, onClose }: PanelContentProps) {
         {
           style: {
             padding: "8px 10px",
-            background: "color-mix(in srgb, var(--primary) 10%, transparent)",
-            border: "1px solid color-mix(in srgb, var(--primary) 35%, transparent)",
+            background: "#eff6ff",
+            border: "1px solid #bfdbfe",
             borderRadius: "6px",
             display: "flex",
             flexDirection: "column",
@@ -487,8 +591,8 @@ function PanelContent({ context, onClose }: PanelContentProps) {
         },
         React.createElement(
           "div",
-          { style: { display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--foreground)" } },
-          React.createElement("span", { style: { color: "var(--primary)", fontSize: "13px" } }, "✓"),
+          { style: { display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#111827" } },
+          React.createElement("span", { style: { color: "#3b82f6", fontSize: "13px" } }, "✓"),
           t(LABELS.status.success, locale)
         ),
         React.createElement(
@@ -496,7 +600,7 @@ function PanelContent({ context, onClose }: PanelContentProps) {
           {
             style: {
               fontSize: "11px",
-              color: "var(--muted-foreground)",
+              color: "#6b7280",
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
@@ -520,8 +624,8 @@ function PanelContent({ context, onClose }: PanelContentProps) {
                 fontWeight: 500,
                 borderRadius: "4px",
                 border: "none",
-                background: "var(--primary)",
-                color: "var(--primary-foreground)",
+                background: "#3b82f6",
+                color: "#ffffff",
                 cursor: "pointer",
               },
             },
@@ -536,9 +640,9 @@ function PanelContent({ context, onClose }: PanelContentProps) {
                 padding: "5px 8px",
                 fontSize: "11px",
                 borderRadius: "4px",
-                border: "1px solid var(--border)",
+                border: "1px solid #e5e7eb",
                 background: "transparent",
-                color: "var(--muted-foreground)",
+                color: "#6b7280",
                 cursor: "pointer",
               },
             },
@@ -552,8 +656,8 @@ function PanelContent({ context, onClose }: PanelContentProps) {
         {
           style: {
             padding: "8px 10px",
-            background: "color-mix(in srgb, var(--destructive) 10%, transparent)",
-            border: "1px solid color-mix(in srgb, var(--destructive) 35%, transparent)",
+            background: "#fef2f2",
+            border: "1px solid #fecaca",
             borderRadius: "6px",
             display: "flex",
             flexDirection: "column",
@@ -562,7 +666,7 @@ function PanelContent({ context, onClose }: PanelContentProps) {
         },
         React.createElement(
           "div",
-          { style: { display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--destructive)", fontWeight: 500 } },
+          { style: { display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#dc2626", fontWeight: 500 } },
           React.createElement("span", null, "⚠"),
           status.reason
         ),
@@ -581,8 +685,8 @@ function PanelContent({ context, onClose }: PanelContentProps) {
                 fontWeight: 500,
                 borderRadius: "4px",
                 border: "none",
-                background: "var(--destructive)",
-                color: "var(--destructive-foreground, white)",
+                background: "#dc2626",
+                color: "#ffffff",
                 cursor: "pointer",
               },
             },
@@ -597,9 +701,9 @@ function PanelContent({ context, onClose }: PanelContentProps) {
                 padding: "5px 8px",
                 fontSize: "11px",
                 borderRadius: "4px",
-                border: "1px solid var(--border)",
+                border: "1px solid #e5e7eb",
                 background: "transparent",
-                color: "var(--muted-foreground)",
+                color: "#6b7280",
                 cursor: "pointer",
               },
             },
@@ -617,8 +721,8 @@ function PanelContent({ context, onClose }: PanelContentProps) {
             alignItems: "center",
             justifyContent: "space-between",
             gap: "8px",
-            borderTop: "1px solid var(--border)",
-            paddingTop: "8px",
+            borderTop: "1px solid #e5e7eb",
+            paddingTop: "10px",
             marginTop: "2px",
           },
         },
@@ -627,7 +731,7 @@ function PanelContent({ context, onClose }: PanelContentProps) {
           {
             style: {
               fontSize: "11px",
-              color: "var(--muted-foreground)",
+              color: "#6b7280",
               display: "flex",
               alignItems: "center",
               gap: "4px",
@@ -658,8 +762,8 @@ function PanelContent({ context, onClose }: PanelContentProps) {
               fontWeight: 500,
               borderRadius: "6px",
               border: "none",
-              background: sendDisabled ? "var(--muted)" : "var(--primary)",
-              color: sendDisabled ? "var(--muted-foreground)" : "var(--primary-foreground)",
+              background: sendDisabled ? "#e5e7eb" : "#3b82f6",
+              color: sendDisabled ? "#9ca3af" : "#ffffff",
               cursor: sendDisabled ? "not-allowed" : "pointer",
               opacity: sendDisabled ? 0.7 : 1,
               transition: "opacity 0.15s",
@@ -672,19 +776,105 @@ function PanelContent({ context, onClose }: PanelContentProps) {
   );
 }
 
+interface MinimizedPanelProps extends PluginPanelProps {
+  position: PanelPosition;
+  onExpand: () => void;
+}
+
+function MinimizedPanel({ context, position, onExpand }: MinimizedPanelProps) {
+  const React = getReact();
+  const locale = (context?.locale || "en") as Locale;
+  const { isConfigured } = useLeanixConfig();
+
+  return React.createElement(
+    "div",
+    {
+      style: {
+        position: "fixed",
+        left: position.x,
+        top: position.y,
+        background: "#ffffff",
+        borderRadius: "8px",
+        border: "1px solid #e5e7eb",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.1)",
+        zIndex: 9999,
+        overflow: "hidden",
+        cursor: "pointer",
+      },
+    },
+    React.createElement(
+      "div",
+      {
+        onClick: onExpand,
+        style: {
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+          padding: "8px 12px",
+          background: "#f9fafb",
+        },
+      },
+      React.createElement("span", { style: { fontSize: "14px" } }, "📤"),
+      React.createElement(
+        "span",
+        { style: { fontSize: "13px", fontWeight: 600, color: "#111827" } },
+        t(LABELS.panel.title, locale)
+      ),
+      isConfigured && React.createElement(
+        "span",
+        {
+          "aria-hidden": true,
+          style: {
+            width: "6px", height: "6px", borderRadius: "999px",
+            background: "#3b82f6",
+          },
+        }
+      ),
+      React.createElement(
+        "span",
+        {
+          style: {
+            marginLeft: "4px",
+            color: "#9ca3af",
+            fontSize: "12px",
+          },
+        },
+        "▼"
+      )
+    )
+  );
+}
+
 /**
- * Toolbar trigger + panel. The host renders a single component in the toolbar
+ * Toolbar trigger + floating panel. The host renders a single component in the toolbar
  * slot; we keep the original "show a small button" trigger so the panel
- * doesn't appear on every page load, and expand into the full panel on click.
+ * doesn't appear on every page load, and expand into a floating draggable panel on click.
  */
 function ToolbarWithPanel({ context }: PluginPanelProps) {
   const React = getReact();
   const locale = (context?.locale || "en") as Locale;
   const isEditMode = context?.isEditMode !== false;
   const { isConfigured } = useLeanixConfig();
-  const [open, setOpen] = React.useState(false);
 
-  if (!open) {
+  // Panel visibility state: 'hidden' | 'expanded' | 'minimized'
+  const [panelState, setPanelState] = React.useState<'hidden' | 'expanded' | 'minimized'>('hidden');
+  const [position, setPosition] = React.useState<PanelPosition>(loadSavedPosition);
+
+  // Save position before closing
+  const handleClose = () => {
+    savePosition(position);
+    setPanelState('hidden');
+  };
+
+  const handleMinimize = () => {
+    setPanelState('minimized');
+  };
+
+  const handleExpand = () => {
+    setPanelState('expanded');
+  };
+
+  if (panelState === 'hidden') {
     return React.createElement(
       "div",
       { style: { display: "flex", flexDirection: "column", gap: "4px" } },
@@ -692,7 +882,7 @@ function ToolbarWithPanel({ context }: PluginPanelProps) {
         "button",
         {
           type: "button",
-          onClick: () => setOpen(true),
+          onClick: handleExpand,
           disabled: !isEditMode,
           title: !isEditMode
             ? t(LABELS.toolbar.tooltipReadOnly, locale)
@@ -715,7 +905,21 @@ function ToolbarWithPanel({ context }: PluginPanelProps) {
     );
   }
 
-  return React.createElement(PanelContent, { context, onClose: () => setOpen(false) });
+  if (panelState === 'minimized') {
+    return React.createElement(MinimizedPanel, {
+      context,
+      position,
+      onExpand: handleExpand,
+    });
+  }
+
+  return React.createElement(FloatingPanel, {
+    context,
+    position,
+    onPositionChange: setPosition,
+    onMinimize: handleMinimize,
+    onClose: handleClose,
+  });
 }
 
 /**
