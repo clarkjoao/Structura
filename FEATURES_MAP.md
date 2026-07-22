@@ -151,7 +151,7 @@
 
 ---
 
-## 🎬 Walkthroughs / Journeys
+## 🎬 Walkthroughs
 
 ### Estrutura
 - `Walkthrough` - Container
@@ -205,7 +205,7 @@
 - **PostMessage API**: Embedding em iframes
 
 ### Problema que Resolve
-- JSON por email/chat é笨拙
+- JSON por email/chat é desajeitado
 - URL muito longa
 - Compartilhar sem perder formatação
 

@@ -15,7 +15,9 @@ export function testServer(wsUrl: string, timeoutMs = 4000): Promise<boolean> {
       done = true;
       try {
         ws?.close();
-      } catch {}
+      } catch (err) {
+        console.warn("[CollabUtils] Failed to close WebSocket:", err);
+      }
       resolve(result);
     };
 

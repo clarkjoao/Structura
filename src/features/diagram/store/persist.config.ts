@@ -428,7 +428,9 @@ function migrateIconLibraryToGlobalStore(state: DiagramStore): void {
     for (const diagram of Object.values(state.diagrams ?? {})) {
       migrateSnapshot((diagram as Diagram).snapshot);
     }
-  } catch {}
+  } catch (err) {
+    console.warn("[persist.config] Failed to migrate snapshot:", err);
+  }
 }
 
 export function mergePersistedState(

@@ -79,7 +79,9 @@ export function decodeShareParam(shareParam: string): Diagram | null {
         },
       } as Diagram;
     }
-  } catch {}
+  } catch (err) {
+    console.warn("[diagram-url] Failed to parse URL:", err);
+  }
 
   try {
     const json = decodeURIComponent(escape(atob(shareParam)));

@@ -92,7 +92,9 @@ export async function sendMessage(
             fullText += delta;
             onChunk(delta);
           }
-        } catch {}
+        } catch (err) {
+          console.warn("[ProxyProvider] Error processing stream:", err);
+        }
       }
     }
 

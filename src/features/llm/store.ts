@@ -72,7 +72,9 @@ function sanitizeMessagesForLLM(messages: ChatMessage[]): ChatMessage[] {
       if (typeof parsed.message === "string") {
         return { ...message, content: parsed.message };
       }
-    } catch {}
+    } catch (err) {
+      console.warn("[llm-store] Failed to parse summary from JSON:", err);
+    }
     return { ...message, content: "[previous diagram suggestion]" };
   });
 }
@@ -802,36 +804,6 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
     },
   };
 });
-
-export function getSuggestionForMessage(
-  pendingSuggestions: PendingSuggestion[],
-  messageId: string,
-): PendingSuggestion | null {
-  return (
-    pendingSuggestions.find(
-      (suggestion) => suggestion.messageId === messageId && suggestion.status === "pending",
-    ) ?? null
-  );
-}
-
-export function summarizePatchActions(patch: DiagramPatch): string[] {
-  return patch.actions.map((action) => {
-    switch (action.type) {
-      case "ADD_NODE":
-        return `ADD_NODE ${action.payload.nodeType} ${action.payload.name}`;
-      case "REMOVE_NODE":
-        return `REMOVE_NODE ${action.payload.nodeId}`;
-      case "UPDATE_NODE":
-        return `UPDATE_NODE ${action.payload.nodeId}`;
-      case "ADD_EDGE":
-        return `ADD_EDGE ${action.payload.sourceId} -> ${action.payload.targetId}`;
-      case "REMOVE_EDGE":
-        return `REMOVE_EDGE ${action.payload.edgeId}`;
-      default:
-        return "UNKNOWN_ACTION";
-    }
-  });
-}
 
 export function getPendingNodeIds(pendingPreviews: PendingNodePreview[]): Set<string> {
   return new Set(pendingPreviews.flatMap((pendingPreview) => pendingPreview.nodeIds));

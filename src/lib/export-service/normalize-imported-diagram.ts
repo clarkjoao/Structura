@@ -103,7 +103,9 @@ export function normalizeImportedDiagram(diagram: Diagram): Diagram {
         }
       }
     }
-  } catch {}
+  } catch (err) {
+    console.warn("[normalize-imported-diagram] Failed to normalize imported diagram:", err);
+  }
 
   const components = { ...snapshot.components };
   for (const key of Object.keys(components)) {

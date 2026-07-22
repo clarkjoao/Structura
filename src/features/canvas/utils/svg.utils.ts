@@ -44,7 +44,9 @@ export function validateSvgSize(
         return { valid: false, reason: "dimension_exceeded" };
       }
     }
-  } catch {}
+  } catch (err) {
+    console.warn("[svg.utils] Failed to parse SVG dimensions:", err);
+  }
 
   return { valid: true };
 }
