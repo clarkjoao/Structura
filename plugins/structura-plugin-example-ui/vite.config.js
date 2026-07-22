@@ -16,8 +16,8 @@ export default defineConfig({
         inlineDynamicImports: true,
         // Inject React as global for IIFE format
         globals: {
-          react: "React",
-          "react-dom": "ReactDOM",
+          react: "__REACT__",
+          "react-dom": "__REACT__",
         },
       },
       external: ["react", "react-dom"],
