@@ -27,21 +27,42 @@ export async function proxyRequest<T = unknown>(
   request: ProxyRequest,
   proxyUrl?: string,
 ): Promise<ProxyResponse<T>> {
-  const baseUrl = proxyUrl
-    ? proxyUrl.endsWith("/")
-      ? proxyUrl.slice(0, -1)
-      : proxyUrl
-    : DEFAULT_PROXY_URL.endsWith("/")
-      ? DEFAULT_PROXY_URL.slice(0, -1)
-      : DEFAULT_PROXY_URL;
+  // Use proxyUrl if provided, otherwise default
+  // User should provide the full proxy URL including /proxy path if needed
+  let baseUrl = proxyUrl || DEFAULT_PROXY_URL;
 
-  const response = await fetch(`${baseUrl}/proxy`, {
-    method: "POST",
+  // Remove trailing slashes
+  baseUrl = baseUrl.replace(/\/+$/, "");
+
+  // If user didn't include /proxy in the URL, add it
+  if (!baseUrl.endsWith("/proxy")) {
+    baseUrl = `${baseUrl}/proxy`;
+  }
+
+  // Build query string with URL and method
+  const params = new URLSearchParams({
+    url: request.url,
+  });
+  if (request.method && request.method !== "GET") {
+    params.set("method", request.method);
+  }
+
+  const proxyEndpoint = `${baseUrl}?${params.toString()}`;
+
+  const fetchOptions: RequestInit = {
+    method: request.method && request.method !== "GET" ? request.method : "GET",
     headers: {
       "Content-Type": "application/json",
+      ...request.headers, // Merge custom headers (Authorization, etc.)
     },
-    body: JSON.stringify(request),
-  });
+  };
+
+  // Add body for non-GET requests
+  if (request.method !== "GET" && request.body !== undefined) {
+    fetchOptions.body = JSON.stringify(request.body);
+  }
+
+  const response = await fetch(proxyEndpoint, fetchOptions);
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => "Unknown error");

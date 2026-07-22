@@ -1,14 +1,6 @@
 import express from "express";
 import axios from "axios";
-import type { AxiosResponse } from "axios";
 import { proxyAgent } from "./config.js";
-
-interface ProxyRequest {
-  url: string;
-  method?: string;
-  headers?: Record<string, string>;
-  body?: unknown;
-}
 
 function isValidUrl(url: string): boolean {
   try {
@@ -43,20 +35,40 @@ function sanitizeForwardHeaders(
   return sanitized;
 }
 
-function forwardResponse(res: express.Response, response: AxiosResponse): void {
-  res.status(response.status);
+function maskSensitiveHeaders(headers: Record<string, string>): Record<string, string> {
+  const masked = { ...headers };
+  const sensitiveKeys = ["authorization", "x-api-key", "api-key", "token", "cookie"];
+  for (const key of Object.keys(masked)) {
+    if (sensitiveKeys.some((s) => key.toLowerCase().includes(s))) {
+      const value = masked[key];
+      masked[key] = value.length > 8 ? `${value.slice(0, 4)}...${value.slice(-4)}` : "****";
+    }
+  }
+  return masked;
+}
 
-  // Forward headers (except hop-by-hop)
-  for (const [key, value] of Object.entries(response.headers)) {
-    if (
-      value !== undefined &&
-      !["content-encoding", "transfer-encoding", "connection"].includes(key.toLowerCase())
-    ) {
-      res.setHeader(key, value);
+function getUpstreamUrl(targetUrl: string, query: express.Request["query"]): string {
+  const upstreamUrl = new URL(targetUrl);
+
+  // Remove default port for cleaner URLs
+  if (
+    (upstreamUrl.port === "80" && upstreamUrl.protocol === "http:") ||
+    (upstreamUrl.port === "443" && upstreamUrl.protocol === "https:")
+  ) {
+    upstreamUrl.port = "";
+  }
+
+  // Preserve the path and search from the target URL
+  // (upstreamUrl already has pathname and search from the URL constructor)
+
+  // Merge additional query params from the request
+  for (const [key, value] of Object.entries(query)) {
+    if (key !== "url" && key !== "method") {
+      upstreamUrl.searchParams.set(key, value as string);
     }
   }
 
-  res.send(response.data);
+  return upstreamUrl.toString();
 }
 
 export function createProxyRouter(): express.Router {
@@ -64,44 +76,94 @@ export function createProxyRouter(): express.Router {
 
   router.use(express.json({ limit: "10mb" }));
 
-  router.post("/", async (req: express.Request, res: express.Response) => {
-    const { url, method = "GET", headers = {}, body } = req.body as ProxyRequest;
+  router.all("/", async (req: express.Request, res: express.Response) => {
+    const startTime = Date.now();
+    const targetUrl = req.query.url as string | undefined;
+    const clientIp = req.ip || req.socket.remoteAddress || "unknown";
 
     // Validate URL
-    if (!url || typeof url !== "string" || !isValidUrl(url)) {
-      res.status(400).json({ error: "Invalid or missing 'url' parameter" });
+    if (!targetUrl || typeof targetUrl !== "string" || !isValidUrl(targetUrl)) {
+      console.warn(`[proxy] ❌ 400 | ${req.method} | Invalid URL: ${targetUrl}`);
+      res.status(400).json({ error: "Missing or invalid 'url' query parameter" });
       return;
     }
 
-    // Normalize method
-    const normalizedMethod = method.toUpperCase();
+    // Normalize method from query or infer from request
+    const methodFromQuery = (req.query.method as string | undefined)?.toUpperCase();
+    const method = methodFromQuery || req.method;
+
+    // Only allow safe methods
     const allowedMethods = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
-    if (!allowedMethods.includes(normalizedMethod)) {
+    if (!allowedMethods.includes(method)) {
+      console.warn(`[proxy] ❌ 400 | ${method} | Unsupported method`);
       res.status(400).json({ error: `Unsupported method: ${method}` });
       return;
     }
 
     try {
-      const isHttps = new URL(url).protocol === "https:";
+      const isHttps = new URL(targetUrl).protocol === "https:";
+
+      // Build upstream URL (includes path and query from ?url=)
+      const upstreamUrl = getUpstreamUrl(targetUrl, req.query);
+
+      // Merge headers: forward headers from original request + body headers
+      const mergedHeaders: Record<string, string> = {
+        ...sanitizeForwardHeaders(req.headers as Record<string, string | string[] | undefined>),
+      };
+
+      // For POST/PUT/PATCH with body, ensure Content-Type is set
+      const hasBody =
+        ["POST", "PUT", "PATCH"].includes(method) && Object.keys(req.body || {}).length > 0;
+      if (hasBody && !mergedHeaders["content-type"]) {
+        mergedHeaders["content-type"] = "application/json";
+      }
+
+      console.log(
+        `[proxy] → ${method} ${upstreamUrl}\n    From: ${clientIp}\n    Headers: ${JSON.stringify(maskSensitiveHeaders(mergedHeaders))}`,
+      );
 
       const response = await axios({
-        method: normalizedMethod,
-        url,
-        headers: {
-          ...sanitizeForwardHeaders(req.headers as Record<string, string | string[] | undefined>),
-          ...headers,
-        },
-        data: body,
+        method,
+        url: upstreamUrl,
+        headers: mergedHeaders,
+        data: hasBody ? req.body : undefined,
         proxy: false,
         validateStatus: () => true,
+        maxRedirects: 5,
         ...(isHttps ? { httpsAgent: proxyAgent } : {}),
         timeout: 30_000,
       });
 
-      forwardResponse(res, response);
+      const elapsed = Date.now() - startTime;
+      const redirectedTo = response.request?.res?.responseUrl
+        ? `\n    Redirected to: ${response.request.res.responseUrl}`
+        : "";
+
+      console.log(
+        `[proxy] ← ${response.status} | ${elapsed}ms${redirectedTo}\n    Response headers: ${JSON.stringify(
+          maskSensitiveHeaders(response.headers as Record<string, string>),
+        )}`,
+      );
+
+      // Forward response status
+      res.status(response.status);
+
+      // Forward headers (except hop-by-hop)
+      for (const [key, value] of Object.entries(response.headers)) {
+        if (
+          value !== undefined &&
+          !["content-encoding", "transfer-encoding", "connection"].includes(key.toLowerCase())
+        ) {
+          res.setHeader(key, value);
+        }
+      }
+
+      // Send response body
+      res.send(response.data);
     } catch (err: unknown) {
+      const elapsed = Date.now() - startTime;
       const message = err instanceof Error ? err.message : String(err);
-      console.error("[proxy] request failed:", message);
+      console.error(`[proxy] ❌ 502 | ${method} ${targetUrl} | ${elapsed}ms | Error: ${message}`);
       res.status(502).json({ error: "Proxy request failed", details: message });
     }
   });
