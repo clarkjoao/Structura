@@ -137,6 +137,18 @@ export const LABELS = {
       "pt-BR": "Fechar",
     },
   },
+  panel: {
+    closeAria: {
+      en: "Close panel",
+      "pt-BR": "Fechar painel",
+    },
+  },
+  plugin: {
+    description: {
+      en: "Example Plugin - Try the interactions!",
+      "pt-BR": "Plugin de Exemplo - Teste as interações!",
+    },
+  },
 } as const;
 
 /**

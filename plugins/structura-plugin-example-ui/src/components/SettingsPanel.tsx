@@ -10,9 +10,9 @@ import { showToast, getReact } from "../hooks/usePluginApi";
  * Shows when an element is selected.
  */
 export function SettingsPanel({ context }: { context: PanelContext }): ReactElement {
-  const locale = context?.locale || "en";
-  const selection = context?.selection || [];
   const React = getReact();
+  const locale = (context?.locale || "en") as "en" | "pt-BR";
+  const selection = context?.selection || [];
 
   const handleTestToast = () => {
     showToast({
@@ -25,29 +25,24 @@ export function SettingsPanel({ context }: { context: PanelContext }): ReactElem
   return React.createElement(
     "div",
     { className: "space-y-3" },
-    // Title
     React.createElement(
       "p",
       { className: "text-sm font-medium" },
       t(LABELS.settings.title, locale)
     ),
-    // Description
     React.createElement(
       "p",
       { className: "text-xs text-muted-foreground" },
       t(LABELS.settings.description, locale)
     ),
-    // Selection info
-    selection.length > 0 &&
-      React.createElement(
-        "div",
-        { className: "rounded-md bg-muted p-2 text-xs" },
-        React.createElement("strong", null, t(LABELS.settings.selected, locale)),
-        " ",
-        selection.length,
-        " element(s)"
-      ),
-    // Test toast button
+    selection.length > 0 && React.createElement(
+      "div",
+      { className: "rounded-md bg-muted p-2 text-xs" },
+      React.createElement("strong", null, t(LABELS.settings.selected, locale)),
+      " ",
+      selection.length,
+      " element(s)"
+    ),
     React.createElement(
       "button",
       {

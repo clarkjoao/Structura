@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite build --watch"
+    "dev": "vite build --watch",
+    "validate": "node scripts/validate-plugin.cjs"
   },
   "devDependencies": {
     "@types/react": "^18.2.0",
