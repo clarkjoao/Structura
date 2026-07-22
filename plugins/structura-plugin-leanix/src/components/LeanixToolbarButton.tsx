@@ -1,15 +1,16 @@
 import type { FC } from "react";
 import type { PluginPanelProps } from "../types/plugin";
 import { LABELS, t, type Locale } from "../i18n/labels";
-import { showToast, openModal, getApi } from "../hooks/usePluginApi";
-import { LeanixConfigModal } from "./LeanixConfigModal";
+import { showToast, openModal, getApi, getReact } from "../hooks/usePluginApi";
+import { createLeanixConfigModal } from "./LeanixConfigModal";
 import { exportDiagram, getDiagramUrl, exportDrawio } from "../services";
 import { useLeanixConfig } from "../hooks/useLeanixConfig";
 
 /**
- * Leanix Toolbar Button Component
+ * Toolbar button content - uses React hooks
  */
-export const LeanixToolbarButton: FC<PluginPanelProps> = ({ context }) => {
+function ToolbarButtonContent({ context }: PluginPanelProps) {
+  const React = getReact();
   const locale = (context?.locale || "en") as Locale;
   const isEditMode = context?.isEditMode !== false;
   const { config: currentConfig, isConfigured } = useLeanixConfig();
@@ -17,7 +18,7 @@ export const LeanixToolbarButton: FC<PluginPanelProps> = ({ context }) => {
   const openConfigModal = () => {
     openModal({
       title: t(LABELS.config.title, locale),
-      content: LeanixConfigModal,
+      content: createLeanixConfigModal,
       size: "md",
     });
   };
@@ -47,11 +48,10 @@ export const LeanixToolbarButton: FC<PluginPanelProps> = ({ context }) => {
     showToast({
       type: "info",
       title: t(LABELS.toasts.sending, locale),
-      duration: 0, // Persistent
+      duration: 0,
     });
 
     try {
-      // Use the draw.io exporter to generate mxGraphModel XML
       if (!diagram) {
         showToast({
           type: "error",
@@ -97,7 +97,6 @@ export const LeanixToolbarButton: FC<PluginPanelProps> = ({ context }) => {
     }
   };
 
-  // Disabled states
   let isDisabled = false;
   let tooltip = "";
 
@@ -116,29 +115,38 @@ export const LeanixToolbarButton: FC<PluginPanelProps> = ({ context }) => {
     }
   }
 
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-      {/* Main Send button */}
-      <button
-        type="button"
-        onClick={isDisabled ? undefined : handleSend}
-        disabled={isDisabled}
-        title={tooltip}
-        className="flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
-      >
-        <span>📤</span>
-        <span>{t(LABELS.toolbar.button, locale)}</span>
-      </button>
-
-      {/* Config button */}
-      <button
-        type="button"
-        onClick={openConfigModal}
-        title={t(LABELS.config.title, locale)}
-        className="text-xs px-2 py-1 rounded bg-secondary/50 hover:bg-secondary transition-colors"
-      >
-        {isConfigured ? "✓" : "⚙"}
-      </button>
-    </div>
+  return React.createElement(
+    "div",
+    { style: { display: "flex", flexDirection: "column", gap: "4px" } },
+    React.createElement(
+      "button",
+      {
+        type: "button",
+        onClick: isDisabled ? undefined : handleSend,
+        disabled: isDisabled,
+        title: tooltip,
+        className: "flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors",
+      },
+      React.createElement("span", null, "📤"),
+      React.createElement("span", null, t(LABELS.toolbar.button, locale))
+    ),
+    React.createElement(
+      "button",
+      {
+        type: "button",
+        onClick: openConfigModal,
+        title: t(LABELS.config.title, locale),
+        className: "text-xs px-2 py-1 rounded bg-secondary/50 hover:bg-secondary transition-colors",
+      },
+      isConfigured ? "✓" : "⚙"
+    )
   );
+}
+
+/**
+ * Leanix Toolbar Button Component - wrapper that gets React from host
+ */
+export const LeanixToolbarButton: FC<PluginPanelProps> = (props) => {
+  const React = getReact();
+  return React.createElement(ToolbarButtonContent, props);
 };

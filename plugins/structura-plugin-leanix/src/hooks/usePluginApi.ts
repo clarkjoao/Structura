@@ -25,6 +25,10 @@ export function initializePlugin(api: StructuraPluginApi): void {
   if (!react) {
     console.error("[Example Plugin] React not available. Please ensure the host provides React.");
   }
+
+  // Also set on globalThis so bundled code can access it
+  // This is a workaround for plugins that bundle React code
+  (globalThis as Record<string, unknown>).__REACT__ = react;
 }
 
 /**

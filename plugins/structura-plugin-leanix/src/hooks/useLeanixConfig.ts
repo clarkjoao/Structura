@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
 import type { LeanixConfig } from "../types/config";
+import { getReact } from "./usePluginApi";
 
 const CONFIG_KEY = "leanix_config";
 
@@ -16,47 +16,54 @@ function notifyListeners() {
 }
 
 /**
+ * Load config from localStorage
+ */
+function loadConfigFromStorage(): void {
+  if (globalConfig !== null) return; // Already loaded
+
+  try {
+    const stored = localStorage.getItem(CONFIG_KEY);
+    if (stored) {
+      globalConfig = JSON.parse(stored) as LeanixConfig;
+      globalIsConfigured = true;
+      notifyListeners();
+    }
+  } catch (e) {
+    console.error("[Leanix Plugin] Failed to load config:", e);
+  }
+}
+
+/**
  * Hook to manage Leanix configuration via localStorage
  * Uses global state to ensure all components share the same config
+ * Uses the host's React via getReact()
  */
 export function useLeanixConfig() {
-  const [config, setConfig] = useState<LeanixConfig | null>(() => globalConfig);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isConfigured, setIsConfigured] = useState(globalIsConfigured);
+  const React = getReact();
 
-  useEffect(() => {
-    // Register as a listener for global state changes
+  // Initialize state with current global values
+  const [config, setConfig] = React.useState<LeanixConfig | null>(() => {
+    loadConfigFromStorage();
+    return globalConfig;
+  });
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isConfigured, setIsConfigured] = React.useState(globalIsConfigured);
+
+  // Listen for global state changes
+  React.useEffect(() => {
     const handleChange = (newConfig: LeanixConfig | null, configured: boolean) => {
       setConfig(newConfig);
       setIsConfigured(configured);
     };
     listeners.add(handleChange);
-
-    // Load config from localStorage if not already loaded
-    if (globalConfig === null) {
-      const loadConfig = () => {
-        try {
-          const stored = localStorage.getItem(CONFIG_KEY);
-          if (stored) {
-            globalConfig = JSON.parse(stored) as LeanixConfig;
-            globalIsConfigured = true;
-            notifyListeners();
-          }
-        } catch (e) {
-          console.error("[Leanix Plugin] Failed to load config:", e);
-        }
-      };
-      loadConfig();
-    }
-
     setIsLoading(false);
 
     return () => {
       listeners.delete(handleChange);
     };
-  }, []);
+  }, [React]);
 
-  const saveConfig = useCallback(async (newConfig: LeanixConfig): Promise<boolean> => {
+  const saveConfig = React.useCallback(async (newConfig: LeanixConfig): Promise<boolean> => {
     if (!newConfig.baseUrl?.trim()) return false;
     if (!newConfig.authToken?.trim()) return false;
     if (!newConfig.userId?.trim()) return false;
@@ -74,7 +81,7 @@ export function useLeanixConfig() {
     }
   }, []);
 
-  const clearConfig = useCallback(async (): Promise<void> => {
+  const clearConfig = React.useCallback(async (): Promise<void> => {
     localStorage.removeItem(CONFIG_KEY);
     globalConfig = null;
     globalIsConfigured = false;

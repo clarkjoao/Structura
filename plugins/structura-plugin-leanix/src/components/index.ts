@@ -1,2 +1,2 @@
 export { LeanixToolbarButton } from "./LeanixToolbarButton";
-export { LeanixConfigModal } from "./LeanixConfigModal";
+export { createLeanixConfigModal } from "./LeanixConfigModal";

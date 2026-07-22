@@ -19,6 +19,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         inlineDynamicImports: true,
+        // Inject React as global for IIFE format
         globals: {
           react: "__REACT__",
           "react-dom": "__REACT__",

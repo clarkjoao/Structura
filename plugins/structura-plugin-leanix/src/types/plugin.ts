@@ -1,5 +1,3 @@
-import type { ReactElement, ReactNode } from "react";
-
 /**
  * Plugin manifest declaration
  */
@@ -30,7 +28,7 @@ export interface ToastOptions {
  */
 export interface ModalOptions {
   title: string;
-  content: ReactNode;
+  content: (props: { onClose: () => void }) => React.ReactElement;
   size?: "sm" | "md" | "lg";
 }
 
