@@ -1667,6 +1667,7 @@
     "by": "by {{author}}",
     "enable": "Enabled",
     "uninstall": "Uninstall",
+    "builtin": "Built-in",
     "errored": "Error",
     "erroredHint": "This plugin failed to activate. Its contributions are not loaded.",
     "capabilities": "Capabilities",

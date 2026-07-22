@@ -1667,6 +1667,7 @@
     "by": "por {{author}}",
     "enable": "Ativado",
     "uninstall": "Desinstalar",
+    "builtin": "Nativo",
     "errored": "Erro",
     "erroredHint": "Este plugin falhou ao ativar. Suas contribuições não foram carregadas.",
     "capabilities": "Capacidades",

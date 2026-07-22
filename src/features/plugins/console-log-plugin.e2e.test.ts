@@ -16,7 +16,7 @@ import {
  * manipulates the current diagram through the v1.1 API with single-undo semantics.
  */
 
-const PLUGIN_PATH = join(__dirname, "../../../examples/plugins/console-log-plugin.js");
+const PLUGIN_PATH = join(__dirname, "../../../plugins/examples/console-log/plugin.js");
 const PLUGIN_ID = "structura-plugin-console-log";
 const NOTIFIER_DEBOUNCE_MS = 300;
 
