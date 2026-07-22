@@ -199,6 +199,51 @@ export function getDiagramUrl(config: LeanixConfig, bookmarkId: string): string 
 }
 
 /**
+ * Test the connection to LeanIX.
+ *
+ * Uses a lightweight list call (no diagram is created). Returns
+ * { ok: true } on success, or { ok: false, reason } with a short
+ * human-readable failure reason suitable for surfacing in the UI.
+ */
+export async function testConnection(
+  config: LeanixConfig,
+): Promise<{ ok: true } | { ok: false; reason: string }> {
+  try {
+    await apiRequest<unknown>(config, "/services/pathfinder/v1/bookmarks?pageSize=1", {
+      method: "GET",
+    });
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, reason: classifyError(error) };
+  }
+}
+
+/**
+ * Map a thrown error to a short, human-readable reason string.
+ * Keeps the UX feedback specific (token vs network vs server) without
+ * leaking raw stack traces to the user.
+ */
+export function classifyError(error: unknown): string {
+  if (error instanceof Error) {
+    const msg = error.message || "";
+    if (/401|403|unauthor|forbidden|token/i.test(msg)) {
+      return "Token expired or invalid";
+    }
+    if (/404|not\s*found/i.test(msg)) {
+      return "Endpoint not found";
+    }
+    if (/500|502|503|504|server/i.test(msg)) {
+      return "Leanix server error";
+    }
+    if (/network|fetch|failed to fetch|cors/i.test(msg)) {
+      return "Could not reach Leanix (network or proxy)";
+    }
+    if (msg) return msg;
+  }
+  return "Unknown error";
+}
+
+/**
  * Default minimal graph XML for empty diagrams
  * Matches the DEFAULT_GRAPH_XML from calls-leanix.js
  */

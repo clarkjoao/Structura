@@ -1,7 +1,7 @@
 import type { LeanixConfig } from "../types/config";
 import { LABELS, t, type Locale } from "../i18n/labels";
 import { useLeanixConfig } from "../hooks/useLeanixConfig";
-import { extractUserIdFromToken } from "../services";
+import { extractUserIdFromToken, testConnection, classifyError } from "../services";
 import { getReact } from "../hooks/usePluginApi";
 
 const DEFAULT_PROXY_URL = "http://localhost:3000/proxy";
@@ -9,6 +9,8 @@ const DEFAULT_PROXY_URL = "http://localhost:3000/proxy";
 interface LeanixConfigModalProps {
   onClose: () => void;
 }
+
+type TestStatus = "idle" | "testing" | "connected" | "failed";
 
 /**
  * Factory function to create the LeanixConfigModal component
@@ -28,15 +30,21 @@ export function createLeanixConfigModal({ onClose }: LeanixConfigModalProps) {
       userId: "",
       useProxy: true,
       proxyUrl: DEFAULT_PROXY_URL,
+      workspaceId: "",
     });
     const [showToken, setShowToken] = React.useState(false);
     const [errors, setErrors] = React.useState<Partial<LeanixConfig>>({});
     const [isSaving, setIsSaving] = React.useState(false);
 
+    // Test-connection state lives alongside the form. We surface a status
+    // pill (idle/testing/connected/failed) next to the auth token field.
+    const [testStatus, setTestStatus] = React.useState<TestStatus>("idle");
+    const [testReason, setTestReason] = React.useState<string>("");
+
     // Sync with global config
     React.useEffect(() => {
       if (config) {
-        setFormData(config);
+        setFormData({ workspaceId: "", ...config });
       }
     }, [config]);
 
@@ -49,6 +57,12 @@ export function createLeanixConfigModal({ onClose }: LeanixConfigModalProps) {
         }
       }
     }, [formData.authToken, formData.userId]);
+
+    // Reset test status when the inputs the test depends on change.
+    React.useEffect(() => {
+      setTestStatus("idle");
+      setTestReason("");
+    }, [formData.baseUrl, formData.authToken, formData.useProxy, formData.proxyUrl]);
 
     const validate = (data: LeanixConfig): boolean => {
       const newErrors: Partial<LeanixConfig> = {};
@@ -63,6 +77,25 @@ export function createLeanixConfigModal({ onClose }: LeanixConfigModalProps) {
       }
       setErrors(newErrors);
       return Object.keys(newErrors).length === 0;
+    };
+
+    const handleTest = async () => {
+      // Use the current form values so the user can test before saving.
+      if (!formData.baseUrl.trim() || !formData.authToken.trim()) {
+        setTestStatus("failed");
+        setTestReason(t(LABELS.validation.urlRequired, locale));
+        return;
+      }
+      setTestStatus("testing");
+      setTestReason("");
+      const result = await testConnection(formData);
+      if (result.ok) {
+        setTestStatus("connected");
+        setTestReason("");
+      } else {
+        setTestStatus("failed");
+        setTestReason(result.reason);
+      }
     };
 
     const handleSave = async () => {
@@ -99,7 +132,10 @@ export function createLeanixConfigModal({ onClose }: LeanixConfigModalProps) {
         userId: "",
         useProxy: true,
         proxyUrl: DEFAULT_PROXY_URL,
+        workspaceId: "",
       });
+      setTestStatus("idle");
+      setTestReason("");
       onClose();
     };
 
@@ -136,6 +172,44 @@ export function createLeanixConfigModal({ onClose }: LeanixConfigModalProps) {
     const checkboxStyle: React.CSSProperties = {
       width: "18px",
       height: "18px",
+    };
+
+    const testPillStyle = (status: TestStatus): React.CSSProperties => {
+      const base: React.CSSProperties = {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "4px",
+        fontSize: "11px",
+        padding: "2px 8px",
+        borderRadius: "999px",
+        border: "1px solid var(--border)",
+        background: "var(--muted)",
+        color: "var(--muted-foreground)",
+        fontWeight: 500,
+        whiteSpace: "nowrap",
+      };
+      if (status === "connected") {
+        return { ...base, borderColor: "color-mix(in srgb, var(--primary) 50%, transparent)", background: "color-mix(in srgb, var(--primary) 12%, transparent)", color: "var(--primary)" };
+      }
+      if (status === "failed") {
+        return { ...base, borderColor: "color-mix(in srgb, var(--destructive) 50%, transparent)", background: "color-mix(in srgb, var(--destructive) 12%, transparent)", color: "var(--destructive)" };
+      }
+      return base;
+    };
+
+    const testDot = (status: TestStatus) => {
+      const color =
+        status === "connected" ? "var(--primary)" :
+        status === "failed" ? "var(--destructive)" :
+        "var(--muted-foreground)";
+      return React.createElement("span", {
+        "aria-hidden": true,
+        style: {
+          width: "6px", height: "6px", borderRadius: "999px",
+          background: color,
+          display: "inline-block",
+        },
+      });
     };
 
     return React.createElement("div", { style: { padding: "16px" } },
@@ -179,9 +253,20 @@ export function createLeanixConfigModal({ onClose }: LeanixConfigModalProps) {
         errors.baseUrl && React.createElement("div", { style: errorStyle }, errors.baseUrl)
       ),
 
-      // Auth Token
+      // Auth Token + Test Connection
       React.createElement("div", { style: { marginBottom: "12px" } },
-        React.createElement("label", { style: labelStyle }, t(LABELS.config.authToken, locale)),
+        React.createElement("div", {
+          style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" },
+        },
+          React.createElement("label", { style: labelStyle }, t(LABELS.config.authToken, locale)),
+          React.createElement("span", { style: testPillStyle(testStatus) },
+            testDot(testStatus),
+            testStatus === "connected" ? t(LABELS.config.testConnected, locale)
+              : testStatus === "failed" ? t(LABELS.config.testFailed, locale)
+              : testStatus === "testing" ? t(LABELS.config.testing, locale)
+              : t(LABELS.config.testNotTested, locale)
+          )
+        ),
         React.createElement("div", { style: { position: "relative" } },
           React.createElement("input", {
             type: showToken ? "text" : "password",
@@ -206,11 +291,32 @@ export function createLeanixConfigModal({ onClose }: LeanixConfigModalProps) {
             },
           }, showToken ? t(LABELS.config.hideToken, locale) : t(LABELS.config.showToken, locale))
         ),
-        errors.authToken && React.createElement("div", { style: errorStyle }, errors.authToken)
+        errors.authToken && React.createElement("div", { style: errorStyle }, errors.authToken),
+        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" } },
+          React.createElement("button", {
+            type: "button",
+            onClick: handleTest,
+            disabled: testStatus === "testing" || !formData.baseUrl.trim() || !formData.authToken.trim(),
+            style: {
+              padding: "6px 12px",
+              fontSize: "12px",
+              fontWeight: 500,
+              borderRadius: "6px",
+              border: "1px solid var(--border)",
+              background: testStatus === "testing" ? "var(--muted)" : "var(--secondary)",
+              color: "var(--secondary-foreground)",
+              cursor: testStatus === "testing" ? "wait" : "pointer",
+              opacity: (!formData.baseUrl.trim() || !formData.authToken.trim()) ? 0.5 : 1,
+            },
+          }, testStatus === "testing" ? t(LABELS.config.testing, locale) : t(LABELS.config.testConnection, locale)),
+          testStatus === "failed" && testReason && React.createElement("span", {
+            style: { fontSize: "12px", color: "var(--destructive)" },
+          }, testReason)
+        )
       ),
 
       // User ID
-      React.createElement("div", { style: { marginBottom: "16px" } },
+      React.createElement("div", { style: { marginBottom: "12px" } },
         React.createElement("label", { style: labelStyle }, t(LABELS.config.userId, locale)),
         React.createElement("input", {
           type: "text",
@@ -220,6 +326,27 @@ export function createLeanixConfigModal({ onClose }: LeanixConfigModalProps) {
           style: { ...inputStyle, borderColor: errors.userId ? "var(--destructive)" : undefined },
         }),
         errors.userId && React.createElement("div", { style: errorStyle }, errors.userId)
+      ),
+
+      // Workspace / Space selector
+      // Note: workspaces aren't auto-fetched in this pass (that would require
+      // an additional API call surface). We expose a free-form select with the
+      // saved value as the only option so the user can review/change it.
+      // When a future API exists, replace the <option> list with a fetched set.
+      React.createElement("div", { style: { marginBottom: "16px" } },
+        React.createElement("label", { style: labelStyle }, t(LABELS.config.workspace, locale)),
+        React.createElement("select", {
+          value: formData.workspaceId ?? "",
+          onChange: (e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, workspaceId: e.target.value }),
+          style: {
+            ...inputStyle,
+            cursor: "pointer",
+            appearance: "auto",
+          },
+        },
+          React.createElement("option", { value: "" }, t(LABELS.config.workspaceEmpty, locale)),
+          formData.workspaceId && React.createElement("option", { value: formData.workspaceId }, formData.workspaceId)
+        )
       ),
 
       // Buttons
@@ -233,6 +360,7 @@ export function createLeanixConfigModal({ onClose }: LeanixConfigModalProps) {
             border: "1px solid var(--border)",
             background: "transparent",
             cursor: "pointer",
+            color: "var(--destructive)",
           },
         }, t(LABELS.config.clear, locale)),
         React.createElement("div", { style: { display: "flex", gap: "8px" } },
@@ -245,6 +373,7 @@ export function createLeanixConfigModal({ onClose }: LeanixConfigModalProps) {
               border: "1px solid var(--border)",
               background: "transparent",
               cursor: "pointer",
+              color: "var(--foreground)",
             },
           }, t(LABELS.config.cancel, locale)),
           React.createElement("button", {
@@ -275,3 +404,8 @@ export function createLeanixConfigModal({ onClose }: LeanixConfigModalProps) {
 export function LeanixConfigModal(props: LeanixConfigModalProps) {
   return createLeanixConfigModal(props);
 }
+
+// classifyError is re-exported here so any future sibling UI in this file can
+// reuse it without going through the services barrel. (Currently unused
+// outside; kept to make error mapping a single source of truth.)
+export { classifyError };
