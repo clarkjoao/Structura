@@ -99,7 +99,7 @@ export function createLeanixConfigModal({ onClose }: LeanixConfigModalProps) {
     };
 
     const handleSave = async () => {
-      let dataToSave = { ...formData };
+      const dataToSave = { ...formData };
       if (!dataToSave.userId && dataToSave.authToken) {
         const extractedUserId = extractUserIdFromToken(dataToSave.authToken);
         if (extractedUserId) {
@@ -212,7 +212,10 @@ export function createLeanixConfigModal({ onClose }: LeanixConfigModalProps) {
       });
     };
 
-    return React.createElement("div", { style: { padding: "16px" } },
+    return React.createElement("form", {
+      style: { padding: "16px" },
+      onSubmit: (e) => e.preventDefault(),
+    },
       // Use Proxy toggle
       React.createElement("div", { style: checkboxContainerStyle },
         React.createElement("input", {
