@@ -1,4 +1,4 @@
-import { Component as ReactComponent, useMemo, type ReactNode } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useDiagramStore } from "@/features/diagram";
 import type {
@@ -15,6 +15,7 @@ import {
   toComponentSnapshot,
   toServiceSnapshot,
 } from "../snapshots";
+import { PluginErrorBoundary } from "./PluginErrorBoundary";
 
 interface PluginPanelSlotProps {
   slot: SlotId;
@@ -22,35 +23,6 @@ interface PluginPanelSlotProps {
   selectionIds?: readonly string[];
   /** Service the panel context exposes as `service` (service-registry slot). */
   serviceId?: string | null;
-}
-
-interface BoundaryProps {
-  message: string;
-  children: ReactNode;
-}
-
-/** A crashing plugin panel must not take down the hosting page (plugin-system spec). */
-class PluginPanelErrorBoundary extends ReactComponent<BoundaryProps, { failed: boolean }> {
-  state = { failed: false };
-
-  static getDerivedStateFromError(): { failed: boolean } {
-    return { failed: true };
-  }
-
-  componentDidCatch(error: unknown): void {
-    console.error("[plugins] panel crashed:", error);
-  }
-
-  render(): ReactNode {
-    if (this.state.failed) {
-      return (
-        <p className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
-          {this.props.message}
-        </p>
-      );
-    }
-    return this.props.children;
-  }
 }
 
 /** Host slot rendering every plugin panel registered for it, each error-boundaried. */
@@ -88,6 +60,8 @@ export function PluginPanelSlot({
         updateServiceAction(id, sanitizeServicePatch(patch));
       },
       locale: i18n.language,
+      // Inspector/service slots aren't edit-mode gated; toolbar overrides this per-slot.
+      isEditMode: true,
     }),
     [
       activeDiagram,
@@ -101,6 +75,12 @@ export function PluginPanelSlot({
 
   if (panels.length === 0) return null;
 
+  const crashFallback = (
+    <p className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+      {t("plugins.panel.crashed")}
+    </p>
+  );
+
   return (
     <div className="flex flex-col gap-3">
       {panels.map((panel) => {
@@ -110,9 +90,9 @@ export function PluginPanelSlot({
             <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {resolveLocalizedText(panel.title, i18n.language)}
             </h4>
-            <PluginPanelErrorBoundary message={t("plugins.panel.crashed")}>
+            <PluginErrorBoundary label="panel" fallback={crashFallback}>
               <PanelComponent context={context} />
-            </PluginPanelErrorBoundary>
+            </PluginErrorBoundary>
           </section>
         );
       })}

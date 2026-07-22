@@ -26,11 +26,14 @@ Plugins in `examples/` are plain JavaScript files — no build step needed. Just
 
 ### React Plugins
 
-React plugins are in individual folders and require a build step:
+React plugins are in individual folders and require a build step. They are written as
+**ordinary React** — the host shares its single React instance as a build-time external, so
+you `import { useState } from "react"` and use JSX directly (no `getReact()`, no bundled
+React). See [structura-plugin-example-ui/README.md](structura-plugin-example-ui/README.md).
 
 | Plugin | Capabilities | Description |
 |--------|-------------|-------------|
-| [structura-plugin-example-ui](structura-plugin-example-ui/) | `ui:panels`, `ui:overlays`, `diagram:read` | Toolbar button, toasts, modals demo |
+| [structura-plugin-example-ui](structura-plugin-example-ui/) | `ui:panels`, `ui:overlays`, `diagram:read`, `events:diagram`, `storage` | Toolbar button, toasts, modals demo |
 
 ```bash
 cd plugins/structura-plugin-example-ui

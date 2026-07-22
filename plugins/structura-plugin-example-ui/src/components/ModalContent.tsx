@@ -1,15 +1,16 @@
-import type { ReactElement } from "react";
 import { LABELS, t } from "../i18n/labels";
-import { showToast, getReact } from "../hooks/usePluginApi";
+import { showToast } from "../hooks/usePluginApi";
+
+interface ModalContentProps {
+  onClose: () => void;
+  locale: "en" | "pt-BR";
+}
 
 /**
- * Factory function to create ModalContent component
- * This pattern allows using React hooks while getting React from the host
+ * Content rendered inside a host modal. An ordinary React component — the host wraps it in
+ * its dialog chrome (and an error boundary), so it only owns its body.
  */
-export function createModalContent({ onClose }: { onClose: () => void }): ReactElement {
-  const React = getReact();
-  const locale = "en";
-
+export function ModalContent({ onClose, locale }: ModalContentProps) {
   const handleShowToast = () => {
     showToast({
       type: "success",
@@ -20,8 +21,8 @@ export function createModalContent({ onClose }: { onClose: () => void }): ReactE
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg bg-muted p-4 space-y-2">
-        <h3 className="font-semibold">{t(LABELS.modal.title, locale)}</h3>
+      <div className="space-y-2 rounded-lg bg-muted p-4">
+        <h3 className="font-semibold text-foreground">{t(LABELS.modal.title, locale)}</h3>
         <p className="text-sm text-muted-foreground">
           This modal demonstrates how to show toast notifications and interact with the diagram API.
         </p>
@@ -38,18 +39,11 @@ export function createModalContent({ onClose }: { onClose: () => void }): ReactE
         <button
           type="button"
           onClick={onClose}
-          className="flex-1 rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent transition-colors"
+          className="flex-1 rounded-md border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-accent"
         >
           {t(LABELS.modal.close, locale)}
         </button>
       </div>
     </div>
   );
-}
-
-/**
- * Modal Content Component - wrapper for backwards compatibility
- */
-export function ModalContent(props: { onClose: () => void }): ReactElement {
-  return createModalContent(props);
 }

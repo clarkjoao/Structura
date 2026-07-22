@@ -1668,6 +1668,9 @@
       "crashed": "This plugin panel crashed. The rest of the page is unaffected.",
       "heading": "Plugins"
     },
+    "modal": {
+      "crashed": "This plugin dialog crashed. The rest of the page is unaffected."
+    },
     "importWarnings": "Import finished with warnings: {{warnings}}",
     "exportGroup": "Plugin formats",
     "importSuccess": "Imported {{count}} elements.",
