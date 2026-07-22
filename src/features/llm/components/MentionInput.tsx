@@ -123,7 +123,7 @@ export function MentionInput({
   }, [syncToken]);
 
   return (
-    <div className="relative">
+    <div className="relative min-w-0">
       {isEmpty ? (
         <span className="pointer-events-none absolute left-3 top-2 text-sm text-muted-foreground">
           {placeholder}
@@ -141,6 +141,10 @@ export function MentionInput({
           minHeight: "2.5rem",
           maxHeight: "12rem",
           overflowY: "auto",
+          overflowX: "hidden",
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+          overflowWrap: "anywhere",
         }}
         onInput={(event) => {
           onSegmentsChange(parseDOMToSegments(event.currentTarget));

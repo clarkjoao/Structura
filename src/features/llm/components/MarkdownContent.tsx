@@ -58,7 +58,9 @@ function CodeBlock({ children }: { children: ReactNode }) {
 
 const markdownComponents = {
   p: ({ children }: MarkdownElementProps) => (
-    <p className="mb-2 leading-relaxed last:mb-0">{children}</p>
+    <p className="mb-2 break-words leading-relaxed last:mb-0 [overflow-wrap:anywhere]">
+      {children}
+    </p>
   ),
   strong: ({ children }: MarkdownElementProps) => (
     <strong className="font-semibold text-foreground">{children}</strong>
@@ -66,7 +68,7 @@ const markdownComponents = {
   em: ({ children }: MarkdownElementProps) => <em className="italic">{children}</em>,
   code: ({ inline, className, children }: MarkdownCodeProps) =>
     inline ? (
-      <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs text-foreground">
+      <code className="break-words rounded bg-muted px-1 py-0.5 font-mono text-xs text-foreground [overflow-wrap:anywhere]">
         {children}
       </code>
     ) : (
@@ -137,7 +139,7 @@ export function MarkdownContent({ content, isStreaming = false }: MarkdownConten
   }
 
   return (
-    <div className="text-sm leading-relaxed">
+    <div className="break-words text-sm leading-relaxed [overflow-wrap:anywhere]">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight]}

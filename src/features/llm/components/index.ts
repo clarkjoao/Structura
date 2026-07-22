@@ -8,3 +8,4 @@ export { LLMSelector } from "./LLMSelector";
 export { MentionInput } from "./MentionInput";
 export { FloatingChatButton } from "./FloatingChatButton";
 export { PendingNodeToolbar } from "./PendingNodeToolbar";
+export { ThreadRenameControl } from "./ThreadRenameControl";

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, Plus, Settings, X } from "lucide-react";
+import { ChevronDown, History, Plus, Settings, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { KEY, keyIs } from "@/lib/keyboard-utils";
 import { useActiveDiagramModel } from "@/features/diagram";
 import {
@@ -23,6 +24,7 @@ import { MentionTag } from "./MentionTag";
 import { LLMSelector } from "./LLMSelector";
 import { MentionInput } from "./MentionInput";
 import { ChatSuggestionsEmptyState } from "./ChatSuggestionsEmptyState";
+import { ThreadRenameControl } from "./ThreadRenameControl";
 
 interface ChatPanelProps {
   onClose: () => void;
@@ -72,9 +74,12 @@ export function ChatPanel({ onClose, selectedNodeIds, selectedNodeId }: ChatPane
     dismissPendingAnalysis,
     streamingContent,
     error,
-    config,
-    setConfig,
-    clearHistory,
+    createThread,
+    threads,
+    activeThread,
+    switchThread,
+    renameThread,
+    deleteThread,
   } = useLLMChat({ selectedNodeIds, selectedNodeId });
 
   const contextualSuggestions = useMemo(
@@ -151,7 +156,82 @@ export function ChatPanel({ onClose, selectedNodeIds, selectedNodeId }: ChatPane
     <div className="relative flex h-full w-96 flex-col border-l border-border bg-card">
       <div className="flex items-center justify-between border-b border-border px-3 py-2">
         <div className="flex min-w-0 items-center gap-2">
-          <h3 className="truncate text-sm font-semibold">{t("llmChat.title")}</h3>
+          <h3 className="truncate text-sm font-semibold">
+            {activeThread?.title ?? t("llmChat.title")}
+          </h3>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                aria-label={t("llmChat.threads.historyAria")}
+                title={t("llmChat.threads.historyLabel")}
+              >
+                <History className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" side="bottom" className="w-72 p-1">
+              <div className="space-y-1">
+                <p className="px-2 py-1 text-[11px] font-medium uppercase text-muted-foreground">
+                  {t("llmChat.threads.historyLabel")}
+                </p>
+                {threads.length === 0 ? (
+                  <p className="px-2 py-2 text-xs text-muted-foreground">
+                    {t("llmChat.threads.empty")}
+                  </p>
+                ) : (
+                  threads.map((thread) => {
+                    const isActive = thread.id === activeThread?.id;
+                    return (
+                      <div
+                        key={thread.id}
+                        className="flex items-center justify-between rounded-sm px-2 py-1.5 text-xs hover:bg-accent hover:text-accent-foreground"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => switchThread(thread.id)}
+                          className="flex min-w-0 flex-1 flex-col items-start text-left"
+                        >
+                          <span className="truncate font-medium">{thread.title}</span>
+                          <span className="truncate text-[10px] text-muted-foreground">
+                            {thread.messages.length} msgs
+                          </span>
+                        </button>
+                        <div className="flex shrink-0 items-center gap-1">
+                          {isActive ? (
+                            <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] text-primary">
+                              {t("llmChat.threads.active")}
+                            </span>
+                          ) : null}
+                          <ThreadRenameControl
+                            threadId={thread.id}
+                            currentTitle={thread.title}
+                            onRename={renameThread}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const confirmed = window.confirm(t("llmChat.threads.deleteConfirm"));
+                              if (confirmed) {
+                                deleteThread(thread.id);
+                              }
+                            }}
+                            className="rounded p-1 text-muted-foreground hover:text-destructive"
+                            aria-label={t("llmChat.threads.delete")}
+                            title={t("llmChat.threads.delete")}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
         <div className="flex items-center gap-1">
           <Button
@@ -159,9 +239,14 @@ export function ChatPanel({ onClose, selectedNodeIds, selectedNodeId }: ChatPane
             variant="ghost"
             size="icon"
             className="h-7 w-7"
-            onClick={clearHistory}
-            aria-label={t("llmChat.newThread")}
-            title={t("llmChat.newThread")}
+            onClick={() => {
+              if (activeDiagram) {
+                createThread(activeDiagram.id);
+              }
+            }}
+            aria-label={t("llmChat.threads.newThread")}
+            title={t("llmChat.threads.newThread")}
+            disabled={!activeDiagram}
           >
             <Plus className="h-4 w-4" />
           </Button>
@@ -191,7 +276,7 @@ export function ChatPanel({ onClose, selectedNodeIds, selectedNodeId }: ChatPane
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="relative min-h-0 flex-1 space-y-2 overflow-y-auto p-3"
+        className="relative min-h-0 min-w-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto p-3"
       >
         {pendingAnalysis ? (
           <AnalysisPanel analysis={pendingAnalysis} onDismiss={dismissPendingAnalysis} />
@@ -306,7 +391,7 @@ export function ChatPanel({ onClose, selectedNodeIds, selectedNodeId }: ChatPane
           />
         </div>
         <div className="flex items-center justify-between">
-          <LLMSelector config={config} onChange={setConfig} />
+          <LLMSelector onOpenSettings={() => setShowSettings(true)} />
           <div className="flex items-center gap-3">
             <p className="text-[11px] text-muted-foreground">{t("llmChat.submitHint")}</p>
             <Button type="button" onClick={() => void handleSend()} disabled={isLoading}>
@@ -316,9 +401,7 @@ export function ChatPanel({ onClose, selectedNodeIds, selectedNodeId }: ChatPane
         </div>
       </div>
 
-      {showSettings ? (
-        <LLMSettings config={config} onClose={() => setShowSettings(false)} onSave={setConfig} />
-      ) : null}
+      {showSettings ? <LLMSettings onClose={() => setShowSettings(false)} /> : null}
     </div>
   );
 }
