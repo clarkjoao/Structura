@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import type { FC, MouseEvent, CSSProperties } from "react";
+import type { FC, MouseEvent } from "react";
 import type { DiagramSnapshot, PluginPanelProps } from "../types/plugin.types";
 import { LABELS, t, type Locale } from "../i18n/labels";
 import { showToast, openModal, getApi } from "../hooks/usePluginApi";
 import { LeanixConfigModal } from "./LeanixConfigModal";
-import { exportDiagram, getDiagramUrl, exportDrawio, classifyError } from "../services";
+import { getDiagramUrl, exportDrawio, classifyError } from "../services";
 import { useLeanixConfig } from "../hooks/useLeanixConfig";
+import { exportDiagramWithProgress } from "../services/leanix.service";
 
 // Lucide-style SVG icons
 const HardDriveUploadIcon = ({ size = 16, className }: { size?: number; className?: string }) => (
@@ -141,9 +142,11 @@ interface FloatingPanelProps extends PluginPanelProps {
   onPositionChange: (pos: PanelPosition) => void;
   onMinimize: () => void;
   onClose: () => void;
+  /** Called after a successful export so the parent can clear the dirty flag. */
+  onExportSuccess: () => void;
 }
 
-function FloatingPanel({ context, position, onPositionChange, onMinimize, onClose }: FloatingPanelProps) {
+function FloatingPanel({ context, position, onPositionChange, onMinimize, onClose, onExportSuccess }: FloatingPanelProps) {
   const locale = (context?.locale || "en") as Locale;
   const api = getApi();
   const diagram: DiagramSnapshot | null = api.getDiagram();
@@ -159,6 +162,8 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
   const [autoArrange, setAutoArrange] = useState(true);
   const [status, setStatus] = useState<SendStatus>({ kind: "idle" });
   const [lastSentAt, setLastSentAt] = useState<number | null>(null);
+  /** Upload progress 0→1; null when indeterminate. */
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   // Tick to refresh "X ago" every 30s while the panel is open.
   const [, setTick] = useState(0);
@@ -166,28 +171,6 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
     const id = setInterval(() => setTick((n) => n + 1), 30_000);
     return () => clearInterval(id);
   }, []);
-
-  // Progress bar driven by requestAnimationFrame while sending
-  const progressRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (status.kind !== "sending") return;
-    let raf = 0;
-    const start = performance.now();
-    const tick = (now: number) => {
-      const el = progressRef.current;
-      if (el) {
-        const phase = ((now - start) % 1200) / 1200;
-        const eased = phase < 0.5
-          ? 2 * phase * phase
-          : 1 - Math.pow(-2 * phase + 2, 2) / 2;
-        const pct = Math.round((eased * 200 - 100) * 100) / 100;
-        el.style.transform = `translateX(${pct}%)`;
-      }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [status.kind]);
 
   const handleMouseDown = useCallback((e: MouseEvent) => {
     if ((e.target as HTMLElement).closest("[data-drag-handle]")) {
@@ -226,7 +209,7 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
   const openConfigModal = () => {
     openModal({
       title: t(LABELS.config.title, locale),
-      content: LeanixConfigModal,
+      content: (props) => <LeanixConfigModal {...props} locale={locale} />,
       size: "md",
     });
   };
@@ -242,9 +225,16 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
     }
 
     setStatus({ kind: "sending" });
+    setUploadProgress(null);
     try {
       const graphXml = exportDrawio(diagram);
-      const result = await exportDiagram(currentConfig, diagram.name, graphXml, currentConfig.userId);
+      const result = await exportDiagramWithProgress(
+        currentConfig,
+        diagram.name,
+        graphXml,
+        currentConfig.userId,
+        (ratio: number | null) => setUploadProgress(ratio),
+      );
       const next: SendStatus = {
         kind: "success",
         action: result.action,
@@ -253,14 +243,17 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
       };
       setStatus(next);
       setLastSentAt(Date.now());
+      setUploadProgress(null);
+      onExportSuccess();
       return next;
     } catch (error) {
       console.error("[Leanix Plugin] Export failed:", error);
       const reason = classifyError(error);
       setStatus({ kind: "error", reason });
+      setUploadProgress(null);
       return { kind: "error", reason };
     }
-  }, [diagram, currentConfig, locale]);
+  }, [diagram, currentConfig, locale, onExportSuccess]);
 
   const handleSend = () => { void runSend(); };
 
@@ -301,6 +294,13 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
         userSelect: isDragging ? "none" : "auto",
       }}
     >
+      <style>{`
+        @keyframes slide {
+          0%   { transform: translateX(-100%); }
+          100% { transform: translateX(300%); }
+        }
+      `}</style>
+
       {/* Header (draggable) */}
       <div
         data-drag-handle
@@ -393,13 +393,24 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
             <div className="flex items-center gap-1.5 text-[12px] text-foreground">
               <span>⏳</span>
               {t(LABELS.status.sending, locale)}
+              {uploadProgress !== null && (
+                <span className="ml-auto text-[11px] text-muted-foreground">
+                  {Math.round(uploadProgress * 100)}%
+                </span>
+              )}
             </div>
             <div className="w-full h-1 bg-border rounded-full overflow-hidden">
-              <div
-                ref={progressRef}
-                className="h-full bg-primary rounded-full"
-                style={{ width: "40%", transform: "translateX(-100%)", willChange: "transform" }}
-              />
+              {uploadProgress !== null ? (
+                // Real progress — width tracks upload ratio
+                <div
+                  className="h-full bg-primary rounded-full transition-all duration-200"
+                  style={{ width: `${uploadProgress * 100}%` }}
+                />
+              ) : (
+                // Indeterminate — sliding highlight
+                <div className="h-full bg-primary rounded-full" style={{ width: "40%", animation: "slide 1.2s ease-in-out infinite" }}
+                />
+              )}
             </div>
           </div>
         )}
@@ -478,8 +489,7 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
             onClick={sendDisabled ? undefined : handleSend}
             disabled={sendDisabled}
             title={sendTitle}
-            className="px-3 py-1.5 text-[12px] font-medium rounded-md border-none transition-opacity disabled:opacity-70 disabled:cursor-not-allowed"
-            style={{ background: sendDisabled ? "#e5e7eb" : "var(--primary)", color: sendDisabled ? "#9ca3af" : "var(--primary-foreground)" }}
+            className={`px-3 py-1.5 text-[12px] font-medium rounded-md border-none transition-opacity ${sendDisabled ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
           >
             {status.kind === "sending" ? (
               "..."
@@ -532,10 +542,21 @@ function ToolbarWithPanel({ context }: PluginPanelProps) {
 
   const [panelState, setPanelState] = useState<'hidden' | 'expanded' | 'minimized'>('hidden');
   const [position, setPosition] = useState<PanelPosition>(loadSavedPosition);
+  const [diagramDirty, setDiagramDirty] = useState(false);
+
+  // Detect diagram changes since last export — set dirty flag.
+  useEffect(() => {
+    return getApi().onDiagramChange(() => setDiagramDirty(true));
+  }, []);
 
   const handleClose = () => {
     savePosition(position);
     setPanelState("hidden");
+  };
+
+  // Called by FloatingPanel after a successful export.
+  const handleExportSuccess = () => {
+    setDiagramDirty(false);
   };
 
   // Hydrate position from storage asynchronously (storage.get is async)
@@ -564,6 +585,13 @@ function ToolbarWithPanel({ context }: PluginPanelProps) {
           {isConfigured && (
             <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full bg-primary ml-0.5" />
           )}
+          {diagramDirty && (
+            <span
+              title="Diagram modified since last export"
+              aria-label="Diagram modified"
+              className="w-1.5 h-1.5 rounded-full bg-yellow-400 ml-0.5"
+            />
+          )}
         </button>
       </div>
     );
@@ -586,6 +614,7 @@ function ToolbarWithPanel({ context }: PluginPanelProps) {
       onPositionChange={setPosition}
       onMinimize={() => setPanelState("minimized")}
       onClose={handleClose}
+      onExportSuccess={handleExportSuccess}
     />
   );
 }

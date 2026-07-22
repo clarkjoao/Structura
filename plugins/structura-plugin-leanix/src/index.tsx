@@ -3,10 +3,12 @@
  *
  * Export diagrams to Leanix ITSM:
  * - canvas-toolbar slot (floating panel with export button)
- * - ui:overlays capability (toasts and modals)
+ * - events:diagram (detect diagram changes for dirty tracking)
  * - diagram:read capability (read diagram name)
  * - network capability (API calls)
  * - storage capability (persist config and panel position)
+ * - ui:overlays capability (toasts and modals)
+ * - ui:panels capability (register toolbar panel)
  *
  * Build: npm run build
  */
@@ -34,6 +36,7 @@ window.StructuraPlugin.define({
     description: "Export diagrams to Leanix ITSM",
     apiVersion: "^1.2",
     capabilities: [
+      "events:diagram",
       "network",
       "ui:panels",
       "ui:overlays",

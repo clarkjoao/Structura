@@ -91,34 +91,6 @@ async function apiRequest<T>(config: LeanixConfig, path: string, options: Reques
 }
 
 /**
- * Create a new diagram (bookmark) in LeanIX
- * Follows the exact format from calls-leanix.js
- */
-async function createDiagram(config: LeanixConfig, name: string, graphXml: string, userId: string): Promise<LeanixBookmark> {
-  // Ensure graphXml is never empty
-  const safeGraphXml = graphXml || getDefaultGraphXml();
-
-  const payload = {
-    type: "VISUALIZER",
-    name,
-    description: "",
-    groupKey: "freedraw",
-    state: buildState(safeGraphXml),
-    predefined: false,
-    permittedReadUserIds: [userId],
-    permittedWriteUserIds: [userId],
-    defaultSharingPriority: null,
-    workingCopy: { state: buildState(safeGraphXml) }
-  };
-
-  return apiRequest<LeanixBookmark>(config, "/services/pathfinder/v1/bookmarks", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
-
-/**
  * Update the editable working copy of a diagram
  * Follows the exact format from calls-leanix.js
  */
@@ -173,16 +145,91 @@ async function saveDiagram(config: LeanixConfig, diagramId: string, graphXml: st
   });
 }
 
+/**
+ * Upload progress as a ratio 0→1. null means the browser does not expose progress info.
+ */
+export type ProgressCallback = (ratio: number | null) => void;
+
+/**
+ * Like exportDiagram but fires onProgress while the request body is being sent.
+ * Uses XMLHttpRequest because fetch does not expose upload progress.
+ */
+export function exportDiagramWithProgress(
+  config: LeanixConfig,
+  name: string,
+  graphXml: string,
+  userId: string,
+  onProgress: ProgressCallback,
+): Promise<{ action: "created" | "updated"; bookmark: LeanixBookmark }> {
+  return new Promise((resolve, reject) => {
+    const targetUrl = config.useProxy
+      ? `${config.proxyUrl.replace(/\/$/, "")}?url=${encodeURIComponent(`${config.baseUrl.replace(/\/$/, "")}/services/pathfinder/v1/bookmarks`)}`
+      : `${config.baseUrl.replace(/\/$/, "")}/services/pathfinder/v1/bookmarks`;
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", targetUrl, true);
+
+    const safeGraphXml = graphXml || getDefaultGraphXml();
+    const payload = {
+      type: "VISUALIZER",
+      name,
+      description: "",
+      groupKey: "freedraw",
+      state: buildState(safeGraphXml),
+      predefined: false,
+      permittedReadUserIds: [userId],
+      permittedWriteUserIds: [userId],
+      defaultSharingPriority: null,
+      workingCopy: { state: buildState(safeGraphXml) },
+    };
+    const body = JSON.stringify(payload);
+
+    xhr.setRequestHeader("Authorization", ensureBearerPrefix(config.authToken));
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.setRequestHeader("Accept", "application/json");
+
+    xhr.upload.addEventListener("progress", (e) => {
+      onProgress(e.lengthComputable ? e.loaded / e.total : null);
+    });
+    // Also fire at 100% to avoid a final frame stuck at 99%
+    xhr.upload.addEventListener("load", () => onProgress(1));
+
+    xhr.addEventListener("load", () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const bookmark = JSON.parse(xhr.responseText) as LeanixBookmark;
+          resolve({ action: "created", bookmark });
+        } catch {
+          reject(new Error("Invalid JSON response from LeanIX"));
+        }
+      } else {
+        let reason = `HTTP ${xhr.status}`;
+        try {
+          const data = JSON.parse(xhr.responseText);
+          reason = data.message || data.error || reason;
+        } catch { /* use status */ }
+        reject(new Error(reason));
+      }
+    });
+
+    xhr.addEventListener("error", () => reject(new Error("Network error reaching LeanIX")));
+    xhr.addEventListener("abort", () => reject(new Error("Request aborted")));
+
+    xhr.send(body);
+  });
+}
+
+/**
+ * Export a diagram to LeanIX. Convenience wrapper around exportDiagramWithProgress
+ * that ignores progress (use exportDiagramWithProgress directly when progress is needed).
+ */
 export async function exportDiagram(
   config: LeanixConfig,
   name: string,
   graphXml: string,
-  userId: string
+  userId: string,
 ): Promise<{ action: "created" | "updated"; bookmark: LeanixBookmark }> {
-  // Always create a new diagram - no duplicate checking
-  // Future: implement diagram matching for updates
-  const bookmark = await createDiagram(config, name, graphXml, userId);
-  return { action: "created", bookmark };
+  return exportDiagramWithProgress(config, name, graphXml, userId, () => {/* no-op */});
 }
 
 export async function updateDiagram(

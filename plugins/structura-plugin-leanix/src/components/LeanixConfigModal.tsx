@@ -3,7 +3,7 @@ import type { FC } from "react";
 import type { LeanixConfig } from "../types/config";
 import { LABELS, t, type Locale } from "../i18n/labels";
 import { useLeanixConfig } from "../hooks/useLeanixConfig";
-import { extractUserIdFromToken, testConnection } from "../services";
+import { extractUserIdFromToken, testConnection, classifyError } from "../services";
 
 const DEFAULT_PROXY_URL = "http://localhost:3000/proxy";
 
@@ -11,11 +11,12 @@ type TestStatus = "idle" | "testing" | "connected" | "failed";
 
 interface LeanixConfigModalProps {
   onClose: () => void;
+  /** Locale from the host's PluginPanelContext, so labels respect user preference. */
+  locale: Locale;
 }
 
-export const LeanixConfigModal: FC<LeanixConfigModalProps> = ({ onClose }) => {
+export const LeanixConfigModal: FC<LeanixConfigModalProps> = ({ onClose, locale }) => {
   const { config, saveConfig, clearConfig } = useLeanixConfig();
-  const locale: Locale = "en";
 
   const [formData, setFormData] = useState<LeanixConfig>({
     baseUrl: "",
@@ -303,6 +304,3 @@ export const LeanixConfigModal: FC<LeanixConfigModalProps> = ({ onClose }) => {
     </form>
   );
 };
-
-// Re-export classifyError so sibling UI files can import it from here without touching services.
-export { classifyError } from "../services";
