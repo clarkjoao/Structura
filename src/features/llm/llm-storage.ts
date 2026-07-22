@@ -96,7 +96,9 @@ export function migrateLegacyConfig(
       if (isObject(parsed)) {
         legacyConfig = parsed as LegacyConfigPayload;
       }
-    } catch {}
+    } catch (err) {
+      console.warn("[llm-storage] Failed to parse legacy config:", err);
+    }
   }
 
   if (rawKeys) {
@@ -105,7 +107,9 @@ export function migrateLegacyConfig(
       if (isObject(parsed)) {
         legacyKeys = parsed as LegacyProviderKeysPayload;
       }
-    } catch {}
+    } catch (err) {
+      console.warn("[llm-storage] Failed to parse legacy keys:", err);
+    }
   }
 
   const mode: LLMConnection["mode"] = legacyConfig.mode === "direct" ? "direct" : "proxy";
@@ -295,7 +299,9 @@ export function loadConnections(): ConnectionsPayload {
         }
       }
     }
-  } catch {}
+  } catch (err) {
+    console.warn("[llm-storage] Failed to load connections:", err);
+  }
 
   // Legacy fallback: migrate from old key shape.
   let migrated: ConnectionsPayload | null = null;
@@ -305,7 +311,9 @@ export function loadConnections(): ConnectionsPayload {
     if (legacyConfig || legacyKeys) {
       migrated = migrateLegacyConfig(legacyConfig, legacyKeys);
     }
-  } catch {}
+  } catch (err) {
+    console.warn("[llm-storage] Failed to migrate legacy config:", err);
+  }
 
   if (migrated && migrated.connections.length > 0) {
     return migrated;
@@ -394,7 +402,9 @@ export function loadThreadsForDiagram(diagramId: string): DiagramThreadState {
     if (isObject(migrated) && diagramId in migrated) {
       return migrated[diagramId];
     }
-  } catch {}
+  } catch (err) {
+    console.warn("[llm-storage] Failed to load threads for diagram:", err);
+  }
   return emptyThreadState(diagramId);
 }
 
@@ -428,7 +438,9 @@ export function saveThreadsForDiagram(diagramId: string, state: DiagramThreadSta
       };
     }
     localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(snapshot));
-  } catch {}
+  } catch (err) {
+    console.warn("[llm-storage] Failed to save threads snapshot:", err);
+  }
 }
 
 /**
@@ -453,7 +465,9 @@ export async function hydrateChatThreadsCacheFromIdb(): Promise<void> {
         }
       }
     }
-  } catch {}
+  } catch (err) {
+    console.warn("[llm-storage] Failed to migrate legacy threads:", err);
+  }
   replaceChatThreadsCache(merged);
   setChatThreadsHydrated(true);
 

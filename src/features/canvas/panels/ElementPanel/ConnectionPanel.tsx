@@ -17,7 +17,6 @@ import { FIELD_DEBOUNCE_MS } from "@/features/canvas/canvas.constants";
 import Field from "./components/Field";
 import TechnologyCombobox from "./components/TechnologyCombobox";
 import { VIBRANT_PRESETS } from "./components/colorPresets";
-import { ENABLE_LEGACY_PANEL_ACTIONS } from "@/features/canvas/selection-actions";
 
 const TRANSPORT_PRESET_DEFAULTS: Record<
   NonNullable<Connection["transportPreset"]>,
@@ -211,41 +210,6 @@ const ConnectionPanel = ({
           }}
           inputRef={titleInputRef}
         />
-        {ENABLE_LEGACY_PANEL_ACTIONS && (
-          <div>
-            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-              {t("common.edgeStyleSection")}
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {edgeStyleOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => onUpdateEdgeStyle(opt.value)}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-                    currentStyle === opt.value
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  >
-                    <path d={opt.icon} />
-                  </svg>
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
         <div>
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
             {t("common.intent")}
@@ -345,121 +309,6 @@ const ConnectionPanel = ({
             <option value="udp">{t("common.transportUdp")}</option>
           </select>
         </div>
-        {ENABLE_LEGACY_PANEL_ACTIONS && (
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
-                {t("connectionPanel.colorLabel")}
-              </label>
-              <button
-                type="button"
-                onClick={() => applyStyle({ color: undefined })}
-                className="text-[10px] text-muted-foreground transition-colors hover:text-foreground"
-              >
-                {t("colorSwatches.default")}
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {VIBRANT_PRESETS.map((preset) => {
-                const isSelected = conn.style?.color === preset.color;
-                return (
-                  <button
-                    key={preset.color}
-                    type="button"
-                    onClick={() => applyStyle({ color: preset.color })}
-                    title={t(preset.nameKey)}
-                    className={cn(
-                      "h-5 w-5 rounded-full border-2 transition-all hover:scale-110",
-                      isSelected ? "scale-110 border-foreground" : "border-transparent",
-                    )}
-                    style={{ backgroundColor: preset.color }}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        )}
-        {ENABLE_LEGACY_PANEL_ACTIONS && conn.communicationType === "custom" && (
-          <div className="space-y-2">
-            <label className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium block mb-1">
-              {t("connectionPanel.strokeLabel")}
-            </label>
-            <div className="flex flex-wrap gap-2">
-              <select
-                value={conn.style?.strokeStyle ?? StrokeStyle.Solid}
-                onChange={(e) => applyStyle({ strokeStyle: e.target.value as StrokeStyle })}
-                className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0"
-                title={t("common.strokeStyleTitle")}
-              >
-                {strokeOptions.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={conn.style?.strokeWidth ?? 1}
-                onChange={(e) => applyStyle({ strokeWidth: Number(e.target.value) as 1 | 2 | 3 })}
-                className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0"
-                title={t("common.strokeWidthTitle")}
-              >
-                {WIDTH_OPTIONS.map((w) => (
-                  <option key={w} value={w}>
-                    {w}pt
-                  </option>
-                ))}
-              </select>
-            </div>
-            <label className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium block mt-2 mb-1">
-              {t("connectionPanel.markersLabel")}
-            </label>
-            <div className="flex flex-wrap gap-2">
-              <select
-                value={conn.style?.markerStart ?? EdgeMarker.None}
-                onChange={(e) =>
-                  applyStyle({
-                    markerStart: (e.target.value === EdgeMarker.None
-                      ? undefined
-                      : e.target.value) as EdgeMarker | undefined,
-                  })
-                }
-                className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0"
-                title={t("common.markerStartTitle")}
-              >
-                {markerOptions.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.value === EdgeMarker.None
-                      ? t("common.markerStartNone")
-                      : t("common.markerStart", { label: o.label })}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={conn.style?.markerEnd ?? EdgeMarker.ArrowClosed}
-                onChange={(e) => applyStyle({ markerEnd: e.target.value as EdgeMarker })}
-                className="rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring min-w-0"
-                title={t("common.markerEndTitle")}
-              >
-                {markerOptions.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.value === EdgeMarker.None
-                      ? t("common.markerEndNone")
-                      : t("common.markerEnd", { label: o.label })}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
-              <input
-                type="checkbox"
-                checked={conn.style?.animated ?? false}
-                onChange={(e) => applyStyle({ animated: e.target.checked })}
-                className="rounded border-border accent-primary"
-              />
-              {t("connectionPanel.animated")}
-            </label>
-          </div>
-        )}
         <Field
           label={t("common.description")}
           value={desc}
@@ -478,22 +327,6 @@ const ConnectionPanel = ({
           </p>
         </div>
         <div className="pt-2 space-y-2">
-          {ENABLE_LEGACY_PANEL_ACTIONS && (
-            <button
-              type="button"
-              onClick={resetEdgeLayout}
-              disabled={waypointCount === 0}
-              className="flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium transition-colors w-full disabled:opacity-40 disabled:cursor-not-allowed text-muted-foreground hover:text-foreground hover:border-muted-foreground"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              {t("connectionPanel.resetPath")}
-              {waypointCount > 0 && (
-                <span className="ml-auto text-[10px] font-mono bg-muted rounded px-1 py-0.5 leading-none">
-                  {waypointCount}
-                </span>
-              )}
-            </button>
-          )}
           <button
             onClick={() => {
               debouncedUpdate.cancel();

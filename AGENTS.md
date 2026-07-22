@@ -47,7 +47,7 @@ src/
 │   ├── custom-components/  # user-defined reusable node templates
 │   ├── icons/              # custom icon store
 │   ├── integrations/       # external tool integrations (GitHub, DefectDojo)
-│   ├── journeys/           # cross-diagram step sequences + player
+│   ├── walkthroughs/           # cross-diagram step sequences + player
 │   ├── llm/                # diagram assistant (chat UI, patch parser, suggestions)
 │   ├── plugins/            # plugin system (manifest, loader, registries, StructuraPlugin API)
 │   └── viewer/             # read-only shared-diagram viewer

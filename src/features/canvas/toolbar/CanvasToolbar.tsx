@@ -76,7 +76,9 @@ const CanvasToolbar = ({
       const next = !prev;
       try {
         localStorage.setItem(STORAGE_KEY, String(next));
-      } catch {}
+      } catch (err) {
+        console.warn("[CanvasToolbar] Failed to persist collapsed state:", err);
+      }
       return next;
     });
   };

@@ -79,7 +79,9 @@ async function readOpenAICompatibleStream(
           fullText += text;
           onChunk(text);
         }
-      } catch {}
+      } catch (err) {
+        console.warn("[OpenAICompatibleProvider] Error processing stream:", err);
+      }
     }
   }
 

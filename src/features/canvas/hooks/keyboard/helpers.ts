@@ -33,12 +33,6 @@ export { KEY, keyIs, keyIsEnterOrSpace, keyIsOneOf, keyMatchesLetter } from "@/l
 export function isInputFocused(target: EventTarget | null): boolean {
   const el = target as HTMLElement;
   if (!el) return false;
-  // return (
-  //   el.tagName === "INPUT" ||
-  //   el.tagName === "TEXTAREA" ||
-  //   el.tagName === "SELECT" ||
-  //   !!el.isContentEditable
-  // );
 
   const tag = el.tagName;
   if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;

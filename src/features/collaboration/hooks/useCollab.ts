@@ -237,7 +237,9 @@ export function useCollab({
         pongTimeoutRef.current = setTimeout(() => {
           try {
             ws.close();
-          } catch {}
+          } catch (err) {
+            console.warn("[useCollab] Failed to close WebSocket on pong timeout:", err);
+          }
         }, CLIENT_PONG_TIMEOUT_MS);
       }, CLIENT_PING_INTERVAL_MS);
     };
@@ -437,7 +439,9 @@ export function useCollab({
           clearClientHeartbeat();
           try {
             ws.close(1000);
-          } catch {}
+          } catch (err) {
+            console.warn("[useCollab] Failed to close WebSocket on session:closed:", err);
+          }
           return;
         }
         case "host:disconnected": {
@@ -450,7 +454,9 @@ export function useCollab({
           clearClientHeartbeat();
           try {
             ws.close(1000);
-          } catch {}
+          } catch (err) {
+            console.warn("[useCollab] Failed to close WebSocket on host:disconnected:", err);
+          }
           return;
         }
         case "error": {
@@ -460,7 +466,9 @@ export function useCollab({
             roomNotFoundRetryRef.current = true;
             try {
               ws.close(4004, "room_not_found");
-            } catch {}
+            } catch (err) {
+              console.warn("[useCollab] Failed to close WebSocket on room_not_found:", err);
+            }
             return;
           }
 
@@ -473,7 +481,9 @@ export function useCollab({
             clearClientHeartbeat();
             try {
               ws.close(1008, "room_full");
-            } catch {}
+            } catch (err) {
+              console.warn("[useCollab] Failed to close WebSocket on room_full:", err);
+            }
           }
           return;
         }
@@ -569,7 +579,9 @@ export function useCollab({
             ws.send(JSON.stringify({ type: "host:close", roomId }));
           }
           ws.close(1000, "unmount");
-        } catch {}
+        } catch (err) {
+          console.warn("[useCollab] Failed to close WebSocket on unmount:", err);
+        }
       }
     };
   }, [clearClientHeartbeat, clearReconnectTimer, connect, isHost, roomId]);
@@ -638,7 +650,9 @@ export function useCollab({
     if (ws) {
       try {
         ws.close(1000);
-      } catch {}
+      } catch (err) {
+        console.warn("[useCollab] Failed to close WebSocket on disconnect:", err);
+      }
     }
   }, [clearClientHeartbeat, isHost, roomId, sendRaw]);
 

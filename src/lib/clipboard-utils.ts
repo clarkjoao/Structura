@@ -26,7 +26,9 @@ export async function writeDrawioToClipboard(fullDrawioXml: string): Promise<voi
       ]);
       return;
     }
-  } catch {}
+  } catch (err) {
+    console.warn("[Clipboard] Failed to copy draw.io XML:", err);
+  }
 
   try {
     await navigator.clipboard.writeText(graphModelXml);
@@ -67,7 +69,9 @@ export async function readDrawioFromClipboard(): Promise<string | null> {
     if (text.includes("<mxGraphModel") || text.includes("<mxfile")) {
       return text;
     }
-  } catch {}
+  } catch (err) {
+    console.warn("[Clipboard] Failed to read draw.io from clipboard:", err);
+  }
   return null;
 }
 
@@ -95,6 +99,8 @@ export async function readSvgFromClipboard(): Promise<string | null> {
         }
       }
     }
-  } catch {}
+  } catch (err) {
+    console.warn("[Clipboard] Failed to read SVG from clipboard:", err);
+  }
   return null;
 }

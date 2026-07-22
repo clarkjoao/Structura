@@ -173,6 +173,21 @@ export class LocalStorageAdapter implements IStoragePort {
   async delete(key: string): Promise<void> {
     await this.removeItem(key);
   }
+
+  async keys(): Promise<string[]> {
+    const result: string[] = [];
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const storageKey = localStorage.key(index);
+      if (storageKey?.startsWith(this.prefix)) {
+        result.push(storageKey.slice(this.prefix.length));
+      }
+    }
+    return result;
+  }
+
+  async length(): Promise<number> {
+    return localStorage.length;
+  }
 }
 
 export const defaultStorage = new LocalStorageAdapter();

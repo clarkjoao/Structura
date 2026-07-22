@@ -63,7 +63,9 @@ export function useDefectDojoSearch(config: DefectDojoConfig | null) {
       const client = new DefectDojoClient(config);
       const types = await getProductTypes(client);
       setProductTypes(types);
-    } catch {}
+    } catch (err) {
+      console.warn("[DefectDojoSearch] Failed to fetch product types:", err);
+    }
   }, [config]);
 
   const clearResults = useCallback(() => {

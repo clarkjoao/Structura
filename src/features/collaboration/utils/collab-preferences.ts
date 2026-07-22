@@ -23,7 +23,9 @@ export function readPrefs(): CollabPrefs {
 export function writePrefs(prefs: Partial<CollabPrefs>): void {
   try {
     localStorage.setItem(KEY, JSON.stringify({ ...readPrefs(), ...prefs }));
-  } catch {}
+  } catch (err) {
+    console.warn("[collab-preferences] Failed to write preferences:", err);
+  }
 }
 
 export type { CollabPrefs };

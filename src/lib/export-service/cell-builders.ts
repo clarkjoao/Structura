@@ -197,7 +197,9 @@ class JsonViewerCellBuilder implements CellBuilder {
     let preview = c.jsonContent;
     try {
       preview = JSON.stringify(JSON.parse(c.jsonContent), null, 2);
-    } catch {}
+    } catch (err) {
+      console.warn("[cell-builders] Failed to format JSON for preview:", err);
+    }
     const truncated = preview.length > 400 ? `${preview.slice(0, 400)}…` : preview;
     const schemaLine = c.schemaRef ? `${c.schemaRef}\n` : "";
     const value = `${c.name}\n${schemaLine}${truncated}`;

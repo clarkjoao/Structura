@@ -84,10 +84,10 @@ components and connections plus layout overrides. Scenes power what-if
 variants and compare mode without forking the diagram. Because a scene is a
 *diff*, the base diagram stays the single source and scenes stay cheap.
 
-## Journey
+## Walkthrough
 
-A `Journey` (`features/journeys`) is a **cross-diagram** narrative: ordered
-steps, each pointing at a diagram and optionally a flow. Journeys are the
+A `Walkthrough` (`features/walkthroughs`) is a **cross-diagram** narrative: ordered
+steps, each pointing at a diagram and optionally a flow. Walkthroughs are the
 storytelling layer (onboarding walkthroughs, incident retrospectives). They
 live in their own store, outside any diagram.
 
@@ -104,9 +104,9 @@ catalog of real services. Components link to it via `serviceId`. This
 is the strongest existing form of cross-diagram identity and the natural seed
 of the future Model Index.
 
-> **Naming note.** The state field is currently `state.serviceRegistry` and
-> the page is at `/serviceRegistry`. The glossary marks both as
-> `deprecated` in favor of `serviceCatalog` and `/services`; see
+> **Naming note.** The state field is `state.serviceCatalog` and
+> the page is at `/catalog`. The glossary marks `serviceRegistry`
+> as deprecated in favor of `serviceCatalog` and `/catalog`; see
 > [../grammar/glossary.md](../grammar/glossary.md) § Service Catalog.
 
 ## User template / Custom component
