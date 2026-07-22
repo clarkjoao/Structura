@@ -1,12 +1,26 @@
-import { createContext, useContext, useState, useEffect, useCallback, useId, type ReactNode } from "react";
+import { useSyncExternalStore } from "react";
 import { getApi } from "./usePluginApi";
 import type { LeanixConfig } from "../types/config";
 
 /**
- * Leanix configuration context - provides shared state across all components.
- * This ensures the modal and panel stay in sync after saving/clearing.
+ * Leanix configuration — a single module-level store shared across the whole plugin bundle.
+ *
+ * Why not React Context? The config UI spans two DISJOINT React subtrees: the toolbar panel
+ * (rendered in the host's canvas-toolbar slot) and the settings modal (rendered by the host's
+ * ModalOverlay, which is NOT a descendant of the panel). A Context Provider around the panel
+ * can never reach the modal, so a modal `useContext` returns the default and the two ends drift
+ * apart — saving in the modal wouldn't re-enable the panel's "send" button, and reopening the
+ * modal could show stale/empty state.
+ *
+ * The plugin bundle is evaluated exactly once (see host plugin-loader `new Function(code)`), so
+ * a module singleton IS shared by both subtrees. We expose it through `useSyncExternalStore`
+ * (the same pattern the host uses for its overlay registry), so every consumer — panel or modal,
+ * whatever the tree — reads one source of truth and re-renders on every change.
  */
-interface LeanixConfigContextValue {
+
+const STORAGE_KEY = "leanix_config";
+
+export interface LeanixConfigValue {
   config: LeanixConfig | null;
   isLoading: boolean;
   isConfigured: boolean;
@@ -14,235 +28,105 @@ interface LeanixConfigContextValue {
   clearConfig: () => Promise<void>;
 }
 
-const LeanixConfigContext = createContext<LeanixConfigContextValue | null>(null);
-
-// Track which instance is responsible for loading (prevent duplicate loads)
-let loadingInstanceId: string | null = null;
-let loadPromise: Promise<void> | null = null;
-
-/**
- * Provider component - should wrap the plugin.
- * Only the first instance will load from storage; others will wait.
- */
-export function LeanixConfigProvider({ children }: { children: ReactNode }) {
-  const [config, setConfig] = useState<LeanixConfig | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isConfigured, setIsConfigured] = useState(false);
-
-  // Generate a unique instance ID for this render
-  const instanceId = useId() || Math.random().toString(36);
-
-  // Initial load from storage (only one instance should do this)
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadConfig = async () => {
-      // If another instance is already loading, wait for it
-      if (loadPromise) {
-        try {
-          await loadPromise;
-        } catch {
-          // Ignore errors from other instance
-        }
-        if (cancelled) return;
-        // After waiting, read from storage (the loading instance updated the state)
-        try {
-          const raw = await getApi().storage.get<string>("leanix_config");
-          if (cancelled) return;
-          if (raw) {
-            try {
-              const parsed = JSON.parse(raw) as LeanixConfig;
-              setConfig(parsed);
-              setIsConfigured(true);
-            } catch {
-              setConfig(null);
-              setIsConfigured(false);
-            }
-          } else {
-            setConfig(null);
-            setIsConfigured(false);
-          }
-        } catch (e) {
-          if (cancelled) return;
-          console.error("[Leanix Plugin] Failed to load config:", e);
-        }
-        setIsLoading(false);
-        return;
-      }
-
-      // This instance is responsible for loading
-      loadingInstanceId = instanceId;
-
-      const doLoad = async () => {
-        try {
-          const raw = await getApi().storage.get<string>("leanix_config");
-          if (cancelled) return;
-          if (raw) {
-            try {
-              const parsed = JSON.parse(raw) as LeanixConfig;
-              setConfig(parsed);
-              setIsConfigured(true);
-            } catch {
-              setConfig(null);
-              setIsConfigured(false);
-            }
-          } else {
-            setConfig(null);
-            setIsConfigured(false);
-          }
-        } catch (e) {
-          if (cancelled) return;
-          console.error("[Leanix Plugin] Failed to load config:", e);
-        } finally {
-          if (!cancelled) {
-            setIsLoading(false);
-            loadingInstanceId = null;
-            loadPromise = null;
-          }
-        }
-      };
-
-      loadPromise = doLoad();
-      await loadPromise;
-    };
-
-    loadConfig();
-    return () => {
-      cancelled = true;
-      if (loadingInstanceId === instanceId) {
-        loadingInstanceId = null;
-        loadPromise = null;
-      }
-    };
-  }, [instanceId]);
-
-  const saveConfig = useCallback(async (newConfig: LeanixConfig): Promise<boolean> => {
-    // Validate
-    if (!newConfig.baseUrl?.trim()) return false;
-    if (!newConfig.authToken?.trim()) return false;
-    if (!newConfig.userId?.trim()) return false;
-    if (newConfig.useProxy && !newConfig.proxyUrl?.trim()) return false;
-
-    try {
-      await getApi().storage.set("leanix_config", JSON.stringify(newConfig));
-      // Update shared state - all subscribers will re-render
-      setConfig(newConfig);
-      setIsConfigured(true);
-      return true;
-    } catch (e) {
-      console.error("[Leanix Plugin] Failed to save config:", e);
-      return false;
-    }
-  }, []);
-
-  const clearConfig = useCallback(async (): Promise<void> => {
-    try {
-      await getApi().storage.remove("leanix_config");
-      setConfig(null);
-      setIsConfigured(false);
-    } catch (e) {
-      console.error("[Leanix Plugin] Failed to clear config:", e);
-    }
-  }, []);
-
-  const value: LeanixConfigContextValue = {
-    config,
-    isLoading,
-    isConfigured,
-    saveConfig,
-    clearConfig,
-  };
-
-  return (
-    <LeanixConfigContext.Provider value={value}>
-      {children}
-    </LeanixConfigContext.Provider>
-  );
+interface ConfigState {
+  config: LeanixConfig | null;
+  isConfigured: boolean;
+  isLoading: boolean;
 }
 
-/**
- * Hook to access Leanix configuration.
- * Must be used within a LeanixConfigProvider.
- */
-export function useLeanixConfig(): LeanixConfigContextValue {
-  const context = useContext(LeanixConfigContext);
-  // Always call the fallback hook - it handles the case where context is null
-  const fallbackValue = useFallbackHook();
-  return context ?? fallbackValue;
+// The single source of truth. Reassigned as a whole object on change so useSyncExternalStore's
+// getSnapshot returns a stable reference between unrelated renders (no tearing / no loops).
+let state: ConfigState = { config: null, isConfigured: false, isLoading: true };
+const listeners = new Set<() => void>();
+
+function emit(): void {
+  for (const listener of listeners) listener();
 }
 
-/**
- * Fallback hook for backwards compatibility when used outside provider.
- * Uses module-level state that persists across instances.
- */
-let fallbackConfig: LeanixConfig | null = null;
-let fallbackIsConfigured = false;
+function setState(next: Partial<ConfigState>): void {
+  state = { ...state, ...next };
+  emit();
+}
 
-function useFallbackHook(): LeanixConfigContextValue {
-  const [config, setConfig] = useState<LeanixConfig | null>(fallbackConfig);
-  const [isConfigured, setIsConfigured] = useState(fallbackIsConfigured);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    getApi().storage.get<string>("leanix_config").then((raw) => {
-      if (cancelled) return;
+// Lazy, one-time hydration from persistent storage. Runs when the first consumer subscribes.
+let hydrated = false;
+function hydrate(): void {
+  if (hydrated) return;
+  hydrated = true;
+  getApi()
+    .storage.get<string>(STORAGE_KEY)
+    .then((raw) => {
       if (raw) {
         try {
           const parsed = JSON.parse(raw) as LeanixConfig;
-          fallbackConfig = parsed;
-          fallbackIsConfigured = true;
-          setConfig(parsed);
-          setIsConfigured(true);
+          setState({ config: parsed, isConfigured: true, isLoading: false });
+          return;
         } catch {
-          fallbackConfig = null;
-          fallbackIsConfigured = false;
-          setConfig(null);
-          setIsConfigured(false);
+          // Corrupt value — fall through to the "not configured" state below.
         }
-      } else {
-        fallbackConfig = null;
-        fallbackIsConfigured = false;
-        setConfig(null);
-        setIsConfigured(false);
       }
-      setIsLoading(false);
-    }).catch(() => {
-      if (!cancelled) setIsLoading(false);
+      setState({ config: null, isConfigured: false, isLoading: false });
+    })
+    .catch((e) => {
+      console.error("[Leanix Plugin] Failed to load config:", e);
+      setState({ isLoading: false });
     });
-    return () => { cancelled = true; };
-  }, []);
+}
 
-  const saveConfig = useCallback(async (newConfig: LeanixConfig): Promise<boolean> => {
-    if (!newConfig.baseUrl?.trim()) return false;
-    if (!newConfig.authToken?.trim()) return false;
-    if (!newConfig.userId?.trim()) return false;
-    if (newConfig.useProxy && !newConfig.proxyUrl?.trim()) return false;
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  hydrate(); // idempotent; ensures storage is read as soon as anything mounts
+  return () => {
+    listeners.delete(listener);
+  };
+}
 
-    try {
-      await getApi().storage.set("leanix_config", JSON.stringify(newConfig));
-      fallbackConfig = newConfig;
-      fallbackIsConfigured = true;
-      setConfig(newConfig);
-      setIsConfigured(true);
-      return true;
-    } catch (e) {
-      console.error("[Leanix Plugin] Failed to save config:", e);
-      return false;
-    }
-  }, []);
+function getSnapshot(): ConfigState {
+  return state;
+}
 
-  const clearConfig = useCallback(async (): Promise<void> => {
-    try {
-      await getApi().storage.remove("leanix_config");
-      fallbackConfig = null;
-      fallbackIsConfigured = false;
-      setConfig(null);
-      setIsConfigured(false);
-    } catch (e) {
-      console.error("[Leanix Plugin] Failed to clear config:", e);
-    }
-  }, []);
+function isValid(cfg: LeanixConfig): boolean {
+  if (!cfg.baseUrl?.trim()) return false;
+  if (!cfg.authToken?.trim()) return false;
+  if (!cfg.userId?.trim()) return false;
+  if (cfg.useProxy && !cfg.proxyUrl?.trim()) return false;
+  return true;
+}
 
-  return { config, isLoading, isConfigured, saveConfig, clearConfig };
+// Stable module-level actions — safe to use directly in effect/callback deps.
+async function saveConfig(newConfig: LeanixConfig): Promise<boolean> {
+  if (!isValid(newConfig)) return false;
+  try {
+    await getApi().storage.set(STORAGE_KEY, JSON.stringify(newConfig));
+    setState({ config: newConfig, isConfigured: true, isLoading: false });
+    return true;
+  } catch (e) {
+    console.error("[Leanix Plugin] Failed to save config:", e);
+    return false;
+  }
+}
+
+async function clearConfig(): Promise<void> {
+  try {
+    await getApi().storage.remove(STORAGE_KEY);
+    setState({ config: null, isConfigured: false, isLoading: false });
+  } catch (e) {
+    console.error("[Leanix Plugin] Failed to clear config:", e);
+  }
+}
+
+/**
+ * Access the shared Leanix configuration. Works identically in any subtree — the toolbar panel
+ * and the settings modal both read/write the same store, so a save on one side is immediately
+ * reflected on the other.
+ */
+export function useLeanixConfig(): LeanixConfigValue {
+  const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  return {
+    config: snapshot.config,
+    isLoading: snapshot.isLoading,
+    isConfigured: snapshot.isConfigured,
+    saveConfig,
+    clearConfig,
+  };
 }

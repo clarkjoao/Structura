@@ -16,7 +16,6 @@
 import type { StructuraPluginGlobal } from "./types/plugin.types";
 import { initializePlugin } from "./hooks/usePluginApi";
 import { LeanixToolbarButton } from "./components";
-import { LeanixConfigProvider } from "./hooks/useLeanixConfig";
 
 declare global {
   interface Window {
@@ -54,11 +53,9 @@ window.StructuraPlugin.define({
       id: "leanix-toolbar",
       slot: "canvas-toolbar",
       title: { en: "Leanix", "pt-BR": "Leanix" },
-      component: (props) => (
-        <LeanixConfigProvider>
-          <LeanixToolbarButton {...props} />
-        </LeanixConfigProvider>
-      ),
+      // Config lives in a module-level store (see useLeanixConfig), shared across the panel
+      // and the settings modal — no Context Provider needed, and none would reach the modal.
+      component: (props) => <LeanixToolbarButton {...props} />,
     });
 
     console.log("[Leanix Plugin] Panel registered!");
