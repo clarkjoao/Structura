@@ -256,7 +256,7 @@ export async function testConnection(
   config: LeanixConfig,
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
   try {
-    await apiRequest<unknown>(config, "/services/pathfinder/v1/bookmarks?pageSize=1", {
+    await apiRequest<unknown>(config, "/services/pathfinder/v1/bookmarks?pageSize=1&bookmarkType=VISUALIZER", {
       method: "GET",
     });
     return { ok: true };

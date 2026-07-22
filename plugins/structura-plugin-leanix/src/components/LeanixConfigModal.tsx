@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import type { FC } from "react";
 import type { LeanixConfig } from "../types/config";
 import { LABELS, t, type Locale } from "../i18n/labels";
 import { useLeanixConfig } from "../hooks/useLeanixConfig";
-import { extractUserIdFromToken, testConnection, classifyError } from "../services";
+import { extractUserIdFromToken, testConnection } from "../services";
 
 const DEFAULT_PROXY_URL = "http://localhost:3000/proxy";
 
@@ -57,21 +57,6 @@ export const LeanixConfigModal: FC<LeanixConfigModalProps> = ({ onClose, locale 
     setTestReason("");
   }, [formData.baseUrl, formData.authToken, formData.useProxy, formData.proxyUrl]);
 
-  const validate = useCallback((data: LeanixConfig): boolean => {
-    const newErrors: Partial<LeanixConfig> = {};
-    if (!data.baseUrl.trim()) {
-      newErrors.baseUrl = t(LABELS.validation.urlRequired, locale);
-    }
-    if (!data.authToken.trim()) {
-      newErrors.authToken = t(LABELS.validation.tokenRequired, locale);
-    }
-    if (formData.useProxy && !data.proxyUrl.trim()) {
-      newErrors.proxyUrl = t(LABELS.validation.proxyRequired, locale);
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [locale, formData.useProxy]);
-
   const handleTest = async () => {
     if (!formData.baseUrl.trim() || !formData.authToken.trim()) {
       setTestStatus("failed");
@@ -91,23 +76,37 @@ export const LeanixConfigModal: FC<LeanixConfigModalProps> = ({ onClose, locale 
   };
 
   const handleSave = async () => {
-    const dataToSave = { ...formData };
+    // Extrair userId do token se necessário
+    let dataToSave = { ...formData };
     if (!dataToSave.userId && dataToSave.authToken) {
       const extractedUserId = extractUserIdFromToken(dataToSave.authToken);
       if (extractedUserId) {
-        dataToSave.userId = extractedUserId;
-        setFormData(dataToSave);
+        dataToSave = { ...dataToSave, userId: extractedUserId };
       }
     }
 
-    if (!validate(dataToSave)) return;
-
+    // Validar campos obrigatórios
+    const newErrors: Partial<LeanixConfig> = {};
+    if (!dataToSave.baseUrl.trim()) {
+      newErrors.baseUrl = t(LABELS.validation.urlRequired, locale);
+    }
+    if (!dataToSave.authToken.trim()) {
+      newErrors.authToken = t(LABELS.validation.tokenRequired, locale);
+    }
     if (!dataToSave.userId?.trim()) {
-      setErrors({ userId: t(LABELS.validation.userIdRequired, locale) });
+      newErrors.userId = t(LABELS.validation.userIdRequired, locale);
+    }
+    if (dataToSave.useProxy && !dataToSave.proxyUrl.trim()) {
+      newErrors.proxyUrl = t(LABELS.validation.proxyRequired, locale);
+    }
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
     setIsSaving(true);
+    setErrors({});
+
     const success = await saveConfig(dataToSave);
     setIsSaving(false);
 
@@ -158,7 +157,7 @@ export const LeanixConfigModal: FC<LeanixConfigModalProps> = ({ onClose, locale 
   const labelClass = "block mb-1 text-[13px] font-medium text-foreground";
 
   return (
-    <form className="p-4 space-y-4" onSubmit={(e) => e.preventDefault()}>
+    <form className="p-4 space-y-4" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
       {/* Use Proxy toggle */}
       <div className="flex items-center gap-2">
         <input
@@ -292,8 +291,7 @@ export const LeanixConfigModal: FC<LeanixConfigModalProps> = ({ onClose, locale 
             {t(LABELS.config.cancel, locale)}
           </button>
           <button
-            type="button"
-            onClick={handleSave}
+            type="submit"
             disabled={isSaving}
             className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground disabled:opacity-70 disabled:cursor-not-allowed hover:bg-primary/90"
           >
