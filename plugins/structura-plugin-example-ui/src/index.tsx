@@ -1,68 +1,46 @@
 /**
- * Structura Example Plugin
+ * Structura Example UI Plugin
  *
- * Demonstrates the new plugin system capabilities:
- * - canvas-toolbar slot (button in toolbar)
- * - ui:overlays capability (toasts and modals)
- * - diagram:read capability (read diagram name)
- * - react dependency via api.dependencies.react
+ * Demonstrates the plugin system with ordinary React:
+ * - canvas-toolbar slot (button that opens a draggable panel)
+ * - element-inspector slot (settings panel on selection)
+ * - ui:overlays (toasts + modal)
+ * - diagram:read (active diagram name/counts)
+ * - storage (persisted panel position via api.storage)
  *
- * Build: npm run build
- * Or: npx vite build
+ * React comes from the host as a build-time external (see vite.config.js), so this plugin
+ * writes normal React — `import { useState } from "react"`, JSX with the automatic runtime —
+ * with no getReact() / factory-function workarounds.
+ *
+ * Build: npm run build  →  upload dist/plugin.js from the Plugins page.
  */
-
-// Types
-import type { PluginManifest, StructuraPluginApi } from "./types/plugin";
-
-// Hooks
+import type {
+  PluginManifest,
+  StructuraPluginApi,
+  StructuraPluginGlobal,
+} from "./types/plugin.types";
 import { initializePlugin } from "./hooks/usePluginApi";
-
-// Components
 import { ToolbarButton, SettingsPanel } from "./components";
 
-/**
- * Plugin manifest - declares capabilities and dependencies
- */
-const manifest: PluginManifest = {
-  id: "structura-plugin-example-ui",
-  name: "Example UI Plugin",
-  version: "1.0.0",
-  author: "Structura Team",
-  description: "Demonstrates toolbar button, toasts, and modal dialogs",
-  apiVersion: "^1.1",
-  capabilities: [
-    "ui:panels",
-    "ui:overlays",
-    "diagram:read",
-    "events:diagram", // Required for onDiagramChange
-  ],
-  uses: ["react"], // Request React from host
-};
-
-/**
- * Global declaration for window.StructuraPlugin
- */
 declare global {
   interface Window {
-    StructuraPlugin: {
-      define(definition: {
-        manifest: PluginManifest;
-        activate: (api: StructuraPluginApi) => void;
-      }): void;
-    };
+    StructuraPlugin: StructuraPluginGlobal;
   }
 }
 
-/**
- * Plugin activation function
- */
+const manifest: PluginManifest = {
+  id: "structura-plugin-example-ui",
+  name: "Example UI Plugin",
+  version: "1.1.0",
+  author: "Structura Team",
+  description: "Demonstrates toolbar button, toasts, and modal dialogs",
+  apiVersion: "^1.2",
+  capabilities: ["ui:panels", "ui:overlays", "diagram:read", "events:diagram", "storage"],
+};
+
 function activate(api: StructuraPluginApi): void {
-  // Initialize plugin API and React
   initializePlugin(api);
 
-  console.log("[Example Plugin] Activated with React!");
-
-  // Register toolbar button
   api.registerPanel({
     id: "example-toolbar-button",
     slot: "canvas-toolbar",
@@ -70,7 +48,6 @@ function activate(api: StructuraPluginApi): void {
     component: ToolbarButton,
   });
 
-  // Register settings panel (shown when element is selected)
   api.registerPanel({
     id: "example-settings",
     slot: "element-inspector",
@@ -78,8 +55,7 @@ function activate(api: StructuraPluginApi): void {
     component: SettingsPanel,
   });
 
-  // Register event listener to demonstrate diagram:read
-  api.onDiagramChange((diagramId: string) => {
+  api.onDiagramChange((diagramId) => {
     const diagram = api.getDiagram(diagramId);
     if (diagram) {
       console.log(`[Example Plugin] Diagram changed: ${diagram.name}`);
@@ -87,10 +63,4 @@ function activate(api: StructuraPluginApi): void {
   });
 }
 
-/**
- * Define the plugin
- */
-window.StructuraPlugin.define({
-  manifest,
-  activate,
-});
+window.StructuraPlugin.define({ manifest, activate });

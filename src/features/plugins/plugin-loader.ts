@@ -1,4 +1,5 @@
 import type { PluginDefinition, StructuraPluginGlobal } from "./plugin.types";
+import { installPluginRuntimeGlobals } from "./runtime-globals";
 
 declare global {
   interface Window {
@@ -27,6 +28,11 @@ export class PluginLoadError extends Error {
  * PluginLoadError and leaves no trace.
  */
 export function executePluginCode(code: string): PluginDefinition {
+  // Publish the host React/JSX runtimes as globals BEFORE the plugin IIFE runs, so a bundle
+  // that externalized `react` / `react/jsx-runtime` binds to the host's single React
+  // instance. Idempotent — see runtime-globals.ts.
+  installPluginRuntimeGlobals();
+
   const captured: PluginDefinition[] = [];
   const hook: StructuraPluginGlobal = {
     define(definition: PluginDefinition) {

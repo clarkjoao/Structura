@@ -1,6 +1,8 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import { overlayRegistry } from "../overlay-registry";
+import { PluginErrorBoundary } from "./PluginErrorBoundary";
 
 interface PluginModalProps {
   title: string;
@@ -15,6 +17,7 @@ const sizeClasses = {
 };
 
 export function PluginModal({ title, content: Content, size = "md" }: PluginModalProps) {
+  const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
 
@@ -111,9 +114,18 @@ export function PluginModal({ title, content: Content, size = "md" }: PluginModa
           </button>
         </div>
 
-        {/* Content */}
+        {/* Content — error-boundaried: a throwing plugin dialog must not crash the app. */}
         <div className="max-h-[70vh] overflow-y-auto p-4">
-          <Content onClose={() => overlayRegistry.closeModal()} />
+          <PluginErrorBoundary
+            label="modal content"
+            fallback={
+              <p className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+                {t("plugins.modal.crashed")}
+              </p>
+            }
+          >
+            <Content onClose={() => overlayRegistry.closeModal()} />
+          </PluginErrorBoundary>
         </div>
       </div>
     </div>

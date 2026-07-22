@@ -1,18 +1,14 @@
-import type { ReactElement } from "react";
-import type { PanelContext } from "../types/plugin";
+import type { PluginPanelProps } from "../types/plugin.types";
 import { LABELS, t } from "../i18n/labels";
-import { showToast, getReact } from "../hooks/usePluginApi";
+import { showToast } from "../hooks/usePluginApi";
 
 /**
- * Settings Panel Component
- *
- * Demonstrates panel contribution in the element inspector.
- * Shows when an element is selected.
+ * Panel shown in the element inspector when an element is selected. A plain React component
+ * typed against the host's PluginPanelProps — no factory, no getReact, no React.createElement.
  */
-export function SettingsPanel({ context }: { context: PanelContext }): ReactElement {
-  const React = getReact();
-  const locale = (context?.locale || "en") as "en" | "pt-BR";
-  const selection = context?.selection || [];
+export function SettingsPanel({ context }: PluginPanelProps) {
+  const locale = (context.locale || "en") as "en" | "pt-BR";
+  const selection = context.selection ?? [];
 
   const handleTestToast = () => {
     showToast({
@@ -22,35 +18,24 @@ export function SettingsPanel({ context }: { context: PanelContext }): ReactElem
     });
   };
 
-  return React.createElement(
-    "div",
-    { className: "space-y-3" },
-    React.createElement(
-      "p",
-      { className: "text-sm font-medium" },
-      t(LABELS.settings.title, locale)
-    ),
-    React.createElement(
-      "p",
-      { className: "text-xs text-muted-foreground" },
-      t(LABELS.settings.description, locale)
-    ),
-    selection.length > 0 && React.createElement(
-      "div",
-      { className: "rounded-md bg-muted p-2 text-xs" },
-      React.createElement("strong", null, t(LABELS.settings.selected, locale)),
-      " ",
-      selection.length,
-      " element(s)"
-    ),
-    React.createElement(
-      "button",
-      {
-        type: "button",
-        onClick: handleTestToast,
-        className: "w-full rounded-md bg-secondary px-3 py-2 text-xs font-medium hover:bg-secondary/80 transition-colors",
-      },
-      t(LABELS.settings.testToast, locale)
-    )
+  return (
+    <div className="space-y-3">
+      <p className="text-sm font-medium text-foreground">{t(LABELS.settings.title, locale)}</p>
+      <p className="text-xs text-muted-foreground">{t(LABELS.settings.description, locale)}</p>
+
+      {selection.length > 0 && (
+        <div className="rounded-md bg-muted p-2 text-xs text-foreground">
+          <strong>{t(LABELS.settings.selected, locale)}</strong> {selection.length} element(s)
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={handleTestToast}
+        className="w-full rounded-md bg-secondary px-3 py-2 text-xs font-medium transition-colors hover:bg-secondary/80"
+      >
+        {t(LABELS.settings.testToast, locale)}
+      </button>
+    </div>
   );
 }

@@ -1,4 +1,4 @@
-import type { LocalizedText } from "../types/plugin";
+import type { LocalizedText } from "../types/plugin.types";
 
 export const LABELS = {
   toolbar: {
@@ -152,8 +152,10 @@ export const LABELS = {
 } as const;
 
 /**
- * Resolve a localized text based on the current locale
+ * Resolve a localized text (host contract type: a plain string, or a per-locale map)
+ * against the active locale, falling back to English.
  */
 export function t(text: LocalizedText, locale: string): string {
-  return text[locale as keyof typeof text] ?? text.en;
+  if (typeof text === "string") return text;
+  return text[locale as "en" | "pt-BR"] ?? text.en ?? "";
 }

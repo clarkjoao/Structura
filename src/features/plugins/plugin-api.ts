@@ -184,10 +184,11 @@ export function createScopedPluginApi(
 
     storage: createPluginStorage(manifest.id, storagePort),
 
-    // Host-provided dependencies based on manifest.uses
+    // Deprecated since API 1.2.0: React is now shared as a host global that plugin bundles
+    // bind to as a build-time external (installPluginRuntimeGlobals). Kept for pre-1.2
+    // plugins that still read api.dependencies.react.
     dependencies: {
       get react(): typeof React | undefined {
-        // Only provide React if the plugin declared "react" in uses
         if (manifest.uses?.includes("react")) {
           return React;
         }

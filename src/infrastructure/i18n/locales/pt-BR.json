@@ -1717,6 +1717,9 @@
       "crashed": "Este painel de plugin travou. O restante da página não foi afetado.",
       "heading": "Plugins"
     },
+    "modal": {
+      "crashed": "Este diálogo de plugin travou. O restante da página não foi afetado."
+    },
     "importWarnings": "Importação concluída com avisos: {{warnings}}",
     "exportGroup": "Formatos de plugins",
     "importSuccess": "{{count}} elementos importados.",

@@ -1,3 +1,11 @@
+/**
+ * AUTO-GENERATED — DO NOT EDIT BY HAND.
+ * Verbatim copy of the host plugin API contract
+ * (src/features/plugins/plugin.types.ts), synced via `npm run sync-types`.
+ * It is the single source of truth for plugin/host type compatibility; edit the host
+ * file and re-run the sync instead of changing this file.
+ */
+
 import type { ComponentType as ReactComponentType } from "react";
 import type { NodeTypes } from "@xyflow/react";
 
