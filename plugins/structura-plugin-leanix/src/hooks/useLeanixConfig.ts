@@ -3,32 +3,58 @@ import { getApi } from "./usePluginApi";
 import type { LeanixConfig } from "../types/config";
 
 /**
+ * Module-level cache so all instances of useLeanixConfig share the same state.
+ * This ensures the modal and panel stay in sync after saving.
+ */
+let cachedConfig: LeanixConfig | null = null;
+let cachedIsConfigured = false;
+let cacheInitialized = false;
+
+/**
  * Persist Leanix configuration via the host's sanctioned api.storage interface.
  * Falls back to a module-level in-memory cache so reads are synchronous and
  * instant even before the first async load resolves.
  */
 export function useLeanixConfig() {
-  const [config, setConfig] = useState<LeanixConfig | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isConfigured, setIsConfigured] = useState(false);
+  const [config, setConfig] = useState<LeanixConfig | null>(cachedConfig);
+  const [isLoading, setIsLoading] = useState(!cacheInitialized);
+  const [isConfigured, setIsConfigured] = useState(cachedIsConfigured);
 
   // Async initial load from storage
   useEffect(() => {
     let cancelled = false;
-    getApi().storage.get<string>("leanix_config").then((raw) => {
-      if (cancelled) return;
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw) as LeanixConfig;
-          setConfig(parsed);
-          setIsConfigured(true);
-        } catch {
+    const loadConfig = async () => {
+      try {
+        const raw = await getApi().storage.get<string>("leanix_config");
+        if (cancelled) return;
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw) as LeanixConfig;
+            cachedConfig = parsed;
+            cachedIsConfigured = true;
+            setConfig(parsed);
+            setIsConfigured(true);
+          } catch {
+            cachedConfig = null;
+            cachedIsConfigured = false;
+            setConfig(null);
+            setIsConfigured(false);
+          }
+        } else {
+          cachedConfig = null;
+          cachedIsConfigured = false;
           setConfig(null);
           setIsConfigured(false);
         }
+        cacheInitialized = true;
+        setIsLoading(false);
+      } catch (e) {
+        if (cancelled) return;
+        console.error("[Leanix Plugin] Failed to load config:", e);
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    });
+    };
+    loadConfig();
     return () => { cancelled = true; };
   }, []);
 
@@ -40,6 +66,9 @@ export function useLeanixConfig() {
 
     try {
       await getApi().storage.set("leanix_config", JSON.stringify(newConfig));
+      // Update cache AND state so all instances see the change
+      cachedConfig = newConfig;
+      cachedIsConfigured = true;
       setConfig(newConfig);
       setIsConfigured(true);
       return true;
@@ -52,6 +81,8 @@ export function useLeanixConfig() {
   const clearConfig = useCallback(async (): Promise<void> => {
     try {
       await getApi().storage.remove("leanix_config");
+      cachedConfig = null;
+      cachedIsConfigured = false;
       setConfig(null);
       setIsConfigured(false);
     } catch (e) {
