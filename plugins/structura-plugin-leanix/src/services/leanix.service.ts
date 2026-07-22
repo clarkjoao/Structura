@@ -45,6 +45,31 @@ export function extractUserIdFromToken(token: string): string | null {
 }
 
 /**
+ * Extract workspace info from JWT token
+ */
+export interface WorkspaceInfo {
+  workspaceId: string | null;
+  workspaceName: string | null;
+}
+
+export function extractWorkspaceFromToken(token: string): WorkspaceInfo {
+  try {
+    // Remove "Bearer " prefix if present
+    const cleanToken = token.replace(/^Bearer\s+/i, "").trim();
+    const parts = cleanToken.split(".");
+    if (parts.length !== 3) return { workspaceId: null, workspaceName: null };
+
+    const payload = JSON.parse(atob(parts[1]));
+    return {
+      workspaceId: payload.permission?.workspaceId || null,
+      workspaceName: payload.permission?.workspaceName || null,
+    };
+  } catch {
+    return { workspaceId: null, workspaceName: null };
+  }
+}
+
+/**
  * Ensure token has "Bearer " prefix
  */
 export function ensureBearerPrefix(token: string): string {

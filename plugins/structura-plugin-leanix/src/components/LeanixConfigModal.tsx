@@ -3,7 +3,7 @@ import type { FC } from "react";
 import type { LeanixConfig } from "../types/config";
 import { LABELS, t, type Locale } from "../i18n/labels";
 import { useLeanixConfig } from "../hooks/useLeanixConfig";
-import { extractUserIdFromToken, testConnection } from "../services";
+import { extractUserIdFromToken, extractWorkspaceFromToken, testConnection } from "../services";
 
 const DEFAULT_PROXY_URL = "http://localhost:3000/proxy";
 
@@ -34,22 +34,42 @@ export const LeanixConfigModal: FC<LeanixConfigModalProps> = ({ onClose, locale 
   const [testStatus, setTestStatus] = useState<TestStatus>("idle");
   const [testReason, setTestReason] = useState<string>("");
 
-  // Sync with global config
+  // Sync with global config - clear errors when config loads
   useEffect(() => {
     if (config) {
       setFormData({ workspaceId: "", ...config });
+      setErrors({}); // Clear any previous errors
     }
   }, [config]);
 
-  // Auto-fill userId when token changes
+  // Auto-fill userId and workspace when token changes
   useEffect(() => {
-    if (formData.authToken && !formData.userId) {
+    if (formData.authToken) {
       const extractedUserId = extractUserIdFromToken(formData.authToken);
-      if (extractedUserId) {
-        setFormData((prev) => ({ ...prev, userId: extractedUserId }));
+      const workspaceInfo = extractWorkspaceFromToken(formData.authToken);
+
+      const updates: Partial<LeanixConfig> = {};
+
+      // Auto-fill userId if not set
+      if (extractedUserId && !formData.userId) {
+        updates.userId = extractedUserId;
+        // Clear userId error when auto-filled
+        setErrors((prev) => {
+          const { userId: _, ...rest } = prev;
+          return rest;
+        });
+      }
+
+      // Auto-fill workspaceId if found in token
+      if (workspaceInfo.workspaceId && !formData.workspaceId) {
+        updates.workspaceId = workspaceInfo.workspaceId;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        setFormData((prev) => ({ ...prev, ...updates }));
       }
     }
-  }, [formData.authToken, formData.userId]);
+  }, [formData.authToken, formData.userId, formData.workspaceId]);
 
   // Reset test status when the inputs the test depends on change.
   useEffect(() => {
@@ -76,12 +96,24 @@ export const LeanixConfigModal: FC<LeanixConfigModalProps> = ({ onClose, locale 
   };
 
   const handleSave = async () => {
-    // Extrair userId do token se necessário
-    let dataToSave = { ...formData };
-    if (!dataToSave.userId && dataToSave.authToken) {
-      const extractedUserId = extractUserIdFromToken(dataToSave.authToken);
+    // Normalize token: ensure Bearer prefix (but keep display as-is for UX)
+    let normalizedToken = formData.authToken.trim();
+    if (normalizedToken && !normalizedToken.toLowerCase().startsWith("bearer ")) {
+      normalizedToken = `Bearer ${normalizedToken}`;
+    }
+
+    // Extract userId and workspace from token if not set
+    let dataToSave: LeanixConfig = { ...formData, authToken: normalizedToken };
+    if (!dataToSave.userId) {
+      const extractedUserId = extractUserIdFromToken(formData.authToken);
       if (extractedUserId) {
         dataToSave = { ...dataToSave, userId: extractedUserId };
+      }
+    }
+    if (!dataToSave.workspaceId) {
+      const workspaceInfo = extractWorkspaceFromToken(formData.authToken);
+      if (workspaceInfo.workspaceId) {
+        dataToSave = { ...dataToSave, workspaceId: workspaceInfo.workspaceId };
       }
     }
 
@@ -125,6 +157,7 @@ export const LeanixConfigModal: FC<LeanixConfigModalProps> = ({ onClose, locale 
       proxyUrl: DEFAULT_PROXY_URL,
       workspaceId: "",
     });
+    setErrors({});
     setTestStatus("idle");
     setTestReason("");
     onClose();

@@ -16,6 +16,7 @@
 import type { StructuraPluginGlobal } from "./types/plugin.types";
 import { initializePlugin } from "./hooks/usePluginApi";
 import { LeanixToolbarButton } from "./components";
+import { LeanixConfigProvider } from "./hooks/useLeanixConfig";
 
 declare global {
   interface Window {
@@ -53,7 +54,11 @@ window.StructuraPlugin.define({
       id: "leanix-toolbar",
       slot: "canvas-toolbar",
       title: { en: "Leanix", "pt-BR": "Leanix" },
-      component: LeanixToolbarButton,
+      component: (props) => (
+        <LeanixConfigProvider>
+          <LeanixToolbarButton {...props} />
+        </LeanixConfigProvider>
+      ),
     });
 
     console.log("[Leanix Plugin] Panel registered!");
