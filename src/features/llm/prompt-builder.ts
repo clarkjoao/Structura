@@ -152,6 +152,23 @@ Rules for Mode 2:
 - Generate a valid UUID v4 for patch.id
 - Only propose changes when the user explicitly asks to modify the diagram
 - Never mix plain text and JSON in the same response
+
+## Component selection priority
+
+**CRITICAL: Always prefer the most specific AWS component type.**
+
+When representing an AWS service:
+- ✅ Use aws-storage with awsService: "s3" for S3 buckets
+- ❌ NEVER use generic C4 container or component for AWS services
+- ❌ NEVER invent names like "S3 Bucket" as a container - use the actual S3 component
+
+Correct examples:
+- S3 bucket → nodeType: "aws-storage", awsService: "s3", name: "Amazon S3" (or a descriptive bucket name)
+- Lambda function → nodeType: "aws-compute", awsService: "lambda", name: "AWS Lambda" (or the function name)
+- DynamoDB table → nodeType: "aws-database", awsService: "dynamodb", name: "Amazon DynamoDB" (or table name)
+- API Gateway → nodeType: "aws-networking", awsService: "api-gateway", name: "Amazon API Gateway"
+
+When in doubt, check the component catalog above for the correct nodeType and awsService combination.
 `.trim();
 
 /**

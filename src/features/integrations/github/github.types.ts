@@ -27,6 +27,10 @@ export interface GithubOrg {
 export interface GithubConfig {
   baseUrl: string;
   token: string;
+  /** Use the dev proxy server instead of direct API calls (for corporate networks with CORS restrictions) */
+  useProxy?: boolean;
+  /** Custom proxy URL (defaults to http://localhost:3000/proxy) */
+  proxyUrl?: string;
 }
 
 export const GH_SEARCH_FIELDS = [

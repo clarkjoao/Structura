@@ -534,10 +534,41 @@
       "provider": "Provedor",
       "providerOpenAI": "OpenAI",
       "providerAnthropic": "Anthropic",
+      "providerCustom": "Custom (compatível com OpenAI)",
       "apiKey": "Chave de API",
       "apiKeyRequired": "Insira sua chave de API da {{provider}}",
       "proxyUrl": "URL do Proxy",
-      "model": "Modelo"
+      "model": "Modelo",
+      "modelCustom": "Outro (digitar manualmente)",
+      "modelCustomPlaceholder": "ex.: meu-modelo-fine-tuned",
+      "connectionsTitle": "Conexões",
+      "connectionName": "Nome da conexão",
+      "connectionNamePlaceholder": "ex.: Claude Sonnet — pessoal",
+      "connectionProviderBadge": "{{provider}} · {{model}}",
+      "connectionNew": "Nova conexão",
+      "connectionNewBadge": "Criando",
+      "editingBadge": "Editando",
+      "connectionDuplicate": "Duplicar",
+      "connectionDelete": "Excluir",
+      "connectionDeleteConfirm": "Excluir esta conexão? Não dá para desfazer.",
+      "cannotDeleteActive": "Mude para outra conexão antes de excluir esta.",
+      "manageConnections": "Gerenciar conexões…",
+      "activeBadge": "Ativa",
+      "customProvider": {
+        "section": "Endpoint customizado",
+        "baseUrl": "URL base",
+        "baseUrlRequired": "É obrigatória uma URL base válida",
+        "baseUrlInvalid": "Informe uma URL que comece com http:// ou https://",
+        "authHeader": "Nome do header de autenticação",
+        "authHeaderHint": "Padrão \"Authorization\" (envia \"Bearer &lt;token&gt;\").",
+        "apiKeyLabel": "Chave de API / token",
+        "advanced": "Avançado",
+        "extraHeaders": "Headers extras (JSON)",
+        "extraHeadersHint": "Mesclados aos headers da requisição. Ex.: {\"X-Org\":\"acme\"}",
+        "extraBodyParams": "Parâmetros extras do body (JSON)",
+        "extraBodyParamsHint": "Mesclados ao body da requisição. Ex.: {\"temperature\":0.2}",
+        "extraJsonInvalid": "JSON inválido. Corrija antes de salvar."
+      }
     },
     "suggestion": {
       "accept": "Aceitar",
@@ -562,7 +593,20 @@
       "proxy": "Proxy",
       "label": "Selecionar modelo LLM",
       "providerOpenai": "OpenAI",
-      "providerAnthropic": "Anthropic"
+      "providerAnthropic": "Anthropic",
+      "manageConnections": "Gerenciar conexões…"
+    },
+    "threads": {
+      "historyLabel": "Histórico de conversas",
+      "historyAria": "Abrir histórico de conversas",
+      "newThread": "Iniciar nova conversa",
+      "switch": "Abrir",
+      "rename": "Renomear",
+      "renamePlaceholder": "Novo título",
+      "delete": "Excluir",
+      "deleteConfirm": "Excluir esta conversa? Não dá para desfazer.",
+      "active": "Atual",
+      "empty": "Nenhuma conversa anterior neste diagrama ainda."
     },
     "floatingButton": {
       "open": "Abrir assistente de chat",
@@ -576,6 +620,7 @@
       "auth": "Chave de API inválida. Verifique suas configurações.",
       "rate_limit": "Limite de requisições atingido. Aguarde alguns segundos.",
       "cors": "Chamada bloqueada pelo navegador. Use o modo Proxy nas configurações.",
+      "corsCustom": "O endpoint recusou a requisição do navegador (CORS). Verifique se o endpoint libera requisições de origens do browser — o Structura não consegue contornar CORS no servidor do provedor.",
       "network": "Sem conexão com o servidor. Verifique sua internet.",
       "model": "Modelo não encontrado. Verifique o nome do modelo nas configurações.",
       "server": "Erro no servidor do provedor. Tente novamente em instantes.",
@@ -1438,7 +1483,9 @@
     "configureIntegrationSearchImport": "Configure a integração para pesquisar e importar repositórios do GitHub.",
     "connected": "Conectado",
     "hideConfig": "Ocultar config",
-    "configure": "Configurar"
+    "configure": "Configurar",
+    "useProxy": "Usar servidor proxy",
+    "proxyUrl": "URL do servidor proxy"
   },
   "defectdojo": {
     "connectionFailed": "Falha na conexão",
@@ -1491,7 +1538,9 @@
       "name__icontains": "Nome (contém)",
       "name": "Nome (exato)",
       "id": "ID"
-    }
+    },
+    "useProxy": "Usar servidor proxy",
+    "proxyUrl": "URL do servidor proxy"
   },
   "githubSearch": {
     "searchRepo": "Buscar repositório...",

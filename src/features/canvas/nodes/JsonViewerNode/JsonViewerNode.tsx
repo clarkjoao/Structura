@@ -7,7 +7,7 @@ import {
   type Node,
   type NodeProps,
 } from "@xyflow/react";
-import { LazyMonacoEditor as Editor } from "@/lib/monaco/LazyMonacoEditor";
+import { LazyMonacoEditor as Editor, type EditorProps } from "@/lib/monaco/LazyMonacoEditor";
 import { Braces, Check, ChevronDown, ChevronUp, Pencil, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
@@ -311,7 +311,7 @@ const JsonViewerNode = memo(
                 language="json"
                 theme={editorTheme}
                 value={isEditing ? draft : (diagramNodeData.jsonContent ?? "{}")}
-                onChange={(value) => {
+                onChange={(value: Parameters<NonNullable<EditorProps["onChange"]>>[0]) => {
                   if (isEditing) setDraft(value ?? "");
                 }}
                 options={{
@@ -328,8 +328,8 @@ const JsonViewerNode = memo(
                   hideCursorInOverviewRuler: true,
                   contextmenu: false,
                 }}
-                onMount={(editor) => {
-                  editor.getDomNode()?.addEventListener("keydown", (keyboardEvent) => {
+                onMount={(editor: Parameters<NonNullable<EditorProps["onMount"]>>[0]) => {
+                  editor.getDomNode()?.addEventListener("keydown", (keyboardEvent: Event) => {
                     keyboardEvent.stopPropagation();
                   });
                 }}

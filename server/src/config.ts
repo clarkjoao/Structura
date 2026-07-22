@@ -31,13 +31,12 @@ export const WS_PATH = (() => {
 export const SSL_KEY_PATH = process.env.SSL_KEY_PATH;
 export const SSL_CERT_PATH = process.env.SSL_CERT_PATH;
 
-// ─── Proxy (local dev only) ──────────────────────────────────────────────────
+// ─── Proxy ───────────────────────────────────────────────────────────────────
 
+/**
+ * Allow insecure TLS certificates (for internal/Corporate networks with self-signed certs)
+ */
 export const INSECURE_TLS = process.env.PROXY_REVERSE_INSECURE_TLS === "true";
-export const DEFECTDOJO_URL = process.env.PROXY_REVERSE_DEFECTDOJO_URL ?? "";
-export const DEFECTDOJO_API_TOKEN = process.env.PROXY_REVERSE_DEFECTDOJO_API_TOKEN;
-export const GITHUB_URL = process.env.PROXY_REVERSE_GITHUB_URL ?? "";
-export const GITHUB_API_TOKEN = process.env.PROXY_REVERSE_GITHUB_API_TOKEN;
 
 if (INSECURE_TLS) process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
@@ -47,6 +46,10 @@ function normalizeProxyUrl(raw: string | undefined): string | undefined {
   return v.startsWith("http://") || v.startsWith("https://") ? v : `http://${v}`;
 }
 
+/**
+ * Corporate HTTP/HTTPS proxy agent for outbound requests.
+ * Used when the server needs to go through a corporate proxy to reach external APIs.
+ */
 const CORPORATE_PROXY_URL =
   normalizeProxyUrl(process.env.PROXY_REVERSE_INTERNAL_HTTP_PROXY) ||
   normalizeProxyUrl(process.env.PROXY_REVERSE_INTERNAL_HTTPS_PROXY) ||

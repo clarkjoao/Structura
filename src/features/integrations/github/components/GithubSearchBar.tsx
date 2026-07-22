@@ -50,10 +50,12 @@ export function GithubSearchBar({ loading, client, onSearch }: Props) {
     Promise.all([client.listUserOrgs(), client.getAuthenticatedUser()])
       .then(([orgList, user]) => {
         if (cancelled) return;
-        setOrgs(orgList);
-        setAuthenticatedUser(user.login);
+        setOrgs(Array.isArray(orgList) ? orgList : []);
+        setAuthenticatedUser(user?.login ?? "");
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error("[GithubSearchBar] Failed to load orgs:", err);
+      })
       .finally(() => {
         if (!cancelled) setOrgsLoading(false);
       });
@@ -142,7 +144,7 @@ export function GithubSearchBar({ loading, client, onSearch }: Props) {
                 {t("github.loadingOrgs")}
               </SelectItem>
             )}
-            {orgs.map((o) => (
+            {Array.isArray(orgs) && orgs.map((o) => (
               <SelectItem key={o.id} value={o.login}>
                 {o.login}
               </SelectItem>

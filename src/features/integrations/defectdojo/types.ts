@@ -26,6 +26,10 @@ export interface DDUser {
 export interface DefectDojoConfig {
   baseUrl: string;
   apiToken: string;
+  /** Use the dev proxy server instead of direct API calls (for corporate networks with CORS restrictions) */
+  useProxy?: boolean;
+  /** Custom proxy URL (defaults to http://localhost:3000/proxy) */
+  proxyUrl?: string;
 }
 
 import type { DefectDojoImportStatus } from "./enums";

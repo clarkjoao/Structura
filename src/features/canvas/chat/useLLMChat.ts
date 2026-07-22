@@ -1,6 +1,11 @@
 import { useCallback, useEffect } from "react";
 import { useActiveDiagramModel } from "@/features/diagram";
-import { buildMentionContextBlock, useLLMStore, type ActiveMention } from "@/features/llm";
+import {
+  buildMentionContextBlock,
+  useLLMStore,
+  type ActiveMention,
+  type LLMConnection,
+} from "@/features/llm";
 import { useDiagramContext } from "./useDiagramContext";
 import { useMentionSearch } from "./useMentionSearch";
 
@@ -27,13 +32,22 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
   const error = useLLMStore((state) => state.error);
   const config = useLLMStore((state) => state.config);
   const activeDiagramId = useLLMStore((state) => state.activeDiagramId);
+  const activeThreadId = useLLMStore((state) => state.activeThreadId);
+  const threadsByDiagram = useLLMStore((state) => state.threadsByDiagram);
+  const connections = useLLMStore((state) => state.connections);
+  const activeConnectionId = useLLMStore((state) => state.activeConnectionId);
   const loadHistoryForDiagram = useLLMStore((state) => state.loadHistoryForDiagram);
   const setLLMConfig = useLLMStore((state) => state.setLLMConfig);
+  const setActiveConnection = useLLMStore((state) => state.setActiveConnection);
   const sendMessage = useLLMStore((state) => state.sendMessage);
   const acceptSuggestion = useLLMStore((state) => state.acceptSuggestion);
   const rejectSuggestion = useLLMStore((state) => state.rejectSuggestion);
   const dismissPendingAnalysis = useLLMStore((state) => state.dismissPendingAnalysis);
   const clearHistory = useLLMStore((state) => state.clearHistory);
+  const createThread = useLLMStore((state) => state.createThread);
+  const switchThread = useLLMStore((state) => state.switchThread);
+  const renameThread = useLLMStore((state) => state.renameThread);
+  const deleteThread = useLLMStore((state) => state.deleteThread);
 
   useEffect(() => {
     if (activeDiagram?.id && activeDiagram.id !== activeDiagramId) {
@@ -78,6 +92,12 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
     [allItems, diagramText, selIds, focusedNodeId, activeDiagram, sendMessage],
   );
 
+  const threads = activeDiagramId ? (threadsByDiagram[activeDiagramId]?.threads ?? []) : [];
+  const activeThread = threads.find((thread) => thread.id === activeThreadId) ?? null;
+  const activeConnection: LLMConnection | undefined = connections.find(
+    (connection) => connection.id === activeConnectionId,
+  );
+
   return {
     messages,
     send,
@@ -91,7 +111,17 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
     accept: acceptSuggestion,
     reject: rejectSuggestion,
     config,
+    connections,
+    activeConnection,
+    activeConnectionId,
+    setActiveConnection,
     setConfig: setLLMConfig,
     clearHistory,
+    threads,
+    activeThread,
+    createThread,
+    switchThread,
+    renameThread,
+    deleteThread,
   };
 }
