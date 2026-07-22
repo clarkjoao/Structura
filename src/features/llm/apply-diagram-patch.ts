@@ -1,4 +1,5 @@
 import { useDiagramStore } from "@/features/diagram";
+import { computeAutoLayout } from "@/features/canvas/layout/autoLayoutEngine";
 import { PATTERNS } from "@/lib/catalogs/patterns";
 import type { DiagramPatchAction } from "./types";
 
@@ -96,10 +97,36 @@ export function applyDiagramPatchAction(
         toolResult: { type: "INSERT_PATTERN", data: { patternId: pattern.id, createdNodes: insertedIds } },
       };
     }
-    case "AUTO_LAYOUT":
-      // TODO: Implement auto layout - for now just log
-      console.info("[LLM] AUTO_LAYOUT requested - feature not yet implemented");
+    case "AUTO_LAYOUT": {
+      const diagramId = diagramState.activeDiagramId;
+      if (!diagramId) {
+        console.info("[apply-diagram-patch] AUTO_LAYOUT: no active diagram");
+        return { addedNodeId: null, addedEdgeId: null, toolResult: { type: "AUTO_LAYOUT" } };
+      }
+      const diagram = diagramState.diagrams[diagramId];
+      if (!diagram) {
+        console.info("[apply-diagram-patch] AUTO_LAYOUT: diagram not found");
+        return { addedNodeId: null, addedEdgeId: null, toolResult: { type: "AUTO_LAYOUT" } };
+      }
+      const connectionsList = Object.values(diagram.snapshot.connections);
+      void computeAutoLayout(
+        diagram.snapshot.components,
+        connectionsList,
+        diagram.nodeLayouts,
+      ).then((result) => {
+        const { updateNodeLayout, resetEdgeControlPoints } = useDiagramStore.getState();
+        // Apply positions to nodes
+        for (const { elementId, x, y } of result.positions) {
+          updateNodeLayout(elementId, { x, y });
+        }
+        // Reset edge control points for laid-out connections
+        for (const connId of result.laidOutConnectionIds) {
+          resetEdgeControlPoints(diagramId, connId);
+        }
+        console.info(`[apply-diagram-patch] AUTO_LAYOUT: positioned ${result.positions.length} nodes`);
+      });
       return { addedNodeId: null, addedEdgeId: null, toolResult: { type: "AUTO_LAYOUT" } };
+    }
     case "GET_TAGS": {
       // GET_TAGS is a read-only operation handled separately
       return { addedNodeId: null, addedEdgeId: null, toolResult: { type: "GET_TAGS" } };

@@ -46,3 +46,6 @@ ds-bundle/
 ^\.pr-body\.md
 
 .pr-body.md
+
+# Debug diagram exports
+*.test-diagram.json

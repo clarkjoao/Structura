@@ -53,7 +53,7 @@ import {
 } from "./sections";
 import { usePanelChildLayout } from "../../hooks/usePanelChildLayout";
 import { isComponentType } from "@/features/diagram";
-import { ENABLE_LEGACY_PANEL_ACTIONS } from "@/features/canvas/selection-actions";
+
 function buildComponentSyncPatch(service: ServiceDefinition, component: Component): ComponentPatch {
   const patch: ComponentPatch = {
     name: service.name,
@@ -146,7 +146,6 @@ const ComponentPanel = ({
   const [flowShape, setFlowShape] = useState<FlowNodeShape>(
     isFlowchart ? component.flowShape : "rectangle",
   );
-  const showIconTab = !isSvgComponentType(component.type) && ENABLE_LEGACY_PANEL_ACTIONS;
   const isAws = isAwsType(type);
   const serviceInfo = awsService ? AWS_SERVICE_MAP.get(awsService) : null;
   const canCreateLinked =
@@ -198,12 +197,6 @@ const ComponentPanel = ({
       setFlowShape(component.flowShape);
     }
   }, [component.id, component]);
-
-  useEffect(() => {
-    if (!showIconTab && tab === "icon") {
-      setTab("details");
-    }
-  }, [showIconTab, tab]);
 
   const handleCreateLinked = () => {
     const level = isSystemType(component.type) ? "container" : "component";
@@ -260,20 +253,6 @@ const ComponentPanel = ({
                   : component.name}
         </h3>
         <div className="flex items-center gap-2">
-          {ENABLE_LEGACY_PANEL_ACTIONS && (
-            <button
-              type="button"
-              onClick={() => updateComponent(component.id, { locked: !component.locked })}
-              title={component.locked ? t("elementPanel.unlock") : t("elementPanel.lock")}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {component.locked ? (
-                <Lock className="h-4 w-4 text-amber-500" />
-              ) : (
-                <Unlock className="h-4 w-4" />
-              )}
-            </button>
-          )}
           <button
             type="button"
             onClick={onClose}
@@ -283,62 +262,13 @@ const ComponentPanel = ({
           </button>
         </div>
       </div>
-      {ENABLE_LEGACY_PANEL_ACTIONS && isPanel && onUngroup && (
-        <div className="px-3 py-2 border-b border-border flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={onUngroup}
-            className="w-full inline-flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          >
-            {t("endpointPanel.ungroup")}
-          </button>
-          {!component.collapsed && (
-            <>
-              <button
-                type="button"
-                onClick={() => fitGroupToChildren(component.id)}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-xs font-medium hover:bg-muted/50 transition-colors"
-              >
-                {t("elementPanel.fitToChildren")}
-              </button>
-              <button
-                type="button"
-                onClick={() => runPanelChildLayout(component.id)}
-                disabled={isPanelLayoutRunning}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-xs font-medium hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isPanelLayoutRunning ? t("autoLayout.running") : t("autoLayout.organizeChildren")}
-              </button>
-            </>
-          )}
-        </div>
-      )}
-      {ENABLE_LEGACY_PANEL_ACTIONS && isChildOfPanel && (
-        <div className="px-3 py-2 border-b border-border">
-          <button
-            type="button"
-            onClick={handleRemoveFromGroup}
-            className="w-full inline-flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            title={t("elementPanel.removeFromGroupTitle")}
-          >
-            {t("endpointPanel.removeFromGroup")}
-          </button>
-        </div>
-      )}
       <TabBar
         active={tab}
         onChange={setTab}
         showConnections={!isSimple}
-        showIconTab={showIconTab}
       />
       {tab === "connections" && !isSimple ? (
         <ConnectionsTab componentId={component.id} />
-      ) : tab === "icon" && showIconTab ? (
-        <ComponentIconTab
-          component={component}
-          diagramId={activeDiagram?.id ?? ""}
-          updateComponent={updateComponent}
-        />
       ) : (
         <div className="p-4 space-y-4 overflow-auto flex-1">
           <PositionSection
@@ -527,39 +457,6 @@ const ComponentPanel = ({
                 onCommitTagInput={handleCommitTagInput}
               />
             </>
-          )}
-          {ENABLE_LEGACY_PANEL_ACTIONS && isPanelComponent(component) && (
-            <PanelStyleSection
-              component={component}
-              updateComponent={updateComponent}
-              updateNodeLayout={updateNodeLayout}
-              componentNodeLayout={resolved?.nodeLayouts[component.id]}
-            />
-          )}
-          {ENABLE_LEGACY_PANEL_ACTIONS && isNoteComponent(component) && (
-            <ColorAccentSection
-              componentId={component.id}
-              type={isDark ? "note-dark" : "note"}
-              currentColor={
-                isDark
-                  ? (component.panelColorDark ?? NOTE_DEFAULT_DARK)
-                  : (component.panelColor ?? NOTE_DEFAULT_LIGHT)
-              }
-              updateComponent={updateComponent}
-            />
-          )}
-          {ENABLE_LEGACY_PANEL_ACTIONS && !isSimple && isC4Component(component) && (
-            <ColorAccentSection
-              componentId={component.id}
-              type="c4"
-              currentColor={
-                (component as { panelColor?: string }).panelColor ??
-                C4_DEFAULT_COLORS[component.type] ??
-                C4_DEFAULT_COLORS.system
-              }
-              allowClear
-              updateComponent={updateComponent}
-            />
           )}
           {!isSimple && !isFlowchart && (
             <ServiceLinkSection

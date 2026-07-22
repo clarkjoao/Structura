@@ -74,13 +74,6 @@ function MainPages() {
         <Route path="/workspace" element={<Dashboard />} />
         <Route path="/walkthroughs" element={<WalkthroughsPage />} />
         <Route path="/walkthroughs/:id/edit" element={<WalkthroughEditorPage />} />
-        {/* Legacy aliases — kept for one release so existing bookmarks
-            to /journeys and /journeys/:id/edit continue to resolve. */}
-        <Route path="/journeys" element={<Navigate to="/walkthroughs" replace />} />
-        <Route
-          path="/journeys/:id/edit"
-          element={<Navigate to="/walkthroughs/:id/edit" replace />}
-        />
         <Route path="/model/:id" element={<Workspace />} />
         <Route path="/collab/:roomId" element={<CollabRoom />} />
         <Route path="/catalog" element={<ServiceCatalog />} />

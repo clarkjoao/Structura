@@ -221,8 +221,21 @@ export function CollabProvider({
     [setActiveElement],
   );
 
+  /**
+   * Viewport sync for collaboration sessions.
+   *
+   * BACKLOG: When a user pans or zooms their canvas, broadcast the viewport to
+   * peers so they can optionally follow along or see where others are looking.
+   *
+   * Implementation would require:
+   * 1. Adding a "viewport" message type to the collab channel protocol
+   * 2. Sending viewport updates on canvas pan/zoom (throttled to avoid flooding)
+   * 3. Receiving and applying viewport changes from peers
+   *
+   * This is low-priority compared to element sync which is the core collab feature.
+   */
   const updateViewport = useCallback((_vp: { x: number; y: number; zoom: number }) => {
-    // TODO: Implement viewport update
+    // Not implemented - see BACKLOG note above
   }, []);
 
   const updateEditingComponent = useCallback(

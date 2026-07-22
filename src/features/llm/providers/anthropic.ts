@@ -71,7 +71,9 @@ export async function sendMessage(
             onChunk(delta);
           }
         }
-      } catch {}
+      } catch (err) {
+        console.warn("[AnthropicProvider] Error processing stream:", err);
+      }
     }
   }
 

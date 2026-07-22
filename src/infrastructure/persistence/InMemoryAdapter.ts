@@ -33,4 +33,12 @@ export class InMemoryAdapter implements IStoragePort {
   async delete(key: string): Promise<void> {
     this.store.delete(key);
   }
+
+  async keys(): Promise<string[]> {
+    return Array.from(this.store.keys());
+  }
+
+  async length(): Promise<number> {
+    return this.store.size;
+  }
 }

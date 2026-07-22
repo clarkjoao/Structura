@@ -236,7 +236,9 @@ function tryParseEnvelope(candidate: string): ParsedLLMResponse | null {
         if (isObject(nestedValue) && typeof nestedValue.message === "string") {
           parsedMessage = nestedValue.message;
         }
-      } catch {}
+      } catch (err) {
+        console.warn("[patch-parser] Failed to parse nested message:", err);
+      }
     }
     const patchValue = parsedValue.patch;
     if (patchValue === null) {

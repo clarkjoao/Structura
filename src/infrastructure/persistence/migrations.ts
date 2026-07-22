@@ -24,11 +24,6 @@ export function migrateDiagram(diagram: Diagram, fromVersion: number): Diagram {
     current = migrateV0toV1(current);
   }
 
-  // Future migrations go here:
-  // if (fromVersion < 2) {
-  //   current = migrateV1toV2(current);
-  // }
-
   return current;
 }
 

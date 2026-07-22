@@ -14,8 +14,8 @@ relay and an LLM proxy — it never stores data.
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ Pages (route-level, lazy-loaded)                            │
-│   dashboard · canvas (Index) · modelExplorer ·              │
-│   serviceRegistry · journeys · viewer                       │
+│   dashboard · canvas (Index) · Workspace ·              │
+│   ServiceCatalog · walkthroughs · viewer                       │
 ├──────────────┬──────────────────────────────────────────────┤
 │ Feature contexts                                            │
 │   canvas   collaboration   llm   journeys   viewer          │

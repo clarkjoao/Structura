@@ -15,12 +15,16 @@ export function getLastEdgeStyle(): EdgeStyle {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (isEdgeStyle(stored)) return stored;
-  } catch {}
+  } catch (err) {
+    console.warn("[useLastEdgeStyle] Failed to read last edge style:", err);
+  }
   return EdgeStyle.Smoothstep;
 }
 
 export function saveLastEdgeStyle(style: EdgeStyle): void {
   try {
     localStorage.setItem(STORAGE_KEY, style);
-  } catch {}
+  } catch (err) {
+    console.warn("[useLastEdgeStyle] Failed to save edge style:", err);
+  }
 }
