@@ -36,8 +36,7 @@ export function createLeanixConfigModal({ onClose }: LeanixConfigModalProps) {
     const [errors, setErrors] = React.useState<Partial<LeanixConfig>>({});
     const [isSaving, setIsSaving] = React.useState(false);
 
-    // Test-connection state lives alongside the form. We surface a status
-    // pill (idle/testing/connected/failed) next to the auth token field.
+    // Test-connection state
     const [testStatus, setTestStatus] = React.useState<TestStatus>("idle");
     const [testReason, setTestReason] = React.useState<string>("");
 
@@ -80,7 +79,6 @@ export function createLeanixConfigModal({ onClose }: LeanixConfigModalProps) {
     };
 
     const handleTest = async () => {
-      // Use the current form values so the user can test before saving.
       if (!formData.baseUrl.trim() || !formData.authToken.trim()) {
         setTestStatus("failed");
         setTestReason(t(LABELS.validation.urlRequired, locale));
@@ -162,19 +160,7 @@ export function createLeanixConfigModal({ onClose }: LeanixConfigModalProps) {
       marginTop: "2px",
     };
 
-    const checkboxContainerStyle: React.CSSProperties = {
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-      marginBottom: "12px",
-    };
-
-    const checkboxStyle: React.CSSProperties = {
-      width: "18px",
-      height: "18px",
-    };
-
-    const testPillStyle = (status: TestStatus): React.CSSProperties => {
+    const getTestPillStyle = (status: TestStatus): React.CSSProperties => {
       const base: React.CSSProperties = {
         display: "inline-flex",
         alignItems: "center",
@@ -197,204 +183,199 @@ export function createLeanixConfigModal({ onClose }: LeanixConfigModalProps) {
       return base;
     };
 
-    const testDot = (status: TestStatus) => {
-      const color =
-        status === "connected" ? "var(--primary)" :
-        status === "failed" ? "var(--destructive)" :
-        "var(--muted-foreground)";
-      return React.createElement("span", {
-        "aria-hidden": true,
-        style: {
-          width: "6px", height: "6px", borderRadius: "999px",
-          background: color,
-          display: "inline-block",
-        },
-      });
+    const TestDot = ({ status }: { status: TestStatus }) => {
+      const color = status === "connected" ? "var(--primary)" : status === "failed" ? "var(--destructive)" : "var(--muted-foreground)";
+      return <span aria-hidden="true" style={{ width: "6px", height: "6px", borderRadius: "999px", background: color, display: "inline-block" }} />;
     };
 
-    return React.createElement("form", {
-      style: { padding: "16px" },
-      onSubmit: (e) => e.preventDefault(),
-    },
-      // Use Proxy toggle
-      React.createElement("div", { style: checkboxContainerStyle },
-        React.createElement("input", {
-          type: "checkbox",
-          id: "useProxy",
-          checked: formData.useProxy,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, useProxy: e.target.checked }),
-          style: checkboxStyle,
-        }),
-        React.createElement("label", { htmlFor: "useProxy", style: { fontSize: "14px", cursor: "pointer" } },
-          t(LABELS.config.useProxy, locale)
-        )
-      ),
+    return (
+      <form style={{ padding: "16px" }} onSubmit={(e) => e.preventDefault()}>
+        {/* Use Proxy toggle */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+          <input
+            type="checkbox"
+            id="useProxy"
+            checked={formData.useProxy}
+            onChange={(e) => setFormData({ ...formData, useProxy: e.target.checked })}
+            style={{ width: "18px", height: "18px" }}
+          />
+          <label htmlFor="useProxy" style={{ fontSize: "14px", cursor: "pointer" }}>
+            {t(LABELS.config.useProxy, locale)}
+          </label>
+        </div>
 
-      // Proxy URL (only visible when useProxy is checked)
-      formData.useProxy && React.createElement("div", { style: { marginBottom: "12px" } },
-        React.createElement("label", { style: labelStyle }, t(LABELS.config.proxyUrl, locale)),
-        React.createElement("input", {
-          type: "url",
-          value: formData.proxyUrl,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, proxyUrl: e.target.value }),
-          placeholder: DEFAULT_PROXY_URL,
-          style: { ...inputStyle, borderColor: errors.proxyUrl ? "var(--destructive)" : undefined },
-        }),
-        errors.proxyUrl && React.createElement("div", { style: errorStyle }, errors.proxyUrl)
-      ),
+        {/* Proxy URL */}
+        {formData.useProxy && (
+          <div style={{ marginBottom: "12px" }}>
+            <label style={labelStyle}>{t(LABELS.config.proxyUrl, locale)}</label>
+            <input
+              type="url"
+              value={formData.proxyUrl}
+              onChange={(e) => setFormData({ ...formData, proxyUrl: e.target.value })}
+              placeholder={DEFAULT_PROXY_URL}
+              style={{ ...inputStyle, borderColor: errors.proxyUrl ? "var(--destructive)" : undefined }}
+            />
+            {errors.proxyUrl && <div style={errorStyle}>{errors.proxyUrl}</div>}
+          </div>
+        )}
 
-      // Base URL
-      React.createElement("div", { style: { marginBottom: "12px" } },
-        React.createElement("label", { style: labelStyle }, t(LABELS.config.baseUrl, locale)),
-        React.createElement("input", {
-          type: "url",
-          value: formData.baseUrl,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, baseUrl: e.target.value }),
-          placeholder: t(LABELS.config.baseUrlPlaceholder, locale),
-          style: { ...inputStyle, borderColor: errors.baseUrl ? "var(--destructive)" : undefined },
-        }),
-        errors.baseUrl && React.createElement("div", { style: errorStyle }, errors.baseUrl)
-      ),
+        {/* Base URL */}
+        <div style={{ marginBottom: "12px" }}>
+          <label style={labelStyle}>{t(LABELS.config.baseUrl, locale)}</label>
+          <input
+            type="url"
+            value={formData.baseUrl}
+            onChange={(e) => setFormData({ ...formData, baseUrl: e.target.value })}
+            placeholder={t(LABELS.config.baseUrlPlaceholder, locale)}
+            style={{ ...inputStyle, borderColor: errors.baseUrl ? "var(--destructive)" : undefined }}
+          />
+          {errors.baseUrl && <div style={errorStyle}>{errors.baseUrl}</div>}
+        </div>
 
-      // Auth Token + Test Connection
-      React.createElement("div", { style: { marginBottom: "12px" } },
-        React.createElement("div", {
-          style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" },
-        },
-          React.createElement("label", { style: labelStyle }, t(LABELS.config.authToken, locale)),
-          React.createElement("span", { style: testPillStyle(testStatus) },
-            testDot(testStatus),
-            testStatus === "connected" ? t(LABELS.config.testConnected, locale)
-              : testStatus === "failed" ? t(LABELS.config.testFailed, locale)
-              : testStatus === "testing" ? t(LABELS.config.testing, locale)
-              : t(LABELS.config.testNotTested, locale)
-          )
-        ),
-        React.createElement("div", { style: { position: "relative" } },
-          React.createElement("input", {
-            type: showToken ? "text" : "password",
-            value: formData.authToken,
-            onChange: (e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, authToken: e.target.value }),
-            placeholder: t(LABELS.config.authTokenPlaceholder, locale),
-            style: { ...inputStyle, paddingRight: "50px", borderColor: errors.authToken ? "var(--destructive)" : undefined },
-          }),
-          React.createElement("button", {
-            type: "button",
-            onClick: () => setShowToken(!showToken),
-            style: {
-              position: "absolute",
-              right: "8px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              background: "none",
-              border: "none",
+        {/* Auth Token + Test Connection */}
+        <div style={{ marginBottom: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+            <label style={labelStyle}>{t(LABELS.config.authToken, locale)}</label>
+            <span style={getTestPillStyle(testStatus)}>
+              <TestDot status={testStatus} />
+              {testStatus === "connected" ? t(LABELS.config.testConnected, locale)
+                : testStatus === "failed" ? t(LABELS.config.testFailed, locale)
+                : testStatus === "testing" ? t(LABELS.config.testing, locale)
+                : t(LABELS.config.testNotTested, locale)}
+            </span>
+          </div>
+          <div style={{ position: "relative" }}>
+            <input
+              type={showToken ? "text" : "password"}
+              value={formData.authToken}
+              onChange={(e) => setFormData({ ...formData, authToken: e.target.value })}
+              placeholder={t(LABELS.config.authTokenPlaceholder, locale)}
+              style={{ ...inputStyle, paddingRight: "50px", borderColor: errors.authToken ? "var(--destructive)" : undefined }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowToken(!showToken)}
+              style={{
+                position: "absolute",
+                right: "8px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--muted-foreground)",
+                fontSize: "12px",
+              }}
+            >
+              {showToken ? t(LABELS.config.hideToken, locale) : t(LABELS.config.showToken, locale)}
+            </button>
+          </div>
+          {errors.authToken && <div style={errorStyle}>{errors.authToken}</div>}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" }}>
+            <button
+              type="button"
+              onClick={handleTest}
+              disabled={testStatus === "testing" || !formData.baseUrl.trim() || !formData.authToken.trim()}
+              style={{
+                padding: "6px 12px",
+                fontSize: "12px",
+                fontWeight: 500,
+                borderRadius: "6px",
+                border: "1px solid var(--border)",
+                background: testStatus === "testing" ? "var(--muted)" : "var(--secondary)",
+                color: "var(--secondary-foreground)",
+                cursor: testStatus === "testing" ? "wait" : "pointer",
+                opacity: (!formData.baseUrl.trim() || !formData.authToken.trim()) ? 0.5 : 1,
+              }}
+            >
+              {testStatus === "testing" ? t(LABELS.config.testing, locale) : t(LABELS.config.testConnection, locale)}
+            </button>
+            {testStatus === "failed" && testReason && (
+              <span style={{ fontSize: "12px", color: "var(--destructive)" }}>{testReason}</span>
+            )}
+          </div>
+        </div>
+
+        {/* User ID */}
+        <div style={{ marginBottom: "12px" }}>
+          <label style={labelStyle}>{t(LABELS.config.userId, locale)}</label>
+          <input
+            type="text"
+            value={formData.userId}
+            onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
+            placeholder={t(LABELS.config.userIdPlaceholder, locale)}
+            style={{ ...inputStyle, borderColor: errors.userId ? "var(--destructive)" : undefined }}
+          />
+          {errors.userId && <div style={errorStyle}>{errors.userId}</div>}
+        </div>
+
+        {/* Workspace / Space selector */}
+        <div style={{ marginBottom: "16px" }}>
+          <label style={labelStyle}>{t(LABELS.config.workspace, locale)}</label>
+          <select
+            value={formData.workspaceId ?? ""}
+            onChange={(e) => setFormData({ ...formData, workspaceId: e.target.value })}
+            style={{
+              ...inputStyle,
               cursor: "pointer",
-              color: "var(--muted-foreground)",
-              fontSize: "12px",
-            },
-          }, showToken ? t(LABELS.config.hideToken, locale) : t(LABELS.config.showToken, locale))
-        ),
-        errors.authToken && React.createElement("div", { style: errorStyle }, errors.authToken),
-        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" } },
-          React.createElement("button", {
-            type: "button",
-            onClick: handleTest,
-            disabled: testStatus === "testing" || !formData.baseUrl.trim() || !formData.authToken.trim(),
-            style: {
-              padding: "6px 12px",
-              fontSize: "12px",
-              fontWeight: 500,
-              borderRadius: "6px",
-              border: "1px solid var(--border)",
-              background: testStatus === "testing" ? "var(--muted)" : "var(--secondary)",
-              color: "var(--secondary-foreground)",
-              cursor: testStatus === "testing" ? "wait" : "pointer",
-              opacity: (!formData.baseUrl.trim() || !formData.authToken.trim()) ? 0.5 : 1,
-            },
-          }, testStatus === "testing" ? t(LABELS.config.testing, locale) : t(LABELS.config.testConnection, locale)),
-          testStatus === "failed" && testReason && React.createElement("span", {
-            style: { fontSize: "12px", color: "var(--destructive)" },
-          }, testReason)
-        )
-      ),
+              appearance: "auto",
+            }}
+          >
+            <option value="">{t(LABELS.config.workspaceEmpty, locale)}</option>
+            {formData.workspaceId && <option value={formData.workspaceId}>{formData.workspaceId}</option>}
+          </select>
+        </div>
 
-      // User ID
-      React.createElement("div", { style: { marginBottom: "12px" } },
-        React.createElement("label", { style: labelStyle }, t(LABELS.config.userId, locale)),
-        React.createElement("input", {
-          type: "text",
-          value: formData.userId,
-          onChange: (e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, userId: e.target.value }),
-          placeholder: t(LABELS.config.userIdPlaceholder, locale),
-          style: { ...inputStyle, borderColor: errors.userId ? "var(--destructive)" : undefined },
-        }),
-        errors.userId && React.createElement("div", { style: errorStyle }, errors.userId)
-      ),
-
-      // Workspace / Space selector
-      // Note: workspaces aren't auto-fetched in this pass (that would require
-      // an additional API call surface). We expose a free-form select with the
-      // saved value as the only option so the user can review/change it.
-      // When a future API exists, replace the <option> list with a fetched set.
-      React.createElement("div", { style: { marginBottom: "16px" } },
-        React.createElement("label", { style: labelStyle }, t(LABELS.config.workspace, locale)),
-        React.createElement("select", {
-          value: formData.workspaceId ?? "",
-          onChange: (e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, workspaceId: e.target.value }),
-          style: {
-            ...inputStyle,
-            cursor: "pointer",
-            appearance: "auto",
-          },
-        },
-          React.createElement("option", { value: "" }, t(LABELS.config.workspaceEmpty, locale)),
-          formData.workspaceId && React.createElement("option", { value: formData.workspaceId }, formData.workspaceId)
-        )
-      ),
-
-      // Buttons
-      React.createElement("div", { style: { display: "flex", justifyContent: "space-between", gap: "8px" } },
-        React.createElement("button", {
-          type: "button",
-          onClick: handleClear,
-          style: {
-            padding: "8px 16px",
-            borderRadius: "6px",
-            border: "1px solid var(--border)",
-            background: "transparent",
-            cursor: "pointer",
-            color: "var(--destructive)",
-          },
-        }, t(LABELS.config.clear, locale)),
-        React.createElement("div", { style: { display: "flex", gap: "8px" } },
-          React.createElement("button", {
-            type: "button",
-            onClick: onClose,
-            style: {
+        {/* Buttons */}
+        <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
+          <button
+            type="button"
+            onClick={handleClear}
+            style={{
               padding: "8px 16px",
               borderRadius: "6px",
               border: "1px solid var(--border)",
               background: "transparent",
               cursor: "pointer",
-              color: "var(--foreground)",
-            },
-          }, t(LABELS.config.cancel, locale)),
-          React.createElement("button", {
-            type: "button",
-            onClick: handleSave,
-            disabled: isSaving,
-            style: {
-              padding: "8px 16px",
-              borderRadius: "6px",
-              border: "none",
-              background: "var(--primary)",
-              color: "var(--primary-foreground)",
-              cursor: isSaving ? "not-allowed" : "pointer",
-              opacity: isSaving ? 0.7 : 1,
-            },
-          }, isSaving ? "..." : t(LABELS.config.save, locale))
-        )
-      )
+              color: "var(--destructive)",
+            }}
+          >
+            {t(LABELS.config.clear, locale)}
+          </button>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                padding: "8px 16px",
+                borderRadius: "6px",
+                border: "1px solid var(--border)",
+                background: "transparent",
+                cursor: "pointer",
+                color: "var(--foreground)",
+              }}
+            >
+              {t(LABELS.config.cancel, locale)}
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={isSaving}
+              style={{
+                padding: "8px 16px",
+                borderRadius: "6px",
+                border: "none",
+                background: "var(--primary)",
+                color: "var(--primary-foreground)",
+                cursor: isSaving ? "not-allowed" : "pointer",
+                opacity: isSaving ? 0.7 : 1,
+              }}
+            >
+              {isSaving ? "..." : t(LABELS.config.save, locale)}
+            </button>
+          </div>
+        </div>
+      </form>
     );
   }
 
@@ -409,6 +390,5 @@ export function LeanixConfigModal(props: LeanixConfigModalProps) {
 }
 
 // classifyError is re-exported here so any future sibling UI in this file can
-// reuse it without going through the services barrel. (Currently unused
-// outside; kept to make error mapping a single source of truth.)
+// reuse it without going through the services barrel.
 export { classifyError };

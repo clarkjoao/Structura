@@ -7,12 +7,7 @@ import { exportDiagram, getDiagramUrl, exportDrawio, classifyError } from "../se
 import { useLeanixConfig } from "../hooks/useLeanixConfig";
 
 // Lucide-style SVG icons
-const iconBaseStyle = {
-  display: "inline",
-  verticalAlign: "middle" as const,
-};
-
-const HardDriveUploadIcon = ({ size = 16, style }: { size?: number; style?: React.CSSProperties }) => (
+const HardDriveUploadIcon = ({ size = 16, className }: { size?: number; className?: string }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width={size}
@@ -23,7 +18,7 @@ const HardDriveUploadIcon = ({ size = 16, style }: { size?: number; style?: Reac
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
-    style={{ ...iconBaseStyle, ...style }}
+    className={className}
   >
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
     <polyline points="17 8 12 3 7 8" />
@@ -31,7 +26,7 @@ const HardDriveUploadIcon = ({ size = 16, style }: { size?: number; style?: Reac
   </svg>
 );
 
-const SettingsIcon = ({ size = 16 }: { size?: number }) => (
+const SettingsIcon = ({ size = 16, className }: { size?: number; className?: string }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width={size}
@@ -42,6 +37,7 @@ const SettingsIcon = ({ size = 16 }: { size?: number }) => (
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
+    className={className}
   >
     <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
     <circle cx="12" cy="12" r="3" />
@@ -100,7 +96,6 @@ function formatRelative(ms: number, locale: Locale): string {
 }
 
 function approxKb(graphXml: string): string {
-  // Approximate by UTF-16 byte count, then round to KB.
   const bytes = graphXml.length * 2;
   const kb = bytes / 1024;
   if (kb < 1) return "<1";
@@ -110,124 +105,57 @@ function approxKb(graphXml: string): string {
 
 /**
  * Abstract preview — a small schematic suggesting the shape of an export.
- * Not a literal render of the diagram.
  */
 function AbstractPreview({ showLabels }: { showLabels: boolean }) {
-  const React = getReact();
-  return React.createElement(
-    "div",
-    {
-      style: {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "10px 8px",
-        background: "#f5f5f5",
-        borderRadius: "6px",
-        minHeight: "76px",
-      },
-    },
-    React.createElement(
-      "svg",
-      {
-        width: "180",
-        height: "56",
-        viewBox: "0 0 180 56",
-        xmlns: "http://www.w3.org/2000/svg",
-        "aria-hidden": true,
-      },
-      // Box 1
-      React.createElement("rect", {
-        key: "b1",
-        x: 6, y: 16, width: 44, height: 24, rx: 4,
-        fill: "#ffffff",
-        stroke: "#d1d5db",
-        strokeWidth: 1.5,
-      }),
-      // Box 2
-      React.createElement("rect", {
-        key: "b2",
-        x: 72, y: 8, width: 44, height: 24, rx: 4,
-        fill: "#ffffff",
-        stroke: "#d1d5db",
-        strokeWidth: 1.5,
-      }),
-      // Box 3
-      React.createElement("rect", {
-        key: "b3",
-        x: 72, y: 36, width: 44, height: 24, rx: 4,
-        fill: "#ffffff",
-        stroke: "#d1d5db",
-        strokeWidth: 1.5,
-      }),
-      // Box 4
-      React.createElement("rect", {
-        key: "b4",
-        x: 138, y: 16, width: 36, height: 24, rx: 4,
-        fill: "#ffffff",
-        stroke: "#d1d5db",
-        strokeWidth: 1.5,
-      }),
-      // Edge 1->2
-      React.createElement("path", {
-        key: "e12",
-        d: "M50 24 L70 16",
-        stroke: "#6b7280",
-        strokeWidth: 1.2,
-        fill: "none",
-        markerEnd: "url(#arrowhead)",
-      }),
-      // Edge 1->3
-      React.createElement("path", {
-        key: "e13",
-        d: "M50 32 L70 44",
-        stroke: "#6b7280",
-        strokeWidth: 1.2,
-        fill: "none",
-        markerEnd: "url(#arrowhead)",
-      }),
-      // Edge 2->4
-      React.createElement("path", {
-        key: "e24",
-        d: "M116 20 L136 24",
-        stroke: "#6b7280",
-        strokeWidth: 1.2,
-        fill: "none",
-        markerEnd: "url(#arrowhead)",
-      }),
-      // Edge 3->4
-      React.createElement("path", {
-        key: "e34",
-        d: "M116 44 L136 32",
-        stroke: "#6b7280",
-        strokeWidth: 1.2,
-        fill: "none",
-        markerEnd: "url(#arrowhead)",
-      }),
-      // Arrow marker
-      React.createElement("defs", { key: "defs" },
-        React.createElement("marker", {
-          id: "arrowhead",
-          viewBox: "0 0 8 8",
-          refX: 7, refY: 4,
-          markerWidth: 6, markerHeight: 6,
-          orient: "auto",
-        },
-          React.createElement("path", {
-            d: "M0 0 L8 4 L0 8 z",
-            fill: "#6b7280",
-          })
-        )
-      ),
-      // Labels under the boxes if enabled
-      showLabels && React.createElement(
-        "g",
-        { key: "labels" },
-        React.createElement("text", { x: 28, y: 50, textAnchor: "middle", fontSize: "6", fill: "#6b7280" }, "label"),
-        React.createElement("text", { x: 94, y: 50, textAnchor: "middle", fontSize: "6", fill: "#6b7280" }, "label"),
-        React.createElement("text", { x: 156, y: 50, textAnchor: "middle", fontSize: "6", fill: "#6b7280" }, "label")
-      )
-    )
+  return (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "10px 8px",
+      background: "#f5f5f5",
+      borderRadius: "6px",
+      minHeight: "76px",
+    }}>
+      <svg
+        width="180"
+        height="56"
+        viewBox="0 0 180 56"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+      >
+        {/* Box 1 */}
+        <rect key="b1" x={6} y={16} width={44} height={24} rx={4} fill="#ffffff" stroke="#d1d5db" strokeWidth={1.5} />
+        {/* Box 2 */}
+        <rect key="b2" x={72} y={8} width={44} height={24} rx={4} fill="#ffffff" stroke="#d1d5db" strokeWidth={1.5} />
+        {/* Box 3 */}
+        <rect key="b3" x={72} y={36} width={44} height={24} rx={4} fill="#ffffff" stroke="#d1d5db" strokeWidth={1.5} />
+        {/* Box 4 */}
+        <rect key="b4" x={138} y={16} width={36} height={24} rx={4} fill="#ffffff" stroke="#d1d5db" strokeWidth={1.5} />
+        {/* Edge 1->2 */}
+        <path key="e12" d="M50 24 L70 16" stroke="#6b7280" strokeWidth={1.2} fill="none" markerEnd="url(#arrowhead)" />
+        {/* Edge 1->3 */}
+        <path key="e13" d="M50 32 L70 44" stroke="#6b7280" strokeWidth={1.2} fill="none" markerEnd="url(#arrowhead)" />
+        {/* Edge 2->4 */}
+        <path key="e24" d="M116 20 L136 24" stroke="#6b7280" strokeWidth={1.2} fill="none" markerEnd="url(#arrowhead)" />
+        {/* Edge 3->4 */}
+        <path key="e34" d="M116 44 L136 32" stroke="#6b7280" strokeWidth={1.2} fill="none" markerEnd="url(#arrowhead)" />
+        {/* Arrow marker */}
+        <defs>
+          <marker id="arrowhead" viewBox="0 0 8 8" refX={7} refY={4} markerWidth={6} markerHeight={6} orient="auto">
+            <path d="M0 0 L8 4 L0 8 z" fill="#6b7280" />
+          </marker>
+        </defs>
+        {/* Labels under the boxes if enabled */}
+        {showLabels && (
+          <g>
+            <text x={28} y={50} textAnchor="middle" fontSize={6} fill="#6b7280">label</text>
+            <text x={94} y={50} textAnchor="middle" fontSize={6} fill="#6b7280">label</text>
+            <text x={156} y={50} textAnchor="middle" fontSize={6} fill="#6b7280">label</text>
+          </g>
+        )}
+      </svg>
+    </div>
   );
 }
 
@@ -287,7 +215,6 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
 
   // Drag handlers
   const handleMouseDown = React.useCallback((e: React.MouseEvent) => {
-    // Only start dragging if clicking on the header area
     if ((e.target as HTMLElement).closest('[data-drag-handle]')) {
       setIsDragging(true);
       const rect = panelRef.current?.getBoundingClientRect();
@@ -406,12 +333,11 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
     sendTitle = t(LABELS.status.sending, locale);
   }
 
-  return React.createElement(
-    "div",
-    {
-      ref: panelRef,
-      onMouseDown: handleMouseDown,
-      style: {
+  return (
+    <div
+      ref={panelRef}
+      onMouseDown={handleMouseDown}
+      style={{
         position: "fixed",
         left: position.x,
         top: position.y,
@@ -424,14 +350,12 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
         overflow: "hidden",
         userSelect: isDragging ? "none" : "auto",
         cursor: isDragging ? "grabbing" : "default",
-      },
-    },
-    // Header (draggable)
-    React.createElement(
-      "div",
-      {
-        "data-drag-handle": true,
-        style: {
+      }}
+    >
+      {/* Header (draggable) */}
+      <div
+        data-drag-handle
+        style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -439,29 +363,21 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
           borderBottom: "1px solid #e5e7eb",
           background: "#f9fafb",
           cursor: "grab",
-        },
-      },
-      React.createElement(
-        "div",
-        { style: { display: "flex", alignItems: "center", gap: "6px" } },
-        React.createElement(HardDriveUploadIcon, { size: 16 }),
-        React.createElement(
-          "span",
-          { style: { fontSize: "13px", fontWeight: 600, color: "#111827" } },
-          t(LABELS.panel.title, locale)
-        )
-      ),
-      React.createElement(
-        "div",
-        { style: { display: "flex", gap: "2px" } },
-        React.createElement(
-          "button",
-          {
-            type: "button",
-            onClick: onMinimize,
-            title: "Minimizar",
-            "aria-label": "Minimizar",
-            style: {
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <HardDriveUploadIcon size={16} />
+          <span style={{ fontSize: "13px", fontWeight: 600, color: "#111827" }}>
+            {t(LABELS.panel.title, locale)}
+          </span>
+        </div>
+        <div style={{ display: "flex", gap: "2px" }}>
+          <button
+            type="button"
+            onClick={onMinimize}
+            title="Minimizar"
+            aria-label="Minimizar"
+            style={{
               background: "transparent",
               border: "none",
               cursor: "pointer",
@@ -469,18 +385,16 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
               borderRadius: "4px",
               color: "#6b7280",
               fontSize: "13px",
-            },
-          },
-          "—"
-        ),
-        React.createElement(
-          "button",
-          {
-            type: "button",
-            onClick: openConfigModal,
-            title: t(LABELS.config.title, locale),
-            "aria-label": t(LABELS.panel.settingsAria, locale),
-            style: {
+            }}
+          >
+            —
+          </button>
+          <button
+            type="button"
+            onClick={openConfigModal}
+            title={t(LABELS.config.title, locale)}
+            aria-label={t(LABELS.panel.settingsAria, locale)}
+            style={{
               background: "transparent",
               border: "none",
               cursor: "pointer",
@@ -488,18 +402,16 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
               borderRadius: "4px",
               color: "#6b7280",
               fontSize: "13px",
-            },
-          },
-          React.createElement(SettingsIcon, { size: 16 }),
-        ),
-        React.createElement(
-          "button",
-          {
-            type: "button",
-            onClick: onClose,
-            title: t(LABELS.panel.closeAria, locale),
-            "aria-label": t(LABELS.panel.closeAria, locale),
-            style: {
+            }}
+          >
+            <SettingsIcon size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            title={t(LABELS.panel.closeAria, locale)}
+            aria-label={t(LABELS.panel.closeAria, locale)}
+            style={{
               background: "transparent",
               border: "none",
               cursor: "pointer",
@@ -507,84 +419,67 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
               borderRadius: "4px",
               color: "#6b7280",
               fontSize: "13px",
-            },
-          },
-          "✕"
-        )
-      )
-    ),
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      </div>
 
-    // Body
-    React.createElement(
-      "div",
-      { style: { padding: "12px", display: "flex", flexDirection: "column", gap: "10px" } },
-
-      // Diagram info
-      React.createElement(
-        "div",
-        { style: { display: "flex", flexDirection: "column", gap: "2px" } },
-        React.createElement(
-          "div",
-          {
-            style: {
+      {/* Body */}
+      <div style={{ padding: "12px", display: "flex", flexDirection: "column", gap: "10px" }}>
+        {/* Diagram info */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+          <div
+            style={{
               fontSize: "13px",
               fontWeight: 500,
               color: "#111827",
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
-            },
-            title: diagram?.name ?? "",
-          },
-          diagram?.name || "—"
-        ),
-        React.createElement(
-          "div",
-          { style: { display: "flex", gap: "8px", fontSize: "11px", color: "#6b7280" } },
-          React.createElement("span", null, `${componentCount} ${t(LABELS.panel.components, locale)}`),
-          React.createElement("span", null, "·"),
-          React.createElement("span", null, `${connectionCount} ${t(LABELS.panel.connections, locale)}`),
-          React.createElement("span", null, "·"),
-          React.createElement("span", null, `${sizeKb} KB`)
-        )
-      ),
+            }}
+            title={diagram?.name ?? ""}
+          >
+            {diagram?.name || "—"}
+          </div>
+          <div style={{ display: "flex", gap: "8px", fontSize: "11px", color: "#6b7280" }}>
+            <span>{`${componentCount} ${t(LABELS.panel.components, locale)}`}</span>
+            <span>·</span>
+            <span>{`${connectionCount} ${t(LABELS.panel.connections, locale)}`}</span>
+            <span>·</span>
+            <span>{`${sizeKb} KB`}</span>
+          </div>
+        </div>
 
-      // Abstract preview
-      React.createElement(AbstractPreview, { showLabels: includeLabels }),
+        {/* Abstract preview */}
+        <AbstractPreview showLabels={includeLabels} />
 
-      // Options
-      React.createElement(
-        "div",
-        { style: { display: "flex", flexDirection: "column", gap: "6px" } },
-        React.createElement(
-          "label",
-          { style: { display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer", color: "#111827" } },
-          React.createElement("input", {
-            type: "checkbox",
-            checked: includeLabels,
-            onChange: (e: React.ChangeEvent<HTMLInputElement>) => setIncludeLabels(e.target.checked),
-            style: { width: "14px", height: "14px", accentColor: "#3b82f6" },
-          }),
-          t(LABELS.panel.includeLabels, locale)
-        ),
-        React.createElement(
-          "label",
-          { style: { display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer", color: "#111827" } },
-          React.createElement("input", {
-            type: "checkbox",
-            checked: autoArrange,
-            onChange: (e: React.ChangeEvent<HTMLInputElement>) => setAutoArrange(e.target.checked),
-            style: { width: "14px", height: "14px", accentColor: "#3b82f6" },
-          }),
-          t(LABELS.panel.autoArrange, locale)
-        )
-      ),
+        {/* Options */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer", color: "#111827" }}>
+            <input
+              type="checkbox"
+              checked={includeLabels}
+              onChange={(e) => setIncludeLabels(e.target.checked)}
+              style={{ width: "14px", height: "14px", accentColor: "#3b82f6" }}
+            />
+            {t(LABELS.panel.includeLabels, locale)}
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", cursor: "pointer", color: "#111827" }}>
+            <input
+              type="checkbox"
+              checked={autoArrange}
+              onChange={(e) => setAutoArrange(e.target.checked)}
+              style={{ width: "14px", height: "14px", accentColor: "#3b82f6" }}
+            />
+            {t(LABELS.panel.autoArrange, locale)}
+          </label>
+        </div>
 
-      // Status / feedback area
-      status.kind === "sending" && React.createElement(
-        "div",
-        {
-          style: {
+        {/* Status / feedback area */}
+        {status.kind === "sending" && (
+          <div style={{
             padding: "8px 10px",
             background: "#f3f4f6",
             border: "1px solid #e5e7eb",
@@ -592,36 +487,29 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
             display: "flex",
             flexDirection: "column",
             gap: "6px",
-          },
-        },
-        React.createElement(
-          "div",
-          { style: { display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#111827" } },
-          React.createElement("span", { style: { fontSize: "12px" } }, "⏳"),
-          t(LABELS.status.sending, locale)
-        ),
-        React.createElement("div", {
-          style: {
-            width: "100%", height: "4px", background: "#e5e7eb", borderRadius: "999px", overflow: "hidden",
-          },
-        },
-          React.createElement("div", {
-            ref: progressRef,
-            style: {
-              width: "40%", height: "100%",
-              background: "#3b82f6",
-              borderRadius: "999px",
-              transform: "translateX(-100%)",
-              willChange: "transform",
-            },
-          })
-        )
-      ),
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#111827" }}>
+              <span style={{ fontSize: "12px" }}>⏳</span>
+              {t(LABELS.status.sending, locale)}
+            </div>
+            <div style={{ width: "100%", height: "4px", background: "#e5e7eb", borderRadius: "999px", overflow: "hidden" }}>
+              <div
+                ref={progressRef}
+                style={{
+                  width: "40%",
+                  height: "100%",
+                  background: "#3b82f6",
+                  borderRadius: "999px",
+                  transform: "translateX(-100%)",
+                  willChange: "transform",
+                }}
+              />
+            </div>
+          </div>
+        )}
 
-      status.kind === "success" && React.createElement(
-        "div",
-        {
-          style: {
+        {status.kind === "success" && (
+          <div style={{
             padding: "8px 10px",
             background: "#eff6ff",
             border: "1px solid #bfdbfe",
@@ -629,74 +517,64 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
             display: "flex",
             flexDirection: "column",
             gap: "6px",
-          },
-        },
-        React.createElement(
-          "div",
-          { style: { display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#111827" } },
-          React.createElement("span", { style: { color: "#3b82f6", fontSize: "13px" } }, "✓"),
-          t(LABELS.status.success, locale)
-        ),
-        React.createElement(
-          "div",
-          {
-            style: {
-              fontSize: "11px",
-              color: "#6b7280",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            },
-            title: status.diagramName,
-          },
-          `${status.action === "created" ? t(LABELS.status.successCreated, locale) : t(LABELS.status.successUpdated, locale)} · ${status.diagramName}`
-        ),
-        React.createElement(
-          "div",
-          { style: { display: "flex", gap: "6px" } },
-          currentConfig && React.createElement(
-            "button",
-            {
-              type: "button",
-              onClick: () => window.open(getDiagramUrl(currentConfig, status.bookmarkId), "_blank"),
-              style: {
-                flex: 1,
-                padding: "5px 8px",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#111827" }}>
+              <span style={{ color: "#3b82f6", fontSize: "13px" }}>✓</span>
+              {t(LABELS.status.success, locale)}
+            </div>
+            <div
+              style={{
                 fontSize: "11px",
-                fontWeight: 500,
-                borderRadius: "4px",
-                border: "none",
-                background: "#3b82f6",
-                color: "#ffffff",
-                cursor: "pointer",
-              },
-            },
-            t(LABELS.status.openInLeanix, locale)
-          ),
-          React.createElement(
-            "button",
-            {
-              type: "button",
-              onClick: () => setStatus({ kind: "idle" }),
-              style: {
-                padding: "5px 8px",
-                fontSize: "11px",
-                borderRadius: "4px",
-                border: "1px solid #e5e7eb",
-                background: "transparent",
                 color: "#6b7280",
-                cursor: "pointer",
-              },
-            },
-            t(LABELS.status.dismiss, locale)
-          )
-        )
-      ),
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+              title={status.diagramName}
+            >
+              {`${status.action === "created" ? t(LABELS.status.successCreated, locale) : t(LABELS.status.successUpdated, locale)} · ${status.diagramName}`}
+            </div>
+            <div style={{ display: "flex", gap: "6px" }}>
+              {currentConfig && (
+                <button
+                  type="button"
+                  onClick={() => window.open(getDiagramUrl(currentConfig, status.bookmarkId), "_blank")}
+                  style={{
+                    flex: 1,
+                    padding: "5px 8px",
+                    fontSize: "11px",
+                    fontWeight: 500,
+                    borderRadius: "4px",
+                    border: "none",
+                    background: "#3b82f6",
+                    color: "#ffffff",
+                    cursor: "pointer",
+                  }}
+                >
+                  {t(LABELS.status.openInLeanix, locale)}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setStatus({ kind: "idle" })}
+                style={{
+                  padding: "5px 8px",
+                  fontSize: "11px",
+                  borderRadius: "4px",
+                  border: "1px solid #e5e7eb",
+                  background: "transparent",
+                  color: "#6b7280",
+                  cursor: "pointer",
+                }}
+              >
+                {t(LABELS.status.dismiss, locale)}
+              </button>
+            </div>
+          </div>
+        )}
 
-      status.kind === "error" && React.createElement(
-        "div",
-        {
-          style: {
+        {status.kind === "error" && (
+          <div style={{
             padding: "8px 10px",
             background: "#fef2f2",
             border: "1px solid #fecaca",
@@ -704,101 +582,83 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
             display: "flex",
             flexDirection: "column",
             gap: "6px",
-          },
-        },
-        React.createElement(
-          "div",
-          { style: { display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#dc2626", fontWeight: 500 } },
-          React.createElement("span", null, "⚠"),
-          status.reason
-        ),
-        React.createElement(
-          "div",
-          { style: { display: "flex", gap: "6px" } },
-          React.createElement(
-            "button",
-            {
-              type: "button",
-              onClick: handleSend,
-              style: {
-                flex: 1,
-                padding: "5px 8px",
-                fontSize: "11px",
-                fontWeight: 500,
-                borderRadius: "4px",
-                border: "none",
-                background: "#dc2626",
-                color: "#ffffff",
-                cursor: "pointer",
-              },
-            },
-            t(LABELS.status.retry, locale)
-          ),
-          React.createElement(
-            "button",
-            {
-              type: "button",
-              onClick: () => setStatus({ kind: "idle" }),
-              style: {
-                padding: "5px 8px",
-                fontSize: "11px",
-                borderRadius: "4px",
-                border: "1px solid #e5e7eb",
-                background: "transparent",
-                color: "#6b7280",
-                cursor: "pointer",
-              },
-            },
-            t(LABELS.status.dismiss, locale)
-          )
-        )
-      ),
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#dc2626", fontWeight: 500 }}>
+              <span>⚠</span>
+              {status.reason}
+            </div>
+            <div style={{ display: "flex", gap: "6px" }}>
+              <button
+                type="button"
+                onClick={handleSend}
+                style={{
+                  flex: 1,
+                  padding: "5px 8px",
+                  fontSize: "11px",
+                  fontWeight: 500,
+                  borderRadius: "4px",
+                  border: "none",
+                  background: "#dc2626",
+                  color: "#ffffff",
+                  cursor: "pointer",
+                }}
+              >
+                {t(LABELS.status.retry, locale)}
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatus({ kind: "idle" })}
+                style={{
+                  padding: "5px 8px",
+                  fontSize: "11px",
+                  borderRadius: "4px",
+                  border: "1px solid #e5e7eb",
+                  background: "transparent",
+                  color: "#6b7280",
+                  cursor: "pointer",
+                }}
+              >
+                {t(LABELS.status.dismiss, locale)}
+              </button>
+            </div>
+          </div>
+        )}
 
-      // Footer: last-sent + send button
-      React.createElement(
-        "div",
-        {
-          style: {
+        {/* Footer: last-sent + send button */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "8px",
+          borderTop: "1px solid #e5e7eb",
+          paddingTop: "10px",
+          marginTop: "2px",
+        }}>
+          <div style={{
+            fontSize: "11px",
+            color: "#6b7280",
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
-            gap: "8px",
-            borderTop: "1px solid #e5e7eb",
-            paddingTop: "10px",
-            marginTop: "2px",
-          },
-        },
-        React.createElement(
-          "div",
-          {
-            style: {
-              fontSize: "11px",
-              color: "#6b7280",
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-              minWidth: 0,
-            },
-          },
-          lastSentAt
-            ? React.createElement(
-                "span",
-                {
-                  title: new Date(lastSentAt).toLocaleString(),
-                  style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
-                },
-                `${t(LABELS.panel.lastSent, locale)} ${formatRelative(lastSentAt, locale)}`
-              )
-            : React.createElement("span", null, t(LABELS.panel.lastSentNever, locale))
-        ),
-        React.createElement(
-          "button",
-          {
-            type: "button",
-            onClick: sendDisabled ? undefined : handleSend,
-            disabled: sendDisabled,
-            title: sendTitle,
-            style: {
+            gap: "4px",
+            minWidth: 0,
+          }}>
+            {lastSentAt ? (
+              <span
+                title={new Date(lastSentAt).toLocaleString()}
+                style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+              >
+                {`${t(LABELS.panel.lastSent, locale)} ${formatRelative(lastSentAt, locale)}`}
+              </span>
+            ) : (
+              <span>{t(LABELS.panel.lastSentNever, locale)}</span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={sendDisabled ? undefined : handleSend}
+            disabled={sendDisabled}
+            title={sendTitle}
+            style={{
               padding: "6px 12px",
               fontSize: "12px",
               fontWeight: 500,
@@ -809,17 +669,20 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
               cursor: sendDisabled ? "not-allowed" : "pointer",
               opacity: sendDisabled ? 0.7 : 1,
               transition: "opacity 0.15s",
-            },
-          },
-          status.kind === "sending"
-            ? "..."
-            : React.createElement("span", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" } },
-                React.createElement(HardDriveUploadIcon, { size: 14 }),
-                t(LABELS.toolbar.button, locale)
-              )
-        )
-      )
-    )
+            }}
+          >
+            {status.kind === "sending" ? (
+              "..."
+            ) : (
+              <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                <HardDriveUploadIcon size={14} />
+                {t(LABELS.toolbar.button, locale)}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -829,14 +692,12 @@ interface MinimizedPanelProps extends PluginPanelProps {
 }
 
 function MinimizedPanel({ context, position, onExpand }: MinimizedPanelProps) {
-  const React = getReact();
   const locale = (context?.locale || "en") as Locale;
   const { isConfigured } = useLeanixConfig();
 
-  return React.createElement(
-    "div",
-    {
-      style: {
+  return (
+    <div
+      style={{
         position: "fixed",
         left: position.x,
         top: position.y,
@@ -847,48 +708,36 @@ function MinimizedPanel({ context, position, onExpand }: MinimizedPanelProps) {
         zIndex: 9999,
         overflow: "hidden",
         cursor: "pointer",
-      },
-    },
-    React.createElement(
-      "div",
-      {
-        onClick: onExpand,
-        style: {
+      }}
+    >
+      <div
+        onClick={onExpand}
+        style={{
           display: "flex",
           alignItems: "center",
           gap: "6px",
           padding: "8px 12px",
           background: "#f9fafb",
-        },
-      },
-      React.createElement(HardDriveUploadIcon, { size: 16 }),
-      React.createElement(
-        "span",
-        { style: { fontSize: "13px", fontWeight: 600, color: "#111827" } },
-        t(LABELS.panel.title, locale)
-      ),
-      isConfigured && React.createElement(
-        "span",
-        {
-          "aria-hidden": true,
-          style: {
-            width: "6px", height: "6px", borderRadius: "999px",
-            background: "#3b82f6",
-          },
-        }
-      ),
-      React.createElement(
-        "span",
-        {
-          style: {
-            marginLeft: "4px",
-            color: "#9ca3af",
-            fontSize: "12px",
-          },
-        },
-        "▼"
-      )
-    )
+        }}
+      >
+        <HardDriveUploadIcon size={16} />
+        <span style={{ fontSize: "13px", fontWeight: 600, color: "#111827" }}>
+          {t(LABELS.panel.title, locale)}
+        </span>
+        {isConfigured && (
+          <span
+            aria-hidden="true"
+            style={{
+              width: "6px",
+              height: "6px",
+              borderRadius: "999px",
+              background: "#3b82f6",
+            }}
+          />
+        )}
+        <span style={{ marginLeft: "4px", color: "#9ca3af", fontSize: "12px" }}>▼</span>
+      </div>
+    </div>
   );
 }
 
@@ -922,57 +771,52 @@ function ToolbarWithPanel({ context }: PluginPanelProps) {
   };
 
   if (panelState === 'hidden') {
-    return React.createElement(
-      "div",
-      { style: { display: "flex", flexDirection: "column", gap: "4px" } },
-      React.createElement(
-        "button",
-        {
-          type: "button",
-          onClick: handleExpand,
-          disabled: !isEditMode,
-          title: !isEditMode
-            ? t(LABELS.toolbar.tooltipReadOnly, locale)
-            : t(LABELS.toolbar.button, locale),
-          className: "flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors",
-        },
-        React.createElement(HardDriveUploadIcon, { size: 14 }),
-        React.createElement("span", null, t(LABELS.toolbar.button, locale)),
-        isConfigured && React.createElement(
-          "span",
-          {
-            "aria-hidden": true,
-            style: {
-              width: "6px", height: "6px", borderRadius: "999px",
-              background: "var(--primary)", marginLeft: "2px",
-            },
-          }
-        )
-      )
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        <button
+          type="button"
+          onClick={handleExpand}
+          disabled={!isEditMode}
+          title={!isEditMode ? t(LABELS.toolbar.tooltipReadOnly, locale) : t(LABELS.toolbar.button, locale)}
+          className="flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
+        >
+          <HardDriveUploadIcon size={14} />
+          <span>{t(LABELS.toolbar.button, locale)}</span>
+          {isConfigured && (
+            <span
+              aria-hidden="true"
+              style={{
+                width: "6px",
+                height: "6px",
+                borderRadius: "999px",
+                background: "var(--primary)",
+                marginLeft: "2px",
+              }}
+            />
+          )}
+        </button>
+      </div>
     );
   }
 
   if (panelState === 'minimized') {
-    return React.createElement(MinimizedPanel, {
-      context,
-      position,
-      onExpand: handleExpand,
-    });
+    return <MinimizedPanel context={context} position={position} onExpand={handleExpand} />;
   }
 
-  return React.createElement(FloatingPanel, {
-    context,
-    position,
-    onPositionChange: setPosition,
-    onMinimize: handleMinimize,
-    onClose: handleClose,
-  });
+  return (
+    <FloatingPanel
+      context={context}
+      position={position}
+      onPositionChange={setPosition}
+      onMinimize={handleMinimize}
+      onClose={handleClose}
+    />
+  );
 }
 
 /**
  * Leanix Toolbar Button Component - wrapper that gets React from host
  */
 export const LeanixToolbarButton: FC<PluginPanelProps> = (props) => {
-  const React = getReact();
-  return React.createElement(ToolbarWithPanel, props);
+  return <ToolbarWithPanel {...props} />;
 };
