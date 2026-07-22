@@ -1,6 +1,6 @@
 import { Component as ReactComponent, useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type { PluginToolbarContext } from "../plugin.types";
+import type { PluginPanelContext } from "../plugin.types";
 import { usePluginPanels } from "../use-plugin-contributions";
 import { resolveLocalizedText } from "../localized-text";
 
@@ -45,12 +45,19 @@ export function PluginToolbarSlot({ slot, isEditMode }: PluginToolbarSlotProps) 
   const { t, i18n } = useTranslation();
   const panels = usePluginPanels(slot);
 
-  const context: PluginToolbarContext = useMemo(
+  const context: PluginPanelContext = useMemo(
     () => ({
+      selection: [],
+      service: null,
+      updateComponent: () => {
+        console.warn("[plugins] updateComponent is not available in canvas-toolbar slot");
+      },
+      updateService: () => {
+        console.warn("[plugins] updateService is not available in canvas-toolbar slot");
+      },
       locale: i18n.language,
-      isEditMode,
     }),
-    [i18n.language, isEditMode],
+    [i18n.language],
   );
 
   if (panels.length === 0) {

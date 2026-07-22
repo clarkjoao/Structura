@@ -1,6 +1,8 @@
 import { Suspense, lazy } from "react";
 import type { EditorProps } from "@monaco-editor/react";
 
+export type { EditorProps } from "@monaco-editor/react";
+
 /**
  * Monaco is ~3.5MB and was previously wired up eagerly in main.tsx, putting it
  * in the initial bundle for every visitor. This wrapper defers both the editor
