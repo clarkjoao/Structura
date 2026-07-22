@@ -208,7 +208,7 @@ export function MermaidImportDialog({ open, onOpenChange, onImport, onImportFlow
               theme="vs-dark"
               height="320px"
               value={text}
-              onChange={(value) => setText(value ?? "")}
+              onChange={(value: Parameters<NonNullable<EditorProps["onChange"]>>[0]) => setText(value ?? "")}
               onMount={handleEditorMount}
               options={{
                 minimap: { enabled: false },
