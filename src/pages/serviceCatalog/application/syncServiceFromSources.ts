@@ -48,7 +48,12 @@ async function fetchGithubRepository(params: {
   if (!githubIdentifier) return null;
   const apiBase = githubConfig?.baseUrl ?? "https://api.github.com";
   const token = githubConfig?.token ?? "";
-  const client = createGithubClient(apiBase, token);
+  const client = createGithubClient({
+    baseUrl: apiBase,
+    token,
+    useProxy: githubConfig?.useProxy,
+    proxyUrl: githubConfig?.useProxy ? githubConfig?.proxyUrl : undefined,
+  });
   return client.getRepository(githubIdentifier);
 }
 

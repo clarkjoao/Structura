@@ -15,6 +15,10 @@ export function GithubConfigForm({ config, onSave, onClear }: Props) {
   const [baseUrl, setBaseUrl] = useState(config?.baseUrl ?? "https://api.github.com");
   const [token, setToken] = useState("");
   const [showToken, setShowToken] = useState(false);
+  const [useProxy, setUseProxy] = useState(config?.useProxy ?? false);
+  const [proxyUrl, setProxyUrl] = useState(
+    config?.proxyUrl ?? "http://localhost:3000/proxy",
+  );
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<
     { ok: true; username: string } | { ok: false; message: string } | null
@@ -25,7 +29,12 @@ export function GithubConfigForm({ config, onSave, onClear }: Props) {
     setTesting(true);
     setTestResult(null);
     try {
-      const client = createGithubClient(baseUrl.replace(/\/+$/, ""), token);
+      const client = createGithubClient({
+        baseUrl: baseUrl.replace(/\/+$/, ""),
+        token,
+        useProxy,
+        proxyUrl: useProxy ? proxyUrl : undefined,
+      });
       const user = await client.getAuthenticatedUser();
       setTestResult({ ok: true, username: user.login });
     } catch (err) {
@@ -39,7 +48,12 @@ export function GithubConfigForm({ config, onSave, onClear }: Props) {
   };
 
   const handleSave = async () => {
-    await onSave({ baseUrl: baseUrl.replace(/\/+$/, ""), token });
+    await onSave({
+      baseUrl: baseUrl.replace(/\/+$/, ""),
+      token,
+      useProxy,
+      proxyUrl: useProxy ? proxyUrl : undefined,
+    });
     setToken("");
   };
 
@@ -128,6 +142,30 @@ export function GithubConfigForm({ config, onSave, onClear }: Props) {
           </button>
         </div>
       </div>
+
+      <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+        <input
+          type="checkbox"
+          checked={useProxy}
+          onChange={(e) => setUseProxy(e.target.checked)}
+          className="rounded border-border"
+        />
+        <span>{t("github.useProxy")}</span>
+      </label>
+
+      {useProxy && (
+        <div>
+          <label className="mb-1 block text-[11px] text-muted-foreground">
+            {t("github.proxyUrl")}
+          </label>
+          <input
+            value={proxyUrl}
+            onChange={(e) => setProxyUrl(e.target.value)}
+            placeholder="http://localhost:3000/proxy"
+            className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+        </div>
+      )}
 
       {testResult && (
         <p className={`text-xs ${testResult.ok ? "text-green-600" : "text-destructive"}`}>

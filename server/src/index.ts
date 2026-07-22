@@ -6,8 +6,8 @@ const app = createApp();
 
 if (!IS_PRODUCTION) {
   const { createProxyRouter } = await import("./proxy.js");
-  app.use(createProxyRouter());
-  console.log("[server] Proxy router mounted (development only)");
+  app.use("/proxy", createProxyRouter());
+  console.log("[server] Generic proxy mounted at /proxy (development only)");
 }
 
 const httpServer = createServer(app);

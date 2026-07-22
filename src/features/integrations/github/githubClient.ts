@@ -1,4 +1,5 @@
-import type { GithubRepo, GithubSearchResult, GithubOrg } from "./github.types";
+import type { GithubRepo, GithubSearchResult, GithubOrg, GithubConfig } from "./github.types";
+import { proxyRequest } from "../proxy";
 
 export type GithubClient = {
   searchRepositories: (query: string, page: number, perPage: number) => Promise<GithubSearchResult>;
@@ -11,13 +12,16 @@ function normalizeBaseUrl(baseUrl: string): string {
   return baseUrl.replace(/\/+$/, "");
 }
 
-export function createGithubClient(baseUrl: string, token: string): GithubClient {
-  const apiBase = normalizeBaseUrl(baseUrl);
+export function createGithubClient(config: GithubConfig): GithubClient {
+  const apiBase = normalizeBaseUrl(config.baseUrl);
+  const useProxy = config.useProxy ?? false;
+  const proxyUrl = config.proxyUrl;
+
   const baseHeaders: Record<string, string> = {
     Accept: "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
   };
-  if (token) baseHeaders.Authorization = `Bearer ${token}`;
+  if (config.token) baseHeaders.Authorization = `Bearer ${config.token}`;
 
   async function getJson<T>(
     path: string,
@@ -28,6 +32,18 @@ export function createGithubClient(baseUrl: string, token: string): GithubClient
       for (const [k, v] of Object.entries(params)) {
         url.searchParams.set(k, String(v));
       }
+    }
+
+    if (useProxy) {
+      const response = await proxyRequest<T>(
+        {
+          url: url.toString(),
+          method: "GET",
+          headers: baseHeaders,
+        },
+        proxyUrl,
+      );
+      return response.data;
     }
 
     const res = await fetch(url.toString(), {

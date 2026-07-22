@@ -19,7 +19,7 @@ export function useGithubImport() {
 
   const client = useMemo(() => {
     if (!config?.baseUrl || !config?.token) return null;
-    return createGithubClient(config.baseUrl, config.token);
+    return createGithubClient({ baseUrl: config.baseUrl, token, useProxy: config.useProxy });
   }, [config]);
 
   const [results, setResults] = useState<GithubRepo[]>([]);
