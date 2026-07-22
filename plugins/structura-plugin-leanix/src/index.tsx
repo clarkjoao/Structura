@@ -2,84 +2,57 @@
  * Structura Leanix Integration Plugin
  *
  * Export diagrams to Leanix ITSM:
- * - canvas-toolbar slot (button in toolbar)
+ * - canvas-toolbar slot (floating panel with export button)
  * - ui:overlays capability (toasts and modals)
  * - diagram:read capability (read diagram name)
- * - diagram:export capability (export to draw.io XML)
  * - network capability (API calls)
+ * - storage capability (persist config and panel position)
  *
  * Build: npm run build
  */
 
-// Types
-import type { PluginManifest, StructuraPluginApi } from "./types/plugin";
-
-// Hooks
+import type { StructuraPluginGlobal } from "./types/plugin.types";
 import { initializePlugin } from "./hooks/usePluginApi";
-
-// Components
 import { LeanixToolbarButton } from "./components";
 
-/**
- * Plugin manifest - declares capabilities and dependencies
- */
-const manifest: PluginManifest = {
-  id: "structura-plugin-leanix",
-  name: "Leanix Integration",
-  version: "1.0.0",
-  author: "Structura",
-  description: "Export diagrams to Leanix ITSM",
-  apiVersion: "^1.1",
-  capabilities: [
-    "network",
-    "ui:panels",
-    "ui:overlays",
-    "diagram:read",
-  ],
-  uses: ["react"],
-};
-
-/**
- * Global declaration for window.StructuraPlugin
- */
 declare global {
   interface Window {
-    StructuraPlugin: {
-      define(definition: {
-        manifest: PluginManifest;
-        activate: (api: StructuraPluginApi) => void;
-      }): void;
-    };
+    StructuraPlugin: StructuraPluginGlobal;
   }
 }
 
 /**
- * Plugin activation function
- */
-function activate(api: StructuraPluginApi): void {
-  console.log("[Leanix Plugin] Activating...");
-  console.log("[Leanix Plugin] API:", Object.keys(api));
-
-  // Initialize plugin API and React
-  initializePlugin(api);
-
-  console.log("[Leanix Plugin] Plugin initialized");
-
-  // Register toolbar button
-  api.registerPanel({
-    id: "leanix-toolbar",
-    slot: "canvas-toolbar",
-    title: { en: "Leanix", "pt-BR": "Leanix" },
-    component: LeanixToolbarButton,
-  });
-
-  console.log("[Leanix Plugin] Panel registered!");
-}
-
-/**
- * Define the plugin
+ * Plugin manifest — declares capabilities and API version.
+ * React is shared by the host as a build-time external; no `uses: ["react"]` needed.
  */
 window.StructuraPlugin.define({
-  manifest,
-  activate,
+  manifest: {
+    id: "structura-plugin-leanix",
+    name: "Leanix Integration",
+    version: "1.0.0",
+    author: "Structura",
+    description: "Export diagrams to Leanix ITSM",
+    apiVersion: "^1.2",
+    capabilities: [
+      "network",
+      "ui:panels",
+      "ui:overlays",
+      "diagram:read",
+      "storage",
+    ],
+  },
+
+  activate(api) {
+    console.log("[Leanix Plugin] Activating...");
+    initializePlugin(api);
+
+    api.registerPanel({
+      id: "leanix-toolbar",
+      slot: "canvas-toolbar",
+      title: { en: "Leanix", "pt-BR": "Leanix" },
+      component: LeanixToolbarButton,
+    });
+
+    console.log("[Leanix Plugin] Panel registered!");
+  },
 });

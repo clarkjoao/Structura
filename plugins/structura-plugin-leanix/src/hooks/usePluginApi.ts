@@ -1,83 +1,34 @@
-import type ReactType from "react";
-import type { StructuraPluginApi, ToastOptions } from "../types/plugin";
+import type { StructuraPluginApi, ToastOptions, ModalOptions } from "../types/plugin.types";
 
 /**
- * Global reference to the plugin API set during activation
+ * The host passes the plugin API to `activate()`. We stash it here so components can reach
+ * host capabilities (storage, diagram reads, overlays) without prop-drilling the API through
+ * every panel. React itself is NOT threaded through here — the host shares its React instance
+ * as a build-time external, so components just `import { useState } from "react"`.
  */
 let pluginApi: StructuraPluginApi | null = null;
 
-/**
- * Global reference to React from the host (set via window after activation)
- */
-let react: typeof ReactType | null = null;
-
-/**
- * Initialize the plugin API and React
- * Called during activation with the API from the host
- */
+/** Called once from `activate()` with the host-provided API. */
 export function initializePlugin(api: StructuraPluginApi): void {
   pluginApi = api;
-
-  // Get React from host via dependencies
-  // Note: For IIFE plugins, we need to store it for later component use
-  react = (api.dependencies?.react as typeof ReactType | undefined) ?? null;
-
-  if (!react) {
-    console.error("[Example Plugin] React not available. Please ensure the host provides React.");
-  }
-
-  // Also set on globalThis so bundled code can access it
-  // This is a workaround for plugins that bundle React code
-  (globalThis as Record<string, unknown>).__REACT__ = react;
 }
 
-/**
- * Check if React is available from the host
- */
-export function hasReact(): boolean {
-  return react !== null;
-}
-
-/**
- * Get the React library from the host
- * @throws if React not available
- */
-export function getReact(): typeof ReactType {
-  if (!react) {
-    throw new Error("[Example Plugin] React not available.");
-  }
-  return react;
-}
-
-/**
- * Get the plugin API
- * @throws if API not initialized
- */
+/** The host plugin API. Throws if read before `activate()` ran. */
 export function getApi(): StructuraPluginApi {
   if (!pluginApi) {
-    throw new Error("[Example Plugin] Plugin API not initialized.");
+    throw new Error(
+      "[Leanix Plugin] Plugin API not initialized — call initializePlugin(api) in activate().",
+    );
   }
   return pluginApi;
 }
 
-/**
- * Hook to access plugin API with React
- * Returns [React, API] tuple
- */
-export function usePluginApi(): [typeof ReactType, StructuraPluginApi] {
-  return [getReact(), getApi()];
-}
-
-/**
- * Show a toast notification
- */
+/** Show a toast notification (requires the ui:overlays capability). */
 export function showToast(options: ToastOptions): void {
   getApi().overlay.showToast(options);
 }
 
-/**
- * Open a modal dialog
- */
-export function openModal(options: Parameters<StructuraPluginApi["overlay"]["openModal"]>[0]): void {
+/** Open a modal dialog (requires the ui:overlays capability). */
+export function openModal(options: ModalOptions): void {
   getApi().overlay.openModal(options);
 }

@@ -4,12 +4,11 @@
 
 export type Locale = "en" | "pt-BR";
 
-export type LocalizedText = {
-  [key in Locale]?: string;
-} & { en: string };
+export type LocalizedText = string | Partial<Record<Locale, string>>;
 
 export function t(text: LocalizedText, locale: Locale): string {
-  return text[locale] || text.en;
+  if (typeof text === "string") return text;
+  return text[locale] ?? text.en ?? "";
 }
 
 export const LABELS = {

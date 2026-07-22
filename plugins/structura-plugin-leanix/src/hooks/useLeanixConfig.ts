@@ -1,79 +1,47 @@
+import { useState, useEffect, useCallback } from "react";
+import { getApi } from "./usePluginApi";
 import type { LeanixConfig } from "../types/config";
-import { getReact } from "./usePluginApi";
-
-const CONFIG_KEY = "leanix_config";
 
 /**
- * Global state that persists across all hook instances
- * This ensures all components share the same config state
- */
-let globalConfig: LeanixConfig | null = null;
-let globalIsConfigured = false;
-const listeners = new Set<(config: LeanixConfig | null, isConfigured: boolean) => void>();
-
-function notifyListeners() {
-  listeners.forEach(listener => listener(globalConfig, globalIsConfigured));
-}
-
-/**
- * Load config from localStorage
- */
-function loadConfigFromStorage(): void {
-  if (globalConfig !== null) return; // Already loaded
-
-  try {
-    const stored = localStorage.getItem(CONFIG_KEY);
-    if (stored) {
-      globalConfig = JSON.parse(stored) as LeanixConfig;
-      globalIsConfigured = true;
-      notifyListeners();
-    }
-  } catch (e) {
-    console.error("[Leanix Plugin] Failed to load config:", e);
-  }
-}
-
-/**
- * Hook to manage Leanix configuration via localStorage
- * Uses global state to ensure all components share the same config
- * Uses the host's React via getReact()
+ * Persist Leanix configuration via the host's sanctioned api.storage interface.
+ * Falls back to a module-level in-memory cache so reads are synchronous and
+ * instant even before the first async load resolves.
  */
 export function useLeanixConfig() {
-  const React = getReact();
+  const [config, setConfig] = useState<LeanixConfig | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isConfigured, setIsConfigured] = useState(false);
 
-  // Initialize state with current global values
-  const [config, setConfig] = React.useState<LeanixConfig | null>(() => {
-    loadConfigFromStorage();
-    return globalConfig;
-  });
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [isConfigured, setIsConfigured] = React.useState(globalIsConfigured);
+  // Async initial load from storage
+  useEffect(() => {
+    let cancelled = false;
+    getApi().storage.get<string>("leanix_config").then((raw) => {
+      if (cancelled) return;
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw) as LeanixConfig;
+          setConfig(parsed);
+          setIsConfigured(true);
+        } catch {
+          setConfig(null);
+          setIsConfigured(false);
+        }
+      }
+      setIsLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
-  // Listen for global state changes
-  React.useEffect(() => {
-    const handleChange = (newConfig: LeanixConfig | null, configured: boolean) => {
-      setConfig(newConfig);
-      setIsConfigured(configured);
-    };
-    listeners.add(handleChange);
-    setIsLoading(false);
-
-    return () => {
-      listeners.delete(handleChange);
-    };
-  }, [React]);
-
-  const saveConfig = React.useCallback(async (newConfig: LeanixConfig): Promise<boolean> => {
+  const saveConfig = useCallback(async (newConfig: LeanixConfig): Promise<boolean> => {
     if (!newConfig.baseUrl?.trim()) return false;
     if (!newConfig.authToken?.trim()) return false;
     if (!newConfig.userId?.trim()) return false;
     if (newConfig.useProxy && !newConfig.proxyUrl?.trim()) return false;
 
     try {
-      localStorage.setItem(CONFIG_KEY, JSON.stringify(newConfig));
-      globalConfig = newConfig;
-      globalIsConfigured = true;
-      notifyListeners();
+      await getApi().storage.set("leanix_config", JSON.stringify(newConfig));
+      setConfig(newConfig);
+      setIsConfigured(true);
       return true;
     } catch (e) {
       console.error("[Leanix Plugin] Failed to save config:", e);
@@ -81,11 +49,14 @@ export function useLeanixConfig() {
     }
   }, []);
 
-  const clearConfig = React.useCallback(async (): Promise<void> => {
-    localStorage.removeItem(CONFIG_KEY);
-    globalConfig = null;
-    globalIsConfigured = false;
-    notifyListeners();
+  const clearConfig = useCallback(async (): Promise<void> => {
+    try {
+      await getApi().storage.remove("leanix_config");
+      setConfig(null);
+      setIsConfigured(false);
+    } catch (e) {
+      console.error("[Leanix Plugin] Failed to clear config:", e);
+    }
   }, []);
 
   return { config, isLoading, isConfigured, saveConfig, clearConfig };

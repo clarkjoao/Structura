@@ -1,4 +1,4 @@
-import type { PluginConnectionSnapshot } from "../../types/plugin";
+import type { PluginConnectionSnapshot } from "../../types/plugin.types";
 import { THEME } from "./constants";
 import { buildEdgeStyle } from "./styles";
 import { escXml } from "./xml-utils";

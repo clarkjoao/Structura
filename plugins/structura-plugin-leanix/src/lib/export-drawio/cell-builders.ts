@@ -1,4 +1,4 @@
-import type { PluginComponentSnapshot } from "../../types/plugin";
+import type { PluginComponentSnapshot } from "../../types/plugin.types";
 import { C4_LABEL_TEMPLATE, C4_META, CONFIG } from "./constants";
 import { awsServiceCache } from "./aws-cache";
 import type { GeometryInfo } from "./types";

@@ -1,5 +1,6 @@
-import type { PluginComponentSnapshot } from "../../types/plugin";
+import type { PluginComponentSnapshot } from "../../types/plugin.types";
 import type { BoundingBox, GeometryInfo, RootPosition } from "./types";
+export type { BoundingBox, RootPosition };
 import { CONFIG } from "./constants";
 
 export const DRAWIO_TARGET_WIDTH = 2400;

@@ -5,7 +5,7 @@
  * This is a self-contained implementation that doesn't depend on any host APIs.
  */
 
-import type { DiagramSnapshot, PluginComponentSnapshot, PluginConnectionSnapshot } from "../types/plugin";
+import type { DiagramSnapshot, PluginComponentSnapshot, PluginConnectionSnapshot } from "../types/plugin.types";
 
 interface Geometry {
   x: number;

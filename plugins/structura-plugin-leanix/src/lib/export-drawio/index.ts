@@ -5,7 +5,7 @@
  * This is a self-contained implementation that mirrors the main app's export logic.
  */
 
-import type { DiagramSnapshot, PluginComponentSnapshot, PluginConnectionSnapshot } from "../../types/plugin";
+import type { DiagramSnapshot, PluginComponentSnapshot, PluginConnectionSnapshot } from "../../types/plugin.types";
 import { CONFIG } from "./constants";
 import { cellBuilders } from "./cell-builders";
 import { buildEdgeCell } from "./edge-builder";
@@ -123,7 +123,7 @@ export function exportDrawio(
   diagram: DiagramSnapshot,
   options?: { componentIds?: string[] },
 ): string {
-  const { components, connections } = diagram.snapshot ?? diagram;
+  const { components, connections } = diagram;
 
   // Validate
   if (!components || !connections) {
@@ -136,20 +136,20 @@ export function exportDrawio(
     ? (() => {
         const expandedIds = expandWithContainerAncestors(options!.componentIds!, components);
         const idSet = new Set(expandedIds);
-        return components.filter(c => idSet.has(c.id));
+        return components.filter((c: PluginComponentSnapshot) => idSet.has(c.id));
       })()
     : [...components];
 
-  const componentIds = filteredComponents.map(c => c.id);
+  const componentIds = filteredComponents.map((c: PluginComponentSnapshot) => c.id);
 
   const containerIds = getContainerIds(filteredComponents);
 
   // Components with positions
-  const componentsWithPosition = filteredComponents.filter(c => c.position !== null);
+  const componentsWithPosition = filteredComponents.filter((c: PluginComponentSnapshot) => c.position !== null);
 
   const bbox = computeBoundingBox(filteredComponents, containerIds);
 
-  const rootComponents = componentsWithPosition.filter(c =>
+  const rootComponents = componentsWithPosition.filter((c: PluginComponentSnapshot) =>
     isRootExportNode(c, containerIds),
   );
   const rootNodeCount = rootComponents.length;
@@ -237,7 +237,7 @@ export function exportDrawio(
   // Filter connections to only those where both source and target exist
   const validConnectionIds = new Set(componentIds);
   const filteredConnections = connections.filter(
-    c => validConnectionIds.has(c.sourceId) && validConnectionIds.has(c.targetId),
+    (c: PluginConnectionSnapshot) => validConnectionIds.has(c.sourceId) && validConnectionIds.has(c.targetId),
   );
 
   const edgeCells: string[] = [];
