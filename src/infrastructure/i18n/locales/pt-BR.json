@@ -1483,7 +1483,9 @@
     "configureIntegrationSearchImport": "Configure a integração para pesquisar e importar repositórios do GitHub.",
     "connected": "Conectado",
     "hideConfig": "Ocultar config",
-    "configure": "Configurar"
+    "configure": "Configurar",
+    "useProxy": "Usar servidor proxy",
+    "proxyUrl": "URL do servidor proxy"
   },
   "defectdojo": {
     "connectionFailed": "Falha na conexão",
@@ -1536,7 +1538,9 @@
       "name__icontains": "Nome (contém)",
       "name": "Nome (exato)",
       "id": "ID"
-    }
+    },
+    "useProxy": "Usar servidor proxy",
+    "proxyUrl": "URL do servidor proxy"
   },
   "githubSearch": {
     "searchRepo": "Buscar repositório...",
