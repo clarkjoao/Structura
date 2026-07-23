@@ -21,11 +21,11 @@ mechanism) is resolved.**
 ## Phase 1 — App adapter (behaviour-identical)
 
 - [ ] Add golden-XML test: serialize the two proportion-fix example diagrams via
-      the *current* `export-service` and snapshot the XML (the freeze baseline).
-- [ ] Add `src/lib/export-service/to-export-model.ts` — `Diagram + catalog →
-      ExportModel` (merges `nodeLayouts`/`edgeLayouts`, resolves service names,
-      maps `intent`/`edgeStyle`/markers → IR enums; preserves container/root +
-      filtering by `componentIds`).
+      the _current_ `export-service` and snapshot the XML (the freeze baseline).
+- [ ] Add `src/lib/export-service/to-export-model.ts` — the app adapter
+      (`Diagram → ExportModel`): merges `nodeLayouts`/`edgeLayouts`, resolves
+      service names, maps `intent`/`edgeStyle`/markers to IR enums, preserves
+      container/root + `componentIds` filtering.
 - [ ] Unit test: every `@/features/diagram` `EdgeStyle`/`EdgeMarker`/`StrokeStyle`
       value maps to a defined IR enum value.
 - [ ] Rewrite `export-service/export-drawio.ts` to `adapter → buildMxGraphXml`;
@@ -41,17 +41,19 @@ mechanism) is resolved.**
       banner + `--check`), wire into plugin `build`; generated dir
       `.gitignore`d. **Option B:** create `packages/drawio-export/`, add root
       `workspaces`, add `file:` dep in the plugin, adjust plugin Vite resolve.
-- [ ] Add `plugins/.../src/lib/to-export-model.ts` — `DiagramSnapshot →
-      ExportModel` (position/size off nodes; `extractProtocol`/`extractMethod`;
-      default the lossy edge fields to core's unstyled defaults).
+- [ ] Add `plugins/.../src/lib/to-export-model.ts` — the plugin adapter
+      (`DiagramSnapshot → ExportModel`): position/size off nodes,
+      `extractProtocol`/`extractMethod`, default the lossy edge fields to the
+      core's unstyled defaults.
 - [ ] Rewrite `plugins/.../src/lib/export-drawio/index.ts` to
       `adapter → buildMxGraphXml({ wrapper: "mxgraphModel" })`; keep signature.
 - [ ] Plugin `npm run typecheck` + `npm run build` green; bundle sanity check.
 
 ## Phase 3 — Delete vendored copies + guard drift
 
-- [ ] Remove plugin `export-drawio/{geometry,cell-builders,styles,constants,
-      aws-cache,edge-builder,types}.ts` (now provided by the core).
+- [ ] Remove the plugin's vendored `export-drawio` copies now provided by the
+      core: `geometry`, `cell-builders`, `styles`, `constants`, `aws-cache`,
+      `edge-builder`, `types`.
 - [ ] Add `sync-shared:check` (Option A) to the CI/lint gate.
 - [ ] Write `docs/adr/0009-export-core-sharing.md` recording the delivery
       decision (A or B) and the IR contract.

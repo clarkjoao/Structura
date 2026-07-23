@@ -1,6 +1,6 @@
 import { AWS_SERVICE_MAP } from "@/lib/catalogs/aws";
-import { AWS_CATEGORY_MAP_LOCAL, AWS_RESICON, THEME } from "./constants";
-import type { AwsServiceInfo } from "./types";
+import { AWS_CATEGORY_MAP_LOCAL, AWS_RESICON, THEME } from "../export-core/constants";
+import type { AwsServiceInfo } from "../export-core/types";
 
 export class AwsServiceCache {
   private cache = new Map<string, AwsServiceInfo>();

@@ -1,4 +1,9 @@
-import type { Component } from "@/features/diagram";
+/**
+ * AUTO-GENERATED — DO NOT EDIT BY HAND.
+ * Verbatim copy of the host export core (src/lib/export-core), synced via
+ * `npm run sync-shared`. It is the single source of truth for draw.io
+ * generation shared by the app and this plugin; edit the host files and re-sync.
+ */
 
 export interface C4MetaInfo {
   fillColor: string;
@@ -23,20 +28,4 @@ export interface GeometryInfo {
   y: number;
   width: number;
   height: number;
-}
-
-export interface PanelLayout {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
-
-export interface CellBuilder {
-  build(
-    component: Component,
-    geometry: GeometryInfo,
-    parentId: string,
-    serviceName?: string,
-  ): string;
 }

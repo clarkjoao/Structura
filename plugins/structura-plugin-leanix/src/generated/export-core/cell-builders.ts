@@ -1,3 +1,10 @@
+/**
+ * AUTO-GENERATED — DO NOT EDIT BY HAND.
+ * Verbatim copy of the host export core (src/lib/export-core), synced via
+ * `npm run sync-shared`. It is the single source of truth for draw.io
+ * generation shared by the app and this plugin; edit the host files and re-sync.
+ */
+
 import { C4_LABEL_TEMPLATE, C4_META, CONFIG, THEME } from "./constants";
 import type { ExportNode } from "./model";
 import {

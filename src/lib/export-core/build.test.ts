@@ -95,10 +95,20 @@ describe("buildMxGraphXml — 1:1 positioning", () => {
 });
 
 describe("buildMxGraphXml — per-kind cells", () => {
-  it("uses the C4 default box for a node with unknown size", () => {
+  it("uses the C4 default box for a node with unknown size (0)", () => {
     const xml = buildMxGraphXml(model([c4("a", 0, 0)]), { wrapper: "mxfile" });
     expect(xml).toContain(`width="240" height="120"`);
     expect(xml).toContain(`c4Type="Software System"`);
+  });
+
+  it("uses the real measured size when present, not the C4_META floor (A1)", () => {
+    // A Person measured 180x64 must export at 180x64 — a Math.max floor would
+    // force 240x120 and overlap the node stacked below it.
+    const xml = buildMxGraphXml(model([c4("a", 0, 0, { width: 180, height: 64 })]), {
+      wrapper: "mxfile",
+    });
+    expect(xml).toContain(`width="180" height="64"`);
+    expect(xml).not.toContain(`width="240" height="120"`);
   });
 
   it("renders a note with the note style and value", () => {
@@ -118,18 +128,18 @@ describe("buildMxGraphXml — per-kind cells", () => {
     const xml = buildMxGraphXml(model(nodes), { wrapper: "mxfile" });
     expect(xml).toContain("text;html=1;strokeColor=#cccccc");
     expect(xml).toContain(`value="hello"`);
-    // note default size (336x475) applied when unknown
-    expect(xml).toContain(`width="336" height="475"`);
+    // height now tracks content (compact), width still defaults to 336
+    expect(xml).toContain(`width="336" height="48"`);
   });
 });
 
 describe("buildMxGraphXml — edges", () => {
-  it("defaults smoothstep to an orthogonal-elbow curved style", () => {
+  it("defaults smoothstep to an orthogonal-elbow style (no curve)", () => {
     const xml = buildMxGraphXml(model([c4("a", 0, 0), c4("b", 300, 0)], [edge("e", "a", "b")]), {
       wrapper: "mxfile",
     });
-    expect(xml).toContain("edgeStyle=elbowEdgeStyle");
-    expect(xml).toContain("curved=1");
+    expect(xml).toContain("edgeStyle=elbowEdgeStyle;elbow=orthogonal;rounded=1");
+    expect(xml).not.toContain("curved=1");
     expect(xml).toContain(`source="a" target="b"`);
   });
 

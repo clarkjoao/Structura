@@ -81,9 +81,7 @@ export function buildEndpointStyle(method: string): string {
   });
 }
 
-function resolveDrawioEdgeStyle(edgeStyle: ExportEdgeStyle, isDashed = false): string {
-  const curvedSuffix = isDashed ? "" : "curved=1;";
-
+function resolveDrawioEdgeStyle(edgeStyle: ExportEdgeStyle): string {
   switch (edgeStyle) {
     case "straight":
       return "edgeStyle=none;html=1;";
@@ -95,7 +93,10 @@ function resolveDrawioEdgeStyle(edgeStyle: ExportEdgeStyle, isDashed = false): s
     case "editable":
     case "editable-step":
     default:
-      return `edgeStyle=elbowEdgeStyle;elbow=orthogonal;${curvedSuffix}rounded=1;orthogonalLoop=1;jettySize=auto;html=1;`;
+      // Orthogonal elbow with rounded corners — mirrors React Flow's smoothstep
+      // (right-angle segments). `curved=1` used to turn this into a soft S-curve,
+      // which is what made exported edges look nothing like the canvas.
+      return "edgeStyle=elbowEdgeStyle;elbow=orthogonal;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;";
   }
 }
 
@@ -108,7 +109,7 @@ export function buildEdgeStyle(
   startArrow: string,
   edgeStyle: ExportEdgeStyle,
 ): string {
-  const baseStyle = resolveDrawioEdgeStyle(edgeStyle, isDashed);
+  const baseStyle = resolveDrawioEdgeStyle(edgeStyle);
 
   return buildStyle(baseStyle, {
     endArrow,

@@ -1,8 +1,12 @@
+/**
+ * AUTO-GENERATED — DO NOT EDIT BY HAND.
+ * Verbatim copy of the host export core (src/lib/export-core), synced via
+ * `npm run sync-shared`. It is the single source of truth for draw.io
+ * generation shared by the app and this plugin; edit the host files and re-sync.
+ */
+
 import type { C4MetaInfo } from "./types";
 
-/**
- * Grid and dimension configuration
- */
 export const CONFIG = {
   minDimensions: {
     c4: { width: 240, height: 120 },
@@ -24,9 +28,6 @@ export const CONFIG = {
   },
 } as const;
 
-/**
- * Theme colors for C4, AWS, and connections
- */
 export const THEME = {
   colors: {
     c4: {
@@ -74,9 +75,6 @@ export const THEME = {
   },
 } as const;
 
-/**
- * AWS category mapping
- */
 export const AWS_CATEGORY_MAP_LOCAL: Record<string, string> = {
   "aws-compute": "compute",
   "aws-storage": "storage",
@@ -96,9 +94,6 @@ export const AWS_CATEGORY_MAP_LOCAL: Record<string, string> = {
   "aws-general": "general",
 };
 
-/**
- * AWS resource icon mapping for draw.io
- */
 export const AWS_RESICON: Record<string, string> = {
   ec2: "ec2",
   lambda: "lambda",
@@ -110,6 +105,8 @@ export const AWS_RESICON: Record<string, string> = {
   lightsail: "lightsail",
   "app-runner": "app_runner",
   "auto-scaling": "auto_scaling",
+  "compute-optimizer": "compute_optimizer",
+  "ec2-image-builder": "ec2_image_builder",
   s3: "s3",
   ebs: "ebs",
   efs: "efs",
@@ -136,6 +133,12 @@ export const AWS_RESICON: Record<string, string> = {
   elb: "elastic_load_balancing",
   "direct-connect": "direct_connect",
   "transit-gateway": "transit_gateway",
+  "global-accelerator": "global_accelerator",
+  "app-mesh": "app_mesh",
+  "cloud-map": "cloud_map",
+  "client-vpn": "client_vpn",
+  "cloud-wan": "cloud_wan",
+  privatelink: "privatelink",
   iam: "iam",
   cognito: "cognito",
   guardduty: "guardduty",
@@ -146,15 +149,37 @@ export const AWS_RESICON: Record<string, string> = {
   kms: "key_management_service",
   "secrets-manager": "secrets_manager",
   acm: "certificate_manager",
+  "firewall-manager": "firewall_manager",
+  "security-hub": "security_hub",
+  detective: "detective",
+  cloudhsm: "cloudhsm",
+  "iam-identity-center": "iam_identity_center",
+  "directory-service": "directory_service",
+  "audit-manager": "audit_manager",
+  artifact: "artifact",
   athena: "athena",
   emr: "emr",
   kinesis: "kinesis",
   quicksight: "quicksight",
   glue: "glue",
+  "lake-formation": "lake_formation",
   opensearch: "opensearch_service",
+  "data-exchange": "data_exchange",
+  msk: "managed_streaming_for_apache_kafka",
+  "data-pipeline": "data_pipeline",
+  "clean-rooms": "clean_rooms",
   sagemaker: "sagemaker",
   bedrock: "bedrock",
   rekognition: "rekognition",
+  comprehend: "comprehend",
+  polly: "polly",
+  transcribe: "transcribe",
+  translate: "translate",
+  lex: "lex",
+  textract: "textract",
+  personalize: "personalize",
+  forecast: "forecast",
+  kendra: "kendra",
   sqs: "sqs",
   sns: "sns",
   eventbridge: "event_bridge",
@@ -167,6 +192,11 @@ export const AWS_RESICON: Record<string, string> = {
   "systems-manager": "systems_manager",
   config: "config",
   organizations: "organizations",
+  "control-tower": "control_tower",
+  "trusted-advisor": "trusted_advisor",
+  "service-catalog": "service_catalog",
+  "health-dashboard": "personal_health_dashboard",
+  "cost-explorer": "cost_explorer",
   codebuild: "codebuild",
   codepipeline: "codepipeline",
   codedeploy: "codedeploy",
@@ -175,17 +205,39 @@ export const AWS_RESICON: Record<string, string> = {
   cloud9: "cloud9",
   xray: "x_ray",
   cdk: "cloud_development_kit",
+  cli: "command_line_interface",
   amplify: "amplify",
   ecr: "ecr",
+  "ecs-2": "ecs",
+  "eks-2": "eks",
+  "fargate-2": "fargate",
+  "media-convert": "elemental_mediaconvert",
+  "media-live": "elemental_medialive",
+  "media-package": "elemental_mediapackage",
+  "media-store": "elemental_mediastore",
+  "media-connect": "elemental_mediaconnect",
+  ivs: "interactive_video_service",
+  "migration-hub": "migration_hub",
+  "app-migration": "application_migration_service",
+  "app-discovery": "application_discovery_service",
+  "transfer-family": "transfer_family",
+  snowball: "snow_family",
+  "iot-core": "iot_core",
+  "iot-greengrass": "iot_greengrass",
+  "iot-analytics": "iot_analytics",
+  "iot-events": "iot_events",
+  "iot-sitewise": "iot_sitewise",
+  "iot-twinmaker": "iot_twinmaker",
+  "iot-device-mgmt": "iot_device_management",
+  "iot-fleetwise": "iot_fleet_wise",
+  workspaces: "workspaces",
+  appstream: "appstream_2_0",
 };
 
-/**
- * C4 metadata for each component type.
- * width/height are the draw.io export geometry per type. The Structura renderer
- * draws every C4 node with the same footprint (CSS `min-w-[200px] max-w-[260px]`,
- * content-driven height), so all types share one box size — keeping the
- * gap-to-node ratio faithful when positions are mapped 1:1.
- */
+// width/height are the draw.io export geometry per C4 type. The Structura renderer
+// draws every C4 node with the same footprint (CSS `min-w-[200px] max-w-[260px]`,
+// content-driven height), so all types share one box size here — keeping the
+// gap-to-node ratio faithful when positions are mapped 1:1.
 export const C4_META: Record<string, C4MetaInfo> = {
   person: {
     fillColor: THEME.colors.c4.person,
@@ -236,3 +288,21 @@ export const C4_LABEL_TEMPLATE =
   "<br>" +
   '<div><font style="font-size:11px">%c4Line2%</font></div>' +
   "%c4RegistryBadge%";
+
+// API method / protocol accent colors (mirrored from the ApiGroupNode renderer
+// so the export core stays framework-agnostic — no @/features import).
+export const METHOD_COLORS: Record<string, string> = {
+  GET: "#1D9E75",
+  POST: "#378ADD",
+  PUT: "#BA7517",
+  PATCH: "#7F77DD",
+  DELETE: "#E24B4A",
+  EVENT: "#1D9E75",
+};
+
+export const PROTOCOL_COLORS: Record<string, string> = {
+  REST: "#1D9E75",
+  gRPC: "#378ADD",
+  GraphQL: "#D4537E",
+  WebSocket: "#BA7517",
+};

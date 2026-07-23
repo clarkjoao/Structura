@@ -18,11 +18,13 @@ constants. Strict-mode rules apply: no `any`, no `as unknown as`; kind-specific
 node data is expressed as a discriminated union on `ExportNode.kind`.
 
 #### Scenario: Core builds without the app barrel
+
 - **GIVEN** the `export-core` source
 - **WHEN** its imports are inspected (lint/test guard)
 - **THEN** none resolve into `@/features/*` or `../../types/plugin.types`
 
 #### Scenario: Core is copy-portable
+
 - **GIVEN** `export-core` copied into the plugin (or packaged) with only relative
   imports rewritten by the delivery mechanism
 - **WHEN** the plugin `typecheck` and `build` run
@@ -36,11 +38,13 @@ The core SHALL expose `buildMxGraphXml(model: ExportModel, opts: { wrapper:
 `<mxGraphModel>…</mxGraphModel>` (LeanIX).
 
 #### Scenario: App wrapper
+
 - **GIVEN** a model and `wrapper: "mxfile"`
 - **WHEN** `buildMxGraphXml` runs
 - **THEN** the output starts with `<?xml` and contains `<mxfile>` and `<diagram`
 
 #### Scenario: LeanIX wrapper
+
 - **GIVEN** a model and `wrapper: "mxgraphModel"`
 - **WHEN** `buildMxGraphXml` runs
 - **THEN** the output starts with `<mxGraphModel` and contains no `<mxfile>`
@@ -53,11 +57,13 @@ nodes whose `parentId` is a container at their parent-relative coordinates. The
 gap-to-node ratio of the source model is preserved.
 
 #### Scenario: Two roots keep their canvas gap
+
 - **GIVEN** two root nodes whose left edges are 300 units apart in the model
 - **WHEN** the XML is built
 - **THEN** their exported x-coordinates are also 300 units apart (not scaled)
 
 #### Scenario: Boundary child is parent-relative
+
 - **GIVEN** a node with `parentId` set to a panel container at model x=20,y=20
 - **WHEN** the XML is built
 - **THEN** its `<mxGeometry>` is `x="20" y="20"` and its `parent` is the panel id
@@ -69,6 +75,7 @@ C4 nodes with unknown size (`width`/`height` = 0) SHALL be exported at the share
 the app and the plugin.
 
 #### Scenario: C4 node without explicit size
+
 - **GIVEN** an `ExportNode` of kind `c4` with `width: 0, height: 0`
 - **WHEN** the XML is built
 - **THEN** its geometry uses the `C4_META` default box for its `subtype`
@@ -80,6 +87,7 @@ positions, and sizes for a diagram expressible in both input models. Styling and
 labels MAY differ only where the plugin snapshot lacks the data.
 
 #### Scenario: Same diagram, same geometry
+
 - **GIVEN** a diagram mapped to an `ExportModel` via the app adapter and the same
   diagram's snapshot mapped via the plugin adapter
 - **WHEN** both are built
@@ -91,6 +99,7 @@ Migrating the app export onto the core SHALL NOT change its generated XML for
 existing diagrams (guarded by a golden-XML baseline captured before the refactor).
 
 #### Scenario: Golden XML stable
+
 - **GIVEN** the golden-XML baseline of the two proportion-fix example diagrams
 - **WHEN** the app export runs through the core-based implementation
 - **THEN** the produced XML is byte-identical to the baseline
@@ -103,6 +112,7 @@ removed, and a CI check fails the build if the shared core copy (delivery Option
 A) or workspace boundary (Option B) drifts from the source of truth.
 
 #### Scenario: Drift is caught
+
 - **GIVEN** the shared core is edited but the plugin's synced copy is not
   regenerated (Option A)
 - **WHEN** `sync-shared --check` runs in CI

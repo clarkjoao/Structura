@@ -80,7 +80,7 @@ share code as-is.
   tests). This is a pure dedup + relocation, not a redesign.
 - **No edge-routing or note-markdown fix here.** Those are separate follow-ups
   (`curved=1` → orthogonal; markdown rendering + content-fit note height). They
-  land *after* unification so the fix is written once.
+  land _after_ unification so the fix is written once.
 - **No new export features** (no new node/edge types, no new output formats).
 - **No runtime plugin loading / marketplace changes** — build-time bundling only,
   as today.

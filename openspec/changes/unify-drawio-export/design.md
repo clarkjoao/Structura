@@ -4,14 +4,14 @@
 
 Two exporters generate the same mxGraph XML from different input models:
 
-| | App (`export-service`) | Plugin (`export-drawio`) |
-|---|---|---|
-| Input | `Diagram` (rich domain union) | `DiagramSnapshot` (flat `PluginComponentSnapshot[]`) |
-| Geometry | separate `nodeLayouts` / `edgeLayouts` maps | `position` / `size` on each component |
-| Classification | real guards (`isC4Component`, …) from `@/features/diagram` | string heuristics (`type.includes("api")`) |
-| Connections | `intent`, `style.edgeStyle`, markers, `strokeStyle`, waypoints | `label`, `description`, `technology` only — **lossy** |
-| Build | app Vite (has `@` alias) | separate Vite **IIFE**, no alias, React externalized |
-| Type sharing | — | `sync-types.mjs` copies `plugin.types.ts` verbatim |
+|                | App (`export-service`)                                         | Plugin (`export-drawio`)                              |
+| -------------- | -------------------------------------------------------------- | ----------------------------------------------------- |
+| Input          | `Diagram` (rich domain union)                                  | `DiagramSnapshot` (flat `PluginComponentSnapshot[]`)  |
+| Geometry       | separate `nodeLayouts` / `edgeLayouts` maps                    | `position` / `size` on each component                 |
+| Classification | real guards (`isC4Component`, …) from `@/features/diagram`     | string heuristics (`type.includes("api")`)            |
+| Connections    | `intent`, `style.edgeStyle`, markers, `strokeStyle`, waypoints | `label`, `description`, `technology` only — **lossy** |
+| Build          | app Vite (has `@` alias)                                       | separate Vite **IIFE**, no alias, React externalized  |
+| Type sharing   | —                                                              | `sync-types.mjs` copies `plugin.types.ts` verbatim    |
 
 The plugin snapshot is a strict subset of what the app knows. Any shared core
 must therefore be a **superset IR** that both sides map into; the plugin adapter
@@ -29,6 +29,7 @@ gains fidelity rather than losing it.
 ## Goals / Non-Goals
 
 **Goals**
+
 - One authoritative implementation of geometry + styles + cell/edge building.
 - Preserve both public `exportDrawio` signatures and the app's byte-for-byte XML.
 - Keep the plugin bundle self-contained (no app internals leaking in).
@@ -50,26 +51,47 @@ needs domain guards. Kind-specific fields are typed via a discriminated union
 ```ts
 // src/lib/export-core/model.ts  (framework-agnostic)
 export type ExportNodeKind =
-  | "c4" | "aws" | "gcp" | "azure" | "panel" | "apiGroup"
-  | "endpoint" | "dbTable" | "note" | "jsonViewer";
+  | "c4"
+  | "aws"
+  | "gcp"
+  | "azure"
+  | "panel"
+  | "apiGroup"
+  | "endpoint"
+  | "dbTable"
+  | "note"
+  | "jsonViewer";
 
 interface BaseNode {
   id: string;
   parentId: string | null;
-  x: number; y: number;
+  x: number;
+  y: number;
   /** 0 means "use the kind's default size" (kept for CSS-auto C4 nodes). */
-  width: number; height: number;
+  width: number;
+  height: number;
 }
 
 export type ExportNode =
-  | (BaseNode & { kind: "c4" | "gcp" | "azure"; subtype: string; name: string;
-                  description: string; technology?: string; serviceId?: string;
-                  serviceName?: string; color?: string })
+  | (BaseNode & {
+      kind: "c4" | "gcp" | "azure";
+      subtype: string;
+      name: string;
+      description: string;
+      technology?: string;
+      serviceId?: string;
+      serviceName?: string;
+      color?: string;
+    })
   | (BaseNode & { kind: "aws"; name: string; awsService: string })
   | (BaseNode & { kind: "panel"; name: string; panelColor?: string })
   | (BaseNode & { kind: "apiGroup"; serviceName: string; basePath: string; protocol: string })
   | (BaseNode & { kind: "endpoint"; method: string; path: string; endpointDescription?: string })
-  | (BaseNode & { kind: "dbTable"; tableName: string; columns: { name: string; dataType: string }[] })
+  | (BaseNode & {
+      kind: "dbTable";
+      tableName: string;
+      columns: { name: string; dataType: string }[];
+    })
   | (BaseNode & { kind: "note"; name: string; description: string })
   | (BaseNode & { kind: "jsonViewer"; name: string; jsonContent: string; schemaRef?: string });
 
@@ -77,8 +99,12 @@ export type ExportNode =
 // EdgeMarker/StrokeStyle enums are duplicated here as the boundary type;
 // adapters map their source enum → these).
 export interface ExportEdge {
-  id: string; sourceId: string; targetId: string;
-  label?: string; technology?: string; intent?: string;
+  id: string;
+  sourceId: string;
+  targetId: string;
+  label?: string;
+  technology?: string;
+  intent?: string;
   edgeStyle: "smoothstep" | "step" | "bezier" | "straight" | "editable" | "editable-step";
   strokeStyle: "solid" | "dashed" | "dotted";
   strokeWidth: number;
@@ -89,7 +115,7 @@ export interface ExportEdge {
 
 export interface ExportModel {
   name: string;
-  nodes: ExportNode[];   // order-independent; core sorts by depth then y,x
+  nodes: ExportNode[]; // order-independent; core sorts by depth then y,x
   edges: ExportEdge[];
 }
 ```
@@ -103,11 +129,12 @@ bare `<mxGraphModel>`).
 ### Decision 2 — Where the core lives + how the plugin gets it
 
 **Decision: Option A (automated source-sync) now; Option B (workspace package) is
-the documented graduation path, not an open question.** The *source* of the core
+the documented graduation path, not an open question.** The _source_ of the core
 is identical either way, so moving A→B later is a relocation + import-path change,
 not a rewrite.
 
 **Option A — Automated source-sync (chosen).**
+
 - Core lives at `src/lib/export-core/` (app-internal; app imports it directly).
 - Extend `sync-types.mjs` → `sync-shared.mjs` to copy `src/lib/export-core/**`
   into `plugins/.../src/generated/export-core/` with the existing DO-NOT-EDIT
@@ -116,15 +143,16 @@ not a rewrite.
 - Requires the core to be **copy-portable**: relative imports only, no `@` alias,
   no app-only deps. (It already has none — it's pure string/number math.)
 - Pros: zero change to install/hoisting; the plugin's isolated IIFE build is
-  untouched; matches and *automates* the accepted `sync-types` precedent, killing
+  untouched; matches and _automates_ the accepted `sync-types` precedent, killing
   the drift that manual vendoring (`aws-cache.ts`) suffered.
 - Cons: generated files live in the plugin tree (noise, `.gitignore`d).
 
 **Option B — Real npm workspace package (documented graduation path).**
+
 - Core lives at `packages/drawio-export/`; root adds `"workspaces": ["packages/*"]`
   (allowed — root is `private: true`). App and plugin depend on
   `@structura/drawio-export`.
-- The plugin consumes it via a `file:` dependency (keeps the plugin *out* of the
+- The plugin consumes it via a `file:` dependency (keeps the plugin _out_ of the
   workspace, so its separate `node_modules` and IIFE build are undisturbed); Vite
   inlines it into the bundle (only React is externalized).
 - Pros: idiomatic, no generated files, single compiled artifact, type-safe
@@ -139,7 +167,7 @@ the repo adopts npm workspaces for other reasons — but is not a blocker here.
 
 `sync-types.mjs` stays exactly as-is: it copies the **host→plugin type contract**
 (`plugin.types.ts`) so the plugin type-checks against what the host ships. It is
-about the *plugin API boundary*, not export code.
+about the _plugin API boundary_, not export code.
 
 `sync-shared.mjs` (Option A) is a sibling with the same mechanics (verbatim copy +
 banner + `--check`) but a different payload: the **framework-agnostic export
@@ -161,7 +189,7 @@ plugin: DiagramSnapshot ─(to-export-model.ts, uses string heuristics)→ Expor
 - The **plugin adapter** reads `position`/`size` off each snapshot node, applies
   its existing `extractProtocol`/`extractMethod` heuristics, and defaults the
   edge fields the snapshot lacks (`edgeStyle: "smoothstep"`, `markerEnd:
-  "arrow-closed"`, `strokeStyle: "solid"`, no waypoints) — i.e. exactly what the
+"arrow-closed"`, `strokeStyle: "solid"`, no waypoints) — i.e. exactly what the
   core already does for an unstyled connection.
 - Positioning (1:1 map, child-relative coords) lives in the **core**, driven off
   the IR, so both sides get the proportion fix by construction and it can never
@@ -171,7 +199,7 @@ plugin: DiagramSnapshot ─(to-export-model.ts, uses string heuristics)→ Expor
 
 - **[Risk] App XML changes subtly during extraction.** Mitigation: freeze current
   output with a golden-XML test (serialize the two proportion-fix example
-  diagrams) *before* refactoring; the refactor must keep it green.
+  diagrams) _before_ refactoring; the refactor must keep it green.
 - **[Risk] Generated files drift (Option A).** Mitigation: `sync-shared --check`
   in CI; the plugin `typecheck`/`build` already run there.
 - **[Risk] Enum duplication (EdgeStyle/Marker/StrokeStyle) in the core.**
@@ -210,7 +238,7 @@ point are both exporters broken simultaneously.
 
 - **Delivery mechanism:** Option A (`sync-shared`), core at `src/lib/export-core/`.
   Option B (workspace package) is the documented graduation path in ADR-0009.
-- **Edge enums:** *duplicated* in the core as small string-literal boundary types
+- **Edge enums:** _duplicated_ in the core as small string-literal boundary types
   (looser coupling); the app adapter maps `@/features/diagram` enums → core enums
   in one place, guarded by a value-coverage unit test.
 - **GCP/Azure nodes:** map to the `c4` IR kind with their raw `subtype` (they
@@ -219,5 +247,5 @@ point are both exporters broken simultaneously.
 - **AWS icon resolution stays in the adapters:** the core's `aws` cell takes a
   pre-resolved `awsIcon` string. App resolves via `@/lib/catalogs/aws`; the plugin
   keeps its own heuristic. This is legitimately source-specific data lookup, not
-  export algorithm — so it is *not* shared, and `aws-cache.ts` does not enter the
+  export algorithm — so it is _not_ shared, and `aws-cache.ts` does not enter the
   core.

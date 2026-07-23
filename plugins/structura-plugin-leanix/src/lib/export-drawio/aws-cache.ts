@@ -1,5 +1,5 @@
-import type { AwsServiceInfo } from "./types";
-import { AWS_CATEGORY_MAP_LOCAL, AWS_RESICON, THEME } from "./constants";
+import type { AwsServiceInfo } from "../../generated/export-core/types";
+import { AWS_CATEGORY_MAP_LOCAL, AWS_RESICON, THEME } from "../../generated/export-core/constants";
 
 /**
  * Simplified AWS service map for the plugin
