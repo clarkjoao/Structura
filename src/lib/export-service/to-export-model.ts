@@ -353,14 +353,33 @@ function inferAnchors(
   const dx = tgtCenterX - srcCenterX;
   const dy = tgtCenterY - srcCenterY;
 
-  // Determine base anchor positions based on geometry
+  // Determine base anchor positions based on geometry.
+  // IMPORTANT: the exit anchor must be on the side of the source that faces
+  // the target, and the entry anchor must be on the side of the target that
+  // faces the source — otherwise the edge will route around the long way.
   let baseExitX = 1; // right side of source
   let baseExitY = 0.5;
   let baseEntryX = 0; // left side of target
   let baseEntryY = 0.5;
 
-  // Vertical-dominant: target sits clearly above or below the source.
-  if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 50) {
+  // Horizontal-dominant: target is clearly to the LEFT or RIGHT of source.
+  // Use left/right anchors and flip based on dx direction.
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+    if (dx > 0) {
+      // Target is to the right of source: exit right, enter left (default).
+      baseExitX = 1;
+      baseExitY = 0.5;
+      baseEntryX = 0;
+      baseEntryY = 0.5;
+    } else {
+      // Target is to the left of source: exit left, enter right.
+      baseExitX = 0;
+      baseExitY = 0.5;
+      baseEntryX = 1;
+      baseEntryY = 0.5;
+    }
+  } else if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 50) {
+    // Vertical-dominant: target sits clearly above or below the source.
     if (dy > 0) {
       // Target below source: exit bottom, enter top.
       baseExitX = 0.5;
