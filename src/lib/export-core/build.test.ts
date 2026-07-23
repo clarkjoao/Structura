@@ -38,6 +38,11 @@ function edge(
     strokeWidth: 1,
     markerStart: "none",
     markerEnd: "arrow-closed",
+    // Structura defaults: source=right, target=left (set by the real mapEdge).
+    exitX: 1,
+    exitY: 0.5,
+    entryX: 0,
+    entryY: 0.5,
     ...over,
   };
 }
@@ -151,13 +156,30 @@ describe("buildMxGraphXml — per-kind cells", () => {
 });
 
 describe("buildMxGraphXml — edges", () => {
-  it("defaults smoothstep to an orthogonal-elbow style (no curve)", () => {
+  it("defaults smoothstep to an orthogonal style with rounded corners (no curve)", () => {
     const xml = buildMxGraphXml(model([c4("a", 0, 0), c4("b", 300, 0)], [edge("e", "a", "b")]), {
       wrapper: "mxfile",
     });
-    expect(xml).toContain("edgeStyle=elbowEdgeStyle;elbow=orthogonal;rounded=1");
+    // orthogonalEdgeStyle supports multi-bend routes (when target is
+    // below+left of source), unlike elbowEdgeStyle which is single-bend only.
+    expect(xml).toContain("edgeStyle=orthogonalEdgeStyle;rounded=1");
     expect(xml).not.toContain("curved=1");
+    expect(xml).not.toContain("elbowEdgeStyle");
     expect(xml).toContain(`source="a" target="b"`);
+  });
+
+  it("writes exitX/exitY/entryX/entryY anchors (right-exit, left-entry)", () => {
+    // Every edge must anchor exitX=1 (right side of source) and entryX=0 (left
+    // side of target) — matching Structura's Position.Right source handles and
+    // Position.Left target handles.  Without anchors the elbow routes from/to the
+    // node centre, visibly wrong with orthogonal routing.
+    const xml = buildMxGraphXml(model([c4("a", 0, 0), c4("b", 300, 0)], [edge("e", "a", "b")]), {
+      wrapper: "mxfile",
+    });
+    expect(xml).toContain('exitX="1"');
+    expect(xml).toContain('exitY="0.5"');
+    expect(xml).toContain('entryX="0"');
+    expect(xml).toContain('entryY="0.5"');
   });
 
   it("colors the edge by intent and transforms waypoints 1:1", () => {

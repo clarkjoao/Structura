@@ -113,6 +113,20 @@ export interface ExportEdge {
   markerStart: ExportMarker;
   markerEnd: ExportMarker;
   waypoints?: { x: number; y: number }[];
+  /**
+   * Normalized exit anchor on the source node.
+   * draw.io: 0 = left edge, 0.5 = center, 1 = right edge, null = top, -1 = bottom.
+   * Structura source handles are always on Position.Right → exitX=1, exitY=0.5.
+   */
+  exitX?: number;
+  exitY?: number;
+  /**
+   * Normalized entry anchor on the target node.
+   * draw.io: 0 = left edge, 0.5 = center, 1 = right edge, null = top, -1 = bottom.
+   * Structura target handles are always on Position.Left → entryX=0, entryY=0.5.
+   */
+  entryX?: number;
+  entryY?: number;
 }
 
 export interface ExportModel {

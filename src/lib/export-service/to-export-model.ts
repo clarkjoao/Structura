@@ -193,8 +193,257 @@ function mapNode(
   throw new Error(`Unsupported component for draw.io export: ${JSON.stringify(_exhaustive)}`);
 }
 
-function mapEdge(conn: Connection, edgeLayout: EdgeLayout | undefined): ExportEdge {
+/**
+ * Infer exit/entry anchors from the relative geometry of source and target
+ * nodes. Structura handles are uniformly at Position.Right (source) and
+ * Position.Left (target) for nearly all node types, so for horizontal flows
+ * we keep the default right→left anchors (single-segment routes are shorter
+ * and clearer). For vertical flows (target below or above source) we switch
+ * to top/bottom anchors so the line goes directly between the nodes instead
+ * of wrapping around — this is the AWS S3→Glue case.
+ */
+function inferAnchors(
+  sourceId: string,
+  targetId: string,
+  layoutMap: Record<string, NodeLayout>,
+): { exitX: number; exitY: number; entryX: number; entryY: number } {
+  const src = layoutMap[sourceId];
+  const tgt = layoutMap[targetId];
+  // Hardcoded default for the common case (mirrors Structura's handles).
+  const DEFAULT = { exitX: 1, exitY: 0.5, entryX: 0, entryY: 0.5 };
+  if (!src || !tgt) return DEFAULT;
+
+  const srcW = src.width ?? 200;
+  const srcH = src.height ?? 120;
+  const tgtW = tgt.width ?? 200;
+  const tgtH = tgt.height ?? 120;
+
+  const srcCenterX = src.x + srcW / 2;
+  const srcCenterY = src.y + srcH / 2;
+  const tgtCenterX = tgt.x + tgtW / 2;
+  const tgtCenterY = tgt.y + tgtH / 2;
+
+  const dx = tgtCenterX - srcCenterX;
+  const dy = tgtCenterY - srcCenterY;
+
+  // Vertical-dominant: target sits clearly above or below the source.
+  // Use top/bottom anchors so the line runs directly between nodes.
+  if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 50) {
+    if (dy > 0) {
+      // Target below source: exit bottom, enter top.
+      return { exitX: 0.5, exitY: 1, entryX: 0.5, entryY: 0 };
+    }
+    // Target above source: exit top, enter bottom.
+    return { exitX: 0.5, exitY: 0, entryX: 0.5, entryY: 1 };
+  }
+
+  // Otherwise: keep the default right→left anchors (single-segment horizontal).
+  return DEFAULT;
+}
+
+/**
+ * When source and target are siblings inside the same container panel / api-group,
+ * other siblings may sit between them.  The automatic orthogonal router has no
+ * knowledge of those obstacles, so it routes straight through them.
+ *
+ * This function detects the common-ancestor container (panel / api-group) of both
+ * ends, computes the bounding box of all *other* children inside it, and returns
+ * a set of waypoints that route the edge around that occupied space while
+ * staying inside the container perimeter.  The result is merged with any
+ * user-authored waypoints in edgeLayout.points (user edits always win).
+ *
+ * The waypoints are placed just inside the container boundary (margin=1) so they
+ * do not clip against the panel outline.
+ */
+function buildContainerWaypoints(
+  sourceId: string,
+  targetId: string,
+  components: Record<string, Component>,
+  layoutMap: Record<string, NodeLayout>,
+): { x: number; y: number }[] | undefined {
+  const srcComp = components[sourceId];
+  const tgtComp = components[targetId];
+  if (!srcComp || !tgtComp) return undefined;
+
+  // Find the nearest common container ancestor (panel or api-group).
+  const srcAncestors = new Set<string>();
+  let p = srcComp.parentId;
+  while (p) {
+    srcAncestors.add(p);
+    p = components[p]?.parentId;
+  }
+
+  let containerId: string | null = null;
+  p = tgtComp.parentId;
+  while (p) {
+    if (srcAncestors.has(p) && (isPanelComponent(components[p]) || isApiGroupComponent(components[p]))) {
+      containerId = p;
+      break;
+    }
+    p = components[p]?.parentId;
+  }
+
+  if (!containerId) return undefined;
+
+  const containerLayout = layoutMap[containerId];
+  const srcLayout = layoutMap[sourceId];
+  const tgtLayout = layoutMap[targetId];
+  if (!containerLayout || !srcLayout || !tgtLayout) return undefined;
+
+  const MARGIN = 1;
+  const cLeft = containerLayout.x + MARGIN;
+  const cTop = containerLayout.y + MARGIN;
+  const cRight = containerLayout.x + (containerLayout.width ?? 200) - MARGIN;
+  const cBottom = containerLayout.y + (containerLayout.height ?? 120) - MARGIN;
+
+  // Bounding box of every OTHER sibling inside the container (excluding src + tgt).
+  let occMinX = Infinity,
+    occMinY = Infinity,
+    occMaxX = -Infinity,
+    occMaxY = -Infinity;
+  let hasOccupied = false;
+
+  for (const [id, comp] of Object.entries(components)) {
+    if (id === sourceId || id === targetId || id === containerId) continue;
+    if (comp.parentId !== containerId) continue;
+    const l = layoutMap[id];
+    if (!l) continue;
+    const w = l.width ?? 0;
+    const h = l.height ?? 0;
+    occMinX = Math.min(occMinX, l.x);
+    occMinY = Math.min(occMinY, l.y);
+    occMaxX = Math.max(occMaxX, l.x + w);
+    occMaxY = Math.max(occMaxY, l.y + h);
+    hasOccupied = true;
+  }
+
+  if (!hasOccupied) return undefined;
+
+  // Clamp to container bounds.
+  occMinX = Math.max(occMinX, cLeft);
+  occMinY = Math.max(occMinY, cTop);
+  occMaxX = Math.min(occMaxX, cRight);
+  occMaxY = Math.min(occMaxY, cBottom);
+
+  if (occMinX >= occMaxX || occMinY >= occMaxY) return undefined;
+
+  // Build per-box array for intersection testing.
+  interface Box {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  }
+  const occupiedBoxes: Box[] = [];
+  for (const [id, comp] of Object.entries(components)) {
+    if (id === sourceId || id === targetId || id === containerId) continue;
+    if (comp.parentId !== containerId) continue;
+    const l = layoutMap[id];
+    if (!l) continue;
+    const w = l.width ?? 0;
+    const h = l.height ?? 0;
+    occupiedBoxes.push({ x: l.x, y: l.y, w, h });
+  }
+
+  // Entry / exit midpoints.
+  const sRight = srcLayout.x + (srcLayout.width ?? 200);
+  const sMidY = srcLayout.y + (srcLayout.height ?? 120) / 2;
+  const tLeft = tgtLayout.x;
+  const tMidY = tgtLayout.y + (tgtLayout.height ?? 120) / 2;
+
+  // Helper: does a horizontal band (at y=midY, x from a→b) intersect any occupied box?
+  function hBandBlocked(a: number, b: number, midY: number): boolean {
+    for (const box of occupiedBoxes) {
+      if (box.y <= midY && midY <= box.y + box.h) {
+        if (Math.max(a, box.x) < Math.min(b, box.x + box.w)) return true;
+      }
+    }
+    return false;
+  }
+
+  // Helper: does a vertical band (at x=midX, y from a→b) intersect any occupied box?
+  function vBandBlocked(a: number, b: number, midX: number): boolean {
+    for (const box of occupiedBoxes) {
+      if (box.x <= midX && midX <= box.x + box.w) {
+        if (Math.max(a, box.y) < Math.min(b, box.y + box.h)) return true;
+      }
+    }
+    return false;
+  }
+
+  // ── Rightward target ─────────────────────────────────────────────────────
+  if (sRight < tLeft) {
+    if (!hBandBlocked(sRight, tLeft, sMidY)) return undefined; // direct path clear
+    // Route below the occupied boxes.
+    const viaY = Math.min(occMaxY + 1, cBottom);
+    return [
+      { x: sRight, y: sMidY },
+      { x: occMaxX + 1, y: sMidY },
+      { x: occMaxX + 1, y: viaY },
+      { x: tLeft, y: viaY },
+      { x: tLeft, y: tMidY },
+    ];
+  }
+
+  // ── Leftward target ────────────────────────────────────────────────────────
+  if (tLeft < sRight) {
+    if (!hBandBlocked(tLeft, sRight, sMidY)) return undefined;
+    // Route above the occupied boxes.
+    const viaY = Math.max(occMinY - 1, cTop);
+    return [
+      { x: sRight, y: sMidY },
+      { x: occMinX - 1, y: sMidY },
+      { x: occMinX - 1, y: viaY },
+      { x: tLeft, y: viaY },
+      { x: tLeft, y: tMidY },
+    ];
+  }
+
+  // ── Vertical: target below source ─────────────────────────────────────────
+  if (sMidY < tMidY) {
+    if (!vBandBlocked(sMidY, tMidY, tLeft)) return undefined;
+    // Route around the right side of the occupied space.
+    const viaX = Math.min(occMaxX + 1, cRight);
+    return [
+      { x: sRight, y: sMidY },
+      { x: viaX, y: sMidY },
+      { x: viaX, y: tMidY },
+      { x: tLeft, y: tMidY },
+    ];
+  }
+
+  // ── Vertical: target above source ─────────────────────────────────────────
+  if (!vBandBlocked(tMidY, sMidY, tLeft)) return undefined;
+  const viaX = Math.max(occMinX - 1, cLeft);
+  return [
+    { x: sRight, y: sMidY },
+    { x: viaX, y: sMidY },
+    { x: viaX, y: tMidY },
+    { x: tLeft, y: tMidY },
+  ];
+}
+
+function mapEdge(
+  conn: Connection,
+  edgeLayout: EdgeLayout | undefined,
+  layoutMap: Record<string, NodeLayout>,
+  components: Record<string, Component>,
+): ExportEdge {
   const eff = getEffectiveConnectionStyle(conn);
+  const anchors = inferAnchors(conn.sourceId, conn.targetId, layoutMap);
+
+  // User-authored waypoints (from manual edge editing) take priority.
+  // When absent, synthesize boundary-aware waypoints so orthogonal routing
+  // does not cut through sibling nodes inside the same container.
+  const userWaypoints =
+    edgeLayout?.points && edgeLayout.points.length > 0
+      ? edgeLayout.points.map((p) => ({ x: p.x, y: p.y }))
+      : undefined;
+
+  const waypoints =
+    userWaypoints ??
+    buildContainerWaypoints(conn.sourceId, conn.targetId, components, layoutMap);
+
   return {
     id: conn.id,
     sourceId: conn.sourceId,
@@ -207,10 +456,8 @@ function mapEdge(conn: Connection, edgeLayout: EdgeLayout | undefined): ExportEd
     strokeWidth: eff.strokeWidth ?? 1,
     markerStart: mapMarker(eff.markerStart),
     markerEnd: mapMarker(eff.markerEnd),
-    waypoints:
-      edgeLayout?.points && edgeLayout.points.length > 0
-        ? edgeLayout.points.map((p) => ({ x: p.x, y: p.y }))
-        : undefined,
+    waypoints,
+    ...anchors,
   };
 }
 
@@ -294,7 +541,7 @@ export function diagramToExportModel(
   }
 
   const edges: ExportEdge[] = Object.values(connections).map((conn) =>
-    mapEdge(conn, edgeLayouts[conn.id]),
+    mapEdge(conn, edgeLayouts[conn.id], layoutMap, components),
   );
 
   return { name: diagramForExport.name, nodes, edges };

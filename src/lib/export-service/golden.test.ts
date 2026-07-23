@@ -95,6 +95,14 @@ const richComponents: Record<string, Component> = {
     description: "",
     parentId: null,
   },
+  awsApi: {
+    id: "awsApi",
+    name: "API Gateway",
+    type: "aws-networking",
+    awsService: "amazon-apigateway",
+    description: "",
+    parentId: null,
+  },
   api: {
     id: "api",
     name: "Orders API",
@@ -166,6 +174,12 @@ const richConnections: Record<string, Connection> = {
     style: { edgeStyle: EdgeStyle.Bezier, markerStart: EdgeMarker.Arrow },
   },
   e5: { id: "e5", sourceId: "sys", targetId: "db", label: "reads" },
+  // Edge to Note: validates entryX=0 (left side) on the Note's target handle.
+  eNote: { id: "eNote", sourceId: "sys", targetId: "note", label: "annotates" },
+  // AWS as source: validates exitX=1 (right side) on Lambda's source handle.
+  eAws1: { id: "eAws1", sourceId: "aws", targetId: "awsApi", label: "invokes" },
+  // AWS as target: validates entryX=0 on API Gateway's target handle.
+  eAws2: { id: "eAws2", sourceId: "awsApi", targetId: "aws", label: "routes to", direction: "bidirectional" as const },
 };
 
 // C4 layouts carry real measured sizes (React Flow persists them into nodeLayouts after
@@ -183,6 +197,7 @@ const richLayouts: Record<string, NodeLayout> = {
   comp: { elementId: "comp", x: 20, y: 200, width: 190, height: 66 },
   note: { elementId: "note", x: 1300, y: 0, width: 336, height: 475 },
   aws: { elementId: "aws", x: 0, y: 420 },
+  awsApi: { elementId: "awsApi", x: 350, y: 420 },
   api: { elementId: "api", x: 400, y: 440, width: 300, height: 160 },
   ep: { elementId: "ep", x: 0, y: 68, width: 300, height: 40 },
   db: { elementId: "db", x: 820, y: 440 },

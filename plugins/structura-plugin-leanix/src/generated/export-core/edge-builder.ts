@@ -74,10 +74,17 @@ export function buildEdgeCell(edge: ExportEdge, options?: BuildEdgeCellOptions):
         })()
       : "";
 
+  // Exit/entry anchors are now inferred from geometry in to-export-model.ts,
+  // supporting all 4 sides (not just the hardcoded right/left assumption).
+  const anchorAttrs =
+    edge.exitX !== undefined || edge.entryX !== undefined
+      ? ` exitX="${edge.exitX ?? 1}" exitY="${edge.exitY ?? 0.5}" entryX="${edge.entryX ?? 0}" entryY="${edge.entryY ?? 0.5}"`
+      : "";
+
   return (
     `<mxCell id="${escXml(edge.id)}" value="${value}" style="${style}" ` +
     `edge="1" source="${escXml(edge.sourceId)}" target="${escXml(edge.targetId)}" parent="1">` +
-    `<mxGeometry relative="1" as="geometry">${waypointsXml}</mxGeometry>` +
+    `<mxGeometry relative="1" as="geometry"${anchorAttrs}>${waypointsXml}</mxGeometry>` +
     `</mxCell>`
   );
 }

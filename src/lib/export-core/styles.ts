@@ -93,10 +93,11 @@ function resolveDrawioEdgeStyle(edgeStyle: ExportEdgeStyle): string {
     case "editable":
     case "editable-step":
     default:
-      // Orthogonal elbow with rounded corners — mirrors React Flow's smoothstep
-      // (right-angle segments). `curved=1` used to turn this into a soft S-curve,
-      // which is what made exported edges look nothing like the canvas.
-      return "edgeStyle=elbowEdgeStyle;elbow=orthogonal;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;";
+      // Orthogonal routing with rounded corners — mirrors React Flow's smoothstep
+      // (right-angle segments) and supports multi-bend routes (e.g. when the
+      // target is below and to the left of the source, requiring two bends).
+      // elbowEdgeStyle (the previous default) only handled one bend cleanly.
+      return "edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;";
   }
 }
 
