@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PanelKind, type Component } from "@/features/diagram";
 import type { NodeLayout } from "@/features/diagram";
-import {
-  computeBoundingBox,
-  computeScaleFactor,
-  isRootExportNode,
-  resolveOverlaps,
-} from "./geometry";
+import { computeBoundingBox, isRootExportNode } from "./geometry";
 
 function layout(x: number, y: number, w?: number, h?: number): NodeLayout {
   return {
@@ -41,28 +36,6 @@ describe("computeBoundingBox", () => {
     expect(bb.minY).toBe(200);
     expect(bb.width).toBe(400);
     expect(bb.height).toBe(300);
-  });
-});
-
-describe("computeScaleFactor", () => {
-  it("returns 1 for a single root or empty extent", () => {
-    expect(
-      computeScaleFactor({ minX: 0, minY: 0, maxX: 100, maxY: 100, width: 100, height: 100 }, 1),
-    ).toBe(1);
-    expect(computeScaleFactor({ minX: 0, minY: 0, maxX: 0, maxY: 0, width: 0, height: 0 }, 2)).toBe(
-      1,
-    );
-  });
-});
-
-describe("resolveOverlaps", () => {
-  it("separates overlapping root rectangles vertically", () => {
-    const m = new Map([
-      ["a", { x: 0, y: 0, width: 100, height: 100 }],
-      ["b", { x: 0, y: 50, width: 100, height: 100 }],
-    ]);
-    const out = resolveOverlaps(m, 40);
-    expect(out.get("b")!.y).toBeGreaterThanOrEqual(140);
   });
 });
 

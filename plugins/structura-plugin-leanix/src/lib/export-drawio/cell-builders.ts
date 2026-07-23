@@ -28,8 +28,8 @@ class C4CellBuilder {
     const meta = C4_META[c.type] ?? C4_META.system;
     const { x, y, width, height } = geometry;
 
-    const finalWidth = Math.max(width, CONFIG.minDimensions.c4.width);
-    const finalHeight = Math.max(height, CONFIG.minDimensions.c4.height);
+    const finalWidth = Math.max(width, meta.width);
+    const finalHeight = Math.max(height, meta.height);
 
     const c4Line2 = buildC4Line2(c.description);
     const badge = buildC4RegistryBadge(serviceName);

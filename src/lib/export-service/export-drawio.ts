@@ -24,14 +24,9 @@ import { buildEdgeCell } from "./edge-builder";
 import {
   type BoundingBox,
   computeBoundingBox,
-  computeScaleFactor,
   DRAWIO_MIN_MARGIN,
-  DRAWIO_ROOT_MIN_GAP,
   getContainerIds,
   getExportGeometry,
-  isRootExportNode,
-  resolveOverlaps,
-  type RootPosition,
 } from "./geometry";
 import { validateDiagram } from "./validate-diagram";
 import { escXml } from "./xml-utils";
@@ -107,15 +102,10 @@ function sortExportOrder(
   });
 }
 
-function transformCanvasPoint(
-  x: number,
-  y: number,
-  bbox: BoundingBox,
-  scale: number,
-): { x: number; y: number } {
+function transformCanvasPoint(x: number, y: number, bbox: BoundingBox): { x: number; y: number } {
   return {
-    x: Math.round((x - bbox.minX) * scale + DRAWIO_MIN_MARGIN),
-    y: Math.round((y - bbox.minY) * scale + DRAWIO_MIN_MARGIN),
+    x: Math.round(x - bbox.minX + DRAWIO_MIN_MARGIN),
+    y: Math.round(y - bbox.minY + DRAWIO_MIN_MARGIN),
   };
 }
 
@@ -173,28 +163,11 @@ export function exportDrawio(
 
   const bbox = computeBoundingBox(componentIdsWithLayout, layoutMap, components, containerIds);
 
-  const rootIds = componentIdsWithLayout.filter((id) =>
-    isRootExportNode(components[id], containerIds),
-  );
-  const rootNodeCount = rootIds.length;
-  const scale = computeScaleFactor(bbox, rootNodeCount);
-
-  const rootPositions = new Map<string, RootPosition>();
-  for (const id of rootIds) {
-    const nl = layoutMap.get(id);
-    if (!nl) continue;
-    const raw = getExportGeometry(nl);
-    const w = raw.width > 0 ? raw.width : (nl.width ?? CONFIG.minDimensions.c4.width);
-    const h = raw.height > 0 ? raw.height : (nl.height ?? CONFIG.minDimensions.c4.height);
-    const x = (raw.x - bbox.minX) * scale + DRAWIO_MIN_MARGIN;
-    const y = (raw.y - bbox.minY) * scale + DRAWIO_MIN_MARGIN;
-    rootPositions.set(id, { x, y, width: w, height: h });
-  }
-
-  const resolvedRoot = resolveOverlaps(rootPositions, DRAWIO_ROOT_MIN_GAP);
-
-  const exportedWidth = Math.ceil(bbox.width * scale + DRAWIO_MIN_MARGIN * 2);
-  const exportedHeight = Math.ceil(bbox.height * scale + DRAWIO_MIN_MARGIN * 2);
+  // Positions are mapped 1:1 (only shifted into positive space by the bbox origin
+  // + margin). Scaling positions without scaling node sizes distorted the
+  // gap-to-node ratio; keeping scale = 1 preserves the spacing seen in Structura.
+  const exportedWidth = Math.ceil(bbox.width + DRAWIO_MIN_MARGIN * 2);
+  const exportedHeight = Math.ceil(bbox.height + DRAWIO_MIN_MARGIN * 2);
   const pageWidth = Math.max(exportedWidth, CONFIG.grid.pageWidth);
   const pageHeight = Math.max(exportedHeight, CONFIG.grid.pageHeight);
 
@@ -218,21 +191,11 @@ export function exportDrawio(
     const isChildNode = !!(c.parentId && containerIds.has(c.parentId));
     const geometry = isChildNode
       ? { ...rawGeometry }
-      : (() => {
-          const pos = resolvedRoot.get(id);
-          if (pos) {
-            return {
-              ...rawGeometry,
-              x: pos.x,
-              y: pos.y,
-            };
-          }
-          return {
-            ...rawGeometry,
-            x: (rawGeometry.x - bbox.minX) * scale + DRAWIO_MIN_MARGIN,
-            y: (rawGeometry.y - bbox.minY) * scale + DRAWIO_MIN_MARGIN,
-          };
-        })();
+      : {
+          ...rawGeometry,
+          x: rawGeometry.x - bbox.minX + DRAWIO_MIN_MARGIN,
+          y: rawGeometry.y - bbox.minY + DRAWIO_MIN_MARGIN,
+        };
 
     const serviceName = c.serviceId ? serviceCatalog[c.serviceId]?.name : undefined;
 
@@ -287,7 +250,7 @@ export function exportDrawio(
     const edgeLayout = edgeLayoutByConnectionId[conn.id];
     const waypoints =
       edgeLayout?.points && edgeLayout.points.length > 0
-        ? edgeLayout.points.map((point) => transformCanvasPoint(point.x, point.y, bbox, scale))
+        ? edgeLayout.points.map((point) => transformCanvasPoint(point.x, point.y, bbox))
         : [];
     edgeCells.push(buildEdgeCell(conn, { waypoints }));
   }

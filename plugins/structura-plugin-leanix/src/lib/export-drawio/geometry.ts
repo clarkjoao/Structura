@@ -1,12 +1,9 @@
 import type { PluginComponentSnapshot } from "../../types/plugin.types";
-import type { BoundingBox, GeometryInfo, RootPosition } from "./types";
-export type { BoundingBox, RootPosition };
+import type { BoundingBox, GeometryInfo } from "./types";
+export type { BoundingBox };
 import { CONFIG } from "./constants";
 
-export const DRAWIO_TARGET_WIDTH = 2400;
-export const DRAWIO_TARGET_HEIGHT = 1600;
 export const DRAWIO_MIN_MARGIN = 80;
-export const DRAWIO_ROOT_MIN_GAP = 40;
 
 const DEFAULT_ROOT_W = CONFIG.minDimensions.c4.width;
 const DEFAULT_ROOT_H = CONFIG.minDimensions.c4.height;
@@ -75,56 +72,6 @@ export function computeBoundingBox(
 }
 
 /**
- * Compute scale factor for fitting diagram in draw.io
- */
-export function computeScaleFactor(bbox: BoundingBox, rootNodeCount: number): number {
-  if (bbox.width === 0 || bbox.height === 0 || rootNodeCount <= 1) return 1;
-
-  const scaleX = DRAWIO_TARGET_WIDTH / Math.max(bbox.width, 400);
-  const scaleY = DRAWIO_TARGET_HEIGHT / Math.max(bbox.height, 300);
-
-  return Math.min(Math.max(Math.min(scaleX, scaleY), 0.8), 2.5);
-}
-
-/**
- * Resolve overlapping root positions
- */
-export function resolveOverlaps(
-  positions: Map<string, RootPosition>,
-  minGap: number,
-): Map<string, RootPosition> {
-  const resolved = new Map(positions);
-  let changed = true;
-  let guard = 0;
-  while (changed && guard++ < 50) {
-    changed = false;
-    const sorted = [...resolved.entries()].sort(([, a], [, b]) =>
-      a.y !== b.y ? a.y - b.y : a.x - b.x,
-    );
-    for (let i = 0; i < sorted.length; i++) {
-      for (let j = i + 1; j < sorted.length; j++) {
-        const idA = sorted[i][0];
-        const idB = sorted[j][0];
-        const rA = resolved.get(idA)!;
-        const rB = resolved.get(idB)!;
-
-        const overlapX = rA.x < rB.x + rB.width + minGap && rB.x < rA.x + rA.width + minGap;
-        const overlapY = rA.y < rB.y + rB.height + minGap && rB.y < rA.y + rA.height + minGap;
-
-        if (overlapX && overlapY) {
-          const newY = rA.y + rA.height + minGap;
-          if (rB.y !== newY) {
-            resolved.set(idB, { ...rB, y: newY });
-            changed = true;
-          }
-        }
-      }
-    }
-  }
-  return resolved;
-}
-
-/**
  * Get export geometry from component
  */
 export function getExportGeometry(c: PluginComponentSnapshot): GeometryInfo {
@@ -136,21 +83,6 @@ export function getExportGeometry(c: PluginComponentSnapshot): GeometryInfo {
     y: c.position.y,
     width: c.size?.width ?? 0,
     height: c.size?.height ?? 0,
-  };
-}
-
-/**
- * Transform canvas point to draw.io coordinates
- */
-export function transformCanvasPoint(
-  x: number,
-  y: number,
-  bbox: BoundingBox,
-  scale: number,
-): { x: number; y: number } {
-  return {
-    x: Math.round((x - bbox.minX) * scale + DRAWIO_MIN_MARGIN),
-    y: Math.round((y - bbox.minY) * scale + DRAWIO_MIN_MARGIN),
   };
 }
 
@@ -169,12 +101,7 @@ export function isAwsComponent(c: PluginComponentSnapshot): boolean {
 
 export function isC4Component(c: PluginComponentSnapshot): boolean {
   const type = c.type.toLowerCase();
-  return (
-    type === "person" ||
-    type === "system" ||
-    type === "container" ||
-    type === "component"
-  );
+  return type === "person" || type === "system" || type === "container" || type === "component";
 }
 
 export function isEndpointComponent(c: PluginComponentSnapshot): boolean {

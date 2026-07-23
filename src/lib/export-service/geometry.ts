@@ -4,12 +4,7 @@ import { isApiGroupComponent, isPanelComponent } from "@/features/diagram";
 import { CONFIG } from "./constants";
 import type { GeometryInfo } from "./types";
 
-export const DRAWIO_TARGET_WIDTH = 2400;
-export const DRAWIO_TARGET_HEIGHT = 1600;
-
 export const DRAWIO_MIN_MARGIN = 80;
-
-export const DRAWIO_ROOT_MIN_GAP = 40;
 
 const DEFAULT_ROOT_W = CONFIG.minDimensions.c4.width;
 const DEFAULT_ROOT_H = CONFIG.minDimensions.c4.height;
@@ -77,52 +72,6 @@ export function computeBoundingBox(
     width: maxX - minX,
     height: maxY - minY,
   };
-}
-
-export function computeScaleFactor(bbox: BoundingBox, rootNodeCount: number): number {
-  if (bbox.width === 0 || bbox.height === 0 || rootNodeCount <= 1) return 1;
-
-  const scaleX = DRAWIO_TARGET_WIDTH / Math.max(bbox.width, 400);
-  const scaleY = DRAWIO_TARGET_HEIGHT / Math.max(bbox.height, 300);
-
-  return Math.min(Math.max(Math.min(scaleX, scaleY), 0.8), 2.5);
-}
-
-export type RootPosition = { x: number; y: number; width: number; height: number };
-
-export function resolveOverlaps(
-  positions: Map<string, RootPosition>,
-  minGap: number,
-): Map<string, RootPosition> {
-  const resolved = new Map(positions);
-  let changed = true;
-  let guard = 0;
-  while (changed && guard++ < 50) {
-    changed = false;
-    const sorted = [...resolved.entries()].sort(([, a], [, b]) =>
-      a.y !== b.y ? a.y - b.y : a.x - b.x,
-    );
-    for (let i = 0; i < sorted.length; i++) {
-      for (let j = i + 1; j < sorted.length; j++) {
-        const idA = sorted[i][0];
-        const idB = sorted[j][0];
-        const rA = resolved.get(idA)!;
-        const rB = resolved.get(idB)!;
-
-        const overlapX = rA.x < rB.x + rB.width + minGap && rB.x < rA.x + rA.width + minGap;
-        const overlapY = rA.y < rB.y + rB.height + minGap && rB.y < rA.y + rA.height + minGap;
-
-        if (overlapX && overlapY) {
-          const newY = rA.y + rA.height + minGap;
-          if (rB.y !== newY) {
-            resolved.set(idB, { ...rB, y: newY });
-            changed = true;
-          }
-        }
-      }
-    }
-  }
-  return resolved;
 }
 
 export function getExportGeometry(layout: NodeLayout | undefined): GeometryInfo {

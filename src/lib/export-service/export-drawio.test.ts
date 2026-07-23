@@ -213,8 +213,61 @@ describe("exportDrawio", () => {
 
     const xml = exportDrawio(diagram, {});
 
+    // Positions map 1:1 (shifted by bbox origin + margin only): the 300x150 gap
+    // between the two roots in canvas space is preserved, not scaled up.
     expect(xml).toContain(`<mxGeometry x="80" y="80"`);
-    expect(xml).toContain(`<mxGeometry x="830" y="455"`);
-    expect(xml).toContain(`pageWidth="1510"`);
+    expect(xml).toContain(`<mxGeometry x="380" y="230"`);
+    expect(xml).toContain(`pageWidth="1169"`);
+  });
+
+  it("keeps a root note beside a boundary at 1:1 spacing (no scale-up)", () => {
+    const panelId = "panel-1";
+    const childId = "sys-1";
+    const noteId = "note-1";
+    const diagram = minimalDiagram({
+      snapshot: {
+        components: {
+          [panelId]: {
+            id: panelId,
+            name: "Novo Painel",
+            type: "panel",
+            panelKind: PanelKind.Default,
+            description: "",
+            parentId: null,
+          },
+          [childId]: {
+            id: childId,
+            name: "Traffic Splitter",
+            type: "system",
+            description: "",
+            parentId: panelId,
+          },
+          [noteId]: {
+            id: noteId,
+            name: "Nota",
+            type: "note",
+            description: "### Nota",
+            parentId: null,
+          },
+        },
+        connections: {},
+        flows: {},
+        iconLibrary: {},
+      },
+      nodeLayouts: {
+        [panelId]: { elementId: panelId, x: 0, y: 0, width: 400, height: 300 },
+        [childId]: { elementId: childId, x: 20, y: 20, width: 240, height: 120 },
+        [noteId]: { elementId: noteId, x: 600, y: 0, width: 336, height: 475 },
+      },
+    });
+
+    const xml = exportDrawio(diagram, {});
+
+    // Two roots (panel + note) previously triggered the >1 scale factor; now the
+    // note sits at its canvas x (600) shifted by the margin only, and the boundary
+    // child keeps its parent-relative coords.
+    expect(xml).toContain(`<mxGeometry x="680" y="80"`);
+    expect(xml).toContain(`parent="${panelId}"`);
+    expect(xml).toContain(`<mxGeometry x="20" y="20"`);
   });
 });

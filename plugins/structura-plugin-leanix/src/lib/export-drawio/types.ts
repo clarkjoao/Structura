@@ -46,13 +46,3 @@ export interface BoundingBox {
   width: number;
   height: number;
 }
-
-/**
- * Root position with dimensions
- */
-export interface RootPosition {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}

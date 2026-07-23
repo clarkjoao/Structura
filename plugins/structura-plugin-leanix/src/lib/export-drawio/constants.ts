@@ -1,4 +1,4 @@
-import type { C4MetaInfo, AwsServiceInfo } from "./types";
+import type { C4MetaInfo } from "./types";
 
 /**
  * Grid and dimension configuration
@@ -180,15 +180,19 @@ export const AWS_RESICON: Record<string, string> = {
 };
 
 /**
- * C4 metadata for each component type
+ * C4 metadata for each component type.
+ * width/height are the draw.io export geometry per type. The Structura renderer
+ * draws every C4 node with the same footprint (CSS `min-w-[200px] max-w-[260px]`,
+ * content-driven height), so all types share one box size — keeping the
+ * gap-to-node ratio faithful when positions are mapped 1:1.
  */
 export const C4_META: Record<string, C4MetaInfo> = {
   person: {
     fillColor: THEME.colors.c4.person,
     strokeColor: THEME.colors.c4.personStroke,
     fontColor: "#ffffff",
-    width: 200,
-    height: 180,
+    width: 240,
+    height: 120,
   },
   system: {
     fillColor: THEME.colors.c4.system,
