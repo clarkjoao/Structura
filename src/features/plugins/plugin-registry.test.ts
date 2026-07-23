@@ -1,17 +1,27 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { InMemoryAdapter } from "@/infrastructure/persistence";
 import { NODE_TYPE_REGISTRY } from "@/features/canvas/nodes/node-types/registry";
 import {
+  PLUGIN_BUNDLED_DISABLED_KEY,
   PLUGIN_INSTALL_RECORDS_KEY,
+  getInstalledPluginIds,
   getPluginRegistrySnapshot,
   initializePluginRegistry,
   installPluginFromCode,
   resetPluginRegistryForTests,
+  setBundledPluginEnabled,
   setPluginEnabled,
   uninstallPlugin,
 } from "./plugin-registry";
 import { getImporterContribution } from "./io-registry";
 import type { PluginInstallRecord } from "./plugin.types";
+
+// The bundled ("built-in") layer is fed from a build-only virtual module; mock its accessor so
+// tests can inject fixtures. Default is empty, so the suites above see no built-in plugins.
+const bundledFixture = vi.hoisted(() => ({ list: [] as { dir: string; code: string }[] }));
+vi.mock("./bundled-plugins", () => ({
+  getBundledPlugins: () => bundledFixture.list,
+}));
 
 const PLUGIN_ID = "structura-plugin-test";
 
@@ -213,5 +223,110 @@ describe("lifecycle", () => {
     await initializePluginRegistry(port);
     expect(getPluginRegistrySnapshot()[0]).toMatchObject({ errored: true, active: false });
     expect(getImporterContribution("test-importer")).toBeUndefined();
+  });
+});
+
+const BUNDLED_ID = "structura-plugin-bundled";
+
+function bundledCode(id: string, importerId: string): string {
+  return `
+    window.StructuraPlugin.define({
+      manifest: {
+        id: "${id}",
+        name: "Bundled Plugin",
+        version: "1.0.0",
+        author: "Tests",
+        description: "A bundled plugin",
+        apiVersion: "^1.0",
+        capabilities: ["io:importers"],
+      },
+      activate: (api) => {
+        api.registerImporter({
+          id: "${importerId}",
+          label: "Bundled",
+          extensions: ["bnd"],
+          import: () => ({ components: [], connections: [], warnings: [] }),
+        });
+      },
+    });
+  `;
+}
+
+/** Set the built-in fixture and boot the registry against it from a clean slate. */
+async function bootWithBundled(list: { dir: string; code: string }[]): Promise<void> {
+  bundledFixture.list = list;
+  await resetPluginRegistryForTests();
+  await initializePluginRegistry(port);
+}
+
+describe("bundled (built-in) plugins", () => {
+  afterEach(() => {
+    bundledFixture.list = [];
+  });
+
+  it("activates a bundled plugin at boot without persisting it as an install record", async () => {
+    await bootWithBundled([{ dir: "bundled", code: bundledCode(BUNDLED_ID, "bundled-importer") }]);
+
+    expect(getImporterContribution("bundled-importer")).toBeDefined();
+    const snapshot = getPluginRegistrySnapshot();
+    expect(snapshot).toHaveLength(1);
+    expect(snapshot[0]).toMatchObject({ source: "bundled", active: true, enabled: true });
+    // Built-in plugins never touch the user install records.
+    expect(await port.load(PLUGIN_INSTALL_RECORDS_KEY)).toBeNull();
+    expect(getInstalledPluginIds()).toContain(BUNDLED_ID);
+  });
+
+  it("persists the disable choice and re-activates on re-enable across a restart", async () => {
+    await bootWithBundled([{ dir: "bundled", code: bundledCode(BUNDLED_ID, "bundled-importer") }]);
+
+    await setBundledPluginEnabled(BUNDLED_ID, false);
+    expect(getImporterContribution("bundled-importer")).toBeUndefined();
+    expect(await port.load(PLUGIN_BUNDLED_DISABLED_KEY)).toEqual([BUNDLED_ID]);
+
+    // Restart: the disabled choice sticks.
+    await resetPluginRegistryForTests();
+    await initializePluginRegistry(port);
+    expect(getImporterContribution("bundled-importer")).toBeUndefined();
+    expect(getPluginRegistrySnapshot()[0]).toMatchObject({ enabled: false, active: false });
+
+    await setBundledPluginEnabled(BUNDLED_ID, true);
+    expect(getImporterContribution("bundled-importer")).toBeDefined();
+    expect(await port.load(PLUGIN_BUNDLED_DISABLED_KEY)).toEqual([]);
+  });
+
+  it("shadows a user record that collides with a bundled id (bundled wins)", async () => {
+    // Pre-seed a user install record sharing the bundled id but a different contribution.
+    const userRecord: PluginInstallRecord = {
+      manifest: {
+        id: BUNDLED_ID,
+        name: "Impostor",
+        version: "9.9.9",
+        author: "User",
+        description: "Colliding user plugin",
+        apiVersion: "^1.0",
+        capabilities: ["io:importers"],
+      },
+      code: bundledCode(BUNDLED_ID, "user-importer"),
+      enabled: true,
+      errored: false,
+      installedAt: 123,
+    };
+    await port.save(PLUGIN_INSTALL_RECORDS_KEY, [userRecord]);
+
+    await bootWithBundled([{ dir: "bundled", code: bundledCode(BUNDLED_ID, "bundled-importer") }]);
+
+    expect(getImporterContribution("bundled-importer")).toBeDefined();
+    expect(getImporterContribution("user-importer")).toBeUndefined();
+    const snapshot = getPluginRegistrySnapshot();
+    expect(snapshot).toHaveLength(1);
+    expect(snapshot[0]).toMatchObject({ source: "bundled" });
+  });
+
+  it("ignores uninstall for a bundled plugin", async () => {
+    await bootWithBundled([{ dir: "bundled", code: bundledCode(BUNDLED_ID, "bundled-importer") }]);
+
+    await uninstallPlugin(BUNDLED_ID);
+    expect(getImporterContribution("bundled-importer")).toBeDefined();
+    expect(getPluginRegistrySnapshot()).toHaveLength(1);
   });
 });

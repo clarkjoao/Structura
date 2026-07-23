@@ -26,6 +26,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:dev": "vite build --mode development",
+    "build:plugins": "node tools/build-with-plugins.mjs",
     "proxy:install": "npm --prefix server install",
     "proxy:dev": "npm --prefix server run dev",
     "proxy": "npm run proxy:install && npm run proxy:dev",

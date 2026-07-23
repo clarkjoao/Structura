@@ -20,7 +20,7 @@ import { runPluginImport } from "./run-plugin-import";
 
 const EXAMPLE_PLUGIN_PATH = join(
   __dirname,
-  "../../../examples/plugins/structura-plugin-mermaid-import.js",
+  "../../../plugins/examples/mermaid-import/plugin.js",
 );
 const PLUGIN_ID = "structura-plugin-mermaid-import";
 const IMPORTER_ID = `${PLUGIN_ID}/flowchart`;

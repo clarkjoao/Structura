@@ -34,6 +34,7 @@ import type { ManifestValidationError } from "@/features/plugins/manifest-valida
 import {
   installPluginFromCode,
   previewPluginManifest,
+  setBundledPluginEnabled,
   setPluginEnabled,
   uninstallPlugin,
   type PluginRuntimeState,
@@ -141,7 +142,11 @@ export default function PluginsPage() {
               <PluginCard
                 key={plugin.manifest.id}
                 plugin={plugin}
-                onToggle={(enabled) => void setPluginEnabled(plugin.manifest.id, enabled)}
+                onToggle={(enabled) =>
+                  void (plugin.source === "bundled"
+                    ? setBundledPluginEnabled(plugin.manifest.id, enabled)
+                    : setPluginEnabled(plugin.manifest.id, enabled))
+                }
                 onUninstall={() => setUninstallTarget(plugin.manifest)}
               />
             ))}
@@ -229,6 +234,7 @@ function PluginCard({
 }) {
   const { t } = useTranslation();
   const { manifest } = plugin;
+  const isBundled = plugin.source === "bundled";
 
   return (
     <Card>
@@ -237,6 +243,7 @@ function PluginCard({
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-base font-semibold text-foreground">{manifest.name}</h2>
             <span className="text-xs text-muted-foreground">v{manifest.version}</span>
+            {isBundled && <Badge variant="outline">{t("plugins.builtin")}</Badge>}
             {plugin.errored && (
               <Badge variant="destructive" className="gap-1">
                 <TriangleAlert className="h-3 w-3" aria-hidden />
@@ -257,14 +264,17 @@ function PluginCard({
               aria-label={t("plugins.enable")}
             />
           </label>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onUninstall}
-            aria-label={t("plugins.uninstall")}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          {/* Bundled plugins ship with the build and can only be disabled, never uninstalled. */}
+          {!isBundled && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onUninstall}
+              aria-label={t("plugins.uninstall")}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 pt-0">

@@ -19,10 +19,10 @@ plugins/
 
 Plugins in `examples/` are plain JavaScript files — no build step needed. Just upload the `.js` file from the Plugins page in Structura.
 
-| Plugin | Capabilities | Description |
-|--------|-------------|-------------|
-| [console-log](examples/console-log/) | `events:diagram`, `diagram:read`, `diagram:write` | Logs diagram changes to console, keyboard shortcuts |
-| [mermaid-import](examples/mermaid-import/) | `io:importers` | Import Mermaid flowchart files |
+| Plugin                                     | Capabilities                                      | Description                                         |
+| ------------------------------------------ | ------------------------------------------------- | --------------------------------------------------- |
+| [console-log](examples/console-log/)       | `events:diagram`, `diagram:read`, `diagram:write` | Logs diagram changes to console, keyboard shortcuts |
+| [mermaid-import](examples/mermaid-import/) | `io:importers`                                    | Import Mermaid flowchart files                      |
 
 ### React Plugins
 
@@ -31,8 +31,8 @@ React plugins are in individual folders and require a build step. They are writt
 you `import { useState } from "react"` and use JSX directly (no `getReact()`, no bundled
 React). See [structura-plugin-example-ui/README.md](structura-plugin-example-ui/README.md).
 
-| Plugin | Capabilities | Description |
-|--------|-------------|-------------|
+| Plugin                                                      | Capabilities                                                            | Description                         |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------- |
 | [structura-plugin-example-ui](structura-plugin-example-ui/) | `ui:panels`, `ui:overlays`, `diagram:read`, `events:diagram`, `storage` | Toolbar button, toasts, modals demo |
 
 ```bash
@@ -42,20 +42,40 @@ npm run build
 # Upload dist/plugin.js from Plugins page
 ```
 
+### Built-in plugins (pre-installed builds)
+
+For a distribution that ships plugins already installed — no manual upload — build the app with
+the plugins embedded:
+
+```bash
+npm run build:plugins -- structura-plugin-leanix
+# or several, comma-separated:
+npm run build:plugins -- structura-plugin-leanix,structura-plugin-example-ui
+```
+
+This builds each selected plugin (installing its deps if needed), embeds each `dist/plugin.js`
+into the app bundle, and produces the normal `dist/` output. Pass `--no-build` to reuse an
+existing `dist/plugin.js` instead of rebuilding.
+
+Built-in plugins show up on the Plugins page with a **Built-in** badge. They activate at boot
+straight from the bundle (never uploaded, never written to browser storage), so a rebuild that
+ships a newer plugin version updates them automatically. Users can disable them but not
+uninstall them. A plain `npm run build` ships zero built-in plugins.
+
 ## Plugin Capabilities Reference
 
 See [docs/architecture/extension-points.md](../../docs/architecture/extension-points.md) for the full extension point inventory.
 
-| Capability | Description |
-|------------|-------------|
-| `events:diagram` | Subscribe to diagram changes via `onDiagramChange` |
-| `diagram:read` | Read diagram data via `getDiagram()` |
-| `diagram:write` | Modify diagrams via `updateComponent()`, `moveComponents()` |
-| `io:importers` | Register file importers via `registerImporter()` |
-| `io:exporters` | Register file exporters via `registerExporter()` |
-| `ui:panels` | Add panels to toolbar or inspector via `registerPanel()` |
-| `ui:overlays` | Show toasts and modals via `overlay.showToast()`, `overlay.openModal()` |
-| `canvas:node-types` | Register custom node types via `registerNodeType()` |
+| Capability          | Description                                                             |
+| ------------------- | ----------------------------------------------------------------------- |
+| `events:diagram`    | Subscribe to diagram changes via `onDiagramChange`                      |
+| `diagram:read`      | Read diagram data via `getDiagram()`                                    |
+| `diagram:write`     | Modify diagrams via `updateComponent()`, `moveComponents()`             |
+| `io:importers`      | Register file importers via `registerImporter()`                        |
+| `io:exporters`      | Register file exporters via `registerExporter()`                        |
+| `ui:panels`         | Add panels to toolbar or inspector via `registerPanel()`                |
+| `ui:overlays`       | Show toasts and modals via `overlay.showToast()`, `overlay.openModal()` |
+| `canvas:node-types` | Register custom node types via `registerNodeType()`                     |
 
 ## Developing Plugins
 
