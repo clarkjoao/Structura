@@ -79,23 +79,35 @@ repo adopts npm workspaces for other reasons.
 
 ## Addendum — measured-size fidelity (A1)
 
-**Context.** C4 nodes are CSS auto-sized (no stored width/height at creation), so
-the export originally floored their size to the `C4_META` box via
-`Math.max(measured, meta)`. With the proportion fix (1:1 positions, no
-`resolveOverlaps`), that floor became visible: a Person measured ≈180×64 was
-exported at 240×120 and overlapped the node stacked below it.
+**Context.** C4 nodes are CSS auto-sized (no stored width/height at creation). React Flow
+measures them on render and persists the result into `nodeLayouts` via
+`handleDimensionsChange`. Without intervention, a Person node measured ~180×64 at render
+time would export at that size — but that size is only the visual box; the canonical
+draw.io representation uses a 240×120 placeholder. Two nodes stacked 75px apart on canvas
+would overlap in the export (75 < 120) and draw.io would render them as overlapping
+rectangles. Previously `resolveOverlaps` masked this; it was removed in A2.
 
-**Decision.** The export uses the **real measured size** when present, and
-`C4_META` only as the fallback for a not-yet-measured node
-(`width > 0 ? width : meta.width`). React Flow's measured dimensions already reach
-`nodeLayouts` — `handleDimensionsChange` (in `useNodeDragParenting`) persists every
-`"dimensions"` change, and the c4 descriptor does not size the node from the
-layout, so there is no measure→persist→re-render loop. The adapter passes the
-stored dimension through; only the export core's floor was removed.
+**Decision — A1-compensation (chosen).** The export uses **canonical C4_META boxes** for
+geometry (always 240×120 for Person), not the measured canvas size. A compensation
+pass (`computeCompensationOffsets`) runs before building the XML: it sorts root C4 nodes
+top→bottom, left→right, and pushes any later node that collides with an earlier one down
+by just enough to restore a GAP ≥ 10px. The `cell-builders.ts` C4 case gets no special
+logic — it just uses the canonical dimension (`width > 0 ? width : meta.width`).
 
-**Consequences.** (+) Stacked/adjacent C4 nodes keep their canvas gaps — no
-overlap, no need to re-introduce `resolveOverlaps`. (+) Fix lands once, for app and
-plugin. (−) A diagram whose C4 nodes were never measured-and-persisted (e.g. a
-freshly imported diagram exported before render) still falls back to the `C4_META`
-box. (−) The golden baseline was re-frozen because C4 dimensions now reflect
-measured sizes rather than the 240×120 floor.
+The key insight is that measured sizes flow through `handleDimensionsChange` → `nodeLayouts`
+→ adapter → export-core, but the export core deliberately ignores them for geometry.
+Measured sizes may still be used by other consumers (layout, collision detection).
+
+**Rejected — A1-measured (direct use of measured sizes).** This approach (the one
+initially proposed) passes `nodeLayouts.width/height` through and removes the floor.
+It eliminates overlaps for normal diagrams but has a subtle failure mode: a diagram
+whose C4 nodes were never measured-and-persisted (e.g. imported, exported before render)
+falls back to size=0 → C4_META floor (overlap returns). More importantly, it makes the
+export output depend on whether the user has opened the diagram, which is confusing.
+The compensation approach is deterministic regardless of render history.
+
+**Consequences.** (+) Stacked/adjacent C4 nodes always export with a gap, regardless
+of measured sizes or render history. (+) Only root nodes are compensated; children of
+panels/api-groups use parent-relative coords and are not shifted. (+) Fix lands once,
+for app and plugin. (−) The golden baseline was re-frozen because C4 positions now
+reflect compensation offsets, not raw canvas positions.

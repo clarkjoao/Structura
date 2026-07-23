@@ -168,10 +168,12 @@ const richConnections: Record<string, Connection> = {
   e5: { id: "e5", sourceId: "sys", targetId: "db", label: "reads" },
 };
 
-// C4 layouts carry real measured sizes (as React Flow persists them into
-// nodeLayouts). The export uses these directly instead of the C4_META floor (A1),
-// so a Person measured 180×64 exports at 180×64 — not 240×120 — which is what
-// keeps stacked/adjacent C4 nodes from overlapping.
+// C4 layouts carry real measured sizes (React Flow persists them into nodeLayouts after
+// render). The export uses canonical C4_META boxes for geometry, NOT these measured sizes.
+// The gap between stacked/adjacent C4 nodes is preserved by computeCompensationOffsets
+// (A1-compensation): it pushes overlapping nodes apart in Y before building the XML.
+// The measured sizes in the fixture exist because the real diagram was rendered, but the
+// export uses C4_META canonical dimensions + offsets — see ADR-0009 A1-compensation.
 const richLayouts: Record<string, NodeLayout> = {
   p1: { elementId: "p1", x: 0, y: 0, width: 180, height: 64 },
   p2: { elementId: "p2", x: 0, y: 160, width: 180, height: 64 },

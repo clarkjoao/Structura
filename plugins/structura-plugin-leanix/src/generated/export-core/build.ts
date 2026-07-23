@@ -11,6 +11,8 @@ import { buildEdgeCell } from "./edge-builder";
 import {
   type BoundingBox,
   computeBoundingBox,
+  computeCompensationOffsets,
+  compensatedMaxY,
   DRAWIO_MIN_MARGIN,
   getContainerIds,
 } from "./geometry";
@@ -82,21 +84,30 @@ export function buildMxGraphXml(model: ExportModel, opts: { wrapper: MxGraphWrap
   const containerIds = getContainerIds(nodes);
   const bbox = computeBoundingBox(nodes, containerIds);
 
+  const ordered = sortExportOrder(nodes, containerIds);
+
+  // Propagate canonical C4_META sizes by pushing overlapping nodes apart in Y.
+  const compensationOffsets = computeCompensationOffsets(ordered, containerIds);
+
   const exportedWidth = Math.ceil(bbox.width + DRAWIO_MIN_MARGIN * 2);
-  const exportedHeight = Math.ceil(bbox.height + DRAWIO_MIN_MARGIN * 2);
+  const compensatedBottom = compensatedMaxY(ordered, compensationOffsets);
+  // Compensated nodes may extend below what the original bbox captured (which was
+  // computed before compensation), so pageHeight must accommodate the deepest node.
+  const exportedHeight = Math.ceil(
+    Math.max(compensatedBottom - bbox.minY + DRAWIO_MIN_MARGIN, bbox.height + DRAWIO_MIN_MARGIN * 2),
+  );
   const pageWidth = Math.max(exportedWidth, CONFIG.grid.pageWidth);
   const pageHeight = Math.max(exportedHeight, CONFIG.grid.pageHeight);
-
-  const ordered = sortExportOrder(nodes, containerIds);
 
   const vertexCells = ordered.map((node) => {
     const parentMx = drawParentId(node, containerIds);
     const isChildNode = !!(node.parentId && containerIds.has(node.parentId));
+    const offsetY = compensationOffsets.get(node.id) ?? 0;
     const geometry = isChildNode
-      ? { x: node.x, y: node.y, width: node.width, height: node.height }
+      ? { x: node.x, y: node.y + offsetY, width: node.width, height: node.height }
       : {
           x: node.x - bbox.minX + DRAWIO_MIN_MARGIN,
-          y: node.y - bbox.minY + DRAWIO_MIN_MARGIN,
+          y: node.y - bbox.minY + DRAWIO_MIN_MARGIN + offsetY,
           width: node.width,
           height: node.height,
         };

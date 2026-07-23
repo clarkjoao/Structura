@@ -25,12 +25,12 @@ export function buildCell(node: ExportNode, geometry: GeometryInfo, parentId: st
   switch (node.kind) {
     case "c4": {
       const meta = C4_META[node.subtype] ?? C4_META.system;
-      // Use the real measured size (persisted from React Flow into nodeLayouts)
-      // when present; C4_META is only the fallback for a not-yet-measured node.
-      // A floor (Math.max) here would discard smaller real sizes and re-introduce
-      // the overlaps that resolveOverlaps used to mask — see ADR-0009 / A1.
-      const finalWidth = width > 0 ? width : meta.width;
-      const finalHeight = height > 0 ? height : meta.height;
+      // Export at the canonical C4_META box so the output is deterministic regardless
+      // of any measured size React Flow persisted. Overlaps between neighbours are
+      // resolved by computeCompensationOffsets (A1-compensation) pushing nodes apart
+      // in Y — see ADR-0009 / A1.
+      const finalWidth = meta.width;
+      const finalHeight = meta.height;
 
       const c4Line2 = buildC4Line2(node.description, node.technology);
       const badge = buildC4RegistryBadge(node.serviceName);
