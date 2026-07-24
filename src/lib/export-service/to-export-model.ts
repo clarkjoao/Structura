@@ -39,6 +39,8 @@ import type {
 } from "../export-core";
 import { awsServiceCache } from "./aws-cache";
 import { validateDiagram } from "./validate-diagram";
+import { resolveEdgeRouting } from "./edge-routing";
+import type { HandleSlots } from "./edge-routing";
 
 const MAX_HANDLES = 9; // Must match the canvas MAX_HANDLES constant
 
@@ -89,6 +91,31 @@ interface ConnectionCounts {
 }
 
 /**
+ * Compute absolute position of a node by accumulating its parent chain.
+ * Returns the layout's x/y plus each ancestor's x/y.
+ */
+function getAbsoluteLayout(
+  nodeId: string,
+  layoutMap: Record<string, NodeLayout>,
+  components: Record<string, Component>,
+): { x: number; y: number; width: number; height: number } | undefined {
+  const l = layoutMap[nodeId];
+  const c = components[nodeId];
+  if (!l) return undefined;
+  let absX = l.x;
+  let absY = l.y;
+  let parentId = c?.parentId ?? null;
+  while (parentId) {
+    const pl = layoutMap[parentId];
+    if (!pl) break;
+    absX += pl.x;
+    absY += pl.y;
+    parentId = components[parentId]?.parentId ?? null;
+  }
+  return { x: absX, y: absY, width: l.width ?? 200, height: l.height ?? 120 };
+}
+
+/**
  * Count incoming and outgoing connections per node, matching the canvas logic.
  */
 function buildConnectionCounts(connections: Connection[]): Record<string, ConnectionCounts> {
@@ -117,13 +144,6 @@ function resolveHandleIndex(
     return orderIdx !== -1 ? Math.min(orderIdx, slotCount - 1) : usageCount % slotCount;
   }
   return usageCount % slotCount;
-}
-
-interface HandleSlots {
-  sourceSlot: number;
-  targetSlot: number;
-  sourceCount: number;
-  targetCount: number;
 }
 
 /**
@@ -189,16 +209,6 @@ function buildHandleSlots(
   }
 
   return slots;
-}
-
-/**
- * Convert a handle slot index to a normalized anchor offset.
- * For N slots on a side, slot i gets position (i+1)/(N+1).
- * This matches how React Flow's buildHandles distributes handles visually.
- */
-function slotToOffset(slot: number, count: number): number {
-  if (count <= 1) return 0.5;
-  return (slot + 1) / (count + 1);
 }
 
 interface BaseGeometry {
@@ -313,340 +323,6 @@ function mapNode(
   throw new Error(`Unsupported component for draw.io export: ${JSON.stringify(_exhaustive)}`);
 }
 
-/**
- * Infer exit/entry anchors from the relative geometry of source and target
- * nodes, with slot-based offsets for multiple handles on the same side.
- *
- * For horizontal flows (right→left default): exitX=1, entryX=0.
- * For vertical flows: use top/bottom anchors so the line runs directly.
- *
- * When multiple edges share the same side, slot offsets distribute them
- * proportionally: slot i of N gets position (i+1)/(N+1), mirroring the
- * canvas React Flow behavior.
- *
- * For container/panel targets: entry anchor is chosen based on where the
- * source is relative to the container, so the line enters from the correct side.
- */
-function inferAnchors(
-  sourceId: string,
-  targetId: string,
-  layoutMap: Record<string, NodeLayout>,
-  components: Record<string, Component>,
-  slot: HandleSlots | undefined,
-): { exitX: number; exitY: number; entryX: number; entryY: number } {
-  const src = layoutMap[sourceId];
-  const tgt = layoutMap[targetId];
-  if (!src || !tgt) {
-    return { exitX: 1, exitY: 0.5, entryX: 0, entryY: 0.5 };
-  }
-
-  const srcW = src.width ?? 200;
-  const srcH = src.height ?? 120;
-  const tgtW = tgt.width ?? 200;
-  const tgtH = tgt.height ?? 120;
-
-  const srcCenterX = src.x + srcW / 2;
-  const srcCenterY = src.y + srcH / 2;
-  const tgtCenterX = tgt.x + tgtW / 2;
-  const tgtCenterY = tgt.y + tgtH / 2;
-
-  const dx = tgtCenterX - srcCenterX;
-  const dy = tgtCenterY - srcCenterY;
-
-  // Determine base anchor positions based on geometry.
-  // IMPORTANT: the exit anchor must be on the side of the source that faces
-  // the target, and the entry anchor must be on the side of the target that
-  // faces the source — otherwise the edge will route around the long way.
-  let baseExitX = 1; // right side of source
-  let baseExitY = 0.5;
-  let baseEntryX = 0; // left side of target
-  let baseEntryY = 0.5;
-
-  // Horizontal-dominant: target is clearly to the LEFT or RIGHT of source.
-  // Use left/right anchors and flip based on dx direction.
-  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
-    if (dx > 0) {
-      // Target is to the right of source: exit right, enter left (default).
-      baseExitX = 1;
-      baseExitY = 0.5;
-      baseEntryX = 0;
-      baseEntryY = 0.5;
-    } else {
-      // Target is to the left of source: exit left, enter right.
-      baseExitX = 0;
-      baseExitY = 0.5;
-      baseEntryX = 1;
-      baseEntryY = 0.5;
-    }
-  } else if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 50) {
-    // Vertical-dominant: target sits clearly above or below the source.
-    if (dy > 0) {
-      // Target below source: exit bottom, enter top.
-      baseExitX = 0.5;
-      baseExitY = 1;
-      baseEntryX = 0.5;
-      baseEntryY = 0;
-    } else {
-      // Target above source: exit top, enter bottom.
-      baseExitX = 0.5;
-      baseExitY = 0;
-      baseEntryX = 0.5;
-      baseEntryY = 1;
-    }
-  }
-
-  // For container/panel targets: choose entry side based on source position
-  const tgtComp = components[targetId];
-  if (tgtComp && (isPanelComponent(tgtComp) || isApiGroupComponent(tgtComp))) {
-    // If source is to the left of container, enter from the left
-    // If source is to the right of container, enter from the right
-    // If source is above container, enter from top
-    // If source is below container, enter from bottom
-    const tgtLeft = tgt.x;
-    const tgtRight = tgt.x + tgtW;
-    const tgtTop = tgt.y;
-    const tgtBottom = tgt.y + tgtH;
-
-    if (srcCenterX < tgtLeft) {
-      // Source is to the left
-      baseEntryX = 0;
-      baseEntryY = 0.5;
-    } else if (srcCenterX > tgtRight) {
-      // Source is to the right
-      baseEntryX = 1;
-      baseEntryY = 0.5;
-    } else if (srcCenterY < tgtTop) {
-      // Source is above
-      baseEntryX = 0.5;
-      baseEntryY = 0;
-    } else if (srcCenterY > tgtBottom) {
-      // Source is below
-      baseEntryX = 0.5;
-      baseEntryY = 1;
-    }
-    // Otherwise, keep horizontal default (left side)
-  }
-
-  // Apply slot offsets when there are multiple handles on the same side
-  if (slot) {
-    // Source handle offset
-    if (slot.sourceCount > 1) {
-      const offset = slotToOffset(slot.sourceSlot, slot.sourceCount);
-      if (baseExitY === 0.5) {
-        // Horizontal: offset along the right side (Y axis)
-        baseExitY = offset;
-      }
-      // For vertical exits (top/bottom), offset would be along X axis
-      // but we keep exitX=0.5 for vertical exits
-    }
-
-    // Target handle offset
-    if (slot.targetCount > 1) {
-      const offset = slotToOffset(slot.targetSlot, slot.targetCount);
-      if (baseEntryY === 0.5) {
-        // Horizontal: offset along the left side (Y axis)
-        baseEntryY = offset;
-      }
-      // For vertical entries (top/bottom), offset would be along X axis
-      // but we keep entryX=0.5 for vertical entries
-    }
-  }
-
-  return {
-    exitX: baseExitX,
-    exitY: baseExitY,
-    entryX: baseEntryX,
-    entryY: baseEntryY,
-  };
-}
-
-/**
- * When source and target are siblings inside the same container panel / api-group,
- * other siblings may sit between them.  The automatic orthogonal router has no
- * knowledge of those obstacles, so it routes straight through them.
- *
- * This function detects the common-ancestor container (panel / api-group) of both
- * ends, computes the bounding box of all *other* children inside it, and returns
- * a set of waypoints that route the edge around that occupied space while
- * staying inside the container perimeter.  The result is merged with any
- * user-authored waypoints in edgeLayout.points (user edits always win).
- *
- * The waypoints are placed just inside the container boundary (margin=1) so they
- * do not clip against the panel outline.
- */
-function buildContainerWaypoints(
-  sourceId: string,
-  targetId: string,
-  components: Record<string, Component>,
-  layoutMap: Record<string, NodeLayout>,
-): { x: number; y: number }[] | undefined {
-  const srcComp = components[sourceId];
-  const tgtComp = components[targetId];
-  if (!srcComp || !tgtComp) return undefined;
-
-  // Find the nearest common container ancestor (panel or api-group).
-  const srcAncestors = new Set<string>();
-  let p = srcComp.parentId;
-  while (p) {
-    srcAncestors.add(p);
-    p = components[p]?.parentId;
-  }
-
-  let containerId: string | null = null;
-  p = tgtComp.parentId;
-  while (p) {
-    if (srcAncestors.has(p) && (isPanelComponent(components[p]) || isApiGroupComponent(components[p]))) {
-      containerId = p;
-      break;
-    }
-    p = components[p]?.parentId;
-  }
-
-  if (!containerId) return undefined;
-
-  const containerLayout = layoutMap[containerId];
-  const srcLayout = layoutMap[sourceId];
-  const tgtLayout = layoutMap[targetId];
-  if (!containerLayout || !srcLayout || !tgtLayout) return undefined;
-
-  // Minimum margin from container edge to waypoint (pixels).
-  // This ensures waypoints never clip against the panel outline.
-  const MARGIN = 5;
-  const cLeft = containerLayout.x + MARGIN;
-  const cTop = containerLayout.y + MARGIN;
-  const cRight = containerLayout.x + (containerLayout.width ?? 200) - MARGIN;
-  const cBottom = containerLayout.y + (containerLayout.height ?? 120) - MARGIN;
-
-  // Bounding box of every OTHER sibling inside the container (excluding src + tgt).
-  let occMinX = Infinity,
-    occMinY = Infinity,
-    occMaxX = -Infinity,
-    occMaxY = -Infinity;
-  let hasOccupied = false;
-
-  for (const [id, comp] of Object.entries(components)) {
-    if (id === sourceId || id === targetId || id === containerId) continue;
-    if (comp.parentId !== containerId) continue;
-    const l = layoutMap[id];
-    if (!l) continue;
-    const w = l.width ?? 0;
-    const h = l.height ?? 0;
-    occMinX = Math.min(occMinX, l.x);
-    occMinY = Math.min(occMinY, l.y);
-    occMaxX = Math.max(occMaxX, l.x + w);
-    occMaxY = Math.max(occMaxY, l.y + h);
-    hasOccupied = true;
-  }
-
-  if (!hasOccupied) return undefined;
-
-  // Clamp to container bounds.
-  occMinX = Math.max(occMinX, cLeft);
-  occMinY = Math.max(occMinY, cTop);
-  occMaxX = Math.min(occMaxX, cRight);
-  occMaxY = Math.min(occMaxY, cBottom);
-
-  if (occMinX >= occMaxX || occMinY >= occMaxY) return undefined;
-
-  // Build per-box array for intersection testing.
-  interface Box {
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-  }
-  const occupiedBoxes: Box[] = [];
-  for (const [id, comp] of Object.entries(components)) {
-    if (id === sourceId || id === targetId || id === containerId) continue;
-    if (comp.parentId !== containerId) continue;
-    const l = layoutMap[id];
-    if (!l) continue;
-    const w = l.width ?? 0;
-    const h = l.height ?? 0;
-    occupiedBoxes.push({ x: l.x, y: l.y, w, h });
-  }
-
-  // Entry / exit midpoints.
-  const sRight = srcLayout.x + (srcLayout.width ?? 200);
-  const sMidY = srcLayout.y + (srcLayout.height ?? 120) / 2;
-  const tLeft = tgtLayout.x;
-  const tMidY = tgtLayout.y + (tgtLayout.height ?? 120) / 2;
-
-  // Helper: does a horizontal band (at y=midY, x from a→b) intersect any occupied box?
-  function hBandBlocked(a: number, b: number, midY: number): boolean {
-    for (const box of occupiedBoxes) {
-      if (box.y <= midY && midY <= box.y + box.h) {
-        if (Math.max(a, box.x) < Math.min(b, box.x + box.w)) return true;
-      }
-    }
-    return false;
-  }
-
-  // Helper: does a vertical band (at x=midX, y from a→b) intersect any occupied box?
-  function vBandBlocked(a: number, b: number, midX: number): boolean {
-    for (const box of occupiedBoxes) {
-      if (box.x <= midX && midX <= box.x + box.w) {
-        if (Math.max(a, box.y) < Math.min(b, box.y + box.h)) return true;
-      }
-    }
-    return false;
-  }
-
-  // ── Rightward target ─────────────────────────────────────────────────────
-  if (sRight < tLeft) {
-    if (!hBandBlocked(sRight, tLeft, sMidY)) return undefined; // direct path clear
-    // Route below the occupied boxes, clamped to container bounds.
-    const viaY = Math.min(occMaxY + MARGIN, cBottom);
-    const viaX = Math.min(occMaxX + MARGIN, cRight);
-    return [
-      { x: sRight, y: sMidY },
-      { x: viaX, y: sMidY },
-      { x: viaX, y: viaY },
-      { x: tLeft, y: viaY },
-      { x: tLeft, y: tMidY },
-    ];
-  }
-
-  // ── Leftward target ────────────────────────────────────────────────────────
-  if (tLeft < sRight) {
-    if (!hBandBlocked(tLeft, sRight, sMidY)) return undefined;
-    // Route above the occupied boxes, clamped to container bounds.
-    const viaY = Math.max(occMinY - MARGIN, cTop);
-    const viaX = Math.max(occMinX - MARGIN, cLeft);
-    return [
-      { x: sRight, y: sMidY },
-      { x: viaX, y: sMidY },
-      { x: viaX, y: viaY },
-      { x: tLeft, y: viaY },
-      { x: tLeft, y: tMidY },
-    ];
-  }
-
-  // ── Vertical: target below source ─────────────────────────────────────────
-  if (sMidY < tMidY) {
-    if (!vBandBlocked(sMidY, tMidY, tLeft)) return undefined;
-    // Route around the right side of the occupied space, clamped to container bounds.
-    const viaX = Math.min(occMaxX + MARGIN, cRight);
-    return [
-      { x: sRight, y: sMidY },
-      { x: viaX, y: sMidY },
-      { x: viaX, y: tMidY },
-      { x: tLeft, y: tMidY },
-    ];
-  }
-
-  // ── Vertical: target above source ─────────────────────────────────────────
-  if (!vBandBlocked(tMidY, sMidY, tLeft)) return undefined;
-  // Route around the left side of the occupied space, clamped to container bounds.
-  const viaX = Math.max(occMinX - MARGIN, cLeft);
-  return [
-    { x: sRight, y: sMidY },
-    { x: viaX, y: sMidY },
-    { x: viaX, y: tMidY },
-    { x: tLeft, y: tMidY },
-  ];
-}
-
 function mapEdge(
   conn: Connection,
   edgeLayout: EdgeLayout | undefined,
@@ -655,19 +331,39 @@ function mapEdge(
   slot: HandleSlots | undefined,
 ): ExportEdge {
   const eff = getEffectiveConnectionStyle(conn);
-  const anchors = inferAnchors(conn.sourceId, conn.targetId, layoutMap, components, slot);
 
-  // User-authored waypoints (from manual edge editing) take priority.
-  // When absent, synthesize boundary-aware waypoints so orthogonal routing
-  // does not cut through sibling nodes inside the same container.
-  const userWaypoints =
-    edgeLayout?.points && edgeLayout.points.length > 0
-      ? edgeLayout.points.map((p) => ({ x: p.x, y: p.y }))
-      : undefined;
+  // Resolve routing: handle positions (with slot offsets), sides, and waypoints.
+  // Uses absolute coordinates and matches the canvas routing exactly.
+  const routing = resolveEdgeRouting(
+    conn.sourceId,
+    conn.targetId,
+    layoutMap,
+    components,
+    edgeLayout,
+    slot,
+  );
 
-  const waypoints =
-    userWaypoints ??
-    buildContainerWaypoints(conn.sourceId, conn.targetId, components, layoutMap);
+  // Compute normalised draw.io anchor values from absolute handle positions.
+  // This is where slot offsets are applied: multiple handles on the same side
+  // of a node each get a different exitY/entryY, so edges don't collapse.
+  const srcAbsLayout = getAbsoluteLayout(conn.sourceId, layoutMap, components);
+  const tgtAbsLayout = getAbsoluteLayout(conn.targetId, layoutMap, components);
+  const srcH = srcAbsLayout?.height ?? 120;
+  const tgtH = tgtAbsLayout?.height ?? 120;
+  const srcW = srcAbsLayout?.width ?? 200;
+  const tgtW = tgtAbsLayout?.width ?? 200;
+
+  // Normalise absolute handle Y to [0, 1] relative to source node height
+  const exitY =
+    routing.sides.sourcePosition === "right" || routing.sides.sourcePosition === "left"
+      ? (routing.sourceAbs.y - (srcAbsLayout?.y ?? 0)) / srcH
+      : routing.sides.exitY;
+
+  // Normalise absolute handle X to [0, 1] relative to target node width
+  const entryX =
+    routing.sides.targetPosition === "top" || routing.sides.targetPosition === "bottom"
+      ? (routing.targetAbs.x - (tgtAbsLayout?.x ?? 0)) / tgtW
+      : routing.sides.entryX;
 
   return {
     id: conn.id,
@@ -681,8 +377,11 @@ function mapEdge(
     strokeWidth: eff.strokeWidth ?? 1,
     markerStart: mapMarker(eff.markerStart),
     markerEnd: mapMarker(eff.markerEnd),
-    waypoints,
-    ...anchors,
+    waypoints: routing.waypoints,
+    exitX: routing.sides.exitX,
+    exitY,
+    entryX,
+    entryY: routing.sides.entryY,
   };
 }
 

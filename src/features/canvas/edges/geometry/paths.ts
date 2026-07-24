@@ -26,7 +26,7 @@ const distance = (a: Point, b: Point): number =>
  * `getBend` joins on this exact polyline, so feeding it to `getPointAtOffset`
  * places the label on the visible path — including the bend.
  */
-function getStepPolylinePoints(params: {
+export function getStepPolylinePoints(params: {
   source: Point;
   sourcePosition: HandlePosition;
   target: Point;
@@ -281,3 +281,11 @@ export function buildEditableEdgePath(
   const knots = getPathKnots(source, target, points);
   return pathType === "linear" ? toLinearPath(knots) : toCatmullRomPath(knots);
 }
+
+// ─── Re-exported for use by the draw.io export service ─────────────────────────
+
+/**
+ * A handle position relative to a node, mirroring xyflow's Position enum.
+ * Exported so the export service can import the type without depending on @xyflow/react.
+ */
+export type { HandlePosition };

@@ -438,4 +438,127 @@ describe("exportDrawio — edge anchor inference", () => {
       expect(w.x).toBeGreaterThanOrEqual(5);
     }
   });
+
+  it("preserves x=0 in node geometry (no attribute omission)", () => {
+    // Regression: x="0" was being omitted from mxGeometry, causing nodes at
+    // relative x=0 inside containers to render at x=0 in absolute space.
+    const panelId = "panel";
+    const childId = "glue";
+    const diagram = minimalDiagram({
+      snapshot: {
+        components: {
+          [panelId]: {
+            id: panelId,
+            name: "AZ",
+            type: "panel",
+            panelKind: PanelKind.Default,
+            description: "",
+            parentId: null,
+          },
+          [childId]: {
+            id: childId,
+            name: "AWS Glue",
+            type: "aws-analytics",
+            awsService: "glue",
+            description: "",
+            parentId: panelId,
+          },
+        },
+        connections: {},
+        flows: {},
+        iconLibrary: {},
+      },
+      nodeLayouts: {
+        [panelId]: { elementId: panelId, x: 100, y: 100, width: 500, height: 300 },
+        // Child at relative x=0 inside the panel
+        [childId]: { elementId: childId, x: 0, y: 200, width: 200, height: 72 },
+      },
+    });
+
+    const xml = exportDrawio(diagram, {});
+
+    // Find the mxGeometry for the glue node
+    const glueGeomMatch = xml.match(/id="glue"[\s\S]*?<mxGeometry([^>]*)\/?>/);
+    expect(glueGeomMatch).not.toBeNull();
+    const geomAttrs = glueGeomMatch![1];
+
+    // x="0" must be present — not omitted
+    expect(geomAttrs).toContain('x="0"');
+  });
+
+  it("emits normalised anchor values (0..1) for nodes inside containers", () => {
+    // Regression test: exitY/entryY were being emitted as 10.5 instead of 0.5
+    // because the export mixed relative (child) coordinates with absolute
+    // (parent-accumulated) handle positions when computing the fraction.
+    // draw.io's orthogonalEdgeStyle uses these as fractions in [0..1], so any
+    // value outside that range produced ghost labels like "n]" overlaid on
+    // neighbouring node labels.
+    const containerId = "az";
+    const srcId = "ec2";
+    const tgtId = "s3";
+    const diagram = minimalDiagram({
+      snapshot: {
+        components: {
+          [containerId]: {
+            id: containerId,
+            name: "AZ",
+            type: "panel",
+            panelKind: PanelKind.Default,
+            description: "",
+            parentId: null,
+          },
+          [srcId]: {
+            id: srcId,
+            name: "EC2",
+            type: "system",
+            description: "",
+            parentId: containerId,
+          },
+          [tgtId]: {
+            id: tgtId,
+            name: "S3",
+            type: "system",
+            description: "",
+            parentId: containerId,
+          },
+        },
+        connections: {
+          e: { id: "e", sourceId: srcId, targetId: tgtId, label: "Usa" },
+        },
+        flows: {},
+        iconLibrary: {},
+      },
+      nodeLayouts: {
+        // Container at large absolute position with children at small relative offsets
+        [containerId]: { elementId: containerId, x: 2940, y: 720, width: 1050, height: 550 },
+        [srcId]: { elementId: srcId, x: 40, y: 40, width: 200, height: 72 },
+        [tgtId]: { elementId: tgtId, x: 850, y: 30, width: 200, height: 72 },
+      },
+    });
+
+    const xml = exportDrawio(diagram, {});
+
+    // Every exitY and entryY must be a fraction in [0, 1]
+    const exitYMatches = [...xml.matchAll(/exitY="([^"]+)"/g)].map((m) => parseFloat(m[1]));
+    const entryYMatches = [...xml.matchAll(/entryY="([^"]+)"/g)].map((m) => parseFloat(m[1]));
+    const exitXMatches = [...xml.matchAll(/exitX="([^"]+)"/g)].map((m) => parseFloat(m[1]));
+    const entryXMatches = [...xml.matchAll(/entryX="([^"]+)"/g)].map((m) => parseFloat(m[1]));
+
+    for (const y of exitYMatches) {
+      expect(y).toBeGreaterThanOrEqual(0);
+      expect(y).toBeLessThanOrEqual(1);
+    }
+    for (const y of entryYMatches) {
+      expect(y).toBeGreaterThanOrEqual(0);
+      expect(y).toBeLessThanOrEqual(1);
+    }
+    for (const x of exitXMatches) {
+      expect(x).toBeGreaterThanOrEqual(0);
+      expect(x).toBeLessThanOrEqual(1);
+    }
+    for (const x of entryXMatches) {
+      expect(x).toBeGreaterThanOrEqual(0);
+      expect(x).toBeLessThanOrEqual(1);
+    }
+  });
 });
