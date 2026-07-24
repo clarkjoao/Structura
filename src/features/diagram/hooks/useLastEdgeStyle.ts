@@ -18,7 +18,7 @@ export function getLastEdgeStyle(): EdgeStyle {
   } catch (err) {
     console.warn("[useLastEdgeStyle] Failed to read last edge style:", err);
   }
-  return EdgeStyle.Smoothstep;
+  return EdgeStyle.EditableStep;
 }
 
 export function saveLastEdgeStyle(style: EdgeStyle): void {

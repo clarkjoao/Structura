@@ -33,7 +33,7 @@ const TRANSPORT_PRESET_DEFAULTS: Record<
     markerEnd: EdgeMarker.ArrowClosed,
   },
   event: {
-    edgeStyle: EdgeStyle.Smoothstep,
+    edgeStyle: EdgeStyle.EditableStep,
     strokeStyle: StrokeStyle.Dashed,
     markerEnd: EdgeMarker.Arrow,
   },
@@ -168,7 +168,7 @@ const ConnectionPanel = ({
   const applyPatch = (patch: Partial<Omit<Connection, "id">>) => updateConnection(conn.id, patch);
   const applyStyle = (stylePatch: Partial<ConnectionStyle>) =>
     applyPatch({ style: { ...conn.style, ...stylePatch } });
-  const currentStyle = conn.style?.edgeStyle ?? EdgeStyle.Smoothstep;
+  const currentStyle = conn.style?.edgeStyle ?? EdgeStyle.EditableStep;
 
   const resetEdgeLayout = () => {
     if (!activeDiagramId) return;

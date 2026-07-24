@@ -130,7 +130,7 @@ export function buildEdge(
       isActivePlayback: isActiveConn,
       activePayload: isActiveConn ? (params.activeStep?.payload ?? null) : null,
       activePayloadDirection: isActiveConn ? (params.activeStep?.payloadDirection ?? null) : null,
-      edgeStyle: conn.style?.edgeStyle ?? EdgeStyle.Smoothstep,
+      edgeStyle: conn.style?.edgeStyle ?? EdgeStyle.EditableStep,
       strokeStyle: effective.strokeStyle,
       strokeWidth: effective.strokeWidth,
       labelPosition: conn.style?.labelPosition,

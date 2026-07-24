@@ -183,7 +183,7 @@ function resolveEdgeStyle(style: string): EdgeStyle {
       return edgeStyle;
     }
   }
-  return EdgeStyle.Smoothstep;
+  return EdgeStyle.EditableStep;
 }
 
 function styleHasDashedBorder(style: string): boolean {

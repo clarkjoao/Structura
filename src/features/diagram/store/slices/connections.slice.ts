@@ -18,7 +18,7 @@ export const connectionsSlice = (
     sourceId: string,
     targetId: string,
     label: string,
-    edgeStyle: EdgeStyle = EdgeStyleEnum.Smoothstep,
+    edgeStyle: EdgeStyle = EdgeStyleEnum.EditableStep,
   ): Connection => {
     const connection: Connection = {
       id: generateId("conn"),
