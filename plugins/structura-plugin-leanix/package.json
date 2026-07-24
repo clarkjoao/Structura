@@ -5,10 +5,12 @@
   "main": "dist/plugin.js",
   "type": "module",
   "scripts": {
-    "build": "npm run sync-types && vite build",
-    "dev": "vite build --watch",
+    "build": "npm run sync-types && npm run sync-shared && vite build",
+    "dev": "npm run sync-shared && vite build --watch",
     "sync-types": "node scripts/sync-types.mjs",
     "sync-types:check": "node scripts/sync-types.mjs --check",
+    "sync-shared": "node scripts/sync-shared.mjs",
+    "sync-shared:check": "node scripts/sync-shared.mjs --check",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

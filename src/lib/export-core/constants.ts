@@ -227,13 +227,17 @@ export const AWS_RESICON: Record<string, string> = {
   appstream: "appstream_2_0",
 };
 
+// width/height are the draw.io export geometry per C4 type. The Structura renderer
+// draws every C4 node with the same footprint (CSS `min-w-[200px] max-w-[260px]`,
+// content-driven height), so all types share one box size here — keeping the
+// gap-to-node ratio faithful when positions are mapped 1:1.
 export const C4_META: Record<string, C4MetaInfo> = {
   person: {
     fillColor: THEME.colors.c4.person,
     strokeColor: THEME.colors.c4.personStroke,
     fontColor: "#ffffff",
-    width: 200,
-    height: 180,
+    width: 240,
+    height: 120,
   },
   system: {
     fillColor: THEME.colors.c4.system,
@@ -277,3 +281,21 @@ export const C4_LABEL_TEMPLATE =
   "<br>" +
   '<div><font style="font-size:11px">%c4Line2%</font></div>' +
   "%c4RegistryBadge%";
+
+// API method / protocol accent colors (mirrored from the ApiGroupNode renderer
+// so the export core stays framework-agnostic — no @/features import).
+export const METHOD_COLORS: Record<string, string> = {
+  GET: "#1D9E75",
+  POST: "#378ADD",
+  PUT: "#BA7517",
+  PATCH: "#7F77DD",
+  DELETE: "#E24B4A",
+  EVENT: "#1D9E75",
+};
+
+export const PROTOCOL_COLORS: Record<string, string> = {
+  REST: "#1D9E75",
+  gRPC: "#378ADD",
+  GraphQL: "#D4537E",
+  WebSocket: "#BA7517",
+};

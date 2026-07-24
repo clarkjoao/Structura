@@ -1,8 +1,12 @@
+/**
+ * AUTO-GENERATED — DO NOT EDIT BY HAND.
+ * Verbatim copy of the host export core (src/lib/export-core), synced via
+ * `npm run sync-shared`. It is the single source of truth for draw.io
+ * generation shared by the app and this plugin; edit the host files and re-sync.
+ */
+
 import type { StyleOption } from "./types";
 
-/**
- * Escape XML special characters
- */
 export function escXml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -11,9 +15,6 @@ export function escXml(s: string): string {
     .replace(/>/g, "&gt;");
 }
 
-/**
- * Build a draw.io style string from base style and options
- */
 export function buildStyle(baseStyle: string, options: StyleOption): string {
   const normalizedBaseStyle = baseStyle.endsWith(";") ? baseStyle : `${baseStyle};`;
 
@@ -25,9 +26,6 @@ export function buildStyle(baseStyle: string, options: StyleOption): string {
   return `${normalizedBaseStyle}${stylePairs}`;
 }
 
-/**
- * Apply placeholders to a template string
- */
 export function applyTemplate(template: string, placeholders: Record<string, string>): string {
   return template.replace(/%(\w+)%/g, (_, key) => placeholders[key] || "");
 }

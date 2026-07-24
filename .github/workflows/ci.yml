@@ -31,6 +31,9 @@ jobs:
       - name: Check formatting
         run: npm run format:check
 
+      - name: Check plugin generated files are in sync
+        run: npm run plugins:sync-check
+
   typecheck:
     name: Type check
     runs-on: ubuntu-latest

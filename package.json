@@ -34,6 +34,7 @@
     "typecheck": "tsc -b",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "plugins:sync-check": "node plugins/structura-plugin-leanix/scripts/sync-types.mjs --check && node plugins/structura-plugin-leanix/scripts/sync-shared.mjs --check",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

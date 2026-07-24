@@ -1,5 +1,3 @@
-import type { Component } from "@/features/diagram";
-
 export interface C4MetaInfo {
   fillColor: string;
   strokeColor: string;
@@ -23,20 +21,4 @@ export interface GeometryInfo {
   y: number;
   width: number;
   height: number;
-}
-
-export interface PanelLayout {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
-
-export interface CellBuilder {
-  build(
-    component: Component,
-    geometry: GeometryInfo,
-    parentId: string,
-    serviceName?: string,
-  ): string;
 }

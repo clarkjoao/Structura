@@ -82,7 +82,7 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
 
   // Read-only surfaces (viewer, playback) turn off selection; never edit there.
   const elementsSelectable = useStore((state) => state.elementsSelectable);
-  const edgeStyle = edgeData.edgeStyle ?? EdgeStyle.Smoothstep;
+  const edgeStyle = edgeData.edgeStyle ?? EdgeStyle.EditableStep;
   const isStep = edgeStyle === EdgeStyle.EditableStep;
   const isCurve = edgeStyle === EdgeStyle.Editable;
   const isEditable = (isCurve || isStep) && elementsSelectable;

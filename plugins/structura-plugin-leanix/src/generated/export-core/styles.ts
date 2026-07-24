@@ -1,7 +1,13 @@
-import { EdgeStyle } from "@/features/diagram";
-import { METHOD_COLORS, PROTOCOL_COLORS } from "@/features/canvas/nodes/ApiGroupNode/constants";
-import { BOX_POINTS, C4_SHAPE_POINTS } from "./constants";
-import type { AwsServiceInfo, C4MetaInfo } from "./types";
+/**
+ * AUTO-GENERATED — DO NOT EDIT BY HAND.
+ * Verbatim copy of the host export core (src/lib/export-core), synced via
+ * `npm run sync-shared`. It is the single source of truth for draw.io
+ * generation shared by the app and this plugin; edit the host files and re-sync.
+ */
+
+import { BOX_POINTS, C4_SHAPE_POINTS, METHOD_COLORS, PROTOCOL_COLORS } from "./constants";
+import type { ExportEdgeStyle } from "./model";
+import type { C4MetaInfo } from "./types";
 import { buildStyle, escXml } from "./xml-utils";
 
 export function buildC4Line2(description?: string, technology?: string): string {
@@ -37,8 +43,8 @@ export function buildC4Style(meta: C4MetaInfo, type: string): string {
   });
 }
 
-export function buildAwsStyle(awsInfo: AwsServiceInfo): string {
-  const baseStyle = `sketch=0;outlineConnect=0;dashed=0;verticalLabelPosition=middle;verticalAlign=bottom;align=center;html=1;whiteSpace=wrap;fontSize=10;fontStyle=1;spacing=3;shape=mxgraph.aws4.productIcon;prIcon=mxgraph.aws4.${awsInfo.icon};`;
+export function buildAwsStyle(icon: string): string {
+  const baseStyle = `sketch=0;outlineConnect=0;dashed=0;verticalLabelPosition=middle;verticalAlign=bottom;align=center;html=1;whiteSpace=wrap;fontSize=10;fontStyle=1;spacing=3;shape=mxgraph.aws4.productIcon;prIcon=mxgraph.aws4.${icon};`;
 
   return buildStyle(baseStyle, {
     strokeColor: "#ffffff",
@@ -82,19 +88,23 @@ export function buildEndpointStyle(method: string): string {
   });
 }
 
-function resolveDrawioEdgeStyle(edgeStyle: EdgeStyle | undefined, isDashed = false): string {
-  const curvedSuffix = isDashed ? "" : "curved=1;";
-
+function resolveDrawioEdgeStyle(edgeStyle: ExportEdgeStyle): string {
   switch (edgeStyle) {
-    case EdgeStyle.Straight:
+    case "straight":
       return "edgeStyle=none;html=1;";
-    case EdgeStyle.Step:
+    case "step":
       return "edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;";
-    case EdgeStyle.Bezier:
+    case "bezier":
       return "edgeStyle=entityRelationEdgeStyle;html=1;";
-    case EdgeStyle.Smoothstep:
+    case "smoothstep":
+    case "editable":
+    case "editable-step":
     default:
-      return `edgeStyle=elbowEdgeStyle;elbow=orthogonal;${curvedSuffix}rounded=1;orthogonalLoop=1;jettySize=auto;html=1;`;
+      // Orthogonal routing with rounded corners — mirrors React Flow's smoothstep
+      // (right-angle segments) and supports multi-bend routes (e.g. when the
+      // target is below and to the left of the source, requiring two bends).
+      // elbowEdgeStyle (the previous default) only handled one bend cleanly.
+      return "edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;";
   }
 }
 
@@ -105,9 +115,9 @@ export function buildEdgeStyle(
   strokeWidth: number,
   endArrow: string,
   startArrow: string,
-  edgeStyle?: EdgeStyle,
+  edgeStyle: ExportEdgeStyle,
 ): string {
-  const baseStyle = resolveDrawioEdgeStyle(edgeStyle, isDashed);
+  const baseStyle = resolveDrawioEdgeStyle(edgeStyle);
 
   return buildStyle(baseStyle, {
     endArrow,
