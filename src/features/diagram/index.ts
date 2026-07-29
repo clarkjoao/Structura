@@ -9,6 +9,8 @@ export {
   FileSystemEntryKind,
 } from "./enums";
 
+export { sanitizeComponentType, BUILTIN_COMPONENT_TYPES } from "./model/sanitize-component-type";
+
 export type {
   ComponentType,
   PluginComponentType,

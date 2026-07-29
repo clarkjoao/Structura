@@ -94,13 +94,23 @@ export function isUnknownType(type: string): type is "unknown" {
   return type === COMPONENT_TYPE_UNKNOWN;
 }
 
-/** Plugin component types are namespaced "<pluginId>/<name>"; no built-in type contains "/".
+/**
+ * Plugin namespaced type pattern: `<pluginId>/<name>` where both
+ * segments are alphanumeric (plus `_`, `-`, `.`). Plugin ids come from
+ * the plugin registry's manifests and never contain spaces, slashes,
+ * or punctuation outside these characters, so an ordinary component
+ * label that happens to contain a slash (e.g. "API Endpoints /api/v1
+ * · REST") won't match.
+ */
+const PLUGIN_COMPONENT_TYPE_PATTERN = /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/;
+
+/** Plugin component types are namespaced "<pluginId>/<name>"; no built-in type matches.
  * NOTE: this is a syntactic check. It does not (and cannot) guarantee that the
  * pluginId segment is actually a registered plugin — that requires the
  * plugin registry at runtime. Use {@link isRegisteredPluginComponentType}
  * for a strict check that uses the cached plugin registry. */
 export function isPluginComponentType(type: string): type is `${string}/${string}` {
-  return type.includes("/");
+  return PLUGIN_COMPONENT_TYPE_PATTERN.test(type);
 }
 
 /**

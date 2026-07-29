@@ -1,5 +1,6 @@
 import type { Node } from "@xyflow/react";
 import type { Component, ComponentPatch, ComponentType } from "@/features/diagram";
+import { sanitizeComponentType } from "@/features/diagram";
 import type { CustomComponentTemplate } from "../types";
 
 const ALLOWED_COMPONENT_PATCH_KEYS = new Set<string>([
@@ -46,54 +47,12 @@ function asRecord(value: unknown): Record<string, unknown> {
   return {};
 }
 
-// Built-in component types that can be the base of a template. Anything
-// outside this list (and not a plugin namespaced type) is rejected so a
-// corrupted `type` (e.g. "API Endpoints /api/v1 · REST") doesn't slip in
-// and re-corrupt every instantiation. Keep in sync with the
-// ComponentType union in component.types.ts.
-const BUILTIN_BASE_TYPES = new Set<string>([
-  "person",
-  "system",
-  "container",
-  "component",
-  "panel",
-  "note",
-  "api-group",
-  "endpoint",
-  "unknown",
-  "svg",
-  "db-table",
-  "json-viewer",
-  "process-node",
-  "external-element",
-]);
-
-/**
- * Sanitize a `type` string for use as a template baseType.
- * Returns the original string if it's a built-in component type or a
- * plugin-style namespaced type (`<pluginId>/<name>`). Otherwise falls
- * back to "component" so we never persist a corrupted type into a
- * template that future instantiations would reproduce.
- */
-function sanitizeBaseType(value: unknown): ComponentType {
-  if (typeof value !== "string" || value.length === 0) return "component";
-  if (BUILTIN_BASE_TYPES.has(value)) return value as ComponentType;
-  if (value.includes("/")) {
-    // Plugin-typed: trust the syntactic shape (see
-    // isRegisteredPluginComponentType from @/features/diagram when the
-    // plugin registry is available). When the plugin is missing, the
-    // node degrades to the `unknown` descriptor at render time.
-    return value as ComponentType;
-  }
-  return "component";
-}
-
 function resolveBaseType(node: Node, nodeData: Record<string, unknown>): ComponentType {
   if (typeof node.type === "string" && node.type.length > 0) {
-    return sanitizeBaseType(node.type);
+    return sanitizeComponentType(node.type);
   }
   if (typeof nodeData.type === "string" && nodeData.type.length > 0) {
-    return sanitizeBaseType(nodeData.type);
+    return sanitizeComponentType(nodeData.type);
   }
   return "component";
 }
@@ -144,7 +103,7 @@ function templateRecordFromDomainComponent(component: Component): Record<string,
   // Sanitize the type so a corrupted component.type (e.g. "API Endpoints
   // /api/v1 · REST" from a previous template-replication cycle) doesn't
   // get persisted as the template's baseType.
-  next.type = sanitizeBaseType(component.type);
+  next.type = sanitizeComponentType(component.type);
   return removeUndefinedEntries(next);
 }
 
