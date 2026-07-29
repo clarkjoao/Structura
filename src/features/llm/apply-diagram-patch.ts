@@ -124,6 +124,8 @@ export function applyDiagramPatchAction(
           resetEdgeControlPoints(diagramId, connId);
         }
         console.info(`[apply-diagram-patch] AUTO_LAYOUT: positioned ${result.positions.length} nodes`);
+      }).catch((err) => {
+        console.error("[llm] auto-layout failed:", err);
       });
       return { addedNodeId: null, addedEdgeId: null, toolResult: { type: "AUTO_LAYOUT" } };
     }
