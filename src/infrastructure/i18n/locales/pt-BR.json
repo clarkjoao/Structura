@@ -254,7 +254,8 @@
     "hint": "Selecione um arquivo .json exportado do Structura.",
     "dropzone": "Arraste um ficheiro para aqui ou escolha um ficheiro.",
     "chooseFile": "Escolher ficheiro",
-    "jsonError": "Não foi possível importar o JSON do diagrama. Verifique o arquivo e tente novamente."
+    "jsonError": "Não foi possível importar o JSON do diagrama. Verifique o arquivo e tente novamente.",
+    "jsonErrorWithReason": "Não foi possível importar o JSON do diagrama: {{reason}}"
   },
   "folderTree": {
     "newFolderTitle": "Nova pasta",

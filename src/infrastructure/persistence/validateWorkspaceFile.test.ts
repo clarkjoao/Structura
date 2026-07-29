@@ -42,10 +42,20 @@ describe("validateDiagramFile", () => {
     });
 
     it("rejects diagram with invalid createdAt type", () => {
-      const result = validateDiagramFile(minimalDiagram({ createdAt: null }));
+      // createdAt: null falls back to now (see bug5: missing timestamps
+      // are tolerated). A truly invalid value (object) still rejects.
+      const result = validateDiagramFile(minimalDiagram({ createdAt: { bad: true } }));
       expect(result.valid).toBe(false);
       if (!result.valid) {
         expect(result.reason).toContain("createdAt");
+      }
+    });
+
+    it("accepts diagram with null createdAt by defaulting to now", () => {
+      const result = validateDiagramFile(minimalDiagram({ createdAt: null }));
+      expect(result.valid).toBe(true);
+      if (result.valid) {
+        expect(typeof result.diagram.createdAt).toBe("number");
       }
     });
 

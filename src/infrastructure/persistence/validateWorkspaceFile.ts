@@ -71,7 +71,7 @@ export function validateDiagramFile(raw: unknown): ValidationResult {
     return validation;
   }
 
-  return { valid: true, diagram: normalizeImportedDiagram(diagram) };
+  return { valid: true, diagram: normalizeImportedDiagram(validation.diagram) };
 }
 
 /**
@@ -87,6 +87,9 @@ function extractLegacyDiagram(obj: Record<string, unknown>): Diagram | null {
 
 /**
  * Validates the core fields of a diagram.
+ * Missing `createdAt` / `updatedAt` are tolerated and default to now —
+ * legacy exports and re-imports are common and a missing timestamp
+ * shouldn't block the whole diagram.
  */
 function validateDiagramFields(diagram: Diagram): ValidationResult {
   // String fields
@@ -100,15 +103,42 @@ function validateDiagramFields(diagram: Diagram): ValidationResult {
     }
   }
 
-  // Timestamps can be string or number
-  if (typeof diagram.createdAt !== "string" && typeof diagram.createdAt !== "number") {
+  // Timestamps default to now when missing or null. We log a dev warning
+  // so stale partial exports surface in the console. String values (ISO
+  // date) are coerced via Date.parse so external tools that produce
+  // string timestamps still import cleanly.
+  const now = Date.now();
+  const rawDiagram = diagram as Diagram & { createdAt?: unknown; updatedAt?: unknown };
+  const coerceToNumber = (value: unknown): number | null => {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string") {
+      const parsed = Date.parse(value);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+    return null;
+  };
+  let createdAt: number | null = coerceToNumber(rawDiagram.createdAt);
+  let updatedAt: number | null = coerceToNumber(rawDiagram.updatedAt);
+  if (rawDiagram.createdAt === undefined || rawDiagram.createdAt === null) {
+    if (typeof window !== "undefined" && import.meta.env?.DEV) {
+      console.warn("[validateDiagramFile] createdAt missing, defaulting to now");
+    }
+    createdAt = now;
+  }
+  if (rawDiagram.updatedAt === undefined || rawDiagram.updatedAt === null) {
+    if (typeof window !== "undefined" && import.meta.env?.DEV) {
+      console.warn("[validateDiagramFile] updatedAt missing, defaulting to now");
+    }
+    updatedAt = now;
+  }
+  if (createdAt === null) {
     return {
       valid: false,
       reason: 'Missing or invalid required field: "createdAt"',
       raw: diagram,
     };
   }
-  if (typeof diagram.updatedAt !== "string" && typeof diagram.updatedAt !== "number") {
+  if (updatedAt === null) {
     return {
       valid: false,
       reason: 'Missing or invalid required field: "updatedAt"',
@@ -156,7 +186,7 @@ function validateDiagramFields(diagram: Diagram): ValidationResult {
     };
   }
 
-  return { valid: true, diagram };
+  return { valid: true, diagram: { ...diagram, createdAt, updatedAt } };
 }
 
 /**
