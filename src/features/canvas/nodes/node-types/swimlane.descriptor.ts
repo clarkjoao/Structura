@@ -19,14 +19,18 @@ export const swimlaneDescriptor: NodeTypeDescriptor = {
     if (!isPanelComponent(comp) || comp.panelKind !== "swimlane") return {};
     const sl = comp.swimlane;
     const orientation = sl?.orientation ?? "horizontal";
-    const laneColor = sl?.laneColor ?? "#6366f1";
+    const laneColor = sl?.laneColor ?? comp.panelColor ?? "#6366f1";
     const laneLabel = sl?.laneLabel ?? "";
+    // Swimlanes honour both a dedicated swimlane.opacity field and the
+    // shared panelOpacity fallback so the editor only has to set one place.
+    const opacity = sl?.opacity ?? comp.panelOpacity;
     return {
       elementId: comp.id,
       name: comp.name,
       orientation,
       laneColor,
       laneLabel,
+      opacity,
       isSelected: ctx.selectedNodeId === comp.id,
       isDragTarget: ctx.dragTargetPanelId === comp.id,
       isUnparentCandidate: ctx.unparentCandidatePanelId === comp.id,

@@ -272,6 +272,213 @@ describe("exportDrawio", () => {
   });
 });
 
+describe("exportDrawio — panel styling", () => {
+  function singlePanelDiagram(panel: Record<string, unknown>): Diagram {
+    return minimalDiagram({
+      snapshot: {
+        components: { p: { id: "p", name: "Painel", type: "panel", description: "", parentId: null, ...panel } },
+        connections: {},
+        flows: {},
+        iconLibrary: {},
+      },
+      nodeLayouts: { p: { elementId: "p", x: 0, y: 0, width: 400, height: 300 } },
+    });
+  }
+
+  function styleFor(xml: string, id: string): string {
+    const re = new RegExp(`id="${id}"><mxCell style="([^"]+)"`);
+    const m = re.exec(xml);
+    if (!m) throw new Error(`style not found for ${id}`);
+    return m[1];
+  }
+
+  it("exports fillColor + fillOpacity from panelColor and panelOpacity", () => {
+    const xml = exportDrawio(
+      singlePanelDiagram({
+        panelKind: PanelKind.Default,
+        panelColor: "#ff0000",
+        panelOpacity: 25,
+      }),
+      {},
+    );
+    const style = styleFor(xml, "p");
+    expect(style).toContain("strokeColor=#ff0000;");
+    expect(style).toMatch(/fillColor=#ff[0-9a-f]{4};/);
+    // drawio expects integer percent (0–100), not a 0–1 fraction.
+    expect(style).toMatch(/fillOpacity=\d{1,3};/);
+    expect(style).not.toContain("fillOpacity=0.");
+    // 25% opacity over white ≈ lighter red, definitely not pure red.
+    expect(style).not.toContain("fillColor=none;");
+  });
+
+  it("converts HSL panel colors to hex for fillColor/strokeColor", () => {
+    const xml = exportDrawio(
+      singlePanelDiagram({
+        panelKind: PanelKind.EksCluster,
+        panelColor: "hsl(260 60% 45%)",
+        panelOpacity: 10,
+      }),
+      {},
+    );
+    const style = styleFor(xml, "p");
+    expect(style).toMatch(/strokeColor=#[0-9a-f]{6};/);
+    expect(style).toMatch(/fillColor=#[0-9a-f]{6};/);
+    expect(style).not.toContain("hsl");
+  });
+
+  it("falls back to the panel-kind defaultColor when panelColor is unset", () => {
+    const xml = exportDrawio(
+      singlePanelDiagram({ panelKind: PanelKind.Vpc }),
+      {},
+    );
+    const style = styleFor(xml, "p");
+    // VPC default is hsl(220 50% 35%) → ~#1f4d8c-ish hex.
+    expect(style).toMatch(/strokeColor=#[0-9a-f]{6};/);
+    expect(style).not.toContain("strokeColor=#666666;");
+  });
+
+  it("honours borderStyle=dashed with dashPattern, and solid omits dashed", () => {
+    const dashed = exportDrawio(
+      singlePanelDiagram({ panelKind: PanelKind.Default, borderStyle: "dashed" }),
+      {},
+    );
+    expect(styleFor(dashed, "p")).toContain("dashed=1;dashPattern=8 4;");
+
+    const solid = exportDrawio(
+      singlePanelDiagram({ panelKind: PanelKind.Default, borderStyle: "solid" }),
+      {},
+    );
+    expect(styleFor(solid, "p")).not.toContain("dashed=1;");
+  });
+
+  it("matches the canvas title-at-top layout (verticalAlign=top, strokeWidth=2)", () => {
+    const xml = exportDrawio(
+      singlePanelDiagram({ panelKind: PanelKind.Default, panelColor: "#1f2937" }),
+      {},
+    );
+    const style = styleFor(xml, "p");
+    expect(style).toContain("verticalAlign=top;");
+    expect(style).toContain("strokeWidth=2;");
+  });
+});
+
+describe("exportDrawio — swimlane", () => {
+  function swimlaneDiagram(
+    swimlane: { orientation?: "horizontal" | "vertical"; laneColor?: string; laneLabel?: string; opacity?: number; panelColor?: string; panelOpacity?: number },
+  ): Diagram {
+    return minimalDiagram({
+      snapshot: {
+        components: {
+          s: {
+            id: "s",
+            name: "Lane",
+            type: "panel",
+            panelKind: PanelKind.Swimlane,
+            panelColor: swimlane.panelColor,
+            panelOpacity: swimlane.panelOpacity,
+            swimlane: {
+              orientation: swimlane.orientation,
+              laneColor: swimlane.laneColor,
+              laneLabel: swimlane.laneLabel,
+              opacity: swimlane.opacity,
+            },
+            description: "",
+            parentId: null,
+          },
+        },
+        connections: {},
+        flows: {},
+        iconLibrary: {},
+      },
+      nodeLayouts: { s: { elementId: "s", x: 0, y: 0, width: 400, height: 240 } },
+    });
+  }
+
+  function valueFor(xml: string, id: string): string {
+    const re = new RegExp(`id="${id}" value="([^"]+)" style=`);
+    const m = re.exec(xml);
+    if (!m) throw new Error(`value not found for ${id}`);
+    return m[1];
+  }
+
+  function styleFor(xml: string, id: string): string {
+    const re = new RegExp(`id="${id}"[^/]*?style="([^"]+)"`);
+    const m = re.exec(xml);
+    if (!m) throw new Error(`style not found for ${id}`);
+    return m[1];
+  }
+
+  it("exports as drawio horizontal container (swimlane;horizontal=0) by default", () => {
+    const xml = exportDrawio(
+      swimlaneDiagram({ laneColor: "#6366f1", laneLabel: "Frontend" }),
+      {},
+    );
+    expect(valueFor(xml, "s")).toBe("Frontend");
+    expect(styleFor(xml, "s")).toMatch(/swimlane;horizontal=0;/);
+    expect(styleFor(xml, "s")).toContain("strokeColor=#6366f1;");
+  });
+
+  it("uses horizontal=1 when orientation is vertical", () => {
+    const xml = exportDrawio(
+      swimlaneDiagram({ orientation: "vertical", laneColor: "#10b981" }),
+      {},
+    );
+    expect(styleFor(xml, "s")).toMatch(/swimlane;horizontal=1;/);
+    expect(styleFor(xml, "s")).toContain("strokeColor=#10b981;");
+  });
+
+  it("emits fillColor + integer fillOpacity derived from the opacity field", () => {
+    const xml = exportDrawio(
+      swimlaneDiagram({ laneColor: "#f43f5e", opacity: 50 }),
+      {},
+    );
+    const style = styleFor(xml, "s");
+    expect(style).toMatch(/fillColor=#[0-9a-f]{6};/);
+    // drawio expects integer percent (0–100), not a 0–1 fraction.
+    expect(style).toMatch(/fillOpacity=\d{1,3};/);
+    expect(style).not.toContain("fillOpacity=0.");
+  });
+
+  it("propagates opacity to the lane stripe (swimlaneFillColor + swimlaneFillOpacity)", () => {
+    // drawio's swimlane has two independent fills: the body (fillColor) and the
+    // coloured stripe that carries the label (swimlaneFillColor). Without the
+    // second one the stripe keeps its default colour regardless of what the
+    // user picked in Structura.
+    const xml = exportDrawio(
+      swimlaneDiagram({ laneColor: "#10b981", opacity: 60 }),
+      {},
+    );
+    const style = styleFor(xml, "s");
+    expect(style).toContain("swimlaneFillColor=#10b981;");
+    // 60% + 0.08 ≈ 68, rounded → swimlaneFillOpacity=68.
+    expect(style).toContain("swimlaneFillOpacity=68;");
+  });
+
+  it("falls back to laneLabel, then to the panel name", () => {
+    const xmlLabel = exportDrawio(
+      swimlaneDiagram({ laneColor: "#6366f1", laneLabel: "Lane A" }),
+      {},
+    );
+    expect(valueFor(xmlLabel, "s")).toBe("Lane A");
+
+    const xmlName = exportDrawio(swimlaneDiagram({ laneColor: "#6366f1" }), {});
+    expect(valueFor(xmlName, "s")).toBe("Lane");
+  });
+
+  it("prefers swimlane.opacity, falling back to panelOpacity", () => {
+    const fromSwimlane = exportDrawio(
+      swimlaneDiagram({ opacity: 80, panelOpacity: 5 }),
+      {},
+    );
+    // 80% + 0.08 ≈ 88, rounded → fillOpacity=88.
+    expect(styleFor(fromSwimlane, "s")).toContain("fillOpacity=88");
+
+    const fromPanel = exportDrawio(swimlaneDiagram({ panelOpacity: 30 }), {});
+    // 30% + 0.08 ≈ 38, rounded → fillOpacity=38.
+    expect(styleFor(fromPanel, "s")).toContain("fillOpacity=38");
+  });
+});
+
 describe("exportDrawio — edge anchor inference", () => {
   it("flips exit/entry anchors when target is to the LEFT of source", () => {
     // Regression for the S3→Glue case: source is to the right of target,

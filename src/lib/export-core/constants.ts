@@ -232,33 +232,38 @@ export const AWS_RESICON: Record<string, string> = {
 // content-driven height), so all types share one box size here — keeping the
 // gap-to-node ratio faithful when positions are mapped 1:1.
 export const C4_META: Record<string, C4MetaInfo> = {
+  // Per-subtype canonical boxes sized to match the canvas rendering of each C4
+  // node (see src/features/canvas/nodes/CustomNode/index.tsx — min-w-[200px]
+  // max-w-[260px], content-driven height). The previous uniform 240×120 made
+  // Person boxes 2× taller than the canvas and pushed adjacent roots apart
+  // unnecessarily.
   person: {
     fillColor: THEME.colors.c4.person,
     strokeColor: THEME.colors.c4.personStroke,
     fontColor: "#ffffff",
-    width: 240,
-    height: 120,
+    width: 180,
+    height: 70,
   },
   system: {
     fillColor: THEME.colors.c4.system,
     strokeColor: THEME.colors.c4.systemStroke,
     fontColor: "#ffffff",
-    width: 240,
-    height: 120,
+    width: 200,
+    height: 80,
   },
   container: {
     fillColor: THEME.colors.c4.container,
     strokeColor: THEME.colors.c4.containerStroke,
     fontColor: "#ffffff",
-    width: 240,
-    height: 120,
+    width: 200,
+    height: 80,
   },
   component: {
     fillColor: THEME.colors.c4.component,
     strokeColor: THEME.colors.c4.componentStroke,
     fontColor: "#000000",
-    width: 240,
-    height: 120,
+    width: 200,
+    height: 80,
   },
 };
 

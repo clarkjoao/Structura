@@ -104,17 +104,18 @@ describe("buildMxGraphXml — 1:1 positioning", () => {
 describe("buildMxGraphXml — per-kind cells", () => {
   it("uses the C4 default box for a node with unknown size (0)", () => {
     const xml = buildMxGraphXml(model([c4("a", 0, 0)]), { wrapper: "mxfile" });
-    expect(xml).toContain(`width="240" height="120"`);
+    // c4() helper uses subtype="system" → 200×80 (matches canvas CustomNode).
+    expect(xml).toContain(`width="200" height="80"`);
     expect(xml).toContain(`c4Type="Software System"`);
   });
 
   it("uses the C4_META canonical box, not a measured size (A1-compensation)", () => {
-    // A Person measured 180x64 must still export at 240x120 (C4_META) — the
+    // A System measured 200x72 must still export at 200x80 (C4_META) — the
     // gap is preserved by computeCompensationOffsets pushing the second node down.
-    const xml = buildMxGraphXml(model([c4("a", 0, 0, { width: 180, height: 64 })]), {
+    const xml = buildMxGraphXml(model([c4("a", 0, 0, { width: 200, height: 72 })]), {
       wrapper: "mxfile",
     });
-    expect(xml).toContain(`width="240" height="120"`);
+    expect(xml).toContain(`width="200" height="80"`);
     // Ensure the canonical C4 type label is present.
     expect(xml).toContain(`c4Type="Software System"`);
   });
@@ -124,13 +125,13 @@ describe("buildMxGraphXml — per-kind cells", () => {
       model([c4("a", 0, 0), c4("b", 0, 75)]),
       { wrapper: "mxfile" },
     );
-    // Extract the two C4 geometry y values (both use canonical 240×120).
-    const matches = [...xml.matchAll(/x="(\d+)" y="(\d+)" width="240" height="120"/g)];
+    // Extract the two C4 geometry y values (both use canonical 200×80).
+    const matches = [...xml.matchAll(/x="(\d+)" y="(\d+)" width="200" height="80"/g)];
     expect(matches).toHaveLength(2);
     const y0 = parseInt(matches[0][2]);
     const y1 = parseInt(matches[1][2]);
-    // Gap = y1 - (y0 + 120) must be ≥ COMPENSATION_GAP (10).
-    expect(y1 - (y0 + 120)).toBeGreaterThanOrEqual(10);
+    // Gap = y1 - (y0 + 80) must be ≥ COMPENSATION_GAP (10).
+    expect(y1 - (y0 + 80)).toBeGreaterThanOrEqual(10);
   });
 
   it("renders a note with the note style and value", () => {
@@ -152,6 +153,26 @@ describe("buildMxGraphXml — per-kind cells", () => {
     expect(xml).toContain(`value="hello"`);
     // height now tracks content (compact), width still defaults to 336
     expect(xml).toContain(`width="336" height="48"`);
+  });
+
+  it("emits per-subtype C4 boxes that match the canvas (180×70, 200×80)", () => {
+    // Pins C4_META so a future drift between the canvas CustomNode and the
+    // export surfaces as a test failure instead of a proportion regression.
+    const persons: ExportNode[] = [
+      { ...c4("a", 0, 0), subtype: "person" } as ExportNode,
+      { ...c4("b", 300, 0), subtype: "system" } as ExportNode,
+      { ...c4("c", 600, 0), subtype: "container" } as ExportNode,
+      { ...c4("d", 900, 0), subtype: "component" } as ExportNode,
+    ];
+    const xml = buildMxGraphXml(model(persons), { wrapper: "mxfile" });
+    // Person: 180×70 (smaller, matches canvas measured ~180×64 with a few px headroom).
+    expect(xml).toContain('id="a"><mxCell');
+    // Geometry appears later in the same node's XML; search for the full substring.
+    expect(xml).toMatch(/id="a"[\s\S]{0,800}width="180" height="70"/);
+    // System/Container/Component: 200×80 (matches canvas ~200×72 with headroom).
+    expect(xml).toMatch(/id="b"[\s\S]{0,800}width="200" height="80"/);
+    expect(xml).toMatch(/id="c"[\s\S]{0,800}width="200" height="80"/);
+    expect(xml).toMatch(/id="d"[\s\S]{0,800}width="200" height="80"/);
   });
 });
 

@@ -77,6 +77,8 @@ export interface SwimlaneStyle {
   orientation?: "horizontal" | "vertical";
   laneColor?: string;
   laneLabel?: string;
+  /** Background tint 0–100 (Structura canvas semantics). Mirrors PanelComponent.panelOpacity. */
+  opacity?: number;
 }
 
 export interface PanelComponent extends BaseComponent {

@@ -458,6 +458,14 @@ const ComponentPanel = ({
               />
             </>
           )}
+          {isPanel && !isFlowchart && (
+            <PanelStyleSection
+              component={component as Parameters<typeof PanelStyleSection>[0]["component"]}
+              updateComponent={updateComponent}
+              updateNodeLayout={updateNodeLayout}
+              componentNodeLayout={resolved?.nodeLayouts[component.id]}
+            />
+          )}
           {!isSimple && !isFlowchart && (
             <ServiceLinkSection
               componentId={component.id}

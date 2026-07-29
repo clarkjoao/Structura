@@ -18,8 +18,11 @@ import {
   isPluginTypedComponent,
   isSvgComponent,
   isUnknownComponent,
+  PanelKind,
   StrokeStyle,
 } from "@/features/diagram";
+import { getPanelKindDef } from "@/lib/catalogs/panels";
+import { DEFAULT_PANEL_OPACITY } from "@/features/canvas/constants/panel.constants";
 import type {
   Component,
   Connection,
@@ -256,7 +259,34 @@ function mapNode(
   };
 
   if (isPanelComponent(c)) {
-    return { ...base, kind: "panel", name: c.name, panelColor: c.panelColor };
+    const kindDef = getPanelKindDef(c.panelKind);
+    // Swimlanes get their own IR kind so the drawio cell builder emits the
+    // `swimlane;horizontal=N` shape instead of a generic panel rectangle.
+    if (c.panelKind === PanelKind.Swimlane) {
+      const sl = c.swimlane;
+      const orientation = sl?.orientation ?? "horizontal";
+      const laneColor =
+        sl?.laneColor ?? c.panelColor ?? kindDef.defaultColor ?? "#6366f1";
+      const laneLabel = sl?.laneLabel ?? c.name;
+      return {
+        ...base,
+        kind: "swimlane",
+        name: c.name,
+        laneColor,
+        laneLabel,
+        orientation,
+        opacity: sl?.opacity ?? c.panelOpacity ?? DEFAULT_PANEL_OPACITY,
+      };
+    }
+    return {
+      ...base,
+      kind: "panel",
+      name: c.name,
+      panelColor: c.panelColor,
+      panelKindDefaultColor: kindDef.defaultColor,
+      panelOpacity: c.panelOpacity ?? DEFAULT_PANEL_OPACITY,
+      borderStyle: c.borderStyle ?? "solid",
+    };
   }
   if (isApiGroupComponent(c)) {
     return {
