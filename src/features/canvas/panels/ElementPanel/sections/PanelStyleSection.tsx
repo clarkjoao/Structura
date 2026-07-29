@@ -198,11 +198,22 @@ export function PanelStyleSection({
                     title={laneColor.label}
                     aria-label={laneColor.label}
                     onClick={() => {
+                      // When the lane is fully transparent, picking a new
+                      // colour would be invisible. Reset opacity to a
+                      // visible default so the user actually sees the
+                      // colour change applied.
+                      const currentOpacity = component.swimlane?.opacity;
+                      const nextOpacity =
+                        currentOpacity === undefined || currentOpacity === 0
+                          ? DEFAULT_PANEL_OPACITY
+                          : currentOpacity;
                       updateComponent(component.id, {
                         swimlane: mergeSwimlane(component.swimlane, {
                           laneColor: laneColor.value,
+                          opacity: nextOpacity,
                         }),
                         panelColor: laneColor.value,
+                        panelOpacity: nextOpacity,
                       } as ComponentPatch);
                     }}
                     className={`h-7 w-7 rounded-full border-2 transition-transform hover:scale-105 ${
