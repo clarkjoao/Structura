@@ -188,9 +188,19 @@ export const flowsSlice = (set: (fn: (state: AppState) => void) => void, get: ()
       const step = flow.steps[stepId];
       if (!step) return;
 
+      // Delete old branch steps before creating new ones (handles double-call safely)
+      if (step.branches) {
+        for (const branch of step.branches) {
+          if (branch.nextId && branch.nextId !== stepId) {
+            delete flow.steps[branch.nextId];
+          }
+        }
+      }
+
       step.type = "condition";
       step.conditionLabel = conditionLabel;
       step.next = undefined;
+      step.branches = undefined;
 
       const branches: FlowBranch[] = [];
       for (const label of branchLabels) {
