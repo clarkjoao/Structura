@@ -23,6 +23,7 @@ import {
   isApiGroupComponent,
   isDbTableComponent,
   isJsonViewerComponent,
+  PanelKind,
 } from "@/features/diagram";
 import { getNotePresetPair } from "@/features/canvas/panels/ElementPanel/components/colorPresets";
 import { IconPickerModal } from "@/features/canvas/components/icons/IconPickerModal";
@@ -190,7 +191,22 @@ export function NodeQuickActionsBar({
         updateComponent(nodeId, { customColor: color });
         return;
       }
-      // Panels + C4: write panelColor
+      // Panels + C4: write panelColor. Swimlanes also need laneColor
+      // updated so the descriptor's `sl?.laneColor ?? panelColor` reads
+      // the new value instead of the previous lane colour.
+      const isSwimlane =
+        isPanelComponent(component) && component.panelKind === PanelKind.Swimlane;
+      if (isSwimlane) {
+        const swimlane = component.swimlane;
+        updateComponent(nodeId, {
+          panelColor: color,
+          swimlane: {
+            ...(swimlane ?? {}),
+            laneColor: color,
+          },
+        } as ComponentPatch);
+        return;
+      }
       updateComponent(nodeId, { panelColor: color });
     },
     [component, isDark, nodeId, updateComponent],
