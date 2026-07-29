@@ -500,11 +500,22 @@ export function wrapIStoragePortWithDiagramPersistTracking(storage: IStoragePort
     }
   };
 
-  const schedulePersist = (name: string, value: string): void => {
+  const schedulePersist = (name: string, value: string, force = false): void => {
     if (name === PERSIST_KEY) {
       useSaveStatusStore.getState()._setSaving();
     }
     pendingPersist = { name, value };
+
+    // Force flush: cancel debounce and write immediately
+    if (force) {
+      if (persistDebounceTimer !== null) {
+        clearTimeout(persistDebounceTimer);
+        persistDebounceTimer = null;
+      }
+      void flushPersist();
+      return;
+    }
+
     if (persistDebounceTimer !== null) {
       clearTimeout(persistDebounceTimer);
     }
@@ -548,6 +559,29 @@ export function wrapIStoragePortWithDiagramPersistTracking(storage: IStoragePort
         }
         useSaveStatusStore.getState()._setError();
       }
+    });
+  }
+
+  // Flush on visibility change (mobile: tab close/minimize)
+  if (typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState !== "hidden") return;
+      if (persistDebounceTimer !== null) {
+        clearTimeout(persistDebounceTimer);
+        persistDebounceTimer = null;
+      }
+      if (!pendingPersist || pendingPersist.name !== PERSIST_KEY) return;
+      const { name, value } = pendingPersist;
+      pendingPersist = null;
+      void storage.setItem(name, value).then(() => {
+        useSaveStatusStore.getState()._setSaved();
+        recordLocalStorageDiagramSyncSuccess();
+      }).catch((err: unknown) => {
+        if (isQuotaExceededError(err)) {
+          useSaveStatusStore.getState()._setStorageCritical();
+        }
+        useSaveStatusStore.getState()._setError();
+      });
     });
   }
 

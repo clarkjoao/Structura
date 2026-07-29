@@ -133,12 +133,6 @@ export function flushDiagramStoreToLocalStorageBeforeUnloadSync(): void {
   recordLocalStorageDiagramSyncSuccess();
 }
 
-if (typeof window !== "undefined") {
-  window.addEventListener("beforeunload", () => {
-    flushDiagramStoreToLocalStorageBeforeUnloadSync();
-  });
-}
-
 export function updateDiagramDescription(diagramId: string, description: string): void {
   useDiagramStore.getState().updateDiagramDescription(diagramId, description);
 }
