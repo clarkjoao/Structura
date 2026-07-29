@@ -155,6 +155,47 @@ describe("buildMxGraphXml — per-kind cells", () => {
     expect(xml).toContain(`width="336" height="48"`);
   });
 
+  it("clamps C4 boxes between the canonical floor and per-subtype ceiling", () => {
+    // No measured size → falls back to the canonical C4_META box.
+    const fallback = buildMxGraphXml(
+      model([
+        c4("a", 0, 0, { subtype: "system", description: "tiny" }),
+      ]),
+      { wrapper: "mxfile" },
+    );
+    expect(fallback).toMatch(/id="a"[\s\S]{0,800}width="200" height="80"/);
+
+    // Measured size bigger than floor but below ceiling → grows with content.
+    const grown = buildMxGraphXml(
+      model([
+        c4("a", 0, 0, {
+          subtype: "system",
+          width: 280,
+          height: 110,
+          description: "long description that wraps onto multiple lines",
+        }),
+      ]),
+      { wrapper: "mxfile" },
+    );
+    expect(grown).toMatch(/id="a"[\s\S]{0,800}width="280" height="110"/);
+
+    // Measured size above the ceiling → clamped to the ceiling (maxWidth=320,
+    // maxHeight=140 for system). Keeps the diagram layout stable even for
+    // 5-paragraph descriptions.
+    const clamped = buildMxGraphXml(
+      model([
+        c4("a", 0, 0, {
+          subtype: "system",
+          width: 800,
+          height: 400,
+          description: "ridiculously long description that should be clamped",
+        }),
+      ]),
+      { wrapper: "mxfile" },
+    );
+    expect(clamped).toMatch(/id="a"[\s\S]{0,800}width="320" height="140"/);
+  });
+
   it("emits per-subtype C4 boxes that match the canvas (180×70, 200×80)", () => {
     // Pins C4_META so a future drift between the canvas CustomNode and the
     // export surfaces as a test failure instead of a proportion regression.
