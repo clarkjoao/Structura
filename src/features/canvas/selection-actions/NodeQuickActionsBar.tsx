@@ -20,9 +20,6 @@ import {
   isC4Component,
   isPanelComponent,
   isEndpointComponent,
-  isApiGroupComponent,
-  isDbTableComponent,
-  isJsonViewerComponent,
   PanelKind,
 } from "@/features/diagram";
 import { getNotePresetPair } from "@/features/canvas/panels/ElementPanel/components/colorPresets";
@@ -122,14 +119,34 @@ export function NodeQuickActionsBar({
 
   const handleOpacityChange = useCallback(
     (value: number) => {
+      if (!component) return;
+      // The swimlane descriptor reads `swimlane.opacity ?? panelOpacity`,
+      // so when the component is a swimlane the existing `swimlane.opacity`
+      // (default 9) shadows any change to panelOpacity. Write both so the
+      // toolbar opacity slider is the single source of truth for panels.
+      if (isPanelComponent(component) && component.panelKind === PanelKind.Swimlane) {
+        updateComponent(nodeId, {
+          panelOpacity: value,
+          swimlane: { ...(component.swimlane ?? {}), opacity: value },
+        } as ComponentPatch);
+        return;
+      }
       updateComponent(nodeId, { panelOpacity: value });
     },
-    [nodeId, updateComponent],
+    [component, nodeId, updateComponent],
   );
 
   const handleOpacityReset = useCallback(() => {
+    if (!component) return;
+    if (isPanelComponent(component) && component.panelKind === PanelKind.Swimlane) {
+      updateComponent(nodeId, {
+        panelOpacity: undefined,
+        swimlane: { ...(component.swimlane ?? {}), opacity: undefined },
+      } as ComponentPatch);
+      return;
+    }
     updateComponent(nodeId, { panelOpacity: undefined });
-  }, [nodeId, updateComponent]);
+  }, [component, nodeId, updateComponent]);
 
   const handlePickIcon = useCallback(
     (selectedIconId: string) => {
