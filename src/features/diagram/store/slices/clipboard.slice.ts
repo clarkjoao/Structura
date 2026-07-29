@@ -103,9 +103,13 @@ export const clipboardSlice = (
         const parentExistsInActiveDiagram = c.parentId
           ? Boolean(availableComponents[c.parentId])
           : false;
-        const parentId = parentIsAlsoPasted
-          ? c.parentId
-          : options?.preserveParentWhenMissing && parentExistsInActiveDiagram
+        // When the parent is being pasted alongside us, defer assigning the
+        // parentId to the second loop (it remaps via idMap). Writing the old
+        // parentId here leaves the new component with a stale reference until
+        // the second pass runs, and the second pass silently no-ops if the
+        // entry was overwritten by something else in the meantime.
+        const parentId =
+          parentIsAlsoPasted || (options?.preserveParentWhenMissing && parentExistsInActiveDiagram)
             ? c.parentId
             : null;
         const comp = { ...current(c), id: newId, parentId };
