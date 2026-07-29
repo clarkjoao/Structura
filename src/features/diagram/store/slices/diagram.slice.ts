@@ -3,6 +3,7 @@ import { AppState } from "../store.types";
 import { Diagram, Level } from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
 import { touchDiagram } from "./get-active-diagram";
+import { toast } from "sonner";
 
 export const diagramsSlice = (
   set: (fn: (state: AppState) => void) => void,
@@ -117,11 +118,22 @@ export const diagramsSlice = (
 
   deleteDiagram: (id: string) => {
     set((s) => {
+      const wasActive = s.activeDiagramId === id;
       delete s.diagrams[id];
-
-      if (s.activeDiagramId === id) s.activeDiagramId = null;
       s.past = s.past.filter((entry) => entry.diagramId !== id);
       s.future = s.future.filter((entry) => entry.diagramId !== id);
+
+      if (wasActive) {
+        const remainingIds = Object.keys(s.diagrams);
+        if (remainingIds.length > 0) {
+          const nextId = remainingIds[0];
+          const nextDiagram = s.diagrams[nextId];
+          s.activeDiagramId = nextId;
+          toast.info(`Switched to "${nextDiagram.name}"`);
+        } else {
+          s.activeDiagramId = null;
+        }
+      }
     });
   },
 });
