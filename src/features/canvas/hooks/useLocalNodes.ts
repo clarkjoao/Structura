@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useEffect, type MutableRefObject } from "react";
+import { useRef, useState, useCallback, useEffect, useLayoutEffect, type MutableRefObject } from "react";
 import { applyNodeChanges, type Node, type NodeChange, type OnNodesChange } from "@xyflow/react";
 import type { Diagram, DiagramModel } from "@/features/diagram";
 import { canMoveNodeInSceneMode } from "@/features/diagram";
@@ -45,125 +45,130 @@ export function useLocalNodes(
   const localNodesStateRef = useRef<Node[]>([]);
 
   const activeDiagramId = diagram?.id ?? null;
-  if (activeDiagramId !== prevActiveDiagramIdRef.current) {
-    prevActiveDiagramIdRef.current = activeDiagramId;
-    draggingNodeIdsRef.current.clear();
-    resizingNodeIdsRef.current.clear();
-    localNodesStateRef.current = storeNodes;
-    localNodesRef.current = storeNodes;
-    prevStoreNodesRef.current = storeNodes;
-    prevDiagramRef.current = diagram;
-  } else if (storeNodes !== prevStoreNodesRef.current) {
-    prevStoreNodesRef.current = storeNodes;
 
-    const undoRedo = isUndoRedoTransition(prevDiagramRef.current, diagram);
-    prevDiagramRef.current = diagram;
-
-    const prev = localNodesStateRef.current;
-
-    if (prev.length === 0 || undoRedo) {
+  // Sync refs when diagram changes — runs synchronously after DOM paint but before paint,
+  // avoiding the React warning about setState during render.
+  useLayoutEffect(() => {
+    if (activeDiagramId !== prevActiveDiagramIdRef.current) {
+      prevActiveDiagramIdRef.current = activeDiagramId;
+      draggingNodeIdsRef.current.clear();
+      resizingNodeIdsRef.current.clear();
       localNodesStateRef.current = storeNodes;
       localNodesRef.current = storeNodes;
-    } else if (prev.length !== storeNodes.length) {
-      const localMap = new Map(prev.map((n) => [n.id, n]));
-      const merged = storeNodes.map((sn) => {
-        const ln = localMap.get(sn.id);
-        if (!ln) return sn;
-        const useRemotePosition =
-          sn.parentId !== ln.parentId || !draggingNodeIdsRef.current.has(sn.id);
-        const keepLocalDimensions = resizingNodeIdsRef.current.has(sn.id);
-        return {
-          ...ln,
-          data: sn.data,
-          style: keepLocalDimensions ? ln.style : sn.style,
-          width: keepLocalDimensions ? ln.width : sn.width,
-          height: keepLocalDimensions ? ln.height : sn.height,
-          hidden: sn.hidden,
-          draggable: sn.draggable,
-          selectable: sn.selectable,
-          focusable: sn.focusable,
-          className: sn.className,
-          dragHandle: sn.dragHandle,
-          zIndex: sn.zIndex,
-          connectable: sn.connectable,
-          selected: ln.selected,
-          type: sn.type,
-          position: useRemotePosition ? sn.position : ln.position,
-          parentId: sn.parentId,
-          extent: sn.extent,
-        };
-      });
-      localNodesStateRef.current = merged;
-      localNodesRef.current = merged;
-    } else {
-      const localMap = new Map(prev.map((n) => [n.id, n]));
-      let anyChanged = false;
-      const merged = storeNodes.map((sn) => {
-        const ln = localMap.get(sn.id);
-        if (!ln) {
-          anyChanged = true;
-          return sn;
-        }
+      prevStoreNodesRef.current = storeNodes;
+      prevDiagramRef.current = diagram;
+    } else if (storeNodes !== prevStoreNodesRef.current) {
+      prevStoreNodesRef.current = storeNodes;
 
-        const useRemotePosition =
-          sn.parentId !== ln.parentId || !draggingNodeIdsRef.current.has(sn.id);
+      const undoRedo = isUndoRedoTransition(prevDiagramRef.current, diagram);
+      prevDiagramRef.current = diagram;
 
-        const positionToUse = useRemotePosition ? sn.position : ln.position;
-        const keepLocalDimensions = resizingNodeIdsRef.current.has(sn.id);
-        const styleToUse = keepLocalDimensions ? ln.style : sn.style;
-        const widthToUse = keepLocalDimensions ? ln.width : sn.width;
-        const heightToUse = keepLocalDimensions ? ln.height : sn.height;
+      const prev = localNodesStateRef.current;
 
-        if (
-          ln.data === sn.data &&
-          ln.style === styleToUse &&
-          ln.width === widthToUse &&
-          ln.height === heightToUse &&
-          ln.hidden === sn.hidden &&
-          ln.draggable === sn.draggable &&
-          ln.selectable === sn.selectable &&
-          ln.focusable === sn.focusable &&
-          ln.className === sn.className &&
-          ln.dragHandle === sn.dragHandle &&
-          ln.zIndex === sn.zIndex &&
-          ln.connectable === sn.connectable &&
-          ln.type === sn.type &&
-          ln.position === positionToUse &&
-          ln.parentId === sn.parentId &&
-          ln.extent === sn.extent
-        ) {
-          return ln;
-        }
-
-        anyChanged = true;
-        return {
-          ...ln,
-          data: sn.data,
-          style: styleToUse,
-          width: widthToUse,
-          height: heightToUse,
-          hidden: sn.hidden,
-          draggable: sn.draggable,
-          selectable: sn.selectable,
-          focusable: sn.focusable,
-          className: sn.className,
-          dragHandle: sn.dragHandle,
-          zIndex: sn.zIndex,
-          connectable: sn.connectable,
-          selected: ln.selected,
-          type: sn.type,
-          position: positionToUse,
-          parentId: sn.parentId,
-          extent: sn.extent,
-        };
-      });
-
-      if (anyChanged) {
+      if (prev.length === 0 || undoRedo) {
+        localNodesStateRef.current = storeNodes;
+        localNodesRef.current = storeNodes;
+      } else if (prev.length !== storeNodes.length) {
+        const localMap = new Map(prev.map((n) => [n.id, n]));
+        const merged = storeNodes.map((sn) => {
+          const ln = localMap.get(sn.id);
+          if (!ln) return sn;
+          const useRemotePosition =
+            sn.parentId !== ln.parentId || !draggingNodeIdsRef.current.has(sn.id);
+          const keepLocalDimensions = resizingNodeIdsRef.current.has(sn.id);
+          return {
+            ...ln,
+            data: sn.data,
+            style: keepLocalDimensions ? ln.style : sn.style,
+            width: keepLocalDimensions ? ln.width : sn.width,
+            height: keepLocalDimensions ? ln.height : sn.height,
+            hidden: sn.hidden,
+            draggable: sn.draggable,
+            selectable: sn.selectable,
+            focusable: sn.focusable,
+            className: sn.className,
+            dragHandle: sn.dragHandle,
+            zIndex: sn.zIndex,
+            connectable: sn.connectable,
+            selected: ln.selected,
+            type: sn.type,
+            position: useRemotePosition ? sn.position : ln.position,
+            parentId: sn.parentId,
+            extent: sn.extent,
+          };
+        });
         localNodesStateRef.current = merged;
         localNodesRef.current = merged;
+      } else {
+        const localMap = new Map(prev.map((n) => [n.id, n]));
+        let anyChanged = false;
+        const merged = storeNodes.map((sn) => {
+          const ln = localMap.get(sn.id);
+          if (!ln) {
+            anyChanged = true;
+            return sn;
+          }
+
+          const useRemotePosition =
+            sn.parentId !== ln.parentId || !draggingNodeIdsRef.current.has(sn.id);
+
+          const positionToUse = useRemotePosition ? sn.position : ln.position;
+          const keepLocalDimensions = resizingNodeIdsRef.current.has(sn.id);
+          const styleToUse = keepLocalDimensions ? ln.style : sn.style;
+          const widthToUse = keepLocalDimensions ? ln.width : sn.width;
+          const heightToUse = keepLocalDimensions ? ln.height : sn.height;
+
+          if (
+            ln.data === sn.data &&
+            ln.style === styleToUse &&
+            ln.width === widthToUse &&
+            ln.height === heightToUse &&
+            ln.hidden === sn.hidden &&
+            ln.draggable === sn.draggable &&
+            ln.selectable === sn.selectable &&
+            ln.focusable === sn.focusable &&
+            ln.className === sn.className &&
+            ln.dragHandle === sn.dragHandle &&
+            ln.zIndex === sn.zIndex &&
+            ln.connectable === sn.connectable &&
+            ln.type === sn.type &&
+            ln.position === positionToUse &&
+            ln.parentId === sn.parentId &&
+            ln.extent === sn.extent
+          ) {
+            return ln;
+          }
+
+          anyChanged = true;
+          return {
+            ...ln,
+            data: sn.data,
+            style: styleToUse,
+            width: widthToUse,
+            height: heightToUse,
+            hidden: sn.hidden,
+            draggable: sn.draggable,
+            selectable: sn.selectable,
+            focusable: sn.focusable,
+            className: sn.className,
+            dragHandle: sn.dragHandle,
+            zIndex: sn.zIndex,
+            connectable: sn.connectable,
+            selected: ln.selected,
+            type: sn.type,
+            position: positionToUse,
+            parentId: sn.parentId,
+            extent: sn.extent,
+          };
+        });
+
+        if (anyChanged) {
+          localNodesStateRef.current = merged;
+          localNodesRef.current = merged;
+        }
       }
     }
-  }
+  }, [activeDiagramId, diagram, storeNodes]);
 
   /**
    * If React Flow omits `resizing: false` on the last dimensions event, clear the
