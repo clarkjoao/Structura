@@ -5,6 +5,8 @@ import type { AppState } from "../store.types";
 import { SEED_SERVICE_REGISTRY } from "@/fixtures/seeds";
 import { normalizeSources } from "@/features/integrations/merge-utils";
 import { getActiveDiagram, touchDiagram } from "./get-active-diagram";
+import { pushHistory } from "./history.slice";
+import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 
 function patchTouchesLinkedComponentFields(patch: Partial<Omit<ServiceDefinition, "id">>): boolean {
   return (
@@ -127,6 +129,7 @@ export const servicesSlice = (
 
   removeService: (id: string) => {
     set((state) => {
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
       delete state.serviceCatalog[id];
       Object.values(state.diagrams).forEach((entry) => {
         Object.values(entry.snapshot.components).forEach((c) => {
@@ -137,6 +140,7 @@ export const servicesSlice = (
             if (c.serviceId === id) c.serviceId = undefined;
           });
         });
+        touchDiagram(entry);
       });
     });
   },
@@ -149,14 +153,34 @@ export const servicesSlice = (
       const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
       const comp = scene?.addedComponents[componentId] ?? d.snapshot.components[componentId];
       if (!comp) return;
+
+      const previousServiceId = comp.serviceId;
+
+      // Clear inherited fields when switching to a different service
+      if (previousServiceId !== undefined && serviceId !== undefined && previousServiceId !== serviceId) {
+        comp.tags = undefined;
+        if ("technology" in comp) {
+          (comp as { technology?: string }).technology = undefined;
+        }
+        comp.externalLinks = undefined;
+      }
+
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
       comp.serviceId = serviceId;
-      if (!serviceId) return;
+      if (!serviceId) {
+        touchDiagram(d);
+        return;
+      }
 
       const service = state.serviceCatalog[serviceId];
-      if (!service) return;
+      if (!service) {
+        touchDiagram(d);
+        return;
+      }
 
       copyServiceCoreFieldsToComponent(comp, service);
       mergeServiceExternalLinksIntoComponent(comp, service);
+      touchDiagram(d);
     });
   },
 
@@ -164,15 +188,20 @@ export const servicesSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
       const sid = d.activeSceneId ?? null;
       const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
       const comp = scene?.addedComponents[componentId] ?? d.snapshot.components[componentId];
-      if (!comp) return;
+      if (!comp) {
+        touchDiagram(d);
+        return;
+      }
       if (comp.type === "external-element") {
         comp.referenceDiagramId = diagramId ?? "";
       } else {
         comp.linkedDiagramId = diagramId;
       }
+      touchDiagram(d);
     });
   },
 });
