@@ -19,16 +19,16 @@ function c4(id: string, x: number, y: number): ExportNode {
 
 describe("computeCompensationOffsets", () => {
   it("pushes stacked nodes apart when canonical boxes collide", () => {
-    // Person1 at y=0 (bottom=120), Person2 at y=75 (top=75, bottom=195).
-    // They overlap by 45px. Push = other.maxY + GAP - my.minY = 120+10-75 = 55.
+    // Person1 at y=0 (bottom=70), Person2 at y=75 (top=75, bottom=145).
+    // They overlap by 5px. Push = other.maxY + GAP - my.minY = 70+10-75 = 5.
     const nodes = [c4("a", 0, 0), c4("b", 0, 75)];
     const offsets = computeCompensationOffsets(nodes, new Set());
     expect(offsets.get("a")).toBeUndefined();
-    expect(offsets.get("b")).toBe(55); // push down by 55px
+    expect(offsets.get("b")).toBe(5); // push down by 5px
   });
 
   it("does not push nodes with no overlap", () => {
-    const nodes = [c4("a", 0, 0), c4("b", 0, 200)]; // gap = 80, > 10
+    const nodes = [c4("a", 0, 0), c4("b", 0, 200)]; // gap = 130, > 10
     const offsets = computeCompensationOffsets(nodes, new Set());
     expect(offsets.size).toBe(0);
   });
@@ -37,10 +37,10 @@ describe("computeCompensationOffsets", () => {
     const nodes = [c4("a", 0, 0), c4("b", 0, 75), c4("c", 0, 150)];
     const offsets = computeCompensationOffsets(nodes, new Set());
     expect(offsets.get("a")).toBeUndefined();
-    // B: push = 120+10-75 = 55 → B placed at (130)-(250)
-    expect(offsets.get("b")).toBe(55);
-    // C: collides with B (placed at 130-250). C.minY=150 < B.maxY=250.
-    // push = B.maxY + GAP - C.minY = 250+10-150 = 110
-    expect(offsets.get("c")).toBe(110);
+    // B: push = 70+10-75 = 5 → B placed at (80)-(150)
+    expect(offsets.get("b")).toBe(5);
+    // C: collides with B (placed at 80-150). C.minY=150 < B.maxY=150 (touch).
+    // push = B.maxY + GAP - C.minY = 150+10-150 = 10
+    expect(offsets.get("c")).toBe(10);
   });
 });

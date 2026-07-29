@@ -18,6 +18,7 @@ function mergeSwimlane(
   return {
     orientation: partial.orientation ?? current?.orientation ?? SwimlaneOrientation.Horizontal,
     laneColor: partial.laneColor ?? current?.laneColor ?? "#6366f1",
+    opacity: partial.opacity ?? current?.opacity ?? DEFAULT_PANEL_OPACITY,
     ...(partial.laneLabel !== undefined
       ? { laneLabel: partial.laneLabel }
       : current?.laneLabel !== undefined
@@ -186,7 +187,7 @@ export function PanelStyleSection({
             <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
               {t("swimlane.laneColor")}
             </label>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mb-3">
               {LANE_COLORS.map((laneColor) => {
                 const current = component.swimlane?.laneColor ?? "#6366f1";
                 const active = current === laneColor.value;
@@ -214,6 +215,32 @@ export function PanelStyleSection({
                 );
               })}
             </div>
+            {/* Full palette + opacity slider — same controls the other panels have,
+                so the user can pick any color and change opacity from 0–100. */}
+            <PanelColorPicker
+              componentId={component.id}
+              currentColor={
+                component.swimlane?.laneColor ??
+                component.panelColor ??
+                getPanelKindDef(PanelKind.Swimlane).defaultColor
+              }
+              currentOpacity={
+                component.swimlane?.opacity ?? component.panelOpacity ?? DEFAULT_PANEL_OPACITY
+              }
+              updateComponent={(id, patch) => {
+                // Color/opacity changes apply to both the swimlane config AND
+                // panelColor/panelOpacity so the canvas + drawio export share
+                // one source of truth.
+                const nextSwimlane = mergeSwimlane(component.swimlane, {
+                  laneColor: patch.panelColor ?? component.swimlane?.laneColor,
+                  opacity: patch.panelOpacity ?? component.swimlane?.opacity,
+                });
+                updateComponent(id, {
+                  swimlane: nextSwimlane,
+                  ...patch,
+                } as ComponentPatch);
+              }}
+            />
           </div>
           {componentNodeLayout && (
             <div className="grid grid-cols-2 gap-2">

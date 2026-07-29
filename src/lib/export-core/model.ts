@@ -19,7 +19,7 @@ export type ExportMarker = "none" | "arrow" | "arrow-closed";
 
 /** Node kinds that map 1:1 to a cell-builder. Panels and api-groups are containers. */
 export type ExportNodeKind =
-  "c4" | "aws" | "panel" | "apiGroup" | "endpoint" | "dbTable" | "note" | "jsonViewer";
+  "c4" | "aws" | "panel" | "swimlane" | "apiGroup" | "endpoint" | "dbTable" | "note" | "jsonViewer";
 
 interface BaseNode {
   id: string;
@@ -53,7 +53,34 @@ export interface AwsNode extends BaseNode {
 export interface PanelNode extends BaseNode {
   kind: "panel";
   name: string;
+  /** Raw panel colour from the snapshot (hex or hsl). */
   panelColor?: string;
+  /**
+   * Default colour for this panel kind (e.g. VPC, EKS). Used as the fill base
+   * when `panelColor` is unset so export matches what the canvas renders for
+   * a freshly-created panel of that kind.
+   */
+  panelKindDefaultColor?: string;
+  /**
+   * Background tint, 0–100 (Structura canvas semantics). Translates to drawio
+   * `fillOpacity` so the panel background keeps the same softness.
+   */
+  panelOpacity?: number;
+  /** Border style from the snapshot — controls `dashed`/`dashPattern` in the export. */
+  borderStyle?: "solid" | "dashed" | "dotted";
+}
+
+export interface SwimlaneNode extends BaseNode {
+  kind: "swimlane";
+  name: string;
+  /** Lane colour from the snapshot (hex or hsl). */
+  laneColor?: string;
+  /** Lane label shown on the lane stripe (drawio uses it as the cell value). */
+  laneLabel?: string;
+  /** Orientation — horizontal = 0, vertical = 1, mapped to drawio's `horizontal=N`. */
+  orientation: "horizontal" | "vertical";
+  /** Background tint 0–100 (Structura canvas semantics). */
+  opacity?: number;
 }
 
 export interface ApiGroupNode extends BaseNode {
@@ -93,6 +120,7 @@ export type ExportNode =
   | C4Node
   | AwsNode
   | PanelNode
+  | SwimlaneNode
   | ApiGroupNode
   | EndpointNode
   | DbTableNode
