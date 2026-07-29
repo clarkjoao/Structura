@@ -26,12 +26,21 @@ export function buildCell(node: ExportNode, geometry: GeometryInfo, parentId: st
   switch (node.kind) {
     case "c4": {
       const meta = C4_META[node.subtype] ?? C4_META.system;
-      // Export at the canonical C4_META box so the output is deterministic regardless
-      // of any measured size React Flow persisted. Overlaps between neighbours are
-      // resolved by computeCompensationOffsets (A1-compensation) pushing nodes apart
-      // in Y — see ADR-0009 / A1.
-      const finalWidth = meta.width;
-      const finalHeight = meta.height;
+      // A1-compensation: nodes that have NO measured size yet (e.g. a diagram
+      // that was never rendered, or freshly created) fall back to the canonical
+      // box. Otherwise we honour the canvas-measured size — clamped between
+      // the canonical floor and the per-subtype ceiling — so a long description
+      // grows the box up to a sensible max instead of overflowing or being
+      // truncated. The compensation pass still keeps adjacent nodes from
+      // overlapping (see computeCompensationOffsets / ADR-0009 A1).
+      const finalWidth = Math.max(
+        meta.width,
+        Math.min(meta.maxWidth, width > 0 ? width : meta.width),
+      );
+      const finalHeight = Math.max(
+        meta.height,
+        Math.min(meta.maxHeight, height > 0 ? height : meta.height),
+      );
 
       const c4Line2 = buildC4Line2(node.description, node.technology);
       const badge = buildC4RegistryBadge(node.serviceName);
