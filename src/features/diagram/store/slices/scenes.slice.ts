@@ -79,6 +79,7 @@ export const scenesSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d?.scenes?.[sceneId]) return;
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
       delete d.scenes[sceneId];
       if (Object.keys(d.scenes).length === 0) {
         d.scenes = undefined;
@@ -219,6 +220,7 @@ export const scenesSlice = (
       const d = getActiveDiagram(state);
       const sc = d?.scenes?.[sceneId];
       if (!sc) return;
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
       sc.addedComponents[component.id] = component;
       sc.nodeLayouts[component.id] = { ...layout, elementId: component.id };
       touchDiagram(d);
@@ -239,6 +241,7 @@ export const scenesSlice = (
       const d = getActiveDiagram(state);
       const sc = d?.scenes?.[sceneId];
       if (!sc) return;
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
       sc.addedConnections[connection.id] = connection;
       touchDiagram(d);
     });
