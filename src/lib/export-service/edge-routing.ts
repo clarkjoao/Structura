@@ -19,6 +19,7 @@
 
 import type { Component } from "@/features/diagram";
 import type { EdgeLayout, NodeLayout } from "@/features/diagram";
+import { isApiGroupComponent, isPanelComponent } from "@/features/diagram";
 import type { HandlePosition } from "@/features/canvas/edges/geometry/paths";
 import { getStepPolylinePoints } from "@/features/canvas/edges/geometry/paths";
 
@@ -116,7 +117,7 @@ export function inferSourceTargetSides(
 
   // For container/panel targets: choose entry side based on source position
   const tgtComp = components[targetId];
-  if (tgtComp && (tgtComp.type === "panel" || tgtComp.type === "api-group")) {
+  if (tgtComp && (isPanelComponent(tgtComp) || isApiGroupComponent(tgtComp))) {
     const tgtLeft = tgt.x;
     const tgtRight = tgt.x + tgtW;
     const tgtTop = tgt.y;
@@ -269,7 +270,7 @@ export function buildContainerWaypointsV2(
   let containerId: string | null = null;
   p = tgtComp.parentId;
   while (p) {
-    if (srcAncestors.has(p) && (components[p]?.type === "panel" || components[p]?.type === "api-group")) {
+    if (srcAncestors.has(p) && components[p] && (isPanelComponent(components[p]!) || isApiGroupComponent(components[p]!))) {
       containerId = p;
       break;
     }
