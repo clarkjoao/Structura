@@ -122,6 +122,17 @@ export function CanvasContextMenu({
       }
     : undefined;
 
+  // Lock toggle is provided for every node that has a `locked` flag (i.e. all
+  // built-in components). It is the only way to unlock a node that's already
+  // locked — the quick-actions bar is hidden on locked nodes.
+  const handleToggleLock =
+    canEditCanvas && contextMenuComponent ? (
+      () => {
+        const locked = contextMenuComponent.locked === true;
+        actions.updateComponent(contextMenuId, { locked: !locked });
+      }
+    ) : undefined;
+
   return (
     <NodeContextMenu
       x={contextMenu.x}
@@ -142,6 +153,8 @@ export function CanvasContextMenu({
       onDelete={handleDelete}
       onGroup={handleGroup}
       onUngroup={handleUngroup}
+      onToggleLock={handleToggleLock}
+      isLocked={contextMenuComponent?.locked === true}
       onAutoLayout={canEditCanvas ? onAutoLayout : undefined}
       isAutoLayoutRunning={isAutoLayoutRunning}
       selectionCount={selectionCount}

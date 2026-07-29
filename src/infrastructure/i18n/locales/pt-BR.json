@@ -1151,7 +1151,9 @@
     "ordering": "Ordenação",
     "bringToFront": "Trazer para frente",
     "sendToBack": "Enviar para trás",
-    "fitToChildren": "Ajustar ao conteúdo"
+    "fitToChildren": "Ajustar ao conteúdo",
+    "lock": "Travar",
+    "unlock": "Destravar"
   },
   "panelNode": {
     "expandAria": "Expandir painel",

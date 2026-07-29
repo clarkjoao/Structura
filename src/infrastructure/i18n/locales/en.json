@@ -1151,7 +1151,9 @@
     "ordering": "Ordering",
     "bringToFront": "Bring to front",
     "sendToBack": "Send to back",
-    "fitToChildren": "Fit to children"
+    "fitToChildren": "Fit to children",
+    "lock": "Lock",
+    "unlock": "Unlock"
   },
   "panelNode": {
     "expandAria": "Expand panel",

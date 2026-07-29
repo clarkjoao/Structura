@@ -9,9 +9,11 @@ import {
   Group,
   LayoutGrid,
   Layers2,
+  Lock,
   Maximize2,
   Trash2,
   Ungroup,
+  Unlock,
 } from "lucide-react";
 import type { Platform } from "../hooks/keyboard/helpers";
 
@@ -29,6 +31,14 @@ interface Props {
   onDelete?: () => void;
   onGroup?: () => void;
   onUngroup?: () => void;
+  /**
+   * Toggle the locked flag on the context-menu target. Provided when the
+   * component backing the menu has a `locked` flag — this is the only way
+   * to unlock a node that's already locked (the quick-actions bar is
+   * hidden on locked nodes).
+   */
+  onToggleLock?: () => void;
+  isLocked?: boolean;
   onAutoLayout?: () => void;
   isAutoLayoutRunning?: boolean;
   selectionCount: number;
@@ -124,6 +134,8 @@ const NodeContextMenu = ({
   onDelete,
   onGroup,
   onUngroup,
+  onToggleLock,
+  isLocked,
   onAutoLayout,
   isAutoLayoutRunning,
   selectionCount,
@@ -283,6 +295,23 @@ const NodeContextMenu = ({
           onClose();
         }}
       />
+
+      {onToggleLock ? (
+        <>
+          <Divider />
+          <MenuItem
+            icon={isLocked ? Lock : Unlock}
+            label={isLocked ? t("nodeContextMenu.unlock") : t("nodeContextMenu.lock")}
+            shortcutMac="⌘⇧K"
+            shortcutOther="Ctrl+Shift+K"
+            platform={platform}
+            onClick={() => {
+              onToggleLock();
+              onClose();
+            }}
+          />
+        </>
+      ) : null}
 
       {hasGrouping ? (
         <>
