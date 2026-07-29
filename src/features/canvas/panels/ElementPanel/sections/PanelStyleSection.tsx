@@ -7,9 +7,7 @@ import { PANEL_KINDS, getPanelKindDef } from "@/lib/catalogs/panels";
 import type { NodeLayout } from "@/features/diagram";
 import { SWIMLANE_DEFAULT_H, SWIMLANE_DEFAULT_W } from "@/features/canvas/canvas.constants";
 import Field from "../components/Field";
-import PanelColorPicker from "../components/PanelColorPicker";
-import { LANE_COLORS } from "../swimlaneLaneColors";
-import { DEFAULT_PANEL_OPACITY, MIN_PANEL_WIDTH, MIN_PANEL_HEIGHT } from "../../../constants/panel.constants";
+import { MIN_PANEL_WIDTH, MIN_PANEL_HEIGHT } from "../../../constants/panel.constants";
 
 function mergeSwimlane(
   current: SwimlaneStyle | undefined,
@@ -18,7 +16,7 @@ function mergeSwimlane(
   return {
     orientation: partial.orientation ?? current?.orientation ?? SwimlaneOrientation.Horizontal,
     laneColor: partial.laneColor ?? current?.laneColor ?? "#6366f1",
-    opacity: partial.opacity ?? current?.opacity ?? DEFAULT_PANEL_OPACITY,
+    opacity: partial.opacity ?? current?.opacity,
     ...(partial.laneLabel !== undefined
       ? { laneLabel: partial.laneLabel }
       : current?.laneLabel !== undefined
@@ -183,65 +181,6 @@ export function PanelStyleSection({
               </button>
             </div>
           </div>
-          <div>
-            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-              {t("swimlane.laneColor")}
-            </label>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {LANE_COLORS.map((laneColor) => {
-                const current = component.swimlane?.laneColor ?? "#6366f1";
-                const active = current === laneColor.value;
-                return (
-                  <button
-                    key={laneColor.value}
-                    type="button"
-                    title={laneColor.label}
-                    aria-label={laneColor.label}
-                    onClick={() => {
-                      updateComponent(component.id, {
-                        swimlane: mergeSwimlane(component.swimlane, {
-                          laneColor: laneColor.value,
-                        }),
-                        panelColor: laneColor.value,
-                      } as ComponentPatch);
-                    }}
-                    className={`h-7 w-7 rounded-full border-2 transition-transform hover:scale-105 ${
-                      active
-                        ? "ring-2 ring-offset-2 ring-offset-background ring-primary"
-                        : "border-border"
-                    }`}
-                    style={{ backgroundColor: laneColor.value }}
-                  />
-                );
-              })}
-            </div>
-            {/* Full palette + opacity slider — same controls the other panels have,
-                so the user can pick any color and change opacity from 0–100. */}
-            <PanelColorPicker
-              componentId={component.id}
-              currentColor={
-                component.swimlane?.laneColor ??
-                component.panelColor ??
-                getPanelKindDef(PanelKind.Swimlane).defaultColor
-              }
-              currentOpacity={
-                component.swimlane?.opacity ?? component.panelOpacity ?? DEFAULT_PANEL_OPACITY
-              }
-              updateComponent={(id, patch) => {
-                // Color/opacity changes apply to both the swimlane config AND
-                // panelColor/panelOpacity so the canvas + drawio export share
-                // one source of truth.
-                const nextSwimlane = mergeSwimlane(component.swimlane, {
-                  laneColor: patch.panelColor ?? component.swimlane?.laneColor,
-                  opacity: patch.panelOpacity ?? component.swimlane?.opacity,
-                });
-                updateComponent(id, {
-                  swimlane: nextSwimlane,
-                  ...patch,
-                } as ComponentPatch);
-              }}
-            />
-          </div>
           {componentNodeLayout && (
             <div className="grid grid-cols-2 gap-2">
               <div>
@@ -273,12 +212,6 @@ export function PanelStyleSection({
         </>
       ) : (
         <>
-          <PanelColorPicker
-            componentId={component.id}
-            currentColor={component.panelColor ?? getPanelKindDef(component.panelKind).defaultColor}
-            currentOpacity={component.panelOpacity ?? DEFAULT_PANEL_OPACITY}
-            updateComponent={updateComponent}
-          />
           {componentNodeLayout && (
             <div className="grid grid-cols-2 gap-2">
               <div>

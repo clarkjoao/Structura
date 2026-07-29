@@ -254,7 +254,8 @@
     "hint": "Select a .json file exported from Structura.",
     "dropzone": "Drag and drop a file here, or choose a file.",
     "chooseFile": "Choose file",
-    "jsonError": "Could not import the diagram JSON. Check the file and try again."
+    "jsonError": "Could not import the diagram JSON. Check the file and try again.",
+    "jsonErrorWithReason": "Could not import the diagram JSON: {{reason}}"
   },
   "folderTree": {
     "newFolderTitle": "New folder",
@@ -1151,7 +1152,9 @@
     "ordering": "Ordering",
     "bringToFront": "Bring to front",
     "sendToBack": "Send to back",
-    "fitToChildren": "Fit to children"
+    "fitToChildren": "Fit to children",
+    "lock": "Lock",
+    "unlock": "Unlock"
   },
   "panelNode": {
     "expandAria": "Expand panel",

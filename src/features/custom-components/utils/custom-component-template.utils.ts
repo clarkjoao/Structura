@@ -1,5 +1,6 @@
 import type { Node } from "@xyflow/react";
 import type { Component, ComponentPatch, ComponentType } from "@/features/diagram";
+import { sanitizeComponentType } from "@/features/diagram";
 import type { CustomComponentTemplate } from "../types";
 
 const ALLOWED_COMPONENT_PATCH_KEYS = new Set<string>([
@@ -48,10 +49,10 @@ function asRecord(value: unknown): Record<string, unknown> {
 
 function resolveBaseType(node: Node, nodeData: Record<string, unknown>): ComponentType {
   if (typeof node.type === "string" && node.type.length > 0) {
-    return node.type as ComponentType;
+    return sanitizeComponentType(node.type);
   }
   if (typeof nodeData.type === "string" && nodeData.type.length > 0) {
-    return nodeData.type as ComponentType;
+    return sanitizeComponentType(nodeData.type);
   }
   return "component";
 }
@@ -99,7 +100,10 @@ function templateRecordFromDomainComponent(component: Component): Record<string,
       next[key] = value;
     }
   }
-  next.type = component.type;
+  // Sanitize the type so a corrupted component.type (e.g. "API Endpoints
+  // /api/v1 · REST" from a previous template-replication cycle) doesn't
+  // get persisted as the template's baseType.
+  next.type = sanitizeComponentType(component.type);
   return removeUndefinedEntries(next);
 }
 

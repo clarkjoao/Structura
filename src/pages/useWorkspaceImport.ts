@@ -56,13 +56,14 @@ export function useWorkspaceImport(options: UseWorkspaceImportOptions = {}) {
         const parsed = JSON.parse(text) as unknown;
         const validation = validateDiagramFile(parsed);
         if (!validation.valid) {
-          toast.error(t("import.jsonError"));
+          toast.error(t("import.jsonErrorWithReason", { reason: validation.reason }));
           return false;
         }
         finishImport(validation.diagram);
         return true;
-      } catch {
-        toast.error(t("import.jsonError"));
+      } catch (err) {
+        const reason = err instanceof Error ? err.message : "Invalid JSON";
+        toast.error(t("import.jsonErrorWithReason", { reason }));
         return false;
       }
     },

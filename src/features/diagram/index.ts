@@ -9,6 +9,8 @@ export {
   FileSystemEntryKind,
 } from "./enums";
 
+export { sanitizeComponentType, BUILTIN_COMPONENT_TYPES } from "./model/sanitize-component-type";
+
 export type {
   ComponentType,
   PluginComponentType,
@@ -232,6 +234,7 @@ export {
   isC4Type,
   isUnknownType,
   isPluginComponentType,
+  isRegisteredPluginComponentType,
   isSvgComponentType,
   isEndpointType,
   isApiGroupType,

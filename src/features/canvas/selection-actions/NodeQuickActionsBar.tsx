@@ -20,9 +20,7 @@ import {
   isC4Component,
   isPanelComponent,
   isEndpointComponent,
-  isApiGroupComponent,
-  isDbTableComponent,
-  isJsonViewerComponent,
+  PanelKind,
 } from "@/features/diagram";
 import { getNotePresetPair } from "@/features/canvas/panels/ElementPanel/components/colorPresets";
 import { IconPickerModal } from "@/features/canvas/components/icons/IconPickerModal";
@@ -121,14 +119,34 @@ export function NodeQuickActionsBar({
 
   const handleOpacityChange = useCallback(
     (value: number) => {
+      if (!component) return;
+      // The swimlane descriptor reads `swimlane.opacity ?? panelOpacity`,
+      // so when the component is a swimlane the existing `swimlane.opacity`
+      // (default 9) shadows any change to panelOpacity. Write both so the
+      // toolbar opacity slider is the single source of truth for panels.
+      if (isPanelComponent(component) && component.panelKind === PanelKind.Swimlane) {
+        updateComponent(nodeId, {
+          panelOpacity: value,
+          swimlane: { ...(component.swimlane ?? {}), opacity: value },
+        } as ComponentPatch);
+        return;
+      }
       updateComponent(nodeId, { panelOpacity: value });
     },
-    [nodeId, updateComponent],
+    [component, nodeId, updateComponent],
   );
 
   const handleOpacityReset = useCallback(() => {
+    if (!component) return;
+    if (isPanelComponent(component) && component.panelKind === PanelKind.Swimlane) {
+      updateComponent(nodeId, {
+        panelOpacity: undefined,
+        swimlane: { ...(component.swimlane ?? {}), opacity: undefined },
+      } as ComponentPatch);
+      return;
+    }
     updateComponent(nodeId, { panelOpacity: undefined });
-  }, [nodeId, updateComponent]);
+  }, [component, nodeId, updateComponent]);
 
   const handlePickIcon = useCallback(
     (selectedIconId: string) => {
@@ -190,7 +208,22 @@ export function NodeQuickActionsBar({
         updateComponent(nodeId, { customColor: color });
         return;
       }
-      // Panels + C4: write panelColor
+      // Panels + C4: write panelColor. Swimlanes also need laneColor
+      // updated so the descriptor's `sl?.laneColor ?? panelColor` reads
+      // the new value instead of the previous lane colour.
+      const isSwimlane =
+        isPanelComponent(component) && component.panelKind === PanelKind.Swimlane;
+      if (isSwimlane) {
+        const swimlane = component.swimlane;
+        updateComponent(nodeId, {
+          panelColor: color,
+          swimlane: {
+            ...(swimlane ?? {}),
+            laneColor: color,
+          },
+        } as ComponentPatch);
+        return;
+      }
       updateComponent(nodeId, { panelColor: color });
     },
     [component, isDark, nodeId, updateComponent],

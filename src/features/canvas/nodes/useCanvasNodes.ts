@@ -453,7 +453,6 @@ export function useCanvasNodes({
             !isCmp &&
             !tagFilteredHidden,
           selectable:
-            !isLockedBySelfOrAncestor &&
             (d.selectable ?? !lockedInGroup) &&
             !isCmp &&
             !tagFilteredHidden,

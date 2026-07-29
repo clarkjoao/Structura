@@ -50,9 +50,53 @@ export const componentParentingSlice = (
       if (!d) return;
       const scene = resolveActiveScene(d);
       if (scene && !scene.addedComponents[childId]) return;
+      // Always push history (even when the parentId is unchanged) so the
+      // user can undo a reparent.
       if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
       const comp = resolveComponent(d, scene, childId);
-      if (comp) comp.parentId = parentId;
+      if (!comp) return;
+
+      const previousParentId = comp.parentId;
+      comp.parentId = parentId;
+
+      // Re-anchor the child into the new parent's coordinate space.
+      // Without this, an absolute → parent reparent keeps the layout's
+      // absolute coords as parent-relative coords, which can place the
+      // child at the parent's origin (0,0) or off-screen.
+      const childLayout = resolveNodeLayout(d, scene, childId);
+      if (!childLayout) return;
+
+      // Reconstruct the child's absolute position before reparenting.
+      const getAbsPos = (eid: string, parentOf: string | null): { x: number; y: number } => {
+        const l = resolveNodeLayout(d, scene, eid);
+        if (!l) return { x: 0, y: 0 };
+        if (!parentOf) return { x: l.x, y: l.y };
+        const parentComp = resolveComponent(d, scene, parentOf);
+        if (!parentComp) return { x: l.x, y: l.y };
+        const p = getAbsPos(parentOf, parentComp.parentId);
+        return { x: p.x + l.x, y: p.y + l.y };
+      };
+
+      const abs = getAbsPos(childId, previousParentId);
+
+      if (parentId) {
+        const parentLayout = resolveNodeLayout(d, scene, parentId);
+        if (parentLayout) {
+          const parentAbs = getAbsPos(parentId, resolveComponent(d, scene, parentId)?.parentId ?? null);
+          childLayout.x = abs.x - parentAbs.x;
+          childLayout.y = abs.y - parentAbs.y;
+        } else {
+          // Parent has no layout yet — leave the absolute coords so the
+          // child is visible at the correct canvas position until the
+          // parent gets a layout.
+          childLayout.x = abs.x;
+          childLayout.y = abs.y;
+        }
+      } else {
+        // Re-anchored to the canvas root: keep the absolute position.
+        childLayout.x = abs.x;
+        childLayout.y = abs.y;
+      }
     });
   },
 
