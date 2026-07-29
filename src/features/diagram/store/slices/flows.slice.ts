@@ -3,7 +3,7 @@ import { generateId } from "../../utils/generate-id";
 import { parseMermaidToSteps } from "../../utils/flow-mermaid";
 import type { AppState } from "../store.types";
 import { resolveSceneSnapshot } from "../../utils/scene.utils";
-import { getActiveDiagram } from "./get-active-diagram";
+import { getActiveDiagram, touchDiagram } from "./get-active-diagram";
 
 export const flowsSlice = (set: (fn: (state: AppState) => void) => void, get: () => AppState) => ({
   addFlow: (
@@ -53,7 +53,14 @@ export const flowsSlice = (set: (fn: (state: AppState) => void) => void, get: ()
       entryStepId,
     };
     set((state) => {
-      state.diagrams[diagramId].snapshot.flows[flow.id] = flow;
+      // Re-check inside set to handle race condition if diagram was deleted
+      const d = state.diagrams[diagramId];
+      if (!d) {
+        console.warn("[addFlow] Diagram not found inside set:", diagramId);
+        return;
+      }
+      d.snapshot.flows[flow.id] = flow;
+      touchDiagram(d);
     });
     return flow;
   },
