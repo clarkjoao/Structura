@@ -116,7 +116,7 @@ export function inferSourceTargetSides(
 
   // For container/panel targets: choose entry side based on source position
   const tgtComp = components[targetId];
-  if (tgtComp && (tgtComp.type === "panel" || tgtComp.type === "apiGroup")) {
+  if (tgtComp && (tgtComp.type === "panel" || tgtComp.type === "api-group")) {
     const tgtLeft = tgt.x;
     const tgtRight = tgt.x + tgtW;
     const tgtTop = tgt.y;
@@ -269,7 +269,7 @@ export function buildContainerWaypointsV2(
   let containerId: string | null = null;
   p = tgtComp.parentId;
   while (p) {
-    if (srcAncestors.has(p) && (components[p]?.type === "panel" || components[p]?.type === "apiGroup")) {
+    if (srcAncestors.has(p) && (components[p]?.type === "panel" || components[p]?.type === "api-group")) {
       containerId = p;
       break;
     }
@@ -463,19 +463,19 @@ export function resolveEdgeRouting(
   const tgtComp = components[targetId];
 
   // 3. Resolve absolute handle positions with slot offsets
-  const sourceAbs =
+  const sourceAbs: { x: number; y: number; position: HandlePosition } =
     srcLayout && srcComp
       ? resolveAbs(
           sourceId, srcLayout, srcComp,
-          sides.sourcePosition as HandlePosition, slot, true, layoutMap, components,
+          sides.sourcePosition, slot, true, layoutMap, components,
         )
       : { x: 0, y: 0, position: "right" };
 
-  const targetAbs =
+  const targetAbs: { x: number; y: number; position: HandlePosition } =
     tgtLayout && tgtComp
       ? resolveAbs(
           targetId, tgtLayout, tgtComp,
-          sides.targetPosition as HandlePosition, slot, false, layoutMap, components,
+          sides.targetPosition, slot, false, layoutMap, components,
         )
       : { x: 0, y: 0, position: "left" };
 

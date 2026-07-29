@@ -282,10 +282,8 @@ export function buildEditableEdgePath(
   return pathType === "linear" ? toLinearPath(knots) : toCatmullRomPath(knots);
 }
 
-// ─── Re-exported for use by the draw.io export service ─────────────────────────
-
-/**
- * A handle position relative to a node, mirroring xyflow's Position enum.
- * Exported so the export service can import the type without depending on @xyflow/react.
- */
-export type { HandlePosition };
+// Note: `HandlePosition` is exported above (line ~10) and consumed by the
+// draw.io export service via `import type { HandlePosition } from
+// "@/features/canvas/edges/geometry/paths"`. No re-export is needed here —
+// TypeScript flags a duplicate export-declaration if we re-export the same
+// type from the same module.

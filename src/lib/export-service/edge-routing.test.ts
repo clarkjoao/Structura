@@ -34,6 +34,16 @@ function mkComponent(id: string, parentId: string | null = null): Component {
   };
 }
 
+function mkC4Child(id: string, parentId: string): Component {
+  // The routing logic only cares about the parent's `type`, not the child's,
+  // so any valid C4 literal works here.
+  return { ...mkComponent(id, parentId), type: "system" };
+}
+
+function mkAwsChild(id: string, parentId: string): Component {
+  return { ...mkComponent(id, parentId), type: "aws-compute" };
+}
+
 function mkHandleSlots(
   srcSlot: number,
   tgtSlot: number,
@@ -159,9 +169,9 @@ describe("buildContainerWaypointsV2", () => {
   };
   const components: Record<string, Component> = {
     panel: { ...mkComponent("panel", null), type: "panel" },
-    a: { ...mkComponent("a", "panel"), type: "c4" },
-    b: { ...mkComponent("b", "panel"), type: "c4" },
-    c: { ...mkComponent("c", "panel"), type: "c4" },
+    a: mkC4Child("a", "panel"),
+    b: mkC4Child("b", "panel"),
+    c: mkC4Child("c", "panel"),
   };
 
   it("returns undefined when nodes are not siblings in a container", () => {
@@ -258,10 +268,10 @@ describe("resolveEdgeRouting", () => {
     };
     const awsComps: Record<string, Component> = {
       az: { ...mkComponent("az", null), type: "panel" },
-      ec2: { ...mkComponent("ec2", "az"), type: "aws" },
-      s3: { ...mkComponent("s3", "az"), type: "aws" },
-      glue: { ...mkComponent("glue", "az"), type: "aws" },
-      sfn: { ...mkComponent("sfn", "az"), type: "aws" },
+      ec2: mkAwsChild("ec2", "az"),
+      s3: mkAwsChild("s3", "az"),
+      glue: mkAwsChild("glue", "az"),
+      sfn: mkAwsChild("sfn", "az"),
     };
     const awsSlots = mkHandleSlots(0, 0, 1, 1);
     const result = resolveEdgeRouting("ec2", "s3", awsLayout, awsComps, undefined, awsSlots);
