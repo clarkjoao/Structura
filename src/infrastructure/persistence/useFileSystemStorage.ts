@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { fileSystemAdapter } from "./FileSystemAdapter";
@@ -79,6 +79,9 @@ export function useFileSystemStorage() {
   const [pushInProgress, setPushInProgress] = useState(false);
   const [disconnectInProgress, setDisconnectInProgress] = useState(false);
 
+  // Guard against double boot in React StrictMode
+  const bootStartedRef = useRef(false);
+
   const clearStore = useCallback(() => {
     useDiagramStore.setState({
       diagrams: {},
@@ -95,6 +98,9 @@ export function useFileSystemStorage() {
 
   useEffect(() => {
     if (!isFileSystemSupported) return;
+    // Guard against double boot in React StrictMode
+    if (bootStartedRef.current) return;
+    bootStartedRef.current = true;
 
     if (fileSystemAdapter.isConnected) {
       defaultStorage.paused = true;
