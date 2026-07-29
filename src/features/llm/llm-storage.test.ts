@@ -315,11 +315,9 @@ describe("llm-storage", () => {
       expect(raw[diagramId].threads[0].id).toBe(threadId);
     });
 
-    it("saveThreadsForDiagram without hydration seeds the cache and snapshot for that diagram only", () => {
-      // Without hydration, saveThreadsForDiagram updates the in-memory cache
-      // (which is empty at this point) and writes a snapshot built purely
-      // from the cache. Any legacy localStorage blob that happens to be
-      // present is intentionally ignored — the cache is the source of truth.
+    it("saveThreadsForDiagram without hydration is blocked to prevent data loss", () => {
+      // Before hydration completes, saveThreadsForDiagram is blocked to prevent
+      // overwriting localStorage with partial data from an empty cache.
       localStorage.setItem(
         HISTORY_KEY,
         JSON.stringify({
@@ -352,9 +350,8 @@ describe("llm-storage", () => {
         activeThreadId: "thread-fresh",
       });
       const raw = JSON.parse(localStorage.getItem(HISTORY_KEY) ?? "{}");
-      // Only the freshly-written diagram appears in the snapshot.
-      expect(Object.keys(raw).sort()).toEqual(["diagram-fresh"]);
-      expect(raw["diagram-fresh"].threads[0].id).toBe("thread-fresh");
+      // Save is blocked during hydration, so the legacy data is preserved.
+      expect(Object.keys(raw).sort()).toEqual(["stale-legacy"]);
     });
   });
 
