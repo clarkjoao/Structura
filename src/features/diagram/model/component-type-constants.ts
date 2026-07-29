@@ -94,9 +94,35 @@ export function isUnknownType(type: string): type is "unknown" {
   return type === COMPONENT_TYPE_UNKNOWN;
 }
 
-/** Plugin component types are namespaced "<pluginId>/<name>"; no built-in type contains "/". */
+/** Plugin component types are namespaced "<pluginId>/<name>"; no built-in type contains "/".
+ * NOTE: this is a syntactic check. It does not (and cannot) guarantee that the
+ * pluginId segment is actually a registered plugin — that requires the
+ * plugin registry at runtime. Use {@link isRegisteredPluginComponentType}
+ * for a strict check that uses the cached plugin registry. */
 export function isPluginComponentType(type: string): type is `${string}/${string}` {
   return type.includes("/");
+}
+
+/**
+ * Strict runtime check: returns true only when `type` is namespaced
+ * (`<pluginId>/<name>`) AND the pluginId is in the supplied set of
+ * installed plugin ids.
+ *
+ * The caller is responsible for reading the registry (via
+ * `getInstalledPluginIds()` from `@/features/plugins/plugin-registry`)
+ * — keeping this helper free of a hard import avoids the circular
+ * dependency between `@/features/diagram` and `@/features/plugins`.
+ */
+export function isRegisteredPluginComponentType(
+  type: string,
+  installedPluginIds: ReadonlySet<string>,
+): boolean {
+  if (!isPluginComponentType(type)) return false;
+  const slashIdx = type.indexOf("/");
+  if (slashIdx <= 0) return false;
+  const pluginId = type.slice(0, slashIdx);
+  if (!pluginId) return false;
+  return installedPluginIds.has(pluginId);
 }
 
 export function isDbTableType(type: string): type is "db-table" {

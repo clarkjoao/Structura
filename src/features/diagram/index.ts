@@ -232,6 +232,7 @@ export {
   isC4Type,
   isUnknownType,
   isPluginComponentType,
+  isRegisteredPluginComponentType,
   isSvgComponentType,
   isEndpointType,
   isApiGroupType,
