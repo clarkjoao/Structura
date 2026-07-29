@@ -1,4 +1,4 @@
-import { sanitizeSvg } from "@/features/canvas";
+import { sanitizeSvg } from "@/features/canvas/utils/svg.sanitizer";
 import type { WalkthroughStep } from "../types";
 
 /**
