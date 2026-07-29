@@ -25,6 +25,8 @@ const TRACKPAD_BUFFER_SIZE = 16;
 const TRACKPAD_HIT_THRESHOLD = 4;
 /** Below this absolute deltaY we consider the event "small" (likely a trackpad). */
 const TRACKPAD_DELTA_THRESHOLD = 50;
+/** Debounce for setProfile updates to avoid rapid state changes. */
+const PROFILE_UPDATE_DEBOUNCE_MS = 200;
 
 function readInputProfile(): CanvasInputProfile {
   if (typeof window === "undefined" || typeof navigator === "undefined") {
@@ -57,6 +59,7 @@ export function useCanvasInputProfile(): CanvasInputProfile {
   const [profile, setProfile] = useState<CanvasInputProfile>(() => readInputProfile());
   const samplesRef = useRef<TrackpadSample[]>([]);
   const likelyTrackpadRef = useRef(false);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
@@ -105,12 +108,24 @@ export function useCanvasInputProfile(): CanvasInputProfile {
       const trackpadHits = fresh.filter(isTrackpadLikeEvent).length;
       if (trackpadHits >= TRACKPAD_HIT_THRESHOLD) {
         likelyTrackpadRef.current = true;
-        setProfile((prev) => (prev.likelyTrackpad ? prev : { ...prev, likelyTrackpad: true }));
+
+        // Debounce setProfile to avoid rapid state changes
+        if (debounceTimerRef.current !== null) {
+          clearTimeout(debounceTimerRef.current);
+        }
+        debounceTimerRef.current = setTimeout(() => {
+          setProfile((prev) => (prev.likelyTrackpad ? prev : { ...prev, likelyTrackpad: true }));
+        }, PROFILE_UPDATE_DEBOUNCE_MS);
       }
     };
 
     window.addEventListener("wheel", handleWheel, { passive: true });
-    return () => window.removeEventListener("wheel", handleWheel);
+    return () => {
+      window.removeEventListener("wheel", handleWheel);
+      if (debounceTimerRef.current !== null) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, [profile.prefersTouchCanvasUi]);
 
   return profile;
