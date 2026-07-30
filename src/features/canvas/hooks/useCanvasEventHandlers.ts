@@ -138,25 +138,16 @@ export function useCanvasEventHandlers({
       setSelectedEdgeId(null);
       setContextMenu(null);
       if (e.metaKey || e.ctrlKey) {
-        setSelectedNodeIds((prev) => {
-          const next = new Set(prev);
-          if (next.has(node.id)) next.delete(node.id);
-          else next.add(node.id);
-          prevSelectionRef.current = [...next].sort().join(",");
-          setSelectedNodeId(
-            next.size === 0
-              ? null
-              : next.has(node.id)
-                ? node.id
-                : (next.values().next().value ?? null),
-          );
-          return next;
-        });
-      } else {
-        prevSelectionRef.current = node.id;
-        setSelectedNodeIds(new Set([node.id]));
-        setSelectedNodeId(node.id);
+        // React Flow owns the multi-selection toggle (see `multiSelectionKeyCode`): by the time
+        // this click handler runs it has already added/removed the node on mousedown and the
+        // result reached the store through `onSelectionFromChanges`. Toggling again here would
+        // undo it — and since `selected` now flows store -> nodes -> React Flow, the two sides
+        // would keep correcting each other.
+        return;
       }
+      prevSelectionRef.current = node.id;
+      setSelectedNodeIds(new Set([node.id]));
+      setSelectedNodeId(node.id);
     },
     [
       clearHighlight,
@@ -210,16 +201,28 @@ export function useCanvasEventHandlers({
     ({ nodes: updatedNodes }: { nodes: Node[]; edges: Edge[] }) => {
       const selectedIds = updatedNodes.filter((n) => n.selected).map((n) => n.id);
 
-      if (selectedIds.length === 0) return;
       if (isCompareMode) return;
       const key = [...selectedIds].sort().join(",");
       if (key === prevSelectionRef.current) return;
       prevSelectionRef.current = key;
 
-      setSelectedEdgeId(null);
-      setContextMenu(null);
-      setPaneContextMenu(null);
-      setSelectedNodeIds(new Set(selectedIds));
+      // An empty list is a real deselection and must reach the store, otherwise `selectedNodeIds`
+      // keeps pointing at the previous node. It also arrives when React Flow deselects nodes
+      // because an edge was clicked — so only reset edge/menu state when nodes got selected.
+      if (selectedIds.length > 0) {
+        setSelectedEdgeId(null);
+        setContextMenu(null);
+        setPaneContextMenu(null);
+      }
+      // React Flow reports its selection back to us after we push `selected` into the nodes, so
+      // write a new Set only on a real content change — an identity-only write would re-render the
+      // canvas and bounce right back here.
+      setSelectedNodeIds((prev) => {
+        if (prev.size === selectedIds.length && selectedIds.every((id) => prev.has(id))) {
+          return prev;
+        }
+        return new Set(selectedIds);
+      });
       setSelectedNodeId(selectedIds[0] ?? null);
     },
     [
@@ -340,7 +343,6 @@ export function useCanvasEventHandlers({
       if (isRecording || isCompareMode) return;
       event.preventDefault();
       clearHighlight();
-      prevSelectionRef.current = node.id;
       setContextMenu({
         x: event.clientX,
         y: event.clientY,
@@ -348,6 +350,14 @@ export function useCanvasEventHandlers({
       });
       setPaneContextMenu(null);
       setSelectedNodeId(node.id);
+      // Keep `selectedNodeIds` in sync: React Flow does not select on context menu, so without
+      // this the panel/toolbar follow the new node while the dim + selection ring stay on the
+      // previously selected one. Right-clicking inside a multi-selection preserves it.
+      setSelectedNodeIds((prev) => {
+        const next = prev.has(node.id) ? prev : new Set([node.id]);
+        prevSelectionRef.current = [...next].sort().join(",");
+        return next;
+      });
       setSelectedEdgeId(null);
     },
     [
@@ -357,6 +367,7 @@ export function useCanvasEventHandlers({
       setContextMenu,
       setPaneContextMenu,
       setSelectedNodeId,
+      setSelectedNodeIds,
       setSelectedEdgeId,
     ],
   );

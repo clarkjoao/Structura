@@ -14,6 +14,71 @@ private and are composed by [`Canvas.tsx`](../Canvas.tsx) through
 4. `useCanvasGraphState` turns the current diagram snapshot into React Flow
    `nodes` and `edges`.
 
+## Node selection
+
+Selection is the one piece of canvas state with two writers — the user, through
+React Flow, and the app, through panels, menus, shortcuts and URL focus. Getting
+it wrong does not throw; it renders a canvas where one node is described in the
+panel while a different one keeps the selection ring. Three rules keep it
+coherent.
+
+### 1. `useCanvasSelectionStore` is the single source of truth
+
+`selectedNodeIds` is the selection. `selectedNodeId` is the *primary* member of
+it. They are one selection stored in two fields because they drive different
+visuals:
+
+| Field             | Drives                                                                                     |
+| ----------------- | ------------------------------------------------------------------------------------------ |
+| `selectedNodeId`  | Element panel contents, `NodeQuickActionsBar` placement, `data.isSelected` on node renderers |
+| `selectedNodeIds` | Dimming of everything else (`nodeVisibility.ts`), and the `selected` flag on each node      |
+
+**INVARIANT: `selectedNodeId === null || selectedNodeIds.has(selectedNodeId)`.**
+The store enforces this in `setSelectedNodeId` / `setSelectedNodeIds`, so a
+caller that updates only one field cannot desynchronize them. Promoting a node
+from outside the selection moves the whole selection to it; dropping the primary
+out of the selection demotes it to another member. Locked by
+`useCanvasSelectionStore.test.ts` — do not weaken those setters into plain
+assignments.
+
+### 2. `selected` flows store → nodes → React Flow, never the reverse
+
+`useCanvasNodes` writes `selected: selectedNodeIds.has(id)` and `useLocalNodes`
+adopts that value (`sn.selected`) instead of keeping its local one. This is what
+makes selections that React Flow never saw — context menu, keyboard, search,
+`focusComponentsOnCanvas` — actually move the ring.
+
+Two consequences worth knowing before editing either hook:
+
+- `useLocalNodes` merges **during render**, not in an effect. In an effect the
+  merged array would only exist after the render returned, so React Flow would
+  paint the previous selection for a frame. It performs no `setState`: React Flow
+  reports its own selection back through `onSelectionChange`, so re-rendering
+  from inside the merge closes a feedback ring and any disagreement in that ring
+  becomes `Maximum update depth exceeded`. The merge is idempotent per
+  `storeNodes` identity, which is what makes render-time mutation safe.
+- The short-circuit comparison in the equal-length branch must include
+  `selected`, otherwise a change that only moves the selection is skipped.
+
+### 3. React Flow owns gestures it already implements
+
+When React Flow has its own behavior for a gesture, let it run and take the
+result from `onNodesChange`; do not apply the same change a second time. In
+particular `multiSelectionKeyCode` (Ctrl/Cmd) makes React Flow toggle the
+clicked node on mousedown and that reaches the store through
+`onSelectionFromChanges`, so `onNodeClick` must not toggle again — it would undo
+the gesture and make the two sides correct each other in a loop.
+
+For the same reason, writes that report React Flow's selection back to the store
+(`onSelectionChange`, `onSelectionFromChanges`) compare content before allocating
+a new `Set`: an identity-only write re-renders the canvas and bounces straight
+back.
+
+Note that an empty node selection also arrives when React Flow deselects nodes
+because an *edge* was clicked. Empty must reach the store — otherwise
+`selectedNodeIds` keeps pointing at the previous node — but the surrounding reset
+of edge and menu state must not.
+
 ## Core orchestration hooks
 
 | Hook                    | Goal                                                                                                                                                                                                        |
@@ -36,7 +101,7 @@ private and are composed by [`Canvas.tsx`](../Canvas.tsx) through
 | `useCanvasKeyboard`          | Registers and routes keyboard shortcuts for the canvas. It delegates concrete behavior to the `keyboard/` sub-hooks and guards them based on focus, flow mode, compare mode, and open panels.                                               |
 | `useCanvasDrillHandlers`     | Handles drill-down into linked diagrams and collapse or expand actions for collapsible node types. It bridges node-level UI actions to diagram navigation and component updates.                                                            |
 | `useNodeDragParenting`       | Handles drag-time parenting and unparenting for panel-based layouts. It tracks candidate parent panels during drag, blocks invalid moves, persists temporary layout updates, and commits final parent changes on drag stop.                 |
-| `useLocalNodes`              | Keeps a local React Flow node array responsive while the store catches up. It merges store-driven node updates with drag-in-progress state, filters locked scene moves, and preserves selection changes coming from React Flow.             |
+| `useLocalNodes`              | Keeps a local React Flow node array responsive while the store catches up. It merges store-driven node updates with drag-in-progress state, filters locked scene moves, and adopts the store's `selected` flag (see [Node selection](#node-selection)).                                    |
 | `useCanvasDiagramNavigation` | Manages diagram navigation UI state such as the sidebar, search, and command palette. It also records recently opened diagrams and closes navigation surfaces when flow or compare mode locks navigation.                                   |
 | `useConnectionInternalsSync` | Watches per-node connection counts and calls `updateNodeInternals` only for nodes whose handles need to be recomputed. This keeps React Flow handle positions current without refreshing every node.                                        |
 | `useWalkthroughViewportSync` | When a walkthrough is actively playing, recenters the viewport on the currently highlighted node so the canvas follows the walkthrough step-by-step.                                                                                        |

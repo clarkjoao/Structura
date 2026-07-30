@@ -143,7 +143,7 @@ export function useCanvasController(
     () => ({
       setSelectedEdgeId: visualState.setSelectedEdgeId,
       setContextMenu: (_: null) => visualState.setContextMenu(null),
-      setSelectedNodeIds: (ids: Set<string>) => visualState.setSelectedNodeIds(ids),
+      setSelectedNodeIds: visualState.setSelectedNodeIds,
       setSelectedNodeId: visualState.setSelectedNodeId,
     }),
     [visualState],

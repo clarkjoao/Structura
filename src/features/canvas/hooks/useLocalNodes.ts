@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useEffect, useLayoutEffect, type MutableRefObject } from "react";
+import { useRef, useState, useCallback, useEffect, type MutableRefObject } from "react";
 import { applyNodeChanges, type Node, type NodeChange, type OnNodesChange } from "@xyflow/react";
 import type { Diagram, DiagramModel } from "@/features/diagram";
 import { canMoveNodeInSceneMode } from "@/features/diagram";
@@ -41,14 +41,19 @@ export function useLocalNodes(
   const prevDiagramRef = useRef<Diagram | DiagramModel | null | undefined>(undefined);
   /** Detects active diagram switch — must reset locals even when `storeNodes` keeps the same ref (e.g. EMPTY_CANVAS_NODE_LIST). */
   const prevActiveDiagramIdRef = useRef<string | null>(null);
-  /** Merged local nodes — ref-only to avoid setState during render (infinite update chains). */
+  /** Merged local nodes — held in a ref, not state, so the merge below never schedules a render. */
   const localNodesStateRef = useRef<Node[]>([]);
 
   const activeDiagramId = diagram?.id ?? null;
 
-  // Sync refs when diagram changes — runs synchronously after DOM paint but before paint,
-  // avoiding the React warning about setState during render.
-  useLayoutEffect(() => {
+  // Derived state, computed during render on purpose. In a layout effect the merge would only land
+  // in the refs *after* this render returned, so React Flow would paint the previous nodes — with
+  // `selected` now sourced from the store that means the previous selection ring and dim. Ticking a
+  // re-render from the effect to compensate is not an option either: `selected` flows store ->
+  // local nodes -> React Flow's internal selection -> onSelectionChange -> store, and re-rendering
+  // from inside that ring turns any disagreement into "Maximum update depth exceeded". No setState
+  // here, so nothing to warn about; the guards below make it idempotent per `storeNodes` identity.
+  {
     if (activeDiagramId !== prevActiveDiagramIdRef.current) {
       prevActiveDiagramIdRef.current = activeDiagramId;
       draggingNodeIdsRef.current.clear();
@@ -90,7 +95,7 @@ export function useLocalNodes(
             dragHandle: sn.dragHandle,
             zIndex: sn.zIndex,
             connectable: sn.connectable,
-            selected: ln.selected,
+            selected: sn.selected,
             type: sn.type,
             position: useRemotePosition ? sn.position : ln.position,
             parentId: sn.parentId,
@@ -131,6 +136,7 @@ export function useLocalNodes(
             ln.dragHandle === sn.dragHandle &&
             ln.zIndex === sn.zIndex &&
             ln.connectable === sn.connectable &&
+            ln.selected === sn.selected &&
             ln.type === sn.type &&
             ln.position === positionToUse &&
             ln.parentId === sn.parentId &&
@@ -154,7 +160,7 @@ export function useLocalNodes(
             dragHandle: sn.dragHandle,
             zIndex: sn.zIndex,
             connectable: sn.connectable,
-            selected: ln.selected,
+            selected: sn.selected,
             type: sn.type,
             position: positionToUse,
             parentId: sn.parentId,
@@ -168,7 +174,7 @@ export function useLocalNodes(
         }
       }
     }
-  }, [activeDiagramId, diagram, storeNodes]);
+  }
 
   /**
    * If React Flow omits `resizing: false` on the last dimensions event, clear the
