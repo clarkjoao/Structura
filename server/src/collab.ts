@@ -60,8 +60,40 @@ function parseUser(value: unknown): User | null {
   };
 }
 
+const DANGEROUS_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
+/**
+ * Validates that a patch object is safe to apply and has a reasonable structure.
+ * Prevents prototype pollution attacks and ensures values are JSON-serializable.
+ */
+function isValidPatch(patch: unknown): patch is Record<string, unknown> {
+  if (!isRecord(patch)) return false;
+
+  // Block dangerous keys that could cause prototype pollution
+  for (const key of Object.keys(patch)) {
+    if (DANGEROUS_KEYS.has(key)) {
+      console.warn(`[collab] blocked dangerous patch key: ${key}`);
+      return false;
+    }
+  }
+
+  // Validate that all values are JSON-serializable (no functions, Symbols, etc.)
+  for (const value of Object.values(patch)) {
+    if (typeof value === "function" || typeof value === "symbol") {
+      console.warn("[collab] blocked non-serializable value in patch");
+      return false;
+    }
+    if (typeof value === "bigint") {
+      console.warn("[collab] blocked bigint value in patch");
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function parsePatch(value: unknown): Record<string, unknown> | null {
-  return isRecord(value) ? value : null;
+  return isRecord(value) && isValidPatch(value) ? value : null;
 }
 
 function parseCursor(value: unknown): { x: number; y: number } | null | undefined {
