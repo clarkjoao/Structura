@@ -29,7 +29,7 @@ import {
   isSvgComponentType,
   isFlowNodeType,
   isExternalElementType,
-  COMPONENT_TYPE_PROCESSOS,
+  COMPONENT_TYPE_PROCESS_NODE,
 } from "../../model/component-type-constants";
 import type {
   FlowNodeComponent,
@@ -200,7 +200,7 @@ function buildComponentForType(
   } else if (isFlowNodeType(type)) {
     component = {
       ...base,
-      type: COMPONENT_TYPE_PROCESSOS,
+      type: COMPONENT_TYPE_PROCESS_NODE,
       flowShape: flowShape ?? "rectangle",
     } as FlowNodeComponent;
   } else if (isExternalElementType(type)) {
