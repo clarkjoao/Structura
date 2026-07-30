@@ -20,15 +20,10 @@ export const WHEEL_MAX_ZOOM = 1.5;
 /** Per-step zoom factor for the custom wheel handler. */
 export const WHEEL_ZOOM_FACTOR = 1.1;
 
+// Re-exported for internal use in canvas features
 export { VIEWPORT_DEBOUNCE_MS } from "@/features/diagram";
 
 export const FIELD_DEBOUNCE_MS = 300;
-
-export { MAX_HISTORY_STEPS } from "@/features/diagram";
-
-export { HISTORY_COALESCE_MS } from "@/features/diagram";
-
-export { UNDO_REDO_COOLDOWN_MS } from "@/features/diagram";
 
 export const FLOW_PARTICLE_DURATION_MS = 1200;
 
