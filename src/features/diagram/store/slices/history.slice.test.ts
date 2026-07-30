@@ -6,7 +6,7 @@ import {
   UNDO_REDO_COOLDOWN_MS,
 } from "../store.constants";
 import { createTestDiagramStore } from "../test-utils";
-import { deepClone, pushHistory } from "./history.slice";
+import { pushHistory } from "./history.slice";
 
 describe("historySlice", () => {
   beforeEach(() => {
@@ -27,7 +27,7 @@ describe("historySlice", () => {
     });
     const pastEntry = store.getState().past[0];
     expect(pastEntry?.diagramId).toBe(diagram.id);
-    expect(pastEntry?.snapshot).toEqual(deepClone(diagram.snapshot));
+    expect(pastEntry?.snapshot).toEqual(diagram.snapshot);
   });
 
   it("undo restores the previous snapshot", () => {
