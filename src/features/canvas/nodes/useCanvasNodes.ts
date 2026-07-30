@@ -22,7 +22,7 @@ import { resolveNodeDescriptor, type NodeBuildContext } from "./node-types";
 import { useFlowMode } from "../flow/FlowModeContext";
 import { buildCollapsedPanelIds, computeNodeVisibility } from "./nodeVisibility";
 import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
-import { OPACITY_FLOW_PLAYBACK_NODE_DIM, OPACITY_TAG_FILTER_DIM } from "../canvas.constants";
+import { OPACITY_FLOW_PLAYBACK_NODE_DIM, OPACITY_TAG_FILTER_DIM, OPACITY_TAG_FILTER_TRANSITION } from "../canvas.constants";
 import { getPendingNodeIds, useLLMStore } from "@/features/llm";
 import { useStableSetByContent } from "../hooks/useStableSetByContent";
 
@@ -416,7 +416,7 @@ export function useCanvasNodes({
         if (tagFilteredHidden) {
           style.opacity = OPACITY_TAG_FILTER_DIM;
           style.pointerEvents = "none";
-          style.transition = "opacity 0.2s ease";
+          style.transition = OPACITY_TAG_FILTER_TRANSITION;
         }
         const lockedInGroup =
           isEndpointType(comp.type) &&

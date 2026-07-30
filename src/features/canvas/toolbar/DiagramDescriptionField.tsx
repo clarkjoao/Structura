@@ -4,10 +4,10 @@ export interface DiagramDescriptionFieldProps {
   editLocked: boolean;
 }
 
-export function DiagramDescriptionField({ editLocked: _editLocked }: DiagramDescriptionFieldProps) {
+export function DiagramDescriptionField({ editLocked }: DiagramDescriptionFieldProps) {
   const diagram = useActiveDiagramModel();
 
-  if (!diagram) return null;
+  if (editLocked || !diagram) return null;
   if (!diagram.description?.trim()) return null;
 
   return (

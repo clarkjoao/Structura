@@ -46,7 +46,7 @@ import {
   buildWalkthroughEditorEdges,
   buildWalkthroughEditorNodes,
   type WalkthroughEditorCanvasFlowVisuals,
-} from "./walkthroughEditorCanvas.utils";
+} from "./walkthrough-editor-canvas.utils";
 import { StepDescriptionBadge } from "./StepDescriptionBadge";
 import { VisualStateOverlay } from "./VisualStateOverlay";
 

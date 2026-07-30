@@ -2,6 +2,3 @@
 export * from "./model";
 export * from "./store";
 export * from "./utils";
-
-// ─── Hooks ────────────────────────────────────────────────────────────────────
-export { getLastEdgeStyle, saveLastEdgeStyle } from "./hooks/useLastEdgeStyle";
