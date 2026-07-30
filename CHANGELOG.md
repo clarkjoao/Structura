@@ -56,6 +56,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (UX concept, persona × touchpoint × emotion) now that the
   Structura feature has been renamed `Walkthrough`.
 
+### Removed
+
+- **Deprecated `Journey*` aliases removed.** The following aliases
+  (kept for one release after the rename) have been removed:
+  `Journey`, `JourneyStep`, `JourneyCard`, `CreateJourneyModal`,
+  `JourneyEditorCanvas`, `JourneyCompletedOverlay`, `JourneyPlayerBar`,
+  `JourneyPlayerProvider`, `useJourney`, `useJourneys`,
+  `useJourneyById`, `useJourneySteps`, `useJourneyActions`,
+  `useAllJourneys`, `useJourneysStore`, `useJourneyPlayer`,
+  `useJourneysByDiagramId`. Use the canonical `Walkthrough*` names
+  instead.
+- **Deprecated `useRegistryActions` alias removed.** Use
+  `useCatalogActions` instead.
+
 ### Fixed
 
 - **`Component.registryServiceId` unified with `serviceId`**
