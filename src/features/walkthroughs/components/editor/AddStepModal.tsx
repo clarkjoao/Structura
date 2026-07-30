@@ -10,8 +10,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useAllDiagrams } from "@/features/diagram";
-import type { Diagram } from "@/features/diagram";
+import { useAllDiagrams } from "@/features/diagram/store";
+import type { Diagram } from "@/features/diagram/model";
 import { cn } from "@/lib/utils";
 import type { WalkthroughStep } from "../../types";
 

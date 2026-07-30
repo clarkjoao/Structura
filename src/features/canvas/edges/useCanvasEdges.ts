@@ -45,7 +45,6 @@ export function useCanvasEdges({
     [visibleTagsKey],
   );
   const pendingPreviews = useLLMStore((state) => state.pendingPreviews);
-  const pendingEdgeIds = useMemo(() => getPendingEdgeIds(pendingPreviews), [pendingPreviews]);
   return useMemo(() => {
     if (!diagram) return [];
 
@@ -78,7 +77,8 @@ export function useCanvasEdges({
         coverage,
         tagFilterEdgeDimmed: sourceHidden || targetHidden,
       });
-      if (pendingEdgeIds.has(conn.id)) {
+      // Inline check — avoids a separate useMemo + Set lookup for the whole array.
+      if (getPendingEdgeIds(pendingPreviews).has(conn.id)) {
         return {
           ...edge,
           className: `${edge.className ?? ""} edge-pending`.trim(),
@@ -100,6 +100,6 @@ export function useCanvasEdges({
     recordingInfo,
     coverage,
     visibleTagsSet,
-    pendingEdgeIds,
+    pendingPreviews,
   ]);
 }

@@ -11,9 +11,9 @@ import { getActiveDiagram } from "./get-active-diagram";
 
 export type { HistoryMutationKind } from "../store.constants";
 
-export function deepClone<T>(v: T): T {
-  const plain = isDraft(v) ? current(v as Draft<T>) : v;
-  return structuredClone(plain);
+/** Convert a draft or plain value to its plain snapshot. O(1) — Immer structural sharing. */
+function toPlain<T>(v: T): T {
+  return isDraft(v) ? current(v as Draft<T>) : v;
 }
 
 /** Snapshot clone for undo — O(n) per checkpoint; coalescing limits frequency (see HISTORY_COALESCE_MS). */
@@ -28,9 +28,9 @@ export function pushHistory(state: AppState, mutationType: HistoryMutationKind =
   state.past.push({
     diagramId: d.id,
     timestamp: Date.now(),
-    snapshot: deepClone(d.snapshot),
-    nodeLayouts: deepClone(d.nodeLayouts),
-    edgeLayouts: deepClone(d.edgeLayouts),
+    snapshot: toPlain(d.snapshot),
+    nodeLayouts: toPlain(d.nodeLayouts),
+    edgeLayouts: toPlain(d.edgeLayouts),
   });
   if (state.past.length > MAX_HISTORY_STEPS) state.past.shift();
   state.future = [];
@@ -59,12 +59,18 @@ export const historySlice = (
       if (!entry) return;
       const d = state.diagrams[activeId];
       if (!d) return;
+
+      // Capture current state before mutating — no structuredClone needed.
+      const currentSnapshot = d.snapshot;
+      const currentNodeLayouts = d.nodeLayouts;
+      const currentEdgeLayouts = d.edgeLayouts;
+
       state.past.splice(entryIndex, 1);
       state.future.push({
         diagramId: d.id,
-        snapshot: deepClone(d.snapshot),
-        nodeLayouts: deepClone(d.nodeLayouts),
-        edgeLayouts: deepClone(d.edgeLayouts),
+        snapshot: currentSnapshot,
+        nodeLayouts: currentNodeLayouts,
+        edgeLayouts: currentEdgeLayouts,
         timestamp: Date.now(),
       } as DiagramSnapshot);
       d.snapshot = entry.snapshot;
@@ -92,12 +98,18 @@ export const historySlice = (
       if (!entry) return;
       const d = state.diagrams[activeId];
       if (!d) return;
+
+      // Capture current state before mutating — no structuredClone needed.
+      const currentSnapshot = d.snapshot;
+      const currentNodeLayouts = d.nodeLayouts;
+      const currentEdgeLayouts = d.edgeLayouts;
+
       state.future.splice(entryIndex, 1);
       state.past.push({
         diagramId: d.id,
-        snapshot: deepClone(d.snapshot),
-        nodeLayouts: deepClone(d.nodeLayouts),
-        edgeLayouts: deepClone(d.edgeLayouts),
+        snapshot: currentSnapshot,
+        nodeLayouts: currentNodeLayouts,
+        edgeLayouts: currentEdgeLayouts,
         timestamp: Date.now(),
       } as DiagramSnapshot);
       d.snapshot = entry.snapshot;

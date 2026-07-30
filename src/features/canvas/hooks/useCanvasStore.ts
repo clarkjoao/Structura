@@ -7,17 +7,15 @@ import {
   useDiagramActions,
   useFlows,
 } from "@/features/diagram";
-import { useStableListByRefEquality } from "./useStableListByRefEquality";
 
 const EMPTY_REGISTRY: Record<string, never> = {};
 
 export function useCanvasStore() {
   const diagram = useActiveDiagramModel();
   const allDiagrams = useDiagrams();
-  const visibleComponentsRaw = useVisibleComponents();
-  const visibleConnectionsRaw = useVisibleConnections();
-  const visibleComponents = useStableListByRefEquality(visibleComponentsRaw);
-  const visibleConnections = useStableListByRefEquality(visibleConnectionsRaw);
+  // Selectors now memoize their own arrays — no wrapper needed.
+  const visibleComponents = useVisibleComponents();
+  const visibleConnections = useVisibleConnections();
   const serviceCatalog = useServiceRegistry();
   const flows = useFlows();
   const actions = useDiagramActions();

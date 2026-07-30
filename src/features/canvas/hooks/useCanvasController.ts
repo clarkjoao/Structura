@@ -20,7 +20,6 @@ import { useCanvasInteraction } from "./useCanvasInteraction";
 import { useCanvasStore } from "./useCanvasStore";
 import { useCanvasVisualState } from "./useCanvasVisualState";
 import { useCanvasInputProfile } from "./useCanvasInputProfile";
-import type { NodeSelectionState } from "@/features/canvas/hooks/useCanvasVisualState";
 import { useInteractionMode } from "./useInteractionMode";
 import { useAutoLayout } from "./useAutoLayout";
 
@@ -99,62 +98,21 @@ export function useCanvasController(
     onAutoLayout: handleAutoLayout,
     inputProfile,
   });
-  const flowContext = useMemo(
-    () => ({
-      flowState,
-      isViewingCoverage: !!canvasProps.isViewingCoverage,
-      onPlayFlow: canvasProps.onPlayFlow,
-    }),
-    [canvasProps.isViewingCoverage, canvasProps.onPlayFlow, flowState],
-  );
-  const compareContext = useMemo(
-    () => ({
-      compareState,
-    }),
-    [compareState],
-  );
-  const nodeSelectionState = useMemo(
-    (): NodeSelectionState => ({
-      selectedNodeId: visualState.selectedNodeId,
-      selectedNodeIds: visualState.selectedNodeIds,
-      highlightedNodeIds: visualState.highlightedNodeIds,
-      dragTargetPanelId: interaction.dragTargetPanelId,
-      unparentCandidatePanelId: interaction.unparentCandidatePanelId,
-      isNodeHiddenByTagFilter: visualState.isNodeHiddenByTagFilter,
-    }),
-    [
-      visualState.selectedNodeId,
-      visualState.selectedNodeIds,
-      visualState.highlightedNodeIds,
-      interaction.dragTargetPanelId,
-      interaction.unparentCandidatePanelId,
-      visualState.isNodeHiddenByTagFilter,
-    ],
-  );
-  const visualContext = useMemo(
-    () => ({
-      visualState,
-      dragTargetPanelId: interaction.dragTargetPanelId,
-      unparentCandidatePanelId: interaction.unparentCandidatePanelId,
-    }),
-    [interaction.dragTargetPanelId, interaction.unparentCandidatePanelId, visualState],
-  );
-  const selectionCallbacks = useMemo(
-    () => ({
-      setSelectedEdgeId: visualState.setSelectedEdgeId,
-      setContextMenu: (_: null) => visualState.setContextMenu(null),
-      setSelectedNodeIds: visualState.setSelectedNodeIds,
-      setSelectedNodeId: visualState.setSelectedNodeId,
-    }),
-    [visualState],
-  );
   const graphState = useCanvasGraphState({
     diagram,
     resolved,
     diagramSceneState,
     flows,
-    nodeSelectionState,
-    selectionCallbacks,
+    // Pass selection/highlight/interaction values directly — no extra useMemo wrappers.
+    selectedNodeId: visualState.selectedNodeId,
+    selectedNodeIds: visualState.selectedNodeIds,
+    highlightedNodeIds: visualState.highlightedNodeIds,
+    dragTargetPanelId: interaction.dragTargetPanelId,
+    unparentCandidatePanelId: interaction.unparentCandidatePanelId,
+    isNodeHiddenByTagFilter: visualState.isNodeHiddenByTagFilter,
+    setSelectedEdgeId: visualState.setSelectedEdgeId,
+    setSelectedNodeIds: visualState.setSelectedNodeIds,
+    setSelectedNodeId: visualState.setSelectedNodeId,
     selectedEdgeId: visualState.selectedEdgeId,
     visibleTags: visualState.visibleTags,
     setNoteInlineEditingId: visualState.setNoteInlineEditingId,
@@ -165,8 +123,11 @@ export function useCanvasController(
     visibleConnections,
     serviceCatalog,
     allDiagrams,
-    compareContext,
-    flowContext,
+    // Direct slices instead of wrapped contexts.
+    compareState,
+    flowState,
+    isViewingCoverage: !!canvasProps.isViewingCoverage,
+    onPlayFlow: canvasProps.onPlayFlow,
     handleDrillDown: interaction.handleDrillDown,
     handlePanelCollapseToggle: interaction.handlePanelCollapseToggle,
     navigateToDiagram: interaction.navigateToDiagram,
@@ -177,17 +138,17 @@ export function useCanvasController(
   const interactionMode = useInteractionMode(diagram);
 
   const selectedNodes = useMemo(
-    () => graphState.nodes.filter((node) => visualContext.visualState.selectedNodeIds.has(node.id)),
-    [graphState.nodes, visualContext.visualState.selectedNodeIds],
+    () => graphState.nodes.filter((node) => visualState.selectedNodeIds.has(node.id)),
+    [graphState.nodes, visualState.selectedNodeIds],
   );
-  const selectedCount = visualContext.visualState.selectedNodeIds.size;
+  const selectedCount = visualState.selectedNodeIds.size;
   const showElementPanel =
-    (visualContext.visualState.selectedNodeId ||
-      visualContext.visualState.selectedEdgeId ||
+    (visualState.selectedNodeId ||
+      visualState.selectedEdgeId ||
       selectedCount > 0) &&
     interactionMode.canEditCanvas &&
-    visualContext.visualState.noteInlineEditingId === null &&
-    visualContext.visualState.jsonViewerInlineEditingId === null;
+    visualState.noteInlineEditingId === null &&
+    visualState.jsonViewerInlineEditingId === null;
   return {
     t,
     diagram,

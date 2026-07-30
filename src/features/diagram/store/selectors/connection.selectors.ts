@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useDiagramStore } from "../diagram.store";
 import { getCachedCanvasSnapshot } from "../../utils/snapshot-cache";
@@ -27,29 +28,43 @@ export const useConnections = () =>
     }),
   );
 
-export const useVisibleComponents = () =>
-  useDiagramStore(
-    useShallow((s) => {
-      if (!s.activeDiagramId) return [];
-      const d = s.diagrams[s.activeDiagramId];
-      const r = getCachedCanvasSnapshot(d);
-      const visibleIds = new Set(Object.keys(r.nodeLayouts));
-      return Object.values(r.components).filter((c) => visibleIds.has(c.id));
-    }),
-  );
+export const useVisibleComponents = () => {
+  const components = useDiagramStore((s) => {
+    if (!s.activeDiagramId) return undefined;
+    const d = s.diagrams[s.activeDiagramId];
+    return getCachedCanvasSnapshot(d).components;
+  });
+  const nodeLayouts = useDiagramStore((s) => {
+    if (!s.activeDiagramId) return undefined;
+    const d = s.diagrams[s.activeDiagramId];
+    return getCachedCanvasSnapshot(d).nodeLayouts;
+  });
+  return useMemo(() => {
+    if (!components || !nodeLayouts) return [];
+    const visibleIds = new Set(Object.keys(nodeLayouts));
+    return Object.values(components).filter((c) => visibleIds.has(c.id));
+  }, [components, nodeLayouts]);
+};
 
-export const useVisibleConnections = () =>
-  useDiagramStore(
-    useShallow((s) => {
-      if (!s.activeDiagramId) return [];
-      const d = s.diagrams[s.activeDiagramId];
-      const r = getCachedCanvasSnapshot(d);
-      const visibleIds = new Set(Object.keys(r.nodeLayouts));
-      return Object.values(r.connections).filter(
-        (conn) => visibleIds.has(conn.sourceId) && visibleIds.has(conn.targetId),
-      );
-    }),
-  );
+export const useVisibleConnections = () => {
+  const connections = useDiagramStore((s) => {
+    if (!s.activeDiagramId) return undefined;
+    const d = s.diagrams[s.activeDiagramId];
+    return getCachedCanvasSnapshot(d).connections;
+  });
+  const nodeLayouts = useDiagramStore((s) => {
+    if (!s.activeDiagramId) return undefined;
+    const d = s.diagrams[s.activeDiagramId];
+    return getCachedCanvasSnapshot(d).nodeLayouts;
+  });
+  return useMemo(() => {
+    if (!connections || !nodeLayouts) return [];
+    const visibleIds = new Set(Object.keys(nodeLayouts));
+    return Object.values(connections).filter(
+      (conn) => visibleIds.has(conn.sourceId) && visibleIds.has(conn.targetId),
+    );
+  }, [connections, nodeLayouts]);
+};
 
 export const useResolvedComponents = () =>
   useDiagramStore(

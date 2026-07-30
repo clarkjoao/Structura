@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Play, Square, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
-import { useDiagramActions } from "@/features/diagram";
+import { useDiagramActions } from "@/features/diagram/store";
 import { useWalkthrough, useWalkthroughSteps } from "../store/selectors/walkthroughs.selectors";
 import { useWalkthroughPlayer } from "../hooks/useWalkthroughPlayer";
 

@@ -21,16 +21,15 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { GitBranch } from "lucide-react";
+import { getStepById } from "@/features/diagram/utils";
 import {
-  getStepById,
   isEndpointType,
   isJsonViewerType,
   isNoteType,
   isReactFlowParentPanelType,
-  useActiveDiagramId,
-  useDiagrams,
-} from "@/features/diagram";
-import type { Flow } from "@/features/diagram";
+} from "@/features/diagram/model";
+import type { Flow } from "@/features/diagram/model";
+import { useActiveDiagramId, useDiagrams } from "@/features/diagram/store";
 import {
   EditableEdge,
   FlowStepNavigator,

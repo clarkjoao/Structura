@@ -24,6 +24,7 @@ import { buildCollapsedPanelIds, computeNodeVisibility } from "./nodeVisibility"
 import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
 import { OPACITY_FLOW_PLAYBACK_NODE_DIM, OPACITY_TAG_FILTER_DIM } from "../canvas.constants";
 import { getPendingNodeIds, useLLMStore } from "@/features/llm";
+import { useStableSetByContent } from "../hooks/useStableSetByContent";
 
 export type DiagramSceneState = {
   id: string;
@@ -97,6 +98,8 @@ type DataCtx = Omit<
 > & {
   highlightedNodeIds: Set<string>;
   isViewingCoverage: boolean;
+  /** Only id+name are needed — avoids full Flow[] as a useMemo dependency. */
+  flows: { id: string; name: string }[];
 };
 
 const EMPTY_JOURNEYS_BY_COMPONENT_ID: Record<string, { name: string }[]> = Object.freeze({});
@@ -200,11 +203,22 @@ export function useCanvasNodes({
 }: UseCanvasNodesParams): Node[] {
   const diagramRef = useRef(diagram);
   diagramRef.current = diagram;
-  const activeDiagramKey = diagram?.id ?? null;
 
   const { isRecording, onRecordHandleClick } = useFlowMode();
   const pendingPreviews = useLLMStore((state) => state.pendingPreviews);
   const pendingNodeIds = useMemo(() => getPendingNodeIds(pendingPreviews), [pendingPreviews]);
+
+  // Stabilize Sets by content so they don't cause unnecessary dataCtx re-creation on
+  // selection/highlight toggles that only add/remove a single member.
+  const stablePanelIds = useStableSetByContent(panelIds);
+  const stableSelectedNodeIds = useStableSetByContent(selectedNodeIds);
+  const stableHighlightedNodeIds = useStableSetByContent(highlightedNodeIds);
+
+  // Derive only what the descriptors need — avoids flows array identity changing on every render.
+  const flowsForDescriptor = useMemo(
+    () => flows.map((f) => ({ id: f.id, name: f.name })),
+    [flows],
+  );
 
   const callbacksRef = useRef({
     handleDrillDown,
@@ -248,7 +262,7 @@ export function useCanvasNodes({
   const dataCtx: DataCtx | null = useMemo(() => {
     if (!diagram) return null;
     return {
-      flows,
+      flows: flowsForDescriptor,
       resolvedComponents,
       resolvedNodeLayouts,
       sceneBadgeByComponentId,
@@ -257,20 +271,20 @@ export function useCanvasNodes({
       serviceCatalog: serviceCatalog ?? {},
       allDiagrams,
       selectedNodeId,
-      selectedNodeIds,
+      selectedNodeIds: stableSelectedNodeIds,
       dragTargetPanelId,
       unparentCandidatePanelId,
-      panelIds,
+      panelIds: stablePanelIds,
       connectionCounts: connectionCountPerNode,
       effectiveHandleOrder,
       activeFlowId,
-      highlightedNodeIds,
+      highlightedNodeIds: stableHighlightedNodeIds,
       isViewingCoverage,
       journeysByComponentId: EMPTY_JOURNEYS_BY_COMPONENT_ID,
       childrenIndex: buildChildrenIndex(resolvedComponents),
     };
   }, [
-    activeDiagramKey,
+    diagram,
     resolvedComponents,
     resolvedNodeLayouts,
     sceneBadgeByComponentId,
@@ -279,16 +293,16 @@ export function useCanvasNodes({
     serviceCatalog,
     allDiagrams,
     selectedNodeId,
-    selectedNodeIds,
+    stableSelectedNodeIds,
     dragTargetPanelId,
     unparentCandidatePanelId,
-    panelIds,
+    stablePanelIds,
     connectionCountPerNode,
     effectiveHandleOrder,
     activeFlowId,
-    highlightedNodeIds,
+    stableHighlightedNodeIds,
     isViewingCoverage,
-    flows,
+    flowsForDescriptor,
   ]);
 
   const nodeCtxPlayback = useMemo(

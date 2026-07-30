@@ -6,7 +6,7 @@ import {
   ReactFlow,
   ReactFlowProvider,
 } from "@xyflow/react";
-import type { Diagram } from "@/features/diagram";
+import type { Diagram } from "@/features/diagram/model";
 import { EMBED_EDGE_TYPES, EMBED_NODE_TYPES } from "./embedNodeTypes";
 import { OpenInStructuraButton } from "./OpenInStructuraButton";
 import { useDiagramToFlow } from "../hooks/useDiagramToFlow";

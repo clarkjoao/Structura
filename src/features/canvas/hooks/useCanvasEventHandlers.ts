@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useRef } from "react";
 import type { Node, Edge, OnEdgesChange, OnConnect, Connection } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import type { CanvasVisualState } from "./useCanvasVisualState";
@@ -380,38 +380,22 @@ export function useCanvasEventHandlers({
     setSelectedEdgeId(null);
   }, [clearHighlight, setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId]);
 
-  return useMemo(
-    () => ({
-      onEdgesChange,
-      onMoveEnd,
-      onConnect,
-      onConnectEnd,
-      onNodeClick,
-      onEdgeClick,
-      onNodeDoubleClick,
-      onEdgeDoubleClick,
-      onSelectionChange,
-      onPaneClick,
-      onPaneContextMenu,
-      onNodeContextMenu,
-      handleQuickInsert,
-      closePanel,
-    }),
-    [
-      onEdgesChange,
-      onMoveEnd,
-      onConnect,
-      onConnectEnd,
-      onNodeClick,
-      onEdgeClick,
-      onNodeDoubleClick,
-      onEdgeDoubleClick,
-      onSelectionChange,
-      onPaneClick,
-      onPaneContextMenu,
-      onNodeContextMenu,
-      handleQuickInsert,
-      closePanel,
-    ],
-  );
+  // Return handlers as a plain object — React Flow diffs by name, not reference,
+  // so a new object each render is fine and avoids the useMemo overhead of 12 deps.
+  return {
+    onEdgesChange,
+    onMoveEnd,
+    onConnect,
+    onConnectEnd,
+    onNodeClick,
+    onEdgeClick,
+    onNodeDoubleClick,
+    onEdgeDoubleClick,
+    onSelectionChange,
+    onPaneClick,
+    onPaneContextMenu,
+    onNodeContextMenu,
+    handleQuickInsert,
+    closePanel,
+  };
 }

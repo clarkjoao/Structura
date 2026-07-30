@@ -1,5 +1,5 @@
 import { ExternalLink } from "lucide-react";
-import type { Diagram } from "@/features/diagram";
+import type { Diagram } from "@/features/diagram/model";
 import { getAppUrl } from "@/lib/diagram-url";
 
 interface OpenInStructuraButtonProps {
