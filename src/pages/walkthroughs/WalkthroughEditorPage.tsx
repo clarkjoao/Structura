@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { useFlowMode } from "@/features/canvas";
 import { useAllDiagrams } from "@/features/diagram";
 import {
-  JourneyCompletedOverlay,
-  JourneyEditorCanvas,
+  WalkthroughCompletedOverlay,
+  WalkthroughEditorCanvas,
   RightPanel,
   StepDetail,
   StepFlowSection,
@@ -380,7 +380,7 @@ export default function WalkthroughEditorPage() {
           </div>
 
           <div className="relative min-w-0 flex-1">
-            <JourneyEditorCanvas
+            <WalkthroughEditorCanvas
               diagramId={activeDiagramId}
               hasSelectedStep={selectedStepId !== null}
               isGlobalPlaying={isGlobalPlaying}
@@ -398,7 +398,7 @@ export default function WalkthroughEditorPage() {
               }
             />
             {journeyFinished ? (
-              <JourneyCompletedOverlay
+              <WalkthroughCompletedOverlay
                 walkthroughName={walkthrough.name}
                 onRestart={() => {
                   setJourneyFinished(false);
