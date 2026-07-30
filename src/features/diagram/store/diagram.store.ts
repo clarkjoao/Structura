@@ -350,6 +350,3 @@ export const useCatalogActions = () =>
       linkComponentToService: s.linkComponentToService,
     })),
   );
-
-/** @deprecated Use `useCatalogActions`. Alias kept for one release. */
-export const useRegistryActions = useCatalogActions;

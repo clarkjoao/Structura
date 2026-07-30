@@ -4,7 +4,7 @@ import { buildGithubQuery } from "../github.types";
 import { createGithubClient } from "../githubClient";
 import type { MergeConflict } from "../detectMergeConflicts";
 import type { MergeResolution } from "../github-merge.types";
-import { useAllServices, useRegistryActions } from "@/features/diagram";
+import { useAllServices, useCatalogActions } from "@/features/diagram";
 import { useGithubConfig } from "./useGithubConfig";
 import { i18n } from "@/infrastructure/i18n";
 import { buildGithubImportPlan } from "../application/buildGithubImportPlan";
@@ -15,7 +15,7 @@ const DEFAULT_PER_PAGE = 50;
 export function useGithubImport() {
   const { config } = useGithubConfig();
   const allServices = useAllServices();
-  const { addService, updateService } = useRegistryActions();
+  const { addService, updateService } = useCatalogActions();
 
   const client = useMemo(() => {
     if (!config?.baseUrl || !config?.token) return null;
