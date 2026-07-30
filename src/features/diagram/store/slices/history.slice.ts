@@ -7,7 +7,7 @@ import {
   UNDO_REDO_COOLDOWN_MS,
 } from "../store.constants";
 import type { HistoryMutationKind } from "../store.constants";
-import { getActiveDiagram } from "./get-active-diagram";
+import { getActiveDiagram } from "../helpers/get-active-diagram";
 
 export type { HistoryMutationKind } from "../store.constants";
 

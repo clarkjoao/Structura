@@ -1,4 +1,4 @@
-export { resolveActiveScene } from "./scene-helpers";
+export { resolveActiveScene } from "../helpers/scene-helpers";
 export { historySlice } from "./history.slice";
 export { componentsSlice } from "./components.slice";
 export { componentParentingSlice } from "./component-parenting.slice";
@@ -8,7 +8,7 @@ export { flowsSlice } from "./flows.slice";
 export { layoutSlice } from "./layout.slice";
 export { servicesSlice } from "./services.slice";
 export { clipboardSlice } from "./clipboard.slice";
-export { getActiveDiagram } from "./get-active-diagram";
+export { getActiveDiagram } from "../helpers/get-active-diagram";
 export { diagramsSlice } from "./diagram.slice";
 export { foldersSlice } from "./folders.slice";
 export { patternsSlice } from "./patterns.slice";

@@ -1,7 +1,7 @@
 import type { IconDefinition } from "../../model/diagram.types";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
-import { touchDiagram } from "./get-active-diagram";
+import { touchDiagram } from "../helpers/get-active-diagram";
 
 function clearCustomIconIdFromComponents(
   record: Record<string, { customIconId?: string }>,

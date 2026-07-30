@@ -55,7 +55,7 @@ export {
 export type { ActiveDiagramSceneState } from "./selectors/connection.selectors";
 
 // ─── Scene helpers ────────────────────────────────────────────────────────────
-export { resolveActiveScene } from "./slices/scene-helpers";
+export { resolveActiveScene } from "./helpers/scene-helpers";
 
 // ─── Store constants ──────────────────────────────────────────────────────────
 export {

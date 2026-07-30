@@ -6,8 +6,8 @@ import type { AppState } from "../store.types";
 import { repairFlowsAfterRemovingDiagramElements } from "../../utils/flow-repair";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
-import { getActiveDiagram, touchDiagram } from "./get-active-diagram";
-import { resolveActiveScene } from "./scene-helpers";
+import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
+import { resolveActiveScene } from "../helpers/scene-helpers";
 import { mutateRemoveConnectionInScene } from "../../utils/scene-mutations";
 
 export const connectionsSlice = (

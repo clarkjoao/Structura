@@ -6,7 +6,7 @@ import { computeUserTemplateNodeLayouts } from "../../utils/user-template-insert
 import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
-import { getActiveDiagram, touchDiagram } from "./get-active-diagram";
+import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 
 type InsertablePattern = PatternTemplate | UserTemplate;
 

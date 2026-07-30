@@ -1,13 +1,13 @@
 import type { EdgeControlPoint } from "../../model/diagram.types";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
-import { getActiveDiagram, touchDiagram } from "./get-active-diagram";
+import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import {
   getActiveComponents,
   getActiveNodeLayouts,
   resolveActiveScene,
   resolveNodeLayout,
-} from "./scene-helpers";
+} from "../helpers/scene-helpers";
 import { computeFitBounds } from "../../utils/fit-group-to-children";
 
 export const layoutSlice = (

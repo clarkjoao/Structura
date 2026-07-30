@@ -4,7 +4,7 @@ import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 import { SEED_SERVICE_REGISTRY } from "@/fixtures/seeds";
 import { normalizeSources } from "@/features/integrations/merge-utils";
-import { getActiveDiagram, touchDiagram } from "./get-active-diagram";
+import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import { pushHistory } from "./history.slice";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 

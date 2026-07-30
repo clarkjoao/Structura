@@ -9,8 +9,8 @@ import {
   getActiveNodeLayouts,
   resolveActiveScene,
   writeComponentAndLayout,
-} from "./scene-helpers";
-import { touchDiagram } from "./get-active-diagram";
+} from "../helpers/scene-helpers";
+import { touchDiagram } from "../helpers/get-active-diagram";
 import { resolveSceneSnapshot } from "../../utils/scene.utils";
 
 function resolveAbsoluteLayoutPosition(
