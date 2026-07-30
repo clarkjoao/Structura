@@ -1,21 +1,15 @@
 import { useCallback, useMemo, type MutableRefObject } from "react";
 import type { TFunction } from "i18next";
 import type { Node } from "@xyflow/react";
-import type {
-  Component,
-  Connection,
-  Diagram,
-  DiagramModel,
-  ServiceDefinition,
-} from "@/features/diagram";
-import type { NodeSelectionState } from "@/features/canvas/hooks/useCanvasVisualState";
-import { useCanvasConnectionDerivations } from "../edges/useCanvasConnectionDerivations";
-import { useCanvasNodes, type DiagramSceneState } from "../nodes/useCanvasNodes";
+import type { Component } from "@/features/diagram";
+import type { DiagramSceneState } from "../nodes/useCanvasNodes";
 import type { Flow } from "@/features/diagram";
 import { useCanvasEdges } from "../edges/useCanvasEdges";
+import { useCanvasConnectionDerivations } from "../edges/useCanvasConnectionDerivations";
 import { useCanvasHandleReorder } from "../edges/useCanvasHandleReorder";
-import { useLocalNodes } from "./useLocalNodes";
+import { useCanvasNodes } from "../nodes/useCanvasNodes";
 import { useConnectionInternalsSync } from "./useConnectionInternalsSync";
+import { useLocalNodes } from "./useLocalNodes";
 import { useWalkthroughCanvasHighlight } from "../chat/useWalkthroughCanvasHighlight";
 import { useWalkthroughPlayer } from "@/features/walkthroughs";
 
@@ -24,19 +18,25 @@ type CompareSlice = ReturnType<typeof import("./useCanvasCompareState").useCanva
 type DiagramActions = ReturnType<typeof import("@/features/diagram").useDiagramActions>;
 type ResolvedSnapshot = import("@/features/diagram").ResolvedSnapshot;
 type NodeDragParenting = ReturnType<typeof import("./useNodeDragParenting").useNodeDragParenting>;
+type IsNodeHiddenByTagFilter = (c: Component) => boolean;
 
 export interface UseCanvasGraphStateParams {
-  diagram: Diagram | DiagramModel | null | undefined;
+  diagram: import("@/features/diagram").Diagram | import("@/features/diagram").DiagramModel | null | undefined;
   resolved: ResolvedSnapshot | null;
   diagramSceneState: DiagramSceneState | null;
   flows: Flow[];
-  nodeSelectionState: NodeSelectionState;
-  selectionCallbacks: {
-    setSelectedEdgeId: (id: string | null) => void;
-    setContextMenu: (v: null) => void;
-    setSelectedNodeIds: (ids: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
-    setSelectedNodeId: (id: string | null) => void;
-  };
+  // Selection/highlight values that previously formed nodeSelectionState — passed directly
+  // so useCanvasController can drop its useMemo wrappers.
+  selectedNodeId: string | null;
+  selectedNodeIds: Set<string>;
+  highlightedNodeIds: Set<string>;
+  dragTargetPanelId: string | null;
+  unparentCandidatePanelId: string | null;
+  isNodeHiddenByTagFilter: IsNodeHiddenByTagFilter;
+  // Selection callbacks passed directly.
+  setSelectedEdgeId: (id: string | null) => void;
+  setSelectedNodeIds: (ids: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
+  setSelectedNodeId: (id: string | null) => void;
   selectedEdgeId: string | null;
   visibleTags: Set<string> | null;
   setNoteInlineEditingId: (id: string | null) => void;
@@ -44,17 +44,14 @@ export interface UseCanvasGraphStateParams {
   localNodesRef: MutableRefObject<Node[]>;
   innerOnNodesChange: NodeDragParenting["onNodesChange"];
   visibleComponents: Component[];
-  visibleConnections: Connection[];
-  serviceCatalog: Record<string, ServiceDefinition>;
-  allDiagrams: Record<string, Diagram>;
-  compareContext: {
-    compareState: CompareSlice;
-  };
-  flowContext: {
-    flowState: FlowSlice;
-    isViewingCoverage: boolean;
-    onPlayFlow?: (flowId: string) => void;
-  };
+  visibleConnections: import("@/features/diagram").Connection[];
+  serviceCatalog: Record<string, import("@/features/diagram").ServiceDefinition>;
+  allDiagrams: Record<string, import("@/features/diagram").Diagram>;
+  // Direct slices instead of wrapped contexts.
+  compareState: CompareSlice;
+  flowState: FlowSlice;
+  isViewingCoverage: boolean;
+  onPlayFlow?: (flowId: string) => void;
   handleDrillDown: (elementId: string) => void;
   handlePanelCollapseToggle: (panelId: string) => void;
   navigateToDiagram?: (diagramId: string, nodeId?: string) => void;
@@ -69,8 +66,6 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     resolved,
     diagramSceneState,
     flows,
-    nodeSelectionState,
-    selectionCallbacks,
     selectedEdgeId,
     visibleTags,
     setNoteInlineEditingId,
@@ -81,8 +76,10 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     visibleConnections,
     serviceCatalog,
     allDiagrams,
-    compareContext,
-    flowContext,
+    compareState,
+    flowState,
+    isViewingCoverage,
+    onPlayFlow,
     handleDrillDown,
     handlePanelCollapseToggle,
     navigateToDiagram,
@@ -90,6 +87,18 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     updateNodeInternals,
     t,
   } = params;
+
+  // Build nodeSelectionState and selectionCallbacks from direct params — avoids extra
+  // useMemo wrappers in useCanvasController.
+  const nodeSelectionState = {
+    selectedNodeId: params.selectedNodeId,
+    selectedNodeIds: params.selectedNodeIds,
+    highlightedNodeIds: params.highlightedNodeIds,
+    dragTargetPanelId: params.dragTargetPanelId,
+    unparentCandidatePanelId: params.unparentCandidatePanelId,
+    isNodeHiddenByTagFilter: params.isNodeHiddenByTagFilter,
+  };
+
   const {
     selectedNodeId,
     selectedNodeIds,
@@ -98,11 +107,6 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     unparentCandidatePanelId,
     isNodeHiddenByTagFilter,
   } = nodeSelectionState;
-  const { compareState } = compareContext;
-  const { flowState, isViewingCoverage, onPlayFlow } = flowContext;
-  // NOTE: `flows` is still forwarded to `useCanvasNodes` because node descriptors consume
-  // full flow objects today. Migrating `dataCtx` dependencies to `flowIds` is deferred to
-  // a safer follow-up to avoid behavioral regressions in node rendering.
 
   const journeyPlayer = useWalkthroughPlayer();
   const journeyHighlight = useWalkthroughCanvasHighlight();
@@ -177,18 +181,17 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
       // Flow deselects nodes because an edge was clicked, so only reset the edge/menu state when
       // nodes actually got selected.
       if (selectedIds.length > 0) {
-        selectionCallbacks.setSelectedEdgeId(null);
-        selectionCallbacks.setContextMenu(null);
+        params.setSelectedEdgeId(null);
       }
-      selectionCallbacks.setSelectedNodeIds((prev) => {
+      params.setSelectedNodeIds((prev) => {
         if (prev.size === selectedIds.length && selectedIds.every((id) => prev.has(id))) {
           return prev;
         }
         return new Set(selectedIds);
       });
-      selectionCallbacks.setSelectedNodeId(selectedIds[0] ?? null);
+      params.setSelectedNodeId(selectedIds[0] ?? null);
     },
-    [selectionCallbacks],
+    [params],
   );
   const visibleTagsKey = useMemo(
     () => (visibleTags ? [...visibleTags].sort().join("\x00") : null),
