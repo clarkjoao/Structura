@@ -98,6 +98,8 @@ type DataCtx = Omit<
 > & {
   highlightedNodeIds: Set<string>;
   isViewingCoverage: boolean;
+  /** Only id+name are needed — avoids full Flow[] as a useMemo dependency. */
+  flows: { id: string; name: string }[];
 };
 
 const EMPTY_JOURNEYS_BY_COMPONENT_ID: Record<string, { name: string }[]> = Object.freeze({});
@@ -201,7 +203,6 @@ export function useCanvasNodes({
 }: UseCanvasNodesParams): Node[] {
   const diagramRef = useRef(diagram);
   diagramRef.current = diagram;
-  const activeDiagramKey = diagram?.id ?? null;
 
   const { isRecording, onRecordHandleClick } = useFlowMode();
   const pendingPreviews = useLLMStore((state) => state.pendingPreviews);
@@ -212,6 +213,12 @@ export function useCanvasNodes({
   const stablePanelIds = useStableSetByContent(panelIds);
   const stableSelectedNodeIds = useStableSetByContent(selectedNodeIds);
   const stableHighlightedNodeIds = useStableSetByContent(highlightedNodeIds);
+
+  // Derive only what the descriptors need — avoids flows array identity changing on every render.
+  const flowsForDescriptor = useMemo(
+    () => flows.map((f) => ({ id: f.id, name: f.name })),
+    [flows],
+  );
 
   const callbacksRef = useRef({
     handleDrillDown,
@@ -255,7 +262,7 @@ export function useCanvasNodes({
   const dataCtx: DataCtx | null = useMemo(() => {
     if (!diagram) return null;
     return {
-      flows,
+      flows: flowsForDescriptor,
       resolvedComponents,
       resolvedNodeLayouts,
       sceneBadgeByComponentId,
@@ -277,7 +284,7 @@ export function useCanvasNodes({
       childrenIndex: buildChildrenIndex(resolvedComponents),
     };
   }, [
-    activeDiagramKey,
+    diagram,
     resolvedComponents,
     resolvedNodeLayouts,
     sceneBadgeByComponentId,
@@ -295,7 +302,7 @@ export function useCanvasNodes({
     activeFlowId,
     stableHighlightedNodeIds,
     isViewingCoverage,
-    flows,
+    flowsForDescriptor,
   ]);
 
   const nodeCtxPlayback = useMemo(

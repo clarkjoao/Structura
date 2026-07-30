@@ -7,7 +7,6 @@ import type {
   ComponentType,
   Diagram,
   DiagramModel,
-  Flow,
   FlowStep,
   NodeLayout,
   ServiceDefinition,
@@ -19,7 +18,8 @@ export type { FlowHighlight, RecordingInfo, CoverageInfo };
 export interface NodeBuildContext {
   diagram: Diagram | DiagramModel;
 
-  flows: Flow[];
+  /** Subset of Flow needed by descriptors — avoids full array as dependency. */
+  flows: { id: string; name: string }[];
 
   resolvedComponents: Record<string, Component>;
   resolvedNodeLayouts: Record<string, NodeLayout>;
