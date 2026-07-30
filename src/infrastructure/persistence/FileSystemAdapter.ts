@@ -1,5 +1,5 @@
 import type { Diagram, Folder, IconDefinition } from "@/features/diagram";
-import type { Journey } from "@/features/walkthroughs";
+import type { Walkthrough } from "@/features/walkthroughs";
 import { normalizeImportedDiagram } from "@/lib/export-service/normalize-imported-diagram";
 import { FileSystemEntryKind } from "@/features/diagram";
 import type { CustomComponentTemplate } from "@/features/custom-components";
@@ -380,7 +380,7 @@ export class FileSystemAdapter {
   }
 
   /** Single-file workspace export; large journey sets may warrant sharding in a future schema. */
-  async writeWalkthroughs(walkthroughs: Record<string, Journey>): Promise<boolean> {
+  async writeWalkthroughs(walkthroughs: Record<string, Walkthrough>): Promise<boolean> {
     if (!this.handle) return false;
     try {
       const file = await this.handle.getFileHandle(JOURNEYS_FILE, {
@@ -396,12 +396,12 @@ export class FileSystemAdapter {
     }
   }
 
-  async readWalkthroughs(): Promise<Record<string, Journey> | null> {
+  async readWalkthroughs(): Promise<Record<string, Walkthrough> | null> {
     if (!this.handle) return null;
     try {
       const file = await this.handle.getFileHandle(JOURNEYS_FILE);
       const fileBody = await file.getFile();
-      return JSON.parse(await fileBody.text()) as Record<string, Journey>;
+      return JSON.parse(await fileBody.text()) as Record<string, Walkthrough>;
     } catch {
       return null;
     }
