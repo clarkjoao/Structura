@@ -124,6 +124,12 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeDiagramId]);
 
+  // Clear connection highlight when node selection changes so highlight doesn't persist
+  useEffect(() => {
+    setHighlightedConnectionId(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedNodeId]);
+
   const derivedRef = useRef({
     clearHighlight: clearHighlightImpl,
     clearCanvasSelection: clearCanvasSelectionImpl,
