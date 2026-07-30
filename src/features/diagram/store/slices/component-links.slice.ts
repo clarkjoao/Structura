@@ -1,9 +1,9 @@
 import type { ExternalLink } from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
-import { getActiveDiagram, touchDiagram } from "./get-active-diagram";
+import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import { pushHistory } from "./history.slice";
-import { resolveActiveScene } from "./scene-helpers";
+import { resolveActiveScene } from "../helpers/scene-helpers";
 
 export const componentLinksSlice = (
   set: (fn: (state: AppState) => void) => void,

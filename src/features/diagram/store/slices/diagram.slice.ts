@@ -2,7 +2,7 @@ import { SEED_DIAGRAMS } from "@/fixtures/seeds";
 import { AppState } from "../store.types";
 import { Diagram, Level } from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
-import { touchDiagram } from "./get-active-diagram";
+import { touchDiagram } from "../helpers/get-active-diagram";
 import { toast } from "sonner";
 
 export const diagramsSlice = (

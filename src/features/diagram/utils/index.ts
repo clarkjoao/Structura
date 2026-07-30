@@ -1,6 +1,9 @@
 // ─── ID generation ───────────────────────────────────────────────────────────
 export { generateId } from "./generate-id";
 
+// ─── Edge style persistence ────────────────────────────────────────────────
+export { getLastEdgeStyle, saveLastEdgeStyle } from "./edge-style";
+
 // ─── Import / Export ─────────────────────────────────────────────────────────
 export {
   formatDiagramImportCalendarDate,

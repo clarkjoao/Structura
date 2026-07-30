@@ -12,7 +12,7 @@ import {
 import i18n from "@/infrastructure/i18n";
 import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
-import { getActiveDiagram, touchDiagram } from "./get-active-diagram";
+import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import { pushHistory } from "./history.slice";
 import {
   getActiveComponents,
@@ -20,7 +20,7 @@ import {
   resolveActiveScene,
   resolveComponent,
   resolveNodeLayout,
-} from "./scene-helpers";
+} from "../helpers/scene-helpers";
 
 function applySingleNodeDrag(
   d: Diagram,

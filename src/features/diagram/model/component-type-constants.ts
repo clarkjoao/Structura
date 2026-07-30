@@ -22,9 +22,6 @@ export const COMPONENT_TYPE_EXTERNAL_ELEMENT = "external-element";
 /** @deprecated Use COMPONENT_TYPE_PROCESS_NODE */
 export const COMPONENT_TYPE_FLOW_NODE = "process-node";
 
-/** @deprecated Use COMPONENT_TYPE_PROCESS_NODE */
-export const COMPONENT_TYPE_PROCESSOS = "process-node";
-
 export const COMPONENT_TYPE_PROCESS_NODE = "process-node";
 
 /** Legacy type strings; both are migrated to "process-node" by

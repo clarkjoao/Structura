@@ -1,7 +1,6 @@
 // ─── Enums ───────────────────────────────────────────────────────────────────
 export {
   ServiceSource,
-  ImportPanel,
   PanelKind,
   EdgeStyle,
   StrokeStyle,
@@ -135,7 +134,6 @@ export {
   COMPONENT_TYPE_DB_TABLE,
   COMPONENT_TYPE_JSON_VIEWER,
   COMPONENT_TYPE_FLOW_NODE,
-  COMPONENT_TYPE_PROCESSOS,
   COMPONENT_TYPE_PROCESS_NODE,
   COMPONENT_TYPE_EXTERNAL_ELEMENT,
   isExternalElementType,

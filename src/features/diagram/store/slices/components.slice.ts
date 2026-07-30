@@ -29,7 +29,7 @@ import {
   isSvgComponentType,
   isFlowNodeType,
   isExternalElementType,
-  COMPONENT_TYPE_PROCESSOS,
+  COMPONENT_TYPE_PROCESS_NODE,
 } from "../../model/component-type-constants";
 import type {
   FlowNodeComponent,
@@ -43,13 +43,13 @@ import { isAzureType } from "@/features/cloud/providers/azure/azure.catalog";
 import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
-import { getActiveDiagram, touchDiagram } from "./get-active-diagram";
+import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import {
   resolveActiveScene,
   resolveComponent,
   resolveNodeLayout,
   writeComponentAndLayout,
-} from "./scene-helpers";
+} from "../helpers/scene-helpers";
 import {
   PANEL_DEFAULT_W,
   PANEL_DEFAULT_H,
@@ -200,7 +200,7 @@ function buildComponentForType(
   } else if (isFlowNodeType(type)) {
     component = {
       ...base,
-      type: COMPONENT_TYPE_PROCESSOS,
+      type: COMPONENT_TYPE_PROCESS_NODE,
       flowShape: flowShape ?? "rectangle",
     } as FlowNodeComponent;
   } else if (isExternalElementType(type)) {

@@ -14,8 +14,8 @@ import {
 } from "../../utils/scene-mutations";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
-import { getActiveDiagram, touchDiagram } from "./get-active-diagram";
-import { resolveActiveScene } from "./scene-helpers";
+import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
+import { resolveActiveScene } from "../helpers/scene-helpers";
 import i18n from "@/infrastructure/i18n";
 
 function ensureScenes(d: Diagram): Record<string, SceneDiff> {

@@ -3,7 +3,6 @@ import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { ArrowUpRight, ExternalLink } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useCollabHighlight } from "@/features/collaboration";
-import { colorWithOpacity } from "@/lib/utils";
 
 export type ExternalElementNodeData = {
   elementId: string;
@@ -16,6 +15,39 @@ export type ExternalElementNodeData = {
   isSelected: boolean;
   onOpenInCanvas?: () => void;
 };
+
+function colorWithOpacity(color: string, opacity: number): string {
+  const alpha = Math.round(opacity * 255)
+    .toString(16)
+    .padStart(2, "0");
+
+  const hslMatch = color.match(/^hsl\(\s*([\d.]+)\s+([\d.]+)%\s+([\d.]+)%\s*\)$/i);
+  if (hslMatch) {
+    return `hsla(${hslMatch[1]}, ${hslMatch[2]}%, ${hslMatch[3]}%, ${opacity})`;
+  }
+
+  const hslMatchSpaces = color.match(/^hsl\(\s*([\d.]+)\s+([\d.]+)%\s+([\d.]+)%\)$/i);
+  if (hslMatchSpaces) {
+    return `hsla(${hslMatchSpaces[1]}, ${hslMatchSpaces[2]}%, ${hslMatchSpaces[3]}%, ${opacity})`;
+  }
+
+  if (color.startsWith("#")) {
+    const hex = color.slice(1);
+    if (hex.length === 3) {
+      return `rgba(${parseInt(hex[0] + hex[0], 16)}, ${parseInt(hex[1] + hex[1], 16)}, ${parseInt(hex[2] + hex[2], 16)}, ${opacity})`;
+    }
+    if (hex.length === 6) {
+      return `rgba(${parseInt(hex.slice(0, 2), 16)}, ${parseInt(hex.slice(2, 4), 16)}, ${parseInt(hex.slice(4, 6), 16)}, ${opacity})`;
+    }
+  }
+
+  const rgbMatch = color.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/i);
+  if (rgbMatch) {
+    return `rgba(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}, ${opacity})`;
+  }
+
+  return color + alpha;
+}
 
 const handleClass =
   "!border-background transition-all duration-150 !w-2.5 !h-2.5 !bg-muted-foreground";

@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { FlowNodeShape } from "@/features/diagram";
-import { COMPONENT_TYPE_PROCESSOS } from "@/features/diagram";
+import { COMPONENT_TYPE_PROCESS_NODE } from "@/features/diagram";
 
 const FLOW_SHAPES: FlowNodeShape[] = [
   "rectangle",
@@ -32,11 +32,11 @@ export function FlowchartFieldsSection({
           {t("endpointPanel.type")}
         </label>
         <select
-          value={COMPONENT_TYPE_PROCESSOS}
+          value={COMPONENT_TYPE_PROCESS_NODE}
           disabled
           className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground opacity-80 cursor-default"
         >
-          <option value={COMPONENT_TYPE_PROCESSOS}>{t("nodeTypes.processos")}</option>
+          <option value={COMPONENT_TYPE_PROCESS_NODE}>{t("nodeTypes.processos")}</option>
         </select>
       </div>
       <div>

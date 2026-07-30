@@ -1,5 +1,7 @@
 export const OPACITY_TAG_FILTER_DIM = 0.15;
 
+export const OPACITY_TAG_FILTER_TRANSITION = "opacity 0.2s ease";
+
 export const OPACITY_FLOW_PLAYBACK_EDGE_DIM = 0.2;
 
 export const OPACITY_FLOW_PLAYBACK_PARTICIPANT = 0.5;

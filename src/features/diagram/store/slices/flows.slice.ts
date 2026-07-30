@@ -3,7 +3,7 @@ import { generateId } from "../../utils/generate-id";
 import { parseMermaidToSteps } from "../../utils/flow-mermaid";
 import type { AppState } from "../store.types";
 import { resolveSceneSnapshot } from "../../utils/scene.utils";
-import { getActiveDiagram, touchDiagram } from "./get-active-diagram";
+import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 
 export const flowsSlice = (set: (fn: (state: AppState) => void) => void, get: () => AppState) => ({
   addFlow: (
