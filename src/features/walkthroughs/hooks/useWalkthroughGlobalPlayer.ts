@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
-import { useDiagramActions } from "@/features/diagram";
+import { useDiagramActions } from "@/features/diagram/store";
 import { useWalkthroughPlayer } from "./useWalkthroughPlayer";
 import { useWalkthroughSteps } from "../store/selectors/walkthroughs.selectors";
 import type { WalkthroughStep } from "../types";

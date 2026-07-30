@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useDiagrams } from "@/features/diagram";
+import { useDiagrams } from "@/features/diagram/store";
 
 interface StepFlowPickerDialogProps {
   open: boolean;

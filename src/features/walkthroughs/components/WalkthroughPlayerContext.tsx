@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { FlowModeProvider, useFlowMode } from "@/features/canvas/flow/FlowModeContext";
-import { useActiveDiagramId, useDiagramActions, useDiagrams } from "@/features/diagram";
+import { useActiveDiagramId, useDiagramActions, useDiagrams } from "@/features/diagram/store";
 import { useWalkthroughsStore } from "../store/walkthroughs.store";
 import type {
   WalkthroughPlaybackContext,

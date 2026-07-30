@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, Plus, X } from "lucide-react";
-import { useAllDiagrams } from "@/features/diagram";
+import { useAllDiagrams } from "@/features/diagram/store";
 import { cn } from "@/lib/utils";
 import {
   useWalkthroughActions,

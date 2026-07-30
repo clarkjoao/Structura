@@ -7,12 +7,12 @@ import {
   isJsonViewerComponent,
   isNoteComponent,
   isPanelComponent,
-  resolveSceneSnapshot,
   type Component,
   type Connection,
   type Diagram,
   type NodeLayout,
-} from "@/features/diagram";
+} from "@/features/diagram/model";
+import { resolveSceneSnapshot } from "@/features/diagram/utils";
 import { DB_TABLE_COLLAPSED_H } from "@/features/canvas/canvas.constants";
 
 function resolveNodeType(component: Component): string {

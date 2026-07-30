@@ -5,9 +5,8 @@ import {
   buildFlowFromRecordingSnapshot,
   resolveSceneSnapshot,
   stepsToMermaid,
-  useDiagramActions,
-  useDiagramStore,
-} from "@/features/diagram";
+} from "@/features/diagram/utils";
+import { useDiagramActions, useDiagramStore } from "@/features/diagram/store";
 import { useWalkthroughActions } from "../store/selectors/walkthroughs.selectors";
 import type { WalkthroughRecordingTarget } from "../types";
 import type { WalkthroughBridgeAction } from "../components/WalkthroughPlayerContext";

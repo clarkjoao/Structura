@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
-import type { Diagram } from "@/features/diagram";
+import type { Diagram } from "@/features/diagram/model";
 import {
   cloneDiagramForImportWithId,
   formatDiagramImportCalendarDate,
   resolveUniqueDiagramId,
-  useDiagramActions,
-  useDiagramStore,
-} from "@/features/diagram";
+} from "@/features/diagram/utils";
+import { useDiagramActions, useDiagramStore } from "@/features/diagram/store";
 import { ViewerCanvas } from "./ViewerCanvas";
 import SharedDiagramBanner from "./SharedDiagramBanner";
 

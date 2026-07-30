@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight, Check, Link2, Mic, Play, Square, X } from "lucid
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useFlowMode } from "@/features/canvas/flow";
-import { useDiagramActions, useDiagrams } from "@/features/diagram";
+import { useDiagramActions, useDiagrams } from "@/features/diagram/store";
 import { useWalkthroughPlayer } from "../../hooks/useWalkthroughPlayer";
 import {
   useWalkthrough,

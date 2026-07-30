@@ -1,14 +1,14 @@
 import type { Edge, Node } from "@xyflow/react";
-import type { Diagram } from "@/features/diagram";
-import { getCachedCanvasSnapshot } from "@/features/diagram";
+import type { Diagram } from "@/features/diagram/model";
+import { getCachedCanvasSnapshot } from "@/features/diagram/utils";
 
 type ResolvedSnapshot = ReturnType<typeof getCachedCanvasSnapshot>;
 import {
   isApiGroupComponent,
   isEndpointType,
   isPanelComponent,
-  buildChildrenIndex,
-} from "@/features/diagram";
+} from "@/features/diagram/model";
+import { buildChildrenIndex } from "@/features/diagram/utils";
 import {
   OPACITY_FLOW_PLAYBACK_NODE_DIM,
   buildConnectionCountPerNode,
