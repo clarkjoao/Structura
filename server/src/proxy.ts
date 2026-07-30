@@ -47,6 +47,41 @@ function maskSensitiveHeaders(headers: Record<string, string>): Record<string, s
   return masked;
 }
 
+/** Masks query parameters that may contain sensitive data in logs. */
+function maskQueryParams(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    const sensitiveParams = [
+      "token",
+      "key",
+      "secret",
+      "password",
+      "auth",
+      "bearer",
+      "api_key",
+      "api-key",
+      "access_token",
+      "refresh_token",
+      "session",
+    ];
+    let hasMasked = false;
+    for (const key of urlObj.searchParams.keys()) {
+      if (sensitiveParams.some((s) => key.toLowerCase().includes(s))) {
+        urlObj.searchParams.set(key, "****");
+        hasMasked = true;
+      }
+    }
+    // If sensitive params were masked, also truncate long query strings
+    if (hasMasked || urlObj.search.length > 200) {
+      const truncated = urlObj.toString();
+      return truncated.length > 200 ? `${truncated.slice(0, 200)}...[truncated]` : truncated;
+    }
+    return url;
+  } catch {
+    return url;
+  }
+}
+
 function getUpstreamUrl(targetUrl: string, query: express.Request["query"]): string {
   const upstreamUrl = new URL(targetUrl);
 
@@ -119,7 +154,7 @@ export function createProxyRouter(): express.Router {
       }
 
       console.log(
-        `[proxy] → ${method} ${upstreamUrl}\n    From: ${clientIp}\n    Headers: ${JSON.stringify(maskSensitiveHeaders(mergedHeaders))}`,
+        `[proxy] → ${method} ${maskQueryParams(upstreamUrl)}\n    From: ${clientIp}\n    Headers: ${JSON.stringify(maskSensitiveHeaders(mergedHeaders))}`,
       );
 
       const response = await axios({
@@ -163,7 +198,7 @@ export function createProxyRouter(): express.Router {
     } catch (err: unknown) {
       const elapsed = Date.now() - startTime;
       const message = err instanceof Error ? err.message : String(err);
-      console.error(`[proxy] ❌ 502 | ${method} ${targetUrl} | ${elapsed}ms | Error: ${message}`);
+      console.error(`[proxy] ❌ 502 | ${method} ${maskQueryParams(targetUrl)} | ${elapsed}ms | Error: ${message}`);
       res.status(502).json({ error: "Proxy request failed", details: message });
     }
   });
