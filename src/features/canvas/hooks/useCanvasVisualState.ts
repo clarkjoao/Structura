@@ -124,6 +124,15 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeDiagramId]);
 
+  // Clear the connection highlight when node selection changes so it doesn't persist. Both halves
+  // must go: `highlightedNodeIds` also suppresses dimming and keeps the node's active ring, and
+  // ConnectionsTab drops its local id once `highlightedConnectionId` is null — leaving the node
+  // set behind would orphan it with no UI able to clear it.
+  useEffect(() => {
+    clearHighlightImpl();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedNodeId]);
+
   const derivedRef = useRef({
     clearHighlight: clearHighlightImpl,
     clearCanvasSelection: clearCanvasSelectionImpl,

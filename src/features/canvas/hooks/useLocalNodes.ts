@@ -41,126 +41,137 @@ export function useLocalNodes(
   const prevDiagramRef = useRef<Diagram | DiagramModel | null | undefined>(undefined);
   /** Detects active diagram switch — must reset locals even when `storeNodes` keeps the same ref (e.g. EMPTY_CANVAS_NODE_LIST). */
   const prevActiveDiagramIdRef = useRef<string | null>(null);
-  /** Merged local nodes — ref-only to avoid setState during render (infinite update chains). */
+  /** Merged local nodes — held in a ref, not state, so the merge below never schedules a render. */
   const localNodesStateRef = useRef<Node[]>([]);
 
   const activeDiagramId = diagram?.id ?? null;
-  if (activeDiagramId !== prevActiveDiagramIdRef.current) {
-    prevActiveDiagramIdRef.current = activeDiagramId;
-    draggingNodeIdsRef.current.clear();
-    resizingNodeIdsRef.current.clear();
-    localNodesStateRef.current = storeNodes;
-    localNodesRef.current = storeNodes;
-    prevStoreNodesRef.current = storeNodes;
-    prevDiagramRef.current = diagram;
-  } else if (storeNodes !== prevStoreNodesRef.current) {
-    prevStoreNodesRef.current = storeNodes;
 
-    const undoRedo = isUndoRedoTransition(prevDiagramRef.current, diagram);
-    prevDiagramRef.current = diagram;
-
-    const prev = localNodesStateRef.current;
-
-    if (prev.length === 0 || undoRedo) {
+  // Derived state, computed during render on purpose. In a layout effect the merge would only land
+  // in the refs *after* this render returned, so React Flow would paint the previous nodes — with
+  // `selected` now sourced from the store that means the previous selection ring and dim. Ticking a
+  // re-render from the effect to compensate is not an option either: `selected` flows store ->
+  // local nodes -> React Flow's internal selection -> onSelectionChange -> store, and re-rendering
+  // from inside that ring turns any disagreement into "Maximum update depth exceeded". No setState
+  // here, so nothing to warn about; the guards below make it idempotent per `storeNodes` identity.
+  {
+    if (activeDiagramId !== prevActiveDiagramIdRef.current) {
+      prevActiveDiagramIdRef.current = activeDiagramId;
+      draggingNodeIdsRef.current.clear();
+      resizingNodeIdsRef.current.clear();
       localNodesStateRef.current = storeNodes;
       localNodesRef.current = storeNodes;
-    } else if (prev.length !== storeNodes.length) {
-      const localMap = new Map(prev.map((n) => [n.id, n]));
-      const merged = storeNodes.map((sn) => {
-        const ln = localMap.get(sn.id);
-        if (!ln) return sn;
-        const useRemotePosition =
-          sn.parentId !== ln.parentId || !draggingNodeIdsRef.current.has(sn.id);
-        const keepLocalDimensions = resizingNodeIdsRef.current.has(sn.id);
-        return {
-          ...ln,
-          data: sn.data,
-          style: keepLocalDimensions ? ln.style : sn.style,
-          width: keepLocalDimensions ? ln.width : sn.width,
-          height: keepLocalDimensions ? ln.height : sn.height,
-          hidden: sn.hidden,
-          draggable: sn.draggable,
-          selectable: sn.selectable,
-          focusable: sn.focusable,
-          className: sn.className,
-          dragHandle: sn.dragHandle,
-          zIndex: sn.zIndex,
-          connectable: sn.connectable,
-          selected: ln.selected,
-          type: sn.type,
-          position: useRemotePosition ? sn.position : ln.position,
-          parentId: sn.parentId,
-          extent: sn.extent,
-        };
-      });
-      localNodesStateRef.current = merged;
-      localNodesRef.current = merged;
-    } else {
-      const localMap = new Map(prev.map((n) => [n.id, n]));
-      let anyChanged = false;
-      const merged = storeNodes.map((sn) => {
-        const ln = localMap.get(sn.id);
-        if (!ln) {
-          anyChanged = true;
-          return sn;
-        }
+      prevStoreNodesRef.current = storeNodes;
+      prevDiagramRef.current = diagram;
+    } else if (storeNodes !== prevStoreNodesRef.current) {
+      prevStoreNodesRef.current = storeNodes;
 
-        const useRemotePosition =
-          sn.parentId !== ln.parentId || !draggingNodeIdsRef.current.has(sn.id);
+      const undoRedo = isUndoRedoTransition(prevDiagramRef.current, diagram);
+      prevDiagramRef.current = diagram;
 
-        const positionToUse = useRemotePosition ? sn.position : ln.position;
-        const keepLocalDimensions = resizingNodeIdsRef.current.has(sn.id);
-        const styleToUse = keepLocalDimensions ? ln.style : sn.style;
-        const widthToUse = keepLocalDimensions ? ln.width : sn.width;
-        const heightToUse = keepLocalDimensions ? ln.height : sn.height;
+      const prev = localNodesStateRef.current;
 
-        if (
-          ln.data === sn.data &&
-          ln.style === styleToUse &&
-          ln.width === widthToUse &&
-          ln.height === heightToUse &&
-          ln.hidden === sn.hidden &&
-          ln.draggable === sn.draggable &&
-          ln.selectable === sn.selectable &&
-          ln.focusable === sn.focusable &&
-          ln.className === sn.className &&
-          ln.dragHandle === sn.dragHandle &&
-          ln.zIndex === sn.zIndex &&
-          ln.connectable === sn.connectable &&
-          ln.type === sn.type &&
-          ln.position === positionToUse &&
-          ln.parentId === sn.parentId &&
-          ln.extent === sn.extent
-        ) {
-          return ln;
-        }
-
-        anyChanged = true;
-        return {
-          ...ln,
-          data: sn.data,
-          style: styleToUse,
-          width: widthToUse,
-          height: heightToUse,
-          hidden: sn.hidden,
-          draggable: sn.draggable,
-          selectable: sn.selectable,
-          focusable: sn.focusable,
-          className: sn.className,
-          dragHandle: sn.dragHandle,
-          zIndex: sn.zIndex,
-          connectable: sn.connectable,
-          selected: ln.selected,
-          type: sn.type,
-          position: positionToUse,
-          parentId: sn.parentId,
-          extent: sn.extent,
-        };
-      });
-
-      if (anyChanged) {
+      if (prev.length === 0 || undoRedo) {
+        localNodesStateRef.current = storeNodes;
+        localNodesRef.current = storeNodes;
+      } else if (prev.length !== storeNodes.length) {
+        const localMap = new Map(prev.map((n) => [n.id, n]));
+        const merged = storeNodes.map((sn) => {
+          const ln = localMap.get(sn.id);
+          if (!ln) return sn;
+          const useRemotePosition =
+            sn.parentId !== ln.parentId || !draggingNodeIdsRef.current.has(sn.id);
+          const keepLocalDimensions = resizingNodeIdsRef.current.has(sn.id);
+          return {
+            ...ln,
+            data: sn.data,
+            style: keepLocalDimensions ? ln.style : sn.style,
+            width: keepLocalDimensions ? ln.width : sn.width,
+            height: keepLocalDimensions ? ln.height : sn.height,
+            hidden: sn.hidden,
+            draggable: sn.draggable,
+            selectable: sn.selectable,
+            focusable: sn.focusable,
+            className: sn.className,
+            dragHandle: sn.dragHandle,
+            zIndex: sn.zIndex,
+            connectable: sn.connectable,
+            selected: sn.selected,
+            type: sn.type,
+            position: useRemotePosition ? sn.position : ln.position,
+            parentId: sn.parentId,
+            extent: sn.extent,
+          };
+        });
         localNodesStateRef.current = merged;
         localNodesRef.current = merged;
+      } else {
+        const localMap = new Map(prev.map((n) => [n.id, n]));
+        let anyChanged = false;
+        const merged = storeNodes.map((sn) => {
+          const ln = localMap.get(sn.id);
+          if (!ln) {
+            anyChanged = true;
+            return sn;
+          }
+
+          const useRemotePosition =
+            sn.parentId !== ln.parentId || !draggingNodeIdsRef.current.has(sn.id);
+
+          const positionToUse = useRemotePosition ? sn.position : ln.position;
+          const keepLocalDimensions = resizingNodeIdsRef.current.has(sn.id);
+          const styleToUse = keepLocalDimensions ? ln.style : sn.style;
+          const widthToUse = keepLocalDimensions ? ln.width : sn.width;
+          const heightToUse = keepLocalDimensions ? ln.height : sn.height;
+
+          if (
+            ln.data === sn.data &&
+            ln.style === styleToUse &&
+            ln.width === widthToUse &&
+            ln.height === heightToUse &&
+            ln.hidden === sn.hidden &&
+            ln.draggable === sn.draggable &&
+            ln.selectable === sn.selectable &&
+            ln.focusable === sn.focusable &&
+            ln.className === sn.className &&
+            ln.dragHandle === sn.dragHandle &&
+            ln.zIndex === sn.zIndex &&
+            ln.connectable === sn.connectable &&
+            ln.selected === sn.selected &&
+            ln.type === sn.type &&
+            ln.position === positionToUse &&
+            ln.parentId === sn.parentId &&
+            ln.extent === sn.extent
+          ) {
+            return ln;
+          }
+
+          anyChanged = true;
+          return {
+            ...ln,
+            data: sn.data,
+            style: styleToUse,
+            width: widthToUse,
+            height: heightToUse,
+            hidden: sn.hidden,
+            draggable: sn.draggable,
+            selectable: sn.selectable,
+            focusable: sn.focusable,
+            className: sn.className,
+            dragHandle: sn.dragHandle,
+            zIndex: sn.zIndex,
+            connectable: sn.connectable,
+            selected: sn.selected,
+            type: sn.type,
+            position: positionToUse,
+            parentId: sn.parentId,
+            extent: sn.extent,
+          };
+        });
+
+        if (anyChanged) {
+          localNodesStateRef.current = merged;
+          localNodesRef.current = merged;
+        }
       }
     }
   }

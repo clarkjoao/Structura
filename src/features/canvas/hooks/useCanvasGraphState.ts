@@ -34,7 +34,7 @@ export interface UseCanvasGraphStateParams {
   selectionCallbacks: {
     setSelectedEdgeId: (id: string | null) => void;
     setContextMenu: (v: null) => void;
-    setSelectedNodeIds: (ids: Set<string>) => void;
+    setSelectedNodeIds: (ids: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
     setSelectedNodeId: (id: string | null) => void;
   };
   selectedEdgeId: string | null;
@@ -173,10 +173,19 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
 
   const onSelectionFromChanges = useCallback(
     (selectedIds: string[]) => {
-      if (selectedIds.length === 0) return;
-      selectionCallbacks.setSelectedEdgeId(null);
-      selectionCallbacks.setContextMenu(null);
-      selectionCallbacks.setSelectedNodeIds(new Set(selectedIds));
+      // An empty list is a real deselection and must reach the store. It also arrives when React
+      // Flow deselects nodes because an edge was clicked, so only reset the edge/menu state when
+      // nodes actually got selected.
+      if (selectedIds.length > 0) {
+        selectionCallbacks.setSelectedEdgeId(null);
+        selectionCallbacks.setContextMenu(null);
+      }
+      selectionCallbacks.setSelectedNodeIds((prev) => {
+        if (prev.size === selectedIds.length && selectedIds.every((id) => prev.has(id))) {
+          return prev;
+        }
+        return new Set(selectedIds);
+      });
       selectionCallbacks.setSelectedNodeId(selectedIds[0] ?? null);
     },
     [selectionCallbacks],

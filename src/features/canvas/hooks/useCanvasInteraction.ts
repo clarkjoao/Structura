@@ -179,13 +179,16 @@ export function useCanvasInteraction(
     batchCommitNodeDrag: actions.batchCommitNodeDrag,
   });
 
-  const handleRequestFocusTitle = useCallback(() => {
-    setFocusTitleTrigger((value) => value + 1);
-  }, [setFocusTitleTrigger]);
-
+  // Reset focus title trigger when selection changes (e.g., user selects a different node).
+  // This signals any child component focused on a title input to clear/blur.
   useEffect(() => {
     setFocusTitleTrigger(0);
   }, [visualState.selectedNodeId, visualState.selectedEdgeId, setFocusTitleTrigger]);
+
+  // Request focus title: increment trigger to signal child to focus title input.
+  const handleRequestFocusTitle = useCallback(() => {
+    setFocusTitleTrigger((value) => value + 1);
+  }, [setFocusTitleTrigger]);
 
   const eventHandlers = useCanvasEventHandlers({
     visualState,

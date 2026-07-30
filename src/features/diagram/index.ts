@@ -185,14 +185,7 @@ export {
   UNDO_REDO_COOLDOWN_MS,
 } from "./store/store.constants";
 
-export {
-  PERSIST_KEY,
-  PERSIST_SCHEMA_VERSION,
-  CURRENT_SCHEMA_VERSION,
-  buildPersistStoragePayload,
-  partializeState,
-} from "./store/persist.config";
-export type { PersistedDiagramStoreSlice } from "./store/persist.config";
+export { PERSIST_KEY, buildPersistStoragePayload } from "./store/persist.config";
 
 export {
   isPanelComponent,
@@ -256,7 +249,6 @@ export type { C4Type } from "./model/component-type-constants";
 export {
   useDiagramStore,
   useCatalogActions,
-  useRegistryActions,
   createDiagramStore,
   useDiagramActions,
   useComponentActions,

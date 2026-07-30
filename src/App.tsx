@@ -4,10 +4,16 @@ import { useSharedDiagram } from "@/features/viewer/hooks/useSharedDiagram";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useDiagramPreviewSync } from "@/lib/diagram-preview";
-import { WalkthroughPlayerBar, WalkthroughPlayerProvider } from "@/features/walkthroughs";
+import { WalkthroughPlayerProvider } from "@/features/walkthroughs";
 import { migrateWalkthroughsLocalStorageKey } from "@/features/walkthroughs/utils/walkthroughsMigration";
 import { useLLMStore } from "@/features/llm";
 import { ModalOverlay } from "@/features/plugins/components/ModalOverlay";
+
+const WalkthroughPlayerBar = lazy(() =>
+  import("@/features/walkthroughs/components/WalkthroughPlayerBar").then((m) => ({
+    default: m.WalkthroughPlayerBar,
+  })),
+);
 
 migrateWalkthroughsLocalStorageKey();
 
@@ -98,7 +104,9 @@ const App = () => {
         </ShareProvider>
       ) : (
         <WalkthroughPlayerProvider>
-          <WalkthroughPlayerBar />
+          <Suspense fallback={null}>
+            <WalkthroughPlayerBar />
+          </Suspense>
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/viewer" element={<ViewerPage />} />

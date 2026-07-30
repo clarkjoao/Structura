@@ -414,6 +414,10 @@ export function loadThreadsForDiagram(diagramId: string): DiagramThreadState {
  * the localStorage snapshot so a runtime without IDB still has data.
  */
 export function saveThreadsForDiagram(diagramId: string, state: DiagramThreadState): void {
+  // Block save during hydration to prevent overwriting threads from other diagrams
+  // with partial data from the cache.
+  if (!isChatThreadsHydrated()) return;
+
   // 1. Cache (sync, source of truth during the session).
   setChatThreadsCacheEntry(diagramId, state);
 
@@ -484,6 +488,9 @@ export function loadThreadFromStorage(diagramId: string): ChatMessage[] {
 }
 
 export function saveThreadToStorage(diagramId: string, messages: ChatMessage[]): void {
+  // Block save during hydration to prevent data loss
+  if (!isChatThreadsHydrated()) return;
+
   const existing = loadThreadsForDiagram(diagramId);
   const threads: ConversationThread[] =
     existing.threads.length > 0

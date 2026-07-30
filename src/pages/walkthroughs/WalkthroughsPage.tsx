@@ -5,8 +5,8 @@ import { Plus, Route } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import {
-  CreateJourneyModal,
-  JourneyCard,
+  CreateWalkthroughModal,
+  WalkthroughCard,
   useWalkthroughActions,
   useWalkthroughs,
   type Walkthrough,
@@ -80,7 +80,7 @@ export default function WalkthroughsPage() {
                 <h2 className="text-lg font-semibold text-foreground">{domain}</h2>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {items.map((walkthrough) => (
-                    <JourneyCard
+                    <WalkthroughCard
                       key={walkthrough.id}
                       walkthrough={walkthrough}
                       onEdit={() => handleEdit(walkthrough.id)}
@@ -98,7 +98,7 @@ export default function WalkthroughsPage() {
                 </h2>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {noDomainJourneys.map((walkthrough) => (
-                    <JourneyCard
+                    <WalkthroughCard
                       key={walkthrough.id}
                       walkthrough={walkthrough}
                       onEdit={() => handleEdit(walkthrough.id)}
@@ -112,7 +112,7 @@ export default function WalkthroughsPage() {
         )}
       </div>
 
-      <CreateJourneyModal open={createOpen} onOpenChange={setCreateOpen} />
+      <CreateWalkthroughModal open={createOpen} onOpenChange={setCreateOpen} />
     </div>
   );
 }

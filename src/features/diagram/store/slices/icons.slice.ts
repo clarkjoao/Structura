@@ -19,12 +19,13 @@ export const iconsSlice = (set: (fn: (state: AppState) => void) => void, _get: (
 
   removeIconReferences: (diagramId: string, iconId: string): void => {
     set((state) => {
-      if (state.activeDiagramId === diagramId) {
-        pushHistory(state);
-      }
       const diagram = state.diagrams[diagramId];
       if (!diagram) {
         return;
+      }
+      // Only push history if this is the active diagram
+      if (state.activeDiagramId === diagramId) {
+        pushHistory(state);
       }
       clearCustomIconIdFromComponents(diagram.snapshot.components, iconId);
       if (diagram.scenes) {

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { ReactFlowInstance } from "@xyflow/react";
 import type { Diagram, DiagramModel, Flow } from "@/features/diagram";
 import { getStepById, useDiagramStore } from "@/features/diagram";
@@ -111,14 +111,14 @@ export function useCanvasEffects({
   }, [isPlaying, onClearSelection]);
 
   useEffect(() => {
-    const el = document.querySelector<HTMLElement>(".react-flow__renderer");
-    if (!el || !diagramId) return;
+    const wrapperEl = document.querySelector<HTMLElement>(".react-flow__renderer");
+    if (!wrapperEl || !diagramId) return;
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
       const viewport = reactFlowInstance.getViewport();
       const isTrackpad = inputProfile.likelyTrackpad;
-      const paneRect = el.getBoundingClientRect();
+      const paneRect = wrapperEl.getBoundingClientRect();
 
       // Horizontal pan is identical across devices.
       if (e.shiftKey && !e.ctrlKey && !e.metaKey) {
@@ -146,8 +146,8 @@ export function useCanvasEffects({
       );
     };
 
-    el.addEventListener("wheel", handleWheel, { passive: false });
-    return () => el.removeEventListener("wheel", handleWheel);
+    wrapperEl.addEventListener("wheel", handleWheel, { passive: false });
+    return () => wrapperEl.removeEventListener("wheel", handleWheel);
   }, [reactFlowInstance, diagramId, inputProfile.likelyTrackpad]);
 
   useEffect(() => {

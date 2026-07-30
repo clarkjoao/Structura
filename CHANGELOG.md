@@ -56,8 +56,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (UX concept, persona × touchpoint × emotion) now that the
   Structura feature has been renamed `Walkthrough`.
 
+### Removed
+
+- **Deprecated `Journey*` aliases removed.** The following aliases
+  (kept for one release after the rename) have been removed:
+  `Journey`, `JourneyStep`, `JourneyCard`, `CreateJourneyModal`,
+  `JourneyEditorCanvas`, `JourneyCompletedOverlay`, `JourneyPlayerBar`,
+  `JourneyPlayerProvider`, `useJourney`, `useJourneys`,
+  `useJourneyById`, `useJourneySteps`, `useJourneyActions`,
+  `useAllJourneys`, `useJourneysStore`, `useJourneyPlayer`,
+  `useJourneysByDiagramId`. Use the canonical `Walkthrough*` names
+  instead.
+- **Deprecated `useRegistryActions` alias removed.** Use
+  `useCatalogActions` instead.
+
 ### Fixed
 
+- **Canvas node selection could describe one node while another kept the
+  focus ring.** `selectedNodeId` (element panel, quick-actions toolbar)
+  and `selectedNodeIds` (dimming, React Flow's `selected` flag) are one
+  selection in two fields, and several writers updated only one of them.
+  Fixed at four levels:
+  - `useCanvasSelectionStore` now enforces the invariant
+    `selectedNodeId === null || selectedNodeIds.has(selectedNodeId)`, so
+    the desynchronized state is structurally impossible regardless of the
+    caller. This also fixes paste/duplicate leaving the panel on the node
+    that was selected before the paste.
+  - `onNodeContextMenu` wrote only `selectedNodeId` — right-clicking a
+    node moved the panel and toolbar to it while the previously selected
+    node kept the ring and stayed undimmed. It now writes both, preserving
+    an existing multi-selection.
+  - `useLocalNodes` now adopts the store's `selected` instead of keeping
+    its React-Flow-local one, so selections that React Flow never saw
+    (context menu, keyboard, search, URL focus) move the ring. The merge
+    also moved from a layout effect into the render body, because in an
+    effect it landed one render late and React Flow painted the previous
+    selection.
+  - Deselection (an empty selection reported by React Flow) now reaches
+    the store instead of being dropped by a `length === 0` guard.
+- **Ctrl/Cmd+click multi-selection was a no-op on the store.** React Flow
+  already toggles the clicked node via `multiSelectionKeyCode`, and
+  `onNodeClick` toggled it a second time, undoing it. The double toggle was
+  invisible while the node array kept its own `selected`; it is now removed.
+- **Connection highlight from the connections tab could outlive its
+  selection.** Only `highlightedConnectionId` was cleared when the
+  selection changed, orphaning `highlightedNodeIds` — which also suppresses
+  dimming and keeps a node's active ring — with no UI left able to clear it.
 - **`Component.registryServiceId` unified with `serviceId`**
   (`PERSIST_SCHEMA_VERSION` 10 → 11). The two fields carried the
   same intent; the legacy `registryServiceId` was written by the

@@ -1,5 +1,4 @@
 import type { ElkExtendedEdge, ElkNode, ElkPort } from "elkjs";
-import ELK from "elkjs/lib/elk.bundled.js";
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
 import {
@@ -14,6 +13,18 @@ import {
   isNoteType,
   isPanelComponent,
 } from "@/features/diagram";
+
+// Lazy-loaded ELK constructor to avoid loading ~250KB on initial bundle
+let elkConstructor: (new () => { layout(graph: ElkNode): Promise<ElkNode> }) | null = null;
+
+async function getElk(): Promise<{ layout(graph: ElkNode): Promise<ElkNode> }> {
+  if (!elkConstructor) {
+    // Dynamic import to keep ELK out of the initial bundle
+    const module = await import(/* @vite-ignore */ "elkjs/lib/elk.bundled.js");
+    elkConstructor = module.default;
+  }
+  return new elkConstructor();
+}
 
 const ELK_ROOT_ID = "__structura_elk_root__";
 
@@ -463,7 +474,7 @@ export async function computeAutoLayout(
     edges: elkEdges,
   };
 
-  const elk = new ELK();
+  const elk = await getElk();
   const laidOut = await elk.layout(graph);
 
   const edgeWaypoints = extractEdgeWaypoints(laidOut);
@@ -512,7 +523,7 @@ export async function computeScopedAutoLayout(
     edges: elkEdges,
   };
 
-  const elk = new ELK();
+  const elk = await getElk();
   const laidOut = await elk.layout(graph);
 
   const positions: Array<{ elementId: string; x: number; y: number }> = [];
@@ -584,7 +595,7 @@ export async function computePanelChildLayout(
     edges: elkEdges,
   };
 
-  const elk = new ELK();
+  const elk = await getElk();
   const laidOut = await elk.layout(graph);
 
   const positions: Array<{ elementId: string; x: number; y: number }> = [];
