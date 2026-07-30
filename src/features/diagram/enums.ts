@@ -4,12 +4,6 @@ export enum ServiceSource {
   Manual = "manual",
 }
 
-export enum ImportPanel {
-  Manual = "manual",
-  Github = "github",
-  Defectdojo = "defectdojo",
-}
-
 export enum EdgeStyle {
   Bezier = "bezier",
   Smoothstep = "smoothstep",

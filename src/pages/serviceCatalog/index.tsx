@@ -16,7 +16,8 @@ import {
   useDiagramActions,
 } from "@/features/diagram";
 import type { ServiceDefinition } from "@/features/diagram";
-import { ServiceSource, ImportPanel } from "@/features/diagram";
+import { ServiceSource } from "@/features/diagram";
+import { ImportPanel } from "@/features/integrations/import-panel";
 import { useTranslation } from "react-i18next";
 import { PluginPanelSlot } from "@/features/plugins/components/PluginPanelSlot";
 import { DetailPanel } from "./DetailPanel";
