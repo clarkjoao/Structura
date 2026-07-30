@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Component } from "@/features/diagram";
-import { useCanvasSelectionStore } from "./useCanvasSelectionStore";
+import { useCanvasSelection } from "./useCanvasSelection";
+import { useCanvasHighlight } from "./useCanvasHighlight";
+import { useCanvasContextMenus } from "./useCanvasContextMenus";
 
 export interface CanvasVisualState {
   selectedNodeId: string | null;
@@ -48,26 +50,14 @@ export interface NodeSelectionState {
 }
 
 export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisualState {
-  const selectedNodeId = useCanvasSelectionStore((s) => s.selectedNodeId);
-  const selectedNodeIds = useCanvasSelectionStore((s) => s.selectedNodeIds);
-  const selectedEdgeId = useCanvasSelectionStore((s) => s.selectedEdgeId);
-  const setSelectedNodeId = useCanvasSelectionStore((s) => s.setSelectedNodeId);
-  const setSelectedNodeIds = useCanvasSelectionStore((s) => s.setSelectedNodeIds);
-  const setSelectedEdgeId = useCanvasSelectionStore((s) => s.setSelectedEdgeId);
-  const clearSelectionInStore = useCanvasSelectionStore((s) => s.clearSelection);
-  const [highlightedConnectionId, setHighlightedConnectionId] = useState<string | null>(null);
-  const [highlightedNodeIds, setHighlightedNodeIds] = useState<Set<string>>(new Set());
-  const [contextMenu, setContextMenu] = useState<{
-    x: number;
-    y: number;
-    elementId: string;
-  } | null>(null);
-  const [quickInsert, setQuickInsert] = useState<{
-    screenPos: { x: number; y: number };
-    flowPos: { x: number; y: number };
-    sourceNodeId?: string | null;
-  } | null>(null);
-  const [paneContextMenu, setPaneContextMenu] = useState<{ x: number; y: number } | null>(null);
+  // Internal sub-hooks — each owns a focused slice of state.
+  const selection = useCanvasSelection(activeDiagramId);
+  const highlight = useCanvasHighlight();
+  const menus = useCanvasContextMenus();
+
+  const { clearSelection: clearStoreSelection } = selection;
+  const { clearHighlight: clearHighlightFn } = highlight;
+
   const [visibleTags, setVisibleTags] = useState<Set<string> | null>(null);
   const [noteInlineEditingId, setNoteInlineEditingId] = useState<string | null>(null);
   const [jsonViewerInlineEditingId, setJsonViewerInlineEditingId] = useState<string | null>(null);
@@ -86,7 +76,6 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
   }, []);
 
   const showAllTags = useCallback(() => setVisibleTags(null), []);
-
   const showNoTags = useCallback(() => setVisibleTags(new Set()), []);
 
   const isNodeHiddenByTagFilterImpl = useCallback(
@@ -98,47 +87,33 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
     [visibleTags],
   );
 
-  const emptySet = useRef(new Set<string>()).current;
-
-  const setHighlight = useCallback((connectionId: string, nodeIds: string[]) => {
-    setHighlightedConnectionId(connectionId);
-    setHighlightedNodeIds(new Set(nodeIds));
-  }, []);
-
-  const clearHighlightImpl = useCallback(() => {
-    setHighlightedConnectionId((prev) => (prev === null ? prev : null));
-    setHighlightedNodeIds((prev) => (prev.size === 0 ? prev : emptySet));
-  }, [emptySet]);
-
   const clearCanvasSelectionImpl = useCallback(() => {
-    clearHighlightImpl();
-    clearSelectionInStore();
-    setContextMenu((prev) => (prev === null ? prev : null));
-    setPaneContextMenu((prev) => (prev === null ? prev : null));
+    clearHighlightFn();
+    clearStoreSelection();
+    menus.setContextMenu(null);
+    menus.setPaneContextMenu(null);
     setNoteInlineEditingId(null);
     setJsonViewerInlineEditingId(null);
-  }, [clearHighlightImpl, clearSelectionInStore]);
+  }, [clearHighlightFn, clearStoreSelection, menus]);
 
   useEffect(() => {
     clearCanvasSelectionImpl();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeDiagramId]);
 
-  // Clear the connection highlight when node selection changes so it doesn't persist. Both halves
-  // must go: `highlightedNodeIds` also suppresses dimming and keeps the node's active ring, and
-  // ConnectionsTab drops its local id once `highlightedConnectionId` is null — leaving the node
-  // set behind would orphan it with no UI able to clear it.
+  // Clear the connection highlight when node selection changes so it doesn't persist.
   useEffect(() => {
-    clearHighlightImpl();
+    clearHighlightFn();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedNodeId]);
+  }, [selection.selectedNodeId]);
 
+  // Stable callbacks backed by ref to avoid stale closures in event handlers.
   const derivedRef = useRef({
-    clearHighlight: clearHighlightImpl,
+    clearHighlight: clearHighlightFn,
     clearCanvasSelection: clearCanvasSelectionImpl,
     isNodeHiddenByTagFilter: isNodeHiddenByTagFilterImpl,
   });
-  derivedRef.current.clearHighlight = clearHighlightImpl;
+  derivedRef.current.clearHighlight = clearHighlightFn;
   derivedRef.current.clearCanvasSelection = clearCanvasSelectionImpl;
   derivedRef.current.isNodeHiddenByTagFilter = isNodeHiddenByTagFilterImpl;
 
@@ -154,61 +129,32 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
     return derivedRef.current.isNodeHiddenByTagFilter(component);
   }).current;
 
-  return useMemo(
-    () => ({
-      selectedNodeId,
-      selectedNodeIds,
-      selectedEdgeId,
-      highlightedConnectionId,
-      highlightedNodeIds,
-      contextMenu,
-      quickInsert,
-      paneContextMenu,
-      visibleTags,
-      noteInlineEditingId,
-      jsonViewerInlineEditingId,
-      setSelectedNodeId,
-      setSelectedNodeIds,
-      setSelectedEdgeId,
-      setHighlight,
-      setContextMenu,
-      setQuickInsert,
-      setPaneContextMenu,
-      toggleTag,
-      showAllTags,
-      showNoTags,
-      setNoteInlineEditingId,
-      setJsonViewerInlineEditingId,
-      clearHighlight,
-      clearCanvasSelection,
-      isNodeHiddenByTagFilter,
-    }),
-    [
-      selectedNodeId,
-      selectedNodeIds,
-      selectedEdgeId,
-      highlightedConnectionId,
-      highlightedNodeIds,
-      contextMenu,
-      quickInsert,
-      paneContextMenu,
-      visibleTags,
-      noteInlineEditingId,
-      jsonViewerInlineEditingId,
-      setSelectedNodeId,
-      setSelectedNodeIds,
-      setSelectedEdgeId,
-      setHighlight,
-      setContextMenu,
-      setQuickInsert,
-      toggleTag,
-      showAllTags,
-      showNoTags,
-      setNoteInlineEditingId,
-      setJsonViewerInlineEditingId,
-      clearHighlight,
-      clearCanvasSelection,
-      isNodeHiddenByTagFilter,
-    ],
-  );
+  return {
+    selectedNodeId: selection.selectedNodeId,
+    selectedNodeIds: selection.selectedNodeIds,
+    selectedEdgeId: selection.selectedEdgeId,
+    highlightedConnectionId: highlight.highlightedConnectionId,
+    highlightedNodeIds: highlight.highlightedNodeIds,
+    contextMenu: menus.contextMenu,
+    quickInsert: menus.quickInsert,
+    paneContextMenu: menus.paneContextMenu,
+    visibleTags,
+    noteInlineEditingId,
+    jsonViewerInlineEditingId,
+    setSelectedNodeId: selection.setSelectedNodeId,
+    setSelectedNodeIds: selection.setSelectedNodeIds,
+    setSelectedEdgeId: selection.setSelectedEdgeId,
+    setHighlight: highlight.setHighlight,
+    setContextMenu: menus.setContextMenu,
+    setQuickInsert: menus.setQuickInsert,
+    setPaneContextMenu: menus.setPaneContextMenu,
+    toggleTag,
+    showAllTags,
+    showNoTags,
+    setNoteInlineEditingId,
+    setJsonViewerInlineEditingId,
+    clearHighlight,
+    clearCanvasSelection,
+    isNodeHiddenByTagFilter,
+  };
 }
