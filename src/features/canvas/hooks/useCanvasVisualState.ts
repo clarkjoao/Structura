@@ -124,6 +124,12 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeDiagramId]);
 
+  // Clear highlight when selection changes (e.g., clicking a different node)
+  useEffect(() => {
+    clearHighlightImpl();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedNodeId, selectedEdgeId]);
+
   const derivedRef = useRef({
     clearHighlight: clearHighlightImpl,
     clearCanvasSelection: clearCanvasSelectionImpl,
