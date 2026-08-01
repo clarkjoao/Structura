@@ -12,6 +12,7 @@ export { getActiveDiagram } from "../helpers/get-active-diagram";
 export { diagramsSlice } from "./diagram.slice";
 export { foldersSlice } from "./folders.slice";
 export { patternsSlice } from "./patterns.slice";
+export { architectureSlice } from "./architecture.slice";
 export { scenesSlice } from "./scenes.slice";
 export { iconsSlice } from "./icons.slice";
 export { userTemplatesSlice } from "./userTemplates.slice";

@@ -156,6 +156,14 @@ export interface AppActions {
     position: { x: number; y: number },
   ) => string[];
 
+  /**
+   * Applies a laid-out architecture proposal in one transaction, with a single history
+   * entry. Geometry comes from the layout engine; this never computes a position.
+   */
+  applyArchitecture: (
+    payload: import("./slices/architecture.slice").ArchitecturePayload,
+  ) => import("./slices/architecture.slice").ArchitectureApplyResult;
+
   undo: () => void;
   redo: () => void;
   pushHistoryBoundary: () => void;
