@@ -1,5 +1,6 @@
 import { ALL_TOOLS } from "./tools";
 import { buildComponentTypeCatalog, buildPatternCatalogCompact } from "./component-catalog";
+import { ARCHITECTURE_SKILL } from "@/features/architecture-gen/skill";
 
 const DIAGRAM_DSL_DESCRIPTION = `
 You are a Senior Solutions Architect and Cloud Expert embedded in Structura, a C4 architecture diagramming tool.
@@ -30,7 +31,7 @@ If the user says 'this', 'these', 'what I selected', or 'what I'm looking at', r
 `.trim();
 
 const FEWSHOT_EXAMPLES = `
-## Example
+## Example — single edit to an existing diagram
 User: "Add a Lambda function between API Gateway and RDS"
 Assistant:
 {
@@ -40,11 +41,14 @@ Assistant:
     "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "description": "Add Lambda",
     "actions": [
-      { "type": "ADD_NODE", "payload": { "nodeType": "container", "name": "Handler Lambda", "parentId": null, "awsService": "lambda", "position": { "x": 300, "y": 200 } } }
+      { "type": "ADD_NODE", "payload": { "nodeType": "aws-compute", "name": "Handler Lambda", "parentId": null, "awsService": "lambda" } }
     ],
-    "toolCalls": [{ "tool": "add_node", "parameters": { "nodeType": "container", "name": "Handler Lambda", "parentId": null, "awsService": "lambda", "position": { "x": 300, "y": 200 } } }]
+    "toolCalls": [{ "tool": "add_node", "parameters": { "nodeType": "aws-compute", "name": "Handler Lambda", "parentId": null, "awsService": "lambda" } }]
   }
 }
+
+Note there is no "position": Structura places the node. To generate a whole diagram, use
+propose_architecture instead of a sequence of add_node calls — see the architecture skill above.
 `.trim();
 
 const RESPONSE_RULES = `
@@ -110,19 +114,18 @@ CRITICAL RULES:
 ## Diagram patch actions (Mode 2)
 
 Valid action types:
-- { "type": "ADD_NODE", "payload": { "nodeType": "<type>", "name": "<name>", "parentId": "<id or null>", "position": { "x": 0, "y": 0 }, "awsService": "<optional>" } }
+- { "type": "ADD_NODE", "payload": { "nodeType": "<type>", "name": "<name>", "parentId": "<id or null>", "awsService": "<optional>" } }
 - { "type": "REMOVE_NODE", "payload": { "nodeId": "<id>" } }
 - { "type": "UPDATE_NODE", "payload": { "nodeId": "<id>", "patch": { "name": "..." } } }
 - { "type": "ADD_EDGE", "payload": { "sourceId": "<id>", "targetId": "<id>", "label": "<label>" } }
 - { "type": "REMOVE_EDGE", "payload": { "edgeId": "<id>" } }
 
-Position guidance for ADD_NODE:
-- Always include "position": { "x": number, "y": number } in ADD_NODE payloads
-- Arrange nodes left-to-right following data flow: client -> gateway -> service -> database
-- Horizontal spacing: 300px between connected nodes
-- Vertical spacing: 150px between sibling nodes
-- Start positions around x:200, y:200 unless the diagram already has nodes (then offset from existing)
-- When adding multiple nodes, space them so they don't overlap
+Mode 2 is for SINGLE EDITS to a diagram that already exists — adding one service, renaming
+a node, connecting two things. To generate a diagram, or to add a group of related elements,
+use propose_architecture (see the architecture skill above).
+
+Never include a position. Structura measures every node and places it; a coordinate from you
+would be based on sizes you cannot know, and the schema rejects it.
 
 ## Connection inference rules
 
@@ -234,6 +237,12 @@ export function buildSystemPrompt(diagramContext: string, responseLocale: string
     buildComponentTypeCatalog(),
     "",
     buildPatternCatalogCompact(),
+    "",
+    // The skill sits before the diagram context and the generic response rules: it is the
+    // authoring contract for whole-diagram generation, and the rules that follow cover
+    // single edits. Order matters — the model should read "describe intent, never geometry"
+    // before it reads anything about patch actions.
+    ARCHITECTURE_SKILL,
     "",
     "Current diagram context:",
     diagramContext,
