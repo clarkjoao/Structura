@@ -168,17 +168,12 @@ function buildHandleSlots(
     const tgtComp = components[conn.targetId];
 
     // Determine slot counts (same logic as canvas)
-    const outCount = Math.min(
-      MAX_HANDLES,
-      Math.max(1, counts[conn.sourceId]?.outgoing ?? 1),
-    );
+    const outCount = Math.min(MAX_HANDLES, Math.max(1, counts[conn.sourceId]?.outgoing ?? 1));
 
     // Single incoming handle for notes, db tables, json viewers
     const isSingleIncomingTarget =
       tgtComp !== undefined &&
-      (isNoteComponent(tgtComp) ||
-        isDbTableComponent(tgtComp) ||
-        isJsonViewerComponent(tgtComp));
+      (isNoteComponent(tgtComp) || isDbTableComponent(tgtComp) || isJsonViewerComponent(tgtComp));
     const inCount = isSingleIncomingTarget
       ? 1
       : Math.min(MAX_HANDLES, Math.max(1, counts[conn.targetId]?.incoming ?? 1));
@@ -187,18 +182,8 @@ function buildHandleSlots(
     const srcOrder = srcComp?.handleOrder?.outgoing;
     const tgtOrder = tgtComp?.handleOrder?.incoming;
 
-    const sIdx = resolveHandleIndex(
-      conn.id,
-      srcOrder,
-      sourceUsage[conn.sourceId] ?? 0,
-      outCount,
-    );
-    const tIdx = resolveHandleIndex(
-      conn.id,
-      tgtOrder,
-      targetUsage[conn.targetId] ?? 0,
-      inCount,
-    );
+    const sIdx = resolveHandleIndex(conn.id, srcOrder, sourceUsage[conn.sourceId] ?? 0, outCount);
+    const tIdx = resolveHandleIndex(conn.id, tgtOrder, targetUsage[conn.targetId] ?? 0, inCount);
 
     sourceUsage[conn.sourceId] = (sourceUsage[conn.sourceId] ?? 0) + 1;
     targetUsage[conn.targetId] = (targetUsage[conn.targetId] ?? 0) + 1;
@@ -265,8 +250,7 @@ function mapNode(
     if (c.panelKind === PanelKind.Swimlane) {
       const sl = c.swimlane;
       const orientation = sl?.orientation ?? "horizontal";
-      const laneColor =
-        sl?.laneColor ?? c.panelColor ?? kindDef.defaultColor ?? "#6366f1";
+      const laneColor = sl?.laneColor ?? c.panelColor ?? kindDef.defaultColor ?? "#6366f1";
       const laneLabel = sl?.laneLabel ?? c.name;
       return {
         ...base,

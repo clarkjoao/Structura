@@ -75,8 +75,10 @@ export function inferSourceTargetSides(
     return {
       sourcePosition: "right",
       targetPosition: "left",
-      exitX: 1, exitY: 0.5,
-      entryX: 0, entryY: 0.5,
+      exitX: 1,
+      exitY: 0.5,
+      entryX: 0,
+      entryY: 0.5,
     };
   }
 
@@ -95,23 +97,42 @@ export function inferSourceTargetSides(
 
   let sourcePosition: HandlePosition = "right";
   let targetPosition: HandlePosition = "left";
-  let exitX = 1, exitY = 0.5, entryX = 0, entryY = 0.5;
+  let exitX = 1,
+    exitY = 0.5,
+    entryX = 0,
+    entryY = 0.5;
 
   if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
     if (dx > 0) {
-      sourcePosition = "right"; targetPosition = "left";
-      exitX = 1; exitY = 0.5; entryX = 0; entryY = 0.5;
+      sourcePosition = "right";
+      targetPosition = "left";
+      exitX = 1;
+      exitY = 0.5;
+      entryX = 0;
+      entryY = 0.5;
     } else {
-      sourcePosition = "left"; targetPosition = "right";
-      exitX = 0; exitY = 0.5; entryX = 1; entryY = 0.5;
+      sourcePosition = "left";
+      targetPosition = "right";
+      exitX = 0;
+      exitY = 0.5;
+      entryX = 1;
+      entryY = 0.5;
     }
   } else if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 50) {
     if (dy > 0) {
-      sourcePosition = "bottom"; targetPosition = "top";
-      exitX = 0.5; exitY = 1; entryX = 0.5; entryY = 0;
+      sourcePosition = "bottom";
+      targetPosition = "top";
+      exitX = 0.5;
+      exitY = 1;
+      entryX = 0.5;
+      entryY = 0;
     } else {
-      sourcePosition = "top"; targetPosition = "bottom";
-      exitX = 0.5; exitY = 0; entryX = 0.5; entryY = 1;
+      sourcePosition = "top";
+      targetPosition = "bottom";
+      exitX = 0.5;
+      exitY = 0;
+      entryX = 0.5;
+      entryY = 1;
     }
   }
 
@@ -124,13 +145,21 @@ export function inferSourceTargetSides(
     const tgtBottom = tgt.y + tgtH;
 
     if (srcCenterX < tgtLeft) {
-      targetPosition = "left"; entryX = 0; entryY = 0.5;
+      targetPosition = "left";
+      entryX = 0;
+      entryY = 0.5;
     } else if (srcCenterX > tgtRight) {
-      targetPosition = "right"; entryX = 1; entryY = 0.5;
+      targetPosition = "right";
+      entryX = 1;
+      entryY = 0.5;
     } else if (srcCenterY < tgtTop) {
-      targetPosition = "top"; entryX = 0.5; entryY = 0;
+      targetPosition = "top";
+      entryX = 0.5;
+      entryY = 0;
     } else if (srcCenterY > tgtBottom) {
-      targetPosition = "bottom"; entryX = 0.5; entryY = 1;
+      targetPosition = "bottom";
+      entryX = 0.5;
+      entryY = 1;
     }
   }
 
@@ -172,26 +201,37 @@ export function computeDefaultWaypoints(
 /**
  * Whether a straight horizontal band at midY from x1→x2 intersects any occupied box.
  */
-function hBandIntersectsBox(x1: number, x2: number, midY: number, box: { x: number; y: number; w: number; h: number }): boolean {
+function hBandIntersectsBox(
+  x1: number,
+  x2: number,
+  midY: number,
+  box: { x: number; y: number; w: number; h: number },
+): boolean {
   return (
-    box.y <= midY &&
-    midY <= box.y + box.h &&
-    Math.max(x1, box.x) < Math.min(x2, box.x + box.w)
+    box.y <= midY && midY <= box.y + box.h && Math.max(x1, box.x) < Math.min(x2, box.x + box.w)
   );
 }
 
 /**
  * Whether a straight vertical band at midX from y1→y2 intersects any occupied box.
  */
-function vBandIntersectsBox(y1: number, y2: number, midX: number, box: { x: number; y: number; w: number; h: number }): boolean {
+function vBandIntersectsBox(
+  y1: number,
+  y2: number,
+  midX: number,
+  box: { x: number; y: number; w: number; h: number },
+): boolean {
   return (
-    box.x <= midX &&
-    midX <= box.x + box.w &&
-    Math.max(y1, box.y) < Math.min(y2, box.y + box.h)
+    box.x <= midX && midX <= box.x + box.w && Math.max(y1, box.y) < Math.min(y2, box.y + box.h)
   );
 }
 
-interface Box { x: number; y: number; w: number; h: number }
+interface Box {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
 
 function boxesOverlap(a: Box, b: Box): boolean {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
@@ -270,7 +310,11 @@ export function buildContainerWaypointsV2(
   let containerId: string | null = null;
   p = tgtComp.parentId;
   while (p) {
-    if (srcAncestors.has(p) && components[p] && (isPanelComponent(components[p]!) || isApiGroupComponent(components[p]!))) {
+    if (
+      srcAncestors.has(p) &&
+      components[p] &&
+      (isPanelComponent(components[p]!) || isApiGroupComponent(components[p]!))
+    ) {
       containerId = p;
       break;
     }
@@ -283,11 +327,14 @@ export function buildContainerWaypointsV2(
   if (!containerLayout) return undefined;
 
   // Helper: compute absolute position for any node by accumulating parent chain
-  function toAbs(nodeId: string): { x: number; y: number; width: number; height: number } | undefined {
+  function toAbs(
+    nodeId: string,
+  ): { x: number; y: number; width: number; height: number } | undefined {
     const l = layoutMap[nodeId];
     const c = components[nodeId];
     if (!l || !c) return undefined;
-    let absX = l.x, absY = l.y;
+    let absX = l.x,
+      absY = l.y;
     let parentId = c.parentId;
     while (parentId) {
       const pl = layoutMap[parentId];
@@ -330,16 +377,20 @@ export function buildContainerWaypointsV2(
     // Obstacle must overlap the horizontal band at sourceAbs.y
     if (box.y > sourceAbs.y || sourceAbs.y > box.y + box.h) return false;
     // Obstacle must be BETWEEN source and target on the x-axis (not behind source)
-    const betweenSrcAndTgt = targetAbs.x > sourceAbs.x
-      ? box.x > sourceAbs.x && box.x < targetAbs.x  // going right: between source and target
-      : box.x < sourceAbs.x && box.x > targetAbs.x; // going left: between source and target
+    const betweenSrcAndTgt =
+      targetAbs.x > sourceAbs.x
+        ? box.x > sourceAbs.x && box.x < targetAbs.x // going right: between source and target
+        : box.x < sourceAbs.x && box.x > targetAbs.x; // going left: between source and target
     return betweenSrcAndTgt;
   });
 
   if (!hBlocked) return undefined;
 
   // Compute bounding box of all occupied boxes (absolute)
-  let occMinX = Infinity, occMinY = Infinity, occMaxX = -Infinity, occMaxY = -Infinity;
+  let occMinX = Infinity,
+    occMinY = Infinity,
+    occMaxX = -Infinity,
+    occMaxY = -Infinity;
   for (const box of occupiedBoxes) {
     occMinX = Math.min(occMinX, box.x);
     occMinY = Math.min(occMinY, box.y);
@@ -419,13 +470,17 @@ function resolveAbs(
 
   let handleX: number, handleY: number;
   if (handlePosition === "right") {
-    handleX = absX + w; handleY = absY + offset * h;
+    handleX = absX + w;
+    handleY = absY + offset * h;
   } else if (handlePosition === "left") {
-    handleX = absX; handleY = absY + offset * h;
+    handleX = absX;
+    handleY = absY + offset * h;
   } else if (handlePosition === "bottom") {
-    handleX = absX + offset * w; handleY = absY + h;
+    handleX = absX + offset * w;
+    handleY = absY + h;
   } else {
-    handleX = absX + offset * w; handleY = absY;
+    handleX = absX + offset * w;
+    handleY = absY;
   }
 
   return { x: handleX, y: handleY, position: handlePosition };
@@ -467,16 +522,28 @@ export function resolveEdgeRouting(
   const sourceAbs: { x: number; y: number; position: HandlePosition } =
     srcLayout && srcComp
       ? resolveAbs(
-          sourceId, srcLayout, srcComp,
-          sides.sourcePosition, slot, true, layoutMap, components,
+          sourceId,
+          srcLayout,
+          srcComp,
+          sides.sourcePosition,
+          slot,
+          true,
+          layoutMap,
+          components,
         )
       : { x: 0, y: 0, position: "right" };
 
   const targetAbs: { x: number; y: number; position: HandlePosition } =
     tgtLayout && tgtComp
       ? resolveAbs(
-          targetId, tgtLayout, tgtComp,
-          sides.targetPosition, slot, false, layoutMap, components,
+          targetId,
+          tgtLayout,
+          tgtComp,
+          sides.targetPosition,
+          slot,
+          false,
+          layoutMap,
+          components,
         )
       : { x: 0, y: 0, position: "left" };
 
@@ -487,7 +554,12 @@ export function resolveEdgeRouting(
 
   // 5. Try container obstacle-aware routing (only returns waypoints if blocked)
   const containerWaypoints = buildContainerWaypointsV2(
-    sourceId, targetId, sourceAbs, targetAbs, components, layoutMap,
+    sourceId,
+    targetId,
+    sourceAbs,
+    targetAbs,
+    components,
+    layoutMap,
   );
 
   if (containerWaypoints) {

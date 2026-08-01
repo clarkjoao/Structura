@@ -128,9 +128,7 @@ export function buildSwimlaneStyle(options: {
   const opacityClamped = Math.max(0, Math.min(100, options.opacity));
   const tintAmount = 1 - opacityClamped / 100;
   const fillHex = mixWithWhite(strokeHex, tintAmount);
-  const fillOpacityPct = Math.round(
-    Math.max(0, Math.min(1, opacityClamped / 100 + 0.08)) * 100,
-  );
+  const fillOpacityPct = Math.round(Math.max(0, Math.min(1, opacityClamped / 100 + 0.08)) * 100);
   // The stripe carries the lane colour at its real saturation. We still pass
   // `swimlaneFillOpacity` so users who want a softer stripe can dial opacity
   // down without losing the lane identity (the body fillOpacity carries the

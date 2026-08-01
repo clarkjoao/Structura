@@ -79,10 +79,10 @@
         "edgeCount": 6
       },
       "engine": {
-        "readabilityScore": 4.35,
+        "readabilityScore": 2.61,
         "throughVertexRoutes": 0,
         "edgeCrossings": 0,
-        "totalEdgeLength": 4348,
+        "totalEdgeLength": 2613,
         "overlapAreaPx": 0,
         "overlappingPairs": 0,
         "errors": 0,
@@ -165,7 +165,7 @@
       "gridAlignmentPct": 100
     },
     "engine": {
-      "readabilityScore": 2.52,
+      "readabilityScore": 2.17,
       "throughVertexRoutes": 0,
       "edgeCrossings": 0,
       "overlapAreaPx": 0,

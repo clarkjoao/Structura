@@ -83,6 +83,11 @@ node is what turns a diagram into a hairball. Connect a cross-cutting service on
 specific relationship is the point of the diagram — and give it at least one incoming edge if
 it is there at all, otherwise the reader cannot tell what uses it.
 
+Each service in the band is placed under whatever consumes it, so give it its one
+representative consumer and the edge stays short. An edge reaching down into the band
+necessarily passes the rows between it and the flow; that is a consequence of the convention,
+so `edge/crosses-node` does not fire on it and you do not need to work around it.
+
 ## The primary path
 
 `meta.primary_path` is the happy path as an ordered list of node ids. It is not decoration:

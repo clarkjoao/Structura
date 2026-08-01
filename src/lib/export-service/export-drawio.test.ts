@@ -276,7 +276,9 @@ describe("exportDrawio — panel styling", () => {
   function singlePanelDiagram(panel: Record<string, unknown>): Diagram {
     return minimalDiagram({
       snapshot: {
-        components: { p: { id: "p", name: "Painel", type: "panel", description: "", parentId: null, ...panel } },
+        components: {
+          p: { id: "p", name: "Painel", type: "panel", description: "", parentId: null, ...panel },
+        },
         connections: {},
         flows: {},
         iconLibrary: {},
@@ -327,10 +329,7 @@ describe("exportDrawio — panel styling", () => {
   });
 
   it("falls back to the panel-kind defaultColor when panelColor is unset", () => {
-    const xml = exportDrawio(
-      singlePanelDiagram({ panelKind: PanelKind.Vpc }),
-      {},
-    );
+    const xml = exportDrawio(singlePanelDiagram({ panelKind: PanelKind.Vpc }), {});
     const style = styleFor(xml, "p");
     // VPC default is hsl(220 50% 35%) → ~#1f4d8c-ish hex.
     expect(style).toMatch(/strokeColor=#[0-9a-f]{6};/);
@@ -363,9 +362,14 @@ describe("exportDrawio — panel styling", () => {
 });
 
 describe("exportDrawio — swimlane", () => {
-  function swimlaneDiagram(
-    swimlane: { orientation?: "horizontal" | "vertical"; laneColor?: string; laneLabel?: string; opacity?: number; panelColor?: string; panelOpacity?: number },
-  ): Diagram {
+  function swimlaneDiagram(swimlane: {
+    orientation?: "horizontal" | "vertical";
+    laneColor?: string;
+    laneLabel?: string;
+    opacity?: number;
+    panelColor?: string;
+    panelOpacity?: number;
+  }): Diagram {
     return minimalDiagram({
       snapshot: {
         components: {
@@ -409,10 +413,7 @@ describe("exportDrawio — swimlane", () => {
   }
 
   it("exports as drawio horizontal container (swimlane;horizontal=0) by default", () => {
-    const xml = exportDrawio(
-      swimlaneDiagram({ laneColor: "#6366f1", laneLabel: "Frontend" }),
-      {},
-    );
+    const xml = exportDrawio(swimlaneDiagram({ laneColor: "#6366f1", laneLabel: "Frontend" }), {});
     expect(valueFor(xml, "s")).toBe("Frontend");
     expect(styleFor(xml, "s")).toMatch(/swimlane;horizontal=0;/);
     expect(styleFor(xml, "s")).toContain("strokeColor=#6366f1;");
@@ -428,10 +429,7 @@ describe("exportDrawio — swimlane", () => {
   });
 
   it("emits fillColor + integer fillOpacity derived from the opacity field", () => {
-    const xml = exportDrawio(
-      swimlaneDiagram({ laneColor: "#f43f5e", opacity: 50 }),
-      {},
-    );
+    const xml = exportDrawio(swimlaneDiagram({ laneColor: "#f43f5e", opacity: 50 }), {});
     const style = styleFor(xml, "s");
     expect(style).toMatch(/fillColor=#[0-9a-f]{6};/);
     // drawio expects integer percent (0–100), not a 0–1 fraction.
@@ -444,10 +442,7 @@ describe("exportDrawio — swimlane", () => {
     // coloured stripe that carries the label (swimlaneFillColor). Without the
     // second one the stripe keeps its default colour regardless of what the
     // user picked in Structura.
-    const xml = exportDrawio(
-      swimlaneDiagram({ laneColor: "#10b981", opacity: 60 }),
-      {},
-    );
+    const xml = exportDrawio(swimlaneDiagram({ laneColor: "#10b981", opacity: 60 }), {});
     const style = styleFor(xml, "s");
     expect(style).toContain("swimlaneFillColor=#10b981;");
     // 60% + 0.08 ≈ 68, rounded → swimlaneFillOpacity=68.
@@ -466,10 +461,7 @@ describe("exportDrawio — swimlane", () => {
   });
 
   it("prefers swimlane.opacity, falling back to panelOpacity", () => {
-    const fromSwimlane = exportDrawio(
-      swimlaneDiagram({ opacity: 80, panelOpacity: 5 }),
-      {},
-    );
+    const fromSwimlane = exportDrawio(swimlaneDiagram({ opacity: 80, panelOpacity: 5 }), {});
     // 80% + 0.08 ≈ 88, rounded → fillOpacity=88.
     expect(styleFor(fromSwimlane, "s")).toContain("fillOpacity=88");
 

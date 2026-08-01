@@ -121,10 +121,7 @@ describe("buildMxGraphXml — per-kind cells", () => {
   });
 
   it("pushes the second stacked node down to preserve the gap (A1-compensation)", () => {
-    const xml = buildMxGraphXml(
-      model([c4("a", 0, 0), c4("b", 0, 75)]),
-      { wrapper: "mxfile" },
-    );
+    const xml = buildMxGraphXml(model([c4("a", 0, 0), c4("b", 0, 75)]), { wrapper: "mxfile" });
     // Extract the two C4 geometry y values (both use canonical 200×80).
     const matches = [...xml.matchAll(/x="(\d+)" y="(\d+)" width="200" height="80"/g)];
     expect(matches).toHaveLength(2);
@@ -158,9 +155,7 @@ describe("buildMxGraphXml — per-kind cells", () => {
   it("clamps C4 boxes between the canonical floor and per-subtype ceiling", () => {
     // No measured size → falls back to the canonical C4_META box.
     const fallback = buildMxGraphXml(
-      model([
-        c4("a", 0, 0, { subtype: "system", description: "tiny" }),
-      ]),
+      model([c4("a", 0, 0, { subtype: "system", description: "tiny" })]),
       { wrapper: "mxfile" },
     );
     expect(fallback).toMatch(/id="a"[\s\S]{0,800}width="200" height="80"/);

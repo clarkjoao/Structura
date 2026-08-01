@@ -13,13 +13,7 @@ import type { HandlePosition } from "@/features/canvas/edges/geometry/paths";
 
 // ─── Fixtures ───────────────────────────────────────────────────────────────────
 
-function mkLayout(
-  id: string,
-  x: number,
-  y: number,
-  w = 200,
-  h = 120,
-): NodeLayout {
+function mkLayout(id: string, x: number, y: number, w = 200, h = 120): NodeLayout {
   return { elementId: id, x, y, width: w, height: h };
 }
 
@@ -112,7 +106,7 @@ describe("inferSourceTargetSides", () => {
     // "below" is at y=300, "above" is at y=-300. Source is below, target is above.
     // Source (below) exits BOTTOM, target (above) enters TOP.
     const result = inferSourceTargetSides("below", "above", layoutMap, emptyComponents);
-    expect(result.sourcePosition).toBe("top");   // exits top to reach something above
+    expect(result.sourcePosition).toBe("top"); // exits top to reach something above
     expect(result.targetPosition).toBe("bottom"); // enters from bottom since source is below
   });
 
@@ -184,9 +178,12 @@ describe("buildContainerWaypointsV2", () => {
       n2: mkComponent("n2", null),
     };
     const result = buildContainerWaypointsV2(
-      "n1", "n2",
-      { x: 200, y: 60 }, { x: 500, y: 60 },
-      comps, layout,
+      "n1",
+      "n2",
+      { x: 200, y: 60 },
+      { x: 500, y: 60 },
+      comps,
+      layout,
     );
     expect(result).toBeUndefined();
   });
@@ -196,10 +193,12 @@ describe("buildContainerWaypointsV2", () => {
     // Occupied: C at (450,50) — but the direct path A→B doesn't hit C
     // ocMaxX = 450+100 = 550, ocMaxY = 50+80 = 130
     const result = buildContainerWaypointsV2(
-      "a", "b",
+      "a",
+      "b",
       { x: 50 + 150, y: 50 + 40 }, // sourceAbs (right side, middle)
-      { x: 250, y: 50 + 40 },       // targetAbs (left side, middle)
-      components, containerLayout,
+      { x: 250, y: 50 + 40 }, // targetAbs (left side, middle)
+      components,
+      containerLayout,
     );
     // Without other siblings blocking, might be undefined
     // This test documents current behavior
@@ -209,10 +208,12 @@ describe("buildContainerWaypointsV2", () => {
   it("returns waypoints clamped to container bounds", () => {
     // This edge would route below ocMaxY but should stay within cBottom
     const result = buildContainerWaypointsV2(
-      "a", "b",
+      "a",
+      "b",
       { x: 200, y: 350 }, // near bottom of container
       { x: 250, y: 380 },
-      components, containerLayout,
+      components,
+      containerLayout,
     );
     if (result) {
       // All waypoints should be within container bounds (with margin)
@@ -241,10 +242,16 @@ describe("resolveEdgeRouting", () => {
 
   it("uses user waypoints when present", () => {
     const edgeLayout: EdgeLayout = {
-      points: [{ id: "p1", x: 100, y: 50 }, { id: "p2", x: 300, y: 50 }],
+      points: [
+        { id: "p1", x: 100, y: 50 },
+        { id: "p2", x: 300, y: 50 },
+      ],
     };
     const result = resolveEdgeRouting("src", "tgt", layoutMap, components, edgeLayout, slots);
-    expect(result.waypoints).toEqual([{ x: 100, y: 50 }, { x: 300, y: 50 }]);
+    expect(result.waypoints).toEqual([
+      { x: 100, y: 50 },
+      { x: 300, y: 50 },
+    ]);
   });
 
   it("returns no waypoints when path is direct (draw.io computes orthogonal from anchors)", () => {

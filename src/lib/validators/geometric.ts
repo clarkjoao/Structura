@@ -168,6 +168,16 @@ export function validateEdges(state: LayoutState): Diagnostic[] {
     const segment = segments.get(connection.id);
     if (!segment) continue;
 
+    // Edges into the cross-cutting band are exempt. The band sits below the whole flow by
+    // design, so an edge reaching it must cross whatever rows lie between — that is a
+    // consequence of the layout convention, not something the author can fix by changing
+    // intent. Reporting it would leave the model with no valid move: this validator would
+    // push it to drop the edge while c4/cross-cutting-no-entry pushes it to add one.
+    const touchesCrossCuttingBand =
+      state.nodes.get(connection.from)?.tier === "cross-cutting" ||
+      state.nodes.get(connection.to)?.tier === "cross-cutting";
+    if (touchesCrossCuttingBand) continue;
+
     for (const node of state.nodes.values()) {
       if (node.id === connection.from || node.id === connection.to) continue;
       if (!segmentIntersectsRect(segment, nodeRect(node))) continue;

@@ -33,8 +33,41 @@ export const layoutCrossCutting: LayoutPass = (input) => {
   const bandTop = flowBottom + LAYOUT.CROSS_CUTTING_GAP;
   const { colGap, rowGap } = SPACING[state.density];
 
-  // Stable order so the band does not reshuffle between runs.
-  const ordered = [...crossCutting].sort((a, b) => a.id.localeCompare(b.id));
+  // Order by where the consumers are, so a service sits under whatever uses it.
+  //
+  // Placing the band alphabetically looks tidy and reads badly: a service consumed by
+  // something in the last column would sit at the far left, and the edge back to it crosses
+  // the whole diagram — through every node in between. Anchoring to the mean consumer
+  // position keeps those edges short and roughly vertical. Services with no consumer sort
+  // last, since nothing constrains them.
+  const anchorX = new Map<string, number>();
+  for (const node of crossCutting) {
+    const consumers: number[] = [];
+    for (const connection of state.connections) {
+      const peerId =
+        connection.to === node.id
+          ? connection.from
+          : connection.from === node.id
+            ? connection.to
+            : undefined;
+      if (!peerId) continue;
+      const peer = state.nodes.get(peerId);
+      if (peer && peer.tier !== "cross-cutting") consumers.push(peer.x + peer.width / 2);
+    }
+    anchorX.set(
+      node.id,
+      consumers.length > 0
+        ? consumers.reduce((sum, value) => sum + value, 0) / consumers.length
+        : Number.POSITIVE_INFINITY,
+    );
+  }
+
+  const ordered = [...crossCutting].sort((a, b) => {
+    const delta = anchorX.get(a.id)! - anchorX.get(b.id)!;
+    // Alphabetical only as a tiebreak, so the band stays stable between runs.
+    if (delta !== 0 && Number.isFinite(delta)) return delta;
+    return a.id.localeCompare(b.id);
+  });
 
   const placed: LayoutNode[] = [];
   let cursorX: number = LAYOUT.ORIGIN_X;
@@ -50,13 +83,16 @@ export const layoutCrossCutting: LayoutPass = (input) => {
       inRow = 0;
     }
 
-    node.x = cursorX;
+    // Sit under the consumer when there is one, but never behind the previous node in the
+    // row — the cursor is the floor, so the band stays packed and collision-free.
+    const anchor = anchorX.get(node.id)!;
+    node.x = Number.isFinite(anchor) ? Math.max(cursorX, anchor - node.width / 2) : cursorX;
     node.y = rowTop;
 
     pushDownUntilClear(node, placed, rowGap);
 
     placed.push(node);
-    cursorX += node.width + colGap;
+    cursorX = node.x + node.width + colGap;
     rowHeight = Math.max(rowHeight, node.y + node.height - rowTop);
     inRow += 1;
   }
