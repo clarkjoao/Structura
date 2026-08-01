@@ -1,6 +1,15 @@
 import type { LLMTool } from "./types";
+import { ARCHITECTURE_TOOLS } from "./tools-architecture";
 
-export const ALL_TOOLS: LLMTool[] = [
+/**
+ * Read tools, pattern insertion and pointwise edits.
+ *
+ * Generating a diagram goes through `propose_architecture` (see `tools-architecture.ts`):
+ * the model sends semantic intent and the layout engine derives geometry. The mutating
+ * tools below remain for targeted manual edits after generation — they are no longer the
+ * generation path, and `add_node` no longer accepts a position.
+ */
+export const BASE_TOOLS: LLMTool[] = [
   {
     name: "get_diagram_summary",
     description: "Returns a summary of the current diagram including all nodes and edges.",
@@ -36,7 +45,9 @@ export const ALL_TOOLS: LLMTool[] = [
   },
   {
     name: "add_node",
-    description: "Add a new node to the diagram.",
+    description:
+      "Add a single node to an existing diagram. For generating a diagram use " +
+      "propose_architecture instead. Position is not accepted: Structura places the node.",
     parametersSchema: {
       type: "object",
       properties: {
@@ -51,14 +62,6 @@ export const ALL_TOOLS: LLMTool[] = [
           type: "string",
           description:
             'Required for AWS node types. The specific AWS service id (e.g. "api-gateway", "rds", "elb", "s3"). Must match a service id from the AWS catalog.',
-        },
-        position: {
-          type: "object",
-          properties: {
-            x: { type: "number" },
-            y: { type: "number" },
-          },
-          required: ["x", "y"],
         },
       },
       required: ["nodeType", "name", "parentId"],
@@ -132,12 +135,18 @@ export const ALL_TOOLS: LLMTool[] = [
   {
     name: "auto_layout",
     description:
-      "Automatically arranges all nodes in the diagram using a clean layout algorithm. Useful when the diagram becomes cluttered.",
+      "Re-arrange an existing diagram with the generic ELK algorithm. Only use this when " +
+      "the user explicitly asks for it. It is not the generation path and not a fallback: " +
+      "if propose_architecture reports problems, fix the IR with refine_architecture rather " +
+      "than reaching for this, which ignores tiers, boundaries and the primary path.",
     parametersSchema: { type: "object", properties: {}, required: [] },
   },
 ];
 
+export const ALL_TOOLS: LLMTool[] = [...ARCHITECTURE_TOOLS, ...BASE_TOOLS];
+
 export const WRITE_TOOL_NAMES: string[] = [
+  "commit_architecture",
   "add_node",
   "remove_node",
   "update_node",

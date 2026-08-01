@@ -189,6 +189,29 @@ function detectFailures(state: LayoutState): LayoutFailure[] {
     }
   }
 
+  // A node whose tier has no column would get no position at all and silently pile up at
+  // the origin, overlapping whatever else landed there. Report it instead: the caller either
+  // picks a listed tier or adds it to meta.tiers.
+  const known = new Set(state.tiers);
+  const orphanedByTier = new Map<string, string[]>();
+  for (const node of state.nodes.values()) {
+    if (known.has(node.tier)) continue;
+    const bucket = orphanedByTier.get(node.tier);
+    if (bucket) bucket.push(node.name);
+    else orphanedByTier.set(node.tier, [node.name]);
+  }
+
+  for (const [tier, names] of orphanedByTier) {
+    failures.push({
+      code: "layout/tier-not-in-layout",
+      message:
+        `${names.map((name) => `"${name}"`).join(", ")} sit in the "${tier}" tier, which is not ` +
+        `one of this diagram's columns (${state.tiers.join(", ")}). Move them to a listed tier, ` +
+        `or add "${tier}" to meta.tiers.`,
+      nodeIds: names,
+    });
+  }
+
   return failures;
 }
 
