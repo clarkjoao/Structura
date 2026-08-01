@@ -6,7 +6,7 @@
  * here is derived.
  *
  * Pipeline: P0 measure -> P1 columns -> P2 stack -> P3 boundaries -> P4 cross-cutting
- * -> P5 edge ports -> P6 snap.
+ * -> P5 edge ports -> P5b normalise origin -> P6 snap.
  *
  * When the engine cannot resolve a layout it reports failures and returns `ok: false`. It
  * never silently falls back to a generic algorithm: a bad layout that looks successful is
@@ -26,6 +26,7 @@ import { assignColumns } from "./passes/columns";
 import { stackColumns } from "./passes/stacking";
 import { layoutBoundaries } from "./passes/boundaries";
 import { layoutCrossCutting } from "./passes/cross-cutting";
+import { normalizeOrigin } from "./passes/normalize-origin";
 import { snapGeometry } from "./passes/snap";
 import {
   TIER_ORDER,
@@ -267,6 +268,9 @@ export function layoutDiagram(input: LayoutInput, options: LayoutOptions = {}): 
     layoutBoundaries,
     layoutCrossCutting,
     applyEdgePorts,
+    // Boundaries extend above and left of their contents, so the diagram can start at a
+    // negative coordinate. Translate it back to the origin before snapping.
+    normalizeOrigin,
     snapGeometry,
   ];
 
