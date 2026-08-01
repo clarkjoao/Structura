@@ -442,14 +442,14 @@ export function validateComposition(state: LayoutState): Diagnostic[] {
 
 /** Readability score. Lower is better; never blocks. */
 export function scoreReadability(state: LayoutState): ReadabilityScore {
-  const segments: Segment[] = [];
+  const routes: Array<{ segment: Segment; from: string; to: string }> = [];
   let throughVertexRoutes = 0;
   let totalEdgeLength = 0;
 
   for (const connection of state.connections) {
     const segment = connectionSegment(state, connection.from, connection.to);
     if (!segment) continue;
-    segments.push(segment);
+    routes.push({ segment, from: connection.from, to: connection.to });
     totalEdgeLength += segmentLength(segment);
 
     for (const node of state.nodes.values()) {
@@ -459,9 +459,17 @@ export function scoreReadability(state: LayoutState): ReadabilityScore {
   }
 
   let edgeCrossings = 0;
-  for (let i = 0; i < segments.length; i += 1) {
-    for (let j = i + 1; j < segments.length; j += 1) {
-      if (segmentsIntersect(segments[i]!, segments[j]!)) edgeCrossings += 1;
+  for (let i = 0; i < routes.length; i += 1) {
+    for (let j = i + 1; j < routes.length; j += 1) {
+      const a = routes[i]!;
+      const b = routes[j]!;
+
+      // Edges meeting at a shared node are not a crossing — they are a fan-out, and the
+      // centre-to-centre segments trivially intersect at that shared centre. Counting them
+      // would penalise every hub in proportion to its degree and drown out real crossings.
+      if (a.from === b.from || a.from === b.to || a.to === b.from || a.to === b.to) continue;
+
+      if (segmentsIntersect(a.segment, b.segment)) edgeCrossings += 1;
     }
   }
 
