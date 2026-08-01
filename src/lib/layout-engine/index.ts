@@ -5,7 +5,7 @@
  * intent — nodes, boundaries, connections, tiers — and never coordinates; every position
  * here is derived.
  *
- * Pipeline: P0 measure -> P1 columns -> P2 stack -> P3 boundaries -> P4 cross-cutting
+ * Pipeline: P0 measure -> P1 columns -> P2 stack -> P2b corridors -> P3 boundaries -> P4 cross-cutting
  * -> P5 edge ports -> P5b normalise origin -> P6 snap.
  *
  * When the engine cannot resolve a layout it reports failures and returns `ok: false`. It
@@ -24,6 +24,7 @@ import { measureNodes, type MeasureNodeOptions, type MeasureText } from "./measu
 import { approximateMeasureText } from "./measure-text";
 import { assignColumns } from "./passes/columns";
 import { stackColumns } from "./passes/stacking";
+import { openRoutingCorridors } from "./passes/corridors";
 import { layoutBoundaries } from "./passes/boundaries";
 import { layoutCrossCutting } from "./passes/cross-cutting";
 import { normalizeOrigin } from "./passes/normalize-origin";
@@ -265,6 +266,8 @@ export function layoutDiagram(input: LayoutInput, options: LayoutOptions = {}): 
   const passes = [
     assignColumns,
     stackColumns,
+    // Clear a corridor for edges that skip a column before boundaries wrap anything.
+    openRoutingCorridors,
     layoutBoundaries,
     layoutCrossCutting,
     applyEdgePorts,
