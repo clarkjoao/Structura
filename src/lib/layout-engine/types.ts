@@ -9,6 +9,7 @@
 import type { ComponentType } from "@/features/diagram";
 import type { Anchor, Rect } from "./edge-ports";
 import type { DensityHint } from "./constants";
+import type { Point } from "../validators/geometry";
 
 /** Ordered layout column. The engine maps one tier to one column. */
 export type Tier =
@@ -42,12 +43,14 @@ export interface LayoutNode {
   /** Set by P0. */
   width: number;
   height: number;
-  /** Set by P1/P2 (or P4 for cross-cutting nodes). */
+  /** Set by P1/P4 (x is provisional until P4 reflows column positions). */
   x: number;
   y: number;
 
   /** Boundary that owns this node, if any. */
   boundaryId?: string;
+  /** IDs of cross-cutting services connected to this node (set by P6). */
+  crossCuttingRefs?: string[];
 }
 
 export type BoundaryKind =
@@ -77,6 +80,9 @@ export interface LayoutBoundary {
   depth: number;
 }
 
+/** How an edge was routed through the diagram (set by P7). */
+export type RoutingMode = "direct" | "gutter" | "forward-lane" | "return-lane" | "suppressed";
+
 export interface LayoutConnection {
   id: string;
   from: string;
@@ -86,9 +92,23 @@ export interface LayoutConnection {
   intent: ConnectionIntent;
   isPrimaryPath: boolean;
 
-  /** Set by P5. */
+  /** Set by P7. Source anchor — used when waypoints are absent. */
   sourceAnchor?: Anchor;
+  /** Set by P7. Target anchor — used when waypoints are absent. */
   targetAnchor?: Anchor;
+
+  /**
+   * Set by P7. Complete orthogonal polyline from source exit to target entry.
+   * This is the single source of truth: the renderer draws exactly these points,
+   * and the validators measure exactly them.
+   */
+  waypoints?: Point[];
+
+  /**
+   * Set by P7. How the edge was routed — diagnostic and test aid.
+   * "suppressed" edges have no waypoints and do not appear as drawn arrows.
+   */
+  routing?: RoutingMode;
 }
 
 /** One laid-out column. */
@@ -99,6 +119,24 @@ export interface LayoutColumn {
   /** Widest node in the column. */
   width: number;
   nodeIds: string[];
+}
+
+/**
+ * A gutter between two adjacent columns (set by P4).
+ * The gutter at index g sits between `columns[g]` and `columns[g+1]`.
+ * Its width is derived from how many edges need vertical channel segments through it.
+ */
+export interface LayoutGutter {
+  index: number;
+  /** Left edge of the gutter. */
+  x: number;
+  width: number;
+  /**
+   * Edge IDs that consume a vertical channel in this gutter, in channel order.
+   * Channel order is the vertical position of the far endpoint — this is what keeps
+   * edges from crossing each other inside the gutter.
+   */
+  channelEdgeIds: string[];
 }
 
 export interface LayoutState {
@@ -115,6 +153,17 @@ export interface LayoutState {
 
   /** Problems the engine could not resolve on its own. */
   failures: LayoutFailure[];
+
+  /** Set by P4. Gutters between adjacent columns, sized by channel demand. */
+  gutters: LayoutGutter[];
+
+  /**
+   * Set by P7. Horizontal lanes reserved for skip/return edges.
+   * `forward[k]` is the y-coordinate of the k-th forward lane above the flow;
+   * `return[k]` is the y-coordinate of the k-th return lane below the flow.
+   * These are absolute flow coordinates; normalizeOrigin translates them.
+   */
+  lanes: { forward: number[]; return: number[] };
 }
 
 /**
@@ -151,8 +200,16 @@ export function cloneState(state: LayoutState): LayoutState {
     ...state,
     nodes: new Map([...state.nodes].map(([id, node]) => [id, { ...node }])),
     boundaries: new Map([...state.boundaries].map(([id, b]) => [id, { ...b }])),
-    connections: state.connections.map((connection) => ({ ...connection })),
+    connections: state.connections.map((connection) => ({
+      ...connection,
+      waypoints: connection.waypoints ? [...connection.waypoints] : undefined,
+    })),
     columns: state.columns.map((column) => ({ ...column, nodeIds: [...column.nodeIds] })),
+    gutters: state.gutters.map((gutter) => ({ ...gutter, channelEdgeIds: [...gutter.channelEdgeIds] })),
+    lanes: {
+      forward: [...state.lanes.forward],
+      return: [...state.lanes.return],
+    },
     failures: [...state.failures],
   };
 }

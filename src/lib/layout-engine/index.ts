@@ -146,6 +146,8 @@ function buildInitialState(input: LayoutInput, options: LayoutOptions): LayoutSt
     density: input.density ?? densityForNodeCount(input.nodes.length),
     primaryPath,
     failures: [],
+    gutters: [],
+    lanes: { forward: [], return: [] },
   };
 }
 
