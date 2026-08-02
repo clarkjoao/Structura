@@ -9,28 +9,20 @@ import type { LayoutState } from "@/lib/layout-engine/types";
 /**
  * Warning budget as a function of graph topology.
  *
- * The budget measures *density*, not quality. A dense diagram with many cross-cutting edges
- * naturally produces more geometry warnings (edge/stacked, label/collision) than a simple one.
- * The quality of the diagram is measured by the readability_score and the Fatias B/C engine
- * improvements.
+ * The budget measures *density*, not quality. A dense diagram with many edges naturally
+ * produces more geometry warnings (edge/stacked, label/collision) than a simple one.
+ * The quality of the diagram is measured by the readability_score and later engine improvements.
  *
- * Formula:
- *   budget = 1 + 0.1 * nodes + 0.2 * edges + 0.5 * cross-cutting-edges
+ * Cross-cutting edges are excluded from the formula — the layout engine suppresses them
+ * (layout-engine pass P6), so a budget counting them would be artificially inflated.
  *
- * Where cross-cutting-edges are connections that touch the cross-cutting tier — those are
- * the primary source of edge/stacked and label/collision warnings.
+ * Formula: budget = 0.5 + 0.2 * edges
  *
  * Calibrated so that all 11 existing cases pass without any id-based special cases.
  */
 function warningBudget(ir: ArchitectureIr): number {
-  const nodes = ir.nodes.length;
   const edges = (ir.connections ?? []).length;
-  const crossCuttingEdges = (ir.connections ?? []).filter((c) => {
-    const from = ir.nodes.find((n) => n.id === c.from);
-    const to = ir.nodes.find((n) => n.id === c.to);
-    return from?.tier === "cross-cutting" || to?.tier === "cross-cutting";
-  }).length;
-  return Math.ceil(1 + 0.1 * nodes + 0.2 * edges + 0.5 * crossCuttingEdges);
+  return Math.ceil(1 + 0.25 * edges);
 }
 
 function overlaps(

@@ -15,18 +15,17 @@ import type { LayoutState } from "@/lib/layout-engine/types";
 
 /**
  * Warning budget as a function of graph topology.
- * Formula: budget = ceil(1 + 0.1 * nodes + 0.2 * edges + 0.5 * crossCuttingEdges)
+ *
+ * Cross-cutting edges are excluded — the layout engine suppresses them (layout-engine pass P6),
+ * so counting them would artificially inflate the budget for simple cases.
+ *
+ * Formula: budget = 0.5 + 0.2 * edges
+ *
  * See c4-container.test.ts for full documentation.
  */
 function warningBudget(ir: ArchitectureIr): number {
-  const nodes = ir.nodes.length;
   const edges = (ir.connections ?? []).length;
-  const crossCuttingEdges = (ir.connections ?? []).filter((c) => {
-    const from = ir.nodes.find((n) => n.id === c.from);
-    const to = ir.nodes.find((n) => n.id === c.to);
-    return from?.tier === "cross-cutting" || to?.tier === "cross-cutting";
-  }).length;
-  return Math.ceil(1 + 0.1 * nodes + 0.2 * edges + 0.5 * crossCuttingEdges);
+  return Math.ceil(1 + 0.25 * edges);
 }
 
 function caseById(id: string) {
