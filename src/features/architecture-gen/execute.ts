@@ -32,6 +32,10 @@ export interface ArchitectureToolResult {
   /** Written for the model: what happened and what to do next. */
   summary: string;
   diagnostics: Diagnostic[];
+  /** IR-class errors — the only ones that block commit. */
+  irErrors: number;
+  /** Geometry-class diagnostics — never block, reported as quality signal. */
+  geometryIssues: number;
   proposal?: ProposalResult;
   applied?: { nodeCount: number; connectionCount: number };
   /** True if commit_architecture was called successfully. */
@@ -59,28 +63,49 @@ function describe(diagnostics: readonly Diagnostic[]): string {
     .join("\n");
 }
 
+/**
+ * Returns only IR-class diagnostics — the ones the model is expected to fix.
+ * Geometry-class diagnostics are the engine's responsibility and are not shown as corrections.
+ */
+function describeIrIssues(diagnostics: readonly Diagnostic[]): string {
+  return describe(diagnostics.filter((d) => d.class === "ir"));
+}
+
+/**
+ * Summarises a proposal result for the model.
+ *
+ * Policy: IR-class errors invite refinement; geometry-class issues are reported as
+ * observations without suggesting correction (the model has no IR-level fix for them).
+ */
 function summarise(result: ProposalResult): string {
   const header =
-    `Round ${result.round}: ${result.errors} error(s), ${result.warnings} warning(s), ` +
-    `readability ${result.readabilityScore}.`;
+    `Round ${result.round}: ${result.irErrors} IR error(s), ` +
+    `${result.geometryIssues} geometry observation(s), readability ${result.readabilityScore}.`;
 
   if (result.status === "ok") {
     return `${header} Clean — call commit_architecture to apply it.`;
   }
 
-  if (result.committable) {
+  if (result.irErrors > 0) {
+    // IR errors block — the model can fix these.
+    const exhausted = result.exhausted
+      ? `\nStopping after ${result.exhausted.roundsUsed} round(s) (${result.exhausted.reason}). ` +
+        `Report the remaining problems to the user.`
+      : `\nApply the fixes above and call refine_architecture.`;
+
+    return `${header}\nIR errors — correction needed:\n${describeIrIssues(result.diagnostics)}${exhausted}`;
+  }
+
+  // Only geometry issues remain — the diagram is committable. These are observations.
+  if (result.geometryIssues > 0) {
     return (
-      `${header} No errors, so this can be committed as-is; fix the warnings first if they ` +
-      `matter.\n${describe(result.diagnostics)}`
+      `${header} Committable. Geometry observations (corrected by the layout engine, not the model):\n` +
+      `${describe(result.diagnostics)}\nCall commit_architecture to apply, or refine_architecture to retry.`
     );
   }
 
-  const exhausted = result.exhausted
-    ? `\nStopping after ${result.exhausted.roundsUsed} round(s) (${result.exhausted.reason}). ` +
-      `Report the remaining problems to the user rather than retrying.`
-    : `\nApply the fixes above and call refine_architecture.`;
-
-  return `${header}\n${describe(result.diagnostics)}${exhausted}`;
+  // Should not reach here, but handle it gracefully.
+  return `${header} Call commit_architecture to apply it.`;
 }
 
 /**
@@ -128,6 +153,8 @@ export class ArchitectureToolExecutor {
         summary:
           "Nothing to commit: no proposal has passed validation yet. Call propose_architecture first.",
         diagnostics: [],
+        irErrors: 0,
+        geometryIssues: 0,
       };
     }
     if (this._committed) {
@@ -136,6 +163,8 @@ export class ArchitectureToolExecutor {
         ok: true,
         summary: "Already committed — this session's proposal is already on the canvas.",
         diagnostics: [],
+        irErrors: 0,
+        geometryIssues: 0,
         committed: false,
       };
     }
@@ -151,6 +180,8 @@ export class ArchitectureToolExecutor {
         `Committed ${result.createdNodeIds.length} node(s) and ` +
         `${result.createdConnectionIds.length} connection(s) to the canvas.`,
       diagnostics: [],
+      irErrors: 0,
+      geometryIssues: 0,
       committed: true,
       applied: {
         nodeCount: result.createdNodeIds.length,
@@ -169,6 +200,8 @@ export class ArchitectureToolExecutor {
           ok: result.committable,
           summary: summarise(result),
           diagnostics: result.diagnostics,
+          irErrors: result.irErrors,
+          geometryIssues: result.geometryIssues,
           proposal: result,
         };
       }
@@ -184,6 +217,8 @@ export class ArchitectureToolExecutor {
           ok: true,
           summary: `${patterns.length} patterns in ${[...new Set(patterns.map((p) => p.category))].length} categories.`,
           diagnostics: [],
+          irErrors: 0,
+          geometryIssues: 0,
           patternExpansion: undefined,
         };
       }
@@ -196,6 +231,8 @@ export class ArchitectureToolExecutor {
             ok: false,
             summary: 'expand_pattern requires { pattern: "<pattern-id>" }.',
             diagnostics: [],
+            irErrors: 0,
+            geometryIssues: 0,
           };
         }
 
@@ -206,6 +243,8 @@ export class ArchitectureToolExecutor {
             ok: false,
             summary: `No pattern matches "${patternId}". Call list_patterns to see available patterns.`,
             diagnostics: [],
+            irErrors: 0,
+            geometryIssues: 0,
           };
         }
 
@@ -247,11 +286,13 @@ export class ArchitectureToolExecutor {
             indexToId: Object.fromEntries(expansion.indexToId),
           },
           diagnostics: [],
+          irErrors: 0,
+          geometryIssues: 0,
         };
       }
 
       default:
-        return { tool, ok: false, summary: `Unknown architecture tool "${tool}".`, diagnostics: [] };
+        return { tool, ok: false, summary: `Unknown architecture tool "${tool}".`, diagnostics: [], irErrors: 0, geometryIssues: 0 };
     }
   }
 }

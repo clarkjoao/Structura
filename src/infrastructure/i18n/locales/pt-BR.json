@@ -676,7 +676,9 @@
       "readyToCommit": "Diagrama validado — pronto para aplicar",
       "errorsFound": "{{count}} problema(s) encontrado(s) — corrija antes de aplicar",
       "refine": "Refinar",
-      "commit": "Aplicar ao canvas"
+      "commit": "Aplicar ao canvas",
+      "geometryObservations": "{{count}} observação(ões) de geometria — diagrama ainda pode ser aplicado",
+      "apply": "Aplicar"
     }
   },
   "scenes": {

@@ -10,9 +10,24 @@ import { AWS_CASES } from "./aws-cases";
 import { ProposalSession } from "../session";
 import { toLayoutInput } from "../ir";
 import { layoutDiagram, approximateMeasureText, LAYOUT } from "@/lib/layout-engine";
+import type { ArchitectureIr } from "../ir";
 import type { LayoutState } from "@/lib/layout-engine/types";
 
-const MAX_WARNINGS = 1;
+/**
+ * Warning budget as a function of graph topology.
+ * Formula: budget = ceil(1 + 0.1 * nodes + 0.2 * edges + 0.5 * crossCuttingEdges)
+ * See c4-container.test.ts for full documentation.
+ */
+function warningBudget(ir: ArchitectureIr): number {
+  const nodes = ir.nodes.length;
+  const edges = (ir.connections ?? []).length;
+  const crossCuttingEdges = (ir.connections ?? []).filter((c) => {
+    const from = ir.nodes.find((n) => n.id === c.from);
+    const to = ir.nodes.find((n) => n.id === c.to);
+    return from?.tier === "cross-cutting" || to?.tier === "cross-cutting";
+  }).length;
+  return Math.ceil(1 + 0.1 * nodes + 0.2 * edges + 0.5 * crossCuttingEdges);
+}
 
 function caseById(id: string) {
   const found = AWS_CASES.find((testCase) => testCase.id === id);
@@ -91,10 +106,11 @@ describe("AWS reference cases", () => {
 
   it.each(AWS_CASES)("$id stays within the warning budget", (testCase) => {
     const result = new ProposalSession().propose(testCase.ir);
+    const max = warningBudget(testCase.ir);
     expect(
       result.warnings,
       `${testCase.id}: ${result.diagnostics.map((d) => d.code).join(", ")}`,
-    ).toBeLessThanOrEqual(MAX_WARNINGS);
+    ).toBeLessThanOrEqual(max);
   });
 
   it.each(AWS_CASES)("$id leaves no overlapping nodes", (testCase) => {

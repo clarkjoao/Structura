@@ -3,7 +3,6 @@ import {
   parseArchitectureIr,
   architectureIrSchema,
   tiersFor,
-  DEFAULT_TIERS,
   toLayoutInput,
   toStructuralInput,
   architectureIrJsonSchema,
@@ -96,24 +95,32 @@ describe("IR schema", () => {
   });
 });
 
-describe("tier defaults", () => {
-  it("gives each diagram kind its own default column set", () => {
-    for (const kind of Object.keys(DEFAULT_TIERS) as Array<keyof typeof DEFAULT_TIERS>) {
-      expect(DEFAULT_TIERS[kind].length).toBeGreaterThan(0);
-    }
-    expect(DEFAULT_TIERS["c4-context"].length).toBeLessThan(DEFAULT_TIERS.aws.length);
+describe("tier derivation", () => {
+  it("derives tiers from the nodes when meta.tiers is absent", () => {
+    // Tiers are the union of tiers actually used by nodes, ordered canonically.
+    const tiers = tiersFor(validIr);
+    expect(tiers).toEqual(["external", "gateway", "application"]);
   });
 
-  it("uses the default when meta.tiers is absent", () => {
-    expect(tiersFor(validIr)).toEqual(DEFAULT_TIERS["c4-container"]);
-  });
-
-  it("honours an explicit tier order", () => {
+  it("honours an explicit tier order when meta.tiers is provided", () => {
     const custom = { ...validIr, meta: { ...validIr.meta, tiers: ["external", "data"] as const } };
     expect(tiersFor({ ...custom, meta: { ...custom.meta, tiers: ["external", "data"] } })).toEqual([
       "external",
       "data",
     ]);
+  });
+
+  it("includes every tier that appears in any node", () => {
+    // A c4-container with "backend" tier but no meta.tiers should still work (A.3).
+    const ir = {
+      ...validIr,
+      nodes: [
+        ...validIr.nodes,
+        { id: "worker", type: "system", name: "Worker", tier: "backend" as const },
+      ],
+    };
+    const tiers = tiersFor(ir);
+    expect(tiers).toContain("backend");
   });
 });
 
@@ -123,7 +130,8 @@ describe("adapters", () => {
 
     expect(input.nodes).toHaveLength(3);
     expect(input.primaryPath).toEqual(["customer", "api", "orders"]);
-    expect(input.tiers).toEqual(DEFAULT_TIERS["c4-container"]);
+    // Tiers are derived from the nodes, so they match the fixture's tier list.
+    expect(input.tiers).toEqual(["external", "gateway", "application"]);
     for (const node of input.nodes) {
       expect(node).not.toHaveProperty("x");
       expect(node).not.toHaveProperty("y");

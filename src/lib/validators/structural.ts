@@ -53,6 +53,7 @@ function duplicateIds(ir: StructuralInput): Diagnostic[] {
     diagnostics.push({
       code: "ir/duplicate-id",
       severity: "error",
+      class: "ir",
       message: `The id "${id}" is used by more than one element (${kinds.join(", ")}). Ids must be unique across nodes, boundaries and connections.`,
       subject: { kind: "node", ids: [id] },
       evidence: { occurrences: kinds.length },
@@ -82,6 +83,7 @@ function unknownReferences(ir: StructuralInput): Diagnostic[] {
       diagnostics.push({
         code: "ir/unknown-node-ref",
         severity: "error",
+        class: "ir",
         message: `Connection "${connection.id}" points ${end} "${id}", which is not a node in this diagram.`,
         subject: { kind: "edge", ids: [connection.id] },
         evidence: { missingId: id, end },
@@ -105,6 +107,7 @@ function unknownReferences(ir: StructuralInput): Diagnostic[] {
       diagnostics.push({
         code: "ir/unknown-node-ref",
         severity: "error",
+        class: "ir",
         message: `Boundary "${boundary.name}" lists "${nodeId}" as a member, but no such node exists.`,
         subject: { kind: "boundary", ids: [boundary.id] },
         evidence: { missingId: nodeId },
@@ -121,6 +124,7 @@ function unknownReferences(ir: StructuralInput): Diagnostic[] {
       diagnostics.push({
         code: "ir/unknown-node-ref",
         severity: "error",
+        class: "ir",
         message: `Boundary "${boundary.name}" names parent "${boundary.parent_boundary_id}", which is not a boundary in this diagram.`,
         subject: { kind: "boundary", ids: [boundary.id] },
         evidence: { missingId: boundary.parent_boundary_id },
@@ -158,6 +162,7 @@ function boundaryCycles(ir: StructuralInput): Diagnostic[] {
           diagnostics.push({
             code: "ir/boundary-cycle",
             severity: "error",
+            class: "ir",
             message: `Boundaries contain each other in a loop: ${cycle
               .map((id) => `"${nameOf.get(id) ?? id}"`)
               .join(" -> ")}. A boundary cannot be inside itself.`,
@@ -207,6 +212,7 @@ function nodesInTwoBoundaries(ir: StructuralInput): Diagnostic[] {
     diagnostics.push({
       code: "ir/node-in-two-boundaries",
       severity: "error",
+      class: "ir",
       message: `"${nameOfNode.get(nodeId) ?? nodeId}" is claimed by ${boundaryIds.length} boundaries (${boundaryIds
         .map((id) => `"${nameOfBoundary.get(id) ?? id}"`)
         .join(", ")}). A node can belong to only one.`,

@@ -6,9 +6,25 @@
  * node to another tier, split a boundary, shorten a label. Proposing "move it 120px down"
  * would hand geometry back to the model, which is the failure this whole subsystem exists
  * to remove.
+ *
+ * Diagnostics are classified by who is responsible for fixing them:
+ *
+ *   `class: "ir"`       — defect in the IR emitted by the model. The model can fix it.
+ *                          Blocks commit.
+ *
+ *   `class: "geometry"` — defect in the layout produced by the engine. The engine's
+ *                          responsibility. Never blocks commit.
  */
 
 export type Severity = "error" | "warning";
+
+/**
+ * Which actor is responsible for addressing this diagnostic.
+ *
+ * IR-class diagnostics are the model's responsibility and block commit.
+ * Geometry-class diagnostics are the engine's responsibility and never block commit.
+ */
+export type DiagnosticClass = "ir" | "geometry";
 
 export type SubjectKind = "node" | "edge" | "boundary" | "label";
 
@@ -45,6 +61,12 @@ export interface SupportedFix {
 export interface Diagnostic {
   code: string;
   severity: Severity;
+  /**
+   * Who is responsible for fixing this. The model fixes IR-class diagnostics; the engine
+   * produces geometry-class diagnostics (they are still reported — they feed Slice B/C
+   * and serve as quality signal — but they never block commit).
+   */
+  class: DiagnosticClass;
   /** Readable by the model, using real element names rather than ids alone. */
   message: string;
   subject: { kind: SubjectKind; ids: string[] };
@@ -102,5 +124,19 @@ export interface ValidationReport {
   diagnostics: Diagnostic[];
   errors: number;
   warnings: number;
+  /** Diagnostics whose class is "ir" — only these block commit. */
+  irErrors: number;
+  /** Diagnostics whose class is "geometry" — never block, but are reported as quality signal. */
+  geometryIssues: number;
   readability: ReadabilityScore;
+}
+
+/** Returns diagnostics filtered to IR-class only (the ones the model needs to fix). */
+export function irDiagnostics(diagnostics: readonly Diagnostic[]): Diagnostic[] {
+  return diagnostics.filter((d) => d.class === "ir");
+}
+
+/** Returns diagnostics filtered to geometry-class only (the engine's responsibility). */
+export function geometryDiagnostics(diagnostics: readonly Diagnostic[]): Diagnostic[] {
+  return diagnostics.filter((d) => d.class === "geometry");
 }

@@ -72,7 +72,9 @@ describe("propose", () => {
       connections: [{ id: "c1", from: "customer", to: "ghost", intent: "call" }],
     });
 
-    expect(result.status).toBe("structurally-invalid");
+    expect(result.status).toBe("has-errors");
+    expect(result.irErrors).toBeGreaterThan(0);
+    expect(result.committable).toBe(false);
     expect(result.diagnostics[0]!.code).toBe("ir/unknown-node-ref");
   });
 
@@ -90,17 +92,18 @@ describe("propose", () => {
     expect(result.warnings).toBeGreaterThan(0);
   });
 
-  it("fails loudly when a node's tier is not one of the diagram's columns", () => {
-    // "backend" is not among the c4-container defaults. Without this check the node gets
-    // no column, silently stays at the origin and overlaps whatever else landed there.
+  it("accepts a node in any tier without needing to declare meta.tiers", () => {
+    // A.3: tiers are now derived from the nodes in the IR, so "backend" in a c4-container
+    // no longer requires explicit declaration. The engine will create a "backend" column.
     const result = new ProposalSession().propose({
       ...cleanIr,
       nodes: [...cleanIr.nodes, { id: "worker", type: "system", name: "Worker", tier: "backend" }],
     });
 
-    expect(result.status).toBe("layout-failed");
-    expect(result.diagnostics[0]!.code).toBe("layout/tier-not-in-layout");
-    expect(result.diagnostics[0]!.message).toContain("meta.tiers");
+    // No IR errors — the layout engine accepts the tier.
+    expect(result.status).not.toBe("schema-invalid");
+    expect(result.irErrors).toBe(0);
+    expect(result.committable).toBe(true);
   });
 
   it("accepts that same tier once it is declared in meta.tiers", () => {
@@ -135,6 +138,44 @@ describe("propose", () => {
         expect(fix.description).not.toMatch(/\b\d+\s*(px|pixels?)\b/i);
       }
     }
+  });
+});
+
+describe("commitability by diagnostic class", () => {
+  it("returns committable=true when only geometry issues are present", () => {
+    // An IR with edge/crosses-node but no IR errors is committable.
+    // Geometry issues are the engine's responsibility, not the model's.
+    const result = new ProposalSession().propose(cleanIr);
+
+    expect(result.committable).toBe(true);
+    expect(result.irErrors).toBe(0);
+  });
+
+  it("returns committable=false when an IR-class error is present", () => {
+    // A reference to a non-existent node is an IR-class error and blocks commit.
+    const result = new ProposalSession().propose({
+      ...cleanIr,
+      connections: [{ id: "c1", from: "customer", to: "ghost-node", intent: "call" as const }],
+    });
+
+    expect(result.committable).toBe(false);
+    expect(result.irErrors).toBeGreaterThan(0);
+    expect(result.diagnostics.some((d) => d.class === "ir")).toBe(true);
+  });
+
+  it("accepts any tier without declaring meta.tiers (A.3)", () => {
+    // A c4-container with tier "backend" — which is not in c4-container defaults —
+    // must succeed without declaring meta.tiers. Tiers are derived from nodes.
+    const result = new ProposalSession().propose({
+      ...cleanIr,
+      nodes: [
+        ...cleanIr.nodes,
+        { id: "worker", type: "system", name: "Worker", tier: "backend" as const },
+      ],
+    });
+
+    expect(result.irErrors).toBe(0);
+    expect(result.committable).toBe(true);
   });
 });
 

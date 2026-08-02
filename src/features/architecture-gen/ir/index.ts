@@ -12,7 +12,6 @@ export {
   boundaryKindSchema,
   parseArchitectureIr,
   tiersFor,
-  DEFAULT_TIERS,
 } from "./schema";
 
 export type {

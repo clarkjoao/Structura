@@ -47,6 +47,8 @@ function summarise(diagnostics: Diagnostic[], state?: LayoutState): ValidationRe
     diagnostics: ordered,
     errors: ordered.filter((d) => d.severity === "error").length,
     warnings: ordered.filter((d) => d.severity === "warning").length,
+    irErrors: ordered.filter((d) => d.class === "ir" && d.severity === "error").length,
+    geometryIssues: ordered.filter((d) => d.class === "geometry").length,
     readability: state
       ? scoreReadability(state)
       : { throughVertexRoutes: 0, edgeCrossings: 0, totalEdgeLength: 0, score: 0 },

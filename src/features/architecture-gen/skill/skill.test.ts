@@ -12,13 +12,15 @@ const EMITTED_CODES = [
   "node/overlap",
   "node/clipped-label",
   "edge/crosses-node",
+  "edge/stacked",
   "edge/arrowhead-clearance",
   "label/clearance",
+  "label/collision",
   "flow/non-monotonic",
   "flow/orphan-node",
   "c4/cross-cutting-no-entry",
   "c4/too-many-primary",
-  "layout/tier-not-in-layout",
+  "boundary/child-outside",
 ];
 
 describe("skill loading", () => {

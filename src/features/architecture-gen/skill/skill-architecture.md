@@ -67,20 +67,13 @@ it would look nice.
 | `cross-cutting` | Observability, auth, secrets — see below                   |
 
 **Event buses go in `backend`, not `data`.** SNS, SQS, EventBridge and Kafka are messaging
-infrastructure, not storage — putting them in the `data` tier makes them block the edges between
-your services and their databases. Move every bus and queue to `backend`, leaving `data` for
-Databases, Redis and S3 only.
+infrastructure, not storage — putting them in the `data` tier makes them read as persistent stores
+and obscures the event-driven nature of the architecture. Move every bus and queue to `backend`,
+leaving `data` for databases, caches and object storage only.
 
-Empty tiers collapse automatically, so listing a tier you do not populate costs nothing. If
-you need a tier outside the default set for the diagram kind, list the full order you want in
-`meta.tiers`.
-
-**Each diagram kind starts with the tiers that fit it.** A context diagram has `external`,
-`application` and `cross-cutting` — deliberately, because at context level everything is
-either an actor, a system you own, or a supporting service. If you reach for `client` or
-`data` in a context diagram, that is usually a sign the element belongs one level down, in a
-container diagram. Reconsider before adding the tier: `layout/tier-not-in-layout` is telling
-you the diagram kind and the content disagree.
+Tiers are derived from the nodes you declare — you do not need to list `meta.tiers` unless you want
+to force a specific column order or an empty column. Any tier that has at least one node appears in
+the layout automatically.
 
 **Cross-cutting is a band, not a column.** Those services sit below the main flow and get
 **no edges drawn by default**. That is deliberate: wiring observability and auth to every
@@ -207,7 +200,8 @@ The bus is the sender. Consumers have incoming edges only. If SES is shown at al
 
 **The rule:** a Lambda that handles an event and calls a downstream service produces exactly two connections: one **from the bus** (or trigger) to the Lambda, and one **from the Lambda** to its direct dependency. The bus itself never has an outgoing `call` edge. The downstream notification/storage service goes in cross-cutting with one representative incoming edge, or is omitted if the event consumer's internals are not the point of the diagram.
 
-If an `edge/crosses-node` diagnostic names the same blocking node on multiple connections, that is a signal you have wired the bus incorrectly — consumers do not call the bus back.
+If an `edge/crosses-node` diagnostic names the same blocking node on multiple connections, that
+is a signal you have wired the bus incorrectly — consumers do not call the bus back.
 
 ## Reading diagnostics
 
@@ -220,19 +214,23 @@ coordinate.
 | `ir/unknown-node-ref`       | A connection or boundary names something that does not exist | Fix the id, or add the missing node                                        |
 | `ir/duplicate-id`           | Two elements share an id                                     | Give each its own                                                          |
 | `ir/node-in-two-boundaries` | A node is claimed by two groups                              | Keep one, or nest them                                                     |
-| `node/overlap`              | Two nodes collide                                            | Usually too many in one tier — move one, or raise `density_hint`           |
-| `node/clipped-label`        | Text is wider than a node can render                         | Shorten the name, technology or description                                |
-| `edge/crosses-node`         | An edge runs through an unrelated node                       | The blocking node is in the path — move it to a tier that matches its role |
-| `edge/arrowhead-clearance`  | Two nodes are too close for the arrow to render              | Raise `density_hint`, or separate them by tier                             |
-| `label/clearance`           | An edge label is too close to a node                         | Shorten it, or drop it if the edge is obvious                              |
-| `label/collision`           | Two edge labels overlap                                      | Shorten both, or drop the less informative one                             |
-| `flow/non-monotonic`        | The main flow doubles back                                   | Reorder the tiers, or reverse the connection if its direction is wrong     |
-| `flow/orphan-node`          | A node has no connections                                    | Connect it, mark it cross-cutting, or remove it                            |
-| `c4/cross-cutting-no-entry` | A cross-cutting service has nothing pointing at it           | Add one representative consumer, or drop it                                |
-| `c4/too-many-primary`       | More than twelve primary elements                            | Split by level, or move supporting services to cross-cutting               |
-| `layout/tier-not-in-layout` | A node sits in a tier this diagram has no column for         | Use a listed tier, or add it to `meta.tiers`                               |
+| `node/overlap`             | Two nodes collide                                            | Usually too many in one tier — raise `density_hint`, or move one to cross-cutting |
+| `node/clipped-label`       | Text is wider than a node can render                         | Shorten the name, technology or description                                |
+| `edge/crosses-node`        | An edge runs through an unrelated node                       | Geometry issue — the layout engine will address this; not a model correction |
+| `edge/stacked`           | Two edges run along the same line                         | Geometry issue — the layout engine will address this                          |
+| `edge/arrowhead-clearance` | Two nodes are too close for the arrow to render              | Raise `density_hint` to widen the gap                                     |
+| `label/clearance`        | An edge label is too close to a node                       | Shorten it, or drop it if the edge is obvious                              |
+| `label/collision`         | Two edge labels overlap                                    | Shorten both, or drop the less informative one                             |
+| `flow/non-monotonic`       | The main flow doubles back                                   | Reverse the connection if its direction is wrong                            |
+| `flow/orphan-node`         | A node has no connections                                    | Connect it, mark it cross-cutting, or remove it                            |
+| `c4/cross-cutting-no-entry`| A cross-cutting service has nothing pointing at it           | Add one representative consumer, or drop it                                |
+| `c4/too-many-primary`      | More than twelve primary elements                            | Split by level, or move supporting services to cross-cutting               |
+| `boundary/child-outside` | A boundary does not fully contain its members             | Geometry issue — the layout engine will address this                          |
 
-Warnings do not block a commit. Fix the ones that matter and say why you left the rest.
+**Geometry issues never block a commit.** `edge/crosses-node`, `edge/stacked`, `label/clearance`,
+`label/collision` and `boundary/child-outside` are the engine's responsibility — they will be
+addressed by the layout engine in future slices. Report the ones that persist to the user after
+commit, but do not ask the user to change the IR to fix them.
 
 ## Worked example
 

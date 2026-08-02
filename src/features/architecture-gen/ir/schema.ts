@@ -15,6 +15,7 @@
  */
 
 import { z } from "zod";
+import { TIER_ORDER } from "@/lib/layout-engine";
 
 /**
  * Layout columns, in reading order. `cross-cutting` is not a column: those services get
@@ -36,21 +37,6 @@ export type Tier = z.infer<typeof tierSchema>;
 export const diagramKindSchema = z.enum(["c4-context", "c4-container", "c4-component", "aws"]);
 
 export type DiagramKind = z.infer<typeof diagramKindSchema>;
-
-/**
- * Default tier order per diagram kind.
- *
- * A C4 context diagram is people and systems; a container diagram adds the inside of one
- * system; an AWS diagram spans the full stack. Giving each kind its own default keeps the
- * model from having to reason about columns it will never populate — and empty tiers
- * collapse anyway, so a wrong guess costs layout nothing.
- */
-export const DEFAULT_TIERS: Record<DiagramKind, Tier[]> = {
-  "c4-context": ["external", "application", "cross-cutting"],
-  "c4-container": ["external", "client", "gateway", "application", "data", "cross-cutting"],
-  "c4-component": ["gateway", "application", "backend", "data", "cross-cutting"],
-  aws: ["external", "client", "gateway", "application", "backend", "data", "cross-cutting"],
-};
 
 export const densityHintSchema = z.enum(["simple", "medium", "complex"]);
 
@@ -186,9 +172,18 @@ export const architectureIrSchema = z.strictObject({
 
 export type ArchitectureIr = z.infer<typeof architectureIrSchema>;
 
-/** Tier order for an IR: explicit if given, else the default for its kind. */
-export function tiersFor(ir: Pick<ArchitectureIr, "diagram_kind" | "meta">): Tier[] {
-  return ir.meta.tiers ?? DEFAULT_TIERS[ir.diagram_kind];
+/**
+ * Tier order for an IR: explicit if given, otherwise derived from the nodes actually used.
+ * `meta.tiers` is an override for when the author needs a specific column order or wants to
+ * force an empty column. When absent, the engine uses every tier that has at least one node,
+ * in the canonical order — so a c4-container diagram with a "backend" node but no "gateway"
+ * node will have a "backend" column and no "gateway" column, without any error.
+ */
+export function tiersFor(ir: Pick<ArchitectureIr, "meta" | "nodes">): Tier[] {
+  if (ir.meta.tiers) return ir.meta.tiers;
+  // Derive from nodes: union of tiers in use, ordered canonically.
+  const used = new Set<Tier>(ir.nodes.map((n) => n.tier));
+  return TIER_ORDER.filter((tier) => used.has(tier));
 }
 
 export interface ParseSuccess {

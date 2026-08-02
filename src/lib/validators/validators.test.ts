@@ -295,6 +295,7 @@ describe("repair order", () => {
       {
         code: "label/collision",
         severity: "warning",
+        class: "geometry",
         message: "",
         subject: { kind: "label", ids: [] },
         supportedFixes: [],
@@ -302,6 +303,7 @@ describe("repair order", () => {
       {
         code: "ir/duplicate-id",
         severity: "error",
+        class: "ir",
         message: "",
         subject: { kind: "node", ids: [] },
         supportedFixes: [],
@@ -309,6 +311,7 @@ describe("repair order", () => {
       {
         code: "node/overlap",
         severity: "error",
+        class: "geometry",
         message: "",
         subject: { kind: "node", ids: [] },
         supportedFixes: [],
@@ -327,6 +330,7 @@ describe("repair order", () => {
       {
         code: "node/warn",
         severity: "warning",
+        class: "geometry",
         message: "",
         subject: { kind: "node", ids: [] },
         supportedFixes: [],
@@ -334,6 +338,7 @@ describe("repair order", () => {
       {
         code: "node/err",
         severity: "error",
+        class: "geometry",
         message: "",
         subject: { kind: "node", ids: [] },
         supportedFixes: [],

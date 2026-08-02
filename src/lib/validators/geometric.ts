@@ -55,6 +55,7 @@ export function validateNodes(state: LayoutState): Diagnostic[] {
       diagnostics.push({
         code: "node/overlap",
         severity: "error",
+        class: "geometry",
         message: `"${a.name}" and "${b.name}" overlap, so both are partly hidden.`,
         subject: { kind: "node", ids: [a.id, b.id] },
         evidence: { overlapArea: Math.round(area), tierA: a.tier, tierB: b.tier },
@@ -85,6 +86,7 @@ export function validateNodes(state: LayoutState): Diagnostic[] {
     diagnostics.push({
       code: "node/clipped-label",
       severity: "error",
+      class: "geometry",
       message: `The label on "${node.name}" is wider than a node can render, so it will be cut off.`,
       subject: { kind: "node", ids: [node.id] },
       evidence: { measuredWidth: node.width, maxWidth: LAYOUT.NODE_MAX_W },
@@ -116,6 +118,7 @@ export function validateAwsServiceNames(state: LayoutState): Diagnostic[] {
       diagnostics.push({
         code: "aws/unknown-service",
         severity: "error",
+        class: "geometry",
         message: `"${node.name}" is an AWS node but has no aws_service. Pick one from the catalog, e.g. "lambda", "rds", "sqs".`,
         subject: { kind: "node", ids: [node.id] },
         evidence: { type: node.type },
@@ -142,6 +145,7 @@ export function validateAwsServiceNames(state: LayoutState): Diagnostic[] {
       diagnostics.push({
         code: "aws/unknown-service",
         severity: "error",
+        class: "geometry",
         message: `"${node.awsService}" is not a known AWS service for "${node.name}".`,
         subject: { kind: "node", ids: [node.id] },
         evidence: { given: node.awsService, suggestions: suggestions.join(", ") },
@@ -168,6 +172,7 @@ export function validateBoundaries(state: LayoutState): Diagnostic[] {
       diagnostics.push({
         code: "boundary/empty",
         severity: "warning",
+        class: "geometry",
         message: `Boundary "${boundary.name}" has no members, so it adds a box without adding meaning.`,
         subject: { kind: "boundary", ids: [boundary.id] },
         supportedFixes: [
@@ -188,6 +193,7 @@ export function validateBoundaries(state: LayoutState): Diagnostic[] {
       diagnostics.push({
         code: "boundary/child-outside",
         severity: "error",
+        class: "geometry",
         message: `"${node.name}" is listed inside "${boundary.name}" but is drawn outside it.`,
         subject: { kind: "boundary", ids: [boundary.id, node.id] },
         evidence: { nodeTier: node.tier },
@@ -246,6 +252,7 @@ export function validateEdges(state: LayoutState): Diagnostic[] {
       diagnostics.push({
         code: "edge/crosses-node",
         severity: "error",
+        class: "geometry",
         message: `The connection from "${nameOf(state, connection.from)}" to "${nameOf(
           state,
           connection.to,
@@ -253,10 +260,6 @@ export function validateEdges(state: LayoutState): Diagnostic[] {
         subject: { kind: "edge", ids: [connection.id, node.id] },
         evidence: { blockingNode: node.name, blockingTier: node.tier },
         supportedFixes: [
-          {
-            action: "move-tier",
-            description: `Move "${node.name}" out of the path, or move an endpoint to an adjacent tier.`,
-          },
           {
             action: "increase-density",
             description: `Raise the density hint so tiers get wider routing corridors.`,
@@ -277,6 +280,7 @@ export function validateEdges(state: LayoutState): Diagnostic[] {
       diagnostics.push({
         code: "edge/stacked",
         severity: "warning",
+        class: "geometry",
         message: `Connections "${idA}" and "${idB}" run along the same line, so they read as one.`,
         subject: { kind: "edge", ids: [idA, idB] },
         supportedFixes: [
@@ -298,6 +302,7 @@ export function validateEdges(state: LayoutState): Diagnostic[] {
     diagnostics.push({
       code: "edge/arrowhead-clearance",
       severity: "warning",
+      class: "geometry",
       message: `"${source.name}" and "${target.name}" sit too close for the arrow between them to render cleanly.`,
       subject: { kind: "edge", ids: [connection.id] },
       evidence: { required: LAYOUT.ARROWHEAD_CLEARANCE },
@@ -305,10 +310,6 @@ export function validateEdges(state: LayoutState): Diagnostic[] {
         {
           action: "increase-density",
           description: `Raise the density hint to widen the gap between tiers.`,
-        },
-        {
-          action: "move-tier",
-          description: `Move "${target.name}" to a tier further from "${source.name}".`,
         },
       ],
     });
@@ -339,6 +340,7 @@ export function validateLabels(state: LayoutState): Diagnostic[] {
       diagnostics.push({
         code: "label/clearance",
         severity: "warning",
+        class: "geometry",
         message: `The label "${connection.label}" sits too close to "${node.name}" to stay readable.`,
         subject: { kind: "label", ids: [connection.id, node.id] },
         evidence: { clearance: Math.round(distance), required: Math.round(required) },
@@ -377,6 +379,7 @@ export function validateLabels(state: LayoutState): Diagnostic[] {
       diagnostics.push({
         code: "label/collision",
         severity: "warning",
+        class: "geometry",
         message: `Labels "${a.label}" and "${b.label}" overlap each other.`,
         subject: { kind: "label", ids: [a.id, b.id] },
         evidence: { distance: Math.round(distance), required: Math.round(required) },
@@ -410,14 +413,11 @@ export function validateFlow(state: LayoutState): Diagnostic[] {
     diagnostics.push({
       code: "flow/non-monotonic",
       severity: "warning",
+      class: "ir",
       message: `The main flow doubles back: "${source.name}" (${source.tier}) points to "${target.name}" (${target.tier}), against the left-to-right reading order.`,
       subject: { kind: "edge", ids: [connection.id] },
       evidence: { fromTier: source.tier, toTier: target.tier },
       supportedFixes: [
-        {
-          action: "move-tier",
-          description: `Move "${target.name}" to a tier after "${source.name}".`,
-        },
         {
           action: "reverse-edge",
           description: `Reverse the connection if the direction is wrong.`,
@@ -440,6 +440,7 @@ export function validateFlow(state: LayoutState): Diagnostic[] {
     diagnostics.push({
       code: "flow/orphan-node",
       severity: "warning",
+      class: "ir",
       message: `"${node.name}" has no connections, so its role in the diagram is unclear.`,
       subject: { kind: "node", ids: [node.id] },
       supportedFixes: [
@@ -466,6 +467,7 @@ export function validateComposition(state: LayoutState): Diagnostic[] {
     diagnostics.push({
       code: "c4/too-many-primary",
       severity: "warning",
+      class: "geometry",
       message: `This diagram has ${primary.length} primary elements. Past about ${MAX_PRIMARY_NODES} it stops being readable at a glance.`,
       subject: { kind: "node", ids: primary.map((node) => node.id) },
       evidence: { count: primary.length, limit: MAX_PRIMARY_NODES },
@@ -493,6 +495,7 @@ export function validateComposition(state: LayoutState): Diagnostic[] {
     diagnostics.push({
       code: "c4/cross-cutting-no-entry",
       severity: "warning",
+      class: "geometry",
       message: `"${node.name}" sits in the cross-cutting band with nothing pointing at it, so a reader cannot tell what uses it.`,
       subject: { kind: "node", ids: [node.id] },
       supportedFixes: [

@@ -8,7 +8,17 @@
 import type { ComponentType } from "@/features/diagram";
 import type { LayoutInput } from "@/lib/layout-engine";
 import type { StructuralInput } from "@/lib/validators";
-import { tiersFor, type ArchitectureIr } from "./schema";
+import { TIER_ORDER, type Tier } from "@/lib/layout-engine";
+import { tierSchema, type ArchitectureIr } from "./schema";
+
+/**
+ * Derives the effective tier list from the IR's nodes, ordered by TIER_ORDER.
+ * Used when `meta.tiers` is not explicitly provided.
+ */
+function deriveTiersFromNodes(ir: ArchitectureIr): Tier[] {
+  const used = new Set<Tier>(ir.nodes.map((n) => n.tier));
+  return TIER_ORDER.filter((tier) => used.has(tier));
+}
 
 export function toLayoutInput(ir: ArchitectureIr): LayoutInput {
   return {
@@ -19,7 +29,7 @@ export function toLayoutInput(ir: ArchitectureIr): LayoutInput {
       name: node.name,
       technology: node.technology,
       description: node.description,
-      tier: node.tier,
+      tier: node.tier as Tier,
       awsService: node.aws_service,
       emphasis: node.emphasis,
     })),
@@ -40,7 +50,8 @@ export function toLayoutInput(ir: ArchitectureIr): LayoutInput {
       intent: connection.intent,
       isPrimaryPath: connection.is_primary_path,
     })),
-    tiers: tiersFor(ir),
+    // Tiers from meta.tiers if provided, otherwise derived from the nodes.
+    tiers: ir.meta.tiers ?? deriveTiersFromNodes(ir),
     density: ir.meta.density_hint,
     primaryPath: ir.meta.primary_path,
   };

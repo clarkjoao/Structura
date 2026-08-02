@@ -6,7 +6,6 @@ export {
   architectureIrJsonSchema,
   proposeArchitectureParameters,
   tiersFor,
-  DEFAULT_TIERS,
 } from "./ir";
 
 export type { ArchitectureIr, IrNode, IrBoundary, IrConnection, Tier, DiagramKind } from "./ir";

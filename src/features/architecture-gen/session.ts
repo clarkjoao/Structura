@@ -37,12 +37,17 @@ export type ProposalStatus =
 
 export interface ProposalResult {
   status: ProposalStatus;
-  /** True when the proposal is good enough to commit. */
+  /** True when the proposal is good enough to commit. Determined solely by irErrors. */
   committable: boolean;
   round: number;
   diagnostics: Diagnostic[];
+  /** Total errors (errors + warnings), kept for backwards compatibility. */
   errors: number;
   warnings: number;
+  /** IR-class errors — the only ones that block commit. */
+  irErrors: number;
+  /** Geometry-class diagnostics — never block commit but are reported as quality signal. */
+  geometryIssues: number;
   readabilityScore: number;
   /** Counts only — never coordinates. The model has no use for geometry. */
   preview?: {
@@ -60,7 +65,8 @@ interface Round {
   /** Absent when the round failed before the engine ran. */
   layout?: LayoutResult;
   report: ValidationReport;
-  errors: number;
+  /** IR errors for committability — geometry errors don't block. */
+  irErrors: number;
 }
 
 export interface SessionOptions {
@@ -73,7 +79,7 @@ export interface SessionOptions {
  */
 export class ProposalSession {
   private readonly rounds: Round[] = [];
-  private bestErrors = Number.POSITIVE_INFINITY;
+  private bestIrErrors = Number.POSITIVE_INFINITY;
   private stalls = 0;
 
   constructor(private readonly options: SessionOptions = {}) {}
@@ -86,7 +92,8 @@ export class ProposalSession {
   get committable(): Round | undefined {
     for (let i = this.rounds.length - 1; i >= 0; i -= 1) {
       const round = this.rounds[i]!;
-      if (round.layout?.ok && round.errors === 0) return round;
+      // Commit only when there are no IR-class errors. Geometry issues never block.
+      if (round.layout?.ok && round.irErrors === 0) return round;
     }
     return undefined;
   }
@@ -105,6 +112,7 @@ export class ProposalSession {
         diagnostics: parsed.issues.map((issue) => ({
           code: "ir/schema",
           severity: "error" as const,
+          class: "ir" as const,
           message: `${issue.path || "(root)"}: ${issue.message}`,
           subject: { kind: "node" as const, ids: [] },
           supportedFixes: [
@@ -116,6 +124,8 @@ export class ProposalSession {
         })),
         errors: parsed.issues.length,
         warnings: 0,
+        irErrors: parsed.issues.length,
+        geometryIssues: 0,
         readabilityScore: 0,
       };
     }
@@ -125,8 +135,8 @@ export class ProposalSession {
     // Structural checks first: an unknown id makes every geometric finding meaningless,
     // and this costs microseconds compared to running the engine.
     const structural = validateIr(toStructuralInput(ir));
-    if (structural.errors > 0) {
-      return this.record(ir, undefined, structural, "structurally-invalid");
+    if (structural.irErrors > 0) {
+      return this.record(ir, undefined, structural);
     }
 
     const layout = layoutDiagram(toLayoutInput(ir), { measureText: this.options.measureText });
@@ -135,6 +145,7 @@ export class ProposalSession {
         diagnostics: layout.failures.map((failure) => ({
           code: failure.code,
           severity: "error" as const,
+          class: "ir" as const,
           message: failure.message,
           subject: { kind: "node" as const, ids: failure.nodeIds ?? [] },
           supportedFixes: [
@@ -146,9 +157,11 @@ export class ProposalSession {
         })),
         errors: layout.failures.length,
         warnings: 0,
+        irErrors: layout.failures.length,
+        geometryIssues: 0,
         readability: { throughVertexRoutes: 0, edgeCrossings: 0, totalEdgeLength: 0, score: 0 },
       };
-      return this.record(ir, layout, report, "layout-failed");
+      return this.record(ir, layout, report);
     }
 
     const geometric = validateGeometry(layout.state);
@@ -156,13 +169,12 @@ export class ProposalSession {
       diagnostics: [...structural.diagnostics, ...geometric.diagnostics],
       errors: structural.errors + geometric.errors,
       warnings: structural.warnings + geometric.warnings,
+      irErrors: structural.irErrors + geometric.irErrors,
+      geometryIssues: structural.geometryIssues + geometric.geometryIssues,
       readability: geometric.readability,
     };
 
-    const status: ProposalStatus =
-      combined.errors > 0 ? "has-errors" : combined.warnings > 0 ? "has-warnings" : "ok";
-
-    return this.record(ir, layout, combined, status);
+    return this.record(ir, layout, combined);
   }
 
   /** Alias for `propose`, for the refine tool. Round accounting is identical. */
@@ -179,21 +191,28 @@ export class ProposalSession {
     ir: ArchitectureIr,
     layout: LayoutResult | undefined,
     report: ValidationReport,
-    status: ProposalStatus,
   ): ProposalResult {
-    const errors = report.errors;
+    const irErrors = report.irErrors;
+    const geometryIssues = report.geometryIssues;
+    // Track IR errors for stall detection — geometry issues are not the model's fault.
+    this.rounds.push({ ir, layout, report, irErrors });
 
-    this.rounds.push({ ir, layout, report, errors });
-
-    if (errors < this.bestErrors) {
-      this.bestErrors = errors;
+    if (irErrors < this.bestIrErrors) {
+      this.bestIrErrors = irErrors;
       this.stalls = 0;
     } else {
       this.stalls += 1;
     }
 
     const round = this.rounds.length;
-    const committable = status === "ok" || status === "has-warnings";
+    // A result is committable when it has no IR-class errors.
+    // Geometry issues may be present — the user can still apply or refine manually.
+    const committable = irErrors === 0;
+
+    // Determine status for diagnostics display.
+    // Only IR-class errors escalate to "has-errors"; geometry issues alone = "has-warnings".
+    const effectiveStatus: ProposalStatus =
+      irErrors > 0 ? "has-errors" : geometryIssues > 0 ? "has-warnings" : "ok";
 
     let exhausted: ProposalResult["exhausted"];
     if (!committable) {
@@ -205,12 +224,14 @@ export class ProposalSession {
     }
 
     return {
-      status,
+      status: effectiveStatus,
       committable,
       round,
       diagnostics: report.diagnostics,
-      errors,
+      errors: report.errors,
       warnings: report.warnings,
+      irErrors,
+      geometryIssues,
       readabilityScore: report.readability.score,
       preview: layout?.state
         ? {
