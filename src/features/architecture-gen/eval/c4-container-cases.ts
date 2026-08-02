@@ -534,4 +534,227 @@ export const C4_CONTAINER_CASES: ContainerCase[] = [
       ],
     },
   },
+
+  // ---------------------------------------------------------------------------
+  // Slice 3: event-driven e-commerce (from user prompt, Aug 2026)
+  // Covers: SNS fan-out, Lambda consumer, cross-cutting observability,
+  // event bus in backend (not data) — this is the canonical anti-pattern test.
+  //
+  // Note: VPC boundary is omitted — the layout engine cannot draw a single boundary
+  // spanning multiple tiers. VPC placement is represented via node descriptions.
+  // See ADR-012 follow-up for VPC boundary strategy.
+  // ---------------------------------------------------------------------------
+  {
+    id: "event-driven-ecommerce",
+    request:
+      "C4 container diagram for a microservices e-commerce platform. " +
+      "Users authenticate via Cognito and browse products in a React web app served by CloudFront + S3. " +
+      "Backend is split into three services behind an API Gateway: " +
+      "Product Service (Node.js) reads from DynamoDB (product catalog); " +
+      "Order Service (Node.js) writes to DynamoDB (orders) and publishes OrderPlaced to SNS; " +
+      "Payment Service (Node.js) subscribes to SNS OrderPlaced, charges via Stripe, publishes OrderPaid. " +
+      "A notification worker (Lambda) listens to SNS OrderPaid and sends confirmation email via SES. " +
+      "All services emit logs to CloudWatch Logs. " +
+      "ElastiCache Redis is used for session storage, shared across services. " +
+      "Put observability and caching in cross-cutting.",
+    covers:
+      "Event bus in backend tier (not data), SNS fan-out wiring, Lambda as backend worker, " +
+      "application→data edges free of SNS blocking. VPC placement via node description.",
+    ir: {
+      schema_version: 1,
+      diagram_kind: "c4-container",
+      meta: {
+        title: "E-commerce — microservices",
+        tiers: [
+          "external", "client", "gateway", "application",
+          "backend", "data", "cross-cutting",
+        ],
+        primary_path: [
+          "customer", "react-spa", "api-gateway",
+          "order-service", "payment-service", "notification-lambda",
+        ],
+        density_hint: "complex",
+      },
+      nodes: [
+        // ── external ──────────────────────────────────────────────────────────
+        {
+          id: "customer",
+          type: "person",
+          name: "Customer",
+          tier: "external",
+        },
+        {
+          id: "stripe",
+          type: "system",
+          name: "Stripe",
+          tier: "external",
+          description: "Card payment processor",
+        },
+
+        // ── client ─────────────────────────────────────────────────────────────
+        {
+          id: "react-spa",
+          type: "container",
+          name: "React SPA",
+          technology: "React / Vite",
+          tier: "client",
+          description: "Product browser and checkout UI",
+        },
+
+        // ── gateway ───────────────────────────────────────────────────────────
+        {
+          id: "cloudfront",
+          type: "aws-networking",
+          name: "CloudFront",
+          aws_service: "cloudfront",
+          tier: "gateway",
+          description: "CDN + static asset delivery",
+        },
+        {
+          id: "api-gateway",
+          type: "aws-networking",
+          name: "API Gateway",
+          aws_service: "api-gateway",
+          tier: "gateway",
+          description: "Entry point — ECS services behind NAT GW in VPC private subnet",
+        },
+
+        // ── application ──────────────────────────────────────────────────────
+        {
+          id: "product-service",
+          type: "container",
+          name: "Product Service",
+          technology: "Node.js / Docker",
+          tier: "application",
+          description: "Product catalogue — ECS on VPC private subnet",
+        },
+        {
+          id: "order-service",
+          type: "container",
+          name: "Order Service",
+          technology: "Node.js / Docker",
+          tier: "application",
+          description: "Order management — ECS on VPC private subnet",
+        },
+        {
+          id: "payment-service",
+          type: "container",
+          name: "Payment Service",
+          technology: "Node.js / Docker",
+          tier: "application",
+          description: "Payment processing and Stripe integration",
+        },
+
+        // ── backend ──────────────────────────────────────────────────────────
+        // SNS MUST be in backend, NOT data — see ADR-012.
+        {
+          id: "sns-order-events",
+          type: "aws-integration",
+          name: "SNS",
+          aws_service: "sns",
+          tier: "backend",
+          description: "Order event bus (OrderPlaced, OrderPaid)",
+        },
+        {
+          id: "notification-lambda",
+          type: "aws-compute",
+          name: "Notification Worker",
+          aws_service: "lambda",
+          tier: "backend",
+          description: "Sends confirmation emails via SES",
+        },
+
+        // ── data ─────────────────────────────────────────────────────────────
+        {
+          id: "dynamodb-products",
+          type: "aws-database",
+          name: "DynamoDB (catalog)",
+          aws_service: "dynamodb",
+          tier: "data",
+          description: "Product catalogue",
+        },
+        {
+          id: "dynamodb-orders",
+          type: "aws-database",
+          name: "DynamoDB (orders)",
+          aws_service: "dynamodb",
+          tier: "data",
+          description: "Order records",
+        },
+
+        // ── cross-cutting ─────────────────────────────────────────────────────
+        {
+          id: "cloudwatch",
+          type: "aws-observability",
+          name: "CloudWatch",
+          aws_service: "cloudwatch",
+          tier: "cross-cutting",
+          description: "Unified logging and metrics",
+        },
+        {
+          id: "ses",
+          type: "aws-integration",
+          name: "SES",
+          aws_service: "ses",
+          tier: "cross-cutting",
+          description: "Transactional email delivery",
+        },
+        {
+          id: "cognito",
+          type: "aws-security",
+          name: "Cognito",
+          aws_service: "cognito",
+          tier: "cross-cutting",
+          description: "User authentication and identity",
+        },
+        {
+          id: "elasticache",
+          type: "aws-database",
+          name: "ElastiCache",
+          aws_service: "elasticache",
+          tier: "cross-cutting",
+          description: "Redis session storage — shared across services",
+        },
+      ],
+      connections: [
+        // ── user flow ────────────────────────────────────────────────────────
+        { id: "c1",  from: "customer",         to: "react-spa",       intent: "call",          label: "Browses" },
+        { id: "c2",  from: "customer",         to: "cognito",        intent: "call",          label: "Authenticates" },
+        { id: "c3",  from: "react-spa",        to: "cloudfront",     intent: "call",          label: "Fetches" },
+        { id: "c4",  from: "react-spa",        to: "api-gateway",    intent: "call",          label: "REST" },
+        { id: "c5",  from: "react-spa",        to: "cognito",        intent: "call",          label: "Auth" },
+
+        // ── service calls ────────────────────────────────────────────────────
+        { id: "c6",  from: "api-gateway",      to: "product-service", intent: "call" },
+        { id: "c7",  from: "api-gateway",      to: "order-service",  intent: "call" },
+        { id: "c8",  from: "api-gateway",      to: "payment-service",intent: "call" },
+
+        // ── product service reads ────────────────────────────────────────────
+        { id: "c9",  from: "product-service",  to: "dynamodb-products", intent: "data-flow", label: "Reads" },
+
+        // ── order service writes + publishes ─────────────────────────────────
+        { id: "c10", from: "order-service",    to: "dynamodb-orders", intent: "data-flow", label: "Writes" },
+        { id: "c11", from: "order-service",   to: "sns-order-events", intent: "async-message", label: "OrderPlaced" },
+
+        // ── payment service consumes + charges ────────────────────────────────
+        { id: "c12", from: "sns-order-events", to: "payment-service", intent: "event", label: "OrderPlaced" },
+        { id: "c13", from: "payment-service",  to: "stripe",        intent: "call", label: "Charges" },
+        { id: "c14", from: "payment-service",  to: "sns-order-events", intent: "async-message", label: "OrderPaid" },
+
+        // ── notification lambda ──────────────────────────────────────────────
+        { id: "c15", from: "sns-order-events", to: "notification-lambda", intent: "event", label: "OrderPaid" },
+        { id: "c16", from: "notification-lambda", to: "ses",           intent: "call", label: "Email" },
+
+        // ── observability (cross-cutting) ─────────────────────────────────────
+        { id: "c17", from: "product-service",  to: "cloudwatch",     intent: "dependency", label: "Logs" },
+        { id: "c18", from: "order-service",   to: "cloudwatch",     intent: "dependency", label: "Logs" },
+        { id: "c19", from: "payment-service", to: "cloudwatch",     intent: "dependency", label: "Logs" },
+
+        // ── session cache (cross-cutting) ─────────────────────────────────────
+        { id: "c20", from: "product-service",  to: "elasticache",    intent: "call", label: "Sessions" },
+        { id: "c21", from: "order-service",   to: "elasticache",    intent: "call", label: "Sessions" },
+        { id: "c22", from: "payment-service", to: "elasticache",    intent: "call", label: "Sessions" },
+      ],
+    },
+  },
 ];

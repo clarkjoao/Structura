@@ -194,6 +194,11 @@ export const AWS_CATEGORIES: AwsCategory[] = [
         iconName: "ArchitectureServiceAmazonVirtualPrivateCloud",
       },
       {
+        id: "nat-gateway",
+        name: "Amazon NAT Gateway",
+        iconName: "ArchitectureServiceAmazonVPCNATGateway",
+      },
+      {
         id: "cloudfront",
         name: "Amazon CloudFront",
         iconName: "ArchitectureServiceAmazonCloudFront",
@@ -501,6 +506,7 @@ export const AWS_CATEGORIES: AwsCategory[] = [
         iconName: "ArchitectureServiceAWSAppSync",
       },
       { id: "mq", name: "Amazon MQ", iconName: "ArchitectureServiceAmazonMQ" },
+      { id: "ses", name: "Amazon SES", iconName: "ArchitectureServiceAmazonSimpleEmailService" },
     ],
   },
   {

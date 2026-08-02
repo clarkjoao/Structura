@@ -62,9 +62,14 @@ it would look nice.
 | `client`        | Browser app, mobile app, CLI — the thing the user touches  |
 | `gateway`       | API gateway, load balancer, CDN, WAF — the front door      |
 | `application`   | Your domain services, the ones that hold business logic    |
-| `backend`       | Internal integrations, workers, batch jobs                 |
-| `data`          | Databases, caches, object storage, queues that store       |
+| `backend`       | Event buses (SNS, SQS, EventBridge, Kafka), workers, batch jobs |
+| `data`          | Databases, caches, object storage — only persistent stores  |
 | `cross-cutting` | Observability, auth, secrets — see below                   |
+
+**Event buses go in `backend`, not `data`.** SNS, SQS, EventBridge and Kafka are messaging
+infrastructure, not storage — putting them in the `data` tier makes them block the edges between
+your services and their databases. Move every bus and queue to `backend`, leaving `data` for
+Databases, Redis and S3 only.
 
 Empty tiers collapse automatically, so listing a tier you do not populate costs nothing. If
 you need a tier outside the default set for the diagram kind, list the full order you want in
@@ -131,18 +136,41 @@ the node, and the validator will tell you when it does.
 
 ## AWS
 
-Use the specific AWS type, never a generic container:
+Use the specific AWS type for **managed services only**. Containerised workloads (ECS, EKS,
+Fargate, App Runner) are **generic containers** — use `type: "container"` with `technology:
+"Node.js / Docker"`:
 
-- S3 → `type: "aws-storage"`, `aws_service: "s3"`
-- Lambda → `type: "aws-compute"`, `aws_service: "lambda"`
-- DynamoDB → `type: "aws-database"`, `aws_service: "dynamodb"`
-- API Gateway → `type: "aws-networking"`, `aws_service: "api-gateway"`
+```
+{ "id": "product-service", "type": "container", "name": "Product Service",
+  "technology": "Node.js / Docker", "tier": "application" }
+```
 
-Check the component catalog in the system prompt for the full list.
+For managed AWS services, use the exact `aws_service` id from the catalog:
 
-For an event-driven system, a bus (EventBridge, SNS, Kafka) with several `intent: "event"`
-connections is recognised as a hub and centred automatically, so its peers reach it with short
-arrows. You do not position it; you just describe the connections honestly.
+| Service       | type             | aws_service    |
+| ------------- | ---------------- | -------------- |
+| S3            | aws-storage      | `s3`           |
+| Lambda        | aws-compute      | `lambda`       |
+| DynamoDB      | aws-database     | `dynamodb`     |
+| API Gateway   | aws-networking   | `api-gateway`  |
+| CloudFront    | aws-networking   | `cloudfront`  |
+| Cognito       | aws-security     | `cognito`      |
+| SES           | aws-integration  | `ses`          |
+| SNS           | aws-integration  | `sns`          |
+| EventBridge   | aws-integration  | `eventbridge`  |
+| SQS           | aws-integration  | `sqs`          |
+| RDS           | aws-database     | `rds`          |
+| ElastiCache   | aws-database     | `elasticache`  |
+| ALB           | aws-networking   | `elb`          |
+| NAT Gateway   | aws-networking   | `nat-gateway`  |
+| VPC           | aws-networking   | `vpc`          |
+| CloudWatch    | aws-observability| `cloudwatch`  |
+| S3 (static)   | aws-storage      | `s3`           |
+
+**Every node with `type: "aws-*"` MUST have a matching `aws_service` field.** A missing or
+invalid `aws_service` triggers `aws/unknown-service` and blocks the round. If the service is not
+a managed AWS resource (your own containers, VMs, databases), do not use an `aws-*` type — use
+`type: "container"` or `type: "aws-database"` with a real managed service.
 
 ## Connection intent
 
@@ -156,6 +184,30 @@ arrows. You do not position it; you just describe the connections honestly.
 
 Direction is the direction of **initiation**, not of data. A service reading from a database
 is `service -> database`.
+
+### Event-driven patterns — the most common source of `edge/crosses-node`
+
+An event bus (EventBridge, SNS, Kafka) is a hub. Consumers are **not** connected back to the bus.
+
+**Wrong:**
+```
+{ "from": "order-lambda", "to": "eventbridge", "intent": "call" },
+{ "from": "inventory-lambda", "to": "eventbridge", "intent": "call" },
+{ "from": "confirmation-lambda", "to": "ses", "intent": "call" }
+```
+The first two are wrong because a Lambda writes to a bus (it doesn't call it for a response). The third is wrong because Confirmation Lambda calls SES, not Order Lambda — and in a diagram that shows the event flow, SES goes in cross-cutting with no edge to it at all.
+
+**Correct for a bus-centric view:**
+```
+{ "from": "order-lambda", "to": "eventbridge", "intent": "async-message" },
+{ "from": "eventbridge", "to": "inventory-lambda", "intent": "event" },
+{ "from": "eventbridge", "to": "confirmation-lambda", "intent": "event" }
+```
+The bus is the sender. Consumers have incoming edges only. If SES is shown at all, it has one edge from Confirmation Lambda — never from Order Lambda or Inventory Lambda.
+
+**The rule:** a Lambda that handles an event and calls a downstream service produces exactly two connections: one **from the bus** (or trigger) to the Lambda, and one **from the Lambda** to its direct dependency. The bus itself never has an outgoing `call` edge. The downstream notification/storage service goes in cross-cutting with one representative incoming edge, or is omitted if the event consumer's internals are not the point of the diagram.
+
+If an `edge/crosses-node` diagnostic names the same blocking node on multiple connections, that is a signal you have wired the bus incorrectly — consumers do not call the bus back.
 
 ## Reading diagnostics
 
