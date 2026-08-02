@@ -3,6 +3,8 @@ import { useDiagramStore } from "@/features/diagram";
 import i18n from "@/infrastructure/i18n";
 import { buildSystemPrompt } from "./prompt-builder";
 import { parseLLMResponse } from "./patch-parser";
+import type { ArchitectureToolResult } from "@/features/architecture-gen/execute";
+import { ArchitectureToolExecutor } from "@/features/architecture-gen/execute";
 import { LLMProviderError, type LLMErrorKind } from "./errors";
 import { deriveThreadTitle } from "./llm-storage";
 import type {
@@ -10,7 +12,6 @@ import type {
   ChatMessage,
   ConversationThread,
   DiagramThreadState,
-  DiagramPatch,
   LLMConfig,
   LLMConnection,
   PendingNodePreview,
@@ -29,6 +30,16 @@ import { sendMessage as sendOpenAIMessage } from "./providers/openai";
 import { sendMessage as sendAnthropicMessage } from "./providers/anthropic";
 import { sendMessage as sendProxyMessage } from "./providers/proxy";
 import { sendMessage as sendCustomMessage } from "./providers/custom";
+
+/** Lazy singleton — created on first architecture tool call, reused across calls. */
+let architectureExecutor: ArchitectureToolExecutor | null = null;
+
+function getArchitectureExecutor(): ArchitectureToolExecutor {
+  if (!architectureExecutor) {
+    architectureExecutor = new ArchitectureToolExecutor();
+  }
+  return architectureExecutor;
+}
 
 function getResolvedAppLanguage(): string {
   const lng = i18n.resolvedLanguage ?? i18n.language ?? "pt-BR";
@@ -132,6 +143,8 @@ export interface LLMStoreState {
   streamingContent: string | null;
   isLoading: boolean;
   error: LLMErrorKind | null;
+  /** Set after a propose/refine/expand tool call; cleared when the user sends a new message. */
+  lastArchitectureResult: ArchitectureToolResult | null;
 
   setLLMConfig: (config: LLMConfig) => void;
   setActiveConnection: (id: string) => void;
@@ -157,6 +170,8 @@ export interface LLMStoreState {
   acceptSuggestion: (suggestionId: string) => void;
   rejectSuggestion: (suggestionId: string) => void;
   dismissPendingAnalysis: () => void;
+  /** Commits the last architecture result to the canvas. Idempotent. */
+  commitArchitecture: () => void;
   /**
    * @deprecated Replaced by `createThread`. Kept for the panel until Fase 6.
    */
@@ -222,6 +237,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
     streamingContent: null,
     isLoading: false,
     error: null,
+    lastArchitectureResult: null,
 
     setLLMConfig: (config) => {
       const { activeConnectionId, connections } = get();
@@ -349,7 +365,9 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         pendingAnalysis: null,
         streamingContent: null,
         error: null,
+        lastArchitectureResult: null,
       });
+      architectureExecutor = null;
     },
 
     switchThread: (threadId) => {
@@ -365,14 +383,16 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       const nextEntry: DiagramThreadState = { threads: entry.threads, activeThreadId: threadId };
       setWithPersist({
         threadsByDiagram: { ...threadsByDiagram, [activeDiagramId]: nextEntry },
-        activeThreadId: threadId,
+        ...nextEntry,
         messages: thread.messages,
         pendingSuggestions: [],
         pendingPreviews: [],
         pendingAnalysis: null,
         streamingContent: null,
         error: null,
+        lastArchitectureResult: null,
       });
+      architectureExecutor = null;
     },
 
     createThread: (diagramId, firstUserMessage) => {
@@ -408,7 +428,9 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         pendingAnalysis: null,
         streamingContent: null,
         error: null,
+        lastArchitectureResult: null,
       });
+      architectureExecutor = null;
       return draft;
     },
 
@@ -471,7 +493,9 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           pendingAnalysis: null,
           streamingContent: null,
           error: null,
+          lastArchitectureResult: null,
         });
+        architectureExecutor = null;
         return;
       }
       const wasActive = entry.activeThreadId === threadId;
@@ -489,9 +513,11 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
               pendingAnalysis: null,
               streamingContent: null,
               error: null,
+              lastArchitectureResult: null,
             }
           : {}),
       });
+      if (wasActive) architectureExecutor = null;
     },
 
     initChatThreads: () => hydrateChatThreadsCacheFromIdb(),
@@ -528,6 +554,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         streamingContent: "",
         isLoading: true,
         error: null,
+        lastArchitectureResult: null,
       });
 
       try {
@@ -568,6 +595,35 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
             streamingContent: null,
             isLoading: false,
             error: null,
+          });
+          persistThread();
+          return;
+        }
+
+        // Architecture generation: run each tool in sequence, accumulate a narrative.
+        if (parsedResponse.kind === "architecture") {
+          const executor = getArchitectureExecutor();
+          const summaries: string[] = [];
+          let lastResult: ArchitectureToolResult | null = null;
+
+          for (const toolCall of parsedResponse.toolCalls) {
+            const result = executor.execute(toolCall.tool, toolCall.parameters);
+            summaries.push(`**[${toolCall.tool}]** ${result.summary}`);
+            lastResult = result;
+          }
+
+          const messageContent = summaries.join("\n\n");
+          set({
+            messages: get().messages.map((message) =>
+              message.id === assistantMessageId
+                ? { ...message, content: messageContent }
+                : message,
+            ),
+            pendingAnalysis: null,
+            streamingContent: null,
+            isLoading: false,
+            error: null,
+            lastArchitectureResult: lastResult,
           });
           persistThread();
           return;
@@ -801,6 +857,17 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
 
     dismissPendingAnalysis: () => {
       set({ pendingAnalysis: null });
+    },
+
+    commitArchitecture: () => {
+      const { lastArchitectureResult } = get();
+      if (!lastArchitectureResult) return;
+      // The banner is only shown when diagnostics are clean and not yet committed,
+      // so this is always a legitimate commit. Delegate to the executor directly.
+      if (!lastArchitectureResult.committed) {
+        getArchitectureExecutor().commit();
+      }
+      set({ lastArchitectureResult: null });
     },
   };
 });

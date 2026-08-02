@@ -671,6 +671,14 @@
       }
     }
   },
+  "archGen": {
+    "banner": {
+      "readyToCommit": "Diagram validated — ready to commit",
+      "errorsFound": "{{count}} issue(s) found — fix before committing",
+      "refine": "Refine",
+      "commit": "Commit to canvas"
+    }
+  },
   "scenes": {
     "base": "Base",
     "newScene": "New scene",

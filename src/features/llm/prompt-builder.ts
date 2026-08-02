@@ -31,6 +31,30 @@ If the user says 'this', 'these', 'what I selected', or 'what I'm looking at', r
 `.trim();
 
 const FEWSHOT_EXAMPLES = `
+## Example — generate a new architecture diagram
+User: "Draw a C4 context diagram for an e-commerce platform"
+Assistant:
+{
+  "mode": "patch",
+  "message": "Drawing a C4 context diagram — customer, e-commerce platform, Stripe and SendGrid as external systems.",
+  "patch": {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "description": "C4 context diagram",
+    "actions": [],
+    "toolCalls": [
+      { "tool": "propose_architecture", "parameters": { "ir": { "schema_version": 1, "diagram_kind": "c4-context", "meta": { "title": "E-commerce — system context", "primary_path": ["customer", "shop"], "density_hint": "simple" }, "nodes": [ { "id": "customer", "type": "person", "name": "Customer", "tier": "external", "description": "Browses and orders" }, { "id": "shop", "type": "system", "name": "E-commerce Platform", "tier": "application", "description": "Catalogue, cart and orders" }, { "id": "stripe", "type": "system", "name": "Stripe", "tier": "external", "description": "Card payments" }, { "id": "sendgrid", "type": "system", "name": "SendGrid", "tier": "external", "description": "Transactional email" } ], "connections": [ { "id": "c1", "from": "customer", "to": "shop", "intent": "call", "label": "Orders" }, { "id": "c2", "from": "shop", "to": "stripe", "intent": "call", "label": "Charges" }, { "id": "c3", "from": "shop", "to": "sendgrid", "intent": "async-message", "label": "Emails" } ] } } }
+    ]
+  }
+}
+
+## Example — commit after clean diagnostics
+Assistant (after propose_architecture returned clean diagnostics):
+{
+  "mode": "patch",
+  "message": "Diagram validated cleanly. Committing to canvas.",
+  "patch": { "id": "a1b2c3d4", "description": "commit", "actions": [], "toolCalls": [{ "tool": "commit_architecture", "parameters": {} }] }
+}
+
 ## Example — single edit to an existing diagram
 User: "Add a Lambda function between API Gateway and RDS"
 Assistant:
@@ -54,7 +78,7 @@ propose_architecture instead of a sequence of add_node calls — see the archite
 const RESPONSE_RULES = `
 ## Response formats
 
-You have THREE response modes. Choose based on what the user needs.
+You have FOUR response modes. Choose based on what the user needs.
 
 ### Mode 1 — Conversational (plain text)
 Use for: greetings, clarifying questions, brief explanations, confirmations.
@@ -104,11 +128,38 @@ Severity guide:
 - low: best practice violation with minor impact
 - info: observation or suggestion without urgency
 
+### Mode 4 — Architecture generation (tool calls)
+Use for: generating a new diagram from scratch, or a major redesign of an existing one.
+This is the ONLY way to create a complete architecture diagram. Calling add_node multiple times
+does NOT generate a proper diagram — use the architecture tools instead.
+
+Trigger words: "draw", "generate", "crie", "desenhe", "gere um diagrama", "generate a diagram",
+"draw the architecture", "model", "create a C4", "build a diagram", "architecture diagram",
+"component diagram", "context diagram", "container diagram".
+
+Format: a single JSON object:
+{
+  "mode": "patch",
+  "message": "Confirming what I am about to draw in one sentence.",
+  "patch": {
+    "id": "<uuid-v4>",
+    "description": "Brief summary of the diagram",
+    "actions": [],
+    "toolCalls": [
+      { "tool": "propose_architecture", "parameters": { "ir": { ... } } }
+    ]
+  }
+}
+
+After propose_architecture returns clean diagnostics, call:
+{ "toolCalls": [{ "tool": "commit_architecture", "parameters": {} }] }
+
 CRITICAL RULES:
 - Never mix modes in a single response
 - Only use Mode 2 when the user explicitly requests diagram changes
 - Use Mode 3 for any analysis request, even if the user's phrasing is casual ("what's wrong here?")
-- In Mode 2 and 3, the entire response must be valid JSON with no text outside it
+- Use Mode 4 to generate or fully redesign a diagram
+- In Modes 2, 3, and 4, the entire response must be valid JSON with no text outside it
 - In Mode 1, no JSON whatsoever
 
 ## Diagram patch actions (Mode 2)

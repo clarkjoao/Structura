@@ -31,7 +31,8 @@ export type FixAction =
   | "reduce-nodes"
   | "mark-cross-cutting"
   | "reverse-edge"
-  | "increase-density";
+  | "increase-density"
+  | "set-aws-service";
 
 export interface SupportedFix {
   action: FixAction;

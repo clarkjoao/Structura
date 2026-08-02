@@ -244,6 +244,64 @@ labels compete for the same space — `label/clearance` and `label/collision` ar
 warnings on a first proposal, and short labels avoid both. Say `"Charges"`, not
 `"Charges the customer's card"`.
 
+## Patterns
+
+Use `list_patterns` to browse the catalog, then `expand_pattern` to generate IR from a pattern.
+
+```
+list_patterns()                          // returns: id, name, description, category, componentCount
+expand_pattern({ pattern: "circuit-breaker", prefix: "payment-" })
+                                          // returns: nodes, connections, indexToId
+```
+
+The expansion gives you **IR nodes and connections**, not canvas objects. Merge them into your
+IR and call `propose_architecture` — the layout engine places them exactly as it does for
+manually-authored elements. Pass `wiring` to connect the pattern's entry (index 0) and exit
+(last index) to existing nodes:
+
+```
+expand_pattern({
+  pattern: "circuit-breaker",
+  prefix: "payment-",
+  wiring: {
+    entrySource: "order-service",   // this node -> pattern entry (incoming edge)
+    exitTarget: "db",               // pattern exit -> this node (outgoing edge)
+  },
+  tier: "application"
+})
+```
+
+Use `reuseExisting` when a pattern's component already exists on the canvas — the bridge emits
+connections but not a duplicate node:
+
+```
+expand_pattern({
+  pattern: "cqrs",
+  reuseExisting: { 1: "order-service" },  // component index 1 is already "order-service"
+})
+```
+
+Available patterns: `circuit-breaker`, `cqrs`, `saga-orchestration`, `saga-choreography`,
+`retry-with-fallback`, `bulkhead-isolation`, `dead-letter-queue-aws`, `fifo-queue-aws`,
+`fan-out`, `cache-aside`, `read-replica`, `event-sourcing`, `api-gateway-bff`,
+`blue-green-deployment`, `canary-release`, and more. Call `list_patterns` for the full catalog.
+
+## Visual self-check (optional round)
+
+After committing, the user may ask you to review the rendered result. Capture the canvas and
+present it to yourself for an honest read.
+
+This catches things the validators miss: label truncation at rendered size, visual balance,
+whether the vocabulary is consistent (AWS icons vs generic boxes), and whether anything an
+architect would expect is absent.
+
+The prompt fragment to append for self-review is provided by the `visualReviewPrompt()` export
+in `visual-check.ts`. It asks for: balance, density, legibility, clarity, vocabulary,
+and missing context.
+
+Do not run this as a matter of course — it is a round the user or the evaluation harness
+requests, not a step in every diagram generation.
+
 ## Never
 
 - Emit `x`, `y`, `width`, `height` or `position` anywhere. The schema rejects them, and the

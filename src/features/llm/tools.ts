@@ -44,6 +44,49 @@ export const BASE_TOOLS: LLMTool[] = [
     parametersSchema: { type: "object", properties: {}, required: [] },
   },
   {
+    name: "expand_pattern",
+    description:
+      "Expand a named pattern into IR nodes and connections, ready to merge into a proposal. " +
+      "Returns the generated ids so you can reference them in your IR. " +
+      "Pass prefix to avoid id collisions when inserting multiple patterns. " +
+      "Pass wiring to connect the pattern entry/exit to existing nodes. " +
+      "Example: { pattern: 'circuit-breaker', prefix: 'payment-', tier: 'application' }",
+    parametersSchema: {
+      type: "object",
+      properties: {
+        pattern: {
+          type: "string",
+          description:
+            'Pattern id from list_patterns, e.g. "circuit-breaker", "cqrs", "saga-orchestration".',
+        },
+        prefix: {
+          type: "string",
+          description:
+            'Prefix for all generated node ids, e.g. "payment-". Prevents collisions when merging multiple patterns.',
+        },
+        tier: {
+          type: "string",
+          description:
+            'Tier for all pattern components. Defaults to "application".',
+        },
+        wiring: {
+          type: "object",
+          description: "Wire the pattern entry (index 0) and exit (last) to existing nodes.",
+          properties: {
+            entrySource: { type: "string", description: "External node id that connects to the pattern entry." },
+            exitTarget: { type: "string", description: "Pattern exit connects to this external node id." },
+          },
+        },
+        reuseExisting: {
+          type: "object",
+          description:
+            "Map of pattern component index to an existing node id — those components are not emitted as new nodes, only their connections.",
+        },
+      },
+      required: ["pattern"],
+    },
+  },
+  {
     name: "add_node",
     description:
       "Add a single node to an existing diagram. For generating a diagram use " +

@@ -6,7 +6,8 @@
  * coordinate.
  */
 
-import { LABEL_MASK, LAYOUT, MAX_PRIMARY_NODES, labelMaskWidth } from "../layout-engine/constants";
+import { LAYOUT, MAX_PRIMARY_NODES, labelMaskWidth, LABEL_MASK } from "../layout-engine/constants";
+import { AWS_SERVICE_MAP } from "../catalogs/aws";
 import { hasArrowheadClearance, type Rect } from "../layout-engine/edge-ports";
 import {
   boundaryRect,
@@ -94,6 +95,66 @@ export function validateNodes(state: LayoutState): Diagnostic[] {
         },
       ],
     });
+  }
+
+  return diagnostics;
+}
+
+/**
+ * Checks every AWS node has a recognised `awsService` name.
+ *
+ * The icon rendered for an AWS node comes from the `awsService` field — an unknown name
+ * silently produces a broken or missing icon. This validator catches that class of error
+ * at the structural layer before the user ever sees the canvas.
+ */
+export function validateAwsServiceNames(state: LayoutState): Diagnostic[] {
+  const diagnostics: Diagnostic[] = [];
+
+  for (const node of state.nodes.values()) {
+    if (!node.type.startsWith("aws-")) continue;
+    if (!node.awsService) {
+      diagnostics.push({
+        code: "aws/unknown-service",
+        severity: "error",
+        message: `"${node.name}" is an AWS node but has no aws_service. Pick one from the catalog, e.g. "lambda", "rds", "sqs".`,
+        subject: { kind: "node", ids: [node.id] },
+        evidence: { type: node.type },
+        supportedFixes: [
+          {
+            action: "set-aws-service",
+            description: `Add an aws_service field to "${node.name}" with a valid service id.`,
+          },
+        ],
+      });
+      continue;
+    }
+
+    if (!AWS_SERVICE_MAP.has(node.awsService)) {
+      // Try a fuzzy suggestion — partial match on known names.
+      const suggestions: string[] = [];
+      for (const [id] of AWS_SERVICE_MAP) {
+        if (id.includes(node.awsService) || node.awsService.includes(id)) {
+          suggestions.push(id);
+          if (suggestions.length >= 3) break;
+        }
+      }
+
+      diagnostics.push({
+        code: "aws/unknown-service",
+        severity: "error",
+        message: `"${node.awsService}" is not a known AWS service for "${node.name}".`,
+        subject: { kind: "node", ids: [node.id] },
+        evidence: { given: node.awsService, suggestions: suggestions.join(", ") },
+        supportedFixes: [
+          {
+            action: "set-aws-service",
+            description: suggestions.length
+              ? `Did you mean: ${suggestions.join(", ")}?`
+              : `Check the AWS service catalog and set a valid aws_service id.`,
+          },
+        ],
+      });
+    }
   }
 
   return diagnostics;

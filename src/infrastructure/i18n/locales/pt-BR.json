@@ -671,6 +671,14 @@
       }
     }
   },
+  "archGen": {
+    "banner": {
+      "readyToCommit": "Diagrama validado — pronto para aplicar",
+      "errorsFound": "{{count}} problema(s) encontrado(s) — corrija antes de aplicar",
+      "refine": "Refinar",
+      "commit": "Aplicar ao canvas"
+    }
+  },
   "scenes": {
     "base": "Base",
     "newScene": "Nova cena",

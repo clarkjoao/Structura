@@ -41,7 +41,11 @@ export const ARCHITECTURE_TOOLS: LLMTool[] = [
   },
 ];
 
-export const ARCHITECTURE_TOOL_NAMES = ARCHITECTURE_TOOLS.map((tool) => tool.name);
+export const ARCHITECTURE_TOOL_NAMES = [
+  ...ARCHITECTURE_TOOLS.map((tool) => tool.name),
+  "list_patterns",
+  "expand_pattern",
+];
 
 /** Only commit touches the canvas; propose and refine are pure. */
 export const ARCHITECTURE_WRITE_TOOL_NAMES = ["commit_architecture"];

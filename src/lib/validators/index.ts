@@ -20,6 +20,7 @@ import {
   validateFlow,
   validateLabels,
   validateNodes,
+  validateAwsServiceNames,
   scoreReadability,
 } from "./geometric";
 import { validateStructure, type StructuralInput } from "./structural";
@@ -36,6 +37,7 @@ export {
   validateLabels,
   validateFlow,
   validateComposition,
+  validateAwsServiceNames,
   scoreReadability,
 } from "./geometric";
 
@@ -66,6 +68,7 @@ export function validateGeometry(state: LayoutState): ValidationReport {
       ...validateLabels(state),
       ...validateFlow(state),
       ...validateComposition(state),
+      ...validateAwsServiceNames(state),
     ],
     state,
   );

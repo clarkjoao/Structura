@@ -25,6 +25,7 @@ import { LLMSelector } from "./LLMSelector";
 import { MentionInput } from "./MentionInput";
 import { ChatSuggestionsEmptyState } from "./ChatSuggestionsEmptyState";
 import { ThreadRenameControl } from "./ThreadRenameControl";
+import { ArchitectureResultBanner } from "./ArchitectureResultBanner";
 
 interface ChatPanelProps {
   onClose: () => void;
@@ -80,6 +81,8 @@ export function ChatPanel({ onClose, selectedNodeIds, selectedNodeId }: ChatPane
     switchThread,
     renameThread,
     deleteThread,
+    lastArchitectureResult,
+    commitArchitecture,
   } = useLLMChat({ selectedNodeIds, selectedNodeId });
 
   const contextualSuggestions = useMemo(
@@ -137,6 +140,10 @@ export function ChatPanel({ onClose, selectedNodeIds, selectedNodeId }: ChatPane
     clearMentions();
     setInputText("");
     dismissPicker();
+  };
+
+  const handleCommit = () => {
+    commitArchitecture();
   };
 
   useEffect(() => {
@@ -337,6 +344,15 @@ export function ChatPanel({ onClose, selectedNodeIds, selectedNodeId }: ChatPane
         </div>
       ) : null}
 
+      {lastArchitectureResult ? (
+        <div className="border-t border-border p-3">
+          <ArchitectureResultBanner
+            result={lastArchitectureResult}
+            onCommit={handleCommit}
+          />
+        </div>
+      ) : null}
+
       <div className="relative space-y-2 border-t border-border p-3">
         {activeMentions.length > 0 ? (
           <div className="flex flex-wrap gap-1">
@@ -363,14 +379,14 @@ export function ChatPanel({ onClose, selectedNodeIds, selectedNodeId }: ChatPane
             onKeyDown={(event) => {
               if (isPickerOpen && keyIs(event, KEY.ARROW_DOWN)) {
                 event.preventDefault();
-                setSelectedIndex((previousIndex) =>
+                setSelectedIndex((previousIndex: number) =>
                   Math.min(previousIndex + 1, Math.max(mentionItems.length - 1, 0)),
                 );
                 return;
               }
               if (isPickerOpen && keyIs(event, KEY.ARROW_UP)) {
                 event.preventDefault();
-                setSelectedIndex((previousIndex) => Math.max(previousIndex - 1, 0));
+                setSelectedIndex((previousIndex: number) => Math.max(previousIndex - 1, 0));
                 return;
               }
               if (isPickerOpen && keyIs(event, KEY.ENTER)) {

@@ -118,7 +118,14 @@ export interface AnalysisResponse {
 export type ParsedLLMResponse =
   | { kind: "text"; message: string }
   | { kind: "patch"; message: string; patch: DiagramPatch | null }
-  | { kind: "analysis"; analysis: AnalysisResponse };
+  | { kind: "analysis"; analysis: AnalysisResponse }
+  | { kind: "architecture"; toolCalls: ArchitectureToolCall[] };
+
+/** An architecture-generation tool call extracted from the model response. */
+export interface ArchitectureToolCall {
+  tool: string;
+  parameters: Record<string, unknown>;
+}
 
 export interface MentionItem {
   id: string;

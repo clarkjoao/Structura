@@ -1,9 +1,11 @@
 import { isWriteTool } from "./tools";
 import { isValidNodeType, isValidPatternId } from "./component-catalog";
+import { ARCHITECTURE_TOOL_NAMES } from "./tools-architecture";
 import type {
   AnalysisFinding,
   AnalysisResponse,
   AnalysisSeverity,
+  ArchitectureToolCall,
   DiagramPatch,
   DiagramPatchAction,
   LLMToolCall,
@@ -255,19 +257,33 @@ function tryParseEnvelope(candidate: string): ParsedLLMResponse | null {
       parsedPatch.actions = sanitizePatchActions(parsedPatch.actions);
     }
     if (parsedPatch && Array.isArray(parsedPatch.toolCalls)) {
+      // Architecture tool calls take priority — extract them and return early.
+      const archCalls: ArchitectureToolCall[] = [];
       const convertedActions: DiagramPatchAction[] = [];
       for (const rawToolCall of parsedPatch.toolCalls) {
-        if (!isToolCall(rawToolCall)) {
-          continue;
-        }
-        if (!isWriteTool(rawToolCall.tool)) {
+        if (!isToolCall(rawToolCall)) continue;
+
+        if (ARCHITECTURE_TOOL_NAMES.includes(rawToolCall.tool)) {
+          // Basic parameter validation for architecture tools.
+          if (
+            rawToolCall.tool !== "commit_architecture" &&
+            rawToolCall.tool !== "list_patterns" &&
+            rawToolCall.tool !== "expand_pattern" &&
+            !("ir" in rawToolCall.parameters)
+          ) {
+            console.warn(`[arch parser] ${rawToolCall.tool} missing "ir" parameter`);
+            continue;
+          }
+          archCalls.push({ tool: rawToolCall.tool, parameters: rawToolCall.parameters });
+        } else if (isWriteTool(rawToolCall.tool)) {
+          const convertedAction = mapToolCallToAction(rawToolCall);
+          if (convertedAction) convertedActions.push(convertedAction);
+        } else {
           console.info("[LLM tool read]", rawToolCall.tool, rawToolCall.parameters);
-          continue;
         }
-        const convertedAction = mapToolCallToAction(rawToolCall);
-        if (convertedAction) {
-          convertedActions.push(convertedAction);
-        }
+      }
+      if (archCalls.length > 0) {
+        return { kind: "architecture", toolCalls: archCalls };
       }
       if (convertedActions.length > 0) {
         parsedPatch.actions = [...parsedPatch.actions, ...convertedActions];

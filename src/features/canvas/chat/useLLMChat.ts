@@ -48,6 +48,8 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
   const switchThread = useLLMStore((state) => state.switchThread);
   const renameThread = useLLMStore((state) => state.renameThread);
   const deleteThread = useLLMStore((state) => state.deleteThread);
+  const lastArchitectureResult = useLLMStore((state) => state.lastArchitectureResult);
+  const commitArchitecture = useLLMStore((state) => state.commitArchitecture);
 
   useEffect(() => {
     if (activeDiagram?.id && activeDiagram.id !== activeDiagramId) {
@@ -123,5 +125,7 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
     switchThread,
     renameThread,
     deleteThread,
+    lastArchitectureResult,
+    commitArchitecture,
   };
 }
