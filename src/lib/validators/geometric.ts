@@ -24,6 +24,7 @@ import {
   rectToPointDistance,
   segmentIntersectsRect,
   segmentLength,
+  segmentsCollinear,
   segmentsIntersect,
   type Segment,
   type Point,
@@ -631,36 +632,57 @@ export function validateComposition(state: LayoutState): Diagnostic[] {
   return diagnostics;
 }
 
-/** Readability score. Lower is better; never blocks. */
+/** Readability score. Lower is better; never blocks.
+ *
+ * Measures the *routed* polylines (waypoints), not the straight centre-to-centre line.
+ * This keeps the readability score consistent with the edge/crosses-node validator. */
 export function scoreReadability(state: LayoutState): ReadabilityScore {
-  const routes: Array<{ segment: Segment; from: string; to: string }> = [];
-  let throughVertexRoutes = 0;
+  // Build per-connection polyline segments and total edge length.
+  const connPolylines: Array<{ segs: Segment[]; from: string; to: string; id: string }> = [];
   let totalEdgeLength = 0;
 
   for (const connection of state.connections) {
-    const segment = connectionSegment(state, connection.from, connection.to);
-    if (!segment) continue;
-    routes.push({ segment, from: connection.from, to: connection.to });
-    totalEdgeLength += segmentLength(segment);
+    const segs = buildSegments(connection, state);
+    if (segs.length === 0) continue; // suppressed
+    connPolylines.push({ segs, from: connection.from, to: connection.to, id: connection.id });
+    for (const seg of segs) totalEdgeLength += segmentLength(seg);
+  }
 
-    for (const node of state.nodes.values()) {
-      if (node.id === connection.from || node.id === connection.to) continue;
-      if (segmentIntersectsRect(segment, nodeRect(node))) throughVertexRoutes += 1;
+  // throughVertexRoutes: count how many times routed segments intersect non-endpoint node bboxes.
+  let throughVertexRoutes = 0;
+  for (const { segs, from, to } of connPolylines) {
+    for (const seg of segs) {
+      for (const node of state.nodes.values()) {
+        if (node.id === from || node.id === to) continue;
+        if (segmentIntersectsRect(seg, nodeRect(node))) throughVertexRoutes += 1;
+      }
     }
   }
 
+  // edgeCrossings: count segment-segment intersections across all routed polylines.
+  // Skip pairs that share an endpoint — those intersections are the correct shape for
+  // fan-in/fan-out and do not represent layout errors.
   let edgeCrossings = 0;
-  for (let i = 0; i < routes.length; i += 1) {
-    for (let j = i + 1; j < routes.length; j += 1) {
-      const a = routes[i]!;
-      const b = routes[j]!;
+  for (let i = 0; i < connPolylines.length; i += 1) {
+    const polyA = connPolylines[i]!;
+    for (let j = i + 1; j < connPolylines.length; j += 1) {
+      const polyB = connPolylines[j]!;
+      if (polyA.from === polyB.from || polyA.from === polyB.to ||
+          polyA.to === polyB.from || polyA.to === polyB.to) continue;
 
-      // Edges meeting at a shared node are not a crossing — they are a fan-out, and the
-      // centre-to-centre segments trivially intersect at that shared centre. Counting them
-      // would penalise every hub in proportion to its degree and drown out real crossings.
-      if (a.from === b.from || a.from === b.to || a.to === b.from || a.to === b.to) continue;
-
-      if (segmentsIntersect(a.segment, b.segment)) edgeCrossings += 1;
+      let crossing = false;
+      outer: for (const segA of polyA.segs) {
+        for (const segB of polyB.segs) {
+          // Skip collinear intersections — two edges can share a vertical rise or horizontal
+          // run in the same gutter (fan-out / parallel routing) without it being a crossing.
+          // Only perpendicular intersections count.
+          if (segmentsIntersect(segA, segB) && !segmentsCollinear(segA, segB)) {
+            crossing = true;
+            break outer;
+          }
+        }
+      }
+      if (crossing) edgeCrossings += 1;
     }
   }
 
@@ -672,8 +694,8 @@ export function scoreReadability(state: LayoutState): ReadabilityScore {
   return {
     throughVertexRoutes,
     edgeCrossings,
-    totalEdgeLength: Math.round(totalEdgeLength),
-    score: Math.round(score * 100) / 100,
+    totalEdgeLength,
+    score,
   };
 }
 

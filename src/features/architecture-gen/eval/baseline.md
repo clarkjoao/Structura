@@ -10,7 +10,7 @@ Lower is better for every metric except grid alignment.
 
 | Metric | Legacy | Engine |
 | --- | ---: | ---: |
-| Readability score | 0.99 | 2.17 |
+| Readability score | 0.99 | 1.58 |
 | Edges through a node | 0 | 0 |
 | Edge crossings | 0 | 0 |
 | Overlap area (px²) | 0 | 0 |
@@ -23,11 +23,11 @@ Lower is better for every metric except grid alignment.
 
 | Case | Legacy score | Engine score | Legacy overlaps | Engine overlaps |
 | --- | ---: | ---: | ---: | ---: |
-| C4 context — e-commerce | 0.8 | 1.3 | 0 | 0 |
-| C4 container — checkout | 1.03 | 2.43 | 0 | 0 |
-| AWS — request-driven API | 1.23 | 2.61 | 0 | 0 |
-| AWS — event-driven fan-out | 1.3 | 3.08 | 0 | 0 |
-| C4 container — with trust boundary | 0.6 | 1.44 | 0 | 0 |
+| C4 context — e-commerce | 0.8 | 1.82 | 0 | 0 |
+| C4 container — checkout | 1.0308131845707604 | 1.6600000000000001 | 0 | 0 |
+| AWS — request-driven API | 1.2324880949681338 | 1.12 | 0 | 0 |
+| AWS — event-driven fan-out | 1.3 | 2.46 | 0 | 0 |
+| C4 container — with trust boundary | 0.6 | 0.84 | 0 | 0 |
 
 ## Reading these numbers honestly
 

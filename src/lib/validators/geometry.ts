@@ -141,3 +141,10 @@ export function collinearOverlap(s1: Segment, s2: Segment, minLength: number): b
 
   return false;
 }
+
+/** True when both segments are parallel (both vertical or both horizontal). */
+export function segmentsCollinear(a: Segment, b: Segment): boolean {
+  const isVertical = (s: Segment) => Math.abs(s.a.x - s.b.x) < 1e-6;
+  const isHorizontal = (s: Segment) => Math.abs(s.a.y - s.b.y) < 1e-6;
+  return (isVertical(a) && isVertical(b)) || (isHorizontal(a) && isHorizontal(b));
+}

@@ -19,10 +19,10 @@
         "edgeCount": 3
       },
       "engine": {
-        "readabilityScore": 1.3,
+        "readabilityScore": 1.82,
         "throughVertexRoutes": 0,
         "edgeCrossings": 0,
-        "totalEdgeLength": 1304,
+        "totalEdgeLength": 1820,
         "overlapAreaPx": 0,
         "overlappingPairs": 0,
         "errors": 0,
@@ -36,10 +36,10 @@
       "id": "c4-container-checkout",
       "title": "C4 container — checkout",
       "legacy": {
-        "readabilityScore": 1.03,
+        "readabilityScore": 1.0308131845707604,
         "throughVertexRoutes": 0,
         "edgeCrossings": 0,
-        "totalEdgeLength": 1031,
+        "totalEdgeLength": 1030.8131845707603,
         "overlapAreaPx": 0,
         "overlappingPairs": 0,
         "errors": 0,
@@ -49,10 +49,10 @@
         "edgeCount": 5
       },
       "engine": {
-        "readabilityScore": 2.43,
+        "readabilityScore": 1.6600000000000001,
         "throughVertexRoutes": 0,
         "edgeCrossings": 0,
-        "totalEdgeLength": 2435,
+        "totalEdgeLength": 1660,
         "overlapAreaPx": 0,
         "overlappingPairs": 0,
         "errors": 0,
@@ -66,10 +66,10 @@
       "id": "aws-request-driven",
       "title": "AWS — request-driven API",
       "legacy": {
-        "readabilityScore": 1.23,
+        "readabilityScore": 1.2324880949681338,
         "throughVertexRoutes": 0,
         "edgeCrossings": 0,
-        "totalEdgeLength": 1232,
+        "totalEdgeLength": 1232.4880949681337,
         "overlapAreaPx": 0,
         "overlappingPairs": 0,
         "errors": 6,
@@ -79,10 +79,10 @@
         "edgeCount": 6
       },
       "engine": {
-        "readabilityScore": 2.61,
+        "readabilityScore": 1.12,
         "throughVertexRoutes": 0,
         "edgeCrossings": 0,
-        "totalEdgeLength": 2613,
+        "totalEdgeLength": 1120,
         "overlapAreaPx": 0,
         "overlappingPairs": 0,
         "errors": 0,
@@ -109,10 +109,10 @@
         "edgeCount": 6
       },
       "engine": {
-        "readabilityScore": 3.08,
+        "readabilityScore": 2.46,
         "throughVertexRoutes": 0,
         "edgeCrossings": 0,
-        "totalEdgeLength": 3078,
+        "totalEdgeLength": 2460,
         "overlapAreaPx": 0,
         "overlappingPairs": 0,
         "errors": 0,
@@ -139,10 +139,10 @@
         "edgeCount": 3
       },
       "engine": {
-        "readabilityScore": 1.44,
+        "readabilityScore": 0.84,
         "throughVertexRoutes": 0,
         "edgeCrossings": 0,
-        "totalEdgeLength": 1440,
+        "totalEdgeLength": 840,
         "overlapAreaPx": 0,
         "overlappingPairs": 0,
         "errors": 0,
@@ -165,7 +165,7 @@
       "gridAlignmentPct": 100
     },
     "engine": {
-      "readabilityScore": 2.17,
+      "readabilityScore": 1.58,
       "throughVertexRoutes": 0,
       "edgeCrossings": 0,
       "overlapAreaPx": 0,
