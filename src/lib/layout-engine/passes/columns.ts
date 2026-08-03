@@ -32,8 +32,7 @@ export const assignColumns: LayoutPass = (input) => {
     if (!nodeIds || nodeIds.length === 0) continue;
 
     const width = Math.max(...nodeIds.map((id) => state.nodes.get(id)?.width ?? LAYOUT.NODE_MIN_W));
-
-    columns.push({ tier, x: cursorX, width, nodeIds });
+    columns.push({ tier, tierIndex: columns.length, x: cursorX, width, nodeIds });
     cursorX += width + colGap;
   }
 

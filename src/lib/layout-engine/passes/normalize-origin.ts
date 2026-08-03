@@ -50,6 +50,19 @@ export const normalizeOrigin: LayoutPass = (input) => {
   for (const column of state.columns) {
     column.x += dx;
   }
+  for (const gutter of state.gutters) {
+    gutter.x += dx;
+  }
+  // Waypoints and lane positions are absolute — translate them to match the node move.
+  for (const connection of state.connections) {
+    if (connection.waypoints) {
+      connection.waypoints = connection.waypoints.map((p) => ({ x: p.x + dx, y: p.y + dy }));
+    }
+  }
+  state.lanes = {
+    forward: state.lanes.forward.map((y) => y + dy),
+    return: state.lanes.return.map((y) => y + dy),
+  };
 
   return state;
 };

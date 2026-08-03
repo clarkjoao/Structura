@@ -23,10 +23,12 @@ import { assignEdgePorts, type Rect } from "./edge-ports";
 import { measureNodes, type MeasureNodeOptions, type MeasureText } from "./measure";
 import { approximateMeasureText } from "./measure-text";
 import { assignColumns } from "./passes/columns";
-import { stackColumns } from "./passes/stacking";
-import { openRoutingCorridors } from "./passes/corridors";
+import { stackRows } from "./passes/stack-rows";
+import { orderRows } from "./passes/order-rows";
+import { sizeGutters } from "./passes/gutters";
 import { layoutBoundaries } from "./passes/boundaries";
 import { layoutCrossCutting } from "./passes/cross-cutting";
+import { routeEdges } from "./passes/route-edges";
 import { normalizeOrigin } from "./passes/normalize-origin";
 import { snapGeometry } from "./passes/snap";
 import {
@@ -265,16 +267,15 @@ export function layoutDiagram(input: LayoutInput, options: LayoutOptions = {}): 
     };
   }
 
-  const passes = [
+  const passes: Array<(state: LayoutState) => LayoutState> = [
     assignColumns,
-    stackColumns,
-    // Clear a corridor for edges that skip a column before boundaries wrap anything.
-    openRoutingCorridors,
+    orderRows,
+    stackRows,
+    applyEdgePorts,
+    sizeGutters,
     layoutBoundaries,
     layoutCrossCutting,
-    applyEdgePorts,
-    // Boundaries extend above and left of their contents, so the diagram can start at a
-    // negative coordinate. Translate it back to the origin before snapping.
+    routeEdges,
     normalizeOrigin,
     snapGeometry,
   ];

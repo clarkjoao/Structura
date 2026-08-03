@@ -66,6 +66,8 @@ function state(nodes: LayoutNode[], overrides: Partial<LayoutState> = {}): Layou
     tiers: TIER_ORDER,
     density: "medium",
     primaryPath: [],
+    gutters: [],
+    lanes: { forward: [], return: [] },
     failures: [],
     ...overrides,
   };
