@@ -50,7 +50,6 @@ export function isCaptureSupported(): boolean {
 /**
  * Blobs to data URLs for transport over JSON (model evaluation).
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -76,7 +75,6 @@ export async function captureCanvas(
   const t0 = performance.now();
 
   // html-to-image is already a dep of the app (used by the share/export feature).
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { toPng } = await import("html-to-image");
 
   const dataUrl = await toPng(element, {
