@@ -85,6 +85,21 @@ export const LAYOUT = {
   ORIGIN_Y: 40,
 } as const;
 
+/** Number of median sweeps in the crossing-reduction pass (P2). Gains saturate after ~4. */
+export const MAX_ORDERING_SWEEPS = 4;
+
+/** Vertical pitch between adjacent channels inside a gutter. */
+export const CHANNEL_PITCH = 16;
+
+/** Vertical pitch between adjacent horizontal routing lanes. */
+export const LANE_PITCH = 24;
+
+/** Gap between the main flow and the first routing lane above/below it. */
+export const LANE_GAP = 40;
+
+/** Vertical misalignment tolerance for a direct edge to bypass the gutter channel. */
+export const ALIGNMENT_TOLERANCE = 8;
+
 /**
  * Semantic palette — fill/stroke pairs by role.
  * Applied when a node carries no explicit colour of its own.

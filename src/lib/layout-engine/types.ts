@@ -114,6 +114,9 @@ export interface LayoutConnection {
 /** One laid-out column. */
 export interface LayoutColumn {
   tier: Tier;
+  /** Position of this column's tier in `TIER_ORDER`. Used by routeEdges to detect
+   * tier-skipping even when intermediate tiers are empty and their columns collapsed. */
+  tierIndex: number;
   /** Left edge in flow coordinates. */
   x: number;
   /** Widest node in the column. */
