@@ -27,7 +27,7 @@
  */
 
 import { MAX_ORDERING_SWEEPS } from "../constants";
-import { cloneState, type LayoutColumn, type LayoutNode, type LayoutPass, type LayoutState } from "../types";
+import { cloneState, type LayoutColumn, type LayoutPass, type LayoutState } from "../types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -149,9 +149,6 @@ export function countCrossings(state: LayoutState): number {
   let total = 0;
 
   for (let ci = 0; ci < state.columns.length - 1; ci += 1) {
-    const colA = state.columns[ci]!;
-    const colB = state.columns[ci + 1]!;
-
     // Collect edges between these two columns.
     const ab: Array<{ from: string; to: string; fromPos: number; toPos: number }> = [];
     for (const conn of state.connections) {
@@ -211,7 +208,6 @@ function orderClustersByMedian(
   for (const cluster of new Set(clusters.values())) {
     const refPositions: number[] = [];
     for (const id of cluster.nodeIds) {
-      const refNodeIds = refColumn.nodeIds;
       // Find neighbors of this node in the reference column (edges to/from ref column).
       for (const conn of state.connections) {
         const otherId = conn.from === id ? conn.to : conn.from === id ? conn.from : undefined;
@@ -251,14 +247,13 @@ function orderClustersByMedian(
     return a.cluster.nodeIds[0]!.localeCompare(b.cluster.nodeIds[0]!);
   });
 
-  // Append floating in their current relative order.
-  const floatingOrder: string[] = [];
-  for (const id of col.nodeIds) {
-    const cluster = clusters.get(id)!;
-    if (!clusterMedian.has(cluster) && !floatingOrder.includes(id)) {
-      floatingOrder.push(id);
-    }
-  }
+  // Append floating in alphabetical order for determinism — not iteration order.
+  // This matches the old stacking.ts behaviour and prevents spurious re-ordering
+  // when two floating nodes share the same median (e.g. both connect to the same
+  // target in the next column).
+  const floatingOrder = col.nodeIds
+    .filter((id) => !clusterMedian.has(clusters.get(id)!))
+    .sort((a, b) => a.localeCompare(b));
 
   // Build final order: anchored clusters first, then floating.
   const result: string[] = [];
