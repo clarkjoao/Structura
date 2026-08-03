@@ -91,8 +91,10 @@ export const MAX_ORDERING_SWEEPS = 4;
 /** Vertical pitch between adjacent channels inside a gutter. */
 export const CHANNEL_PITCH = 16;
 
-/** Vertical pitch between adjacent horizontal routing lanes. */
-export const LANE_PITCH = 24;
+/** Vertical pitch between adjacent horizontal routing lanes.
+ * Must be >= ARROWHEAD_CLEARANCE so two adjacent lanes in the same gutter are
+ * visually distinguishable (avoids false edge/stacked positives). */
+export const LANE_PITCH = 40;
 
 /** Gap between the main flow and the first routing lane above/below it. */
 export const LANE_GAP = 40;

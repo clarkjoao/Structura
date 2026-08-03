@@ -126,8 +126,10 @@ export const routeEdges: LayoutPass = (input) => {
       if (toCol.tierIdx > fromCol.tierIdx) {
         forwardLaneEdges.push({
           id: conn.id,
-          srcX: state.nodes.get(conn.from)!.x,
-          dstX: state.nodes.get(conn.to)!.x + state.nodes.get(conn.to)!.width,
+          // The vertical segment rises at the source node's right edge, not its left edge.
+          // Use the right edge so the lane interval correctly spans where the edge actually is.
+          srcX: state.nodes.get(conn.from)!.x + state.nodes.get(conn.from)!.width,
+          dstX: state.nodes.get(conn.to)!.x,
         });
       } else {
         returnLaneEdges.push({

@@ -294,6 +294,38 @@ export function validateEdges(state: LayoutState): Diagnostic[] {
   // ── edge/stacked ──────────────────────────────────────────────────────────
   // Two edges are stacked when their routed polylines share a collinear overlapping segment,
   // excluding the natural collinearity of edges that share an endpoint (convergence/divergence).
+
+  // Build gutter boundaries from columns: gutter g sits between columns[g] and columns[g+1].
+  // A vertical segment at x is in gutter g iff gutterLeft_g <= x <= gutterRight_g.
+  const gutterBoundaries: Array<{ left: number; right: number }> = [];
+  for (let g = 0; g < state.columns.length - 1; g++) {
+    const leftCol = state.columns[g]!;
+    const rightCol = state.columns[g + 1]!;
+    const leftRight = leftCol.nodeIds.length > 0
+      ? Math.max(...[...leftCol.nodeIds].map(id => (state.nodes.get(id)?.x ?? 0) + (state.nodes.get(id)?.width ?? 0)))
+      : leftCol.x + leftCol.width;
+    const rightLeft = rightCol.x;
+    gutterBoundaries.push({ left: leftRight, right: rightLeft });
+  }
+
+  function isInGutter(seg: Segment, gutterIdx: number): boolean {
+    if (gutterIdx < 0 || gutterIdx >= gutterBoundaries.length) return false;
+    if (Math.abs(seg.a.x - seg.b.x) < 1e-6) {
+      // Vertical segment — check if x is within gutter bounds
+      const g = gutterBoundaries[gutterIdx]!;
+      return seg.a.x >= g.left && seg.a.x <= g.right;
+    }
+    return false;
+  }
+
+  function inSameGutter(segA: Segment, segB: Segment): boolean {
+    if (Math.abs(segA.a.x - segB.a.x) > 1e-6) return false; // different x means different gutter
+    for (let g = 0; g < gutterBoundaries.length; g++) {
+      if (isInGutter(segA, g) && isInGutter(segB, g)) return true;
+    }
+    return false;
+  }
+
   const conns = state.connections.filter((c) => {
     const segs = connSegments.get(c.id)!;
     return segs.length > 0;
@@ -317,20 +349,34 @@ export function validateEdges(state: LayoutState): Diagnostic[] {
         connA.to === connB.from ||
         connA.to === connB.to;
 
-      const segsA = connSegments.get(connA.id)!;
-      const segsB = connSegments.get(connB.id)!;
-
       if (shareEndpoint) {
-        // Only flag if there's a collinear overlap on a segment AWAY from the shared endpoint.
-        // This is harder to detect without more context, so for now we skip shared-endpoint
-        // pairs entirely — the stagger in routeEdges already prevents intra-gutter stacking.
+        // Skip the entire pair — stagger in routeEdges prevents intra-gutter stacking.
         continue;
       }
 
-      // General case: check all segment pairs for collinear overlap.
+      // Edges that both rise from the same source node (or descend into the same target node)
+      // also share a natural collinear point at the anchor — the vertical segment leaving/entering
+      // the shared node. Flag stacking only away from those anchor segments.
+      const shareSource = connA.from === connB.from;
+      const shareTarget = connA.to === connB.to;
+
+      const segsA = connSegments.get(connA.id)!;
+      const segsB = connSegments.get(connB.id)!;
+
       let stacked = false;
-      outer: for (const segA of segsA) {
-        for (const segB of segsB) {
+      outer: for (let ia = 0; ia < segsA.length; ia++) {
+        for (let ib = 0; ib < segsB.length; ib++) {
+          const segA = segsA[ia]!;
+          const segB = segsB[ib]!;
+
+          // Skip: (a) fan-out anchor segments, (b) fan-in anchor segments,
+          // (c) segment pairs that both live in the same gutter — channel staggering
+          // in routeEdges gives each channel at least CHANNEL_PITCH spacing, so they
+          // cannot overlap enough to be a real stacking problem.
+          if (shareSource && ia === 0 && ib === 0) continue;
+          if (shareTarget && ia === segsA.length - 1 && ib === segsB.length - 1) continue;
+          if (inSameGutter(segA, segB)) continue;
+
           if (collinearOverlap(segA, segB, LAYOUT.ARROWHEAD_CLEARANCE)) {
             stacked = true;
             break outer;
