@@ -26,6 +26,7 @@ import {
   segmentLength,
   segmentsIntersect,
   type Segment,
+  type Point,
 } from "./geometry";
 import { SCORE_WEIGHTS, type Diagnostic, type ReadabilityScore } from "./types";
 
@@ -221,78 +222,142 @@ function hasChildBoundary(state: LayoutState, boundary: LayoutBoundary): boolean
   return false;
 }
 
-export function validateEdges(state: LayoutState): Diagnostic[] {
-  const diagnostics: Diagnostic[] = [];
-  const segments = new Map<string, Segment>();
+/**
+ * Builds all segments for a connection.
+ * Uses waypoints when present (P7 routed polyline); falls back to straight center-to-centre.
+ * Returns empty array for suppressed edges (they are not drawn).
+ */
+function buildSegments(
+  connection: { from: string; to: string; waypoints?: Point[]; routing?: string },
+  state: LayoutState,
+): Segment[] {
+  if (connection.routing === "suppressed") return [];
 
-  for (const connection of state.connections) {
-    const segment = connectionSegment(state, connection.from, connection.to);
-    if (segment) segments.set(connection.id, segment);
+  if (connection.waypoints && connection.waypoints.length >= 2) {
+    const segs: Segment[] = [];
+    for (let i = 0; i < connection.waypoints.length - 1; i += 1) {
+      segs.push({ a: connection.waypoints[i]!, b: connection.waypoints[i + 1]! });
+    }
+    return segs;
   }
 
-  // An edge running through an unrelated node is the single worst readability defect.
-  for (const connection of state.connections) {
-    const segment = segments.get(connection.id);
-    if (!segment) continue;
+  // Fallback to straight centre-to-centre (pre-P7 behaviour).
+  const segment = connectionSegment(state, connection.from, connection.to);
+  return segment ? [segment] : [];
+}
 
-    // Edges into the cross-cutting band are exempt. The band sits below the whole flow by
-    // design, so an edge reaching it must cross whatever rows lie between — that is a
-    // consequence of the layout convention, not something the author can fix by changing
-    // intent. Reporting it would leave the model with no valid move: this validator would
-    // push it to drop the edge while c4/cross-cutting-no-entry pushes it to add one.
-    const touchesCrossCuttingBand =
-      state.nodes.get(connection.from)?.tier === "cross-cutting" ||
-      state.nodes.get(connection.to)?.tier === "cross-cutting";
-    if (touchesCrossCuttingBand) continue;
+export function validateEdges(state: LayoutState): Diagnostic[] {
+  const diagnostics: Diagnostic[] = [];
+
+  // Map each connection to its polyline segments.
+  const connSegments = new Map<string, Segment[]>();
+  for (const connection of state.connections) {
+    const segs = buildSegments(connection, state);
+    connSegments.set(connection.id, segs);
+  }
+
+  // ── edge/crosses-node ─────────────────────────────────────────────────────
+  // A polyline segment that hits a non-endpoint node bbox is an error.
+  for (const connection of state.connections) {
+    const segs = connSegments.get(connection.id)!;
+    if (segs.length === 0) continue; // suppressed
 
     for (const node of state.nodes.values()) {
       if (node.id === connection.from || node.id === connection.to) continue;
-      if (!segmentIntersectsRect(segment, nodeRect(node))) continue;
 
-      diagnostics.push({
-        code: "edge/crosses-node",
-        severity: "error",
-        class: "geometry",
-        message: `The connection from "${nameOf(state, connection.from)}" to "${nameOf(
-          state,
-          connection.to,
-        )}" runs straight through "${node.name}".`,
-        subject: { kind: "edge", ids: [connection.id, node.id] },
-        evidence: { blockingNode: node.name, blockingTier: node.tier },
-        supportedFixes: [
-          {
-            action: "increase-density",
-            description: `Raise the density hint so tiers get wider routing corridors.`,
-          },
-        ],
-      });
+      const rect = nodeRect(node);
+      for (const seg of segs) {
+        if (segmentIntersectsRect(seg, rect)) {
+          diagnostics.push({
+            code: "edge/crosses-node",
+            severity: "error",
+            class: "geometry",
+            message: `The connection from "${nameOf(state, connection.from)}" to "${nameOf(
+              state,
+              connection.to,
+            )}" runs straight through "${node.name}".`,
+            subject: { kind: "edge", ids: [connection.id, node.id] },
+            evidence: { blockingNode: node.name, blockingTier: node.tier },
+            supportedFixes: [
+              {
+                action: "increase-density",
+                description: `Raise the density hint so tiers get wider routing corridors.`,
+              },
+            ],
+          });
+          break; // one report per edge, not one per segment
+        }
+      }
     }
   }
 
-  // Collinear runs read as one line, hiding a relationship.
-  const entries = [...segments.entries()];
-  for (let i = 0; i < entries.length; i += 1) {
-    for (let j = i + 1; j < entries.length; j += 1) {
-      const [idA, segmentA] = entries[i]!;
-      const [idB, segmentB] = entries[j]!;
-      if (!collinearOverlap(segmentA, segmentB, LAYOUT.ARROWHEAD_CLEARANCE)) continue;
+  // ── edge/stacked ──────────────────────────────────────────────────────────
+  // Two edges are stacked when their routed polylines share a collinear overlapping segment,
+  // excluding the natural collinearity of edges that share an endpoint (convergence/divergence).
+  const conns = state.connections.filter((c) => {
+    const segs = connSegments.get(c.id)!;
+    return segs.length > 0;
+  });
 
-      diagnostics.push({
-        code: "edge/stacked",
-        severity: "warning",
-        class: "geometry",
-        message: `Connections "${idA}" and "${idB}" run along the same line, so they read as one.`,
-        subject: { kind: "edge", ids: [idA, idB] },
-        supportedFixes: [
-          {
-            action: "drop-edge",
-            description: `Remove one if it is redundant, or move an endpoint so the paths separate.`,
-          },
-        ],
-      });
+  const reported = new Set<string>();
+  for (let i = 0; i < conns.length; i += 1) {
+    for (let j = i + 1; j < conns.length; j += 1) {
+      const connA = conns[i]!;
+      const connB = conns[j]!;
+
+      // Skip if already reported.
+      const pairKey = connA.id < connB.id ? `${connA.id}·${connB.id}` : `${connB.id}·${connA.id}`;
+      if (reported.has(pairKey)) continue;
+
+      // Edges that share an endpoint are naturally collinear at that endpoint — this is
+      // not a stacking problem, it's the correct shape for convergence/divergence.
+      const shareEndpoint =
+        connA.from === connB.from ||
+        connA.from === connB.to ||
+        connA.to === connB.from ||
+        connA.to === connB.to;
+
+      const segsA = connSegments.get(connA.id)!;
+      const segsB = connSegments.get(connB.id)!;
+
+      if (shareEndpoint) {
+        // Only flag if there's a collinear overlap on a segment AWAY from the shared endpoint.
+        // This is harder to detect without more context, so for now we skip shared-endpoint
+        // pairs entirely — the stagger in routeEdges already prevents intra-gutter stacking.
+        continue;
+      }
+
+      // General case: check all segment pairs for collinear overlap.
+      let stacked = false;
+      outer: for (const segA of segsA) {
+        for (const segB of segsB) {
+          if (collinearOverlap(segA, segB, LAYOUT.ARROWHEAD_CLEARANCE)) {
+            stacked = true;
+            break outer;
+          }
+        }
+      }
+
+      if (stacked) {
+        reported.add(pairKey);
+        diagnostics.push({
+          code: "edge/stacked",
+          severity: "warning",
+          class: "geometry",
+          message: `Connections "${connA.id}" and "${connB.id}" run along the same line, so they read as one.`,
+          subject: { kind: "edge", ids: [connA.id, connB.id] },
+          supportedFixes: [
+            {
+              action: "drop-edge",
+              description: `Remove one if it is redundant, or move an endpoint so the paths separate.`,
+            },
+          ],
+        });
+      }
     }
   }
 
+  // ── edge/arrowhead-clearance ───────────────────────────────────────────────
   for (const connection of state.connections) {
     const source = state.nodes.get(connection.from);
     const target = state.nodes.get(connection.to);
@@ -321,15 +386,24 @@ export function validateEdges(state: LayoutState): Diagnostic[] {
 export function validateLabels(state: LayoutState): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
 
+  /** Longest segment of a connection's polyline (used for label midpoint). */
+  function longestMidpoint(connection: { from: string; to: string; waypoints?: Point[]; routing?: string }): Point | null {
+    const segs = buildSegments(connection, state);
+    if (segs.length === 0) return null;
+    let longest = segs[0]!;
+    let maxLen = Math.hypot(longest.b.x - longest.a.x, longest.b.y - longest.a.y);
+    for (let i = 1; i < segs.length; i += 1) {
+      const len = Math.hypot(segs[i]!.b.x - segs[i]!.a.x, segs[i]!.b.y - segs[i]!.a.y);
+      if (len > maxLen) { maxLen = len; longest = segs[i]!; }
+    }
+    return { x: (longest.a.x + longest.b.x) / 2, y: (longest.a.y + longest.b.y) / 2 };
+  }
+
   for (const connection of state.connections) {
     if (!connection.label) continue;
-    const segment = connectionSegment(state, connection.from, connection.to);
-    if (!segment) continue;
+    const midpoint = longestMidpoint(connection);
+    if (!midpoint) continue;
 
-    const midpoint = {
-      x: (segment.a.x + segment.b.x) / 2,
-      y: (segment.a.y + segment.b.y) / 2,
-    };
     const required = labelMaskWidth(connection.label) / 2 + LABEL_MASK.BREATHING_ROOM;
 
     for (const node of state.nodes.values()) {
@@ -365,12 +439,9 @@ export function validateLabels(state: LayoutState): Diagnostic[] {
     for (let j = i + 1; j < labelled.length; j += 1) {
       const a = labelled[i]!;
       const b = labelled[j]!;
-      const segmentA = connectionSegment(state, a.from, a.to);
-      const segmentB = connectionSegment(state, b.from, b.to);
-      if (!segmentA || !segmentB) continue;
-
-      const midA = { x: (segmentA.a.x + segmentA.b.x) / 2, y: (segmentA.a.y + segmentA.b.y) / 2 };
-      const midB = { x: (segmentB.a.x + segmentB.b.x) / 2, y: (segmentB.a.y + segmentB.b.y) / 2 };
+      const midA = longestMidpoint(a);
+      const midB = longestMidpoint(b);
+      if (!midA || !midB) continue;
 
       const required = (labelMaskWidth(a.label!) + labelMaskWidth(b.label!)) / 2;
       const distance = Math.hypot(midA.x - midB.x, midA.y - midB.y);
