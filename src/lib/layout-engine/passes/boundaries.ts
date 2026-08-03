@@ -1,8 +1,12 @@
 /**
- * P3 — boundary geometry.
+ * P5 — boundary geometry.
  *
  * A boundary is the bounding box of its members plus padding and a title band. Nesting is
  * resolved innermost-first, so an outer boundary sees its children at their final size.
+ *
+ * Multi-tier boundaries (e.g. VPC spanning application + data tiers): when the nodes inside
+ * a boundary span more than one tier, the boundary's horizontal extent covers all those tier
+ * columns — not just the nodes. This mirrors how archify renders security-group boundaries.
  *
  * When a boundary grows, later siblings shift to make room — the cascading reflow from
  * event-modeling-tools. Growing a container without reflowing its siblings is what produces
@@ -14,6 +18,7 @@ import { LAYOUT } from "../constants";
 import {
   cloneState,
   type LayoutBoundary,
+  type LayoutColumn,
   type LayoutPass,
   type LayoutState,
   type LayoutNode,
@@ -58,11 +63,38 @@ function isEmpty(box: Box): boolean {
   return box.minX === Infinity;
 }
 
+/**
+ * Returns the tiers touched by a boundary's members, based on the columns map.
+ * Only returns the tier indices that have an actual column (not empty tiers).
+ */
+function tiersForBoundary(
+  boundary: LayoutBoundary,
+  nodes: Map<string, LayoutNode>,
+  columns: Map<string, { tierIndex: number }>,
+): Set<number> {
+  const tiers = new Set<number>();
+  for (const nodeId of boundary.contains) {
+    const node = nodes.get(nodeId);
+    if (!node) continue;
+    const col = columns.get(node.tier);
+    if (col) tiers.add(col.tierIndex);
+  }
+  return tiers;
+}
+
 export const layoutBoundaries: LayoutPass = (input) => {
   const state = cloneState(input);
   if (state.boundaries.size === 0) return state;
 
   computeDepths(state);
+
+  // Build a tier → column map for multi-tier boundary expansion.
+  // state.columns may be empty if assignColumns hasn't run yet (e.g. direct call),
+  // in which case we fall back to node-only bounding boxes.
+  const tierToColumn = new Map<string, LayoutColumn>();
+  for (const col of state.columns) {
+    tierToColumn.set(col.tier, col);
+  }
 
   // Innermost first: an outer boundary must see its children at final size.
   const ordered = [...state.boundaries.values()].sort((a, b) => b.depth - a.depth);
@@ -85,6 +117,28 @@ export const layoutBoundaries: LayoutPass = (input) => {
 
     for (const child of childBoundaries.get(boundary.id) ?? []) {
       extend(box, child.x, child.y, child.width, child.height);
+    }
+
+    // Multi-tier boundaries: when members span more than one tier column, the boundary's
+    // horizontal extent covers the full column range — not just the nodes inside.
+    // This produces the archify security-group / VPC pattern where the boundary frame
+    // visually spans multiple tiers.
+    if (tierToColumn.size > 0 && box.minX !== Infinity) {
+      const boundaryTiers = tiersForBoundary(boundary, state.nodes, tierToColumn);
+      if (boundaryTiers.size > 1) {
+        const sortedTiers = [...boundaryTiers].sort((a, b) => a - b);
+        const firstCol = tierToColumn.get(state.columns[sortedTiers[0]!]!.tier);
+        const lastCol = tierToColumn.get(state.columns[sortedTiers[sortedTiers.length - 1]!]!.tier);
+        if (firstCol && lastCol) {
+          box.minX = Math.min(box.minX, firstCol.x);
+          box.maxX = Math.max(box.maxX, firstCol.x + firstCol.width);
+          // Extend through all intermediate columns.
+          for (let t = 1; t < sortedTiers.length; t++) {
+            const col = tierToColumn.get(state.columns[sortedTiers[t]!]!.tier);
+            if (col) box.maxX = Math.max(box.maxX, col.x + col.width);
+          }
+        }
+      }
     }
 
     if (isEmpty(box)) {

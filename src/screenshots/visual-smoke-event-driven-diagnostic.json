@@ -1,0 +1,64 @@
+{
+  "nodeCount": 16,
+  "connectionCount": 22,
+  "routingModes": {
+    "gutter": 9,
+    "suppressed": 9,
+    "forward-lane": 2,
+    "return-lane": 1,
+    "direct": 1
+  },
+  "edgeErrors": 0,
+  "nodeErrors": 0,
+  "invariantViolations": 0,
+  "waypointsSample": [
+    {
+      "id": "c1",
+      "routing": "gutter",
+      "waypoints": [
+        {
+          "x": 240,
+          "y": 270
+        },
+        {
+          "x": 280,
+          "y": 270
+        },
+        {
+          "x": 280,
+          "y": 430
+        },
+        {
+          "x": 590,
+          "y": 430
+        }
+      ]
+    },
+    {
+      "id": "c2",
+      "routing": "suppressed"
+    },
+    {
+      "id": "c3",
+      "routing": "gutter",
+      "waypoints": [
+        {
+          "x": 790,
+          "y": 430
+        },
+        {
+          "x": 860,
+          "y": 430
+        },
+        {
+          "x": 860,
+          "y": 590
+        },
+        {
+          "x": 1170,
+          "y": 590
+        }
+      ]
+    }
+  ]
+}

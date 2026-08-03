@@ -165,6 +165,31 @@ describe("boundaries become React Flow parents", () => {
       expect(member.position.y + (member.height ?? 0)).toBeLessThanOrEqual(panel.height ?? 0);
     }
   });
+
+  it("spans multiple tiers when members cross tier boundaries", () => {
+    // A VPC containing services in both "application" and "data" tiers — the boundary
+    // frame must cover the full column range, not just the nodes inside it.
+    const vpcDiagram: LayoutInput = {
+      nodes: [
+        { id: "svc", type: "container", name: "Order Service", tier: "application" },
+        { id: "db", type: "container", name: "Order DB", tier: "data" },
+        { id: "cache", type: "container", name: "Redis", tier: "data" },
+      ],
+      boundaries: [
+        {
+          id: "vpc",
+          name: "Production VPC",
+          kind: "aws-vpc",
+          contains: ["svc", "db", "cache"],
+        },
+      ],
+    };
+    const result = layoutDiagram(vpcDiagram);
+    const panel = result.nodes.find((n) => n.id === "vpc")!;
+
+    // The panel must be wider than a single node — it spans two tier columns.
+    expect(panel.width!).toBeGreaterThan(400);
+  });
 });
 
 describe("explicit failure instead of silent fallback", () => {

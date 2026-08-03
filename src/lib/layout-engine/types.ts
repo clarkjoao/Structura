@@ -109,6 +109,9 @@ export interface LayoutConnection {
    * "suppressed" edges have no waypoints and do not appear as drawn arrows.
    */
   routing?: RoutingMode;
+
+  /** Line style: "solid" (default) or "dashed" for optional/background flows. */
+  edgeStyle?: "solid" | "dashed";
 }
 
 /** One laid-out column. */

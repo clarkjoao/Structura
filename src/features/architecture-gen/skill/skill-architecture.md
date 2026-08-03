@@ -106,6 +106,38 @@ belongs to it.
 - **Label what is not obvious.** A protocol, a data contract, a cross-boundary hop. An arrow
   from a service to its own database does not need the word "queries".
 
+## VPC and network boundaries
+
+A VPC boundary groups nodes that live inside the same private network. Declare it as a
+`boundary` with `kind: "vpc"` containing the private subnets (application services, databases,
+internal queues):
+
+```json
+{
+  "id": "private-vpc",
+  "name": "VPC (private subnets)",
+  "kind": "vpc",
+  "contains": ["order-service", "payment-service", "order-db", "order-queue"]
+}
+```
+
+**What stays outside the VPC:** external actors, API gateways, load balancers, and any managed
+service reachable from the internet (CloudFront, S3 static hosting, SES). These are in `external`,
+`client` or `gateway` tiers.
+
+**Cross-account and shared services** (Cognito, SES, SNS from a shared account) go in
+`cross-cutting` — they are outside the VPC but shared by it. Connect them with a single
+representative edge from the service that owns the relationship.
+
+**One VPC per diagram.** If the user describes two VPCs (prod + staging, or hub + spoke),
+split into two diagrams. A boundary wrapping a boundary is the only exception to "one level
+of nesting".
+
+The layout engine places the VPC boundary around its member nodes after column assignment.
+All tiers the VPC spans share the same left edge; the boundary height covers from the topmost
+to the bottommost member. There is no padding above or below the boundary beyond what the
+contained nodes already have.
+
 ## C4 vocabulary
 
 Use these `type` values verbatim.
@@ -165,6 +197,9 @@ invalid `aws_service` triggers `aws/unknown-service` and blocks the round. If th
 a managed AWS resource (your own containers, VMs, databases), do not use an `aws-*` type — use
 `type: "container"` or `type: "aws-database"` with a real managed service.
 
+If `aws/unknown-service` appears, add the correct `aws_service` value from the table above.
+If the service is not in the table, use `type: "container"` — it is not a managed AWS service.
+
 ## Connection intent
 
 | `intent`        | Use for                                                |
@@ -174,6 +209,10 @@ a managed AWS resource (your own containers, VMs, databases), do not use an `aws
 | `event`         | Published to a bus, consumers unknown to the publisher |
 | `data-flow`     | Reads and writes to a store                            |
 | `dependency`    | Needs it, but no runtime traffic in this view          |
+
+**Line style** — `edge_style: "dashed"` marks optional, background or async flows that are not
+part of the main happy path. Use it for retries, manual interventions, or fallback paths. The
+default is `edge_style: "solid"`. It is optional; omit it unless the style carries meaning.
 
 Direction is the direction of **initiation**, not of data. A service reading from a database
 is `service -> database`.
@@ -225,7 +264,8 @@ coordinate.
 | `flow/orphan-node`         | A node has no connections                                    | Connect it, mark it cross-cutting, or remove it                            |
 | `c4/cross-cutting-no-entry`| A cross-cutting service has nothing pointing at it           | Add one representative consumer, or drop it                                |
 | `c4/too-many-primary`      | More than twelve primary elements                            | Split by level, or move supporting services to cross-cutting               |
-| `boundary/child-outside` | A boundary does not fully contain its members             | Geometry issue — the layout engine will address this                          |
+| `boundary/child-outside` | A boundary does not fully contain its members             | Geometry issue — the layout engine will address this |
+| `aws/unknown-service`     | `type: "aws-*"` without a valid `aws_service` field         | Add the matching `aws_service` id from the catalog    |
 
 **Geometry issues never block a commit.** `edge/crosses-node`, `edge/stacked`, `label/clearance`,
 `label/collision` and `boundary/child-outside` are the engine's responsibility — they will be

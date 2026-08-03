@@ -12,6 +12,7 @@
 import type { Component } from "../../model/diagram.types";
 import type { Connection } from "../../model/connection.types";
 import type { ComponentType } from "../../model/component.types";
+import { StrokeStyle } from "../../enums";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
@@ -42,6 +43,8 @@ export interface ArchitectureConnectionPayload {
   label?: string;
   /** Orthogonal waypoints for the edge path. Written to edgeLayouts in the store. */
   waypoints?: Array<{ x: number; y: number }>;
+  /** Line style: "solid" (default) or "dashed". */
+  edgeStyle?: "solid" | "dashed";
 }
 
 export interface ArchitecturePayload {
@@ -130,6 +133,10 @@ export const architectureSlice = (
           // Connections always carry a label field; an unlabelled edge is an empty string,
           // which is what the canvas renders as no label.
           label: connection.label ?? "",
+          // edgeStyle from the IR propagates to the canvas style so dashed edges render correctly.
+          ...(connection.edgeStyle && {
+            style: { strokeStyle: connection.edgeStyle as StrokeStyle },
+          }),
         };
 
         if (scene) {

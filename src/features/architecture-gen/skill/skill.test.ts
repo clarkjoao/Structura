@@ -95,9 +95,15 @@ describe("skill content", () => {
 describe("the worked example is real", () => {
   /** Extracts the JSON block from the example section. */
   function exampleIr(): unknown {
-    const match = ARCHITECTURE_SKILL.match(/```json\n([\s\S]*?)```/);
-    expect(match, "skill must contain a JSON example").not.toBeNull();
-    return JSON.parse(match![1]!);
+    // The skill has multiple JSON blocks. Find the one containing "schema_version"
+    // (the worked example) rather than other snippets like the VPC boundary.
+    const jsonBlocks = ARCHITECTURE_SKILL.matchAll(/```json\n([\s\S]*?)```/g);
+    for (const match of jsonBlocks) {
+      if (match[1]!.includes('"schema_version"')) {
+        return JSON.parse(match[1]!);
+      }
+    }
+    throw new Error("Worked example not found in skill");
   }
 
   it("parses against the real schema", () => {

@@ -3,7 +3,7 @@ import { sizeGutters } from "./gutters";
 import { routeEdges } from "./route-edges";
 import { assignColumns } from "./columns";
 import { stackRows } from "./stack-rows";
-import { buildStepPath } from "../../../features/canvas/edges/geometry/orthogonal";
+import { buildStepPath } from "@/features/canvas/edges/geometry/orthogonal";
 import {
   type LayoutNode,
   type LayoutConnection,

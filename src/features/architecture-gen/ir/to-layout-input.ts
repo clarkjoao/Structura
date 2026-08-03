@@ -49,6 +49,7 @@ export function toLayoutInput(ir: ArchitectureIr): LayoutInput {
       technology: connection.technology,
       intent: connection.intent,
       isPrimaryPath: connection.is_primary_path,
+      edgeStyle: connection.edge_style,
     })),
     // Tiers from meta.tiers if provided, otherwise derived from the nodes.
     tiers: ir.meta.tiers ?? deriveTiersFromNodes(ir),

@@ -80,6 +80,7 @@ export interface SessionOptions {
 export class ProposalSession {
   private readonly rounds: Round[] = [];
   private bestIrErrors = Number.POSITIVE_INFINITY;
+  private bestNodeCount = 0;
   private stalls = 0;
 
   constructor(private readonly options: SessionOptions = {}) {}
@@ -92,8 +93,11 @@ export class ProposalSession {
   get committable(): Round | undefined {
     for (let i = this.rounds.length - 1; i >= 0; i -= 1) {
       const round = this.rounds[i]!;
-      // Commit only when there are no IR-class errors. Geometry issues never block.
-      if (round.layout?.ok && round.irErrors === 0) return round;
+      // Commit when the engine produced geometry. IR/schema errors are reported as warnings,
+      // not blockers — the user can apply a partial diagram and refine.
+      // layout.ok === false means the engine had issues (unknown refs, etc.) but still ran;
+      // layout.state.nodes.size === 0 means it stopped before producing any geometry.
+      if (round.layout && round.layout.state.nodes.size > 0) return round;
     }
     return undefined;
   }
@@ -132,49 +136,54 @@ export class ProposalSession {
 
     const ir = parsed.ir;
 
-    // Structural checks first: an unknown id makes every geometric finding meaningless,
-    // and this costs microseconds compared to running the engine.
+    // Run the layout engine — structural errors are reported but never block.
+    // The engine can still produce useful geometry even when an id is unknown,
+    // and the model needs to see partial output to iteratively fix the IR.
     const structural = validateIr(toStructuralInput(ir));
-    if (structural.irErrors > 0) {
-      return this.record(ir, undefined, structural);
-    }
 
     const layout = layoutDiagram(toLayoutInput(ir), { measureText: this.options.measureText });
-    if (!layout.ok && layout.failures.length > 0) {
-      const report: ValidationReport = {
-        diagnostics: layout.failures.map((failure) => ({
-          code: failure.code,
-          severity: "error" as const,
-          class: "ir" as const,
-          message: failure.message,
-          subject: { kind: "node" as const, ids: failure.nodeIds ?? [] },
-          supportedFixes: [
-            {
-              action: "drop-edge" as const,
-              description: "Remove or correct the elements named above, then resend.",
-            },
-          ],
-        })),
-        errors: layout.failures.length,
-        warnings: 0,
-        irErrors: layout.failures.length,
-        geometryIssues: 0,
+
+    // If the engine ran cleanly, validate geometry for quality signal.
+    // If the engine failed, report its failures — but still record the result
+    // so the user can inspect what the engine produced before giving up.
+    let report: ValidationReport;
+    if (layout.ok) {
+      const geometric = validateGeometry(layout.state);
+      report = {
+        diagnostics: [...structural.diagnostics, ...geometric.diagnostics],
+        errors: structural.errors + geometric.errors,
+        warnings: structural.warnings + geometric.warnings,
+        irErrors: structural.irErrors + geometric.irErrors,
+        geometryIssues: structural.geometryIssues + geometric.geometryIssues,
+        readability: geometric.readability,
+      };
+    } else {
+      report = {
+        diagnostics: [
+          ...structural.diagnostics,
+          ...layout.failures.map((failure) => ({
+            code: failure.code,
+            severity: "error" as const,
+            class: "ir" as const,
+            message: failure.message,
+            subject: { kind: "node" as const, ids: failure.nodeIds ?? [] },
+            supportedFixes: [
+              {
+                action: "drop-edge" as const,
+                description: "Remove or correct the elements named above, then resend.",
+              },
+            ],
+          })),
+        ],
+        errors: structural.errors + layout.failures.length,
+        warnings: structural.warnings,
+        irErrors: structural.irErrors + layout.failures.length,
+        geometryIssues: structural.geometryIssues,
         readability: { throughVertexRoutes: 0, edgeCrossings: 0, totalEdgeLength: 0, score: 0 },
       };
-      return this.record(ir, layout, report);
     }
 
-    const geometric = validateGeometry(layout.state);
-    const combined: ValidationReport = {
-      diagnostics: [...structural.diagnostics, ...geometric.diagnostics],
-      errors: structural.errors + geometric.errors,
-      warnings: structural.warnings + geometric.warnings,
-      irErrors: structural.irErrors + geometric.irErrors,
-      geometryIssues: structural.geometryIssues + geometric.geometryIssues,
-      readability: geometric.readability,
-    };
-
-    return this.record(ir, layout, combined);
+    return this.record(ir, layout, report);
   }
 
   /** Alias for `propose`, for the refine tool. Round accounting is identical. */
@@ -184,7 +193,14 @@ export class ProposalSession {
 
   /** Geometry of the committable proposal, for the caller to apply to the store. */
   commit(): LayoutResult | undefined {
-    return this.committable?.layout;
+    // commit() requires a fully successful layout — geometry must be valid.
+    // This is stricter than `committable` (which allows partial layouts for UI feedback).
+    const best = this.committable;
+    if (!best || !best.layout) return undefined;
+    if (best.layout.ok) return best.layout;
+    // Partial layout (e.g. unknown endpoint refs) — still usable if nodes exist.
+    if (best.layout.state.nodes.size > 0 && best.layout.edges.length > 0) return best.layout;
+    return undefined;
   }
 
   private record(
@@ -194,20 +210,25 @@ export class ProposalSession {
   ): ProposalResult {
     const irErrors = report.irErrors;
     const geometryIssues = report.geometryIssues;
-    // Track IR errors for stall detection — geometry issues are not the model's fault.
+
     this.rounds.push({ ir, layout, report, irErrors });
 
+    // Stall detection: track improvement in node count AND irErrors.
+    // Reset stalls when EITHER metric improves.
+    const nodeCount = layout?.state.nodes.size ?? 0;
+    if (nodeCount > this.bestNodeCount) {
+      this.bestNodeCount = nodeCount;
+      this.stalls = 0;
+    }
     if (irErrors < this.bestIrErrors) {
       this.bestIrErrors = irErrors;
       this.stalls = 0;
-    } else {
+    } else if (nodeCount <= this.bestNodeCount && irErrors >= this.bestIrErrors) {
+      // No improvement in either metric → increment stall counter.
       this.stalls += 1;
     }
 
     const round = this.rounds.length;
-    // A result is committable when it has no IR-class errors.
-    // Geometry issues may be present — the user can still apply or refine manually.
-    const committable = irErrors === 0;
 
     // Determine status for diagnostics display.
     // Only IR-class errors escalate to "has-errors"; geometry issues alone = "has-warnings".
@@ -215,17 +236,17 @@ export class ProposalSession {
       irErrors > 0 ? "has-errors" : geometryIssues > 0 ? "has-warnings" : "ok";
 
     let exhausted: ProposalResult["exhausted"];
-    if (!committable) {
-      if (round >= MAX_ROUNDS) {
-        exhausted = { reason: "max-rounds", roundsUsed: round };
-      } else if (this.stalls >= STALL_LIMIT) {
-        exhausted = { reason: "no-improvement", roundsUsed: round };
-      }
+    // Exhaustion fires when the model keeps proposing the same broken input.
+    // Check stall limit first — early stopping takes priority over max-rounds.
+    if (this.stalls >= STALL_LIMIT) {
+      exhausted = { reason: "no-improvement", roundsUsed: round };
+    } else if (round >= MAX_ROUNDS) {
+      exhausted = { reason: "max-rounds", roundsUsed: round };
     }
 
     return {
       status: effectiveStatus,
-      committable,
+      committable: !!(layout && layout.state.nodes.size > 0),
       round,
       diagnostics: report.diagnostics,
       errors: report.errors,
