@@ -17,6 +17,9 @@ import { C4_CONTAINER_CASES } from "./c4-container-cases";
 import { AWS_CASES } from "./aws-cases";
 import { runBaseline, formatBaseline, type BaselineReport } from "./run-baseline";
 import { ProposalSession } from "../session";
+import { layoutDiagram, approximateMeasureText } from "../../../lib/layout-engine";
+import { toLayoutInput } from "../ir";
+import { segmentIntersectsRect } from "../../../lib/validators/geometry";
 
 // ─── Arguments ─────────────────────────────────────────────────────────────────
 
@@ -61,11 +64,120 @@ function runReferenceSuite<T extends { id: string; ir: unknown }>(
   return { name, id: name, cases: cases.length, errors };
 }
 
+// ─── Property tests ──────────────────────────────────────────────────────────────
+
+/** Checks determinism: same IR → identical LayoutResult across N runs. */
+function runPropertyTests(): SuiteResult {
+  const allCases = [...C4_CONTEXT_CASES, ...C4_CONTAINER_CASES, ...AWS_CASES];
+  const DETERMINISM_RUNS = 5;
+
+  const failures: string[] = [];
+
+  for (const c of allCases) {
+    const input = toLayoutInput(c.ir);
+    const first = layoutDiagram(input, { measureText: approximateMeasureText });
+
+    for (let run = 1; run < DETERMINISM_RUNS; run++) {
+      const next = layoutDiagram(input, { measureText: approximateMeasureText });
+      const diff = layoutResultDiff(first, next);
+      if (diff.length > 0) {
+        failures.push(`${c.id} (run ${run}): ${diff.join("; ")}`);
+      }
+    }
+  }
+
+  // Invariant: no polyline segment intersects a non-endpoint node bbox.
+  for (const c of allCases) {
+    const result = layoutDiagram(toLayoutInput(c.ir), { measureText: approximateMeasureText });
+    const violations = checkInvariant(result);
+    for (const v of violations) {
+      failures.push(`${c.id}: ${v}`);
+    }
+  }
+
+  return {
+    name: "Property tests",
+    id: "property",
+    cases: allCases.length,
+    errors: failures.length,
+  };
+}
+
+/** Returns a list of field differences between two LayoutResults. */
+function layoutResultDiff(
+  a: ReturnType<typeof layoutDiagram>,
+  b: ReturnType<typeof layoutDiagram>,
+): string[] {
+  const diffs: string[] = [];
+
+  // Compare node positions
+  for (const [id, nodeA] of a.state.nodes) {
+    const nodeB = b.state.nodes.get(id);
+    if (!nodeB) { diffs.push(`node ${id} missing in second run`); continue; }
+    if (nodeA.x !== nodeB.x || nodeA.y !== nodeB.y) {
+      diffs.push(`node ${id} position: (${nodeA.x},${nodeA.y}) vs (${nodeB.x},${nodeB.y})`);
+    }
+  }
+
+  // Compare column orders
+  const aOrder = a.state.columns.map((c) => c.nodeIds.join(",")).join("|");
+  const bOrder = b.state.columns.map((c) => c.nodeIds.join(",")).join("|");
+  if (aOrder !== bOrder) diffs.push(`column order: ${aOrder} vs ${bOrder}`);
+
+  // Compare waypoints
+  for (const connA of a.state.connections) {
+    const connB = b.state.connections.find((c) => c.id === connA.id);
+    if (!connB) continue;
+    const wpA = connA.waypoints;
+    const wpB = connB.waypoints;
+    if (!wpA && !wpB) continue;
+    if (!wpA || !wpB) { diffs.push(`conn ${connA.id} waypoints: ${wpA ? "present" : "missing"} vs ${wpB ? "present" : "missing"}`); continue; }
+    if (wpA.length !== wpB.length) { diffs.push(`conn ${connA.id} waypoints length: ${wpA.length} vs ${wpB.length}`); continue; }
+    for (let i = 0; i < wpA.length; i++) {
+      if (wpA[i]!.x !== wpB[i]!.x || wpA[i]!.y !== wpB[i]!.y) {
+        diffs.push(`conn ${connA.id} wp[${i}]: (${wpA[i]!.x},${wpA[i]!.y}) vs (${wpB[i]!.x},${wpB[i]!.y})`);
+        break;
+      }
+    }
+  }
+
+  return diffs;
+}
+
+/** Checks the routing invariant: no polyline segment intersects a non-endpoint node. */
+function checkInvariant(result: ReturnType<typeof layoutDiagram>): string[] {
+  const violations: string[] = [];
+  const state = result.state;
+
+  for (const conn of state.connections) {
+    const waypoints = conn.waypoints;
+    if (!waypoints || waypoints.length < 2) continue;
+    if (conn.routing === "suppressed") continue;
+
+    for (let i = 0; i < waypoints.length - 1; i++) {
+      const a = waypoints[i]!;
+      const b = waypoints[i + 1]!;
+
+      for (const node of state.nodes.values()) {
+        // Skip endpoint nodes
+        if (node.id === conn.from || node.id === conn.to) continue;
+
+        if (segmentIntersectsRect({ a, b }, { x: node.x, y: node.y, width: node.width, height: node.height })) {
+          violations.push(`conn ${conn.id} seg${i} (${Math.round(a.x)},${Math.round(a.y)})→(${Math.round(b.x)},${Math.round(b.y)}) hits "${node.name}" (${node.id})`);
+        }
+      }
+    }
+  }
+
+  return violations;
+}
+
 const suites: SuiteResult[] = [
   runReferenceSuite("C4 Context", C4_CONTEXT_CASES),
   runReferenceSuite("C4 Container", C4_CONTAINER_CASES),
   runReferenceSuite("AWS", AWS_CASES),
   runBaselineSuite(),
+  runPropertyTests(),
 ];
 
 const activeSuites = caseFilter
