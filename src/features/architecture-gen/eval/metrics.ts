@@ -121,6 +121,8 @@ export function measureLegacy(nodes: LegacyNode[], edges: LegacyEdge[]): Diagram
     tiers: TIER_ORDER,
     density: "medium",
     primaryPath: [],
+    gutters: [],
+    lanes: { forward: [], return: [] },
     failures: [],
   };
 

@@ -26,7 +26,7 @@
         "overlapAreaPx": 0,
         "overlappingPairs": 0,
         "errors": 0,
-        "warnings": 1,
+        "warnings": 0,
         "gridAlignmentPct": 100,
         "nodeCount": 4,
         "edgeCount": 3
@@ -171,7 +171,7 @@
       "overlapAreaPx": 0,
       "overlappingPairs": 0,
       "errors": 0,
-      "warnings": 0.2,
+      "warnings": 0,
       "gridAlignmentPct": 100
     }
   }

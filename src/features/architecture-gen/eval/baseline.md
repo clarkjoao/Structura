@@ -16,7 +16,7 @@ Lower is better for every metric except grid alignment.
 | Overlap area (px²) | 0 | 0 |
 | Overlapping pairs | 0 | 0 |
 | Validation errors | 2.4 | 0 |
-| Validation warnings | 3.8 | 0.2 |
+| Validation warnings | 3.8 | 0 |
 | Grid alignment (%) | 100 | 100 |
 
 ## Per case
