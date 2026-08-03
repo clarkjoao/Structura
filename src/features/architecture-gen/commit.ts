@@ -55,6 +55,7 @@ export function toStorePayload(state: LayoutState): ArchitecturePayload {
       fromIrId: connection.from,
       toIrId: connection.to,
       label: connection.label,
+      waypoints: connection.waypoints,
     })),
   };
 }

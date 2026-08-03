@@ -40,6 +40,8 @@ export interface ArchitectureConnectionPayload {
   fromIrId: string;
   toIrId: string;
   label?: string;
+  /** Orthogonal waypoints for the edge path. Written to edgeLayouts in the store. */
+  waypoints?: Array<{ x: number; y: number }>;
 }
 
 export interface ArchitecturePayload {
@@ -136,6 +138,13 @@ export const architectureSlice = (
           diagram.snapshot.connections[connectionId] = record;
         }
         createdConnectionIds.push(connectionId);
+
+        // Write engine-routed waypoints to edgeLayouts so the renderer uses them.
+        if (connection.waypoints && connection.waypoints.length > 0) {
+          diagram.edgeLayouts[connectionId] = {
+            points: connection.waypoints.map((wp, i) => ({ id: `${connectionId}-wp-${i}`, x: wp.x, y: wp.y })),
+          };
+        }
       }
 
       touchDiagram(diagram);
