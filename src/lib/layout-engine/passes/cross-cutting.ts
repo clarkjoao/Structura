@@ -75,6 +75,20 @@ export const layoutCrossCutting: LayoutPass = (input) => {
   let rowHeight = 0;
   let inRow = 0;
 
+  // Build the cross-cutting references map: for each main-flow node, which cross-cutting
+  // services it is connected to (used by the renderer to draw a badge on the node).
+  const crossCuttingById = new Set(crossCutting.map((n) => n.id));
+  const refsByNode = new Map<string, string[]>();
+  for (const connection of state.connections) {
+    const toCc = crossCuttingById.has(connection.to);
+    const fromCc = crossCuttingById.has(connection.from);
+    if (!toCc && !fromCc) continue;
+    if (connection.routing === "suppressed") continue; // suppressed edges don't draw
+    const consumer = toCc ? connection.from : connection.to;
+    if (!refsByNode.has(consumer)) refsByNode.set(consumer, []);
+    refsByNode.get(consumer)!.push(toCc ? connection.to : connection.from);
+  }
+
   for (const node of ordered) {
     if (inRow >= LAYOUT.CROSS_CUTTING_PER_ROW) {
       rowTop += rowHeight + rowGap;
@@ -95,6 +109,13 @@ export const layoutCrossCutting: LayoutPass = (input) => {
     cursorX = node.x + node.width + colGap;
     rowHeight = Math.max(rowHeight, node.y + node.height - rowTop);
     inRow += 1;
+  }
+
+  // Annotate main-flow nodes with their cross-cutting references.
+  for (const node of state.nodes.values()) {
+    if (node.tier === "cross-cutting") continue;
+    const refs = refsByNode.get(node.id);
+    if (refs && refs.length > 0) node.crossCuttingRefs = refs;
   }
 
   return state;

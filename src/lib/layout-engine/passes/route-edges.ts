@@ -18,7 +18,7 @@
  * Lane reservation: greedy interval graph colouring of edge horizontal extents ensures
  * no two skip/return edges occupy the same lane.
  */
-import { LAYOUT, SPACING, LANE_GAP, LANE_PITCH, CHANNEL_PITCH } from "../constants";
+import { LAYOUT, SPACING, LANE_GAP, LANE_PITCH, CHANNEL_PITCH, snapToGrid } from "../constants";
 import { cloneState, type LayoutPass } from "../types";
 
 // ─── Lane colouring ──────────────────────────────────────────────────────────
@@ -59,6 +59,15 @@ function assignLanes(
 export const routeEdges: LayoutPass = (input) => {
   const state = cloneState(input);
 
+  // Snap node x positions before computing waypoints. The preceding passes (boundaries,
+  // cross-cutting) reflow column x and may leave nodes off-grid. Waypoints computed from
+  // off-grid positions would also be off-grid, and snapGeometry can't correct them when
+  // normalizeOrigin applies no delta. Snapping here makes every waypoint x a multiple of
+  // the grid and ensures the invariant "every waypoint x is on-grid" holds throughout.
+  for (const node of state.nodes.values()) {
+    node.x = snapToGrid(node.x);
+  }
+
   const columnOf = new Map<string, { colIdx: number; tierIdx: number }>();
   state.columns.forEach((col, ci) =>
     col.nodeIds.forEach((id) => columnOf.set(id, { colIdx: ci, tierIdx: col.tierIndex })),
@@ -66,7 +75,7 @@ export const routeEdges: LayoutPass = (input) => {
 
   const gutterOf = new Map<number, { x: number; width: number; channelEdgeIds: string[] }>();
   for (const g of state.gutters) {
-    gutterOf.set(g.index, { x: g.x, width: g.width, channelEdgeIds: [...g.channelEdgeIds] });
+    gutterOf.set(g.index, { x: snapToGrid(g.x), width: g.width, channelEdgeIds: [...g.channelEdgeIds] });
   }
 
   // Every column boundary has a gutter entry, even if it has no channels.
@@ -124,12 +133,18 @@ export const routeEdges: LayoutPass = (input) => {
       }
     } else if (!sameColumn && !isAdjacent) {
       if (toCol.tierIdx > fromCol.tierIdx) {
+        // The vertical segment rises through the gutter BEFORE the source column, not the
+        // source gutter. Rising through the source gutter would cause the vertical to
+        // intersect gutter-mode horizontals that pass through that same gutter
+        // (e.g. backward edges from a downstream column to the source column).
+        const riseGutter = gutterOf.get(fromCol.colIdx - 1) ?? gutterOf.get(0);
         forwardLaneEdges.push({
           id: conn.id,
-          // The vertical segment rises at the source node's right edge, not its left edge.
-          // Use the right edge so the lane interval correctly spans where the edge actually is.
-          srcX: state.nodes.get(conn.from)!.x + state.nodes.get(conn.from)!.width,
-          dstX: state.nodes.get(conn.to)!.x,
+          // The horizontal segment of the forward-lane waypoints goes from riseX (= riseGutter.x +
+          // LANE_PITCH, staggered by lane) to crossX (= tgtLeft - LANE_PITCH). Use this span
+          // for lane assignment so lanes are computed from the actual horizontal extent.
+          srcX: riseGutter.x + LANE_PITCH,
+          dstX: state.nodes.get(conn.to)!.x - LANE_PITCH,
         });
       } else {
         returnLaneEdges.push({
@@ -186,11 +201,6 @@ export const routeEdges: LayoutPass = (input) => {
     const tgtCenterY = tgtNode.y + tgtNode.height / 2;
     const aligned = Math.abs(srcCenterY - tgtCenterY) <= 8;
 
-    const rightEdge = srcNode.x + srcNode.width;
-    const leftEdge = tgtNode.x;
-    const srcCy = srcCenterY;
-    const tgtCy = tgtCenterY;
-
     let mode: "direct" | "gutter" | "forward-lane" | "return-lane";
     if (sameColumn || (isAdjacent && aligned)) {
       mode = "direct";
@@ -203,9 +213,11 @@ export const routeEdges: LayoutPass = (input) => {
     }
     conn.routing = mode;
 
-    // Right edge of source, left edge of target. For lane routing, offset by LANE_PITCH
-    // to avoid the vertical segment running along a node boundary (which would cause
-    // segmentIntersectsRect to detect a corner hit on adjacent nodes in the same column).
+    const rightEdge = snapToGrid(srcNode.x + srcNode.width);
+    const leftEdge = snapToGrid(tgtNode.x);
+    // Snap centerY to the grid — node height is fixed but may be odd, giving .5 values.
+    const srcCy = snapToGrid(srcCenterY);
+    const tgtCy = snapToGrid(tgtCenterY);
     const isLaneMode = mode === "forward-lane" || mode === "return-lane";
     const srcRight = rightEdge + (isLaneMode ? LANE_PITCH : 0);
     const tgtLeft = leftEdge - (isLaneMode ? LANE_PITCH : 0);
@@ -231,7 +243,7 @@ export const routeEdges: LayoutPass = (input) => {
         const channelOffset = isForward
           ? 2 * gEntry.channelIdx + 1  // odd channels
           : 2 * gEntry.channelIdx;       // even channels
-        const channelX = gutter.x + LAYOUT.ARROWHEAD_CLEARANCE + channelOffset * CHANNEL_PITCH;
+        const channelX = snapToGrid(gutter.x + LAYOUT.ARROWHEAD_CLEARANCE + channelOffset * CHANNEL_PITCH);
         conn.waypoints = [
           { x: srcRight, y: srcCy2 },
           { x: channelX, y: srcCy2 },
@@ -242,34 +254,39 @@ export const routeEdges: LayoutPass = (input) => {
     } else if (mode === "forward-lane") {
       const laneIdx = forwardLane.get(conn.id) ?? 0;
       const ly = state.lanes.forward[laneIdx]!;
-      // The horizontal segment between source and target gutter must stay in gutters —
-      // never inside an intermediate node column. The pattern is:
-      //   rise in source gutter → horizontal in gutter before target → descend in target gutter.
-      // crossX is in the gutter immediately before the target column, staggered by lane.
-      const tgtGutter = gutterOf.get(toCol.colIdx - 1)!;
-      const crossX = tgtGutter.x + (laneIdx + 1) * LANE_PITCH;
+      // Pattern (no slanted segments — every segment is axis-aligned):
+      //   srcRight → rise vertically to ly → horizontal → descend vertically → tgtLeft
+      //
+      // Stagger by lane so verticals from different lanes don't coincide in the gutter.
+      // riseX is past srcRight by (laneIdx+1)*PITCH so each lane's vertical is distinct.
+      // crossX is tgtLeft - PITCH so the descent is vertical inside the target gutter
+      // (for adjacent) or left of the target node (for non-adjacent).
+      const riseX = srcRight + (laneIdx + 1) * LANE_PITCH;
+      const crossX = tgtLeft - LANE_PITCH;
       conn.waypoints = [
-        { x: srcRight, y: srcCy2 },
-        { x: srcRight, y: ly },       // rise in source gutter
-        { x: crossX, y: ly },         // horizontal in gutter before target
-        { x: crossX, y: tgtCy2 },     // descend in target gutter
-        { x: tgtLeft, y: tgtCy2 },
+        { x: srcRight, y: srcCy2 },  // exit source node
+        { x: riseX, y: srcCy2 },    // horizontal to riseX, at srcCy (above nodes)
+        { x: riseX, y: ly },        // rise: vertical at column boundary past source
+        { x: crossX, y: ly },       // horizontal at lane height — above all intermediate nodes
+        { x: crossX, y: tgtCy2 },  // descend: vertical at gutter before target
+        { x: tgtLeft, y: tgtCy2 },  // enter target node
       ];
     } else if (mode === "return-lane") {
       const laneIdx = returnLane.get(conn.id) ?? 0;
       const ly = state.lanes.return[laneIdx]!;
-      // For return-lane targeting the first column (colIdx=0), there is no gutter before it.
-      // Use gutter 0 (between col 0 and col 1) as the routing anchor for return-lane
-      // targeting col 0. This keeps all routing in gutters 0–n, never entering col 6
-      // (cross-cutting). The final horizontal segment goes from gutter 0 to the target node.
+      // Pattern (mirror of forward-lane): rise vertically → horizontal → descend into target.
+      // riseX past srcRight by (laneIdx+1)*PITCH (lane-staggered, distinct verticals).
+      // crossX in gutter 0 past the left gutter boundary by (laneIdx+1)*PITCH.
+      const riseX = srcRight + (laneIdx + 1) * LANE_PITCH;
       const tgtGutter = gutterOf.get(0)!;
       const crossX = tgtGutter.x + tgtGutter.width - (laneIdx + 1) * LANE_PITCH;
       conn.waypoints = [
-        { x: srcRight, y: srcCy2 },
-        { x: srcRight, y: ly },
-        { x: crossX, y: ly },
-        { x: crossX, y: tgtCy2 },
-        { x: tgtLeft, y: tgtCy2 },
+        { x: srcRight, y: srcCy2 },  // exit source node
+        { x: riseX, y: srcCy2 },    // horizontal to riseX, at srcCy (above nodes)
+        { x: riseX, y: ly },        // rise: vertical at column boundary past source
+        { x: crossX, y: ly },       // horizontal in gutter 0
+        { x: crossX, y: tgtCy2 },  // descend: vertical into target column
+        { x: tgtLeft, y: tgtCy2 },  // enter target node
       ];
     }
   }
