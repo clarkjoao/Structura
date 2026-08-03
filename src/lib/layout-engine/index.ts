@@ -5,16 +5,25 @@
  * intent — nodes, boundaries, connections, tiers — and never coordinates; every position
  * here is derived.
  *
- * Pipeline: P0 measure -> P1 columns -> P2 stack -> P2b corridors -> P3 boundaries -> P4 cross-cutting
- * -> P5 edge ports -> P5b normalise origin -> P6 snap.
+ * Pipeline:
+ *   P0 measureNodes       — measure node sizes
+ *   P1 assignColumns      — assign tiers to columns, compute provisional x
+ *   P2 orderRows         — crossing-reduction ordering within each column
+ *   P3 stackRows         — convert column order to y positions
+ *   P4 sizeGutters       — dimension gutters by channel demand, reflow column x
+ *   P5 layoutBoundaries  — boundary boxes with cascading reflow
+ *   P6 layoutCrossCutting — cross-cutting band + suppress cross-cutting edges
+ *   P7 routeEdges        — orthogonal polyline waypoints + routing mode
+ *   P8 snapToGrid         — snap node positions to grid, translate waypoints
+ *   P9 normalizeOrigin    — translate diagram so top-left is at ORIGIN
+ *   applyEdgePorts        — resolve sourceAnchor/targetAnchor from final geometry
  *
- * When the engine cannot resolve a layout it reports failures and returns `ok: false`. It
- * never silently falls back to a generic algorithm: a bad layout that looks successful is
- * exactly the failure this subsystem exists to remove.
+ * Aresta é polilinha: routeEdges produz os waypoints, o renderer desenha exatamente
+ * eles, os validators medem exatamente eles. Uma geometria só.
  *
- * No waypoint routing in this slice. Columns, corridors and ordered anchors cover C4/AWS;
- * obstacle-avoiding orthogonal routing is the most expensive part to get right and the
- * least necessary in a column layout, so it stays gated behind evaluation data.
+ * Quando o motor não consegue resolver, reporta failures e retorna `ok: false`. Nunca
+ * falha silenciosamente: um layout ruim que pareceu bem é exatamente o tipo de falha
+ * que este subsistema existe para eliminar.
  */
 
 import type { Edge, Node } from "@xyflow/react";
