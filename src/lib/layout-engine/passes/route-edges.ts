@@ -137,7 +137,7 @@ export const routeEdges: LayoutPass = (input) => {
         // source gutter. Rising through the source gutter would cause the vertical to
         // intersect gutter-mode horizontals that pass through that same gutter
         // (e.g. backward edges from a downstream column to the source column).
-        const riseGutter = gutterOf.get(fromCol.colIdx - 1) ?? gutterOf.get(0);
+        const riseGutter = gutterOf.get(fromCol.colIdx - 1) ?? gutterOf.get(0)!;
         forwardLaneEdges.push({
           id: conn.id,
           // The horizontal segment of the forward-lane waypoints goes from riseX (= riseGutter.x +

@@ -13,7 +13,7 @@
  */
 
 import { LAYOUT, SPACING } from "../constants";
-import { cloneState, type LayoutPass, type LayoutState } from "../types";
+import { cloneState, type LayoutPass } from "../types";
 
 export const stackRows: LayoutPass = (input) => {
   const state = cloneState(input);

@@ -140,8 +140,6 @@ describe("orderRows", () => {
       connection("e2", "n1", "n4"),
       connection("e3", "n2", "n5"),
     ];
-    const state = makeState(nodes, connections);
-
     const run = () => {
       const s = makeState(nodes, connections);
       return layout(s);
