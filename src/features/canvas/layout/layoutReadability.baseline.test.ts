@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { validateIR } from "@/features/llm/ir/ir-validator";
 import { layoutIRGraph } from "./irLayoutEngine";
 import { measureReadability, type ReadabilityReport } from "./layoutReadability";
+import { measureRenderedReadability } from "./renderedEdgePath";
 import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
 
 /**
@@ -69,6 +70,35 @@ describe("layout readability baseline", () => {
 
     console.info(`\nLayout readability\n${rows.join("\n")}\n`);
     expect(failures, failures.join("\n")).toHaveLength(0);
+  });
+
+  /**
+   * The number that matters for the user: the canvas discards ELK's routing and
+   * draws step edges between handles, so this is the only column that describes
+   * what is actually on screen today.
+   */
+  it("prints the rendered-path table", async () => {
+    const rows: string[] = [];
+
+    for (const { name, ir } of REFERENCE_DIAGRAMS) {
+      const graph = await layoutIRGraph(ir);
+      const rendered = measureRenderedReadability(graph, ir.edges, { labels: labelsOf(ir) });
+      const elk = measureReadability(graph, { labels: labelsOf(ir) });
+
+      rows.push(
+        [
+          name.padEnd(24),
+          `rendered ${String(rendered.edgeCrossings).padStart(3)}`,
+          `elk ${String(elk.edgeCrossings).padStart(3)}`,
+          `placement ${String(elk.placementCrossings).padStart(3)}`,
+          `rendered-over-node ${String(rendered.edgeNodeOverlaps).padStart(3)}`,
+          `rendered-labels ${String(rendered.labelOverlaps).padStart(3)}`,
+        ].join("  "),
+      );
+    }
+
+    console.info(`\nRendered path vs ELK routing\n${rows.join("\n")}\n`);
+    expect(rows).toHaveLength(REFERENCE_DIAGRAMS.length);
   });
 
   it("produces a layout for every reference diagram", async () => {

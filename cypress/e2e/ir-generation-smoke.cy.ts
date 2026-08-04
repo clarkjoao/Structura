@@ -354,3 +354,36 @@ describe("IR generation — invalid IR is reported, not crashed on", () => {
     });
   });
 });
+
+describe("IR export", () => {
+  const errors: string[] = [];
+
+  before(() => {
+    cy.intercept("POST", "**/chat/completions", {
+      statusCode: 200,
+      headers: { "content-type": "text/event-stream" },
+      body: sseBody(JSON.stringify(NESTED_IR)),
+    }).as("generateForExport");
+
+    visitWorkspace(errors);
+    openChat();
+    sendPrompt("/generate AWS deployment");
+    cy.wait("@generateForExport");
+  });
+
+  it("offers a download of the generated IR and writes valid JSON", () => {
+    cy.window().then((win) => {
+      // Capture what the anchor would download instead of hitting the disk.
+      cy.stub(win.URL, "createObjectURL").callsFake((blob: Blob) => {
+        return blob.text().then((text: string) => {
+          const parsed = JSON.parse(text) as { type: string; nodes: unknown[] };
+          expect(parsed.type).to.equal(NESTED_IR.type);
+          expect(parsed.nodes).to.have.length(NESTED_IR.nodes.length);
+          return "blob:stubbed";
+        }) as unknown as string;
+      });
+    });
+
+    cy.get('button[aria-label="Download the generated IR as JSON"]').should("exist").click();
+  });
+});

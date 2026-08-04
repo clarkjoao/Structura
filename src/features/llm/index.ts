@@ -56,7 +56,11 @@ export type {
 } from "./ir";
 export {
   applyIRToDiagram,
+  buildIRFilename,
   buildIRSystemPrompt,
+  downloadIR,
+  serializeIR,
+  setApplyElkWaypoints,
   IR_SEMANTIC_TYPES,
   IR_TIERS,
   mapNodeToComponent,

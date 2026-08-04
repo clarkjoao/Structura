@@ -1,9 +1,11 @@
 import {
+  generateId,
   useDiagramStore,
   type GeneratedEdgeInput,
   type GeneratedNodeInput,
 } from "@/features/diagram";
 import { layoutIR, type IRLayoutBox } from "@/features/canvas/layout/irLayoutEngine";
+import { isApplyElkWaypointsEnabled } from "./ir-layout-flags";
 import { mapNodeToComponent } from "./ir-to-component";
 import type { DiagramIR } from "./ir.types";
 
@@ -85,13 +87,55 @@ export function buildGeneratedGraphInputs(
 }
 
 /**
+ * Interior bend points of an ELK route, moved into canvas coordinates.
+ *
+ * The first and last entries sit on the node borders; the canvas draws those
+ * legs from the node handles instead, so only what is between them becomes
+ * control points.
+ */
+export function interiorWaypoints(
+  route: Array<{ x: number; y: number }>,
+  origin: { x: number; y: number },
+): Array<{ x: number; y: number }> {
+  if (route.length <= 2) return [];
+  return route.slice(1, -1).map((point) => ({ x: point.x + origin.x, y: point.y + origin.y }));
+}
+
+/**
  * Lays the IR out with ELK and writes the result to the active diagram as a
  * single undoable mutation.
  */
 export async function applyIRToDiagram(ir: DiagramIR): Promise<ApplyIRResult> {
-  const { boxes } = await layoutIR(ir);
-  const { nodes, edges } = buildGeneratedGraphInputs(ir, boxes, currentViewportOrigin());
+  const { boxes, edgeRoutes } = await layoutIR(ir);
+  const origin = currentViewportOrigin();
+  const { nodes, edges } = buildGeneratedGraphInputs(ir, boxes, origin);
 
-  const result = useDiagramStore.getState().insertGeneratedGraph(nodes, edges);
+  const store = useDiagramStore.getState();
+  const result = store.insertGeneratedGraph(nodes, edges);
+
+  if (isApplyElkWaypointsEnabled()) {
+    const diagramId = store.activeDiagramId;
+    if (diagramId !== null) {
+      // `insertGeneratedGraph` returns connection ids in the order it consumed
+      // the edges, which is the order of `ir.edges`.
+      ir.edges.forEach((edge, index) => {
+        const connectionId = result.connectionIds[index];
+        const route = edgeRoutes.get(edge.id);
+        if (connectionId === undefined || route === undefined) return;
+
+        const waypoints = interiorWaypoints(route, origin);
+        if (waypoints.length === 0) return;
+
+        useDiagramStore.getState().setEdgeControlPoints(
+          diagramId,
+          connectionId,
+          waypoints.map((point) => ({ id: generateId("cp"), x: point.x, y: point.y })),
+          // The generation already pushed its own history checkpoint.
+          { history: false },
+        );
+      });
+    }
+  }
+
   return { componentIds: result.componentIds, connectionIds: result.connectionIds };
 }

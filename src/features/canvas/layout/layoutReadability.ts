@@ -391,6 +391,58 @@ export function measureReadability(
   };
 }
 
+/**
+ * Same counters, over polylines produced somewhere other than ELK — used to
+ * measure the path the canvas actually draws. `boxes` must be absolute, and
+ * `parentOf` is what keeps a container from counting as an obstruction for the
+ * edges running inside it.
+ */
+export function measurePolylines(
+  input: {
+    boxes: Map<string, Box>;
+    parentOf: Map<string, string | null>;
+    edges: Array<{ id: string; source: string; target: string; points: Point[] }>;
+    rootId: string;
+    width: number;
+    height: number;
+  },
+  options: MeasureOptions = {},
+): ReadabilityReport {
+  const walked: WalkedGraph = {
+    boxes: input.boxes,
+    parentOf: input.parentOf,
+    edges: input.edges,
+  };
+  const labels = options.labels ?? new Map<string, string>();
+
+  return {
+    edgeCrossings: countPolylineCrossings(walked.edges),
+    placementCrossings: countPlacementCrossings(walked),
+    edgeNodeOverlaps: countEdgeNodeOverlaps(walked, input.rootId),
+    labelOverlaps: countLabelOverlaps(walked, labels, input.rootId),
+    nodeCount: walked.boxes.size - 1,
+    edgeCount: walked.edges.length,
+    width: Math.round(input.width),
+    height: Math.round(input.height),
+  };
+}
+
+export type { Box as ReadabilityBox, Point as ReadabilityPoint };
+
+/**
+ * Absolute geometry of a laid-out ELK graph, with every edge already corrected
+ * for the lowest-common-ancestor coordinate space. Exposed so the waypoint
+ * application and the rendered-path metric share one implementation of the
+ * correction instead of each repeating it.
+ */
+export function readLaidOutGraph(graph: ElkNode): {
+  boxes: Map<string, Box>;
+  parentOf: Map<string, string | null>;
+  edges: Array<{ id: string; source: string; target: string; points: Point[] }>;
+} {
+  return walkGraph(graph);
+}
+
 /** Sums a set of per-diagram reports, for comparing whole configurations. */
 export function totalReadability(reports: ReadabilityReport[]): ReadabilityReport {
   return reports.reduce<ReadabilityReport>(

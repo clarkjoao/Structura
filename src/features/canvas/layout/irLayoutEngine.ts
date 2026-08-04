@@ -2,6 +2,7 @@ import type { ElkExtendedEdge, ElkNode } from "elkjs";
 import { DEFAULT_NODE_W, DEFAULT_NODE_H } from "@/features/diagram";
 // Leaf import, not the `ir` barrel: the barrel reaches back into this module.
 import { isBoundaryNode, type DiagramIR, type IRNode } from "@/features/llm/ir/ir.types";
+import { readLaidOutGraph } from "./layoutReadability";
 
 /**
  * ELK layout for a generated IR (spec §7).
@@ -67,6 +68,13 @@ export interface IRLayoutBox {
 export interface IRLayoutResult {
   /** Keyed by IR node id. */
   boxes: Map<string, IRLayoutBox>;
+  /**
+   * ELK's routed path per edge id, in coordinates relative to the layout origin
+   * — already corrected for ELK's lowest-common-ancestor coordinate space.
+   * Includes the endpoints on the node borders, so interior bend points are
+   * everything between the first and last entry.
+   */
+  edgeRoutes: Map<string, Array<{ x: number; y: number }>>;
 }
 
 function buildChildrenByParent(nodes: IRNode[]): Map<string | null, IRNode[]> {
@@ -162,10 +170,22 @@ export async function layoutIRGraph(
  */
 export async function layoutIR(ir: DiagramIR): Promise<IRLayoutResult> {
   const boxes = new Map<string, IRLayoutBox>();
+  const edgeRoutes = new Map<string, Array<{ x: number; y: number }>>();
   if (ir.nodes.length === 0) {
-    return { boxes };
+    return { boxes, edgeRoutes };
   }
 
-  collectBoxes(await layoutIRGraph(ir), boxes);
-  return { boxes };
+  const laidOut = await layoutIRGraph(ir);
+  collectBoxes(laidOut, boxes);
+
+  // `readLaidOutGraph` owns the lowest-common-ancestor correction and is tested
+  // there; re-deriving it here is exactly how the legacy engine got it wrong.
+  for (const edge of readLaidOutGraph(laidOut).edges) {
+    edgeRoutes.set(
+      edge.id,
+      edge.points.map((point) => ({ x: point.x, y: point.y })),
+    );
+  }
+
+  return { boxes, edgeRoutes };
 }
