@@ -22,6 +22,24 @@ import type { ElkNode } from "elkjs";
  */
 
 /**
+ * Which sides an edge should leave from and arrive at.
+ *
+ * Today the canvas is fixed: out of the right, into the left, whatever the
+ * geometry — so an edge to a node that sits further left loops all the way
+ * around. "mirrored" is the opposite pair, for exactly that case.
+ *
+ * The flip only happens when the target is *entirely* left of the source. That
+ * leaves a dead band as wide as the horizontal overlap, so nudging a node by a
+ * pixel near the boundary cannot flip the side back and forth; crossing it takes
+ * a real move. No stored state, so nothing to go stale.
+ */
+export type EdgeSides = "forward" | "mirrored";
+
+export function edgeSides(source: ReadabilityBox, target: ReadabilityBox): EdgeSides {
+  return target.x + target.width < source.x ? "mirrored" : "forward";
+}
+
+/**
  * Handle anchor, matching `buildHandles`: `n` handles clamped to [1, 4], handle
  * `i` at `(i + 1) / (n + 1)` of the node height. A single handle sits at the
  * default 50%, which the same formula yields for n = 1.
@@ -31,11 +49,13 @@ export function handleAnchor(
   side: "source" | "target",
   slot: number,
   count: number,
+  sides: EdgeSides = "forward",
 ): Point {
   const n = Math.min(MAX_HANDLES, Math.max(MIN_HANDLES, count));
   const index = Math.min(Math.max(slot, 0), n - 1);
+  const onRight = sides === "forward" ? side === "source" : side === "target";
   return {
-    x: side === "source" ? box.x + box.width : box.x,
+    x: onRight ? box.x + box.width : box.x,
     y: box.y + box.height * ((index + 1) / (n + 1)),
   };
 }
@@ -98,38 +118,52 @@ export interface HandleOrderInput {
  * connection order, unless the node carries a `handleOrder`, capped at
  * MAX_HANDLES.
  */
+interface SlotGrouping {
+  sourceGroup: string;
+  targetGroup: string;
+  sourceCount: number;
+  targetCount: number;
+}
+
 function assignHandleSlots(
   edges: RenderedEdgeInput[],
   handleOrder: HandleOrderInput = {},
+  grouping?: (edge: RenderedEdgeInput) => SlotGrouping,
 ): Map<string, { source: number; target: number }> {
-  const outgoing: Record<string, number> = {};
-  const incoming: Record<string, number> = {};
+  const fallbackCounts: Record<string, number> = {};
   for (const edge of edges) {
-    outgoing[edge.sourceId] = (outgoing[edge.sourceId] ?? 0) + 1;
-    incoming[edge.targetId] = (incoming[edge.targetId] ?? 0) + 1;
+    fallbackCounts[`s|${edge.sourceId}`] = (fallbackCounts[`s|${edge.sourceId}`] ?? 0) + 1;
+    fallbackCounts[`t|${edge.targetId}`] = (fallbackCounts[`t|${edge.targetId}`] ?? 0) + 1;
   }
+  const groupOf = (edge: RenderedEdgeInput): SlotGrouping =>
+    grouping?.(edge) ?? {
+      sourceGroup: `s|${edge.sourceId}`,
+      targetGroup: `t|${edge.targetId}`,
+      sourceCount: fallbackCounts[`s|${edge.sourceId}`] ?? 1,
+      targetCount: fallbackCounts[`t|${edge.targetId}`] ?? 1,
+    };
 
-  const sourceUsage: Record<string, number> = {};
-  const targetUsage: Record<string, number> = {};
+  const usage: Record<string, number> = {};
   const slots = new Map<string, { source: number; target: number }>();
 
   for (const edge of edges) {
-    const outCount = Math.min(MAX_HANDLES, Math.max(1, outgoing[edge.sourceId] ?? 1));
-    const inCount = Math.min(MAX_HANDLES, Math.max(1, incoming[edge.targetId] ?? 1));
+    const group = groupOf(edge);
+    const outCount = Math.min(MAX_HANDLES, Math.max(1, group.sourceCount));
+    const inCount = Math.min(MAX_HANDLES, Math.max(1, group.targetCount));
     const sourceSlot = resolveSlot(
       edge.id,
       handleOrder.outgoing?.get(edge.sourceId),
-      sourceUsage[edge.sourceId] ?? 0,
+      usage[group.sourceGroup] ?? 0,
       outCount,
     );
     const targetSlot = resolveSlot(
       edge.id,
       handleOrder.incoming?.get(edge.targetId),
-      targetUsage[edge.targetId] ?? 0,
+      usage[group.targetGroup] ?? 0,
       inCount,
     );
-    sourceUsage[edge.sourceId] = (sourceUsage[edge.sourceId] ?? 0) + 1;
-    targetUsage[edge.targetId] = (targetUsage[edge.targetId] ?? 0) + 1;
+    usage[group.sourceGroup] = (usage[group.sourceGroup] ?? 0) + 1;
+    usage[group.targetGroup] = (usage[group.targetGroup] ?? 0) + 1;
     slots.set(edge.id, { source: sourceSlot, target: targetSlot });
   }
 
@@ -148,14 +182,38 @@ export function buildRenderedPolylines(
   boxes: Map<string, ReadabilityBox>,
   edges: RenderedEdgeInput[],
   handleOrder: HandleOrderInput = {},
+  options: { dynamicSides?: boolean } = {},
 ): RenderedPolyline[] {
-  const slots = assignHandleSlots(edges, handleOrder);
-  const outgoing: Record<string, number> = {};
-  const incoming: Record<string, number> = {};
+  const sidesOf = (edge: RenderedEdgeInput): EdgeSides => {
+    if (options.dynamicSides !== true) return "forward";
+    const sourceBox = boxes.get(edge.sourceId);
+    const targetBox = boxes.get(edge.targetId);
+    if (!sourceBox || !targetBox) return "forward";
+    return edgeSides(sourceBox, targetBox);
+  };
+
+  // Handles live per side, so an edge leaving on the left is counted and
+  // slotted separately from one leaving on the right.
+  const counts = new Map<string, number>();
+  const key = (nodeId: string, end: "source" | "target", sides: EdgeSides) =>
+    `${nodeId}|${end}|${sides}`;
   for (const edge of edges) {
-    outgoing[edge.sourceId] = (outgoing[edge.sourceId] ?? 0) + 1;
-    incoming[edge.targetId] = (incoming[edge.targetId] ?? 0) + 1;
+    const sides = sidesOf(edge);
+    const sourceKey = key(edge.sourceId, "source", sides);
+    const targetKey = key(edge.targetId, "target", sides);
+    counts.set(sourceKey, (counts.get(sourceKey) ?? 0) + 1);
+    counts.set(targetKey, (counts.get(targetKey) ?? 0) + 1);
   }
+
+  const slots = assignHandleSlots(edges, handleOrder, (edge) => {
+    const sides = sidesOf(edge);
+    return {
+      sourceGroup: key(edge.sourceId, "source", sides),
+      targetGroup: key(edge.targetId, "target", sides),
+      sourceCount: counts.get(key(edge.sourceId, "source", sides)) ?? 1,
+      targetCount: counts.get(key(edge.targetId, "target", sides)) ?? 1,
+    };
+  });
 
   const result: RenderedPolyline[] = [];
   for (const edge of edges) {
@@ -163,13 +221,20 @@ export function buildRenderedPolylines(
     const targetBox = boxes.get(edge.targetId);
     if (!sourceBox || !targetBox) continue;
 
+    const sides = sidesOf(edge);
     const slot = slots.get(edge.id) ?? { source: 0, target: 0 };
-    const source = handleAnchor(sourceBox, "source", slot.source, outgoing[edge.sourceId] ?? 1);
-    const target = handleAnchor(targetBox, "target", slot.target, incoming[edge.targetId] ?? 1);
+    const sourceCount = counts.get(key(edge.sourceId, "source", sides)) ?? 1;
+    const targetCount = counts.get(key(edge.targetId, "target", sides)) ?? 1;
+    const source = handleAnchor(sourceBox, "source", slot.source, sourceCount, sides);
+    const target = handleAnchor(targetBox, "target", slot.target, targetCount, sides);
     const corners =
       edge.corners && edge.corners.length > 0
         ? edge.corners
-        : defaultOrthogonalCorners(source, target, Position.Right);
+        : defaultOrthogonalCorners(
+            source,
+            target,
+            sides === "forward" ? Position.Right : Position.Left,
+          );
 
     result.push({
       id: edge.id,
@@ -188,6 +253,8 @@ export interface RenderedMeasureOptions {
   cornersByEdgeId?: Map<string, Point[]>;
   /** Per-node edge ordering, as writing ELK's order into `handleOrder` would. */
   handleOrder?: HandleOrderInput;
+  /** Pick the exit/entry side from the node positions instead of always R->L. */
+  dynamicSides?: boolean;
 }
 
 /**
@@ -214,7 +281,9 @@ export function measureRenderedReadability(
     {
       boxes,
       parentOf,
-      edges: buildRenderedPolylines(boxes, inputs, options.handleOrder ?? {}),
+      edges: buildRenderedPolylines(boxes, inputs, options.handleOrder ?? {}, {
+        ...(options.dynamicSides !== undefined ? { dynamicSides: options.dynamicSides } : {}),
+      }),
       rootId: graph.id,
       width: graph.width ?? 0,
       height: graph.height ?? 0,

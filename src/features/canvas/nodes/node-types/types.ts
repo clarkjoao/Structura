@@ -36,7 +36,7 @@ export interface NodeBuildContext {
 
   unparentCandidatePanelId: string | null;
   panelIds: Set<string>;
-  connectionCounts: Record<string, { incoming: number; outgoing: number }>;
+  connectionCounts: Record<string, import("../../edges/connectionDerivations").ConnectionCounts>;
 
   effectiveHandleOrder: Record<string, { incoming: string[]; outgoing: string[] }>;
 

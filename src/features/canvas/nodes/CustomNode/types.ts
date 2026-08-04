@@ -25,6 +25,9 @@ export type NodeData = {
   coverageFlowNames?: string[];
   incomingCount?: number;
   outgoingCount?: number;
+  /** Edges that leave/arrive on the mirrored side; 0 or absent means none. */
+  outgoingLeftCount?: number;
+  incomingRightCount?: number;
   handleOrder?: { incoming: string[]; outgoing: string[] };
   customColor?: string;
   onReorderHandle?: (

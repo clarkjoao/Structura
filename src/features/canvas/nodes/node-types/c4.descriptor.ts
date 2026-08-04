@@ -119,8 +119,11 @@ export const c4Descriptor: NodeTypeDescriptor = {
         isPlaying && flowHighlight.activeNodeId === comp.id
           ? (activeStep?.handleId ?? undefined)
           : undefined,
-      incomingCount: Math.min(4, Math.max(1, counts.incoming)),
-      outgoingCount: Math.min(4, Math.max(1, counts.outgoing)),
+      // Per-side counts when geometry is known; the totals are the fallback.
+      incomingCount: Math.min(4, Math.max(1, counts.incomingLeft ?? counts.incoming)),
+      outgoingCount: Math.min(4, Math.max(1, counts.outgoingRight ?? counts.outgoing)),
+      outgoingLeftCount: Math.min(4, counts.outgoingLeft ?? 0),
+      incomingRightCount: Math.min(4, counts.incomingRight ?? 0),
       handleOrder: ctx.effectiveHandleOrder[comp.id],
       onReorderHandle:
         isRecording || isPlaying
