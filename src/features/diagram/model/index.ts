@@ -91,12 +91,7 @@ export {
 export type { EffectiveConnectionStyle } from "./connection-defaults";
 
 // ─── Flow ─────────────────────────────────────────────────────────────────────
-export type {
-  FlowStep,
-  FlowStepType,
-  FlowBranch,
-  Flow,
-} from "./flow.types";
+export type { FlowStep, FlowStepType, FlowBranch, Flow } from "./flow.types";
 
 // ─── Diagram / Scene / Template / Service ────────────────────────────────────
 // diagram.types owns Level, Icon*, ModelDraft, Diagram, SceneDiff, Folder, etc.
@@ -114,11 +109,7 @@ export type {
   Level,
 } from "./diagram.types";
 
-export {
-  isAwsIcon,
-  isLucideIcon,
-  isSvgIcon,
-} from "./diagram.types";
+export { isAwsIcon, isLucideIcon, isSvgIcon } from "./diagram.types";
 
 export type { ServiceDefinition, ServiceSourceRef } from "./service.types";
 

@@ -115,7 +115,7 @@ function countEndpointsUnderParent(
   return n;
 }
 
-function buildComponentForType(
+export function buildComponentForType(
   id: string,
   type: ComponentType,
   name: string,

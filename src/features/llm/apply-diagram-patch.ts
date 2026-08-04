@@ -34,7 +34,10 @@ export function computeGridPositions(
   }));
 }
 
-export function resolveParentRef(value: string | null, nameToIdMap: Map<string, string>): string | null {
+export function resolveParentRef(
+  value: string | null,
+  nameToIdMap: Map<string, string>,
+): string | null {
   if (!value) return null;
   if (value.startsWith("@ref:")) {
     const resolved = nameToIdMap.get(value.slice(5).toLowerCase());
@@ -94,7 +97,10 @@ export function applyDiagramPatchAction(
       return {
         addedNodeId: insertedIds[0] ?? null,
         addedEdgeId: null,
-        toolResult: { type: "INSERT_PATTERN", data: { patternId: pattern.id, createdNodes: insertedIds } },
+        toolResult: {
+          type: "INSERT_PATTERN",
+          data: { patternId: pattern.id, createdNodes: insertedIds },
+        },
       };
     }
     case "AUTO_LAYOUT": {
@@ -109,24 +115,24 @@ export function applyDiagramPatchAction(
         return { addedNodeId: null, addedEdgeId: null, toolResult: { type: "AUTO_LAYOUT" } };
       }
       const connectionsList = Object.values(diagram.snapshot.connections);
-      void computeAutoLayout(
-        diagram.snapshot.components,
-        connectionsList,
-        diagram.nodeLayouts,
-      ).then((result) => {
-        const { updateNodeLayout, resetEdgeControlPoints } = useDiagramStore.getState();
-        // Apply positions to nodes
-        for (const { elementId, x, y } of result.positions) {
-          updateNodeLayout(elementId, { x, y });
-        }
-        // Reset edge control points for laid-out connections
-        for (const connId of result.laidOutConnectionIds) {
-          resetEdgeControlPoints(diagramId, connId);
-        }
-        console.info(`[apply-diagram-patch] AUTO_LAYOUT: positioned ${result.positions.length} nodes`);
-      }).catch((err) => {
-        console.error("[llm] auto-layout failed:", err);
-      });
+      void computeAutoLayout(diagram.snapshot.components, connectionsList, diagram.nodeLayouts)
+        .then((result) => {
+          const { updateNodeLayout, resetEdgeControlPoints } = useDiagramStore.getState();
+          // Apply positions to nodes
+          for (const { elementId, x, y } of result.positions) {
+            updateNodeLayout(elementId, { x, y });
+          }
+          // Reset edge control points for laid-out connections
+          for (const connId of result.laidOutConnectionIds) {
+            resetEdgeControlPoints(diagramId, connId);
+          }
+          console.info(
+            `[apply-diagram-patch] AUTO_LAYOUT: positioned ${result.positions.length} nodes`,
+          );
+        })
+        .catch((err) => {
+          console.error("[llm] auto-layout failed:", err);
+        });
       return { addedNodeId: null, addedEdgeId: null, toolResult: { type: "AUTO_LAYOUT" } };
     }
     case "GET_TAGS": {

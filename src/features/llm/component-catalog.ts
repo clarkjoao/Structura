@@ -256,7 +256,8 @@ export function buildPatternCatalog(): string {
     const patterns = PATTERNS.filter((p) => p.category === category);
     lines.push(`${category.toUpperCase()}:`);
     for (const p of patterns) {
-      const shortDesc = p.description.length > 120 ? p.description.slice(0, 117) + "..." : p.description;
+      const shortDesc =
+        p.description.length > 120 ? p.description.slice(0, 117) + "..." : p.description;
       lines.push(`  - ${p.id}: ${shortDesc}`);
     }
     lines.push("");

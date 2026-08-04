@@ -156,6 +156,11 @@ export interface AppActions {
     position: { x: number; y: number },
   ) => string[];
 
+  insertGeneratedGraph: (
+    nodes: import("./slices/generated-graph.slice").GeneratedNodeInput[],
+    edges: import("./slices/generated-graph.slice").GeneratedEdgeInput[],
+  ) => import("./slices/generated-graph.slice").GeneratedGraphResult;
+
   undo: () => void;
   redo: () => void;
   pushHistoryBoundary: () => void;

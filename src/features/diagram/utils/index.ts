@@ -11,11 +11,7 @@ export {
   cloneDiagramForImportWithId,
 } from "./shared-import";
 
-export {
-  exportTemplateToJson,
-  downloadTemplate,
-  importTemplateFromFile,
-} from "./template-sharing";
+export { exportTemplateToJson, downloadTemplate, importTemplateFromFile } from "./template-sharing";
 export type { TemplateExportEnvelope, ImportTemplateResult } from "./template-sharing";
 
 // ─── Handle order ────────────────────────────────────────────────────────────
@@ -64,11 +60,7 @@ export {
   computeMergePreview,
   sceneHasDiff,
 } from "./scene.utils";
-export type {
-  CompareSnapshotResult,
-  CompareElementVisual,
-  MergePreview,
-} from "./scene.utils";
+export type { CompareSnapshotResult, CompareElementVisual, MergePreview } from "./scene.utils";
 
 export { buildChildrenIndex, getDescendantIdsFromIndex } from "./children-index";
 

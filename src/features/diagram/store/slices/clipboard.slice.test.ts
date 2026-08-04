@@ -14,11 +14,7 @@ describe("clipboard paste of api-group with endpoints", () => {
     });
 
     // Add an endpoint as a child of the api-group
-    const endpoint = store.getState().addComponent(
-      "endpoint",
-      "GET /test",
-      apiGroup.id,
-    );
+    const endpoint = store.getState().addComponent("endpoint", "GET /test", apiGroup.id);
 
     // Sanity: endpoint.parentId is the api-group
     expect(apiGroup.parentId).toBeNull();
@@ -62,17 +58,8 @@ describe("clipboard paste of api-group with endpoints", () => {
       x: 0,
       y: 0,
     });
-    const apiGroup = store.getState().addComponent(
-      "api-group",
-      "API",
-      panel.id,
-      { x: 50, y: 50 },
-    );
-    const endpoint = store.getState().addComponent(
-      "endpoint",
-      "GET /a",
-      apiGroup.id,
-    );
+    const apiGroup = store.getState().addComponent("api-group", "API", panel.id, { x: 50, y: 50 });
+    const endpoint = store.getState().addComponent("endpoint", "GET /a", apiGroup.id);
 
     expect(apiGroup.parentId).toBe(panel.id);
     expect(endpoint.parentId).toBe(apiGroup.id);

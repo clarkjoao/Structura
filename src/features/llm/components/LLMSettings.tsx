@@ -98,7 +98,10 @@ function tryParseJson(text: string): { value: unknown } | { error: true } {
   }
 }
 
-export function LLMSettings({ selectedConnectionId: _selectedConnectionId = null, onClose }: LLMSettingsProps) {
+export function LLMSettings({
+  selectedConnectionId: _selectedConnectionId = null,
+  onClose,
+}: LLMSettingsProps) {
   const { t } = useTranslation();
   const connections = useLLMStore((state) => state.connections);
   const activeConnectionId = useLLMStore((state) => state.activeConnectionId);

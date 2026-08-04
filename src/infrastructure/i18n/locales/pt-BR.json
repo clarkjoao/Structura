@@ -669,6 +669,37 @@
         "blastRadius": "Qual o blast radius se o componente central falhar?",
         "observability": "Identificar gaps de observabilidade"
       }
+    },
+    "ir": {
+      "commandHint": "Descreva o diagrama depois do comando, por exemplo: /gerar diagrama C4 de contêineres para um e-commerce com microsserviços.",
+      "invalid": "O modelo devolveu um diagrama fora do schema do IR:",
+      "moreIssues": "e mais {{count}} problema(s).",
+      "applied": "Diagrama gerado: {{nodeCount}} nó(s) e {{edgeCount}} conexão(ões).",
+      "noActiveDiagram": "Abra um diagrama antes de gerar.",
+      "notApplied": "O diagrama foi gerado, mas não pôde ser aplicado ao canvas.",
+      "issue": {
+        "invalidJson": "A resposta não é um JSON válido.",
+        "notAnObject": "A resposta não é um objeto JSON.",
+        "invalidDiagramType": "Tipo de diagrama desconhecido: \"{{value}}\".",
+        "nodesNotArray": "\"nodes\" não é uma lista.",
+        "edgesNotArray": "\"edges\" não é uma lista.",
+        "emptyNodes": "O diagrama não tem nenhum nó.",
+        "nodeNotAnObject": "O nó na posição {{index}} não é um objeto.",
+        "nodeMissingId": "O nó na posição {{index}} não tem id.",
+        "nodeDuplicateId": "Id de nó duplicado: \"{{id}}\".",
+        "nodeMissingName": "O nó \"{{id}}\" não tem nome.",
+        "nodeInvalidSemanticType": "O nó \"{{id}}\" usa um semanticType desconhecido: \"{{value}}\".",
+        "nodeInvalidTier": "O nó \"{{id}}\" usa um tier desconhecido: \"{{value}}\".",
+        "nodeInvalidParentId": "O nó \"{{id}}\" tem um parentId inválido.",
+        "nodeParentNotFound": "O nó \"{{id}}\" aponta para um pai inexistente: \"{{parentId}}\".",
+        "nodeSelfParent": "O nó \"{{id}}\" é pai de si mesmo.",
+        "containmentCycle": "Ciclo de containment: {{ids}}.",
+        "edgeNotAnObject": "A aresta na posição {{index}} não é um objeto.",
+        "edgeMissingId": "A aresta na posição {{index}} não tem id.",
+        "edgeDuplicateId": "Id de aresta duplicado: \"{{id}}\".",
+        "edgeSourceNotFound": "A aresta \"{{id}}\" sai de um nó inexistente: \"{{ref}}\".",
+        "edgeTargetNotFound": "A aresta \"{{id}}\" chega em um nó inexistente: \"{{ref}}\"."
+      }
     }
   },
   "scenes": {

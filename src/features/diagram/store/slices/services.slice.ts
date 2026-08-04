@@ -157,7 +157,11 @@ export const servicesSlice = (
       const previousServiceId = comp.serviceId;
 
       // Clear inherited fields when switching to a different service
-      if (previousServiceId !== undefined && serviceId !== undefined && previousServiceId !== serviceId) {
+      if (
+        previousServiceId !== undefined &&
+        serviceId !== undefined &&
+        previousServiceId !== serviceId
+      ) {
         comp.tags = undefined;
         if ("technology" in comp) {
           (comp as { technology?: string }).technology = undefined;
