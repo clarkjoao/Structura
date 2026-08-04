@@ -672,6 +672,7 @@
     },
     "ir": {
       "commandHint": "Descreva o diagrama depois do comando, por exemplo: /gerar diagrama C4 de contêineres para um e-commerce com microsserviços.",
+      "export": "Baixar o IR gerado em JSON",
       "invalid": "O modelo devolveu um diagrama fora do schema do IR:",
       "moreIssues": "e mais {{count}} problema(s).",
       "applied": "Diagrama gerado: {{nodeCount}} nó(s) e {{edgeCount}} conexão(ões).",

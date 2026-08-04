@@ -672,6 +672,7 @@
     },
     "ir": {
       "commandHint": "Describe the diagram you want after the command, for example: /generate C4 container diagram for an e-commerce with microservices.",
+      "export": "Download the generated IR as JSON",
       "invalid": "The model returned a diagram that does not match the IR schema:",
       "moreIssues": "and {{count}} more problem(s).",
       "applied": "Diagram generated: {{nodeCount}} node(s) and {{edgeCount}} connection(s).",
