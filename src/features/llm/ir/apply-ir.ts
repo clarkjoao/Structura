@@ -5,7 +5,7 @@ import {
   type GeneratedNodeInput,
 } from "@/features/diagram";
 import { layoutIR, type IRLayoutBox } from "@/features/canvas/layout/irLayoutEngine";
-import { isApplyElkWaypointsEnabled } from "./ir-layout-flags";
+import { isApplyElkHandleOrderEnabled, isApplyElkWaypointsEnabled } from "./ir-layout-flags";
 import { mapNodeToComponent } from "./ir-to-component";
 import type { DiagramIR } from "./ir.types";
 
@@ -106,20 +106,41 @@ export function interiorWaypoints(
  * single undoable mutation.
  */
 export async function applyIRToDiagram(ir: DiagramIR): Promise<ApplyIRResult> {
-  const { boxes, edgeRoutes } = await layoutIR(ir);
+  const { boxes, edgeRoutes, handleOrder } = await layoutIR(ir);
   const origin = currentViewportOrigin();
   const { nodes, edges } = buildGeneratedGraphInputs(ir, boxes, origin);
 
   const store = useDiagramStore.getState();
   const result = store.insertGeneratedGraph(nodes, edges);
 
+  const connectionIdByEdgeId = new Map<string, string>();
+  ir.edges.forEach((edge, index) => {
+    const connectionId = result.connectionIds[index];
+    if (connectionId !== undefined) connectionIdByEdgeId.set(edge.id, connectionId);
+  });
+
+  if (isApplyElkHandleOrderEnabled()) {
+    // `handleOrder` is the field the canvas already consults (and that the
+    // reorder controls write to), so this is the same mechanism a user gets by
+    // reordering by hand — not a second, parallel notion of handle choice.
+    for (const side of ["outgoing", "incoming"] as const) {
+      for (const [irNodeId, edgeIds] of handleOrder[side]) {
+        const componentId = result.componentIdByExternalId[irNodeId];
+        if (componentId === undefined) continue;
+        const orderedConnectionIds = edgeIds
+          .map((edgeId) => connectionIdByEdgeId.get(edgeId))
+          .filter((connectionId): connectionId is string => connectionId !== undefined);
+        if (orderedConnectionIds.length === 0) continue;
+        useDiagramStore.getState().updateHandleOrder(componentId, side, orderedConnectionIds);
+      }
+    }
+  }
+
   if (isApplyElkWaypointsEnabled()) {
     const diagramId = store.activeDiagramId;
     if (diagramId !== null) {
-      // `insertGeneratedGraph` returns connection ids in the order it consumed
-      // the edges, which is the order of `ir.edges`.
-      ir.edges.forEach((edge, index) => {
-        const connectionId = result.connectionIds[index];
+      ir.edges.forEach((edge) => {
+        const connectionId = connectionIdByEdgeId.get(edge.id);
         const route = edgeRoutes.get(edge.id);
         if (connectionId === undefined || route === undefined) return;
 

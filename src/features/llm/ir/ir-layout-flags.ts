@@ -11,13 +11,15 @@
  *
  *   localStorage.setItem("structura:ir:applyElkWaypoints", "true")
  */
-const STORAGE_KEY = "structura:ir:applyElkWaypoints";
+const WAYPOINTS_KEY = "structura:ir:applyElkWaypoints";
+const HANDLE_ORDER_KEY = "structura:ir:applyElkHandleOrder";
 
-let override: boolean | null = null;
+let waypointsOverride: boolean | null = null;
+let handleOrderOverride: boolean | null = null;
 
-function readStoredFlag(): boolean {
+function readStoredFlag(key: string): boolean {
   try {
-    return globalThis.localStorage?.getItem(STORAGE_KEY) === "true";
+    return globalThis.localStorage?.getItem(key) === "true";
   } catch {
     // Storage can be unavailable (SSR, private mode); the default is off.
     return false;
@@ -25,10 +27,24 @@ function readStoredFlag(): boolean {
 }
 
 export function isApplyElkWaypointsEnabled(): boolean {
-  return override ?? readStoredFlag();
+  return waypointsOverride ?? readStoredFlag(WAYPOINTS_KEY);
 }
 
 /** Overrides the stored value for this session. `null` restores it. */
 export function setApplyElkWaypoints(value: boolean | null): void {
-  override = value;
+  waypointsOverride = value;
+}
+
+/**
+ * Writes ELK's edge ordering into each generated node's `handleOrder`, so the
+ * canvas picks handles in the order ELK worked out instead of round-robin.
+ *
+ *   localStorage.setItem("structura:ir:applyElkHandleOrder", "true")
+ */
+export function isApplyElkHandleOrderEnabled(): boolean {
+  return handleOrderOverride ?? readStoredFlag(HANDLE_ORDER_KEY);
+}
+
+export function setApplyElkHandleOrder(value: boolean | null): void {
+  handleOrderOverride = value;
 }

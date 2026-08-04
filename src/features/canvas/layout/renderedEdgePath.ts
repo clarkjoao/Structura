@@ -74,12 +74,33 @@ export interface RenderedEdgeInput {
   corners?: Point[];
 }
 
+/** Mirrors `resolveHandleIndex` in `connectionDerivations.ts`. */
+function resolveSlot(
+  edgeId: string,
+  order: string[] | undefined,
+  usageCount: number,
+  slotCount: number,
+): number {
+  if (order?.length) {
+    const index = order.indexOf(edgeId);
+    if (index !== -1) return Math.min(index, slotCount - 1);
+  }
+  return usageCount % slotCount;
+}
+
+export interface HandleOrderInput {
+  outgoing?: Map<string, string[]>;
+  incoming?: Map<string, string[]>;
+}
+
 /**
  * Mirrors `buildEdgeHandleAssignments`: handles are handed out round-robin in
- * connection order, capped at MAX_HANDLES.
+ * connection order, unless the node carries a `handleOrder`, capped at
+ * MAX_HANDLES.
  */
 function assignHandleSlots(
   edges: RenderedEdgeInput[],
+  handleOrder: HandleOrderInput = {},
 ): Map<string, { source: number; target: number }> {
   const outgoing: Record<string, number> = {};
   const incoming: Record<string, number> = {};
@@ -95,8 +116,18 @@ function assignHandleSlots(
   for (const edge of edges) {
     const outCount = Math.min(MAX_HANDLES, Math.max(1, outgoing[edge.sourceId] ?? 1));
     const inCount = Math.min(MAX_HANDLES, Math.max(1, incoming[edge.targetId] ?? 1));
-    const sourceSlot = (sourceUsage[edge.sourceId] ?? 0) % outCount;
-    const targetSlot = (targetUsage[edge.targetId] ?? 0) % inCount;
+    const sourceSlot = resolveSlot(
+      edge.id,
+      handleOrder.outgoing?.get(edge.sourceId),
+      sourceUsage[edge.sourceId] ?? 0,
+      outCount,
+    );
+    const targetSlot = resolveSlot(
+      edge.id,
+      handleOrder.incoming?.get(edge.targetId),
+      targetUsage[edge.targetId] ?? 0,
+      inCount,
+    );
     sourceUsage[edge.sourceId] = (sourceUsage[edge.sourceId] ?? 0) + 1;
     targetUsage[edge.targetId] = (targetUsage[edge.targetId] ?? 0) + 1;
     slots.set(edge.id, { source: sourceSlot, target: targetSlot });
@@ -116,8 +147,9 @@ export interface RenderedPolyline {
 export function buildRenderedPolylines(
   boxes: Map<string, ReadabilityBox>,
   edges: RenderedEdgeInput[],
+  handleOrder: HandleOrderInput = {},
 ): RenderedPolyline[] {
-  const slots = assignHandleSlots(edges);
+  const slots = assignHandleSlots(edges, handleOrder);
   const outgoing: Record<string, number> = {};
   const incoming: Record<string, number> = {};
   for (const edge of edges) {
@@ -154,6 +186,8 @@ export interface RenderedMeasureOptions {
   labels?: Map<string, string>;
   /** Control points per edge id, as applying ELK waypoints would store them. */
   cornersByEdgeId?: Map<string, Point[]>;
+  /** Per-node edge ordering, as writing ELK's order into `handleOrder` would. */
+  handleOrder?: HandleOrderInput;
 }
 
 /**
@@ -180,7 +214,7 @@ export function measureRenderedReadability(
     {
       boxes,
       parentOf,
-      edges: buildRenderedPolylines(boxes, inputs),
+      edges: buildRenderedPolylines(boxes, inputs, options.handleOrder ?? {}),
       rootId: graph.id,
       width: graph.width ?? 0,
       height: graph.height ?? 0,

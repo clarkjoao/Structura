@@ -3,6 +3,7 @@ import { DEFAULT_NODE_W, DEFAULT_NODE_H } from "@/features/diagram";
 // Leaf import, not the `ir` barrel: the barrel reaches back into this module.
 import { isBoundaryNode, type DiagramIR, type IRNode } from "@/features/llm/ir/ir.types";
 import { readLaidOutGraph } from "./layoutReadability";
+import { readElkHandleOrder, type ElkHandleOrder } from "./elkHandleOrder";
 
 /**
  * ELK layout for a generated IR (spec §7).
@@ -75,6 +76,12 @@ export interface IRLayoutResult {
    * everything between the first and last entry.
    */
   edgeRoutes: Map<string, Array<{ x: number; y: number }>>;
+  /**
+   * The order ELK attached edges along each node's side, keyed by IR node id.
+   * Feeding this into `handleOrder` is what makes the canvas pick handles in a
+   * crossing-minimising order instead of round-robin.
+   */
+  handleOrder: ElkHandleOrder;
 }
 
 function buildChildrenByParent(nodes: IRNode[]): Map<string | null, IRNode[]> {
@@ -172,7 +179,11 @@ export async function layoutIR(ir: DiagramIR): Promise<IRLayoutResult> {
   const boxes = new Map<string, IRLayoutBox>();
   const edgeRoutes = new Map<string, Array<{ x: number; y: number }>>();
   if (ir.nodes.length === 0) {
-    return { boxes, edgeRoutes };
+    return {
+      boxes,
+      edgeRoutes,
+      handleOrder: { outgoing: new Map(), incoming: new Map() },
+    };
   }
 
   const laidOut = await layoutIRGraph(ir);
@@ -187,5 +198,5 @@ export async function layoutIR(ir: DiagramIR): Promise<IRLayoutResult> {
     );
   }
 
-  return { boxes, edgeRoutes };
+  return { boxes, edgeRoutes, handleOrder: readElkHandleOrder(laidOut) };
 }
