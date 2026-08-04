@@ -40,7 +40,7 @@ describe("Stress Interaction: 500 elements — drag, select, undo", () => {
     });
   });
 
-  it("drags a root node without crash", () => {
+  it("drags a root node: it moves, and nothing crashes", () => {
     const rootIds = seed.allComponentIds.filter((id) => id.startsWith("root_stress_"));
     expect(rootIds.length).to.be.greaterThan(0);
     const nodeId = rootIds[rootIds.length - 1]!;
@@ -49,7 +49,7 @@ describe("Stress Interaction: 500 elements — drag, select, undo", () => {
     cy.get("body").should("not.contain.text", "Maximum update depth exceeded");
   });
 
-  it("drags a root panel without crash", () => {
+  it("drags a root panel: it moves, and nothing crashes", () => {
     const panel = seed.panelsByLevel[0]![0]!;
     cy.getNode(panel).should("exist");
     cy.dragNode(panel, 80, 40);
