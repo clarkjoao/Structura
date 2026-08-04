@@ -1,4 +1,5 @@
 import {
+  isBoundaryNode,
   isIRDiagramType,
   isSemanticType,
   isTier,
@@ -25,6 +26,8 @@ export type IRIssueCode =
   | "nodeInvalidSemanticType"
   | "nodeInvalidTier"
   | "nodeInvalidParentId"
+  | "nodeInvalidBoundary"
+  | "nodeChildrenWithoutBoundary"
   | "nodeParentNotFound"
   | "nodeSelfParent"
   | "containmentCycle"
@@ -165,6 +168,11 @@ function validateNodes(
       issues.push({ code: "nodeInvalidParentId", params: { id } });
       valid = false;
     }
+    const boundaryRaw = rawNode.isBoundary;
+    if (boundaryRaw !== undefined && typeof boundaryRaw !== "boolean") {
+      issues.push({ code: "nodeInvalidBoundary", params: { id } });
+      valid = false;
+    }
 
     if (!valid || !isSemanticType(rawNode.semanticType) || !isTier(rawNode.tier)) {
       return;
@@ -177,6 +185,13 @@ function validateNodes(
       parentId: typeof parentIdRaw === "string" ? parentIdRaw : null,
       tier: rawNode.tier,
       ...(nonEmptyString(rawNode.technology) ? { technology: rawNode.technology } : {}),
+      ...(nonEmptyString(rawNode.awsService)
+        ? { awsService: rawNode.awsService.trim().toLowerCase() }
+        : {}),
+      // Normalized so downstream never has to re-derive it from the semanticType.
+      ...(isBoundaryNode({ semanticType: rawNode.semanticType, isBoundary: boundaryRaw === true })
+        ? { isBoundary: true }
+        : {}),
     });
   });
 
@@ -211,6 +226,15 @@ function validateContainment(
 
   for (const cycle of collectContainmentCycles(parentById)) {
     issues.push({ code: "containmentCycle", params: { ids: cycle.join(" -> ") } });
+  }
+
+  // Only a boundary may contain other nodes. The reverse is allowed on purpose:
+  // an empty VPC or a not-yet-populated AZ is still a boundary.
+  const parentsWithChildren = new Set(parentById.values());
+  for (const node of nodes) {
+    if (parentsWithChildren.has(node.id) && !isBoundaryNode(node)) {
+      issues.push({ code: "nodeChildrenWithoutBoundary", params: { id: node.id } });
+    }
   }
 }
 

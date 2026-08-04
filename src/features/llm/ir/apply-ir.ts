@@ -4,7 +4,7 @@ import {
   type GeneratedNodeInput,
 } from "@/features/diagram";
 import { layoutIR, type IRLayoutBox } from "@/features/canvas/layout/irLayoutEngine";
-import { mapSemanticTypeToComponent } from "./ir-to-component";
+import { mapNodeToComponent } from "./ir-to-component";
 import type { DiagramIR } from "./ir.types";
 
 /** Margin from the top-left of the visible canvas area, in flow units. */
@@ -33,16 +33,6 @@ function currentViewportOrigin(): { x: number; y: number } {
   };
 }
 
-function collectParentIds(ir: DiagramIR): Set<string> {
-  const parentIds = new Set<string>();
-  for (const node of ir.nodes) {
-    if (node.parentId !== null) {
-      parentIds.add(node.parentId);
-    }
-  }
-  return parentIds;
-}
-
 export interface GeneratedGraphInputs {
   nodes: GeneratedNodeInput[];
   edges: GeneratedEdgeInput[];
@@ -57,11 +47,8 @@ export function buildGeneratedGraphInputs(
   boxes: Map<string, IRLayoutBox>,
   origin: { x: number; y: number },
 ): GeneratedGraphInputs {
-  const parentIds = collectParentIds(ir);
-
   const nodes: GeneratedNodeInput[] = ir.nodes.map((node, index): GeneratedNodeInput => {
-    const isContainer = parentIds.has(node.id);
-    const mapped = mapSemanticTypeToComponent(node.semanticType, isContainer);
+    const mapped = mapNodeToComponent(node);
     const box: IRLayoutBox | undefined = boxes.get(node.id);
     const isRoot = node.parentId === null;
 
@@ -76,6 +63,7 @@ export function buildGeneratedGraphInputs(
       name: node.name,
       parentExternalId: node.parentId,
       ...(mapped.panelKind !== undefined ? { panelKind: mapped.panelKind } : {}),
+      ...(mapped.awsService !== undefined ? { awsService: mapped.awsService } : {}),
       ...(node.technology !== undefined ? { technology: node.technology } : {}),
       x,
       y,

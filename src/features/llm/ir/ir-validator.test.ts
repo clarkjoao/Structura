@@ -9,7 +9,14 @@ function codesOf(result: ReturnType<typeof validateIR>): IRIssueCode[] {
 const validIR: DiagramIR = {
   type: "c4-container",
   nodes: [
-    { id: "shop", semanticType: "container", name: "Shop", parentId: null, tier: "compute" },
+    {
+      id: "shop",
+      semanticType: "container",
+      name: "Shop",
+      parentId: null,
+      isBoundary: true,
+      tier: "compute",
+    },
     { id: "api", semanticType: "container", name: "API", parentId: "shop", tier: "compute" },
     { id: "db", semanticType: "database", name: "Orders DB", parentId: "shop", tier: "data" },
   ],
@@ -30,6 +37,25 @@ describe("validateIR — valid input", () => {
     if (!result.ok) throw new Error("expected valid IR");
     const api = result.ir.nodes.find((node) => node.id === "api");
     expect(api).toMatchObject({ semanticType: "container", tier: "compute", parentId: "shop" });
+  });
+
+  it("keeps and normalizes the awsService field", () => {
+    const result = validateIR({
+      type: "aws-deployment",
+      nodes: [
+        {
+          id: "fn",
+          semanticType: "aws-compute",
+          name: "Handler",
+          awsService: "  Lambda ",
+          parentId: null,
+          tier: "compute",
+        },
+      ],
+      edges: [],
+    });
+    if (!result.ok) throw new Error("expected valid IR");
+    expect(result.ir.nodes[0].awsService).toBe("lambda");
   });
 
   it("keeps the optional technology field and drops unknown extras", () => {
@@ -213,6 +239,67 @@ describe("validateIR — containment", () => {
     expect(cycles).toHaveLength(1);
     expect(String(cycles[0].params?.ids)).toContain("a");
     expect(String(cycles[0].params?.ids)).toContain("b");
+  });
+
+  it("rejects a node that has children but is not a boundary", () => {
+    const result = validateIR({
+      type: "c4-container",
+      nodes: [
+        { id: "sys", semanticType: "container", name: "System", parentId: null, tier: "compute" },
+        { id: "api", semanticType: "container", name: "API", parentId: "sys", tier: "compute" },
+      ],
+      edges: [],
+    });
+    expect(codesOf(result)).toContain("nodeChildrenWithoutBoundary");
+  });
+
+  it("accepts an empty boundary", () => {
+    const result = validateIR({
+      type: "aws-deployment",
+      nodes: [
+        {
+          id: "vpc",
+          semanticType: "aws-vpc",
+          name: "Empty VPC",
+          parentId: null,
+          isBoundary: true,
+          tier: "edge",
+        },
+      ],
+      edges: [],
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it("treats the VPC/AZ/subnet semanticTypes as boundaries without the flag", () => {
+    const result = validateIR({
+      type: "aws-deployment",
+      nodes: [
+        { id: "vpc", semanticType: "aws-vpc", name: "VPC", parentId: null, tier: "edge" },
+        { id: "az", semanticType: "aws-az", name: "AZ", parentId: "vpc", tier: "compute" },
+      ],
+      edges: [],
+    });
+    if (!result.ok) throw new Error("expected valid IR");
+    expect(result.ir.nodes.every((node) => node.isBoundary === true)).toBe(true);
+  });
+
+  it("rejects a non-boolean isBoundary", () => {
+    const result = validateIR({
+      type: "c4-container",
+      nodes: [
+        {
+          id: "a",
+          semanticType: "container",
+          name: "A",
+          parentId: null,
+          isBoundary: "yes",
+          tier: "compute",
+        },
+      ],
+      edges: [],
+    });
+    expect(codesOf(result)).toContain("nodeInvalidBoundary");
   });
 
   it("accepts deep containment without flagging a cycle", () => {

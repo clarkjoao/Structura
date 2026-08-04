@@ -59,7 +59,7 @@ export {
   buildIRSystemPrompt,
   IR_SEMANTIC_TYPES,
   IR_TIERS,
-  mapSemanticTypeToComponent,
+  mapNodeToComponent,
   parseAndValidateIR,
   parseGenerateCommand,
   validateIR,

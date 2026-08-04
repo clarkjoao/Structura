@@ -2,22 +2,15 @@
 // mapping, and going through the barrel would drag the whole store in with it.
 import { PanelKind } from "@/features/diagram/enums";
 import type { ComponentType } from "@/features/diagram/model/component.types";
-import type { SemanticType } from "./ir.types";
+import { getPanelKindForAwsService } from "@/lib/catalogs/panels";
+import {
+  isBoundarySemanticType,
+  type BoundarySemanticType,
+  type IRNode,
+  type SemanticType,
+} from "./ir.types";
 
-/**
- * Semantic types that always render as a boundary box, whether or not the model
- * put anything inside them.
- */
-export const IR_BOUNDARY_SEMANTIC_TYPES = [
-  "aws-vpc",
-  "aws-az",
-  "aws-subnet",
-  "aws-public-subnet",
-  "aws-private-subnet",
-] as const;
-
-type BoundarySemanticType = (typeof IR_BOUNDARY_SEMANTIC_TYPES)[number];
-
+/** Fallback panel kind per boundary semanticType, when no service pins it down. */
 const BOUNDARY_PANEL_KIND: Record<BoundarySemanticType, PanelKind> = {
   "aws-vpc": PanelKind.Vpc,
   "aws-az": PanelKind.AvailabilityZone,
@@ -50,31 +43,43 @@ const LEAF_COMPONENT_TYPE: Record<Exclude<SemanticType, BoundarySemanticType>, C
 export interface MappedComponentType {
   type: ComponentType;
   panelKind?: PanelKind;
+  /** Passed through to the component so the canvas can resolve its icon. */
+  awsService?: string;
 }
 
-export function isBoundarySemanticType(
-  semanticType: SemanticType,
-): semanticType is BoundarySemanticType {
-  return (IR_BOUNDARY_SEMANTIC_TYPES as readonly string[]).includes(semanticType);
+/**
+ * Panel kind for a boundary. The concrete service wins when Structura knows it
+ * (`ecs` -> ECS Cluster, `private-subnet` -> Private Subnet), because it names
+ * the actual thing; otherwise the semanticType decides.
+ */
+function panelKindFor(semanticType: SemanticType, awsService: string | undefined): PanelKind {
+  const fromService = awsService ? getPanelKindForAwsService(awsService) : undefined;
+  if (fromService) {
+    return fromService;
+  }
+  if (isBoundarySemanticType(semanticType)) {
+    return BOUNDARY_PANEL_KIND[semanticType];
+  }
+  return PanelKind.Default;
 }
 
 /**
  * Translates an IR node into a Structura component type.
  *
- * `hasChildren` is part of the input because React Flow only nests a node
- * visually when its parent is a panel (see `computeNodeVisibility`). Any IR node
- * with children therefore has to become a panel, whatever its semanticType —
- * that is how a C4 system or container boundary is drawn here.
+ * Boundaries become panels because React Flow only nests a node visually when
+ * its parent is a panel (see `computeNodeVisibility`) — that is also how a C4
+ * system boundary or an AWS VPC is drawn here. Leaf nodes keep their natural
+ * type and carry `awsService` so the canvas can pick the service icon.
  */
-export function mapSemanticTypeToComponent(
-  semanticType: SemanticType,
-  hasChildren: boolean,
+export function mapNodeToComponent(
+  node: Pick<IRNode, "semanticType" | "awsService" | "isBoundary">,
 ): MappedComponentType {
-  if (isBoundarySemanticType(semanticType)) {
-    return { type: "panel", panelKind: BOUNDARY_PANEL_KIND[semanticType] };
+  const { semanticType, awsService } = node;
+  if (node.isBoundary === true || isBoundarySemanticType(semanticType)) {
+    return { type: "panel", panelKind: panelKindFor(semanticType, awsService) };
   }
-  if (hasChildren) {
-    return { type: "panel", panelKind: PanelKind.Default };
-  }
-  return { type: LEAF_COMPONENT_TYPE[semanticType] };
+  return {
+    type: LEAF_COMPONENT_TYPE[semanticType],
+    ...(awsService !== undefined ? { awsService } : {}),
+  };
 }

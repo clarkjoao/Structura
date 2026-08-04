@@ -1,7 +1,7 @@
 import type { ElkExtendedEdge, ElkNode } from "elkjs";
 import { DEFAULT_NODE_W, DEFAULT_NODE_H } from "@/features/diagram";
 // Leaf import, not the `ir` barrel: the barrel reaches back into this module.
-import type { DiagramIR, IRNode } from "@/features/llm/ir/ir.types";
+import { isBoundaryNode, type DiagramIR, type IRNode } from "@/features/llm/ir/ir.types";
 
 /**
  * ELK layout for a generated IR (spec §7).
@@ -37,6 +37,13 @@ const ELK_ROOT_ID = "__structura_ir_root__";
 /** Placeholder size for a container; ELK replaces it with the fitted size. */
 const CONTAINER_SEED_W = 240;
 const CONTAINER_SEED_H = 160;
+
+/**
+ * An empty boundary keeps this size verbatim — ELK has no children to fit it
+ * around — so it has to be wide enough for the header label not to truncate.
+ */
+const EMPTY_BOUNDARY_W = 360;
+const EMPTY_BOUNDARY_H = 200;
 
 let elkConstructor: (new () => { layout(graph: ElkNode): Promise<ElkNode> }) | null = null;
 
@@ -79,7 +86,14 @@ function buildChildrenByParent(nodes: IRNode[]): Map<string | null, IRNode[]> {
 function buildElkNode(node: IRNode, childrenByParent: Map<string | null, IRNode[]>): ElkNode {
   const children = childrenByParent.get(node.id) ?? [];
   if (children.length === 0) {
-    return { id: node.id, width: DEFAULT_NODE_W, height: DEFAULT_NODE_H };
+    // An empty boundary still has to read as a box, so it keeps the container
+    // size instead of collapsing to a leaf-sized node.
+    const isEmptyBoundary = isBoundaryNode(node);
+    return {
+      id: node.id,
+      width: isEmptyBoundary ? EMPTY_BOUNDARY_W : DEFAULT_NODE_W,
+      height: isEmptyBoundary ? EMPTY_BOUNDARY_H : DEFAULT_NODE_H,
+    };
   }
   return {
     id: node.id,

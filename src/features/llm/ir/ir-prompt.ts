@@ -1,3 +1,4 @@
+import { buildAwsCatalogCompact } from "../component-catalog";
 import {
   IR_AWS_SEMANTIC_TYPES,
   IR_C4_SEMANTIC_TYPES,
@@ -54,7 +55,9 @@ function buildSchemaSection(): string {
     "    semanticType: SemanticType; // see the list below",
     "    name: string;               // display name",
     '    technology?: string;        // optional, e.g. "React", "PostgreSQL 16"',
+    '    awsService?: string;        // concrete AWS service id, e.g. "lambda" (see the list below)',
     "    parentId: string | null;    // id of the containing node, or null for a root",
+    "    isBoundary?: boolean;       // true when the node contains other nodes",
     "    tier: Tier;                 // see the list below",
     "  }>;",
     "  edges: Array<{",
@@ -85,6 +88,39 @@ function buildSemanticTypeSection(): string {
   ].join("\n");
 }
 
+/**
+ * Reuses Structura's own AWS catalog so the model's service ids resolve against
+ * exactly the same table the canvas uses to pick icons.
+ */
+function buildAwsServiceSection(): string {
+  return [
+    "## awsService values",
+    "",
+    'Whenever a node represents a concrete AWS service, set "awsService" to its id',
+    "from the list below, and keep the semanticType as the matching category.",
+    'Example: an Application Load Balancer is semanticType "aws-networking" with',
+    'awsService "elb". Boundaries take one too when they name a real construct',
+    '("vpc", "public-subnet", "private-subnet", "ecs", "eks").',
+    "Omit the field when no service in the list fits — never invent an id.",
+    "",
+    buildAwsCatalogCompact(),
+  ].join("\n");
+}
+
+function buildBoundarySection(): string {
+  return [
+    "## Boundaries",
+    "",
+    'Set "isBoundary": true on any node that contains other nodes. A boundary may',
+    "also be empty — an infrastructure boundary with nothing deployed in it yet is",
+    "still worth drawing.",
+    "",
+    'A node without "isBoundary": true must not be referenced as a parentId.',
+    'The VPC/AZ/subnet semanticTypes are boundaries by definition; setting "isBoundary"',
+    "on them as well is harmless and preferred for clarity.",
+  ].join("\n");
+}
+
 function buildTierSection(): string {
   return [
     "## tier values",
@@ -109,18 +145,20 @@ const RULES = `
 3. "parentId" is either null or the id of another node in the same document. Use it
    for containment: a node nested inside a boundary. Containment can nest several
    levels deep. A node must never be its own ancestor.
-4. Every "sourceId" and "targetId" must be the id of a node in the same document.
+4. Any node used as a parentId must have "isBoundary": true.
+5. Every "sourceId" and "targetId" must be the id of a node in the same document.
    Edges express interaction, not containment — never add an edge to say that one
    node is inside another.
-5. Give every node a "tier", even when the choice is not obvious.
-6. Keep the diagram to at most 50 nodes. Prefer the level of detail the user asked
+6. Give every node a "tier", even when the choice is not obvious.
+7. Set "awsService" whenever the node is a real AWS service.
+8. Keep the diagram to at most 50 nodes. Prefer the level of detail the user asked
    for over exhaustiveness.
-7. Choose "type" from what the user asked for. If they describe AWS infrastructure,
+9. Choose "type" from what the user asked for. If they describe AWS infrastructure,
    use "aws-deployment"; otherwise pick the C4 level that matches their request.
 `.trim();
 
 const EXAMPLE = `
-## Example
+## Examples
 
 User: "C4 container diagram for a small booking app: a web SPA and an API talking to Postgres"
 
@@ -128,7 +166,7 @@ User: "C4 container diagram for a small booking app: a web SPA and an API talkin
   "type": "c4-container",
   "nodes": [
     { "id": "customer", "semanticType": "person", "name": "Customer", "parentId": null, "tier": "external" },
-    { "id": "booking-system", "semanticType": "container", "name": "Booking System", "parentId": null, "tier": "compute" },
+    { "id": "booking-system", "semanticType": "container", "name": "Booking System", "parentId": null, "isBoundary": true, "tier": "compute" },
     { "id": "web-spa", "semanticType": "container", "name": "Web SPA", "technology": "React", "parentId": "booking-system", "tier": "edge" },
     { "id": "booking-api", "semanticType": "container", "name": "Booking API", "technology": "Node.js", "parentId": "booking-system", "tier": "compute" },
     { "id": "booking-db", "semanticType": "database", "name": "Booking DB", "technology": "PostgreSQL", "parentId": "booking-system", "tier": "data" }
@@ -137,6 +175,23 @@ User: "C4 container diagram for a small booking app: a web SPA and an API talkin
     { "id": "customer-to-web", "sourceId": "customer", "targetId": "web-spa", "label": "books a room" },
     { "id": "web-to-api", "sourceId": "web-spa", "targetId": "booking-api", "label": "HTTPS/JSON" },
     { "id": "api-to-db", "sourceId": "booking-api", "targetId": "booking-db", "label": "reads/writes" }
+  ]
+}
+
+User: "AWS deployment: an ALB in a public subnet forwarding to Lambda in a private subnet"
+
+{
+  "type": "aws-deployment",
+  "nodes": [
+    { "id": "main-vpc", "semanticType": "aws-vpc", "name": "Main", "awsService": "vpc", "parentId": null, "isBoundary": true, "tier": "edge" },
+    { "id": "az-a", "semanticType": "aws-az", "name": "us-east-1a", "parentId": "main-vpc", "isBoundary": true, "tier": "compute" },
+    { "id": "public-a", "semanticType": "aws-public-subnet", "name": "Public", "awsService": "public-subnet", "parentId": "az-a", "isBoundary": true, "tier": "edge" },
+    { "id": "private-a", "semanticType": "aws-private-subnet", "name": "Private", "awsService": "private-subnet", "parentId": "az-a", "isBoundary": true, "tier": "compute" },
+    { "id": "public-alb", "semanticType": "aws-networking", "name": "Public ALB", "awsService": "elb", "parentId": "public-a", "tier": "edge" },
+    { "id": "orders-fn", "semanticType": "aws-compute", "name": "Orders Handler", "awsService": "lambda", "parentId": "private-a", "tier": "compute" }
+  ],
+  "edges": [
+    { "id": "alb-to-fn", "sourceId": "public-alb", "targetId": "orders-fn", "label": "invokes" }
   ]
 }
 `.trim();
@@ -162,7 +217,11 @@ export function buildIRSystemPrompt(responseLocale: string): string {
     "",
     buildSemanticTypeSection(),
     "",
+    buildBoundarySection(),
+    "",
     buildTierSection(),
+    "",
+    buildAwsServiceSection(),
     "",
     RULES,
     "",

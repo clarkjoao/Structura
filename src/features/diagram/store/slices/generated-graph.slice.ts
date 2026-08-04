@@ -1,5 +1,10 @@
 import type { ComponentType, NodeLayout, PanelKind } from "../../model/diagram.types";
-import { isC4Component, isCloudComponent } from "../../model/component.guards";
+import {
+  isAwsComponent,
+  isAzureComponent,
+  isC4Component,
+  isGcpComponent,
+} from "../../model/component.guards";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
@@ -20,6 +25,8 @@ export interface GeneratedNodeInput {
   parentExternalId: string | null;
   panelKind?: PanelKind;
   technology?: string;
+  /** Cloud service id, resolved by the canvas against the provider catalog. */
+  awsService?: string;
   /** Position is relative to the parent, like React Flow child nodes. */
   x: number;
   y: number;
@@ -97,12 +104,18 @@ export const generatedGraphSlice = (
           node.name,
           parentId,
           node.panelKind,
-          undefined,
+          node.awsService,
         );
 
+        // Type-based guards, not `isCloudComponent`: that one asks the cloud
+        // registry, which is only populated once `features/cloud/bootstrap`
+        // has run — so it answers differently in the app and under test.
         if (
           node.technology !== undefined &&
-          (isC4Component(component) || isCloudComponent(component))
+          (isC4Component(component) ||
+            isAwsComponent(component) ||
+            isGcpComponent(component) ||
+            isAzureComponent(component))
         ) {
           component.technology = node.technology;
         }

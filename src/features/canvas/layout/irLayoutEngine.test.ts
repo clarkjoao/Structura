@@ -70,6 +70,17 @@ describe("layoutIR", () => {
     }
   });
 
+  // The spec's §7 literal carried three keys ELK silently ignores. These assert
+  // the corrected keys actually take effect, since a wrong key throws nothing.
+  it("applies the 40px container padding (elk.padding)", async () => {
+    const { boxes } = await layoutIR(nestedIR);
+    const firstChild = boxes.get("az");
+    if (!firstChild) throw new Error("missing box");
+    // ELK's default padding is 12; anything below 40 means the value did not parse.
+    expect(firstChild.x).to.be.at.least(40);
+    expect(firstChild.y).to.be.at.least(40);
+  });
+
   it("orders connected nodes along the flow direction", async () => {
     const { boxes } = await layoutIR(nestedIR);
     const alb = boxes.get("alb");
@@ -93,6 +104,30 @@ describe("layoutIR", () => {
     });
     expect(boxes.size).toBe(2);
     expect(boxes.get("a")!.x).toBeLessThan(boxes.get("b")!.x);
+  });
+
+  it("gives an empty boundary a container-sized box", async () => {
+    const { boxes } = await layoutIR({
+      type: "aws-deployment",
+      nodes: [
+        {
+          id: "vpc",
+          semanticType: "aws-vpc",
+          name: "Empty VPC",
+          parentId: null,
+          isBoundary: true,
+          tier: "edge",
+        },
+        { id: "user", semanticType: "person", name: "User", parentId: null, tier: "external" },
+      ],
+      edges: [],
+    });
+    const vpc = boxes.get("vpc");
+    const user = boxes.get("user");
+    if (!vpc || !user) throw new Error("missing box");
+    // Not collapsed to a leaf: it still has to read as a boundary on the canvas.
+    expect(vpc.width).to.be.greaterThan(user.width);
+    expect(vpc.height).to.be.greaterThan(user.height);
   });
 
   it("returns no boxes for an empty IR", async () => {

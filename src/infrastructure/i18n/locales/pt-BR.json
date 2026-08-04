@@ -691,6 +691,8 @@
         "nodeInvalidSemanticType": "O nó \"{{id}}\" usa um semanticType desconhecido: \"{{value}}\".",
         "nodeInvalidTier": "O nó \"{{id}}\" usa um tier desconhecido: \"{{value}}\".",
         "nodeInvalidParentId": "O nó \"{{id}}\" tem um parentId inválido.",
+        "nodeInvalidBoundary": "O nó \"{{id}}\" tem isBoundary que não é booleano.",
+        "nodeChildrenWithoutBoundary": "O nó \"{{id}}\" contém outros nós mas não está marcado como boundary.",
         "nodeParentNotFound": "O nó \"{{id}}\" aponta para um pai inexistente: \"{{parentId}}\".",
         "nodeSelfParent": "O nó \"{{id}}\" é pai de si mesmo.",
         "containmentCycle": "Ciclo de containment: {{ids}}.",

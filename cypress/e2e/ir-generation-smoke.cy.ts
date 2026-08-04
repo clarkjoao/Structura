@@ -12,7 +12,11 @@ const STUB_ENDPOINT = "https://stub.invalid/v1/chat/completions";
 
 const DIAGRAM_ID = "diag_ir_smoke";
 
-/** vpc > az > private subnet > {alb, ecs, rds}: three levels of containment. */
+/**
+ * vpc > az > private subnet > services: three levels of containment, plus the
+ * cases slice 2 added — concrete AWS services, a boundary named exactly like its
+ * kind, an unknown service, and an empty boundary.
+ */
 const NESTED_IR = {
   type: "aws-deployment",
   nodes: [
@@ -21,7 +25,9 @@ const NESTED_IR = {
       id: "prod-vpc",
       semanticType: "aws-vpc",
       name: "Production VPC",
+      awsService: "vpc",
       parentId: null,
+      isBoundary: true,
       tier: "edge",
     },
     {
@@ -29,19 +35,24 @@ const NESTED_IR = {
       semanticType: "aws-az",
       name: "AZ us-east-1a",
       parentId: "prod-vpc",
+      isBoundary: true,
       tier: "compute",
     },
     {
+      // Named exactly like its panel kind — the duplicated-label case.
       id: "private-subnet",
       semanticType: "aws-private-subnet",
       name: "Private Subnet",
+      awsService: "private-subnet",
       parentId: "az-a",
+      isBoundary: true,
       tier: "compute",
     },
     {
-      id: "app-alb",
+      id: "app-elb",
       semanticType: "aws-networking",
       name: "Application Load Balancer",
+      awsService: "elb",
       parentId: "private-subnet",
       tier: "edge",
     },
@@ -49,7 +60,8 @@ const NESTED_IR = {
       id: "orders-service",
       semanticType: "aws-compute",
       name: "Orders Service",
-      technology: "ECS Fargate",
+      awsService: "lambda",
+      technology: "Node.js",
       parentId: "private-subnet",
       tier: "compute",
     },
@@ -57,14 +69,34 @@ const NESTED_IR = {
       id: "orders-db",
       semanticType: "aws-database",
       name: "Orders Database",
+      awsService: "rds",
       technology: "Aurora PostgreSQL",
       parentId: "private-subnet",
       tier: "data",
     },
+    {
+      // Service the catalog does not know — must degrade, not break.
+      id: "mystery-box",
+      semanticType: "aws-compute",
+      name: "Mystery Box",
+      awsService: "not-a-real-service",
+      parentId: "private-subnet",
+      tier: "compute",
+    },
+    {
+      // Boundary with nothing inside it: only renderable via isBoundary.
+      id: "empty-vpc",
+      semanticType: "aws-vpc",
+      name: "Disaster Recovery",
+      awsService: "vpc",
+      parentId: null,
+      isBoundary: true,
+      tier: "edge",
+    },
   ],
   edges: [
-    { id: "customer-to-alb", sourceId: "customer", targetId: "app-alb", label: "HTTPS" },
-    { id: "alb-to-service", sourceId: "app-alb", targetId: "orders-service", label: "routes" },
+    { id: "customer-to-elb", sourceId: "customer", targetId: "app-elb", label: "HTTPS" },
+    { id: "elb-to-service", sourceId: "app-elb", targetId: "orders-service", label: "routes" },
     {
       id: "service-to-db",
       sourceId: "orders-service",
@@ -188,8 +220,8 @@ describe("IR generation — valid IR reaches the canvas", () => {
   });
 
   it("nests three levels of containment inside their parents", () => {
-    // Deepest chain: Production VPC > AZ > Private Subnet > Orders Service.
-    const chain = ["Production VPC", "AZ us-east-1a", "Private Subnet", "Orders Service"];
+    // Deepest chain: Production VPC > AZ > Private Subnet > Orders Database.
+    const chain = ["Production VPC", "AZ us-east-1a", "Private Subnet", "Orders Database"];
 
     for (let index = 0; index < chain.length - 1; index += 1) {
       nodeRect(chain[index]).then((parent) => {
@@ -217,6 +249,53 @@ describe("IR generation — valid IR reaches the canvas", () => {
 
   it("confirms the generation in the chat", () => {
     cy.contains("Diagram generated:", { timeout: 20000 }).should("exist");
+  });
+
+  it("resolves service icons from the AWS catalog", () => {
+    // A resolved icon comes from `aws-react-icons`; the fallback is lucide's
+    // Network glyph, which always carries a `lucide` class.
+    for (const label of ["Orders Service", "Orders Database", "Application Load Balancer"]) {
+      cy.contains(".react-flow__node", label)
+        .find("svg:not(.lucide)", { timeout: 20000 })
+        .should("have.length.gte", 1);
+    }
+  });
+
+  it("degrades an unknown service to the fallback icon without breaking", () => {
+    cy.contains(".react-flow__node", "Mystery Box").should("exist");
+    cy.contains(".react-flow__node", "Mystery Box").find("svg.lucide").should("exist");
+  });
+
+  it("gives boundaries the AWS treatment", () => {
+    for (const label of ["Production VPC", "Private Subnet", "AZ us-east-1a"]) {
+      cy.contains(".react-flow__node", label)
+        .find("svg:not(.lucide)", { timeout: 20000 })
+        .should("have.length.gte", 1);
+    }
+  });
+
+  it("does not duplicate the kind in a boundary label", () => {
+    cy.contains(".react-flow__node", "Private Subnet")
+      .invoke("text")
+      .should((text: string) => {
+        expect(text).to.not.contain("Private Subnet - Private Subnet");
+      });
+    cy.contains(".react-flow__node", "Production VPC")
+      .invoke("text")
+      .should((text: string) => {
+        expect(text).to.not.contain("VPC - Production VPC");
+      });
+  });
+
+  it("renders a boundary that has no children", () => {
+    cy.contains(".react-flow__node", "Disaster Recovery")
+      .should("exist")
+      .then(($el) => {
+        const rect = $el[0].getBoundingClientRect();
+        // A boundary box, not a collapsed leaf-sized node.
+        expect(rect.width).to.be.at.least(200);
+        expect(rect.height).to.be.at.least(120);
+      });
   });
 
   it("logged no console errors", () => {

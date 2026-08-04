@@ -1,6 +1,8 @@
 import type { LucideIcon } from "lucide-react";
 import { Square, MapPin, LayoutList } from "lucide-react";
-import { PanelKind } from "@/features/diagram";
+// Leaf import: this catalog only needs the enum, and going through the
+// `@/features/diagram` barrel would pull the store in behind it.
+import { PanelKind } from "@/features/diagram/enums";
 
 export interface PanelKindDef {
   id: PanelKind;

@@ -50,15 +50,50 @@ export const IR_TIERS = ["external", "edge", "ingress", "compute", "data", "inte
 
 export type Tier = (typeof IR_TIERS)[number];
 
+/**
+ * Semantic types that are boundaries by definition — the type itself already
+ * declares the node is a container, so `isBoundary` is implied for them.
+ */
+export const IR_BOUNDARY_SEMANTIC_TYPES = [
+  "aws-vpc",
+  "aws-az",
+  "aws-subnet",
+  "aws-public-subnet",
+  "aws-private-subnet",
+] as const;
+
+export type BoundarySemanticType = (typeof IR_BOUNDARY_SEMANTIC_TYPES)[number];
+
+export function isBoundarySemanticType(value: SemanticType): value is BoundarySemanticType {
+  return (IR_BOUNDARY_SEMANTIC_TYPES as readonly string[]).includes(value);
+}
+
 export interface IRNode {
   /** lowercase-hyphenated, unique within the IR */
   id: string;
   semanticType: SemanticType;
   name: string;
   technology?: string;
+  /**
+   * Concrete cloud service behind the semanticType — "lambda", "rds", "alb".
+   * Resolved against Structura's AWS catalog for iconography; an unknown value
+   * degrades to the category icon rather than failing.
+   */
+  awsService?: string;
   /** containment hierarchy; null for a root node */
   parentId: string | null;
+  /**
+   * Marks the node as a container. A boundary may hold children or stand empty
+   * (an unpopulated VPC is still a VPC); a node that is not a boundary must not
+   * have children.
+   */
+  isBoundary?: boolean;
   tier: Tier;
+}
+
+/** True when the node is a container, by explicit flag or by semanticType. */
+export function isBoundaryNode(node: Pick<IRNode, "semanticType" | "isBoundary">): boolean {
+  return node.isBoundary === true || isBoundarySemanticType(node.semanticType);
 }
 
 export interface IREdge {

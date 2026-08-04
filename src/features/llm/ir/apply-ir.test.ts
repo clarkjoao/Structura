@@ -48,11 +48,128 @@ describe("buildGeneratedGraphInputs — type mapping", () => {
     expect(byId.get("ecs")).toMatchObject({ type: "aws-compute" });
   });
 
-  it("turns any node with children into a panel so React Flow nests it", () => {
+  it("carries awsService through to leaf components", () => {
+    const ir: DiagramIR = {
+      type: "aws-deployment",
+      nodes: [
+        {
+          id: "fn",
+          semanticType: "aws-compute",
+          name: "Handler",
+          awsService: "lambda",
+          parentId: null,
+          tier: "compute",
+        },
+      ],
+      edges: [],
+    };
+    const { nodes } = buildGeneratedGraphInputs(
+      ir,
+      boxesFrom({ fn: { x: 0, y: 0, width: 180, height: 80 } }),
+      NO_ORIGIN,
+    );
+    expect(nodes[0]).toMatchObject({ type: "aws-compute", awsService: "lambda" });
+  });
+
+  it("lets a known service pick the boundary's panel kind", () => {
+    const ir: DiagramIR = {
+      type: "aws-deployment",
+      nodes: [
+        {
+          id: "cluster",
+          semanticType: "aws-compute",
+          name: "Prod Cluster",
+          awsService: "ecs",
+          parentId: null,
+          isBoundary: true,
+          tier: "compute",
+        },
+        {
+          id: "task",
+          semanticType: "aws-compute",
+          name: "Worker",
+          parentId: "cluster",
+          tier: "compute",
+        },
+      ],
+      edges: [],
+    };
+    const { nodes } = buildGeneratedGraphInputs(
+      ir,
+      boxesFrom({
+        cluster: { x: 0, y: 0, width: 400, height: 200 },
+        task: { x: 40, y: 40, width: 180, height: 80 },
+      }),
+      NO_ORIGIN,
+    );
+    const byId = new Map(nodes.map((node) => [node.externalId, node]));
+    expect(byId.get("cluster")).toMatchObject({ type: "panel", panelKind: PanelKind.EcsCluster });
+  });
+
+  it("degrades an unknown service to the plain category component", () => {
+    const ir: DiagramIR = {
+      type: "aws-deployment",
+      nodes: [
+        {
+          id: "thing",
+          semanticType: "aws-compute",
+          name: "Mystery",
+          awsService: "not-a-real-service",
+          parentId: null,
+          tier: "compute",
+        },
+      ],
+      edges: [],
+    };
+    const { nodes } = buildGeneratedGraphInputs(
+      ir,
+      boxesFrom({ thing: { x: 0, y: 0, width: 180, height: 80 } }),
+      NO_ORIGIN,
+    );
+    // Kept verbatim: the canvas falls back to the category icon on its own.
+    expect(nodes[0]).toMatchObject({ type: "aws-compute", awsService: "not-a-real-service" });
+  });
+
+  it("renders an empty boundary as a panel", () => {
+    const ir: DiagramIR = {
+      type: "aws-deployment",
+      nodes: [
+        {
+          id: "vpc",
+          semanticType: "aws-vpc",
+          name: "Empty VPC",
+          parentId: null,
+          isBoundary: true,
+          tier: "edge",
+        },
+      ],
+      edges: [],
+    };
+    const { nodes } = buildGeneratedGraphInputs(
+      ir,
+      boxesFrom({ vpc: { x: 0, y: 0, width: 240, height: 160 } }),
+      NO_ORIGIN,
+    );
+    expect(nodes[0]).toMatchObject({
+      type: "panel",
+      panelKind: PanelKind.Vpc,
+      width: 240,
+      height: 160,
+    });
+  });
+
+  it("turns a boundary into a panel so React Flow nests it", () => {
     const ir: DiagramIR = {
       type: "c4-container",
       nodes: [
-        { id: "sys", semanticType: "container", name: "System", parentId: null, tier: "compute" },
+        {
+          id: "sys",
+          semanticType: "container",
+          name: "System",
+          parentId: null,
+          isBoundary: true,
+          tier: "compute",
+        },
         { id: "api", semanticType: "container", name: "API", parentId: "sys", tier: "compute" },
       ],
       edges: [],
