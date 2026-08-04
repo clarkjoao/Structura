@@ -70,8 +70,21 @@ export const c4Descriptor: NodeTypeDescriptor = {
       name: comp.name,
       type: comp.type,
       description: comp.description,
-      technology: isC4Component(comp) ? comp.technology : undefined,
-      customColor: (comp as { customColor?: string }).customColor ?? (isC4Component(comp) ? comp.panelColor : undefined),
+      // Cloud components carry `technology` too ("Fargate", "Aurora PostgreSQL").
+      // Passing only C4 here meant an AWS node always fell through to the
+      // category name in `CustomNode`, so a technology the user (or the
+      // generator) set was never shown. The fallback still applies when the
+      // field is empty, which is what keeps existing diagrams unchanged.
+      technology:
+        isC4Component(comp) ||
+        isAwsComponent(comp) ||
+        isGcpComponent(comp) ||
+        isAzureComponent(comp)
+          ? comp.technology
+          : undefined,
+      customColor:
+        (comp as { customColor?: string }).customColor ??
+        (isC4Component(comp) ? comp.panelColor : undefined),
       awsService: isAwsComponent(comp)
         ? comp.awsService
         : isGcpComponent(comp)
