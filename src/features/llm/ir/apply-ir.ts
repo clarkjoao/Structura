@@ -43,14 +43,21 @@ function collectParentIds(ir: DiagramIR): Set<string> {
   return parentIds;
 }
 
+export interface GeneratedGraphInputs {
+  nodes: GeneratedNodeInput[];
+  edges: GeneratedEdgeInput[];
+}
+
 /**
- * Lays the IR out with ELK and writes the result to the active diagram as a
- * single undoable mutation.
+ * Turns a laid-out IR into store input. Pure: everything that depends on the
+ * store or on ELK is resolved by the caller.
  */
-export async function applyIRToDiagram(ir: DiagramIR): Promise<ApplyIRResult> {
-  const { boxes } = await layoutIR(ir);
+export function buildGeneratedGraphInputs(
+  ir: DiagramIR,
+  boxes: Map<string, IRLayoutBox>,
+  origin: { x: number; y: number },
+): GeneratedGraphInputs {
   const parentIds = collectParentIds(ir);
-  const origin = currentViewportOrigin();
 
   const nodes: GeneratedNodeInput[] = ir.nodes.map((node, index): GeneratedNodeInput => {
     const isContainer = parentIds.has(node.id);
@@ -85,6 +92,17 @@ export async function applyIRToDiagram(ir: DiagramIR): Promise<ApplyIRResult> {
     targetExternalId: edge.targetId,
     label: edge.label ?? "",
   }));
+
+  return { nodes, edges };
+}
+
+/**
+ * Lays the IR out with ELK and writes the result to the active diagram as a
+ * single undoable mutation.
+ */
+export async function applyIRToDiagram(ir: DiagramIR): Promise<ApplyIRResult> {
+  const { boxes } = await layoutIR(ir);
+  const { nodes, edges } = buildGeneratedGraphInputs(ir, boxes, currentViewportOrigin());
 
   const result = useDiagramStore.getState().insertGeneratedGraph(nodes, edges);
   return { componentIds: result.componentIds, connectionIds: result.connectionIds };
