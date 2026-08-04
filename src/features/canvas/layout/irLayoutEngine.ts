@@ -83,7 +83,11 @@ function buildChildrenByParent(nodes: IRNode[]): Map<string | null, IRNode[]> {
   return childrenByParent;
 }
 
-function buildElkNode(node: IRNode, childrenByParent: Map<string | null, IRNode[]>): ElkNode {
+function buildElkNode(
+  node: IRNode,
+  childrenByParent: Map<string | null, IRNode[]>,
+  options: Record<string, string>,
+): ElkNode {
   const children = childrenByParent.get(node.id) ?? [];
   if (children.length === 0) {
     // An empty boundary still has to read as a box, so it keeps the container
@@ -99,8 +103,8 @@ function buildElkNode(node: IRNode, childrenByParent: Map<string | null, IRNode[
     id: node.id,
     width: CONTAINER_SEED_W,
     height: CONTAINER_SEED_H,
-    layoutOptions: { ...IR_ELK_OPTIONS },
-    children: children.map((child) => buildElkNode(child, childrenByParent)),
+    layoutOptions: { ...options },
+    children: children.map((child) => buildElkNode(child, childrenByParent, options)),
   };
 }
 
@@ -119,16 +123,18 @@ function collectBoxes(node: ElkNode, boxes: Map<string, IRLayoutBox>): void {
 }
 
 /**
- * Lays out every node of the IR. Positions come back relative to the parent
- * (root nodes relative to the canvas origin), which is exactly what React Flow
- * expects from a child node.
+ * Runs ELK and returns its graph untouched. Exposed so the readability counter
+ * can measure the same output the canvas is built from, and so layout options
+ * can be compared without going through the store.
+ *
+ * `optionOverrides` exists for that comparison only — production callers use
+ * `layoutIR`, which applies the configuration this project settled on.
  */
-export async function layoutIR(ir: DiagramIR): Promise<IRLayoutResult> {
-  const boxes = new Map<string, IRLayoutBox>();
-  if (ir.nodes.length === 0) {
-    return { boxes };
-  }
-
+export async function layoutIRGraph(
+  ir: DiagramIR,
+  optionOverrides: Record<string, string> = {},
+): Promise<ElkNode> {
+  const options = { ...IR_ELK_OPTIONS, ...optionOverrides };
   const childrenByParent = buildChildrenByParent(ir.nodes);
   const roots = childrenByParent.get(null) ?? [];
 
@@ -140,14 +146,26 @@ export async function layoutIR(ir: DiagramIR): Promise<IRLayoutResult> {
 
   const graph: ElkNode = {
     id: ELK_ROOT_ID,
-    layoutOptions: { ...IR_ELK_OPTIONS },
-    children: roots.map((root) => buildElkNode(root, childrenByParent)),
+    layoutOptions: options,
+    children: roots.map((root) => buildElkNode(root, childrenByParent, options)),
     edges: elkEdges,
   };
 
   const elk = await getElk();
-  const laidOut = await elk.layout(graph);
-  collectBoxes(laidOut, boxes);
+  return elk.layout(graph);
+}
 
+/**
+ * Lays out every node of the IR. Positions come back relative to the parent
+ * (root nodes relative to the canvas origin), which is exactly what React Flow
+ * expects from a child node.
+ */
+export async function layoutIR(ir: DiagramIR): Promise<IRLayoutResult> {
+  const boxes = new Map<string, IRLayoutBox>();
+  if (ir.nodes.length === 0) {
+    return { boxes };
+  }
+
+  collectBoxes(await layoutIRGraph(ir), boxes);
   return { boxes };
 }

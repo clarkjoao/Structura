@@ -266,6 +266,13 @@ describe("IR generation — valid IR reaches the canvas", () => {
     cy.contains(".react-flow__node", "Mystery Box").find("svg.lucide").should("exist");
   });
 
+  it("shows technology on an AWS node, and the category when it has none", () => {
+    cy.contains(".react-flow__node", "Orders Service").should("contain.text", "Node.js");
+    // No technology set: the category label is the fallback, which is what
+    // already-saved diagrams rely on.
+    cy.contains(".react-flow__node", "Mystery Box").should("contain.text", "Compute");
+  });
+
   it("gives boundaries the AWS treatment", () => {
     for (const label of ["Production VPC", "Private Subnet", "AZ us-east-1a"]) {
       cy.contains(".react-flow__node", label)
