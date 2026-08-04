@@ -82,10 +82,7 @@ export const componentParentingSlice = (
       if (parentId) {
         const parentLayout = resolveNodeLayout(d, scene, parentId);
         if (parentLayout) {
-          const parentAbs = getAbsPos(
-            parentId,
-            resolveComponent(d, scene, parentId)?.parentId ?? null,
-          );
+          const parentAbs = getAbsPos(parentId, resolveComponent(d, scene, parentId)?.parentId ?? null);
           childLayout.x = abs.x - parentAbs.x;
           childLayout.y = abs.y - parentAbs.y;
         } else {

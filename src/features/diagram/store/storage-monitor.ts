@@ -9,7 +9,11 @@ import { useSaveStatusStore } from "./saveStatus.store";
  * statuses, update this union to match.
  */
 export type FolderSyncStatus =
-  "disconnected" | "connecting" | "connected" | "needs_permission" | "error";
+  | "disconnected"
+  | "connecting"
+  | "connected"
+  | "needs_permission"
+  | "error";
 
 /** Soma o tamanho de todas as chaves/valores do localStorage em bytes (UTF-16: char × 2). */
 export function measureLocalStorageUsage(): number {

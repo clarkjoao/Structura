@@ -573,18 +573,15 @@ export function wrapIStoragePortWithDiagramPersistTracking(storage: IStoragePort
       if (!pendingPersist || pendingPersist.name !== PERSIST_KEY) return;
       const { name, value } = pendingPersist;
       pendingPersist = null;
-      void storage
-        .setItem(name, value)
-        .then(() => {
-          useSaveStatusStore.getState()._setSaved();
-          recordLocalStorageDiagramSyncSuccess();
-        })
-        .catch((err: unknown) => {
-          if (isQuotaExceededError(err)) {
-            useSaveStatusStore.getState()._setStorageCritical();
-          }
-          useSaveStatusStore.getState()._setError();
-        });
+      void storage.setItem(name, value).then(() => {
+        useSaveStatusStore.getState()._setSaved();
+        recordLocalStorageDiagramSyncSuccess();
+      }).catch((err: unknown) => {
+        if (isQuotaExceededError(err)) {
+          useSaveStatusStore.getState()._setStorageCritical();
+        }
+        useSaveStatusStore.getState()._setError();
+      });
     });
   }
 
