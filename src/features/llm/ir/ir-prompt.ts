@@ -115,9 +115,9 @@ function buildBoundarySection(): string {
     "also be empty — an infrastructure boundary with nothing deployed in it yet is",
     "still worth drawing.",
     "",
-    'A node without "isBoundary": true must not be referenced as a parentId.',
-    'The VPC/AZ/subnet semanticTypes are boundaries by definition; setting "isBoundary"',
-    "on them as well is harmless and preferred for clarity.",
+    "A node that has children is treated as a boundary whether or not the flag is",
+    "set, so the flag matters most for the empty case. The VPC/AZ/subnet",
+    "semanticTypes are boundaries by definition.",
   ].join("\n");
 }
 
@@ -145,7 +145,9 @@ const RULES = `
 3. "parentId" is either null or the id of another node in the same document. Use it
    for containment: a node nested inside a boundary. Containment can nest several
    levels deep. A node must never be its own ancestor.
-4. Any node used as a parentId must have "isBoundary": true.
+4. Set "isBoundary": true on any node used as a parentId. A node that holds
+   children is treated as a boundary either way, so this is for clarity — but it
+   is the *only* way to mark a boundary that is currently empty.
 5. Every "sourceId" and "targetId" must be the id of a node in the same document.
    Edges express interaction, not containment — never add an edge to say that one
    node is inside another.

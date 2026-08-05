@@ -27,7 +27,6 @@ export type IRIssueCode =
   | "nodeInvalidTier"
   | "nodeInvalidParentId"
   | "nodeInvalidBoundary"
-  | "nodeChildrenWithoutBoundary"
   | "nodeParentNotFound"
   | "nodeSelfParent"
   | "containmentCycle"
@@ -228,12 +227,16 @@ function validateContainment(
     issues.push({ code: "containmentCycle", params: { ids: cycle.join(" -> ") } });
   }
 
-  // Only a boundary may contain other nodes. The reverse is allowed on purpose:
-  // an empty VPC or a not-yet-populated AZ is still a boundary.
+  // A node with children is a container, whether or not the model said so —
+  // holding children is proof enough. `isBoundary` earns its place on the *other*
+  // side: it is the only way to say "container that happens to be empty", which
+  // nothing else can express. Rejecting this case bought nothing and threw away
+  // whole diagrams that render perfectly (models routinely omit the flag on C4
+  // services that contain components), so it is normalized instead.
   const parentsWithChildren = new Set(parentById.values());
   for (const node of nodes) {
     if (parentsWithChildren.has(node.id) && !isBoundaryNode(node)) {
-      issues.push({ code: "nodeChildrenWithoutBoundary", params: { id: node.id } });
+      node.isBoundary = true;
     }
   }
 }

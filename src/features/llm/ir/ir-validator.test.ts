@@ -241,7 +241,11 @@ describe("validateIR — containment", () => {
     expect(String(cycles[0].params?.ids)).toContain("b");
   });
 
-  it("rejects a node that has children but is not a boundary", () => {
+  it("treats a node that has children as a boundary, flag or no flag", () => {
+    // Models routinely omit `isBoundary` on a C4 service that contains
+    // components. Holding children is proof enough of being a container, so this
+    // is normalized rather than rejected — refusing it threw away whole
+    // diagrams that render perfectly well.
     const result = validateIR({
       type: "c4-container",
       nodes: [
@@ -250,7 +254,35 @@ describe("validateIR — containment", () => {
       ],
       edges: [],
     });
-    expect(codesOf(result)).toContain("nodeChildrenWithoutBoundary");
+    if (!result.ok) throw new Error(`expected valid IR, got ${JSON.stringify(result.issues)}`);
+    expect(result.ir.nodes.find((node) => node.id === "sys")?.isBoundary).toBe(true);
+    // The leaf is untouched.
+    expect(result.ir.nodes.find((node) => node.id === "api")?.isBoundary).toBeUndefined();
+  });
+
+  it("accepts the shape that failed in the field: services holding components", () => {
+    const services = ["quoting", "underwriting", "policy", "billing", "claims", "documents"];
+    const result = validateIR({
+      type: "c4-container",
+      nodes: [
+        ...services.map((id) => ({
+          id: `${id}-service`,
+          semanticType: "container",
+          name: id,
+          parentId: null,
+          tier: "compute",
+        })),
+        ...services.map((id) => ({
+          id: `${id}-api`,
+          semanticType: "component",
+          name: `${id} API`,
+          parentId: `${id}-service`,
+          tier: "compute",
+        })),
+      ],
+      edges: [],
+    });
+    expect(result.ok, result.ok ? "" : JSON.stringify(result.issues)).toBe(true);
   });
 
   it("accepts an empty boundary", () => {

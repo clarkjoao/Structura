@@ -693,7 +693,6 @@
         "nodeInvalidTier": "Node \"{{id}}\" uses an unknown tier: \"{{value}}\".",
         "nodeInvalidParentId": "Node \"{{id}}\" has an invalid parentId.",
         "nodeInvalidBoundary": "Node \"{{id}}\" has a non-boolean isBoundary.",
-        "nodeChildrenWithoutBoundary": "Node \"{{id}}\" contains other nodes but is not marked as a boundary.",
         "nodeParentNotFound": "Node \"{{id}}\" points to a parent that does not exist: \"{{parentId}}\".",
         "nodeSelfParent": "Node \"{{id}}\" is its own parent.",
         "containmentCycle": "Containment cycle: {{ids}}.",
