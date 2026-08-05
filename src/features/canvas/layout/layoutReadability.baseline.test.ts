@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { validateIR } from "@/features/llm/ir/ir-validator";
 import { layoutIRGraph } from "./irLayoutEngine";
-import { measureReadability, type ReadabilityReport } from "./layoutReadability";
-import { measureRenderedReadability } from "./renderedEdgePath";
+import { measurePolylines, measureReadability, type ReadabilityReport } from "./layoutReadability";
+import { buildRenderedPolylines, measureRenderedReadability } from "./renderedEdgePath";
+import { handPlacedDiagram, handPlacedLabels, handPlacedParents } from "./hand-placed-diagram";
 import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
 
 /**
@@ -108,5 +109,54 @@ describe("layout readability baseline", () => {
       expect(report.nodeCount, name).toBe(ir.nodes.length);
       expect(report.edgeCount, name).toBe(ir.edges.length);
     }
+  });
+});
+
+/**
+ * The four diagrams above are all ELK-laid-out, so they are systematically blind
+ * to anything that only matters when an edge runs against the flow. This one is
+ * placed by hand and stays in the suite for that reason.
+ */
+describe("hand-placed baseline", () => {
+  // Measured with the shipped configuration; upper bounds, like the four above.
+  const HAND_PLACED_BASELINE = { edgeCrossings: 10, edgeNodeOverlaps: 2 };
+
+  function measure() {
+    const diagram = handPlacedDiagram();
+    return measurePolylines(
+      {
+        boxes: diagram.boxes,
+        parentOf: handPlacedParents(diagram),
+        edges: buildRenderedPolylines(
+          diagram.boxes,
+          diagram.edges.map((edge) => ({
+            id: edge.id,
+            sourceId: edge.sourceId,
+            targetId: edge.targetId,
+          })),
+          {},
+          { dynamicSides: true },
+        ),
+        rootId: diagram.rootId,
+        width: diagram.width,
+        height: diagram.height,
+      },
+      { labels: handPlacedLabels(diagram) },
+    );
+  }
+
+  it("prints its numbers and stays within the recorded baseline", () => {
+    const report = measure();
+    console.info(
+      `\nHand-placed diagram: crossings ${report.edgeCrossings}, ` +
+        `over-node ${report.edgeNodeOverlaps}, labels ${report.labelOverlaps}, ` +
+        `${report.nodeCount} nodes / ${report.edgeCount} edges\n`,
+    );
+    expect(report.edgeCrossings).toBeLessThanOrEqual(HAND_PLACED_BASELINE.edgeCrossings);
+    expect(report.edgeNodeOverlaps).toBeLessThanOrEqual(HAND_PLACED_BASELINE.edgeNodeOverlaps);
+  });
+
+  it("keeps every edge", () => {
+    expect(measure().edgeCount).toBe(handPlacedDiagram().edges.length);
   });
 });
