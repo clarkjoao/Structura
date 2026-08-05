@@ -62,10 +62,15 @@ interface WalkedGraph {
 function absoluteBoxes(graph: ElkNode): {
   boxes: Map<string, Box>;
   parentOf: Map<string, string | null>;
+  portOwner: Map<string, string>;
   rawEdges: Array<{ edge: ElkExtendedEdge; storedIn: string }>;
 } {
   const boxes = new Map<string, Box>();
   const parentOf = new Map<string, string | null>();
+  // Ports are kept out of `parentOf` on purpose: that map is what tells the
+  // obstruction count which nodes are containers, and a node owning ports is
+  // still a leaf.
+  const portOwner = new Map<string, string>();
   const rawEdges: Array<{ edge: ElkExtendedEdge; storedIn: string }> = [];
 
   const walk = (node: ElkNode, offsetX: number, offsetY: number, parent: string | null): void => {
@@ -74,6 +79,9 @@ function absoluteBoxes(graph: ElkNode): {
     boxes.set(node.id, { x, y, width: node.width ?? 0, height: node.height ?? 0 });
     parentOf.set(node.id, parent);
 
+    for (const port of node.ports ?? []) {
+      portOwner.set(port.id, node.id);
+    }
     for (const edge of node.edges ?? []) {
       rawEdges.push({ edge: edge as ElkExtendedEdge, storedIn: node.id });
     }
@@ -83,7 +91,7 @@ function absoluteBoxes(graph: ElkNode): {
   };
 
   walk(graph, 0, 0, null);
-  return { boxes, parentOf, rawEdges };
+  return { boxes, parentOf, portOwner, rawEdges };
 }
 
 function ancestorChain(id: string, parentOf: Map<string, string | null>): string[] {
@@ -125,7 +133,7 @@ function sectionPoints(section: ElkEdgeSection): Point[] {
 }
 
 function walkGraph(graph: ElkNode): WalkedGraph {
-  const { boxes, parentOf, rawEdges } = absoluteBoxes(graph);
+  const { boxes, parentOf, portOwner, rawEdges } = absoluteBoxes(graph);
   const edges: WalkedGraph["edges"] = [];
 
   for (const { edge } of rawEdges) {
@@ -133,10 +141,11 @@ function walkGraph(graph: ElkNode): WalkedGraph {
     const target = edge.targets?.[0];
     if (source === undefined || target === undefined) continue;
 
-    // Ports are children of their node in ELK's model but not in ours; fall back
-    // to the port's owner when the endpoint id is not a node we walked.
-    const sourceNode = boxes.has(source) ? source : (parentOf.get(source) ?? source);
-    const targetNode = boxes.has(target) ? target : (parentOf.get(target) ?? target);
+    // An edge can be attached to a port rather than the node itself (the legacy
+    // auto-layout does this); resolve back to the owning node so the common
+    // ancestor can be found at all.
+    const sourceNode = boxes.has(source) ? source : (portOwner.get(source) ?? source);
+    const targetNode = boxes.has(target) ? target : (portOwner.get(target) ?? target);
 
     const anchorId = lowestCommonAncestor(sourceNode, targetNode, parentOf) ?? graph.id;
     const anchor = boxes.get(anchorId) ?? { x: 0, y: 0, width: 0, height: 0 };
