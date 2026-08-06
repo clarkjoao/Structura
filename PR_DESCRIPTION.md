@@ -33,7 +33,8 @@ e-commerce with microservices` (`/gerar` also works).
 - `reference-diagrams.ts` + `hand-placed-diagram.ts` — five fixtures with
   recorded baselines, guarded by `layoutReadability.baseline.test.ts`.
 
-Rendered crossings across the four generated fixtures went **52 → 12**.
+Rendered crossings across the four generated fixtures went **52 → 16**, from
+reusing ELK's edge ordering when handing out handle slots.
 
 ---
 
@@ -44,15 +45,20 @@ merging.
 
 | Change                                            | Effect                                                                                                                                                                                                                                     | Where                                                |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
-| **Edge side is now derived from position**        | Every edge in every diagram. An edge to a node further left used to leave the right side and loop around; it now leaves the left. Flips only when the target is _entirely_ left of the source, so a pixel of movement cannot oscillate it. | `connectionDerivations.ts`, `CustomNode/Handles.tsx` |
 | **`technology` shows on cloud nodes**             | AWS/GCP/Azure nodes with a `technology` value now display it instead of the category name. Nodes without one are unchanged — the category fallback still applies.                                                                          | `c4.descriptor.ts`                                   |
 | **Panel headers stop repeating the kind**         | "VPC - VPC" becomes "VPC"; "Availability Zone - AZ us-east-1a" becomes "AZ us-east-1a". A name that does not mention its kind still gets the prefix.                                                                                       | `panelLabel.ts`                                      |
 | **Auto-layout waypoints land in the right place** | Bug fix. Running auto-layout on a diagram with panels used to offset the control points of every edge between two siblings by the panel's position.                                                                                        | `autoLayoutEngine.ts`                                |
 | **`cy.dragNode` actually drags**                  | Test-only. It fired pointer events, which React Flow ignores, so the two stress drag tests passed while moving nothing.                                                                                                                    | `cypress/support/commands.ts`                        |
 
-New handle ids only appear for the mirrored sides (`source-l-*`, `target-r-*`);
-the default sides keep their original ids, so recorded walkthrough steps — which
-store a `handleId` for highlighting — still resolve.
+Handle ids are unchanged (`source-N` / `target-N`), so recorded walkthrough
+steps — which store a `handleId` for highlighting — still resolve.
+
+An earlier revision of this branch also derived each edge's handle **side** from
+the node positions, mirroring an edge whose target sat further left. That is
+withdrawn: it broke Structura's reading contract, where left is input and right
+is output on every node regardless of position, and it meant dragging a node
+rewired edges that were already on the canvas. The rule is now written down in
+`AGENTS.md` and locked by `connectionDerivations.fixedSides.test.ts`.
 
 ---
 
@@ -73,9 +79,9 @@ store a `handleId` for highlighting — still resolve.
 
 1. **The legacy auto-layout still disagrees with the canvas about handle
    geometry.** `buildPortsForNode` tells ELK the handles are at
-   `(slot + 0.5) / MAX_HANDLES` and always EAST→WEST; the canvas renders
-   `(i + 1) / (n + 1)` and now picks the side from the geometry. Reconciling
-   properly means the engine consuming `buildEdgeHandleAssignments` instead of
+   `(slot + 0.5) / MAX_HANDLES`; the canvas renders `(i + 1) / (n + 1)`. Both
+   agree on EAST→WEST. Reconciling properly means the engine consuming
+   `buildEdgeHandleAssignments` instead of
    reimplementing it — a real refactor of a shared file. A partial attempt made
    the measured mismatch _worse_ (avg 4.0 → 17.2px) and was reverted. Current
    mismatch on a fan-out fixture: avg 4.0px, worst 14.7px.
@@ -99,8 +105,8 @@ store a `handleId` for highlighting — still resolve.
 
 ## Where a reviewer should look hardest
 
-- **`connectionDerivations.ts`** — the side/slot decision. It touches every edge
-  in the product, and the per-side counting is the subtle part.
+- **`connectionDerivations.ts`** — the slot decision. It touches every edge in
+  the product. Sides are fixed and must stay that way.
 - **`layoutReadability.ts` `walkGraph`** — the lowest-common-ancestor correction.
   ELK reports an edge relative to the LCA of its endpoints, not to the array
   holding it. Getting this wrong is silent and was the cause of the auto-layout
@@ -114,7 +120,7 @@ store a `handleId` for highlighting — still resolve.
 
 ## Checks
 
-- `npm run typecheck`, `npm run test` (680), `npm run build` all clean.
+- `npm run typecheck`, `npm run test` (671), `npm run build` all clean.
 - Cypress: `ir-generation-smoke` (15) and `node-drag-smoke` (2) pass.
 - `npm run lint` and `npm run format:check` report exactly what they report on
   `main` — 74 lint problems and 90 unformatted files, none of them from this

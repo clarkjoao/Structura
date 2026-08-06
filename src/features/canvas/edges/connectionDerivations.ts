@@ -8,6 +8,22 @@ import {
 } from "@/features/diagram";
 import { MAX_HANDLES } from "../canvas.constants";
 
+/**
+ * Handle sides are fixed, by design.
+ *
+ * Structura diagrams are read left to right, and the handles are what enforce
+ * that reading: **left is input only, right is output only**, on every node,
+ * whatever its position. An edge leaves its source on the right and arrives at
+ * its target on the left — always. Only the slot within a side varies.
+ *
+ * Do not derive the side from the node positions. The edge states the direction;
+ * position only complements it. Deriving the side means dragging a node silently
+ * rewires which handles an existing edge uses, so the picture rearranges itself
+ * under the user, and a deliberate back-edge — a loop, a retry, a write-back to
+ * a store drawn further left — stops reading as one. Same contract as draw.io:
+ * the connection owns its endpoints.
+ */
+
 export function singleIncomingTargetHandleId(nodeId: string): string {
   return `in-${nodeId}`;
 }
@@ -21,50 +37,6 @@ export interface HandleAssignment {
 export interface ConnectionCounts {
   incoming: number;
   outgoing: number;
-  /**
-   * How many edges use each side. Handles are rendered per side, so a node with
-   * two edges leaving right and one leaving left needs two right handles and one
-   * left handle — not three of each. Absent until geometry is known, in which
-   * case everything sits on the default sides.
-   */
-  outgoingRight?: number;
-  outgoingLeft?: number;
-  incomingLeft?: number;
-  incomingRight?: number;
-}
-
-export interface NodeBox {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-/**
- * Which sides an edge leaves from and arrives at.
- *
- * The canvas used to be fixed at right -> left whatever the geometry, so an edge
- * to a node further left looped all the way around. The flip happens only when
- * the target is *entirely* left of the source: that leaves a dead band as wide
- * as the horizontal overlap, so a one-pixel nudge near the boundary cannot flip
- * the side back and forth. Stateless, so there is nothing to go stale.
- */
-export type EdgeSides = "forward" | "mirrored";
-
-export function resolveEdgeSides(
-  source: NodeBox | undefined,
-  target: NodeBox | undefined,
-): EdgeSides {
-  if (!source || !target) return "forward";
-  return target.x + target.width < source.x ? "mirrored" : "forward";
-}
-
-/** Handle id for one end of an edge, given the sides it uses. */
-export function handleIdFor(end: "source" | "target", sides: EdgeSides, slot: number): string {
-  // The default sides keep their original ids so recorded flow steps, which
-  // store a handleId for highlighting, still resolve.
-  if (sides === "forward") return `${end}-${slot}`;
-  return end === "source" ? `source-l-${slot}` : `target-r-${slot}`;
 }
 
 export function buildPanelIds(components: Component[]): Set<string> {
@@ -77,32 +49,13 @@ export function buildPanelIds(components: Component[]): Set<string> {
 
 export function buildConnectionCountPerNode(
   connections: Connection[],
-  boxes?: Record<string, NodeBox>,
 ): Record<string, ConnectionCounts> {
   const counts: Record<string, ConnectionCounts> = {};
-  const blank = (): ConnectionCounts => ({
-    incoming: 0,
-    outgoing: 0,
-    outgoingRight: 0,
-    outgoingLeft: 0,
-    incomingLeft: 0,
-    incomingRight: 0,
-  });
-
   for (const conn of connections) {
-    if (!counts[conn.sourceId]) counts[conn.sourceId] = blank();
-    if (!counts[conn.targetId]) counts[conn.targetId] = blank();
+    if (!counts[conn.sourceId]) counts[conn.sourceId] = { incoming: 0, outgoing: 0 };
+    if (!counts[conn.targetId]) counts[conn.targetId] = { incoming: 0, outgoing: 0 };
     counts[conn.sourceId].outgoing += 1;
     counts[conn.targetId].incoming += 1;
-
-    const sides = boxes ? resolveEdgeSides(boxes[conn.sourceId], boxes[conn.targetId]) : "forward";
-    if (sides === "forward") {
-      counts[conn.sourceId].outgoingRight = (counts[conn.sourceId].outgoingRight ?? 0) + 1;
-      counts[conn.targetId].incomingLeft = (counts[conn.targetId].incomingLeft ?? 0) + 1;
-    } else {
-      counts[conn.sourceId].outgoingLeft = (counts[conn.sourceId].outgoingLeft ?? 0) + 1;
-      counts[conn.targetId].incomingRight = (counts[conn.targetId].incomingRight ?? 0) + 1;
-    }
   }
   return counts;
 }
@@ -124,53 +77,42 @@ export function buildEdgeHandleAssignments(
   connections: Connection[],
   connectionCountPerNode: Record<string, ConnectionCounts>,
   components: Record<string, Component>,
-  boxes?: Record<string, NodeBox>,
 ): HandleAssignment[] {
-  // Usage is tracked per node *and side*, since each side has its own handles.
-  const usage: Record<string, number> = {};
+  const sourceUsage: Record<string, number> = {};
+  const targetUsage: Record<string, number> = {};
 
   return connections.map((conn) => {
-    const sides = boxes ? resolveEdgeSides(boxes[conn.sourceId], boxes[conn.targetId]) : "forward";
-    const sourceCounts = connectionCountPerNode[conn.sourceId];
-    const targetCounts = connectionCountPerNode[conn.targetId];
-
-    const rawOut =
-      sides === "forward"
-        ? (sourceCounts?.outgoingRight ?? sourceCounts?.outgoing)
-        : (sourceCounts?.outgoingLeft ?? sourceCounts?.outgoing);
-    const outCount = Math.min(MAX_HANDLES, Math.max(1, rawOut ?? 1));
-
+    const outCount = Math.min(
+      MAX_HANDLES,
+      Math.max(1, connectionCountPerNode[conn.sourceId]?.outgoing ?? 1),
+    );
     const targetComp = components[conn.targetId];
+
     const usesSingleIncomingHandle =
       targetComp !== undefined &&
       (isNoteType(targetComp.type) ||
         isDbTableType(targetComp.type) ||
         isJsonViewerType(targetComp.type));
-
-    const rawIn =
-      sides === "forward"
-        ? (targetCounts?.incomingLeft ?? targetCounts?.incoming)
-        : (targetCounts?.incomingRight ?? targetCounts?.incoming);
-    const inCount = usesSingleIncomingHandle ? 1 : Math.min(MAX_HANDLES, Math.max(1, rawIn ?? 1));
+    const inCount = usesSingleIncomingHandle
+      ? 1
+      : Math.min(MAX_HANDLES, Math.max(1, connectionCountPerNode[conn.targetId]?.incoming ?? 1));
 
     const srcOrder = components[conn.sourceId]?.handleOrder?.outgoing;
     const tgtOrder = components[conn.targetId]?.handleOrder?.incoming;
 
-    const sourceKey = `${conn.sourceId}|source|${sides}`;
-    const targetKey = `${conn.targetId}|target|${sides}`;
+    const sIdx = resolveHandleIndex(conn.id, srcOrder, sourceUsage[conn.sourceId] ?? 0, outCount);
+    const tIdx = resolveHandleIndex(conn.id, tgtOrder, targetUsage[conn.targetId] ?? 0, inCount);
 
-    const sIdx = resolveHandleIndex(conn.id, srcOrder, usage[sourceKey] ?? 0, outCount);
-    const tIdx = resolveHandleIndex(conn.id, tgtOrder, usage[targetKey] ?? 0, inCount);
+    sourceUsage[conn.sourceId] = (sourceUsage[conn.sourceId] ?? 0) + 1;
+    targetUsage[conn.targetId] = (targetUsage[conn.targetId] ?? 0) + 1;
 
-    usage[sourceKey] = (usage[sourceKey] ?? 0) + 1;
-    usage[targetKey] = (usage[targetKey] ?? 0) + 1;
-
+    // Sides are fixed: out of the right, into the left. Only the slot varies.
     return {
       connId: conn.id,
-      sourceHandle: handleIdFor("source", sides, sIdx),
+      sourceHandle: `source-${sIdx}`,
       targetHandle: usesSingleIncomingHandle
         ? singleIncomingTargetHandleId(conn.targetId)
-        : handleIdFor("target", sides, tIdx),
+        : `target-${tIdx}`,
     };
   });
 }
@@ -186,8 +128,8 @@ export function buildEffectiveHandleOrder(
     const conn = connMap.get(a.connId);
     if (!conn) continue;
 
-    const sourceSlot = /^source-(?:l-)?(\d+)$/.exec(a.sourceHandle);
-    const targetSlot = /^target-(?:r-)?(\d+)$/.exec(a.targetHandle);
+    const sourceSlot = /^source-(\d+)$/.exec(a.sourceHandle);
+    const targetSlot = /^target-(\d+)$/.exec(a.targetHandle);
     const sIdx = sourceSlot ? parseInt(sourceSlot[1], 10) : 0;
     const tIdx = targetSlot ? parseInt(targetSlot[1], 10) : 0;
 

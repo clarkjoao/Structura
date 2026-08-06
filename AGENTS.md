@@ -62,6 +62,15 @@ src/
 
 ## Hard rules
 
+- **Diagrams read left to right, and handles enforce it**: on every node the left
+  handles are input only and the right handles are output only, whatever the node's
+  position. An edge leaves its source on the right and arrives at its target on the
+  left — always. Never derive the side from the node geometry: the edge states the
+  direction, position only complements it. Moving a node must not rewire the edges
+  already drawn, and a deliberate back-edge (loop, retry, write-back to a store
+  drawn further left) must keep reading as one. Same contract as draw.io. This
+  outranks layout metrics — improve a crossing count by routing or placement, never
+  by flipping a side. Locked by `edges/connectionDerivations.fixedSides.test.ts`.
 - **Type guards, not raw strings**: `isPanelComponent(c)` / `isPanelType(t)` from
   `@/features/diagram` — never `c.type === "panel"`.
 - **No hardcoded user-visible strings**: always `t("key")` with entries in both

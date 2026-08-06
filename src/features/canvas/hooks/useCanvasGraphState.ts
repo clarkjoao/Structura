@@ -126,7 +126,6 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
       visibleComponents,
       visibleConnections,
       resolvedComponents: resolved?.components ?? {},
-      resolvedNodeLayouts: resolved?.nodeLayouts ?? {},
     });
 
   const handleAddEndpointToGroup = useCallback(

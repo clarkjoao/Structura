@@ -62,12 +62,8 @@ const NodeHandles = ({
       {buildHandles(incomingCount, "target", Position.Left, d, handlePointer)}
       {d.onReorderHandle &&
         buildReorderControls(incomingIds, "incoming", controlsDisabled, d.onReorderHandle)}
+      {/* Left is input only, right is output only — never mirrored by position. */}
       {buildHandles(outgoingCount, "source", Position.Right, d, handlePointer)}
-      {/* Mirrored sides, used when the other end of the edge sits further left. */}
-      {(d.outgoingLeftCount ?? 0) > 0 &&
-        buildHandles(d.outgoingLeftCount ?? 0, "source", Position.Left, d, handlePointer, "l-")}
-      {(d.incomingRightCount ?? 0) > 0 &&
-        buildHandles(d.incomingRightCount ?? 0, "target", Position.Right, d, handlePointer, "r-")}
       {d.onReorderHandle &&
         buildReorderControls(outgoingIds, "outgoing", controlsDisabled, d.onReorderHandle)}
     </>
