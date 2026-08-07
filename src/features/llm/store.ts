@@ -10,7 +10,6 @@ import type {
   ChatMessage,
   ConversationThread,
   DiagramThreadState,
-  DiagramPatch,
   LLMConfig,
   LLMConnection,
   PendingNodePreview,
@@ -25,6 +24,13 @@ import {
   saveThreadsForDiagram,
 } from "./llm-storage";
 import { applyDiagramPatchAction, computeGridPositions, resolveRef } from "./apply-diagram-patch";
+import {
+  applyIRToDiagram,
+  buildIRSystemPrompt,
+  parseAndValidateIR,
+  type DiagramIR,
+  type IRValidationIssue,
+} from "./ir";
 import { sendMessage as sendOpenAIMessage } from "./providers/openai";
 import { sendMessage as sendAnthropicMessage } from "./providers/anthropic";
 import { sendMessage as sendProxyMessage } from "./providers/proxy";
@@ -53,6 +59,35 @@ function buildPatchMessage(locale: string, actionCount: number): string {
   return isPT
     ? `Proponho ${actionCount} alterações no diagrama.`
     : `I propose ${actionCount} diagram changes.`;
+}
+
+/**
+ * Renders validation issues as a message the user can act on. Codes map 1:1 to
+ * i18n keys so the validator itself carries no user-visible text.
+ */
+function buildIRIssuesMessage(issues: IRValidationIssue[]): string {
+  const MAX_LISTED_ISSUES = 8;
+  const lines = issues
+    .slice(0, MAX_LISTED_ISSUES)
+    .map((issue) => `- ${i18n.t(`llmChat.ir.issue.${issue.code}`, { ...issue.params })}`);
+  if (issues.length > MAX_LISTED_ISSUES) {
+    lines.push(
+      `- ${i18n.t("llmChat.ir.moreIssues", { count: issues.length - MAX_LISTED_ISSUES })}`,
+    );
+  }
+  return [i18n.t("llmChat.ir.invalid"), ...lines].join("\n");
+}
+
+/**
+ * The IR is the input every later slice debugs against, so it is logged raw
+ * alongside the validation outcome and also kept on the store as
+ * `lastGeneratedIR` for inspection.
+ */
+function logGeneratedIR(rawResponse: string, ir: DiagramIR | null): void {
+  console.info("[ir] raw model response:", rawResponse);
+  if (ir) {
+    console.info("[ir] validated IR:", JSON.stringify(ir, null, 2));
+  }
 }
 
 function sanitizeMessagesForLLM(messages: ChatMessage[]): ChatMessage[] {
@@ -132,6 +167,8 @@ export interface LLMStoreState {
   streamingContent: string | null;
   isLoading: boolean;
   error: LLMErrorKind | null;
+  /** Last IR the generator produced and the validator accepted, kept for inspection. */
+  lastGeneratedIR: DiagramIR | null;
 
   setLLMConfig: (config: LLMConfig) => void;
   setActiveConnection: (id: string) => void;
@@ -154,6 +191,11 @@ export interface LLMStoreState {
   initChatThreads: () => Promise<void>;
 
   sendMessage: (userText: string, diagramContext: string) => Promise<void>;
+  /**
+   * Generates a whole diagram from a natural-language description, through the
+   * IR pipeline: prompt -> IR -> validation -> ELK layout -> canvas.
+   */
+  generateDiagramFromIR: (description: string, userText: string) => Promise<void>;
   acceptSuggestion: (suggestionId: string) => void;
   rejectSuggestion: (suggestionId: string) => void;
   dismissPendingAnalysis: () => void;
@@ -222,6 +264,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
     streamingContent: null,
     isLoading: false,
     error: null,
+    lastGeneratedIR: null,
 
     setLLMConfig: (config) => {
       const { activeConnectionId, connections } = get();
@@ -644,14 +687,17 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
               );
               continue;
             }
-            const applied = applyDiagramPatchAction({
-              ...action,
-              payload: {
-                ...action.payload,
-                sourceId: resolvedSourceId,
-                targetId: resolvedTargetId,
+            const applied = applyDiagramPatchAction(
+              {
+                ...action,
+                payload: {
+                  ...action.payload,
+                  sourceId: resolvedSourceId,
+                  targetId: resolvedTargetId,
+                },
               },
-            }, nameToIdMap);
+              nameToIdMap,
+            );
             if (applied.addedEdgeId) {
               previewEdgeIds.push(applied.addedEdgeId);
             }
@@ -688,10 +734,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
                   ...message,
                   content:
                     parsedResponse.kind === "patch"
-                      ? buildPatchMessage(
-                          locale,
-                          parsedResponse.patch?.actions.length ?? 0,
-                        )
+                      ? buildPatchMessage(locale, parsedResponse.patch?.actions.length ?? 0)
                       : parsedResponse.kind === "text"
                         ? parsedResponse.message
                         : "",
@@ -706,6 +749,118 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           error: null,
         });
         persistThread();
+      } catch (error) {
+        const errorKind: LLMErrorKind = error instanceof LLMProviderError ? error.kind : "unknown";
+        set({
+          messages: outgoingMessages,
+          streamingContent: null,
+          isLoading: false,
+          error: errorKind,
+        });
+        persistThread();
+      }
+    },
+
+    generateDiagramFromIR: async (description, userText) => {
+      const state = get();
+
+      if (!isChatThreadsHydrated()) {
+        void hydrateChatThreadsCacheFromIdb();
+      }
+
+      const userMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "user",
+        content: userText.trim(),
+        timestamp: Date.now(),
+      };
+      const outgoingMessages = [...state.messages, userMessage];
+
+      const trimmedDescription = description.trim();
+      if (!trimmedDescription) {
+        set({
+          messages: [
+            ...outgoingMessages,
+            {
+              id: crypto.randomUUID(),
+              role: "assistant",
+              content: i18n.t("llmChat.ir.commandHint"),
+              timestamp: Date.now(),
+            },
+          ],
+          streamingContent: null,
+          isLoading: false,
+          error: null,
+        });
+        persistThread();
+        return;
+      }
+
+      const assistantMessageId = crypto.randomUUID();
+      set({
+        messages: [
+          ...outgoingMessages,
+          { id: assistantMessageId, role: "assistant", content: "", timestamp: Date.now() },
+        ],
+        streamingContent: "",
+        isLoading: true,
+        error: null,
+      });
+
+      const finishWith = (content: string) => {
+        set({
+          messages: get().messages.map((message) =>
+            message.id === assistantMessageId ? { ...message, content } : message,
+          ),
+          streamingContent: null,
+          isLoading: false,
+        });
+        persistThread();
+      };
+
+      try {
+        const systemPrompt = buildIRSystemPrompt(getResolvedAppLanguage());
+        let streamed = "";
+        const rawResponse = await executeLLMMessage(
+          state.config,
+          [{ ...userMessage, content: trimmedDescription }],
+          systemPrompt,
+          (chunk) => {
+            // A partial IR is not renderable, so only the progress indicator
+            // reacts to streaming — the message body stays empty until the end.
+            streamed += chunk;
+            set({ streamingContent: streamed });
+          },
+        );
+
+        const validation = parseAndValidateIR(rawResponse);
+        if (!validation.ok) {
+          logGeneratedIR(rawResponse, null);
+          set({ lastGeneratedIR: null });
+          finishWith(buildIRIssuesMessage(validation.issues));
+          return;
+        }
+
+        logGeneratedIR(rawResponse, validation.ir);
+        set({ lastGeneratedIR: validation.ir });
+
+        if (!useDiagramStore.getState().activeDiagramId) {
+          finishWith(i18n.t("llmChat.ir.noActiveDiagram"));
+          return;
+        }
+
+        const applied = await applyIRToDiagram(validation.ir);
+        if (applied.componentIds.length === 0) {
+          finishWith(i18n.t("llmChat.ir.notApplied"));
+          return;
+        }
+
+        finishWith(
+          i18n.t("llmChat.ir.applied", {
+            nodeCount: applied.componentIds.length,
+            edgeCount: applied.connectionIds.length,
+          }),
+        );
       } catch (error) {
         const errorKind: LLMErrorKind = error instanceof LLMProviderError ? error.kind : "unknown";
         set({

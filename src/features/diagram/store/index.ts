@@ -56,6 +56,11 @@ export type { ActiveDiagramSceneState } from "./selectors/connection.selectors";
 
 // ─── Scene helpers ────────────────────────────────────────────────────────────
 export { resolveActiveScene } from "./helpers/scene-helpers";
+export type {
+  GeneratedEdgeInput,
+  GeneratedGraphResult,
+  GeneratedNodeInput,
+} from "./slices/generated-graph.slice";
 
 // ─── Store constants ──────────────────────────────────────────────────────────
 export {

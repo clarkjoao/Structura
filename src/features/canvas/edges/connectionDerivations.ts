@@ -8,6 +8,22 @@ import {
 } from "@/features/diagram";
 import { MAX_HANDLES } from "../canvas.constants";
 
+/**
+ * Handle sides are fixed, by design.
+ *
+ * Structura diagrams are read left to right, and the handles are what enforce
+ * that reading: **left is input only, right is output only**, on every node,
+ * whatever its position. An edge leaves its source on the right and arrives at
+ * its target on the left — always. Only the slot within a side varies.
+ *
+ * Do not derive the side from the node positions. The edge states the direction;
+ * position only complements it. Deriving the side means dragging a node silently
+ * rewires which handles an existing edge uses, so the picture rearranges itself
+ * under the user, and a deliberate back-edge — a loop, a retry, a write-back to
+ * a store drawn further left — stops reading as one. Same contract as draw.io:
+ * the connection owns its endpoints.
+ */
+
 export function singleIncomingTargetHandleId(nodeId: string): string {
   return `in-${nodeId}`;
 }
@@ -90,6 +106,7 @@ export function buildEdgeHandleAssignments(
     sourceUsage[conn.sourceId] = (sourceUsage[conn.sourceId] ?? 0) + 1;
     targetUsage[conn.targetId] = (targetUsage[conn.targetId] ?? 0) + 1;
 
+    // Sides are fixed: out of the right, into the left. Only the slot varies.
     return {
       connId: conn.id,
       sourceHandle: `source-${sIdx}`,

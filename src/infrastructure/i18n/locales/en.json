@@ -669,6 +669,38 @@
         "blastRadius": "What is the blast radius if the central component fails?",
         "observability": "Identify observability gaps"
       }
+    },
+    "ir": {
+      "commandHint": "Describe the diagram you want after the command, for example: /generate C4 container diagram for an e-commerce with microservices.",
+      "export": "Download the generated IR as JSON",
+      "invalid": "The model returned a diagram that does not match the IR schema:",
+      "moreIssues": "and {{count}} more problem(s).",
+      "applied": "Diagram generated: {{nodeCount}} node(s) and {{edgeCount}} connection(s).",
+      "noActiveDiagram": "Open a diagram before generating one.",
+      "notApplied": "The diagram was generated but could not be applied to the canvas.",
+      "issue": {
+        "invalidJson": "The response is not valid JSON.",
+        "notAnObject": "The response is not a JSON object.",
+        "invalidDiagramType": "Unknown diagram type: \"{{value}}\".",
+        "nodesNotArray": "\"nodes\" is not a list.",
+        "edgesNotArray": "\"edges\" is not a list.",
+        "emptyNodes": "The diagram has no nodes.",
+        "nodeNotAnObject": "Node at position {{index}} is not an object.",
+        "nodeMissingId": "Node at position {{index}} has no id.",
+        "nodeDuplicateId": "Duplicate node id: \"{{id}}\".",
+        "nodeMissingName": "Node \"{{id}}\" has no name.",
+        "nodeInvalidSemanticType": "Node \"{{id}}\" uses an unknown semanticType: \"{{value}}\".",
+        "nodeInvalidParentId": "Node \"{{id}}\" has an invalid parentId.",
+        "nodeInvalidBoundary": "Node \"{{id}}\" has a non-boolean isBoundary.",
+        "nodeParentNotFound": "Node \"{{id}}\" points to a parent that does not exist: \"{{parentId}}\".",
+        "nodeSelfParent": "Node \"{{id}}\" is its own parent.",
+        "containmentCycle": "Containment cycle: {{ids}}.",
+        "edgeNotAnObject": "Edge at position {{index}} is not an object.",
+        "edgeMissingId": "Edge at position {{index}} has no id.",
+        "edgeDuplicateId": "Duplicate edge id: \"{{id}}\".",
+        "edgeSourceNotFound": "Edge \"{{id}}\" starts at a node that does not exist: \"{{ref}}\".",
+        "edgeTargetNotFound": "Edge \"{{id}}\" ends at a node that does not exist: \"{{ref}}\"."
+      }
     }
   },
   "scenes": {

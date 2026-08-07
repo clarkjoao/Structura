@@ -12,6 +12,7 @@ import { useCollabHighlight } from "@/features/collaboration";
 import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPresence";
 import { usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
 import { DEFAULT_PANEL_OPACITY } from "../constants/panel.constants";
+import { buildPanelHeaderLabel, buildPanelSubLabel } from "./panelLabel";
 
 export type PanelNodeData = {
   elementId: string;
@@ -135,9 +136,12 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
             {d.name || t("panelNode.defaultName")}
           </span>
           <span className="text-[8px] text-muted-foreground text-nowrap truncate">
-            {d?.panelKind !== "default" ? `${kindDef.label}` : ""}
-            {d?.panelKind !== "default" ? " - " : ""}
-            {t("panelNode.childElements", { count: childCount })}
+            {buildPanelSubLabel(
+              d.panelKind,
+              kindDef.label,
+              d.name || t("panelNode.defaultName"),
+              t("panelNode.childElements", { count: childCount }),
+            )}
           </span>
         </div>
         {onToggle && (
@@ -207,7 +211,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
           )}
           <div className="min-w-0 flex-1">
             <span className="text-sm font-semibold text-foreground truncate block">
-              {d?.panelKind !== "default" ? `${kindDef.label} - ${d.name}` : d.name}
+              {buildPanelHeaderLabel(d.panelKind, kindDef.label, d.name)}
             </span>
             {d.description && (
               <span className="text-xs text-muted-foreground line-clamp-1 block">

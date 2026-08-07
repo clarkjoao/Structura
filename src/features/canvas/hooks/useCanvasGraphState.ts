@@ -21,7 +21,11 @@ type NodeDragParenting = ReturnType<typeof import("./useNodeDragParenting").useN
 type IsNodeHiddenByTagFilter = (c: Component) => boolean;
 
 export interface UseCanvasGraphStateParams {
-  diagram: import("@/features/diagram").Diagram | import("@/features/diagram").DiagramModel | null | undefined;
+  diagram:
+    | import("@/features/diagram").Diagram
+    | import("@/features/diagram").DiagramModel
+    | null
+    | undefined;
   resolved: ResolvedSnapshot | null;
   diagramSceneState: DiagramSceneState | null;
   flows: Flow[];

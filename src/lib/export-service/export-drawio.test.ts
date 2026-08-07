@@ -479,12 +479,14 @@ describe("exportDrawio — swimlane", () => {
   });
 });
 
-describe("exportDrawio — edge anchor inference", () => {
-  it("flips exit/entry anchors when target is to the LEFT of source", () => {
-    // Regression for the S3→Glue case: source is to the right of target,
-    // so the edge must exit the source from its LEFT side and enter the
-    // target from its RIGHT side. Otherwise the edge routes the long way
-    // around and overlaps with sibling labels.
+describe("exportDrawio — edge anchors", () => {
+  it("keeps exit right / entry left when the target is to the LEFT of source", () => {
+    // The S3 -> Glue case: Glue sits down and to the left, so this edge runs
+    // against the reading direction. The export must still exit S3 on the
+    // right and enter Glue on the left, because that is what the canvas draws
+    // — left is input only, right is output only, whatever the positions.
+    // The edge taking the long way around is the intended reading of a
+    // back-edge, not a defect to route away.
     const s3Id = "s3";
     const glueId = "glue";
     const diagram = minimalDiagram({
@@ -521,9 +523,9 @@ describe("exportDrawio — edge anchor inference", () => {
 
     const xml = exportDrawio(diagram, {});
 
-    // Edge from S3 (right) to Glue (left): exit from S3's LEFT, enter Glue's RIGHT.
+    // Edge from S3 to Glue: exit from S3's RIGHT, enter Glue's LEFT.
     expect(xml).toContain(`source="s3" target="glue"`);
-    expect(xml).toContain(`exitX="0" exitY="0.5" entryX="1" entryY="0.5"`);
+    expect(xml).toContain(`exitX="1" exitY="0.5" entryX="0" entryY="0.5"`);
   });
 
   it("distributes handle slots when multiple edges share the same side", () => {

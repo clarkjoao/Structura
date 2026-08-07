@@ -42,3 +42,29 @@ export {
 } from "./component-catalog";
 export type { ComponentTypeDefinition } from "./component-catalog";
 export { useLLMStore, getPendingNodeIds, getPendingEdgeIds, getSuggestionIdForNode } from "./store";
+export type {
+  ApplyIRResult,
+  DiagramIR,
+  IRDiagramType,
+  IREdge,
+  IRIssueCode,
+  IRNode,
+  IRValidationIssue,
+  IRValidationResult,
+  SemanticType,
+  Tier,
+} from "./ir";
+export {
+  applyIRToDiagram,
+  buildIRFilename,
+  buildIRSystemPrompt,
+  downloadIR,
+  serializeIR,
+  setApplyElkWaypoints,
+  IR_SEMANTIC_TYPES,
+  IR_TIERS,
+  mapNodeToComponent,
+  parseAndValidateIR,
+  parseGenerateCommand,
+  validateIR,
+} from "./ir";

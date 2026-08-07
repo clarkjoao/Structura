@@ -2,6 +2,7 @@ import { useCallback, useEffect } from "react";
 import { useActiveDiagramModel } from "@/features/diagram";
 import {
   buildMentionContextBlock,
+  parseGenerateCommand,
   useLLMStore,
   type ActiveMention,
   type LLMConnection,
@@ -40,6 +41,7 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
   const setLLMConfig = useLLMStore((state) => state.setLLMConfig);
   const setActiveConnection = useLLMStore((state) => state.setActiveConnection);
   const sendMessage = useLLMStore((state) => state.sendMessage);
+  const generateDiagramFromIR = useLLMStore((state) => state.generateDiagramFromIR);
   const acceptSuggestion = useLLMStore((state) => state.acceptSuggestion);
   const rejectSuggestion = useLLMStore((state) => state.rejectSuggestion);
   const dismissPendingAnalysis = useLLMStore((state) => state.dismissPendingAnalysis);
@@ -57,6 +59,14 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
 
   const send = useCallback(
     async (userText: string, mentions: ActiveMention[]) => {
+      // `/generate` goes through the IR pipeline (whole diagram from a
+      // description); everything else stays on the incremental patch path.
+      const generateCommand = parseGenerateCommand(userText);
+      if (generateCommand) {
+        await generateDiagramFromIR(generateCommand.description, userText);
+        return;
+      }
+
       const mentionContext = buildMentionContextBlock(mentions, allItems);
 
       const visualContextLines: string[] = [];
@@ -89,7 +99,15 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
 
       await sendMessage(userText, enrichedContext);
     },
-    [allItems, diagramText, selIds, focusedNodeId, activeDiagram, sendMessage],
+    [
+      allItems,
+      diagramText,
+      selIds,
+      focusedNodeId,
+      activeDiagram,
+      sendMessage,
+      generateDiagramFromIR,
+    ],
   );
 
   const threads = activeDiagramId ? (threadsByDiagram[activeDiagramId]?.threads ?? []) : [];

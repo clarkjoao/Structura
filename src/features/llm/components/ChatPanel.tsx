@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, History, Plus, Settings, X } from "lucide-react";
+import { ChevronDown, Download, History, Plus, Settings, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { KEY, keyIs } from "@/lib/keyboard-utils";
 import { useActiveDiagramModel } from "@/features/diagram";
 import {
   buildContextualSuggestions,
+  downloadIR,
   getLLMErrorI18nKey,
+  useLLMStore,
   type PendingSuggestion,
 } from "@/features/llm";
 import {
@@ -49,6 +51,9 @@ export function ChatPanel({ onClose, selectedNodeIds, selectedNodeId }: ChatPane
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const { search } = useMentionSearch();
+  // Exposed so a real generation can become a layout fixture instead of a
+  // hand-written reconstruction.
+  const lastGeneratedIR = useLLMStore((state) => state.lastGeneratedIR);
   const {
     segments,
     setSegments,
@@ -234,6 +239,19 @@ export function ChatPanel({ onClose, selectedNodeIds, selectedNodeId }: ChatPane
           </Popover>
         </div>
         <div className="flex items-center gap-1">
+          {lastGeneratedIR ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => downloadIR(lastGeneratedIR)}
+              aria-label={t("llmChat.ir.export")}
+              title={t("llmChat.ir.export")}
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          ) : null}
           <Button
             type="button"
             variant="ghost"

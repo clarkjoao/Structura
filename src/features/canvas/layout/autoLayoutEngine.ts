@@ -1,6 +1,7 @@
 import type { ElkExtendedEdge, ElkNode, ElkPort } from "elkjs";
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
+import { readLaidOutGraph } from "./layoutReadability";
 import {
   DEFAULT_NODE_W,
   DEFAULT_NODE_H,
@@ -20,7 +21,7 @@ let elkConstructor: (new () => { layout(graph: ElkNode): Promise<ElkNode> }) | n
 async function getElk(): Promise<{ layout(graph: ElkNode): Promise<ElkNode> }> {
   if (!elkConstructor) {
     // Dynamic import to keep ELK out of the initial bundle
-    const module = await import(/* @vite-ignore */ "elkjs/lib/elk.bundled.js");
+    const module = await import("elkjs/lib/elk.bundled.js");
     elkConstructor = module.default;
   }
   return new elkConstructor();
@@ -376,19 +377,29 @@ function buildSubtree(
   return node;
 }
 
+/**
+ * Bend points in absolute canvas space.
+ *
+ * ELK reports an edge relative to the lowest common ancestor of its endpoints,
+ * not to the node whose `edges` array holds it, so reading `bendPoints` straight
+ * off put every edge between two siblings inside a panel out by that panel's
+ * position — and `useAutoLayout` stores these as absolute control points.
+ * `readLaidOutGraph` owns that correction and is tested there; re-deriving it
+ * here is how this went wrong in the first place.
+ *
+ * Its `points` include the two endpoints on the node borders, which are not
+ * control points — the canvas draws those legs from the handles — so the ends
+ * are dropped, matching what this function always returned.
+ */
 function extractEdgeWaypoints(laidOut: ElkNode): Map<string, Array<{ x: number; y: number }>> {
   const result = new Map<string, Array<{ x: number; y: number }>>();
-  const edges = laidOut.edges ?? [];
-  for (const edge of edges) {
-    const section = edge.sections?.[0];
-    if (!section) continue;
 
-    const bendPoints = section.bendPoints;
-    if (!bendPoints?.length) continue;
-
+  for (const edge of readLaidOutGraph(laidOut).edges) {
+    const interior = edge.points.slice(1, -1);
+    if (interior.length === 0) continue;
     result.set(
       edge.id,
-      bendPoints.map((point) => ({ x: point.x, y: point.y })),
+      interior.map((point) => ({ x: point.x, y: point.y })),
     );
   }
 
@@ -519,7 +530,9 @@ export async function computeScopedAutoLayout(
   const graph: ElkNode = {
     id: ELK_ROOT_ID,
     layoutOptions: { ...ELK_OPTIONS },
-    children: sortedIds.map((childId) => buildSubtree(childId, scopedComponents, nodeLayouts, includedIds, new Map(), measuredNodes)),
+    children: sortedIds.map((childId) =>
+      buildSubtree(childId, scopedComponents, nodeLayouts, includedIds, new Map(), measuredNodes),
+    ),
     edges: elkEdges,
   };
 

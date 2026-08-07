@@ -4,7 +4,7 @@ import type { EdgeLayout, NodeLayout } from "@/features/diagram";
 import {
   buildContainerWaypointsV2,
   computeDefaultWaypoints,
-  inferSourceTargetSides,
+  FIXED_EDGE_SIDES,
   resolveEdgeRouting,
   slotToAnchorOffset,
   type HandleSlots,
@@ -72,9 +72,15 @@ describe("slotToAnchorOffset", () => {
   });
 });
 
-// ─── inferSourceTargetSides ─────────────────────────────────────────────────────
+// ─── Fixed edge sides ───────────────────────────────────────────────────────────
 
-describe("inferSourceTargetSides", () => {
+/**
+ * The export has to reproduce the canvas, and on the canvas left is input only
+ * and right is output only — whatever the node positions. These tests exist
+ * because the export used to infer the sides from the geometry, so a back-edge
+ * came out attached to the opposite sides from the ones on screen.
+ */
+describe("edge sides are fixed, matching the canvas", () => {
   const layoutMap: Record<string, NodeLayout> = {
     src: mkLayout("src", 0, 0, 200, 120),
     tgt: mkLayout("tgt", 500, 0, 200, 120), // 500px to the right
@@ -82,49 +88,66 @@ describe("inferSourceTargetSides", () => {
     below: mkLayout("below", 100, 300, 200, 120), // 300px below
     panel: mkLayout("panel", 100, 100, 400, 300),
   };
-  const emptyComponents: Record<string, Component> = {};
+  const components: Record<string, Component> = {
+    src: mkComponent("src"),
+    tgt: mkComponent("tgt"),
+    above: mkComponent("above"),
+    below: mkComponent("below"),
+    panel: { ...mkComponent("panel", null), type: "panel" },
+  };
 
-  it("uses right/left for horizontal flows (target to the right)", () => {
-    const result = inferSourceTargetSides("src", "tgt", layoutMap, emptyComponents);
-    expect(result.sourcePosition).toBe("right");
-    expect(result.targetPosition).toBe("left");
-    expect(result.exitX).toBe(1);
-    expect(result.entryX).toBe(0);
+  const sidesOf = (sourceId: string, targetId: string) =>
+    resolveEdgeRouting(sourceId, targetId, layoutMap, components, undefined, undefined).sides;
+
+  it("exits right and enters left for a forward edge", () => {
+    expect(sidesOf("src", "tgt")).toMatchObject({
+      sourcePosition: "right",
+      targetPosition: "left",
+      exitX: 1,
+      entryX: 0,
+    });
   });
 
-  it("uses left/right for horizontal flows (target to the left)", () => {
-    // tgt is at x=500, src at x=0. Source (tgt) is to the RIGHT, target (src) is to the LEFT.
-    // When source is right of target: source exits LEFT, target enters RIGHT.
-    const result = inferSourceTargetSides("tgt", "src", layoutMap, emptyComponents);
-    expect(result.sourcePosition).toBe("left");
-    expect(result.targetPosition).toBe("right");
+  it("keeps the same sides for a back-edge", () => {
+    // tgt sits 500px right of src, so this edge runs right to left. It must
+    // still leave the right side and arrive at the left, exactly as drawn.
+    expect(sidesOf("tgt", "src")).toMatchObject({
+      sourcePosition: "right",
+      targetPosition: "left",
+    });
   });
 
-  it("uses bottom/top for vertical flows (target below)", () => {
-    const result = inferSourceTargetSides("src", "below", layoutMap, emptyComponents);
-    expect(result.sourcePosition).toBe("bottom");
-    expect(result.targetPosition).toBe("top");
-    expect(result.exitY).toBe(1);
-    expect(result.entryY).toBe(0);
+  it("never uses top or bottom, however vertical the run", () => {
+    for (const [from, to] of [
+      ["src", "below"],
+      ["below", "above"],
+      ["above", "below"],
+    ] as const) {
+      const sides = sidesOf(from, to);
+      expect(sides.sourcePosition, `${from} -> ${to}`).toBe("right");
+      expect(sides.targetPosition, `${from} -> ${to}`).toBe("left");
+    }
   });
 
-  it("uses top/bottom for vertical flows (target above)", () => {
-    // "below" is at y=300, "above" is at y=-300. Source is below, target is above.
-    // Source (below) exits BOTTOM, target (above) enters TOP.
-    const result = inferSourceTargetSides("below", "above", layoutMap, emptyComponents);
-    expect(result.sourcePosition).toBe("top");   // exits top to reach something above
-    expect(result.targetPosition).toBe("bottom"); // enters from bottom since source is below
+  it("enters a panel on the left like any other target", () => {
+    // Panels used to get an entry side picked from where the source sat.
+    expect(sidesOf("tgt", "panel")).toMatchObject({
+      targetPosition: "left",
+      entryX: 0,
+      entryY: 0.5,
+    });
   });
 
-  it("falls back to right/left for near-equidistant nodes", () => {
-    // Node slightly to the right and slightly below
-    const layout: Record<string, NodeLayout> = {
-      a: mkLayout("a", 0, 0, 100, 100),
-      b: mkLayout("b", 30, 30, 100, 100), // dx=30, dy=30, both < 50
-    };
-    const result = inferSourceTargetSides("a", "b", layout, emptyComponents);
-    expect(result.sourcePosition).toBe("right");
-    expect(result.targetPosition).toBe("left");
+  it("exposes the contract as a frozen constant", () => {
+    expect(FIXED_EDGE_SIDES).toEqual({
+      sourcePosition: "right",
+      targetPosition: "left",
+      exitX: 1,
+      exitY: 0.5,
+      entryX: 0,
+      entryY: 0.5,
+    });
+    expect(Object.isFrozen(FIXED_EDGE_SIDES)).toBe(true);
   });
 });
 
