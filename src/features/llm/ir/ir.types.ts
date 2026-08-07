@@ -23,6 +23,15 @@ export const IR_C4_SEMANTIC_TYPES = [
   "component",
 ] as const;
 
+/**
+ * Boundary types first, then one per AWS catalog category, in catalog order.
+ *
+ * The category half must stay complete: the prompt hands the model every service
+ * id in `AWS_CATEGORIES`, so a category with no semanticType here is a trap — the
+ * model is invited to draw Athena or SageMaker and then has nothing legal to type
+ * it as, and `nodeInvalidSemanticType` throws away the whole diagram. Locked by
+ * `ir.types.test.ts`.
+ */
 export const IR_AWS_SEMANTIC_TYPES = [
   "aws-vpc",
   "aws-az",
@@ -30,12 +39,21 @@ export const IR_AWS_SEMANTIC_TYPES = [
   "aws-public-subnet",
   "aws-private-subnet",
   "aws-compute",
-  "aws-database",
   "aws-storage",
+  "aws-database",
   "aws-networking",
   "aws-security",
+  "aws-analytics",
+  "aws-ml",
   "aws-integration",
   "aws-management",
+  "aws-developer",
+  "aws-containers",
+  "aws-media",
+  "aws-migration",
+  "aws-iot",
+  "aws-end-user",
+  "aws-general",
 ] as const;
 
 export const IR_SEMANTIC_TYPES = [...IR_C4_SEMANTIC_TYPES, ...IR_AWS_SEMANTIC_TYPES] as const;
@@ -122,30 +140,57 @@ export function isTier(value: unknown): value is Tier {
 }
 
 /**
- * Best tier for a semanticType, used when the model supplied one that is not in
- * the vocabulary. The mapping is only as good as the vocabulary is: `IR_TIERS`
- * describes a *position in the left-to-right flow*, and cross-cutting services —
- * security, observability, cost management — do not have one. Models reach for
- * "security" and "management" precisely because the IR teaches those words as
- * semanticTypes (`aws-security`, `aws-management`) while forbidding them here.
+ * Default tier per semanticType — the runtime fallback when the model supplied
+ * one that is not in the vocabulary, and the table the generator prompt shows.
+ * It is a total record on purpose: both readers then cover every type, and the
+ * prompt cannot teach a default the validator would not have picked.
+ *
+ * The mapping is only as good as the vocabulary is: `IR_TIERS` describes a
+ * *position in the left-to-right flow*, and cross-cutting categories — security,
+ * observability, governance, developer tooling — do not have one. Models reach
+ * for "security", "monitoring" and "analytics" precisely because the IR teaches
+ * those words as semanticTypes while forbidding them here.
  *
  * Until the tier mechanism is designed (spec §8), those land on "compute" for
  * want of anywhere better. Nothing reads `tier` yet, so this normalization
  * cannot misplace a node today — but whoever implements tier ordering should
  * treat a cross-cutting node's tier as unset rather than as a real position.
  */
-const TIER_BY_SEMANTIC_TYPE: Partial<Record<SemanticType, Tier>> = {
+export const TIER_BY_SEMANTIC_TYPE: Record<SemanticType, Tier> = {
   person: "external",
   "external-system": "external",
+  container: "compute",
   database: "data",
-  "aws-database": "data",
+  component: "compute",
+
+  // Boundaries have no position of their own; they take the one of the traffic
+  // they front, which is what the worked examples in the prompt show.
+  "aws-vpc": "edge",
+  "aws-az": "compute",
+  "aws-subnet": "compute",
+  "aws-public-subnet": "edge",
+  "aws-private-subnet": "compute",
+
+  "aws-compute": "compute",
   "aws-storage": "data",
+  "aws-database": "data",
   "aws-networking": "ingress",
+  "aws-security": "compute",
+  "aws-analytics": "data",
+  "aws-ml": "compute",
   "aws-integration": "integration",
+  "aws-management": "compute",
+  "aws-developer": "compute",
+  "aws-containers": "compute",
+  "aws-media": "compute",
+  "aws-migration": "integration",
+  "aws-iot": "edge",
+  "aws-end-user": "edge",
+  "aws-general": "compute",
 };
 
 /** The node's tier when it gave a usable one, else the closest fit for its type. */
 export function coerceTier(value: unknown, semanticType: SemanticType): Tier {
   if (isTier(value)) return value;
-  return TIER_BY_SEMANTIC_TYPE[semanticType] ?? "compute";
+  return TIER_BY_SEMANTIC_TYPE[semanticType];
 }

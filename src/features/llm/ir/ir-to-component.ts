@@ -24,6 +24,10 @@ const BOUNDARY_PANEL_KIND: Record<BoundarySemanticType, PanelKind> = {
 /**
  * Leaf mapping. Note "database": Structura's C4 model has no database type, so
  * it degrades to a container — the technology field carries the engine name.
+ *
+ * Every `aws-*` semanticType is also an `AwsCategoryId`, so it maps to itself:
+ * the canvas already treats those node types generically (`isAwsType`) and picks
+ * the icon from `awsService`.
  */
 const LEAF_COMPONENT_TYPE: Record<Exclude<SemanticType, BoundarySemanticType>, ComponentType> = {
   person: "person",
@@ -32,12 +36,21 @@ const LEAF_COMPONENT_TYPE: Record<Exclude<SemanticType, BoundarySemanticType>, C
   database: "container",
   component: "component",
   "aws-compute": "aws-compute",
-  "aws-database": "aws-database",
   "aws-storage": "aws-storage",
+  "aws-database": "aws-database",
   "aws-networking": "aws-networking",
   "aws-security": "aws-security",
+  "aws-analytics": "aws-analytics",
+  "aws-ml": "aws-ml",
   "aws-integration": "aws-integration",
   "aws-management": "aws-management",
+  "aws-developer": "aws-developer",
+  "aws-containers": "aws-containers",
+  "aws-media": "aws-media",
+  "aws-migration": "aws-migration",
+  "aws-iot": "aws-iot",
+  "aws-end-user": "aws-end-user",
+  "aws-general": "aws-general",
 };
 
 export interface MappedComponentType {
