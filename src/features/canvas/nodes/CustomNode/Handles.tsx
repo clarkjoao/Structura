@@ -25,15 +25,10 @@ export function buildHandles(
   position: Position,
   d: NodeData,
   handlePointer: React.CSSProperties | undefined,
-  /**
-   * Id prefix for the side. Empty for the default sides (source right, target
-   * left) so recorded flow steps, which store a handleId, keep resolving.
-   */
-  idPrefix = "",
 ): React.ReactNode[] {
   const n = Math.min(MAX_HANDLES, Math.max(MIN_HANDLES, count));
   if (n <= 1) {
-    const handleId = `${type}-${idPrefix}0`;
+    const handleId = `${type}-0`;
     const onClick =
       d.isRecording && d.onHandleClick
         ? (e: React.MouseEvent) => {
@@ -54,7 +49,7 @@ export function buildHandles(
     ];
   }
   return Array.from({ length: n }, (_, i) => {
-    const handleId = `${type}-${idPrefix}${i}`;
+    const handleId = `${type}-${i}`;
     const onClick =
       d.isRecording && d.onHandleClick
         ? (e: React.MouseEvent) => {

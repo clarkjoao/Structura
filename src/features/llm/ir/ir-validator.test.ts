@@ -123,13 +123,63 @@ describe("validateIR — schema errors", () => {
     expect(codesOf(result)).toContain("nodeInvalidSemanticType");
   });
 
-  it("rejects an unknown tier", () => {
+  it("normalizes an unknown tier instead of rejecting the diagram", () => {
+    // A real generation was thrown away over exactly this: Secrets Manager and
+    // CloudWatch tagged "security" and "management". Nothing reads `tier`, and
+    // the vocabulary has no slot for a cross-cutting service, so refusing the
+    // whole diagram over it threw away something that renders perfectly.
     const result = validateIR({
-      type: "c4-context",
-      nodes: [{ id: "a", semanticType: "container", name: "A", parentId: null, tier: "backend" }],
+      type: "aws-deployment",
+      nodes: [
+        {
+          id: "secrets-manager",
+          semanticType: "aws-security",
+          name: "Secrets Manager",
+          parentId: null,
+          tier: "security",
+        },
+        {
+          id: "cloudwatch",
+          semanticType: "aws-management",
+          name: "CloudWatch",
+          parentId: null,
+          tier: "management",
+        },
+      ],
       edges: [],
     });
-    expect(codesOf(result)).toContain("nodeInvalidTier");
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.ir.nodes.map((n) => n.tier)).toEqual(["compute", "compute"]);
+  });
+
+  it("picks the closest tier for the type when the model's value is unusable", () => {
+    const result = validateIR({
+      type: "aws-deployment",
+      nodes: [
+        { id: "u", semanticType: "person", name: "User", parentId: null, tier: "actor" },
+        { id: "d", semanticType: "aws-database", name: "RDS", parentId: null },
+        { id: "q", semanticType: "aws-integration", name: "SQS", parentId: null, tier: 7 },
+      ],
+      edges: [],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.ir.nodes.map((n) => n.tier)).toEqual(["external", "data", "integration"]);
+  });
+
+  it("keeps a tier the model got right", () => {
+    const result = validateIR({
+      type: "c4-context",
+      nodes: [{ id: "a", semanticType: "container", name: "A", parentId: null, tier: "edge" }],
+      edges: [],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.ir.nodes[0].tier).toBe("edge");
   });
 
   it("rejects duplicate node ids", () => {
@@ -152,12 +202,7 @@ describe("validateIR — schema errors", () => {
     });
     const codes = codesOf(result);
     expect(codes).toEqual(
-      expect.arrayContaining([
-        "invalidDiagramType",
-        "nodeMissingName",
-        "nodeInvalidSemanticType",
-        "nodeInvalidTier",
-      ]),
+      expect.arrayContaining(["invalidDiagramType", "nodeMissingName", "nodeInvalidSemanticType"]),
     );
   });
 });

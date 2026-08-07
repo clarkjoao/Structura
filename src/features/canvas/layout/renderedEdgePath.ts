@@ -22,40 +22,24 @@ import type { ElkNode } from "elkjs";
  */
 
 /**
- * Which sides an edge should leave from and arrive at.
- *
- * Today the canvas is fixed: out of the right, into the left, whatever the
- * geometry — so an edge to a node that sits further left loops all the way
- * around. "mirrored" is the opposite pair, for exactly that case.
- *
- * The flip only happens when the target is *entirely* left of the source. That
- * leaves a dead band as wide as the horizontal overlap, so nudging a node by a
- * pixel near the boundary cannot flip the side back and forth; crossing it takes
- * a real move. No stored state, so nothing to go stale.
- */
-export type EdgeSides = "forward" | "mirrored";
-
-export function edgeSides(source: ReadabilityBox, target: ReadabilityBox): EdgeSides {
-  return target.x + target.width < source.x ? "mirrored" : "forward";
-}
-
-/**
  * Handle anchor, matching `buildHandles`: `n` handles clamped to [1, 4], handle
  * `i` at `(i + 1) / (n + 1)` of the node height. A single handle sits at the
  * default 50%, which the same formula yields for n = 1.
+ *
+ * The side is fixed — sources leave on the right, targets arrive on the left,
+ * whatever the geometry — because that is what the canvas draws. See the module
+ * comment in `edges/connectionDerivations.ts`.
  */
 export function handleAnchor(
   box: ReadabilityBox,
   side: "source" | "target",
   slot: number,
   count: number,
-  sides: EdgeSides = "forward",
 ): Point {
   const n = Math.min(MAX_HANDLES, Math.max(MIN_HANDLES, count));
   const index = Math.min(Math.max(slot, 0), n - 1);
-  const onRight = sides === "forward" ? side === "source" : side === "target";
   return {
-    x: onRight ? box.x + box.width : box.x,
+    x: side === "source" ? box.x + box.width : box.x,
     y: box.y + box.height * ((index + 1) / (n + 1)),
   };
 }
@@ -182,38 +166,22 @@ export function buildRenderedPolylines(
   boxes: Map<string, ReadabilityBox>,
   edges: RenderedEdgeInput[],
   handleOrder: HandleOrderInput = {},
-  options: { dynamicSides?: boolean } = {},
 ): RenderedPolyline[] {
-  const sidesOf = (edge: RenderedEdgeInput): EdgeSides => {
-    if (options.dynamicSides !== true) return "forward";
-    const sourceBox = boxes.get(edge.sourceId);
-    const targetBox = boxes.get(edge.targetId);
-    if (!sourceBox || !targetBox) return "forward";
-    return edgeSides(sourceBox, targetBox);
-  };
-
-  // Handles live per side, so an edge leaving on the left is counted and
-  // slotted separately from one leaving on the right.
   const counts = new Map<string, number>();
-  const key = (nodeId: string, end: "source" | "target", sides: EdgeSides) =>
-    `${nodeId}|${end}|${sides}`;
+  const key = (nodeId: string, end: "source" | "target") => `${nodeId}|${end}`;
   for (const edge of edges) {
-    const sides = sidesOf(edge);
-    const sourceKey = key(edge.sourceId, "source", sides);
-    const targetKey = key(edge.targetId, "target", sides);
+    const sourceKey = key(edge.sourceId, "source");
+    const targetKey = key(edge.targetId, "target");
     counts.set(sourceKey, (counts.get(sourceKey) ?? 0) + 1);
     counts.set(targetKey, (counts.get(targetKey) ?? 0) + 1);
   }
 
-  const slots = assignHandleSlots(edges, handleOrder, (edge) => {
-    const sides = sidesOf(edge);
-    return {
-      sourceGroup: key(edge.sourceId, "source", sides),
-      targetGroup: key(edge.targetId, "target", sides),
-      sourceCount: counts.get(key(edge.sourceId, "source", sides)) ?? 1,
-      targetCount: counts.get(key(edge.targetId, "target", sides)) ?? 1,
-    };
-  });
+  const slots = assignHandleSlots(edges, handleOrder, (edge) => ({
+    sourceGroup: key(edge.sourceId, "source"),
+    targetGroup: key(edge.targetId, "target"),
+    sourceCount: counts.get(key(edge.sourceId, "source")) ?? 1,
+    targetCount: counts.get(key(edge.targetId, "target")) ?? 1,
+  }));
 
   const result: RenderedPolyline[] = [];
   for (const edge of edges) {
@@ -221,20 +189,15 @@ export function buildRenderedPolylines(
     const targetBox = boxes.get(edge.targetId);
     if (!sourceBox || !targetBox) continue;
 
-    const sides = sidesOf(edge);
     const slot = slots.get(edge.id) ?? { source: 0, target: 0 };
-    const sourceCount = counts.get(key(edge.sourceId, "source", sides)) ?? 1;
-    const targetCount = counts.get(key(edge.targetId, "target", sides)) ?? 1;
-    const source = handleAnchor(sourceBox, "source", slot.source, sourceCount, sides);
-    const target = handleAnchor(targetBox, "target", slot.target, targetCount, sides);
+    const sourceCount = counts.get(key(edge.sourceId, "source")) ?? 1;
+    const targetCount = counts.get(key(edge.targetId, "target")) ?? 1;
+    const source = handleAnchor(sourceBox, "source", slot.source, sourceCount);
+    const target = handleAnchor(targetBox, "target", slot.target, targetCount);
     const corners =
       edge.corners && edge.corners.length > 0
         ? edge.corners
-        : defaultOrthogonalCorners(
-            source,
-            target,
-            sides === "forward" ? Position.Right : Position.Left,
-          );
+        : defaultOrthogonalCorners(source, target, Position.Right);
 
     result.push({
       id: edge.id,
@@ -253,8 +216,6 @@ export interface RenderedMeasureOptions {
   cornersByEdgeId?: Map<string, Point[]>;
   /** Per-node edge ordering, as writing ELK's order into `handleOrder` would. */
   handleOrder?: HandleOrderInput;
-  /** Pick the exit/entry side from the node positions instead of always R->L. */
-  dynamicSides?: boolean;
 }
 
 /**
@@ -281,9 +242,7 @@ export function measureRenderedReadability(
     {
       boxes,
       parentOf,
-      edges: buildRenderedPolylines(boxes, inputs, options.handleOrder ?? {}, {
-        ...(options.dynamicSides !== undefined ? { dynamicSides: options.dynamicSides } : {}),
-      }),
+      edges: buildRenderedPolylines(boxes, inputs, options.handleOrder ?? {}),
       rootId: graph.id,
       width: graph.width ?? 0,
       height: graph.height ?? 0,

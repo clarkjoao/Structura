@@ -55,87 +55,30 @@ export interface InferredSides {
 }
 
 /**
- * Infer which handle side each end of the connection uses, based on the
- * relative geometry of source and target nodes.  This matches the logic
- * React Flow uses internally to select which handle the connection attaches to.
+ * The sides an edge attaches to — fixed, exactly as the canvas draws them.
  *
- * For horizontal flows (target to the right): exit right, enter left.
- * For vertical flows (target below): exit bottom, enter top.
- * For container/panel targets: entry side is chosen based on where source sits.
+ * Structura diagrams read left to right, and the handles enforce it: left is
+ * input only, right is output only, on every node, whatever its position. An
+ * edge leaves its source on the right and arrives at its target on the left,
+ * always. See the module comment in
+ * `features/canvas/edges/connectionDerivations.ts` for the full rule.
+ *
+ * This used to be inferred from the relative geometry of the two nodes —
+ * mirroring to left/right when the target sat further left, and switching to
+ * top/bottom for a mostly-vertical run. That contradicted the canvas, which
+ * renders `target-N` on the left and `source-N` on the right and nowhere else,
+ * so a back-edge came out of the export attached to the opposite sides from the
+ * ones on screen. The export's job is to reproduce the canvas, not to re-derive
+ * a routing of its own.
  */
-export function inferSourceTargetSides(
-  sourceId: string,
-  targetId: string,
-  layoutMap: Record<string, NodeLayout>,
-  components: Record<string, Component>,
-): InferredSides {
-  const src = layoutMap[sourceId];
-  const tgt = layoutMap[targetId];
-  if (!src || !tgt) {
-    return {
-      sourcePosition: "right",
-      targetPosition: "left",
-      exitX: 1, exitY: 0.5,
-      entryX: 0, entryY: 0.5,
-    };
-  }
-
-  const srcW = src.width ?? 200;
-  const srcH = src.height ?? 120;
-  const tgtW = tgt.width ?? 200;
-  const tgtH = tgt.height ?? 120;
-
-  const srcCenterX = src.x + srcW / 2;
-  const srcCenterY = src.y + srcH / 2;
-  const tgtCenterX = tgt.x + tgtW / 2;
-  const tgtCenterY = tgt.y + tgtH / 2;
-
-  const dx = tgtCenterX - srcCenterX;
-  const dy = tgtCenterY - srcCenterY;
-
-  let sourcePosition: HandlePosition = "right";
-  let targetPosition: HandlePosition = "left";
-  let exitX = 1, exitY = 0.5, entryX = 0, entryY = 0.5;
-
-  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
-    if (dx > 0) {
-      sourcePosition = "right"; targetPosition = "left";
-      exitX = 1; exitY = 0.5; entryX = 0; entryY = 0.5;
-    } else {
-      sourcePosition = "left"; targetPosition = "right";
-      exitX = 0; exitY = 0.5; entryX = 1; entryY = 0.5;
-    }
-  } else if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 50) {
-    if (dy > 0) {
-      sourcePosition = "bottom"; targetPosition = "top";
-      exitX = 0.5; exitY = 1; entryX = 0.5; entryY = 0;
-    } else {
-      sourcePosition = "top"; targetPosition = "bottom";
-      exitX = 0.5; exitY = 0; entryX = 0.5; entryY = 1;
-    }
-  }
-
-  // For container/panel targets: choose entry side based on source position
-  const tgtComp = components[targetId];
-  if (tgtComp && (isPanelComponent(tgtComp) || isApiGroupComponent(tgtComp))) {
-    const tgtLeft = tgt.x;
-    const tgtRight = tgt.x + tgtW;
-    const tgtTop = tgt.y;
-    const tgtBottom = tgt.y + tgtH;
-
-    if (srcCenterX < tgtLeft) {
-      targetPosition = "left"; entryX = 0; entryY = 0.5;
-    } else if (srcCenterX > tgtRight) {
-      targetPosition = "right"; entryX = 1; entryY = 0.5;
-    } else if (srcCenterY < tgtTop) {
-      targetPosition = "top"; entryX = 0.5; entryY = 0;
-    } else if (srcCenterY > tgtBottom) {
-      targetPosition = "bottom"; entryX = 0.5; entryY = 1;
-    }
-  }
-
-  return { sourcePosition, targetPosition, exitX, exitY, entryX, entryY };
-}
+export const FIXED_EDGE_SIDES: Readonly<InferredSides> = Object.freeze({
+  sourcePosition: "right",
+  targetPosition: "left",
+  exitX: 1,
+  exitY: 0.5,
+  entryX: 0,
+  entryY: 0.5,
+});
 
 // ─── Default waypoints (matching React Flow's smoothstep/step routing) ──────────
 
@@ -455,8 +398,8 @@ export function resolveEdgeRouting(
       ? edgeLayout.points.map((p) => ({ x: p.x, y: p.y }))
       : undefined;
 
-  // 2. Infer source/target sides (needed for handle position resolution)
-  const sides = inferSourceTargetSides(sourceId, targetId, layoutMap, components);
+  // 2. Sides are fixed by the reading direction, never derived from geometry.
+  const sides = FIXED_EDGE_SIDES;
 
   const srcLayout = layoutMap[sourceId];
   const tgtLayout = layoutMap[targetId];
