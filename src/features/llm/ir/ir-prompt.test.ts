@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { AWS_SERVICE_MAP } from "@/lib/catalogs/aws";
+import { AWS_CATEGORIES, AWS_SERVICE_MAP } from "@/lib/catalogs/aws";
 import { buildIRSystemPrompt } from "./ir-prompt";
 import { parseAndValidateIR } from "./ir-validator";
-import { IR_SEMANTIC_TYPES, IR_TIERS } from "./ir.types";
+import { IR_SEMANTIC_TYPES, IR_TIERS, TIER_BY_SEMANTIC_TYPE } from "./ir.types";
 
 const prompt = buildIRSystemPrompt("en");
 
@@ -18,6 +18,25 @@ describe("buildIRSystemPrompt", () => {
     }
     for (const tier of IR_TIERS) {
       expect(prompt, `tier ${tier}`).toContain(`"${tier}"`);
+    }
+  });
+
+  it("gives every semanticType a default tier, matching the one the validator coerces to", () => {
+    for (const semanticType of IR_SEMANTIC_TYPES) {
+      const line = `"${semanticType}" → "${TIER_BY_SEMANTIC_TYPE[semanticType]}"`;
+      expect(prompt, `default tier for ${semanticType}`).toContain(line);
+    }
+  });
+
+  it("names every AWS category, and every category word that is not a tier", () => {
+    for (const category of AWS_CATEGORIES) {
+      expect(prompt, `category ${category.id}`).toContain(`"${category.id}"`);
+
+      // "compute" and "integration" are both a category and a real tier; every
+      // other category word has to be called out as one the model must not use.
+      const word = category.id.replace(/^aws-/, "");
+      if ((IR_TIERS as readonly string[]).includes(word)) continue;
+      expect(prompt, `category word ${word}`).toContain(`"${word}"`);
     }
   });
 

@@ -834,6 +834,7 @@ export type AwsCategoryId =
   | "aws-media"
   | "aws-migration"
   | "aws-iot"
+  | "aws-end-user"
   | "aws-general";
 
 export const AWS_CATEGORY_ID_GENERAL = "aws-general" as const satisfies AwsCategoryId;

@@ -1,9 +1,12 @@
+import { AWS_CATEGORIES, AWS_CATEGORY_MAP } from "@/lib/catalogs/aws";
 import { buildAwsCatalogCompact } from "../component-catalog";
 import {
   IR_AWS_SEMANTIC_TYPES,
   IR_C4_SEMANTIC_TYPES,
   IR_DIAGRAM_TYPES,
   IR_TIERS,
+  TIER_BY_SEMANTIC_TYPE,
+  type SemanticType,
 } from "./ir.types";
 
 /**
@@ -23,6 +26,12 @@ JSON document — the Intermediate Representation (IR) — describing the whole 
 The application validates that IR, lays it out and renders it.
 `.trim();
 
+/**
+ * Hand-written only for the types the AWS catalog does not describe: the C4 five
+ * and the boundary types, which are IR concepts rather than catalog categories.
+ * Every other `aws-*` semanticType *is* a catalog category id, so its description
+ * comes from the catalog itself (`describeSemanticType`) and cannot drift from it.
+ */
 const SEMANTIC_TYPE_GLOSSARY: Record<string, string> = {
   person: "a human actor or user role",
   "external-system": "a system outside the scope you are describing",
@@ -34,14 +43,30 @@ const SEMANTIC_TYPE_GLOSSARY: Record<string, string> = {
   "aws-subnet": "a subnet when public/private is unknown — a boundary",
   "aws-public-subnet": "a public subnet — a boundary",
   "aws-private-subnet": "a private subnet — a boundary",
-  "aws-compute": "EC2, ECS, EKS, Lambda, Fargate",
-  "aws-database": "RDS, Aurora, DynamoDB, ElastiCache, Redshift",
-  "aws-storage": "S3, EFS, EBS, Glacier",
-  "aws-networking": "ALB/NLB, CloudFront, Route 53, API Gateway, NAT, Internet Gateway",
-  "aws-security": "IAM, KMS, WAF, Shield, Secrets Manager, Cognito",
-  "aws-integration": "SQS, SNS, EventBridge, Step Functions, AppSync",
-  "aws-management": "CloudWatch, CloudTrail, Config, Systems Manager",
 };
+
+/** The bare category word a model is tempted to use as a tier: "aws-security" -> "security". */
+function categoryWord(categoryId: string): string {
+  return categoryId.replace(/^aws-/, "");
+}
+
+/**
+ * `Security, Identity & Compliance (iam, cognito, …)` for a semanticType that is
+ * an AWS catalog category, so the model can connect a service id to its type.
+ */
+function awsCategoryHint(semanticType: string, serviceLimit: number): string | undefined {
+  const category = AWS_CATEGORY_MAP.get(semanticType);
+  if (!category) {
+    return undefined;
+  }
+  const shown = category.services.slice(0, serviceLimit).map((service) => service.id);
+  const ellipsis = category.services.length > shown.length ? ", …" : "";
+  return `${category.name} (${shown.join(", ")}${ellipsis})`;
+}
+
+function describeSemanticType(semanticType: string): string {
+  return awsCategoryHint(semanticType, 8) ?? SEMANTIC_TYPE_GLOSSARY[semanticType] ?? "";
+}
 
 function buildSchemaSection(): string {
   return [
@@ -73,12 +98,13 @@ function buildSchemaSection(): string {
 
 function buildSemanticTypeSection(): string {
   const describe = (value: string): string =>
-    `- "${value}" — ${SEMANTIC_TYPE_GLOSSARY[value] ?? ""}`.trimEnd();
+    `- "${value}" — ${describeSemanticType(value)}`.trimEnd();
 
   return [
     "## semanticType values",
     "",
-    "Use exactly one of these strings. Never invent a new one.",
+    "Use exactly one of these strings. Never invent a new one. There is one per AWS",
+    'category, so every service in the "awsService" list below has a type to sit in.',
     "",
     "C4:",
     ...IR_C4_SEMANTIC_TYPES.map(describe),
@@ -121,6 +147,45 @@ function buildBoundarySection(): string {
   ].join("\n");
 }
 
+/**
+ * Where the default tier alone would mislead. Kept short: the model reads this
+ * per line, so a note earns its place only when the category genuinely straddles
+ * two tiers or is not a step in the request flow at all.
+ */
+const TIER_NOTE: Partial<Record<SemanticType, string>> = {
+  "aws-networking": 'use "edge" when it is the first hop from the internet',
+  "aws-analytics": 'use "integration" for the streaming ones, kinesis and msk',
+  "aws-security": "cross-cutting — reached from everywhere, no position of its own",
+  "aws-management": "cross-cutting — monitoring, logging, cost and governance",
+  "aws-developer": "cross-cutting — CI/CD and tracing are not a step in the flow",
+  "aws-containers": "registries and clusters; a running container is aws-compute",
+  "aws-general": 'grouping constructs — set "isBoundary": true',
+};
+
+/**
+ * Words models reach for as a tier because the IR taught them as categories.
+ * Derived from the catalog so a new AWS category is named the day it lands, minus
+ * the two that are legitimately both ("compute", "integration").
+ */
+function nonTierWords(): string[] {
+  const invented = ["monitoring", "observability", "logging", "governance", "identity", "devops"];
+  const fromCatalog = AWS_CATEGORIES.map((category) => categoryWord(category.id));
+  return [...new Set([...fromCatalog, ...invented])].filter(
+    (word) => !(IR_TIERS as readonly string[]).includes(word),
+  );
+}
+
+/** `- "aws-security" → "compute" (note): Security, Identity & Compliance (iam, …)` */
+function buildTierLine(semanticType: SemanticType): string {
+  const note = TIER_NOTE[semanticType];
+  const hint = awsCategoryHint(semanticType, 5) ?? SEMANTIC_TYPE_GLOSSARY[semanticType] ?? "";
+  return [
+    `- "${semanticType}" → "${TIER_BY_SEMANTIC_TYPE[semanticType]}"`,
+    note ? ` (${note})` : "",
+    hint ? `: ${hint}` : "",
+  ].join("");
+}
+
 function buildTierSection(): string {
   return [
     "## tier values",
@@ -135,12 +200,29 @@ function buildTierSection(): string {
     '- "data" — datastores, caches, object storage',
     '- "integration" — queues, topics, event buses, workflow orchestration',
     "",
-    "A tier is a position in the left-to-right flow, not a category of service.",
-    "Cross-cutting services have no tier of their own: a secrets manager, a",
-    'monitoring or logging service, an IAM role, a cost dashboard all take "compute".',
-    'Do not invent a tier from the service category — "security", "management",',
-    '"monitoring" and "observability" are not tier values, even though',
-    '"aws-security" and "aws-management" are valid semanticTypes.',
+    "A tier is a position in the left-to-right flow, not a category of service. The",
+    'category is already carried by "semanticType" and "awsService" — never repeat it',
+    "here and never coin a tier from it. None of the following is a tier value, even",
+    "though each one names a real AWS category and most name a real semanticType:",
+    nonTierWords()
+      .map((word) => `"${word}"`)
+      .join(", ") + ".",
+    "",
+    "Cross-cutting services have no position in the flow: a secrets manager, an IAM",
+    "role, a CloudWatch dashboard, a CI pipeline, a cost report are reached from",
+    'everywhere, so they all take "compute".',
+    "",
+    "### Default tier per semanticType",
+    "",
+    "Place the node by where it actually sits in the flow you are drawing. When that",
+    "is not obvious, take the default for its semanticType. Every AWS category in the",
+    '"awsService" list below appears here, so every service has a tier to fall back on:',
+    "",
+    "C4:",
+    ...IR_C4_SEMANTIC_TYPES.map(buildTierLine),
+    "",
+    "AWS:",
+    ...IR_AWS_SEMANTIC_TYPES.map(buildTierLine),
   ].join("\n");
 }
 
