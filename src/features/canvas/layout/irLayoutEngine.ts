@@ -52,7 +52,7 @@ let elkConstructor: (new () => { layout(graph: ElkNode): Promise<ElkNode> }) | n
 async function getElk(): Promise<{ layout(graph: ElkNode): Promise<ElkNode> }> {
   if (!elkConstructor) {
     // Dynamic import to keep ELK out of the initial bundle.
-    const module = await import(/* @vite-ignore */ "elkjs/lib/elk.bundled.js");
+    const module = await import("elkjs/lib/elk.bundled.js");
     elkConstructor = module.default;
   }
   return new elkConstructor();

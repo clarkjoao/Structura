@@ -1,8 +1,8 @@
 import {
+  coerceTier,
   isBoundaryNode,
   isIRDiagramType,
   isSemanticType,
-  isTier,
   type DiagramIR,
   type IREdge,
   type IRNode,
@@ -24,7 +24,6 @@ export type IRIssueCode =
   | "nodeDuplicateId"
   | "nodeMissingName"
   | "nodeInvalidSemanticType"
-  | "nodeInvalidTier"
   | "nodeInvalidParentId"
   | "nodeInvalidBoundary"
   | "nodeParentNotFound"
@@ -158,10 +157,6 @@ function validateNodes(
       });
       valid = false;
     }
-    if (!isTier(rawNode.tier)) {
-      issues.push({ code: "nodeInvalidTier", params: { id, value: String(rawNode.tier) } });
-      valid = false;
-    }
     const parentIdRaw = rawNode.parentId ?? null;
     if (parentIdRaw !== null && !nonEmptyString(parentIdRaw)) {
       issues.push({ code: "nodeInvalidParentId", params: { id } });
@@ -173,7 +168,7 @@ function validateNodes(
       valid = false;
     }
 
-    if (!valid || !isSemanticType(rawNode.semanticType) || !isTier(rawNode.tier)) {
+    if (!valid || !isSemanticType(rawNode.semanticType)) {
       return;
     }
 
@@ -182,7 +177,12 @@ function validateNodes(
       semanticType: rawNode.semanticType,
       name: String(rawNode.name),
       parentId: typeof parentIdRaw === "string" ? parentIdRaw : null,
-      tier: rawNode.tier,
+      // An unusable tier is normalized, never fatal. Nothing reads `tier` yet,
+      // and the vocabulary has no slot for the cross-cutting services models
+      // reach for ("security", "management"), so refusing a diagram over it
+      // throws away something that renders perfectly. Same reasoning as
+      // `isBoundary`: a validator refusing what it can render is the bug.
+      tier: coerceTier(rawNode.tier, rawNode.semanticType),
       ...(nonEmptyString(rawNode.technology) ? { technology: rawNode.technology } : {}),
       ...(nonEmptyString(rawNode.awsService)
         ? { awsService: rawNode.awsService.trim().toLowerCase() }

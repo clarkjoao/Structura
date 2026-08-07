@@ -690,7 +690,6 @@
         "nodeDuplicateId": "Duplicate node id: \"{{id}}\".",
         "nodeMissingName": "Node \"{{id}}\" has no name.",
         "nodeInvalidSemanticType": "Node \"{{id}}\" uses an unknown semanticType: \"{{value}}\".",
-        "nodeInvalidTier": "Node \"{{id}}\" uses an unknown tier: \"{{value}}\".",
         "nodeInvalidParentId": "Node \"{{id}}\" has an invalid parentId.",
         "nodeInvalidBoundary": "Node \"{{id}}\" has a non-boolean isBoundary.",
         "nodeParentNotFound": "Node \"{{id}}\" points to a parent that does not exist: \"{{parentId}}\".",

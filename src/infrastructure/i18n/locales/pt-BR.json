@@ -690,7 +690,6 @@
         "nodeDuplicateId": "Id de nó duplicado: \"{{id}}\".",
         "nodeMissingName": "O nó \"{{id}}\" não tem nome.",
         "nodeInvalidSemanticType": "O nó \"{{id}}\" usa um semanticType desconhecido: \"{{value}}\".",
-        "nodeInvalidTier": "O nó \"{{id}}\" usa um tier desconhecido: \"{{value}}\".",
         "nodeInvalidParentId": "O nó \"{{id}}\" tem um parentId inválido.",
         "nodeInvalidBoundary": "O nó \"{{id}}\" tem isBoundary que não é booleano.",
         "nodeParentNotFound": "O nó \"{{id}}\" aponta para um pai inexistente: \"{{parentId}}\".",

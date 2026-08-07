@@ -125,7 +125,8 @@ function buildTierSection(): string {
   return [
     "## tier values",
     "",
-    `Every node needs a tier. Valid values: ${IR_TIERS.map((value) => `"${value}"`).join(", ")}.`,
+    `Every node needs a tier. Use one of these exactly — the list is closed, and` +
+      ` these are the only accepted values: ${IR_TIERS.map((value) => `"${value}"`).join(", ")}.`,
     "",
     '- "external" — actors and systems outside the boundary',
     '- "edge" — the first hop traffic reaches (CDN, load balancer, gateway, UI)',
@@ -133,6 +134,13 @@ function buildTierSection(): string {
     '- "compute" — services that run application logic',
     '- "data" — datastores, caches, object storage',
     '- "integration" — queues, topics, event buses, workflow orchestration',
+    "",
+    "A tier is a position in the left-to-right flow, not a category of service.",
+    "Cross-cutting services have no tier of their own: a secrets manager, a",
+    'monitoring or logging service, an IAM role, a cost dashboard all take "compute".',
+    'Do not invent a tier from the service category — "security", "management",',
+    '"monitoring" and "observability" are not tier values, even though',
+    '"aws-security" and "aws-management" are valid semanticTypes.',
   ].join("\n");
 }
 
@@ -151,7 +159,8 @@ const RULES = `
 5. Every "sourceId" and "targetId" must be the id of a node in the same document.
    Edges express interaction, not containment — never add an edge to say that one
    node is inside another.
-6. Give every node a "tier", even when the choice is not obvious.
+6. Give every node a "tier", picking the closest value from the closed list when
+   the choice is not obvious. Never coin a new one.
 7. Set "awsService" whenever the node is a real AWS service.
 8. Keep the diagram to at most 50 nodes. Prefer the level of detail the user asked
    for over exhaustiveness.
