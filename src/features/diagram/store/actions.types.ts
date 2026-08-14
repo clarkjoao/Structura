@@ -19,6 +19,7 @@ import type {
 } from "../model/diagram.types";
 import type { ServiceDefinition } from "../model/service.types";
 import type { EdgeStyle } from "../model/connection.types";
+import type { ClipboardEntry } from "./store.types";
 
 export interface AppActions {
   addDiagram: (
@@ -184,6 +185,7 @@ export interface AppActions {
     layouts: NodeLayout[],
   ) => string;
   clearClipboard: () => void;
+  hydrateClipboard: (entry: ClipboardEntry) => void;
 
   addScene: (name: string) => SceneDiff;
   duplicateScene: (sceneId: string, name?: string) => SceneDiff | null;

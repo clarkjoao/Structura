@@ -1,7 +1,7 @@
 import { useState, type ElementType } from "react";
 import {
   BookMarked,
-  Github,
+  GitBranch,
   Ticket,
   Link,
   X,
@@ -15,7 +15,7 @@ import type { ExternalLink } from "@/features/diagram";
 
 const TYPE_ICONS: Record<ExternalLinkType, ElementType> = {
   [ExternalLinkType.Confluence]: BookMarked,
-  [ExternalLinkType.Github]: Github,
+  [ExternalLinkType.Github]: GitBranch,
   [ExternalLinkType.Jira]: Ticket,
   [ExternalLinkType.Generic]: Link,
 };

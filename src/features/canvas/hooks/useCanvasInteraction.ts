@@ -240,6 +240,7 @@ export function useCanvasInteraction(
     copyToClipboard: actions.copyToClipboard,
     pasteFromClipboard: actions.pasteFromClipboard,
     importDrawioResult: actions.importDrawioResult,
+    hydrateClipboard: actions.hydrateClipboard,
     clearClipboard: actions.clearClipboard,
     addComponent: actions.addComponent,
     isPanelOpen,

@@ -26,11 +26,11 @@ export type SwimlaneNodeData = {
 
 const DEFAULT_SWIMLANE_OPACITY = 9;
 
-function hexWithAlpha(color: string, alphaHex: string): string {
-  if (color.startsWith("#") && color.replace("#", "").length >= 6) {
-    return `${color}${alphaHex}`;
-  }
-  return color;
+export function withAlpha(color: string, opacityPct: number): string {
+  const rgb = colorToRgb(color);
+  if (!rgb) return color;
+  const alpha = Math.max(0, Math.min(1, opacityPct / 100));
+  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
 }
 
 /**
@@ -72,7 +72,11 @@ function colorToRgb(color: string): { r: number; g: number; b: number } | null {
   const trimmed = color.trim();
   if (trimmed.startsWith("#")) {
     let hex = trimmed.slice(1);
-    if (hex.length === 3) hex = hex.split("").map((c) => c + c).join("");
+    if (hex.length === 3)
+      hex = hex
+        .split("")
+        .map((c) => c + c)
+        .join("");
     if (hex.length < 6) return null;
     return {
       r: parseInt(hex.slice(0, 2), 16),
@@ -110,12 +114,8 @@ const SwimlaneNode = memo((props: NodeProps<Node<SwimlaneNodeData>>) => {
   const { highlightedNodeIds } = useHandleHighlight();
   const isHorizontal = d.orientation !== "vertical";
   const laneColor = d.laneColor || "#6366f1";
-  // 0–100 → 2-digit hex (00–ff). Matches the canvas's other translucent containers.
   const opacityPct = Math.max(0, Math.min(100, d.opacity ?? DEFAULT_SWIMLANE_OPACITY));
-  const alphaHex = Math.round((opacityPct / 100) * 255)
-    .toString(16)
-    .padStart(2, "0");
-  const fill = hexWithAlpha(laneColor, alphaHex);
+  const fill = withAlpha(laneColor, opacityPct);
   const labelText = d.laneLabel?.trim() || d.name?.trim() || t("swimlane.defaultLaneLabel");
   const labelColor = pickLabelColor(laneColor, opacityPct);
 
@@ -167,7 +167,7 @@ const SwimlaneNode = memo((props: NodeProps<Node<SwimlaneNodeData>>) => {
         {isDragTarget && (
           <div
             className="absolute inset-0 rounded-lg animate-pulse-glow pointer-events-none z-0"
-            style={{ boxShadow: `0 0 20px 4px ${laneColor}80` }}
+            style={{ boxShadow: `0 0 20px 4px ${withAlpha(laneColor, 50)}` }}
           />
         )}
         <div

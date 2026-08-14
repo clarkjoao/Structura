@@ -7,6 +7,7 @@ import type {
   DiagramModel,
   ComponentType,
   Component,
+  ClipboardEntry,
   Connection,
   NodeLayout,
   ServiceDefinition,
@@ -86,6 +87,7 @@ interface UseCanvasKeyboardParams {
     connections: Connection[],
     layouts: NodeLayout[],
   ) => string[];
+  hydrateClipboard: (entry: ClipboardEntry) => void;
   clearClipboard: () => void;
   addComponent: (
     type: ComponentType,
@@ -152,6 +154,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     copyToClipboard,
     pasteFromClipboard,
     importDrawioResult,
+    hydrateClipboard,
     clearClipboard,
     addComponent,
     isPanelOpen,
@@ -256,6 +259,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     copyToClipboard,
     pasteFromClipboard,
     importDrawioResult,
+    hydrateClipboard,
     pasteSvgAsCanvasNode,
     importSvgForIconLibrary,
     serviceCatalog,

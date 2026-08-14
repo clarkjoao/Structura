@@ -217,6 +217,7 @@ export const useDiagramActions = () =>
       importDrawioResult: s.importDrawioResult,
       importMermaidSequenceResult: s.importMermaidSequenceResult,
       clearClipboard: s.clearClipboard,
+      hydrateClipboard: s.hydrateClipboard,
       addScene: s.addScene,
       duplicateScene: s.duplicateScene,
       removeScene: s.removeScene,
@@ -329,6 +330,7 @@ export const useClipboardActions = () =>
       copyToClipboard: s.copyToClipboard,
       pasteFromClipboard: s.pasteFromClipboard,
       clearClipboard: s.clearClipboard,
+      hydrateClipboard: s.hydrateClipboard,
     })),
   );
 
