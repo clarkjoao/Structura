@@ -1,7 +1,16 @@
 import { extractMxGraphModelXml } from "@/lib/export-service";
 import type { ClipboardEntry } from "@/features/diagram/store/store.types";
 
-const STRUCTURA_CLIPBOARD_ATTR = "data-structura-clipboard";
+// Chrome's "web custom formats" for the Async Clipboard API (Chromium 104+) store
+// data under a MIME type no other app will ever request. This is deliberately
+// NOT embedded in the text/html payload below: real draw.io's paste importer
+// parses that exact html shape to recognize a graph to import, and an earlier
+// version of this file that hid an extra marker div inside it broke that
+// recognition — draw.io fell back to importing the raw escaped XML as literal
+// text shapes instead of real diagram cells. Keeping text/plain and text/html
+// byte-for-byte what real draw.io itself would write avoids that entirely.
+const STRUCTURA_CUSTOM_TYPE = "application/x-structura-clipboard+json";
+const STRUCTURA_CUSTOM_FORMAT = `web ${STRUCTURA_CUSTOM_TYPE}`;
 
 function escapeForHtmlClipboard(xml: string): string {
   return xml
@@ -11,36 +20,12 @@ function escapeForHtmlClipboard(xml: string): string {
     .replace(/"/g, "&quot;");
 }
 
-/**
- * Encodes a UTF-8 string to base64. `btoa` only accepts Latin1, so component
- * names/descriptions with non-ASCII characters (accents, emoji) need this
- * UTF-8-safe wrapper instead of a bare `btoa` call.
- */
-function encodeBase64Utf8(value: string): string {
-  const bytes = new TextEncoder().encode(value);
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary);
-}
-
-function decodeBase64Utf8(base64: string): string {
-  const binary = atob(base64);
-  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
-}
-
-/**
- * Builds the hidden marker embedded in the `text/html` clipboard payload
- * alongside the draw.io XML. It carries a full-fidelity, base64-encoded JSON
- * copy of the internal clipboard entry (styles, AWS type/icon, custom colors)
- * so paste in a *different browser tab/window* — which can't share the
- * in-memory Zustand clipboard — can still be lossless. Real external apps
- * (actual draw.io, other tools) simply ignore this unknown div; only
- * Structura's own paste handler looks for it.
- */
-function buildStructuraClipboardMarker(entry: ClipboardEntry): string {
-  const encoded = encodeBase64Utf8(JSON.stringify(entry));
-  return `<div ${STRUCTURA_CLIPBOARD_ATTR}="1" style="display:none">${encoded}</div>`;
+function supportsStructuraCustomFormat(): boolean {
+  return (
+    typeof ClipboardItem !== "undefined" &&
+    typeof ClipboardItem.supports === "function" &&
+    ClipboardItem.supports(STRUCTURA_CUSTOM_FORMAT)
+  );
 }
 
 export async function writeDrawioToClipboard(
@@ -48,24 +33,24 @@ export async function writeDrawioToClipboard(
   structuraClipboardEntry?: ClipboardEntry,
 ): Promise<void> {
   const graphModelXml = extractMxGraphModelXml(fullDrawioXml);
-  const structuraMarker = structuraClipboardEntry
-    ? buildStructuraClipboardMarker(structuraClipboardEntry)
-    : "";
   const html =
     `<meta charset="utf-8">` +
     `<div data-type="text/plain" style="white-space:pre-wrap;font-family:monospace">` +
     escapeForHtmlClipboard(graphModelXml) +
-    `</div>` +
-    structuraMarker;
+    `</div>`;
 
   try {
     if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          "text/plain": new Blob([graphModelXml], { type: "text/plain" }),
-          "text/html": new Blob([html], { type: "text/html" }),
-        }),
-      ]);
+      const items: Record<string, Blob> = {
+        "text/plain": new Blob([graphModelXml], { type: "text/plain" }),
+        "text/html": new Blob([html], { type: "text/html" }),
+      };
+      if (structuraClipboardEntry && supportsStructuraCustomFormat()) {
+        items[STRUCTURA_CUSTOM_FORMAT] = new Blob([JSON.stringify(structuraClipboardEntry)], {
+          type: STRUCTURA_CUSTOM_TYPE,
+        });
+      }
+      await navigator.clipboard.write([new ClipboardItem(items)]);
       return;
     }
   } catch (err) {
@@ -118,24 +103,22 @@ export async function readDrawioFromClipboard(): Promise<string | null> {
 }
 
 /**
- * Reads back the full-fidelity `ClipboardEntry` embedded by
- * `writeDrawioToClipboard`, if present. Returns null whenever the OS
- * clipboard wasn't written by this app (no marker div), or the marker can't
- * be parsed (corrupted, or written by an older Structura build) — callers
- * should fall back to the lossy draw.io XML import in that case.
+ * Reads back the full-fidelity `ClipboardEntry` written by
+ * `writeDrawioToClipboard` under the Structura custom clipboard format, if
+ * present. Returns null whenever the OS clipboard wasn't written by this app,
+ * the writing browser didn't support custom formats, or the payload can't be
+ * parsed (corrupted, or written by an older Structura build) — callers should
+ * fall back to the lossy draw.io XML import in that case.
  */
 export async function readStructuraClipboard(): Promise<ClipboardEntry | null> {
   try {
     if (!navigator.clipboard?.read) return null;
     const items = await navigator.clipboard.read();
     for (const item of items) {
-      if (!item.types.includes("text/html")) continue;
-      const blob = await item.getType("text/html");
-      const html = await blob.text();
-      const match = html.match(new RegExp(`${STRUCTURA_CLIPBOARD_ATTR}="1"[^>]*>([^<]*)</div>`));
-      if (!match) continue;
-      const decoded = decodeBase64Utf8(match[1]);
-      return JSON.parse(decoded) as ClipboardEntry;
+      if (!item.types.includes(STRUCTURA_CUSTOM_FORMAT)) continue;
+      const blob = await item.getType(STRUCTURA_CUSTOM_FORMAT);
+      const text = await blob.text();
+      return JSON.parse(text) as ClipboardEntry;
     }
   } catch (err) {
     console.warn("[Clipboard] Failed to read Structura clipboard payload:", err);
