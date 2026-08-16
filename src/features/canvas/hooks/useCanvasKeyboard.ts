@@ -70,8 +70,7 @@ interface UseCanvasKeyboardParams {
   setContextMenu: (v: null) => void;
   undo: () => void;
   redo: () => void;
-  removeComponent: (id: string) => void;
-  removeConnection: (id: string) => void;
+  removeElements: (nodeIds: string[], edgeIds: string[]) => void;
   groupNodes: (ids: string[]) => string | null;
   ungroupNodes: (panelId: string) => void;
   setParent: (childId: string, parentId: string | null) => void;
@@ -145,8 +144,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     setContextMenu,
     undo,
     redo,
-    removeComponent,
-    removeConnection,
+    removeElements,
     groupNodes,
     ungroupNodes,
     setParent,
@@ -281,8 +279,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     setSelectedEdgeId,
     setContextMenu,
     clearClipboard,
-    removeComponent,
-    removeConnection,
+    removeElements,
   });
 
   const undoRedoHandler = useUndoRedoShortcuts({ undo, redo });

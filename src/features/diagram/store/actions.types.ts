@@ -52,6 +52,7 @@ export interface AppActions {
   ) => Component;
   updateComponent: (id: string, patch: ComponentPatch) => void;
   removeComponent: (id: string) => void;
+  removeElements: (nodeIds: string[], edgeIds: string[]) => void;
   updateHandleOrder: (
     componentId: string,
     side: "incoming" | "outgoing",

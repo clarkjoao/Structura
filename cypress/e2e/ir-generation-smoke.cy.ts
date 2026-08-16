@@ -106,6 +106,11 @@ const NESTED_IR = {
   ],
 };
 
+/** Keyboard shortcuts in this app use Cmd on macOS and Ctrl elsewhere (see `isModKeyPressed`). */
+function modKey(): string {
+  return Cypress.platform === "darwin" ? "{meta}" : "{ctrl}";
+}
+
 function sseBody(content: string): string {
   return `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n` + "data: [DONE]\n\n";
 }
@@ -247,8 +252,10 @@ describe("IR generation — valid IR reaches the canvas", () => {
     }
   });
 
-  it("confirms the generation in the chat", () => {
-    cy.contains("Diagram generated:", { timeout: 20000 }).should("exist");
+  it("confirms the generation in the chat and offers accept/reject", () => {
+    cy.contains("review and accept below", { timeout: 20000 }).should("exist");
+    cy.contains("button", "Accept").should("exist");
+    cy.contains("button", "Reject").should("exist");
   });
 
   it("resolves service icons from the AWS catalog", () => {
@@ -309,6 +316,76 @@ describe("IR generation — valid IR reaches the canvas", () => {
     cy.wrap(null).then(() => {
       expect(errors, `console errors:\n${errors.join("\n")}`).to.have.length(0);
     });
+  });
+});
+
+describe("IR generation — reject discards the whole generated graph", () => {
+  const errors: string[] = [];
+
+  before(() => {
+    cy.intercept("POST", "**/chat/completions", {
+      statusCode: 200,
+      headers: { "content-type": "text/event-stream" },
+      body: sseBody(JSON.stringify(NESTED_IR)),
+    }).as("generateForReject");
+
+    visitWorkspace(errors);
+    openChat();
+    sendPrompt("/generate AWS deployment for the orders platform");
+    cy.wait("@generateForReject");
+  });
+
+  it("removes every generated node when rejected", () => {
+    cy.get(".react-flow__node", { timeout: 60000 }).should(
+      "have.length.gte",
+      NESTED_IR.nodes.length,
+    );
+    cy.contains("button", "Reject").click();
+    cy.get(".react-flow__node").should("have.length", 0);
+  });
+});
+
+describe("IR generation — accepted elements survive a batched delete + single undo", () => {
+  const errors: string[] = [];
+
+  before(() => {
+    cy.intercept("POST", "**/chat/completions", {
+      statusCode: 200,
+      headers: { "content-type": "text/event-stream" },
+      body: sseBody(JSON.stringify(NESTED_IR)),
+    }).as("generateForAccept");
+
+    visitWorkspace(errors);
+    openChat();
+    sendPrompt("/generate AWS deployment for the orders platform");
+    cy.wait("@generateForAccept");
+    cy.get(".react-flow__node", { timeout: 60000 }).should(
+      "have.length.gte",
+      NESTED_IR.nodes.length,
+    );
+    cy.contains("button", "Accept").click();
+    cy.contains("button", "Accept").should("be.disabled");
+  });
+
+  it("restores every deleted node with a single undo after a multi-select delete", () => {
+    // Ctrl/Cmd-click three nodes into a multi-selection, delete them
+    // together, then undo once — the whole batch must come back from a
+    // single history checkpoint, not just the last node removed.
+    const labels = ["Customer", "Application Load Balancer", "Orders Service"];
+    cy.contains(".react-flow__node", labels[0]).click({ force: true });
+    for (const label of labels.slice(1)) {
+      cy.get("body").type("{ctrl}", { release: false });
+      cy.contains(".react-flow__node", label).click({ force: true });
+      cy.get("body").type("{ctrl}");
+    }
+    cy.get("body").type("{del}");
+    cy.get(".react-flow__node").should(
+      "have.length",
+      NESTED_IR.nodes.length - labels.length,
+    );
+
+    cy.get("body").type(`${modKey()}z`);
+    cy.get(".react-flow__node").should("have.length", NESTED_IR.nodes.length);
   });
 });
 

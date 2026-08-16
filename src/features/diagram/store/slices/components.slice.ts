@@ -66,7 +66,10 @@ import {
 import i18n from "@/infrastructure/i18n";
 import { computeApiGroupSize } from "../../utils/api-group-size";
 import { buildChildrenIndex, getDescendantIdsFromIndex } from "../../utils/children-index";
-import { mutateRemoveComponentInScene } from "../../utils/scene-mutations";
+import {
+  mutateRemoveComponentInScene,
+  mutateRemoveConnectionInScene,
+} from "../../utils/scene-mutations";
 import { repairFlowsAfterRemovingDiagramElements } from "../../utils/flow-repair";
 
 function handleEndpointInsertion(
@@ -302,6 +305,74 @@ function buildLayoutForComponent(
   return { elementId: componentId, x, y };
 }
 
+/**
+ * Removes a set of components (with descendants) and standalone connection ids
+ * from `d`'s live snapshot, without touching history. Shared by `removeComponent`
+ * and the batched `removeElements` so a multi-element delete pushes one history
+ * checkpoint instead of one per removed id.
+ */
+function removeElementsFromSnapshot(d: Diagram, nodeIds: string[], edgeIds: string[]): void {
+  const childrenIndex = buildChildrenIndex(d.snapshot.components);
+  const toRemove = new Set<string>();
+  nodeIds.forEach((id) => {
+    getDescendantIdsFromIndex(id, childrenIndex).forEach((descendantId) => toRemove.add(descendantId));
+    toRemove.add(id);
+  });
+
+  const apiGroupParentsToSync = new Set<string>();
+  toRemove.forEach((eid) => {
+    const comp = d.snapshot.components[eid];
+    if (comp?.parentId && isApiGroupComponent(d.snapshot.components[comp.parentId])) {
+      apiGroupParentsToSync.add(comp.parentId);
+    }
+  });
+
+  const removedConnectionIds = new Set<string>(edgeIds);
+  for (const connection of Object.values(d.snapshot.connections)) {
+    if (toRemove.has(connection.sourceId) || toRemove.has(connection.targetId)) {
+      removedConnectionIds.add(connection.id);
+    }
+  }
+
+  toRemove.forEach((eid) => delete d.snapshot.components[eid]);
+  removedConnectionIds.forEach((connectionId) => {
+    delete d.snapshot.connections[connectionId];
+  });
+  toRemove.forEach((eid) => delete d.nodeLayouts[eid]);
+
+  repairFlowsAfterRemovingDiagramElements(d.snapshot.flows, toRemove, removedConnectionIds);
+
+  const syncApiGroupSize = (groupId: string) => {
+    const childCount = Object.values(d.snapshot.components).filter(
+      (c) => c.parentId === groupId && isEndpointType(c.type),
+    ).length;
+    const { width, height } = computeApiGroupSize(childCount);
+    const layout = d.nodeLayouts[groupId];
+    if (layout) {
+      layout.width = width;
+      layout.height = height;
+    }
+  };
+
+  const reindexEndpoints = (groupId: string) => {
+    if (toRemove.has(groupId)) return;
+    const siblings = Object.values(d.snapshot.components)
+      .filter((c) => c.parentId === groupId && isEndpointType(c.type))
+      .sort((a, b) => {
+        const ay = d.nodeLayouts[a.id]?.y ?? 0;
+        const by = d.nodeLayouts[b.id]?.y ?? 0;
+        return ay - by;
+      });
+    siblings.forEach((sibling, i) => {
+      const layout = d.nodeLayouts[sibling.id];
+      if (layout) layout.y = API_GROUP_HEADER_H + i * API_GROUP_ENDPOINT_H;
+    });
+    syncApiGroupSize(groupId);
+  };
+
+  apiGroupParentsToSync.forEach(reindexEndpoints);
+}
+
 export const componentsSlice = (
   set: (fn: (state: AppState) => void) => void,
   _get: () => AppState,
@@ -447,63 +518,32 @@ export const componentsSlice = (
       }
 
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-      const childrenIndex = buildChildrenIndex(d.snapshot.components);
-      const toRemove = getDescendantIdsFromIndex(id, childrenIndex);
-      toRemove.add(id);
+      removeElementsFromSnapshot(d, [id], []);
+      touchDiagram(d);
+    });
+  },
 
-      const apiGroupParentsToSync = new Set<string>();
-      toRemove.forEach((eid) => {
-        const comp = d.snapshot.components[eid];
-        if (comp?.parentId && isApiGroupComponent(d.snapshot.components[comp.parentId])) {
-          apiGroupParentsToSync.add(comp.parentId);
-        }
-      });
-
-      const removedConnectionIds = new Set<string>();
-      for (const connection of Object.values(d.snapshot.connections)) {
-        if (toRemove.has(connection.sourceId) || toRemove.has(connection.targetId)) {
-          removedConnectionIds.add(connection.id);
-        }
+  /**
+   * Removes many components and/or connections as a single undoable step.
+   * Used by multi-select delete and AI-suggestion rejection so a batch delete
+   * doesn't push one history checkpoint per removed element (see
+   * `insertGeneratedGraph`, which batches inserts for the same reason).
+   */
+  removeElements: (nodeIds: string[], edgeIds: string[]) => {
+    if (nodeIds.length === 0 && edgeIds.length === 0) return;
+    set((state) => {
+      const d = getActiveDiagram(state);
+      if (!d) return;
+      const scene = resolveActiveScene(d);
+      if (scene) {
+        nodeIds.forEach((id) => mutateRemoveComponentInScene(d, scene.id, id));
+        edgeIds.forEach((id) => mutateRemoveConnectionInScene(d, scene.id, id));
+        touchDiagram(d);
+        return;
       }
 
-      toRemove.forEach((eid) => delete d.snapshot.components[eid]);
-      removedConnectionIds.forEach((connectionId) => {
-        delete d.snapshot.connections[connectionId];
-      });
-      toRemove.forEach((eid) => delete d.nodeLayouts[eid]);
-
-      repairFlowsAfterRemovingDiagramElements(d.snapshot.flows, toRemove, removedConnectionIds);
-
-      const syncApiGroupSize = (groupId: string) => {
-        const childCount = Object.values(d.snapshot.components).filter(
-          (c) => c.parentId === groupId && isEndpointType(c.type),
-        ).length;
-        const { width, height } = computeApiGroupSize(childCount);
-        const layout = d.nodeLayouts[groupId];
-        if (layout) {
-          layout.width = width;
-          layout.height = height;
-        }
-      };
-
-      const reindexEndpoints = (groupId: string) => {
-        if (toRemove.has(groupId)) return;
-        const siblings = Object.values(d.snapshot.components)
-          .filter((c) => c.parentId === groupId && isEndpointType(c.type))
-          .sort((a, b) => {
-            const ay = d.nodeLayouts[a.id]?.y ?? 0;
-            const by = d.nodeLayouts[b.id]?.y ?? 0;
-            return ay - by;
-          });
-        siblings.forEach((sibling, i) => {
-          const layout = d.nodeLayouts[sibling.id];
-          if (layout) layout.y = API_GROUP_HEADER_H + i * API_GROUP_ENDPOINT_H;
-        });
-        syncApiGroupSize(groupId);
-      };
-
-      apiGroupParentsToSync.forEach(reindexEndpoints);
-
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+      removeElementsFromSnapshot(d, nodeIds, edgeIds);
       touchDiagram(d);
     });
   },
