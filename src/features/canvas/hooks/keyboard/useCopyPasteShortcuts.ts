@@ -6,6 +6,7 @@ import {
   useDiagramStore,
   type Component,
   type Connection,
+  type ClipboardEntry,
   type Diagram,
   type DiagramModel,
   type NodeLayout,
@@ -23,6 +24,7 @@ import {
 } from "./helpers";
 import {
   readDrawioFromClipboard,
+  readStructuraClipboard,
   readSvgFromClipboard,
   writeDrawioToClipboard,
 } from "@/lib/clipboard-utils";
@@ -44,6 +46,7 @@ interface UseCopyPasteShortcutsParams {
     connections: Connection[],
     layouts: NodeLayout[],
   ) => string[];
+  hydrateClipboard: (entry: ClipboardEntry) => void;
   pasteSvgAsCanvasNode: (svgContent: string, position: { x: number; y: number }) => string | null;
   importSvgForIconLibrary: (svgContent: string) => string | null;
   serviceCatalog: Record<string, { id: string; name: string }>;
@@ -61,6 +64,7 @@ export function useCopyPasteShortcuts({
   copyToClipboard,
   pasteFromClipboard,
   importDrawioResult,
+  hydrateClipboard,
   pasteSvgAsCanvasNode,
   importSvgForIconLibrary,
   serviceCatalog,
@@ -83,7 +87,11 @@ export function useCopyPasteShortcuts({
           copyToClipboard(ids);
           try {
             const xml = exportDrawioXml(ids);
-            void writeDrawioToClipboard(xml);
+            // Embed the just-copied full-fidelity entry alongside the draw.io XML so
+            // pasting into a different browser tab/window (a separate in-memory store,
+            // where the rich clipboard below isn't shared) can still be lossless.
+            const entry = useDiagramStore.getState().clipboard;
+            void writeDrawioToClipboard(xml, entry ?? undefined);
           } catch {
             // drawio export is best-effort; internal clipboard copy already succeeded
           }
@@ -111,27 +119,38 @@ export function useCopyPasteShortcuts({
           return true;
         }
 
-        const drawioXml = await readDrawioFromClipboard();
-        if (drawioXml) {
-          const pasteCenter = getPasteFlowPosition(
-            reactFlowInstance,
-            reactFlowWrapperRef,
-            lastPointerScreenRef.current,
-          );
-          const result = parseDrawioXml(drawioXml, pasteCenter, serviceCatalog);
-          if (result.components.length > 0 || result.connections.length > 0) {
-            const newIds = importDrawioResult(
-              result.components,
-              result.connections,
-              result.layouts,
+        // A hidden marker embedded by our own writeDrawioToClipboard carries the
+        // full-fidelity entry (styles, AWS type/icon, custom colors) alongside the
+        // draw.io XML. It survives across browser tabs/windows via the OS clipboard,
+        // unlike the in-memory Zustand clipboard below — so prefer it whenever
+        // present, and only fall back to the lossy XML import for genuinely
+        // external draw.io content (a real draw.io app, or an older Structura tab).
+        const structuraEntry = await readStructuraClipboard();
+        if (structuraEntry) {
+          hydrateClipboard(structuraEntry);
+        } else {
+          const drawioXml = await readDrawioFromClipboard();
+          if (drawioXml) {
+            const pasteCenter = getPasteFlowPosition(
+              reactFlowInstance,
+              reactFlowWrapperRef,
+              lastPointerScreenRef.current,
             );
-            if (newIds.length > 0) {
-              reactFlowInstance.setNodes((nodes) =>
-                nodes.map((node) => ({ ...node, selected: newIds.includes(node.id) })),
+            const result = parseDrawioXml(drawioXml, pasteCenter, serviceCatalog);
+            if (result.components.length > 0 || result.connections.length > 0) {
+              const newIds = importDrawioResult(
+                result.components,
+                result.connections,
+                result.layouts,
               );
-              setSelectedNodeIds(new Set(newIds));
+              if (newIds.length > 0) {
+                reactFlowInstance.setNodes((nodes) =>
+                  nodes.map((node) => ({ ...node, selected: newIds.includes(node.id) })),
+                );
+                setSelectedNodeIds(new Set(newIds));
+              }
+              return true;
             }
-            return true;
           }
         }
 
@@ -239,6 +258,7 @@ export function useCopyPasteShortcuts({
       copyToClipboard,
       pasteFromClipboard,
       importDrawioResult,
+      hydrateClipboard,
       pasteSvgAsCanvasNode,
       importSvgForIconLibrary,
       serviceCatalog,

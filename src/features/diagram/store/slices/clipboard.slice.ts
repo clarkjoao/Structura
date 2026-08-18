@@ -242,4 +242,10 @@ export const clipboardSlice = (
       state.clipboard = null;
     });
   },
+
+  hydrateClipboard: (entry: ClipboardEntry) => {
+    set((state) => {
+      state.clipboard = entry;
+    });
+  },
 });

@@ -81,9 +81,7 @@ export function CanvasContextMenu({
 
   const handleDelete = canEditCanvas
     ? () => {
-        for (const selectedId of effectiveIds) {
-          actions.removeComponent(selectedId);
-        }
+        actions.removeElements(effectiveIds, []);
       }
     : undefined;
 

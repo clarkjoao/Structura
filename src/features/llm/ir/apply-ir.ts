@@ -5,6 +5,7 @@ import {
   type GeneratedNodeInput,
 } from "@/features/diagram";
 import { layoutIR, type IRLayoutBox } from "@/features/canvas/layout/irLayoutEngine";
+import { useCanvasSelectionStore } from "@/features/canvas/hooks/useCanvasSelectionStore";
 import { isApplyElkHandleOrderEnabled, isApplyElkWaypointsEnabled } from "./ir-layout-flags";
 import { mapNodeToComponent } from "./ir-to-component";
 import type { DiagramIR } from "./ir.types";
@@ -112,6 +113,15 @@ export async function applyIRToDiagram(ir: DiagramIR): Promise<ApplyIRResult> {
 
   const store = useDiagramStore.getState();
   const result = store.insertGeneratedGraph(nodes, edges);
+
+  if (result.componentIds.length > 0) {
+    // Select what was just generated, matching every other insert-then-select
+    // flow (C4 shortcuts, Pattern Picker, Mermaid/drawio import).
+    const selection = useCanvasSelectionStore.getState();
+    selection.setSelectedNodeId(result.componentIds[0] ?? null);
+    selection.setSelectedNodeIds(new Set(result.componentIds));
+    selection.setSelectedEdgeId(null);
+  }
 
   const connectionIdByEdgeId = new Map<string, string>();
   ir.edges.forEach((edge, index) => {

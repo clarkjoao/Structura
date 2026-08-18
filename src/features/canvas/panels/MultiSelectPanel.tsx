@@ -56,7 +56,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
   const diagram = useActiveDiagram();
   const {
     groupNodes,
-    removeComponent,
+    removeElements,
     addComponent,
     updateComponent,
     saveUserTemplate,
@@ -147,7 +147,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
   };
 
   const handleDelete = () => {
-    ids.forEach((id) => removeComponent(id));
+    removeElements(ids, []);
     onClose();
   };
 

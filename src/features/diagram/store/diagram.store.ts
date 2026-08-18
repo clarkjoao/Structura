@@ -174,6 +174,7 @@ export const useDiagramActions = () =>
       addComponent: s.addComponent,
       updateComponent: s.updateComponent,
       removeComponent: s.removeComponent,
+      removeElements: s.removeElements,
       updateHandleOrder: s.updateHandleOrder,
       addExternalLink: s.addExternalLink,
       updateExternalLink: s.updateExternalLink,
@@ -217,6 +218,7 @@ export const useDiagramActions = () =>
       importDrawioResult: s.importDrawioResult,
       importMermaidSequenceResult: s.importMermaidSequenceResult,
       clearClipboard: s.clearClipboard,
+      hydrateClipboard: s.hydrateClipboard,
       addScene: s.addScene,
       duplicateScene: s.duplicateScene,
       removeScene: s.removeScene,
@@ -243,6 +245,7 @@ export const useComponentActions = () =>
       addComponent: s.addComponent,
       updateComponent: s.updateComponent,
       removeComponent: s.removeComponent,
+      removeElements: s.removeElements,
       groupNodes: s.groupNodes,
       ungroupNodes: s.ungroupNodes,
       updateHandleOrder: s.updateHandleOrder,
@@ -329,6 +332,7 @@ export const useClipboardActions = () =>
       copyToClipboard: s.copyToClipboard,
       pasteFromClipboard: s.pasteFromClipboard,
       clearClipboard: s.clearClipboard,
+      hydrateClipboard: s.hydrateClipboard,
     })),
   );
 

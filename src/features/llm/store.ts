@@ -855,12 +855,35 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           return;
         }
 
-        finishWith(
-          i18n.t("llmChat.ir.applied", {
-            nodeCount: applied.componentIds.length,
-            edgeCount: applied.connectionIds.length,
-          }),
-        );
+        const appliedMessage = i18n.t("llmChat.ir.applied", {
+          nodeCount: applied.componentIds.length,
+          edgeCount: applied.connectionIds.length,
+        });
+
+        // Generated nodes/edges are already on the canvas (insertGeneratedGraph
+        // applied them as a single undo step) — stage them as a pending
+        // suggestion so the user gets the same Accept/Reject + canvas
+        // Keep/Discard flow as a normal chat patch, instead of the result
+        // being final immediately.
+        const suggestion: PendingSuggestion = {
+          id: crypto.randomUUID(),
+          messageId: assistantMessageId,
+          patch: { id: crypto.randomUUID(), description: appliedMessage, actions: [] },
+          status: "pending",
+        };
+        set({
+          pendingSuggestions: [...get().pendingSuggestions, suggestion],
+          pendingPreviews: [
+            ...get().pendingPreviews,
+            {
+              suggestionId: suggestion.id,
+              nodeIds: applied.componentIds,
+              edgeIds: applied.connectionIds,
+            },
+          ],
+        });
+
+        finishWith(appliedMessage);
       } catch (error) {
         const errorKind: LLMErrorKind = error instanceof LLMProviderError ? error.kind : "unknown";
         set({
@@ -915,14 +938,10 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         (pendingPreview) => pendingPreview.suggestionId === suggestionId,
       );
 
-      ensureHistoryBoundary();
-      if (preview) {
-        for (const edgeId of preview.edgeIds) {
-          applyDiagramPatchAction({ type: "REMOVE_EDGE", payload: { edgeId } });
-        }
-        for (const nodeId of preview.nodeIds) {
-          applyDiagramPatchAction({ type: "REMOVE_NODE", payload: { nodeId } });
-        }
+      if (preview && (preview.nodeIds.length > 0 || preview.edgeIds.length > 0)) {
+        // Batched so a multi-node suggestion is removed as one undo step,
+        // instead of pushing a history checkpoint per removed node/edge.
+        useDiagramStore.getState().removeElements(preview.nodeIds, preview.edgeIds);
       }
 
       set((state) => ({

@@ -27,7 +27,7 @@ function structuraBundledPlugins(): Plugin {
         .filter(Boolean);
 
       const bundled = selected.map((dir) => {
-        const distPath = path.resolve(__dirname, "plugins", dir, "dist", "plugin.js");
+        const distPath = path.resolve(import.meta.dirname, "plugins", dir, "dist", "plugin.js");
         if (!fs.existsSync(distPath)) {
           throw new Error(
             `[structura-bundled-plugins] "${dir}" has no dist/plugin.js at ${distPath}. ` +
@@ -54,7 +54,7 @@ export default defineConfig(() => ({
   plugins: [react(), structuraBundledPlugins()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
   optimizeDeps: {

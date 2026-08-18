@@ -675,7 +675,7 @@
       "export": "Baixar o IR gerado em JSON",
       "invalid": "O modelo devolveu um diagrama fora do schema do IR:",
       "moreIssues": "e mais {{count}} problema(s).",
-      "applied": "Diagrama gerado: {{nodeCount}} nó(s) e {{edgeCount}} conexão(ões).",
+      "applied": "Gerados {{nodeCount}} nó(s) e {{edgeCount}} conexão(ões) — revise e aceite abaixo.",
       "noActiveDiagram": "Abra um diagrama antes de gerar.",
       "notApplied": "O diagrama foi gerado, mas não pôde ser aplicado ao canvas.",
       "issue": {

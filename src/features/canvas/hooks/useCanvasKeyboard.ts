@@ -7,6 +7,7 @@ import type {
   DiagramModel,
   ComponentType,
   Component,
+  ClipboardEntry,
   Connection,
   NodeLayout,
   ServiceDefinition,
@@ -69,8 +70,7 @@ interface UseCanvasKeyboardParams {
   setContextMenu: (v: null) => void;
   undo: () => void;
   redo: () => void;
-  removeComponent: (id: string) => void;
-  removeConnection: (id: string) => void;
+  removeElements: (nodeIds: string[], edgeIds: string[]) => void;
   groupNodes: (ids: string[]) => string | null;
   ungroupNodes: (panelId: string) => void;
   setParent: (childId: string, parentId: string | null) => void;
@@ -86,6 +86,7 @@ interface UseCanvasKeyboardParams {
     connections: Connection[],
     layouts: NodeLayout[],
   ) => string[];
+  hydrateClipboard: (entry: ClipboardEntry) => void;
   clearClipboard: () => void;
   addComponent: (
     type: ComponentType,
@@ -143,8 +144,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     setContextMenu,
     undo,
     redo,
-    removeComponent,
-    removeConnection,
+    removeElements,
     groupNodes,
     ungroupNodes,
     setParent,
@@ -152,6 +152,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     copyToClipboard,
     pasteFromClipboard,
     importDrawioResult,
+    hydrateClipboard,
     clearClipboard,
     addComponent,
     isPanelOpen,
@@ -256,6 +257,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     copyToClipboard,
     pasteFromClipboard,
     importDrawioResult,
+    hydrateClipboard,
     pasteSvgAsCanvasNode,
     importSvgForIconLibrary,
     serviceCatalog,
@@ -277,8 +279,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     setSelectedEdgeId,
     setContextMenu,
     clearClipboard,
-    removeComponent,
-    removeConnection,
+    removeElements,
   });
 
   const undoRedoHandler = useUndoRedoShortcuts({ undo, redo });

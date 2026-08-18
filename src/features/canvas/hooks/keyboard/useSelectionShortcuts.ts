@@ -21,8 +21,7 @@ interface UseSelectionShortcutsParams {
   setSelectedEdgeId: (id: string | null) => void;
   setContextMenu: (v: null) => void;
   clearClipboard: () => void;
-  removeComponent: (id: string) => void;
-  removeConnection: (id: string) => void;
+  removeElements: (nodeIds: string[], edgeIds: string[]) => void;
 }
 
 export function useSelectionShortcuts({
@@ -35,8 +34,7 @@ export function useSelectionShortcuts({
   setSelectedEdgeId,
   setContextMenu,
   clearClipboard,
-  removeComponent,
-  removeConnection,
+  removeElements,
 }: UseSelectionShortcutsParams): KeyHandler {
   return useCallback(
     (e: KeyboardEvent): boolean => {
@@ -68,13 +66,17 @@ export function useSelectionShortcuts({
       if (keyIsOneOf(e, [KEY.DELETE, KEY.BACKSPACE])) {
         e.preventDefault();
         const selected = getSelectedNodes(reactFlowInstance, selectedNodeId);
+        if (selected.length > 0 || selectedEdgeId) {
+          removeElements(
+            selected.map((n) => n.id),
+            selectedEdgeId ? [selectedEdgeId] : [],
+          );
+        }
         if (selected.length > 0) {
-          selected.forEach((n) => removeComponent(n.id));
           setSelectedNodeId(null);
           setSelectedNodeIds(new Set());
         }
         if (selectedEdgeId) {
-          removeConnection(selectedEdgeId);
           setSelectedEdgeId(null);
         }
         return true;
@@ -92,8 +94,7 @@ export function useSelectionShortcuts({
       setSelectedEdgeId,
       setContextMenu,
       clearClipboard,
-      removeComponent,
-      removeConnection,
+      removeElements,
     ],
   );
 }
