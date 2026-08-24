@@ -1,0 +1,18 @@
+openapi: 3.1.0
+info:
+  title: BusinessCapability
+  version: v1
+  description: "Capacidade de negócio"
+
+components:
+  schemas:
+    BusinessCapabilitySpec:
+      type: object
+      required:
+        - description
+      properties:
+        description:
+          type: string
+        displayName:
+          type: string
+          description: Friendly display name for the capability

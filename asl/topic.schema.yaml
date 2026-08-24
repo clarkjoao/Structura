@@ -1,0 +1,29 @@
+openapi: 3.1.0
+info:
+  title: Topic
+  version: v1
+  description: "Tópico"
+
+components:
+  schemas:
+    TopicSpec:
+      type: object
+      required:
+        - provider
+        - type
+      properties:
+        provider:
+          type: string
+          enum:
+            - SNS
+            - Kafka
+        type:
+          type: string
+          enum:
+            - Comando
+            - Evento Interprocess
+            - Evento Corporativo
+            - Retorno
+        description:
+          type: string
+          description: Topic description

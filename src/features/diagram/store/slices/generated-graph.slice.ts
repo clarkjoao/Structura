@@ -1,4 +1,10 @@
-import type { ComponentType, NodeLayout, PanelKind } from "../../model/diagram.types";
+import type {
+  ComponentType,
+  Connection,
+  ConnectionIntent,
+  NodeLayout,
+  PanelKind,
+} from "../../model/diagram.types";
 import {
   isAwsComponent,
   isAzureComponent,
@@ -27,6 +33,9 @@ export interface GeneratedNodeInput {
   technology?: string;
   /** Cloud service id, resolved by the canvas against the provider catalog. */
   awsService?: string;
+  /** Free text for the node body. Producers that have none omit it. */
+  description?: string;
+  tags?: string[];
   /** Position is relative to the parent, like React Flow child nodes. */
   x: number;
   y: number;
@@ -38,6 +47,12 @@ export interface GeneratedEdgeInput {
   sourceExternalId: string;
   targetExternalId: string;
   label: string;
+  /** Position along the edge path, 0–1, where 0.5 is the midpoint. */
+  labelPosition?: number;
+  /** Semantic fields a producer may know; omitted ones keep the model default. */
+  description?: string;
+  intent?: ConnectionIntent;
+  transportPreset?: Connection["transportPreset"];
 }
 
 export interface GeneratedGraphResult {
@@ -74,11 +89,24 @@ export const generatedGraphSlice = (
     for (const node of nodes) {
       componentIdByExternalId[node.externalId] = generateId("el");
     }
-    const resolvedEdges = edges.flatMap((edge) => {
+    const resolvedEdges = edges.flatMap((edge): Connection[] => {
       const sourceId = componentIdByExternalId[edge.sourceExternalId];
       const targetId = componentIdByExternalId[edge.targetExternalId];
       if (!sourceId || !targetId) return [];
-      return [{ id: generateId("conn"), sourceId, targetId, label: edge.label }];
+      return [
+        {
+          id: generateId("conn"),
+          sourceId,
+          targetId,
+          label: edge.label,
+          ...(edge.description !== undefined ? { description: edge.description } : {}),
+          ...(edge.intent !== undefined ? { intent: edge.intent } : {}),
+          ...(edge.transportPreset !== undefined ? { transportPreset: edge.transportPreset } : {}),
+          ...(edge.labelPosition !== undefined
+            ? { style: { labelPosition: edge.labelPosition } }
+            : {}),
+        },
+      ];
     });
 
     let committed = false;
@@ -106,6 +134,13 @@ export const generatedGraphSlice = (
           node.panelKind,
           node.awsService,
         );
+
+        if (node.description !== undefined) {
+          component.description = node.description;
+        }
+        if (node.tags !== undefined && node.tags.length > 0) {
+          component.tags = [...node.tags];
+        }
 
         // Type-based guards, not `isCloudComponent`: that one asks the cloud
         // registry, which is only populated once `features/cloud/bootstrap`

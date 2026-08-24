@@ -1,0 +1,33 @@
+openapi: 3.1.0
+info:
+  title: Application
+  version: v1
+  description: "Aplicação técnica ou de negócio"
+
+components:
+  schemas:
+    ApplicationSpec:
+      type: object
+      required:
+        - provider
+        - language
+        - description
+      properties:
+        provider:
+          type: string
+          enum:
+            - ECS
+            - EKS
+            - Lambda
+            - OpenShift
+            - VM
+        language:
+          type: string
+          enum:
+            - Java
+            - Python
+        description:
+          type: string
+        siglaApp:
+          type: string
+          description: Application identifier/code

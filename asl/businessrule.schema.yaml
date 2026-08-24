@@ -1,0 +1,57 @@
+openapi: 3.1.0
+info:
+  title: BusinessRule
+  version: v1
+  description: "Regra de negócio"
+
+components:
+  schemas:
+    BusinessRuleSpec:
+      type: object
+      required:
+        - description
+        - appliesTo
+        - constraints
+      properties:
+        description:
+          type: string
+        appliesTo:
+          type: array
+          items:
+            type: object
+            required:
+              - kind
+              - name
+            properties:
+              kind:
+                type: string
+                enum:
+                  - Application
+                  - BusinessCapability
+                  - BusinessService
+              name:
+                type: string
+        constraints:
+          type: array
+          items:
+            $ref: "#/components/schemas/Constraint"
+
+    Constraint:
+      type: object
+      required:
+        - name
+        - condition
+        - error
+      properties:
+        name:
+          type: string
+          description: "Constraint identifier"
+        condition:
+          type: string
+          description: "Business rule condition statement"
+        error:
+          type: string
+          description: "Error message when constraint is violated"
+        action:
+          type: string
+          description: "Action to take on violation (optional)"

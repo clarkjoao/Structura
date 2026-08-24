@@ -1,0 +1,19 @@
+openapi: 3.1.0
+info:
+  title: Community
+  version: v1
+  description: Comunidade
+
+components:
+  schemas:
+    CommunitySpec:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          description: Community identifier/code
+        displayName:
+          type: string
+          description: Friendly display name for the community

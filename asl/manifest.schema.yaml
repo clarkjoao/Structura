@@ -1,0 +1,60 @@
+openapi: 3.1.0
+info:
+  title: ASL Manifest Base Schema
+  version: v1
+  description: |
+    Base envelope schema for all ASL manifests.
+    Every resource follows the apiVersion/kind/metadata/spec pattern.
+
+components:
+  schemas:
+    ManifestBase:
+      type: object
+      required:
+        - apiVersion
+        - kind
+        - metadata
+        - spec
+      properties:
+        apiVersion:
+          type: string
+          enum:
+            - "arquitetura.itau/v1"
+        kind:
+          type: string
+          enum:
+            - APIGateway
+            - Application
+            - ApplicationService
+            - Topic
+            - Queue
+            - Database
+            - BusinessCapability
+            - BusinessService
+            - ServiceOffer
+            - Squad
+            - Community
+            - BusinessRule
+            - Relationship
+        metadata:
+          $ref: "#/components/schemas/Metadata"
+        spec:
+          type: object
+
+    Metadata:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          pattern: "^[a-z][a-z0-9_-]*$"
+          description: Unique resource name (kebab-case or snake_case)
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+        annotations:
+          type: object
+          additionalProperties:
+            type: string

@@ -1,0 +1,19 @@
+openapi: 3.1.0
+info:
+  title: ApplicationService
+  version: v1
+  description: "Serviço de aplicação"
+
+components:
+  schemas:
+    ApplicationServiceSpec:
+      type: object
+      required:
+        - sigla
+      properties:
+        sigla:
+          type: string
+          description: Application Service identifier/code
+        displayName:
+          type: string
+          description: Friendly display name for the application service

@@ -1,0 +1,26 @@
+openapi: 3.1.0
+info:
+  title: Database
+  version: v1
+  description: "Banco de dados"
+
+components:
+  schemas:
+    DatabaseSpec:
+      type: object
+      required:
+        - provider
+      properties:
+        provider:
+          type: string
+          enum:
+            - DynamoDB
+            - AuroraMySQL
+            - RDSMySQL
+            - AuroraPostgres
+            - RDSPostgres
+            - Neptune
+            - CosmosDB
+        description:
+          type: string
+          description: Database description

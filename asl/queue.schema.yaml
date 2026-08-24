@@ -1,0 +1,21 @@
+openapi: 3.1.0
+info:
+  title: Queue
+  version: v1
+  description: Fila
+
+components:
+  schemas:
+    QueueSpec:
+      type: object
+      required:
+        - provider
+      properties:
+        provider:
+          type: string
+          enum:
+            - IBM MQ
+            - SQS
+        description:
+          type: string
+          description: Queue description

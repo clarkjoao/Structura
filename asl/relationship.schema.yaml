@@ -1,0 +1,62 @@
+openapi: 3.1.0
+info:
+  title: Relationship
+  version: v1
+  description: "Grafo de relacionamentos: uma lista de arestas direcionadas (from -> to)"
+
+components:
+  schemas:
+    RelationshipSpec:
+      type: object
+      required:
+        - edges
+      properties:
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/Edge"
+          minItems: 1
+          description: List of directed edges between components
+
+    Edge:
+      type: object
+      required:
+        - from
+        - to
+        - type
+      properties:
+        from:
+          $ref: "#/components/schemas/EndpointRef"
+        to:
+          $ref: "#/components/schemas/EndpointRef"
+        type:
+          type: string
+          enum:
+            - calls
+            - consumes
+            - produces
+            - reads
+            - writes
+            - subscribes
+            - publishes
+            - triggers
+            - appliesTo
+            - belongsTo
+            - relatedTo
+          description: Type of relationship
+        description:
+          type: string
+
+    EndpointRef:
+      type: object
+      description: "Chave composta (kind + id) que referencia um componente do workspace"
+      required:
+        - kind
+        - id
+      properties:
+        kind:
+          type: string
+          description: Kind of the referenced component (asserted against the resolved component)
+        id:
+          type: string
+          description: metadata.name of the referenced component

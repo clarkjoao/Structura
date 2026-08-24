@@ -1,0 +1,143 @@
+apiVersion: arquitetura.itau/v1
+kind: ApplicationService
+metadata:
+  name: sa-proposal-consignado-tracking-clt
+  labels:
+    domain: consignado
+    tier: critical
+  annotations:
+    contact: tracking-squad@itau.com.br
+spec:
+  sigla: JX9
+  displayName: "SA Tracking de propostas de Consignado"
+
+---
+apiVersion: arquitetura.itau/v1
+kind: Application
+metadata:
+  name: app-tracking-consignado
+spec:
+  provider: Lambda
+  language: Python
+  description: "Aplicação de rastreamento de propostas de consignado"
+  siglaApp: JX9-X000
+
+---
+apiVersion: arquitetura.itau/v1
+kind: Application
+metadata:
+  name: app-proposal-consignado-stream-processor
+spec:
+  provider: Lambda
+  language: Python
+  description: "Aplicação de processamento do stream de rastreamento"
+  siglaApp: JX9-X001
+
+---
+apiVersion: arquitetura.itau/v1
+kind: Database
+metadata:
+  name: tbjx9-trackingdb
+spec:
+  provider: DynamoDB
+  # A foto corta o fim desta linha: confira o texto exato no original.
+  description: "Persiste dados de rastreamento de propostas (com DynamoDB Stream habilitado)"
+
+---
+apiVersion: arquitetura.itau/v1
+kind: Queue
+metadata:
+  name: queue-update-tracking-proposal
+spec:
+  provider: SQS
+  description: "Fila de mensagens para atualização de propostas"
+
+---
+apiVersion: arquitetura.itau/v1
+kind: Topic
+metadata:
+  name: topic-proposal-status-events
+spec:
+  provider: Kafka
+  type: Evento Interprocess
+  description: "Eventos de mudança de status de proposta"
+
+---
+apiVersion: arquitetura.itau/v1
+kind: BusinessRule
+metadata:
+  name: regra-tracking-consignado
+spec:
+  description: "Regras de integridade para rastreamento de propostas de consignado"
+  appliesTo:
+    - kind: Application
+      name: app-tracking-consignado
+  constraints:
+    - name: "RequireProposalId"
+      condition: "proposal_id MUST be present in the tracking event payload"
+      error: "Evento rejeitado: proposal_id ausente"
+    - name: "IdempotentUpdate"
+      # A foto corta o fim desta linha: confira o texto exato no original.
+      condition: "Duplicate tracking events with same proposal_id and timestamp MUST be discarded"
+      error: "Evento duplicado descartado"
+      action: "Retornar sucesso sem reprocessar"
+    - name: "ValidStatus"
+      condition: "Proposal status MUST be one of: PENDING, APPROVED, REJECTED, CANCELLED"
+      error: "Status de proposta inválido"
+
+---
+apiVersion: arquitetura.itau/v1
+kind: Relationship
+metadata:
+  name: proposal-tracking-relationships
+spec:
+  edges:
+    # sqs -> lambda: a fila dispara o processamento do tracking
+    - from:
+        kind: Queue
+        id: queue-update-tracking-proposal
+      to:
+        kind: Application
+        id: app-tracking-consignado
+      type: triggers
+      description: "SQS dispara o processamento das atualizações de tracking"
+
+    # lambda -> dynamodb: persiste os dados de rastreamento
+    - from:
+        kind: Application
+        id: app-tracking-consignado
+      to:
+        kind: Database
+        id: tbjx9-trackingdb
+      type: writes
+      description: "Persiste dados de rastreamento"
+
+    # dynamodb (stream) -> lambda: o DynamoDB Stream dispara o processador
+    - from:
+        kind: Database
+        id: tbjx9-trackingdb
+      to:
+        kind: Application
+        id: app-proposal-consignado-stream-processor
+      type: triggers
+      description: "DynamoDB Stream dispara o processador de stream"
+
+    # lambda -> kafka: publica os eventos de mudança de status
+    - from:
+        kind: Application
+        id: app-proposal-consignado-stream-processor
+      to:
+        kind: Topic
+        id: topic-proposal-status-events
+      type: publishes
+      description: "Publica eventos de mudança de status de proposta no Kafka"
+
+    # regra de negócio aplicada ao serviço de aplicação
+    - from:
+        kind: BusinessRule
+        id: regra-tracking-consignado
+      to:
+        kind: ApplicationService
+        id: sa-proposal-consignado-tracking-clt
+      type: appliesTo
+      description: "Regra de negócio aplicada a este serviço"

@@ -1,0 +1,25 @@
+openapi: 3.1.0
+info:
+  title: APIGateway
+  version: v1
+  description: API Gateway
+
+components:
+  schemas:
+    APIGatewaySpec:
+      type: object
+      required:
+        - provider
+        - exposure
+      properties:
+        provider:
+          type: string
+          enum:
+            - AWS API Gateway
+            - Kong On-premise
+        exposure:
+          type: string
+          enum:
+            - Internal
+            - External
+            - InternalExternal
