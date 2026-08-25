@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useWorkspaceImport } from "@/pages/useWorkspaceImport";
+import { ServiceRelinkDialog } from "@/pages/ServiceRelinkDialog";
 import type { ImporterContribution } from "@/features/plugins/plugin.types";
 import { usePluginIoContributions } from "@/features/plugins/use-plugin-contributions";
 import { resolveLocalizedText } from "@/features/plugins/localized-text";
@@ -36,7 +37,7 @@ export function ImportModal({
   allowPluginImporters = false,
 }: ImportModalProps) {
   const { t, i18n } = useTranslation();
-  const { importJsonText } = useWorkspaceImport({
+  const { importJsonText, pendingRelinkPlan, confirmRelink, cancelRelink } = useWorkspaceImport({
     targetFolderId,
   });
   const { importers } = usePluginIoContributions();
@@ -137,54 +138,37 @@ export function ImportModal({
   const hasPlugins = pluginImporters.length > 0;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5" />
-            {t("import.title")}
-          </DialogTitle>
-          <DialogDescription>{t("import.description")}</DialogDescription>
-        </DialogHeader>
+    <>
+      {pendingRelinkPlan && (
+        <ServiceRelinkDialog
+          open
+          plan={pendingRelinkPlan}
+          onCancel={cancelRelink}
+          onConfirm={confirmRelink}
+        />
+      )}
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5" />
+              {t("import.title")}
+            </DialogTitle>
+            <DialogDescription>{t("import.description")}</DialogDescription>
+          </DialogHeader>
 
-        {hasPlugins && (
-          <div className="space-y-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {t("import.format")}
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setActiveImporter(null)}
-                className={cn(
-                  "flex items-center gap-2 rounded-lg border p-3 text-left transition-all",
-                  !activeImporter
-                    ? "border-primary bg-primary/5 ring-1 ring-primary"
-                    : "border-border hover:border-primary/50 hover:bg-muted/50",
-                )}
-              >
-                <div
-                  className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-lg",
-                    !activeImporter ? "bg-primary text-primary-foreground" : "bg-muted",
-                  )}
-                >
-                  <FileJson className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{t("import.json")}</p>
-                  <p className="text-xs text-muted-foreground">.json</p>
-                </div>
-              </button>
-
-              {pluginImporters.map((importer) => (
+          {hasPlugins && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {t("import.format")}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
                 <button
-                  key={importer.id}
                   type="button"
-                  onClick={() => setActiveImporter(importer)}
+                  onClick={() => setActiveImporter(null)}
                   className={cn(
                     "flex items-center gap-2 rounded-lg border p-3 text-left transition-all",
-                    activeImporter?.id === importer.id
+                    !activeImporter
                       ? "border-primary bg-primary/5 ring-1 ring-primary"
                       : "border-border hover:border-primary/50 hover:bg-muted/50",
                   )}
@@ -192,61 +176,90 @@ export function ImportModal({
                   <div
                     className={cn(
                       "flex h-9 w-9 items-center justify-center rounded-lg",
-                      activeImporter?.id === importer.id ? "bg-primary text-primary-foreground" : "bg-muted",
+                      !activeImporter ? "bg-primary text-primary-foreground" : "bg-muted",
                     )}
                   >
                     <FileJson className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">
-                      {resolveLocalizedText(importer.label, i18n.language)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {importer.extensions.map((e) => `.${e}`).join(", ")}
-                    </p>
+                    <p className="text-sm font-medium">{t("import.json")}</p>
+                    <p className="text-xs text-muted-foreground">.json</p>
                   </div>
                 </button>
-              ))}
+
+                {pluginImporters.map((importer) => (
+                  <button
+                    key={importer.id}
+                    type="button"
+                    onClick={() => setActiveImporter(importer)}
+                    className={cn(
+                      "flex items-center gap-2 rounded-lg border p-3 text-left transition-all",
+                      activeImporter?.id === importer.id
+                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                        : "border-border hover:border-primary/50 hover:bg-muted/50",
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "flex h-9 w-9 items-center justify-center rounded-lg",
+                        activeImporter?.id === importer.id
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted",
+                      )}
+                    >
+                      <FileJson className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">
+                        {resolveLocalizedText(importer.label, i18n.language)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {importer.extensions.map((e) => `.${e}`).join(", ")}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-
-        <p className="text-xs text-muted-foreground">{hintText}</p>
-
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          className={cn(
-            "flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-colors",
-            isDragging ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40",
           )}
-        >
-          <Upload className="h-8 w-8 text-muted-foreground" aria-hidden />
-          <p className="text-sm text-muted-foreground">{t("import.dropzone")}</p>
-          <span className="mt-1 rounded-md bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground">
-            {t("import.chooseFile")}
-          </span>
-        </button>
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept={acceptTypes}
-          className="hidden"
-          tabIndex={-1}
-          aria-label={t("import.chooseFile")}
-          onChange={handleFileChange}
-        />
+          <p className="text-xs text-muted-foreground">{hintText}</p>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {t("common.cancel")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            className={cn(
+              "flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-colors",
+              isDragging ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40",
+            )}
+          >
+            <Upload className="h-8 w-8 text-muted-foreground" aria-hidden />
+            <p className="text-sm text-muted-foreground">{t("import.dropzone")}</p>
+            <span className="mt-1 rounded-md bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground">
+              {t("import.chooseFile")}
+            </span>
+          </button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={acceptTypes}
+            className="hidden"
+            tabIndex={-1}
+            aria-label={t("import.chooseFile")}
+            onChange={handleFileChange}
+          />
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              {t("common.cancel")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

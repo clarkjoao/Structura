@@ -12,20 +12,16 @@ import {
   useResolvedNodeLayouts,
 } from "@/features/diagram";
 import type { CanvasProps } from "../canvas.types";
-import type { CanvasInputProfile } from "./useCanvasInputProfile";
 import { useCanvasCompareState } from "./useCanvasCompareState";
 import { useCanvasFlowState } from "./useCanvasFlowState";
 import { useCanvasGraphState } from "./useCanvasGraphState";
 import { useCanvasInteraction } from "./useCanvasInteraction";
 import { useCanvasStore } from "./useCanvasStore";
 import { useCanvasVisualState } from "./useCanvasVisualState";
-import { useCanvasInputProfile } from "./useCanvasInputProfile";
 import { useInteractionMode } from "./useInteractionMode";
 import { useAutoLayout } from "./useAutoLayout";
 
-export function useCanvasController(
-  canvasProps: CanvasProps & { inputProfile?: CanvasInputProfile } = {},
-) {
+export function useCanvasController(canvasProps: CanvasProps = {}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const reactFlowInstance = useReactFlow();
@@ -49,8 +45,6 @@ export function useCanvasController(
   const diagramSceneState = useActiveDiagramSceneState();
   const allDiagramTags = useDiagramTags();
   const visualState = useCanvasVisualState(diagram?.id ?? null);
-  const internalInputProfile = useCanvasInputProfile();
-  const inputProfile = canvasProps.inputProfile ?? internalInputProfile;
   const { updateSelectedNode } = useCollab();
   const compareState = useCanvasCompareState({
     diagram,
@@ -73,8 +67,20 @@ export function useCanvasController(
   const handleAutoLayout = useCallback(() => {
     if (!diagram) return;
     const measuredNodes = reactFlowInstance.getNodes();
-    runAutoLayout(resolvedComponents, Object.values(resolvedConnections), resolvedNodeLayouts, measuredNodes);
-  }, [diagram, runAutoLayout, resolvedComponents, resolvedConnections, resolvedNodeLayouts, reactFlowInstance]);
+    runAutoLayout(
+      resolvedComponents,
+      Object.values(resolvedConnections),
+      resolvedNodeLayouts,
+      measuredNodes,
+    );
+  }, [
+    diagram,
+    runAutoLayout,
+    resolvedComponents,
+    resolvedConnections,
+    resolvedNodeLayouts,
+    reactFlowInstance,
+  ]);
   const flowState = useCanvasFlowState({ flows, isCompareMode: compareState.isCompareMode });
   const activeCollabElementId = visualState.selectedEdgeId ?? visualState.selectedNodeId;
   useEffect(() => {
@@ -96,7 +102,6 @@ export function useCanvasController(
     setShowScenes,
     setFocusTitleTrigger,
     onAutoLayout: handleAutoLayout,
-    inputProfile,
   });
   const graphState = useCanvasGraphState({
     diagram,
@@ -143,9 +148,7 @@ export function useCanvasController(
   );
   const selectedCount = visualState.selectedNodeIds.size;
   const showElementPanel =
-    (visualState.selectedNodeId ||
-      visualState.selectedEdgeId ||
-      selectedCount > 0) &&
+    (visualState.selectedNodeId || visualState.selectedEdgeId || selectedCount > 0) &&
     interactionMode.canEditCanvas &&
     visualState.noteInlineEditingId === null &&
     visualState.jsonViewerInlineEditingId === null;

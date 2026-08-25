@@ -1,12 +1,17 @@
 import {
   useDiagramStore,
+  reparentOrphanDiagrams,
   VIEWPORT_DEBOUNCE_MS,
   PERSIST_KEY,
   type Diagram,
   type IconDefinition,
 } from "@/features/diagram";
 import { useWalkthroughsStore } from "@/features/walkthroughs";
-import { fileSystemAdapter, type WorkspacePayload, type WorkspaceScanResult } from "./FileSystemAdapter";
+import {
+  fileSystemAdapter,
+  type WorkspacePayload,
+  type WorkspaceScanResult,
+} from "./FileSystemAdapter";
 import { clearLocalStorageDiagramSyncTimestamp } from "./localStorageSyncTimestamp";
 import { clearFolderSyncTimestamp, recordFolderSyncSuccess } from "./folderSyncTimestamp";
 import { defaultStorage } from "./LocalStorageAdapter";
@@ -184,25 +189,28 @@ async function doReconnect(): Promise<boolean> {
           const scan = await fileSystemAdapter.scanWorkspace();
           resolveBootScan(scan);
         } catch (error) {
-          console.warn(
-            "[Structura] boot conflict scan failed; falling back to fresh load",
-            error,
-          );
+          console.warn("[Structura] boot conflict scan failed; falling back to fresh load", error);
         }
         _reconnected = true;
         return true;
       }
 
       const hydrated = hydrateIconStoreFromWorkspace(workspace);
-      useDiagramStore.setState((s) => ({
-        ...s,
-        diagrams: hydrated.diagrams as typeof s.diagrams,
-        serviceCatalog: workspace.serviceCatalog as typeof s.serviceCatalog,
-        folders: workspace.folders as typeof s.folders,
-        activeDiagramId: workspace.activeDiagramId,
-        past: [],
-        future: [],
-      }));
+      useDiagramStore.setState((s) => {
+        const folders = workspace.folders as typeof s.folders;
+        return {
+          ...s,
+          // Diagrams and folders come from separate reads, so a partial or conflicting
+          // workspace can reference a folder that was never written. Such a diagram would
+          // render nowhere; drop the reference and let it land at the root instead.
+          diagrams: reparentOrphanDiagrams(hydrated.diagrams as typeof s.diagrams, folders),
+          serviceCatalog: workspace.serviceCatalog as typeof s.serviceCatalog,
+          folders,
+          activeDiagramId: workspace.activeDiagramId,
+          past: [],
+          future: [],
+        };
+      });
       fileSystemAdapter.setFolders(workspace.folders as unknown as DiagramStoreState["folders"]);
 
       const workspaceTemplates: Record<string, CustomComponentTemplate> | undefined =

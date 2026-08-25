@@ -60,7 +60,7 @@ function buildExportContent(
 ): string {
   switch (format) {
     case "json":
-      return exportJSON(diagram);
+      return exportJSON(diagram, serviceCatalog);
     case "drawio":
       return exportDrawio(diagram, serviceCatalog);
     case "mermaid":

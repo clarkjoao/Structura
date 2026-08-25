@@ -96,9 +96,11 @@ export default function WorkspacePage() {
 
   const handleCopyJson = useCallback(async () => {
     if (!diagram) return;
-    await navigator.clipboard.writeText(exportJson(diagram));
+    // Same payload as the downloaded file, service manifest included — otherwise a diagram
+    // pasted from the clipboard would lose its service links on import.
+    await navigator.clipboard.writeText(exportJson(diagram, serviceCatalog));
     flashCopied("json");
-  }, [diagram, flashCopied]);
+  }, [diagram, flashCopied, serviceCatalog]);
 
   const handleExportFormats = useCallback(
     async (formats: DiagramExportFormat[], pluginExporterIds: string[]) => {

@@ -1,6 +1,7 @@
 import type { Diagram } from "@/features/diagram";
 import type { CustomComponentTemplate } from "@/features/custom-components";
 import type { IconDefinition } from "@/features/diagram";
+import type { ServiceManifestEntry } from "@/features/diagram";
 
 // Schema version para diagramas individuais
 export const DIAGRAM_SCHEMA_VERSION = 1;
@@ -15,6 +16,12 @@ export interface VersionedDiagram {
   schemaVersion: number;
   data: Diagram;
   exportedAt?: string;
+  /**
+   * Identity of the services the diagram references, so the importing workspace can match
+   * them against its own catalog. Optional and additive: readers that predate it ignore the
+   * field, which is why `DIAGRAM_SCHEMA_VERSION` does not move for it.
+   */
+  services?: ServiceManifestEntry[];
 }
 
 // Workspace versionado (formato de export completo)
@@ -35,12 +42,16 @@ export interface VersionedManifest {
 }
 
 // Helper para criar diagrama versionado
-export function createVersionedDiagram(diagram: Diagram): VersionedDiagram {
+export function createVersionedDiagram(
+  diagram: Diagram,
+  services?: ServiceManifestEntry[],
+): VersionedDiagram {
   return {
     $schema: DIAGRAM_SCHEMA_URI,
     schemaVersion: DIAGRAM_SCHEMA_VERSION,
     data: diagram,
     exportedAt: new Date().toISOString(),
+    ...(services && services.length > 0 ? { services } : {}),
   };
 }
 

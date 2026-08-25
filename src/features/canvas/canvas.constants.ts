@@ -22,6 +22,12 @@ export const WHEEL_MAX_ZOOM = 1.5;
 /** Per-step zoom factor for the custom wheel handler. */
 export const WHEEL_ZOOM_FACTOR = 1.1;
 
+/**
+ * Pixels per line used to normalize `WheelEvent.deltaMode === DOM_DELTA_LINE`. Mice that report
+ * line deltas would otherwise pan a few pixels per notch.
+ */
+export const WHEEL_LINE_HEIGHT_PX = 16;
+
 // Re-exported for internal use in canvas features
 export { VIEWPORT_DEBOUNCE_MS } from "@/features/diagram";
 
