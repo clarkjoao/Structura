@@ -130,3 +130,63 @@ describe("computeAutoLayout — edge waypoints", () => {
     expect(result.positions.length).toBe(Object.keys(components).length);
   });
 });
+
+/**
+ * The sharp version of the same claim: one panel driven far from the origin,
+ * two children, one bending edge. If the lowest-common-ancestor offset were
+ * ever dropped, the bend would come back in panel-relative coordinates — small
+ * numbers, sitting outside the panel's absolute box entirely.
+ *
+ * ELK discards the input positions, so the panel is pushed away from the origin
+ * the only way that works: a wide upstream node it depends on, which forces it
+ * into a later layer.
+ */
+describe("computeAutoLayout — waypoints carry the panel offset", () => {
+  it("puts a sibling edge's bend inside the panel's absolute box", async () => {
+    const components: Record<string, Component> = {
+      outer: panel("outer"),
+      entry: node("entry", "outer"),
+      p: panel("p", "outer"),
+      a: node("a", "p"),
+      b: node("b", "p"),
+      c: node("c", "p"),
+    };
+    const nodeLayouts: Record<string, NodeLayout> = {
+      outer: layout("outer", 0, 0, 1800, 900),
+      entry: layout("entry", 40, 40, 600, 120),
+      p: layout("p", 800, 600, 900, 500),
+      a: layout("a", 40, 40),
+      b: layout("b", 400, 40),
+      c: layout("c", 400, 240),
+    };
+    const connections = [
+      connection("entry-a", "entry", "a"),
+      connection("a-b", "a", "b"),
+      connection("a-c", "a", "c"),
+    ];
+
+    const result = await computeAutoLayout(components, connections, nodeLayouts);
+
+    const waypoints = result.edgeWaypoints.get("a-c");
+    expect(waypoints, "expected ELK to bend this edge").toBeDefined();
+    expect(waypoints!.length, "expected at least one bend point").toBeGreaterThan(0);
+
+    const absolute = absolutePositions(result.positions, components);
+    const p = absolute.get("p")!;
+    const a = absolute.get("a")!;
+    const c = absolute.get("c")!;
+
+    // Without a real offset there is nothing for this test to catch: a bend read
+    // in panel-relative space would still land near the panel.
+    expect(p.x, "panel must sit far from the origin for this to bite").toBeGreaterThan(400);
+
+    // The bend belongs in the corridor its own two nodes define, in absolute
+    // space. Panel-relative values fall hundreds of pixels short of `a.x`.
+    const width = nodeLayouts.a.width ?? 180;
+    for (const point of waypoints!) {
+      expect(point.x, "bend x is at or past the source node").toBeGreaterThanOrEqual(a.x);
+      expect(point.x, "bend x is not past the target node").toBeLessThanOrEqual(c.x + width);
+      expect(point.y, "bend y is at or past the panel top").toBeGreaterThanOrEqual(p.y);
+    }
+  });
+});

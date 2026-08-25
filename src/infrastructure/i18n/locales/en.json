@@ -5,17 +5,12 @@
     "confirm": "Confirm",
     "delete": "Delete",
     "edit": "Edit",
-    "search": "Search",
-    "add": "Add",
     "close": "Close",
     "dismiss": "Dismiss",
     "copy": "Copy",
     "copied": "Copied!",
-    "back": "Back",
     "next": "Next",
     "previous": "Previous",
-    "open": "Open",
-    "create": "Create",
     "name": "Name",
     "description": "Description",
     "technology": "Technology",
@@ -29,7 +24,6 @@
     "none": "None",
     "noDescription": "No description",
     "emDash": "—",
-    "addChip": "+ add",
     "service_one": "service",
     "service_other": "services",
     "result_one": "result",
@@ -50,17 +44,12 @@
     "commaSeparatedTags": "Comma-separated tags",
     "techExample": "e.g. REST, gRPC",
     "workspace": "Workspace",
-    "registry": "Registry",
-    "services": "Services",
     "sort": "Sort",
     "lastEdited": "Last edited",
     "c4Level": "C4 level",
     "domain": "Domain",
     "created": "Created",
     "edited": "Edited",
-    "product": "Product",
-    "repository": "Repository",
-    "sync": "Sync",
     "rename": "Rename",
     "actions": "Actions",
     "intent": "Intent",
@@ -88,21 +77,11 @@
     "markerNone": "None",
     "markerArrow": "Arrow",
     "markerArrowClosed": "Filled arrow",
-    "markerStartNone": "Start: None",
-    "markerStart": "Start: {{label}}",
-    "markerEndNone": "End: None",
-    "markerEnd": "End: {{label}}",
     "transportSync": "Synchronous",
     "transportAsync": "Asynchronous",
     "transportEvent": "Event",
     "transportTcp": "TCP",
     "transportUdp": "UDP",
-    "edgeStyleSection": "Edge style",
-    "lineTypeTitle": "Line type",
-    "strokeStyleTitle": "Stroke",
-    "strokeWidthTitle": "Width",
-    "markerStartTitle": "Start marker",
-    "markerEndTitle": "End marker",
     "transportTypeTitle": "Transport type",
     "copySuffix": " (copy)",
     "defaultNamePrefix": "New"
@@ -127,7 +106,6 @@
   "nav": {
     "workspaces": "Workspaces",
     "registry": "Services",
-    "services": "Services",
     "brandSuffix": "Architecture",
     "plugins": "Plugins"
   },
@@ -197,12 +175,9 @@
     "createFirst": "Create your first architecture diagram",
     "createDiagram": "Create diagram",
     "newDiagram": "New diagram",
-    "newFolder": "New folder",
     "recentViewHeading": "Recent",
     "recentEmptyTitle": "No diagrams opened recently",
     "recentEmptyHint": "Open a diagram to see it here",
-    "recentCount": "{{count}} {{diagrams}}",
-    "foldersHiddenInRecent": "Recent diagrams are listed by last access, across folders.",
     "diagramCount": "{{count}} {{diagrams}}{{folders}}",
     "foldersSuffix": " · {{count}} {{folders}}",
     "addDiagramTitle": "New diagram",
@@ -231,13 +206,11 @@
     "diagramPreviewAlt": "Preview of {{name}}",
     "card": {
       "rename": "Rename",
-      "renamePrompt": "Diagram name",
       "duplicate": "Duplicate",
       "duplicatedDiagramName": "{{name}} (copy)",
       "move": "Move",
       "moveDialogTitle": "Move to folder",
       "delete": "Delete",
-      "deleteConfirm": "Delete \"{{name}}\"?",
       "components": "components",
       "connections": "connections",
       "flows": "flows"
@@ -248,11 +221,9 @@
     "description": "Import a diagram from a JSON file exported from Structura.",
     "format": "Format",
     "json": "JSON",
-    "button": "Import",
     "hint": "Select a .json file exported from Structura.",
     "dropzone": "Drag and drop a file here, or choose a file.",
     "chooseFile": "Choose file",
-    "jsonError": "Could not import the diagram JSON. Check the file and try again.",
     "jsonErrorWithReason": "Could not import the diagram JSON: {{reason}}"
   },
   "serviceRelink": {
@@ -322,7 +293,6 @@
   },
   "filesystem": {
     "localFolder": "Local folder",
-    "noFolderConnected": "No folder connected. Use 'Connect folder' to sync.",
     "savedSuccess": "Saved to connected folder",
     "saveError": "Failed to save to folder",
     "syncNow": "· synced now",
@@ -355,13 +325,11 @@
   "workspaceMerge": {
     "title": "Folder with existing files",
     "subtitle": "This folder already contains diagrams. Choose how to combine them with your current browser data.",
-    "found": "We found {{count}} diagram(s) in this folder.",
     "valid": "{{count}} valid",
     "invalid": "{{count}} invalid",
     "local": "{{count}} local",
     "toggleInvalid": "View invalid files ({{count}})",
     "manifestWarning": "Manifest warning:",
-    "conflict": "{{count}} diagram(s) already exist locally (localStorage). On conflict, the folder version takes priority over the local (localStorage) version in the merge.",
     "conflictDetailsTitle": "Diagrams present in both places",
     "conflictDetailsHint": "On merge, the folder version replaces the browser one.",
     "conflictBadgeLocal": "app only",
@@ -373,7 +341,6 @@
     "overwrite": "Use folder files only",
     "overwriteHint": "Will discard {{lostLocal}} diagram(s) that exist only in the browser and keep {{keptFromFolder}} from the folder. This action cannot be undone.",
     "overwriteHintNoLoss": "Will discard {{lostLocal}} diagram(s) that exist only in the browser and keep {{keptFromFolder}} from the folder.",
-    "overwriteHintNoFolder": "Will discard all {{lostLocal}} diagram(s) from the browser and use only {{keptFromFolder}} from the folder. This action cannot be undone.",
     "mergeTitle": "Keep diagrams already in the app and add those from the folder",
     "merge": "Keep all and merge",
     "mergeHint": "Will keep all {{keptLocal}} from the browser and add {{addedFromFolder}} new ones from the folder. Same-name diagrams: the folder version wins.",
@@ -391,7 +358,6 @@
   },
   "disconnect": {
     "title": "Disconnect folder",
-    "subtitle": "You are about to disconnect sync with this folder.",
     "messageNamed": "Disconnect \"{{name}}\"?",
     "messageGeneric": "Disconnect the local folder?",
     "explanation": "Current data is only on your filesystem (not saved in the browser). Keep a copy in the browser (localStorage) before disconnecting?",
@@ -480,10 +446,7 @@
       "allTags": "All tags",
       "noTagsFilter": "No tags",
       "filterByTag": "Filter by tag",
-      "noTags": "No tags in this diagram",
-      "showAll": "Show all",
-      "descriptionPlaceholder": "Add description...",
-      "editDescription": "Click to edit description"
+      "noTags": "No tags in this diagram"
     },
     "multiSelect": {
       "saveAsTemplate": "Save as template"
@@ -498,8 +461,7 @@
       "edgeStyle": "Edge style",
       "color": "Color",
       "markerStart": "Start cap",
-      "markerEnd": "End cap",
-      "delete": "Delete"
+      "markerEnd": "End cap"
     }
   },
   "compareMode": {
@@ -508,7 +470,6 @@
     "modified": "Modified"
   },
   "canvasToolbar": {
-    "renameTitle": "Double-click to rename",
     "drillUp": "Level up",
     "patterns": "Patterns",
     "addElement": "Add element",
@@ -517,9 +478,6 @@
     "awsServices": "AWS services",
     "gcpServices": "GCP services",
     "azureServices": "Azure services",
-    "newPanel": "New panel",
-    "c4Model": "C4 Model",
-    "selectedCount": "{{count}} selected",
     "levelContext": "Level 1",
     "levelContainer": "Level 2",
     "levelComponent": "Level 3",
@@ -548,7 +506,6 @@
     "title": "Diagram Assistant",
     "openSettings": "Open LLM settings",
     "close": "Close chat",
-    "emptyState": "Ask about your architecture or request a diagram improvement.",
     "inputPlaceholder": "Type your message...",
     "submitHint": "Use Cmd/Ctrl + Enter to send",
     "sending": "Sending...",
@@ -556,7 +513,6 @@
     "scrollToBottom": "New message",
     "showMore": "Show more",
     "showLess": "Show less",
-    "newThread": "New conversation",
     "generating": "Generating response...",
     "settings": {
       "title": "LLM Settings",
@@ -584,10 +540,8 @@
       "connectionDelete": "Delete",
       "connectionDeleteConfirm": "Delete this connection? It cannot be undone.",
       "cannotDeleteActive": "Switch to another connection before deleting this one.",
-      "manageConnections": "Manage connections…",
       "activeBadge": "Active",
       "customProvider": {
-        "section": "Custom endpoint",
         "baseUrl": "Base URL",
         "baseUrlRequired": "A valid base URL is required",
         "baseUrlInvalid": "Enter a URL that starts with http:// or https://",
@@ -624,15 +578,12 @@
     "selector": {
       "proxy": "Proxy",
       "label": "Select LLM model",
-      "providerOpenai": "OpenAI",
-      "providerAnthropic": "Anthropic",
       "manageConnections": "Manage connections…"
     },
     "threads": {
       "historyLabel": "Conversation history",
       "historyAria": "Open conversation history",
       "newThread": "Start a new conversation",
-      "switch": "Open",
       "rename": "Rename",
       "renamePlaceholder": "New title",
       "delete": "Delete",
@@ -683,12 +634,6 @@
     "suggestions": {
       "title": "SUGGESTIONS",
       "context": "Context loaded: \"{{name}}\"",
-      "explain": "Explain this diagram’s architecture",
-      "components": "What are the main components and their responsibilities?",
-      "failures": "Identify possible failure points in the architecture",
-      "security": "Suggest security improvements for this diagram",
-      "communicate": "How do the systems communicate?",
-      "improve": "What scalability improvements do you recommend?",
       "contextual": {
         "explainThis": "Explain this architecture",
         "reviewThis": "Review this architecture",
@@ -742,13 +687,9 @@
     "numberedDefaultName": "Scene {{number}}",
     "rename": "Rename",
     "remove": "Remove",
-    "sceneMenu": "Scene menu",
     "baseMoveBlocked": "Moving base nodes is not allowed while a scene is active",
     "groupBlockedInScene": "Grouping is not available while a scene is active",
-    "comparing": "Comparing",
     "compareModeTooltip": "Comparison mode active — click × to exit",
-    "clearSceneAndCompare": "Back to base",
-    "removeFromCompare": "Remove from comparison",
     "mergeIntoBase": "Merge into base",
     "deleteEmptyScene": "Delete empty scene",
     "mergePreviewError": "Could not prepare merge preview",
@@ -801,19 +742,13 @@
   },
   "quickInsert": {
     "searchPlaceholder": "Search element...",
-    "sectionC4": "C4",
-    "sectionCanvas": "Canvas",
     "sectionCanvasGroups": "Canvas & groups",
-    "sectionAws": "AWS",
     "sectionCloud": "Cloud (GCP / Azure)",
-    "sectionServices": "Services",
     "noResults": "No results",
     "typePerson": "Person",
     "typeSystem": "System",
     "typeContainer": "Container",
     "typeComponent": "Component",
-    "typePanel": "Panel",
-    "typeNote": "Note",
     "typeApiGroup": "API Group",
     "typeEndpoint": "Endpoint",
     "newNamed": "New {{name}}",
@@ -852,8 +787,7 @@
     "laneLabel": "Lane label",
     "orientation": "Orientation",
     "horizontal": "Horizontal",
-    "vertical": "Vertical",
-    "laneColor": "Lane color"
+    "vertical": "Vertical"
   },
   "dbTable": {
     "panelTitle": "Database table",
@@ -863,7 +797,6 @@
     "ariaLabel": "Table {{name}}",
     "unnamedTable": "Unnamed table",
     "columnCount": "{{count}} column",
-    "columnCount_plural": "{{count}} columns",
     "noColumns": "No columns defined",
     "addRow": "Add row",
     "addCol": "Add column",
@@ -899,7 +832,6 @@
   "nodeTypes": {
     "db-table": "Database table",
     "json-viewer": "JSON Viewer",
-    "process-node": "Process Node",
     "processos": "Processes"
   },
   "flowchart": {
@@ -918,30 +850,21 @@
   "elementPicker": {
     "categoryAll": "All",
     "viewAll": "View all",
-    "viewAllServices": "View all in services",
     "viewAllRegistry": "View all in registry",
     "registry": "Services",
     "registryEmpty": "No services in registry",
     "openRegistry": "Open services",
-    "services": "Services",
     "modalTitle": "Add element",
-    "searchPlaceholder": "Search elements and services...",
     "searchPlaceholderUnified": "Search elements, AWS, GCP, Azure, services…",
     "cloudOther": "Other",
-    "frequentlyUsed": "Frequently used",
     "noResultsFor": "No element found for “{{query}}”",
-    "onCanvas": "On canvas",
     "addButton": "+ Add",
     "addAnotherInstance": "Add another instance to the canvas",
     "c4Model": "C4 Model",
     "flowchart": "Flowchart",
     "canvasGroups": "Canvas & Groups",
     "awsOther": "Other",
-    "servicesEmpty": "No services yet.",
-    "openServices": "Open services",
-    "categories": {
-      "data": "Data"
-    }
+    "categories": {}
   },
   "patterns": {
     "searchPlaceholder": "Search patterns by name, description or components...",
@@ -976,12 +899,6 @@
   },
   "connectionPanel": {
     "technologyLabel": "Technology",
-    "lineStyle": "Line style",
-    "colorLabel": "Color",
-    "resetPath": "Reset path",
-    "strokeLabel": "Stroke",
-    "markersLabel": "Markers",
-    "animated": "Animated",
     "removeConnection": "Remove",
     "idLabel": "ID"
   },
@@ -999,14 +916,12 @@
     "notePlaceholder": "**Bold**, *italic*, lists, `code`...",
     "tagsPlaceholder": "Add tag and press Enter",
     "syncFromServiceTitle": "Sync name, description, technology and tags from the linked service",
-    "removeFromGroupTitle": "Remove from group (⌘⇧G)",
     "border": "Border",
     "noteColorLabel": "Note color",
     "panelColorLabel": "Panel color",
     "borderColorLabel": "Border color",
     "linkService": "Link to service",
     "syncButton": "Sync",
-    "linkedDiagram": "Linked diagram",
     "linkedDiagramCreated": "✓ Diagram “{{name}}” created and linked.",
     "createLinkedDiagram": "Create linked diagram",
     "linkToDiagram": "Link to diagram",
@@ -1020,8 +935,6 @@
     "positionW": "W",
     "positionH": "H",
     "fitToChildren": "Fit to children",
-    "lock": "Lock element",
-    "unlock": "Unlock element",
     "lockedDragBlocked": "This element is locked and cannot be moved",
     "opacityLabel": "Opacity — {{value}}%",
     "tabs": {
@@ -1067,7 +980,6 @@
     "content": "Content",
     "markdownHint": "Markdown supported",
     "type": "Type",
-    "c4Model": "C4 model",
     "awsCategory": "AWS: {{name}}",
     "ungroup": "Ungroup",
     "removeFromGroup": "↗ Remove from group",
@@ -1158,8 +1070,6 @@
     "endSession": "End session",
     "endSessionForEveryone": "End session for everyone?",
     "endSessionForEveryoneDesc": "Guests will be disconnected and the live session will end.",
-    "hostReconnecting": "Host reconnecting…",
-    "hostReconnected": "Host is back — syncing.",
     "scenesReadOnly": "Only the host can add or edit scenes. You can still switch scenes.",
     "notAvailableInCollab": "Not available in collaboration mode",
     "and": "and",
@@ -1176,7 +1086,6 @@
     "loading": "Loading…",
     "localhostHint": "If the connection fails, check the signaling URL and firewall — especially when using localhost from another device.",
     "invalidRoom": "Invalid or expired room link",
-    "confirmClose": "Leave this session? You can import the diagram to your workspace first.",
     "backToWorkspace": "Back to workspace",
     "importToWorkspace": "Import to workspace",
     "hostDisconnected": "Host disconnected",
@@ -1266,8 +1175,6 @@
     "addPointAria": "Add a control point here",
     "segmentHandleAria": "Edge segment {{index}}, drag to reposition",
     "cornerHandleAria": "Edge corner {{index}}, drag to reposition",
-    "routeAsStep": "Switch to orthogonal routing",
-    "routeAsCurve": "Switch to curved routing",
     "resetPoints": "Reset edge shape",
     "deleteEdge": "Delete connection"
   },
@@ -1282,29 +1189,22 @@
       "code": "Mermaid code",
       "exampleSequence": "Sequence example",
       "exampleFlowchart": "Flowchart example",
-      "validate": "Validate",
       "import": "Import",
       "newComponents": "{{count}} new component(s) will be created",
       "newConnections": "{{count}} new connection(s) will be created",
       "errors": "Errors",
-      "invalidDiagram": "Text must contain a valid sequenceDiagram",
       "unknownDiagramType": "Unrecognized diagram type. Start with sequenceDiagram or flowchart.",
       "detectedSequence": "Sequence diagram detected",
       "detectedFlowchart": "Flowchart detected",
       "layoutError": "Could not arrange the elements. Adjust them manually."
     },
     "copyDrawio": "Copy to Drawio",
-    "copied": "Copied!",
-    "export": "Export",
     "shortcuts": "Shortcuts",
-    "shortcutsAria": "Shortcuts",
     "recordingEdit": "✎ EDIT",
     "recordingRec": "● REC",
     "backToDashboard": "Back to dashboard",
     "noDiagram": "No diagram selected.",
     "unnamed": "Unnamed flow",
-    "alreadyActive": "A recording or playback is already in progress",
-    "coverageTitle": "View coverage",
     "duplicateTitle": "Duplicate flow",
     "copyMermaidTitle": "Copy Mermaid",
     "editTitle": "Edit",
@@ -1353,17 +1253,11 @@
       "copied": "Embed code copied!",
       "tabs": {
         "direct": "Direct (iframe)",
-        "postMessage": "Via code",
-        "src": "Via URL"
-      },
-      "urlTooLong": "URL is large — we recommend using Via code"
-    },
-    "error": "Could not export the diagram."
+        "postMessage": "Via code"
+      }
+    }
   },
-  "toolbar": {
-    "shareExport": "Export",
-    "exportGroup": "Export as"
-  },
+  "toolbar": {},
   "share": {
     "button": "Share",
     "modalTitle": "Share diagram",
@@ -1376,13 +1270,10 @@
     "urlLargeWarning": "Large diagram — link may not work in production (GitHub Pages). Works fine on localhost.",
     "urlTooLargeError": "Diagram too large to share via URL. Export the JSON and share the file directly.",
     "urlSize": "Link size: {{size}}",
-    "previewPrefix": "Shared preview:",
     "importedDiagramName": "{{name}} - imported {{date}}",
-    "import": "Import",
     "previewBanner": {
       "title": "You're viewing \"{{name}}\"",
       "subtitle": "read-only mode",
-      "import": "Import to my workspace",
       "openInStructura": "Open in Structura",
       "close": "Close"
     }
@@ -1391,7 +1282,6 @@
     "loading": "Loading diagram...",
     "waiting": "Waiting for diagram...",
     "errors": {
-      "invalidShare": "Invalid or corrupted share link",
       "invalidDiagram": "Invalid diagram"
     }
   },
@@ -1422,7 +1312,6 @@
   },
   "brokenFlow": {
     "title": "Flow with invalid references",
-    "description": "The following steps reference elements that were removed from the diagram. Remove them to continue.",
     "descriptionWithName": "{{name}} — The following steps reference elements that were removed from the diagram. Remove them to continue.",
     "componentDeleted": "component removed",
     "connectionRemoved": "connection removed",
@@ -1439,7 +1328,6 @@
   },
   "shortcutsModal": {
     "title": "Canvas shortcuts",
-    "description": "Tip: on Windows/Linux, use Ctrl instead of Cmd.",
     "descriptionBeforeKbd": "Tip: on Windows/Linux, use",
     "descriptionAfterCtrl": "instead of",
     "searchNav": "Search & navigation",
@@ -1477,7 +1365,6 @@
     "quickC4": "Quick create (C4)",
     "quickInsertOpen": "Open Quick Insert on canvas",
     "quickInsertDesc": "Cmd/Ctrl+E near cursor, or right-click empty canvas (no selection, outside flow play/record)",
-    "rightClick": "Right click",
     "addPerson": "Add Person",
     "addSystem": "Add System",
     "addContainer": "Add Container",
@@ -1557,13 +1444,11 @@
     "connectionFailed": "Connection failed",
     "baseUrlPlaceholder": "https://defectdojo.mycompany.com",
     "tokenPlaceholder": "API token",
-    "searchFieldPlaceholder": "Search field",
     "searchProduct": "Search product...",
     "searchByField": "Search by {{field}}...",
     "searchButton": "Search",
     "searchError": "Error searching products",
     "removeIntegration": "Remove integration",
-    "unlinkNote": "Services will not be deleted — only the DefectDojo link",
     "unlinkOnly": "No, unlink only",
     "configuration": "Configuration",
     "testConnection": "Test connection",
@@ -1680,7 +1565,6 @@
   "flowPanel": {
     "copyPrefix": "Copy of {{name}}",
     "newFlow": "New flow",
-    "coverage": "Coverage",
     "stepsCount": "{{count}} steps",
     "participantsCount": "· {{count}} participants"
   },
@@ -1721,7 +1605,6 @@
     "noConnectedNodes": "No connected nodes found",
     "panelApplied": "Panel layout applied",
     "organizeChildren": "Organize children (LR)",
-    "running": "Running...",
     "error": "Error computing layout"
   },
   "plugins": {
@@ -1781,14 +1664,12 @@
       "diagram-write": "Diagram modification"
     },
     "panel": {
-      "crashed": "This plugin panel crashed. The rest of the page is unaffected.",
-      "heading": "Plugins"
+      "crashed": "This plugin panel crashed. The rest of the page is unaffected."
     },
     "modal": {
       "crashed": "This plugin dialog crashed. The rest of the page is unaffected."
     },
     "importWarnings": "Import finished with warnings: {{warnings}}",
-    "exportGroup": "Plugin formats",
     "importSuccess": "Imported {{count}} elements.",
     "importFailed": "This file could not be imported by the plugin.",
     "importNoActiveDiagram": "Open a diagram before importing with a plugin.",

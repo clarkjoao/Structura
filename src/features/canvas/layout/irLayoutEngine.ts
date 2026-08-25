@@ -189,8 +189,9 @@ export async function layoutIR(ir: DiagramIR): Promise<IRLayoutResult> {
   const laidOut = await layoutIRGraph(ir);
   collectBoxes(laidOut, boxes);
 
-  // `readLaidOutGraph` owns the lowest-common-ancestor correction and is tested
-  // there; re-deriving it here is exactly how the legacy engine got it wrong.
+  // Points come back absolute: `readLaidOutGraph` owns the
+  // lowest-common-ancestor correction, shared with `autoLayoutEngine`, and is
+  // tested in `layoutReadability.test.ts`. Do not re-derive the offset here.
   for (const edge of readLaidOutGraph(laidOut).edges) {
     edgeRoutes.set(
       edge.id,

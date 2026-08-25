@@ -380,16 +380,16 @@ function buildSubtree(
 /**
  * Bend points in absolute canvas space.
  *
- * ELK reports an edge relative to the lowest common ancestor of its endpoints,
- * not to the node whose `edges` array holds it, so reading `bendPoints` straight
- * off put every edge between two siblings inside a panel out by that panel's
- * position — and `useAutoLayout` stores these as absolute control points.
- * `readLaidOutGraph` owns that correction and is tested there; re-deriving it
- * here is how this went wrong in the first place.
+ * The points arrive already absolute: `readLaidOutGraph` owns the
+ * lowest-common-ancestor correction (ELK reports an edge relative to the lowest
+ * common ancestor of its endpoints, not to the node whose `edges` array holds
+ * it) and is tested in `layoutReadability.test.ts`. Nothing is re-derived here,
+ * and nothing should be — `useAutoLayout` stores what comes out as absolute
+ * control points, so a second offset would be a second error.
  *
- * Its `points` include the two endpoints on the node borders, which are not
- * control points — the canvas draws those legs from the handles — so the ends
- * are dropped, matching what this function always returned.
+ * All this function does is drop the two endpoints: they sit on the node
+ * borders and are not control points, because the canvas draws those legs from
+ * the handles.
  */
 function extractEdgeWaypoints(laidOut: ElkNode): Map<string, Array<{ x: number; y: number }>> {
   const result = new Map<string, Array<{ x: number; y: number }>>();
