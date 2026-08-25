@@ -193,17 +193,6 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
       {d.recordingBadges && d.recordingBadges.length > 0 && (
         <RecordingBadge badges={d.recordingBadges} isLastRecorded={d.isLastRecorded} />
       )}
-      {(d.journeyCount ?? 0) > 0 && d.journeyNames && d.journeyNames.length > 0 && (
-        <div
-          title={t("walkthroughs.badge.tooltip", {
-            names: d.journeyNames.join(", "),
-          })}
-          className="pointer-events-none absolute -bottom-1 -right-1 z-10 flex items-center gap-0.5 rounded-full bg-primary/20 px-1.5 py-0.5 text-[9px] font-medium text-primary"
-        >
-          <span aria-hidden>✦</span>
-          <span>{d.journeyCount}</span>
-        </div>
-      )}
       <NodeHandles
         d={d}
         incomingCount={incomingCount}

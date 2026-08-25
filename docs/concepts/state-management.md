@@ -1,7 +1,7 @@
 # State Management
 
 Global state is a single Zustand store with Immer, composed from slices
-(`src/features/diagram/store/`). Satellite features (journeys, collaboration,
+(`src/features/diagram/store/`). Satellite features (collaboration,
 custom components, icons, LLM) keep their own small stores following the same
 pattern.
 

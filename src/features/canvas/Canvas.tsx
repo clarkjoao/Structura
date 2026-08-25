@@ -11,7 +11,6 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import CanvasToolbar from "./toolbar/CanvasToolbar";
-import { WalkthroughsInDiagramPanel } from "./panels/WalkthroughsInDiagramPanel";
 import { ConnectedSceneDrawer } from "./toolbar/SceneDrawer";
 import ElementPanel from "./panels/ElementPanel/index";
 import { CanvasContextMenu } from "./panels/CanvasContextMenu";
@@ -31,11 +30,9 @@ import { Eye, Minimize2 } from "lucide-react";
 import { useCanvasController } from "./hooks/useCanvasController";
 import { hasSavedViewport } from "./hooks/useCanvasEffects";
 import { useCanvasInputProfile } from "./hooks/useCanvasInputProfile";
-import { useWalkthroughViewportSync } from "./hooks/useWalkthroughViewportSync";
 import { useServiceFocusFromUrl } from "./hooks/useServiceFocusFromUrl";
 import { useElementFocusFromUrl } from "./hooks/useElementFocusFromUrl";
 import { getCachedCanvasSnapshot, useDiagramStore } from "@/features/diagram";
-import { useWalkthroughsByDiagramId } from "@/features/walkthroughs";
 import { CANVAS_STYLES, GRID_SIZE } from "./canvas.constants";
 import { getPlatform } from "./hooks/keyboard/helpers";
 import EditableEdge from "./edges/EditableEdge";
@@ -62,7 +59,6 @@ const canvasEdgeTypes = { editable: EditableEdge };
 const Canvas = (props: CanvasProps = {}) => {
   const nodeTypes = useNodeTypes();
   const [templateNodeId, setTemplateNodeId] = useState<string | null>(null);
-  const [showJourneysPanel, setShowJourneysPanel] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
   const previousAssistantMessageCountRef = useRef(0);
@@ -125,11 +121,9 @@ const Canvas = (props: CanvasProps = {}) => {
     }, []),
   );
 
-  useWalkthroughViewportSync();
   useServiceFocusFromUrl(visualState);
   useElementFocusFromUrl(visualState);
 
-  const journeysInThisDiagram = useWalkthroughsByDiagramId(diagram?.id ?? "");
   const showMiniMap = useCanvasPreferencesStore((state) => state.showMiniMap);
   const occupancy = useViewportOccupancy();
 
@@ -152,12 +146,6 @@ const Canvas = (props: CanvasProps = {}) => {
   }, [isFlowActive, isChatOpen]);
 
   useEffect(() => {
-    if (isFlowActive && showJourneysPanel) {
-      setShowJourneysPanel(false);
-    }
-  }, [isFlowActive, showJourneysPanel]);
-
-  useEffect(() => {
     if (isFlowActive && showScenes) {
       setShowScenes(false);
     }
@@ -170,7 +158,6 @@ const Canvas = (props: CanvasProps = {}) => {
   }, [isFlowActive, showDiagramSidebar, setShowDiagramSidebar]);
 
   useEffect(() => {
-    setShowJourneysPanel(false);
     setShowScenes(false);
   }, [diagram?.id, setShowScenes]);
 
@@ -257,21 +244,9 @@ const Canvas = (props: CanvasProps = {}) => {
             onToggleTag={visualState.toggleTag}
             onShowAllTags={visualState.showAllTags}
             onShowNoTags={visualState.showNoTags}
-            journeysInDiagramCount={journeysInThisDiagram.length}
-            journeysPanelOpen={showJourneysPanel}
             focusMode={props.focusMode}
             onToggleFocusMode={props.onToggleFocusMode}
-            onToggleJourneysPanel={() => {
-              if (isFlowActive) return;
-              setShowJourneysPanel((previous) => !previous);
-            }}
           />
-          {showJourneysPanel ? (
-            <WalkthroughsInDiagramPanel
-              diagramId={diagram.id}
-              onClose={() => setShowJourneysPanel(false)}
-            />
-          ) : null}
           {showSearch && diagram && (
             <CanvasSearch
               onClose={() => setShowSearch(false)}

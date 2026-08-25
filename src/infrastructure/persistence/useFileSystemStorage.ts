@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { fileSystemAdapter } from "./FileSystemAdapter";
 import type { WorkspaceScanResult } from "./FileSystemAdapter";
 import { useDiagramStore } from "@/features/diagram";
-import { useWalkthroughsStore } from "@/features/walkthroughs";
 import {
   useCustomComponentStore,
   type CustomComponentTemplate,
@@ -35,15 +34,6 @@ import { WORKSPACE_SCHEMA_VERSION as WORKSPACE_VERSION } from "./versions";
 async function clearLocalCache(): Promise<void> {
   await defaultStorage.delete(PERSIST_KEY);
   clearLocalStorageDiagramSyncTimestamp();
-}
-
-async function mergeJourneysFromConnectedFolder(): Promise<void> {
-  const fsJourneys = await fileSystemAdapter.readWalkthroughs();
-  if (fsJourneys) {
-    useWalkthroughsStore.setState((state) => ({
-      walkthroughs: { ...state.walkthroughs, ...fsJourneys },
-    }));
-  }
 }
 
 export type FsStatus = "disconnected" | "connecting" | "connected" | "error" | "needs_permission";
@@ -191,7 +181,6 @@ export function useFileSystemStorage() {
           templates: mergeCustomComponentTemplates(state.templates, workspaceTemplates),
         }));
       }
-      await mergeJourneysFromConnectedFolder();
     }
 
     await defaultStorage.delete(PERSIST_KEY);
@@ -226,7 +215,6 @@ export function useFileSystemStorage() {
         recordFolderSyncSuccess();
         defaultStorage.paused = true;
         await clearLocalCache();
-        await mergeJourneysFromConnectedFolder();
         startFileSystemSync();
         setStatus("connected");
         return;
@@ -240,7 +228,6 @@ export function useFileSystemStorage() {
     if (scan.valid.length === 0) {
       defaultStorage.paused = true;
       await clearLocalCache();
-      await mergeJourneysFromConnectedFolder();
       startFileSystemSync();
       setStatus("connected");
       return;
@@ -273,7 +260,6 @@ export function useFileSystemStorage() {
       await fileSystemAdapter.writeManifest(buildManifest(state));
       recordFolderSyncSuccess();
       await clearLocalCache();
-      await mergeJourneysFromConnectedFolder();
       startFileSystemSync();
       setScanResult(null);
       setPendingMerge(false);
@@ -331,8 +317,6 @@ export function useFileSystemStorage() {
       useDiagramStore.setState((draft) => {
         draft.diagrams = hydratedMerge.diagrams as typeof draft.diagrams;
       });
-
-      await mergeJourneysFromConnectedFolder();
 
       const merged = useDiagramStore.getState();
       const flushed = await flushWorkspaceToConnectedFolder(merged);
@@ -395,8 +379,6 @@ export function useFileSystemStorage() {
       useDiagramStore.setState((draft) => {
         draft.diagrams = hydratedOverwrite.diagrams as typeof draft.diagrams;
       });
-
-      await mergeJourneysFromConnectedFolder();
 
       const overwritten = useDiagramStore.getState();
       const flushed = await flushWorkspaceToConnectedFolder(overwritten);

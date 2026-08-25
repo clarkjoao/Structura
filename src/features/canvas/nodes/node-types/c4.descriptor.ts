@@ -63,8 +63,6 @@ export const c4Descriptor: NodeTypeDescriptor = {
 
     const counts = connectionCounts[comp.id] ?? { incoming: 0, outgoing: 0 };
 
-    const journeyData = ctx.journeysByComponentId?.[comp.id];
-
     return {
       elementId: comp.id,
       name: comp.name,
@@ -129,8 +127,6 @@ export const c4Descriptor: NodeTypeDescriptor = {
             ? (side: "incoming" | "outgoing", connId: string, direction: "up" | "down") =>
                 ctx.onReorderHandle!(comp.id, side, connId, direction)
             : undefined,
-      journeyCount: journeyData?.length ?? 0,
-      journeyNames: journeyData?.map((journeyEntry) => journeyEntry.name) ?? [],
       ...sceneBadgePropsForNode(ctx, comp.id),
     };
   },

@@ -25,7 +25,6 @@ function buildContext(): NodeBuildContext {
     connectionCounts: {},
     effectiveHandleOrder: {},
     activeFlowId: null,
-    journeysByComponentId: {},
     childrenIndex: new Map(),
     isPlaying: false,
     isRecording: false,

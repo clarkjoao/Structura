@@ -94,7 +94,7 @@ Important rules:
 | `jsonViewerDescriptor` | Builds JSON viewer nodes with inline editing and size persistence.                                                                         |
 | `svgDescriptor`        | Builds SVG-backed nodes that render imported custom artwork.                                                                               |
 | `unknownDescriptor`    | Renders unknown component payloads safely when the model type is intentionally opaque.                                                     |
-| `c4Descriptor`         | Catch-all descriptor for C4-style nodes and AWS nodes, including flow overlays, service metadata, journey badges, and drill-down behavior. |
+| `c4Descriptor`         | Catch-all descriptor for C4-style nodes and AWS nodes, including flow overlays, service metadata, and drill-down behavior. |
 
 ## Adding a new node type
 

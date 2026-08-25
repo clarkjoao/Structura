@@ -10,8 +10,6 @@ import { useCanvasHandleReorder } from "../edges/useCanvasHandleReorder";
 import { useCanvasNodes } from "../nodes/useCanvasNodes";
 import { useConnectionInternalsSync } from "./useConnectionInternalsSync";
 import { useLocalNodes } from "./useLocalNodes";
-import { useWalkthroughCanvasHighlight } from "../chat/useWalkthroughCanvasHighlight";
-import { useWalkthroughPlayer } from "@/features/walkthroughs";
 
 type FlowSlice = ReturnType<typeof import("./useCanvasFlowState").useCanvasFlowState>;
 type CompareSlice = ReturnType<typeof import("./useCanvasCompareState").useCanvasCompareState>;
@@ -112,14 +110,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     isNodeHiddenByTagFilter,
   } = nodeSelectionState;
 
-  const journeyPlayer = useWalkthroughPlayer();
-  const journeyHighlight = useWalkthroughCanvasHighlight();
-  const effectiveFlowHighlight = useMemo(() => {
-    if (journeyPlayer.mode.kind === "playing") {
-      return journeyHighlight;
-    }
-    return flowState.flowHighlight;
-  }, [flowState.flowHighlight, journeyHighlight, journeyPlayer.mode.kind]);
+  const effectiveFlowHighlight = flowState.flowHighlight;
 
   const { panelIds, connectionCountPerNode, edgeHandleAssignments, effectiveHandleOrder } =
     useCanvasConnectionDerivations({

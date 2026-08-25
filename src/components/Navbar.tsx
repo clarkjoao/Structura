@@ -1,7 +1,6 @@
-import { Link, NavLink } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Network } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { cn } from "@/lib/utils";
 import { FileSystemStatus } from "./FileSystemStatus";
 import { useFileSystemSync } from "@/infrastructure/persistence";
 import { SettingsMenu } from "./SettingsMenu";
@@ -26,31 +25,15 @@ const Navbar = () => {
           <Link to="/" className="hover:text-foreground transition-colors">
             {t("nav.workspaces")}
           </Link>
-          <NavLink
-            to="/walkthroughs"
-            className={({ isActive }) =>
-              cn(
-                "hover:text-foreground transition-colors",
-                isActive ? "text-foreground" : "text-muted-foreground",
-              )
-            }
-          >
-            {t("nav.journeys")}
-          </NavLink>
           <Link to="/catalog" className="hover:text-foreground transition-colors">
             {t("nav.registry")}
           </Link>
-          <NavLink
+          <Link
             to="/plugins"
-            className={({ isActive }) =>
-              cn(
-                "hover:text-foreground transition-colors",
-                isActive ? "text-foreground" : "text-muted-foreground",
-              )
-            }
+            className="hover:text-foreground transition-colors"
           >
             {t("nav.plugins")}
-          </NavLink>
+          </Link>
         </div>
 
         <div className="flex items-center gap-2">
