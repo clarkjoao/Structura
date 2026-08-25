@@ -65,7 +65,6 @@ export function WorkspaceContent({
   showFlows,
   setShowFlows,
   isViewingCoverage,
-  setIsViewingCoverage,
   showShortcuts,
   setShowShortcuts,
   navStack,

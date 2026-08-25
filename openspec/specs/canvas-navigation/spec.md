@@ -1,69 +1,170 @@
 # canvas-navigation Specification
 
 ## Purpose
-TBD - created by archiving change ux-002-canvas-zoom. Update Purpose after archive.
+TBD - created by archiving change ux-002-canvas-zoom; consolidated during cleanup with the deltas from `canvas-findability` and `canvas-scroll-pan-drawio`. Update Purpose after archive.
+
 ## Requirements
-### Requirement: Canvas detects trackpad vs mouse at runtime
 
-The canvas MUST distinguish a trackpad from a mouse at runtime, without persisting the choice, and MUST default to "mouse" behavior when no signal is available. The detection MUST be based on observed wheel events (small, frequent, non-integer deltas indicate a trackpad; large, isolated, integer deltas indicate a mouse) and MUST NOT call `preventDefault` on the events it observes.
+### Requirement: Scroll pans the canvas by default
 
-#### Scenario: First wheel event uses mouse behavior
+With no modifier key, a wheel event MUST translate the viewport on both axes, on every pointing
+device. Content follows the fingers/wheel: the viewport moves by `(-deltaX, -deltaY)`. The canvas
+MUST NOT attempt to classify the device before deciding this.
 
-- **WHEN** a user opens the canvas for the first time and has not yet produced any wheel events
-- **THEN** the canvas treats input as a mouse (wheel = zoom, Shift+wheel = horizontal pan)
-- **AND** no trackpad-specific behavior is active
+#### Scenario: Vertical two-finger scroll pans
 
-#### Scenario: Repeated small wheel deltas flip to trackpad mode
+- **WHEN** a user produces a wheel event with `deltaY` non-zero, `deltaX` zero and no modifier keys
+- **THEN** the viewport translates vertically by `-deltaY`
+- **AND** the zoom level is unchanged
 
-- **WHEN** a user produces several wheel events with `Math.abs(deltaY) < 50` and non-zero `deltaX` within a short window
-- **THEN** the canvas flips to trackpad mode (two-finger scroll = pan, Ctrl+wheel = zoom)
-- **AND** a subsequent isolated large `deltaY` event does NOT flip the mode back to mouse on its own
+#### Scenario: Diagonal two-finger scroll pans both axes
 
-#### Scenario: Detection does not block the event
+- **WHEN** a user produces a wheel event with both `deltaX` and `deltaY` non-zero and no modifiers
+- **THEN** the viewport translates by `(-deltaX, -deltaY)`
+- **AND** the zoom level is unchanged
 
-- **WHEN** the detector is observing wheel events for classification
-- **THEN** the observed event is delivered to the main wheel handler with no additional latency
-- **AND** the main handler still calls `preventDefault` as it does today
+#### Scenario: Mouse wheel pans in the default mode
 
-### Requirement: Trackpad wheel pans and pinch zooms
+- **WHEN** a mouse user scrolls the wheel with no modifier and the scroll-mode preference is `"pan"`
+- **THEN** the viewport translates vertically
+- **AND** the zoom level is unchanged
 
-On a trackpad, the canvas MUST treat a two-finger scroll as a pan (both axes) and a pinch (delivered as a wheel event with `ctrlKey` true on most platforms) as a zoom. The zoom MUST be centered on the cursor.
+### Requirement: Ctrl/Cmd+wheel zooms centered on the cursor
 
-#### Scenario: Two-finger trackpad scroll pans the canvas
+A wheel event with `ctrlKey` or `metaKey` true MUST zoom, regardless of the scroll-mode
+preference and regardless of the pointing device. The zoom MUST keep the world point under the
+cursor fixed, and MUST clamp to the same `maxZoom` as the `<Controls>` buttons. Because browsers
+synthesize `ctrlKey` for a trackpad pinch, this requirement also covers pinch-to-zoom.
 
-- **WHEN** a trackpad user produces a wheel event with `deltaY` and `deltaX` and no modifier keys
-- **THEN** the canvas viewport translates by `(-deltaX, -deltaY)` (content follows fingers)
+#### Scenario: Ctrl+wheel zooms in place
 
-#### Scenario: Trackpad pinch zooms in place
+- **WHEN** a user scrolls the wheel with `ctrlKey` true
+- **THEN** the zoom changes by the standard factor
+- **AND** the world point under the cursor before the zoom is under the cursor after it
 
-- **WHEN** a trackpad user produces a wheel event with `ctrlKey` true (synthesized by the browser for pinch)
-- **THEN** the canvas zoom changes by the standard factor
-- **AND** the world point under the cursor remains under the cursor after the zoom
+#### Scenario: Cmd+wheel zooms in place
 
-### Requirement: Mouse wheel zooms and Shift+wheel pans horizontally
+- **WHEN** a macOS user scrolls the wheel with `metaKey` true
+- **THEN** the zoom changes by the standard factor, cursor-centered
 
-On a mouse, the canvas MUST treat the wheel as a zoom centered on the cursor and Shift+wheel as a horizontal pan. The previous Cmd/Ctrl+wheel shortcut MUST still work as a fallback for users who learned it.
+#### Scenario: Trackpad pinch zooms
 
-#### Scenario: Mouse wheel zooms in place
+- **WHEN** a trackpad user pinches and the browser delivers a wheel event with `ctrlKey` true
+- **THEN** the canvas zooms, cursor-centered
+- **AND** no panning occurs
 
-- **WHEN** a mouse user scrolls the wheel without modifiers
-- **THEN** the canvas zoom changes by the standard factor
-- **AND** the world point under the cursor remains under the cursor after the zoom
+### Requirement: Zoom keeps the world point under the cursor fixed
 
-#### Scenario: Shift+wheel pans horizontally on a mouse
+The zoom handler MUST keep the world point under the cursor fixed across the zoom step. The
+clamp MUST use the same `maxZoom` advertised by the React Flow `<Controls>` zoom buttons, so a user
+MUST be able to reach the same maximum zoom by wheel and by clicking the on-screen "Zoom in"
+button.
 
-- **WHEN** a mouse user scrolls the wheel with `shiftKey` true
-- **THEN** the canvas viewport translates horizontally by `deltaY`
-- **AND** the vertical position is unchanged
+#### Scenario: Wheel zoom reaches the configured max
 
-#### Scenario: Cmd+wheel on a mouse zooms (legacy fallback)
+- **WHEN** a user scrolls the wheel up repeatedly starting from the default zoom
+- **THEN** the zoom increases and saturates at the React Flow `maxZoom` value
+- **AND** further wheel events do not push the zoom above that value
 
-- **WHEN** a mouse user scrolls the wheel with `ctrlKey` or `metaKey` true
-- **THEN** the canvas zoom changes by the standard factor (same as the unmodifed wheel case)
+#### Scenario: Cursor-centered zoom keeps the world point stable
+
+- **WHEN** a user zooms in via wheel
+- **THEN** the world point under the cursor before the zoom is the same world point under the cursor after the zoom
+- **AND** the visual center of the canvas does not jump to a different element
+
+### Requirement: Shift+wheel pans horizontally
+
+A wheel event with `shiftKey` true and neither `ctrlKey` nor `metaKey` MUST translate the
+viewport horizontally by `deltaY`, leaving the vertical position and the zoom unchanged.
+
+#### Scenario: Shift+wheel scrolls sideways
+
+- **WHEN** a user scrolls the wheel with `shiftKey` true
+- **THEN** the viewport translates horizontally
+- **AND** the vertical position and the zoom are unchanged
+
+### Requirement: Scroll behavior is a persisted user preference
+
+The canvas MUST expose a `scrollMode` preference with the values `"pan"` and `"zoom"`,
+defaulting to `"pan"`. In `"zoom"` mode an unmodified wheel event zooms cursor-centered instead
+of panning; `Ctrl`/`Cmd`+wheel and `Shift`+wheel are unaffected by the preference. The preference
+MUST persist across reloads and MUST be reachable from a control on the canvas, since the
+application has no settings page. Its labels MUST come from `t()` with entries in both `en.json`
+and `pt-BR.json`.
+
+#### Scenario: Preference defaults to pan
+
+- **GIVEN** a user who has never changed the setting
+- **WHEN** they scroll the canvas with no modifier
+- **THEN** the canvas pans
+
+#### Scenario: Switching to zoom mode
+
+- **GIVEN** the user sets the scroll mode to `"zoom"`
+- **WHEN** they scroll the canvas with no modifier
+- **THEN** the canvas zooms cursor-centered
+- **AND** `Shift`+wheel still pans horizontally
+
+#### Scenario: Preference survives a reload
+
+- **GIVEN** the user set the scroll mode to `"zoom"`
+- **WHEN** they reload the application
+- **THEN** the scroll mode is still `"zoom"`
+
+### Requirement: Wheel deltas are normalized across delta modes
+
+The wheel handler MUST normalize `WheelEvent.deltaMode` to pixels before using the deltas:
+`DOM_DELTA_LINE` scaled by a line height, `DOM_DELTA_PAGE` scaled by the pane height,
+`DOM_DELTA_PIXEL` used as-is. Without this, devices reporting line deltas pan a few pixels per
+notch.
+
+#### Scenario: Line-mode wheel pans a usable distance
+
+- **WHEN** a wheel event arrives with `deltaMode === DOM_DELTA_LINE` and `deltaY === 3`
+- **THEN** the viewport translates by a pixel distance scaled from the line height, not by 3 px
+
+#### Scenario: Pixel-mode wheel is unscaled
+
+- **WHEN** a wheel event arrives with `deltaMode === DOM_DELTA_PIXEL` and `deltaY === 120`
+- **THEN** the viewport translates by 120 px
+
+### Requirement: Only one handler processes wheel events
+
+The canvas MUST NOT run two wheel handlers at the same time. React Flow's own `panOnScroll` MUST
+be disabled, and the custom wheel handler in `useCanvasEffects` MUST be the single source of
+truth for wheel-driven pan and zoom.
+
+#### Scenario: No dual-handler race
+
+- **WHEN** a user produces a wheel event on the canvas
+- **THEN** the custom handler in `useCanvasEffects` is the only code that updates the viewport in response
+- **AND** the canvas viewport does not jump or stutter as a result of two competing handlers
+
+### Requirement: Touch and stylus behavior is unchanged
+
+The existing `prefersTouchCanvasUi` branch in `useCanvasInputProfile` MUST continue to drive the
+touch-specific React Flow props (`panOnDrag={true}`, `selectionOnDrag={false}`,
+`panActivationKeyCode={null}`). `CanvasInputProfile` MUST keep exposing `isTouchDevice`,
+`isCoarsePointer` and `prefersTouchCanvasUi`, and MUST NOT expose any device-classification
+signal derived from wheel events.
+
+#### Scenario: Touch device still pans with one finger
+
+- **WHEN** a user opens the canvas on a touch device
+- **THEN** the canvas uses the touch-specific pan behavior
+- **AND** pinch-to-zoom continues to work via React Flow's `zoomOnPinch`
+
+#### Scenario: Input profile carries no wheel-derived signal
+
+- **WHEN** the canvas reads `CanvasInputProfile`
+- **THEN** the profile contains only pointer-capability fields
+- **AND** no global wheel listener is registered for device classification
 
 ### Requirement: Middle-button drag pans the canvas on desktop
 
-On a desktop device that is not a coarse pointer / touch device, the canvas MUST allow the user to pan by holding the middle mouse button and dragging. Left-drag MUST continue to perform selection (or move nodes when applicable), and right-drag MUST continue to pan as it does today.
+On a desktop device that is not a coarse pointer / touch device, the canvas MUST allow the user
+to pan by holding the middle mouse button and dragging. Left-drag MUST continue to perform
+selection (or move nodes when applicable), and right-drag MUST continue to pan as it does today.
 
 #### Scenario: Middle-button drag pans
 
@@ -81,48 +182,73 @@ On a desktop device that is not a coarse pointer / touch device, the canvas MUST
 - **WHEN** a user releases the middle button after a pan
 - **THEN** the canvas returns to its default interaction mode immediately
 
-### Requirement: Wheel zoom respects the configured maximum
+### Requirement: Canvas offers a spatial overview
 
-The wheel handler MUST clamp the zoom to the same `maxZoom` advertised by the React Flow `<Controls>` zoom buttons. A user MUST be able to reach the same maximum zoom by wheel and by clicking the on-screen "Zoom in" button.
+The editor canvas MUST render a minimap giving a scaled overview of the whole diagram and of the
+current viewport within it. The minimap MUST be pannable and zoomable, so clicking or dragging
+in it moves the viewport. Node color MUST be derived from the component's type descriptor, with
+a neutral fallback for plugin and unknown types, and the minimap chrome MUST use the same theme
+tokens as the existing `<Controls>` so it reads correctly in light and dark.
 
-#### Scenario: Wheel zoom reaches the configured max
+#### Scenario: Minimap reflects the diagram
 
-- **WHEN** a user scrolls the wheel up repeatedly starting from the default zoom
-- **THEN** the zoom increases and saturates at the React Flow `maxZoom` value
-- **AND** further wheel events do not push the zoom above that value
+- **GIVEN** a diagram with nodes spread across the canvas
+- **WHEN** the canvas is open
+- **THEN** the minimap shows a scaled representation of every visible node
+- **AND** it highlights the region covered by the current viewport
 
-#### Scenario: Cursor-centered zoom keeps the world point stable
+#### Scenario: Clicking the minimap navigates
 
-- **WHEN** a user zooms in via wheel
-- **THEN** the world point under the cursor before the zoom is the same world point under the cursor after the zoom
-- **AND** the visual center of the canvas does not jump to a different element
+- **WHEN** the user clicks a point in the minimap
+- **THEN** the viewport moves to that region of the diagram
 
-### Requirement: Only one handler processes wheel events
+#### Scenario: Unknown node type still renders
 
-The canvas MUST NOT run two wheel handlers at the same time. React Flow's own `panOnScroll` MUST be disabled, and the custom wheel handler in `useCanvasEffects` MUST be the single source of truth for wheel-driven pan and zoom.
+- **GIVEN** a diagram containing a component whose type belongs to an absent plugin
+- **WHEN** the minimap renders
+- **THEN** that node is drawn with the neutral fallback color and no error is raised
 
-#### Scenario: No dual-handler race
+### Requirement: Minimap visibility is a persisted preference
 
-- **WHEN** a user produces a wheel event on the canvas
-- **THEN** the custom handler in `useCanvasEffects` is the only code that updates the viewport in response
-- **AND** the canvas viewport does not jump or stutter as a result of two competing handlers
+The minimap MUST be toggleable, default on, and the choice MUST persist across reloads. The
+control MUST live alongside the other canvas view preferences, and its label MUST come from
+`t()` with entries in both `en.json` and `pt-BR.json`.
 
-### Requirement: Touch and stylus behavior is unchanged
+#### Scenario: Turning the minimap off
 
-The existing `prefersTouchCanvasUi` branch in `useCanvasInputProfile` MUST continue to drive the touch-specific React Flow props (`panOnDrag={true}`, `selectionOnDrag={false}`, `panActivationKeyCode={null}`). The new "likely trackpad" signal MUST be consulted only when `prefersTouchCanvasUi` is false.
+- **WHEN** the user turns the minimap off
+- **THEN** it stops rendering and the canvas area it occupied is free
+- **AND** after a reload it is still off
 
-#### Scenario: Touch device still pans with one finger
+### Requirement: Canvas recovers an empty viewport
 
-- **WHEN** a user opens the canvas on a touch device
-- **THEN** the canvas uses the touch-specific pan behavior regardless of the new trackpad signal
-- **AND** pinch-to-zoom continues to work via React Flow's `zoomOnPinch`
+When the diagram contains at least one node and none of them intersect the current viewport, the
+canvas MUST show a floating recovery card naming how many elements exist and offering an action
+that fits all of them into view. The card MUST disappear as soon as any node is visible again,
+and MUST NOT appear for an empty diagram. Its strings MUST come from `t()` with entries in both
+`en.json` and `pt-BR.json`.
 
-### Requirement: No new translation keys
+#### Scenario: User pans away from all content
 
-This change introduces no new user-visible strings. Existing `canvasToolbar.*` keys are unaffected. The `<Controls>` zoom/fit buttons keep their built-in React Flow aria labels. If implementation surfaces a new user-facing string (status, hint, error), it MUST be added to both `en.json` and `pt-BR.json`.
+- **GIVEN** a diagram with nodes
+- **WHEN** the user pans until no node intersects the viewport
+- **THEN** the recovery card appears with the element count
 
-#### Scenario: Locale files unchanged by this change
+#### Scenario: Recovery action brings the content back
 
-- **WHEN** the implementation is reviewed against the locale files
-- **THEN** `src/infrastructure/i18n/locales/en.json` and `src/infrastructure/i18n/locales/pt-BR.json` contain no new keys added by this change
+- **GIVEN** the recovery card is showing
+- **WHEN** the user activates its fit action
+- **THEN** the viewport is fitted to all nodes using the canvas fit-view constants
+- **AND** the card disappears
 
+#### Scenario: Empty diagram shows nothing
+
+- **GIVEN** a diagram with no components
+- **WHEN** the canvas is open
+- **THEN** the recovery card is not rendered
+
+#### Scenario: Partially visible node counts as visible
+
+- **GIVEN** a node whose bounding box only partly overlaps the viewport
+- **WHEN** occupancy is evaluated
+- **THEN** the node counts as visible and the card is not shown
