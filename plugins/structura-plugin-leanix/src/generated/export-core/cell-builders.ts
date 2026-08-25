@@ -16,6 +16,7 @@ import {
   buildEndpointStyle,
   buildNoteStyle,
   buildPanelStyle,
+  buildSwimlaneStyle,
   c4TypeLabel,
 } from "./styles";
 import { estimateNoteHeight, renderNoteHtml } from "./note-format";
@@ -32,12 +33,21 @@ export function buildCell(node: ExportNode, geometry: GeometryInfo, parentId: st
   switch (node.kind) {
     case "c4": {
       const meta = C4_META[node.subtype] ?? C4_META.system;
-      // Export at the canonical C4_META box so the output is deterministic regardless
-      // of any measured size React Flow persisted. Overlaps between neighbours are
-      // resolved by computeCompensationOffsets (A1-compensation) pushing nodes apart
-      // in Y — see ADR-0009 / A1.
-      const finalWidth = meta.width;
-      const finalHeight = meta.height;
+      // A1-compensation: nodes that have NO measured size yet (e.g. a diagram
+      // that was never rendered, or freshly created) fall back to the canonical
+      // box. Otherwise we honour the canvas-measured size — clamped between
+      // the canonical floor and the per-subtype ceiling — so a long description
+      // grows the box up to a sensible max instead of overflowing or being
+      // truncated. The compensation pass still keeps adjacent nodes from
+      // overlapping (see computeCompensationOffsets / ADR-0009 A1).
+      const finalWidth = Math.max(
+        meta.width,
+        Math.min(meta.maxWidth, width > 0 ? width : meta.width),
+      );
+      const finalHeight = Math.max(
+        meta.height,
+        Math.min(meta.maxHeight, height > 0 ? height : meta.height),
+      );
 
       const c4Line2 = buildC4Line2(node.description, node.technology);
       const badge = buildC4RegistryBadge(node.serviceName);
@@ -84,8 +94,15 @@ export function buildCell(node: ExportNode, geometry: GeometryInfo, parentId: st
     case "panel": {
       const w = width || CONFIG.defaults.panelWidth;
       const h = height || CONFIG.defaults.panelHeight;
-      const stroke = node.panelColor ?? CONFIG.defaults.panelColor;
-      const style = buildPanelStyle(stroke);
+      // Prefer the panel's own colour; fall back to the kind default (VPC/EKS/…)
+      // so a freshly-created panel of that kind exports the same colour the
+      // canvas renders; only the legacy neutral grey is used when neither is set.
+      const color = node.panelColor ?? node.panelKindDefaultColor ?? CONFIG.defaults.panelColor;
+      const style = buildPanelStyle({
+        color,
+        opacity: node.panelOpacity ?? 10,
+        borderStyle: node.borderStyle ?? "solid",
+      });
 
       const label =
         '<font style="font-size:16px"><b><div style="text-align:left">%c4Name%</div></b></font>' +
@@ -106,6 +123,23 @@ export function buildCell(node: ExportNode, geometry: GeometryInfo, parentId: st
         `<mxGeometry x="${x}" y="${y}" width="${w}" height="${h}" as="geometry"/>` +
         `</mxCell>` +
         `</object>`
+      );
+    }
+
+    case "swimlane": {
+      const w = width || CONFIG.defaults.panelWidth;
+      const h = height || CONFIG.defaults.panelHeight;
+      const style = buildSwimlaneStyle({
+        laneColor: node.laneColor ?? "#6366f1",
+        orientation: node.orientation,
+        opacity: node.opacity ?? 10,
+      });
+      const label = node.laneLabel?.trim() || node.name?.trim() || "Lane";
+      return (
+        `<mxCell id="${escXml(node.id)}" value="${escXml(label)}" style="${style}" ` +
+        `vertex="1" parent="${escXml(parentId)}">` +
+        `<mxGeometry x="${x}" y="${y}" width="${w}" height="${h}" as="geometry"/>` +
+        `</mxCell>`
       );
     }
 
