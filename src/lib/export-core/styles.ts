@@ -171,24 +171,45 @@ export function buildEndpointStyle(method: string): string {
 }
 
 function resolveDrawioEdgeStyle(edgeStyle: ExportEdgeStyle): string {
-  switch (edgeStyle) {
-    case "straight":
-      return "edgeStyle=none;html=1;";
-    case "step":
-      return "edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;";
-    case "bezier":
-      return "edgeStyle=entityRelationEdgeStyle;html=1;";
-    case "smoothstep":
-    case "editable":
-    case "editable-step":
-    default:
-      // Orthogonal routing with rounded corners — mirrors React Flow's smoothstep
-      // (right-angle segments) and supports multi-bend routes (e.g. when the
-      // target is below and to the left of the source, requiring two bends).
-      // elbowEdgeStyle (the previous default) only handled one bend cleanly.
-      return "edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;";
+  const base = EDGE_STYLE_BASE[edgeStyle];
+  if (base === undefined) {
+    // No silent fallback: if a new ExportEdgeStyle is added without an entry
+    // here, this assertion fires at runtime. The Record type also enforces
+    // exhaustiveness at compile time, but this guard is the belt-and-braces
+    // for the case where someone widens the union without recompiling.
+    throw new Error(`Unhandled edge style: ${String(edgeStyle)}`);
   }
+  return base;
 }
+
+/**
+ * draw.io base style for each Structura `ExportEdgeStyle`.
+ *
+ * `curved=1` is **deliberately not** in this table. `curved=1` is a legacy
+ * draw.io attribute that bows an `edgeStyle=none` line into a curve; it is
+ * not the right knob for "rounded corners on orthogonal routing", which is
+ * `rounded=1`. The two are semantically unrelated and combining
+ * `curved=1` with `orthogonalEdgeStyle` is a contradiction. If a future
+ * style needs a curved straight line, the path is
+ * `entityRelationEdgeStyle` (a Bezier), not `curved=1`.
+ *
+ * `rounded=1` is the draw.io idiom for "orthogonal routing, rounded
+ * corners", which mirrors React Flow's smoothstep. The smoothstep family
+ * (smoothstep, editable, editable-step) shares the same `rounded=1`
+ * line — separating them in drawio is out of scope for the export (see
+ * the asymmetry report on the import-drawio follow-up).
+ */
+const EDGE_STYLE_BASE: Record<ExportEdgeStyle, string> = {
+  straight: "edgeStyle=none;html=1;",
+  step: "edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;",
+  bezier: "edgeStyle=entityRelationEdgeStyle;html=1;",
+  smoothstep:
+    "edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;",
+  editable:
+    "edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;",
+  "editable-step":
+    "edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;",
+};
 
 export function buildEdgeStyle(
   strokeColor: string,

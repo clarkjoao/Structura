@@ -9,6 +9,7 @@ import { BOX_POINTS, C4_SHAPE_POINTS, METHOD_COLORS, PROTOCOL_COLORS } from "./c
 import type { ExportEdgeStyle } from "./model";
 import type { C4MetaInfo } from "./types";
 import { buildStyle, escXml } from "./xml-utils";
+import { mixWithWhite, toHex } from "./color-utils";
 
 export function buildC4Line2(description?: string, technology?: string): string {
   const parts: string[] = [];
@@ -54,11 +55,51 @@ export function buildAwsStyle(icon: string): string {
   });
 }
 
-export function buildPanelStyle(stroke: string): string {
-  const baseStyle = `rounded=1;arcSize=20;dashed=1;dashPattern=8 4;fillColor=none;whiteSpace=wrap;html=1;fontSize=11;labelBackgroundColor=none;align=left;verticalAlign=bottom;spacing=10;spacingTop=0;metaEdit=1;rotatable=0;connectable=0;allowArrows=0;expand=0;recursiveResize=0;editable=1;pointerEvents=0;absoluteArcSize=1;perimeter=rectanglePerimeter;`;
+/**
+ * Build the drawio style for a Structura panel container.
+ *
+ * The canvas renders panels with a translucent fill (`color` mixed with the
+ * background by `panelOpacity/100`) and a coloured border. drawio's `fillColor`
+ * only accepts a hex string with no alpha, so we mimic the canvas's look by
+ * pre-tinting the fill toward white and then applying `fillOpacity` — together
+ * they read as a soft tinted background, close to what the React Flow renderer
+ * shows.
+ *
+ * NB: drawio's `fillOpacity` is an integer 0–100 (a percentage), not a 0–1
+ * fraction — older desktop builds silently ignore fractional values, which is
+ * why we previously saw every panel export as effectively transparent. Always
+ * pass an integer here.
+ */
+export function buildPanelStyle(options: {
+  /** Raw panel colour from the snapshot (hex or hsl). */
+  color: string;
+  /** Background tint 0–100 (Structura canvas semantics). */
+  opacity: number;
+  /** Border style from the snapshot. */
+  borderStyle: "solid" | "dashed" | "dotted";
+}): string {
+  const strokeHex = toHex(options.color);
+  // Translucent canvas fill = color at `opacity/100` over white.
+  // drawio can't blend on its own, so we approximate by mixing toward white by
+  // (1 - opacity) and then letting fillOpacity carry the remaining transparency.
+  const opacityClamped = Math.max(0, Math.min(100, options.opacity));
+  const tintAmount = 1 - opacityClamped / 100;
+  const fillHex = mixWithWhite(strokeHex, tintAmount);
+  const fillOpacityPct = Math.round(Math.max(0, Math.min(1, opacityClamped / 100 + 0.08)) * 100);
 
-  return buildStyle(baseStyle, {
-    strokeColor: stroke,
+  const baseStyle = `rounded=1;arcSize=20;whiteSpace=wrap;html=1;fontSize=11;labelBackgroundColor=none;align=left;verticalAlign=top;spacing=10;spacingTop=0;metaEdit=1;rotatable=0;connectable=0;allowArrows=0;expand=0;recursiveResize=0;editable=1;pointerEvents=0;absoluteArcSize=1;perimeter=rectanglePerimeter;strokeWidth=2;`;
+
+  const dashBits =
+    options.borderStyle === "dashed"
+      ? "dashed=1;dashPattern=8 4;"
+      : options.borderStyle === "dotted"
+        ? "dashed=1;dashPattern=1 4;"
+        : "";
+
+  return buildStyle(baseStyle + dashBits, {
+    strokeColor: strokeHex,
+    fillColor: fillHex,
+    fillOpacity: fillOpacityPct,
     fontColor: "#333333",
     points:
       "[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]]",
@@ -67,6 +108,54 @@ export function buildPanelStyle(stroke: string): string {
 
 export function buildNoteStyle(): string {
   return "text;html=1;strokeColor=#cccccc;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;whiteSpace=wrap;rounded=1;arcSize=5;fontColor=#000000;fontSize=12;";
+}
+
+/**
+ * Build the drawio style for a Structura swimlane.
+ *
+ * drawio's `swimlane` shape (a.k.a. "Horizontal Container" / "Vertical
+ * Container" in the drawio palette) uses `horizontal=0|1` to pick the
+ * orientation and has TWO independent fills:
+ *   - `fillColor`           → the lane body (content area)
+ *   - `swimlaneFillColor`   → the colored stripe (`startSize` wide) that
+ *                             carries the lane label
+ *
+ * Structura's `panelOpacity` controls how strongly the lane colour paints
+ * both surfaces, so we apply the same opacity to both. This matches what the
+ * canvas renderer does — there the same `laneColor` + `opacity` drive both
+ * the body tint and the stripe colour.
+ */
+export function buildSwimlaneStyle(options: {
+  laneColor: string;
+  orientation: "horizontal" | "vertical";
+  /** Background tint 0–100. */
+  opacity: number;
+}): string {
+  const strokeHex = toHex(options.laneColor);
+  const opacityClamped = Math.max(0, Math.min(100, options.opacity));
+  const tintAmount = 1 - opacityClamped / 100;
+  const fillHex = mixWithWhite(strokeHex, tintAmount);
+  const fillOpacityPct = Math.round(
+    Math.max(0, Math.min(1, opacityClamped / 100 + 0.08)) * 100,
+  );
+  // The stripe carries the lane colour at its real saturation. We still pass
+  // `swimlaneFillOpacity` so users who want a softer stripe can dial opacity
+  // down without losing the lane identity (the body fillOpacity carries the
+  // tint amount too).
+  const horizontal = options.orientation === "vertical" ? 1 : 0;
+
+  const baseStyle = `swimlane;horizontal=${horizontal};whiteSpace=wrap;html=1;startSize=24;`;
+
+  return buildStyle(baseStyle, {
+    strokeColor: strokeHex,
+    fillColor: fillHex,
+    fillOpacity: fillOpacityPct,
+    // Stripe colours + opacity — both must be present, otherwise drawio falls
+    // back to the default orange/red stripe and the lane loses its identity.
+    swimlaneFillColor: strokeHex,
+    swimlaneFillOpacity: fillOpacityPct,
+    fontColor: "#333333",
+  });
 }
 
 export function buildApiGroupStyle(protocol: string): string {
@@ -89,24 +178,45 @@ export function buildEndpointStyle(method: string): string {
 }
 
 function resolveDrawioEdgeStyle(edgeStyle: ExportEdgeStyle): string {
-  switch (edgeStyle) {
-    case "straight":
-      return "edgeStyle=none;html=1;";
-    case "step":
-      return "edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;";
-    case "bezier":
-      return "edgeStyle=entityRelationEdgeStyle;html=1;";
-    case "smoothstep":
-    case "editable":
-    case "editable-step":
-    default:
-      // Orthogonal routing with rounded corners — mirrors React Flow's smoothstep
-      // (right-angle segments) and supports multi-bend routes (e.g. when the
-      // target is below and to the left of the source, requiring two bends).
-      // elbowEdgeStyle (the previous default) only handled one bend cleanly.
-      return "edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;";
+  const base = EDGE_STYLE_BASE[edgeStyle];
+  if (base === undefined) {
+    // No silent fallback: if a new ExportEdgeStyle is added without an entry
+    // here, this assertion fires at runtime. The Record type also enforces
+    // exhaustiveness at compile time, but this guard is the belt-and-braces
+    // for the case where someone widens the union without recompiling.
+    throw new Error(`Unhandled edge style: ${String(edgeStyle)}`);
   }
+  return base;
 }
+
+/**
+ * draw.io base style for each Structura `ExportEdgeStyle`.
+ *
+ * `curved=1` is **deliberately not** in this table. `curved=1` is a legacy
+ * draw.io attribute that bows an `edgeStyle=none` line into a curve; it is
+ * not the right knob for "rounded corners on orthogonal routing", which is
+ * `rounded=1`. The two are semantically unrelated and combining
+ * `curved=1` with `orthogonalEdgeStyle` is a contradiction. If a future
+ * style needs a curved straight line, the path is
+ * `entityRelationEdgeStyle` (a Bezier), not `curved=1`.
+ *
+ * `rounded=1` is the draw.io idiom for "orthogonal routing, rounded
+ * corners", which mirrors React Flow's smoothstep. The smoothstep family
+ * (smoothstep, editable, editable-step) shares the same `rounded=1`
+ * line — separating them in drawio is out of scope for the export (see
+ * the asymmetry report on the import-drawio follow-up).
+ */
+const EDGE_STYLE_BASE: Record<ExportEdgeStyle, string> = {
+  straight: "edgeStyle=none;html=1;",
+  step: "edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;",
+  bezier: "edgeStyle=entityRelationEdgeStyle;html=1;",
+  smoothstep:
+    "edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;",
+  editable:
+    "edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;",
+  "editable-step":
+    "edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;",
+};
 
 export function buildEdgeStyle(
   strokeColor: string,

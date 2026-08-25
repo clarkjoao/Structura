@@ -20,7 +20,7 @@ the *why* behind them.
 1. [architecture/vision.md](architecture/vision.md) — what Structura is becoming and the principles that govern it.
 2. [architecture/overview.md](architecture/overview.md) — the layers and bounded contexts as they exist in the code today.
 3. [grammar/glossary.md](grammar/glossary.md) — the canonical vocabulary. Read this before adding a new concept so it gets the right name.
-4. [concepts/core-concepts.md](concepts/core-concepts.md) — the domain model in narrative form (workspace, diagram, component, connection, flow, scene, walkthrough, service).
+4. [concepts/core-concepts.md](concepts/core-concepts.md) — the domain model in narrative form (workspace, diagram, component, connection, flow, scene, service).
 5. The concept doc for whatever subsystem you are touching.
 6. [../openspec/](../openspec/) — the engineering process (`/opsx:propose` → apply → archive), if you are proposing a feature.
 

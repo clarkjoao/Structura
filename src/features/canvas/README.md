@@ -43,7 +43,7 @@ Canvas.tsx
 | `toolbar/`    | Top-level canvas actions such as quick insert, search, pattern insertion, and scene controls.                                     |
 | `panels/`     | Contextual side panels and editing UIs for nodes, connections, and multiselect.                                                   |
 | `navigation/` | Sidebar and recent-diagram navigation helpers.                                                                                    |
-| `chat/`       | Diagram-aware chat context, mention search, mention input parsing, and journey-to-canvas highlighting.                            |
+| `chat/`       | Diagram-aware chat context, mention search, and mention input parsing.                            |
 | `contexts/`   | Small React contexts shared by node and edge renderers.                                                                           |
 | `models/`     | Canvas-local geometry and parenting helpers used during drag interactions.                                                        |
 
@@ -63,5 +63,5 @@ interaction, keyboard, edges, nodes, flow, chat, and navigation.
   responsive without losing the source-of-truth store model.
 - `FlowModeContext` is the local source of truth for recording and playback
   behavior, while persisted flows still live in the diagram feature.
-- Compare mode and journey playback reuse the same node and edge rendering
+- Compare mode and flow playback reuse the same node and edge rendering
   pipeline by feeding alternate highlight and opacity metadata into it.

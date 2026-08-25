@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Download, FileJson, FileImage, Link, QrCode, Share2 } from "lucide-react";
+import { Download, FileJson, FileImage, Link, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

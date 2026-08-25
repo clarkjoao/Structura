@@ -1,5 +1,4 @@
 import type { Diagram, Folder, IconDefinition } from "@/features/diagram";
-import type { Walkthrough } from "@/features/walkthroughs";
 import { normalizeImportedDiagram } from "@/lib/export-service/normalize-imported-diagram";
 import { FileSystemEntryKind } from "@/features/diagram";
 import type { CustomComponentTemplate } from "@/features/custom-components";
@@ -16,7 +15,6 @@ const DB_NAME = "structura-fs";
 const DB_STORE = "handles";
 const HANDLE_KEY = "workspace-handle";
 const MANIFEST_FILE = "structura-manifest.json";
-const JOURNEYS_FILE = "structura-walkthroughs.json";
 
 type FileSystemPermissionMode = "read" | "readwrite";
 type FileSystemPermissionState = "granted" | "denied" | "prompt";
@@ -379,34 +377,6 @@ export class FileSystemAdapter {
     }
   }
 
-  /** Single-file workspace export; large journey sets may warrant sharding in a future schema. */
-  async writeWalkthroughs(walkthroughs: Record<string, Walkthrough>): Promise<boolean> {
-    if (!this.handle) return false;
-    try {
-      const file = await this.handle.getFileHandle(JOURNEYS_FILE, {
-        create: true,
-      });
-      const writable = await file.createWritable();
-      await writable.write(JSON.stringify(walkthroughs, null, 2));
-      await writable.close();
-      return true;
-    } catch (e) {
-      console.error("[FileSystemAdapter] writeWalkthroughs failed:", e);
-      return false;
-    }
-  }
-
-  async readWalkthroughs(): Promise<Record<string, Walkthrough> | null> {
-    if (!this.handle) return null;
-    try {
-      const file = await this.handle.getFileHandle(JOURNEYS_FILE);
-      const fileBody = await file.getFile();
-      return JSON.parse(await fileBody.text()) as Record<string, Walkthrough>;
-    } catch {
-      return null;
-    }
-  }
-
   async readManifest(): Promise<WorkspaceManifest | null> {
     if (!this.handle) return null;
     try {
@@ -490,10 +460,6 @@ export class FileSystemAdapter {
             continue;
           }
 
-          if (name === JOURNEYS_FILE) {
-            continue;
-          }
-
           const dv = validateDiagramFile(raw);
           if (dv.valid === true) {
             result.valid.push(dv.diagram);
@@ -528,8 +494,7 @@ export class FileSystemAdapter {
       if (
         entry.kind === FileSystemEntryKind.File &&
         name.endsWith(".json") &&
-        name !== MANIFEST_FILE &&
-        name !== JOURNEYS_FILE
+        name !== MANIFEST_FILE
       ) {
         try {
           const f = await (entry as FileSystemFileHandle).getFile();

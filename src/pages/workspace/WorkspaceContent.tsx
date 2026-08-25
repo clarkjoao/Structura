@@ -39,7 +39,6 @@ import {
 import { useActiveDiagram, useStorageMonitor, type Flow } from "@/features/diagram";
 import { StorageWarningBanner } from "@/features/canvas/components/StorageWarningBanner";
 import { CollabCursors, CollabToolbar, useCollab } from "@/features/collaboration";
-import { useWalkthroughPlayer } from "@/features/walkthroughs";
 import { ExportModal } from "./ExportModal";
 import { ShareModal } from "./ShareModal";
 import type { WorkspaceContentProps } from "./types";
@@ -65,7 +64,6 @@ export function WorkspaceContent({
   showFlows,
   setShowFlows,
   isViewingCoverage,
-  setIsViewingCoverage,
   showShortcuts,
   setShowShortcuts,
   navStack,
@@ -94,7 +92,6 @@ export function WorkspaceContent({
     updateSelectedNode,
   } = useCollab();
   const diagram = useActiveDiagram();
-  const journeyPlayer = useWalkthroughPlayer();
   const flowMode = useFlowMode();
   const playbackState = flowMode.mode.kind === "playing" ? flowMode.mode : null;
   const activeFlow = playbackState?.flow ?? null;
@@ -183,7 +180,6 @@ export function WorkspaceContent({
   const canvasInteractionLocked = !interaction.canEditCanvas;
   const compareModeBlocksRecorder = interaction.isCompareMode;
   const flowButtonLocked = canvasInteractionLocked || !interaction.canUseFlow;
-  const journeyPlaybackActive = journeyPlayer.mode.kind !== "idle";
 
   const startRecordingWhenAllowed = useCallback(() => {
     if (!interaction.canUseFlow) {
@@ -456,7 +452,7 @@ export function WorkspaceContent({
                     return getViewportCenter(instance, !!showFlows);
                   }}
                   panelActionsLocked={
-                    compareModeBlocksRecorder || !interaction.canUseFlow || journeyPlaybackActive
+                    compareModeBlocksRecorder || !interaction.canUseFlow
                   }
                   panelActionsLockedTitle={t("diagramNav.unavailableWhileRecordingOrPlayback")}
                 />

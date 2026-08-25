@@ -17,7 +17,7 @@ sequencing live in
 | Storage backends | 🟢 | `IStoragePort` adapters | Add adapters, never bypass the port. |
 | AI providers | 🟡 | `features/llm/providers/*` | Common call shape exists; needs a formal provider registry + capability flags. |
 | Importers / Exporters | 🟢 | Plugin capability `io:importers`, `io:exporters` | Registry via `registerImporter`/`registerExporter`. |
-| Export cell builders | 🔴 | `lib/export-core` (neutral IR + `cell-builders.ts` `kind` switch), shared with the LeanIX plugin via `sync-shared` | Single source of truth for draw.io generation across app + plugins ([ADR-0009](../adr/0009-export-core-sharing.md)). Still a `kind` switch; should become per-node-type contributions paired with node descriptors. |
+| Export cell builders | 🔴 | `lib/export-core` (neutral IR + `cell-builders.ts` `kind` switch), shared with the LeanIX plugin via **versioned sync, not direct import** | Single source of truth for draw.io generation across app + plugins ([ADR-0009](../adr/0009-export-core-sharing.md)). The plugin cannot import the host (no path mapping, no workspaces, IIFE bundle isolates it), so `plugins/.../scripts/sync-shared.mjs` copies `export-core/**` into `plugins/.../src/generated/export-core/` and `npm run plugins:sync-check` guards drift in CI. Still a `kind` switch; should become per-node-type contributions paired with node descriptors. |
 | Commands | 🔴 | ad-hoc store action calls from UI | Prerequisite for toolbar/menu/shortcut/palette/MCP extensibility. Needs its own spec. |
 | Toolbar actions | 🟢 | Plugin `canvas-toolbar` slot | Plugins register buttons via `ui:panels` capability with `slot: "canvas-toolbar"`. |
 | Context menus | 🔴 | hardcoded menus | Same: command contributions with context predicates. |

@@ -4,18 +4,8 @@ import { useSharedDiagram } from "@/features/viewer/hooks/useSharedDiagram";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useDiagramPreviewSync } from "@/lib/diagram-preview";
-import { WalkthroughPlayerProvider } from "@/features/walkthroughs";
-import { migrateWalkthroughsLocalStorageKey } from "@/features/walkthroughs/utils/walkthroughsMigration";
 import { useLLMStore } from "@/features/llm";
 import { ModalOverlay } from "@/features/plugins/components/ModalOverlay";
-
-const WalkthroughPlayerBar = lazy(() =>
-  import("@/features/walkthroughs/components/WalkthroughPlayerBar").then((m) => ({
-    default: m.WalkthroughPlayerBar,
-  })),
-);
-
-migrateWalkthroughsLocalStorageKey();
 
 const ViewerPage = lazy(() =>
   import("@/pages/ViewerPage").then((m) => ({ default: m.ViewerPage })),
@@ -31,8 +21,6 @@ const CollabRoom = lazy(() =>
   })),
 );
 const Dashboard = lazy(() => import("@/pages/dashboard"));
-const WalkthroughEditorPage = lazy(() => import("@/pages/walkthroughs/WalkthroughEditorPage"));
-const WalkthroughsPage = lazy(() => import("@/pages/walkthroughs/WalkthroughsPage"));
 const Workspace = lazy(() => import("@/pages/workspace"));
 const ServiceCatalog = lazy(() => import("@/pages/serviceCatalog"));
 const PluginsPage = lazy(() => import("@/pages/settings/PluginsPage"));
@@ -78,8 +66,6 @@ function MainPages() {
       <Routes>
         <Route path="/" element={<Navigate to="/workspace" />} />
         <Route path="/workspace" element={<Dashboard />} />
-        <Route path="/walkthroughs" element={<WalkthroughsPage />} />
-        <Route path="/walkthroughs/:id/edit" element={<WalkthroughEditorPage />} />
         <Route path="/model/:id" element={<Workspace />} />
         <Route path="/collab/:roomId" element={<CollabRoom />} />
         <Route path="/catalog" element={<ServiceCatalog />} />
@@ -103,17 +89,12 @@ const App = () => {
           </Suspense>
         </ShareProvider>
       ) : (
-        <WalkthroughPlayerProvider>
-          <Suspense fallback={null}>
-            <WalkthroughPlayerBar />
-          </Suspense>
-          <Suspense fallback={<RouteFallback />}>
-            <Routes>
-              <Route path="/viewer" element={<ViewerPage />} />
-              <Route path="*" element={<MainPages />} />
-            </Routes>
-          </Suspense>
-        </WalkthroughPlayerProvider>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route path="/viewer" element={<ViewerPage />} />
+            <Route path="*" element={<MainPages />} />
+          </Routes>
+        </Suspense>
       )}
     </BrowserRouter>
   );

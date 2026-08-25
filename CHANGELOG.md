@@ -159,6 +159,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The redundant `registryServiceId` field on `Component` and
   `CustomComponentTemplate`. The unified `serviceId` is the only
   field that points to a Service in the catalog.
+- The **Walkthroughs** feature. The cross-diagram narrative player,
+  the `features/walkthroughs/` bounded context, the `/walkthroughs`
+  and `/walkthroughs/:id/edit` routes, the `WalkthroughsInDiagramPanel`
+  in the canvas, the `useWalkthroughPlayer` /
+  `useWalkthroughGlobalPlayer` / `useWalkthroughCanvasHighlight` /
+  `useWalkthroughViewportSync` hooks, the
+  `journeysByComponentId` field on the C4 node descriptor, and the
+  `structura-walkthroughs.json` companion file in the connected-folder
+  sync are all gone. The `walkthroughs` and `nav.walkthroughs` /
+  `nav.journeys` i18n namespaces are removed from both `en` and
+  `pt-BR`. A pre-removal snapshot is tagged `pre-remove-walkthroughs`
+  (commit `6b3d9a1`). The decision is recorded at
+  `docs/decisions/2026-08-26-remove-walkthroughs.md`.
 
 ## 0.1.0 - 2026-05
 

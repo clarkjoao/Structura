@@ -151,30 +151,6 @@
 
 ---
 
-## 🎬 Walkthroughs
-
-### Estrutura
-- `Walkthrough` - Container
-- `WalkthroughStep` - Passo com referência a diagrama/fluxo/mídia
-
-### Funcionalidades
-- Tutoriais interativos
-- Mídia embarcada (SVG, imagem)
-- Playback controlado pelo usuário
-- Embed via iframe
-
-### Componentes
-- `WalkthroughPlayerBar` - Barra de reprodução
-- `WalkthroughEditorCanvas` - Editor
-- `AddStepModal` - Adicionar passo
-
-### Problema que Resolve
-- Onboarding de usuários
-- Tutoriais interativos
-- Demonstrações de funcionalidades
-
----
-
 ## 🎭 Cenários (Scenes)
 
 ### Funcionalidades
@@ -476,7 +452,7 @@ moveComponents()      // Mover em lote
 | "Diagrama muito grande" | Scenes, Buscar, Minimap, Fit |
 | "Não consigo explicar o fluxo" | Flow Recording, Playback, Mermaid |
 | "Preciso mostrar para meu chefe" | Levels C4, Compartilhamento, Embed |
-| "Equipe não entende" | Walkthroughs, Notes, Labels |
+| "Equipe não entende" | Notes, Labels |
 | "Perco meu trabalho" | Auto-save, FileSystem sync, Export |
 | "Várias pessoas editando" | Colaboração em tempo real |
 | "Cansado de repetir" | Templates, Custom Components, Patterns |

@@ -102,8 +102,6 @@ type DataCtx = Omit<
   flows: { id: string; name: string }[];
 };
 
-const EMPTY_JOURNEYS_BY_COMPONENT_ID: Record<string, { name: string }[]> = Object.freeze({});
-
 const EMPTY_CANVAS_NODE_LIST: Node[] = [];
 
 function isSameBuiltFlowNode(a: Node, b: Node): boolean {
@@ -280,7 +278,6 @@ export function useCanvasNodes({
       activeFlowId,
       highlightedNodeIds: stableHighlightedNodeIds,
       isViewingCoverage,
-      journeysByComponentId: EMPTY_JOURNEYS_BY_COMPONENT_ID,
       childrenIndex: buildChildrenIndex(resolvedComponents),
     };
   }, [

@@ -69,8 +69,6 @@ export interface NodeBuildContext {
 
   updateComponent?: (id: string, patch: ComponentPatch) => void;
 
-  journeysByComponentId?: Record<string, { name: string }[]>;
-
   childrenIndex: Map<string, Set<string>>;
 }
 

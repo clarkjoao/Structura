@@ -90,7 +90,6 @@ src/
 │   │                      # NO React, NO JSX allowed here
 │   ├── canvas/            # ReactFlow canvas, node descriptors, toolbar, hooks
 │   ├── collaboration/     # Real-time collab via WebRTC + Yjs
-│   ├── walkthroughs/       # Walkthrough sequences (cross-diagram user flows)
 │   ├── custom-components/ # User-defined component templates
 │   ├── viewer/            # Read-only shared diagram viewer
 │   ├── icons/             # Icon library store

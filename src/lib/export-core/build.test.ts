@@ -230,6 +230,91 @@ describe("buildMxGraphXml — edges", () => {
     expect(xml).toContain(`source="a" target="b"`);
   });
 
+  // Per-style coverage for the EDGE_STYLE_BASE table in styles.ts. Each style
+  // pins: (1) the right edgeStyle= token, (2) the right rounded= value, and
+  // (3) the absence of curved=1 (which is a legacy drawio attribute for
+  // curving `edgeStyle=none` and is never what we want — see styles.ts
+  // comment on EDGE_STYLE_BASE).
+  describe("emits the right base style for each ExportEdgeStyle", () => {
+    const cases: Array<{
+      style: ExportEdge["edgeStyle"];
+      expectEdgeStyleToken: string;
+      expectRounded: "present" | "absent";
+    }> = [
+      { style: "straight", expectEdgeStyleToken: "edgeStyle=none;", expectRounded: "absent" },
+      {
+        style: "step",
+        expectEdgeStyleToken: "edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;",
+        expectRounded: "absent",
+      },
+      {
+        style: "bezier",
+        expectEdgeStyleToken: "edgeStyle=entityRelationEdgeStyle;html=1;",
+        expectRounded: "absent",
+      },
+      {
+        style: "smoothstep",
+        expectEdgeStyleToken:
+          "edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;",
+        expectRounded: "present",
+      },
+      {
+        style: "editable",
+        expectEdgeStyleToken:
+          "edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;",
+        expectRounded: "present",
+      },
+      {
+        style: "editable-step",
+        expectEdgeStyleToken:
+          "edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;",
+        expectRounded: "present",
+      },
+    ];
+
+    for (const c of cases) {
+      it(`${c.style} → ${c.expectEdgeStyleToken} (rounded=${c.expectRounded})`, () => {
+        const xml = buildMxGraphXml(
+          model(
+            [c4("a", 0, 0), c4("b", 300, 0)],
+            [edge("e", "a", "b", { edgeStyle: c.style })],
+          ),
+          { wrapper: "mxfile" },
+        );
+        expect(xml).toContain(`style="${c.expectEdgeStyleToken}`);
+        if (c.expectRounded === "present") {
+          expect(xml).toContain("rounded=1");
+        } else {
+          // `rounded=0` may be emitted by buildEdgeStyle when the stroke is
+          // dashed; on a solid stroke with no rounded corners, the edge XML
+          // must simply not carry `rounded=1`.
+          expect(xml).not.toMatch(/rounded=1/);
+        }
+        // The legacy drawio `curved=1` is never what we want: it bows
+        // edgeStyle=none into a curve, and is semantically unrelated to
+        // orthogonal routing with rounded corners (which is `rounded=1`).
+        expect(xml).not.toContain("curved=1");
+        // The retired `elbowEdgeStyle` should also not reappear.
+        expect(xml).not.toContain("elbowEdgeStyle");
+      });
+    }
+
+    // Pins EDGE_STYLE_BASE to the ExportEdgeStyle union. If the union grows,
+    // this fails to typecheck (TS complains `cases` is not exhaustive), which
+    // forces the table in styles.ts to be updated. The `Record<ExportEdgeStyle,
+    // string>` type on EDGE_STYLE_BASE does the same job from the other side.
+    it("EDGE_STYLE_BASE is exhaustive over ExportEdgeStyle", () => {
+      type Covered = typeof cases[number]["style"];
+      type _Exhaustive = [ExportEdge["edgeStyle"]] extends [Covered]
+        ? [Covered] extends [ExportEdge["edgeStyle"]]
+          ? true
+          : never
+        : never;
+      const _check: _Exhaustive = true;
+      expect(_check).toBe(true);
+    });
+  });
+
   it("writes exitX/exitY/entryX/entryY anchors (right-exit, left-entry)", () => {
     // Every edge must anchor exitX=1 (right side of source) and entryX=0 (left
     // side of target) — matching Structura's Position.Right source handles and

@@ -349,7 +349,7 @@ export const PATTERNS: PatternTemplate[] = [
       {
         type: "container",
         name: "Web BFF",
-        description: "Aggregates and shapes data for web journeys",
+        description: "Aggregates and shapes data for web flows",
         x: COL,
         y: 0,
       },

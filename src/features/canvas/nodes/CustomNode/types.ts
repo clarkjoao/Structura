@@ -37,6 +37,4 @@ export type NodeData = {
     a: { name: string; color: string };
     b: { name: string; color: string };
   };
-  journeyCount?: number;
-  journeyNames?: string[];
 };
