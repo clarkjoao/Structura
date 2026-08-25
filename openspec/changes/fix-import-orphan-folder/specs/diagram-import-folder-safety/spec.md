@@ -58,18 +58,37 @@ whose folder exists or that are already at the root.
 - **WHEN** the migration is applied to an already-migrated state
 - **THEN** the state is unchanged
 
-### Requirement: File System boot applies the same rule
+### Requirement: An unknown folder map never unfiles a diagram
 
-The File System Access boot path hydrates `diagrams` and `folders` from separate reads, so a
-partial or conflicting read can produce orphans. The boot hydration MUST apply the same
-reparenting rule before writing to the store.
+Reparenting MUST distinguish "this folder does not exist" from "the set of folders is not
+known". Given a null or undefined folder map, the reparenting helpers MUST return the diagram
+unchanged rather than clearing `folderId`.
 
-#### Scenario: Folder file missing while diagram files reference it
+This rules out two failures. Throwing on the missing map aborts any caller that reads a folder
+map it does not control — the File System boot swallows such a throw silently and the whole
+workspace fails to hydrate. Treating it as an empty map is worse: it unfiles every diagram, and
+on a connected workspace folder the sync then rewrites those files to the root on disk.
 
-- **GIVEN** a connected workspace folder whose diagram files reference a folder absent from the
-  manifest
+#### Scenario: Folder map is absent
+
+- **GIVEN** a set of diagrams that carry `folderId` values
+- **WHEN** reparenting runs with a null or undefined folder map
+- **THEN** no error is raised
+- **AND** every diagram keeps its `folderId`
+
+### Requirement: The File System boot path does not reparent
+
+The File System Access boot path MUST NOT apply orphan reparenting. Its folder map comes from
+the workspace manifest, which is not validated for that field, and acting on an absent map
+would rewrite the user's diagram files on disk. Import-time sanitisation and the persisted-state
+migration cover the orphan case without touching a connected folder.
+
+#### Scenario: Connected folder hydrates unchanged
+
+- **GIVEN** a connected workspace folder whose manifest has no `folders` field
 - **WHEN** the workspace is loaded at boot
-- **THEN** those diagrams are hydrated at the root instead of disappearing from the UI
+- **THEN** the diagrams hydrate with their `folderId` values untouched
+- **AND** the workspace loads normally
 
 ### Requirement: No new user-visible strings
 

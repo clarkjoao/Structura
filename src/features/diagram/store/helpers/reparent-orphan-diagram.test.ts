@@ -47,6 +47,18 @@ describe("reparentOrphanDiagram", () => {
     expect(reparentOrphanDiagram(diagram, FOLDERS)).toBe(diagram);
   });
 
+  it("leaves the diagram untouched when the folder map is unknown", () => {
+    // Regression: passing `undefined` used to throw on `folders[folderId]`. In
+    // `fileSystemBoot` that threw inside a silent catch, aborting the whole workspace
+    // hydration, so a folder-backed workspace never loaded and /model/:id reported that the
+    // diagram did not exist.
+    const diagram = makeDiagram("d1", "known");
+
+    expect(reparentOrphanDiagram(diagram, undefined)).toBe(diagram);
+    expect(reparentOrphanDiagram(diagram, null)).toBe(diagram);
+    expect(reparentOrphanDiagrams({ d1: diagram }, undefined).d1.folderId).toBe("known");
+  });
+
   it("clears every folderId when the workspace has no folders", () => {
     const result = reparentOrphanDiagram(makeDiagram("d1", "known"), {});
 

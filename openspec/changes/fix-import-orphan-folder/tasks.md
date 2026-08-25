@@ -26,9 +26,13 @@
 
 ## 4. File System boot
 
-- [x] 4.1 `fileSystemBoot.ts` — apply `reparentOrphanDiagrams` to `hydrated.diagrams` against
-      `workspace.folders` in the `useDiagramStore.setState` at the fresh-load branch
-- [x] 4.2 Check the reconnect / merge branches for the same hazard and apply where relevant
+- [x] 4.1 REVERTED — `fileSystemBoot.ts` must NOT reparent. `manifest.folders` is unvalidated
+      and can be absent; reading it threw inside `doReconnect`'s silent `catch`, aborting the
+      whole workspace hydration so `/model/:id` reported the diagram missing. Guarding with
+      `?? {}` would have been worse: it unfiles every diagram and the sync rewrites those files
+      to the root on the user's disk.
+- [x] 4.2 Harden `reparentOrphanDiagram`/`reparentOrphanDiagrams` — a null/undefined folder map
+      means "unknown", so the diagram is returned unchanged (+ regression test)
 
 ## 5. Import hook cleanup
 

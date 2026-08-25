@@ -1,6 +1,5 @@
 import {
   useDiagramStore,
-  reparentOrphanDiagrams,
   VIEWPORT_DEBOUNCE_MS,
   PERSIST_KEY,
   type Diagram,
@@ -196,21 +195,21 @@ async function doReconnect(): Promise<boolean> {
       }
 
       const hydrated = hydrateIconStoreFromWorkspace(workspace);
-      useDiagramStore.setState((s) => {
-        const folders = workspace.folders as typeof s.folders;
-        return {
-          ...s,
-          // Diagrams and folders come from separate reads, so a partial or conflicting
-          // workspace can reference a folder that was never written. Such a diagram would
-          // render nowhere; drop the reference and let it land at the root instead.
-          diagrams: reparentOrphanDiagrams(hydrated.diagrams as typeof s.diagrams, folders),
-          serviceCatalog: workspace.serviceCatalog as typeof s.serviceCatalog,
-          folders,
-          activeDiagramId: workspace.activeDiagramId,
-          past: [],
-          future: [],
-        };
-      });
+      // Deliberately no orphan-folder reparenting here. `manifest.folders` is not validated
+      // (`validateManifest` only checks `version` and `diagramIds`), so it can be absent —
+      // and treating "unknown folder map" as "no folders exist" would strip every
+      // `folderId` and make the sync rewrite those diagram files to the workspace root on
+      // the user's disk. Import-time sanitisation plus the persisted-state migration cover
+      // the orphan case without touching a connected folder.
+      useDiagramStore.setState((s) => ({
+        ...s,
+        diagrams: hydrated.diagrams as typeof s.diagrams,
+        serviceCatalog: workspace.serviceCatalog as typeof s.serviceCatalog,
+        folders: workspace.folders as typeof s.folders,
+        activeDiagramId: workspace.activeDiagramId,
+        past: [],
+        future: [],
+      }));
       fileSystemAdapter.setFolders(workspace.folders as unknown as DiagramStoreState["folders"]);
 
       const workspaceTemplates: Record<string, CustomComponentTemplate> | undefined =
