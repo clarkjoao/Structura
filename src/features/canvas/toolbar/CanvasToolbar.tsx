@@ -26,9 +26,6 @@ interface CanvasToolbarProps {
   onToggleTag: (tag: string) => void;
   onShowAllTags: () => void;
   onShowNoTags: () => void;
-  journeysInDiagramCount?: number;
-  journeysPanelOpen?: boolean;
-  onToggleJourneysPanel?: () => void;
   isFlowActive?: boolean;
   focusMode?: boolean;
   onToggleFocusMode?: () => void;
@@ -47,9 +44,6 @@ const CanvasToolbar = ({
   onToggleTag,
   onShowAllTags,
   onShowNoTags,
-  journeysInDiagramCount = 0,
-  journeysPanelOpen = false,
-  onToggleJourneysPanel,
   isFlowActive = false,
   focusMode = false,
 }: CanvasToolbarProps) => {
@@ -133,29 +127,6 @@ const CanvasToolbar = ({
             scenesPickerLocked={scenesPickerLocked || isFlowActive}
             onOpenScenes={onOpenScenes}
           />
-
-          {onToggleJourneysPanel ? (
-            <button
-              type="button"
-              onClick={isFlowActive ? undefined : onToggleJourneysPanel}
-              disabled={isFlowActive}
-              className={cn(
-                "flex items-center gap-1.5 rounded-lg border border-border bg-card/90 px-3 py-2 text-xs font-medium backdrop-blur-sm transition-colors",
-                journeysPanelOpen && !isFlowActive
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-surface-hover hover:text-foreground",
-                isFlowActive && "pointer-events-none cursor-not-allowed opacity-40",
-              )}
-            >
-              <span aria-hidden>✦</span>
-              <span>{t("walkthroughs.inDiagram.title")}</span>
-              {journeysInDiagramCount > 0 ? (
-                <span className="ml-0.5 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-secondary-foreground">
-                  {journeysInDiagramCount}
-                </span>
-              ) : null}
-            </button>
-          ) : null}
 
           <LayerFilterPopover
             allTags={allTags}

@@ -13,7 +13,7 @@ element identity across diagrams; the product's *pleasure* (five-minute
 sketching, freeform annotation) and the no-rewrite principle demand that
 diagrams stay first-class documents. The codebase already contains four
 ad-hoc bridges compensating for missing identity (`linkedDiagramId`,
-`ExternalElementComponent`, `registryServiceId`, journeys).
+`ExternalElementComponent`, `registryServiceId`).
 
 ## Decision
 

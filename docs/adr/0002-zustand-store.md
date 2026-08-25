@@ -14,8 +14,8 @@ Jotai/Recoil atoms, Zustand.
 One Zustand store composed from concern-scoped slices
 (`features/diagram/store/slices/*`), with Immer for draft-style mutations,
 selectors in `store/selectors/*`, and `zustand/persist` with an explicit
-schema version + migration chain. Satellite contexts (journeys,
-collaboration, custom components, icons, LLM) get their own small stores in
+schema version + migration chain. Satellite contexts (collaboration,
+custom components, icons, LLM) get their own small stores in
 the same pattern rather than joining the main store.
 
 - Over Redux: same architecture (single store, slices, selectors) with a

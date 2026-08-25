@@ -143,7 +143,7 @@ export function MermaidImportDialog({ open, onOpenChange, onImport, onImportFlow
 
   const handlePasteExample = (kind: "sequence" | "flowchart") => {
     setText(kind === "sequence" ? SEQUENCE_EXAMPLE : FLOWCHART_EXAMPLE);
-    setFlowName(kind === "sequence" ? "Login flow" : "User journey");
+    setFlowName(kind === "sequence" ? "Login flow" : "Imported process");
   };
 
   const canImportFlowchart = validation?.diagramType === "flowchart" && Boolean(onImportFlowchart);

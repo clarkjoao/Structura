@@ -7,8 +7,8 @@ a bug worth fixing.
 ## Workspace
 
 The implicit top-level unit: everything the persisted store holds — diagrams,
-folders, service registry, user templates (plus journeys, custom components,
-and icons in their satellite stores). A workspace is what gets synced to a
+folders, service registry, user templates (plus custom components and icons
+in their satellite stores). A workspace is what gets synced to a
 local folder or merged on import. There is no `Workspace` type today; it is
 the store state itself (`AppState` in `store/store.types.ts`).
 
@@ -86,16 +86,14 @@ variants and compare mode without forking the diagram. Because a scene is a
 
 ## Walkthrough
 
-A `Walkthrough` (`features/walkthroughs`) is a **cross-diagram** narrative: ordered
-steps, each pointing at a diagram and optionally a flow. Walkthroughs are the
-storytelling layer (onboarding walkthroughs, incident retrospectives). They
-live in their own store, outside any diagram.
+The cross-diagram narrative feature was removed in 2026-08; the
+decision is recorded at
+[`../decisions/2026-08-26-remove-walkthroughs.md`](../decisions/2026-08-26-remove-walkthroughs.md).
+What may want to come back, and from where, is in that document.
 
-> **Naming note.** The term `Journey` is overloaded in software (UX Customer
-> Journey, BPMN journey, marketing journey) and the Structura feature is
-> none of those — it is a recorded/curated walkthrough of diagrams. The
-> glossary marks `Journey` as `deprecated` in favor of `Walkthrough`; see
-> [../grammar/glossary.md](../grammar/glossary.md) § Walkthrough.
+> **Naming note.** The terms `Journey` and `Walkthrough` were both
+> considered for the now-removed feature. The glossary notes the
+> historical usage at [../grammar/glossary.md](../grammar/glossary.md) § Walkthrough.
 
 ## Service (catalog)
 

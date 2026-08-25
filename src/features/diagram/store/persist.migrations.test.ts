@@ -4,14 +4,11 @@ import type { DiagramStore } from "./store.types";
 import type { Component } from "../model/diagram.types";
 
 /**
- * Schema migration tests for the five renames / unifications shipped
+ * Schema migration tests for the renames / unifications shipped
  * under feat/glossary:
  *
  *   v6 -> v7: ComponentType "processos" -> "process-node"
  *   v7 -> v8: state.serviceRegistry -> state.serviceCatalog
- *   v8 -> v9: walkthroughs store: localStorage key structura:journeys
- *             -> structura:walkthroughs (covered by the App.tsx
- *             migration module; not tested here)
  *   v9 -> v10: ExternalElementComponent.linkedDiagramId ->
  *              referenceDiagramId
  *   v10 -> v11: Component.registryServiceId -> serviceId

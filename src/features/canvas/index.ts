@@ -8,7 +8,6 @@ export { default as Canvas } from "./Canvas";
 export { default as FlowPanel } from "./flow/FlowPanel";
 export { default as FlowStepNavigator } from "./flow/FlowStepNavigator";
 export { default as FlowRecorderPanel } from "./flow/FlowRecorderPanel";
-export { WalkthroughsInDiagramPanel } from "./panels/WalkthroughsInDiagramPanel";
 export { default as ElementPanel } from "./panels/ElementPanel/index";
 export { default as CanvasToolbar } from "./toolbar/CanvasToolbar";
 export { default as CustomNode } from "./nodes/CustomNode";

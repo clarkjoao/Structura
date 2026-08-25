@@ -101,7 +101,7 @@ explicitly, with their responsibilities and allowed dependencies:
 | **Catalogs** | `features/cloud`, `lib/catalogs` | AWS/GCP/Azure service catalogs and icons; pattern and panel catalogs. Data, not behavior. | Model |
 | **Collaboration** | `features/collaboration`, `server/` | Yjs/WebSocket sync, presence, patches. The optional Node server is a relay, never a source of truth. | Model |
 | **Intelligence** | `features/llm` | Diagram assistant: providers (Anthropic/OpenAI/proxy), prompt building, patch parsing, applying `DiagramPatch` actions to the store. | Model |
-| **Storytelling** | `features/walkthroughs`, flows in Model | Cross-diagram narrative: walkthroughs, flow recording/playback. | Model, Canvas (player UI) |
+| **Storytelling** | flows in Model | Cross-diagram narrative: flow recording/playback. The cross-diagram *Walkthroughs* feature was removed in 2026-08; see `docs/decisions/2026-08-26-remove-walkthroughs.md`. | Model, Canvas |
 | **Sharing** | `features/viewer`, share/embed utils | Read-only viewer for shared diagrams. | Model, Canvas |
 
 Dependency rule: **everything may depend on Model; Model depends on nothing.**
@@ -132,7 +132,6 @@ Workspace (implicit — the persisted store)
 │   └── Scene*                   named diffs over the snapshot (what-if / compare)
 ├── ServiceDefinition*           workspace-level service registry
 ├── UserTemplate*                reusable multi-component templates
-└── Walkthrough*                     cross-diagram step sequences (own store)
 ```
 
 Two properties of this model matter for everything below:
@@ -143,8 +142,7 @@ Two properties of this model matter for everything below:
 2. **Identity is diagram-scoped.** A component exists *in* a diagram. Concepts
    that need cross-diagram identity have grown ad-hoc bridges:
    `Component.linkedDiagramId` (drill-down), `ExternalElementComponent`
-   (references), `registryServiceId` (service registry), journeys
-   (cross-diagram narrative). These are four different partial answers to the
+   (references), `registryServiceId` (service registry). These are three different partial answers to the
    same missing abstraction.
 
 ---

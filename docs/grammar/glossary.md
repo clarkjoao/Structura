@@ -34,7 +34,7 @@ that introduces the concept — name the concept **before** naming the file.
 **Status:** `proposed` (currently implicit; the persisted store state)
 
 **Definition:** The top-level container for everything a user authors. Holds
-diagrams, folders, the service catalog, user templates, walkthroughs, and
+diagrams, folders, the service catalog, user templates, and
 (in the future) capabilities, personas, and ADRs. A workspace is what gets
 synced to a local folder or merged on import; it is the unit of persistence.
 
@@ -54,8 +54,7 @@ Structura Cloud ships — `ADR-0007` keeps the cloud as a separate product).
 
 **Definition:** An authoring document. Holds semantic content
 (`snapshot: ModelDraft`) and view state (`nodeLayouts`, `edgeLayouts`,
-`viewport`). Belongs to a folder; participates in a profile; can be
-referenced by other diagrams and by walkthroughs.
+`viewport`). Belongs to a folder; participates in a profile.
 
 **Reference:** `Diagram` in
 `src/features/diagram/model/diagram.types.ts`.
@@ -158,7 +157,6 @@ Lives inside `Diagram.snapshot.flows`.
 - **Not** the same as a `ProcessNode` (a Component of type
   `"process-node"`, used in Mermaid-style flowcharts). When you mean the
   component, say **"process node"** — never "flow node".
-- **Not** the same as a **Walkthrough** (which crosses diagrams).
 - **Not** the same as a **Data Flow** (a future profile, `dataflow`, that
   reuses `Flow` for its playback but with stronger constraints).
 
@@ -309,7 +307,6 @@ the Canvas.
 | --- | --- | --- |
 | Variant (env, scenario) | **Scene** | `Diagram.scenes` |
 | Abstraction (C4 levels) | **Drill-Down** | `BaseComponent.linkedDiagramId` |
-| Narrative (walk-through) | **Walkthrough** | Service catalog (planned), `features/walkthroughs/` |
 
 ---
 
@@ -334,33 +331,28 @@ should not be merged.
 
 ### Walkthrough
 
-**Status:** `current` (renamed from `Journey` in
-  `openspec/changes/rename-journey-to-walkthrough/`, shipped under
-  `PERSIST_SCHEMA_VERSION` 9; the legacy `Journey*` aliases remain for
-  one release)
+**Status:** `removed` (the bounded context was removed in 2026-08; see
+  `docs/decisions/2026-08-26-remove-walkthroughs.md`)
 
 **Definition:** A curated or recorded sequence of steps across one or more
-Diagrams. Each step points at a Diagram and optionally at a Flow within
-that Diagram. Used for onboarding, demos, incident retrospectives, and
-executive walkthroughs. Has a VCR-style player (prev/next, play, record).
+Diagrams. Each step pointed at a Diagram and optionally at a Flow within
+that Diagram. The feature had a VCR-style player (prev/next, play, record)
+and a separate `Walkthroughs` Zustand store.
 
-**Reference:** `Walkthrough` in `src/features/walkthroughs/types.ts`;
-player at `src/features/walkthroughs/components/WalkthroughPlayerBar.tsx`.
+**Reference (historical):** `Walkthrough` lived in
+  `src/features/walkthroughs/types.ts`; the player was at
+  `src/features/walkthroughs/components/WalkthroughPlayerBar.tsx`.
 
-**Aliases:** `Journey` (deprecated; types and hooks re-exported from
-`features/walkthroughs`), `nav.journeys` (deprecated; resolves to
-"Walkthroughs" via `nav.walkthroughs`).
-
-**Counterpoint:**
+**Counterpoint (still applies if a future equivalent is rebuilt):**
 
 - **Not** a Customer Journey. Customer Journey is a UX concept
   (persona × touchpoint × emotion) that Structura does not model today.
   When that feature is added, the term *Journey* is free to use.
 - **Not** a BPMN process. Steps are pointers to diagrams, not activities
   with gateways and timers.
-- **Not** a Scene (Scene is a variant of a single Diagram; Walkthrough is
+- **Not** a Scene (Scene is a variant of a single Diagram; a walkthrough is
   a sequence across multiple).
-- **Not** a Flow (Flow is recorded within one Diagram; Walkthrough is
+- **Not** a Flow (Flow is recorded within one Diagram; a walkthrough is
   recorded across Diagrams, optionally invoking Flows).
 
 ---
@@ -470,13 +462,13 @@ related but distinct.
 
 **Status:** `current`
 
-**Definition:** An optional string tag on a Diagram, Folder, or
-Walkthrough that groups elements by business domain ("billing",
-"logistics", "auth"). Free-form today; candidates for typing in a
-future tag-scheme system.
+**Definition:** An optional string tag on a Diagram or Folder
+that groups elements by business domain ("billing", "logistics",
+"auth"). Free-form today; candidates for typing in a future tag-scheme
+system.
 
-**Reference:** `Diagram.domain`, `Folder.domain`, `Journey.domain`
-in respective model files.
+**Reference:** `Diagram.domain`, `Folder.domain` in respective model
+files.
 
 **Counterpoint:** Not the same as a typed **Tag** scheme (planned). For
 now, `domain` is the only typed-string field with consistent meaning
@@ -488,11 +480,10 @@ across entities.
 
 **Status:** `current`
 
-**Definition:** A free-form string label on a Component, Service, or
-Walkthrough. Used for search and filtering.
+**Definition:** A free-form string label on a Component or
+ServiceDefinition. Used for search and filtering.
 
-**Reference:** `Component.tags`, `ServiceDefinition.tags`,
-`Journey.tags`.
+**Reference:** `Component.tags`, `ServiceDefinition.tags`.
 
 **Counterpoint:** Not the same as a **Domain** (a single string on a
 Diagram/Folder). Tags are per-entity and free-form; Domain is a

@@ -5,7 +5,6 @@ import {
   type Diagram,
   type IconDefinition,
 } from "@/features/diagram";
-import { useWalkthroughsStore } from "@/features/walkthroughs";
 import {
   fileSystemAdapter,
   type WorkspacePayload,
@@ -119,10 +118,6 @@ export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState):
   });
   if (!manifestOk) return false;
 
-  const walkthroughs = useWalkthroughsStore.getState().walkthroughs;
-  const journeysOk = await fileSystemAdapter.writeWalkthroughs(walkthroughs);
-  if (!journeysOk) return false;
-
   lastSyncedManifestFingerprint = manifestSemanticFingerprint({
     diagramIds: Object.keys(state.diagrams),
     serviceCatalog: state.serviceCatalog,
@@ -131,7 +126,6 @@ export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState):
     customComponentTemplates,
     iconLibrary,
   });
-  lastSyncedJourneysJson = JSON.stringify(walkthroughs);
 
   recordFolderSyncSuccess();
 
@@ -219,13 +213,6 @@ async function doReconnect(): Promise<boolean> {
           templates: mergeCustomComponentTemplates(state.templates, workspaceTemplates),
         }));
       }
-
-      const fsJourneys = await fileSystemAdapter.readWalkthroughs();
-      if (fsJourneys) {
-        useWalkthroughsStore.setState((state) => ({
-          walkthroughs: { ...state.walkthroughs, ...fsJourneys },
-        }));
-      }
     }
     await clearLocalCache();
 
@@ -278,7 +265,6 @@ let lastFlushedDiagrams: Record<string, Diagram> = {};
 let lastFlushedPathSegments: Record<string, string[]> = {};
 /** Skips redundant structura-manifest.json writes during incremental sync (reset in stopFileSystemSync). */
 let lastSyncedManifestFingerprint = "";
-let lastSyncedJourneysJson = "";
 
 export function startFileSystemSync(): void {
   stopFileSystemSync();
@@ -377,14 +363,6 @@ export function startFileSystemSync(): void {
             wroteSomething = true;
           }
 
-          const walkthroughs = useWalkthroughsStore.getState().walkthroughs;
-          const journeysJson = JSON.stringify(walkthroughs);
-          if (journeysJson !== lastSyncedJourneysJson) {
-            await fileSystemAdapter.writeWalkthroughs(walkthroughs);
-            lastSyncedJourneysJson = journeysJson;
-            wroteSomething = true;
-          }
-
           if (wroteSomething) {
             recordFolderSyncSuccess();
           }
@@ -414,15 +392,10 @@ export function startFileSystemSync(): void {
     runDebouncedFlush();
   });
 
-  const journeyUnsubscribe = useWalkthroughsStore.subscribe(() => {
-    runDebouncedFlush();
-  });
-
   _syncUnsub = () => {
     diagramUnsubscribe();
     customComponentUnsubscribe();
     iconLibraryUnsubscribe();
-    journeyUnsubscribe();
   };
 }
 
@@ -436,7 +409,6 @@ export function stopFileSystemSync(): void {
     _syncTimer = null;
   }
   lastSyncedManifestFingerprint = "";
-  lastSyncedJourneysJson = "";
   lastFlushedPathSegments = {};
 }
 

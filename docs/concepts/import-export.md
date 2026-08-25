@@ -45,7 +45,7 @@ explicit:
 
 - Semantic connection fields (`intent`, `transportPreset`) do not survive any
   external format today.
-- Scenes, flows, and journeys export only via native JSON.
+- Scenes and flows export only via native JSON.
 - Structurizr drops layout; Mermaid drops nearly all styling.
 
 When improving a format (e.g. the roadmap's "better draw.io import/export"),
