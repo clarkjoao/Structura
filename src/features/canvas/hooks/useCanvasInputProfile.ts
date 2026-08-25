@@ -1,32 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 export interface CanvasInputProfile {
   isTouchDevice: boolean;
   isCoarsePointer: boolean;
   prefersTouchCanvasUi: boolean;
-  /**
-   * Best-effort runtime signal that the user is on a trackpad rather than a mouse.
-   * Always false on touch / coarse-pointer devices. Non-persistent: re-detected on
-   * each load from observed wheel events.
-   */
-  likelyTrackpad: boolean;
 }
-
-interface TrackpadSample {
-  timestamp: number;
-  deltaX: number;
-  deltaY: number;
-}
-
-const TRACKPAD_WINDOW_MS = 400;
-/** Maximum number of samples kept in the rolling window. */
-const TRACKPAD_BUFFER_SIZE = 16;
-/** At least this many small-delta events inside the window flip the mode to trackpad. */
-const TRACKPAD_HIT_THRESHOLD = 4;
-/** Below this absolute deltaY we consider the event "small" (likely a trackpad). */
-const TRACKPAD_DELTA_THRESHOLD = 50;
-/** Debounce for setProfile updates to avoid rapid state changes. */
-const PROFILE_UPDATE_DEBOUNCE_MS = 200;
 
 function readInputProfile(): CanvasInputProfile {
   if (typeof window === "undefined" || typeof navigator === "undefined") {
@@ -34,7 +12,6 @@ function readInputProfile(): CanvasInputProfile {
       isTouchDevice: false,
       isCoarsePointer: false,
       prefersTouchCanvasUi: false,
-      likelyTrackpad: false,
     };
   }
 
@@ -45,21 +22,19 @@ function readInputProfile(): CanvasInputProfile {
     isTouchDevice,
     isCoarsePointer,
     prefersTouchCanvasUi: isTouchDevice || isCoarsePointer,
-    likelyTrackpad: false,
   };
 }
 
-function isTrackpadLikeEvent(sample: TrackpadSample): boolean {
-  if (Math.abs(sample.deltaY) >= TRACKPAD_DELTA_THRESHOLD) return false;
-  // Trackpad two-finger swipes produce non-zero deltaX; mouse wheel rarely does.
-  return sample.deltaX !== 0;
-}
-
+/**
+ * Pointer capabilities of the device, used only to pick the touch-specific React Flow props.
+ *
+ * There is deliberately no trackpad-vs-mouse signal here. The wheel-sampling heuristic this
+ * hook used to run required a non-zero `deltaX` to classify a trackpad, so a plain vertical
+ * two-finger scroll never qualified and fell into the mouse branch, which zoomed. Wheel
+ * behavior is now device-independent and driven by the `scrollMode` preference instead.
+ */
 export function useCanvasInputProfile(): CanvasInputProfile {
   const [profile, setProfile] = useState<CanvasInputProfile>(() => readInputProfile());
-  const samplesRef = useRef<TrackpadSample[]>([]);
-  const likelyTrackpadRef = useRef(false);
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
@@ -85,48 +60,6 @@ export function useCanvasInputProfile(): CanvasInputProfile {
       window.removeEventListener("resize", updateProfile);
     };
   }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (profile.prefersTouchCanvasUi) return;
-
-    const handleWheel = (event: WheelEvent) => {
-      if (event.ctrlKey || event.metaKey) return;
-      if (event.shiftKey) return;
-
-      const now = performance.now();
-      const samples = samplesRef.current;
-      samples.push({ timestamp: now, deltaX: event.deltaX, deltaY: event.deltaY });
-      while (samples.length > TRACKPAD_BUFFER_SIZE) samples.shift();
-
-      const fresh = samples.filter((s) => now - s.timestamp <= TRACKPAD_WINDOW_MS);
-      samples.length = 0;
-      fresh.forEach((s) => samples.push(s));
-
-      if (likelyTrackpadRef.current) return;
-
-      const trackpadHits = fresh.filter(isTrackpadLikeEvent).length;
-      if (trackpadHits >= TRACKPAD_HIT_THRESHOLD) {
-        likelyTrackpadRef.current = true;
-
-        // Debounce setProfile to avoid rapid state changes
-        if (debounceTimerRef.current !== null) {
-          clearTimeout(debounceTimerRef.current);
-        }
-        debounceTimerRef.current = setTimeout(() => {
-          setProfile((prev) => (prev.likelyTrackpad ? prev : { ...prev, likelyTrackpad: true }));
-        }, PROFILE_UPDATE_DEBOUNCE_MS);
-      }
-    };
-
-    window.addEventListener("wheel", handleWheel, { passive: true });
-    return () => {
-      window.removeEventListener("wheel", handleWheel);
-      if (debounceTimerRef.current !== null) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, [profile.prefersTouchCanvasUi]);
 
   return profile;
 }

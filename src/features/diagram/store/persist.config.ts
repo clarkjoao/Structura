@@ -18,6 +18,7 @@ import type { DiagramStore } from "./store.types";
 import type { ServiceDefinition } from "../model/service.types";
 import { ServiceSource } from "../enums";
 import { generateId } from "../utils/generate-id";
+import { reparentOrphanDiagrams } from "./helpers/reparent-orphan-diagram";
 import { migrateFlow } from "../utils/flow-migration";
 import { useSaveStatusStore } from "./saveStatus.store";
 import { isQuotaExceededError } from "@/infrastructure/persistence/storageQuota";
@@ -27,7 +28,7 @@ export const PERSIST_KEY = "diagram-store";
 /** localStorage persist debounce; folder sync uses VIEWPORT_DEBOUNCE_MS — they are independent by design. */
 const PERSIST_DEBOUNCE_MS = 1000;
 
-export const PERSIST_SCHEMA_VERSION = 11;
+export const PERSIST_SCHEMA_VERSION = 12;
 
 export const CURRENT_SCHEMA_VERSION = PERSIST_SCHEMA_VERSION;
 
@@ -352,6 +353,16 @@ function migrateUnifyRegistryServiceId(state: Partial<DiagramStore>): void {
   }
 }
 
+/** Schema v12: drop `Diagram.folderId` values that point at a folder the workspace does
+ * not have. An imported diagram carries the `folderId` of the workspace it was exported
+ * from; pointing at a folder that does not exist makes it invisible, because the dashboard
+ * and the diagram sidebar both list diagrams by exact `folderId` match, so it shows up
+ * neither at the root nor inside any folder. Idempotent. */
+function migrateReparentOrphanDiagrams(state: Partial<DiagramStore>): void {
+  if (!state.diagrams) return;
+  state.diagrams = reparentOrphanDiagrams(state.diagrams, state.folders ?? {});
+}
+
 function migrateAddDiagramDescription(state: Partial<DiagramStore>): void {
   for (const diagram of Object.values(state.diagrams ?? {})) {
     const diagramRecord = diagram as Diagram;
@@ -469,6 +480,7 @@ export function mergePersistedState(
   migrateServiceRegistryToServiceCatalog(next as unknown as Record<string, unknown>);
   migrateExternalElementLinkedDiagramId(next);
   migrateUnifyRegistryServiceId(next);
+  migrateReparentOrphanDiagrams(next);
   if (hasEmbeddedIconLibraryInDiagrams(next)) {
     migrateIconLibraryToGlobalStore(next);
   }
@@ -573,15 +585,18 @@ export function wrapIStoragePortWithDiagramPersistTracking(storage: IStoragePort
       if (!pendingPersist || pendingPersist.name !== PERSIST_KEY) return;
       const { name, value } = pendingPersist;
       pendingPersist = null;
-      void storage.setItem(name, value).then(() => {
-        useSaveStatusStore.getState()._setSaved();
-        recordLocalStorageDiagramSyncSuccess();
-      }).catch((err: unknown) => {
-        if (isQuotaExceededError(err)) {
-          useSaveStatusStore.getState()._setStorageCritical();
-        }
-        useSaveStatusStore.getState()._setError();
-      });
+      void storage
+        .setItem(name, value)
+        .then(() => {
+          useSaveStatusStore.getState()._setSaved();
+          recordLocalStorageDiagramSyncSuccess();
+        })
+        .catch((err: unknown) => {
+          if (isQuotaExceededError(err)) {
+            useSaveStatusStore.getState()._setStorageCritical();
+          }
+          useSaveStatusStore.getState()._setError();
+        });
     });
   }
 

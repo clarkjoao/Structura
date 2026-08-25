@@ -15,6 +15,8 @@ import type { Component } from "../model/diagram.types";
  *   v9 -> v10: ExternalElementComponent.linkedDiagramId ->
  *              referenceDiagramId
  *   v10 -> v11: Component.registryServiceId -> serviceId
+ *   v11 -> v12: Diagram.folderId pointing at a folder the workspace does
+ *               not have is cleared, so the diagram lands at the root
  *
  * Each test loads a v-shape fixture, runs `mergePersistedState`, and
  * asserts the post-migration shape. The migration is idempotent:
@@ -266,5 +268,59 @@ describe("v10 -> v11: Component.registryServiceId -> serviceId", () => {
     const c1 = getComponent(next, "c1");
     // The serviceId field is now populated from the legacy value.
     expect(c1.serviceId).toBe("svc-template");
+  });
+});
+
+describe("v11 -> v12: orphaned Diagram.folderId is cleared", () => {
+  function makeStateWithFolders(
+    diagrams: Record<string, { folderId?: string | null }>,
+    folders: Record<string, { id: string }>,
+  ): Partial<DiagramStore> {
+    return {
+      diagrams: Object.fromEntries(
+        Object.entries(diagrams).map(([id, diagram]) => [
+          id,
+          { ...diagram, snapshot: { components: {} }, scenes: {} } as never,
+        ]),
+      ),
+      folders: folders as never,
+    } as Partial<DiagramStore>;
+  }
+
+  function getDiagram(state: Partial<DiagramStore>, id: string): Record<string, unknown> {
+    return (state.diagrams as unknown as Record<string, Record<string, unknown>>)[id];
+  }
+
+  it("clears a folderId that no folder resolves", () => {
+    const state = makeStateWithFolders({ d1: { folderId: "gone" } }, {});
+    const next = mergePersistedState(state, {} as DiagramStore);
+    expect(getDiagram(next, "d1").folderId).toBeUndefined();
+  });
+
+  it("keeps a folderId that resolves", () => {
+    const state = makeStateWithFolders({ d1: { folderId: "team" } }, { team: { id: "team" } });
+    const next = mergePersistedState(state, {} as DiagramStore);
+    expect(getDiagram(next, "d1").folderId).toBe("team");
+  });
+
+  it("is idempotent", () => {
+    const state = makeStateWithFolders({ d1: { folderId: "gone" } }, {});
+    const once = mergePersistedState(state, {} as DiagramStore);
+    const twice = mergePersistedState(once, {} as DiagramStore);
+    expect(getDiagram(twice, "d1").folderId).toBeUndefined();
+  });
+
+  it("regression: an imported diagram is visible at the root instead of vanishing", () => {
+    // Importing a JSON exported from another workspace used to keep the source
+    // folderId. The dashboard and the sidebar both list diagrams by exact
+    // folderId match, so the diagram rendered neither at the root nor in a
+    // folder — it simply disappeared after the import navigated away.
+    const state = makeStateWithFolders(
+      { imported: { folderId: "folder-from-another-workspace" }, local: { folderId: "team" } },
+      { team: { id: "team" } },
+    );
+    const next = mergePersistedState(state, {} as DiagramStore);
+    expect(getDiagram(next, "imported").folderId).toBeUndefined();
+    expect(getDiagram(next, "local").folderId).toBe("team");
   });
 });

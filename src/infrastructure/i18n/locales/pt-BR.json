@@ -257,6 +257,26 @@
     "jsonError": "Não foi possível importar o JSON do diagrama. Verifique o arquivo e tente novamente.",
     "jsonErrorWithReason": "Não foi possível importar o JSON do diagrama: {{reason}}"
   },
+  "serviceRelink": {
+    "title": "Reconectar serviços",
+    "description": "Este diagrama referencia serviços de outro workspace. O Structura encontrou os equivalentes no seu catálogo — confirme o que deve ser reconectado.",
+    "relinkGroup": "Reconectar ao seu serviço",
+    "unmatchedGroup": "Sem correspondência",
+    "alreadyLocalGroup_one": "{{count}} serviço já existe aqui",
+    "alreadyLocalGroup_other": "{{count}} serviços já existem aqui",
+    "ambiguous": "Vários serviços correspondem igualmente — escolha um manualmente após importar.",
+    "clearDangling": "Limpar o vínculo quebrado",
+    "usedByComponents_one": "usado por {{count}} elemento",
+    "usedByComponents_other": "usado por {{count}} elementos",
+    "selectAll": "Selecionar todos",
+    "cancel": "Cancelar importação",
+    "confirm": "Importar",
+    "signalGithubRepoId": "mesmo id de repositório no GitHub",
+    "signalRepositoryUrl": "mesma URL de repositório",
+    "signalName": "mesmo nome",
+    "signalGithubFullName": "mesmo nome no GitHub",
+    "signalComponentLink": "elemento aponta para este repositório"
+  },
   "folderTree": {
     "newFolderTitle": "Nova pasta",
     "newFolder": "Nova pasta",
@@ -443,6 +463,10 @@
   },
   "canvas": {
     "noDiagramSelected": "Nenhum diagrama selecionado",
+    "nothingInView": "Nada à vista",
+    "nothingInViewHint_one": "{{count}} elemento está fora da tela.",
+    "nothingInViewHint_other": "{{count}} elementos estão fora da tela.",
+    "fitAll": "Enquadrar tudo",
     "newEndpoint": "Novo Endpoint",
     "defaultEndpointPath": "/novo-endpoint",
     "usesEdgeLabel": "Usa",
@@ -506,7 +530,16 @@
     "expand": "Expandir barra",
     "enterFocusMode": "Modo foco",
     "exitFocusMode": "Sair do foco",
-    "moreMenuAria": "Mais opções"
+    "moreMenuAria": "Mais opções",
+    "viewOptions": "Opções de visualização",
+    "viewOptionsAria": "Opções de visualização do canvas",
+    "showMiniMap": "Mostrar minimapa",
+    "scrollBehavior": "Rolagem do mouse / trackpad",
+    "scrollBehaviorPan": "Mover o canvas",
+    "scrollBehaviorPanHint": "A rolagem desliza em qualquer direção, como no draw.io.",
+    "scrollBehaviorZoom": "Aproximar e afastar",
+    "scrollBehaviorZoomHint": "A rolagem dá zoom no ponteiro.",
+    "scrollBehaviorShortcut": "Ctrl/⌘ + rolagem sempre dá zoom. Shift + rolagem desliza na horizontal."
   },
   "diagram": {
     "deleteConfirmTitle": "Remover diagrama?",

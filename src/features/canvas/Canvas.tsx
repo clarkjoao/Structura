@@ -5,6 +5,8 @@ import {
   Background,
   BackgroundVariant,
   Controls,
+  MiniMap,
+  Panel,
   SelectionMode,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -16,6 +18,11 @@ import { CanvasContextMenu } from "./panels/CanvasContextMenu";
 import { useNodeTypes } from "./nodes/node-types";
 import QuickInsertPopover from "./toolbar/QuickInsertPopover";
 import CanvasSearch from "./toolbar/CanvasSearch";
+import { CanvasViewOptions } from "./toolbar/components/CanvasViewOptions";
+import { NothingInViewCard } from "./components/NothingInViewCard";
+import { makeMiniMapNodeColor } from "./components/miniMapNodeColor";
+import { useViewportOccupancy } from "./hooks/useViewportOccupancy";
+import { useCanvasPreferencesStore } from "./preferences";
 import { DiagramSidebar } from "./navigation/DiagramSidebar";
 import { DiagramCommandPalette } from "./navigation/DiagramCommandPalette";
 import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
@@ -46,10 +53,7 @@ import { useLLMChat } from "./chat";
 import { getPendingNodeIds, getSuggestionIdForNode, useLLMStore } from "@/features/llm";
 import { usePanelChildLayout } from "./hooks/usePanelChildLayout";
 import { useResolvedComponents } from "@/features/diagram";
-import {
-  isPanelComponent,
-  isApiGroupComponent,
-} from "@/features/diagram";
+import { isPanelComponent, isApiGroupComponent } from "@/features/diagram";
 
 const MULTI_SELECTION_KEY_CODES = ["Meta", "Control"];
 const PAN_ACTIVATION_KEY = getPlatform() === "mac" ? "Meta" : "Control";
@@ -100,7 +104,7 @@ const Canvas = (props: CanvasProps = {}) => {
     handleAutoLayout,
     isAutoLayoutRunning,
     actions,
-  } = useCanvasController({ ...props, inputProfile });
+  } = useCanvasController(props);
   const {
     pendingPreviews,
     accept: acceptSuggestion,
@@ -126,6 +130,8 @@ const Canvas = (props: CanvasProps = {}) => {
   useElementFocusFromUrl(visualState);
 
   const journeysInThisDiagram = useWalkthroughsByDiagramId(diagram?.id ?? "");
+  const showMiniMap = useCanvasPreferencesStore((state) => state.showMiniMap);
+  const occupancy = useViewportOccupancy();
 
   const templateSourceNode = templateNodeId
     ? (nodes.find((node) => node.id === templateNodeId) ?? null)
@@ -183,10 +189,8 @@ const Canvas = (props: CanvasProps = {}) => {
   const selectedSingleId = visualState.selectedNodeId;
   const selectedComponent =
     selectedSingleId && selectedNodes.length === 1 ? resolvedComponents[selectedSingleId] : null;
-  const isSelectedPanel =
-    !!selectedComponent && isPanelComponent(selectedComponent);
-  const isSelectedApiGroup =
-    !!selectedComponent && isApiGroupComponent(selectedComponent);
+  const isSelectedPanel = !!selectedComponent && isPanelComponent(selectedComponent);
+  const isSelectedApiGroup = !!selectedComponent && isApiGroupComponent(selectedComponent);
   const parentComp = selectedComponent?.parentId
     ? resolvedComponents[selectedComponent.parentId]
     : undefined;
@@ -194,7 +198,8 @@ const Canvas = (props: CanvasProps = {}) => {
     !!selectedComponent?.parentId &&
     !!parentComp &&
     (isPanelComponent(parentComp) || isApiGroupComponent(parentComp));
-  const hasPanelChildren = (isSelectedPanel || isSelectedApiGroup) &&
+  const hasPanelChildren =
+    (isSelectedPanel || isSelectedApiGroup) &&
     Object.values(resolvedComponents).some((c) => c.parentId === selectedSingleId);
 
   const { runPanelChildLayout, isRunning: isPanelLayoutRunning } = usePanelChildLayout();
@@ -399,21 +404,41 @@ const Canvas = (props: CanvasProps = {}) => {
                       : undefined
                   }
                   onFitToChildren={
-                    (isSelectedPanel || isSelectedApiGroup) && hasPanelChildren && !(selectedComponent as { collapsed?: boolean })?.collapsed
+                    (isSelectedPanel || isSelectedApiGroup) &&
+                    hasPanelChildren &&
+                    !(selectedComponent as { collapsed?: boolean })?.collapsed
                       ? handleFitToChildren
                       : undefined
                   }
                   onOrganizeChildren={
-                    (isSelectedPanel || isSelectedApiGroup) && hasPanelChildren && !(selectedComponent as { collapsed?: boolean })?.collapsed && !isPanelLayoutRunning
+                    (isSelectedPanel || isSelectedApiGroup) &&
+                    hasPanelChildren &&
+                    !(selectedComponent as { collapsed?: boolean })?.collapsed &&
+                    !isPanelLayoutRunning
                       ? handleOrganizeChildren
                       : undefined
                   }
-                  onRemoveFromGroup={
-                    isSelectedChildOfGroup ? handleRemoveFromGroup : undefined
-                  }
+                  onRemoveFromGroup={isSelectedChildOfGroup ? handleRemoveFromGroup : undefined}
                 />
               )}
               <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
+              <Panel position="bottom-left" className="!mb-4 !ml-[3.25rem]">
+                <CanvasViewOptions />
+              </Panel>
+              {showMiniMap && (
+                <MiniMap
+                  pannable
+                  zoomable
+                  position="bottom-right"
+                  nodeColor={makeMiniMapNodeColor(resolvedSnapshot.components)}
+                  /* Offset above the floating chat button, which also sits bottom-right. */
+                  className="!mb-20 !mr-4 !bg-card !border !border-border !rounded-lg !shadow-lg"
+                  maskColor="hsl(var(--muted) / 0.6)"
+                />
+              )}
+              {occupancy.hasNodes && !occupancy.anyNodeVisible && (
+                <NothingInViewCard elementCount={occupancy.nodeCount} />
+              )}
             </ReactFlow>
           </div>
         </div>

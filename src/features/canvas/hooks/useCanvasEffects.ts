@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import type { ReactFlowInstance } from "@xyflow/react";
 import type { Diagram, DiagramModel, Flow } from "@/features/diagram";
 import { getStepById, useDiagramStore } from "@/features/diagram";
@@ -9,9 +9,9 @@ import {
   FIT_VIEW_PADDING,
   VIEWPORT_MIN_ZOOM,
   WHEEL_MAX_ZOOM,
-  WHEEL_ZOOM_FACTOR,
 } from "../canvas.constants";
-import type { CanvasInputProfile } from "./useCanvasInputProfile";
+import { useCanvasPreferencesStore } from "../preferences";
+import { resolveWheelIntent } from "./resolve-wheel-intent";
 
 interface UseCanvasEffectsParams {
   diagram: Diagram | DiagramModel | null | undefined;
@@ -21,7 +21,6 @@ interface UseCanvasEffectsParams {
   currentStepId?: string | null;
   onClearSelection: () => void;
   skipInitialFit?: boolean;
-  inputProfile: CanvasInputProfile;
 }
 
 interface Viewport {
@@ -74,9 +73,9 @@ export function useCanvasEffects({
   currentStepId,
   onClearSelection,
   skipInitialFit = false,
-  inputProfile,
 }: UseCanvasEffectsParams) {
   const diagramId = diagram?.id ?? null;
+  const scrollMode = useCanvasPreferencesStore((state) => state.scrollMode);
 
   useEffect(() => {
     if (!diagramId || skipInitialFit) return;
@@ -117,38 +116,29 @@ export function useCanvasEffects({
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
       const viewport = reactFlowInstance.getViewport();
-      const isTrackpad = inputProfile.likelyTrackpad;
       const paneRect = wrapperEl.getBoundingClientRect();
+      const intent = resolveWheelIntent(e, scrollMode, paneRect.height);
 
-      // Horizontal pan is identical across devices.
-      if (e.shiftKey && !e.ctrlKey && !e.metaKey) {
-        reactFlowInstance.setViewport(
-          { x: viewport.x - e.deltaY, y: viewport.y, zoom: viewport.zoom },
-          { duration: 0 },
+      if (intent.kind === "zoom") {
+        const next = cursorCenteredZoom(
+          viewport,
+          { x: e.clientX, y: e.clientY },
+          intent.factor,
+          paneRect,
         );
-        return;
-      }
-
-      // Zoom: cursor-centered (or in-place when no cursor info).
-      const isZoomGesture = e.ctrlKey || e.metaKey || !isTrackpad;
-      if (isZoomGesture) {
-        const factor = e.deltaY > 0 ? 1 / WHEEL_ZOOM_FACTOR : WHEEL_ZOOM_FACTOR;
-        const next = cursorCenteredZoom(viewport, { x: e.clientX, y: e.clientY }, factor, paneRect);
         reactFlowInstance.setViewport(next, { duration: 0 });
         return;
       }
 
-      // Trackpad plain wheel: pan using both axes. Content follows the fingers:
-      // a downward two-finger swipe (deltaY > 0) should move the content down.
       reactFlowInstance.setViewport(
-        { x: viewport.x - e.deltaX, y: viewport.y - e.deltaY, zoom: viewport.zoom },
+        { x: viewport.x - intent.dx, y: viewport.y - intent.dy, zoom: viewport.zoom },
         { duration: 0 },
       );
     };
 
     wrapperEl.addEventListener("wheel", handleWheel, { passive: false });
     return () => wrapperEl.removeEventListener("wheel", handleWheel);
-  }, [reactFlowInstance, diagramId, inputProfile.likelyTrackpad]);
+  }, [reactFlowInstance, diagramId, scrollMode]);
 
   useEffect(() => {
     if (!isPlaying || !activeFlow || !currentStepId) return;

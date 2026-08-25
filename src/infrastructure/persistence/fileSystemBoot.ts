@@ -6,7 +6,11 @@ import {
   type IconDefinition,
 } from "@/features/diagram";
 import { useWalkthroughsStore } from "@/features/walkthroughs";
-import { fileSystemAdapter, type WorkspacePayload, type WorkspaceScanResult } from "./FileSystemAdapter";
+import {
+  fileSystemAdapter,
+  type WorkspacePayload,
+  type WorkspaceScanResult,
+} from "./FileSystemAdapter";
 import { clearLocalStorageDiagramSyncTimestamp } from "./localStorageSyncTimestamp";
 import { clearFolderSyncTimestamp, recordFolderSyncSuccess } from "./folderSyncTimestamp";
 import { defaultStorage } from "./LocalStorageAdapter";
@@ -184,16 +188,19 @@ async function doReconnect(): Promise<boolean> {
           const scan = await fileSystemAdapter.scanWorkspace();
           resolveBootScan(scan);
         } catch (error) {
-          console.warn(
-            "[Structura] boot conflict scan failed; falling back to fresh load",
-            error,
-          );
+          console.warn("[Structura] boot conflict scan failed; falling back to fresh load", error);
         }
         _reconnected = true;
         return true;
       }
 
       const hydrated = hydrateIconStoreFromWorkspace(workspace);
+      // Deliberately no orphan-folder reparenting here. `manifest.folders` is not validated
+      // (`validateManifest` only checks `version` and `diagramIds`), so it can be absent —
+      // and treating "unknown folder map" as "no folders exist" would strip every
+      // `folderId` and make the sync rewrite those diagram files to the workspace root on
+      // the user's disk. Import-time sanitisation plus the persisted-state migration cover
+      // the orphan case without touching a connected folder.
       useDiagramStore.setState((s) => ({
         ...s,
         diagrams: hydrated.diagrams as typeof s.diagrams,

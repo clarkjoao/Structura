@@ -257,6 +257,26 @@
     "jsonError": "Could not import the diagram JSON. Check the file and try again.",
     "jsonErrorWithReason": "Could not import the diagram JSON: {{reason}}"
   },
+  "serviceRelink": {
+    "title": "Reconnect services",
+    "description": "This diagram references services from another workspace. Structura found the equivalents in your catalog — confirm what to reconnect.",
+    "relinkGroup": "Reconnect to your service",
+    "unmatchedGroup": "No match found",
+    "alreadyLocalGroup_one": "{{count}} service already exists here",
+    "alreadyLocalGroup_other": "{{count}} services already exist here",
+    "ambiguous": "Several services match equally well — pick one manually after importing.",
+    "clearDangling": "Clear the broken link",
+    "usedByComponents_one": "used by {{count}} element",
+    "usedByComponents_other": "used by {{count}} elements",
+    "selectAll": "Select all",
+    "cancel": "Cancel import",
+    "confirm": "Import",
+    "signalGithubRepoId": "same GitHub repository id",
+    "signalRepositoryUrl": "same repository URL",
+    "signalName": "same name",
+    "signalGithubFullName": "same GitHub name",
+    "signalComponentLink": "element links to this repository"
+  },
   "folderTree": {
     "newFolderTitle": "New folder",
     "newFolder": "New folder",
@@ -443,6 +463,10 @@
   },
   "canvas": {
     "noDiagramSelected": "No diagram selected",
+    "nothingInView": "Nothing in view",
+    "nothingInViewHint_one": "{{count}} element is off screen.",
+    "nothingInViewHint_other": "{{count}} elements are off screen.",
+    "fitAll": "Fit all",
     "newEndpoint": "New endpoint",
     "defaultEndpointPath": "/new-endpoint",
     "usesEdgeLabel": "Uses",
@@ -506,7 +530,16 @@
     "expand": "Expand toolbar",
     "enterFocusMode": "Focus mode",
     "exitFocusMode": "Exit focus",
-    "moreMenuAria": "More options"
+    "moreMenuAria": "More options",
+    "viewOptions": "View options",
+    "viewOptionsAria": "Canvas view options",
+    "showMiniMap": "Show minimap",
+    "scrollBehavior": "Mouse / trackpad scroll",
+    "scrollBehaviorPan": "Move the canvas",
+    "scrollBehaviorPanHint": "Scrolling pans in every direction, like draw.io.",
+    "scrollBehaviorZoom": "Zoom in and out",
+    "scrollBehaviorZoomHint": "Scrolling zooms on the pointer.",
+    "scrollBehaviorShortcut": "Ctrl/⌘ + scroll always zooms. Shift + scroll pans sideways."
   },
   "diagram": {
     "deleteConfirmTitle": "Delete diagram?",

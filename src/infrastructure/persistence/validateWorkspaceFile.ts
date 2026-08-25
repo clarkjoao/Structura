@@ -1,14 +1,21 @@
-import type { Diagram } from "@/features/diagram";
+import type { Diagram, ServiceManifestEntry } from "@/features/diagram";
 import { normalizeImportedDiagram } from "@/lib/export-service/normalize-imported-diagram";
 import type { WorkspaceManifest } from "./FileSystemAdapter";
-import {
-  DIAGRAM_SCHEMA_VERSION,
-  DIAGRAM_SCHEMA_URI,
-} from "./versions";
+import { DIAGRAM_SCHEMA_VERSION, DIAGRAM_SCHEMA_URI } from "./versions";
 import { migrateDiagram } from "./migrations";
 
 export type ValidationResult =
-  { valid: true; diagram: Diagram } | { valid: false; reason: string; raw: unknown };
+  | {
+      valid: true;
+      diagram: Diagram;
+      /**
+       * Identity of the services the file references, when it carries a manifest. Absent for
+       * files exported before the manifest existed; the importer falls back to component
+       * evidence in that case.
+       */
+      services?: ServiceManifestEntry[];
+    }
+  | { valid: false; reason: string; raw: unknown };
 
 export type ManifestValidationResult =
   { valid: true; manifest: WorkspaceManifest } | { valid: false; reason: string };
@@ -71,7 +78,60 @@ export function validateDiagramFile(raw: unknown): ValidationResult {
     return validation;
   }
 
-  return { valid: true, diagram: normalizeImportedDiagram(validation.diagram) };
+  const services = extractServiceManifest(raw);
+
+  return {
+    valid: true,
+    diagram: normalizeImportedDiagram(validation.diagram),
+    ...(services ? { services } : {}),
+  };
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function toStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter(isNonEmptyString) : [];
+}
+
+function extractGithubIdentity(value: unknown): ServiceManifestEntry["github"] {
+  if (!value || typeof value !== "object") return undefined;
+  const github = value as Record<string, unknown>;
+  if (typeof github.repoId !== "number" || !Number.isFinite(github.repoId)) return undefined;
+  if (typeof github.fullName !== "string") return undefined;
+  return { repoId: github.repoId, fullName: github.fullName };
+}
+
+/**
+ * Read the optional service manifest from the envelope. Entries are validated field by field:
+ * the file is user-supplied and a malformed entry must degrade to "no manifest" rather than
+ * reach the matcher.
+ */
+function extractServiceManifest(raw: unknown): ServiceManifestEntry[] | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const services = (raw as Record<string, unknown>).services;
+  if (!Array.isArray(services)) return undefined;
+
+  const entries: ServiceManifestEntry[] = [];
+  for (const candidate of services) {
+    if (!candidate || typeof candidate !== "object") continue;
+    const entry = candidate as Record<string, unknown>;
+    if (!isNonEmptyString(entry.id) || typeof entry.name !== "string") continue;
+
+    const github = extractGithubIdentity(entry.github);
+    entries.push({
+      id: entry.id,
+      name: entry.name,
+      repositoryUrl: typeof entry.repositoryUrl === "string" ? entry.repositoryUrl : "",
+      technology: toStringArray(entry.technology),
+      ...(isNonEmptyString(entry.owner) ? { owner: entry.owner } : {}),
+      ...(toStringArray(entry.tags).length > 0 ? { tags: toStringArray(entry.tags) } : {}),
+      ...(github ? { github } : {}),
+    });
+  }
+
+  return entries.length > 0 ? entries : undefined;
 }
 
 /**

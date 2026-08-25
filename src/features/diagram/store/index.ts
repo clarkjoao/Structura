@@ -56,6 +56,9 @@ export type { ActiveDiagramSceneState } from "./selectors/connection.selectors";
 
 // ─── Scene helpers ────────────────────────────────────────────────────────────
 export { resolveActiveScene } from "./helpers/scene-helpers";
+
+// ─── Import safety helpers ────────────────────────────────────────────────────
+export { reparentOrphanDiagram, reparentOrphanDiagrams } from "./helpers/reparent-orphan-diagram";
 export type {
   GeneratedEdgeInput,
   GeneratedGraphResult,

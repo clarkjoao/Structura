@@ -3,6 +3,7 @@ import { AppState } from "../store.types";
 import { Diagram, Level } from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
 import { touchDiagram } from "../helpers/get-active-diagram";
+import { reparentOrphanDiagram } from "../helpers/reparent-orphan-diagram";
 import { toast } from "sonner";
 
 export const diagramsSlice = (
@@ -42,11 +43,14 @@ export const diagramsSlice = (
   },
 
   addImportedDiagram: (diagramInput: Diagram) => {
-    const importedDiagram: Diagram = {
+    let importedDiagram: Diagram = {
       ...structuredClone(diagramInput),
     };
 
     set((state) => {
+      // The file carries the `folderId` of the workspace it came from; a folder this
+      // workspace does not have would leave the diagram invisible (see the helper).
+      importedDiagram = reparentOrphanDiagram(importedDiagram, state.folders);
       state.diagrams[importedDiagram.id] = importedDiagram;
     });
 
@@ -55,7 +59,7 @@ export const diagramsSlice = (
 
   importDiagram: (diagramInput: Diagram) => {
     const now = Date.now();
-    const importedDiagram: Diagram = {
+    let importedDiagram: Diagram = {
       ...structuredClone(diagramInput),
       id: generateId("d"),
       createdAt: now,
@@ -63,6 +67,9 @@ export const diagramsSlice = (
     };
 
     set((state) => {
+      // The file carries the `folderId` of the workspace it came from; a folder this
+      // workspace does not have would leave the diagram invisible (see the helper).
+      importedDiagram = reparentOrphanDiagram(importedDiagram, state.folders);
       state.diagrams[importedDiagram.id] = importedDiagram;
     });
 
