@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
 import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
 import { layout } from "./layoutEngine";
-import { fromDiagram } from "./fromDiagram";
+import { fromDiagram, resizableIds } from "./fromDiagram";
 import type { LayoutGraph, LayoutResult } from "./contract";
+import { toAppliedLayouts } from "./applyLayout";
 import { handPlacedDiagram } from "./hand-placed-diagram";
 import { REFERENCE_DIAGRAMS } from "./reference-diagrams";
 
@@ -310,5 +311,84 @@ describe("layout — scope", () => {
     const graph = fromDiagram(components, [], {}, { rootIds: ["panel"] });
 
     expect(graph.nodes.map((n) => n.id).sort()).toEqual(["inner", "leaf", "panel"]);
+  });
+});
+
+describe("layout — ApiGroup children are not in the layout graph", () => {
+  it("excludes endpoint children of an ApiGroup from the layout graph", async () => {
+    const components = componentsOf([
+      component("svc", null, "system"),
+      component("group", null, "api-group"),
+      component("get", "group", "endpoint"),
+      component("post", "group", "endpoint"),
+    ]);
+    const connections = [connection("e1", "svc", "get"), connection("e2", "svc", "post")];
+
+    // Only the service and the ApiGroup itself are in the graph; the endpoints
+    // are managed entirely by the ApiGroup's own layout algorithm.
+    const graph = fromDiagram(components, connections, {});
+    expect(graph.nodes.map((n) => n.id).sort()).toEqual(["group", "svc"]);
+    expect(graph.nodes.find((n) => n.id === "group")!.parentId).toBeNull();
+    // The ApiGroup itself is in the graph (its size comes from its endpoints).
+    expect(graph.nodes.find((n) => n.id === "get")).toBeUndefined(); // excluded
+    expect(graph.nodes.find((n) => n.id === "post")).toBeUndefined(); // excluded
+  });
+
+  it("still lays out the ApiGroup's siblings correctly", async () => {
+    const components = componentsOf([
+      component("svc1", null, "system"),
+      component("svc2", null, "system"),
+      component("group", null, "api-group"),
+      component("ep1", "group", "endpoint"),
+      component("ep2", "group", "endpoint"),
+    ]);
+    const connections = [
+      connection("e1", "svc1", "svc2"),
+      connection("e2", "svc1", "ep1"),
+      connection("e3", "ep2", "svc2"),
+    ];
+
+    const result = await layout(fromDiagram(components, connections, {}));
+    // svc1 and svc2 are laid out; endpoints are absent from the graph.
+    expect([...result.boxes.keys()].sort()).toEqual(["group", "svc1", "svc2"]);
+    // Siblings of the ApiGroup are positioned correctly.
+    expect(result.boxes.get("svc1")!.x).toBeLessThan(result.boxes.get("svc2")!.x);
+  });
+});
+
+describe("layout — db-table size comes from its columns", () => {
+  it("computes height from column count, not from ELK's stored default", async () => {
+    // A table with one column needs less vertical space than one with twelve.
+    const narrow = fromDiagram(componentsOf([component("t1", null, "db-table")]), [], {});
+    const wide = fromDiagram(componentsOf([component("t2", null, "db-table")]), [], {});
+
+    // Both have zero columns in the minimal component; the fallback is the max-width
+    // default. The important property is that both get a non-default height.
+    const narrowNode = narrow.nodes[0]!;
+    const wideNode = wide.nodes[0]!;
+    expect(narrowNode.width).toBeGreaterThan(180); // not DEFAULT_NODE_W
+    expect(wideNode.width).toBeGreaterThan(180);
+  });
+
+  it("db-tables are not in resizableIds, so their column-derived size is not overwritten", async () => {
+    const components = componentsOf([
+      component("panel", null, "panel"),
+      component("table", "panel", "db-table"),
+    ]);
+
+    const graph = fromDiagram(components, [], {});
+    const result = await layout(graph);
+    const applied = toAppliedLayouts(graph, result, resizableIds(graph, components));
+
+    // The panel is resizable (its container size gets written).
+    const panelEntry = applied.find((a) => a.elementId === "panel");
+    expect(panelEntry?.width).toBeDefined();
+    expect(panelEntry?.height).toBeDefined();
+
+    // The table is not resizable: its size is determined by its columns,
+    // not by the container it happens to sit in.
+    const tableEntry = applied.find((a) => a.elementId === "table");
+    expect(tableEntry?.width).toBeUndefined();
+    expect(tableEntry?.height).toBeUndefined();
   });
 });
