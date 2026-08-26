@@ -239,7 +239,24 @@ export const layoutSlice = (
     });
   },
 
-  applyAutoLayout: (layouts: Array<{ elementId: string; x: number; y: number }>) => {
+  /**
+   * Writes a whole layout run in one mutation, so it is one undo step however
+   * many nodes moved.
+   *
+   * `width`/`height` are optional and only set when the caller passes them: a
+   * container has to be resized to hold what the layout put inside it, and
+   * dropping that size is what used to leave children outside their own panel.
+   * Nodes that size themselves from their content are simply passed without one.
+   */
+  applyAutoLayout: (
+    layouts: Array<{
+      elementId: string;
+      x: number;
+      y: number;
+      width?: number;
+      height?: number;
+    }>,
+  ) => {
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d || layouts.length === 0) return;
@@ -248,19 +265,18 @@ export const layoutSlice = (
 
       const scene = resolveActiveScene(d);
 
-      for (const { elementId, x, y } of layouts) {
-        if (scene && scene.nodeLayouts[elementId]) {
-          const layout = scene.nodeLayouts[elementId];
-          if (layout) {
-            layout.x = x;
-            layout.y = y;
-          }
-          continue;
-        }
-        const layout = d.nodeLayouts[elementId];
-        if (layout) {
-          layout.x = x;
-          layout.y = y;
+      for (const { elementId, x, y, width, height } of layouts) {
+        const layout =
+          scene && scene.nodeLayouts[elementId]
+            ? scene.nodeLayouts[elementId]
+            : d.nodeLayouts[elementId];
+        if (!layout) continue;
+
+        layout.x = x;
+        layout.y = y;
+        if (width !== undefined && height !== undefined) {
+          layout.width = width;
+          layout.height = height;
         }
       }
 

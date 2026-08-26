@@ -1,5 +1,7 @@
 import { useDiagramStore } from "@/features/diagram";
-import { computeAutoLayout } from "@/features/canvas/layout/autoLayoutEngine";
+import { layout } from "@/features/canvas/layout/layoutEngine";
+import { fromDiagram, resizableIds } from "@/features/canvas/layout/fromDiagram";
+import { toAppliedLayouts } from "@/features/canvas/layout/applyLayout";
 import { PATTERNS } from "@/lib/catalogs/patterns";
 import type { DiagramPatchAction } from "./types";
 
@@ -108,25 +110,25 @@ export function applyDiagramPatchAction(
         console.info("[apply-diagram-patch] AUTO_LAYOUT: diagram not found");
         return { addedNodeId: null, addedEdgeId: null, toolResult: { type: "AUTO_LAYOUT" } };
       }
+      const components = diagram.snapshot.components;
       const connectionsList = Object.values(diagram.snapshot.connections);
-      void computeAutoLayout(
-        diagram.snapshot.components,
-        connectionsList,
-        diagram.nodeLayouts,
-      ).then((result) => {
-        const { updateNodeLayout, resetEdgeControlPoints } = useDiagramStore.getState();
-        // Apply positions to nodes
-        for (const { elementId, x, y } of result.positions) {
-          updateNodeLayout(elementId, { x, y });
-        }
-        // Reset edge control points for laid-out connections
-        for (const connId of result.laidOutConnectionIds) {
-          resetEdgeControlPoints(diagramId, connId);
-        }
-        console.info(`[apply-diagram-patch] AUTO_LAYOUT: positioned ${result.positions.length} nodes`);
-      }).catch((err) => {
-        console.error("[llm] auto-layout failed:", err);
-      });
+      const graph = fromDiagram(components, connectionsList, diagram.nodeLayouts);
+      void layout(graph)
+        .then((result) => {
+          const { applyAutoLayout, resetEdgeControlPoints } = useDiagramStore.getState();
+          // One mutation for the whole run, so a model-initiated relayout is a
+          // single undo step rather than an unreachable pile of per-node writes.
+          applyAutoLayout(toAppliedLayouts(graph, result, resizableIds(graph, components)));
+          for (const edge of graph.edges) {
+            resetEdgeControlPoints(diagramId, edge.id);
+          }
+          console.info(
+            `[apply-diagram-patch] AUTO_LAYOUT: positioned ${result.boxes.size} nodes`,
+          );
+        })
+        .catch((err) => {
+          console.error("[llm] auto-layout failed:", err);
+        });
       return { addedNodeId: null, addedEdgeId: null, toolResult: { type: "AUTO_LAYOUT" } };
     }
     case "GET_TAGS": {

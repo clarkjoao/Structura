@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readElkHandleOrder } from "./elkHandleOrder";
-import { layoutIRGraph } from "./irLayoutEngine";
+import { layoutElkGraph } from "./layoutEngine";
+import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
 import { totalReadability } from "./layoutReadability";
 import { measureRenderedReadability } from "./renderedEdgePath";
 import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
@@ -18,7 +19,7 @@ import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
  */
 
 async function measureBothModes(ir: (typeof REFERENCE_DIAGRAMS)[number]["ir"]) {
-  const graph = await layoutIRGraph(ir);
+  const graph = await layoutElkGraph(irToLayoutGraph(ir));
   const labels = labelsOf(ir);
   const handleOrder = readElkHandleOrder(graph);
 

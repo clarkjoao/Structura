@@ -4,10 +4,12 @@ import {
   type GeneratedEdgeInput,
   type GeneratedNodeInput,
 } from "@/features/diagram";
-import { layoutIR, type IRLayoutBox } from "@/features/canvas/layout/irLayoutEngine";
+import { layout } from "@/features/canvas/layout/layoutEngine";
+import type { LayoutBox } from "@/features/canvas/layout/contract";
 import { useCanvasSelectionStore } from "@/features/canvas/hooks/useCanvasSelectionStore";
 import { isApplyElkHandleOrderEnabled, isApplyElkWaypointsEnabled } from "./ir-layout-flags";
 import { mapNodeToComponent } from "./ir-to-component";
+import { irToLayoutGraph } from "./ir-to-layout-graph";
 import type { DiagramIR } from "./ir.types";
 
 /** Margin from the top-left of the visible canvas area, in flow units. */
@@ -47,12 +49,12 @@ export interface GeneratedGraphInputs {
  */
 export function buildGeneratedGraphInputs(
   ir: DiagramIR,
-  boxes: Map<string, IRLayoutBox>,
+  boxes: Map<string, LayoutBox>,
   origin: { x: number; y: number },
 ): GeneratedGraphInputs {
   const nodes: GeneratedNodeInput[] = ir.nodes.map((node, index): GeneratedNodeInput => {
     const mapped = mapNodeToComponent(node);
-    const box: IRLayoutBox | undefined = boxes.get(node.id);
+    const box: LayoutBox | undefined = boxes.get(node.id);
     const isRoot = node.parentId === null;
 
     // Root positions are canvas-absolute, child positions are relative to the
@@ -107,7 +109,7 @@ export function interiorWaypoints(
  * single undoable mutation.
  */
 export async function applyIRToDiagram(ir: DiagramIR): Promise<ApplyIRResult> {
-  const { boxes, edgeRoutes, handleOrder } = await layoutIR(ir);
+  const { boxes, edgeRoutes, handleOrder } = await layout(irToLayoutGraph(ir));
   const origin = currentViewportOrigin();
   const { nodes, edges } = buildGeneratedGraphInputs(ir, boxes, origin);
 

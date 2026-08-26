@@ -13,7 +13,9 @@ import {
   FileInput,
 } from "lucide-react";
 import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
-import { computeScopedAutoLayout } from "@/features/canvas/layout/autoLayoutEngine";
+import { layout } from "@/features/canvas/layout/layoutEngine";
+import { fromDiagram, resizableIds } from "@/features/canvas/layout/fromDiagram";
+import { interiorWaypoints, toAppliedLayouts } from "@/features/canvas/layout/applyLayout";
 import { useCanvasSelectionStore } from "@/features/canvas/hooks/useCanvasSelectionStore";
 import {
   useFlows,
@@ -88,34 +90,31 @@ const FlowPanel = ({
         .map((id) => connections[id])
         .filter(Boolean);
 
-      const result = await computeScopedAutoLayout(
-        scopedComponents,
-        scopedConnections,
-        resolvedNodeLayouts,
-      );
-      if (result.positions.length === 0) return;
+      const graph = fromDiagram(scopedComponents, scopedConnections, resolvedNodeLayouts);
+      const result = await layout(graph);
+      if (result.boxes.size === 0) return;
 
       const anchor = onGetInsertPosition();
-      const offsetX = anchor.x - result.bounds.width / 2;
-      const offsetY = anchor.y - result.bounds.height / 2;
+      const offset = {
+        x: anchor.x - result.bounds.width / 2,
+        y: anchor.y - result.bounds.height / 2,
+      };
 
-      applyAutoLayout(
-        result.positions.map((p) => ({ elementId: p.elementId, x: p.x + offsetX, y: p.y + offsetY })),
-      );
+      applyAutoLayout(toAppliedLayouts(graph, result, resizableIds(graph, scopedComponents), offset));
 
       if (activeDiagramId !== null) {
-        for (const connectionId of result.laidOutConnectionIds) {
-          resetEdgeControlPoints(activeDiagramId, connectionId);
-        }
-        for (const [connectionId, waypoints] of result.edgeWaypoints) {
-          if (waypoints.length > 0) {
-            setEdgeControlPoints(
-              activeDiagramId,
-              connectionId,
-              waypoints.map((wp) => ({ id: generateId("cp"), x: wp.x + offsetX, y: wp.y + offsetY })),
-              { history: false },
-            );
-          }
+        for (const edge of graph.edges) {
+          resetEdgeControlPoints(activeDiagramId, edge.id);
+
+          const waypoints = interiorWaypoints(result.edgeRoutes.get(edge.id), offset);
+          if (waypoints.length === 0) continue;
+
+          setEdgeControlPoints(
+            activeDiagramId,
+            edge.id,
+            waypoints.map((wp) => ({ id: generateId("cp"), x: wp.x, y: wp.y })),
+            { history: false },
+          );
         }
       }
 

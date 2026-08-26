@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { validateIR } from "@/features/llm/ir/ir-validator";
-import { layoutIRGraph } from "./irLayoutEngine";
-import { measurePolylines, measureReadability, type ReadabilityReport } from "./layoutReadability";
+import { layoutElkGraph } from "./layoutEngine";
+import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
+import {
+  measurePolylines,
+  measureReadability,
+  totalReadability,
+  type ReadabilityReport,
+} from "./layoutReadability";
+import { readElkHandleOrder } from "./elkHandleOrder";
 import { buildRenderedPolylines, measureRenderedReadability } from "./renderedEdgePath";
 import { handPlacedDiagram, handPlacedLabels, handPlacedParents } from "./hand-placed-diagram";
 import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
@@ -38,7 +45,7 @@ describe("layout readability baseline", () => {
     const failures: string[] = [];
 
     for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const graph = await layoutIRGraph(ir);
+      const graph = await layoutElkGraph(irToLayoutGraph(ir));
       const report = measureReadability(graph, { labels: labelsOf(ir) });
 
       rows.push(
@@ -82,7 +89,7 @@ describe("layout readability baseline", () => {
     const rows: string[] = [];
 
     for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const graph = await layoutIRGraph(ir);
+      const graph = await layoutElkGraph(irToLayoutGraph(ir));
       const rendered = measureRenderedReadability(graph, ir.edges, { labels: labelsOf(ir) });
       const elk = measureReadability(graph, { labels: labelsOf(ir) });
 
@@ -102,9 +109,36 @@ describe("layout readability baseline", () => {
     expect(rows).toHaveLength(REFERENCE_DIAGRAMS.length);
   });
 
+  /**
+   * The number that reaches the user: nodes placed by ELK, edge paths drawn by
+   * the canvas, handles in the order ELK worked out. Recorded at 16 when the
+   * handle ordering shipped (1 + 3 + 5 + 7 across the four diagrams). An upper
+   * bound, like the ELK-routing numbers above.
+   */
+  const RENDERED_CROSSINGS_BASELINE = 16;
+
+  it("does not regress the rendered-crossing total", async () => {
+    const reports: ReadabilityReport[] = [];
+    const rows: string[] = [];
+
+    for (const { name, ir } of REFERENCE_DIAGRAMS) {
+      const graph = await layoutElkGraph(irToLayoutGraph(ir));
+      const report = measureRenderedReadability(graph, ir.edges, {
+        labels: labelsOf(ir),
+        handleOrder: readElkHandleOrder(graph),
+      });
+      reports.push(report);
+      rows.push(`${name.padEnd(24)} crossings ${String(report.edgeCrossings).padStart(3)}`);
+    }
+
+    const total = totalReadability(reports);
+    console.info(`\n${rows.join("\n")}\nTOTAL rendered crossings ${total.edgeCrossings}\n`);
+    expect(total.edgeCrossings).toBeLessThanOrEqual(RENDERED_CROSSINGS_BASELINE);
+  });
+
   it("produces a layout for every reference diagram", async () => {
     for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const graph = await layoutIRGraph(ir);
+      const graph = await layoutElkGraph(irToLayoutGraph(ir));
       const report = measureReadability(graph);
       expect(report.nodeCount, name).toBe(ir.nodes.length);
       expect(report.edgeCount, name).toBe(ir.edges.length);

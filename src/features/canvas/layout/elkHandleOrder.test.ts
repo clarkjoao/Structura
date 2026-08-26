@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { ElkNode } from "elkjs";
 import { readElkHandleOrder } from "./elkHandleOrder";
-import { layoutIRGraph } from "./irLayoutEngine";
+import { layoutElkGraph } from "./layoutEngine";
+import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
 import type { DiagramIR } from "@/features/llm/ir/ir.types";
 
 function edge(id: string, source: string, target: string, start: number[], end: number[]) {
@@ -117,7 +118,7 @@ describe("readElkHandleOrder — against a real ELK run", () => {
       })),
     };
 
-    const graph = await layoutIRGraph(ir);
+    const graph = await layoutElkGraph(irToLayoutGraph(ir));
     const order = readElkHandleOrder(graph).outgoing.get("hub");
     expect(order).toHaveLength(5);
 

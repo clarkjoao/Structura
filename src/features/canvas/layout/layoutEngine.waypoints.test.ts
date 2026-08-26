@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
-import { computeAutoLayout } from "./autoLayoutEngine";
+import { layout } from "./layoutEngine";
+import { fromDiagram } from "./fromDiagram";
+import { interiorWaypoints, toAppliedLayouts } from "./applyLayout";
 
 /**
  * ELK reports an edge's geometry relative to the lowest common ancestor of its
- * endpoints, not to the node whose `edges` array holds it. `useAutoLayout`
- * writes those bend points into the store as absolute canvas control points, so
+ * endpoints, not to the node whose `edges` array holds it. Consumers write those
+ * bend points into the store as absolute canvas control points, so
  * an edge between two siblings inside a panel used to land offset by that
  * panel's absolute position — the deeper the nesting, the further off.
  *
@@ -19,7 +21,13 @@ const panel = (id: string, parentId: string | null = null): Component =>
 const node = (id: string, parentId: string | null): Component =>
   ({ id, name: id, description: "", parentId, type: "system" }) as Component;
 
-const layout = (elementId: string, x: number, y: number, width = 180, height = 80): NodeLayout => ({
+const nodeLayout = (
+  elementId: string,
+  x: number,
+  y: number,
+  width = 180,
+  height = 80,
+): NodeLayout => ({
   elementId,
   x,
   y,
@@ -44,12 +52,12 @@ function nestedScenario() {
     outside: node("outside", null),
   };
   const nodeLayouts: Record<string, NodeLayout> = {
-    outer: layout("outer", 900, 500, 900, 500),
-    inner: layout("inner", 60, 60, 700, 340),
-    a: layout("a", 40, 40),
-    b: layout("b", 400, 40),
-    d: layout("d", 400, 200),
-    outside: layout("outside", 100, 100),
+    outer: nodeLayout("outer", 900, 500, 900, 500),
+    inner: nodeLayout("inner", 60, 60, 700, 340),
+    a: nodeLayout("a", 40, 40),
+    b: nodeLayout("b", 400, 40),
+    d: nodeLayout("d", 400, 200),
+    outside: nodeLayout("outside", 100, 100),
   };
   const connections = [
     connection("a-b", "a", "b"),
@@ -82,10 +90,27 @@ function absolutePositions(
   return absolute;
 }
 
-describe("computeAutoLayout — edge waypoints", () => {
+/** The contract's answer to the same question the legacy engine was asked. */
+async function run(
+  components: Record<string, Component>,
+  connections: Connection[],
+  nodeLayouts: Record<string, NodeLayout>,
+) {
+  const graph = fromDiagram(components, connections, nodeLayouts);
+  const result = await layout(graph);
+  const positions = toAppliedLayouts(graph, result, new Set());
+  const edgeWaypoints = new Map(
+    graph.edges
+      .map((edge) => [edge.id, interiorWaypoints(result.edgeRoutes.get(edge.id))] as const)
+      .filter(([, points]) => points.length > 0),
+  );
+  return { positions, edgeWaypoints, laidOutConnectionIds: graph.edges.map((e) => e.id) };
+}
+
+describe("layout — edge waypoints", () => {
   it("puts a nested edge's waypoints in absolute space, not the panel's", async () => {
     const { components, nodeLayouts, connections } = nestedScenario();
-    const result = await computeAutoLayout(components, connections, nodeLayouts);
+    const result = await run(components, connections, nodeLayouts);
 
     const waypoints = result.edgeWaypoints.get("a-d");
     expect(waypoints, "expected ELK to bend this edge").toBeDefined();
@@ -108,7 +133,7 @@ describe("computeAutoLayout — edge waypoints", () => {
 
   it("leaves a top-level edge's waypoints where they already were", async () => {
     const { components, nodeLayouts, connections } = nestedScenario();
-    const result = await computeAutoLayout(components, connections, nodeLayouts);
+    const result = await run(components, connections, nodeLayouts);
     const waypoints = result.edgeWaypoints.get("out-a");
     if (!waypoints?.length) return;
 
@@ -125,7 +150,7 @@ describe("computeAutoLayout — edge waypoints", () => {
 
   it("still lays the graph out and reports every connection", async () => {
     const { components, nodeLayouts, connections } = nestedScenario();
-    const result = await computeAutoLayout(components, connections, nodeLayouts);
+    const result = await run(components, connections, nodeLayouts);
     expect(result.laidOutConnectionIds).toEqual(expect.arrayContaining(["a-b", "a-d", "out-a"]));
     expect(result.positions.length).toBe(Object.keys(components).length);
   });
@@ -141,7 +166,7 @@ describe("computeAutoLayout — edge waypoints", () => {
  * the only way that works: a wide upstream node it depends on, which forces it
  * into a later layer.
  */
-describe("computeAutoLayout — waypoints carry the panel offset", () => {
+describe("layout — waypoints carry the panel offset", () => {
   it("puts a sibling edge's bend inside the panel's absolute box", async () => {
     const components: Record<string, Component> = {
       outer: panel("outer"),
@@ -152,12 +177,12 @@ describe("computeAutoLayout — waypoints carry the panel offset", () => {
       c: node("c", "p"),
     };
     const nodeLayouts: Record<string, NodeLayout> = {
-      outer: layout("outer", 0, 0, 1800, 900),
-      entry: layout("entry", 40, 40, 600, 120),
-      p: layout("p", 800, 600, 900, 500),
-      a: layout("a", 40, 40),
-      b: layout("b", 400, 40),
-      c: layout("c", 400, 240),
+      outer: nodeLayout("outer", 0, 0, 1800, 900),
+      entry: nodeLayout("entry", 40, 40, 600, 120),
+      p: nodeLayout("p", 800, 600, 900, 500),
+      a: nodeLayout("a", 40, 40),
+      b: nodeLayout("b", 400, 40),
+      c: nodeLayout("c", 400, 240),
     };
     const connections = [
       connection("entry-a", "entry", "a"),
@@ -165,7 +190,7 @@ describe("computeAutoLayout — waypoints carry the panel offset", () => {
       connection("a-c", "a", "c"),
     ];
 
-    const result = await computeAutoLayout(components, connections, nodeLayouts);
+    const result = await run(components, connections, nodeLayouts);
 
     const waypoints = result.edgeWaypoints.get("a-c");
     expect(waypoints, "expected ELK to bend this edge").toBeDefined();

@@ -2,7 +2,9 @@ import { useCallback, useState } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { computePanelChildLayout } from "../layout/autoLayoutEngine";
+import { layout } from "../layout/layoutEngine";
+import { fromDiagram, resizableIds } from "../layout/fromDiagram";
+import { measuredSizesOf, toAppliedLayouts } from "../layout/applyLayout";
 import {
   useDiagramActions,
   useComponents,
@@ -25,13 +27,34 @@ export function usePanelChildLayout() {
       setIsRunning(true);
       try {
         const connections = Object.values(connectionsRecord);
-        const measuredNodes = getNodes();
-        const result = await computePanelChildLayout(panelId, components, connections, nodeLayouts, measuredNodes);
-        if (result.length === 0) {
-          toast.info(t("autoLayout.noConnectedNodes"));
+        // The panel goes into the graph with its children, not just around them:
+        // that is what lets the layout size it to hold what it puts inside.
+        const graph = fromDiagram(components, connections, nodeLayouts, {
+          rootIds: [panelId],
+          measured: measuredSizesOf(getNodes()),
+        });
+        if (graph.nodes.length <= 1) {
+          toast.info(t("autoLayout.nothingToLayout"));
           return;
         }
-        applyAutoLayout(result);
+
+        const result = await layout(graph);
+        if (result.boxes.size === 0) {
+          toast.info(t("autoLayout.nothingToLayout"));
+          return;
+        }
+
+        // The panel keeps where it sits; only its size comes from the layout.
+        // Its children are positioned relative to it either way.
+        const panelLayout = nodeLayouts[panelId];
+        const applied = toAppliedLayouts(graph, result, resizableIds(graph, components)).map(
+          (entry) =>
+            entry.elementId === panelId && panelLayout
+              ? { ...entry, x: panelLayout.x, y: panelLayout.y }
+              : entry,
+        );
+
+        applyAutoLayout(applied);
         toast.success(t("autoLayout.panelApplied"));
       } catch (err) {
         console.error("[panelChildLayout] ELK error", err);

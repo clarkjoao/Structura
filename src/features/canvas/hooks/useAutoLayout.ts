@@ -2,7 +2,9 @@ import { useCallback, useState } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { computeAutoLayout } from "../layout/autoLayoutEngine";
+import { layout } from "../layout/layoutEngine";
+import { fromDiagram, resizableIds } from "../layout/fromDiagram";
+import { toAppliedLayouts, measuredSizesOf, interiorWaypoints } from "../layout/applyLayout";
 import { useDiagramActions, useDiagramStore, generateId } from "@/features/diagram";
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
@@ -10,7 +12,8 @@ import type { Node } from "@xyflow/react";
 export function useAutoLayout() {
   const { t } = useTranslation();
   const { fitView, getNodes } = useReactFlow();
-  const { applyAutoLayout, setEdgeControlPoints, resetEdgeControlPoints } = useDiagramActions();
+  const { applyAutoLayout, updateHandleOrder, setEdgeControlPoints, resetEdgeControlPoints } =
+    useDiagramActions();
   const [isRunning, setIsRunning] = useState(false);
 
   const runAutoLayout = useCallback(
@@ -40,30 +43,42 @@ export function useAutoLayout() {
 
       setIsRunning(true);
       try {
-        const result = await computeAutoLayout(components, connections, nodeLayouts, measuredNodes);
+        const graph = fromDiagram(components, connections, nodeLayouts, {
+          measured: measuredSizesOf(nodesToUse),
+        });
+        const result = await layout(graph);
 
-        if (result.positions.length === 0) {
-          toast.info(t("autoLayout.noConnectedNodes"));
+        if (result.boxes.size === 0) {
+          toast.info(t("autoLayout.nothingToLayout"));
           return;
         }
 
-        applyAutoLayout(result.positions);
+        applyAutoLayout(toAppliedLayouts(graph, result, resizableIds(graph, components)));
+
+        // handleOrder is what makes ELK's crossing-minimisation land on the canvas.
+        // The user explicitly asked for a layout; giving them round-robin handles after
+        // a full reorganisation would undo the legibility gain silently.
+        for (const node of graph.nodes) {
+          const outgoing = result.handleOrder.outgoing.get(node.id);
+          if (outgoing?.length) updateHandleOrder(node.id, "outgoing", outgoing);
+          const incoming = result.handleOrder.incoming.get(node.id);
+          if (incoming?.length) updateHandleOrder(node.id, "incoming", incoming);
+        }
 
         const diagramId = useDiagramStore.getState().activeDiagramId;
         if (diagramId !== null) {
-          for (const connectionId of result.laidOutConnectionIds) {
-            resetEdgeControlPoints(diagramId, connectionId);
-          }
+          for (const edge of graph.edges) {
+            resetEdgeControlPoints(diagramId, edge.id);
 
-          for (const [connectionId, waypoints] of result.edgeWaypoints) {
-            if (waypoints.length > 0) {
-              setEdgeControlPoints(
-                diagramId,
-                connectionId,
-                waypoints.map((wp) => ({ id: generateId("cp"), x: wp.x, y: wp.y })),
-                { history: false },
-              );
-            }
+            const waypoints = interiorWaypoints(result.edgeRoutes.get(edge.id));
+            if (waypoints.length === 0) continue;
+
+            setEdgeControlPoints(
+              diagramId,
+              edge.id,
+              waypoints.map((wp) => ({ id: generateId("cp"), x: wp.x, y: wp.y })),
+              { history: false },
+            );
           }
         }
 
@@ -78,7 +93,16 @@ export function useAutoLayout() {
         setIsRunning(false);
       }
     },
-    [isRunning, applyAutoLayout, setEdgeControlPoints, resetEdgeControlPoints, fitView, getNodes, t],
+    [
+      isRunning,
+      applyAutoLayout,
+      updateHandleOrder,
+      setEdgeControlPoints,
+      resetEdgeControlPoints,
+      fitView,
+      getNodes,
+      t,
+    ],
   );
 
   return { runAutoLayout, isRunning };
