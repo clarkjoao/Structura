@@ -102,3 +102,43 @@ Nenhuma mudança de código de feature. Apenas:
 | `tailwind.config.ts` em sintaxe v3 | Tailwind 3.4.19 está instalado (downgrade feito em `897a31c`). A config antiga é a correta. Não há migração a fazer. |
 | `plugins:sync-check` reporta `out of date` | Pré-existente, fora de escopo. |
 | Peer dep `typescript-eslint` vs TS 6.0.3 | O `npm ci` aceita, o lint executa. `typescript-eslint@8.68.0` (latest) declara o mesmo range `<6.1.0`; não há versão publicada que aceite TS 6+. A correção real (downgrade do TS para 5.x) é regressão, não foi aplicada. |
+---
+
+## Remedição do `format:check` — 2026-08-26
+
+> Medido em worktrees novas (`git worktree add` + `npm ci`), um portão só:
+> **apenas `npm run format:check`**. Nenhuma formatação foi corrigida, nenhum
+> `prettier --write` foi executado, o lint não foi tocado.
+>
+> Data: 2026-08-26 (UTC). Ambiente: macOS Darwin 25.6.0, Node v25.4.0,
+> Prettier 3.9.6 (`prettier --check .`).
+
+| ref | commit | arquivos divergentes | exit |
+|---|---|---:|---:|
+| `main` | `8cdf408` | **103** | 1 |
+| `chore/refact-llm` | `a898953` | **101** | 1 |
+
+Reprodução:
+
+```sh
+git worktree add /tmp/fmt-main main      # ou: --detach <sha>
+cd /tmp/fmt-main && npm ci && npm run format:check
+```
+
+### O que muda em relação ao registro anterior
+
+- **O número 95 registrado acima está desatualizado.** Ele foi medido em
+  `897a31c` (HEAD de `feat/remove-walkthrough`), antes dos merges que trouxeram
+  `main` até `8cdf408`. Na `main` de hoje são **103** arquivos.
+- **O relatório que citou 61 arquivos na `main` não reproduz.** Nenhuma medição
+  desta sessão chegou perto desse número; 61 não deve ser usado como linha de
+  base.
+- **`prettier --check` retorna exit 1, não 0.** A nota na tabela de resumo acima
+  ("prettier `--check` retorna 0 mesmo com warns") está errada: com divergências
+  o comando sai com 1, que é o que faz o portão de CI falhar.
+
+### Escopo desta remedição
+
+Só o `format:check` foi remedido. Os demais números da tabela de resumo
+(`npm ci`, `typecheck`, `test`, `lint`, `build`, `plugins:sync-check`) continuam
+sendo os de `897a31c` e **não** foram verificados nesta data.

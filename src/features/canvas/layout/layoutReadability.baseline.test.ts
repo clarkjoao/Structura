@@ -111,15 +111,34 @@ describe("layout readability baseline", () => {
 
   /**
    * The number that reaches the user: nodes placed by ELK, edge paths drawn by
-   * the canvas, handles in the order ELK worked out. Recorded at 16 when the
-   * handle ordering shipped (1 + 3 + 5 + 7 across the four diagrams). An upper
-   * bound, like the ELK-routing numbers above.
+   * the canvas, handles in the order ELK worked out.
+   *
+   * Measured 2026-08-26 on this file's fixtures, per diagram, in the order
+   * `REFERENCE_DIAGRAMS` declares them:
+   *
+   *   round-robin handles  10 + 12 + 12 + 14 = 48
+   *   ELK ordering          2 +  3 +  3 +  7 = 15
+   *
+   * Both totals are reproducible — the IR ids are fixed, so this path is
+   * deterministic across runs. An earlier note here recorded the shipped total
+   * as 16 with a decomposition of 1 + 3 + 5 + 7; neither reproduces, and the
+   * "16 -> 15" improvement it implied was never the comparison. The comparison
+   * is 48 -> 15, and every diagram improves — nothing here is a redistribution.
+   *
+   * An upper bound, like the ELK-routing numbers above.
    */
-  const RENDERED_CROSSINGS_BASELINE = 16;
+  const RENDERED_CROSSINGS_BASELINE = 15;
+  const RENDERED_CROSSINGS_PER_DIAGRAM: Record<string, number> = {
+    "C4 e-commerce": 2,
+    "AWS ECS Fargate": 3,
+    "C4 Context healthcare": 3,
+    "AWS microservices": 7,
+  };
 
   it("does not regress the rendered-crossing total", async () => {
     const reports: ReadabilityReport[] = [];
     const rows: string[] = [];
+    const failures: string[] = [];
 
     for (const { name, ir } of REFERENCE_DIAGRAMS) {
       const graph = await layoutElkGraph(irToLayoutGraph(ir));
@@ -129,11 +148,45 @@ describe("layout readability baseline", () => {
       });
       reports.push(report);
       rows.push(`${name.padEnd(24)} crossings ${String(report.edgeCrossings).padStart(3)}`);
+
+      // Per diagram as well as in total, so a regression that another diagram
+      // happens to offset still shows up as one.
+      const expected = RENDERED_CROSSINGS_PER_DIAGRAM[name];
+      if (expected !== undefined && report.edgeCrossings > expected) {
+        failures.push(`${name}: ${report.edgeCrossings} > baseline ${expected}`);
+      }
     }
 
     const total = totalReadability(reports);
     console.info(`\n${rows.join("\n")}\nTOTAL rendered crossings ${total.edgeCrossings}\n`);
+    expect(failures, failures.join("\n")).toHaveLength(0);
     expect(total.edgeCrossings).toBeLessThanOrEqual(RENDERED_CROSSINGS_BASELINE);
+  });
+
+  /**
+   * The other half of the record: what the same diagrams measure with the
+   * round-robin handles the canvas hands out when no `handleOrder` is stored.
+   * Without it, "15" is a number with nothing to compare against.
+   */
+  it("is a large improvement over round-robin handles, on every diagram", async () => {
+    const rows: string[] = [];
+
+    for (const { name, ir } of REFERENCE_DIAGRAMS) {
+      const graph = await layoutElkGraph(irToLayoutGraph(ir));
+      const labels = labelsOf(ir);
+      const roundRobin = measureRenderedReadability(graph, ir.edges, { labels }).edgeCrossings;
+      const ordered = measureRenderedReadability(graph, ir.edges, {
+        labels,
+        handleOrder: readElkHandleOrder(graph),
+      }).edgeCrossings;
+
+      rows.push(
+        `${name.padEnd(24)} round-robin ${String(roundRobin).padStart(3)} -> elk ${String(ordered).padStart(3)}`,
+      );
+      expect(ordered, `${name} got worse with ELK's ordering`).toBeLessThan(roundRobin);
+    }
+
+    console.info(`\nRound-robin vs ELK ordering\n${rows.join("\n")}\n`);
   });
 
   it("produces a layout for every reference diagram", async () => {
