@@ -34,12 +34,43 @@ import {
   AssistantMessageComponent,
 } from "./AssistantUIMessage";
 import { SuggestionCard } from "./SuggestionCard";
+import { TypingIndicator } from "./TypingIndicator";
 
 interface AssistantUIChatPanelProps {
   onClose: () => void;
   selectedNodeIds?: Set<string>;
   selectedNodeId?: string | null;
 }
+
+/* ── Skeleton card ──────────────────────────────────────────────────────── */
+function SkeletonMessage({ role }: { role: "user" | "assistant" }) {
+  const isUser = role === "user";
+  return (
+    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+      <div
+        className={`rounded-2xl px-4 py-2.5 ${
+          isUser ? "bg-muted" : "bg-muted/60"
+        } space-y-1.5`}
+        style={{ maxWidth: "75%" }}
+      >
+        <div className="h-3 w-32 animate-pulse rounded-md bg-muted-foreground/20" />
+        <div className="h-3 w-24 animate-pulse rounded-md bg-muted-foreground/15" />
+      </div>
+    </div>
+  );
+}
+
+function SkeletonLoader() {
+  return (
+    <div className="space-y-3">
+      <SkeletonMessage role="user" />
+      <SkeletonMessage role="assistant" />
+      <SkeletonMessage role="assistant" />
+      <SkeletonMessage role="user" />
+    </div>
+  );
+}
+/* ───────────────────────────────────────────────────────────────────────── */
 
 export function AssistantUIChatPanel({
   onClose,
@@ -60,6 +91,7 @@ export function AssistantUIChatPanel({
     messages,
     send,
     isLoading,
+    streamingContent,
     pendingSuggestions,
     pendingAnalysis,
     dismissPendingAnalysis,
@@ -68,10 +100,87 @@ export function AssistantUIChatPanel({
     createThread,
     accept,
     reject,
+    clearHistory,
   } = useLLMChat({ selectedNodeIds, selectedNodeId });
 
   // Empty state is rendered *without* creating a thread — no auto-persistence.
   const hasMessages = messages.length > 0;
+
+  // ── Skeleton: briefly shown when switching to a thread that has no
+  //    messages in memory yet (IndexedDB fetch is in-flight).
+  const [showSkeleton, setShowSkeleton] = useState(false);
+  const prevThreadIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!activeThread) {
+      prevThreadIdRef.current = null;
+      setShowSkeleton(false);
+      return;
+    }
+    if (prevThreadIdRef.current !== activeThread.id) {
+      // New thread: if it has no messages yet, show skeleton briefly.
+      if (activeThread.messages.length === 0) {
+        setShowSkeleton(true);
+        const timer = setTimeout(() => setShowSkeleton(false), 700);
+        return () => clearTimeout(timer);
+      }
+      setShowSkeleton(false);
+    }
+    prevThreadIdRef.current = activeThread.id;
+  }, [activeThread]);
+
+  // ── Auto-scroll: only scroll to bottom when user is already near bottom.
+  //    We track whether the user was at bottom before the last content change.
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const userAtBottomRef = useRef(true);
+  const prevMessageCountRef = useRef(0);
+  const prevStreamingRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+    const scrollable = el.closest('[data-aui-thread-viewport]') as HTMLElement | null;
+    const target = scrollable ?? el.parentElement as HTMLElement | null;
+    if (!target) return;
+
+    const dist = target.scrollHeight - target.scrollTop - target.clientHeight;
+    userAtBottomRef.current = dist < 80;
+  });
+
+  // Scroll to bottom when new content arrives AND user was at bottom.
+  useEffect(() => {
+    const messageCountChanged = messages.length !== prevMessageCountRef.current;
+    const streamingStarted = streamingContent !== null && prevStreamingRef.current === null;
+    prevMessageCountRef.current = messages.length;
+    prevStreamingRef.current = streamingContent;
+
+    if (!userAtBottomRef.current) return;
+    if (!messageCountChanged && !streamingStarted) return;
+
+    const el = viewportRef.current;
+    if (!el) return;
+    const scrollable = el.closest('[data-aui-thread-viewport]') as HTMLElement | null;
+    const target = scrollable ?? el.parentElement as HTMLElement | null;
+    if (!target) return;
+
+    requestAnimationFrame(() => {
+      target.scrollTo({ top: target.scrollHeight, behavior: "smooth" });
+    });
+  }, [messages.length, streamingContent]);
+
+  // ── Cmd+K: focus the composer textarea from anywhere in the chat.
+  const composerRef = useRef<{ focusTextarea: () => void } | null>(null);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        composerRef.current?.focusTextarea();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
 
   const contextualSuggestions = useMemo(
     () => buildContextualSuggestions(activeDiagram ?? null),
@@ -103,6 +212,9 @@ export function AssistantUIChatPanel({
           defaultValue: "Diagram assistant",
         });
 
+  // Show typing indicator when loading but no streaming content yet.
+  const showTyping = isLoading && !streamingContent && hasMessages;
+
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <div className="relative flex h-full w-[26rem] max-w-[92vw] flex-col overflow-hidden rounded-l-xl border-l border-border bg-card shadow-2xl">
@@ -129,7 +241,10 @@ export function AssistantUIChatPanel({
             indefinitely (which was the previous bug). */}
         <div className="relative min-h-0 flex-1 overflow-hidden">
           <ThreadPrimitive.Root className="flex h-full flex-col">
-            <ThreadPrimitive.Viewport className="h-full w-full overflow-y-auto">
+            <ThreadPrimitive.Viewport
+              ref={viewportRef}
+              className="h-full w-full overflow-y-auto"
+            >
               <div className="flex flex-col gap-3 p-4">
                 {pendingAnalysis ? (
                   <AnalysisPanel
@@ -138,7 +253,11 @@ export function AssistantUIChatPanel({
                   />
                 ) : null}
 
-                {hasMessages ? (
+                {showSkeleton ? (
+                  <SkeletonLoader />
+                ) : showTyping ? (
+                  <TypingIndicator />
+                ) : hasMessages ? (
                   <ThreadPrimitive.Messages>
                     {({ message }) => {
                       if (message.role === "user") {
@@ -175,7 +294,7 @@ export function AssistantUIChatPanel({
               </div>
             </ThreadPrimitive.Viewport>
 
-            <ScrollToBottomAffordance />
+            <ScrollToBottomAffordance viewportRef={viewportRef} />
           </ThreadPrimitive.Root>
         </div>
 
@@ -199,7 +318,18 @@ export function AssistantUIChatPanel({
 
         {/* Composer */}
         <div className="shrink-0 border-t border-border bg-card/60 p-3">
-          <AssistantUIComposer onSend={handleSend} isLoading={isLoading} />
+          <AssistantUIComposer
+            ref={composerRef}
+            onSend={handleSend}
+            isLoading={isLoading}
+            onExportIR={
+              lastGeneratedIR ? () => downloadIR(lastGeneratedIR) : undefined
+            }
+            onClearHistory={clearHistory}
+            onDismissAnalysis={
+              pendingAnalysis ? dismissPendingAnalysis : undefined
+            }
+          />
           <div className="mt-2 flex items-center justify-between">
             <p className="text-[11px] text-muted-foreground">
               {t("llmChat.disclaimer", {
@@ -349,51 +479,46 @@ function EmptyState({ diagramName, suggestions, onSelectSuggestion }: EmptyState
   );
 }
 
-function ScrollToBottomAffordance() {
+/* ── Scroll-to-bottom affordance ─────────────────────────────────────── */
+interface ScrollToBottomAffordanceProps {
+  viewportRef: React.RefObject<HTMLDivElement | null>;
+}
+
+function ScrollToBottomAffordance({ viewportRef }: ScrollToBottomAffordanceProps) {
   const { t } = useTranslation();
   const [atBottom, setAtBottom] = useState(true);
-  const viewportRef = useRef<HTMLDivElement | null>(null);
 
-  // Track scroll position to decide whether to render the affordance.
   useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+
+    const scrollable = el.closest('[data-aui-thread-viewport]') as HTMLElement | null;
+    const target = scrollable ?? el.parentElement as HTMLElement | null;
+    if (!target) return;
+
     const onScroll = () => {
-      const root = viewportRef.current?.closest('[data-aui-thread-viewport]');
-      // Fallback: any scrollable element near us.
-      const scrollable =
-        (root as HTMLElement | null) ??
-        (viewportRef.current?.parentElement?.querySelector(
-          '[class*="overflow"]',
-        ) as HTMLElement | null);
-      if (!scrollable) return;
-      const distance =
-        scrollable.scrollHeight - scrollable.scrollTop - scrollable.clientHeight;
-      setAtBottom(distance < 40);
+      const dist = target.scrollHeight - target.scrollTop - target.clientHeight;
+      setAtBottom(dist < 40);
     };
-    const target = viewportRef.current?.parentElement;
-    target?.addEventListener("scroll", onScroll, { passive: true });
-    return () => target?.removeEventListener("scroll", onScroll);
-  }, []);
+
+    target.addEventListener("scroll", onScroll, { passive: true });
+    return () => target.removeEventListener("scroll", onScroll);
+  }, [viewportRef]);
 
   if (atBottom) return null;
+
   return (
     <div className="pointer-events-none sticky bottom-3 z-10 flex w-full justify-center">
       <button
         type="button"
         onClick={() => {
-          const root = viewportRef.current?.closest(
+          const scrollable = viewportRef.current?.closest(
             '[data-aui-thread-viewport]',
-          ) as HTMLElement | null;
-          const scrollable =
-            root ??
-            (viewportRef.current?.parentElement?.querySelector(
-              '[class*="overflow"]',
-            ) as HTMLElement | null);
-          if (scrollable) {
-            scrollable.scrollTo({
-              top: scrollable.scrollHeight,
-              behavior: "smooth",
-            });
-          }
+          ) as HTMLElement | null ?? viewportRef.current?.parentElement as HTMLElement | null;
+          scrollable?.scrollTo({
+            top: scrollable.scrollHeight,
+            behavior: "smooth",
+          });
         }}
         className="pointer-events-auto inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1 text-[11px] font-medium text-foreground shadow-md transition-colors hover:bg-surface-hover"
       >

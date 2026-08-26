@@ -677,6 +677,26 @@
         "edgeSourceNotFound": "Edge \"{{id}}\" starts at a node that does not exist: \"{{ref}}\".",
         "edgeTargetNotFound": "Edge \"{{id}}\" ends at a node that does not exist: \"{{ref}}\"."
       }
+    },
+    "slash": {
+      "title": "Commands",
+      "analyze": "Analyze diagram",
+      "analyzeDesc": "Review structure and suggest improvements",
+      "analyzePrompt": "Analyze the current diagram and suggest improvements.",
+      "export": "Export IR",
+      "exportDesc": "Download intermediate representation as JSON",
+      "clear": "Clear chat",
+      "clearDesc": "Delete all history for this conversation",
+      "clearConfirm": "Start a new conversation? Current chat will be saved in history.",
+      "copy": "Copy conversation",
+      "copyDesc": "Copy entire conversation to clipboard",
+      "copied": "Conversation copied!",
+      "copyFailed": "Failed to copy.",
+      "noMessages": "No messages to copy.",
+      "newChat": "New conversation started.",
+      "exported": "IR exported!",
+      "noIR": "No IR generated yet. Use /generate first.",
+      "analyzing": "Analyzing…"
     }
   },
   "scenes": {
