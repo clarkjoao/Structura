@@ -568,7 +568,11 @@
         "insertPattern": "Inserir pattern {{patternId}}",
         "autoLayout": "Organizar diagrama automaticamente",
         "getTags": "Listar tags do diagrama"
-      }
+      },
+      "defaultTitle": "Alterações sugeridas",
+      "noChanges": "sem alterações",
+      "accepted": "Aceito",
+      "rejected": "Rejeitado"
     },
     "mention": {
       "noResults": "Nenhum nó ou conexão encontrado",

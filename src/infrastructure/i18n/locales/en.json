@@ -568,7 +568,11 @@
         "insertPattern": "Insert pattern {{patternId}}",
         "autoLayout": "Auto layout diagram",
         "getTags": "List diagram tags"
-      }
+      },
+      "defaultTitle": "Suggested changes",
+      "noChanges": "no changes",
+      "accepted": "Accepted",
+      "rejected": "Rejected"
     },
     "mention": {
       "noResults": "No matching nodes or edges",
