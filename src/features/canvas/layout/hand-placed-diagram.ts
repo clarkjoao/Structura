@@ -36,14 +36,17 @@ const box = (x: number, y: number): ReadabilityBox => ({
 
 export function handPlacedDiagram(): HandPlacedDiagram {
   const boxes = new Map<string, ReadabilityBox>([
+    // "services" panel: intentionally undersized so ELK grows it to fit children.
+    // ELK will compute ~1020x340 (with 40px padding) from the child boxes below.
+    ["services", { x: 0, y: 0, width: 400, height: 200 }],
     // Left column: the datastores, deliberately upstream of nothing.
     ["orders-db", box(60, 620)],
     ["audit-log", box(60, 60)],
-    // Middle: the request path, left to right.
-    ["client", box(60, 340)],
-    ["gateway", box(420, 340)],
-    ["orders", box(780, 260)],
-    ["billing", box(780, 460)],
+    // Middle: the request path, left to right.  All inside "services".
+    ["client", box(80, 40)],
+    ["gateway", box(440, 40)],
+    ["orders", box(800, 40)],
+    ["billing", box(800, 140)],
     // Right: a worker that writes back to the left-hand datastore.
     ["reporting", box(1140, 360)],
   ]);
@@ -74,11 +77,20 @@ export function handPlacedDiagram(): HandPlacedDiagram {
   };
 }
 
-/** Every node hangs off the synthetic root; there is no containment here. */
+/**
+ * The "services" panel is a real parent; client/gateway/orders/billing nest inside it.
+ * orders-db, audit-log and reporting hang off the root.
+ */
 export function handPlacedParents(diagram: HandPlacedDiagram): Map<string, string | null> {
   const parentOf = new Map<string, string | null>();
   for (const id of diagram.boxes.keys()) {
-    parentOf.set(id, id === diagram.rootId ? null : diagram.rootId);
+    if (id === diagram.rootId) { parentOf.set(id, null); continue; }
+    if (id === "services") { parentOf.set(id, diagram.rootId); continue; }
+    if (["client", "gateway", "orders", "billing"].includes(id)) {
+      parentOf.set(id, "services");
+    } else {
+      parentOf.set(id, diagram.rootId);
+    }
   }
   return parentOf;
 }

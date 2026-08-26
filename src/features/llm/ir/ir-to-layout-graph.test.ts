@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { layoutIR } from "./irLayoutEngine";
-import type { DiagramIR } from "@/features/llm/ir/ir.types";
+import { layout } from "@/features/canvas/layout/layoutEngine";
+import { irToLayoutGraph } from "./ir-to-layout-graph";
+import type { DiagramIR } from "./ir.types";
 
 /** vpc > az > private-subnet > {alb, ecs, rds}: three levels of containment. */
 const nestedIR: DiagramIR = {
@@ -27,16 +28,16 @@ const nestedIR: DiagramIR = {
   ],
 };
 
-describe("layoutIR", () => {
+describe("irToLayoutGraph + layout", () => {
   it("returns a box for every node", async () => {
-    const { boxes } = await layoutIR(nestedIR);
+    const { boxes } = await layout(irToLayoutGraph(nestedIR));
     for (const node of nestedIR.nodes) {
       expect(boxes.has(node.id)).toBe(true);
     }
   });
 
   it("sizes each container to hold its children", async () => {
-    const { boxes } = await layoutIR(nestedIR);
+    const { boxes } = await layout(irToLayoutGraph(nestedIR));
     const vpc = boxes.get("vpc");
     const az = boxes.get("az");
     const subnet = boxes.get("subnet");
@@ -49,7 +50,7 @@ describe("layoutIR", () => {
   });
 
   it("keeps every child inside its parent box, relative to the parent", async () => {
-    const { boxes } = await layoutIR(nestedIR);
+    const { boxes } = await layout(irToLayoutGraph(nestedIR));
     const parentOf: Record<string, string> = {
       az: "vpc",
       subnet: "az",
@@ -73,7 +74,7 @@ describe("layoutIR", () => {
   // The spec's §7 literal carried three keys ELK silently ignores. These assert
   // the corrected keys actually take effect, since a wrong key throws nothing.
   it("applies the 40px container padding (elk.padding)", async () => {
-    const { boxes } = await layoutIR(nestedIR);
+    const { boxes } = await layout(irToLayoutGraph(nestedIR));
     const firstChild = boxes.get("az");
     if (!firstChild) throw new Error("missing box");
     // ELK's default padding is 12; anything below 40 means the value did not parse.
@@ -82,7 +83,7 @@ describe("layoutIR", () => {
   });
 
   it("orders connected nodes along the flow direction", async () => {
-    const { boxes } = await layoutIR(nestedIR);
+    const { boxes } = await layout(irToLayoutGraph(nestedIR));
     const alb = boxes.get("alb");
     const ecs = boxes.get("ecs");
     const rds = boxes.get("rds");
@@ -94,34 +95,38 @@ describe("layoutIR", () => {
   });
 
   it("lays out a flat diagram with no containment", async () => {
-    const { boxes } = await layoutIR({
-      type: "c4-context",
-      nodes: [
-        { id: "a", semanticType: "person", name: "A", parentId: null, tier: "external" },
-        { id: "b", semanticType: "container", name: "B", parentId: null, tier: "compute" },
-      ],
-      edges: [{ id: "e", sourceId: "a", targetId: "b" }],
-    });
+    const { boxes } = await layout(
+      irToLayoutGraph({
+        type: "c4-context",
+        nodes: [
+          { id: "a", semanticType: "person", name: "A", parentId: null, tier: "external" },
+          { id: "b", semanticType: "container", name: "B", parentId: null, tier: "compute" },
+        ],
+        edges: [{ id: "e", sourceId: "a", targetId: "b" }],
+      }),
+    );
     expect(boxes.size).toBe(2);
     expect(boxes.get("a")!.x).toBeLessThan(boxes.get("b")!.x);
   });
 
   it("gives an empty boundary a container-sized box", async () => {
-    const { boxes } = await layoutIR({
-      type: "aws-deployment",
-      nodes: [
-        {
-          id: "vpc",
-          semanticType: "aws-vpc",
-          name: "Empty VPC",
-          parentId: null,
-          isBoundary: true,
-          tier: "edge",
-        },
-        { id: "user", semanticType: "person", name: "User", parentId: null, tier: "external" },
-      ],
-      edges: [],
-    });
+    const { boxes } = await layout(
+      irToLayoutGraph({
+        type: "aws-deployment",
+        nodes: [
+          {
+            id: "vpc",
+            semanticType: "aws-vpc",
+            name: "Empty VPC",
+            parentId: null,
+            isBoundary: true,
+            tier: "edge",
+          },
+          { id: "user", semanticType: "person", name: "User", parentId: null, tier: "external" },
+        ],
+        edges: [],
+      }),
+    );
     const vpc = boxes.get("vpc");
     const user = boxes.get("user");
     if (!vpc || !user) throw new Error("missing box");
@@ -131,7 +136,7 @@ describe("layoutIR", () => {
   });
 
   it("returns no boxes for an empty IR", async () => {
-    const { boxes } = await layoutIR({ type: "c4-context", nodes: [], edges: [] });
+    const { boxes } = await layout(irToLayoutGraph({ type: "c4-context", nodes: [], edges: [] }));
     expect(boxes.size).toBe(0);
   });
 });

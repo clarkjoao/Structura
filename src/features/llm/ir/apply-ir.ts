@@ -4,10 +4,11 @@ import {
   type GeneratedEdgeInput,
   type GeneratedNodeInput,
 } from "@/features/diagram";
-import { layoutIR, type IRLayoutBox } from "@/features/canvas/layout/irLayoutEngine";
+import { layout } from "@/features/canvas/layout/layoutEngine";
+import type { LayoutBox, LayoutPoint } from "@/features/canvas/layout/contract";
 import { useCanvasSelectionStore } from "@/features/canvas/hooks/useCanvasSelectionStore";
-import { isApplyElkHandleOrderEnabled, isApplyElkWaypointsEnabled } from "./ir-layout-flags";
 import { mapNodeToComponent } from "./ir-to-component";
+import { irToLayoutGraph } from "./ir-to-layout-graph";
 import type { DiagramIR } from "./ir.types";
 
 /** Margin from the top-left of the visible canvas area, in flow units. */
@@ -47,12 +48,12 @@ export interface GeneratedGraphInputs {
  */
 export function buildGeneratedGraphInputs(
   ir: DiagramIR,
-  boxes: Map<string, IRLayoutBox>,
+  boxes: Map<string, LayoutBox>,
   origin: { x: number; y: number },
 ): GeneratedGraphInputs {
   const nodes: GeneratedNodeInput[] = ir.nodes.map((node, index): GeneratedNodeInput => {
     const mapped = mapNodeToComponent(node);
-    const box: IRLayoutBox | undefined = boxes.get(node.id);
+    const box: LayoutBox | undefined = boxes.get(node.id);
     const isRoot = node.parentId === null;
 
     // Root positions are canvas-absolute, child positions are relative to the
@@ -94,10 +95,10 @@ export function buildGeneratedGraphInputs(
  * legs from the node handles instead, so only what is between them becomes
  * control points.
  */
-export function interiorWaypoints(
-  route: Array<{ x: number; y: number }>,
+function interiorWaypoints(
+  route: readonly LayoutPoint[],
   origin: { x: number; y: number },
-): Array<{ x: number; y: number }> {
+): LayoutPoint[] {
   if (route.length <= 2) return [];
   return route.slice(1, -1).map((point) => ({ x: point.x + origin.x, y: point.y + origin.y }));
 }
@@ -107,7 +108,7 @@ export function interiorWaypoints(
  * single undoable mutation.
  */
 export async function applyIRToDiagram(ir: DiagramIR): Promise<ApplyIRResult> {
-  const { boxes, edgeRoutes, handleOrder } = await layoutIR(ir);
+  const { boxes, edgeRoutes, handleOrder } = await layout(irToLayoutGraph(ir));
   const origin = currentViewportOrigin();
   const { nodes, edges } = buildGeneratedGraphInputs(ir, boxes, origin);
 
@@ -129,43 +130,41 @@ export async function applyIRToDiagram(ir: DiagramIR): Promise<ApplyIRResult> {
     if (connectionId !== undefined) connectionIdByEdgeId.set(edge.id, connectionId);
   });
 
-  if (isApplyElkHandleOrderEnabled()) {
-    // `handleOrder` is the field the canvas already consults (and that the
-    // reorder controls write to), so this is the same mechanism a user gets by
-    // reordering by hand — not a second, parallel notion of handle choice.
-    for (const side of ["outgoing", "incoming"] as const) {
-      for (const [irNodeId, edgeIds] of handleOrder[side]) {
-        const componentId = result.componentIdByExternalId[irNodeId];
-        if (componentId === undefined) continue;
-        const orderedConnectionIds = edgeIds
-          .map((edgeId) => connectionIdByEdgeId.get(edgeId))
-          .filter((connectionId): connectionId is string => connectionId !== undefined);
-        if (orderedConnectionIds.length === 0) continue;
-        useDiagramStore.getState().updateHandleOrder(componentId, side, orderedConnectionIds);
-      }
+  // Write ELK's handle ordering into every generated node.
+  // `handleOrder` is the field the canvas already consults (and that the
+  // reorder controls write to), so this is the same mechanism a user gets by
+  // reordering by hand — not a second, parallel notion of handle choice.
+  for (const side of ["outgoing", "incoming"] as const) {
+    for (const [irNodeId, edgeIds] of handleOrder[side]) {
+      const componentId = result.componentIdByExternalId[irNodeId];
+      if (componentId === undefined) continue;
+      const orderedConnectionIds = edgeIds
+        .map((edgeId) => connectionIdByEdgeId.get(edgeId))
+        .filter((connectionId): connectionId is string => connectionId !== undefined);
+      if (orderedConnectionIds.length === 0) continue;
+      useDiagramStore.getState().updateHandleOrder(componentId, side, orderedConnectionIds);
     }
   }
 
-  if (isApplyElkWaypointsEnabled()) {
-    const diagramId = store.activeDiagramId;
-    if (diagramId !== null) {
-      ir.edges.forEach((edge) => {
-        const connectionId = connectionIdByEdgeId.get(edge.id);
-        const route = edgeRoutes.get(edge.id);
-        if (connectionId === undefined || route === undefined) return;
+  // Write ELK's bend points as edge control points.
+  const diagramId = store.activeDiagramId;
+  if (diagramId !== null) {
+    ir.edges.forEach((edge) => {
+      const connectionId = connectionIdByEdgeId.get(edge.id);
+      const route = edgeRoutes.get(edge.id);
+      if (connectionId === undefined || route === undefined) return;
 
-        const waypoints = interiorWaypoints(route, origin);
-        if (waypoints.length === 0) return;
+      const waypoints = interiorWaypoints(route, origin);
+      if (waypoints.length === 0) return;
 
-        useDiagramStore.getState().setEdgeControlPoints(
-          diagramId,
-          connectionId,
-          waypoints.map((point) => ({ id: generateId("cp"), x: point.x, y: point.y })),
-          // The generation already pushed its own history checkpoint.
-          { history: false },
-        );
-      });
-    }
+      useDiagramStore.getState().setEdgeControlPoints(
+        diagramId,
+        connectionId,
+        waypoints.map((point) => ({ id: generateId("cp"), x: point.x, y: point.y })),
+        // The generation already pushed its own history checkpoint.
+        { history: false },
+      );
+    });
   }
 
   return { componentIds: result.componentIds, connectionIds: result.connectionIds };

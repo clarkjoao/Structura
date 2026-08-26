@@ -28,7 +28,7 @@ sequencing live in
 | Validators | 🔴 | `validate-diagram.ts` (interchange only) | Model-level validation rules (per diagram profile) don't exist yet. |
 | Templates / patterns | 🟡 | `UserTemplate` store, `lib/catalogs/patterns.ts` | User templates are runtime data; built-in patterns should become contributions. |
 | Diagram types (profiles) | 🔴 | `Diagram.level` is a free string | A profile = bundle of node/edge types, palette, validators, defaults. Late-stage. |
-| Layout providers | 🔴 | `useAutoLayout` | Registry of layout algorithms per selection/diagram profile. |
+| Layout providers | 🔴 | `layout/layoutEngine.ts` (`layout()`) + `layout/applyLayoutResult.ts` | One engine and one applicator, shared by all five consumers: `hooks/useAutoLayout` (toolbar button), `hooks/usePanelChildLayout` ("Organize children"), `llm/ir/apply-ir.ts`, `llm/apply-diagram-patch.ts` and `layout/layoutScopedNodes.ts` (mermaid/draw.io import, via `FlowPanel`). The contract is single; what is still missing is a *registry* — `layout()` hardcodes ELK, so an alternative algorithm per selection or diagram profile has nowhere to register. |
 | Themes | 🔴 | Tailwind + CSS vars | Low priority; CSS-variable theming is nearly sufficient. |
 | Sidebar views | 🔴 | page-level composition | Wait for real demand before designing. |
 | MCP providers | 🔴 | none | Must be built on the command system + patch contract, never raw store access. |

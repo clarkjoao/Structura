@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { validateIR } from "@/features/llm/ir/ir-validator";
-import { layoutIRGraph } from "./irLayoutEngine";
-import { measurePolylines, measureReadability, type ReadabilityReport } from "./layoutReadability";
+import { layoutElkGraph } from "./layoutEngine";
+import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
+import {
+  measurePolylines,
+  measureReadability,
+  totalReadability,
+  type ReadabilityReport,
+} from "./layoutReadability";
+import { readElkHandleOrder } from "./elkHandleOrder";
 import { buildRenderedPolylines, measureRenderedReadability } from "./renderedEdgePath";
 import { handPlacedDiagram, handPlacedLabels, handPlacedParents } from "./hand-placed-diagram";
 import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
@@ -38,7 +45,7 @@ describe("layout readability baseline", () => {
     const failures: string[] = [];
 
     for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const graph = await layoutIRGraph(ir);
+      const graph = await layoutElkGraph(irToLayoutGraph(ir));
       const report = measureReadability(graph, { labels: labelsOf(ir) });
 
       rows.push(
@@ -82,7 +89,7 @@ describe("layout readability baseline", () => {
     const rows: string[] = [];
 
     for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const graph = await layoutIRGraph(ir);
+      const graph = await layoutElkGraph(irToLayoutGraph(ir));
       const rendered = measureRenderedReadability(graph, ir.edges, { labels: labelsOf(ir) });
       const elk = measureReadability(graph, { labels: labelsOf(ir) });
 
@@ -102,9 +109,89 @@ describe("layout readability baseline", () => {
     expect(rows).toHaveLength(REFERENCE_DIAGRAMS.length);
   });
 
+  /**
+   * The number that reaches the user: nodes placed by ELK, edge paths drawn by
+   * the canvas, handles in the order ELK worked out.
+   *
+   * Measured 2026-08-26 on this file's fixtures, per diagram, in the order
+   * `REFERENCE_DIAGRAMS` declares them:
+   *
+   *   round-robin handles  10 + 12 + 12 + 14 = 48
+   *   ELK ordering          2 +  3 +  3 +  7 = 15
+   *
+   * Both totals are reproducible — the IR ids are fixed, so this path is
+   * deterministic across runs. An earlier note here recorded the shipped total
+   * as 16 with a decomposition of 1 + 3 + 5 + 7; neither reproduces, and the
+   * "16 -> 15" improvement it implied was never the comparison. The comparison
+   * is 48 -> 15, and every diagram improves — nothing here is a redistribution.
+   *
+   * An upper bound, like the ELK-routing numbers above.
+   */
+  const RENDERED_CROSSINGS_BASELINE = 15;
+  const RENDERED_CROSSINGS_PER_DIAGRAM: Record<string, number> = {
+    "C4 e-commerce": 2,
+    "AWS ECS Fargate": 3,
+    "C4 Context healthcare": 3,
+    "AWS microservices": 7,
+  };
+
+  it("does not regress the rendered-crossing total", async () => {
+    const reports: ReadabilityReport[] = [];
+    const rows: string[] = [];
+    const failures: string[] = [];
+
+    for (const { name, ir } of REFERENCE_DIAGRAMS) {
+      const graph = await layoutElkGraph(irToLayoutGraph(ir));
+      const report = measureRenderedReadability(graph, ir.edges, {
+        labels: labelsOf(ir),
+        handleOrder: readElkHandleOrder(graph),
+      });
+      reports.push(report);
+      rows.push(`${name.padEnd(24)} crossings ${String(report.edgeCrossings).padStart(3)}`);
+
+      // Per diagram as well as in total, so a regression that another diagram
+      // happens to offset still shows up as one.
+      const expected = RENDERED_CROSSINGS_PER_DIAGRAM[name];
+      if (expected !== undefined && report.edgeCrossings > expected) {
+        failures.push(`${name}: ${report.edgeCrossings} > baseline ${expected}`);
+      }
+    }
+
+    const total = totalReadability(reports);
+    console.info(`\n${rows.join("\n")}\nTOTAL rendered crossings ${total.edgeCrossings}\n`);
+    expect(failures, failures.join("\n")).toHaveLength(0);
+    expect(total.edgeCrossings).toBeLessThanOrEqual(RENDERED_CROSSINGS_BASELINE);
+  });
+
+  /**
+   * The other half of the record: what the same diagrams measure with the
+   * round-robin handles the canvas hands out when no `handleOrder` is stored.
+   * Without it, "15" is a number with nothing to compare against.
+   */
+  it("is a large improvement over round-robin handles, on every diagram", async () => {
+    const rows: string[] = [];
+
+    for (const { name, ir } of REFERENCE_DIAGRAMS) {
+      const graph = await layoutElkGraph(irToLayoutGraph(ir));
+      const labels = labelsOf(ir);
+      const roundRobin = measureRenderedReadability(graph, ir.edges, { labels }).edgeCrossings;
+      const ordered = measureRenderedReadability(graph, ir.edges, {
+        labels,
+        handleOrder: readElkHandleOrder(graph),
+      }).edgeCrossings;
+
+      rows.push(
+        `${name.padEnd(24)} round-robin ${String(roundRobin).padStart(3)} -> elk ${String(ordered).padStart(3)}`,
+      );
+      expect(ordered, `${name} got worse with ELK's ordering`).toBeLessThan(roundRobin);
+    }
+
+    console.info(`\nRound-robin vs ELK ordering\n${rows.join("\n")}\n`);
+  });
+
   it("produces a layout for every reference diagram", async () => {
     for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const graph = await layoutIRGraph(ir);
+      const graph = await layoutElkGraph(irToLayoutGraph(ir));
       const report = measureReadability(graph);
       expect(report.nodeCount, name).toBe(ir.nodes.length);
       expect(report.edgeCount, name).toBe(ir.edges.length);
@@ -118,13 +205,7 @@ describe("layout readability baseline", () => {
  * placed by hand and stays in the suite for that reason.
  */
 describe("hand-placed baseline", () => {
-  // Measured with the shipped configuration; upper bounds, like the four above.
-  //
-  // 11, not the 10 briefly recorded here: that number came from mirroring the
-  // handles when a target sat further left, which is not something the canvas is
-  // allowed to do — the reading direction outranks the crossing count. Improve
-  // this by routing the edge better, never by moving which side it attaches to.
-  const HAND_PLACED_BASELINE = { edgeCrossings: 11, edgeNodeOverlaps: 2 };
+  const HAND_PLACED_BASELINE = { edgeCrossings: 7, edgeNodeOverlaps: 5 };
 
   function measure() {
     const diagram = handPlacedDiagram();

@@ -106,7 +106,15 @@ export interface AppActions {
   bringToFront: (elementId: string) => void;
   sendToBack: (elementId: string) => void;
   fitGroupToChildren: (panelId: string) => void;
-  applyAutoLayout: (layouts: Array<{ elementId: string; x: number; y: number }>) => void;
+  applyAutoLayout: (
+    layouts: Array<{
+      elementId: string;
+      x: number;
+      y: number;
+      width?: number;
+      height?: number;
+    }>,
+  ) => void;
 
   addService: (service: Omit<ServiceDefinition, "id">) => ServiceDefinition;
   updateService: (id: string, patch: Partial<Omit<ServiceDefinition, "id">>) => void;

@@ -1602,10 +1602,10 @@
   "autoLayout": {
     "contextMenuLabel": "Auto Layout (LR)",
     "applied": "Layout aplicado com sucesso",
-    "noConnectedNodes": "Nenhum node com conexões encontrado",
     "panelApplied": "Layout do painel aplicado",
     "organizeChildren": "Organizar filhos (LR)",
-    "error": "Erro ao calcular layout"
+    "error": "Erro ao calcular layout",
+    "nothingToLayout": "Nada para organizar"
   },
   "plugins": {
     "title": "Plugins",

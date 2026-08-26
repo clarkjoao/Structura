@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { layoutIRGraph } from "./irLayoutEngine";
+import { layoutElkGraph } from "./layoutEngine";
+import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
 import { measureReadability, totalReadability } from "./layoutReadability";
 import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
 
@@ -85,7 +86,7 @@ const SANITY_CHECK: Candidate = {
 async function measureCandidate(candidate: Candidate) {
   const reports = [];
   for (const { name, ir } of REFERENCE_DIAGRAMS) {
-    const graph = await layoutIRGraph(ir, candidate.options);
+    const graph = await layoutElkGraph(irToLayoutGraph(ir), candidate.options);
     reports.push({ name, report: measureReadability(graph, { labels: labelsOf(ir) }) });
   }
   return { reports, total: totalReadability(reports.map((entry) => entry.report)) };
@@ -119,7 +120,7 @@ describe("layout option comparison", () => {
   it("keeps generating every diagram under every candidate", async () => {
     for (const candidate of [...CANDIDATES, SANITY_CHECK]) {
       for (const { name, ir } of REFERENCE_DIAGRAMS) {
-        const graph = await layoutIRGraph(ir, candidate.options);
+        const graph = await layoutElkGraph(irToLayoutGraph(ir), candidate.options);
         const report = measureReadability(graph);
         expect(report.nodeCount, `${candidate.name} / ${name}`).toBe(ir.nodes.length);
       }
@@ -157,10 +158,10 @@ describe("layout option comparison", () => {
     };
 
     const on = measureReadability(
-      await layoutIRGraph(split, { "elk.separateConnectedComponents": "true" }),
+      await layoutElkGraph(irToLayoutGraph(split), { "elk.separateConnectedComponents": "true" }),
     );
     const off = measureReadability(
-      await layoutIRGraph(split, { "elk.separateConnectedComponents": "false" }),
+      await layoutElkGraph(irToLayoutGraph(split), { "elk.separateConnectedComponents": "false" }),
     );
 
     console.info(

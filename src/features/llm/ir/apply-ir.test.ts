@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { PanelKind } from "@/features/diagram/enums";
 import { buildGeneratedGraphInputs } from "./apply-ir";
-import type { IRLayoutBox } from "@/features/canvas/layout/irLayoutEngine";
+import type { LayoutBox } from "@/features/canvas/layout/contract";
 import type { DiagramIR } from "./ir.types";
 
 const NO_ORIGIN = { x: 0, y: 0 };
 
-function boxesFrom(entries: Record<string, IRLayoutBox>): Map<string, IRLayoutBox> {
+function boxesFrom(entries: Record<string, LayoutBox>): Map<string, LayoutBox> {
   return new Map(Object.entries(entries));
 }
 

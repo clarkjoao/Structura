@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { interiorWaypoints } from "@/features/llm/ir/apply-ir";
-import { layoutIR, layoutIRGraph } from "./irLayoutEngine";
+import { interiorWaypoints } from "./applyLayout";
+import { layout, layoutElkGraph } from "./layoutEngine";
+import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
 import { measureReadability, totalReadability } from "./layoutReadability";
 import { measureRenderedReadability } from "./renderedEdgePath";
 import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
@@ -19,8 +20,8 @@ import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
 const NO_ORIGIN = { x: 0, y: 0 };
 
 async function measureBothModes(ir: (typeof REFERENCE_DIAGRAMS)[number]["ir"]) {
-  const graph = await layoutIRGraph(ir);
-  const { edgeRoutes } = await layoutIR(ir);
+  const graph = await layoutElkGraph(irToLayoutGraph(ir));
+  const { edgeRoutes } = await layout(irToLayoutGraph(ir));
   const labels = labelsOf(ir);
 
   const cornersByEdgeId = new Map<string, Array<{ x: number; y: number }>>();

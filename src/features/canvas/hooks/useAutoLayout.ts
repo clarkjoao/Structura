@@ -1,17 +1,23 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { computeAutoLayout } from "../layout/autoLayoutEngine";
-import { useDiagramActions, useDiagramStore, generateId } from "@/features/diagram";
+import { layout } from "../layout/layoutEngine";
+import { fromDiagram, resizableIds } from "../layout/fromDiagram";
+import { toAppliedLayouts, measuredSizesOf } from "../layout/applyLayout";
+import { applyLayoutResultEdges } from "../layout/applyLayoutResult";
+import { useDiagramActions, useDiagramStore } from "@/features/diagram";
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
 
 export function useAutoLayout() {
   const { t } = useTranslation();
   const { fitView, getNodes } = useReactFlow();
-  const { applyAutoLayout, setEdgeControlPoints, resetEdgeControlPoints } = useDiagramActions();
+  const { applyAutoLayout } = useDiagramActions();
   const [isRunning, setIsRunning] = useState(false);
+
+  // Keep a ref to the latest runAutoLayout for recursive calls
+  const runAutoLayoutRef = useRef<(components: Record<string, Component>, connections: Connection[], nodeLayouts: Record<string, NodeLayout>, measuredNodes?: Node[]) => Promise<void>>();
 
   const runAutoLayout = useCallback(
     async (
@@ -33,38 +39,28 @@ export function useAutoLayout() {
       if (!hasMeasuredDimensions) {
         // Retry after a short delay to allow nodes to measure
         requestAnimationFrame(() => {
-          runAutoLayout(components, connections, nodeLayouts, getNodes());
+          runAutoLayoutRef.current?.(components, connections, nodeLayouts, getNodes());
         });
         return;
       }
 
       setIsRunning(true);
       try {
-        const result = await computeAutoLayout(components, connections, nodeLayouts, measuredNodes);
+        const graph = fromDiagram(components, connections, nodeLayouts, {
+          measured: measuredSizesOf(nodesToUse),
+        });
+        const result = await layout(graph);
 
-        if (result.positions.length === 0) {
-          toast.info(t("autoLayout.noConnectedNodes"));
+        if (result.boxes.size === 0) {
+          toast.info(t("autoLayout.nothingToLayout"));
           return;
         }
 
-        applyAutoLayout(result.positions);
+        applyAutoLayout(toAppliedLayouts(graph, result, resizableIds(graph, components)));
 
         const diagramId = useDiagramStore.getState().activeDiagramId;
         if (diagramId !== null) {
-          for (const connectionId of result.laidOutConnectionIds) {
-            resetEdgeControlPoints(diagramId, connectionId);
-          }
-
-          for (const [connectionId, waypoints] of result.edgeWaypoints) {
-            if (waypoints.length > 0) {
-              setEdgeControlPoints(
-                diagramId,
-                connectionId,
-                waypoints.map((wp) => ({ id: generateId("cp"), x: wp.x, y: wp.y })),
-                { history: false },
-              );
-            }
-          }
+          applyLayoutResultEdges(graph, result, diagramId);
         }
 
         requestAnimationFrame(() => {
@@ -78,8 +74,19 @@ export function useAutoLayout() {
         setIsRunning(false);
       }
     },
-    [isRunning, applyAutoLayout, setEdgeControlPoints, resetEdgeControlPoints, fitView, getNodes, t],
+    [
+      isRunning,
+      applyAutoLayout,
+      fitView,
+      getNodes,
+      t,
+    ],
   );
+
+  // Keep ref in sync with the callback
+  useEffect(() => {
+    runAutoLayoutRef.current = runAutoLayout;
+  }, [runAutoLayout]);
 
   return { runAutoLayout, isRunning };
 }
