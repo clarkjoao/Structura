@@ -568,7 +568,11 @@
         "insertPattern": "Inserir pattern {{patternId}}",
         "autoLayout": "Organizar diagrama automaticamente",
         "getTags": "Listar tags do diagrama"
-      }
+      },
+      "defaultTitle": "Alterações sugeridas",
+      "noChanges": "sem alterações",
+      "accepted": "Aceito",
+      "rejected": "Rejeitado"
     },
     "mention": {
       "noResults": "Nenhum nó ou conexão encontrado",
@@ -677,6 +681,26 @@
         "edgeSourceNotFound": "A aresta \"{{id}}\" sai de um nó inexistente: \"{{ref}}\".",
         "edgeTargetNotFound": "A aresta \"{{id}}\" chega em um nó inexistente: \"{{ref}}\"."
       }
+    },
+    "slash": {
+      "title": "Comandos",
+      "analyze": "Analisar diagrama",
+      "analyzeDesc": "Revisar a estrutura e sugerir melhorias",
+      "analyzePrompt": "Analise o diagrama atual e sugira melhorias na estrutura.",
+      "export": "Exportar IR",
+      "exportDesc": "Baixar a representação intermediária em JSON",
+      "clear": "Limpar conversa",
+      "clearDesc": "Apagar todo o histórico desta conversa",
+      "clearConfirm": "Iniciar nova conversa? O chat atual será salvo no histórico.",
+      "copy": "Copiar conversa",
+      "copyDesc": "Copiar toda a conversa para a área de transferência",
+      "copied": "Conversa copiada!",
+      "copyFailed": "Falha ao copiar.",
+      "noMessages": "Nenhuma mensagem para copiar.",
+      "newChat": "Nova conversa iniciada.",
+      "exported": "IR exportado!",
+      "noIR": "Nenhum IR gerado ainda. Use /generate primeiro.",
+      "analyzing": "Analisando…"
     }
   },
   "scenes": {

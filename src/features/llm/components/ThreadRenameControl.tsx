@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Pencil } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
@@ -15,30 +15,31 @@ export function ThreadRenameControl({
   onRename,
 }: ThreadRenameControlProps) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const [value, setValue] = useState(currentTitle);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
-    if (open) {
-      setValue(currentTitle);
-      requestAnimationFrame(() => inputRef.current?.focus());
-    }
-  }, [open, currentTitle]);
-
-  const submit = () => {
+  const submit = (value: string) => {
     const trimmed = value.trim();
     if (trimmed.length > 0 && trimmed !== currentTitle) {
       onRename(threadId, trimmed);
     }
-    setOpen(false);
   };
 
-  if (!open) {
+  const handleOpen = () => {
+    const initial = currentTitle;
+    requestAnimationFrame(() => inputRef.current?.focus());
+    setEditorState({ open: true, value: initial });
+  };
+
+  const [editorState, setEditorState] = useState<{
+    open: boolean;
+    value: string;
+  } | null>(null);
+
+  if (!editorState?.open) {
     return (
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={handleOpen}
         className="rounded p-1 text-muted-foreground hover:text-foreground"
         aria-label={t("llmChat.threads.rename")}
         title={t("llmChat.threads.rename")}
@@ -52,21 +53,24 @@ export function ThreadRenameControl({
     <form
       onSubmit={(event) => {
         event.preventDefault();
-        submit();
+        submit(editorState.value);
+        setEditorState(null);
       }}
       className="flex items-center gap-1"
       onClick={(event) => event.stopPropagation()}
     >
       <Input
         ref={inputRef}
-        value={value}
+        value={editorState.value}
         size={20}
         className="h-6 w-32 px-1 py-0.5 text-xs"
         placeholder={t("llmChat.threads.renamePlaceholder")}
-        onChange={(event) => setValue(event.target.value)}
+        onChange={(event) =>
+          setEditorState({ open: true, value: event.target.value })
+        }
         onKeyDown={(event) => {
           if (event.key === "Escape") {
-            setOpen(false);
+            setEditorState(null);
           }
         }}
       />

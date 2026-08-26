@@ -45,7 +45,7 @@ import {
   CUSTOM_COMPONENT_DRAG_MIME,
   useCustomComponentLibrary,
 } from "@/features/custom-components";
-import { ChatPanel, FloatingChatButton, PendingNodeToolbar } from "@/features/llm/components";
+import { AssistantUIChatPanel, FloatingChatButton, PendingNodeToolbar } from "@/features/llm/components";
 import { useLLMChat } from "./chat";
 import { getPendingNodeIds, getSuggestionIdForNode, useLLMStore } from "@/features/llm";
 import { usePanelChildLayout } from "./hooks/usePanelChildLayout";
@@ -226,7 +226,7 @@ const Canvas = (props: CanvasProps = {}) => {
         clearHighlight: visualState.clearHighlight,
       }}
     >
-      <div className="flex-1 flex relative">
+      <div className="flex-1 flex relative h-full min-h-0">
         <style>{CANVAS_STYLES}</style>
         <div ref={reactFlowWrapperRef} className="flex-1 relative">
           {showScenes && <ConnectedSceneDrawer onClose={() => setShowScenes(false)} />}
@@ -483,7 +483,7 @@ const Canvas = (props: CanvasProps = {}) => {
           />
         ) : null}
 
-        <div className="absolute inset-y-0 right-0 z-20 flex items-stretch">
+        <div className="absolute inset-y-0 right-0 z-20 flex items-stretch h-full">
           <div className="pointer-events-none flex h-full min-h-0 flex-col items-end">
             {props.focusMode && props.onToggleFocusMode ? (
               <div className="shrink-0 pt-4 pr-4">
@@ -529,7 +529,7 @@ const Canvas = (props: CanvasProps = {}) => {
             />
           )}
           {isChatOpen ? (
-            <ChatPanel
+            <AssistantUIChatPanel
               onClose={() => setIsChatOpen(false)}
               selectedNodeIds={visualState.selectedNodeIds}
               selectedNodeId={visualState.selectedNodeId}
