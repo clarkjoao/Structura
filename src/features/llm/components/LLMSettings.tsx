@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Copy, Pencil, Plus, Trash2 } from "lucide-react";
+import { Copy, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -273,36 +273,63 @@ export function LLMSettings({ selectedConnectionId: _selectedConnectionId = null
     );
 
   return (
-    <div className="absolute inset-0 z-30 bg-background/90 backdrop-blur-sm p-3 overflow-y-auto">
-      <div className="rounded-lg border border-border bg-card p-3 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold">{t("llmChat.settings.title")}</h3>
-          <Button type="button" variant="outline" size="sm" onClick={onClose}>
-            {t("common.cancel")}
-          </Button>
-        </div>
-
-        <div className="space-y-1">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">
-              {t("llmChat.settings.connectionsTitle")}
-            </span>
-            <Button type="button" variant="ghost" size="sm" onClick={handleNew}>
-              <Plus className="mr-1 h-3.5 w-3.5" />
-              {t("llmChat.settings.connectionNew")}
-            </Button>
+    <div className="absolute inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-sm">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-border bg-card px-4 py-3">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 text-primary ring-1 ring-primary/15">
+            <Sparkles className="h-3.5 w-3.5" />
           </div>
-          <ul className="space-y-1">
-            {connections.map((connection) => {
-              const isActive = connection.id === activeConnectionId;
-              const isEditing = draft.id === connection.id;
-              return (
-                <li
-                  key={connection.id}
-                  className={`flex items-center justify-between rounded-md border px-2 py-1.5 text-xs ${
-                    isEditing ? "border-primary/60 bg-primary/5" : "border-border"
-                  }`}
-                >
+          <div>
+            <h3 className="text-sm font-semibold tracking-tight">
+              {t("llmChat.settings.title")}
+            </h3>
+            <p className="text-[11px] text-muted-foreground">
+              {t("llmChat.settings.subtitle", {
+                defaultValue: "Configure your AI provider and model",
+              })}
+            </p>
+          </div>
+        </div>
+        <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+          {t("common.cancel")}
+        </Button>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-4">
+        <div className="mx-auto max-w-xl space-y-5">
+          {/* Connections section */}
+          <section className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-xs font-semibold tracking-wide text-foreground">
+                  {t("llmChat.settings.connectionsTitle")}
+                </h4>
+                <p className="text-[11px] text-muted-foreground">
+                  {t("llmChat.settings.connectionsHint", {
+                    defaultValue: "Manage saved provider connections",
+                  })}
+                </p>
+              </div>
+              <Button type="button" variant="outline" size="sm" onClick={handleNew}>
+                <Plus className="mr-1 h-3.5 w-3.5" />
+                {t("llmChat.settings.connectionNew")}
+              </Button>
+            </div>
+            <ul className="space-y-1.5">
+              {connections.map((connection) => {
+                const isActive = connection.id === activeConnectionId;
+                const isEditing = draft.id === connection.id;
+                return (
+                  <li
+                    key={connection.id}
+                    className={`flex items-center justify-between rounded-lg border px-2.5 py-2 text-xs transition-colors ${
+                      isEditing
+                        ? "border-primary/60 bg-primary/5 ring-1 ring-primary/20"
+                        : "border-border hover:border-primary/30"
+                    }`}
+                  >
                   <button
                     type="button"
                     onClick={() => handleSelectConnection(connection.id)}
@@ -357,26 +384,27 @@ export function LLMSettings({ selectedConnectionId: _selectedConnectionId = null
               );
             })}
           </ul>
-        </div>
+          </section>
 
-        <div className="space-y-2 border-t border-border pt-3">
-          <div className="flex items-center justify-between">
-            <h4 className="text-xs font-medium text-muted-foreground">
-              {isCreateMode
-                ? t("llmChat.settings.connectionNew")
-                : draft.name || t("llmChat.settings.connectionName")}
-            </h4>
-            {isCreateMode ? (
-              <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] text-primary">
-                {t("llmChat.settings.connectionNewBadge")}
-              </span>
-            ) : (
-              <span className="flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-secondary-foreground">
-                <Pencil className="h-3 w-3" />
-                {t("llmChat.settings.editingBadge")}
-              </span>
-            )}
-          </div>
+          {/* Form section */}
+          <section className="space-y-3 border-t border-border pt-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-semibold tracking-wide text-foreground">
+                {isCreateMode
+                  ? t("llmChat.settings.connectionNew")
+                  : draft.name || t("llmChat.settings.connectionName")}
+              </h4>
+              {isCreateMode ? (
+                <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] text-primary">
+                  {t("llmChat.settings.connectionNewBadge")}
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-secondary-foreground">
+                  <Pencil className="h-3 w-3" />
+                  {t("llmChat.settings.editingBadge")}
+                </span>
+              )}
+            </div>
 
           <div className="space-y-1">
             <label htmlFor="llm-conn-name" className="text-xs text-muted-foreground">
@@ -620,15 +648,16 @@ export function LLMSettings({ selectedConnectionId: _selectedConnectionId = null
               <Input id="llm-proxy-url" value={proxyEndpoint} readOnly />
             </div>
           )}
-        </div>
+          </section>
 
-        <div className="flex items-center justify-end gap-2 border-t border-border pt-3">
-          <Button type="button" variant="outline" size="sm" onClick={onClose}>
-            {t("common.cancel")}
-          </Button>
-          <Button type="button" size="sm" onClick={handleSave} disabled={Boolean(disableSave)}>
-            {t("common.save")}
-          </Button>
+          <div className="flex items-center justify-end gap-2 border-t border-border pt-3">
+            <Button type="button" variant="outline" size="sm" onClick={onClose}>
+              {t("common.cancel")}
+            </Button>
+            <Button type="button" size="sm" onClick={handleSave} disabled={Boolean(disableSave)}>
+              {t("common.save")}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

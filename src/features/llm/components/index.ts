@@ -1,11 +1,15 @@
-export { ChatPanel } from "./ChatPanel";
-export { ChatMessage } from "./ChatMessage";
+export { AssistantUIChatPanel } from "./AssistantUIChatPanel";
+export { AssistantUIComposer } from "./AssistantUIComposer";
+export {
+  UserMessageComponent,
+  AssistantMessageComponent,
+} from "./AssistantUIMessage";
 export { SuggestionCard } from "./SuggestionCard";
 export { LLMSettings } from "./LLMSettings";
 export { MentionPicker } from "./MentionPicker";
 export { MentionTag } from "./MentionTag";
 export { LLMSelector } from "./LLMSelector";
-export { MentionInput } from "./MentionInput";
 export { FloatingChatButton } from "./FloatingChatButton";
 export { PendingNodeToolbar } from "./PendingNodeToolbar";
 export { ThreadRenameControl } from "./ThreadRenameControl";
+export { ThreadDrawer } from "./ThreadDrawer";
