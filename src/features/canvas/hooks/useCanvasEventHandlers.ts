@@ -12,6 +12,7 @@ import {
 import type { EdgeStyle } from "@/features/diagram";
 import { getLastEdgeStyle } from "@/features/diagram";
 import { getNodeType } from "../utils/node-type-utils";
+import { dragSelectionRef } from "./useLocalNodes";
 
 interface UseCanvasEventHandlersParams {
   visualState: CanvasVisualState;
@@ -197,18 +198,49 @@ export function useCanvasEventHandlers({
   );
 
   const prevSelectionRef = useRef<string>("");
+
   const onSelectionChange = useCallback(
     ({ nodes: updatedNodes }: { nodes: Node[]; edges: Edge[] }) => {
       const selectedIds = updatedNodes.filter((n) => n.selected).map((n) => n.id);
+      const selectedSet = new Set(selectedIds);
 
       if (isCompareMode) return;
       const key = [...selectedIds].sort().join(",");
       if (key === prevSelectionRef.current) return;
       prevSelectionRef.current = key;
 
-      // An empty list is a real deselection and must reach the store, otherwise `selectedNodeIds`
-      // keeps pointing at the previous node. It also arrives when React Flow deselects nodes
-      // because an edge was clicked — so only reset edge/menu state when nodes got selected.
+      // Draw.io parity: if we're in a drag gesture and previously had selected nodes,
+      // merge the dragged node with the previous selection so all move together
+      if (dragSelectionRef.isDragging && dragSelectionRef.selectedBeforeDrag.size > 0) {
+        // Merge: add previously selected nodes to the current selection
+        const mergedIds = new Set([...selectedIds, ...dragSelectionRef.selectedBeforeDrag]);
+        const mergedKey = [...mergedIds].sort().join(",");
+
+        // Only update if selection actually changed
+        if (mergedKey !== key) {
+          // An empty list is a real deselection and must reach the store
+          if (mergedIds.size > 0) {
+            setSelectedEdgeId(null);
+            setContextMenu(null);
+            setPaneContextMenu(null);
+          }
+
+          setSelectedNodeIds((prev) => {
+            if (prev.size === mergedIds.size && [...mergedIds].every((id) => prev.has(id))) {
+              return prev;
+            }
+            return mergedIds;
+          });
+          setSelectedNodeId(selectedIds[0] ?? null);
+        }
+
+        // Clear drag tracking after processing
+        dragSelectionRef.selectedBeforeDrag.clear();
+        dragSelectionRef.isDragging = false;
+        return;
+      }
+
+      // Normal selection change (not during drag)
       if (selectedIds.length > 0) {
         setSelectedEdgeId(null);
         setContextMenu(null);

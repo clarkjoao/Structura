@@ -4,6 +4,8 @@ interface CanvasSelectionState {
   selectedNodeId: string | null;
   selectedNodeIds: Set<string>;
   selectedEdgeId: string | null;
+  /** Set when a drag gesture starts on an unselected node — used for draw.io drag-selection parity. */
+  selectedBeforeDrag: Set<string>;
   setSelectedNodeId: (id: string | null) => void;
   setSelectedNodeIds: (ids: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
   setSelectedEdgeId: (id: string | null) => void;
@@ -31,6 +33,7 @@ export const useCanvasSelectionStore = create<CanvasSelectionState>((set) => ({
   selectedNodeId: null,
   selectedNodeIds: new Set<string>(),
   selectedEdgeId: null,
+  selectedBeforeDrag: new Set<string>(),
   setSelectedNodeId: (id) =>
     set((state) => {
       // Promoting a node that is not in the selection means the selection moved to it.
@@ -47,5 +50,5 @@ export const useCanvasSelectionStore = create<CanvasSelectionState>((set) => ({
     }),
   setSelectedEdgeId: (id) => set({ selectedEdgeId: id }),
   clearSelection: () =>
-    set({ selectedNodeId: null, selectedNodeIds: new Set(), selectedEdgeId: null }),
+    set({ selectedNodeId: null, selectedNodeIds: new Set(), selectedEdgeId: null, selectedBeforeDrag: new Set() }),
 }));

@@ -1,7 +1,24 @@
+/**
+ * Shared drag state for draw.io drag-selection parity.
+ * When user starts dragging an unselected node while others are selected,
+ * we track the selection before the drag so we can merge it later.
+ */
+
 import { useRef, useState, useCallback, useEffect, type MutableRefObject } from "react";
 import { applyNodeChanges, type Node, type NodeChange, type OnNodesChange } from "@xyflow/react";
 import type { Diagram, DiagramModel } from "@/features/diagram";
 import { canMoveNodeInSceneMode } from "@/features/diagram";
+
+/** Minimum drag distance in pixels before drag is considered intentional (draw.io parity). */
+const DRAG_THRESHOLD_PX = 3;
+
+/** Refs shared between useLocalNodes and the event handlers for drag-selection parity. */
+export const dragSelectionRef = {
+  /** Set when a drag gesture starts on an unselected node. */
+  selectedBeforeDrag: new Set<string>(),
+  /** Set when a drag is in progress. */
+  isDragging: false,
+};
 
 function filterNodeChangesForSceneMoveLock(
   diagram: Diagram | DiagramModel | null | undefined,
@@ -34,6 +51,10 @@ export function useLocalNodes(
 ) {
   const [, setTick] = useState(0);
 
+  /** Tracks drag start positions to enforce minimum drag threshold. */
+  const dragStartPositionsRef = useRef(new Map<string, { x: number; y: number }>());
+  /** Tracks whether a drag has exceeded the threshold and should be allowed. */
+  const dragConfirmedRef = useRef(new Set<string>());
   const draggingNodeIdsRef = useRef(new Set<string>());
   /** While true, NodeResizer updates dimensions in local state before the store catches up — keep local style/size. */
   const resizingNodeIdsRef = useRef(new Set<string>());
@@ -57,7 +78,11 @@ export function useLocalNodes(
     if (activeDiagramId !== prevActiveDiagramIdRef.current) {
       prevActiveDiagramIdRef.current = activeDiagramId;
       draggingNodeIdsRef.current.clear();
+      dragConfirmedRef.current.clear();
+      dragStartPositionsRef.current.clear();
       resizingNodeIdsRef.current.clear();
+      dragSelectionRef.selectedBeforeDrag.clear();
+      dragSelectionRef.isDragging = false;
       localNodesStateRef.current = storeNodes;
       localNodesRef.current = storeNodes;
       prevStoreNodesRef.current = storeNodes;
@@ -177,6 +202,52 @@ export function useLocalNodes(
   }
 
   /**
+   * Enforce drag threshold: after pointerup, if total drag distance is less than threshold,
+   * snap the node back to its original position.
+   */
+  useEffect(() => {
+    const handlePointerUp = () => {
+      const unconfirmedDrags = Array.from(dragStartPositionsRef.current.entries());
+      if (unconfirmedDrags.length === 0) return;
+
+      // These nodes didn't pass the threshold — snap back to start position
+      for (const [nodeId, startPos] of unconfirmedDrags) {
+        const nodeIndex = localNodesStateRef.current.findIndex((n) => n.id === nodeId);
+        if (nodeIndex === -1) continue;
+
+        const node = localNodesStateRef.current[nodeIndex];
+        if (node.position.x === startPos.x && node.position.y === startPos.y) {
+          // Already at start position
+          continue;
+        }
+
+        // Update local state with snap-back position
+        const updated = [...localNodesStateRef.current];
+        updated[nodeIndex] = { ...node, position: startPos };
+        localNodesStateRef.current = updated;
+        localNodesRef.current = updated;
+
+        // Trigger re-render
+        setTick((tick) => tick + 1);
+      }
+
+      // Clear tracking refs
+      dragStartPositionsRef.current.clear();
+      dragConfirmedRef.current.clear();
+      draggingNodeIdsRef.current.clear();
+      dragSelectionRef.selectedBeforeDrag.clear();
+      dragSelectionRef.isDragging = false;
+    };
+
+    window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("pointercancel", handlePointerUp);
+    return () => {
+      window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerUp);
+    };
+  }, []);
+
+  /**
    * If React Flow omits `resizing: false` on the last dimensions event, clear the
    * override set after the gesture so merges use the store again (double rAF: after
    * RF internal updates + parenting layout flush on pointerup).
@@ -203,17 +274,101 @@ export function useLocalNodes(
     (changes) => {
       if (!changes.length) return;
 
-      for (const change of changes) {
-        if (change.type === "position") {
-          if (change.dragging) {
-            draggingNodeIdsRef.current.add(change.id);
-          } else {
-            draggingNodeIdsRef.current.delete(change.id);
+      // Process position changes to enforce drag threshold
+      const positionChanges = changes.filter((c) => c.type === "position");
+      for (const change of positionChanges) {
+        if (change.type !== "position") continue;
+
+        if (change.dragging && !dragConfirmedRef.current.has(change.id)) {
+          // Drag is starting — record the start position from local state
+          const node = localNodesStateRef.current.find((n) => n.id === change.id);
+          if (node && !dragStartPositionsRef.current.has(change.id)) {
+            dragStartPositionsRef.current.set(change.id, {
+              x: node.position.x,
+              y: node.position.y,
+            });
+          }
+
+          // Draw.io parity: if this node is not selected but others are,
+          // track the selection before drag so we can merge it later
+          if (!node?.selected && dragSelectionRef.selectedBeforeDrag.size === 0 && !dragSelectionRef.isDragging) {
+            const currentSelected = localNodesStateRef.current.filter((n) => n.selected).map((n) => n.id);
+            if (currentSelected.length > 0) {
+              dragSelectionRef.selectedBeforeDrag = new Set(currentSelected);
+              dragSelectionRef.isDragging = true;
+            }
+          }
+        } else if (change.position && !dragConfirmedRef.current.has(change.id)) {
+          // Position update before drag is confirmed — check threshold
+          const startPos = dragStartPositionsRef.current.get(change.id);
+          if (startPos) {
+            const dx = Math.abs(change.position.x - startPos.x);
+            const dy = Math.abs(change.position.y - startPos.y);
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance >= DRAG_THRESHOLD_PX) {
+              // Drag confirmed — mark as confirmed and clear start position
+              dragConfirmedRef.current.add(change.id);
+              dragStartPositionsRef.current.delete(change.id);
+            }
           }
         }
-        // Match position/dragging: intermediate dimension events often omit `resizing`
-        // (undefined). Only treat `resizing === false` as "resize ended" — otherwise we
-        // would delete the id mid-gesture and merge stale store sizes over RF's live node.
+
+        if (!change.dragging) {
+          // Drag ended — check if it passed the threshold
+          const startPos = dragStartPositionsRef.current.get(change.id);
+          const node = localNodesStateRef.current.find((n) => n.id === change.id);
+
+          if (startPos && node && !dragConfirmedRef.current.has(change.id)) {
+            // Drag didn't pass threshold — snap back to start position
+            const dx = Math.abs(node.position.x - startPos.x);
+            const dy = Math.abs(node.position.y - startPos.y);
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < DRAG_THRESHOLD_PX) {
+              // Snap back
+              const nodeIndex = localNodesStateRef.current.findIndex((n) => n.id === change.id);
+              if (nodeIndex !== -1) {
+                const updated = [...localNodesStateRef.current];
+                updated[nodeIndex] = { ...node, position: startPos };
+                localNodesStateRef.current = updated;
+                localNodesRef.current = updated;
+                setTick((tick) => tick + 1);
+              }
+            }
+          }
+
+          // Reset tracking refs
+          draggingNodeIdsRef.current.delete(change.id);
+          dragConfirmedRef.current.delete(change.id);
+          dragStartPositionsRef.current.delete(change.id);
+          // Clear drag selection state on drag end
+          if (!draggingNodeIdsRef.current.size) {
+            dragSelectionRef.selectedBeforeDrag.clear();
+            dragSelectionRef.isDragging = false;
+          }
+        } else {
+          draggingNodeIdsRef.current.add(change.id);
+        }
+      }
+
+      // Block position updates for nodes that haven't passed the drag threshold
+      // Note: We still allow the position to update visually, but we track the start position
+      // for potential snap-back on pointerup
+      const filteredChanges = changes.map((change) => {
+        if (change.type === "position" && change.dragging) {
+          const wasAlreadyDragging = draggingNodeIdsRef.current.has(change.id);
+          const isConfirmed = dragConfirmedRef.current.has(change.id) || wasAlreadyDragging;
+
+          if (!isConfirmed) {
+            // Node is trying to move but hasn't passed threshold yet
+            // We don't block it visually here - the snap-back will happen on pointerup
+          }
+        }
+        return change;
+      });
+
+      // Process dimension changes (resize)
+      for (const change of filteredChanges) {
         if (change.type === "dimensions") {
           if (change.resizing === false) {
             resizingNodeIdsRef.current.delete(change.id);
@@ -223,7 +378,7 @@ export function useLocalNodes(
         }
       }
 
-      const sanitizedChanges = changes.map((change) => {
+      const sanitizedChanges = filteredChanges.map((change) => {
         if (change.type !== "replace") return change;
         const previousNode = localNodesRef.current.find((node) => node.id === change.item.id);
         const previousData = previousNode?.data as Record<string, unknown> | undefined;
@@ -248,7 +403,7 @@ export function useLocalNodes(
           },
         };
       });
-      const hasSelect = changes.some((c) => c.type === "select");
+      const hasSelect = filteredChanges.some((c) => c.type === "select");
       innerOnNodesChange(sanitizedChanges);
       const forApply = filterNodeChangesForSceneMoveLock(diagram, sanitizedChanges);
 
