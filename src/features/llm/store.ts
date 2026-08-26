@@ -132,7 +132,13 @@ function connectionToConfig(connection: LLMConnection): LLMConfig {
 }
 
 function defaultTitleForLanguage(): string {
-  return getResolvedAppLanguage() === "en" ? "New conversation" : "Nova conversa";
+  const lang = getResolvedAppLanguage();
+  const isEN = lang === "en";
+  const stamp = new Date().toLocaleDateString(
+    isEN ? "en-US" : "pt-BR",
+    { day: "2-digit", month: "short" },
+  );
+  return isEN ? `Conversation · ${stamp}` : `Conversa · ${stamp}`;
 }
 
 async function executeLLMMessage(

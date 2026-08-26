@@ -10,6 +10,7 @@ import { formatDistanceToNow, isToday, isYesterday, format } from "date-fns";
 import { enUS, ptBR } from "date-fns/locale";
 import type { Locale } from "date-fns";
 import { useLLMChat } from "@/features/canvas/chat";
+import { useActiveDiagramModel } from "@/features/diagram";
 import { ThreadRenameControl } from "./ThreadRenameControl";
 import type { ConversationThread } from "@/features/llm";
 
@@ -62,6 +63,10 @@ export function ThreadDrawer({ open, onClose }: ThreadDrawerProps) {
   const locale = i18n.language === "pt-BR" ? ptBR : enUS;
   const drawerRef = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState("");
+  // The diagram model is the source of truth for "current diagram" — the
+  // store's `activeDiagramId` is only set after `loadHistoryForDiagram` runs,
+  // but the model is already available the moment the chat mounts.
+  const activeDiagram = useActiveDiagramModel();
 
   const {
     threads,
@@ -70,6 +75,7 @@ export function ThreadDrawer({ open, onClose }: ThreadDrawerProps) {
     switchThread,
     renameThread,
     deleteThread,
+    loadHistoryForDiagram,
   } = useLLMChat({ selectedNodeIds: new Set(), selectedNodeId: null });
 
   // Close on Escape
@@ -82,41 +88,27 @@ export function ThreadDrawer({ open, onClose }: ThreadDrawerProps) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [open, onClose]);
 
-  // Close on click outside
-  useEffect(() => {
-    if (!open) return;
-    const handleClick = (e: MouseEvent) => {
-      if (drawerRef.current && !drawerRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    };
-    const timer = setTimeout(() => {
-      document.addEventListener("mousedown", handleClick);
-    }, 50);
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener("mousedown", handleClick);
-    };
-  }, [open, onClose]);
-
   const handleSelectThread = useCallback(
     (threadId: string) => {
+      // Always ensure the store is hydrated for the current diagram before
+      // switching — otherwise switchThread becomes a no-op when
+      // activeDiagramId is still null on first interaction.
+      const diagramId = activeDiagram?.id ?? activeThread?.diagramId;
+      if (diagramId) {
+        loadHistoryForDiagram(diagramId);
+      }
       switchThread(threadId);
       onClose();
     },
-    [switchThread, onClose],
+    [activeDiagram, activeThread, loadHistoryForDiagram, switchThread, onClose],
   );
 
   const handleCreateThread = useCallback(() => {
-    // Use the active diagram if known — `useLLMChat` switches by activeDiagram
-    // context, so passing `undefined` would still attempt to create one
-    // against the active diagram (or `null` if none).
-    const diagramId = activeThread?.diagramId;
-    if (diagramId) {
-      createThread(diagramId);
-    }
+    const diagramId = activeDiagram?.id ?? activeThread?.diagramId;
+    if (!diagramId) return;
+    createThread(diagramId);
     onClose();
-  }, [activeThread, createThread, onClose]);
+  }, [activeDiagram, activeThread, createThread, onClose]);
 
   const handleDeleteThread = useCallback(
     (threadId: string) => {
@@ -139,18 +131,23 @@ export function ThreadDrawer({ open, onClose }: ThreadDrawerProps) {
 
   return (
     <>
+      {/* Light dim layer that ONLY covers the chat panel — not the whole
+          viewport. Keeps the focus inside the chat without obscuring the
+          canvas underneath. */}
       {open && (
-        <div
-          className="absolute inset-0 z-40 bg-black/30 backdrop-blur-[2px]"
+        <button
+          type="button"
+          aria-label={t("llmChat.close")}
           onClick={onClose}
-          aria-hidden="true"
+          className="absolute inset-0 z-30 cursor-default bg-black/30 backdrop-blur-[1px]"
         />
       )}
 
+      {/* Drawer sits inside the chat panel, slides in from the left edge */}
       <div
         ref={drawerRef}
         className={cn(
-          "absolute inset-y-0 left-0 z-50 flex w-[20rem] max-w-[88vw] flex-col border-r border-border bg-card shadow-2xl transition-transform duration-200 ease-out",
+          "absolute inset-y-0 left-0 z-40 flex w-[20rem] max-w-[88%] flex-col border-r border-border bg-card shadow-xl transition-transform duration-200 ease-out",
           open ? "translate-x-0" : "-translate-x-full pointer-events-none",
         )}
         role="dialog"
@@ -197,6 +194,7 @@ export function ThreadDrawer({ open, onClose }: ThreadDrawerProps) {
             size="sm"
             className="w-full justify-center gap-2 text-xs"
             onClick={handleCreateThread}
+            disabled={!activeDiagram && !activeThread}
           >
             <MessageSquarePlus className="h-3.5 w-3.5" />
             {t("llmChat.threads.newThread")}

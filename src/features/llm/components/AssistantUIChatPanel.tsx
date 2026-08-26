@@ -92,14 +92,20 @@ export function AssistantUIChatPanel({
     }
   }, [activeDiagram, createThread]);
 
+  // Header title: prefer active thread's title; if a thread exists but is
+  // empty, fall back to the default "Diagram assistant" label so the UI
+  // doesn't surface the raw seed title ("Nova conversa") while still
+  // showing it inside the threads drawer for context.
   const threadedTitle =
-    activeThread?.title && activeThread.title.length > 0
+    activeThread && activeThread.title && activeThread.title.length > 0
       ? activeThread.title
-      : t("llmChat.title");
+      : t("llmChat.headerSubtitle", {
+          defaultValue: "Diagram assistant",
+        });
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
-      <div className="flex h-full w-[26rem] max-w-[92vw] flex-col overflow-hidden rounded-l-xl border-l border-border bg-card shadow-2xl">
+      <div className="relative flex h-full w-[26rem] max-w-[92vw] flex-col overflow-hidden rounded-l-xl border-l border-border bg-card shadow-2xl">
         {/* Header */}
         <ChatHeader
           title={threadedTitle}

@@ -141,5 +141,7 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
     switchThread,
     renameThread,
     deleteThread,
+    loadHistoryForDiagram,
+    activeDiagramId,
   };
 }
