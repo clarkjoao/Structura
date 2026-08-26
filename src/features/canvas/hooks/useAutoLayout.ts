@@ -1,20 +1,23 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { layout } from "../layout/layoutEngine";
 import { fromDiagram, resizableIds } from "../layout/fromDiagram";
-import { toAppliedLayouts, measuredSizesOf, interiorWaypoints } from "../layout/applyLayout";
-import { useDiagramActions, useDiagramStore, generateId } from "@/features/diagram";
+import { toAppliedLayouts, measuredSizesOf } from "../layout/applyLayout";
+import { applyLayoutResultEdges } from "../layout/applyLayoutResult";
+import { useDiagramActions, useDiagramStore } from "@/features/diagram";
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
 
 export function useAutoLayout() {
   const { t } = useTranslation();
   const { fitView, getNodes } = useReactFlow();
-  const { applyAutoLayout, updateHandleOrder, setEdgeControlPoints, resetEdgeControlPoints } =
-    useDiagramActions();
+  const { applyAutoLayout } = useDiagramActions();
   const [isRunning, setIsRunning] = useState(false);
+
+  // Keep a ref to the latest runAutoLayout for recursive calls
+  const runAutoLayoutRef = useRef<(components: Record<string, Component>, connections: Connection[], nodeLayouts: Record<string, NodeLayout>, measuredNodes?: Node[]) => Promise<void>>();
 
   const runAutoLayout = useCallback(
     async (
@@ -36,7 +39,7 @@ export function useAutoLayout() {
       if (!hasMeasuredDimensions) {
         // Retry after a short delay to allow nodes to measure
         requestAnimationFrame(() => {
-          runAutoLayout(components, connections, nodeLayouts, getNodes());
+          runAutoLayoutRef.current?.(components, connections, nodeLayouts, getNodes());
         });
         return;
       }
@@ -55,31 +58,9 @@ export function useAutoLayout() {
 
         applyAutoLayout(toAppliedLayouts(graph, result, resizableIds(graph, components)));
 
-        // handleOrder is what makes ELK's crossing-minimisation land on the canvas.
-        // The user explicitly asked for a layout; giving them round-robin handles after
-        // a full reorganisation would undo the legibility gain silently.
-        for (const node of graph.nodes) {
-          const outgoing = result.handleOrder.outgoing.get(node.id);
-          if (outgoing?.length) updateHandleOrder(node.id, "outgoing", outgoing);
-          const incoming = result.handleOrder.incoming.get(node.id);
-          if (incoming?.length) updateHandleOrder(node.id, "incoming", incoming);
-        }
-
         const diagramId = useDiagramStore.getState().activeDiagramId;
         if (diagramId !== null) {
-          for (const edge of graph.edges) {
-            resetEdgeControlPoints(diagramId, edge.id);
-
-            const waypoints = interiorWaypoints(result.edgeRoutes.get(edge.id));
-            if (waypoints.length === 0) continue;
-
-            setEdgeControlPoints(
-              diagramId,
-              edge.id,
-              waypoints.map((wp) => ({ id: generateId("cp"), x: wp.x, y: wp.y })),
-              { history: false },
-            );
-          }
+          applyLayoutResultEdges(graph, result, diagramId);
         }
 
         requestAnimationFrame(() => {
@@ -96,14 +77,16 @@ export function useAutoLayout() {
     [
       isRunning,
       applyAutoLayout,
-      updateHandleOrder,
-      setEdgeControlPoints,
-      resetEdgeControlPoints,
       fitView,
       getNodes,
       t,
     ],
   );
+
+  // Keep ref in sync with the callback
+  useEffect(() => {
+    runAutoLayoutRef.current = runAutoLayout;
+  }, [runAutoLayout]);
 
   return { runAutoLayout, isRunning };
 }

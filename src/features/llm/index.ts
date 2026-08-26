@@ -60,7 +60,6 @@ export {
   buildIRSystemPrompt,
   downloadIR,
   serializeIR,
-  setApplyElkWaypoints,
   IR_SEMANTIC_TYPES,
   IR_TIERS,
   mapNodeToComponent,

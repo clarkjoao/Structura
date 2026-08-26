@@ -243,6 +243,18 @@ export const layoutSlice = (
    * Writes a whole layout run in one mutation, so it is one undo step however
    * many nodes moved.
    *
+   * That single `set()` is what makes the undo step single, and it is load-bearing:
+   * `pushHistory` is called once, from inside it, before anything is written.
+   *
+   * Do not split this into one write per node. It would still *look* correct today,
+   * because `pushHistory` coalesces pushes that land within `HISTORY_COALESCE_MS`
+   * (1500 ms, see `history.slice.ts`) and every caller writes synchronously after
+   * `await layout()` — so the extra checkpoints would be swallowed. That property is
+   * temporal, not structural: add a debounce, an `await`, or any scheduling between
+   * the writes and the run silently becomes one undo step per node, with no test
+   * going red. `layout.slice.autolayout.test.ts` runs on frozen fake timers and so
+   * cannot catch it either.
+   *
    * `width`/`height` are optional and only set when the caller passes them: a
    * container has to be resized to hold what the layout put inside it, and
    * dropping that size is what used to leave children outside their own panel.

@@ -13,9 +13,7 @@ import {
   FileInput,
 } from "lucide-react";
 import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
-import { layout } from "@/features/canvas/layout/layoutEngine";
-import { fromDiagram, resizableIds } from "@/features/canvas/layout/fromDiagram";
-import { interiorWaypoints, toAppliedLayouts } from "@/features/canvas/layout/applyLayout";
+import { layoutScopedNodes } from "@/features/canvas/layout/layoutScopedNodes";
 import { useCanvasSelectionStore } from "@/features/canvas/hooks/useCanvasSelectionStore";
 import {
   useFlows,
@@ -33,7 +31,6 @@ import {
   stepsToMermaid,
   parseMermaidFlowchart,
   parseMermaidSequence,
-  generateId,
 } from "@/features/diagram";
 import type { Flow } from "@/features/diagram";
 import { toast } from "sonner";
@@ -70,7 +67,7 @@ const FlowPanel = ({
   const components = useComponents();
   const connections = useConnections();
   const resolvedNodeLayouts = useResolvedNodeLayouts();
-  const { removeFlow, addFlow, updateFlow, applyAutoLayout, setEdgeControlPoints, resetEdgeControlPoints } = useDiagramActions();
+  const { removeFlow, addFlow, updateFlow, applyAutoLayout } = useDiagramActions();
   const importMermaidSequenceResult = useDiagramStore((state) => state.importMermaidSequenceResult);
   const importDrawioResult = useDiagramStore((state) => state.importDrawioResult);
   const reactFlowInstance = useReactFlow();
@@ -81,42 +78,17 @@ const FlowPanel = ({
 
   const layoutNewNodes = useCallback(
     async (nodeIds: string[], connectionIds: string[]) => {
-      if (nodeIds.length === 0) return;
-
-      const scopedComponents = Object.fromEntries(
-        nodeIds.map((id) => components[id]).filter(Boolean).map((c) => [c.id, c]),
-      );
-      const scopedConnections = connectionIds
-        .map((id) => connections[id])
-        .filter(Boolean);
-
-      const graph = fromDiagram(scopedComponents, scopedConnections, resolvedNodeLayouts);
-      const result = await layout(graph);
-      if (result.boxes.size === 0) return;
-
-      const anchor = onGetInsertPosition();
-      const offset = {
-        x: anchor.x - result.bounds.width / 2,
-        y: anchor.y - result.bounds.height / 2,
-      };
-
-      applyAutoLayout(toAppliedLayouts(graph, result, resizableIds(graph, scopedComponents), offset));
-
-      if (activeDiagramId !== null) {
-        for (const edge of graph.edges) {
-          resetEdgeControlPoints(activeDiagramId, edge.id);
-
-          const waypoints = interiorWaypoints(result.edgeRoutes.get(edge.id), offset);
-          if (waypoints.length === 0) continue;
-
-          setEdgeControlPoints(
-            activeDiagramId,
-            edge.id,
-            waypoints.map((wp) => ({ id: generateId("cp"), x: wp.x, y: wp.y })),
-            { history: false },
-          );
-        }
-      }
+      const applied = await layoutScopedNodes({
+        nodeIds,
+        connectionIds,
+        components,
+        connections,
+        nodeLayouts: resolvedNodeLayouts,
+        anchor: onGetInsertPosition(),
+        activeDiagramId,
+        applyAutoLayout,
+      });
+      if (!applied) return;
 
       requestAnimationFrame(() => {
         reactFlowInstance.fitView({ duration: 400, padding: 0.2 });
@@ -127,8 +99,6 @@ const FlowPanel = ({
       connections,
       resolvedNodeLayouts,
       applyAutoLayout,
-      resetEdgeControlPoints,
-      setEdgeControlPoints,
       activeDiagramId,
       onGetInsertPosition,
       reactFlowInstance,

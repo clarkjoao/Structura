@@ -2,6 +2,7 @@ import { useDiagramStore } from "@/features/diagram";
 import { layout } from "@/features/canvas/layout/layoutEngine";
 import { fromDiagram, resizableIds } from "@/features/canvas/layout/fromDiagram";
 import { toAppliedLayouts } from "@/features/canvas/layout/applyLayout";
+import { applyLayoutResultEdges } from "@/features/canvas/layout/applyLayoutResult";
 import { PATTERNS } from "@/lib/catalogs/patterns";
 import type { DiagramPatchAction } from "./types";
 
@@ -115,13 +116,13 @@ export function applyDiagramPatchAction(
       const graph = fromDiagram(components, connectionsList, diagram.nodeLayouts);
       void layout(graph)
         .then((result) => {
-          const { applyAutoLayout, resetEdgeControlPoints } = useDiagramStore.getState();
+          const { applyAutoLayout } = useDiagramStore.getState();
           // One mutation for the whole run, so a model-initiated relayout is a
           // single undo step rather than an unreachable pile of per-node writes.
           applyAutoLayout(toAppliedLayouts(graph, result, resizableIds(graph, components)));
-          for (const edge of graph.edges) {
-            resetEdgeControlPoints(diagramId, edge.id);
-          }
+          // All edges from the graph get handle order and waypoints — same as every
+          // other layout consumer.
+          applyLayoutResultEdges(graph, result, diagramId);
           console.info(
             `[apply-diagram-patch] AUTO_LAYOUT: positioned ${result.boxes.size} nodes`,
           );

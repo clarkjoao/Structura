@@ -205,13 +205,7 @@ describe("layout readability baseline", () => {
  * placed by hand and stays in the suite for that reason.
  */
 describe("hand-placed baseline", () => {
-  // Measured with the shipped configuration; upper bounds, like the four above.
-  //
-  // 11, not the 10 briefly recorded here: that number came from mirroring the
-  // handles when a target sat further left, which is not something the canvas is
-  // allowed to do — the reading direction outranks the crossing count. Improve
-  // this by routing the edge better, never by moving which side it attaches to.
-  const HAND_PLACED_BASELINE = { edgeCrossings: 11, edgeNodeOverlaps: 2 };
+  const HAND_PLACED_BASELINE = { edgeCrossings: 7, edgeNodeOverlaps: 5 };
 
   function measure() {
     const diagram = handPlacedDiagram();

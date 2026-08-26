@@ -5,7 +5,7 @@ import { layout } from "./layoutEngine";
 import { fromDiagram, resizableIds } from "./fromDiagram";
 import type { LayoutGraph, LayoutResult } from "./contract";
 import { toAppliedLayouts } from "./applyLayout";
-import { handPlacedDiagram } from "./hand-placed-diagram";
+import { handPlacedDiagram, handPlacedParents } from "./hand-placed-diagram";
 import { REFERENCE_DIAGRAMS } from "./reference-diagrams";
 
 /**
@@ -58,12 +58,18 @@ function childrenOutsideParent(graph: LayoutGraph, result: LayoutResult): string
   return escaped;
 }
 
-/** The hand-placed fixture as engine input: flat, with edges against the flow. */
+/** The hand-placed fixture as engine input: with a real containment hierarchy. */
 function handPlacedGraph(): LayoutGraph {
   const diagram = handPlacedDiagram();
+  const parents = handPlacedParents(diagram);
   const nodes = [...diagram.boxes]
     .filter(([id]) => id !== diagram.rootId)
-    .map(([id, box]) => ({ id, parentId: null, width: box.width, height: box.height }));
+    .map(([id, box]) => ({
+      id,
+      parentId: parents.get(id) ?? null,
+      width: box.width,
+      height: box.height,
+    }));
   return { nodes, edges: diagram.edges };
 }
 

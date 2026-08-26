@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { interiorWaypoints } from "@/features/llm/ir/apply-ir";
+import { interiorWaypoints } from "./applyLayout";
 import { layout, layoutElkGraph } from "./layoutEngine";
 import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
 import { measureReadability, totalReadability } from "./layoutReadability";

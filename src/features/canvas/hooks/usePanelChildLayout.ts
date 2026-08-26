@@ -5,12 +5,8 @@ import { toast } from "sonner";
 import { layout } from "../layout/layoutEngine";
 import { fromDiagram, resizableIds } from "../layout/fromDiagram";
 import { measuredSizesOf, toAppliedLayouts } from "../layout/applyLayout";
-import {
-  useDiagramActions,
-  useComponents,
-  useConnections,
-  useResolvedNodeLayouts,
-} from "@/features/diagram";
+import { applyLayoutResultEdges } from "../layout/applyLayoutResult";
+import { useDiagramActions, useDiagramStore, useComponents, useConnections, useResolvedNodeLayouts } from "@/features/diagram";
 
 export function usePanelChildLayout() {
   const { t } = useTranslation();
@@ -45,7 +41,6 @@ export function usePanelChildLayout() {
         }
 
         // The panel keeps where it sits; only its size comes from the layout.
-        // Its children are positioned relative to it either way.
         const panelLayout = nodeLayouts[panelId];
         const applied = toAppliedLayouts(graph, result, resizableIds(graph, components)).map(
           (entry) =>
@@ -55,6 +50,19 @@ export function usePanelChildLayout() {
         );
 
         applyAutoLayout(applied);
+
+        // Write handle order and waypoints for the edges that belong to this layout.
+        const diagramId = useDiagramStore.getState().activeDiagramId;
+        if (diagramId !== null) {
+          const panelNodeIds = new Set(graph.nodes.map((n) => n.id));
+          const scopedEdges = graph.edges.filter(
+            (e) => panelNodeIds.has(e.sourceId) && panelNodeIds.has(e.targetId),
+          );
+          applyLayoutResultEdges(graph, result, diagramId, {
+            edgeIds: new Set(scopedEdges.map((e) => e.id)),
+          });
+        }
+
         toast.success(t("autoLayout.panelApplied"));
       } catch (err) {
         console.error("[panelChildLayout] ELK error", err);
