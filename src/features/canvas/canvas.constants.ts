@@ -38,6 +38,29 @@ export const FLOW_PARTICLE_DURATION_MS = 1200;
 /** Canvas grid spacing (flow units) shared by node snapping and edge editing. */
 export const GRID_SIZE = 15;
 
+/**
+ * E2E-only escape hatch for `snapToGrid`.
+ *
+ * Why it has to exist: `snapGrid=[15, 15]` quantises node positions, so a drag
+ * shorter than half a grid step produces no movement AT ALL — with or without
+ * the `DRAG_THRESHOLD_PX` gate. That made the two "3 px does not move" tests
+ * unfalsifiable: mutating `DRAG_THRESHOLD_PX` to 0 left both of them green,
+ * which is exactly the shape of the original defect this phase was fixing (a
+ * threshold declared working on the strength of a test that never exercised
+ * it). With snap off the drag distance reaches the rendered transform intact
+ * and the gate becomes observable.
+ *
+ * The flag is set by Cypress in `cy.visit(..., { onBeforeLoad })`, before the
+ * app boots, and is never set in production — `undefined` keeps `snapToGrid`
+ * on, so shipped behaviour is untouched. It deliberately does NOT go through
+ * `canvas-preferences.store`: snapping is not a user-facing setting and making
+ * it one would be a product decision, not a test fixture.
+ */
+export function isSnapToGridDisabledForE2E(): boolean {
+  if (typeof window === "undefined") return false;
+  return (window as { __structuraE2eDisableSnap?: boolean }).__structuraE2eDisableSnap === true;
+}
+
 export {
   PANEL_DEFAULT_W,
   PANEL_DEFAULT_H,
@@ -63,6 +86,19 @@ export const CANVAS_STYLES = `
   .react-flow__pane:active { cursor: grabbing; }
   .react-flow__selection { background: rgba(59, 130, 246, 0.08); border: 1px solid #3b82f6; }
   .react-flow__background pattern circle { fill: hsl(var(--grid-line)); }
+  /*
+   * Phase 4 — decision #9: the bounding-box rect that React Flow draws around a
+   * multi-selection (Cmd+A) used to intercept pane clicks. With pointer-events
+   * disabled, keyboard focus is unaffected (arrow keys still nudge, Ctrl+A
+   * still re-selects), but mouse clicks inside the bbox fall through to the
+   * pane and clear the selection as a regular pane click would.
+   *
+   * The rect's own context-menu handler is also gated by this, which is the
+   * desired behaviour: a right-click inside the bbox opens the menu against
+   * whatever element is actually under the cursor (the pane or a node behind),
+   * not against the invisible selection box.
+   */
+  .react-flow__nodesselection-rect { pointer-events: none; }
   .node-diff-added {
     outline: 2px solid #22c55e;
     outline-offset: 3px;

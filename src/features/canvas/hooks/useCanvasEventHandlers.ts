@@ -1,5 +1,6 @@
 import { useCallback, useRef } from "react";
 import type { Node, Edge, OnEdgesChange, OnConnect, Connection } from "@xyflow/react";
+import { useReactFlow } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import type { CanvasVisualState } from "./useCanvasVisualState";
 import { useFlowMode } from "../flow/FlowModeContext";
@@ -13,6 +14,7 @@ import type { EdgeStyle } from "@/features/diagram";
 import { getLastEdgeStyle } from "@/features/diagram";
 import { getNodeType } from "../utils/node-type-utils";
 import { dragSelectionRef } from "./useLocalNodes";
+import { usePointerFunnel, type GestureTarget } from "../selection/pointerFunnel";
 
 interface UseCanvasEventHandlersParams {
   visualState: CanvasVisualState;
@@ -47,6 +49,7 @@ export function useCanvasEventHandlers({
 }: UseCanvasEventHandlersParams) {
   const { t } = useTranslation();
   const { isRecording, onRecordNodeClick, onRecordEdgeClick } = useFlowMode();
+  const reactFlowInstance = useReactFlow();
   const {
     setSelectedNodeId,
     setSelectedNodeIds,
@@ -57,6 +60,107 @@ export function useCanvasEventHandlers({
     clearHighlight,
     clearCanvasSelection,
   } = visualState;
+
+  /**
+   * Right-button context-menu opener (decisions #7 + #8). Lives in the
+   * pointer funnel and fires on pointerup if the gesture stayed below the
+   * 4 px threshold. Above the threshold the funnel does not call back —
+   * React Flow's `panOnDrag=[1,2]` handles the drag-pan.
+   */
+  const openContextMenuFromFunnel = useCallback(
+    (target: GestureTarget, atScreen: { x: number; y: number }) => {
+      if (isRecording || isCompareMode || isPlaying || isFlowPanelOpen) return;
+      const isOnNode =
+        target.kind === "node" ||
+        target.kind === "panel-header" ||
+        target.kind === "panel-border" ||
+        target.kind === "panel-body";
+      if (isOnNode) {
+        const nodeId = target.nodeId;
+        const node = reactFlowInstance.getNodes().find((n) => n.id === nodeId);
+        if (!node) return;
+        // Mirror the legacy onNodeContextMenu body verbatim — the menu
+        // position and selection-restore logic must not diverge.
+        if (isRecording || isCompareMode) return;
+        clearHighlight();
+        setContextMenu({ x: atScreen.x, y: atScreen.y, elementId: node.id });
+        setPaneContextMenu(null);
+        setSelectedNodeId(node.id);
+        setSelectedNodeIds((prev) => {
+          const next = prev.has(node.id) ? prev : new Set([node.id]);
+          prevSelectionRef.current = [...next].sort().join(",");
+          return next;
+        });
+        setSelectedEdgeId(null);
+        return;
+      }
+      // Pane: open quick insert.
+      if (
+        visualState.selectedNodeId ||
+        visualState.selectedEdgeId ||
+        visualState.selectedNodeIds.size > 0
+      ) {
+        return;
+      }
+      clearHighlight();
+      setContextMenu(null);
+      setPaneContextMenu(null);
+      const flowPos = screenToFlowPosition(atScreen);
+      setQuickInsert({ screenPos: atScreen, flowPos, sourceNodeId: null });
+    },
+    [
+      clearHighlight,
+      isCompareMode,
+      isPlaying,
+      isFlowPanelOpen,
+      isRecording,
+      reactFlowInstance,
+      screenToFlowPosition,
+      setContextMenu,
+      setPaneContextMenu,
+      setQuickInsert,
+      setSelectedEdgeId,
+      setSelectedNodeId,
+      setSelectedNodeIds,
+      visualState.selectedNodeId,
+      visualState.selectedEdgeId,
+      visualState.selectedNodeIds,
+    ],
+  );
+
+  /**
+   * Decision #1 — a click in a panel's empty interior is a background click.
+   * Same function the pane click uses, so the two paths cannot drift.
+   */
+  const clearSelectionFromPanelBody = useCallback(() => {
+    prevSelectionRef.current = "";
+    setQuickInsert(null);
+    clearCanvasSelection();
+  }, [clearCanvasSelection, setQuickInsert]);
+
+  /**
+   * Decision #8 — right-button pan over a node or a panel.
+   *
+   * Only the funnel calls this, and only for presses d3-zoom refused (inside
+   * `.nopan`). `setViewport` with `duration: 0` goes through React Flow's own
+   * pan-zoom instance, so the transform, the `onMove`/`onMoveEnd` round-trip
+   * and therefore `updateViewport`'s persistence all behave exactly as they do
+   * for a pane pan — there is no second viewport source of truth.
+   */
+  const panViewportBy = useCallback(
+    (dx: number, dy: number) => {
+      if (isPlaying || isFlowPanelOpen) return;
+      const vp = reactFlowInstance.getViewport();
+      reactFlowInstance.setViewport({ x: vp.x + dx, y: vp.y + dy, zoom: vp.zoom }, { duration: 0 });
+    },
+    [reactFlowInstance, isPlaying, isFlowPanelOpen],
+  );
+
+  const funnel = usePointerFunnel({
+    openContextMenu: openContextMenuFromFunnel,
+    onBackgroundClick: clearSelectionFromPanelBody,
+    panViewportBy,
+  });
 
   const onEdgesChange: OnEdgesChange = useCallback(() => {}, []);
 
@@ -138,12 +242,17 @@ export function useCanvasEventHandlers({
       clearHighlight();
       setSelectedEdgeId(null);
       setContextMenu(null);
-      if (e.metaKey || e.ctrlKey) {
-        // React Flow owns the multi-selection toggle (see `multiSelectionKeyCode`): by the time
-        // this click handler runs it has already added/removed the node on mousedown and the
-        // result reached the store through `onSelectionFromChanges`. Toggling again here would
-        // undo it — and since `selected` now flows store -> nodes -> React Flow, the two sides
+      if (e.metaKey || e.ctrlKey || e.shiftKey) {
+        // The pointer funnel (decision #3) writes selection on pointerdown —
+        // by the time `onClick` runs, the round-trip has already settled.
+        // Toggling again here would undo the funnel's write, and since
+        // `selected` flows store -> nodes -> React Flow, the two sides
         // would keep correcting each other.
+        return;
+      }
+      if (funnel.consumedClick(node.id)) {
+        // Same race protection when the funnel replaced the selection with
+        // just this node on pointerdown (decision #3 — replace half).
         return;
       }
       prevSelectionRef.current = node.id;
@@ -163,6 +272,7 @@ export function useCanvasEventHandlers({
       setContextMenu,
       setQuickInsert,
       setPaneContextMenu,
+      funnel,
     ],
   );
 
@@ -370,39 +480,28 @@ export function useCanvasEventHandlers({
     ],
   );
 
-  const onNodeContextMenu = useCallback(
-    (event: React.MouseEvent, node: Node) => {
-      if (isRecording || isCompareMode) return;
-      event.preventDefault();
-      clearHighlight();
-      setContextMenu({
-        x: event.clientX,
-        y: event.clientY,
-        elementId: node.id,
-      });
-      setPaneContextMenu(null);
-      setSelectedNodeId(node.id);
-      // Keep `selectedNodeIds` in sync: React Flow does not select on context menu, so without
-      // this the panel/toolbar follow the new node while the dim + selection ring stay on the
-      // previously selected one. Right-clicking inside a multi-selection preserves it.
-      setSelectedNodeIds((prev) => {
-        const next = prev.has(node.id) ? prev : new Set([node.id]);
-        prevSelectionRef.current = [...next].sort().join(",");
-        return next;
-      });
-      setSelectedEdgeId(null);
-    },
-    [
-      clearHighlight,
-      isCompareMode,
-      isRecording,
-      setContextMenu,
-      setPaneContextMenu,
-      setSelectedNodeId,
-      setSelectedNodeIds,
-      setSelectedEdgeId,
-    ],
-  );
+  /**
+   * Decision #7 — the node context menu must open on RELEASE of the right
+   * button, never on press: "se clicar e segurar, o usuário quer arrastar".
+   *
+   * This handler used to open the menu itself. React Flow wires it to the
+   * node element's React `onContextMenu`, i.e. to the native `contextmenu`
+   * event, and that path has no drag-threshold gate — so it defeated the
+   * funnel's gate on every platform, in two different ways:
+   *
+   *  - macOS fires `contextmenu` on MOUSEDOWN. The menu appeared the instant
+   *    the button went down, before the user could move a pixel.
+   *  - Windows/Linux fire it after `mouseup`. The funnel correctly withheld
+   *    the menu after a >= `DRAG_THRESHOLD_PX` right-drag, and then this
+   *    handler opened it anyway a moment later.
+   *
+   * The opening logic now lives exclusively in `openContextMenuFromFunnel`,
+   * which fires from `pointerup` and is threshold-gated. All that is left to
+   * do here is suppress Chrome's own menu; the funnel decides the rest.
+   */
+  const onNodeContextMenu = useCallback((event: React.MouseEvent) => {
+    event.preventDefault();
+  }, []);
 
   const closePanel = useCallback(() => {
     prevSelectionRef.current = "";
@@ -429,5 +528,10 @@ export function useCanvasEventHandlers({
     onNodeContextMenu,
     handleQuickInsert,
     closePanel,
+    /**
+     * Phase 4 — exposed for the Esc handler (decision #5, layer 1). Returns
+     * true if a gesture was actually cancelled.
+     */
+    cancelInFlightGesture: funnel.cancelInFlightGesture,
   };
 }

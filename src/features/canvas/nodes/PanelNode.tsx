@@ -11,7 +11,7 @@ import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
 import { useCollabHighlight } from "@/features/collaboration";
 import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPresence";
 import { usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
-import { DEFAULT_PANEL_OPACITY } from "../constants/panel.constants";
+import { DEFAULT_PANEL_OPACITY, PANEL_BORDER_HIT_PX } from "../constants/panel.constants";
 import { buildPanelHeaderLabel, buildPanelSubLabel } from "./panelLabel";
 
 export type PanelNodeData = {
@@ -103,7 +103,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
   if (collapsed) {
     return (
       <div
-        className={`relative w-full h-full rounded-lg flex items-center gap-2 px-3 ${motionClass} ${isActive ? selectedRing : unselectedClass}`}
+        className={`relative w-full h-full rounded-lg panel-header flex items-center gap-2 px-3 ${motionClass} ${isActive ? selectedRing : unselectedClass}`}
         style={{
           backgroundColor,
           border: `2px ${borderStyle} ${borderColor}`,
@@ -174,7 +174,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
         handleStyle={{ backgroundColor: color }}
       />
       <div
-        className={`w-full h-full rounded-xl ${motionClass} relative ${!isTransparent ? "backdrop-blur-sm" : ""} ${isActive ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
+        className={`w-full h-full rounded-xl ${motionClass} relative flex flex-col ${!isTransparent ? "backdrop-blur-sm" : ""} ${isActive ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
         style={{
           backgroundColor,
           border: `2px ${borderStyle} ${borderColor}`,
@@ -197,7 +197,54 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
             style={{ boxShadow: `0 0 20px 4px ${colorWithAlpha(color, 0.5)}` }}
           />
         )}
-        <div className="flex items-start gap-2 px-3 py-2.5">
+        {/*
+         * Phase 4 — decisions #1 + #2. Three named hit regions, and the
+         * geometry below is the whole point: an earlier revision described
+         * this layout in prose while the DOM did something else, and the
+         * Cypress case that "proved" it clicked with `force: true`, i.e. an
+         * element no cursor could reach.
+         *
+         *  - `.panel-border` — four absolutely positioned strips forming a
+         *    ring `PANEL_BORDER_HIT_PX` (8 px) wide, measured inward from the
+         *    container's padding box. Clicking or dragging here selects and
+         *    moves the panel. It is four elements and not one `inset-0` div
+         *    with an 8 px transparent border because a div's hit area is its
+         *    whole border box: `inset-0` made the "ring" cover the entire
+         *    panel, which is exactly how the interior ended up selecting.
+         *  - `.panel-header` — the drag handle (decision #2, enforced by
+         *    `dragHandle` in `node-types/panel.descriptor.ts`) and a select
+         *    target on click.
+         *  - `.panel-body` — the empty interior. `flex-1` on a `flex-col`
+         *    container is what gives it real height; before this it laid out
+         *    at 397×0 and never received a single real pointer event.
+         *
+         * Stacking: ring `z-[2]` over header `z-[1]` over body `z-0`, so the
+         * 8 px band wins over the header at the top corners. The ring's boxes
+         * start at the padding box, i.e. 2 px in from the node's outer edge —
+         * that outer 2 px stays free for `NodeResizer`'s handles, which is
+         * where they were reachable before this change too.
+         */}
+        <div
+          className="panel-border absolute z-[2] left-0 right-0 top-0"
+          data-border-side="top"
+          style={{ height: PANEL_BORDER_HIT_PX }}
+        />
+        <div
+          className="panel-border absolute z-[2] left-0 right-0 bottom-0"
+          data-border-side="bottom"
+          style={{ height: PANEL_BORDER_HIT_PX }}
+        />
+        <div
+          className="panel-border absolute z-[2] top-0 bottom-0 left-0"
+          data-border-side="left"
+          style={{ width: PANEL_BORDER_HIT_PX }}
+        />
+        <div
+          className="panel-border absolute z-[2] top-0 bottom-0 right-0"
+          data-border-side="right"
+          style={{ width: PANEL_BORDER_HIT_PX }}
+        />
+        <div className="panel-header relative z-[1] shrink-0 flex items-start gap-2 px-3 py-2.5">
           {customDiagramIcon ? (
             <div className="shrink-0 mt-0.5" style={{ color }}>
               <CustomIconRenderer icon={customDiagramIcon} size={24} />
@@ -235,6 +282,88 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
             </button>
           )}
         </div>
+        {/*
+         * The body is a sibling of the header inside the same outer container.
+         * Child nodes are separate `.react-flow__node` elements rendered by
+         * React Flow (because they have parentId); they sit ABOVE the body in
+         * DOM order via React Flow's transform layer.
+         *
+         * Decision #1 in full: the interior of a panel behaves as CANVAS
+         * BACKGROUND. A click clears the selection, a drag draws a marquee,
+         * and neither selects or moves the panel. The two handlers below are
+         * what makes that true, and each one is load-bearing for a different
+         * half — both were measured in real Chrome, not read off the code:
+         *
+         *  - `onPointerDown` forwards the LEFT-button press to
+         *    `.react-flow__pane`. React Flow only arms `selectionOnDrag` when
+         *    the press lands on the pane element itself:
+         *
+         *        const eventTargetIsContainer = event.target === container.current;
+         *        const isSelectionActive =
+         *          (selectionOnDrag && eventTargetIsContainer) || selectionKeyPressed;
+         *        if (isNoKeyEvent || !isSelecting || !isSelectionActive || ...) return;
+         *
+         *    (`@xyflow/react/dist/esm/index.mjs`, `Pane.onPointerDownCapture`.)
+         *    A press on `.panel-body` fails that guard, so before this the
+         *    interior drew no marquee at all — measured as 0 marquee frames
+         *    against 12 for the identical drag started one pixel outside the
+         *    panel. Re-dispatching the press with the pane as target satisfies
+         *    the guard; React Flow then calls `setPointerCapture` on the pane,
+         *    so every later move and the release go to the pane natively and
+         *    the rest of the gesture needs no help from us.
+         *
+         *    Right button is deliberately NOT forwarded: the panel's own
+         *    context menu (decision #7, rows 0.4-0.6 of the manual script)
+         *    comes from the funnel resolving this element, and forwarding
+         *    would turn it into the pane's quick-insert.
+         *
+         *  - `onClick` stops the click from reaching React Flow's node click
+         *    handler. This one is NOT dead code, and the measurement that says
+         *    so is worth keeping: with the geometry fixed and this handler
+         *    removed, a real click in the interior with nothing selected
+         *    SELECTED the panel. So propagation up to the node element is the
+         *    real mechanism behind "the body does not select" — the corrected
+         *    geometry alone does not deliver decision #1. The `stopPropagation`
+         *    the previous revision carried as dead weight (the body was 397x0
+         *    and never received an event) is now the thing doing the work.
+         */}
+        <div
+          className="panel-body relative z-0 flex-1 min-h-0"
+          style={{ pointerEvents: "auto" }}
+          onPointerDown={(e) => {
+            if (e.button !== 0) return;
+            const pane = e.currentTarget
+              .closest(".react-flow")
+              ?.querySelector<HTMLElement>(".react-flow__pane");
+            if (!pane) return;
+            const native = e.nativeEvent;
+            pane.dispatchEvent(
+              new PointerEvent("pointerdown", {
+                pointerId: native.pointerId,
+                pointerType: native.pointerType,
+                isPrimary: native.isPrimary,
+                clientX: native.clientX,
+                clientY: native.clientY,
+                screenX: native.screenX,
+                screenY: native.screenY,
+                button: native.button,
+                buttons: native.buttons,
+                ctrlKey: native.ctrlKey,
+                shiftKey: native.shiftKey,
+                altKey: native.altKey,
+                metaKey: native.metaKey,
+                bubbles: true,
+                cancelable: true,
+                composed: true,
+                view: window,
+              }),
+            );
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+          }}
+        />
       </div>
     </>
   );
