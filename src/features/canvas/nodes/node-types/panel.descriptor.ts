@@ -13,6 +13,21 @@ export const panelDescriptor: NodeTypeDescriptor = {
   connectable: false,
   canHaveParent: true,
   canBeParent: true,
+  /**
+   * Phase 4 — decision #2. The panel moves by its header or by its border
+   * ring, never by its interior. Without this, the panel body competes with
+   * connector handles for the gesture, which (a) caused the freeze reported
+   * by the product owner when dragging by the body, and (b) defeats the
+   * body = marquee decision.
+   *
+   * The value is a selector LIST, and React Flow evaluates it with
+   * `target.closest(dragHandle)`, so both parts match. `.panel-border` is the
+   * four 8 px ring strips in `PanelNode.tsx`; `.panel-header` is the title
+   * band. Measured before adding `.panel-border`: a drag started on the ring
+   * left the panel at its original `translate(...)` — the ring selected the
+   * panel but could not move it, which contradicted the decision as written.
+   */
+  dragHandle: ".panel-header, .panel-border",
 
   buildData: (comp, ctx) => {
     if (!isPanelComponent(comp)) return {};

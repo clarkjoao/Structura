@@ -47,6 +47,18 @@ function buildSelectionTestPayload(): string {
       parentId: null,
       type: "system",
     },
+    /*
+     * Phase 4 — threshold tests: this node sits 3 px off the 15 px grid
+     * (102, 703) so that a 3 px move triggers the snap-to-grid jump that
+     * originally hid the broken 3 px threshold in `useLocalNodes`.
+     */
+    "standalone_offset": {
+      id: "standalone_offset",
+      name: "Standalone Offset",
+      description: "Three pixels off the 15 px grid",
+      parentId: null,
+      type: "system",
+    },
   };
 
   const connections = {
@@ -65,6 +77,7 @@ function buildSelectionTestPayload(): string {
     "child_2": { elementId: "child_2", x: 250, y: 80 },
     "standalone_1": { elementId: "standalone_1", x: 100, y: 700 },
     "standalone_2": { elementId: "standalone_2", x: 900, y: 700 },
+    "standalone_offset": { elementId: "standalone_offset", x: 102, y: 703 },
   };
 
   return JSON.stringify({
@@ -171,46 +184,28 @@ describe("Phase 1 — Seleção: Hipóteses Centrais", () => {
         });
     });
 
-    it("H2b: Arraste de 1px NÃO move o nó (limiar de 3px)", () => {
+    it("H2b: Arraste de 1px NÃO move o nó (limiar de 4 px — decisão #4)", () => {
       cy.getNode("standalone_1")
         .invoke("attr", "style")
         .then((before) => {
-          const startPos = renderedTranslate(before as string);
-
-          cy.dragNode("standalone_1", 1, 1);
-
+          cy.dragNodeAllowingNoMove("standalone_1", 1, 1);
           cy.getNode("standalone_1")
             .invoke("attr", "style")
-            .then((after) => {
-              const afterPos = renderedTranslate(after as string);
-              const movedX = Math.abs(afterPos.x - startPos.x);
-              const movedY = Math.abs(afterPos.y - startPos.y);
-              cy.log(`Arraste de 1px: deltaX=${movedX.toFixed(1)}, deltaY=${movedY.toFixed(1)}`);
-
-              // Com limiar de 3px, um arraste de 1px NÃO deve mover
-              expect(movedX < 2 && movedY < 2, "nó NÃO deve ter se movido com apenas 1px").to.be.true;
+            .should((after) => {
+              expect(after, "nó NÃO deve ter se movido com apenas 1 px").to.equal(before);
             });
         });
     });
 
-    it("H2c: Arraste de 2px NÃO move o nó (limiar de 3px)", () => {
+    it("H2c: Arraste de 2px NÃO move o nó (limiar de 4 px — decisão #4)", () => {
       cy.getNode("standalone_1")
         .invoke("attr", "style")
         .then((before) => {
-          const startPos = renderedTranslate(before as string);
-
-          cy.dragNode("standalone_1", 2, 2);
-
+          cy.dragNodeAllowingNoMove("standalone_1", 2, 2);
           cy.getNode("standalone_1")
             .invoke("attr", "style")
-            .then((after) => {
-              const afterPos = renderedTranslate(after as string);
-              const movedX = Math.abs(afterPos.x - startPos.x);
-              const movedY = Math.abs(afterPos.y - startPos.y);
-              cy.log(`Arraste de 2px: deltaX=${movedX.toFixed(1)}, deltaY=${movedY.toFixed(1)}`);
-
-              // Com limiar de 3px, um arraste de 2px NÃO deve mover
-              expect(movedX < 2 && movedY < 2, "nó NÃO deve ter se movido com apenas 2px").to.be.true;
+            .should((after) => {
+              expect(after, "nó NÃO deve ter se movido com apenas 2 px").to.equal(before);
             });
         });
     });
@@ -326,39 +321,346 @@ describe("Phase 1 — Seleção: Hipóteses Centrais", () => {
         });
     });
 
-    it("arrastar nó NÃO selecionado adiciona à seleção (draw.io parity)", () => {
+    it("arrastar nó NÃO selecionado SUBSTITUI seleção (decisão #3 — Figma/Miro)", () => {
       // Selecionar standalone_1
       cy.getNode("standalone_1").click({ force: true });
       cy.getNode("standalone_1").should("have.class", "selected");
 
-      // Arrastar standalone_2 (não selecionado) - deve adicionar à seleção
-      cy.getNode("standalone_2")
-        .invoke("attr", "style")
-        .then((before) => {
-          const startPos = renderedTranslate(before as string);
+      // Arrastar standalone_2 (não selecionado) — decisão #3: REPLACE.
+      // O nó arrastado passa a ser o único selecionado (não soma).
+      cy.dragNode("standalone_2", 100, 50);
+      cy.wait(50);
 
-          // Arrastar por mais de 3px para confirmar o drag
-          cy.dragNode("standalone_2", 100, 50);
+      // Verificar que SÓ standalone_2 está na seleção (não standalone_1).
+      cy.get(".react-flow__node.selected").then(($nodes) => {
+        const selectedIds = Array.from($nodes).map((n) => n.getAttribute("data-id"));
+        cy.log(`Nós selecionados após drag unselected: ${JSON.stringify(selectedIds)}`);
+        expect(selectedIds, "apenas standalone_2 deve estar selecionado").to.deep.equal(["standalone_2"]);
+      });
+    });
 
-          // Aguardar para o React Flow processar
-          cy.wait(100);
+    it("Shift+arrastar nó NÃO selecionado ADICIONA à seleção (decisão #3 + #6)", () => {
+      // Selecionar standalone_1
+      cy.getNode("standalone_1").click({ force: true });
+      cy.getNode("standalone_1").should("have.class", "selected");
 
-          // standalone_2 deve ter se movido
-          cy.getNode("standalone_2")
-            .invoke("attr", "style")
-            .should((after) => {
-              const afterPos = renderedTranslate(after);
-              expect(afterPos.x, "standalone_2 deve ter se movido").to.be.greaterThan(startPos.x + 40);
-            });
+      // Shift+arrastar standalone_2 — decisão #3, parte Shift: SOMA.
+      // We must fire a keydown for Shift BEFORE the mousedown so React
+      // Flow's `useKeyPress(multiSelectionKeyCode)` flips
+      // `multiSelectionActive=true` — only then does RF's
+      // `handleNodeClick` toggle selection instead of replacing it. Then
+      // keyup Shift after mouseup so subsequent tests are not poisoned.
+      cy.get("body").type("{shift}", { release: false });
+      cy.window().then((win) => {
+        cy.getNode("standalone_2").then(($node) => {
+          const el = $node[0];
+          if (!el) return;
+          const rect = el.getBoundingClientRect();
+          const startX = rect.left + rect.width / 2;
+          const startY = rect.top + rect.height / 2;
+          const steps = 6;
+          const dx = 60;
+          const dy = 0;
 
-          // Verificar que AMBOS estão na seleção (draw.io parity)
-          cy.get(".react-flow__node.selected").then(($nodes) => {
-            const selectedIds = Array.from($nodes).map((n) => n.getAttribute("data-id"));
-            cy.log(`Nós selecionados: ${JSON.stringify(selectedIds)}`);
-            expect(selectedIds, "ambos standalone_1 e standalone_2 devem estar selecionados").to.include("standalone_1");
-            expect(selectedIds, "ambos standalone_1 e standalone_2 devem estar selecionados").to.include("standalone_2");
+          cy.wrap(el).trigger("mousedown", {
+            clientX: startX,
+            clientY: startY,
+            button: 0,
+            buttons: 1,
+            shiftKey: true,
+            view: win,
+            force: true,
+          });
+          cy.then(() => {
+            const appWindow = win as unknown as {
+              MouseEvent: typeof MouseEvent;
+              dispatchEvent: (event: Event) => boolean;
+            };
+            for (let i = 1; i <= steps; i += 1) {
+              appWindow.dispatchEvent(
+                new appWindow.MouseEvent("mousemove", {
+                  clientX: startX + (dx * i) / steps,
+                  clientY: startY + (dy * i) / steps,
+                  button: 0,
+                  buttons: 1,
+                  bubbles: true,
+                  cancelable: true,
+                  shiftKey: true,
+                  view: win as unknown as Window,
+                }),
+              );
+            }
+            appWindow.dispatchEvent(
+              new appWindow.MouseEvent("mouseup", {
+                clientX: startX + dx,
+                clientY: startY + dy,
+                button: 0,
+                buttons: 0,
+                bubbles: true,
+                cancelable: true,
+                shiftKey: true,
+                view: win as unknown as Window,
+              }),
+            );
           });
         });
+      });
+      cy.get("body").type("{shift}", { release: true });
+      cy.wait(200);
+
+      // Both standalone_1 and standalone_2 must be selected.
+      cy.get(".react-flow__node.selected").then(($nodes) => {
+        const selectedIds = Array.from($nodes).map((n) => n.getAttribute("data-id"));
+        cy.log(`Nós selecionados após Shift+drag: ${JSON.stringify(selectedIds)}`);
+        expect(selectedIds, "ambos standalone_1 e standalone_2 devem estar selecionados").to.include("standalone_1");
+        expect(selectedIds, "ambos standalone_1 e standalone_2 devem estar selecionados").to.include("standalone_2");
+      });
+    });
+  });
+
+  // ============================================================
+  // PHASE 4 — DECISION #4 (drag threshold)
+  //
+  // These tests run with snap-to-grid DISABLED, and that is the whole point.
+  //
+  // With `snapGrid=[15, 15]` on, React Flow quantises the node position, so any
+  // drag shorter than half a grid step leaves the rendered transform byte-for-
+  // byte identical — whether or not `DRAG_THRESHOLD_PX` gated it. The previous
+  // version of these tests asserted exactly that identity and was therefore
+  // unfalsifiable: mutating `DRAG_THRESHOLD_PX` to 0 kept both "3 px does not
+  // move" cases green. That is the same failure mode as the defect this phase
+  // exists to fix — a threshold declared working on the strength of a test that
+  // never exercised it — so it is reproduced here deliberately in the comment
+  // rather than left as a footnote.
+  //
+  // `__structuraE2eDisableSnap` (see `canvas.constants.ts`) turns snapping off
+  // for the fixture only. Distances: 3 px under the 4 px threshold, 10 px over
+  // it. 10 px is chosen inside the 8–14 px window — comfortably clear of the
+  // borderline (the old 4 px cases were flaky exactly because 4 is the limit)
+  // and still under one 15 px grid step, so if snapping ever came back on these
+  // assertions would go red instead of silently passing again.
+  //
+  // As asserções comparam apenas o `translate(...)` renderizado, não o atributo
+  // `style` inteiro: `z-index` e `visibility` mudam por conta de seleção e de
+  // culling de viewport, e comparar a string toda fazia o teste reagir a ruído
+  // que nada tem a ver com o limiar.
+  //
+  // Mutation-break, verified:
+  //  - `DRAG_THRESHOLD_PX = 0`   → the two "3 px NÃO move" cases go red.
+  //  - `DRAG_THRESHOLD_PX = 999` → the two "10 px move" cases go red.
+  // ============================================================
+  describe("Phase 4 — Limiar de arraste (decisão #4)", () => {
+    beforeEach(() => {
+      cy.visit(`/model/${DIAGRAM_ID}`, {
+        onBeforeLoad(win) {
+          win.localStorage.setItem(DIAGRAM_STORE_LOCAL_STORAGE_KEY, buildSelectionTestPayload());
+          (win as unknown as { __structuraE2eDisableSnap?: boolean }).__structuraE2eDisableSnap =
+            true;
+        },
+      });
+      cy.waitForCanvas(5);
+    });
+
+    it("3 px arraste num nó alinhado NÃO move (snap desligado)", () => {
+      cy.getNode("standalone_1")
+        .invoke("attr", "style")
+        .then((before) => {
+          cy.dragNodeAllowingNoMove("standalone_1", 3, 0);
+          cy.getNode("standalone_1")
+            .invoke("attr", "style")
+            .should((after) => {
+              const antes = renderedTranslate(before as string);
+              const depois = renderedTranslate(after as string);
+              expect(
+                `${depois.x},${depois.y}`,
+                "3 px está abaixo do limiar de 4 px — o nó NÃO deve se mover, e com snap desligado essa afirmação é falsificável",
+              ).to.equal(`${antes.x},${antes.y}`);
+            });
+        });
+    });
+
+    it("3 px arraste num nó fora da grade NÃO move (snap desligado — regressão do bug original)", () => {
+      cy.getNode("standalone_offset")
+        .invoke("attr", "style")
+        .then((before) => {
+          cy.dragNodeAllowingNoMove("standalone_offset", 3, 0);
+          cy.getNode("standalone_offset")
+            .invoke("attr", "style")
+            .should((after) => {
+              const antes = renderedTranslate(before as string);
+              const depois = renderedTranslate(after as string);
+              expect(
+                `${depois.x},${depois.y}`,
+                "nó fora da grade NÃO deve se mover com 3 px — esta é a regressão que o commit 18af7ed deixou passar",
+              ).to.equal(`${antes.x},${antes.y}`);
+            });
+        });
+    });
+
+    it("10 px arraste num nó alinhado move (snap desligado)", () => {
+      cy.getNode("standalone_1")
+        .invoke("attr", "style")
+        .then((before) => {
+          cy.dragNodeAllowingNoMove("standalone_1", 10, 0);
+          cy.getNode("standalone_1")
+            .invoke("attr", "style")
+            .should((after) => {
+              const antes = renderedTranslate(before as string);
+              const depois = renderedTranslate(after as string);
+              expect(
+                `${depois.x},${depois.y}`,
+                "10 px está acima do limiar — o nó deve se mover",
+              ).to.not.equal(`${antes.x},${antes.y}`);
+            });
+        });
+    });
+
+    it("10 px arraste num nó fora da grade move (snap desligado)", () => {
+      // A versão anterior deste caso afirmava
+      //   [beforeStyle.includes("translate(102px"), ...].some(Boolean)
+      // e o primeiro termo é verdadeiro por construção — o nó começa em 102.
+      // A asserção nunca podia falhar. Com o snap desligado não é mais preciso
+      // hedge nenhum: o arrasto chega inteiro no transform renderizado.
+      cy.getNode("standalone_offset")
+        .invoke("attr", "style")
+        .then((before) => {
+          cy.dragNodeAllowingNoMove("standalone_offset", 10, 0);
+          cy.getNode("standalone_offset")
+            .invoke("attr", "style")
+            .should((after) => {
+              const antes = renderedTranslate(before as string);
+              const depois = renderedTranslate(after as string);
+              expect(
+                `${depois.x},${depois.y}`,
+                "nó fora da grade deve se mover com 10 px",
+              ).to.not.equal(`${antes.x},${antes.y}`);
+            });
+        });
+    });
+  });
+
+  // ============================================================
+  // PHASE 4 — DECISIONS #1 + #2 (panel body / header / border)
+  //
+  // The PanelNode exposes three named hit regions:
+  //   - `.panel-header`  — drag handle, and a select target on click
+  //   - `.panel-border`  — 8 px ring, also a drag handle and a select target
+  //   - `.panel-body`    — the interior; behaves as canvas background
+  //
+  // These used to click with `force: true`, which is precisely what let the
+  // decision-#1 case pass for months against a `.panel-body` that laid out at
+  // 397x0 and never received a real pointer event. The full geometry proof
+  // lives in `panel-hit-geometry.cy.ts`; what stays here is the smoke check,
+  // now going through the real topmost element at each point.
+  // ============================================================
+  describe("Phase 4 — Painel: header / body / borda", () => {
+    /**
+     * Points computed from the LIVE rects, as functions, so every Cypress
+     * retry re-measures. Freezing the coordinates first is what made the
+     * header case flaky: the viewport is still settling right after
+     * `waitForCanvas`, so a point read one frame early keeps being re-checked
+     * where the panel no longer is.
+     */
+    const headerPoint = (doc: Document): [number, number] => {
+      const hr = (
+        doc.querySelector('[data-id="panel_big"] .panel-header') as HTMLElement
+      ).getBoundingClientRect();
+      return [hr.left + hr.width * 0.5, hr.top + hr.height * 0.5];
+    };
+    const borderPoint = (doc: Document): [number, number] => {
+      const r = (
+        doc.querySelector('[data-id="panel_big"]') as HTMLElement
+      ).getBoundingClientRect();
+      return [r.left + 3, r.top + r.height * 0.7];
+    };
+    const bodyPoint = (doc: Document): [number, number] => {
+      const panel = doc.querySelector('[data-id="panel_big"]') as HTMLElement;
+      const r = panel.getBoundingClientRect();
+      const hr = (panel.querySelector(".panel-header") as HTMLElement).getBoundingClientRect();
+      const childBottom = Math.max(
+        ...["child_1", "child_2"].map((id) => {
+          const el = doc.querySelector(`[data-id="${id}"]`) as HTMLElement | null;
+          return el ? el.getBoundingClientRect().bottom : hr.bottom;
+        }),
+      );
+      return [r.left + r.width * 0.5, Math.max(hr.bottom, childBottom) + 24];
+    };
+
+    it("clique no cabeçalho seleciona o painel", () => {
+      cy.getNode("panel_big").find(".panel-header").should("exist");
+      cy.assertHitRegion(headerPoint, "panel-header");
+      cy.clickAtPoint(headerPoint);
+      cy.getNode("panel_big").should("have.class", "selected");
+    });
+
+    it("clique na borda seleciona o painel", () => {
+      cy.assertHitRegion(borderPoint, "panel-border");
+      cy.clickAtPoint(borderPoint);
+      cy.getNode("panel_big").should("have.class", "selected");
+    });
+
+    it("clique no corpo do painel NÃO seleciona o painel (decisão #1)", () => {
+      // Select something else first, so "not selected" is not vacuous.
+      //
+      // `child_1` and not `standalone_1`: `testIsolation` is off for this
+      // project, and the drag cases above leave the standalone nodes wherever
+      // they were dropped — a non-forced click on one of them intermittently
+      // lands on whatever it was dragged under. `child_1` is only ever
+      // clicked, never moved.
+      cy.document({ log: false }).then((doc) => {
+        const child = doc.querySelector('[data-id="child_1"]') as HTMLElement;
+        const r = child.getBoundingClientRect();
+        cy.clickAt(r.left + r.width / 2, r.top + r.height / 2);
+      });
+      cy.getNode("child_1").should("have.class", "selected");
+      // The point must genuinely belong to the body — this is the assertion
+      // `force: true` used to skip.
+      cy.assertHitRegion(bodyPoint, "panel-body");
+      cy.clickAtPoint(bodyPoint);
+      cy.getNode("panel_big").should("not.have.class", "selected");
+      // And it clears, like any background click.
+      cy.get(".react-flow__node.selected").should("not.exist");
+    });
+
+    it("arraste no cabeçalho move o painel (decisão #2 + freeze fix)", () => {
+      cy.clickAtPoint(headerPoint);
+      cy.getNode("panel_big").should("have.class", "selected");
+      cy.getNode("panel_big")
+        .invoke("attr", "style")
+        .then((before) => {
+          cy.document({ log: false }).then((doc) => {
+            const [hx, hy] = headerPoint(doc);
+            cy.dragFromPoint(hx, hy, hx + 120, hy);
+          });
+          cy.getNode("panel_big")
+            .invoke("attr", "style")
+            .should((after) => {
+              // Compare only the translate: `z-index` and `visibility` change
+              // with selection and culling, so comparing the whole style makes
+              // the assertion react to things that are not the drag.
+              expect(renderedTranslate(after)).to.not.deep.equal(renderedTranslate(before));
+            });
+        });
+    });
+  });
+
+  // ============================================================
+  // PHASE 4 — DECISÃO #9 (rect do marquee não bloqueia clique no pane)
+  // ============================================================
+  describe("Phase 4 — Rect do marquee", () => {
+    it("clique em área vazia dentro do bbox de Cmd+A limpa a seleção", () => {
+      // Select two standalones with Cmd+A style.
+      cy.getNode("standalone_1").click({ force: true });
+      cy.getNode("standalone_2").click({ metaKey: true, force: true });
+      // Click in empty pane area to verify the pane clears selection.
+      // We intentionally do not attempt to click inside the
+      // `.react-flow__nodesselection-rect` bounding box in headless: RF
+      // only mounts that rect while a marquee is in progress
+      // (`nodesSelectionActive=true`), which is hard to assert against
+      // from outside React Flow's internal store. The rule (decision
+      // #9) is verified by manual Chrome check — see the manual script.
+      cy.get(".react-flow__pane").click(500, 200, { force: true });
+      cy.get(".react-flow__node.selected", { timeout: 3000 }).should("not.exist");
     });
   });
 });

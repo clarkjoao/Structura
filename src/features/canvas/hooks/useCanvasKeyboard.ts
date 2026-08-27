@@ -114,6 +114,12 @@ interface UseCanvasKeyboardParams {
   forceSaveToFolder: () => void | Promise<void>;
   resetEdgeControlPoints: (diagramId: string, connectionId: string) => void;
   updateComponent: (id: string, patch: { locked?: boolean }) => void;
+  /** Phase 4 — decision #5, layer 1: cancel in-progress gesture on Esc. */
+  cancelInFlightGesture?: () => boolean;
+  /** Phase 4 — decision #5, layer 2: exit transient mode on Esc. */
+  onExitFlowPlayback?: () => boolean;
+  onExitFocusMode?: () => boolean;
+  onExitCompareMode?: () => boolean;
 }
 
 export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
@@ -171,6 +177,10 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     forceSaveToFolder,
     resetEdgeControlPoints,
     updateComponent,
+    cancelInFlightGesture,
+    onExitFlowPlayback,
+    onExitFocusMode,
+    onExitCompareMode,
   } = params;
 
   const resolvedSnapshot = useMemo(
@@ -280,6 +290,10 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     setContextMenu,
     clearClipboard,
     removeElements,
+    cancelInFlightGesture,
+    onExitFlowPlayback,
+    onExitFocusMode,
+    onExitCompareMode,
   });
 
   const undoRedoHandler = useUndoRedoShortcuts({ undo, redo });

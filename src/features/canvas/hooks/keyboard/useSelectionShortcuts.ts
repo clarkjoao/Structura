@@ -22,6 +22,21 @@ interface UseSelectionShortcutsParams {
   setContextMenu: (v: null) => void;
   clearClipboard: () => void;
   removeElements: (nodeIds: string[], edgeIds: string[]) => void;
+  /**
+   * Phase 4 — decision #5: Esc layered precedence, layer 1.
+   * Returns true if there was an in-flight gesture to cancel.
+   * Supplied by the pointer funnel owner (typically the canvas controller).
+   */
+  cancelInFlightGesture?: () => boolean;
+  /**
+   * Phase 4 — decision #5: Esc layered precedence, layer 2.
+   * Returns true if a transient mode (focus/compare/flow playback) was
+   * actually exited. The keyboard handler calls each in turn and stops at
+   * the first that reports a change.
+   */
+  onExitFlowPlayback?: () => boolean;
+  onExitFocusMode?: () => boolean;
+  onExitCompareMode?: () => boolean;
 }
 
 export function useSelectionShortcuts({
@@ -35,6 +50,10 @@ export function useSelectionShortcuts({
   setContextMenu,
   clearClipboard,
   removeElements,
+  cancelInFlightGesture,
+  onExitFlowPlayback,
+  onExitFocusMode,
+  onExitCompareMode,
 }: UseSelectionShortcutsParams): KeyHandler {
   return useCallback(
     (e: KeyboardEvent): boolean => {
@@ -43,6 +62,14 @@ export function useSelectionShortcuts({
 
       if (keyIs(e, KEY.ESCAPE)) {
         e.preventDefault();
+        // Layer 1 — cancel in-progress gesture (decision #5).
+        if (cancelInFlightGesture?.()) return true;
+        // Layer 2 — exit transient mode. Each handler returns true only if
+        // it actually exited something; otherwise the next layer runs.
+        if (onExitCompareMode?.()) return true;
+        if (onExitFlowPlayback?.()) return true;
+        if (onExitFocusMode?.()) return true;
+        // Layer 3 — clear selection.
         clearClipboard();
         reactFlowInstance.setNodes((nds: Node[]) => nds.map((n) => ({ ...n, selected: false })));
         setSelectedNodeId(null);
@@ -95,6 +122,10 @@ export function useSelectionShortcuts({
       setContextMenu,
       clearClipboard,
       removeElements,
+      cancelInFlightGesture,
+      onExitFlowPlayback,
+      onExitFocusMode,
+      onExitCompareMode,
     ],
   );
 }

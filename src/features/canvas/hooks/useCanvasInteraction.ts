@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import type { Node, ReactFlowInstance } from "@xyflow/react";
 import { useSearchParams, type NavigateFunction } from "react-router-dom";
 import { focusComponentsOnCanvas } from "../focus/focusComponents";
+import { useFlowMode } from "../flow/FlowModeContext";
 import {
   flushDiagramStoreToLocalStorageNow,
   type Diagram,
@@ -94,6 +95,17 @@ export function useCanvasInteraction(
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const skipInitialFit = !!searchParams.get("serviceId");
+  const flowMode = useFlowMode();
+  const exitFlowPlayback = useCallback(() => {
+    if (!flowState.isPlaying) return false;
+    flowMode.exitPlay();
+    return true;
+  }, [flowState.isPlaying, flowMode]);
+  const exitCompareMode = useCallback(() => {
+    if (!compareState.isCompareMode) return false;
+    actions.setCompareScene(null);
+    return true;
+  }, [compareState.isCompareMode, actions]);
 
   const forceSaveToFolder = useCallback(async () => {
     const fsResult = await forceSaveToConnectedFolder();
@@ -268,6 +280,9 @@ export function useCanvasInteraction(
     forceSaveToFolder,
     resetEdgeControlPoints: actions.resetEdgeControlPoints,
     updateComponent: actions.updateComponent,
+    cancelInFlightGesture: eventHandlers.cancelInFlightGesture,
+    onExitFlowPlayback: exitFlowPlayback,
+    onExitCompareMode: exitCompareMode,
   });
 
   useCanvasEffects({

@@ -33,8 +33,8 @@ import { useCanvasInputProfile } from "./hooks/useCanvasInputProfile";
 import { useServiceFocusFromUrl } from "./hooks/useServiceFocusFromUrl";
 import { useElementFocusFromUrl } from "./hooks/useElementFocusFromUrl";
 import { getCachedCanvasSnapshot, useDiagramStore } from "@/features/diagram";
-import { CANVAS_STYLES, GRID_SIZE } from "./canvas.constants";
-import { getPlatform } from "./hooks/keyboard/helpers";
+import { CANVAS_STYLES, GRID_SIZE, isSnapToGridDisabledForE2E } from "./canvas.constants";
+import { DRAG_THRESHOLD_PX } from "./selection/dragThreshold";
 import EditableEdge from "./edges/EditableEdge";
 import { useEdgeReconnect } from "./edges/interaction/useEdgeReconnect";
 import type { CanvasProps } from "./canvas.types";
@@ -52,8 +52,48 @@ import { usePanelChildLayout } from "./hooks/usePanelChildLayout";
 import { useResolvedComponents } from "@/features/diagram";
 import { isPanelComponent, isApiGroupComponent } from "@/features/diagram";
 
-const MULTI_SELECTION_KEY_CODES = ["Meta", "Control"];
-const PAN_ACTIVATION_KEY = getPlatform() === "mac" ? "Meta" : "Control";
+/**
+ * Phase 4 — selection epic.
+ *
+ * Selection modifiers (any of these toggle/add to multi-selection):
+ *   Meta (macOS Cmd) / Control (Win/Linux Ctrl) / Shift.
+ *
+ * Pan modifier: holding Space + drag pans. Middle-button and right-button
+ * drags also pan; the right-button path is gated by the pointer funnel —
+ * short press opens the context menu, long press pans.
+ *
+ * Decision #8: **a right-drag pans from anywhere on the canvas**, nodes and
+ * panels included. An earlier revision of this docblock declared the opposite
+ * ("right-button pan is a pane gesture") and eight `it.skip`s in
+ * `cypress/e2e/right-button-context-menu.cy.ts` kept that gap named; the
+ * product owner revoked the rule, the tests are live, and they are the
+ * acceptance criterion.
+ *
+ * Two mechanisms deliver it, and which one runs is decided once, at
+ * pointerdown, so they can never both move the viewport for one gesture:
+ *
+ *   - press outside `.nopan`  →  d3-zoom pans, via `panOnDrag=[1, 2]`;
+ *   - press inside `.nopan`   →  the pointer funnel pans, translating the
+ *     viewport by the pointer delta through `setViewport`.
+ *
+ * `.react-flow__node` carries `nopan`, which is why the second branch exists.
+ * The branch is owned here rather than removed at the source because
+ * `noPanClassName` — the only prop that reaches React Flow's filter — is
+ * global: renaming the class re-enables pan over every text field, slider and
+ * quick-action bar inside a node too. React Flow itself takes the same shape,
+ * hardcoding one early return for the MIDDLE button over nodes and edges in
+ * `createFilter`; it just has no equivalent for the right button. See the
+ * precedence docblock in `selection/pointerFunnel.ts`.
+ *
+ * `selectionKeyCode` is neutralised (set to `null`) so React Flow's default
+ * "Shift = selection mode" does not fight our Shift-as-multi-selection
+ * modifier. With the default, holding Shift would flip `selectionKeyPressed`
+ * which forces `panOnDrag=false` and disables `selectionOnDrag`, breaking
+ * Shift+drag-marquee.
+ */
+const MULTI_SELECTION_KEY_CODES = ["Meta", "Control", "Shift"];
+const PAN_ACTIVATION_KEY = "Space";
+const SELECTION_KEY_CODE: string | null = null;
 const canvasEdgeTypes = { editable: EditableEdge };
 
 const Canvas = (props: CanvasProps = {}) => {
@@ -339,7 +379,9 @@ const Canvas = (props: CanvasProps = {}) => {
               minZoom={0.3}
               maxZoom={1.5}
               multiSelectionKeyCode={MULTI_SELECTION_KEY_CODES}
-              snapToGrid
+              selectionKeyCode={SELECTION_KEY_CODE}
+              nodeDragThreshold={DRAG_THRESHOLD_PX}
+              snapToGrid={!isSnapToGridDisabledForE2E()}
               snapGrid={[GRID_SIZE, GRID_SIZE]}
               defaultViewport={initialViewport}
               fitView={!hasSavedViewport(initialViewport)}
