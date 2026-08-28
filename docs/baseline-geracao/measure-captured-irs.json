@@ -1,0 +1,125 @@
+{
+  "A-run1": {
+    "ok": false,
+    "issues": [
+      {
+        "code": "invalidJson"
+      }
+    ]
+  },
+  "A-run2": {
+    "ok": false,
+    "issues": [
+      {
+        "code": "invalidJson"
+      }
+    ]
+  },
+  "A-run3": {
+    "ok": false,
+    "issues": [
+      {
+        "code": "invalidJson"
+      }
+    ]
+  },
+  "B-run1": {
+    "ok": false,
+    "issues": [
+      {
+        "code": "invalidJson"
+      }
+    ]
+  },
+  "B-run2": {
+    "ok": false,
+    "issues": [
+      {
+        "code": "invalidJson"
+      }
+    ]
+  },
+  "B-run3": {
+    "ok": false,
+    "issues": [
+      {
+        "code": "invalidJson"
+      }
+    ]
+  },
+  "C-run1": {
+    "ok": true,
+    "nodes": 10,
+    "edges": 10,
+    "elkCrossings": 1,
+    "renderedCrossings": 7,
+    "renderedEdgeNodeOverlaps": 1,
+    "childrenOutsideParent": 0,
+    "escapedIds": [],
+    "databaseNodes": [
+      "db-encurtador",
+      "cache-urls"
+    ]
+  },
+  "C-run2": {
+    "ok": true,
+    "nodes": 10,
+    "edges": 10,
+    "elkCrossings": 2,
+    "renderedCrossings": 1,
+    "renderedEdgeNodeOverlaps": 2,
+    "childrenOutsideParent": 0,
+    "escapedIds": [],
+    "databaseNodes": [
+      "database",
+      "cache"
+    ]
+  },
+  "C-run3": {
+    "ok": true,
+    "nodes": 9,
+    "edges": 10,
+    "elkCrossings": 1,
+    "renderedCrossings": 1,
+    "renderedEdgeNodeOverlaps": 3,
+    "childrenOutsideParent": 0,
+    "escapedIds": [],
+    "databaseNodes": [
+      "database",
+      "cache"
+    ]
+  },
+  "D-run1": {
+    "ok": true,
+    "nodes": 8,
+    "edges": 3,
+    "elkCrossings": 0,
+    "renderedCrossings": 0,
+    "renderedEdgeNodeOverlaps": 1,
+    "childrenOutsideParent": 0,
+    "escapedIds": [],
+    "databaseNodes": []
+  },
+  "D-run2": {
+    "ok": true,
+    "nodes": 9,
+    "edges": 4,
+    "elkCrossings": 0,
+    "renderedCrossings": 1,
+    "renderedEdgeNodeOverlaps": 0,
+    "childrenOutsideParent": 0,
+    "escapedIds": [],
+    "databaseNodes": []
+  },
+  "D-run3": {
+    "ok": true,
+    "nodes": 9,
+    "edges": 4,
+    "elkCrossings": 0,
+    "renderedCrossings": 0,
+    "renderedEdgeNodeOverlaps": 0,
+    "childrenOutsideParent": 0,
+    "escapedIds": [],
+    "databaseNodes": []
+  }
+}

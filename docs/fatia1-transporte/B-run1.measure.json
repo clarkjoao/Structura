@@ -1,0 +1,28 @@
+{
+ "label": "B-run1",
+ "rendered": true,
+ "irType": "aws-deployment",
+ "irNodes": 39,
+ "irEdges": 27,
+ "domNodes": 39,
+ "domEdges": 11,
+ "apiMs": null,
+ "renderedCrossings": 23,
+ "renderedEdgeNodeOverlaps": 23,
+ "renderedLabelOverlaps": 3,
+ "elkCrossings": 7,
+ "placementCrossings": 24,
+ "elkEdgeNodeOverlaps": 0,
+ "layoutWidth": 2345,
+ "layoutHeight": 2453,
+ "childrenOutsideParent": 0,
+ "childrenOutsideParentIds": [],
+ "maxNestingDepth": 4,
+ "timing": {
+  "apiCalls": 1,
+  "apiDurationMs": 17265,
+  "endToEndMs": 22729,
+  "irLogged": 2
+ },
+ "domEdgePaths": 11
+}

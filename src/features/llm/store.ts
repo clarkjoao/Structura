@@ -10,6 +10,7 @@ import type {
   ChatMessage,
   ConversationThread,
   DiagramThreadState,
+  LLMCompletion,
   LLMConfig,
   LLMConnection,
   PendingNodePreview,
@@ -65,7 +66,10 @@ function buildPatchMessage(locale: string, actionCount: number): string {
  * Renders validation issues as a message the user can act on. Codes map 1:1 to
  * i18n keys so the validator itself carries no user-visible text.
  */
-function buildIRIssuesMessage(issues: IRValidationIssue[]): string {
+function buildIRIssuesMessage(
+  issues: IRValidationIssue[],
+  headerKey = "llmChat.ir.invalid",
+): string {
   const MAX_LISTED_ISSUES = 8;
   const lines = issues
     .slice(0, MAX_LISTED_ISSUES)
@@ -75,7 +79,17 @@ function buildIRIssuesMessage(issues: IRValidationIssue[]): string {
       `- ${i18n.t("llmChat.ir.moreIssues", { count: issues.length - MAX_LISTED_ISSUES })}`,
     );
   }
-  return [i18n.t("llmChat.ir.invalid"), ...lines].join("\n");
+  return [i18n.t(headerKey), ...lines].join("\n");
+}
+
+/**
+ * The response was cut at the provider's output ceiling. This is deliberately
+ * not the generic "outside the IR schema" message: the diagram the model was
+ * describing may be perfectly well-formed, it just did not fit, and the user's
+ * next move is to ask for less rather than to look for a modelling mistake.
+ */
+function buildTruncatedMessage(): string {
+  return buildIRIssuesMessage([{ code: "responseTruncated" }], "llmChat.ir.truncated");
 }
 
 /**
@@ -146,7 +160,7 @@ async function executeLLMMessage(
   messages: ChatMessage[],
   systemPrompt: string,
   onChunk: (chunk: string) => void,
-): Promise<string> {
+): Promise<LLMCompletion> {
   if (config.mode === "proxy") {
     return sendProxyMessage(config, messages, systemPrompt, onChunk);
   }
@@ -583,7 +597,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         const systemPrompt = buildSystemPrompt(diagramContext, getResolvedAppLanguage());
         const sanitizedMessages = sanitizeMessagesForLLM(outgoingMessages);
         let fullResponse = "";
-        const rawAssistantResponse = await executeLLMMessage(
+        const { text: rawAssistantResponse } = await executeLLMMessage(
           state.config,
           sanitizedMessages,
           systemPrompt,
@@ -827,7 +841,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       try {
         const systemPrompt = buildIRSystemPrompt(getResolvedAppLanguage());
         let streamed = "";
-        const rawResponse = await executeLLMMessage(
+        const { text: rawResponse, stopReason } = await executeLLMMessage(
           state.config,
           [{ ...userMessage, content: trimmedDescription }],
           systemPrompt,
@@ -838,6 +852,17 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
             set({ streamingContent: streamed });
           },
         );
+
+        // Checked before parsing: a response the provider cut at its output
+        // ceiling is incomplete whatever it looks like, and running it through
+        // the validator would only produce `invalidJson`, which points the user
+        // at the wrong problem.
+        if (stopReason === "length") {
+          logGeneratedIR(rawResponse, null);
+          set({ lastGeneratedIR: null });
+          finishWith(buildTruncatedMessage());
+          return;
+        }
 
         const validation = parseAndValidateIR(rawResponse);
         if (!validation.ok) {

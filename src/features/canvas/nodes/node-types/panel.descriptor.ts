@@ -3,7 +3,7 @@ import type { NodeTypeDescriptor } from "./types";
 import { sceneBadgePropsForNode } from "./compare-node-badges";
 import { isPanelComponent, isPanelType } from "@/features/diagram";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
-import { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../../canvas.constants";
+import { MAX_HANDLES, PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../../canvas.constants";
 
 export const panelDescriptor: NodeTypeDescriptor = {
   rfType: "panel",
@@ -32,6 +32,11 @@ export const panelDescriptor: NodeTypeDescriptor = {
   buildData: (comp, ctx) => {
     if (!isPanelComponent(comp)) return {};
     const def = getPanelKindDef(comp.panelKind);
+    // Same source and same clamp as the C4 descriptor, and it has to stay that
+    // way: `buildEdgeHandleAssignments` picks the slot from these very counts,
+    // so a panel that renders fewer handles than the assignment reaches for
+    // loses the edge to React Flow error #008.
+    const counts = ctx.connectionCounts[comp.id] ?? { incoming: 0, outgoing: 0 };
     return {
       elementId: comp.id,
       name: comp.name,
@@ -46,6 +51,8 @@ export const panelDescriptor: NodeTypeDescriptor = {
       isUnparentCandidate: ctx.unparentCandidatePanelId === comp.id,
       collapsed: comp.collapsed ?? false,
       childCount: ctx.childrenIndex.get(comp.id)?.size ?? 0,
+      incomingCount: Math.min(MAX_HANDLES, Math.max(1, counts.incoming)),
+      outgoingCount: Math.min(MAX_HANDLES, Math.max(1, counts.outgoing)),
       onToggleCollapse: () => ctx.onPanelCollapseToggle?.(comp.id),
       ...sceneBadgePropsForNode(ctx, comp.id),
     };

@@ -658,7 +658,9 @@
       "applied": "Gerados {{nodeCount}} nó(s) e {{edgeCount}} conexão(ões) — revise e aceite abaixo.",
       "noActiveDiagram": "Abra um diagrama antes de gerar.",
       "notApplied": "O diagrama foi gerado, mas não pôde ser aplicado ao canvas.",
+      "truncated": "O diagrama foi cortado: a resposta atingiu o limite de saída do modelo antes de terminar.",
       "issue": {
+        "responseTruncated": "Tente de novo descrevendo menos elementos, ou gere o diagrama em partes — uma fronteira ou subsistema por vez.",
         "invalidJson": "A resposta não é um JSON válido.",
         "notAnObject": "A resposta não é um objeto JSON.",
         "invalidDiagramType": "Tipo de diagrama desconhecido: \"{{value}}\".",

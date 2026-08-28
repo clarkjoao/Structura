@@ -1,0 +1,145 @@
+{
+  "type": "c4-container",
+  "nodes": [
+    {
+      "id": "usuario",
+      "semanticType": "person",
+      "name": "Usuário",
+      "parentId": null,
+      "tier": "external"
+    },
+    {
+      "id": "url-encurtador",
+      "semanticType": "container",
+      "name": "Sistema Encurtador de URLs",
+      "parentId": null,
+      "tier": "compute",
+      "isBoundary": true
+    },
+    {
+      "id": "web-app",
+      "semanticType": "container",
+      "name": "Aplicação Web",
+      "parentId": "url-encurtador",
+      "tier": "edge",
+      "technology": "React"
+    },
+    {
+      "id": "shortener-api",
+      "semanticType": "container",
+      "name": "API de Encurtamento",
+      "parentId": "url-encurtador",
+      "tier": "compute",
+      "technology": "Node.js"
+    },
+    {
+      "id": "redirect-service",
+      "semanticType": "container",
+      "name": "Serviço de Redirecionamento",
+      "parentId": "url-encurtador",
+      "tier": "edge",
+      "technology": "Node.js"
+    },
+    {
+      "id": "database",
+      "semanticType": "database",
+      "name": "Banco de Dados",
+      "parentId": "url-encurtador",
+      "tier": "data",
+      "technology": "PostgreSQL"
+    },
+    {
+      "id": "cache",
+      "semanticType": "database",
+      "name": "Cache",
+      "parentId": "url-encurtador",
+      "tier": "data",
+      "technology": "Redis"
+    },
+    {
+      "id": "admin-user",
+      "semanticType": "person",
+      "name": "Administrador",
+      "parentId": null,
+      "tier": "external"
+    },
+    {
+      "id": "admin-web",
+      "semanticType": "container",
+      "name": "Console Admin",
+      "parentId": "url-encurtador",
+      "tier": "edge",
+      "technology": "React"
+    },
+    {
+      "id": "metrics",
+      "semanticType": "container",
+      "name": "Coletor de Métricas",
+      "parentId": "url-encurtador",
+      "tier": "compute",
+      "technology": "Prometheus Exporter"
+    }
+  ],
+  "edges": [
+    {
+      "id": "usuario-web-app",
+      "sourceId": "usuario",
+      "targetId": "web-app",
+      "label": "acessa via navegador"
+    },
+    {
+      "id": "web-app-api",
+      "sourceId": "web-app",
+      "targetId": "shortener-api",
+      "label": "HTTPS JSON (criar/consultar URLs encurtadas)"
+    },
+    {
+      "id": "shortener-api-db",
+      "sourceId": "shortener-api",
+      "targetId": "database",
+      "label": "CRUD URLs curtas"
+    },
+    {
+      "id": "shortener-api-cache",
+      "sourceId": "shortener-api",
+      "targetId": "cache",
+      "label": "consulta/armazenamento"
+    },
+    {
+      "id": "redirect-service-cache",
+      "sourceId": "redirect-service",
+      "targetId": "cache",
+      "label": "consulta URLs curtas"
+    },
+    {
+      "id": "redirect-service-db",
+      "sourceId": "redirect-service",
+      "targetId": "database",
+      "label": "busca fallback"
+    },
+    {
+      "id": "usuario-redirect",
+      "sourceId": "usuario",
+      "targetId": "redirect-service",
+      "label": "acessa URL curta"
+    },
+    {
+      "id": "admin-user-admin-web",
+      "sourceId": "admin-user",
+      "targetId": "admin-web",
+      "label": "gerencia URLs"
+    },
+    {
+      "id": "admin-web-api",
+      "sourceId": "admin-web",
+      "targetId": "shortener-api",
+      "label": "operações administrativas"
+    },
+    {
+      "id": "api-metrics",
+      "sourceId": "shortener-api",
+      "targetId": "metrics",
+      "label": "envia métricas"
+    }
+  ]
+}

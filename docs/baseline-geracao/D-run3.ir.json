@@ -1,0 +1,105 @@
+{
+  "type": "aws-deployment",
+  "nodes": [
+    {
+      "id": "app-vpc",
+      "semanticType": "aws-vpc",
+      "name": "VPC Principal",
+      "parentId": null,
+      "tier": "edge",
+      "awsService": "vpc",
+      "isBoundary": true
+    },
+    {
+      "id": "az-1",
+      "semanticType": "aws-az",
+      "name": "us-east-1a",
+      "parentId": "app-vpc",
+      "tier": "compute",
+      "isBoundary": true
+    },
+    {
+      "id": "public-subnet",
+      "semanticType": "aws-public-subnet",
+      "name": "Subnet Pública",
+      "parentId": "az-1",
+      "tier": "edge",
+      "awsService": "public-subnet",
+      "isBoundary": true
+    },
+    {
+      "id": "private-subnet",
+      "semanticType": "aws-private-subnet",
+      "name": "Subnet Privada",
+      "parentId": "az-1",
+      "tier": "compute",
+      "awsService": "private-subnet",
+      "isBoundary": true
+    },
+    {
+      "id": "app-alb",
+      "semanticType": "aws-networking",
+      "name": "Application Load Balancer",
+      "parentId": "public-subnet",
+      "tier": "edge",
+      "awsService": "elb"
+    },
+    {
+      "id": "lambda-func",
+      "semanticType": "aws-compute",
+      "name": "Função Lambda",
+      "parentId": "private-subnet",
+      "tier": "compute",
+      "awsService": "lambda"
+    },
+    {
+      "id": "app-rds",
+      "semanticType": "aws-database",
+      "name": "Banco de Dados RDS",
+      "parentId": "private-subnet",
+      "tier": "data",
+      "awsService": "rds"
+    },
+    {
+      "id": "app-s3",
+      "semanticType": "aws-storage",
+      "name": "Bucket S3",
+      "parentId": "private-subnet",
+      "tier": "data",
+      "awsService": "s3"
+    },
+    {
+      "id": "usuario-final",
+      "semanticType": "person",
+      "name": "Usuário Final",
+      "parentId": null,
+      "tier": "external"
+    }
+  ],
+  "edges": [
+    {
+      "id": "user-to-alb",
+      "sourceId": "usuario-final",
+      "targetId": "app-alb",
+      "label": "acessa aplicação"
+    },
+    {
+      "id": "alb-to-lambda",
+      "sourceId": "app-alb",
+      "targetId": "lambda-func",
+      "label": "invoca Lambda"
+    },
+    {
+      "id": "lambda-to-rds",
+      "sourceId": "lambda-func",
+      "targetId": "app-rds",
+      "label": "consulta/salva dados"
+    },
+    {
+      "id": "lambda-to-s3",
+      "sourceId": "lambda-func",
+      "targetId": "app-s3",
+      "label": "lê/escreve arquivos"
+    }
+  ]
+}

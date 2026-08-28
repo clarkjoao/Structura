@@ -1,11 +1,11 @@
 import {
-  generateId,
   useDiagramStore,
   type GeneratedEdgeInput,
   type GeneratedNodeInput,
 } from "@/features/diagram";
 import { layout } from "@/features/canvas/layout/layoutEngine";
-import type { LayoutBox, LayoutPoint } from "@/features/canvas/layout/contract";
+import { applyLayoutResultEdges } from "@/features/canvas/layout/applyLayoutResult";
+import type { LayoutBox } from "@/features/canvas/layout/contract";
 import { useCanvasSelectionStore } from "@/features/canvas/hooks/useCanvasSelectionStore";
 import { mapNodeToComponent } from "./ir-to-component";
 import { irToLayoutGraph } from "./ir-to-layout-graph";
@@ -89,28 +89,14 @@ export function buildGeneratedGraphInputs(
 }
 
 /**
- * Interior bend points of an ELK route, moved into canvas coordinates.
- *
- * The first and last entries sit on the node borders; the canvas draws those
- * legs from the node handles instead, so only what is between them becomes
- * control points.
- */
-function interiorWaypoints(
-  route: readonly LayoutPoint[],
-  origin: { x: number; y: number },
-): LayoutPoint[] {
-  if (route.length <= 2) return [];
-  return route.slice(1, -1).map((point) => ({ x: point.x + origin.x, y: point.y + origin.y }));
-}
-
-/**
  * Lays the IR out with ELK and writes the result to the active diagram as a
  * single undoable mutation.
  */
 export async function applyIRToDiagram(ir: DiagramIR): Promise<ApplyIRResult> {
-  const { boxes, edgeRoutes, handleOrder } = await layout(irToLayoutGraph(ir));
+  const graph = irToLayoutGraph(ir);
+  const layoutResult = await layout(graph);
   const origin = currentViewportOrigin();
-  const { nodes, edges } = buildGeneratedGraphInputs(ir, boxes, origin);
+  const { nodes, edges } = buildGeneratedGraphInputs(ir, layoutResult.boxes, origin);
 
   const store = useDiagramStore.getState();
   const result = store.insertGeneratedGraph(nodes, edges);
@@ -124,48 +110,32 @@ export async function applyIRToDiagram(ir: DiagramIR): Promise<ApplyIRResult> {
     selection.setSelectedEdgeId(null);
   }
 
+  // The one thing this path has that the other four do not: the layout graph is
+  // keyed by IR ids, while the store just minted ids of its own. Both maps are
+  // built here, in one place, and handed to the unified applicator as a
+  // translation — the previous revision spread the same mapping across a
+  // handle-order loop and a waypoint loop that could drift apart.
+  //
+  // Edge ids pair by index because `insertGeneratedGraph` returns
+  // `connectionIds` in the order it received `edges`, which is `ir.edges` order
+  // (see `buildGeneratedGraphInputs`).
   const connectionIdByEdgeId = new Map<string, string>();
   ir.edges.forEach((edge, index) => {
     const connectionId = result.connectionIds[index];
     if (connectionId !== undefined) connectionIdByEdgeId.set(edge.id, connectionId);
   });
 
-  // Write ELK's handle ordering into every generated node.
-  // `handleOrder` is the field the canvas already consults (and that the
-  // reorder controls write to), so this is the same mechanism a user gets by
-  // reordering by hand — not a second, parallel notion of handle choice.
-  for (const side of ["outgoing", "incoming"] as const) {
-    for (const [irNodeId, edgeIds] of handleOrder[side]) {
-      const componentId = result.componentIdByExternalId[irNodeId];
-      if (componentId === undefined) continue;
-      const orderedConnectionIds = edgeIds
-        .map((edgeId) => connectionIdByEdgeId.get(edgeId))
-        .filter((connectionId): connectionId is string => connectionId !== undefined);
-      if (orderedConnectionIds.length === 0) continue;
-      useDiagramStore.getState().updateHandleOrder(componentId, side, orderedConnectionIds);
-    }
-  }
-
-  // Write ELK's bend points as edge control points.
-  const diagramId = store.activeDiagramId;
-  if (diagramId !== null) {
-    ir.edges.forEach((edge) => {
-      const connectionId = connectionIdByEdgeId.get(edge.id);
-      const route = edgeRoutes.get(edge.id);
-      if (connectionId === undefined || route === undefined) return;
-
-      const waypoints = interiorWaypoints(route, origin);
-      if (waypoints.length === 0) return;
-
-      useDiagramStore.getState().setEdgeControlPoints(
-        diagramId,
-        connectionId,
-        waypoints.map((point) => ({ id: generateId("cp"), x: point.x, y: point.y })),
-        // The generation already pushed its own history checkpoint.
-        { history: false },
-      );
-    });
-  }
+  // ELK's handle ordering and bend points, through the same applicator every
+  // other layout consumer uses. `waypointOffset` is the viewport origin: the
+  // routes come back anchored at (0,0) and the diagram was inserted where the
+  // user is looking.
+  applyLayoutResultEdges(graph, layoutResult, store.activeDiagramId, {
+    waypointOffset: origin,
+    idMap: {
+      node: (irNodeId) => result.componentIdByExternalId[irNodeId],
+      edge: (irEdgeId) => connectionIdByEdgeId.get(irEdgeId),
+    },
+  });
 
   return { componentIds: result.componentIds, connectionIds: result.connectionIds };
 }

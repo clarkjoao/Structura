@@ -1,5 +1,6 @@
-import type { ChatMessage, LLMConfig } from "../types";
+import type { ChatMessage, LLMCompletion, LLMConfig, LLMStopReason } from "../types";
 import { LLMProviderError } from "../errors";
+import { toStopReason } from "./openai-compatible";
 
 const DEFAULT_PROXY_URL = import.meta.env.VITE_LLM_PROXY_URL ?? "http://localhost:3000";
 const DEFAULT_PROXY_PATH = import.meta.env.VITE_LLM_PROXY_PATH ?? "/llm/chat";
@@ -21,7 +22,7 @@ export async function sendMessage(
   messages: ChatMessage[],
   systemPrompt: string,
   onChunk: (chunk: string) => void,
-): Promise<string> {
+): Promise<LLMCompletion> {
   let response: Response;
   try {
     response = await fetch(getProxyEndpoint(), {
@@ -51,12 +52,16 @@ export async function sendMessage(
   const contentType = response.headers.get("content-type") ?? "";
   if (contentType.includes("text/event-stream")) {
     if (!response.body) {
-      return "";
+      return { text: "", stopReason: "unknown" };
     }
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let fullText = "";
     let buffer = "";
+    // A proxy is free to forward the upstream `finish_reason` or to swallow it.
+    // When it is absent the stop reason stays `unknown`, which the generation
+    // pipeline treats as "no evidence either way" rather than a clean stop.
+    let stopReason: LLMStopReason = "unknown";
 
     while (true) {
       const { done, value } = await reader.read();
@@ -77,7 +82,7 @@ export async function sendMessage(
         }
         try {
           const parsedData = JSON.parse(trimmedLine.slice(6)) as {
-            choices?: Array<{ delta?: { content?: string } }>;
+            choices?: Array<{ delta?: { content?: string }; finish_reason?: unknown }>;
             message?: string;
             delta?: { text?: string };
             text?: string;
@@ -92,13 +97,17 @@ export async function sendMessage(
             fullText += delta;
             onChunk(delta);
           }
+          const finishReason = parsedData.choices?.[0]?.finish_reason;
+          if (finishReason != null) {
+            stopReason = toStopReason(finishReason);
+          }
         } catch (err) {
           console.warn("[ProxyProvider] Error processing stream:", err);
         }
       }
     }
 
-    return fullText;
+    return { text: fullText, stopReason };
   }
 
   const data = (await response.json()) as ProxyResponse;
@@ -106,5 +115,6 @@ export async function sendMessage(
   if (fullText) {
     onChunk(fullText);
   }
-  return fullText;
+  // The non-streaming proxy shape carries no stop reason at all.
+  return { text: fullText, stopReason: "unknown" };
 }

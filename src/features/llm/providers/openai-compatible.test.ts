@@ -63,7 +63,7 @@ describe("sendOpenAICompatibleMessage", () => {
         body: JSON.stringify({ model: "foo", stream: true }),
       }),
     );
-    expect(result).toBe("hello");
+    expect(result).toEqual({ text: "hello", stopReason: "unknown" });
     expect(streamed).toBe("hello");
   });
 
@@ -152,7 +152,7 @@ describe("sendOpenAICompatibleMessage", () => {
       },
       () => {},
     );
-    expect(result).toBe("");
+    expect(result).toEqual({ text: "", stopReason: "unknown" });
   });
 });
 
@@ -176,7 +176,7 @@ describe("readOpenAICompatibleStream", () => {
     const full = await readOpenAICompatibleStreamForTest(body, (chunk: string) => {
       accumulated += chunk;
     });
-    expect(full).toBe("Hello, world!");
+    expect(full.text).toBe("Hello, world!");
     expect(accumulated).toBe("Hello, world!");
   });
 
@@ -192,6 +192,6 @@ describe("readOpenAICompatibleStream", () => {
     });
 
     const full = await readOpenAICompatibleStreamForTest(body, (_chunk: string) => {});
-    expect(full).toBe("ok");
+    expect(full.text).toBe("ok");
   });
 });

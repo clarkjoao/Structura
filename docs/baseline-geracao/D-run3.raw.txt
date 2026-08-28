@@ -1,0 +1,20 @@
+{
+  "type": "aws-deployment",
+  "nodes": [
+    { "id": "app-vpc", "semanticType": "aws-vpc", "name": "VPC Principal", "awsService": "vpc", "parentId": null, "isBoundary": true, "tier": "edge" },
+    { "id": "az-1", "semanticType": "aws-az", "name": "us-east-1a", "parentId": "app-vpc", "isBoundary": true, "tier": "compute" },
+    { "id": "public-subnet", "semanticType": "aws-public-subnet", "name": "Subnet Pública", "awsService": "public-subnet", "parentId": "az-1", "isBoundary": true, "tier": "edge" },
+    { "id": "private-subnet", "semanticType": "aws-private-subnet", "name": "Subnet Privada", "awsService": "private-subnet", "parentId": "az-1", "isBoundary": true, "tier": "compute" },
+    { "id": "app-alb", "semanticType": "aws-networking", "name": "Application Load Balancer", "awsService": "elb", "parentId": "public-subnet", "tier": "edge" },
+    { "id": "lambda-func", "semanticType": "aws-compute", "name": "Função Lambda", "awsService": "lambda", "parentId": "private-subnet", "tier": "compute" },
+    { "id": "app-rds", "semanticType": "aws-database", "name": "Banco de Dados RDS", "awsService": "rds", "parentId": "private-subnet", "tier": "data" },
+    { "id": "app-s3", "semanticType": "aws-storage", "name": "Bucket S3", "awsService": "s3", "parentId": "private-subnet", "tier": "data" },
+    { "id": "usuario-final", "semanticType": "person", "name": "Usuário Final", "parentId": null, "tier": "external" }
+  ],
+  "edges": [
+    { "id": "user-to-alb", "sourceId": "usuario-final", "targetId": "app-alb", "label": "acessa aplicação" },
+    { "id": "alb-to-lambda", "sourceId": "app-alb", "targetId": "lambda-func", "label": "invoca Lambda" },
+    { "id": "lambda-to-rds", "sourceId": "lambda-func", "targetId": "app-rds", "label": "consulta/salva dados" },
+    { "id": "lambda-to-s3", "sourceId": "lambda-func", "targetId": "app-s3", "label": "lê/escreve arquivos" }
+  ]
+}

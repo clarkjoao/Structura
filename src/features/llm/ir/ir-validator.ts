@@ -13,6 +13,15 @@ import {
  * validator stays free of user-visible strings while still explaining itself.
  */
 export type IRIssueCode =
+  /**
+   * Reported by the generation pipeline, never by `validateIR`: the provider cut
+   * the response at its output ceiling, so the text that arrived is incomplete
+   * by construction. It is a member of this union only so the store can render
+   * it through the same `llmChat.ir.issue.<code>` path as everything else —
+   * telling it apart from `invalidJson` is the whole point, because a truncated
+   * diagram is a size problem and invalid JSON is a modelling problem.
+   */
+  | "responseTruncated"
   | "invalidJson"
   | "notAnObject"
   | "invalidDiagramType"

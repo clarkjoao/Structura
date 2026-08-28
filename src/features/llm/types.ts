@@ -27,6 +27,23 @@ export interface LLMConnection {
   extraParams?: Record<string, unknown>;
 }
 
+/**
+ * Why the model stopped emitting.
+ *
+ * `length` means the provider cut the response at its output-token ceiling, so
+ * whatever arrived is incomplete by construction. The generation pipeline has to
+ * be able to tell that apart from a natural stop: both reach the parser as text
+ * that fails to parse, and reporting "not valid JSON" for a cut-off diagram
+ * sends the user looking for a modelling problem that is not there.
+ */
+export type LLMStopReason = "stop" | "length" | "unknown";
+
+/** A finished model response plus the reason the provider stopped it. */
+export interface LLMCompletion {
+  text: string;
+  stopReason: LLMStopReason;
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";

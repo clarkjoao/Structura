@@ -1,0 +1,28 @@
+{
+ "label": "A-run1",
+ "rendered": true,
+ "irType": "c4-container",
+ "irNodes": 33,
+ "irEdges": 33,
+ "domNodes": 33,
+ "domEdges": 33,
+ "apiMs": null,
+ "renderedCrossings": 10,
+ "renderedEdgeNodeOverlaps": 5,
+ "renderedLabelOverlaps": 4,
+ "elkCrossings": 1,
+ "placementCrossings": 4,
+ "elkEdgeNodeOverlaps": 0,
+ "layoutWidth": 3905,
+ "layoutHeight": 1461,
+ "childrenOutsideParent": 0,
+ "childrenOutsideParentIds": [],
+ "maxNestingDepth": 2,
+ "timing": {
+  "apiCalls": 0,
+  "apiDurationMs": null,
+  "endToEndMs": null,
+  "irLogged": 0
+ },
+ "domEdgePaths": 33
+}

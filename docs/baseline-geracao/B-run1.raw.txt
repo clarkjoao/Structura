@@ -1,0 +1,87 @@
+{
+  "type": "aws-deployment",
+  "nodes": [
+    { "id": "vpc-principal", "semanticType": "aws-vpc", "name": "VPC Principal", "awsService": "vpc", "parentId": null, "isBoundary": true, "tier": "edge" },
+    { "id": "az1", "semanticType": "aws-az", "name": "us-east-1a", "parentId": "vpc-principal", "isBoundary": true, "tier": "compute" },
+    { "id": "az2", "semanticType": "aws-az", "name": "us-east-1b", "parentId": "vpc-principal", "isBoundary": true, "tier": "compute" },
+
+    { "id": "public-az1", "semanticType": "aws-public-subnet", "name": "Pública 1", "awsService": "public-subnet", "parentId": "az1", "isBoundary": true, "tier": "edge" },
+    { "id": "private-az1", "semanticType": "aws-private-subnet", "name": "Privada 1", "awsService": "private-subnet", "parentId": "az1", "isBoundary": true, "tier": "compute" },
+    { "id": "public-az2", "semanticType": "aws-public-subnet", "name": "Pública 2", "awsService": "public-subnet", "parentId": "az2", "isBoundary": true, "tier": "edge" },
+    { "id": "private-az2", "semanticType": "aws-private-subnet", "name": "Privada 2", "awsService": "private-subnet", "parentId": "az2", "isBoundary": true, "tier": "compute" },
+
+    { "id": "route53", "semanticType": "aws-networking", "name": "Route 53", "awsService": "route53", "parentId": null, "tier": "edge" },
+    { "id": "cloudfront", "semanticType": "aws-networking", "name": "CloudFront", "awsService": "cloudfront", "parentId": null, "tier": "edge" },
+
+    { "id": "alb-az1", "semanticType": "aws-networking", "name": "ALB Zona 1", "awsService": "elb", "parentId": "public-az1", "tier": "edge" },
+    { "id": "alb-az2", "semanticType": "aws-networking", "name": "ALB Zona 2", "awsService": "elb", "parentId": "public-az2", "tier": "edge" },
+
+    { "id": "nat-az1", "semanticType": "aws-networking", "name": "NAT Gateway 1", "awsService": "vpc", "parentId": "public-az1", "tier": "ingress" },
+    { "id": "nat-az2", "semanticType": "aws-networking", "name": "NAT Gateway 2", "awsService": "vpc", "parentId": "public-az2", "tier": "ingress" },
+
+    { "id": "ecs-fargate-az1", "semanticType": "aws-compute", "name": "ECS Fargate (az1)", "awsService": "fargate", "parentId": "private-az1", "tier": "compute" },
+    { "id": "ecs-fargate-az2", "semanticType": "aws-compute", "name": "ECS Fargate (az2)", "awsService": "fargate", "parentId": "private-az2", "tier": "compute" },
+
+    { "id": "lambda-api-az1", "semanticType": "aws-compute", "name": "Lambda API (az1)", "awsService": "lambda", "parentId": "private-az1", "tier": "compute" },
+    { "id": "lambda-api-az2", "semanticType": "aws-compute", "name": "Lambda API (az2)", "awsService": "lambda", "parentId": "private-az2", "tier": "compute" },
+
+    { "id": "secrets-manager-az1", "semanticType": "aws-security", "name": "Secrets Manager (az1)", "awsService": "secrets-manager", "parentId": "private-az1", "tier": "compute" },
+    { "id": "secrets-manager-az2", "semanticType": "aws-security", "name": "Secrets Manager (az2)", "awsService": "secrets-manager", "parentId": "private-az2", "tier": "compute" },
+
+    { "id": "cloudwatch", "semanticType": "aws-management", "name": "CloudWatch", "awsService": "cloudwatch", "parentId": null, "tier": "compute" },
+
+    { "id": "rds-az1", "semanticType": "aws-database", "name": "RDS (az1) - Primário", "awsService": "rds", "parentId": "private-az1", "tier": "data" },
+    { "id": "rds-az2", "semanticType": "aws-database", "name": "RDS (az2) - Réplica", "awsService": "rds", "parentId": "private-az2", "tier": "data" },
+
+    { "id": "s3-arquivos", "semanticType": "aws-storage", "name": "S3 Arquivos", "awsService": "s3", "parentId": null, "tier": "data" },
+    { "id": "s3-logs", "semanticType": "aws-storage", "name": "S3 Logs", "awsService": "s3", "parentId": null, "tier": "data" },
+
+    { "id": "sqs-processamento", "semanticType": "aws-integration", "name": "SQS Processamento", "awsService": "sqs", "parentId": null, "tier": "integration" },
+    { "id": "sqs-email", "semanticType": "aws-integration", "name": "SQS E-mail", "awsService": "sqs", "parentId": null, "tier": "integration" },
+
+    { "id": "sns-notificacoes", "semanticType": "aws-integration", "name": "SNS Notificações", "awsService": "sns", "parentId": null, "tier": "integration" },
+    { "id": "sns-alertas", "semanticType": "aws-integration", "name": "SNS Alertas", "awsService": "sns", "parentId": null, "tier": "integration" },
+
+    { "id": "ecs-task-frontend-az1", "semanticType": "aws-compute", "name": "ECS Tarefa Frontend (az1)", "awsService": "fargate", "parentId": "private-az1", "tier": "compute" },
+    { "id": "ecs-task-frontend-az2", "semanticType": "aws-compute", "name": "ECS Tarefa Frontend (az2)", "awsService": "fargate", "parentId": "private-az2", "tier": "compute" },
+
+    { "id": "ecs-task-background-az1", "semanticType": "aws-compute", "name": "Tarefa Fargate Background (az1)", "awsService": "fargate", "parentId": "private-az1", "tier": "compute" },
+    { "id": "ecs-task-background-az2", "semanticType": "aws-compute", "name": "Tarefa Fargate Background (az2)", "awsService": "fargate", "parentId": "private-az2", "tier": "compute" },
+
+    { "id": "lambda-sqs-processor-az1", "semanticType": "aws-compute", "name": "Lambda SQS Processor (az1)", "awsService": "lambda", "parentId": "private-az1", "tier": "compute" },
+    { "id": "lambda-sqs-processor-az2", "semanticType": "aws-compute", "name": "Lambda SQS Processor (az2)", "awsService": "lambda", "parentId": "private-az2", "tier": "compute" },
+
+    { "id": "ecs-task-worker-az1", "semanticType": "aws-compute", "name": "ECS Worker (az1)", "awsService": "fargate", "parentId": "private-az1", "tier": "compute" },
+    { "id": "ecs-task-worker-az2", "semanticType": "aws-compute", "name": "ECS Worker (az2)", "awsService": "fargate", "parentId": "private-az2", "tier": "compute" },
+
+    { "id": "end-user", "semanticType": "person", "name": "Usuário Final", "parentId": null, "tier": "external" },
+    { "id": "team-ops", "semanticType": "person", "name": "Equipe de Operações", "parentId": null, "tier": "external" },
+
+    { "id": "external-smtp", "semanticType": "external-system", "name": "Gateway SMTP Externo", "parentId": null, "tier": "external" },
+    { "id": "external-payment", "semanticType": "external-system", "name": "Serviço de Pagamento", "parentId": null, "tier": "external" }
+  ],
+  "edges": [
+    { "id": "user-to-route53", "sourceId": "end-user", "targetId": "route53", "label": "acessa domínio" },
+    { "id": "route53-to-cloudfront", "sourceId": "route53", "targetId": "cloudfront", "label": "resolve para CloudFront" },
+    { "id": "cloudfront-to-alb-az1", "sourceId": "cloudfront", "targetId": "alb-az1", "label": "HTTP/HTTPS" },
+    { "id": "cloudfront-to-alb-az2", "sourceId": "cloudfront", "targetId": "alb-az2", "label": "HTTP/HTTPS" },
+
+    { "id": "alb1-to-ecs-frontend-az1", "sourceId": "alb-az1", "targetId": "ecs-task-frontend-az1", "label": "encaminha requisições" },
+    { "id": "alb2-to-ecs-frontend-az2", "sourceId": "alb-az2", "targetId": "ecs-task-frontend-az2", "label": "encaminha requisições" },
+
+    { "id": "ecs-frontend-az1-to-api-az1", "sourceId": "ecs-task-frontend-az1", "targetId": "ecs-fargate-az1", "label": "chama API" },
+    { "id": "ecs-frontend-az2-to-api-az2", "sourceId": "ecs-task-frontend-az2", "targetId": "ecs-fargate-az2", "label": "chama API" },
+
+    { "id": "ecs-fargate-az1-to-rds-az1", "sourceId": "ecs-fargate-az1", "targetId": "rds-az1", "label": "leitura/escrita BD" },
+    { "id": "ecs-fargate-az2-to-rds-az2", "sourceId": "ecs-fargate-az2", "targetId": "rds-az2", "label": "leitura/escrita BD" },
+
+    { "id": "ecs-fargate-az1-to-s3-arquivos", "sourceId": "ecs-fargate-az1", "targetId": "s3-arquivos", "label": "armazenar arquivos" },
+    { "id": "ecs-fargate-az2-to-s3-arquivos", "sourceId": "ecs-fargate-az2", "targetId": "s3-arquivos", "label": "armazenar arquivos" },
+
+    { "id": "ecs-fargate-az1-to-sqs-processamento", "sourceId": "ecs-fargate-az1", "targetId": "sqs-processamento", "label": "publica mensagens" },
+    { "id": "ecs-fargate-az2-to-sqs-processamento", "sourceId": "ecs-fargate-az2", "targetId": "sqs-processamento", "label": "publica mensagens" },
+
+    { "id": "lambda-api-az1-to-rds-az1", "sourceId": "lambda-api-az1", "targetId": "rds-az1", "label": "consulta BD" },
+    { "id": "lambda-api-az2-to-rds-az2", "sourceId": "lambda-api-az2", "targetId": "rds-az2", "label": "consulta BD" },
+
+    { "id": "ecs-task-background-az1-to-sqs-email", "sourceId": "ecs-task-background-az1", "target

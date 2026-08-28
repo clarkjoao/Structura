@@ -1,4 +1,4 @@
-import type { ChatMessage, LLMConfig } from "../types";
+import type { ChatMessage, LLMCompletion, LLMConfig } from "../types";
 import { sendOpenAICompatibleMessage } from "./openai-compatible";
 
 export async function sendMessage(
@@ -6,7 +6,7 @@ export async function sendMessage(
   messages: ChatMessage[],
   systemPrompt: string,
   onChunk: (chunk: string) => void,
-): Promise<string> {
+): Promise<LLMCompletion> {
   if (!config.baseUrl) {
     throw new Error("custom provider requires a baseUrl");
   }

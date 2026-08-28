@@ -1,7 +1,8 @@
 import { LLMProviderError } from "../errors";
+import type { LLMCompletion, LLMStopReason } from "../types";
 
 interface OpenAICompatibleDelta {
-  choices?: Array<{ delta?: { content?: unknown } }>;
+  choices?: Array<{ delta?: { content?: unknown }; finish_reason?: unknown }>;
 }
 
 interface OpenAICompatibleRequest {
@@ -11,10 +12,25 @@ interface OpenAICompatibleRequest {
   errorOrigin: "openai" | "custom";
 }
 
+/**
+ * Maps the OpenAI `finish_reason` onto the transport-level stop reason. Anything
+ * we do not recognise stays `unknown` rather than being optimistically read as a
+ * clean stop — a stop reason we cannot interpret is not evidence of completeness.
+ */
+export function toStopReason(finishReason: unknown): LLMStopReason {
+  if (finishReason === "length") {
+    return "length";
+  }
+  if (finishReason === "stop") {
+    return "stop";
+  }
+  return "unknown";
+}
+
 export async function sendOpenAICompatibleMessage(
   request: OpenAICompatibleRequest,
   onChunk: (chunk: string) => void,
-): Promise<string> {
+): Promise<LLMCompletion> {
   let response: Response;
   try {
     response = await fetch(request.baseUrl, {
@@ -32,7 +48,7 @@ export async function sendOpenAICompatibleMessage(
   }
 
   if (!response.body) {
-    return "";
+    return { text: "", stopReason: "unknown" };
   }
 
   return readOpenAICompatibleStream(response.body, onChunk);
@@ -41,18 +57,21 @@ export async function sendOpenAICompatibleMessage(
 export async function readOpenAICompatibleStreamForTest(
   body: ReadableStream<Uint8Array>,
   onChunk: (chunk: string) => void,
-): Promise<string> {
+): Promise<LLMCompletion> {
   return readOpenAICompatibleStream(body, onChunk);
 }
 
 async function readOpenAICompatibleStream(
   body: ReadableStream<Uint8Array>,
   onChunk: (chunk: string) => void,
-): Promise<string> {
+): Promise<LLMCompletion> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let fullText = "";
   let buffer = "";
+  // The reason arrives on a late chunk whose delta is empty, so it is tracked
+  // separately from the text and the last non-null one wins.
+  let stopReason: LLMStopReason = "unknown";
 
   while (true) {
     const { done, value } = await reader.read();
@@ -73,11 +92,15 @@ async function readOpenAICompatibleStream(
       }
       try {
         const parsed = JSON.parse(trimmedLine.slice(6)) as OpenAICompatibleDelta;
-        const delta = parsed.choices?.[0]?.delta?.content;
+        const choice = parsed.choices?.[0];
+        const delta = choice?.delta?.content;
         const text = typeof delta === "string" ? delta : "";
         if (text) {
           fullText += text;
           onChunk(text);
+        }
+        if (choice?.finish_reason != null) {
+          stopReason = toStopReason(choice.finish_reason);
         }
       } catch (err) {
         console.warn("[OpenAICompatibleProvider] Error processing stream:", err);
@@ -85,5 +108,5 @@ async function readOpenAICompatibleStream(
     }
   }
 
-  return fullText;
+  return { text: fullText, stopReason };
 }

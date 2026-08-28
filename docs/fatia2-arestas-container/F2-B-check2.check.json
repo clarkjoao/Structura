@@ -1,0 +1,18 @@
+{
+ "label": "F2-B-check2",
+ "irNodes": 38,
+ "irEdges": 44,
+ "containerEdges": 4,
+ "containerEdgeIds": [
+  "private-a-to-nat-gw-a",
+  "private-b-to-nat-gw-b",
+  "bastion-to-private-a",
+  "bastion-to-private-b"
+ ],
+ "domNodes": 38,
+ "domEdges": 44,
+ "domEdgePaths": 44,
+ "panelHandlesInDom": 16,
+ "rf008Warnings": 0,
+ "rf008Errors": 0
+}
