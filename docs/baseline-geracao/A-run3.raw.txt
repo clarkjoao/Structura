@@ -1,0 +1,86 @@
+{
+  "type": "c4-container",
+  "nodes": [
+    { "id": "segurado", "semanticType": "person", "name": "Segurado", "parentId": null, "tier": "external" },
+    { "id": "corretor", "semanticType": "person", "name": "Corretor", "parentId": null, "tier": "external" },
+    { "id": "analista-sinistro", "semanticType": "person", "name": "Analista de Sinistro", "parentId": null, "tier": "external" },
+    { "id": "subscritor", "semanticType": "person", "name": "Subscritor", "parentId": null, "tier": "external" },
+
+    { "id": "seguradora", "semanticType": "container", "name": "Seguradora", "parentId": null, "isBoundary": true, "tier": "compute" },
+
+    { "id": "portal-corretor", "semanticType": "container", "name": "Portal do Corretor", "technology": "SPA Angular", "parentId": "seguradora", "tier": "edge" },
+
+    { "id": "dominio-emissao", "semanticType": "container", "name": "Domínio Emissão de Apólice", "parentId": "seguradora", "isBoundary": true, "tier": "compute" },
+    { "id": "emissao-api", "semanticType": "container", "name": "API Emissão", "technology": "Spring Boot", "parentId": "dominio-emissao", "tier": "compute" },
+    { "id": "emissao-worker", "semanticType": "container", "name": "Worker Emissão", "technology": "Node.js", "parentId": "dominio-emissao", "tier": "compute" },
+    { "id": "emissao-regras", "semanticType": "container", "name": "Serviço de Regras Emissão", "technology": "Drools", "parentId": "dominio-emissao", "tier": "compute" },
+    { "id": "emissao-db", "semanticType": "database", "name": "Banco Emissão", "technology": "PostgreSQL", "parentId": "dominio-emissao", "tier": "data" },
+
+    { "id": "dominio-sinistro", "semanticType": "container", "name": "Domínio Gestão de Sinistro", "parentId": "seguradora", "isBoundary": true, "tier": "compute" },
+    { "id": "sinistro-api", "semanticType": "container", "name": "API Sinistro", "technology": "Spring Boot", "parentId": "dominio-sinistro", "tier": "compute" },
+    { "id": "sinistro-worker", "semanticType": "container", "name": "Worker Sinistro", "technology": "Node.js", "parentId": "dominio-sinistro", "tier": "compute" },
+    { "id": "sinistro-regras", "semanticType": "container", "name": "Serviço de Regras Sinistro", "technology": "Drools", "parentId": "dominio-sinistro", "tier": "compute" },
+    { "id": "sinistro-db", "semanticType": "database", "name": "Banco Sinistro", "technology": "PostgreSQL", "parentId": "dominio-sinistro", "tier": "data" },
+
+    { "id": "dominio-subscricao", "semanticType": "container", "name": "Domínio Subscrição", "parentId": "seguradora", "isBoundary": true, "tier": "compute" },
+    { "id": "subscricao-api", "semanticType": "container", "name": "API Subscrição", "technology": "Spring Boot", "parentId": "dominio-subscricao", "tier": "compute" },
+    { "id": "subscricao-worker", "semanticType": "container", "name": "Worker Subscrição", "technology": "Node.js", "parentId": "dominio-subscricao", "tier": "compute" },
+    { "id": "subscricao-regras", "semanticType": "container", "name": "Serviço de Regras Subscrição", "technology": "Drools", "parentId": "dominio-subscricao", "tier": "compute" },
+    { "id": "subscricao-db", "semanticType": "database", "name": "Banco Subscrição", "technology": "MongoDB", "parentId": "dominio-subscricao", "tier": "data" },
+
+    { "id": "dominio-pagamento", "semanticType": "container", "name": "Domínio Pagamento", "parentId": "seguradora", "isBoundary": true, "tier": "compute" },
+    { "id": "pagamento-api", "semanticType": "container", "name": "API Pagamento", "technology": "Spring Boot", "parentId": "dominio-pagamento", "tier": "compute" },
+    { "id": "pagamento-worker", "semanticType": "container", "name": "Worker Pagamento", "technology": "Node.js", "parentId": "dominio-pagamento", "tier": "compute" },
+    { "id": "pagamento-regras", "semanticType": "container", "name": "Serviço de Regras Pagamento", "technology": "Drools", "parentId": "dominio-pagamento", "tier": "compute" },
+    { "id": "pagamento-db", "semanticType": "database", "name": "Banco Pagamento", "technology": "PostgreSQL", "parentId": "dominio-pagamento", "tier": "data" },
+
+    { "id": "dominio-fraude", "semanticType": "container", "name": "Domínio Detecção de Fraude", "parentId": "seguradora", "isBoundary": true, "tier": "compute" },
+    { "id": "fraude-api", "semanticType": "container", "name": "API Fraude", "technology": "Spring Boot", "parentId": "dominio-fraude", "tier": "compute" },
+    { "id": "fraude-worker", "semanticType": "container", "name": "Worker Fraude", "technology": "Python", "parentId": "dominio-fraude", "tier": "compute" },
+    { "id": "fraude-regras", "semanticType": "container", "name": "Serviço de Regras Fraude", "technology": "Drools", "parentId": "dominio-fraude", "tier": "compute" },
+    { "id": "fraude-db", "semanticType": "database", "name": "Banco Fraude", "technology": "MongoDB", "parentId": "dominio-fraude", "tier": "data" },
+
+    { "id": "mensageria", "semanticType": "container", "name": "Sistema de Mensageria", "technology": "RabbitMQ", "parentId": "seguradora", "tier": "integration" },
+
+    { "id": "relatorios-api", "semanticType": "container", "name": "API Relatórios", "technology": "Spring Boot", "parentId": "seguradora", "tier": "compute" },
+    { "id": "relatorios-db", "semanticType": "database", "name": "Banco Relatórios", "technology": "PostgreSQL", "parentId": "seguradora", "tier": "data" }
+  ],
+  "edges": [
+    { "id": "segurado-portal", "sourceId": "segurado", "targetId": "portal-corretor", "label": "acessa consultas e propostas" },
+    { "id": "corretor-portal", "sourceId": "corretor", "targetId": "portal-corretor", "label": "acessa propostas e emissão" },
+    { "id": "portal-api-emissao", "sourceId": "portal-corretor", "targetId": "emissao-api", "label": "solicita cotações/emissão" },
+    { "id": "portal-api-sinistro", "sourceId": "portal-corretor", "targetId": "sinistro-api", "label": "avisa e acompanha sinistros" },
+    { "id": "portal-api-subscricao", "sourceId": "portal-corretor", "targetId": "subscricao-api", "label": "enviar propostas de subscrição" },
+    { "id": "portal-api-pagamento", "sourceId": "portal-corretor", "targetId": "pagamento-api", "label": "consulta boletos e status" },
+
+    { "id": "emissao-api-worker", "sourceId": "emissao-api", "targetId": "emissao-worker", "label": "processa solicitações de emissão" },
+    { "id": "emissao-worker-regras", "sourceId": "emissao-worker", "targetId": "emissao-regras", "label": "avalia regras de negócio" },
+    { "id": "emissao-api-db", "sourceId": "emissao-api", "targetId": "emissao-db", "label": "consulta / persiste apólices" },
+    { "id": "emissao-worker-db", "sourceId": "emissao-worker", "targetId": "emissao-db", "label": "atualiza apólices" },
+
+    { "id": "sinistro-api-worker", "sourceId": "sinistro-api", "targetId": "sinistro-worker", "label": "processa abertura e acompanhamento" },
+    { "id": "sinistro-worker-regras", "sourceId": "sinistro-worker", "targetId": "sinistro-regras", "label": "aplica regras de sinistro" },
+    { "id": "sinistro-api-db", "sourceId": "sinistro-api", "targetId": "sinistro-db", "label": "consulta / persiste sinistros" },
+    { "id": "sinistro-worker-db", "sourceId": "sinistro-worker", "targetId": "sinistro-db", "label": "atualiza sinistros" },
+
+    { "id": "subscricao-api-worker", "sourceId": "subscricao-api", "targetId": "subscricao-worker", "label": "processa submissões" },
+    { "id": "subscricao-worker-regras", "sourceId": "subscricao-worker", "targetId": "subscricao-regras", "label": "avalia regras de subscrição" },
+    { "id": "subscricao-api-db", "sourceId": "subscricao-api", "targetId": "subscricao-db", "label": "consulta / persiste dados" },
+    { "id": "subscricao-worker-db", "sourceId": "subscricao-worker", "targetId": "subscricao-db", "label": "atualiza dados" },
+
+    { "id": "pagamento-api-worker", "sourceId": "pagamento-api", "targetId": "pagamento-worker", "label": "processa cobranças" },
+    { "id": "pagamento-worker-regras", "sourceId": "pagamento-worker", "targetId": "pagamento-regras", "label": "aplica regras de pagamento" },
+    { "id": "pagamento-api-db", "sourceId": "pagamento-api", "targetId": "pagamento-db", "label": "consulta / persiste pagamentos" },
+    { "id": "pagamento-worker-db", "sourceId": "pagamento-worker", "targetId": "pagamento-db", "label": "atualiza pagamentos" },
+
+    { "id": "fraude-api-worker", "sourceId": "fraude-api", "targetId": "fraude-worker", "label": "envia eventos de análise" },
+    { "id": "fraude-worker-regras", "sourceId": "fraude-worker", "targetId": "fraude-regras", "label": "analisa possíveis fraudes" },
+    { "id": "fraude-api-db", "sourceId": "fraude-api", "targetId": "fraude-db", "label": "consulta / registra alertas" },
+    { "id": "fraude-worker-db", "sourceId": "fraude-worker", "targetId": "fraude-db", "label": "atualiza alertas" },
+    { "id": "emissao-api-fraude", "sourceId": "emissao-api", "targetId": "fraude-api", "label": "envia eventos para análise" },
+    { "id": "sinistro-api-fraude", "sourceId": "sinistro-api", "targetId": "fraude-api", "label": "notifica possíveis fraudes" },
+
+    { "id": "mensageria-emissao", "sourceId": "emissao-worker", "targetId": "mensageria", "label": "publica eventos" },
+    { "id": "mensageria-sinistro", "sourceId": "sinistro-worker", "targetId": "mensageria", "label": "publica eventos" },
+    { "id": "mensageria-subscricao", "sourceId": "subscricao-worker", "targetId": "mensageria", "label": "publica eventos" },
+    { "id": "mensager

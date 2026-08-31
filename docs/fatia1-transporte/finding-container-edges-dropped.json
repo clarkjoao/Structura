@@ -1,0 +1,18 @@
+{
+  "measuredAt": "2026-08-27",
+  "finding": "An IR edge whose source or target is a node that has children never reaches the canvas. React Flow refuses to create it and logs error #008; the connection is silently absent from the rendered diagram.",
+  "evidenceVerbatim": "[React Flow]: Couldn't create edge for target handle id: \"target-1\", edge id: conn-... Help: https://reactflow.dev/error#008",
+  "how": "console.warn was wrapped in the running app tab to capture React Flow's own warning, and `.react-flow__edge-path` counted in the DOM after Aceitar. Independently, each captured IR was re-analysed offline: an edge counts as container-touching when its source or target id appears as some other node's parentId.",
+  "perRun": [
+    { "run": "A-run1", "irNodes": 33, "irEdges": 33, "containers": 6, "edgesTouchingContainer": 0, "domEdgePaths": 33 },
+    { "run": "A-run2", "irNodes": 34, "irEdges": 40, "containers": 6, "edgesTouchingContainer": 0, "domEdgePaths": 40 },
+    { "run": "A-run3", "irNodes": 34, "irEdges": 40, "containers": 7, "edgesTouchingContainer": 0, "domEdgePaths": 40 },
+    { "run": "B-run1", "irNodes": 39, "irEdges": 27, "containers": 9, "edgesTouchingContainer": 16, "domEdgePaths": 11 },
+    { "run": "B-run2", "irNodes": 42, "irEdges": 33, "containers": 7, "edgesTouchingContainer": 0, "domEdgePaths": 33 },
+    { "run": "B-run3", "irNodes": 33, "irEdges": 37, "containers": 9, "edgesTouchingContainer": 0, "domEdgePaths": 37 }
+  ],
+  "correlation": "domEdgePaths == irEdges - edgesTouchingContainer in all six runs, exactly. B-run1: 27 - 16 = 11 rendered paths, and 11 is what the DOM has.",
+  "notVirtualisation": "`onlyRenderVisibleElements` appears nowhere in the codebase (grep), so the missing paths are not React Flow culling offscreen edges.",
+  "whyOnlyOneRun": "Whether the failure fires depends on what the model wrote, not on the pipeline. Case A's model output happens to wire only leaf-to-leaf. Case B hit it once, in the run where the model wired 'ALB -> ECS service' and similar container-addressed edges, which is idiomatic AWS. It is latent in the other five runs, not absent.",
+  "scope": "Reported, not fixed. Per the slice's mandatory stop, a new failure mode is the result of this slice; correcting it belongs to another slice with its own product decision."
+}

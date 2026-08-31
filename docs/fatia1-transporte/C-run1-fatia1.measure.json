@@ -1,0 +1,12 @@
+{
+ "label": "C-run1-fatia1",
+ "rawResponseBytes": 2670,
+ "clickToLastIrLogMs": 9835,
+ "apiDurationMs": 5715,
+ "domNodes": 10,
+ "domEdgePaths": 9,
+ "irNodes": 10,
+ "irEdges": 9,
+ "irType": "c4-container",
+ "droppedEdgeWarnings": 0
+}

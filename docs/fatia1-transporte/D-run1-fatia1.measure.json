@@ -1,0 +1,12 @@
+{
+ "label": "D-run1-fatia1",
+ "rawResponseBytes": 1963,
+ "clickToLastIrLogMs": 4205,
+ "apiDurationMs": 4141,
+ "domNodes": 9,
+ "domEdgePaths": 4,
+ "irNodes": 9,
+ "irEdges": 4,
+ "irType": "aws-deployment",
+ "droppedEdgeWarnings": 0
+}

@@ -1,0 +1,615 @@
+{
+  "runs": 10,
+  "data": [
+    {
+      "C4 e-commerce": {
+        "elkCrossings": 0,
+        "elkOverNode": 0,
+        "placement": 0,
+        "renderedCrossings": 2,
+        "renderedOverNode": 2,
+        "renderedLabels": 0,
+        "roundRobinCrossings": 10,
+        "nodeCount": 16,
+        "edgeCount": 16,
+        "width": 2330,
+        "height": 753
+      },
+      "AWS ECS Fargate": {
+        "elkCrossings": 4,
+        "elkOverNode": 0,
+        "placement": 3,
+        "renderedCrossings": 3,
+        "renderedOverNode": 4,
+        "renderedLabels": 0,
+        "roundRobinCrossings": 12,
+        "nodeCount": 18,
+        "edgeCount": 14,
+        "width": 3230,
+        "height": 754
+      },
+      "C4 Context healthcare": {
+        "elkCrossings": 0,
+        "elkOverNode": 0,
+        "placement": 0,
+        "renderedCrossings": 3,
+        "renderedOverNode": 0,
+        "renderedLabels": 1,
+        "roundRobinCrossings": 12,
+        "nodeCount": 10,
+        "edgeCount": 11,
+        "width": 920,
+        "height": 800
+      },
+      "AWS microservices": {
+        "elkCrossings": 5,
+        "elkOverNode": 0,
+        "placement": 2,
+        "renderedCrossings": 7,
+        "renderedOverNode": 7,
+        "renderedLabels": 1,
+        "roundRobinCrossings": 14,
+        "nodeCount": 17,
+        "edgeCount": 17,
+        "width": 1775,
+        "height": 1071
+      },
+      "Hand-placed": {
+        "renderedCrossings": 7,
+        "renderedOverNode": 5,
+        "renderedLabels": 1,
+        "nodeCount": 8,
+        "edgeCount": 9
+      }
+    },
+    {
+      "C4 e-commerce": {
+        "elkCrossings": 0,
+        "elkOverNode": 0,
+        "placement": 0,
+        "renderedCrossings": 2,
+        "renderedOverNode": 2,
+        "renderedLabels": 0,
+        "roundRobinCrossings": 10,
+        "nodeCount": 16,
+        "edgeCount": 16,
+        "width": 2330,
+        "height": 753
+      },
+      "AWS ECS Fargate": {
+        "elkCrossings": 4,
+        "elkOverNode": 0,
+        "placement": 3,
+        "renderedCrossings": 3,
+        "renderedOverNode": 4,
+        "renderedLabels": 0,
+        "roundRobinCrossings": 12,
+        "nodeCount": 18,
+        "edgeCount": 14,
+        "width": 3230,
+        "height": 754
+      },
+      "C4 Context healthcare": {
+        "elkCrossings": 0,
+        "elkOverNode": 0,
+        "placement": 0,
+        "renderedCrossings": 3,
+        "renderedOverNode": 0,
+        "renderedLabels": 1,
+        "roundRobinCrossings": 12,
+        "nodeCount": 10,
+        "edgeCount": 11,
+        "width": 920,
+        "height": 800
+      },
+      "AWS microservices": {
+        "elkCrossings": 5,
+        "elkOverNode": 0,
+        "placement": 2,
+        "renderedCrossings": 7,
+        "renderedOverNode": 7,
+        "renderedLabels": 1,
+        "roundRobinCrossings": 14,
+        "nodeCount": 17,
+        "edgeCount": 17,
+        "width": 1775,
+        "height": 1071
+      },
+      "Hand-placed": {
+        "renderedCrossings": 7,
+        "renderedOverNode": 5,
+        "renderedLabels": 1,
+        "nodeCount": 8,
+        "edgeCount": 9
+      }
+    },
+    {
+      "C4 e-commerce": {
+        "elkCrossings": 0,
+        "elkOverNode": 0,
+        "placement": 0,
+        "renderedCrossings": 2,
+        "renderedOverNode": 2,
+        "renderedLabels": 0,
+        "roundRobinCrossings": 10,
+        "nodeCount": 16,
+        "edgeCount": 16,
+        "width": 2330,
+        "height": 753
+      },
+      "AWS ECS Fargate": {
+        "elkCrossings": 4,
+        "elkOverNode": 0,
+        "placement": 3,
+        "renderedCrossings": 3,
+        "renderedOverNode": 4,
+        "renderedLabels": 0,
+        "roundRobinCrossings": 12,
+        "nodeCount": 18,
+        "edgeCount": 14,
+        "width": 3230,
+        "height": 754
+      },
+      "C4 Context healthcare": {
+        "elkCrossings": 0,
+        "elkOverNode": 0,
+        "placement": 0,
+        "renderedCrossings": 3,
+        "renderedOverNode": 0,
+        "renderedLabels": 1,
+        "roundRobinCrossings": 12,
+        "nodeCount": 10,
+        "edgeCount": 11,
+        "width": 920,
+        "height": 800
+      },
+      "AWS microservices": {
+        "elkCrossings": 5,
+        "elkOverNode": 0,
+        "placement": 2,
+        "renderedCrossings": 7,
+        "renderedOverNode": 7,
+        "renderedLabels": 1,
+        "roundRobinCrossings": 14,
+        "nodeCount": 17,
+        "edgeCount": 17,
+        "width": 1775,
+        "height": 1071
+      },
+      "Hand-placed": {
+        "renderedCrossings": 7,
+        "renderedOverNode": 5,
+        "renderedLabels": 1,
+        "nodeCount": 8,
+        "edgeCount": 9
+      }
+    },
+    {
+      "C4 e-commerce": {
+        "elkCrossings": 0,
+        "elkOverNode": 0,
+        "placement": 0,
+        "renderedCrossings": 2,
+        "renderedOverNode": 2,
+        "renderedLabels": 0,
+        "roundRobinCrossings": 10,
+        "nodeCount": 16,
+        "edgeCount": 16,
+        "width": 2330,
+        "height": 753
+      },
+      "AWS ECS Fargate": {
+        "elkCrossings": 4,
+        "elkOverNode": 0,
+        "placement": 3,
+        "renderedCrossings": 3,
+        "renderedOverNode": 4,
+        "renderedLabels": 0,
+        "roundRobinCrossings": 12,
+        "nodeCount": 18,
+        "edgeCount": 14,
+        "width": 3230,
+        "height": 754
+      },
+      "C4 Context healthcare": {
+        "elkCrossings": 0,
+        "elkOverNode": 0,
+        "placement": 0,
+        "renderedCrossings": 3,
+        "renderedOverNode": 0,
+        "renderedLabels": 1,
+        "roundRobinCrossings": 12,
+        "nodeCount": 10,
+        "edgeCount": 11,
+        "width": 920,
+        "height": 800
+      },
+      "AWS microservices": {
+        "elkCrossings": 5,
+        "elkOverNode": 0,
+        "placement": 2,
+        "renderedCrossings": 7,
+        "renderedOverNode": 7,
+        "renderedLabels": 1,
+        "roundRobinCrossings": 14,
+        "nodeCount": 17,
+        "edgeCount": 17,
+        "width": 1775,
+        "height": 1071
+      },
+      "Hand-placed": {
+        "renderedCrossings": 7,
+        "renderedOverNode": 5,
+        "renderedLabels": 1,
+        "nodeCount": 8,
+        "edgeCount": 9
+      }
+    },
+    {
+      "C4 e-commerce": {
+        "elkCrossings": 0,
+        "elkOverNode": 0,
+        "placement": 0,
+        "renderedCrossings": 2,
+        "renderedOverNode": 2,
+        "renderedLabels": 0,
+        "roundRobinCrossings": 10,
+        "nodeCount": 16,
+        "edgeCount": 16,
+        "width": 2330,
+        "height": 753
+      },
+      "AWS ECS Fargate": {
+        "elkCrossings": 4,
+        "elkOverNode": 0,
+        "placement": 3,
+        "renderedCrossings": 3,
+        "renderedOverNode": 4,
+        "renderedLabels": 0,
+        "roundRobinCrossings": 12,
+        "nodeCount": 18,
+        "edgeCount": 14,
+        "width": 3230,
+        "height": 754
+      },
+      "C4 Context healthcare": {
+        "elkCrossings": 0,
+        "elkOverNode": 0,
+        "placement": 0,
+        "renderedCrossings": 3,
+        "renderedOverNode": 0,
+        "renderedLabels": 1,
+        "roundRobinCrossings": 12,
+        "nodeCount": 10,
+        "edgeCount": 11,
+        "width": 920,
+        "height": 800
+      },
+      "AWS microservices": {
+        "elkCrossings": 5,
+        "elkOverNode": 0,
+        "placement": 2,
+        "renderedCrossings": 7,
+        "renderedOverNode": 7,
+        "renderedLabels": 1,
+        "roundRobinCrossings": 14,
+        "nodeCount": 17,
+        "edgeCount": 17,
+        "width": 1775,
+        "height": 1071
+      },
+      "Hand-placed": {
+        "renderedCrossings": 7,
+        "renderedOverNode": 5,
+        "renderedLabels": 1,
+        "nodeCount": 8,
+        "edgeCount": 9
+      }
+    },
+    {
+      "C4 e-commerce": {
+        "elkCrossings": 0,
+        "elkOverNode": 0,
+        "placement": 0,
+        "renderedCrossings": 2,
+        "renderedOverNode": 2,
+        "renderedLabels": 0,
+        "roundRobinCrossings": 10,
+        "nodeCount": 16,
+        "edgeCount": 16,
+        "width": 2330,
+        "height": 753
+      },
+      "AWS ECS Fargate": {
+        "elkCrossings": 4,
+        "elkOverNode": 0,
+        "placement": 3,
+        "renderedCrossings": 3,
+        "renderedOverNode": 4,
+        "renderedLabels": 0,
+        "roundRobinCrossings": 12,
+        "nodeCount": 18,
+        "edgeCount": 14,
+        "width": 3230,
+        "height": 754
+      },
+      "C4 Context healthcare": {
+        "elkCrossings": 0,
+        "elkOverNode": 0,
+        "placement": 0,
+        "renderedCrossings": 3,
+        "renderedOverNode": 0,
+        "renderedLabels": 1,
+        "roundRobinCrossings": 12,
+        "nodeCount": 10,
+        "edgeCount": 11,
+        "width": 920,
+        "height": 800
+      },
+      "AWS microservices": {
+        "elkCrossings": 5,
+        "elkOverNode": 0,
+        "placement": 2,
+        "renderedCrossings": 7,
+        "renderedOverNode": 7,
+        "renderedLabels": 1,
+        "roundRobinCrossings": 14,
+        "nodeCount": 17,
+        "edgeCount": 17,
+        "width": 1775,
+        "height": 1071
+      },
+      "Hand-placed": {
+        "renderedCrossings": 7,
+        "renderedOverNode": 5,
+        "renderedLabels": 1,
+        "nodeCount": 8,
+        "edgeCount": 9
+      }
+    },
+    {
+      "C4 e-commerce": {
+        "elkCrossings": 0,
+        "elkOverNode": 0,
+        "placement": 0,
+        "renderedCrossings": 2,
+        "renderedOverNode": 2,
+        "renderedLabels": 0,
+        "roundRobinCrossings": 10,
+        "nodeCount": 16,
+        "edgeCount": 16,
+        "width": 2330,
+        "height": 753
+      },
+      "AWS ECS Fargate": {
+        "elkCrossings": 4,
+        "elkOverNode": 0,
+        "placement": 3,
+        "renderedCrossings": 3,
+        "renderedOverNode": 4,
+        "renderedLabels": 0,
+        "roundRobinCrossings": 12,
+        "nodeCount": 18,
+        "edgeCount": 14,
+        "width": 3230,
+        "height": 754
+      },
+      "C4 Context healthcare": {
+        "elkCrossings": 0,
+        "elkOverNode": 0,
+        "placement": 0,
+        "renderedCrossings": 3,
+        "renderedOverNode": 0,
+        "renderedLabels": 1,
+        "roundRobinCrossings": 12,
+        "nodeCount": 10,
+        "edgeCount": 11,
+        "width": 920,
+        "height": 800
+      },
+      "AWS microservices": {
+        "elkCrossings": 5,
+        "elkOverNode": 0,
+        "placement": 2,
+        "renderedCrossings": 7,
+        "renderedOverNode": 7,
+        "renderedLabels": 1,
+        "roundRobinCrossings": 14,
+        "nodeCount": 17,
+        "edgeCount": 17,
+        "width": 1775,
+        "height": 1071
+      },
+      "Hand-placed": {
+        "renderedCrossings": 7,
+        "renderedOverNode": 5,
+        "renderedLabels": 1,
+        "nodeCount": 8,
+        "edgeCount": 9
+      }
+    },
+    {
+      "C4 e-commerce": {
+        "elkCrossings": 0,
+        "elkOverNode": 0,
+        "placement": 0,
+        "renderedCrossings": 2,
+        "renderedOverNode": 2,
+        "renderedLabels": 0,
+        "roundRobinCrossings": 10,
+        "nodeCount": 16,
+        "edgeCount": 16,
+        "width": 2330,
+        "height": 753
+      },
+      "AWS ECS Fargate": {
+        "elkCrossings": 4,
+        "elkOverNode": 0,
+        "placement": 3,
+        "renderedCrossings": 3,
+        "renderedOverNode": 4,
+        "renderedLabels": 0,
+        "roundRobinCrossings": 12,
+        "nodeCount": 18,
+        "edgeCount": 14,
+        "width": 3230,
+        "height": 754
+      },
+      "C4 Context healthcare": {
+        "elkCrossings": 0,
+        "elkOverNode": 0,
+        "placement": 0,
+        "renderedCrossings": 3,
+        "renderedOverNode": 0,
+        "renderedLabels": 1,
+        "roundRobinCrossings": 12,
+        "nodeCount": 10,
+        "edgeCount": 11,
+        "width": 920,
+        "height": 800
+      },
+      "AWS microservices": {
+        "elkCrossings": 5,
+        "elkOverNode": 0,
+        "placement": 2,
+        "renderedCrossings": 7,
+        "renderedOverNode": 7,
+        "renderedLabels": 1,
+        "roundRobinCrossings": 14,
+        "nodeCount": 17,
+        "edgeCount": 17,
+        "width": 1775,
+        "height": 1071
+      },
+      "Hand-placed": {
+        "renderedCrossings": 7,
+        "renderedOverNode": 5,
+        "renderedLabels": 1,
+        "nodeCount": 8,
+        "edgeCount": 9
+      }
+    },
+    {
+      "C4 e-commerce": {
+        "elkCrossings": 0,
+        "elkOverNode": 0,
+        "placement": 0,
+        "renderedCrossings": 2,
+        "renderedOverNode": 2,
+        "renderedLabels": 0,
+        "roundRobinCrossings": 10,
+        "nodeCount": 16,
+        "edgeCount": 16,
+        "width": 2330,
+        "height": 753
+      },
+      "AWS ECS Fargate": {
+        "elkCrossings": 4,
+        "elkOverNode": 0,
+        "placement": 3,
+        "renderedCrossings": 3,
+        "renderedOverNode": 4,
+        "renderedLabels": 0,
+        "roundRobinCrossings": 12,
+        "nodeCount": 18,
+        "edgeCount": 14,
+        "width": 3230,
+        "height": 754
+      },
+      "C4 Context healthcare": {
+        "elkCrossings": 0,
+        "elkOverNode": 0,
+        "placement": 0,
+        "renderedCrossings": 3,
+        "renderedOverNode": 0,
+        "renderedLabels": 1,
+        "roundRobinCrossings": 12,
+        "nodeCount": 10,
+        "edgeCount": 11,
+        "width": 920,
+        "height": 800
+      },
+      "AWS microservices": {
+        "elkCrossings": 5,
+        "elkOverNode": 0,
+        "placement": 2,
+        "renderedCrossings": 7,
+        "renderedOverNode": 7,
+        "renderedLabels": 1,
+        "roundRobinCrossings": 14,
+        "nodeCount": 17,
+        "edgeCount": 17,
+        "width": 1775,
+        "height": 1071
+      },
+      "Hand-placed": {
+        "renderedCrossings": 7,
+        "renderedOverNode": 5,
+        "renderedLabels": 1,
+        "nodeCount": 8,
+        "edgeCount": 9
+      }
+    },
+    {
+      "C4 e-commerce": {
+        "elkCrossings": 0,
+        "elkOverNode": 0,
+        "placement": 0,
+        "renderedCrossings": 2,
+        "renderedOverNode": 2,
+        "renderedLabels": 0,
+        "roundRobinCrossings": 10,
+        "nodeCount": 16,
+        "edgeCount": 16,
+        "width": 2330,
+        "height": 753
+      },
+      "AWS ECS Fargate": {
+        "elkCrossings": 4,
+        "elkOverNode": 0,
+        "placement": 3,
+        "renderedCrossings": 3,
+        "renderedOverNode": 4,
+        "renderedLabels": 0,
+        "roundRobinCrossings": 12,
+        "nodeCount": 18,
+        "edgeCount": 14,
+        "width": 3230,
+        "height": 754
+      },
+      "C4 Context healthcare": {
+        "elkCrossings": 0,
+        "elkOverNode": 0,
+        "placement": 0,
+        "renderedCrossings": 3,
+        "renderedOverNode": 0,
+        "renderedLabels": 1,
+        "roundRobinCrossings": 12,
+        "nodeCount": 10,
+        "edgeCount": 11,
+        "width": 920,
+        "height": 800
+      },
+      "AWS microservices": {
+        "elkCrossings": 5,
+        "elkOverNode": 0,
+        "placement": 2,
+        "renderedCrossings": 7,
+        "renderedOverNode": 7,
+        "renderedLabels": 1,
+        "roundRobinCrossings": 14,
+        "nodeCount": 17,
+        "edgeCount": 17,
+        "width": 1775,
+        "height": 1071
+      },
+      "Hand-placed": {
+        "renderedCrossings": 7,
+        "renderedOverNode": 5,
+        "renderedLabels": 1,
+        "nodeCount": 8,
+        "edgeCount": 9
+      }
+    }
+  ]
+}

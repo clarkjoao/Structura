@@ -1,0 +1,28 @@
+{
+ "label": "F2-B-check1",
+ "irNodes": 41,
+ "irEdges": 33,
+ "containerEdges": 14,
+ "containerEdgeIds": [
+  "alb-a-to-ecs",
+  "alb-b-to-ecs",
+  "ecs-fargate-svc-a-to-rds",
+  "ecs-fargate-svc-b-to-rds",
+  "ecs-fargate-svc-a-to-s3-uploads",
+  "ecs-fargate-svc-b-to-s3-uploads",
+  "ecs-fargate-svc-a-to-secrets",
+  "ecs-fargate-svc-b-to-secrets",
+  "ecs-fargate-svc-a-to-cloudwatch",
+  "ecs-fargate-svc-b-to-cloudwatch",
+  "ecs-fargate-svc-a-to-vpc-endpoint",
+  "ecs-fargate-svc-b-to-vpc-endpoint",
+  "ecs-cluster-to-ecs-fargate-a",
+  "ecs-cluster-to-ecs-fargate-b"
+ ],
+ "domNodes": 41,
+ "domEdges": 33,
+ "domEdgePaths": 33,
+ "panelHandlesInDom": 26,
+ "rf008Warnings": 0,
+ "rf008Errors": 0
+}

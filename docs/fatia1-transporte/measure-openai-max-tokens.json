@@ -1,0 +1,19 @@
+{
+  "measuredAt": "2026-08-27",
+  "how": "Browser fetch against api.openai.com/v1/chat/completions with the user's configured key, from the running app tab. Ceiling probe sends max_tokens: 999999 and reads the 400 the API itself returns, which names the per-model limit. Positive control sends the value we intend to ship and requires HTTP 200.",
+  "ceilingProbe": [
+    { "model": "gpt-4o", "status": 400, "modelSupportsAtMost": 16384 },
+    { "model": "gpt-4o-mini", "status": 400, "modelSupportsAtMost": 16384 },
+    { "model": "gpt-4.1", "status": 400, "modelSupportsAtMost": 32768 },
+    { "model": "gpt-4.1-mini", "status": 400, "modelSupportsAtMost": 32768 }
+  ],
+  "errorMessageVerbatim": "max_tokens is too large: 999999. This model supports at most <N> completion tokens, whereas you provided 999999.",
+  "positiveControl16000": [
+    { "model": "gpt-4o", "status": 200, "content": "OK" },
+    { "model": "gpt-4o-mini", "status": 200, "content": "ok" },
+    { "model": "gpt-4.1", "status": 200, "content": "ok" },
+    { "model": "gpt-4.1-mini", "status": 200, "content": "ok" }
+  ],
+  "conclusion": "Smallest ceiling across the four supported OpenAI presets is 16384. 16000 is accepted by all four and is the value shipped.",
+  "notMeasured": "Anthropic. No Anthropic connection is configured in this app, so its per-model ceiling was not probed."
+}

@@ -1,0 +1,92 @@
+{
+  "type": "aws-deployment",
+  "nodes": [
+    {
+      "id": "app-vpc",
+      "semanticType": "aws-vpc",
+      "name": "VPC Principal",
+      "awsService": "vpc",
+      "parentId": null,
+      "isBoundary": true,
+      "tier": "edge"
+    },
+    {
+      "id": "az-1",
+      "semanticType": "aws-az",
+      "name": "us-east-1a",
+      "parentId": "app-vpc",
+      "isBoundary": true,
+      "tier": "compute"
+    },
+    {
+      "id": "public-subnet-1",
+      "semanticType": "aws-public-subnet",
+      "name": "Subnet Pública",
+      "awsService": "public-subnet",
+      "parentId": "az-1",
+      "isBoundary": true,
+      "tier": "edge"
+    },
+    {
+      "id": "private-subnet-1",
+      "semanticType": "aws-private-subnet",
+      "name": "Subnet Privada",
+      "awsService": "private-subnet",
+      "parentId": "az-1",
+      "isBoundary": true,
+      "tier": "compute"
+    },
+    {
+      "id": "alb",
+      "semanticType": "aws-networking",
+      "name": "Application Load Balancer",
+      "awsService": "elb",
+      "parentId": "public-subnet-1",
+      "tier": "edge"
+    },
+    {
+      "id": "lambda-func",
+      "semanticType": "aws-compute",
+      "name": "Função Lambda",
+      "awsService": "lambda",
+      "parentId": "private-subnet-1",
+      "tier": "compute"
+    },
+    {
+      "id": "rds-db",
+      "semanticType": "aws-database",
+      "name": "Banco de Dados RDS",
+      "awsService": "rds",
+      "parentId": "private-subnet-1",
+      "tier": "data"
+    },
+    {
+      "id": "s3-bucket",
+      "semanticType": "aws-storage",
+      "name": "Bucket S3",
+      "awsService": "s3",
+      "parentId": "app-vpc",
+      "tier": "data"
+    }
+  ],
+  "edges": [
+    {
+      "id": "alb-para-lambda",
+      "sourceId": "alb",
+      "targetId": "lambda-func",
+      "label": "redireciona requisições"
+    },
+    {
+      "id": "lambda-para-rds",
+      "sourceId": "lambda-func",
+      "targetId": "rds-db",
+      "label": "consulta/grava dados"
+    },
+    {
+      "id": "lambda-para-s3",
+      "sourceId": "lambda-func",
+      "targetId": "s3-bucket",
+      "label": "lê/escreve arquivos"
+    }
+  ]
+}

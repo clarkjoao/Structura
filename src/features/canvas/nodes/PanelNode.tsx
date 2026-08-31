@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
+import { NodeResizer, Position, type Node, type NodeProps } from "@xyflow/react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useComponentIcon } from "@/features/diagram";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
@@ -13,6 +13,7 @@ import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPrese
 import { usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
 import { DEFAULT_PANEL_OPACITY, PANEL_BORDER_HIT_PX } from "../constants/panel.constants";
 import { buildPanelHeaderLabel, buildPanelSubLabel } from "./panelLabel";
+import { buildPanelHandles } from "./CustomNode/Handles";
 
 export type PanelNodeData = {
   elementId: string;
@@ -31,6 +32,13 @@ export type PanelNodeData = {
   isUnparentCandidate?: boolean;
   collapsed?: boolean;
   childCount?: number;
+  /**
+   * How many connections address this panel. Drives the number of handle slots
+   * it renders, and has to match what `buildEdgeHandleAssignments` computes from
+   * the same counts — a mismatch is React Flow error #008 and a dropped edge.
+   */
+  incomingCount?: number;
+  outgoingCount?: number;
   onToggleCollapse?: () => void;
   sceneBadge?: { name: string; color: string };
   compareBadges?: {
@@ -80,6 +88,28 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
   const childCount = d.childCount ?? 0;
   const onToggle = d.onToggleCollapse;
 
+  /*
+   * Edges addressed to a container attach here.
+   *
+   * Before this the panel rendered no handles at all, so React Flow refused
+   * every edge whose endpoint was a panel — `Couldn't create edge for target
+   * handle id: "target-1" … error#008` — and dropped it with no UI signal. It
+   * cost 16 of 27 connections in one measured ~40-node AWS generation, and the
+   * only way to know was the console. See
+   * `docs/fatia1-transporte/finding-container-edges-dropped.json`.
+   *
+   * Sides are fixed, as everywhere else: targets on the left, sources on the
+   * right, whatever the geometry (`edges/connectionDerivations.ts`). They are
+   * rendered in both the collapsed and expanded branches — a collapsed panel is
+   * still an edge endpoint.
+   */
+  const panelHandles = (
+    <>
+      {buildPanelHandles(d.incomingCount ?? 1, "target", Position.Left, d.elementId)}
+      {buildPanelHandles(d.outgoingCount ?? 1, "source", Position.Right, d.elementId)}
+    </>
+  );
+
   const bgAlpha = isDragTarget ? Math.min(opacity + 15, 40) / 100 : opacity / 100;
   const isTransparent = opacity === 0;
   const collabHighlight = useCollabHighlight(d.elementId);
@@ -109,6 +139,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
           border: `2px ${borderStyle} ${borderColor}`,
         }}
       >
+        {panelHandles}
         {collabHighlight && (
           <div
             className="absolute inset-0 pointer-events-none rounded-lg z-10"
@@ -180,6 +211,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
           border: `2px ${borderStyle} ${borderColor}`,
         }}
       >
+        {panelHandles}
         {collabHighlight && (
           <div
             className="absolute inset-0 pointer-events-none rounded-xl z-10"

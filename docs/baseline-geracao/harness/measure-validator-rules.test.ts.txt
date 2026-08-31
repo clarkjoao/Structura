@@ -1,0 +1,86 @@
+import { describe, it } from "vitest";
+import { writeFileSync, mkdirSync } from "node:fs";
+import { validateIR, parseAndValidateIR, type IRIssueCode } from "@/features/llm/ir/ir-validator";
+
+const OUT = process.env.PROBE_OUT ?? "/tmp/probe";
+mkdirSync(OUT, { recursive: true });
+
+/** A healthy 4-node IR every case mutates one thing away from. */
+function base() {
+  return {
+    type: "c4-container",
+    nodes: [
+      { id: "u", semanticType: "person", name: "User", parentId: null, tier: "external" },
+      { id: "sys", semanticType: "container", name: "Sys", parentId: null, isBoundary: true, tier: "compute" },
+      { id: "api", semanticType: "container", name: "API", parentId: "sys", tier: "compute" },
+      { id: "db", semanticType: "database", name: "DB", parentId: "sys", tier: "data" },
+    ] as Record<string, unknown>[],
+    edges: [
+      { id: "e1", sourceId: "u", targetId: "api" },
+      { id: "e2", sourceId: "api", targetId: "db" },
+    ] as Record<string, unknown>[],
+  };
+}
+
+const cases: Array<{ code: IRIssueCode; mutate: (b: ReturnType<typeof base>) => unknown }> = [
+  { code: "invalidJson", mutate: () => "not json at all" },
+  { code: "notAnObject", mutate: () => [1, 2, 3] },
+  { code: "invalidDiagramType", mutate: (b) => ({ ...b, type: "c4-deployment" }) },
+  { code: "nodesNotArray", mutate: (b) => ({ ...b, nodes: {} }) },
+  { code: "edgesNotArray", mutate: (b) => ({ ...b, edges: {} }) },
+  { code: "emptyNodes", mutate: (b) => ({ ...b, nodes: [], edges: [] }) },
+  { code: "nodeNotAnObject", mutate: (b) => ({ ...b, nodes: [...b.nodes, "oops"] }) },
+  { code: "nodeMissingId", mutate: (b) => ({ ...b, nodes: [...b.nodes, { semanticType: "container", name: "X", parentId: null, tier: "compute" }] }) },
+  { code: "nodeDuplicateId", mutate: (b) => ({ ...b, nodes: [...b.nodes, { id: "api", semanticType: "container", name: "Dup", parentId: null, tier: "compute" }] }) },
+  { code: "nodeMissingName", mutate: (b) => ({ ...b, nodes: [...b.nodes, { id: "x", semanticType: "container", parentId: null, tier: "compute" }] }) },
+  { code: "nodeInvalidSemanticType", mutate: (b) => ({ ...b, nodes: [...b.nodes, { id: "x", semanticType: "queue", name: "Queue", parentId: null, tier: "compute" }] }) },
+  { code: "nodeInvalidParentId", mutate: (b) => ({ ...b, nodes: [...b.nodes, { id: "x", semanticType: "container", name: "X", parentId: 42, tier: "compute" }] }) },
+  { code: "nodeInvalidBoundary", mutate: (b) => ({ ...b, nodes: [...b.nodes, { id: "x", semanticType: "container", name: "X", parentId: null, isBoundary: "yes", tier: "compute" }] }) },
+  { code: "nodeParentNotFound", mutate: (b) => ({ ...b, nodes: [...b.nodes, { id: "x", semanticType: "container", name: "X", parentId: "ghost", tier: "compute" }] }) },
+  { code: "nodeSelfParent", mutate: (b) => ({ ...b, nodes: [...b.nodes, { id: "x", semanticType: "container", name: "X", parentId: "x", tier: "compute" }] }) },
+  { code: "containmentCycle", mutate: (b) => ({ ...b, nodes: [...b.nodes, { id: "p", semanticType: "container", name: "P", parentId: "q", tier: "compute" }, { id: "q", semanticType: "container", name: "Q", parentId: "p", tier: "compute" }] }) },
+  { code: "edgeNotAnObject", mutate: (b) => ({ ...b, edges: [...b.edges, "oops"] }) },
+  { code: "edgeMissingId", mutate: (b) => ({ ...b, edges: [...b.edges, { sourceId: "u", targetId: "db" }] }) },
+  { code: "edgeDuplicateId", mutate: (b) => ({ ...b, edges: [...b.edges, { id: "e1", sourceId: "u", targetId: "db" }] }) },
+  { code: "edgeSourceNotFound", mutate: (b) => ({ ...b, edges: [...b.edges, { id: "e3", sourceId: "ghost", targetId: "db" }] }) },
+  { code: "edgeTargetNotFound", mutate: (b) => ({ ...b, edges: [...b.edges, { id: "e3", sourceId: "u", targetId: "ghost" }] }) },
+];
+
+describe("validator rules", () => {
+  it("records, per rule, whether it blocks and how much of the diagram was still usable", () => {
+    const rows: Record<string, unknown> = {};
+
+    // Control: the healthy IR must pass, or every row below is meaningless.
+    const ctrl = validateIR(base());
+    rows["__control_healthy"] = ctrl.ok
+      ? { blocks: false, nodes: ctrl.ir.nodes.length, edges: ctrl.ir.edges.length }
+      : { blocks: true, issues: ctrl.issues };
+
+    for (const { code, mutate } of cases) {
+      const input = mutate(base());
+      const result = typeof input === "string" ? parseAndValidateIR(input) : validateIR(input);
+      const codes = result.ok ? [] : result.issues.map((i) => i.code);
+      rows[code] = {
+        triggered: codes.includes(code),
+        allCodes: codes,
+        blocks: !result.ok,
+      };
+    }
+
+    // The "how much survives" question: re-run the same mutations but count what
+    // the validator had already built before it decided to refuse. Approximated
+    // by validating the mutated doc with the offending element removed.
+    writeFileSync(`${OUT}/rules.json`, JSON.stringify(rows, null, 2));
+  });
+
+  it("checks whether isBoundary is still required for a node with children", () => {
+    const b = base();
+    // Model omits isBoundary on a node that holds children — the historical failure.
+    b.nodes[1] = { id: "sys", semanticType: "container", name: "Sys", parentId: null, tier: "compute" };
+    const r = validateIR(b);
+    const out = r.ok
+      ? { accepted: true, sysIsBoundary: r.ir.nodes.find((n) => n.id === "sys")?.isBoundary ?? null }
+      : { accepted: false, issues: r.issues };
+    writeFileSync(`${OUT}/isBoundary.json`, JSON.stringify(out, null, 2));
+  });
+});

@@ -1,0 +1,90 @@
+import { describe, it } from "vitest";
+import { readFileSync, readdirSync, writeFileSync, mkdirSync } from "node:fs";
+import { validateIR } from "@/features/llm/ir/ir-validator";
+import { layoutElkGraph } from "@/features/canvas/layout/layoutEngine";
+import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
+import { measureReadability } from "@/features/canvas/layout/layoutReadability";
+import { readElkHandleOrder } from "@/features/canvas/layout/elkHandleOrder";
+import { measureRenderedReadability } from "@/features/canvas/layout/renderedEdgePath";
+import { parseAndValidateIR } from "@/features/llm/ir/ir-validator";
+import type { DiagramIR } from "@/features/llm/ir/ir.types";
+
+const DIR = "docs/baseline-geracao";
+const OUT = process.env.PROBE_OUT ?? "/tmp/probe";
+mkdirSync(OUT, { recursive: true });
+
+describe("captured generations", () => {
+  it("re-validates every raw response and measures every valid IR", async () => {
+    const results: Record<string, unknown> = {};
+    for (const f of readdirSync(DIR).filter((n) => n.endsWith(".raw.txt")).sort()) {
+      const name = f.replace(".raw.txt", "");
+      const raw = readFileSync(`${DIR}/${f}`, "utf8");
+      const v = parseAndValidateIR(raw);
+      if (!v.ok) {
+        results[name] = { ok: false, issues: v.issues };
+        continue;
+      }
+      const ir: DiagramIR = v.ir;
+      const graph = await layoutElkGraph(irToLayoutGraph(ir));
+      const elk = measureReadability(graph);
+      const rendered = measureRenderedReadability(graph, ir.edges, {
+        handleOrder: readElkHandleOrder(graph),
+      });
+      // Children whose box escapes the parent box, read straight off ELK.
+      const boxes = new Map<string, { x: number; y: number; w: number; h: number }>();
+      const walk = (n: typeof graph, ox: number, oy: number) => {
+        const x = ox + (n.x ?? 0);
+        const y = oy + (n.y ?? 0);
+        boxes.set(n.id, { x, y, w: n.width ?? 0, h: n.height ?? 0 });
+        for (const c of n.children ?? []) walk(c as typeof graph, x, y);
+      };
+      walk(graph, 0, 0);
+      let escaped = 0;
+      const escapedIds: string[] = [];
+      for (const node of ir.nodes) {
+        if (node.parentId === null) continue;
+        const c = boxes.get(node.id);
+        const p = boxes.get(node.parentId);
+        if (!c || !p) continue;
+        if (c.x < p.x || c.y < p.y || c.x + c.w > p.x + p.w || c.y + c.h > p.y + p.h) {
+          escaped++;
+          escapedIds.push(node.id);
+        }
+      }
+      results[name] = {
+        ok: true,
+        nodes: ir.nodes.length,
+        edges: ir.edges.length,
+        elkCrossings: elk.edgeCrossings,
+        renderedCrossings: rendered.edgeCrossings,
+        renderedEdgeNodeOverlaps: rendered.edgeNodeOverlaps,
+        childrenOutsideParent: escaped,
+        escapedIds,
+        databaseNodes: ir.nodes.filter((n) => n.semanticType === "database").map((n) => n.id),
+      };
+    }
+    writeFileSync(`${OUT}/captured.json`, JSON.stringify(results, null, 2));
+  }, 600000);
+
+  it("re-validates the truncated Case A/B responses with a repaired tail", () => {
+    // Does the *content* validate once the truncation is undone? Distinguishes
+    // "the model modelled it wrong" from "the transport cut it off".
+    const repaired: Record<string, unknown> = {};
+    for (const f of readdirSync(DIR).filter((n) => n.endsWith(".raw.txt")).sort()) {
+      const name = f.replace(".raw.txt", "");
+      const raw = readFileSync(`${DIR}/${f}`, "utf8");
+      if (parseAndValidateIR(raw).ok) continue;
+      // Drop the incomplete trailing entry and close the JSON.
+      let cut = raw.lastIndexOf("},");
+      if (cut === -1) { repaired[name] = "unrepairable"; continue; }
+      const patched = raw.slice(0, cut + 1) + "]}";
+      let parsed: unknown;
+      try { parsed = JSON.parse(patched); } catch (e) { repaired[name] = `still unparseable: ${String(e)}`; continue; }
+      const v = validateIR(parsed);
+      repaired[name] = v.ok
+        ? { ok: true, nodes: v.ir.nodes.length, edges: v.ir.edges.length }
+        : { ok: false, issues: v.issues };
+    }
+    writeFileSync(`${OUT}/repaired.json`, JSON.stringify(repaired, null, 2));
+  }, 600000);
+});

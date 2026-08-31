@@ -1,0 +1,18 @@
+{
+  "measuredAt": "2026-08-28",
+  "finding": "The dropped-edge failure class is not only about panels. Five more node types render fewer handles than buildEdgeHandleAssignments reaches for, and lose edges the same silent way.",
+  "how": "Each type given 3 incoming and 3 outgoing connections, rendered through the real node registry and the real handle assignment in the jsdom harness from `src/features/canvas/edges/ir-edges-reach-the-dom.test.tsx`. `rendered` is read from the DOM (`data-handleid` on `.react-flow__handle` inside the node), `domEdges` counts `.react-flow__edge` out of the 6 connections given.",
+  "results": [
+    { "type": "external-element", "rfType": "external-element", "renderedHandles": ["target-0", "source-0"], "assignmentWants": ["target-0", "target-1", "target-2", "source-0", "source-1", "source-2"], "domEdges": "2/6" },
+    { "type": "svg", "rfType": "svg", "renderedHandles": ["target-0", "source-0"], "assignmentWants": ["target-0..2", "source-0..2"], "domEdges": "2/6" },
+    { "type": "endpoint", "rfType": "endpoint", "renderedHandles": ["target-0", "source-0"], "assignmentWants": ["target-0..2", "source-0..2"], "domEdges": "2/6" },
+    { "type": "note", "rfType": "note", "renderedHandles": ["in-x"], "assignmentWants": ["in-x", "source-0..2"], "domEdges": "3/6", "note": "renders no source handle at all, so an outgoing edge from a note can never be drawn" },
+    { "type": "json-viewer", "rfType": "json-viewer", "renderedHandles": ["in-x"], "assignmentWants": ["in-x", "source-0..2"], "domEdges": "3/6" },
+    { "type": "db-table", "rfType": "db-table", "renderedHandles": ["in-x"], "assignmentWants": ["in-x", "source-0..2"], "domEdges": "3/6" },
+    { "type": "process-node", "rfType": "flow-node", "renderedHandles": ["target-0..3", "source-0..3"], "assignmentWants": ["target-0..2", "source-0..2"], "domEdges": "6/6" },
+    { "type": "container (C4)", "rfType": "c4", "renderedHandles": ["target-0..2", "source-0..2"], "assignmentWants": ["target-0..2", "source-0..2"], "domEdges": "6/6" },
+    { "type": "panel", "rfType": "panel", "renderedHandles": ["target-0..2", "source-0..2"], "assignmentWants": ["target-0..2", "source-0..2"], "domEdges": "6/6", "note": "this slice's fix; was 1/6 before it" }
+  ],
+  "scope": "REPORTED, NOT FIXED. None of these six types is reachable from the IR path — `mapNodeToComponent` produces `panel` and the C4/AWS leaf types only — so the epic's invariant ('every IR edge reaches the DOM') holds. They are reachable by drawing by hand. Fixing them means either giving those components the handles the assignment expects, or clamping the assignment to what each type renders; both are product decisions about how a note or an endpoint should take a second incoming edge, and neither was the decision taken for this slice.",
+  "howItWasFound": "Not looked for. Building the Task 3 invariant required knowing which handle ids each node type renders, and reading the components turned this up; it was then measured rather than left as a code reading."
+}

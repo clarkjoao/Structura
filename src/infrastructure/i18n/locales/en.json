@@ -658,7 +658,9 @@
       "applied": "Generated {{nodeCount}} node(s) and {{edgeCount}} connection(s) — review and accept below.",
       "noActiveDiagram": "Open a diagram before generating one.",
       "notApplied": "The diagram was generated but could not be applied to the canvas.",
+      "truncated": "The diagram was cut off: the response hit the model's output limit before it finished.",
       "issue": {
+        "responseTruncated": "Try again describing fewer elements, or generate the diagram in parts \u2014 one boundary or subsystem at a time.",
         "invalidJson": "The response is not valid JSON.",
         "notAnObject": "The response is not a JSON object.",
         "invalidDiagramType": "Unknown diagram type: \"{{value}}\".",

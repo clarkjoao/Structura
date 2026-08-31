@@ -1,0 +1,86 @@
+{
+  "type": "aws-deployment",
+  "nodes": [
+    { "id": "app-vpc", "semanticType": "aws-vpc", "name": "VPC de Produção", "awsService": "vpc", "parentId": null, "isBoundary": true, "tier": "edge" },
+
+    { "id": "az-a", "semanticType": "aws-az", "name": "us-east-1a", "parentId": "app-vpc", "isBoundary": true, "tier": "compute" },
+    { "id": "az-b", "semanticType": "aws-az", "name": "us-east-1b", "parentId": "app-vpc", "isBoundary": true, "tier": "compute" },
+
+    { "id": "public-a", "semanticType": "aws-public-subnet", "name": "Subnet Pública (AZ A)", "awsService": "public-subnet", "parentId": "az-a", "isBoundary": true, "tier": "edge" },
+    { "id": "private-a", "semanticType": "aws-private-subnet", "name": "Subnet Privada (AZ A)", "awsService": "private-subnet", "parentId": "az-a", "isBoundary": true, "tier": "compute" },
+
+    { "id": "public-b", "semanticType": "aws-public-subnet", "name": "Subnet Pública (AZ B)", "awsService": "public-subnet", "parentId": "az-b", "isBoundary": true, "tier": "edge" },
+    { "id": "private-b", "semanticType": "aws-private-subnet", "name": "Subnet Privada (AZ B)", "awsService": "private-subnet", "parentId": "az-b", "isBoundary": true, "tier": "compute" },
+
+    { "id": "route53", "semanticType": "aws-networking", "name": "Route 53", "awsService": "route53", "parentId": null, "tier": "edge" },
+    { "id": "cloudfront", "semanticType": "aws-networking", "name": "CloudFront", "awsService": "cloudfront", "parentId": null, "tier": "edge" },
+
+    { "id": "alb-a", "semanticType": "aws-networking", "name": "Application Load Balancer (AZ A)", "awsService": "elb", "parentId": "public-a", "tier": "edge" },
+    { "id": "alb-b", "semanticType": "aws-networking", "name": "Application Load Balancer (AZ B)", "awsService": "elb", "parentId": "public-b", "tier": "edge" },
+
+    { "id": "nat-gw-a", "semanticType": "aws-networking", "name": "NAT Gateway (AZ A)", "awsService": "vpc", "parentId": "public-a", "tier": "edge" },
+    { "id": "nat-gw-b", "semanticType": "aws-networking", "name": "NAT Gateway (AZ B)", "awsService": "vpc", "parentId": "public-b", "tier": "edge" },
+
+    { "id": "ecs-fargate-a", "semanticType": "aws-compute", "name": "ECS Fargate (AZ A)", "awsService": "fargate", "parentId": "private-a", "tier": "compute" },
+    { "id": "ecs-fargate-b", "semanticType": "aws-compute", "name": "ECS Fargate (AZ B)", "awsService": "fargate", "parentId": "private-b", "tier": "compute" },
+
+    { "id": "ecs-task-web-a", "semanticType": "aws-compute", "name": "Tarefa Web", "awsService": "ecs", "parentId": "ecs-fargate-a", "tier": "compute" },
+    { "id": "ecs-task-worker-a", "semanticType": "aws-compute", "name": "Tarefa Worker", "awsService": "ecs", "parentId": "ecs-fargate-a", "tier": "compute" },
+    { "id": "ecs-task-web-b", "semanticType": "aws-compute", "name": "Tarefa Web", "awsService": "ecs", "parentId": "ecs-fargate-b", "tier": "compute" },
+    { "id": "ecs-task-worker-b", "semanticType": "aws-compute", "name": "Tarefa Worker", "awsService": "ecs", "parentId": "ecs-fargate-b", "tier": "compute" },
+
+    { "id": "lambda-a-1", "semanticType": "aws-compute", "name": "Função Lambda (AZ A 1)", "awsService": "lambda", "parentId": "private-a", "tier": "compute" },
+    { "id": "lambda-a-2", "semanticType": "aws-compute", "name": "Função Lambda (AZ A 2)", "awsService": "lambda", "parentId": "private-a", "tier": "compute" },
+    { "id": "lambda-b-1", "semanticType": "aws-compute", "name": "Função Lambda (AZ B 1)", "awsService": "lambda", "parentId": "private-b", "tier": "compute" },
+    { "id": "lambda-b-2", "semanticType": "aws-compute", "name": "Função Lambda (AZ B 2)", "awsService": "lambda", "parentId": "private-b", "tier": "compute" },
+
+    { "id": "rds-az-a", "semanticType": "aws-database", "name": "RDS Multi-AZ (Primário)", "awsService": "rds", "parentId": "private-a", "tier": "data" },
+    { "id": "rds-az-b", "semanticType": "aws-database", "name": "RDS Multi-AZ (Réplicas)", "awsService": "rds", "parentId": "private-b", "tier": "data" },
+
+    { "id": "s3-arquivos", "semanticType": "aws-storage", "name": "Bucket S3 Arquivos", "awsService": "s3", "parentId": "app-vpc", "tier": "data" },
+    { "id": "s3-backup", "semanticType": "aws-storage", "name": "Bucket S3 Backup", "awsService": "s3", "parentId": "app-vpc", "tier": "data" },
+    { "id": "s3-logs", "semanticType": "aws-storage", "name": "Bucket S3 Logs", "awsService": "s3", "parentId": "app-vpc", "tier": "data" },
+
+    { "id": "sqs-fila-1", "semanticType": "aws-integration", "name": "Fila SQS Processamento", "awsService": "sqs", "parentId": "app-vpc", "tier": "integration" },
+    { "id": "sqs-fila-2", "semanticType": "aws-integration", "name": "Fila SQS Notificações", "awsService": "sqs", "parentId": "app-vpc", "tier": "integration" },
+    { "id": "sns-topico-1", "semanticType": "aws-integration", "name": "Tópico SNS Alerta", "awsService": "sns", "parentId": "app-vpc", "tier": "integration" },
+    { "id": "sns-topico-2", "semanticType": "aws-integration", "name": "Tópico SNS Usuários", "awsService": "sns", "parentId": "app-vpc", "tier": "integration" },
+
+    { "id": "cloudwatch", "semanticType": "aws-management", "name": "CloudWatch", "awsService": "cloudwatch", "parentId": "app-vpc", "tier": "compute" },
+    { "id": "secrets-manager", "semanticType": "aws-security", "name": "Secrets Manager", "awsService": "secrets-manager", "parentId": "app-vpc", "tier": "compute" },
+
+    { "id": "sec-group-alb", "semanticType": "aws-security", "name": "SG ALB", "awsService": "security-hub", "parentId": "app-vpc", "tier": "compute" },
+    { "id": "sec-group-ecs", "semanticType": "aws-security", "name": "SG ECS", "awsService": "security-hub", "parentId": "app-vpc", "tier": "compute" },
+    { "id": "sec-group-rds", "semanticType": "aws-security", "name": "SG RDS", "awsService": "security-hub", "parentId": "app-vpc", "tier": "compute" },
+
+    { "id": "iam-ecs", "semanticType": "aws-security", "name": "IAM ECS", "awsService": "iam", "parentId": "app-vpc", "tier": "compute" },
+    { "id": "iam-lambda", "semanticType": "aws-security", "name": "IAM Lambda", "awsService": "iam", "parentId": "app-vpc", "tier": "compute" },
+
+    { "id": "codepipeline", "semanticType": "aws-developer", "name": "CodePipeline CI/CD", "awsService": "codepipeline", "parentId": "app-vpc", "tier": "compute" }
+  ],
+  "edges": [
+    { "id": "route53-to-cloudfront", "sourceId": "route53", "targetId": "cloudfront", "label": "resolve domínio" },
+
+    { "id": "cloudfront-to-alb-a", "sourceId": "cloudfront", "targetId": "alb-a", "label": "HTTP/HTTPS" },
+    { "id": "cloudfront-to-alb-b", "sourceId": "cloudfront", "targetId": "alb-b", "label": "HTTP/HTTPS" },
+
+    { "id": "alb-a-to-ecs-fargate-a", "sourceId": "alb-a", "targetId": "ecs-fargate-a", "label": "rota requisições HTTP" },
+    { "id": "alb-b-to-ecs-fargate-b", "sourceId": "alb-b", "targetId": "ecs-fargate-b", "label": "rota requisições HTTP" },
+
+    { "id": "ecs-fargate-a-to-task-web", "sourceId": "ecs-fargate-a", "targetId": "ecs-task-web-a", "label": "inicia tarefas" },
+    { "id": "ecs-fargate-a-to-task-worker", "sourceId": "ecs-fargate-a", "targetId": "ecs-task-worker-a", "label": "inicia tarefas" },
+    { "id": "ecs-fargate-b-to-task-web", "sourceId": "ecs-fargate-b", "targetId": "ecs-task-web-b", "label": "inicia tarefas" },
+    { "id": "ecs-fargate-b-to-task-worker", "sourceId": "ecs-fargate-b", "targetId": "ecs-task-worker-b", "label": "inicia tarefas" },
+
+    { "id": "ecs-task-web-a-to-rds", "sourceId": "ecs-task-web-a", "targetId": "rds-az-a", "label": "acessa dados" },
+    { "id": "ecs-task-web-b-to-rds", "sourceId": "ecs-task-web-b", "targetId": "rds-az-b", "label": "acessa dados" },
+    { "id": "ecs-task-worker-a-to-sqs", "sourceId": "ecs-task-worker-a", "targetId": "sqs-fila-1", "label": "lê eventos" },
+    { "id": "ecs-task-worker-b-to-sqs", "sourceId": "ecs-task-worker-b", "targetId": "sqs-fila-1", "label": "lê eventos" },
+    { "id": "ecs-task-worker-a-to-s3", "sourceId": "ecs-task-worker-a", "targetId": "s3-arquivos", "label": "upload/processa arquivos" },
+    { "id": "ecs-task-worker-b-to-s3", "sourceId": "ecs-task-worker-b", "targetId": "s3-arquivos", "label": "upload/processa arquivos" },
+
+    { "id": "alb-a-to-lambda-a-1", "sourceId": "alb-a", "targetId": "lambda-a-1", "label": "invoca função" },
+    { "id": "alb-b-to-lambda-b-1", "sourceId": "alb-b", "targetId": "lambda-b-1", "label": "invoca função" },
+    { "id": "ecs-task-web-a-to-sns", "sourceId": "ecs-task-web-a", "targetId": "sns-topico-1", "label": "publica evento" },
+    { "id": "ecs-task-web-b-to-sns", "sourceId": "ecs-task-web-b", "targetId": "sns-topico-2", "label": "publica evento" },
+    { "id": "lambda-a-1-to
