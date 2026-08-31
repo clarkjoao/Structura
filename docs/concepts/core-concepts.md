@@ -72,10 +72,15 @@ wrinkle.
 
 ## Flow
 
-A `Flow` (`model/flow.types.ts`) is a recorded step sequence *within* one
-diagram — "request comes in here, then hits this, then branches" — used by the
-flow recorder/player and exportable to Mermaid. Flows live inside the
-diagram's snapshot.
+A `Flow` (`model/flow.types.ts`) is a named path through one diagram —
+"request comes in here, then hits this, then branches" — recorded by clicking
+the canvas, replayed step by step, and exportable to Mermaid. Flows live inside
+the diagram's snapshot.
+
+It is stored as a **graph**, not a list: a `Record<string, FlowStep>` linked by
+`next` and `branches[].nextId` from `entryStepId`, with no `order` field. A
+step's position is derived by walking that graph, which is what lets a flow
+branch. See [flow.md](flow.md).
 
 ## Scene
 
