@@ -54,6 +54,15 @@ export type { FlowLabelResult, FlowLabelAmbiguity } from "./flow-labels";
 
 export { migrateFlow } from "./flow-migration";
 export { repairFlow } from "./flow-repair";
+export { sewOnDelete } from "./flow-sew";
+export type { SewOnDeleteResult, SewBlockedStep } from "./flow-sew";
+export { moveStep } from "./flow-move";
+export type {
+  MoveStepTarget,
+  MoveStepResult,
+  MoveStepRefusal,
+  MoveStepRefusalCode,
+} from "./flow-move";
 export { buildFlowDuplicatePatch } from "./flow-duplicate";
 
 // ─── Scene ───────────────────────────────────────────────────────────────────
