@@ -54,8 +54,9 @@ function refuse(
  * refuses rather than guesses:
  *
  * - Moving a branch point would leave its predecessor with no defined successor
- *   and its branches hanging. That is the same open question as deleting one,
- *   so it is refused with `branch_point_move`.
+ *   and its branches hanging, so it is refused with `branch_point_move`.
+ *   Relocating a condition together with its branches is a separate gesture,
+ *   not this one.
  * - "after" a branch point is refused with `target_after_branch_point`.
  */
 export function moveStep(flow: Flow, stepId: string, target: MoveStepTarget): MoveStepResult {

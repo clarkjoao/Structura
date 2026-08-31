@@ -1,8 +1,8 @@
 import type { Flow, FlowStep } from "../model/flow.types";
 
 /**
- * A requested removal that was not carried out, because the rule for it is
- * not settled. The step is left in place rather than resolved by guesswork.
+ * A requested removal that was not carried out. The step is left in place and
+ * reported, so the flow keeps its shape and the user decides.
  */
 export interface SewBlockedStep {
   code: "branch_point";
@@ -29,9 +29,10 @@ export interface SewOnDeleteResult {
  *   entry falls back to the first remaining step, as it did before.
  * - The last step: its predecessor simply loses its `next`.
  * - A branch point (a step with a non-empty `branches` array): **not removed**.
- *   What should become of the orphaned branches is a product decision, so the
- *   step is kept and reported in `blocked`; the existing broken-step check
- *   surfaces it to the user rather than this function inventing an answer.
+ *   Nothing is guessed about its branches — the step is kept with them intact
+ *   and reported in `blocked`, and because it now references an element that
+ *   is gone, the existing broken-step check surfaces it for the user to
+ *   resolve. Deliberate: the alternatives all discard the user's branches.
  *
  * References to ids that are absent from the record are dropped, and a branch
  * array left empty is removed entirely — both as before.
