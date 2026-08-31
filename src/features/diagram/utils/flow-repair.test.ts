@@ -33,7 +33,7 @@ describe("repairFlow", () => {
     expect(result.entryStepId).toBe("s2");
   });
 
-  it("clears next reference pointing to a removed step", () => {
+  it("drops next when the removed step had no successor to sew to", () => {
     const flow = makeFlow({
       entryStepId: "s1",
       steps: {
@@ -92,7 +92,8 @@ describe("repairFlow", () => {
     const result = repairFlow(flow, ["s2", "s4"]);
 
     expect(Object.keys(result.steps)).toEqual(["s1", "s3"]);
-    expect(result.steps.s1.next).toBeUndefined();
+    // s1 -> s2 -> s3 with s2 gone: the chain is sewn, not severed.
+    expect(result.steps.s1.next).toBe("s3");
     expect(result.steps.s3.branches).toEqual([{ label: "b", nextId: "s1" }]);
     expect(result.entryStepId).toBe("s1");
   });
