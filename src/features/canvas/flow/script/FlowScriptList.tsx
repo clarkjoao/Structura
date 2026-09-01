@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import type { DragEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { AlertTriangle } from "lucide-react";
@@ -36,6 +37,8 @@ export function FlowScriptList({
   const actions = useFlowScriptActions(flow.id);
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
   const [conditionForm, setConditionForm] = useState<ConditionFormState | null>(null);
+  const [draggingStepId, setDraggingStepId] = useState<string | null>(null);
+  const [dragOverStepId, setDragOverStepId] = useState<string | null>(null);
 
   const outline = useMemo(() => buildFlowOutline(flow), [flow]);
 
@@ -70,6 +73,45 @@ export function FlowScriptList({
 
   const lastStepId = outline.rows[outline.rows.length - 1]?.stepId;
 
+  const onDragStart = useCallback((event: DragEvent, stepId: string) => {
+    event.dataTransfer.effectAllowed = "move";
+    setDraggingStepId(stepId);
+  }, []);
+
+  const onDragOver = useCallback(
+    (event: DragEvent, stepId: string) => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      if (draggingStepId !== null) setDragOverStepId(stepId);
+    },
+    [draggingStepId],
+  );
+
+  const endDrag = useCallback(() => {
+    setDraggingStepId(null);
+    setDragOverStepId(null);
+  }, []);
+
+  /**
+   * Dropping onto a row means "take the place of that row": from above, the
+   * dragged step lands behind it; from below, in front of it. The graph has
+   * the last word — a move it will not make is refused with a reason, not
+   * quietly undone.
+   */
+  const onDrop = useCallback(
+    (event: DragEvent, stepId: string) => {
+      event.preventDefault();
+      const dragged = draggingStepId;
+      endDrag();
+      if (dragged === null || dragged === stepId) return;
+      const from = outline.rows.findIndex((row) => row.stepId === dragged);
+      const to = outline.rows.findIndex((row) => row.stepId === stepId);
+      if (from < 0 || to < 0) return;
+      actions.moveStep(dragged, { kind: from < to ? "after" : "before", stepId });
+    },
+    [actions, draggingStepId, endDrag, outline.rows],
+  );
+
   return (
     <div className="space-y-2">
       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -101,6 +143,17 @@ export function FlowScriptList({
                   setConditionForm({ stepId, label: "", branches: ["", ""] })
                 }
                 onOpenBranchSelect={onOpenBranchSelect}
+                drag={{
+                  isDragging: draggingStepId === row.stepId,
+                  isDragOver:
+                    dragOverStepId === row.stepId &&
+                    draggingStepId !== null &&
+                    draggingStepId !== row.stepId,
+                  onDragStart,
+                  onDragOver,
+                  onDrop,
+                  onDragEnd: endDrag,
+                }}
               />
             );
           })}

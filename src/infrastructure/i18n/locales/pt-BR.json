@@ -1372,7 +1372,8 @@
     "branchStepCount_other": "{{count}} passos gravados",
     "continueMainFlow": "Voltar ao fluxo principal",
     "unreachable_one": "{{count}} passo não é alcançável a partir do início",
-    "unreachable_other": "{{count}} passos não são alcançáveis a partir do início"
+    "unreachable_other": "{{count}} passos não são alcançáveis a partir do início",
+    "openScript": "Abrir o roteiro"
   },
   "flowRefusal": {
     "unknown": "A mudança foi recusada.",

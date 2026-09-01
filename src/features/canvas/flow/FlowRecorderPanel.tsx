@@ -14,7 +14,7 @@ import { RecorderMetadataForm } from "./recorder/RecorderMetadataForm";
 import { BranchRecordingStrip } from "./recorder/BranchRecordingStrip";
 import { BranchSelectView } from "./recorder/BranchSelectView";
 import { MermaidPreview } from "./recorder/MermaidPreview";
-import { FlowScriptList } from "./script/FlowScriptList";
+import { FlowScriptPanel } from "./script/FlowScriptPanel";
 
 interface Props {
   flowId: string;
@@ -137,7 +137,7 @@ const FlowRecorderPanel = ({
         )}
         {showScript && (
           <div className="min-h-0 flex-1 space-y-3 p-3">
-            <FlowScriptList
+            <FlowScriptPanel
               flow={flow}
               onOpenBranchSelect={(conditionStepId) =>
                 setRecordingContext({ mode: "branch-select", conditionStepId })

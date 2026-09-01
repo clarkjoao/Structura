@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useEffect } from "react";
 import { act, render } from "@testing-library/react";
 import i18n from "@/infrastructure/i18n";
 import type { Flow } from "@/features/diagram";
@@ -10,10 +11,20 @@ vi.mock("sonner", () => ({
   toast: { warning: vi.fn(), error: vi.fn(), success: vi.fn(), info: vi.fn() },
 }));
 
-let api: FlowModeState;
+/** Published from an effect rather than during render, so the harness is a well-behaved component. */
+const held: { current: FlowModeState | null } = { current: null };
+const api = new Proxy({} as FlowModeState, {
+  get: (_target, key) => {
+    if (!held.current) throw new Error("the recorder harness has not rendered yet");
+    return Reflect.get(held.current, key);
+  },
+});
 
 function Harness() {
-  api = useFlowMode();
+  const flowMode = useFlowMode();
+  useEffect(() => {
+    held.current = flowMode;
+  });
   return null;
 }
 

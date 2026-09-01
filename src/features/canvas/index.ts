@@ -29,7 +29,7 @@ export { EMPTY_FLOW_HIGHLIGHT } from "./flow/flowState";
 export { sanitizeSvg } from "./utils/svg.sanitizer";
 export { FlowModeProvider, useFlowMode, useFlowState } from "./flow";
 export type { RecordingContext } from "./flow";
-export { FlowScriptList, useFlowScriptActions } from "./flow";
+export { FlowScriptList, FlowScriptPanel, useFlowScriptActions, useFlowViewStore } from "./flow";
 export { EmbedModal } from "./components/EmbedModal";
 export { useInteractionMode } from "./hooks/useInteractionMode";
 export type { InteractionMode } from "./hooks/useInteractionMode";

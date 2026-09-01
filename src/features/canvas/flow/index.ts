@@ -14,6 +14,8 @@ export { useFlowState } from "./useFlowState";
 export { useFlowScriptActions } from "./useFlowScriptActions";
 export type { FlowScriptActions } from "./useFlowScriptActions";
 export { FlowScriptList } from "./script/FlowScriptList";
+export { FlowScriptPanel } from "./script/FlowScriptPanel";
+export { useFlowViewStore } from "./useFlowViewStore";
 export type { FlowHighlight, RecordingInfo, CoverageInfo } from "./flowState";
 export {
   EMPTY_FLOW_HIGHLIGHT,

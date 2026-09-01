@@ -6,6 +6,7 @@ import type { Flow, FlowStoreResult, RecordedStepContent } from "@/features/diag
 import { useActiveDiagramId, useDiagramActions, useDiagramStore } from "@/features/diagram";
 import type { FlowMode, RecordingContext } from "./flowMode.types";
 import { recordingCursor } from "./flowMode.types";
+import { useFlowViewStore } from "./useFlowViewStore";
 
 export interface FlowRecordingSlice {
   recordingFlowId: string | null;
@@ -45,6 +46,7 @@ export function useFlowRecording(
     undoLastRecordedStep,
   } = useDiagramActions();
 
+  const openScript = useFlowViewStore((state) => state.openScript);
   const recording = mode.kind === "recording" ? mode : null;
   const recordingFlowId = recording?.flowId ?? null;
   const recordingContext = recording?.context ?? TRUNK;
@@ -96,6 +98,7 @@ export function useFlowRecording(
       cancelFlowSession();
       return;
     }
+    openScript(flow.id);
     setMode({ kind: "recording", flowId: flow.id, context: TRUNK, isNewFlow: true });
   }, [
     activeDiagramId,
@@ -104,6 +107,7 @@ export function useFlowRecording(
     cancelFlowSession,
     mode.kind,
     onStartRecordingRef,
+    openScript,
     setMode,
   ]);
 
@@ -111,16 +115,18 @@ export function useFlowRecording(
     (flow: Flow) => {
       onStartRecordingRef.current?.();
       beginFlowSession();
+      openScript(flow.id);
       setMode({ kind: "recording", flowId: flow.id, context: TRUNK, isNewFlow: false });
     },
-    [beginFlowSession, onStartRecordingRef, setMode],
+    [beginFlowSession, onStartRecordingRef, openScript, setMode],
   );
 
   const cancelRecording = useCallback(() => {
     if (!recording) return;
     cancelFlowSession();
+    openScript(null);
     setMode({ kind: "idle" });
-  }, [cancelFlowSession, recording, setMode]);
+  }, [cancelFlowSession, openScript, recording, setMode]);
 
   const finalizeRecording = useCallback(() => {
     if (!recording) return;

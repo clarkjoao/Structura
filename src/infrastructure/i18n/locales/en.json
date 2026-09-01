@@ -1372,7 +1372,8 @@
     "branchStepCount_other": "{{count}} steps recorded",
     "continueMainFlow": "Back to the main flow",
     "unreachable_one": "{{count}} step is not reachable from the start",
-    "unreachable_other": "{{count}} steps are not reachable from the start"
+    "unreachable_other": "{{count}} steps are not reachable from the start",
+    "openScript": "Open the script"
   },
   "flowRefusal": {
     "unknown": "That change was refused.",
