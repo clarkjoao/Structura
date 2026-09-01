@@ -1,12 +1,13 @@
 import { useMemo } from "react";
-import type { Flow, FlowStep } from "@/features/diagram";
+import type { Flow } from "@/features/diagram";
 import { buildFlowOutline, getBranchRows } from "@/features/diagram";
 import { useFlowMode } from "./FlowModeContext";
+import { useFlowViewStore } from "./useFlowViewStore";
 import {
   EMPTY_FLOW_HIGHLIGHT,
   buildFlowHighlight,
   buildCoverage,
-  buildRecordingInfo,
+  buildFlowBadges,
 } from "./flowState";
 
 const EMPTY_HISTORY: string[] = [];
@@ -25,9 +26,11 @@ export function useFlowState({ flows, isCompareMode = false }: UseFlowStateParam
   const { isPlaying, currentStep: activeStep, isRecording, recordingFlowId } = flowMode;
   const recordingContext = flowMode.recordingContext;
 
-  const recordingFlow = useMemo(
-    () => (recordingFlowId ? (flows.find((flow) => flow.id === recordingFlowId) ?? null) : null),
-    [flows, recordingFlowId],
+  const scriptFlowId = useFlowViewStore((state) => state.scriptFlowId);
+  const numberedFlowId = recordingFlowId ?? scriptFlowId;
+  const numberedFlow = useMemo(
+    () => (numberedFlowId ? (flows.find((flow) => flow.id === numberedFlowId) ?? null) : null),
+    [flows, numberedFlowId],
   );
 
   const flowHighlight = useMemo(() => {
@@ -42,30 +45,32 @@ export function useFlowState({ flows, isCompareMode = false }: UseFlowStateParam
   }, [flows, isPlaying, isRecording, isCompareMode]);
 
   /**
-   * The steps the recorder is showing, in reading order — the whole script, or
-   * just the branch being recorded. Read off the stored flow: the recorder
-   * keeps no copy of its own any more.
+   * The rows the canvas is numbered from.
+   *
+   * One flow numbers the canvas at a time: the one whose script is open. Two
+   * flows would put two unrelated numbers on the same node with nothing to
+   * tell them apart. While recording that is the flow being recorded, and the
+   * rows narrow to the branch in hand, so the canvas shows what the panel
+   * shows. Outside a recording the numbers stay: they are derived from the
+   * graph, not a thing the recorder puts there.
    */
-  const recordingInfo = useMemo(() => {
-    if (!isRecording || !recordingFlow) return null;
-    const outline = buildFlowOutline(recordingFlow);
+  const flowBadges = useMemo(() => {
+    if (!numberedFlow) return null;
+    const outline = buildFlowOutline(numberedFlow);
     const rows =
-      recordingContext.mode === "branch-record"
+      isRecording && recordingContext.mode === "branch-record"
         ? getBranchRows(outline, recordingContext.conditionStepId, recordingContext.branchIndex)
         : outline.rows;
-    const steps = rows
-      .map((row) => recordingFlow.steps[row.stepId])
-      .filter((step): step is FlowStep => Boolean(step));
-    if (steps.length === 0) return null;
-    return buildRecordingInfo(steps);
-  }, [isRecording, recordingContext, recordingFlow]);
+    if (rows.length === 0) return null;
+    return buildFlowBadges(numberedFlow, rows);
+  }, [isRecording, numberedFlow, recordingContext]);
 
   return {
     isPlaying,
     activeStep,
     flowHighlight,
     coverage,
-    recordingInfo,
+    flowBadges,
     activeFlow,
     currentStepId,
   };

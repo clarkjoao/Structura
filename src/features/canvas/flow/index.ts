@@ -16,10 +16,10 @@ export type { FlowScriptActions } from "./useFlowScriptActions";
 export { FlowScriptList } from "./script/FlowScriptList";
 export { FlowScriptPanel } from "./script/FlowScriptPanel";
 export { useFlowViewStore } from "./useFlowViewStore";
-export type { FlowHighlight, RecordingInfo, CoverageInfo } from "./flowState";
+export type { FlowHighlight, FlowBadges, CoverageInfo } from "./flowState";
 export {
   EMPTY_FLOW_HIGHLIGHT,
   buildFlowHighlight,
   buildCoverage,
-  buildRecordingInfo,
+  buildFlowBadges,
 } from "./flowState";

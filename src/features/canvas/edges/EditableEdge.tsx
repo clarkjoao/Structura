@@ -368,7 +368,7 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
           label={edgeData.label}
           technology={edgeData.technology}
           isHighlighted={isHighlighted}
-          recordingBadges={edgeData.recordingBadges}
+          stepBadges={edgeData.stepBadges}
           isLastRecorded={edgeData.isLastRecorded}
           coverageFlowNames={edgeData.coverageFlowNames}
           playbackDuration={edgeData.playbackDuration}

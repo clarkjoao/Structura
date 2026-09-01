@@ -4,7 +4,7 @@ import type { Connection, Diagram, DiagramModel, FlowStep } from "@/features/dia
 import { getCachedCanvasSnapshot } from "@/features/diagram";
 import { useFlowMode } from "../flow/FlowModeContext";
 import { buildEdge, filterVisibleConnections } from "./data/buildEdges";
-import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
+import type { FlowHighlight, FlowBadges, CoverageInfo } from "../flow/flowState";
 import { getPendingEdgeIds, useLLMStore } from "@/features/llm";
 
 interface UseCanvasEdgesParams {
@@ -17,7 +17,7 @@ interface UseCanvasEdgesParams {
   compareConnectionOpacity?: Record<string, number>;
   activeStep: FlowStep | null;
   flowHighlight: Pick<FlowHighlight, "activeConnId" | "participantConnIds">;
-  recordingInfo: Pick<RecordingInfo, "edgeSteps" | "recordedEdgeIds" | "lastEdgeId"> | null;
+  flowBadges: Pick<FlowBadges, "edgeLabels" | "badgedEdgeIds" | "lastEdgeId"> | null;
   coverage: Pick<CoverageInfo, "edgeFlows"> | null;
   visibleTags: Set<string> | null;
   visibleTagsKey: string | null;
@@ -33,7 +33,7 @@ export function useCanvasEdges({
   compareConnectionOpacity,
   activeStep,
   flowHighlight,
-  recordingInfo,
+  flowBadges,
   coverage,
   visibleTags: _visibleTags,
   visibleTagsKey,
@@ -73,7 +73,7 @@ export function useCanvasEdges({
         compareConnectionOpacity,
         activeStep,
         flowHighlight,
-        recordingInfo,
+        flowBadges,
         coverage,
         tagFilterEdgeDimmed: sourceHidden || targetHidden,
       });
@@ -97,7 +97,7 @@ export function useCanvasEdges({
     isRecording,
     activeStep,
     flowHighlight,
-    recordingInfo,
+    flowBadges,
     coverage,
     visibleTagsSet,
     pendingPreviews,

@@ -21,7 +21,7 @@ import {
 import { resolveNodeDescriptor, type NodeBuildContext } from "./node-types";
 import { useFlowMode } from "../flow/FlowModeContext";
 import { buildCollapsedPanelIds, computeNodeVisibility } from "./nodeVisibility";
-import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../flow/flowState";
+import type { FlowHighlight, FlowBadges, CoverageInfo } from "../flow/flowState";
 import { OPACITY_FLOW_PLAYBACK_NODE_DIM, OPACITY_TAG_FILTER_DIM, OPACITY_TAG_FILTER_TRANSITION } from "../canvas.constants";
 import { getPendingNodeIds, useLLMStore } from "@/features/llm";
 import { useStableSetByContent } from "../hooks/useStableSetByContent";
@@ -62,7 +62,7 @@ interface UseCanvasNodesParams {
   ) => void;
   flowHighlight: FlowHighlight;
   activeStep: import("@/features/diagram").FlowStep | null;
-  recordingInfo: RecordingInfo | null;
+  flowBadges: FlowBadges | null;
   coverage: CoverageInfo | null;
   isViewingCoverage: boolean;
   activeFlowId?: string | null;
@@ -83,7 +83,7 @@ type DataCtx = Omit<
   | "isRecording"
   | "flowHighlight"
   | "activeStep"
-  | "recordingInfo"
+  | "flowBadges"
   | "coverage"
   | "handleDrillDown"
   | "navigateToDiagram"
@@ -186,7 +186,7 @@ export function useCanvasNodes({
   onReorderHandle,
   flowHighlight,
   activeStep,
-  recordingInfo,
+  flowBadges,
   coverage,
   isViewingCoverage,
   activeFlowId,
@@ -308,10 +308,10 @@ export function useCanvasNodes({
       isRecording,
       flowHighlight,
       activeStep,
-      recordingInfo,
+      flowBadges,
       coverage,
     }),
-    [isPlaying, isRecording, flowHighlight, activeStep, recordingInfo, coverage],
+    [isPlaying, isRecording, flowHighlight, activeStep, flowBadges, coverage],
   );
 
   return useMemo(() => {

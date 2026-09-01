@@ -13,7 +13,7 @@ export type {
   NodeBuildContext,
   NodeTypeDescriptor,
   FlowHighlight,
-  RecordingInfo,
+  FlowBadges,
   CoverageInfo,
 } from "./types";
 export type { NodeBadgeProps } from "./compare-node-badges";

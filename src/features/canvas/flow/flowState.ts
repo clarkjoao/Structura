@@ -1,4 +1,4 @@
-import type { Flow, FlowStep } from "@/features/diagram";
+import type { Flow, FlowOutlineRow, FlowStep } from "@/features/diagram";
 import { getStepById, getFlowParticipants, getOrderedStepIds } from "@/features/diagram";
 
 export interface FlowHighlight {
@@ -14,11 +14,18 @@ export interface CoverageInfo {
   edgeFlows: Map<string, string[]>;
 }
 
-export interface RecordingInfo {
-  nodeSteps: Map<string, number[]>;
-  edgeSteps: Map<string, number[]>;
-  recordedNodeIds: Set<string>;
-  recordedEdgeIds: Set<string>;
+/**
+ * The step numbers the canvas shows, and which elements a flow touches.
+ *
+ * The numbers are the derived labels — `1`, `3a`, `3a.2` — so a node the flow
+ * visits inside a branch says so. They are not stored anywhere: this is built
+ * from the graph on each render, during a recording and outside one alike.
+ */
+export interface FlowBadges {
+  nodeLabels: Map<string, string[]>;
+  edgeLabels: Map<string, string[]>;
+  badgedNodeIds: Set<string>;
+  badgedEdgeIds: Set<string>;
   lastNodeId: string | null;
   lastEdgeId: string | null;
   lastHandleId: string | null;
@@ -85,33 +92,43 @@ export function buildCoverage(flows: Flow[]): CoverageInfo {
   return { nodeFlows, edgeFlows };
 }
 
-export function buildRecordingInfo(steps: FlowStep[]): RecordingInfo {
-  const nodeSteps = new Map<string, number[]>();
-  const edgeSteps = new Map<string, number[]>();
-  const recordedNodeIds = new Set<string>();
-  const recordedEdgeIds = new Set<string>();
+/**
+ * Badges for a run of rows, in reading order. `rows` is what the script panel
+ * shows — the whole flow, or just the branch being recorded — so the canvas and
+ * the panel always agree on which steps are on screen.
+ */
+export function buildFlowBadges(flow: Flow, rows: readonly FlowOutlineRow[]): FlowBadges {
+  const nodeLabels = new Map<string, string[]>();
+  const edgeLabels = new Map<string, string[]>();
+  const badgedNodeIds = new Set<string>();
+  const badgedEdgeIds = new Set<string>();
 
-  steps.forEach((step, i) => {
+  const push = (map: Map<string, string[]>, key: string, label: string) => {
+    const labels = map.get(key);
+    if (labels) labels.push(label);
+    else map.set(key, [label]);
+  };
+
+  let lastStep: FlowStep | undefined;
+  for (const row of rows) {
+    const step = flow.steps[row.stepId];
+    if (!step) continue;
+    lastStep = step;
     if (step.componentId) {
-      recordedNodeIds.add(step.componentId);
-      const arr = nodeSteps.get(step.componentId) ?? [];
-      arr.push(i + 1);
-      nodeSteps.set(step.componentId, arr);
+      badgedNodeIds.add(step.componentId);
+      push(nodeLabels, step.componentId, row.label);
     }
     if (step.connectionId) {
-      recordedEdgeIds.add(step.connectionId);
-      const arr = edgeSteps.get(step.connectionId) ?? [];
-      arr.push(i + 1);
-      edgeSteps.set(step.connectionId, arr);
+      badgedEdgeIds.add(step.connectionId);
+      push(edgeLabels, step.connectionId, row.label);
     }
-  });
+  }
 
-  const lastStep = steps[steps.length - 1];
   return {
-    nodeSteps,
-    edgeSteps,
-    recordedNodeIds,
-    recordedEdgeIds,
+    nodeLabels,
+    edgeLabels,
+    badgedNodeIds,
+    badgedEdgeIds,
     lastNodeId: lastStep?.componentId ?? null,
     lastEdgeId: lastStep?.connectionId ?? null,
     lastHandleId: lastStep?.handleId ?? null,

@@ -7,7 +7,7 @@ export interface EdgeLabelProps {
   label: string;
   technology?: string;
   isHighlighted: boolean;
-  recordingBadges?: number[];
+  stepBadges?: string[];
   isLastRecorded?: boolean;
   coverageFlowNames?: string[];
   playbackDuration?: string;
@@ -25,7 +25,7 @@ export function EdgeLabel({
   label,
   technology,
   isHighlighted,
-  recordingBadges,
+  stepBadges,
   isLastRecorded,
   coverageFlowNames,
   playbackDuration,
@@ -71,11 +71,11 @@ export function EdgeLabel({
               .join("\n\n") || undefined
           }
         >
-          {recordingBadges && recordingBadges.length > 0 && (
+          {stepBadges && stepBadges.length > 0 && (
             <div
               className={`absolute -top-2.5 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-primary text-primary-foreground text-[9px] font-bold px-0.5 ${isLastRecorded ? "animate-pulse" : ""}`}
             >
-              {recordingBadges.join(",")}
+              {stepBadges.join(",")}
             </div>
           )}
           <span className="block max-w-[160px] truncate">{label}</span>
