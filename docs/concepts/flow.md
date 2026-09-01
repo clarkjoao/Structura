@@ -51,97 +51,93 @@ traversal in the codebase follows that rule, so a `next` set on a condition step
 is unreachable data. `checkFlowInvariants` reports its target as an unreachable
 step rather than silently numbering it.
 
-## Two representations, one boundary
+## One representation, written as it goes
 
-The flow exists in two different shapes at different moments, and the conversion
-between them is the seam where most surprises live.
+There used to be two shapes — a flat `FlowStep[]` in React state while
+recording, converted to a graph when the user pressed Finish. There is one now.
+`FlowModeContext` holds only interaction state: which flow is open and where the
+next recorded step goes. The steps live in `diagram.snapshot.flows` from the
+first click.
 
-| | While recording | Once stored |
+| | Then | Now |
 | --- | --- | --- |
-| Shape | `FlowStep[]` — a flat array | `Record<string, FlowStep>` — a graph |
+| Shape while recording | `FlowStep[]` in React state | the graph, in the store |
 | Branch membership | a side `Map<stepId, {conditionStepId, branchIndex}>` | the `branches[].nextId` links themselves |
-| Where it lives | React state in `FlowModeContext` | the Zustand store, inside `diagram.snapshot.flows` |
+| Written to the store | once, at Finish | on every click |
 | Ordering | array position | reachability from `entryStepId` |
 
-`FlowModeContext.tsx` holds the whole recording session in a `useState`, plus a
-`branchOwnershipRef`. **The store is not touched while recording or playing.**
-Nothing is persisted until the user presses Finish.
-
-That single boundary is `src/pages/workspace/useWorkspaceFlowRecordingFinalize.ts`.
-It converts the array to a graph with `buildFlowFromRecordingSnapshot`,
-serializes mermaid, and calls `addFlow` (new) or `updateFlow` (editing) — always
-writing the flow whole, never a step at a time.
-
-This is why the store's per-step mutators are dead code (see
-[Sharp edges](#sharp-edges)): the editing surface never needed them.
+A recording therefore starts by creating a real flow. It appears in the flows
+panel while it is being recorded, and cancelling deletes it again.
 
 ### The three ways a flow comes into existence
 
 | Path | Action | Opens an undo checkpoint? |
 | --- | --- | --- |
-| Finish a recording | `addFlow` / `updateFlow` (`flows.slice.ts`) | no |
+| Record one | `beginFlowSession` + `addFlow` (`flows.slice.ts`) | yes — one for the whole session |
 | Duplicate in the panel | `addFlow` with `buildFlowDuplicatePatch` | no |
 | Import a Mermaid sequence | `importMermaidSequenceResult` (`clipboard.slice.ts`) | yes |
 
-The import path is the odd one out twice over: it writes into
-`d.snapshot.flows` directly rather than going through the flows slice, and it is
-the only one that calls `pushHistory`. It has to, because it also creates the
-components and connections the steps point at.
+The import path still writes into `d.snapshot.flows` directly rather than going
+through the flows slice. It has to open a checkpoint of its own, because it also
+creates the components and connections the steps point at.
 
 ## Lifecycle
 
 ### Recording
 
 `FlowMode` is a three-state machine: `idle`, `playing`, `recording`. Recording
-carries its own sub-context:
+carries a cursor — where the next step goes:
 
 | `RecordingContext` | Meaning |
 | --- | --- |
-| `{ mode: "trunk" }` | clicks append to the main path |
-| `{ mode: "branch-select", conditionStepId }` | the user is choosing which branch to fill |
+| `{ mode: "trunk" }` | clicks append to the main sequence |
+| `{ mode: "branch-select", conditionStepId }` | the user is choosing which branch to fill; clicks record nothing |
 | `{ mode: "branch-record", conditionStepId, branchIndex }` | clicks append inside that branch |
 
-While recording, clicking a node calls `onRecordNodeClick`, clicking an edge
-`onRecordEdgeClick`, and `appendRecordedStep` pushes a step onto the array. In
-`branch-record` the step is spliced in after the last step already owned by that
-branch, and its ownership is written into the map — that is how a flat array
-keeps track of a tree.
+`recordingCursor` maps that to a `FlowCursor`, and `recordFlowStep` writes it:
 
-The canvas dims everything not yet recorded and shows numeric badges on the
-nodes that are (`buildRecordingInfo` → `recordingBadges` in
-`c4.descriptor.ts`). **Those badges are the array index + 1**, so they are the
-recording's own numbering, not the graph's.
+- `getFlowTail` finds the end of the sequence the cursor points at, read off the
+  derived labels — the main sequence is the steps whose label is a bare number,
+  one branch is `3a` plus `3a.1`, `3a.2`. That is what makes the step where two
+  branches meet count as the trunk's tail rather than either branch's.
+- If that tail is a step nobody has filled in yet — a new flow's first step, a
+  fresh branch's placeholder — the click fills it instead of pushing it down.
+- Otherwise `appendFlowStep` hangs the new step off the end.
 
-Steps can be edited in place from the recorder panel: description, duration,
-payload and direction, async flag, delete, and **reorder by dragging**
-(`StepList.tsx` uses HTML5 drag-and-drop — `draggable` plus
-`dragstart`/`dragover`/`drop` — and `onReorderSteps` splices the array).
-Reordering only exists here, on the array, during a session. There is no
-gesture that reorders a flow that has already been stored.
+**Returning to the main sequence after a condition reconverges the branches.**
+The new step becomes the successor of every open end below the condition, so the
+branches meet again at it. Before, a step recorded there was simply left
+unreachable; the numbering already described this shape (a condition at `2`, a
+meeting point at `3`), and now the recorder produces it.
 
-### Finalize
+A condition's branches each stand on a real step, so a branch is never a
+dangling reference and the numbering can see it. Converting a step to a
+condition keeps whatever followed it: each new branch points at the old
+successor, which makes the rest of the flow the place the branches meet again
+rather than something the conversion threw away.
 
-`buildFlowFromRecordingSnapshot` turns the array into a graph:
+### Finishing, cancelling, undo
 
-- Steps with no branch owner form the trunk and are chained with `next`.
-- Each condition's branch `bi` gets `nextId` = the first step owned by
-  `(conditionStepId, bi)`, and those steps are chained among themselves.
-- `entryStepId` is `steps[0].id` — the first thing recorded, always.
+**The undo unit is the session, not the click.** `beginFlowSession` opens one
+checkpoint and the flow actions push none while it is open. `MAX_HISTORY_STEPS`
+is 30 and every checkpoint clones the diagram snapshot, so a checkpoint per
+recorded step would push the diagram's real history off the end after thirty
+clicks. That checkpoint is taken unconditionally, bypassing the undo/redo
+cooldown in `pushHistory`: a recording started right after a Ctrl+Z would
+otherwise have nothing to go back to.
 
-**A condition ends the trunk.** The chaining loop skips condition steps
-(`if (step.type !== "condition")`), so a condition never receives a `next`.
-Anything recorded on the trunk *after* a condition is therefore left with no
-predecessor and becomes unreachable. Verified directly:
+- **Finish** — `commitFlowSession`. The flow is already written; an unnamed one
+  gets the default name. One Ctrl+Z afterwards removes the whole recording.
+- **Cancel** — `cancelFlowSession` restores the snapshot the session opened on
+  and takes its checkpoint back with it, so a cancelled recording leaves neither
+  a half-written flow nor a Ctrl+Z that does nothing visible. Cancelling an
+  *edit* puts the flow back the way it was for the same reason.
+- **The recorder's own undo** — `undoLastRecordedStep` takes back the last step
+  of the sequence in hand. The head of a sequence is emptied rather than
+  removed, so the flow keeps its first step and a condition keeps its branch.
 
-```
-steps: A, C(condition: sim→x, nao→y), x, y, D     (x, y owned by C's branches)
-result: A.next=C   C.next=undefined   C.branches=[sim→x, nao→y]   D.next=undefined
-        reachable = A, C, x, y        invariants = unreachable_step:D
-```
-
-This is consistent with the shadowing rule — a condition could not carry a
-usable `next` anyway — but it means the recorder cannot express reconvergence:
-once a flow branches, each branch runs to its own end.
+Outside a session — the script panel on a stored flow — every gesture is its own
+undo step.
 
 ### Playback
 
@@ -159,6 +155,36 @@ participant of the flow is distinguished from the rest of the diagram.
 When nothing is playing or recording, `buildCoverage` runs instead and maps each
 component and connection to the flows that mention it — that is the "which flows
 touch this node" affordance.
+
+## The script panel
+
+`FlowScriptPanel` is where a flow is edited. It renders `buildFlowOutline`,
+which turns the graph into rows in reading order — `1`, `2`, `2a`, `2a.1`, `2b`,
+`3` — each carrying its derived label, how far it is indented (one level per
+lettered segment of the label) and which branch it sits in.
+
+It opens in two places: inside the recorder, and from a flow in the flows panel,
+which is how a stored flow is edited without recording anything.
+
+| Gesture | What it calls |
+| --- | --- |
+| Drag a row onto another | `moveStep`, `before` from below and `after` from above |
+| The `+` on a row | `insertFlowStepAt`, `after` that row |
+| The `×` on a row | `removeFlowSteps` — the graph is sewn, not cut |
+| Edit a description, duration, payload | `updateFlowStep` |
+| Turn a step into a condition | `convertStepToCondition` |
+| Rename a branch, add or drop one | `setFlowBranchLabel`, `addFlowBranch`, `removeFlowBranch` |
+
+Every one of those returns a `FlowStoreResult`, and **a refused gesture is named
+on screen** rather than quietly reverted: moving a condition, dropping a step
+directly behind one, removing a branch point. `flowRefusalMessage.ts` maps every
+refusal code to a message through a total `Record`, so a new code without a
+message is a type error.
+
+Row selection and canvas selection are one selection. Picking a row selects what
+the step points at; selecting that element moves the panel to the row. The panel
+stays where it is while its row still matches, so a flow that visits the same
+node twice does not snap back to the first visit.
 
 ## Derived numbering
 
@@ -179,6 +205,13 @@ every reachable step. Nothing is stored; it is recomputed on demand.
 The numbering depends only on the graph and `entryStepId`, never on the
 insertion order of the `Record` — two builds of the same structure with
 different key order produce identical labels.
+
+The labels are also what the canvas shows. **One flow numbers the canvas at a
+time: the one whose script is open.** A label means something inside one flow's
+graph and nothing across two, so a node on the path of two flows would otherwise
+carry two unrelated numbers with nothing to tell them apart. With no script open
+the canvas carries no numbers. While recording it is the flow being recorded,
+narrowed to the branch in hand, so the canvas shows what the panel shows.
 
 Two shapes the rule does not settle are **reported rather than resolved**: a
 join whose incoming chains close at two different branch points lands in
@@ -227,6 +260,15 @@ the "Auth Guard" component turned the seed flow `cp-f1 → f2 → f3 → f4 → 
 `cp-f1` alone plus an unreachable island, and the panel read one step where
 there had been five. `flow-sew.regression.test.ts` locks that shut.
 
+**A sew is said out loud.** Removing a node the script walks through is a change
+to the flow made as a side effect of a different gesture, so
+`repairFlowsAfterRemovingDiagramElements` reports each join it made — the label
+the removed step had, read before the sew, and the labels on both sides of the
+join, read after it. `useFlowSewNotices` turns that into one notice per join
+("«Storefront» left the diagram. The script of «Checkout» was sewn shut:
+1 → 2.") with an action that puts the node and the step back together. That
+works because the removal already took a single undo checkpoint covering both.
+
 **Deleting a branch point is held back.** Its predecessor would be left with no
 defined successor and its branches with nothing to hang from, and every
 mechanical answer discards branches the user built. So the step is kept with its
@@ -253,8 +295,8 @@ One consequence worth knowing: `FlowBranch` requires `nextId: string`, so a
 branch with no target cannot be expressed. Moving the only step out of a branch
 **deletes the branch**, label and all.
 
-`moveStep` has no caller in the UI yet. It is the graph operation a future drag
-gesture will sit on.
+Dragging a row in the script panel is what calls it. A refusal is shown as a
+message, so the gesture never looks like it silently sprang back.
 
 ### Broken steps
 
@@ -291,9 +333,10 @@ or a flowchart (`parseMermaidFlowchart` → components and connections only). Th
 sequence path is the only way to author a flow's contents without recording it
 by hand — duplicating copies an existing one.
 
-Each `Flow` also carries a `mermaid` string alongside its `steps`. It is
-regenerated by `stepsToMermaid` at finalize and is what the panel's copy button
-puts on the clipboard.
+Each `Flow` also carries a `mermaid` string alongside its `steps`. It is a
+cache — every reader that draws or exports recomputes it from the graph — and
+the flows slice refreshes it wherever the graph changes, so the stored copy does
+not drift now that the graph is written a step at a time.
 
 ## Where the canvas reads flow state
 
@@ -303,8 +346,12 @@ descriptors consume:
 | Value | When it is built | What it drives |
 | --- | --- | --- |
 | `flowHighlight` | while playing | active node/edge, visited nodes, participants |
-| `recordingInfo` | while recording | step badges and the dimming of unrecorded nodes |
+| `flowBadges` | whenever a script is open | the step numbers on nodes and edges |
 | `coverage` | only when idle | "which flows touch this node" |
+
+The badges are permanent: they are derived from the graph on each render and
+stay outside a recording. Dimming the rest of the diagram is still a recording
+thing and is gated on `isRecording` separately.
 
 The canvas never reads `flows` to decide semantics; it only receives these three
 derived structures through the descriptor context, which is the same
@@ -312,52 +359,37 @@ domain-agnosticism rule described in [canvas-engine.md](canvas-engine.md).
 
 ## Sharp edges
 
-- **Six of the nine store mutators have no caller.** `addFlowStep`,
-  `updateFlowStep`, `removeFlowStep`, `addFlowBranch`, `removeFlowBranch` and
-  `convertStepToCondition` are referenced only by the store's own action map,
-  `actions.types.ts`, and the `useFlowActions` hook — which has no consumer
-  either, and neither does `useHistoryActions`. They are dead because the
-  recorder edits its own React state and writes the flow whole at finalize.
-  Do not build on them without first deciding whether that boundary should move.
-
-- **`flows.slice.ts` never calls `pushHistory`.** Eleven mutating slices do;
-  this one does not, so recording, editing, duplicating or deleting a flow opens
-  no undo checkpoint — while importing a Mermaid sequence, which writes flows
-  from a different slice, does. Flows are still *inside* the snapshot that other
-  mutations photograph, so an undo triggered by an unrelated structural change
-  can roll flows back to whatever they were at that checkpoint. The result is
-  that undo affects flows without ever being *about* them.
-
 - **Keyboard shortcuts are silently disabled while the flow panel is open.**
   `useCanvasKeyboard` returns early on
   `isFlowPanelOpen || isPlaying || isCompareMode || isRecording`, which sits
   *before* copy/paste, selection, undo/redo, grouping, waypoints and locking.
   Auto Layout is gated separately a few lines above. There is no feedback: the
-  key simply does nothing.
+  key simply does nothing. It is also why the recording session can be the undo
+  unit without fighting a global Ctrl+Z.
 
-- **The recorder cannot express reconvergence**, because the trunk is severed at
-  a condition (see [Finalize](#finalize)). The graph model supports it — the
-  numbering, the invariants and the sewing all handle joins — but nothing in the
-  UI produces one today.
+- **Flows are inside the snapshot other mutations photograph.** A structural
+  change anywhere in the diagram opens a checkpoint that includes the flows, so
+  an undo can roll flows back without ever being *about* them.
+
+- **A branch cannot be empty.** `FlowBranch` requires `nextId: string`, so every
+  branch stands on a real step — a placeholder until something fills it. Moving
+  the only step out of a branch therefore deletes the branch, label and all, and
+  `isPlaceholderStep` is what tells a step nobody has filled in from a real one.
 
 - **Duplicating a flow reuses the step ids.** `buildFlowDuplicatePatch` passes
   `steps: flow.steps` straight through, so the copy's steps carry the original
   ids. Step ids are only ever resolved within their own flow, so this is not
   currently observable, but it is not what a reader expects from a duplicate.
 
-- **19 of the 79 flow i18n keys used in code are missing from both locales**,
-  all under `flowRecorder.*` (`addBranch`, `convertToCondition`,
-  `selectBranchPrompt`, …). They render through the inline default passed as
-  `t(key, default)`, which is why nothing looks broken — but the defaults are a
-  mix of English and Portuguese, so a Portuguese UI shows "Add condition step".
-  A parity check that only compares `en.json` against `pt-BR.json` will not find
-  this: the two files agree, both by omission.
+- **Scene mode does not sew.** `removeElements` and `removeComponent` return
+  early when a scene is active, before the flows are repaired, so removing an
+  element inside a scene leaves the flows pointing at it.
 
-- **The flow UI has no tests.** `src/features/canvas/flow/` is 26 files and
-  about 3600 lines with no test file in it. The graph core underneath
-  (`flow-graph`, `flow-labels`, `flow-sew`, `flow-move`, `flow-traversal`,
-  `flow-repair`) is covered; the recorder, the panel and the playback hooks are
-  not.
+- **The numbering reports two shapes it cannot settle** — an ambiguous join and
+  a base-26 branch-letter collision (see [Derived numbering](#derived-numbering)).
+  The script panel does not surface either yet; it reads `outline.unreachable`
+  and shows a count, but `ambiguities` and `collisions` are carried through and
+  dropped.
 
 ## Where things live
 
@@ -369,11 +401,15 @@ domain-agnosticism rule described in [canvas-engine.md](canvas-engine.md).
 | `features/diagram/utils/flow-labels.ts` | `computeFlowStepLabels` |
 | `features/diagram/utils/flow-sew.ts` | `sewOnDelete` |
 | `features/diagram/utils/flow-move.ts` | `moveStep` |
+| `features/diagram/utils/flow-edit.ts` | `getFlowTail`, `appendFlowStep`, `insertFlowStep`, `isPlaceholderStep` |
+| `features/diagram/utils/flow-condition.ts` | turning a step into a condition, adding and dropping branches |
+| `features/diagram/utils/flow-outline.ts` | the graph as numbered, indented rows |
 | `features/diagram/utils/flow-repair.ts` | `repairFlow`, `repairFlowsAfterRemovingDiagramElements` |
-| `features/diagram/utils/recording-to-flow.ts` | array + ownership → graph |
 | `features/diagram/utils/flow-migration.ts` | legacy ordered list → graph |
 | `features/diagram/utils/flow-mermaid.ts` | `stepsToMermaid`, `parseMermaidToSteps` |
-| `features/diagram/store/slices/flows.slice.ts` | `addFlow`, `updateFlow`, `removeFlow` (+ six unused) |
+| `features/diagram/store/slices/flows.slice.ts` | every write to a flow, and the session that bounds a recording |
 | `features/diagram/store/slices/clipboard.slice.ts` | `importMermaidSequenceResult` — writes a flow directly |
 | `features/canvas/flow/` | the mode machine, recorder, panel, playback and overlays |
-| `pages/workspace/useWorkspaceFlowRecordingFinalize.ts` | the only UI → store write for flows |
+| `features/canvas/flow/script/` | the script panel: rows, drag, condition form |
+| `features/canvas/flow/useFlowViewStore.ts` | which flow's script is open, and which row is selected |
+| `features/canvas/flow/useFlowSewNotices.ts` | the notice shown when deleting a node sews a script |
