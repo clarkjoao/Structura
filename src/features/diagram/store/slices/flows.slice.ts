@@ -152,12 +152,22 @@ export const flowsSlice = (set: (fn: (state: AppState) => void) => void, get: ()
     return flow;
   },
 
+  /**
+   * Patches a flow — its name, its tags, or the graph itself.
+   *
+   * It takes a checkpoint like every other write to a flow. It was the one
+   * that did not, so a script edit made through it, or a repair, left nothing
+   * on the undo stack and Ctrl+Z reached past it to something older. Inside a
+   * recording the session's own checkpoint is the undo unit and `checkpoint`
+   * adds nothing, which is what keeps a recording of N steps to one undo.
+   */
   updateFlow: (id: string, patch: Partial<Omit<Flow, "id">>) => {
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
       const flow = d.snapshot.flows[id];
       if (!flow) return;
+      checkpoint(state);
       Object.assign(flow, patch);
       if (patch.mermaid !== undefined && patch.steps === undefined) {
         const r = resolveSceneSnapshot(d, d.activeSceneId ?? null);
