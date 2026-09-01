@@ -70,7 +70,11 @@ import {
   mutateRemoveComponentInScene,
   mutateRemoveConnectionInScene,
 } from "../../utils/scene-mutations";
-import { repairFlowsAfterRemovingDiagramElements } from "../../utils/flow-repair";
+import {
+  repairFlowsAfterRemovingDiagramElements,
+  toFlowSewNotices,
+  type FlowSewNotice,
+} from "../../utils/flow-repair";
 
 function handleEndpointInsertion(
   state: AppState,
@@ -306,16 +310,32 @@ function buildLayoutForComponent(
 }
 
 /**
+ * Hands the notices to whoever is listening. Each batch gets an id of its own,
+ * so deleting the same node twice is two notices rather than one that looks
+ * like it never changed.
+ */
+function publishSewNotices(state: AppState, notices: FlowSewNotice[]): void {
+  if (notices.length === 0) return;
+  state._flowSewNotices = { id: (state._flowSewNotices?.id ?? 0) + 1, notices };
+}
+
+/**
  * Removes a set of components (with descendants) and standalone connection ids
  * from `d`'s live snapshot, without touching history. Shared by `removeComponent`
  * and the batched `removeElements` so a multi-element delete pushes one history
  * checkpoint instead of one per removed id.
  */
-function removeElementsFromSnapshot(d: Diagram, nodeIds: string[], edgeIds: string[]): void {
+function removeElementsFromSnapshot(
+  d: Diagram,
+  nodeIds: string[],
+  edgeIds: string[],
+): FlowSewNotice[] {
   const childrenIndex = buildChildrenIndex(d.snapshot.components);
   const toRemove = new Set<string>();
   nodeIds.forEach((id) => {
-    getDescendantIdsFromIndex(id, childrenIndex).forEach((descendantId) => toRemove.add(descendantId));
+    getDescendantIdsFromIndex(id, childrenIndex).forEach((descendantId) =>
+      toRemove.add(descendantId),
+    );
     toRemove.add(id);
   });
 
@@ -334,13 +354,30 @@ function removeElementsFromSnapshot(d: Diagram, nodeIds: string[], edgeIds: stri
     }
   }
 
+  // Read before the deletes: the notice names what left the diagram, and by
+  // the time the flows are sewn it is no longer there to be named.
+  const elementNames = new Map<string, string>();
+  toRemove.forEach((eid) => {
+    const name = d.snapshot.components[eid]?.name;
+    if (name) elementNames.set(eid, name);
+  });
+  removedConnectionIds.forEach((connectionId) => {
+    const label = d.snapshot.connections[connectionId]?.label;
+    if (label) elementNames.set(connectionId, label);
+  });
+
   toRemove.forEach((eid) => delete d.snapshot.components[eid]);
   removedConnectionIds.forEach((connectionId) => {
     delete d.snapshot.connections[connectionId];
   });
   toRemove.forEach((eid) => delete d.nodeLayouts[eid]);
 
-  repairFlowsAfterRemovingDiagramElements(d.snapshot.flows, toRemove, removedConnectionIds);
+  const reports = repairFlowsAfterRemovingDiagramElements(
+    d.snapshot.flows,
+    toRemove,
+    removedConnectionIds,
+  );
+  const notices = toFlowSewNotices(reports, elementNames);
 
   const syncApiGroupSize = (groupId: string) => {
     const childCount = Object.values(d.snapshot.components).filter(
@@ -371,6 +408,8 @@ function removeElementsFromSnapshot(d: Diagram, nodeIds: string[], edgeIds: stri
   };
 
   apiGroupParentsToSync.forEach(reindexEndpoints);
+
+  return notices;
 }
 
 export const componentsSlice = (
@@ -518,7 +557,7 @@ export const componentsSlice = (
       }
 
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-      removeElementsFromSnapshot(d, [id], []);
+      publishSewNotices(state, removeElementsFromSnapshot(d, [id], []));
       touchDiagram(d);
     });
   },
@@ -543,7 +582,7 @@ export const componentsSlice = (
       }
 
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-      removeElementsFromSnapshot(d, nodeIds, edgeIds);
+      publishSewNotices(state, removeElementsFromSnapshot(d, nodeIds, edgeIds));
       touchDiagram(d);
     });
   },

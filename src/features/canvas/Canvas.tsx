@@ -30,6 +30,7 @@ import { Eye, Minimize2 } from "lucide-react";
 import { useCanvasController } from "./hooks/useCanvasController";
 import { hasSavedViewport } from "./hooks/useCanvasEffects";
 import { useCanvasInputProfile } from "./hooks/useCanvasInputProfile";
+import { useFlowSewNotices } from "./flow/useFlowSewNotices";
 import { useServiceFocusFromUrl } from "./hooks/useServiceFocusFromUrl";
 import { useElementFocusFromUrl } from "./hooks/useElementFocusFromUrl";
 import { getCachedCanvasSnapshot, useDiagramStore } from "@/features/diagram";
@@ -45,7 +46,11 @@ import {
   CUSTOM_COMPONENT_DRAG_MIME,
   useCustomComponentLibrary,
 } from "@/features/custom-components";
-import { AssistantUIChatPanel, FloatingChatButton, PendingNodeToolbar } from "@/features/llm/components";
+import {
+  AssistantUIChatPanel,
+  FloatingChatButton,
+  PendingNodeToolbar,
+} from "@/features/llm/components";
 import { useLLMChat } from "./chat";
 import { getPendingNodeIds, getSuggestionIdForNode, useLLMStore } from "@/features/llm";
 import { usePanelChildLayout } from "./hooks/usePanelChildLayout";
@@ -97,6 +102,7 @@ const SELECTION_KEY_CODE: string | null = null;
 const canvasEdgeTypes = { editable: EditableEdge };
 
 const Canvas = (props: CanvasProps = {}) => {
+  useFlowSewNotices();
   const nodeTypes = useNodeTypes();
   const [templateNodeId, setTemplateNodeId] = useState<string | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);

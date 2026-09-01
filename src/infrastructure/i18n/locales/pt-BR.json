@@ -1391,6 +1391,12 @@
     "invariant_violated": "Essa mudança quebraria o flow: deixaria um laço, ou um passo que ninguém alcança.",
     "branch_point_removal": "Uma condição não pode ser removida sozinha — os ramos ficariam soltos. Remova os ramos primeiro."
   },
+  "flowSew": {
+    "sewn": "\"{{element}}\" saiu do diagrama. O roteiro de \"{{flow}}\" foi costurado: {{from}} → {{to}}.",
+    "removed": "\"{{element}}\" saiu do diagrama, e com ele um passo de \"{{flow}}\".",
+    "unnamedElement": "Um elemento",
+    "undo": "Desfazer"
+  },
   "brokenFlow": {
     "title": "Flow com referências inválidas",
     "descriptionWithName": "{{name}} — Os seguintes steps referenciam elementos que foram removidos do diagrama. Remova-os para continuar.",

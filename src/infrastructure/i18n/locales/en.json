@@ -1391,6 +1391,12 @@
     "invariant_violated": "That change would break the flow: it would leave a loop, or a step nothing reaches.",
     "branch_point_removal": "A condition cannot be removed on its own — its branches would be left hanging. Remove the branches first."
   },
+  "flowSew": {
+    "sewn": "\"{{element}}\" left the diagram. The script of \"{{flow}}\" was sewn shut: {{from}} → {{to}}.",
+    "removed": "\"{{element}}\" left the diagram, and with it a step of \"{{flow}}\".",
+    "unnamedElement": "An element",
+    "undo": "Undo"
+  },
   "brokenFlow": {
     "title": "Flow with invalid references",
     "descriptionWithName": "{{name}} — The following steps reference elements that were removed from the diagram. Remove them to continue.",

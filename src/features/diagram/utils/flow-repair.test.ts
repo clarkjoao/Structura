@@ -3,6 +3,7 @@ import {
   getFlowStepIdsReferencingRemovedElements,
   repairFlow,
   repairFlowsAfterRemovingDiagramElements,
+  toFlowSewNotices,
 } from "./flow-repair";
 import type { Flow } from "../model/flow.types";
 
@@ -234,5 +235,130 @@ describe("repairFlowsAfterRemovingDiagramElements", () => {
     expect(flows.f1!.steps.s1).toBeUndefined();
     expect(flows.f1!.steps.s2).toBeDefined();
     expect(flows.f1!.entryStepId).toBe("s2");
+  });
+});
+
+describe("what the sew says it did", () => {
+  /** 1 → 2 → 3 → 4, where step 2 is the one whose node leaves the diagram. */
+  function fourSteps(): Flow {
+    return makeFlow({
+      entryStepId: "s1",
+      name: "Checkout",
+      steps: {
+        s1: { id: "s1", type: "action", next: "s2", componentId: "keep" },
+        s2: { id: "s2", type: "action", next: "s3", componentId: "doomed" },
+        s3: { id: "s3", type: "action", next: "s4", componentId: "keep" },
+        s4: { id: "s4", type: "action" },
+      },
+    });
+  }
+
+  it("reports the join in the numbers the panel shows, after the sew", () => {
+    const flows = { f1: fourSteps() };
+    const [report] = repairFlowsAfterRemovingDiagramElements(flows, new Set(["doomed"]), new Set());
+    expect(report).toMatchObject({ flowId: "flow-1", flowName: "Checkout" });
+    // Step 2 went; step 1 now leads to what is numbered 2 afterwards.
+    expect(report!.joins).toEqual([
+      { stepId: "s2", componentId: "doomed", removedLabel: "2", fromLabel: "1", toLabel: "2" },
+    ]);
+  });
+
+  it("says nothing about a flow the removal did not touch", () => {
+    const flows = { f1: fourSteps() };
+    expect(repairFlowsAfterRemovingDiagramElements(flows, new Set(["other"]), new Set())).toEqual(
+      [],
+    );
+  });
+
+  it("reports the join in the numbers from after the sew, not before it", () => {
+    // Two steps go at once, so the numbers on both sides of the join move:
+    // before, the surviving neighbours are 2 and 4; after, they are 1 and 2.
+    const flows = {
+      f1: makeFlow({
+        entryStepId: "s1",
+        name: "Checkout",
+        steps: {
+          s1: { id: "s1", type: "action", next: "s2", componentId: "doomed-a" },
+          s2: { id: "s2", type: "action", next: "s3", componentId: "keep" },
+          s3: { id: "s3", type: "action", next: "s4", componentId: "doomed-b" },
+          s4: { id: "s4", type: "action", componentId: "keep" },
+        },
+      }),
+    };
+    const [report] = repairFlowsAfterRemovingDiagramElements(
+      flows,
+      new Set(["doomed-a", "doomed-b"]),
+      new Set(),
+    );
+    const forS3 = report!.joins.find((join) => join.stepId === "s3")!;
+    expect(forS3.removedLabel).toBe("3");
+    expect(forS3.fromLabel).toBe("1");
+    expect(forS3.toLabel).toBe("2");
+  });
+
+  it("counts the condition as the predecessor of the branch step that went", () => {
+    const flows = {
+      f1: makeFlow({
+        entryStepId: "s1",
+        name: "Checkout",
+        steps: {
+          s1: { id: "s1", type: "action", next: "c", componentId: "keep" },
+          c: {
+            id: "c",
+            type: "condition",
+            branches: [
+              { label: "yes", nextId: "a1" },
+              { label: "no", nextId: "b1" },
+            ],
+          },
+          a1: { id: "a1", type: "action", next: "a2", componentId: "doomed" },
+          a2: { id: "a2", type: "action", componentId: "keep" },
+          b1: { id: "b1", type: "action", componentId: "keep" },
+        },
+      }),
+    };
+    const [report] = repairFlowsAfterRemovingDiagramElements(flows, new Set(["doomed"]), new Set());
+    expect(report!.joins).toEqual([
+      { stepId: "a1", componentId: "doomed", removedLabel: "2a", fromLabel: "2", toLabel: "2a" },
+    ]);
+  });
+
+  it("leaves the ends of a join out when the step had no neighbour there", () => {
+    const flows = {
+      f1: makeFlow({
+        entryStepId: "s1",
+        steps: {
+          s1: { id: "s1", type: "action", next: "s2", componentId: "doomed" },
+          s2: { id: "s2", type: "action", componentId: "keep" },
+        },
+      }),
+    };
+    const [report] = repairFlowsAfterRemovingDiagramElements(flows, new Set(["doomed"]), new Set());
+    // The entry went: nothing led to it, so there is no "from" side.
+    expect(report!.joins).toEqual([
+      { stepId: "s1", componentId: "doomed", removedLabel: "1", toLabel: "1" },
+    ]);
+  });
+
+  it("names what left the diagram", () => {
+    const flows = { f1: fourSteps() };
+    const reports = repairFlowsAfterRemovingDiagramElements(flows, new Set(["doomed"]), new Set());
+    expect(toFlowSewNotices(reports, new Map([["doomed", "Checkout API"]]))).toEqual([
+      {
+        flowId: "flow-1",
+        flowName: "Checkout",
+        elementName: "Checkout API",
+        fromLabel: "1",
+        toLabel: "2",
+      },
+    ]);
+  });
+
+  it("leaves the name out rather than inventing one", () => {
+    const flows = { f1: fourSteps() };
+    const reports = repairFlowsAfterRemovingDiagramElements(flows, new Set(["doomed"]), new Set());
+    expect(toFlowSewNotices(reports, new Map())).toEqual([
+      { flowId: "flow-1", flowName: "Checkout", fromLabel: "1", toLabel: "2" },
+    ]);
   });
 });

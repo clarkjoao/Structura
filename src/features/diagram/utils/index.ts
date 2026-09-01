@@ -73,7 +73,12 @@ export {
 export type { FlowOutline, FlowOutlineRow, FlowOutlineBranch } from "./flow-outline";
 
 export { migrateFlow } from "./flow-migration";
-export { repairFlow } from "./flow-repair";
+export {
+  repairFlow,
+  repairFlowsAfterRemovingDiagramElements,
+  toFlowSewNotices,
+} from "./flow-repair";
+export type { FlowSewNotice, FlowSewReport, FlowSewJoin } from "./flow-repair";
 export { sewOnDelete } from "./flow-sew";
 export type { SewOnDeleteResult, SewBlockedStep } from "./flow-sew";
 export { moveStep } from "./flow-move";
