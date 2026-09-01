@@ -44,6 +44,7 @@ import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
 import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
+import { publishSewNotices } from "../helpers/publish-sew-notices";
 import {
   resolveActiveScene,
   resolveComponent,
@@ -310,16 +311,6 @@ function buildLayoutForComponent(
 }
 
 /**
- * Hands the notices to whoever is listening. Each batch gets an id of its own,
- * so deleting the same node twice is two notices rather than one that looks
- * like it never changed.
- */
-function publishSewNotices(state: AppState, notices: FlowSewNotice[]): void {
-  if (notices.length === 0) return;
-  state._flowSewNotices = { id: (state._flowSewNotices?.id ?? 0) + 1, notices };
-}
-
-/**
  * Removes a set of components (with descendants) and standalone connection ids
  * from `d`'s live snapshot, without touching history. Shared by `removeComponent`
  * and the batched `removeElements` so a multi-element delete pushes one history
@@ -551,7 +542,8 @@ export const componentsSlice = (
       if (!d) return;
       const scene = resolveActiveScene(d);
       if (scene) {
-        mutateRemoveComponentInScene(d, scene.id, id);
+        pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+        publishSewNotices(state, mutateRemoveComponentInScene(d, scene.id, id));
         touchDiagram(d);
         return;
       }
@@ -575,8 +567,11 @@ export const componentsSlice = (
       if (!d) return;
       const scene = resolveActiveScene(d);
       if (scene) {
-        nodeIds.forEach((id) => mutateRemoveComponentInScene(d, scene.id, id));
-        edgeIds.forEach((id) => mutateRemoveConnectionInScene(d, scene.id, id));
+        pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+        publishSewNotices(state, [
+          ...nodeIds.flatMap((id) => mutateRemoveComponentInScene(d, scene.id, id)),
+          ...edgeIds.flatMap((id) => mutateRemoveConnectionInScene(d, scene.id, id)),
+        ]);
         touchDiagram(d);
         return;
       }

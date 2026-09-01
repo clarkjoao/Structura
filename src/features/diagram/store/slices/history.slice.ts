@@ -35,6 +35,7 @@ export function pushHistoryCheckpoint(state: AppState): boolean {
     snapshot: toPlain(d.snapshot),
     nodeLayouts: toPlain(d.nodeLayouts),
     edgeLayouts: toPlain(d.edgeLayouts),
+    scenes: toPlain(d.scenes),
   });
   if (state.past.length > MAX_HISTORY_STEPS) state.past.shift();
   state.future = [];
@@ -81,6 +82,7 @@ export const historySlice = (
       const currentSnapshot = d.snapshot;
       const currentNodeLayouts = d.nodeLayouts;
       const currentEdgeLayouts = d.edgeLayouts;
+      const currentScenes = d.scenes;
 
       state.past.splice(entryIndex, 1);
       state.future.push({
@@ -88,11 +90,13 @@ export const historySlice = (
         snapshot: currentSnapshot,
         nodeLayouts: currentNodeLayouts,
         edgeLayouts: currentEdgeLayouts,
+        scenes: currentScenes,
         timestamp: Date.now(),
       } as DiagramSnapshot);
       d.snapshot = entry.snapshot;
       d.nodeLayouts = entry.nodeLayouts;
       d.edgeLayouts = entry.edgeLayouts;
+      d.scenes = entry.scenes;
       state._lastUndoRedoAt = Date.now();
     });
   },
@@ -120,6 +124,7 @@ export const historySlice = (
       const currentSnapshot = d.snapshot;
       const currentNodeLayouts = d.nodeLayouts;
       const currentEdgeLayouts = d.edgeLayouts;
+      const currentScenes = d.scenes;
 
       state.future.splice(entryIndex, 1);
       state.past.push({
@@ -127,11 +132,13 @@ export const historySlice = (
         snapshot: currentSnapshot,
         nodeLayouts: currentNodeLayouts,
         edgeLayouts: currentEdgeLayouts,
+        scenes: currentScenes,
         timestamp: Date.now(),
       } as DiagramSnapshot);
       d.snapshot = entry.snapshot;
       d.nodeLayouts = entry.nodeLayouts;
       d.edgeLayouts = entry.edgeLayouts;
+      d.scenes = entry.scenes;
       state._lastUndoRedoAt = Date.now();
     });
   },
