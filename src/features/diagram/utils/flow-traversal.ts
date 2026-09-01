@@ -1,5 +1,5 @@
 import type { Flow, FlowStep } from "../model/flow.types";
-import type { Diagram } from "../model/diagram.types";
+import type { Diagram, SceneDiff } from "../model/diagram.types";
 import { resolveSceneSnapshot } from "./scene.utils";
 
 export function getStepById(flow: Flow, id: string): FlowStep | undefined {
@@ -71,6 +71,51 @@ export interface BrokenStep {
   reason: "component_deleted" | "connection_deleted";
   missingId: string;
   label: string;
+  /**
+   * The scene that still holds the missing element, when one does.
+   *
+   * A scene keeps what it created in its own diff, so from anywhere else in
+   * the diagram that element is absent from the view and from the base alike
+   * — the same shape a genuinely deleted one has. The step cannot play from
+   * here, but it is not garbage: removing it would throw away a reference that
+   * works again the moment the scene is opened.
+   */
+  inScene?: { id: string; name: string };
+}
+
+/**
+ * The scene that owns `id`, if any scene does.
+ *
+ * Only a scene's *own* elements count. An element a scene merely hides is
+ * still in the base, so it never reaches here.
+ */
+function sceneHolding(
+  scenes: Record<string, SceneDiff> | undefined,
+  id: string,
+  kind: "component" | "connection",
+): { id: string; name: string } | undefined {
+  for (const scene of Object.values(scenes ?? {})) {
+    const own = kind === "component" ? scene.addedComponents : scene.addedConnections;
+    if (own[id]) return { id: scene.id, name: scene.name };
+  }
+  return undefined;
+}
+
+function brokenStep(
+  stepId: string,
+  reason: BrokenStep["reason"],
+  missingId: string,
+  inScene: { id: string; name: string } | undefined,
+): BrokenStep {
+  const what = reason === "component_deleted" ? "component" : "connection";
+  const where = inScene ? `lives in scene “${inScene.name}”` : "removed";
+  return {
+    stepId,
+    reason,
+    missingId,
+    label: `Step ${stepId.slice(0, 8)}… — ${what} ${where} (${missingId.slice(0, 8)}…)`,
+    inScene,
+  };
 }
 
 /**
@@ -83,32 +128,35 @@ export interface BrokenStep {
  * refused to play a flow that had nothing wrong with it. An id is missing only
  * when neither the view nor the base has it — which still covers a component
  * created inside a scene and then deleted, since the base never held it.
+ *
+ * Missing from *here* is not the same as gone, though: an element another
+ * scene owns looks identical from outside that scene. Those steps are still
+ * reported — the flow cannot play them from this view — but each carries the
+ * scene that holds it, so a repair can tell the two apart instead of deleting
+ * both.
  */
 export function validateFlowGraph(flow: Flow, diagram: Diagram): BrokenStep[] {
   const broken: BrokenStep[] = [];
   const { components, connections } = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
   const base = diagram.snapshot;
+  const scenes = diagram.scenes;
 
   walkFlow(flow, (step) => {
     if (step.componentId && !components[step.componentId] && !base.components[step.componentId]) {
-      broken.push({
-        stepId: step.id,
-        reason: "component_deleted",
-        missingId: step.componentId,
-        label: `Step ${step.id.slice(0, 8)}… — component removed (${step.componentId.slice(0, 8)}…)`,
-      });
+      const id = step.componentId;
+      broken.push(
+        brokenStep(step.id, "component_deleted", id, sceneHolding(scenes, id, "component")),
+      );
     }
     if (
       step.connectionId &&
       !connections[step.connectionId] &&
       !base.connections[step.connectionId]
     ) {
-      broken.push({
-        stepId: step.id,
-        reason: "connection_deleted",
-        missingId: step.connectionId,
-        label: `Step ${step.id.slice(0, 8)}… — connection removed (${step.connectionId.slice(0, 8)}…)`,
-      });
+      const id = step.connectionId;
+      broken.push(
+        brokenStep(step.id, "connection_deleted", id, sceneHolding(scenes, id, "connection")),
+      );
     }
   });
 
