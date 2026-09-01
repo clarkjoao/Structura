@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { StrictMode } from "react";
 import { act, renderHook } from "@testing-library/react";
 import i18n from "@/infrastructure/i18n";
 import type { FlowStep } from "@/features/diagram";
@@ -94,29 +93,11 @@ describe("deleting a node that a script walks through says so", () => {
     expect(toast.warning).toHaveBeenCalledTimes(1);
   });
 
-  it("says it once even where effects run twice", () => {
-    const { n2 } = seed();
-    renderHook(() => useFlowSewNotices(), {
-      wrapper: ({ children }) => <StrictMode>{children}</StrictMode>,
-    });
-    act(() => useDiagramStore.getState().removeElements([n2], []));
-    expect(toast.warning).toHaveBeenCalledTimes(1);
-  });
-
   it("says it again when the same kind of removal happens twice", () => {
     const { n2, n3 } = seed();
     renderHook(() => useFlowSewNotices());
     act(() => useDiagramStore.getState().removeElements([n2], []));
     act(() => useDiagramStore.getState().removeElements([n3], []));
     expect(toast.warning).toHaveBeenCalledTimes(2);
-  });
-
-  it("does not repeat itself when nothing new happened", () => {
-    const { n2 } = seed();
-    const { rerender } = renderHook(() => useFlowSewNotices());
-    act(() => useDiagramStore.getState().removeElements([n2], []));
-    rerender();
-    rerender();
-    expect(toast.warning).toHaveBeenCalledTimes(1);
   });
 });

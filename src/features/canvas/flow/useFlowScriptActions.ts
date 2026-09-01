@@ -1,9 +1,9 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { heldBackMessage, refusalMessage } from "./flowRefusalMessage";
 import type { FlowStep, FlowStoreResult, MoveStepTarget } from "@/features/diagram";
 import { useDiagramActions } from "@/features/diagram";
+import { heldBackMessage, refusalMessage } from "./flowRefusalMessage";
 
 export interface FlowScriptActions {
   updateStep: (stepId: string, patch: Partial<FlowStep>) => void;
@@ -70,9 +70,14 @@ export function useFlowScriptActions(flowId: string | null): FlowScriptActions {
         announce(flowId ? actions.addFlowBranch(flowId, conditionStepId, label) : noFlow());
       },
       removeBranch: (conditionStepId, branchIndex) => {
-        announce(
+        const result = announce(
           flowId ? actions.removeFlowBranch(flowId, conditionStepId, branchIndex) : noFlow(),
         );
+        // Dropping a branch takes the steps only that branch reached with it.
+        // The user named the branch, not those steps, so the count is said.
+        if (result.ok && result.removedStepIds.length > 0) {
+          toast.warning(t("flowScript.branchRemoved", { count: result.removedStepIds.length }));
+        }
       },
       setBranchLabel: (conditionStepId, branchIndex, label) => {
         if (!flowId) return;

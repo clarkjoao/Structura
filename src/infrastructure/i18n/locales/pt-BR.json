@@ -1364,7 +1364,9 @@
     "unreachable_other": "{{count}} passos não são alcançáveis a partir do início",
     "openScript": "Abrir o roteiro",
     "recordingBranch": "Gravando ramo",
-    "branchDone": "Pronto"
+    "branchDone": "Pronto",
+    "branchRemoved_one": "O ramo saiu, e o passo que só ele alcançava foi junto.",
+    "branchRemoved_other": "O ramo saiu, e os {{count}} passos que só ele alcançava foram junto."
   },
   "flowRefusal": {
     "unknown_flow": "Esse flow não está mais aberto.",

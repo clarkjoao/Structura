@@ -1364,7 +1364,9 @@
     "unreachable_other": "{{count}} steps are not reachable from the start",
     "openScript": "Open the script",
     "recordingBranch": "Recording branch",
-    "branchDone": "Done"
+    "branchDone": "Done",
+    "branchRemoved_one": "The branch went, and the step only it reached went with it.",
+    "branchRemoved_other": "The branch went, and the {{count}} steps only it reached went with it."
   },
   "flowRefusal": {
     "unknown_flow": "That flow is no longer open.",

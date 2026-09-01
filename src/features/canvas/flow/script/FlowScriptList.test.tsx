@@ -158,6 +158,37 @@ describe("FlowScriptList", () => {
     expect(checkFlowInvariants(flow)).toEqual([]);
   });
 
+  it("says how many steps a removed branch takes with it", () => {
+    // Three branches: the panel only offers to remove one while more than two
+    // remain, so a two-branch condition has no remove button to click.
+    const { read } = seedFlow([
+      { id: "s1", type: "action", next: "c", description: "submits" },
+      {
+        id: "c",
+        type: "condition",
+        conditionLabel: "paid?",
+        branches: [
+          { label: "yes", nextId: "a1" },
+          { label: "no", nextId: "b1" },
+          { label: "later", nextId: "m1" },
+        ],
+      },
+      { id: "a1", type: "action", next: "a2", description: "ships" },
+      { id: "a2", type: "action", description: "invoices" },
+      { id: "b1", type: "action", description: "declines" },
+      { id: "m1", type: "action", description: "waits" },
+    ]);
+    renderScript(read);
+    fireEvent.click(screen.getByText("◇ paid?"));
+    fireEvent.click(screen.getAllByTitle("Remove branch")[0]!);
+
+    expect(read().steps.a1).toBeUndefined();
+    expect(read().steps.a2).toBeUndefined();
+    expect(toast.warning).toHaveBeenCalledWith(
+      expect.stringContaining("the 2 steps only it reached"),
+    );
+  });
+
   it("says how many steps nothing reaches instead of hiding them", () => {
     const { read } = seedFlow([...CHAIN, { id: "lost", type: "action", description: "orphan" }]);
     renderScript(read);
