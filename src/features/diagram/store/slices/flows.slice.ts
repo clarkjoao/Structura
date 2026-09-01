@@ -93,6 +93,13 @@ export type RecordedStepContent = Pick<
 >;
 
 export const flowsSlice = (set: (fn: (state: AppState) => void) => void, get: () => AppState) => ({
+  /**
+   * Creates a flow, and leaves a checkpoint so the creation can be taken back.
+   *
+   * A recording opens its session before it asks for the flow, so the session
+   * is already in place here and this adds nothing: the whole recording stays
+   * one undo step, and cancelling it drops the flow with the checkpoint.
+   */
   addFlow: (
     diagramId: string,
     name: string,
@@ -146,6 +153,10 @@ export const flowsSlice = (set: (fn: (state: AppState) => void) => void, get: ()
         console.warn("[addFlow] Diagram not found inside set:", diagramId);
         return;
       }
+      // History snapshots the diagram in view, so a flow added to any other
+      // diagram has nowhere to be recorded — better no checkpoint at all than
+      // one that would undo a diagram nobody is looking at.
+      if (diagramId === state.activeDiagramId) checkpoint(state, STRUCTURAL_MUTATION_MARKER);
       d.snapshot.flows[flow.id] = flow;
       touchDiagram(d);
     });
@@ -180,10 +191,22 @@ export const flowsSlice = (set: (fn: (state: AppState) => void) => void, get: ()
     });
   },
 
+  /**
+   * Deletes a flow, whole.
+   *
+   * It leaves a checkpoint now. It did not, so a misclick on the trash took a
+   * whole script and Ctrl+Z reached past the deletion to some older edit
+   * instead — the flow stayed gone with nothing on screen to say so.
+   * Structural, so the coalescing window cannot swallow the deletion behind an
+   * edit made a moment earlier; and, like every other write to a flow, silent
+   * inside a recording, where the session's own checkpoint is the undo unit.
+   */
   removeFlow: (id: string) => {
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
+      if (!d.snapshot.flows[id]) return;
+      checkpoint(state, STRUCTURAL_MUTATION_MARKER);
       delete d.snapshot.flows[id];
     });
   },
