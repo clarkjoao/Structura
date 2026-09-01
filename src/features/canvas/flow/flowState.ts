@@ -1,5 +1,5 @@
 import type { Flow, FlowOutlineRow, FlowStep } from "@/features/diagram";
-import { getStepById, getFlowParticipants, getOrderedStepIds } from "@/features/diagram";
+import { getStepById, getFlowParticipants } from "@/features/diagram";
 
 export interface FlowHighlight {
   activeNodeId: string | null;
@@ -38,16 +38,6 @@ export const EMPTY_FLOW_HIGHLIGHT: FlowHighlight = {
   participantNodeIds: new Set(),
   participantConnIds: new Set(),
 };
-
-export function safeFlowSteps(flow: Flow): FlowStep[] {
-  const s = flow.steps;
-  if (Array.isArray(s)) return s;
-  if (!s || typeof s !== "object") return [];
-  const ordered = getOrderedStepIds(flow);
-  if (ordered.length > 0)
-    return ordered.map((id) => flow.steps[id]).filter((x): x is FlowStep => !!x);
-  return Object.values(s);
-}
 
 function addFlowToMap(map: Map<string, string[]>, key: string, flowName: string): void {
   const arr = map.get(key) ?? [];

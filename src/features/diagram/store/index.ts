@@ -8,8 +8,6 @@ export {
   useConnectionActions,
   useLayoutActions,
   useSceneActions,
-  useFlowActions,
-  useHistoryActions,
   useClipboardActions,
   useIconActions,
   flushDiagramStoreToLocalStorageNow,

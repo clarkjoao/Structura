@@ -142,7 +142,9 @@ describe("dragging a row moves the step", () => {
     const before = JSON.stringify(read().steps);
     dragRow(container, "c", "s1");
     expect(JSON.stringify(read().steps)).toBe(before);
-    expect(toast.warning).toHaveBeenCalled();
+    expect(toast.warning).toHaveBeenCalledWith(
+      expect.stringContaining("A condition moves together with its branches"),
+    );
   });
 
   it("refuses a drop directly behind a condition, and says why", () => {
@@ -151,7 +153,9 @@ describe("dragging a row moves the step", () => {
     const before = JSON.stringify(read().steps);
     dragRow(container, "s1", "c");
     expect(JSON.stringify(read().steps)).toBe(before);
-    expect(toast.warning).toHaveBeenCalled();
+    expect(toast.warning).toHaveBeenCalledWith(
+      expect.stringContaining("no place directly after a condition"),
+    );
   });
 
   it("does nothing when a row is dropped on itself", () => {

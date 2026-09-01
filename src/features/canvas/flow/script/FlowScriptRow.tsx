@@ -32,6 +32,12 @@ export interface FlowScriptRowProps {
 
 const INDENT_PX = 14;
 
+/** Named rather than built from the value, so a renamed key is a type error. */
+const PAYLOAD_DIRECTION_KEYS = {
+  request: "flowScript.request",
+  response: "flowScript.response",
+} as const;
+
 export function FlowScriptRow({
   row,
   step,
@@ -245,7 +251,7 @@ export function FlowScriptRow({
                               : "bg-secondary text-muted-foreground hover:text-foreground"
                           }`}
                         >
-                          {t(`flowScript.${direction}`)}
+                          {t(PAYLOAD_DIRECTION_KEYS[direction])}
                         </button>
                       ))}
                     </div>

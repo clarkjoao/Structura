@@ -1,11 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { chain, condition, expectFlowInvariants, makeFlow } from "@/test/flow-graph-helpers";
-import {
-  branchLetter,
-  compareFlowStepLabels,
-  computeFlowStepLabels,
-  getFlowStepLabel,
-} from "./flow-labels";
+import { branchLetter, compareFlowStepLabels, computeFlowStepLabels } from "./flow-labels";
 import { checkFlowInvariants } from "./flow-graph";
 
 describe("branchLetter", () => {
@@ -392,14 +387,5 @@ describe("computeFlowStepLabels", () => {
     expect(checkFlowInvariants(flow)).toEqual([
       expect.objectContaining({ code: "cycle", stepId: "s3", targetId: "s2" }),
     ]);
-  });
-});
-
-describe("getFlowStepLabel", () => {
-  it("returns the label of one step, and undefined for an unreachable one", () => {
-    const flow = makeFlow([...chain("s1", "s2"), { id: "orphan", type: "action" }], "s1");
-
-    expect(getFlowStepLabel(flow, "s2")).toBe("2");
-    expect(getFlowStepLabel(flow, "orphan")).toBeUndefined();
   });
 });

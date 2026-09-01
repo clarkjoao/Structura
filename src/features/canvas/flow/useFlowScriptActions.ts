@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { heldBackMessage, refusalMessage } from "./flowRefusalMessage";
 import type { FlowStep, FlowStoreResult, MoveStepTarget } from "@/features/diagram";
 import { useDiagramActions } from "@/features/diagram";
 
@@ -28,15 +29,13 @@ export function useFlowScriptActions(flowId: string | null): FlowScriptActions {
   return useMemo(() => {
     const announce = (result: FlowStoreResult): FlowStoreResult => {
       if (!result.ok) {
-        toast.warning(t(`flowRefusal.${result.code}`, { defaultValue: t("flowRefusal.unknown") }));
+        toast.warning(refusalMessage(t, result.code));
         return result;
       }
       // A held-back removal reports success — it changed nothing on purpose —
       // so it needs saying out loud too, or the click looks like it did nothing.
       for (const held of result.blocked) {
-        toast.warning(
-          t(`flowRefusal.${held.code}_removal`, { defaultValue: t("flowRefusal.unknown") }),
-        );
+        toast.warning(heldBackMessage(t, held.code));
       }
       return result;
     };

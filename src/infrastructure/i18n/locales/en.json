@@ -1314,7 +1314,6 @@
   "flowRecorder": {
     "editingTitle": "Editing flow",
     "recordingTitle": "Recording flow",
-    "stepsHeading": "Steps ({{count}})",
     "mermaid": "Mermaid",
     "emptyNameWarning": "Flow name is empty",
     "noStepsWarning": "No recorded steps",
@@ -1322,19 +1321,9 @@
     "descPlaceholder": "Flow description (optional)",
     "tags": "Tags",
     "tagPlaceholder": "Add tag (Enter)...",
-    "removeStepTitle": "Remove step",
-    "stepDescPlaceholder": "Step description...",
-    "durationPlaceholder": "~200ms, async...",
-    "request": "→ Request",
-    "response": "← Response",
-    "payloadPlaceholder": "Payload...",
     "copyMermaidTitle": "Copy Mermaid",
     "finalize": "Finish",
-    "cancel": "Cancel",
-    "recordHint": "Click nodes, handles, or connections on the canvas to record steps.",
-    "unknownStep": "?",
-    "condition": "Condition",
-    "connectionLabelPrefix": "→ "
+    "cancel": "Cancel"
   },
   "flowScript": {
     "stepsHeading_one": "{{count}} step",
@@ -1373,10 +1362,11 @@
     "continueMainFlow": "Back to the main flow",
     "unreachable_one": "{{count}} step is not reachable from the start",
     "unreachable_other": "{{count}} steps are not reachable from the start",
-    "openScript": "Open the script"
+    "openScript": "Open the script",
+    "recordingBranch": "Recording branch",
+    "branchDone": "Done"
   },
   "flowRefusal": {
-    "unknown": "That change was refused.",
     "unknown_flow": "That flow is no longer open.",
     "unknown_step": "That step is no longer part of this flow.",
     "unknown_condition": "That condition is no longer part of this flow.",

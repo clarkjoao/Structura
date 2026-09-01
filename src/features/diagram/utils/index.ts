@@ -34,22 +34,13 @@ export {
   validateFlowGraph,
   getOrderedStepIds,
   getStepCount,
-  getBranchStepCount,
 } from "./flow-traversal";
 export type { BrokenStep } from "./flow-traversal";
-
-export { buildFlowFromRecordingSnapshot } from "./recording-to-flow";
-export type { BranchOwnershipMap } from "./recording-to-flow";
 
 export { getFlowOutEdges, getReachableStepIds, checkFlowInvariants } from "./flow-graph";
 export type { FlowEdge, FlowInvariantCode, FlowInvariantViolation } from "./flow-graph";
 
-export {
-  computeFlowStepLabels,
-  getFlowStepLabel,
-  compareFlowStepLabels,
-  branchLetter,
-} from "./flow-labels";
+export { computeFlowStepLabels, compareFlowStepLabels, branchLetter } from "./flow-labels";
 export type { FlowLabelResult, FlowLabelAmbiguity } from "./flow-labels";
 
 export {

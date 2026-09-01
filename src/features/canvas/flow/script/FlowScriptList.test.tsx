@@ -132,7 +132,9 @@ describe("FlowScriptList", () => {
     const before = JSON.stringify(read().steps);
     fireEvent.click(screen.getAllByTitle("Remove step")[1]!);
     expect(JSON.stringify(read().steps)).toBe(before);
-    expect(toast.warning).toHaveBeenCalled();
+    expect(toast.warning).toHaveBeenCalledWith(
+      expect.stringContaining("A condition cannot be removed on its own"),
+    );
   });
 
   it("renames a branch without moving anything", () => {

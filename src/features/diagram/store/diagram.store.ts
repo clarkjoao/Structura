@@ -311,34 +311,6 @@ export const useSceneActions = () =>
     })),
   );
 
-export const useFlowActions = () =>
-  useDiagramStore(
-    useShallow((s) => ({
-      addFlow: s.addFlow,
-      updateFlow: s.updateFlow,
-      removeFlow: s.removeFlow,
-      updateFlowStep: s.updateFlowStep,
-      recordFlowStep: s.recordFlowStep,
-      undoLastRecordedStep: s.undoLastRecordedStep,
-      insertFlowStepAt: s.insertFlowStepAt,
-      moveFlowStep: s.moveFlowStep,
-      removeFlowSteps: s.removeFlowSteps,
-      addFlowBranch: s.addFlowBranch,
-      removeFlowBranch: s.removeFlowBranch,
-      setFlowBranchLabel: s.setFlowBranchLabel,
-      convertStepToCondition: s.convertStepToCondition,
-    })),
-  );
-
-export const useHistoryActions = () =>
-  useDiagramStore(
-    useShallow((s) => ({
-      undo: s.undo,
-      redo: s.redo,
-      pushHistoryBoundary: s.pushHistoryBoundary,
-    })),
-  );
-
 export const useClipboardActions = () =>
   useDiagramStore(
     useShallow((s) => ({

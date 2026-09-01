@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { heldBackMessage, refusalMessage } from "./flowRefusalMessage";
 import type { Flow, FlowStoreResult, RecordedStepContent } from "@/features/diagram";
 import { useActiveDiagramId, useDiagramActions, useDiagramStore } from "@/features/diagram";
 import type { FlowMode, RecordingContext } from "./flowMode.types";
@@ -66,13 +67,11 @@ export function useFlowRecording(
   const announce = useCallback(
     (result: FlowStoreResult) => {
       if (!result.ok) {
-        toast.warning(t(`flowRefusal.${result.code}`, { defaultValue: t("flowRefusal.unknown") }));
+        toast.warning(refusalMessage(t, result.code));
         return;
       }
       for (const held of result.blocked) {
-        toast.warning(
-          t(`flowRefusal.${held.code}_removal`, { defaultValue: t("flowRefusal.unknown") }),
-        );
+        toast.warning(heldBackMessage(t, held.code));
       }
     },
     [t],
