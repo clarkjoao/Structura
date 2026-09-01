@@ -457,6 +457,7 @@ export function mergePersistedState(
   state.past = [];
   state.future = [];
   state._lastUndoRedoAt = 0;
+  state._flowSession = null;
 
   if (!state.serviceCatalog) state.serviceCatalog = {};
   if (!state.folders) state.folders = {};

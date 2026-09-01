@@ -52,6 +52,26 @@ export {
 } from "./flow-labels";
 export type { FlowLabelResult, FlowLabelAmbiguity } from "./flow-labels";
 
+export {
+  appendFlowStep,
+  insertFlowStep,
+  getFlowTail,
+  getOpenEndIds,
+  isPlaceholderStep,
+} from "./flow-edit";
+export type { FlowCursor, FlowEditResult, FlowEditRefusal, FlowEditRefusalCode } from "./flow-edit";
+
+export { convertFlowStepToCondition, appendFlowBranch, dropFlowBranch } from "./flow-condition";
+export type { NewBranchSpec } from "./flow-condition";
+
+export {
+  buildFlowOutline,
+  flowLabelDepth,
+  flowBranchHeadLabel,
+  getBranchRows,
+} from "./flow-outline";
+export type { FlowOutline, FlowOutlineRow, FlowOutlineBranch } from "./flow-outline";
+
 export { migrateFlow } from "./flow-migration";
 export { repairFlow } from "./flow-repair";
 export { sewOnDelete } from "./flow-sew";

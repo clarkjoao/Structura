@@ -20,6 +20,12 @@ export {
 } from "./diagram.store";
 
 export type { DiagramStore, ClipboardEntry } from "./store.types";
+export type {
+  FlowStoreResult,
+  FlowStoreRefusal,
+  FlowStoreRefusalCode,
+  RecordedStepContent,
+} from "./slices/flows.slice";
 
 // ─── Selectors ────────────────────────────────────────────────────────────────
 export {
