@@ -1394,6 +1394,8 @@
     "descriptionWithName": "{{name}} — The following steps reference elements that were removed from the diagram. Remove them to continue.",
     "componentDeleted": "component removed",
     "connectionRemoved": "connection removed",
+    "sceneBlocked": "Removing steps would edit the flow in the base model, not the scene “{{scene}}”.",
+    "sceneBlockedFix": "Leave the scene to repair the flow, or cancel and leave it as it is.",
     "removeInvalid": "Remove invalid steps and start",
     "cancel": "Cancel"
   },

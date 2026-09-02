@@ -11,7 +11,13 @@ import ptBR from "./locales/pt-BR.json";
  * missing. These three checks are what stops that coming back.
  */
 
-const FLOW_NAMESPACES = ["flowScript", "flowRefusal", "flowSew", "flowRecorder"] as const;
+const FLOW_NAMESPACES = [
+  "flowScript",
+  "flowRefusal",
+  "flowSew",
+  "flowRecorder",
+  "brokenFlow",
+] as const;
 const FLOW_DIRS = ["src/features/canvas/flow"];
 
 function flatten(value: Record<string, unknown>, prefix = ""): Record<string, string> {

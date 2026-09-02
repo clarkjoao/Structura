@@ -1394,6 +1394,8 @@
     "descriptionWithName": "{{name}} — Os seguintes steps referenciam elementos que foram removidos do diagrama. Remova-os para continuar.",
     "componentDeleted": "componente removido",
     "connectionRemoved": "conexão removida",
+    "sceneBlocked": "Remover steps editaria o flow do modelo base, não a cena “{{scene}}”.",
+    "sceneBlockedFix": "Saia da cena para corrigir o flow, ou cancele e deixe como está.",
     "removeInvalid": "Remover steps inválidos e iniciar",
     "cancel": "Cancelar"
   },

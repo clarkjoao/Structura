@@ -5,6 +5,7 @@ import type {
   EdgeLayout,
   Folder,
   ModelDraft,
+  SceneDiff,
   UserTemplate,
   ViewNodeLayout,
 } from "../model/diagram.types";
@@ -16,6 +17,15 @@ export interface DiagramSnapshot {
   snapshot: ModelDraft;
   nodeLayouts: Record<string, ViewNodeLayout>;
   edgeLayouts: Record<string, EdgeLayout>;
+  /**
+   * The scenes as they stood at the checkpoint.
+   *
+   * A scene holds elements of its own, and deleting one of those now sews the
+   * base flows: undoing that has to put the element back as well as the step,
+   * or the step comes back pointing at nothing. Undefined on a diagram that
+   * has no scenes.
+   */
+  scenes?: Record<string, SceneDiff>;
   timestamp: number;
 }
 

@@ -73,12 +73,24 @@ export interface BrokenStep {
   label: string;
 }
 
+/**
+ * The steps of `flow` whose element is gone from the model.
+ *
+ * Gone from the model, not merely out of sight: a scene *hides* base elements
+ * instead of deleting them, so a component a scene has taken out of view is
+ * still in `diagram.snapshot` and the step that names it still means what it
+ * said. Reading only the scene's resolved view called those steps broken and
+ * refused to play a flow that had nothing wrong with it. An id is missing only
+ * when neither the view nor the base has it — which still covers a component
+ * created inside a scene and then deleted, since the base never held it.
+ */
 export function validateFlowGraph(flow: Flow, diagram: Diagram): BrokenStep[] {
   const broken: BrokenStep[] = [];
   const { components, connections } = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
+  const base = diagram.snapshot;
 
   walkFlow(flow, (step) => {
-    if (step.componentId && !components[step.componentId]) {
+    if (step.componentId && !components[step.componentId] && !base.components[step.componentId]) {
       broken.push({
         stepId: step.id,
         reason: "component_deleted",
@@ -86,7 +98,11 @@ export function validateFlowGraph(flow: Flow, diagram: Diagram): BrokenStep[] {
         label: `Step ${step.id.slice(0, 8)}… — component removed (${step.componentId.slice(0, 8)}…)`,
       });
     }
-    if (step.connectionId && !connections[step.connectionId]) {
+    if (
+      step.connectionId &&
+      !connections[step.connectionId] &&
+      !base.connections[step.connectionId]
+    ) {
       broken.push({
         stepId: step.id,
         reason: "connection_deleted",
