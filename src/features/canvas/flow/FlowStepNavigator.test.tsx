@@ -350,3 +350,80 @@ describe("the reader can move to another script without leaving the reading", ()
     expect(checked.map((row) => row.textContent?.trim())).toEqual(["Checkout"]);
   });
 });
+
+describe("the reading says why the canvas is blank at this step", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
+  });
+
+  /** Hides the step's node behind a scene, the way the scene panel does. */
+  function hideBehindScene(componentId: string, name = "Q3 proposal") {
+    const scene = useDiagramStore.getState().addScene(name);
+    useDiagramStore.getState().setActiveScene(scene.id);
+    useDiagramStore.getState().removeComponent(componentId);
+    return scene.id;
+  }
+
+  it("says the scene is hiding the node, and names it", () => {
+    const { read, gatewayId } = seed(PLAIN);
+    hideBehindScene(gatewayId);
+
+    renderNav(read(), "s1");
+
+    expect(screen.getByTestId("flow-step-element-state")).toHaveTextContent(
+      "the scene “Q3 proposal” is hiding",
+    );
+  });
+
+  it("does not call the node deleted when a scene is merely hiding it", () => {
+    const { read, gatewayId } = seed(PLAIN);
+    hideBehindScene(gatewayId);
+
+    renderNav(read(), "s1");
+
+    expect(screen.getByTestId("flow-step-element-state")).not.toHaveTextContent("no longer has");
+  });
+
+  it("says the diagram no longer has the element when nothing holds it", () => {
+    const { read } = seed({
+      s1: { id: "s1", type: "action", next: "s2", componentId: "el-never-existed" },
+      s2: { id: "s2", type: "action" },
+    });
+
+    renderNav(read(), "s1");
+
+    expect(screen.getByTestId("flow-step-element-state")).toHaveTextContent("no longer has");
+  });
+
+  it("says nothing at all when the node is on screen", () => {
+    const { read } = seed(PLAIN);
+
+    renderNav(read(), "s1");
+
+    expect(screen.queryByTestId("flow-step-element-state")).not.toBeInTheDocument();
+  });
+
+  it("says nothing once the reading moves to a step whose node is there", () => {
+    const { read, gatewayId } = seed({
+      s1: { id: "s1", type: "action", next: "s2", componentId: "GATEWAY" },
+      s2: { id: "s2", type: "action", note: "a remark" },
+    });
+    hideBehindScene(gatewayId);
+
+    renderNav(read(), "s2", ["s1"]);
+
+    expect(screen.queryByTestId("flow-step-element-state")).not.toBeInTheDocument();
+  });
+
+  it("leaves the scene alone: the node is hidden, not removed from the model", () => {
+    const { read, gatewayId, diagramId } = seed(PLAIN);
+    const sceneId = hideBehindScene(gatewayId);
+
+    renderNav(read(), "s1");
+
+    const diagram = useDiagramStore.getState().diagrams[diagramId]!;
+    expect(diagram.snapshot.components[gatewayId]).toBeDefined();
+    expect(diagram.scenes![sceneId]!.removedComponentIds).toContain(gatewayId);
+    expect(read().steps.s1!.componentId).toBe(gatewayId);
+  });
+});

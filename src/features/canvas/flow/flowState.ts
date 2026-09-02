@@ -1,9 +1,10 @@
-import type { Flow, FlowOutlineRow, FlowStep } from "@/features/diagram";
+import type { Diagram, Flow, FlowOutlineRow, FlowStep } from "@/features/diagram";
 import {
   getStepById,
   getFlowParticipants,
   getStepCount,
   isConditionStep,
+  resolveSceneSnapshot,
 } from "@/features/diagram";
 
 export interface FlowHighlight {
@@ -209,4 +210,50 @@ export function describeFlowProgress(
   const position = history.length + 1;
   const { count, hasChoice } = stepsAhead(flow, currentStepId);
   return { position, pathTotal: position + count, openEnded: hasChoice, flowTotal };
+}
+
+/**
+ * Why the canvas has nothing to light up for the step being read.
+ *
+ * A scene *hides* base elements rather than deleting them, so a reading that
+ * reaches a step whose node the scene took out of view sees the same blank
+ * canvas it would see for a node that was actually deleted. Only the reading
+ * changes here: nothing decides anything about the scene, it just says which
+ * of the two happened.
+ */
+export type StepElementState =
+  | { kind: "present" }
+  | { kind: "hidden"; sceneName: string }
+  | { kind: "elsewhere"; sceneName: string }
+  | { kind: "gone" };
+
+export function describeStepElement(
+  step: FlowStep | null,
+  diagram: Diagram | null,
+): StepElementState {
+  if (!step || !diagram) return { kind: "present" };
+  const componentId = step.componentId;
+  const connectionId = step.connectionId;
+  const id = componentId ?? connectionId;
+  if (!id) return { kind: "present" };
+
+  const view = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
+  const inView = componentId ? view.components[componentId] : view.connections[connectionId!];
+  if (inView) return { kind: "present" };
+
+  const base = diagram.snapshot;
+  const inBase = componentId ? base.components[componentId] : base.connections[connectionId!];
+  if (inBase) {
+    const active = diagram.activeSceneId ? diagram.scenes?.[diagram.activeSceneId] : undefined;
+    return active ? { kind: "hidden", sceneName: active.name } : { kind: "present" };
+  }
+
+  for (const scene of Object.values(diagram.scenes ?? {})) {
+    const owned = componentId
+      ? scene.addedComponents[componentId]
+      : scene.addedConnections[connectionId!];
+    if (owned) return { kind: "elsewhere", sceneName: scene.name };
+  }
+
+  return { kind: "gone" };
 }

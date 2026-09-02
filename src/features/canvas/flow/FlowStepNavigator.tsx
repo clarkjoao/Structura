@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronUp,
   Check,
+  EyeOff,
 } from "lucide-react";
 import {
   getOrderedStepIds,
@@ -18,7 +19,7 @@ import {
 } from "@/features/diagram";
 import { useTranslation } from "react-i18next";
 import { BRANCH_COLORS } from "./branchColors";
-import { describeFlowProgress } from "./flowState";
+import { describeFlowProgress, describeStepElement } from "./flowState";
 
 interface DotInfo {
   id: string;
@@ -208,6 +209,7 @@ const FlowStepNavigator = ({
     () => describeFlowProgress(flow, currentStepId, history),
     [flow, currentStepId, history],
   );
+  const elementState = useMemo(() => describeStepElement(step, diagram), [step, diagram]);
 
   return (
     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 w-[460px] rounded-xl border border-border bg-card/95 backdrop-blur-sm shadow-2xl">
@@ -356,6 +358,22 @@ const FlowStepNavigator = ({
               <span className="truncate">{candidate.name}</span>
             </button>
           ))}
+        </div>
+      )}
+
+      {elementState.kind !== "present" && (
+        <div
+          data-testid="flow-step-element-state"
+          className="mx-4 mt-3 flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2"
+        >
+          <EyeOff className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
+          <p className="text-[11px] text-amber-500">
+            {elementState.kind === "hidden"
+              ? t("flowStepNav.elementHidden", { scene: elementState.sceneName })
+              : elementState.kind === "elsewhere"
+                ? t("flowStepNav.elementElsewhere", { scene: elementState.sceneName })
+                : t("flowStepNav.elementGone")}
+          </p>
         </div>
       )}
 
