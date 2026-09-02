@@ -322,3 +322,65 @@ describe("the selection a recording leaves behind ends with it", () => {
     expect(api.isRecording).toBe(false);
   });
 });
+
+describe("leaving the reading leaves no selection behind either", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
+    useCanvasSelectionStore.getState().clearSelection();
+  });
+
+  /** A one-step flow in the store, plus a node selected before reading starts. */
+  function readableFlow() {
+    const store = useDiagramStore.getState();
+    const diagram = store.addDiagram("Reading", "context");
+    store.openDiagram(diagram.id);
+    const node = useDiagramStore.getState().addComponent("system", "A", null, { x: 0, y: 0 }).id;
+    const flow = useDiagramStore.getState().addFlow(diagram.id, "R", "")!;
+    useDiagramStore.getState().updateFlow(flow.id, {
+      steps: { p1: { id: "p1", type: "action", componentId: node } },
+      entryStepId: "p1",
+    });
+    return useDiagramStore.getState().diagrams[diagram.id]!.snapshot.flows[flow.id]!;
+  }
+
+  it("does not touch a selection the reader already had", () => {
+    // `play` is a mode transition, not a selection gesture: it leaves the
+    // selection exactly as it found it. What stops that selection from dimming
+    // the canvas mid-reading is the precedence rule, not a clear here.
+    mountRecorder();
+    const flow = readableFlow();
+    const loose = useDiagramStore.getState().addComponent("system", "B", null, { x: 1, y: 0 }).id;
+    useCanvasSelectionStore.getState().setSelectedNodeId(loose);
+    useCanvasSelectionStore.getState().setSelectedNodeIds(new Set([loose]));
+
+    act(() => api.play(flow));
+
+    expect(useCanvasSelectionStore.getState().selectedNodeId).toBe(loose);
+    expect(api.isPlaying).toBe(true);
+  });
+
+  it("leaves none behind when the reading is left with none open", () => {
+    mountRecorder();
+    const flow = readableFlow();
+    act(() => api.play(flow));
+
+    act(() => api.exitPlay());
+
+    expect(useCanvasSelectionStore.getState().selectedNodeId).toBeNull();
+    expect([...useCanvasSelectionStore.getState().selectedNodeIds]).toEqual([]);
+    expect(api.isPlaying).toBe(false);
+  });
+
+  it("gives a pre-existing selection back when the reading ends", () => {
+    mountRecorder();
+    const flow = readableFlow();
+    const loose = useDiagramStore.getState().addComponent("system", "B", null, { x: 1, y: 0 }).id;
+    useCanvasSelectionStore.getState().setSelectedNodeId(loose);
+    useCanvasSelectionStore.getState().setSelectedNodeIds(new Set([loose]));
+    act(() => api.play(flow));
+
+    act(() => api.exitPlay());
+
+    expect(useCanvasSelectionStore.getState().selectedNodeId).toBe(loose);
+  });
+});

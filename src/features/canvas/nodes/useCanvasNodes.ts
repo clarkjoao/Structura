@@ -20,9 +20,13 @@ import {
 } from "@/features/diagram";
 import { resolveNodeDescriptor, type NodeBuildContext } from "./node-types";
 import { useFlowMode } from "../flow/FlowModeContext";
-import { buildCollapsedPanelIds, computeNodeVisibility } from "./nodeVisibility";
+import {
+  buildCollapsedPanelIds,
+  computeNodeVisibility,
+  selectionDimOpacity,
+} from "./nodeVisibility";
 import type { FlowHighlight, FlowBadges, CoverageInfo } from "../flow/flowState";
-import { OPACITY_FLOW_PLAYBACK_NODE_DIM, OPACITY_TAG_FILTER_DIM, OPACITY_TAG_FILTER_TRANSITION } from "../canvas.constants";
+import { OPACITY_TAG_FILTER_DIM, OPACITY_TAG_FILTER_TRANSITION } from "../canvas.constants";
 import { getPendingNodeIds, useLLMStore } from "@/features/llm";
 import { useStableSetByContent } from "../hooks/useStableSetByContent";
 
@@ -213,10 +217,7 @@ export function useCanvasNodes({
   const stableHighlightedNodeIds = useStableSetByContent(highlightedNodeIds);
 
   // Derive only what the descriptors need — avoids flows array identity changing on every render.
-  const flowsForDescriptor = useMemo(
-    () => flows.map((f) => ({ id: f.id, name: f.name })),
-    [flows],
-  );
+  const flowsForDescriptor = useMemo(() => flows.map((f) => ({ id: f.id, name: f.name })), [flows]);
 
   const callbacksRef = useRef({
     handleDrillDown,
@@ -400,9 +401,10 @@ export function useCanvasNodes({
           nodeCtxPlayback.coverage,
           dataCtx.resolvedComponents,
         );
+        const selectionDim = selectionDimOpacity(vis, ctx.isPlaying || ctx.isRecording);
         const style: Record<string, unknown> = {
           ...d.buildStyle?.(comp, ctx),
-          ...(vis.dimmed ? { opacity: OPACITY_FLOW_PLAYBACK_NODE_DIM } : {}),
+          ...(selectionDim !== undefined ? { opacity: selectionDim } : {}),
         };
         const cmpVis = compareVisual?.[comp.id];
         if (cmpVis !== undefined) {
@@ -463,10 +465,7 @@ export function useCanvasNodes({
             !sceneLocksBase &&
             !isCmp &&
             !tagFilteredHidden,
-          selectable:
-            (d.selectable ?? !lockedInGroup) &&
-            !isCmp &&
-            !tagFilteredHidden,
+          selectable: (d.selectable ?? !lockedInGroup) && !isCmp && !tagFilteredHidden,
           focusable: (d.focusable ?? !lockedInGroup) && !isCmp && !tagFilteredHidden,
           className: nodeClassNames || undefined,
           ...(d.dragHandle ? { dragHandle: d.dragHandle } : {}),
