@@ -1,5 +1,11 @@
-import type { Flow, FlowOutlineRow, FlowStep } from "@/features/diagram";
-import { getStepById, getFlowParticipants } from "@/features/diagram";
+import type { Diagram, Flow, FlowOutlineRow, FlowStep } from "@/features/diagram";
+import {
+  getStepById,
+  getFlowParticipants,
+  getStepCount,
+  isConditionStep,
+  resolveSceneSnapshot,
+} from "@/features/diagram";
 
 export interface FlowHighlight {
   activeNodeId: string | null;
@@ -123,4 +129,131 @@ export function buildFlowBadges(flow: Flow, rows: readonly FlowOutlineRow[]): Fl
     lastEdgeId: lastStep?.connectionId ?? null,
     lastHandleId: lastStep?.handleId ?? null,
   };
+}
+
+export interface FlowProgress {
+  /** Steps walked so far, counting the one on screen. */
+  position: number;
+  /** How long this reading will be if it runs on from here. */
+  pathTotal: number;
+  /** A choice still lies ahead, so `pathTotal` is a floor rather than the answer. */
+  openEnded: boolean;
+  /** Every step the script holds, whichever way a reading goes. */
+  flowTotal: number;
+}
+
+/**
+ * The shortest number of steps still ahead, and whether a choice is among them.
+ *
+ * Shortest, because at a branch nobody knows yet which way the reader will go:
+ * a floor is honest where a guess is not, and `openEnded` says a floor is what
+ * it is. Successors are followed breadth-first through the graph with the path
+ * so far guarding against a cycle.
+ */
+function stepsAhead(flow: Flow, fromId: string): { count: number; hasChoice: boolean } {
+  const memo = new Map<string, number>();
+  let hasChoice = false;
+
+  const walk = (id: string, onPath: Set<string>): number => {
+    if (onPath.has(id)) return Number.POSITIVE_INFINITY;
+    const cached = memo.get(id);
+    if (cached !== undefined) return cached;
+
+    const step = flow.steps[id];
+    if (!step) return 0;
+    if (isConditionStep(step)) hasChoice = true;
+
+    const successors = step.branches?.length
+      ? step.branches.map((branch) => branch.nextId)
+      : step.next
+        ? [step.next]
+        : [];
+
+    let best = 0;
+    if (successors.length > 0) {
+      onPath.add(id);
+      best = Number.POSITIVE_INFINITY;
+      for (const nextId of successors) {
+        const ahead = walk(nextId, onPath);
+        if (ahead + 1 < best) best = ahead + 1;
+      }
+      onPath.delete(id);
+      if (!Number.isFinite(best)) best = 0;
+    }
+
+    memo.set(id, best);
+    return best;
+  };
+
+  return { count: walk(fromId, new Set<string>()), hasChoice };
+}
+
+/**
+ * Where the reader is, counted along the path they actually walked.
+ *
+ * The denominator used to be every step the script holds, so a reading that
+ * took a branch ended short of it — "4 / 5", as if a step had been skipped —
+ * and could even overshoot on the way, because the numerator was the step's
+ * position in a depth-first listing rather than in the reading. Both numbers
+ * now describe the path; the script's own total goes alongside, and in a flow
+ * with no branches the two are the same number and nothing looks different.
+ */
+export function describeFlowProgress(
+  flow: Flow,
+  currentStepId: string | null,
+  history: readonly string[],
+): FlowProgress {
+  const flowTotal = getStepCount(flow);
+  if (!currentStepId || !flow.steps[currentStepId]) {
+    return { position: 0, pathTotal: flowTotal, openEnded: false, flowTotal };
+  }
+  const position = history.length + 1;
+  const { count, hasChoice } = stepsAhead(flow, currentStepId);
+  return { position, pathTotal: position + count, openEnded: hasChoice, flowTotal };
+}
+
+/**
+ * Why the canvas has nothing to light up for the step being read.
+ *
+ * A scene *hides* base elements rather than deleting them, so a reading that
+ * reaches a step whose node the scene took out of view sees the same blank
+ * canvas it would see for a node that was actually deleted. Only the reading
+ * changes here: nothing decides anything about the scene, it just says which
+ * of the two happened.
+ */
+export type StepElementState =
+  | { kind: "present" }
+  | { kind: "hidden"; sceneName: string }
+  | { kind: "elsewhere"; sceneName: string }
+  | { kind: "gone" };
+
+export function describeStepElement(
+  step: FlowStep | null,
+  diagram: Diagram | null,
+): StepElementState {
+  if (!step || !diagram) return { kind: "present" };
+  const componentId = step.componentId;
+  const connectionId = step.connectionId;
+  const id = componentId ?? connectionId;
+  if (!id) return { kind: "present" };
+
+  const view = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
+  const inView = componentId ? view.components[componentId] : view.connections[connectionId!];
+  if (inView) return { kind: "present" };
+
+  const base = diagram.snapshot;
+  const inBase = componentId ? base.components[componentId] : base.connections[connectionId!];
+  if (inBase) {
+    const active = diagram.activeSceneId ? diagram.scenes?.[diagram.activeSceneId] : undefined;
+    return active ? { kind: "hidden", sceneName: active.name } : { kind: "present" };
+  }
+
+  for (const scene of Object.values(diagram.scenes ?? {})) {
+    const owned = componentId
+      ? scene.addedComponents[componentId]
+      : scene.addedConnections[connectionId!];
+    if (owned) return { kind: "elsewhere", sceneName: scene.name };
+  }
+
+  return { kind: "gone" };
 }

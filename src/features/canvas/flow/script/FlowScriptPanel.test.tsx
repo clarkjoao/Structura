@@ -221,3 +221,90 @@ describe("the script row and the canvas share one selection", () => {
     expect(useCanvasSelectionStore.getState().selectedNodeId).toBe(nodes.n1);
   });
 });
+
+describe("a step carries a title and a note the author writes", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
+    vi.mocked(toast.warning).mockClear();
+    useFlowViewStore.setState({ scriptFlowId: null, selectedStepId: null });
+    useCanvasSelectionStore.getState().clearSelection();
+  });
+
+  /** Rows open on click; the title and note editors live inside the open row. */
+  function openRow(container: HTMLElement, stepId: string) {
+    fireEvent.click(container.querySelector(`[data-step-id="${stepId}"] > div`) as HTMLElement);
+  }
+
+  it("writes a title onto the step", () => {
+    const { read } = seedFlow(CHAIN, "s1");
+    const { container } = renderPanel(read);
+    openRow(container, "s1");
+
+    fireEvent.change(screen.getByPlaceholderText("Step title (optional)"), {
+      target: { value: "Client asks for a short link" },
+    });
+
+    expect(read().steps.s1!.title).toBe("Client asks for a short link");
+  });
+
+  it("writes a note onto the step", () => {
+    const { read } = seedFlow(CHAIN, "s1");
+    const { container } = renderPanel(read);
+    openRow(container, "s1");
+
+    fireEvent.change(screen.getByPlaceholderText("Note for the reader (optional)"), {
+      target: { value: "Only the happy path." },
+    });
+
+    expect(read().steps.s1!.note).toBe("Only the happy path.");
+  });
+
+  it("keeps the title and the note apart", () => {
+    const { read } = seedFlow(CHAIN, "s1");
+    const { container } = renderPanel(read);
+    openRow(container, "s1");
+
+    fireEvent.change(screen.getByPlaceholderText("Step title (optional)"), {
+      target: { value: "A title" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Note for the reader (optional)"), {
+      target: { value: "A note" },
+    });
+
+    expect([read().steps.s1!.title, read().steps.s1!.note]).toEqual(["A title", "A note"]);
+    expect(read().steps.s1!.description).toBeUndefined();
+  });
+
+  it("drops the field when the author clears it, rather than storing an empty string", () => {
+    const { read } = seedFlow(CHAIN, "s1");
+    const { container } = renderPanel(read);
+    openRow(container, "s1");
+    const input = screen.getByPlaceholderText("Step title (optional)");
+
+    fireEvent.change(input, { target: { value: "Something" } });
+    fireEvent.change(input, { target: { value: "" } });
+
+    expect(read().steps.s1!.title).toBeUndefined();
+  });
+
+  it("shows what the step already had, so an edit does not start from blank", () => {
+    const { read } = seedFlow(
+      () => [{ id: "s1", type: "action", componentId: "n1", title: "Kept", note: "Also kept" }],
+      "s1",
+    );
+    const { container } = renderPanel(read);
+    openRow(container, "s1");
+
+    expect(screen.getByPlaceholderText("Step title (optional)")).toHaveValue("Kept");
+    expect(screen.getByPlaceholderText("Note for the reader (optional)")).toHaveValue("Also kept");
+  });
+
+  it("offers neither editor on a condition, which carries its own label", () => {
+    const { read } = seedFlow(BRANCHED, "s1");
+    const { container } = renderPanel(read);
+    openRow(container, "c");
+
+    expect(screen.queryByPlaceholderText("Step title (optional)")).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Condition label")).toBeInTheDocument();
+  });
+});

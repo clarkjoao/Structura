@@ -7,6 +7,8 @@ import {
   Clock,
   ChevronDown,
   ChevronUp,
+  Check,
+  EyeOff,
 } from "lucide-react";
 import {
   getOrderedStepIds,
@@ -17,6 +19,7 @@ import {
 } from "@/features/diagram";
 import { useTranslation } from "react-i18next";
 import { BRANCH_COLORS } from "./branchColors";
+import { describeFlowProgress, describeStepElement } from "./flowState";
 
 interface DotInfo {
   id: string;
@@ -98,6 +101,17 @@ interface Props {
   flow: Flow;
   currentStepId: string | null;
   currentStep: FlowStep | null;
+  /** The steps already walked, in order — the reading, not the script. */
+  history: readonly string[];
+  /**
+   * Every script on the diagram, so the reader can move to another one.
+   *
+   * The diagram is the thing being read; a script is one route through it, and
+   * with three of them the likeliest next gesture is to read a different one.
+   * Leaving the reading first was the only way to do that.
+   */
+  flows: readonly Flow[];
+  onSelectFlow: (flowId: string) => void;
   isCondition: boolean;
   canGoBack: boolean;
   canGoForward: boolean;
@@ -111,6 +125,9 @@ const FlowStepNavigator = ({
   flow,
   currentStepId,
   currentStep,
+  history,
+  flows,
+  onSelectFlow,
   isCondition,
   canGoBack,
   canGoForward,
@@ -123,6 +140,8 @@ const FlowStepNavigator = ({
   const diagram = useActiveDiagram();
   const step = currentStep;
   const [showPayload, setShowPayload] = useState(false);
+  const [showFlowList, setShowFlowList] = useState(false);
+  const canSwitch = flows.length > 1;
 
   const stepTitles = useMemo(() => {
     const titles = new Map<string, string>();
@@ -141,6 +160,12 @@ const FlowStepNavigator = ({
 
     Object.values(flow.steps).forEach((flowStep, index) => {
       const prefix = `${index + 1}. `;
+      // The author's own heading wins: it is the one thing on the step written
+      // for a reader rather than derived from what the step points at.
+      if (flowStep.title?.trim()) {
+        titles.set(flowStep.id, `${prefix}${flowStep.title}`);
+        return;
+      }
       if (flowStep.componentId) {
         const component = components[flowStep.componentId];
         titles.set(
@@ -180,6 +205,11 @@ const FlowStepNavigator = ({
   const dotInfos = useMemo(() => buildDotInfos(flow, stepTitles), [flow, stepTitles]);
   const total = dotInfos.length;
   const currentIndex = currentStepId ? dotInfos.findIndex((dot) => dot.id === currentStepId) : -1;
+  const progress = useMemo(
+    () => describeFlowProgress(flow, currentStepId, history),
+    [flow, currentStepId, history],
+  );
+  const elementState = useMemo(() => describeStepElement(step, diagram), [step, diagram]);
 
   return (
     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 w-[460px] rounded-xl border border-border bg-card/95 backdrop-blur-sm shadow-2xl">
@@ -259,15 +289,35 @@ const FlowStepNavigator = ({
             <ChevronLeft className="h-4 w-4" />
           </button>
           <div className="min-w-0 flex items-center gap-1.5">
-            <span className="text-xs font-semibold text-foreground truncate">{flow.name}</span>
+            {canSwitch ? (
+              <button
+                type="button"
+                onClick={() => setShowFlowList((open) => !open)}
+                title={t("flowStepNav.switchFlow")}
+                className="flex min-w-0 items-center gap-1 rounded-md px-1 py-0.5 text-xs font-semibold text-foreground transition-colors hover:bg-secondary"
+              >
+                <span className="truncate">{flow.name}</span>
+                <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
+              </button>
+            ) : (
+              <span className="text-xs font-semibold text-foreground truncate">{flow.name}</span>
+            )}
             {flow.description && (
               <span className="text-[10px] text-muted-foreground italic truncate hidden sm:inline">
                 {t("flowStepNav.inlineDescription", { text: flow.description })}
               </span>
             )}
           </div>
-          <span className="text-[10px] font-mono text-muted-foreground shrink-0">
-            {currentIndex >= 0 ? currentIndex + 1 : "—"} / {total}
+          <span
+            data-testid="flow-progress"
+            title={t("flowStepNav.progressTitle", { count: progress.flowTotal })}
+            className="text-[10px] font-mono text-muted-foreground shrink-0"
+          >
+            {progress.position > 0 ? progress.position : "—"} / {progress.pathTotal}
+            {progress.openEnded ? "+" : ""}
+            {progress.pathTotal !== progress.flowTotal && (
+              <span className="opacity-60"> · {progress.flowTotal}</span>
+            )}
           </span>
           {!isCondition && (
             <button
@@ -287,6 +337,53 @@ const FlowStepNavigator = ({
           <X className="h-4 w-4" />
         </button>
       </div>
+
+      {showFlowList && canSwitch && (
+        <div data-testid="flow-switcher" className="border-b border-border px-2 py-1.5">
+          {flows.map((candidate) => (
+            <button
+              type="button"
+              key={candidate.id}
+              onClick={() => {
+                setShowFlowList(false);
+                onSelectFlow(candidate.id);
+              }}
+              className={`flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-secondary ${
+                candidate.id === flow.id ? "text-primary" : "text-foreground"
+              }`}
+            >
+              <Check
+                className={`h-3 w-3 shrink-0 ${candidate.id === flow.id ? "" : "opacity-0"}`}
+              />
+              <span className="truncate">{candidate.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {elementState.kind !== "present" && (
+        <div
+          data-testid="flow-step-element-state"
+          className="mx-4 mt-3 flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2"
+        >
+          <EyeOff className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
+          <p className="text-[11px] text-amber-500">
+            {elementState.kind === "hidden"
+              ? t("flowStepNav.elementHidden", { scene: elementState.sceneName })
+              : elementState.kind === "elsewhere"
+                ? t("flowStepNav.elementElsewhere", { scene: elementState.sceneName })
+                : t("flowStepNav.elementGone")}
+          </p>
+        </div>
+      )}
+
+      {step?.title?.trim() && (
+        <div className="px-4 pt-3">
+          <p data-testid="flow-step-title" className="text-sm font-semibold leading-snug">
+            {step.title}
+          </p>
+        </div>
+      )}
 
       {isCondition && step?.branches && (
         <div className="px-4 py-3">

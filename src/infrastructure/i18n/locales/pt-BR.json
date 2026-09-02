@@ -1336,6 +1336,8 @@
     "async": "async",
     "removeStep": "Remover passo",
     "addStepAfter": "Adicionar passo depois deste",
+    "titlePlaceholder": "Título do passo (opcional)",
+    "notePlaceholder": "Nota para quem lê (opcional)",
     "descriptionPlaceholder": "Descrição do passo...",
     "durationPlaceholder": "~200ms, async...",
     "payloadPlaceholder": "Payload...",
@@ -1405,6 +1407,12 @@
     "cancel": "Cancelar"
   },
   "flowStepNav": {
+    "progressTitle_one": "{{count}} passo no roteiro",
+    "progressTitle_other": "{{count}} passos no roteiro",
+    "switchFlow": "Ler outro roteiro",
+    "elementHidden": "Este passo aponta para um elemento que a cena “{{scene}}” está escondendo, então o canvas não tem o que mostrar.",
+    "elementElsewhere": "Este passo aponta para um elemento que só existe na cena “{{scene}}”.",
+    "elementGone": "Este passo aponta para um elemento que o diagrama não tem mais.",
     "exitTitle": "Sair do flow",
     "request": "→ Request",
     "response": "← Response",

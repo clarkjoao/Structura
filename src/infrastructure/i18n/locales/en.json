@@ -1336,6 +1336,8 @@
     "async": "async",
     "removeStep": "Remove step",
     "addStepAfter": "Add a step after this one",
+    "titlePlaceholder": "Step title (optional)",
+    "notePlaceholder": "Note for the reader (optional)",
     "descriptionPlaceholder": "Step description...",
     "durationPlaceholder": "~200ms, async...",
     "payloadPlaceholder": "Payload...",
@@ -1405,6 +1407,12 @@
     "cancel": "Cancel"
   },
   "flowStepNav": {
+    "progressTitle_one": "{{count}} step in the script",
+    "progressTitle_other": "{{count}} steps in the script",
+    "switchFlow": "Read another script",
+    "elementHidden": "This step points at an element the scene “{{scene}}” is hiding, so the canvas has nothing to show for it.",
+    "elementElsewhere": "This step points at an element that only exists in the scene “{{scene}}”.",
+    "elementGone": "This step points at an element the diagram no longer has.",
     "exitTitle": "Exit flow",
     "request": "→ Request",
     "response": "← Response",
