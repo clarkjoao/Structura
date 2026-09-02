@@ -7,6 +7,7 @@ import type { FlowMode, FlowModeState } from "./flowMode.types";
 export type FlowModePlaybackSlice = Pick<
   FlowModeState,
   | "play"
+  | "switchFlow"
   | "exitPlay"
   | "goNext"
   | "goBack"
@@ -25,6 +26,25 @@ export function useFlowModePlayback(
     (flow: Flow) => {
       setMode((prevMode) => {
         if (prevMode.kind !== "idle") return prevMode;
+        const entry = getEntryStep(flow);
+        return { kind: "playing", flow, currentStepId: entry?.id ?? null, history: [] };
+      });
+    },
+    [setMode],
+  );
+
+  /**
+   * Reads another script from its first step.
+   *
+   * One transition rather than an exit and a fresh play, so the reading never
+   * passes through idle: the canvas would drop its highlight and the panels
+   * would flicker back for a frame in between.
+   */
+  const switchFlow = useCallback(
+    (flow: Flow) => {
+      setMode((prevMode) => {
+        if (prevMode.kind !== "playing") return prevMode;
+        if (prevMode.flow.id === flow.id) return prevMode;
         const entry = getEntryStep(flow);
         return { kind: "playing", flow, currentStepId: entry?.id ?? null, history: [] };
       });
@@ -90,6 +110,7 @@ export function useFlowModePlayback(
   return useMemo(
     () => ({
       play,
+      switchFlow,
       exitPlay,
       goNext,
       goBack,
@@ -101,6 +122,7 @@ export function useFlowModePlayback(
     }),
     [
       play,
+      switchFlow,
       exitPlay,
       goNext,
       goBack,

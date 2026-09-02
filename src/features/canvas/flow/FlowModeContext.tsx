@@ -12,6 +12,7 @@ function createDefaultFlowModeState(): FlowModeState {
     isPlaying: false,
     isRecording: false,
     play: noop,
+    switchFlow: noop,
     exitPlay: noop,
     goNext: noop,
     goBack: noop,

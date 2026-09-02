@@ -101,6 +101,7 @@ export function WorkspaceContent({
     canGoBack,
     canGoForward,
     play,
+    switchFlow,
     exitPlay,
     goBack,
     goNext,
@@ -399,6 +400,11 @@ export function WorkspaceContent({
                   currentStepId={currentStepId}
                   currentStep={currentStep}
                   history={playbackState?.history ?? EMPTY_HISTORY}
+                  flows={flows}
+                  onSelectFlow={(flowId) => {
+                    const target = flows.find((candidate) => candidate.id === flowId);
+                    if (target) switchFlow(target);
+                  }}
                   isCondition={isCondition}
                   canGoBack={canGoBack}
                   canGoForward={canGoForward}

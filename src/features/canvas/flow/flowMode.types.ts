@@ -51,6 +51,8 @@ export interface FlowModeState {
   isRecording: boolean;
 
   play: (flow: Flow) => void;
+  /** Reads a different script without leaving the reading. */
+  switchFlow: (flow: Flow) => void;
   exitPlay: () => void;
   goNext: () => void;
   goBack: () => void;

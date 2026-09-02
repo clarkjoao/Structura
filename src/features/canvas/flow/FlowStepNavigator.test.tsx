@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import i18n from "@/infrastructure/i18n";
 import type { Flow, FlowStep } from "@/features/diagram";
 import { useDiagramStore, isConditionStep } from "@/features/diagram";
@@ -31,7 +31,12 @@ function seed(steps: Record<string, FlowStep>, entryStepId = "s1") {
   return { read, diagramId: diagram.id, gatewayId: gateway.id };
 }
 
-function renderNav(flow: Flow, currentStepId: string, history: string[] = []) {
+function renderNav(
+  flow: Flow,
+  currentStepId: string,
+  history: string[] = [],
+  extra: { flows?: Flow[]; onSelectFlow?: (id: string) => void } = {},
+) {
   const step = flow.steps[currentStepId] ?? null;
   return render(
     <FlowStepNavigator
@@ -39,6 +44,8 @@ function renderNav(flow: Flow, currentStepId: string, history: string[] = []) {
       currentStepId={currentStepId}
       currentStep={step}
       history={history}
+      flows={extra.flows ?? [flow]}
+      onSelectFlow={extra.onSelectFlow ?? vi.fn()}
       isCondition={step ? isConditionStep(step) : false}
       canGoBack={false}
       canGoForward={Boolean(step?.next)}
@@ -257,5 +264,89 @@ describe("the counter is about the reading, not the script", () => {
     renderNav(read(), "nowhere", []);
 
     expect(progress()).toBe("— / 2");
+  });
+});
+
+describe("the reader can move to another script without leaving the reading", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
+  });
+
+  function twoFlows() {
+    const { read } = seed(PLAIN);
+    const other: Flow = {
+      id: "flow-refund",
+      name: "Refund",
+      mermaid: "",
+      diagramId: "d1",
+      entryStepId: "r1",
+      steps: { r1: { id: "r1", type: "action" } },
+    };
+    return { read, other };
+  }
+
+  it("offers the other scripts by name", () => {
+    const { read, other } = twoFlows();
+    renderNav(read(), "s1", [], { flows: [read(), other] });
+
+    fireEvent.click(screen.getByTitle("Read another script"));
+
+    expect(screen.getByTestId("flow-switcher")).toHaveTextContent("Refund");
+    expect(screen.getByTestId("flow-switcher")).toHaveTextContent("Checkout");
+  });
+
+  it("hands back the script the reader picked", () => {
+    const { read, other } = twoFlows();
+    const onSelectFlow = vi.fn();
+    renderNav(read(), "s1", [], { flows: [read(), other], onSelectFlow });
+
+    fireEvent.click(screen.getByTitle("Read another script"));
+    fireEvent.click(screen.getByRole("button", { name: "Refund" }));
+
+    expect(onSelectFlow).toHaveBeenCalledWith("flow-refund");
+  });
+
+  it("closes the list once a script is picked", () => {
+    const { read, other } = twoFlows();
+    renderNav(read(), "s1", [], { flows: [read(), other] });
+
+    fireEvent.click(screen.getByTitle("Read another script"));
+    fireEvent.click(screen.getByRole("button", { name: "Refund" }));
+
+    expect(screen.queryByTestId("flow-switcher")).not.toBeInTheDocument();
+  });
+
+  it("keeps the list shut until it is asked for", () => {
+    const { read, other } = twoFlows();
+    renderNav(read(), "s1", [], { flows: [read(), other] });
+
+    expect(screen.queryByTestId("flow-switcher")).not.toBeInTheDocument();
+  });
+
+  it("offers nothing to switch to when the diagram has one script", () => {
+    const { read } = twoFlows();
+    renderNav(read(), "s1", [], { flows: [read()] });
+
+    expect(screen.queryByTitle("Read another script")).not.toBeInTheDocument();
+  });
+
+  it("still names the script being read when there is nothing to switch to", () => {
+    const { read } = twoFlows();
+    renderNav(read(), "s1", [], { flows: [read()] });
+
+    expect(screen.getByText("Checkout")).toBeInTheDocument();
+  });
+
+  it("marks which one is being read", () => {
+    const { read, other } = twoFlows();
+    const { container } = renderNav(read(), "s1", [], { flows: [read(), other] });
+
+    fireEvent.click(screen.getByTitle("Read another script"));
+
+    const rows = [...container.querySelectorAll('[data-testid="flow-switcher"] button')];
+    const checked = rows.filter(
+      (row) => !row.querySelector("svg")?.classList.contains("opacity-0"),
+    );
+    expect(checked.map((row) => row.textContent?.trim())).toEqual(["Checkout"]);
   });
 });

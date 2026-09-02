@@ -1409,6 +1409,7 @@
   "flowStepNav": {
     "progressTitle_one": "{{count}} step in the script",
     "progressTitle_other": "{{count}} steps in the script",
+    "switchFlow": "Read another script",
     "exitTitle": "Exit flow",
     "request": "→ Request",
     "response": "← Response",

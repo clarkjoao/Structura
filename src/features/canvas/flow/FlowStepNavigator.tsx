@@ -7,6 +7,7 @@ import {
   Clock,
   ChevronDown,
   ChevronUp,
+  Check,
 } from "lucide-react";
 import {
   getOrderedStepIds,
@@ -101,6 +102,15 @@ interface Props {
   currentStep: FlowStep | null;
   /** The steps already walked, in order — the reading, not the script. */
   history: readonly string[];
+  /**
+   * Every script on the diagram, so the reader can move to another one.
+   *
+   * The diagram is the thing being read; a script is one route through it, and
+   * with three of them the likeliest next gesture is to read a different one.
+   * Leaving the reading first was the only way to do that.
+   */
+  flows: readonly Flow[];
+  onSelectFlow: (flowId: string) => void;
   isCondition: boolean;
   canGoBack: boolean;
   canGoForward: boolean;
@@ -115,6 +125,8 @@ const FlowStepNavigator = ({
   currentStepId,
   currentStep,
   history,
+  flows,
+  onSelectFlow,
   isCondition,
   canGoBack,
   canGoForward,
@@ -127,6 +139,8 @@ const FlowStepNavigator = ({
   const diagram = useActiveDiagram();
   const step = currentStep;
   const [showPayload, setShowPayload] = useState(false);
+  const [showFlowList, setShowFlowList] = useState(false);
+  const canSwitch = flows.length > 1;
 
   const stepTitles = useMemo(() => {
     const titles = new Map<string, string>();
@@ -273,7 +287,19 @@ const FlowStepNavigator = ({
             <ChevronLeft className="h-4 w-4" />
           </button>
           <div className="min-w-0 flex items-center gap-1.5">
-            <span className="text-xs font-semibold text-foreground truncate">{flow.name}</span>
+            {canSwitch ? (
+              <button
+                type="button"
+                onClick={() => setShowFlowList((open) => !open)}
+                title={t("flowStepNav.switchFlow")}
+                className="flex min-w-0 items-center gap-1 rounded-md px-1 py-0.5 text-xs font-semibold text-foreground transition-colors hover:bg-secondary"
+              >
+                <span className="truncate">{flow.name}</span>
+                <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
+              </button>
+            ) : (
+              <span className="text-xs font-semibold text-foreground truncate">{flow.name}</span>
+            )}
             {flow.description && (
               <span className="text-[10px] text-muted-foreground italic truncate hidden sm:inline">
                 {t("flowStepNav.inlineDescription", { text: flow.description })}
@@ -309,6 +335,29 @@ const FlowStepNavigator = ({
           <X className="h-4 w-4" />
         </button>
       </div>
+
+      {showFlowList && canSwitch && (
+        <div data-testid="flow-switcher" className="border-b border-border px-2 py-1.5">
+          {flows.map((candidate) => (
+            <button
+              type="button"
+              key={candidate.id}
+              onClick={() => {
+                setShowFlowList(false);
+                onSelectFlow(candidate.id);
+              }}
+              className={`flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-secondary ${
+                candidate.id === flow.id ? "text-primary" : "text-foreground"
+              }`}
+            >
+              <Check
+                className={`h-3 w-3 shrink-0 ${candidate.id === flow.id ? "" : "opacity-0"}`}
+              />
+              <span className="truncate">{candidate.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {step?.title?.trim() && (
         <div className="px-4 pt-3">
