@@ -9,21 +9,14 @@ import {
   isC4Component,
   type Component,
 } from "@/features/diagram";
-import { OPACITY_FLOW_PLAYBACK_PARTICIPANT } from "../../canvas.constants";
-
-const C4_FLOW_PLAYBACK_DIM_OPACITY = 0.25;
+import { flowPlaybackOpacity } from "../../flow/flowState";
 
 const C4_RECORDING_DIM_OPACITY = 0.35;
 
 export function buildC4Style(comp: Component, ctx: NodeBuildContext): CSSProperties | undefined {
   if (ctx.isCompareMode) return undefined;
   if (ctx.isPlaying) {
-    const { activeNodeId, visitedNodeIds, participantNodeIds } = ctx.flowHighlight;
-    if (activeNodeId === comp.id) return { opacity: 1, filter: "none" };
-    if (visitedNodeIds.has(comp.id)) return { opacity: 0.85, filter: "none" };
-    if (participantNodeIds.has(comp.id))
-      return { opacity: OPACITY_FLOW_PLAYBACK_PARTICIPANT, filter: "none" };
-    return { opacity: C4_FLOW_PLAYBACK_DIM_OPACITY, filter: "none" };
+    return { opacity: flowPlaybackOpacity(comp.id, ctx.flowHighlight), filter: "none" };
   }
   if (ctx.isRecording) {
     return {

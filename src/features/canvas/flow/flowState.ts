@@ -1,4 +1,5 @@
 import type { Diagram, Flow, FlowOutlineRow, FlowStep } from "@/features/diagram";
+import { OPACITY_FLOW_PLAYBACK_PARTICIPANT } from "../canvas.constants";
 import {
   getStepById,
   getFlowParticipants,
@@ -73,6 +74,25 @@ export function buildFlowHighlight(
     participantNodeIds,
     participantConnIds,
   };
+}
+
+/**
+ * How prominent a node is while a flow is being read.
+ *
+ * The step in hand is at full strength, the ones already walked stay legible,
+ * the rest of the flow's participants recede, and everything the flow never
+ * touches recedes further. Shared so the editor's canvas and the viewer's
+ * agree on what a reading looks like — they used to be the same four numbers
+ * written twice.
+ */
+export const FLOW_PLAYBACK_DIM_OPACITY = 0.25;
+export const FLOW_PLAYBACK_VISITED_OPACITY = 0.85;
+
+export function flowPlaybackOpacity(componentId: string, highlight: FlowHighlight): number {
+  if (highlight.activeNodeId === componentId) return 1;
+  if (highlight.visitedNodeIds.has(componentId)) return FLOW_PLAYBACK_VISITED_OPACITY;
+  if (highlight.participantNodeIds.has(componentId)) return OPACITY_FLOW_PLAYBACK_PARTICIPANT;
+  return FLOW_PLAYBACK_DIM_OPACITY;
 }
 
 export function buildCoverage(flows: Flow[]): CoverageInfo {
