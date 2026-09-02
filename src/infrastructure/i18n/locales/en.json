@@ -1387,6 +1387,7 @@
     "invalid_input": "This flow is broken. Repair it before editing.",
     "branch_point_move": "A condition moves together with its branches, which is a different gesture from this one.",
     "target_after_branch_point": "There is no place directly after a condition. Drop it inside one of the branches.",
+    "join_broken": "Moving that step there would undo where the branches meet again. Put it somewhere both branches still reach.",
     "unlabeled_cursor": "That branch has no sequence of its own to record into.",
     "invariant_violated": "That change would break the flow: it would leave a loop, or a step nothing reaches.",
     "branch_point_removal": "A condition cannot be removed on its own — its branches would be left hanging. Remove the branches first."

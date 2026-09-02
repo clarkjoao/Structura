@@ -19,6 +19,7 @@ const REFUSAL_KEYS: Record<FlowStoreRefusalCode, string> = {
   invalid_input: "flowRefusal.invalid_input",
   branch_point_move: "flowRefusal.branch_point_move",
   target_after_branch_point: "flowRefusal.target_after_branch_point",
+  join_broken: "flowRefusal.join_broken",
   unlabeled_cursor: "flowRefusal.unlabeled_cursor",
   invariant_violated: "flowRefusal.invariant_violated",
 };

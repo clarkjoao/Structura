@@ -1387,6 +1387,7 @@
     "invalid_input": "Este flow está quebrado. Conserte antes de editar.",
     "branch_point_move": "Uma condição se move junto com os ramos, o que é um gesto diferente deste.",
     "target_after_branch_point": "Não existe lugar logo depois de uma condição. Solte dentro de um dos ramos.",
+    "join_broken": "Mover esse passo para lá desfaria o ponto onde os ramos se reencontram. Deixe-o onde os dois ramos ainda chegam.",
     "unlabeled_cursor": "Esse ramo não tem uma sequência própria para gravar.",
     "invariant_violated": "Essa mudança quebraria o flow: deixaria um laço, ou um passo que ninguém alcança.",
     "branch_point_removal": "Uma condição não pode ser removida sozinha — os ramos ficariam soltos. Remova os ramos primeiro."

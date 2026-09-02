@@ -19,6 +19,7 @@ export type MoveStepRefusalCode =
   | "invalid_input"
   | "branch_point_move"
   | "target_after_branch_point"
+  | "join_broken"
   | "invariant_violated";
 
 export interface MoveStepRefusal {
@@ -42,6 +43,99 @@ function refuse(
   violations?: FlowInvariantViolation[],
 ): MoveStepRefusal {
   return violations ? { ok: false, code, detail, violations } : { ok: false, code, detail };
+}
+
+/** Every step reachable from `startId`, following `next` and every branch. */
+function reachableFrom(flow: Flow, startId: string): Set<string> {
+  const seen = new Set<string>();
+  const stack = [startId];
+  while (stack.length > 0) {
+    const id = stack.pop()!;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const step = flow.steps[id];
+    if (!step) continue;
+    if (step.branches && step.branches.length > 0) {
+      for (const branch of step.branches) stack.push(branch.nextId);
+    } else if (step.next !== undefined) {
+      stack.push(step.next);
+    }
+  }
+  return seen;
+}
+
+/** How many steps point straight at `id`, by `next` or by a branch. */
+function incomingCount(flow: Flow, id: string): number {
+  let count = 0;
+  for (const step of Object.values(flow.steps)) {
+    if (step.next === id) count += 1;
+    for (const branch of step.branches ?? []) {
+      if (branch.nextId === id) count += 1;
+    }
+  }
+  return count;
+}
+
+/**
+ * The branch points that feed `id`, and how many of their branches get there.
+ *
+ * A step is a *join* when two or more branches of the same condition reach it:
+ * that is the reconvergence a reader sees when both answers lead back to the
+ * same place. One branch reaching it is just a step inside a branch.
+ */
+function feedingForks(flow: Flow, id: string): Map<string, number> {
+  const forks = new Map<string, number>();
+  for (const step of Object.values(flow.steps)) {
+    if (!step.branches || step.branches.length === 0) continue;
+    let count = 0;
+    for (const branch of step.branches) {
+      if (reachableFrom(flow, branch.nextId).has(id)) count += 1;
+    }
+    if (count >= 2) forks.set(step.id, count);
+  }
+  return forks;
+}
+
+/**
+ * Whether moving a join has undone the reconvergence.
+ *
+ * Two ways it can, both measured on the graph the move produced:
+ *
+ * - the join now sits *in front of* the branch point that fed it, so the fork
+ *   is reachable from it and no branch can ever arrive;
+ * - the join is still reachable from the fork, but from fewer of its branches
+ *   than before — it has been pulled inside one branch, and the others no
+ *   longer meet there.
+ *
+ * A join that stops being reachable from the fork entirely without the fork
+ * moving behind it is left alone: the branches keep meeting at whatever the
+ * join handed its successor to. That case is deliberately not decided here.
+ */
+function brokenJoinFork(before: Flow, after: Flow, stepId: string): string | null {
+  // A join is a step two or more steps point *at*. Without this, everything
+  // downstream of a reconvergence counts as one too — both branches reach it,
+  // just not directly — and ordinary steps become unmovable.
+  if (incomingCount(before, stepId) < 2) return null;
+  const forksBefore = feedingForks(before, stepId);
+  if (forksBefore.size === 0) return null;
+  const aheadOfMoved = reachableFrom(after, stepId);
+  for (const [forkId, countBefore] of forksBefore) {
+    if (aheadOfMoved.has(forkId)) return forkId;
+    const countAfter = branchesReaching(after, forkId, stepId);
+    if (countAfter >= 1 && countAfter < countBefore) return forkId;
+  }
+  return null;
+}
+
+/** How many of `forkId`'s branches reach `id` in `flow`. */
+function branchesReaching(flow: Flow, forkId: string, id: string): number {
+  const fork = flow.steps[forkId];
+  if (!fork?.branches) return 0;
+  let count = 0;
+  for (const branch of fork.branches) {
+    if (reachableFrom(flow, branch.nextId).has(id)) count += 1;
+  }
+  return count;
 }
 
 /**
@@ -180,6 +274,17 @@ export function moveStep(flow: Flow, stepId: string, target: MoveStepTarget): Mo
       "invariant_violated",
       `moving "${stepId}" would break the flow's structural invariants`,
       violations,
+    );
+  }
+
+  // The graph stays valid either way — that is exactly why this has to be
+  // checked separately. `checkFlowInvariants` answers "is this a flow", not
+  // "is this still the flow the author drew".
+  const brokenFork = brokenJoinFork(flow, movedFlow, stepId);
+  if (brokenFork !== null) {
+    return refuse(
+      "join_broken",
+      `step "${stepId}" is where the branches of "${brokenFork}" meet again; moving it there would undo that`,
     );
   }
 

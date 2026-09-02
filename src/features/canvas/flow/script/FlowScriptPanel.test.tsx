@@ -98,6 +98,12 @@ const BRANCHED = (): FlowStep[] => [
   { id: "join", type: "action", description: "notifies" },
 ];
 
+/** The same shape with a plain step after the join, free to be dragged about. */
+const BRANCHED_WITH_TAIL = (): FlowStep[] => [
+  ...BRANCHED().map((step) => (step.id === "join" ? { ...step, next: "tail" } : step)),
+  { id: "tail", type: "action", description: "archives" },
+];
+
 describe("dragging a row moves the step", () => {
   beforeEach(async () => {
     await i18n.changeLanguage("en");
@@ -127,13 +133,40 @@ describe("dragging a row moves the step", () => {
   });
 
   it("drops a step into the branch whose row it lands on", () => {
+    // `tail` is an ordinary step, not the join: dropping it into a branch is
+    // the capability this test is about. The same drag with `join` is refused
+    // now — see "refuses to pull the join into one of its own branches".
+    const { read } = seedFlow(BRANCHED_WITH_TAIL);
+    const { container } = renderPanel(read);
+    dragRow(container, "tail", "a1");
+    const flow = read();
+    expect(flow.steps.c!.branches![0]!.nextId).toBe("tail");
+    expect(flow.steps.tail!.next).toBe("a1");
+    expect(checkFlowInvariants(flow)).toEqual([]);
+  });
+
+  it("refuses to drag the join in front of its branch point, and says why", () => {
     const { read } = seedFlow(BRANCHED);
     const { container } = renderPanel(read);
+    const before = JSON.stringify(read().steps);
+
+    dragRow(container, "join", "s1");
+
+    expect(JSON.stringify(read().steps)).toBe(before);
+    expect(toast.warning).toHaveBeenCalledWith(
+      expect.stringContaining("undo where the branches meet again"),
+    );
+  });
+
+  it("refuses to pull the join into one of its own branches", () => {
+    const { read } = seedFlow(BRANCHED);
+    const { container } = renderPanel(read);
+    const before = JSON.stringify(read().steps);
+
     dragRow(container, "join", "a1");
-    const flow = read();
-    expect(flow.steps.c!.branches![0]!.nextId).toBe("join");
-    expect(flow.steps.join!.next).toBe("a1");
-    expect(checkFlowInvariants(flow)).toEqual([]);
+
+    expect(JSON.stringify(read().steps)).toBe(before);
+    expect(toast.warning).toHaveBeenCalled();
   });
 
   it("refuses to move a condition, and says why", () => {
