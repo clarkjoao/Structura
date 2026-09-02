@@ -8,6 +8,7 @@ import { useActiveDiagramId, useDiagramActions, useDiagramStore } from "@/featur
 import type { FlowMode, RecordingContext } from "./flowMode.types";
 import { recordingCursor } from "./flowMode.types";
 import { useFlowViewStore } from "./useFlowViewStore";
+import { useCanvasSelectionStore } from "../hooks/useCanvasSelectionStore";
 
 export interface FlowRecordingSlice {
   recordingFlowId: string | null;
@@ -30,6 +31,22 @@ const TRUNK: RecordingContext = { mode: "trunk" };
  * nothing else: every click is written straight into the store, so the flow on
  * screen and the flow on disk are the same flow from the first step on.
  */
+
+/**
+ * Clears what the recording left selected on the canvas.
+ *
+ * Every click that records a step also selects the node it landed on, and that
+ * selection outlived the recording: the canvas kept dimming everything else,
+ * because "dim all but the selection" is a live rule and the selection was
+ * still there. Nothing on screen said why, and only a reload cleared it — the
+ * selection is not persisted, which is exactly why undo never helped.
+ *
+ * The selection belongs to the recording, so it ends with it.
+ */
+function clearRecordingSelection(): void {
+  useCanvasSelectionStore.getState().clearSelection();
+}
+
 export function useFlowRecording(
   mode: FlowMode,
   setMode: Dispatch<SetStateAction<FlowMode>>,
@@ -124,6 +141,7 @@ export function useFlowRecording(
     if (!recording) return;
     cancelFlowSession();
     openScript(null);
+    clearRecordingSelection();
     setMode({ kind: "idle" });
   }, [cancelFlowSession, openScript, recording, setMode]);
 
@@ -136,6 +154,7 @@ export function useFlowRecording(
       : undefined;
     if (flow && !flow.name.trim()) updateFlow(recording.flowId, { name: t("flows.unnamed") });
     commitFlowSession();
+    clearRecordingSelection();
     setMode({ kind: "idle" });
   }, [commitFlowSession, recording, setMode, t, updateFlow]);
 

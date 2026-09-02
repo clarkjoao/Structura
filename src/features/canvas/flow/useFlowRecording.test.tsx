@@ -4,6 +4,7 @@ import { act, render } from "@testing-library/react";
 import i18n from "@/infrastructure/i18n";
 import type { Flow } from "@/features/diagram";
 import { checkFlowInvariants, computeFlowStepLabels, useDiagramStore } from "@/features/diagram";
+import { useCanvasSelectionStore } from "../hooks/useCanvasSelectionStore";
 import { FlowModeProvider, useFlowMode } from "./FlowModeContext";
 import type { FlowModeState } from "./flowMode.types";
 
@@ -226,5 +227,98 @@ describe("recording writes into the store as it goes", () => {
 
     act(() => api.cancelRecording());
     expect(JSON.stringify(flows()[existing.id]!.steps)).toBe(before);
+  });
+});
+
+describe("the selection a recording leaves behind ends with it", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
+    useCanvasSelectionStore.getState().clearSelection();
+  });
+
+  /** Records two steps by clicking nodes, the way a person does. */
+  function recordTwo(diagramId: string): { first: string; last: string } {
+    const store = useDiagramStore.getState();
+    const first = store.addComponent("system", "A", null, { x: 0, y: 0 }).id;
+    const last = useDiagramStore.getState().addComponent("system", "B", null, { x: 1, y: 0 }).id;
+    act(() => api.startRecording());
+    // The selection lands first, the way a click on the canvas does it: select
+    // the node, then record the step. Setting it afterwards would hide a clear
+    // that ran inside the recording itself.
+    const clickNode = (id: string) =>
+      act(() => {
+        useCanvasSelectionStore.getState().setSelectedNodeId(id);
+        useCanvasSelectionStore.getState().setSelectedNodeIds(new Set([id]));
+        api.onRecordNodeClick(id);
+      });
+    clickNode(first);
+    clickNode(last);
+    void diagramId;
+    return { first, last };
+  }
+
+  it("clears what was selected when the recording is finalised", () => {
+    const { diagramId } = mountRecorder();
+    const { last } = recordTwo(diagramId);
+    expect(useCanvasSelectionStore.getState().selectedNodeId).toBe(last);
+
+    act(() => api.finalizeRecording());
+
+    expect(useCanvasSelectionStore.getState().selectedNodeId).toBeNull();
+  });
+
+  it("clears it when the recording is cancelled too", () => {
+    const { diagramId } = mountRecorder();
+    const { last } = recordTwo(diagramId);
+    expect(useCanvasSelectionStore.getState().selectedNodeId).toBe(last);
+
+    act(() => api.cancelRecording());
+
+    expect(useCanvasSelectionStore.getState().selectedNodeId).toBeNull();
+  });
+
+  it("clears the whole selection, not just its primary member", () => {
+    const { diagramId } = mountRecorder();
+    recordTwo(diagramId);
+    act(() => useCanvasSelectionStore.getState().setSelectedEdgeId("some-edge"));
+    expect(useCanvasSelectionStore.getState().selectedEdgeId).toBe("some-edge");
+
+    act(() => api.finalizeRecording());
+
+    const selection = useCanvasSelectionStore.getState();
+    expect([...selection.selectedNodeIds]).toEqual([]);
+    expect(selection.selectedEdgeId).toBeNull();
+  });
+
+  it("leaves the selection alone while the recording is still running", () => {
+    const { diagramId } = mountRecorder();
+    const { last } = recordTwo(diagramId);
+
+    expect(useCanvasSelectionStore.getState().selectedNodeId).toBe(last);
+    expect(api.isRecording).toBe(true);
+  });
+
+  it("does not clear a selection made outside any recording", () => {
+    mountRecorder();
+    const loose = useDiagramStore.getState().addComponent("system", "C", null, { x: 2, y: 0 }).id;
+    useCanvasSelectionStore.getState().setSelectedNodeId(loose);
+    useCanvasSelectionStore.getState().setSelectedNodeIds(new Set([loose]));
+
+    // No recording is open, so both exits are no-ops and must stay that way.
+    act(() => api.finalizeRecording());
+    act(() => api.cancelRecording());
+
+    expect(useCanvasSelectionStore.getState().selectedNodeId).toBe(loose);
+  });
+
+  it("still finishes the flow it was recording", () => {
+    const { diagramId, flows } = mountRecorder();
+    recordTwo(diagramId);
+    const flowId = api.recordingFlowId!;
+
+    act(() => api.finalizeRecording());
+
+    expect(Object.keys(flows()[flowId]!.steps)).toHaveLength(2);
+    expect(api.isRecording).toBe(false);
   });
 });
