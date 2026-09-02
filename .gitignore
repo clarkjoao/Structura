@@ -36,8 +36,7 @@ cypress/reports
 
 .ai/
 tasks-ai
-tsconfig.app.tsbuildinfo
-tsconfig.node.tsbuildinfo
+*.tsbuildinfo
 .ds-sync/
 ds-bundle/
 .design-sync/.cache/
