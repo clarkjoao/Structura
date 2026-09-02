@@ -39,6 +39,9 @@ import type { WorkspaceContentProps } from "./types";
 import { getViewportCenter } from "@/features/canvas/viewport-utils";
 import { KEY, keyIs } from "@/lib/keyboard-utils";
 
+/** Stable identity, so the progress memo is not rebuilt on every render. */
+const EMPTY_HISTORY: string[] = [];
+
 function ReactFlowInstanceBridge({
   onReady,
 }: {
@@ -395,6 +398,7 @@ export function WorkspaceContent({
                   flow={activeFlow}
                   currentStepId={currentStepId}
                   currentStep={currentStep}
+                  history={playbackState?.history ?? EMPTY_HISTORY}
                   isCondition={isCondition}
                   canGoBack={canGoBack}
                   canGoForward={canGoForward}

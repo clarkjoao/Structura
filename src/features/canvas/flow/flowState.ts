@@ -1,5 +1,10 @@
 import type { Flow, FlowOutlineRow, FlowStep } from "@/features/diagram";
-import { getStepById, getFlowParticipants } from "@/features/diagram";
+import {
+  getStepById,
+  getFlowParticipants,
+  getStepCount,
+  isConditionStep,
+} from "@/features/diagram";
 
 export interface FlowHighlight {
   activeNodeId: string | null;
@@ -123,4 +128,85 @@ export function buildFlowBadges(flow: Flow, rows: readonly FlowOutlineRow[]): Fl
     lastEdgeId: lastStep?.connectionId ?? null,
     lastHandleId: lastStep?.handleId ?? null,
   };
+}
+
+export interface FlowProgress {
+  /** Steps walked so far, counting the one on screen. */
+  position: number;
+  /** How long this reading will be if it runs on from here. */
+  pathTotal: number;
+  /** A choice still lies ahead, so `pathTotal` is a floor rather than the answer. */
+  openEnded: boolean;
+  /** Every step the script holds, whichever way a reading goes. */
+  flowTotal: number;
+}
+
+/**
+ * The shortest number of steps still ahead, and whether a choice is among them.
+ *
+ * Shortest, because at a branch nobody knows yet which way the reader will go:
+ * a floor is honest where a guess is not, and `openEnded` says a floor is what
+ * it is. Successors are followed breadth-first through the graph with the path
+ * so far guarding against a cycle.
+ */
+function stepsAhead(flow: Flow, fromId: string): { count: number; hasChoice: boolean } {
+  const memo = new Map<string, number>();
+  let hasChoice = false;
+
+  const walk = (id: string, onPath: Set<string>): number => {
+    if (onPath.has(id)) return Number.POSITIVE_INFINITY;
+    const cached = memo.get(id);
+    if (cached !== undefined) return cached;
+
+    const step = flow.steps[id];
+    if (!step) return 0;
+    if (isConditionStep(step)) hasChoice = true;
+
+    const successors = step.branches?.length
+      ? step.branches.map((branch) => branch.nextId)
+      : step.next
+        ? [step.next]
+        : [];
+
+    let best = 0;
+    if (successors.length > 0) {
+      onPath.add(id);
+      best = Number.POSITIVE_INFINITY;
+      for (const nextId of successors) {
+        const ahead = walk(nextId, onPath);
+        if (ahead + 1 < best) best = ahead + 1;
+      }
+      onPath.delete(id);
+      if (!Number.isFinite(best)) best = 0;
+    }
+
+    memo.set(id, best);
+    return best;
+  };
+
+  return { count: walk(fromId, new Set<string>()), hasChoice };
+}
+
+/**
+ * Where the reader is, counted along the path they actually walked.
+ *
+ * The denominator used to be every step the script holds, so a reading that
+ * took a branch ended short of it — "4 / 5", as if a step had been skipped —
+ * and could even overshoot on the way, because the numerator was the step's
+ * position in a depth-first listing rather than in the reading. Both numbers
+ * now describe the path; the script's own total goes alongside, and in a flow
+ * with no branches the two are the same number and nothing looks different.
+ */
+export function describeFlowProgress(
+  flow: Flow,
+  currentStepId: string | null,
+  history: readonly string[],
+): FlowProgress {
+  const flowTotal = getStepCount(flow);
+  if (!currentStepId || !flow.steps[currentStepId]) {
+    return { position: 0, pathTotal: flowTotal, openEnded: false, flowTotal };
+  }
+  const position = history.length + 1;
+  const { count, hasChoice } = stepsAhead(flow, currentStepId);
+  return { position, pathTotal: position + count, openEnded: hasChoice, flowTotal };
 }

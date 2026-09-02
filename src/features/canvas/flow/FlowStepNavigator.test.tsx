@@ -31,13 +31,14 @@ function seed(steps: Record<string, FlowStep>, entryStepId = "s1") {
   return { read, diagramId: diagram.id, gatewayId: gateway.id };
 }
 
-function renderNav(flow: Flow, currentStepId: string) {
+function renderNav(flow: Flow, currentStepId: string, history: string[] = []) {
   const step = flow.steps[currentStepId] ?? null;
   return render(
     <FlowStepNavigator
       flow={flow}
       currentStepId={currentStepId}
       currentStep={step}
+      history={history}
       isCondition={step ? isConditionStep(step) : false}
       canGoBack={false}
       canGoForward={Boolean(step?.next)}
@@ -161,5 +162,100 @@ describe("the step's own title and note are what turn stepping into reading", ()
 
     expect(screen.getByTestId("flow-step-title")).toHaveTextContent("The fork");
     expect(screen.getByRole("button", { name: "Yes" })).toBeInTheDocument();
+  });
+});
+
+const FORKED: Record<string, FlowStep> = {
+  s1: { id: "s1", type: "action", next: "c", componentId: "GATEWAY" },
+  c: {
+    id: "c",
+    type: "condition",
+    conditionLabel: "Authorised?",
+    branches: [
+      { label: "Yes", nextId: "a" },
+      { label: "No", nextId: "b" },
+    ],
+  },
+  a: { id: "a", type: "action", next: "join" },
+  b: { id: "b", type: "action", next: "join" },
+  join: { id: "join", type: "action" },
+};
+
+describe("the counter is about the reading, not the script", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
+  });
+
+  const progress = () => screen.getByTestId("flow-progress").textContent?.replace(/\s+/g, " ");
+
+  it("reads exactly as before on a flow with nothing to choose", () => {
+    const { read } = seed({
+      s1: { id: "s1", type: "action", next: "s2", componentId: "GATEWAY" },
+      s2: { id: "s2", type: "action", next: "s3" },
+      s3: { id: "s3", type: "action" },
+    });
+
+    renderNav(read(), "s1");
+
+    expect(progress()).toBe("1 / 3");
+  });
+
+  it("shows no second total when the path is the whole script", () => {
+    const { read } = seed({
+      s1: { id: "s1", type: "action", next: "s2", componentId: "GATEWAY" },
+      s2: { id: "s2", type: "action" },
+    });
+
+    renderNav(read(), "s2", ["s1"]);
+
+    expect(progress()).toBe("2 / 2");
+  });
+
+  it("ends a four-step reading of a five-step flow at four of four", () => {
+    const { read } = seed(FORKED);
+
+    renderNav(read(), "join", ["s1", "c", "b"]);
+
+    expect(progress()).toBe("4 / 4 · 5");
+  });
+
+  it("does not overshoot in the middle of the branch it took", () => {
+    const { read } = seed(FORKED);
+
+    renderNav(read(), "b", ["s1", "c"]);
+
+    expect(progress()).toBe("3 / 4 · 5");
+  });
+
+  it("marks the total as a floor while the choice is still ahead", () => {
+    const { read } = seed(FORKED);
+
+    renderNav(read(), "s1", []);
+
+    expect(progress()).toBe("1 / 4+ · 5");
+  });
+
+  it("drops the mark once the choice is behind", () => {
+    const { read } = seed(FORKED);
+
+    renderNav(read(), "a", ["s1", "c"]);
+
+    expect(progress()).toBe("3 / 4 · 5");
+  });
+
+  it("names the script's total for whoever hovers it", () => {
+    const { read } = seed(FORKED);
+
+    renderNav(read(), "s1", []);
+
+    expect(screen.getByTestId("flow-progress")).toHaveAttribute("title", "5 steps in the script");
+  });
+
+  it("shows a dash rather than a zero when there is no step in hand", () => {
+    const { read } = seed(PLAIN);
+
+    renderNav(read(), "nowhere", []);
+
+    expect(progress()).toBe("— / 2");
   });
 });

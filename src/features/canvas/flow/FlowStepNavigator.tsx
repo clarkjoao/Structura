@@ -17,6 +17,7 @@ import {
 } from "@/features/diagram";
 import { useTranslation } from "react-i18next";
 import { BRANCH_COLORS } from "./branchColors";
+import { describeFlowProgress } from "./flowState";
 
 interface DotInfo {
   id: string;
@@ -98,6 +99,8 @@ interface Props {
   flow: Flow;
   currentStepId: string | null;
   currentStep: FlowStep | null;
+  /** The steps already walked, in order — the reading, not the script. */
+  history: readonly string[];
   isCondition: boolean;
   canGoBack: boolean;
   canGoForward: boolean;
@@ -111,6 +114,7 @@ const FlowStepNavigator = ({
   flow,
   currentStepId,
   currentStep,
+  history,
   isCondition,
   canGoBack,
   canGoForward,
@@ -186,6 +190,10 @@ const FlowStepNavigator = ({
   const dotInfos = useMemo(() => buildDotInfos(flow, stepTitles), [flow, stepTitles]);
   const total = dotInfos.length;
   const currentIndex = currentStepId ? dotInfos.findIndex((dot) => dot.id === currentStepId) : -1;
+  const progress = useMemo(
+    () => describeFlowProgress(flow, currentStepId, history),
+    [flow, currentStepId, history],
+  );
 
   return (
     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 w-[460px] rounded-xl border border-border bg-card/95 backdrop-blur-sm shadow-2xl">
@@ -272,8 +280,16 @@ const FlowStepNavigator = ({
               </span>
             )}
           </div>
-          <span className="text-[10px] font-mono text-muted-foreground shrink-0">
-            {currentIndex >= 0 ? currentIndex + 1 : "—"} / {total}
+          <span
+            data-testid="flow-progress"
+            title={t("flowStepNav.progressTitle", { count: progress.flowTotal })}
+            className="text-[10px] font-mono text-muted-foreground shrink-0"
+          >
+            {progress.position > 0 ? progress.position : "—"} / {progress.pathTotal}
+            {progress.openEnded ? "+" : ""}
+            {progress.pathTotal !== progress.flowTotal && (
+              <span className="opacity-60"> · {progress.flowTotal}</span>
+            )}
           </span>
           {!isCondition && (
             <button

@@ -1407,6 +1407,8 @@
     "cancel": "Cancelar"
   },
   "flowStepNav": {
+    "progressTitle_one": "{{count}} passo no roteiro",
+    "progressTitle_other": "{{count}} passos no roteiro",
     "exitTitle": "Sair do flow",
     "request": "→ Request",
     "response": "← Response",
