@@ -1311,6 +1311,12 @@
       "invalidDiagram": "Diagrama inválido"
     }
   },
+  "viewerFlows": {
+    "invite_one": "Este diagrama tem um roteiro:",
+    "invite_other": "Este diagrama tem {{count}} roteiros:",
+    "read": "Ler “{{name}}”",
+    "exit": "Fechar o roteiro"
+  },
   "flowRecorder": {
     "editingTitle": "Editando Flow",
     "recordingTitle": "Gravando Flow",

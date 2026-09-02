@@ -1311,6 +1311,12 @@
       "invalidDiagram": "Invalid diagram"
     }
   },
+  "viewerFlows": {
+    "invite_one": "This diagram has one flow:",
+    "invite_other": "This diagram has {{count}} flows:",
+    "read": "Read “{{name}}”",
+    "exit": "Close the flow"
+  },
   "flowRecorder": {
     "editingTitle": "Editing flow",
     "recordingTitle": "Recording flow",
