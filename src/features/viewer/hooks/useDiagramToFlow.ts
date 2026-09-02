@@ -206,7 +206,12 @@ export function useDiagramToFlow(diagram: Diagram): {
   edges: Edge[];
 } {
   return useMemo(() => {
-    const resolvedSnapshot = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
+    // The base, always. A reader arriving by link is not in the author's
+    // scene: it hid nodes the script may walk through, said nothing, and
+    // offered no way out. Links shared before that rule still carry
+    // `activeSceneId`, so the viewer ignores it rather than trusting the
+    // payload to be clean.
+    const resolvedSnapshot = resolveSceneSnapshot(diagram, null);
 
     const visibleComponents = Object.values(resolvedSnapshot.components).filter(
       (component) => !component.hidden,
