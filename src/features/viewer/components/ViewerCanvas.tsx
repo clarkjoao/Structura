@@ -8,11 +8,23 @@ import {
   ReactFlowProvider,
 } from "@xyflow/react";
 import type { Diagram } from "@/features/diagram/model";
+import { buildFlowOutline } from "@/features/diagram";
+import FlowStepNavigator from "@/features/canvas/flow/FlowStepNavigator";
+import { useFlowModePlayback } from "@/features/canvas/flow/useFlowModePlayback";
+import type { FlowMode } from "@/features/canvas/flow/flowMode.types";
+import {
+  buildFlowBadges,
+  buildFlowHighlight,
+  EMPTY_FLOW_HIGHLIGHT,
+} from "@/features/canvas/flow/flowState";
 import { EMBED_EDGE_TYPES, EMBED_NODE_TYPES } from "./embedNodeTypes";
 import { OpenInStructuraButton } from "./OpenInStructuraButton";
 import { FlowInvite } from "./FlowInvite";
 import { useDiagramToFlow } from "../hooks/useDiagramToFlow";
 import "./ViewerCanvas.css";
+
+/** Stable identity, so the reading memo is not rebuilt on every render. */
+const EMPTY_HISTORY: string[] = [];
 
 interface ViewerCanvasProps {
   diagram: Diagram;
@@ -25,11 +37,34 @@ const ViewerCanvasContent = ({
   offsetTop = 0,
   showOpenInStructuraButton = true,
 }: ViewerCanvasProps) => {
-  const { nodes, edges } = useDiagramToFlow(diagram);
   const flows = useMemo(() => Object.values(diagram.snapshot.flows ?? {}), [diagram]);
-  /** The script being read, if the reader has picked one. Nothing is open to start. */
-  const [readingFlowId, setReadingFlowId] = useState<string | null>(null);
-  const readingFlow = flows.find((flow) => flow.id === readingFlowId) ?? null;
+
+  /**
+   * The reading, held here rather than in the editor's store: the viewer has
+   * no store, and this is the same state machine the editor drives.
+   */
+  const [mode, setMode] = useState<FlowMode>({ kind: "idle" });
+  const playback = useFlowModePlayback(mode, setMode);
+  const playing = mode.kind === "playing" ? mode : null;
+  const readingFlow = playing?.flow ?? null;
+
+  /**
+   * What the canvas shows of the reading: the numbers, and where the reader
+   * is. Null while nothing is open, and then the canvas carries no numbers —
+   * the open script is what numbers it.
+   */
+  const reading = useMemo(() => {
+    if (!readingFlow) return null;
+    const rows = buildFlowOutline(readingFlow).rows;
+    return {
+      badges: rows.length > 0 ? buildFlowBadges(readingFlow, rows) : null,
+      highlight: playing?.currentStepId
+        ? buildFlowHighlight(readingFlow, playing.currentStepId, playing.history)
+        : EMPTY_FLOW_HIGHLIGHT,
+    };
+  }, [readingFlow, playing?.currentStepId, playing?.history]);
+
+  const { nodes, edges } = useDiagramToFlow(diagram, reading);
 
   return (
     <div
@@ -66,7 +101,37 @@ const ViewerCanvasContent = ({
         <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
       </ReactFlow>
 
-      {!readingFlow && <FlowInvite flows={flows} onSelect={setReadingFlowId} />}
+      {!readingFlow && (
+        <FlowInvite
+          flows={flows}
+          onSelect={(flowId) => {
+            const target = flows.find((flow) => flow.id === flowId);
+            if (target) playback.play(target);
+          }}
+        />
+      )}
+
+      {readingFlow && (
+        <FlowStepNavigator
+          flow={readingFlow}
+          diagram={diagram}
+          currentStepId={playing?.currentStepId ?? null}
+          currentStep={playback.currentStep}
+          history={playing?.history ?? EMPTY_HISTORY}
+          flows={flows}
+          onSelectFlow={(flowId) => {
+            const target = flows.find((flow) => flow.id === flowId);
+            if (target) playback.switchFlow(target);
+          }}
+          isCondition={playback.isCondition}
+          canGoBack={playback.canGoBack}
+          canGoForward={playback.canGoForward}
+          onGoNext={playback.goNext}
+          onGoBack={playback.goBack}
+          onChooseBranch={playback.chooseBranch}
+          onExit={playback.exitPlay}
+        />
+      )}
 
       {showOpenInStructuraButton && <OpenInStructuraButton diagram={diagram} />}
     </div>

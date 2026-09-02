@@ -14,6 +14,7 @@ import {
   getOrderedStepIds,
   resolveSceneSnapshot,
   useActiveDiagram,
+  type Diagram,
   type Flow,
   type FlowStep,
 } from "@/features/diagram";
@@ -112,6 +113,14 @@ interface Props {
    */
   flows: readonly Flow[];
   onSelectFlow: (flowId: string) => void;
+  /**
+   * The diagram the steps are read against.
+   *
+   * The editor takes it from the store, which is where the diagram being
+   * edited lives. The viewer has no store — its diagram arrives in a link —
+   * so it passes one in and the same reading works there.
+   */
+  diagram?: Diagram;
   isCondition: boolean;
   canGoBack: boolean;
   canGoForward: boolean;
@@ -128,6 +137,7 @@ const FlowStepNavigator = ({
   history,
   flows,
   onSelectFlow,
+  diagram: diagramProp,
   isCondition,
   canGoBack,
   canGoForward,
@@ -137,7 +147,8 @@ const FlowStepNavigator = ({
   onExit,
 }: Props) => {
   const { t } = useTranslation();
-  const diagram = useActiveDiagram();
+  const storeDiagram = useActiveDiagram();
+  const diagram = diagramProp ?? storeDiagram;
   const step = currentStep;
   const [showPayload, setShowPayload] = useState(false);
   const [showFlowList, setShowFlowList] = useState(false);
