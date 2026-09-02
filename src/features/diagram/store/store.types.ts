@@ -35,6 +35,19 @@ export interface AppState {
   past: DiagramSnapshot[];
   future: DiagramSnapshot[];
   _lastUndoRedoAt: number;
+  /**
+   * An open flow-editing session. While one is open the flow actions push no
+   * checkpoints of their own: the session's is the undo unit. `undoMark` is
+   * the length `past` had right after that checkpoint, so an abandoned
+   * session can find it again.
+   */
+  _flowSession: { undoMark: number | null } | null;
+  /**
+   * The last batch of flow joins made by removing diagram elements, so the
+   * canvas can name a change the user did not ask for directly. Consumed and
+   * cleared by whoever shows it.
+   */
+  _flowSewNotices: { id: number; notices: import("../utils/flow-repair").FlowSewNotice[] } | null;
   clipboard: ClipboardEntry | null;
 }
 

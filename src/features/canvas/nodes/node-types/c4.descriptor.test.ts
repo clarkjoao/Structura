@@ -34,7 +34,7 @@ function buildContext(): NodeBuildContext {
       participantNodeIds: new Set<string>(),
     },
     activeStep: null,
-    recordingInfo: null,
+    flowBadges: null,
     coverage: null,
   } as unknown as NodeBuildContext;
 }

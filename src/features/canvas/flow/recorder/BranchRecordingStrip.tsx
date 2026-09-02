@@ -27,7 +27,7 @@ export function BranchRecordingStrip({
     >
       <div className="min-w-0">
         <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-          {t("flowRecorder.branchRecordingStrip", "Gravando branch")}
+          {t("flowScript.recordingBranch")}
         </p>
         <p className="text-sm font-semibold text-foreground truncate">{branchLabel}</p>
       </div>
@@ -36,7 +36,7 @@ export function BranchRecordingStrip({
         onClick={() => onDone(conditionStepId)}
         className="shrink-0 flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-[11px] font-medium text-foreground hover:bg-surface-hover"
       >
-        <Check className="h-3 w-3" /> {t("flowRecorder.branchOk", "Ok")}
+        <Check className="h-3 w-3" /> {t("flowScript.branchDone")}
       </button>
     </div>
   );

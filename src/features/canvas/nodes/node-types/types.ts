@@ -11,9 +11,9 @@ import type {
   NodeLayout,
   ServiceDefinition,
 } from "@/features/diagram";
-import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../../flow/flowState";
+import type { FlowHighlight, FlowBadges, CoverageInfo } from "../../flow/flowState";
 
-export type { FlowHighlight, RecordingInfo, CoverageInfo };
+export type { FlowHighlight, FlowBadges, CoverageInfo };
 
 export interface NodeBuildContext {
   diagram: Diagram | DiagramModel;
@@ -50,7 +50,7 @@ export interface NodeBuildContext {
   isRecording: boolean;
   flowHighlight: FlowHighlight;
   activeStep: FlowStep | null;
-  recordingInfo: RecordingInfo | null;
+  flowBadges: FlowBadges | null;
   coverage: CoverageInfo | null;
   handleDrillDown: (id: string) => void;
   navigateToDiagram?: (diagramId: string, nodeId?: string) => void;

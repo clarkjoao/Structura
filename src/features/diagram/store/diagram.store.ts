@@ -42,6 +42,8 @@ export function createDiagramStore(
         past: [] as DiagramSnapshot[],
         future: [] as DiagramSnapshot[],
         _lastUndoRedoAt: 0,
+        _flowSession: null as { undoMark: number | null } | null,
+        _flowSewNotices: null as AppState["_flowSewNotices"],
         ...diagramsSlice(set, get as () => AppState),
         ...componentsSlice(set, get as () => AppState),
         ...componentParentingSlice(set, get as () => AppState),
@@ -204,11 +206,18 @@ export const useDiagramActions = () =>
       addFlow: s.addFlow,
       updateFlow: s.updateFlow,
       removeFlow: s.removeFlow,
-      addFlowStep: s.addFlowStep,
       updateFlowStep: s.updateFlowStep,
-      removeFlowStep: s.removeFlowStep,
+      beginFlowSession: s.beginFlowSession,
+      commitFlowSession: s.commitFlowSession,
+      cancelFlowSession: s.cancelFlowSession,
+      recordFlowStep: s.recordFlowStep,
+      undoLastRecordedStep: s.undoLastRecordedStep,
+      insertFlowStepAt: s.insertFlowStepAt,
+      moveFlowStep: s.moveFlowStep,
+      removeFlowSteps: s.removeFlowSteps,
       addFlowBranch: s.addFlowBranch,
       removeFlowBranch: s.removeFlowBranch,
+      setFlowBranchLabel: s.setFlowBranchLabel,
       convertStepToCondition: s.convertStepToCondition,
       insertPattern: s.insertPattern,
       undo: s.undo,
@@ -299,30 +308,6 @@ export const useSceneActions = () =>
       addConnectionToScene: s.addConnectionToScene,
       removeConnectionFromScene: s.removeConnectionFromScene,
       updateSceneNodeLayout: s.updateSceneNodeLayout,
-    })),
-  );
-
-export const useFlowActions = () =>
-  useDiagramStore(
-    useShallow((s) => ({
-      addFlow: s.addFlow,
-      updateFlow: s.updateFlow,
-      removeFlow: s.removeFlow,
-      addFlowStep: s.addFlowStep,
-      updateFlowStep: s.updateFlowStep,
-      removeFlowStep: s.removeFlowStep,
-      addFlowBranch: s.addFlowBranch,
-      removeFlowBranch: s.removeFlowBranch,
-      convertStepToCondition: s.convertStepToCondition,
-    })),
-  );
-
-export const useHistoryActions = () =>
-  useDiagramStore(
-    useShallow((s) => ({
-      undo: s.undo,
-      redo: s.redo,
-      pushHistoryBoundary: s.pushHistoryBoundary,
     })),
   );
 

@@ -104,7 +104,7 @@ function CollabRoomInner() {
             onPointerMove={handleCanvasPointerMove}
             onPointerLeave={handleCanvasPointerLeave}
           >
-            <FlowModeProvider onFinalize={() => {}}>
+            <FlowModeProvider>
               <ReactFlowProvider>
                 <Canvas />
               </ReactFlowProvider>

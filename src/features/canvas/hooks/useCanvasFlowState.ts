@@ -4,18 +4,11 @@ import { useFlowMode } from "../flow/FlowModeContext";
 
 export function useCanvasFlowState(params: { flows: Flow[]; isCompareMode: boolean }) {
   const { isRecording } = useFlowMode();
-  const {
-    isPlaying,
-    activeStep,
-    flowHighlight,
-    coverage,
-    recordingInfo,
-    activeFlow,
-    currentStepId,
-  } = useFlowState({
-    flows: params.flows,
-    isCompareMode: params.isCompareMode,
-  });
+  const { isPlaying, activeStep, flowHighlight, coverage, flowBadges, activeFlow, currentStepId } =
+    useFlowState({
+      flows: params.flows,
+      isCompareMode: params.isCompareMode,
+    });
   const isPlayingEffective = params.isCompareMode ? false : isPlaying;
 
   return {
@@ -27,6 +20,6 @@ export function useCanvasFlowState(params: { flows: Flow[]; isCompareMode: boole
     currentStepId,
     flowHighlight,
     coverage,
-    recordingInfo,
+    flowBadges,
   };
 }

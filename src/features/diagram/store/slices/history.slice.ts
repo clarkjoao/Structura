@@ -16,15 +16,19 @@ function toPlain<T>(v: T): T {
   return isDraft(v) ? current(v as Draft<T>) : v;
 }
 
-/** Snapshot clone for undo — O(n) per checkpoint; coalescing limits frequency (see HISTORY_COALESCE_MS). */
-export function pushHistory(state: AppState, mutationType: HistoryMutationKind = "soft"): void {
+/**
+ * A checkpoint that is always taken, whatever just happened.
+ *
+ * For an explicit boundary — the start of an editing session — rather than an
+ * edit: the cooldown and the coalescing window exist to stop *edits* from
+ * piling up checkpoints, and a boundary that skipped itself because the user
+ * had just pressed Ctrl+Z would leave that session with nothing to go back to.
+ *
+ * Returns whether a checkpoint was recorded, so a caller can find it again.
+ */
+export function pushHistoryCheckpoint(state: AppState): boolean {
   const d = getActiveDiagram(state);
-  if (!d) return;
-  if (Date.now() - state._lastUndoRedoAt < UNDO_REDO_COOLDOWN_MS) return;
-  if (mutationType !== STRUCTURAL_MUTATION_MARKER) {
-    const last = state.past[state.past.length - 1];
-    if (last?.diagramId === d.id && Date.now() - last.timestamp < HISTORY_COALESCE_MS) return;
-  }
+  if (!d) return false;
   state.past.push({
     diagramId: d.id,
     timestamp: Date.now(),
@@ -34,6 +38,19 @@ export function pushHistory(state: AppState, mutationType: HistoryMutationKind =
   });
   if (state.past.length > MAX_HISTORY_STEPS) state.past.shift();
   state.future = [];
+  return true;
+}
+
+/** Snapshot clone for undo — O(n) per checkpoint; coalescing limits frequency (see HISTORY_COALESCE_MS). */
+export function pushHistory(state: AppState, mutationType: HistoryMutationKind = "soft"): void {
+  const d = getActiveDiagram(state);
+  if (!d) return;
+  if (Date.now() - state._lastUndoRedoAt < UNDO_REDO_COOLDOWN_MS) return;
+  if (mutationType !== STRUCTURAL_MUTATION_MARKER) {
+    const last = state.past[state.past.length - 1];
+    if (last?.diagramId === d.id && Date.now() - last.timestamp < HISTORY_COALESCE_MS) return;
+  }
+  pushHistoryCheckpoint(state);
 }
 
 export const historySlice = (

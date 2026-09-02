@@ -11,6 +11,8 @@ import {
   Check,
   Layers,
   FileInput,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
 import { layoutScopedNodes } from "@/features/canvas/layout/layoutScopedNodes";
@@ -36,6 +38,8 @@ import type { Flow } from "@/features/diagram";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import MermaidImportDialog from "./MermaidImportDialog";
+import { FlowScriptPanel } from "./script/FlowScriptPanel";
+import { useFlowViewStore } from "./useFlowViewStore";
 import { validateFlow, type BrokenStep } from "./validateFlow";
 import BrokenFlowDialog from "./BrokenFlowDialog";
 
@@ -75,6 +79,8 @@ const FlowPanel = ({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [pendingPlay, setPendingPlay] = useState<{ flow: Flow; broken: BrokenStep[] } | null>(null);
   const [showMermaidImport, setShowMermaidImport] = useState(false);
+  const scriptFlowId = useFlowViewStore((state) => state.scriptFlowId);
+  const openScript = useFlowViewStore((state) => state.openScript);
 
   const layoutNewNodes = useCallback(
     async (nodeIds: string[], connectionIds: string[]) => {
@@ -210,7 +216,14 @@ const FlowPanel = ({
       }
       setShowMermaidImport(false);
     },
-    [activeDiagramId, components, connections, importDrawioResult, onGetInsertPosition, preselectAfterImport],
+    [
+      activeDiagramId,
+      components,
+      connections,
+      importDrawioResult,
+      onGetInsertPosition,
+      preselectAfterImport,
+    ],
   );
 
   return (
@@ -276,9 +289,21 @@ const FlowPanel = ({
           return (
             <div
               key={flow.id}
-              className="rounded-lg border border-border p-2.5 hover:bg-surface-hover transition-colors"
+              className="rounded-lg border border-border p-2.5 transition-colors hover:bg-surface-hover"
             >
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => openScript(scriptFlowId === flow.id ? null : flow.id)}
+                  title={t("flowScript.openScript")}
+                  className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {scriptFlowId === flow.id ? (
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  ) : (
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  )}
+                </button>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-foreground truncate">{flow.name}</p>
                   {flow.description && (
@@ -361,6 +386,11 @@ const FlowPanel = ({
                   </button>
                 </div>
               </div>
+              {scriptFlowId === flow.id && (
+                <div className="mt-2 border-t border-border pt-2">
+                  <FlowScriptPanel flow={flow} />
+                </div>
+              )}
             </div>
           );
         })}

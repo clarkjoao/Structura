@@ -27,7 +27,7 @@ export function buildC4Style(comp: Component, ctx: NodeBuildContext): CSSPropert
   }
   if (ctx.isRecording) {
     return {
-      opacity: ctx.recordingInfo?.recordedNodeIds.has(comp.id) ? 1 : C4_RECORDING_DIM_OPACITY,
+      opacity: ctx.flowBadges?.badgedNodeIds.has(comp.id) ? 1 : C4_RECORDING_DIM_OPACITY,
     };
   }
   return undefined;
@@ -49,7 +49,7 @@ export const c4Descriptor: NodeTypeDescriptor = {
       isRecording,
       flowHighlight,
       activeStep,
-      recordingInfo,
+      flowBadges,
       coverage,
       connectionCounts,
     } = ctx;
@@ -104,14 +104,14 @@ export const c4Descriptor: NodeTypeDescriptor = {
       linkedDiagramName: isPlaying || isRecording ? undefined : linkedDiagramName,
       onDrillDown:
         isPlaying || isRecording ? undefined : linkedDiagramName ? ctx.handleDrillDown : undefined,
-      recordingBadges: recordingInfo?.nodeSteps.get(comp.id),
-      isLastRecorded: recordingInfo?.lastNodeId === comp.id,
+      stepBadges: flowBadges?.nodeLabels.get(comp.id),
+      isLastRecorded: flowBadges?.lastNodeId === comp.id,
       coverageFlowNames: coverage?.nodeFlows.get(comp.id),
       isRecording: !!isRecording,
       onHandleClick: isRecording ? ctx.onRecordHandleClick : undefined,
       lastRecordedHandleId:
-        isRecording && recordingInfo?.lastNodeId === comp.id
-          ? (recordingInfo?.lastHandleId ?? undefined)
+        isRecording && flowBadges?.lastNodeId === comp.id
+          ? (flowBadges?.lastHandleId ?? undefined)
           : undefined,
       activeHandleId:
         isPlaying && flowHighlight.activeNodeId === comp.id

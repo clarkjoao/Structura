@@ -21,7 +21,7 @@ export type EdgeStyleData = {
  * coverage). Rendered by isolated overlay components, not the editing core.
  */
 export type EdgeOverlayData = {
-  recordingBadges?: number[];
+  stepBadges?: string[];
   isLastRecorded?: boolean;
   coverageFlowNames?: string[];
   playbackDuration?: string;

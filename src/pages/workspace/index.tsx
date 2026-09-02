@@ -26,7 +26,6 @@ import { CollabProvider, CollabStartModal } from "@/features/collaboration";
 import { ImportModal } from "@/pages/ImportModal";
 import type { CopiedClipboardKind } from "./types";
 import { WorkspaceContent } from "./WorkspaceContent";
-import { useWorkspaceFlowRecordingFinalize } from "./useWorkspaceFlowRecordingFinalize";
 
 export default function WorkspacePage() {
   const { t } = useTranslation();
@@ -152,8 +151,6 @@ export default function WorkspacePage() {
     setShowFlows(false);
   }, []);
 
-  const onWorkspaceFlowFinalize = useWorkspaceFlowRecordingFinalize();
-
   if (!diagram) {
     const backHref = "/workspace";
     return (
@@ -174,7 +171,7 @@ export default function WorkspacePage() {
 
   return (
     <div className="h-screen flex flex-col">
-      <FlowModeProvider onFinalize={onWorkspaceFlowFinalize} onStartRecording={() => {}}>
+      <FlowModeProvider onStartRecording={() => {}}>
         <CollabProvider
           enabled={collabActive}
           reserveEphemeralRoomId={showStartModal}

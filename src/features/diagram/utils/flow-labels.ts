@@ -239,8 +239,3 @@ export function computeFlowStepLabels(flow: Flow): FlowLabelResult {
 
   return { labels, order, unlabeled, ambiguities, collisions };
 }
-
-/** Convenience for a single step; prefer `computeFlowStepLabels` when labelling many. */
-export function getFlowStepLabel(flow: Flow, stepId: string): string | undefined {
-  return computeFlowStepLabels(flow).labels[stepId];
-}

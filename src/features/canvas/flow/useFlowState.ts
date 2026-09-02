@@ -1,18 +1,16 @@
 import { useMemo } from "react";
-import type { Flow, FlowStep } from "@/features/diagram";
+import type { Flow } from "@/features/diagram";
+import { buildFlowOutline, getBranchRows } from "@/features/diagram";
 import { useFlowMode } from "./FlowModeContext";
-import type { BranchOwnerInfo, RecordingContext } from "./flowMode.types";
+import { useFlowViewStore } from "./useFlowViewStore";
 import {
   EMPTY_FLOW_HIGHLIGHT,
   buildFlowHighlight,
   buildCoverage,
-  buildRecordingInfo,
+  buildFlowBadges,
 } from "./flowState";
 
 const EMPTY_HISTORY: string[] = [];
-const EMPTY_STEPS: FlowStep[] = [];
-const EMPTY_BRANCH = new Map<string, BranchOwnerInfo>();
-const TRUNK_CONTEXT: RecordingContext = { mode: "trunk" };
 
 interface UseFlowStateParams {
   flows: Flow[];
@@ -25,12 +23,15 @@ export function useFlowState({ flows, isCompareMode = false }: UseFlowStateParam
   const activeFlow = playbackState?.flow ?? null;
   const currentStepId = playbackState?.currentStepId ?? null;
   const history = playbackState?.history ?? EMPTY_HISTORY;
-  const { isPlaying, currentStep: activeStep, isRecording } = flowMode;
+  const { isPlaying, currentStep: activeStep, isRecording, recordingFlowId } = flowMode;
+  const recordingContext = flowMode.recordingContext;
 
-  const recordingState = flowMode.mode.kind === "recording" ? flowMode.mode : null;
-  const recordingSteps = recordingState?.steps ?? EMPTY_STEPS;
-  const recordingContext = recordingState?.context ?? TRUNK_CONTEXT;
-  const branchOwnership = recordingState?.branchOwnership ?? EMPTY_BRANCH;
+  const scriptFlowId = useFlowViewStore((state) => state.scriptFlowId);
+  const numberedFlowId = recordingFlowId ?? scriptFlowId;
+  const numberedFlow = useMemo(
+    () => (numberedFlowId ? (flows.find((flow) => flow.id === numberedFlowId) ?? null) : null),
+    [flows, numberedFlowId],
+  );
 
   const flowHighlight = useMemo(() => {
     if (!isPlaying || !activeFlow || !currentStepId) return EMPTY_FLOW_HIGHLIGHT;
@@ -43,29 +44,33 @@ export function useFlowState({ flows, isCompareMode = false }: UseFlowStateParam
     return buildCoverage(flows);
   }, [flows, isPlaying, isRecording, isCompareMode]);
 
-  const stepsForRecordingOverlay = useMemo(() => {
-    if (!isRecording || !recordingSteps.length) return [];
-    if (recordingContext.mode !== "branch-record") return recordingSteps;
-    const { conditionStepId, branchIndex } = recordingContext;
-    return recordingSteps.filter((step) => {
-      const owner = branchOwnership.get(step.id);
-      return (
-        owner && owner.conditionStepId === conditionStepId && owner.branchIndex === branchIndex
-      );
-    });
-  }, [isRecording, recordingSteps, recordingContext, branchOwnership]);
-
-  const recordingInfo = useMemo(() => {
-    if (!isRecording || !stepsForRecordingOverlay.length) return null;
-    return buildRecordingInfo(stepsForRecordingOverlay);
-  }, [isRecording, stepsForRecordingOverlay]);
+  /**
+   * The rows the canvas is numbered from.
+   *
+   * One flow numbers the canvas at a time: the one whose script is open. Two
+   * flows would put two unrelated numbers on the same node with nothing to
+   * tell them apart. While recording that is the flow being recorded, and the
+   * rows narrow to the branch in hand, so the canvas shows what the panel
+   * shows. Outside a recording the numbers stay: they are derived from the
+   * graph, not a thing the recorder puts there.
+   */
+  const flowBadges = useMemo(() => {
+    if (!numberedFlow) return null;
+    const outline = buildFlowOutline(numberedFlow);
+    const rows =
+      isRecording && recordingContext.mode === "branch-record"
+        ? getBranchRows(outline, recordingContext.conditionStepId, recordingContext.branchIndex)
+        : outline.rows;
+    if (rows.length === 0) return null;
+    return buildFlowBadges(numberedFlow, rows);
+  }, [isRecording, numberedFlow, recordingContext]);
 
   return {
     isPlaying,
     activeStep,
     flowHighlight,
     coverage,
-    recordingInfo,
+    flowBadges,
     activeFlow,
     currentStepId,
   };

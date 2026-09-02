@@ -137,7 +137,7 @@ function buildContext(
       participantConnIds: new Set<string>(),
     },
     activeStep: null,
-    recordingInfo: null,
+    flowBadges: null,
     coverage: null,
     handleDrillDown: () => {},
     childrenIndex,

@@ -60,6 +60,10 @@ describe("repairFlowsAfterRemovingDiagramElements", () => {
     expect(held).toEqual([
       {
         flowId: flow.id,
+        flowName: flow.name,
+        // Nothing was sewn: the only step that referenced the removed element
+        // is the branch point, and that removal was held back.
+        joins: [],
         blocked: [
           {
             code: "branch_point",

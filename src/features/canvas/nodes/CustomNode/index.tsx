@@ -16,7 +16,7 @@ import { buildReorderControls } from "./ReorderControls";
 import { Badges } from "./Badges";
 import { DrillDownButton } from "./DrillDownButton";
 import { EmbedButton } from "./EmbedButton";
-import { RecordingBadge } from "./RecordingBadge";
+import { StepBadge } from "./StepBadge";
 import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
 import { useCollab } from "@/features/collaboration";
@@ -190,8 +190,8 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
       {!d.compareBadges && d.sceneBadge && (
         <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
       )}
-      {d.recordingBadges && d.recordingBadges.length > 0 && (
-        <RecordingBadge badges={d.recordingBadges} isLastRecorded={d.isLastRecorded} />
+      {d.stepBadges && d.stepBadges.length > 0 && (
+        <StepBadge badges={d.stepBadges} isLastRecorded={d.isLastRecorded} />
       )}
       <NodeHandles
         d={d}

@@ -1,167 +1,105 @@
 import { useCallback, useMemo } from "react";
-import {
-  useComponents,
-  useConnections,
-  stepsToMermaid,
-  buildFlowFromRecordingSnapshot,
-} from "@/features/diagram";
-import type { FlowStep, Flow } from "@/features/diagram";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import type { BranchOwnerInfo, RecordingContext } from "./flowMode.types";
+import {
+  stepsToMermaid,
+  useComponents,
+  useConnections,
+  useDiagramActions,
+  useFlows,
+} from "@/features/diagram";
+import type { RecordingContext } from "./flowMode.types";
 import { RecorderHeader } from "./recorder/RecorderHeader";
 import { RecorderMetadataForm } from "./recorder/RecorderMetadataForm";
 import { BranchRecordingStrip } from "./recorder/BranchRecordingStrip";
 import { BranchSelectView } from "./recorder/BranchSelectView";
-import { StepList } from "./recorder/StepList";
 import { MermaidPreview } from "./recorder/MermaidPreview";
+import { FlowScriptPanel } from "./script/FlowScriptPanel";
 
 interface Props {
+  flowId: string;
   recordingContext: RecordingContext;
   setRecordingContext: React.Dispatch<React.SetStateAction<RecordingContext>>;
-  name: string;
-  onNameChange: (name: string) => void;
-  description: string;
-  onDescriptionChange: (desc: string) => void;
-  tags: string[];
-  onAddTag: (tag: string) => void;
-  onRemoveTag: (index: number) => void;
-  steps: FlowStep[];
-  recordingSteps: FlowStep[];
-  branchOwnership: Map<string, BranchOwnerInfo>;
   onCancel: () => void;
   onFinalize: () => void;
-  onUpdateStepDescription: (index: number, description: string) => void;
-  onUpdateStepDuration: (index: number, duration: string) => void;
-  onUpdateStepPayload: (index: number, payload: string) => void;
-  onUpdateStepPayloadDirection: (index: number, direction: "request" | "response") => void;
-  onUpdateStepIsAsync: (index: number, isAsync: boolean) => void;
-  onDeleteStep: (index: number) => void;
-  onReorderSteps: (fromIndex: number, toIndex: number) => void;
-  onConvertStepToCondition: (index: number, conditionLabel: string, branchLabels: string[]) => void;
-  onUpdateConditionLabel: (index: number, label: string) => void;
-  onAddBranchLabel: (conditionStepId: string, label: string) => void;
-  onRemoveBranchLabel: (conditionStepId: string, branchIndex: number) => void;
-  onUpdateBranchLabel: (conditionStepId: string, branchIndex: number, label: string) => void;
-  onAddConditionStep: (conditionLabel: string, branchLabels: string[]) => void;
-  onEnterBranchRecording: (conditionStepId: string, branchIndex: number) => void;
-  onOpenBranchSelect: (conditionStepId: string) => void;
   isEditing?: boolean;
 }
 
 const FlowRecorderPanel = ({
+  flowId,
   recordingContext,
   setRecordingContext,
-  name,
-  onNameChange,
-  description,
-  onDescriptionChange,
-  tags,
-  onAddTag,
-  onRemoveTag,
-  steps,
-  recordingSteps,
-  branchOwnership,
   onCancel,
   onFinalize,
-  onUpdateStepDescription,
-  onUpdateStepDuration,
-  onUpdateStepPayload,
-  onUpdateStepPayloadDirection,
-  onUpdateStepIsAsync,
-  onDeleteStep,
-  onReorderSteps,
-  onConvertStepToCondition,
-  onUpdateConditionLabel,
-  onAddBranchLabel,
-  onRemoveBranchLabel,
-  onUpdateBranchLabel,
-  onAddConditionStep,
-  onEnterBranchRecording,
-  onOpenBranchSelect,
   isEditing,
 }: Props) => {
   const { t } = useTranslation();
   const components = useComponents();
   const connections = useConnections();
+  const flows = useFlows();
+  const { updateFlow } = useDiagramActions();
 
-  const previewFlow: Flow = useMemo(
-    () => buildFlowFromRecordingSnapshot(recordingSteps, branchOwnership, { name }),
-    [recordingSteps, branchOwnership, name],
-  );
+  const flow = useMemo(() => flows.find((candidate) => candidate.id === flowId), [flows, flowId]);
 
   const participants = useMemo(() => {
+    if (!flow) return [];
     return [
       ...new Set(
-        recordingSteps
-          .map((s) => (s.componentId ? components[s.componentId]?.name : null))
+        Object.values(flow.steps)
+          .map((step) => (step.componentId ? components[step.componentId]?.name : null))
           .filter(Boolean) as string[],
       ),
     ];
-  }, [recordingSteps, components]);
+  }, [flow, components]);
 
-  const getStepLabel = useCallback(
-    (step: FlowStep): string => {
-      if (step.type === "condition") {
-        return `◇ ${step.conditionLabel ?? t("flowRecorder.condition")}`;
-      }
-      if (step.connectionId) {
-        const conn = connections[step.connectionId];
-        if (conn) return `${t("flowRecorder.connectionLabelPrefix")}${conn.label}`;
-      }
-      if (step.componentId) {
-        return components[step.componentId]?.name ?? t("flowRecorder.unknownStep");
-      }
-      return t("flowRecorder.unknownStep");
-    },
-    [components, connections, t],
+  const mermaidPreview = useMemo(
+    () => (flow ? stepsToMermaid(flow, components, connections) : ""),
+    [flow, components, connections],
   );
 
-  const handleFinalize = () => {
-    if (!name.trim()) toast.warning(t("flowRecorder.emptyNameWarning"));
-    if (recordingSteps.length === 0) toast.warning(t("flowRecorder.noStepsWarning"));
+  const handleFinalize = useCallback(() => {
+    if (!flow) return;
+    if (!flow.name.trim()) toast.warning(t("flowRecorder.emptyNameWarning"));
+    if (Object.keys(flow.steps).length === 0) toast.warning(t("flowRecorder.noStepsWarning"));
     onFinalize();
-  };
+  }, [flow, onFinalize, t]);
 
-  const mermaidPreview = useMemo(() => {
-    const stepsRecord: Record<string, FlowStep> = {};
-    for (const s of recordingSteps) stepsRecord[s.id] = s;
-    for (let i = 0; i < recordingSteps.length - 1; i++) {
-      if (recordingSteps[i].type !== "condition" && !recordingSteps[i].next) {
-        stepsRecord[recordingSteps[i].id] = {
-          ...stepsRecord[recordingSteps[i].id],
-          next: recordingSteps[i + 1].id,
-        };
-      }
-    }
-    const tempFlow: Flow = {
-      id: "preview",
-      name,
-      mermaid: "",
-      diagramId: "",
-      entryStepId: recordingSteps[0]?.id,
-      steps: stepsRecord,
-    };
-    return stepsToMermaid(tempFlow, components, connections);
-  }, [recordingSteps, components, connections, name]);
+  const onAddTag = useCallback(
+    (tag: string) => {
+      if (!flow) return;
+      const tags = flow.tags ?? [];
+      if (tags.includes(tag)) return;
+      updateFlow(flow.id, { tags: [...tags, tag] });
+    },
+    [flow, updateFlow],
+  );
+
+  const onRemoveTag = useCallback(
+    (index: number) => {
+      if (!flow) return;
+      updateFlow(flow.id, { tags: (flow.tags ?? []).filter((_, i) => i !== index) });
+    },
+    [flow, updateFlow],
+  );
+
+  if (!flow) return null;
 
   const branchSelectCondition =
     recordingContext.mode === "branch-select"
-      ? previewFlow.steps[recordingContext.conditionStepId]
+      ? flow.steps[recordingContext.conditionStepId]
       : undefined;
 
-  const showTrunkBody =
-    recordingContext.mode === "trunk" || recordingContext.mode === "branch-record";
+  const showScript = recordingContext.mode === "trunk" || recordingContext.mode === "branch-record";
 
   return (
-    <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
+    <div className="flex h-full min-h-0 w-80 flex-col overflow-hidden border-l border-border bg-card">
       <RecorderHeader isEditing={isEditing} onCancel={onCancel} />
       <RecorderMetadataForm
-        name={name}
-        onNameChange={onNameChange}
-        description={description}
-        onDescriptionChange={onDescriptionChange}
-        tags={tags}
+        name={flow.name}
+        onNameChange={(name) => updateFlow(flow.id, { name })}
+        description={flow.description ?? ""}
+        onDescriptionChange={(description) => updateFlow(flow.id, { description })}
+        tags={flow.tags ?? []}
         onAddTag={onAddTag}
         onRemoveTag={onRemoveTag}
         participants={participants}
@@ -178,54 +116,49 @@ const FlowRecorderPanel = ({
           }
         />
       )}
-      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {recordingContext.mode === "branch-select" && branchSelectCondition && (
           <BranchSelectView
             branchSelectCondition={branchSelectCondition}
-            previewFlow={previewFlow}
+            flow={flow}
             conditionStepId={recordingContext.conditionStepId}
-            onEnterBranch={onEnterBranchRecording}
+            onEnterBranch={(conditionStepId, branchIndex) => {
+              const branch = flow.steps[conditionStepId]?.branches?.[branchIndex];
+              if (!branch) return;
+              setRecordingContext({
+                mode: "branch-record",
+                conditionStepId,
+                branchIndex,
+                branchLabel: branch.label,
+              });
+            }}
             onContinueMainFlow={() => setRecordingContext({ mode: "trunk" })}
           />
         )}
-        {showTrunkBody && (
-          <div className="p-3 space-y-3 flex-1 min-h-0">
-            <StepList
-              steps={steps}
-              connections={connections}
-              branchOwnership={branchOwnership}
-              getStepLabel={getStepLabel}
-              onDeleteStep={onDeleteStep}
-              onReorderSteps={onReorderSteps}
-              onUpdateStepDescription={onUpdateStepDescription}
-              onUpdateStepDuration={onUpdateStepDuration}
-              onUpdateStepPayload={onUpdateStepPayload}
-              onUpdateStepPayloadDirection={onUpdateStepPayloadDirection}
-              onUpdateStepIsAsync={onUpdateStepIsAsync}
-              onUpdateConditionLabel={onUpdateConditionLabel}
-              onAddBranchLabel={onAddBranchLabel}
-              onRemoveBranchLabel={onRemoveBranchLabel}
-              onUpdateBranchLabel={onUpdateBranchLabel}
-              onOpenBranchSelect={onOpenBranchSelect}
-              onConvertStepToCondition={onConvertStepToCondition}
-              onAddConditionStep={onAddConditionStep}
+        {showScript && (
+          <div className="min-h-0 flex-1 space-y-3 p-3">
+            <FlowScriptPanel
+              flow={flow}
+              onOpenBranchSelect={(conditionStepId) =>
+                setRecordingContext({ mode: "branch-select", conditionStepId })
+              }
             />
-            {recordingSteps.length > 0 && <MermaidPreview mermaid={mermaidPreview} />}
+            {Object.keys(flow.steps).length > 0 && <MermaidPreview mermaid={mermaidPreview} />}
           </div>
         )}
       </div>
-      <div className="p-3 border-t border-border flex gap-2 shrink-0">
+      <div className="flex shrink-0 gap-2 border-t border-border p-3">
         <button
           type="button"
           onClick={handleFinalize}
-          className="flex-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+          className="flex-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
         >
           {t("flowRecorder.finalize")}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="px-3 py-2 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md transition-colors"
+          className="rounded-md border border-border px-3 py-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
           {t("flowRecorder.cancel")}
         </button>
