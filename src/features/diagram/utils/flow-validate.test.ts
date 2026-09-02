@@ -128,3 +128,99 @@ describe("a flow's references are checked against the model, not the view", () =
     expect(broken.map((b) => b.missingId)).toEqual(["gone"]);
   });
 });
+
+/** The same diagram with no scene open, so a scene's own elements are out of reach. */
+function outsideScene(diagram: Diagram): Diagram {
+  const next = structuredClone(diagram);
+  next.activeSceneId = null;
+  return next;
+}
+
+/** A second scene, so "look through the scenes" cannot pass by reading only one. */
+function plusScene(
+  diagram: Diagram,
+  id: string,
+  name: string,
+  addedComponents: Record<string, Component>,
+): Diagram {
+  const next = structuredClone(diagram);
+  next.scenes = {
+    ...next.scenes,
+    [id]: {
+      id,
+      name,
+      color: "#000",
+      createdAt: 0,
+      addedComponents,
+      addedConnections: {},
+      removedComponentIds: [],
+      removedConnectionIds: [],
+      nodeLayouts: {},
+    },
+  };
+  return next;
+}
+
+describe("an element a closed scene owns is reported, but named as that scene's", () => {
+  const sceneWithCache = () =>
+    outsideScene(withScene(makeDiagram(), { addedComponents: { sc1: component("sc1") } }));
+
+  it("still reports the step, because the flow cannot play it from here", () => {
+    const broken = validateFlowGraph(flowOver(["c1", "sc1"]), sceneWithCache());
+    expect(broken.map((b) => b.missingId)).toEqual(["sc1"]);
+  });
+
+  it("names the scene that still holds it", () => {
+    const broken = validateFlowGraph(flowOver(["c1", "sc1"]), sceneWithCache());
+    expect(broken[0]!.inScene).toEqual({ id: "s1", name: "Scene" });
+  });
+
+  it("says as much in the label instead of calling the element removed", () => {
+    const broken = validateFlowGraph(flowOver(["c1", "sc1"]), sceneWithCache());
+    expect(broken[0]!.label).toContain("lives in scene “Scene”");
+    expect(broken[0]!.label).not.toContain("removed");
+  });
+
+  it("leaves the scene unnamed for an element no scene has", () => {
+    const broken = validateFlowGraph(flowOver(["c1", "ghost"]), sceneWithCache());
+    expect(broken.map((b) => b.missingId)).toEqual(["ghost"]);
+    expect(broken[0]!.inScene).toBeUndefined();
+    expect(broken[0]!.label).toContain("component removed");
+  });
+
+  it("names the scene for a connection a scene owns too", () => {
+    const diagram = outsideScene(
+      withScene(makeDiagram(), { addedConnections: { sn1: connection("sn1", "c1", "c2") } }),
+    );
+    const broken = validateFlowGraph(flowOver(["c1", "c2"], "sn1"), diagram);
+    expect(broken.map((b) => [b.reason, b.missingId, b.inScene?.name])).toEqual([
+      ["connection_deleted", "sn1", "Scene"],
+    ]);
+  });
+
+  it("does not read a component as a connection the scene owns, or the other way round", () => {
+    const diagram = outsideScene(
+      withScene(makeDiagram(), { addedComponents: { sc1: component("sc1") } }),
+    );
+    const broken = validateFlowGraph(flowOver(["c1", "c2"], "sc1"), diagram);
+    expect(broken.map((b) => [b.reason, b.inScene?.name])).toEqual([
+      ["connection_deleted", undefined],
+    ]);
+  });
+
+  it("finds the owning scene when it is not the first one", () => {
+    const diagram = plusScene(sceneWithCache(), "s2", "Rollout", { sc2: component("sc2") });
+    const broken = validateFlowGraph(flowOver(["c1", "sc2"]), diagram);
+    expect(broken[0]!.inScene).toEqual({ id: "s2", name: "Rollout" });
+  });
+
+  it("says nothing at all once that scene is open", () => {
+    const diagram = withScene(makeDiagram(), { addedComponents: { sc1: component("sc1") } });
+    expect(validateFlowGraph(flowOver(["c1", "sc1"]), diagram)).toEqual([]);
+  });
+
+  it("reports every reference when none of them resolves", () => {
+    const broken = validateFlowGraph(flowOver(["gone-a", "gone-b"]), sceneWithCache());
+    expect(broken.map((b) => b.stepId)).toEqual(["s1", "s2"]);
+  });
+});

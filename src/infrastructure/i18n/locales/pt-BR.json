@@ -1392,10 +1392,15 @@
   "brokenFlow": {
     "title": "Flow com referências inválidas",
     "descriptionWithName": "{{name}} — Os seguintes steps referenciam elementos que foram removidos do diagrama. Remova-os para continuar.",
+    "descriptionKept": "{{name}} — Os seguintes steps referenciam elementos que a visão atual não tem.",
     "componentDeleted": "componente removido",
     "connectionRemoved": "conexão removida",
     "sceneBlocked": "Remover steps editaria o flow do modelo base, não a cena “{{scene}}”.",
     "sceneBlockedFix": "Saia da cena para corrigir o flow, ou cancele e deixe como está.",
+    "inSceneBadge": "na cena “{{scene}}”",
+    "keptInScene": "Os steps marcados com a cena apontam para elementos que só existem em {{scenes}}. Eles são mantidos, não removidos.",
+    "nothingToRemove": "Nada a remover: todo step inválido aponta para um elemento que só existe em {{scenes}}.",
+    "keptInSceneFix": "Abra a cena para mexer nesses steps, ou cancele e deixe o flow como está.",
     "removeInvalid": "Remover steps inválidos e iniciar",
     "cancel": "Cancelar"
   },
