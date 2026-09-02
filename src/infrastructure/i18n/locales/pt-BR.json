@@ -1336,6 +1336,8 @@
     "async": "async",
     "removeStep": "Remover passo",
     "addStepAfter": "Adicionar passo depois deste",
+    "titlePlaceholder": "Título do passo (opcional)",
+    "notePlaceholder": "Nota para quem lê (opcional)",
     "descriptionPlaceholder": "Descrição do passo...",
     "durationPlaceholder": "~200ms, async...",
     "payloadPlaceholder": "Payload...",

@@ -205,6 +205,31 @@ export function FlowScriptRow({
           ) : (
             <>
               <div className="flex items-start gap-1">
+                <span className="mt-1 shrink-0 text-[10px]">🏷</span>
+                <input
+                  value={step.title ?? ""}
+                  onChange={(event) =>
+                    actions.updateStep(row.stepId, { title: event.target.value || undefined })
+                  }
+                  placeholder={t("flowScript.titlePlaceholder")}
+                  className="w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  onClick={(event) => event.stopPropagation()}
+                />
+              </div>
+              <div className="flex items-start gap-1">
+                <span className="mt-1 shrink-0 text-[10px]">🗒</span>
+                <textarea
+                  value={step.note ?? ""}
+                  onChange={(event) =>
+                    actions.updateStep(row.stepId, { note: event.target.value || undefined })
+                  }
+                  placeholder={t("flowScript.notePlaceholder")}
+                  rows={2}
+                  className="w-full resize-y rounded border border-border bg-secondary px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  onClick={(event) => event.stopPropagation()}
+                />
+              </div>
+              <div className="flex items-start gap-1">
                 <span className="mt-1 shrink-0 text-[10px]">📝</span>
                 <input
                   value={step.description ?? ""}

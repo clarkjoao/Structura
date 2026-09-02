@@ -17,6 +17,7 @@ const FLOW_NAMESPACES = [
   "flowSew",
   "flowRecorder",
   "brokenFlow",
+  "flowStepNav",
 ] as const;
 const FLOW_DIRS = ["src/features/canvas/flow"];
 

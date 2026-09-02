@@ -141,6 +141,12 @@ const FlowStepNavigator = ({
 
     Object.values(flow.steps).forEach((flowStep, index) => {
       const prefix = `${index + 1}. `;
+      // The author's own heading wins: it is the one thing on the step written
+      // for a reader rather than derived from what the step points at.
+      if (flowStep.title?.trim()) {
+        titles.set(flowStep.id, `${prefix}${flowStep.title}`);
+        return;
+      }
       if (flowStep.componentId) {
         const component = components[flowStep.componentId];
         titles.set(
@@ -287,6 +293,14 @@ const FlowStepNavigator = ({
           <X className="h-4 w-4" />
         </button>
       </div>
+
+      {step?.title?.trim() && (
+        <div className="px-4 pt-3">
+          <p data-testid="flow-step-title" className="text-sm font-semibold leading-snug">
+            {step.title}
+          </p>
+        </div>
+      )}
 
       {isCondition && step?.branches && (
         <div className="px-4 py-3">
