@@ -80,6 +80,8 @@ export function WorkspaceContent({
     session,
     isReady,
     collabUrl,
+    participantCount,
+    maxParticipants,
     peerLimitReached,
     closeSession,
     updateCursor,
@@ -278,6 +280,8 @@ export function WorkspaceContent({
                 session={session}
                 isReady={isReady}
                 collabUrl={collabUrl}
+                participantCount={participantCount}
+                maxParticipants={maxParticipants}
                 peerLimitReached={peerLimitReached}
                 onStartCollab={interaction.canStartCollab ? onStartCollab : undefined}
                 onEndCollab={handleEndCollab}

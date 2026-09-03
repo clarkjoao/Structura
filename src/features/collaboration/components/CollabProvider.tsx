@@ -14,7 +14,9 @@ import { useCollab as useWsCollab } from "../hooks/useCollab";
 import { newCollabRoomId } from "../utils/collab.utils";
 import { readPrefs } from "../utils/collab-preferences";
 import { useCollabStoreSync } from "../hooks/useCollabStoreSync";
+import { useCollabStore } from "../store/collab.store";
 import type { CollabSession, CollabStatus, CollabUser } from "../types";
+import { CollabRoomFullModal } from "./CollabRoomFullModal";
 
 interface CollabContextValue {
   session: CollabSession | null;
@@ -23,6 +25,9 @@ interface CollabContextValue {
   isGuest: boolean;
   sessionClosedByHost: boolean;
   hostDisconnected: boolean;
+  roomFullReason: string | null;
+  participantCount: number;
+  maxParticipants: number;
   closeSession: () => void;
   provider: null;
   ydoc: null;
@@ -42,6 +47,9 @@ const CollabContext = createContext<CollabContextValue>({
   status: "idle",
   sessionClosedByHost: false,
   hostDisconnected: false,
+  roomFullReason: null,
+  participantCount: 0,
+  maxParticipants: 15,
   closeSession: () => {},
   provider: null,
   ydoc: null,
@@ -165,6 +173,9 @@ export function CollabProvider({
     isReady,
     sessionClosedByHost,
     hostDisconnected,
+    roomFullReason,
+    participantCount,
+    maxParticipants,
     sendPatch,
     sendCursor,
     setActiveElement,
@@ -181,6 +192,8 @@ export function CollabProvider({
   });
 
   sendPatchRef.current = sendPatch;
+
+  const peerLimitReached = participantCount >= maxParticipants;
 
   const handleCloseSession = useCallback(() => {
     closeWsSession();
@@ -256,30 +269,52 @@ export function CollabProvider({
     return map;
   }, [session]);
 
-  const peerLimitReached = (session?.peers.length ?? 0) >= 4;
+  const [showRoomFullModal, setShowRoomFullModal] = useState(false);
+
+  // Show room full modal when roomFullReason is set
+  useEffect(() => {
+    if (roomFullReason) {
+      setShowRoomFullModal(true);
+    }
+  }, [roomFullReason]);
+
+  const handleCloseRoomFullModal = useCallback(() => {
+    setShowRoomFullModal(false);
+    useCollabStore.getState().setRoomFullReason(null);
+  }, []);
 
   return (
-    <CollabContext.Provider
-      value={{
-        session,
-        isReady,
-        status,
-        isGuest: isHost ? false : session !== null && !session.isHost,
-        sessionClosedByHost,
-        hostDisconnected,
-        closeSession: handleCloseSession,
-        provider: null,
-        ydoc: null,
-        collabUrl,
-        updateCursor,
-        updateSelectedNode,
-        updateViewport,
-        updateEditingComponent,
-        editingComponents,
-        peerLimitReached,
-      }}
-    >
-      {children}
-    </CollabContext.Provider>
+    <>
+      <CollabRoomFullModal
+        isOpen={showRoomFullModal}
+        reason={roomFullReason}
+        onClose={handleCloseRoomFullModal}
+      />
+      <CollabContext.Provider
+        value={{
+          session,
+          isReady,
+          status,
+          isGuest: isHost ? false : session !== null && !session.isHost,
+          sessionClosedByHost,
+          hostDisconnected,
+          roomFullReason,
+          participantCount,
+          maxParticipants,
+          closeSession: handleCloseSession,
+          provider: null,
+          ydoc: null,
+          collabUrl,
+          updateCursor,
+          updateSelectedNode,
+          updateViewport,
+          updateEditingComponent,
+          editingComponents,
+          peerLimitReached,
+        }}
+      >
+        {children}
+      </CollabContext.Provider>
+    </>
   );
 }
