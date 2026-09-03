@@ -2,7 +2,17 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, Network, FolderOpen, LayoutGrid, List, ArrowUpDown, Search, Upload, Clock } from "lucide-react";
+import {
+  Plus,
+  Network,
+  FolderOpen,
+  LayoutGrid,
+  List,
+  ArrowUpDown,
+  Search,
+  Upload,
+  Clock,
+} from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useAllDiagrams, useFolders, useDiagramActions, removeRecentRef } from "@/features/diagram";
 import { deletePreview } from "@/lib/diagram-preview/previewCache";
@@ -209,7 +219,9 @@ export default function DashboardPage() {
         };
       })
       .filter(
-        (row): row is {
+        (
+          row,
+        ): row is {
           id: string;
           openedAt: number;
           name: string;
@@ -219,10 +231,7 @@ export default function DashboardPage() {
   }, [recent, diagramsById]);
 
   const recentDiagramObjects = useMemo(
-    () =>
-      recent
-        .map((entry) => diagramsById[entry.id])
-        .filter((d): d is Diagram => Boolean(d)),
+    () => recent.map((entry) => diagramsById[entry.id]).filter((d): d is Diagram => Boolean(d)),
     [recent, diagramsById],
   );
 
@@ -648,27 +657,29 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {view === "recent" && globalSearchResults === null && recentDiagramObjects.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/50 mb-4">
-                  <Clock className="h-7 w-7 text-muted-foreground/60" />
+            {view === "recent" &&
+              globalSearchResults === null &&
+              recentDiagramObjects.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/50 mb-4">
+                    <Clock className="h-7 w-7 text-muted-foreground/60" />
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-1">
+                    {t("dashboard.recentEmptyTitle")}
+                  </p>
+                  <p className="text-xs text-muted-foreground/60 mb-4 max-w-xs">
+                    {t("dashboard.recentEmptyHint")}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setView("all")}
+                    className="gap-1.5"
+                  >
+                    {t("folderTree.allDiagrams")}
+                  </Button>
                 </div>
-                <p className="text-sm text-muted-foreground mb-1">
-                  {t("dashboard.recentEmptyTitle")}
-                </p>
-                <p className="text-xs text-muted-foreground/60 mb-4 max-w-xs">
-                  {t("dashboard.recentEmptyHint")}
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setView("all")}
-                  className="gap-1.5"
-                >
-                  {t("folderTree.allDiagrams")}
-                </Button>
-              </div>
-            )}
+              )}
 
             {globalSearchResults === null &&
               (viewMode === "grid" ? (

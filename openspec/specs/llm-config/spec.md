@@ -1,8 +1,11 @@
 # llm-config Specification
 
 ## Purpose
+
 TBD - created by archiving change llm-multiconnection-and-chat-ux. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Connection storage
 
 The system SHALL persist LLM configuration as a single localStorage payload under `structura:llm:connections` of shape `{ connections: LLMConnection[]; activeConnectionId: string }`. The active connection SHALL be the one used for the next chat request. Every UI string surfaced while reading, writing, or explaining connections SHALL be obtained through `t("llmChat.*")` with entries present in both `en.json` and `pt-BR.json`.
@@ -126,4 +129,3 @@ The LLM connection feature SHALL observe project hard rules: no hardcoded user-v
 
 - **WHEN** the change introduces any new user-facing label
 - **THEN** a corresponding key exists in both `en.json` and `pt-BR.json` (verified by a test that loads the `llmChat.*` subtree from each locale and asserts there is no `undefined` when `t(key)` is invoked for every key referenced in code).
-

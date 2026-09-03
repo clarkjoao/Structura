@@ -29,10 +29,7 @@ import { AnalysisPanel } from "@/features/canvas/chat";
 import { buildContextualSuggestions, downloadIR, getLLMErrorI18nKey } from "@/features/llm";
 import type { ChatSuggestion } from "@/features/llm/suggestions";
 import { useActiveDiagramModel } from "@/features/diagram";
-import {
-  UserMessageComponent,
-  AssistantMessageComponent,
-} from "./AssistantUIMessage";
+import { UserMessageComponent, AssistantMessageComponent } from "./AssistantUIMessage";
 import { SuggestionCard } from "./SuggestionCard";
 import { TypingIndicator } from "./TypingIndicator";
 
@@ -48,9 +45,7 @@ function SkeletonMessage({ role }: { role: "user" | "assistant" }) {
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`rounded-2xl px-4 py-2.5 ${
-          isUser ? "bg-muted" : "bg-muted/60"
-        } space-y-1.5`}
+        className={`rounded-2xl px-4 py-2.5 ${isUser ? "bg-muted" : "bg-muted/60"} space-y-1.5`}
         style={{ maxWidth: "75%" }}
       >
         <div className="h-3 w-32 animate-pulse rounded-md bg-muted-foreground/20" />
@@ -139,8 +134,8 @@ export function AssistantUIChatPanel({
   useEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
-    const scrollable = el.closest('[data-aui-thread-viewport]') as HTMLElement | null;
-    const target = scrollable ?? el.parentElement as HTMLElement | null;
+    const scrollable = el.closest("[data-aui-thread-viewport]") as HTMLElement | null;
+    const target = scrollable ?? (el.parentElement as HTMLElement | null);
     if (!target) return;
 
     const dist = target.scrollHeight - target.scrollTop - target.clientHeight;
@@ -159,8 +154,8 @@ export function AssistantUIChatPanel({
 
     const el = viewportRef.current;
     if (!el) return;
-    const scrollable = el.closest('[data-aui-thread-viewport]') as HTMLElement | null;
-    const target = scrollable ?? el.parentElement as HTMLElement | null;
+    const scrollable = el.closest("[data-aui-thread-viewport]") as HTMLElement | null;
+    const target = scrollable ?? (el.parentElement as HTMLElement | null);
     if (!target) return;
 
     requestAnimationFrame(() => {
@@ -241,16 +236,10 @@ export function AssistantUIChatPanel({
             indefinitely (which was the previous bug). */}
         <div className="relative min-h-0 flex-1 overflow-hidden">
           <ThreadPrimitive.Root className="flex h-full flex-col">
-            <ThreadPrimitive.Viewport
-              ref={viewportRef}
-              className="h-full w-full overflow-y-auto"
-            >
+            <ThreadPrimitive.Viewport ref={viewportRef} className="h-full w-full overflow-y-auto">
               <div className="flex flex-col gap-3 p-4">
                 {pendingAnalysis ? (
-                  <AnalysisPanel
-                    analysis={pendingAnalysis}
-                    onDismiss={dismissPendingAnalysis}
-                  />
+                  <AnalysisPanel analysis={pendingAnalysis} onDismiss={dismissPendingAnalysis} />
                 ) : null}
 
                 {showSkeleton ? (
@@ -283,11 +272,7 @@ export function AssistantUIChatPanel({
                   if (!suggestion) return null;
                   return (
                     <div key={`suggestion-${message.id}`} className="mt-1">
-                      <SuggestionCard
-                        suggestion={suggestion}
-                        onAccept={accept}
-                        onReject={reject}
-                      />
+                      <SuggestionCard suggestion={suggestion} onAccept={accept} onReject={reject} />
                     </div>
                   );
                 })}
@@ -301,9 +286,7 @@ export function AssistantUIChatPanel({
         {/* Error */}
         {error ? (
           <div className="mx-3 mb-2 space-y-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
-            <p className="text-xs font-medium text-destructive">
-              {t(getLLMErrorI18nKey(error))}
-            </p>
+            <p className="text-xs font-medium text-destructive">{t(getLLMErrorI18nKey(error))}</p>
             {error === "auth" || error === "cors" || error === "model" ? (
               <button
                 type="button"
@@ -322,13 +305,9 @@ export function AssistantUIChatPanel({
             ref={composerRef}
             onSend={handleSend}
             isLoading={isLoading}
-            onExportIR={
-              lastGeneratedIR ? () => downloadIR(lastGeneratedIR) : undefined
-            }
+            onExportIR={lastGeneratedIR ? () => downloadIR(lastGeneratedIR) : undefined}
             onClearHistory={clearHistory}
-            onDismissAnalysis={
-              pendingAnalysis ? dismissPendingAnalysis : undefined
-            }
+            onDismissAnalysis={pendingAnalysis ? dismissPendingAnalysis : undefined}
           />
           <div className="mt-2 flex items-center justify-between">
             <p className="text-[11px] text-muted-foreground">
@@ -390,10 +369,7 @@ function ChatHeader({
         </div>
       </div>
       <div className="flex items-center gap-0.5">
-        <IconButton
-          label={t("llmChat.threads.historyAria")}
-          onClick={onOpenThreads}
-        >
+        <IconButton label={t("llmChat.threads.historyAria")} onClick={onOpenThreads}>
           <History className="h-4 w-4" />
         </IconButton>
         {hasExportableIR && (
@@ -401,10 +377,7 @@ function ChatHeader({
             <Download className="h-4 w-4" />
           </IconButton>
         )}
-        <IconButton
-          label={t("llmChat.threads.newThread")}
-          onClick={onCreateThread}
-        >
+        <IconButton label={t("llmChat.threads.newThread")} onClick={onCreateThread}>
           <MessageSquarePlus className="h-4 w-4" />
         </IconButton>
         <IconButton label={t("llmChat.openSettings")} onClick={onOpenSettings}>
@@ -492,8 +465,8 @@ function ScrollToBottomAffordance({ viewportRef }: ScrollToBottomAffordanceProps
     const el = viewportRef.current;
     if (!el) return;
 
-    const scrollable = el.closest('[data-aui-thread-viewport]') as HTMLElement | null;
-    const target = scrollable ?? el.parentElement as HTMLElement | null;
+    const scrollable = el.closest("[data-aui-thread-viewport]") as HTMLElement | null;
+    const target = scrollable ?? (el.parentElement as HTMLElement | null);
     if (!target) return;
 
     const onScroll = () => {
@@ -512,9 +485,9 @@ function ScrollToBottomAffordance({ viewportRef }: ScrollToBottomAffordanceProps
       <button
         type="button"
         onClick={() => {
-          const scrollable = viewportRef.current?.closest(
-            '[data-aui-thread-viewport]',
-          ) as HTMLElement | null ?? viewportRef.current?.parentElement as HTMLElement | null;
+          const scrollable =
+            (viewportRef.current?.closest("[data-aui-thread-viewport]") as HTMLElement | null) ??
+            (viewportRef.current?.parentElement as HTMLElement | null);
           scrollable?.scrollTo({
             top: scrollable.scrollHeight,
             behavior: "smooth",

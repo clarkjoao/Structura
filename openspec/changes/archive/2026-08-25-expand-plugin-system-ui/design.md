@@ -3,6 +3,7 @@
 ## Context
 
 The existing plugin system in Structura supports `ui:panels` capability for side panel contributions. The `PluginPanelSlot` component renders registered panels in two slots:
+
 - `element-inspector` — Right panel when component is selected
 - `service-registry-import` — Service catalog import section
 
@@ -11,12 +12,14 @@ This design adds canvas toolbar support and overlay capabilities (toasts/modals)
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Allow plugins to add buttons to the canvas toolbar
 - Provide a toast notification API for plugins
 - Provide a modal dialog API for plugins
 - Keep plugin contributions self-contained (plugin provides its own React component)
 
 **Non-Goals:**
+
 - Built-in modal dialog types (plugins own their modal content)
 - Notification history/center
 - Plugin-to-plugin communication
@@ -31,6 +34,7 @@ This design adds canvas toolbar support and overlay capabilities (toasts/modals)
 **Rendering:** New `<PluginToolbarSlot slot="canvas-toolbar" />` in `CanvasToolbar.tsx`, positioned alongside existing toolbar buttons.
 
 **Context:** Unlike `element-inspector` which provides selection context, toolbar panels receive:
+
 ```typescript
 interface ToolbarPanelContext {
   locale: string;
@@ -97,12 +101,15 @@ New slots (`canvas-toolbar`) are opt-in for plugins.
 ## Risks / Trade-offs
 
 **[Risk]** Multiple plugins adding toolbar buttons could clutter the UI
+
 - **Mitigation:** Toolbar slot renders buttons in a predictable order. Future enhancement could add user-configurable visibility.
 
 **[Risk]** Toast stacking from multiple plugins
+
 - **Mitigation:** Toast queue with auto-dismiss. Toasts from same plugin are grouped.
 
 **[Risk]** Modal blocking the entire app
+
 - **Mitigation:** Only one modal at a time per plugin. Host enforces modal stack.
 
 ## Open Questions

@@ -60,9 +60,7 @@ describe("removeElements", () => {
     const c = store.getState().addComponent("system", "C", null, { x: 200, y: 0 });
 
     store.getState().removeElements([a.id, b.id, c.id], []);
-    expect(
-      Object.keys(store.getState().diagrams[diagramId]!.snapshot.components),
-    ).toHaveLength(0);
+    expect(Object.keys(store.getState().diagrams[diagramId]!.snapshot.components)).toHaveLength(0);
 
     store.getState().undo();
 

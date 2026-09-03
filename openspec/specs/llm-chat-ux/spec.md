@@ -1,8 +1,11 @@
 # llm-chat-ux Specification
 
 ## Purpose
+
 TBD - created by archiving change llm-multiconnection-and-chat-ux. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Multi-thread history per diagram
 
 The system SHALL persist chat history as `Record<diagramId, { threads: ConversationThread[]; activeThreadId: string }>` where each thread carries `id`, `diagramId`, `title` (derived from the first user message; truncated), `messages`, `createdAt`, and `updatedAt`. The diagram's `activeThreadId` SHALL drive which thread is rendered in the chat panel; switching diagrams SHALL switch the active thread independently and MUST NOT collapse threads across diagrams.
@@ -107,4 +110,3 @@ This capability SHALL continue to observe project hard rules: i18n (every new la
 
 - **WHEN** searching `localStorage.` usage across `features/llm/components/**` and `features/canvas/chat/**`
 - **THEN** the search SHALL return zero matches — all persistence goes through `features/llm/llm-storage.ts`.
-

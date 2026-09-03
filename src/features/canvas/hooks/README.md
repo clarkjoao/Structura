@@ -24,14 +24,14 @@ coherent.
 
 ### 1. `useCanvasSelectionStore` is the single source of truth
 
-`selectedNodeIds` is the selection. `selectedNodeId` is the *primary* member of
+`selectedNodeIds` is the selection. `selectedNodeId` is the _primary_ member of
 it. They are one selection stored in two fields because they drive different
 visuals:
 
-| Field             | Drives                                                                                     |
-| ----------------- | ------------------------------------------------------------------------------------------ |
+| Field             | Drives                                                                                       |
+| ----------------- | -------------------------------------------------------------------------------------------- |
 | `selectedNodeId`  | Element panel contents, `NodeQuickActionsBar` placement, `data.isSelected` on node renderers |
-| `selectedNodeIds` | Dimming of everything else (`nodeVisibility.ts`), and the `selected` flag on each node      |
+| `selectedNodeIds` | Dimming of everything else (`nodeVisibility.ts`), and the `selected` flag on each node       |
 
 **INVARIANT: `selectedNodeId === null || selectedNodeIds.has(selectedNodeId)`.**
 The store enforces this in `setSelectedNodeId` / `setSelectedNodeIds`, so a
@@ -75,7 +75,7 @@ a new `Set`: an identity-only write re-renders the canvas and bounces straight
 back.
 
 Note that an empty node selection also arrives when React Flow deselects nodes
-because an *edge* was clicked. Empty must reach the store — otherwise
+because an _edge_ was clicked. Empty must reach the store — otherwise
 `selectedNodeIds` keeps pointing at the previous node — but the surrounding reset
 of edge and menu state must not.
 
@@ -94,18 +94,18 @@ of edge and menu state must not.
 
 ## Interaction and lifecycle hooks
 
-| Hook                         | Goal                                                                                                                                                                                                                                        |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `useCanvasEventHandlers`     | Creates the React Flow event handlers for connect, click, selection, double-click, context menu, pane click, and quick insert. It translates raw canvas events into store actions and visual-state updates.                                 |
-| `useCanvasEffects`           | Runs canvas-level effects tied to the active diagram and playback state. It performs the initial `fitView`, applies custom wheel pan/zoom behavior, clears selection while playing, and keeps the viewport focused on the active flow step. |
-| `useCanvasKeyboard`          | Registers and routes keyboard shortcuts for the canvas. It delegates concrete behavior to the `keyboard/` sub-hooks and guards them based on focus, flow mode, compare mode, and open panels.                                               |
-| `useCanvasDrillHandlers`     | Handles drill-down into linked diagrams and collapse or expand actions for collapsible node types. It bridges node-level UI actions to diagram navigation and component updates.                                                            |
-| `useNodeDragParenting`       | Handles drag-time parenting and unparenting for panel-based layouts. It tracks candidate parent panels during drag, blocks invalid moves, persists temporary layout updates, and commits final parent changes on drag stop.                 |
-| `useLocalNodes`              | Keeps a local React Flow node array responsive while the store catches up. It merges store-driven node updates with drag-in-progress state, filters locked scene moves, and adopts the store's `selected` flag (see [Node selection](#node-selection)).                                    |
-| `useCanvasDiagramNavigation` | Manages diagram navigation UI state such as the sidebar, search, and command palette. It also records recently opened diagrams and closes navigation surfaces when flow or compare mode locks navigation.                                   |
-| `useConnectionInternalsSync` | Watches per-node connection counts and calls `updateNodeInternals` only for nodes whose handles need to be recomputed. This keeps React Flow handle positions current without refreshing every node.                                        |
-| `usePeerOnNode`              | Looks up whether a collaboration peer is currently focused on a given node, allowing the canvas to render presence information on that element.                                                                                             |
-| `useStableListByRefEquality` | Returns the previous array reference when each item is referentially unchanged. It is a small render-avoidance helper used to stabilize selector outputs.                                                                                   |
+| Hook                         | Goal                                                                                                                                                                                                                                                    |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `useCanvasEventHandlers`     | Creates the React Flow event handlers for connect, click, selection, double-click, context menu, pane click, and quick insert. It translates raw canvas events into store actions and visual-state updates.                                             |
+| `useCanvasEffects`           | Runs canvas-level effects tied to the active diagram and playback state. It performs the initial `fitView`, applies custom wheel pan/zoom behavior, clears selection while playing, and keeps the viewport focused on the active flow step.             |
+| `useCanvasKeyboard`          | Registers and routes keyboard shortcuts for the canvas. It delegates concrete behavior to the `keyboard/` sub-hooks and guards them based on focus, flow mode, compare mode, and open panels.                                                           |
+| `useCanvasDrillHandlers`     | Handles drill-down into linked diagrams and collapse or expand actions for collapsible node types. It bridges node-level UI actions to diagram navigation and component updates.                                                                        |
+| `useNodeDragParenting`       | Handles drag-time parenting and unparenting for panel-based layouts. It tracks candidate parent panels during drag, blocks invalid moves, persists temporary layout updates, and commits final parent changes on drag stop.                             |
+| `useLocalNodes`              | Keeps a local React Flow node array responsive while the store catches up. It merges store-driven node updates with drag-in-progress state, filters locked scene moves, and adopts the store's `selected` flag (see [Node selection](#node-selection)). |
+| `useCanvasDiagramNavigation` | Manages diagram navigation UI state such as the sidebar, search, and command palette. It also records recently opened diagrams and closes navigation surfaces when flow or compare mode locks navigation.                                               |
+| `useConnectionInternalsSync` | Watches per-node connection counts and calls `updateNodeInternals` only for nodes whose handles need to be recomputed. This keeps React Flow handle positions current without refreshing every node.                                                    |
+| `usePeerOnNode`              | Looks up whether a collaboration peer is currently focused on a given node, allowing the canvas to render presence information on that element.                                                                                                         |
+| `useStableListByRefEquality` | Returns the previous array reference when each item is referentially unchanged. It is a small render-avoidance helper used to stabilize selector outputs.                                                                                               |
 
 ## Keyboard sub-hooks
 
@@ -144,12 +144,12 @@ of edge and menu state must not.
 
 ## Chat hooks
 
-| Hook                            | Goal                                                                                                                                                                                 |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `useLLMChat`                    | Presents the canvas chat UI with diagram-aware context. It syncs chat history to the active diagram and enriches outgoing prompts with both diagram context and structured mentions. |
-| `useDiagramContext`             | Serializes the active diagram, resolved snapshot, active scene, metadata, and external links into a text block suitable for LLM prompts.                                             |
-| `useMentionSearch`              | Builds and searches the list of mentionable nodes and edges from the active diagram snapshot.                                                                                        |
-| `useMentionInput`               | Manages the mention-aware text input model, including picker visibility, parsed mention segments, active mention extraction, and insert/remove behavior.                             |
+| Hook                | Goal                                                                                                                                                                                 |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `useLLMChat`        | Presents the canvas chat UI with diagram-aware context. It syncs chat history to the active diagram and enriches outgoing prompts with both diagram context and structured mentions. |
+| `useDiagramContext` | Serializes the active diagram, resolved snapshot, active scene, metadata, and external links into a text block suitable for LLM prompts.                                             |
+| `useMentionSearch`  | Builds and searches the list of mentionable nodes and edges from the active diagram snapshot.                                                                                        |
+| `useMentionInput`   | Manages the mention-aware text input model, including picker visibility, parsed mention segments, active mention extraction, and insert/remove behavior.                             |
 
 ## Navigation hooks
 

@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  generateShareUrl,
-  getShareParamFromUrl,
-  decodeShareParam,
-} from "./diagram-url";
+import { generateShareUrl, getShareParamFromUrl, decodeShareParam } from "./diagram-url";
 import type { Diagram } from "@/features/diagram";
 import { EdgeStyle } from "@/features/diagram";
 

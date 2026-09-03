@@ -80,8 +80,12 @@ const ExternalElementNode = memo(
       <div
         className={[
           "relative rounded-lg border-2 min-w-[200px] max-w-[260px] px-3 py-2.5 transition-shadow",
-          !hasCustomColor && !isSelected && "border-dashed border-muted-foreground/40 bg-muted/20 hover:border-muted-foreground/60",
-          !hasCustomColor && isSelected && "border-dashed border-primary/70 shadow-[0_0_0_2px_hsl(var(--primary)/0.25)] bg-muted/20",
+          !hasCustomColor &&
+            !isSelected &&
+            "border-dashed border-muted-foreground/40 bg-muted/20 hover:border-muted-foreground/60",
+          !hasCustomColor &&
+            isSelected &&
+            "border-dashed border-primary/70 shadow-[0_0_0_2px_hsl(var(--primary)/0.25)] bg-muted/20",
           hasCustomColor && "border-solid shadow-sm",
           isSelected && !hasCustomColor && "shadow-[0_0_0_2px_hsl(var(--primary)/0.25)]",
         ].join(" ")}
@@ -90,7 +94,9 @@ const ExternalElementNode = memo(
             ? {
                 backgroundColor: colorWithOpacity(d.customColor!, 0.2),
                 borderColor: d.customColor,
-                boxShadow: isSelected ? `0 0 0 2px ${colorWithOpacity(d.customColor!, 0.25)}` : undefined,
+                boxShadow: isSelected
+                  ? `0 0 0 2px ${colorWithOpacity(d.customColor!, 0.25)}`
+                  : undefined,
               }
             : undefined
         }

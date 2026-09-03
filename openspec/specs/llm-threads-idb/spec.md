@@ -1,8 +1,11 @@
 # llm-threads-idb Specification
 
 ## Purpose
+
 TBD - created by archiving change llm-threads-to-indexeddb. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Persistent chat threads in IndexedDB
 
 The system SHALL persist LLM chat threads (per-diagram conversation history) inside an IndexedDB database named `structura`, in an object store named `llm_threads` keyed by `diagramId`. The schema version SHALL be `1`. Each record SHALL store a `DiagramThreadState` (a list of threads plus the active thread id for that diagram).
@@ -68,4 +71,3 @@ The new IDB module SHALL live at `features/llm/llm-threads-idb.ts` (single modul
 
 - **WHEN** grepping for `indexedDB` in `src/features/llm/components/**` and `src/features/canvas/chat/**`
 - **THEN** the search SHALL return zero matches — all IDB access lives inside `features/llm/llm-threads-idb.ts`.
-

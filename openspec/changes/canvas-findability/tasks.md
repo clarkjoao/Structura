@@ -36,7 +36,7 @@
 - [x] 4.1 Create `src/features/canvas/components/NothingInViewCard.tsx` — floating card with the
       element count and a fit action
 - [x] 4.2 Fit action calls `fitView({ padding: FIT_VIEW_INITIAL_PADDING, minZoom: VIEWPORT_MIN_ZOOM,
-      maxZoom: FIT_VIEW_MAX_ZOOM, duration: FIT_VIEW_DURATION_MS })` from `canvas.constants.ts`
+maxZoom: FIT_VIEW_MAX_ZOOM, duration: FIT_VIEW_DURATION_MS })` from `canvas.constants.ts`
 - [x] 4.3 Render it in `Canvas.tsx` only when `hasNodes && !anyNodeVisible`
 - [x] 4.4 i18n keys `canvas.nothingInView`, `canvas.fitAll` in both locales
 - [x] 4.5 Covered by `useViewportOccupancy.test.ts`: empty diagram → `hasNodes: false`, so the

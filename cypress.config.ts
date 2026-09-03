@@ -23,7 +23,6 @@ export default defineConfig({
     setupNodeEvents(on) {
       on("task", {
         log(message: string) {
-           
           console.log(message);
           return null;
         },

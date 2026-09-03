@@ -12,12 +12,7 @@ import {
 } from "@/features/canvas/panels/ElementPanel/components/colorPresets";
 import { cn } from "@/lib/utils";
 
-export type ColorPickerGroup =
-  | "vibrant"
-  | "panel"
-  | "c4"
-  | "note"
-  | "note-dark";
+export type ColorPickerGroup = "vibrant" | "panel" | "c4" | "note" | "note-dark";
 
 interface ColorPickerProps {
   selectedColor?: string;
@@ -119,9 +114,7 @@ export function ColorPicker({
                   className={cn(
                     "rounded-full border transition-all hover:scale-110 shrink-0",
                     swatchSize,
-                    isSelected
-                      ? "scale-110 border-foreground"
-                      : "border-transparent",
+                    isSelected ? "scale-110 border-foreground" : "border-transparent",
                   )}
                   style={{ backgroundColor: preset.color }}
                 />

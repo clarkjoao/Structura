@@ -13,6 +13,7 @@ Simple JavaScript plugins that require no build step. Upload the `plugin.js` fil
 - **Alt+Shift+U** — Uppercase all component names
 
 **Files:**
+
 - `plugin.js` — The plugin (upload this)
 - `README.md` — This file
 
@@ -25,6 +26,7 @@ Simple JavaScript plugins that require no build step. Upload the `plugin.js` fil
 - Reuses existing components by name
 
 **Files:**
+
 - `plugin.js` — The plugin (upload this)
 - `README.md` — This file
 
@@ -38,9 +40,9 @@ Simple JavaScript plugins that require no build step. Upload the `plugin.js` fil
 
 ## Capability Reference
 
-| Capability | Used By |
-|------------|---------|
-| `events:diagram` | console-log |
-| `diagram:read` | console-log |
-| `diagram:write` | console-log |
-| `io:importers` | mermaid-import |
+| Capability       | Used By        |
+| ---------------- | -------------- |
+| `events:diagram` | console-log    |
+| `diagram:read`   | console-log    |
+| `diagram:write`  | console-log    |
+| `io:importers`   | mermaid-import |

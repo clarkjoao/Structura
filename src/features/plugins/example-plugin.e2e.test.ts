@@ -18,10 +18,7 @@ import { runPluginImport } from "./run-plugin-import";
  * Mermaid flowchart through the real store, verify dedupe, undo, and lifecycle cleanup.
  */
 
-const EXAMPLE_PLUGIN_PATH = join(
-  __dirname,
-  "../../../plugins/examples/mermaid-import/plugin.js",
-);
+const EXAMPLE_PLUGIN_PATH = join(__dirname, "../../../plugins/examples/mermaid-import/plugin.js");
 const PLUGIN_ID = "structura-plugin-mermaid-import";
 const IMPORTER_ID = `${PLUGIN_ID}/flowchart`;
 

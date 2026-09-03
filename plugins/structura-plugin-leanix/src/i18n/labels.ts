@@ -14,7 +14,10 @@ export function t(text: LocalizedText, locale: Locale): string {
 export const LABELS = {
   toolbar: {
     button: { en: "Send to Leanix", "pt-BR": "Enviar para Leanix" },
-    tooltipNoConfig: { en: "Configure Leanix in settings", "pt-BR": "Configure o Leanix nas configurações" },
+    tooltipNoConfig: {
+      en: "Configure Leanix in settings",
+      "pt-BR": "Configure o Leanix nas configurações",
+    },
     tooltipNoName: { en: "Set a name for the diagram", "pt-BR": "Defina um nome para o diagrama" },
     tooltipReadOnly: { en: "Read-only mode", "pt-BR": "Modo somente leitura" },
     configured: { en: "Configured", "pt-BR": "Configurado" },
@@ -56,12 +59,18 @@ export const LABELS = {
     errorInternal: { en: "Leanix internal error", "pt-BR": "Erro interno do Leanix" },
     openSettings: { en: "Open Settings", "pt-BR": "Abrir Configurações" },
     retry: { en: "Retry", "pt-BR": "Tentar novamente" },
-    noName: { en: "Set a name for the diagram first", "pt-BR": "Defina um nome para o diagrama primeiro" },
+    noName: {
+      en: "Set a name for the diagram first",
+      "pt-BR": "Defina um nome para o diagrama primeiro",
+    },
     notConfigured: { en: "Configure Leanix first", "pt-BR": "Configure o Leanix primeiro" },
   },
   config: {
     title: { en: "Leanix Configuration", "pt-BR": "Configuração do Leanix" },
-    useProxy: { en: "Use server proxy (bypass CORS)", "pt-BR": "Usar proxy do servidor (bypass CORS)" },
+    useProxy: {
+      en: "Use server proxy (bypass CORS)",
+      "pt-BR": "Usar proxy do servidor (bypass CORS)",
+    },
     proxyUrl: { en: "Proxy URL", "pt-BR": "URL do Proxy" },
     baseUrl: { en: "Base URL", "pt-BR": "URL Base" },
     baseUrlPlaceholder: { en: "https://company.leanix.net", "pt-BR": "https://empresa.leanix.net" },

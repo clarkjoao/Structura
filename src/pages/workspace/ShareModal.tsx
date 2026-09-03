@@ -40,10 +40,7 @@ export function ShareModal({ diagram, open, onOpenChange }: ShareModalProps) {
 
   const shareUrl = shareResult.url;
 
-  const embedUrl = useMemo(
-    () => generateViewerUrl(diagram),
-    [diagram.id, snapshotVersion],
-  );
+  const embedUrl = useMemo(() => generateViewerUrl(diagram), [diagram.id, snapshotVersion]);
 
   const formattedLinkSize = useMemo(
     () => new Intl.NumberFormat().format(shareResult.compressedLength),

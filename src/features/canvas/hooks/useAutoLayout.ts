@@ -17,7 +17,15 @@ export function useAutoLayout() {
   const [isRunning, setIsRunning] = useState(false);
 
   // Keep a ref to the latest runAutoLayout for recursive calls
-  const runAutoLayoutRef = useRef<(components: Record<string, Component>, connections: Connection[], nodeLayouts: Record<string, NodeLayout>, measuredNodes?: Node[]) => Promise<void>>();
+  const runAutoLayoutRef =
+    useRef<
+      (
+        components: Record<string, Component>,
+        connections: Connection[],
+        nodeLayouts: Record<string, NodeLayout>,
+        measuredNodes?: Node[],
+      ) => Promise<void>
+    >();
 
   const runAutoLayout = useCallback(
     async (
@@ -74,13 +82,7 @@ export function useAutoLayout() {
         setIsRunning(false);
       }
     },
-    [
-      isRunning,
-      applyAutoLayout,
-      fitView,
-      getNodes,
-      t,
-    ],
+    [isRunning, applyAutoLayout, fitView, getNodes, t],
   );
 
   // Keep ref in sync with the callback

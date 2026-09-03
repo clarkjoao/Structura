@@ -38,9 +38,7 @@ export function TypingIndicator() {
       </div>
       {/* Text bubble */}
       <div className="rounded-2xl rounded-bl-md bg-muted/60 px-4 py-2.5">
-        <span className="text-xs text-muted-foreground">
-          {"thinking" + ".".repeat(dots)}
-        </span>
+        <span className="text-xs text-muted-foreground">{"thinking" + ".".repeat(dots)}</span>
       </div>
     </div>
   );

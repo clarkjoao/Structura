@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -15,9 +15,7 @@
         var path = window.location.pathname;
         var search = window.location.search;
         var hash = window.location.hash;
-        window.location.replace(
-          "/index.html" + (search ? search : "") + (hash ? hash : "")
-        );
+        window.location.replace("/index.html" + (search ? search : "") + (hash ? hash : ""));
       })();
     </script>
   </head>

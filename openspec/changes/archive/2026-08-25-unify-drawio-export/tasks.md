@@ -9,6 +9,7 @@ mechanism) is resolved.**
 > the file or output that confirms it. Phase 3 and 4 are not closed here.
 
 > **Final status (this PR — closing pass):**
+>
 > - **Phase 3** is **superada, não concluída** — superseded by ADR-0009 (Option
 >   A): the versioned copy in `plugins/.../src/generated/export-core/` is the
 >   vigente arrangement, recorded as accepted cost in ADR-0009 (lines 46-51).
@@ -24,7 +25,7 @@ mechanism) is resolved.**
 >   - Note markdown: implemented earlier in `Improve/export drawio (#130)` —
 >     `note-format.ts:renderNoteHtml` + `estimateNoteHeight` (now used in
 >     `cell-builders.ts:187,190`); tests in `note-format.test.ts`. The 336×475
->     values in `constants.ts:17-18` are width/height *defaults* consumed by
+>     values in `constants.ts:17-18` are width/height _defaults_ consumed by
 >     `estimateNoteHeight`, not fixed output size. Discarded as no-op.
 
 ## Phase 0 — Framework-agnostic core (no consumers)
@@ -152,22 +153,19 @@ mechanism) is resolved.**
       `orthogonalEdgeStyle;rounded=1`) + test. (own change) — **not applicable
       as written.** The generator never emits `curved=1` in any path; the
       Smoothstep mapping today is `edgeStyle=orthogonalEdgeStyle;rounded=1;
-      orthogonalLoop=1;jettySize=auto;html=1;` and the existing test at
+orthogonalLoop=1;jettySize=auto;html=1;` and the existing test at
       `build.test.ts:228` already asserts the absence of `curved=1`. What
-      this PR did instead (the *explicitness* pass the openspec actually
-      needed) lives in `styles.ts:resolveDrawioEdgeStyle`:
-      - Each `ExportEdgeStyle` is mapped by an explicit `Record` lookup; the
-        silent `default` branch is removed and replaced by a
-        `never`-asserted exhaustive switch, so a future style added to the
-        union cannot silently collapse into Smoothstep.
-      - The "rounded corners on orthogonal routing" line is documented
-        inline so the next reader knows it is `rounded=1` (the drawio
-        idiom) and **not** `curved=1` (a legacy drawio attribute for
-        curving `edgeStyle=none`, semantically unrelated).
-      - Per-style tests in `build.test.ts` assert the right `edgeStyle=…`
-        token for every `ExportEdgeStyle`, the right `rounded` value, and
-        the absence of `curved=1` everywhere. A type-level test pins the
-        table to the union so a new style cannot land unhandled.
+      this PR did instead (the _explicitness_ pass the openspec actually
+      needed) lives in `styles.ts:resolveDrawioEdgeStyle`: - Each `ExportEdgeStyle` is mapped by an explicit `Record` lookup; the
+      silent `default` branch is removed and replaced by a
+      `never`-asserted exhaustive switch, so a future style added to the
+      union cannot silently collapse into Smoothstep. - The "rounded corners on orthogonal routing" line is documented
+      inline so the next reader knows it is `rounded=1` (the drawio
+      idiom) and **not** `curved=1` (a legacy drawio attribute for
+      curving `edgeStyle=none`, semantically unrelated). - Per-style tests in `build.test.ts` assert the right `edgeStyle=…`
+      token for every `ExportEdgeStyle`, the right `rounded` value, and
+      the absence of `curved=1` everywhere. A type-level test pins the
+      table to the union so a new style cannot land unhandled.
 - [x] Note: render/strip basic markdown via `html=1` and size height to content
       instead of fixed 336×475. (own change) — **already done in
       `Improve/export drawio (#130)`** (commit `d35b712`); the openspec
@@ -177,6 +175,6 @@ mechanism) is resolved.**
       `estimateNoteHeight(text, width)` (content-fit height, no longer
       the 336×475 default). Both are consumed by
       `cell-builders.ts:187,190`. The 336×475 numbers remaining in
-      `constants.ts:17-18` are width/height *defaults* (input to the
+      `constants.ts:17-18` are width/height _defaults_ (input to the
       estimator), not fixed output size. Tests in `note-format.test.ts`
       cover the cases named in the openspec. Discarded as no-op.

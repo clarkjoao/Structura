@@ -1,14 +1,6 @@
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import {
-  FolderX,
-  X,
-  Save,
-  Unplug,
-  Loader2,
-  AlertTriangle,
-  CheckCircle2,
-} from "lucide-react";
+import { FolderX, X, Save, Unplug, Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 interface DisconnectConfirmDialogProps {
   folderName: string | null;
@@ -67,9 +59,7 @@ export function DisconnectConfirmDialog({
           </div>
         </div>
 
-        <p className="text-[11px] text-muted-foreground mb-4">
-          {t("disconnect.explanation")}
-        </p>
+        <p className="text-[11px] text-muted-foreground mb-4">{t("disconnect.explanation")}</p>
 
         {/* Browser backup status — tells the user at a glance whether they have
             a safety copy, and which hint variant to use below. */}
@@ -141,11 +131,7 @@ export function DisconnectConfirmDialog({
           </div>
           <div className="grid grid-cols-3 gap-2 text-[10px] text-muted-foreground leading-snug">
             <p className="px-1">{t("disconnect.cancelHint")}</p>
-            <p
-              className={`px-1 ${
-                hasLocalCopy ? "" : "text-destructive/80"
-              }`}
-            >
+            <p className={`px-1 ${hasLocalCopy ? "" : "text-destructive/80"}`}>
               {hasLocalCopy
                 ? t("disconnect.disconnectOnlyHint")
                 : t("disconnect.disconnectOnlyHintNoCopy")}

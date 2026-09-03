@@ -24,10 +24,7 @@ type ThreadGroup = {
   items: ConversationThread[];
 };
 
-function groupThreadsByDate(
-  threads: ConversationThread[],
-  locale: Locale,
-): ThreadGroup[] {
+function groupThreadsByDate(threads: ConversationThread[], locale: Locale): ThreadGroup[] {
   const today: ConversationThread[] = [];
   const yesterday: ConversationThread[] = [];
   const earlier = new Map<string, ConversationThread[]>();
@@ -241,9 +238,7 @@ export function ThreadDrawer({ open, onClose }: ThreadDrawerProps) {
                             onClick={() => handleSelectThread(thread.id)}
                             className="flex min-w-0 flex-1 flex-col items-start gap-0.5 text-left"
                           >
-                            <span className="line-clamp-1 w-full font-medium">
-                              {thread.title}
-                            </span>
+                            <span className="line-clamp-1 w-full font-medium">{thread.title}</span>
                             <span className="text-[10px] text-muted-foreground">
                               {thread.messages.length} · {timeAgo}
                             </span>

@@ -319,10 +319,7 @@ function RecentSection({
 }) {
   const { t } = useTranslation();
   const dateLocale = locale.startsWith("pt") ? ptBR : enUS;
-  const preview = useMemo(
-    () => recentDiagrams.slice(0, RECENT_PREVIEW_LIMIT),
-    [recentDiagrams],
-  );
+  const preview = useMemo(() => recentDiagrams.slice(0, RECENT_PREVIEW_LIMIT), [recentDiagrams]);
 
   return (
     <div className="mb-1">
@@ -339,9 +336,7 @@ function RecentSection({
       >
         <Clock className="h-4 w-4 shrink-0 opacity-60" />
         <span className="flex-1 truncate text-left">{t("folderTree.recentLabel")}</span>
-        <span className="text-[11px] text-sidebar-foreground/40 tabular-nums">
-          {recentCount}
-        </span>
+        <span className="text-[11px] text-sidebar-foreground/40 tabular-nums">{recentCount}</span>
       </button>
 
       <div className="mt-0.5 ml-3 space-y-0.5">

@@ -92,17 +92,17 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
   const segmentDrag = useSegmentDrag(connectionId, source, target, sourcePosition);
 
   // Label placement polyline:
-//  - Editable (Curve/Step): control points (Curve) or orthogonal corners
-//    (Step) — these are what the rendered path actually traces.
-//  - Non-editable (Smoothstep / Step / Bezier / Straight): we build the
-//    same polyline (or, for Bezier, a 32-sample approximation of the same
-//    cubic) that xyflow's getSmoothStepPath / getBezierPath / getStraightPath
-//    renders. Sampling this with getPointAtOffset places the label on the
-//    visible path, including the Smoothstep/Step bend, and `labelOffset`
-//    slides it end-to-end along that polyline. The polyline is built from
-//    source/target/handles — never from the store's `points` — so stale
-//    entries left over from a previous Editable style, a copy, or the
-//    waypoints->points migration cannot detach the label.
+  //  - Editable (Curve/Step): control points (Curve) or orthogonal corners
+  //    (Step) — these are what the rendered path actually traces.
+  //  - Non-editable (Smoothstep / Step / Bezier / Straight): we build the
+  //    same polyline (or, for Bezier, a 32-sample approximation of the same
+  //    cubic) that xyflow's getSmoothStepPath / getBezierPath / getStraightPath
+  //    renders. Sampling this with getPointAtOffset places the label on the
+  //    visible path, including the Smoothstep/Step bend, and `labelOffset`
+  //    slides it end-to-end along that polyline. The polyline is built from
+  //    source/target/handles — never from the store's `points` — so stale
+  //    entries left over from a previous Editable style, a copy, or the
+  //    waypoints->points migration cannot detach the label.
   const projectionPoints = isEditable
     ? isStep
       ? segmentDrag.corners

@@ -82,9 +82,8 @@ export function applyLayoutResultEdges(
 
   // Determine which edge ids actually get waypoints.
   // By default, every edge from the graph participates.
-  const edgesToStyle = edgeIds === null
-    ? graph.edges
-    : graph.edges.filter((e) => edgeIds.has(e.id));
+  const edgesToStyle =
+    edgeIds === null ? graph.edges : graph.edges.filter((e) => edgeIds.has(e.id));
 
   // Handle order — written unconditionally for all nodes in the graph.
   // The ordering's *values* are edge ids, so they need translating too; an
@@ -96,9 +95,7 @@ export function applyLayoutResultEdges(
     for (const side of ["outgoing", "incoming"] as const) {
       const ordering = result.handleOrder[side].get(node.id);
       if (!ordering?.length) continue;
-      const storeOrdering = ordering
-        .map(edgeIdOf)
-        .filter((id): id is string => id !== undefined);
+      const storeOrdering = ordering.map(edgeIdOf).filter((id): id is string => id !== undefined);
       if (storeOrdering.length === 0) continue;
       store.updateHandleOrder(storeNodeId, side, storeOrdering);
     }
@@ -124,9 +121,11 @@ export function applyLayoutResultEdges(
     // Convert ELK's canvas-absolute route into control points.
     // The first and last route entries sit on the node borders; the canvas draws
     // those legs from the handles, so only the slice between them becomes CPs.
-    const waypoints = route
-      .slice(1, -1)
-      .map((pt) => ({ id: generateId("cp"), x: pt.x + waypointOffset.x, y: pt.y + waypointOffset.y }));
+    const waypoints = route.slice(1, -1).map((pt) => ({
+      id: generateId("cp"),
+      x: pt.x + waypointOffset.x,
+      y: pt.y + waypointOffset.y,
+    }));
 
     if (waypoints.length > 0) {
       store.setEdgeControlPoints(diagramId, storeEdgeId, waypoints, { history: false });

@@ -19,7 +19,7 @@
 
 - [x] 2.1 Create `src/features/integrations/service-matching.ts` exporting
       `matchServiceEntry(entry, localServices) => { kind: "match", service, signals } |
-      { kind: "none" } | { kind: "ambiguous", candidates }`
+{ kind: "none" } | { kind: "ambiguous", candidates }`
 - [x] 2.2 Implement the five signals, reusing `repoUrlsMatch` / `normalizeRepoUrl` from
       `merge-utils.ts`; add a `normalizeServiceName` helper there if one is needed
 - [x] 2.3 Enforce the rule: `signals >= 2` AND unique top scorer

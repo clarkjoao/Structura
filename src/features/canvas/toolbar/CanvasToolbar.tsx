@@ -165,7 +165,10 @@ const CanvasToolbar = ({
           </button>
 
           {/* Plugin toolbar slot */}
-          <PluginToolbarSlot slot="canvas-toolbar" isEditMode={!toolbarEditLocked && !isFlowActive} />
+          <PluginToolbarSlot
+            slot="canvas-toolbar"
+            isEditMode={!toolbarEditLocked && !isFlowActive}
+          />
         </>
       )}
       {addButton}

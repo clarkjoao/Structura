@@ -139,10 +139,7 @@ export function computeCompensationOffsets(
 }
 
 /** The maximum y (bottom edge) of any node after applying compensation offsets. */
-export function compensatedMaxY(
-  nodes: ExportNode[],
-  offsets: CompensationOffsets,
-): number {
+export function compensatedMaxY(nodes: ExportNode[], offsets: CompensationOffsets): number {
   let max = 0;
   for (const node of nodes) {
     const offset = offsets.get(node.id) ?? 0;

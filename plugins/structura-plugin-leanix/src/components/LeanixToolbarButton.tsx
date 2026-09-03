@@ -81,7 +81,9 @@ function parsePosition(raw: string | null): PanelPosition | null {
   try {
     const p = JSON.parse(raw);
     if (typeof p.x === "number" && typeof p.y === "number") return p;
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return null;
 }
 
@@ -111,25 +113,113 @@ function approxKb(graphXml: string): string {
 function AbstractPreview({ showLabels }: { showLabels: boolean }) {
   return (
     <div className="flex items-center justify-center p-2.5 rounded-md bg-muted min-h-[76px]">
-      <svg width="180" height="56" viewBox="0 0 180 56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <rect key="b1" x={6} y={16} width={44} height={24} rx={4} fill="#ffffff" stroke="#d1d5db" strokeWidth={1.5} />
-        <rect key="b2" x={72} y={8} width={44} height={24} rx={4} fill="#ffffff" stroke="#d1d5db" strokeWidth={1.5} />
-        <rect key="b3" x={72} y={36} width={44} height={24} rx={4} fill="#ffffff" stroke="#d1d5db" strokeWidth={1.5} />
-        <rect key="b4" x={138} y={16} width={36} height={24} rx={4} fill="#ffffff" stroke="#d1d5db" strokeWidth={1.5} />
-        <path key="e12" d="M50 24 L70 16" stroke="#6b7280" strokeWidth={1.2} fill="none" markerEnd="url(#arrowhead)" />
-        <path key="e13" d="M50 32 L70 44" stroke="#6b7280" strokeWidth={1.2} fill="none" markerEnd="url(#arrowhead)" />
-        <path key="e24" d="M116 20 L136 24" stroke="#6b7280" strokeWidth={1.2} fill="none" markerEnd="url(#arrowhead)" />
-        <path key="e34" d="M116 44 L136 32" stroke="#6b7280" strokeWidth={1.2} fill="none" markerEnd="url(#arrowhead)" />
+      <svg
+        width="180"
+        height="56"
+        viewBox="0 0 180 56"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+      >
+        <rect
+          key="b1"
+          x={6}
+          y={16}
+          width={44}
+          height={24}
+          rx={4}
+          fill="#ffffff"
+          stroke="#d1d5db"
+          strokeWidth={1.5}
+        />
+        <rect
+          key="b2"
+          x={72}
+          y={8}
+          width={44}
+          height={24}
+          rx={4}
+          fill="#ffffff"
+          stroke="#d1d5db"
+          strokeWidth={1.5}
+        />
+        <rect
+          key="b3"
+          x={72}
+          y={36}
+          width={44}
+          height={24}
+          rx={4}
+          fill="#ffffff"
+          stroke="#d1d5db"
+          strokeWidth={1.5}
+        />
+        <rect
+          key="b4"
+          x={138}
+          y={16}
+          width={36}
+          height={24}
+          rx={4}
+          fill="#ffffff"
+          stroke="#d1d5db"
+          strokeWidth={1.5}
+        />
+        <path
+          key="e12"
+          d="M50 24 L70 16"
+          stroke="#6b7280"
+          strokeWidth={1.2}
+          fill="none"
+          markerEnd="url(#arrowhead)"
+        />
+        <path
+          key="e13"
+          d="M50 32 L70 44"
+          stroke="#6b7280"
+          strokeWidth={1.2}
+          fill="none"
+          markerEnd="url(#arrowhead)"
+        />
+        <path
+          key="e24"
+          d="M116 20 L136 24"
+          stroke="#6b7280"
+          strokeWidth={1.2}
+          fill="none"
+          markerEnd="url(#arrowhead)"
+        />
+        <path
+          key="e34"
+          d="M116 44 L136 32"
+          stroke="#6b7280"
+          strokeWidth={1.2}
+          fill="none"
+          markerEnd="url(#arrowhead)"
+        />
         <defs>
-          <marker id="arrowhead" viewBox="0 0 8 8" refX={7} refY={4} markerWidth={6} markerHeight={6} orient="auto">
+          <marker
+            id="arrowhead"
+            viewBox="0 0 8 8"
+            refX={7}
+            refY={4}
+            markerWidth={6}
+            markerHeight={6}
+            orient="auto"
+          >
             <path d="M0 0 L8 4 L0 8 z" fill="#6b7280" />
           </marker>
         </defs>
         {showLabels && (
           <g>
-            <text x={28} y={50} textAnchor="middle" fontSize={6} fill="#6b7280">label</text>
-            <text x={94} y={50} textAnchor="middle" fontSize={6} fill="#6b7280">label</text>
-            <text x={156} y={50} textAnchor="middle" fontSize={6} fill="#6b7280">label</text>
+            <text x={28} y={50} textAnchor="middle" fontSize={6} fill="#6b7280">
+              label
+            </text>
+            <text x={94} y={50} textAnchor="middle" fontSize={6} fill="#6b7280">
+              label
+            </text>
+            <text x={156} y={50} textAnchor="middle" fontSize={6} fill="#6b7280">
+              label
+            </text>
           </g>
         )}
       </svg>
@@ -146,7 +236,14 @@ interface FloatingPanelProps extends PluginPanelProps {
   onExportSuccess: () => void;
 }
 
-function FloatingPanel({ context, position, onPositionChange, onMinimize, onClose, onExportSuccess }: FloatingPanelProps) {
+function FloatingPanel({
+  context,
+  position,
+  onPositionChange,
+  onMinimize,
+  onClose,
+  onExportSuccess,
+}: FloatingPanelProps) {
   const locale = (context?.locale || "en") as Locale;
   const api = getApi();
   const diagram: DiagramSnapshot | null = api.getDiagram();
@@ -182,11 +279,14 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
     }
   }, []);
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (isDragging) {
-      onPositionChange({ x: e.clientX - dragOffset.x, y: e.clientY - dragOffset.y });
-    }
-  }, [isDragging, dragOffset, onPositionChange]);
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (isDragging) {
+        onPositionChange({ x: e.clientX - dragOffset.x, y: e.clientY - dragOffset.y });
+      }
+    },
+    [isDragging, dragOffset, onPositionChange],
+  );
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
@@ -255,7 +355,9 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
     }
   }, [diagram, currentConfig, locale, onExportSuccess]);
 
-  const handleSend = () => { void runSend(); };
+  const handleSend = () => {
+    void runSend();
+  };
 
   const sizeKb = useMemo(() => {
     if (!diagram) return "0";
@@ -408,7 +510,9 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
                 />
               ) : (
                 // Indeterminate — sliding highlight
-                <div className="h-full bg-primary rounded-full" style={{ width: "40%", animation: "slide 1.2s ease-in-out infinite" }}
+                <div
+                  className="h-full bg-primary rounded-full"
+                  style={{ width: "40%", animation: "slide 1.2s ease-in-out infinite" }}
                 />
               )}
             </div>
@@ -428,7 +532,9 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
               {currentConfig && (
                 <button
                   type="button"
-                  onClick={() => window.open(getDiagramUrl(currentConfig, status.bookmarkId), "_blank")}
+                  onClick={() =>
+                    window.open(getDiagramUrl(currentConfig, status.bookmarkId), "_blank")
+                  }
                   className="flex-1 px-2 py-1 text-[11px] font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   {t(LABELS.status.openInLeanix, locale)}
@@ -474,10 +580,7 @@ function FloatingPanel({ context, position, onPositionChange, onMinimize, onClos
         <div className="flex items-center justify-between gap-2 border-t border-border pt-2.5 mt-0.5">
           <div className="text-[11px] text-muted-foreground flex items-center gap-1 min-w-0">
             {lastSentAt ? (
-              <span
-                title={new Date(lastSentAt).toLocaleString()}
-                className="truncate"
-              >
+              <span title={new Date(lastSentAt).toLocaleString()} className="truncate">
                 {`${t(LABELS.panel.lastSent, locale)} ${formatRelative(lastSentAt, locale)}`}
               </span>
             ) : (
@@ -540,7 +643,7 @@ function ToolbarWithPanel({ context }: PluginPanelProps) {
   const isEditMode = context?.isEditMode !== false;
   const { isConfigured } = useLeanixConfig();
 
-  const [panelState, setPanelState] = useState<'hidden' | 'expanded' | 'minimized'>('hidden');
+  const [panelState, setPanelState] = useState<"hidden" | "expanded" | "minimized">("hidden");
   const [position, setPosition] = useState<PanelPosition>(loadSavedPosition);
   const [diagramDirty, setDiagramDirty] = useState(false);
 
@@ -562,12 +665,16 @@ function ToolbarWithPanel({ context }: PluginPanelProps) {
   // Hydrate position from storage asynchronously (storage.get is async)
   useEffect(() => {
     let cancelled = false;
-    getApi().storage.get<string>(POSITION_STORAGE_KEY).then((raw) => {
-      if (cancelled) return;
-      const pos = parsePosition(raw);
-      if (pos) setPosition(pos);
-    });
-    return () => { cancelled = true; };
+    getApi()
+      .storage.get<string>(POSITION_STORAGE_KEY)
+      .then((raw) => {
+        if (cancelled) return;
+        const pos = parsePosition(raw);
+        if (pos) setPosition(pos);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (panelState === "hidden") {
@@ -577,7 +684,11 @@ function ToolbarWithPanel({ context }: PluginPanelProps) {
           type="button"
           onClick={() => setPanelState("expanded")}
           disabled={!isEditMode}
-          title={!isEditMode ? t(LABELS.toolbar.tooltipReadOnly, locale) : t(LABELS.toolbar.button, locale)}
+          title={
+            !isEditMode
+              ? t(LABELS.toolbar.tooltipReadOnly, locale)
+              : t(LABELS.toolbar.button, locale)
+          }
           className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border border-border bg-card/90 backdrop-blur-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <HardDriveUploadIcon size={14} />

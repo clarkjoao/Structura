@@ -227,11 +227,7 @@ const ComponentPanel = ({
           </button>
         </div>
       </div>
-      <TabBar
-        active={tab}
-        onChange={setTab}
-        showConnections={!isSimple}
-      />
+      <TabBar active={tab} onChange={setTab} showConnections={!isSimple} />
       {tab === "connections" && !isSimple ? (
         <ConnectionsTab componentId={component.id} />
       ) : (

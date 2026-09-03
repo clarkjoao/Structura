@@ -164,7 +164,8 @@ export const LeanixConfigModal: FC<LeanixConfigModalProps> = ({ onClose, locale 
   };
 
   const getTestPillClass = (status: TestStatus) => {
-    const base = "inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border font-medium whitespace-nowrap";
+    const base =
+      "inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border font-medium whitespace-nowrap";
     if (status === "connected") {
       return `${base} border-primary/50 bg-primary/12 text-primary`;
     }
@@ -175,11 +176,22 @@ export const LeanixConfigModal: FC<LeanixConfigModalProps> = ({ onClose, locale 
   };
 
   const TestDot = ({ status }: { status: TestStatus }) => {
-    const color = status === "connected" ? "var(--primary)" : status === "failed" ? "var(--destructive)" : "var(--muted-foreground)";
+    const color =
+      status === "connected"
+        ? "var(--primary)"
+        : status === "failed"
+          ? "var(--destructive)"
+          : "var(--muted-foreground)";
     return (
       <span
         aria-hidden="true"
-        style={{ width: "6px", height: "6px", borderRadius: "999px", background: color, display: "inline-block" }}
+        style={{
+          width: "6px",
+          height: "6px",
+          borderRadius: "999px",
+          background: color,
+          display: "inline-block",
+        }}
       />
     );
   };
@@ -190,7 +202,13 @@ export const LeanixConfigModal: FC<LeanixConfigModalProps> = ({ onClose, locale 
   const labelClass = "block mb-1 text-[13px] font-medium text-foreground";
 
   return (
-    <form className="p-4 space-y-4" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+    <form
+      className="p-4 space-y-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleSave();
+      }}
+    >
       {/* Use Proxy toggle */}
       <div className="flex items-center gap-2">
         <input
@@ -242,10 +260,10 @@ export const LeanixConfigModal: FC<LeanixConfigModalProps> = ({ onClose, locale 
             {testStatus === "connected"
               ? t(LABELS.config.testConnected, locale)
               : testStatus === "failed"
-              ? t(LABELS.config.testFailed, locale)
-              : testStatus === "testing"
-              ? t(LABELS.config.testing, locale)
-              : t(LABELS.config.testNotTested, locale)}
+                ? t(LABELS.config.testFailed, locale)
+                : testStatus === "testing"
+                  ? t(LABELS.config.testing, locale)
+                  : t(LABELS.config.testNotTested, locale)}
           </span>
         </div>
         <div className="relative">
@@ -269,10 +287,14 @@ export const LeanixConfigModal: FC<LeanixConfigModalProps> = ({ onClose, locale 
           <button
             type="button"
             onClick={handleTest}
-            disabled={testStatus === "testing" || !formData.baseUrl.trim() || !formData.authToken.trim()}
+            disabled={
+              testStatus === "testing" || !formData.baseUrl.trim() || !formData.authToken.trim()
+            }
             className="px-3 py-1.5 text-xs font-medium rounded-md border border-border bg-secondary text-secondary-foreground disabled:opacity-50 disabled:cursor-not-allowed hover:bg-secondary/80"
           >
-            {testStatus === "testing" ? t(LABELS.config.testing, locale) : t(LABELS.config.testConnection, locale)}
+            {testStatus === "testing"
+              ? t(LABELS.config.testing, locale)
+              : t(LABELS.config.testConnection, locale)}
           </button>
           {testStatus === "failed" && testReason && (
             <span className="text-xs text-destructive">{testReason}</span>
@@ -302,7 +324,9 @@ export const LeanixConfigModal: FC<LeanixConfigModalProps> = ({ onClose, locale 
           className={inputClass(false)}
         >
           <option value="">{t(LABELS.config.workspaceEmpty, locale)}</option>
-          {formData.workspaceId && <option value={formData.workspaceId}>{formData.workspaceId}</option>}
+          {formData.workspaceId && (
+            <option value={formData.workspaceId}>{formData.workspaceId}</option>
+          )}
         </select>
       </div>
 

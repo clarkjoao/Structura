@@ -48,13 +48,7 @@ describe("ColorPicker", () => {
   it("shows reset button inside dropdown when onReset is provided", () => {
     const onSelectColor = vi.fn();
     const onReset = vi.fn();
-    render(
-      <ColorPicker
-        selectedColor="#FF0000"
-        onSelectColor={onSelectColor}
-        onReset={onReset}
-      />,
-    );
+    render(<ColorPicker selectedColor="#FF0000" onSelectColor={onSelectColor} onReset={onReset} />);
     fireEvent.click(screen.getByRole("button"));
     // Reset button now lives inside the dropdown, not the trigger
     const resetButtons = screen.getAllByTitle("colorSwatches.default");
@@ -64,13 +58,7 @@ describe("ColorPicker", () => {
   it("calls onReset when reset button is clicked", () => {
     const onSelectColor = vi.fn();
     const onReset = vi.fn();
-    render(
-      <ColorPicker
-        selectedColor="#FF0000"
-        onSelectColor={onSelectColor}
-        onReset={onReset}
-      />,
-    );
+    render(<ColorPicker selectedColor="#FF0000" onSelectColor={onSelectColor} onReset={onReset} />);
     fireEvent.click(screen.getByRole("button"));
     const resetButton = screen.getByTitle("colorSwatches.default");
     fireEvent.click(resetButton);

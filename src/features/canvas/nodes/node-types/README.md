@@ -83,17 +83,17 @@ Important rules:
 
 ## Built-in descriptors
 
-| Descriptor             | Goal                                                                                                                                       |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `panelDescriptor`      | Renders regular panel containers, including drag-target and collapse metadata.                                                             |
-| `swimlaneDescriptor`   | Handles swimlane panels as a special panel variant with lane-specific data and layout.                                                     |
-| `noteDescriptor`       | Builds sticky-note style nodes, including collapse state and inline editing hooks.                                                         |
-| `apiGroupDescriptor`   | Builds API group containers and computes size from child endpoint count.                                                                   |
-| `endpointDescriptor`   | Builds API endpoint nodes and wires handler-to-flow playback actions.                                                                      |
-| `dbTableDescriptor`    | Builds database table nodes with editable column data and collapsed sizing rules.                                                          |
-| `jsonViewerDescriptor` | Builds JSON viewer nodes with inline editing and size persistence.                                                                         |
-| `svgDescriptor`        | Builds SVG-backed nodes that render imported custom artwork.                                                                               |
-| `unknownDescriptor`    | Renders unknown component payloads safely when the model type is intentionally opaque.                                                     |
+| Descriptor             | Goal                                                                                                                       |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `panelDescriptor`      | Renders regular panel containers, including drag-target and collapse metadata.                                             |
+| `swimlaneDescriptor`   | Handles swimlane panels as a special panel variant with lane-specific data and layout.                                     |
+| `noteDescriptor`       | Builds sticky-note style nodes, including collapse state and inline editing hooks.                                         |
+| `apiGroupDescriptor`   | Builds API group containers and computes size from child endpoint count.                                                   |
+| `endpointDescriptor`   | Builds API endpoint nodes and wires handler-to-flow playback actions.                                                      |
+| `dbTableDescriptor`    | Builds database table nodes with editable column data and collapsed sizing rules.                                          |
+| `jsonViewerDescriptor` | Builds JSON viewer nodes with inline editing and size persistence.                                                         |
+| `svgDescriptor`        | Builds SVG-backed nodes that render imported custom artwork.                                                               |
+| `unknownDescriptor`    | Renders unknown component payloads safely when the model type is intentionally opaque.                                     |
 | `c4Descriptor`         | Catch-all descriptor for C4-style nodes and AWS nodes, including flow overlays, service metadata, and drill-down behavior. |
 
 ## Adding a new node type

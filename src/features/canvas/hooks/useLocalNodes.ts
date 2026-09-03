@@ -101,8 +101,7 @@ export function useLocalNodes(
         const merged = storeNodes.map((sn) => {
           const ln = localMap.get(sn.id);
           if (!ln) return sn;
-          const useRemotePosition =
-            sn.parentId !== ln.parentId;
+          const useRemotePosition = sn.parentId !== ln.parentId;
           const keepLocalDimensions = resizingNodeIdsRef.current.has(sn.id);
           return {
             ...ln,
@@ -137,8 +136,7 @@ export function useLocalNodes(
             return sn;
           }
 
-          const useRemotePosition =
-            sn.parentId !== ln.parentId;
+          const useRemotePosition = sn.parentId !== ln.parentId;
 
           const positionToUse = useRemotePosition ? sn.position : ln.position;
           const keepLocalDimensions = resizingNodeIdsRef.current.has(sn.id);

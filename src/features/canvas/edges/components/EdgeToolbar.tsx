@@ -2,7 +2,11 @@ import { EdgeLabelRenderer } from "@xyflow/react";
 import { RotateCcw, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { EdgeStyle, EdgeMarker, Point } from "@/features/diagram";
-import { ColorPicker, EdgeStyleDropdown, MarkerCapsDropdown } from "@/features/canvas/selection-actions";
+import {
+  ColorPicker,
+  EdgeStyleDropdown,
+  MarkerCapsDropdown,
+} from "@/features/canvas/selection-actions";
 import {
   dropdownToEdgeStyle,
   edgeStyleToDropdown,
@@ -62,10 +66,7 @@ export function EdgeToolbar({
                 onStyleChange!(dropdownToEdgeStyle(displayValue));
               }}
             />
-            <ColorPicker
-              selectedColor={edgeColor}
-              onSelectColor={onColorChange!}
-            />
+            <ColorPicker selectedColor={edgeColor} onSelectColor={onColorChange!} />
             <MarkerCapsDropdown
               currentCap={markerStart}
               onChangeCap={onMarkerStartChange!}

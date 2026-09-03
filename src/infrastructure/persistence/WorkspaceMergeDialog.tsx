@@ -60,10 +60,7 @@ export function WorkspaceMergeDialog({
 
   // Classify each diagram into a 3-bucket status: local-only, folder-only, or both.
   const classifiedDiagrams = useMemo(() => {
-    const allIds = new Set<string>([
-      ...localDiagramIds,
-      ...folderDiagramIds,
-    ]);
+    const allIds = new Set<string>([...localDiagramIds, ...folderDiagramIds]);
     const rows: Array<{
       id: string;
       name: string;
@@ -79,8 +76,7 @@ export function WorkspaceMergeDialog({
       rows.push({
         id,
         name: diagramName,
-        status:
-          inLocal && inFolder ? "both" : inLocal ? "local" : "folder",
+        status: inLocal && inFolder ? "both" : inLocal ? "local" : "folder",
       });
     }
     return rows.sort((a, b) => a.name.localeCompare(b.name));
@@ -108,9 +104,7 @@ export function WorkspaceMergeDialog({
   })();
 
   const mergeHintKey =
-    folderOnlyCount === 0
-      ? "workspaceMerge.mergeHintSimple"
-      : "workspaceMerge.mergeHint";
+    folderOnlyCount === 0 ? "workspaceMerge.mergeHintSimple" : "workspaceMerge.mergeHint";
 
   if (isEmptyFolderPush) {
     return (
@@ -138,9 +132,7 @@ export function WorkspaceMergeDialog({
           </div>
           <div className="mb-4 flex items-start gap-2 text-[11px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-md px-3 py-2">
             <HardDrive className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-            <span>
-              {t("workspaceMerge.emptyFolderPushHint", { count: localDiagramCount })}
-            </span>
+            <span>{t("workspaceMerge.emptyFolderPushHint", { count: localDiagramCount })}</span>
           </div>
           <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
             <button
@@ -222,9 +214,7 @@ export function WorkspaceMergeDialog({
           </div>
           <div className="flex items-center gap-2">
             <Database className="h-3 w-3 text-primary shrink-0" />
-            <span className="text-muted-foreground">
-              {t("workspaceMerge.conflictBadgeLocal")}:
-            </span>
+            <span className="text-muted-foreground">{t("workspaceMerge.conflictBadgeLocal")}:</span>
             <span className="font-medium">{localOnlyCount}</span>
           </div>
           {bothCount > 0 && (
@@ -294,10 +284,7 @@ export function WorkspaceMergeDialog({
                 {classifiedDiagrams
                   .filter((d) => d.status === "both")
                   .map((d) => (
-                    <div
-                      key={d.id}
-                      className="text-[11px] flex items-center gap-2 px-1 py-0.5"
-                    >
+                    <div key={d.id} className="text-[11px] flex items-center gap-2 px-1 py-0.5">
                       <span className="font-mono truncate">{d.name}</span>
                       <span className="ml-auto text-[10px] text-amber-400 shrink-0">
                         {t("workspaceMerge.conflictBadgeBoth")}

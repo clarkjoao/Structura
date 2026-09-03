@@ -16,8 +16,7 @@ const HANDLE_DIRECTIONS: Record<HandlePosition, { x: -1 | 0 | 1; y: -1 | 0 | 1 }
   bottom: { x: 0, y: 1 },
 };
 
-const distance = (a: Point, b: Point): number =>
-  Math.hypot(b.x - a.x, b.y - a.y);
+const distance = (a: Point, b: Point): number => Math.hypot(b.x - a.x, b.y - a.y);
 
 /**
  * Port of xyflow's internal `getPoints()` (from @xyflow/system). Returns the
@@ -52,14 +51,7 @@ export function getStepPolylinePoints(params: {
       ? sourceGapped.x < targetGapped.x
       : sourceGapped.y < targetGapped.y;
   const dirAccessor: "x" | "y" = sourceGapped.x !== targetGapped.x ? "x" : "y";
-  const currDir =
-    dirAccessor === "x"
-      ? sourceGappedDir
-        ? 1
-        : -1
-      : sourceGappedDir
-        ? 1
-        : -1;
+  const currDir = dirAccessor === "x" ? (sourceGappedDir ? 1 : -1) : sourceGappedDir ? 1 : -1;
 
   const sourceGapOffset = { x: 0, y: 0 };
   const targetGapOffset = { x: 0, y: 0 };
@@ -141,8 +133,7 @@ export function getStepPolylinePoints(params: {
   const head =
     gappedSource.x !== points[0].x || gappedSource.y !== points[0].y ? [gappedSource] : [];
   const tail =
-    gappedTarget.x !== points[points.length - 1].x ||
-    gappedTarget.y !== points[points.length - 1].y
+    gappedTarget.x !== points[points.length - 1].x || gappedTarget.y !== points[points.length - 1].y
       ? [gappedTarget]
       : [];
   return [source, ...head, ...points, ...tail, target];
@@ -152,13 +143,7 @@ export function getStepPolylinePoints(params: {
  * Sample a cubic bezier curve defined by control points P0..P3 at the given
  * `t` (0..1). Mirrors xyflow's getBezierPath control-point computation.
  */
-function sampleBezier(
-  p0: Point,
-  c0: Point,
-  c1: Point,
-  p1: Point,
-  t: number,
-): Point {
+function sampleBezier(p0: Point, c0: Point, c1: Point, p1: Point, t: number): Point {
   const mt = 1 - t;
   return {
     x: mt * mt * mt * p0.x + 3 * mt * mt * t * c0.x + 3 * mt * t * t * c1.x + t * t * t * p1.x,

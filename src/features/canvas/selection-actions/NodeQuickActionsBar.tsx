@@ -57,11 +57,7 @@ function pickColorGroup(component: Component | null): ColorPickerGroup {
 function usesCustomColor(component: Component): boolean {
   // Endpoints don't support color
   if (isEndpointComponent(component)) return false;
-  return !(
-    isNoteComponent(component) ||
-    isC4Component(component) ||
-    isPanelComponent(component)
-  );
+  return !(isNoteComponent(component) || isC4Component(component) || isPanelComponent(component));
 }
 
 /**
@@ -176,13 +172,7 @@ export function NodeQuickActionsBar({
     if (!component?.customIconId) return;
     decrementIconUsage(diagramId, component.customIconId);
     updateComponent(nodeId, { customIconId: undefined });
-  }, [
-    component?.customIconId,
-    decrementIconUsage,
-    diagramId,
-    nodeId,
-    updateComponent,
-  ]);
+  }, [component?.customIconId, decrementIconUsage, diagramId, nodeId, updateComponent]);
 
   const handleColorChange = useCallback(
     (color: string) => {
@@ -211,8 +201,7 @@ export function NodeQuickActionsBar({
       // Panels + C4: write panelColor. Swimlanes also need laneColor
       // updated so the descriptor's `sl?.laneColor ?? panelColor` reads
       // the new value instead of the previous lane colour.
-      const isSwimlane =
-        isPanelComponent(component) && component.panelKind === PanelKind.Swimlane;
+      const isSwimlane = isPanelComponent(component) && component.panelKind === PanelKind.Swimlane;
       if (isSwimlane) {
         const swimlane = component.swimlane;
         updateComponent(nodeId, {
@@ -263,8 +252,12 @@ export function NodeQuickActionsBar({
           {/* Lock/unlock */}
           <button
             type="button"
-            title={component.locked ? t("canvas.quickActions.unlock") : t("canvas.quickActions.lock")}
-            aria-label={component.locked ? t("canvas.quickActions.unlock") : t("canvas.quickActions.lock")}
+            title={
+              component.locked ? t("canvas.quickActions.unlock") : t("canvas.quickActions.lock")
+            }
+            aria-label={
+              component.locked ? t("canvas.quickActions.unlock") : t("canvas.quickActions.lock")
+            }
             onClick={handleLockToggle}
             className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
           >

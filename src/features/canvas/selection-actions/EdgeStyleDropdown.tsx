@@ -32,8 +32,7 @@ export function EdgeStyleDropdown({ currentStyle, onChangeStyle }: EdgeStyleDrop
   const ref = useRef<HTMLDivElement>(null);
 
   const selected =
-    EDGE_STYLE_OPTIONS.find((o) => o.value === currentStyle) ??
-    EDGE_STYLE_OPTIONS[3];
+    EDGE_STYLE_OPTIONS.find((o) => o.value === currentStyle) ?? EDGE_STYLE_OPTIONS[3];
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {

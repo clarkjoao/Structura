@@ -146,7 +146,9 @@ describe("layoutScopedNodes — mermaid import path", () => {
   it("grows the parent so its children fit inside it", async () => {
     // Mermaid itself imports flat, so containment is exercised through the same
     // function with a scope that has a real parent in it.
-    const panel = useDiagramStore.getState().addComponent("panel", "Services", null, { x: 0, y: 0 });
+    const panel = useDiagramStore
+      .getState()
+      .addComponent("panel", "Services", null, { x: 0, y: 0 });
     const children = ["A", "B", "C", "D", "E", "F"].map((name) =>
       useDiagramStore.getState().addComponent("system", name, panel.id, { x: 0, y: 0 }),
     );

@@ -82,10 +82,12 @@ describe("getPointAtOffset", () => {
     ];
     // The labeled polyline the OLD code would have built (source → stale
     // points → target) lands the midpoint far off-canvas.
-    const detachedIfStale = getPointAtOffset(source, target, [
-      cp("stale-1", 30, -500),
-      cp("stale-2", 70, 800),
-    ], 0.5);
+    const detachedIfStale = getPointAtOffset(
+      source,
+      target,
+      [cp("stale-1", 30, -500), cp("stale-2", 70, 800)],
+      0.5,
+    );
     expect(detachedIfStale).not.toEqual(straightMid);
     expect(Math.abs(detachedIfStale.y)).toBeGreaterThan(100);
 
@@ -165,9 +167,7 @@ describe("getRenderedPathKnots", () => {
     // which is off the chord (the chord at x = centerX has y = centerX / 2).
     const chordYAt = (x: number) => (x / 200) * 100;
     const intermediates = knots.slice(1, -1);
-    const detoursOffChord = intermediates.filter(
-      (k) => Math.abs(k.y - chordYAt(k.x)) > 1,
-    );
+    const detoursOffChord = intermediates.filter((k) => Math.abs(k.y - chordYAt(k.x)) > 1);
     expect(detoursOffChord.length).toBeGreaterThan(0);
   });
 

@@ -6,7 +6,13 @@ import { layout } from "../layout/layoutEngine";
 import { fromDiagram, resizableIds } from "../layout/fromDiagram";
 import { measuredSizesOf, toAppliedLayouts } from "../layout/applyLayout";
 import { applyLayoutResultEdges } from "../layout/applyLayoutResult";
-import { useDiagramActions, useDiagramStore, useComponents, useConnections, useResolvedNodeLayouts } from "@/features/diagram";
+import {
+  useDiagramActions,
+  useDiagramStore,
+  useComponents,
+  useConnections,
+  useResolvedNodeLayouts,
+} from "@/features/diagram";
 
 export function usePanelChildLayout() {
   const { t } = useTranslation();

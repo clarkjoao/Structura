@@ -93,7 +93,6 @@ const ConnectionPanel = ({
     [t],
   );
 
-
   const debouncedUpdate = useMemo(
     () =>
       debounce((patch: Partial<Omit<Connection, "id">>) => {

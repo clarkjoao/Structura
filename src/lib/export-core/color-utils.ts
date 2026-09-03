@@ -44,7 +44,5 @@ export function mixWithWhite(hex: string, amount: number): string {
   const g = parseInt(m[2], 16);
   const b = parseInt(m[3], 16);
   const blend = (c: number) => Math.round(c + (255 - c) * Math.max(0, Math.min(1, amount)));
-  return `#${[blend(r), blend(g), blend(b)]
-    .map((x) => x.toString(16).padStart(2, "0"))
-    .join("")}`;
+  return `#${[blend(r), blend(g), blend(b)].map((x) => x.toString(16).padStart(2, "0")).join("")}`;
 }

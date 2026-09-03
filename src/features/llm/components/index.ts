@@ -1,9 +1,6 @@
 export { AssistantUIChatPanel } from "./AssistantUIChatPanel";
 export { AssistantUIComposer } from "./AssistantUIComposer";
-export {
-  UserMessageComponent,
-  AssistantMessageComponent,
-} from "./AssistantUIMessage";
+export { UserMessageComponent, AssistantMessageComponent } from "./AssistantUIMessage";
 export { SuggestionCard } from "./SuggestionCard";
 export { LLMSettings } from "./LLMSettings";
 export { MentionPicker } from "./MentionPicker";
