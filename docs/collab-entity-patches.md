@@ -1,6 +1,6 @@
 # Collab — migração para patches por entidade
 
-> **Status:** implementado — fases 1 a 6 concluídas
+> **Status:** implementado — fases 1 a 7 concluídas
 > **Início:** 2026-09-03
 > **Branch:** `improve/collab`
 > **Decisão anterior:** [collab-architecture-study.md](./collab-architecture-study.md)
@@ -101,6 +101,7 @@ Reproduzir: `PATCH_MODE=entity npm run loadtest` (em `server/`).
 | 4 | Versão de protocolo no handshake | ✅ |
 | 5 | `it.skip` vira teste real de convergência | ✅ |
 | 6 | Revalidar carga e comparar com a tabela acima | ✅ |
+| 7 | Tombstones com janela (remove-wins) | ✅ |
 
 ### Ordem e porquê
 
@@ -113,10 +114,11 @@ protocolo por último, mas **antes de qualquer deploy**.
 
 ## 5. Riscos conhecidos
 
-### Deletes podem ressuscitar
-A apaga `node-7`, B move `node-7` concorrentemente → o move recria o nó.
-**Decisão:** aceitar por ora (raro, visível, desfazível). Se incomodar, set de
-tombstones no servidor com janela igual à retenção do oplog (~40 linhas).
+### ~~Deletes podem ressuscitar~~ — resolvido na fase 7
+A apaga `node-7`, B move `node-7` concorrentemente → o move recriava o nó, e
+como o delete cobre várias coleções enquanto a edição em voo costuma tocar uma
+só, ele voltava **órfão** (layout sem componente). Resolvido com remove-wins
+por janela — ver fase 7.
 
 ### Mudança de semântica é silenciosa
 Cliente antigo + servidor novo interpretaria o patch esparso como "a coleção
@@ -212,13 +214,50 @@ A implementação real bateu a previsão (p99 31× melhor que o baseline).
 
 ---
 
+### Fase 7 — tombstones com janela (remove-wins)
+
+`server/src/collab.ts`
+
+O servidor passa a guardar por sala `coleção → entityId → versão em que foi
+apagada`. Uma escrita numa entidade apagada em versão `D` é **descartada** se o
+remetente declarou versão `< D` — ele não tinha visto o delete. Se declarou
+`>= D`, sabia e está recriando de propósito: a escrita vale e o tombstone é
+limpo.
+
+Duas consequências que exigiram cuidado:
+
+1. **O broadcast leva o patch efetivo, não o recebido.** `applyPatch` passou a
+   retornar o que de fato entrou. Se o servidor suprime uma escrita e mesmo
+   assim retransmite o patch original, os peers aplicam a ressurreição que o
+   servidor não tem — e divergem em silêncio. O oplog também registra o efetivo,
+   senão o replay reproduz um estado que nunca existiu.
+2. **Poda.** Tombstones anteriores ao último snapshot são inúteis (quem está
+   tão atrasado recebe o snapshot inteiro), então são removidos junto com a
+   poda do oplog. A memória fica limitada sem precisar de TTL.
+
+**Bug encontrado de permeio:** o teste falhou por um motivo diferente do
+esperado — `host:ack` de sala **nova** não mandava `version` (só o caminho de
+sala retomada mandava). Sem isso o host não tinha versão para declarar ao
+enviar patches, e o guard não conseguia decidir. Corrigido; `host:ack` agora
+carrega `version` e `protocol` nos dois caminhos.
+
+**Testes:** ressurreição bloqueada, recriação deliberada permitida. Servidor:
+13 → **15 testes**.
+
+**Carga:** sem regressão. A primeira medição deu p50 16ms, a segunda p50 4ms /
+lag 0,89ms — dentro da variância já documentada e igual ao pré-tombstone.
+
+---
+
 ## 7. O que ficou de fora
 
-- **Tombstones com janela no servidor.** Delete concorrente com edit ainda pode
-  ressuscitar a entidade. Decisão consciente (ver seção 5).
 - **Granularidade de campo dentro da entidade.** Dois usuários editando campos
   diferentes do *mesmo* componente ainda disputam. Bem mais raro que o caso de
   nós diferentes, que era o que doía; refinamento futuro se aparecer demanda.
 - **Reativar o gate de version gap.** Com patches disjuntos por entidade ele
   volta a fazer sentido (foi removido porque sob LWW-de-coleção não protegia
   nada). Não reativado nesta rodada.
+- **Tombstone para escrita sem versão declarada.** Um cliente que não manda
+  `version` não pode ser avaliado e a escrita passa. Hoje é inalcançável — o
+  guard de protocolo já recusa qualquer cliente que não seja v2, e o v2 sempre
+  declara versão — mas o caminho existe no código.

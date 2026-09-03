@@ -24,6 +24,8 @@ interface Room {
     timestamp: number;
     bytes: number;
   }>;
+  /** collection -> entityId -> version at which it was deleted. */
+  tombstones: Map<string, Map<string, number>>;
   /** Approximate bytes retained by operationLog, kept in step with it. */
   operationLogBytes: number;
   /** Newest cursor per client, awaiting the next coalesced flush. */
@@ -421,26 +423,112 @@ function ensureUniqueGuestId(room: Room, desiredId: string): string {
  * through here — they go via the snapshot path (host:join / session:init /
  * SYNC_SNAPSHOT), which replaces outright.
  */
-function applyPatch(snapshot: Record<string, unknown>, patch: Record<string, unknown>): void {
+/**
+ * Record that an entity was deleted at the room's current version, so a peer
+ * that had not yet seen the delete cannot resurrect it.
+ */
+function recordTombstone(room: Room, collection: string, entityId: string): void {
+  let byEntity = room.tombstones.get(collection);
+  if (!byEntity) {
+    byEntity = new Map();
+    room.tombstones.set(collection, byEntity);
+  }
+  byEntity.set(entityId, room.version);
+}
+
+/**
+ * Drop tombstones a resync can no longer need.
+ *
+ * A client behind the last snapshot is served the full snapshot rather than a
+ * replay, so deletes older than that can never be contradicted by an in-flight
+ * patch. Called when a snapshot is taken.
+ */
+function pruneTombstones(room: Room): void {
+  for (const [collection, byEntity] of room.tombstones.entries()) {
+    for (const [entityId, deletedAt] of byEntity.entries()) {
+      if (deletedAt <= room.snapshotAtVersion) byEntity.delete(entityId);
+    }
+    if (byEntity.size === 0) room.tombstones.delete(collection);
+  }
+}
+
+/**
+ * Apply a patch to a room snapshot and return the portion that actually took
+ * effect.
+ *
+ * Patches are sparse and per entity. The merge rule is structural rather than
+ * a hard-coded list of collection names, so adding a collection to the domain
+ * needs no change here:
+ *
+ *   - an object value is an entity collection → merge one level, and a `null`
+ *     entry is a tombstone that removes that entity
+ *   - anything else is a scalar → assign
+ *
+ * The invariant this relies on: every object-valued key at the top level of a
+ * patch is a keyed collection of entities. Whole-state transfers do not come
+ * through here — they go via the snapshot path (host:join / session:init /
+ * SYNC_SNAPSHOT), which replaces outright.
+ *
+ * Remove wins over a concurrent edit: a write to an entity deleted at a version
+ * the sender had not yet seen is dropped, otherwise a peer mid-drag would
+ * resurrect a node someone else deleted — and, because a delete spans several
+ * collections while the in-flight edit usually touches one, resurrect it as an
+ * orphan. A sender that already knew about the delete is deliberately
+ * re-creating the entity, so its write is honoured and the tombstone cleared.
+ *
+ * The caller must broadcast and log the returned patch rather than the one it
+ * received: peers that applied a suppressed write would diverge from the
+ * server's own snapshot.
+ */
+function applyPatch(
+  room: Room,
+  patch: Record<string, unknown>,
+  senderKnownVersion: number | null,
+): Record<string, unknown> {
+  const snapshot = room.snapshot;
+  const effective: Record<string, unknown> = {};
+
   for (const [key, value] of Object.entries(patch)) {
     if (!isRecord(value)) {
       snapshot[key] = value;
+      effective[key] = value;
       continue;
     }
 
     const existing = snapshot[key];
     const target: Record<string, unknown> = isRecord(existing) ? { ...existing } : {};
+    const tombstones = room.tombstones.get(key);
+    const appliedEntities: Record<string, unknown> = {};
+    let appliedAny = false;
 
     for (const [entityId, entityValue] of Object.entries(value)) {
       if (entityValue === null) {
         delete target[entityId];
-      } else {
-        target[entityId] = entityValue;
+        recordTombstone(room, key, entityId);
+        appliedEntities[entityId] = null;
+        appliedAny = true;
+        continue;
       }
+
+      const deletedAt = tombstones?.get(entityId);
+      if (deletedAt !== undefined && senderKnownVersion !== null && senderKnownVersion < deletedAt) {
+        logThrottled("resurrect_blocked", `blocked resurrection of ${key}/${entityId}`);
+        continue;
+      }
+      if (deletedAt !== undefined) tombstones?.delete(entityId);
+
+      target[entityId] = entityValue;
+      appliedEntities[entityId] = entityValue;
+      appliedAny = true;
     }
 
-    snapshot[key] = target;
+    if (appliedAny) {
+      snapshot[key] = target;
+      effective[key] = appliedEntities;
+    }
   }
+
+  return effective;
 }
 
 function handleHostJoin(ws: WebSocket, message: JsonMessage): void {
@@ -478,6 +566,7 @@ function handleHostJoin(ws: WebSocket, message: JsonMessage): void {
     safeSend(ws, {
       type: "host:ack",
       resumed: true,
+      protocol: COLLAB_PROTOCOL_VERSION,
       snapshot: existingRoom.snapshot,
       version: existingRoom.version,
     });
@@ -514,6 +603,7 @@ function handleHostJoin(ws: WebSocket, message: JsonMessage): void {
     snapshotAtVersion: 0,
     operationLog: [],
     operationLogBytes: 0,
+    tombstones: new Map(),
     pendingCursors: new Map(),
     cursorTimer: null,
   };
@@ -530,7 +620,14 @@ function handleHostJoin(ws: WebSocket, message: JsonMessage): void {
     pongTimeout: null,
   });
 
-  safeSend(ws, { type: "host:ack", resumed: false });
+  // Carry version and protocol here too: the resumed path already did, and a
+  // host with no version cannot declare what it had seen when it patches.
+  safeSend(ws, {
+    type: "host:ack",
+    resumed: false,
+    protocol: COLLAB_PROTOCOL_VERSION,
+    version: room.version,
+  });
   console.log(
     `[collab] host joined: room=${roomId}, diagram=${diagramIdMeta ?? "none"}, host=${user.id}`,
   );
@@ -659,15 +756,17 @@ function handleHostPatch(ws: WebSocket, message: JsonMessage): void {
   // Generate operation ID if not provided by client
   const operationId = clientOperationId ?? crypto.randomUUID();
 
-  // Increment version and apply patch
+  // Increment version and apply patch. What actually landed may be narrower
+  // than what was sent — see applyPatch on remove-wins.
   room.version++;
-  applyPatch(room.snapshot, patch);
+  const effectivePatch = applyPatch(room, patch, clientVersion);
+  const hasEffect = Object.keys(effectivePatch).length > 0;
 
   appendOperation(room, {
     version: room.version,
     operationId,
     clientId: state.clientId,
-    patch,
+    patch: effectivePatch,
     timestamp: Date.now(),
     bytes: frameSizes.get(message) ?? 0,
   });
@@ -683,17 +782,20 @@ function handleHostPatch(ws: WebSocket, message: JsonMessage): void {
     accepted: true,
   });
 
-  // Broadcast to other clients with operation ID and version
-  broadcastToRoom(
-    room,
-    {
-      type: "session:patch",
-      patch,
-      operationId,
-      version: room.version,
-    },
-    { exceptClientId: state.clientId },
-  );
+  // Broadcast what landed, not what was sent: a peer applying a suppressed
+  // write would drift from the server's snapshot.
+  if (hasEffect) {
+    broadcastToRoom(
+      room,
+      {
+        type: "session:patch",
+        patch: effectivePatch,
+        operationId,
+        version: room.version,
+      },
+      { exceptClientId: state.clientId },
+    );
+  }
   // Warn client about version gap AFTER applying (non-blocking)
   if (hasVersionGap) {
     safeSend(ws, {
@@ -744,15 +846,17 @@ function handleGuestPatch(ws: WebSocket, message: JsonMessage): void {
   // Generate operation ID if not provided by client
   const operationId = clientOperationId ?? crypto.randomUUID();
 
-  // Increment version and apply patch
+  // Increment version and apply patch. What actually landed may be narrower
+  // than what was sent — see applyPatch on remove-wins.
   room.version++;
-  applyPatch(room.snapshot, patch);
+  const effectivePatch = applyPatch(room, patch, clientVersion);
+  const hasEffect = Object.keys(effectivePatch).length > 0;
 
   appendOperation(room, {
     version: room.version,
     operationId,
     clientId: state.clientId,
-    patch,
+    patch: effectivePatch,
     timestamp: Date.now(),
     bytes: frameSizes.get(message) ?? 0,
   });
@@ -769,17 +873,19 @@ function handleGuestPatch(ws: WebSocket, message: JsonMessage): void {
   });
 
   // Broadcast to all clients (including host) with operation ID and version
-  broadcastToRoom(
-    room,
-    {
-      type: "session:patch",
-      patch,
-      operationId,
-      version: room.version,
-      clientId: state.clientId,
-    },
-    { exceptClientId: state.clientId },
-  );
+  if (hasEffect) {
+    broadcastToRoom(
+      room,
+      {
+        type: "session:patch",
+        patch: effectivePatch,
+        operationId,
+        version: room.version,
+        clientId: state.clientId,
+      },
+      { exceptClientId: state.clientId },
+    );
+  }
 
   // Warn client about version gap AFTER applying (non-blocking)
   if (hasVersionGap) {
@@ -899,6 +1005,10 @@ function takePeriodicSnapshot(room: Room, roomId: string): void {
   room.operationLog = opsToKeep;
   // Keep the byte counter in step with the log it tracks.
   room.operationLogBytes = opsToKeep.reduce((total, op) => total + op.bytes, 0);
+
+  // Deletes older than the snapshot can no longer be contradicted: anyone that
+  // far behind is served the snapshot itself.
+  pruneTombstones(room);
 
   console.log(
     `[collab] periodic snapshot: room=${roomId}, version=${snapshotVersion}, opsLogged=${room.operationLog.length}`,

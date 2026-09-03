@@ -742,4 +742,124 @@ describe("collaboration server integration", () => {
 
     legacy.ws.close();
   });
+  // -------------------------------------------------------------------------
+  // 14. Remove wins: a peer that had not seen the delete cannot resurrect
+  // -------------------------------------------------------------------------
+  it("blocks a stale edit from resurrecting a deleted entity", async () => {
+    const room = TEST_ROOM + "-resurrect";
+    const host = await connectClient(room);
+    host.ws.send(
+      JSON.stringify({
+        type: "host:join",
+        protocol: 2,
+        roomId: room,
+        diagramId: room,
+        user: makeUser(0),
+        snapshot: makeSnapshot({
+          diagramId: room,
+          components: { "node-7": { id: "node-7" } },
+          nodeLayouts: { "node-7": { elementId: "node-7", x: 0, y: 0 } },
+        }),
+      }),
+    );
+    const ack = (await waitForMessage(host, "host:ack")) as Record<string, unknown>;
+    const versionBeforeDelete = ack.version as number;
+
+    const guest = await connectClient(room);
+    guest.ws.send(
+      JSON.stringify({ type: "guest:join", protocol: 2, roomId: room, user: makeUser(1) }),
+    );
+    await waitForMessage(guest, "session:init");
+
+    // Host deletes node-7 across both collections.
+    host.ws.send(
+      JSON.stringify({
+        type: "host:patch",
+        roomId: room,
+        version: versionBeforeDelete,
+        patch: { components: { "node-7": null }, nodeLayouts: { "node-7": null } },
+      }),
+    );
+    await waitForMessage(host, "OP_ACK");
+
+    // The guest was mid-drag and still believes it is on the pre-delete
+    // version, so its edit must not bring node-7 back as an orphan layout.
+    guest.ws.send(
+      JSON.stringify({
+        type: "guest:patch",
+        roomId: room,
+        version: versionBeforeDelete,
+        patch: { nodeLayouts: { "node-7": { elementId: "node-7", x: 500, y: 500 } } },
+      }),
+    );
+    await waitForMessage(guest, "OP_ACK");
+
+    const observer = await connectClient(room);
+    observer.ws.send(
+      JSON.stringify({ type: "guest:join", protocol: 2, roomId: room, user: makeUser(2) }),
+    );
+    const init = (await waitForMessage(observer, "session:init")) as Record<string, unknown>;
+    const snap = init.snapshot as Record<string, Record<string, unknown>>;
+
+    expect(snap.components["node-7"]).toBeUndefined();
+    expect(snap.nodeLayouts["node-7"]).toBeUndefined();
+
+    host.ws.close();
+    guest.ws.close();
+    observer.ws.close();
+  });
+
+  // -------------------------------------------------------------------------
+  // 15. A client that knows about the delete may deliberately re-create
+  // -------------------------------------------------------------------------
+  it("allows re-creating an entity when the sender already saw the delete", async () => {
+    const room = TEST_ROOM + "-recreate";
+    const host = await connectClient(room);
+    host.ws.send(
+      JSON.stringify({
+        type: "host:join",
+        protocol: 2,
+        roomId: room,
+        diagramId: room,
+        user: makeUser(0),
+        snapshot: makeSnapshot({
+          diagramId: room,
+          nodeLayouts: { "node-9": { elementId: "node-9", x: 0, y: 0 } },
+        }),
+      }),
+    );
+    await waitForMessage(host, "host:ack");
+
+    host.ws.send(
+      JSON.stringify({
+        type: "host:patch",
+        roomId: room,
+        patch: { nodeLayouts: { "node-9": null } },
+      }),
+    );
+    const deleteAck = (await waitForMessage(host, "OP_ACK")) as Record<string, unknown>;
+
+    // Sending at the post-delete version means the client knew: honour it.
+    host.ws.send(
+      JSON.stringify({
+        type: "host:patch",
+        roomId: room,
+        version: deleteAck.version,
+        patch: { nodeLayouts: { "node-9": { elementId: "node-9", x: 7, y: 7 } } },
+      }),
+    );
+    await waitForMessage(host, "OP_ACK");
+
+    const observer = await connectClient(room);
+    observer.ws.send(
+      JSON.stringify({ type: "guest:join", protocol: 2, roomId: room, user: makeUser(1) }),
+    );
+    const init = (await waitForMessage(observer, "session:init")) as Record<string, unknown>;
+    const layouts = (init.snapshot as Record<string, unknown>).nodeLayouts as Record<string, unknown>;
+
+    expect(layouts["node-9"]).toMatchObject({ x: 7, y: 7 });
+
+    host.ws.close();
+    observer.ws.close();
+  });
 });
