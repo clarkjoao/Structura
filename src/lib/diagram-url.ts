@@ -56,7 +56,8 @@ function stripForShare(diagram: Diagram): Record<string, unknown> {
 }
 
 export function generateShareUrl(diagram: Diagram): ShareUrlResult {
-  const json = JSON.stringify(stripForShare(diagram));
+  const stripped = stripForShare(diagram);
+  const json = JSON.stringify(stripped);
   const encoded = LZString.compressToEncodedURIComponent(json);
   const base = `${window.location.origin}${getBasePath()}`;
   const url = `${base}#share=${encoded}`;
