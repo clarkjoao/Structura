@@ -27,12 +27,18 @@ collaboration relay and proxying only.
 
 ```
 npm run dev          # vite dev server (port 8080)
-npm run typecheck    # tsc -b (project references; root tsconfig checks nothing by itself)
+npm run typecheck    # the type gate: checks src and vite.config.ts
 npm run lint         # eslint
 npm run format       # prettier --write
 npm run test         # vitest run
-npm run build        # tsc -b && vite build
+npm run build        # npm run typecheck && vite build
 ```
+
+`npx tsc --noEmit` at the root checks `src`, because the root tsconfig is the
+app project. It does **not** cover `vite.config.ts`, which is a project of its
+own so it can be checked against a Node lib with no DOM — `npm run typecheck`
+runs both, and is the gate CI runs. The plugins under `plugins/` have their own
+`typecheck` scripts that no workflow calls.
 
 ## Folder structure
 

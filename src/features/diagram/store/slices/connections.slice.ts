@@ -7,6 +7,7 @@ import { repairFlowsAfterRemovingDiagramElements } from "../../utils/flow-repair
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
 import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
+import { publishSewNotices } from "../helpers/publish-sew-notices";
 import { resolveActiveScene } from "../helpers/scene-helpers";
 import { mutateRemoveConnectionInScene } from "../../utils/scene-mutations";
 
@@ -63,7 +64,8 @@ export const connectionsSlice = (
       if (!d) return;
       const scene = resolveActiveScene(d);
       if (scene) {
-        mutateRemoveConnectionInScene(d, scene.id, id);
+        pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+        publishSewNotices(state, mutateRemoveConnectionInScene(d, scene.id, id));
         touchDiagram(d);
         return;
       }

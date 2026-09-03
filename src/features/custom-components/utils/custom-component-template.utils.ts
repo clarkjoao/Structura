@@ -64,7 +64,7 @@ const NODE_DATA_UI_ONLY_KEYS = new Set<string>([
   "outgoingCount",
   "isRecording",
   "isLastRecorded",
-  "recordingBadges",
+  "stepBadges",
   "onDrillDown",
   "onEmbed",
   "onReorderHandle",

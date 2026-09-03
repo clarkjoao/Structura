@@ -1,5 +1,12 @@
-import type { Flow, FlowStep } from "@/features/diagram";
-import { getStepById, getFlowParticipants, getOrderedStepIds } from "@/features/diagram";
+import type { Diagram, Flow, FlowOutlineRow, FlowStep } from "@/features/diagram";
+import { OPACITY_FLOW_PLAYBACK_PARTICIPANT } from "../canvas.constants";
+import {
+  getStepById,
+  getFlowParticipants,
+  getStepCount,
+  isConditionStep,
+  resolveSceneSnapshot,
+} from "@/features/diagram";
 
 export interface FlowHighlight {
   activeNodeId: string | null;
@@ -14,11 +21,18 @@ export interface CoverageInfo {
   edgeFlows: Map<string, string[]>;
 }
 
-export interface RecordingInfo {
-  nodeSteps: Map<string, number[]>;
-  edgeSteps: Map<string, number[]>;
-  recordedNodeIds: Set<string>;
-  recordedEdgeIds: Set<string>;
+/**
+ * The step numbers the canvas shows, and which elements a flow touches.
+ *
+ * The numbers are the derived labels — `1`, `3a`, `3a.2` — so a node the flow
+ * visits inside a branch says so. They are not stored anywhere: this is built
+ * from the graph on each render, during a recording and outside one alike.
+ */
+export interface FlowBadges {
+  nodeLabels: Map<string, string[]>;
+  edgeLabels: Map<string, string[]>;
+  badgedNodeIds: Set<string>;
+  badgedEdgeIds: Set<string>;
   lastNodeId: string | null;
   lastEdgeId: string | null;
   lastHandleId: string | null;
@@ -31,16 +45,6 @@ export const EMPTY_FLOW_HIGHLIGHT: FlowHighlight = {
   participantNodeIds: new Set(),
   participantConnIds: new Set(),
 };
-
-export function safeFlowSteps(flow: Flow): FlowStep[] {
-  const s = flow.steps;
-  if (Array.isArray(s)) return s;
-  if (!s || typeof s !== "object") return [];
-  const ordered = getOrderedStepIds(flow);
-  if (ordered.length > 0)
-    return ordered.map((id) => flow.steps[id]).filter((x): x is FlowStep => !!x);
-  return Object.values(s);
-}
 
 function addFlowToMap(map: Map<string, string[]>, key: string, flowName: string): void {
   const arr = map.get(key) ?? [];
@@ -72,6 +76,25 @@ export function buildFlowHighlight(
   };
 }
 
+/**
+ * How prominent a node is while a flow is being read.
+ *
+ * The step in hand is at full strength, the ones already walked stay legible,
+ * the rest of the flow's participants recede, and everything the flow never
+ * touches recedes further. Shared so the editor's canvas and the viewer's
+ * agree on what a reading looks like — they used to be the same four numbers
+ * written twice.
+ */
+export const FLOW_PLAYBACK_DIM_OPACITY = 0.25;
+export const FLOW_PLAYBACK_VISITED_OPACITY = 0.85;
+
+export function flowPlaybackOpacity(componentId: string, highlight: FlowHighlight): number {
+  if (highlight.activeNodeId === componentId) return 1;
+  if (highlight.visitedNodeIds.has(componentId)) return FLOW_PLAYBACK_VISITED_OPACITY;
+  if (highlight.participantNodeIds.has(componentId)) return OPACITY_FLOW_PLAYBACK_PARTICIPANT;
+  return FLOW_PLAYBACK_DIM_OPACITY;
+}
+
 export function buildCoverage(flows: Flow[]): CoverageInfo {
   const nodeFlows = new Map<string, string[]>();
   const edgeFlows = new Map<string, string[]>();
@@ -85,35 +108,172 @@ export function buildCoverage(flows: Flow[]): CoverageInfo {
   return { nodeFlows, edgeFlows };
 }
 
-export function buildRecordingInfo(steps: FlowStep[]): RecordingInfo {
-  const nodeSteps = new Map<string, number[]>();
-  const edgeSteps = new Map<string, number[]>();
-  const recordedNodeIds = new Set<string>();
-  const recordedEdgeIds = new Set<string>();
+/**
+ * Badges for a run of rows, in reading order. `rows` is what the script panel
+ * shows — the whole flow, or just the branch being recorded — so the canvas and
+ * the panel always agree on which steps are on screen.
+ */
+export function buildFlowBadges(flow: Flow, rows: readonly FlowOutlineRow[]): FlowBadges {
+  const nodeLabels = new Map<string, string[]>();
+  const edgeLabels = new Map<string, string[]>();
+  const badgedNodeIds = new Set<string>();
+  const badgedEdgeIds = new Set<string>();
 
-  steps.forEach((step, i) => {
+  const push = (map: Map<string, string[]>, key: string, label: string) => {
+    const labels = map.get(key);
+    if (labels) labels.push(label);
+    else map.set(key, [label]);
+  };
+
+  let lastStep: FlowStep | undefined;
+  for (const row of rows) {
+    const step = flow.steps[row.stepId];
+    if (!step) continue;
+    lastStep = step;
     if (step.componentId) {
-      recordedNodeIds.add(step.componentId);
-      const arr = nodeSteps.get(step.componentId) ?? [];
-      arr.push(i + 1);
-      nodeSteps.set(step.componentId, arr);
+      badgedNodeIds.add(step.componentId);
+      push(nodeLabels, step.componentId, row.label);
     }
     if (step.connectionId) {
-      recordedEdgeIds.add(step.connectionId);
-      const arr = edgeSteps.get(step.connectionId) ?? [];
-      arr.push(i + 1);
-      edgeSteps.set(step.connectionId, arr);
+      badgedEdgeIds.add(step.connectionId);
+      push(edgeLabels, step.connectionId, row.label);
     }
-  });
+  }
 
-  const lastStep = steps[steps.length - 1];
   return {
-    nodeSteps,
-    edgeSteps,
-    recordedNodeIds,
-    recordedEdgeIds,
+    nodeLabels,
+    edgeLabels,
+    badgedNodeIds,
+    badgedEdgeIds,
     lastNodeId: lastStep?.componentId ?? null,
     lastEdgeId: lastStep?.connectionId ?? null,
     lastHandleId: lastStep?.handleId ?? null,
   };
+}
+
+export interface FlowProgress {
+  /** Steps walked so far, counting the one on screen. */
+  position: number;
+  /** How long this reading will be if it runs on from here. */
+  pathTotal: number;
+  /** A choice still lies ahead, so `pathTotal` is a floor rather than the answer. */
+  openEnded: boolean;
+  /** Every step the script holds, whichever way a reading goes. */
+  flowTotal: number;
+}
+
+/**
+ * The shortest number of steps still ahead, and whether a choice is among them.
+ *
+ * Shortest, because at a branch nobody knows yet which way the reader will go:
+ * a floor is honest where a guess is not, and `openEnded` says a floor is what
+ * it is. Successors are followed breadth-first through the graph with the path
+ * so far guarding against a cycle.
+ */
+function stepsAhead(flow: Flow, fromId: string): { count: number; hasChoice: boolean } {
+  const memo = new Map<string, number>();
+  let hasChoice = false;
+
+  const walk = (id: string, onPath: Set<string>): number => {
+    if (onPath.has(id)) return Number.POSITIVE_INFINITY;
+    const cached = memo.get(id);
+    if (cached !== undefined) return cached;
+
+    const step = flow.steps[id];
+    if (!step) return 0;
+    if (isConditionStep(step)) hasChoice = true;
+
+    const successors = step.branches?.length
+      ? step.branches.map((branch) => branch.nextId)
+      : step.next
+        ? [step.next]
+        : [];
+
+    let best = 0;
+    if (successors.length > 0) {
+      onPath.add(id);
+      best = Number.POSITIVE_INFINITY;
+      for (const nextId of successors) {
+        const ahead = walk(nextId, onPath);
+        if (ahead + 1 < best) best = ahead + 1;
+      }
+      onPath.delete(id);
+      if (!Number.isFinite(best)) best = 0;
+    }
+
+    memo.set(id, best);
+    return best;
+  };
+
+  return { count: walk(fromId, new Set<string>()), hasChoice };
+}
+
+/**
+ * Where the reader is, counted along the path they actually walked.
+ *
+ * The denominator used to be every step the script holds, so a reading that
+ * took a branch ended short of it — "4 / 5", as if a step had been skipped —
+ * and could even overshoot on the way, because the numerator was the step's
+ * position in a depth-first listing rather than in the reading. Both numbers
+ * now describe the path; the script's own total goes alongside, and in a flow
+ * with no branches the two are the same number and nothing looks different.
+ */
+export function describeFlowProgress(
+  flow: Flow,
+  currentStepId: string | null,
+  history: readonly string[],
+): FlowProgress {
+  const flowTotal = getStepCount(flow);
+  if (!currentStepId || !flow.steps[currentStepId]) {
+    return { position: 0, pathTotal: flowTotal, openEnded: false, flowTotal };
+  }
+  const position = history.length + 1;
+  const { count, hasChoice } = stepsAhead(flow, currentStepId);
+  return { position, pathTotal: position + count, openEnded: hasChoice, flowTotal };
+}
+
+/**
+ * Why the canvas has nothing to light up for the step being read.
+ *
+ * A scene *hides* base elements rather than deleting them, so a reading that
+ * reaches a step whose node the scene took out of view sees the same blank
+ * canvas it would see for a node that was actually deleted. Only the reading
+ * changes here: nothing decides anything about the scene, it just says which
+ * of the two happened.
+ */
+export type StepElementState =
+  | { kind: "present" }
+  | { kind: "hidden"; sceneName: string }
+  | { kind: "elsewhere"; sceneName: string }
+  | { kind: "gone" };
+
+export function describeStepElement(
+  step: FlowStep | null,
+  diagram: Diagram | null,
+): StepElementState {
+  if (!step || !diagram) return { kind: "present" };
+  const componentId = step.componentId;
+  const connectionId = step.connectionId;
+  const id = componentId ?? connectionId;
+  if (!id) return { kind: "present" };
+
+  const view = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
+  const inView = componentId ? view.components[componentId] : view.connections[connectionId!];
+  if (inView) return { kind: "present" };
+
+  const base = diagram.snapshot;
+  const inBase = componentId ? base.components[componentId] : base.connections[connectionId!];
+  if (inBase) {
+    const active = diagram.activeSceneId ? diagram.scenes?.[diagram.activeSceneId] : undefined;
+    return active ? { kind: "hidden", sceneName: active.name } : { kind: "present" };
+  }
+
+  for (const scene of Object.values(diagram.scenes ?? {})) {
+    const owned = componentId
+      ? scene.addedComponents[componentId]
+      : scene.addedConnections[connectionId!];
+    if (owned) return { kind: "elsewhere", sceneName: scene.name };
+  }
+
+  return { kind: "gone" };
 }

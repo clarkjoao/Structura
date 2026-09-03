@@ -32,10 +32,23 @@ export interface ShareUrlResult {
 
 const WARN_THRESHOLD = 8_000;
 
+/**
+ * The diagram as a reader should receive it.
+ *
+ * `activeSceneId` is which scene the author happened to have open, not part of
+ * the diagram: carried into a link it dropped the reader inside that scene,
+ * missing the nodes it hides, with nothing saying so and no way out. A link
+ * opens on the base.
+ *
+ * The viewer resolves the base whatever arrives, so this is not the only guard
+ * — links shared before this change still carry the field. Dropping it here
+ * keeps the payload to what the reader is meant to see.
+ */
 function stripForShare(diagram: Diagram): Record<string, unknown> {
   return JSON.parse(
     JSON.stringify(diagram, (key: string, value: unknown) => {
       if (key === "iconLibrary") return undefined;
+      if (key === "activeSceneId") return undefined;
       if (key === "hidden" && value === false) return undefined;
       return value;
     }),
@@ -43,7 +56,8 @@ function stripForShare(diagram: Diagram): Record<string, unknown> {
 }
 
 export function generateShareUrl(diagram: Diagram): ShareUrlResult {
-  const json = JSON.stringify(stripForShare(diagram));
+  const stripped = stripForShare(diagram);
+  const json = JSON.stringify(stripped);
   const encoded = LZString.compressToEncodedURIComponent(json);
   const base = `${window.location.origin}${getBasePath()}`;
   const url = `${base}#share=${encoded}`;

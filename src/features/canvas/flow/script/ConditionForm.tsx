@@ -3,77 +3,70 @@ import { X } from "lucide-react";
 import { getBranchColor } from "../branchColors";
 
 export interface ConditionFormState {
-  index: number;
+  /** Step being turned into a condition. */
+  stepId: string;
   label: string;
   branches: string[];
 }
 
-export interface ConditionStepFormProps {
-  conditionForm: ConditionFormState;
+export interface ConditionFormProps {
+  form: ConditionFormState;
   onChange: (form: ConditionFormState) => void;
   onSubmit: () => void;
   onCancel: () => void;
 }
 
-export function ConditionStepForm({
-  conditionForm,
-  onChange,
-  onSubmit,
-  onCancel,
-}: ConditionStepFormProps) {
+export function ConditionForm({ form, onChange, onSubmit, onCancel }: ConditionFormProps) {
   const { t } = useTranslation();
+  const incomplete = !form.label.trim() || form.branches.some((branch) => !branch.trim());
+
   return (
-    <div className="rounded-lg border border-amber-500/30 bg-amber-500/05 p-4 space-y-3">
+    <div className="space-y-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
       <div className="flex items-center gap-2">
         <span className="text-amber-400">◇</span>
         <span className="text-xs font-semibold text-amber-400">
-          {t("flowRecorder.newConditionTitle", "Nova Condição")}
+          {t("flowScript.newConditionTitle")}
         </span>
       </div>
 
       <input
-        placeholder={t(
-          "flowRecorder.conditionPlaceholderExample",
-          "se o usuário for menor de idade...",
-        )}
-        value={conditionForm.label}
-        onChange={(e) => onChange({ ...conditionForm, label: e.target.value })}
+        placeholder={t("flowScript.conditionExample")}
+        value={form.label}
+        onChange={(event) => onChange({ ...form, label: event.target.value })}
         className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm"
         autoFocus
       />
 
       <div className="space-y-1.5">
-        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
-          {t("flowRecorder.branches", "Branches")}
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {t("flowScript.branches")}
         </p>
-        {conditionForm.branches.map((b, bi) => (
-          <div key={bi} className="flex items-center gap-2">
+        {form.branches.map((branch, branchIndex) => (
+          <div key={branchIndex} className="flex items-center gap-2">
             <div
-              className="w-1 h-6 rounded-full shrink-0"
-              style={{ backgroundColor: getBranchColor(bi) }}
+              className="h-6 w-1 shrink-0 rounded-full"
+              style={{ backgroundColor: getBranchColor(branchIndex) }}
             />
             <input
-              value={b}
-              onChange={(e) => {
-                const nb = [...conditionForm.branches];
-                nb[bi] = e.target.value;
-                onChange({ ...conditionForm, branches: nb });
+              value={branch}
+              onChange={(event) => {
+                const branches = [...form.branches];
+                branches[branchIndex] = event.target.value;
+                onChange({ ...form, branches });
               }}
-              placeholder={t("flowRecorder.branchOptionPlaceholder", {
-                n: bi + 1,
-                defaultValue: `Opção ${bi + 1}`,
-              })}
+              placeholder={t("flowScript.branchPlaceholder", { n: branchIndex + 1 })}
               className="flex-1 rounded border border-border bg-secondary px-2 py-1 text-sm"
             />
-            {conditionForm.branches.length > 2 && (
+            {form.branches.length > 2 && (
               <button
                 type="button"
                 onClick={() =>
                   onChange({
-                    ...conditionForm,
-                    branches: conditionForm.branches.filter((_, j) => j !== bi),
+                    ...form,
+                    branches: form.branches.filter((_, index) => index !== branchIndex),
                   })
                 }
+                title={t("flowScript.removeBranch")}
                 className="text-muted-foreground hover:text-destructive"
               >
                 <X className="h-3.5 w-3.5" />
@@ -83,10 +76,10 @@ export function ConditionStepForm({
         ))}
         <button
           type="button"
-          onClick={() => onChange({ ...conditionForm, branches: [...conditionForm.branches, ""] })}
+          onClick={() => onChange({ ...form, branches: [...form.branches, ""] })}
           className="text-[11px] text-primary hover:underline"
         >
-          + {t("flowRecorder.addBranchOption", "Adicionar opção")}
+          + {t("flowScript.addBranchOption")}
         </button>
       </div>
 
@@ -96,15 +89,15 @@ export function ConditionStepForm({
           onClick={onCancel}
           className="flex-1 rounded border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
         >
-          {t("flowRecorder.cancel")}
+          {t("flowScript.cancel")}
         </button>
         <button
           type="button"
           onClick={onSubmit}
-          disabled={!conditionForm.label.trim() || conditionForm.branches.some((b) => !b.trim())}
+          disabled={incomplete}
           className="flex-1 rounded bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-50"
         >
-          {t("flowRecorder.createCondition", "Criar")}
+          {t("flowScript.createCondition")}
         </button>
       </div>
     </div>

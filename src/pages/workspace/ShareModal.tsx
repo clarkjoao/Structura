@@ -16,24 +16,40 @@ interface ShareModalProps {
 
 type CopiedState = "share" | "embed" | null;
 
+/** Creates a content-based key to detect diagram changes for memoization. */
+function getSnapshotVersionKey(snapshot: Diagram["snapshot"]): string {
+  if (!snapshot) return "";
+  return JSON.stringify({
+    components: Object.keys(snapshot.components ?? {}).length,
+    connections: Object.keys(snapshot.connections ?? {}).length,
+    flows: Object.keys(snapshot.flows ?? {}).length,
+  });
+}
+
 export function ShareModal({ diagram, open, onOpenChange }: ShareModalProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState<CopiedState>(null);
+
+  // Depend on content key so URL regenerates when components are added/removed
+  const snapshotVersion = getSnapshotVersionKey(diagram.snapshot);
+
   const shareResult: ShareUrlResult = useMemo(
     () => generateShareUrl(diagram),
-
-    [diagram.id],
+    [diagram.id, snapshotVersion],
   );
+
   const shareUrl = shareResult.url;
+
   const embedUrl = useMemo(
     () => generateViewerUrl(diagram),
-
-    [diagram.id],
+    [diagram.id, snapshotVersion],
   );
+
   const formattedLinkSize = useMemo(
     () => new Intl.NumberFormat().format(shareResult.compressedLength),
     [shareResult.compressedLength],
   );
+
   const compressionPercent = useMemo(
     () => Math.round(shareResult.compressionRatio * 100),
     [shareResult.compressionRatio],

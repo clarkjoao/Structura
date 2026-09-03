@@ -14,6 +14,22 @@ import {
 } from "@/features/diagram/model";
 import { resolveSceneSnapshot } from "@/features/diagram/utils";
 import { DB_TABLE_COLLAPSED_H } from "@/features/canvas/canvas.constants";
+import {
+  flowPlaybackOpacity,
+  type FlowBadges,
+  type FlowHighlight,
+} from "@/features/canvas/flow/flowState";
+
+/**
+ * The script being read, as the canvas needs it.
+ *
+ * `null` while nothing is open — and then the canvas carries no numbers at
+ * all, because the open script is what numbers it.
+ */
+export interface ViewerReading {
+  badges: FlowBadges | null;
+  highlight: FlowHighlight;
+}
 
 function resolveNodeType(component: Component): string {
   if (isPanelComponent(component)) {
@@ -27,7 +43,10 @@ function resolveNodeType(component: Component): string {
   return "c4";
 }
 
-function buildNodeData(component: Component): Record<string, unknown> {
+function buildNodeData(
+  component: Component,
+  reading: ViewerReading | null,
+): Record<string, unknown> {
   if (isPanelComponent(component)) {
     return {
       elementId: component.id,
@@ -112,6 +131,7 @@ function buildNodeData(component: Component): Record<string, unknown> {
 
   return {
     elementId: component.id,
+    stepBadges: reading?.badges?.nodeLabels.get(component.id),
     name: component.name,
     type: component.type,
     description: component.description,
@@ -126,7 +146,11 @@ function buildNodeData(component: Component): Record<string, unknown> {
   };
 }
 
-function buildNode(component: Component, nodeLayouts: Record<string, NodeLayout>): Node {
+function buildNode(
+  component: Component,
+  nodeLayouts: Record<string, NodeLayout>,
+  reading: ViewerReading | null,
+): Node {
   const layout = nodeLayouts[component.id];
   const dbTableFixedH = 32 + 22 + 20 + 2;
   const dbTableRowH = 24;
@@ -151,8 +175,12 @@ function buildNode(component: Component, nodeLayouts: Record<string, NodeLayout>
     draggable: false,
     selectable: false,
     connectable: false,
-    data: buildNodeData(component),
-    style: { width, height },
+    data: buildNodeData(component, reading),
+    style: {
+      width,
+      height,
+      ...(reading ? { opacity: flowPlaybackOpacity(component.id, reading.highlight) } : {}),
+    },
   };
 }
 
@@ -201,12 +229,20 @@ function sortComponentsTopologically(components: Component[]): Component[] {
   return sorted;
 }
 
-export function useDiagramToFlow(diagram: Diagram): {
+export function useDiagramToFlow(
+  diagram: Diagram,
+  reading: ViewerReading | null = null,
+): {
   nodes: Node[];
   edges: Edge[];
 } {
   return useMemo(() => {
-    const resolvedSnapshot = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
+    // The base, always. A reader arriving by link is not in the author's
+    // scene: it hid nodes the script may walk through, said nothing, and
+    // offered no way out. Links shared before that rule still carry
+    // `activeSceneId`, so the viewer ignores it rather than trusting the
+    // payload to be clean.
+    const resolvedSnapshot = resolveSceneSnapshot(diagram, null);
 
     const visibleComponents = Object.values(resolvedSnapshot.components).filter(
       (component) => !component.hidden,
@@ -215,11 +251,11 @@ export function useDiagramToFlow(diagram: Diagram): {
     const sortedComponents = sortComponentsTopologically(visibleComponents);
 
     const nodes = sortedComponents.map((component) =>
-      buildNode(component, resolvedSnapshot.nodeLayouts),
+      buildNode(component, resolvedSnapshot.nodeLayouts, reading),
     );
 
     const edges = Object.values(resolvedSnapshot.connections).map(buildEdge);
 
     return { nodes, edges };
-  }, [diagram]);
+  }, [diagram, reading]);
 }

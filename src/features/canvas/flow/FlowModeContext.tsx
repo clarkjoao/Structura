@@ -1,11 +1,6 @@
-import { createContext, useContext, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type {
-  BranchOwnerInfo,
-  FlowMode,
-  FlowModeProviderProps,
-  FlowModeState,
-} from "./flowMode.types";
-import { getDisplayStepsFromRecording, useFlowModeRecording } from "./useFlowModeRecording";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import type { FlowMode, FlowModeProviderProps, FlowModeState } from "./flowMode.types";
+import { useFlowRecording } from "./useFlowRecording";
 import { useFlowModePlayback } from "./useFlowModePlayback";
 
 const noop = () => {};
@@ -17,6 +12,7 @@ function createDefaultFlowModeState(): FlowModeState {
     isPlaying: false,
     isRecording: false,
     play: noop,
+    switchFlow: noop,
     exitPlay: noop,
     goNext: noop,
     goBack: noop,
@@ -25,36 +21,17 @@ function createDefaultFlowModeState(): FlowModeState {
     isCondition: false,
     canGoBack: false,
     canGoForward: false,
+    recordingFlowId: null,
+    recordingContext: { mode: "trunk" },
+    setRecordingContext: noop,
     startRecording: noop,
+    editFlow: noop,
     cancelRecording: noop,
     finalizeRecording: noop,
-    editFlow: noop,
-    setRecordingName: noop,
-    setRecordingDescription: noop,
-    onAddTag: noop,
-    onRemoveTag: noop,
-    setRecordingContext: noop,
     onRecordNodeClick: noop,
     onRecordEdgeClick: noop,
     onRecordHandleClick: noop,
     onRecordUndo: noop,
-    onDeleteStep: noop,
-    onReorderSteps: noop,
-    onUpdateStepDescription: noop,
-    onUpdateStepDuration: noop,
-    onUpdateStepPayload: noop,
-    onUpdateStepPayloadDirection: noop,
-    onUpdateStepIsAsync: noop,
-    onConvertStepToCondition: noop,
-    onUpdateConditionLabel: noop,
-    onAddBranchLabel: noop,
-    onRemoveBranchLabel: noop,
-    onUpdateBranchLabel: noop,
-    onAddConditionStep: noop,
-    onEnterBranchRecording: noop,
-    onOpenBranchSelect: noop,
-    recordingStepsForPanel: [],
-    onFinalize: noop,
   };
 }
 
@@ -64,41 +41,26 @@ export function useFlowMode(): FlowModeState {
   return useContext(FlowModeReactContext);
 }
 
-export function FlowModeProvider({
-  children,
-  onFinalize: onFinalizeProp,
-  onStartRecording,
-}: FlowModeProviderProps) {
+/**
+ * Flow mode: playing a flow, or recording one.
+ *
+ * It holds interaction state only — which flow is open, where the next
+ * recorded step goes. The steps themselves live in the diagram store from the
+ * first click, so nothing here has to be materialised at the end.
+ */
+export function FlowModeProvider({ children, onStartRecording }: FlowModeProviderProps) {
   const [mode, setMode] = useState<FlowMode>({ kind: "idle" });
-  const branchOwnershipRef = useRef<Map<string, BranchOwnerInfo>>(new Map());
-  const onFinalizeRef = useRef(onFinalizeProp);
   const onStartRecordingRef = useRef(onStartRecording);
-  onFinalizeRef.current = onFinalizeProp;
-  onStartRecordingRef.current = onStartRecording;
-
-  useLayoutEffect(() => {
-    if (mode.kind === "recording") {
-      branchOwnershipRef.current = mode.branchOwnership;
-    }
-  }, [mode]);
+  useEffect(() => {
+    onStartRecordingRef.current = onStartRecording;
+  }, [onStartRecording]);
 
   const playback = useFlowModePlayback(mode, setMode);
-  const recording = useFlowModeRecording(
-    mode,
-    setMode,
-    branchOwnershipRef,
-    onFinalizeRef,
-    onStartRecordingRef,
-  );
+  const recording = useFlowRecording(mode, setMode, onStartRecordingRef);
 
   const isIdle = mode.kind === "idle";
   const isPlaying = mode.kind === "playing" && mode.currentStepId !== null;
   const isRecording = mode.kind === "recording";
-
-  const recordingStepsForPanel = useMemo(() => {
-    if (mode.kind !== "recording") return [];
-    return getDisplayStepsFromRecording(mode.steps, mode.context, mode.branchOwnership);
-  }, [mode]);
 
   const value: FlowModeState = useMemo(
     () => ({
@@ -108,19 +70,8 @@ export function FlowModeProvider({
       isRecording,
       ...playback,
       ...recording,
-      recordingStepsForPanel,
-      onFinalize: onFinalizeProp,
     }),
-    [
-      mode,
-      isIdle,
-      isPlaying,
-      isRecording,
-      playback,
-      recording,
-      recordingStepsForPanel,
-      onFinalizeProp,
-    ],
+    [mode, isIdle, isPlaying, isRecording, playback, recording],
   );
 
   return <FlowModeReactContext.Provider value={value}>{children}</FlowModeReactContext.Provider>;

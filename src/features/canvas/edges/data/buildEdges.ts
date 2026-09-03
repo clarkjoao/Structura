@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import { MarkerType, type Edge } from "@xyflow/react";
 import type { Connection, Diagram, DiagramModel, FlowStep } from "@/features/diagram";
 import { getEffectiveConnectionStyle, EdgeMarker, EdgeStyle } from "@/features/diagram";
-import type { FlowHighlight, RecordingInfo, CoverageInfo } from "../../flow/flowState";
+import type { FlowHighlight, FlowBadges, CoverageInfo } from "../../flow/flowState";
 import {
   OPACITY_FLOW_PLAYBACK_EDGE_DIM,
   OPACITY_FLOW_PLAYBACK_PARTICIPANT,
@@ -21,7 +21,7 @@ export interface EdgeBuildParams {
   compareConnectionOpacity?: Record<string, number>;
   activeStep: FlowStep | null;
   flowHighlight: Pick<FlowHighlight, "activeConnId" | "participantConnIds">;
-  recordingInfo: Pick<RecordingInfo, "edgeSteps" | "recordedEdgeIds" | "lastEdgeId"> | null;
+  flowBadges: Pick<FlowBadges, "edgeLabels" | "badgedEdgeIds" | "lastEdgeId"> | null;
   coverage: Pick<CoverageInfo, "edgeFlows"> | null;
 
   tagFilterEdgeDimmed?: boolean;
@@ -53,7 +53,7 @@ export function getEdgeOpacity(
   isPlaying: boolean,
   isRecording: boolean,
   flowHighlight: Pick<FlowHighlight, "activeConnId" | "participantConnIds">,
-  recordingInfo: Pick<RecordingInfo, "recordedEdgeIds"> | null,
+  flowBadges: Pick<FlowBadges, "badgedEdgeIds"> | null,
 ): number | undefined {
   if (isPlaying) {
     const isActive = flowHighlight.activeConnId === connId;
@@ -64,8 +64,8 @@ export function getEdgeOpacity(
         ? OPACITY_FLOW_PLAYBACK_PARTICIPANT
         : OPACITY_FLOW_PLAYBACK_EDGE_DIM;
   }
-  if (isRecording && recordingInfo) {
-    return recordingInfo.recordedEdgeIds.has(connId) ? 1 : OPACITY_FLOW_PLAYBACK_EDGE_DIM;
+  if (isRecording && flowBadges) {
+    return flowBadges.badgedEdgeIds.has(connId) ? 1 : OPACITY_FLOW_PLAYBACK_EDGE_DIM;
   }
   return undefined;
 }
@@ -87,7 +87,7 @@ export function buildEdge(
     params.isPlaying,
     params.isRecording,
     params.flowHighlight,
-    params.recordingInfo,
+    params.flowBadges,
   );
   const compareOp =
     params.isCompareMode && params.compareConnectionOpacity
@@ -123,8 +123,8 @@ export function buildEdge(
       technology: conn.technology,
       color: conn.style?.color,
       connectionId: conn.id,
-      recordingBadges: params.recordingInfo?.edgeSteps.get(conn.id),
-      isLastRecorded: params.recordingInfo?.lastEdgeId === conn.id,
+      stepBadges: params.flowBadges?.edgeLabels.get(conn.id),
+      isLastRecorded: params.flowBadges?.lastEdgeId === conn.id,
       coverageFlowNames: params.coverage?.edgeFlows.get(conn.id),
       playbackDuration: isActiveConn ? params.activeStep?.duration : undefined,
       isActivePlayback: isActiveConn,

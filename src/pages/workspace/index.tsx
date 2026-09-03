@@ -26,7 +26,6 @@ import { CollabProvider, CollabStartModal } from "@/features/collaboration";
 import { ImportModal } from "@/pages/ImportModal";
 import type { CopiedClipboardKind } from "./types";
 import { WorkspaceContent } from "./WorkspaceContent";
-import { useWorkspaceFlowRecordingFinalize } from "./useWorkspaceFlowRecordingFinalize";
 
 export default function WorkspacePage() {
   const { t } = useTranslation();
@@ -49,6 +48,15 @@ export default function WorkspacePage() {
   const [collabUserName, setCollabUserName] = useState("");
   const [collabServerUrl, setCollabServerUrl] = useState("");
   const [importModalOpen, setImportModalOpen] = useState(false);
+
+  // Prevent flashing "diagram not found" during boot sequence.
+  // The diagram store is empty on first render while FileSystem boot runs.
+  const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsInitialLoadComplete(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (urlId && urlDiagramExists && activeDiagramId !== urlId) {
@@ -152,7 +160,19 @@ export default function WorkspacePage() {
     setShowFlows(false);
   }, []);
 
-  const onWorkspaceFlowFinalize = useWorkspaceFlowRecordingFinalize();
+  // Show loading state while waiting for boot to complete and diagram to load
+  if (!diagram && !isInitialLoadComplete) {
+    return (
+      <div className="h-screen flex flex-col">
+        <div className={`flex-1 flex items-center justify-center ${focusMode ? "" : "mt-16"}`}>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+            <p className="text-muted-foreground text-sm">{t("common.loading")}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!diagram) {
     const backHref = "/workspace";
@@ -174,7 +194,7 @@ export default function WorkspacePage() {
 
   return (
     <div className="h-screen flex flex-col">
-      <FlowModeProvider onFinalize={onWorkspaceFlowFinalize} onStartRecording={() => {}}>
+      <FlowModeProvider onStartRecording={() => {}}>
         <CollabProvider
           enabled={collabActive}
           reserveEphemeralRoomId={showStartModal}

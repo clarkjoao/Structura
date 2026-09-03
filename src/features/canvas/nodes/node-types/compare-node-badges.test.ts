@@ -40,7 +40,7 @@ function createMinimalNodeBuildContext(
       participantConnIds: new Set(),
     },
     activeStep: null,
-    recordingInfo: null,
+    flowBadges: null,
     coverage: null,
     handleDrillDown: () => {},
     childrenIndex: new Map(),

@@ -2,6 +2,7 @@ import type { Component } from "@/features/diagram";
 import { isPanelComponent } from "@/features/diagram";
 import type { NodeTypeDescriptor } from "./node-types/types";
 import type { CoverageInfo } from "../flow/flowState";
+import { OPACITY_FLOW_PLAYBACK_NODE_DIM } from "../canvas.constants";
 
 export interface NodeVisibilityState {
   isChild: boolean;
@@ -73,4 +74,26 @@ export function computeNodeVisibility(
     isHighlighted,
     dimmed: dimWhenSelectionActive || dimWhenCoverage,
   };
+}
+
+/**
+ * What the *selection* contributes to a node's opacity, or nothing.
+ *
+ * Two dimming systems share this one channel. The descriptor's style says what
+ * the flow makes of the node — the step in hand, one already walked, one the
+ * script never names. This says what the selection makes of it, and the two
+ * used to collide: applied last, the selection won, so a node that was step 1
+ * of the script was drawn exactly as dim as a node the script never mentions.
+ *
+ * While a flow is open the flow decides and the selection stands down. Outside
+ * a flow nothing changes: focus dimming is the canvas-wide behaviour it always
+ * was.
+ */
+export function selectionDimOpacity(
+  vis: NodeVisibilityState,
+  flowModeActive: boolean,
+): number | undefined {
+  if (!vis.dimmed) return undefined;
+  if (flowModeActive) return undefined;
+  return OPACITY_FLOW_PLAYBACK_NODE_DIM;
 }

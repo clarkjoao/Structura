@@ -5,7 +5,6 @@ import type {
   Diagram,
   Flow,
   FlowStep,
-  FlowBranch,
   ComponentType,
   Level,
   Folder,
@@ -18,6 +17,9 @@ import type {
   ExternalLink,
 } from "../model/diagram.types";
 import type { ServiceDefinition } from "../model/service.types";
+import type { FlowCursor } from "../utils/flow-edit";
+import type { MoveStepTarget } from "../utils/flow-move";
+import type { FlowStoreResult, RecordedStepContent } from "./slices/flows.slice";
 import type { EdgeStyle } from "../model/connection.types";
 import type { ClipboardEntry } from "./store.types";
 
@@ -147,17 +149,42 @@ export interface AppActions {
   updateFlow: (id: string, patch: Partial<Omit<Flow, "id">>) => void;
   removeFlow: (id: string) => void;
 
-  addFlowStep: (flowId: string, step: Omit<FlowStep, "id">) => string;
   updateFlowStep: (flowId: string, stepId: string, patch: Partial<FlowStep>) => void;
-  removeFlowStep: (flowId: string, stepId: string) => void;
-  addFlowBranch: (flowId: string, conditionStepId: string, branch: FlowBranch) => void;
-  removeFlowBranch: (flowId: string, conditionStepId: string, branchIndex: number) => void;
+
+  /** Opens one undo checkpoint for a whole editing session (see `flowsSlice`). */
+  beginFlowSession: () => void;
+  /** Keeps what the session wrote. */
+  commitFlowSession: () => void;
+  /** Puts the diagram back the way the session found it. */
+  cancelFlowSession: () => void;
+
+  recordFlowStep: (
+    flowId: string,
+    content: RecordedStepContent,
+    cursor: FlowCursor,
+  ) => FlowStoreResult;
+  undoLastRecordedStep: (flowId: string, cursor: FlowCursor) => FlowStoreResult;
+  insertFlowStepAt: (flowId: string, target: MoveStepTarget) => FlowStoreResult;
+  moveFlowStep: (flowId: string, stepId: string, target: MoveStepTarget) => FlowStoreResult;
+  removeFlowSteps: (flowId: string, stepIds: readonly string[]) => FlowStoreResult;
+  addFlowBranch: (flowId: string, conditionStepId: string, label: string) => FlowStoreResult;
+  removeFlowBranch: (
+    flowId: string,
+    conditionStepId: string,
+    branchIndex: number,
+  ) => FlowStoreResult;
+  setFlowBranchLabel: (
+    flowId: string,
+    conditionStepId: string,
+    branchIndex: number,
+    label: string,
+  ) => void;
   convertStepToCondition: (
     flowId: string,
     stepId: string,
     conditionLabel: string,
-    branchLabels: string[],
-  ) => void;
+    branchLabels: readonly string[],
+  ) => FlowStoreResult;
 
   insertPattern: (
     template:

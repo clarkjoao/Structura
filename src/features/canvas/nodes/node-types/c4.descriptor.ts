@@ -9,25 +9,18 @@ import {
   isC4Component,
   type Component,
 } from "@/features/diagram";
-import { OPACITY_FLOW_PLAYBACK_PARTICIPANT } from "../../canvas.constants";
-
-const C4_FLOW_PLAYBACK_DIM_OPACITY = 0.25;
+import { flowPlaybackOpacity } from "../../flow/flowState";
 
 const C4_RECORDING_DIM_OPACITY = 0.35;
 
 export function buildC4Style(comp: Component, ctx: NodeBuildContext): CSSProperties | undefined {
   if (ctx.isCompareMode) return undefined;
   if (ctx.isPlaying) {
-    const { activeNodeId, visitedNodeIds, participantNodeIds } = ctx.flowHighlight;
-    if (activeNodeId === comp.id) return { opacity: 1, filter: "none" };
-    if (visitedNodeIds.has(comp.id)) return { opacity: 0.85, filter: "none" };
-    if (participantNodeIds.has(comp.id))
-      return { opacity: OPACITY_FLOW_PLAYBACK_PARTICIPANT, filter: "none" };
-    return { opacity: C4_FLOW_PLAYBACK_DIM_OPACITY, filter: "none" };
+    return { opacity: flowPlaybackOpacity(comp.id, ctx.flowHighlight), filter: "none" };
   }
   if (ctx.isRecording) {
     return {
-      opacity: ctx.recordingInfo?.recordedNodeIds.has(comp.id) ? 1 : C4_RECORDING_DIM_OPACITY,
+      opacity: ctx.flowBadges?.badgedNodeIds.has(comp.id) ? 1 : C4_RECORDING_DIM_OPACITY,
     };
   }
   return undefined;
@@ -49,7 +42,7 @@ export const c4Descriptor: NodeTypeDescriptor = {
       isRecording,
       flowHighlight,
       activeStep,
-      recordingInfo,
+      flowBadges,
       coverage,
       connectionCounts,
     } = ctx;
@@ -104,14 +97,14 @@ export const c4Descriptor: NodeTypeDescriptor = {
       linkedDiagramName: isPlaying || isRecording ? undefined : linkedDiagramName,
       onDrillDown:
         isPlaying || isRecording ? undefined : linkedDiagramName ? ctx.handleDrillDown : undefined,
-      recordingBadges: recordingInfo?.nodeSteps.get(comp.id),
-      isLastRecorded: recordingInfo?.lastNodeId === comp.id,
+      stepBadges: flowBadges?.nodeLabels.get(comp.id),
+      isLastRecorded: flowBadges?.lastNodeId === comp.id,
       coverageFlowNames: coverage?.nodeFlows.get(comp.id),
       isRecording: !!isRecording,
       onHandleClick: isRecording ? ctx.onRecordHandleClick : undefined,
       lastRecordedHandleId:
-        isRecording && recordingInfo?.lastNodeId === comp.id
-          ? (recordingInfo?.lastHandleId ?? undefined)
+        isRecording && flowBadges?.lastNodeId === comp.id
+          ? (flowBadges?.lastHandleId ?? undefined)
           : undefined,
       activeHandleId:
         isPlaying && flowHighlight.activeNodeId === comp.id

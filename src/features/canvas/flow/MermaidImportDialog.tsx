@@ -1,14 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { LazyMonacoEditor as Editor, type EditorProps } from "@/lib/monaco/LazyMonacoEditor";
 import { useTranslation } from "react-i18next";
-import {
-  AlertCircle,
-  CheckCircle2,
-  FileInput,
-  GitBranch,
-  Sparkles,
-  Workflow,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, FileInput, GitBranch, Sparkles, Workflow } from "lucide-react";
 import { parseMermaidFlowchart, parseMermaidSequence } from "@/features/diagram";
 import { Button } from "@/components/ui/button";
 import {
@@ -208,7 +201,9 @@ export function MermaidImportDialog({ open, onOpenChange, onImport, onImportFlow
               theme="vs-dark"
               height="320px"
               value={text}
-              onChange={(value: Parameters<NonNullable<EditorProps["onChange"]>>[0]) => setText(value ?? "")}
+              onChange={(value: Parameters<NonNullable<EditorProps["onChange"]>>[0]) =>
+                setText(value ?? "")
+              }
               onMount={handleEditorMount}
               options={{
                 minimap: { enabled: false },

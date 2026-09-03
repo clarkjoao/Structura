@@ -29,13 +29,7 @@ import {
 import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
 import { SaveStatusIndicator } from "@/features/canvas/components/SaveStatusIndicator";
 import { FileSystemStatus } from "@/components/FileSystemStatus";
-import {
-  EmbedModal,
-  useFlowMode,
-  useInteractionMode,
-  type BranchOwnerInfo,
-  type RecordingContext,
-} from "@/features/canvas";
+import { EmbedModal, useFlowMode, useInteractionMode } from "@/features/canvas";
 import { useActiveDiagram, useStorageMonitor, type Flow } from "@/features/diagram";
 import { StorageWarningBanner } from "@/features/canvas/components/StorageWarningBanner";
 import { CollabCursors, CollabToolbar, useCollab } from "@/features/collaboration";
@@ -45,8 +39,8 @@ import type { WorkspaceContentProps } from "./types";
 import { getViewportCenter } from "@/features/canvas/viewport-utils";
 import { KEY, keyIs } from "@/lib/keyboard-utils";
 
-const TRUNK_CONTEXT: RecordingContext = { mode: "trunk" };
-const EMPTY_BRANCH_MAP = new Map<string, BranchOwnerInfo>();
+/** Stable identity, so the progress memo is not rebuilt on every render. */
+const EMPTY_HISTORY: string[] = [];
 
 function ReactFlowInstanceBridge({
   onReady,
@@ -97,7 +91,7 @@ export function WorkspaceContent({
   const activeFlow = playbackState?.flow ?? null;
   const currentStepId = playbackState?.currentStepId ?? null;
   const recordingState = flowMode.mode.kind === "recording" ? flowMode.mode : null;
-  const editingFlowId = recordingState?.editingFlowId ?? null;
+  const isEditingFlow = recordingState ? !recordingState.isNewFlow : false;
 
   const {
     isRecording,
@@ -107,6 +101,7 @@ export function WorkspaceContent({
     canGoBack,
     canGoForward,
     play,
+    switchFlow,
     exitPlay,
     goBack,
     goNext,
@@ -115,27 +110,8 @@ export function WorkspaceContent({
     cancelRecording,
     finalizeRecording,
     editFlow,
-    recordingStepsForPanel,
+    recordingContext,
     setRecordingContext,
-    setRecordingName,
-    setRecordingDescription,
-    onAddTag,
-    onRemoveTag,
-    onUpdateStepDescription,
-    onUpdateStepDuration,
-    onUpdateStepPayload,
-    onUpdateStepPayloadDirection,
-    onUpdateStepIsAsync,
-    onDeleteStep,
-    onReorderSteps,
-    onConvertStepToCondition,
-    onUpdateConditionLabel,
-    onAddBranchLabel,
-    onRemoveBranchLabel,
-    onUpdateBranchLabel,
-    onAddConditionStep,
-    onEnterBranchRecording,
-    onOpenBranchSelect,
   } = flowMode;
 
   useStorageMonitor();
@@ -248,13 +224,6 @@ export function WorkspaceContent({
     updateSelectedNode(null);
   }, [session, updateCursor, updateSelectedNode]);
 
-  const recordingContext = recordingState?.context ?? TRUNK_CONTEXT;
-  const recordingName = recordingState?.name ?? "";
-  const recordingDescription = recordingState?.description ?? "";
-  const recordingTags = recordingState?.tags ?? [];
-  const recordingSteps = recordingState?.steps ?? [];
-  const branchOwnership = recordingState?.branchOwnership ?? EMPTY_BRANCH_MAP;
-
   return (
     <>
       {!focusMode ? (
@@ -295,10 +264,10 @@ export function WorkspaceContent({
               {isRecording && (
                 <span
                   className={`text-[10px] font-mono rounded px-1.5 py-0.5 animate-pulse ${
-                    editingFlowId ? "text-amber-400 bg-amber-400/10" : "text-red-400 bg-red-400/10"
+                    isEditingFlow ? "text-amber-400 bg-amber-400/10" : "text-red-400 bg-red-400/10"
                   }`}
                 >
-                  {editingFlowId ? t("flows.recordingEdit") : t("flows.recordingRec")}
+                  {isEditingFlow ? t("flows.recordingEdit") : t("flows.recordingRec")}
                 </span>
               )}
             </div>
@@ -430,6 +399,12 @@ export function WorkspaceContent({
                   flow={activeFlow}
                   currentStepId={currentStepId}
                   currentStep={currentStep}
+                  history={playbackState?.history ?? EMPTY_HISTORY}
+                  flows={flows}
+                  onSelectFlow={(flowId) => {
+                    const target = flows.find((candidate) => candidate.id === flowId);
+                    if (target) switchFlow(target);
+                  }}
                   isCondition={isCondition}
                   canGoBack={canGoBack}
                   canGoForward={canGoForward}
@@ -451,46 +426,20 @@ export function WorkspaceContent({
                     if (!instance) return { x: 0, y: 0 };
                     return getViewportCenter(instance, !!showFlows);
                   }}
-                  panelActionsLocked={
-                    compareModeBlocksRecorder || !interaction.canUseFlow
-                  }
+                  panelActionsLocked={compareModeBlocksRecorder || !interaction.canUseFlow}
                   panelActionsLockedTitle={t("diagramNav.unavailableWhileRecordingOrPlayback")}
                 />
               )}
             </div>
           </ReactFlowProvider>
-          {isRecording && (
+          {isRecording && recordingState && (
             <FlowRecorderPanel
+              flowId={recordingState.flowId}
               recordingContext={recordingContext}
               setRecordingContext={setRecordingContext}
-              name={recordingName}
-              onNameChange={setRecordingName}
-              description={recordingDescription}
-              onDescriptionChange={setRecordingDescription}
-              tags={recordingTags}
-              onAddTag={onAddTag}
-              onRemoveTag={onRemoveTag}
-              steps={recordingStepsForPanel}
-              recordingSteps={recordingSteps}
-              branchOwnership={branchOwnership}
               onCancel={cancelRecording}
               onFinalize={finalizeRecording}
-              onUpdateStepDescription={onUpdateStepDescription}
-              onUpdateStepDuration={onUpdateStepDuration}
-              onUpdateStepPayload={onUpdateStepPayload}
-              onUpdateStepPayloadDirection={onUpdateStepPayloadDirection}
-              onUpdateStepIsAsync={onUpdateStepIsAsync}
-              onDeleteStep={onDeleteStep}
-              onReorderSteps={onReorderSteps}
-              onConvertStepToCondition={onConvertStepToCondition}
-              onUpdateConditionLabel={onUpdateConditionLabel}
-              onAddBranchLabel={onAddBranchLabel}
-              onRemoveBranchLabel={onRemoveBranchLabel}
-              onUpdateBranchLabel={onUpdateBranchLabel}
-              onAddConditionStep={onAddConditionStep}
-              onEnterBranchRecording={onEnterBranchRecording}
-              onOpenBranchSelect={onOpenBranchSelect}
-              isEditing={!!editingFlowId}
+              isEditing={isEditingFlow}
             />
           )}
         </div>

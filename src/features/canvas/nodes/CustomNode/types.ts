@@ -16,7 +16,7 @@ export type NodeData = {
   externalLinks?: ExternalLink[];
   onDrillDown?: (elementId: string) => void;
   onEmbed?: (elementId: string) => void;
-  recordingBadges?: number[];
+  stepBadges?: string[];
   isLastRecorded?: boolean;
   isRecording?: boolean;
   onHandleClick?: (nodeId: string, handleId: string) => void;

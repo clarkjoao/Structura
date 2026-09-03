@@ -15,6 +15,7 @@ import {
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
 import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
+import { publishSewNotices } from "../helpers/publish-sew-notices";
 import { resolveActiveScene } from "../helpers/scene-helpers";
 import i18n from "@/infrastructure/i18n";
 
@@ -231,7 +232,8 @@ export const scenesSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d?.scenes?.[sceneId]) return;
-      mutateRemoveComponentInScene(d, sceneId, componentId);
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+      publishSewNotices(state, mutateRemoveComponentInScene(d, sceneId, componentId));
       touchDiagram(d);
     });
   },
@@ -251,7 +253,8 @@ export const scenesSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d?.scenes?.[sceneId]) return;
-      mutateRemoveConnectionInScene(d, sceneId, connectionId);
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+      publishSewNotices(state, mutateRemoveConnectionInScene(d, sceneId, connectionId));
       touchDiagram(d);
     });
   },

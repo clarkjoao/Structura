@@ -11,11 +11,7 @@ export {
   cloneDiagramForImportWithId,
 } from "./shared-import";
 
-export {
-  exportTemplateToJson,
-  downloadTemplate,
-  importTemplateFromFile,
-} from "./template-sharing";
+export { exportTemplateToJson, downloadTemplate, importTemplateFromFile } from "./template-sharing";
 export type { TemplateExportEnvelope, ImportTemplateResult } from "./template-sharing";
 
 // ─── Handle order ────────────────────────────────────────────────────────────
@@ -38,15 +34,51 @@ export {
   validateFlowGraph,
   getOrderedStepIds,
   getStepCount,
-  getBranchStepCount,
 } from "./flow-traversal";
 export type { BrokenStep } from "./flow-traversal";
 
-export { buildFlowFromRecordingSnapshot } from "./recording-to-flow";
-export type { BranchOwnershipMap } from "./recording-to-flow";
+export { getFlowOutEdges, getReachableStepIds, checkFlowInvariants } from "./flow-graph";
+export type { FlowEdge, FlowInvariantCode, FlowInvariantViolation } from "./flow-graph";
+
+export { computeFlowStepLabels, compareFlowStepLabels, branchLetter } from "./flow-labels";
+export type { FlowLabelResult, FlowLabelAmbiguity } from "./flow-labels";
+
+export {
+  appendFlowStep,
+  insertFlowStep,
+  getFlowTail,
+  getOpenEndIds,
+  isPlaceholderStep,
+} from "./flow-edit";
+export type { FlowCursor, FlowEditResult, FlowEditRefusal, FlowEditRefusalCode } from "./flow-edit";
+
+export { convertFlowStepToCondition, appendFlowBranch, dropFlowBranch } from "./flow-condition";
+export type { NewBranchSpec } from "./flow-condition";
+
+export {
+  buildFlowOutline,
+  flowLabelDepth,
+  flowBranchHeadLabel,
+  getBranchRows,
+} from "./flow-outline";
+export type { FlowOutline, FlowOutlineRow, FlowOutlineBranch } from "./flow-outline";
 
 export { migrateFlow } from "./flow-migration";
-export { repairFlow } from "./flow-repair";
+export {
+  repairFlow,
+  repairFlowsAfterRemovingDiagramElements,
+  toFlowSewNotices,
+} from "./flow-repair";
+export type { FlowSewNotice, FlowSewReport, FlowSewJoin } from "./flow-repair";
+export { sewOnDelete } from "./flow-sew";
+export type { SewOnDeleteResult, SewBlockedStep } from "./flow-sew";
+export { moveStep } from "./flow-move";
+export type {
+  MoveStepTarget,
+  MoveStepResult,
+  MoveStepRefusal,
+  MoveStepRefusalCode,
+} from "./flow-move";
 export { buildFlowDuplicatePatch } from "./flow-duplicate";
 
 // ─── Scene ───────────────────────────────────────────────────────────────────
@@ -64,11 +96,7 @@ export {
   computeMergePreview,
   sceneHasDiff,
 } from "./scene.utils";
-export type {
-  CompareSnapshotResult,
-  CompareElementVisual,
-  MergePreview,
-} from "./scene.utils";
+export type { CompareSnapshotResult, CompareElementVisual, MergePreview } from "./scene.utils";
 
 export { buildChildrenIndex, getDescendantIdsFromIndex } from "./children-index";
 

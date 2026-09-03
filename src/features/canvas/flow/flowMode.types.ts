@@ -1,24 +1,26 @@
 import type { Dispatch, ReactNode, SetStateAction } from "react";
-import type { Flow, FlowStep } from "@/features/diagram";
+import type { Flow, FlowCursor, FlowStep } from "@/features/diagram";
 
-export interface BranchOwnerInfo {
-  conditionStepId: string;
-  branchIndex: number;
-}
-
+/**
+ * Where the recorder is pointing. `branch-select` writes nothing: it is the
+ * moment between finishing one branch and choosing the next.
+ */
 export type RecordingContext =
   | { mode: "trunk" }
   | { mode: "branch-select"; conditionStepId: string }
   | { mode: "branch-record"; conditionStepId: string; branchIndex: number; branchLabel: string };
 
-export interface RecordingFinalizeData {
-  name: string;
-  description: string;
-  tags: string[];
-  steps: FlowStep[];
-  entryStepId?: string;
-  editingFlowId: string | null;
-  branchOwnership: Map<string, BranchOwnerInfo>;
+/** The write position a recording context points at, or null when it points at none. */
+export function recordingCursor(context: RecordingContext): FlowCursor | null {
+  if (context.mode === "trunk") return { kind: "trunk" };
+  if (context.mode === "branch-record") {
+    return {
+      kind: "branch",
+      conditionStepId: context.conditionStepId,
+      branchIndex: context.branchIndex,
+    };
+  }
+  return null;
 }
 
 export type FlowMode =
@@ -31,13 +33,14 @@ export type FlowMode =
     }
   | {
       kind: "recording";
-      steps: FlowStep[];
+      /**
+       * The flow being written. The steps live in the store from the first
+       * click; this context owns only where the next one goes.
+       */
+      flowId: string;
       context: RecordingContext;
-      name: string;
-      description: string;
-      tags: string[];
-      editingFlowId: string | null;
-      branchOwnership: Map<string, BranchOwnerInfo>;
+      /** True when this session created the flow, so the header can say "REC" not "EDIT". */
+      isNewFlow: boolean;
     };
 
 export interface FlowModeState {
@@ -48,6 +51,8 @@ export interface FlowModeState {
   isRecording: boolean;
 
   play: (flow: Flow) => void;
+  /** Reads a different script without leaving the reading. */
+  switchFlow: (flow: Flow) => void;
   exitPlay: () => void;
   goNext: () => void;
   goBack: () => void;
@@ -58,42 +63,23 @@ export interface FlowModeState {
   canGoBack: boolean;
   canGoForward: boolean;
 
+  /** Id of the flow being recorded, or null outside a recording. */
+  recordingFlowId: string | null;
+  recordingContext: RecordingContext;
+  setRecordingContext: Dispatch<SetStateAction<RecordingContext>>;
+
   startRecording: () => void;
+  editFlow: (flow: Flow) => void;
   cancelRecording: () => void;
   finalizeRecording: () => void;
-  editFlow: (flow: Flow) => void;
-  setRecordingName: (name: string) => void;
-  setRecordingDescription: (desc: string) => void;
-  onAddTag: (tag: string) => void;
-  onRemoveTag: (index: number) => void;
-  setRecordingContext: Dispatch<SetStateAction<RecordingContext>>;
+
   onRecordNodeClick: (nodeId: string) => void;
   onRecordEdgeClick: (edgeId: string, handleId?: string) => void;
   onRecordHandleClick: (nodeId: string, handleId: string) => void;
   onRecordUndo: () => void;
-  onDeleteStep: (index: number) => void;
-  onReorderSteps: (from: number, to: number) => void;
-  onUpdateStepDescription: (index: number, value: string) => void;
-  onUpdateStepDuration: (index: number, value: string) => void;
-  onUpdateStepPayload: (index: number, value: string) => void;
-  onUpdateStepPayloadDirection: (index: number, direction: "request" | "response") => void;
-  onUpdateStepIsAsync: (index: number, value: boolean) => void;
-  onConvertStepToCondition: (index: number, conditionLabel: string, branchLabels: string[]) => void;
-  onUpdateConditionLabel: (index: number, label: string) => void;
-  onAddBranchLabel: (conditionStepId: string, label: string) => void;
-  onRemoveBranchLabel: (conditionStepId: string, branchIndex: number) => void;
-  onUpdateBranchLabel: (conditionStepId: string, branchIndex: number, label: string) => void;
-  onAddConditionStep: (conditionLabel: string, branchLabels: string[]) => void;
-  onEnterBranchRecording: (conditionStepId: string, branchIndex: number) => void;
-  onOpenBranchSelect: (conditionStepId: string) => void;
-
-  recordingStepsForPanel: FlowStep[];
-
-  onFinalize: (data: RecordingFinalizeData) => void;
 }
 
 export interface FlowModeProviderProps {
   children: ReactNode;
-  onFinalize: (data: RecordingFinalizeData) => void;
   onStartRecording?: () => void;
 }

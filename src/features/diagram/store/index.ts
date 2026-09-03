@@ -8,8 +8,6 @@ export {
   useConnectionActions,
   useLayoutActions,
   useSceneActions,
-  useFlowActions,
-  useHistoryActions,
   useClipboardActions,
   useIconActions,
   flushDiagramStoreToLocalStorageNow,
@@ -20,6 +18,12 @@ export {
 } from "./diagram.store";
 
 export type { DiagramStore, ClipboardEntry } from "./store.types";
+export type {
+  FlowStoreResult,
+  FlowStoreRefusal,
+  FlowStoreRefusalCode,
+  RecordedStepContent,
+} from "./slices/flows.slice";
 
 // ─── Selectors ────────────────────────────────────────────────────────────────
 export {

@@ -44,6 +44,7 @@ import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
 import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
+import { publishSewNotices } from "../helpers/publish-sew-notices";
 import {
   resolveActiveScene,
   resolveComponent,
@@ -70,7 +71,11 @@ import {
   mutateRemoveComponentInScene,
   mutateRemoveConnectionInScene,
 } from "../../utils/scene-mutations";
-import { repairFlowsAfterRemovingDiagramElements } from "../../utils/flow-repair";
+import {
+  repairFlowsAfterRemovingDiagramElements,
+  toFlowSewNotices,
+  type FlowSewNotice,
+} from "../../utils/flow-repair";
 
 function handleEndpointInsertion(
   state: AppState,
@@ -311,11 +316,17 @@ function buildLayoutForComponent(
  * and the batched `removeElements` so a multi-element delete pushes one history
  * checkpoint instead of one per removed id.
  */
-function removeElementsFromSnapshot(d: Diagram, nodeIds: string[], edgeIds: string[]): void {
+function removeElementsFromSnapshot(
+  d: Diagram,
+  nodeIds: string[],
+  edgeIds: string[],
+): FlowSewNotice[] {
   const childrenIndex = buildChildrenIndex(d.snapshot.components);
   const toRemove = new Set<string>();
   nodeIds.forEach((id) => {
-    getDescendantIdsFromIndex(id, childrenIndex).forEach((descendantId) => toRemove.add(descendantId));
+    getDescendantIdsFromIndex(id, childrenIndex).forEach((descendantId) =>
+      toRemove.add(descendantId),
+    );
     toRemove.add(id);
   });
 
@@ -334,13 +345,30 @@ function removeElementsFromSnapshot(d: Diagram, nodeIds: string[], edgeIds: stri
     }
   }
 
+  // Read before the deletes: the notice names what left the diagram, and by
+  // the time the flows are sewn it is no longer there to be named.
+  const elementNames = new Map<string, string>();
+  toRemove.forEach((eid) => {
+    const name = d.snapshot.components[eid]?.name;
+    if (name) elementNames.set(eid, name);
+  });
+  removedConnectionIds.forEach((connectionId) => {
+    const label = d.snapshot.connections[connectionId]?.label;
+    if (label) elementNames.set(connectionId, label);
+  });
+
   toRemove.forEach((eid) => delete d.snapshot.components[eid]);
   removedConnectionIds.forEach((connectionId) => {
     delete d.snapshot.connections[connectionId];
   });
   toRemove.forEach((eid) => delete d.nodeLayouts[eid]);
 
-  repairFlowsAfterRemovingDiagramElements(d.snapshot.flows, toRemove, removedConnectionIds);
+  const reports = repairFlowsAfterRemovingDiagramElements(
+    d.snapshot.flows,
+    toRemove,
+    removedConnectionIds,
+  );
+  const notices = toFlowSewNotices(reports, elementNames);
 
   const syncApiGroupSize = (groupId: string) => {
     const childCount = Object.values(d.snapshot.components).filter(
@@ -371,6 +399,8 @@ function removeElementsFromSnapshot(d: Diagram, nodeIds: string[], edgeIds: stri
   };
 
   apiGroupParentsToSync.forEach(reindexEndpoints);
+
+  return notices;
 }
 
 export const componentsSlice = (
@@ -512,13 +542,14 @@ export const componentsSlice = (
       if (!d) return;
       const scene = resolveActiveScene(d);
       if (scene) {
-        mutateRemoveComponentInScene(d, scene.id, id);
+        pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+        publishSewNotices(state, mutateRemoveComponentInScene(d, scene.id, id));
         touchDiagram(d);
         return;
       }
 
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-      removeElementsFromSnapshot(d, [id], []);
+      publishSewNotices(state, removeElementsFromSnapshot(d, [id], []));
       touchDiagram(d);
     });
   },
@@ -536,14 +567,17 @@ export const componentsSlice = (
       if (!d) return;
       const scene = resolveActiveScene(d);
       if (scene) {
-        nodeIds.forEach((id) => mutateRemoveComponentInScene(d, scene.id, id));
-        edgeIds.forEach((id) => mutateRemoveConnectionInScene(d, scene.id, id));
+        pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+        publishSewNotices(state, [
+          ...nodeIds.flatMap((id) => mutateRemoveComponentInScene(d, scene.id, id)),
+          ...edgeIds.flatMap((id) => mutateRemoveConnectionInScene(d, scene.id, id)),
+        ]);
         touchDiagram(d);
         return;
       }
 
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-      removeElementsFromSnapshot(d, nodeIds, edgeIds);
+      publishSewNotices(state, removeElementsFromSnapshot(d, nodeIds, edgeIds));
       touchDiagram(d);
     });
   },
