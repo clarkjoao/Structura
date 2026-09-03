@@ -33,6 +33,33 @@ function hasOwn<T extends object>(obj: T, key: keyof T): boolean {
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
 
+/**
+ * Merge an incoming per-entity delta into a collection, mirroring the server's
+ * applyPatch: entries are merged one level and a `null` entry removes that
+ * entity. Returns the original reference when there is nothing to apply, so
+ * untouched collections keep their identity and don't invalidate memoisation.
+ */
+function mergeCollection<T extends Record<string, unknown>>(
+  existing: T | undefined,
+  delta: unknown,
+): T {
+  const base = (existing ?? {}) as T;
+  if (!delta || typeof delta !== "object" || Array.isArray(delta)) return base;
+
+  const entries = Object.entries(delta as Record<string, unknown>);
+  if (entries.length === 0) return base;
+
+  const next: Record<string, unknown> = { ...base };
+  for (const [entityId, value] of entries) {
+    if (value === null) {
+      delete next[entityId];
+    } else {
+      next[entityId] = value;
+    }
+  }
+  return next as T;
+}
+
 function pickTrackedState(diagramId: string | null): TrackedDiagramState | null {
   if (!diagramId) return null;
   const state = useDiagramStore.getState();
@@ -55,33 +82,72 @@ function pickTrackedState(diagramId: string | null): TrackedDiagramState | null 
   };
 }
 
-function diffPatch(
+/** Keyed collections diffed per entity. Everything else is sent whole. */
+const ENTITY_COLLECTIONS = [
+  "components",
+  "connections",
+  "flows",
+  "iconLibrary",
+  "nodeLayouts",
+  "edgeLayouts",
+  "scenes",
+] as const satisfies ReadonlyArray<keyof TrackedDiagramState>;
+
+/**
+ * Per-entity delta between two versions of a keyed collection, or null when
+ * nothing moved.
+ *
+ * Comparison is by reference: the diagram store updates immutably, so an
+ * untouched entity keeps its identity while a changed one does not. That makes
+ * this O(n) pointer comparisons rather than a deep diff.
+ *
+ * A `null` value marks a tombstone — the entity was removed.
+ */
+export function diffCollection(
+  previous: Record<string, unknown>,
+  current: Record<string, unknown>,
+): Record<string, unknown> | null {
+  if (previous === current) return null;
+
+  const delta: Record<string, unknown> = {};
+  let changed = false;
+
+  for (const id of Object.keys(current)) {
+    if (previous[id] !== current[id]) {
+      delta[id] = current[id];
+      changed = true;
+    }
+  }
+
+  for (const id of Object.keys(previous)) {
+    if (!Object.prototype.hasOwnProperty.call(current, id)) {
+      delta[id] = null;
+      changed = true;
+    }
+  }
+
+  return changed ? delta : null;
+}
+
+export function diffPatch(
   previous: TrackedDiagramState,
   current: TrackedDiagramState,
 ): CollabPatch | null {
   const patch: CollabPatch = {};
 
-  if (previous.components !== current.components) {
-    patch.components = current.components;
+  // Collections ship only the entities that actually changed. Sending the whole
+  // map made concurrent edits to different entities overwrite each other, and
+  // put the entire diagram on the wire for every drag.
+  for (const key of ENTITY_COLLECTIONS) {
+    const delta = diffCollection(
+      previous[key] as Record<string, unknown>,
+      current[key] as Record<string, unknown>,
+    );
+    if (delta) {
+      patch[key] = delta;
+    }
   }
-  if (previous.connections !== current.connections) {
-    patch.connections = current.connections;
-  }
-  if (previous.flows !== current.flows) {
-    patch.flows = current.flows;
-  }
-  if (previous.iconLibrary !== current.iconLibrary) {
-    patch.iconLibrary = current.iconLibrary;
-  }
-  if (previous.nodeLayouts !== current.nodeLayouts) {
-    patch.nodeLayouts = current.nodeLayouts;
-  }
-  if (previous.edgeLayouts !== current.edgeLayouts) {
-    patch.edgeLayouts = current.edgeLayouts;
-  }
-  if (previous.scenes !== current.scenes) {
-    patch.scenes = current.scenes;
-  }
+
   if (previous.activeSceneId !== current.activeSceneId) {
     patch.activeSceneId = current.activeSceneId;
   }
@@ -163,26 +229,14 @@ export function useCollabStoreSync({
             description: hasOwn(patch, "description") ? patch.description : diagram.description,
             snapshot: {
               ...diagram.snapshot,
-              components: patch.components
-                ? (patch.components as typeof diagram.snapshot.components)
-                : diagram.snapshot.components,
-              connections: patch.connections
-                ? (patch.connections as typeof diagram.snapshot.connections)
-                : diagram.snapshot.connections,
-              flows: patch.flows
-                ? (patch.flows as typeof diagram.snapshot.flows)
-                : diagram.snapshot.flows,
-              iconLibrary: patch.iconLibrary
-                ? (patch.iconLibrary as typeof diagram.snapshot.iconLibrary)
-                : diagram.snapshot.iconLibrary,
+              components: mergeCollection(diagram.snapshot.components, patch.components),
+              connections: mergeCollection(diagram.snapshot.connections, patch.connections),
+              flows: mergeCollection(diagram.snapshot.flows, patch.flows),
+              iconLibrary: mergeCollection(diagram.snapshot.iconLibrary, patch.iconLibrary),
             },
-            nodeLayouts: patch.nodeLayouts
-              ? (patch.nodeLayouts as typeof diagram.nodeLayouts)
-              : diagram.nodeLayouts,
-            edgeLayouts: patch.edgeLayouts
-              ? (patch.edgeLayouts as typeof diagram.edgeLayouts)
-              : diagram.edgeLayouts,
-            scenes: patch.scenes ? (patch.scenes as typeof diagram.scenes) : diagram.scenes,
+            nodeLayouts: mergeCollection(diagram.nodeLayouts, patch.nodeLayouts),
+            edgeLayouts: mergeCollection(diagram.edgeLayouts, patch.edgeLayouts),
+            scenes: mergeCollection(diagram.scenes, patch.scenes),
             activeSceneId: hasOwn(patch, "activeSceneId")
               ? patch.activeSceneId
               : diagram.activeSceneId,
