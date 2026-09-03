@@ -62,7 +62,6 @@ const MAX_PENDING_OPS = 100; // Max pending operations before forcing resync
 // Coalescing and batching configuration
 const BATCH_INTERVAL_MS = 50; // Send batched patches every 50ms
 const MAX_BATCH_SIZE = 10; // Max patches per batch
-const COALESCE_WINDOW_MS = 100; // Window to coalesce same-field patches
 
 interface PendingOperation {
   id: string;
@@ -839,7 +838,8 @@ export function useCollab({
     if (pendingBatchRef.current.length === 0) return;
     if (!roomId) return;
 
-    const type = isHost ? "host:patch" : "guest:patch";
+    const isCurrentlyHost = isHost;
+    const type = isCurrentlyHost ? "host:patch" : "guest:patch";
     const batch = pendingBatchRef.current;
     pendingBatchRef.current = [];
 
@@ -854,8 +854,8 @@ export function useCollab({
         version: versionRef.current.version,
       });
     } else {
-      // Multiple patches - coalesce into single payload
-      // Merge all patches together (last write wins for same keys)
+      // Multiple patches - merge into single payload
+      // Note: We use last-write-wins strategy for same keys
       const mergedPatch: CollabPatch = {};
       for (const item of batch) {
         Object.assign(mergedPatch, item.patch);

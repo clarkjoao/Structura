@@ -822,10 +822,9 @@ function handleSyncRequest(ws: WebSocket, message: JsonMessage): void {
     return;
   }
 
-  // If client is behind snapshot, send snapshot + ops since snapshot
+  // If client is behind snapshot, send snapshot + reset
+  // Client will apply the snapshot and continue from there
   if (baseVersion < room.snapshotAtVersion) {
-    // Client needs the snapshot first
-    const opsSinceSnapshot = room.operationLog.filter((op) => op.version > room.snapshotAtVersion);
     safeSend(ws, {
       type: "SYNC_SNAPSHOT",
       version: room.version,
