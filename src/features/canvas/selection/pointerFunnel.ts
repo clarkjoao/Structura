@@ -401,7 +401,12 @@ export function usePointerFunnel(params: {
       window.removeEventListener("pointerup", onPointerUp, true);
       window.removeEventListener("mouseup", onPointerUp, true);
     };
-  }, [params]);
+  }, [
+    params.openContextMenu,
+    params.onNodePointerDown,
+    params.onBackgroundClick,
+    params.panViewportBy,
+  ]);
 
   return {
     /**
