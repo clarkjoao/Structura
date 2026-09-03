@@ -1,6 +1,6 @@
 # Collab — migração para patches por entidade
 
-> **Status:** implementado — fases 1 a 7 concluídas
+> **Status:** implementado — fases 1 a 8 concluídas
 > **Início:** 2026-09-03
 > **Branch:** `improve/collab`
 > **Decisão anterior:** [collab-architecture-study.md](./collab-architecture-study.md)
@@ -102,6 +102,7 @@ Reproduzir: `PATCH_MODE=entity npm run loadtest` (em `server/`).
 | 5 | `it.skip` vira teste real de convergência | ✅ |
 | 6 | Revalidar carga e comparar com a tabela acima | ✅ |
 | 7 | Tombstones com janela (remove-wins) | ✅ |
+| 8 | Detecção de gap movida para onde é observável | ✅ |
 
 ### Ordem e porquê
 
@@ -247,6 +248,47 @@ carrega `version` e `protocol` nos dois caminhos.
 **Carga:** sem regressão. A primeira medição deu p50 16ms, a segunda p50 4ms /
 lag 0,89ms — dentro da variância já documentada e igual ao pré-tombstone.
 
+### Fase 8 — detecção de gap no lugar certo
+
+Entrei nesta fase para *reativar* o gate de version gap no servidor. A medição
+disse o contrário: o certo era **removê-lo**.
+
+**Medido antes de decidir.** Instrumentei o harness para contar resyncs, com o
+worker declarando `version` nos patches como o cliente real faz. Cenário
+padrão, 30s:
+
+| | antes | depois |
+|---|---|---|
+| `SYNC_REQUIRED` emitidos | **23.800** (~793/s) | **0** |
+| Operações reenviadas | **137.181** | **0** |
+
+Quase 5% de todos os patches disparavam um round trip de resync — para clientes
+conectados que não tinham perdido nada.
+
+**Por que o gate estava errado.** O servidor comparava a versão declarada pelo
+remetente com a da sala e concluía "gap". Mas num socket ordenado e confiável um
+cliente conectado **não perde broadcast**: essa diferença é concorrência e
+latência em voo, nunca perda. O servidor não tem como distinguir as duas coisas
+— da posição dele elas são idênticas.
+
+Além de desperdício, era prejudicial: o `SYNC_COMPLETE` reaplica operações
+antigas, e uma op antiga carrega o valor antigo da entidade — podendo **reverter
+edição mais nova** do próprio cliente.
+
+**Onde a detecção passou a viver.** No cliente, no fluxo de broadcast: as versões
+chegam uma a uma, então `version > conhecida + 1` significa que operações
+realmente faltaram. É o único ponto em que perda é observável, e aí o cliente
+pede `sync:request` sozinho. `SYNC_REQUIRED` deixou de existir.
+
+**Bug de permeio:** `baseVersion` nunca era atualizado em patches comuns (havia
+até um comentário afirmando que era proposital), então todo `sync:request` pedia
+replay desde o momento do join — o que explica as 137 mil ops. Os dois campos
+viraram um só, sempre atual.
+
+**Testes:** servidor afirma que cliente atrasado não recebe resync; cliente
+afirma que salto de versão pede sync e que versões consecutivas não pedem.
+Cliente: 21 → **23 testes**. Verifiquei desabilitando a detecção — o teste falha.
+
 ---
 
 ## 7. O que ficou de fora
@@ -254,9 +296,9 @@ lag 0,89ms — dentro da variância já documentada e igual ao pré-tombstone.
 - **Granularidade de campo dentro da entidade.** Dois usuários editando campos
   diferentes do *mesmo* componente ainda disputam. Bem mais raro que o caso de
   nós diferentes, que era o que doía; refinamento futuro se aparecer demanda.
-- **Reativar o gate de version gap.** Com patches disjuntos por entidade ele
-  volta a fazer sentido (foi removido porque sob LWW-de-coleção não protegia
-  nada). Não reativado nesta rodada.
+- **Replay no reconnect.** Hoje um cliente que reconecta recebe o snapshot
+  inteiro via `session:init`. Correto, mas mais pesado que pedir replay a partir
+  da versão que ele tinha — é o uso legítimo que sobrou para `sync:request`.
 - **Tombstone para escrita sem versão declarada.** Um cliente que não manda
   `version` não pode ser avaliado e a escrita passa. Hoje é inalcançável — o
   guard de protocolo já recusa qualquer cliente que não seja v2, e o v2 sempre

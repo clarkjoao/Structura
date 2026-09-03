@@ -79,12 +79,6 @@ interface PendingOperation {
   patch: CollabPatch;
 }
 
-// Version tracking for sequencing
-interface LocalVersion {
-  version: number;
-  baseVersion: number; // Version when we last synced with server
-}
-
 // Batching for optimized network usage
 interface BatchedPatch {
   patch: CollabPatch;
@@ -254,7 +248,8 @@ export function useCollab({
   const pendingOpsRef = useRef<Map<string, PendingOperation>>(new Map());
 
   // Version tracking
-  const versionRef = useRef<LocalVersion>({ version: 0, baseVersion: 0 });
+  // Highest server version this client has applied.
+  const versionRef = useRef<{ version: number }>({ version: 0 });
 
   // Batching for coalescing operations
   const pendingBatchRef = useRef<BatchedPatch[]>([]);
@@ -420,7 +415,6 @@ export function useCollab({
             // Extract version from server
             const msgVersion = typeof message.version === "number" ? message.version : 0;
             versionRef.current.version = msgVersion;
-            versionRef.current.baseVersion = msgVersion;
           }
           if (isHost) {
             const store = useCollabStore.getState();
@@ -458,7 +452,6 @@ export function useCollab({
           // Extract version from server
           const msgVersion = typeof message.version === "number" ? message.version : 0;
           versionRef.current.version = msgVersion;
-          versionRef.current.baseVersion = msgVersion;
 
           // Extract participant count from server
           if (typeof message.clientId === "string") {
@@ -489,7 +482,21 @@ export function useCollab({
           const clientId = typeof message.clientId === "string" ? message.clientId : null;
           const serverVersion = typeof message.version === "number" ? message.version : null;
 
-          // Update local version if server provides one
+          // A gap is only observable here: versions arrive one at a time on an
+          // ordered socket, so a jump means we genuinely missed operations.
+          // The server cannot tell — from its side a lagging version is just
+          // concurrency and in-flight latency.
+          if (
+            serverVersion !== null &&
+            versionRef.current.version > 0 &&
+            serverVersion > versionRef.current.version + 1
+          ) {
+            console.warn(
+              `[useCollab] missed operations: have=${versionRef.current.version}, got=${serverVersion}`,
+            );
+            sendRaw({ type: "sync:request", roomId, baseVersion: versionRef.current.version });
+          }
+
           if (serverVersion !== null && serverVersion > versionRef.current.version) {
             versionRef.current.version = serverVersion;
           }
@@ -526,29 +533,12 @@ export function useCollab({
           }
           return;
         }
-        case "SYNC_REQUIRED": {
-          const currentVersion = typeof message.currentVersion === "number" ? message.currentVersion : null;
-          const reason = typeof message.reason === "string" ? message.reason : "unknown";
-
-          console.log(`[useCollab] sync required: version=${currentVersion}, reason=${reason}`);
-
-          if (currentVersion !== null) {
-            // Request sync from server
-            sendRaw({
-              type: "sync:request",
-              roomId,
-              baseVersion: versionRef.current.baseVersion,
-            });
-          }
-          return;
-        }
         case "SYNC_COMPLETE": {
           const newVersion = typeof message.version === "number" ? message.version : null;
           const operations = Array.isArray(message.operations) ? message.operations : [];
 
           if (newVersion !== null) {
             versionRef.current.version = newVersion;
-            versionRef.current.baseVersion = newVersion;
           }
 
           // Apply all operations in order
@@ -566,7 +556,6 @@ export function useCollab({
 
           if (newVersion !== null) {
             versionRef.current.version = newVersion;
-            versionRef.current.baseVersion = newVersion;
           }
 
           // Full snapshot received, apply it
@@ -583,7 +572,6 @@ export function useCollab({
 
           if (newVersion !== null) {
             versionRef.current.version = newVersion;
-            // baseVersion is NOT updated here - we keep tracking from where we were
           }
 
           // Full snapshot received, apply it to reset state
@@ -771,7 +759,7 @@ export function useCollab({
       // Clear pending operations, version, and batch on disconnect
       pendingOpsRef.current.clear();
       assignedClientIdRef.current = null;
-      versionRef.current = { version: 0, baseVersion: 0 };
+      versionRef.current = { version: 0 };
 
       // Clear batch timer and flush
       if (batchTimerRef.current) {
@@ -1016,7 +1004,7 @@ export function useCollab({
 
     // Clear pending operations, version, and batch
     pendingOpsRef.current.clear();
-    versionRef.current = { version: 0, baseVersion: 0 };
+    versionRef.current = { version: 0 };
 
     if (batchTimerRef.current) {
       clearTimeout(batchTimerRef.current);

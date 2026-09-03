@@ -474,65 +474,60 @@ describe("collaboration server integration", () => {
   });
 
   // -------------------------------------------------------------------------
-  // B2 variant: version-gap patch is applied AND SYNC_REQUIRED warning sent
+  // A lagging version is concurrency, not loss: apply, and stay quiet
   // -------------------------------------------------------------------------
-  it("sends SYNC_REQUIRED as warning after applying version-gap patch", async () => {
-    const hostClient = await connectClient(TEST_ROOM + "-syncwarn");
-    hostClient.ws.send(
+  it("does not ask a connected client to resync just for lagging behind", async () => {
+    const room = TEST_ROOM + "-nosyncstorm";
+    const host = await connectClient(room);
+    host.ws.send(
       JSON.stringify({
         type: "host:join",
         protocol: 2,
-        roomId: TEST_ROOM + "-syncwarn",
-        diagramId: TEST_ROOM + "-syncwarn",
+        roomId: room,
+        diagramId: room,
         user: makeUser(0),
-        snapshot: makeSnapshot(),
+        snapshot: makeSnapshot({ diagramId: room }),
       }),
     );
-    await waitForMessage(hostClient, "host:ack");
+    await waitForMessage(host, "host:ack");
 
-    for (let v = 0; v < 2; v++) {
-      hostClient.ws.send(
+    for (let v = 0; v < 3; v++) {
+      host.ws.send(
         JSON.stringify({
           type: "host:patch",
-          roomId: TEST_ROOM + "-syncwarn",
-          patch: { nodeLayouts: { [`n${v}`]: { x: v } } },
+          roomId: room,
+          patch: { nodeLayouts: { [`n${v}`]: { elementId: `n${v}`, x: v } } },
           version: v,
         }),
       );
-      await waitForMessage(hostClient, "OP_ACK");
+      await waitForMessage(host, "OP_ACK");
     }
 
-    const guestClient = await connectClient(TEST_ROOM + "-syncwarn");
-    guestClient.ws.send(
-      JSON.stringify({ type: "guest:join",
-        protocol: 2, roomId: TEST_ROOM + "-syncwarn", user: makeUser(1) }),
-    );
-    await waitForMessage(guestClient, "session:init");
+    const guest = await connectClient(room);
+    guest.ws.send(JSON.stringify({ type: "guest:join", protocol: 2, roomId: room, user: makeUser(1) }));
+    await waitForMessage(guest, "session:init");
 
-    // Guest sends patch with version 0 (room is at version 2) — gap of 2
-    guestClient.ws.send(
+    // Declares version 0 while the room is at 3. On an ordered socket that is
+    // latency and concurrency, never lost data, so the patch applies and the
+    // server must not trigger a resync round trip.
+    guest.ws.send(
       JSON.stringify({
         type: "guest:patch",
-        roomId: TEST_ROOM + "-syncwarn",
-        patch: { nodeLayouts: { guestNode: { x: 999 } } },
+        roomId: room,
+        patch: { nodeLayouts: { guestNode: { elementId: "guestNode", x: 999 } } },
         version: 0,
       }),
     );
 
-    // Patch is applied (OP_ACK accepted)
-    const ack = (await waitForMessage(guestClient, "OP_ACK")) as { accepted?: boolean };
+    const ack = (await waitForMessage(guest, "OP_ACK")) as { accepted?: boolean };
     expect(ack.accepted).toBe(true);
 
-    // SYNC_REQUIRED is sent as non-blocking warning
-    const syncRequired = (await waitForMessage(guestClient, "SYNC_REQUIRED")) as {
-      type: string;
-      reason?: string;
-    };
-    expect(syncRequired.type).toBe("SYNC_REQUIRED");
-    expect(syncRequired.reason).toBe("VERSION_GAP");
+    await new Promise<void>((resolve) => setTimeout(resolve, 300));
+    const types = guest.sentMessages.map((m) => (m as Record<string, unknown>)?.type);
+    expect(types).not.toContain("SYNC_REQUIRED");
 
-    guestClient.ws.close();
-    hostClient.ws.close();
+    host.ws.close();
+    guest.ws.close();
   });
 
   // -------------------------------------------------------------------------

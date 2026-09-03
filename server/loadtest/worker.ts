@@ -33,6 +33,9 @@ const stats = {
   patchLatencies: [] as number[],
   bytesSent: 0,
   sendErrors: 0,
+  syncRequired: 0,
+  syncComplete: 0,
+  opsReplayed: 0,
 };
 
 function noteError(code: string): void {
@@ -79,6 +82,8 @@ interface Client {
   isHost: boolean;
   isEditor: boolean;
   ready: boolean;
+  baseVersion: number;
+  knownVersion: number;
 }
 
 const clients: Client[] = [];
@@ -102,7 +107,7 @@ function connectClient(roomIdx: number, seat: number): Promise<void> {
     const clientId = `u${roomIdx}-${seat}`;
     const isHost = seat === 0;
     const ws = new WebSocket(cfg.url, { perMessageDeflate: false });
-    const c: Client = { ws, roomId, clientId, isHost, isEditor: seat < cfg.editorsPerRoom, ready: false };
+    const c: Client = { ws, roomId, clientId, isHost, isEditor: seat < cfg.editorsPerRoom, ready: false, baseVersion: 0, knownVersion: 0 };
 
     const giveUp = setTimeout(() => {
       stats.connectFailed++;
@@ -137,6 +142,10 @@ function connectClient(roomIdx: number, seat: number): Promise<void> {
       const type = msg.type;
 
       if (type === "host:ack" || type === "session:init") {
+        if (typeof msg.version === "number") {
+          c.baseVersion = msg.version;
+          c.knownVersion = msg.version;
+        }
         if (!c.ready) {
           c.ready = true;
           stats.connected++;
@@ -153,6 +162,33 @@ function connectClient(roomIdx: number, seat: number): Promise<void> {
           stats.connectFailed++;
           resolve();
         }
+        return;
+      }
+
+      if (type === "OP_ACK") {
+        if (typeof msg.version === "number" && msg.version > c.knownVersion) {
+          c.knownVersion = msg.version;
+        }
+        return;
+      }
+
+      // Mirror the real client: a SYNC_REQUIRED prompts a sync:request from
+      // the last synced base version.
+      if (type === "SYNC_REQUIRED") {
+        stats.syncRequired++;
+        send(c, { type: "sync:request", roomId: c.roomId, baseVersion: c.baseVersion });
+        return;
+      }
+      if (type === "SYNC_COMPLETE") {
+        stats.syncComplete++;
+        const ops = Array.isArray(msg.operations) ? msg.operations : [];
+        stats.opsReplayed += ops.length;
+        if (typeof msg.version === "number") c.baseVersion = msg.version;
+        return;
+      }
+      if (type === "SYNC_SNAPSHOT") {
+        stats.syncComplete++;
+        if (typeof msg.version === "number") c.baseVersion = msg.version;
         return;
       }
 
@@ -181,6 +217,9 @@ function connectClient(roomIdx: number, seat: number): Promise<void> {
 
       // Patch round trip: t0 rides inside the patch itself.
       if (type === "session:patch") {
+        if (typeof msg.version === "number" && msg.version > c.knownVersion) {
+          c.knownVersion = msg.version;
+        }
         const patch = msg.patch as Record<string, unknown> | undefined;
         const t0 = patch?.__t0;
         if (typeof t0 === "number") stats.patchLatencies.push(Date.now() - t0);
@@ -273,6 +312,7 @@ async function main(): Promise<void> {
             type: c.isHost ? "host:patch" : "guest:patch",
             roomId: c.roomId,
             patch,
+            version: c.knownVersion,
             operationId: `${c.clientId}-${Math.random().toString(36).slice(2, 8)}`,
           });
         }

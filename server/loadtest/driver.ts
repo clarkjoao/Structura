@@ -160,6 +160,9 @@ async function main(): Promise<void> {
   let received = 0;
   let bytesSent = 0;
   let sendErrors = 0;
+  let syncRequired = 0;
+  let syncComplete = 0;
+  let opsReplayed = 0;
   const allLat: number[] = [];
   const allPatchLat: number[] = [];
   const errors: Record<string, number> = {};
@@ -169,6 +172,9 @@ async function main(): Promise<void> {
     received += Number(r.received ?? 0);
     bytesSent += Number(r.bytesSent ?? 0);
     sendErrors += Number(r.sendErrors ?? 0);
+    syncRequired += Number(r.syncRequired ?? 0);
+    syncComplete += Number(r.syncComplete ?? 0);
+    opsReplayed += Number(r.opsReplayed ?? 0);
     for (const l of (r.latencies as number[]) ?? []) allLat.push(l);
     for (const l of (r.patchLatencies as number[]) ?? []) allPatchLat.push(l);
     for (const [k, v] of Object.entries((r.errors as Record<string, number>) ?? {})) {
@@ -195,6 +201,9 @@ async function main(): Promise<void> {
   if (lag) {
     console.log(`server loop lag avg=${lag.avgMs}ms  max=${lag.maxMs}ms`);
   }
+  console.log(
+    `resync          SYNC_REQUIRED=${syncRequired}  completed=${syncComplete}  opsReplayed=${opsReplayed}`,
+  );
   console.log(`errors          ${Object.keys(errors).length ? JSON.stringify(errors) : "none"}`);
   if (sendErrors) console.log(`client send err ${sendErrors}`);
   console.log("");

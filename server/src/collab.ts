@@ -721,6 +721,10 @@ function handleHostPatch(ws: WebSocket, message: JsonMessage): void {
   const roomId = typeof message.roomId === "string" ? message.roomId : null;
   const patch = parsePatch(message.patch);
   const clientOperationId = typeof message.operationId === "string" ? message.operationId : null;
+  // The version the sender had applied when it composed this patch. Used to
+  // decide whether it had seen a delete (see applyPatch), not to gate the
+  // patch: a connected socket delivers every broadcast in order, so a version
+  // difference here is concurrency and latency, never loss.
   const clientVersion = typeof message.version === "number" ? message.version : null;
 
   if (!state || !roomId || !patch || state.roomId !== roomId) {
@@ -746,12 +750,6 @@ function handleHostPatch(ws: WebSocket, message: JsonMessage): void {
     sendError(ws, "batch_too_large", `Batch size exceeds maximum of ${MAX_BATCH_SIZE}`);
     return;
   }
-
-  // Check for version gap - client is behind
-  // Under LWW-per-collection, the gate provides no safety: every patch overwrites
-  // the entire collection anyway, so no patch is "safe" vs "unsafe" to apply.
-  // A real gap policy depends on the per-operation protocol (see docs/collab-architecture-study.md).
-  const hasVersionGap = clientVersion !== null && clientVersion < room.version - 1;
 
   // Generate operation ID if not provided by client
   const operationId = clientOperationId ?? crypto.randomUUID();
@@ -796,14 +794,6 @@ function handleHostPatch(ws: WebSocket, message: JsonMessage): void {
       { exceptClientId: state.clientId },
     );
   }
-  // Warn client about version gap AFTER applying (non-blocking)
-  if (hasVersionGap) {
-    safeSend(ws, {
-      type: "SYNC_REQUIRED",
-      currentVersion: room.version,
-      reason: "VERSION_GAP",
-    });
-  }
 }
 
 function handleGuestPatch(ws: WebSocket, message: JsonMessage): void {
@@ -811,6 +801,10 @@ function handleGuestPatch(ws: WebSocket, message: JsonMessage): void {
   const roomId = typeof message.roomId === "string" ? message.roomId : null;
   const patch = parsePatch(message.patch);
   const clientOperationId = typeof message.operationId === "string" ? message.operationId : null;
+  // The version the sender had applied when it composed this patch. Used to
+  // decide whether it had seen a delete (see applyPatch), not to gate the
+  // patch: a connected socket delivers every broadcast in order, so a version
+  // difference here is concurrency and latency, never loss.
   const clientVersion = typeof message.version === "number" ? message.version : null;
 
   if (!state || state.role !== "guest" || !roomId || !patch || state.roomId !== roomId) {
@@ -836,12 +830,6 @@ function handleGuestPatch(ws: WebSocket, message: JsonMessage): void {
     sendError(ws, "batch_too_large", `Batch size exceeds maximum of ${MAX_BATCH_SIZE}`);
     return;
   }
-
-  // Check for version gap - client is behind
-  // Under LWW-per-collection, the gate provides no safety: every patch overwrites
-  // the entire collection anyway, so no patch is "safe" vs "unsafe" to apply.
-  // A real gap policy depends on the per-operation protocol (see docs/collab-architecture-study.md).
-  const hasVersionGap = clientVersion !== null && clientVersion < room.version - 1;
 
   // Generate operation ID if not provided by client
   const operationId = clientOperationId ?? crypto.randomUUID();
@@ -887,14 +875,6 @@ function handleGuestPatch(ws: WebSocket, message: JsonMessage): void {
     );
   }
 
-  // Warn client about version gap AFTER applying (non-blocking)
-  if (hasVersionGap) {
-    safeSend(ws, {
-      type: "SYNC_REQUIRED",
-      currentVersion: room.version,
-      reason: "VERSION_GAP",
-    });
-  }
 }
 
 function handleHostClose(ws: WebSocket, message: JsonMessage): void {

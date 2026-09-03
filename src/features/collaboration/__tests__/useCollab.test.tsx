@@ -446,4 +446,58 @@ describe("useCollab hook", () => {
   // is proven end to end in server/src/collab.test.ts ("no whole-collection
   // clobber"); the delta production that feeds it is covered in
   // useCollabStoreSync.test.ts.
+  // -------------------------------------------------------------------------
+  // 8. Gap detection lives here: a jump in the broadcast stream is the only
+  //    place lost operations are observable.
+  // -------------------------------------------------------------------------
+  it("requests a sync when the broadcast version jumps", async () => {
+    const { getWs } = renderHookWithClient({ isHost: false });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    const ws = getWs();
+    ws.injectMessage({ type: "session:init", version: 5, snapshot: makeSnapshot(), peers: [] });
+    ws.sentMessages = [];
+
+    // 6 would be the next version; 9 means 6, 7 and 8 never arrived.
+    await act(async () => {
+      ws.injectMessage({
+        type: "session:patch",
+        version: 9,
+        patch: { nodeLayouts: { n1: { elementId: "n1", x: 1 } } },
+      });
+    });
+
+    const sync = ws.sentMessages.find((m) => m.type === "sync:request");
+    expect(sync).toMatchObject({ type: "sync:request", baseVersion: 5 });
+  });
+
+  // -------------------------------------------------------------------------
+  // 9. Lagging behind is normal concurrency — it must not trigger a resync
+  // -------------------------------------------------------------------------
+  it("does not request a sync for consecutive versions", async () => {
+    const { getWs } = renderHookWithClient({ isHost: false });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    const ws = getWs();
+    ws.injectMessage({ type: "session:init", version: 5, snapshot: makeSnapshot(), peers: [] });
+    ws.sentMessages = [];
+
+    await act(async () => {
+      for (const version of [6, 7, 8]) {
+        ws.injectMessage({
+          type: "session:patch",
+          version,
+          patch: { nodeLayouts: { n1: { elementId: "n1", x: version } } },
+        });
+      }
+    });
+
+    expect(ws.sentMessages.find((m) => m.type === "sync:request")).toBeUndefined();
+  });
 });
