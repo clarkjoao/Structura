@@ -269,7 +269,3 @@ export function buildPatternCatalog(): string {
 export function isValidPatternId(patternId: string): boolean {
   return PATTERNS.some((p) => p.id === patternId);
 }
-
-export function getPatternById(patternId: string) {
-  return PATTERNS.find((p) => p.id === patternId);
-}
