@@ -21,9 +21,9 @@ function buildState(graphXml: string) {
     graphXml,
     viewport: {
       scale: 1,
-      scroll: { left: 12, top: 12 }
+      scroll: { left: 12, top: 12 },
     },
-    autoUpdate: true
+    autoUpdate: true,
   };
 }
 
@@ -80,7 +80,11 @@ export function ensureBearerPrefix(token: string): string {
   return `Bearer ${cleanToken}`;
 }
 
-async function apiRequest<T>(config: LeanixConfig, path: string, options: RequestInit = {}): Promise<T> {
+async function apiRequest<T>(
+  config: LeanixConfig,
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
   const targetPath = path.startsWith("/") ? path : `/${path}`;
   const targetUrl = `${config.baseUrl.replace(/\/$/, "")}${targetPath}`;
 
@@ -119,7 +123,11 @@ async function apiRequest<T>(config: LeanixConfig, path: string, options: Reques
  * Update the editable working copy of a diagram
  * Follows the exact format from calls-leanix.js
  */
-async function updateWorkingCopy(config: LeanixConfig, diagramId: string, graphXml: string): Promise<void> {
+async function updateWorkingCopy(
+  config: LeanixConfig,
+  diagramId: string,
+  graphXml: string,
+): Promise<void> {
   const safeGraphXml = graphXml || getDefaultGraphXml();
 
   const payload = {
@@ -127,12 +135,12 @@ async function updateWorkingCopy(config: LeanixConfig, diagramId: string, graphX
       autoUpdate: true,
       viewport: {
         scale: 1,
-        scroll: { left: -157.5, top: -257.5 }
+        scroll: { left: -157.5, top: -257.5 },
       },
       graphXml: safeGraphXml,
       version: 2,
-      viewLegend: []
-    }
+      viewLegend: [],
+    },
   };
 
   return apiRequest<void>(config, `/services/pathfinder/v1/bookmarks/${diagramId}/workingCopy`, {
@@ -146,7 +154,11 @@ async function updateWorkingCopy(config: LeanixConfig, diagramId: string, graphX
  * Persist (save) a diagram
  * Follows the exact format from calls-leanix.js
  */
-async function saveDiagram(config: LeanixConfig, diagramId: string, graphXml: string): Promise<LeanixBookmark> {
+async function saveDiagram(
+  config: LeanixConfig,
+  diagramId: string,
+  graphXml: string,
+): Promise<LeanixBookmark> {
   const safeGraphXml = graphXml || getDefaultGraphXml();
 
   const payload = {
@@ -154,13 +166,13 @@ async function saveDiagram(config: LeanixConfig, diagramId: string, graphXml: st
       autoUpdate: true,
       viewport: {
         scale: 1,
-        scroll: { left: -157.5, top: -257.5 }
+        scroll: { left: -157.5, top: -257.5 },
       },
       graphXml: safeGraphXml,
       version: 2,
-      viewLegend: []
+      viewLegend: [],
     },
-    lastModified: new Date().toISOString()
+    lastModified: new Date().toISOString(),
   };
 
   return apiRequest<LeanixBookmark>(config, `/services/pathfinder/v1/bookmarks/${diagramId}`, {
@@ -232,7 +244,9 @@ export function exportDiagramWithProgress(
         try {
           const data = JSON.parse(xhr.responseText);
           reason = data.message || data.error || reason;
-        } catch { /* use status */ }
+        } catch {
+          /* use status */
+        }
         reject(new Error(reason));
       }
     });
@@ -254,13 +268,15 @@ export async function exportDiagram(
   graphXml: string,
   userId: string,
 ): Promise<{ action: "created" | "updated"; bookmark: LeanixBookmark }> {
-  return exportDiagramWithProgress(config, name, graphXml, userId, () => {/* no-op */});
+  return exportDiagramWithProgress(config, name, graphXml, userId, () => {
+    /* no-op */
+  });
 }
 
 export async function updateDiagram(
   config: LeanixConfig,
   diagramId: string,
-  graphXml: string
+  graphXml: string,
 ): Promise<LeanixBookmark> {
   await updateWorkingCopy(config, diagramId, graphXml);
   return saveDiagram(config, diagramId, graphXml);
@@ -281,9 +297,13 @@ export async function testConnection(
   config: LeanixConfig,
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
   try {
-    await apiRequest<unknown>(config, "/services/pathfinder/v1/bookmarks?pageSize=1&bookmarkType=VISUALIZER", {
-      method: "GET",
-    });
+    await apiRequest<unknown>(
+      config,
+      "/services/pathfinder/v1/bookmarks?pageSize=1&bookmarkType=VISUALIZER",
+      {
+        method: "GET",
+      },
+    );
     return { ok: true };
   } catch (error) {
     return { ok: false, reason: classifyError(error) };

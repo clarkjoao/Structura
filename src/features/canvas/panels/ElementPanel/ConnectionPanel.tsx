@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import debounce from "lodash.debounce";
-import { X, Trash2, RotateCcw } from "lucide-react";
+import { X, Trash2 } from "lucide-react";
 import type { Connection, ConnectionIntent, ConnectionStyle } from "@/features/diagram";
 import {
   EdgeStyle,
@@ -9,14 +9,12 @@ import {
   EdgeMarker,
   useActiveDiagramId,
   useDiagramActions,
-  useEdgeControlPoints,
 } from "@/features/diagram";
-import { INTENT_DEFAULTS, saveLastEdgeStyle } from "@/features/diagram";
+import { INTENT_DEFAULTS } from "@/features/diagram";
 import { cn } from "@/lib/utils";
 import { FIELD_DEBOUNCE_MS } from "@/features/canvas/canvas.constants";
 import Field from "./components/Field";
 import TechnologyCombobox from "./components/TechnologyCombobox";
-import { VIBRANT_PRESETS } from "./components/colorPresets";
 
 const TRANSPORT_PRESET_DEFAULTS: Record<
   NonNullable<Connection["transportPreset"]>,
@@ -49,14 +47,6 @@ const TRANSPORT_PRESET_DEFAULTS: Record<
   },
 };
 
-type EdgeStyleOption = {
-  value: EdgeStyle;
-  label: string;
-  icon: string;
-};
-
-const WIDTH_OPTIONS = [1, 2, 3] as const;
-
 const EDGE_LABEL_OFFSET_CENTER = 0.5;
 
 interface ConnectionPanelProps {
@@ -77,7 +67,6 @@ const ConnectionPanel = ({
   const { t } = useTranslation();
   const activeDiagramId = useActiveDiagramId();
   const { resetEdgeControlPoints, setEdgeLabelOffset } = useDiagramActions();
-  const waypointCount = useEdgeControlPoints(conn.id).length;
   const [label, setLabel] = useState(conn.label);
   const [desc, setDesc] = useState(conn.description ?? "");
   const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
@@ -104,48 +93,6 @@ const ConnectionPanel = ({
     [t],
   );
 
-  const edgeStyleOptions: EdgeStyleOption[] = useMemo(
-    () => [
-      { value: EdgeStyle.Straight, label: t("common.edgeStraight"), icon: "M 4 20 L 20 4" },
-      { value: EdgeStyle.Bezier, label: t("common.edgeBezier"), icon: "M 4 20 C 4 4 20 4 20 4" },
-      { value: EdgeStyle.Step, label: t("common.edgeStep"), icon: "M 4 20 H 12 V 4 H 20" },
-      {
-        value: EdgeStyle.Smoothstep,
-        label: t("common.edgeSmoothstep"),
-        icon: "M 4 20 C 12 20 12 4 20 4",
-      },
-      {
-        value: EdgeStyle.Editable,
-        label: t("common.edgeEditable"),
-        icon: "M 4 20 Q 8 4 12 12 T 20 4",
-      },
-      {
-        value: EdgeStyle.EditableStep,
-        label: t("common.edgeEditableStep"),
-        icon: "M 4 20 H 12 V 4 H 20",
-      },
-    ],
-    [t],
-  );
-
-  const strokeOptions = useMemo(
-    () => [
-      { value: StrokeStyle.Solid, label: t("common.strokeSolid") },
-      { value: StrokeStyle.Dashed, label: t("common.strokeDashed") },
-      { value: StrokeStyle.Dotted, label: t("common.strokeDotted") },
-    ],
-    [t],
-  );
-
-  const markerOptions = useMemo(
-    () => [
-      { value: EdgeMarker.None, label: t("common.markerNone") },
-      { value: EdgeMarker.Arrow, label: t("common.markerArrow") },
-      { value: EdgeMarker.ArrowClosed, label: t("common.markerArrowClosed") },
-    ],
-    [t],
-  );
-
   const debouncedUpdate = useMemo(
     () =>
       debounce((patch: Partial<Omit<Connection, "id">>) => {
@@ -166,28 +113,11 @@ const ConnectionPanel = ({
     }
   }, [focusTitleTrigger]);
   const applyPatch = (patch: Partial<Omit<Connection, "id">>) => updateConnection(conn.id, patch);
-  const applyStyle = (stylePatch: Partial<ConnectionStyle>) =>
-    applyPatch({ style: { ...conn.style, ...stylePatch } });
-  const currentStyle = conn.style?.edgeStyle ?? EdgeStyle.EditableStep;
 
   const resetEdgeLayout = () => {
     if (!activeDiagramId) return;
     resetEdgeControlPoints(activeDiagramId, conn.id);
     setEdgeLabelOffset(activeDiagramId, conn.id, EDGE_LABEL_OFFSET_CENTER);
-  };
-
-  const onUpdateEdgeStyle = (newStyle: EdgeStyleOption["value"]) => {
-    const previousEdgeStyle = conn.style?.edgeStyle;
-    if (previousEdgeStyle === newStyle) return;
-    saveLastEdgeStyle(newStyle);
-    updateConnection(conn.id, {
-      style: {
-        ...(conn.style ?? {}),
-        edgeStyle: newStyle,
-        waypoints: undefined,
-      } as ConnectionStyle,
-    });
-    resetEdgeLayout();
   };
 
   return (

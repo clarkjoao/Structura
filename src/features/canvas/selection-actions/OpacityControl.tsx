@@ -59,7 +59,9 @@ export function OpacityControl({ value, onChange, onReset }: OpacityControlProps
         >
           <div className="flex items-center gap-2 mb-2">
             <Droplets className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            <span className="text-xs text-muted-foreground">{t("canvas.quickActions.opacity")}</span>
+            <span className="text-xs text-muted-foreground">
+              {t("canvas.quickActions.opacity")}
+            </span>
             <span className="text-xs font-medium tabular-nums ml-auto">{value}%</span>
           </div>
           <input

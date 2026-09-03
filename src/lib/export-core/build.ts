@@ -87,7 +87,10 @@ export function buildMxGraphXml(model: ExportModel, opts: { wrapper: MxGraphWrap
   // Compensated nodes may extend below what the original bbox captured (which was
   // computed before compensation), so pageHeight must accommodate the deepest node.
   const exportedHeight = Math.ceil(
-    Math.max(compensatedBottom - bbox.minY + DRAWIO_MIN_MARGIN, bbox.height + DRAWIO_MIN_MARGIN * 2),
+    Math.max(
+      compensatedBottom - bbox.minY + DRAWIO_MIN_MARGIN,
+      bbox.height + DRAWIO_MIN_MARGIN * 2,
+    ),
   );
   const pageWidth = Math.max(exportedWidth, CONFIG.grid.pageWidth);
   const pageHeight = Math.max(exportedHeight, CONFIG.grid.pageHeight);

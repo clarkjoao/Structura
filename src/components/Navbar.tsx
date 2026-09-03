@@ -28,10 +28,7 @@ const Navbar = () => {
           <Link to="/catalog" className="hover:text-foreground transition-colors">
             {t("nav.registry")}
           </Link>
-          <Link
-            to="/plugins"
-            className="hover:text-foreground transition-colors"
-          >
+          <Link to="/plugins" className="hover:text-foreground transition-colors">
             {t("nav.plugins")}
           </Link>
         </div>

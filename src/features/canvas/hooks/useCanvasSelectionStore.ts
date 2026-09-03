@@ -50,5 +50,10 @@ export const useCanvasSelectionStore = create<CanvasSelectionState>((set) => ({
     }),
   setSelectedEdgeId: (id) => set({ selectedEdgeId: id }),
   clearSelection: () =>
-    set({ selectedNodeId: null, selectedNodeIds: new Set(), selectedEdgeId: null, selectedBeforeDrag: new Set() }),
+    set({
+      selectedNodeId: null,
+      selectedNodeIds: new Set(),
+      selectedEdgeId: null,
+      selectedBeforeDrag: new Set(),
+    }),
 }));

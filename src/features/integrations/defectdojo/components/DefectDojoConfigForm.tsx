@@ -19,9 +19,7 @@ export function DefectDojoConfigForm({ config, onSave, onClear }: Props) {
   const [apiToken, setApiToken] = useState(config?.apiToken ?? "");
   const [showToken, setShowToken] = useState(false);
   const [useProxy, setUseProxy] = useState(config?.useProxy ?? false);
-  const [proxyUrl, setProxyUrl] = useState(
-    config?.proxyUrl ?? "http://localhost:3000/proxy",
-  );
+  const [proxyUrl, setProxyUrl] = useState(config?.proxyUrl ?? "http://localhost:3000/proxy");
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<
     { ok: true; username: string } | { ok: false; message: string } | null

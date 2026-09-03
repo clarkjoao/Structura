@@ -158,7 +158,7 @@ export function useCopyPasteShortcuts({
         try {
           clipboardPlain = await navigator.clipboard.readText();
         } catch {
-          clipboardPlain = null;
+          // clipboard read may fail in non-secure contexts
         }
         if (clipboardPlain && /<svg(\s|>)/i.test(clipboardPlain)) {
           const cleanedMarkup = importSvgForIconLibrary(clipboardPlain);

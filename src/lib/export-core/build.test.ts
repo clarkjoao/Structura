@@ -121,10 +121,7 @@ describe("buildMxGraphXml — per-kind cells", () => {
   });
 
   it("pushes the second stacked node down to preserve the gap (A1-compensation)", () => {
-    const xml = buildMxGraphXml(
-      model([c4("a", 0, 0), c4("b", 0, 75)]),
-      { wrapper: "mxfile" },
-    );
+    const xml = buildMxGraphXml(model([c4("a", 0, 0), c4("b", 0, 75)]), { wrapper: "mxfile" });
     // Extract the two C4 geometry y values (both use canonical 200×80).
     const matches = [...xml.matchAll(/x="(\d+)" y="(\d+)" width="200" height="80"/g)];
     expect(matches).toHaveLength(2);
@@ -158,9 +155,7 @@ describe("buildMxGraphXml — per-kind cells", () => {
   it("clamps C4 boxes between the canonical floor and per-subtype ceiling", () => {
     // No measured size → falls back to the canonical C4_META box.
     const fallback = buildMxGraphXml(
-      model([
-        c4("a", 0, 0, { subtype: "system", description: "tiny" }),
-      ]),
+      model([c4("a", 0, 0, { subtype: "system", description: "tiny" })]),
       { wrapper: "mxfile" },
     );
     expect(fallback).toMatch(/id="a"[\s\S]{0,800}width="200" height="80"/);
@@ -244,7 +239,8 @@ describe("buildMxGraphXml — edges", () => {
       { style: "straight", expectEdgeStyleToken: "edgeStyle=none;", expectRounded: "absent" },
       {
         style: "step",
-        expectEdgeStyleToken: "edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;",
+        expectEdgeStyleToken:
+          "edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;",
         expectRounded: "absent",
       },
       {
@@ -275,10 +271,7 @@ describe("buildMxGraphXml — edges", () => {
     for (const c of cases) {
       it(`${c.style} → ${c.expectEdgeStyleToken} (rounded=${c.expectRounded})`, () => {
         const xml = buildMxGraphXml(
-          model(
-            [c4("a", 0, 0), c4("b", 300, 0)],
-            [edge("e", "a", "b", { edgeStyle: c.style })],
-          ),
+          model([c4("a", 0, 0), c4("b", 300, 0)], [edge("e", "a", "b", { edgeStyle: c.style })]),
           { wrapper: "mxfile" },
         );
         expect(xml).toContain(`style="${c.expectEdgeStyleToken}`);
@@ -304,7 +297,7 @@ describe("buildMxGraphXml — edges", () => {
     // forces the table in styles.ts to be updated. The `Record<ExportEdgeStyle,
     // string>` type on EDGE_STYLE_BASE does the same job from the other side.
     it("EDGE_STYLE_BASE is exhaustive over ExportEdgeStyle", () => {
-      type Covered = typeof cases[number]["style"];
+      type Covered = (typeof cases)[number]["style"];
       type _Exhaustive = [ExportEdge["edgeStyle"]] extends [Covered]
         ? [Covered] extends [ExportEdge["edgeStyle"]]
           ? true

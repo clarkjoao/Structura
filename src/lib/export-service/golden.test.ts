@@ -179,7 +179,13 @@ const richConnections: Record<string, Connection> = {
   // AWS as source: validates exitX=1 (right side) on Lambda's source handle.
   eAws1: { id: "eAws1", sourceId: "aws", targetId: "awsApi", label: "invokes" },
   // AWS as target: validates entryX=0 on API Gateway's target handle.
-  eAws2: { id: "eAws2", sourceId: "awsApi", targetId: "aws", label: "routes to", direction: "bidirectional" as const },
+  eAws2: {
+    id: "eAws2",
+    sourceId: "awsApi",
+    targetId: "aws",
+    label: "routes to",
+    direction: "bidirectional" as const,
+  },
 };
 
 // C4 layouts carry real measured sizes (React Flow persists them into nodeLayouts after

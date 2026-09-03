@@ -179,74 +179,71 @@ Cypress.Commands.add("dragNode", (componentId: string, dx: number, dy: number) =
     });
 });
 
-Cypress.Commands.add(
-  "dragNodeAllowingNoMove",
-  (componentId: string, dx: number, dy: number) => {
-    cy.getNode(componentId)
-      .invoke("attr", "style")
-      .then((before) => {
-        cy.window().then((win) => {
-          cy.getNode(componentId).then(($node) => {
-            const el = $node[0];
-            if (!el) return;
-            const rect = el.getBoundingClientRect();
-            const startX = rect.left + rect.width / 2;
-            const startY = rect.top + rect.height / 2;
-            const steps = 6;
+Cypress.Commands.add("dragNodeAllowingNoMove", (componentId: string, dx: number, dy: number) => {
+  cy.getNode(componentId)
+    .invoke("attr", "style")
+    .then((before) => {
+      cy.window().then((win) => {
+        cy.getNode(componentId).then(($node) => {
+          const el = $node[0];
+          if (!el) return;
+          const rect = el.getBoundingClientRect();
+          const startX = rect.left + rect.width / 2;
+          const startY = rect.top + rect.height / 2;
+          const steps = 6;
 
-            cy.wrap(el).trigger("mousedown", {
-              clientX: startX,
-              clientY: startY,
-              button: 0,
-              buttons: 1,
-              view: win,
-              force: true,
-            });
+          cy.wrap(el).trigger("mousedown", {
+            clientX: startX,
+            clientY: startY,
+            button: 0,
+            buttons: 1,
+            view: win,
+            force: true,
+          });
 
-            cy.then(async () => {
-              const appWindow = win as unknown as {
-                MouseEvent: typeof MouseEvent;
-                dispatchEvent: (event: Event) => boolean;
-              };
-              for (let i = 1; i <= steps; i += 1) {
-                appWindow.dispatchEvent(
-                  new appWindow.MouseEvent("mousemove", {
-                    clientX: startX + (dx * i) / steps,
-                    clientY: startY + (dy * i) / steps,
-                    button: 0,
-                    buttons: 1,
-                    bubbles: true,
-                    cancelable: true,
-                    view: win as unknown as Window,
-                  }),
-                );
-                await delay(DRAG_STEP_DELAY_MS);
-              }
+          cy.then(async () => {
+            const appWindow = win as unknown as {
+              MouseEvent: typeof MouseEvent;
+              dispatchEvent: (event: Event) => boolean;
+            };
+            for (let i = 1; i <= steps; i += 1) {
               appWindow.dispatchEvent(
-                new appWindow.MouseEvent("mouseup", {
-                  clientX: startX + dx,
-                  clientY: startY + dy,
+                new appWindow.MouseEvent("mousemove", {
+                  clientX: startX + (dx * i) / steps,
+                  clientY: startY + (dy * i) / steps,
                   button: 0,
-                  buttons: 0,
+                  buttons: 1,
                   bubbles: true,
                   cancelable: true,
                   view: win as unknown as Window,
                 }),
               );
               await delay(DRAG_STEP_DELAY_MS);
-            });
+            }
+            appWindow.dispatchEvent(
+              new appWindow.MouseEvent("mouseup", {
+                clientX: startX + dx,
+                clientY: startY + dy,
+                button: 0,
+                buttons: 0,
+                bubbles: true,
+                cancelable: true,
+                view: win as unknown as Window,
+              }),
+            );
+            await delay(DRAG_STEP_DELAY_MS);
           });
         });
-
-        // Unlike `dragNode`, do not assert the transform changed — Phase 4
-        // threshold tests need to verify that sub-threshold drags DO NOT
-        // move the node. That assertion is only worth anything because the
-        // moves above are spaced by `DRAG_STEP_DELAY_MS`: a synchronous burst
-        // moves nothing at all, which would make "did not move" vacuous.
-        return cy.wrap(before, { log: false });
       });
-  },
-);
+
+      // Unlike `dragNode`, do not assert the transform changed — Phase 4
+      // threshold tests need to verify that sub-threshold drags DO NOT
+      // move the node. That assertion is only worth anything because the
+      // moves above are spaced by `DRAG_STEP_DELAY_MS`: a synchronous burst
+      // moves nothing at all, which would make "did not move" vacuous.
+      return cy.wrap(before, { log: false });
+    });
+});
 
 /**
  * Names the panel region that actually owns a viewport point.

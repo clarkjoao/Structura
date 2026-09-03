@@ -84,8 +84,14 @@ export function handPlacedDiagram(): HandPlacedDiagram {
 export function handPlacedParents(diagram: HandPlacedDiagram): Map<string, string | null> {
   const parentOf = new Map<string, string | null>();
   for (const id of diagram.boxes.keys()) {
-    if (id === diagram.rootId) { parentOf.set(id, null); continue; }
-    if (id === "services") { parentOf.set(id, diagram.rootId); continue; }
+    if (id === diagram.rootId) {
+      parentOf.set(id, null);
+      continue;
+    }
+    if (id === "services") {
+      parentOf.set(id, diagram.rootId);
+      continue;
+    }
     if (["client", "gateway", "orders", "billing"].includes(id)) {
       parentOf.set(id, "services");
     } else {

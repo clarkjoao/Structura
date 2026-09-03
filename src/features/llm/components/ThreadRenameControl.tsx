@@ -65,9 +65,7 @@ export function ThreadRenameControl({
         size={20}
         className="h-6 w-32 px-1 py-0.5 text-xs"
         placeholder={t("llmChat.threads.renamePlaceholder")}
-        onChange={(event) =>
-          setEditorState({ open: true, value: event.target.value })
-        }
+        onChange={(event) => setEditorState({ open: true, value: event.target.value })}
         onKeyDown={(event) => {
           if (event.key === "Escape") {
             setEditorState(null);

@@ -144,11 +144,12 @@ export function GithubSearchBar({ loading, client, onSearch }: Props) {
                 {t("github.loadingOrgs")}
               </SelectItem>
             )}
-            {Array.isArray(orgs) && orgs.map((o) => (
-              <SelectItem key={o.id} value={o.login}>
-                {o.login}
-              </SelectItem>
-            ))}
+            {Array.isArray(orgs) &&
+              orgs.map((o) => (
+                <SelectItem key={o.id} value={o.login}>
+                  {o.login}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
 

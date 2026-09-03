@@ -10,7 +10,7 @@ const DIAGRAM_ID = "diag_selection_test";
 
 function buildSelectionTestPayload(): string {
   const components = {
-    "panel_big": {
+    panel_big: {
       id: "panel_big",
       name: "Big Panel",
       description: "Painel grande para teste",
@@ -19,28 +19,28 @@ function buildSelectionTestPayload(): string {
       panelKind: "default",
       panelColor: "#6366f1",
     },
-    "child_1": {
+    child_1: {
       id: "child_1",
       name: "Child 1",
       description: "",
       parentId: "panel_big",
       type: "system",
     },
-    "child_2": {
+    child_2: {
       id: "child_2",
       name: "Child 2",
       description: "",
       parentId: "panel_big",
       type: "system",
     },
-    "standalone_1": {
+    standalone_1: {
       id: "standalone_1",
       name: "Standalone 1",
       description: "Nó solto",
       parentId: null,
       type: "system",
     },
-    "standalone_2": {
+    standalone_2: {
       id: "standalone_2",
       name: "Standalone 2",
       description: "Nó solto 2",
@@ -52,7 +52,7 @@ function buildSelectionTestPayload(): string {
      * (102, 703) so that a 3 px move triggers the snap-to-grid jump that
      * originally hid the broken 3 px threshold in `useLocalNodes`.
      */
-    "standalone_offset": {
+    standalone_offset: {
       id: "standalone_offset",
       name: "Standalone Offset",
       description: "Three pixels off the 15 px grid",
@@ -62,7 +62,7 @@ function buildSelectionTestPayload(): string {
   };
 
   const connections = {
-    "edge_1": {
+    edge_1: {
       id: "edge_1",
       sourceId: "child_1",
       targetId: "child_2",
@@ -72,12 +72,12 @@ function buildSelectionTestPayload(): string {
   };
 
   const nodeLayouts = {
-    "panel_big": { elementId: "panel_big", x: 300, y: 200, width: 500, height: 400 },
-    "child_1": { elementId: "child_1", x: 50, y: 80 },
-    "child_2": { elementId: "child_2", x: 250, y: 80 },
-    "standalone_1": { elementId: "standalone_1", x: 100, y: 700 },
-    "standalone_2": { elementId: "standalone_2", x: 900, y: 700 },
-    "standalone_offset": { elementId: "standalone_offset", x: 102, y: 703 },
+    panel_big: { elementId: "panel_big", x: 300, y: 200, width: 500, height: 400 },
+    child_1: { elementId: "child_1", x: 50, y: 80 },
+    child_2: { elementId: "child_2", x: 250, y: 80 },
+    standalone_1: { elementId: "standalone_1", x: 100, y: 700 },
+    standalone_2: { elementId: "standalone_2", x: 900, y: 700 },
+    standalone_offset: { elementId: "standalone_offset", x: 102, y: 703 },
   };
 
   return JSON.stringify({
@@ -260,7 +260,10 @@ describe("Phase 1 — Seleção: Hipóteses Centrais", () => {
 
       // Verificar se ficou selecionado
       cy.getNode("standalone_1").should(($el) => {
-        const hasSelected = $el.hasClass("selected") || $el.attr("aria-selected") === "true" || $el[0]?.classList.contains("selected");
+        const hasSelected =
+          $el.hasClass("selected") ||
+          $el.attr("aria-selected") === "true" ||
+          $el[0]?.classList.contains("selected");
         expect(hasSelected, "standalone_1 deve estar selecionado após Ctrl+click").to.be.true;
       });
     });
@@ -306,7 +309,9 @@ describe("Phase 1 — Seleção: Hipóteses Centrais", () => {
                 .invoke("attr", "style")
                 .should((after1) => {
                   const afterPos1 = renderedTranslate(after1 as string);
-                  expect(afterPos1.x, "standalone_1 deve ter se movido").to.be.greaterThan(startPos1.x);
+                  expect(afterPos1.x, "standalone_1 deve ter se movido").to.be.greaterThan(
+                    startPos1.x,
+                  );
                 });
 
               cy.getNode("standalone_2")
@@ -335,7 +340,9 @@ describe("Phase 1 — Seleção: Hipóteses Centrais", () => {
       cy.get(".react-flow__node.selected").then(($nodes) => {
         const selectedIds = Array.from($nodes).map((n) => n.getAttribute("data-id"));
         cy.log(`Nós selecionados após drag unselected: ${JSON.stringify(selectedIds)}`);
-        expect(selectedIds, "apenas standalone_2 deve estar selecionado").to.deep.equal(["standalone_2"]);
+        expect(selectedIds, "apenas standalone_2 deve estar selecionado").to.deep.equal([
+          "standalone_2",
+        ]);
       });
     });
 
@@ -412,8 +419,14 @@ describe("Phase 1 — Seleção: Hipóteses Centrais", () => {
       cy.get(".react-flow__node.selected").then(($nodes) => {
         const selectedIds = Array.from($nodes).map((n) => n.getAttribute("data-id"));
         cy.log(`Nós selecionados após Shift+drag: ${JSON.stringify(selectedIds)}`);
-        expect(selectedIds, "ambos standalone_1 e standalone_2 devem estar selecionados").to.include("standalone_1");
-        expect(selectedIds, "ambos standalone_1 e standalone_2 devem estar selecionados").to.include("standalone_2");
+        expect(
+          selectedIds,
+          "ambos standalone_1 e standalone_2 devem estar selecionados",
+        ).to.include("standalone_1");
+        expect(
+          selectedIds,
+          "ambos standalone_1 e standalone_2 devem estar selecionados",
+        ).to.include("standalone_2");
       });
     });
   });
@@ -568,9 +581,7 @@ describe("Phase 1 — Seleção: Hipóteses Centrais", () => {
       return [hr.left + hr.width * 0.5, hr.top + hr.height * 0.5];
     };
     const borderPoint = (doc: Document): [number, number] => {
-      const r = (
-        doc.querySelector('[data-id="panel_big"]') as HTMLElement
-      ).getBoundingClientRect();
+      const r = (doc.querySelector('[data-id="panel_big"]') as HTMLElement).getBoundingClientRect();
       return [r.left + 3, r.top + r.height * 0.7];
     };
     const bodyPoint = (doc: Document): [number, number] => {

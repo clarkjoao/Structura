@@ -43,7 +43,7 @@ Canvas.tsx
 | `toolbar/`    | Top-level canvas actions such as quick insert, search, pattern insertion, and scene controls.                                     |
 | `panels/`     | Contextual side panels and editing UIs for nodes, connections, and multiselect.                                                   |
 | `navigation/` | Sidebar and recent-diagram navigation helpers.                                                                                    |
-| `chat/`       | Diagram-aware chat context, mention search, and mention input parsing.                            |
+| `chat/`       | Diagram-aware chat context, mention search, and mention input parsing.                                                            |
 | `contexts/`   | Small React contexts shared by node and edge renderers.                                                                           |
 | `models/`     | Canvas-local geometry and parenting helpers used during drag interactions.                                                        |
 

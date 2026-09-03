@@ -13,11 +13,7 @@ describe("MarkerCapsDropdown", () => {
   it("renders the current cap label", () => {
     const onChangeCap = vi.fn();
     render(
-      <MarkerCapsDropdown
-        currentCap={EdgeMarker.Arrow}
-        onChangeCap={onChangeCap}
-        capType="end"
-      />,
+      <MarkerCapsDropdown currentCap={EdgeMarker.Arrow} onChangeCap={onChangeCap} capType="end" />,
     );
     expect(screen.getByRole("button")).toBeInTheDocument();
   });
@@ -25,11 +21,7 @@ describe("MarkerCapsDropdown", () => {
   it("calls onChangeCap when an option is clicked", () => {
     const onChangeCap = vi.fn();
     const { container } = render(
-      <MarkerCapsDropdown
-        currentCap={EdgeMarker.Arrow}
-        onChangeCap={onChangeCap}
-        capType="end"
-      />,
+      <MarkerCapsDropdown currentCap={EdgeMarker.Arrow} onChangeCap={onChangeCap} capType="end" />,
     );
     // Click the button to open dropdown
     fireEvent.click(screen.getByRole("button"));

@@ -98,7 +98,10 @@ function tryParseJson(text: string): { value: unknown } | { error: true } {
   }
 }
 
-export function LLMSettings({ selectedConnectionId: _selectedConnectionId = null, onClose }: LLMSettingsProps) {
+export function LLMSettings({
+  selectedConnectionId: _selectedConnectionId = null,
+  onClose,
+}: LLMSettingsProps) {
   const { t } = useTranslation();
   const connections = useLLMStore((state) => state.connections);
   const activeConnectionId = useLLMStore((state) => state.activeConnectionId);
@@ -281,9 +284,7 @@ export function LLMSettings({ selectedConnectionId: _selectedConnectionId = null
             <Sparkles className="h-3.5 w-3.5" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold tracking-tight">
-              {t("llmChat.settings.title")}
-            </h3>
+            <h3 className="text-sm font-semibold tracking-tight">{t("llmChat.settings.title")}</h3>
             <p className="text-[11px] text-muted-foreground">
               {t("llmChat.settings.subtitle", {
                 defaultValue: "Configure your AI provider and model",
@@ -330,60 +331,60 @@ export function LLMSettings({ selectedConnectionId: _selectedConnectionId = null
                         : "border-border hover:border-primary/30"
                     }`}
                   >
-                  <button
-                    type="button"
-                    onClick={() => handleSelectConnection(connection.id)}
-                    className="flex min-w-0 flex-1 flex-col items-start text-left"
-                  >
-                    <span className="truncate font-medium">{connection.name}</span>
-                    <span className="truncate text-[11px] text-muted-foreground">
-                      {t("llmChat.settings.connectionProviderBadge", {
-                        provider: connection.provider,
-                        model: connection.model,
-                      })}
-                    </span>
-                  </button>
-                  <div className="flex items-center gap-1">
-                    {isEditing ? (
-                      <span
-                        className="flex items-center rounded bg-secondary px-1.5 py-0.5 text-[10px] text-secondary-foreground"
-                        aria-label={t("llmChat.settings.editingBadge")}
+                    <button
+                      type="button"
+                      onClick={() => handleSelectConnection(connection.id)}
+                      className="flex min-w-0 flex-1 flex-col items-start text-left"
+                    >
+                      <span className="truncate font-medium">{connection.name}</span>
+                      <span className="truncate text-[11px] text-muted-foreground">
+                        {t("llmChat.settings.connectionProviderBadge", {
+                          provider: connection.provider,
+                          model: connection.model,
+                        })}
+                      </span>
+                    </button>
+                    <div className="flex items-center gap-1">
+                      {isEditing ? (
+                        <span
+                          className="flex items-center rounded bg-secondary px-1.5 py-0.5 text-[10px] text-secondary-foreground"
+                          aria-label={t("llmChat.settings.editingBadge")}
+                        >
+                          <Pencil className="mr-0.5 h-3 w-3" />
+                          {t("llmChat.settings.editingBadge")}
+                        </span>
+                      ) : null}
+                      {!isEditing && isActive ? (
+                        <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] text-primary">
+                          {t("llmChat.settings.activeBadge")}
+                        </span>
+                      ) : null}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => handleDuplicate(connection.id)}
+                        aria-label={t("llmChat.settings.connectionDuplicate")}
                       >
-                        <Pencil className="mr-0.5 h-3 w-3" />
-                        {t("llmChat.settings.editingBadge")}
-                      </span>
-                    ) : null}
-                    {!isEditing && isActive ? (
-                      <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] text-primary">
-                        {t("llmChat.settings.activeBadge")}
-                      </span>
-                    ) : null}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => handleDuplicate(connection.id)}
-                      aria-label={t("llmChat.settings.connectionDuplicate")}
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => handleRemove(connection.id)}
-                      disabled={connections.length <= 1}
-                      aria-label={t("llmChat.settings.connectionDelete")}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => handleRemove(connection.id)}
+                        disabled={connections.length <= 1}
+                        aria-label={t("llmChat.settings.connectionDelete")}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
           </section>
 
           {/* Form section */}
@@ -406,248 +407,251 @@ export function LLMSettings({ selectedConnectionId: _selectedConnectionId = null
               )}
             </div>
 
-          <div className="space-y-1">
-            <label htmlFor="llm-conn-name" className="text-xs text-muted-foreground">
-              {t("llmChat.settings.connectionName")}
-            </label>
-            <Input
-              id="llm-conn-name"
-              value={draft.name}
-              placeholder={t("llmChat.settings.connectionNamePlaceholder")}
-              onChange={(event) => setDraft({ ...draft, name: event.target.value })}
-            />
-          </div>
+            <div className="space-y-1">
+              <label htmlFor="llm-conn-name" className="text-xs text-muted-foreground">
+                {t("llmChat.settings.connectionName")}
+              </label>
+              <Input
+                id="llm-conn-name"
+                value={draft.name}
+                placeholder={t("llmChat.settings.connectionNamePlaceholder")}
+                onChange={(event) => setDraft({ ...draft, name: event.target.value })}
+              />
+            </div>
 
-          <div className="space-y-1">
-            <label htmlFor="llm-mode" className="text-xs text-muted-foreground">
-              {t("llmChat.settings.mode")}
-            </label>
-            <select
-              id="llm-mode"
-              className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
-              value={draft.mode}
-              onChange={(event) => {
-                const value = event.target.value;
-                if (value === "direct" || value === "proxy") {
-                  setDraft({ ...draft, mode: value });
-                }
-              }}
-            >
-              <option value="direct">{t("llmChat.settings.modeDirect")}</option>
-              <option value="proxy">{t("llmChat.settings.modeProxy")}</option>
-            </select>
-          </div>
+            <div className="space-y-1">
+              <label htmlFor="llm-mode" className="text-xs text-muted-foreground">
+                {t("llmChat.settings.mode")}
+              </label>
+              <select
+                id="llm-mode"
+                className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
+                value={draft.mode}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  if (value === "direct" || value === "proxy") {
+                    setDraft({ ...draft, mode: value });
+                  }
+                }}
+              >
+                <option value="direct">{t("llmChat.settings.modeDirect")}</option>
+                <option value="proxy">{t("llmChat.settings.modeProxy")}</option>
+              </select>
+            </div>
 
-          {draft.mode === "direct" ? (
-            <>
-              <div className="space-y-1">
-                <label htmlFor="llm-provider" className="text-xs text-muted-foreground">
-                  {t("llmChat.settings.provider")}
-                </label>
-                <select
-                  id="llm-provider"
-                  className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
-                  value={draft.provider}
-                  onChange={(event) => {
-                    const value = event.target.value;
-                    if (value !== "openai" && value !== "anthropic" && value !== "custom") {
-                      return;
-                    }
-                    setDraft({
-                      ...draft,
-                      provider: value,
-                      model: "",
-                      modelCustom: "",
-                      baseUrl: value === "custom" ? draft.baseUrl : "",
-                    });
-                  }}
-                >
-                  <option value="openai">{t("llmChat.settings.providerOpenAI")}</option>
-                  <option value="anthropic">{t("llmChat.settings.providerAnthropic")}</option>
-                  <option value="custom">{t("llmChat.settings.providerCustom")}</option>
-                </select>
-              </div>
-
-              {draft.provider === "custom" ? (
-                <>
-                  <div className="space-y-1">
-                    <label htmlFor="llm-base-url" className="text-xs text-muted-foreground">
-                      {t("llmChat.settings.customProvider.baseUrl")}
-                    </label>
-                    <Input
-                      id="llm-base-url"
-                      value={draft.baseUrl}
-                      onChange={(event) => setDraft({ ...draft, baseUrl: event.target.value })}
-                    />
-                    {validation.baseUrl ? (
-                      <p className="text-xs text-amber-600">{validation.baseUrl}</p>
-                    ) : null}
-                  </div>
-                  <div className="space-y-1">
-                    <label htmlFor="llm-auth-header" className="text-xs text-muted-foreground">
-                      {t("llmChat.settings.customProvider.authHeader")}
-                    </label>
-                    <Input
-                      id="llm-auth-header"
-                      placeholder="Authorization"
-                      value={draft.authHeader}
-                      onChange={(event) => setDraft({ ...draft, authHeader: event.target.value })}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {t("llmChat.settings.customProvider.authHeaderHint")}
-                    </p>
-                  </div>
-                </>
-              ) : (
+            {draft.mode === "direct" ? (
+              <>
                 <div className="space-y-1">
-                  <label htmlFor="llm-api-key" className="text-xs text-muted-foreground">
-                    {t("llmChat.settings.apiKey")}
+                  <label htmlFor="llm-provider" className="text-xs text-muted-foreground">
+                    {t("llmChat.settings.provider")}
                   </label>
-                  <Input
-                    id="llm-api-key"
-                    type="password"
-                    value={draft.apiKey}
-                    onChange={(event) => setDraft({ ...draft, apiKey: event.target.value })}
-                  />
-                  {draft.apiKey === "" ? (
-                    <p className="text-xs text-amber-600">
-                      {t("llmChat.settings.apiKeyRequired", {
-                        provider: draft.provider === "openai" ? "OpenAI" : "Anthropic",
-                      })}
-                    </p>
-                  ) : null}
+                  <select
+                    id="llm-provider"
+                    className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
+                    value={draft.provider}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      if (value !== "openai" && value !== "anthropic" && value !== "custom") {
+                        return;
+                      }
+                      setDraft({
+                        ...draft,
+                        provider: value,
+                        model: "",
+                        modelCustom: "",
+                        baseUrl: value === "custom" ? draft.baseUrl : "",
+                      });
+                    }}
+                  >
+                    <option value="openai">{t("llmChat.settings.providerOpenAI")}</option>
+                    <option value="anthropic">{t("llmChat.settings.providerAnthropic")}</option>
+                    <option value="custom">{t("llmChat.settings.providerCustom")}</option>
+                  </select>
                 </div>
-              )}
-              {draft.provider === "custom" ? (
-                <div className="space-y-1">
-                  <label htmlFor="llm-api-key-custom" className="text-xs text-muted-foreground">
-                    {t("llmChat.settings.customProvider.apiKeyLabel")}
-                  </label>
-                  <Input
-                    id="llm-api-key-custom"
-                    type="password"
-                    value={draft.apiKey}
-                    onChange={(event) => setDraft({ ...draft, apiKey: event.target.value })}
-                  />
-                </div>
-              ) : null}
 
-              <div className="space-y-1">
-                <label htmlFor="llm-model" className="text-xs text-muted-foreground">
-                  {t("llmChat.settings.model")}
-                </label>
-                {isCustomSelectable ? (
+                {draft.provider === "custom" ? (
                   <>
-                    <select
-                      id="llm-model"
-                      className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
-                      value={modelSelectValue}
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        if (value === CUSTOM_MODEL_OPTION_VALUE) {
-                          setDraft({ ...draft, model: "" });
-                          return;
-                        }
-                        setDraft({ ...draft, model: value, modelCustom: "" });
-                      }}
-                    >
-                      {presetModels.map((preset) => (
-                        <option key={preset.id} value={preset.model}>
-                          {preset.label}
-                        </option>
-                      ))}
-                      <option value={CUSTOM_MODEL_OPTION_VALUE}>
-                        {t("llmChat.settings.modelCustom")}
-                      </option>
-                    </select>
-                    {modelSelectValue === CUSTOM_MODEL_OPTION_VALUE ? (
+                    <div className="space-y-1">
+                      <label htmlFor="llm-base-url" className="text-xs text-muted-foreground">
+                        {t("llmChat.settings.customProvider.baseUrl")}
+                      </label>
                       <Input
-                        className="mt-1"
-                        placeholder={t("llmChat.settings.modelCustomPlaceholder")}
-                        value={draft.modelCustom}
-                        onChange={(event) =>
-                          setDraft({ ...draft, modelCustom: event.target.value })
-                        }
+                        id="llm-base-url"
+                        value={draft.baseUrl}
+                        onChange={(event) => setDraft({ ...draft, baseUrl: event.target.value })}
                       />
-                    ) : null}
+                      {validation.baseUrl ? (
+                        <p className="text-xs text-amber-600">{validation.baseUrl}</p>
+                      ) : null}
+                    </div>
+                    <div className="space-y-1">
+                      <label htmlFor="llm-auth-header" className="text-xs text-muted-foreground">
+                        {t("llmChat.settings.customProvider.authHeader")}
+                      </label>
+                      <Input
+                        id="llm-auth-header"
+                        placeholder="Authorization"
+                        value={draft.authHeader}
+                        onChange={(event) => setDraft({ ...draft, authHeader: event.target.value })}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {t("llmChat.settings.customProvider.authHeaderHint")}
+                      </p>
+                    </div>
                   </>
                 ) : (
-                  <Input
-                    id="llm-model"
-                    placeholder={t("llmChat.settings.modelCustomPlaceholder")}
-                    value={draft.provider === "custom" ? draft.model : draft.modelCustom}
-                    onChange={(event) =>
-                      draft.provider === "custom"
-                        ? setDraft({ ...draft, model: event.target.value })
-                        : setDraft({ ...draft, modelCustom: event.target.value })
-                    }
-                  />
-                )}
-              </div>
-
-              {draft.provider === "custom" ? (
-                <details className="space-y-1">
-                  <summary className="cursor-pointer text-xs text-muted-foreground">
-                    {t("llmChat.settings.customProvider.advanced")}
-                  </summary>
-                  <div className="mt-2 space-y-2">
-                    <div className="space-y-1">
-                      <label htmlFor="llm-extra-headers" className="text-xs text-muted-foreground">
-                        {t("llmChat.settings.customProvider.extraHeaders")}
-                      </label>
-                      <textarea
-                        id="llm-extra-headers"
-                        rows={3}
-                        spellCheck={false}
-                        className="w-full rounded-md border border-input bg-background px-2 py-1.5 font-mono text-xs"
-                        value={draft.extraHeadersText}
-                        onChange={(event) =>
-                          setDraft({ ...draft, extraHeadersText: event.target.value })
-                        }
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        {t("llmChat.settings.customProvider.extraHeadersHint")}
+                  <div className="space-y-1">
+                    <label htmlFor="llm-api-key" className="text-xs text-muted-foreground">
+                      {t("llmChat.settings.apiKey")}
+                    </label>
+                    <Input
+                      id="llm-api-key"
+                      type="password"
+                      value={draft.apiKey}
+                      onChange={(event) => setDraft({ ...draft, apiKey: event.target.value })}
+                    />
+                    {draft.apiKey === "" ? (
+                      <p className="text-xs text-amber-600">
+                        {t("llmChat.settings.apiKeyRequired", {
+                          provider: draft.provider === "openai" ? "OpenAI" : "Anthropic",
+                        })}
                       </p>
-                      {validation.extraHeaders ? (
-                        <p className="text-xs text-amber-600">{validation.extraHeaders}</p>
-                      ) : null}
-                    </div>
-                    <div className="space-y-1">
-                      <label
-                        htmlFor="llm-extra-body-params"
-                        className="text-xs text-muted-foreground"
-                      >
-                        {t("llmChat.settings.customProvider.extraBodyParams")}
-                      </label>
-                      <textarea
-                        id="llm-extra-body-params"
-                        rows={3}
-                        spellCheck={false}
-                        className="w-full rounded-md border border-input bg-background px-2 py-1.5 font-mono text-xs"
-                        value={draft.extraBodyParamsText}
-                        onChange={(event) =>
-                          setDraft({ ...draft, extraBodyParamsText: event.target.value })
-                        }
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        {t("llmChat.settings.customProvider.extraBodyParamsHint")}
-                      </p>
-                      {validation.extraBodyParams ? (
-                        <p className="text-xs text-amber-600">{validation.extraBodyParams}</p>
-                      ) : null}
-                    </div>
+                    ) : null}
                   </div>
-                </details>
-              ) : null}
-            </>
-          ) : (
-            <div className="space-y-1">
-              <label htmlFor="llm-proxy-url" className="text-xs text-muted-foreground">
-                {t("llmChat.settings.proxyUrl")}
-              </label>
-              <Input id="llm-proxy-url" value={proxyEndpoint} readOnly />
-            </div>
-          )}
+                )}
+                {draft.provider === "custom" ? (
+                  <div className="space-y-1">
+                    <label htmlFor="llm-api-key-custom" className="text-xs text-muted-foreground">
+                      {t("llmChat.settings.customProvider.apiKeyLabel")}
+                    </label>
+                    <Input
+                      id="llm-api-key-custom"
+                      type="password"
+                      value={draft.apiKey}
+                      onChange={(event) => setDraft({ ...draft, apiKey: event.target.value })}
+                    />
+                  </div>
+                ) : null}
+
+                <div className="space-y-1">
+                  <label htmlFor="llm-model" className="text-xs text-muted-foreground">
+                    {t("llmChat.settings.model")}
+                  </label>
+                  {isCustomSelectable ? (
+                    <>
+                      <select
+                        id="llm-model"
+                        className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
+                        value={modelSelectValue}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          if (value === CUSTOM_MODEL_OPTION_VALUE) {
+                            setDraft({ ...draft, model: "" });
+                            return;
+                          }
+                          setDraft({ ...draft, model: value, modelCustom: "" });
+                        }}
+                      >
+                        {presetModels.map((preset) => (
+                          <option key={preset.id} value={preset.model}>
+                            {preset.label}
+                          </option>
+                        ))}
+                        <option value={CUSTOM_MODEL_OPTION_VALUE}>
+                          {t("llmChat.settings.modelCustom")}
+                        </option>
+                      </select>
+                      {modelSelectValue === CUSTOM_MODEL_OPTION_VALUE ? (
+                        <Input
+                          className="mt-1"
+                          placeholder={t("llmChat.settings.modelCustomPlaceholder")}
+                          value={draft.modelCustom}
+                          onChange={(event) =>
+                            setDraft({ ...draft, modelCustom: event.target.value })
+                          }
+                        />
+                      ) : null}
+                    </>
+                  ) : (
+                    <Input
+                      id="llm-model"
+                      placeholder={t("llmChat.settings.modelCustomPlaceholder")}
+                      value={draft.provider === "custom" ? draft.model : draft.modelCustom}
+                      onChange={(event) =>
+                        draft.provider === "custom"
+                          ? setDraft({ ...draft, model: event.target.value })
+                          : setDraft({ ...draft, modelCustom: event.target.value })
+                      }
+                    />
+                  )}
+                </div>
+
+                {draft.provider === "custom" ? (
+                  <details className="space-y-1">
+                    <summary className="cursor-pointer text-xs text-muted-foreground">
+                      {t("llmChat.settings.customProvider.advanced")}
+                    </summary>
+                    <div className="mt-2 space-y-2">
+                      <div className="space-y-1">
+                        <label
+                          htmlFor="llm-extra-headers"
+                          className="text-xs text-muted-foreground"
+                        >
+                          {t("llmChat.settings.customProvider.extraHeaders")}
+                        </label>
+                        <textarea
+                          id="llm-extra-headers"
+                          rows={3}
+                          spellCheck={false}
+                          className="w-full rounded-md border border-input bg-background px-2 py-1.5 font-mono text-xs"
+                          value={draft.extraHeadersText}
+                          onChange={(event) =>
+                            setDraft({ ...draft, extraHeadersText: event.target.value })
+                          }
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          {t("llmChat.settings.customProvider.extraHeadersHint")}
+                        </p>
+                        {validation.extraHeaders ? (
+                          <p className="text-xs text-amber-600">{validation.extraHeaders}</p>
+                        ) : null}
+                      </div>
+                      <div className="space-y-1">
+                        <label
+                          htmlFor="llm-extra-body-params"
+                          className="text-xs text-muted-foreground"
+                        >
+                          {t("llmChat.settings.customProvider.extraBodyParams")}
+                        </label>
+                        <textarea
+                          id="llm-extra-body-params"
+                          rows={3}
+                          spellCheck={false}
+                          className="w-full rounded-md border border-input bg-background px-2 py-1.5 font-mono text-xs"
+                          value={draft.extraBodyParamsText}
+                          onChange={(event) =>
+                            setDraft({ ...draft, extraBodyParamsText: event.target.value })
+                          }
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          {t("llmChat.settings.customProvider.extraBodyParamsHint")}
+                        </p>
+                        {validation.extraBodyParams ? (
+                          <p className="text-xs text-amber-600">{validation.extraBodyParams}</p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </details>
+                ) : null}
+              </>
+            ) : (
+              <div className="space-y-1">
+                <label htmlFor="llm-proxy-url" className="text-xs text-muted-foreground">
+                  {t("llmChat.settings.proxyUrl")}
+                </label>
+                <Input id="llm-proxy-url" value={proxyEndpoint} readOnly />
+              </div>
+            )}
           </section>
 
           <div className="flex items-center justify-end gap-2 border-t border-border pt-3">

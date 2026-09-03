@@ -1,6 +1,7 @@
 # canvas-navigation Specification
 
 ## Purpose
+
 TBD - created by archiving change ux-002-canvas-zoom; consolidated during cleanup with the deltas from `canvas-findability` and `canvas-scroll-pan-drawio`. Update Purpose after archive.
 
 ## Requirements

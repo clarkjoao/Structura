@@ -89,8 +89,8 @@ ones.
 ### Requirement: Relinking is reviewed before it is applied
 
 When the plan contains at least one entry to relink or clear, the import MUST present the
-proposal before writing to the store, grouped as *relink* (pre-selected, showing the matched
-signals), *no match* (offering to clear the dangling `serviceId`) and *already local* (the id
+proposal before writing to the store, grouped as _relink_ (pre-selected, showing the matched
+signals), _no match_ (offering to clear the dangling `serviceId`) and _already local_ (the id
 exists in the receiving catalog; no action). The user MUST be able to accept or reject each
 entry, to apply all at once, and to cancel. Nothing MUST be remapped without confirmation.
 

@@ -20,11 +20,7 @@ import {
 import { registerConnectFolderRequestHandler } from "@/infrastructure/persistence/requestConnectFolder";
 import { WorkspaceMergeDialog } from "@/infrastructure/persistence/WorkspaceMergeDialog";
 import { DisconnectConfirmDialog } from "@/infrastructure/persistence/DisconnectConfirmDialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useDiagramStore } from "@/features/diagram";
 import { useShallow } from "zustand/react/shallow";
 
@@ -33,7 +29,10 @@ export interface FileSystemStatusProps {
   hideActions?: boolean;
 }
 
-export function FileSystemStatus({ compact = false, hideActions = false }: FileSystemStatusProps = {}) {
+export function FileSystemStatus({
+  compact = false,
+  hideActions = false,
+}: FileSystemStatusProps = {}) {
   const { t, i18n } = useTranslation();
   const lastFolderSync = useLastFolderSync();
   const lastLocalStorageSync = useLastLocalStorageSync();
@@ -241,8 +240,10 @@ export function FileSystemStatus({ compact = false, hideActions = false }: FileS
         </div>
       )}
 
-      {isFileSystemSupported && status === "needs_permission" && !hideActions && (
-        compact ? (
+      {isFileSystemSupported &&
+        status === "needs_permission" &&
+        !hideActions &&
+        (compact ? (
           <Tooltip>
             <TooltipTrigger asChild>
               <button
@@ -275,8 +276,7 @@ export function FileSystemStatus({ compact = false, hideActions = false }: FileS
               ? t("filesystem.needsPermissionFolder", { name: folderName })
               : t("filesystem.needsPermissionLabel")}
           </button>
-        )
-      )}
+        ))}
 
       {status === "disconnected" && (
         <div className="flex items-center gap-2">

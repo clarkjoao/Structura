@@ -7,17 +7,11 @@
  * after picking them. Bezier/Straight have no editable counterpart.
  */
 
-export type EdgeStyleDropdownValue =
-  | "step"
-  | "smoothstep"
-  | "bezier"
-  | "straight";
+export type EdgeStyleDropdownValue = "step" | "smoothstep" | "bezier" | "straight";
 
 import type { EdgeStyle } from "@/features/diagram";
 
-export const dropdownToEdgeStyle = (
-  value: EdgeStyleDropdownValue,
-): EdgeStyle => {
+export const dropdownToEdgeStyle = (value: EdgeStyleDropdownValue): EdgeStyle => {
   switch (value) {
     case "step":
       return "editable-step" as EdgeStyle;
@@ -30,13 +24,11 @@ export const dropdownToEdgeStyle = (
   }
 };
 
-export const edgeStyleToDropdown = (
-  style: EdgeStyle | undefined,
-): EdgeStyleDropdownValue => {
+export const edgeStyleToDropdown = (style: EdgeStyle | undefined): EdgeStyleDropdownValue => {
   switch (style) {
-    case ("editable-step" as EdgeStyle):
+    case "editable-step" as EdgeStyle:
       return "step";
-    case ("editable" as EdgeStyle):
+    case "editable" as EdgeStyle:
       return "smoothstep";
     case "bezier":
       return "bezier";

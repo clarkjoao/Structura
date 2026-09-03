@@ -7,7 +7,7 @@
 
 const DEFAULT_PROXY_URL =
   typeof import.meta !== "undefined" && import.meta.env
-    ? import.meta.env.VITE_LLM_PROXY_URL ?? "http://localhost:3000"
+    ? (import.meta.env.VITE_LLM_PROXY_URL ?? "http://localhost:3000")
     : "http://localhost:3000";
 
 export interface ProxyRequest {

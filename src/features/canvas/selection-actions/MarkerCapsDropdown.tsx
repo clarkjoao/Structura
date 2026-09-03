@@ -16,18 +16,12 @@ interface MarkerCapsDropdownProps {
   capType: "start" | "end";
 }
 
-export function MarkerCapsDropdown({
-  currentCap,
-  onChangeCap,
-  capType,
-}: MarkerCapsDropdownProps) {
+export function MarkerCapsDropdown({ currentCap, onChangeCap, capType }: MarkerCapsDropdownProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const selected =
-    MARKER_OPTIONS.find((o) => o.value === currentCap) ??
-    MARKER_OPTIONS[0];
+  const selected = MARKER_OPTIONS.find((o) => o.value === currentCap) ?? MARKER_OPTIONS[0];
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -39,7 +33,8 @@ export function MarkerCapsDropdown({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const labelKey = capType === "start" ? "canvas.quickActions.markerStart" : "canvas.quickActions.markerEnd";
+  const labelKey =
+    capType === "start" ? "canvas.quickActions.markerStart" : "canvas.quickActions.markerEnd";
 
   return (
     <div ref={ref} className="relative">

@@ -131,10 +131,7 @@ export function StorageWarningBanner() {
           <Button
             type="button"
             size="sm"
-            className={cn(
-              "h-7 text-xs gap-1",
-              suggestFolder && "w-full",
-            )}
+            className={cn("h-7 text-xs gap-1", suggestFolder && "w-full")}
             onClick={handleConnectFolder}
           >
             <FolderOpen className="h-3 w-3" aria-hidden />

@@ -26,7 +26,16 @@ interface SuggestionCardProps {
 }
 
 interface ActionSummary {
-  type: "add_node" | "remove_node" | "update_node" | "add_edge" | "remove_edge" | "layout" | "pattern" | "tags" | "unknown";
+  type:
+    | "add_node"
+    | "remove_node"
+    | "update_node"
+    | "add_edge"
+    | "remove_edge"
+    | "layout"
+    | "pattern"
+    | "tags"
+    | "unknown";
   icon: React.ReactNode;
   label: string;
   count: number;
@@ -128,7 +137,11 @@ function groupActions(actions: DiagramPatchAction[], translate: TFunction): Acti
   return Object.values(groups);
 }
 
-function countChanges(actions: DiagramPatchAction[]): { nodes: number; edges: number; other: number } {
+function countChanges(actions: DiagramPatchAction[]): {
+  nodes: number;
+  edges: number;
+  other: number;
+} {
   return actions.reduce(
     (acc, action) => {
       if (action.type.includes("NODE")) acc.nodes++;
@@ -163,15 +176,13 @@ export function SuggestionCard({ suggestion, onAccept, onReject }: SuggestionCar
     [suggestion.patch.actions, t],
   );
 
-  const changes = useMemo(
-    () => countChanges(suggestion.patch.actions),
-    [suggestion.patch.actions],
-  );
+  const changes = useMemo(() => countChanges(suggestion.patch.actions), [suggestion.patch.actions]);
 
   // Build summary text
   const summaryParts: string[] = [];
   if (changes.nodes > 0) summaryParts.push(`${changes.nodes} nó${changes.nodes > 1 ? "s" : ""}`);
-  if (changes.edges > 0) summaryParts.push(`${changes.edges} conexõe${changes.edges > 1 ? "s" : "ão"}`);
+  if (changes.edges > 0)
+    summaryParts.push(`${changes.edges} conexõe${changes.edges > 1 ? "s" : "ão"}`);
   if (changes.other > 0) summaryParts.push(`${changes.other} outra${changes.other > 1 ? "s" : ""}`);
   const summaryText = summaryParts.join(", ") || t("llmChat.suggestion.noChanges");
 
@@ -203,7 +214,8 @@ export function SuggestionCard({ suggestion, onAccept, onReject }: SuggestionCar
         <div className="min-w-0 flex-1">
           {/* Title */}
           <h4 className="mb-1 text-sm font-semibold text-foreground leading-tight">
-            {suggestion.patch.description || t("llmChat.suggestion.defaultTitle", { defaultValue: "Suggested changes" })}
+            {suggestion.patch.description ||
+              t("llmChat.suggestion.defaultTitle", { defaultValue: "Suggested changes" })}
           </h4>
 
           {/* Summary badges */}
@@ -243,7 +255,12 @@ export function SuggestionCard({ suggestion, onAccept, onReject }: SuggestionCar
                 group.color.replace("text-", "hover:bg-").replace("dark:", ""),
               )}
             >
-              <div className={cn("mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md", group.color)}>
+              <div
+                className={cn(
+                  "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md",
+                  group.color,
+                )}
+              >
                 {group.icon}
               </div>
               <div className="min-w-0 flex-1">

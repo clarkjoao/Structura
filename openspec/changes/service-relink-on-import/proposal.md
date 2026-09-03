@@ -6,7 +6,7 @@ Structura is stateless and client-side: every workspace mints its own service id
 (`generateId("svc")` in `src/features/diagram/store/slices/services.slice.ts:98`). A component
 stores only `serviceId`. `exportJSON` (`src/lib/export-service/export-json.ts:7`) does not export
 the service catalog at all, so the JSON leaves with an id that means nothing anywhere else. On
-the receiving side the very same service usually *does* exist — same name, same GitHub repo —
+the receiving side the very same service usually _does_ exist — same name, same GitHub repo —
 under a different local id, and the link is silently lost: the component renders unlinked with no
 indication that it ever pointed at anything.
 
@@ -28,11 +28,11 @@ import time.
    `src/features/integrations/service-matching.ts` scores a manifest entry against the local
    catalog on five independent signals: GitHub `repoId`, normalized repository URL, normalized
    name, normalized `fullName`, and a component `externalLink.url` pointing at a local service's
-   repository. A local service is a match only with **two or more distinct signals** *and* only
+   repository. A local service is a match only with **two or more distinct signals** _and_ only
    if it is the unique top scorer — a tie is reported as no match rather than guessed.
 3. **A review dialog on import.** When a plan has anything to remap, the import shows the
-   proposal grouped into *relink* (checked by default, showing which signals matched), *no match*
-   (with the option to clear the dangling `serviceId`), and *already local* (nothing to do), plus
+   proposal grouped into _relink_ (checked by default, showing which signals matched), _no match_
+   (with the option to clear the dangling `serviceId`), and _already local_ (nothing to do), plus
    an "apply all". The user confirms; nothing is remapped behind their back.
 4. **A fallback for files exported before this change.** With no manifest, a synthetic entry is
    built from the component itself — `name`, `externalLinks`, `technology` — which
@@ -40,7 +40,7 @@ import time.
    (`services.slice.ts:21-37`). The same two-signal rule applies, so the weaker input simply
    produces fewer matches rather than wrong ones.
 5. **One store write.** The remapping is applied to the in-memory `Diagram` (including
-   `scenes[*].addedComponents`, the way `syncLinkedComponentsFromRegistry` walks them) *before*
+   `scenes[*].addedComponents`, the way `syncLinkedComponentsFromRegistry` walks them) _before_
    `importDiagram`, so the import stays a single write with no undo-history noise.
 
 ## Non-Goals

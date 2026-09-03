@@ -6,12 +6,12 @@ Imports Mermaid flowchart files into Structura diagrams.
 
 ## Supported Syntax
 
-| Shape | Syntax | Rendered As |
-|-------|--------|-------------|
-| Rectangle | `A[Label]` | Standard node |
-| Rounded | `B(Label)` | Rounded rectangle |
-| Diamond | `C{Label}` | Decision/condition |
-| Circle | `D((Label))` | Circle/node |
+| Shape     | Syntax       | Rendered As        |
+| --------- | ------------ | ------------------ |
+| Rectangle | `A[Label]`   | Standard node      |
+| Rounded   | `B(Label)`   | Rounded rectangle  |
+| Diamond   | `C{Label}`   | Decision/condition |
+| Circle    | `D((Label))` | Circle/node        |
 
 ## Edges
 

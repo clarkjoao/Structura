@@ -105,9 +105,7 @@ export function useAssistantUIAdapter(): ExternalStoreAdapter<ThreadMessage> {
       lastAssistantIndex === -1 ? -1 : chatMessages.length - 1 - lastAssistantIndex;
 
     const isActivelyStreaming =
-      streamingContent !== null &&
-      streamingContent.length > 0 &&
-      actualAssistantIndex !== -1;
+      streamingContent !== null && streamingContent.length > 0 && actualAssistantIndex !== -1;
 
     const baseMessages = isActivelyStreaming
       ? chatMessages.slice(0, actualAssistantIndex)
@@ -206,12 +204,9 @@ export function useAssistantUIAdapter(): ExternalStoreAdapter<ThreadMessage> {
     [chatMessages, send],
   );
 
-  const setMessages = useCallback(
-    (_messages: readonly ThreadMessage[]) => {
-      // The Structura store owns thread/messages lifecycle.
-    },
-    [],
-  );
+  const setMessages = useCallback((_messages: readonly ThreadMessage[]) => {
+    // The Structura store owns thread/messages lifecycle.
+  }, []);
 
   return useMemo<ExternalStoreAdapter<ThreadMessage>>(
     () => ({

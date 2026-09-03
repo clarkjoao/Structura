@@ -22,7 +22,6 @@ import type { MentionItem, ActiveMention } from "@/features/llm/types";
 import type { DiagramIR } from "@/features/llm/ir/ir.types";
 
 const MENTION_TRIGGER_PATTERN = /(?:^|\s)@([^\s@]*)$/;
-const SLASH_PATTERN = /^\/(\w*)$/;
 
 function findMentionTrigger(
   value: string,
@@ -50,7 +49,8 @@ function formatConversationForCopy(
 
 /* ── Slash commands ───────────────────────────────────────────────────── */
 // Support both Portuguese and English command names
-export type SlashCommand = "analisar" | "analyze" | "exportar" | "export" | "limpar" | "clear" | "copiar" | "copy";
+export type SlashCommand =
+  "analisar" | "analyze" | "exportar" | "export" | "limpar" | "clear" | "copiar" | "copy";
 
 export interface SlashCommandDef {
   names: string[]; // Both PT and EN aliases
@@ -86,11 +86,11 @@ function filterSlashCommands(input: string): SlashCommandDef[] {
   const trimmed = input.trimStart().toLowerCase();
   if (!trimmed.startsWith("/")) return [];
   const query = trimmed.slice(1).toLowerCase();
-  
+
   if (!query) return SLASH_COMMANDS;
-  
+
   return SLASH_COMMANDS.filter((cmd) =>
-    cmd.names.some((name) => name.toLowerCase().startsWith(query))
+    cmd.names.some((name) => name.toLowerCase().startsWith(query)),
   );
 }
 
@@ -104,9 +104,9 @@ function SlashCommandMenu({
   onSelect: (c: SlashCommandDef) => void;
 }) {
   const { t } = useTranslation();
-  
+
   if (commands.length === 0) return null;
-  
+
   return (
     <div className="absolute bottom-full left-0 mb-1.5 w-60 rounded-xl border border-border bg-card shadow-lg">
       <div className="px-2.5 py-1.5">
@@ -129,9 +129,7 @@ function SlashCommandMenu({
               /{cmd.names[0]}
             </span>
           </span>
-          <span className="text-[11px] text-muted-foreground">
-            {t(cmd.descriptionKey)}
-          </span>
+          <span className="text-[11px] text-muted-foreground">{t(cmd.descriptionKey)}</span>
         </button>
       ))}
     </div>
@@ -177,7 +175,7 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
       isLoading,
       disabled = false,
       placeholder,
-      onExportIR,
+      onExportIR: _onExportIR,
       onClearHistory,
     },
     ref,
@@ -302,15 +300,18 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
       [text],
     );
 
-    const handleRemoveMention = useCallback((mentionId: string) => {
-      setMentions((prev) => prev.filter((m) => m.mentionId !== mentionId));
-      setText((current) => {
-        const mention = mentions.find((m) => m.mentionId === mentionId);
-        if (!mention) return current;
-        const marker = `@${mention.label}`;
-        return current.replace(marker, "").replace(/\s+/g, " ").trimStart();
-      });
-    }, [mentions]);
+    const handleRemoveMention = useCallback(
+      (mentionId: string) => {
+        setMentions((prev) => prev.filter((m) => m.mentionId !== mentionId));
+        setText((current) => {
+          const mention = mentions.find((m) => m.mentionId === mentionId);
+          if (!mention) return current;
+          const marker = `@${mention.label}`;
+          return current.replace(marker, "").replace(/\s+/g, " ").trimStart();
+        });
+      },
+      [mentions],
+    );
 
     /** Execute a slash command and clear the input. */
     const executeSlashCommand = useCallback(
@@ -361,7 +362,9 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
             ) {
               if (activeDiagramId) {
                 createThread(activeDiagramId);
-                showToast(t("llmChat.slash.newChat", { defaultValue: "New conversation started." }));
+                showToast(
+                  t("llmChat.slash.newChat", { defaultValue: "New conversation started." }),
+                );
               } else {
                 onClearHistory?.();
                 showToast(t("llmChat.slash.cleared", { defaultValue: "Chat cleared." }));
@@ -373,24 +376,32 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
           case "copiar":
           case "copy": {
             if (messages.length === 0) {
-              showToast(
-                t("llmChat.slash.noMessages", { defaultValue: "No messages to copy." }),
-              );
+              showToast(t("llmChat.slash.noMessages", { defaultValue: "No messages to copy." }));
               break;
             }
             const formatted = formatConversationForCopy(messages);
-            navigator.clipboard.writeText(formatted).then(() => {
-              showToast(t("llmChat.slash.copied", { defaultValue: "Conversation copied!" }));
-            }).catch(() => {
-              showToast(
-                t("llmChat.slash.copyFailed", { defaultValue: "Failed to copy." }),
-              );
-            });
+            navigator.clipboard
+              .writeText(formatted)
+              .then(() => {
+                showToast(t("llmChat.slash.copied", { defaultValue: "Conversation copied!" }));
+              })
+              .catch(() => {
+                showToast(t("llmChat.slash.copyFailed", { defaultValue: "Failed to copy." }));
+              });
             break;
           }
         }
       },
-      [lastGeneratedIR, messages, activeDiagramId, createThread, onClearHistory, onSend, showToast, t],
+      [
+        lastGeneratedIR,
+        messages,
+        activeDiagramId,
+        createThread,
+        onClearHistory,
+        onSend,
+        showToast,
+        t,
+      ],
     );
 
     const handleClear = useCallback(() => {

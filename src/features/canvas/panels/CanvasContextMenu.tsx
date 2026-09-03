@@ -124,12 +124,12 @@ export function CanvasContextMenu({
   // built-in components). It is the only way to unlock a node that's already
   // locked — the quick-actions bar is hidden on locked nodes.
   const handleToggleLock =
-    canEditCanvas && contextMenuComponent ? (
-      () => {
-        const locked = contextMenuComponent.locked === true;
-        actions.updateComponent(contextMenuId, { locked: !locked });
-      }
-    ) : undefined;
+    canEditCanvas && contextMenuComponent
+      ? () => {
+          const locked = contextMenuComponent.locked === true;
+          actions.updateComponent(contextMenuId, { locked: !locked });
+        }
+      : undefined;
 
   return (
     <NodeContextMenu

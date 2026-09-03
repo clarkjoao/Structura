@@ -1,6 +1,4 @@
 import type { Diagram } from "@/features/diagram";
-import type { CustomComponentTemplate } from "@/features/custom-components";
-import type { IconDefinition } from "@/features/diagram";
 import type { ServiceManifestEntry } from "@/features/diagram";
 
 // Schema version para diagramas individuais

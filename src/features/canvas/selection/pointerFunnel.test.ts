@@ -27,16 +27,12 @@ describe("selection/pointerFunnel", () => {
   });
 
   it("exposes a constant threshold matching dragThreshold.DRAG_THRESHOLD_PX", () => {
-    const { result } = renderHook(() =>
-      usePointerFunnel({ openContextMenu: () => {} }),
-    );
+    const { result } = renderHook(() => usePointerFunnel({ openContextMenu: () => {} }));
     expect(result.current.threshold).toBe(4);
   });
 
   it("Shift pointerdown on an unselected node adds to the existing selection", () => {
-    const { result } = renderHook(() =>
-      usePointerFunnel({ openContextMenu: () => {} }),
-    );
+    const { result } = renderHook(() => usePointerFunnel({ openContextMenu: () => {} }));
     // pre-select node A
     useCanvasSelectionStore.getState().setSelectedNodeIds(new Set(["a"]));
     // simulate pointerdown on B with shiftKey
@@ -50,9 +46,7 @@ describe("selection/pointerFunnel", () => {
   });
 
   it("cancelInFlightGesture returns false when there is nothing to cancel", () => {
-    const { result } = renderHook(() =>
-      usePointerFunnel({ openContextMenu: () => {} }),
-    );
+    const { result } = renderHook(() => usePointerFunnel({ openContextMenu: () => {} }));
     expect(result.current.cancelInFlightGesture()).toBe(false);
   });
 

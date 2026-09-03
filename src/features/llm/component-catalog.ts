@@ -243,6 +243,29 @@ export function isValidNodeType(nodeType: string): boolean {
   return ALL_COMPONENT_TYPES.some((definition) => definition.nodeType === nodeType);
 }
 
+export function buildPatternCatalog(): string {
+  const lines: string[] = [
+    "",
+    "### Architectural Patterns",
+    "",
+    "These are reusable architectural templates you can insert into the diagram. Use the insert_pattern tool.",
+    "",
+  ];
+
+  for (const category of PATTERN_CATEGORIES) {
+    const patterns = PATTERNS.filter((p) => p.category === category);
+    lines.push(`${category.toUpperCase()}:`);
+    for (const p of patterns) {
+      const shortDesc =
+        p.description.length > 120 ? p.description.slice(0, 117) + "..." : p.description;
+      lines.push(`  - ${p.id}: ${shortDesc}`);
+    }
+    lines.push("");
+  }
+
+  return lines.join("\n");
+}
+
 export function isValidPatternId(patternId: string): boolean {
   return PATTERNS.some((p) => p.id === patternId);
 }

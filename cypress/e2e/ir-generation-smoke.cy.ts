@@ -379,10 +379,7 @@ describe("IR generation — accepted elements survive a batched delete + single 
       cy.get("body").type("{ctrl}");
     }
     cy.get("body").type("{del}");
-    cy.get(".react-flow__node").should(
-      "have.length",
-      NESTED_IR.nodes.length - labels.length,
-    );
+    cy.get(".react-flow__node").should("have.length", NESTED_IR.nodes.length - labels.length);
 
     cy.get("body").type(`${modKey()}z`);
     cy.get(".react-flow__node").should("have.length", NESTED_IR.nodes.length);

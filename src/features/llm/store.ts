@@ -148,10 +148,10 @@ function connectionToConfig(connection: LLMConnection): LLMConfig {
 function defaultTitleForLanguage(): string {
   const lang = getResolvedAppLanguage();
   const isEN = lang === "en";
-  const stamp = new Date().toLocaleDateString(
-    isEN ? "en-US" : "pt-BR",
-    { day: "2-digit", month: "short" },
-  );
+  const stamp = new Date().toLocaleDateString(isEN ? "en-US" : "pt-BR", {
+    day: "2-digit",
+    month: "short",
+  });
   return isEN ? `Conversation · ${stamp}` : `Conversa · ${stamp}`;
 }
 

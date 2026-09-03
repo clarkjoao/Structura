@@ -1,10 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Moon, Sun, Monitor, Check, Settings as SettingsIcon } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { I18N_STORAGE_KEY } from "@/infrastructure/i18n";
@@ -19,8 +15,7 @@ const LANGS = [
 export function SettingsMenu() {
   const { i18n, t } = useTranslation();
   const { theme, setTheme } = useTheme();
-  const resolved =
-    i18n.resolvedLanguage?.toLowerCase().startsWith("pt") ? "pt-BR" : "en";
+  const resolved = i18n.resolvedLanguage?.toLowerCase().startsWith("pt") ? "pt-BR" : "en";
 
   const isDark = theme === "dark";
 
@@ -63,9 +58,8 @@ export function SettingsMenu() {
           <button
             type="button"
             onClick={() => {
-              const sys: "light" | "dark" = window.matchMedia(
-                "(prefers-color-scheme: dark)",
-              ).matches
+              const sys: "light" | "dark" = window.matchMedia("(prefers-color-scheme: dark)")
+                .matches
                 ? "dark"
                 : "light";
               setTheme(sys);

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import debounce from "lodash.debounce";
-import { X, Trash2, Lock, Unlock } from "lucide-react";
+import { X, Trash2 } from "lucide-react";
 import {
   useAllDiagrams,
   useActiveDiagram,
@@ -16,29 +16,19 @@ import type {
   ServiceDefinition,
 } from "@/features/diagram";
 import {
-  isApiGroupComponent,
   isPanelComponent,
   isNoteComponent,
-  isC4Component,
   isDbTableComponent,
   isJsonViewerComponent,
   isFlowNodeComponent,
   isSystemType,
   isContainerType,
-  isSvgComponentType,
 } from "@/features/diagram";
 import { isAwsType, AWS_CATEGORIES, AWS_CATEGORY_MAP, AWS_SERVICE_MAP } from "@/lib/catalogs/aws";
 import AwsIcon from "../../nodes/AwsIcon";
 import TabBar, { type Tab } from "./components/TabBar";
-import {
-  C4_DEFAULT_COLORS,
-  NOTE_DEFAULT_DARK,
-  NOTE_DEFAULT_LIGHT,
-} from "./components/colorPresets";
 import ConnectionsTab from "./components/ConnectionsTab";
-import { ComponentIconTab } from "./components/ComponentIconTab";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "@/hooks/useTheme";
 import i18n from "@/infrastructure/i18n";
 import { FIELD_DEBOUNCE_MS } from "@/features/canvas/canvas.constants";
 import {
@@ -46,12 +36,10 @@ import {
   ServiceLinkSection,
   LinkedDiagramSection,
   PanelStyleSection,
-  ColorAccentSection,
   ExternalLinksSection,
   FlowchartFieldsSection,
   PositionSection,
 } from "./sections";
-import { usePanelChildLayout } from "../../hooks/usePanelChildLayout";
 import { isComponentType } from "@/features/diagram";
 
 function buildComponentSyncPatch(service: ServiceDefinition, component: Component): ComponentPatch {
@@ -86,12 +74,10 @@ const ComponentPanel = ({
   onClose,
   updateComponent,
   removeComponent,
-  onUngroup,
+  onUngroup: _onUngroup,
   focusTitleTrigger = 0,
 }: ComponentPanelProps) => {
   const { t } = useTranslation();
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
   const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   useEffect(() => {
     if (focusTitleTrigger > 0) {
@@ -118,14 +104,11 @@ const ComponentPanel = ({
     linkComponentToService,
     linkComponentToDiagram,
     addDiagram,
-    setParent,
     updateNodeLayout,
-    fitGroupToChildren,
     addExternalLink,
     updateExternalLink,
     removeExternalLink,
   } = useDiagramActions();
-  const { runPanelChildLayout, isRunning: isPanelLayoutRunning } = usePanelChildLayout();
   const [tab, setTab] = useState<Tab>("details");
   const [name, setName] = useState(component.name);
   const [desc, setDesc] = useState(component.description);
@@ -157,24 +140,6 @@ const ComponentPanel = ({
     () => allServices.find((service) => service.id === component.serviceId) ?? null,
     [allServices, component.serviceId],
   );
-  const parentComp = component.parentId ? resolved?.components[component.parentId] : undefined;
-  const isChildOfPanel =
-    !!component.parentId &&
-    parentComp &&
-    (isPanelComponent(parentComp) || isApiGroupComponent(parentComp));
-  const handleRemoveFromGroup = () => {
-    if (!component.parentId || !setParent || !updateNodeLayout || !activeDiagram || !resolved)
-      return;
-    const childLayout = resolved.nodeLayouts[component.id];
-    const parentLayout = resolved.nodeLayouts[component.parentId];
-    setParent(component.id, null);
-    if (childLayout && parentLayout) {
-      updateNodeLayout(component.id, {
-        x: childLayout.x + parentLayout.x,
-        y: childLayout.y + parentLayout.y,
-      });
-    }
-  };
 
   const debouncedUpdate = useMemo(
     () =>
@@ -262,11 +227,7 @@ const ComponentPanel = ({
           </button>
         </div>
       </div>
-      <TabBar
-        active={tab}
-        onChange={setTab}
-        showConnections={!isSimple}
-      />
+      <TabBar active={tab} onChange={setTab} showConnections={!isSimple} />
       {tab === "connections" && !isSimple ? (
         <ConnectionsTab componentId={component.id} />
       ) : (

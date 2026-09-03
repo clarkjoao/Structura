@@ -59,7 +59,6 @@
  */
 
 import { useEffect, useRef } from "react";
-import type { Node } from "@xyflow/react";
 import { DRAG_THRESHOLD_PX, DRAG_THRESHOLD_PX_SQUARED } from "./dragThreshold";
 import { useCanvasSelectionStore } from "../hooks/useCanvasSelectionStore";
 import { dragSelectionRef } from "../hooks/useLocalNodes";
@@ -98,7 +97,9 @@ const SELECTOR_PANE = ".react-flow__pane";
  * DOM contains the panel header / body / border / node / pane in a single
  * tree; walking up gives us the most-specific hit.
  */
-function resolveTarget(event: PointerEvent | MouseEvent | React.PointerEvent): GestureTarget | null {
+function resolveTarget(
+  event: PointerEvent | MouseEvent | React.PointerEvent,
+): GestureTarget | null {
   const el = event.target as Element | null;
   if (!el) return null;
   const closest = el.closest?.bind(el) as (selector: string) => Element | null;

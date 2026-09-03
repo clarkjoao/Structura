@@ -28,7 +28,7 @@ already imported such a file are stuck with invisible diagrams.
 4. **File System boot** applies the same helper when it merges diagrams and folders read from
    separate files.
 
-Importing *into* a folder is unaffected: `finishImport` already calls
+Importing _into_ a folder is unaffected: `finishImport` already calls
 `moveDiagram(imported.id, targetFolderId)` after the import when a target folder is given.
 
 ## Non-Goals

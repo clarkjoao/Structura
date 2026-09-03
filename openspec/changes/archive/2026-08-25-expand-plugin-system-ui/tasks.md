@@ -66,6 +66,7 @@
 **Core implementation complete (24/29 tasks)**
 
 The plugin system now supports:
+
 - `canvas-toolbar` slot for toolbar buttons
 - `ui:overlays` capability for toasts and modals
 - `api.overlay.showToast()` using Sonner

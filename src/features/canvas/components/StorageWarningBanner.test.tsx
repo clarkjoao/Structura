@@ -6,11 +6,7 @@ import { render, screen } from "@testing-library/react";
 // because the hook reads the property at call time, not at module init.
 const mockState = vi.hoisted(() => ({
   folderStatus: "disconnected" as
-    | "disconnected"
-    | "connecting"
-    | "connected"
-    | "needs_permission"
-    | "error",
+    "disconnected" | "connecting" | "connected" | "needs_permission" | "error",
 }));
 
 // We mock the barrel that the banner actually imports from. Vitest resolves
@@ -30,10 +26,7 @@ vi.mock("@/infrastructure/persistence/requestConnectFolder", () => ({
 }));
 
 import { StorageWarningBanner } from "./StorageWarningBanner";
-import {
-  shouldSuggestFolderSync,
-  useSaveStatusStore,
-} from "@/features/diagram";
+import { shouldSuggestFolderSync, useSaveStatusStore } from "@/features/diagram";
 
 function setHealth(level: "ok" | "warning" | "danger" | "critical"): void {
   useSaveStatusStore.setState({
@@ -76,14 +69,10 @@ describe("StorageWarningBanner", () => {
     expect(screen.getByText("Sync to a folder")).toBeInTheDocument();
 
     // Clear-storage is suppressed when promoting folder sync.
-    expect(
-      screen.queryByRole("button", { name: /free up space/i }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /free up space/i })).not.toBeInTheDocument();
 
     // Connect-folder CTA is present.
-    expect(
-      screen.getByRole("button", { name: /connect folder/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /connect folder/i })).toBeInTheDocument();
   });
 
   it("hides dismiss in danger + disconnected (mirrors critical)", () => {
@@ -113,14 +102,7 @@ describe("StorageWarningBanner", () => {
     expect(screen.queryByText("Sync to a folder")).not.toBeInTheDocument();
 
     // Both remediation buttons remain accessible.
-    expect(
-      screen.getByRole("button", { name: /free up space/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /connect folder/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /free up space/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /connect folder/i })).toBeInTheDocument();
   });
 });
-
-
-

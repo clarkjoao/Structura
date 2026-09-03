@@ -37,7 +37,10 @@ export function computeGridPositions(
   }));
 }
 
-export function resolveParentRef(value: string | null, nameToIdMap: Map<string, string>): string | null {
+export function resolveParentRef(
+  value: string | null,
+  nameToIdMap: Map<string, string>,
+): string | null {
   if (!value) return null;
   if (value.startsWith("@ref:")) {
     const resolved = nameToIdMap.get(value.slice(5).toLowerCase());
@@ -97,7 +100,10 @@ export function applyDiagramPatchAction(
       return {
         addedNodeId: insertedIds[0] ?? null,
         addedEdgeId: null,
-        toolResult: { type: "INSERT_PATTERN", data: { patternId: pattern.id, createdNodes: insertedIds } },
+        toolResult: {
+          type: "INSERT_PATTERN",
+          data: { patternId: pattern.id, createdNodes: insertedIds },
+        },
       };
     }
     case "AUTO_LAYOUT": {
@@ -123,9 +129,7 @@ export function applyDiagramPatchAction(
           // All edges from the graph get handle order and waypoints — same as every
           // other layout consumer.
           applyLayoutResultEdges(graph, result, diagramId);
-          console.info(
-            `[apply-diagram-patch] AUTO_LAYOUT: positioned ${result.boxes.size} nodes`,
-          );
+          console.info(`[apply-diagram-patch] AUTO_LAYOUT: positioned ${result.boxes.size} nodes`);
         })
         .catch((err) => {
           console.error("[llm] auto-layout failed:", err);

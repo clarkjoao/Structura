@@ -198,7 +198,9 @@ export function createProxyRouter(): express.Router {
     } catch (err: unknown) {
       const elapsed = Date.now() - startTime;
       const message = err instanceof Error ? err.message : String(err);
-      console.error(`[proxy] ❌ 502 | ${method} ${maskQueryParams(targetUrl)} | ${elapsed}ms | Error: ${message}`);
+      console.error(
+        `[proxy] ❌ 502 | ${method} ${maskQueryParams(targetUrl)} | ${elapsed}ms | Error: ${message}`,
+      );
       res.status(502).json({ error: "Proxy request failed", details: message });
     }
   });

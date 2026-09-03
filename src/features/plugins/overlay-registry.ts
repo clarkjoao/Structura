@@ -10,7 +10,7 @@ interface OverlayState {
   activeModal: ModalOptions | null;
 }
 
-let state: OverlayState = {
+const state: OverlayState = {
   activeModal: null,
 };
 
