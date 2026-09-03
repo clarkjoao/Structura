@@ -302,7 +302,7 @@ export function useCollab({
         const parsed = JSON.parse(String(event.data));
         message = isRecord(parsed) ? parsed : null;
       } catch {
-        message = null;
+        // malformed payload, will be skipped by the null check below
       }
 
       if (!message) return;

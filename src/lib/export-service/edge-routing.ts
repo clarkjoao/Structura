@@ -110,73 +110,8 @@ export function computeDefaultWaypoints(
   return polyline.slice(1, -1);
 }
 
-// ─── Obstacle-aware waypoints for siblings inside the same container ────────────
-
-/**
- * Whether a straight horizontal band at midY from x1→x2 intersects any occupied box.
- */
-function hBandIntersectsBox(x1: number, x2: number, midY: number, box: { x: number; y: number; w: number; h: number }): boolean {
-  return (
-    box.y <= midY &&
-    midY <= box.y + box.h &&
-    Math.max(x1, box.x) < Math.min(x2, box.x + box.w)
-  );
-}
-
-/**
- * Whether a straight vertical band at midX from y1→y2 intersects any occupied box.
- */
-function vBandIntersectsBox(y1: number, y2: number, midX: number, box: { x: number; y: number; w: number; h: number }): boolean {
-  return (
-    box.x <= midX &&
-    midX <= box.x + box.w &&
-    Math.max(y1, box.y) < Math.min(y2, box.y + box.h)
-  );
-}
 
 interface Box { x: number; y: number; w: number; h: number }
-
-function boxesOverlap(a: Box, b: Box): boolean {
-  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
-}
-
-/**
- * Detect whether the direct orthogonal path between sourceAbs and targetAbs
- * would intersect any sibling node inside the container.
- *
- * We check two bands:
- * - Horizontal band at sourceAbs.y from sourceAbs.x→targetAbs.x
- * - Vertical band at targetAbs.x from sourceAbs.y→targetAbs.y
- *
- * If neither band hits an occupied box, the direct route is clear.
- */
-function directPathBlocked(
-  sourceAbs: { x: number; y: number },
-  targetAbs: { x: number; y: number },
-  occupiedBoxes: Box[],
-): boolean {
-  // Horizontal band from source to target at sourceAbs.y
-  const hBlocked = occupiedBoxes.some((box) =>
-    hBandIntersectsBox(
-      Math.min(sourceAbs.x, targetAbs.x),
-      Math.max(sourceAbs.x, targetAbs.x),
-      sourceAbs.y,
-      box,
-    ),
-  );
-  if (!hBlocked) return false;
-
-  // Vertical band from source to target at targetAbs.x
-  const vBlocked = occupiedBoxes.some((box) =>
-    vBandIntersectsBox(
-      Math.min(sourceAbs.y, targetAbs.y),
-      Math.max(sourceAbs.y, targetAbs.y),
-      targetAbs.x,
-      box,
-    ),
-  );
-  return vBlocked;
-}
 
 /**
  * Build obstacle-aware waypoints for edges between sibling nodes inside the

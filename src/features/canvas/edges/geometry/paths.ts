@@ -63,7 +63,7 @@ export function getStepPolylinePoints(params: {
 
   const sourceGapOffset = { x: 0, y: 0 };
   const targetGapOffset = { x: 0, y: 0 };
-  let points: Point[] = [];
+  let points: Point[];
 
   if (sourceDir[dirAccessor] * targetDir[dirAccessor] === -1) {
     let centerX: number;

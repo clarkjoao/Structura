@@ -59,7 +59,6 @@
  */
 
 import { useEffect, useRef } from "react";
-import type { Node } from "@xyflow/react";
 import { DRAG_THRESHOLD_PX, DRAG_THRESHOLD_PX_SQUARED } from "./dragThreshold";
 import { useCanvasSelectionStore } from "../hooks/useCanvasSelectionStore";
 import { dragSelectionRef } from "../hooks/useLocalNodes";
@@ -402,12 +401,7 @@ export function usePointerFunnel(params: {
       window.removeEventListener("pointerup", onPointerUp, true);
       window.removeEventListener("mouseup", onPointerUp, true);
     };
-  }, [
-    params.openContextMenu,
-    params.onNodePointerDown,
-    params.onBackgroundClick,
-    params.panViewportBy,
-  ]);
+  }, [params]);
 
   return {
     /**

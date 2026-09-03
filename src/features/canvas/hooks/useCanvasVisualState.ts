@@ -98,13 +98,11 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
 
   useEffect(() => {
     clearCanvasSelectionImpl();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeDiagramId]);
 
   // Clear the connection highlight when node selection changes so it doesn't persist.
   useEffect(() => {
     clearHighlightFn();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selection.selectedNodeId]);
 
   // Stable callbacks backed by ref to avoid stale closures in event handlers.

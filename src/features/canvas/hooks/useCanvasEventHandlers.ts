@@ -312,7 +312,6 @@ export function useCanvasEventHandlers({
   const onSelectionChange = useCallback(
     ({ nodes: updatedNodes }: { nodes: Node[]; edges: Edge[] }) => {
       const selectedIds = updatedNodes.filter((n) => n.selected).map((n) => n.id);
-      const selectedSet = new Set(selectedIds);
 
       if (isCompareMode) return;
       const key = [...selectedIds].sort().join(",");

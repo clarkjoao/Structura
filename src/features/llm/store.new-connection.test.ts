@@ -122,8 +122,7 @@ describe("'Nova conexão' does not overwrite the active one", () => {
       apiKey: "sk-seed",
       model: "claude-opus-4-8",
     });
-    let isCreating = false;
-    let draftId: string | undefined = seeded.id;
+    const draftId: string | undefined = seeded.id;
 
     useLLMStore.getState().updateConnection(draftId as string, {
       name: "Edited",
@@ -132,7 +131,6 @@ describe("'Nova conexão' does not overwrite the active one", () => {
       apiKey: "sk-edited",
       mode: "direct",
     });
-    isCreating = false;
 
     const refreshed = loadConnections();
     expect(refreshed.connections).toHaveLength(1);

@@ -79,7 +79,7 @@ describe("applyLayoutResultEdges", () => {
   beforeEach(() => {
     diagramId = "diag-1";
     fakeStore = makeFakeStore(diagramId);
-    vi.spyOn(useDiagramStore, "getState").mockReturnValue(fakeStore as any);
+    vi.spyOn(useDiagramStore, "getState").mockReturnValue(fakeStore as unknown as ReturnType<typeof useDiagramStore.getState>);
   });
 
   afterEach(() => {
@@ -93,7 +93,7 @@ describe("applyLayoutResultEdges", () => {
     };
     const result = makeResult(graph);
     // Should not throw
-    applyLayoutResultEdges(graph as any, result, null);
+    applyLayoutResultEdges(graph as unknown as Parameters<typeof applyLayoutResultEdges>[0], result, null);
     expect(fakeStore.updateHandleOrder).not.toHaveBeenCalled();
   });
 
@@ -106,7 +106,7 @@ describe("applyLayoutResultEdges", () => {
     result.handleOrder.outgoing.set("a", ["e1"]);
     result.handleOrder.incoming.set("b", ["e1"]);
 
-    applyLayoutResultEdges(graph as any, result, diagramId);
+    applyLayoutResultEdges(graph as unknown as Parameters<typeof applyLayoutResultEdges>[0], result, diagramId);
 
     expect(fakeStore.updateHandleOrder).toHaveBeenCalledWith("a", "outgoing", ["e1"]);
     expect(fakeStore.updateHandleOrder).toHaveBeenCalledWith("b", "incoming", ["e1"]);
@@ -119,7 +119,7 @@ describe("applyLayoutResultEdges", () => {
     };
     const result = makeResult(graph);
 
-    applyLayoutResultEdges(graph as any, result, diagramId);
+    applyLayoutResultEdges(graph as unknown as Parameters<typeof applyLayoutResultEdges>[0], result, diagramId);
 
     expect(fakeStore.resetEdgeControlPoints).toHaveBeenCalledWith(diagramId, "e1");
     expect(fakeStore.setEdgeControlPoints).toHaveBeenCalled();
@@ -132,7 +132,7 @@ describe("applyLayoutResultEdges", () => {
     };
     const result = makeResult(graph);
 
-    applyLayoutResultEdges(graph as any, result, diagramId);
+    applyLayoutResultEdges(graph as unknown as Parameters<typeof applyLayoutResultEdges>[0], result, diagramId);
 
     expect(fakeStore._waypoints).toHaveLength(1);
     expect(fakeStore._waypoints[0].connectionId).toBe("e1");
@@ -147,7 +147,7 @@ describe("applyLayoutResultEdges", () => {
     // Two-point route: no interior waypoints
     result.edgeRoutes.set("e1", [{ x: 0, y: 0 }, { x: 100, y: 100 }]);
 
-    applyLayoutResultEdges(graph as any, result, diagramId);
+    applyLayoutResultEdges(graph as unknown as Parameters<typeof applyLayoutResultEdges>[0], result, diagramId);
 
     expect(fakeStore._resets).toContain("e1"); // reset happens
     expect(fakeStore._waypoints.find((w) => w.connectionId === "e1")).toBeUndefined(); // no new waypoints written
@@ -161,7 +161,7 @@ describe("applyLayoutResultEdges", () => {
     const result = makeResult(graph);
     const OFFSET = { x: 500, y: 300 };
 
-    applyLayoutResultEdges(graph as any, result, diagramId, { waypointOffset: OFFSET });
+    applyLayoutResultEdges(graph as unknown as Parameters<typeof applyLayoutResultEdges>[0], result, diagramId, { waypointOffset: OFFSET });
 
     const wp = fakeStore._waypoints.find((w) => w.connectionId === "e1")!;
     // The single interior point (200,200) is shifted by the offset
@@ -179,7 +179,7 @@ describe("applyLayoutResultEdges", () => {
     };
     const result = makeResult(graph);
 
-    applyLayoutResultEdges(graph as any, result, diagramId, { edgeIds: new Set(["e1"]) });
+    applyLayoutResultEdges(graph as unknown as Parameters<typeof applyLayoutResultEdges>[0], result, diagramId, { edgeIds: new Set(["e1"]) });
 
     // e1 is reset and rewritten
     expect(fakeStore._resets).toContain("e1");
@@ -201,7 +201,7 @@ describe("applyLayoutResultEdges — integration with layout()", () => {
   beforeEach(() => {
     diagramId = "diag-integration";
     fakeStore = makeFakeStore(diagramId);
-    vi.spyOn(useDiagramStore, "getState").mockReturnValue(fakeStore as any);
+    vi.spyOn(useDiagramStore, "getState").mockReturnValue(fakeStore as unknown as ReturnType<typeof useDiagramStore.getState>);
   });
 
   afterEach(() => {

@@ -172,7 +172,7 @@ export default function DashboardPage() {
   const sorted = useMemo(() => {
     const arr = [...folderDiagrams];
     arr.sort((a, b) => {
-      let cmp = 0;
+      let cmp: number;
       if (sortKey === "name") cmp = a.name.localeCompare(b.name);
       else if (sortKey === "domain") cmp = (a.domain ?? "").localeCompare(b.domain ?? "");
       else if (sortKey === "level") cmp = a.level.localeCompare(b.level);

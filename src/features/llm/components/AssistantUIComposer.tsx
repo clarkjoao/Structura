@@ -22,7 +22,6 @@ import type { MentionItem, ActiveMention } from "@/features/llm/types";
 import type { DiagramIR } from "@/features/llm/ir/ir.types";
 
 const MENTION_TRIGGER_PATTERN = /(?:^|\s)@([^\s@]*)$/;
-const SLASH_PATTERN = /^\/(\w*)$/;
 
 function findMentionTrigger(
   value: string,
@@ -177,7 +176,7 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
       isLoading,
       disabled = false,
       placeholder,
-      onExportIR,
+      onExportIR: _onExportIR,
       onClearHistory,
     },
     ref,

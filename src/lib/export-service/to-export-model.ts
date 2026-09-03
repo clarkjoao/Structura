@@ -379,8 +379,6 @@ function mapEdge(
   const srcAbsLayout = getAbsoluteLayout(conn.sourceId, layoutMap, components);
   const tgtAbsLayout = getAbsoluteLayout(conn.targetId, layoutMap, components);
   const srcH = srcAbsLayout?.height ?? 120;
-  const tgtH = tgtAbsLayout?.height ?? 120;
-  const srcW = srcAbsLayout?.width ?? 200;
   const tgtW = tgtAbsLayout?.width ?? 200;
 
   // Normalise absolute handle Y to [0, 1] relative to source node height
