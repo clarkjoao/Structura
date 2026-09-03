@@ -24,7 +24,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run typecheck && vite build",
+    "build": "npm run typecheck && vite build && npm run copy-404",
+    "copy-404": "node -e \"require('fs').copyFileSync('public/404.html','dist/404.html')\"",
     "build:dev": "vite build --mode development",
     "build:plugins": "node tools/build-with-plugins.mjs",
     "proxy:install": "npm --prefix server install",
