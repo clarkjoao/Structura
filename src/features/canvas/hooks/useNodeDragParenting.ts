@@ -62,6 +62,15 @@ export function useNodeDragParenting({
 }: UseNodeDragParentingParams): UseNodeDragParentingResult {
   const diagramRef = useRef(diagram);
   diagramRef.current = diagram;
+  /**
+   * `nodes` changes on every frame of a drag. Closing over it directly made
+   * `onNodesChange` and `onNodeDragStop` new functions each frame, and React
+   * Flow tracks both — so each frame wrote them into its store and ran the
+   * selector of every node on screen. Both are event handlers, so reading the
+   * latest list from a ref is what the recreated closure did anyway.
+   */
+  const nodesRef = useRef(nodes);
+  nodesRef.current = nodes;
   const [dragTargetPanelId, setDragTargetPanelId] = useState<string | null>(null);
   const [unparentCandidatePanelId, setUnparentCandidatePanelId] = useState<string | null>(null);
   const dragTargetRef = useRef<string | null>(null);
@@ -128,6 +137,7 @@ export function useNodeDragParenting({
       if (change.type !== "position" || !change.position) return;
       const activeDiagram = diagramRef.current;
       if (!activeDiagram) return;
+      const nodes = nodesRef.current;
 
       const r = getCachedCanvasSnapshot(activeDiagram);
       const comp = r.components[change.id];
@@ -228,7 +238,7 @@ export function useNodeDragParenting({
         });
       }
     },
-    [nodes, updateNodeLayout],
+    [updateNodeLayout],
   );
 
   const handleDimensionsChange = useCallback(
@@ -281,6 +291,7 @@ export function useNodeDragParenting({
 
   const onNodeDragStop = useCallback(
     (_: unknown, draggedNode: Node) => {
+      const nodes = nodesRef.current;
       if (dragTargetRafRef.current !== null) {
         cancelAnimationFrame(dragTargetRafRef.current);
         dragTargetRafRef.current = null;
@@ -451,7 +462,7 @@ export function useNodeDragParenting({
 
       commitSelectedNodesDrag();
     },
-    [nodes, commitNodeDrag, batchCommitNodeDrag, updateNodeLayout],
+    [commitNodeDrag, batchCommitNodeDrag, updateNodeLayout],
   );
 
   return { dragTargetPanelId, unparentCandidatePanelId, onNodesChange, onNodeDragStop };

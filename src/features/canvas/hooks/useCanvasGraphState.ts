@@ -170,23 +170,28 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     updateComponent: actions.updateComponent,
   });
 
+  // `params` is a fresh object literal on every Canvas render, so depending on it
+  // rebuilt this callback — and with it `onNodesChange`, which React Flow writes
+  // into its store, notifying every node. The three setters it actually uses are
+  // stable, so name them instead.
+  const { setSelectedEdgeId, setSelectedNodeIds, setSelectedNodeId } = params;
   const onSelectionFromChanges = useCallback(
     (selectedIds: string[]) => {
       // An empty list is a real deselection and must reach the store. It also arrives when React
       // Flow deselects nodes because an edge was clicked, so only reset the edge/menu state when
       // nodes actually got selected.
       if (selectedIds.length > 0) {
-        params.setSelectedEdgeId(null);
+        setSelectedEdgeId(null);
       }
-      params.setSelectedNodeIds((prev) => {
+      setSelectedNodeIds((prev) => {
         if (prev.size === selectedIds.length && selectedIds.every((id) => prev.has(id))) {
           return prev;
         }
         return new Set(selectedIds);
       });
-      params.setSelectedNodeId(selectedIds[0] ?? null);
+      setSelectedNodeId(selectedIds[0] ?? null);
     },
-    [params],
+    [setSelectedEdgeId, setSelectedNodeIds, setSelectedNodeId],
   );
   const visibleTagsKey = useMemo(
     () => (visibleTags ? [...visibleTags].sort().join("\x00") : null),

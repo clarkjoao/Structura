@@ -199,6 +199,17 @@ export function useCanvasInteraction(
     setFocusTitleTrigger((value) => value + 1);
   }, [setFocusTitleTrigger]);
 
+  /**
+   * Wrapped once: an inline arrow here re-creates `onConnectEnd`, which React
+   * Flow tracks, so every Canvas render became a store notification for all
+   * subscribers. `useReactFlow()` is memoised on `viewportInitialized`, so the
+   * instance is stable once the pane is up.
+   */
+  const screenToFlowPosition = useCallback(
+    (pos: { x: number; y: number }) => reactFlowInstance.screenToFlowPosition(pos),
+    [reactFlowInstance],
+  );
+
   const eventHandlers = useCanvasEventHandlers({
     visualState,
     isPlaying: flowState.isPlaying,
@@ -206,7 +217,7 @@ export function useCanvasInteraction(
     isFlowPanelOpen: !!canvasProps.isFlowPanelOpen,
     updateViewport: actions.updateViewport,
     addConnection: actions.addConnection,
-    screenToFlowPosition: (pos) => reactFlowInstance.screenToFlowPosition(pos),
+    screenToFlowPosition,
     onRequestFocusTitle: handleRequestFocusTitle,
   });
 

@@ -1,13 +1,13 @@
 import { create } from "zustand";
 import type { StoreApi } from "zustand";
-import { useShallow } from "zustand/react/shallow";
 import { immer } from "zustand/middleware/immer";
 import { persist } from "zustand/middleware";
 import { defaultStorage, type IStoragePort } from "@/infrastructure/persistence";
 import { recordLocalStorageDiagramSyncSuccess } from "@/infrastructure/persistence/localStorageSyncTimestamp";
 import { useIconStore, type IconStore } from "@/features/icons";
 import type { UserTemplate } from "../model/diagram.types";
-import type { AppState, DiagramSnapshot } from "./store.types";
+import type { AppState, DiagramSnapshot, DiagramStore } from "./store.types";
+import { createStableSlice } from "./stableSlice";
 import {
   historySlice,
   componentsSlice,
@@ -156,188 +156,182 @@ export function deleteUserTemplate(id: string): void {
   useDiagramStore.getState().deleteUserTemplate(id);
 }
 
-export const useDiagramActions = () =>
-  useDiagramStore(
-    useShallow((s) => ({
-      addDiagram: s.addDiagram,
-      addImportedDiagram: s.addImportedDiagram,
-      importDiagram: s.importDiagram,
-      duplicateDiagram: s.duplicateDiagram,
-      openDiagram: s.openDiagram,
-      updateDiagram: s.updateDiagram,
-      updateDiagramDescription: s.updateDiagramDescription,
-      deleteDiagram: s.deleteDiagram,
-      addFolder: s.addFolder,
-      renameFolder: s.renameFolder,
-      deleteFolder: s.deleteFolder,
-      moveDiagram: s.moveDiagram,
-      groupNodes: s.groupNodes,
-      ungroupNodes: s.ungroupNodes,
-      addComponent: s.addComponent,
-      updateComponent: s.updateComponent,
-      removeComponent: s.removeComponent,
-      removeElements: s.removeElements,
-      updateHandleOrder: s.updateHandleOrder,
-      addExternalLink: s.addExternalLink,
-      updateExternalLink: s.updateExternalLink,
-      removeExternalLink: s.removeExternalLink,
-      addConnection: s.addConnection,
-      updateConnection: s.updateConnection,
-      removeConnection: s.removeConnection,
-      updateNodeLayout: s.updateNodeLayout,
-      updateViewport: s.updateViewport,
-      setEdgeControlPoints: s.setEdgeControlPoints,
-      addEdgeControlPoint: s.addEdgeControlPoint,
-      removeEdgeControlPoint: s.removeEdgeControlPoint,
-      resetEdgeControlPoints: s.resetEdgeControlPoints,
-      setEdgeLabelOffset: s.setEdgeLabelOffset,
-      bringToFront: s.bringToFront,
-      sendToBack: s.sendToBack,
-      fitGroupToChildren: s.fitGroupToChildren,
-      applyAutoLayout: s.applyAutoLayout,
-      addService: s.addService,
-      updateService: s.updateService,
-      removeService: s.removeService,
-      linkComponentToService: s.linkComponentToService,
-      linkComponentToDiagram: s.linkComponentToDiagram,
-      setParent: s.setParent,
-      commitNodeDrag: s.commitNodeDrag,
-      batchCommitNodeDrag: s.batchCommitNodeDrag,
-      addFlow: s.addFlow,
-      updateFlow: s.updateFlow,
-      removeFlow: s.removeFlow,
-      updateFlowStep: s.updateFlowStep,
-      beginFlowSession: s.beginFlowSession,
-      commitFlowSession: s.commitFlowSession,
-      cancelFlowSession: s.cancelFlowSession,
-      recordFlowStep: s.recordFlowStep,
-      undoLastRecordedStep: s.undoLastRecordedStep,
-      insertFlowStepAt: s.insertFlowStepAt,
-      moveFlowStep: s.moveFlowStep,
-      removeFlowSteps: s.removeFlowSteps,
-      addFlowBranch: s.addFlowBranch,
-      removeFlowBranch: s.removeFlowBranch,
-      setFlowBranchLabel: s.setFlowBranchLabel,
-      convertStepToCondition: s.convertStepToCondition,
-      insertPattern: s.insertPattern,
-      undo: s.undo,
-      redo: s.redo,
-      copyToClipboard: s.copyToClipboard,
-      pasteFromClipboard: s.pasteFromClipboard,
-      importDrawioResult: s.importDrawioResult,
-      importMermaidSequenceResult: s.importMermaidSequenceResult,
-      clearClipboard: s.clearClipboard,
-      hydrateClipboard: s.hydrateClipboard,
-      addScene: s.addScene,
-      duplicateScene: s.duplicateScene,
-      removeScene: s.removeScene,
-      mergeSceneIntoBase: s.mergeSceneIntoBase,
-      setActiveScene: s.setActiveScene,
-      setCompareScene: s.setCompareScene,
-      renameScene: s.renameScene,
-      addComponentToScene: s.addComponentToScene,
-      removeComponentFromScene: s.removeComponentFromScene,
-      addConnectionToScene: s.addConnectionToScene,
-      removeConnectionFromScene: s.removeConnectionFromScene,
-      updateSceneNodeLayout: s.updateSceneNodeLayout,
-      saveUserTemplate: s.saveUserTemplate,
-      updateUserTemplate: s.updateUserTemplate,
-      deleteUserTemplate: s.deleteUserTemplate,
-    })),
-  );
+const pickFromStore = createStableSlice<DiagramStore>();
+
+const selectDiagramActions = pickFromStore([
+  "addDiagram",
+  "addImportedDiagram",
+  "importDiagram",
+  "duplicateDiagram",
+  "openDiagram",
+  "updateDiagram",
+  "updateDiagramDescription",
+  "deleteDiagram",
+  "addFolder",
+  "renameFolder",
+  "deleteFolder",
+  "moveDiagram",
+  "groupNodes",
+  "ungroupNodes",
+  "addComponent",
+  "updateComponent",
+  "removeComponent",
+  "removeElements",
+  "updateHandleOrder",
+  "addExternalLink",
+  "updateExternalLink",
+  "removeExternalLink",
+  "addConnection",
+  "updateConnection",
+  "removeConnection",
+  "updateNodeLayout",
+  "updateViewport",
+  "setEdgeControlPoints",
+  "addEdgeControlPoint",
+  "removeEdgeControlPoint",
+  "resetEdgeControlPoints",
+  "setEdgeLabelOffset",
+  "bringToFront",
+  "sendToBack",
+  "fitGroupToChildren",
+  "applyAutoLayout",
+  "addService",
+  "updateService",
+  "removeService",
+  "linkComponentToService",
+  "linkComponentToDiagram",
+  "setParent",
+  "commitNodeDrag",
+  "batchCommitNodeDrag",
+  "addFlow",
+  "updateFlow",
+  "removeFlow",
+  "updateFlowStep",
+  "beginFlowSession",
+  "commitFlowSession",
+  "cancelFlowSession",
+  "recordFlowStep",
+  "undoLastRecordedStep",
+  "insertFlowStepAt",
+  "moveFlowStep",
+  "removeFlowSteps",
+  "addFlowBranch",
+  "removeFlowBranch",
+  "setFlowBranchLabel",
+  "convertStepToCondition",
+  "insertPattern",
+  "undo",
+  "redo",
+  "copyToClipboard",
+  "pasteFromClipboard",
+  "importDrawioResult",
+  "importMermaidSequenceResult",
+  "clearClipboard",
+  "hydrateClipboard",
+  "addScene",
+  "duplicateScene",
+  "removeScene",
+  "mergeSceneIntoBase",
+  "setActiveScene",
+  "setCompareScene",
+  "renameScene",
+  "addComponentToScene",
+  "removeComponentFromScene",
+  "addConnectionToScene",
+  "removeConnectionFromScene",
+  "updateSceneNodeLayout",
+  "saveUserTemplate",
+  "updateUserTemplate",
+  "deleteUserTemplate",
+]);
+
+const selectComponentActions = pickFromStore([
+  "addComponent",
+  "updateComponent",
+  "removeComponent",
+  "removeElements",
+  "groupNodes",
+  "ungroupNodes",
+  "updateHandleOrder",
+  "addExternalLink",
+  "updateExternalLink",
+  "removeExternalLink",
+]);
+
+const selectConnectionActions = pickFromStore([
+  "addConnection",
+  "updateConnection",
+  "removeConnection",
+]);
+
+const selectLayoutActions = pickFromStore([
+  "updateNodeLayout",
+  "updateViewport",
+  "setEdgeControlPoints",
+  "addEdgeControlPoint",
+  "removeEdgeControlPoint",
+  "resetEdgeControlPoints",
+  "setEdgeLabelOffset",
+  "bringToFront",
+  "sendToBack",
+  "fitGroupToChildren",
+  "applyAutoLayout",
+  "commitNodeDrag",
+  "batchCommitNodeDrag",
+  "setParent",
+]);
+
+const selectSceneActions = pickFromStore([
+  "addScene",
+  "duplicateScene",
+  "removeScene",
+  "mergeSceneIntoBase",
+  "setActiveScene",
+  "setCompareScene",
+  "renameScene",
+  "addComponentToScene",
+  "removeComponentFromScene",
+  "addConnectionToScene",
+  "removeConnectionFromScene",
+  "updateSceneNodeLayout",
+]);
+
+const selectClipboardActions = pickFromStore([
+  "copyToClipboard",
+  "pasteFromClipboard",
+  "clearClipboard",
+  "hydrateClipboard",
+]);
+
+const selectIconActions = pickFromStore([
+  "addIcon",
+  "removeIcon",
+  "updateIconName",
+  "incrementIconUsage",
+  "decrementIconUsage",
+]);
+
+const selectCatalogActions = pickFromStore([
+  "addService",
+  "updateService",
+  "removeService",
+  "linkComponentToService",
+]);
+
+export const useDiagramActions = () => useDiagramStore(selectDiagramActions);
 
 // --- Domain-scoped action hooks ---
 
-export const useComponentActions = () =>
-  useDiagramStore(
-    useShallow((s) => ({
-      addComponent: s.addComponent,
-      updateComponent: s.updateComponent,
-      removeComponent: s.removeComponent,
-      removeElements: s.removeElements,
-      groupNodes: s.groupNodes,
-      ungroupNodes: s.ungroupNodes,
-      updateHandleOrder: s.updateHandleOrder,
-      addExternalLink: s.addExternalLink,
-      updateExternalLink: s.updateExternalLink,
-      removeExternalLink: s.removeExternalLink,
-    })),
-  );
+export const useComponentActions = () => useDiagramStore(selectComponentActions);
 
-export const useConnectionActions = () =>
-  useDiagramStore(
-    useShallow((s) => ({
-      addConnection: s.addConnection,
-      updateConnection: s.updateConnection,
-      removeConnection: s.removeConnection,
-    })),
-  );
+export const useConnectionActions = () => useDiagramStore(selectConnectionActions);
 
-export const useLayoutActions = () =>
-  useDiagramStore(
-    useShallow((s) => ({
-      updateNodeLayout: s.updateNodeLayout,
-      updateViewport: s.updateViewport,
-      setEdgeControlPoints: s.setEdgeControlPoints,
-      addEdgeControlPoint: s.addEdgeControlPoint,
-      removeEdgeControlPoint: s.removeEdgeControlPoint,
-      resetEdgeControlPoints: s.resetEdgeControlPoints,
-      setEdgeLabelOffset: s.setEdgeLabelOffset,
-      bringToFront: s.bringToFront,
-      sendToBack: s.sendToBack,
-      fitGroupToChildren: s.fitGroupToChildren,
-      applyAutoLayout: s.applyAutoLayout,
-      commitNodeDrag: s.commitNodeDrag,
-      batchCommitNodeDrag: s.batchCommitNodeDrag,
-      setParent: s.setParent,
-    })),
-  );
+export const useLayoutActions = () => useDiagramStore(selectLayoutActions);
 
-export const useSceneActions = () =>
-  useDiagramStore(
-    useShallow((s) => ({
-      addScene: s.addScene,
-      duplicateScene: s.duplicateScene,
-      removeScene: s.removeScene,
-      mergeSceneIntoBase: s.mergeSceneIntoBase,
-      setActiveScene: s.setActiveScene,
-      setCompareScene: s.setCompareScene,
-      renameScene: s.renameScene,
-      addComponentToScene: s.addComponentToScene,
-      removeComponentFromScene: s.removeComponentFromScene,
-      addConnectionToScene: s.addConnectionToScene,
-      removeConnectionFromScene: s.removeConnectionFromScene,
-      updateSceneNodeLayout: s.updateSceneNodeLayout,
-    })),
-  );
+export const useSceneActions = () => useDiagramStore(selectSceneActions);
 
-export const useClipboardActions = () =>
-  useDiagramStore(
-    useShallow((s) => ({
-      copyToClipboard: s.copyToClipboard,
-      pasteFromClipboard: s.pasteFromClipboard,
-      clearClipboard: s.clearClipboard,
-      hydrateClipboard: s.hydrateClipboard,
-    })),
-  );
+export const useClipboardActions = () => useDiagramStore(selectClipboardActions);
 
-export const useIconActions = () =>
-  useDiagramStore(
-    useShallow((s) => ({
-      addIcon: s.addIcon,
-      removeIcon: s.removeIcon,
-      updateIconName: s.updateIconName,
-      incrementIconUsage: s.incrementIconUsage,
-      decrementIconUsage: s.decrementIconUsage,
-    })),
-  );
+export const useIconActions = () => useDiagramStore(selectIconActions);
 
-export const useCatalogActions = () =>
-  useDiagramStore(
-    useShallow((s) => ({
-      addService: s.addService,
-      updateService: s.updateService,
-      removeService: s.removeService,
-      linkComponentToService: s.linkComponentToService,
-    })),
-  );
+export const useCatalogActions = () => useDiagramStore(selectCatalogActions);

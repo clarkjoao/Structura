@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, type RefObject } from "react";
 import { useDiagramStore } from "@/features/diagram";
+import { snapshotChecksum } from "../utils/snapshotChecksum";
 import type { CollabPatch, CollabSnapshot } from "./useCollab";
 
 export const remoteLayoutUpdates = new Set<string>();
@@ -27,10 +28,78 @@ interface UseCollabStoreSyncParams {
 interface UseCollabStoreSyncReturn {
   getSnapshot: () => CollabSnapshot | null;
   onPatch: (patch: CollabPatch) => void;
+  /** Fingerprint of the state we believe the room has, for drift detection. */
+  getSyncedChecksum: () => string;
+  /** Adopt the store as the new baseline, after authoritative state replaced it. */
+  resetBaseline: () => void;
 }
 
 function hasOwn<T extends object>(obj: T, key: keyof T): boolean {
   return Object.prototype.hasOwnProperty.call(obj, key);
+}
+
+/**
+ * Merge an incoming per-entity delta into a collection, mirroring the server's
+ * applyPatch: entries are merged one level and a `null` entry removes that
+ * entity. Returns the original reference when there is nothing to apply, so
+ * untouched collections keep their identity and don't invalidate memoisation.
+ */
+function mergeCollection<T extends Record<string, unknown>>(
+  existing: T | undefined,
+  delta: unknown,
+): T {
+  const base = (existing ?? {}) as T;
+  if (!delta || typeof delta !== "object" || Array.isArray(delta)) return base;
+
+  const entries = Object.entries(delta as Record<string, unknown>);
+  if (entries.length === 0) return base;
+
+  const next: Record<string, unknown> = { ...base };
+  for (const [entityId, value] of entries) {
+    if (value === null) {
+      delete next[entityId];
+    } else {
+      next[entityId] = value;
+    }
+  }
+  return next as T;
+}
+
+/**
+ * Advance the "what peers already know" baseline by one remote patch.
+ *
+ * Mirrors the merge in `onPatch`, reusing the patch's own value objects so the
+ * next diff sees them as unchanged. Anything the patch does not mention keeps
+ * its reference, which is what lets a local edit that is still waiting for its
+ * frame survive and be broadcast.
+ */
+function applyPatchToTracked(
+  previous: TrackedDiagramState,
+  patch: CollabPatch,
+): TrackedDiagramState {
+  return {
+    diagramName:
+      hasOwn(patch, "diagramName") && typeof patch.diagramName === "string"
+        ? patch.diagramName
+        : previous.diagramName,
+    domain: hasOwn(patch, "domain") ? (patch.domain as string | undefined) : previous.domain,
+    description: hasOwn(patch, "description")
+      ? (patch.description as string | undefined)
+      : previous.description,
+    components: mergeCollection(previous.components, patch.components),
+    connections: mergeCollection(previous.connections, patch.connections),
+    flows: mergeCollection(previous.flows, patch.flows),
+    iconLibrary: mergeCollection(previous.iconLibrary, patch.iconLibrary),
+    nodeLayouts: mergeCollection(previous.nodeLayouts, patch.nodeLayouts),
+    edgeLayouts: mergeCollection(previous.edgeLayouts, patch.edgeLayouts),
+    scenes: mergeCollection(previous.scenes, patch.scenes),
+    activeSceneId: hasOwn(patch, "activeSceneId")
+      ? (patch.activeSceneId as string | null)
+      : previous.activeSceneId,
+    compareSceneId: hasOwn(patch, "compareSceneId")
+      ? (patch.compareSceneId as string | null)
+      : previous.compareSceneId,
+  };
 }
 
 function pickTrackedState(diagramId: string | null): TrackedDiagramState | null {
@@ -55,33 +124,72 @@ function pickTrackedState(diagramId: string | null): TrackedDiagramState | null 
   };
 }
 
-function diffPatch(
+/** Keyed collections diffed per entity. Everything else is sent whole. */
+const ENTITY_COLLECTIONS = [
+  "components",
+  "connections",
+  "flows",
+  "iconLibrary",
+  "nodeLayouts",
+  "edgeLayouts",
+  "scenes",
+] as const satisfies ReadonlyArray<keyof TrackedDiagramState>;
+
+/**
+ * Per-entity delta between two versions of a keyed collection, or null when
+ * nothing moved.
+ *
+ * Comparison is by reference: the diagram store updates immutably, so an
+ * untouched entity keeps its identity while a changed one does not. That makes
+ * this O(n) pointer comparisons rather than a deep diff.
+ *
+ * A `null` value marks a tombstone — the entity was removed.
+ */
+export function diffCollection(
+  previous: Record<string, unknown>,
+  current: Record<string, unknown>,
+): Record<string, unknown> | null {
+  if (previous === current) return null;
+
+  const delta: Record<string, unknown> = {};
+  let changed = false;
+
+  for (const id of Object.keys(current)) {
+    if (previous[id] !== current[id]) {
+      delta[id] = current[id];
+      changed = true;
+    }
+  }
+
+  for (const id of Object.keys(previous)) {
+    if (!Object.prototype.hasOwnProperty.call(current, id)) {
+      delta[id] = null;
+      changed = true;
+    }
+  }
+
+  return changed ? delta : null;
+}
+
+export function diffPatch(
   previous: TrackedDiagramState,
   current: TrackedDiagramState,
 ): CollabPatch | null {
   const patch: CollabPatch = {};
 
-  if (previous.components !== current.components) {
-    patch.components = current.components;
+  // Collections ship only the entities that actually changed. Sending the whole
+  // map made concurrent edits to different entities overwrite each other, and
+  // put the entire diagram on the wire for every drag.
+  for (const key of ENTITY_COLLECTIONS) {
+    const delta = diffCollection(
+      previous[key] as Record<string, unknown>,
+      current[key] as Record<string, unknown>,
+    );
+    if (delta) {
+      patch[key] = delta;
+    }
   }
-  if (previous.connections !== current.connections) {
-    patch.connections = current.connections;
-  }
-  if (previous.flows !== current.flows) {
-    patch.flows = current.flows;
-  }
-  if (previous.iconLibrary !== current.iconLibrary) {
-    patch.iconLibrary = current.iconLibrary;
-  }
-  if (previous.nodeLayouts !== current.nodeLayouts) {
-    patch.nodeLayouts = current.nodeLayouts;
-  }
-  if (previous.edgeLayouts !== current.edgeLayouts) {
-    patch.edgeLayouts = current.edgeLayouts;
-  }
-  if (previous.scenes !== current.scenes) {
-    patch.scenes = current.scenes;
-  }
+
   if (previous.activeSceneId !== current.activeSceneId) {
     patch.activeSceneId = current.activeSceneId;
   }
@@ -105,7 +213,8 @@ export function useCollabStoreSync({
   diagramId,
   sendPatchRef,
 }: UseCollabStoreSyncParams): UseCollabStoreSyncReturn {
-  const isApplyingRemoteRef = useRef(false);
+  /** What we believe every peer already has. The diff is taken against this. */
+  const baselineRef = useRef<TrackedDiagramState | null>(null);
 
   const getSnapshot = useCallback((): CollabSnapshot | null => {
     if (!diagramId) return null;
@@ -136,73 +245,62 @@ export function useCollabStoreSync({
     (patch: CollabPatch) => {
       if (!diagramId) return;
 
-      isApplyingRemoteRef.current = true;
-      try {
-        useDiagramStore.setState((previous) => {
-          const diagram = previous.diagrams[diagramId];
-          if (!diagram) return previous;
+      useDiagramStore.setState((previous) => {
+        const diagram = previous.diagrams[diagramId];
+        if (!diagram) return previous;
 
-          if (patch.nodeLayouts) {
-            const nextLayouts = patch.nodeLayouts as Record<string, unknown>;
-            for (const [id, nextLayout] of Object.entries(nextLayouts)) {
-              if (diagram.nodeLayouts[id] !== nextLayout) {
-                remoteLayoutUpdates.add(id);
-              }
+        if (patch.nodeLayouts) {
+          const nextLayouts = patch.nodeLayouts as Record<string, unknown>;
+          for (const [id, nextLayout] of Object.entries(nextLayouts)) {
+            if (diagram.nodeLayouts[id] !== nextLayout) {
+              remoteLayoutUpdates.add(id);
             }
           }
+        }
 
-          const now = Date.now();
+        const now = Date.now();
 
-          const nextDiagram = {
-            ...diagram,
-            name:
-              hasOwn(patch, "diagramName") && typeof patch.diagramName === "string"
-                ? patch.diagramName
-                : diagram.name,
-            domain: hasOwn(patch, "domain") ? patch.domain : diagram.domain,
-            description: hasOwn(patch, "description") ? patch.description : diagram.description,
-            snapshot: {
-              ...diagram.snapshot,
-              components: patch.components
-                ? (patch.components as typeof diagram.snapshot.components)
-                : diagram.snapshot.components,
-              connections: patch.connections
-                ? (patch.connections as typeof diagram.snapshot.connections)
-                : diagram.snapshot.connections,
-              flows: patch.flows
-                ? (patch.flows as typeof diagram.snapshot.flows)
-                : diagram.snapshot.flows,
-              iconLibrary: patch.iconLibrary
-                ? (patch.iconLibrary as typeof diagram.snapshot.iconLibrary)
-                : diagram.snapshot.iconLibrary,
-            },
-            nodeLayouts: patch.nodeLayouts
-              ? (patch.nodeLayouts as typeof diagram.nodeLayouts)
-              : diagram.nodeLayouts,
-            edgeLayouts: patch.edgeLayouts
-              ? (patch.edgeLayouts as typeof diagram.edgeLayouts)
-              : diagram.edgeLayouts,
-            scenes: patch.scenes ? (patch.scenes as typeof diagram.scenes) : diagram.scenes,
-            activeSceneId: hasOwn(patch, "activeSceneId")
-              ? patch.activeSceneId
-              : diagram.activeSceneId,
-            compareSceneId: hasOwn(patch, "compareSceneId")
-              ? patch.compareSceneId
-              : diagram.compareSceneId,
-            updatedAt: now,
-          };
+        const nextDiagram = {
+          ...diagram,
+          name:
+            hasOwn(patch, "diagramName") && typeof patch.diagramName === "string"
+              ? patch.diagramName
+              : diagram.name,
+          domain: hasOwn(patch, "domain") ? patch.domain : diagram.domain,
+          description: hasOwn(patch, "description") ? patch.description : diagram.description,
+          snapshot: {
+            ...diagram.snapshot,
+            components: mergeCollection(diagram.snapshot.components, patch.components),
+            connections: mergeCollection(diagram.snapshot.connections, patch.connections),
+            flows: mergeCollection(diagram.snapshot.flows, patch.flows),
+            iconLibrary: mergeCollection(diagram.snapshot.iconLibrary, patch.iconLibrary),
+          },
+          nodeLayouts: mergeCollection(diagram.nodeLayouts, patch.nodeLayouts),
+          edgeLayouts: mergeCollection(diagram.edgeLayouts, patch.edgeLayouts),
+          scenes: mergeCollection(diagram.scenes, patch.scenes),
+          activeSceneId: hasOwn(patch, "activeSceneId")
+            ? patch.activeSceneId
+            : diagram.activeSceneId,
+          compareSceneId: hasOwn(patch, "compareSceneId")
+            ? patch.compareSceneId
+            : diagram.compareSceneId,
+          updatedAt: now,
+        };
 
-          return {
-            ...previous,
-            diagrams: {
-              ...previous.diagrams,
-              [diagramId]: nextDiagram,
-            },
-          };
-        });
-      } finally {
-        isApplyingRemoteRef.current = false;
-      }
+        return {
+          ...previous,
+          diagrams: {
+            ...previous.diagrams,
+            [diagramId]: nextDiagram,
+          },
+        };
+      });
+
+      // The room now knows this patch, so the baseline moves by exactly it —
+      // never by the whole store, which would absorb unsent local edits.
+      baselineRef.current = baselineRef.current
+        ? applyPatchToTracked(baselineRef.current, patch)
+        : pickTrackedState(diagramId);
     },
     [diagramId],
   );
@@ -211,17 +309,18 @@ export function useCollabStoreSync({
     if (!diagramId) return;
 
     let frame: number | null = null;
-    let previousState = pickTrackedState(diagramId);
+    baselineRef.current = pickTrackedState(diagramId);
 
     const flush = () => {
       frame = null;
-      if (isApplyingRemoteRef.current || !previousState) return;
+      const previousState = baselineRef.current;
+      if (!previousState) return;
 
       const currentState = pickTrackedState(diagramId);
       if (!currentState) return;
 
       const patch = diffPatch(previousState, currentState);
-      previousState = currentState;
+      baselineRef.current = currentState;
 
       if (patch) {
         sendPatchRef.current?.(patch);
@@ -235,11 +334,11 @@ export function useCollabStoreSync({
       frame = requestAnimationFrame(flush);
     };
 
+    // Every store change is diffed against the baseline, including ones that
+    // land while a remote patch is being applied. The baseline already accounts
+    // for the patch, so an applied patch diffs to nothing and is not echoed,
+    // while a local edit waiting for its frame still gets sent.
     const unsubscribe = useDiagramStore.subscribe((diagramStoreState) => {
-      if (isApplyingRemoteRef.current) {
-        previousState = pickTrackedState(diagramId);
-        return;
-      }
       if (!diagramStoreState.diagrams[diagramId]) return;
       scheduleFlush();
     });
@@ -252,8 +351,25 @@ export function useCollabStoreSync({
     };
   }, [diagramId, sendPatchRef]);
 
+  // Hash the baseline rather than the live store: an edit the user just made
+  // and that has not been broadcast yet is a difference the room is *supposed*
+  // to have, and comparing it would report drift on every drag.
+  const getSyncedChecksum = useCallback(
+    () => snapshotChecksum(baselineRef.current as Record<string, unknown> | null),
+    [],
+  );
+
+  // A snapshot replaces the store wholesale, so the baseline has to follow it.
+  // Left alone, the next diff would treat the authoritative state as local work
+  // and broadcast the client's old view straight back to the room.
+  const resetBaseline = useCallback(() => {
+    baselineRef.current = pickTrackedState(diagramId);
+  }, [diagramId]);
+
   return {
     getSnapshot,
     onPatch,
+    getSyncedChecksum,
+    resetBaseline,
   };
 }

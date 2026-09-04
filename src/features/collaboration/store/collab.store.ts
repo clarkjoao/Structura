@@ -7,12 +7,17 @@ export interface CollabStoreState {
   isReady: boolean;
   sessionClosedByHost: boolean;
   hostDisconnected: boolean;
+  roomFullReason: string | null;
+  participantCount: number;
+  maxParticipants: number;
 
   setSession: (session: CollabSession | null) => void;
   setStatus: (status: CollabStatus) => void;
   setIsReady: (value: boolean) => void;
   setSessionClosedByHost: (value: boolean) => void;
   setHostDisconnected: (value: boolean) => void;
+  setRoomFullReason: (reason: string | null) => void;
+  setParticipantCount: (count: number, max: number) => void;
   upsertPeer: (peer: PeerState) => void;
   removePeer: (clientId: string) => void;
   applyPeerCursorPayload: (input: {
@@ -30,6 +35,9 @@ export const useCollabStore = create<CollabStoreState>((set) => ({
   isReady: false,
   sessionClosedByHost: false,
   hostDisconnected: false,
+  roomFullReason: null,
+  participantCount: 0,
+  maxParticipants: 15,
 
   setSession: (session) =>
     set(() => ({
@@ -48,6 +56,10 @@ export const useCollabStore = create<CollabStoreState>((set) => ({
   setSessionClosedByHost: (sessionClosedByHost) => set({ sessionClosedByHost }),
 
   setHostDisconnected: (hostDisconnected) => set({ hostDisconnected }),
+
+  setRoomFullReason: (roomFullReason) => set({ roomFullReason }),
+
+  setParticipantCount: (count, max) => set({ participantCount: count, maxParticipants: max }),
 
   upsertPeer: (peer) =>
     set((state) => {

@@ -1,6 +1,7 @@
 import type { Server as HttpServer } from "http";
 import { WebSocketServer, type WebSocket } from "ws";
 import { WS_PATH } from "./config.js";
+import { snapshotChecksum } from "./snapshotChecksum.js";
 
 interface User {
   id: string;
@@ -14,7 +15,40 @@ interface Room {
   snapshot: Record<string, unknown>;
   guests: Map<string, { ws: WebSocket; user: User }>;
   reconnectTimer?: ReturnType<typeof setTimeout>;
+  version: number; // Monotonically increasing operation counter
+  snapshotAtVersion: number; // Version when last snapshot was taken
+  checksumAtVersion: number; // Version of the last fingerprint broadcast
+  operationLog: Array<{
+    version: number;
+    operationId: string;
+    clientId: string;
+    patch: Record<string, unknown>;
+    timestamp: number;
+    bytes: number;
+  }>;
+  /** collection -> entityId -> version at which it was deleted. */
+  tombstones: Map<string, Map<string, number>>;
+  /** Approximate bytes retained by operationLog, kept in step with it. */
+  operationLogBytes: number;
+  /** Newest cursor per client, awaiting the next coalesced flush. */
+  pendingCursors: Map<string, CursorEntry>;
+  cursorTimer: ReturnType<typeof setTimeout> | null;
+  /** Publishes a fingerprint once the room falls quiet. */
+  checksumTimer: ReturnType<typeof setTimeout> | null;
 }
+
+interface CursorEntry {
+  clientId: string;
+  user: User;
+  cursor: { x: number; y: number } | null;
+  activeElementId: string | null;
+}
+
+const MAX_OPERATION_LOG_SIZE = 1000; // Keep at most this many operations for resync
+// ...and at most this many bytes of them. Patches carry whole collections, so
+// a busy room on a large diagram can hold hundreds of MB under the count cap
+// alone; the byte budget is what actually bounds the relay's heap.
+const MAX_OPERATION_LOG_BYTES = 2 * 1024 * 1024;
 
 type JsonMessage = Record<string, unknown>;
 
@@ -30,19 +64,94 @@ interface SocketState {
 
 const HEARTBEAT_INTERVAL_MS = 30_000;
 const HEARTBEAT_TIMEOUT_MS = 10_000;
-const MAX_ROOM_PEERS = 5; // 1 host + 4 guests
+const MAX_PARTICIPANTS = 15; // 1 host + 14 guests
+
+/**
+ * Wire protocol version. v2 made patches sparse and per entity — a change that
+ * is invisible in the message shape, so a v1 client would read "these entities
+ * changed" as "the collection is now only these" and wipe the user's diagram.
+ * Joins that do not declare v2 are refused rather than silently corrupted.
+ */
+const COLLAB_PROTOCOL_VERSION = 2;
+
+/** Reject a join whose client speaks a different protocol version. */
+function hasProtocolMismatch(ws: WebSocket, message: JsonMessage): boolean {
+  const declared = typeof message.protocol === "number" ? message.protocol : 1;
+  if (declared === COLLAB_PROTOCOL_VERSION) return false;
+
+  sendError(
+    ws,
+    "protocol_mismatch",
+    `Unsupported protocol version ${declared}; server speaks ${COLLAB_PROTOCOL_VERSION}. Reload to update.`,
+    { close: true },
+  );
+  return true;
+}
+
+// Snapshot configuration
+const SNAPSHOT_INTERVAL_OPS = 100; // Take snapshot every N operations
+const CHECKSUM_INTERVAL_OPS = 25; // Fingerprint the room this often, so drift is caught early
+const CHECKSUM_IDLE_MS = 2000; // ...and once more after the room falls quiet
+const SNAPSHOT_INTERVAL_MS = 5 * 60 * 1000; // Or every 5 minutes (whichever comes first)
+
+// Security and abuse prevention
+const MAX_PAYLOAD_SIZE_BYTES = 100 * 1024; // 100KB max payload
+const MAX_OPS_PER_SECOND = 50; // Max operations per second per client
+const MAX_BATCH_SIZE = 10; // Max patches in a batch
+const RATE_WINDOW_MS = 1000; // Rate limit window
+const LOG_THROTTLE_MS = 1000; // Collapse repeated hot-path warnings
+const MAX_BUFFERED_BYTES = 1024 * 1024; // Drop lossy frames past 1MB queued per socket
+const CURSOR_FLUSH_MS = 50; // Coalesce cursor fan-out to 20Hz per room
 
 const rooms = new Map<string, Room>();
 const socketStates = new Map<WebSocket, SocketState>();
+const snapshotTimers = new Map<string, ReturnType<typeof setInterval>>();
+
+// Rate limiting: fixed-window counter per room+client (see rateKeyFor).
+// A counter avoids the per-op array allocation a sliding window required.
+const clientOpTimestamps = new Map<string, { windowStart: number; count: number }>();
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/**
+ * Byte length of an inbound frame without copying it.
+ *
+ * ws hands us a Buffer (or a list of them) whose .length is already the byte
+ * count, so the size gate costs nothing. Measuring after String(raw) instead
+ * would copy the whole frame twice — once to a JS string, once to a byte
+ * array — on every message, which dominates the relay's CPU under load.
+ */
+function rawByteLength(raw: WebSocket.RawData): number {
+  if (typeof raw === "string") return Buffer.byteLength(raw, "utf8");
+  if (Array.isArray(raw)) {
+    let total = 0;
+    for (const chunk of raw) total += chunk.length;
+    return total;
+  }
+  return (raw as Buffer | ArrayBuffer).byteLength ?? (raw as Buffer).length;
+}
+
+/**
+ * Inbound frame size per parsed message, so the operation log can budget by
+ * bytes without re-serialising the patch it already received.
+ */
+const frameSizes = new WeakMap<JsonMessage, number>();
+
 function parseMessage(raw: WebSocket.RawData): JsonMessage | null {
+  // Validate payload size before materialising the frame as a string.
+  const sizeBytes = rawByteLength(raw);
+  if (sizeBytes > MAX_PAYLOAD_SIZE_BYTES) {
+    logThrottled("payload_too_large", `payload too large: ${sizeBytes} bytes`);
+    return null;
+  }
+
   try {
     const parsed = JSON.parse(String(raw));
-    return isRecord(parsed) ? parsed : null;
+    if (!isRecord(parsed)) return null;
+    frameSizes.set(parsed, sizeBytes);
+    return parsed;
   } catch {
     return null;
   }
@@ -103,9 +212,85 @@ function parseCursor(value: unknown): { x: number; y: number } | null | undefine
   return { x: value.x, y: value.y };
 }
 
+/**
+ * Check if a client is rate limited.
+ * Returns true if the client should be rate limited.
+ */
+function isRateLimited(rateKey: string): boolean {
+  const now = Date.now();
+
+  let bucket = clientOpTimestamps.get(rateKey);
+  if (!bucket || now - bucket.windowStart >= RATE_WINDOW_MS) {
+    bucket = { windowStart: now, count: 0 };
+    clientOpTimestamps.set(rateKey, bucket);
+  }
+
+  if (bucket.count >= MAX_OPS_PER_SECOND) {
+    logThrottled("rate_limited", `rate limited: key=${rateKey}`);
+    return true;
+  }
+
+  bucket.count++;
+  return false;
+}
+
+/**
+ * Rate-limit key. Scoped by room so a clientId reused across rooms — the same
+ * person in two sessions, or a guest-id collision — cannot consume another
+ * room's budget or have its own cleared by an unrelated disconnect.
+ */
+function rateKeyFor(roomId: string, clientId: string): string {
+  return `${roomId} ${clientId}`;
+}
+
+/**
+ * Clear rate limit data for a client.
+ */
+function clearRateLimitData(rateKey: string): void {
+  clientOpTimestamps.delete(rateKey);
+}
+
+/**
+ * Per-message logging is a synchronous write on every hot-path event, which
+ * is itself a bottleneck under load. Collapse repeats into one line per key
+ * per interval, carrying the suppressed count.
+ */
+const logCounters = new Map<string, { count: number; lastLoggedAt: number }>();
+
+function logThrottled(key: string, message: string): void {
+  const now = Date.now();
+  let entry = logCounters.get(key);
+  if (!entry) {
+    entry = { count: 0, lastLoggedAt: 0 };
+    logCounters.set(key, entry);
+  }
+  entry.count++;
+  if (now - entry.lastLoggedAt < LOG_THROTTLE_MS) return;
+  const suppressed = entry.count - 1;
+  entry.lastLoggedAt = now;
+  entry.count = 0;
+  console.warn(`[collab] ${message}${suppressed > 0 ? ` (+${suppressed} suppressed)` : ""}`);
+}
+
 function safeSend(ws: WebSocket, payload: Record<string, unknown>): void {
   if (ws.readyState !== ws.OPEN) return;
   ws.send(JSON.stringify(payload));
+}
+
+/**
+ * Send an already-serialised frame. Lets a broadcast stringify once for the
+ * whole room instead of once per recipient.
+ */
+function sendRawFrame(ws: WebSocket, data: string, options: { lossy?: boolean } = {}): void {
+  if (ws.readyState !== ws.OPEN) return;
+  // Backpressure: a client that cannot drain must not grow the server's heap
+  // without bound. Cursor traffic is superseded by the next frame anyway, so
+  // drop it rather than queue it; state-bearing frames are always queued.
+  if (options.lossy && ws.bufferedAmount > MAX_BUFFERED_BYTES) {
+    logThrottled("slow_client", `dropping lossy frame for slow client (${ws.bufferedAmount}B buffered)`);
+    return;
+  }
+  ws.send(data);
 }
 
 function sendError(
@@ -167,6 +352,20 @@ function closeRoom(roomId: string, reason: "session:closed" | "host:disconnected
     }
   }
 
+  // Stop the periodic snapshot timer
+  stopSnapshotTimer(roomId);
+
+  // Cancel any pending cursor flush so a closed room leaves no live timer
+  if (room.cursorTimer) {
+    clearTimeout(room.cursorTimer);
+    room.cursorTimer = null;
+  }
+  if (room.checksumTimer) {
+    clearTimeout(room.checksumTimer);
+    room.checksumTimer = null;
+  }
+  room.pendingCursors.clear();
+
   console.log(`[collab] room closed: room=${roomId}, reason=${reason}`);
 }
 
@@ -186,21 +385,26 @@ function roomPeerCount(room: Room): number {
 function broadcastToRoom(
   room: Room,
   payload: Record<string, unknown>,
-  options: { exceptClientId?: string } = {},
+  options: { exceptClientId?: string; lossy?: boolean } = {},
 ): void {
-  const { exceptClientId } = options;
+  const { exceptClientId, lossy } = options;
+
+  // Serialise once for the whole room. Doing it per recipient meant a 15-seat
+  // room paid 14 JSON.stringify calls for one identical frame — with
+  // whole-collection patches that was the relay's dominant cost.
+  const data = JSON.stringify(payload);
 
   if (
     exceptClientId !== room.hostUser.id &&
     room.hostWs &&
     room.hostWs.readyState === room.hostWs.OPEN
   ) {
-    safeSend(room.hostWs, payload);
+    sendRawFrame(room.hostWs, data, { lossy });
   }
 
   for (const [clientId, guest] of room.guests.entries()) {
     if (clientId === exceptClientId) continue;
-    safeSend(guest.ws, payload);
+    sendRawFrame(guest.ws, data, { lossy });
   }
 }
 
@@ -213,13 +417,174 @@ function ensureUniqueGuestId(room: Room, desiredId: string): string {
   return candidate;
 }
 
-function applyPatch(snapshot: Record<string, unknown>, patch: Record<string, unknown>): void {
-  for (const [key, value] of Object.entries(patch)) {
-    snapshot[key] = value;
+/**
+ * Apply a patch to a room snapshot.
+ *
+ * Patches are sparse and per entity. The merge rule is structural rather than
+ * a hard-coded list of collection names, so adding a collection to the domain
+ * needs no change here:
+ *
+ *   - an object value is an entity collection → merge one level, and a `null`
+ *     entry is a tombstone that removes that entity
+ *   - anything else is a scalar → assign
+ *
+ * The invariant this relies on: every object-valued key at the top level of a
+ * patch is a keyed collection of entities. Whole-state transfers do not come
+ * through here — they go via the snapshot path (host:join / session:init /
+ * SYNC_SNAPSHOT), which replaces outright.
+ */
+/**
+ * Record that an entity was deleted at the room's current version, so a peer
+ * that had not yet seen the delete cannot resurrect it.
+ */
+function recordTombstone(room: Room, collection: string, entityId: string): void {
+  let byEntity = room.tombstones.get(collection);
+  if (!byEntity) {
+    byEntity = new Map();
+    room.tombstones.set(collection, byEntity);
+  }
+  byEntity.set(entityId, room.version);
+}
+
+/**
+ * Drop tombstones a resync can no longer need.
+ *
+ * A client behind the last snapshot is served the full snapshot rather than a
+ * replay, so deletes older than that can never be contradicted by an in-flight
+ * patch. Called when a snapshot is taken.
+ */
+function pruneTombstones(room: Room): void {
+  for (const [collection, byEntity] of room.tombstones.entries()) {
+    for (const [entityId, deletedAt] of byEntity.entries()) {
+      if (deletedAt <= room.snapshotAtVersion) byEntity.delete(entityId);
+    }
+    if (byEntity.size === 0) room.tombstones.delete(collection);
   }
 }
 
+/**
+ * Apply a patch to a room snapshot and return the portion that actually took
+ * effect.
+ *
+ * Patches are sparse and per entity. The merge rule is structural rather than
+ * a hard-coded list of collection names, so adding a collection to the domain
+ * needs no change here:
+ *
+ *   - an object value is an entity collection → merge one level, and a `null`
+ *     entry is a tombstone that removes that entity
+ *   - anything else is a scalar → assign
+ *
+ * The invariant this relies on: every object-valued key at the top level of a
+ * patch is a keyed collection of entities. Whole-state transfers do not come
+ * through here — they go via the snapshot path (host:join / session:init /
+ * SYNC_SNAPSHOT), which replaces outright.
+ *
+ * Remove wins over a concurrent edit: a write to an entity deleted at a version
+ * the sender had not yet seen is dropped, otherwise a peer mid-drag would
+ * resurrect a node someone else deleted — and, because a delete spans several
+ * collections while the in-flight edit usually touches one, resurrect it as an
+ * orphan. A sender that already knew about the delete is deliberately
+ * re-creating the entity, so its write is honoured and the tombstone cleared.
+ *
+ * The caller must broadcast and log the returned patch rather than the one it
+ * received: peers that applied a suppressed write would diverge from the
+ * server's own snapshot.
+ */
+function applyPatch(
+  room: Room,
+  patch: Record<string, unknown>,
+  senderKnownVersion: number | null,
+): Record<string, unknown> {
+  const snapshot = room.snapshot;
+  const effective: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(patch)) {
+    if (!isRecord(value)) {
+      snapshot[key] = value;
+      effective[key] = value;
+      continue;
+    }
+
+    const existing = snapshot[key];
+    const target: Record<string, unknown> = isRecord(existing) ? { ...existing } : {};
+    const tombstones = room.tombstones.get(key);
+    const appliedEntities: Record<string, unknown> = {};
+    let appliedAny = false;
+
+    for (const [entityId, entityValue] of Object.entries(value)) {
+      if (entityValue === null) {
+        delete target[entityId];
+        recordTombstone(room, key, entityId);
+        appliedEntities[entityId] = null;
+        appliedAny = true;
+        continue;
+      }
+
+      const deletedAt = tombstones?.get(entityId);
+      if (deletedAt !== undefined && senderKnownVersion !== null && senderKnownVersion < deletedAt) {
+        logThrottled("resurrect_blocked", `blocked resurrection of ${key}/${entityId}`);
+        continue;
+      }
+      if (deletedAt !== undefined) tombstones?.delete(entityId);
+
+      target[entityId] = entityValue;
+      appliedEntities[entityId] = entityValue;
+      appliedAny = true;
+    }
+
+    if (appliedAny) {
+      snapshot[key] = target;
+      effective[key] = appliedEntities;
+    }
+  }
+
+  return effective;
+}
+
+/**
+ * Operations needed to bring a client from `fromVersion` up to date, or null
+ * when the log cannot cover that span and a full snapshot is required.
+ *
+ * The log is trimmed by both count and bytes, so coverage is not guaranteed:
+ * it holds only ops newer than the last snapshot, and only as many as the
+ * budget allows.
+ */
+function replayableFrom(
+  room: Room,
+  fromVersion: number,
+): Array<Record<string, unknown>> | null {
+  if (fromVersion < 0 || fromVersion > room.version) return null;
+  if (fromVersion === room.version) return [];
+  // Anything at or before the last snapshot is no longer replayable.
+  if (fromVersion < room.snapshotAtVersion) return null;
+
+  const ops = room.operationLog.filter((op) => op.version > fromVersion);
+  if (ops.length === 0) return null;
+  // The oldest op we hold must be the very next one the client needs,
+  // otherwise there is a hole in the middle.
+  if (ops[0].version !== fromVersion + 1) return null;
+
+  return ops.map((op) => ({
+    version: op.version,
+    operationId: op.operationId,
+    clientId: op.clientId,
+    patch: op.patch,
+  }));
+}
+
+/**
+ * Version a rejoining client claims to already hold, or null when it is
+ * starting fresh. Only meaningful if the client vouches that its local state
+ * matches that version exactly — see the client's resume guard.
+ */
+function parseResumeFrom(message: JsonMessage): number | null {
+  const value = message.resumeFrom;
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 ? value : null;
+}
+
 function handleHostJoin(ws: WebSocket, message: JsonMessage): void {
+  if (hasProtocolMismatch(ws, message)) return;
+
   const roomId = typeof message.roomId === "string" ? message.roomId : null;
   const diagramIdMeta = typeof message.diagramId === "string" ? message.diagramId : null;
   const user = parseUser(message.user);
@@ -249,10 +614,15 @@ function handleHostJoin(ws: WebSocket, message: JsonMessage): void {
       pongTimeout: null,
     });
 
+    const hostResumeFrom = parseResumeFrom(message);
+    const hostReplay = hostResumeFrom === null ? null : replayableFrom(existingRoom, hostResumeFrom);
+
     safeSend(ws, {
       type: "host:ack",
       resumed: true,
-      snapshot: existingRoom.snapshot,
+      protocol: COLLAB_PROTOCOL_VERSION,
+      ...(hostReplay ? { operations: hostReplay } : { snapshot: existingRoom.snapshot }),
+      version: existingRoom.version,
     });
 
     for (const [clientId, guest] of existingRoom.guests.entries()) {
@@ -283,9 +653,21 @@ function handleHostJoin(ws: WebSocket, message: JsonMessage): void {
     hostUser: user,
     snapshot: { ...snapshot },
     guests: new Map(),
+    version: 0,
+    snapshotAtVersion: 0,
+    checksumAtVersion: 0,
+    operationLog: [],
+    operationLogBytes: 0,
+    tombstones: new Map(),
+    pendingCursors: new Map(),
+    cursorTimer: null,
+    checksumTimer: null,
   };
 
   rooms.set(roomId, room);
+
+  // Start periodic snapshot timer for this room
+  startSnapshotTimer(roomId);
   socketStates.set(ws, {
     roomId,
     clientId: user.id,
@@ -294,13 +676,22 @@ function handleHostJoin(ws: WebSocket, message: JsonMessage): void {
     pongTimeout: null,
   });
 
-  safeSend(ws, { type: "host:ack", resumed: false });
+  // Carry version and protocol here too: the resumed path already did, and a
+  // host with no version cannot declare what it had seen when it patches.
+  safeSend(ws, {
+    type: "host:ack",
+    resumed: false,
+    protocol: COLLAB_PROTOCOL_VERSION,
+    version: room.version,
+  });
   console.log(
     `[collab] host joined: room=${roomId}, diagram=${diagramIdMeta ?? "none"}, host=${user.id}`,
   );
 }
 
 function handleGuestJoin(ws: WebSocket, message: JsonMessage): void {
+  if (hasProtocolMismatch(ws, message)) return;
+
   const roomId = typeof message.roomId === "string" ? message.roomId : null;
   const user = parseUser(message.user);
 
@@ -315,8 +706,8 @@ function handleGuestJoin(ws: WebSocket, message: JsonMessage): void {
     return;
   }
 
-  if (roomPeerCount(room) >= MAX_ROOM_PEERS) {
-    sendError(ws, "room_full", "Room is full", { close: true });
+  if (roomPeerCount(room) >= MAX_PARTICIPANTS) {
+    sendError(ws, "room_full", `Room is full (maximum ${MAX_PARTICIPANTS} participants)`, { close: true });
     return;
   }
 
@@ -332,9 +723,23 @@ function handleGuestJoin(ws: WebSocket, message: JsonMessage): void {
     pongTimeout: null,
   });
 
+  // A client rejoining after a blip can be caught up with the operations it
+  // missed instead of the whole diagram — but only if it still holds the state
+  // it claims and the log actually covers the span.
+  const resumeFrom = parseResumeFrom(message);
+  const replay = resumeFrom === null ? null : replayableFrom(room, resumeFrom);
+
   safeSend(ws, {
     type: "session:init",
-    snapshot: room.snapshot,
+    protocol: COLLAB_PROTOCOL_VERSION,
+    // The server may rename a colliding guest id (see ensureUniqueGuestId), so
+    // tell the client which id it was actually assigned. Coalesced cursor
+    // frames include the recipient's own entry, and this is what it filters on.
+    clientId,
+    participantCount: roomPeerCount(room),
+    maxParticipants: MAX_PARTICIPANTS,
+    version: room.version,
+    ...(replay ? { operations: replay } : { snapshot: room.snapshot }),
     hostUser: room.hostUser,
     peers: buildGuestPeers(room, clientId),
   });
@@ -343,6 +748,8 @@ function handleGuestJoin(ws: WebSocket, message: JsonMessage): void {
     type: "peer:joined",
     clientId,
     user: normalizedUser,
+    participantCount: roomPeerCount(room),
+    maxParticipants: MAX_PARTICIPANTS,
   };
   broadcastToRoom(room, peerJoinedPayload, { exceptClientId: clientId });
 
@@ -351,10 +758,36 @@ function handleGuestJoin(ws: WebSocket, message: JsonMessage): void {
   );
 }
 
+/**
+ * Append an operation to the room's replay log, evicting the oldest entries
+ * until it is within both the count and byte budgets. Oldest-first eviction
+ * keeps the most recent history, which is what a resync actually replays.
+ */
+function appendOperation(room: Room, op: Room["operationLog"][number]): void {
+  room.operationLog.push(op);
+  room.operationLogBytes += op.bytes;
+
+  while (
+    room.operationLog.length > MAX_OPERATION_LOG_SIZE ||
+    (room.operationLogBytes > MAX_OPERATION_LOG_BYTES && room.operationLog.length > 1)
+  ) {
+    const evicted = room.operationLog.shift();
+    if (!evicted) break;
+    room.operationLogBytes -= evicted.bytes;
+  }
+  if (room.operationLogBytes < 0) room.operationLogBytes = 0;
+}
+
 function handleHostPatch(ws: WebSocket, message: JsonMessage): void {
   const state = socketStates.get(ws);
   const roomId = typeof message.roomId === "string" ? message.roomId : null;
   const patch = parsePatch(message.patch);
+  const clientOperationId = typeof message.operationId === "string" ? message.operationId : null;
+  // The version the sender had applied when it composed this patch. Used to
+  // decide whether it had seen a delete (see applyPatch), not to gate the
+  // patch: a connected socket delivers every broadcast in order, so a version
+  // difference here is concurrency and latency, never loss.
+  const clientVersion = typeof message.version === "number" ? message.version : null;
 
   if (!state || !roomId || !patch || state.roomId !== roomId) {
     sendError(ws, "invalid_host_patch", "Invalid host:patch payload");
@@ -367,22 +800,79 @@ function handleHostPatch(ws: WebSocket, message: JsonMessage): void {
     return;
   }
 
-  applyPatch(room.snapshot, patch);
+  // Rate limiting check
+  if (isRateLimited(rateKeyFor(roomId, state.clientId))) {
+    sendError(ws, "rate_limited", "Too many operations per second");
+    return;
+  }
 
-  broadcastToRoom(
-    room,
-    {
+  // Check batch size if provided
+  const batchSize = typeof message.batched === "number" ? message.batched : 1;
+  if (batchSize > MAX_BATCH_SIZE) {
+    sendError(ws, "batch_too_large", `Batch size exceeds maximum of ${MAX_BATCH_SIZE}`);
+    return;
+  }
+
+  // Generate operation ID if not provided by client
+  const operationId = clientOperationId ?? crypto.randomUUID();
+
+  // Increment version and apply patch. What actually landed may be narrower
+  // than what was sent — see applyPatch on remove-wins.
+  room.version++;
+  const effectivePatch = applyPatch(room, patch, clientVersion);
+  const hasEffect = Object.keys(effectivePatch).length > 0;
+
+  appendOperation(room, {
+    version: room.version,
+    operationId,
+    clientId: state.clientId,
+    patch: effectivePatch,
+    timestamp: Date.now(),
+    bytes: frameSizes.get(message) ?? 0,
+  });
+
+  // Check if we need to take a periodic snapshot
+  checkAndTakePeriodicSnapshot(room, roomId);
+
+  // Send ACK to the sender with version
+  safeSend(ws, {
+    type: "OP_ACK",
+    operationId,
+    version: room.version,
+    accepted: true,
+  });
+
+  // Broadcast what landed, not what was sent: a peer applying a suppressed
+  // write would drift from the server's snapshot.
+  //
+  // The sender is included. Excluding it left a hole in the only ordered view
+  // it has of the room: with its own operations missing, a peer's older patch
+  // that arrived afterwards became its final state while the server had moved
+  // on, and nothing ever reconciled the two.
+  if (hasEffect) {
+    broadcastToRoom(room, {
       type: "session:patch",
-      patch,
-    },
-    { exceptClientId: state.clientId },
-  );
+      patch: effectivePatch,
+      operationId,
+      version: room.version,
+    });
+  }
+
+  // After the patch, never before: a client that has not applied this version
+  // yet would read its own lag as divergence and ask for a needless repair.
+  broadcastChecksum(room);
 }
 
 function handleGuestPatch(ws: WebSocket, message: JsonMessage): void {
   const state = socketStates.get(ws);
   const roomId = typeof message.roomId === "string" ? message.roomId : null;
   const patch = parsePatch(message.patch);
+  const clientOperationId = typeof message.operationId === "string" ? message.operationId : null;
+  // The version the sender had applied when it composed this patch. Used to
+  // decide whether it had seen a delete (see applyPatch), not to gate the
+  // patch: a connected socket delivers every broadcast in order, so a version
+  // difference here is concurrency and latency, never loss.
+  const clientVersion = typeof message.version === "number" ? message.version : null;
 
   if (!state || state.role !== "guest" || !roomId || !patch || state.roomId !== roomId) {
     sendError(ws, "invalid_guest_patch", "Invalid guest:patch payload");
@@ -395,9 +885,61 @@ function handleGuestPatch(ws: WebSocket, message: JsonMessage): void {
     return;
   }
 
-  applyPatch(room.snapshot, patch);
+  // Rate limiting check
+  if (isRateLimited(rateKeyFor(roomId, state.clientId))) {
+    sendError(ws, "rate_limited", "Too many operations per second");
+    return;
+  }
 
-  broadcastToRoom(room, { type: "session:patch", patch }, { exceptClientId: state.clientId });
+  // Check batch size if provided
+  const batchSize = typeof message.batched === "number" ? message.batched : 1;
+  if (batchSize > MAX_BATCH_SIZE) {
+    sendError(ws, "batch_too_large", `Batch size exceeds maximum of ${MAX_BATCH_SIZE}`);
+    return;
+  }
+
+  // Generate operation ID if not provided by client
+  const operationId = clientOperationId ?? crypto.randomUUID();
+
+  // Increment version and apply patch. What actually landed may be narrower
+  // than what was sent — see applyPatch on remove-wins.
+  room.version++;
+  const effectivePatch = applyPatch(room, patch, clientVersion);
+  const hasEffect = Object.keys(effectivePatch).length > 0;
+
+  appendOperation(room, {
+    version: room.version,
+    operationId,
+    clientId: state.clientId,
+    patch: effectivePatch,
+    timestamp: Date.now(),
+    bytes: frameSizes.get(message) ?? 0,
+  });
+
+  // Check if we need to take a periodic snapshot
+  checkAndTakePeriodicSnapshot(room, roomId);
+
+  // Send ACK to the sender with version
+  safeSend(ws, {
+    type: "OP_ACK",
+    operationId,
+    version: room.version,
+    accepted: true,
+  });
+
+  // Broadcast to every client, the sender included — see handleHostPatch for
+  // why leaving the sender out lets it settle on a stale value.
+  if (hasEffect) {
+    broadcastToRoom(room, {
+      type: "session:patch",
+      patch: effectivePatch,
+      operationId,
+      version: room.version,
+      clientId: state.clientId,
+    });
+  }
+
+  broadcastChecksum(room);
 }
 
 function handleHostClose(ws: WebSocket, message: JsonMessage): void {
@@ -436,15 +978,169 @@ function handlePeerCursor(ws: WebSocket, message: JsonMessage): void {
   const user = isHost ? room.hostUser : room.guests.get(state.clientId)?.user;
   if (!user) return;
 
-  const payload = {
-    type: "peer:cursor",
-    clientId: state.clientId,
-    user,
-    cursor,
-    activeElementId,
-  };
+  // Coalesce rather than relay. Relaying each cursor immediately cost one send
+  // per peer per event: a full room at 30Hz was 6,300 sends/s from one room
+  // alone. Keeping only the newest position per client and flushing the room
+  // once per tick makes that 15 sends per tick regardless of how fast anyone
+  // moves, which is what lets 50 rooms share one event loop.
+  room.pendingCursors.set(state.clientId, { clientId: state.clientId, user, cursor, activeElementId });
+  scheduleCursorFlush(room, roomId);
+}
 
-  broadcastToRoom(room, payload, { exceptClientId: state.clientId });
+/**
+ * Flush the room's coalesced cursor positions as a single frame.
+ *
+ * The frame carries every pending cursor, including the recipient's own, so
+ * the room pays one JSON.stringify instead of one per recipient. Clients drop
+ * their own entry by clientId.
+ */
+function flushCursors(room: Room, roomId: string): void {
+  room.cursorTimer = null;
+  if (room.pendingCursors.size === 0) return;
+
+  const cursors = Array.from(room.pendingCursors.values());
+  room.pendingCursors.clear();
+
+  broadcastToRoom(room, { type: "peer:cursors", roomId, cursors }, { lossy: true });
+}
+
+function scheduleCursorFlush(room: Room, roomId: string): void {
+  if (room.cursorTimer) return;
+  room.cursorTimer = setTimeout(() => {
+    flushCursors(room, roomId);
+  }, CURSOR_FLUSH_MS);
+}
+
+/**
+ * Check if periodic snapshot is needed and take it if so.
+ * Called after each operation.
+ */
+function checkAndTakePeriodicSnapshot(room: Room, roomId: string): void {
+  // Check if we've accumulated enough operations since last snapshot
+  const opsSinceSnapshot = room.version - room.snapshotAtVersion;
+
+  if (opsSinceSnapshot >= SNAPSHOT_INTERVAL_OPS) {
+    takePeriodicSnapshot(room, roomId);
+  }
+}
+
+/**
+ * Publish a fingerprint of the room so clients can tell whether they still
+ * agree with it.
+ *
+ * Versions alone cannot answer that: a client can be at the right version and
+ * still hold a stale entity, which is exactly how divergence went unnoticed.
+ * The frame is ~16 bytes of hash, so it can run far more often than the full
+ * snapshot it may end up triggering.
+ */
+function publishChecksum(room: Room): void {
+  if (room.version === room.checksumAtVersion) return;
+  room.checksumAtVersion = room.version;
+
+  broadcastToRoom(room, {
+    type: "sync:checksum",
+    version: room.version,
+    checksum: snapshotChecksum(room.snapshot),
+  });
+}
+
+function broadcastChecksum(room: Room): void {
+  // Publishing only every N operations leaves the last window of a burst
+  // unverified: the room goes quiet, no further fingerprint is sent, and a
+  // client that drifted on one of those final operations stays wrong with
+  // nobody looking. So the count triggers one, and so does falling idle.
+
+  if (room.checksumTimer) clearTimeout(room.checksumTimer);
+  room.checksumTimer = setTimeout(() => {
+    room.checksumTimer = null;
+    publishChecksum(room);
+  }, CHECKSUM_IDLE_MS);
+  // Node would keep the process alive for this alone; the room does not need it.
+  room.checksumTimer.unref?.();
+
+  if (room.version - room.checksumAtVersion >= CHECKSUM_INTERVAL_OPS) {
+    publishChecksum(room);
+  }
+}
+
+/**
+ * Take a periodic snapshot and broadcast it to all clients.
+ * This resets the operation log and updates snapshotAtVersion.
+ */
+function takePeriodicSnapshot(room: Room, roomId: string): void {
+  const snapshotVersion = room.version;
+
+  // Broadcast snapshot to all clients
+  broadcastToRoom(room, {
+    type: "PERIODIC_SNAPSHOT",
+    version: snapshotVersion,
+    snapshot: { ...room.snapshot },
+  });
+
+  // Capture old snapshot version BEFORE updating so the filter keeps the right ops
+  const previousSnapshotAtVersion = room.snapshotAtVersion;
+
+  // Update snapshot marker
+  room.snapshotAtVersion = snapshotVersion;
+
+  // Trim operation log to only keep ops newer than the previous snapshot
+  // This keeps memory bounded while allowing resync
+  const opsToKeep = room.operationLog.filter((op) => op.version > previousSnapshotAtVersion);
+  room.operationLog = opsToKeep;
+  // Keep the byte counter in step with the log it tracks.
+  room.operationLogBytes = opsToKeep.reduce((total, op) => total + op.bytes, 0);
+
+  // Deletes older than the snapshot can no longer be contradicted: anyone that
+  // far behind is served the snapshot itself.
+  pruneTombstones(room);
+
+  console.log(
+    `[collab] periodic snapshot: room=${roomId}, version=${snapshotVersion}, opsLogged=${room.operationLog.length}`,
+  );
+}
+
+/**
+ * Start the periodic snapshot timer for a room.
+ */
+function startSnapshotTimer(roomId: string): void {
+  // Don't start multiple timers for the same room
+  if (snapshotTimers.has(roomId)) {
+    return;
+  }
+
+  const timer = setInterval(() => {
+    const room = rooms.get(roomId);
+    if (!room || !room.hostWs) {
+      // Room is closed or host disconnected, stop the timer
+      const existingTimer = snapshotTimers.get(roomId);
+      if (existingTimer) {
+        clearInterval(existingTimer);
+        snapshotTimers.delete(roomId);
+      }
+      return;
+    }
+
+    // Take snapshot if there have been operations since last snapshot
+    const opsSinceSnapshot = room.version - room.snapshotAtVersion;
+    if (opsSinceSnapshot > 0) {
+      takePeriodicSnapshot(room, roomId);
+    }
+  }, SNAPSHOT_INTERVAL_MS);
+
+  snapshotTimers.set(roomId, timer);
+  console.log(`[collab] snapshot timer started: room=${roomId}, interval=${SNAPSHOT_INTERVAL_MS}ms`);
+}
+
+/**
+ * Stop the periodic snapshot timer for a room.
+ */
+function stopSnapshotTimer(roomId: string): void {
+  const timer = snapshotTimers.get(roomId);
+  if (timer) {
+    clearInterval(timer);
+    snapshotTimers.delete(roomId);
+    console.log(`[collab] snapshot timer stopped: room=${roomId}`);
+  }
 }
 
 function handleSocketClose(ws: WebSocket): void {
@@ -452,6 +1148,7 @@ function handleSocketClose(ws: WebSocket): void {
   if (!state) return;
 
   clearSocketHeartbeat(state);
+  clearRateLimitData(rateKeyFor(state.roomId, state.clientId));
   socketStates.delete(ws);
 
   const room = rooms.get(state.roomId);
@@ -475,9 +1172,13 @@ function handleSocketClose(ws: WebSocket): void {
   const removed = room.guests.delete(state.clientId);
   if (!removed) return;
 
+  room.pendingCursors.delete(state.clientId);
+
   broadcastToRoom(room, {
     type: "peer:left",
     clientId: state.clientId,
+    participantCount: roomPeerCount(room),
+    maxParticipants: MAX_PARTICIPANTS,
   });
 
   console.log(`[collab] guest left: room=${state.roomId}, guest=${state.clientId}`);
@@ -488,6 +1189,65 @@ function handleHeartbeatPong(ws: WebSocket): void {
   if (!state) return;
   state.awaitingPong = false;
   clearSocketHeartbeat(state);
+}
+
+function handleSyncRequest(ws: WebSocket, message: JsonMessage): void {
+  const state = socketStates.get(ws);
+  const roomId = typeof message.roomId === "string" ? message.roomId : null;
+  const baseVersion = typeof message.baseVersion === "number" ? message.baseVersion : 0;
+
+  if (!state || !roomId || state.roomId !== roomId) {
+    sendError(ws, "invalid_sync_request", "Invalid sync:request payload");
+    return;
+  }
+
+  const room = rooms.get(roomId);
+  if (!room) {
+    sendError(ws, "room_not_found", "Room not found");
+    return;
+  }
+
+  // A checksum mismatch means the content is wrong, not that operations are
+  // missing — the client is usually at the right version. Replaying the log
+  // would send it nothing, so this case always gets the full snapshot.
+  const wantsFullResync = message.reason === "checksum";
+
+  // If client is behind snapshot, send snapshot + reset
+  // Client will apply the snapshot and continue from there
+  if (wantsFullResync || baseVersion < room.snapshotAtVersion) {
+    safeSend(ws, {
+      type: "SYNC_SNAPSHOT",
+      version: room.version,
+      snapshot: room.snapshot,
+      snapshotVersion: room.snapshotAtVersion,
+    });
+    return;
+  }
+
+  // Get operations since baseVersion
+  const opsSinceBase = room.operationLog.filter((op) => op.version > baseVersion);
+
+  if (opsSinceBase.length === 0) {
+    // Already up to date
+    safeSend(ws, {
+      type: "SYNC_COMPLETE",
+      version: room.version,
+      operations: [],
+    });
+    return;
+  }
+
+  // Send incremental sync
+  safeSend(ws, {
+    type: "SYNC_COMPLETE",
+    version: room.version,
+    operations: opsSinceBase.map((op) => ({
+      version: op.version,
+      operationId: op.operationId,
+      patch: op.patch,
+      clientId: op.clientId,
+    })),
+  });
 }
 
 function startHeartbeat(): ReturnType<typeof setInterval> {
@@ -556,6 +1316,9 @@ export function attachCollabServer(httpServer: HttpServer): CollabHandle {
           return;
         case "peer:cursor":
           handlePeerCursor(ws, message);
+          return;
+        case "sync:request":
+          handleSyncRequest(ws, message);
           return;
         case "ping":
           safeSend(ws, { type: "pong" });

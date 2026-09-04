@@ -1093,6 +1093,8 @@
     "onlineCount": "{{count}} online",
     "waitingPeers": "Esperando convidados",
     "peerLimitReached": "Limite de convidados atingido",
+    "roomFull": "Sala cheia",
+    "roomFullDesc": "Esta sessão atingiu o máximo de 15 participantes. Tente novamente mais tarde ou entre em contato com o host.",
     "endSession": "Encerrar sessão",
     "endSessionForEveryone": "Encerrar a sessão para todos?",
     "endSessionForEveryoneDesc": "Os convidados vão ser desconectados e a sessão ao vivo termina.",
