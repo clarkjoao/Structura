@@ -1,11 +1,12 @@
 /**
- * CPU-profile the host while other people edit.
+ * Traces the host's rendering pipeline while other people edit.
  *
- * The stress script says how much the main thread is blocked; this says by
- * what. Runs the same session shape with the host as a pure observer, samples
- * its profile over CDP and prints the functions with the most self time.
+ * The sampling profiler reports "idle" during the stalls, which is what it
+ * shows when the main thread is busy outside JS. This records the actual
+ * timeline — style, layout, paint, composite and JS — and reports where the
+ * blocked time goes, both overall and restricted to the long tasks.
  *
- *   node scripts/collab-profile.mjs
+ *   node scripts/collab-trace.mjs
  *
  * Env: GUESTS, DURATION_MS, NODES, APP_URL, WS_URL, TOP
  */
@@ -15,7 +16,7 @@ const WS_URL = process.env.WS_URL ?? "ws://localhost:3000/ws";
 const GUESTS = Number(process.env.GUESTS ?? 14);
 const DURATION_MS = Number(process.env.DURATION_MS ?? 20_000);
 const NODES = Number(process.env.NODES ?? 20);
-const TOP = Number(process.env.TOP ?? 18);
+const TOP = Number(process.env.TOP ?? 16);
 const STORAGE_KEY = "structura_diagram-store";
 
 async function findAppUrl() {
@@ -28,8 +29,7 @@ async function findAppUrl() {
         signal: AbortSignal.timeout(2000),
       });
       if (res.status >= 300 && res.status < 400) continue;
-      const body = await res.text();
-      if (/<div id="root"|\/src\/main\.tsx/i.test(body)) return base;
+      if (/<div id="root"|\/src\/main\.tsx/i.test(await res.text())) return base;
     } catch {
       /* keep looking */
     }
@@ -38,7 +38,7 @@ async function findAppUrl() {
 }
 
 function buildSeed(nodeCount) {
-  const diagramId = `collab-profile-${Date.now().toString(36)}`;
+  const diagramId = `collab-trace-${Date.now().toString(36)}`;
   const components = {};
   const nodeLayouts = {};
   const ids = [];
@@ -46,13 +46,7 @@ function buildSeed(nodeCount) {
   for (let i = 0; i < nodeCount; i++) {
     const id = `cmp_${i}`;
     ids.push(id);
-    components[id] = {
-      id,
-      name: `Service ${i}`,
-      description: "",
-      parentId: null,
-      type: "system",
-    };
+    components[id] = { id, name: `Service ${i}`, description: "", parentId: null, type: "system" };
     nodeLayouts[id] = {
       elementId: id,
       x: 120 + (i % perRow) * 260,
@@ -70,7 +64,7 @@ function buildSeed(nodeCount) {
         diagrams: {
           [diagramId]: {
             id: diagramId,
-            name: "Profile",
+            name: "Trace",
             domain: "",
             level: "context",
             description: "",
@@ -135,15 +129,43 @@ async function dragNode(page, id, dx, dy) {
     .catch(() => false);
 }
 
+/** Timeline events worth naming; everything else is folded into "outro". */
+const INTERESTING = new Set([
+  "FunctionCall",
+  "EventDispatch",
+  "TimerFire",
+  "RunTask",
+  "ParseHTML",
+  "UpdateLayoutTree",
+  "Layout",
+  "Paint",
+  "PrePaint",
+  "Layerize",
+  "CompositeLayers",
+  "UpdateLayer",
+  "UpdateLayerTree",
+  "HitTest",
+  "ScheduleStyleRecalculation",
+  "InvalidateLayout",
+  "CommitLoad",
+  "MajorGC",
+  "MinorGC",
+  "GCEvent",
+  "V8.GC",
+  "RasterTask",
+  "DecodeImage",
+  "XHRLoad",
+]);
+
 async function main() {
   const appUrl = await findAppUrl();
   if (!appUrl) {
-    console.error("dev server não encontrado — rode `npm run dev`");
+    console.error("dev server nao encontrado — rode `npm run dev`");
     process.exit(1);
   }
   const seed = buildSeed(NODES);
-  console.log(`\n=== PERFIL DO HOST (observador) — ${GUESTS} editores ===`);
-  console.log(`app ${appUrl} | ${NODES} nós | ${DURATION_MS / 1000}s\n`);
+  console.log(`\n=== TIMELINE DO HOST (observador) — ${GUESTS} editores ===`);
+  console.log(`app ${appUrl} | ${NODES} nos | ${DURATION_MS / 1000}s\n`);
 
   const browser = await chromium.launch({ headless: true });
   const hostCtx = await browser.newContext({ ignoreHTTPSErrors: true });
@@ -201,25 +223,38 @@ async function main() {
     guests.push(page);
     process.stdout.write(`\r  entrando: ${i}/${GUESTS}`);
   }
-  console.log(`\n  perfilando...\n`);
+  console.log(`\n  tracando...\n`);
 
-  // Record long tasks so the profile can be read twice: overall, and
-  // restricted to the windows where the frame loop actually stalled. The
-  // overall view is dominated by idle and hides what causes the jank.
   await host.evaluate(() => {
     window.__stalls = [];
     new PerformanceObserver((list) => {
-      for (const e of list.getEntries()) {
-        window.__stalls.push({ at: e.startTime, ms: e.duration });
-      }
+      for (const e of list.getEntries()) window.__stalls.push({ at: e.startTime, ms: e.duration });
     }).observe({ entryTypes: ["longtask"] });
   });
 
   const cdp = await hostCtx.newCDPSession(host);
-  await cdp.send("Profiler.enable");
-  await cdp.send("Profiler.setSamplingInterval", { interval: 1000 });
-  await cdp.send("Profiler.start");
-  const t0 = await host.evaluate(() => performance.now());
+  const events = [];
+  cdp.on("Tracing.dataCollected", ({ value }) => events.push(...value));
+
+  await cdp.send("Tracing.start", {
+    traceConfig: {
+      recordMode: "recordAsMuchAsPossible",
+      includedCategories: [
+        "devtools.timeline",
+        "disabled-by-default-devtools.timeline",
+        "disabled-by-default-devtools.timeline.frame",
+        "blink.user_timing",
+        "v8.execute",
+      ],
+    },
+    transferMode: "ReportEvents",
+  });
+  // Anchor the trace clock to page time: the mark lands in the trace with its
+  // own monotonic ts, and we know the performance.now() that produced it.
+  const anchorNow = await host.evaluate(() => {
+    performance.mark("__trace_anchor");
+    return performance.now();
+  });
 
   const deadline = Date.now() + DURATION_MS;
   await Promise.all(
@@ -231,74 +266,107 @@ async function main() {
     }),
   );
 
-  const { profile } = await cdp.send("Profiler.stop");
+  const done = new Promise((resolve) => cdp.once("Tracing.tracingComplete", resolve));
+  await cdp.send("Tracing.end");
+  await done;
+
   const stalls = await host.evaluate(() => window.__stalls);
+  const blocked = stalls.reduce((a, s) => a + s.ms, 0);
 
-  // Aggregate self time per function from the sample counts.
-  const byId = new Map(profile.nodes.map((n) => [n.id, n]));
-  const selfTime = new Map();
-  const total = profile.samples?.length ?? 0;
-  const durationMs = (profile.endTime - profile.startTime) / 1000;
-
-  // Map each sample to page time so it can be tested against a stall window.
-  const samples = profile.samples ?? [];
-  const deltas = profile.timeDeltas ?? [];
-  const sampleAt = [];
-  let clock = profile.startTime;
-  for (let i = 0; i < samples.length; i++) {
-    clock += deltas[i] ?? 0;
-    sampleAt.push(t0 + (clock - profile.startTime) / 1000);
+  const anchorEvent = events.find(
+    (e) => e.name === "__trace_anchor" || e.args?.data?.name === "__trace_anchor",
+  );
+  if (!anchorEvent) {
+    console.error("ancora nao encontrada no trace — nao da para alinhar os relogios");
+    await browser.close();
+    process.exit(1);
   }
+  const mainThread = `${anchorEvent.pid}:${anchorEvent.tid}`;
+  const traceToPage = (ts) => anchorNow + (ts - anchorEvent.ts) / 1000;
   const inStall = (ms) => stalls.some((s) => ms >= s.at && ms <= s.at + s.ms);
 
-  const label = (id) => {
-    const node = byId.get(id);
-    if (!node) return null;
-    const f = node.callFrame;
-    const where = f.url ? f.url.split("/").slice(-1)[0].split("?")[0] : "";
-    return `${f.functionName || "(anonymous)"}${where ? ` — ${where}` : ""}`;
+  // X events nest on a thread, so raw durations double-count. Walk them in
+  // order keeping a stack and charge each event only its own time.
+  const main = events
+    .filter((e) => e.ph === "X" && e.dur && `${e.pid}:${e.tid}` === mainThread)
+    .sort((a, b) => a.ts - b.ts || b.dur - a.dur);
+
+  const overall = new Map();
+  const during = new Map();
+  let overallUs = 0;
+  let duringUs = 0;
+  const stack = [];
+
+  // Which JS ran during the stalls, by name.
+  const callers = new Map();
+  let callerUs = 0;
+
+  const charge = (event, us) => {
+    if (us <= 0) return;
+    const name = INTERESTING.has(event.name) ? event.name : "outro";
+    overall.set(name, (overall.get(name) ?? 0) + us);
+    overallUs += us;
+    if (inStall(traceToPage(event.ts))) {
+      during.set(name, (during.get(name) ?? 0) + us);
+      duringUs += us;
+      const d = event.args?.data;
+      if (event.name === "FunctionCall" && d) {
+        const file = (d.url ?? "").split("/").slice(-1)[0].split("?")[0];
+        const key = `${d.functionName || "(anonymous)"}${file ? ` — ${file}:${d.lineNumber ?? "?"}` : ""}`;
+        callers.set(key, (callers.get(key) ?? 0) + us);
+        callerUs += us;
+      }
+    }
   };
 
-  const stallTime = new Map();
-  let stallSamples = 0;
-  for (let i = 0; i < samples.length; i++) {
-    const key = label(samples[i]);
-    if (!key) continue;
-    selfTime.set(key, (selfTime.get(key) ?? 0) + 1);
-    if (inStall(sampleAt[i])) {
-      stallTime.set(key, (stallTime.get(key) ?? 0) + 1);
-      stallSamples++;
+  for (const e of main) {
+    while (stack.length && stack[stack.length - 1].end <= e.ts) {
+      const done = stack.pop();
+      charge(done.event, done.self);
     }
+    if (stack.length) stack[stack.length - 1].self -= e.dur;
+    stack.push({ event: e, end: e.ts + e.dur, self: e.dur });
+  }
+  while (stack.length) {
+    const done = stack.pop();
+    charge(done.event, done.self);
   }
 
-  const ranked = [...selfTime.entries()].sort((a, b) => b[1] - a[1]).slice(0, TOP);
-  console.log(`amostras: ${total} em ${durationMs.toFixed(0)}ms\n`);
-  console.log("função".padEnd(58) + "self%    ms");
-  console.log("-".repeat(76));
-  for (const [name, count] of ranked) {
-    const pct = ((count / total) * 100).toFixed(1);
-    const ms = ((count / total) * durationMs).toFixed(0);
-    console.log(name.slice(0, 56).padEnd(58) + pct.padStart(5) + "%" + String(ms).padStart(7));
-  }
-  console.log("");
-
-  const blocked = stalls.reduce((a, s) => a + s.ms, 0);
-  console.log(
-    `\n=== SOMENTE DENTRO DAS ${stalls.length} LONG TASKS (${Math.round(blocked)}ms bloqueado) ===\n`,
-  );
-  if (stallSamples === 0) {
-    console.log("nenhuma amostra caiu numa long task\n");
-  } else {
-    console.log("função".padEnd(58) + "self%    ms");
-    console.log("-".repeat(76));
-    for (const [name, count] of [...stallTime.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, TOP)) {
-      const pct = ((count / stallSamples) * 100).toFixed(1);
-      const ms = ((count / stallSamples) * blocked).toFixed(0);
-      console.log(name.slice(0, 56).padEnd(58) + pct.padStart(5) + "%" + String(ms).padStart(7));
+  const table = (map, totalUs, header) => {
+    console.log(header);
+    console.log("evento".padEnd(30) + "ms".padStart(9) + "%".padStart(8));
+    console.log("-".repeat(47));
+    for (const [name, us] of [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, TOP)) {
+      console.log(
+        name.slice(0, 28).padEnd(30) +
+          (us / 1000).toFixed(0).padStart(9) +
+          (totalUs ? ((us / totalUs) * 100).toFixed(1) : "0").padStart(7) +
+          "%",
+      );
     }
     console.log("");
+  };
+
+  console.log(`long tasks: ${stalls.length} | bloqueado: ${Math.round(blocked)}ms\n`);
+  table(overall, overallUs, "=== TIMELINE INTEIRA ===");
+  if (duringUs === 0) {
+    console.log("=== DENTRO DAS LONG TASKS ===\nnenhum evento casou com as janelas\n");
+  } else {
+    table(during, duringUs, `=== DENTRO DAS LONG TASKS (${Math.round(blocked)}ms) ===`);
+    if (callerUs > 0) {
+      console.log("=== QUAL JS, DENTRO DAS LONG TASKS ===");
+      console.log("entrada".padEnd(46) + "ms".padStart(8) + "%".padStart(8));
+      console.log("-".repeat(62));
+      for (const [name, us] of [...callers.entries()].sort((a, b) => b[1] - a[1]).slice(0, TOP)) {
+        console.log(
+          name.slice(0, 44).padEnd(46) +
+            (us / 1000).toFixed(0).padStart(8) +
+            ((us / callerUs) * 100).toFixed(1).padStart(7) +
+            "%",
+        );
+      }
+      console.log("");
+    }
   }
 
   await browser.close();
