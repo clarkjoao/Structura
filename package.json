@@ -44,7 +44,8 @@
     "cy:run:stress:headed": "cypress run --spec 'cypress/e2e/stress-*' --browser chrome --headed",
     "cy:report:merge": "mochawesome-merge cypress/reports/mochawesome/*.json -o cypress/reports/mochawesome/merged.json",
     "cy:report:html": "marge cypress/reports/mochawesome/merged.json -o cypress/reports/mochawesome/html -f index --charts --inline",
-    "cy:report": "npm run cy:report:merge && npm run cy:report:html"
+    "cy:report": "npm run cy:report:merge && npm run cy:report:html",
+    "collab:stress": "node scripts/collab-stress.mjs"
   },
   "dependencies": {
     "@assistant-ui/react": "^0.15.16",
