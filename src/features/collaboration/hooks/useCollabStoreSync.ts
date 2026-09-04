@@ -60,6 +60,43 @@ function mergeCollection<T extends Record<string, unknown>>(
   return next as T;
 }
 
+/**
+ * Advance the "what peers already know" baseline by one remote patch.
+ *
+ * Mirrors the merge in `onPatch`, reusing the patch's own value objects so the
+ * next diff sees them as unchanged. Anything the patch does not mention keeps
+ * its reference, which is what lets a local edit that is still waiting for its
+ * frame survive and be broadcast.
+ */
+function applyPatchToTracked(
+  previous: TrackedDiagramState,
+  patch: CollabPatch,
+): TrackedDiagramState {
+  return {
+    diagramName:
+      hasOwn(patch, "diagramName") && typeof patch.diagramName === "string"
+        ? patch.diagramName
+        : previous.diagramName,
+    domain: hasOwn(patch, "domain") ? (patch.domain as string | undefined) : previous.domain,
+    description: hasOwn(patch, "description")
+      ? (patch.description as string | undefined)
+      : previous.description,
+    components: mergeCollection(previous.components, patch.components),
+    connections: mergeCollection(previous.connections, patch.connections),
+    flows: mergeCollection(previous.flows, patch.flows),
+    iconLibrary: mergeCollection(previous.iconLibrary, patch.iconLibrary),
+    nodeLayouts: mergeCollection(previous.nodeLayouts, patch.nodeLayouts),
+    edgeLayouts: mergeCollection(previous.edgeLayouts, patch.edgeLayouts),
+    scenes: mergeCollection(previous.scenes, patch.scenes),
+    activeSceneId: hasOwn(patch, "activeSceneId")
+      ? (patch.activeSceneId as string | null)
+      : previous.activeSceneId,
+    compareSceneId: hasOwn(patch, "compareSceneId")
+      ? (patch.compareSceneId as string | null)
+      : previous.compareSceneId,
+  };
+}
+
 function pickTrackedState(diagramId: string | null): TrackedDiagramState | null {
   if (!diagramId) return null;
   const state = useDiagramStore.getState();
@@ -171,7 +208,8 @@ export function useCollabStoreSync({
   diagramId,
   sendPatchRef,
 }: UseCollabStoreSyncParams): UseCollabStoreSyncReturn {
-  const isApplyingRemoteRef = useRef(false);
+  /** What we believe every peer already has. The diff is taken against this. */
+  const baselineRef = useRef<TrackedDiagramState | null>(null);
 
   const getSnapshot = useCallback((): CollabSnapshot | null => {
     if (!diagramId) return null;
@@ -202,61 +240,62 @@ export function useCollabStoreSync({
     (patch: CollabPatch) => {
       if (!diagramId) return;
 
-      isApplyingRemoteRef.current = true;
-      try {
-        useDiagramStore.setState((previous) => {
-          const diagram = previous.diagrams[diagramId];
-          if (!diagram) return previous;
+      useDiagramStore.setState((previous) => {
+        const diagram = previous.diagrams[diagramId];
+        if (!diagram) return previous;
 
-          if (patch.nodeLayouts) {
-            const nextLayouts = patch.nodeLayouts as Record<string, unknown>;
-            for (const [id, nextLayout] of Object.entries(nextLayouts)) {
-              if (diagram.nodeLayouts[id] !== nextLayout) {
-                remoteLayoutUpdates.add(id);
-              }
+        if (patch.nodeLayouts) {
+          const nextLayouts = patch.nodeLayouts as Record<string, unknown>;
+          for (const [id, nextLayout] of Object.entries(nextLayouts)) {
+            if (diagram.nodeLayouts[id] !== nextLayout) {
+              remoteLayoutUpdates.add(id);
             }
           }
+        }
 
-          const now = Date.now();
+        const now = Date.now();
 
-          const nextDiagram = {
-            ...diagram,
-            name:
-              hasOwn(patch, "diagramName") && typeof patch.diagramName === "string"
-                ? patch.diagramName
-                : diagram.name,
-            domain: hasOwn(patch, "domain") ? patch.domain : diagram.domain,
-            description: hasOwn(patch, "description") ? patch.description : diagram.description,
-            snapshot: {
-              ...diagram.snapshot,
-              components: mergeCollection(diagram.snapshot.components, patch.components),
-              connections: mergeCollection(diagram.snapshot.connections, patch.connections),
-              flows: mergeCollection(diagram.snapshot.flows, patch.flows),
-              iconLibrary: mergeCollection(diagram.snapshot.iconLibrary, patch.iconLibrary),
-            },
-            nodeLayouts: mergeCollection(diagram.nodeLayouts, patch.nodeLayouts),
-            edgeLayouts: mergeCollection(diagram.edgeLayouts, patch.edgeLayouts),
-            scenes: mergeCollection(diagram.scenes, patch.scenes),
-            activeSceneId: hasOwn(patch, "activeSceneId")
-              ? patch.activeSceneId
-              : diagram.activeSceneId,
-            compareSceneId: hasOwn(patch, "compareSceneId")
-              ? patch.compareSceneId
-              : diagram.compareSceneId,
-            updatedAt: now,
-          };
+        const nextDiagram = {
+          ...diagram,
+          name:
+            hasOwn(patch, "diagramName") && typeof patch.diagramName === "string"
+              ? patch.diagramName
+              : diagram.name,
+          domain: hasOwn(patch, "domain") ? patch.domain : diagram.domain,
+          description: hasOwn(patch, "description") ? patch.description : diagram.description,
+          snapshot: {
+            ...diagram.snapshot,
+            components: mergeCollection(diagram.snapshot.components, patch.components),
+            connections: mergeCollection(diagram.snapshot.connections, patch.connections),
+            flows: mergeCollection(diagram.snapshot.flows, patch.flows),
+            iconLibrary: mergeCollection(diagram.snapshot.iconLibrary, patch.iconLibrary),
+          },
+          nodeLayouts: mergeCollection(diagram.nodeLayouts, patch.nodeLayouts),
+          edgeLayouts: mergeCollection(diagram.edgeLayouts, patch.edgeLayouts),
+          scenes: mergeCollection(diagram.scenes, patch.scenes),
+          activeSceneId: hasOwn(patch, "activeSceneId")
+            ? patch.activeSceneId
+            : diagram.activeSceneId,
+          compareSceneId: hasOwn(patch, "compareSceneId")
+            ? patch.compareSceneId
+            : diagram.compareSceneId,
+          updatedAt: now,
+        };
 
-          return {
-            ...previous,
-            diagrams: {
-              ...previous.diagrams,
-              [diagramId]: nextDiagram,
-            },
-          };
-        });
-      } finally {
-        isApplyingRemoteRef.current = false;
-      }
+        return {
+          ...previous,
+          diagrams: {
+            ...previous.diagrams,
+            [diagramId]: nextDiagram,
+          },
+        };
+      });
+
+      // The room now knows this patch, so the baseline moves by exactly it —
+      // never by the whole store, which would absorb unsent local edits.
+      baselineRef.current = baselineRef.current
+        ? applyPatchToTracked(baselineRef.current, patch)
+        : pickTrackedState(diagramId);
     },
     [diagramId],
   );
@@ -265,17 +304,18 @@ export function useCollabStoreSync({
     if (!diagramId) return;
 
     let frame: number | null = null;
-    let previousState = pickTrackedState(diagramId);
+    baselineRef.current = pickTrackedState(diagramId);
 
     const flush = () => {
       frame = null;
-      if (isApplyingRemoteRef.current || !previousState) return;
+      const previousState = baselineRef.current;
+      if (!previousState) return;
 
       const currentState = pickTrackedState(diagramId);
       if (!currentState) return;
 
       const patch = diffPatch(previousState, currentState);
-      previousState = currentState;
+      baselineRef.current = currentState;
 
       if (patch) {
         sendPatchRef.current?.(patch);
@@ -289,11 +329,11 @@ export function useCollabStoreSync({
       frame = requestAnimationFrame(flush);
     };
 
+    // Every store change is diffed against the baseline, including ones that
+    // land while a remote patch is being applied. The baseline already accounts
+    // for the patch, so an applied patch diffs to nothing and is not echoed,
+    // while a local edit waiting for its frame still gets sent.
     const unsubscribe = useDiagramStore.subscribe((diagramStoreState) => {
-      if (isApplyingRemoteRef.current) {
-        previousState = pickTrackedState(diagramId);
-        return;
-      }
       if (!diagramStoreState.diagrams[diagramId]) return;
       scheduleFlush();
     });
