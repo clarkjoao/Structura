@@ -335,6 +335,93 @@ desabilitando o guard — os dois testes de negação falham.
 
 ---
 
+### Fase 10 — divergência persistente: as duas metades que faltavam
+
+**Como apareceu.** A pergunta era de *fluidez*, não de correção: o canvas parecia
+travado com 15 pessoas. A investigação de desempenho (fase 11) exigiu comparar o
+estado final de todo mundo, e a comparação por **conteúdo** — não por contagem de
+nós, que era o que o stress test checava — mostrou outra coisa: 5 a 8 de 14
+convidados terminavam com **1 ou 2 nós em posições diferentes**, com desvios de
+até 500px, e **não convergiam** depois de 12 segundos de silêncio.
+
+Não era corrida de medição: a leitura aos 4s e aos 12s dava exatamente o mesmo
+resultado. Também não era rate limit — os 382 patches enviados receberam 382
+acks, zero rejeições. E não era renderização: comparando o store persistido em
+vez do DOM, a divergência estava no **dado**.
+
+Duas causas independentes, cada uma capaz de perder uma edição sozinha.
+
+**Causa 1 — o loop de sync engolia a edição local.** `useCollabStoreSync` mantém
+uma baseline do que os pares já sabem e transmite a diferença uma vez por frame.
+Ao aplicar um patch remoto, ele resetava essa baseline para o estado **inteiro**
+do store. Uma edição local que ainda esperava seu frame passava a fazer parte da
+baseline sem nunca ter sido enviada: quem moveu ficava com a posição nova, todo
+o resto ficava com a antiga, e nada reconciliava.
+
+A baseline agora avança **exatamente pelo patch aplicado** (`applyPatchToTracked`),
+reusando os objetos do próprio patch para que o diff seguinte os veja como
+inalterados. O patch remoto continua não ecoando, e a edição local sobrevive.
+Isso tornou o `isApplyingRemoteRef` desnecessário — o subscriber não precisa mais
+de caso especial.
+
+**Causa 2 — o remetente não via a própria operação.** O servidor transmitia com
+`exceptClientId: state.clientId`. O remetente, então, tinha uma visão ordenada da
+sala com um buraco: as próprias operações. Sequência real: B move o nó (v10), A
+move o mesmo nó (v11). O servidor guarda o valor de A. A recebe o v10 de B
+*depois* de ter enviado o v11 e o aplica — e como o v11 nunca chega até A, A fica
+permanentemente com o valor de B enquanto a sala tem o de A.
+
+O remetente passou a ser incluído no broadcast de patches. Não há eco: a baseline
+do cliente avança pelo mesmo patch, então o diff seguinte não encontra diferença.
+A exclusão continua onde faz sentido, no `peer:joined`.
+
+**Medição (produção, 40 nós, 13 convidados + host, 30s):**
+
+| | divergentes | host vs servidor |
+|---|---|---|
+| antes | 5–8 de 14, toda execução | — |
+| só correção do servidor | 3 de 13 | bate |
+| ambas | **0 de 13**, três execuções | bate |
+
+**Testes:** cliente afirma que um movimento local sobrevive a um patch remoto que
+chega no mesmo frame, e que um patch aplicado não é ecoado. Servidor afirma que o
+remetente recebe a própria operação com versão maior que a do peer anterior.
+Verifiquei os dois desabilitando a correção: ambos falham.
+
+---
+
+### Fase 11 — a fluidez não estava onde eu procurei
+
+A hipótese era tamanho e frequência das mensagens. Medindo o fio com 14 editores:
+**5–15 KB/s, ~10 mensagens/s, patch mediano de 1 entidade e ~240 bytes**. O
+trabalho por entidade das fases 1–3 já tinha resolvido isso.
+
+Correlacionando cada long task com o que chegou nos 120ms anteriores, não há
+relação com o tamanho: uma travada de **182ms** carregava **474 bytes**; uma de
+67ms carregava 7,4KB; uma de 150ms não teve mensagem nenhuma. O custo escala com
+os nós **na tela**, não com os alterados — 5 nós: 62ms bloqueado; 60 nós: 2292ms,
+com o mesmo tráfego.
+
+Onde o tempo está, pelo trace do renderer (produção, dentro das long tasks):
+**PrePaint 44,6%**, JS 16,5%. É o pipeline de paint do Blink, não o nosso código.
+Duas hipóteses minhas caíram por medição: `useCanvasNodes` custa 2,6% do tempo
+bloqueado e reaproveita 98,4% dos objetos de nó; e o DOM recebe 3 escritas por
+entidade alterada, sem amplificação.
+
+E o build importa mais que tudo isso: **dev 123–168 ms/s bloqueado, produção
+9–31 ms/s** na mesma configuração. O stress test que motivou a pergunta rodava em
+dev.
+
+Duas tentativas de otimização (fatia de presença separada e buffer de commit por
+rAF) mediram **pior** que a baseline e foram descartadas.
+
+**Ferramentas que ficaram:** `scripts/collab-wire.mjs` (tráfego, convergência por
+conteúdo contra a verdade do servidor, escritas de DOM), `scripts/collab-trace.mjs`
+(timeline do renderer dentro das long tasks) e `scripts/collab-profile.mjs`
+(perfil de CPU do host).
+
+---
+
 ## 7. O que ficou de fora
 
 - **Granularidade de campo dentro da entidade.** Dois usuários editando campos
@@ -344,6 +431,12 @@ desabilitando o guard — os dois testes de negação falham.
   é recusado e o snapshot descarta essa edição. Reconciliar de verdade exigiria
   reenviar as operações pendentes com o conteúdo — hoje `pendingOps` guarda só o
   id, não o patch.
+- **Checksum de snapshot como rede de segurança.** As duas causas da fase 10
+  foram encontradas e corrigidas, mas nada *detecta* divergência: um cliente que
+  perca um patch por qualquer outro motivo fica calado para sempre. Um checksum
+  do snapshot no `PERIODIC_SNAPSHOT`, comparado pelo cliente, transformaria isso
+  num resync automático. Hoje o `collab-wire.mjs` faz essa comparação de fora,
+  que é o suficiente para o teste mas não para produção.
 - **Tombstone para escrita sem versão declarada.** Um cliente que não manda
   `version` não pode ser avaliado e a escrita passa. Hoje é inalcançável — o
   guard de protocolo já recusa qualquer cliente que não seja v2, e o v2 sempre
