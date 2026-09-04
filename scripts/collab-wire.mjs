@@ -149,7 +149,7 @@ const WIRE_PROBE = () => {
 
 /** Counts server rejections and outbound patches on a guest. */
 const GUEST_PROBE = () => {
-  window.__g = { errors: {}, sentPatches: 0, acks: 0 };
+  window.__g = { errors: {}, sentPatches: 0, acks: 0, checksums: 0, resyncs: 0 };
   const Native = window.WebSocket;
   function Wrapped(url, protocols) {
     const ws = protocols === undefined ? new Native(url) : new Native(url, protocols);
@@ -158,6 +158,7 @@ const GUEST_PROBE = () => {
       try {
         const m = JSON.parse(String(data));
         if (m.type === "guest:patch" || m.type === "host:patch") window.__g.sentPatches++;
+        if (m.type === "sync:request") window.__g.resyncs++;
       } catch {
         /* not json */
       }
@@ -171,6 +172,8 @@ const GUEST_PROBE = () => {
           window.__g.errors[c] = (window.__g.errors[c] ?? 0) + 1;
         } else if (m.type === "OP_ACK") {
           window.__g.acks++;
+        } else if (m.type === "sync:checksum") {
+          window.__g.checksums++;
         }
       } catch {
         /* not json */
@@ -507,15 +510,23 @@ async function main() {
   const allErrors = {};
   let totalSent = 0;
   let totalAcks = 0;
+  let totalChecksums = 0;
+  let totalResyncs = 0;
   for (const page of guests) {
     const g = await page.evaluate(() => window.__g ?? null);
     if (!g) continue;
     totalSent += g.sentPatches;
     totalAcks += g.acks;
+    totalChecksums += g.checksums;
+    totalResyncs += g.resyncs;
     for (const [c, n] of Object.entries(g.errors)) allErrors[c] = (allErrors[c] ?? 0) + n;
   }
   console.log(
-    `convidados: ${totalSent} patches enviados, ${totalAcks} acks, rejeicoes ${JSON.stringify(allErrors)}\n`,
+    `convidados: ${totalSent} patches enviados, ${totalAcks} acks, rejeicoes ${JSON.stringify(allErrors)}`,
+  );
+  console.log(
+    `checksums recebidos: ${totalChecksums} | pedidos de resync: ${totalResyncs} ` +
+      `(esperado 0 numa sessao sem deriva)\n`,
   );
 
   const badEarly = await report("4s de silencio", 4000);
