@@ -101,6 +101,18 @@ const PAN_ACTIVATION_KEY = "Space";
 const SELECTION_KEY_CODE: string | null = null;
 const canvasEdgeTypes = { editable: EditableEdge };
 
+/**
+ * Every prop React Flow tracks in `reactFlowFieldsToTrack` is written into its
+ * zustand store whenever its *identity* changes, and each write runs the
+ * selector of every subscriber — one per node on screen. An inline `[15, 15]`
+ * or `{ padding: 0.3 }` is therefore a full store notification per Canvas
+ * render: measured at 226 apiece over a single 6 s drag of 150 nodes.
+ */
+const SNAP_GRID: [number, number] = [GRID_SIZE, GRID_SIZE];
+const FIT_VIEW_OPTIONS = { padding: 0.3 };
+const PRO_OPTIONS = { hideAttribution: true };
+const PAN_ON_DRAG_MOUSE: [number, number] = [1, 2];
+
 const Canvas = (props: CanvasProps = {}) => {
   useFlowSewNotices();
   const nodeTypes = useNodeTypes();
@@ -387,7 +399,7 @@ const Canvas = (props: CanvasProps = {}) => {
               onNodeContextMenu={eventHandlers.onNodeContextMenu}
               onNodeDragStop={onNodeDragStop}
               onSelectionChange={eventHandlers.onSelectionChange}
-              panOnDrag={inputProfile.prefersTouchCanvasUi ? true : [1, 2]}
+              panOnDrag={inputProfile.prefersTouchCanvasUi ? true : PAN_ON_DRAG_MOUSE}
               panOnScroll={false}
               selectionOnDrag={!inputProfile.prefersTouchCanvasUi}
               panActivationKeyCode={inputProfile.prefersTouchCanvasUi ? null : PAN_ACTIVATION_KEY}
@@ -402,15 +414,15 @@ const Canvas = (props: CanvasProps = {}) => {
               selectionKeyCode={SELECTION_KEY_CODE}
               nodeDragThreshold={DRAG_THRESHOLD_PX}
               snapToGrid={!isSnapToGridDisabledForE2E()}
-              snapGrid={[GRID_SIZE, GRID_SIZE]}
+              snapGrid={SNAP_GRID}
               defaultViewport={initialViewport}
               fitView={!hasSavedViewport(initialViewport)}
-              fitViewOptions={{ padding: 0.3 }}
+              fitViewOptions={FIT_VIEW_OPTIONS}
               onMoveEnd={eventHandlers.onMoveEnd}
               nodesDraggable={interactionMode.canEditCanvas}
               nodesConnectable={interactionMode.canEditCanvas}
               elementsSelectable={interactionMode.canEditCanvas}
-              proOptions={{ hideAttribution: true }}
+              proOptions={PRO_OPTIONS}
               className="bg-background"
             >
               <Background variant={BackgroundVariant.Dots} gap={18} size={1.5} />
