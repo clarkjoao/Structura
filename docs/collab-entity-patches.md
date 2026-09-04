@@ -422,6 +422,70 @@ conteúdo contra a verdade do servidor, escritas de DOM), `scripts/collab-trace.
 
 ---
 
+### Fase 12 — checksum: detectar a deriva que ainda não conhecemos
+
+A fase 10 achou e corrigiu duas causas de divergência, mas não deixou nada que
+*perceba* uma terceira. O caso perigoso é deriva de conteúdo na versão **certa**:
+a detecção de gap não vê (as versões batem), o snapshot periódico só repara a
+cada 100 operações, e até lá o cliente fica errado sem saber.
+
+**Como funciona.** O servidor publica um fingerprint da sala (`sync:checksum`,
+~68 bytes) a cada 25 operações **e** 2s depois de a sala ficar quieta. O cliente
+compara com o seu e, se diferirem, pede reparo.
+
+Só o contador não bastava, e foi a medição que mostrou: numa execução, 1 de 13
+convidados derivou e nada disparou — a deriva caiu na última janela de operações
+antes do silêncio, que o contador nunca fecha. É exatamente quando o usuário
+para de mexer e continua vendo errado. Com a publicação por ociosidade, uma
+deriva seguida de apenas 5 operações (bem abaixo do limiar) é detectada e
+reparada. O `sync:request` ganhou `reason: "checksum"`, porque nesse caso o cliente
+está na versão certa: reproduzir o log mandaria zero operações, então esse motivo
+sempre responde com snapshot completo.
+
+**O que é hasheado.** Exatamente a superfície sincronizável — as sete coleções
+por entidade mais os escalares. Nada de `diagramId`, `level` ou viewport:
+reportar deriva que nenhum resync conserta seria pior que não reportar. As chaves
+são ordenadas recursivamente (dois pares podem montar a mesma entidade em ordens
+diferentes) e `undefined` é dobrado em `null`.
+
+**O cliente hasheia a baseline, não o store.** Uma edição que o usuário acabou de
+fazer e que ainda não foi transmitida é uma diferença que a sala *deve* ter;
+comparar o store faria todo arrasto parecer divergência.
+
+**Guardas contra tempestade de resync** — o risco real de ligar um detector:
+só compara com nada em voo (`pendingOps` e batch vazios) e na mesma versão do
+fingerprint; e no máximo um pedido a cada 10s. Os três testes que cobrem isso
+falham se a guarda correspondente for removida.
+
+**Ordem importa.** O fingerprint é emitido *depois* do patch daquela versão. Na
+primeira tentativa saía antes, e todo cliente lia o próprio atraso como
+divergência — o teste de ponta a ponta pegou isso antes do commit.
+
+**Efeito colateral necessário.** Aplicar um snapshot substitui o diagrama inteiro
+mas não mexia na baseline do `useCollabStoreSync`, então o cliente respondia a
+cada reparo transmitindo de volta a visão que acabara de descartar. `onSnapshot`
+agora adota o snapshot como baseline. Sem isso, o detector criaria a tempestade
+que ele deveria evitar.
+
+**Medições (produção):**
+
+| | resultado |
+|---|---|
+| deriva forçada (patch apagado, versão preservada) | vítima se recupera sozinha, 3 de 3 |
+| mesma deriva com só 5 operações depois | reparada pela via da ociosidade, 2 de 2 |
+| sessão normal, 13 convidados | 156-195 fingerprints, **0 pedidos de resync**, 3 execuções |
+| custo no fio | 68 bytes por frame, 1,0 KB em 30s (0,0 KB/s) |
+| bloqueio do host | 8-9 ms/s, sem mudança |
+
+**Testes:** paridade entre as duas implementações do hash (cliente e servidor são
+pacotes separados, então a função é duplicada e um teste as prende uma à outra);
+o servidor publica o fingerprint do próprio estado, publica também ao ficar
+ocioso e responde a `reason: "checksum"` com snapshot; o cliente pede reparo no mismatch e se cala nos três
+casos de guarda. Ponta a ponta: `scripts/collab-divergence.mjs` intercepta o
+socket de um convidado, apaga um patch preservando a versão e verifica a cura.
+
+---
+
 ## 7. O que ficou de fora
 
 - **Granularidade de campo dentro da entidade.** Dois usuários editando campos
@@ -431,12 +495,10 @@ conteúdo contra a verdade do servidor, escritas de DOM), `scripts/collab-trace.
   é recusado e o snapshot descarta essa edição. Reconciliar de verdade exigiria
   reenviar as operações pendentes com o conteúdo — hoje `pendingOps` guarda só o
   id, não o patch.
-- **Checksum de snapshot como rede de segurança.** As duas causas da fase 10
-  foram encontradas e corrigidas, mas nada *detecta* divergência: um cliente que
-  perca um patch por qualquer outro motivo fica calado para sempre. Um checksum
-  do snapshot no `PERIODIC_SNAPSHOT`, comparado pelo cliente, transformaria isso
-  num resync automático. Hoje o `collab-wire.mjs` faz essa comparação de fora,
-  que é o suficiente para o teste mas não para produção.
+- **Granularidade do reparo por checksum.** O mismatch repara com o snapshot
+  inteiro, mesmo que só uma entidade tenha derivado. É o caminho seguro e raro
+  (zero disparos numa sessão saudável), mas um reparo por coleção seria mais
+  barato se algum dia isso deixar de ser raro.
 - **Tombstone para escrita sem versão declarada.** Um cliente que não manda
   `version` não pode ser avaliado e a escrita passa. Hoje é inalcançável — o
   guard de protocolo já recusa qualquer cliente que não seja v2, e o v2 sempre
