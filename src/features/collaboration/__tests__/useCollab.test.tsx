@@ -101,6 +101,7 @@ interface RenderOptions {
   isHost?: boolean;
   diagramId?: string | null;
   getSnapshot?: () => CollabSnapshot | null;
+  getSyncedChecksum?: () => string;
 }
 
 function renderHookWithClient(options: RenderOptions = {}) {
@@ -108,6 +109,7 @@ function renderHookWithClient(options: RenderOptions = {}) {
     isHost = false,
     diagramId = TEST_ROOM_ID,
     getSnapshot = () => makeSnapshot(),
+    getSyncedChecksum = () => "checksum-in-sync",
   } = options;
 
   const onSnapshot = vi.fn();
@@ -123,6 +125,7 @@ function renderHookWithClient(options: RenderOptions = {}) {
         getSnapshot,
         onSnapshot,
         onPatch,
+        getSyncedChecksum,
       }),
     {
       initialProps: { isHost, diagramId },
@@ -604,5 +607,88 @@ describe("useCollab hook", () => {
     expect(onPatch).toHaveBeenCalledTimes(2);
     expect(onPatch).toHaveBeenNthCalledWith(1, { nodeLayouts: { a: { elementId: "a", x: 1 } } });
     expect(onPatch).toHaveBeenNthCalledWith(2, { nodeLayouts: { b: { elementId: "b", x: 2 } } });
+  });
+
+  // -------------------------------------------------------------------------
+  // Drift detection: the room's fingerprint vs. ours
+  // -------------------------------------------------------------------------
+  describe("sync:checksum", () => {
+    /** Connect, settle at the given version, and clear the join traffic. */
+    async function settledClient(checksum: string, version = 4) {
+      const harness = renderHookWithClient({
+        isHost: false,
+        getSyncedChecksum: () => checksum,
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0);
+      });
+      const ws = harness.getWs();
+      ws.injectMessage({ type: "session:init", version, snapshot: makeSnapshot(), peers: [] });
+      ws.sentMessages = [];
+      return { ...harness, ws };
+    }
+
+    it("asks for a full resync when the fingerprints disagree", async () => {
+      const { ws } = await settledClient("ours-is-different");
+
+      await act(async () => {
+        ws.injectMessage({ type: "sync:checksum", version: 4, checksum: "the-rooms" });
+      });
+
+      expect(ws.sentMessages).toHaveLength(1);
+      expect(ws.sentMessages[0]).toMatchObject({
+        type: "sync:request",
+        baseVersion: 4,
+        reason: "checksum",
+      });
+    });
+
+    it("stays quiet when the fingerprints agree", async () => {
+      const { ws } = await settledClient("same");
+
+      await act(async () => {
+        ws.injectMessage({ type: "sync:checksum", version: 4, checksum: "same" });
+      });
+
+      expect(ws.sentMessages).toEqual([]);
+    });
+
+    it("ignores a fingerprint for a version it has not reached", async () => {
+      const { ws } = await settledClient("ours-is-different", 4);
+
+      await act(async () => {
+        ws.injectMessage({ type: "sync:checksum", version: 9, checksum: "the-rooms" });
+      });
+
+      expect(ws.sentMessages).toEqual([]);
+    });
+
+    it("ignores a fingerprint while its own writes are still in flight", async () => {
+      const { result, ws } = await settledClient("ours-is-different");
+
+      await act(async () => {
+        result.current.sendPatch({ nodeLayouts: { n1: { x: 1 } } });
+        await vi.advanceTimersByTimeAsync(60);
+      });
+      ws.sentMessages = [];
+
+      await act(async () => {
+        ws.injectMessage({ type: "sync:checksum", version: 4, checksum: "the-rooms" });
+      });
+
+      expect(ws.sentMessages.filter((m) => m.type === "sync:request")).toEqual([]);
+    });
+
+    it("does not repeat the request while the cooldown is running", async () => {
+      const { ws } = await settledClient("ours-is-different");
+
+      await act(async () => {
+        ws.injectMessage({ type: "sync:checksum", version: 4, checksum: "the-rooms" });
+        ws.injectMessage({ type: "sync:checksum", version: 4, checksum: "the-rooms" });
+        ws.injectMessage({ type: "sync:checksum", version: 4, checksum: "the-rooms" });
+      });
+
+      expect(ws.sentMessages.filter((m) => m.type === "sync:request")).toHaveLength(1);
+    });
   });
 });

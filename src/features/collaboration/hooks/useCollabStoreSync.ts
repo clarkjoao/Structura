@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, type RefObject } from "react";
 import { useDiagramStore } from "@/features/diagram";
+import { snapshotChecksum } from "../utils/snapshotChecksum";
 import type { CollabPatch, CollabSnapshot } from "./useCollab";
 
 export const remoteLayoutUpdates = new Set<string>();
@@ -27,6 +28,10 @@ interface UseCollabStoreSyncParams {
 interface UseCollabStoreSyncReturn {
   getSnapshot: () => CollabSnapshot | null;
   onPatch: (patch: CollabPatch) => void;
+  /** Fingerprint of the state we believe the room has, for drift detection. */
+  getSyncedChecksum: () => string;
+  /** Adopt the store as the new baseline, after authoritative state replaced it. */
+  resetBaseline: () => void;
 }
 
 function hasOwn<T extends object>(obj: T, key: keyof T): boolean {
@@ -346,8 +351,25 @@ export function useCollabStoreSync({
     };
   }, [diagramId, sendPatchRef]);
 
+  // Hash the baseline rather than the live store: an edit the user just made
+  // and that has not been broadcast yet is a difference the room is *supposed*
+  // to have, and comparing it would report drift on every drag.
+  const getSyncedChecksum = useCallback(
+    () => snapshotChecksum(baselineRef.current as Record<string, unknown> | null),
+    [],
+  );
+
+  // A snapshot replaces the store wholesale, so the baseline has to follow it.
+  // Left alone, the next diff would treat the authoritative state as local work
+  // and broadcast the client's old view straight back to the room.
+  const resetBaseline = useCallback(() => {
+    baselineRef.current = pickTrackedState(diagramId);
+  }, [diagramId]);
+
   return {
     getSnapshot,
     onPatch,
+    getSyncedChecksum,
+    resetBaseline,
   };
 }

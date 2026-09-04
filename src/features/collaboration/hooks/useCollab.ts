@@ -36,6 +36,9 @@ export interface UseCollabParams {
   onSnapshot: (snapshot: CollabSnapshot) => void;
 
   onPatch: (patch: CollabPatch) => void;
+
+  /** Fingerprint of the state this client believes the room has. */
+  getSyncedChecksum: () => string;
 }
 
 export interface UseCollabReturn {
@@ -58,6 +61,8 @@ const ROOM_NOT_FOUND_RETRY_MS = 3000;
 const CLIENT_PING_INTERVAL_MS = 25_000;
 const CLIENT_PONG_TIMEOUT_MS = 10_000;
 const MAX_PENDING_OPS = 100; // Max pending operations before forcing resync
+/** Never ask for a full repair more often than this, whatever the checksums say. */
+const CHECKSUM_RESYNC_COOLDOWN_MS = 10_000;
 
 /**
  * Wire protocol version, sent on join and validated by the server.
@@ -232,6 +237,7 @@ export function useCollab({
   getSnapshot,
   onSnapshot,
   onPatch,
+  getSyncedChecksum,
 }: UseCollabParams): UseCollabReturn {
   const roomId = diagramId ?? null;
 
@@ -245,6 +251,9 @@ export function useCollab({
   const getSnapshotRef = useRef(getSnapshot);
   const onSnapshotRef = useRef(onSnapshot);
   const onPatchRef = useRef(onPatch);
+  const getSyncedChecksumRef = useRef(getSyncedChecksum);
+  /** Timestamp of the last checksum-driven resync, to keep it from repeating. */
+  const lastChecksumResyncRef = useRef(0);
 
   const wsRef = useRef<WebSocket | null>(null);
   const retryAttemptRef = useRef(0);
@@ -300,6 +309,7 @@ export function useCollab({
   getSnapshotRef.current = getSnapshot;
   onSnapshotRef.current = onSnapshot;
   onPatchRef.current = onPatch;
+  getSyncedChecksumRef.current = getSyncedChecksum;
 
   const clearReconnectTimer = useCallback(() => {
     if (!reconnectTimerRef.current) return;
@@ -580,6 +590,38 @@ export function useCollab({
               console.warn(`[useCollab] operation rejected: id=${operationId}, reason=${reason}`);
             }
           }
+          return;
+        }
+        case "sync:checksum": {
+          const serverVersion = typeof message.version === "number" ? message.version : null;
+          const serverChecksum = typeof message.checksum === "string" ? message.checksum : null;
+          if (serverVersion === null || serverChecksum === null) return;
+
+          // Only meaningful when this client is at exactly the version the
+          // fingerprint describes and has nothing in flight. Otherwise a
+          // mismatch is just latency, and acting on it would be the resync
+          // storm this is meant to avoid.
+          const settled =
+            pendingOpsRef.current.size === 0 &&
+            pendingBatchRef.current.length === 0 &&
+            versionRef.current.version === serverVersion;
+          if (!settled) return;
+
+          if (getSyncedChecksumRef.current() === serverChecksum) return;
+
+          const now = Date.now();
+          if (now - lastChecksumResyncRef.current < CHECKSUM_RESYNC_COOLDOWN_MS) return;
+          lastChecksumResyncRef.current = now;
+
+          console.warn(
+            `[useCollab] diverged from the room at version ${serverVersion}, asking for a full resync`,
+          );
+          sendRaw({
+            type: "sync:request",
+            roomId,
+            baseVersion: versionRef.current.version,
+            reason: "checksum",
+          });
           return;
         }
         case "SYNC_COMPLETE": {

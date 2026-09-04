@@ -1,6 +1,7 @@
 import type { Server as HttpServer } from "http";
 import { WebSocketServer, type WebSocket } from "ws";
 import { WS_PATH } from "./config.js";
+import { snapshotChecksum } from "./snapshotChecksum.js";
 
 interface User {
   id: string;
@@ -16,6 +17,7 @@ interface Room {
   reconnectTimer?: ReturnType<typeof setTimeout>;
   version: number; // Monotonically increasing operation counter
   snapshotAtVersion: number; // Version when last snapshot was taken
+  checksumAtVersion: number; // Version of the last fingerprint broadcast
   operationLog: Array<{
     version: number;
     operationId: string;
@@ -31,6 +33,8 @@ interface Room {
   /** Newest cursor per client, awaiting the next coalesced flush. */
   pendingCursors: Map<string, CursorEntry>;
   cursorTimer: ReturnType<typeof setTimeout> | null;
+  /** Publishes a fingerprint once the room falls quiet. */
+  checksumTimer: ReturnType<typeof setTimeout> | null;
 }
 
 interface CursorEntry {
@@ -86,6 +90,8 @@ function hasProtocolMismatch(ws: WebSocket, message: JsonMessage): boolean {
 
 // Snapshot configuration
 const SNAPSHOT_INTERVAL_OPS = 100; // Take snapshot every N operations
+const CHECKSUM_INTERVAL_OPS = 25; // Fingerprint the room this often, so drift is caught early
+const CHECKSUM_IDLE_MS = 2000; // ...and once more after the room falls quiet
 const SNAPSHOT_INTERVAL_MS = 5 * 60 * 1000; // Or every 5 minutes (whichever comes first)
 
 // Security and abuse prevention
@@ -353,6 +359,10 @@ function closeRoom(roomId: string, reason: "session:closed" | "host:disconnected
   if (room.cursorTimer) {
     clearTimeout(room.cursorTimer);
     room.cursorTimer = null;
+  }
+  if (room.checksumTimer) {
+    clearTimeout(room.checksumTimer);
+    room.checksumTimer = null;
   }
   room.pendingCursors.clear();
 
@@ -645,11 +655,13 @@ function handleHostJoin(ws: WebSocket, message: JsonMessage): void {
     guests: new Map(),
     version: 0,
     snapshotAtVersion: 0,
+    checksumAtVersion: 0,
     operationLog: [],
     operationLogBytes: 0,
     tombstones: new Map(),
     pendingCursors: new Map(),
     cursorTimer: null,
+    checksumTimer: null,
   };
 
   rooms.set(roomId, room);
@@ -845,6 +857,10 @@ function handleHostPatch(ws: WebSocket, message: JsonMessage): void {
       version: room.version,
     });
   }
+
+  // After the patch, never before: a client that has not applied this version
+  // yet would read its own lag as divergence and ask for a needless repair.
+  broadcastChecksum(room);
 }
 
 function handleGuestPatch(ws: WebSocket, message: JsonMessage): void {
@@ -922,6 +938,8 @@ function handleGuestPatch(ws: WebSocket, message: JsonMessage): void {
       clientId: state.clientId,
     });
   }
+
+  broadcastChecksum(room);
 }
 
 function handleHostClose(ws: WebSocket, message: JsonMessage): void {
@@ -1003,6 +1021,45 @@ function checkAndTakePeriodicSnapshot(room: Room, roomId: string): void {
 
   if (opsSinceSnapshot >= SNAPSHOT_INTERVAL_OPS) {
     takePeriodicSnapshot(room, roomId);
+  }
+}
+
+/**
+ * Publish a fingerprint of the room so clients can tell whether they still
+ * agree with it.
+ *
+ * Versions alone cannot answer that: a client can be at the right version and
+ * still hold a stale entity, which is exactly how divergence went unnoticed.
+ * The frame is ~16 bytes of hash, so it can run far more often than the full
+ * snapshot it may end up triggering.
+ */
+function publishChecksum(room: Room): void {
+  if (room.version === room.checksumAtVersion) return;
+  room.checksumAtVersion = room.version;
+
+  broadcastToRoom(room, {
+    type: "sync:checksum",
+    version: room.version,
+    checksum: snapshotChecksum(room.snapshot),
+  });
+}
+
+function broadcastChecksum(room: Room): void {
+  // Publishing only every N operations leaves the last window of a burst
+  // unverified: the room goes quiet, no further fingerprint is sent, and a
+  // client that drifted on one of those final operations stays wrong with
+  // nobody looking. So the count triggers one, and so does falling idle.
+
+  if (room.checksumTimer) clearTimeout(room.checksumTimer);
+  room.checksumTimer = setTimeout(() => {
+    room.checksumTimer = null;
+    publishChecksum(room);
+  }, CHECKSUM_IDLE_MS);
+  // Node would keep the process alive for this alone; the room does not need it.
+  room.checksumTimer.unref?.();
+
+  if (room.version - room.checksumAtVersion >= CHECKSUM_INTERVAL_OPS) {
+    publishChecksum(room);
   }
 }
 
@@ -1150,9 +1207,14 @@ function handleSyncRequest(ws: WebSocket, message: JsonMessage): void {
     return;
   }
 
+  // A checksum mismatch means the content is wrong, not that operations are
+  // missing — the client is usually at the right version. Replaying the log
+  // would send it nothing, so this case always gets the full snapshot.
+  const wantsFullResync = message.reason === "checksum";
+
   // If client is behind snapshot, send snapshot + reset
   // Client will apply the snapshot and continue from there
-  if (baseVersion < room.snapshotAtVersion) {
+  if (wantsFullResync || baseVersion < room.snapshotAtVersion) {
     safeSend(ws, {
       type: "SYNC_SNAPSHOT",
       version: room.version,

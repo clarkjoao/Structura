@@ -115,6 +115,55 @@ describe("useCollabStoreSync — local edits vs. incoming patches", () => {
     });
   });
 
+  it("adopts an authoritative snapshot as the baseline instead of echoing it back", () => {
+    const sent: CollabPatch[] = [];
+    const sendPatchRef = { current: (patch: CollabPatch) => sent.push(patch) };
+
+    const { result } = renderHook(() =>
+      useCollabStoreSync({ diagramId: DIAGRAM_ID, sendPatchRef }),
+    );
+
+    // A resync replaces the diagram wholesale, the way onSnapshot does.
+    useDiagramStore.setState((state) => {
+      const diagram = state.diagrams[DIAGRAM_ID]!;
+      return {
+        diagrams: {
+          ...state.diagrams,
+          [DIAGRAM_ID]: {
+            ...diagram,
+            nodeLayouts: {
+              a: { elementId: "a", x: 500, y: 500, width: 10, height: 10 },
+              b: { elementId: "b", x: 600, y: 600, width: 10, height: 10 },
+            },
+          },
+        },
+      } as never;
+    });
+    result.current.resetBaseline();
+
+    runFrames();
+
+    expect(sent).toEqual([]);
+  });
+
+  it("reports a checksum that follows the baseline, not unsent local work", () => {
+    const sendPatchRef = { current: () => {} };
+    const { result } = renderHook(() =>
+      useCollabStoreSync({ diagramId: DIAGRAM_ID, sendPatchRef }),
+    );
+
+    const atRest = result.current.getSyncedChecksum();
+
+    // An edit the room has not been told about yet must not move the
+    // fingerprint, or every drag would look like divergence.
+    moveNodeLocally("a", 42, 42);
+    expect(result.current.getSyncedChecksum()).toBe(atRest);
+
+    // Once it is broadcast, the fingerprint moves with it.
+    runFrames();
+    expect(result.current.getSyncedChecksum()).not.toBe(atRest);
+  });
+
   it("does not echo an applied remote patch back to the room", () => {
     const sent: CollabPatch[] = [];
     const sendPatchRef = { current: (patch: CollabPatch) => sent.push(patch) };

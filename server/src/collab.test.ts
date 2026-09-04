@@ -9,6 +9,7 @@ import { createServer, type Server as HttpServer } from "node:http";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import WebSocket from "ws";
 import { attachCollabServer } from "./collab.js";
+import { snapshotChecksum } from "./snapshotChecksum.js";
 
 // ---------------------------------------------------------------------------
 // Test harness
@@ -1055,5 +1056,133 @@ describe("collaboration server integration", () => {
     host.ws.close();
     alice.ws.close();
     bob.ws.close();
+  });
+
+  // -------------------------------------------------------------------------
+  // Drift detection
+  // -------------------------------------------------------------------------
+  it("publishes a fingerprint of the room that matches its own state", async () => {
+    const room = `${TEST_ROOM}-checksum`;
+    const host = await connectClient(room);
+    host.ws.send(
+      JSON.stringify({
+        type: "host:join",
+        protocol: 2,
+        roomId: room,
+        diagramId: room,
+        user: makeUser(80),
+        snapshot: makeSnapshot({ nodeLayouts: { n1: { elementId: "n1", x: 0, y: 0 } } }),
+      }),
+    );
+    await waitForMessage(host, "host:ack");
+
+    // One fingerprint is published every CHECKSUM_INTERVAL_OPS operations.
+    let lastX = 0;
+    for (let i = 1; i <= 25; i++) {
+      lastX = i;
+      host.ws.send(
+        JSON.stringify({
+          type: "host:patch",
+          roomId: room,
+          patch: { nodeLayouts: { n1: { elementId: "n1", x: i, y: 0 } } },
+        }),
+      );
+      await waitForMessage(host, "OP_ACK");
+    }
+
+    const frame = (await waitForMessage(host, "sync:checksum")) as Record<string, unknown>;
+    expect(typeof frame.checksum).toBe("string");
+    expect(frame.version).toBe(25);
+
+    // The value has to be the fingerprint of what the room actually holds,
+    // otherwise every client would ask for a repair it does not need.
+    const expected = snapshotChecksum({
+      ...makeSnapshot({ nodeLayouts: { n1: { elementId: "n1", x: lastX, y: 0 } } }),
+    });
+    expect(frame.checksum).toBe(expected);
+
+    host.ws.close();
+  });
+
+  it("answers a checksum mismatch with a snapshot, not an empty replay", async () => {
+    const room = `${TEST_ROOM}-checksum-repair`;
+    const host = await connectClient(room);
+    host.ws.send(
+      JSON.stringify({
+        type: "host:join",
+        protocol: 2,
+        roomId: room,
+        diagramId: room,
+        user: makeUser(81),
+        snapshot: makeSnapshot({ nodeLayouts: { n1: { elementId: "n1", x: 3, y: 3 } } }),
+      }),
+    );
+    const ack = (await waitForMessage(host, "host:ack")) as Record<string, unknown>;
+
+    const guest = await connectClient(room);
+    guest.ws.send(
+      JSON.stringify({ type: "guest:join", protocol: 2, roomId: room, user: makeUser(82) }),
+    );
+    await waitForMessage(guest, "session:init");
+
+    // The guest is at the current version — a log replay would send it nothing,
+    // which is exactly the case a mismatch needs covered.
+    guest.ws.send(
+      JSON.stringify({
+        type: "sync:request",
+        roomId: room,
+        baseVersion: ack.version ?? 0,
+        reason: "checksum",
+      }),
+    );
+
+    const repair = (await waitForMessage(guest, [
+      "SYNC_SNAPSHOT",
+      "SYNC_COMPLETE",
+    ])) as Record<string, unknown>;
+    expect(repair.type).toBe("SYNC_SNAPSHOT");
+    const layouts = (repair.snapshot as Record<string, Record<string, Record<string, number>>>)
+      .nodeLayouts;
+    expect(layouts.n1.x).toBe(3);
+
+    host.ws.close();
+    guest.ws.close();
+  });
+
+  it("publishes a fingerprint once the room falls quiet, not only every N operations", async () => {
+    const room = `${TEST_ROOM}-checksum-idle`;
+    const host = await connectClient(room);
+    host.ws.send(
+      JSON.stringify({
+        type: "host:join",
+        protocol: 2,
+        roomId: room,
+        diagramId: room,
+        user: makeUser(83),
+        snapshot: makeSnapshot({ nodeLayouts: { n1: { elementId: "n1", x: 0, y: 0 } } }),
+      }),
+    );
+    await waitForMessage(host, "host:ack");
+
+    // Far fewer than CHECKSUM_INTERVAL_OPS: on the operation counter alone this
+    // burst would never be verified, which is exactly where drift used to sit.
+    for (let i = 1; i <= 3; i++) {
+      host.ws.send(
+        JSON.stringify({
+          type: "host:patch",
+          roomId: room,
+          patch: { nodeLayouts: { n1: { elementId: "n1", x: i, y: 0 } } },
+        }),
+      );
+      await waitForMessage(host, "OP_ACK");
+    }
+
+    const frame = (await waitForMessage(host, "sync:checksum", 10_000)) as Record<string, unknown>;
+    expect(frame.version).toBe(3);
+    expect(frame.checksum).toBe(
+      snapshotChecksum(makeSnapshot({ nodeLayouts: { n1: { elementId: "n1", x: 3, y: 0 } } })),
+    );
+
+    host.ws.close();
   });
 });

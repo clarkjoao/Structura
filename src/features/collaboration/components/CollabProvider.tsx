@@ -127,45 +127,53 @@ export function CollabProvider({
 
   const sendPatchRef = useRef<(patch: CollabPatch) => void>(() => {});
 
-  const { getSnapshot, onPatch } = useCollabStoreSync({
+  const { getSnapshot, onPatch, getSyncedChecksum, resetBaseline } = useCollabStoreSync({
     diagramId: storeDiagramId,
     sendPatchRef,
   });
 
-  const onSnapshot = useCallback((snapshot: CollabSnapshot) => {
-    useDiagramStore.setState((prev) => {
-      const existing = prev.diagrams[snapshot.diagramId];
-      const now = Date.now();
-      return {
-        ...prev,
-        activeDiagramId: snapshot.diagramId,
-        diagrams: {
-          ...prev.diagrams,
-          [snapshot.diagramId]: {
-            id: snapshot.diagramId,
-            name: snapshot.diagramName,
-            level: snapshot.level,
-            domain: snapshot.domain,
-            description: snapshot.description,
-            createdAt: existing?.createdAt ?? now,
-            updatedAt: now,
-            activeSceneId: snapshot.activeSceneId,
-            compareSceneId: snapshot.compareSceneId,
-            viewport: existing?.viewport ?? { x: 0, y: 0, zoom: 1 },
-            snapshot: {
-              components: snapshot.components,
-              connections: snapshot.connections,
-              flows: snapshot.flows,
-              iconLibrary: snapshot.iconLibrary,
+  const onSnapshot = useCallback(
+    (snapshot: CollabSnapshot) => {
+      useDiagramStore.setState((prev) => {
+        const existing = prev.diagrams[snapshot.diagramId];
+        const now = Date.now();
+        return {
+          ...prev,
+          activeDiagramId: snapshot.diagramId,
+          diagrams: {
+            ...prev.diagrams,
+            [snapshot.diagramId]: {
+              id: snapshot.diagramId,
+              name: snapshot.diagramName,
+              level: snapshot.level,
+              domain: snapshot.domain,
+              description: snapshot.description,
+              createdAt: existing?.createdAt ?? now,
+              updatedAt: now,
+              activeSceneId: snapshot.activeSceneId,
+              compareSceneId: snapshot.compareSceneId,
+              viewport: existing?.viewport ?? { x: 0, y: 0, zoom: 1 },
+              snapshot: {
+                components: snapshot.components,
+                connections: snapshot.connections,
+                flows: snapshot.flows,
+                iconLibrary: snapshot.iconLibrary,
+              },
+              nodeLayouts: snapshot.nodeLayouts,
+              edgeLayouts: snapshot.edgeLayouts,
+              scenes: snapshot.scenes,
             },
-            nodeLayouts: snapshot.nodeLayouts,
-            edgeLayouts: snapshot.edgeLayouts,
-            scenes: snapshot.scenes,
           },
-        },
-      };
-    });
-  }, []);
+        };
+      });
+
+      // The snapshot is the room's state, not local work: adopt it as the
+      // baseline so the next diff has nothing to say. Without this the client
+      // would answer every repair by broadcasting the view it just replaced.
+      resetBaseline();
+    },
+    [resetBaseline],
+  );
 
   const {
     session,
@@ -189,6 +197,7 @@ export function CollabProvider({
     getSnapshot,
     onSnapshot,
     onPatch,
+    getSyncedChecksum,
   });
 
   sendPatchRef.current = sendPatch;
