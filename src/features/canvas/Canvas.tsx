@@ -253,6 +253,27 @@ const Canvas = (props: CanvasProps = {}) => {
     actions.setParent(selectedSingleId!, null);
   }, [actions, selectedComponent?.parentId, selectedSingleId]);
 
+  /**
+   * Every node type reads this context. An object literal here changes identity
+   * on each Canvas render — and `useLocalNodes` ticks one per drag frame — so
+   * all of them re-rendered every frame, `memo` or not. Keyed on the four
+   * values it carries, the identity now only moves when a highlight does.
+   */
+  const handleHighlightValue = useMemo(
+    () => ({
+      highlightedConnectionId: visualState.highlightedConnectionId,
+      highlightedNodeIds: visualState.highlightedNodeIds,
+      setHighlight: visualState.setHighlight,
+      clearHighlight: visualState.clearHighlight,
+    }),
+    [
+      visualState.highlightedConnectionId,
+      visualState.highlightedNodeIds,
+      visualState.setHighlight,
+      visualState.clearHighlight,
+    ],
+  );
+
   if (!diagram) {
     return (
       <div className="flex-1 flex items-center justify-center text-muted-foreground">
@@ -264,14 +285,7 @@ const Canvas = (props: CanvasProps = {}) => {
   const resolvedSnapshot = getCachedCanvasSnapshot(diagram);
 
   return (
-    <HandleHighlightProvider
-      value={{
-        highlightedConnectionId: visualState.highlightedConnectionId,
-        highlightedNodeIds: visualState.highlightedNodeIds,
-        setHighlight: visualState.setHighlight,
-        clearHighlight: visualState.clearHighlight,
-      }}
-    >
+    <HandleHighlightProvider value={handleHighlightValue}>
       <div className="flex-1 flex relative h-full min-h-0">
         <style>{CANVAS_STYLES}</style>
         <div ref={reactFlowWrapperRef} className="flex-1 relative">
