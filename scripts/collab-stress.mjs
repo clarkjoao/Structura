@@ -22,6 +22,11 @@ const SHOW_GUESTS = process.env.SHOW_GUESTS === "1";
 const SLOW_MO = Number(process.env.SLOW_MO ?? 0);
 // CURSORS=0 isolates how much of the cost is cursor traffic alone.
 const CURSORS = process.env.CURSORS !== "0";
+// IDLE=1 keeps everyone connected but inactive: same browser count, no traffic.
+const IDLE = process.env.IDLE === "1";
+// HOST_IDLE=1 makes the watched host a pure observer, so its cost is only what
+// receiving other people costs.
+const HOST_IDLE = process.env.HOST_IDLE === "1";
 
 // Same key as LocalStorageAdapter prefix + PERSIST_KEY, and the current
 // PERSIST_SCHEMA_VERSION — seeding at an older version would silently run
@@ -472,6 +477,7 @@ async function runBot({ page, name, componentIds, stats, deadline, canAddElement
   let y = between(100, 600);
 
   while (Date.now() < deadline) {
+    if (IDLE || (HOST_IDLE && name === "Host")) { await sleep(500); continue; }
     try {
       // Wander the cursor: several small steps between heavier actions.
       for (let i = 0; i < (CURSORS ? 6 : 0) && Date.now() < deadline; i++) {
