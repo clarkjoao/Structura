@@ -531,6 +531,47 @@ function applyPatch(
   return effective;
 }
 
+/**
+ * Operations needed to bring a client from `fromVersion` up to date, or null
+ * when the log cannot cover that span and a full snapshot is required.
+ *
+ * The log is trimmed by both count and bytes, so coverage is not guaranteed:
+ * it holds only ops newer than the last snapshot, and only as many as the
+ * budget allows.
+ */
+function replayableFrom(
+  room: Room,
+  fromVersion: number,
+): Array<Record<string, unknown>> | null {
+  if (fromVersion < 0 || fromVersion > room.version) return null;
+  if (fromVersion === room.version) return [];
+  // Anything at or before the last snapshot is no longer replayable.
+  if (fromVersion < room.snapshotAtVersion) return null;
+
+  const ops = room.operationLog.filter((op) => op.version > fromVersion);
+  if (ops.length === 0) return null;
+  // The oldest op we hold must be the very next one the client needs,
+  // otherwise there is a hole in the middle.
+  if (ops[0].version !== fromVersion + 1) return null;
+
+  return ops.map((op) => ({
+    version: op.version,
+    operationId: op.operationId,
+    clientId: op.clientId,
+    patch: op.patch,
+  }));
+}
+
+/**
+ * Version a rejoining client claims to already hold, or null when it is
+ * starting fresh. Only meaningful if the client vouches that its local state
+ * matches that version exactly — see the client's resume guard.
+ */
+function parseResumeFrom(message: JsonMessage): number | null {
+  const value = message.resumeFrom;
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 ? value : null;
+}
+
 function handleHostJoin(ws: WebSocket, message: JsonMessage): void {
   if (hasProtocolMismatch(ws, message)) return;
 
@@ -563,11 +604,14 @@ function handleHostJoin(ws: WebSocket, message: JsonMessage): void {
       pongTimeout: null,
     });
 
+    const hostResumeFrom = parseResumeFrom(message);
+    const hostReplay = hostResumeFrom === null ? null : replayableFrom(existingRoom, hostResumeFrom);
+
     safeSend(ws, {
       type: "host:ack",
       resumed: true,
       protocol: COLLAB_PROTOCOL_VERSION,
-      snapshot: existingRoom.snapshot,
+      ...(hostReplay ? { operations: hostReplay } : { snapshot: existingRoom.snapshot }),
       version: existingRoom.version,
     });
 
@@ -667,6 +711,12 @@ function handleGuestJoin(ws: WebSocket, message: JsonMessage): void {
     pongTimeout: null,
   });
 
+  // A client rejoining after a blip can be caught up with the operations it
+  // missed instead of the whole diagram — but only if it still holds the state
+  // it claims and the log actually covers the span.
+  const resumeFrom = parseResumeFrom(message);
+  const replay = resumeFrom === null ? null : replayableFrom(room, resumeFrom);
+
   safeSend(ws, {
     type: "session:init",
     protocol: COLLAB_PROTOCOL_VERSION,
@@ -677,7 +727,7 @@ function handleGuestJoin(ws: WebSocket, message: JsonMessage): void {
     participantCount: roomPeerCount(room),
     maxParticipants: MAX_PARTICIPANTS,
     version: room.version,
-    snapshot: room.snapshot,
+    ...(replay ? { operations: replay } : { snapshot: room.snapshot }),
     hostUser: room.hostUser,
     peers: buildGuestPeers(room, clientId),
   });

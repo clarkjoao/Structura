@@ -170,6 +170,23 @@ function parsePeers(value: unknown): PeerState[] {
   return peers;
 }
 
+/**
+ * Apply a catch-up replay sent in place of a full snapshot, in version order.
+ * Returns false when the message carries no operations.
+ */
+function applyResumeOperations(
+  value: unknown,
+  apply: (patch: CollabPatch) => void,
+): boolean {
+  if (!Array.isArray(value) || value.length === 0) return false;
+  for (const op of value) {
+    if (isRecord(op) && isRecord(op.patch)) {
+      apply(op.patch as CollabPatch);
+    }
+  }
+  return true;
+}
+
 function parseSnapshot(value: unknown): CollabSnapshot | null {
   if (!isRecord(value)) return null;
   const diagramId = value.diagramId;
@@ -251,6 +268,17 @@ export function useCollab({
   // Highest server version this client has applied.
   const versionRef = useRef<{ version: number }>({ version: 0 });
 
+  /**
+   * Version to resume from on the next join, or null to take a full snapshot.
+   *
+   * Only set when local state provably equals that version: nothing unacked,
+   * nothing queued, and nothing attempted while the socket was down. An edit
+   * made offline is applied locally but never reaches the server, so resuming
+   * would leave the two silently diverged — a full snapshot discards that edit
+   * instead, which is lossy but consistent.
+   */
+  const resumeFromRef = useRef<number | null>(null);
+
   // Batching for coalescing operations
   const pendingBatchRef = useRef<BatchedPatch[]>([]);
   const batchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -292,7 +320,12 @@ export function useCollab({
 
   const sendRaw = useCallback((payload: Record<string, unknown>) => {
     const ws = wsRef.current;
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      // Dropped on the floor: local state has moved past anything the server
+      // knows, so the next join must take a full snapshot.
+      resumeFromRef.current = null;
+      return;
+    }
     ws.send(JSON.stringify(payload));
   }, []);
 
@@ -369,6 +402,7 @@ export function useCollab({
           JSON.stringify({
             type: "host:join",
             protocol: COLLAB_PROTOCOL_VERSION,
+            ...(resumeFromRef.current !== null ? { resumeFrom: resumeFromRef.current } : {}),
             roomId,
             diagramId:
               typeof activeDiagramId === "string" && activeDiagramId.length > 0
@@ -386,6 +420,7 @@ export function useCollab({
         JSON.stringify({
           type: "guest:join",
           protocol: COLLAB_PROTOCOL_VERSION,
+          ...(resumeFromRef.current !== null ? { resumeFrom: resumeFromRef.current } : {}),
           roomId,
           user: localUserRef.current,
         }),
@@ -407,15 +442,22 @@ export function useCollab({
 
       switch (messageType) {
         case "host:ack": {
-          if (message.resumed === true && isRecord(message.snapshot)) {
-            const snapshot = parseSnapshot(message.snapshot as Record<string, unknown>);
-            if (snapshot) {
-              onSnapshotRef.current(snapshot);
+          if (message.resumed === true) {
+            // The server sends whichever is cheaper: the operations we missed,
+            // or the whole snapshot when it cannot replay them.
+            const replayed = applyResumeOperations(message.operations, (patch) =>
+              onPatchRef.current(patch),
+            );
+            if (!replayed && isRecord(message.snapshot)) {
+              const snapshot = parseSnapshot(message.snapshot as Record<string, unknown>);
+              if (snapshot) {
+                onSnapshotRef.current(snapshot);
+              }
             }
-            // Extract version from server
             const msgVersion = typeof message.version === "number" ? message.version : 0;
             versionRef.current.version = msgVersion;
           }
+          resumeFromRef.current = null;
           if (isHost) {
             const store = useCollabStore.getState();
             store.setIsReady(true);
@@ -442,10 +484,17 @@ export function useCollab({
           return;
         }
         case "session:init": {
-          const snapshot = parseSnapshot(message.snapshot);
-          if (!snapshot) return;
-
-          onSnapshotRef.current(snapshot);
+          // A rejoin after a brief drop is caught up with the operations it
+          // missed; a fresh join gets the whole snapshot.
+          const replayed = applyResumeOperations(message.operations, (patch) =>
+            onPatchRef.current(patch),
+          );
+          if (!replayed) {
+            const snapshot = parseSnapshot(message.snapshot);
+            if (!snapshot) return;
+            onSnapshotRef.current(snapshot);
+          }
+          resumeFromRef.current = null;
 
           const peers = parsePeers(message.peers);
 
@@ -756,7 +805,13 @@ export function useCollab({
     ws.onclose = () => {
       clearClientHeartbeat();
 
-      // Clear pending operations, version, and batch on disconnect
+      // A resume is only safe when nothing was in flight: an unacked op or a
+      // queued patch means local state and the server's have already parted.
+      const nothingInFlight =
+        pendingOpsRef.current.size === 0 && pendingBatchRef.current.length === 0;
+      resumeFromRef.current =
+        nothingInFlight && versionRef.current.version > 0 ? versionRef.current.version : null;
+
       pendingOpsRef.current.clear();
       assignedClientIdRef.current = null;
       versionRef.current = { version: 0 };

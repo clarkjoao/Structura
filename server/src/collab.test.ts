@@ -857,4 +857,140 @@ describe("collaboration server integration", () => {
     host.ws.close();
     observer.ws.close();
   });
+  // -------------------------------------------------------------------------
+  // 16. Rejoin replay: a client that vouches for its version is caught up with
+  //     the operations it missed instead of the whole diagram.
+  // -------------------------------------------------------------------------
+  it("replays missed operations on rejoin instead of resending the snapshot", async () => {
+    const room = TEST_ROOM + "-resume";
+    const host = await connectClient(room);
+    host.ws.send(
+      JSON.stringify({
+        type: "host:join",
+        protocol: 2,
+        roomId: room,
+        diagramId: room,
+        user: makeUser(0),
+        snapshot: makeSnapshot({ diagramId: room, nodeLayouts: { base: { elementId: "base", x: 0 } } }),
+      }),
+    );
+    const ack = (await waitForMessage(host, "host:ack")) as Record<string, unknown>;
+    const versionAtDrop = ack.version as number;
+
+    // Three edits land while our guest is "away".
+    for (let i = 0; i < 3; i++) {
+      host.ws.send(
+        JSON.stringify({
+          type: "host:patch",
+          roomId: room,
+          patch: { nodeLayouts: { [`n${i}`]: { elementId: `n${i}`, x: i } } },
+        }),
+      );
+      await waitForMessage(host, "OP_ACK");
+    }
+
+    const rejoin = await connectClient(room);
+    rejoin.ws.send(
+      JSON.stringify({
+        type: "guest:join",
+        protocol: 2,
+        resumeFrom: versionAtDrop,
+        roomId: room,
+        user: makeUser(1),
+      }),
+    );
+    const init = (await waitForMessage(rejoin, "session:init")) as Record<string, unknown>;
+
+    expect(init.snapshot).toBeUndefined();
+    const ops = init.operations as Array<{ version: number }>;
+    expect(ops).toHaveLength(3);
+    expect(ops.map((o) => o.version)).toEqual([
+      versionAtDrop + 1,
+      versionAtDrop + 2,
+      versionAtDrop + 3,
+    ]);
+
+    host.ws.close();
+    rejoin.ws.close();
+  });
+
+  // -------------------------------------------------------------------------
+  // 17. A join with no resume claim still gets the full snapshot
+  // -------------------------------------------------------------------------
+  it("sends the full snapshot to a join that claims no version", async () => {
+    const room = TEST_ROOM + "-fresh";
+    const host = await connectClient(room);
+    host.ws.send(
+      JSON.stringify({
+        type: "host:join",
+        protocol: 2,
+        roomId: room,
+        diagramId: room,
+        user: makeUser(0),
+        snapshot: makeSnapshot({ diagramId: room, nodeLayouts: { base: { elementId: "base", x: 0 } } }),
+      }),
+    );
+    await waitForMessage(host, "host:ack");
+
+    const guest = await connectClient(room);
+    guest.ws.send(JSON.stringify({ type: "guest:join", protocol: 2, roomId: room, user: makeUser(1) }));
+    const init = (await waitForMessage(guest, "session:init")) as Record<string, unknown>;
+
+    expect(init.operations).toBeUndefined();
+    expect((init.snapshot as Record<string, unknown>).nodeLayouts).toMatchObject({
+      base: { x: 0 },
+    });
+
+    host.ws.close();
+    guest.ws.close();
+  });
+
+  // -------------------------------------------------------------------------
+  // 18. A claim the log cannot cover falls back to the snapshot rather than
+  //     handing back a partial history with a hole in it.
+  // -------------------------------------------------------------------------
+  it("falls back to the snapshot when the log cannot cover the claimed version", async () => {
+    const room = TEST_ROOM + "-uncoverable";
+    const host = await connectClient(room);
+    host.ws.send(
+      JSON.stringify({
+        type: "host:join",
+        protocol: 2,
+        roomId: room,
+        diagramId: room,
+        user: makeUser(0),
+        snapshot: makeSnapshot({ diagramId: room }),
+      }),
+    );
+    await waitForMessage(host, "host:ack");
+
+    host.ws.send(
+      JSON.stringify({
+        type: "host:patch",
+        roomId: room,
+        patch: { nodeLayouts: { a: { elementId: "a", x: 1 } } },
+      }),
+    );
+    await waitForMessage(host, "OP_ACK");
+
+    // Claiming a version beyond what the room has ever reached is nonsense and
+    // must not be honoured.
+    const guest = await connectClient(room);
+    guest.ws.send(
+      JSON.stringify({
+        type: "guest:join",
+        protocol: 2,
+        resumeFrom: 9999,
+        roomId: room,
+        user: makeUser(1),
+      }),
+    );
+    const init = (await waitForMessage(guest, "session:init")) as Record<string, unknown>;
+
+    expect(init.operations).toBeUndefined();
+    expect(init.snapshot).toBeDefined();
+
+    host.ws.close();
+    guest.ws.close();
+  });
 });

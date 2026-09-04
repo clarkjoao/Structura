@@ -500,4 +500,109 @@ describe("useCollab hook", () => {
 
     expect(ws.sentMessages.find((m) => m.type === "sync:request")).toBeUndefined();
   });
+  // -------------------------------------------------------------------------
+  // 10. Resume ticket: a clean drop lets the rejoin ask for a replay
+  // -------------------------------------------------------------------------
+  it("declares resumeFrom on rejoin when nothing was in flight", async () => {
+    const { getWs } = renderHookWithClient({ isHost: false });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    const ws = getWs();
+    ws.injectMessage({ type: "session:init", version: 12, snapshot: makeSnapshot(), peers: [] });
+
+    // Drop with an empty queue and nothing unacked.
+    await act(async () => {
+      ws.close(1006, "network");
+      await vi.advanceTimersByTimeAsync(2500);
+    });
+
+    const rejoin = latestMockWs().sentMessages.find((m) => m.type === "guest:join");
+    expect(rejoin).toMatchObject({ type: "guest:join", resumeFrom: 12 });
+  });
+
+  // -------------------------------------------------------------------------
+  // 11. An unflushed edit voids the ticket: resuming would leave local state
+  //     ahead of the server with no way to reconcile.
+  // -------------------------------------------------------------------------
+  it("omits resumeFrom when a patch was queued at the moment of the drop", async () => {
+    const { result, getWs } = renderHookWithClient({ isHost: false });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    const ws = getWs();
+    ws.injectMessage({ type: "session:init", version: 12, snapshot: makeSnapshot(), peers: [] });
+
+    // Queued but not yet flushed when the socket dies.
+    await act(async () => {
+      result.current.sendPatch({ nodeLayouts: { n1: { elementId: "n1", x: 1 } } });
+      ws.close(1006, "network");
+      await vi.advanceTimersByTimeAsync(2500);
+    });
+
+    const rejoin = latestMockWs().sentMessages.find((m) => m.type === "guest:join");
+    expect(rejoin).toBeDefined();
+    expect(rejoin).not.toHaveProperty("resumeFrom");
+  });
+
+  // -------------------------------------------------------------------------
+  // 12. An edit attempted while offline also voids it — sendRaw drops the
+  //     frame, so the server never learns about that change.
+  // -------------------------------------------------------------------------
+  it("omits resumeFrom when an edit was attempted while disconnected", async () => {
+    const { result, getWs } = renderHookWithClient({ isHost: false });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    const ws = getWs();
+    ws.injectMessage({ type: "session:init", version: 12, snapshot: makeSnapshot(), peers: [] });
+
+    await act(async () => {
+      ws.close(1006, "network");
+    });
+
+    // Edit made offline: applied locally, never sent.
+    await act(async () => {
+      result.current.sendPatch({ nodeLayouts: { n2: { elementId: "n2", x: 2 } } });
+      await vi.advanceTimersByTimeAsync(2500);
+    });
+
+    const rejoin = latestMockWs().sentMessages.find((m) => m.type === "guest:join");
+    expect(rejoin).toBeDefined();
+    expect(rejoin).not.toHaveProperty("resumeFrom");
+  });
+
+  // -------------------------------------------------------------------------
+  // 13. A replay arriving in place of a snapshot is applied as patches
+  // -------------------------------------------------------------------------
+  it("applies operations when session:init carries a replay", async () => {
+    const { getWs, onPatch, onSnapshot } = renderHookWithClient({ isHost: false });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    await act(async () => {
+      getWs().injectMessage({
+        type: "session:init",
+        version: 14,
+        peers: [],
+        operations: [
+          { version: 13, patch: { nodeLayouts: { a: { elementId: "a", x: 1 } } } },
+          { version: 14, patch: { nodeLayouts: { b: { elementId: "b", x: 2 } } } },
+        ],
+      });
+    });
+
+    expect(onSnapshot).not.toHaveBeenCalled();
+    expect(onPatch).toHaveBeenCalledTimes(2);
+    expect(onPatch).toHaveBeenNthCalledWith(1, { nodeLayouts: { a: { elementId: "a", x: 1 } } });
+    expect(onPatch).toHaveBeenNthCalledWith(2, { nodeLayouts: { b: { elementId: "b", x: 2 } } });
+  });
 });

@@ -1,6 +1,6 @@
 # Collab — migração para patches por entidade
 
-> **Status:** implementado — fases 1 a 8 concluídas
+> **Status:** implementado — fases 1 a 9 concluídas
 > **Início:** 2026-09-03
 > **Branch:** `improve/collab`
 > **Decisão anterior:** [collab-architecture-study.md](./collab-architecture-study.md)
@@ -103,6 +103,7 @@ Reproduzir: `PATCH_MODE=entity npm run loadtest` (em `server/`).
 | 6 | Revalidar carga e comparar com a tabela acima | ✅ |
 | 7 | Tombstones com janela (remove-wins) | ✅ |
 | 8 | Detecção de gap movida para onde é observável | ✅ |
+| 9 | Replay no reconnect | ✅ |
 
 ### Ordem e porquê
 
@@ -289,6 +290,49 @@ viraram um só, sempre atual.
 afirma que salto de versão pede sync e que versões consecutivas não pedem.
 Cliente: 21 → **23 testes**. Verifiquei desabilitando a detecção — o teste falha.
 
+### Fase 9 — replay no reconnect
+
+Até aqui, todo cliente que reconectava recebia o diagrama inteiro. Agora ele
+declara a versão que já tem e o servidor manda só as operações que faltaram.
+
+**Ganho medido** (`npx tsx loadtest/measure-resume.ts`), diagrama de 300 nós com
+5 edições perdidas durante a queda:
+
+| | bytes |
+|---|---|
+| Join novo (snapshot) | 22,4 KB |
+| Rejoin (replay) | **1,0 KB** |
+| | **95,4% menor** |
+
+**O risco que definiu o desenho.** `sendRaw` descarta em silêncio quando o socket
+não está aberto. Hoje o snapshot completo sobrescreve qualquer edição feita
+offline: perde o dado, mas cliente e servidor ficam consistentes. Com replay
+essa edição **sobreviveria localmente e divergiria calada** — pior que perdê-la.
+
+Então o resume só acontece quando o estado local comprovadamente equivale à
+versão declarada. O cliente só emite `resumeFrom` se, no momento da queda:
+
+- nada estava sem ACK (`pendingOps` vazio), **e**
+- nada estava enfileirado (`pendingBatch` vazio), **e**
+- nenhum envio foi tentado enquanto o socket estava fechado — qualquer chamada a
+  `sendRaw` com socket fora do ar invalida o passe na hora
+
+Fora dessas condições cai no snapshot completo, que é o comportamento antigo.
+Isso cobre o caso dominante (queda com o usuário parado ou entre edições) sem
+apostar em reconciliação.
+
+**Do lado do servidor**, `replayableFrom` recusa o replay se a versão pedida for
+anterior ao último snapshot, se o log não tiver a operação seguinte à pedida
+(buraco no meio) ou se a versão for impossível. Em qualquer recusa manda o
+snapshot. O `session:init` passa a carregar `operations` **ou** `snapshot`,
+nunca os dois.
+
+**Testes:** servidor afirma replay no rejoin, snapshot no join novo e fallback
+quando o log não cobre. Cliente afirma que o passe é emitido na queda limpa e
+**negado** nos dois modos de sujeira, e que operações no lugar do snapshot são
+aplicadas como patches. Servidor: 15 → **18**; cliente: 23 → **27**. Verifiquei
+desabilitando o guard — os dois testes de negação falham.
+
 ---
 
 ## 7. O que ficou de fora
@@ -296,9 +340,10 @@ Cliente: 21 → **23 testes**. Verifiquei desabilitando a detecção — o teste
 - **Granularidade de campo dentro da entidade.** Dois usuários editando campos
   diferentes do *mesmo* componente ainda disputam. Bem mais raro que o caso de
   nós diferentes, que era o que doía; refinamento futuro se aparecer demanda.
-- **Replay no reconnect.** Hoje um cliente que reconecta recebe o snapshot
-  inteiro via `session:init`. Correto, mas mais pesado que pedir replay a partir
-  da versão que ele tinha — é o uso legítimo que sobrou para `sync:request`.
+- **Reconciliar edições feitas offline.** Quando há edição sem envio, o resume
+  é recusado e o snapshot descarta essa edição. Reconciliar de verdade exigiria
+  reenviar as operações pendentes com o conteúdo — hoje `pendingOps` guarda só o
+  id, não o patch.
 - **Tombstone para escrita sem versão declarada.** Um cliente que não manda
   `version` não pode ser avaliado e a escrita passa. Hoje é inalcançável — o
   guard de protocolo já recusa qualquer cliente que não seja v2, e o v2 sempre
