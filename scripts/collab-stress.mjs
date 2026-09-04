@@ -20,6 +20,8 @@ const DURATION_MS = Number(process.env.DURATION_MS ?? 60_000);
 const NODES = Number(process.env.NODES ?? 24);
 const SHOW_GUESTS = process.env.SHOW_GUESTS === "1";
 const SLOW_MO = Number(process.env.SLOW_MO ?? 0);
+// CURSORS=0 isolates how much of the cost is cursor traffic alone.
+const CURSORS = process.env.CURSORS !== "0";
 
 // Same key as LocalStorageAdapter prefix + PERSIST_KEY, and the current
 // PERSIST_SCHEMA_VERSION — seeding at an older version would silently run
@@ -410,6 +412,48 @@ async function openGuest(browser, index, link, slot) {
   return { context, page };
 }
 
+/**
+ * Sample the host's frame rate and long tasks while the session runs.
+ *
+ * "Feels laggy" is not actionable; frames per second and blocked-main-thread
+ * time are. Installed on the host page only — it is the one a person watches.
+ */
+async function installFrameProbe(page) {
+  await page.evaluate(() => {
+    const w = window;
+    w.__fps = { frames: 0, longTasks: 0, blockedMs: 0, startedAt: performance.now() };
+    const tick = () => {
+      w.__fps.frames++;
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    try {
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          w.__fps.longTasks++;
+          w.__fps.blockedMs += entry.duration;
+        }
+      }).observe({ entryTypes: ["longtask"] });
+    } catch {
+      // longtask unsupported — frame count still tells the story
+    }
+  });
+}
+
+async function readFrameProbe(page) {
+  return page.evaluate(() => {
+    const w = window;
+    if (!w.__fps) return null;
+    const seconds = (performance.now() - w.__fps.startedAt) / 1000;
+    return {
+      fps: +(w.__fps.frames / seconds).toFixed(1),
+      longTasks: w.__fps.longTasks,
+      blockedMs: Math.round(w.__fps.blockedMs),
+      seconds: +seconds.toFixed(1),
+    };
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Behaviour
 // ---------------------------------------------------------------------------
@@ -430,7 +474,7 @@ async function runBot({ page, name, componentIds, stats, deadline, canAddElement
   while (Date.now() < deadline) {
     try {
       // Wander the cursor: several small steps between heavier actions.
-      for (let i = 0; i < 6 && Date.now() < deadline; i++) {
+      for (let i = 0; i < (CURSORS ? 6 : 0) && Date.now() < deadline; i++) {
         x = Math.max(40, Math.min(1200, x + between(-140, 140)));
         y = Math.max(40, Math.min(760, y + between(-110, 110)));
         await pageHelpers.moveCursor(page, x, y);
@@ -523,6 +567,8 @@ async function main() {
     console.log(`  Observe a janela do host: os cursores, arrastes e novos`);
     console.log(`  elementos dos outros ${guests.length} aparecem lá.\n`);
 
+    await installFrameProbe(host.page);
+
     const stats = {
       cursorMoves: 0,
       drags: 0,
@@ -606,6 +652,12 @@ async function main() {
     );
     for (const d of divergent) {
       console.log(`  divergente: ${d.name} vê ${d.count} — ${d.note}`);
+    }
+    const frames = await readFrameProbe(host.page);
+    if (frames) {
+      console.log(
+        `fluidez host      ${frames.fps} fps | ${frames.longTasks} long tasks | ${frames.blockedMs}ms bloqueado em ${frames.seconds}s`,
+      );
     }
     console.log(`erros             ${stats.errors}\n`);
   } finally {
