@@ -993,4 +993,67 @@ describe("collaboration server integration", () => {
     host.ws.close();
     guest.ws.close();
   });
+
+  // -------------------------------------------------------------------------
+  // A sender must see its own operation in the broadcast stream
+  // -------------------------------------------------------------------------
+  it("echoes an operation back to its sender so its view of the order is complete", async () => {
+    const room = `${TEST_ROOM}-echo`;
+    const host = await connectClient(room);
+    host.ws.send(
+      JSON.stringify({
+        type: "host:join",
+        protocol: 2,
+        roomId: room,
+        diagramId: room,
+        user: makeUser(90),
+        snapshot: makeSnapshot({ nodeLayouts: { n1: { elementId: "n1", x: 0, y: 0 } } }),
+      }),
+    );
+    await waitForMessage(host, "host:ack");
+
+    const alice = await connectClient(room);
+    alice.ws.send(
+      JSON.stringify({ type: "guest:join", protocol: 2, roomId: room, user: makeUser(91) }),
+    );
+    await waitForMessage(alice, "session:init");
+
+    const bob = await connectClient(room);
+    bob.ws.send(
+      JSON.stringify({ type: "guest:join", protocol: 2, roomId: room, user: makeUser(92) }),
+    );
+    await waitForMessage(bob, "session:init");
+
+    // Bob moves the node and Alice sees it.
+    bob.ws.send(
+      JSON.stringify({
+        type: "guest:patch",
+        roomId: room,
+        patch: { nodeLayouts: { n1: { elementId: "n1", x: 10, y: 10 } } },
+      }),
+    );
+    const seenByAlice = (await waitForMessage(alice, "session:patch")) as Record<string, unknown>;
+    const bobVersion = seenByAlice.version as number;
+
+    // Alice moves it afterwards, so hers is the write the room keeps. She has to
+    // be told: otherwise the last thing she applied is Bob's earlier patch, and
+    // she settles on a value nobody else has.
+    alice.ws.send(
+      JSON.stringify({
+        type: "guest:patch",
+        roomId: room,
+        patch: { nodeLayouts: { n1: { elementId: "n1", x: 20, y: 20 } } },
+      }),
+    );
+
+    const echo = (await waitForMessage(alice, "session:patch")) as Record<string, unknown>;
+    const layouts = (echo.patch as Record<string, Record<string, Record<string, number>>>)
+      .nodeLayouts;
+    expect(layouts.n1.x).toBe(20);
+    expect(echo.version as number).toBeGreaterThan(bobVersion);
+
+    host.ws.close();
+    alice.ws.close();
+    bob.ws.close();
+  });
 });

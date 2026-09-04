@@ -832,17 +832,18 @@ function handleHostPatch(ws: WebSocket, message: JsonMessage): void {
 
   // Broadcast what landed, not what was sent: a peer applying a suppressed
   // write would drift from the server's snapshot.
+  //
+  // The sender is included. Excluding it left a hole in the only ordered view
+  // it has of the room: with its own operations missing, a peer's older patch
+  // that arrived afterwards became its final state while the server had moved
+  // on, and nothing ever reconciled the two.
   if (hasEffect) {
-    broadcastToRoom(
-      room,
-      {
-        type: "session:patch",
-        patch: effectivePatch,
-        operationId,
-        version: room.version,
-      },
-      { exceptClientId: state.clientId },
-    );
+    broadcastToRoom(room, {
+      type: "session:patch",
+      patch: effectivePatch,
+      operationId,
+      version: room.version,
+    });
   }
 }
 
@@ -910,21 +911,17 @@ function handleGuestPatch(ws: WebSocket, message: JsonMessage): void {
     accepted: true,
   });
 
-  // Broadcast to all clients (including host) with operation ID and version
+  // Broadcast to every client, the sender included — see handleHostPatch for
+  // why leaving the sender out lets it settle on a stale value.
   if (hasEffect) {
-    broadcastToRoom(
-      room,
-      {
-        type: "session:patch",
-        patch: effectivePatch,
-        operationId,
-        version: room.version,
-        clientId: state.clientId,
-      },
-      { exceptClientId: state.clientId },
-    );
+    broadcastToRoom(room, {
+      type: "session:patch",
+      patch: effectivePatch,
+      operationId,
+      version: room.version,
+      clientId: state.clientId,
+    });
   }
-
 }
 
 function handleHostClose(ws: WebSocket, message: JsonMessage): void {
