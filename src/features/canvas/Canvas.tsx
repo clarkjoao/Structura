@@ -415,49 +415,63 @@ const Canvas = (props: CanvasProps = {}) => {
                   />
                 );
               })}
-              {/* QuickActions toolbar for single node selection */}
-              {visualState.selectedNodeId && selectedNodes.length === 1 && (
-                <NodeQuickActionsBar
-                  nodeId={visualState.selectedNodeId}
-                  diagramId={diagram?.id ?? ""}
-                  updateComponent={actions.updateComponent}
-                  onUngroup={
-                    (isSelectedPanel || isSelectedApiGroup) && hasPanelChildren
-                      ? handleUngroup
-                      : undefined
-                  }
-                  onFitToChildren={
-                    (isSelectedPanel || isSelectedApiGroup) &&
-                    hasPanelChildren &&
-                    !(selectedComponent as { collapsed?: boolean })?.collapsed
-                      ? handleFitToChildren
-                      : undefined
-                  }
-                  onOrganizeChildren={
-                    (isSelectedPanel || isSelectedApiGroup) &&
-                    hasPanelChildren &&
-                    !(selectedComponent as { collapsed?: boolean })?.collapsed &&
-                    !isPanelLayoutRunning
-                      ? handleOrganizeChildren
-                      : undefined
-                  }
-                  onRemoveFromGroup={isSelectedChildOfGroup ? handleRemoveFromGroup : undefined}
-                />
-              )}
-              <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
-              <Panel position="bottom-left" className="!mb-4 !ml-[3.25rem]">
-                <CanvasViewOptions />
-              </Panel>
-              {showMiniMap && (
-                <MiniMap
-                  pannable
-                  zoomable
-                  position="bottom-right"
-                  nodeColor={makeMiniMapNodeColor(resolvedSnapshot.components)}
-                  /* Offset above the floating chat button, which also sits bottom-right. */
-                  className="!mb-20 !mr-4 !bg-card !border !border-border !rounded-lg !shadow-lg"
-                  maskColor="hsl(var(--muted) / 0.6)"
-                />
+              {/* QuickActions toolbar for single node selection. Gated on the same
+                  flag as the element panel: the bar edits the element, so it has no
+                  place in a reading or a comparison — and a selection made before
+                  either began would otherwise carry it in. */}
+              {visualState.selectedNodeId &&
+                selectedNodes.length === 1 &&
+                interactionMode.canEditCanvas && (
+                  <NodeQuickActionsBar
+                    nodeId={visualState.selectedNodeId}
+                    diagramId={diagram?.id ?? ""}
+                    updateComponent={actions.updateComponent}
+                    onUngroup={
+                      (isSelectedPanel || isSelectedApiGroup) && hasPanelChildren
+                        ? handleUngroup
+                        : undefined
+                    }
+                    onFitToChildren={
+                      (isSelectedPanel || isSelectedApiGroup) &&
+                      hasPanelChildren &&
+                      !(selectedComponent as { collapsed?: boolean })?.collapsed
+                        ? handleFitToChildren
+                        : undefined
+                    }
+                    onOrganizeChildren={
+                      (isSelectedPanel || isSelectedApiGroup) &&
+                      hasPanelChildren &&
+                      !(selectedComponent as { collapsed?: boolean })?.collapsed &&
+                      !isPanelLayoutRunning
+                        ? handleOrganizeChildren
+                        : undefined
+                    }
+                    onRemoveFromGroup={isSelectedChildOfGroup ? handleRemoveFromGroup : undefined}
+                  />
+                )}
+              {/* Zoom, fit, view options and the minimap all move the viewport, and a
+                  reading moves it for you — every step frames its own element. Leaving
+                  them out keeps the two from fighting over the same viewport, and keeps
+                  the reading's canvas as clean as the rail beside it. Recording still
+                  needs them: that is where you go looking for the next element to click. */}
+              {!interactionMode.isPlaying && (
+                <>
+                  <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
+                  <Panel position="bottom-left" className="!mb-4 !ml-[3.25rem]">
+                    <CanvasViewOptions />
+                  </Panel>
+                  {showMiniMap && (
+                    <MiniMap
+                      pannable
+                      zoomable
+                      position="bottom-right"
+                      nodeColor={makeMiniMapNodeColor(resolvedSnapshot.components)}
+                      /* Offset above the floating chat button, which also sits bottom-right. */
+                      className="!mb-20 !mr-4 !bg-card !border !border-border !rounded-lg !shadow-lg"
+                      maskColor="hsl(var(--muted) / 0.6)"
+                    />
+                  )}
+                </>
               )}
               {occupancy.hasNodes && !occupancy.anyNodeVisible && (
                 <NothingInViewCard elementCount={occupancy.nodeCount} />
