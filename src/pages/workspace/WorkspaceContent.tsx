@@ -26,7 +26,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
+import { Canvas, FlowPanel, FlowReadingRail, FlowRecorderPanel } from "@/features/canvas";
 import { SaveStatusIndicator } from "@/features/canvas/components/SaveStatusIndicator";
 import { FileSystemStatus } from "@/components/FileSystemStatus";
 import { EmbedModal, useFlowMode, useInteractionMode } from "@/features/canvas";
@@ -255,12 +255,6 @@ export function WorkspaceContent({
               </Link>
               {diagram?.domain && <span className="text-muted-foreground">{diagram.domain}</span>}
               <span className="font-medium">{diagram?.name}</span>
-              {activeFlow && (
-                <span className="text-[10px] font-mono text-primary bg-primary/10 rounded px-1.5 py-0.5">
-                  ▶ {activeFlow.name}
-                  {activeFlow.description ? ` · "${activeFlow.description}"` : ""}
-                </span>
-              )}
               {isRecording && (
                 <span
                   className={`text-[10px] font-mono rounded px-1.5 py-0.5 animate-pulse ${
@@ -369,6 +363,26 @@ export function WorkspaceContent({
         ) : null}
         <div className="flex flex-1 min-h-0 overflow-hidden">
           <ReactFlowProvider>
+            {activeFlow && (
+              <FlowReadingRail
+                flow={activeFlow}
+                currentStepId={currentStepId}
+                currentStep={currentStep}
+                history={playbackState?.history ?? EMPTY_HISTORY}
+                flows={flows}
+                onSelectFlow={(flowId) => {
+                  const target = flows.find((candidate) => candidate.id === flowId);
+                  if (target) switchFlow(target);
+                }}
+                isCondition={isCondition}
+                canGoBack={canGoBack}
+                canGoForward={canGoForward}
+                onGoNext={goNext}
+                onGoBack={goBack}
+                onChooseBranch={chooseBranch}
+                onExit={exitPlay}
+              />
+            )}
             <div
               className="flex min-h-0 min-w-0 flex-1 flex-col relative"
               onPointerMove={handleCanvasPointerMove}
@@ -394,26 +408,6 @@ export function WorkspaceContent({
                   if (targetFlow) play(targetFlow);
                 }}
               />
-              {activeFlow && (
-                <FlowStepNavigator
-                  flow={activeFlow}
-                  currentStepId={currentStepId}
-                  currentStep={currentStep}
-                  history={playbackState?.history ?? EMPTY_HISTORY}
-                  flows={flows}
-                  onSelectFlow={(flowId) => {
-                    const target = flows.find((candidate) => candidate.id === flowId);
-                    if (target) switchFlow(target);
-                  }}
-                  isCondition={isCondition}
-                  canGoBack={canGoBack}
-                  canGoForward={canGoForward}
-                  onGoNext={goNext}
-                  onGoBack={goBack}
-                  onChooseBranch={chooseBranch}
-                  onExit={exitPlay}
-                />
-              )}
               {session && <CollabCursors peers={session.peers} />}
               {showFlows && !activeFlow && !isRecording && (
                 <FlowPanel

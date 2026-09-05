@@ -1,6 +1,14 @@
 export { default as FlowPanel } from "./FlowPanel";
 export { default as FlowRecorderPanel } from "./FlowRecorderPanel";
 export { default as FlowStepNavigator } from "./FlowStepNavigator";
+export { default as FlowReadingRail } from "./reading/FlowReadingRail";
+export { default as FlowReadingScene } from "./reading/FlowReadingScene";
+export { describeStepCall } from "./reading/stepCall";
+export type { StepCall } from "./reading/stepCall";
+export { describeStepHeading, describeStepTarget } from "./reading/readingScene";
+export type { StepTarget, StepHeadingLabels } from "./reading/readingScene";
+export { buildReadingSpine } from "./reading/readingSpine";
+export type { ReadingSpine, ReadingRow, ReadingBranch } from "./reading/readingSpine";
 export { FlowModeProvider, useFlowMode } from "./FlowModeContext";
 export { recordingCursor } from "./flowMode.types";
 export type {

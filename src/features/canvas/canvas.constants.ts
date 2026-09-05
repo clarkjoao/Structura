@@ -16,6 +16,8 @@ export const FIT_VIEW_MAX_ZOOM = 1.5;
 
 export const VIEWPORT_MIN_ZOOM = 0.3;
 export const FIT_VIEW_INITIAL_PADDING = 0.3;
+/** Tighter than the initial fit: the reading rail has already taken its share of the width. */
+export const FIT_VIEW_READING_PADDING = 0.12;
 
 /** Max zoom reachable via the custom wheel handler. Must match `<ReactFlow maxZoom>`. */
 export const WHEEL_MAX_ZOOM = 1.5;

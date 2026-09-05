@@ -1427,6 +1427,21 @@
     "componentRemoved": "componente removido",
     "connectionRemoved": "conexão removida"
   },
+  "flowReading": {
+    "eyebrow": "Roteiro",
+    "switchFlow": "Trocar roteiro",
+    "request": "requisição",
+    "response": "resposta",
+    "at": "no",
+    "untitledStep": "Passo sem título",
+    "chooseBranch": "escolha um ramo para seguir",
+    "exits_one": "— {{count}} saída",
+    "exits_other": "— {{count}} saídas",
+    "steps_one": "{{count}} passo",
+    "steps_other": "{{count}} passos",
+    "branchSummary": "{{label}} · {{steps}}",
+    "branchDetail": "{{steps}} · {{lead}}"
+  },
   "shortcutsModal": {
     "title": "Atalhos do Canvas",
     "descriptionBeforeKbd": "Dica: em Windows/Linux, use",

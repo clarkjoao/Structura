@@ -1427,6 +1427,21 @@
     "componentRemoved": "component removed",
     "connectionRemoved": "connection removed"
   },
+  "flowReading": {
+    "eyebrow": "Script",
+    "switchFlow": "Switch script",
+    "request": "request",
+    "response": "response",
+    "at": "at",
+    "untitledStep": "Untitled step",
+    "chooseBranch": "choose a branch to carry on",
+    "exits_one": "— {{count}} way out",
+    "exits_other": "— {{count}} ways out",
+    "steps_one": "{{count}} step",
+    "steps_other": "{{count}} steps",
+    "branchSummary": "{{label}} · {{steps}}",
+    "branchDetail": "{{steps}} · {{lead}}"
+  },
   "shortcutsModal": {
     "title": "Canvas shortcuts",
     "descriptionBeforeKbd": "Tip: on Windows/Linux, use",

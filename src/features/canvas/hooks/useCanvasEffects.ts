@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import type { ReactFlowInstance } from "@xyflow/react";
+import { useEffect, useRef } from "react";
+import { useStore, type ReactFlowInstance } from "@xyflow/react";
 import type { Diagram, DiagramModel, Flow } from "@/features/diagram";
 import { getStepById, useDiagramStore } from "@/features/diagram";
 import {
@@ -7,6 +7,7 @@ import {
   FIT_VIEW_INITIAL_PADDING,
   FIT_VIEW_MAX_ZOOM,
   FIT_VIEW_PADDING,
+  FIT_VIEW_READING_PADDING,
   VIEWPORT_MIN_ZOOM,
   WHEEL_MAX_ZOOM,
 } from "../canvas.constants";
@@ -140,35 +141,103 @@ export function useCanvasEffects({
     return () => wrapperEl.removeEventListener("wheel", handleWheel);
   }, [reactFlowInstance, diagramId, scrollMode]);
 
+  /**
+   * Reframe when the reading gives the canvas its column back.
+   *
+   * The reading rail is a column beside the canvas, not a card over it, so
+   * going in takes its width off the canvas and coming out hands it back.
+   * React Flow keeps the viewport transform across a resize, and on the way
+   * out nothing else reframes — the diagram would sit where the last step left
+   * it, zoomed into a corner of a canvas that just grew.
+   *
+   * Waiting on the width React Flow reports rather than on a frame or two:
+   * the size reaches its store through a ResizeObserver, and fitting before
+   * that arrives measures against the width the canvas has just stopped
+   * having. On the way in there is nothing to do here — the effect below
+   * frames the step being read, and now waits on the same width.
+   */
+  const paneWidth = useStore((state) => state.width);
+  const readingWasOpenRef = useRef(isPlaying);
+  const reframeOnResizeRef = useRef(false);
+
+  useEffect(() => {
+    const wasOpen = readingWasOpenRef.current;
+    readingWasOpenRef.current = isPlaying;
+    // Assigned rather than raised, so a reading that opens again drops a
+    // reframe the canvas never got round to: the way in has its own framing,
+    // and an unclaimed flag would spend itself on that instead.
+    reframeOnResizeRef.current = wasOpen && !isPlaying;
+  }, [isPlaying]);
+
+  useEffect(() => {
+    if (!reframeOnResizeRef.current) return;
+    reframeOnResizeRef.current = false;
+
+    // Next frame: leaving a reading re-renders every node as it comes back to
+    // full strength, and a pan-and-zoom transition started in the middle of
+    // that commit is dropped before it draws anything.
+    let cancelled = false;
+    const id = requestAnimationFrame(() => {
+      if (cancelled) return;
+      void reactFlowInstance.fitView({
+        duration: FIT_VIEW_DURATION_MS,
+        padding: FIT_VIEW_READING_PADDING,
+      });
+    });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(id);
+    };
+  }, [paneWidth, reactFlowInstance]);
+
   useEffect(() => {
     if (!isPlaying || !activeFlow || !currentStepId) return;
     const step = getStepById(activeFlow, currentStepId);
     if (!step) return;
 
-    if (step.componentId) {
-      const node = reactFlowInstance.getNode(step.componentId);
-      if (node) {
-        void reactFlowInstance.fitView({
-          nodes: [{ id: step.componentId }],
-          duration: FIT_VIEW_DURATION_MS,
-          padding: FIT_VIEW_PADDING,
-          maxZoom: FIT_VIEW_MAX_ZOOM,
-        });
-      }
-    } else if (step.connectionId) {
-      const edge = reactFlowInstance.getEdge(step.connectionId);
-      if (edge) {
-        const srcNode = reactFlowInstance.getNode(edge.source);
-        const tgtNode = reactFlowInstance.getNode(edge.target);
-        if (srcNode && tgtNode) {
-          void reactFlowInstance.fitView({
-            nodes: [{ id: edge.source }, { id: edge.target }],
-            duration: FIT_VIEW_DURATION_MS,
-            padding: FIT_VIEW_PADDING,
-            maxZoom: FIT_VIEW_MAX_ZOOM,
-          });
+    let cancelled = false;
+    // `paneWidth` is a dependency, not a value used here: opening the reading
+    // rail narrows the canvas, and framing a step against the width it had a
+    // moment ago puts it half a rail off centre. The width arrives through a
+    // ResizeObserver, so it lands a beat after this effect first runs and this
+    // run is cancelled in favour of one that measures the canvas it now has.
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (cancelled) return;
+
+        if (step.componentId) {
+          const node = reactFlowInstance.getNode(step.componentId);
+          if (node) {
+            void reactFlowInstance.fitView({
+              nodes: [{ id: step.componentId }],
+              duration: FIT_VIEW_DURATION_MS,
+              padding: FIT_VIEW_PADDING,
+              maxZoom: FIT_VIEW_MAX_ZOOM,
+            });
+          }
+          return;
         }
-      }
-    }
-  }, [isPlaying, activeFlow, currentStepId, reactFlowInstance]);
+
+        if (step.connectionId) {
+          const edge = reactFlowInstance.getEdge(step.connectionId);
+          if (!edge) return;
+          const srcNode = reactFlowInstance.getNode(edge.source);
+          const tgtNode = reactFlowInstance.getNode(edge.target);
+          if (srcNode && tgtNode) {
+            void reactFlowInstance.fitView({
+              nodes: [{ id: edge.source }, { id: edge.target }],
+              duration: FIT_VIEW_DURATION_MS,
+              padding: FIT_VIEW_PADDING,
+              maxZoom: FIT_VIEW_MAX_ZOOM,
+            });
+          }
+        }
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(id);
+    };
+  }, [isPlaying, activeFlow, currentStepId, paneWidth, reactFlowInstance]);
 }
