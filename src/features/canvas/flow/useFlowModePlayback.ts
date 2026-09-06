@@ -28,6 +28,8 @@ export type FlowModePlaybackSlice = Pick<
   | "callStack"
   | "stepOverTarget"
   | "stepOutFrameId"
+  | "togglePinnedKey"
+  | "pinnedKeys"
 >;
 
 /**
@@ -60,6 +62,9 @@ function frameToLeave(callStack: FlowCallStack, stepId: string | null): string |
   return info.openFrameIds[info.callDepth - 1] ?? null;
 }
 
+/** Stable, so a reading that pins nothing does not re-render on every mode read. */
+const EMPTY_PINS: readonly string[] = [];
+
 export function useFlowModePlayback(
   mode: FlowMode,
   setMode: Dispatch<SetStateAction<FlowMode>>,
@@ -75,6 +80,7 @@ export function useFlowModePlayback(
           currentStepId: entry?.id ?? null,
           history: [],
           seen: entry ? [entry.id] : [],
+          pinnedKeys: [],
         };
       });
     },
@@ -100,6 +106,8 @@ export function useFlowModePlayback(
           currentStepId: entry?.id ?? null,
           history: [],
           seen: entry ? [entry.id] : [],
+          // Another script's values are not these values; the pins go with them.
+          pinnedKeys: [],
         };
       });
     },
@@ -204,6 +212,19 @@ export function useFlowModePlayback(
     [setMode],
   );
 
+  const togglePinnedKey = useCallback(
+    (key: string) => {
+      setMode((prevMode) => {
+        if (prevMode.kind !== "playing") return prevMode;
+        const pinned = prevMode.pinnedKeys.includes(key)
+          ? prevMode.pinnedKeys.filter((pin) => pin !== key)
+          : [...prevMode.pinnedKeys, key];
+        return { ...prevMode, pinnedKeys: pinned };
+      });
+    },
+    [setMode],
+  );
+
   const stepOver = useCallback(() => walkTo(stepOverTarget), [walkTo, stepOverTarget]);
 
   const stepOut = useCallback(() => {
@@ -220,6 +241,7 @@ export function useFlowModePlayback(
   const isCondition = currentStep ? isConditionStep(currentStep) : false;
   const canGoBack = mode.kind === "playing" && mode.history.length > 0;
   const canGoForward = mode.kind === "playing" && !!currentStep?.next && !isCondition;
+  const pinnedKeys = mode.kind === "playing" ? mode.pinnedKeys : EMPTY_PINS;
 
   return useMemo(
     () => ({
@@ -238,6 +260,8 @@ export function useFlowModePlayback(
       callStack,
       stepOverTarget,
       stepOutFrameId,
+      togglePinnedKey,
+      pinnedKeys,
     }),
     [
       play,
@@ -255,6 +279,8 @@ export function useFlowModePlayback(
       callStack,
       stepOverTarget,
       stepOutFrameId,
+      togglePinnedKey,
+      pinnedKeys,
     ],
   );
 }

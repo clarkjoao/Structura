@@ -1405,7 +1405,10 @@
     "descriptionLabel": "Description",
     "durationLabel": "Duration",
     "payloadLabel": "Body",
-    "contextShadows": "replaces the value from {{number}}"
+    "contextShadows": "replaces the value from {{number}}",
+    "scopeOuter": "Outside",
+    "scopeEndsAt": "leaves scope after step {{number}}",
+    "contextReadUnset": "nothing before this step sets it"
   },
   "flowRefusal": {
     "unknown_flow": "That flow is no longer open.",
@@ -1503,7 +1506,18 @@
     "threads_other": "— {{count}} threads in parallel",
     "loopRepeats": "This part repeats — what follows is one pass through it.",
     "optionalSkippable": "This part may not happen at all.",
-    "breakStops": "If this happens, the reading stops here."
+    "breakStops": "If this happens, the reading stops here.",
+    "deltaNew_one": "{{count}} new",
+    "deltaNew_other": "{{count}} new",
+    "deltaChanged_one": "{{count}} replaced",
+    "deltaChanged_other": "{{count}} replaced",
+    "deltaGone_one": "{{count}} left with {{name}}",
+    "deltaGone_other": "{{count}} left with {{name}}",
+    "changedValue": "replaced",
+    "leavingNow": "goes with this return",
+    "outOfScope": "out of scope",
+    "pin": "Follow this key",
+    "unpin": "Stop following"
   },
   "shortcutsModal": {
     "title": "Canvas shortcuts",

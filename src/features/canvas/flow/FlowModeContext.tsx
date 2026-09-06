@@ -13,6 +13,8 @@ function createDefaultFlowModeState(): FlowModeState {
     isRecording: false,
     play: noop,
     switchFlow: noop,
+    togglePinnedKey: noop,
+    pinnedKeys: [],
     exitPlay: noop,
     goNext: noop,
     goBack: noop,

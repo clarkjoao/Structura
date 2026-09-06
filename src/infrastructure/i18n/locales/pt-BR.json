@@ -1405,7 +1405,10 @@
     "descriptionLabel": "Descrição",
     "durationLabel": "Duração",
     "payloadLabel": "Corpo",
-    "contextShadows": "substitui o valor do passo {{number}}"
+    "contextShadows": "substitui o valor do passo {{number}}",
+    "scopeOuter": "Fora",
+    "scopeEndsAt": "sai de escopo depois do passo {{number}}",
+    "contextReadUnset": "nenhum passo anterior define esta chave"
   },
   "flowRefusal": {
     "unknown_flow": "Esse flow não está mais aberto.",
@@ -1503,7 +1506,18 @@
     "threads_other": "— {{count}} linhas em paralelo",
     "loopRepeats": "Este trecho se repete — o que segue é uma passagem por ele.",
     "optionalSkippable": "Este trecho pode não acontecer.",
-    "breakStops": "Se isto acontecer, o roteiro para aqui."
+    "breakStops": "Se isto acontecer, o roteiro para aqui.",
+    "deltaNew_one": "{{count}} novo",
+    "deltaNew_other": "{{count}} novos",
+    "deltaChanged_one": "{{count}} alterado",
+    "deltaChanged_other": "{{count}} alterados",
+    "deltaGone_one": "{{count}} saiu com {{name}}",
+    "deltaGone_other": "{{count}} saíram com {{name}}",
+    "changedValue": "alterado",
+    "leavingNow": "sai com esta volta",
+    "outOfScope": "fora de escopo",
+    "pin": "Seguir esta chave",
+    "unpin": "Parar de seguir"
   },
   "shortcutsModal": {
     "title": "Atalhos do Canvas",

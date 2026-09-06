@@ -192,6 +192,18 @@ export function buildRunningContext(
   flow: Flow,
   callStack: FlowCallStack,
   path: readonly string[],
+  /**
+   * A step whose own values are left out — everything else about the fold is
+   * unchanged, the drops included.
+   *
+   * This is what the panel someone authors in asks for: the state a step is
+   * being written *against* is the state at that step minus what the step
+   * itself contributes. Folding a shorter path instead would look equivalent
+   * and is not — the shorter path never reaches the step, so the frame the step
+   * closes is never dropped, and the editor ends up offering keys the reading
+   * will report as defined by nobody.
+   */
+  excludeSetsOf?: string | null,
 ): RunningContext {
   if (path.length === 0) return EMPTY_CONTEXT;
 
@@ -215,7 +227,7 @@ export function buildRunningContext(
     const info = callStack.byStep.get(stepId);
     if (info?.closesFrameId) drop(info.closesFrameId);
 
-    const sets = step.context?.sets;
+    const sets = stepId === excludeSetsOf ? undefined : step.context?.sets;
     if (!sets) continue;
 
     const frameId = enclosingFrameId(callStack, stepId);
@@ -246,4 +258,171 @@ export function buildRunningContext(
   const unsetReads = reads.filter((key) => !byKey.has(key));
 
   return { groups, byKey, unsetReads, reads, size: byKey.size };
+}
+
+/**
+ * The calls that end at a step — the ones it answers, and the ones the reading
+ * had to close on the way there.
+ *
+ * Same two sources the fold drops from, in the same order, so anything asking
+ * *what ended here* and the fold itself cannot disagree.
+ */
+export function framesDroppedAt(callStack: FlowCallStack, stepId: string): string[] {
+  const frames = (callStack.derivedReturnsBefore.get(stepId) ?? []).map((entry) => entry.frameId);
+  const closes = callStack.byStep.get(stepId)?.closesFrameId;
+  if (closes) frames.push(closes);
+  return frames;
+}
+
+/** Which step answers each call, for scripts where one does. */
+export function framesClosedByStep(callStack: FlowCallStack): Map<string, string> {
+  const byFrame = new Map<string, string>();
+  for (const [stepId, info] of callStack.byStep) {
+    if (info.closesFrameId) byFrame.set(info.closesFrameId, stepId);
+  }
+  return byFrame;
+}
+
+/** A value the step in hand wrote over, and the one that was there. */
+export interface ReplacedEntry {
+  entry: ContextEntry;
+  previous: ContextEntry;
+}
+
+/** Values that left scope together, and the call they left with. */
+export interface GoneFrame {
+  frameId: string;
+  entries: ContextEntry[];
+}
+
+/**
+ * What the step in hand did to the running object.
+ *
+ * The panel used to show the fold's result and nothing else, so a value set
+ * twelve steps ago and one set on the line being read looked identical, and a
+ * call ending took its locals away in silence — the group was simply absent on
+ * the next step. This is the same fold, twice, compared.
+ */
+export interface ContextChange {
+  introduced: ContextEntry[];
+  replaced: ReplacedEntry[];
+  gone: GoneFrame[];
+  /** True when the step neither wrote a value nor ended a call. */
+  empty: boolean;
+}
+
+const NO_CHANGE: ContextChange = { introduced: [], replaced: [], gone: [], empty: true };
+
+/**
+ * Compares the running object at a step with the one a step earlier.
+ *
+ * A key can leave the object for exactly one reason — the call holding it
+ * ended — so `gone` is asked of the call stack rather than read off the
+ * difference. A key that vanished for any other reason would be a defect in
+ * the fold, and folding it into an ordinary category here would hide it.
+ *
+ * One case stays deliberately quiet: a key set both inside a call and outside
+ * it reverts to the outer value when the call ends. It is neither gone nor
+ * written over, and saying "1 value left" of a key still on screen would be
+ * false.
+ */
+export function describeContextChange(
+  flow: Flow,
+  callStack: FlowCallStack,
+  path: readonly string[],
+): ContextChange {
+  const current = path[path.length - 1];
+  if (!current) return NO_CHANGE;
+
+  const after = buildRunningContext(flow, callStack, path);
+  const before = buildRunningContext(flow, callStack, path.slice(0, -1));
+  const dropped = new Set(framesDroppedAt(callStack, current));
+
+  /** What was in scope a step earlier and survived this step's returns. */
+  const survived = new Map<string, ContextEntry>();
+  for (const group of before.groups) {
+    if (group.frameId && dropped.has(group.frameId)) continue;
+    for (const entry of group.entries) if (!survived.has(entry.key)) survived.set(entry.key, entry);
+  }
+
+  const introduced: ContextEntry[] = [];
+  const replaced: ReplacedEntry[] = [];
+  for (const entry of after.byKey.values()) {
+    if (entry.fromStepId !== current) continue;
+    const previous = survived.get(entry.key);
+    if (previous) replaced.push({ entry, previous });
+    else introduced.push(entry);
+  }
+
+  const gone: GoneFrame[] = [];
+  for (const frameId of dropped) {
+    const group = before.groups.find((candidate) => candidate.frameId === frameId);
+    const entries = (group?.entries ?? []).filter((entry) => !after.byKey.has(entry.key));
+    if (entries.length > 0) gone.push({ frameId, entries });
+  }
+
+  return {
+    introduced,
+    replaced,
+    gone,
+    empty: introduced.length === 0 && replaced.length === 0 && gone.length === 0,
+  };
+}
+
+/** One thing that happened to a key on the path the reading walked. */
+export type KeyEventKind = "set" | "replaced" | "read" | "gone";
+
+export interface KeyEvent {
+  kind: KeyEventKind;
+  stepId: string;
+  /** What the key holds after the event, on `set` and `replaced`. */
+  value?: string;
+  /** The call it left with, on `gone`. */
+  frameId?: string;
+}
+
+/**
+ * The life of one key along the path already walked.
+ *
+ * Answers *why is this value what it is* without leaving the step in hand — a
+ * question that otherwise means walking the whole reading again, since the fold
+ * only ever shows its result.
+ *
+ * It repeats the fold's rules rather than folding every prefix, which would be
+ * quadratic. The rules are short, but that is a duplication that could rot, so
+ * the test pins this against exactly that slower derivation instead of against
+ * a fixture: a change to the fold breaks it.
+ */
+export function keyLife(
+  flow: Flow,
+  callStack: FlowCallStack,
+  path: readonly string[],
+  key: string,
+): KeyEvent[] {
+  const events: KeyEvent[] = [];
+  /** bucket (frameId, or "" outside every call) → the value it holds for `key`. */
+  const holders = new Map<string, string>();
+
+  for (const stepId of path) {
+    const step = flow.steps[stepId];
+    if (!step) continue;
+
+    for (const frameId of framesDroppedAt(callStack, stepId)) {
+      if (!holders.delete(frameId)) continue;
+      // A key set both inside a call and outside it reverts rather than leaves.
+      if (holders.size === 0) events.push({ kind: "gone", stepId, frameId });
+    }
+
+    const value = step.context?.sets?.[key];
+    if (value !== undefined) {
+      events.push({ kind: holders.size > 0 ? "replaced" : "set", stepId, value });
+      holders.set(enclosingFrameId(callStack, stepId) ?? "", value);
+    }
+
+    if (step.context?.reads?.includes(key) && holders.size > 0) {
+      events.push({ kind: "read", stepId });
+    }
+  }
+
+  return events;
 }

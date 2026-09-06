@@ -223,6 +223,22 @@ It has one entry marked `roundTripOnly`: `connectionIntent`, written by the Merm
 only by the Mermaid exporter. That is legitimate, and worth having to say out loud rather than
 leaving as an absence that looks exactly like the three fields that shipped with no path at all.
 
+### D15 — The seed is a fixture with a test over it
+
+Three of the shapes this change draws only exist when the data has them, and each of them shipped
+inert once already. So the seed carries every one — nested calls, a derived return, an async step, a
+contract that fails in both directions, a read of a key nothing sets, and all six branch-point kinds
+— and `seed-flow-coverage.test.ts` asserts that it still does.
+
+Written the same way as the rest: removing `conditionKind: "par"`, the `expects`, or the unset read
+from the seed each fails a specific case in it. The third one did not, at first — the test was
+passing off a second unset read that turned out to be a mistake in the seed itself, where a response
+step read a value its own return takes out of scope. That is the fold behaving correctly and the
+fixture asking the wrong question; the fixture was fixed.
+
+_Alternative considered:_ a separate demo diagram, kept out of the seed. Rejected — the seed is the
+only diagram most people open, and a feature that is not in it is a feature nobody finds.
+
 ## Risks / Trade-offs
 
 - **Every in-app recorded script derives a flat stack** (`useFlowRecording` never writes

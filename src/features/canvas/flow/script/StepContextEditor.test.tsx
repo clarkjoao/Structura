@@ -2,8 +2,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import i18n from "@/infrastructure/i18n";
 import type { FlowStep } from "@/features/diagram";
-import { StepContextEditor, type ScopeEntry } from "./StepContextEditor";
-import { fromSetRows, newSetRow, parseReads, setsFromPayload, toSetRows } from "./stepContext";
+import { StepContextEditor, type ScopeEntry, type ScopeGroup } from "./StepContextEditor";
+import {
+  fromSetRows,
+  newSetRow,
+  parseReads,
+  rowsFromPaste,
+  setsFromPayload,
+  toSetRows,
+} from "./stepContext";
 
 /**
  * Getting a context onto a step, against the state it is written into.
@@ -19,9 +26,17 @@ function step(partial: Partial<FlowStep> = {}): FlowStep {
   return { id: "s1", type: "action", ...partial } as FlowStep;
 }
 
-function renderEditor(partial: Partial<FlowStep> = {}, scope: ScopeEntry[] = []) {
+/** Most of these care about the values, not which call holds them. */
+function outer(entries: ScopeEntry[]): ScopeGroup[] {
+  return entries.length > 0 ? [{ frameId: null, name: null, endsAtNumber: null, entries }] : [];
+}
+
+function renderEditor(partial: Partial<FlowStep> = {}, scope: ScopeGroup[] | ScopeEntry[] = []) {
   const onChange = vi.fn();
-  render(<StepContextEditor step={step(partial)} scope={scope} onChange={onChange} />);
+  const groups = scope.every((item) => "entries" in item)
+    ? (scope as ScopeGroup[])
+    : outer(scope as ScopeEntry[]);
+  render(<StepContextEditor step={step(partial)} scope={groups} onChange={onChange} />);
   return onChange;
 }
 
@@ -236,7 +251,9 @@ describe("the state already set is what the keys are chosen from", () => {
     renderEditor({ context: { reads: ["cupom"] } }, SCOPE);
 
     const chips = screen.getAllByTestId("step-context-read-chip").map((n) => n.textContent);
-    expect(chips).toEqual(["pedido_id", "score", "cupom"]);
+    expect(chips).toEqual(["pedido_id", "score"]);
+    // Still offered, and no longer indistinguishable from a key that resolves.
+    expect(screen.getByTestId("step-context-read-unset").textContent).toBe("cupom");
   });
 });
 
@@ -271,5 +288,146 @@ describe("what a call expects back", () => {
     });
 
     expect(lastCall(onChange)).toEqual({ expects: '{"pago":true}' });
+  });
+});
+
+/**
+ * A key nothing sets, said where it is written.
+ *
+ * The reading has always reported it — `lê X, que nenhum passo anterior define`
+ * — but only on the way back through. In the panel the chip looked exactly like
+ * a chip for a key something does set.
+ */
+describe("a key nothing in scope sets", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("pt-BR");
+  });
+
+  it("is marked apart from the keys that resolve", () => {
+    renderEditor({ context: { reads: ["ttl_horas"] } }, [
+      { key: "slug", value: "artigo26", fromNumber: "1" },
+    ]);
+
+    expect(screen.getByTestId("step-context-read-unset").textContent).toBe("ttl_horas");
+    expect(screen.getByTestId("step-context-read-chip").textContent).toBe("slug");
+  });
+
+  it("marks nothing when every key read is in scope", () => {
+    renderEditor({ context: { reads: ["slug"] } }, [
+      { key: "slug", value: "artigo26", fromNumber: "1" },
+    ]);
+
+    expect(screen.queryByTestId("step-context-read-unset")).toBeNull();
+  });
+});
+
+/**
+ * Writing values without reaching for the mouse.
+ *
+ * Every row used to need a trip to the `+`, and a row opened and abandoned sat
+ * there looking like part of the step.
+ */
+describe("the values table under the keyboard", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("pt-BR");
+  });
+
+  it("opens the next row and puts the cursor in its key", () => {
+    renderEditor({ context: { sets: { slug: "artigo26" } } });
+    fireEvent.keyDown(keyInputs()[0]!, { key: "Enter" });
+
+    expect(keyInputs()).toHaveLength(2);
+    expect(document.activeElement).toBe(keyInputs()[1]);
+  });
+
+  it("opens it from the value cell too", () => {
+    renderEditor({ context: { sets: { slug: "artigo26" } } });
+    fireEvent.keyDown(valueInputs()[0]!, { key: "Enter" });
+
+    expect(keyInputs()).toHaveLength(2);
+  });
+
+  it("opens nothing from a row that is not the last", () => {
+    renderEditor({ context: { sets: { slug: "a", plano: "b" } } });
+    fireEvent.keyDown(valueInputs()[0]!, { key: "Enter" });
+
+    expect(keyInputs()).toHaveLength(2);
+  });
+
+  it("opens nothing from a row whose key is still empty", () => {
+    renderEditor();
+    addSet();
+    fireEvent.keyDown(keyInputs()[0]!, { key: "Enter" });
+
+    expect(keyInputs()).toHaveLength(1);
+  });
+
+  it("drops a row abandoned with no key", () => {
+    renderEditor({ context: { sets: { slug: "a" } } });
+    addSet();
+    expect(keyInputs()).toHaveLength(2);
+
+    fireEvent.blur(keyInputs()[1]!, { relatedTarget: document.body });
+
+    expect(keyInputs()).toHaveLength(1);
+  });
+
+  it("drops one that got a value but never a key", () => {
+    renderEditor({ context: { sets: { slug: "a" } } });
+    addSet();
+    fireEvent.change(valueInputs()[1]!, { target: { value: "orfao" } });
+    fireEvent.blur(valueInputs()[1]!, { relatedTarget: document.body });
+
+    expect(keyInputs()).toHaveLength(1);
+  });
+
+  it("keeps a row while focus is still inside the table", () => {
+    renderEditor({ context: { sets: { slug: "a" } } });
+    addSet();
+    fireEvent.blur(keyInputs()[1]!, { relatedTarget: keyInputs()[0]! });
+
+    expect(keyInputs()).toHaveLength(2);
+  });
+
+  it("turns a pasted block into rows", () => {
+    const onChange = renderEditor();
+    addSet();
+    fireEvent.paste(keyInputs()[0]!, {
+      clipboardData: { getData: () => "slug: artigo26\nshort_url: https://url.sh/x" },
+    });
+
+    expect(lastCall(onChange)).toEqual({
+      sets: { slug: "artigo26", short_url: "https://url.sh/x" },
+    });
+  });
+});
+
+describe("text pasted into a key cell", () => {
+  it("splits on the first colon, so a URL survives", () => {
+    const rows = rowsFromPaste("slug: artigo26\nurl: https://url.sh/x");
+
+    expect(rows?.map((row) => [row.key, row.value])).toEqual([
+      ["slug", "artigo26"],
+      ["url", "https://url.sh/x"],
+    ]);
+  });
+
+  it("reads an object as its top-level keys", () => {
+    expect(
+      rowsFromPaste('{ "a": 1, "b": { "c": 2 } }')?.map((row) => [row.key, row.value]),
+    ).toEqual([
+      ["a", "1"],
+      ["b", '{"c":2}'],
+    ]);
+  });
+
+  it("leaves a single line to fill the cell it was pasted into", () => {
+    expect(rowsFromPaste("https://url.sh/x")).toBeNull();
+    expect(rowsFromPaste("slug: artigo26")).toBeNull();
+  });
+
+  it("leaves text that is not shaped like values alone", () => {
+    expect(rowsFromPaste("uma nota\nsobre o passo")).toBeNull();
+    expect(rowsFromPaste("   ")).toBeNull();
   });
 });

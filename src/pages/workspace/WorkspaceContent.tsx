@@ -111,6 +111,7 @@ export function WorkspaceContent({
     callStack,
     stepOverTarget,
     stepOutFrameId,
+    togglePinnedKey,
     startRecording,
     cancelRecording,
     finalizeRecording,
@@ -407,6 +408,8 @@ export function WorkspaceContent({
                 onStepOver={stepOver}
                 stepOutFrameId={stepOutFrameId}
                 onStepOut={stepOut}
+                pinnedKeys={playbackState?.pinnedKeys ?? EMPTY_HISTORY}
+                onTogglePin={togglePinnedKey}
               />
             )}
             <div

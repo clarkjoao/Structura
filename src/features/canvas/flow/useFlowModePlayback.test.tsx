@@ -48,6 +48,7 @@ describe("switching script mid-reading", () => {
       currentStepId: "r1",
       history: [],
       seen: ["r1"],
+      pinnedKeys: [],
     });
   });
 
@@ -75,6 +76,7 @@ describe("switching script mid-reading", () => {
       currentStepId: "s1b",
       history: ["s1"],
       seen: ["s1", "s1b"],
+      pinnedKeys: [],
     });
   });
 
@@ -119,6 +121,7 @@ describe("switching script mid-reading", () => {
       currentStepId: null,
       history: [],
       seen: [],
+      pinnedKeys: [],
     });
     expect(result.current.canGoForward).toBe(false);
   });
@@ -146,6 +149,7 @@ describe("what the reading remembers after turning back", () => {
       currentStepId: "s1",
       history: [],
       seen: ["s1", "s1b"],
+      pinnedKeys: [],
     });
   });
 
@@ -167,5 +171,70 @@ describe("what the reading remembers after turning back", () => {
     act(() => result.current.switchFlow(REFUND));
 
     expect(result.current.mode).toMatchObject({ seen: ["r1"] });
+  });
+});
+
+/**
+ * The keys a reader is following.
+ *
+ * They belong to the reading and die with it — the same rule that governs
+ * depth, derived returns and the running object itself. Nothing here reaches
+ * the flow, which is why switching scripts starts over rather than carrying
+ * names that meant something somewhere else.
+ */
+describe("following a key across a reading", () => {
+  it("starts with nothing pinned", () => {
+    const { result } = renderHook(() => usePlayback());
+    act(() => result.current.play(CHECKOUT));
+
+    expect(result.current.pinnedKeys).toEqual([]);
+  });
+
+  it("pins and unpins the same key", () => {
+    const { result } = renderHook(() => usePlayback());
+    act(() => result.current.play(CHECKOUT));
+
+    act(() => result.current.togglePinnedKey("slug"));
+    expect(result.current.pinnedKeys).toEqual(["slug"]);
+
+    act(() => result.current.togglePinnedKey("slug"));
+    expect(result.current.pinnedKeys).toEqual([]);
+  });
+
+  it("keeps them in the order they were pinned", () => {
+    const { result } = renderHook(() => usePlayback());
+    act(() => result.current.play(CHECKOUT));
+    act(() => result.current.togglePinnedKey("slug"));
+    act(() => result.current.togglePinnedKey("plano"));
+
+    expect(result.current.pinnedKeys).toEqual(["slug", "plano"]);
+  });
+
+  it("survives walking the reading", () => {
+    const { result } = renderHook(() => usePlayback());
+    act(() => result.current.play(CHECKOUT));
+    act(() => result.current.togglePinnedKey("slug"));
+    act(() => result.current.goNext());
+    act(() => result.current.goBack());
+
+    expect(result.current.pinnedKeys).toEqual(["slug"]);
+  });
+
+  it("goes with the script when another one is read", () => {
+    const { result } = renderHook(() => usePlayback());
+    act(() => result.current.play(CHECKOUT));
+    act(() => result.current.togglePinnedKey("slug"));
+
+    act(() => result.current.switchFlow(REFUND));
+
+    expect(result.current.pinnedKeys).toEqual([]);
+  });
+
+  it("pins nothing outside a reading", () => {
+    const { result } = renderHook(() => usePlayback());
+    act(() => result.current.togglePinnedKey("slug"));
+
+    expect(result.current.pinnedKeys).toEqual([]);
+    expect(result.current.mode).toEqual({ kind: "idle" });
   });
 });

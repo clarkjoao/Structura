@@ -40,6 +40,15 @@ export type FlowMode =
        * so the question is which ones are still owed a visit.
        */
       seen: string[];
+      /**
+       * Keys the reader is following, in the order they were pinned.
+       *
+       * Keys rather than steps: a reader watching `url_id` wants it across the
+       * frames that hold it, and wants to be told when it is no longer in any
+       * of them — which is the one screen where the frame rule explains itself.
+       * It belongs to the reading and dies with it; nothing reaches the flow.
+       */
+      pinnedKeys: string[];
     }
   | {
       kind: "recording";
@@ -63,6 +72,10 @@ export interface FlowModeState {
   play: (flow: Flow) => void;
   /** Reads a different script without leaving the reading. */
   switchFlow: (flow: Flow) => void;
+  /** Follows a key across the reading, or stops following it. */
+  togglePinnedKey: (key: string) => void;
+  /** The keys being followed, empty outside a reading. */
+  pinnedKeys: readonly string[];
   exitPlay: () => void;
   goNext: () => void;
   goBack: () => void;

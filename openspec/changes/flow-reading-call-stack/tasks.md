@@ -115,3 +115,11 @@
 - [x] 14.6 Say when a value replaces one already in scope, and where that one came from; verify tests cover the marking and its absence.
 - [x] 14.7 Mark, in the reading, the values the step in hand has just introduced — the one thing a debugger's variables pane always says, and the reason `flowReading.newValue` had sat unused in both locales since it was written; verify tests cover the marking, its absence on an earlier value, and its absence when no step is named.
 - [x] 14.8 Author a context end to end in the running editor; verify by screenshot that `score` / `0.12` types cleanly, that the next step shows it under Estado aqui with its origin, that it is offered as a key to consume, that a key replacing it says so, and that the reading marks it new on the step that set it and not on the next.
+
+## 15. The seed reads for all of it
+
+- [x] 15.1 Seed a script that nests three calls, closes two of them and leaves one without a written answer, so depth, guides, the trail, step over, step out and a derived return all have data on a fresh install; verify by walking it in the running editor.
+- [x] 15.2 Give that script a declared contract the response does not keep in both directions — a key expected and absent, a key that arrived unannounced — and a `reads` naming a key nothing sets; verify the two report lines appear in the panel.
+- [x] 15.3 Seed a script whose branch point is `par`, with a second branch point nested inside one of its threads and an async step in the other; verify the threads, the note and the nesting read in the editor.
+- [x] 15.4 Seed a script carrying `loop`, `opt`, `critical` and `break`, so every kind is somewhere a reader can find it; verify each renders its own mark and note, and that `critical` adds nothing — it is only a choice.
+- [x] 15.5 Assert the coverage rather than trusting it: one test over every seeded flow for the stack shapes, all six kinds, the nesting, the three context fields, both halves of the contract diff, the unset read, and the block keywords surviving export; verify the test fails when a feature is taken out of the seed.

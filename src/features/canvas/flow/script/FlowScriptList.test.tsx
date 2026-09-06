@@ -258,3 +258,81 @@ describe("FlowScriptList", () => {
     expect(screen.getByText(/not reachable from the start/)).toBeInTheDocument();
   });
 });
+
+/**
+ * The scope the panel offers is the scope the reading will have.
+ *
+ * These two panels are the same fold given the same path. They stopped being
+ * that when the editor folded the path one step shorter: the walk never reached
+ * the step, so the call that step answers was never closed, and every value the
+ * call was holding stayed on offer while the reading called those keys
+ * undefined.
+ */
+const NESTED_CONTEXT: FlowStep[] = [
+  {
+    id: "s1",
+    type: "action",
+    next: "s2",
+    connectionId: "c1",
+    payloadDirection: "request",
+    context: { sets: { slug: "artigo26" } },
+  },
+  { id: "s2", type: "action", next: "s3", connectionId: "c2", payloadDirection: "request" },
+  { id: "s3", type: "action", next: "s4", context: { sets: { linha: "1" } } },
+  { id: "s4", type: "action", next: "s5", description: "inside the call" },
+  {
+    id: "s5",
+    type: "action",
+    next: "s6",
+    connectionId: "c2",
+    payloadDirection: "response",
+    context: { sets: { short_url: "https://url.sh/artigo26" } },
+  },
+  { id: "s6", type: "action", connectionId: "c1", payloadDirection: "response" },
+];
+
+describe("the state a step is written against", () => {
+  const expand = (label: string) => fireEvent.click(screen.getByText(label));
+  const scopeText = () => screen.getByTestId("step-context-scope").textContent ?? "";
+
+  it("withholds a value the step's own return takes away", () => {
+    const { read } = seedFlow(NESTED_CONTEXT);
+    renderScript(read);
+    expand("6");
+
+    // `short_url` lives in the call step 6 answers, so it is gone by the time
+    // step 6 runs — exactly what the reading reports there.
+    expect(scopeText()).toContain("slug");
+    expect(scopeText()).not.toContain("short_url");
+  });
+
+  it("offers a value to a step that runs before the call holding it ends", () => {
+    const { read } = seedFlow(NESTED_CONTEXT);
+    renderScript(read);
+    expand("4");
+
+    expect(scopeText()).toContain("linha");
+    expect(scopeText()).toContain("slug");
+  });
+
+  it("says when the values of a call do not outlive it", () => {
+    const { read } = seedFlow(NESTED_CONTEXT);
+    renderScript(read);
+    expand("4");
+
+    // The call is answered at step 5, and `linha` does not survive it.
+    expect(screen.getByTestId("step-context-scope-ends").textContent).toContain("5");
+  });
+
+  it("has nothing to mark on a group no step ever closes", () => {
+    const { read } = seedFlow([
+      { id: "s1", type: "action", next: "s2", context: { sets: { slug: "a" } } },
+      { id: "s2", type: "action", description: "plain" },
+    ]);
+    renderScript(read);
+    expand("2");
+
+    expect(scopeText()).toContain("slug");
+    expect(screen.queryByTestId("step-context-scope-ends")).toBeNull();
+  });
+});

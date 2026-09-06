@@ -140,6 +140,15 @@ question they are usually there to answer.
 - `src/features/diagram/utils/import-mermaid-sequence.ts` — an outward message is a request.
 - `src/fixtures/seeds/urlshort-example.ts` — the context script's response names its connection.
 
+**Also modified** (the seed)
+
+- `src/fixtures/seeds/urlshort-example.ts` — three scripts on the containers diagram covering the
+  whole feature: a three-deep call stack with a contract that fails both ways and a return nobody
+  wrote, a `par` with a branch point nested in one thread, and a batch job carrying `loop`, `opt`,
+  `critical` and `break`.
+- `src/fixtures/seeds/seed-flow-coverage.test.ts` — asserts the seed keeps exercising all of it, so
+  a feature dropped from the seed fails here rather than quietly emptying a panel.
+
 **Also modified** (see What Changes 10)
 
 - `src/features/diagram/model/flow.types.ts` — `FlowConditionKind`, `FlowStep.conditionKind`.

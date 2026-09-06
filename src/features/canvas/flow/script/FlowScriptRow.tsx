@@ -8,7 +8,7 @@ import type { FlowConditionKind, FlowOutlineRow, FlowStep } from "@/features/dia
 import { getBranchColor } from "../branchColors";
 import { CONDITION_KIND_LABEL, conditionGlyph } from "../conditionKinds";
 import type { FlowScriptActions } from "../useFlowScriptActions";
-import type { ScopeEntry } from "./StepContextEditor";
+import type { ScopeGroup } from "./StepContextEditor";
 
 const SECTION = "text-[9px] font-semibold uppercase tracking-wider text-muted-foreground";
 const FIELD =
@@ -42,8 +42,8 @@ export interface FlowScriptRowProps {
   onToggleExpand: () => void;
   onSelect: () => void;
   onConvertToCondition: (stepId: string) => void;
-  /** Everything set before this step, so the state section can show its scope. */
-  scope: readonly ScopeEntry[];
+  /** In scope where this step runs, grouped by the call each value belongs to. */
+  scope: readonly ScopeGroup[];
   /** Recorder-only: jump into this condition's branches. */
   onOpenBranchSelect?: (conditionStepId: string) => void;
   /** Set while a row is being dragged; absent outside a reorderable list. */

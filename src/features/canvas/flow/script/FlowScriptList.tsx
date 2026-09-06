@@ -12,10 +12,10 @@ import {
   useComponents,
   useConnections,
 } from "@/features/diagram";
-import { buildRunningContext } from "../reading/readingVariables";
-import type { ScopeEntry } from "./StepContextEditor";
+import { buildRunningContext, framesClosedByStep } from "../reading/readingVariables";
+import type { ScopeGroup } from "./StepContextEditor";
 
-const EMPTY_SCOPE: readonly ScopeEntry[] = [];
+const EMPTY_SCOPE: readonly ScopeGroup[] = [];
 import { CONDITION_KIND_LABEL, conditionGlyph } from "../conditionKinds";
 import { useFlowScriptActions } from "../useFlowScriptActions";
 import { ConditionForm, type ConditionFormState } from "./ConditionForm";
@@ -55,26 +55,46 @@ export function FlowScriptList({
   const outline = useMemo(() => buildFlowOutline(flow), [flow]);
 
   /**
-   * What is already set when a step is reached, folded exactly as the reading
-   * folds it — same walk, same buckets, same locals dropped when a call ends.
-   * Sharing the fold is what keeps the panel someone authors against and the
-   * panel they read from ever disagreeing.
+   * What is in scope where a step runs — the reading's own fold, given the
+   * reading's own path, with only this step's contribution held back.
+   *
+   * It used to fold the path one step shorter, which reads as the same thing
+   * and is not: the walk never reached the step, so the call that step answers
+   * was never closed, and every value that call was holding stayed on offer.
+   * The reading, standing on that step, called those same keys undefined.
    */
   const scopeOf = useMemo(() => {
     const callStack = buildCallStack(flow, outline);
     const numbers = new Map(outline.rows.map((row) => [row.stepId, row.label]));
-    return (stepId: string): ScopeEntry[] => {
-      // Everything before the step: what it sets is what it is about to add.
-      const before = getPathToStep(flow, stepId).slice(0, -1);
-      if (before.length === 0) return [];
-      const running = buildRunningContext(flow, callStack, before);
-      return [...running.byKey.values()].map((entry) => ({
-        key: entry.key,
-        value: entry.value,
-        fromNumber: numbers.get(entry.fromStepId) ?? "",
-      }));
+    const closedBy = framesClosedByStep(callStack);
+    /** A call is named by who is waiting on it — the source of its connection. */
+    const callerOf = (connectionId: string) => {
+      const connection = connections[connectionId];
+      const source = connection ? components[connection.sourceId] : undefined;
+      return source?.name ?? t("common.connection");
     };
-  }, [flow, outline]);
+
+    return (stepId: string): ScopeGroup[] => {
+      const path = getPathToStep(flow, stepId);
+      if (path.length === 0) return [];
+      const running = buildRunningContext(flow, callStack, path, stepId);
+      return running.groups.map((group) => {
+        const closer = group.frameId ? closedBy.get(group.frameId) : undefined;
+        return {
+          frameId: group.frameId,
+          name: group.frameId
+            ? callerOf(callStack.frames.get(group.frameId)?.connectionId ?? "")
+            : null,
+          endsAtNumber: closer ? (numbers.get(closer) ?? null) : null,
+          entries: group.entries.map((entry) => ({
+            key: entry.key,
+            value: entry.value,
+            fromNumber: numbers.get(entry.fromStepId) ?? "",
+          })),
+        };
+      });
+    };
+  }, [flow, outline, components, connections, t]);
 
   const titleOf = useCallback(
     (step: FlowStep): string => {

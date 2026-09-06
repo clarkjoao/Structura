@@ -22,7 +22,9 @@ import FlowVariablesPanel from "./FlowVariablesPanel";
 import {
   buildRunningContext,
   checkContract,
+  describeContextChange,
   describeExpected,
+  keyLife,
   describePayload,
 } from "./readingVariables";
 
@@ -73,6 +75,9 @@ interface Props {
   /** The call the reader is inside, or null at the outermost level. */
   stepOutFrameId?: string | null;
   onStepOut?: () => void;
+  /** Keys the reader is following across the reading. */
+  pinnedKeys?: readonly string[];
+  onTogglePin?: (key: string) => void;
 }
 
 /**
@@ -106,6 +111,8 @@ const FlowReadingRail = ({
   onStepOver,
   stepOutFrameId = null,
   onStepOut,
+  pinnedKeys,
+  onTogglePin,
 }: Props) => {
   const { t } = useTranslation();
   const storeDiagram = useActiveDiagram();
@@ -216,6 +223,11 @@ const FlowReadingRail = ({
         : { groups: [], byKey: new Map(), unsetReads: [], reads: [], size: 0 },
     [flow, callStack, walked],
   );
+  /** What the step in hand did to it — the same fold, one step apart. */
+  const contextChange = useMemo(
+    () => (callStack ? describeContextChange(flow, callStack, walked) : null),
+    [flow, callStack, walked],
+  );
   const contract = useMemo(
     () => (callStack && currentStepId ? checkContract(flow, callStack, currentStepId) : null),
     [flow, callStack, currentStepId],
@@ -248,6 +260,12 @@ const FlowReadingRail = ({
           fromNumber: numberOf(entry.fromStepId),
         })),
     [runningContext, numberOf],
+  );
+
+  /** Built per key on demand: most readings pin nothing, and none pin many. */
+  const lifeOf = useMemo(
+    () => (key: string) => (callStack ? keyLife(flow, callStack, walked, key) : []),
+    [flow, callStack, walked],
   );
 
   const sceneRef = useRef<HTMLDivElement | null>(null);
@@ -400,6 +418,7 @@ const FlowReadingRail = ({
         sends={sends}
         expected={expected}
         context={runningContext}
+        change={contextChange}
         contract={contract}
         contractStepNumber={
           currentStepId
@@ -408,7 +427,9 @@ const FlowReadingRail = ({
         }
         numberOf={numberOf}
         frameName={frameName}
-        currentStepId={currentStepId}
+        pinnedKeys={pinnedKeys}
+        onTogglePin={onTogglePin}
+        lifeOf={lifeOf}
       />
 
       <div className="flex shrink-0 items-center gap-2.5 border-t border-border px-5 py-3">
