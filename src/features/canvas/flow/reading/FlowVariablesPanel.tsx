@@ -29,6 +29,14 @@ interface Props {
   frameName: (frameId: string) => string;
   /** Moves the reading to the step that introduced a value. */
   onGoToStep?: (stepId: string) => void;
+  /**
+   * The step in hand, so a value it has just introduced can be marked.
+   *
+   * A debugger's variables pane says what *changed* on the line you stopped at;
+   * without it the running object is a flat list, and the value the step being
+   * read just put there looks exactly like one set twelve steps ago.
+   */
+  currentStepId?: string | null;
 }
 
 interface RootProps {
@@ -90,6 +98,7 @@ const FlowVariablesPanel = ({
   numberOf,
   frameName,
   onGoToStep,
+  currentStepId,
 }: Props) => {
   const { t } = useTranslation();
 
@@ -182,6 +191,7 @@ const FlowVariablesPanel = ({
               </span>
               {group.entries.map((entry) => {
                 const isRead = context.reads.includes(entry.key);
+                const isNew = Boolean(currentStepId) && entry.fromStepId === currentStepId;
                 return (
                   <div
                     key={entry.key}
@@ -193,9 +203,21 @@ const FlowVariablesPanel = ({
                       {entry.key}
                     </span>
                     <span className="text-muted-foreground">:</span>
-                    <span className="min-w-0 flex-1 break-words text-json-string">
+                    <span
+                      className={`min-w-0 flex-1 break-words ${
+                        isNew ? "font-semibold text-json-number" : "text-json-string"
+                      }`}
+                    >
                       {entry.value}
                     </span>
+                    {isNew && (
+                      <span
+                        data-testid="flow-variables-new"
+                        className="shrink-0 rounded-[3px] bg-secondary px-1 py-px text-[8.5px] font-semibold uppercase tracking-[0.06em] text-muted-foreground"
+                      >
+                        {t("flowReading.newValue")}
+                      </span>
+                    )}
                     <button
                       type="button"
                       data-testid="flow-variables-origin"

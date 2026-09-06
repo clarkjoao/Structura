@@ -223,3 +223,47 @@ describe("nothing to show means no panel at all", () => {
     expect(screen.getByTestId("flow-variables")).toBeTruthy();
   });
 });
+
+/**
+ * What the step in hand just changed.
+ *
+ * The running object was a flat list: a value the step being read had only now
+ * introduced looked exactly like one set twelve steps earlier, which is the one
+ * thing a debugger's variables pane always tells you.
+ */
+describe("the value this step just introduced", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("pt-BR");
+  });
+
+  const ONE_VALUE = context({
+    groups: [
+      {
+        frameId: null,
+        entries: [{ key: "score", value: "0.12", fromStepId: "s2", frameId: null }],
+      },
+    ],
+    size: 1,
+  });
+
+  it("is marked when the step in hand is the one that set it", () => {
+    renderPanel({ context: ONE_VALUE, currentStepId: "s2" });
+    fireEvent.click(screen.getByTestId("flow-variables-toggle-state"));
+
+    expect(screen.getByTestId("flow-variables-new")).toBeTruthy();
+  });
+
+  it("is not marked on a value an earlier step set", () => {
+    renderPanel({ context: ONE_VALUE, currentStepId: "s9" });
+    fireEvent.click(screen.getByTestId("flow-variables-toggle-state"));
+
+    expect(screen.queryByTestId("flow-variables-new")).toBeNull();
+  });
+
+  it("marks nothing at all when no step is named", () => {
+    renderPanel({ context: ONE_VALUE });
+    fireEvent.click(screen.getByTestId("flow-variables-toggle-state"));
+
+    expect(screen.queryByTestId("flow-variables-new")).toBeNull();
+  });
+});

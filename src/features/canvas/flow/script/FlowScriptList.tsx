@@ -5,11 +5,17 @@ import { toast } from "sonner";
 import { AlertTriangle } from "lucide-react";
 import type { Flow, FlowStep } from "@/features/diagram";
 import {
+  buildCallStack,
   buildFlowOutline,
   conditionKindOf,
+  getPathToStep,
   useComponents,
   useConnections,
 } from "@/features/diagram";
+import { buildRunningContext } from "../reading/readingVariables";
+import type { ScopeEntry } from "./StepContextEditor";
+
+const EMPTY_SCOPE: readonly ScopeEntry[] = [];
 import { CONDITION_KIND_LABEL, conditionGlyph } from "../conditionKinds";
 import { useFlowScriptActions } from "../useFlowScriptActions";
 import { ConditionForm, type ConditionFormState } from "./ConditionForm";
@@ -47,6 +53,28 @@ export function FlowScriptList({
   const [dragOverStepId, setDragOverStepId] = useState<string | null>(null);
 
   const outline = useMemo(() => buildFlowOutline(flow), [flow]);
+
+  /**
+   * What is already set when a step is reached, folded exactly as the reading
+   * folds it — same walk, same buckets, same locals dropped when a call ends.
+   * Sharing the fold is what keeps the panel someone authors against and the
+   * panel they read from ever disagreeing.
+   */
+  const scopeOf = useMemo(() => {
+    const callStack = buildCallStack(flow, outline);
+    const numbers = new Map(outline.rows.map((row) => [row.stepId, row.label]));
+    return (stepId: string): ScopeEntry[] => {
+      // Everything before the step: what it sets is what it is about to add.
+      const before = getPathToStep(flow, stepId).slice(0, -1);
+      if (before.length === 0) return [];
+      const running = buildRunningContext(flow, callStack, before);
+      return [...running.byKey.values()].map((entry) => ({
+        key: entry.key,
+        value: entry.value,
+        fromNumber: numbers.get(entry.fromStepId) ?? "",
+      }));
+    };
+  }, [flow, outline]);
 
   const titleOf = useCallback(
     (step: FlowStep): string => {
@@ -142,6 +170,7 @@ export function FlowScriptList({
                 isSelected={selectedStepId === row.stepId}
                 isLast={lastStepId === row.stepId}
                 actions={actions}
+                scope={expandedStepId === row.stepId ? scopeOf(row.stepId) : EMPTY_SCOPE}
                 onToggleExpand={() =>
                   setExpandedStepId(expandedStepId === row.stepId ? null : row.stepId)
                 }

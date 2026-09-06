@@ -104,3 +104,14 @@
 - [x] 13.4 Parse a block inside a block instead of discarding it with a warning; verify tests assert an `alt` nested in a `par` keeps both kinds, both branch labels, every message, and a byte-stable round trip.
 - [x] 13.5 Rename `ReadingBranch.walked` to `visited`, since the rail's own `walked` asks whether a row is on the path and this asks whether the reader has ever been there; verify the typecheck and the reading tests.
 - [x] 13.6 Correct `stepsAhead`'s reason: the count is a floor at a `par` because the reading has one cursor, not because nobody knows which way it will go. **The number itself was right** — the review claimed a defect that was not there.
+
+## 14. The panel someone writes in
+
+- [x] 14.1 Give every field in the expanded row a label that survives being filled, grouped under Passo / Chamada / Estado, instead of an emoji and a placeholder that vanishes on the first keystroke; verify the script tests still pass and the row reads in both locales.
+- [x] 14.2 Edit the bodies as JSON in the editor the product already uses — highlighting, bracket matching, folding and a format action — reporting when the content is not JSON rather than refusing it, since `payload` is free text by design; verify a stand-in keeps the tests running in jsdom and the real editor is checked in a browser.
+- [x] 14.3 Make the values a step introduces rows with identities of their own instead of `key: value` text; verify tests cover the round trip, a half-typed key reaching nothing, a value holding a colon, and a key typed one character at a time — the failure this removes by construction.
+- [x] 14.4 Show the state as it stands where the author is editing, folded by `buildRunningContext` over `getPathToStep` so the panel written in and the panel read from cannot disagree; verify tests cover the path through a branch, a step both branches reach, an unreachable step and a cycle.
+- [x] 14.5 Offer the keys in scope as the ones a step consumes, keeping free entry for a key nothing sets; verify tests cover the chips, the marking, taking one off, and a key already read that nothing sets.
+- [x] 14.6 Say when a value replaces one already in scope, and where that one came from; verify tests cover the marking and its absence.
+- [x] 14.7 Mark, in the reading, the values the step in hand has just introduced — the one thing a debugger's variables pane always says, and the reason `flowReading.newValue` had sat unused in both locales since it was written; verify tests cover the marking, its absence on an earlier value, and its absence when no step is named.
+- [x] 14.8 Author a context end to end in the running editor; verify by screenshot that `score` / `0.12` types cleanly, that the next step shows it under Estado aqui with its origin, that it is offered as a key to consume, that a key replacing it says so, and that the reading marks it new on the step that set it and not on the next.

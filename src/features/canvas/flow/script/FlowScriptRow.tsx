@@ -1,5 +1,6 @@
 import type { DragEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { JsonField } from "./JsonField";
 import { StepContextEditor } from "./StepContextEditor";
 import { GitBranch, GripVertical, Plus, X } from "lucide-react";
 import { FLOW_CONDITION_KINDS, conditionKindOf } from "@/features/diagram";
@@ -7,6 +8,27 @@ import type { FlowConditionKind, FlowOutlineRow, FlowStep } from "@/features/dia
 import { getBranchColor } from "../branchColors";
 import { CONDITION_KIND_LABEL, conditionGlyph } from "../conditionKinds";
 import type { FlowScriptActions } from "../useFlowScriptActions";
+import type { ScopeEntry } from "./StepContextEditor";
+
+const SECTION = "text-[9px] font-semibold uppercase tracking-wider text-muted-foreground";
+const FIELD =
+  "w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring";
+
+/**
+ * A field that still says what it is once it holds something.
+ *
+ * These were an emoji and a placeholder: the emoji had to be decoded, and the
+ * placeholder — the only place the field was named — disappeared the moment
+ * anyone typed.
+ */
+function Labelled({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="flex flex-col gap-0.5">
+      <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
+      {children}
+    </label>
+  );
+}
 
 export interface FlowScriptRowProps {
   row: FlowOutlineRow;
@@ -20,6 +42,8 @@ export interface FlowScriptRowProps {
   onToggleExpand: () => void;
   onSelect: () => void;
   onConvertToCondition: (stepId: string) => void;
+  /** Everything set before this step, so the state section can show its scope. */
+  scope: readonly ScopeEntry[];
   /** Recorder-only: jump into this condition's branches. */
   onOpenBranchSelect?: (conditionStepId: string) => void;
   /** Set while a row is being dragged; absent outside a reorderable list. */
@@ -49,6 +73,7 @@ export function FlowScriptRow({
   isSelected,
   isLast,
   actions,
+  scope,
   onToggleExpand,
   onSelect,
   onConvertToCondition,
@@ -230,20 +255,19 @@ export function FlowScriptRow({
             </>
           ) : (
             <>
-              <div className="flex items-start gap-1">
-                <span className="mt-1 shrink-0 text-[10px]">🏷</span>
+              <span className={SECTION}>{t("flowScript.sectionStep")}</span>
+              <Labelled label={t("flowScript.titleLabel")}>
                 <input
                   value={step.title ?? ""}
                   onChange={(event) =>
                     actions.updateStep(row.stepId, { title: event.target.value || undefined })
                   }
                   placeholder={t("flowScript.titlePlaceholder")}
-                  className="w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  className={`${FIELD} font-semibold`}
                   onClick={(event) => event.stopPropagation()}
                 />
-              </div>
-              <div className="flex items-start gap-1">
-                <span className="mt-1 shrink-0 text-[10px]">🗒</span>
+              </Labelled>
+              <Labelled label={t("flowScript.noteLabel")}>
                 <textarea
                   value={step.note ?? ""}
                   onChange={(event) =>
@@ -251,41 +275,39 @@ export function FlowScriptRow({
                   }
                   placeholder={t("flowScript.notePlaceholder")}
                   rows={2}
-                  className="w-full resize-y rounded border border-border bg-secondary px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  className={`${FIELD} resize-y`}
                   onClick={(event) => event.stopPropagation()}
                 />
-              </div>
-              <div className="flex items-start gap-1">
-                <span className="mt-1 shrink-0 text-[10px]">📝</span>
+              </Labelled>
+              <Labelled label={t("flowScript.descriptionLabel")}>
                 <input
                   value={step.description ?? ""}
                   onChange={(event) =>
                     actions.updateStep(row.stepId, { description: event.target.value })
                   }
                   placeholder={t("flowScript.descriptionPlaceholder")}
-                  className="w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  className={FIELD}
                   onClick={(event) => event.stopPropagation()}
                 />
-              </div>
-              <div className="flex items-start gap-1">
-                <span className="mt-1 shrink-0 text-[10px]">⏱</span>
+              </Labelled>
+              <Labelled label={t("flowScript.durationLabel")}>
                 <input
                   value={step.duration ?? ""}
                   onChange={(event) =>
                     actions.updateStep(row.stepId, { duration: event.target.value || undefined })
                   }
                   placeholder={t("flowScript.durationPlaceholder")}
-                  className="w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  className={FIELD}
                   onClick={(event) => event.stopPropagation()}
                 />
-              </div>
+              </Labelled>
               {step.connectionId && (
                 <>
+                  <span className={`${SECTION} pt-1`}>{t("flowScript.sectionCall")}</span>
                   <div
                     className="flex items-center gap-1"
                     onClick={(event) => event.stopPropagation()}
                   >
-                    <span className="mt-0.5 shrink-0 text-[10px]">📦</span>
                     <div className="flex overflow-hidden rounded border border-border">
                       {(["request", "response"] as const).map((direction) => (
                         <button
@@ -307,21 +329,14 @@ export function FlowScriptRow({
                       ))}
                     </div>
                   </div>
-                  <div className="flex items-start gap-1">
-                    <span className="mt-1 shrink-0 text-[10px]">
-                      {step.payloadDirection === "response" ? "📥" : "📤"}
-                    </span>
-                    <textarea
-                      value={step.payload ?? ""}
-                      onChange={(event) =>
-                        actions.updateStep(row.stepId, { payload: event.target.value || undefined })
-                      }
-                      placeholder={t("flowScript.payloadPlaceholder")}
-                      rows={2}
-                      className="w-full resize-y rounded border border-border bg-secondary px-2 py-1 font-mono text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                      onClick={(event) => event.stopPropagation()}
-                    />
-                  </div>
+                  <JsonField
+                    testId="step-payload"
+                    label={t("flowScript.payloadLabel")}
+                    value={step.payload ?? ""}
+                    onChange={(value) =>
+                      actions.updateStep(row.stepId, { payload: value || undefined })
+                    }
+                  />
                   <label
                     className="flex cursor-pointer items-center gap-1 text-[10px] text-muted-foreground"
                     onClick={(event) => event.stopPropagation()}
@@ -338,8 +353,11 @@ export function FlowScriptRow({
                   </label>
                 </>
               )}
+              <span className={`${SECTION} pt-1`}>{t("flowScript.sectionState")}</span>
               <StepContextEditor
+                key={step.id}
                 step={step}
+                scope={scope}
                 onChange={(context) => actions.updateStep(row.stepId, { context })}
               />
               <button

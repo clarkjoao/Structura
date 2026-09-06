@@ -6,27 +6,57 @@
  * without rendering anything.
  */
 
-/** `key: value` per line, which is how a small object reads when typed. */
-export function parseSets(text: string): Record<string, string> | undefined {
+/**
+ * One row of the values a step introduces, with an identity of its own.
+ *
+ * The identity is the point. These used to be lines of `key: value` text that
+ * were parsed on every keystroke and formatted back into the field, so typing
+ * `score` turned the first character into a whole `s: ` line and everything
+ * after it into the value. Rows are edited as rows; nothing is parsed, so there
+ * is nothing to reformat, and a half-typed key is just a key that is half typed.
+ */
+export interface SetRow {
+  id: string;
+  key: string;
+  value: string;
+}
+
+let rowSeq = 0;
+
+export function newSetRow(key = "", value = ""): SetRow {
+  rowSeq += 1;
+  return { id: `set-${rowSeq}`, key, value };
+}
+
+export function toSetRows(sets: Record<string, string> | undefined): SetRow[] {
+  return Object.entries(sets ?? {}).map(([key, value]) => newSetRow(key, value));
+}
+
+/** A row with no key is one someone is still starting; it reaches nothing. */
+export function fromSetRows(rows: readonly SetRow[]): Record<string, string> | undefined {
   const sets: Record<string, string> = {};
-  for (const line of text.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    const at = trimmed.indexOf(":");
-    // A line with no colon is a key someone has not finished typing. Keeping it
-    // with an empty value lets them carry on rather than having it vanish.
-    const key = (at < 0 ? trimmed : trimmed.slice(0, at)).trim();
-    const value = at < 0 ? "" : trimmed.slice(at + 1).trim();
-    if (key) sets[key] = value;
+  for (const row of rows) {
+    const key = row.key.trim();
+    if (key) sets[key] = row.value;
   }
   return Object.keys(sets).length > 0 ? sets : undefined;
 }
 
-export function formatSets(sets: Record<string, string> | undefined): string {
-  if (!sets) return "";
-  return Object.entries(sets)
-    .map(([key, value]) => `${key}: ${value}`)
-    .join("\n");
+/**
+ * Parsed content, or `null` for anything that is not JSON — including empty.
+ *
+ * Never throws and never blocks: `payload` is free text by design and some
+ * scripts hold prose in it, so failing to parse is a fact the field reports,
+ * not a value it refuses.
+ */
+export function parseJsonField(value: string): unknown {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  try {
+    return JSON.parse(trimmed) as unknown;
+  } catch {
+    return null;
+  }
 }
 
 export function parseReads(text: string): string[] | undefined {

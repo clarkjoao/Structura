@@ -33,6 +33,7 @@ export {
   getFlowParticipants,
   validateFlowGraph,
   getOrderedStepIds,
+  getPathToStep,
   getStepCount,
 } from "./flow-traversal";
 export type { BrokenStep } from "./flow-traversal";

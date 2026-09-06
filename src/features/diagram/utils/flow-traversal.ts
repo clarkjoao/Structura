@@ -31,6 +31,47 @@ export function getEntryStep(flow: Flow): FlowStep | undefined {
   return undefined;
 }
 
+/**
+ * One way a reading could arrive at this step, from the entry to the step
+ * itself.
+ *
+ * *One* way, because a step inside a branch is reached only by the branch that
+ * leads to it, and a step after two branches meet is reached by either — the
+ * first path found is taken, which is the one a reader following the script
+ * top to bottom would walk. What was set before the step therefore depends on
+ * which way in, and this answers for that way.
+ *
+ * Empty when the step is unreachable, which is the honest answer: nothing runs
+ * before a step nothing leads to.
+ */
+export function getPathToStep(flow: Flow, stepId: string): string[] {
+  const entry = getEntryStep(flow);
+  if (!entry || !flow.steps[stepId]) return [];
+
+  const path: string[] = [];
+  const onPath = new Set<string>();
+
+  const walk = (id: string): boolean => {
+    if (onPath.has(id)) return false;
+    const step = flow.steps[id];
+    if (!step) return false;
+
+    onPath.add(id);
+    path.push(id);
+    if (id === stepId) return true;
+
+    for (const next of getNextSteps(flow, id)) {
+      if (walk(next.id)) return true;
+    }
+
+    path.pop();
+    onPath.delete(id);
+    return false;
+  };
+
+  return walk(entry.id) ? path : [];
+}
+
 export function walkFlow(flow: Flow, visitor: (step: FlowStep) => void): void {
   const entry = getEntryStep(flow);
   if (!entry) return;

@@ -408,6 +408,7 @@ const FlowReadingRail = ({
         }
         numberOf={numberOf}
         frameName={frameName}
+        currentStepId={currentStepId}
       />
 
       <div className="flex shrink-0 items-center gap-2.5 border-t border-border px-5 py-3">

@@ -228,3 +228,85 @@ site.
 - **WHEN** the flow namespace locale coverage check runs
 - **THEN** every key used by the variables panel exists in `en` and in `pt-BR`
 - **AND** no `t()` call in the panel supplies a default string
+
+### Requirement: A context is written against the state it is written into
+
+The system SHALL show, on the step being edited, the values already set when that step is reached —
+each with the step that set it — folded by the same rules the reading folds by. It SHALL offer those
+keys as the ones the step consumes, while still accepting a key nothing sets. It SHALL say when a
+value the step introduces replaces one already in scope, and where that one came from.
+
+#### Scenario: The scope is what the reading would have
+
+- **GIVEN** a step reached by a path on which an earlier step sets `score`
+- **WHEN** its context is edited
+- **THEN** `score` is shown with its value and the number of the step that set it
+
+#### Scenario: Nothing is shown where nothing is set
+
+- **GIVEN** the first step of a script
+- **WHEN** its context is edited
+- **THEN** no scope is shown at all
+
+#### Scenario: The keys in scope are the ones offered
+
+- **GIVEN** a step whose scope holds `pedido_id` and `score`
+- **THEN** both are offered as keys it can consume, and picking one writes it
+
+#### Scenario: A key nothing sets is still accepted
+
+- **GIVEN** a step whose scope holds neither
+- **WHEN** the author names a key nothing sets
+- **THEN** it is written, and the reading is what reports it as unset
+
+#### Scenario: Replacing a value says so
+
+- **GIVEN** a step that introduces a key already in scope
+- **THEN** the editor says the value replaces the one from that earlier step
+
+### Requirement: A value is a row, not a line of text
+
+The system SHALL edit the values a step introduces as key and value fields with identities of their
+own. A row whose key is empty SHALL reach the step as nothing. Nothing SHALL be parsed out of typed
+text, so nothing can be reformatted back into it mid-word.
+
+#### Scenario: A value holding a colon survives
+
+- **GIVEN** a row whose value is `https://x.com/a`
+- **THEN** the whole value reaches the step
+
+#### Scenario: A key typed one character at a time survives
+
+- **GIVEN** an author typing `score` one character at a time
+- **THEN** the field holds `score` and the step receives the key `score`
+
+### Requirement: Bodies are edited as JSON, and never required to be
+
+The system SHALL edit `payload` and `context.expects` in a JSON editor with highlighting, bracket
+matching, folding and a format action. It SHALL report when the content does not parse rather than
+refusing it, since `payload` is free text by design.
+
+#### Scenario: Valid JSON can be formatted
+
+- **GIVEN** a body that parses
+- **WHEN** the format action is used
+- **THEN** the body is rewritten pretty-printed, and its meaning is unchanged
+
+#### Scenario: Prose is held and reported
+
+- **GIVEN** a body holding prose
+- **THEN** the field says it will be read as text, and the content is kept as written
+
+### Requirement: The reading marks what the step in hand introduced
+
+The system SHALL mark, in the running object, each value whose origin is the step being read.
+
+#### Scenario: A value set by this step is marked
+
+- **GIVEN** a reading on the step that sets `score`
+- **THEN** `score` is marked as new
+
+#### Scenario: The mark is gone on the next step
+
+- **GIVEN** the reading has moved on
+- **THEN** `score` is no longer marked
