@@ -1,6 +1,7 @@
 import type { Component } from "../model/component.types";
 import type { Connection, ConnectionIntent } from "../model/connection.types";
 import type { Flow, FlowStep } from "../model/flow.types";
+import { conditionKindOf } from "./flow-condition-kind";
 
 const INTENT_ARROW: Record<ConnectionIntent, string> = {
   dependency: "-->",
@@ -9,23 +10,6 @@ const INTENT_ARROW: Record<ConnectionIntent, string> = {
   "data-flow": "=>>",
   "async-message": "-->>",
 };
-
-function getConditionKeyword(
-  label?: string,
-): "alt" | "loop" | "opt" | "par" | "critical" | "break" {
-  const normalized = label?.toLowerCase();
-  if (
-    normalized === "alt" ||
-    normalized === "loop" ||
-    normalized === "opt" ||
-    normalized === "par" ||
-    normalized === "critical" ||
-    normalized === "break"
-  ) {
-    return normalized;
-  }
-  return "alt";
-}
 
 function getBranchSeparator(keyword: string): "else" | "and" | "option" | null {
   if (keyword === "alt") return "else";
@@ -136,7 +120,20 @@ export function stepsToMermaid(
         const sourceName = components[sourceId]?.name ?? "?";
         const targetName = components[targetId]?.name ?? "?";
         const intent = step.connectionIntent ?? connection.intent ?? "call";
-        const arrow = step.isAsync ? "-)" : INTENT_ARROW[intent];
+        /**
+         * The glyph carries two facts, and both have to survive the trip: a
+         * dashed stem means the message is travelling back, and a `)` head
+         * means nobody waits for it. Choosing on `isAsync` alone rewrote every
+         * reply as a fire-and-forget, and the arrow degraded a step further on
+         * each round trip — `-->>` to `-)` to `-x`.
+         */
+        const arrow = isResponse
+          ? step.isAsync
+            ? "--)"
+            : "-->>"
+          : step.isAsync
+            ? "-)"
+            : INTENT_ARROW[intent];
         const messageLabel = step.note?.trim() || connection.label;
         lines.push(`${indent}${alias(sourceName)}${arrow}${alias(targetName)}: ${messageLabel}`);
         if (step.description) {
@@ -180,7 +177,7 @@ export function stepsToMermaid(
     if (!step) return;
 
     if (step.type === "condition" && step.branches && step.branches.length > 0) {
-      const keyword = getConditionKeyword(step.conditionLabel);
+      const keyword = conditionKindOf(step);
       const firstLabel = step.branches[0]?.label?.trim();
       lines.push(`${indent}${keyword}${firstLabel ? ` ${firstLabel}` : ""}`);
       const separator = getBranchSeparator(keyword);

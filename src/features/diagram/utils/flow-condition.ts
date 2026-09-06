@@ -151,6 +151,7 @@ export function dropFlowBranch(
     delete trimmed.branches;
     trimmed.type = "action";
     delete trimmed.conditionLabel;
+    delete trimmed.conditionKind;
   }
   steps[conditionStepId] = trimmed;
 

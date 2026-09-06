@@ -59,6 +59,7 @@ function renderRail(
     onGoNext?: () => void;
     onChooseBranch?: (index: number) => void;
     onExit?: () => void;
+    seen?: string[];
   } = {},
 ) {
   const step = flow.steps[currentStepId] ?? null;
@@ -68,6 +69,7 @@ function renderRail(
       currentStepId={currentStepId}
       currentStep={step}
       history={history}
+      seen={extra.seen ?? history}
       flows={extra.flows ?? [flow]}
       onSelectFlow={extra.onSelectFlow ?? vi.fn()}
       isCondition={step ? isConditionStep(step) : false}
@@ -386,5 +388,94 @@ describe("the reading says why the canvas is blank at this step", () => {
     renderRail(read(), "s1");
 
     expect(screen.queryByTestId("flow-step-element-state")).not.toBeInTheDocument();
+  });
+});
+
+/**
+ * The same fork, but every way out of it happens.
+ *
+ * The footer used to tell every reader at a branch point to choose one, which
+ * is the wrong instruction at a `par` and the only instruction there was.
+ */
+const THREADS = (ids: Seeded): Record<string, FlowStep> => ({
+  s1: {
+    id: "s1",
+    type: "action",
+    componentId: ids.gatewayId,
+    title: "Vídeo enfileirado",
+    next: "c",
+  },
+  c: {
+    id: "c",
+    type: "condition",
+    conditionKind: "par",
+    branches: [
+      { label: "Notificações", nextId: "a1" },
+      { label: "Métricas", nextId: "b1" },
+    ],
+  },
+  a1: { id: "a1", type: "action", title: "Envia o e-mail" },
+  b1: { id: "b1", type: "action", title: "Registra a métrica" },
+});
+
+describe("a fork into threads is not a fork in the road", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
+  });
+
+  it("asks the reader to follow a thread, not to choose one", () => {
+    const { read } = seed(THREADS);
+
+    renderRail(read(), "c", ["s1"]);
+
+    expect(screen.getByText("follow a thread — all of them run")).toBeTruthy();
+  });
+
+  it("counts the ways out as threads running alongside each other", () => {
+    const { read } = seed(THREADS);
+
+    renderRail(read(), "s1");
+
+    expect(screen.getByText(/2 threads in parallel/)).toBeTruthy();
+  });
+
+  it("names the block by what it is when nobody wrote it a question", () => {
+    const { read } = seed(THREADS);
+
+    renderRail(read(), "c", ["s1"]);
+
+    expect(within(screen.getByTestId("flow-step-title")).getByText(/Parallel/)).toBeTruthy();
+  });
+
+  /**
+   * The path is not the visit. Going back into the fork drops the thread from
+   * `history`, so a reader who explored one and returned looked as though they
+   * never had — the mark below only ever appeared in a test that built a
+   * history by hand.
+   */
+  it("marks a thread the reader has been down and returned from", () => {
+    const { read } = seed(THREADS);
+
+    renderRail(read(), "c", ["s1"], { seen: ["s1", "c", "a1"] });
+
+    const marks = screen.getAllByTestId("flow-reading-thread-walked");
+    expect(marks).toHaveLength(1);
+    expect(marks[0]!.textContent).toBe("read");
+  });
+
+  it("marks none while the reader has only reached the fork", () => {
+    const { read } = seed(THREADS);
+
+    renderRail(read(), "c", ["s1"]);
+
+    expect(screen.queryByTestId("flow-reading-thread-walked")).toBeNull();
+  });
+
+  it("leaves a plain condition asking exactly what it asked before", () => {
+    const { read } = seed(FORK);
+
+    renderRail(read(), "c", ["s1"]);
+
+    expect(screen.getByText("choose a branch to carry on")).toBeTruthy();
   });
 });

@@ -27,6 +27,14 @@ const LABELS: StepHeadingLabels = {
   connectionRemoved: "connection removed",
   connection: "Connection",
   untitled: "Untitled step",
+  conditionKinds: {
+    alt: "Choice",
+    opt: "Optional",
+    loop: "Loop",
+    par: "Parallel",
+    critical: "Critical",
+    break: "Break",
+  },
 };
 
 describe("where the step lands", () => {
@@ -88,6 +96,43 @@ describe("where the step lands", () => {
 
   it("has nowhere to point when the element is gone from the view", () => {
     expect(describeStepTarget(step({ componentId: "ghost" }), COMPONENTS, CONNECTIONS)).toBeNull();
+  });
+
+  it("lets the call decide where it lands, not the sender the importer wrote down", () => {
+    // The Mermaid importer puts the message's sender in `componentId`, so a
+    // step carries both. The connection is the one that says where it arrives.
+    const step = {
+      id: "s1",
+      type: "action",
+      componentId: "gateway",
+      connectionId: "c1",
+      payloadDirection: "request",
+    } as FlowStep;
+
+    expect(describeStepTarget(step, COMPONENTS, CONNECTIONS)?.name).toBe("Antifraude");
+  });
+
+  it("still lands on the sender when that same step is the response", () => {
+    const step = {
+      id: "s1",
+      type: "action",
+      componentId: "gateway",
+      connectionId: "c1",
+      payloadDirection: "response",
+    } as FlowStep;
+
+    expect(describeStepTarget(step, COMPONENTS, CONNECTIONS)?.name).toBe("API Gateway");
+  });
+
+  it("falls back to the element it names when the connection is gone", () => {
+    const step = {
+      id: "s1",
+      type: "action",
+      componentId: "gateway",
+      connectionId: "vanished",
+    } as FlowStep;
+
+    expect(describeStepTarget(step, COMPONENTS, CONNECTIONS)?.name).toBe("API Gateway");
   });
 
   it("has nowhere to point for a step that names no element at all", () => {

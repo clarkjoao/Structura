@@ -2,19 +2,29 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, EyeOff, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
+  isParallelStep,
   resolveSceneSnapshot,
   useActiveDiagram,
   type Component,
   type Connection,
   type Diagram,
   type Flow,
+  type FlowCallStack,
   type FlowStep,
 } from "@/features/diagram";
 import { describeStepElement } from "../flowState";
+import { CONDITION_KIND_LABEL, conditionGlyph, conditionGlyphClass } from "../conditionKinds";
 import FlowReadingScene from "./FlowReadingScene";
 import { describeStepHeading, describeStepTarget, type StepHeadingLabels } from "./readingScene";
 import { buildReadingSpine, type ReadingRow } from "./readingSpine";
 import { describeStepCall } from "./stepCall";
+import FlowVariablesPanel from "./FlowVariablesPanel";
+import {
+  buildRunningContext,
+  checkContract,
+  describeExpected,
+  describePayload,
+} from "./readingVariables";
 
 /** Stable identities, so the derivations are not rebuilt on every render. */
 const EMPTY_COMPONENTS: Record<string, Component> = {};
@@ -26,6 +36,12 @@ interface Props {
   currentStep: FlowStep | null;
   /** The steps already walked, in order — the reading, not the script. */
   history: readonly string[];
+  /**
+   * Every step this reading has stood on, which going back does not shorten.
+   * Absent, the path is used, and a reader who turned back looks as though they
+   * were never there.
+   */
+  seen?: readonly string[];
   /**
    * Every script on the diagram, so the reader can move to another one.
    *
@@ -49,6 +65,14 @@ interface Props {
   onGoBack: () => void;
   onChooseBranch: (branchIndex: number) => void;
   onExit: () => void;
+  /** The calls in the air, or null when the reading has none paired. */
+  callStack?: FlowCallStack | null;
+  /** True when the step in hand makes a call whose result can be skipped to. */
+  canStepOver?: boolean;
+  onStepOver?: () => void;
+  /** The call the reader is inside, or null at the outermost level. */
+  stepOutFrameId?: string | null;
+  onStepOut?: () => void;
 }
 
 /**
@@ -66,6 +90,7 @@ const FlowReadingRail = ({
   currentStepId,
   currentStep,
   history,
+  seen = history,
   flows,
   onSelectFlow,
   diagram: diagramProp,
@@ -76,6 +101,11 @@ const FlowReadingRail = ({
   onGoBack,
   onChooseBranch,
   onExit,
+  callStack = null,
+  canStepOver = false,
+  onStepOver,
+  stepOutFrameId = null,
+  onStepOut,
 }: Props) => {
   const { t } = useTranslation();
   const storeDiagram = useActiveDiagram();
@@ -96,17 +126,34 @@ const FlowReadingRail = ({
       connectionRemoved: t("flowStepNav.connectionRemoved"),
       connection: t("common.connection"),
       untitled: t("flowReading.untitledStep"),
+      conditionKinds: {
+        alt: t(CONDITION_KIND_LABEL.alt),
+        opt: t(CONDITION_KIND_LABEL.opt),
+        loop: t(CONDITION_KIND_LABEL.loop),
+        par: t(CONDITION_KIND_LABEL.par),
+        critical: t(CONDITION_KIND_LABEL.critical),
+        break: t(CONDITION_KIND_LABEL.break),
+      },
     }),
     [t],
   );
 
   const spine = useMemo(
     () =>
-      buildReadingSpine(flow, currentStepId, history, (step) =>
-        describeStepHeading(step, components, connections, headingLabels),
+      buildReadingSpine(
+        flow,
+        currentStepId,
+        history,
+        (step) => describeStepHeading(step, components, connections, headingLabels),
+        seen,
       ),
-    [flow, currentStepId, history, components, connections, headingLabels],
+    [flow, currentStepId, history, seen, components, connections, headingLabels],
   );
+
+  // The one thing the rail asks about a branch point: whether the ways out are
+  // a choice or threads that all run. Everything it says differently — glyph,
+  // colour, the footer's prompt — hangs off this and nothing else.
+  const isParallel = currentStep ? isParallelStep(currentStep) : false;
 
   const call = useMemo(
     () => describeStepCall(currentStep, connections),
@@ -119,6 +166,88 @@ const FlowReadingRail = ({
   const elementState = useMemo(
     () => describeStepElement(currentStep, diagram),
     [currentStep, diagram],
+  );
+
+  /**
+   * Names the component a call comes *from* — the one left waiting for it.
+   *
+   * Both the breadcrumb and the return rows ask this, and both mean the source
+   * of the connection: a call to Pagamentos is a call the API is waiting on, so
+   * leaving it goes back to the API.
+   */
+  const callerOf = useMemo(
+    () => (connectionId: string) => {
+      const connection = connections[connectionId];
+      const source = connection ? components[connection.sourceId] : undefined;
+      return source?.name ?? t("common.connection");
+    },
+    [components, connections, t],
+  );
+
+  /** The callers still waiting, outermost first. Empty at the top level. */
+  const stackTrail = useMemo(() => {
+    if (!callStack || !currentStepId) return [];
+    const info = callStack.byStep.get(currentStepId);
+    if (!info || info.callDepth === 0) return [];
+    return info.openFrameIds.map((frameId) => ({
+      frameId,
+      name: callerOf(callStack.frames.get(frameId)?.connectionId ?? ""),
+    }));
+  }, [callStack, currentStepId, callerOf]);
+
+  const stepOutName = stepOutFrameId
+    ? callerOf(callStack?.frames.get(stepOutFrameId)?.connectionId ?? "")
+    : null;
+
+  /** Everything the variables panel needs, folded over the walk so far. */
+  const walked = useMemo(
+    () => (currentStepId ? [...history, currentStepId] : [...history]),
+    [history, currentStepId],
+  );
+  const sends = useMemo(() => describePayload(flow, currentStepId), [flow, currentStepId]);
+  const expected = useMemo(
+    () => (callStack ? describeExpected(flow, callStack, currentStepId) : null),
+    [flow, callStack, currentStepId],
+  );
+  const runningContext = useMemo(
+    () =>
+      callStack
+        ? buildRunningContext(flow, callStack, walked)
+        : { groups: [], byKey: new Map(), unsetReads: [], reads: [], size: 0 },
+    [flow, callStack, walked],
+  );
+  const contract = useMemo(
+    () => (callStack && currentStepId ? checkContract(flow, callStack, currentStepId) : null),
+    [flow, callStack, currentStepId],
+  );
+  const numbers = useMemo(
+    () =>
+      new Map(
+        [...spine.past, ...(spine.current ? [spine.current] : []), ...spine.upcoming].map((r) => [
+          r.stepId,
+          r.number,
+        ]),
+      ),
+    [spine],
+  );
+  const numberOf = useMemo(() => (stepId: string) => numbers.get(stepId) ?? "", [numbers]);
+  const frameName = useMemo(
+    () => (frameId: string) => callerOf(callStack?.frames.get(frameId)?.connectionId ?? ""),
+    [callStack, callerOf],
+  );
+
+  /** What the step being read consumes, resolved to the values it will see. */
+  const readValues = useMemo(
+    () =>
+      runningContext.reads
+        .map((key) => runningContext.byKey.get(key))
+        .filter((entry): entry is NonNullable<typeof entry> => entry !== undefined)
+        .map((entry) => ({
+          key: entry.key,
+          value: entry.value,
+          fromNumber: numberOf(entry.fromStepId),
+        })),
+    [runningContext, numberOf],
   );
 
   const sceneRef = useRef<HTMLDivElement | null>(null);
@@ -212,32 +341,45 @@ const FlowReadingRail = ({
         )}
 
         {spine.past.map((row) => (
-          <SpineRow key={row.stepId} row={row} walked />
+          <SpineRow key={row.stepId} row={row} walked callerOf={callerOf} />
         ))}
 
         {spine.current && currentStep && (
-          <div ref={sceneRef} className="my-1.5 flex items-start gap-3">
-            <span
-              className={`w-[34px] shrink-0 pt-3.5 text-right font-mono text-[15px] font-bold ${
-                isCondition ? "text-amber-600" : "text-primary"
-              }`}
-            >
-              {spine.current.number}
-            </span>
-            <FlowReadingScene
-              step={currentStep}
-              call={call}
-              target={target}
-              heading={spine.current.heading}
-              isCondition={isCondition}
-              branches={spine.branches}
-              onChooseBranch={onChooseBranch}
-            />
-          </div>
+          <>
+            {spine.current.returnsBefore?.map((entry) => (
+              <ReturnRow
+                key={entry.frameId}
+                callDepth={entry.callDepth}
+                caller={callerOf(entry.connectionId)}
+              />
+            ))}
+            <div ref={sceneRef} className="my-1.5 flex items-start gap-3">
+              <span
+                className={`w-[34px] shrink-0 pt-3.5 text-right font-mono text-[15px] font-bold ${
+                  isCondition ? conditionGlyphClass(spine.current.conditionKind) : "text-primary"
+                }`}
+              >
+                {spine.current.number}
+              </span>
+              <CallGuides depth={spine.current.callDepth} />
+              <FlowReadingScene
+                step={currentStep}
+                call={call}
+                target={target}
+                heading={spine.current.heading}
+                isCondition={isCondition}
+                branches={spine.branches}
+                onChooseBranch={onChooseBranch}
+                stackTrail={stackTrail}
+                onLeaveFrame={onStepOut}
+                readValues={readValues}
+              />
+            </div>
+          </>
         )}
 
         {spine.upcoming.map((row) => (
-          <SpineRow key={row.stepId} row={row} walked={false} />
+          <SpineRow key={row.stepId} row={row} walked={false} callerOf={callerOf} />
         ))}
 
         {!isCondition &&
@@ -253,6 +395,20 @@ const FlowReadingRail = ({
             </div>
           ))}
       </div>
+
+      <FlowVariablesPanel
+        sends={sends}
+        expected={expected}
+        context={runningContext}
+        contract={contract}
+        contractStepNumber={
+          currentStepId
+            ? numberOf(callStack?.byStep.get(currentStepId)?.closesFrameId ?? "")
+            : undefined
+        }
+        numberOf={numberOf}
+        frameName={frameName}
+      />
 
       <div className="flex shrink-0 items-center gap-2.5 border-t border-border px-5 py-3">
         <button
@@ -274,13 +430,76 @@ const FlowReadingRail = ({
           </button>
         )}
         <div className="flex-1" />
+        {canStepOver && (
+          <button
+            type="button"
+            data-testid="flow-reading-step-over"
+            onClick={onStepOver}
+            title={t("flowReading.stepOverKey")}
+            aria-label={t("flowReading.stepOver")}
+            className="rounded-[7px] border border-border bg-card px-2.5 py-2 font-mono text-[13px] leading-none text-muted-foreground transition-colors hover:text-foreground"
+          >
+            ⤵
+          </button>
+        )}
+        {stepOutName && (
+          <button
+            type="button"
+            data-testid="flow-reading-step-out"
+            onClick={onStepOut}
+            title={t("flowReading.stepOutKey", { name: stepOutName })}
+            aria-label={t("flowReading.stepOut", { name: stepOutName })}
+            className="rounded-[7px] border border-border bg-card px-2.5 py-2 font-mono text-[13px] leading-none text-muted-foreground transition-colors hover:text-foreground"
+          >
+            ↰
+          </button>
+        )}
         {isCondition ? (
-          <span className="text-xs text-muted-foreground">{t("flowReading.chooseBranch")}</span>
+          <span className="text-xs text-muted-foreground">
+            {t(isParallel ? "flowReading.chooseThread" : "flowReading.chooseBranch")}
+          </span>
         ) : (
-          <span className="font-mono text-[11px] text-muted-foreground">← →</span>
+          !canStepOver &&
+          !stepOutName && <span className="font-mono text-[11px] text-muted-foreground">← →</span>
         )}
       </div>
     </aside>
+  );
+};
+
+/**
+ * One guide per call open around a row, drawn the full height of it.
+ *
+ * Continuous across consecutive rows on purpose: what the reader needs to see
+ * is how far a call *reaches*, not merely that this one line sits deeper.
+ */
+const CallGuides = ({ depth }: { depth: number }) => {
+  if (depth <= 0) return null;
+  return (
+    <span data-testid="flow-reading-guides" className="flex shrink-0 gap-[11px] self-stretch">
+      {Array.from({ length: depth }, (_, index) => (
+        <span key={index} data-testid="flow-reading-guide" className="block w-px bg-border" />
+      ))}
+    </span>
+  );
+};
+
+/** A call ending where the script never wrote the return. */
+const ReturnRow = ({ callDepth, caller }: { callDepth: number; caller: string }) => {
+  const { t } = useTranslation();
+
+  return (
+    <div data-testid="flow-reading-return" className="flex items-start gap-3 py-[5px] opacity-70">
+      <span className="w-[34px] shrink-0" />
+      <CallGuides depth={callDepth} />
+      <span className="mt-px shrink-0 text-[11px] leading-none text-muted-foreground">↩</span>
+      <span className="text-[12.5px] italic leading-[1.35] text-muted-foreground">
+        {t("flowReading.returnsTo", { name: caller })}
+        <span className="ml-1.5 rounded-[3px] bg-secondary px-1 py-px text-[9px] not-italic uppercase tracking-[0.06em]">
+          {t("flowReading.derived")}
+        </span>
+      </span>
+    </div>
   );
 };
 
@@ -288,35 +507,57 @@ interface SpineRowProps {
   row: ReadingRow;
   /** True for a step the reading has already been through. */
   walked: boolean;
+  /** Names the component a call returns to, for the rows the script omits. */
+  callerOf: (connectionId: string) => string;
 }
 
-const SpineRow = ({ row, walked }: SpineRowProps) => {
+const SpineRow = ({ row, walked, callerOf }: SpineRowProps) => {
   const { t } = useTranslation();
 
   return (
-    <div
-      data-testid="flow-reading-step"
-      className={`flex items-start gap-3 py-[7px] ${walked ? "opacity-75" : ""}`}
-    >
-      <span className="w-[34px] shrink-0 pt-px text-right font-mono text-xs font-semibold text-muted-foreground">
-        {row.number}
-      </span>
-      {row.isCondition ? (
-        <span className="mt-0.5 shrink-0 text-xs leading-none text-amber-600">◇</span>
-      ) : (
-        <span
-          className={`mt-[5px] h-[9px] w-[9px] shrink-0 rounded-full ${
-            walked ? "bg-primary" : "border border-border bg-background"
-          }`}
+    <>
+      {row.returnsBefore?.map((entry) => (
+        <ReturnRow
+          key={entry.frameId}
+          callDepth={entry.callDepth}
+          caller={callerOf(entry.connectionId)}
         />
-      )}
-      <span className="text-[13.5px] leading-[1.35] text-muted-foreground">
-        {row.heading}
-        {row.isCondition && row.exits > 0 && (
-          <span className="opacity-70"> {t("flowReading.exits", { count: row.exits })}</span>
+      ))}
+      <div
+        data-testid="flow-reading-step"
+        className={`flex items-start gap-3 py-[7px] ${walked ? "opacity-75" : ""}`}
+      >
+        <span className="w-[34px] shrink-0 pt-px text-right font-mono text-xs font-semibold text-muted-foreground">
+          {row.number}
+        </span>
+        <CallGuides depth={row.callDepth} />
+        {row.isCondition ? (
+          <span
+            data-testid="flow-reading-branch-glyph"
+            className={`mt-0.5 shrink-0 text-xs leading-none ${conditionGlyphClass(row.conditionKind)}`}
+          >
+            {conditionGlyph(row.conditionKind)}
+          </span>
+        ) : (
+          <span
+            className={`mt-[5px] h-[9px] w-[9px] shrink-0 rounded-full ${
+              walked ? "bg-primary" : "border border-border bg-background"
+            }`}
+          />
         )}
-      </span>
-    </div>
+        <span className="text-[13.5px] leading-[1.35] text-muted-foreground">
+          {row.heading}
+          {row.isCondition && row.exits > 0 && (
+            <span className="opacity-70">
+              {" "}
+              {t(row.conditionKind === "par" ? "flowReading.threads" : "flowReading.exits", {
+                count: row.exits,
+              })}
+            </span>
+          )}
+        </span>
+      </div>
+    </>
   );
 };
 

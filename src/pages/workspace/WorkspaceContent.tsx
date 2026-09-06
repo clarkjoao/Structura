@@ -106,6 +106,11 @@ export function WorkspaceContent({
     goBack,
     goNext,
     chooseBranch,
+    stepOver,
+    stepOut,
+    callStack,
+    stepOverTarget,
+    stepOutFrameId,
     startRecording,
     cancelRecording,
     finalizeRecording,
@@ -146,11 +151,26 @@ export function WorkspaceContent({
       if (keyIs(e, KEY.ARROW_RIGHT)) {
         e.preventDefault();
         if (!isCondition) goNext();
+        return;
+      }
+      /**
+       * The debugger's own keys, because the reading borrows its whole shape:
+       * F10 steps over a call, Shift+F11 steps out of one. F11 is left to the
+       * browser — it is fullscreen, and `Próximo` already has two keys.
+       */
+      if (keyIs(e, KEY.F10)) {
+        e.preventDefault();
+        stepOver();
+        return;
+      }
+      if (keyIs(e, KEY.F11) && e.shiftKey) {
+        e.preventDefault();
+        stepOut();
       }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [flowMode.mode.kind, isCondition, exitPlay, goBack, goNext]);
+  }, [flowMode.mode.kind, isCondition, exitPlay, goBack, goNext, stepOver, stepOut]);
 
   const interaction = useInteractionMode(diagram);
   const canvasInteractionLocked = !interaction.canEditCanvas;
@@ -369,6 +389,7 @@ export function WorkspaceContent({
                 currentStepId={currentStepId}
                 currentStep={currentStep}
                 history={playbackState?.history ?? EMPTY_HISTORY}
+                seen={playbackState?.seen ?? EMPTY_HISTORY}
                 flows={flows}
                 onSelectFlow={(flowId) => {
                   const target = flows.find((candidate) => candidate.id === flowId);
@@ -381,6 +402,11 @@ export function WorkspaceContent({
                 onGoBack={goBack}
                 onChooseBranch={chooseBranch}
                 onExit={exitPlay}
+                callStack={callStack}
+                canStepOver={stepOverTarget !== null}
+                onStepOver={stepOver}
+                stepOutFrameId={stepOutFrameId}
+                onStepOut={stepOut}
               />
             )}
             <div

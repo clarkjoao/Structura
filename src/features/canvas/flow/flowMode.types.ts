@@ -1,5 +1,5 @@
 import type { Dispatch, ReactNode, SetStateAction } from "react";
-import type { Flow, FlowCursor, FlowStep } from "@/features/diagram";
+import type { Flow, FlowCallStack, FlowCursor, FlowStep, FrameExit } from "@/features/diagram";
 
 /**
  * Where the recorder is pointing. `branch-select` writes nothing: it is the
@@ -30,6 +30,16 @@ export type FlowMode =
       flow: Flow;
       currentStepId: string | null;
       history: string[];
+      /**
+       * Every step this reading has ever stood on, in the order it first did.
+       *
+       * `history` is the path *to* the step in hand, so going back un-walks it —
+       * which is what makes the running object time-travel. This never
+       * shortens, and is the only thing that can answer "have I been down there
+       * already", which a reader at a `par` needs: all of its ways out happen,
+       * so the question is which ones are still owed a visit.
+       */
+      seen: string[];
     }
   | {
       kind: "recording";
@@ -57,11 +67,22 @@ export interface FlowModeState {
   goNext: () => void;
   goBack: () => void;
   chooseBranch: (branchIndex: number) => void;
+  /** Reads a call's result without reading its interior. */
+  stepOver: () => void;
+  /** Leaves the call the reader is inside, landing where it returns. */
+  stepOut: () => void;
 
   currentStep: FlowStep | null;
   isCondition: boolean;
   canGoBack: boolean;
   canGoForward: boolean;
+
+  /** The calls the script has in the air, or null outside a reading. */
+  callStack: FlowCallStack | null;
+  /** Where stepping over would land, or null when there is nothing to skip. */
+  stepOverTarget: FrameExit | null;
+  /** The call the reader is inside, or null at the outermost level. */
+  stepOutFrameId: string | null;
 
   /** Id of the flow being recorded, or null outside a recording. */
   recordingFlowId: string | null;

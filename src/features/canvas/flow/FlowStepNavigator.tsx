@@ -11,6 +11,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import {
+  conditionKindOf,
   getOrderedStepIds,
   resolveSceneSnapshot,
   useActiveDiagram,
@@ -20,6 +21,7 @@ import {
 } from "@/features/diagram";
 import { useTranslation } from "react-i18next";
 import { BRANCH_COLORS } from "./branchColors";
+import { CONDITION_KIND_LABEL, conditionGlyph, conditionGlyphClass } from "./conditionKinds";
 import { describeFlowProgress, describeStepElement } from "./flowState";
 
 interface DotInfo {
@@ -398,7 +400,10 @@ const FlowStepNavigator = ({
 
       {isCondition && step?.branches && (
         <div className="px-4 py-3">
-          <p className="text-xs font-semibold text-amber-400 mb-3">◇ {step.conditionLabel}</p>
+          <p className={`mb-3 text-xs font-semibold ${conditionGlyphClass(step.conditionKind)}`}>
+            {conditionGlyph(step.conditionKind)}{" "}
+            {step.conditionLabel?.trim() || t(CONDITION_KIND_LABEL[conditionKindOf(step)])}
+          </p>
           <div className="grid gap-2">
             {step.branches.map((branch, i) => (
               <button

@@ -60,6 +60,13 @@
     --node-container: 260 60% 48%;
     --node-component: 152 60% 38%;
     --node-person: 38 92% 50%;
+
+    /* Object inspector: JSON values coloured by type, taken from the node hues
+       so the reading and the diagram stay one palette. */
+    --json-key: 222 40% 26%;
+    --json-string: 24 68% 42%;
+    --json-number: 152 58% 32%;
+    --json-boolean: 260 58% 50%;
     --grid-line: 214 20% 88%;
 
     /* Edge waypoint handles (draw.io-style aliases) */
@@ -191,6 +198,11 @@
     --node-container: 260 60% 55%;
     --node-component: 152 60% 45%;
     --node-person: 38 92% 50%;
+
+    --json-key: 210 30% 78%;
+    --json-string: 24 82% 68%;
+    --json-number: 152 55% 58%;
+    --json-boolean: 260 70% 74%;
     --grid-line: 220 20% 12%;
 
     /* Edge waypoint handles (draw.io-style aliases) */

@@ -4,7 +4,13 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { AlertTriangle } from "lucide-react";
 import type { Flow, FlowStep } from "@/features/diagram";
-import { buildFlowOutline, useComponents, useConnections } from "@/features/diagram";
+import {
+  buildFlowOutline,
+  conditionKindOf,
+  useComponents,
+  useConnections,
+} from "@/features/diagram";
+import { CONDITION_KIND_LABEL, conditionGlyph } from "../conditionKinds";
 import { useFlowScriptActions } from "../useFlowScriptActions";
 import { ConditionForm, type ConditionFormState } from "./ConditionForm";
 import { FlowScriptRow } from "./FlowScriptRow";
@@ -45,7 +51,8 @@ export function FlowScriptList({
   const titleOf = useCallback(
     (step: FlowStep): string => {
       if (step.branches && step.branches.length > 0) {
-        return `◇ ${step.conditionLabel ?? t("flowScript.condition")}`;
+        const kind = conditionKindOf(step);
+        return `${conditionGlyph(kind)} ${step.conditionLabel?.trim() || t(CONDITION_KIND_LABEL[kind])}`;
       }
       if (step.connectionId) {
         const connection = connections[step.connectionId];

@@ -20,6 +20,10 @@ export const KEY = {
   ARROW_LEFT: "ArrowLeft",
   ARROW_RIGHT: "ArrowRight",
 
+  /** Debugger keys, so a reading steps the way a debugger does. */
+  F10: "F10",
+  F11: "F11",
+
   SLASH: "/",
   BACKTICK: "`",
 

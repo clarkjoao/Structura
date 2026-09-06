@@ -16,7 +16,7 @@ interface UseCanvasEdgesParams {
   isCompareMode?: boolean;
   compareConnectionOpacity?: Record<string, number>;
   activeStep: FlowStep | null;
-  flowHighlight: Pick<FlowHighlight, "activeConnId" | "participantConnIds">;
+  flowHighlight: Pick<FlowHighlight, "activeConnId" | "participantConnIds" | "openFrameConnIds">;
   flowBadges: Pick<FlowBadges, "edgeLabels" | "badgedEdgeIds" | "lastEdgeId"> | null;
   coverage: Pick<CoverageInfo, "edgeFlows"> | null;
   visibleTags: Set<string> | null;

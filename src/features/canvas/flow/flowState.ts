@@ -1,6 +1,9 @@
 import type { Diagram, Flow, FlowOutlineRow, FlowStep } from "@/features/diagram";
 import { OPACITY_FLOW_PLAYBACK_PARTICIPANT } from "../canvas.constants";
 import {
+  buildCallStack,
+  buildFlowOutline,
+  framesOpenAfter,
   getStepById,
   getFlowParticipants,
   getStepCount,
@@ -14,6 +17,14 @@ export interface FlowHighlight {
   visitedNodeIds: Set<string>;
   participantNodeIds: Set<string>;
   participantConnIds: Set<string>;
+  /**
+   * The calls made and not yet answered at this point in the reading.
+   *
+   * The rail says who is waiting in words; this is the same fact on the
+   * picture, so the chain of edges the reader is currently inside stays lit
+   * while the rest of the flow recedes.
+   */
+  openFrameConnIds: Set<string>;
 }
 
 export interface CoverageInfo {
@@ -44,6 +55,7 @@ export const EMPTY_FLOW_HIGHLIGHT: FlowHighlight = {
   visitedNodeIds: new Set(),
   participantNodeIds: new Set(),
   participantConnIds: new Set(),
+  openFrameConnIds: new Set(),
 };
 
 function addFlowToMap(map: Map<string, string[]>, key: string, flowName: string): void {
@@ -67,12 +79,20 @@ export function buildFlowHighlight(
     if (vs?.componentId) visitedNodeIds.add(vs.componentId);
   }
 
+  const callStack = buildCallStack(activeFlow, buildFlowOutline(activeFlow));
+  const openFrameConnIds = new Set<string>();
+  for (const frameId of framesOpenAfter(callStack, currentStepId)) {
+    const connectionId = callStack.frames.get(frameId)?.connectionId;
+    if (connectionId) openFrameConnIds.add(connectionId);
+  }
+
   return {
     activeNodeId: step?.componentId ?? null,
     activeConnId: step?.connectionId ?? null,
     visitedNodeIds,
     participantNodeIds,
     participantConnIds,
+    openFrameConnIds,
   };
 }
 
@@ -163,12 +183,17 @@ export interface FlowProgress {
 }
 
 /**
- * The shortest number of steps still ahead, and whether a choice is among them.
+ * The shortest number of steps still ahead, and whether a branch point is
+ * among them.
  *
- * Shortest, because at a branch nobody knows yet which way the reader will go:
- * a floor is honest where a guess is not, and `openEnded` says a floor is what
- * it is. Successors are followed breadth-first through the graph with the path
- * so far guarding against a cycle.
+ * Shortest, because this counts the *reading* and a reading has one cursor: at
+ * an `alt` nobody knows yet which way it will go, and at a `par` it will still
+ * only walk one thread even though every one of them happens. Both make the
+ * number a floor, for different reasons, and `openEnded` says so either way —
+ * how much more the script holds is `flowTotal`, which sits beside it.
+ *
+ * Successors are followed breadth-first through the graph with the path so far
+ * guarding against a cycle.
  */
 function stepsAhead(flow: Flow, fromId: string): { count: number; hasChoice: boolean } {
   const memo = new Map<string, number>();

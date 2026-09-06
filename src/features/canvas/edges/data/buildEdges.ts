@@ -5,6 +5,7 @@ import { getEffectiveConnectionStyle, EdgeMarker, EdgeStyle } from "@/features/d
 import type { FlowHighlight, FlowBadges, CoverageInfo } from "../../flow/flowState";
 import {
   OPACITY_FLOW_PLAYBACK_EDGE_DIM,
+  OPACITY_FLOW_PLAYBACK_IN_FLIGHT,
   OPACITY_FLOW_PLAYBACK_PARTICIPANT,
   OPACITY_TAG_FILTER_EDGE_DIM,
 } from "../../canvas.constants";
@@ -20,7 +21,7 @@ export interface EdgeBuildParams {
 
   compareConnectionOpacity?: Record<string, number>;
   activeStep: FlowStep | null;
-  flowHighlight: Pick<FlowHighlight, "activeConnId" | "participantConnIds">;
+  flowHighlight: Pick<FlowHighlight, "activeConnId" | "participantConnIds" | "openFrameConnIds">;
   flowBadges: Pick<FlowBadges, "edgeLabels" | "badgedEdgeIds" | "lastEdgeId"> | null;
   coverage: Pick<CoverageInfo, "edgeFlows"> | null;
 
@@ -52,17 +53,21 @@ export function getEdgeOpacity(
   connId: string,
   isPlaying: boolean,
   isRecording: boolean,
-  flowHighlight: Pick<FlowHighlight, "activeConnId" | "participantConnIds">,
+  flowHighlight: Pick<FlowHighlight, "activeConnId" | "participantConnIds" | "openFrameConnIds">,
   flowBadges: Pick<FlowBadges, "badgedEdgeIds"> | null,
 ): number | undefined {
   if (isPlaying) {
     const isActive = flowHighlight.activeConnId === connId;
+    // A call still owed a return is in flight, not merely on the flow.
+    const isInFlight = flowHighlight.openFrameConnIds.has(connId);
     const isParticipant = flowHighlight.participantConnIds.has(connId);
     return isActive
       ? 1
-      : isParticipant
-        ? OPACITY_FLOW_PLAYBACK_PARTICIPANT
-        : OPACITY_FLOW_PLAYBACK_EDGE_DIM;
+      : isInFlight
+        ? OPACITY_FLOW_PLAYBACK_IN_FLIGHT
+        : isParticipant
+          ? OPACITY_FLOW_PLAYBACK_PARTICIPANT
+          : OPACITY_FLOW_PLAYBACK_EDGE_DIM;
   }
   if (isRecording && flowBadges) {
     return flowBadges.badgedEdgeIds.has(connId) ? 1 : OPACITY_FLOW_PLAYBACK_EDGE_DIM;

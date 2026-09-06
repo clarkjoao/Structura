@@ -107,6 +107,9 @@ describe("exportMermaid", () => {
     expect(exported).not.toContain("stale label");
   });
 
+  // The keyword used to be smuggled through `conditionLabel`, so a block was a
+  // loop only because someone had typed the word "loop" as its question. It has
+  // a field of its own now, and the label is free to be a label again.
   it("preserves loop keyword when exporting condition blocks", () => {
     const components: Record<string, Component> = {
       app: { id: "app", name: "App", type: "system", description: "", parentId: null },
@@ -132,7 +135,8 @@ describe("exportMermaid", () => {
           c1: {
             id: "c1",
             type: "condition",
-            conditionLabel: "loop",
+            conditionKind: "loop",
+            conditionLabel: "Enquanto restar parte",
             branches: [{ label: "Envio em chunks", nextId: "a1" }],
           },
           a1: {

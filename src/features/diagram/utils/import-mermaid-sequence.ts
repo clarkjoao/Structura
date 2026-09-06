@@ -2,6 +2,7 @@ import type {
   Component,
   Connection,
   ConnectionIntent,
+  FlowConditionKind,
   FlowStep,
   NodeLayout,
 } from "../model/diagram.types";
@@ -16,13 +17,22 @@ interface ParseContext {
   steps: Record<string, FlowStep>;
 }
 
-type ConditionalKind = "alt" | "opt" | "loop" | "par" | "critical" | "break";
+type ConditionalKind = FlowConditionKind;
 
 type ArrowMatch = {
   sourceAlias: string;
   targetAlias: string;
   label: string;
   intent: ConnectionIntent;
+  /** `-)` and `--)`: Mermaid's fire-and-forget arrows, and only those. */
+  isAsync: boolean;
+  /**
+   * A dashed arrow, which in a sequence diagram is the way *back*.
+   *
+   * `-->>` is the reply to `->>`, not an async message — reading it as one made
+   * every imported response claim to be a call nobody returns.
+   */
+  isReturn: boolean;
 } | null;
 
 export interface MermaidImportPlan {
@@ -81,6 +91,7 @@ function resolveMessageConnection(
   targetId: string,
   label: string,
   intent: ConnectionIntent,
+  isReturn: boolean,
 ): { connection: Connection; isResponse: boolean } {
   const existing = findConnectionByEndpoints(ctx.existingConnections, sourceId, targetId);
   if (existing) return { connection: existing, isResponse: false };
@@ -92,8 +103,9 @@ function resolveMessageConnection(
   );
   if (fromNew) return { connection: fromNew, isResponse: false };
 
-  const canReuseReverse = intent === "async-message" || intent === "event";
-  if (canReuseReverse) {
+  // A dashed arrow travels back along a connection that already exists, which
+  // is what pairs a reply with the call it answers.
+  if (isReturn) {
     const reverseExisting = findConnectionByEndpoints(ctx.existingConnections, targetId, sourceId);
     if (reverseExisting) return { connection: reverseExisting, isResponse: true };
 
@@ -121,20 +133,23 @@ function matchArrowLine(line: string): ArrowMatch {
   if (!match) return null;
 
   const arrowType = match[2];
-  const intent: ConnectionIntent =
-    arrowType === "-->>"
-      ? "async-message"
-      : arrowType === "-->"
-        ? "dependency"
-        : arrowType === "-x" || arrowType === "--x" || arrowType === "-)" || arrowType === "--)"
-          ? "event"
-          : "call";
+  const isAsync = arrowType === "-)" || arrowType === "--)";
+  const isReturn = arrowType.startsWith("--");
+  const intent: ConnectionIntent = isAsync
+    ? "async-message"
+    : arrowType === "-->"
+      ? "dependency"
+      : arrowType === "-x" || arrowType === "--x"
+        ? "event"
+        : "call";
 
   return {
     sourceAlias: match[1],
     targetAlias: match[3],
     label: match[4].trim(),
     intent,
+    isAsync,
+    isReturn,
   };
 }
 
@@ -144,6 +159,7 @@ function createActionStep(
   note: string,
   sourceComponentId: string,
   intent: ConnectionIntent,
+  isAsync: boolean,
 ): FlowStep {
   const step: FlowStep = {
     id: generateId("step"),
@@ -151,7 +167,7 @@ function createActionStep(
     connectionId,
     componentId: sourceComponentId,
     connectionIntent: intent,
-    isAsync: intent === "async-message",
+    isAsync,
     note,
   };
   ctx.steps[step.id] = step;
@@ -180,26 +196,9 @@ function connectTailToHead(
   }
 }
 
-function skipConditionalBlock(lines: string[], startIndex: number): number {
-  let depth = 0;
-  for (let index = startIndex; index < lines.length; index += 1) {
-    const line = lines[index];
-    if (/^(alt|opt|loop|par|critical|break)\b/i.test(line)) {
-      depth += 1;
-      continue;
-    }
-    if (line === "end") {
-      depth -= 1;
-      if (depth === 0) return index + 1;
-    }
-  }
-  return lines.length;
-}
-
 function parseSequenceFrom(
   ctx: ParseContext,
   startIndex: number,
-  inConditionalBlock: boolean,
   stopTokens: Set<string>,
 ): { index: number; entryId: string; exitIds: string[] } {
   let index = startIndex;
@@ -221,11 +220,11 @@ function parseSequenceFrom(
     const conditionalMatch = line.match(/^(alt|opt|loop|par|critical|break)\b(.*)$/i);
     if (conditionalMatch) {
       const blockKind = conditionalMatch[1].toLowerCase() as ConditionalKind;
-      if (inConditionalBlock) {
-        ctx.errors.push(`Nested ${blockKind} block skipped`);
-        index = skipConditionalBlock(ctx.lines, index);
-        continue;
-      }
+      // Nested blocks used to be dropped on the floor with a warning, which is
+      // data loss on the shape a real concurrent flow actually has — an `alt`
+      // inside a `par` is the ordinary case, not the exotic one. The walk was
+      // already recursive: a block consumes its own `end`, so the enclosing
+      // sequence resumes on the line after it and stops on its own tokens.
       const parsed = parseConditionalBlock(ctx, index, blockKind);
       if (parsed.entryId) {
         if (!entryId) entryId = parsed.entryId;
@@ -251,11 +250,21 @@ function parseSequenceFrom(
         targetId,
         arrow.label,
         arrow.intent,
+        arrow.isReturn,
       );
-      const step = createActionStep(ctx, connection.id, arrow.label, sourceId, arrow.intent);
-      if (isResponse) {
-        step.payloadDirection = "response";
-      }
+      const step = createActionStep(
+        ctx,
+        connection.id,
+        arrow.label,
+        sourceId,
+        arrow.intent,
+        arrow.isAsync,
+      );
+      // Both ways, not just the way back. A message travelling along a
+      // connection it did not have to reverse is a request, and saying so is
+      // what lets the reading pair it with the answer below — leaving it unset
+      // made every imported response an answer to a call nobody had made.
+      step.payloadDirection = isResponse ? "response" : "request";
       if (!entryId) entryId = step.id;
       connectTailToHead(ctx.steps, tailIds, step.id);
       tailIds = [step.id];
@@ -276,11 +285,16 @@ function parseConditionalBlock(
 ): { index: number; entryId: string; exitIds: string[] } {
   const line = ctx.lines[startIndex];
   const firstLabelRaw = line.replace(/^(alt|opt|loop|par|critical|break)\s*/i, "").trim();
+  // The keyword is what the block *is*, and it now has a field of its own. It
+  // used to be written into `conditionLabel`, which both destroyed the label
+  // and made every reader parse a magic string to find out whether the ways out
+  // were a choice or threads. Mermaid keeps no question of its own on the
+  // header — its text is the first branch's label, which is where it goes.
   const conditionStep: FlowStep = {
     id: generateId("step"),
     type: "condition",
     branches: [],
-    conditionLabel: kind,
+    conditionKind: kind,
   };
   ctx.steps[conditionStep.id] = conditionStep;
 
@@ -296,7 +310,7 @@ function parseConditionalBlock(
         : kind === "critical"
           ? new Set(["option", "end"])
           : new Set(["else", "end"]);
-    const parsed = parseSequenceFrom(ctx, index, true, stopTokens);
+    const parsed = parseSequenceFrom(ctx, index, stopTokens);
     index = parsed.index;
     let branchEntryId = parsed.entryId;
     let branchExitIds = parsed.exitIds;
@@ -452,7 +466,7 @@ export function parseMermaidSequence(
     newConnections: [],
     steps: {},
   };
-  const parsed = parseSequenceFrom(ctx, 0, false, new Set());
+  const parsed = parseSequenceFrom(ctx, 0, new Set());
 
   return {
     newComponents,

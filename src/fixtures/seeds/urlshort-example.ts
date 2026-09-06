@@ -152,6 +152,9 @@ function buildDiagrams(): Record<string, Diagram> {
                 id: "ctx-f3",
                 type: "action",
                 componentId: "us-ctx-system",
+                // The answer to `ctx-f1`, on the connection that carried the ask.
+                // Without the connection named, a response closes nothing.
+                connectionId: "us-ctx-r1",
                 description: "Sistema gera o slug único, persiste no banco e aquece o cache Redis.",
                 duration: "~40ms",
                 payload: '{ "shortUrl": "https://url.sh/artigo26", "expiresAt": null }',

@@ -1,8 +1,11 @@
 import type { DragEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { StepContextEditor } from "./StepContextEditor";
 import { GitBranch, GripVertical, Plus, X } from "lucide-react";
-import type { FlowOutlineRow, FlowStep } from "@/features/diagram";
+import { FLOW_CONDITION_KINDS, conditionKindOf } from "@/features/diagram";
+import type { FlowConditionKind, FlowOutlineRow, FlowStep } from "@/features/diagram";
 import { getBranchColor } from "../branchColors";
+import { CONDITION_KIND_LABEL, conditionGlyph } from "../conditionKinds";
 import type { FlowScriptActions } from "../useFlowScriptActions";
 
 export interface FlowScriptRowProps {
@@ -134,7 +137,30 @@ export function FlowScriptRow({
           {row.isBranchPoint ? (
             <>
               <div className="flex items-start gap-1">
-                <span className="mt-1 shrink-0 text-[10px]">◇</span>
+                {/*
+                  What the branch point *is*, not what it is called. The two used
+                  to be the same field — the importer wrote `par` into the label —
+                  so a fork into threads could only be authored by typing a
+                  keyword into the question, and nothing said that was a keyword.
+                */}
+                <select
+                  value={conditionKindOf(step)}
+                  onChange={(event) =>
+                    actions.updateStep(row.stepId, {
+                      conditionKind: event.target.value as FlowConditionKind,
+                    })
+                  }
+                  onClick={(event) => event.stopPropagation()}
+                  title={t("flowScript.conditionKind.title")}
+                  aria-label={t("flowScript.conditionKind.title")}
+                  className="shrink-0 rounded border border-border bg-secondary px-1 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  {FLOW_CONDITION_KINDS.map((kind) => (
+                    <option key={kind} value={kind}>
+                      {`${conditionGlyph(kind)} ${t(CONDITION_KIND_LABEL[kind])}`}
+                    </option>
+                  ))}
+                </select>
                 <input
                   value={step.conditionLabel ?? ""}
                   onChange={(event) =>
@@ -312,6 +338,10 @@ export function FlowScriptRow({
                   </label>
                 </>
               )}
+              <StepContextEditor
+                step={step}
+                onChange={(context) => actions.updateStep(row.stepId, { context })}
+              />
               <button
                 type="button"
                 onClick={(event) => {
