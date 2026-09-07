@@ -26,6 +26,14 @@ scope. The report SHALL be derived from the walked path; the system SHALL NOT st
 - **WHEN** the change is reported
 - **THEN** the key is reported as replaced, and not as introduced
 
+#### Scenario: A value that comes back when the call that hid it ends
+
+- **GIVEN** a key written both inside a call and outside it, and a reading standing on the step that
+  ends that call
+- **WHEN** the change is reported
+- **THEN** the key is reported as replaced, holding the value it had before the call
+- **AND** it is reported as neither introduced nor gone
+
 #### Scenario: A step that closes a call holding values
 
 - **GIVEN** a reading standing on a step that closes a frame in which values were introduced
@@ -46,19 +54,39 @@ scope. The report SHALL be derived from the walked path; the system SHALL NOT st
 - **WHEN** the change is reported
 - **THEN** the report is empty in all three categories
 
+### Requirement: The running object is shown as one object
+
+The reading SHALL show the running object as a single object, in the order its keys were first
+introduced along the walked path. It SHALL NOT group the values by the call each was introduced
+inside, and SHALL NOT show a key more than once.
+
+#### Scenario: A key written both inside a call and outside it
+
+- **GIVEN** a reading whose path writes the same key at two depths
+- **WHEN** the running object is shown
+- **THEN** there is one row for that key, holding the value in force
+
+#### Scenario: The order does not shuffle as the reading walks
+
+- **GIVEN** a reading whose path writes one key outside a call and a later key inside one
+- **WHEN** the running object is shown
+- **THEN** the keys read in the order they were first introduced
+
 ### Requirement: A value the step in hand wrote is marked, and marked once
 
 A value introduced or replaced by the step in hand SHALL be marked so it is distinguishable from one
-set earlier, and the marking SHALL survive the reader's attention moving elsewhere. The reading SHALL
-NOT show the value that was replaced beside the one that replaced it; that history belongs to the key's
-own life. A reader who has asked for reduced motion SHALL still get the marking.
+set earlier, and the marking SHALL survive the reader's attention moving elsewhere. The mark SHALL be
+a single indicator on the value's own row; the reading SHALL NOT repeat in words beside the value what
+the change report above it already says, and SHALL NOT show the value that was replaced beside the one
+that replaced it — that history belongs to the key's own life. Each mark SHALL carry its meaning in
+words for a reader who asks for it. A reader who has asked for reduced motion SHALL still get the mark.
 
 #### Scenario: A value this step wrote
 
 - **GIVEN** a reading standing on a step that writes over a value already in scope
 - **WHEN** the running object is shown
-- **THEN** the value is marked as replaced
-- **AND** the value it replaced is not shown beside it
+- **THEN** the value carries a mark saying it was replaced
+- **AND** neither the word nor the value it replaced is shown beside it
 
 #### Scenario: A value an earlier step wrote
 
@@ -76,8 +104,8 @@ SHALL be absent.
 
 - **GIVEN** a reading standing on a step that closes a frame holding a value
 - **WHEN** the running object is shown
-- **THEN** the value is present and marked as leaving
-- **AND** the call it leaves with is named
+- **THEN** the value is present, in the object, marked as leaving
+- **AND** the call it leaves with is named in the change report above
 
 #### Scenario: The step after the frame closed
 

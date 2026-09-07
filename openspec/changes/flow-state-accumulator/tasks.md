@@ -35,3 +35,17 @@
 - [x] 5.1 Read the seeded `Criar link — pilha completa` end to end in the running editor; verify by screenshot that the delta bar names the frame that closed, that `url_id` is dimmed on step 6 and absent on step 7, and that the editor's scope on step 7 no longer offers what the reading calls unset.
 - [x] 5.2 Pin a key and walk the whole reading; verify by screenshot that it survives the frame closing as *out of scope* and that its life names the steps that introduced, read and ended it.
 - [x] 5.3 Author a context with the keyboard alone — a row, the next row, an abandoned row; verify by screenshot that nothing needs the mouse and the step holds exactly what was typed. **The paste is covered by unit tests only** — driving a real clipboard through the automation is not something a screenshot can honestly witness.
+
+## 6. One object, in both panels
+
+- [x] 6.1 Give `RunningContext` a flat `entries` list ordered by when each key was first introduced, per design D13; verify tests cover a key written at two depths reading as one row and the order not shuffling when a value is written inside a call.
+- [x] 6.2 Report a value that comes back when the call hiding it ends, by comparing the whole earlier object against the whole current one rather than against the survivors; verify a test covers the revert, and that the first formulation — comparing against the object minus the dying frame — cannot see it.
+- [x] 6.3 Show the running object as one object between braces, keys and values quoted, with no group headings and no `Fora`; verify the panel tests assert one row per key and no heading.
+- [x] 6.4 Reduce a row's marking to one indicator in the gutter, carrying its words on hover, per design D14; verify tests cover each mark, its absence on an untouched row, and that the word is not repeated beside the value.
+- [x] 6.5 Move the object out of the step into a panel of the script, showing it at the selected step and at the end of the script when none is selected, per design D15; verify tests cover the object at a step, the step's own contribution being shown, the end-of-script default, and an unreachable step folding to nothing.
+- [x] 6.6 Make a row inherited or written here, with taking a key over and giving it back; verify tests cover both directions and the last key given back leaving no empty value behind.
+- [x] 6.7 Move consuming a key onto the key's own row, and give a key nothing writes a row of its own with no value; verify tests cover the toggle and the unwritten key.
+- [x] 6.8 Carry `sai de escopo depois do passo N` onto the inherited rows rather than losing it with the scope panel — it is one of the three places that let the grouping go; verify tests cover a value inside an open call and a call answered only on the branch not taken.
+- [x] 6.9 Keep pasting a block and taking the values from the step's own body, both of which lived in the deleted editor; verify tests cover the paste shapes and the body offer.
+- [x] 6.10 Delete `StepContextEditor` and everything left without a consumer — `SetRow`, `toSetRows`, `fromSetRows`, `newSetRow`, `parseReads` — and rename `rowsFromPaste` to what its only caller wants; verify the typecheck, the lint and the provenance table, which names the new producer of `context`.
+- [x] 6.11 Read the seeded script in the running editor; verify by screenshot that the object reads as one object with the marks, that the panel says *ao fim do roteiro* with no step selected and *no passo 2* with one, and that taking a key over and giving it back both work.

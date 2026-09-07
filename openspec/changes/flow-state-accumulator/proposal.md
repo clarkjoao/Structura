@@ -13,15 +13,20 @@ the reading folds it"; it is not.
 
 ## What Changes
 
-- **Fix** the editor's scope so it is the reading's scope: fold the whole path, holding back only the
-  step's own values. Group it by frame, innermost first, and say when a call's values do not outlive it.
+- **Change** both panels to show *one object*, in the order its keys arrived — not a list split by the
+  call each value was introduced inside, headed by the name of whoever made that call.
+- **Fix** the author's view of the object so it is the reading's: the whole path folded, the same
+  function with the same argument, and a word about when a call's values do not outlive it.
+- **Move** the author's object out of the step and into a panel of the script, seen from the step the
+  author has selected — *at that step, it has this value* — and at the end of the script when none is.
 - **Add** a delta between the step before and the step in hand — introduced, replaced, and gone with a
   frame — derived by folding the path twice and comparing. Nothing stored.
-- **Add** two row states the panel lacks: *replaced*, which shows the value that was there, and
-  *leaving*, which dims a key one step before the frame holding it closes.
+- **Add** two row states the panel lacks: *replaced*, and *leaving*, which dims a key one step before
+  the frame holding it closes. Each row carries one mark and no words; the words are in the report
+  above it.
 - **Change** the variables panel's order and defaults so the accumulating root comes first and open.
-- **Add** keyboard behaviour to the values table: Enter opens the next row, Tab walks the cells, a
-  pasted `key: value` block or JSON object becomes rows, an abandoned empty row removes itself.
+- **Add** a way to bring in values already written elsewhere: a pasted `key: value` block or JSON
+  object where a key is named, and the top-level keys of the step's own body.
 - **Add** a watch strip: keys the reader pins stay visible across steps, including — especially — when
   the fold no longer holds them, where the strip says *out of scope* rather than hiding them. On the
   step that ends the call, it shows the value going, in agreement with the list below it.
@@ -70,8 +75,12 @@ the reading folds it"; it is not.
   pinned keys, which live beside `seen` on the playing mode.
 - `src/pages/workspace/WorkspaceContent.tsx` — hands the pins to the rail.
 - `src/features/canvas/flow/script/FlowScriptList.tsx` — the scope fix.
-- `src/features/canvas/flow/script/StepContextEditor.tsx` — scope grouped by frame; the values table.
-- `src/features/canvas/flow/script/stepContext.ts` — row keyboard helpers.
+- `src/features/canvas/flow/script/FlowObjectPanel.tsx`, `flowObject.ts` — the object as a panel of the
+  script, and the derivation behind it.
+- `src/features/canvas/flow/script/FlowScriptPanel.tsx` — where that panel sits.
+- `src/features/canvas/flow/script/StepContextEditor.tsx` — **deleted**, with the two lists it held.
+- `src/features/canvas/flow/script/stepContext.ts` — down to what survived it.
+- `tailwind.config.ts`, `src/index.css` — the flash, and dropping it under reduced motion.
 - `src/infrastructure/i18n/locales/{en,pt-BR}.json` — new strings in both locales.
 - Design proposal this change implements:
   https://claude.ai/code/artifact/bfff3cc2-e24b-46ed-a247-f31dfea28d5b

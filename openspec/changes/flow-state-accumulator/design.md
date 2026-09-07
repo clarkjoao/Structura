@@ -47,6 +47,12 @@ which frames the step closed, and reports the keys those frames held, naming the
 disappeared for any *other* reason would be a bug in the fold, and reporting it as an ordinary
 category would hide that.
 
+*Introduced and replaced are the other way round*: they compare the whole earlier object against the
+whole current one, row by row. Comparing against the earlier object *minus the frames that just ended*
+looks equivalent and is not — a value shadowed inside a call and revealed again when the call returns
+changes on screen, and subtracting the dying frame first is exactly what makes that change invisible.
+See D13.
+
 ### D3 — "Leaving" is the same fact, one step early
 
 The dimmed *leaving* marker is not a fourth derivation. On the step that closes a frame, the fold has
@@ -54,7 +60,7 @@ already dropped that frame — so the values are gone from `after` and present i
 same set D2 reports as gone. The panel renders that set inline, dimmed, instead of only counting it,
 which is why the value is visible on the step that ends it and absent on the next.
 
-### D4 — The scope fix folds the whole path, holding back one step's values
+### D4 — The scope fix folds the whole path, holding back one step's values *(superseded by D15)*
 
 `scopeOf` becomes `buildRunningContext(flow, stack, getPathToStep(flow, stepId), stepId)` — the whole
 path, the step included, with a fourth argument naming the one step whose `sets` are skipped. The
@@ -68,6 +74,10 @@ the fold has already run every drop.
 
 *Alternative considered:* keep `slice(0, -1)` and apply the step's frame drop by hand. Rejected — it
 reimplements one rule of the fold outside the fold, which is how the two got out of step.
+
+**Superseded.** The panel this fixed no longer exists, and its replacement shows the step's own values
+rather than holding them back — for the reason in D15. The fix itself stands: the object at a step is
+still the whole path folded, which is the only formulation that cannot drift from the reading.
 
 ### D5 — Pins live in the flow-mode slice, keyed by nothing
 
@@ -92,7 +102,7 @@ State moves above the payload roots and opens by default. The payload roots are 
 and are already spoken by the rail; the running object is the only root that accumulates. `Root` keeps
 its own open state, so a reader who shuts it keeps it shut as they walk.
 
-### D8 — The values table stays uncontrolled per row
+### D8 — The values table stays uncontrolled per row *(superseded by D15)*
 
 `SetRow` already carries an identity so a half-typed key survives. The keyboard work adds behaviour
 around those rows and no new source of truth: Enter appends a row and focuses it, Tab is the browser's,
@@ -101,6 +111,10 @@ blur drops keyless rows, and paste parses into rows before any row exists.
 Paste splits on the **first** colon per line, so a value holding a colon — a URL, a timestamp — stays
 whole. A pasted JSON object is a separate branch, taking top-level entries only, the same rule
 `setsFromPayload` already applies.
+
+**Superseded.** The table went with the step-level panel. The paste rule outlived it and moved to
+where a key is named; `SetRow` and the row identity it existed for did not, since the object's rows
+are keys and a key is its own identity.
 
 ### D9 — A read that resolves and one that does not cannot look alike
 
@@ -149,6 +163,58 @@ provenance table exists to prevent one field at a time.
 in hand just wrote mounts afresh and its animation actually runs. A row nothing touched keeps its
 identity and stays still.
 
+### D13 — One object, in arrival order, with no groups at all
+
+The panel split the running object by the call each value was introduced inside and headed each group
+with `frameName(frameId)` — which is the *caller* of that call. So a key written by the Management API
+sat under "Criador de Links", and the outermost group was headed "Fora", meaning outside every call
+and reading as outside the system. The grouping was also the only reason a key could appear twice with
+two values, which is what put a change badge on the row that had just been replaced.
+
+The grouping went. What it uniquely carried — which values are on borrowed time — is said in three
+better places: the change report names the call at the moment it ends, the leaving row is dimmed one
+step before it goes, and the authoring panel names the step where a value stops existing.
+
+Flattening is not the groups concatenated. Those run innermost call first, so a value written inside a
+call jumps above one written before it and the list reshuffles as the reader walks. `RunningContext`
+gained `entries`, ordered by when each key was *first* introduced: a key appears where it appeared and
+stays there until it goes, which is what makes it read as one object rather than a list that happens
+to differ from the one before it.
+
+Two things fall out. A key written at two depths is one row, so the double entry and the misplaced
+badge stop being possible by construction. And a value reverting when the call that hid it ends is
+now a visible change, so it is reported — it used to be deliberately silent, because with two groups
+on screen neither "gone" nor "replaced" was true of what the reader could see.
+
+### D14 — The mark is the whole marking; the words live in the report
+
+A row carries one indicator and nothing else: `⊕` written here, `~` replaced, `↗` consumed, `↩` going
+with the call that ends here. The words are not lost — the change report above counts them in full,
+and each mark carries its own on hover — but a badge beside every changed value pushed the value
+around and repeated what the reader had just read one line up.
+
+### D15 — The object leaves the step and becomes a panel of the script
+
+The author's half was two lists inside every expanded step: what is already set, and what this step
+adds. A reader had to join them to know how the object ends up. It is one panel now, above the steps
+and sticky, showing the object at whichever step is selected — the same object the reading shows, at
+the same step, differing only in being editable.
+
+A row is inherited or written here. Acting on an inherited value makes the selected step write that
+key, seeded with what it held; the `×` gives it back. Consuming a key moves onto the key's own row,
+because with the object outside the step, leaving the chips inside it pointing at keys that live here
+would split one question across two places — and a key nothing writes finally has somewhere to be
+said, as a row of its own with no value.
+
+Unlike the panel it replaces, this one *includes* what the selected step writes. The old one held that
+back on purpose (D4). Here the author is editing the object as it ends up, and hiding half of it would
+be lying about the result. The shadow marker goes with it: the row already says "this step", and the
+origin already said whose it was.
+
+*Consequence:* the keyboard work on the values table goes with the table — Enter opening the next row,
+tab between cells, dropping a row abandoned without a key. Pasting a block survives, moved to where a
+key is named, and so does taking the values from the step's own body.
+
 ## Risks / Trade-offs
 
 - **The scope fix changes what existing scripts show in the editor.** A key that used to be offered and
@@ -166,6 +232,14 @@ identity and stays still.
 - **`keyLife` repeats the fold's rules.** If the fold changes and `keyLife` does not, they diverge
   silently. → The test compares it against the prefix-diff oracle rather than against a fixture, so a
   change to the fold breaks it.
+
+- **The object no longer says, at every step, which values are on borrowed time.** → It says it where
+  it matters instead: the mark and the report at the step that ends the call, and the authoring panel
+  naming the step where a value stops existing. Keeping a permanent grouping to say it earlier cost the
+  panel the thing it exists for.
+
+- **A long value wraps and takes two lines.** → It is a monospace object with a fixed key column; the
+  alternative is truncating a value the reader came to read.
 
 - **The flash is missed by a reader who arrives late at a step.** → The badge and the colour stay after
   it, which is why the marking is not the animation alone; and reduced motion drops the flash and keeps
