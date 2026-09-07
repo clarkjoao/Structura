@@ -13,8 +13,8 @@ the reading folds it"; it is not.
 
 ## What Changes
 
-- **Fix** the editor's scope so it is the reading's scope: fold the whole path, subtract what the step
-  itself introduces. Group it by frame, innermost first, and mark the frame the step closes as leaving.
+- **Fix** the editor's scope so it is the reading's scope: fold the whole path, holding back only the
+  step's own values. Group it by frame, innermost first, and say when a call's values do not outlive it.
 - **Add** a delta between the step before and the step in hand — introduced, replaced, and gone with a
   frame — derived by folding the path twice and comparing. Nothing stored.
 - **Add** two row states the panel lacks: *replaced*, which shows the value that was there, and
@@ -23,7 +23,8 @@ the reading folds it"; it is not.
 - **Add** keyboard behaviour to the values table: Enter opens the next row, Tab walks the cells, a
   pasted `key: value` block or JSON object becomes rows, an abandoned empty row removes itself.
 - **Add** a watch strip: keys the reader pins stay visible across steps, including — especially — when
-  the fold no longer holds them, where the strip says *out of scope* rather than hiding them.
+  the fold no longer holds them, where the strip says *out of scope* rather than hiding them. On the
+  step that ends the call, it shows the value going, in agreement with the list below it.
 - **Add** the life of a pinned key along the walked path: where it was introduced, read, replaced, and
   where it went out with its frame. Derived by folding cumulatively; each mark is a jump.
 
@@ -63,7 +64,11 @@ the reading folds it"; it is not.
 - `src/features/canvas/flow/reading/readingVariables.ts` — the fold gains a comparison beside it.
 - `src/features/canvas/flow/reading/FlowVariablesPanel.tsx` — delta bar, four row states, watch strip,
   root order and defaults.
-- `src/features/canvas/flow/reading/FlowReadingRail.tsx` — passes the previous path and the pin state.
+- `src/features/canvas/flow/reading/FlowReadingRail.tsx` — derives the change and one key's life, and
+  passes both down with the pin state.
+- `src/features/canvas/flow/flowMode.types.ts`, `useFlowModePlayback.ts`, `FlowModeContext.tsx` — the
+  pinned keys, which live beside `seen` on the playing mode.
+- `src/pages/workspace/WorkspaceContent.tsx` — hands the pins to the rail.
 - `src/features/canvas/flow/script/FlowScriptList.tsx` — the scope fix.
 - `src/features/canvas/flow/script/StepContextEditor.tsx` — scope grouped by frame; the values table.
 - `src/features/canvas/flow/script/stepContext.ts` — row keyboard helpers.

@@ -240,6 +240,19 @@ const FlowVariablesPanel = ({
   const replaced = new Map(
     (change?.replaced ?? []).map((entry) => [entry.entry.key, entry.previous.value]),
   );
+  /**
+   * The values this step's return is taking, by key.
+   *
+   * The fold has already dropped them, so anything asking the running object
+   * for one gets nothing back — which had the watch strip calling a key out of
+   * scope on the very step where the list below it still showed the value,
+   * dimmed, going. Both read the same set now.
+   */
+  const leaving = new Map(
+    (change?.gone ?? []).flatMap((frame) =>
+      frame.entries.map((entry) => [entry.key, { entry, frameId: frame.frameId }] as const),
+    ),
+  );
   const pinned = new Set(pinnedKeys);
   if (!sends && !expected && !hasState && pinnedKeys.length === 0) return null;
 
@@ -255,6 +268,7 @@ const FlowVariablesPanel = ({
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             {pinnedKeys.map((key) => {
               const held = context.byKey.get(key);
+              const going = held ? undefined : leaving.get(key);
               return (
                 <span key={key} className="flex items-baseline gap-1 font-mono text-[10.5px]">
                   <button
@@ -265,9 +279,19 @@ const FlowVariablesPanel = ({
                   >
                     {openLifeKey === key ? "▾" : "▸"} {key}
                   </button>
-                  {held ? (
-                    <span className="text-json-string">{held.value}</span>
-                  ) : (
+                  {held && <span className="text-json-string">{held.value}</span>}
+                  {going && (
+                    <span
+                      data-testid="flow-variables-watch-leaving"
+                      className="flex items-baseline gap-1"
+                    >
+                      <span className="text-json-string opacity-50">{going.entry.value}</span>
+                      <span className="text-rose-500">
+                        ↩ {t("flowReading.leavesWith", { name: frameName(going.frameId) })}
+                      </span>
+                    </span>
+                  )}
+                  {!held && !going && (
                     /*
                       Not hidden when the fold no longer holds it: that absence
                       *is* the answer, and it is the one place the rule about a

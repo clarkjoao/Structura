@@ -1517,7 +1517,8 @@
     "leavingNow": "goes with this return",
     "outOfScope": "out of scope",
     "pin": "Follow this key",
-    "unpin": "Stop following"
+    "unpin": "Stop following",
+    "leavesWith": "goes with {{name}}"
   },
   "shortcutsModal": {
     "title": "Canvas shortcuts",

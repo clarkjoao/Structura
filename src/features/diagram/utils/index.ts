@@ -34,6 +34,7 @@ export {
   validateFlowGraph,
   getOrderedStepIds,
   getPathToStep,
+  canReachStep,
   getStepCount,
 } from "./flow-traversal";
 export type { BrokenStep } from "./flow-traversal";

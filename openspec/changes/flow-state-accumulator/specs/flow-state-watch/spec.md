@@ -35,10 +35,22 @@ in hand. Pinning SHALL belong to the reading and SHALL NOT be written to the flo
 When the running object at the step in hand does not hold a pinned key, the reading SHALL keep the key
 visible and SHALL state that it is out of scope, rather than removing it from view.
 
+On the step that ends the call holding the key, the reading SHALL instead show the key with the value
+it is losing, marked as leaving and naming that call — the same account the running object gives of it
+on that step. It SHALL read as out of scope only from the following step. A reading MUST NOT describe
+one key two ways at the same step.
+
+#### Scenario: The step that ends the call holding it
+
+- **GIVEN** a reading with a key pinned that lives in the frame the step in hand closes
+- **WHEN** the pinned keys are shown
+- **THEN** the key still shows the value it is losing, marked as leaving and naming the call
+- **AND** it is not reported as out of scope
+
 #### Scenario: The frame holding the key has closed
 
 - **GIVEN** a reading with a key pinned that was introduced inside a call
-- **WHEN** the reader reaches a step after that call has closed
+- **WHEN** the reader reaches a step *after* the one that closed that call
 - **THEN** the key remains visible
 - **AND** it is marked as out of scope rather than shown with a value
 

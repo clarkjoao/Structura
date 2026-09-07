@@ -1517,7 +1517,8 @@
     "leavingNow": "sai com esta volta",
     "outOfScope": "fora de escopo",
     "pin": "Seguir esta chave",
-    "unpin": "Parar de seguir"
+    "unpin": "Parar de seguir",
+    "leavesWith": "sai com {{name}}"
   },
   "shortcutsModal": {
     "title": "Atalhos do Canvas",

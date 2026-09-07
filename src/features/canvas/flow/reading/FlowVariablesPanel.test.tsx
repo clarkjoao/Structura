@@ -349,6 +349,13 @@ describe("a key the reader is following", () => {
     await i18n.changeLanguage("pt-BR");
   });
 
+  const entry = (key: string, value: string) => ({
+    key,
+    value,
+    fromStepId: "s2",
+    frameId: null,
+  });
+
   const HELD = context({
     groups: [
       {
@@ -374,6 +381,36 @@ describe("a key the reader is following", () => {
 
     expect(screen.getByTestId("flow-variables-watch").textContent).toContain("url_id");
     expect(screen.getByTestId("flow-variables-watch-gone").textContent).toContain("fora de escopo");
+  });
+
+  /**
+   * The strip read the running object, where the fold has already dropped what
+   * this step's return is taking — so on that one step it called a key out of
+   * scope while the list below it still showed the value, dimmed, going.
+   */
+  it("shows a value the step's own return is taking, as the list does", () => {
+    renderPanel({
+      context: HELD,
+      pinnedKeys: ["url_id"],
+      change: {
+        introduced: [],
+        replaced: [],
+        gone: [{ frameId: "f1", entries: [entry("url_id", "u_9f2")] }],
+        empty: false,
+      },
+    });
+
+    const going = screen.getByTestId("flow-variables-watch-leaving");
+    expect(going.textContent).toContain("u_9f2");
+    expect(going.textContent).toContain("sai com Pagamentos");
+    expect(screen.queryByTestId("flow-variables-watch-gone")).toBeNull();
+  });
+
+  it("calls it out of scope only once the call has actually ended", () => {
+    renderPanel({ context: HELD, pinnedKeys: ["url_id"], change: NO_CHANGE });
+
+    expect(screen.getByTestId("flow-variables-watch-gone")).toBeTruthy();
+    expect(screen.queryByTestId("flow-variables-watch-leaving")).toBeNull();
   });
 
   it("is pinned from the running object and unpinned from the strip", () => {

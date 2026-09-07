@@ -7,6 +7,7 @@ import type { Flow, FlowStep } from "@/features/diagram";
 import {
   buildCallStack,
   buildFlowOutline,
+  canReachStep,
   conditionKindOf,
   getPathToStep,
   useComponents,
@@ -80,12 +81,17 @@ export function FlowScriptList({
       const running = buildRunningContext(flow, callStack, path, stepId);
       return running.groups.map((group) => {
         const closer = group.frameId ? closedBy.get(group.frameId) : undefined;
+        // Only when the reading could actually get there: a call answered
+        // inside one branch is never answered on the other, and saying "these
+        // go at step 3a" to someone writing 3b would be the same kind of claim
+        // this panel was built to stop making.
+        const ends = closer && canReachStep(flow, stepId, closer) ? closer : undefined;
         return {
           frameId: group.frameId,
           name: group.frameId
             ? callerOf(callStack.frames.get(group.frameId)?.connectionId ?? "")
             : null,
-          endsAtNumber: closer ? (numbers.get(closer) ?? null) : null,
+          endsAtNumber: ends ? (numbers.get(ends) ?? null) : null,
           entries: group.entries.map((entry) => ({
             key: entry.key,
             value: entry.value,

@@ -109,6 +109,25 @@ Showing the scope is half of that; the other half is the chips, where a key noth
 identically to one that does. It is marked instead — the same amber the reading uses for the same
 fact, said in the place the mistake is made.
 
+### D10 — A claim about what happens after a step needs the other direction of the graph
+
+`getPathToStep` walks from the entry and answers *how did the reading get here*. The marker saying
+where a call's values run out is a claim about what happens *next*, and scanning the whole script for
+the step that answers gets it wrong the moment the answer sits inside a branch: someone writing the
+other branch is told their values end at a step that branch never reaches. `canReachStep(flow, from,
+target)` — a cycle-guarded walk forward — gates the marker, so a claim is made only where it holds.
+
+Deliberately not narrower: reachable on *some* path is enough to say the call can end there. Saying it
+only when every path answers would be a different, weaker statement, and the reader is looking at one
+way through.
+
+### D11 — Every part of the panel reads the same set
+
+The running object and the leaving set are two different questions about the same step, and any part
+of the panel that asks only the first will disagree with any part that asks both. That is not
+hypothetical: the watch strip read `byKey` alone and called a key out of scope on exactly the step
+where the list below it showed the value going. Anything naming a key now consults the change first.
+
 ## Risks / Trade-offs
 
 - **The scope fix changes what existing scripts show in the editor.** A key that used to be offered and
@@ -117,8 +136,11 @@ fact, said in the place the mistake is made.
   → The reading was already reporting those as unset; the panel now agrees with the report. The seed
   carries the case (`ct-cs-7`), so it is visible on a fresh install rather than only in a test.
 
-- **Two folds per render on a long path.** → The fold is linear and the paths are tens of steps; both
-  results are memoised on `[flow, path]`. If it ever matters, D6's incremental walk generalises.
+- **Three folds per render, where two would do.** The rail folds the walked path for the running
+  object, and `describeContextChange` folds it again alongside the shorter path — so the same fold runs
+  twice on every step. Each is memoised on `[flow, callStack, walked]`, and the fold is linear over a
+  path of tens of steps, so this is waste rather than a problem. → The fix is for the change to hand
+  back the context it already folded; see Open Questions.
 
 - **`keyLife` repeats the fold's rules.** If the fold changes and `keyLife` does not, they diverge
   silently. → The test compares it against the prefix-diff oracle rather than against a fixture, so a
@@ -138,3 +160,6 @@ about them.
 - Whether the delta bar's markers should filter the list on click, or only count. Filtering is easy to
   add later and does not change any requirement, so it is left out of the first pass rather than
   guessed at.
+- Whether `describeContextChange` should return the running object it folded, so the rail stops folding
+  the same path twice. It is a pure saving with no behaviour attached, which is why it is a question
+  rather than a decision: it widens a return type that three call sites already read.

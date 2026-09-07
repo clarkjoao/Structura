@@ -72,6 +72,34 @@ export function getPathToStep(flow: Flow, stepId: string): string[] {
   return walk(entry.id) ? path : [];
 }
 
+/**
+ * Whether a reading standing on one step could ever arrive at another.
+ *
+ * Asked of claims about what happens *after* a step, which `getPathToStep`
+ * cannot answer — it walks from the entry, and a step that answers a call from
+ * inside one branch is not on the path to a step in the other. Without this,
+ * such a claim reads as certain to a reader whose branch never reaches it.
+ *
+ * `false` for a step that cannot reach itself: a plain step is not ahead of
+ * itself, and one in a cycle is found on the way round.
+ */
+export function canReachStep(flow: Flow, fromStepId: string, targetStepId: string): boolean {
+  if (!flow.steps[fromStepId] || !flow.steps[targetStepId]) return false;
+
+  const seen = new Set<string>();
+  const queue = getNextSteps(flow, fromStepId).map((step) => step.id);
+
+  while (queue.length > 0) {
+    const id = queue.shift()!;
+    if (id === targetStepId) return true;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    for (const next of getNextSteps(flow, id)) queue.push(next.id);
+  }
+
+  return false;
+}
+
 export function walkFlow(flow: Flow, visitor: (step: FlowStep) => void): void {
   const entry = getEntryStep(flow);
   if (!entry) return;

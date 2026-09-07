@@ -336,3 +336,51 @@ describe("the state a step is written against", () => {
     expect(screen.queryByTestId("step-context-scope-ends")).toBeNull();
   });
 });
+
+/**
+ * A claim about what happens after a step has to hold on the reader's own way
+ * through.
+ *
+ * The marker said where a call is answered by scanning the whole script, so a
+ * call answered inside one branch was announced to someone writing the other —
+ * a branch that never reaches it. Same class of claim as the scope bug this
+ * panel was rebuilt to stop making.
+ */
+const ANSWERED_IN_ONE_BRANCH: FlowStep[] = [
+  { id: "s1", type: "action", next: "s2", connectionId: "c1", payloadDirection: "request" },
+  { id: "s2", type: "action", next: "s3", context: { sets: { linha: "1" } } },
+  { id: "s3", type: "action", next: "c", description: "dentro da chamada" },
+  {
+    id: "c",
+    type: "condition",
+    conditionLabel: "respondeu?",
+    branches: [
+      { label: "sim", nextId: "a1" },
+      { label: "nao", nextId: "b1" },
+    ],
+  },
+  { id: "a1", type: "action", connectionId: "c1", payloadDirection: "response" },
+  { id: "b1", type: "action", description: "segue sem resposta" },
+];
+
+describe("saying when a call's values run out", () => {
+  const expand = (label: string) => fireEvent.click(screen.getByText(label));
+
+  it("names the step that answers, on the way that reaches it", () => {
+    const { read } = seedFlow(ANSWERED_IN_ONE_BRANCH);
+    renderScript(read);
+    expand("dentro da chamada");
+
+    expect(screen.getByTestId("step-context-scope").textContent).toContain("linha");
+    expect(screen.getByTestId("step-context-scope-ends")).toBeInTheDocument();
+  });
+
+  it("says nothing on a way that never reaches the answer", () => {
+    const { read } = seedFlow(ANSWERED_IN_ONE_BRANCH);
+    renderScript(read);
+    expand("segue sem resposta");
+
+    expect(screen.getByTestId("step-context-scope").textContent).toContain("linha");
+    expect(screen.queryByTestId("step-context-scope-ends")).toBeNull();
+  });
+});
