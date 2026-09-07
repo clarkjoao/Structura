@@ -18,6 +18,7 @@ function createMinimalNodeBuildContext(
       viewport: { x: 0, y: 0, zoom: 1 },
     },
     flows: [],
+    endpointCallerNames: new Map(),
     resolvedComponents: {},
     resolvedNodeLayouts: {},
     sceneBadgeByComponentId: {},

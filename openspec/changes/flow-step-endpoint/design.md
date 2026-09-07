@@ -93,6 +93,32 @@ The seeded `Criar link` script calls the Management API twice while five seeded 
 naming nobody. Pointing the script's calls at `POST /urls` is what makes the feature visible on a fresh
 install rather than only in a test, and it is what will make an OpenAPI import obviously worth having.
 
+### D7 — The mismatch check assumes routes are drawn *inside* the service, and seeding proved that is not the only way
+
+Found while seeding, which is the only reason it was found: D4 compares the endpoint's parent chain
+against the component the call arrives at. That holds when an api-group is nested inside the service it
+belongs to. It does not hold for the other ordinary layout — routes drawn as a group *beside* the
+service, with the call connecting to the service — where the chain never reaches the target and the
+check reports a mismatch on a step that is linked correctly.
+
+The seeded containers diagram cannot take the nested shape without real surgery: the Management API
+container is 260×155 on a hand-tuned layout, an api-group is 300 wide and 188 tall with two routes, and
+growing the container far enough pushes it through the cache below it.
+
+So the check as written is conservative in the wrong direction — it would be quiet where it should
+speak and loud where it should not, on the layout that is easiest to draw. Noise in a report-only
+feature is how people learn to stop reading reports.
+
+Two ways out, and this one is the user's call rather than a default:
+
+1. **Compare services, not parentage.** An api-group carries `serviceName` and a container carries
+   `serviceId`; matching those catches a route on the wrong service wherever the group is drawn. It
+   needs the service catalog, which the check does not currently see.
+2. **Drop the check.** The link is worth having without it, and a wrong route is visible the moment the
+   reading heads a step with a path that does not belong.
+
+Until then the derivation stays, tested, and the seed carries no link — see tasks 5.1 and 5.2.
+
 ## Risks / Trade-offs
 
 - **A second way to say roughly the same thing.** A reader now meets `componentId`, `connectionId` and

@@ -129,7 +129,7 @@ the endpoints that exist on the diagram, identified by method and path.
 
 - **GIVEN** a step naming an endpoint
 - **WHEN** the author clears it
-- **THEN** the step names none, and the field is absent from the step rather than empty
+- **THEN** the step names none, and no empty value is stored in its place
 
 ### Requirement: Every string this adds exists in both locales
 

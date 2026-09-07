@@ -64,6 +64,21 @@ export interface FlowStep {
   title?: string;
   componentId?: string;
   connectionId?: string;
+  /**
+   * The route this step calls.
+   *
+   * Not the same question as `componentId`, which is the node the step happens
+   * *at* — in a recorded script that is the sender, and on a component-level
+   * diagram it can be the endpoint being served rather than the one being
+   * called. This says which operation the call is against, so a reading can
+   * head a step `POST /urls` instead of naming whoever sent it or the edge the
+   * message travelled.
+   *
+   * The other direction — which scripts exercise a route — is derived from this
+   * and never written to the endpoint, so deleting a step cannot leave a stale
+   * reference behind.
+   */
+  endpointId?: string;
   description?: string;
   note?: string;
   handleId?: string;

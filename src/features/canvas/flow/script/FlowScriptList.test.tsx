@@ -384,3 +384,95 @@ describe("saying when a call's values run out", () => {
     expect(screen.queryByTestId("step-context-scope-ends")).toBeNull();
   });
 });
+
+/**
+ * Pointing a step at the route it calls.
+ *
+ * The step could say which edge a message travels and which node it happens at,
+ * and not which operation it was. So the spine read as a column of participant
+ * names while routes sat on the same diagram naming nobody.
+ */
+describe("the route a step calls", () => {
+  const expand = (label: string) => fireEvent.click(screen.getByText(label));
+  const routeSelect = () => screen.getByTestId("step-route") as HTMLSelectElement;
+
+  /** A diagram holding one service, one route on it, and a call arriving there. */
+  function seedWithRoute() {
+    const store = useDiagramStore.getState();
+    const diagram = store.addDiagram("Rotas", "component");
+    store.openDiagram(diagram.id);
+
+    const caller = useDiagramStore.getState().addComponent("container", "SPA", null);
+    const api = useDiagramStore.getState().addComponent("container", "Management API", null);
+    const group = useDiagramStore.getState().addComponent("api-group", "Management API", api.id);
+    const route = useDiagramStore.getState().addComponent("endpoint", "Criar URL", group.id);
+    useDiagramStore.getState().updateComponent(route.id, { method: "POST", path: "/urls" });
+    const other = useDiagramStore.getState().addComponent("container", "Redirect API", null);
+
+    const toApi = useDiagramStore.getState().addConnection(caller.id, api.id, "REST API calls");
+    const toOther = useDiagramStore.getState().addConnection(caller.id, other.id, "GET");
+
+    const created = useDiagramStore.getState().addFlow(diagram.id, "Criar", "");
+    if (!created) throw new Error("addFlow returned null");
+    const steps: Record<string, FlowStep> = {
+      s1: { id: "s1", type: "action", connectionId: toApi.id, description: "chama a API" },
+      s2: { id: "s2", type: "action", connectionId: toOther.id, description: "chama outra" },
+    };
+    steps.s1!.next = "s2";
+    useDiagramStore.getState().updateFlow(created.id, { steps, entryStepId: "s1" });
+
+    const read = (): Flow => {
+      const flow = useDiagramStore.getState().diagrams[diagram.id]!.snapshot.flows[created.id];
+      if (!flow) throw new Error("flow is gone");
+      return flow;
+    };
+    return { read, routeId: route.id };
+  }
+
+  it("offers the diagram's routes by method and path", () => {
+    const { read } = seedWithRoute();
+    renderScript(read);
+    expand("→ REST API calls");
+
+    const labels = [...routeSelect().querySelectorAll("option")].map((o) => o.textContent);
+    expect(labels).toContain("POST /urls");
+    expect(routeSelect().querySelector("optgroup")?.getAttribute("label")).toBe("Management API");
+  });
+
+  it("writes the route onto the step, and clears it away entirely", () => {
+    const { read, routeId } = seedWithRoute();
+    renderScript(read);
+    expand("→ REST API calls");
+
+    fireEvent.change(routeSelect(), { target: { value: routeId } });
+    expect(read().steps.s1!.endpointId).toBe(routeId);
+
+    fireEvent.change(routeSelect(), { target: { value: "" } });
+    // Not the empty string, which would read as a route nobody can find. The
+    // key itself lingers as `undefined`, exactly as every other optional field
+    // on a step does when it is cleared.
+    expect(read().steps.s1!.endpointId).toBeUndefined();
+  });
+
+  it("says nothing when the call arrives where the route lives", () => {
+    const { read, routeId } = seedWithRoute();
+    renderScript(read);
+    expand("→ REST API calls");
+    fireEvent.change(routeSelect(), { target: { value: routeId } });
+
+    expect(screen.queryByTestId("step-route-mismatch")).toBeNull();
+  });
+
+  it("remarks when the route belongs somewhere the call never reaches", () => {
+    const { read, routeId } = seedWithRoute();
+    renderScript(read);
+    expand("→ GET");
+    fireEvent.change(routeSelect(), { target: { value: routeId } });
+
+    const remark = screen.getByTestId("step-route-mismatch").textContent ?? "";
+    expect(remark).toContain("Redirect API");
+    expect(remark).toContain("Management API");
+    // Reported, never blocked: the step keeps what the author chose.
+    expect(read().steps.s2!.endpointId).toBe(routeId);
+  });
+});

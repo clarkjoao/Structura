@@ -1,4 +1,4 @@
-import { conditionKindOf, isConditionStep } from "@/features/diagram";
+import { conditionKindOf, isConditionStep, resolveStepEndpoint } from "@/features/diagram";
 import type { Component, Connection, FlowConditionKind, FlowStep } from "@/features/diagram";
 import { componentSwatchColor, componentTechnology } from "../../nodes/componentColor";
 
@@ -15,6 +15,8 @@ export interface StepTarget {
 export interface StepHeadingLabels {
   componentRemoved: string;
   connectionRemoved: string;
+  /** The step names a route that is no longer on the diagram. */
+  endpointRemoved: string;
   connection: string;
   untitled: string;
   /** What each kind of branch point is called, for one that carries no question. */
@@ -74,6 +76,12 @@ function toTarget(component: Component): StepTarget {
  * The author's own heading wins: it is the only thing on the step written for
  * a reader rather than derived from what the step points at. Everything below
  * it is a fallback, in the order a reader would recognise the step by.
+ *
+ * A named route comes next, above the node and the edge: a reader stopped on a
+ * call wants to know *what was called*, and the node is the weaker answer to
+ * that — in a recorded script it is the sender — while an edge label names a
+ * channel rather than an operation. Nothing existing changes, since a step
+ * names a route only once someone points it at one.
  */
 export function describeStepHeading(
   step: FlowStep,
@@ -87,6 +95,13 @@ export function describeStepHeading(
   // the node is only where the question is asked — the scene says that on its
   // own line, and a spine row reading "Antifraude" would hide the fork.
   if (isConditionStep(step) && step.conditionLabel?.trim()) return step.conditionLabel.trim();
+
+  const endpoint = resolveStepEndpoint(step, components);
+  if (endpoint.kind === "present") return endpoint.label;
+  // Said rather than fallen back from: an author who pointed a step at a route
+  // and later deleted it would otherwise see the heading quietly revert and
+  // believe the link was still there.
+  if (endpoint.kind === "gone") return labels.endpointRemoved;
 
   if (step.componentId) {
     const component = components[step.componentId];

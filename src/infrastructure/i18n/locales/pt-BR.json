@@ -984,7 +984,8 @@
     "removeEndpointTitle": "Remover endpoint",
     "addEndpoint": "Adicionar endpoint",
     "serviceName": "Nome do Serviço",
-    "slaHint": "Texto livre — latência, throughput, disponibilidade"
+    "slaHint": "Texto livre — latência, throughput, disponibilidade",
+    "calledByScripts": "chamada por: {{names}}"
   },
   "endpointPanel": {
     "panelTitle": "Endpoint",
@@ -1408,7 +1409,11 @@
     "contextShadows": "substitui o valor do passo {{number}}",
     "scopeOuter": "Fora",
     "scopeEndsAt": "sai de escopo depois do passo {{number}}",
-    "contextReadUnset": "nenhum passo anterior define esta chave"
+    "contextReadUnset": "nenhum passo anterior define esta chave",
+    "routeLabel": "Rota",
+    "routeNone": "sem rota",
+    "routeUngrouped": "Sem grupo",
+    "routeElsewhere": "esta chamada chega em {{arrivesAt}}, e a rota é de {{belongsTo}}"
   },
   "flowRefusal": {
     "unknown_flow": "Esse flow não está mais aberto.",
@@ -1459,7 +1464,8 @@
     "response": "← Response",
     "inlineDescription": "· \"{{text}}\"",
     "componentRemoved": "componente removido",
-    "connectionRemoved": "conexão removida"
+    "connectionRemoved": "conexão removida",
+    "endpointRemoved": "rota removida"
   },
   "flowReading": {
     "eyebrow": "Roteiro",

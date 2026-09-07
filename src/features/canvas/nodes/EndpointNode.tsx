@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { Play } from "lucide-react";
 import type { EndpointHandler, HttpMethod } from "@/features/diagram";
@@ -14,6 +15,14 @@ export type EndpointNodeData = {
   path: string;
   description?: string;
   handlers: EndpointHandler[];
+  /**
+   * The scripts that call this route, by name.
+   *
+   * A route with none is as worth seeing as an unused component: the canvas
+   * already says which flows touch a node, and this is the same fact for an
+   * operation.
+   */
+  callerNames?: string[];
   isSelected: boolean;
   controlsDisabled?: boolean;
   isPlaying?: boolean;
@@ -30,7 +39,9 @@ export type EndpointNodeData = {
 
 const EndpointNode = memo(({ data: d }: NodeProps<Node<EndpointNodeData>>) => {
   const { method, path } = d;
+  const { t } = useTranslation();
   const collabHighlight = useCollabHighlight(d.elementId);
+  const callers = d.callerNames ?? [];
 
   return (
     <div
@@ -62,6 +73,16 @@ const EndpointNode = memo(({ data: d }: NodeProps<Node<EndpointNodeData>>) => {
       </span>
 
       <span className="text-[11px] font-mono text-foreground truncate flex-1">{path}</span>
+
+      {callers.length > 0 && (
+        <span
+          data-testid="endpoint-callers"
+          title={t("apiGroup.calledByScripts", { names: callers.join(", ") })}
+          className="shrink-0 rounded bg-secondary px-1 py-0.5 font-mono text-[9px] text-muted-foreground"
+        >
+          ↗ {callers.length}
+        </span>
+      )}
 
       {d.activeFlowId && (
         <button

@@ -64,6 +64,10 @@ const PROVENANCE: Record<OptionalKeys<FlowStep>, FieldProvenance> = {
     producers: [`${S}/canvas/flow/useFlowRecording.ts`],
     consumers: [`${DIAGRAM}/flow-call-stack.ts`],
   },
+  endpointId: {
+    producers: [`${SCRIPT}/FlowScriptRow.tsx`],
+    consumers: [`${DIAGRAM}/flow-endpoint.ts`],
+  },
   description: {
     producers: [`${SCRIPT}/FlowScriptRow.tsx`],
     consumers: [`${READING}/FlowReadingScene.tsx`],

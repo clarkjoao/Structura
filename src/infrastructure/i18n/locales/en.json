@@ -984,7 +984,8 @@
     "removeEndpointTitle": "Remove endpoint",
     "addEndpoint": "Add endpoint",
     "serviceName": "Service name",
-    "slaHint": "Free text — latency, throughput, availability"
+    "slaHint": "Free text — latency, throughput, availability",
+    "calledByScripts": "called by: {{names}}"
   },
   "endpointPanel": {
     "panelTitle": "Endpoint",
@@ -1408,7 +1409,11 @@
     "contextShadows": "replaces the value from {{number}}",
     "scopeOuter": "Outside",
     "scopeEndsAt": "leaves scope after step {{number}}",
-    "contextReadUnset": "nothing before this step sets it"
+    "contextReadUnset": "nothing before this step sets it",
+    "routeLabel": "Route",
+    "routeNone": "no route",
+    "routeUngrouped": "Ungrouped",
+    "routeElsewhere": "this call arrives at {{arrivesAt}}, and the route belongs to {{belongsTo}}"
   },
   "flowRefusal": {
     "unknown_flow": "That flow is no longer open.",
@@ -1459,7 +1464,8 @@
     "response": "← Response",
     "inlineDescription": "· \"{{text}}\"",
     "componentRemoved": "component removed",
-    "connectionRemoved": "connection removed"
+    "connectionRemoved": "connection removed",
+    "endpointRemoved": "route removed"
   },
   "flowReading": {
     "eyebrow": "Script",

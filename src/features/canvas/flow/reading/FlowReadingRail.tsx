@@ -131,6 +131,7 @@ const FlowReadingRail = ({
     () => ({
       componentRemoved: t("flowStepNav.componentRemoved"),
       connectionRemoved: t("flowStepNav.connectionRemoved"),
+      endpointRemoved: t("flowStepNav.endpointRemoved"),
       connection: t("common.connection"),
       untitled: t("flowReading.untitledStep"),
       conditionKinds: {

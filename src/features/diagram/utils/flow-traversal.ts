@@ -128,6 +128,10 @@ export function getFlowParticipants(flow: Flow): {
   const connectionIds = new Set<string>();
 
   walkFlow(flow, (step) => {
+    // A route is a component, so it belongs in the same set: coverage and the
+    // playback highlight then reach an endpoint the script calls without either
+    // of them learning a new kind of participant.
+    if (step.endpointId) componentIds.add(step.endpointId);
     if (step.componentId) componentIds.add(step.componentId);
     if (step.connectionId) connectionIds.add(step.connectionId);
   });

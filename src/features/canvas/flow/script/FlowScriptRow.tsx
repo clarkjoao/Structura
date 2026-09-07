@@ -10,6 +10,21 @@ import { CONDITION_KIND_LABEL, conditionGlyph } from "../conditionKinds";
 import type { FlowScriptActions } from "../useFlowScriptActions";
 import type { ScopeGroup } from "./StepContextEditor";
 
+/** One route an author can point a step at, already named for a list. */
+export interface EndpointOption {
+  id: string;
+  /** `POST /urls`. */
+  label: string;
+  /** The api-group it hangs off, so two services with the same path stay apart. */
+  groupName: string;
+}
+
+/** A step claiming a route its own call does not arrive at, in names. */
+export interface RouteMismatch {
+  arrivesAt: string;
+  belongsTo: string;
+}
+
 const SECTION = "text-[9px] font-semibold uppercase tracking-wider text-muted-foreground";
 const FIELD =
   "w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring";
@@ -44,6 +59,10 @@ export interface FlowScriptRowProps {
   onConvertToCondition: (stepId: string) => void;
   /** In scope where this step runs, grouped by the call each value belongs to. */
   scope: readonly ScopeGroup[];
+  /** Every route on the diagram, for the step to point at one. */
+  endpoints: readonly EndpointOption[];
+  /** Set when the route this step names is not where its call arrives. */
+  routeMismatch?: RouteMismatch | null;
   /** Recorder-only: jump into this condition's branches. */
   onOpenBranchSelect?: (conditionStepId: string) => void;
   /** Set while a row is being dragged; absent outside a reorderable list. */
@@ -74,6 +93,8 @@ export function FlowScriptRow({
   isLast,
   actions,
   scope,
+  endpoints,
+  routeMismatch,
   onToggleExpand,
   onSelect,
   onConvertToCondition,
@@ -304,6 +325,46 @@ export function FlowScriptRow({
               {step.connectionId && (
                 <>
                   <span className={`${SECTION} pt-1`}>{t("flowScript.sectionCall")}</span>
+                  <Labelled label={t("flowScript.routeLabel")}>
+                    <select
+                      data-testid="step-route"
+                      value={step.endpointId ?? ""}
+                      onChange={(event) =>
+                        actions.updateStep(row.stepId, {
+                          endpointId: event.target.value || undefined,
+                        })
+                      }
+                      onClick={(event) => event.stopPropagation()}
+                      className={FIELD}
+                    >
+                      <option value="">{t("flowScript.routeNone")}</option>
+                      {Object.entries(
+                        endpoints.reduce<Record<string, EndpointOption[]>>((groups, option) => {
+                          (groups[option.groupName] ??= []).push(option);
+                          return groups;
+                        }, {}),
+                      ).map(([groupName, options]) => (
+                        <optgroup key={groupName} label={groupName}>
+                          {options.map((option) => (
+                            <option key={option.id} value={option.id}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  </Labelled>
+                  {routeMismatch && (
+                    <span
+                      data-testid="step-route-mismatch"
+                      className="text-[9px] leading-relaxed text-amber-500"
+                    >
+                      {t("flowScript.routeElsewhere", {
+                        arrivesAt: routeMismatch.arrivesAt,
+                        belongsTo: routeMismatch.belongsTo,
+                      })}
+                    </span>
+                  )}
                   <div
                     className="flex items-center gap-1"
                     onClick={(event) => event.stopPropagation()}

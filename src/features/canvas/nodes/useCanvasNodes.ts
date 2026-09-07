@@ -11,6 +11,7 @@ import type {
   ServiceDefinition,
 } from "@/features/diagram";
 import {
+  endpointCallersByRoute,
   isPanelComponent,
   isApiGroupComponent,
   isEndpointType,
@@ -219,6 +220,15 @@ export function useCanvasNodes({
   // Derive only what the descriptors need — avoids flows array identity changing on every render.
   const flowsForDescriptor = useMemo(() => flows.map((f) => ({ id: f.id, name: f.name })), [flows]);
 
+  /** One walk over the scripts for the whole diagram, not one per route node. */
+  const endpointCallerNames = useMemo(() => {
+    const names = new Map<string, string[]>();
+    for (const [endpointId, calls] of endpointCallersByRoute(flows)) {
+      names.set(endpointId, [...new Set(calls.map((call) => call.flowName))]);
+    }
+    return names;
+  }, [flows]);
+
   const callbacksRef = useRef({
     handleDrillDown,
     navigateToDiagram,
@@ -262,6 +272,7 @@ export function useCanvasNodes({
     if (!diagram) return null;
     return {
       flows: flowsForDescriptor,
+      endpointCallerNames,
       resolvedComponents,
       resolvedNodeLayouts,
       sceneBadgeByComponentId,
@@ -301,6 +312,7 @@ export function useCanvasNodes({
     stableHighlightedNodeIds,
     isViewingCoverage,
     flowsForDescriptor,
+    endpointCallerNames,
   ]);
 
   const nodeCtxPlayback = useMemo(

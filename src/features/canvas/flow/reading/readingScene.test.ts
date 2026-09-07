@@ -24,6 +24,7 @@ const CONNECTIONS: Record<string, Connection> = {
 
 const LABELS: StepHeadingLabels = {
   componentRemoved: "component removed",
+  endpointRemoved: "rota removida",
   connectionRemoved: "connection removed",
   connection: "Connection",
   untitled: "Untitled step",
@@ -197,5 +198,78 @@ describe("the one line that names a step", () => {
 
   it("says the step is untitled rather than printing its type at the reader", () => {
     expect(heading({})).toBe("Untitled step");
+  });
+});
+
+/**
+ * A call, headed by what it calls.
+ *
+ * The spine used to name a call by the node the step sits on — which in a
+ * recorded script is the sender — or by the edge's label, which names a channel
+ * rather than an operation. A route outranks both, and nothing an author has
+ * already written changes, because a step names a route only once someone
+ * points it at one.
+ */
+describe("a step that names a route", () => {
+  const WITH_ROUTE: Record<string, Component> = {
+    ...COMPONENTS,
+    group: {
+      id: "group",
+      name: "Management API",
+      description: "",
+      parentId: null,
+      type: "api-group",
+    } as Component,
+    post: {
+      id: "post",
+      name: "Criar URL",
+      description: "",
+      parentId: "group",
+      type: "endpoint",
+      method: "POST",
+      path: "/urls",
+      handlers: [],
+    } as Component,
+  };
+
+  it("is headed by its method and path", () => {
+    const heading = describeStepHeading(
+      step({ endpointId: "post", componentId: "gateway", connectionId: "c1" }),
+      WITH_ROUTE,
+      CONNECTIONS,
+      LABELS,
+    );
+
+    expect(heading).toBe("POST /urls");
+  });
+
+  it("still loses to a heading the author wrote", () => {
+    const heading = describeStepHeading(
+      step({ endpointId: "post", title: "Cria o link curto" }),
+      WITH_ROUTE,
+      CONNECTIONS,
+      LABELS,
+    );
+
+    expect(heading).toBe("Cria o link curto");
+  });
+
+  it("says the route is gone rather than quietly reverting to the node", () => {
+    const heading = describeStepHeading(
+      step({ endpointId: "deleted", componentId: "gateway" }),
+      WITH_ROUTE,
+      CONNECTIONS,
+      LABELS,
+    );
+
+    expect(heading).toBe(LABELS.endpointRemoved);
+  });
+
+  it("changes nothing for a step that names none", () => {
+    const plain = step({ componentId: "gateway", connectionId: "c1" });
+
+    expect(describeStepHeading(plain, WITH_ROUTE, CONNECTIONS, LABELS)).toBe(
+      describeStepHeading(plain, COMPONENTS, CONNECTIONS, LABELS),
+    );
   });
 });

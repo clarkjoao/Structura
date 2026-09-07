@@ -142,3 +142,11 @@ export type { RecentDiagramRef } from "./recent-diagrams";
 // ─── Layout helpers ───────────────────────────────────────────────────────────
 export { computeApiGroupSize } from "./api-group-size";
 export { computeFitBounds } from "./fit-group-to-children";
+export {
+  endpointCallers,
+  endpointCallersByRoute,
+  endpointLabel,
+  findEndpointMismatch,
+  resolveStepEndpoint,
+} from "./flow-endpoint";
+export type { EndpointCall, EndpointMismatch, StepEndpointState } from "./flow-endpoint";

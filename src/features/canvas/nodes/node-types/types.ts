@@ -20,6 +20,14 @@ export interface NodeBuildContext {
 
   /** Subset of Flow needed by descriptors — avoids full array as dependency. */
   flows: { id: string; name: string }[];
+  /**
+   * The scripts calling each route, indexed once for the whole diagram.
+   *
+   * Built here rather than per node so the walk happens once, and kept apart
+   * from `flows` above, which is deliberately narrowed to keep its identity
+   * stable across renders.
+   */
+  endpointCallerNames: Map<string, string[]>;
 
   resolvedComponents: Record<string, Component>;
   resolvedNodeLayouts: Record<string, NodeLayout>;

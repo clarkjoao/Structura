@@ -20,6 +20,9 @@ export const endpointDescriptor: NodeTypeDescriptor = {
     const allFlows = ctx.flows;
 
     return {
+      // Derived, never kept on the endpoint: the route does not learn who calls
+      // it, so deleting a step leaves nothing to clean up.
+      callerNames: ctx.endpointCallerNames.get(comp.id) ?? [],
       elementId: comp.id,
       method: comp.method,
       path: comp.path,
