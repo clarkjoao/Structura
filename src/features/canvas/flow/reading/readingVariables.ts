@@ -154,6 +154,15 @@ export interface ContextGroup {
 export interface RunningContext {
   /** Innermost call first, so what is closest to hand reads first. */
   groups: ContextGroup[];
+  /**
+   * The object, flat, in the order its keys were first introduced.
+   *
+   * Not the groups flattened: those run innermost call first, so a value set
+   * inside a call jumps above one set before it and the list reshuffles as the
+   * reader walks. First-introduced order is what makes it read as *one object*
+   * — a key appears where it appeared and stays there until it goes.
+   */
+  entries: ContextEntry[];
   byKey: Map<string, ContextEntry>;
   /** Keys the step being read consumes that nothing before it introduced. */
   unsetReads: string[];
@@ -162,8 +171,10 @@ export interface RunningContext {
   size: number;
 }
 
-const EMPTY_CONTEXT: RunningContext = {
+/** One definition, so a caller standing in for "nothing yet" cannot drift. */
+export const EMPTY_RUNNING_CONTEXT: RunningContext = {
   groups: [],
+  entries: [],
   byKey: new Map(),
   unsetReads: [],
   reads: [],
@@ -205,11 +216,13 @@ export function buildRunningContext(
    */
   excludeSetsOf?: string | null,
 ): RunningContext {
-  if (path.length === 0) return EMPTY_CONTEXT;
+  if (path.length === 0) return EMPTY_RUNNING_CONTEXT;
 
   /** frameId (or "" for the outermost level) → key → entry. */
   const byFrame = new Map<string, Map<string, ContextEntry>>();
   const order: string[] = [];
+  /** Keys in the order they were first seen, which the flat object reads in. */
+  const keyOrder: string[] = [];
 
   const drop = (frameId: string) => {
     byFrame.delete(frameId);
@@ -239,6 +252,7 @@ export function buildRunningContext(
       order.push(bucketKey);
     }
     for (const [key, value] of Object.entries(sets)) {
+      if (!keyOrder.includes(key)) keyOrder.push(key);
       bucket.set(key, { key, value, fromStepId: stepId, frameId });
     }
   }
@@ -253,11 +267,15 @@ export function buildRunningContext(
     for (const entry of bucket.values()) if (!byKey.has(entry.key)) byKey.set(entry.key, entry);
   }
 
+  const entries = keyOrder
+    .map((key) => byKey.get(key))
+    .filter((entry): entry is ContextEntry => entry !== undefined);
+
   const current = path[path.length - 1];
   const reads = (current ? (flow.steps[current]?.context?.reads ?? []) : []).filter(Boolean);
   const unsetReads = reads.filter((key) => !byKey.has(key));
 
-  return { groups, byKey, unsetReads, reads, size: byKey.size };
+  return { groups, entries, byKey, unsetReads, reads, size: byKey.size };
 }
 
 /**
@@ -283,12 +301,6 @@ export function framesClosedByStep(callStack: FlowCallStack): Map<string, string
   return byFrame;
 }
 
-/** A value the step in hand wrote over, and the one that was there. */
-export interface ReplacedEntry {
-  entry: ContextEntry;
-  previous: ContextEntry;
-}
-
 /** Values that left scope together, and the call they left with. */
 export interface GoneFrame {
   frameId: string;
@@ -305,7 +317,16 @@ export interface GoneFrame {
  */
 export interface ContextChange {
   introduced: ContextEntry[];
-  replaced: ReplacedEntry[];
+  /**
+   * Values this step wrote over something already in scope.
+   *
+   * The value that was there is deliberately not carried. The panel stopped
+   * showing it beside the new one — it doubled the width of every replaced row
+   * — and the key's own life says it better anyway: `1 ⊕ pro · 6 ~ enterprise`,
+   * where the old value is simply the earlier event. Carrying it here as well
+   * would be a second copy that nothing reads.
+   */
+  replaced: ContextEntry[];
   gone: GoneFrame[];
   /** True when the step neither wrote a value nor ended a call. */
   empty: boolean;
@@ -321,10 +342,11 @@ const NO_CHANGE: ContextChange = { introduced: [], replaced: [], gone: [], empty
  * difference. A key that vanished for any other reason would be a defect in
  * the fold, and folding it into an ordinary category here would hide it.
  *
- * One case stays deliberately quiet: a key set both inside a call and outside
- * it reverts to the outer value when the call ends. It is neither gone nor
- * written over, and saying "1 value left" of a key still on screen would be
- * false.
+ * A key set both inside a call and outside it *reverts* to the outer value when
+ * the call ends. That used to be reported as nothing at all, because the panel
+ * showed the two side by side in their own frames and neither "gone" nor
+ * "replaced" was true of what was on screen. In one flat object there is one
+ * row, its value changes, and saying nothing would be the lie instead.
  */
 export function describeContextChange(
   flow: Flow,
@@ -338,20 +360,20 @@ export function describeContextChange(
   const before = buildRunningContext(flow, callStack, path.slice(0, -1));
   const dropped = new Set(framesDroppedAt(callStack, current));
 
-  /** What was in scope a step earlier and survived this step's returns. */
-  const survived = new Map<string, ContextEntry>();
-  for (const group of before.groups) {
-    if (group.frameId && dropped.has(group.frameId)) continue;
-    for (const entry of group.entries) if (!survived.has(entry.key)) survived.set(entry.key, entry);
-  }
-
+  /**
+   * Row by row, what the object showed a step ago against what it shows now.
+   *
+   * Compared against the whole earlier object, not against it minus the frames
+   * that just ended: a value shadowed inside a call and revealed again when the
+   * call returns changes on screen, and subtracting the dying frame first is
+   * exactly what made that change invisible.
+   */
   const introduced: ContextEntry[] = [];
-  const replaced: ReplacedEntry[] = [];
+  const replaced: ContextEntry[] = [];
   for (const entry of after.byKey.values()) {
-    if (entry.fromStepId !== current) continue;
-    const previous = survived.get(entry.key);
-    if (previous) replaced.push({ entry, previous });
-    else introduced.push(entry);
+    const was = before.byKey.get(entry.key);
+    if (!was) introduced.push(entry);
+    else if (was.fromStepId !== entry.fromStepId || was.value !== entry.value) replaced.push(entry);
   }
 
   const gone: GoneFrame[] = [];

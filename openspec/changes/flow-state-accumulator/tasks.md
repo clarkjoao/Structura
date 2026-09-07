@@ -11,7 +11,7 @@
 - [x] 2.1 Add `describeContextChange(flow, callStack, path)` to the reading's variables module per design D1 and D2 — it takes the path rather than two folds, so no caller can hand it two contexts that were never one step apart — introduced, replaced with the value being replaced, and gone with the call that took them; verify unit tests cover a value introduced, a value written over, a frame closing with values, the entry step, a step that touches nothing, and that going back reports the step arrived at.
 - [x] 2.2 Put the running object above the payload roots and open it by default, per design D7; verify the panel tests assert the order and the default, and that a reader who closes it keeps it closed while walking.
 - [x] 2.3 Show the delta above the entries — introduced, replaced, gone, with the call named when a frame closed; verify tests cover each count, the naming, and the bar being absent when nothing changed.
-- [x] 2.4 Give the entry rows the two states they lack: replaced, showing the value that was there, and leaving, dimmed with the call it goes with, per design D3; verify tests cover both, their absence on an untouched row, and that a leaving row is gone on the following step.
+- [x] 2.4 Give the entry rows the two states they lack: replaced and leaving — the first flashing once on arrival and keeping a badge, the second dimmed with the call it goes with — per design D3 and D12; verify tests cover both, their absence on an untouched row, that the replaced value is shown without the one it replaced, and that a leaving row is gone on the following step.
 - [x] 2.5 Add every new string to both locales with no default at the call site; verify the locale coverage test passes and the panel reads in `en` and `pt-BR`.
 
 ## 3. The values table

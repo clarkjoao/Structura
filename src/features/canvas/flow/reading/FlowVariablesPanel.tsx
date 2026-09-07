@@ -116,13 +116,24 @@ const PayloadBody = ({ payload }: { payload: PayloadView }) =>
     </p>
   );
 
+/** Named rather than built, so a new state is a type error rather than a typo. */
+const MARK = {
+  new: { glyph: "⊕", tone: "text-json-number", key: "flowReading.newValue" },
+  changed: { glyph: "~", tone: "text-amber-500", key: "flowReading.changedValue" },
+  leaving: { glyph: "↩", tone: "text-rose-500", key: "flowReading.leavingNow" },
+  read: { glyph: "↗", tone: "text-primary", key: "flowReading.readHere" },
+} as const;
+
 /**
- * One value, and what the step in hand did to it.
+ * One line of the object, and what the step in hand did to it.
  *
- * Four states, where the panel used to have two. *Replaced* carries the value
- * that was there — it was irrecoverable once written over — and *leaving* dims a
- * value the call ending here is about to take, so the reader watches it go
- * rather than finding it absent a step later.
+ * A mark in the gutter and nothing else. The words are not lost: the bar above
+ * counts them — *1 novo · 1 saiu com Dashboard SPA* — and each mark carries its
+ * own on hover. Badges beside the value pushed the value around and repeated
+ * what the bar had just said.
+ *
+ * The value that was written over is not shown beside the new one either. The
+ * key's life holds that: pinned, its timeline reads `1 ⊕ pro · 6 ~ enterprise`.
  */
 interface EntryRowProps {
   entry: ContextEntry;
@@ -131,7 +142,7 @@ interface EntryRowProps {
   pinned?: boolean;
   onTogglePin?: (key: string) => void;
   /** Set when this step wrote over a value already in scope. */
-  previousValue?: string;
+  changed?: boolean;
   /** Set on a value held by the call this step ends. */
   leaving?: boolean;
   numberOf: (stepId: string) => string;
@@ -144,64 +155,62 @@ const EntryRow = ({
   isNew,
   pinned = false,
   onTogglePin,
-  previousValue,
+  changed = false,
   leaving = false,
   numberOf,
   onGoToStep,
 }: EntryRowProps) => {
   const { t } = useTranslation();
-  const changed = previousValue !== undefined;
+
+  const mark = leaving
+    ? MARK.leaving
+    : isNew
+      ? MARK.new
+      : changed
+        ? MARK.changed
+        : isRead
+          ? MARK.read
+          : null;
 
   return (
     <div
       data-testid="flow-variables-entry"
-      className={`flex items-baseline gap-2 py-px font-mono text-[11.5px] ${
+      className={`flex items-baseline gap-2 rounded-sm px-1 py-px font-mono text-[11.5px] ${
         leaving ? "opacity-50" : ""
-      }`}
+      } ${isNew || changed ? "animate-value-flash" : ""}`}
     >
+      <span
+        data-testid={mark ? `flow-variables-mark-${mark.glyph}` : undefined}
+        title={mark ? t(mark.key) : undefined}
+        aria-label={mark ? t(mark.key) : undefined}
+        className={`w-[1.1em] shrink-0 text-center ${mark ? mark.tone : ""}`}
+      >
+        {mark?.glyph ?? ""}
+      </span>
       <button
         type="button"
         data-testid="flow-variables-pin"
         aria-pressed={pinned}
         title={t(pinned ? "flowReading.unpin" : "flowReading.pin")}
         onClick={() => onTogglePin?.(entry.key)}
-        className={`shrink-0 text-left ${isRead ? "text-primary" : "text-json-key"} ${
-          pinned ? "underline decoration-dotted underline-offset-2" : ""
-        }`}
+        className={`w-[13ch] shrink-0 truncate text-left ${
+          isRead ? "text-primary" : "text-json-key"
+        } ${pinned ? "underline decoration-dotted underline-offset-2" : ""}`}
       >
-        {isRead ? "↗ " : ""}
-        {entry.key}
+        "{entry.key}"
       </button>
       <span className="text-muted-foreground">:</span>
-      <span className="min-w-0 flex-1 break-words">
-        {changed && (
-          <span
-            data-testid="flow-variables-previous"
-            className="mr-1 text-muted-foreground line-through opacity-70"
-          >
-            {previousValue}
-          </span>
-        )}
-        <span
-          className={
-            isNew
-              ? "font-semibold text-json-number"
-              : changed
-                ? "font-semibold text-amber-500"
-                : "text-json-string"
-          }
-        >
-          {entry.value}
-        </span>
+      <span
+        className={`min-w-0 flex-1 break-words ${
+          isNew
+            ? "font-semibold text-json-number"
+            : changed
+              ? "font-semibold text-amber-500"
+              : "text-json-string"
+        }`}
+      >
+        "{entry.value}"
       </span>
-      {(isNew || changed) && (
-        <span
-          data-testid={changed ? "flow-variables-changed" : "flow-variables-new"}
-          className="shrink-0 rounded-[3px] bg-secondary px-1 py-px text-[8.5px] font-semibold uppercase tracking-[0.06em] text-muted-foreground"
-        >
-          {t(changed ? "flowReading.changedValue" : "flowReading.newValue")}
-        </span>
-      )}
       <button
         type="button"
         data-testid="flow-variables-origin"
@@ -235,11 +244,17 @@ const FlowVariablesPanel = ({
   // A step that ends a call has something to say even when nothing survives it.
   const hasState = context.size > 0 || context.unsetReads.length > 0 || hasChange;
 
-  /** Marking a row wants the change by key; the bar wants it by count. */
-  const introduced = new Set((change?.introduced ?? []).map((entry) => entry.key));
-  const replaced = new Map(
-    (change?.replaced ?? []).map((entry) => [entry.entry.key, entry.previous.value]),
-  );
+  /**
+   * Marking a row wants the change by entry; the bar wants it by count.
+   *
+   * By entry, not by key: a value written inside a call shadows one of the same
+   * name outside it, and the fold keeps both, in their own frames. Looking the
+   * mark up by name alone put `ALTERADO` on the older row too — on the value
+   * that was replaced, which is the one thing on screen that did not change.
+   */
+  const markOf = (entry: ContextEntry) => `${entry.key}@${entry.fromStepId}`;
+  const introduced = new Set((change?.introduced ?? []).map(markOf));
+  const replaced = new Set((change?.replaced ?? []).map(markOf));
   /**
    * The values this step's return is taking, by key.
    *
@@ -380,56 +395,51 @@ const FlowVariablesPanel = ({
             </div>
           )}
 
-          {context.groups.map((group) => (
-            <div key={group.frameId ?? "outer"} className="mb-1.5 last:mb-0">
-              <span className="block font-mono text-[9.5px] font-semibold uppercase tracking-[0.11em] text-muted-foreground opacity-85">
-                {group.frameId ? frameName(group.frameId) : t("flowReading.outerScope")}
-              </span>
-              {group.entries.map((entry) => (
-                <EntryRow
-                  key={entry.key}
-                  entry={entry}
-                  isRead={context.reads.includes(entry.key)}
-                  isNew={introduced.has(entry.key)}
-                  previousValue={replaced.get(entry.key)}
-                  pinned={pinned.has(entry.key)}
-                  onTogglePin={onTogglePin}
-                  numberOf={numberOf}
-                  onGoToStep={onGoToStep}
-                />
-              ))}
-            </div>
+          {/*
+            One object, in the order its keys arrived. It used to be split by
+            the call each value was introduced inside, with each group headed by
+            the *caller* of that call — so a key the Management API wrote sat
+            under "Criador de Links". A reader following a script wants what is
+            known now, not a lesson in frames; where a value came from is on its
+            own line, and where it is going is the mark beside it.
+          */}
+          <p className="font-mono text-[11.5px] text-muted-foreground">{"{"}</p>
+          {context.entries.map((entry) => (
+            <EntryRow
+              key={markOf(entry)}
+              entry={entry}
+              isRead={context.reads.includes(entry.key)}
+              isNew={introduced.has(markOf(entry))}
+              changed={replaced.has(markOf(entry))}
+              pinned={pinned.has(entry.key)}
+              onTogglePin={onTogglePin}
+              numberOf={numberOf}
+              onGoToStep={onGoToStep}
+            />
           ))}
 
           {/*
             The values a call takes with it, shown on the step that ends it and
-            gone on the next. They are the same set the bar counts: the fold has
-            already dropped them, so this is the one place they are still legible
-            — which is the whole point of showing them at all.
+            gone on the next. The fold has already dropped them, so this is the
+            one place they are still legible — which is the whole point of
+            showing them at all.
           */}
-          {(change?.gone ?? []).map((frame) => (
-            <div key={frame.frameId} data-testid="flow-variables-leaving" className="mb-1.5">
-              <span className="block font-mono text-[9.5px] font-semibold uppercase tracking-[0.11em] text-rose-500 opacity-90">
-                {frameName(frame.frameId)}{" "}
-                <span className="font-normal normal-case tracking-normal">
-                  ↩ {t("flowReading.leavingNow")}
-                </span>
-              </span>
-              {frame.entries.map((entry) => (
-                <EntryRow
-                  key={entry.key}
-                  entry={entry}
-                  isRead={false}
-                  isNew={false}
-                  leaving
-                  pinned={pinned.has(entry.key)}
-                  onTogglePin={onTogglePin}
-                  numberOf={numberOf}
-                  onGoToStep={onGoToStep}
-                />
-              ))}
-            </div>
-          ))}
+          {(change?.gone ?? []).flatMap((frame) =>
+            frame.entries.map((entry) => (
+              <EntryRow
+                key={markOf(entry)}
+                entry={entry}
+                isRead={false}
+                isNew={false}
+                leaving
+                pinned={pinned.has(entry.key)}
+                onTogglePin={onTogglePin}
+                numberOf={numberOf}
+                onGoToStep={onGoToStep}
+              />
+            )),
+          )}
+          <p className="font-mono text-[11.5px] text-muted-foreground">{"}"}</p>
 
           {context.unsetReads.length > 0 && (
             <p

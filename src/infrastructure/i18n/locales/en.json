@@ -1413,7 +1413,14 @@
     "routeLabel": "Route",
     "routeNone": "no route",
     "routeUngrouped": "Ungrouped",
-    "routeElsewhere": "this call arrives at {{arrivesAt}}, and the route belongs to {{belongsTo}}"
+    "routeElsewhere": "this call arrives at {{arrivesAt}}, and the route belongs to {{belongsTo}}",
+    "objectLabel": "Object",
+    "objectAtStep": "at step {{number}}",
+    "objectAtEnd": "at the end of the script",
+    "objectAddKey": "key",
+    "objectWriteHere": "Write this key from this step",
+    "objectStopWriting": "Stop writing it here",
+    "objectUsesHere": "This step uses this key"
   },
   "flowRefusal": {
     "unknown_flow": "That flow is no longer open.",
@@ -1502,7 +1509,6 @@
     "fields_other": "{{count}} fields",
     "keys_one": "{{count}} key",
     "keys_other": "{{count}} keys",
-    "outerScope": "Outer",
     "stepOverKey": "Skip the call · F10",
     "stepOutKey": "Leave for {{name}} · ⇧F11",
     "parallelAll": "All of these run at the same time — following one does not rule out the rest.",
@@ -1524,7 +1530,8 @@
     "outOfScope": "out of scope",
     "pin": "Follow this key",
     "unpin": "Stop following",
-    "leavesWith": "goes with {{name}}"
+    "leavesWith": "goes with {{name}}",
+    "readHere": "read by this step"
   },
   "shortcutsModal": {
     "title": "Canvas shortcuts",

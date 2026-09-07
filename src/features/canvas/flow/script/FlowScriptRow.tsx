@@ -1,14 +1,12 @@
 import type { DragEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { JsonField } from "./JsonField";
-import { StepContextEditor } from "./StepContextEditor";
 import { GitBranch, GripVertical, Plus, X } from "lucide-react";
 import { FLOW_CONDITION_KINDS, conditionKindOf } from "@/features/diagram";
 import type { FlowConditionKind, FlowOutlineRow, FlowStep } from "@/features/diagram";
 import { getBranchColor } from "../branchColors";
 import { CONDITION_KIND_LABEL, conditionGlyph } from "../conditionKinds";
 import type { FlowScriptActions } from "../useFlowScriptActions";
-import type { ScopeGroup } from "./StepContextEditor";
 
 /** One route an author can point a step at, already named for a list. */
 export interface EndpointOption {
@@ -57,8 +55,6 @@ export interface FlowScriptRowProps {
   onToggleExpand: () => void;
   onSelect: () => void;
   onConvertToCondition: (stepId: string) => void;
-  /** In scope where this step runs, grouped by the call each value belongs to. */
-  scope: readonly ScopeGroup[];
   /** Every route on the diagram, for the step to point at one. */
   endpoints: readonly EndpointOption[];
   /** Set when the route this step names is not where its call arrives. */
@@ -92,7 +88,6 @@ export function FlowScriptRow({
   isSelected,
   isLast,
   actions,
-  scope,
   endpoints,
   routeMismatch,
   onToggleExpand,
@@ -412,15 +407,20 @@ export function FlowScriptRow({
                     />
                     {t("flowScript.async")}
                   </label>
+                  {(step.payloadDirection ?? "request") === "request" && (
+                    <JsonField
+                      testId="step-context-expects"
+                      label={t("flowScript.contextExpects")}
+                      value={step.context?.expects ?? ""}
+                      onChange={(value) =>
+                        actions.updateStep(row.stepId, {
+                          context: { ...step.context, expects: value || undefined },
+                        })
+                      }
+                    />
+                  )}
                 </>
               )}
-              <span className={`${SECTION} pt-1`}>{t("flowScript.sectionState")}</span>
-              <StepContextEditor
-                key={step.id}
-                step={step}
-                scope={scope}
-                onChange={(context) => actions.updateStep(row.stepId, { context })}
-              />
               <button
                 type="button"
                 onClick={(event) => {

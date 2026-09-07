@@ -105,7 +105,7 @@ const PROVENANCE: Record<OptionalKeys<FlowStep>, FieldProvenance> = {
       "or the script panel shows it, and no author can set it.",
   },
   context: {
-    producers: [`${SCRIPT}/StepContextEditor.tsx`],
+    producers: [`${SCRIPT}/FlowObjectPanel.tsx`, `${SCRIPT}/FlowScriptRow.tsx`],
     consumers: [`${READING}/readingVariables.ts`],
   },
   conditionLabel: {

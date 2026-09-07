@@ -24,8 +24,7 @@ scope. The report SHALL be derived from the walked path; the system SHALL NOT st
 
 - **GIVEN** a reading standing on a step that sets a key an earlier step already set
 - **WHEN** the change is reported
-- **THEN** the key is reported as replaced
-- **AND** the value the earlier step gave it is carried in the report
+- **THEN** the key is reported as replaced, and not as introduced
 
 #### Scenario: A step that closes a call holding values
 
@@ -46,6 +45,26 @@ scope. The report SHALL be derived from the walked path; the system SHALL NOT st
 - **GIVEN** a reading standing on a step that sets nothing and closes no frame
 - **WHEN** the change is reported
 - **THEN** the report is empty in all three categories
+
+### Requirement: A value the step in hand wrote is marked, and marked once
+
+A value introduced or replaced by the step in hand SHALL be marked so it is distinguishable from one
+set earlier, and the marking SHALL survive the reader's attention moving elsewhere. The reading SHALL
+NOT show the value that was replaced beside the one that replaced it; that history belongs to the key's
+own life. A reader who has asked for reduced motion SHALL still get the marking.
+
+#### Scenario: A value this step wrote
+
+- **GIVEN** a reading standing on a step that writes over a value already in scope
+- **WHEN** the running object is shown
+- **THEN** the value is marked as replaced
+- **AND** the value it replaced is not shown beside it
+
+#### Scenario: A value an earlier step wrote
+
+- **GIVEN** a reading standing on a step that touched none of the values on screen
+- **WHEN** the running object is shown
+- **THEN** no value is marked
 
 ### Requirement: A value leaving with a call is visible before it leaves
 

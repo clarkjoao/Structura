@@ -173,6 +173,13 @@ export default {
             opacity: "1",
           },
         },
+        // A value the step in hand just wrote, catching the eye once and then
+        // getting out of the way. Neutral on purpose: the row's own green or
+        // amber already says *which* kind of change it was.
+        "value-flash": {
+          from: { backgroundColor: "hsl(var(--foreground) / 0.14)" },
+          to: { backgroundColor: "transparent" },
+        },
         "fade-in-up": {
           from: {
             opacity: "0",
@@ -189,6 +196,7 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
         "fade-in-up": "fade-in-up 0.5s ease-out forwards",
+        "value-flash": "value-flash 1.1s ease-out",
       },
       boxShadow: {
         "2xs": "var(--shadow-2xs)",

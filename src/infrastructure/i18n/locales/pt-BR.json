@@ -1413,7 +1413,14 @@
     "routeLabel": "Rota",
     "routeNone": "sem rota",
     "routeUngrouped": "Sem grupo",
-    "routeElsewhere": "esta chamada chega em {{arrivesAt}}, e a rota é de {{belongsTo}}"
+    "routeElsewhere": "esta chamada chega em {{arrivesAt}}, e a rota é de {{belongsTo}}",
+    "objectLabel": "Objeto",
+    "objectAtStep": "no passo {{number}}",
+    "objectAtEnd": "ao fim do roteiro",
+    "objectAddKey": "chave",
+    "objectWriteHere": "Escrever esta chave a partir deste passo",
+    "objectStopWriting": "Parar de escrever aqui",
+    "objectUsesHere": "Este passo usa esta chave"
   },
   "flowRefusal": {
     "unknown_flow": "Esse flow não está mais aberto.",
@@ -1502,7 +1509,6 @@
     "fields_other": "{{count}} campos",
     "keys_one": "{{count}} chave",
     "keys_other": "{{count}} chaves",
-    "outerScope": "Fora",
     "stepOverKey": "Pular a chamada · F10",
     "stepOutKey": "Sair para {{name}} · ⇧F11",
     "parallelAll": "Todos estes acontecem ao mesmo tempo — seguir um não descarta os outros.",
@@ -1524,7 +1530,8 @@
     "outOfScope": "fora de escopo",
     "pin": "Seguir esta chave",
     "unpin": "Parar de seguir",
-    "leavesWith": "sai com {{name}}"
+    "leavesWith": "sai com {{name}}",
+    "readHere": "consumida por este passo"
   },
   "shortcutsModal": {
     "title": "Atalhos do Canvas",

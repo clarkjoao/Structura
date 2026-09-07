@@ -339,3 +339,13 @@
   background: #1e1e2e;
   color: #cdd6f4;
 }
+
+/*
+ * A reader who has asked for less motion still gets the marking — the badge and
+ * the colour say what changed — without the flash that draws the eye to it.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .animate-value-flash {
+    animation: none;
+  }
+}

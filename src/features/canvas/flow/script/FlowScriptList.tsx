@@ -5,21 +5,14 @@ import { toast } from "sonner";
 import { AlertTriangle } from "lucide-react";
 import type { Flow, FlowStep } from "@/features/diagram";
 import {
-  buildCallStack,
   buildFlowOutline,
-  canReachStep,
   conditionKindOf,
   endpointLabel,
   findEndpointMismatch,
-  getPathToStep,
   isEndpointComponent,
   useComponents,
   useConnections,
 } from "@/features/diagram";
-import { buildRunningContext, framesClosedByStep } from "../reading/readingVariables";
-import type { ScopeGroup } from "./StepContextEditor";
-
-const EMPTY_SCOPE: readonly ScopeGroup[] = [];
 import { CONDITION_KIND_LABEL, conditionGlyph } from "../conditionKinds";
 import { useFlowScriptActions } from "../useFlowScriptActions";
 import { ConditionForm, type ConditionFormState } from "./ConditionForm";
@@ -59,53 +52,6 @@ export function FlowScriptList({
   const [dragOverStepId, setDragOverStepId] = useState<string | null>(null);
 
   const outline = useMemo(() => buildFlowOutline(flow), [flow]);
-
-  /**
-   * What is in scope where a step runs — the reading's own fold, given the
-   * reading's own path, with only this step's contribution held back.
-   *
-   * It used to fold the path one step shorter, which reads as the same thing
-   * and is not: the walk never reached the step, so the call that step answers
-   * was never closed, and every value that call was holding stayed on offer.
-   * The reading, standing on that step, called those same keys undefined.
-   */
-  const scopeOf = useMemo(() => {
-    const callStack = buildCallStack(flow, outline);
-    const numbers = new Map(outline.rows.map((row) => [row.stepId, row.label]));
-    const closedBy = framesClosedByStep(callStack);
-    /** A call is named by who is waiting on it — the source of its connection. */
-    const callerOf = (connectionId: string) => {
-      const connection = connections[connectionId];
-      const source = connection ? components[connection.sourceId] : undefined;
-      return source?.name ?? t("common.connection");
-    };
-
-    return (stepId: string): ScopeGroup[] => {
-      const path = getPathToStep(flow, stepId);
-      if (path.length === 0) return [];
-      const running = buildRunningContext(flow, callStack, path, stepId);
-      return running.groups.map((group) => {
-        const closer = group.frameId ? closedBy.get(group.frameId) : undefined;
-        // Only when the reading could actually get there: a call answered
-        // inside one branch is never answered on the other, and saying "these
-        // go at step 3a" to someone writing 3b would be the same kind of claim
-        // this panel was built to stop making.
-        const ends = closer && canReachStep(flow, stepId, closer) ? closer : undefined;
-        return {
-          frameId: group.frameId,
-          name: group.frameId
-            ? callerOf(callStack.frames.get(group.frameId)?.connectionId ?? "")
-            : null,
-          endsAtNumber: ends ? (numbers.get(ends) ?? null) : null,
-          entries: group.entries.map((entry) => ({
-            key: entry.key,
-            value: entry.value,
-            fromNumber: numbers.get(entry.fromStepId) ?? "",
-          })),
-        };
-      });
-    };
-  }, [flow, outline, components, connections, t]);
 
   /**
    * Every route on the diagram, named the way a list of routes reads.
@@ -236,7 +182,6 @@ export function FlowScriptList({
                 isSelected={selectedStepId === row.stepId}
                 isLast={lastStepId === row.stepId}
                 actions={actions}
-                scope={expandedStepId === row.stepId ? scopeOf(row.stepId) : EMPTY_SCOPE}
                 endpoints={expandedStepId === row.stepId ? endpointOptions : EMPTY_ENDPOINTS}
                 routeMismatch={expandedStepId === row.stepId ? routeMismatchOf(step) : null}
                 onToggleExpand={() =>

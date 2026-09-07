@@ -128,6 +128,27 @@ of the panel that asks only the first will disagree with any part that asks both
 hypothetical: the watch strip read `byKey` alone and called a key out of scope on exactly the step
 where the list below it showed the value going. Anything naming a key now consults the change first.
 
+### D12 — The value that was replaced is not shown beside the one that replaced it
+
+It was, at first, and for a good reason: the old value was irrecoverable anywhere in the interface
+once written over. That stopped being true in this same change — the key's life reads
+`1 ⊕ pro · 6 ~ enterprise`, and the old value is simply the earlier event, in the one place built to
+hold the history of a single key.
+
+So what was left was a struck-through value doubling the width of every replaced row to say something
+said better elsewhere. It goes, and the row instead flashes once as the reader arrives on the step,
+keeping its badge afterwards — a flash alone would be missed by anyone who looked away, and a badge
+alone never catches the eye. The flash is neutral rather than green or amber, since the row's own
+colour already says which kind of change it was.
+
+`ContextChange.replaced` drops the previous entry with it, becoming the same shape as `introduced`.
+Keeping it would have been a second copy of the fact that nothing reads, which is the thing the
+provenance table exists to prevent one field at a time.
+
+*Consequence for the flash:* a row's React identity becomes key *and* origin step, so a value the step
+in hand just wrote mounts afresh and its animation actually runs. A row nothing touched keeps its
+identity and stays still.
+
 ## Risks / Trade-offs
 
 - **The scope fix changes what existing scripts show in the editor.** A key that used to be offered and
@@ -145,6 +166,10 @@ where the list below it showed the value going. Anything naming a key now consul
 - **`keyLife` repeats the fold's rules.** If the fold changes and `keyLife` does not, they diverge
   silently. → The test compares it against the prefix-diff oracle rather than against a fixture, so a
   change to the fold breaks it.
+
+- **The flash is missed by a reader who arrives late at a step.** → The badge and the colour stay after
+  it, which is why the marking is not the animation alone; and reduced motion drops the flash and keeps
+  both.
 
 - **A pinned key that is out of scope everywhere reads as broken.** → It says *out of scope*, which is
   a fact about the walk. The alternative — hiding it — is what makes the frame rule invisible today.

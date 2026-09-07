@@ -4,6 +4,8 @@ import { buildFlowOutline } from "@/features/diagram";
 import { useCanvasSelectionStore } from "../../hooks/useCanvasSelectionStore";
 import { useFlowViewStore } from "../useFlowViewStore";
 import { FlowScriptList } from "./FlowScriptList";
+import { FlowObjectPanel } from "./FlowObjectPanel";
+import { useFlowScriptActions } from "../useFlowScriptActions";
 
 export interface FlowScriptPanelProps {
   flow: Flow;
@@ -26,6 +28,7 @@ export function FlowScriptPanel({ flow, onOpenBranchSelect }: FlowScriptPanelPro
   const selectedEdgeId = useCanvasSelectionStore((state) => state.selectedEdgeId);
 
   const outline = useMemo(() => buildFlowOutline(flow), [flow]);
+  const actions = useFlowScriptActions(flow.id);
 
   useEffect(() => {
     if (!selectedNodeId && !selectedEdgeId) return;
@@ -64,11 +67,14 @@ export function FlowScriptPanel({ flow, onOpenBranchSelect }: FlowScriptPanelPro
   );
 
   return (
-    <FlowScriptList
-      flow={flow}
-      selectedStepId={selectedStepId}
-      onSelectStep={onSelectStep}
-      onOpenBranchSelect={onOpenBranchSelect}
-    />
+    <>
+      <FlowObjectPanel flow={flow} selectedStepId={selectedStepId} actions={actions} />
+      <FlowScriptList
+        flow={flow}
+        selectedStepId={selectedStepId}
+        onSelectStep={onSelectStep}
+        onOpenBranchSelect={onOpenBranchSelect}
+      />
+    </>
   );
 }

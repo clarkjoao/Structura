@@ -21,6 +21,7 @@ import { describeStepCall } from "./stepCall";
 import FlowVariablesPanel from "./FlowVariablesPanel";
 import {
   buildRunningContext,
+  EMPTY_RUNNING_CONTEXT,
   checkContract,
   describeContextChange,
   describeExpected,
@@ -218,10 +219,7 @@ const FlowReadingRail = ({
     [flow, callStack, currentStepId],
   );
   const runningContext = useMemo(
-    () =>
-      callStack
-        ? buildRunningContext(flow, callStack, walked)
-        : { groups: [], byKey: new Map(), unsetReads: [], reads: [], size: 0 },
+    () => (callStack ? buildRunningContext(flow, callStack, walked) : EMPTY_RUNNING_CONTEXT),
     [flow, callStack, walked],
   );
   /** What the step in hand did to it — the same fold, one step apart. */

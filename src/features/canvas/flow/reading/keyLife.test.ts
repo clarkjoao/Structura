@@ -46,9 +46,7 @@ function slowKeyLife(
       if (entry.key === key) events.push({ kind: "set", stepId, value: entry.value });
     }
     for (const swap of change.replaced) {
-      if (swap.entry.key === key) {
-        events.push({ kind: "replaced", stepId, value: swap.entry.value });
-      }
+      if (swap.key === key) events.push({ kind: "replaced", stepId, value: swap.value });
     }
     const running = buildRunningContext(f, stack, prefix);
     if (running.reads.includes(key) && running.byKey.has(key)) {

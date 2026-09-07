@@ -67,12 +67,11 @@ describe("the change a step makes to the running object", () => {
     expect(change.empty).toBe(false);
   });
 
-  it("carries the value a step wrote over", () => {
+  it("names the value a step wrote over", () => {
     const change = changeAt("s6");
 
     expect(change.replaced).toHaveLength(1);
-    expect(change.replaced[0]!.entry).toMatchObject({ key: "plano", value: "enterprise" });
-    expect(change.replaced[0]!.previous).toMatchObject({ value: "pro", fromStepId: "s1" });
+    expect(change.replaced[0]).toMatchObject({ key: "plano", value: "enterprise" });
     expect(change.introduced).toEqual([]);
   });
 
@@ -173,5 +172,81 @@ describe("the fold a panel is authored against", () => {
     expect(buildRunningContext(NESTED, STACK, PATH, null)).toEqual(
       buildRunningContext(NESTED, STACK, PATH),
     );
+  });
+});
+
+/**
+ * A key written both inside a call and outside it.
+ *
+ * The panel used to show the two side by side, each in its own frame, and the
+ * report said nothing when the inner one died — neither "gone" nor "replaced"
+ * was true of what was on screen. One flat object has one row for that key, its
+ * value changes when the call ends, and staying quiet is what would lie.
+ */
+describe("a value that reverts when the call holding it ends", () => {
+  const SHADOWED = flow({
+    s1: {
+      connectionId: "c1",
+      payloadDirection: "request",
+      next: "s2",
+      context: { sets: { plano: "pro" } },
+    },
+    s2: {
+      connectionId: "c2",
+      payloadDirection: "request",
+      next: "s3",
+      context: { sets: { plano: "enterprise" } },
+    },
+    s3: { connectionId: "c2", payloadDirection: "response", next: "s4" },
+    s4: { connectionId: "c1", payloadDirection: "response" },
+  });
+  const stack = buildCallStack(SHADOWED, buildFlowOutline(SHADOWED));
+  const at = (upTo: number) =>
+    describeContextChange(SHADOWED, stack, ["s1", "s2", "s3", "s4"].slice(0, upTo));
+
+  it("is one key with one value, not two rows", () => {
+    const running = buildRunningContext(SHADOWED, stack, ["s1", "s2"]);
+
+    expect(running.entries.map((entry) => entry.key)).toEqual(["plano"]);
+    expect(running.entries[0]!.value).toBe("enterprise");
+  });
+
+  it("reports the write over it", () => {
+    expect(at(2).replaced.map((entry) => entry.value)).toEqual(["enterprise"]);
+  });
+
+  it("reports the value coming back when the call ends", () => {
+    const change = at(4);
+
+    expect(change.replaced.map((entry) => entry.value)).toEqual(["pro"]);
+    expect(change.introduced).toEqual([]);
+    expect(change.gone).toEqual([]);
+  });
+
+  it("keeps the key in the object throughout", () => {
+    for (let upTo = 1; upTo <= 4; upTo += 1) {
+      const path = ["s1", "s2", "s3", "s4"].slice(0, upTo);
+      expect(buildRunningContext(SHADOWED, stack, path).byKey.has("plano")).toBe(true);
+    }
+  });
+});
+
+describe("the object reads in the order its keys arrived", () => {
+  it("does not reshuffle when a value is written inside a call", () => {
+    const order = flow({
+      s1: {
+        connectionId: "c1",
+        payloadDirection: "request",
+        next: "s2",
+        context: { sets: { primeira: "a" } },
+      },
+      s2: { next: "s3", context: { sets: { segunda: "b" } } },
+      s3: { context: { sets: { terceira: "c" } } },
+    });
+    const stack = buildCallStack(order, buildFlowOutline(order));
+
+    expect(
+      buildRunningContext(order, stack, ["s1", "s2", "s3"]).entries.map((entry) => entry.key),
+    ).toEqual(["primeira", "segunda", "terceira"]);
   });
 });

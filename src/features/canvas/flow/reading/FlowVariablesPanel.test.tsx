@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import i18n from "@/infrastructure/i18n";
 import JsonTree from "./JsonTree";
 import FlowVariablesPanel from "./FlowVariablesPanel";
-import type { ContextChange, RunningContext } from "./readingVariables";
+import { EMPTY_RUNNING_CONTEXT } from "./readingVariables";
+import type { ContextChange, ContextEntry, RunningContext } from "./readingVariables";
 
 /**
  * The object as the reader meets it.
@@ -13,16 +14,22 @@ import type { ContextChange, RunningContext } from "./readingVariables";
  * divider — the second is what keeps a simple reading simple.
  */
 
-const EMPTY: RunningContext = {
-  groups: [],
-  byKey: new Map(),
-  unsetReads: [],
-  reads: [],
-  size: 0,
-};
+const EMPTY = EMPTY_RUNNING_CONTEXT;
 
-function context(partial: Partial<RunningContext>): RunningContext {
-  return { ...EMPTY, ...partial };
+/**
+ * The object as the panel now takes it: a flat, ordered list. `byKey` and the
+ * count fall out of it, so no fixture can describe an object whose parts
+ * disagree.
+ */
+function context(partial: Partial<RunningContext> & { entries?: ContextEntry[] }): RunningContext {
+  const entries = partial.entries ?? [];
+  return {
+    ...EMPTY,
+    ...partial,
+    entries,
+    byKey: new Map(entries.map((entry) => [entry.key, entry])),
+    size: entries.length,
+  };
 }
 
 const NO_CHANGE: ContextChange = { introduced: [], replaced: [], gone: [], empty: true };
@@ -142,13 +149,7 @@ describe("the state root opens shut and the payload root open", () => {
     renderPanel({
       sends: { json: { a: 1 }, text: "{}", direction: "request" },
       context: context({
-        size: 1,
-        groups: [
-          {
-            frameId: null,
-            entries: [{ key: "x", value: "guardado", fromStepId: "s1", frameId: null }],
-          },
-        ],
+        entries: [{ key: "x", value: "guardado", fromStepId: "s1", frameId: null }],
       }),
     });
 
@@ -166,14 +167,8 @@ describe("a value says where it came from", () => {
 
   const withState = {
     context: context({
-      size: 1,
       reads: ["cliente_id"],
-      groups: [
-        {
-          frameId: null,
-          entries: [{ key: "cliente_id", value: "c_8f3a", fromStepId: "s1", frameId: null }],
-        },
-      ],
+      entries: [{ key: "cliente_id", value: "c_8f3a", fromStepId: "s1", frameId: null }],
     }),
   };
 
@@ -244,10 +239,7 @@ describe("what the step in hand did to the running object", () => {
     frameId: null,
   });
 
-  const ONE_VALUE = context({
-    groups: [{ frameId: null, entries: [entry("score", "0.12")] }],
-    size: 1,
-  });
+  const ONE_VALUE = context({ entries: [entry("score", "0.12")] });
 
   const change = (partial: Partial<ContextChange>): ContextChange => ({
     ...NO_CHANGE,
@@ -280,28 +272,64 @@ describe("what the step in hand did to the running object", () => {
   it("marks a value this step introduced", () => {
     renderPanel({ context: ONE_VALUE, change: change({ introduced: [entry("score", "0.12")] }) });
 
-    expect(screen.getByTestId("flow-variables-new")).toBeTruthy();
+    expect(screen.getByTestId("flow-variables-mark-⊕")).toBeTruthy();
+    // The word lives in the bar and in the mark's own title, not in a badge.
     expect(screen.getByTestId("flow-variables-delta-new").textContent).toContain("1 novo");
+    expect(screen.getByTestId("flow-variables-entry").textContent).not.toContain("novo");
   });
 
   it("marks nothing on a value an earlier step set", () => {
     renderPanel({ context: ONE_VALUE });
 
-    expect(screen.queryByTestId("flow-variables-new")).toBeNull();
+    expect(screen.queryByTestId("flow-variables-mark-⊕")).toBeNull();
     expect(screen.queryByTestId("flow-variables-delta")).toBeNull();
   });
 
-  it("shows the value a step wrote over, which used to be irrecoverable", () => {
+  it("marks a value this step wrote over, without the one it replaced", () => {
     renderPanel({
       context: ONE_VALUE,
-      change: change({
-        replaced: [{ entry: entry("score", "0.12"), previous: entry("score", "0.99", "s1") }],
-      }),
+      change: change({ replaced: [entry("score", "0.12")] }),
     });
 
-    expect(screen.getByTestId("flow-variables-previous").textContent).toBe("0.99");
-    expect(screen.getByTestId("flow-variables-changed")).toBeTruthy();
+    expect(screen.getByTestId("flow-variables-mark-~")).toBeTruthy();
     expect(screen.getByTestId("flow-variables-delta-changed").textContent).toContain("1 alterado");
+    // The old value used to sit here, struck through, doubling the row's width.
+    // The key's own life reads `1 ⊕ pro · 6 ~ enterprise` and says it better.
+    expect(screen.getByTestId("flow-variables-entry").textContent).not.toContain("0.99");
+  });
+
+  /**
+   * A value written inside a call used to sit beside the one of the same name
+   * written outside it, each in its own frame — two rows, two values, and a
+   * badge that landed on both. One flat object cannot describe that: there is
+   * one key, holding whatever the fold resolves it to.
+   */
+  it("holds one row for a key written twice, not two", () => {
+    const inner = { key: "plano", value: "enterprise", fromStepId: "s2", frameId: "f1" };
+    renderPanel({
+      context: context({ entries: [inner] }),
+      change: change({ replaced: [inner] }),
+    });
+
+    const rows = screen.getAllByTestId("flow-variables-entry");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.textContent).toContain("enterprise");
+    expect(rows[0]!.textContent).not.toContain("pro");
+    expect(screen.getByTestId("flow-variables-mark-~")).toBeTruthy();
+  });
+
+  it("flashes the row it just wrote, and leaves the untouched ones still", () => {
+    renderPanel({
+      context: ONE_VALUE,
+      change: change({ replaced: [entry("score", "0.12")] }),
+    });
+    expect(screen.getByTestId("flow-variables-entry").className).toContain("animate-value-flash");
+
+    cleanup();
+    renderPanel({ context: ONE_VALUE });
+    expect(screen.getByTestId("flow-variables-entry").className).not.toContain(
+      "animate-value-flash",
+    );
   });
 
   it("names the call a value left with", () => {
@@ -321,9 +349,11 @@ describe("what the step in hand did to the running object", () => {
       change: change({ gone: [{ frameId: "f1", entries: [entry("url_id", "u_9f2")] }] }),
     });
 
-    const leaving = screen.getByTestId("flow-variables-leaving");
-    expect(leaving.textContent).toContain("url_id");
-    expect(leaving.textContent).toContain("Pagamentos");
+    // Still a row in the object, marked and dimmed — not a group of its own.
+    const rows = screen.getAllByTestId("flow-variables-entry");
+    expect(rows[rows.length - 1]!.textContent).toContain("url_id");
+    expect(screen.getByTestId("flow-variables-mark-↩")).toBeTruthy();
+    expect(screen.getByTestId("flow-variables-delta-gone").textContent).toContain("Pagamentos");
   });
 
   it("shows a call that ended even when nothing of the reading survives it", () => {
@@ -332,7 +362,7 @@ describe("what the step in hand did to the running object", () => {
       change: change({ gone: [{ frameId: "f1", entries: [entry("url_id", "u_9f2")] }] }),
     });
 
-    expect(screen.getByTestId("flow-variables-leaving").textContent).toContain("url_id");
+    expect(screen.getByTestId("flow-variables-entry").textContent).toContain("url_id");
   });
 });
 
@@ -357,14 +387,7 @@ describe("a key the reader is following", () => {
   });
 
   const HELD = context({
-    groups: [
-      {
-        frameId: null,
-        entries: [{ key: "slug", value: "artigo26", fromStepId: "s1", frameId: null }],
-      },
-    ],
-    byKey: new Map([["slug", { key: "slug", value: "artigo26", fromStepId: "s1", frameId: null }]]),
-    size: 1,
+    entries: [{ key: "slug", value: "artigo26", fromStepId: "s1", frameId: null }],
   });
 
   it("shows the value the running object holds for it", () => {
