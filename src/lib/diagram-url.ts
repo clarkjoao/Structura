@@ -33,6 +33,31 @@ export interface ShareUrlResult {
 const WARN_THRESHOLD = 8_000;
 
 /**
+ * What a link says beyond the diagram itself.
+ *
+ * The script an author wants read is not part of the diagram — it is part of
+ * the invitation — so it travels as its own parameter rather than inside the
+ * compressed payload, the same reasoning that keeps `activeSceneId` out of it.
+ * A link can then be pointed at another script by editing a few characters,
+ * and the parameter can be checked against the payload instead of trusted.
+ */
+export interface ShareOptions {
+  flowId?: string | null;
+}
+
+function flowParam(flowId?: string | null): string {
+  return flowId ? `&flow=${encodeURIComponent(flowId)}` : "";
+}
+
+/** The script a link names, from either kind of link. */
+export function getFlowParamFromUrl(): string | null {
+  const hash = window.location.hash.startsWith("#")
+    ? window.location.hash.slice(1)
+    : window.location.hash;
+  return new URLSearchParams(hash).get("flow");
+}
+
+/**
  * The diagram as a reader should receive it.
  *
  * `activeSceneId` is which scene the author happened to have open, not part of
@@ -55,12 +80,12 @@ function stripForShare(diagram: Diagram): Record<string, unknown> {
   ) as Record<string, unknown>;
 }
 
-export function generateShareUrl(diagram: Diagram): ShareUrlResult {
+export function generateShareUrl(diagram: Diagram, options: ShareOptions = {}): ShareUrlResult {
   const stripped = stripForShare(diagram);
   const json = JSON.stringify(stripped);
   const encoded = LZString.compressToEncodedURIComponent(json);
   const base = `${window.location.origin}${getBasePath()}`;
-  const url = `${base}#share=${encoded}`;
+  const url = `${base}#share=${encoded}${flowParam(options.flowId)}`;
 
   return {
     url,
@@ -111,9 +136,9 @@ export function getViewerPostMessageUrl(): string {
   return `${window.location.origin}${getBasePath()}/viewer`;
 }
 
-export function generateViewerUrl(diagram: Diagram): string {
+export function generateViewerUrl(diagram: Diagram, options: ShareOptions = {}): string {
   const encoded = encodeDiagramPayload(diagram);
-  return `${window.location.origin}${getBasePath()}/viewer#data=${encoded}`;
+  return `${window.location.origin}${getBasePath()}/viewer#data=${encoded}${flowParam(options.flowId)}`;
 }
 
 export function getViewerDataFromHash(): Diagram | null {

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { Edge, Node } from "@xyflow/react";
+import type { FlowRef } from "@/features/diagram/utils";
 import {
   isApiGroupComponent,
   isDbTableComponent,
@@ -31,6 +32,19 @@ export interface ViewerReading {
   highlight: FlowHighlight;
 }
 
+/**
+ * What a route offers a reader.
+ *
+ * The viewer builds its node data by hand rather than through the editor's
+ * descriptors, so the association a route carries has to be handed in. One map
+ * covers routes and groups alike — both are keyed by the component the reader
+ * clicks.
+ */
+export interface ViewerRoutePlay {
+  flowsByComponent: ReadonlyMap<string, FlowRef[]>;
+  onPlayFlow: (flowId: string) => void;
+}
+
 function resolveNodeType(component: Component): string {
   if (isPanelComponent(component)) {
     return component.panelKind === "swimlane" ? "swimlane" : "panel";
@@ -46,6 +60,7 @@ function resolveNodeType(component: Component): string {
 function buildNodeData(
   component: Component,
   reading: ViewerReading | null,
+  routePlay: ViewerRoutePlay | null,
 ): Record<string, unknown> {
   if (isPanelComponent(component)) {
     return {
@@ -81,7 +96,11 @@ function buildNodeData(
       protocol: component.protocol,
       sla: component.sla,
       isSelected: false,
+      // No route is added from here, which is what frees the footer to say
+      // which scripts run through the group instead.
       controlsDisabled: true,
+      flows: routePlay?.flowsByComponent.get(component.id) ?? [],
+      onPlayFlow: routePlay?.onPlayFlow,
     };
   }
 
@@ -94,6 +113,8 @@ function buildNodeData(
       handlers: component.handlers ?? [],
       isSelected: false,
       controlsDisabled: true,
+      flows: routePlay?.flowsByComponent.get(component.id) ?? [],
+      onPlayFlow: routePlay?.onPlayFlow,
     };
   }
 
@@ -150,6 +171,7 @@ function buildNode(
   component: Component,
   nodeLayouts: Record<string, NodeLayout>,
   reading: ViewerReading | null,
+  routePlay: ViewerRoutePlay | null,
 ): Node {
   const layout = nodeLayouts[component.id];
   const dbTableFixedH = 32 + 22 + 20 + 2;
@@ -175,7 +197,7 @@ function buildNode(
     draggable: false,
     selectable: false,
     connectable: false,
-    data: buildNodeData(component, reading),
+    data: buildNodeData(component, reading, routePlay),
     style: {
       width,
       height,
@@ -232,6 +254,7 @@ function sortComponentsTopologically(components: Component[]): Component[] {
 export function useDiagramToFlow(
   diagram: Diagram,
   reading: ViewerReading | null = null,
+  routePlay: ViewerRoutePlay | null = null,
 ): {
   nodes: Node[];
   edges: Edge[];
@@ -251,11 +274,11 @@ export function useDiagramToFlow(
     const sortedComponents = sortComponentsTopologically(visibleComponents);
 
     const nodes = sortedComponents.map((component) =>
-      buildNode(component, resolvedSnapshot.nodeLayouts, reading),
+      buildNode(component, resolvedSnapshot.nodeLayouts, reading, routePlay),
     );
 
     const edges = Object.values(resolvedSnapshot.connections).map(buildEdge);
 
     return { nodes, edges };
-  }, [diagram, reading]);
+  }, [diagram, reading, routePlay]);
 }

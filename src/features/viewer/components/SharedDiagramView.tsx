@@ -13,9 +13,11 @@ import SharedDiagramBanner from "./SharedDiagramBanner";
 
 interface SharedDiagramViewProps {
   diagram: Diagram;
+  /** The script the link named, already checked against this diagram. */
+  flowId?: string | null;
 }
 
-export function SharedDiagramView({ diagram }: SharedDiagramViewProps) {
+export function SharedDiagramView({ diagram, flowId = null }: SharedDiagramViewProps) {
   const { t } = useTranslation();
   const diagrams = useDiagramStore(useShallow((state) => state.diagrams));
   const { addImportedDiagram } = useDiagramActions();
@@ -57,7 +59,12 @@ export function SharedDiagramView({ diagram }: SharedDiagramViewProps) {
           onClose={handleClose}
         />
       ) : null}
-      <ViewerCanvas diagram={diagram} offsetTop={44} showOpenInStructuraButton={false} />
+      <ViewerCanvas
+        diagram={diagram}
+        offsetTop={44}
+        showOpenInStructuraButton={false}
+        initialFlowId={flowId}
+      />
     </div>
   );
 }

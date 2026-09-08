@@ -2,8 +2,14 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Check, ChevronRight } from "lucide-react";
 import type { Flow, FlowStep } from "@/features/diagram";
-import { buildFlowOutline, getBranchRows, isPlaceholderStep } from "@/features/diagram";
+import {
+  buildFlowOutline,
+  conditionKindOf,
+  getBranchRows,
+  isPlaceholderStep,
+} from "@/features/diagram";
 import { getBranchColor } from "../branchColors";
+import { CONDITION_KIND_LABEL, conditionGlyph, conditionGlyphClass } from "../conditionKinds";
 
 export interface BranchSelectViewProps {
   branchSelectCondition: FlowStep;
@@ -43,9 +49,12 @@ export function BranchSelectView({
   return (
     <div className="flex flex-1 flex-col space-y-4 p-4">
       <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2">
-        <span className="text-lg text-amber-400">◇</span>
+        <span className={`text-lg ${conditionGlyphClass(branchSelectCondition.conditionKind)}`}>
+          {conditionGlyph(branchSelectCondition.conditionKind)}
+        </span>
         <span className="text-sm font-medium text-foreground">
-          {branchSelectCondition.conditionLabel}
+          {branchSelectCondition.conditionLabel?.trim() ||
+            t(CONDITION_KIND_LABEL[conditionKindOf(branchSelectCondition)])}
         </span>
       </div>
 

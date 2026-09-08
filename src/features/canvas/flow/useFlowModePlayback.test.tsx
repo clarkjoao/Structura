@@ -47,6 +47,8 @@ describe("switching script mid-reading", () => {
       flow: REFUND,
       currentStepId: "r1",
       history: [],
+      seen: ["r1"],
+      pinnedKeys: [],
     });
   });
 
@@ -73,6 +75,8 @@ describe("switching script mid-reading", () => {
       flow: CHECKOUT,
       currentStepId: "s1b",
       history: ["s1"],
+      seen: ["s1", "s1b"],
+      pinnedKeys: [],
     });
   });
 
@@ -116,7 +120,121 @@ describe("switching script mid-reading", () => {
       flow: empty,
       currentStepId: null,
       history: [],
+      seen: [],
+      pinnedKeys: [],
     });
     expect(result.current.canGoForward).toBe(false);
+  });
+});
+
+/**
+ * Where the reader has been, which is not the path they took to get here.
+ *
+ * `history` is the path, and going back shortens it — that is what makes the
+ * running object time-travel. So it cannot answer "have I already been down
+ * there", and at a `par`, where every way out happens, that is the only
+ * question worth asking. Found in the running editor: the mark for a thread
+ * already read never appeared, because entering a thread and coming back left
+ * no trace of ever having entered it.
+ */
+describe("what the reading remembers after turning back", () => {
+  it("keeps the step it turned back from", () => {
+    const { result } = renderHook(() => usePlayback());
+    act(() => result.current.play(CHECKOUT));
+    act(() => result.current.goNext());
+
+    act(() => result.current.goBack());
+
+    expect(result.current.mode).toMatchObject({
+      currentStepId: "s1",
+      history: [],
+      seen: ["s1", "s1b"],
+      pinnedKeys: [],
+    });
+  });
+
+  it("records a step once, however often the reader passes through it", () => {
+    const { result } = renderHook(() => usePlayback());
+    act(() => result.current.play(CHECKOUT));
+    act(() => result.current.goNext());
+    act(() => result.current.goBack());
+    act(() => result.current.goNext());
+
+    expect(result.current.mode).toMatchObject({ seen: ["s1", "s1b"] });
+  });
+
+  it("starts empty again on another script, since it belongs to the reading", () => {
+    const { result } = renderHook(() => usePlayback());
+    act(() => result.current.play(CHECKOUT));
+    act(() => result.current.goNext());
+
+    act(() => result.current.switchFlow(REFUND));
+
+    expect(result.current.mode).toMatchObject({ seen: ["r1"] });
+  });
+});
+
+/**
+ * The keys a reader is following.
+ *
+ * They belong to the reading and die with it — the same rule that governs
+ * depth, derived returns and the running object itself. Nothing here reaches
+ * the flow, which is why switching scripts starts over rather than carrying
+ * names that meant something somewhere else.
+ */
+describe("following a key across a reading", () => {
+  it("starts with nothing pinned", () => {
+    const { result } = renderHook(() => usePlayback());
+    act(() => result.current.play(CHECKOUT));
+
+    expect(result.current.pinnedKeys).toEqual([]);
+  });
+
+  it("pins and unpins the same key", () => {
+    const { result } = renderHook(() => usePlayback());
+    act(() => result.current.play(CHECKOUT));
+
+    act(() => result.current.togglePinnedKey("slug"));
+    expect(result.current.pinnedKeys).toEqual(["slug"]);
+
+    act(() => result.current.togglePinnedKey("slug"));
+    expect(result.current.pinnedKeys).toEqual([]);
+  });
+
+  it("keeps them in the order they were pinned", () => {
+    const { result } = renderHook(() => usePlayback());
+    act(() => result.current.play(CHECKOUT));
+    act(() => result.current.togglePinnedKey("slug"));
+    act(() => result.current.togglePinnedKey("plano"));
+
+    expect(result.current.pinnedKeys).toEqual(["slug", "plano"]);
+  });
+
+  it("survives walking the reading", () => {
+    const { result } = renderHook(() => usePlayback());
+    act(() => result.current.play(CHECKOUT));
+    act(() => result.current.togglePinnedKey("slug"));
+    act(() => result.current.goNext());
+    act(() => result.current.goBack());
+
+    expect(result.current.pinnedKeys).toEqual(["slug"]);
+  });
+
+  it("goes with the script when another one is read", () => {
+    const { result } = renderHook(() => usePlayback());
+    act(() => result.current.play(CHECKOUT));
+    act(() => result.current.togglePinnedKey("slug"));
+
+    act(() => result.current.switchFlow(REFUND));
+
+    expect(result.current.pinnedKeys).toEqual([]);
+  });
+
+  it("pins nothing outside a reading", () => {
+    const { result } = renderHook(() => usePlayback());
+    act(() => result.current.togglePinnedKey("slug"));
+
+    expect(result.current.pinnedKeys).toEqual([]);
+    expect(result.current.mode).toEqual({ kind: "idle" });
   });
 });

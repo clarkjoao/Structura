@@ -7,6 +7,7 @@ import type {
   ComponentType,
   Diagram,
   DiagramModel,
+  EndpointCall,
   FlowStep,
   NodeLayout,
   ServiceDefinition,
@@ -20,6 +21,15 @@ export interface NodeBuildContext {
 
   /** Subset of Flow needed by descriptors — avoids full array as dependency. */
   flows: { id: string; name: string }[];
+  /**
+   * The steps calling each route, indexed once for the whole diagram.
+   *
+   * Built here rather than per node so the walk happens once, and kept apart
+   * from `flows` above, which is deliberately narrowed to keep its identity
+   * stable across renders. Holds the calls rather than only their names: a
+   * route offers to *play* what runs through it, and a name cannot be played.
+   */
+  endpointCallsByRoute: Map<string, EndpointCall[]>;
 
   resolvedComponents: Record<string, Component>;
   resolvedNodeLayouts: Record<string, NodeLayout>;
@@ -56,8 +66,6 @@ export interface NodeBuildContext {
   navigateToDiagram?: (diagramId: string, nodeId?: string) => void;
   onRecordHandleClick?: (nodeId: string, handleId: string) => void;
   onPanelCollapseToggle?: (panelId: string) => void;
-
-  activeFlowId?: string | null;
 
   onPlayFlow?: (flowId: string) => void;
 

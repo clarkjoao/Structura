@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Flow } from "../model/flow.types";
-import { getOrderedStepIds, getStepCount, walkFlow } from "./flow-traversal";
+import { canReachStep, getOrderedStepIds, getStepCount, walkFlow } from "./flow-traversal";
 
 function makeFlow(overrides: Partial<Flow> = {}): Flow {
   return {
@@ -74,5 +74,73 @@ describe("flow traversal", () => {
     });
     expect(getOrderedStepIds(flow)).toEqual(["a", "b"]);
     expect(getStepCount(flow)).toBe(2);
+  });
+});
+
+/**
+ * What lies ahead of a step, which is not what lies behind it.
+ *
+ * `getPathToStep` walks from the entry and answers "how did the reading get
+ * here". Claims about what happens *after* a step need the other direction: a
+ * call answered inside one branch is not answered on the other, and a panel
+ * that cannot tell the difference states as certain something the reader's
+ * branch never reaches.
+ */
+describe("whether one step can reach another", () => {
+  const BRANCHED = makeFlow({
+    entryStepId: "s1",
+    steps: {
+      s1: { id: "s1", type: "action", next: "c" },
+      c: {
+        id: "c",
+        type: "condition",
+        branches: [
+          { label: "sim", nextId: "a1" },
+          { label: "nao", nextId: "b1" },
+        ],
+      },
+      a1: { id: "a1", type: "action", next: "join" },
+      b1: { id: "b1", type: "action", next: "join" },
+      join: { id: "join", type: "action" },
+    },
+  });
+
+  it("finds a step further down the same run", () => {
+    expect(canReachStep(BRANCHED, "s1", "join")).toBe(true);
+  });
+
+  it("finds a step in either branch from the point that chooses", () => {
+    expect(canReachStep(BRANCHED, "c", "a1")).toBe(true);
+    expect(canReachStep(BRANCHED, "c", "b1")).toBe(true);
+  });
+
+  it("does not find a step in the branch not taken", () => {
+    expect(canReachStep(BRANCHED, "a1", "b1")).toBe(false);
+    expect(canReachStep(BRANCHED, "b1", "a1")).toBe(false);
+  });
+
+  it("does not look backwards", () => {
+    expect(canReachStep(BRANCHED, "join", "s1")).toBe(false);
+  });
+
+  it("says a plain step does not reach itself", () => {
+    expect(canReachStep(BRANCHED, "join", "join")).toBe(false);
+  });
+
+  it("says a step in a cycle does reach itself, and terminates", () => {
+    const loop = makeFlow({
+      entryStepId: "s1",
+      steps: {
+        s1: { id: "s1", type: "action", next: "s2" },
+        s2: { id: "s2", type: "action", next: "s1" },
+      },
+    });
+
+    expect(canReachStep(loop, "s1", "s1")).toBe(true);
+  });
+
+  it("answers for steps that are not there", () => {
+    expect(canReachStep(BRANCHED, "s1", "ghost")).toBe(false);
+    expect(canReachStep(BRANCHED, "ghost", "s1")).toBe(false);
   });
 });

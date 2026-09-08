@@ -1,6 +1,6 @@
 import { createElement, useMemo, type ReactElement, type ReactNode } from "react";
 import type { Diagram } from "@/features/diagram/model";
-import { decodeShareParam, getShareParamFromUrl } from "@/lib/diagram-url";
+import { decodeShareParam, getFlowParamFromUrl, getShareParamFromUrl } from "@/lib/diagram-url";
 import { ShareContext } from "../components/ShareContext";
 
 interface ShareProviderProps {
@@ -9,13 +9,19 @@ interface ShareProviderProps {
 
 export interface UseSharedDiagramResult {
   sharedDiagram: Diagram | null;
+  /** The script the link opened on, when it named one the diagram holds. */
+  sharedFlowId: string | null;
   ShareProvider: (props: ShareProviderProps) => ReactElement;
 }
 
 export function useSharedDiagram(): UseSharedDiagramResult {
   return useMemo(() => {
     const shareParam = getShareParamFromUrl();
+    // Read before the hash is cleared below; both live in it.
+    const flowParam = getFlowParamFromUrl();
     const sharedDiagram: Diagram | null = shareParam ? decodeShareParam(shareParam) : null;
+    // Named, and actually there. A link outlives the script it points at.
+    const sharedFlowId = flowParam && sharedDiagram?.snapshot.flows?.[flowParam] ? flowParam : null;
     if (shareParam) {
       const cleanUrl = `${window.location.pathname}${window.location.search}`;
       window.history.replaceState(null, "", cleanUrl);
@@ -34,6 +40,6 @@ export function useSharedDiagram(): UseSharedDiagramResult {
       );
     }
 
-    return { sharedDiagram, ShareProvider };
+    return { sharedDiagram, sharedFlowId, ShareProvider };
   }, []);
 }

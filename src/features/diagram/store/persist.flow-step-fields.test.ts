@@ -131,6 +131,56 @@ describe("a new optional field on a step needs no migration", () => {
     expect(readStep(reloaded).title).toBe("Kept");
   });
 
+  it("keeps a step's context through a legacy rebuild, nested object and all", () => {
+    const flow = {
+      id: "f1",
+      name: "Checkout",
+      mermaid: "",
+      diagramId: "d1",
+      entryStepId: "s1",
+      steps: {
+        s1: {
+          id: "s1",
+          type: "action",
+          context: {
+            sets: { score: "0.12" },
+            reads: ["cliente.cpf"],
+            expects: '{"score":0.12}',
+          },
+        } as FlowStep,
+      },
+    };
+
+    const migrated = migrateFlow(flow);
+
+    expect(migrated.steps.s1!.context).toEqual({
+      sets: { score: "0.12" },
+      reads: ["cliente.cpf"],
+      expects: '{"score":0.12}',
+    });
+  });
+
+  it("round-trips a context through storage, so the new field needs no migration either", () => {
+    const written = buildPersistStoragePayload({
+      ...(stateWithStep({
+        id: "s1",
+        type: "action",
+        context: { sets: { score: "0.12" } },
+      }) as DiagramStore),
+      folders: {},
+      userTemplates: {},
+      serviceCatalog: {},
+      activeDiagramId: "d1",
+    } as DiagramStore);
+
+    const reloaded = mergePersistedState(
+      JSON.parse(JSON.stringify(written.state)) as Partial<DiagramStore>,
+      {} as DiagramStore,
+    );
+
+    expect(readStep(reloaded).context).toEqual({ sets: { score: "0.12" } });
+  });
+
   it("is still schema 12, because nothing about the shape changed", () => {
     expect(PERSIST_SCHEMA_VERSION).toBe(12);
   });

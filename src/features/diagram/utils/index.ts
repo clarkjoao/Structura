@@ -33,6 +33,8 @@ export {
   getFlowParticipants,
   validateFlowGraph,
   getOrderedStepIds,
+  getPathToStep,
+  canReachStep,
   getStepCount,
 } from "./flow-traversal";
 export type { BrokenStep } from "./flow-traversal";
@@ -62,6 +64,27 @@ export {
   getBranchRows,
 } from "./flow-outline";
 export type { FlowOutline, FlowOutlineRow, FlowOutlineBranch } from "./flow-outline";
+export {
+  buildCallStack,
+  emptyStepFrameInfo,
+  findFrameExit,
+  framesOpenAfter,
+  directionForRecordedClick,
+} from "./flow-call-stack";
+export type {
+  FlowCallStack,
+  CallFrame,
+  StepFrameInfo,
+  DerivedReturn,
+  FrameExit,
+} from "./flow-call-stack";
+
+export {
+  FLOW_CONDITION_KINDS,
+  conditionKindOf,
+  isParallelStep,
+  parseConditionKind,
+} from "./flow-condition-kind";
 
 export { migrateFlow } from "./flow-migration";
 export {
@@ -119,3 +142,13 @@ export type { RecentDiagramRef } from "./recent-diagrams";
 // ─── Layout helpers ───────────────────────────────────────────────────────────
 export { computeApiGroupSize } from "./api-group-size";
 export { computeFitBounds } from "./fit-group-to-children";
+export {
+  apiGroupFlows,
+  endpointCallers,
+  endpointCallersByRoute,
+  endpointFlows,
+  endpointLabel,
+  findEndpointMismatch,
+  resolveStepEndpoint,
+} from "./flow-endpoint";
+export type { EndpointCall, EndpointMismatch, FlowRef, StepEndpointState } from "./flow-endpoint";

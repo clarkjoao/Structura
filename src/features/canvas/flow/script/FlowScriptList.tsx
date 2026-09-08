@@ -4,10 +4,21 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { AlertTriangle } from "lucide-react";
 import type { Flow, FlowStep } from "@/features/diagram";
-import { buildFlowOutline, useComponents, useConnections } from "@/features/diagram";
+import {
+  buildFlowOutline,
+  conditionKindOf,
+  endpointLabel,
+  findEndpointMismatch,
+  isEndpointComponent,
+  useComponents,
+  useConnections,
+} from "@/features/diagram";
+import { CONDITION_KIND_LABEL, conditionGlyph } from "../conditionKinds";
 import { useFlowScriptActions } from "../useFlowScriptActions";
 import { ConditionForm, type ConditionFormState } from "./ConditionForm";
-import { FlowScriptRow } from "./FlowScriptRow";
+import { FlowScriptRow, type EndpointOption, type RouteMismatch } from "./FlowScriptRow";
+
+const EMPTY_ENDPOINTS: readonly EndpointOption[] = [];
 
 export interface FlowScriptListProps {
   flow: Flow;
@@ -42,10 +53,46 @@ export function FlowScriptList({
 
   const outline = useMemo(() => buildFlowOutline(flow), [flow]);
 
+  /**
+   * Every route on the diagram, named the way a list of routes reads.
+   *
+   * The group's name comes along because two services can serve the same path,
+   * and `POST /urls` on its own would then name two different operations.
+   */
+  const endpointOptions = useMemo<EndpointOption[]>(() => {
+    const options: EndpointOption[] = [];
+    for (const component of Object.values(components)) {
+      if (!isEndpointComponent(component)) continue;
+      const group = component.parentId ? components[component.parentId] : undefined;
+      options.push({
+        id: component.id,
+        label: endpointLabel(component),
+        groupName: group?.name ?? t("flowScript.routeUngrouped"),
+      });
+    }
+    return options.sort(
+      (a, b) => a.groupName.localeCompare(b.groupName) || a.label.localeCompare(b.label),
+    );
+  }, [components, t]);
+
+  /** Named here, where both maps are to hand; the row only renders it. */
+  const routeMismatchOf = useCallback(
+    (step: FlowStep): RouteMismatch | null => {
+      const mismatch = findEndpointMismatch(step, components, connections);
+      if (!mismatch) return null;
+      return {
+        arrivesAt: components[mismatch.arrivesAtId]?.name ?? t("flowScript.unknownStep"),
+        belongsTo: components[mismatch.belongsToId]?.name ?? t("flowScript.unknownStep"),
+      };
+    },
+    [components, connections, t],
+  );
+
   const titleOf = useCallback(
     (step: FlowStep): string => {
       if (step.branches && step.branches.length > 0) {
-        return `◇ ${step.conditionLabel ?? t("flowScript.condition")}`;
+        const kind = conditionKindOf(step);
+        return `${conditionGlyph(kind)} ${step.conditionLabel?.trim() || t(CONDITION_KIND_LABEL[kind])}`;
       }
       if (step.connectionId) {
         const connection = connections[step.connectionId];
@@ -135,6 +182,8 @@ export function FlowScriptList({
                 isSelected={selectedStepId === row.stepId}
                 isLast={lastStepId === row.stepId}
                 actions={actions}
+                endpoints={expandedStepId === row.stepId ? endpointOptions : EMPTY_ENDPOINTS}
+                routeMismatch={expandedStepId === row.stepId ? routeMismatchOf(step) : null}
                 onToggleExpand={() =>
                   setExpandedStepId(expandedStepId === row.stepId ? null : row.stepId)
                 }

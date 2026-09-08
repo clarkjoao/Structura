@@ -148,6 +148,68 @@ describe("FlowScriptList", () => {
     expect(branches.map((branch) => branch.nextId)).toEqual(["a1", "b1"]);
   });
 
+  /**
+   * The keyword used to be authorable only by typing it into the question, and
+   * nothing on screen said that the word `par` in a label meant anything. This
+   * is the path from the panel to the field — the piece itself is tested next
+   * door, and testing a piece is no proof that anything reaches it.
+   */
+  it("writes the kind of branch point the author picks", () => {
+    const { read } = seedFlow(BRANCHED);
+    renderScript(read);
+    fireEvent.click(screen.getByText("◇ paid?"));
+
+    fireEvent.change(screen.getByLabelText("What this branch point is"), {
+      target: { value: "par" },
+    });
+
+    expect(read().steps.c!.conditionKind).toBe("par");
+  });
+
+  it("leaves the question alone when the kind changes", () => {
+    const { read } = seedFlow(BRANCHED);
+    renderScript(read);
+    fireEvent.click(screen.getByText("◇ paid?"));
+
+    fireEvent.change(screen.getByLabelText("What this branch point is"), {
+      target: { value: "loop" },
+    });
+
+    expect(read().steps.c!.conditionLabel).toBe("paid?");
+  });
+
+  it("marks the row with what the branch point is once it is threads", () => {
+    const { read } = seedFlow(BRANCHED);
+    renderScript(read);
+    fireEvent.click(screen.getByText("◇ paid?"));
+
+    fireEvent.change(screen.getByLabelText("What this branch point is"), {
+      target: { value: "par" },
+    });
+
+    expect(screen.getByText("⇉ paid?")).toBeTruthy();
+  });
+
+  it("calls an unnamed branch point what it is rather than nothing", () => {
+    const { read } = seedFlow([
+      { id: "s1", type: "action", next: "c", description: "enqueues" },
+      {
+        id: "c",
+        type: "condition",
+        conditionKind: "par",
+        branches: [
+          { label: "email", nextId: "a1" },
+          { label: "metrics", nextId: "b1" },
+        ],
+      },
+      { id: "a1", type: "action", description: "sends" },
+      { id: "b1", type: "action", description: "records" },
+    ]);
+    renderScript(read);
+
+    expect(screen.getByText("⇉ Parallel")).toBeTruthy();
+  });
+
   it("adds an empty step right after the one asked for", () => {
     const { read } = seedFlow(CHAIN);
     renderScript(read);

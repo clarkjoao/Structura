@@ -89,7 +89,7 @@ const UNKNOWN_FLOW = (flowId: string): FlowStoreRefusal => ({
 /** Content a recorded click carries; the id and the wiring belong to the graph. */
 export type RecordedStepContent = Pick<
   FlowStep,
-  "componentId" | "connectionId" | "handleId" | "description"
+  "componentId" | "connectionId" | "handleId" | "description" | "payloadDirection"
 >;
 
 export const flowsSlice = (set: (fn: (state: AppState) => void) => void, get: () => AppState) => ({

@@ -1,0 +1,51 @@
+## 1. The scope the author writes against
+
+- [x] 1.1 Fold the whole path — the step included — in `FlowScriptList.scopeOf` and subtract the keys the step's own `sets` introduce, per design D4, so the panel written in and the panel read from call the same function with the same argument; verify a test asserts the editor's scope and the reading's running object hold the same keys at every step of a flow that closes two frames, and that the test fails against `slice(0, -1)`.
+- [x] 1.2 Carry the frame each value belongs to through to the editor, replacing the flat `ScopeEntry` list with the reading's grouping — innermost call first, the outermost group named as outside any call; verify tests cover a value in an enclosing call, a value outside every call, and a step no path reaches folding to nothing without failing.
+- [x] 1.3 Mark the group held by the frame the step closes as leaving after this step, naming the call; verify tests cover the marking, its absence on a step that closes nothing, and a step closing a frame that holds no values.
+- [x] 1.5 Mark a key the step consumes that nothing in scope sets, so the report the reading has always made is also made where the key is written; verify tests cover the marking and its absence when every key read resolves.
+- [x] 1.4 Remove the claim from `StepContextEditor`'s docblock that the panel is folded exactly as the reading folds it, and state what actually holds; verify by reading it against 1.1.
+
+## 2. The change a step makes
+
+- [x] 2.1 Add `describeContextChange(flow, callStack, path)` to the reading's variables module per design D1 and D2 — it takes the path rather than two folds, so no caller can hand it two contexts that were never one step apart — introduced, replaced with the value being replaced, and gone with the call that took them; verify unit tests cover a value introduced, a value written over, a frame closing with values, the entry step, a step that touches nothing, and that going back reports the step arrived at.
+- [x] 2.2 Put the running object above the payload roots and open it by default, per design D7; verify the panel tests assert the order and the default, and that a reader who closes it keeps it closed while walking.
+- [x] 2.3 Show the delta above the entries — introduced, replaced, gone, with the call named when a frame closed; verify tests cover each count, the naming, and the bar being absent when nothing changed.
+- [x] 2.4 Give the entry rows the two states they lack: replaced and leaving — the first flashing once on arrival and keeping a badge, the second dimmed with the call it goes with — per design D3 and D12; verify tests cover both, their absence on an untouched row, that the replaced value is shown without the one it replaced, and that a leaving row is gone on the following step.
+- [x] 2.5 Add every new string to both locales with no default at the call site; verify the locale coverage test passes and the panel reads in `en` and `pt-BR`.
+
+## 3. The values table
+
+- [x] 3.1 Complete a row and open the next from the keyboard, focusing the new row's key; verify tests cover the append, the focus, and that it does not fire from the value cell of a row that is not the last.
+- [x] 3.2 Discard a row left with no key when focus leaves the table, so an abandoned row changes nothing about the step; verify tests cover the discard, a keyless row with a value still discarded, and a row being typed not discarded mid-word.
+- [x] 3.3 Turn a pasted `key: value` block or JSON object into rows, splitting on the first colon so a value holding one stays whole, per design D8; verify tests cover several lines, a value containing a colon, a pasted object, top-level keys only, and text that is neither shape landing in the cell unchanged.
+
+## 4. Following one value
+
+- [x] 4.1 Add `pinnedKeys` to the playing mode beside `seen`, cleared by `play` and `switchFlow`, per design D5; verify tests cover pinning, unpinning, the clear on switching flows, and that nothing reaches the flow.
+- [x] 4.2 Show pinned keys in a strip that stays visible with the roots collapsed, carrying the value held at the step in hand; verify tests cover the value following the reading forward and changing when a step writes over it.
+- [x] 4.3 Keep a pinned key visible when the running object no longer holds it, saying it is out of scope rather than hiding it; verify tests cover a key lost with its frame and a key pinned before the step that introduces it.
+- [x] 4.6 Read the leaving set in the strip as well as in the list, so the two cannot describe the same key two ways on the step that ends its call; verify tests cover the value shown going with the call named, and *out of scope* held back until the following step. **Found in review** — the strip read the running object, where that value has already been dropped.
+- [x] 4.7 Show the marker that says where a call's values run out only when the reading could reach the step that answers it, using a new `canReachStep`; verify tests cover both branches of a call answered in one of them, a step not reaching itself, and a cycle terminating. **Found in review** — the same class of unfounded claim about scope that this change was written to remove.
+- [x] 4.4 Add `keyLife(flow, callStack, path, key)` returning the events on the walked path — introduced, read, replaced, gone with a call — per design D6; verify a test pins it against the slow oracle that folds every prefix and diffs consecutive pairs, plus a key never introduced on the path and a key introduced only on a branch not taken.
+- [x] 4.5 Show the life of a pinned key as a row of events naming each step by the number the reading shows, each one a jump; verify tests cover the ordering, the numbering and an empty life rendering nothing.
+
+## 5. Seen in the running app
+
+- [x] 5.1 Read the seeded `Criar link — pilha completa` end to end in the running editor; verify by screenshot that the delta bar names the frame that closed, that `url_id` is dimmed on step 6 and absent on step 7, and that the editor's scope on step 7 no longer offers what the reading calls unset.
+- [x] 5.2 Pin a key and walk the whole reading; verify by screenshot that it survives the frame closing as *out of scope* and that its life names the steps that introduced, read and ended it.
+- [x] 5.3 Author a context with the keyboard alone — a row, the next row, an abandoned row; verify by screenshot that nothing needs the mouse and the step holds exactly what was typed. **The paste is covered by unit tests only** — driving a real clipboard through the automation is not something a screenshot can honestly witness.
+
+## 6. One object, in both panels
+
+- [x] 6.1 Give `RunningContext` a flat `entries` list ordered by when each key was first introduced, per design D13; verify tests cover a key written at two depths reading as one row and the order not shuffling when a value is written inside a call.
+- [x] 6.2 Report a value that comes back when the call hiding it ends, by comparing the whole earlier object against the whole current one rather than against the survivors; verify a test covers the revert, and that the first formulation — comparing against the object minus the dying frame — cannot see it.
+- [x] 6.3 Show the running object as one object between braces, keys and values quoted, with no group headings and no `Fora`; verify the panel tests assert one row per key and no heading.
+- [x] 6.4 Reduce a row's marking to one indicator in the gutter, carrying its words on hover, per design D14; verify tests cover each mark, its absence on an untouched row, and that the word is not repeated beside the value.
+- [x] 6.5 Move the object out of the step into a panel of the script, showing it at the selected step and at the end of the script when none is selected, per design D15; verify tests cover the object at a step, the step's own contribution being shown, the end-of-script default, and an unreachable step folding to nothing.
+- [x] 6.6 Make a row inherited or written here, with taking a key over and giving it back; verify tests cover both directions and the last key given back leaving no empty value behind.
+- [x] 6.7 Move consuming a key onto the key's own row, and give a key nothing writes a row of its own with no value; verify tests cover the toggle and the unwritten key.
+- [x] 6.8 Carry `sai de escopo depois do passo N` onto the inherited rows rather than losing it with the scope panel — it is one of the three places that let the grouping go; verify tests cover a value inside an open call and a call answered only on the branch not taken.
+- [x] 6.9 Keep pasting a block and taking the values from the step's own body, both of which lived in the deleted editor; verify tests cover the paste shapes and the body offer.
+- [x] 6.10 Delete `StepContextEditor` and everything left without a consumer — `SetRow`, `toSetRows`, `fromSetRows`, `newSetRow`, `parseReads` — and rename `rowsFromPaste` to what its only caller wants; verify the typecheck, the lint and the provenance table, which names the new producer of `context`.
+- [x] 6.11 Read the seeded script in the running editor; verify by screenshot that the object reads as one object with the marks, that the panel says *ao fim do roteiro* with no step selected and *no passo 2* with one, and that taking a key over and giving it back both work.

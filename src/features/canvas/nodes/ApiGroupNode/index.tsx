@@ -1,8 +1,8 @@
 import { memo } from "react";
 import type { Node, NodeProps } from "@xyflow/react";
-import { Plus } from "lucide-react";
+import { Play, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { ApiProtocol } from "@/features/diagram";
+import type { ApiProtocol, FlowRef } from "@/features/diagram";
 import { HEADER_H, FOOTER_H, PROTOCOL_COLORS } from "./constants";
 import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
 import { useCollabHighlight } from "@/features/collaboration";
@@ -19,6 +19,9 @@ export type ApiGroupNodeData = {
   isSelected: boolean;
   controlsDisabled?: boolean;
   onAddEndpoint?: () => void;
+  /** Every script running through one of this group's routes, named once. */
+  flows?: FlowRef[];
+  onPlayFlow?: (flowId: string) => void;
   sceneBadge?: { name: string; color: string };
   compareBadges?: {
     a: { name: string; color: string };
@@ -30,6 +33,7 @@ const ApiGroupNode = memo(({ data: d, selected }: NodeProps<Node<ApiGroupNodeDat
   const { t } = useTranslation();
   const isSelected = selected || d.isSelected;
   const collabHighlight = useCollabHighlight(d.elementId);
+  const flows = d.flows ?? [];
 
   return (
     <div
@@ -79,11 +83,16 @@ const ApiGroupNode = memo(({ data: d, selected }: NodeProps<Node<ApiGroupNodeDat
         <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{d.serviceName}</p>
       </div>
 
+      {/*
+        One strip, two states. Where a route can be added — the editor — it is
+        the button that adds one. Where it cannot, it used to render empty, and
+        that is the mode with the most to say: which scripts run through here.
+      */}
       <div
         className="absolute bottom-0 left-0 right-0 border-t border-border"
         style={{ height: FOOTER_H }}
       >
-        {!d.controlsDisabled && (
+        {!d.controlsDisabled ? (
           <button
             type="button"
             onClick={(e) => {
@@ -94,6 +103,29 @@ const ApiGroupNode = memo(({ data: d, selected }: NodeProps<Node<ApiGroupNodeDat
           >
             <Plus className="h-3.5 w-3.5" /> {t("apiGroup.addEndpoint")}
           </button>
+        ) : (
+          flows.length > 0 && (
+            <div
+              data-testid="api-group-scripts"
+              className="flex h-full items-center gap-1 overflow-x-auto px-2"
+            >
+              {flows.map((flow) => (
+                <button
+                  key={flow.id}
+                  type="button"
+                  title={t("apiGroup.playScript", { names: flow.name })}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    d.onPlayFlow?.(flow.id);
+                  }}
+                  className="flow-play-control inline-flex shrink-0 items-center gap-1 rounded border border-border bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-surface-hover"
+                >
+                  <Play className="h-2.5 w-2.5 shrink-0 text-primary" />
+                  <span className="max-w-[12rem] truncate">{flow.name}</span>
+                </button>
+              ))}
+            </div>
+          )
         )}
       </div>
     </div>

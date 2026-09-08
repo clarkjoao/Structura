@@ -4,7 +4,14 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { heldBackMessage, refusalMessage } from "./flowRefusalMessage";
 import type { Flow, FlowStoreResult, RecordedStepContent } from "@/features/diagram";
-import { useActiveDiagramId, useDiagramActions, useDiagramStore } from "@/features/diagram";
+import {
+  buildFlowOutline,
+  directionForRecordedClick,
+  getFlowTail,
+  useActiveDiagramId,
+  useDiagramActions,
+  useDiagramStore,
+} from "@/features/diagram";
 import type { FlowMode, RecordingContext } from "./flowMode.types";
 import { recordingCursor } from "./flowMode.types";
 import { useFlowViewStore } from "./useFlowViewStore";
@@ -163,9 +170,37 @@ export function useFlowRecording(
     [write],
   );
 
+  /**
+   * Clicking an edge records which way the message travels, without asking.
+   *
+   * An edge the script has already gone down and not yet come back from can
+   * only be the way back; anything else is a call going out. Deriving it here
+   * is what lets a recorded script pair its calls at all — until now nothing
+   * in the app wrote a direction, so every recording read as a flat sequence.
+   */
   const onRecordEdgeClick = useCallback(
-    (edgeId: string, handleId?: string) => write({ connectionId: edgeId, handleId }),
-    [write],
+    (edgeId: string, handleId?: string) => {
+      if (!recording) return;
+      const store = useDiagramStore.getState();
+      const diagramId = store.activeDiagramId;
+      const flow = diagramId
+        ? store.diagrams[diagramId]?.snapshot.flows[recording.flowId]
+        : undefined;
+      const cursor = recordingCursor(recording.context);
+
+      const payloadDirection =
+        flow && cursor
+          ? directionForRecordedClick(
+              flow,
+              buildFlowOutline(flow),
+              getFlowTail(flow, cursor),
+              edgeId,
+            )
+          : "request";
+
+      write({ connectionId: edgeId, handleId, payloadDirection });
+    },
+    [recording, write],
   );
 
   const onRecordHandleClick = useCallback(

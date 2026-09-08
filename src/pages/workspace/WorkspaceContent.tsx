@@ -26,10 +26,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Canvas, FlowPanel, FlowStepNavigator, FlowRecorderPanel } from "@/features/canvas";
+import { Canvas, FlowPanel, FlowReadingRail, FlowRecorderPanel } from "@/features/canvas";
 import { SaveStatusIndicator } from "@/features/canvas/components/SaveStatusIndicator";
 import { FileSystemStatus } from "@/components/FileSystemStatus";
 import { EmbedModal, useFlowMode, useInteractionMode } from "@/features/canvas";
+import { useFlowPanelHandover } from "@/features/canvas/flow/useFlowPanelHandover";
+import { useFlowReadingKeys } from "@/features/canvas/flow/reading/useFlowReadingKeys";
 import { useActiveDiagram, useStorageMonitor, type Flow } from "@/features/diagram";
 import { StorageWarningBanner } from "@/features/canvas/components/StorageWarningBanner";
 import { CollabCursors, CollabToolbar, useCollab } from "@/features/collaboration";
@@ -37,7 +39,6 @@ import { ExportModal } from "./ExportModal";
 import { ShareModal } from "./ShareModal";
 import type { WorkspaceContentProps } from "./types";
 import { getViewportCenter } from "@/features/canvas/viewport-utils";
-import { KEY, keyIs } from "@/lib/keyboard-utils";
 
 /** Stable identity, so the progress memo is not rebuilt on every render. */
 const EMPTY_HISTORY: string[] = [];
@@ -108,6 +109,12 @@ export function WorkspaceContent({
     goBack,
     goNext,
     chooseBranch,
+    stepOver,
+    stepOut,
+    callStack,
+    stepOverTarget,
+    stepOutFrameId,
+    togglePinnedKey,
     startRecording,
     cancelRecording,
     finalizeRecording,
@@ -123,36 +130,26 @@ export function WorkspaceContent({
   }, [isPlaying, setShowFlows]);
 
   useEffect(() => {
-    if (isRecording) setShowFlows(false);
-  }, [isRecording, setShowFlows]);
-
-  useEffect(() => {
     if (session) {
       setShowFlows(false);
     }
   }, [session, setShowFlows]);
 
-  useEffect(() => {
-    if (flowMode.mode.kind !== "playing") return;
-    const handler = (e: KeyboardEvent) => {
-      if (keyIs(e, KEY.ESCAPE)) {
-        e.preventDefault();
-        exitPlay();
-        return;
-      }
-      if (keyIs(e, KEY.ARROW_LEFT)) {
-        e.preventDefault();
-        goBack();
-        return;
-      }
-      if (keyIs(e, KEY.ARROW_RIGHT)) {
-        e.preventDefault();
-        if (!isCondition) goNext();
-      }
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [flowMode.mode.kind, isCondition, exitPlay, goBack, goNext]);
+  useFlowPanelHandover({
+    isRecording,
+    isCollaborating: Boolean(session),
+    setShowFlows,
+  });
+
+  useFlowReadingKeys({
+    isReading: flowMode.mode.kind === "playing",
+    isCondition,
+    onGoNext: goNext,
+    onGoBack: goBack,
+    onExit: exitPlay,
+    onStepOver: stepOver,
+    onStepOut: stepOut,
+  });
 
   const interaction = useInteractionMode(diagram);
   const canvasInteractionLocked = !interaction.canEditCanvas;
@@ -257,12 +254,6 @@ export function WorkspaceContent({
               </Link>
               {diagram?.domain && <span className="text-muted-foreground">{diagram.domain}</span>}
               <span className="font-medium">{diagram?.name}</span>
-              {activeFlow && (
-                <span className="text-[10px] font-mono text-primary bg-primary/10 rounded px-1.5 py-0.5">
-                  ▶ {activeFlow.name}
-                  {activeFlow.description ? ` · "${activeFlow.description}"` : ""}
-                </span>
-              )}
               {isRecording && (
                 <span
                   className={`text-[10px] font-mono rounded px-1.5 py-0.5 animate-pulse ${
@@ -373,6 +364,34 @@ export function WorkspaceContent({
         ) : null}
         <div className="flex flex-1 min-h-0 overflow-hidden">
           <ReactFlowProvider>
+            {activeFlow && (
+              <FlowReadingRail
+                flow={activeFlow}
+                currentStepId={currentStepId}
+                currentStep={currentStep}
+                history={playbackState?.history ?? EMPTY_HISTORY}
+                seen={playbackState?.seen ?? EMPTY_HISTORY}
+                flows={flows}
+                onSelectFlow={(flowId) => {
+                  const target = flows.find((candidate) => candidate.id === flowId);
+                  if (target) switchFlow(target);
+                }}
+                isCondition={isCondition}
+                canGoBack={canGoBack}
+                canGoForward={canGoForward}
+                onGoNext={goNext}
+                onGoBack={goBack}
+                onChooseBranch={chooseBranch}
+                onExit={exitPlay}
+                callStack={callStack}
+                canStepOver={stepOverTarget !== null}
+                onStepOver={stepOver}
+                stepOutFrameId={stepOutFrameId}
+                onStepOut={stepOut}
+                pinnedKeys={playbackState?.pinnedKeys ?? EMPTY_HISTORY}
+                onTogglePin={togglePinnedKey}
+              />
+            )}
             <div
               className="flex min-h-0 min-w-0 flex-1 flex-col relative"
               onPointerMove={handleCanvasPointerMove}
@@ -398,26 +417,6 @@ export function WorkspaceContent({
                   if (targetFlow) play(targetFlow);
                 }}
               />
-              {activeFlow && (
-                <FlowStepNavigator
-                  flow={activeFlow}
-                  currentStepId={currentStepId}
-                  currentStep={currentStep}
-                  history={playbackState?.history ?? EMPTY_HISTORY}
-                  flows={flows}
-                  onSelectFlow={(flowId) => {
-                    const target = flows.find((candidate) => candidate.id === flowId);
-                    if (target) switchFlow(target);
-                  }}
-                  isCondition={isCondition}
-                  canGoBack={canGoBack}
-                  canGoForward={canGoForward}
-                  onGoNext={goNext}
-                  onGoBack={goBack}
-                  onChooseBranch={chooseBranch}
-                  onExit={exitPlay}
-                />
-              )}
               {session && <CollabCursors peers={session.peers} />}
               {showFlows && !activeFlow && !isRecording && (
                 <FlowPanel

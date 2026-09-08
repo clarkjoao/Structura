@@ -1,9 +1,63 @@
 import type { DragEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { JsonField } from "./JsonField";
 import { GitBranch, GripVertical, Plus, X } from "lucide-react";
-import type { FlowOutlineRow, FlowStep } from "@/features/diagram";
+import { FLOW_CONDITION_KINDS, conditionKindOf } from "@/features/diagram";
+import type { FlowConditionKind, FlowOutlineRow, FlowStep } from "@/features/diagram";
 import { getBranchColor } from "../branchColors";
+import { CONDITION_KIND_LABEL, conditionGlyph } from "../conditionKinds";
 import type { FlowScriptActions } from "../useFlowScriptActions";
+
+/** One route an author can point a step at, already named for a list. */
+export interface EndpointOption {
+  id: string;
+  /** `POST /urls`. */
+  label: string;
+  /** The api-group it hangs off, so two services with the same path stay apart. */
+  groupName: string;
+}
+
+/** A step claiming a route its own call does not arrive at, in names. */
+export interface RouteMismatch {
+  arrivesAt: string;
+  belongsTo: string;
+}
+
+const SECTION = "text-[9px] font-semibold uppercase tracking-wider text-muted-foreground";
+const FIELD =
+  "w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring";
+
+/**
+ * A field that still says what it is once it holds something.
+ *
+ * These were an emoji and a placeholder: the emoji had to be decoded, and the
+ * placeholder — the only place the field was named — disappeared the moment
+ * anyone typed.
+ */
+function Labelled({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="flex flex-col gap-0.5">
+      <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+/**
+ * The same label over something that is not one input.
+ *
+ * A `<label>` around a pair of buttons would make clicking the word press the
+ * first of them, so the direction — the only control here that is a choice
+ * rather than a field — gets the label without the association.
+ */
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
+      {children}
+    </div>
+  );
+}
 
 export interface FlowScriptRowProps {
   row: FlowOutlineRow;
@@ -17,6 +71,10 @@ export interface FlowScriptRowProps {
   onToggleExpand: () => void;
   onSelect: () => void;
   onConvertToCondition: (stepId: string) => void;
+  /** Every route on the diagram, for the step to point at one. */
+  endpoints: readonly EndpointOption[];
+  /** Set when the route this step names is not where its call arrives. */
+  routeMismatch?: RouteMismatch | null;
   /** Recorder-only: jump into this condition's branches. */
   onOpenBranchSelect?: (conditionStepId: string) => void;
   /** Set while a row is being dragged; absent outside a reorderable list. */
@@ -46,6 +104,8 @@ export function FlowScriptRow({
   isSelected,
   isLast,
   actions,
+  endpoints,
+  routeMismatch,
   onToggleExpand,
   onSelect,
   onConvertToCondition,
@@ -134,7 +194,30 @@ export function FlowScriptRow({
           {row.isBranchPoint ? (
             <>
               <div className="flex items-start gap-1">
-                <span className="mt-1 shrink-0 text-[10px]">◇</span>
+                {/*
+                  What the branch point *is*, not what it is called. The two used
+                  to be the same field — the importer wrote `par` into the label —
+                  so a fork into threads could only be authored by typing a
+                  keyword into the question, and nothing said that was a keyword.
+                */}
+                <select
+                  value={conditionKindOf(step)}
+                  onChange={(event) =>
+                    actions.updateStep(row.stepId, {
+                      conditionKind: event.target.value as FlowConditionKind,
+                    })
+                  }
+                  onClick={(event) => event.stopPropagation()}
+                  title={t("flowScript.conditionKind.title")}
+                  aria-label={t("flowScript.conditionKind.title")}
+                  className="shrink-0 rounded border border-border bg-secondary px-1 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  {FLOW_CONDITION_KINDS.map((kind) => (
+                    <option key={kind} value={kind}>
+                      {`${conditionGlyph(kind)} ${t(CONDITION_KIND_LABEL[kind])}`}
+                    </option>
+                  ))}
+                </select>
                 <input
                   value={step.conditionLabel ?? ""}
                   onChange={(event) =>
@@ -204,20 +287,19 @@ export function FlowScriptRow({
             </>
           ) : (
             <>
-              <div className="flex items-start gap-1">
-                <span className="mt-1 shrink-0 text-[10px]">🏷</span>
+              <span className={SECTION}>{t("flowScript.sectionStep")}</span>
+              <Labelled label={t("flowScript.titleLabel")}>
                 <input
                   value={step.title ?? ""}
                   onChange={(event) =>
                     actions.updateStep(row.stepId, { title: event.target.value || undefined })
                   }
                   placeholder={t("flowScript.titlePlaceholder")}
-                  className="w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  className={`${FIELD} font-semibold`}
                   onClick={(event) => event.stopPropagation()}
                 />
-              </div>
-              <div className="flex items-start gap-1">
-                <span className="mt-1 shrink-0 text-[10px]">🗒</span>
+              </Labelled>
+              <Labelled label={t("flowScript.noteLabel")}>
                 <textarea
                   value={step.note ?? ""}
                   onChange={(event) =>
@@ -225,77 +307,132 @@ export function FlowScriptRow({
                   }
                   placeholder={t("flowScript.notePlaceholder")}
                   rows={2}
-                  className="w-full resize-y rounded border border-border bg-secondary px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  className={`${FIELD} resize-y`}
                   onClick={(event) => event.stopPropagation()}
                 />
-              </div>
-              <div className="flex items-start gap-1">
-                <span className="mt-1 shrink-0 text-[10px]">📝</span>
+              </Labelled>
+              <Labelled label={t("flowScript.descriptionLabel")}>
                 <input
                   value={step.description ?? ""}
                   onChange={(event) =>
                     actions.updateStep(row.stepId, { description: event.target.value })
                   }
                   placeholder={t("flowScript.descriptionPlaceholder")}
-                  className="w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  className={FIELD}
                   onClick={(event) => event.stopPropagation()}
                 />
-              </div>
-              <div className="flex items-start gap-1">
-                <span className="mt-1 shrink-0 text-[10px]">⏱</span>
+              </Labelled>
+              <Labelled label={t("flowScript.durationLabel")}>
                 <input
                   value={step.duration ?? ""}
                   onChange={(event) =>
                     actions.updateStep(row.stepId, { duration: event.target.value || undefined })
                   }
                   placeholder={t("flowScript.durationPlaceholder")}
-                  className="w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  className={FIELD}
                   onClick={(event) => event.stopPropagation()}
                 />
-              </div>
+              </Labelled>
               {step.connectionId && (
                 <>
-                  <div
-                    className="flex items-center gap-1"
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    <span className="mt-0.5 shrink-0 text-[10px]">📦</span>
-                    <div className="flex overflow-hidden rounded border border-border">
-                      {(["request", "response"] as const).map((direction) => (
-                        <button
-                          key={direction}
-                          type="button"
-                          onClick={() =>
-                            actions.updateStep(row.stepId, { payloadDirection: direction })
-                          }
-                          className={`px-2 py-0.5 text-[9px] font-medium transition-colors ${
-                            (step.payloadDirection ?? "request") === direction
-                              ? direction === "request"
-                                ? "bg-cyan-500/20 text-cyan-400"
-                                : "bg-emerald-500/20 text-emerald-400"
-                              : "bg-secondary text-muted-foreground hover:text-foreground"
-                          }`}
-                        >
-                          {t(PAYLOAD_DIRECTION_KEYS[direction])}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-1">
-                    <span className="mt-1 shrink-0 text-[10px]">
-                      {step.payloadDirection === "response" ? "📥" : "📤"}
-                    </span>
-                    <textarea
-                      value={step.payload ?? ""}
-                      onChange={(event) =>
-                        actions.updateStep(row.stepId, { payload: event.target.value || undefined })
-                      }
-                      placeholder={t("flowScript.payloadPlaceholder")}
-                      rows={2}
-                      className="w-full resize-y rounded border border-border bg-secondary px-2 py-1 font-mono text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  <span className={`${SECTION} pt-1`}>{t("flowScript.sectionCall")}</span>
+                  {/*
+                    Direction leads: it is what makes the step a call going out
+                    or the answer coming back, it is what pairs the two halves
+                    in the reading, and it is what decides whether the shape
+                    expected back is a field at all. It used to be asked third,
+                    with no label — the two buttons named the answers and
+                    nothing named the question.
+                  */}
+                  <Field label={t("flowScript.directionLabel")}>
+                    <div
+                      className="flex items-center gap-1"
                       onClick={(event) => event.stopPropagation()}
+                    >
+                      <div className="flex overflow-hidden rounded border border-border">
+                        {(["request", "response"] as const).map((direction) => (
+                          <button
+                            key={direction}
+                            type="button"
+                            onClick={() =>
+                              actions.updateStep(row.stepId, { payloadDirection: direction })
+                            }
+                            className={`px-2 py-0.5 text-[9px] font-medium transition-colors ${
+                              (step.payloadDirection ?? "request") === direction
+                                ? direction === "request"
+                                  ? "bg-cyan-500/20 text-cyan-400"
+                                  : "bg-emerald-500/20 text-emerald-400"
+                                : "bg-secondary text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {t(PAYLOAD_DIRECTION_KEYS[direction])}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </Field>
+                  <Labelled label={t("flowScript.routeLabel")}>
+                    <select
+                      data-testid="step-route"
+                      value={step.endpointId ?? ""}
+                      onChange={(event) =>
+                        actions.updateStep(row.stepId, {
+                          endpointId: event.target.value || undefined,
+                        })
+                      }
+                      onClick={(event) => event.stopPropagation()}
+                      className={FIELD}
+                    >
+                      <option value="">{t("flowScript.routeNone")}</option>
+                      {Object.entries(
+                        endpoints.reduce<Record<string, EndpointOption[]>>((groups, option) => {
+                          (groups[option.groupName] ??= []).push(option);
+                          return groups;
+                        }, {}),
+                      ).map(([groupName, options]) => (
+                        <optgroup key={groupName} label={groupName}>
+                          {options.map((option) => (
+                            <option key={option.id} value={option.id}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  </Labelled>
+                  {routeMismatch && (
+                    <span
+                      data-testid="step-route-mismatch"
+                      className="text-[9px] leading-relaxed text-amber-500"
+                    >
+                      {t("flowScript.routeElsewhere", {
+                        arrivesAt: routeMismatch.arrivesAt,
+                        belongsTo: routeMismatch.belongsTo,
+                      })}
+                    </span>
+                  )}
+                  {/* The body and the shape expected back are written together, so
+                      nothing is put between them. */}
+                  <JsonField
+                    testId="step-payload"
+                    label={t("flowScript.payloadLabel")}
+                    value={step.payload ?? ""}
+                    onChange={(value) =>
+                      actions.updateStep(row.stepId, { payload: value || undefined })
+                    }
+                  />
+                  {(step.payloadDirection ?? "request") === "request" && (
+                    <JsonField
+                      testId="step-context-expects"
+                      label={t("flowScript.contextExpects")}
+                      value={step.context?.expects ?? ""}
+                      onChange={(value) =>
+                        actions.updateStep(row.stepId, {
+                          context: { ...step.context, expects: value || undefined },
+                        })
+                      }
                     />
-                  </div>
+                  )}
                   <label
                     className="flex cursor-pointer items-center gap-1 text-[10px] text-muted-foreground"
                     onClick={(event) => event.stopPropagation()}

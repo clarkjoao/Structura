@@ -11,6 +11,7 @@ import type {
   ServiceDefinition,
 } from "@/features/diagram";
 import {
+  endpointCallersByRoute,
   isPanelComponent,
   isApiGroupComponent,
   isEndpointType,
@@ -69,7 +70,6 @@ interface UseCanvasNodesParams {
   flowBadges: FlowBadges | null;
   coverage: CoverageInfo | null;
   isViewingCoverage: boolean;
-  activeFlowId?: string | null;
   onPlayFlow?: (flowId: string) => void;
   onAddEndpointToGroup?: (groupId: string) => void;
   isCompareMode?: boolean;
@@ -193,7 +193,6 @@ export function useCanvasNodes({
   flowBadges,
   coverage,
   isViewingCoverage,
-  activeFlowId,
   onPlayFlow,
   onAddEndpointToGroup,
   isCompareMode = false,
@@ -218,6 +217,9 @@ export function useCanvasNodes({
 
   // Derive only what the descriptors need — avoids flows array identity changing on every render.
   const flowsForDescriptor = useMemo(() => flows.map((f) => ({ id: f.id, name: f.name })), [flows]);
+
+  /** One walk over the scripts for the whole diagram, not one per route node. */
+  const endpointCallsByRoute = useMemo(() => endpointCallersByRoute(flows), [flows]);
 
   const callbacksRef = useRef({
     handleDrillDown,
@@ -262,6 +264,7 @@ export function useCanvasNodes({
     if (!diagram) return null;
     return {
       flows: flowsForDescriptor,
+      endpointCallsByRoute,
       resolvedComponents,
       resolvedNodeLayouts,
       sceneBadgeByComponentId,
@@ -276,7 +279,6 @@ export function useCanvasNodes({
       panelIds: stablePanelIds,
       connectionCounts: connectionCountPerNode,
       effectiveHandleOrder,
-      activeFlowId,
       highlightedNodeIds: stableHighlightedNodeIds,
       isViewingCoverage,
       childrenIndex: buildChildrenIndex(resolvedComponents),
@@ -297,10 +299,10 @@ export function useCanvasNodes({
     stablePanelIds,
     connectionCountPerNode,
     effectiveHandleOrder,
-    activeFlowId,
     stableHighlightedNodeIds,
     isViewingCoverage,
     flowsForDescriptor,
+    endpointCallsByRoute,
   ]);
 
   const nodeCtxPlayback = useMemo(
@@ -345,6 +347,17 @@ export function useCanvasNodes({
 
     const compareVisual = dataCtx.compareVisualByComponentId;
     const isCmp = dataCtx.isCompareMode ?? false;
+    /**
+     * A flow being read is a stage, not a workbench: the diagram is there to be
+     * followed, and nothing on it should move, join up or take a selection.
+     *
+     * The gate has to be here rather than only on `<ReactFlow>`. A node that
+     * states `draggable` / `selectable` / `connectable` for itself outranks the
+     * canvas-wide `nodesDraggable` / `elementsSelectable` / `nodesConnectable`,
+     * so a reading that only turned those off still let a node be dragged into
+     * a new position — and saved it.
+     */
+    const isReading = ctx.isPlaying;
 
     const visibleIds = new Set(visibleComponents.map((c) => c.id));
     for (const cachedId of prevNodeDataRef.current.keys()) {
@@ -457,16 +470,18 @@ export function useCanvasNodes({
           type: d.rfType,
           position: stablePosition,
           zIndex: vis.zIndex,
-          connectable: d.connectable && !isCmp && !tagFilteredHidden,
+          connectable: d.connectable && !isCmp && !isReading && !tagFilteredHidden,
           selected: vis.isSelected,
           draggable:
             !isLockedBySelfOrAncestor &&
             (d.draggable ?? !lockedInGroup) &&
             !sceneLocksBase &&
             !isCmp &&
+            !isReading &&
             !tagFilteredHidden,
-          selectable: (d.selectable ?? !lockedInGroup) && !isCmp && !tagFilteredHidden,
-          focusable: (d.focusable ?? !lockedInGroup) && !isCmp && !tagFilteredHidden,
+          selectable:
+            (d.selectable ?? !lockedInGroup) && !isCmp && !isReading && !tagFilteredHidden,
+          focusable: (d.focusable ?? !lockedInGroup) && !isCmp && !isReading && !tagFilteredHidden,
           className: nodeClassNames || undefined,
           ...(d.dragHandle ? { dragHandle: d.dragHandle } : {}),
           ...(vis.isChild ? { parentId: comp.parentId!, extent: "parent" as const } : {}),

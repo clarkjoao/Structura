@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { type ShareUrlResult, generateShareUrl, generateViewerUrl } from "@/lib/diagram-url";
 
+/** Nothing chosen. A value rather than an empty string, so the select says it. */
+const NO_FLOW = "";
+
 interface ShareModalProps {
   diagram: Diagram;
   open: boolean;
@@ -29,18 +32,28 @@ function getSnapshotVersionKey(snapshot: Diagram["snapshot"]): string {
 export function ShareModal({ diagram, open, onOpenChange }: ShareModalProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState<CopiedState>(null);
+  /**
+   * The script the link opens on. Not part of the diagram — part of the
+   * invitation — so it is chosen here and travels beside the payload.
+   */
+  const [flowId, setFlowId] = useState<string>(NO_FLOW);
+
+  const flows = useMemo(() => Object.values(diagram.snapshot?.flows ?? {}), [diagram.snapshot]);
 
   // Depend on content key so URL regenerates when components are added/removed
   const snapshotVersion = getSnapshotVersionKey(diagram.snapshot);
 
   const shareResult: ShareUrlResult = useMemo(
-    () => generateShareUrl(diagram),
-    [diagram.id, snapshotVersion],
+    () => generateShareUrl(diagram, { flowId: flowId || null }),
+    [diagram.id, snapshotVersion, flowId],
   );
 
   const shareUrl = shareResult.url;
 
-  const embedUrl = useMemo(() => generateViewerUrl(diagram), [diagram.id, snapshotVersion]);
+  const embedUrl = useMemo(
+    () => generateViewerUrl(diagram, { flowId: flowId || null }),
+    [diagram.id, snapshotVersion, flowId],
+  );
 
   const formattedLinkSize = useMemo(
     () => new Intl.NumberFormat().format(shareResult.compressedLength),
@@ -68,6 +81,29 @@ export function ShareModal({ diagram, open, onOpenChange }: ShareModalProps) {
         </DialogHeader>
 
         <div className="flex flex-col gap-4 py-4">
+          {flows.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium" htmlFor="share-flow">
+                {t("share.flowLabel")}
+              </label>
+              <p className="text-xs text-muted-foreground">{t("share.flowDescription")}</p>
+              <select
+                id="share-flow"
+                data-testid="share-flow"
+                value={flowId}
+                onChange={(event) => setFlowId(event.target.value)}
+                className="w-full rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value={NO_FLOW}>{t("share.flowNone")}</option>
+                {flows.map((flow) => (
+                  <option key={flow.id} value={flow.id}>
+                    {flow.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium">{t("share.linkLabel")}</label>
             <p className="text-xs text-muted-foreground">{t("share.linkDescription")}</p>

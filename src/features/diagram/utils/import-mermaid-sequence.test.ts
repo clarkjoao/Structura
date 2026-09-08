@@ -203,7 +203,10 @@ describe("parseMermaidSequence", () => {
     expect(actionStep?.componentId).toBe(aliceId);
   });
 
-  it("-->> arrow creates connection with async-message intent", () => {
+  it("-->> arrow answers a call rather than firing one off", () => {
+    // `-->>` is Mermaid's reply arrow, not an async message. With no call to
+    // answer it still creates the connection, but as an ordinary one and
+    // without claiming the step is fire-and-forget.
     let sequence = 0;
     generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
     const input = ["sequenceDiagram", "Alice-->>John: Great!"].join("\n");
@@ -211,7 +214,20 @@ describe("parseMermaidSequence", () => {
     const result = parseMermaidSequence(input, {}, {}, { x: 0, y: 0 });
 
     expect(result.newConnections).toHaveLength(1);
-    expect(result.newConnections[0].intent).toBe("async-message");
+    expect(result.newConnections[0].intent).toBe("call");
+    expect(Object.values(result.steps)[0].isAsync).toBe(false);
+  });
+
+  it("-->> pairs with the call it answers when there is one", () => {
+    let sequence = 0;
+    generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
+    const input = ["sequenceDiagram", "A->>B: ask", "B-->>A: answer"].join("\n");
+
+    const result = parseMermaidSequence(input, {}, {}, { x: 0, y: 0 });
+    const steps = Object.values(result.steps);
+
+    expect(result.newConnections).toHaveLength(1);
+    expect(steps.map((step) => step.payloadDirection)).toEqual(["request", "response"]);
   });
 
   it("--> arrow creates connection with dependency intent", () => {
@@ -343,11 +359,22 @@ describe("parseMermaidSequence", () => {
     expect(result.newConnections[0].intent).toBe("call");
   });
 
-  it("maps -) to event intent", () => {
+  it("maps -) to a call nobody waits for", () => {
+    // `-)` is Mermaid's own fire-and-forget arrow — the one glyph that really
+    // does mean async. `-x` and `--x`, the lost-message arrows, stay events.
     let sequence = 0;
     generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
     const result = parseMermaidSequence("sequenceDiagram\nA-)B: msg", {}, {}, { x: 0, y: 0 });
+    expect(result.newConnections[0].intent).toBe("async-message");
+    expect(Object.values(result.steps)[0].isAsync).toBe(true);
+  });
+
+  it("keeps -x as a lost message rather than an async one", () => {
+    let sequence = 0;
+    generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
+    const result = parseMermaidSequence("sequenceDiagram\nA-xB: msg", {}, {}, { x: 0, y: 0 });
     expect(result.newConnections[0].intent).toBe("event");
+    expect(Object.values(result.steps)[0].isAsync).toBe(false);
   });
 
   it("handles activation suffix in ->>+ without errors", () => {
@@ -362,7 +389,7 @@ describe("parseMermaidSequence", () => {
     let sequence = 0;
     generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
     const result = parseMermaidSequence("sequenceDiagram\nA-->>-B: msg", {}, {}, { x: 0, y: 0 });
-    expect(result.newConnections[0].intent).toBe("async-message");
+    expect(result.newConnections[0].intent).toBe("call");
     expect(result.errors).toEqual([]);
   });
 

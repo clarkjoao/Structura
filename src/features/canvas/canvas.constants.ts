@@ -4,6 +4,12 @@ export const OPACITY_TAG_FILTER_TRANSITION = "opacity 0.2s ease";
 
 export const OPACITY_FLOW_PLAYBACK_EDGE_DIM = 0.2;
 
+/**
+ * A call made and not yet answered: brighter than the flow's other edges,
+ * dimmer than the step in hand. It is the reading's stack, on the picture.
+ */
+export const OPACITY_FLOW_PLAYBACK_IN_FLIGHT = 0.8;
+
 export const OPACITY_FLOW_PLAYBACK_PARTICIPANT = 0.5;
 
 export const OPACITY_TAG_FILTER_EDGE_DIM = 0.1;
@@ -16,6 +22,8 @@ export const FIT_VIEW_MAX_ZOOM = 1.5;
 
 export const VIEWPORT_MIN_ZOOM = 0.3;
 export const FIT_VIEW_INITIAL_PADDING = 0.3;
+/** Tighter than the initial fit: the reading rail has already taken its share of the width. */
+export const FIT_VIEW_READING_PADDING = 0.12;
 
 /** Max zoom reachable via the custom wheel handler. Must match `<ReactFlow maxZoom>`. */
 export const WHEEL_MAX_ZOOM = 1.5;

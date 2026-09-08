@@ -47,7 +47,7 @@ export type {
   EdgePathType,
 } from "./layout.types";
 
-export type { FlowStep, FlowStepType, FlowBranch, Flow } from "./flow.types";
+export type { FlowStep, FlowStepType, FlowConditionKind, FlowBranch, Flow } from "./flow.types";
 
 import type { Component } from "./component.types";
 import type { Connection } from "./connection.types";

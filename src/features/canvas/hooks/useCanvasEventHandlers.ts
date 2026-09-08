@@ -217,6 +217,9 @@ export function useCanvasEventHandlers({
       if (isEndpointType(nodeType) && node.parentId) {
         if (isCompareMode) return;
         if (!isRecording) {
+          // Same read-only gate the ordinary node path applies below. Clicking a
+          // port selects the group it belongs to, and selecting is editing.
+          if (isPlaying || isFlowPanelOpen) return;
           clearHighlight();
           setSelectedEdgeId(null);
           setContextMenu(null);

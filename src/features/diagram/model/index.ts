@@ -91,7 +91,14 @@ export {
 export type { EffectiveConnectionStyle } from "./connection-defaults";
 
 // ─── Flow ─────────────────────────────────────────────────────────────────────
-export type { FlowStep, FlowStepType, FlowBranch, Flow } from "./flow.types";
+export type {
+  FlowStep,
+  FlowStepType,
+  FlowStepContext,
+  FlowConditionKind,
+  FlowBranch,
+  Flow,
+} from "./flow.types";
 
 // ─── Diagram / Scene / Template / Service ────────────────────────────────────
 // diagram.types owns Level, Icon*, ModelDraft, Diagram, SceneDiff, Folder, etc.

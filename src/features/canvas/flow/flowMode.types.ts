@@ -1,5 +1,5 @@
 import type { Dispatch, ReactNode, SetStateAction } from "react";
-import type { Flow, FlowCursor, FlowStep } from "@/features/diagram";
+import type { Flow, FlowCallStack, FlowCursor, FlowStep, FrameExit } from "@/features/diagram";
 
 /**
  * Where the recorder is pointing. `branch-select` writes nothing: it is the
@@ -30,6 +30,25 @@ export type FlowMode =
       flow: Flow;
       currentStepId: string | null;
       history: string[];
+      /**
+       * Every step this reading has ever stood on, in the order it first did.
+       *
+       * `history` is the path *to* the step in hand, so going back un-walks it —
+       * which is what makes the running object time-travel. This never
+       * shortens, and is the only thing that can answer "have I been down there
+       * already", which a reader at a `par` needs: all of its ways out happen,
+       * so the question is which ones are still owed a visit.
+       */
+      seen: string[];
+      /**
+       * Keys the reader is following, in the order they were pinned.
+       *
+       * Keys rather than steps: a reader watching `url_id` wants it across the
+       * frames that hold it, and wants to be told when it is no longer in any
+       * of them — which is the one screen where the frame rule explains itself.
+       * It belongs to the reading and dies with it; nothing reaches the flow.
+       */
+      pinnedKeys: string[];
     }
   | {
       kind: "recording";
@@ -53,15 +72,30 @@ export interface FlowModeState {
   play: (flow: Flow) => void;
   /** Reads a different script without leaving the reading. */
   switchFlow: (flow: Flow) => void;
+  /** Follows a key across the reading, or stops following it. */
+  togglePinnedKey: (key: string) => void;
+  /** The keys being followed, empty outside a reading. */
+  pinnedKeys: readonly string[];
   exitPlay: () => void;
   goNext: () => void;
   goBack: () => void;
   chooseBranch: (branchIndex: number) => void;
+  /** Reads a call's result without reading its interior. */
+  stepOver: () => void;
+  /** Leaves the call the reader is inside, landing where it returns. */
+  stepOut: () => void;
 
   currentStep: FlowStep | null;
   isCondition: boolean;
   canGoBack: boolean;
   canGoForward: boolean;
+
+  /** The calls the script has in the air, or null outside a reading. */
+  callStack: FlowCallStack | null;
+  /** Where stepping over would land, or null when there is nothing to skip. */
+  stepOverTarget: FrameExit | null;
+  /** The call the reader is inside, or null at the outermost level. */
+  stepOutFrameId: string | null;
 
   /** Id of the flow being recorded, or null outside a recording. */
   recordingFlowId: string | null;
