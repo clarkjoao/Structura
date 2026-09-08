@@ -1093,6 +1093,8 @@
     "onlineCount": "{{count}} online",
     "waitingPeers": "Waiting for guests",
     "peerLimitReached": "Guest limit reached",
+    "roomFull": "Room is full",
+    "roomFullDesc": "This session has reached the maximum of 15 participants. Please try again later or contact the host.",
     "endSession": "End session",
     "endSessionForEveryone": "End session for everyone?",
     "endSessionForEveryoneDesc": "Guests will be disconnected and the live session will end.",

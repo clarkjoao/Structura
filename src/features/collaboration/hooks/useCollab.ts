@@ -36,6 +36,9 @@ export interface UseCollabParams {
   onSnapshot: (snapshot: CollabSnapshot) => void;
 
   onPatch: (patch: CollabPatch) => void;
+
+  /** Fingerprint of the state this client believes the room has. */
+  getSyncedChecksum: () => string;
 }
 
 export interface UseCollabReturn {
@@ -44,6 +47,9 @@ export interface UseCollabReturn {
   isReady: boolean;
   sessionClosedByHost: boolean;
   hostDisconnected: boolean;
+  roomFullReason: string | null;
+  participantCount: number;
+  maxParticipants: number;
   sendPatch: (patch: CollabPatch) => void;
   sendCursor: (cursor: { x: number; y: number } | null) => void;
   setActiveElement: (elementId: string | null) => void;
@@ -54,10 +60,81 @@ const RECONNECT_DELAYS_MS = [2000, 4000, 8000, 15000, 30000];
 const ROOM_NOT_FOUND_RETRY_MS = 3000;
 const CLIENT_PING_INTERVAL_MS = 25_000;
 const CLIENT_PONG_TIMEOUT_MS = 10_000;
+const MAX_PENDING_OPS = 100; // Max pending operations before forcing resync
+/** Never ask for a full repair more often than this, whatever the checksums say. */
+const CHECKSUM_RESYNC_COOLDOWN_MS = 10_000;
+
+/**
+ * Wire protocol version, sent on join and validated by the server.
+ *
+ * v2 made patches sparse and per entity. The change is silent on the wire —
+ * the keys are identical — so a v1 client reading a v2 patch would treat
+ * "these entities changed" as "the collection is now only these entities" and
+ * wipe the diagram on screen. The handshake exists to make that impossible.
+ */
+export const COLLAB_PROTOCOL_VERSION = 2;
+
+// Coalescing and batching configuration
+const BATCH_INTERVAL_MS = 50; // Send batched patches every 50ms
+const MAX_BATCH_SIZE = 10; // Max patches per batch
+
+interface PendingOperation {
+  id: string;
+  timestamp: number;
+  patch: CollabPatch;
+}
+
+// Batching for optimized network usage
+interface BatchedPatch {
+  patch: CollabPatch;
+  timestamp: number;
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
+
+interface ParsedPeerCursor {
+  clientId: string;
+  user: { id: string; name: string; color: string };
+  cursor: { x: number; y: number } | null;
+  activeElementId: string | null;
+}
+
+/**
+ * Parse one cursor entry. Shared by the single `peer:cursor` frame and the
+ * coalesced `peer:cursors` batch, which carry identical entry shapes.
+ */
+function parsePeerCursorEntry(source: Record<string, unknown>): ParsedPeerCursor | null {
+  const clientId = typeof source.clientId === "string" ? source.clientId : null;
+  const userRaw = source.user;
+  const user = isRecord(userRaw)
+    ? {
+        id: typeof userRaw.id === "string" ? userRaw.id : "",
+        name: typeof userRaw.name === "string" ? userRaw.name : "",
+        color: typeof userRaw.color === "string" ? userRaw.color : "#6366f1",
+      }
+    : null;
+
+  if (!clientId || !user?.id || !user.name) return null;
+
+  const cursorValue = source.cursor;
+  const cursor =
+    cursorValue === null
+      ? null
+      : isRecord(cursorValue) &&
+          typeof cursorValue.x === "number" &&
+          typeof cursorValue.y === "number"
+        ? { x: cursorValue.x, y: cursorValue.y }
+        : null;
+  const activeElementId: string | null =
+    typeof source.activeElementId === "string" || source.activeElementId === null
+      ? (source.activeElementId as string | null)
+      : null;
+
+  return { clientId, user, cursor, activeElementId };
+}
+
 
 function randomId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -96,6 +173,23 @@ function parsePeers(value: unknown): PeerState[] {
     });
   }
   return peers;
+}
+
+/**
+ * Apply a catch-up replay sent in place of a full snapshot, in version order.
+ * Returns false when the message carries no operations.
+ */
+function applyResumeOperations(
+  value: unknown,
+  apply: (patch: CollabPatch) => void,
+): boolean {
+  if (!Array.isArray(value) || value.length === 0) return false;
+  for (const op of value) {
+    if (isRecord(op) && isRecord(op.patch)) {
+      apply(op.patch as CollabPatch);
+    }
+  }
+  return true;
 }
 
 function parseSnapshot(value: unknown): CollabSnapshot | null {
@@ -143,6 +237,7 @@ export function useCollab({
   getSnapshot,
   onSnapshot,
   onPatch,
+  getSyncedChecksum,
 }: UseCollabParams): UseCollabReturn {
   const roomId = diagramId ?? null;
 
@@ -156,6 +251,9 @@ export function useCollab({
   const getSnapshotRef = useRef(getSnapshot);
   const onSnapshotRef = useRef(onSnapshot);
   const onPatchRef = useRef(onPatch);
+  const getSyncedChecksumRef = useRef(getSyncedChecksum);
+  /** Timestamp of the last checksum-driven resync, to keep it from repeating. */
+  const lastChecksumResyncRef = useRef(0);
 
   const wsRef = useRef<WebSocket | null>(null);
   const retryAttemptRef = useRef(0);
@@ -167,17 +265,51 @@ export function useCollab({
   const isUnmountedRef = useRef(false);
   const roomNotFoundRetryRef = useRef(false);
   const activeElementIdRef = useRef<string | null>(null);
+  // Id the server assigned us. Usually our own user id, but the server renames
+  // colliding guest ids, and coalesced cursor frames are filtered against this.
+  const assignedClientIdRef = useRef<string | null>(null);
   const lastCursorRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Operation tracking for ACK mechanism
+  const pendingOpsRef = useRef<Map<string, PendingOperation>>(new Map());
+
+  // Version tracking
+  // Highest server version this client has applied.
+  const versionRef = useRef<{ version: number }>({ version: 0 });
+
+  /**
+   * Version to resume from on the next join, or null to take a full snapshot.
+   *
+   * Only set when local state provably equals that version: nothing unacked,
+   * nothing queued, and nothing attempted while the socket was down. An edit
+   * made offline is applied locally but never reaches the server, so resuming
+   * would leave the two silently diverged — a full snapshot discards that edit
+   * instead, which is lossy but consistent.
+   */
+  const resumeFromRef = useRef<number | null>(null);
+
+  // Batching for coalescing operations
+  const pendingBatchRef = useRef<BatchedPatch[]>([]);
+  const batchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Stores the last batch sent so it can be re-enqueued on server rejection (rate_limited / batch_too_large)
+  const sentBatchDataRef = useRef<BatchedPatch[]>([]);
+  // Tracks whether we are in a rate-limit backoff window
+  const rateLimitedRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const RATE_LIMITED_BACKOFF_MS = 500;
 
   const session = useCollabStore((state) => state.session);
   const status = useCollabStore((state) => state.status);
   const isReady = useCollabStore((state) => state.isReady);
   const sessionClosedByHost = useCollabStore((state) => state.sessionClosedByHost);
   const hostDisconnected = useCollabStore((state) => state.hostDisconnected);
+  const roomFullReason = useCollabStore((state) => state.roomFullReason);
+  const participantCount = useCollabStore((state) => state.participantCount);
+  const maxParticipants = useCollabStore((state) => state.maxParticipants);
 
   getSnapshotRef.current = getSnapshot;
   onSnapshotRef.current = onSnapshot;
   onPatchRef.current = onPatch;
+  getSyncedChecksumRef.current = getSyncedChecksum;
 
   const clearReconnectTimer = useCallback(() => {
     if (!reconnectTimerRef.current) return;
@@ -198,7 +330,12 @@ export function useCollab({
 
   const sendRaw = useCallback((payload: Record<string, unknown>) => {
     const ws = wsRef.current;
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      // Dropped on the floor: local state has moved past anything the server
+      // knows, so the next join must take a full snapshot.
+      resumeFromRef.current = null;
+      return;
+    }
     ws.send(JSON.stringify(payload));
   }, []);
 
@@ -274,6 +411,8 @@ export function useCollab({
         ws.send(
           JSON.stringify({
             type: "host:join",
+            protocol: COLLAB_PROTOCOL_VERSION,
+            ...(resumeFromRef.current !== null ? { resumeFrom: resumeFromRef.current } : {}),
             roomId,
             diagramId:
               typeof activeDiagramId === "string" && activeDiagramId.length > 0
@@ -290,6 +429,8 @@ export function useCollab({
       ws.send(
         JSON.stringify({
           type: "guest:join",
+          protocol: COLLAB_PROTOCOL_VERSION,
+          ...(resumeFromRef.current !== null ? { resumeFrom: resumeFromRef.current } : {}),
           roomId,
           user: localUserRef.current,
         }),
@@ -311,12 +452,22 @@ export function useCollab({
 
       switch (messageType) {
         case "host:ack": {
-          if (message.resumed === true && isRecord(message.snapshot)) {
-            const snapshot = parseSnapshot(message.snapshot as Record<string, unknown>);
-            if (snapshot) {
-              onSnapshotRef.current(snapshot);
+          if (message.resumed === true) {
+            // The server sends whichever is cheaper: the operations we missed,
+            // or the whole snapshot when it cannot replay them.
+            const replayed = applyResumeOperations(message.operations, (patch) =>
+              onPatchRef.current(patch),
+            );
+            if (!replayed && isRecord(message.snapshot)) {
+              const snapshot = parseSnapshot(message.snapshot as Record<string, unknown>);
+              if (snapshot) {
+                onSnapshotRef.current(snapshot);
+              }
             }
+            const msgVersion = typeof message.version === "number" ? message.version : 0;
+            versionRef.current.version = msgVersion;
           }
+          resumeFromRef.current = null;
           if (isHost) {
             const store = useCollabStore.getState();
             store.setIsReady(true);
@@ -343,17 +494,36 @@ export function useCollab({
           return;
         }
         case "session:init": {
-          const snapshot = parseSnapshot(message.snapshot);
-          if (!snapshot) return;
-
-          onSnapshotRef.current(snapshot);
+          // A rejoin after a brief drop is caught up with the operations it
+          // missed; a fresh join gets the whole snapshot.
+          const replayed = applyResumeOperations(message.operations, (patch) =>
+            onPatchRef.current(patch),
+          );
+          if (!replayed) {
+            const snapshot = parseSnapshot(message.snapshot);
+            if (!snapshot) return;
+            onSnapshotRef.current(snapshot);
+          }
+          resumeFromRef.current = null;
 
           const peers = parsePeers(message.peers);
 
-          const storeInit = useCollabStore.getState();
-          storeInit.setIsReady(true);
+          // Extract version from server
+          const msgVersion = typeof message.version === "number" ? message.version : 0;
+          versionRef.current.version = msgVersion;
+
+          // Extract participant count from server
+          if (typeof message.clientId === "string") {
+            assignedClientIdRef.current = message.clientId;
+          }
+
+          const msgParticipantCount = typeof message.participantCount === "number" ? message.participantCount : 1;
+          const msgMaxParticipants = typeof message.maxParticipants === "number" ? message.maxParticipants : 15;
+
+          useCollabStore.getState().setParticipantCount(msgParticipantCount, msgMaxParticipants);
+          useCollabStore.getState().setIsReady(true);
           retryAttemptRef.current = 0;
-          storeInit.setSession({
+          useCollabStore.getState().setSession({
             roomId,
             isHost,
             localUser: localUserRef.current,
@@ -365,7 +535,143 @@ export function useCollab({
         case "session:patch": {
           const patch = isRecord(message.patch) ? (message.patch as CollabPatch) : null;
           if (!patch) return;
+
+          // Track the operation ID if present (from server broadcast)
+          const operationId = typeof message.operationId === "string" ? message.operationId : null;
+          const clientId = typeof message.clientId === "string" ? message.clientId : null;
+          const serverVersion = typeof message.version === "number" ? message.version : null;
+
+          // A gap is only observable here: versions arrive one at a time on an
+          // ordered socket, so a jump means we genuinely missed operations.
+          // The server cannot tell — from its side a lagging version is just
+          // concurrency and in-flight latency.
+          if (
+            serverVersion !== null &&
+            versionRef.current.version > 0 &&
+            serverVersion > versionRef.current.version + 1
+          ) {
+            console.warn(
+              `[useCollab] missed operations: have=${versionRef.current.version}, got=${serverVersion}`,
+            );
+            sendRaw({ type: "sync:request", roomId, baseVersion: versionRef.current.version });
+          }
+
+          if (serverVersion !== null && serverVersion > versionRef.current.version) {
+            versionRef.current.version = serverVersion;
+          }
+
+          // Mark as acknowledged if we sent this operation
+          if (operationId) {
+            pendingOpsRef.current.delete(operationId);
+          }
+
           onPatchRef.current(patch);
+          return;
+        }
+        case "OP_ACK": {
+          const operationId = typeof message.operationId === "string" ? message.operationId : null;
+          const accepted = message.accepted === true;
+          const serverVersion = typeof message.version === "number" ? message.version : null;
+
+          // Update local version if provided
+          if (serverVersion !== null && serverVersion > versionRef.current.version) {
+            versionRef.current.version = serverVersion;
+          }
+
+          if (operationId) {
+            if (accepted) {
+              pendingOpsRef.current.delete(operationId);
+              // Batch was accepted — clear the stored sent-batch so re-enqueue won't fire
+              sentBatchDataRef.current = [];
+            } else {
+              // Operation was rejected - remove from pending
+              pendingOpsRef.current.delete(operationId);
+              const reason = typeof message.reason === "string" ? message.reason : "unknown";
+              console.warn(`[useCollab] operation rejected: id=${operationId}, reason=${reason}`);
+            }
+          }
+          return;
+        }
+        case "sync:checksum": {
+          const serverVersion = typeof message.version === "number" ? message.version : null;
+          const serverChecksum = typeof message.checksum === "string" ? message.checksum : null;
+          if (serverVersion === null || serverChecksum === null) return;
+
+          // Only meaningful when this client is at exactly the version the
+          // fingerprint describes and has nothing in flight. Otherwise a
+          // mismatch is just latency, and acting on it would be the resync
+          // storm this is meant to avoid.
+          const settled =
+            pendingOpsRef.current.size === 0 &&
+            pendingBatchRef.current.length === 0 &&
+            versionRef.current.version === serverVersion;
+          if (!settled) return;
+
+          if (getSyncedChecksumRef.current() === serverChecksum) return;
+
+          const now = Date.now();
+          if (now - lastChecksumResyncRef.current < CHECKSUM_RESYNC_COOLDOWN_MS) return;
+          lastChecksumResyncRef.current = now;
+
+          console.warn(
+            `[useCollab] diverged from the room at version ${serverVersion}, asking for a full resync`,
+          );
+          sendRaw({
+            type: "sync:request",
+            roomId,
+            baseVersion: versionRef.current.version,
+            reason: "checksum",
+          });
+          return;
+        }
+        case "SYNC_COMPLETE": {
+          const newVersion = typeof message.version === "number" ? message.version : null;
+          const operations = Array.isArray(message.operations) ? message.operations : [];
+
+          if (newVersion !== null) {
+            versionRef.current.version = newVersion;
+          }
+
+          // Apply all operations in order
+          for (const op of operations) {
+            if (isRecord(op) && isRecord(op.patch)) {
+              onPatchRef.current(op.patch as CollabPatch);
+            }
+          }
+
+          console.log(`[useCollab] sync complete: version=${newVersion}, ops=${operations.length}`);
+          return;
+        }
+        case "SYNC_SNAPSHOT": {
+          const newVersion = typeof message.version === "number" ? message.version : null;
+
+          if (newVersion !== null) {
+            versionRef.current.version = newVersion;
+          }
+
+          // Full snapshot received, apply it
+          const snapshot = parseSnapshot(message.snapshot);
+          if (snapshot) {
+            onSnapshotRef.current(snapshot);
+          }
+
+          console.log(`[useCollab] sync snapshot: version=${newVersion}`);
+          return;
+        }
+        case "PERIODIC_SNAPSHOT": {
+          const newVersion = typeof message.version === "number" ? message.version : null;
+
+          if (newVersion !== null) {
+            versionRef.current.version = newVersion;
+          }
+
+          // Full snapshot received, apply it to reset state
+          const snapshot = parseSnapshot(message.snapshot);
+          if (snapshot) {
+            onSnapshotRef.current(snapshot);
+          }
+
+          console.log(`[useCollab] periodic snapshot: version=${newVersion}`);
           return;
         }
         case "peer:joined": {
@@ -386,45 +692,47 @@ export function useCollab({
             cursor: null,
             activeElementId: null,
           });
+
+          // Update participant count if provided
+          if (typeof message.participantCount === "number" && typeof message.maxParticipants === "number") {
+            useCollabStore.getState().setParticipantCount(message.participantCount, message.maxParticipants);
+          }
           return;
         }
         case "peer:left": {
           const clientId = typeof message.clientId === "string" ? message.clientId : null;
           if (!clientId) return;
           useCollabStore.getState().removePeer(clientId);
+
+          // Update participant count if provided
+          if (typeof message.participantCount === "number" && typeof message.maxParticipants === "number") {
+            useCollabStore.getState().setParticipantCount(message.participantCount, message.maxParticipants);
+          }
+          return;
+        }
+        // Coalesced cursor frame: the server batches a room's cursors into one
+        // message per tick. It includes our own entry (so the room serialises
+        // once instead of once per recipient), which we skip here.
+        case "peer:cursors": {
+          const entries = Array.isArray(message.cursors) ? message.cursors : [];
+          const selfId = assignedClientIdRef.current ?? localUserRef.current.id;
+          for (const entry of entries) {
+            if (!isRecord(entry)) continue;
+            const parsed = parsePeerCursorEntry(entry);
+            if (!parsed || parsed.clientId === selfId) continue;
+            useCollabStore.getState().applyPeerCursorPayload({
+              ...parsed,
+              preserveCursorIfMessageNull: true,
+            });
+          }
           return;
         }
         case "peer:cursor": {
-          const clientId = typeof message.clientId === "string" ? message.clientId : null;
-          const userRaw = message.user;
-          const user = isRecord(userRaw)
-            ? {
-                id: typeof userRaw.id === "string" ? userRaw.id : "",
-                name: typeof userRaw.name === "string" ? userRaw.name : "",
-                color: typeof userRaw.color === "string" ? userRaw.color : "#6366f1",
-              }
-            : null;
-          const cursorValue = message.cursor;
-          const cursor =
-            cursorValue === null
-              ? null
-              : isRecord(cursorValue) &&
-                  typeof cursorValue.x === "number" &&
-                  typeof cursorValue.y === "number"
-                ? { x: cursorValue.x, y: cursorValue.y }
-                : null;
-          const activeElementId: string | null =
-            typeof message.activeElementId === "string" || message.activeElementId === null
-              ? (message.activeElementId as string | null)
-              : null;
-
-          if (!clientId || !user?.id || !user.name) return;
+          const parsed = parsePeerCursorEntry(message);
+          if (!parsed) return;
 
           useCollabStore.getState().applyPeerCursorPayload({
-            clientId,
-            user,
-            cursor,
-            activeElementId,
+            ...parsed,
             preserveCursorIfMessageNull: true,
           });
           return;
@@ -461,6 +769,7 @@ export function useCollab({
         }
         case "error": {
           const code = typeof message.code === "string" ? message.code : "";
+          const errorMessage = typeof message.message === "string" ? message.message : "";
 
           if (code === "room_not_found" && !isHost) {
             roomNotFoundRetryRef.current = true;
@@ -475,15 +784,47 @@ export function useCollab({
           if (code === "room_full") {
             shouldReconnectRef.current = false;
             intentionalCloseRef.current = true;
-            const storeFull = useCollabStore.getState();
-            storeFull.setStatus("disconnected");
-            storeFull.setIsReady(false);
+            useCollabStore.getState().setRoomFullReason(errorMessage || `Room is full (maximum 15 participants)`);
+            useCollabStore.getState().setStatus("disconnected");
+            useCollabStore.getState().setIsReady(false);
             clearClientHeartbeat();
             try {
               ws.close(1008, "room_full");
             } catch (err) {
               console.warn("[useCollab] Failed to close WebSocket on room_full:", err);
             }
+          }
+
+          // Re-enqueue the batch if the server rejected it due to rate limiting or batch size.
+          // The patches are preserved in sentBatchDataRef and re-enqueued one at a time after a backoff.
+          if ((code === "rate_limited" || code === "batch_too_large") && sentBatchDataRef.current.length > 0) {
+            const patchesToRequeue = sentBatchDataRef.current;
+            sentBatchDataRef.current = [];
+            // Cancel any pending batch timer since we are taking over
+            if (batchTimerRef.current) {
+              clearTimeout(batchTimerRef.current);
+              batchTimerRef.current = null;
+            }
+            // Schedule each patch individually with backoff
+            if (rateLimitedRetryRef.current) {
+              clearTimeout(rateLimitedRetryRef.current);
+            }
+            rateLimitedRetryRef.current = setTimeout(() => {
+              rateLimitedRetryRef.current = null;
+              for (const item of patchesToRequeue) {
+                pendingBatchRef.current.push(item);
+                if (pendingBatchRef.current.length >= MAX_BATCH_SIZE) {
+                  flushBatch();
+                }
+              }
+              // If we didn't fill a batch, schedule the normal timer
+              if (pendingBatchRef.current.length > 0 && !batchTimerRef.current) {
+                batchTimerRef.current = setTimeout(() => {
+                  flushBatch();
+                  batchTimerRef.current = null;
+                }, BATCH_INTERVAL_MS);
+              }
+            }, RATE_LIMITED_BACKOFF_MS);
           }
           return;
         }
@@ -505,6 +846,30 @@ export function useCollab({
 
     ws.onclose = () => {
       clearClientHeartbeat();
+
+      // A resume is only safe when nothing was in flight: an unacked op or a
+      // queued patch means local state and the server's have already parted.
+      const nothingInFlight =
+        pendingOpsRef.current.size === 0 && pendingBatchRef.current.length === 0;
+      resumeFromRef.current =
+        nothingInFlight && versionRef.current.version > 0 ? versionRef.current.version : null;
+
+      pendingOpsRef.current.clear();
+      assignedClientIdRef.current = null;
+      versionRef.current = { version: 0 };
+
+      // Clear batch timer and flush
+      if (batchTimerRef.current) {
+        clearTimeout(batchTimerRef.current);
+        batchTimerRef.current = null;
+      }
+      pendingBatchRef.current = [];
+      sentBatchDataRef.current = [];
+      if (rateLimitedRetryRef.current) {
+        clearTimeout(rateLimitedRetryRef.current);
+        rateLimitedRetryRef.current = null;
+      }
+
       if (wsRef.current === ws) {
         wsRef.current = null;
       }
@@ -571,6 +936,16 @@ export function useCollab({
       clearReconnectTimer();
       clearClientHeartbeat();
 
+      // Clear batch timer
+      if (batchTimerRef.current) {
+        clearTimeout(batchTimerRef.current);
+        batchTimerRef.current = null;
+      }
+      // Flush any remaining batched patches
+      if (pendingBatchRef.current.length > 0) {
+        flushBatch();
+      }
+
       const ws = wsRef.current;
       wsRef.current = null;
       if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
@@ -586,13 +961,93 @@ export function useCollab({
     };
   }, [clearClientHeartbeat, clearReconnectTimer, connect, isHost, roomId]);
 
+  // flushBatch must be declared before sendPatch so it captures the current isHost/sendRaw
+  const flushBatch = useCallback(() => {
+    if (pendingBatchRef.current.length === 0) return;
+    if (!roomId) return;
+
+    const type = isHost ? "host:patch" : "guest:patch";
+    const batch = pendingBatchRef.current;
+    pendingBatchRef.current = [];
+    // Store for potential re-enqueue if server rejects with rate_limited / batch_too_large
+    sentBatchDataRef.current = batch;
+
+    // Generate one operationId for the (potentially merged) batch
+    const operationId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `op-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+
+    // Register one pending op for the batch (not one per item)
+    pendingOpsRef.current.set(operationId, {
+      id: operationId,
+      timestamp: Date.now(),
+      patch: {}, // Patch object itself is not needed for tracking
+    });
+
+    // Limit pending operations to prevent memory leaks
+    if (pendingOpsRef.current.size > MAX_PENDING_OPS) {
+      console.warn(`[useCollab] too many pending ops (${pendingOpsRef.current.size}), clearing oldest`);
+      const oldestKey = pendingOpsRef.current.keys().next().value;
+      if (oldestKey) {
+        pendingOpsRef.current.delete(oldestKey);
+      }
+    }
+
+    if (batch.length === 1) {
+      // Single patch - send directly
+      const item = batch[0];
+      sendRaw({
+        type,
+        roomId,
+        patch: item.patch,
+        operationId,
+        version: versionRef.current.version,
+      });
+    } else {
+      // Multiple patches - merge into single payload
+      // Note: We use last-write-wins strategy for same keys
+      const mergedPatch: CollabPatch = {};
+      for (const item of batch) {
+        Object.assign(mergedPatch, item.patch);
+      }
+
+      sendRaw({
+        type,
+        roomId,
+        patch: mergedPatch,
+        operationId,
+        version: versionRef.current.version,
+        batched: batch.length,
+      });
+    }
+  }, [roomId, isHost, sendRaw]);
+
   const sendPatch = useCallback(
     (patch: CollabPatch) => {
       if (!roomId) return;
-      const type = isHost ? "host:patch" : "guest:patch";
-      sendRaw({ type, roomId, patch });
+
+      // Add to batch queue (no operationId here — generated at flush time)
+      pendingBatchRef.current.push({
+        patch,
+        timestamp: Date.now(),
+      });
+
+      // Schedule batch flush
+      if (!batchTimerRef.current) {
+        batchTimerRef.current = setTimeout(() => {
+          flushBatch();
+          batchTimerRef.current = null;
+        }, BATCH_INTERVAL_MS);
+      }
+
+      // Force immediate send if batch is too large
+      if (pendingBatchRef.current.length >= MAX_BATCH_SIZE) {
+        clearTimeout(batchTimerRef.current);
+        batchTimerRef.current = null;
+        flushBatch();
+      }
     },
-    [isHost, roomId, sendRaw],
+    [roomId, flushBatch],
   );
 
   const sendCursor = useCallback(
@@ -624,6 +1079,11 @@ export function useCollab({
 
   const setActiveElement = useCallback(
     (elementId: string | null) => {
+      // Pointer-move handlers call this on every event, but only the
+      // transitions carry information. Without this guard each mousemove put a
+      // peer:cursor frame on the wire — unthrottled and unbatched — which the
+      // server then fanned out to every peer in the room.
+      if (activeElementIdRef.current === elementId) return;
       activeElementIdRef.current = elementId;
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         sendActiveElement(elementId);
@@ -638,6 +1098,21 @@ export function useCollab({
     shouldReconnectRef.current = false;
     intentionalCloseRef.current = true;
     sendRaw({ type: "host:close", roomId });
+
+    // Clear pending operations, version, and batch
+    pendingOpsRef.current.clear();
+    versionRef.current = { version: 0 };
+
+    if (batchTimerRef.current) {
+      clearTimeout(batchTimerRef.current);
+      batchTimerRef.current = null;
+    }
+    pendingBatchRef.current = [];
+    sentBatchDataRef.current = [];
+    if (rateLimitedRetryRef.current) {
+      clearTimeout(rateLimitedRetryRef.current);
+      rateLimitedRetryRef.current = null;
+    }
 
     const storeClose = useCollabStore.getState();
     storeClose.setStatus("closed");
@@ -662,6 +1137,9 @@ export function useCollab({
     isReady,
     sessionClosedByHost,
     hostDisconnected,
+    roomFullReason,
+    participantCount,
+    maxParticipants,
     sendPatch,
     sendCursor,
     setActiveElement,

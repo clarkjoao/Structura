@@ -18,6 +18,8 @@ interface CollabToolbarProps {
   session: CollabSession | null;
   isReady: boolean;
   collabUrl: string;
+  participantCount: number;
+  maxParticipants: number;
   peerLimitReached?: boolean;
   onStartCollab?: () => void;
   onEndCollab?: () => void;
@@ -27,6 +29,8 @@ export function CollabToolbar({
   session,
   isReady,
   collabUrl,
+  participantCount,
+  maxParticipants,
   peerLimitReached,
   onStartCollab,
   onEndCollab,
@@ -64,7 +68,7 @@ export function CollabToolbar({
     );
   }
 
-  const peerCount = session.peers.length;
+  const peerCount = participantCount > 0 ? participantCount - 1 : 0;
 
   return (
     <>
@@ -91,14 +95,14 @@ export function CollabToolbar({
             className={`h-2 w-2 rounded-full ${isReady ? "bg-emerald-500" : "bg-amber-500 animate-pulse"}`}
           />
           <span className="text-xs font-medium text-foreground">
-            {peerCount > 0
-              ? t("collaboration.onlineCount", { count: peerCount + 1 })
+            {participantCount > 0
+              ? t("collaboration.onlineCount", { count: participantCount })
               : t("collaboration.waitingPeers")}
           </span>
         </div>
 
         <div className="flex items-center gap-1">
-          {session.peers.slice(0, 4).map((peer, index) => (
+          {session.peers.slice(0, 8).map((peer, index) => (
             <div
               key={`${peer.user.id}-${index}`}
               className="h-5 w-5 rounded-full border-2 border-background flex items-center justify-center text-[8px] text-white font-bold"
@@ -110,7 +114,7 @@ export function CollabToolbar({
           ))}
         </div>
 
-        {peerLimitReached && (
+        {participantCount >= maxParticipants && (
           <div
             className="flex items-center gap-1 text-[10px] text-amber-500"
             title={t("collaboration.peerLimitReached")}
