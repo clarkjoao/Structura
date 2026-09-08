@@ -1,5 +1,10 @@
 import ApiGroupNode from "../ApiGroupNode";
-import { isApiGroupComponent, isApiGroupType, isEndpointType } from "@/features/diagram";
+import {
+  apiGroupFlows,
+  isApiGroupComponent,
+  isApiGroupType,
+  isEndpointType,
+} from "@/features/diagram";
 import { computeApiGroupSize } from "../ApiGroupNode/useApiGroupSize";
 import type { NodeTypeDescriptor } from "./types";
 import { sceneBadgePropsForNode } from "./compare-node-badges";
@@ -23,6 +28,8 @@ export const apiGroupDescriptor: NodeTypeDescriptor = {
       protocol: comp.protocol,
       sla: comp.sla,
       customColor: (comp as { customColor?: string }).customColor,
+      flows: apiGroupFlows(comp.id, ctx.resolvedComponents, ctx.flows, ctx.endpointCallsByRoute),
+      onPlayFlow: ctx.onPlayFlow,
       isSelected: ctx.selectedNodeId === comp.id,
       controlsDisabled:
         !!ctx.isCompareMode ||

@@ -27,3 +27,14 @@
   max-width: 12px;
   max-height: 12px;
 }
+
+/*
+ * React Flow switches a node's wrapper to `pointer-events: none` when the node
+ * is neither draggable, selectable nor connectable — which is every node in a
+ * shared diagram. Nothing inside one can be clicked, so a control a reader is
+ * meant to use has to opt back in; a child may do that even under a parent
+ * that opted out.
+ */
+.react-flow__node .flow-play-control {
+  pointer-events: auto;
+}

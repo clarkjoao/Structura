@@ -1,17 +1,17 @@
 import { useEffect, useRef } from "react";
 import { useStore, type ReactFlowInstance } from "@xyflow/react";
 import type { Diagram, DiagramModel, Flow } from "@/features/diagram";
-import { getStepById, useDiagramStore } from "@/features/diagram";
+import { useDiagramStore } from "@/features/diagram";
 import {
   FIT_VIEW_DURATION_MS,
   FIT_VIEW_INITIAL_PADDING,
   FIT_VIEW_MAX_ZOOM,
-  FIT_VIEW_PADDING,
   FIT_VIEW_READING_PADDING,
   VIEWPORT_MIN_ZOOM,
   WHEEL_MAX_ZOOM,
 } from "../canvas.constants";
 import { useCanvasPreferencesStore } from "../preferences";
+import { useFrameReadStep } from "../flow/reading/useFrameReadStep";
 import { resolveWheelIntent } from "./resolve-wheel-intent";
 
 interface UseCanvasEffectsParams {
@@ -190,54 +190,10 @@ export function useCanvasEffects({
     };
   }, [paneWidth, reactFlowInstance]);
 
-  useEffect(() => {
-    if (!isPlaying || !activeFlow || !currentStepId) return;
-    const step = getStepById(activeFlow, currentStepId);
-    if (!step) return;
-
-    let cancelled = false;
-    // `paneWidth` is a dependency, not a value used here: opening the reading
-    // rail narrows the canvas, and framing a step against the width it had a
-    // moment ago puts it half a rail off centre. The width arrives through a
-    // ResizeObserver, so it lands a beat after this effect first runs and this
-    // run is cancelled in favour of one that measures the canvas it now has.
-    const id = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (cancelled) return;
-
-        if (step.componentId) {
-          const node = reactFlowInstance.getNode(step.componentId);
-          if (node) {
-            void reactFlowInstance.fitView({
-              nodes: [{ id: step.componentId }],
-              duration: FIT_VIEW_DURATION_MS,
-              padding: FIT_VIEW_PADDING,
-              maxZoom: FIT_VIEW_MAX_ZOOM,
-            });
-          }
-          return;
-        }
-
-        if (step.connectionId) {
-          const edge = reactFlowInstance.getEdge(step.connectionId);
-          if (!edge) return;
-          const srcNode = reactFlowInstance.getNode(edge.source);
-          const tgtNode = reactFlowInstance.getNode(edge.target);
-          if (srcNode && tgtNode) {
-            void reactFlowInstance.fitView({
-              nodes: [{ id: edge.source }, { id: edge.target }],
-              duration: FIT_VIEW_DURATION_MS,
-              padding: FIT_VIEW_PADDING,
-              maxZoom: FIT_VIEW_MAX_ZOOM,
-            });
-          }
-        }
-      });
-    });
-
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(id);
-    };
-  }, [isPlaying, activeFlow, currentStepId, paneWidth, reactFlowInstance]);
+  useFrameReadStep({
+    reactFlowInstance,
+    isReading: isPlaying,
+    flow: activeFlow,
+    currentStepId,
+  });
 }

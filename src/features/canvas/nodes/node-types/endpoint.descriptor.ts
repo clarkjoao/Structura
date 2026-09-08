@@ -1,5 +1,10 @@
 import EndpointNode from "../EndpointNode";
-import { isEndpointComponent, isApiGroupComponent, isEndpointType } from "@/features/diagram";
+import {
+  endpointFlows,
+  isEndpointComponent,
+  isApiGroupComponent,
+  isEndpointType,
+} from "@/features/diagram";
 import { ENDPOINT_H, FRAME_W } from "../ApiGroupNode/constants";
 import type { NodeTypeDescriptor } from "./types";
 import { sceneBadgePropsForNode } from "./compare-node-badges";
@@ -17,12 +22,20 @@ export const endpointDescriptor: NodeTypeDescriptor = {
   buildData: (comp, ctx) => {
     if (!isEndpointComponent(comp)) return {};
 
-    const allFlows = ctx.flows;
+    const calls = ctx.endpointCallsByRoute.get(comp.id) ?? [];
 
     return {
       // Derived, never kept on the endpoint: the route does not learn who calls
       // it, so deleting a step leaves nothing to clean up.
-      callerNames: ctx.endpointCallerNames.get(comp.id) ?? [],
+      callerNames: [...new Set(calls.map((call) => call.flowName))],
+      /**
+       * What runs through this route: the scripts its handlers implement and
+       * the ones whose steps call it. It used to be `handlers[0].flowId` — the
+       * first handler and nothing else — falling back to whichever script was
+       * being read, which put a play button on every route on the diagram
+       * mid-reading, all of them for the same script.
+       */
+      flows: endpointFlows(comp, ctx.flows, ctx.endpointCallsByRoute),
       elementId: comp.id,
       method: comp.method,
       path: comp.path,
@@ -36,9 +49,7 @@ export const endpointDescriptor: NodeTypeDescriptor = {
           ctx.selectedNodeIds.size > 0 &&
           !ctx.selectedNodeIds.has(comp.id)),
       isPlaying: ctx.isCompareMode ? false : ctx.isPlaying,
-      activeFlowId: ctx.activeFlowId ?? comp.handlers?.[0]?.flowId ?? null,
-      availableFlows: allFlows.map((f) => ({ id: f.id, name: f.name })),
-      onPlayHandler: ctx.onPlayFlow ? (flowId: string) => ctx.onPlayFlow!(flowId) : undefined,
+      onPlayFlow: ctx.onPlayFlow,
       ...sceneBadgePropsForNode(ctx, comp.id),
     };
   },

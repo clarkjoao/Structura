@@ -985,6 +985,7 @@
     "addEndpoint": "Add endpoint",
     "serviceName": "Service name",
     "slaHint": "Free text — latency, throughput, availability",
+    "playScript": "play: {{names}}",
     "calledByScripts": "called by: {{names}}"
   },
   "endpointPanel": {
@@ -1292,6 +1293,9 @@
   "share": {
     "button": "Share",
     "modalTitle": "Share diagram",
+    "flowLabel": "Script to open on",
+    "flowDescription": "The reader arrives with this script already playing.",
+    "flowNone": "no script",
     "linkLabel": "View link",
     "linkDescription": "Opens the diagram in preview mode with import option",
     "embedLabel": "Embed link (iframe)",
@@ -1465,16 +1469,11 @@
     "cancel": "Cancel"
   },
   "flowStepNav": {
-    "progressTitle_one": "{{count}} step in the script",
-    "progressTitle_other": "{{count}} steps in the script",
     "switchFlow": "Read another script",
     "elementHidden": "This step points at an element the scene “{{scene}}” is hiding, so the canvas has nothing to show for it.",
     "elementElsewhere": "This step points at an element that only exists in the scene “{{scene}}”.",
     "elementGone": "This step points at an element the diagram no longer has.",
     "exitTitle": "Exit flow",
-    "request": "→ Request",
-    "response": "← Response",
-    "inlineDescription": "· \"{{text}}\"",
     "componentRemoved": "component removed",
     "connectionRemoved": "connection removed",
     "endpointRemoved": "route removed"

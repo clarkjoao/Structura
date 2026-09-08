@@ -1,6 +1,5 @@
 export { default as FlowPanel } from "./FlowPanel";
 export { default as FlowRecorderPanel } from "./FlowRecorderPanel";
-export { default as FlowStepNavigator } from "./FlowStepNavigator";
 export { default as FlowReadingRail } from "./reading/FlowReadingRail";
 export { default as FlowReadingScene } from "./reading/FlowReadingScene";
 export { describeStepCall } from "./reading/stepCall";

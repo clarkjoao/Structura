@@ -31,6 +31,7 @@ import { SaveStatusIndicator } from "@/features/canvas/components/SaveStatusIndi
 import { FileSystemStatus } from "@/components/FileSystemStatus";
 import { EmbedModal, useFlowMode, useInteractionMode } from "@/features/canvas";
 import { useFlowPanelHandover } from "@/features/canvas/flow/useFlowPanelHandover";
+import { useFlowReadingKeys } from "@/features/canvas/flow/reading/useFlowReadingKeys";
 import { useActiveDiagram, useStorageMonitor, type Flow } from "@/features/diagram";
 import { StorageWarningBanner } from "@/features/canvas/components/StorageWarningBanner";
 import { CollabCursors, CollabToolbar, useCollab } from "@/features/collaboration";
@@ -38,7 +39,6 @@ import { ExportModal } from "./ExportModal";
 import { ShareModal } from "./ShareModal";
 import type { WorkspaceContentProps } from "./types";
 import { getViewportCenter } from "@/features/canvas/viewport-utils";
-import { KEY, keyIs } from "@/lib/keyboard-utils";
 
 /** Stable identity, so the progress memo is not rebuilt on every render. */
 const EMPTY_HISTORY: string[] = [];
@@ -139,42 +139,15 @@ export function WorkspaceContent({
     setShowFlows,
   });
 
-  useEffect(() => {
-    if (flowMode.mode.kind !== "playing") return;
-    const handler = (e: KeyboardEvent) => {
-      if (keyIs(e, KEY.ESCAPE)) {
-        e.preventDefault();
-        exitPlay();
-        return;
-      }
-      if (keyIs(e, KEY.ARROW_LEFT)) {
-        e.preventDefault();
-        goBack();
-        return;
-      }
-      if (keyIs(e, KEY.ARROW_RIGHT)) {
-        e.preventDefault();
-        if (!isCondition) goNext();
-        return;
-      }
-      /**
-       * The debugger's own keys, because the reading borrows its whole shape:
-       * F10 steps over a call, Shift+F11 steps out of one. F11 is left to the
-       * browser — it is fullscreen, and `Próximo` already has two keys.
-       */
-      if (keyIs(e, KEY.F10)) {
-        e.preventDefault();
-        stepOver();
-        return;
-      }
-      if (keyIs(e, KEY.F11) && e.shiftKey) {
-        e.preventDefault();
-        stepOut();
-      }
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [flowMode.mode.kind, isCondition, exitPlay, goBack, goNext, stepOver, stepOut]);
+  useFlowReadingKeys({
+    isReading: flowMode.mode.kind === "playing",
+    isCondition,
+    onGoNext: goNext,
+    onGoBack: goBack,
+    onExit: exitPlay,
+    onStepOver: stepOver,
+    onStepOut: stepOut,
+  });
 
   const interaction = useInteractionMode(diagram);
   const canvasInteractionLocked = !interaction.canEditCanvas;

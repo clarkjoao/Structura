@@ -70,7 +70,6 @@ interface UseCanvasNodesParams {
   flowBadges: FlowBadges | null;
   coverage: CoverageInfo | null;
   isViewingCoverage: boolean;
-  activeFlowId?: string | null;
   onPlayFlow?: (flowId: string) => void;
   onAddEndpointToGroup?: (groupId: string) => void;
   isCompareMode?: boolean;
@@ -194,7 +193,6 @@ export function useCanvasNodes({
   flowBadges,
   coverage,
   isViewingCoverage,
-  activeFlowId,
   onPlayFlow,
   onAddEndpointToGroup,
   isCompareMode = false,
@@ -221,13 +219,7 @@ export function useCanvasNodes({
   const flowsForDescriptor = useMemo(() => flows.map((f) => ({ id: f.id, name: f.name })), [flows]);
 
   /** One walk over the scripts for the whole diagram, not one per route node. */
-  const endpointCallerNames = useMemo(() => {
-    const names = new Map<string, string[]>();
-    for (const [endpointId, calls] of endpointCallersByRoute(flows)) {
-      names.set(endpointId, [...new Set(calls.map((call) => call.flowName))]);
-    }
-    return names;
-  }, [flows]);
+  const endpointCallsByRoute = useMemo(() => endpointCallersByRoute(flows), [flows]);
 
   const callbacksRef = useRef({
     handleDrillDown,
@@ -272,7 +264,7 @@ export function useCanvasNodes({
     if (!diagram) return null;
     return {
       flows: flowsForDescriptor,
-      endpointCallerNames,
+      endpointCallsByRoute,
       resolvedComponents,
       resolvedNodeLayouts,
       sceneBadgeByComponentId,
@@ -287,7 +279,6 @@ export function useCanvasNodes({
       panelIds: stablePanelIds,
       connectionCounts: connectionCountPerNode,
       effectiveHandleOrder,
-      activeFlowId,
       highlightedNodeIds: stableHighlightedNodeIds,
       isViewingCoverage,
       childrenIndex: buildChildrenIndex(resolvedComponents),
@@ -308,11 +299,10 @@ export function useCanvasNodes({
     stablePanelIds,
     connectionCountPerNode,
     effectiveHandleOrder,
-    activeFlowId,
     stableHighlightedNodeIds,
     isViewingCoverage,
     flowsForDescriptor,
-    endpointCallerNames,
+    endpointCallsByRoute,
   ]);
 
   const nodeCtxPlayback = useMemo(

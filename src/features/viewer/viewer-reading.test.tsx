@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import i18n from "@/infrastructure/i18n";
 import type { Component, Diagram, Flow, SceneDiff } from "@/features/diagram";
@@ -128,7 +128,22 @@ function open(diagram: Diagram) {
 const startReading = (name: string) =>
   fireEvent.click(screen.getByRole("button", { name: new RegExp(name) }));
 
-const progress = () => screen.getByTestId("flow-progress").textContent?.replace(/\s+/g, " ");
+/**
+ * The rail carries no counter of its own: the spine is the progress, holding
+ * what is behind the reader and what is ahead, with the step in hand read out
+ * in full beside it.
+ */
+const spine = () =>
+  screen
+    .queryAllByTestId("flow-reading-step")
+    .map((row) => row.textContent ?? "")
+    .join("|");
+
+/** Branch buttons live in the scene, where the question is asked. */
+const chooseBranch = (label: RegExp) =>
+  fireEvent.click(
+    within(screen.getByTestId("flow-reading-scene")).getByRole("button", { name: label }),
+  );
 
 describe("choosing a script starts the reading", () => {
   beforeEach(async () => {
@@ -138,7 +153,7 @@ describe("choosing a script starts the reading", () => {
   it("shows nothing of the reading until a script is chosen", () => {
     open(diagramWith([CHECKOUT]));
 
-    expect(screen.queryByTestId("flow-progress")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("flow-reading-rail")).not.toBeInTheDocument();
     expect(screen.getByTestId("viewer-flow-invite")).toBeInTheDocument();
   });
 
@@ -148,7 +163,7 @@ describe("choosing a script starts the reading", () => {
     startReading("Checkout");
 
     expect(screen.queryByTestId("viewer-flow-invite")).not.toBeInTheDocument();
-    expect(screen.getByTestId("flow-progress")).toBeInTheDocument();
+    expect(screen.getByTestId("flow-reading-rail")).toBeInTheDocument();
   });
 
   it("reads the step's own title and note, from a diagram that came in a link", () => {
@@ -160,24 +175,24 @@ describe("choosing a script starts the reading", () => {
     expect(screen.getByText("Only the happy path.")).toBeInTheDocument();
   });
 
-  it("counts the path, not the script", () => {
+  it("keeps the step behind the reader in the spine, which is the progress", () => {
     open(diagramWith([CHECKOUT]));
-
     startReading("Checkout");
+    expect(spine()).not.toContain("The ask");
 
-    // Five steps in the script; every reading of it is four, and a choice is ahead.
-    expect(progress()).toBe("1 / 4+ · 5");
+    fireEvent.click(screen.getByRole("button", { name: /Next/ }));
+
+    expect(spine()).toContain("The ask");
   });
 
   it("offers the branches at the condition and follows the one chosen", () => {
     open(diagramWith([CHECKOUT]));
     startReading("Checkout");
 
-    fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    fireEvent.click(screen.getByRole("button", { name: "No" }));
+    fireEvent.click(screen.getByRole("button", { name: /Next/ }));
+    chooseBranch(/No/);
 
     expect(screen.getByTestId("flow-step-title")).toHaveTextContent("Fallback");
-    expect(progress()).toBe("3 / 4 · 5");
   });
 
   it("starts a script from its first step", () => {
@@ -186,7 +201,6 @@ describe("choosing a script starts the reading", () => {
     startReading("Refund");
 
     expect(screen.getByTestId("flow-step-title")).toHaveTextContent("Refund asked");
-    expect(progress()).toBe("1 / 1");
   });
 });
 
@@ -245,8 +259,8 @@ describe("the canvas shows where the reader is", () => {
     const { container } = open(diagramWith([CHECKOUT]));
     startReading("Checkout");
 
-    fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    fireEvent.click(screen.getByRole("button", { name: "Yes" }));
+    fireEvent.click(screen.getByRole("button", { name: /Next/ }));
+    chooseBranch(/Yes/);
 
     // The step in hand is now the one on c2; c1 is behind the reader.
     expect(opacityOf(container, "c2")).toBe("1");
@@ -265,7 +279,7 @@ describe("leaving and switching, without losing the diagram", () => {
 
     fireEvent.click(screen.getByTitle("Exit flow"));
 
-    expect(screen.queryByTestId("flow-progress")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("flow-reading-rail")).not.toBeInTheDocument();
     expect(screen.getByTestId("viewer-flow-invite")).toBeInTheDocument();
   });
 

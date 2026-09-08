@@ -143,10 +143,12 @@ export type { RecentDiagramRef } from "./recent-diagrams";
 export { computeApiGroupSize } from "./api-group-size";
 export { computeFitBounds } from "./fit-group-to-children";
 export {
+  apiGroupFlows,
   endpointCallers,
   endpointCallersByRoute,
+  endpointFlows,
   endpointLabel,
   findEndpointMismatch,
   resolveStepEndpoint,
 } from "./flow-endpoint";
-export type { EndpointCall, EndpointMismatch, StepEndpointState } from "./flow-endpoint";
+export type { EndpointCall, EndpointMismatch, FlowRef, StepEndpointState } from "./flow-endpoint";

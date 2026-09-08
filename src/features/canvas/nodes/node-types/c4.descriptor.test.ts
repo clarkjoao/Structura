@@ -24,7 +24,6 @@ function buildContext(): NodeBuildContext {
     panelIds: new Set<string>(),
     connectionCounts: {},
     effectiveHandleOrder: {},
-    activeFlowId: null,
     childrenIndex: new Map(),
     isPlaying: false,
     isRecording: false,

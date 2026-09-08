@@ -106,6 +106,69 @@ export function endpointCallersByRoute(flows: readonly Flow[]): Map<string, Endp
   return byRoute;
 }
 
+/** A script, named. Enough to offer it and to play it; never the flow itself. */
+export interface FlowRef {
+  id: string;
+  name: string;
+}
+
+/**
+ * Every script associated with a route.
+ *
+ * Two ways to be associated, and both are already stored elsewhere: a handler
+ * on the route names the script that *implements* it, and a step in a script
+ * names the route it *calls*. Neither is written to the route here.
+ *
+ * A handler's `flowId` is a stored reference, so it can outlive the script it
+ * names — a script deleted after the handler was written. Such a handler is
+ * left out rather than offered: a control that cannot play anything is worse
+ * than no control. The callers cannot go stale, because the fact lives in the
+ * step that states it.
+ */
+export function endpointFlows(
+  endpoint: EndpointComponent,
+  flows: readonly FlowRef[],
+  callersByRoute: ReadonlyMap<string, EndpointCall[]>,
+): FlowRef[] {
+  const byId = new Map(flows.map((flow) => [flow.id, flow]));
+  const found = new Map<string, FlowRef>();
+
+  for (const handler of endpoint.handlers ?? []) {
+    if (!handler.flowId) continue;
+    const flow = byId.get(handler.flowId);
+    if (flow) found.set(flow.id, flow);
+  }
+  for (const call of callersByRoute.get(endpoint.id) ?? []) {
+    if (found.has(call.flowId)) continue;
+    const flow = byId.get(call.flowId);
+    if (flow) found.set(flow.id, flow);
+  }
+
+  return [...found.values()];
+}
+
+/**
+ * Every script running through any route an api-group holds.
+ *
+ * The group itself carries no reference to anything; it is where its routes
+ * are, and this is the union of what they are associated with.
+ */
+export function apiGroupFlows(
+  groupId: string,
+  components: Record<string, Component>,
+  flows: readonly FlowRef[],
+  callersByRoute: ReadonlyMap<string, EndpointCall[]>,
+): FlowRef[] {
+  const found = new Map<string, FlowRef>();
+  for (const component of Object.values(components)) {
+    if (component.parentId !== groupId || !isEndpointComponent(component)) continue;
+    for (const flow of endpointFlows(component, flows, callersByRoute)) {
+      found.set(flow.id, flow);
+    }
+  }
+  return [...found.values()];
+}
+
 /** A step claiming a route that the call it makes does not arrive at. */
 export interface EndpointMismatch {
   /** The component the call lands on. */

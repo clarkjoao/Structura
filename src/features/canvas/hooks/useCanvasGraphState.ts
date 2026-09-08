@@ -161,7 +161,6 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     flowBadges: flowState.flowBadges,
     coverage: flowState.coverage,
     isViewingCoverage,
-    activeFlowId: flowState.activeFlow?.id ?? null,
     onPlayFlow,
     onAddEndpointToGroup: handleAddEndpointToGroup,
     isNodeHiddenByTagFilter,
