@@ -1,7 +1,17 @@
-import type { KeyboardEvent } from "react";
+import { useState, type KeyboardEvent } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { KEY, keyIs } from "@/lib/keyboard-utils";
 import { useTranslation } from "react-i18next";
 import type { RecordingContext } from "../flowMode.types";
+
+/**
+ * What a flow is called, and — folded away — everything else about it.
+ *
+ * These four fields are written once and then sat above the script forever,
+ * taking about a fifth of the panel from the thing the panel is for. Only the
+ * name stays out: it is the one field that is required, the one shown wherever
+ * else the flow appears, and the one a new recording opens focused on.
+ */
 
 export interface RecorderMetadataFormProps {
   name: string;
@@ -14,6 +24,8 @@ export interface RecorderMetadataFormProps {
   participants: string[];
   recordingMode: RecordingContext["mode"];
   autoFocusName?: boolean;
+  /** Open for a new recording, where nothing has been written yet. */
+  defaultDetailsOpen?: boolean;
 }
 
 export function RecorderMetadataForm({
@@ -27,8 +39,10 @@ export function RecorderMetadataForm({
   participants,
   recordingMode,
   autoFocusName,
+  defaultDetailsOpen = false,
 }: RecorderMetadataFormProps) {
   const { t } = useTranslation();
+  const [detailsOpen, setDetailsOpen] = useState(defaultDetailsOpen);
 
   const handleTagKey = (e: KeyboardEvent<HTMLInputElement>) => {
     if (keyIs(e, KEY.ENTER) && e.currentTarget.value.trim()) {
@@ -38,7 +52,7 @@ export function RecorderMetadataForm({
   };
 
   return (
-    <div className="p-3 space-y-3 shrink-0 border-b border-border">
+    <div className="shrink-0 space-y-2 border-b border-border p-3">
       <input
         value={name}
         onChange={(e) => onNameChange(e.target.value)}
@@ -47,43 +61,57 @@ export function RecorderMetadataForm({
         autoFocus={autoFocusName}
       />
 
-      <input
-        value={description}
-        onChange={(e) => onDescriptionChange(e.target.value)}
-        placeholder={t("flowRecorder.descPlaceholder")}
-        className="w-full rounded-md border border-border bg-secondary px-3 py-1.5 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-      />
+      <button
+        type="button"
+        onClick={() => setDetailsOpen((open) => !open)}
+        aria-expanded={detailsOpen}
+        className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+      >
+        {detailsOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+        {t("flowRecorder.details")}
+      </button>
 
-      <div className="space-y-1">
-        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
-          {t("flowRecorder.tags")}
-        </p>
-        <div className="flex flex-wrap gap-1">
-          {tags.map((tag, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center gap-0.5 text-[9px] rounded-full bg-secondary px-2 py-0.5 text-secondary-foreground"
-            >
-              {tag}
-              <button
-                type="button"
-                onClick={() => onRemoveTag(i)}
-                className="hover:text-destructive ml-0.5"
-              >
-                ×
-              </button>
-            </span>
-          ))}
+      {detailsOpen && (
+        <div className="space-y-3">
+          <input
+            value={description}
+            onChange={(e) => onDescriptionChange(e.target.value)}
+            placeholder={t("flowRecorder.descPlaceholder")}
+            className="w-full rounded-md border border-border bg-secondary px-3 py-1.5 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+
+          <div className="space-y-1">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {t("flowRecorder.tags")}
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {tags.map((tag, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-0.5 rounded-full bg-secondary px-2 py-0.5 text-[9px] text-secondary-foreground"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => onRemoveTag(i)}
+                    className="ml-0.5 hover:text-destructive"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+            <input
+              placeholder={t("flowRecorder.tagPlaceholder")}
+              className="w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              onKeyDown={handleTagKey}
+            />
+          </div>
+
+          {participants.length > 0 && recordingMode !== "branch-select" && (
+            <p className="text-[10px] text-muted-foreground">{participants.join(", ")}</p>
+          )}
         </div>
-        <input
-          placeholder={t("flowRecorder.tagPlaceholder")}
-          className="w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-          onKeyDown={handleTagKey}
-        />
-      </div>
-
-      {participants.length > 0 && recordingMode !== "branch-select" && (
-        <p className="text-[10px] text-muted-foreground">{participants.join(", ")}</p>
       )}
     </div>
   );

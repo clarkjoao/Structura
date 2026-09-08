@@ -43,6 +43,22 @@ function Labelled({ label, children }: { label: string; children: React.ReactNod
   );
 }
 
+/**
+ * The same label over something that is not one input.
+ *
+ * A `<label>` around a pair of buttons would make clicking the word press the
+ * first of them, so the direction — the only control here that is a choice
+ * rather than a field — gets the label without the association.
+ */
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
+      {children}
+    </div>
+  );
+}
+
 export interface FlowScriptRowProps {
   row: FlowOutlineRow;
   step: FlowStep;
@@ -320,6 +336,41 @@ export function FlowScriptRow({
               {step.connectionId && (
                 <>
                   <span className={`${SECTION} pt-1`}>{t("flowScript.sectionCall")}</span>
+                  {/*
+                    Direction leads: it is what makes the step a call going out
+                    or the answer coming back, it is what pairs the two halves
+                    in the reading, and it is what decides whether the shape
+                    expected back is a field at all. It used to be asked third,
+                    with no label — the two buttons named the answers and
+                    nothing named the question.
+                  */}
+                  <Field label={t("flowScript.directionLabel")}>
+                    <div
+                      className="flex items-center gap-1"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <div className="flex overflow-hidden rounded border border-border">
+                        {(["request", "response"] as const).map((direction) => (
+                          <button
+                            key={direction}
+                            type="button"
+                            onClick={() =>
+                              actions.updateStep(row.stepId, { payloadDirection: direction })
+                            }
+                            className={`px-2 py-0.5 text-[9px] font-medium transition-colors ${
+                              (step.payloadDirection ?? "request") === direction
+                                ? direction === "request"
+                                  ? "bg-cyan-500/20 text-cyan-400"
+                                  : "bg-emerald-500/20 text-emerald-400"
+                                : "bg-secondary text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {t(PAYLOAD_DIRECTION_KEYS[direction])}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </Field>
                   <Labelled label={t("flowScript.routeLabel")}>
                     <select
                       data-testid="step-route"
@@ -360,31 +411,8 @@ export function FlowScriptRow({
                       })}
                     </span>
                   )}
-                  <div
-                    className="flex items-center gap-1"
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    <div className="flex overflow-hidden rounded border border-border">
-                      {(["request", "response"] as const).map((direction) => (
-                        <button
-                          key={direction}
-                          type="button"
-                          onClick={() =>
-                            actions.updateStep(row.stepId, { payloadDirection: direction })
-                          }
-                          className={`px-2 py-0.5 text-[9px] font-medium transition-colors ${
-                            (step.payloadDirection ?? "request") === direction
-                              ? direction === "request"
-                                ? "bg-cyan-500/20 text-cyan-400"
-                                : "bg-emerald-500/20 text-emerald-400"
-                              : "bg-secondary text-muted-foreground hover:text-foreground"
-                          }`}
-                        >
-                          {t(PAYLOAD_DIRECTION_KEYS[direction])}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  {/* The body and the shape expected back are written together, so
+                      nothing is put between them. */}
                   <JsonField
                     testId="step-payload"
                     label={t("flowScript.payloadLabel")}
@@ -393,6 +421,18 @@ export function FlowScriptRow({
                       actions.updateStep(row.stepId, { payload: value || undefined })
                     }
                   />
+                  {(step.payloadDirection ?? "request") === "request" && (
+                    <JsonField
+                      testId="step-context-expects"
+                      label={t("flowScript.contextExpects")}
+                      value={step.context?.expects ?? ""}
+                      onChange={(value) =>
+                        actions.updateStep(row.stepId, {
+                          context: { ...step.context, expects: value || undefined },
+                        })
+                      }
+                    />
+                  )}
                   <label
                     className="flex cursor-pointer items-center gap-1 text-[10px] text-muted-foreground"
                     onClick={(event) => event.stopPropagation()}
@@ -407,18 +447,6 @@ export function FlowScriptRow({
                     />
                     {t("flowScript.async")}
                   </label>
-                  {(step.payloadDirection ?? "request") === "request" && (
-                    <JsonField
-                      testId="step-context-expects"
-                      label={t("flowScript.contextExpects")}
-                      value={step.context?.expects ?? ""}
-                      onChange={(value) =>
-                        actions.updateStep(row.stepId, {
-                          context: { ...step.context, expects: value || undefined },
-                        })
-                      }
-                    />
-                  )}
                 </>
               )}
               <button

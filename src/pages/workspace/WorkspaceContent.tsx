@@ -30,6 +30,7 @@ import { Canvas, FlowPanel, FlowReadingRail, FlowRecorderPanel } from "@/feature
 import { SaveStatusIndicator } from "@/features/canvas/components/SaveStatusIndicator";
 import { FileSystemStatus } from "@/components/FileSystemStatus";
 import { EmbedModal, useFlowMode, useInteractionMode } from "@/features/canvas";
+import { useFlowPanelHandover } from "@/features/canvas/flow/useFlowPanelHandover";
 import { useActiveDiagram, useStorageMonitor, type Flow } from "@/features/diagram";
 import { StorageWarningBanner } from "@/features/canvas/components/StorageWarningBanner";
 import { CollabCursors, CollabToolbar, useCollab } from "@/features/collaboration";
@@ -127,14 +128,16 @@ export function WorkspaceContent({
   }, [isPlaying, setShowFlows]);
 
   useEffect(() => {
-    if (isRecording) setShowFlows(false);
-  }, [isRecording, setShowFlows]);
-
-  useEffect(() => {
     if (session) {
       setShowFlows(false);
     }
   }, [session, setShowFlows]);
+
+  useFlowPanelHandover({
+    isRecording,
+    isCollaborating: Boolean(session),
+    setShowFlows,
+  });
 
   useEffect(() => {
     if (flowMode.mode.kind !== "playing") return;

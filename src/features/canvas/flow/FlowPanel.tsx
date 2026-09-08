@@ -8,11 +8,11 @@ import {
   Trash2,
   Pencil,
   Copy,
-  Check,
+  Circle,
+  CircleDot,
   Layers,
   FileInput,
-  ChevronDown,
-  ChevronRight,
+  MoreHorizontal,
 } from "lucide-react";
 import { useFlowMode } from "@/features/canvas/flow/FlowModeContext";
 import { layoutScopedNodes } from "@/features/canvas/layout/layoutScopedNodes";
@@ -38,8 +38,13 @@ import {
 import type { Flow } from "@/features/diagram";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import MermaidImportDialog from "./MermaidImportDialog";
-import { FlowScriptPanel } from "./script/FlowScriptPanel";
 import { useFlowViewStore } from "./useFlowViewStore";
 import { validateFlow, type BrokenStep } from "./validateFlow";
 import BrokenFlowDialog from "./BrokenFlowDialog";
@@ -77,7 +82,6 @@ const FlowPanel = ({
   const importDrawioResult = useDiagramStore((state) => state.importDrawioResult);
   const reactFlowInstance = useReactFlow();
   const [tagFilter, setTagFilter] = useState<string | null>(null);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [pendingPlay, setPendingPlay] = useState<{ flow: Flow; broken: BrokenStep[] } | null>(null);
   const [showMermaidImport, setShowMermaidImport] = useState(false);
   const scriptFlowId = useFlowViewStore((state) => state.scriptFlowId);
@@ -159,10 +163,14 @@ const FlowPanel = ({
   const allTags = [...new Set(flows.flatMap((f) => f.tags ?? []))];
   const filtered = tagFilter ? flows.filter((f) => f.tags?.includes(tagFilter)) : flows;
 
+  /**
+   * The check that used to sit in place of the icon lived on a button that is
+   * now inside a menu, and the menu closes on the click. The confirmation has
+   * to outlive it, so it is said rather than shown.
+   */
   const handleCopy = (flow: Flow) => {
     navigator.clipboard.writeText(stepsToMermaid(flow, components, connections));
-    setCopiedId(flow.id);
-    setTimeout(() => setCopiedId(null), 2000);
+    toast.success(t("flows.copiedMermaid"));
   };
 
   const handleDuplicate = (flow: Flow) => {
@@ -295,25 +303,37 @@ const FlowPanel = ({
         {filtered.map((flow) => {
           const stepCount = getStepCount(flow);
           const { componentIds } = getFlowParticipants(flow);
+          const isSelected = scriptFlowId === flow.id;
+          const select = () => openScript(isSelected ? null : flow.id);
           return (
             <div
               key={flow.id}
-              className="rounded-lg border border-border p-2.5 transition-colors hover:bg-surface-hover"
+              className={`rounded-lg border p-2.5 transition-colors ${
+                isSelected
+                  ? "border-primary/60 bg-primary/5"
+                  : "border-border hover:bg-surface-hover"
+              }`}
             >
-              <div className="flex items-center gap-2">
+              {/* Top-aligned: the mark and the actions belong to the flow's name,
+                  and a card whose tags wrap to a second line would otherwise
+                  push them into the middle of nothing. */}
+              <div className="flex items-start gap-2">
                 <button
                   type="button"
-                  onClick={() => openScript(scriptFlowId === flow.id ? null : flow.id)}
-                  title={t("flowScript.openScript")}
-                  className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+                  onClick={select}
+                  aria-pressed={isSelected}
+                  title={isSelected ? t("flows.selectedTitle") : t("flows.selectTitle")}
+                  className={`mt-0.5 shrink-0 transition-colors ${
+                    isSelected ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                  }`}
                 >
-                  {scriptFlowId === flow.id ? (
-                    <ChevronDown className="h-3.5 w-3.5" />
+                  {isSelected ? (
+                    <CircleDot className="h-3.5 w-3.5" />
                   ) : (
-                    <ChevronRight className="h-3.5 w-3.5" />
+                    <Circle className="h-3.5 w-3.5" />
                   )}
                 </button>
-                <div className="flex-1 min-w-0">
+                <button type="button" onClick={select} className="min-w-0 flex-1 text-left">
                   <p className="text-xs font-semibold text-foreground truncate">{flow.name}</p>
                   {flow.description && (
                     <p className="text-[10px] text-muted-foreground italic truncate mt-0.5">
@@ -338,34 +358,8 @@ const FlowPanel = ({
                       </span>
                     ))}
                   </div>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    type="button"
-                    disabled={flowOrCompareLocked}
-                    onClick={() => handleDuplicate(flow)}
-                    className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 disabled:pointer-events-none"
-                    title={
-                      flowOrCompareLocked ? panelActionsLockedTitle : t("flows.duplicateTitle")
-                    }
-                  >
-                    <Layers className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    disabled={flowOrCompareLocked}
-                    onClick={() => handleCopy(flow)}
-                    className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 disabled:pointer-events-none"
-                    title={
-                      flowOrCompareLocked ? panelActionsLockedTitle : t("flows.copyMermaidTitle")
-                    }
-                  >
-                    {copiedId === flow.id ? (
-                      <Check className="h-3.5 w-3.5 text-emerald-500" />
-                    ) : (
-                      <Copy className="h-3.5 w-3.5" />
-                    )}
-                  </button>
+                </button>
+                <div className="flex shrink-0 items-center gap-1.5">
                   <button
                     type="button"
                     disabled={flowOrCompareLocked}
@@ -384,22 +378,36 @@ const FlowPanel = ({
                   >
                     <Play className="h-4 w-4" />
                   </button>
-                  <button
-                    type="button"
-                    disabled={flowOrCompareLocked}
-                    onClick={() => removeFlow(flow.id)}
-                    className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-40 disabled:pointer-events-none"
-                    title={flowOrCompareLocked ? panelActionsLockedTitle : t("flows.removeTitle")}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        disabled={flowOrCompareLocked}
+                        title={
+                          flowOrCompareLocked ? panelActionsLockedTitle : t("flows.moreActions")
+                        }
+                        className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                      >
+                        <MoreHorizontal className="h-3.5 w-3.5" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="min-w-[10rem]">
+                      <DropdownMenuItem onClick={() => handleDuplicate(flow)} className="text-xs">
+                        <Layers className="mr-2 h-3.5 w-3.5" /> {t("flows.duplicateTitle")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleCopy(flow)} className="text-xs">
+                        <Copy className="mr-2 h-3.5 w-3.5" /> {t("flows.copyMermaidTitle")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => removeFlow(flow.id)}
+                        className="text-xs text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="mr-2 h-3.5 w-3.5" /> {t("flows.removeTitle")}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
-              {scriptFlowId === flow.id && (
-                <div className="mt-2 border-t border-border pt-2">
-                  <FlowScriptPanel flow={flow} />
-                </div>
-              )}
             </div>
           );
         })}

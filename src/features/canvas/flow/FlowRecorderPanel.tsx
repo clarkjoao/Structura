@@ -92,7 +92,7 @@ const FlowRecorderPanel = ({
   const showScript = recordingContext.mode === "trunk" || recordingContext.mode === "branch-record";
 
   return (
-    <div className="flex h-full min-h-0 w-80 flex-col overflow-hidden border-l border-border bg-card">
+    <div className="flex h-full min-h-0 w-96 flex-col overflow-hidden border-l border-border bg-card">
       <RecorderHeader isEditing={isEditing} onCancel={onCancel} />
       <RecorderMetadataForm
         name={flow.name}
@@ -105,6 +105,7 @@ const FlowRecorderPanel = ({
         participants={participants}
         recordingMode={recordingContext.mode}
         autoFocusName={recordingContext.mode === "trunk"}
+        defaultDetailsOpen={!isEditing}
       />
       {recordingContext.mode === "branch-record" && (
         <BranchRecordingStrip
