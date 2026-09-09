@@ -13,11 +13,11 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
-import { generateViewerUrl, getViewerPostMessageUrl } from "@/lib/diagram-url";
+import { generateViewerUrl, getViewerPostMessageUrl } from "@/lib/share-url";
 
 type EmbedMethod = "iframe-hash" | "iframe-postmessage";
 
-interface EmbedModalProps {
+export interface EmbedModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   diagram: Diagram;

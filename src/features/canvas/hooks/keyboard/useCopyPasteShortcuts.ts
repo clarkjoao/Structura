@@ -27,7 +27,7 @@ import {
   readStructuraClipboard,
   readSvgFromClipboard,
   writeDrawioToClipboard,
-} from "@/lib/clipboard-utils";
+} from "@/lib/clipboard";
 import { parseDrawioXml } from "@/lib/export-service/import-drawio";
 import { generateIconId, normalizeSvgForStorage } from "@/features/canvas/utils/svg.utils";
 

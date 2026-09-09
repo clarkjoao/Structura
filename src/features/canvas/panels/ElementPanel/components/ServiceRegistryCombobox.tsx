@@ -12,7 +12,7 @@ import {
 import { useAllServices, useDiagramActions, ServiceSource } from "@/features/diagram";
 import type { ServiceDefinition } from "@/features/diagram";
 import { useTranslation } from "react-i18next";
-import { KEY, keyIs } from "@/lib/keyboard-utils";
+import { KEY, keyIs } from "@/lib/core/keyboard";
 
 interface ServiceRegistryComboboxProps {
   value: string | null;

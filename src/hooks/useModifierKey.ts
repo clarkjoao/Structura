@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { KEY, keyIsOneOf } from "@/lib/keyboard-utils";
+import { KEY, keyIsOneOf } from "@/lib/core/keyboard";
 
 export function useModifierKey(): boolean {
   const [isModifierActive, setIsModifierActive] = useState(false);

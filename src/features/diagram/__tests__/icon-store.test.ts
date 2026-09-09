@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { IconDefinition } from "@/features/diagram";
-import { useIconStore } from "../store/icons.store";
+import type { IconDefinition } from "../model/diagram.types";
+import { useIconStore } from "../store/icon-store";
 
 function sampleIcon(id: string): IconDefinition {
   return {
@@ -12,7 +12,7 @@ function sampleIcon(id: string): IconDefinition {
   };
 }
 
-describe("icons store", () => {
+describe("icon store", () => {
   it("addIcon stores an icon by id", () => {
     useIconStore.setState({ icons: {} });
     const icon = sampleIcon("i1");

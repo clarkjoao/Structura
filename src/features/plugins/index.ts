@@ -1,5 +1,6 @@
 // Plugin registry and types
 export { usePluginRegistry } from "./store/plugins.store";
+export type { PluginRuntimeState } from "./store/plugins.store";
 export type {
   PluginManifest,
   ImporterContribution,

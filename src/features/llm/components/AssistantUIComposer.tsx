@@ -14,7 +14,7 @@ import { ArrowDown, Loader2, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLLMStore } from "@/features/llm";
 import { cn } from "@/lib/utils";
-import { KEY, keyIs } from "@/lib/keyboard-utils";
+import { KEY, keyIs } from "@/lib/core/keyboard";
 import { useMentionSearch } from "@/features/canvas/chat/useMentionSearch";
 import { MentionPicker } from "./MentionPicker";
 import { MentionTag } from "./MentionTag";

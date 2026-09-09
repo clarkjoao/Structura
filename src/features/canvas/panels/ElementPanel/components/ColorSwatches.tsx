@@ -12,7 +12,7 @@ import {
   NOTE_PRESETS_DARK,
   type ColorPreset,
 } from "./colorPresets";
-import { KEY, keyIs } from "@/lib/keyboard-utils";
+import { KEY, keyIs } from "@/lib/core/keyboard";
 
 export type ColorPresetGroup =
   "vibrant" | "paper" | "c4" | "neutral" | "panel" | "note" | "note-dark" | "all";

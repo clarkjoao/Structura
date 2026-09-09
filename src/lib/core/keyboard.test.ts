@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { KEY, keyIs, keyIsEnterOrSpace, keyIsOneOf, keyMatchesLetter } from "./keyboard-utils";
+import { KEY, keyIs, keyIsEnterOrSpace, keyIsOneOf, keyMatchesLetter } from "./keyboard";
 
 function keyEv(key: string): KeyboardEvent {
   return new KeyboardEvent("keydown", { key });

@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { ArrowRight, Box, Play } from "lucide-react";
 import type { Diagram } from "@/features/diagram";
-import { formatTimestamp } from "@/lib/format-date";
+import { formatTimestamp } from "@/lib/core/format-timestamp";
 import { cn } from "@/lib/utils";
 import { levelColors } from "@/pages/dashboard/dashboard.constants";
 import { StatChip } from "./StatChip";

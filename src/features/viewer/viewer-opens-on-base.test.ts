@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { renderHook } from "@testing-library/react";
 import type { Component, Diagram, Flow, SceneDiff } from "@/features/diagram";
-import { generateShareUrl, decodeShareParam } from "@/lib/diagram-url";
+import { generateShareUrl, decodeShareParam } from "@/lib/share-url";
 import { useDiagramToFlow } from "./hooks/useDiagramToFlow";
 
 /**

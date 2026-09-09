@@ -2,8 +2,10 @@
 
 Global state is a single Zustand store with Immer, composed from slices
 (`src/features/diagram/store/`). Satellite features (collaboration,
-custom components, icons, LLM) keep their own small stores following the same
-pattern.
+custom components, LLM) keep their own small stores following the same
+pattern. Icon state (`IconStore`) lives inside the diagram store
+(`features/diagram/store/icon-store.ts`) and is the single source of truth
+for custom icons; the canvas and interchange layers reference it, not each other.
 
 ## Why Zustand + Immer
 
@@ -23,10 +25,15 @@ AppActions: contributed by slices in store/slices/
 ```
 
 Each slice owns one concern (components, connections, flows, scenes,
-folders, services, icons, clipboard, history, layout, parenting,
-component-links, patterns, user templates) and exposes actions; selectors
+folders, services, clipboard, history, layout, parenting,
+component-links, patterns, user templates, icons) and exposes actions; selectors
 live separately in `store/selectors/`. The rule: **UI calls actions and
 subscribes to selectors — nothing else.**
+
+Icon CRUD (add, update, delete, register) lives in `IconStore`
+(`store/icon-store.ts`) — a Zustand store backed by the same persistence
+layer. When an icon is deleted, `diagramStore.iconsSlice.removeIconReferences()`
+cleans up all `customIconId` references in diagram components and scenes.
 
 ## History (undo/redo)
 

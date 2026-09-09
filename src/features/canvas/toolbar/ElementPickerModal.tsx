@@ -8,7 +8,7 @@ import type { CanvasPickerOption, ElementPickerModalProps } from "./element-pick
 import { getUsageKeyForType, getDefaultNameForNewComponent } from "@/features/diagram";
 import { AWS_CATEGORIES, type AwsCategory } from "@/lib/catalogs/aws";
 import { getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
-import { KEY, keyIs } from "@/lib/keyboard-utils";
+import { KEY, keyIs } from "@/lib/core/keyboard";
 import type { AwsCategoryId } from "@/lib/catalogs/aws";
 import { cloudRegistry } from "@/features/cloud";
 import { trackUsage } from "./element-usage-tracker";

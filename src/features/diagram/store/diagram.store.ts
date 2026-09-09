@@ -4,7 +4,7 @@ import { immer } from "zustand/middleware/immer";
 import { persist } from "zustand/middleware";
 import { defaultStorage, type IStoragePort } from "@/infrastructure/persistence";
 import { recordLocalStorageDiagramSyncSuccess } from "@/infrastructure/persistence/localStorageSyncTimestamp";
-import { useIconStore, type IconStore } from "@/features/icons";
+import { useIconStore, type IconStore } from "./icon-store";
 import type { UserTemplate } from "../model/diagram.types";
 import type { AppState, DiagramSnapshot, DiagramStore } from "./store.types";
 import { createStableSlice } from "./stableSlice";

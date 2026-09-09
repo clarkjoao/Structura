@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { IconDefinition } from "@/features/diagram";
+import type { IconDefinition } from "../model";
 
 export interface IconStore {
   icons: Record<string, IconDefinition>;

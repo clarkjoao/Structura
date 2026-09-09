@@ -1,6 +1,6 @@
 import type { RefObject } from "react";
 import { useTranslation } from "react-i18next";
-import { KEY, keyIs } from "@/lib/keyboard-utils";
+import { KEY, keyIs } from "@/lib/core/keyboard";
 import Field from "../components/Field";
 
 export interface BasicFieldsSectionProps {

@@ -6,7 +6,7 @@ import { downloadTemplate } from "@/features/diagram";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { PatternFlowPreview } from "./PatternFlowPreview";
-import { KEY, keyIs, keyIsEnterOrSpace } from "@/lib/keyboard-utils";
+import { KEY, keyIs, keyIsEnterOrSpace } from "@/lib/core/keyboard";
 
 export interface UserTemplateCardProps {
   template: UserTemplate;

@@ -10,7 +10,8 @@ unit-testable and renderer-independent.
 ```
 features/diagram/
 ├── model/       types + guards (component, connection, flow, layout, diagram)
-├── store/       Zustand store: slices/, selectors/, persist config, history
+├── store/       Zustand store: slices/, selectors/, persist config, history,
+│                icon-store.ts (IconStore — the custom icon registry)
 ├── utils/       pure model operations (traversal, repair, migration,
 │                scene mutations, mermaid import, id generation, …)
 ├── enums.ts     shared enums (PanelKind, EdgeStyle, ExternalLinkType, …)
@@ -21,8 +22,8 @@ features/diagram/
 
 All mutations go through slice actions
 (`store/slices/*` — components, connections, flows, folders, scenes,
-services, icons, clipboard, history, layout, parenting, links, patterns,
-user templates). The composition rules:
+services, clipboard, history, layout, parenting, links, patterns,
+user templates, icons). The composition rules:
 
 - **Immer drafts** — actions mutate a draft; the store stays immutable
   outside.

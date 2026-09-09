@@ -17,7 +17,7 @@ import {
   useCustomComponentStore,
   type CustomComponentTemplate,
 } from "@/features/custom-components";
-import { useIconStore } from "@/features/icons";
+import { useIconStore } from "@/features/diagram/store";
 import { mergeCustomComponentTemplates } from "./merge-custom-component-templates";
 import { diagramStoreWorkspaceEqualsForFolderSync } from "./workspace-folder-sync-equality";
 import { manifestSemanticFingerprint } from "./workspace-manifest-fingerprint";

@@ -29,7 +29,7 @@ import { getDefaultNameForNewComponent, getLastEdgeStyle } from "@/features/diag
 import { buildFlowchartPickerOptions } from "./element-picker/buildPickerOptions";
 import { PANEL_KINDS, getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/catalogs/aws";
-import { KEY, keyIs } from "@/lib/keyboard-utils";
+import { KEY, keyIs } from "@/lib/core/keyboard";
 import AwsIcon from "../nodes/AwsIcon";
 import { cloudRegistry, CloudIcon } from "@/features/cloud";
 import { filterCloudServicesForQuery } from "./element-picker/pickerFilters";

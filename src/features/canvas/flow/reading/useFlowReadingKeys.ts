@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { KEY, keyIs } from "@/lib/keyboard-utils";
+import { KEY, keyIs } from "@/lib/core/keyboard";
 
 interface Params {
   /** True while a script is being read; nothing is bound otherwise. */

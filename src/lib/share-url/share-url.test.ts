@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generateShareUrl, getShareParamFromUrl, decodeShareParam } from "./diagram-url";
+import { generateShareUrl, getShareParamFromUrl, decodeShareParam } from "./index";
 import type { Diagram } from "@/features/diagram";
 import { EdgeStyle } from "@/features/diagram";
 
@@ -29,14 +29,12 @@ describe("Sharing functionality", () => {
 
   it("should extract share param from URL", () => {
     const result = generateShareUrl(testDiagram);
-    // Simulate being on that URL by setting location.hash
     const originalHash = window.location.hash;
     window.location.hash = result.url.split("#")[1] || "";
 
     const shareParam = getShareParamFromUrl();
     expect(shareParam).toBeTruthy();
 
-    // Restore
     window.location.hash = originalHash;
   });
 
@@ -91,7 +89,6 @@ describe("Sharing functionality", () => {
   });
 
   it("should handle base64 fallback for legacy URLs", () => {
-    // This tests the fallback mechanism
     const base64Encoded = btoa(JSON.stringify(testDiagram));
     const decoded = decodeShareParam(base64Encoded);
     expect(decoded).toBeTruthy();

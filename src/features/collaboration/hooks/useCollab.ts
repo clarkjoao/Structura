@@ -135,7 +135,6 @@ function parsePeerCursorEntry(source: Record<string, unknown>): ParsedPeerCursor
   return { clientId, user, cursor, activeElementId };
 }
 
-
 function randomId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
@@ -179,10 +178,7 @@ function parsePeers(value: unknown): PeerState[] {
  * Apply a catch-up replay sent in place of a full snapshot, in version order.
  * Returns false when the message carries no operations.
  */
-function applyResumeOperations(
-  value: unknown,
-  apply: (patch: CollabPatch) => void,
-): boolean {
+function applyResumeOperations(value: unknown, apply: (patch: CollabPatch) => void): boolean {
   if (!Array.isArray(value) || value.length === 0) return false;
   for (const op of value) {
     if (isRecord(op) && isRecord(op.patch)) {
@@ -517,8 +513,10 @@ export function useCollab({
             assignedClientIdRef.current = message.clientId;
           }
 
-          const msgParticipantCount = typeof message.participantCount === "number" ? message.participantCount : 1;
-          const msgMaxParticipants = typeof message.maxParticipants === "number" ? message.maxParticipants : 15;
+          const msgParticipantCount =
+            typeof message.participantCount === "number" ? message.participantCount : 1;
+          const msgMaxParticipants =
+            typeof message.maxParticipants === "number" ? message.maxParticipants : 15;
 
           useCollabStore.getState().setParticipantCount(msgParticipantCount, msgMaxParticipants);
           useCollabStore.getState().setIsReady(true);
@@ -538,7 +536,7 @@ export function useCollab({
 
           // Track the operation ID if present (from server broadcast)
           const operationId = typeof message.operationId === "string" ? message.operationId : null;
-          const clientId = typeof message.clientId === "string" ? message.clientId : null;
+          const _clientId = typeof message.clientId === "string" ? message.clientId : null;
           const serverVersion = typeof message.version === "number" ? message.version : null;
 
           // A gap is only observable here: versions arrive one at a time on an
@@ -675,7 +673,7 @@ export function useCollab({
           return;
         }
         case "peer:joined": {
-          const clientId = typeof message.clientId === "string" ? message.clientId : null;
+          const _clientId = typeof message.clientId === "string" ? message.clientId : null;
           const userRaw = message.user;
           const user = isRecord(userRaw)
             ? {
@@ -685,28 +683,38 @@ export function useCollab({
               }
             : null;
 
-          if (!clientId || !user?.id || !user.name) return;
+          if (!_clientId || !user?.id || !user.name) return;
           useCollabStore.getState().upsertPeer({
-            clientId,
+            clientId: _clientId,
             user,
             cursor: null,
             activeElementId: null,
           });
 
           // Update participant count if provided
-          if (typeof message.participantCount === "number" && typeof message.maxParticipants === "number") {
-            useCollabStore.getState().setParticipantCount(message.participantCount, message.maxParticipants);
+          if (
+            typeof message.participantCount === "number" &&
+            typeof message.maxParticipants === "number"
+          ) {
+            useCollabStore
+              .getState()
+              .setParticipantCount(message.participantCount, message.maxParticipants);
           }
           return;
         }
         case "peer:left": {
-          const clientId = typeof message.clientId === "string" ? message.clientId : null;
-          if (!clientId) return;
-          useCollabStore.getState().removePeer(clientId);
+          const _clientId = typeof message.clientId === "string" ? message.clientId : null;
+          if (!_clientId) return;
+          useCollabStore.getState().removePeer(_clientId);
 
           // Update participant count if provided
-          if (typeof message.participantCount === "number" && typeof message.maxParticipants === "number") {
-            useCollabStore.getState().setParticipantCount(message.participantCount, message.maxParticipants);
+          if (
+            typeof message.participantCount === "number" &&
+            typeof message.maxParticipants === "number"
+          ) {
+            useCollabStore
+              .getState()
+              .setParticipantCount(message.participantCount, message.maxParticipants);
           }
           return;
         }
@@ -784,7 +792,9 @@ export function useCollab({
           if (code === "room_full") {
             shouldReconnectRef.current = false;
             intentionalCloseRef.current = true;
-            useCollabStore.getState().setRoomFullReason(errorMessage || `Room is full (maximum 15 participants)`);
+            useCollabStore
+              .getState()
+              .setRoomFullReason(errorMessage || `Room is full (maximum 15 participants)`);
             useCollabStore.getState().setStatus("disconnected");
             useCollabStore.getState().setIsReady(false);
             clearClientHeartbeat();
@@ -797,7 +807,10 @@ export function useCollab({
 
           // Re-enqueue the batch if the server rejected it due to rate limiting or batch size.
           // The patches are preserved in sentBatchDataRef and re-enqueued one at a time after a backoff.
-          if ((code === "rate_limited" || code === "batch_too_large") && sentBatchDataRef.current.length > 0) {
+          if (
+            (code === "rate_limited" || code === "batch_too_large") &&
+            sentBatchDataRef.current.length > 0
+          ) {
             const patchesToRequeue = sentBatchDataRef.current;
             sentBatchDataRef.current = [];
             // Cancel any pending batch timer since we are taking over
@@ -973,9 +986,10 @@ export function useCollab({
     sentBatchDataRef.current = batch;
 
     // Generate one operationId for the (potentially merged) batch
-    const operationId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-      ? crypto.randomUUID()
-      : `op-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+    const operationId =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `op-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 
     // Register one pending op for the batch (not one per item)
     pendingOpsRef.current.set(operationId, {
@@ -986,7 +1000,9 @@ export function useCollab({
 
     // Limit pending operations to prevent memory leaks
     if (pendingOpsRef.current.size > MAX_PENDING_OPS) {
-      console.warn(`[useCollab] too many pending ops (${pendingOpsRef.current.size}), clearing oldest`);
+      console.warn(
+        `[useCollab] too many pending ops (${pendingOpsRef.current.size}), clearing oldest`,
+      );
       const oldestKey = pendingOpsRef.current.keys().next().value;
       if (oldestKey) {
         pendingOpsRef.current.delete(oldestKey);

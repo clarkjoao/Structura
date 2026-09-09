@@ -1,3 +1,4 @@
+// ─── Types ────────────────────────────────────────────────────────────────────
 export type {
   LLMProvider,
   LLMMode,
@@ -20,50 +21,36 @@ export type {
   LLMToolCall,
 } from "./types";
 
-export { serializeDiagramContext } from "./serializer";
-export type { DiagramSerializerOptions } from "./serializer";
-export { buildSystemPrompt, buildResponseLanguageInstruction } from "./prompt-builder";
-export { parseLLMResponse } from "./patch-parser";
-export { serializeMentionItem, buildMentionContextBlock } from "./mention-serializer";
-export type { ModelPreset } from "./model-presets";
-export { MODEL_PRESETS, getPresetsForProvider } from "./model-presets";
-export type { ChatSuggestion } from "./suggestions";
-export { buildContextualSuggestions } from "./suggestions";
-export type { LLMErrorKind } from "./errors";
-export { LLMProviderError, getLLMErrorI18nKey } from "./errors";
-export { ALL_TOOLS, WRITE_TOOL_NAMES, isWriteTool } from "./tools";
-export {
-  isValidNodeType,
-  ALL_COMPONENT_TYPES,
-  buildComponentTypeCatalog,
-  STRUCTURAL_TYPES,
-  C4_TYPES,
-  AWS_TYPES,
-} from "./component-catalog";
-export type { ComponentTypeDefinition } from "./component-catalog";
+// ─── Store ────────────────────────────────────────────────────────────────────
 export { useLLMStore, getPendingNodeIds, getPendingEdgeIds, getSuggestionIdForNode } from "./store";
-export type {
-  ApplyIRResult,
-  DiagramIR,
-  IRDiagramType,
-  IREdge,
-  IRIssueCode,
-  IRNode,
-  IRValidationIssue,
-  IRValidationResult,
-  SemanticType,
-  Tier,
-} from "./ir";
-export {
-  applyIRToDiagram,
-  buildIRFilename,
-  buildIRSystemPrompt,
-  downloadIR,
-  serializeIR,
-  IR_SEMANTIC_TYPES,
-  IR_TIERS,
-  mapNodeToComponent,
-  parseAndValidateIR,
-  parseGenerateCommand,
-  validateIR,
-} from "./ir";
+
+// ─── Serializers ──────────────────────────────────────────────────────────────
+export { serializeDiagramContext } from "./serializer";
+export { serializeMentionItem, buildMentionContextBlock } from "./mention-serializer";
+export { parseGenerateCommand } from "./ir";
+export type { DiagramSerializerOptions } from "./serializer";
+
+// ─── Errors ───────────────────────────────────────────────────────────────────
+export { getLLMErrorI18nKey } from "./errors";
+
+// ─── Settings helpers ─────────────────────────────────────────────────────────
+// Used internally by LLM components and external consumers.
+export { MODEL_PRESETS, getPresetsForProvider } from "./model-presets";
+export type { ModelPreset } from "./model-presets";
+export type { LLMErrorKind } from "./errors";
+
+// ─── Suggestions ──────────────────────────────────────────────────────────────
+// Used internally by LLM components.
+export { buildContextualSuggestions } from "./suggestions";
+export type { ChatSuggestion } from "./suggestions";
+
+// ─── IR ───────────────────────────────────────────────────────────────────────
+// Used internally by LLM components via dynamic import.
+export { downloadIR, buildIRFilename } from "./ir";
+
+// ─── Internal sub-modules — import directly: ──────────────────────────────────
+//   import { ... } from "@/features/llm/component-catalog";
+//   import { ... } from "@/features/llm/prompt-builder";
+//   import { ... } from "@/features/llm/patch-parser";
+//   import { ... } from "@/features/llm/tools";
+//   import { ... } from "@/features/llm/ir";

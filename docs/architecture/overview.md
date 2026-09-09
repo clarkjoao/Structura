@@ -18,8 +18,7 @@ relay and an LLM proxy — it never stores data.
 │   ServiceCatalog · viewer                                  │
 ├──────────────┬──────────────────────────────────────────────┤
 │ Feature contexts                                            │
-│   canvas   collaboration   llm   viewer                    │
-│   cloud    custom-components    icons                       │
+│   canvas   collaboration   llm   viewer   cloud   custom-components              │
 ├──────────────┴──────────────────────────────────────────────┤
 │ Model  (features/diagram — types, guards, store; no React)  │
 ├─────────────────────────────────────────────────────────────┤
@@ -27,8 +26,8 @@ relay and an LLM proxy — it never stores data.
 │   persistence (IStoragePort + adapters, sync, migrations)   │
 │   i18n (react-i18next, en / pt-BR)                          │
 └─────────────────────────────────────────────────────────────┘
-        lib/: export-service (interchange), catalogs,
-              diagram-preview, monaco, utilities
+        lib/: export-service (interchange), catalogs, core,
+              diagram-preview, monaco, clipboard, share-url, utilities
 ```
 
 ## Layering rules
@@ -67,6 +66,12 @@ All pages are lazy-loaded from `App.tsx`. The `@/features/diagram` and
 only if always-mounted code (app shell, LLM chat) imports leaf modules
 directly instead of the barrels. Keep this in mind when adding imports to
 anything that mounts at startup.
+
+Each feature sub-directory has its own `index.ts` barrel (e.g.
+`canvas/edges/`, `canvas/nodes/`, `canvas/toolbar/`). These are the
+canonical entry points — other features should import from barrels, not
+from internal leaf modules. Direct leaf imports are acceptable for
+performance-sensitive code or to avoid circular dependencies.
 
 ## Quality gates
 

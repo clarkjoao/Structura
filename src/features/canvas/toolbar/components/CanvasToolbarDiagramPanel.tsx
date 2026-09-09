@@ -4,7 +4,7 @@ import type { Diagram } from "@/features/diagram";
 import { useDiagramActions } from "@/features/diagram";
 import { DiagramDescriptionField } from "../DiagramDescriptionField";
 import { useTranslation } from "react-i18next";
-import { KEY, keyIs } from "@/lib/keyboard-utils";
+import { KEY, keyIs } from "@/lib/core/keyboard";
 
 export interface CanvasToolbarDiagramPanelProps {
   diagram: Diagram;

@@ -22,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { KEY, keyIs } from "@/lib/keyboard-utils";
+import { KEY, keyIs } from "@/lib/core/keyboard";
 import type { Folder as FolderType, Diagram } from "@/features/diagram";
 import { useDiagramActions } from "@/features/diagram";
 import { buildBreadcrumbPath } from "@/pages/dashboard/dashboard.utils";

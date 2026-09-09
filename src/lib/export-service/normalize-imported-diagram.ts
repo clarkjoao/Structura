@@ -1,5 +1,5 @@
 import type { Diagram, IconDefinition } from "@/features/diagram";
-import { useIconStore } from "@/features/icons";
+import { useIconStore } from "@/features/diagram";
 
 function normalizeOneIconEntry(key: string, value: unknown): IconDefinition | null {
   if (!value || typeof value !== "object") return null;

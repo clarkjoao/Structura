@@ -1,5 +1,5 @@
 import type { Component, IconDefinition } from "@/features/diagram";
-import { useIconStore } from "@/features/icons";
+import { useIconStore } from "@/features/diagram";
 
 export function resolveUsedIconLibrary(
   components: Record<string, Component>,
