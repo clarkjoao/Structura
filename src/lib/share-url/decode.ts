@@ -3,6 +3,8 @@
  */
 import LZString from "lz-string";
 import type { Diagram } from "@/features/diagram";
+import { currentHashParams } from "./utils";
+import { logger } from "@/lib/core/logger";
 
 export function decodeDiagramPayload(encoded: string): Diagram {
   const json = LZString.decompressFromEncodedURIComponent(encoded);
@@ -13,11 +15,7 @@ export function decodeDiagramPayload(encoded: string): Diagram {
 }
 
 export function getShareParamFromUrl(): string | null {
-  const hash = window.location.hash.startsWith("#")
-    ? window.location.hash.slice(1)
-    : window.location.hash;
-  const params = new URLSearchParams(hash);
-  return params.get("share");
+  return currentHashParams().get("share");
 }
 
 export function decodeShareParam(shareParam: string): Diagram | null {
@@ -35,11 +33,14 @@ export function decodeShareParam(shareParam: string): Diagram | null {
       } as Diagram;
     }
   } catch (err) {
-    console.warn("[share-url] Failed to parse URL:", err);
+    logger.warn("[share-url]", "Failed to parse URL:", err);
   }
 
   try {
-    const json = decodeURIComponent(escape(atob(shareParam)));
+    // Decode base64 to UTF-8 without the deprecated escape() polyfill.
+    const binary = atob(shareParam);
+    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+    const json = new TextDecoder("utf-8").decode(bytes);
     const parsed = JSON.parse(json);
     if (!parsed?.id || !parsed?.snapshot) return null;
     return parsed as Diagram;

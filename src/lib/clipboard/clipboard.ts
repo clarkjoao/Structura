@@ -1,4 +1,5 @@
 import { extractMxGraphModelXml } from "@/lib/export-service";
+import { logger } from "@/lib/core/logger";
 import type { ClipboardEntry } from "@/features/diagram/store/store.types";
 
 // Chrome's "web custom formats" for the Async Clipboard API (Chromium 104+) store
@@ -54,13 +55,13 @@ export async function writeDrawioToClipboard(
       return;
     }
   } catch (err) {
-    console.warn("[Clipboard] Failed to copy draw.io XML:", err);
+    logger.warn("[Clipboard]", "Failed to copy draw.io XML:", err);
   }
 
   try {
     await navigator.clipboard.writeText(graphModelXml);
   } catch {
-    console.warn("[Clipboard] Could not write to system clipboard");
+    logger.warn("[Clipboard]", "Could not write to system clipboard");
   }
 }
 
@@ -97,7 +98,7 @@ export async function readDrawioFromClipboard(): Promise<string | null> {
       return text;
     }
   } catch (err) {
-    console.warn("[Clipboard] Failed to read draw.io from clipboard:", err);
+    logger.warn("[Clipboard]", "Failed to read draw.io from clipboard:", err);
   }
   return null;
 }
@@ -121,7 +122,7 @@ export async function readStructuraClipboard(): Promise<ClipboardEntry | null> {
       return JSON.parse(text) as ClipboardEntry;
     }
   } catch (err) {
-    console.warn("[Clipboard] Failed to read Structura clipboard payload:", err);
+    logger.warn("[Clipboard]", "Failed to read Structura clipboard payload:", err);
   }
   return null;
 }
@@ -151,7 +152,7 @@ export async function readSvgFromClipboard(): Promise<string | null> {
       }
     }
   } catch (err) {
-    console.warn("[Clipboard] Failed to read SVG from clipboard:", err);
+    logger.warn("[Clipboard]", "Failed to read SVG from clipboard:", err);
   }
   return null;
 }

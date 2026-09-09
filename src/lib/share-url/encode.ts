@@ -3,6 +3,7 @@
  */
 import LZString from "lz-string";
 import type { Diagram } from "@/features/diagram";
+import { getBasePath, currentHashParams } from "./utils";
 
 export interface ShareUrlResult {
   url: string;
@@ -13,15 +14,6 @@ export interface ShareUrlResult {
 }
 
 const WARN_THRESHOLD = 8_000;
-
-function getBasePath(): string {
-  return import.meta.env.BASE_URL.replace(/\/$/, "");
-}
-
-export function getAppUrl(): string {
-  const pathnameWithoutTrailingSlash = window.location.pathname.replace(/\/$/, "");
-  return `${window.location.origin}${pathnameWithoutTrailingSlash}`;
-}
 
 export function encodeDiagramPayload(diagram: Diagram): string {
   return LZString.compressToEncodedURIComponent(JSON.stringify(diagram));
@@ -46,10 +38,7 @@ function flowParam(flowId?: string | null): string {
 
 /** The script a link names, from either kind of link. */
 export function getFlowParamFromUrl(): string | null {
-  const hash = window.location.hash.startsWith("#")
-    ? window.location.hash.slice(1)
-    : window.location.hash;
-  return new URLSearchParams(hash).get("flow");
+  return currentHashParams().get("flow");
 }
 
 /**

@@ -11,6 +11,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowDown, Loader2, Square } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useLLMStore } from "@/features/llm";
 import { cn } from "@/lib/utils";
@@ -136,18 +137,6 @@ function SlashCommandMenu({
   );
 }
 
-/* ── Toast feedback ───────────────────────────────────────────────────── */
-function useToast() {
-  const [toast, setToast] = useState<string | null>(null);
-
-  const showToast = useCallback((message: string) => {
-    setToast(message);
-    setTimeout(() => setToast(null), 2500);
-  }, []);
-
-  return { toast, showToast };
-}
-
 /* ── Main composer ────────────────────────────────────────────────────── */
 export interface AssistantUIComposerProps {
   onSend: (text: string, mentions: ActiveMention[]) => Promise<void>;
@@ -197,7 +186,6 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
     const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const { toast, showToast } = useToast();
 
     // Filtered commands based on current input
     const filteredCommands = useMemo(() => filterSlashCommands(text), [text]);
@@ -330,7 +318,7 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
               }),
               [],
             );
-            showToast(t("llmChat.slash.analyzing", { defaultValue: "Analyzing…" }));
+            toast(t("llmChat.slash.analyzing", { defaultValue: "Analyzing…" }));
             break;
           }
 
@@ -340,9 +328,9 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
               import("@/features/llm").then(({ downloadIR }) => {
                 downloadIR(lastGeneratedIR as DiagramIR);
               });
-              showToast(t("llmChat.slash.exported", { defaultValue: "IR exported!" }));
+              toast(t("llmChat.slash.exported", { defaultValue: "IR exported!" }));
             } else {
-              showToast(
+              toast(
                 t("llmChat.slash.noIR", {
                   defaultValue: "No IR generated yet. Use /generate first.",
                 }),
@@ -362,12 +350,10 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
             ) {
               if (activeDiagramId) {
                 createThread(activeDiagramId);
-                showToast(
-                  t("llmChat.slash.newChat", { defaultValue: "New conversation started." }),
-                );
+                toast(t("llmChat.slash.newChat", { defaultValue: "New conversation started." }));
               } else {
                 onClearHistory?.();
-                showToast(t("llmChat.slash.cleared", { defaultValue: "Chat cleared." }));
+                toast(t("llmChat.slash.cleared", { defaultValue: "Chat cleared." }));
               }
             }
             break;
@@ -376,32 +362,23 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
           case "copiar":
           case "copy": {
             if (messages.length === 0) {
-              showToast(t("llmChat.slash.noMessages", { defaultValue: "No messages to copy." }));
+              toast(t("llmChat.slash.noMessages", { defaultValue: "No messages to copy." }));
               break;
             }
             const formatted = formatConversationForCopy(messages);
             navigator.clipboard
               .writeText(formatted)
               .then(() => {
-                showToast(t("llmChat.slash.copied", { defaultValue: "Conversation copied!" }));
+                toast(t("llmChat.slash.copied", { defaultValue: "Conversation copied!" }));
               })
               .catch(() => {
-                showToast(t("llmChat.slash.copyFailed", { defaultValue: "Failed to copy." }));
+                toast(t("llmChat.slash.copyFailed", { defaultValue: "Failed to copy." }));
               });
             break;
           }
         }
       },
-      [
-        lastGeneratedIR,
-        messages,
-        activeDiagramId,
-        createThread,
-        onClearHistory,
-        onSend,
-        showToast,
-        t,
-      ],
+      [lastGeneratedIR, messages, activeDiagramId, createThread, onClearHistory, onSend, t],
     );
 
     const handleClear = useCallback(() => {
@@ -500,15 +477,6 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
 
     return (
       <div className="relative">
-        {/* Toast notification */}
-        {toast && (
-          <div className="pointer-events-none absolute bottom-full left-0 right-0 mb-2 flex justify-center">
-            <div className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-md animate-in fade-in slide-in-from-bottom-2 duration-200">
-              {toast}
-            </div>
-          </div>
-        )}
-
         {/* Slash command menu - shows as you type / */}
         {slashMenuOpen && (
           <SlashCommandMenu
