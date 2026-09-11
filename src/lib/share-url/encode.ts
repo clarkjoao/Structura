@@ -66,7 +66,7 @@ function stripForShare(diagram: Diagram): Record<string, unknown> {
 export function generateShareUrl(diagram: Diagram, options: ShareOptions = {}): ShareUrlResult {
   const stripped = stripForShare(diagram);
   const json = JSON.stringify(stripped);
-  const encoded = LZString.compressToEncodedURIComponent(json);
+  const encoded = encodeURIComponent(LZString.compressToEncodedURIComponent(json));
   const url = `${getAppBaseUrl()}#share=${encoded}${flowParam(options.flowId)}`;
 
   return {
