@@ -1,5 +1,5 @@
 import { useShallow } from "zustand/react/shallow";
-import { useIconStore } from "@/features/icons";
+import { useIconStore } from "../icon-store";
 import type { IconDefinition } from "../../model/diagram.types";
 import { getCachedCanvasSnapshot } from "../../utils/snapshot-cache";
 import { useDiagramStore } from "../diagram.store";
@@ -38,3 +38,7 @@ export const useComponentIcon = (componentId: string): IconDefinition | null => 
 
   return icon;
 };
+
+/** Aliases for the global icon library (same implementation, different name). */
+export const useGlobalIconLibrary = useIconLibrary;
+export const useGlobalIconById = useIconById;

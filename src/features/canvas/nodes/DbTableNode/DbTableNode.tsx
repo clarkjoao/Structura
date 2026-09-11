@@ -3,7 +3,7 @@ import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { ChevronDown, ChevronUp, Database, Plus, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-import { KEY, keyIs } from "@/lib/keyboard-utils";
+import { KEY, keyIs } from "@/lib/core/keyboard";
 import { useCollabHighlight } from "@/features/collaboration";
 import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
 import { singleIncomingTargetHandleId } from "../../edges/connectionDerivations";

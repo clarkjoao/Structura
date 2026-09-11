@@ -287,7 +287,10 @@ function sendRawFrame(ws: WebSocket, data: string, options: { lossy?: boolean } 
   // without bound. Cursor traffic is superseded by the next frame anyway, so
   // drop it rather than queue it; state-bearing frames are always queued.
   if (options.lossy && ws.bufferedAmount > MAX_BUFFERED_BYTES) {
-    logThrottled("slow_client", `dropping lossy frame for slow client (${ws.bufferedAmount}B buffered)`);
+    logThrottled(
+      "slow_client",
+      `dropping lossy frame for slow client (${ws.bufferedAmount}B buffered)`,
+    );
     return;
   }
   ws.send(data);
@@ -521,7 +524,11 @@ function applyPatch(
       }
 
       const deletedAt = tombstones?.get(entityId);
-      if (deletedAt !== undefined && senderKnownVersion !== null && senderKnownVersion < deletedAt) {
+      if (
+        deletedAt !== undefined &&
+        senderKnownVersion !== null &&
+        senderKnownVersion < deletedAt
+      ) {
         logThrottled("resurrect_blocked", `blocked resurrection of ${key}/${entityId}`);
         continue;
       }
@@ -549,10 +556,7 @@ function applyPatch(
  * it holds only ops newer than the last snapshot, and only as many as the
  * budget allows.
  */
-function replayableFrom(
-  room: Room,
-  fromVersion: number,
-): Array<Record<string, unknown>> | null {
+function replayableFrom(room: Room, fromVersion: number): Array<Record<string, unknown>> | null {
   if (fromVersion < 0 || fromVersion > room.version) return null;
   if (fromVersion === room.version) return [];
   // Anything at or before the last snapshot is no longer replayable.
@@ -615,7 +619,8 @@ function handleHostJoin(ws: WebSocket, message: JsonMessage): void {
     });
 
     const hostResumeFrom = parseResumeFrom(message);
-    const hostReplay = hostResumeFrom === null ? null : replayableFrom(existingRoom, hostResumeFrom);
+    const hostReplay =
+      hostResumeFrom === null ? null : replayableFrom(existingRoom, hostResumeFrom);
 
     safeSend(ws, {
       type: "host:ack",
@@ -707,7 +712,9 @@ function handleGuestJoin(ws: WebSocket, message: JsonMessage): void {
   }
 
   if (roomPeerCount(room) >= MAX_PARTICIPANTS) {
-    sendError(ws, "room_full", `Room is full (maximum ${MAX_PARTICIPANTS} participants)`, { close: true });
+    sendError(ws, "room_full", `Room is full (maximum ${MAX_PARTICIPANTS} participants)`, {
+      close: true,
+    });
     return;
   }
 
@@ -983,7 +990,12 @@ function handlePeerCursor(ws: WebSocket, message: JsonMessage): void {
   // alone. Keeping only the newest position per client and flushing the room
   // once per tick makes that 15 sends per tick regardless of how fast anyone
   // moves, which is what lets 50 rooms share one event loop.
-  room.pendingCursors.set(state.clientId, { clientId: state.clientId, user, cursor, activeElementId });
+  room.pendingCursors.set(state.clientId, {
+    clientId: state.clientId,
+    user,
+    cursor,
+    activeElementId,
+  });
   scheduleCursorFlush(room, roomId);
 }
 
@@ -1128,7 +1140,9 @@ function startSnapshotTimer(roomId: string): void {
   }, SNAPSHOT_INTERVAL_MS);
 
   snapshotTimers.set(roomId, timer);
-  console.log(`[collab] snapshot timer started: room=${roomId}, interval=${SNAPSHOT_INTERVAL_MS}ms`);
+  console.log(
+    `[collab] snapshot timer started: room=${roomId}, interval=${SNAPSHOT_INTERVAL_MS}ms`,
+  );
 }
 
 /**

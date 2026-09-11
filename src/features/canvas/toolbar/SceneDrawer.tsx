@@ -12,7 +12,7 @@ import {
 } from "@/features/diagram";
 import { useInteractionMode } from "../hooks/useInteractionMode";
 import { cn } from "@/lib/utils";
-import { KEY, keyIs } from "@/lib/keyboard-utils";
+import { KEY, keyIs } from "@/lib/core/keyboard";
 import { MergeSceneDialog } from "./MergeSceneDialog";
 
 export type SceneDrawerScene = SceneDiff;

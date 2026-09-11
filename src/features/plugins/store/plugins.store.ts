@@ -13,3 +13,4 @@ import {
 export function usePluginRegistry(): PluginRuntimeState[] {
   return useSyncExternalStore(subscribePluginRegistry, getPluginRegistrySnapshot);
 }
+export type { PluginRuntimeState } from "../plugin-registry";

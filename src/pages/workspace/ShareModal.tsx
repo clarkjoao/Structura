@@ -6,7 +6,7 @@ import type { Diagram } from "@/features/diagram";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { type ShareUrlResult, generateShareUrl, generateViewerUrl } from "@/lib/diagram-url";
+import { type ShareUrlResult, generateShareUrl, generateViewerUrl } from "@/lib/share-url";
 
 /** Nothing chosen. A value rather than an empty string, so the select says it. */
 const NO_FLOW = "";
@@ -51,7 +51,7 @@ export function ShareModal({ diagram, open, onOpenChange }: ShareModalProps) {
   const shareUrl = shareResult.url;
 
   const embedUrl = useMemo(
-    () => generateViewerUrl(diagram, { flowId: flowId || null }),
+    () => generateViewerUrl(diagram, flowId ? { flowId } : {}),
     [diagram.id, snapshotVersion, flowId],
   );
 

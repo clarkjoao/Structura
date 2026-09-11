@@ -8,7 +8,7 @@ import {
   useCustomComponentStore,
   type CustomComponentTemplate,
 } from "@/features/custom-components";
-import { useIconStore } from "@/features/icons";
+import { useIconStore } from "@/features/diagram/store";
 import {
   buildPersistStoragePayload,
   flushDiagramStoreToLocalStorageNow,

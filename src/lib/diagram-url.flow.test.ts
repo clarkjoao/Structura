@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Diagram, Flow } from "@/features/diagram";
-import { decodeShareParam, generateShareUrl, generateViewerUrl } from "./diagram-url";
+import { decodeShareParam, generateShareUrl, generateViewerUrl } from "./share-url";
 
 /**
  * The script a link opens on.

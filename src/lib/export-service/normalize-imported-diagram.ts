@@ -1,5 +1,6 @@
 import type { Diagram, IconDefinition } from "@/features/diagram";
-import { useIconStore } from "@/features/icons";
+import { logger } from "@/lib/core/logger";
+import { useIconStore } from "@/features/diagram";
 
 function normalizeOneIconEntry(key: string, value: unknown): IconDefinition | null {
   if (!value || typeof value !== "object") return null;
@@ -104,7 +105,7 @@ export function normalizeImportedDiagram(diagram: Diagram): Diagram {
       }
     }
   } catch (err) {
-    console.warn("[normalize-imported-diagram] Failed to normalize imported diagram:", err);
+    logger.warn("[normalize-imported-diagram]", "Failed to normalize imported diagram:", err);
   }
 
   const components = { ...snapshot.components };

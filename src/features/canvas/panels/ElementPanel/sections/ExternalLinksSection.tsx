@@ -8,7 +8,7 @@ import {
   Plus,
   ExternalLink as ExternalLinkIcon,
 } from "lucide-react";
-import { KEY, keyIs } from "@/lib/keyboard-utils";
+import { KEY, keyIs } from "@/lib/core/keyboard";
 import { useTranslation } from "react-i18next";
 import { ExternalLinkType } from "@/features/diagram";
 import type { ExternalLink } from "@/features/diagram";

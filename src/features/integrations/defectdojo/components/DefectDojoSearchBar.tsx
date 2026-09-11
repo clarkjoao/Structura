@@ -3,7 +3,7 @@ import { Search, Loader2 } from "lucide-react";
 import type { DDProductType } from "../types";
 import { DD_PRODUCT_SEARCH_FIELDS, type DDProductSearchField } from "../defectdojo.service";
 import { useTranslation } from "react-i18next";
-import { KEY, keyIs } from "@/lib/keyboard-utils";
+import { KEY, keyIs } from "@/lib/core/keyboard";
 
 interface Props {
   productTypes: DDProductType[];

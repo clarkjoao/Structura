@@ -3,7 +3,7 @@ import { AlertCircle, LayoutDashboard, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Diagram } from "@/features/diagram";
 import { ViewerCanvas } from "@/features/viewer";
-import { getFlowParamFromUrl, getViewerDataFromHash } from "@/lib/diagram-url";
+import { getFlowParamFromUrl, getViewerDataFromHash } from "@/lib/share-url";
 
 function assertDiagram(value: unknown): asserts value is Diagram {
   if (!value || typeof value !== "object" || !("id" in value) || !("snapshot" in value)) {

@@ -1,4 +1,3 @@
-import type { IconDefinition } from "../../model/diagram.types";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
 import { touchDiagram } from "../helpers/get-active-diagram";
@@ -14,16 +13,18 @@ function clearCustomIconIdFromComponents(
   }
 }
 
+/**
+ * Removes all customIconId references to a deleted icon from a diagram's components and scenes.
+ * The actual icon CRUD lives in the global icon-store (icon-store.ts).
+ * This slice only handles the reference cleanup.
+ */
 export const iconsSlice = (set: (fn: (state: AppState) => void) => void, _get: () => AppState) => ({
-  addIcon: (_diagramId: string, _icon: IconDefinition): void => {},
-
   removeIconReferences: (diagramId: string, iconId: string): void => {
     set((state) => {
       const diagram = state.diagrams[diagramId];
       if (!diagram) {
         return;
       }
-      // Only push history if this is the active diagram
       if (state.activeDiagramId === diagramId) {
         pushHistory(state);
       }
@@ -36,12 +37,4 @@ export const iconsSlice = (set: (fn: (state: AppState) => void) => void, _get: (
       touchDiagram(diagram);
     });
   },
-
-  removeIcon: (_diagramId: string, _iconId: string): void => {},
-
-  updateIconName: (_diagramId: string, _iconId: string, _name: string): void => {},
-
-  incrementIconUsage: (_diagramId: string, _iconId: string): void => {},
-
-  decrementIconUsage: (_diagramId: string, _iconId: string): void => {},
 });

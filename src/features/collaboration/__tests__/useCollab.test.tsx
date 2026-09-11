@@ -140,8 +140,7 @@ function renderHookWithClient(options: RenderOptions = {}) {
     /** Access the MockWebSocket instance that was created */
     getWs: (): MockWebSocket => latestMockWs(),
     /** Get all messages sent by the hook */
-    getSentMessages: (): SentMessage[] =>
-      latestMockWs().sentMessages,
+    getSentMessages: (): SentMessage[] => latestMockWs().sentMessages,
   };
 }
 
@@ -287,7 +286,12 @@ describe("useCollab hook", () => {
       await vi.advanceTimersByTimeAsync(0);
     });
 
-    latestMockWs().injectMessage({ type: "session:init", version: 0, snapshot: makeSnapshot(), peers: [] });
+    latestMockWs().injectMessage({
+      type: "session:init",
+      version: 0,
+      snapshot: makeSnapshot(),
+      peers: [],
+    });
 
     // Re-render with isHost = true (roomId unchanged)
     await act(async () => {

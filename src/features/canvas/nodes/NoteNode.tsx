@@ -9,7 +9,7 @@ import {
   NOTE_DEFAULT_LIGHT,
 } from "@/features/canvas/panels/ElementPanel/components/colorPresets";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
-import { KEY, keyIs } from "@/lib/keyboard-utils";
+import { KEY, keyIs } from "@/lib/core/keyboard";
 
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/hooks/useTheme";

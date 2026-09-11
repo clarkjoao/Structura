@@ -1,10 +1,10 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { CustomComponentStoreState, CustomComponentTemplate } from "../types";
-import { customComponentRepository } from "@/infrastructure/persistence/CustomComponentRepository";
+import { customComponentTemplateStore } from "@/infrastructure/persistence/customComponentTemplateStore";
 
 function syncRepository(templates: Record<string, CustomComponentTemplate>): void {
-  void customComponentRepository.save(templates);
+  void customComponentTemplateStore.save(templates);
 }
 
 function isC4Subtype(value: unknown): value is "person" | "system" | "container" | "component" {
@@ -109,7 +109,7 @@ void useCustomComponentStore.persist.onFinishHydration(() => {
   });
 });
 
-void customComponentRepository.load().then((templates) => {
+void customComponentTemplateStore.load().then((templates) => {
   if (Object.keys(templates).length === 0) return;
   useCustomComponentStore.setState((state) => {
     if (Object.keys(state.templates).length > 0) return state;

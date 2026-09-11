@@ -20,7 +20,7 @@ import {
   type DiagramExportFormat,
 } from "@/lib/export-service";
 import { toast } from "sonner";
-import { writeDrawioToClipboard } from "@/lib/clipboard-utils";
+import { writeDrawioToClipboard } from "@/lib/clipboard";
 import { FlowModeProvider } from "@/features/canvas";
 import { CollabProvider, CollabStartModal } from "@/features/collaboration";
 import { ImportModal } from "@/pages/ImportModal";

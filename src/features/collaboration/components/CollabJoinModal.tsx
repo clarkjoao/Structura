@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { KEY, keyIs } from "@/lib/keyboard-utils";
+import { KEY, keyIs } from "@/lib/core/keyboard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { readPrefs, writePrefs } from "../utils/collab-preferences";

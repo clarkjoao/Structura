@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, Check, Link, Users, X } from "lucide-react";
 import type { CollabSession } from "../types";
-import { copyText } from "../utils/copy-text";
+import { copyText } from "../utils/copyText";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,7 +31,7 @@ export function CollabToolbar({
   collabUrl,
   participantCount,
   maxParticipants,
-  peerLimitReached,
+  peerLimitReached: _peerLimitReached,
   onStartCollab,
   onEndCollab,
 }: CollabToolbarProps) {
@@ -68,7 +68,7 @@ export function CollabToolbar({
     );
   }
 
-  const peerCount = participantCount > 0 ? participantCount - 1 : 0;
+  const _peerCount = participantCount > 0 ? participantCount - 1 : 0;
 
   return (
     <>

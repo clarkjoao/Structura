@@ -359,6 +359,30 @@ and a separate `Walkthroughs` Zustand store.
 
 ## Part 5 — Auxiliary concepts
 
+### IconStore
+
+**Status:** `current`
+
+**Definition:** A Zustand store (`features/diagram/store/icon-store.ts`) that
+holds all custom SVG icons in a workspace. It is the single source of truth
+for icon data; the canvas and interchange layers subscribe to it via selectors.
+When an icon is deleted, `diagramStore.removeIconReferences()` sweeps all
+`customIconId` pointers from components and scenes.
+
+**Reference:** `IconStore` in
+`src/features/diagram/store/icon-store.ts`; exported from
+`src/features/diagram/store/index.ts`.
+
+**Counterpoint:**
+
+- **Not** the same as the AWS/GCP/Azure icon catalog (which lives in
+  `lib/catalogs/` and is read-only at runtime).
+- **Not** the same as a `Component`'s `icon` field (which is a static
+  catalog icon reference; a `customIconId` field points to a custom icon
+  in IconStore instead).
+
+---
+
 ### UserTemplate
 
 **Status:** `current`
@@ -501,7 +525,7 @@ cross-entity grouping field.
 disambiguate in writing:
 
 - **the Model** — the bounded context at `src/features/diagram/`,
-  containing types, guards, the store (slices/selectors), and pure
+  containing types, guards, the store (slices/selectors, icon-store), and pure
   utilities. No React. See `architecture/overview.md` §4.
 - **ModelDraft** — the semantic snapshot of a Diagram, type
   `Diagram.snapshot: ModelDraft`. This is the unit of undo/redo and
@@ -595,6 +619,8 @@ blocking defect.
 | 5 | `Journey` (entity, route, i18n) | `Walkthrough` | 3 | shipped (PERSIST_SCHEMA_VERSION 9) |
 | 6 | `ExternalElementComponent.linkedDiagramId` | `referenceDiagramId` | 3 | shipped (PERSIST_SCHEMA_VERSION 10) |
 | 7 | `CustomComponentRepository.ts` | `customComponentTemplateStore.ts` | 4 | cosmetic, optional |
+| 8 | `features/icons/` (feature) | merged into `features/diagram/store/icon-store.ts` | 3 | `IconStore` is now the single source of truth for custom icons inside the diagram feature; `features/icons/` deleted; 7 import paths updated |
+| 9 | `copy-text.ts` (file) | `copyText.ts` | 4 | cosmetic, camelCase convention |
 
 Each rename ships as its own OpenSpec change with a forward-only
 migration where persisted data is affected. Tier 1 is small and can
@@ -626,4 +652,4 @@ PR** with `Status: proposed` and a note about the implementation PR.
 
 ---
 
-_Last updated: <today>._
+_Last updated: 2026-09-08 — IconStore entry added; feature icons merged into diagram._

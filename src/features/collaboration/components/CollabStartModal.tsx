@@ -9,12 +9,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { KEY, keyIs } from "@/lib/keyboard-utils";
+import { KEY, keyIs } from "@/lib/core/keyboard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { readPrefs, writePrefs } from "../utils/collab-preferences";
 import { testServer } from "../utils/collab.utils";
-import { copyText } from "../utils/copy-text";
+import { copyText } from "../utils/copyText";
 import { useCollab } from "./CollabProvider";
 
 interface CollabStartModalProps {

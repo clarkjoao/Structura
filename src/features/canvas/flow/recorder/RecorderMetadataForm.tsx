@@ -1,6 +1,6 @@
 import { useState, type KeyboardEvent } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { KEY, keyIs } from "@/lib/keyboard-utils";
+import { KEY, keyIs } from "@/lib/core/keyboard";
 import { useTranslation } from "react-i18next";
 import type { RecordingContext } from "../flowMode.types";
 

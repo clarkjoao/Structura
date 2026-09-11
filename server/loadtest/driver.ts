@@ -47,16 +47,18 @@ async function main(): Promise<void> {
   );
 
   // --- boot server under test -------------------------------------------
-  const sut: ChildProcess = spawn(
-    "npx",
-    ["tsx", path.join(here, "sut.ts")],
-    { env: { ...process.env, SUT_PORT: String(PORT) }, stdio: ["ignore", "ignore", "pipe"] },
-  );
+  const sut: ChildProcess = spawn("npx", ["tsx", path.join(here, "sut.ts")], {
+    env: { ...process.env, SUT_PORT: String(PORT) },
+    stdio: ["ignore", "ignore", "pipe"],
+  });
 
   let peakRss = 0;
   let peakHeap = 0;
   let lastRss = 0;
-  interface Lag { maxMs: number; avgMs: number }
+  interface Lag {
+    maxMs: number;
+    avgMs: number;
+  }
   let lagReport: Lag | null = null;
   let ready = false;
 
@@ -196,7 +198,9 @@ async function main(): Promise<void> {
   console.log(
     `patch latency   p50=${pct(allPatchLat, 50)}ms  p95=${pct(allPatchLat, 95)}ms  p99=${pct(allPatchLat, 99)}ms  max=${allPatchLat[allPatchLat.length - 1] ?? 0}ms  (n=${allPatchLat.length})`,
   );
-  console.log(`server memory   peakRSS=${mb(peakRss)}  peakHeap=${mb(peakHeap)}  endRSS=${mb(lastRss)}`);
+  console.log(
+    `server memory   peakRSS=${mb(peakRss)}  peakHeap=${mb(peakHeap)}  endRSS=${mb(lastRss)}`,
+  );
   const lag = lagReport as Lag | null;
   if (lag) {
     console.log(`server loop lag avg=${lag.avgMs}ms  max=${lag.maxMs}ms`);

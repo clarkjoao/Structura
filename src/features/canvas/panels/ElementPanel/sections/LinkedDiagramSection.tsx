@@ -2,7 +2,7 @@ import { LayoutDashboard, Lock, Plus, Sparkles, ChevronDown, X } from "lucide-re
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCollab } from "@/features/collaboration";
-import { KEY, keyIs } from "@/lib/keyboard-utils";
+import { KEY, keyIs } from "@/lib/core/keyboard";
 
 export interface LinkedDiagramOption {
   id: string;

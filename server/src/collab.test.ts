@@ -180,8 +180,7 @@ describe("collaboration server integration", () => {
     for (let i = 1; i <= 14; i++) {
       const guest = await connectClient(TEST_ROOM);
       guest.ws.send(
-        JSON.stringify({ type: "guest:join",
-        protocol: 2, roomId: TEST_ROOM, user: makeUser(i) }),
+        JSON.stringify({ type: "guest:join", protocol: 2, roomId: TEST_ROOM, user: makeUser(i) }),
       );
       await waitForMessage(guest, "session:init");
       guestClients.push(guest);
@@ -196,8 +195,7 @@ describe("collaboration server integration", () => {
     });
 
     guest15.ws.send(
-      JSON.stringify({ type: "guest:join",
-        protocol: 2, roomId: TEST_ROOM, user: makeUser(15) }),
+      JSON.stringify({ type: "guest:join", protocol: 2, roomId: TEST_ROOM, user: makeUser(15) }),
     );
 
     await new Promise<void>((resolve) => {
@@ -223,8 +221,12 @@ describe("collaboration server integration", () => {
     const client = await connectClient("nonexistent-room");
 
     client.ws.send(
-      JSON.stringify({ type: "guest:join",
-        protocol: 2, roomId: "nonexistent-room", user: makeUser(99) }),
+      JSON.stringify({
+        type: "guest:join",
+        protocol: 2,
+        roomId: "nonexistent-room",
+        user: makeUser(99),
+      }),
     );
 
     const errorReceived = (await waitForMessage(client, "error")) as { code?: string };
@@ -308,8 +310,12 @@ describe("collaboration server integration", () => {
     // Guest joins at version 1
     const guestClient = await connectClient(TEST_ROOM + "-vgap");
     guestClient.ws.send(
-      JSON.stringify({ type: "guest:join",
-        protocol: 2, roomId: TEST_ROOM + "-vgap", user: makeUser(1) }),
+      JSON.stringify({
+        type: "guest:join",
+        protocol: 2,
+        roomId: TEST_ROOM + "-vgap",
+        user: makeUser(1),
+      }),
     );
     await waitForMessage(guestClient, "session:init");
 
@@ -361,8 +367,12 @@ describe("collaboration server integration", () => {
     // Guest joins and requests sync from version 2 (wants ops 3, 4, 5)
     const guestClient = await connectClient(TEST_ROOM + "-sync");
     guestClient.ws.send(
-      JSON.stringify({ type: "guest:join",
-        protocol: 2, roomId: TEST_ROOM + "-sync", user: makeUser(1) }),
+      JSON.stringify({
+        type: "guest:join",
+        protocol: 2,
+        roomId: TEST_ROOM + "-sync",
+        user: makeUser(1),
+      }),
     );
     await waitForMessage(guestClient, "session:init");
 
@@ -505,7 +515,9 @@ describe("collaboration server integration", () => {
     }
 
     const guest = await connectClient(room);
-    guest.ws.send(JSON.stringify({ type: "guest:join", protocol: 2, roomId: room, user: makeUser(1) }));
+    guest.ws.send(
+      JSON.stringify({ type: "guest:join", protocol: 2, roomId: room, user: makeUser(1) }),
+    );
     await waitForMessage(guest, "session:init");
 
     // Declares version 0 while the room is at 3. On an ordered socket that is
@@ -583,8 +595,12 @@ describe("collaboration server integration", () => {
 
     const guestClient = await connectClient(TEST_ROOM + "-cleanup");
     guestClient.ws.send(
-      JSON.stringify({ type: "guest:join",
-        protocol: 2, roomId: TEST_ROOM + "-cleanup", user: makeUser(1) }),
+      JSON.stringify({
+        type: "guest:join",
+        protocol: 2,
+        roomId: TEST_ROOM + "-cleanup",
+        user: makeUser(1),
+      }),
     );
     const init = (await waitForMessage(guestClient, "session:init")) as {
       participantCount?: number;
@@ -626,8 +642,9 @@ describe("collaboration server integration", () => {
     await waitForMessage(host, "host:ack");
 
     const guest = await connectClient(room);
-    guest.ws.send(JSON.stringify({ type: "guest:join",
-        protocol: 2, roomId: room, user: makeUser(1) }));
+    guest.ws.send(
+      JSON.stringify({ type: "guest:join", protocol: 2, roomId: room, user: makeUser(1) }),
+    );
     await waitForMessage(guest, "session:init");
 
     // Host moves node-a; guest moves node-b. Different entities, so both edits
@@ -653,8 +670,9 @@ describe("collaboration server integration", () => {
     // A fresh joiner receives the authoritative snapshot: the proof of what the
     // server actually kept.
     const observer = await connectClient(room);
-    observer.ws.send(JSON.stringify({ type: "guest:join",
-        protocol: 2, roomId: room, user: makeUser(2) }));
+    observer.ws.send(
+      JSON.stringify({ type: "guest:join", protocol: 2, roomId: room, user: makeUser(2) }),
+    );
     const init = (await waitForMessage(observer, "session:init")) as Record<string, unknown>;
     const layouts = (init.snapshot as Record<string, unknown>).nodeLayouts as Record<
       string,
@@ -703,10 +721,14 @@ describe("collaboration server integration", () => {
     await waitForMessage(host, "OP_ACK");
 
     const observer = await connectClient(room);
-    observer.ws.send(JSON.stringify({ type: "guest:join",
-        protocol: 2, roomId: room, user: makeUser(1) }));
+    observer.ws.send(
+      JSON.stringify({ type: "guest:join", protocol: 2, roomId: room, user: makeUser(1) }),
+    );
     const init = (await waitForMessage(observer, "session:init")) as Record<string, unknown>;
-    const layouts = (init.snapshot as Record<string, unknown>).nodeLayouts as Record<string, unknown>;
+    const layouts = (init.snapshot as Record<string, unknown>).nodeLayouts as Record<
+      string,
+      unknown
+    >;
 
     expect(layouts["delete-me"]).toBeUndefined();
     expect(layouts["keep-me"]).toMatchObject({ x: 5, y: 5 });
@@ -851,7 +873,10 @@ describe("collaboration server integration", () => {
       JSON.stringify({ type: "guest:join", protocol: 2, roomId: room, user: makeUser(1) }),
     );
     const init = (await waitForMessage(observer, "session:init")) as Record<string, unknown>;
-    const layouts = (init.snapshot as Record<string, unknown>).nodeLayouts as Record<string, unknown>;
+    const layouts = (init.snapshot as Record<string, unknown>).nodeLayouts as Record<
+      string,
+      unknown
+    >;
 
     expect(layouts["node-9"]).toMatchObject({ x: 7, y: 7 });
 
@@ -872,7 +897,10 @@ describe("collaboration server integration", () => {
         roomId: room,
         diagramId: room,
         user: makeUser(0),
-        snapshot: makeSnapshot({ diagramId: room, nodeLayouts: { base: { elementId: "base", x: 0 } } }),
+        snapshot: makeSnapshot({
+          diagramId: room,
+          nodeLayouts: { base: { elementId: "base", x: 0 } },
+        }),
       }),
     );
     const ack = (await waitForMessage(host, "host:ack")) as Record<string, unknown>;
@@ -928,13 +956,18 @@ describe("collaboration server integration", () => {
         roomId: room,
         diagramId: room,
         user: makeUser(0),
-        snapshot: makeSnapshot({ diagramId: room, nodeLayouts: { base: { elementId: "base", x: 0 } } }),
+        snapshot: makeSnapshot({
+          diagramId: room,
+          nodeLayouts: { base: { elementId: "base", x: 0 } },
+        }),
       }),
     );
     await waitForMessage(host, "host:ack");
 
     const guest = await connectClient(room);
-    guest.ws.send(JSON.stringify({ type: "guest:join", protocol: 2, roomId: room, user: makeUser(1) }));
+    guest.ws.send(
+      JSON.stringify({ type: "guest:join", protocol: 2, roomId: room, user: makeUser(1) }),
+    );
     const init = (await waitForMessage(guest, "session:init")) as Record<string, unknown>;
 
     expect(init.operations).toBeUndefined();
@@ -1136,10 +1169,10 @@ describe("collaboration server integration", () => {
       }),
     );
 
-    const repair = (await waitForMessage(guest, [
-      "SYNC_SNAPSHOT",
-      "SYNC_COMPLETE",
-    ])) as Record<string, unknown>;
+    const repair = (await waitForMessage(guest, ["SYNC_SNAPSHOT", "SYNC_COMPLETE"])) as Record<
+      string,
+      unknown
+    >;
     expect(repair.type).toBe("SYNC_SNAPSHOT");
     const layouts = (repair.snapshot as Record<string, Record<string, Record<string, number>>>)
       .nodeLayouts;

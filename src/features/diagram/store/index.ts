@@ -17,6 +17,9 @@ export {
   deleteUserTemplate,
 } from "./diagram.store";
 
+export { useIconStore } from "./icon-store";
+export type { IconStore } from "./icon-store";
+
 export type { DiagramStore, ClipboardEntry } from "./store.types";
 export type {
   FlowStoreResult,
@@ -55,6 +58,8 @@ export {
   useEdgeControlPoints,
   useEdgeLabelOffset,
   useAllUserTemplates,
+  useGlobalIconLibrary,
+  useGlobalIconById,
 } from "./selectors";
 export type { ActiveDiagramSceneState } from "./selectors/connection.selectors";
 

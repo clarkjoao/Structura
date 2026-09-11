@@ -1,6 +1,6 @@
 import { Clock, Network, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { formatTimestamp } from "@/lib/format-date";
+import { formatTimestamp } from "@/lib/core/format-timestamp";
 import { cn } from "@/lib/utils";
 import { levelColors } from "@/pages/dashboard/dashboard.constants";
 import type { DiagramListProps } from "@/pages/dashboard/dashboard.types";

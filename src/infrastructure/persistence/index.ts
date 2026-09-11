@@ -22,4 +22,7 @@ export {
 export type { ForceSaveToFolderResult } from "./fileSystemBoot";
 export { validateDiagramFile, validateManifest } from "./validateWorkspaceFile";
 export type { ValidationResult, ManifestValidationResult } from "./validateWorkspaceFile";
-export { CustomComponentRepository, customComponentRepository } from "./CustomComponentRepository";
+export {
+  CustomComponentTemplateStore,
+  customComponentTemplateStore,
+} from "./customComponentTemplateStore";

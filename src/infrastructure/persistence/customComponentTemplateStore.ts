@@ -3,7 +3,7 @@ import type { CustomComponentTemplate } from "@/features/custom-components";
 
 const CUSTOM_COMPONENTS_STORAGE_KEY = "custom_components";
 
-export class CustomComponentRepository {
+export class CustomComponentTemplateStore {
   async save(templates: Record<string, CustomComponentTemplate>): Promise<void> {
     await defaultStorage.save(CUSTOM_COMPONENTS_STORAGE_KEY, templates);
   }
@@ -16,4 +16,4 @@ export class CustomComponentRepository {
   }
 }
 
-export const customComponentRepository = new CustomComponentRepository();
+export const customComponentTemplateStore = new CustomComponentTemplateStore();

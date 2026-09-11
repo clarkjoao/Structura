@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import type { ServiceDefinition } from "@/features/diagram";
 import { ServiceSource } from "@/features/diagram";
-import { KEY, keyIs } from "@/lib/keyboard-utils";
+import { KEY, keyIs } from "@/lib/core/keyboard";
 import { ChipInput } from "./ChipInput";
 
 export const ManualCreateForm = ({

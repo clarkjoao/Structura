@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { readStructuraClipboard, writeDrawioToClipboard } from "./clipboard-utils";
+import { readStructuraClipboard, writeDrawioToClipboard } from "./clipboard";
 import type { ClipboardEntry } from "@/features/diagram/store/store.types";
 import type { AwsComponent } from "@/features/diagram/model/component.types";
 
@@ -76,11 +76,6 @@ const sampleEntry: ClipboardEntry = {
 
 describe("writeDrawioToClipboard", () => {
   it("never modifies the text/plain or text/html payloads real draw.io parses", async () => {
-    // Regression: an earlier version embedded a hidden marker div inside the
-    // text/html blob. Real draw.io's paste importer only recognizes its own
-    // exact html shape and fell back to importing the raw XML as literal text
-    // shapes when that shape was altered. text/plain and text/html must stay
-    // byte-for-byte what they'd be without any Structura payload at all.
     let withEntry: FakeClipboardItem | null = null;
     let withoutEntry: FakeClipboardItem | null = null;
 

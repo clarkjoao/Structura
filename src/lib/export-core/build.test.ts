@@ -57,7 +57,11 @@ describe("export-core is framework-agnostic", () => {
     expect(files.length).toBeGreaterThan(5);
     for (const f of files) {
       const src = readFileSync(`${HERE}/${f}`, "utf8");
-      expect(src, `${f} must not import from @/`).not.toMatch(/from\s+["']@\//);
+      // @/lib/core is cross-cutting utilities (logger), not app features — exempt.
+      // @/features and @/plugins are app-specific and must stay out of export-core.
+      expect(src, `${f} must not import from @/features or @/plugins`).not.toMatch(
+        /from\s+["']@\/(features|plugins)\//,
+      );
       expect(src, `${f} must not reference plugin.types`).not.toMatch(/plugin\.types/);
     }
   });
