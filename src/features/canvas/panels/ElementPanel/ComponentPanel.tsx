@@ -258,7 +258,6 @@ const ComponentPanel = ({
               tagInput={tagInput}
               isNote={isNote}
               isPanel={isPanel}
-              isAws={isAws}
               showTechnology={false}
               showTags={false}
               titleInputRef={titleInputRef}
@@ -288,7 +287,6 @@ const ComponentPanel = ({
                 tagInput={tagInput}
                 isNote={isNote}
                 isPanel={isPanel}
-                isAws={isAws}
                 showDescription={false}
                 showTechnology={false}
                 showTags={false}
@@ -397,7 +395,6 @@ const ComponentPanel = ({
                 tagInput={tagInput}
                 isNote={isNote}
                 isPanel={isPanel}
-                isAws={isAws}
                 showName={false}
                 showTechnology
                 showTags

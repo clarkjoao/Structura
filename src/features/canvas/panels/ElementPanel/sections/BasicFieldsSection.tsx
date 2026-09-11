@@ -11,7 +11,6 @@ export interface BasicFieldsSectionProps {
   tagInput: string;
   isNote: boolean;
   isPanel: boolean;
-  isAws: boolean;
 
   showName?: boolean;
 
