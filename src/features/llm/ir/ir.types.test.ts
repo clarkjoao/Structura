@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AWS_CATEGORIES } from "@/lib/catalogs/aws";
+import { AWS_CATEGORIES } from "@/features/cloud/providers/aws/aws.catalog";
 import {
   coerceTier,
   isBoundarySemanticType,

@@ -127,7 +127,7 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
   if (customDiagramIcon) {
     icon = <CustomIconRenderer icon={customDiagramIcon} size={24} className="shrink-0" />;
     if (cloudProvider) {
-      const svc = d.awsService ? cloudProvider.getService(d.awsService) : undefined;
+      const svc = d.cloudService ? cloudProvider.getService(d.cloudService) : undefined;
       const cat = cloudProvider.getCategoryForType(d.type);
       const hasCustomColor = !!d.customColor;
       borderClass = !hasCustomColor ? cloudProvider.getCategoryStyle(d.type).borderClass : "";
@@ -143,7 +143,7 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
       actionColorClass = hasCustomColor ? "" : cfg.textColor;
     }
   } else if (cloudProvider) {
-    const svc = d.awsService ? cloudProvider.getService(d.awsService) : undefined;
+    const svc = d.cloudService ? cloudProvider.getService(d.cloudService) : undefined;
     const cat = cloudProvider.getCategoryForType(d.type);
     const hasCustomColor = !!d.customColor;
     borderClass = !hasCustomColor ? cloudProvider.getCategoryStyle(d.type).borderClass : "";

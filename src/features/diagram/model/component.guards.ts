@@ -1,4 +1,4 @@
-import { isAwsType } from "@/lib/catalogs/aws";
+import { isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
 import { isGcpType } from "@/features/cloud/providers/gcp/gcp.catalog";
 import { isAzureType } from "@/features/cloud/providers/azure/azure.catalog";
 import { cloudRegistry } from "@/features/cloud";

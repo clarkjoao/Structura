@@ -1,4 +1,4 @@
-import type { AwsCategoryId } from "@/lib/catalogs/aws";
+import type { AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
 import type { GcpCategoryId } from "@/features/cloud/providers/gcp/gcp.catalog";
 import type { AzureCategoryId } from "@/features/cloud/providers/azure/azure.catalog";
 import type { ExternalLinkType, PanelKind } from "../enums";
@@ -260,6 +260,8 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<PanelComponent, "id">> &
   Partial<Omit<NoteComponent, "id">> &
   Partial<Omit<AwsComponent, "id">> &
+  Partial<Omit<GcpComponent, "id">> &
+  Partial<Omit<AzureComponent, "id">> &
   Partial<Omit<ApiGroupComponent, "id">> &
   Partial<Omit<EndpointComponent, "id">> &
   Partial<Omit<UnknownComponent, "id">> &

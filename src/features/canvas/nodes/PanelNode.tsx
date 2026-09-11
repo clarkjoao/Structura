@@ -5,7 +5,7 @@ import { useComponentIcon } from "@/features/diagram";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
-import AwsIcon from "./AwsIcon";
+import { AwsIcon } from "./CloudIcon";
 import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
 import { useCollabHighlight } from "@/features/collaboration";

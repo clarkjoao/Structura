@@ -75,7 +75,7 @@ describe("c4Descriptor — technology", () => {
     // keeps already-saved diagrams looking the way they did.
     const data = dataFor({ ...base, type: "aws-database", awsService: "rds" } as Component);
     expect(data.technology).toBeUndefined();
-    expect(data.awsService).toBe("rds");
+    expect(data.cloudService).toBe("rds");
   });
 
   it("leaves technology undefined for a type that has no such field", () => {

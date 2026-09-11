@@ -1,5 +1,5 @@
 export * from "./node-types";
-export * from "./AwsIcon";
+export * from "./CloudIcon";
 export * from "./EndpointNode";
 export * from "./ExternalElementNode";
 export * from "./nodeVisibility";

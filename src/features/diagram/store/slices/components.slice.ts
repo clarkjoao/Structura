@@ -37,7 +37,7 @@ import type {
   ExternalElementComponent,
 } from "../../model/component.types";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
-import { isAwsType } from "@/lib/catalogs/aws";
+import { isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
 import { isGcpType } from "@/features/cloud/providers/gcp/gcp.catalog";
 import { isAzureType } from "@/features/cloud/providers/azure/azure.catalog";
 import type { AppState } from "../store.types";

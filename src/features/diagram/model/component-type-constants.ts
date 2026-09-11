@@ -1,6 +1,6 @@
 import { PanelKind } from "../enums";
 import type { ComponentType } from "./component.types";
-import { isAwsType } from "@/lib/catalogs/aws";
+import { isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
 import i18n from "@/infrastructure/i18n";
 
 export const C4_TYPES = ["person", "system", "container", "component"] as const;

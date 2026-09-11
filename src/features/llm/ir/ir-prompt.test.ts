@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AWS_CATEGORIES, AWS_SERVICE_MAP } from "@/lib/catalogs/aws";
+import { AWS_CATEGORIES, AWS_SERVICE_MAP } from "@/features/cloud/providers/aws/aws.catalog";
 import { buildIRSystemPrompt } from "./ir-prompt";
 import { parseAndValidateIR } from "./ir-validator";
 import { IR_SEMANTIC_TYPES, IR_TIERS, TIER_BY_SEMANTIC_TYPE } from "./ir.types";

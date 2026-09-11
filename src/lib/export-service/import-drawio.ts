@@ -6,7 +6,7 @@ import type {
   UnknownComponent,
 } from "@/features/diagram";
 import { COMPONENT_TYPE_UNKNOWN, EdgeStyle, PanelKind, generateId } from "@/features/diagram";
-import { AWS_CATEGORY_ID_GENERAL } from "@/lib/catalogs/aws";
+import { AWS_CATEGORY_ID_GENERAL } from "@/features/cloud/providers/aws/aws.catalog";
 
 export interface DrawioImportResult {
   components: Component[];
