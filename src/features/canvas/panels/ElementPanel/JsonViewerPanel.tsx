@@ -6,7 +6,6 @@ import { LazyMonacoEditor as Editor, type EditorProps } from "@/lib/monaco/LazyM
 import type { JsonViewerComponent, ComponentPatch } from "@/features/diagram";
 import { useActiveDiagram } from "@/features/diagram";
 import TabBar, { type Tab } from "./components/TabBar";
-import { ComponentIconTab } from "./components/ComponentIconTab";
 import { FIELD_DEBOUNCE_MS } from "@/features/canvas/canvas.constants";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/useTheme";
@@ -287,13 +286,6 @@ export default function JsonViewerPanel({
           </div>
         )}
 
-        {tab === "icon" && (
-          <ComponentIconTab
-            component={component}
-            diagramId={activeDiagram?.id ?? ""}
-            updateComponent={updateComponent}
-          />
-        )}
       </div>
     </div>
   );

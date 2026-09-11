@@ -228,7 +228,7 @@ const ComponentPanel = ({
         </div>
       </div>
       <TabBar active={tab} onChange={setTab} showConnections={!isSimple} />
-      {tab === "connections" && !isSimple ? (
+      {tab === "connections" ? (
         <ConnectionsTab componentId={component.id} />
       ) : (
         <div className="p-4 space-y-4 overflow-auto flex-1">
