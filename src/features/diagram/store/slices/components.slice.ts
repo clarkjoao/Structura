@@ -32,12 +32,12 @@ import {
   COMPONENT_TYPE_PROCESS_NODE,
 } from "../../model/component-type-constants";
 import type {
-  FlowNodeComponent,
+  ProcessNodeComponent,
   FlowNodeShape,
   ExternalElementComponent,
 } from "../../model/component.types";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
-import { isAwsType } from "@/lib/catalogs/aws";
+import { isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
 import { isGcpType } from "@/features/cloud/providers/gcp/gcp.catalog";
 import { isAzureType } from "@/features/cloud/providers/azure/azure.catalog";
 import type { AppState } from "../store.types";
@@ -210,7 +210,7 @@ export function buildComponentForType(
       ...base,
       type: COMPONENT_TYPE_PROCESS_NODE,
       flowShape: flowShape ?? "rectangle",
-    } as FlowNodeComponent;
+    } as ProcessNodeComponent;
   } else if (isExternalElementType(type)) {
     component = {
       ...base,

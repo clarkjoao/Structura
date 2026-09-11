@@ -5,8 +5,8 @@ import { resolveTemplateAccentColor } from "../utils/resolve-template-accent-col
 import { cn } from "@/lib/utils";
 import { useIconById, isPanelKind, isC4Type, isPanelType, isNoteType } from "@/features/diagram";
 import { TypeConfig } from "@/features/canvas/nodes/CustomNode/TypeConfig";
-import { AWS_SERVICE_MAP, isAwsType } from "@/lib/catalogs/aws";
-import AwsIcon from "@/features/canvas/nodes/AwsIcon";
+import { AWS_SERVICE_MAP, isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
+import { AwsIcon } from "@/features/canvas/nodes/CloudIcon";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
 

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import type { Component } from "@/features/diagram";
 import { isPanelType, isNoteType, isApiGroupType } from "@/features/diagram";
-import { isAwsType } from "@/lib/catalogs/aws";
+import { isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
 import { TypeConfig } from "@/features/canvas/nodes/CustomNode/TypeConfig";
 import { KEY, keyIs } from "@/lib/core/keyboard";
 import { useTranslation } from "react-i18next";

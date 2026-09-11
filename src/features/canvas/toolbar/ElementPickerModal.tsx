@@ -6,10 +6,10 @@ import { ElementCategory } from "../enums";
 import type { ComponentType } from "@/features/diagram";
 import type { CanvasPickerOption, ElementPickerModalProps } from "./element-picker/types";
 import { getUsageKeyForType, getDefaultNameForNewComponent } from "@/features/diagram";
-import { AWS_CATEGORIES, type AwsCategory } from "@/lib/catalogs/aws";
+import { AWS_CATEGORIES, type AwsCategory } from "@/features/cloud/providers/aws/aws.catalog";
 import { getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
 import { KEY, keyIs } from "@/lib/core/keyboard";
-import type { AwsCategoryId } from "@/lib/catalogs/aws";
+import type { AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
 import { cloudRegistry } from "@/features/cloud";
 import { trackUsage } from "./element-usage-tracker";
 import { useTranslation } from "react-i18next";
@@ -38,7 +38,7 @@ import { ElementPickerSearchResults } from "./element-picker/ElementPickerSearch
 import { AwsBrowseView } from "./element-picker/AwsBrowseView";
 import { CloudBrowseView } from "./element-picker/CloudBrowseView";
 import { RegistryCategoryPanel } from "./element-picker/RegistryCategoryPanel";
-import AwsIcon from "../nodes/AwsIcon";
+import { AwsIcon } from "../nodes/CloudIcon";
 import { isPanelType } from "@/features/diagram";
 import {
   useCustomComponentLibrary,

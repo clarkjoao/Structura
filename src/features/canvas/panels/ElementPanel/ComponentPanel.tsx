@@ -20,12 +20,12 @@ import {
   isNoteComponent,
   isDbTableComponent,
   isJsonViewerComponent,
-  isFlowNodeComponent,
+  isProcessNodeComponent,
   isSystemType,
   isContainerType,
 } from "@/features/diagram";
-import { isAwsType, AWS_CATEGORIES, AWS_CATEGORY_MAP, AWS_SERVICE_MAP } from "@/lib/catalogs/aws";
-import AwsIcon from "../../nodes/AwsIcon";
+import { cloudRegistry } from "@/features/cloud/registry/cloud.registry";
+import CloudIcon from "../../nodes/CloudIcon";
 import TabBar, { type Tab } from "./components/TabBar";
 import ConnectionsTab from "./components/ConnectionsTab";
 import { useTranslation } from "react-i18next";
@@ -116,26 +116,29 @@ const ComponentPanel = ({
   const [tags, setTags] = useState<string[]>(component.tags ?? []);
   const [tagInput, setTagInput] = useState("");
   const [type, setType] = useState<ComponentType>(component.type);
-  const [awsService, setAwsService] = useState(
-    (component as { awsService?: string }).awsService ?? "",
+  const [cloudService, setCloudService] = useState(
+    (component as { awsService?: string }).awsService ??
+      (component as { gcpService?: string }).gcpService ??
+      (component as { azureService?: string }).azureService ??
+      "",
   );
   const [createdDiagramName, setCreatedDiagramName] = useState<string | null>(null);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isPanel = isPanelComponent(component);
   const isNote = isNoteComponent(component);
   const isDbTable = isDbTableComponent(component);
-  const isFlowchart = isFlowNodeComponent(component);
+  const isFlowchart = isProcessNodeComponent(component);
   const isSimple = isPanel || isNote;
   const [flowShape, setFlowShape] = useState<FlowNodeShape>(
     isFlowchart ? component.flowShape : "rectangle",
   );
-  const isAws = isAwsType(type);
-  const serviceInfo = awsService ? AWS_SERVICE_MAP.get(awsService) : null;
+  const cloudProvider = cloudRegistry.forType(type);
+  const cloudServiceInfo = cloudProvider && cloudService ? cloudProvider.getService(cloudService) : null;
   const canCreateLinked =
     isSystemType(component.type) ||
     isContainerType(component.type) ||
     isComponentType(component.type) ||
-    isAwsType(component.type);
+    cloudRegistry.isCloudType(component.type);
   const linkedService = useMemo(
     () => allServices.find((service) => service.id === component.serviceId) ?? null,
     [allServices, component.serviceId],
@@ -158,7 +161,7 @@ const ComponentPanel = ({
   }, [component.id]);
 
   useEffect(() => {
-    if (isFlowNodeComponent(component)) {
+    if (isProcessNodeComponent(component)) {
       setFlowShape(component.flowShape);
     }
   }, [component.id, component]);
@@ -228,7 +231,7 @@ const ComponentPanel = ({
         </div>
       </div>
       <TabBar active={tab} onChange={setTab} showConnections={!isSimple} />
-      {tab === "connections" && !isSimple ? (
+      {tab === "connections" ? (
         <ConnectionsTab componentId={component.id} />
       ) : (
         <div className="p-4 space-y-4 overflow-auto flex-1">
@@ -238,13 +241,17 @@ const ComponentPanel = ({
             updateNodeLayout={updateNodeLayout}
             isPanel={isPanel || isNote}
           />
-          {!isSimple && isAws && serviceInfo && (
+          {!isSimple && cloudProvider && cloudServiceInfo && (
             <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
-              <AwsIcon iconName={serviceInfo.iconName} size={32} />
+              <CloudIcon
+                providerId={cloudProvider.id as "aws" | "gcp" | "azure"}
+                iconName={cloudServiceInfo.iconName}
+                size={32}
+              />
               <div>
-                <p className="text-xs font-semibold text-foreground">{serviceInfo.name}</p>
+                <p className="text-xs font-semibold text-foreground">{cloudServiceInfo.name}</p>
                 <p className="text-[10px] text-muted-foreground">
-                  {AWS_CATEGORY_MAP.get(type)?.name}
+                  {cloudProvider.getCategoryForType(type)?.name}
                 </p>
               </div>
             </div>
@@ -258,7 +265,6 @@ const ComponentPanel = ({
               tagInput={tagInput}
               isNote={isNote}
               isPanel={isPanel}
-              isAws={isAws}
               showTechnology={false}
               showTags={false}
               titleInputRef={titleInputRef}
@@ -288,7 +294,6 @@ const ComponentPanel = ({
                 tagInput={tagInput}
                 isNote={isNote}
                 isPanel={isPanel}
-                isAws={isAws}
                 showDescription={false}
                 showTechnology={false}
                 showTags={false}
@@ -328,12 +333,14 @@ const ComponentPanel = ({
                     onChange={(event) => {
                       const nextType = event.target.value as ComponentType;
                       setType(nextType);
-                      if (!nextType.startsWith("aws-")) setAwsService("");
+                      const nextProvider = cloudRegistry.forType(nextType);
+                      if (!nextProvider) setCloudService("");
                       updateComponent(component.id, {
                         type: nextType,
-                        awsService:
-                          nextType.startsWith("aws-") && awsService ? awsService : undefined,
-                      } as ComponentPatch);
+                        awsService: nextProvider?.id === "aws" && cloudService ? cloudService : undefined,
+                        gcpService: nextProvider?.id === "gcp" && cloudService ? cloudService : undefined,
+                        azureService: nextProvider?.id === "azure" && cloudService ? cloudService : undefined,
+                      } as unknown as ComponentPatch);
                     }}
                     className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                   >
@@ -343,28 +350,33 @@ const ComponentPanel = ({
                       <option value="container">{t("colors.c4Container")}</option>
                       <option value="component">{t("colors.c4Component")}</option>
                     </optgroup>
-                    {AWS_CATEGORIES.map((category) => (
-                      <optgroup
-                        key={category.id}
-                        label={t("endpointPanel.awsCategory", { name: category.name })}
-                      >
-                        <option value={category.id}>{category.name}</option>
-                      </optgroup>
-                    ))}
+                    {cloudRegistry.allProviders().flatMap((provider) =>
+                      provider.categories.map((category) => (
+                        <optgroup
+                          key={`${provider.id}-${category.id}`}
+                          label={t("endpointPanel.cloudCategory", {
+                            provider: provider.name,
+                            name: category.name,
+                          })}
+                        >
+                          <option value={category.id}>{category.name}</option>
+                        </optgroup>
+                      )),
+                    )}
                   </select>
                 </div>
               )}
-              {isAws && (
+              {cloudProvider && (
                 <div>
                   <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
                     {t("elementPanel.awsServiceLabel")}
                   </label>
                   <select
-                    value={awsService}
+                    value={cloudService}
                     onChange={(event) => {
                       const nextService = event.target.value;
-                      setAwsService(nextService);
-                      const serviceEntry = AWS_SERVICE_MAP.get(nextService);
+                      setCloudService(nextService);
+                      const serviceEntry = cloudProvider.getService(nextService);
                       const preserveContent = shouldPreserveContent(name, desc);
                       const shouldRename =
                         !!serviceEntry &&
@@ -373,15 +385,17 @@ const ComponentPanel = ({
                           name.startsWith(i18n.t("common.defaultNamePrefix")) ||
                           name === component.name);
                       updateComponent(component.id, {
-                        awsService: nextService || undefined,
-                        ...(shouldRename ? { name: serviceEntry.name } : {}),
-                      } as ComponentPatch);
-                      if (shouldRename) setName(serviceEntry.name);
+                        awsService: cloudProvider.id === "aws" ? nextService || undefined : undefined,
+                        gcpService: cloudProvider.id === "gcp" ? nextService || undefined : undefined,
+                        azureService: cloudProvider.id === "azure" ? nextService || undefined : undefined,
+                        ...(shouldRename && serviceEntry ? { name: serviceEntry.name } : {}),
+                      } as unknown as ComponentPatch);
+                      if (shouldRename && serviceEntry) setName(serviceEntry.name);
                     }}
                     className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                   >
                     <option value="">{t("endpointPanel.selectAwsService")}</option>
-                    {AWS_CATEGORY_MAP.get(type)?.services.map((service) => (
+                    {cloudProvider.services.filter((s) => s.categoryId === type).map((service) => (
                       <option key={service.id} value={service.id}>
                         {service.name}
                       </option>
@@ -397,7 +411,6 @@ const ComponentPanel = ({
                 tagInput={tagInput}
                 isNote={isNote}
                 isPanel={isPanel}
-                isAws={isAws}
                 showName={false}
                 showTechnology
                 showTags

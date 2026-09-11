@@ -1,6 +1,6 @@
 import { PanelKind } from "../enums";
 import type { ComponentType } from "./component.types";
-import { isAwsType } from "@/lib/catalogs/aws";
+import { isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
 import i18n from "@/infrastructure/i18n";
 
 export const C4_TYPES = ["person", "system", "container", "component"] as const;
@@ -29,9 +29,7 @@ export const COMPONENT_TYPE_PROCESS_NODE = "process-node";
 const LEGACY_FLOW_NODE_TYPE = "flow-node";
 const LEGACY_PROCESSOS_TYPE = "processos";
 
-/** Matches the canonical `process-node` and both legacy strings during the
- * migration window. Prefer `isProcessNodeType` in new code. */
-export function isFlowNodeType(type: string): type is "process-node" {
+export function isProcessNodeType(type: string): type is "process-node" {
   return (
     type === COMPONENT_TYPE_PROCESS_NODE ||
     type === LEGACY_FLOW_NODE_TYPE ||
@@ -39,8 +37,9 @@ export function isFlowNodeType(type: string): type is "process-node" {
   );
 }
 
-export function isProcessNodeType(type: string): type is "process-node" {
-  return isFlowNodeType(type);
+/** @deprecated Use `isProcessNodeType` */
+export function isFlowNodeType(type: string): type is "process-node" {
+  return isProcessNodeType(type);
 }
 
 export function isSvgComponentType(type: string): type is "svg" {

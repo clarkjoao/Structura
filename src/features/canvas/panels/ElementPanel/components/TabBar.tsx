@@ -1,25 +1,22 @@
 import { useTranslation } from "react-i18next";
 
-export type Tab = "details" | "connections" | "icon";
+export type Tab = "details" | "connections";
 
 export interface TabBarProps {
   active: Tab;
   onChange: (next: Tab) => void;
   showConnections: boolean;
-
-  showIconTab?: boolean;
 }
 
-const TabBar = ({ active, onChange, showConnections, showIconTab = true }: TabBarProps) => {
+const TabBar = ({ active, onChange, showConnections }: TabBarProps) => {
   const { t } = useTranslation();
-  const tabs = (
-    showConnections ? (["details", "connections", "icon"] as const) : (["details", "icon"] as const)
-  ).filter((tab) => showIconTab || tab !== "icon");
+  const tabs = showConnections
+    ? (["details", "connections"] as const)
+    : (["details"] as const);
 
   const labelFor = (tab: (typeof tabs)[number]) => {
     if (tab === "details") return t("elementPanelTab.details");
-    if (tab === "connections") return t("elementPanelTab.connections");
-    return t("elementPanel.tabs.icon");
+    return t("elementPanelTab.connections");
   };
 
   return (

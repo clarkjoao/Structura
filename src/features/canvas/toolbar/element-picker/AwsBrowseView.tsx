@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { AwsCategory, AwsCategoryId } from "@/lib/catalogs/aws";
+import type { AwsCategory, AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
 import { OTHER_AWS_SECTION_KEY } from "./constants";
 import { AwsCategoryBlock } from "./AwsCategoryBlock";
 

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Loader2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { useIconActions, useIconLibrary } from "@/features/diagram";
-import { AWS_SERVICE_MAP } from "@/lib/catalogs/aws";
+import { AWS_SERVICE_MAP } from "@/features/cloud/providers/aws/aws.catalog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

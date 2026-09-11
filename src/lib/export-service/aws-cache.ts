@@ -1,4 +1,4 @@
-import { AWS_SERVICE_MAP } from "@/lib/catalogs/aws";
+import { AWS_SERVICE_MAP } from "@/features/cloud/providers/aws/aws.catalog";
 import { AWS_CATEGORY_MAP_LOCAL, AWS_RESICON, THEME } from "../export-core/constants";
 import type { AwsServiceInfo } from "../export-core/types";
 

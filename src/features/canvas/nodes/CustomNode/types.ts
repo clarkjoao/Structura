@@ -6,7 +6,7 @@ export type NodeData = {
   type: ComponentType;
   description: string;
   technology?: string;
-  awsService?: string;
+  cloudService?: string;
   isSelected: boolean;
   isHighlighted?: boolean;
   controlsDisabled?: boolean;

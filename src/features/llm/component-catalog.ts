@@ -1,4 +1,4 @@
-import { AWS_CATEGORIES, type AwsCategoryId } from "@/lib/catalogs/aws";
+import { AWS_CATEGORIES, type AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
 import { PATTERNS, PATTERN_CATEGORIES } from "@/lib/catalogs/patterns";
 
 export interface ComponentTypeDefinition {

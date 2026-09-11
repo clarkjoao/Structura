@@ -1,6 +1,6 @@
 import { Suspense, type CSSProperties } from "react";
 import { isAwsIcon, isLucideIcon, isSvgIcon, type IconDefinition } from "@/features/diagram";
-import AwsIcon from "@/features/canvas/nodes/AwsIcon";
+import { AwsIcon } from "@/features/canvas/nodes/CloudIcon";
 import { cn } from "@/lib/utils";
 import { getLazyLucideIcon, resolveLucideDynamicImportKey } from "./lucideDynamicIcon";
 

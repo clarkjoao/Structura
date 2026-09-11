@@ -76,7 +76,7 @@ export const c4Descriptor: NodeTypeDescriptor = {
       customColor:
         (comp as { customColor?: string }).customColor ??
         (isC4Component(comp) ? comp.panelColor : undefined),
-      awsService: isAwsComponent(comp)
+      cloudService: isAwsComponent(comp)
         ? comp.awsService
         : isGcpComponent(comp)
           ? comp.gcpService

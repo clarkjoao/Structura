@@ -1,6 +1,6 @@
 import { getPanelKindDef } from "@/lib/catalogs/panels";
-import { AWS_CATEGORIES } from "@/lib/catalogs/aws";
-import type { AwsCategory } from "@/lib/catalogs/aws";
+import { AWS_CATEGORIES } from "@/features/cloud/providers/aws/aws.catalog";
+import type { AwsCategory } from "@/features/cloud/providers/aws/aws.catalog";
 import type { CloudProviderAdapter, CloudService } from "@/features/cloud";
 import type { ServiceDefinition } from "@/features/diagram";
 import type { CanvasPickerOption } from "./types";

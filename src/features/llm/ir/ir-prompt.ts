@@ -1,4 +1,4 @@
-import { AWS_CATEGORIES, AWS_CATEGORY_MAP } from "@/lib/catalogs/aws";
+import { AWS_CATEGORIES, AWS_CATEGORY_MAP } from "@/features/cloud/providers/aws/aws.catalog";
 import { buildAwsCatalogCompact } from "../component-catalog";
 import {
   IR_AWS_SEMANTIC_TYPES,

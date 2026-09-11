@@ -1,4 +1,4 @@
-import { isAwsType } from "@/lib/catalogs/aws";
+import { isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
 import { isGcpType } from "@/features/cloud/providers/gcp/gcp.catalog";
 import { isAzureType } from "@/features/cloud/providers/azure/azure.catalog";
 import { cloudRegistry } from "@/features/cloud";
@@ -16,7 +16,6 @@ import type {
   SvgComponent,
   DbTableComponent,
   JsonViewerComponent,
-  FlowNodeComponent,
   ProcessNodeComponent,
   ExternalElementComponent,
   PluginTypedComponent,
@@ -32,7 +31,6 @@ import {
   isSvgComponentType,
   isDbTableType,
   isJsonViewerType,
-  isFlowNodeType,
   isProcessNodeType,
   isExternalElementType,
 } from "./component-type-constants";
@@ -64,9 +62,11 @@ export const isDbTableComponent = (c: Component): c is DbTableComponent => isDbT
 export const isJsonViewerComponent = (c: Component): c is JsonViewerComponent =>
   isJsonViewerType(c.type);
 
-export const isFlowNodeComponent = (c: Component): c is FlowNodeComponent => isFlowNodeType(c.type);
-
 export const isProcessNodeComponent = (c: Component): c is ProcessNodeComponent =>
+  isProcessNodeType(c.type);
+
+/** @deprecated Use `isProcessNodeComponent` */
+export const isFlowNodeComponent = (c: Component): c is ProcessNodeComponent =>
   isProcessNodeType(c.type);
 
 export const isExternalElementComponent = (c: Component): c is ExternalElementComponent =>
