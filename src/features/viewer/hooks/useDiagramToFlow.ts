@@ -157,7 +157,14 @@ function buildNodeData(
     type: component.type,
     description: component.description,
     technology: "technology" in component ? component.technology : undefined,
-    awsService: "awsService" in component ? component.awsService : undefined,
+    cloudService:
+      "awsService" in component
+        ? component.awsService
+        : "gcpService" in component
+          ? component.gcpService
+          : "azureService" in component
+            ? component.azureService
+            : undefined,
     customColor: "panelColor" in component ? component.panelColor : undefined,
     isSelected: false,
     controlsDisabled: true,

@@ -1,6 +1,6 @@
 import { ExternalLink } from "lucide-react";
 import type { Diagram } from "@/features/diagram/model";
-import { getAppUrl } from "@/lib/share-url";
+import { generateShareUrl } from "@/lib/share-url";
 
 interface OpenInStructuraButtonProps {
   diagram: Diagram;
@@ -8,7 +8,7 @@ interface OpenInStructuraButtonProps {
 
 export const OpenInStructuraButton = ({ diagram }: OpenInStructuraButtonProps) => (
   <a
-    href={getAppUrl()}
+    href={generateShareUrl(diagram).url}
     target="_blank"
     rel="noopener noreferrer"
     aria-label={`Abrir ${diagram.name} no Structura`}
