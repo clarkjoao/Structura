@@ -8,7 +8,7 @@ See proposal.md — Why. The material this change needs already exists and is al
 - `getPathToStep(flow, stepId)` returns the first path from the entry that reaches a step.
 - The reading holds `history` (the path to the step in hand) and `seen` (every step ever stood on).
 
-Nothing here needs a new derivation. What is missing is a *comparison* beside the fold, and an
+Nothing here needs a new derivation. What is missing is a _comparison_ beside the fold, and an
 interface that reads the comparison rather than the fold's result.
 
 ## Goals / Non-Goals
@@ -32,11 +32,11 @@ reports the difference. It takes the path rather than two contexts so that no ca
 folds that were never one step apart. Folding twice is O(path) twice, on a path at most the length of
 a flow, on a panel that re-renders once per step.
 
-*Alternative considered:* have `buildRunningContext` emit events as it folds. Rejected — it would make
+_Alternative considered:_ have `buildRunningContext` emit events as it folds. Rejected — it would make
 the fold's return depend on where the caller happens to stop, and the fold is used in four places that
 do not want events. A comparison keeps the fold a fold.
 
-*Alternative considered:* store the previous context in the playback slice. Rejected — that is state
+_Alternative considered:_ store the previous context in the playback slice. Rejected — that is state
 that can go stale and disagree with the path, which is the exact class of bug this change is fixing.
 
 ### D2 — "Gone" is derived from frames, not from absence
@@ -44,27 +44,27 @@ that can go stale and disagree with the path, which is the exact class of bug th
 A key can vanish between two folds for exactly one reason: the frame holding it closed. So the diff
 does not report "keys in before and not in after" as a category of its own — it asks the call stack
 which frames the step closed, and reports the keys those frames held, naming the call. A key that
-disappeared for any *other* reason would be a bug in the fold, and reporting it as an ordinary
+disappeared for any _other_ reason would be a bug in the fold, and reporting it as an ordinary
 category would hide that.
 
-*Introduced and replaced are the other way round*: they compare the whole earlier object against the
-whole current one, row by row. Comparing against the earlier object *minus the frames that just ended*
+_Introduced and replaced are the other way round_: they compare the whole earlier object against the
+whole current one, row by row. Comparing against the earlier object _minus the frames that just ended_
 looks equivalent and is not — a value shadowed inside a call and revealed again when the call returns
 changes on screen, and subtracting the dying frame first is exactly what makes that change invisible.
 See D13.
 
 ### D3 — "Leaving" is the same fact, one step early
 
-The dimmed *leaving* marker is not a fourth derivation. On the step that closes a frame, the fold has
+The dimmed _leaving_ marker is not a fourth derivation. On the step that closes a frame, the fold has
 already dropped that frame — so the values are gone from `after` and present in `before`. That is the
 same set D2 reports as gone. The panel renders that set inline, dimmed, instead of only counting it,
 which is why the value is visible on the step that ends it and absent on the next.
 
-### D4 — The scope fix folds the whole path, holding back one step's values *(superseded by D15)*
+### D4 — The scope fix folds the whole path, holding back one step's values _(superseded by D15)_
 
 `scopeOf` becomes `buildRunningContext(flow, stack, getPathToStep(flow, stepId), stepId)` — the whole
 path, the step included, with a fourth argument naming the one step whose `sets` are skipped. The
-author is writing *against* the state, so their own contribution is the one thing not to show.
+author is writing _against_ the state, so their own contribution is the one thing not to show.
 
 Subtracting after the fold would have been wrong in a way that is easy to miss: a key the step
 replaces would vanish entirely, taking with it the shadow marker that says which value is being
@@ -72,7 +72,7 @@ written over. Skipping the step's `sets` inside the fold leaves the previous hol
 exactly what the author needs to see — and only when that holder is still in a surviving frame, since
 the fold has already run every drop.
 
-*Alternative considered:* keep `slice(0, -1)` and apply the step's frame drop by hand. Rejected — it
+_Alternative considered:_ keep `slice(0, -1)` and apply the step's frame drop by hand. Rejected — it
 reimplements one rule of the fold outside the fold, which is how the two got out of step.
 
 **Superseded.** The panel this fixed no longer exists, and its replacement shows the step's own values
@@ -93,7 +93,7 @@ records an event whenever the key is introduced, replaced, read, or dropped with
 the fold's rules rather than calling it per prefix, which would be O(n²); the rules are six lines and
 the test asserts the two agree at every prefix of a path.
 
-*Alternative considered:* fold every prefix and diff consecutive pairs. Correct and much slower, but a
+_Alternative considered:_ fold every prefix and diff consecutive pairs. Correct and much slower, but a
 better oracle — so that is what the test does, on a small flow, to pin the fast version.
 
 ### D7 — Order and defaults are the smallest change with the largest effect
@@ -102,7 +102,7 @@ State moves above the payload roots and opens by default. The payload roots are 
 and are already spoken by the rail; the running object is the only root that accumulates. `Root` keeps
 its own open state, so a reader who shuts it keeps it shut as they walk.
 
-### D8 — The values table stays uncontrolled per row *(superseded by D15)*
+### D8 — The values table stays uncontrolled per row _(superseded by D15)_
 
 `SetRow` already carries an identity so a half-typed key survives. The keyboard work adds behaviour
 around those rows and no new source of truth: Enter appends a row and focuses it, Tab is the browser's,
@@ -125,13 +125,13 @@ fact, said in the place the mistake is made.
 
 ### D10 — A claim about what happens after a step needs the other direction of the graph
 
-`getPathToStep` walks from the entry and answers *how did the reading get here*. The marker saying
-where a call's values run out is a claim about what happens *next*, and scanning the whole script for
+`getPathToStep` walks from the entry and answers _how did the reading get here_. The marker saying
+where a call's values run out is a claim about what happens _next_, and scanning the whole script for
 the step that answers gets it wrong the moment the answer sits inside a branch: someone writing the
 other branch is told their values end at a step that branch never reaches. `canReachStep(flow, from,
 target)` — a cycle-guarded walk forward — gates the marker, so a claim is made only where it holds.
 
-Deliberately not narrower: reachable on *some* path is enough to say the call can end there. Saying it
+Deliberately not narrower: reachable on _some_ path is enough to say the call can end there. Saying it
 only when every path answers would be a different, weaker statement, and the reader is looking at one
 way through.
 
@@ -159,14 +159,14 @@ colour already says which kind of change it was.
 Keeping it would have been a second copy of the fact that nothing reads, which is the thing the
 provenance table exists to prevent one field at a time.
 
-*Consequence for the flash:* a row's React identity becomes key *and* origin step, so a value the step
+_Consequence for the flash:_ a row's React identity becomes key _and_ origin step, so a value the step
 in hand just wrote mounts afresh and its animation actually runs. A row nothing touched keeps its
 identity and stays still.
 
 ### D13 — One object, in arrival order, with no groups at all
 
 The panel split the running object by the call each value was introduced inside and headed each group
-with `frameName(frameId)` — which is the *caller* of that call. So a key written by the Management API
+with `frameName(frameId)` — which is the _caller_ of that call. So a key written by the Management API
 sat under "Criador de Links", and the outermost group was headed "Fora", meaning outside every call
 and reading as outside the system. The grouping was also the only reason a key could appear twice with
 two values, which is what put a change badge on the row that had just been replaced.
@@ -177,7 +177,7 @@ step before it goes, and the authoring panel names the step where a value stops 
 
 Flattening is not the groups concatenated. Those run innermost call first, so a value written inside a
 call jumps above one written before it and the list reshuffles as the reader walks. `RunningContext`
-gained `entries`, ordered by when each key was *first* introduced: a key appears where it appeared and
+gained `entries`, ordered by when each key was _first_ introduced: a key appears where it appeared and
 stays there until it goes, which is what makes it read as one object rather than a list that happens
 to differ from the one before it.
 
@@ -206,12 +206,12 @@ because with the object outside the step, leaving the chips inside it pointing a
 would split one question across two places — and a key nothing writes finally has somewhere to be
 said, as a row of its own with no value.
 
-Unlike the panel it replaces, this one *includes* what the selected step writes. The old one held that
+Unlike the panel it replaces, this one _includes_ what the selected step writes. The old one held that
 back on purpose (D4). Here the author is editing the object as it ends up, and hiding half of it would
 be lying about the result. The shadow marker goes with it: the row already says "this step", and the
 origin already said whose it was.
 
-*Consequence:* the keyboard work on the values table goes with the table — Enter opening the next row,
+_Consequence:_ the keyboard work on the values table goes with the table — Enter opening the next row,
 tab between cells, dropping a row abandoned without a key. Pasting a block survives, moved to where a
 key is named, and so does taking the values from the step's own body.
 
@@ -245,7 +245,7 @@ key is named, and so does taking the values from the step's own body.
   it, which is why the marking is not the animation alone; and reduced motion drops the flash and keeps
   both.
 
-- **A pinned key that is out of scope everywhere reads as broken.** → It says *out of scope*, which is
+- **A pinned key that is out of scope everywhere reads as broken.** → It says _out of scope_, which is
   a fact about the walk. The alternative — hiding it — is what makes the frame rule invisible today.
 
 ## Migration Plan

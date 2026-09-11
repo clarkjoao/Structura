@@ -477,7 +477,10 @@ async function runBot({ page, name, componentIds, stats, deadline, canAddElement
   let y = between(100, 600);
 
   while (Date.now() < deadline) {
-    if (IDLE || (HOST_IDLE && name === "Host")) { await sleep(500); continue; }
+    if (IDLE || (HOST_IDLE && name === "Host")) {
+      await sleep(500);
+      continue;
+    }
     try {
       // Wander the cursor: several small steps between heavier actions.
       for (let i = 0; i < (CURSORS ? 6 : 0) && Date.now() < deadline; i++) {
@@ -631,7 +634,12 @@ async function main() {
             count: await p.page.locator(".react-flow__node").count(),
             // A participant showing nothing has usually been dropped from the
             // room rather than lost its nodes, so capture why.
-            note: (await p.page.locator("body").innerText().catch(() => ""))
+            note: (
+              await p.page
+                .locator("body")
+                .innerText()
+                .catch(() => "")
+            )
               .slice(0, 90)
               .replace(/\s+/g, " "),
           };

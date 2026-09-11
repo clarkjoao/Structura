@@ -3,11 +3,11 @@
 A flow step can say which edge a message travels and which node it happens at. It cannot say **which
 route it calls**. The product describes the same API in three places that never check one another:
 
-| where | what it holds | how much of it exists in the seed |
-| --- | --- | --- |
-| `api-group` + `endpoint` | method and path | 5 endpoints |
-| `FlowStep.payload` | an example body, in motion | 18 payloads |
-| `FlowStep.context.expects` | the shape expected back | **1** |
+| where                      | what it holds              | how much of it exists in the seed |
+| -------------------------- | -------------------------- | --------------------------------- |
+| `api-group` + `endpoint`   | method and path            | 5 endpoints                       |
+| `FlowStep.payload`         | an example body, in motion | 18 payloads                       |
+| `FlowStep.context.expects` | the shape expected back    | **1**                             |
 
 Three consequences follow from the missing link, and all three are visible today:
 

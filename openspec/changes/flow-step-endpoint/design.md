@@ -4,7 +4,7 @@ See proposal.md — Why. What already exists and what this builds on:
 
 - `EndpointComponent` is an ordinary component: `method`, `path`, `handlers[]`, parented by an
   `ApiGroupComponent` that carries `serviceName`, `basePath`, `protocol`, `sla`.
-- `EndpointHandler.flowId` points the other way — an endpoint naming the flow that *implements* it.
+- `EndpointHandler.flowId` points the other way — an endpoint naming the flow that _implements_ it.
 - `FlowStep` carries `componentId` (a node) and `connectionId` (an edge), and nothing else that could
   identify a route.
 - `describeStepHeading` heads a step by: title → condition label → component name → connection label.
@@ -24,13 +24,13 @@ See proposal.md — Why. What already exists and what this builds on:
 **Non-Goals** — beyond the proposal's: no change to how a step is recorded from a canvas click. The
 recorder writes `componentId` and `connectionId` from what was clicked; naming a route stays a
 deliberate act in the script panel, because clicking an endpoint node is already how you record a step
-*at* it.
+_at_ it.
 
 ## Decisions
 
 ### D1 — A field of its own, not a second meaning for `componentId`
 
-`componentId` means *the node this step happens at*, and in practice that is the sender: in the seeded
+`componentId` means _the node this step happens at_, and in practice that is the sender: in the seeded
 `Criar link`, the step that calls the Management API carries `componentId` of the **Dashboard SPA**. An
 endpoint sits on the receiving side. Pointing `componentId` at an endpoint would put the step's canvas
 highlight on the callee while every other step highlights the caller, and `describeStepHeading` would
@@ -38,7 +38,7 @@ have no way to tell the two meanings apart.
 
 So: `endpointId?: string`.
 
-*Alternative considered:* reuse `componentId` and disambiguate with a type guard on the component. It
+_Alternative considered:_ reuse `componentId` and disambiguate with a type guard on the component. It
 costs no migration, and it was tempting for exactly that reason — but it makes one field answer two
 questions, and the canvas would quietly start lighting up a different end of the same arrow.
 
@@ -56,12 +56,12 @@ steps long.
 
 New order: title → condition label → **endpoint** → component → connection.
 
-A reader stopped on a call wants to know *what was called*. The node the step sits on is the weaker
+A reader stopped on a call wants to know _what was called_. The node the step sits on is the weaker
 answer to that question and the edge label is weaker still — `REST API calls` names a channel, not an
 operation.
 
 This does not change any existing reading: the order only shifts for steps that name an endpoint, and
-none do. That matters, because reordering the two rules *below* it — putting the connection above the
+none do. That matters, because reordering the two rules _below_ it — putting the connection above the
 component — would change the appearance of every reading already written, which is why that separate
 complaint is still open and is not being resolved here.
 
@@ -74,13 +74,13 @@ Enforcing it would be wrong in ordinary cases — a gateway forwarding to a serv
 drawn at container level against a route that lives a level down — and the product's whole stance on
 contracts is to report. It joins the unset read and the contract diff rather than becoming an error.
 
-*Not decided here:* whether the check should follow parenthood up more than one level. The first pass
+_Not decided here:_ whether the check should follow parenthood up more than one level. The first pass
 compares the endpoint's owning api-group, and its parent chain, against the connection's target.
 
 ### D5 — `handlers[].flowId` stays, because it answers a different question
 
-`endpoint.handlers[].flowId` says *this flow describes what happens when this route is hit*. The new
-`step.endpointId` says *this step calls that route*. Implementation versus call site. Keeping both is
+`endpoint.handlers[].flowId` says _this flow describes what happens when this route is hit_. The new
+`step.endpointId` says _this step calls that route_. Implementation versus call site. Keeping both is
 not duplication, and neither can be derived from the other: a route can be called by scripts that say
 nothing about how it is served, and served by a script no other script calls.
 
@@ -93,11 +93,11 @@ The seeded `Criar link` script calls the Management API twice while five seeded 
 naming nobody. Pointing the script's calls at `POST /urls` is what makes the feature visible on a fresh
 install rather than only in a test, and it is what will make an OpenAPI import obviously worth having.
 
-### D7 — The mismatch check assumes routes are drawn *inside* the service, and seeding proved that is not the only way
+### D7 — The mismatch check assumes routes are drawn _inside_ the service, and seeding proved that is not the only way
 
 Found while seeding, which is the only reason it was found: D4 compares the endpoint's parent chain
 against the component the call arrives at. That holds when an api-group is nested inside the service it
-belongs to. It does not hold for the other ordinary layout — routes drawn as a group *beside* the
+belongs to. It does not hold for the other ordinary layout — routes drawn as a group _beside_ the
 service, with the call connecting to the service — where the chain never reaches the target and the
 check reports a mismatch on a step that is linked correctly.
 
@@ -144,7 +144,7 @@ None. A new optional field on `FlowStep`; steps written before it are unchanged 
 
 ## Open Questions
 
-- Whether a step should be able to name a route it reaches through *no* connection at all — a step that
+- Whether a step should be able to name a route it reaches through _no_ connection at all — a step that
   is only "this route is called here". Allowed by the spec as written, and harmless; whether the script
   panel should encourage it can wait for someone to want it.
 - How far up the parent chain the mismatch check should walk (D4). Answerable once real diagrams have

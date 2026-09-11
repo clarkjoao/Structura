@@ -50,7 +50,7 @@ one key two ways at the same step.
 #### Scenario: The frame holding the key has closed
 
 - **GIVEN** a reading with a key pinned that was introduced inside a call
-- **WHEN** the reader reaches a step *after* the one that closed that call
+- **WHEN** the reader reaches a step _after_ the one that closed that call
 - **THEN** the key remains visible
 - **AND** it is marked as out of scope rather than shown with a value
 

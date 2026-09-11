@@ -35,7 +35,10 @@ function open(): Promise<WebSocket> {
 }
 
 /** Wait for one frame of the given type, returning it with its byte length. */
-function next(ws: WebSocket, type: string): Promise<{ msg: Record<string, unknown>; bytes: number }> {
+function next(
+  ws: WebSocket,
+  type: string,
+): Promise<{ msg: Record<string, unknown>; bytes: number }> {
   return new Promise((resolve) => {
     const onMessage = (raw: WebSocket.RawData): void => {
       const text = String(raw);

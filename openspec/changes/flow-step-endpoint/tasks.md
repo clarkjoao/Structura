@@ -22,5 +22,5 @@
 
 ## 5. Seen in the running app
 
-- [ ] 5.1 **Blocked — needs a decision, see design D7.** The seeded routes live on `d-us-containers`' *linked* diagram, not on it, so no seeded call can name one without either nesting an api-group inside the Management API container (which does not fit: the container would have to grow past the cache below it, on a hand-tuned layout) or placing it beside the container, which makes the D4 mismatch check fire on a correctly linked step.
+- [ ] 5.1 **Blocked — needs a decision, see design D7.** The seeded routes live on `d-us-containers`' _linked_ diagram, not on it, so no seeded call can name one without either nesting an api-group inside the Management API container (which does not fit: the container would have to grow past the cache below it, on a hand-tuned layout) or placing it beside the container, which makes the D4 mismatch check fire on a correctly linked step.
 - [ ] 5.2 Blocked behind 5.1: there is nothing in the seed to assert until the seed carries the link.

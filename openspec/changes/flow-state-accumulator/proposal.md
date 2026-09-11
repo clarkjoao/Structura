@@ -1,6 +1,6 @@
 ## Why
 
-The reading's variables panel answers *what exists*. A debugger answers *what just happened*. Every
+The reading's variables panel answers _what exists_. A debugger answers _what just happened_. Every
 value in the panel today looks the same whether it was set twelve steps ago or on the line the reader
 is standing on, and the single most instructive event in the whole call-stack model — a call ending
 and taking its locals with it — happens in total silence: the group is simply gone on the next step.
@@ -13,22 +13,22 @@ the reading folds it"; it is not.
 
 ## What Changes
 
-- **Change** both panels to show *one object*, in the order its keys arrived — not a list split by the
+- **Change** both panels to show _one object_, in the order its keys arrived — not a list split by the
   call each value was introduced inside, headed by the name of whoever made that call.
 - **Fix** the author's view of the object so it is the reading's: the whole path folded, the same
   function with the same argument, and a word about when a call's values do not outlive it.
 - **Move** the author's object out of the step and into a panel of the script, seen from the step the
-  author has selected — *at that step, it has this value* — and at the end of the script when none is.
+  author has selected — _at that step, it has this value_ — and at the end of the script when none is.
 - **Add** a delta between the step before and the step in hand — introduced, replaced, and gone with a
   frame — derived by folding the path twice and comparing. Nothing stored.
-- **Add** two row states the panel lacks: *replaced*, and *leaving*, which dims a key one step before
+- **Add** two row states the panel lacks: _replaced_, and _leaving_, which dims a key one step before
   the frame holding it closes. Each row carries one mark and no words; the words are in the report
   above it.
 - **Change** the variables panel's order and defaults so the accumulating root comes first and open.
 - **Add** a way to bring in values already written elsewhere: a pasted `key: value` block or JSON
   object where a key is named, and the top-level keys of the step's own body.
 - **Add** a watch strip: keys the reader pins stay visible across steps, including — especially — when
-  the fold no longer holds them, where the strip says *out of scope* rather than hiding them. On the
+  the fold no longer holds them, where the strip says _out of scope_ rather than hiding them. On the
   step that ends the call, it shows the value going, in agreement with the list below it.
 - **Add** the life of a pinned key along the walked path: where it was introduced, read, replaced, and
   where it went out with its frame. Derived by folding cumulatively; each mark is a jump.

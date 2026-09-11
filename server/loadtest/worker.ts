@@ -107,7 +107,16 @@ function connectClient(roomIdx: number, seat: number): Promise<void> {
     const clientId = `u${roomIdx}-${seat}`;
     const isHost = seat === 0;
     const ws = new WebSocket(cfg.url, { perMessageDeflate: false });
-    const c: Client = { ws, roomId, clientId, isHost, isEditor: seat < cfg.editorsPerRoom, ready: false, baseVersion: 0, knownVersion: 0 };
+    const c: Client = {
+      ws,
+      roomId,
+      clientId,
+      isHost,
+      isEditor: seat < cfg.editorsPerRoom,
+      ready: false,
+      baseVersion: 0,
+      knownVersion: 0,
+    };
 
     const giveUp = setTimeout(() => {
       stats.connectFailed++;
@@ -119,15 +128,14 @@ function connectClient(roomIdx: number, seat: number): Promise<void> {
       if (isHost) {
         send(c, {
           type: "host:join",
-        protocol: 2,
+          protocol: 2,
           roomId,
           diagramId: roomId,
           user,
           snapshot: makeSnapshot(cfg.payloadNodes),
         });
       } else {
-        send(c, { type: "guest:join",
-        protocol: 2, roomId, user });
+        send(c, { type: "guest:join", protocol: 2, roomId, user });
       }
     });
 
@@ -205,7 +213,8 @@ function connectClient(roomIdx: number, seat: number): Promise<void> {
       if (type === "peer:cursors") {
         const list = Array.isArray(msg.cursors) ? msg.cursors : [];
         for (const e of list) {
-          if (e && typeof e === "object") noteCursor((e as Record<string, unknown>).activeElementId);
+          if (e && typeof e === "object")
+            noteCursor((e as Record<string, unknown>).activeElementId);
         }
         return;
       }
@@ -304,7 +313,9 @@ async function main(): Promise<void> {
           const patch =
             cfg.patchMode === "entity"
               ? {
-                  nodeLayouts: { [id]: { elementId: id, x: Math.random() * 2000, y: Math.random() * 2000 } },
+                  nodeLayouts: {
+                    [id]: { elementId: id, x: Math.random() * 2000, y: Math.random() * 2000 },
+                  },
                   __t0: Date.now(),
                 }
               : { nodeLayouts: makeNodeLayouts(cfg.payloadNodes), __t0: Date.now() };
