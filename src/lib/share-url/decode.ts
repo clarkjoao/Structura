@@ -7,7 +7,8 @@ import { currentHashParams } from "./utils";
 import { logger } from "@/lib/core/logger";
 
 export function decodeDiagramPayload(encoded: string): Diagram {
-  const json = LZString.decompressFromEncodedURIComponent(encoded);
+  const normalized = decodeURIComponent(encoded).replace(/ /g, "+");
+  const json = LZString.decompressFromEncodedURIComponent(normalized);
   if (json) {
     return JSON.parse(json) as Diagram;
   }
@@ -20,7 +21,8 @@ export function getShareParamFromUrl(): string | null {
 
 export function decodeShareParam(shareParam: string): Diagram | null {
   try {
-    const json = LZString.decompressFromEncodedURIComponent(shareParam);
+    const normalized = decodeURIComponent(shareParam).replace(/ /g, "+");
+    const json = LZString.decompressFromEncodedURIComponent(normalized);
     if (json) {
       const parsed = JSON.parse(json);
       if (!parsed?.id || !parsed?.snapshot) return null;

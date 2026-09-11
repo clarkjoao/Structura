@@ -5,6 +5,7 @@ import type { Diagram } from "@/features/diagram";
 import { encodeDiagramPayload } from "./encode";
 import { decodeDiagramPayload } from "./decode";
 import { getBasePath } from "./utils";
+import { logger } from "../core/logger";
 
 export function getViewerPostMessageUrl(): string {
   return `${window.location.origin}${getBasePath()}/viewer`;
@@ -14,7 +15,7 @@ export function generateViewerUrl(
   diagram: Diagram,
   options: { flowId?: string | null } = {},
 ): string {
-  const encoded = encodeDiagramPayload(diagram);
+  const encoded = encodeURIComponent(encodeDiagramPayload(diagram));
   const flowParam = options.flowId ? `&flow=${encodeURIComponent(options.flowId)}` : "";
   return `${window.location.origin}${getBasePath()}/viewer#data=${encoded}${flowParam}`;
 }
@@ -25,7 +26,8 @@ export function getViewerDataFromHash(): Diagram | null {
   if (!encoded) return null;
   try {
     return decodeDiagramPayload(encoded);
-  } catch {
+  } catch (e){
+    logger.error("Failed to decode diagram payload from URL hash", e);
     return null;
   }
 }
