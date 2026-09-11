@@ -20,7 +20,7 @@ import {
   isNoteComponent,
   isDbTableComponent,
   isJsonViewerComponent,
-  isFlowNodeComponent,
+  isProcessNodeComponent,
   isSystemType,
   isContainerType,
 } from "@/features/diagram";
@@ -127,7 +127,7 @@ const ComponentPanel = ({
   const isPanel = isPanelComponent(component);
   const isNote = isNoteComponent(component);
   const isDbTable = isDbTableComponent(component);
-  const isFlowchart = isFlowNodeComponent(component);
+  const isFlowchart = isProcessNodeComponent(component);
   const isSimple = isPanel || isNote;
   const [flowShape, setFlowShape] = useState<FlowNodeShape>(
     isFlowchart ? component.flowShape : "rectangle",
@@ -161,7 +161,7 @@ const ComponentPanel = ({
   }, [component.id]);
 
   useEffect(() => {
-    if (isFlowNodeComponent(component)) {
+    if (isProcessNodeComponent(component)) {
       setFlowShape(component.flowShape);
     }
   }, [component.id, component]);

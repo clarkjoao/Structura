@@ -32,7 +32,7 @@ import {
   COMPONENT_TYPE_PROCESS_NODE,
 } from "../../model/component-type-constants";
 import type {
-  FlowNodeComponent,
+  ProcessNodeComponent,
   FlowNodeShape,
   ExternalElementComponent,
 } from "../../model/component.types";
@@ -210,7 +210,7 @@ export function buildComponentForType(
       ...base,
       type: COMPONENT_TYPE_PROCESS_NODE,
       flowShape: flowShape ?? "rectangle",
-    } as FlowNodeComponent;
+    } as ProcessNodeComponent;
   } else if (isExternalElementType(type)) {
     component = {
       ...base,

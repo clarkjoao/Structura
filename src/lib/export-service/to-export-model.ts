@@ -10,7 +10,7 @@ import {
   isDbTableComponent,
   isEndpointComponent,
   isExternalElementComponent,
-  isFlowNodeComponent,
+  isProcessNodeComponent,
   isGcpComponent,
   isJsonViewerComponent,
   isNoteComponent,
@@ -327,7 +327,7 @@ function mapNode(
   if (
     isUnknownComponent(c) ||
     isSvgComponent(c) ||
-    isFlowNodeComponent(c) ||
+    isProcessNodeComponent(c) ||
     isExternalElementComponent(c) ||
     isPluginTypedComponent(c)
   ) {

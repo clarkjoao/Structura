@@ -1,7 +1,7 @@
 import type {
   Component,
   Connection,
-  FlowNodeComponent,
+  ProcessNodeComponent,
   FlowNodeShape,
   NodeLayout,
 } from "../model/diagram.types";
@@ -370,7 +370,7 @@ export function parseMermaidFlowchart(
     }
 
     const id = generateId("comp");
-    const component: FlowNodeComponent = {
+    const component: ProcessNodeComponent = {
       id,
       name: info.label,
       description: "",

@@ -22,7 +22,6 @@ export type {
   DbTableComponent,
   DbColumn,
   JsonViewerComponent,
-  FlowNodeComponent,
   ProcessNodeComponent,
   FlowNodeShape,
   ExternalElementComponent,

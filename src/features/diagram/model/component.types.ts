@@ -203,16 +203,6 @@ export type FlowNodeShape =
   | "circle" // Mermaid: ((text))
   | "subroutine"; // Mermaid: [[text]]
 
-/** @deprecated Use `ProcessNodeComponent`. The legacy `flow-node` and
- * `processos` type strings are recognized by `isFlowNodeType` (and
- * `isProcessNodeType`) for one migration cycle, and migrated to
- * `process-node` by `store/persist.config.ts`. */
-export interface FlowNodeComponent extends BaseComponent {
-  type: "process-node";
-  flowShape: FlowNodeShape;
-  nodeColor?: string;
-}
-
 export interface ProcessNodeComponent extends BaseComponent {
   type: "process-node";
   flowShape: FlowNodeShape;
@@ -251,7 +241,6 @@ export type Component =
   | DbTableComponent
   | JsonViewerComponent
   | SvgComponent
-  | FlowNodeComponent
   | ProcessNodeComponent
   | ExternalElementComponent
   | PluginTypedComponent;
@@ -268,7 +257,7 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<DbTableComponent, "id">> &
   Partial<Omit<JsonViewerComponent, "id">> &
   Partial<Omit<SvgComponent, "id">> &
-  Partial<Omit<FlowNodeComponent, "id">> &
+  Partial<Omit<ProcessNodeComponent, "id">> &
   Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number };
 
 export type TypedComponentPatch =
@@ -284,7 +273,7 @@ export type TypedComponentPatch =
   | (Partial<Omit<DbTableComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<JsonViewerComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<SvgComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<FlowNodeComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<PluginTypedComponent, "id">> & { width?: number; height?: number })
