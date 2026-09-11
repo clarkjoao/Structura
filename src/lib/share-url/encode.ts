@@ -3,7 +3,7 @@
  */
 import LZString from "lz-string";
 import type { Diagram } from "@/features/diagram";
-import { getBasePath, currentHashParams } from "./utils";
+import { getAppBaseUrl, currentHashParams } from "./utils";
 
 export interface ShareUrlResult {
   url: string;
@@ -56,7 +56,6 @@ export function getFlowParamFromUrl(): string | null {
 function stripForShare(diagram: Diagram): Record<string, unknown> {
   return JSON.parse(
     JSON.stringify(diagram, (key: string, value: unknown) => {
-      if (key === "iconLibrary") return undefined;
       if (key === "activeSceneId") return undefined;
       if (key === "hidden" && value === false) return undefined;
       return value;
@@ -68,8 +67,7 @@ export function generateShareUrl(diagram: Diagram, options: ShareOptions = {}): 
   const stripped = stripForShare(diagram);
   const json = JSON.stringify(stripped);
   const encoded = LZString.compressToEncodedURIComponent(json);
-  const base = `${window.location.origin}${getBasePath()}`;
-  const url = `${base}#share=${encoded}${flowParam(options.flowId)}`;
+  const url = `${getAppBaseUrl()}#share=${encoded}${flowParam(options.flowId)}`;
 
   return {
     url,

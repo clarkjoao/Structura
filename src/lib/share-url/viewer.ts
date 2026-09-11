@@ -4,10 +4,10 @@
 import type { Diagram } from "@/features/diagram";
 import { encodeDiagramPayload } from "./encode";
 import { decodeDiagramPayload } from "./decode";
-import { getBasePath } from "./utils";
+import { getAppBaseUrl } from "./utils";
 
 export function getViewerPostMessageUrl(): string {
-  return `${window.location.origin}${getBasePath()}/viewer`;
+  return `${getAppBaseUrl()}/viewer`;
 }
 
 export function generateViewerUrl(
@@ -16,7 +16,7 @@ export function generateViewerUrl(
 ): string {
   const encoded = encodeDiagramPayload(diagram);
   const flowParam = options.flowId ? `&flow=${encodeURIComponent(options.flowId)}` : "";
-  return `${window.location.origin}${getBasePath()}/viewer#data=${encoded}${flowParam}`;
+  return `${getAppBaseUrl()}/viewer#data=${encoded}${flowParam}`;
 }
 
 export function getViewerDataFromHash(): Diagram | null {

@@ -4,8 +4,8 @@ import { Position, type Node, type NodeProps } from "@xyflow/react";
 import { useCollabHighlight } from "@/features/collaboration";
 import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPresence";
 import { usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
-import { useComponentIcon } from "@/features/diagram";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
+import { useResolvedComponentIcon } from "@/features/canvas/components/icons/componentIconLookupContext";
 import { cloudRegistry, CloudIcon } from "@/features/cloud";
 import { MIN_HANDLES, MAX_HANDLES } from "../../canvas.constants";
 import { useHandleHighlight } from "../../contexts/HandleHighlightContext";
@@ -112,7 +112,7 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
     useNodeState(data, selected);
   const { isGuest } = useCollab();
 
-  const customDiagramIcon = useComponentIcon(d.elementId);
+  const customDiagramIcon = useResolvedComponentIcon(d.elementId);
   const collabHighlight = useCollabHighlight(d.elementId);
   const activePeer = usePeerOnNode(d.elementId);
 

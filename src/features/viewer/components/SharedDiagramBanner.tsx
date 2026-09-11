@@ -69,7 +69,7 @@ const SharedDiagramBanner = ({ diagramName, onImport, onClose }: SharedDiagramBa
           }}
         >
           <Download size={13} />
-          {t("share.previewBanner.openInStructura")}
+          {t("share.previewBanner.importToWorkspace")}
         </button>
 
         <button

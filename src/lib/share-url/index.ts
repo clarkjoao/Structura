@@ -5,7 +5,7 @@
  * - encode.ts    — compress + generate a share link
  * - decode.ts    — parse a share link from the URL
  * - viewer.ts    — standalone viewer URL helpers
- * - utils.ts     — shared URL helpers (getBasePath, getAppUrl, currentHashParams)
+ * - utils.ts     — shared URL helpers (getBasePath, getAppBaseUrl, getAppUrl, currentHashParams)
  */
 export {
   generateShareUrl,
@@ -18,4 +18,4 @@ export { decodeShareParam, getShareParamFromUrl, decodeDiagramPayload } from "./
 
 export { getViewerPostMessageUrl, generateViewerUrl, getViewerDataFromHash } from "./viewer";
 
-export { getAppUrl } from "./utils";
+export { getAppUrl, getAppBaseUrl } from "./utils";

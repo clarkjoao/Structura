@@ -8,6 +8,7 @@ import {
   resolveUniqueDiagramId,
 } from "@/features/diagram/utils";
 import { useDiagramActions, useDiagramStore } from "@/features/diagram/store";
+import { getAppBaseUrl } from "@/lib/share-url";
 import { ViewerCanvas } from "./ViewerCanvas";
 import SharedDiagramBanner from "./SharedDiagramBanner";
 
@@ -22,11 +23,6 @@ export function SharedDiagramView({ diagram, flowId = null }: SharedDiagramViewP
   const diagrams = useDiagramStore(useShallow((state) => state.diagrams));
   const { addImportedDiagram } = useDiagramActions();
   const [imported, setImported] = useState(false);
-
-  const getAppBaseUrl = () => {
-    const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-    return `${window.location.origin}${basePath}`;
-  };
 
   const handleImport = () => {
     const now = Date.now();

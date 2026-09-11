@@ -2,7 +2,8 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { Handle, NodeResizer, Position, type Node, type NodeProps } from "@xyflow/react";
 import ReactMarkdown from "react-markdown";
 import { ChevronDown, ChevronUp, FileText } from "lucide-react";
-import { useComponentIcon, useDiagramActions } from "@/features/diagram";
+import { useDiagramActions } from "@/features/diagram";
+import { useResolvedComponentIcon } from "@/features/canvas/components/icons/componentIconLookupContext";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
 import {
   NOTE_DEFAULT_DARK,
@@ -75,7 +76,7 @@ const NoteNode = memo(({ data: d, selected }: NodeProps<Node<NoteNodeData>>) => 
   const onInlineEditingChange = d.onInlineEditingChange;
   const collapsed = d.collapsed ?? false;
   const onToggleCollapse = d.onToggleCollapse;
-  const customDiagramIcon = useComponentIcon(elementId);
+  const customDiagramIcon = useResolvedComponentIcon(elementId);
   const { highlightedNodeIds } = useHandleHighlight();
   const { updateComponent } = useDiagramActions();
 

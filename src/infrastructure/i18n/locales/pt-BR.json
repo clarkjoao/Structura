@@ -1311,7 +1311,7 @@
     "previewBanner": {
       "title": "Você está visualizando \"{{name}}\"",
       "subtitle": "modo somente leitura",
-      "openInStructura": "Abrir no Structura",
+      "importToWorkspace": "Importar para o workspace",
       "close": "Fechar"
     }
   },
