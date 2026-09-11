@@ -1311,7 +1311,7 @@
     "previewBanner": {
       "title": "You're viewing \"{{name}}\"",
       "subtitle": "read-only mode",
-      "openInStructura": "Open in Structura",
+      "importToWorkspace": "Import to Workspace",
       "close": "Close"
     }
   },

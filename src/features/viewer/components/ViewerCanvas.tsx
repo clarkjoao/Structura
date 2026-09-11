@@ -8,17 +8,9 @@ import {
   ReactFlowProvider,
   useReactFlow,
 } from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 import type { Diagram } from "@/features/diagram/model";
-import {
-  apiGroupFlows,
-  buildFlowOutline,
-  endpointCallersByRoute,
-  endpointFlows,
-  isApiGroupComponent,
-  isEndpointComponent,
-  resolveSceneSnapshot,
-  type FlowRef,
-} from "@/features/diagram";
+import { buildFlowOutline } from "@/features/diagram";
 import FlowReadingRail from "@/features/canvas/flow/reading/FlowReadingRail";
 import { useFrameReadStep } from "@/features/canvas/flow/reading/useFrameReadStep";
 import { useFlowReadingKeys } from "@/features/canvas/flow/reading/useFlowReadingKeys";
@@ -29,10 +21,13 @@ import {
   buildFlowHighlight,
   EMPTY_FLOW_HIGHLIGHT,
 } from "@/features/canvas/flow/flowState";
-import { EMBED_EDGE_TYPES, EMBED_NODE_TYPES } from "./embedNodeTypes";
+import { useNodeTypes } from "@/features/canvas/nodes/node-types";
+import { ComponentIconLookupProvider } from "@/features/canvas/components/icons/ComponentIconLookupProvider";
+import { EMBED_EDGE_TYPES } from "./embedNodeTypes";
 import { OpenInStructuraButton } from "./OpenInStructuraButton";
 import { FlowInvite } from "./FlowInvite";
 import { useDiagramToFlow, type ViewerRoutePlay } from "../hooks/useDiagramToFlow";
+import { iconLookupForDiagram } from "../icons/diagramIconLookup";
 import "./ViewerCanvas.css";
 
 /** Stable identity, so the reading memo is not rebuilt on every render. */
@@ -109,30 +104,9 @@ const ViewerCanvasContent = ({
     else playback.play(target);
   };
   const startFlow = useCallback((flowId: string) => startRef.current(flowId), []);
-
-  /**
-   * What each route and each group offers, walked once for the diagram.
-   *
-   * The base snapshot, to match the nodes being drawn: the viewer resolves a
-   * link onto the base whatever scene the author had open.
-   */
-  const routePlay = useMemo<ViewerRoutePlay>(() => {
-    const components = resolveSceneSnapshot(diagram, null).components;
-    const callsByRoute = endpointCallersByRoute(flows);
-    const refs: FlowRef[] = flows.map((flow) => ({ id: flow.id, name: flow.name }));
-    const flowsByComponent = new Map<string, FlowRef[]>();
-
-    for (const component of Object.values(components)) {
-      const associated = isEndpointComponent(component)
-        ? endpointFlows(component, refs, callsByRoute)
-        : isApiGroupComponent(component)
-          ? apiGroupFlows(component.id, components, refs, callsByRoute)
-          : [];
-      if (associated.length > 0) flowsByComponent.set(component.id, associated);
-    }
-
-    return { flowsByComponent, onPlayFlow: startFlow };
-  }, [diagram, flows, startFlow]);
+  const nodeTypes = useNodeTypes();
+  const iconLookup = useMemo(() => iconLookupForDiagram(diagram), [diagram]);
+  const routePlay = useMemo<ViewerRoutePlay>(() => ({ onPlayFlow: startFlow }), [startFlow]);
 
   /** The link's own choice, honoured once — a reader who closes it stays closed. */
   const openedInitial = useRef(false);
@@ -227,30 +201,32 @@ const ViewerCanvasContent = ({
           boxSizing: "border-box",
         }}
       >
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={EMBED_NODE_TYPES}
-          edgeTypes={EMBED_EDGE_TYPES}
-          fitView
-          fitViewOptions={{ padding: 0.12 }}
-          nodesDraggable={false}
-          nodesConnectable={false}
-          elementsSelectable={false}
-          panOnDrag
-          panOnScroll
-          panOnScrollMode={PanOnScrollMode.Free}
-          zoomOnScroll
-          zoomOnPinch
-          zoomOnDoubleClick={false}
-          minZoom={0.3}
-          maxZoom={1.5}
-          proOptions={{ hideAttribution: true }}
-          className="bg-background"
-        >
-          <Background variant={BackgroundVariant.Dots} gap={18} size={1.5} />
-          <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
-        </ReactFlow>
+        <ComponentIconLookupProvider lookup={iconLookup}>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            edgeTypes={EMBED_EDGE_TYPES}
+            fitView
+            fitViewOptions={{ padding: 0.12 }}
+            nodesDraggable={false}
+            nodesConnectable={false}
+            elementsSelectable={false}
+            panOnDrag
+            panOnScroll
+            panOnScrollMode={PanOnScrollMode.Free}
+            zoomOnScroll
+            zoomOnPinch
+            zoomOnDoubleClick={false}
+            minZoom={0.3}
+            maxZoom={1.5}
+            proOptions={{ hideAttribution: true }}
+            className="bg-background"
+          >
+            <Background variant={BackgroundVariant.Dots} gap={18} size={1.5} />
+            <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
+          </ReactFlow>
+        </ComponentIconLookupProvider>
 
         {!readingFlow && <FlowInvite flows={flows} onSelect={startFlow} />}
 

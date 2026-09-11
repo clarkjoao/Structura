@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generateShareUrl, getShareParamFromUrl, decodeShareParam } from "./index";
+import { generateShareUrl, getShareParamFromUrl, decodeShareParam, getAppBaseUrl } from "./index";
 import type { Diagram } from "@/features/diagram";
 import { EdgeStyle } from "@/features/diagram";
 
@@ -95,9 +95,49 @@ describe("Sharing functionality", () => {
     expect(decoded?.id).toBe(testDiagram.id);
   });
 
+  it("carries the author's icon library so a shared node keeps its icon", () => {
+    const icon = {
+      id: "ico-1",
+      name: "Box",
+      source: { kind: "lucide" as const, iconName: "box" },
+      createdAt: 0,
+      usageCount: 1,
+    };
+    const withIcon: Diagram = {
+      ...testDiagram,
+      snapshot: {
+        ...testDiagram.snapshot,
+        components: {
+          "comp-1": {
+            id: "comp-1",
+            type: "system",
+            name: "API",
+            description: "",
+            parentId: null,
+            customIconId: "ico-1",
+          },
+        },
+        iconLibrary: { "ico-1": icon },
+      },
+    };
+    const shareParam = generateShareUrl(withIcon).url.split("#share=")[1];
+    const decoded = decodeShareParam(shareParam);
+
+    expect(decoded?.snapshot.iconLibrary["ico-1"]).toEqual(icon);
+    expect(decoded?.snapshot.components["comp-1"].customIconId).toBe("ico-1");
+  });
+
   it("should return null for invalid share params", () => {
     expect(decodeShareParam("invalid-data")).toBeNull();
     expect(decodeShareParam("")).toBeNull();
     expect(decodeShareParam("x" + "=".repeat(100))).toBeNull();
+  });
+});
+
+describe("getAppBaseUrl", () => {
+  it("joins origin and the Vite base path without a trailing slash", () => {
+    expect(getAppBaseUrl()).toBe(
+      `${window.location.origin}${import.meta.env.BASE_URL.replace(/\/$/, "")}`,
+    );
   });
 });

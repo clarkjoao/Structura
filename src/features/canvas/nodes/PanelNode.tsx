@@ -1,8 +1,8 @@
 import { memo } from "react";
 import { NodeResizer, Position, type Node, type NodeProps } from "@xyflow/react";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { useComponentIcon } from "@/features/diagram";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
+import { useResolvedComponentIcon } from "@/features/canvas/components/icons/componentIconLookupContext";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import { AwsIcon } from "./CloudIcon";
@@ -70,7 +70,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
   const isResizing =
     "resizing" in props ? Boolean((props as NodeProps & { resizing?: boolean }).resizing) : false;
   const { t } = useTranslation();
-  const customDiagramIcon = useComponentIcon(d.elementId);
+  const customDiagramIcon = useResolvedComponentIcon(d.elementId);
   const { highlightedNodeIds } = useHandleHighlight();
   const kindDef = getPanelKindDef(
     d.panelKind as import("@/features/diagram").PanelKind | undefined,
