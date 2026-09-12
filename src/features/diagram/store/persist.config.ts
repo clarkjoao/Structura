@@ -539,7 +539,14 @@ export function wrapIStoragePortWithDiagramPersistTracking(storage: IStoragePort
   };
 
   if (typeof window !== "undefined") {
-    window.addEventListener("beforeunload", () => {
+    /**
+     * The last chance to write. `beforeunload` does not fire on mobile Safari
+     * when the tab is swiped away or backgrounded out of memory, and
+     * `visibilitychange` alone can be too late on desktop unload, so all three
+     * are wired: whichever arrives first drains the pending write and the
+     * others then find nothing to do.
+     */
+    const flushOnLeave = () => {
       if (persistDebounceTimer !== null) {
         clearTimeout(persistDebounceTimer);
         persistDebounceTimer = null;
@@ -573,7 +580,9 @@ export function wrapIStoragePortWithDiagramPersistTracking(storage: IStoragePort
         }
         useSaveStatusStore.getState()._setError();
       }
-    });
+    };
+    window.addEventListener("beforeunload", flushOnLeave);
+    window.addEventListener("pagehide", flushOnLeave);
   }
 
   // Flush on visibility change (mobile: tab close/minimize)

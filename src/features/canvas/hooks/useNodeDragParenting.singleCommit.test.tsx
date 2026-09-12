@@ -73,7 +73,13 @@ function setup() {
   const batchCommitNodeDrag = vi.fn();
   const updateNodeLayout = vi.fn();
   const { result } = renderHook(() =>
-    useNodeDragParenting({ diagram, nodes, updateNodeLayout, batchCommitNodeDrag }),
+    useNodeDragParenting({
+      diagram,
+      nodes,
+      updateNodeLayout,
+      batchUpdateNodeLayouts: vi.fn(),
+      batchCommitNodeDrag,
+    }),
   );
   return { result, nodes, batchCommitNodeDrag, updateNodeLayout };
 }

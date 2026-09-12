@@ -126,6 +126,7 @@ describe("useNodeDragParenting hot path", () => {
         diagram,
         nodes: counting.array,
         updateNodeLayout: vi.fn(),
+        batchUpdateNodeLayouts: vi.fn(),
         batchCommitNodeDrag: vi.fn(),
       }),
     );
@@ -151,7 +152,13 @@ describe("useNodeDragParenting hot path", () => {
     const { nodes, diagram } = buildFixture();
     const batchCommitNodeDrag = vi.fn();
     const { result } = renderHook(() =>
-      useNodeDragParenting({ diagram, nodes, updateNodeLayout: vi.fn(), batchCommitNodeDrag }),
+      useNodeDragParenting({
+        diagram,
+        nodes,
+        updateNodeLayout: vi.fn(),
+        batchUpdateNodeLayouts: vi.fn(),
+        batchCommitNodeDrag,
+      }),
     );
 
     // P0 abs (0,0) / P1 abs (100,100) / P2 abs (200,200), 900x900.
@@ -180,7 +187,13 @@ describe("useNodeDragParenting hot path", () => {
     const { nodes, diagram } = buildFixture();
     const batchCommitNodeDrag = vi.fn();
     const { result } = renderHook(() =>
-      useNodeDragParenting({ diagram, nodes, updateNodeLayout: vi.fn(), batchCommitNodeDrag }),
+      useNodeDragParenting({
+        diagram,
+        nodes,
+        updateNodeLayout: vi.fn(),
+        batchUpdateNodeLayouts: vi.fn(),
+        batchCommitNodeDrag,
+      }),
     );
 
     act(() => {
@@ -206,7 +219,13 @@ describe("useNodeDragParenting hot path", () => {
     const { nodes, diagram } = buildFixture();
     const batchCommitNodeDrag = vi.fn();
     const { result } = renderHook(() =>
-      useNodeDragParenting({ diagram, nodes, updateNodeLayout: vi.fn(), batchCommitNodeDrag }),
+      useNodeDragParenting({
+        diagram,
+        nodes,
+        updateNodeLayout: vi.fn(),
+        batchUpdateNodeLayouts: vi.fn(),
+        batchCommitNodeDrag,
+      }),
     );
 
     // P0 is the root panel; dropping it on a point inside its own descendant P2

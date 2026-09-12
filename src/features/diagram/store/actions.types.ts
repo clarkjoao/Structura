@@ -83,6 +83,13 @@ export interface AppActions {
     position: { x: number; y: number },
     dimensions?: { width: number; height: number },
   ) => void;
+  batchUpdateNodeLayouts: (
+    entries: Array<{
+      elementId: string;
+      position: { x: number; y: number };
+      dimensions?: { width: number; height: number };
+    }>,
+  ) => void;
   updateViewport: (viewport: { x: number; y: number; zoom: number }) => void;
   setEdgeControlPoints: (
     diagramId: string,

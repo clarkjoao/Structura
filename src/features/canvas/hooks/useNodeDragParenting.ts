@@ -38,6 +38,19 @@ interface UseNodeDragParentingParams {
   ) => void;
 
   /**
+   * One write for a whole round of re-measured nodes. React Flow's
+   * ResizeObserver can report every node on screen at once, and each separate
+   * store write serialises the entire workspace.
+   */
+  batchUpdateNodeLayouts: (
+    entries: Array<{
+      elementId: string;
+      position: { x: number; y: number };
+      dimensions?: { width: number; height: number };
+    }>,
+  ) => void;
+
+  /**
    * Every drag commit goes through this one batch action, including a single
    * node: one set() on the diagram store, one structural history checkpoint,
    * one collaboration patch. The single-node `commitNodeDrag` store action is
@@ -64,6 +77,7 @@ export function useNodeDragParenting({
   diagram,
   nodes,
   updateNodeLayout,
+  batchUpdateNodeLayouts,
   batchCommitNodeDrag,
 }: UseNodeDragParentingParams): UseNodeDragParentingResult {
   const diagramRef = useRef(diagram);
@@ -150,12 +164,19 @@ export function useNodeDragParenting({
     const snapshot = getCachedCanvasSnapshot(diagramRef.current);
     const copy = new Map(pending);
     pending.clear();
+    const entries: Array<{
+      elementId: string;
+      position: { x: number; y: number };
+      dimensions?: { width: number; height: number };
+    }> = [];
     for (const [elementId, dimensions] of copy) {
       const layout = snapshot.nodeLayouts[elementId];
       if (!layout) continue;
-      updateNodeLayout(elementId, { x: layout.x, y: layout.y }, dimensions);
+      entries.push({ elementId, position: { x: layout.x, y: layout.y }, dimensions });
     }
-  }, [updateNodeLayout]);
+    // One write, however many nodes were re-measured.
+    if (entries.length > 0) batchUpdateNodeLayouts(entries);
+  }, [batchUpdateNodeLayouts]);
 
   useEffect(
     () => () => {
