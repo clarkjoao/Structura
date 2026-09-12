@@ -15,7 +15,6 @@ import {
   isOutsideParentSize,
   findPanelContainingPoint,
   resolveAbsolutePosition,
-  resolveAbsolutePositionFromNodes,
   resolveAbsolutePositionFromNodeMap,
   buildNodeMap,
   buildGesturePanelIndex,
@@ -38,12 +37,13 @@ interface UseNodeDragParentingParams {
     dimensions?: { width: number; height: number },
   ) => void;
 
-  commitNodeDrag: (
-    nodeId: string,
-    newParentId: string | null,
-    newPosition: { x: number; y: number },
-  ) => void;
-
+  /**
+   * Every drag commit goes through this one batch action, including a single
+   * node: one set() on the diagram store, one structural history checkpoint,
+   * one collaboration patch. The single-node `commitNodeDrag` store action is
+   * deliberately not wired here -- reintroducing it would fan the gesture back
+   * out into several transactions.
+   */
   batchCommitNodeDrag: (
     entries: Array<{
       nodeId: string;
@@ -64,7 +64,6 @@ export function useNodeDragParenting({
   diagram,
   nodes,
   updateNodeLayout,
-  commitNodeDrag,
   batchCommitNodeDrag,
 }: UseNodeDragParentingParams): UseNodeDragParentingResult {
   const diagramRef = useRef(diagram);
@@ -382,13 +381,15 @@ export function useNodeDragParenting({
       const absX = draggedAbsPos.x;
       const absY = draggedAbsPos.y;
 
-      const commitSelectedNodesDrag = () => {
-        const entries: Array<{
-          nodeId: string;
-          newParentId: string | null;
-          newPosition: { x: number; y: number };
-        }> = [];
+      type DragEntry = {
+        nodeId: string;
+        newParentId: string | null;
+        newPosition: { x: number; y: number };
+      };
+      /** Every node this gesture moved, written in one transaction at the end. */
+      const entries: DragEntry[] = [];
 
+      const collectSelectedNodesDrag = () => {
         const otherSelected = nodes.filter(
           (node) =>
             node.selected && node.id !== draggedNode.id && !isEndpointType(getNodeType(node)),
@@ -443,13 +444,22 @@ export function useNodeDragParenting({
               newPosition: { x: nodeAbsPos.x - matchAbsPos.x, y: nodeAbsPos.y - matchAbsPos.y },
             });
           } else {
-            updateNodeLayout(node.id, node.position);
+            // Moved but kept its parent. This used to be a separate updateNodeLayout,
+            // i.e. one more set() and one more full persist per node; it belongs in
+            // the same transaction as the rest of the gesture.
+            entries.push({
+              nodeId: node.id,
+              newParentId: node.parentId ?? null,
+              newPosition: { x: node.position.x, y: node.position.y },
+            });
           }
         }
+      };
 
-        if (entries.length > 0) {
-          batchCommitNodeDrag(entries);
-        }
+      /** Writes the gesture. One call, one set(), one history checkpoint. */
+      const flush = () => {
+        collectSelectedNodesDrag();
+        if (entries.length > 0) batchCommitNodeDrag(entries);
       };
 
       const isDraggedPanel = isReactFlowParentPanelType(nodeType);
@@ -466,12 +476,16 @@ export function useNodeDragParenting({
           components,
         );
         if (match && descendantIds.has(match.id)) {
-          if (draggedNode.parentId) {
-            commitNodeDrag(draggedNode.id, draggedNode.parentId ?? null, draggedNode.position);
-          } else {
-            commitNodeDrag(draggedNode.id, null, { x: absX, y: absY });
-          }
-          commitSelectedNodesDrag();
+          entries.push(
+            draggedNode.parentId
+              ? {
+                  nodeId: draggedNode.id,
+                  newParentId: draggedNode.parentId,
+                  newPosition: { x: draggedNode.position.x, y: draggedNode.position.y },
+                }
+              : { nodeId: draggedNode.id, newParentId: null, newPosition: { x: absX, y: absY } },
+          );
+          flush();
           return;
         }
       }
@@ -484,12 +498,16 @@ export function useNodeDragParenting({
           height: draggedNode.measured?.height ?? 0,
         };
         const outside = isOutsideParentBounds(draggedNode.position, parent, draggedDims);
-        if (outside) {
-          commitNodeDrag(draggedNode.id, null, { x: absX, y: absY });
-        } else {
-          commitNodeDrag(draggedNode.id, draggedNode.parentId ?? null, draggedNode.position);
-        }
-        commitSelectedNodesDrag();
+        entries.push(
+          outside
+            ? { nodeId: draggedNode.id, newParentId: null, newPosition: { x: absX, y: absY } }
+            : {
+                nodeId: draggedNode.id,
+                newParentId: draggedNode.parentId ?? null,
+                newPosition: { x: draggedNode.position.x, y: draggedNode.position.y },
+              },
+        );
+        flush();
         return;
       }
 
@@ -508,19 +526,22 @@ export function useNodeDragParenting({
           components,
           r.nodeLayouts,
         );
-
-        const relPos = {
-          x: absX - matchAbsPos.x,
-          y: absY - matchAbsPos.y,
-        };
-        commitNodeDrag(draggedNode.id, match.id, relPos);
+        entries.push({
+          nodeId: draggedNode.id,
+          newParentId: match.id,
+          newPosition: { x: absX - matchAbsPos.x, y: absY - matchAbsPos.y },
+        });
       } else {
-        commitNodeDrag(draggedNode.id, null, { x: absX, y: absY });
+        entries.push({
+          nodeId: draggedNode.id,
+          newParentId: null,
+          newPosition: { x: absX, y: absY },
+        });
       }
 
-      commitSelectedNodesDrag();
+      flush();
     },
-    [commitNodeDrag, batchCommitNodeDrag, updateNodeLayout, endGesture],
+    [batchCommitNodeDrag, endGesture],
   );
 
   return { dragTargetPanelId, unparentCandidatePanelId, onNodesChange, onNodeDragStop };

@@ -93,6 +93,21 @@ function buildFixture() {
   return { nodes, diagram };
 }
 
+/**
+ * The gesture commits through one batchCommitNodeDrag call (see
+ * useNodeDragParenting.singleCommit.test.tsx). These tests are about WHICH
+ * parent and WHICH relative position the gesture decides on, so they read that
+ * decision out of the single payload.
+ */
+function entryFor(mock: { mock: { calls: unknown[][] } }, nodeId: string) {
+  const entries = (mock.mock.calls[0]?.[0] ?? []) as Array<{
+    nodeId: string;
+    newParentId: string | null;
+    newPosition: { x: number; y: number };
+  }>;
+  return entries.find((e) => e.nodeId === nodeId);
+}
+
 function dragFrame(id: string, x: number, y: number): NodeChange {
   return { type: "position", id, position: { x, y }, dragging: true } as NodeChange;
 }
@@ -111,7 +126,6 @@ describe("useNodeDragParenting hot path", () => {
         diagram,
         nodes: counting.array,
         updateNodeLayout: vi.fn(),
-        commitNodeDrag: vi.fn(),
         batchCommitNodeDrag: vi.fn(),
       }),
     );
@@ -135,15 +149,9 @@ describe("useNodeDragParenting hot path", () => {
 
   it("commits to the innermost panel of a three-level nest", () => {
     const { nodes, diagram } = buildFixture();
-    const commitNodeDrag = vi.fn();
+    const batchCommitNodeDrag = vi.fn();
     const { result } = renderHook(() =>
-      useNodeDragParenting({
-        diagram,
-        nodes,
-        updateNodeLayout: vi.fn(),
-        commitNodeDrag,
-        batchCommitNodeDrag: vi.fn(),
-      }),
+      useNodeDragParenting({ diagram, nodes, updateNodeLayout: vi.fn(), batchCommitNodeDrag }),
     );
 
     // P0 abs (0,0) / P1 abs (100,100) / P2 abs (200,200), 900x900.
@@ -160,21 +168,19 @@ describe("useNodeDragParenting hot path", () => {
       } as Node);
     });
 
-    expect(commitNodeDrag).toHaveBeenCalledTimes(1);
-    expect(commitNodeDrag).toHaveBeenCalledWith("n-0", "P2", { x: 200, y: 200 });
+    expect(batchCommitNodeDrag).toHaveBeenCalledTimes(1);
+    expect(entryFor(batchCommitNodeDrag, "n-0")).toEqual({
+      nodeId: "n-0",
+      newParentId: "P2",
+      newPosition: { x: 200, y: 200 },
+    });
   });
 
   it("drops on the canvas when the pointer is outside every panel", () => {
     const { nodes, diagram } = buildFixture();
-    const commitNodeDrag = vi.fn();
+    const batchCommitNodeDrag = vi.fn();
     const { result } = renderHook(() =>
-      useNodeDragParenting({
-        diagram,
-        nodes,
-        updateNodeLayout: vi.fn(),
-        commitNodeDrag,
-        batchCommitNodeDrag: vi.fn(),
-      }),
+      useNodeDragParenting({ diagram, nodes, updateNodeLayout: vi.fn(), batchCommitNodeDrag }),
     );
 
     act(() => {
@@ -189,20 +195,18 @@ describe("useNodeDragParenting hot path", () => {
       } as Node);
     });
 
-    expect(commitNodeDrag).toHaveBeenCalledWith("n-0", null, { x: 9000, y: 9000 });
+    expect(entryFor(batchCommitNodeDrag, "n-0")).toEqual({
+      nodeId: "n-0",
+      newParentId: null,
+      newPosition: { x: 9000, y: 9000 },
+    });
   });
 
   it("never makes a dragged panel a child of its own descendant", () => {
     const { nodes, diagram } = buildFixture();
-    const commitNodeDrag = vi.fn();
+    const batchCommitNodeDrag = vi.fn();
     const { result } = renderHook(() =>
-      useNodeDragParenting({
-        diagram,
-        nodes,
-        updateNodeLayout: vi.fn(),
-        commitNodeDrag,
-        batchCommitNodeDrag: vi.fn(),
-      }),
+      useNodeDragParenting({ diagram, nodes, updateNodeLayout: vi.fn(), batchCommitNodeDrag }),
     );
 
     // P0 is the root panel; dropping it on a point inside its own descendant P2
@@ -217,6 +221,10 @@ describe("useNodeDragParenting hot path", () => {
       } as Node);
     });
 
-    expect(commitNodeDrag).toHaveBeenCalledWith("P0", null, { x: 400, y: 400 });
+    expect(entryFor(batchCommitNodeDrag, "P0")).toEqual({
+      nodeId: "P0",
+      newParentId: null,
+      newPosition: { x: 400, y: 400 },
+    });
   });
 });
