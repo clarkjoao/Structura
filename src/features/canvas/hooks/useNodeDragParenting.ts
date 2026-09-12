@@ -12,10 +12,17 @@ import {
 } from "@/features/diagram";
 import {
   isOutsideParentBounds,
+  isOutsideParentSize,
   findPanelContainingPoint,
   resolveAbsolutePosition,
   resolveAbsolutePositionFromNodes,
+  resolveAbsolutePositionFromNodeMap,
+  buildNodeMap,
+  buildGesturePanelIndex,
+  findPanelInIndex,
+  resolveAbsoluteFromIndex,
   getPanelDimensions,
+  type GesturePanelIndex,
 } from "../models/panelParenting";
 import { getCachedCanvasSnapshot, canMoveNodeInSceneMode } from "@/features/diagram";
 import { getNodeType } from "../utils/node-type-utils";
@@ -82,6 +89,57 @@ export function useNodeDragParenting({
 
   const dragTargetRafRef = useRef<number | null>(null);
 
+  /**
+   * Built once on the first frame of a gesture, dropped on `onNodeDragStop`.
+   *
+   * Panels do not move while one of their children is dragged, and a dragged
+   * panel is kept out of the drop-target list along with its descendants, so
+   * the answer is stable for the whole gesture. Before this, every frame re-ran
+   * an O(N) `filter` over the node list (O(S * N) with a multi-selection) and
+   * resolved absolute positions from a second, disagreeing coordinate source.
+   */
+  const gestureRef = useRef<{
+    index: GesturePanelIndex;
+    draggedSizes: Map<string, { width: number; height: number }>;
+  } | null>(null);
+
+  const endGesture = useCallback(() => {
+    gestureRef.current = null;
+  }, []);
+
+  const ensureGesture = useCallback((draggingIds: string[]) => {
+    if (gestureRef.current) return gestureRef.current;
+    const activeDiagram = diagramRef.current;
+    const nodes = nodesRef.current;
+    if (!activeDiagram) return null;
+    const r = getCachedCanvasSnapshot(activeDiagram);
+
+    const excluded = new Set<string>();
+    if (draggingIds.length > 0) {
+      const childrenIndex = buildChildrenIndex(r.components);
+      for (const id of draggingIds) {
+        excluded.add(id);
+        for (const descendant of getDescendantIdsFromIndex(id, childrenIndex)) {
+          excluded.add(descendant);
+        }
+      }
+    }
+
+    const draggedSizes = new Map<string, { width: number; height: number }>();
+    if (draggingIds.length > 0) {
+      const wanted = new Set(draggingIds);
+      for (const node of nodes) {
+        if (wanted.has(node.id)) draggedSizes.set(node.id, getPanelDimensions(node));
+      }
+    }
+
+    gestureRef.current = {
+      index: buildGesturePanelIndex(nodes, r.components, r.nodeLayouts, excluded),
+      draggedSizes,
+    };
+    return gestureRef.current;
+  }, []);
+
   const pendingLayoutUpdatesRef = useRef(new Map<string, { width: number; height: number }>());
   const layoutUpdateRafRef = useRef<number | null>(null);
 
@@ -137,7 +195,6 @@ export function useNodeDragParenting({
       if (change.type !== "position" || !change.position) return;
       const activeDiagram = diagramRef.current;
       if (!activeDiagram) return;
-      const nodes = nodesRef.current;
 
       const r = getCachedCanvasSnapshot(activeDiagram);
       const comp = r.components[change.id];
@@ -196,34 +253,28 @@ export function useNodeDragParenting({
 
       if (!comp || isNoteComponent(comp) || isEndpointComponent(comp)) return;
 
+      const gesture = gestureRef.current;
+      if (!gesture) return;
+      const { index, draggedSizes } = gesture;
+
       let absX = change.position.x;
       let absY = change.position.y;
 
       if (comp.parentId) {
-        const parentAbsPos = resolveAbsolutePositionFromNodes(comp.parentId, nodes);
-        absX = parentAbsPos.x + change.position.x;
-        absY = parentAbsPos.y + change.position.y;
+        const absolute = resolveAbsoluteFromIndex(index, comp.parentId, change.position);
+        absX = absolute.x;
+        absY = absolute.y;
 
-        const parentNode = nodes.find((n) => n.id === comp.parentId);
-
-        const childNode = nodes.find((n) => n.id === change.id);
-        const childDims = childNode ? getPanelDimensions(childNode) : undefined;
-        const outside = parentNode
-          ? isOutsideParentBounds(change.position, parentNode, childDims)
+        const parentSize = index.sizeById.get(comp.parentId);
+        const outside = parentSize
+          ? isOutsideParentSize(change.position, parentSize, draggedSizes.get(change.id))
           : false;
         setUnparentCandidatePanelId(outside ? comp.parentId : null);
       } else {
         setUnparentCandidatePanelId(null);
       }
 
-      const match = findPanelContainingPoint(
-        nodes,
-        absX,
-        absY,
-        comp.parentId,
-        r.nodeLayouts,
-        r.components,
-      );
+      const match = findPanelInIndex(index, absX, absY, comp.parentId);
       const newTarget = match?.id ?? null;
 
       if (newTarget !== dragTargetRef.current) {
@@ -265,12 +316,16 @@ export function useNodeDragParenting({
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
+      const draggingIds: string[] = [];
       for (const change of changes) {
         if (change.type !== "position") continue;
+        if (change.dragging) draggingIds.push(change.id);
         if (!change.dragging && draggingNodeIdsRef.current.has(change.id)) {
           dragStopPendingNodeIdsRef.current.add(change.id);
         }
       }
+      // One index for the whole gesture, built from every node the gesture moves.
+      if (draggingIds.length > 0) ensureGesture(draggingIds);
 
       changes.forEach((change) => {
         if (change.type === "position") handlePositionChange(change);
@@ -286,12 +341,15 @@ export function useNodeDragParenting({
         }
       }
     },
-    [handlePositionChange, handleDimensionsChange],
+    [handlePositionChange, handleDimensionsChange, ensureGesture],
   );
 
   const onNodeDragStop = useCallback(
     (_: unknown, draggedNode: Node) => {
       const nodes = nodesRef.current;
+      endGesture();
+      // One walk of the node list for the whole commit instead of one per node.
+      const nodeMap = buildNodeMap(nodes);
       if (dragTargetRafRef.current !== null) {
         cancelAnimationFrame(dragTargetRafRef.current);
         dragTargetRafRef.current = null;
@@ -319,7 +377,7 @@ export function useNodeDragParenting({
       const components = r.components;
 
       const draggedAbsPos = draggedNode.parentId
-        ? resolveAbsolutePositionFromNodes(draggedNode.id, nodes)
+        ? resolveAbsolutePositionFromNodeMap(draggedNode.id, nodeMap)
         : draggedNode.position;
       const absX = draggedAbsPos.x;
       const absY = draggedAbsPos.y;
@@ -343,11 +401,11 @@ export function useNodeDragParenting({
             continue;
 
           const nodeAbsPos = node.parentId
-            ? resolveAbsolutePositionFromNodes(node.id, nodes)
+            ? resolveAbsolutePositionFromNodeMap(node.id, nodeMap)
             : node.position;
 
           if (node.parentId) {
-            const parentNode = nodes.find((n) => n.id === node.parentId);
+            const parentNode = nodeMap.get(node.parentId);
 
             const childDims = getPanelDimensions(node);
             const outside = parentNode
@@ -418,7 +476,7 @@ export function useNodeDragParenting({
         }
       }
 
-      const parent = draggedNode.parentId ? nodes.find((n) => n.id === draggedNode.parentId) : null;
+      const parent = draggedNode.parentId ? (nodeMap.get(draggedNode.parentId) ?? null) : null;
 
       if (parent) {
         const draggedDims = {
@@ -462,7 +520,7 @@ export function useNodeDragParenting({
 
       commitSelectedNodesDrag();
     },
-    [commitNodeDrag, batchCommitNodeDrag, updateNodeLayout],
+    [commitNodeDrag, batchCommitNodeDrag, updateNodeLayout, endGesture],
   );
 
   return { dragTargetPanelId, unparentCandidatePanelId, onNodesChange, onNodeDragStop };
