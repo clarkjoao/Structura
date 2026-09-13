@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { EdgeLabelRenderer } from "@xyflow/react";
 
@@ -68,10 +68,22 @@ function attachEdgeLabelContainer(mount: HTMLDivElement | null, container: HTMLE
  */
 export function EdgeLabelPortalHost() {
   const container = useEdgeLabelPortalContainer();
+  /*
+   * Stable identity, not an inline arrow: the host re-renders with the Canvas,
+   * and React detaches a ref whose identity changed — calling the old callback
+   * with null (which removes the container) and the new one with the mount
+   * (which appends it again). That is two DOM mutations per render on the
+   * element holding every edge label; the Canvas renders once per drag frame.
+   * `container` never changes, so this is created once.
+   */
+  const attach = useCallback(
+    (mount: HTMLDivElement | null) => attachEdgeLabelContainer(mount, container),
+    [container],
+  );
 
   return (
     <EdgeLabelRenderer>
-      <div ref={(mount) => attachEdgeLabelContainer(mount, container)} />
+      <div ref={attach} />
     </EdgeLabelRenderer>
   );
 }

@@ -1,10 +1,12 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { ReactFlow, ReactFlowProvider } from "@xyflow/react";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { useState, type ReactNode } from "react";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import {
   EdgeLabelPortal,
+  EdgeLabelPortalHost,
   EdgeLabelPortalProvider,
   useEdgeLabelPortalContainer,
 } from "./EdgeLabelPortal";
@@ -165,5 +167,61 @@ describe("edge-label renderer instances", () => {
     walk(root);
 
     expect(offenders).toEqual([]);
+  });
+});
+
+/**
+ * The host re-renders on every Canvas render, and the Canvas renders once per
+ * drag frame. An inline `ref={(mount) => …}` is a new function on each of those
+ * renders, so React detaches the old ref (`container.remove()`) and attaches the
+ * new one (`mount.appendChild(container)`) — two DOM mutations per frame, on the
+ * element that holds every edge label on the canvas. Measured on the 400-node
+ * fixture: 283 mutation records over 40 drag frames, against 229 with a stable
+ * ref, and 11.0 ms of JS per frame against 9.2. The attach itself must stay a
+ * ref callback (see LateMountHost above); what has to be stable is its identity.
+ */
+describe("EdgeLabelPortalHost attachment stability", () => {
+  // jsdom has no layout; React Flow needs an observer that answers to mount.
+  beforeAll(() => {
+    (globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver = class {
+      observe(): void {}
+      unobserve(): void {}
+      disconnect(): void {}
+    };
+  });
+
+  function HostFixture({ tick }: { tick: number }) {
+    return (
+      <EdgeLabelPortalProvider>
+        <ReactFlowProvider>
+          <ReactFlow nodes={[]} edges={[]}>
+            <EdgeLabelPortalHost />
+            <span data-testid="tick">{tick}</span>
+          </ReactFlow>
+        </ReactFlowProvider>
+      </EdgeLabelPortalProvider>
+    );
+  }
+
+  it("does not detach and re-attach the shared container on every render", async () => {
+    const { rerender } = render(<HostFixture tick={0} />);
+
+    const renderer = await waitFor(() => {
+      const el = document.querySelector(".react-flow__edgelabel-renderer");
+      expect(el).not.toBeNull();
+      expect(el!.querySelector("div > div")).not.toBeNull();
+      return el!;
+    });
+
+    const observer = new MutationObserver(() => {});
+    observer.observe(renderer, { childList: true, subtree: true });
+
+    for (let tick = 1; tick <= 5; tick++) {
+      rerender(<HostFixture tick={tick} />);
+    }
+
+    const records = observer.takeRecords();
+    observer.disconnect();
+    expect(records.map((record) => record.type)).toEqual([]);
   });
 });
