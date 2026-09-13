@@ -184,7 +184,7 @@ export function useCanvasInteraction(
     diagram,
     nodes: localNodesRef.current,
     updateNodeLayout: actions.updateNodeLayout,
-    commitNodeDrag: actions.commitNodeDrag,
+    batchUpdateNodeLayouts: actions.batchUpdateNodeLayouts,
     batchCommitNodeDrag: actions.batchCommitNodeDrag,
   });
 

@@ -1,6 +1,6 @@
-import { EdgeLabelRenderer } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import type { PointerEvent as ReactPointerEvent } from "react";
+import { EdgeLabelPortal } from "../EdgeLabelPortal";
 
 export interface EdgeLabelProps {
   labelPoint: { x: number; y: number };
@@ -40,7 +40,7 @@ export function EdgeLabel({
   const { t } = useTranslation();
 
   return (
-    <EdgeLabelRenderer>
+    <EdgeLabelPortal>
       <div
         className={`nodrag nopan absolute z-[2] pointer-events-auto ${canDrag ? "cursor-grab active:cursor-grabbing" : ""}`}
         data-connection-id={connectionId}
@@ -89,6 +89,6 @@ export function EdgeLabel({
           )}
         </div>
       </div>
-    </EdgeLabelRenderer>
+    </EdgeLabelPortal>
   );
 }

@@ -232,16 +232,18 @@ export function useLocalNodes(
       // Phase 4: drag-threshold gate moved to `selection/pointerFunnel.ts`.
       // All we do here is capture the prior selection for the unselected-drag
       // merge (decision #3) so `onSelectionChange` can restore it.
-      const positionChanges = changes.filter((c) => c.type === "position");
-      for (const change of positionChanges) {
+      // The two ref guards below are checked first on purpose: they do not depend on
+      // the node, and once a gesture is under way they are both true. Scanning the
+      // node list before them put two O(N) passes on every frame of every drag.
+      for (const change of changes) {
         if (change.type !== "position") continue;
         if (!change.dragging) continue;
+        if (dragSelectionRef.isDragging) continue;
+        if (dragSelectionRef.selectedBeforeDrag.size > 0) continue;
 
         const node = localNodesStateRef.current.find((n) => n.id === change.id);
         if (!node) continue;
         if (node.selected) continue;
-        if (dragSelectionRef.selectedBeforeDrag.size > 0) continue;
-        if (dragSelectionRef.isDragging) continue;
 
         const currentSelected = localNodesStateRef.current
           .filter((n) => n.selected)
