@@ -129,8 +129,20 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
     projectionRef.current = projectionPoints;
   }, [projectionPoints]);
 
+  const canDragLabel = Boolean(edgeData.label && activeDiagramId);
+  // Declared here because `labelOffset` -- and so every anchor derived from it
+  // -- has to follow the pointer during a drag. The gesture keeps its offset
+  // local and writes the store once, on release.
+  const labelDrag = useEdgeLabelDrag({
+    connectionId,
+    enabled: canDragLabel,
+    source,
+    target,
+    pointsRef: projectionRef,
+  });
+
   const storedLabelOffset = useEdgeLabelOffset(connectionId);
-  const labelOffset = clampOffset(storedLabelOffset ?? edgeData.labelPosition);
+  const labelOffset = clampOffset(labelDrag.offset ?? storedLabelOffset ?? edgeData.labelPosition);
 
   const [hovered, setHovered] = useState(false);
 
@@ -201,15 +213,6 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
 
   // Snap guides come from whichever editing surface is active for this style.
   const activeGuides = isStep ? segmentDrag.snapGuides : snapGuides;
-
-  const canDragLabel = Boolean(edgeData.label && activeDiagramId);
-  const labelDrag = useEdgeLabelDrag({
-    connectionId,
-    enabled: canDragLabel,
-    source,
-    target,
-    pointsRef: projectionRef,
-  });
 
   const handleResetDoubleClick = (event: ReactMouseEvent<SVGPathElement>) => {
     if (!isEditable || points.length === 0 || !activeDiagramId) return;

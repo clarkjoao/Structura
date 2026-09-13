@@ -24,11 +24,14 @@ export interface UseControlPointsResult {
 }
 
 /**
- * Bridges control-point pointer gestures to the diagram store. A drag streams
- * position updates without pushing history and lets the store record a single
- * checkpoint on the first move, so one drag collapses to one undo step. Points
- * snap magnetically to node alignment lines (Alt bypasses) but stay free-form
- * otherwise. Add, remove, and keyboard nudge are discrete history entries.
+ * Bridges control-point pointer gestures to the diagram store. A drag keeps the
+ * moving point in local state and writes the store once, on release, so one
+ * gesture is one store write and one undo step -- the same shape node drag has.
+ * Each diagram-store `set()` serializes the whole workspace for persist and is
+ * diffed for collaboration, so a write per pointermove is a write per frame of
+ * both. Points snap magnetically to node alignment lines (Alt bypasses) but
+ * stay free-form otherwise. Add, remove, and keyboard nudge are discrete
+ * history entries.
  */
 export function useControlPoints(connectionId: string): UseControlPointsResult {
   const activeDiagramId = useActiveDiagramId();
@@ -40,6 +43,8 @@ export function useControlPoints(connectionId: string): UseControlPointsResult {
   const cleanupRef = useRef<(() => void) | null>(null);
   const [activePointId, setActivePointId] = useState<string | null>(null);
   const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([]);
+  /** The in-progress gesture's points: what the edge draws until release. */
+  const [draftPoints, setDraftPoints] = useState<EdgeControlPoint[] | null>(null);
 
   useEffect(() => {
     pointsRef.current = points;
@@ -93,7 +98,7 @@ export function useControlPoints(connectionId: string): UseControlPointsResult {
       cleanupRef.current?.();
 
       const session = capture();
-      let checkpointed = false;
+      let pending: EdgeControlPoint[] | null = null;
       setActivePointId(pointId);
       document.body.style.cursor = "grabbing";
 
@@ -112,11 +117,10 @@ export function useControlPoints(connectionId: string): UseControlPointsResult {
         } else {
           setSnapGuides([]);
         }
-        const next = pointsRef.current.map((point) =>
+        pending = pointsRef.current.map((point) =>
           point.id === pointId ? { ...point, x, y } : point,
         );
-        setEdgeControlPoints(activeDiagramId, connectionId, next, { history: !checkpointed });
-        checkpointed = true;
+        setDraftPoints(pending);
       };
 
       const onUp = () => {
@@ -125,6 +129,12 @@ export function useControlPoints(connectionId: string): UseControlPointsResult {
         window.removeEventListener("pointercancel", onUp);
         cleanupRef.current = null;
         document.body.style.cursor = "";
+        // One write for the gesture. Clearing the draft in the same handler as
+        // the write means React commits both together: the edge never paints
+        // the pre-drag position between them.
+        if (pending)
+          setEdgeControlPoints(activeDiagramId, connectionId, pending, { history: true });
+        setDraftPoints(null);
         setActivePointId(null);
         setSnapGuides([]);
       };
@@ -138,7 +148,7 @@ export function useControlPoints(connectionId: string): UseControlPointsResult {
   );
 
   return {
-    points,
+    points: draftPoints ?? points,
     activePointId,
     snapGuides,
     addPoint,
