@@ -53,9 +53,8 @@ interface UseNodeDragParentingParams {
   /**
    * Every drag commit goes through this one batch action, including a single
    * node: one set() on the diagram store, one structural history checkpoint,
-   * one collaboration patch. The single-node `commitNodeDrag` store action is
-   * deliberately not wired here -- reintroducing it would fan the gesture back
-   * out into several transactions.
+   * one collaboration patch. Do not add a single-node commit alongside it --
+   * that would fan the gesture back out into several transactions.
    */
   batchCommitNodeDrag: (
     entries: Array<{

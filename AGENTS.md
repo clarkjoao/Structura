@@ -89,6 +89,17 @@ src/
 - **Store changes go through slices** (`features/diagram/store/slices/*`); mutating
   actions that change structure must call `pushHistory` for undo/redo. Persisted
   schema changes need a migration in `persist.config.ts` (bump `PERSIST_SCHEMA_VERSION`).
+- **`batchUpdateNodeLayouts` writes no history, deliberately.** It writes a whole
+  batch of re-measured node dimensions in a single transaction, and skips
+  `pushHistory` for the same reason single-node `updateNodeLayout` does — writing
+  many nodes at once does not make it an edit. React Flow re-measures through a
+  `ResizeObserver`, so one store change can hand the canvas a dimension change per
+  node on screen: that is the canvas reporting the size it just painted, not an
+  edit the user made. Checkpointing it would put entries in the undo stack that
+  the user never caused and cannot meaningfully undo, and writing the batch one
+  `updateNodeLayout` at a time costs one `set()` each — every `set()` serialises
+  the whole workspace for the persist middleware. Do not add a history checkpoint
+  here, and do not split the batch, without a measurement that justifies it.
 - **Persistence goes through `IStoragePort`** — never touch `localStorage` directly
   outside `infrastructure/persistence/`.
 - **`@` alias** resolves to `./src`.

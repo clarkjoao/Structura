@@ -103,26 +103,6 @@ export const componentParentingSlice = (
     });
   },
 
-  commitNodeDrag: (
-    nodeId: string,
-    newParentId: string | null,
-    newPosition: { x: number; y: number },
-  ) => {
-    set((state) => {
-      const d = getActiveDiagram(state);
-      if (!d) return;
-      const scene = resolveActiveScene(d);
-
-      if (scene && !scene.addedComponents[nodeId]) return;
-
-      if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-
-      applySingleNodeDrag(d, scene, nodeId, newParentId, newPosition);
-
-      touchDiagram(d);
-    });
-  },
-
   batchCommitNodeDrag: (
     entries: Array<{
       nodeId: string;

@@ -113,8 +113,8 @@ set((state) => {
 #### Node drag — never call setParent or updateNodeLayout directly
 
 ```ts
-// ✅ CORRECT
-commitNodeDrag(nodeId, position);
+// ✅ CORRECT — one batch call commits the whole gesture
+batchCommitNodeDrag([{ nodeId, newParentId, newPosition }]);
 
 // ❌ FORBIDDEN
 setParent(nodeId, parentId);

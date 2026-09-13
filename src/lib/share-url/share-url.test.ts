@@ -3,6 +3,18 @@ import { generateShareUrl, getShareParamFromUrl, decodeShareParam, getAppBaseUrl
 import type { Diagram } from "@/features/diagram";
 import { EdgeStyle } from "@/features/diagram";
 
+/**
+ * The payload as a reader receives it.
+ *
+ * `generateShareUrl` percent-encodes the compressed payload, because the
+ * LZString alphabet contains `+` and a raw `+` in a hash is read back as a
+ * space — silent corruption rather than a clean failure. `URLSearchParams`
+ * removes exactly that layer, so this mirrors what the app does in
+ * `getShareParamFromUrl`. Splitting the string by hand would skip the decode
+ * and hand `decodeShareParam` a still-encoded payload.
+ */
+const shareParamOf = (url: string) => new URLSearchParams(url.split("#")[1]).get("share")!;
+
 describe("Sharing functionality", () => {
   const testDiagram: Diagram = {
     id: "test-id",
@@ -40,7 +52,7 @@ describe("Sharing functionality", () => {
 
   it("should decode share param correctly", () => {
     const result = generateShareUrl(testDiagram);
-    const shareParam = result.url.split("#share=")[1];
+    const shareParam = shareParamOf(result.url);
 
     const decoded = decodeShareParam(shareParam);
     expect(decoded).toBeTruthy();
@@ -80,7 +92,7 @@ describe("Sharing functionality", () => {
     };
 
     const result = generateShareUrl(complexDiagram);
-    const shareParam = result.url.split("#share=")[1];
+    const shareParam = shareParamOf(result.url);
     const decoded = decodeShareParam(shareParam);
 
     expect(decoded).toBeTruthy();
@@ -120,7 +132,7 @@ describe("Sharing functionality", () => {
         iconLibrary: { "ico-1": icon },
       },
     };
-    const shareParam = generateShareUrl(withIcon).url.split("#share=")[1];
+    const shareParam = shareParamOf(generateShareUrl(withIcon).url);
     const decoded = decodeShareParam(shareParam);
 
     expect(decoded?.snapshot.iconLibrary["ico-1"]).toEqual(icon);

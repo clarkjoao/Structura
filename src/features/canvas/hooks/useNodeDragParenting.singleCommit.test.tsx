@@ -7,9 +7,9 @@ import { useNodeDragParenting } from "./useNodeDragParenting";
 /**
  * One gesture is one store transaction.
  *
- * The commit used to fan out: commitNodeDrag for the node under the pointer,
- * batchCommitNodeDrag for the selected nodes that changed parent, and one
- * updateNodeLayout per selected node that did not. Each of those is a set() on
+ * The commit used to fan out: a single-node commit for the node under the
+ * pointer, batchCommitNodeDrag for the selected nodes that changed parent, and
+ * one updateNodeLayout per selected node that did not. Each of those is a set() on
  * the diagram store, and each set() is the single most expensive thing the app
  * does. Two of them also push a structural history checkpoint, which never
  * coalesces -- so a multi-select drag that reparented took two undos.

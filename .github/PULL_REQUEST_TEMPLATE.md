@@ -22,7 +22,7 @@ Closes #
 > These are non-negotiable. PRs that fail these will be closed without review.
 
 - [ ] `pushHistory(state)` is the **first call** inside every `set()` that mutates diagram state
-- [ ] No direct calls to `setParent()` or `updateNodeLayout()` — used `commitNodeDrag()` instead
+- [ ] No direct calls to `setParent()` or `updateNodeLayout()` — used `batchCommitNodeDrag()` instead
 - [ ] No imports from `src/lib/model-types` or `src/lib/model-store` — used `@/features/diagram` only
 - [ ] Type guards used (e.g. `isC4Component(node)`) — no `node.type === '...'` string checks
 - [ ] All UI text uses `i18n` / `useTranslation()` — no hardcoded strings

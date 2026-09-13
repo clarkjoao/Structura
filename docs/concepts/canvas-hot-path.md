@@ -83,7 +83,7 @@ into history + collab. Measured: one arrow-key nudge used to be 800+
 
 | Do | Don't |
 | --- | --- |
-| Collect every moved node and call `batchCommitNodeDrag` once | `commitNodeDrag` + `updateNodeLayout` per selected node |
+| Collect every moved node and call `batchCommitNodeDrag` once | A separate commit + `updateNodeLayout` per selected node |
 | Flush ResizeObserver sizes with `batchUpdateNodeLayouts` (no history) | `updateNodeLayout` once per measured node |
 | History: one structural checkpoint per gesture | Two `STRUCTURAL` checkpoints for one multi-select drag |
 

@@ -4,10 +4,10 @@ import { createTestDiagramStore } from "../test-utils";
 /**
  * One drag gesture is one undo step.
  *
- * commitNodeDrag and batchCommitNodeDrag both push a STRUCTURAL checkpoint, and
- * structural checkpoints are exempt from coalescing, so a gesture that called
- * both cost the user two Ctrl+Z. Routing a whole gesture through one
- * batchCommitNodeDrag keeps it at one.
+ * batchCommitNodeDrag pushes a STRUCTURAL checkpoint, and structural
+ * checkpoints are exempt from coalescing, so a gesture that commits more than
+ * once costs the user one Ctrl+Z per commit. Routing a whole gesture through a
+ * single batchCommitNodeDrag keeps it at one.
  */
 function seed() {
   const store = createTestDiagramStore();

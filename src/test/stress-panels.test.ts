@@ -112,19 +112,6 @@ describe("Stress: 500 elements with 6-level nested panels", () => {
       expect(components[deepLeaf]!.parentId).toBe(midPanel);
     });
 
-    it("commitNodeDrag atomically updates parentId and position", () => {
-      const { store, leafNodeIds, panelsByLevel } = seedStressDiagram();
-      const leaf = leafNodeIds[0]!;
-      const targetPanel = panelsByLevel[1]![0]!;
-
-      store.getState().commitNodeDrag(leaf, targetPanel, { x: 100, y: 200 });
-
-      const { components, nodeLayouts } = getSnapshot(store);
-      expect(components[leaf]!.parentId).toBe(targetPanel);
-      expect(nodeLayouts[leaf]!.x).toBe(100);
-      expect(nodeLayouts[leaf]!.y).toBe(200);
-    });
-
     it("batchCommitNodeDrag applies multiple reparentings in single transaction", () => {
       const { store, leafNodeIds, panelsByLevel } = seedStressDiagram();
       const targetPanel = panelsByLevel[0]![0]!;
@@ -177,7 +164,11 @@ describe("Stress: 500 elements with 6-level nested panels", () => {
       );
 
       vi.advanceTimersByTime(HISTORY_COALESCE_MS + 1);
-      store.getState().commitNodeDrag(allComponentIds[0]!, null, { x: 9999, y: 9999 });
+      store
+        .getState()
+        .batchCommitNodeDrag([
+          { nodeId: allComponentIds[0]!, newParentId: null, newPosition: { x: 9999, y: 9999 } },
+        ]);
 
       store.getState().undo();
 
@@ -284,14 +275,6 @@ describe("Stress: 500 elements with 6-level nested panels", () => {
       const { store, leafNodeIds } = seedStressDiagram();
       const ms = measureMs(() => {
         store.getState().setParent(leafNodeIds[0]!, null);
-      });
-      expect(ms).toBeLessThan(100);
-    });
-
-    it("commitNodeDrag on 500-element diagram completes in under 100ms", () => {
-      const { store, leafNodeIds, panelsByLevel } = seedStressDiagram();
-      const ms = measureMs(() => {
-        store.getState().commitNodeDrag(leafNodeIds[0]!, panelsByLevel[0]![0]!, { x: 100, y: 100 });
       });
       expect(ms).toBeLessThan(100);
     });
