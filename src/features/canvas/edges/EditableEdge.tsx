@@ -2,7 +2,6 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import {
   BaseEdge,
-  EdgeLabelRenderer,
   getBezierPath,
   getSmoothStepPath,
   getStraightPath,
@@ -38,6 +37,7 @@ import { EdgeParticle } from "./overlays/EdgeParticle";
 import { EdgePayloadOverlay } from "./overlays/EdgePayloadOverlay";
 import { CollabEdgeHighlight } from "./overlays/CollabEdgeHighlight";
 import type { EdgeData } from "./data/edgeData.types";
+import { EdgeLabelPortal } from "./EdgeLabelPortal";
 
 export type { EdgeData };
 
@@ -383,14 +383,14 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
       )}
 
       {isActivePlayback && edgeData.activePayload && payloadDirection && (
-        <EdgeLabelRenderer>
+        <EdgeLabelPortal>
           <EdgePayloadOverlay
             labelPoint={labelPoint}
             labelOffsetY={edgeData.label ? 52 : 16}
             payload={edgeData.activePayload}
             direction={payloadDirection}
           />
-        </EdgeLabelRenderer>
+        </EdgeLabelPortal>
       )}
     </>
   );
