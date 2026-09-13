@@ -131,11 +131,6 @@ export interface AppActions {
   linkComponentToService: (componentId: string, serviceId: string | undefined) => void;
   linkComponentToDiagram: (componentId: string, diagramId: string | undefined) => void;
   setParent: (childId: string, parentId: string | null) => void;
-  commitNodeDrag: (
-    nodeId: string,
-    newParentId: string | null,
-    newPosition: { x: number; y: number },
-  ) => void;
   batchCommitNodeDrag: (
     entries: Array<{
       nodeId: string;

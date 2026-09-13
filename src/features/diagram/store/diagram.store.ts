@@ -202,7 +202,6 @@ const selectDiagramActions = pickFromStore([
   "linkComponentToService",
   "linkComponentToDiagram",
   "setParent",
-  "commitNodeDrag",
   "batchCommitNodeDrag",
   "addFlow",
   "updateFlow",
@@ -278,7 +277,6 @@ const selectLayoutActions = pickFromStore([
   "sendToBack",
   "fitGroupToChildren",
   "applyAutoLayout",
-  "commitNodeDrag",
   "batchCommitNodeDrag",
   "setParent",
 ]);

@@ -80,7 +80,7 @@ Use `useShallow` whenever the selector returns a derived array or object (not a 
 
 Call `pushHistory` at the **start** of any mutation that should be undoable.
 
-- **Structural** (`pushHistory(state, "structural")`): never coalesced — one checkpoint per structural action. Used for `addComponent`, `removeComponent`, `setParent`, `groupNodes`, `ungroupNodes`, `addConnection`, `removeConnection`, `insertPattern`, `pasteFromClipboard`, `commitNodeDrag`, `mergeSceneIntoBase`, and the LLM history boundary.
+- **Structural** (`pushHistory(state, "structural")`): never coalesced — one checkpoint per structural action. Used for `addComponent`, `removeComponent`, `setParent`, `groupNodes`, `ungroupNodes`, `addConnection`, `removeConnection`, `insertPattern`, `pasteFromClipboard`, `batchCommitNodeDrag`, `mergeSceneIntoBase`, and the LLM history boundary.
 - **Soft** (`pushHistory(state)` or `pushHistory(state, "soft")`): may coalesce within `HISTORY_COALESCE_MS` for rapid typing-style edits — e.g. `updateComponent` (non-dimension-only), `updateConnection`.
 
 **Should call:** `addComponent`, `removeComponent`, `updateComponent` (non-dimension-only),
