@@ -5,7 +5,6 @@ import {
   getBezierPath,
   getSmoothStepPath,
   getStraightPath,
-  useStore,
   type Edge,
   type EdgeProps,
 } from "@xyflow/react";
@@ -20,6 +19,7 @@ import {
   type Point,
 } from "@/features/diagram";
 import { useTranslation } from "react-i18next";
+import { useElementsSelectable } from "../contexts/ElementsSelectableContext";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { buildEditableEdgePath, getRenderedPathKnots } from "./geometry/paths";
 import { buildStepPath } from "./geometry/orthogonal";
@@ -81,7 +81,10 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
   const target = useMemo<Point>(() => ({ x: targetX, y: targetY }), [targetX, targetY]);
 
   // Read-only surfaces (viewer, playback) turn off selection; never edit there.
-  const elementsSelectable = useStore((state) => state.elementsSelectable);
+  // Read from the canvas, not `useStore`: the value is the same for every edge,
+  // and a React Flow subscription per edge runs its selector on every store
+  // write, drag frames included.
+  const elementsSelectable = useElementsSelectable();
   const edgeStyle = edgeData.edgeStyle ?? EdgeStyle.EditableStep;
   const isStep = edgeStyle === EdgeStyle.EditableStep;
   const isCurve = edgeStyle === EdgeStyle.Editable;
