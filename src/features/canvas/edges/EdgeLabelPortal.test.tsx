@@ -225,3 +225,39 @@ describe("EdgeLabelPortalHost attachment stability", () => {
     expect(records.map((record) => record.type)).toEqual([]);
   });
 });
+
+/**
+ * `EdgeLabelPortal` renders nothing when no provider is above it, and the edge
+ * components that used to mount their own `<EdgeLabelRenderer>` now all portal.
+ * So a surface that renders `<ReactFlow>` with those edge types and forgets the
+ * host does not fall back to anything: its labels, toolbars and collaboration
+ * highlights are simply absent, with no error. The embedded viewer shipped that
+ * way. The rule is therefore per render site, not per component.
+ */
+describe("every canvas surface", () => {
+  it("mounts the portal host next to its <ReactFlow>", () => {
+    const root = join(process.cwd(), "src");
+    const missing: string[] = [];
+
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const full = join(dir, entry);
+        if (statSync(full).isDirectory()) {
+          if (entry === "__tests__" || entry === "node_modules") continue;
+          walk(full);
+          continue;
+        }
+        if (!/\.tsx$/.test(entry) || /\.test\.tsx$/.test(entry)) continue;
+        const source = readFileSync(full, "utf8")
+          .replace(/\/\*[\s\S]*?\*\//g, "")
+          .replace(/\/\/[^\n]*/g, "");
+        // a JSX element, not ReactFlowProvider and not a type reference
+        if (!/<ReactFlow[\s>]/.test(source)) continue;
+        if (!source.includes("EdgeLabelPortalHost")) missing.push(full.slice(root.length + 1));
+      }
+    };
+    walk(root);
+
+    expect(missing).toEqual([]);
+  });
+});

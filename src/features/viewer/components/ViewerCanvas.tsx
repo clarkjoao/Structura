@@ -23,6 +23,10 @@ import {
 } from "@/features/canvas/flow/flowState";
 import { useNodeTypes } from "@/features/canvas/nodes/node-types";
 import { ComponentIconLookupProvider } from "@/features/canvas/components/icons/ComponentIconLookupProvider";
+import {
+  EdgeLabelPortalHost,
+  EdgeLabelPortalProvider,
+} from "@/features/canvas/edges/EdgeLabelPortal";
 import { EMBED_EDGE_TYPES } from "./embedNodeTypes";
 import { OpenInStructuraButton } from "./OpenInStructuraButton";
 import { FlowInvite } from "./FlowInvite";
@@ -202,30 +206,39 @@ const ViewerCanvasContent = ({
         }}
       >
         <ComponentIconLookupProvider lookup={iconLookup}>
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            nodeTypes={nodeTypes}
-            edgeTypes={EMBED_EDGE_TYPES}
-            fitView
-            fitViewOptions={{ padding: 0.12 }}
-            nodesDraggable={false}
-            nodesConnectable={false}
-            elementsSelectable={false}
-            panOnDrag
-            panOnScroll
-            panOnScrollMode={PanOnScrollMode.Free}
-            zoomOnScroll
-            zoomOnPinch
-            zoomOnDoubleClick={false}
-            minZoom={0.3}
-            maxZoom={1.5}
-            proOptions={{ hideAttribution: true }}
-            className="bg-background"
-          >
-            <Background variant={BackgroundVariant.Dots} gap={18} size={1.5} />
-            <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
-          </ReactFlow>
+          {/*
+            The viewer renders the canvas' EditableEdge, and every edge label,
+            toolbar and overlay it draws goes through EdgeLabelPortal. Without
+            this provider and its single host they portal into nothing and the
+            viewer shows unlabelled edges.
+          */}
+          <EdgeLabelPortalProvider>
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              nodeTypes={nodeTypes}
+              edgeTypes={EMBED_EDGE_TYPES}
+              fitView
+              fitViewOptions={{ padding: 0.12 }}
+              nodesDraggable={false}
+              nodesConnectable={false}
+              elementsSelectable={false}
+              panOnDrag
+              panOnScroll
+              panOnScrollMode={PanOnScrollMode.Free}
+              zoomOnScroll
+              zoomOnPinch
+              zoomOnDoubleClick={false}
+              minZoom={0.3}
+              maxZoom={1.5}
+              proOptions={{ hideAttribution: true }}
+              className="bg-background"
+            >
+              <EdgeLabelPortalHost />
+              <Background variant={BackgroundVariant.Dots} gap={18} size={1.5} />
+              <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
+            </ReactFlow>
+          </EdgeLabelPortalProvider>
         </ComponentIconLookupProvider>
 
         {!readingFlow && <FlowInvite flows={flows} onSelect={startFlow} />}
