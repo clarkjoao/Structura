@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { EdgeLabelRenderer } from "@xyflow/react";
 
@@ -41,6 +41,23 @@ export function useEdgeLabelPortalContainer(): HTMLElement | null {
 }
 
 /**
+ * Attach `container` when the mount node appears. Must be a ref callback, not a
+ * mount-only effect: `<EdgeLabelRenderer>` often returns null on the host's
+ * first paint (RF `domNode` not ready yet), then portals the mount on a later
+ * store update without re-rendering the host. An effect keyed on `container`
+ * would run once with `mount === null` and never attach — labels/toolbars stay
+ * in a detached node and never show.
+ */
+function attachEdgeLabelContainer(mount: HTMLDivElement | null, container: HTMLElement | null) {
+  if (!container) return;
+  if (mount) {
+    if (container.parentElement !== mount) mount.appendChild(container);
+    return;
+  }
+  if (container.parentElement) container.remove();
+}
+
+/**
  * The single `<EdgeLabelRenderer>` of the canvas. Render it once, inside
  * `<ReactFlow>`, under an `EdgeLabelPortalProvider`.
  *
@@ -51,20 +68,10 @@ export function useEdgeLabelPortalContainer(): HTMLElement | null {
  */
 export function EdgeLabelPortalHost() {
   const container = useEdgeLabelPortalContainer();
-  const mountRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const mount = mountRef.current;
-    if (!container || !mount) return;
-    mount.appendChild(container);
-    return () => {
-      container.remove();
-    };
-  }, [container]);
 
   return (
     <EdgeLabelRenderer>
-      <div ref={mountRef} />
+      <div ref={(mount) => attachEdgeLabelContainer(mount, container)} />
     </EdgeLabelRenderer>
   );
 }

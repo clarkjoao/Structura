@@ -1,6 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { useState, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import {
   EdgeLabelPortal,
@@ -8,16 +9,61 @@ import {
   useEdgeLabelPortalContainer,
 } from "./EdgeLabelPortal";
 
-/** Stands in for EdgeLabelPortalHost, which needs a React Flow store to render. */
+/**
+ * Stands in for EdgeLabelPortalHost's attach path (ref callback into the shared
+ * container). Avoids React Flow's store; mirrors the host's attach contract.
+ */
 function TestHost() {
   const container = useEdgeLabelPortalContainer();
   return (
     <div
       data-testid="host"
       ref={(mount) => {
-        if (mount && container) mount.appendChild(container);
+        if (!container) return;
+        if (mount) {
+          if (container.parentElement !== mount) mount.appendChild(container);
+          return;
+        }
+        if (container.parentElement) container.remove();
       }}
     />
+  );
+}
+
+/**
+ * Reproduces the real host failure mode: the mount node is missing on the first
+ * paint (EdgeLabelRenderer returned null), then appears later without the host
+ * component identity changing. A mount-only useEffect keyed on `container`
+ * would miss that transition and leave portals detached.
+ */
+function LateMountHost({ showMount }: { showMount: boolean }) {
+  const container = useEdgeLabelPortalContainer();
+  if (!showMount) return null;
+  return (
+    <div
+      data-testid="host"
+      ref={(mount) => {
+        if (!container) return;
+        if (mount) {
+          if (container.parentElement !== mount) mount.appendChild(container);
+          return;
+        }
+        if (container.parentElement) container.remove();
+      }}
+    />
+  );
+}
+
+function LateMountFixture({ children }: { children: ReactNode }) {
+  const [showMount, setShowMount] = useState(false);
+  return (
+    <EdgeLabelPortalProvider>
+      <button type="button" onClick={() => setShowMount(true)}>
+        ready
+      </button>
+      <LateMountHost showMount={showMount} />
+      {children}
+    </EdgeLabelPortalProvider>
   );
 }
 
@@ -43,6 +89,36 @@ describe("EdgeLabelPortal", () => {
     expect(parents.size).toBe(1);
     // and none of them is inline in the caller's tree
     expect(container.querySelector("[data-testid='tree'] [data-label]")).toBeNull();
+  });
+
+  it("attaches a portal that rendered before the mount node existed", () => {
+    let sharedContainer: HTMLElement | null = null;
+    function CaptureContainer() {
+      sharedContainer = useEdgeLabelPortalContainer();
+      return null;
+    }
+
+    render(
+      <LateMountFixture>
+        <CaptureContainer />
+        <EdgeLabelPortal>
+          <span data-testid="toolbar">toolbar</span>
+        </EdgeLabelPortal>
+      </LateMountFixture>,
+    );
+
+    // Content already rendered into the detached container, but not in the document —
+    // the failure mode that hid EdgeToolbar after the single-renderer change.
+    expect(sharedContainer).not.toBeNull();
+    expect(sharedContainer!.querySelector("[data-testid='toolbar']")).not.toBeNull();
+    expect(document.body.contains(sharedContainer)).toBe(false);
+    expect(screen.queryByTestId("toolbar")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "ready" }));
+
+    const toolbar = screen.getByTestId("toolbar");
+    expect(document.body.contains(sharedContainer)).toBe(true);
+    expect(screen.getByTestId("host").contains(toolbar)).toBe(true);
   });
 
   it("renders nothing outside a provider instead of throwing", () => {
